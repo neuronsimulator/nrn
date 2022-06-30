@@ -89,6 +89,7 @@ class Phase2 {
                               NrnThreadChkpnt& ntc);
     void set_vec_play(NrnThread& nt, NrnThreadChkpnt& ntc);
 
+    int n_real_cell;
     int n_output;
     int n_real_output;
     int n_node;

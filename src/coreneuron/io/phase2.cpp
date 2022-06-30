@@ -24,6 +24,7 @@
 #endif
 
 int (*nrn2core_get_dat2_1_)(int tid,
+                            int& n_real_cell,
                             int& ngid,
                             int& n_real_gid,
                             int& nnode,
@@ -107,6 +108,7 @@ inline void mech_data_layout_transform(T* data, int cnt, int sz, int layout) {
 }
 
 void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
+    n_real_cell = F.read_int();
     n_output = F.read_int();
     n_real_output = F.read_int();
     n_node = F.read_int();
@@ -256,6 +258,7 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
     int* nodecounts_ = nullptr;
     int n_weight;
     (*nrn2core_get_dat2_1_)(thread_id,
+                            n_real_cell,
                             n_output,
                             n_real_output,
                             n_node,
@@ -915,8 +918,9 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
     NrnThreadChkpnt& ntc = nrnthread_chkpnt[nt.id];
     ntc.file_id = userParams.gidgroups[nt.id];
 
-    nt.ncell = n_real_output;
+    nt.ncell = n_real_cell;
     nt.end = n_node;
+    nt.n_real_output = n_real_output;
 
 #if CHKPNTDEBUG
     ntc.n_outputgids = n_output;
@@ -1221,14 +1225,15 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
         node_permute(output_vindex.data(), nt.n_presyn, nt._permute);
     }
 #if CHKPNTDEBUG
-    ntc.output_threshold = new double[nt.ncell];
-    memcpy(ntc.output_threshold, output_threshold.data(), nt.ncell * sizeof(double));
+    ntc.output_threshold = new double[n_real_output];
+    memcpy(ntc.output_threshold, output_threshold.data(), n_real_output * sizeof(double));
 #endif
+
     for (int i = 0; i < nt.n_presyn; ++i) {  // real cells
         PreSyn* ps = nt.presyns + i;
 
         int ix = output_vindex[i];
-        if (ix == -1 && i < nt.ncell) {  // real cell without a presyn
+        if (ix == -1 && i < n_real_output) {  // real cell without a presyn
             continue;
         }
         if (ix < 0) {
@@ -1256,7 +1261,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
     // initial net_send_buffer size about 1% of number of presyns
     // nt._net_send_buffer_size = nt.ncell/100 + 1;
     // but, to avoid reallocation complexity on GPU ...
-    nt._net_send_buffer_size = nt.ncell;
+    nt._net_send_buffer_size = n_real_output;
     nt._net_send_buffer = (int*) ecalloc_align(nt._net_send_buffer_size, sizeof(int));
 
     int nnetcon = nt.n_netcon;

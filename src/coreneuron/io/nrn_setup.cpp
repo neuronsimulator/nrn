@@ -102,7 +102,7 @@ void (*nrn2core_all_weights_return_)(std::vector<double*>& weights);
 // for the negative gids in netcon_srcgid (in that order) the source thread.
 //
 // <firstgid>_2.dat
-// n_output n_real_output, nnode
+// n_real_cell, n_output, n_real_output, nnode
 // ndiam - 0 if no mechanism has dparam with diam semantics, or nnode
 // nmech - includes artcell mechanisms
 // for the nmech tml mechanisms

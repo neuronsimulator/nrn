@@ -67,9 +67,12 @@ void Phase1::populate(NrnThread& nt, OMP_Mutex& mut) {
     coreneuron::nrnthreads_netcon_negsrcgid_tid[nt.id] = this->netcon_negsrcgid_tid;
 
     nt.netcons = new NetCon[nt.n_netcon];
-    nt.presyns_helper = (PreSynHelper*) ecalloc_align(nt.n_presyn, sizeof(PreSynHelper));
 
-    nt.presyns = new PreSyn[nt.n_presyn];
+    if (nt.n_presyn) {
+        nt.presyns_helper = (PreSynHelper*) ecalloc_align(nt.n_presyn, sizeof(PreSynHelper));
+        nt.presyns = new PreSyn[nt.n_presyn];
+    }
+
     PreSyn* ps = nt.presyns;
     /// go through all presyns
     for (auto& gid: this->output_gids) {

@@ -131,12 +131,13 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
         }
     }
 
+    fh << nt.ncell << " ncell\n";
     fh << n_outputgid << " ngid\n";
 #if CHKPNTDEBUG
     assert(ntc.n_outputgids == n_outputgid);
 #endif
 
-    fh << nt.ncell << " n_real_gid\n";
+    fh << nt.n_real_output << " n_real_output\n";
     fh << nt.end << " nnode\n";
     fh << ((nt._actual_diam == nullptr) ? 0 : nt.end) << " ndiam\n";
     int nmech = 0;
@@ -316,7 +317,7 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
     int nnetcon = nt.n_netcon;
 
     int* output_vindex = new int[nt.n_presyn];
-    double* output_threshold = new double[nt.ncell];
+    double* output_threshold = new double[nt.n_real_output];
     for (int i = 0; i < nt.n_presyn; ++i) {
         PreSyn* ps = nt.presyns + i;
         if (ps->thvar_index_ >= 0) {
@@ -327,8 +328,8 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
             assert(ps->pntsrc_ == nullptr);
             output_threshold[i] = ps->threshold_;
             output_vindex[i] = pinv_nt[ps->thvar_index_];
-        } else if (i < nt.ncell) {      // real cell without a presyn
-            output_threshold[i] = 0.0;  // the way it was set in nrnbbcore_write.cpp
+        } else if (i < nt.n_real_output) {  // real cell without a presyn
+            output_threshold[i] = 0.0;      // the way it was set in nrnbbcore_write.cpp
             output_vindex[i] = -1;
         } else {
             Point_process* pnt = ps->pntsrc_;
@@ -347,12 +348,12 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
         }
     }
     fh.write_array<int>(output_vindex, nt.n_presyn);
-    fh.write_array<double>(output_threshold, nt.ncell);
+    fh.write_array<double>(output_threshold, nt.n_real_output);
 #if CHKPNTDEBUG
     for (int i = 0; i < nt.n_presyn; ++i) {
         assert(ntc.output_vindex[i] == output_vindex[i]);
     }
-    for (int i = 0; i < nt.ncell; ++i) {
+    for (int i = 0; i < nt.n_real_output; ++i) {
         assert(ntc.output_threshold[i] == output_threshold[i]);
     }
 #endif

@@ -104,7 +104,12 @@ struct NrnThread {
     NetCon* uniform netcons;
     double* uniform weights;
 
-    uniform int n_pntproc, n_presyn, n_input_presyn, n_netcon, n_weight;
+    uniform int n_pntproc;
+    uniform int n_weight;
+    uniform int n_netcon;
+    uniform int n_input_presyn;
+    uniform int n_presyn;
+    uniform int n_real_output;
 
     uniform int ncell;
     uniform int end;
@@ -112,7 +117,9 @@ struct NrnThread {
     uniform int _stop_stepping;
     uniform int n_vecplay;
 
-    uniform unsigned int64 _ndata, _nidata, _nvdata;
+    uniform unsigned int64 _ndata;
+    uniform unsigned int64 _nidata;
+    uniform unsigned int64 _nvdata;
     double* uniform _data;
     int* uniform _idata;
 

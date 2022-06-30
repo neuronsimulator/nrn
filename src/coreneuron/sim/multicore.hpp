@@ -90,7 +90,8 @@ struct NrnThread: public MemoryManaged {
     int n_weight = 0;
     int n_netcon = 0;
     int n_input_presyn = 0;
-    int n_presyn = 0;  // only for model_size
+    int n_presyn = 0;       // only for model_size
+    int n_real_output = 0;  // for checking their thresholds.
 
     int ncell = 0; /* analogous to old rootnodecount */
     int end = 0;   /* 1 + position of last in v_node array. Now v_node_count. */
