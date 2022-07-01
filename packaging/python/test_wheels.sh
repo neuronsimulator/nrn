@@ -210,11 +210,13 @@ run_parallel_test() {
 
       # TODO : latest mpich has issuee on Azure OSX
       if [[ "$CI_OS_NAME" == "osx" ]]; then
+          export DYLD_LIBRARY_PATH=${BREW_PREFIX}/opt/mpich/lib:$DYLD_LIBRARY_PATH
           run_mpi_test "${BREW_PREFIX}/opt/mpich/bin/mpirun" "MPICH" ""
       fi
 
       brew unlink mpich
       brew link openmpi
+      export DYLD_LIBRARY_PATH=${BREW_PREFIX}/opt/open-mpi/lib:$DYLD_LIBRARY_PATH
       run_mpi_test "${BREW_PREFIX}/opt/open-mpi/bin/mpirun" "OpenMPI" ""
 
     # CI Linux or Azure Linux
