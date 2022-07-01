@@ -186,10 +186,8 @@ stages:
         inputs:
           secureFile: 'readline7.0.tar.gz'
 
-      # macOS 10.14 is needed to avoid:
-      # error: aligned allocation function of type 'void *(std::size_t, std::align_val_t)' is only available on macOS 10.14 or newer
       - script: |
-          export MACOSX_DEPLOYMENT_TARGET=10.14
+          export MACOSX_DEPLOYMENT_TARGET=10.9
           export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           export NRN_BUILD_FOR_UPLOAD=1
