@@ -18,7 +18,7 @@ class HocMark: public PolyGlyph {
     virtual void draw(Canvas*, const Allocation&) const;
     //	virtual void print(Printer*, const Allocation&) const;
     virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
-    //	virtual void save(ostream&);
+    //	virtual void save(std::ostream&);
   protected:
     HocMark(char style, float size, const Color*, const Brush*);
 

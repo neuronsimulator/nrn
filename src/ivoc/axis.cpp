@@ -21,7 +21,7 @@
     GAxisItem(Glyph* g)
         : GraphItem(g) {}
     virtual ~GAxisItem(){};
-    virtual void save(ostream&, Coord, Coord) {}
+    virtual void save(std::ostream&, Coord, Coord) {}
     virtual void erase(Scene* s, GlyphIndex i, int type) {
         if (type & GraphItem::ERASE_AXIS) {
             s->remove(i);
@@ -85,7 +85,7 @@ void Axis::size(float& min, float& max) {
     max = float(amax_);
 }
 
-void Axis::save(ostream& o) {
+void Axis::save(std::ostream& o) {
     char buf[256];
     int c;
     if (d_ == Dimension_X) {
@@ -103,7 +103,7 @@ void Axis::save(ostream& o) {
             nminor_,
             invert_,
             number_);
-    o << buf << endl;
+    o << buf << std::endl;
 }
 
 void Axis::update(Observable*) {}
