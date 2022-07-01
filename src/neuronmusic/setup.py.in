@@ -22,11 +22,13 @@ libdirs = ['@MUSIC_LIBDIR@', @NRN_LIBDIR@]
 # added to rpath to avoid issues with dlopen.
 libdirs.append("@CMAKE_BINARY_DIR@/lib")
 
+nrnmusic_lib = [@NRNMUSIC_DYNAM_LIB@]
+
 neuronmusic_module = Extension(
     'neuronmusic',
     ['neuronmusic.cpp'],
     library_dirs = libdirs,
-    libraries = ['music', 'nrniv'],
+    libraries = ['nrniv'] + nrnmusic_lib,
     runtime_library_dirs = [@NRN_LIBDIR@],
     include_dirs = include_dirs
 )

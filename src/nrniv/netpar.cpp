@@ -8,6 +8,7 @@
 #include <nrnoc2iv.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <netpar.h>
 #include <unordered_map>
 #include <bbs.h>
 
@@ -27,6 +28,11 @@ using Gid2PreSyn = std::unordered_map<int, PreSyn*>;
 #include "ivocvect.h"
 
 static int n_multisend_interval;
+
+#if NRN_MUSIC
+#include "nrnmusicapi.h"
+int nrnmusic;
+#endif
 
 static Symbol* netcon_sym_;
 static Gid2PreSyn gid2out_;
@@ -192,6 +198,16 @@ static double last_maxstep_arg_;
 static NetParEvent* npe_;  // nrn_nthread of them
 static int n_npe_;         // just to compare with nrn_nthread
 
+double nrn_usable_mindelay() {
+    return usable_mindelay_;
+}
+Symbol* nrn_netcon_sym() {
+    return netcon_sym_;
+}
+Gid2PreSyn& nrn_gid2out() {
+    return gid2out_;
+}
+
 #if NRNMPI
 // for combination of threads and mpi.
 #if NRN_ENABLE_THREADS
@@ -199,10 +215,6 @@ static MUTDEC
 #endif
     static int seqcnt_;
 static NrnThread* last_nt_;
-#endif
-
-#if NRN_MUSIC
-#include "nrnmusic.cpp"
 #endif
 
 NetParEvent::NetParEvent() {

@@ -20,19 +20,35 @@ try:
 except:
     pass
 
-# Also try to find path to music binary
-my_env = os.environ.copy()
-try:
-    my_env["PATH"] = os.getenv("MUSIC_LIBDIR") + "/../bin:" + my_env["PATH"]
-except:
-    pass
-
 
 def run(cmd):
     result = subprocess.run(cmd, shell=True, env=my_env, capture_output=True, text=True)
     result.check_returncode()
     return result
 
+
+# try to find path to music binary
+my_env = os.environ.copy()
+try:
+    my_env["PATH"] = os.getenv("MUSIC_LIBDIR") + "/../bin:" + my_env["PATH"]
+except:
+    pass
+
+result = run("which music")
+musicpath = "/".join(result.stdout.strip().split("/")[:-2])
+# need MUSIC_LIB_NRN_PATH if mpi dynamic
+if "NRN_ENABLE_MPI_DYNAMIC=ON" in h.nrnversion(6):
+    if os.getenv("MUSIC_LIB_NRN_PATH") is None:
+        from os.path import exists
+
+        prefix = os.getenv("MUSIC_LIBDIR")
+        name = ""
+        for suffix in ["so", "dylib", "dll", None]:
+            name = musicpath + "/lib/libmusic." + suffix
+            if exists(name):
+                break
+        my_env["MUSIC_LIB_NRN_PATH"] = name
+    print(my_env["MUSIC_LIB_NRN_PATH"])
 
 out2 = "numprocs=1\nRank 0: Event (0, 0.001175) detected at 0\nRank 0: Event (0, 0.013825) detected at 0\n"
 

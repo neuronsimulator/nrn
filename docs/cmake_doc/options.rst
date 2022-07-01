@@ -243,6 +243,11 @@ NRN_ENABLE_MUSIC:BOOL=OFF
   With the music installed above, cmake configuration example is
   ``build % cmake .. -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python3.11` -DNRN_ENABLE_RX3D=OFF -DCMAKE_BUILD_TYPE=Debug -DNRN_ENABLE_TESTS=ON -DNRN_ENABLE_MUSIC=ON -DCMAKE_PREFIX_PATH=$HOME/neuron/MUSIC/musicinstall``
 
+  If -DNRN_ENABLE_MPI_DYNAMIC=ON then the nrnmusic interface to
+  NEURON will also be dynamically loaded at runtime. (Generally useful
+  only for binary distributions of NEURON (e.g. wheels) where NEURON may
+  be installed and used prior to installing music.)
+
 Python options:
 ===============
 

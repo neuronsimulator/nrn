@@ -1,5 +1,15 @@
+#include <../../nrnconf.h>
 #define NO_PYTHON_H 1
-#include <../neuronmusic/nrnmusic.h>
+#define IN_NRNMUSIC_CPP
+#include "nrnmusicapi.h"
+#include "hocdec.h"
+#include "nrn_ansi.h"
+#include "netcon.h"
+#include "cvodeobj.h"
+#include "netcvode.h"
+#include "multicore.h"
+#include "nrnmusic.h"
+#include "netpar.h"
 #include <unordered_map>
 
 extern int nrnmusic;
@@ -15,6 +25,7 @@ void nrnmusic_spikehandle(void* vport, double tt, int gindex);
 extern Object* nrnpy_po2ho(PyObject*);
 extern PyObject* nrnpy_ho2po(Object*);
 extern Object* hoc_new_object(Symbol*, void*);
+extern NetCvode* net_cvode_instance;
 
 MUSIC::Setup* nrnmusic_setup;
 MUSIC::Runtime* nrnmusic_runtime;
@@ -73,7 +84,7 @@ static PortTable* music_output_ports;
 NetParMusicEvent::NetParMusicEvent() {}
 NetParMusicEvent::~NetParMusicEvent() {}
 void NetParMusicEvent::send(double t, NetCvode* nc, NrnThread* nt) {
-    nc->event(t + usable_mindelay_, this, nt);
+    nc->event(t + nrn_usable_mindelay(), this, nt);
 }
 void NetParMusicEvent::deliver(double t, NetCvode* nc, NrnThread* nt) {
     nrnmusic_runtime->tick();
@@ -127,8 +138,8 @@ void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
     // except pc.cell(gid, nc) has already been called and this
     // will add this to the PreSyn.music_out_ list.
     alloc_music_space();
-    auto iter = gid2out_.find(gid);
-    if (iter == gid2out_.end()) {
+    auto iter = nrn_gid2out().find(gid);
+    if (iter == nrn_gid2out().end()) {
         return;
     }
     PreSyn* ps = iter->second;
@@ -179,7 +190,7 @@ PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
         ps = (*gi_table)[gi];
     }
     NetCon* nc = new NetCon(ps, target);
-    Object* o = hoc_new_object(netcon_sym_, nc);
+    Object* o = hoc_new_object(nrn_netcon_sym(), nc);
     nc->obj_ = o;
     PyObject* po = nrnpy_ho2po(o);
     // printf("index2target %d %s\n", gi, hoc_object_name(target));
@@ -198,6 +209,7 @@ void nrnmusic_init(int* pargc, char*** pargv) {
             nrnmusic = 1;
         }
     }
+
     if (getenv("_MUSIC_CONFIG_"))
         nrnmusic = 1;  // temporary kludge
     if (nrnmusic) {
@@ -216,7 +228,7 @@ void nrnmusic_terminate() {
 
 // Called from nrn_spike_exchange_init so usable_mindelay is ready to use
 // For now, can only be called once.
-static void nrnmusic_runtime_phase() {
+void nrnmusic_runtime_phase() {
     static int called = 0;
     assert(!called);
     called = 1;
@@ -237,7 +249,7 @@ static void nrnmusic_runtime_phase() {
         }
         eh->filltable(eip, cnt);
         MUSIC::PermutationIndex indices(&gindices.front(), gindices.size());
-        eip->map(&indices, eh, usable_mindelay_ / 1000.0);
+        eip->map(&indices, eh, nrn_usable_mindelay() / 1000.0);
         delete eip->gi_table;
     }
     delete music_input_ports;
@@ -260,8 +272,8 @@ static void nrnmusic_runtime_phase() {
     delete music_output_ports;
 
     // switch to the runtime phase
-    // printf("usable_mindelay = %g\n", usable_mindelay_);
-    nrnmusic_runtime = new MUSIC::Runtime(nrnmusic_setup, usable_mindelay_ / 1000.0);
+    // printf("usable_mindelay = %g\n", nrn_usable_mindelay());
+    nrnmusic_runtime = new MUSIC::Runtime(nrnmusic_setup, nrn_usable_mindelay() / 1000.0);
     npme = new NetParMusicEvent();
     npme->send(0, net_cvode_instance, nrn_threads);
 }
