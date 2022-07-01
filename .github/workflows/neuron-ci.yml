@@ -168,7 +168,7 @@ jobs:
         run:  |
           # OS related
           if [ "$RUNNER_OS" == "Linux" ]; then
-            eval $MATRIX_EVAL;
+            export ${MATRIX_EVAL};
             export SHELL="/bin/bash"
           else
             export CXX=${CXX:-g++};
