@@ -3,6 +3,7 @@ additional_commands:
     pargs: 0
     kwargs:
       CORENEURON: 0
+      ENVIRONMENT: '+'
       NAME: 1
       MODFILE_PATTERNS: '+'
       NRNIVMODL_ARGS: '+'
@@ -16,6 +17,7 @@ additional_commands:
       GROUP: 1
       NAME: 1
       COMMAND: '+'
+      ENVIRONMENT: '+'
       CONFLICTS: '+'
       PRECOMMAND: '+'
       PRELOAD_SANITIZER: 0
