@@ -213,6 +213,23 @@ NRN_MPI_DYNAMIC:STRING=
 
   This option is ignored unless NRN_ENABLE_MPI_DYNAMIC=ON
 
+NRN_ENABLE_MUSIC:BOOL=OFF
+-------------------------
+  Enable MUSIC. MUlti SImulation Coordinator.
+
+  MUSIC must already be installed. See https://github.com/INCF/MUSIC.
+
+  MPI and Python must be enabled.
+
+  If MUSIC is installed but CMake cannot find its /path, augment the
+  semicolon separated list of paths ``-DCMAKE_PREFIX_PATH=...;/path;...``
+  CMake needs to find
+
+  .. code-block:: shell
+
+    /path/include/music.hh
+    /path/lib/libmusic.so.*
+  
 Python options:
 ===============
 

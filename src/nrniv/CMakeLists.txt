@@ -329,6 +329,11 @@ if(NRN_ENABLE_MPI_DYNAMIC)
                               PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
 endif()
 
+if(NRN_ENABLE_MUSIC)
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrniv/netpar.cpp
+                              PROPERTIES INCLUDE_DIRECTORIES ${MUSIC_INCDIR})
+endif()
+
 if(NRN_COVERAGE_FILES)
   foreach(f ${NRN_COVERAGE_FILES})
     set_property(

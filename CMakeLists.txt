@@ -63,6 +63,7 @@ option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fal
        ${NRN_ENABLE_PYTHON_DEFAULT})
 option(NRN_ENABLE_THREADS "Allow use of multithreading" ${NRN_ENABLE_THREADS_DEFAULT})
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
+option(NRN_ENABLE_MUSIC "Enable MPI support" ${NRN_ENABLE_MUSIC_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
@@ -333,6 +334,14 @@ if(NRN_ENABLE_MPI)
 else()
   set(NRNMPI 0)
   set(PARANEURON 0)
+endif()
+
+# =============================================================================
+# Enable MUSIC MUlti SImulation Coordinator
+# =============================================================================
+if(NRN_ENABLE_MUSIC)
+  find_package(Music REQUIRED)
+  set(NRN_MUSIC 1)
 endif()
 
 # =============================================================================
@@ -904,6 +913,9 @@ if(NRN_ENABLE_MPI)
     endif()
     message(STATUS "  LIB         | ${MPI_LIBRARY}")
   endif()
+endif()
+if(NRN_ENABLE_MUSIC)
+  message(STATUS "MUSIC         | ${MUSIC_PREFIX}")
 endif()
 message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")
 if(NRN_ENABLE_PYTHON)
