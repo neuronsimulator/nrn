@@ -251,7 +251,7 @@ include(cmake/SanitizerHelper.cmake)
 # Find required packages
 # =============================================================================
 find_package(BISON REQUIRED)
-find_package(FLEX REQUIRED)
+find_package(FLEX 2.6 REQUIRED)
 
 # When shipping the wheels we want to link readline libs statically.
 if(NRN_WHEEL_STATIC_READLINE)
