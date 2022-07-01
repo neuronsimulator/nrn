@@ -10,7 +10,7 @@
 
 class PreSyn;
 class NetCon;
-class NrnThread;
+struct NrnThread;
 
 typedef std::pair<int, Memb_list*> MlWithArtItem;
 typedef std::vector<MlWithArtItem> MlWithArt;
