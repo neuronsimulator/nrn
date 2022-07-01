@@ -1,7 +1,7 @@
 #ifndef nrnoc_ml_h
 #define nrnoc_ml_h
 
-typedef struct Memb_list {
+struct Memb_list {
     Node** nodelist;
 #if CACHEVEC != 0
     /* nodeindices contains all nodes this extension is responsible for,
@@ -16,6 +16,6 @@ typedef struct Memb_list {
     Prop** prop;
     Datum* _thread; /* thread specific data (when static is no good) */
     int nodecount;
-} Memb_list;
+};
 
 #endif

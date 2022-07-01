@@ -11,7 +11,7 @@ class DataVec;
 class Color;
 class Brush;
 struct Symbol;
-class Symlist;
+struct Symlist;
 class GraphLine;
 class GLabel;
 class GPolyLine;
