@@ -381,6 +381,10 @@ else()
   endif()
 endif()
 
+if(NRN_ENABLE_MUSIC)
+  target_link_libraries(nrniv_lib ${MUSIC_LIBRARY})
+endif()
+
 if(NRN_ENABLE_PROFILING)
   target_link_libraries(nrniv_lib ${likwid_LIBRARIES} ${CALIPER_LIB})
 endif()
