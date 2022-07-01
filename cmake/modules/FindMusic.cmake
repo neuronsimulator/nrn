@@ -2,19 +2,11 @@
 # Find the MUSIC installation.
 #
 
-if (NOT NRN_ENABLE_MPI)
-  message(FATAL "MUSIC requires -DNRN_ENABLE_MPI=ON")
-endif()
+find_path(MUSIC_INCDIR music.hh PATH_SUFFIXES include)
+find_path(MUSIC_LIBDIR libmusic.a PATH_SUFFIXES lib)
+find_library(MUSIC_LIBRARY libmusic.a PATHS ${MUSIC_LIBDIR})
 
-if (NOT NRN_ENABLE_PYTHON)
-  message(FATAL "MUSIC requires -DNRN_ENABLE_PYTHON=ON")
-endif()
-
-message(STATUS "MUSIC requires Cython")
-find_package(Cython REQUIRED)
-
-set(MUSIC_FOUND TRUE)
-set(MUSIC_PREFIX "/home/hines/soft/MUSIC/install")
-set(MUSIC_INCDIR "${MUSIC_PREFIX}/include")
-set(MUSIC_LIBDIR "${MUSIC_PREFIX}/lib")
-
+find_package_handle_standard_args(MUSIC "Failed to find MUSIC package"
+  MUSIC_INCDIR
+  MUSIC_LIBDIR
+  MUSIC_LIBRARY)
