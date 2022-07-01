@@ -116,7 +116,7 @@ class RangeVarPlot: public NoIVGraphVector {
     RangeVarPlot(const char*, Object* pyobj);
     virtual ~RangeVarPlot();
 #if HAVE_IV
-    virtual void save(ostream&);
+    virtual void save(std::ostream&);
     virtual void request(Requisition& req) const;
     virtual bool choose_sym(Graph*);
     virtual void update(Observable*);
@@ -468,17 +468,17 @@ void RangeVarPlot::request(Requisition& req) const {
 #endif
 
 #if HAVE_IV
-void RangeVarPlot::save(ostream& o) {
+void RangeVarPlot::save(std::ostream& o) {
     char buf[256];
-    o << "objectvar rvp_" << endl;
+    o << "objectvar rvp_" << std::endl;
     sprintf(buf, "rvp_ = new RangeVarPlot(\"%s\")", expr_.string());
-    o << buf << endl;
+    o << buf << std::endl;
     sprintf(buf, "%s rvp_.begin(%g)", hoc_section_pathname(begin_section_), x_begin_);
-    o << buf << endl;
+    o << buf << std::endl;
     sprintf(buf, "%s rvp_.end(%g)", hoc_section_pathname(end_section_), x_end_);
-    o << buf << endl;
+    o << buf << std::endl;
     sprintf(buf, "rvp_.origin(%g)", origin_);
-    o << buf << endl;
+    o << buf << std::endl;
     Coord x, y;
     label_loc(x, y);
     sprintf(buf,
@@ -487,7 +487,7 @@ void RangeVarPlot::save(ostream& o) {
             brushes->brush(brush()),
             x,
             y);
-    o << buf << endl;
+    o << buf << std::endl;
 }
 #endif
 
