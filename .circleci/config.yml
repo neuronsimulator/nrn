@@ -14,6 +14,11 @@ jobs:
 
     machine:
       image: ubuntu-2004:202101-01
+    environment:
+      NEURON_WHEEL_VERSION: 8.2
+      NEURON_NIGHTLY_TAG: ""
+      NRN_NIGHTLY_UPLOAD: false
+      NRN_RELEASE_UPLOAD: false
 
     resource_class: arm.medium
 
@@ -93,7 +98,7 @@ workflows:
                 - /circleci\/.*/
           matrix:
             parameters:
-              NRN_PYTHON_VERSION: ["310"]
+              NRN_PYTHON_VERSION: ["37", "38", "39", "310"]
               NRN_NIGHTLY_UPLOAD: ["false"]
 
   nightly:
