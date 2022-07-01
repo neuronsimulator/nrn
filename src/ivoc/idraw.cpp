@@ -40,7 +40,7 @@ void OcIdraw::prologue() {
     }
     name = expand_env_var(name.string());
 #if defined(WIN32) || defined(MAC)
-    if (!ibuf.open(name.string(), ios::in)) {
+    if (!ibuf.open(name.string(), std::ios::in)) {
 #else
     if (!ibuf.open(name.string(), IOS_IN)) {
 #endif
