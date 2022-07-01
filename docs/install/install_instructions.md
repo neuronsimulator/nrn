@@ -198,8 +198,8 @@ from source.
 In order to build NEURON from source, the following packages must be available:
 
 - Bison
-- Flex
-- C/C++ compiler suite
+- Flex >= 2.6
+- C/C++ compiler suite supporting C++17
 - CMake 3.15.0
 
 The following packages are optional (see build options):
