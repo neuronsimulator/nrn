@@ -3,7 +3,6 @@ set(prefix "sim") # everything is under this prefix in the repository
 set(olfactory_bulb_3d_sim_time 50)
 set(olfactory_bulb_3d_mpi_ranks 4)
 set(olfactory_bulb_3d_neuron_prefix
-    OMP_NUM_THREADS=1
     ${MPIEXEC_NAME}
     ${MPIEXEC_NUMPROC_FLAG}
     ${olfactory_bulb_3d_mpi_ranks}
@@ -16,6 +15,7 @@ nrn_add_test_group(
   CORENEURON
   NAME olfactory-bulb-3d
   SUBMODULE tests/olfactory-bulb-3d
+  ENVIRONMENT OMP_NUM_THREADS=1
   OUTPUT asciispikes::olfactory_bulb.spikes.dat.000
   MODFILE_PATTERNS "${prefix}/*.mod"
   SCRIPT_PATTERNS "${prefix}/*.py" "${prefix}/*.txt" "${prefix}/*.hoc" "${prefix}/*.dic"

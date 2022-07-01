@@ -238,10 +238,9 @@ jobs:
                                 -Wno-unused-but-set-variable \
                                 -Wno-reorder \
                                 -Wno-sign-compare \
-                                -Wno-strict-aliasing \
-                                -Wno-missing-braces \
-                                -Wno-mismatched-tags" \
-                             -DNRN_EXTRA_MECH_CXX_FLAGS="")
+                                -Wno-strict-aliasing" \
+                             -DNRN_EXTRA_MECH_CXX_FLAGS="-Wno-sometimes-uninitialized \
+                                -Wno-missing-braces")
               fi
               mkdir build && cd build
               echo "Building with: ${cmake_args[@]}"
