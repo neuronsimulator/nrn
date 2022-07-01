@@ -305,10 +305,13 @@ if(NRN_ENABLE_MPI)
   nrn_mpi_find_package()
   set(NRNMPI 1)
   set(PARANEURON 1)
-  # avoid linking to C++ bindings
-  add_definitions("-DMPI_NO_CPPBIND=1")
-  add_definitions("-DOMPI_SKIP_MPICXX=1")
-  add_definitions("-DMPICH_SKIP_MPICXX=1")
+
+  if (NOT NRN_ENABLE_MUSIC) # MUSIC still has C++ MPI interfaces
+    # avoid linking to C++ bindings
+    add_definitions("-DMPI_NO_CPPBIND=1")
+    add_definitions("-DOMPI_SKIP_MPICXX=1")
+    add_definitions("-DMPICH_SKIP_MPICXX=1")
+  endif()
 
   # Launching mpi executable with full path can mangle different python versions and libraries (see
   # issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
@@ -342,6 +345,9 @@ endif()
 if(NRN_ENABLE_MUSIC)
   if (NOT NRN_ENABLE_MPI)
     message(FATAL "MUSIC requires -DNRN_ENABLE_MPI=ON")
+  endif()
+  if (NOT NRN_ENABLE_INTERVIEWS)
+    message(FATAL "MUSIC requires -DNRN_ENABLE_INTERVIEWS=ON")
   endif()
   if (NOT NRN_ENABLE_PYTHON)
     message(FATAL "MUSIC requires -DNRN_ENABLE_PYTHON=ON")
