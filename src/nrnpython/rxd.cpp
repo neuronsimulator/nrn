@@ -302,7 +302,7 @@ extern "C" void rxd_include_node_flux1D(int n, long* index, double* scales, PyOb
     }
     _node_flux_count = n;
     if (n > 0) {
-        _node_flux_idx = (long*) allocopy(index, n * sizeof(long) * n);
+        _node_flux_idx = (long*) allocopy(index, n * sizeof(long));
         _node_flux_scale = (double*) allocopy(scales, n * sizeof(double));
         _node_flux_src = (PyObject**) allocopy(sources, n * sizeof(PyObject*));
     }
