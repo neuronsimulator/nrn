@@ -108,6 +108,8 @@ Installation
 
       `Download the Windows Installer <https://github.com/neuronsimulator/nrn/releases/download/8.1.0/nrn-8.1.0.w64-mingw-py-36-37-38-39-310-setup.exe>`_.
 
+      You can also install the Linux wheel via the Windows Subsystem for Linux (WSL). See `instructions <install/install_instructions.html#windows-subsystem-for-linux-wsl-python-wheel>`_.
+
       For troubleshooting, see the `detailed installation instructions <install/install_instructions.html>`_.
 
    
