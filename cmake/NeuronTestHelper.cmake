@@ -381,9 +381,6 @@ function(nrn_add_test)
   set(${prefix}_TESTS
       "${group_members}"
       PARENT_SCOPE)
-  if(DEFINED NRN_ADD_TEST_PROCESSORS)
-    set_tests_properties(${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
-  endif()
   set(test_env "${NRN_RUN_FROM_BUILD_DIR_ENV}")
   if(requires_coreneuron)
     if(DEFINED nrnivmodl_directory)
@@ -449,6 +446,9 @@ function(nrn_add_test)
     set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
   endif()
   set_tests_properties(${test_names} PROPERTIES TIMEOUT 300)
+  if(DEFINED NRN_ADD_TEST_PROCESSORS)
+    set_tests_properties(${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
+  endif()
   # Construct an expression containing the names of the test output files that will be passed to the
   # comparison script.
   set(output_file_string "${NRN_ADD_TEST_NAME}")
