@@ -209,8 +209,6 @@ Similar to BB5, the wheel can be tested on any desktop system provided that NVHP
 
 ## Publishing the wheels on Pypi via Azure
 
-### Official Release wheels
-
 Head over to the [neuronsimulator.nrn](https://dev.azure.com/neuronsimulator/nrn/_build?definitionId=1) pipeline on Azure.
 
 After creating the tag on the `release/x.y` or on the `master` branch, perform the following steps:
@@ -229,8 +227,8 @@ After creating the tag on the `release/x.y` or on the `master` branch, perform t
 ![](images/azure-release-no-upload.png)
 
 With above, wheel will be created like release from the provided tag but they won't be uploaded to the pypi.org ( as we have set  `NRN_RELEASE_UPLOAD=false`). These wheels now you can download from artifacts section and perform thorough testing. Once you are happy with the testing result, set `NRN_RELEASE_UPLOAD` to `true` and trigger the pipeline same way:
-   * `NRN_NIGHTLY_UPLOAD` : `true`
-   * `NRN_RELEASE_UPLOAD` : `false`
+   * `NRN_NIGHTLY_UPLOAD` : `false`
+   * `NRN_RELEASE_UPLOAD` : `true`
    * `NEURON_NIGHTLY_TAG` : undefined (leave empty)
 
 ![](images/azure-release.png)
@@ -272,7 +270,7 @@ $ git diff
 The reason we are setting `NEURON_WHEEL_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
 
 
-### Nightly wheels
+## Nightly wheels
 
 Nightly wheels get automatically published from `master` in CRON mode.
 
