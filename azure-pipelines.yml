@@ -321,7 +321,7 @@ stages:
       condition: succeeded()
       displayName: 'Install Python from python.org'
     - script: |
-        export MACOSX_DEPLOYMENT_TARGET=10.9
+        export MACOSX_DEPLOYMENT_TARGET=10.14
         export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
         export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
         if [[ "$(RELEASEWHEELBUILD)" != "True" ]]; then
