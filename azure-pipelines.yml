@@ -186,8 +186,10 @@ stages:
         inputs:
           secureFile: 'readline7.0.tar.gz'
 
+      # 10.14 is required for full C++17 support, see:
+      # https://cibuildwheel.readthedocs.io/en/stable/cpp_standards
       - script: |
-          export MACOSX_DEPLOYMENT_TARGET=10.9
+          export MACOSX_DEPLOYMENT_TARGET=10.14
           export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           export NRN_BUILD_FOR_UPLOAD=1
