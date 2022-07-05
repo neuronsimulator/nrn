@@ -25,10 +25,8 @@
  * \brief Top level nmodl Python module implementation
  */
 
-
 namespace py = pybind11;
 using namespace pybind11::literals;
-
 
 namespace nmodl {
 
@@ -110,7 +108,6 @@ static const char* to_json = R"(
 
 }  // namespace docstring
 
-
 /**
  * \class PyNmodlDriver
  * \brief Class to bridge C++ NmodlDriver with Python world using pybind11
@@ -138,12 +135,13 @@ void init_visitor_module(py::module& m);
 void init_ast_module(py::module& m);
 void init_symtab_module(py::module& m);
 
-
 PYBIND11_MODULE(_nmodl, m_nmodl) {
     m_nmodl.doc() = "NMODL : Source-to-Source Code Generation Framework";
     m_nmodl.attr("__version__") = nmodl::Version::NMODL_VERSION;
 
-    py::class_<nmodl::PyNmodlDriver> nmodl_driver(m_nmodl, "NmodlDriver", nmodl::docstring::driver);
+    py::class_<nmodl::parser::NmodlDriver>(m_nmodl, "nmodl::parser::NmodlDriver");
+    py::class_<nmodl::PyNmodlDriver, nmodl::parser::NmodlDriver> nmodl_driver(
+        m_nmodl, "NmodlDriver", nmodl::docstring::driver);
     nmodl_driver.def(py::init<>())
         .def("parse_string",
              &nmodl::PyNmodlDriver::parse_string,
