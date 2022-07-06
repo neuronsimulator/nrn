@@ -85,8 +85,6 @@ if(CORENRN_ENABLE_GPU)
   else()
     message(FATAL_ERROR "${CORENRN_ACCELERATOR_OFFLOAD} not supported with NVHPC compilers")
   endif()
-  # avoid PGI adding standard compliant "-A" flags
-  set(CMAKE_CXX14_STANDARD_COMPILE_OPTION --c++14)
   string(APPEND CMAKE_EXE_LINKER_FLAGS " ${NVHPC_ACC_COMP_FLAGS}")
   # Use `-Mautoinline` option to compile .cpp files generated from .mod files only. This is
   # especially needed when we compile with -O0 or -O1 optimisation level where we get link errors.

@@ -23,18 +23,17 @@ math(EXPR CORENEURON_VERSION_COMBINED
 # =============================================================================
 # CMake common project settings
 # =============================================================================
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_BUILD_TYPE
     RelWithDebInfo
     CACHE STRING "Empty or one of Debug, Release, RelWithDebInfo")
 
-if(NOT "cxx_std_14" IN_LIST CMAKE_CXX_COMPILE_FEATURES OR NOT "cxx_digit_separators" IN_LIST
-                                                          CMAKE_CXX_COMPILE_FEATURES)
+if(NOT "cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
   message(
     FATAL_ERROR
-      "This compiler does not fully support C++14, choose an higher version or an other compiler.")
+      "This compiler does not fully support C++17, choose a higher version or another compiler.")
 endif()
 
 # =============================================================================
@@ -296,6 +295,11 @@ if(CORENRN_HAVE_NVHPC_COMPILER)
     # (mis)detects nvc++ as nvcc because we pass the -cuda option and we therefore avoid the
     # problem. If GPU support is disabled, we define R123_USE_INTRIN_H=0 to avoid the problem.
     list(APPEND CORENRN_COMPILE_DEFS R123_USE_INTRIN_H=0)
+  endif()
+  # CMake versions <3.19 used to add -A when using NVHPC/PGI, which makes the compiler excessively
+  # pedantic. See https://gitlab.kitware.com/cmake/cmake/-/issues/20997.
+  if(CMAKE_VERSION VERSION_LESS 3.19)
+    list(REMOVE_ITEM CMAKE_CXX17_STANDARD_COMPILE_OPTION -A)
   endif()
 endif()
 
