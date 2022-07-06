@@ -563,7 +563,7 @@ void OcGlyph::def_size(Coord& w, Coord& h) const {
     }
 }
 
-void OcGlyph::save(ostream&) {
+void OcGlyph::save(std::ostream&) {
     printf("OcGlyph::save (not implemented for relevant class)\n");
 }
 

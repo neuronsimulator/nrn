@@ -62,7 +62,7 @@ class NrnFixedLayout: public Layout {
     CopyString* save_action_;
     Object* save_pyact_;
     int type_;
-    ostream* o_;
+    std::ostream* o_;
     Object* keep_ref_;
     CopyString* dis_act_;
     Object* dis_pyact_;
@@ -691,7 +691,7 @@ void OcBox::save_action(const char* creat, Object* pyact) {
     if (bi_->o_) {
         // old endl cause great slowness on remote filesystem
         // with gcc version 3.3 20030226 (prerelease) (SuSE Linux)
-        //*bi_->o_ << creat << endl;
+        //*bi_->o_ << creat << std::endl;
         *bi_->o_ << creat << "\n";
     } else {
         if (pyact) {
@@ -728,7 +728,7 @@ void OcBox::dismiss_action(const char* act, Object* pyact) {
     }
 }
 
-void OcBox::save(ostream& o) {
+void OcBox::save(std::ostream& o) {
     char buf[256];
     if (bi_->save_action_ || bi_->save_pyact_) {
         if (bi_->save_action_ && strcmp(bi_->save_action_->string(), "") == 0) {
@@ -736,9 +736,9 @@ void OcBox::save(ostream& o) {
         }
         if (has_window()) {
             sprintf(buf, "\n//Begin %s", window()->name());
-            o << buf << endl;
+            o << buf << std::endl;
         }
-        o << "{" << endl;
+        o << "{" << std::endl;
         bi_->o_ = &o;
         if (bi_->save_pyact_) {
             HocCommand hc(bi_->save_pyact_);
@@ -750,18 +750,18 @@ void OcBox::save(ostream& o) {
         bi_->o_ = NULL;
     } else {
         if (bi_->type_ == H) {
-            o << "{\nocbox_ = new HBox()" << endl;
+            o << "{\nocbox_ = new HBox()" << std::endl;
         } else {
-            o << "{\nocbox_ = new VBox()" << endl;
+            o << "{\nocbox_ = new VBox()" << std::endl;
         }
-        o << "ocbox_list_.prepend(ocbox_)" << endl;
-        o << "ocbox_.intercept(1)\n}" << endl;
+        o << "ocbox_list_.prepend(ocbox_)" << std::endl;
+        o << "ocbox_.intercept(1)\n}" << std::endl;
         long i, cnt = bi_->ocglyph_list_->count();
         for (i = 0; i < cnt; ++i) {
             ((OcGlyph*) bi_->ocglyph_list_->component(i))->save(o);
         }
-        o << "{\nocbox_ = ocbox_list_.object(0)" << endl;
-        o << "ocbox_.intercept(0)" << endl;
+        o << "{\nocbox_ = ocbox_list_.object(0)" << std::endl;
+        o << "ocbox_.intercept(0)" << std::endl;
     }
     if (has_window()) {
 #if defined(WIN32)
@@ -788,19 +788,19 @@ void OcBox::save(ostream& o) {
                 window()->width(),
                 window()->height());
 #endif
-        o << buf << endl;
+        o << buf << std::endl;
     } else {
-        o << "ocbox_.map()\n}" << endl;
+        o << "ocbox_.map()\n}" << std::endl;
     }
     if (bi_->oc_ref_) {
         sprintf(buf, "%s = ocbox_", hoc_object_pathname(bi_->oc_ref_));
-        o << buf << endl;
-        o << "ocbox_list_.remove(0)" << endl;
+        o << buf << std::endl;
+        o << "ocbox_list_.remove(0)" << std::endl;
     }
-    o << "objref ocbox_" << endl;
+    o << "objref ocbox_" << std::endl;
     if (bi_->save_action_ && has_window()) {
         sprintf(buf, "//End %s\n", window()->name());
-        o << buf << endl;
+        o << buf << std::endl;
     }
 }
 

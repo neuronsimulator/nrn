@@ -83,7 +83,8 @@ using worker_job_t = void* (*) (NrnThread*);
 
 // With C++17 and alignment-aware allocators we could do something like
 // alignas(std::hardware_destructive_interference_size) here and then use a
-// regular vector.
+// regular vector. https://en.cppreference.com/w/cpp/compiler_support/17 shows
+// that std::hardware_destructive_interference_size is not very well supported.
 struct worker_conf_t {
     /* for nrn_solve etc.*/
     worker_job_t job{};
