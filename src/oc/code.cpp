@@ -149,8 +149,8 @@ Inst* prog_parse_recover; /* start after parse error */
 int hoc_returning;        /* 1 if return stmt seen, 2 if break, 3 if continue */
 /* 4 if stop */
 namespace nrn {
-    namespace oc {
-struct frame {     /* proc/func call stack frame */
+namespace oc {
+struct frame {             /* proc/func call stack frame */
     Symbol* sp;            /* symbol table entry */
     Inst* retpc;           /* where to resume after return */
     Datum* argn;           /* n-th argument on stack */
@@ -159,8 +159,8 @@ struct frame {     /* proc/func call stack frame */
     Object* iter_stmt_ob;  /* context of Iterator statement */
     Object* ob;            /* for stack frame debug message */
 };
-} // namespace oc
-}
+}  // namespace oc
+}  // namespace nrn
 using Frame = nrn::oc::frame;
 #define NFRAME 512 /* default size */
 #define nframe hoc_nframe
@@ -447,17 +447,17 @@ static Datum* rstack;
 static const char* parsestr;
 
 void oc_save_code(Inst** a1,
-                             Inst** a2,
-                             Datum** a3,
-                             Frame** a4,
-                             int* a5,
-                             int* a6,
-                             Inst** a7,
-                             Frame** a8,
-                             Datum** a9,
-                             Symlist** a10,
-                             Inst** a11,
-                             int* a12) {
+                  Inst** a2,
+                  Datum** a3,
+                  Frame** a4,
+                  int* a5,
+                  int* a6,
+                  Inst** a7,
+                  Frame** a8,
+                  Datum** a9,
+                  Symlist** a10,
+                  Inst** a11,
+                  int* a12) {
     *a1 = progbase;
     *a2 = progp;
     *a3 = stackp;
@@ -473,17 +473,17 @@ void oc_save_code(Inst** a1,
 }
 
 void oc_restore_code(Inst** a1,
-                                Inst** a2,
-                                Datum** a3,
-                                Frame** a4,
-                                int* a5,
-                                int* a6,
-                                Inst** a7,
-                                Frame** a8,
-                                Datum** a9,
-                                Symlist** a10,
-                                Inst** a11,
-                                int* a12) {
+                     Inst** a2,
+                     Datum** a3,
+                     Frame** a4,
+                     int* a5,
+                     int* a6,
+                     Inst** a7,
+                     Frame** a8,
+                     Datum** a9,
+                     Symlist** a10,
+                     Inst** a11,
+                     int* a12) {
     progbase = *a1;
     progp = *a2;
     frame_objauto_recover_on_err(*a4);

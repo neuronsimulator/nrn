@@ -440,10 +440,10 @@ void hoc_oop_initaftererror(void) {
 }
 
 void oc_save_hoc_oop(Object** a1,
-                                Objectdata** a2,
-                                // a3 is missing, do not add it
-                                int* a4,
-                                Symlist** a5) {
+                     Objectdata** a2,
+                     // a3 is missing, do not add it
+                     int* a4,
+                     Symlist** a5) {
     *a1 = hoc_thisobject;
     /* same style as hoc_objectdata_sav */
     if (hoc_objectdata == hoc_top_level_data) {

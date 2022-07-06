@@ -1,6 +1,6 @@
 #pragma once
 #include "hocstr.h"
-#include "nrnmpiuse.h" // defines USE_NRNFILEWRAP
+#include "nrnmpiuse.h"  // defines USE_NRNFILEWRAP
 
 #include <stdio.h>
 #include <stdlib.h>
