@@ -2600,7 +2600,7 @@ void _nrn_watch_allocate(Datum* d,
  *  WatchCondition be deactivated prior to mirroring the activation
  *  that exists on the corenrn side.
  **/
-extern "C" void nrn_watch_clear() {
+void nrn_watch_clear() {
     assert(net_cvode_instance->wl_list_.size() == (size_t) nrn_nthread);
     for (auto& htlists_of_thread: net_cvode_instance->wl_list_) {
         for (HTList* wl: htlists_of_thread) {

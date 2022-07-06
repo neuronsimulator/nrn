@@ -27,7 +27,6 @@ extern int nrn_use_daspk_;
 NetCvode* net_cvode_instance;
 void deliver_net_events(NrnThread*);
 void nrn_deliver_events(NrnThread*);
-extern "C" void clear_event_queue();
 void init_net_events();
 void nrn_record_init();
 void nrn_play_init();
@@ -54,7 +53,7 @@ void nrn_deliver_events(NrnThread* nt) {
     nt->_t = tsav;
 }
 
-extern "C" void clear_event_queue() {
+void clear_event_queue() {
     if (net_cvode_instance) {
         net_cvode_instance->clear_events();
     }
