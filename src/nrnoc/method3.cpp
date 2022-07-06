@@ -299,7 +299,7 @@ method3_connection_coef() /* setup a and b */
     hoc_Item* qsec;
     Section* sec;
     Node* nd;
-    Prop *p;
+    Prop* p;
     float r, s, t;
 
     if (tree_changed) {

@@ -1839,7 +1839,7 @@ void node_data_values(void) {
         Pg(NODEAREA(v_node[i]));
     }
     for (i = 2; i < n_memb_func; ++i) {
-        Prop *prop;
+        Prop* prop;
         int cnt;
         double* pd;
         if (memb_list[i].nodecount) {

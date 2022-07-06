@@ -41,14 +41,14 @@ pval = pval_praxis(i, Vector)
 #include "parse.hpp"
 
 extern "C" double praxis(double* t0,
-                     double* machep,
-                     double* h0,
-                     long int nval,
-                     long int* prin,
-                     double* x,
-                     double (*f)(double*, long int),
-                     double* fmin,
-                     char* after_quad);
+                         double* machep,
+                         double* h0,
+                         long int nval,
+                         long int* prin,
+                         double* x,
+                         double (*f)(double*, long int),
+                         double* fmin,
+                         char* after_quad);
 extern "C" double praxis_pval(int), *praxis_paxis(int);
 extern "C" int praxis_stop(int);
 

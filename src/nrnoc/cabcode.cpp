@@ -1069,8 +1069,7 @@ static int range_vec_indx(Symbol* s) {
 }
 
 /* returns property for mechanism at the node */
-Prop* nrn_mechanism(int type, Node* nd) 
-{
+Prop* nrn_mechanism(int type, Node* nd) {
     Prop* m;
     for (m = nd->prop; m; m = m->next) {
         if (m->type == type) {

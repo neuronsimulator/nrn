@@ -681,13 +681,13 @@ It's version %s \"c\" code is incompatible with this neuron version.\n",
 }
 
 void register_mech(const char** m,
-                              Pvmp alloc,
-                              Pvmi cur,
-                              Pvmi jacob,
-                              Pvmi stat,
-                              Pvmi initialize,
-                              int nrnpointerindex, /* if -1 then there are none */
-                              int vectorized) {
+                   Pvmp alloc,
+                   Pvmi cur,
+                   Pvmi jacob,
+                   Pvmi stat,
+                   Pvmi initialize,
+                   int nrnpointerindex, /* if -1 then there are none */
+                   int vectorized) {
     int type = n_memb_func;
     nrn_register_mech_common(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
     if (nrnpy_reg_mech_p_) {
@@ -773,11 +773,7 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
 }
 
 #if CVODE
-void hoc_register_cvode(int i,
-                                   nrn_ode_count_t cnt,
-                                   nrn_ode_map_t map,
-                                   Pvmi spec,
-                                   Pvmi matsol) {
+void hoc_register_cvode(int i, nrn_ode_count_t cnt, nrn_ode_map_t map, Pvmi spec, Pvmi matsol) {
     memb_func[i].ode_count = cnt;
     memb_func[i].ode_map = map;
     memb_func[i].ode_spec = spec;
@@ -813,17 +809,17 @@ extern void class2oc(const char*,
 
 
 int point_register_mech(const char** m,
-                                   Pvmp alloc,
-                                   Pvmi cur,
-                                   Pvmi jacob,
-                                   Pvmi stat,
-                                   Pvmi initialize,
-                                   int nrnpointerindex,
-                                   int vectorized,
+                        Pvmp alloc,
+                        Pvmi cur,
+                        Pvmi jacob,
+                        Pvmi stat,
+                        Pvmi initialize,
+                        int nrnpointerindex,
+                        int vectorized,
 
-                                   void* (*constructor)(Object*),
-                                   void (*destructor)(void*),
-                                   Member_func* fmember) {
+                        void* (*constructor)(Object*),
+                        void (*destructor)(void*),
+                        Member_func* fmember) {
     Symlist* sl;
     Symbol *s, *s2;
     nrn_load_name_check(m[1]);

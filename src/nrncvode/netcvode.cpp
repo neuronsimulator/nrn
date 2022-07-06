@@ -2488,11 +2488,11 @@ void net_event(Point_process* pnt, double time) {
 }
 
 void _nrn_watch_activate(Datum* d,
-                                    double (*c)(Point_process*),
-                                    int i,
-                                    Point_process* pnt,
-                                    int r,
-                                    double flag) {
+                         double (*c)(Point_process*),
+                         int i,
+                         Point_process* pnt,
+                         int r,
+                         double flag) {
     if (!d[i]._pvoid || !d[0]._pvoid) {
         // When c is NULL, i.e. called from CoreNEURON,
         // we never get here because we made sure
@@ -2575,10 +2575,10 @@ Here are some more notes about WatchCondition, HTList, HTListList, and
  *  and flag_ filled in.
  **/
 void _nrn_watch_allocate(Datum* d,
-                                    double (*c)(Point_process*),
-                                    int i,
-                                    Point_process* pnt,
-                                    double flag) {
+                         double (*c)(Point_process*),
+                         int i,
+                         Point_process* pnt,
+                         double flag) {
     if (!d->_pvoid) {
         d->_pvoid = (void*) new WatchList();
     }

@@ -1181,13 +1181,13 @@ int nrn_nonvint_block_helper(int method, int size, double* pd1, double* pd2, int
 
 /* ARGSUSED */
 int euler_thread(int neqn,
-                            int* var,
-                            int* der,
-                            double* p,
-                            int (*func)(double*, Datum*, Datum*, NrnThread*),
-                            Datum* ppvar,
-                            Datum* thread,
-                            NrnThread* nt) {
+                 int* var,
+                 int* der,
+                 double* p,
+                 int (*func)(double*, Datum*, Datum*, NrnThread*),
+                 Datum* ppvar,
+                 Datum* thread,
+                 NrnThread* nt) {
     int i;
     double dt = nt->_dt;
 
