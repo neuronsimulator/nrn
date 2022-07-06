@@ -1407,13 +1407,13 @@ static void nrn_inputbuf_getline(void) {
 }
 
 // used by ocjump.cpp
-extern "C" void oc_save_input_info(const char** i1, int* i2, int* i3, NrnFILEWrap** i4) {
+void oc_save_input_info(const char** i1, int* i2, int* i3, NrnFILEWrap** i4) {
     *i1 = nrn_inputbufptr;
     *i2 = pipeflag;
     *i3 = lineno;
     *i4 = fin;
 }
-extern "C" void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
+void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
     nrn_inputbufptr = i1;
     pipeflag = i2;
     lineno = i3;

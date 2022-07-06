@@ -148,7 +148,9 @@ Inst* progbase;           /* start of current subprogram */
 Inst* prog_parse_recover; /* start after parse error */
 int hoc_returning;        /* 1 if return stmt seen, 2 if break, 3 if continue */
 /* 4 if stop */
-typedef struct Frame {     /* proc/func call stack frame */
+namespace nrn {
+    namespace oc {
+struct frame {     /* proc/func call stack frame */
     Symbol* sp;            /* symbol table entry */
     Inst* retpc;           /* where to resume after return */
     Datum* argn;           /* n-th argument on stack */
@@ -156,7 +158,10 @@ typedef struct Frame {     /* proc/func call stack frame */
     Inst* iter_stmt_begin; /* Iterator statement starts here */
     Object* iter_stmt_ob;  /* context of Iterator statement */
     Object* ob;            /* for stack frame debug message */
-} Frame;
+};
+} // namespace oc
+}
+using Frame = nrn::oc::frame;
 #define NFRAME 512 /* default size */
 #define nframe hoc_nframe
 static Frame *frame, *fp, *framelast; /* first, frame pointer, last */
@@ -441,7 +446,7 @@ static Frame* rframe;
 static Datum* rstack;
 static const char* parsestr;
 
-extern "C" void oc_save_code(Inst** a1,
+void oc_save_code(Inst** a1,
                              Inst** a2,
                              Datum** a3,
                              Frame** a4,
@@ -467,7 +472,7 @@ extern "C" void oc_save_code(Inst** a1,
     *a12 = tobj_count;
 }
 
-extern "C" void oc_restore_code(Inst** a1,
+void oc_restore_code(Inst** a1,
                                 Inst** a2,
                                 Datum** a3,
                                 Frame** a4,

@@ -186,7 +186,7 @@ void hoc_Symbol_units(void) {
     hoc_pushstr(units);
 }
 
-extern "C" char* hoc_back2forward(char*);
+char* hoc_back2forward(char*);
 char* neuronhome_forward(void) {
     extern char* neuron_home;
 #ifdef WIN32

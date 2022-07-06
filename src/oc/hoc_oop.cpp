@@ -10,6 +10,7 @@
 #include "nrnmpi.h"
 #include "nrnfilewrap.h"
 #include <nrnpython_config.h>
+#include "ocfunc.h"
 
 
 #define PDEBUG 0
@@ -438,7 +439,7 @@ void hoc_oop_initaftererror(void) {
 #endif
 }
 
-extern "C" void oc_save_hoc_oop(Object** a1,
+void oc_save_hoc_oop(Object** a1,
                                 Objectdata** a2,
                                 // a3 is missing, do not add it
                                 int* a4,
@@ -454,7 +455,7 @@ extern "C" void oc_save_hoc_oop(Object** a1,
     *a5 = hoc_symlist;
 }
 
-extern "C" void oc_restore_hoc_oop(Object** a1, Objectdata** a2, int* a4, Symlist** a5) {
+void oc_restore_hoc_oop(Object** a1, Objectdata** a2, int* a4, Symlist** a5) {
     hoc_thisobject = *a1;
     if (*a2 == (Objectdata*) 1) {
         hoc_objectdata = hoc_top_level_data;

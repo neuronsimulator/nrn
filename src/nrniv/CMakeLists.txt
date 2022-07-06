@@ -201,6 +201,7 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}/src/sundials/cvodes
     ${PROJECT_SOURCE_DIR}/src/sundials/ida
     ${PROJECT_SOURCE_DIR}/src/sundials/shared)
+  set(NRN_INCLUDE_DIRS ${NRN_INCLUDE_DIRS} PARENT_SCOPE)
 
 # =============================================================================
 # Helper commands : generate various headers

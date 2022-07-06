@@ -634,7 +634,7 @@ double nrnmpi_dbl_allreduce(double x, int type) {
     return result;
 }
 
-void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type) {
+extern "C" void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type) {
     int i;
     MPI_Op t;
     assert(src != dest);

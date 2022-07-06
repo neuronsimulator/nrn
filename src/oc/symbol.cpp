@@ -184,14 +184,14 @@ void hoc_link_symbol(Symbol* sp, Symlist* list) {
 
 static int emalloc_error = 0;
 
-extern "C" void hoc_malchk(void) {
+void hoc_malchk(void) {
     if (emalloc_error) {
         emalloc_error = 0;
         execerror("out of memory", nullptr);
     }
 }
 
-extern "C" void* hoc_Emalloc(size_t n) { /* check return from malloc */
+void* hoc_Emalloc(size_t n) { /* check return from malloc */
     void* p = malloc(n);
     if (p == nullptr)
         emalloc_error = 1;
@@ -206,7 +206,7 @@ void* emalloc(size_t n) {
     return p;
 }
 
-extern "C" void* hoc_Ecalloc(size_t n, size_t size) { /* check return from calloc */
+void* hoc_Ecalloc(size_t n, size_t size) { /* check return from calloc */
     if (n == 0) {
         return nullptr;
     }

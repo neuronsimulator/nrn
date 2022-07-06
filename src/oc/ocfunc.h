@@ -1,6 +1,5 @@
-#ifndef ocfunc_h
-#define ocfunc_h
-
+#pragma once
+#include "nrnfilewrap.h"
 
 extern double hoc_Log(double), hoc_Log10(double), hoc1_Exp(double), hoc_Sqrt(double),
     hoc_integer(double);
@@ -46,5 +45,45 @@ extern void hoc_settext(void);
 extern void hoc_win_exec();
 #endif
 
-
-#endif
+union Datum;
+namespace nrn {
+namespace oc {
+// Avoid `Frame` because InterViews likes #define-ing that as something else
+struct frame;
+}
+}
+union Inst;
+struct Object;
+union Objectdata;
+struct Symlist;
+void oc_restore_code(Inst** a1,
+                                Inst** a2,
+                                Datum** a3,
+                                nrn::oc::frame** a4,
+                                int* a5,
+                                int* a6,
+                                Inst** a7,
+                                nrn::oc::frame** a8,
+                                Datum** a9,
+                                Symlist** a10,
+                                Inst** a11,
+                                int* a12);
+void oc_restore_hoc_oop(Object** a1, Objectdata** a2, int* a4, Symlist** a5);
+void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4);
+void oc_save_code(Inst** a1,
+                             Inst** a2,
+                             Datum** a3,
+                             nrn::oc::frame** a4,
+                             int* a5,
+                             int* a6,
+                             Inst** a7,
+                             nrn::oc::frame** a8,
+                             Datum** a9,
+                             Symlist** a10,
+                             Inst** a11,
+                             int* a12);
+void oc_save_hoc_oop(Object** a1,
+                                Objectdata** a2,
+                                int* a4,
+                                Symlist** a5);
+void oc_save_input_info(const char**, int*, int*, NrnFILEWrap**);

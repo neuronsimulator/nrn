@@ -953,7 +953,7 @@ for(_i=%d;_i<%d;_i++){\n",
                         Sprintf(buf, "extern double *_getelm(int, int);\n");
                         qv = linsertstr(procfunc, buf);
 #if VECTORIZE
-                        Sprintf(buf, "");
+                        Sprintf(buf, "extern double *_nrn_thread_getelm(SparseObj*, int, int);\n");
                         vectorize_substitute(qv, buf);
 #endif
                     }

@@ -798,7 +798,7 @@ static int hoc_Load_file(int always, const char* name) {
 
     return b;
 }
-extern "C" char* hoc_back2forward(char*);
+char* hoc_back2forward(char*);
 void hoc_getcwd(void) {
     int len;
     static char* buf;
