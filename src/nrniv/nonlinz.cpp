@@ -576,7 +576,7 @@ void NonLinImpRep::current(int im, Memb_list* ml, int in) {  // assume there is 
     mfake.nodelist = ml->nodelist + in;
     mfake.data = ml->data + in;
     mfake.pdata = ml->pdata + in;
-    mfake.prop = ml->prop ? ml->prop + in : nullptr;
+    mfake.prop = ml->prop ? ml->prop + in : nullptr; // Conditional jump or move depends on uninitialised value(s)
     mfake.nodecount = 1;
     mfake._thread = ml->_thread;
     (*s)(nrn_threads, &mfake, im);
