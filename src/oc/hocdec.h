@@ -138,16 +138,7 @@ struct Symbol { /* symbol table entry */
 };
 #define ISARRAY(arg) (arg->arayinfo != (Arrayinfo*) 0)
 
-
-#ifndef hoc_list_h
-#if defined(__cplusplus)
-#define hoc_List struct hoc_Item
-#else
-typedef struct hoc_Item hoc_List;
-#define List hoc_List
-#define Item hoc_Item
-#endif
-#endif
+using hoc_List = hoc_Item;
 
 union Datum { /* interpreter stack type */
     double val;
@@ -242,18 +233,10 @@ typedef struct { /* units for symbol values */
 
 #include "oc_ansi.h"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
-extern void* emalloc(size_t n);
-extern void* ecalloc(size_t n, size_t size);
-extern void* erealloc(void* ptr, size_t n);
-
-#if defined(__cplusplus)
-}
-#endif
-
+// Used in sparse.c so needs C linkage.
+extern "C" void* emalloc(size_t n);
+void* ecalloc(size_t n, size_t size);
+void* erealloc(void* ptr, size_t n);
 
 extern Inst *hoc_progp, *hoc_progbase, *hoc_prog, *hoc_prog_parse_recover;
 extern Inst* hoc_pc;

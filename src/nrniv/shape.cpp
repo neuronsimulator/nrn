@@ -31,6 +31,7 @@
 #include "rubband.h"
 #include "scenepic.h"
 #include "rot3band.h"
+#include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "objcmd.h"
 #include "idraw.h"
@@ -46,11 +47,8 @@
 
 void nrn_define_shape();
 extern int nrn_shape_changed_;
-extern "C" int structure_change_cnt;
 extern int section_count;
 extern Section** secorder;
-extern "C" Point_process* ob2pntproc(Object*);
-extern "C" Point_process* ob2pntproc_0(Object*);
 extern Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 
 #if BEVELJOIN

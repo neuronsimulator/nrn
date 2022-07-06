@@ -132,7 +132,6 @@ static void prmat(SparseObj* so);
 static void initeqn(SparseObj* so, unsigned maxeqn);
 static void free_elm(SparseObj* so);
 static Elm* getelm(SparseObj* so,unsigned row, unsigned col, Elm* new);
-double* _nrn_thread_getelm(SparseObj* so, int row, int col);
 static void create_coef_list(SparseObj* so, int n, FUN fun, double* p, void* ppvar, void* thread, void* nt);
 static void init_coef_list(SparseObj* so);
 static void init_minorder(SparseObj* so);

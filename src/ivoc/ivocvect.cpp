@@ -136,7 +136,6 @@ static double dmaxint_ = 9007199254740992;
 
 extern Object* hoc_thisobject;
 extern Symlist* hoc_top_level_symlist;
-extern "C" void nrn_exit(int);
 IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 Object** (*nrnpy_vec_to_python_p_)(void*);
 Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
@@ -160,11 +159,6 @@ static int narg() {
 int cmpfcn(double a, double b) {
     return ((a) <= (b)) ? (((a) == (b)) ? 0 : -1) : 1;
 }
-
-extern "C" {
-extern void install_vector_method(const char* name, Pfrd_vp);
-extern int vector_instance_px(void*, double**);
-}  // extern "C"
 
 extern int vector_arg_px(int, double**);
 
@@ -388,7 +382,6 @@ Object** IvocVect::temp_objvar() {
     return po;
 }
 
-extern "C" {  // bug in cray compiler requires this
 void install_vector_method(const char* name, double (*f)(void*)) {
     Symbol* s_meth;
     if (hoc_table_lookup(name, svec_->u.ctemplate->symtable)) {
@@ -399,9 +392,8 @@ void install_vector_method(const char* name, double (*f)(void*)) {
 #define PUBLIC_TYPE 1
     s_meth->cpublic = PUBLIC_TYPE;
 }
-}  // extern "C"
 
-extern "C" int vector_instance_px(void* v, double** px) {
+int vector_instance_px(void* v, double** px) {
     Vect* x = (Vect*) v;
     *px = x->data();
     return x->size();

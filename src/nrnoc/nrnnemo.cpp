@@ -30,7 +30,6 @@ void neuron2nemo(void) {
     hoc_execerror("neuron2nemo:", "implementation is obsolete");
 #else
     short i, isec, imark;
-    extern int tree_changed;
     char name[50];
 
     if (tree_changed) {

@@ -1,12 +1,14 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/treeset.cpp,v 1.39 1999/07/08 14:25:07 hines Exp */
 
+#include "cvodeobj.h"
 #include "isoc99.h"
 #include "membfunc.h"
 #include "multisplit.h"
 #include "neuron.h"
 #include "nonvintblock.h"
 #include "nrndae_c.h"
+#include "nrniv_mf.h"
 #include "nrnmpi.h"
 #include "ocnotify.h"
 #include "section.h"
@@ -27,8 +29,6 @@ extern spREAL* spGetElement(char*, int, int);
 int nrn_shape_changed_; /* for notifying Shape class in nrniv */
 double* nrn_mech_wtime_;
 
-extern int diam_changed;
-extern int tree_changed;
 extern double chkarg(int, double low, double high);
 extern double nrn_ra(Section*);
 #if !defined(NRNMPI) || NRNMPI == 0
@@ -75,11 +75,9 @@ int nrn_use_daspk_ = 0;
 When properties are allocated to nodes or freed, v_structure_change is
 set to 1. This means that the mechanism vectors need to be re-determined.
 */
-extern "C" {
 int v_structure_change;
 int structure_change_cnt;
 int diam_change_cnt;
-}  // extern "C"
 int nrn_node_ptr_change_cnt_;
 
 #endif
@@ -642,7 +640,7 @@ Section* nrn_pnt_sec_for_need_;
 extern Prop* prop_alloc(Prop**, int, Node*);
 
 
-extern "C" Prop* need_memb(Symbol* sym) {
+Prop* need_memb(Symbol* sym) {
     int type;
     Prop *mprev, *m;
     if (disallow_needmemb) {
@@ -1841,7 +1839,7 @@ void node_data_values(void) {
         Pg(NODEAREA(v_node[i]));
     }
     for (i = 2; i < n_memb_func; ++i) {
-        Prop *prop, *nrn_mechanism();
+        Prop *prop;
         int cnt;
         double* pd;
         if (memb_list[i].nodecount) {
@@ -1888,7 +1886,7 @@ void node_data(void) {
 
 #endif
 
-extern "C" void nrn_complain(double* pp) {
+void nrn_complain(double* pp) {
     /* print location for this param on the standard error */
     Node* nd;
     hoc_Item* qsec;

@@ -268,7 +268,6 @@ static void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
 extern bool use_bgpdma_;
 #endif
 
-extern "C" Point_process* ob2pntproc(Object*);
 extern void nrn_play_init();
 extern Symlist* hoc_built_in_symlist;
 

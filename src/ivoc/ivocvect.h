@@ -110,14 +110,12 @@ double stdDev(InputIterator begin, InputIterator end) {
     return sqrt(var(begin, end));
 }
 
-extern "C" {
 extern void vector_delete(IvocVect*);
 extern Object** vector_temp_objvar(IvocVect*);
 
 extern int is_vector_arg(int);
 extern char* vector_get_label(IvocVect*);
 extern void vector_set_label(IvocVect*, char*);
-}  // extern "C"
 
 // olupton 2022-01-21: backwards compatibility
 using Vect = IvocVect;

@@ -29,10 +29,6 @@
 #ifndef DLFCN_H
 #define DLFCN_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if defined(DLFCN_WIN32_SHARED)
 #if defined(DLFCN_WIN32_EXPORTS)
 #define DLFCN_EXPORT __declspec(dllexport)
@@ -78,22 +74,18 @@ typedef struct dl_info {
 } Dl_info;
 
 /* Open a symbol table handle. */
-DLFCN_EXPORT void* dlopen(const char* file, int mode);
+DLFCN_EXPORT extern "C" void* dlopen(const char* file, int mode);
 
 /* Close a symbol table handle. */
-DLFCN_EXPORT int dlclose(void* handle);
+DLFCN_EXPORT extern "C" int dlclose(void* handle);
 
 /* Get the address of a symbol from a symbol table handle. */
-DLFCN_EXPORT void* dlsym(void* handle, const char* name);
+DLFCN_EXPORT extern "C" void* dlsym(void* handle, const char* name);
 
 /* Get diagnostic information. */
-DLFCN_EXPORT char* dlerror(void);
+DLFCN_EXPORT extern "C" char* dlerror(void);
 
 /* Translate address to symbolic information (no POSIX standard) */
-DLFCN_EXPORT int dladdr(const void* addr, Dl_info* info);
-
-#ifdef __cplusplus
-}
-#endif
+DLFCN_EXPORT extern "C" int dladdr(const void* addr, Dl_info* info);
 
 #endif /* DLFCN_H */

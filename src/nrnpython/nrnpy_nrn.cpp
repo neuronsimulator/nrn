@@ -2,6 +2,7 @@
 #include <nrnpython.h>
 #include <structmember.h>
 #include <InterViews/resource.h>
+#include "nrniv_mf.h"
 #include <nrnoc2iv.h>
 #include "nrnpy_utils.h"
 #include <cmath>
@@ -99,7 +100,6 @@ extern short* nrn_is_artificial_;
 extern cTemplate** nrn_pnt_template_;
 extern void nrn_diam_change(Section*);
 extern void nrn_length_change(Section*, double);
-extern int diam_changed;
 extern void mech_insert1(Section*, int);
 extern void mech_uninsert1(Section*, Symbol*);
 extern "C" PyObject* nrn_hocobj_ptr(double*);

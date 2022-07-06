@@ -263,10 +263,6 @@ void oc_restore_code(Inst**,
                      int*);
 void oc_save_input_info(char**, int*, int*, NrnFILEWrap**);
 void oc_restore_input_info(char*, int, int, NrnFILEWrap*);
-#if CABLE
-void oc_save_cabcode(int*, int*);
-void oc_restore_cabcode(int*, int*);
-#endif
 }  // extern "C"
 
 void OcJumpImpl::begin() {

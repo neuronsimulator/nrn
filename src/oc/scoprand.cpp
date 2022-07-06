@@ -92,6 +92,6 @@ extern "C" double scop_random(void) {
  *
  */
 
-extern "C" void set_seed(double seed) {
+void set_seed(double seed) {
     value = (uint32_t) seed;
 }

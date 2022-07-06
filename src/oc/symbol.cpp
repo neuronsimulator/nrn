@@ -14,6 +14,7 @@
 #endif
 
 #include "hoc.h"
+#include "hocdec.h"
 #include "hoclist.h"
 #include "oc_ansi.h"
 #include "ocnotify.h"
@@ -215,7 +216,7 @@ extern "C" void* hoc_Ecalloc(size_t n, size_t size) { /* check return from callo
     return p;
 }
 
-extern "C" void* ecalloc(size_t n, size_t size) {
+void* ecalloc(size_t n, size_t size) {
     void* p = hoc_Ecalloc(n, size);
     if (emalloc_error) {
         hoc_malchk();
@@ -263,7 +264,7 @@ void* hoc_Erealloc(void* ptr, size_t size) { /* check return from realloc */
     return p;
 }
 
-extern "C" void* erealloc(void* ptr, size_t size) {
+void* erealloc(void* ptr, size_t size) {
     void* p = hoc_Erealloc(ptr, size);
     if (emalloc_error) {
         hoc_malchk();

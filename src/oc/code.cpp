@@ -796,7 +796,6 @@ double xpop(void) { /* pop double and return top elem from stack */
 
 #if 0
 void pstack(void) {
-    char* hoc_object_name();
     Datum* d;
     int i;
     for (d=stackp; d > stack;) {
@@ -1579,7 +1578,7 @@ void hoc_Argtype(void) {
     pushxm((double) itype);
 }
 
-extern "C" int ifarg(int narg) { /* true if there is an nth argument */
+int ifarg(int narg) { /* true if there is an nth argument */
     if (narg > fp->nargs)
         return 0;
     return 1;
@@ -1757,7 +1756,7 @@ void bltin(void) /* evaluate built-in on top of stack */
     pushxm(d);
 }
 
-extern "C" Symbol* hoc_get_symbol(const char* var) {
+Symbol* hoc_get_symbol(const char* var) {
     Symlist* sl = (Symlist*) 0;
     Symbol *prc, *sym;
     Inst* last;

@@ -80,7 +80,7 @@ void hoc_obj_set(int i, Object* obj) {
     p[i] = obj;
 }
 
-extern "C" char* hoc_object_name(Object* ob) {
+char* hoc_object_name(Object* ob) {
     static char s[100];
     if (ob) {
         Sprintf(s, "%s[%d]", ob->ctemplate->sym->name, ob->index);

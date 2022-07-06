@@ -1,15 +1,7 @@
 #ifndef nrn_memb_func_h
 #define nrn_memb_func_h
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 extern void hoc_register_prop_size(int type, int psize, int dpsize);
-
-#if defined(__cplusplus)
-}
-#endif
 
 #include "nrnoc_ml.h"
 

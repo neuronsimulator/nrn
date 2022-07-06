@@ -4,7 +4,9 @@
 #include <cmath>
 #include <InterViews/resource.h>
 #include "classreg.h"
+#include "cvodeobj.h"
 #include "nrncvode.h"
+#include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "datapath.h"
 #if USECVODE
@@ -16,7 +18,6 @@ class Cvode;
 
 void cvode_finitialize(double t0);
 void nrncvode_set_t(double);
-extern "C" bool at_time(NrnThread*, double);
 
 extern double dt, t;
 #define nt_t  nrn_threads->_t
@@ -96,13 +97,9 @@ void nrn_solver_prepare() {
     }
 }
 
-extern "C" int v_structure_change;
-
 void cvode_fadvance(double tstop) {  // tstop = -1 means single step
 #if USECVODE
     int err;
-    extern int tree_changed;
-    extern int diam_changed;
     if (net_cvode_instance) {
         if (tree_changed || v_structure_change || diam_changed) {
             net_cvode_instance->re_init();
@@ -127,7 +124,7 @@ void cvode_finitialize(double t0) {
 #endif
 }
 
-extern "C" bool at_time(NrnThread* nt, double te) {
+bool at_time(NrnThread* nt, double te) {
 #if USECVODE
     if (cvode_active_ && nt->_vcv) {
         return ((Cvode*) nt->_vcv)->at_time(te, nt);
@@ -135,9 +132,9 @@ extern "C" bool at_time(NrnThread* nt, double te) {
 #endif
     double x = te - 1e-11;
     if (x <= nt->_t && x > (nt->_t - nt->_dt)) {
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
 }
 
 void nrncvode_set_t(double tt) {

@@ -120,7 +120,7 @@ void wopen(void) /* open file for writing */
     pushx(d);
 }
 
-extern "C" const char* expand_env_var(const char* s) {
+const char* expand_env_var(const char* s) {
     static HocStr* hs;
     const char* cp1;
     char* cp2;

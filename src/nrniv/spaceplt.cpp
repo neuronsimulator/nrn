@@ -14,13 +14,13 @@
 #include "ivoc.h"
 #endif
 #include "ivocvect.h"
+#include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "objcmd.h"
 
 extern int nrn_multisplit_active_;
 extern int hoc_execerror_messages;
 extern int node_index(Section*, double);
-extern "C" int structure_change_cnt;
 extern int nrn_shape_changed_;
 extern int hoc_return_type_code;
 Object* (*nrnpy_rvp_rxd_to_callable)(Object*) = 0;

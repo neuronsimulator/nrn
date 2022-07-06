@@ -31,26 +31,27 @@
 #define replacstr hoc_l_replacstr
 #define Item      hoc_Item
 #define List      hoc_List
-
-typedef struct hoc_Item hoc_List; /* list of mixed items */
-#else
-#define hoc_List struct hoc_Item
 #endif
 
-typedef struct hoc_Item {
+struct Object;
+struct Section;
+struct Symbol;
+struct hoc_Item {
     union {
-        struct hoc_Item* itm;
-        hoc_List* lst;
+        hoc_Item* itm;
+        hoc_Item* lst;
         char* str;
-        struct Symbol* sym;
-        struct Section* sec;
-        struct Object* obj;
+        Symbol* sym;
+        Section* sec;
+        Object* obj;
         void* vd;
     } element; /* pointer to the actual item */
-    struct hoc_Item* next;
-    struct hoc_Item* prev;
+    hoc_Item* next;
+    hoc_Item* prev;
     short itemtype;
-} hoc_Item;
+};
+using hoc_List = hoc_Item;
+
 #define ITEM0 (hoc_Item*) 0
 #define LIST0 (hoc_List*) 0
 

@@ -53,6 +53,7 @@ node.v + extnode.v[0]
 
 #include "membdef.h"
 #include "membfunc.h"
+#include "nrniv_mf.h"
 #include "nrnmpiuse.h"
 #include "ocnotify.h"
 #include "section.h"
@@ -62,7 +63,6 @@ node.v + extnode.v[0]
 #include <stdlib.h>
 #include <math.h>
 
-extern int tree_changed;
 static void node_free();
 static void triang(NrnThread*), bksub(NrnThread*);
 

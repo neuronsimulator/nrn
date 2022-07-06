@@ -12,10 +12,6 @@ struct cTemplate;
 // when the last ref disappears, disconnect is called on the Observer
 // Some objects may be written so that update gets called  on the Observer
 
-extern "C" {
-void hoc_obj_notify(Object* ob);
-}
-
 class ObjObservable: public Observable {
   public:
     static void Attach(Object*, Observer*);

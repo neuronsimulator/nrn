@@ -7,6 +7,7 @@ saves the pointtype as later argument to create and loc */
 #include <stdlib.h>
 
 #include "membfunc.h"
+#include "nrniv_mf.h"
 #include "ocnotify.h"
 #include "parse_with_deps.hpp"
 #include "section.h"
@@ -17,9 +18,6 @@ extern Symbol** pointsym; /*list of variable symbols in s->u.ppsym[k]
                 with number in s->s_varn */
 
 extern short* nrn_is_artificial_;
-extern "C" {
-extern double loc_point_process(int, void*);
-}  // extern "C"
 extern Prop* prop_alloc(Prop**, int, Node*);
 
 static int cppp_semaphore = 0; /* connect point process pointer semaphore */
@@ -31,7 +29,7 @@ Prop* nrn_point_prop_;
 void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
 
-extern "C" void* create_point_process(int pointtype, Object* ho) {
+void* create_point_process(int pointtype, Object* ho) {
     Point_process* pp;
     pp = (Point_process*) emalloc(sizeof(Point_process));
     pp->node = 0;
@@ -74,7 +72,7 @@ Object* nrn_new_pointprocess(Symbol* sym) {
     return ob;
 }
 
-extern "C" void destroy_point_process(void* v) {
+void destroy_point_process(void* v) {
     // might be NULL if error handling because of error in construction
     if (v) {
         Point_process* pp = (Point_process*) v;
@@ -216,7 +214,7 @@ void nrn_seg_or_x_arg2(int iarg, Section** psec, double* px) {
     }
 }
 
-extern "C" double loc_point_process(int pointtype, void* v) {
+double loc_point_process(int pointtype, void* v) {
     Point_process* pnt = (Point_process*) v;
     double x;
     Section* sec;
@@ -231,7 +229,7 @@ extern "C" double loc_point_process(int pointtype, void* v) {
     return x;
 }
 
-extern "C" double get_loc_point_process(void* v) {
+double get_loc_point_process(void* v) {
 #if METHOD3
     extern int _method3;
 #endif
@@ -251,7 +249,7 @@ extern "C" double get_loc_point_process(void* v) {
     return x;
 }
 
-extern "C" double has_loc_point(void* v) {
+double has_loc_point(void* v) {
     Point_process* pnt = (Point_process*) v;
     return (pnt->sec != 0);
 }
@@ -292,8 +290,8 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
     return pd;
 }
 
-extern "C" void steer_point_process(void* v) /* put the right double pointer on the stack */
-{
+/* put the right double pointer on the stack */
+void steer_point_process(void* v) {
     Symbol* sym;
     int index;
     Point_process* pnt = (Point_process*) v;
@@ -319,10 +317,6 @@ void connect_point_process_pointer(void) {
     *cppp_pointer = hoc_pxpop();
     hoc_nopop();
 }
-
-#if VECTORIZE
-extern "C" int v_structure_change;
-#endif
 
 static void free_one_point(Point_process* pnt) /* must unlink from node property list also */
 {

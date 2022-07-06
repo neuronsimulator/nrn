@@ -11,6 +11,7 @@
 #include <errno.h>
 #include "parse.hpp"
 #include "hocparse.h"
+#include "oc_ansi.h"
 #include "ocfunc.h"
 #include "ocmisc.h"
 #include "nrnmpi.h"
@@ -218,7 +219,7 @@ static int Getc(NrnFILEWrap* fp);
 static void unGetc(int c, NrnFILEWrap* fp);
 static int backslash(int c);
 
-extern "C" void nrn_exit(int i) {
+void nrn_exit(int i) {
 #if defined(WIN32)
     printf("NEURON exiting abnormally, press return to quit\n");
     fgetc(stdin);
