@@ -631,7 +631,7 @@ static double ms_name(void* v) {
 
 static double ms_save(void* v) {
 #if HAVE_IV
-    ostream* o = Oc::save_stream;
+    std::ostream* o = Oc::save_stream;
     if (o) {
         ((MechanismStandard*) v)->save(gargstr(1), o);
     }

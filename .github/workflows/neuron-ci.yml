@@ -43,12 +43,14 @@ jobs:
       matrix:
         os: [ macOS-10.15, ubuntu-18.04]
         config:
-          - { matrix_eval : "CC=gcc CXX=g++" ,      build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON" }
-          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "setuptools"  }
-          - { matrix_eval : "CC=gcc-5 CXX=g++-5",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON" }
-          - { matrix_eval : "CC=gcc-6 CXX=g++-6",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF" }
-          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON" }
-          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake",      python_dynamic : ON }
+        # GitHub Actions's ubuntu-18.04 image should provide g++ versions 9 and
+        # 10 even though those are not available in vanilla Ubuntu 18.04
+          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
+          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake"}
+          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake", python_dynamic: ON}
+          - { matrix_eval : "CC=gcc-7 CXX=g++-7" ,  build_mode: "cmake", cmake_option: "-DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-7 CXX=g++-7",   build_mode: "cmake", cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"}
         include:
           - os: ubuntu-22.04
             config:
@@ -79,10 +81,11 @@ jobs:
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install ccache coreutils doxygen mpich ninja xz
+          brew install ccache coreutils doxygen flex mpich ninja xz
           brew unlink mpich
           brew install openmpi
           brew install --cask xquartz
+          echo /usr/local/opt/flex/bin >> $GITHUB_PATH
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
           echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> $GITHUB_ENV
           echo CTEST_PARALLEL_LEVEL=3 >> $GITHUB_ENV
@@ -97,7 +100,7 @@ jobs:
             openmpi-bin patchelf
           # The sanitizer builds use ubuntu 22.04
           if [[ "${{matrix.os}}" == "ubuntu-18.04" ]]; then
-            sudo apt-get install g++-5 g++-6 g++-8 g++-9
+            sudo apt-get install g++-7 g++-8
           fi
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
           echo CMAKE_BUILD_PARALLEL_LEVEL=2 >> $GITHUB_ENV
@@ -165,7 +168,7 @@ jobs:
         run:  |
           # OS related
           if [ "$RUNNER_OS" == "Linux" ]; then
-            eval $MATRIX_EVAL;
+            export ${MATRIX_EVAL};
             export SHELL="/bin/bash"
           else
             export CXX=${CXX:-g++};

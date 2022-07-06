@@ -83,7 +83,7 @@ bool GraphItem::is_mark() {
     GraphLabelItem(Glyph* g)
         : GraphItem(g) {}
     virtual ~GraphLabelItem(){};
-    virtual void save(ostream& o, Coord x, Coord y) {
+    virtual void save(std::ostream& o, Coord x, Coord y) {
         ((GLabel*) body())->save(o, x, y);
     }
     virtual void erase(Scene* s, GlyphIndex i, int type) {
@@ -98,7 +98,7 @@ bool GraphItem::is_mark() {
     GraphAxisItem(Glyph* g)
         : GraphItem(g) {}
     virtual ~GraphAxisItem(){};
-    virtual void save(ostream& o, Coord, Coord) {
+    virtual void save(std::ostream& o, Coord, Coord) {
         ((Axis*) body())->save(o);
     }
     virtual void erase(Scene* s, GlyphIndex i, int type) {
@@ -285,12 +285,12 @@ static double gr_save_name(void* v) {
     g->name(gargstr(1));
     if (ifarg(2) && (chkarg(2, 0, 1) == 1.) && Oc::save_stream) {
         char buf[80];
-        *Oc::save_stream << "{\nsave_window_=" << gargstr(1) << endl;
+        *Oc::save_stream << "{\nsave_window_=" << gargstr(1) << std::endl;
         *Oc::save_stream << "save_window_.size(" << g->x1() << "," << g->x2() << "," << g->y1()
                          << "," << g->y2() << ")\n";
         long i = Scene::scene_list_index(g);
         sprintf(buf, "scene_vector_[%ld] = save_window_", i);
-        *Oc::save_stream << buf << endl;
+        *Oc::save_stream << buf << std::endl;
         g->save_phase2(*Oc::save_stream);
         g->Scene::mark(true);
     }
@@ -1354,7 +1354,7 @@ GraphItem::GraphItem(Glyph* g, bool s, bool p)
     pick_ = p;
 }
 GraphItem::~GraphItem() {}
-void GraphItem::save(ostream&, Coord, Coord) {}
+void GraphItem::save(std::ostream&, Coord, Coord) {}
 void GraphItem::erase(Scene*, GlyphIndex, int) {}
 void GraphItem::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
     if (pick_) {
@@ -1590,13 +1590,13 @@ GlyphIndex Graph::glyph_index(const Glyph* gl) {
     return -1;
 }
 
-ostream* Graph::ascii_;
+std::ostream* Graph::ascii_;
 SymChooser* Graph::fsc_;
 
-void Graph::ascii(ostream* o) {
+void Graph::ascii(std::ostream* o) {
     ascii_ = o;
 }
-ostream* Graph::ascii() {
+std::ostream* Graph::ascii() {
     return ascii_;
 }
 
@@ -1615,13 +1615,13 @@ void Graph::draw(Canvas* c, const Allocation& a) const {
     }
 }
 
-void Graph::ascii_save(ostream& o) const {
+void Graph::ascii_save(std::ostream& o) const {
     long line, lcnt = line_list_.count();
     int i, dcnt;
     if (lcnt == 0 || !x_ || family_label_) {
         // tries to print in matrix form is labels and each line the same
         // size.
-        o << "PolyLines" << endl;
+        o << "PolyLines" << std::endl;
         if (x_expr_) {
             o << "x expression: " << x_expr_->name;
         }
@@ -1630,7 +1630,7 @@ void Graph::ascii_save(ostream& o) const {
             for (i = 0; i < lcnt; ++i) {
                 o << " " << line_list_.item(i)->name();
             }
-            o << endl;
+            o << std::endl;
         }
 
 
@@ -1673,8 +1673,8 @@ void Graph::ascii_save(ostream& o) const {
                     }
                 }
             }
-            o << endl;
-            o << xcnt << " rows, " << col + 1 << " columns" << endl;
+            o << std::endl;
+            o << xcnt << " rows, " << col + 1 << " columns" << std::endl;
             int j;
             for (j = 0; j < xcnt; ++j) {
                 o << xvec->get_val(j);
@@ -1687,11 +1687,11 @@ void Graph::ascii_save(ostream& o) const {
                         }
                     }
                 }
-                o << endl;
+                o << std::endl;
             }
         }
         if (!matrix_form) {
-            o << "Line Manifest:" << endl;
+            o << "Line Manifest:" << std::endl;
             for (i = 0; i < lcnt; ++i) {
                 GraphItem* gi = (GraphItem*) component(i);
                 if (gi->is_polyline()) {
@@ -1700,13 +1700,13 @@ void Graph::ascii_save(ostream& o) const {
                     jcnt = gpl->y_data()->count();
                     if (jcnt && family_label_ && gpl->label()) {
                         o << jcnt << "  " << family_label_->text() << "=" << gpl->label()->text()
-                          << endl;
+                          << std::endl;
                     } else {
-                        o << jcnt << endl;
+                        o << jcnt << std::endl;
                     }
                 }
             }
-            o << "End of Line Manifest" << endl;
+            o << "End of Line Manifest" << std::endl;
             for (i = 0; i < lcnt; ++i) {
                 GraphItem* gi = (GraphItem*) component(i);
                 if (gi->is_polyline()) {
@@ -1715,9 +1715,9 @@ void Graph::ascii_save(ostream& o) const {
                     jcnt = gpl->y_data()->count();
                     if (jcnt && family_label_ && gpl->label()) {
                         o << jcnt << "  " << family_label_->text() << "=" << gpl->label()->text()
-                          << endl;
+                          << std::endl;
                     } else {
-                        o << jcnt << endl;
+                        o << jcnt << std::endl;
                     }
                     for (j = 0; j < jcnt; ++j) {
                         o << gpl->x(j) << "\t" << gpl->y(j) << "\n";
@@ -1727,8 +1727,8 @@ void Graph::ascii_save(ostream& o) const {
         }
         return;
     }
-    o << "Graph addvar/addexpr lines" << endl;
-    o << lcnt << " " << x_->count() << endl;
+    o << "Graph addvar/addexpr lines" << std::endl;
+    o << lcnt << " " << x_->count() << std::endl;
     if (x_expr_) {
         o << x_expr_->name;
     } else {
@@ -1737,14 +1737,14 @@ void Graph::ascii_save(ostream& o) const {
     for (line = 0; line < lcnt; ++line) {
         o << " " << line_list_.item(line)->name();
     }
-    o << endl;
+    o << std::endl;
     dcnt = x_->count();
     for (i = 0; i < dcnt; ++i) {
         o << x_->get_val(i);
         for (line = 0; line < lcnt; ++line) {
             o << "\t" << line_list_.item(line)->y(i);
         }
-        o << endl;
+        o << std::endl;
     }
     // print the remaining unlabeled polylines. i.e. saved with KeepLines
     lcnt = count();
@@ -1758,17 +1758,17 @@ void Graph::ascii_save(ostream& o) const {
             }
         }
     }
-    o << n << " unlabeled lines" << endl;
+    o << n << " unlabeled lines" << std::endl;
     for (i = 0; i < lcnt; ++i) {
         GraphItem* gi = (GraphItem*) component(i);
         if (gi->is_polyline()) {
             GPolyLine* gpl = (GPolyLine*) gi->body();
             if (!gpl->label()) {
                 int n = gpl->x_data()->count();
-                o << n << endl;
+                o << n << std::endl;
                 int j;
                 for (j = 0; j < n; ++j) {
-                    o << gpl->x(j) << "\t" << gpl->y(j) << endl;
+                    o << gpl->x(j) << "\t" << gpl->y(j) << std::endl;
                 }
             }
         }
@@ -2409,18 +2409,18 @@ void Graph::see_range_plot(GraphVector* rvp) {
     Resource::ref(rvp);
 }
 
-void Graph::save_phase1(ostream& o) {
-    o << "{" << endl;
+void Graph::save_phase1(std::ostream& o) {
+    o << "{" << std::endl;
     save_class(o, "Graph");
 }
 
 static Graph* current_save_graph;
 
-void Graph::save_phase2(ostream& o) {
+void Graph::save_phase2(std::ostream& o) {
     char buf[256];
     if (family_label_) {
         sprintf(buf, "save_window_.family(\"%s\")", family_label_->text());
-        o << buf << endl;
+        o << buf << std::endl;
     }
     if (var_name_) {
         if ((var_name_->string())[var_name_->length() - 1] == '.') {
@@ -2428,13 +2428,13 @@ void Graph::save_phase2(ostream& o) {
         } else {
             sprintf(buf, "%s = save_window_", var_name_->string());
         }
-        o << buf << endl;
+        o << buf << std::endl;
         sprintf(buf, "save_window_.save_name(\"%s\")", var_name_->string());
-        o << buf << endl;
+        o << buf << std::endl;
     }
     if (x_expr_) {
         sprintf(buf, "save_window_.xexpr(\"%s\", %d)", x_expr_->name, x_pval_ ? 1 : 0);
-        o << buf << endl;
+        o << buf << std::endl;
     }
     long cnt = count();
     current_save_graph = this;
@@ -2446,7 +2446,7 @@ void Graph::save_phase2(ostream& o) {
             g->save(o, x, y);
         }
     }
-    o << "}" << endl;
+    o << "}" << std::endl;
 }
 
 
@@ -2752,7 +2752,7 @@ void GraphLine::extension_continue() {
     extension_->extend();
 }
 
-void GraphLine::save(ostream& o) {
+void GraphLine::save(std::ostream& o) {
     char buf[256];
     float x, y;
     if (!label()) {
@@ -2783,10 +2783,10 @@ void GraphLine::save(ostream& o) {
                 y,
                 label()->fixtype());
     }
-    o << buf << endl;
+    o << buf << std::endl;
 }
 
-void GPolyLine::save(ostream&) {}
+void GPolyLine::save(std::ostream&) {}
 
 void GPolyLine::label_loc(Coord& x, Coord& y) const {
     if (label()) {
@@ -3074,7 +3074,7 @@ Glyph* GLabel::clone() const {
     return new GLabel(text_.string(), color_, fixtype_, scale_, x_align_, y_align_);
 }
 
-void GLabel::save(ostream& o, Coord x, Coord y) {
+void GLabel::save(std::ostream& o, Coord x, Coord y) {
     if (labeled_line()) {
         return;
     }
@@ -3089,7 +3089,7 @@ void GLabel::save(ostream& o, Coord x, Coord y) {
             x_align_,
             y_align_,
             colors->color(color_));
-    o << buf << endl;
+    o << buf << std::endl;
 }
 
 void GLabel::fixed(float scale) {
@@ -3324,10 +3324,10 @@ void DataVec::erase() {
 
 void DataVec::write() {
 #if 0
-	cout << get_name() << endl;
-	cout << count_ << endl;
+	cout << get_name() << std::endl;
+	cout << count_ << std::endl;
 	for (int i=0; i<count_; i++) {
-		cout << y_[i] << endl;
+		cout << y_[i] << std::endl;
 	}
 #endif
 }
@@ -3373,7 +3373,7 @@ const char* GraphVector::name() const {
     return name_.string();
 }
 
-void GraphVector::save(ostream&) {}
+void GraphVector::save(std::ostream&) {}
 
 void GraphVector::begin() {
     dp_->erase();

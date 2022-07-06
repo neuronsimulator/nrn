@@ -16,7 +16,7 @@ class OcBox: public OcGlyphContainer {
     virtual ~OcBox();
 
     virtual void box_append(OcGlyph*);
-    virtual void save(ostream&);
+    virtual void save(std::ostream&);
     virtual void save_action(const char*, Object*);
     virtual void adjuster(Coord natural);
     virtual void adjust(Coord natural, int);

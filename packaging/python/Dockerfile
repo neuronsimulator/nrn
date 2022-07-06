@@ -12,13 +12,24 @@ RUN yum -y install \
     curl \
     unzip \
     bison \
-    flex \
     autoconf \
     automake \
     openssh-server \
     libtool
+    
+# required for rpmbuild
+RUN yum -y install \
+    gettext \
+    gcc-c++ \
+    help2man \
+    rpm-build
 
 WORKDIR /root
+
+# newer flex with rpmbuild (manylinux2014 based on Centos7 currently has flex < 2.6)
+RUN rpmbuild --rebuild https://vault.centos.org/8-stream/AppStream/Source/SPackages/flex-2.6.1-9.el8.src.rpm \
+    && yum install -y /root/rpmbuild/RPMS/x86_64/flex-2.6.1-9.el7.x86_64.rpm \
+    && rm -rf rpmbuild
 
 RUN wget http://ftpmirror.gnu.org/ncurses/ncurses-6.2.tar.gz \
     && tar -xvzf ncurses-6.2.tar.gz \

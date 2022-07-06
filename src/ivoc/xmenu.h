@@ -96,8 +96,8 @@ declarePtrList(HocUpdateItemList, HocUpdateItem) declarePtrList(HocItemList, Hoc
                 bool slow = false,
                 Object* pyvar = NULL,
                 Object* pysend = NULL);
-    virtual void write(ostream&);
-    virtual void save(ostream&);
+    virtual void write(std::ostream&);
+    virtual void save(std::ostream&);
     virtual HocItem* hoc_item();
     void label(const char*);
     void var_label(char**, Object* pyvar = NULL);
@@ -107,7 +107,7 @@ declarePtrList(HocUpdateItemList, HocUpdateItem) declarePtrList(HocItemList, Hoc
     void notifyHocValue();
     void check_valid_pointers(void*, int);
     Coord left_, bottom_;  // write by makeTray read by dissolve
-    static void save_all(ostream&);
+    static void save_all(std::ostream&);
     void data_path(HocDataPaths*, bool);
     void item_append(HocItem*);
 #if MAC
@@ -137,7 +137,7 @@ class HocItem: public Resource {
   public:
     HocItem(const char*, HocItem* parent = NULL);
     virtual ~HocItem();
-    virtual void write(ostream&);
+    virtual void write(std::ostream&);
     const char* getStr();
     virtual void help(const char* childpath = NULL);
     virtual void help_parent(HocItem*);
@@ -153,7 +153,7 @@ class HocPushButton: public HocItem {
   public:
     HocPushButton(const char*, HocAction*, HocItem* parent = NULL);
     virtual ~HocPushButton();
-    virtual void write(ostream&);
+    virtual void write(std::ostream&);
 #if MAC
     virtual int mac_menubar(int&, int, int);
 #endif
@@ -165,7 +165,7 @@ class HocRadioButton: public HocItem {
   public:
     HocRadioButton(const char*, HocRadioAction*, HocItem* parent = NULL);
     virtual ~HocRadioButton();
-    virtual void write(ostream&);
+    virtual void write(std::ostream&);
 #if MAC
     virtual int mac_menubar(int&, int, int);
 #endif
@@ -177,7 +177,7 @@ class HocMenu: public HocItem {
   public:
     HocMenu(const char*, Menu*, MenuItem*, HocItem* parent = NULL, bool add2menubar = false);
     virtual ~HocMenu();
-    virtual void write(ostream&);
+    virtual void write(std::ostream&);
     virtual Menu* menu() {
         return menu_;
     }
@@ -208,14 +208,14 @@ class HocLabel: public HocItem {
   public:
     HocLabel(const char*);
     virtual ~HocLabel();
-    virtual void write(ostream&);
+    virtual void write(std::ostream&);
 };
 
 class HocVarLabel: public HocUpdateItem {
   public:
     HocVarLabel(char**, PolyGlyph*, Object* pyvar = NULL);
     virtual ~HocVarLabel();
-    virtual void write(ostream&);
+    virtual void write(std::ostream&);
     virtual void update_hoc_item();
     virtual void check_pointer(void*, int);
     virtual void data_path(HocDataPaths*, bool);
@@ -325,7 +325,7 @@ class HocValEditor: public HocUpdateItem {
     void evalField();
     void audit();
     virtual void updateField();
-    virtual void write(ostream&);
+    virtual void write(std::ostream&);
     virtual void data_path(HocDataPaths*, bool);
     virtual void check_pointer(void*, int);
     virtual void print(Printer*, const Allocation&) const;
@@ -399,7 +399,7 @@ class HocValEditorKeepUpdated: public HocValEditor {
                             HocItem* parent = NULL,
                             Object* pyvar = NULL);
     virtual ~HocValEditorKeepUpdated();
-    virtual void write(ostream&);
+    virtual void write(std::ostream&);
 };
 
 class HocValAction: public HocAction {
@@ -443,7 +443,7 @@ class OcSlider: public HocUpdateItem, public Observer {
              Object* pyvar = NULL,
              Object* pysend = NULL);
     virtual ~OcSlider();
-    virtual void write(ostream&);
+    virtual void write(std::ostream&);
 
     Adjustable* adjustable();
 
@@ -481,7 +481,7 @@ class HocStateButton: public HocUpdateItem, public Observer {
                    HocItem* parent = NULL,
                    Object* pyvar = NULL);
     virtual ~HocStateButton();
-    virtual void write(ostream&);
+    virtual void write(std::ostream&);
 
     bool chosen();
     void button_action();
@@ -513,7 +513,7 @@ class HocStateMenuItem: public HocUpdateItem, public Observer {
                      HocItem* parent = NULL,
                      Object* pyvar = NULL);
     virtual ~HocStateMenuItem();
-    virtual void write(ostream&);
+    virtual void write(std::ostream&);
 
     bool chosen();
     void button_action();
