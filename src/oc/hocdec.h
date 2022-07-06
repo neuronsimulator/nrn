@@ -108,15 +108,7 @@ struct Symbol { /* symbol table entry */
     char* name;
     short type;
     short subtype;            /* Flag for user integers */
-                              /**
-                               * Note: `public` is a reserved keyword. Keeping following __cplusplus comments a bit longer
-                               * for future reference,  with upcoming work for NMODL + eventual mod files to support cpp.
-                               */
-                              //#if defined(__cplusplus)
-    short cpublic;            /* flag set public variable */
-                              //#else
-                              //	short	public;		/* flag set public variable */
-                              //#endif
+    short cpublic;            /* flag set public variable. this was called `public` before C++ */
     short defined_on_the_fly; /* moved here because otherwize gcc and borland do not align the same
                                  way */
     union {
@@ -135,7 +127,6 @@ struct Symbol { /* symbol table entry */
             int index;  /* prop->param[index] */
         } rng;
         Symbol** ppsym; /* Pointer to symbol pointer array */
-                        //#if defined(__cplusplus)
         cTemplate* ctemplate;
         Symbol* sym; /* for external */
     } u;

@@ -8,7 +8,7 @@ saves the pointtype as later argument to create and loc */
 
 #include "membfunc.h"
 #include "ocnotify.h"
-#include "parse_with_deps.hpp"  // MECHANISM
+#include "parse_with_deps.hpp"
 #include "section.h"
 
 

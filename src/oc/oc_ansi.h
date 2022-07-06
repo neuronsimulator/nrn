@@ -42,7 +42,7 @@ Symbol* hoc_lookup(const char*);
 // olupton 2022-05-30: This has to have C linkage for now because it is used in
 //                     praxis.c
 extern "C" void* hoc_Ecalloc(std::size_t nmemb, std::size_t size);
-// olupton 2022-05-30: These have to have C linkage for now because it is used
+// olupton 2022-05-30: These have to have C linkage for now because they are used
 //                     in newton_thread.c
 extern "C" void* hoc_Emalloc(size_t size);
 extern "C" void hoc_malchk();
