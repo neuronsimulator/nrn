@@ -211,14 +211,6 @@ int derivimplicit_thread(int,
                                 void*,
                                 void*,
                                 void*);
-int euler_thread(int,
-                        int*,
-                        int*,
-                        double*,
-                        int (*)(double*, Datum*, Datum*, NrnThread*),
-                        Datum*,
-                        Datum*,
-                        NrnThread*);
 double* _getelm(int, int);
 int _nrn_destroy_sparseobj_thread(void*);
 double* _nrn_thread_getelm(SparseObj*, int, int);

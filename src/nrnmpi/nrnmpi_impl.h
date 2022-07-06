@@ -1,4 +1,6 @@
 #pragma once
 #include <mpi.h>
-extern "C" MPI_Comm nrnmpi_world_comm;
-extern "C" MPI_Comm nrnmpi_comm;
+extern "C" {
+extern MPI_Comm nrnmpi_world_comm;
+extern MPI_Comm nrnmpi_comm;
+}

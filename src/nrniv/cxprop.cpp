@@ -274,7 +274,6 @@ void nrn_mk_prop_pools(int n) {
     mk_prop_pools(n);
 }
 
-// clash with cprop.cpp?
 double* nrn_prop_data_alloc(int type, int count, Prop* p) {
     if (!dblpools_[type]) {
         dblpools_[type] = new DoubleArrayPool(APSIZE, count);
