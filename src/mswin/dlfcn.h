@@ -29,7 +29,9 @@
 #ifndef DLFCN_H
 #define DLFCN_H
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 #if defined(DLFCN_WIN32_SHARED)
 #if defined(DLFCN_WIN32_EXPORTS)
@@ -90,6 +92,8 @@ DLFCN_EXPORT char* dlerror(void);
 /* Translate address to symbolic information (no POSIX standard) */
 DLFCN_EXPORT int dladdr(const void* addr, Dl_info* info);
 
+#ifdef __cplusplus
 }
+#endif
 
 #endif /* DLFCN_H */
