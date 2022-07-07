@@ -240,8 +240,7 @@ jobs:
                                 -Wno-unused-function \
                                 -Wno-unused-but-set-variable \
                                 -Wno-reorder \
-                                -Wno-sign-compare \
-                                -Wno-strict-aliasing" \
+                                -Wno-sign-compare" \
                              -DNRN_EXTRA_MECH_CXX_FLAGS="-Wno-sometimes-uninitialized \
                                 -Wno-missing-braces")
               fi

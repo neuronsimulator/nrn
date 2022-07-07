@@ -92,7 +92,6 @@ class OcJumpImpl {
     // hoc_oop
     Object* o1;
     Objectdata* o2;
-    int* o3;
     int o4;
     Symlist* o5;
 
