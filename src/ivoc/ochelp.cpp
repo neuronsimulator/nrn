@@ -35,7 +35,7 @@ declareList(CopyStringList, CopyString) implementList(CopyStringList, CopyString
 
     static CopyStringList* filequeue;
 
-extern "C" void ivoc_help(const char* s) {
+void ivoc_help(const char* s) {
 #if 1
     //	printf("online help not currently working\n");
     return;

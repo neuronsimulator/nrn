@@ -9,6 +9,7 @@ greater cache efficiency
 #include <stdio.h>
 #include <stdlib.h>
 #include <InterViews/resource.h>
+#include "nrniv_mf.h"
 #include <nrnmpi.h>
 #include <nrnoc2iv.h>
 #include <membfunc.h>
@@ -19,7 +20,6 @@ greater cache efficiency
 extern void nrn_mk_prop_pools(int);
 extern void nrn_cache_prop_realloc();
 extern int nrn_is_ion(int);
-extern "C" void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip);
 void nrn_delete_prop_pool(int type);
 #if EXTRACELLULAR
 extern void nrn_extcell_update_param();
@@ -274,7 +274,7 @@ void nrn_mk_prop_pools(int n) {
     mk_prop_pools(n);
 }
 
-extern "C" double* nrn_prop_data_alloc(int type, int count, Prop* p) {
+double* nrn_prop_data_alloc(int type, int count, Prop* p) {
     if (!dblpools_[type]) {
         dblpools_[type] = new DoubleArrayPool(APSIZE, count);
     }
@@ -286,7 +286,7 @@ extern "C" double* nrn_prop_data_alloc(int type, int count, Prop* p) {
     return pd;
 }
 
-extern "C" Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
+Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
     int i;
     Datum* ppd;
     if (!datumpools_[type]) {
@@ -303,14 +303,14 @@ extern "C" Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
     return ppd;
 }
 
-extern "C" void nrn_prop_data_free(int type, double* pd) {
+void nrn_prop_data_free(int type, double* pd) {
     // if (type > 1) printf("nrn_prop_data_free %d %s %p\n", type, memb_func[type].sym->name, pd);
     if (pd) {
         dblpools_[type]->hpfree(pd);
     }
 }
 
-extern "C" void nrn_prop_datum_free(int type, Datum* ppd) {
+void nrn_prop_datum_free(int type, Datum* ppd) {
     // if (type > 1) printf("nrn_prop_datum_free %d %s %p\n", type, memb_func[type].sym->name, ppd);
     if (ppd) {
         datumpools_[type]->hpfree(ppd);
@@ -583,7 +583,7 @@ static int in_place_data_realloc() {
     return status;
 }
 
-extern "C" void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip) {
+void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip) {
     int iontype = sion->subtype;
     DoubleArrayPool* np = dblpools_[iontype];
     DoubleArrayPool* op = oldpools_[iontype];

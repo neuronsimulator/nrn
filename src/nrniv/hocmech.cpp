@@ -11,7 +11,6 @@ extern Object* hoc_newobj1(Symbol*, int);
 extern Symlist* hoc_symlist;
 extern void hoc_unlink_symbol(Symbol*, Symlist*);
 extern void hoc_link_symbol(Symbol*, Symlist*);
-extern "C" void hoc_free_list(Symlist**);
 extern Datum* hoc_look_inside_stack(int, int);
 extern void nrn_loc_point_process(int, Point_process*, Section*, Node*);
 extern char* pnt_map;
@@ -75,7 +74,7 @@ void hoc_construct_point(Object* ob, int narg) {
     }
 }
 
-extern "C" Point_process* ob2pntproc_0(Object* ob) {
+Point_process* ob2pntproc_0(Object* ob) {
     Point_process* pp;
     if (ob->ctemplate->steer) {
         pp = (Point_process*) ob->u.this_pointer;
@@ -85,7 +84,7 @@ extern "C" Point_process* ob2pntproc_0(Object* ob) {
     return pp;
 }
 
-extern "C" Point_process* ob2pntproc(Object* ob) {
+Point_process* ob2pntproc(Object* ob) {
     Point_process* pp = ob2pntproc_0(ob);
     if (!pp || !pp->prop) {
         hoc_execerror(hoc_object_name(ob), "point process not located in a section");

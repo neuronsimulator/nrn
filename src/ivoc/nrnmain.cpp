@@ -6,7 +6,6 @@
 #include <errno.h>
 #include "isoc99.h"
 
-extern "C" int nrn_isdouble(double*, double, double);
 extern int ivocmain(int, const char**, const char**);
 extern int nrn_main_launch;
 extern int nrn_noauto_dlopen_nrnmech;

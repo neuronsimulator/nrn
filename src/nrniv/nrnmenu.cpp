@@ -10,6 +10,7 @@
 #include "secbrows.h"
 #include "ivoc.h"
 #endif
+#include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "nrnmenu.h"
 #include "classreg.h"
@@ -26,7 +27,6 @@ extern int hoc_return_type_code;
 extern Symlist* hoc_built_in_symlist;
 extern Symbol** pointsym;
 extern double* point_process_pointer(Point_process*, Symbol*, int);
-extern "C" Point_process* ob2pntproc(Object*);
 extern ReceiveFunc* pnt_receive;
 extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;

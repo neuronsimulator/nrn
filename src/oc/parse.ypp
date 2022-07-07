@@ -10,6 +10,7 @@
 #endif
 
 #include "hoc.h"
+#include "hocdec.h"
 #include "ocmisc.h"
 #include "hocparse.h"
 #include "code.h"

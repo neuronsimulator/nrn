@@ -1,5 +1,9 @@
-#ifndef nrnoc_ml_h
-#define nrnoc_ml_h
+#pragma once
+#include "options.h"  // for CACHEVEC
+
+union Datum;
+struct Node;
+struct Prop;
 
 struct Memb_list {
     Node** nodelist;
@@ -17,5 +21,3 @@ struct Memb_list {
     Datum* _thread; /* thread specific data (when static is no good) */
     int nodecount;
 };
-
-#endif

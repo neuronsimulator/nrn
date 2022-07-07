@@ -119,6 +119,7 @@ copyinc() {
 
 
 copyinc '
+cstdio
 cstdint
 '
 

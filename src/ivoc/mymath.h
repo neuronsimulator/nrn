@@ -3,8 +3,6 @@
 
 #include <InterViews/geometry.h>
 
-extern "C" int nrn_isdouble(double*, double, double);
-
 class Extension;
 
 class MyMath {

@@ -13,14 +13,17 @@
 #define _XOPEN_SOURCE 600
 #endif
 
+#include "hoc.h"
+#include "hocdec.h"
+#include "hoclist.h"
+#include "oc_ansi.h"
+#include "ocnotify.h"
+#include "parse.hpp"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "hoc.h"
-#include "oc_ansi.h"
-#include "ocfunc.h"
-#include "parse.hpp"
-#include "hoclist.h"
+
 #if MAC
 #undef HAVE_MALLOC_H
 #endif
@@ -181,14 +184,14 @@ void hoc_link_symbol(Symbol* sp, Symlist* list) {
 
 static int emalloc_error = 0;
 
-extern "C" void hoc_malchk(void) {
+void hoc_malchk(void) {
     if (emalloc_error) {
         emalloc_error = 0;
         execerror("out of memory", nullptr);
     }
 }
 
-extern "C" void* hoc_Emalloc(size_t n) { /* check return from malloc */
+void* hoc_Emalloc(size_t n) { /* check return from malloc */
     void* p = malloc(n);
     if (p == nullptr)
         emalloc_error = 1;
@@ -203,7 +206,7 @@ void* emalloc(size_t n) {
     return p;
 }
 
-extern "C" void* hoc_Ecalloc(size_t n, size_t size) { /* check return from calloc */
+void* hoc_Ecalloc(size_t n, size_t size) { /* check return from calloc */
     if (n == 0) {
         return nullptr;
     }
@@ -213,7 +216,7 @@ extern "C" void* hoc_Ecalloc(size_t n, size_t size) { /* check return from callo
     return p;
 }
 
-extern "C" void* ecalloc(size_t n, size_t size) {
+void* ecalloc(size_t n, size_t size) {
     void* p = hoc_Ecalloc(n, size);
     if (emalloc_error) {
         hoc_malchk();
@@ -261,7 +264,7 @@ void* hoc_Erealloc(void* ptr, size_t size) { /* check return from realloc */
     return p;
 }
 
-extern "C" void* erealloc(void* ptr, size_t size) {
+void* erealloc(void* ptr, size_t size) {
     void* p = hoc_Erealloc(ptr, size);
     if (emalloc_error) {
         hoc_malchk();

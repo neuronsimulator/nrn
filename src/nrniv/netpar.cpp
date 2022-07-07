@@ -3,6 +3,7 @@
 #include <InterViews/resource.h>
 #include <math.h>
 #include "nrncvode.h"
+#include "nrniv_mf.h"
 #include <nrnmpi.h>
 #include <nrnoc2iv.h>
 #include <stdio.h>
@@ -41,7 +42,6 @@ static void alloc_space();
 
 extern NetCvode* net_cvode_instance;
 extern double t, dt;
-extern "C" Point_process* ob2pntproc(Object*);
 extern int nrn_use_selfqueue_;
 extern void nrn_pending_selfqueue(double, NrnThread*);
 extern Object* nrn_sec2cell(Section*);
@@ -1251,7 +1251,6 @@ int nrn_set_timeout(int timeout) {
 
 void BBS::netpar_solve(double tstop) {
     // temporary check to be eventually replaced by verify_structure()
-    extern int tree_changed, v_structure_change, diam_changed;
     if (tree_changed) {
         setup_topology();
     }
@@ -1598,7 +1597,6 @@ void nrn_gidout_iter(PFIO callback) {
 
 #include "nrncore_write.h"
 extern int* nrn_prop_param_size_;
-extern int* pnt_receive_size;
 extern short* nrn_is_artificial_;
 static int weightcnt(NetCon* nc) {
     return nc->cnt_;

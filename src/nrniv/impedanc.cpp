@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #undef check
+#include "nrniv_mf.h"
 #include "nrnmpi.h"
 #include "nonlinz.h"
 #include <InterViews/resource.h>
@@ -11,8 +12,6 @@
 #include "membfunc.h"
 extern void nrn_rhs(NrnThread*);
 extern void nrn_lhs(NrnThread*);
-extern int tree_changed;
-extern "C" int v_structure_change;
 extern void setup_topology();
 extern void recalc_diam();
 

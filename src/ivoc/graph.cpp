@@ -37,6 +37,7 @@ extern Image* gif_image(const char*);
 #include "idraw.h"
 #include "symchoos.h"
 #include "scenepic.h"
+#include "oc_ansi.h"
 #include "oc2iv.h"
 #include "objcmd.h"
 #include "ocjump.h"
@@ -1452,10 +1453,6 @@ Graph::Graph(bool b)
         }
     }
 }
-
-extern "C" {
-extern void hoc_free_list(Symlist**);
-}  // extern "C";
 
 Graph::~Graph() {
     // printf("~Graph\n");

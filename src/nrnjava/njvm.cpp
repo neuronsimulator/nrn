@@ -65,7 +65,7 @@ extern void* (*p_java2nrn_cons)(Object*);
 #define _WIN32
 #endif
 #ifdef _WIN32
-extern "C" char* hoc_back2forward(char*);
+char* hoc_back2forward(char*);
 jint nrn_CreateJavaVM(JavaVM** pvm, void** penv, void* args);
 #endif
 #if MAC

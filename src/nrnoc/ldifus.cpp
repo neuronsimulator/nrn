@@ -13,9 +13,6 @@
 #define nt_t  nrn_threads->_t
 #define nt_dt nrn_threads->_dt
 
-extern "C" int diam_change_cnt;
-extern "C" int structure_change_cnt;
-
 typedef struct LongDifus {
     int dchange;
     int* mindex; /* index into memb_list[m] */

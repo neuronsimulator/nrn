@@ -44,19 +44,7 @@ double nrnmpi_transfer_wait_;
 double nrnmpi_splitcell_wait_;
 #endif
 #if NRNMPI
-extern "C" {
-void nrnmpi_barrier();
-double nrnmpi_dbl_allreduce(double, int);
-void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
-void nrnmpi_dbl_allgather(double*, double*, int);
-void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
-void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
-double nrmpi_wtime();
-void nrnmpi_int_broadcast(int*, int, int);
-void nrnmpi_char_broadcast(char*, int, int);
-void nrnmpi_dbl_broadcast(double*, int, int);
-extern void nrnmpi_subworld_size(int n);
-}  // extern "C"
+#include "nrnmpidec.h"
 #else
 static void nrnmpi_int_broadcast(int*, int, int) {}
 static void nrnmpi_char_broadcast(char*, int, int) {}

@@ -206,7 +206,6 @@ extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-extern "C" void clear_event_queue();
 extern cTemplate** nrn_pnt_template_;
 extern hoc_Item* net_cvode_instance_psl();
 extern PlayRecList* net_cvode_instance_prl();
@@ -268,7 +267,6 @@ static void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
 extern bool use_bgpdma_;
 #endif
 
-extern "C" Point_process* ob2pntproc(Object*);
 extern void nrn_play_init();
 extern Symlist* hoc_built_in_symlist;
 
