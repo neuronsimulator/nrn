@@ -1729,7 +1729,6 @@ def _mview_html_tree(hlist, inside_mechanisms_in_use=0):
         return f"{''.join(items)}"
 
 
-
 # register our ModelView display formatter with Jupyter if available
 if _get_ipython() is not None:
     html_formatter = _get_ipython().display_formatter.formatters["text/html"]
