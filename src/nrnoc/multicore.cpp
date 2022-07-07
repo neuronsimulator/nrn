@@ -1,6 +1,7 @@
 /* included by treeset.cpp */
 #include <nrnmpi.h>
 
+#include "nrnoc_ml.h"
 
 /*
 Now that threads have taken over the actual_v, v_node, etc, it might

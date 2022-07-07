@@ -24,7 +24,6 @@ int diam_changed = 1; /* changing diameter, length set this flag
               The flag is set to 0 when node.a and node.b
               is set up */
 extern int nrn_shape_changed_;
-extern int v_structure_change;
 
 char* (*nrnpy_pysec_name_p_)(Section*);
 Object* (*nrnpy_pysec_cell_p_)(Section*);
@@ -96,7 +95,7 @@ void oc_restore_cabcode(int* a1, int* a2) {
     section_object_seen = *a2;
 }
 
-extern "C" void nrn_pushsec(Section* sec) {
+void nrn_pushsec(Section* sec) {
     isecstack++;
     if (isecstack >= NSECSTACK) {
         int i = NSECSTACK;
@@ -120,7 +119,7 @@ extern "C" void nrn_pushsec(Section* sec) {
     }
 }
 
-extern "C" void nrn_popsec(void) {
+void nrn_popsec(void) {
     if (isecstack > 0) {
         Section* sec = secstack[isecstack--];
         if (!sec) {
@@ -434,7 +433,7 @@ void nrn_chk_section(Symbol* s) {
     }
 }
 
-extern "C" Section* chk_access(void) {
+Section* chk_access() {
     Section* sec = secstack[isecstack];
     if (!sec || !sec->prop) {
         /* use any existing section as a default section */
@@ -1069,8 +1068,8 @@ static int range_vec_indx(Symbol* s) {
     return indx;
 }
 
-extern "C" Prop* nrn_mechanism(int type, Node* nd) /* returns property for mechanism at the node */
-{
+/* returns property for mechanism at the node */
+Prop* nrn_mechanism(int type, Node* nd) {
     Prop* m;
     for (m = nd->prop; m; m = m->next) {
         if (m->type == type) {
@@ -1930,7 +1929,7 @@ int segment_limits(double* pdx) {
 #undef PI
 #define PI 3.14159265358979323846
 
-extern "C" Node* node_exact(Section* sec, double x) {
+Node* node_exact(Section* sec, double x) {
     /* like node_index but give proper node when
         x is 0 or 1 as well as in between
     */
@@ -1990,7 +1989,7 @@ Node* node_ptr(Section* sec, double x, double* parea) {
     return nd;
 }
 
-extern "C" int nrn_get_mechtype(const char* mechname) {
+int nrn_get_mechtype(const char* mechname) {
     Symbol* s;
     s = hoc_lookup(mechname);
     assert(s);

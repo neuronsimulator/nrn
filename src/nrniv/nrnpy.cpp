@@ -25,7 +25,7 @@ extern int (*p_nrnpython_start)(int);
 void nrnpython();
 static void (*p_nrnpython_real)();
 static void (*p_nrnpython_reg_real)();
-extern "C" char* hoc_back2forward(char* s);
+char* hoc_back2forward(char* s);
 char* hoc_forward2back(char* s);
 #if DARWIN
 extern void nrn_possible_mismatched_arch(const char*);

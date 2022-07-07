@@ -39,7 +39,7 @@ extern char** hoc_strpop();
 #include <IV-Win/mprinter.h>
 void iv_display_scale(float);
 void iv_display_scale(Coord, Coord);  // Make if fit into the screen
-extern "C" char* hoc_back2forward(char*);
+char* hoc_back2forward(char*);
 #endif
 
 #if MAC
@@ -465,7 +465,7 @@ void PWMDismiss::execute() {
 
 #else  //! HAVE_IV
 #ifdef MINGW
-extern "C" char* hoc_back2forward(char*);
+char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV
 

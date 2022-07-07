@@ -65,10 +65,6 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 #include "membfunc.h"
 extern void single_event_run();
 extern void setup_topology(), v_setup_vectors();
-extern "C" int structure_change_cnt;
-extern int v_structure_change;
-extern int tree_changed, nrn_matrix_cnt_;
-extern int diam_changed;
 extern int nrn_errno_check(int);
 extern void nrn_ba(NrnThread*, int);
 extern NetCvode* net_cvode_instance;
@@ -83,27 +79,14 @@ extern Object* nrn_sec2cell(Section*);
 extern int nrn_sec2cell_equals(Section*, Object*);
 extern ReceiveFunc* pnt_receive;
 extern ReceiveFunc* pnt_receive_init;
-extern short* pnt_receive_size;
 extern short* nrn_is_artificial_;  // should be bool but not using that type in c
 extern short* nrn_artcell_qindex_;
-extern "C" void net_move(void**, Point_process*, double);
-extern "C" void artcell_net_move(void**, Point_process*, double);
 int nrn_use_selfqueue_;
 void nrn_pending_selfqueue(double tt, NrnThread*);
 static void all_pending_selfqueue(double tt);
 static void* pending_selfqueue(NrnThread*);
-extern "C" void net_event(Point_process*, double);
-extern "C" void _nrn_watch_activate(Datum*,
-                                    double (*)(Point_process*),
-                                    int,
-                                    Point_process*,
-                                    int,
-                                    double);
-extern "C" void _nrn_free_watch(Datum*, int, int);
 extern int hoc_araypt(Symbol*, int);
 extern int hoc_stacktype();
-extern "C" Point_process* ob2pntproc(Object*);
-extern "C" Point_process* ob2pntproc_0(Object*);
 void nrn_use_daspk(int);
 extern int nrn_use_daspk_;
 int linmod_extra_eqn_count();
@@ -144,7 +127,6 @@ extern int hoc_return_type_code;
 extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_index_;
 extern int* nrn_fornetcon_type_;
-void _nrn_free_fornetcon(void**);
 
 // for use in mod files
 double nrn_netcon_get_delay(NetCon* nc) {
@@ -2326,7 +2308,7 @@ int Cvode::handle_step(NetCvode* ns, double te) {
     return err;
 }
 
-extern "C" void net_move(void** v, Point_process* pnt, double tt) {
+void net_move(void** v, Point_process* pnt, double tt) {
     if (!(*v)) {
         hoc_execerror("No event with flag=1 for net_move in ", hoc_object_name(pnt->ob));
     }
@@ -2343,7 +2325,7 @@ extern "C" void net_move(void** v, Point_process* pnt, double tt) {
     net_cvode_instance->move_event(q, tt, PP2NT(pnt));
 }
 
-extern "C" void artcell_net_move(void** v, Point_process* pnt, double tt) {
+void artcell_net_move(void** v, Point_process* pnt, double tt) {
     if (nrn_use_selfqueue_) {
         if (!(*v)) {
             hoc_execerror("No event with flag=1 for net_move in ", hoc_object_name(pnt->ob));
@@ -2483,7 +2465,7 @@ void nrn_net_send(void** v, double* weight, void* pnt, double td, double flag) {
     nrn_net_send(v, weight, static_cast<Point_process*>(pnt), td, flag);
 }
 
-extern "C" void net_event(Point_process* pnt, double time) {
+void net_event(Point_process* pnt, double time) {
     STATISTICS(net_event_cnt_);
     PreSyn* ps = (PreSyn*) pnt->presyn_;
     if (ps) {
@@ -2505,12 +2487,12 @@ extern "C" void net_event(Point_process* pnt, double time) {
     }
 }
 
-extern "C" void _nrn_watch_activate(Datum* d,
-                                    double (*c)(Point_process*),
-                                    int i,
-                                    Point_process* pnt,
-                                    int r,
-                                    double flag) {
+void _nrn_watch_activate(Datum* d,
+                         double (*c)(Point_process*),
+                         int i,
+                         Point_process* pnt,
+                         int r,
+                         double flag) {
     if (!d[i]._pvoid || !d[0]._pvoid) {
         // When c is NULL, i.e. called from CoreNEURON,
         // we never get here because we made sure
@@ -2592,11 +2574,11 @@ Here are some more notes about WatchCondition, HTList, HTListList, and
  *  because the allocated WatchCondition has double (*c_)(Point_process)
  *  and flag_ filled in.
  **/
-extern "C" void _nrn_watch_allocate(Datum* d,
-                                    double (*c)(Point_process*),
-                                    int i,
-                                    Point_process* pnt,
-                                    double flag) {
+void _nrn_watch_allocate(Datum* d,
+                         double (*c)(Point_process*),
+                         int i,
+                         Point_process* pnt,
+                         double flag) {
     if (!d->_pvoid) {
         d->_pvoid = (void*) new WatchList();
     }
@@ -2618,7 +2600,7 @@ extern "C" void _nrn_watch_allocate(Datum* d,
  *  WatchCondition be deactivated prior to mirroring the activation
  *  that exists on the corenrn side.
  **/
-extern "C" void nrn_watch_clear() {
+void nrn_watch_clear() {
     assert(net_cvode_instance->wl_list_.size() == (size_t) nrn_nthread);
     for (auto& htlists_of_thread: net_cvode_instance->wl_list_) {
         for (HTList* wl: htlists_of_thread) {
@@ -2631,7 +2613,7 @@ extern "C" void nrn_watch_clear() {
 }
 
 /** Called by Point_process destructor in translated mod file **/
-extern "C" void _nrn_free_watch(Datum* d, int offset, int n) {
+void _nrn_free_watch(Datum* d, int offset, int n) {
     int i;
     int nn = offset + n;
     if (d[offset]._pvoid) {
@@ -4241,7 +4223,7 @@ int _nrn_netcon_args(void* v, double*** argslist) {
     return fnc->size;
 }
 
-extern "C" void _nrn_free_fornetcon(void** v) {
+void _nrn_free_fornetcon(void** v) {
     ForNetConsInfo* fnc = (ForNetConsInfo*) (*v);
     if (fnc) {
         if (fnc->argslist) {

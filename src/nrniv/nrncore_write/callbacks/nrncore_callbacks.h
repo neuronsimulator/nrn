@@ -163,13 +163,14 @@ struct NrnCoreTransferEvents {
 typedef std::vector<std::pair<int, bool>> Core2NrnWatchInfoItem;
 typedef std::vector<Core2NrnWatchInfoItem> Core2NrnWatchInfo;
 
+void nrn_watch_clear();
+
 extern "C" {
 extern NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid);
 
 // per item direct transfer of WatchCondition
 void nrn2core_transfer_WATCH(void (*cb)(int, int, int, int, int));
 
-void nrn_watch_clear();
 void core2nrn_watch_activate(int tid, int type, int wbegin, Core2NrnWatchInfo&);
 
 // per VecPlayContinous direct transfer of instance indices.

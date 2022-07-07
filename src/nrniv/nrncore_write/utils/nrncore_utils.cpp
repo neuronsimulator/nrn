@@ -2,6 +2,7 @@
 #include "nrncore_write/callbacks/nrncore_callbacks.h"
 
 #include "nrnconf.h"
+#include "nrniv_mf.h"
 #include <cstdlib>
 #include "nrndae_c.h"
 #include "section.h"
@@ -23,7 +24,6 @@
 #endif
 
 extern bool corenrn_direct;
-extern int diam_changed, v_structure_change, tree_changed;
 extern const char* bbcore_write_version;
 extern NrnMappingInfo mapinfo;
 extern void (*nrnthread_v_transfer_)(NrnThread*);

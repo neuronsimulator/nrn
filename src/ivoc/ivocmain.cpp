@@ -868,10 +868,6 @@ void ivoc_final_exit() {
 #endif
 }
 
-extern "C" {
-extern int ifarg(int);
-}  // extern "C"
-
 extern void hoc_ret(), hoc_pushx(double);
 
 void hoc_single_event_run() {

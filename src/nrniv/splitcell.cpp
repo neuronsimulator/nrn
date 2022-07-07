@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <errno.h>
+#include "nrniv_mf.h"
 #include <nrnoc2iv.h>
 #include <nrnmpi.h>
 
@@ -16,8 +17,6 @@ both subtrees are on the same host. This policy allows a very simple and direct
 setting up and transfer of matrix information. Note that gid information about
 the subtrees is no longer required by this implementation.
 */
-
-extern "C" int structure_change_cnt;
 
 #if PARANEURON
 void nrnmpi_split_clear();
