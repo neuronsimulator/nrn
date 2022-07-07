@@ -221,15 +221,16 @@ NRN_ENABLE_MUSIC:BOOL=OFF
 
   MPI and Python must be enabled.
 
-  If MUSIC is installed but CMake cannot find its /path, augment the
+  If MUSIC is installed but CMake cannot find its ``/path``, augment the
   semicolon separated list of paths ``-DCMAKE_PREFIX_PATH=...;/path;...``
+  or pass the ``/path`` with ``-DMUSIC_ROOT=/path`` to cmake.
   CMake needs to find
 
   .. code-block:: shell
 
     /path/include/music.hh
-    /path/lib/libmusic.so.*
-  
+    /path/lib/libmusic.so
+
 Python options:
 ===============
 
