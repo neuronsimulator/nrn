@@ -53,7 +53,6 @@ class Cell:
                 syn.e = -65 * r.uniform(1.0, 1.1)
                 syn.tau = r.uniform(0.1, 1.0)
                 self.syns.append(syn)
-
                 nc = h.NetCon(self.netstim, syn)
                 nc.delay = 0.2
                 nc.weight[0] = 0.001 * r.uniform(1.0, 1.1)
@@ -267,10 +266,23 @@ def test_fastimem_corenrn():
     cvode.cache_efficient(0)
     cells = [Cell(id, 10) for id in range(ncell)]
     cvode.use_fast_imem(1)
-    # See https://github.com/neuronsimulator/nrn/issues/1888 for a discussion
-    # of the next line, which is an ugly temporary workaround.
-    h.finitialize()
-    imem = [h.Vector().record(cell.secs[3](0.5)._ref_i_membrane_) for cell in cells]
+
+    # When nthread changes, or internal model data needs to be reallocated,
+    # pointers need to be updated. Use of i_membrane_ requires that the user
+    # update the pointers to i_membrane_.
+    imem = [None]  # wrapper to allow change of imem in imem_callback
+
+    def imem_update():
+        print("imem_update")
+        imem[0] = [
+            h.Vector().record(cell.ics[0], cell.secs[3](0.5)._ref_i_membrane_)
+            for cell in cells
+        ]
+
+    imem_updater = h.PtrVector(1)
+    imem_updater.ptr_update_callback(imem_update)
+    imem_update()
+
     tstop = 1.0
 
     def init_v():
@@ -290,23 +302,25 @@ def test_fastimem_corenrn():
 
     # standard
     run(tstop)
-    imem_std = [vec.c() for vec in imem]
+    imem_std = [vec.c() for vec in imem[0]]
 
     def compare():
         for i in range(ncell):
-            if not imem_std[i].eq(imem[i]):
+            if not imem_std[i].eq(imem[0][i]):
                 print("imem for cell ", i)
                 for j, x in enumerate(imem_std[i]):
-                    print(j, x, imem[i][j], x - imem[i][j])
-            assert imem_std[i].eq(imem[i])
-            imem[i].resize(0)
+                    print(j, x, imem[0][i][j], x - imem[0][i][j])
+            assert imem_std[i].eq(imem[0][i])
+            imem[0][i].resize(0)
 
-    compare()  # just starting iwth imem cleared
+    compare()  # just starting with imem cleared
 
     print("cache efficient NEURON")
     cvode.cache_efficient(1)
-    run(tstop)
-    compare()
+    for nth in [2, 1]:
+        pc.nthread(nth)
+        run(tstop)
+        compare()
 
     print("direct mode (online) coreneuron")
     from neuron import coreneuron

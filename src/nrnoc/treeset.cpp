@@ -2302,6 +2302,7 @@ void nrn_recalc_node_ptrs(void) {
     nrn_cache_prop_realloc();
     nrn_recalc_ptrvector();
     nrn_partrans_update_ptrs();
+    nrn_imem_defer_free(nullptr);
 }
 
 #endif /* CACHEVEC */
