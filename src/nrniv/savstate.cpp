@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include "ocfile.h"
+#include "nrncvode.h"
 #include "nrnoc2iv.h"
 #include "classreg.h"
 #include "ndatclas.h"
@@ -22,7 +23,6 @@ extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-extern "C" void clear_event_queue();
 extern hoc_Item* net_cvode_instance_psl();
 extern PlayRecList* net_cvode_instance_prl();
 extern double t;
@@ -1300,8 +1300,11 @@ static double sswrite(void* v) {
     return 1.;
 }
 
-static Member_func members[] =
-    {"save", save, "restore", restore, "fread", ssread, "fwrite", sswrite, 0, 0};
+static Member_func members[] = {{"save", save},
+                                {"restore", restore},
+                                {"fread", ssread},
+                                {"fwrite", sswrite},
+                                {0, 0}};
 
 void SaveState_reg() {
     class2oc("SaveState", cons, destruct, members, NULL, NULL, NULL);

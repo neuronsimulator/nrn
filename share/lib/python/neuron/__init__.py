@@ -1677,3 +1677,59 @@ def clear_gui_callback():
         nrnpy_set_gui_callback(None)
     except:
         pass
+
+
+try:
+    from IPython import get_ipython as _get_ipython
+except:
+    _get_ipython = lambda *args: None
+
+
+def _hocobj_html(item):
+    try:
+        if item.hname().split("[")[0] == "ModelView":
+            return _mview_html_tree(item.display.top)
+        return None
+    except:
+        return None
+
+
+def _mview_html_tree(hlist, inside_mechanisms_in_use=0):
+    items = []
+    if inside_mechanisms_in_use:
+        miu_level = inside_mechanisms_in_use + 1
+    else:
+        miu_level = 0
+    my_miu_level = miu_level
+    for ho in hlist:
+        html = ho.s.lstrip(" *")
+        if ho.children:
+            if html == "Mechanisms in use":
+                my_miu_level = 1
+        if html or miu_level == 3:
+            if ho.children:
+                children_data = _mview_html_tree(
+                    ho.children, inside_mechanisms_in_use=my_miu_level
+                )
+                if miu_level == 3:
+                    items.append(html + children_data)
+                else:
+                    items.append(
+                        f"<div><details><summary style='cursor:pointer'>{html}</summary><div style='margin-left:1.06em'>{children_data}</div></div>"
+                    )
+            else:
+                if miu_level == 3:
+                    items.append(html)
+                else:
+                    items.append(f"<div style='margin-left:1.06em'>{html}</div>")
+
+    if miu_level == 3:
+        return f"{'<br>'.join(items)}"
+    else:
+        return f"{''.join(items)}"
+
+
+# register our ModelView display formatter with Jupyter if available
+if _get_ipython() is not None:
+    html_formatter = _get_ipython().display_formatter.formatters["text/html"]
+    html_formatter.for_type(hoc.HocObject, _hocobj_html)

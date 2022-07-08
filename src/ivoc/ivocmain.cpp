@@ -164,7 +164,7 @@ char* nrnpy_pyexe;
 int Oc::refcnt_ = 0;
 Session* Oc::session_ = 0;
 HandleStdin* Oc::handleStdin_ = 0;
-ostream* OcIdraw::idraw_stream = 0;
+std::ostream* OcIdraw::idraw_stream = 0;
 #endif
 /*****************************************************************************/
 extern void ivoc_cleanup();
@@ -867,10 +867,6 @@ void ivoc_final_exit() {
     nrnmpi_terminate();
 #endif
 }
-
-extern "C" {
-extern int ifarg(int);
-}  // extern "C"
 
 extern void hoc_ret(), hoc_pushx(double);
 

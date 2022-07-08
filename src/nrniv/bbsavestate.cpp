@@ -206,7 +206,6 @@ extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-extern "C" void clear_event_queue();
 extern cTemplate** nrn_pnt_template_;
 extern hoc_Item* net_cvode_instance_psl();
 extern PlayRecList* net_cvode_instance_prl();
@@ -268,7 +267,6 @@ static void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
 extern bool use_bgpdma_;
 #endif
 
-extern "C" Point_process* ob2pntproc(Object*);
 extern void nrn_play_init();
 extern Symlist* hoc_built_in_symlist;
 
@@ -945,24 +943,22 @@ static double vector_play_init(void* v) {
     return 0.;
 }
 
-static Member_func members[] = {
-    // text test
-    {"save", save},
-    {"restore", restore},
-    {"save_test", save_test},
-    {"restore_test", restore_test},
-    // binary test
-    {"save_test_bin", save_test_bin},
-    {"restore_test_bin", restore_test_bin},
-    // binary save/restore interface to interpreter
-    {"save_request", save_request},
-    {"save_gid", save_gid},
-    {"restore_gid", restore_gid},
-    // indicate which point processes are to be ignored
-    {"ignore", ppignore},
-    // allow Vector.play to work
-    {"vector_play_init", vector_play_init},
-    {0, 0}};
+static Member_func members[] = {{"save", save},
+                                {"restore", restore},
+                                {"save_test", save_test},
+                                {"restore_test", restore_test},
+                                // binary test
+                                {"save_test_bin", save_test_bin},
+                                {"restore_test_bin", restore_test_bin},
+                                // binary save/restore interface to interpreter
+                                {"save_request", save_request},
+                                {"save_gid", save_gid},
+                                {"restore_gid", restore_gid},
+                                // indicate which point processes are to be ignored
+                                {"ignore", ppignore},
+                                // allow Vector.play to work
+                                {"vector_play_init", vector_play_init},
+                                {0, 0}};
 
 void BBSaveState_reg() {
     class2oc("BBSaveState", cons, destruct, members, NULL, NULL, NULL);

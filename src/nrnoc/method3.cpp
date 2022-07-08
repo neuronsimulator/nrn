@@ -103,8 +103,6 @@ method3.cpp,v
 #include "neuron.h"
 #include "parse.hpp"
 
-extern int diam_changed;
-extern int tree_changed;
 extern double chkarg();
 extern double nrn_ra();
 
@@ -134,7 +132,6 @@ int spatial_method() {
 When properties are allocated to nodes or freed, v_structure_change is
 set to 1. This means that the mechanism vectors need to be re-determined.
 */
-extern "C" int v_structure_change;
 extern int v_node_count;
 extern Node** v_node;
 extern Node** v_parent;
@@ -302,7 +299,7 @@ method3_connection_coef() /* setup a and b */
     hoc_Item* qsec;
     Section* sec;
     Node* nd;
-    Prop *p, *nrn_mechanism();
+    Prop* p;
     float r, s, t;
 
     if (tree_changed) {

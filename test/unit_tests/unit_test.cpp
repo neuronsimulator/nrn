@@ -7,15 +7,13 @@
 #include <section.h>
 #include <neuron.h>
 
-extern void nrn_threads_create(int, int);
-extern void nrn_threads_free();
 extern int ivocmain_session(int, const char**, const char**, int);
 
 extern int nrn_main_launch;
 extern int nrn_nobanner_;
 
 /// Needed for compilation
-void modl_reg() {}
+extern "C" void modl_reg() {}
 extern int nrn_nthread;
 extern NrnThread* nrn_threads;
 

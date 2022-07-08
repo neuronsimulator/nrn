@@ -44,6 +44,7 @@ set(HEADER_FILES_TO_INSTALL
     ocfunc.h
     ocmisc.h
     options.h
+    parse_with_deps.hpp
     scoplib.h
     section.h
     spconfig.h

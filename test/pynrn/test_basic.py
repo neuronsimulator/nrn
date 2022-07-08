@@ -393,6 +393,25 @@ def test_nrn_mallinfo():
     assert h.nrn_mallinfo(0) > 0
 
 
+def test_errorcode():
+    import sys, subprocess
+
+    # NVHPC errno handling is broken. See:
+    # https://forums.developer.nvidia.com/t/math-errhandling-not-working-as-expected-with-nvc-compiler/219072
+    cmake_args = h.nrnversion(6)
+    if re.search("'CMAKE_CXX_COMPILER=/.*/nvc\\+\\+'", cmake_args):
+        print("Skipping test_errorcode checks because NVHPC errno is broken.")
+        return
+
+    process = subprocess.run('nrniv -c "1/0"', shell=True)
+    assert process.returncode > 0
+
+    process = subprocess.run(
+        '{} -c "from neuron import h; h.sqrt(-1)"'.format(sys.executable), shell=True
+    )
+    assert process.returncode > 0
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()

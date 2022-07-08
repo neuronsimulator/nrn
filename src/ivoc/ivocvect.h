@@ -1,15 +1,12 @@
 #ifndef ivoc_vector_h
 #define ivoc_vector_h
 
-// definition of vector classes from the gnu c++ class library
-#include <nrnmutdec.h>
+#include "nrnmutdec.h"
+#include "ocnotify.h"
+
 #include <vector>
 #include <numeric>
 #include <algorithm>
-
-extern "C" {
-extern void notify_freed_val_array(double*, size_t);
-}
 
 using ParentVect = std::vector<double>;
 struct Object;
@@ -73,7 +70,7 @@ class IvocVect {
         vec_.push_back(v);
     }
 
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     void mutconstruct(int mkmut) {
         if (!mut_)
             MUTCONSTRUCT(mkmut)
@@ -113,14 +110,12 @@ double stdDev(InputIterator begin, InputIterator end) {
     return sqrt(var(begin, end));
 }
 
-extern "C" {
 extern void vector_delete(IvocVect*);
 extern Object** vector_temp_objvar(IvocVect*);
 
 extern int is_vector_arg(int);
 extern char* vector_get_label(IvocVect*);
 extern void vector_set_label(IvocVect*, char*);
-}  // extern "C"
 
 // olupton 2022-01-21: backwards compatibility
 using Vect = IvocVect;

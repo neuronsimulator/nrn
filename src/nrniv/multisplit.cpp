@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <InterViews/resource.h>
 #include <vector>
+#include "nrniv_mf.h"
 #include <nrnoc2iv.h>
 #include <nrnmpi.h>
 #include <multisplit.h>
@@ -14,8 +15,6 @@
 void nrnmpi_multisplit(Section*, double x, int sid, int backbone_style);
 int nrn_multisplit_active_;
 
-extern int tree_changed;
-extern int diam_changed;
 extern void setup_topology();
 extern void nrn_cachevec(int);
 extern void nrn_matrix_node_free();

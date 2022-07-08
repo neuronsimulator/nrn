@@ -230,24 +230,15 @@ static double move_last(void* v) {
 #endif /* HAVE_IV  */
 }
 
-static Member_func members[] = {"flip_to",
-                                flip_to,
-                                "intercept",
-                                intercept,
-                                "save",
-                                save,
-                                "map",
-                                map,
-                                "unmap",
-                                unmap,
-                                "remove_last",
-                                remove_last,
-                                "remove",
-                                remove,
-                                "move_last",
-                                move_last,
-                                0,
-                                0};
+static Member_func members[] = {{"flip_to", flip_to},
+                                {"intercept", intercept},
+                                {"save", save},
+                                {"map", map},
+                                {"unmap", unmap},
+                                {"remove_last", remove_last},
+                                {"remove", remove},
+                                {"move_last", move_last},
+                                {0, 0}};
 
 void OcDeck_reg() {
     class2oc("Deck", cons, destruct, members, NULL, NULL, NULL);
@@ -338,22 +329,22 @@ void OcDeck::save_action(const char* creat, Object* o) {
     }
 }
 
-void OcDeck::save(ostream& o) {
+void OcDeck::save(std::ostream& o) {
     char buf[256];
     if (bi_->save_action_) {
         sprintf(buf, "{ocbox_ = %s", bi_->save_action_->string());
-        o << buf << endl;
+        o << buf << std::endl;
     } else {
-        o << "{ocbox_ = new Deck()" << endl;
-        o << "ocbox_list_.prepend(ocbox_)" << endl;
-        o << "ocbox_.intercept(1)}" << endl;
+        o << "{ocbox_ = new Deck()" << std::endl;
+        o << "ocbox_list_.prepend(ocbox_)" << std::endl;
+        o << "ocbox_.intercept(1)}" << std::endl;
         long i, cnt = bi_->ocglyph_list_->count();
         for (i = 0; i < cnt; ++i) {
             ((OcGlyph*) bi_->ocglyph_list_->component(i))->save(o);
         }
-        o << "{ocbox_ = ocbox_list_.object(0)" << endl;
-        o << "ocbox_list_.remove(0)" << endl;
-        o << "ocbox_.intercept(0)" << endl;
+        o << "{ocbox_ = ocbox_list_.object(0)" << std::endl;
+        o << "ocbox_list_.remove(0)" << std::endl;
+        o << "ocbox_.intercept(0)" << std::endl;
     }
     if (has_window()) {
         sprintf(buf,
@@ -363,13 +354,13 @@ void OcDeck::save(ostream& o) {
                 window()->save_bottom(),
                 window()->width(),
                 window()->height());
-        o << buf << endl;
+        o << buf << std::endl;
     } else {
-        o << "ocbox_.map()}" << endl;
+        o << "ocbox_.map()}" << std::endl;
     }
     if (bi_->oc_ref_) {
         sprintf(buf, "%s = ocbox_", hoc_object_pathname(bi_->oc_ref_));
-        o << buf << endl;
+        o << buf << std::endl;
     }
 }
 #endif /* HAVE_IV */

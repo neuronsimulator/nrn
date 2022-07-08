@@ -18,13 +18,14 @@ extern int hoc_return_type_code;
 #include "netcvode.h"
 #include "membfunc.h"
 #include "nrndaspk.h"
+#include "nrniv_mf.h"
 #include "tqueue.h"
 #include "mymath.h"
 #include "htlist.h"
 #include <OS/list.h>
 #include <nrnmutdec.h>
 
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
 static MUTDEC
 #endif
 
@@ -58,21 +59,17 @@ static MUTDEC
 extern double dt, t;
 #define nt_dt nrn_threads->_dt
 #define nt_t  nrn_threads->_t
-extern int diam_changed;
 extern int secondorder;
 extern int linmod_extra_eqn_count();
 extern int nrn_modeltype();
 extern int nrn_use_selfqueue_;
 extern int use_cachevec;
 extern void nrn_cachevec(int);
-extern "C" Point_process* ob2pntproc(Object*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 extern void (*nrnmpi_v_transfer_)();
 
 extern NetCvode* net_cvode_instance;
 extern short* nrn_is_artificial_;
-extern "C" int structure_change_cnt;
-extern "C" int diam_change_cnt;
 #if USENCS
 extern void nrn2ncs_netcons();
 #endif  // USENCS

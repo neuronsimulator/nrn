@@ -186,7 +186,7 @@ void hoc_Symbol_units(void) {
     hoc_pushstr(units);
 }
 
-extern "C" char* hoc_back2forward(char*);
+char* hoc_back2forward(char*);
 char* neuronhome_forward(void) {
     extern char* neuron_home;
 #ifdef WIN32
@@ -527,20 +527,13 @@ void Xred(void) /* read with prompt string and default and limits */
 static struct { /* symbol types */
     char* name;
     short t_type;
-} type_sym[] = {"Builtins",
-                BLTIN,
-                "Other Builtins",
-                FUN_BLTIN,
-                "Functions",
-                FUNCTION,
-                "Procedures",
-                PROCEDURE,
-                "Undefined",
-                UNDEF,
-                "Scalars",
-                VAR,
-                0,
-                0};
+} type_sym[] = {{"Builtins", BLTIN},
+                {"Other Builtins", FUN_BLTIN},
+                {"Functions", FUNCTION},
+                {"Procedures", PROCEDURE},
+                {"Undefined", UNDEF},
+                {"Scalars", VAR},
+                {0, 0}};
 
 static void symdebug(const char* s, Symlist* list) /* for debugging display the symbol lists */
 {
@@ -688,7 +681,7 @@ void hoc_run_stmt(Symbol* sym) {
 }
 extern Symlist* hoc_top_level_symlist;
 
-extern "C" Symbol* hoc_parse_stmt(const char* str, Symlist** psymlist) {
+Symbol* hoc_parse_stmt(const char* str, Symlist** psymlist) {
     Symbol* sp;
     char s[BUFSIZ];
 

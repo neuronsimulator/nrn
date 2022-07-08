@@ -31,6 +31,7 @@
 #include "rubband.h"
 #include "scenepic.h"
 #include "rot3band.h"
+#include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "objcmd.h"
 #include "idraw.h"
@@ -46,11 +47,8 @@
 
 void nrn_define_shape();
 extern int nrn_shape_changed_;
-extern "C" int structure_change_cnt;
 extern int section_count;
 extern Section** secorder;
-extern "C" Point_process* ob2pntproc(Object*);
-extern "C" Point_process* ob2pntproc_0(Object*);
 extern Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 
 #if BEVELJOIN
@@ -146,7 +144,7 @@ class OcShapeHandler;
     }
     virtual void set_select_action(const char*);
     virtual void set_select_action(Object*);
-    virtual void save_phase1(ostream&);
+    virtual void save_phase1(std::ostream&);
     virtual PointMark* point_mark(Object*,
                                   const Color*,
                                   const char style = 'O',
@@ -528,75 +526,43 @@ extern double ivoc_gr_erase(void*);
 extern double ivoc_gr_gif(void*);
 extern double ivoc_erase_all(void*);
 
-static Member_func sh_members[] = {"nearest",
-                                   nrniv_sh_nearest,
-                                   "push_selected",
-                                   nrniv_sh_push,
-                                   "view",
-                                   sh_view,
-                                   "size",
-                                   ivoc_gr_size,
-                                   "flush",
-                                   sh_flush,
-                                   "begin",
-                                   sh_begin,
-                                   "view_count",
-                                   sh_view_count,
-                                   "select",
-                                   sh_select,
-                                   "action",
-                                   sh_select_action,
-                                   "save_name",
-                                   sh_save_name,
-                                   "unmap",
-                                   sh_unmap,
-                                   "color",
-                                   nrniv_sh_color,
-                                   "color_all",
-                                   nrniv_sh_color_all,
-                                   "color_list",
-                                   nrniv_sh_color_list,
-                                   "point_mark",
-                                   sh_point_mark,
-                                   "point_mark_remove",
-                                   sh_point_mark_remove,
-                                   "point_mark_remove",
-                                   sh_point_mark_remove,
-                                   "printfile",
-                                   sh_printfile,
-                                   "show",
-                                   sh_show,
-                                   "menu_action",
-                                   ivoc_gr_menu_action,
-                                   "menu_tool",
-                                   ivoc_gr_menu_tool,
-                                   "exec_menu",
-                                   exec_menu,
-                                   "observe",
-                                   nrniv_sh_observe,
-                                   "rotate",
-                                   nrniv_sh_rotate,
-                                   "beginline",
-                                   ivoc_gr_begin_line,
-                                   "line",
-                                   ivoc_gr_line,
-                                   "label",
-                                   ivoc_gr_label,
-                                   "mark",
-                                   ivoc_gr_mark,
-                                   "erase",
-                                   ivoc_gr_erase,
-                                   "erase_all",
-                                   ivoc_erase_all,
-                                   "len_scale",
-                                   nrniv_len_scale,
-                                   "gif",
-                                   ivoc_gr_gif,
-                                   0,
-                                   0};
+static Member_func sh_members[] = {{"nearest", nrniv_sh_nearest},
+                                   {"push_selected", nrniv_sh_push},
+                                   {"view", sh_view},
+                                   {"size", ivoc_gr_size},
+                                   {"flush", sh_flush},
+                                   {"begin", sh_begin},
+                                   {"view_count", sh_view_count},
+                                   {"select", sh_select},
+                                   {"action", sh_select_action},
+                                   {"save_name", sh_save_name},
+                                   {"unmap", sh_unmap},
+                                   {"color", nrniv_sh_color},
+                                   {"color_all", nrniv_sh_color_all},
+                                   {"color_list", nrniv_sh_color_list},
+                                   {"point_mark", sh_point_mark},
+                                   {"point_mark_remove", sh_point_mark_remove},
+                                   {"point_mark_remove", sh_point_mark_remove},
+                                   {"printfile", sh_printfile},
+                                   {"show", sh_show},
+                                   {"menu_action", ivoc_gr_menu_action},
+                                   {"menu_tool", ivoc_gr_menu_tool},
+                                   {"exec_menu", exec_menu},
+                                   {"observe", nrniv_sh_observe},
+                                   {"rotate", nrniv_sh_rotate},
+                                   {"beginline", ivoc_gr_begin_line},
+                                   {"line", ivoc_gr_line},
+                                   {"label", ivoc_gr_label},
+                                   {"mark", ivoc_gr_mark},
+                                   {"erase", ivoc_gr_erase},
+                                   {"erase_all", ivoc_erase_all},
+                                   {"len_scale", nrniv_len_scale},
+                                   {"gif", ivoc_gr_gif},
+                                   {0, 0}};
 
-static Member_ret_obj_func retobj_members[] =
-    {"nearest_seg", nrniv_sh_nearest_seg, "selected_seg", nrniv_sh_selected_seg, NULL, NULL};
+static Member_ret_obj_func retobj_members[] = {{"nearest_seg", nrniv_sh_nearest_seg},
+                                               {"selected_seg", nrniv_sh_selected_seg},
+                                               {NULL, NULL}};
 
 
 static void* sh_cons(Object* ho) {
@@ -809,8 +775,8 @@ void OcShape::handle_picked() {
     }
 }
 
-void OcShape::save_phase1(ostream& o) {
-    o << "{" << endl;
+void OcShape::save_phase1(std::ostream& o) {
+    o << "{" << std::endl;
     save_class(o, "Shape");
 }
 
@@ -1086,7 +1052,7 @@ void ShapeScene::name(const char* s) {
     }
 }
 
-void ShapeScene::save_phase2(ostream& o) {
+void ShapeScene::save_phase2(std::ostream& o) {
     char buf[256];
     if (var_name_) {
         if ((var_name_->string())[var_name_->length() - 1] == '.') {
@@ -1094,9 +1060,9 @@ void ShapeScene::save_phase2(ostream& o) {
         } else {
             sprintf(buf, "%s = save_window_", var_name_->string());
         }
-        o << buf << endl;
+        o << buf << std::endl;
         sprintf(buf, "save_window_.save_name(\"%s\")", var_name_->string());
-        o << buf << endl;
+        o << buf << std::endl;
     }
     Graph::save_phase2(o);
 }

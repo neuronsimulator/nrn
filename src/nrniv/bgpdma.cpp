@@ -635,7 +635,7 @@ void bgp_dma_send(PreSyn* ps, double t) {
 }
 
 void bgpdma_cleanup_presyn(PreSyn* ps) {
-    if (ps->bgp.dma_send_) {
+    if (ps && ps->bgp.dma_send_) {
         if (ps->output_index_ >= 0) {
             delete ps->bgp.dma_send_;
             ps->bgp.dma_send_ = 0;

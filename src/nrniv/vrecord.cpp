@@ -5,6 +5,7 @@
 #if HAVE_IV
 #include "ivoc.h"
 #endif
+#include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "ocobserv.h"
 #include "ivocvect.h"
@@ -17,7 +18,6 @@
 
 extern double t;
 extern NetCvode* net_cvode_instance;
-extern "C" Point_process* ob2pntproc(Object*);
 
 // Vector.play_remove()
 void nrn_vecsim_remove(void* v) {

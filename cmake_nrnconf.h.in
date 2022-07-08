@@ -129,12 +129,6 @@
 /* Define to 1 if you have the `posix_memalign' function. */
 #undef HAVE_POSIX_MEMALIGN
 
-/* Define if you have POSIX threads libraries and header files. */
-#undef HAVE_PTHREAD
-
-/* Define to 1 if you have the <pthread.h> header file. */
-#undef HAVE_PTHREAD_H
-
 /* Define to 1 if you have the `putenv' function. */
 #undef HAVE_PUTENV
 
@@ -302,10 +296,6 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Define to necessary symbol if this constant uses a non-standard name on
-   your system. */
-#undef PTHREAD_CREATE_JOINABLE
-
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
 
@@ -370,7 +360,9 @@
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
 
-
+/* __cplusplus guard still needed because this header is included from C code in
+ * mesch (and maybe others)
+ */
 #if defined(__cplusplus)
 #include <ivstream.h>
 #endif

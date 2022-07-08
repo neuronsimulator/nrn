@@ -51,8 +51,6 @@ static void thread_transfer(NrnThread*);
 static void thread_vi_compute(NrnThread*);
 static void mk_ttd();
 extern double t;
-extern "C" int v_structure_change;
-extern "C" int structure_change_cnt;
 extern int nrn_node_ptr_change_cnt_;
 extern const char* bbcore_write_version;
 // see lengthy comment in ../nrnoc/fadvance.cpp

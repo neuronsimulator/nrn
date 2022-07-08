@@ -950,7 +950,7 @@ static char* hideQuote(const char* s) {
 
 static void saveMenuFile() {}
 
-void HocPanel::save_all(ostream&) {
+void HocPanel::save_all(std::ostream&) {
     if (!hoc_panel_list)
         return;
 
@@ -1195,10 +1195,10 @@ HocPushButton::HocPushButton(const char* name, HocAction* a, HocItem* hi)
 HocPushButton::~HocPushButton() {
     Resource::unref(a_);
 }
-void HocPushButton::write(ostream& o) {
+void HocPushButton::write(std::ostream& o) {
     char buf[200];
     nrn_assert(snprintf(buf, 200, "xbutton(\"%s\",\"%s\")", getStr(), hideQuote(a_->name())) < 200);
-    o << buf << endl;
+    o << buf << std::endl;
 }
 
 #if MAC
@@ -1217,11 +1217,11 @@ HocRadioButton::HocRadioButton(const char* name, HocRadioAction* a, HocItem* hi)
 HocRadioButton::~HocRadioButton() {
     Resource::unref(a_);
 }
-void HocRadioButton::write(ostream& o) {
+void HocRadioButton::write(std::ostream& o) {
     char buf[200];
     nrn_assert(snprintf(buf, 200, "xradiobutton(\"%s\",\"%s\")", getStr(), hideQuote(a_->name())) <
                200);
-    o << buf << endl;
+    o << buf << std::endl;
 }
 
 #if MAC
@@ -1335,10 +1335,10 @@ HocMenu::HocMenu(const char* name, Menu* m, MenuItem* mi, HocItem* hi, bool add2
 HocMenu::~HocMenu() {
     menu_->unref();
 }
-void HocMenu::write(ostream& o) {
+void HocMenu::write(std::ostream& o) {
     char buf[200];
     sprintf(buf, "xmenu(\"%s\", %d)", getStr(), add2menubar_);
-    o << buf << endl;
+    o << buf << std::endl;
 }
 
 #if MAC
@@ -1436,27 +1436,27 @@ void HocPanel::valueEd(const char* name,
     last_fe_constructed_ = fe;
 }
 
-void HocPanel::save(ostream& o) {
-    o << "{" << endl;
+void HocPanel::save(std::ostream& o) {
+    o << "{" << std::endl;
     write(o);
-    o << "}" << endl;
+    o << "}" << std::endl;
 }
 
-void HocPanel::write(ostream& o) {
+void HocPanel::write(std::ostream& o) {
     Oc oc;
     char buf[200];
     long i;
-    //	o << "xpanel(\"" << getName() << "\")" << endl;
+    //	o << "xpanel(\"" << getName() << "\")" << std::endl;
     sprintf(buf, "xpanel(\"%s\", %d)", getName(), horizontal_);
-    o << buf << endl;
+    o << buf << std::endl;
     for (i = 1; i < ilist_.count(); i++) {
         ilist_.item(i)->write(o);
     }
     if (has_window()) {
         sprintf(buf, "xpanel(%g,%g)", window()->save_left(), window()->save_bottom());
-        o << buf << endl;
+        o << buf << std::endl;
     } else {
-        o << "xpanel()" << endl;
+        o << "xpanel()" << std::endl;
     }
 }
 
@@ -1473,8 +1473,8 @@ HocItem::HocItem(const char* str, HocItem* hi)
 HocItem::~HocItem() {
     //	printf("~HocItem %s\n", str_.string());
 }
-void HocItem::write(ostream& o) {
-    o << str_.string() << endl;
+void HocItem::write(std::ostream& o) {
+    o << str_.string() << std::endl;
 }
 
 #if MAC
@@ -1523,10 +1523,10 @@ void HocItem::help(const char* child) {
 HocLabel::HocLabel(const char* s)
     : HocItem(s) {}
 HocLabel::~HocLabel() {}
-void HocLabel::write(ostream& o) {
+void HocLabel::write(std::ostream& o) {
     char buf[210];
     sprintf(buf, "xlabel(\"%s\")", hideQuote(getStr()));
-    o << buf << endl;
+    o << buf << std::endl;
 }
 
 #if 0
@@ -1565,13 +1565,13 @@ HocVarLabel::~HocVarLabel() {
     }
 }
 
-void HocVarLabel::write(ostream& o) {
+void HocVarLabel::write(std::ostream& o) {
     if (variable_ && cpp_) {
         char buf[256];
         sprintf(buf, "xvarlabel(%s)", variable_->string());
-        o << buf << endl;
+        o << buf << std::endl;
     } else {
-        o << "xlabel(\"<can't retrieve>\")" << endl;
+        o << "xlabel(\"<can't retrieve>\")" << std::endl;
     }
 }
 
@@ -2109,7 +2109,7 @@ void HocValEditor::updateField() {
     }
 }
 
-void HocValEditor::write(ostream& o) {
+void HocValEditor::write(std::ostream& o) {
     char buf[200];
     Oc oc;
     if (variable_) {
@@ -2123,7 +2123,7 @@ void HocValEditor::write(ostream& o) {
         sprintf(buf, "/* variable freed */");
         return;
     }
-    o << buf << endl;
+    o << buf << std::endl;
 
     int usepointer;
     if (pval_) {
@@ -2140,7 +2140,7 @@ void HocValEditor::write(ostream& o) {
                         hideQuote(action_->name()),
                         (int) canrun_,
                         usepointer) < 200);
-    o << buf << endl;
+    o << buf << std::endl;
 }
 
 const char* HocValEditor::variable() const {
@@ -2152,15 +2152,15 @@ const char* HocValEditor::variable() const {
 }
 
 
-void HocValEditorKeepUpdated::write(ostream& o) {
+void HocValEditorKeepUpdated::write(std::ostream& o) {
     char buf[200];
     Oc oc;
     sprintf(buf, "hoc_ac_ = %s\n", variable());
     oc.run(buf);
     sprintf(buf, "%s = %g", variable(), hoc_ac_);
-    o << buf << endl;
+    o << buf << std::endl;
     sprintf(buf, "xvalue(\"%s\",\"%s\", 2 )", getStr(), variable());
-    o << buf << endl;
+    o << buf << std::endl;
 }
 
 void HocEditorForItem::keystroke(const Event& e) {
@@ -2853,7 +2853,7 @@ void OcSlider::data_path(HocDataPaths* hdp, bool append) {
         }
     }
 }
-void OcSlider::write(ostream& o) {
+void OcSlider::write(std::ostream& o) {
     if (variable_) {
         char buf[256];
         if (send_) {
@@ -2874,7 +2874,7 @@ void OcSlider::write(ostream& o) {
                     vert_,
                     slow_);
         }
-        o << buf << endl;
+        o << buf << std::endl;
     }
 }
 
@@ -3022,7 +3022,7 @@ void HocStateButton::data_path(HocDataPaths* hdp, bool append) {
         }
     }
 }
-void HocStateButton::write(ostream& o) {
+void HocStateButton::write(std::ostream& o) {
     if (variable_) {
         char buf[256];
         if (style_ == PALETTE) {
@@ -3038,7 +3038,7 @@ void HocStateButton::write(ostream& o) {
                     variable_->string(),
                     hideQuote(action_->name()));
         }
-        o << buf << endl;
+        o << buf << std::endl;
     }
 }
 
@@ -3181,7 +3181,7 @@ void HocStateMenuItem::data_path(HocDataPaths* hdp, bool append) {
     }
 }
 
-void HocStateMenuItem::write(ostream& o) {
+void HocStateMenuItem::write(std::ostream& o) {
     if (variable_) {
         char buf[256];
         sprintf(buf,
@@ -3190,7 +3190,7 @@ void HocStateMenuItem::write(ostream& o) {
                 variable_->string(),
                 hideQuote(action_->name()));
 
-        o << buf << endl;
+        o << buf << std::endl;
     }
 }
 
@@ -3234,7 +3234,7 @@ static double vfe_default(void* v) {
 #endif
     return x;
 }
-static Member_func vfe_members[] = {"default", vfe_default, 0, 0};
+static Member_func vfe_members[] = {{"default", vfe_default}, {0, 0}};
 void ValueFieldEditor_reg() {
     class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members, NULL, NULL, NULL);
 }

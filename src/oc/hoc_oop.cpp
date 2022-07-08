@@ -12,6 +12,7 @@
 #include "nrnmpi.h"
 #include "nrnfilewrap.h"
 #include <nrnpython_config.h>
+#include "ocfunc.h"
 
 
 #define PDEBUG 0
@@ -83,7 +84,7 @@ void hoc_obj_set(int i, Object* obj) {
     p[i] = obj;
 }
 
-extern "C" char* hoc_object_name(Object* ob) {
+char* hoc_object_name(Object* ob) {
     static char s[100];
     if (ob) {
         Sprintf(s, "%s[%d]", ob->ctemplate->sym->name, ob->index);
@@ -441,11 +442,11 @@ void hoc_oop_initaftererror(void) {
 #endif
 }
 
-extern "C" void oc_save_hoc_oop(Object** a1,
-                                Objectdata** a2,
-                                // a3 is missing, do not add it
-                                int* a4,
-                                Symlist** a5) {
+void oc_save_hoc_oop(Object** a1,
+                     Objectdata** a2,
+                     // a3 is missing, do not add it
+                     int* a4,
+                     Symlist** a5) {
     *a1 = hoc_thisobject;
     /* same style as hoc_objectdata_sav */
     if (hoc_objectdata == hoc_top_level_data) {
@@ -457,7 +458,7 @@ extern "C" void oc_save_hoc_oop(Object** a1,
     *a5 = hoc_symlist;
 }
 
-extern "C" void oc_restore_hoc_oop(Object** a1, Objectdata** a2, int* a4, Symlist** a5) {
+void oc_restore_hoc_oop(Object** a1, Objectdata** a2, int* a4, Symlist** a5) {
     hoc_thisobject = *a1;
     if (*a2 == (Objectdata*) 1) {
         hoc_objectdata = hoc_top_level_data;

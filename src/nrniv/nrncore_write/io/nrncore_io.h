@@ -5,9 +5,9 @@
 #include <vector>
 
 class CellGroup;
-class NrnThread;
+struct NrnThread;
 union Datum;
-class NrnMappingInfo;
+struct NrnMappingInfo;
 
 void create_dir_path(const std::string& path);
 std::string get_write_path();

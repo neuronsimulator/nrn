@@ -9,17 +9,7 @@
 #include <stdio.h>
 #endif
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
-extern void hoc_execerror(const char*, const char*);
-
-#if defined(__cplusplus)
-}
-#endif
-
-
+#include "oc_ansi.h"
 #if defined(__STDC__)
 #define assert(ex)                                                                       \
     {                                                                                    \

@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <InterViews/resource.h>
 #include <OS/string.h>
+#include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "nrndaspk.h"
 #include "cvodeobj.h"
@@ -14,7 +15,6 @@
 extern void setup_topology(), v_setup_vectors();
 extern void nrn_mul_capacity(NrnThread*, Memb_list*);
 extern void nrn_div_capacity(NrnThread*, Memb_list*);
-extern int diam_changed;
 extern void recalc_diam();
 extern int nrn_errno_check(int);
 // extern double t, dt;

@@ -1,6 +1,4 @@
-#ifndef ocjump_h
-#define ocjump_h
-
+#pragma once
 union Inst;
 class OcJumpImpl;
 struct Symlist;
@@ -16,7 +14,6 @@ class ObjectContext {
   private:
     Object* a1;
     Objectdata* a2;
-    int* a3;
     int a4;
     Symlist* a5;
     bool restored_;
@@ -35,5 +32,3 @@ class OcJump {
   private:
     OcJumpImpl* impl_;
 };
-
-#endif

@@ -39,7 +39,7 @@ extern char** hoc_strpop();
 #include <IV-Win/mprinter.h>
 void iv_display_scale(float);
 void iv_display_scale(Coord, Coord);  // Make if fit into the screen
-extern "C" char* hoc_back2forward(char*);
+char* hoc_back2forward(char*);
 #endif
 
 #if MAC
@@ -117,7 +117,7 @@ static bool ivoc_snapshot(const Event*);
 #define pwm_impl PrintableWindowManager::current()->pwmi_
 class HocPanel {
   public:
-    static void save_all(ostream&);
+    static void save_all(std::ostream&);
 };
 
 int inside(Coord x, Coord y, const Allocation& a) {
@@ -179,7 +179,7 @@ bool (*p_java2nrn_identity)(Object* o1, Object* o2);
     virtual void pmove(int l, int t);
     virtual void presize(int w, int h);
     virtual int priority();
-    virtual void save_session(const char* fname, ostream& o);
+    virtual void save_session(const char* fname, std::ostream& o);
     void ref();
     void unref();
     Coord l();
@@ -348,10 +348,10 @@ class PaperItem;
     GlyphIndex upper_left();
     void redraw(Window*);
     bool none_selected(const char*, const char*) const;
-    void ses_group(ScreenItem* si, ostream& o);
+    void ses_group(ScreenItem* si, std::ostream& o);
     int ses_group_first_;
-    void save_begin(ostream&);
-    void save_list(int, ScreenItem**, ostream&);
+    void save_begin(std::ostream&);
+    void save_list(int, ScreenItem**, std::ostream&);
 
   private:
     StandardWindow* w_;
@@ -465,7 +465,7 @@ void PWMDismiss::execute() {
 
 #else  //! HAVE_IV
 #ifdef MINGW
-extern "C" char* hoc_back2forward(char*);
+char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV
 
@@ -865,48 +865,29 @@ static double pwman_deco(void* v) {
     return 1.;
 }
 
-static Member_func members[] = {"count",
-                                pwman_count,
-                                "is_mapped",
-                                pwman_is_mapped,
-                                "map",
-                                pwman_map,
-                                "hide",
-                                pwman_hide,
-                                "close",
-                                pwman_close,
-                                "iconify",
-                                pwman_iconify,
-                                "deiconify",
-                                pwman_deiconify,
-                                "leader",
-                                pwman_leader,
-                                "manager",
-                                pwman_manager,
-                                "save",
-                                pwman_save,
-                                "snap",
-                                pwman_snap,
-                                "jwindow",
-                                pwman_jwindow,
-                                "scale",
-                                pwman_scale,
-                                "window_place",
-                                pwman_window_place,
-                                "paper_place",
-                                pwman_paper_place,
-                                "printfile",
-                                pwman_printfile,
-                                "landscape",
-                                pwman_landscape,
-                                "deco",
-                                pwman_deco,
-                                0,
-                                0};
+static Member_func members[] = {{"count", pwman_count},
+                                {"is_mapped", pwman_is_mapped},
+                                {"map", pwman_map},
+                                {"hide", pwman_hide},
+                                {"close", pwman_close},
+                                {"iconify", pwman_iconify},
+                                {"deiconify", pwman_deiconify},
+                                {"leader", pwman_leader},
+                                {"manager", pwman_manager},
+                                {"save", pwman_save},
+                                {"snap", pwman_snap},
+                                {"jwindow", pwman_jwindow},
+                                {"scale", pwman_scale},
+                                {"window_place", pwman_window_place},
+                                {"paper_place", pwman_paper_place},
+                                {"printfile", pwman_printfile},
+                                {"landscape", pwman_landscape},
+                                {"deco", pwman_deco},
+                                {0, 0}};
 
-static Member_ret_obj_func retobj_members[] = {"group", pwman_group, 0, 0};
+static Member_ret_obj_func retobj_members[] = {{"group", pwman_group}, {0, 0}};
 
-static Member_ret_str_func s_memb[] = {"name", pwman_name, 0, 0};
+static Member_ret_str_func s_memb[] = {{"name", pwman_name}, {0, 0}};
 
 void PWManager_reg() {
     class2oc("PWManager", pwman_cons, pwman_destruct, members, NULL, retobj_members, s_memb);
@@ -1898,7 +1879,7 @@ void PWMImpl::do_print_session(bool use_printer, const char* name) {
 void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style, bool ses_style) {
     Style* s = Session::instance()->style();
     static char* tmpfile = (char*) 0;
-    filebuf obuf;
+    std::filebuf obuf;
 #if MAC && !DARWIN
     obuf.open(name, IOS_OUT);
 #else
@@ -1910,7 +1891,7 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
 #endif
     obuf.open(tmpfile, IOS_OUT);
 #endif
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     Printer* pr = new Printer(&o);
     pr->prolog();
 
@@ -2832,9 +2813,9 @@ void PWMImpl::file_control() {
 #if SNAPSHOT
 void PWMImpl::snapshot(const Event* e) {
     snap_event_ = e;
-    filebuf obuf;
+    std::filebuf obuf;
     obuf.open(fc_print_->selected()->string(), IOS_OUT);
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     Printer* pr = new Printer(&o);
     pr->prolog();
     pr->resize(0, 0, 1200, 1000);
@@ -2981,9 +2962,9 @@ void PWMImpl::idraw_write(const char* fname, bool ses_style) {
 #ifdef WIN32
     unlink(fname);
 #endif
-    filebuf obuf;
+    std::filebuf obuf;
     obuf.open(fname, IOS_OUT);
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     OcIdraw::idraw_stream = &o;
     OcIdraw::prologue();
     Scene* p = paper();
@@ -3037,12 +3018,12 @@ void PWMImpl::ascii_control() {
 }
 
 void PWMImpl::ascii_write(const char* fname, bool ses_style) {
-    filebuf obuf;
+    std::filebuf obuf;
 #ifdef WIN32
     unlink(fname);
 #endif
     obuf.open(fname, IOS_OUT);
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     Graph::ascii(&o);
     Scene* p = paper();
     GlyphIndex count = p->count();
@@ -3064,7 +3045,7 @@ void PWMImpl::ascii_write(const char* fname, bool ses_style) {
     Graph::ascii(NULL);
 }
 
-ostream* Oc::save_stream;
+std::ostream* Oc::save_stream;
 
 void PWMImpl::save_selected_control() {
     save_control(1);
@@ -3139,12 +3120,12 @@ int PWMImpl::save_group(Object* ho, const char* filename) {
     }
     if (nwin > 0) {
         cur_ses_name_ = filename;
-        filebuf obuf;
+        std::filebuf obuf;
 #ifdef WIN32
         unlink(filename);
 #endif
         obuf.open(filename, IOS_OUT);
-        ostream o(&obuf);
+        std::ostream o(&obuf);
         save_begin(o);
         save_list(nwin, sivec, o);
         obuf.close();
@@ -3160,7 +3141,7 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
     ScreenItem* si;
     ScreenItem** sivec = NULL;
 
-    filebuf obuf;
+    std::filebuf obuf;
     cur_ses_name_ = filename;
 #ifdef WIN32
     unlink(filename);
@@ -3169,9 +3150,9 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
     if (!obuf.is_open()) {
         hoc_execerror(filename, "is not open for writing");
     }
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     if (head) {
-        o << head << endl;
+        o << head << std::endl;
     }
     save_begin(o);
 
@@ -3231,15 +3212,15 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
     }
 }
 
-void PWMImpl::save_begin(ostream& o) {
+void PWMImpl::save_begin(std::ostream& o) {
     Oc::save_stream = &o;
     Scene::save_all(o);
     HocPanel::save_all(o);
-    o << "objectvar ocbox_, ocbox_list_, scene_, scene_list_" << endl;
-    o << "{ocbox_list_ = new List()  scene_list_ = new List()}" << endl;
+    o << "objectvar ocbox_, ocbox_list_, scene_, scene_list_" << std::endl;
+    o << "{ocbox_list_ = new List()  scene_list_ = new List()}" << std::endl;
 }
 
-void PWMImpl::save_list(int nwin, ScreenItem** sivec, ostream& o) {
+void PWMImpl::save_list(int nwin, ScreenItem** sivec, std::ostream& o) {
     // save highest first, only a few priorities
     OcGlyph* ocg;
     int i, pri, max, working;
@@ -3270,10 +3251,10 @@ void PWMImpl::save_list(int nwin, ScreenItem** sivec, ostream& o) {
         }
     }
     Oc::save_stream = NULL;
-    o << "objectvar scene_vector_[1]\n{doNotify()}" << endl;
+    o << "objectvar scene_vector_[1]\n{doNotify()}" << std::endl;
 }
 
-void PWMImpl::ses_group(ScreenItem* si, ostream& o) {
+void PWMImpl::ses_group(ScreenItem* si, std::ostream& o) {
     char buf[512];
     char* name;
     if (si->group_obj_) {
@@ -3323,7 +3304,7 @@ class OcLabelGlyph: public OcGlyph {
   public:
     OcLabelGlyph(const char*, OcGlyph*, Glyph*);
     virtual ~OcLabelGlyph();
-    virtual void save(ostream&);
+    virtual void save(std::ostream&);
 
   private:
     CopyString label_;
@@ -3343,12 +3324,12 @@ OcLabelGlyph::~OcLabelGlyph() {
     Resource::unref(og_);
 }
 
-void OcLabelGlyph::save(ostream& o) {
+void OcLabelGlyph::save(std::ostream& o) {
     char buf[256];
-    o << "{xpanel(\"\")" << endl;
+    o << "{xpanel(\"\")" << std::endl;
     sprintf(buf, "xlabel(\"%s\")", label_.string());
-    o << buf << endl;
-    o << "xpanel()}" << endl;
+    o << buf << std::endl;
+    o << "xpanel()}" << std::endl;
     og_->save(o);
 }
 
@@ -3646,7 +3627,7 @@ int JavaWindow::priority() {
     return i;
 }
 
-void JavaWindow::save_session(const char* fname, ostream& o) {
+void JavaWindow::save_session(const char* fname, std::ostream& o) {
     // minimum save is, if ho is not NULL, to
     // load_java and create an object ocbox_ with the noarg constructor,
     // which is then unreffed.

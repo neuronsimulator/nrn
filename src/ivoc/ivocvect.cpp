@@ -136,7 +136,6 @@ static double dmaxint_ = 9007199254740992;
 
 extern Object* hoc_thisobject;
 extern Symlist* hoc_top_level_symlist;
-extern "C" void nrn_exit(int);
 IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 Object** (*nrnpy_vec_to_python_p_)(void*);
 Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
@@ -161,13 +160,7 @@ int cmpfcn(double a, double b) {
     return ((a) <= (b)) ? (((a) == (b)) ? 0 : -1) : 1;
 }
 
-extern "C" {
-extern void install_vector_method(const char* name, Pfrd_vp);
-extern int vector_instance_px(void*, double**);
-}  // extern "C"
-
 extern int vector_arg_px(int, double**);
-extern void notify_freed_val_array(double*, size_t);
 
 extern int hoc_return_type_code;
 
@@ -389,7 +382,6 @@ Object** IvocVect::temp_objvar() {
     return po;
 }
 
-extern "C" {  // bug in cray compiler requires this
 void install_vector_method(const char* name, double (*f)(void*)) {
     Symbol* s_meth;
     if (hoc_table_lookup(name, svec_->u.ctemplate->symtable)) {
@@ -400,9 +392,8 @@ void install_vector_method(const char* name, double (*f)(void*)) {
 #define PUBLIC_TYPE 1
     s_meth->cpublic = PUBLIC_TYPE;
 }
-}  // extern "C"
 
-extern "C" int vector_instance_px(void* v, double** px) {
+int vector_instance_px(void* v, double** px) {
     Vect* x = (Vect*) v;
     *px = x->data();
     return x->size();
@@ -3715,227 +3706,126 @@ Object** v_as_numpy(void* v) {
 
 static Member_func v_members[] = {
 
-    "x",
-    v_size,  // will be changed below
-    "size",
-    v_size,
-    "buffer_size",
-    v_buffer_size,
-    "get",
-    v_get,
-    "reduce",
-    v_reduce,
-    "min",
-    v_min,
-    "max",
-    v_max,
-    "min_ind",
-    v_min_ind,
-    "max_ind",
-    v_max_ind,
-    "sum",
-    v_sum,
-    "sumsq",
-    v_sumsq,
-    "mean",
-    v_mean,
-    "var",
-    v_var,
-    "stdev",
-    v_stdev,
-    "stderr",
-    v_stderr,
-    "meansqerr",
-    v_meansqerr,
-    "mag",
-    v_mag,
-    "contains",
-    v_contains,
-    "median",
-    v_median,
+    {"x", v_size},  // will be changed below
+    {"size", v_size},
+    {"buffer_size", v_buffer_size},
+    {"get", v_get},
+    {"reduce", v_reduce},
+    {"min", v_min},
+    {"max", v_max},
+    {"min_ind", v_min_ind},
+    {"max_ind", v_max_ind},
+    {"sum", v_sum},
+    {"sumsq", v_sumsq},
+    {"mean", v_mean},
+    {"var", v_var},
+    {"stdev", v_stdev},
+    {"stderr", v_stderr},
+    {"meansqerr", v_meansqerr},
+    {"mag", v_mag},
+    {"contains", v_contains},
+    {"median", v_median},
 
-    "dot",
-    v_dot,
-    "eq",
-    v_eq,
+    {"dot", v_dot},
+    {"eq", v_eq},
 
-    "play_remove",
-    v_play_remove,
+    {"play_remove", v_play_remove},
 
-    "fwrite",
-    v_fwrite,
-    "fread",
-    v_fread,
-    "vwrite",
-    v_vwrite,
-    "vread",
-    v_vread,
-    "printf",
-    v_printf,
-    "scanf",
-    v_scanf,
-    "scantil",
-    v_scantil,
+    {"fwrite", v_fwrite},
+    {"fread", v_fread},
+    {"vwrite", v_vwrite},
+    {"vread", v_vread},
+    {"printf", v_printf},
+    {"scanf", v_scanf},
+    {"scantil", v_scantil},
 
-    "fit",
-    v_fit,
-    "trigavg",
-    v_trigavg,
-    "indwhere",
-    v_indwhere,
+    {"fit", v_fit},
+    {"trigavg", v_trigavg},
+    {"indwhere", v_indwhere},
 
-    "scale",
-    v_scale,
+    {"scale", v_scale},
 
-    0,
-    0};
+    {0, 0}};
 
-static Member_ret_obj_func v_retobj_members[] = {"c",
-                                                 v_c,
-                                                 "cl",
-                                                 v_cl,
-                                                 "at",
-                                                 v_at,
-                                                 "ind",
-                                                 v_ind,
-                                                 "histogram",
-                                                 v_histogram,
-                                                 "sumgauss",
-                                                 v_sumgauss,
+static Member_ret_obj_func v_retobj_members[] = {{"c", v_c},
+                                                 {"cl", v_cl},
+                                                 {"at", v_at},
+                                                 {"ind", v_ind},
+                                                 {"histogram", v_histogram},
+                                                 {"sumgauss", v_sumgauss},
 
-                                                 "resize",
-                                                 v_resize,
-                                                 "clear",
-                                                 v_clear,
-                                                 "set",
-                                                 v_set,
-                                                 "append",
-                                                 v_append,
-                                                 "copy",
-                                                 v_copy,
-                                                 "insrt",
-                                                 v_insert,
-                                                 "remove",
-                                                 v_remove,
-                                                 "interpolate",
-                                                 v_interpolate,
-                                                 "from_double",
-                                                 v_from_double,
+                                                 {"resize", v_resize},
+                                                 {"clear", v_clear},
+                                                 {"set", v_set},
+                                                 {"append", v_append},
+                                                 {"copy", v_copy},
+                                                 {"insrt", v_insert},
+                                                 {"remove", v_remove},
+                                                 {"interpolate", v_interpolate},
+                                                 {"from_double", v_from_double},
 
-                                                 "index",
-                                                 v_index,
-                                                 "apply",
-                                                 v_apply,
-                                                 "add",
-                                                 v_add,
-                                                 "sub",
-                                                 v_sub,
-                                                 "mul",
-                                                 v_mul,
-                                                 "div",
-                                                 v_div,
-                                                 "fill",
-                                                 v_fill,
-                                                 "indgen",
-                                                 v_indgen,
-                                                 "addrand",
-                                                 v_addrand,
-                                                 "setrand",
-                                                 v_setrand,
-                                                 "deriv",
-                                                 v_deriv,
-                                                 "integral",
-                                                 v_integral,
+                                                 {"index", v_index},
+                                                 {"apply", v_apply},
+                                                 {"add", v_add},
+                                                 {"sub", v_sub},
+                                                 {"mul", v_mul},
+                                                 {"div", v_div},
+                                                 {"fill", v_fill},
+                                                 {"indgen", v_indgen},
+                                                 {"addrand", v_addrand},
+                                                 {"setrand", v_setrand},
+                                                 {"deriv", v_deriv},
+                                                 {"integral", v_integral},
 
-                                                 "sqrt",
-                                                 v_sqrt,
-                                                 "abs",
-                                                 v_abs,
-                                                 "floor",
-                                                 v_floor,
-                                                 "sin",
-                                                 v_sin,
-                                                 "pow",
-                                                 v_pow,
-                                                 "log",
-                                                 v_log,
-                                                 "log10",
-                                                 v_log10,
-                                                 "tanh",
-                                                 v_tanh,
+                                                 {"sqrt", v_sqrt},
+                                                 {"abs", v_abs},
+                                                 {"floor", v_floor},
+                                                 {"sin", v_sin},
+                                                 {"pow", v_pow},
+                                                 {"log", v_log},
+                                                 {"log10", v_log10},
+                                                 {"tanh", v_tanh},
 
-                                                 "correl",
-                                                 v_correl,
-                                                 "convlv",
-                                                 v_convlv,
-                                                 "spctrm",
-                                                 v_spctrm,
-                                                 "filter",
-                                                 v_filter,
-                                                 "fft",
-                                                 v_fft,
-                                                 "rotate",
-                                                 v_rotate,
-                                                 "smhist",
-                                                 v_smhist,
-                                                 "hist",
-                                                 v_hist,
-                                                 "spikebin",
-                                                 v_spikebin,
-                                                 "rebin",
-                                                 v_rebin,
-                                                 "medfltr",
-                                                 v_medfltr,
-                                                 "sort",
-                                                 v_sort,
-                                                 "sortindex",
-                                                 v_sortindex,
-                                                 "reverse",
-                                                 v_reverse,
-                                                 "resample",
-                                                 v_resample,
-                                                 "psth",
-                                                 v_psth,
-                                                 "inf",
-                                                 v_inf,
+                                                 {"correl", v_correl},
+                                                 {"convlv", v_convlv},
+                                                 {"spctrm", v_spctrm},
+                                                 {"filter", v_filter},
+                                                 {"fft", v_fft},
+                                                 {"rotate", v_rotate},
+                                                 {"smhist", v_smhist},
+                                                 {"hist", v_hist},
+                                                 {"spikebin", v_spikebin},
+                                                 {"rebin", v_rebin},
+                                                 {"medfltr", v_medfltr},
+                                                 {"sort", v_sort},
+                                                 {"sortindex", v_sortindex},
+                                                 {"reverse", v_reverse},
+                                                 {"resample", v_resample},
+                                                 {"psth", v_psth},
+                                                 {"inf", v_inf},
 
-                                                 "index",
-                                                 v_index,
-                                                 "indvwhere",
-                                                 v_indvwhere,
+                                                 {"index", v_index},
+                                                 {"indvwhere", v_indvwhere},
 
-                                                 "where",
-                                                 v_where,
+                                                 {"where", v_where},
 
-                                                 "plot",
-                                                 v_plot,
-                                                 "line",
-                                                 v_line,
-                                                 "mark",
-                                                 v_mark,
-                                                 "ploterr",
-                                                 v_ploterr,
+                                                 {"plot", v_plot},
+                                                 {"line", v_line},
+                                                 {"mark", v_mark},
+                                                 {"ploterr", v_ploterr},
 
-                                                 "record",
-                                                 v_record,
-                                                 "play",
-                                                 v_play,
+                                                 {"record", v_record},
+                                                 {"play", v_play},
 
-                                                 "from_python",
-                                                 v_from_python,
-                                                 "to_python",
-                                                 v_to_python,
-                                                 "as_numpy",
-                                                 v_as_numpy,
+                                                 {"from_python", v_from_python},
+                                                 {"to_python", v_to_python},
+                                                 {"as_numpy", v_as_numpy},
 
-                                                 0,
-                                                 0};
+                                                 {0, 0}};
 
-static Member_ret_str_func v_retstr_members[] = {"label",
-                                                 v_label,
+static Member_ret_str_func v_retstr_members[] = {{"label", v_label},
 
-                                                 0,
-                                                 0};
+                                                 {0, 0}};
 
 extern int hoc_araypt(Symbol*, int);
 

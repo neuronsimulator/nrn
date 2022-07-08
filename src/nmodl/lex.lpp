@@ -28,11 +28,7 @@ extern int unput(int);
 static int input();
 static int yyinput();
 int newinput() {
-    #ifdef __cplusplus
     return yyinput();
-    #else
-    return input ();
-    #endif
 }
 
 

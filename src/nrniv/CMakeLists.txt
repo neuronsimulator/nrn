@@ -201,6 +201,9 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}/src/sundials/cvodes
     ${PROJECT_SOURCE_DIR}/src/sundials/ida
     ${PROJECT_SOURCE_DIR}/src/sundials/shared)
+set(NRN_INCLUDE_DIRS
+    ${NRN_INCLUDE_DIRS}
+    PARENT_SCOPE)
 
 # =============================================================================
 # Helper commands : generate various headers
@@ -342,7 +345,7 @@ add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")
-if(${USE_PTHREAD} EQUAL 1)
+if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv_lib Threads::Threads)
 endif()
 if(NRN_WINDOWS_BUILD)
@@ -456,7 +459,7 @@ endif()
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
 cpp_cc_configure_sanitizers(TARGET nrniv)
 target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_DL_LIBS})
-if(${USE_PTHREAD} EQUAL 1)
+if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv Threads::Threads)
 endif()
 if(NOT MINGW)

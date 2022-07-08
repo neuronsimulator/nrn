@@ -481,26 +481,26 @@ extern Memb_func* memb_func;\n\
     Lappendstr(defs_list, "/* connect user functions to hoc names */\n");
     Lappendstr(defs_list, "static VoidFunc hoc_intfunc[] = {\n");
     if (point_process) {
-        Lappendstr(defs_list, "0,0\n};\n");
+        Lappendstr(defs_list, "{0, 0}\n};\n");
         Lappendstr(defs_list, "static Member_func _member_func[] = {\n");
-        Sprintf(buf, "\"loc\", _hoc_loc_pnt,\n");
+        Sprintf(buf, "{\"loc\", _hoc_loc_pnt},\n");
         Lappendstr(defs_list, buf);
-        Sprintf(buf, "\"has_loc\", _hoc_has_loc,\n");
+        Sprintf(buf, "{\"has_loc\", _hoc_has_loc},\n");
         Lappendstr(defs_list, buf);
-        Sprintf(buf, "\"get_loc\", _hoc_get_loc_pnt,\n");
+        Sprintf(buf, "{\"get_loc\", _hoc_get_loc_pnt},\n");
         Lappendstr(defs_list, buf);
     } else {
-        Sprintf(buf, "\"setdata_%s\", _hoc_setdata,\n", mechname);
+        Sprintf(buf, "{\"setdata_%s\", _hoc_setdata},\n", mechname);
         Lappendstr(defs_list, buf);
     }
     SYMLISTITER {
         s = SYM(q);
         if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
-            Sprintf(buf, "\"%s%s\", _hoc_%s,\n", s->name, rsuffix, s->name);
+            Sprintf(buf, "{\"%s%s\", _hoc_%s},\n", s->name, rsuffix, s->name);
             Lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "0, 0\n};\n");
+    Lappendstr(defs_list, "{0, 0}\n};\n");
 
 #if GLOBFUNCT
     /* FUNCTION's are now global so callable from other models */
@@ -684,15 +684,15 @@ extern Memb_func* memb_func;\n\
             double d1 = 0., d2 = 0.;
             if (decode_limits(s, &d1, &d2)) {
                 if (s->nrntype & NRNGLOBAL || !point_process) {
-                    Sprintf(buf, "\"%s%s\", %g, %g,\n", s->name, suffix, d1, d2);
+                    Sprintf(buf, "{\"%s%s\", %g, %g},\n", s->name, suffix, d1, d2);
                 } else {
-                    Sprintf(buf, "\"%s\", %g, %g,\n", s->name, d1, d2);
+                    Sprintf(buf, "{\"%s\", %g, %g},\n", s->name, d1, d2);
                 }
                 Lappendstr(defs_list, buf);
             }
         }
     }
-    Lappendstr(defs_list, "0,0,0\n};\n");
+    Lappendstr(defs_list, "{0, 0, 0}\n};\n");
 
     units_reg();
 
@@ -718,22 +718,22 @@ extern Memb_func* memb_func;\n\
     ITERATE(q, syminorder) {
         s = SYM(q);
         if (s->nrntype & NRNGLOBAL && !(s->subtype & ARRAY)) {
-            Sprintf(buf, "\"%s%s\", &%s%s,\n", s->name, suffix, s->name, suffix);
+            Sprintf(buf, "{\"%s%s\", &%s%s},\n", s->name, suffix, s->name, suffix);
             Lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "0,0\n};\n");
+    Lappendstr(defs_list, "{0, 0}\n};\n");
 
     /* double vectors */
     Lappendstr(defs_list, "static DoubVec hoc_vdoub[] = {\n");
     ITERATE(q, syminorder) {
         s = SYM(q);
         if (s->nrntype & NRNGLOBAL && (s->subtype & ARRAY)) {
-            Sprintf(buf, "\"%s%s\", %s%s, %d,\n", s->name, suffix, s->name, suffix, s->araydim);
+            Sprintf(buf, "{\"%s%s\", %s%s, %d},\n", s->name, suffix, s->name, suffix, s->araydim);
             Lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "0,0,0\n};\n");
+    Lappendstr(defs_list, "{0, 0, 0}\n};\n");
     Lappendstr(defs_list, "static double _sav_indep;\n");
     if (ba_index_ > 0) {
         Lappendstr(
@@ -1064,14 +1064,14 @@ static void _constructor(Prop* _prop) {\n\
             s = SYM(q);
             if (decode_tolerance(s, &d1)) {
                 if (!point_process) {
-                    Sprintf(buf, "\"%s%s\", %g,\n", s->name, suffix, d1);
+                    Sprintf(buf, "{\"%s%s\", %g},\n", s->name, suffix, d1);
                 } else {
-                    Sprintf(buf, "\"%s\", %g,\n", s->name, d1);
+                    Sprintf(buf, "{\"%s\", %g},\n", s->name, d1);
                 }
                 Lappendstr(defs_list, buf);
             }
         }
-        Lappendstr(defs_list, "0,0\n};\n");
+        Lappendstr(defs_list, "{0, 0}\n};\n");
     }
     if (singlechan_) {
         sprintf(buf, "static _singlechan_declare%d();\n", singlechan_);
@@ -1625,7 +1625,7 @@ void units_reg() {
         if (s->nrntype & NRNGLOBAL) {
             decode_ustr(s, &d1, &d2, u);
             if (u[0]) {
-                sprintf(buf, "\"%s%s\", \"%s\",\n", s->name, suffix, u);
+                sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, suffix, u);
                 lappendstr(defs_list, buf);
             }
         }
@@ -1634,7 +1634,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            sprintf(buf, "\"%s%s\", \"%s\",\n", s->name, rsuffix, u);
+            sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
@@ -1642,7 +1642,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            sprintf(buf, "\"%s%s\", \"%s\",\n", s->name, rsuffix, u);
+            sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
@@ -1650,7 +1650,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            sprintf(buf, "\"%s%s\", \"%s\",\n", s->name, rsuffix, u);
+            sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
@@ -1658,11 +1658,11 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            sprintf(buf, "\"%s%s\", \"%s\",\n", s->name, rsuffix, u);
+            sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "0,0\n};\n");
+    Lappendstr(defs_list, "{0, 0}\n};\n");
 }
 
 static void var_count(Symbol* s) {

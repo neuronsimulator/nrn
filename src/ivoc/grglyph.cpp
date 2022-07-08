@@ -187,13 +187,20 @@ static Object** g_gif(void* v) {
 
 static Symbol* sggl_;
 
-Member_func members[] = {0, 0};
+Member_func members[] = {{0, 0}};
 
-Member_ret_obj_func objmembers[] = {"path",          g_new_path, "m",      g_move_to,  "l",
-                                    g_line_to,       "s",        g_stroke, "close",    g_close_path,
-                                    "fill",          g_fill,     "curve",  g_curve_to, "cpt",
-                                    g_control_point, "erase",    g_erase,  "gif",      g_gif,
-                                    "circle",        g_circle,   0,        0};
+Member_ret_obj_func objmembers[] = {{"path", g_new_path},
+                                    {"m", g_move_to},
+                                    {"l", g_line_to},
+                                    {"s", g_stroke},
+                                    {"close", g_close_path},
+                                    {"fill", g_fill},
+                                    {"curve", g_curve_to},
+                                    {"cpt", g_control_point},
+                                    {"erase", g_erase},
+                                    {"gif", g_gif},
+                                    {"circle", g_circle},
+                                    {0, 0}};
 
 static void* cons(Object* o) {
     TRY_GUI_REDIRECT_OBJ("Glyph", NULL);

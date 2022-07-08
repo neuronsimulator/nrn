@@ -248,28 +248,18 @@ static double ptr_plot(void* v) {
 }
 
 
-static Member_func members[] = {"size",
-                                get_size,
-                                "resize",
-                                resize,
-                                "pset",
-                                pset,
-                                "setval",
-                                setval,
-                                "getval",
-                                getval,
-                                "scatter",
-                                scatter,
-                                "gather",
-                                gather,
-                                "ptr_update_callback",
-                                ptr_update_callback,
-                                "plot",
-                                ptr_plot,
-                                0,
-                                0};
+static Member_func members[] = {{"size", get_size},
+                                {"resize", resize},
+                                {"pset", pset},
+                                {"setval", setval},
+                                {"getval", getval},
+                                {"scatter", scatter},
+                                {"gather", gather},
+                                {"ptr_update_callback", ptr_update_callback},
+                                {"plot", ptr_plot},
+                                {0, 0}};
 
-static Member_ret_str_func retstr_members[] = {"label", ptr_label, 0, 0};
+static Member_ret_str_func retstr_members[] = {{"label", ptr_label}, {0, 0}};
 
 static void* cons(Object*) {
     int sz;

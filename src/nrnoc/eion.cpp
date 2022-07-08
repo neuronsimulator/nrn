@@ -31,20 +31,15 @@ static const char* mechanism[] = {/*just a template*/
                                   0,
                                   0};
 static DoubScal scdoub[] = {/* just a template*/
-                            "ci0_na_ion",
-                            0,
-                            "co0_na_ion",
-                            0,
-                            0,
-                            0};
+                            {"ci0_na_ion", 0},
+                            {"co0_na_ion", 0},
+                            {0, 0}};
 
 static void ion_alloc(Prop*);
 
 static void ion_cur(NrnThread*, Memb_list*, int);
 
 static void ion_init(NrnThread*, Memb_list*, int);
-
-extern "C" double nrn_nernst(double, double, double), nrn_ghk(double, double, double, double);
 
 static int na_ion, k_ion, ca_ion; /* will get type for these special ions */
 
@@ -147,10 +142,6 @@ void ion_charge(void) {
     hoc_retpushx(global_charge(s->subtype));
 }
 
-extern "C" {
-void register_mech(const char**, Pvmp, Pvmi, Pvmi, Pvmi, Pvmi, int, int);
-
-
 void ion_reg(const char* name, double valence) {
     int i, mechtype;
     Symbol* s;
@@ -251,7 +242,6 @@ two USEION statements (%g and %g)\n",
         free(buf[i]);
     }
 }
-}  // extern "C"
 
 void nrn_verify_ion_charge_defined() {
     int i;
@@ -288,7 +278,7 @@ double nrn_nernst(double ci, double co, double z) {
     }
 }
 
-extern "C" void nrn_wrote_conc(Symbol* sym, double* pe, int it) {
+void nrn_wrote_conc(Symbol* sym, double* pe, int it) {
     if (it & 040) {
         pe[0] = nrn_nernst(pe[1], pe[2], nrn_ion_charge(sym));
     }
@@ -344,7 +334,7 @@ static double efun(double x) {
     }
 }
 
-extern "C" double nrn_ghk(double v, double ci, double co, double z) {
+double nrn_ghk(double v, double ci, double co, double z) {
     double eco, eci, temp;
     temp = z * v / ktf;
     eco = co * efun(temp);
@@ -402,7 +392,7 @@ double nrn_nernst_coef(int type) {
 /*
 It is generally an error for two models to WRITE the same concentration
 */
-extern "C" void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
+void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
     static long *chk_conc_, *ion_bit_, size_;
     Prop* p;
     int flag, j, k;
@@ -536,7 +526,7 @@ int nrn_vartype(Symbol* sym) {
 }
 
 /* the ion mechanism it flag  defines how _AMBIGUOUS is to be interpreted */
-extern "C" void nrn_promote(Prop* p, int conc, int rev) {
+void nrn_promote(Prop* p, int conc, int rev) {
     int oldconc, oldrev;
     int* it = &p->dparam[0].i;
     oldconc = (*it & 03);
