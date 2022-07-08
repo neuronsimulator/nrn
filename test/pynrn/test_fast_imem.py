@@ -270,14 +270,14 @@ def test_fastimem_corenrn():
     # When nthread changes, or internal model data needs to be reallocated,
     # pointers need to be updated. Use of i_membrane_ requires that the user
     # update the pointers to i_membrane_.
-    imem = [None]  # wrapper to allow change of imem in imem_callback
+    imem = []
 
     def imem_update():
-        print("imem_update")
-        imem[0] = [
-            h.Vector().record(cell.ics[0], cell.secs[3](0.5)._ref_i_membrane_)
-            for cell in cells
-        ]
+        imem.clear()
+        for cell in cells:
+            imem.append(
+                h.Vector().record(cell.ics[0], cell.secs[3](0.5)._ref_i_membrane_)
+            )
 
     imem_updater = h.PtrVector(1)
     imem_updater.ptr_update_callback(imem_update)
@@ -302,16 +302,16 @@ def test_fastimem_corenrn():
 
     # standard
     run(tstop)
-    imem_std = [vec.c() for vec in imem[0]]
+    imem_std = [vec.c() for vec in imem]
 
     def compare():
         for i in range(ncell):
-            if not imem_std[i].eq(imem[0][i]):
+            if not imem_std[i].eq(imem[i]):
                 print("imem for cell ", i)
                 for j, x in enumerate(imem_std[i]):
-                    print(j, x, imem[0][i][j], x - imem[0][i][j])
-            assert imem_std[i].eq(imem[0][i])
-            imem[0][i].resize(0)
+                    print(j, x, imem[i][j], x - imem[i][j])
+            assert imem_std[i].eq(imem[i])
+            imem[i].resize(0)
 
     compare()  # just starting with imem cleared
 
@@ -372,6 +372,7 @@ def test_fastimem_corenrn():
     pc.gid_clear()
     print(arg)
 
+    del imem_updater, imem
     cvode.use_fast_imem(0)
 
 
