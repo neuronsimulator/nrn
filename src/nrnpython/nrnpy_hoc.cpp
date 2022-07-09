@@ -215,9 +215,8 @@ static void hocobj_dealloc(PyHocObject* self) {
 static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwds) {
     PyObject* subself;
     PyObject* base;
-    PyHocObject* hbase;
-    bool has_base = false;
-    bool ok = true;
+    PyHocObject* hbase = nullptr;
+
     subself = subtype->tp_alloc(subtype, 0);
     // printf("hocobj_new %s %p %p\n", subtype->tp_name, subtype, subself);
     if (subself == NULL) {
@@ -234,59 +233,45 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
 
     // if subtype is a subclass of some NEURON class, then one of its
     // tp_mro's is in sym_to_type_map
-
     for (Py_ssize_t i = 0; i < PyTuple_Size(subtype->tp_mro); i++) {
         PyObject* item = PyTuple_GetItem(subtype->tp_mro, i);
-        Py_INCREF(item);
-        auto location = type_to_sym_map.find((PyTypeObject*) item);
-        if (location != type_to_sym_map.end()) {
-            PyObject* result = hocobj_new(hocobject_type, 0, 0);
-            hbase = (PyHocObject*) result;
+        auto symbol_result = type_to_sym_map.find((PyTypeObject*) item);
+        if (symbol_result != type_to_sym_map.end()) {
+            hbase = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
             hbase->type_ = PyHoc::HocFunction;
-            hbase->sym_ = location->second;
-            has_base = true;
-        }
-        Py_DECREF(item);
-        if (has_base) {
+            hbase->sym_ = symbol_result->second;
             break;
         }
     }
 
-    if (kwds && PyDict_Check(kwds)) {
-        base = PyDict_GetItemString(kwds, "hocbase");
-        if (base) {
-            ok = false;
-            if (PyObject_TypeCheck(base, hocobject_type)) {
-                hbase = (PyHocObject*) base;
-                has_base = true;
-            }
-            // TODO: is it a problem doing this before we're done with the base
-            PyDict_DelItemString(kwds, "hocbase");
+    if (kwds && PyDict_Check(kwds) && (base = PyDict_GetItemString(kwds, "hocbase"))) {
+        if (PyObject_TypeCheck(base, hocobject_type)) {
+            hbase = (PyHocObject*) base;
         }
-    }
-    if (has_base) {
-        if (hbase->type_ == PyHoc::HocFunction && hbase->sym_->type == TEMPLATE) {
-            // printf("hocobj_new base %s\n", hbase->sym_->name);
-            // remove the hocbase keyword since hocobj_call only allows
-            // the "sec" keyword argument
-            PyObject* r = hocobj_call(hbase, args, kwds);
-            if (!r) {
-                Py_DECREF(subself);
-                return NULL;
-            }
-            PyHocObject* rh = (PyHocObject*) r;
-            self->type_ = rh->type_;
-            self->ho_ = rh->ho_;
-            hoc_obj_ref(self->ho_);
-            Py_DECREF(r);
-            ok = true;
-        }
-        if (!ok) {
-            Py_DECREF(subself);
+        else {
             PyErr_SetString(PyExc_TypeError, "HOC base class not valid");
+            Py_DECREF(subself);
             return NULL;
         }
+        PyDict_DelItemString(kwds, "hocbase");
     }
+
+    if (hbase and hbase->type_ == PyHoc::HocFunction && hbase->sym_->type == TEMPLATE) {
+        // printf("hocobj_new base %s\n", hbase->sym_->name);
+        // remove the hocbase keyword since hocobj_call only allows
+        // the "sec" keyword argument
+        PyObject* r = hocobj_call(hbase, args, kwds);
+        if (!r) {
+            Py_DECREF(subself);
+            return NULL;
+        }
+        PyHocObject* rh = (PyHocObject*) r;
+        self->type_ = rh->type_;
+        self->ho_ = rh->ho_;
+        hoc_obj_ref(self->ho_);
+        Py_DECREF(r);
+    }
+
     return subself;
 }
 
@@ -554,6 +539,7 @@ PyObject* nrnpy_ho2po(Object* o) {
         ((PyHocObject*) po)->type_ = PyHoc::HocObject;
         auto location = sym_to_type_map.find(o->ctemplate->sym);
         if (location != sym_to_type_map.end()) {
+            Py_INCREF(location->second);
             po->ob_type = location->second;
         }
         hoc_obj_ref(o);
@@ -725,6 +711,7 @@ static void* fcall(void* vself, void* vargs) {
         //       so we could avoid repetitive code
         auto location = sym_to_type_map.find(ho->ctemplate->sym);
         if (location != sym_to_type_map.end()) {
+            Py_INCREF(location->second);
             ((PyObject*) result)->ob_type = location->second;
         }
 
@@ -3179,7 +3166,6 @@ PyObject* nrnpy_hoc() {
     hocobject_type = (PyTypeObject*) PyType_FromSpec(&spec);
     if (PyType_Ready(hocobject_type) < 0)
         goto fail;
-    Py_INCREF(hocobject_type);
     PyModule_AddObject(m, "HocObject", (PyObject*) hocobject_type);
 
     bases = PyTuple_Pack(1, hocobject_type);
@@ -3193,7 +3179,6 @@ PyObject* nrnpy_hoc() {
         type_to_sym_map[pto] = hoc_lookup(name);
         if (PyType_Ready(pto) < 0)
             goto fail;
-        Py_INCREF(pto);
         PyModule_AddObject(m, name, (PyObject*) pto);
     }
     Py_DECREF(bases);
