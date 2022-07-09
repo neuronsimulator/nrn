@@ -106,6 +106,7 @@ static cTemplate* hoc_sectionlist_template_;
 
 static std::unordered_map<Symbol*, PyTypeObject*> sym_to_type_map;
 static std::unordered_map<PyTypeObject*, Symbol*> type_to_sym_map;
+static std::vector<std::string> exposed_py_type_names;
 
 // typestr returned by Vector.__array_interface__
 // byteorder (first element) is modified at import time
@@ -3185,8 +3186,8 @@ PyObject* nrnpy_hoc() {
     Py_INCREF(bases);
     for (auto name: py_exposed_classes) {
         // TODO: obj_spec_from_name needs a hoc. prepended
-        auto long_name = std::string("hoc.") + name;
-        spec = obj_spec_from_name(long_name.c_str());
+        exposed_py_type_names.push_back(std::string("hoc.") + name);
+        spec = obj_spec_from_name(exposed_py_type_names.back().c_str());
         pto = (PyTypeObject*) PyType_FromSpecWithBases(&spec, bases);
         sym_to_type_map[hoc_lookup(name)] = pto;
         type_to_sym_map[pto] = hoc_lookup(name);
