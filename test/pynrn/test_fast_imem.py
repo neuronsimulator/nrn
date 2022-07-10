@@ -369,7 +369,6 @@ def test_fastimem_corenrn():
     coreneuron.enable = True
     coreneuron.file_mode = True
 
-    do_update = False
     arg = coreneuron.nrncore_arg(tstop)
     coreneuron.enable = False
     pc.gid_clear()
@@ -377,6 +376,7 @@ def test_fastimem_corenrn():
 
     del imem_updater, imem
     cvode.use_fast_imem(0)
+    do_update = False
 
 
 if __name__ == "__main__":
