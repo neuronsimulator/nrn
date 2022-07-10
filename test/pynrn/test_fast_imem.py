@@ -271,13 +271,15 @@ def test_fastimem_corenrn():
     # pointers need to be updated. Use of i_membrane_ requires that the user
     # update the pointers to i_membrane_.
     imem = []
+    do_update = True
 
     def imem_update():
         imem.clear()
-        for cell in cells:
-            imem.append(
-                h.Vector().record(cell.ics[0], cell.secs[3](0.5)._ref_i_membrane_)
-            )
+        if do_update:
+            for cell in cells:
+                imem.append(
+                    h.Vector().record(cell.ics[0], cell.secs[3](0.5)._ref_i_membrane_)
+                )
 
     imem_updater = h.PtrVector(1)
     imem_updater.ptr_update_callback(imem_update)
@@ -367,6 +369,7 @@ def test_fastimem_corenrn():
     coreneuron.enable = True
     coreneuron.file_mode = True
 
+    do_update = False
     arg = coreneuron.nrncore_arg(tstop)
     coreneuron.enable = False
     pc.gid_clear()
