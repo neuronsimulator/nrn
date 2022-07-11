@@ -15,6 +15,10 @@ schedules:
     - master
   always: True
 
+# Auto cancel old PR builds
+pr:
+  autoCancel: true
+
 # Trigger build for certain branches only
 trigger:
 - master
@@ -203,6 +207,7 @@ stages:
       displayName: 'Build and Run Tests'
     - script: |
         export PATH=$(pwd)/$CMAKE_PKG/bin:/home/vsts/.local/bin:$PATH
+        export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
         export CC='gcc-8'
         export CXX='g++-8'
         git clone${NEURON_BRANCH:+ --branch }${NEURON_BRANCH} --single-branch https://github.com/neuronsimulator/nrn.git
@@ -216,7 +221,7 @@ stages:
         mkdir nrn/build
         cd nrn/build
         cmake --version
-        cmake .. -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_BINARY_SPECIAL=ON -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_TESTS=ON -DCORENRN_ENABLE_MPI=OFF -DCORENRN_ENABLE_NMODL=ON -DCORENRN_NMODL_DIR=$HOME/nmodl -Dnmodl_PYTHONPATH=$HOME/nmodl/lib -DPYTHON_EXECUTABLE=$(which python3) -DCORENRN_NMODL_FLAGS="sympy --analytic"
+        cmake .. -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_TESTS=ON -DCORENRN_ENABLE_MPI=OFF -DCORENRN_ENABLE_NMODL=ON -DCORENRN_NMODL_DIR=$HOME/nmodl -Dnmodl_PYTHONPATH=$HOME/nmodl/lib -DPYTHON_EXECUTABLE=$(which python3) -DCORENRN_NMODL_FLAGS="sympy --analytic"
         make -j 2
         if [ $? -ne 0 ]
         then
@@ -239,14 +244,14 @@ stages:
     strategy:
       matrix:
         ${{ if eq(variables.buildWheel, True) }}:
-          Python36:
-            python.version: '3.6'
           Python37:
             python.version: '3.7'
           Python38:
             python.version: '3.8'
           Python39:
             python.version: '3.9'
+          Python310:
+            python.version: '3.10'
         ${{ if eq(variables.buildWheel, False) }}:
           Python39:
             python.version: '3.9'
@@ -288,22 +293,28 @@ stages:
     strategy:
       matrix:
         ${{ if eq(variables.buildWheel, True) }}:
-          Python36:
-            python.version: '3.6'
-            python.org.version: '3.6.8'
           Python37:
             python.version: '3.7'
-            python.org.version: '3.7.7'
+            python.org.version: '3.7.9'
+            python.installer.name: 'macosx10.9.pkg'
           Python38:
             python.version: '3.8'
-            python.org.version: '3.8.2'
+            python.org.version: '3.8.10'
+            python.installer.name: 'macosx10.9.pkg'
           Python39:
             python.version: '3.9'
-            python.org.version: '3.9.0'
+            python.org.version: '3.9.13'
+            python.installer.name: 'macosx10.9.pkg'
+          Python310:
+            python.version: '3.10'
+            python.org.version: '3.10.5'
+            python.installer.name: 'macos11.pkg'
+
         ${{ if eq(variables.buildWheel, False) }}:
           Python39:
             python.version: '3.9'
-            python.org.version: '3.9.0'
+            python.org.version: '3.9.13'
+            python.installer.name: 'macosx10.9.pkg'
     steps:
     - checkout: self
       submodules: True
@@ -314,7 +325,7 @@ stages:
       condition: succeeded()
       displayName: 'Install Dependencies'
     - script: |
-        installer=python-$(python.org.version)-macosx10.9.pkg
+        installer=python-$(python.org.version)-$(python.installer.name)
         url=https://www.python.org/ftp/python/$(python.org.version)/$installer
         curl $url -o $installer
         sudo installer -pkg $installer -target /
