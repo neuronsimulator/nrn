@@ -95,7 +95,6 @@ proc init() {
 	mview = $o1
 }
 proc selected() {
-	print "ModelViewNetConGrapher selected", $2
 	mview.gui.do_netcon_graph()
 }
 endtemplate ModelViewNetConGrapher
