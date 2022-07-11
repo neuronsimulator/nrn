@@ -423,7 +423,7 @@ NetCon
         If the List arg is present, the objects are appended.
 
         Returns empty list if the target is an ARTIFICIAL_CELL. For that
-        case use :meth:NetCon.synlist
+        case use :meth:`NetCon.synlist`
 
     .. seealso::
         :meth:`CVode.netconlist`
