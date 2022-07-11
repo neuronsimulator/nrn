@@ -9,6 +9,7 @@ objref this, realcells_, tobj, tobj1, mt, rc_classes, dparm, allsec
 objref ms, display, storecm, cdis, adis, acview, ncv, appv, pdis, gui
 objref topcelldis, distinctvalues, tvi, tvi2, kst, ksth, xml
 objref seclists, pyobj
+objref mvncgrapher
 strdef tstr, tstr1, cond, name
 
 in_=0
@@ -112,7 +113,8 @@ proc init() {local i, n, icdis, ntop
 
 	tobj = new List("NetCon")
 	sprint(tstr, "%d NetCon objects", tobj.count)
-	display.top.append(new TreeViewItem(nil, tstr))
+	mvncgrapher = new ModelViewNetConGrapher(this)
+	display.top.append(new TreeViewItem(nil, tstr, mvncgrapher, 1.7))
 	if (tobj.count != 0) {
 		ncv = new ModelViewNetCon(tobj, display.top.object(display.top.count - 1), this)
 	}		

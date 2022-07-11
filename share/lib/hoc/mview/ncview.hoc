@@ -86,3 +86,16 @@ proc selected() {
 }
 
 endtemplate ModelViewNetCon
+
+
+begintemplate ModelViewNetConGrapher
+public selected, mview
+objref mview
+proc init() {
+	mview = $o1
+}
+proc selected() {
+	print "ModelViewNetConGrapher selected", $2
+	mview.gui.do_netcon_graph()
+}
+endtemplate ModelViewNetConGrapher

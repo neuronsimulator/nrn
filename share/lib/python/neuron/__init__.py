@@ -1733,3 +1733,105 @@ def _mview_html_tree(hlist, inside_mechanisms_in_use=0):
 if _get_ipython() is not None:
     html_formatter = _get_ipython().display_formatter.formatters["text/html"]
     html_formatter.for_type(hoc.HocObject, _hocobj_html)
+
+
+def _rect(gr, xlo, ylo, xhi, yhi, fill_color=None):
+    """draw a rectangle from (xlo, ylo) to (xhi, yhi) on Graph gr"""
+    rectangle = h.Glyph().path().m(0, 0).l(1, 0).l(1, 1).l(0, 1).close()
+    if fill_color is None:
+        rectangle.s()
+    else:
+        rectangle.fill(fill_color)
+    gr.glyph(rectangle, xlo, ylo, xhi - xlo, yhi - ylo, 0)
+
+
+def _cell_type(cell):
+    if isinstance(cell, hoc.HocObject):
+        return cell.hname().split("[")[0]
+    return type(cell).__name__
+
+
+def _show_cell_connectivity_grid(gr):
+    gr.erase_all()
+    all_cells = set()
+    for sec in h.allsec():
+        all_cells.add(sec.cell())
+
+    cell_types = {_cell_type(cell) for cell in all_cells}
+
+    cells_by_type = {cell_type: [] for cell_type in cell_types}
+    for cell in all_cells:
+        cells_by_type[_cell_type(cell)].append(cell)
+
+    cell_order = [
+        cell
+        for cell_list in sorted(cells_by_type)
+        for cell in sorted(cells_by_type[cell_list], key=str)
+    ]
+
+    # check for artifical cells being used
+    ncs = h.List("NetCon")
+    for my_nc in ncs:
+        if my_nc.precell() is None or my_nc.postcell() is None:
+            cell_order = [None] + cell_order
+            break
+
+    # setup graph; hide axes
+    gr.size(0, 100, 0, 100)
+    gr.xaxis(3)
+    gr.yaxis(3)
+
+    labels = [str(cell) for cell in cell_order]
+    right_edge = 20
+
+    # labels are relative to scene coordinates
+    gr.fixed(1)
+
+    # labels going down
+
+    # right justify, vertically center
+    gr.align(1, 0.5)
+
+    for i, label in enumerate(labels):
+        if i == 0 and cell_order[0] is None:
+            label = "(Artifical Cells)"
+        gr.label(right_edge - 5, (len(labels) - i - 0.5) * 100 / (len(labels)), label)
+
+    # labels going across
+    across_width = 100 - right_edge
+    across_each = across_width / len(labels)
+    y_placement = 105  # (len(labels) + 0.5) * 100 / len(labels)
+
+    # bottom justify, horizontally center
+    gr.align(0.5, 1)
+
+    for i, label in enumerate(labels):
+        if i == 0 and cell_order[0] is None:
+            label = "(Artifical Cells)"
+        gr.label(right_edge + (i + 0.5) * across_each, y_placement, label)
+
+    ncs = h.List("NetCon")
+    for my_nc in ncs:
+        try:
+            i = cell_order.index(my_nc.precell())
+            j = cell_order.index(my_nc.postcell())
+        except ValueError:
+            continue
+        # we found a netcon; now draw the box
+        xlo = right_edge + j * across_each
+        ylo = (len(labels) - i - 1) * 100 / len(labels)
+        xhi = xlo + across_each
+        yhi = ylo + 100 / len(labels)
+        _rect(gr, xlo + 0.5, ylo + 0.5, xhi - 0.5, yhi - 0.5, 1)
+
+    # add pre/post labels and dividing line
+    gr.beginline()
+    gr.line(-5, 110)
+    gr.line(right_edge - 0.5, 100)
+    gr.flush()
+
+    gr.align(0, 0.5)
+    gr.label(-5, y_placement - 2, "PreSyn:")
+    gr.align(0, 1)
+    gr.label(right_edge - 10, y_placement + 5, "PostSyn:")
+    return gr
