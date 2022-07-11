@@ -260,6 +260,11 @@ target_include_directories(coreneuron SYSTEM
 target_include_directories(coreneuron SYSTEM
                            PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11/include)
 
+# See: https://en.cppreference.com/w/cpp/filesystem#Notes
+if(CMAKE_CXX_COMPILER_IS_GCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1)
+  target_link_libraries(coreneuron stdc++fs)
+endif()
+
 if(CORENRN_ENABLE_GPU)
   # nrnran123.cpp possibly-temporarily uses Boost.Pool in GPU builds if it's available.
   find_package(Boost QUIET)

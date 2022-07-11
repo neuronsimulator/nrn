@@ -152,12 +152,3 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang" OR ${CMAKE_SYSTEM_NAME} MATCHES "D
   string(APPEND CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS " ${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
   string(APPEND CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS " ${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
 endif()
-
-# ===============================================================================
-# See "Note: Special instructions for GCC 8" on https://github.com/CLIUtils/CLI11
-# ===============================================================================
-if(CMAKE_CXX_COMPILER_IS_GCC
-   AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 8
-   AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 9)
-  add_compile_definitions(CLI11_HAS_FILESYSTEM=0)
-endif()
