@@ -200,6 +200,13 @@ void add_section(void) /* symbol at pc+1, number of indices at pc+2 */
         hoc_freearay(sym);
     } else {
         assert(sym->type == UNDEF);
+        if (hoc_objectdata != hoc_top_level_data && hoc_thisobject) {
+            hoc_execerr_ext(
+                "First time declaration of Section %s in %s "
+                "must happen at command level (not in method)",
+                sym->name,
+                hoc_object_name(hoc_thisobject));
+        }
         sym->type = SECTION;
         hoc_install_object_data_index(sym);
     }
