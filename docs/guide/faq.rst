@@ -94,18 +94,18 @@ Here are some general tips about program development.
 
 - Use a "modular" programming style. At the most concrete level, this means using lots of short, simple procs and funcs.
 
-Also, "don't throw all your code into one giant ``hoc`` (or ``ses``) file." Regardless of whether you use ``hoc``, the GUI, or both, it will be much easier to create and revise programs if you keep model specification (the "experimental preparation") separate from instrumentation and control (the "user interface"). You might even put them in separate files, e.g. "model.hoc" might contain the code that specifies the anatomy and biophysics of your model cell or network, and "rig.ses" might specify a RunControl panel and other graphical tools that you use to run simulations, apply stimuli, and display results. Then you create a third file, called "init.hoc", which contains the following statements :
+Also, "don't throw all your code into one giant ``hoc`` (or ``ses``) file." Regardless of whether you use ``hoc``, the GUI, or both, it will be much easier to create and revise programs if you keep model specification (the "experimental preparation") separate from instrumentation and control (the "user interface"). You might even put them in separate files, e.g. :file:`model.hoc` might contain the code that specifies the anatomy and biophysics of your model cell or network, and :file:`rig.ses` might specify a RunControl panel and other graphical tools that you use to run simulations, apply stimuli, and display results. Then you create a third file, called :file:`init.hoc`, which contains the following statements :
 
 .. code::
-    Python
+    c++
 
     load_file("nrngui.hoc") // get NEURON's gui library
-   load_file("model.hoc") // the model specification
-   load_file("rig.ses") // the instrumentation, control, and user interface
+    load_file("model.hoc") // the model specification
+    load_file("rig.ses") // the instrumentation, control, and user interface
 
-When NEURON executes ``init.hoc``, up comes your model and user interface.
+When NEURON executes :file:`init.hoc`, up comes your model and user interface.
 
-This greatly simplifies program development, testing and maintentance. For example, complex models and experimental rigs can be constructed in an incremental manner, so that ``init.hoc`` grows to contain many ``load_file`` statements.
+This greatly simplifies program development, testing and maintentance. For example, complex models and experimental rigs can be constructed in an incremental manner, so that :file:`init.hoc` grows to contain many :func:`load_file` statements.
 
 - Mine other code (e.g. the Programmers' Reference) for reusable or customizable working examples. "Good programmers imitate great code, great programmers steal great code." But test all code.
 
@@ -245,18 +245,12 @@ What units does NEURON use for current, concentration, etc.?
 
 If you're using the GUI, you've probably noticed that buttons next to numeric fields generally indicate the units, such as (mV), (nA), (ms) for millivolt, nanoamp, or millisecond.
 
-`Here's a chart of the units that NEURON uses by default. <https://nrn.readthedocs.io/en/latest/guide/units.html?highlight=units>`_
+:ref:`Here's a chart of the units that NEURON uses by default. <units_used_in_neuron>`
 
 If you're writing your own mod files, you can specify what units will be used. For example, you may prefer to work with micromolar or nanomolar concentrations when dealing with intracellular free calcium or other second messengers. You can also define new units. :ref:`See this tutorial <units_tutorial>` to get a better understanding of units in NMODL.
 
 For the terminally curious, here is a copy of the :download:`units.dat <data/units.dat.txt>` file that accompanies one of the popular Linux distributions. Presumably mod file variables should be able to use any of its entries.
 
-What units does NEURON use for current, concentration, etc?
------------------------------------------------------------
-
-If you're using the GUI, you've probably noticed that buttons next to numeric fields generally indicate the units, such as (mV), (nA), (ms) for millivolt, nanoamp, or millisecond.
-
-:ref:`Here's a chart of the units that NEURON uses by default <units>` along with information on validating units and defining new units in NMODL.
 
 When I type a new value into a numeric field, it doesn't seem to have any effect.
 --------------------------------
@@ -315,7 +309,7 @@ If you only have a "few" spikes (up to a few dozen), you could just dump them in
     Create a Vector and load it with the times at which you want to activate the synaptic mechanism.
 
 2.
-    Then use an :ref:`FIinitializeHandler <finitialize_handler>` that stuffs the spike times into the NetCon's event queue by calling the `NetCon class's event() method <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/network/netcon.html?highlight=netcon>`_ during initialization.
+    Then use an :ref:`finitialize_handler` that stuffs the spike times into the NetCon's event queue by calling the `NetCon class's event() method <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/network/netcon.html>`_ during initialization.
 
     For example, if the Vector that holds the event times is syntimes, and the NetCon that drives the synaptic point process is nc, this would work:
 
@@ -354,17 +348,16 @@ Is there a list of functions that are built into NEURON?
 
 For available functions when scripting or interactively using NEURON, see the `Python programmer's reference <../python/index.html>`_ or the `HOC programmer's reference <../hoc/index.html>`_ as appropriate. (Standard Python functions and libraries may be used as well.)
 
-For functions available when defining ion channel mechanisms etc with NMODL, see :ref:`here <nmodlfunc>`.
+For functions available when defining ion channel mechanisms etc with NMODL, see :ref:`here <nmodls_built_in_functions>`.
 
 .. toctree::
     :hidden:
 
-    nmodlfunc
     using_plotwhat_to_specify_a_variable.rst
     working_with_postscript_and_idraw.rst
     using_session_files_for_saving.rst
     using_the_d_lambda_rule.rst
-    nrn_defaults
+    nrn_defaults.rst
     how_to_get_started_with_neuron.rst
     compiling_new_mechanisms_under_msw.rst
     compiling_new_mechanisms_under_unix.rst
@@ -372,4 +365,6 @@ For functions available when defining ion channel mechanisms etc with NMODL, see
     nmodls_built_in_functions.rst
     units_tutorial.rst
     finitialize_handler.rst
+    using_neuron_on_the_mac.rst
+
 

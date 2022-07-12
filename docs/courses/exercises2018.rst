@@ -1,3 +1,5 @@
+.. _exercises2018:
+
 NEURON Course Exercises
 =======================
 

@@ -59,7 +59,7 @@ but now we want ``gnabar_hh``, ``gkbar_hh``, and ``gl_hh`` in the apical dendrit
      - 
        hh
 
-* gnabar_hh, gkbar_hh, and gl_hh vary with distance from the origin of the apical tree
+* ``gnabar_hh``, ``gkbar_hh``, and ``gl_hh`` vary with distance from the origin of the apical tree
 
 1.
     All have "full" density at origin of apical tree.

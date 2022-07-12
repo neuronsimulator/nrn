@@ -6,7 +6,7 @@ UNITS Tutorial
 Units in models are checked for consistency with
 
 .. code::
-    python
+    bash
 
     modlunit file
 
@@ -17,7 +17,6 @@ where *file* is the prefix to a model description file (having a ``.mod`` suffix
 Consider the model description language fragment:
 
 .. code::
-    python
 
     ASSIGNED {
         i   (milliamp)
@@ -95,7 +94,6 @@ The units follow the number. Note that the two expressions above evaluate to the
 Local variables inherit units through the assignment statement. Thus, consider,
 
 .. code::
-    python
 
     BREAKPOINT {
        LOCAL temp
@@ -115,7 +113,6 @@ Definition of new units
 New units can be defined in terms of default units and previously defined units by placing definitions in the UNITS block. eg.
 
 .. code::
-    python
 
     UNITS {
         (uF)    =  (microfarad)
@@ -141,7 +138,6 @@ The units database knows about a lot of physical constants in addition to mole, 
 and it is more convenient to define *constant* constants in the UNITS block rather than in the CONSTANTS block --- there is less chance of a typo, and they do not appear in SCoP where they can be inadvertently changed. For example:
 
 .. code::
-    python
 
     UNITS {
         F      = (faraday) (coulomb)
@@ -156,7 +152,6 @@ Here, ``C`` is the speed of light in cm/sec and ``R`` is the Gas constant.
 Constant factors are defined in the UNITS block in the following manner.
 
 .. code::
-    python
 
     UNITS {
         F   = 96520    (coul)
@@ -174,7 +169,6 @@ Note that one could also write the last example as
 This shows that it can sometimes take too much clear thinking to specify dimensionless conversion factors. To avoid misunderstanding, conversion factors ( dimensionless factors used to convert between conformable units) can most clearly be written
 
 .. code::
-    python
 
     UNITS {
         foot2inch = (foot) -> (inch)
@@ -230,3 +224,4 @@ If a NEURON block exists in the model description the following variables are ch
     current density	    milliamp/cm2
     point current	    nanoamp
 
+Here's another resource for :ref:`units used in NEURON <units_used_in_neuron>`. 

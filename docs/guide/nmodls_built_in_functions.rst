@@ -7,19 +7,19 @@ These functions, which are provided by the C language math library, can be calle
 
     **acos(x) - compute the arc cosine**
 
-        : Returns the arc cosine of its argument (arccosx). The argument must be in the range -1.0 to 1.0.
+        : Returns the arc cosine of its argument (arccos x). The argument must be in the range -1.0 to 1.0.
 
     **asin(x) - compute the arc sine**
 
-         : Returns the arc sine of its argument (arcsinx). The argument must be in the range -1.0 to 1.0.
+         : Returns the arc sine of its argument (arcsin x). The argument must be in the range -1.0 to 1.0.
 
     **atan(x) - compute the arc tangent**
 
-        : Returns the arc tangent of its argument (arctanx).
+        : Returns the arc tangent of its argument (arctan x).
 
     **atan2(y,x) - compute the arc tangent of y/x**
 
-        : Returns the arc tangent of the ratio y/x (arctany/x).
+        : Returns the arc tangent of the ratio y/x (arctan y/x).
 
     **ceil(x) - round upwards**
 
@@ -27,15 +27,15 @@ These functions, which are provided by the C language math library, can be calle
 
     **cos(x) - compute the cosine**
 
-        : Returns the cosine of its argument (cosx). The angle is expressed in radians.
+        : Returns the cosine of its argument (cos x). The angle is expressed in radians.
 
     **cosh(x) - compute the hyperbolic cosine**
 
-        : Returns the hyperbolic cosine for a real argument (coshx).
+        : Returns the hyperbolic cosine for a real argument (cosh x).
 
     **exp(x) - compute the exponential function**
 
-        : Returns the value of e raised to the argument power (ex).
+        : Returns the value of e raised to the argument power (:math:`e^x`).
 
     **fabs(x) - compute the absolute value of a floating point number**
 
@@ -47,11 +47,11 @@ These functions, which are provided by the C language math library, can be calle
 
     **fmod(x,y) - compute x modulo y**
 
-        : Returns the value of x modulo y, the remainder resulting from x/y. (In Python this is ``x%``)
+        : Returns the value of x modulo y, the remainder resulting from x/y. (In Python this is ``x%y``)
 
     **log(x) - compute the natural logarithm**
 
-        : Returns the natural logarithm of its argument (lnx).
+        : Returns the natural logarithm of its argument (ln x).
 
     **log10(x) - compute the base 10 logarithm**
 
@@ -59,7 +59,7 @@ These functions, which are provided by the C language math library, can be calle
 
     **pow(x,y) - compute x raised to the y power**
 
-        : Returns the value of x raised to the power of y (xy).
+        : Returns the value of x raised to the power of y (:math:`x^y`).
 
     **sin(x) - compute the sine**
 
@@ -69,9 +69,9 @@ These functions, which are provided by the C language math library, can be calle
 
         : Returns the hyperbolic sine for a real argument (sinh x).
 
-    :math:`\sqrt(x)` **- compute the square root**
+    **sqrt(x) - compute the square root**
 
-        : Returns the positive square root of its argument (x).
+        : Returns the positive square root of its argument (:math:`\sqrt{x}`).
 
     **tan(x) - compute the tangent**
 

@@ -14,7 +14,7 @@ Standard intfire implementation (eg :hoc:class:`IntFire1` from ``intfire1.mod``)
 
 Individual units are integrate-and-fire neurons.
 
-The basic intfire implementation in neuron utilizes a decaying state variable (*m* as a stand-in for voltage) which is pushed up by the arrival of an excitatory input or down by the arrival of an inhibitory input (*m* = m + w). When m exceeds threshold the cell "fires," sending events to other connected cells.
+The basic intfire implementation in neuron utilizes a decaying state variable (``m`` as a stand-in for voltage) which is pushed up by the arrival of an excitatory input or down by the arrival of an inhibitory input (``m = m + w``). When m exceeds threshold the cell "fires," sending events to other connected cells.
 
 .. code::
     python
@@ -28,7 +28,7 @@ The basic intfire implementation in neuron utilizes a decaying state variable (*
 IntIbFire in sync model
 ---------
 
-The integrate-and-fire neuron in the current model must fire spontaneously with no input, as well as firing when a threshold is reached. This is implemented by utilizing a *firetime()* routine to calculate when the state variable m will reach threshold **assuming no other inputs during that time**. This firing time is calculated based on the natural firing interval of the cell (*invl*) and the time constant for state variable decay (*tau*). When an input comes in, a new firetime is calculated after taking into account the synaptic input (*m = m + w*) which perturbs the state variable's trajectory towards threshold.
+The integrate-and-fire neuron in the current model must fire spontaneously with no input, as well as firing when a threshold is reached. This is implemented by utilizing a ``firetime()`` routine to calculate when the state variable m will reach threshold **assuming no other inputs during that time**. This firing time is calculated based on the natural firing interval of the cell (``invl``) and the time constant for state variable decay (``tau``). When an input comes in, a new firetime is calculated after taking into account the synaptic input (``m = m + w``) which perturbs the state variable's trajectory towards threshold.
 
 Cell template
 --------
@@ -82,13 +82,13 @@ This will destroy synchrony. Increase inhibitory weight; synchrony recovers. Thi
 Beyond the GUI -- Saving and displaying spikes
 =============
 
-Spike times are being saved in a series of vectors in a template: sp.vecs[0] .. sp.vecs[ncell-1]
+Spike times are being saved in a series of vectors in a template: ``sp.vecs[0]`` .. ``sp.vecs[ncell-1]``
 ++++++++++
 
-Count the total number of spikes using a *for* loop and *total+=sp.vecs[ii].size*
+Count the total number of spikes using a ``for`` loop and ``total+=len(sp.vecs[ii])``
  
 
-We will instead save spike times in a single vector (*tvec*), using a second vector (*ind*) for indices
+We will instead save spike times in a single vector (``tvec``), using a second vector (``ind``) for indices
 ++++++++++
 .. code::
     python
@@ -107,7 +107,7 @@ Make sure that the same number of spikes are being saved as were saved in sp.vec
 
 Wise precaution -- check step by step to make sure that nothing's screwed up
 
-Can use for ... : *vec.append(sp.vecs[ii]); vec.sort(); tvec.sort(); vec.eq(tvec)* to make sure have all the same spike times (still doesn't tell you they correspond to the same cells)
+Can use for ... : ``vec.append(sp.vecs[ii]); vec.sort(); tvec.sort(); vec.eq(tvec)`` to make sure have all the same spike times (still doesn't tell you they correspond to the same cells)
 
 Graph spike times -- should look like SpikePlot1 graph
 ----------
@@ -208,14 +208,13 @@ procedure wire() in ``ocomm.hoc`` is slightly simplified from that in ``synchron
 
 .. code::
     python
+
     def wire ():
-    nclist.remove_all()
-
-    for pre in cells: 
-
-        for post in cells: 
-
-            if pre!=post: nclist.append(h.NetCon(pre.pp,post.pp)) 
+        nclist.remove_all()
+        for pre in cells: 
+            for post in cells: 
+                if pre!=post: 
+                    nclist.append(h.NetCon(pre.pp,post.pp)) 
 
 
 Exercises
@@ -232,17 +231,9 @@ eg
     python
 
     rdm.discunif(0,ncell-1) 
-
-
     proj=rdm.repick()
-
-
     if proj < ncell/2:
-
-
         # project to 0->proj 
-
-
     else: # project to proj->ncell-1 
 
 
@@ -250,20 +241,20 @@ This algorithm is not very good since cells in center get more convergence
 
 - rewrite wire to get even convergence
 
-suggestions: counting upwards from *proj*, use modulus (%) to wrap-around and get values between 0 and ncell-1
+suggestions: counting upwards from ``proj``, use modulus (%) to wrap-around and get values between 0 and ncell-1
 
 - run(), graph and check synchrony
 
-- generalize your procedure to take argument *pij=$1* that defines connection density
+- generalize your procedure to take argument ``pij`` that defines connection density
 
 - assess synchrony at different connection densities
 
 Assessing connectivity
 ==========
 
-- *cvode.netconlist(cells.object(0).pp,"","")* gives a divergence list for cell#0
+- ``cvode.netconlist(cells.object(0).pp,"","")`` gives a divergence list for cell#0
 
-- *cvode.netconlist("","",cells.object(0).pp)* gives a convergence list for cell#0
+- ``cvode.netconlist("","",cells.object(0).pp)`` gives a convergence list for cell#0
 
 - Exercise: use these lists to calculate average, min, max for conv and div
 
@@ -271,20 +262,20 @@ Assessing connectivity
 Graphing connectivity
 ==============
 
-- use *fconn(prevec,postvec)* to get parallel vecs of pre and postsyn cell numbers
+- use ``fconn(prevec,postvec)`` to get parallel vecs of pre and postsyn cell numbers
 
-- use *postvec.mark(g,prevec)* to demonstrate that central cells get most of the convergence (if using original suggestion for *wire()* rewrite)
+- use ``postvec.mark(g,prevec)`` to demonstrate that central cells get most of the convergence (if using original suggestion for ``wire()`` rewrite)
 
-- use *showdiv1(cell#)* and *showconv1(cell#)* to graph connections for selected cells
+- use ``showdiv1(cell#)`` and ``showconv1(cell#)`` to graph connections for selected cells
 
 - Exercise: write a procedure to count, print out and graph all cells with reciprocal connectivity, eg A->B and B->A
 
-- Exercise: modify your *wire()* to eliminate reciprocal connectivity
+- Exercise: modify your ``wire()`` to eliminate reciprocal connectivity
 
 Animate
 ========
 
-- Use *animplot()* to put up squares for animating simulation
+- Use ``animplot()`` to put up squares for animating simulation
 
 - Resize and shift around as needed but afterwards make sure that "Shape Plot" is set on pulldown menu
 

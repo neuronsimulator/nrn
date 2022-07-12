@@ -43,7 +43,7 @@ To learn how to use NMODL to add new mechanisms to NEURON:
 4.
     You may also find useful examples in `ModelDB <https://senselab.med.yale.edu/modeldb/>`_.
 
-For courses about NEURON, see the `Courses <https://nrn.readthedocs.io/en/latest/courses/exercises2018.html>`_ page.
+For courses about NEURON, see the :ref:`Course Exercises <exercises2018>` page and the :ref:`Training Videos <training_videos>` page.
 
 
 

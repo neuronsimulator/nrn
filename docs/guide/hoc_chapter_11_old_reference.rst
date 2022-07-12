@@ -31,7 +31,7 @@ When NEURON is installed, four programs are constructed from the combinations of
 
 **ivoc**
 
-    OC with C++ classes and graphical interface (which is written in C++). This is the best starting place for building non-neural applications. These C++ classes are implemented in ``ivoc/SRC``. The files here are of general use apart from the neuron simulation domain and generally implement the graphical interface, eg. Graph, xpanel, VBox, etc. However the File, List, Vector, and Random class are very useful even if no window manager is present.
+    OC with C++ classes and graphical interface (which is written in C++). This is the best starting place for building non-neural applications. These C++ classes are implemented in :file:`ivoc/SRC`. The files here are of general use apart from the neuron simulation domain and generally implement the graphical interface, eg. :hoc:class:`Graph`, :hoc:func:`xpanel`, :hoc:class:`VBox`, etc. However the :hoc:class:`File`, :hoc:class:`List`, :hoc:class:`Vector`, and :hoc:class:`Random` class are very useful even if no window manager is present.
 
 **nrniv**
 
@@ -59,7 +59,7 @@ There are various shell scripts for unix workstations in ``$NEURONHOME/bin`` tha
 
         nrnivmodl file1 file2 ...
 
-    adds the model descriptions defined in file1.mod, file2.mod, etc. to nrniv. The resulting executable is called special. If no file arguments are present then nrnivmodl adds all the files in the current working directory that have the suffix .mod to the program called special. In order to construct an executable, the model descriptions first have to be translated into c with the nocmodl translator. Such models must contain a NEURON block which specifies the type of model (density mechanism or point process), the names of ions it uses, and which variables are to be treated as range variables in the interface to OC.
+    adds the model descriptions defined in :file:`file1.mod`, :file:`file2.mod`, etc. to ``nrniv``. The resulting executable is called special. If no file arguments are present then nrnivmodl adds all the files in the current working directory that have the suffix .mod to the program called special. In order to construct an executable, the model descriptions first have to be translated into c with the nocmodl translator. Such models must contain a NEURON block which specifies the type of model (density mechanism or point process), the names of ions it uses, and which variables are to be treated as range variables in the interface to OC.
 
 **mknrndll**
 
@@ -454,7 +454,7 @@ The operators used in expressions are, in order of precedence from high to low,
     ()
 	^	exponentiation  (right to left precedence)
 	- !	unaryminus, not
-	* / %	multiplication, division, ``remainder''
+	* / %	multiplication, division, ``remainder``
 	+ -	plus, minus
 	> >= < <= != ==	  logical operators
 	&&	logical AND

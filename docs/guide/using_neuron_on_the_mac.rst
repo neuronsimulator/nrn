@@ -16,5 +16,5 @@ If you want to do everything with a UNIX-like terminal window, then in the folde
     nrnivmodl
     python your_starting_file.py
 
-This assumes you have /Applications/NEURON-X.X/nrn/x86_64/bin in your PATH (substitute the version number for the X.X).
+This assumes you have :file:`/Applications/NEURON-X.X/nrn/x86_64/bin` in your PATH (substitute the version number for the X.X).
 

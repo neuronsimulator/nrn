@@ -13,10 +13,7 @@ Start NEURON, and at the oc> prompt type
 
 On my Linux box, this tells me that $(NEURONHOME) is
 
-.. code::
-    Python
-
-    /usr/local/nrn/share/nrn
+:file:`/usr/local/nrn/share/nrn`
 
 and sure enough, ``nrn.defaults`` is in
 
@@ -31,7 +28,6 @@ How to change the background color used in shape plots and other graphs
 Change the lines
 
 .. code::
-    Python
 
    *Scene_background: #ffffff
    *Scene_foreground: #000000
@@ -65,7 +61,6 @@ The colormap file is plain ASCII, with one set of RGB values per line. NEURON co
 Here's another one you might try:
 
 .. code::
-    Python
 
     95      0       95      
     111     0       111
@@ -96,7 +91,6 @@ Here's another one you might try:
 and yet another:
 
 .. code::
-    Python
 
     111     0       111
     143     0       127

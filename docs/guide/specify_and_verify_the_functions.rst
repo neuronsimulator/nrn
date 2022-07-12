@@ -5,7 +5,7 @@ Step 3. Specify and verify the functions that govern the parameters
 
 First we make sure that Specify Strategy is off.
 
-Then, for each parameter that is supposed to vary with location, we must specify the function that governs it, and verify that we have achieved the desired spatial variation. It's easiest to do this by focussing on one parameter at a time, so the following instructions show how to proceed for gnabar_hh. Finishing up the job for gkbar_hh and gl_hh "is left as an exercise for the reader."
+Then, for each parameter that is supposed to vary with location, we must specify the function that governs it, and verify that we have achieved the desired spatial variation. It's easiest to do this by focussing on one parameter at a time, so the following instructions show how to proceed for ``gnabar_hh``. Finishing up the job for ``gkbar_hh`` and ``gl_hh`` "is left as an exercise for the reader."
 
 A. Specifying a function
 ------------------------
