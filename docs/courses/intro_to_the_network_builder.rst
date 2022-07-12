@@ -139,4 +139,7 @@ Cell templates are probably essential programming practice with regard to simula
 The hoc file for the above spec looks like :download:`this <code/net1spec.ho.txt>`.
 
 
+.. toctree::
+    :hidden:
 
+    artificial_cells_neuron.rst

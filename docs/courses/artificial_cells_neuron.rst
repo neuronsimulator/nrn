@@ -34,3 +34,6 @@ NEURON has four built-in point process classes which can be used to construct ar
 4. :hoc:class:`IntFire4`, with fast excitation current (rises abruptly, decays exponentially) and slower alpha function like inhibition current that is integrated by even slower membrane.
 
 NEURON requires that all point processes be located in a section. To meet this (in this context, conceptually irrelevant) requirement, the Network Builder tool locates each point process of its instantiated artificial cells in the dummy section called ``acell_home_``
+
+
+

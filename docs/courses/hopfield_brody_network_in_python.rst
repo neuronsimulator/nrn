@@ -143,32 +143,14 @@ Graph synchronization
     python
 
     >>>  [vec.resize(0) for vec in veclist]        # clear
-
-
     >>>  for w in np.arange(0, -5e-2, -5e-3):
-
-
             weight(w) 
-
-
             h.run() 
-
-
             vec[1].append(w) 
-
-
             vec[2].append(syncer())
-
-
     >>>  print vec[1].size(), vec[2].size()         # make sure nothing went wrong
-
-
     >>>  g.erase()                     # assuming it's still there, else put up a new one
-
-
     >>>  vec[2].line(g,vec[1])         # use "View = plot" on pull down to see it
-
-
     >>>  vec[2].mark(g,vec[1],"O",8,2,1)         # big (8) red (2) circles ("O") 
 
 
@@ -222,28 +204,25 @@ Rewiring the network
 All of the programs discussed in the lecture are available in ocomm.hoc. The student may wish to use or rewrite any of these procedures. Below we suggest a different approach to wiring the network.
  
 procedure wire() in ``ocomm.hoc`` is slightly simplified from that in ``synchronize.hoc`` but does the same thing
-++++++++
+
 
 .. code::
     python
     def wire ():
-     nclist.remove_all()
+    nclist.remove_all()
 
-
-     for pre in cells: 
-
+    for pre in cells: 
 
         for post in cells: 
-
 
             if pre!=post: nclist.append(h.NetCon(pre.pp,post.pp)) 
 
 
 Exercises
-++++++++
+--------
 
 rewrite wire() to connect each neuron to half of the neurons
-~~~~~~~~~~~~
+
 
 suggestion: for each neuron, pick an initial projection randomly
 

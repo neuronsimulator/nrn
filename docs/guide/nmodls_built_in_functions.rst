@@ -3,7 +3,7 @@
 NMODL's built-in functions
 ===============
 
-These functions, which are provided by the C language math library, can be called from within NMODL code. With the exception of **abs**(), all expect double-precision floating point arguments and return double-precision floating point values.
+These functions, which are provided by the C language math library, can be called from within NMODL code. With the exception of **abs()**, all expect double-precision floating point arguments and return double-precision floating point values.
 
     **acos(x) - compute the arc cosine**
 
@@ -47,7 +47,7 @@ These functions, which are provided by the C language math library, can be calle
 
     **fmod(x,y) - compute x modulo y**
 
-        : Returns the value of x modulo y (x y), the remainder resulting from x/y.
+        : Returns the value of x modulo y, the remainder resulting from x/y. (In Python this is ``x%``)
 
     **log(x) - compute the natural logarithm**
 
@@ -63,23 +63,23 @@ These functions, which are provided by the C language math library, can be calle
 
     **sin(x) - compute the sine**
 
-        : Returns the sine of its argument (sinx). The angle is expressed in radians.
+        : Returns the sine of its argument (sin x). The angle is expressed in radians.
 
     **sinh(x) - compute the hyperbolic sine**
 
-        : Returns the hyperbolic sine for a real argument (sinhx).
+        : Returns the hyperbolic sine for a real argument (sinh x).
 
-    **sqrt(x) - compute the square root**
+    :math:`\sqrt(x)` **- compute the square root**
 
         : Returns the positive square root of its argument (x).
 
     **tan(x) - compute the tangent**
 
-        : Returns the tangent of its argument (tanx). The angle is expressed in radians.
+        : Returns the tangent of its argument (tan x). The angle is expressed in radians.
 
     **tanh(x) - compute the hyperbolic tangent**
 
-        : Returns the hyperbolic tangent for a real argument (tanhx).
+        : Returns the hyperbolic tangent for a real argument (tanh x).
 
 
 

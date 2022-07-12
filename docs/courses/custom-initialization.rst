@@ -82,7 +82,7 @@ Use Move Text and View = plot as needed to get a better picture.
 Add a space plot and use its Set View to change the y axis range to ``-70 -65``.
 Run another simulation and watch how drastically v changes from the initial condition.
 
-Save everything to a session file called :file:`all.ses` (use :menuselection:`File --> save session``) and exit NEURON.
+Save everything to a session file called :file:`all.ses` (use :menuselection:`File --> save session`) and exit NEURON.
 
 Exercise: initializing to steady state
 --------------------------------------

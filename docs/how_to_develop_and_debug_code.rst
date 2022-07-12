@@ -49,3 +49,14 @@ Algorithm for debugging code:
         If no more chunks of code remain, your job is done.
         Otherwise, uncomment the next chunk of code, and go to step 3.
 
+
+The Python Debugger: pdb
+-------------
+
+NEURON models implemented in Python may also be examined using `Python's built-in debugger pdb <https://docs.python.org/3/library/pdb.html>`_.
+
+
+
+
+
+

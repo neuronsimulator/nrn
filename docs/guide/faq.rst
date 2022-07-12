@@ -271,7 +271,6 @@ What is the difference between SEClamp and VClamp, and which should I use?
 SEClamp is just an ideal voltage source in series with a resistance (Single Electrode Clamp), while VClamp is a model of a two electrode voltage clamp with this equivalent circuit:
 
 .. code::
-    python
 
                    tau2
                    gain
