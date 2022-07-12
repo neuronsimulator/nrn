@@ -71,14 +71,14 @@ int main(int argc, char** argv) {
     char* args;
     char* msg;
 
-#if !defined(MINGW)
+#ifndef MINGW
     ShowWindow(GetConsoleWindow(), SW_HIDE);
 #endif
     setneuronhome();
     nh = hoc_dos2unixpath(nrnhome);
     args = argstr(argc, argv);
     buf = new char[strlen(args) + 6 * strlen(nh) + 200];
-#if defined(MINGW)
+#ifdef MINGW
     // sprintf(buf, "%s\\mingw\\bin\\bash.exe -rcfile %s/lib/nrnstart.bsh -i %s/lib/neuron2.sh
     // nrngui %s", nrnhome, nh, nh, args);
 #if 0

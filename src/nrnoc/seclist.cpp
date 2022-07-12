@@ -132,13 +132,16 @@ static double allroots(void* v) {
     List* sl;
     Item* qsec;
     sl = (List*) v;
-    ForAllSections(sec) if (!sec->parentsec) {
-        lappendsec(sl, sec);
-        section_ref(sec);
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        if (!sec->parentsec) {
+            lappendsec(sl, sec);
+            section_ref(sec);
+        }
     }
-}
 
-return 1.;
+    return 1.;
 }
 
 static double seclist_remove(void* v) {
@@ -243,11 +246,16 @@ static double printnames(void* v) {
 return 1.;
 }
 
-static Member_func members[] = {"append",     append,     "remove",   seclist_remove,
-                                "wholetree",  wholetree,  "subtree",  subtree,
-                                "children",   children,   "unique",   unique,
-                                "printnames", printnames, "contains", contains,
-                                "allroots",   allroots,   0,          0};
+static Member_func members[] = {{"append", append},
+                                {"remove", seclist_remove},
+                                {"wholetree", wholetree},
+                                {"subtree", subtree},
+                                {"children", children},
+                                {"unique", unique},
+                                {"printnames", printnames},
+                                {"contains", contains},
+                                {"allroots", allroots},
+                                {0, 0}};
 
 
 extern void class2oc(const char*,

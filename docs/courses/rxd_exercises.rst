@@ -6,11 +6,11 @@ Reaction-Diffusion Exercises
 Exercise 1
 ----------
 
-Consider the signaling molecule IP3, which in Wagner et al 2004 was modeled as having a diffusion coefficient in the cytosol of 0.283 μm :sup:`2`/ms. (Our units here are not those usually used by cell biologists, but they are the ones used by NEURON’s reaction-diffusion module as they are reasonable for neuronal electrophysiology.)
+Consider the signaling molecule IP3, which in Wagner et al 2004 was modeled as having a diffusion coefficient in the cytosol of 0.283 μm\ :sup:`2`/ms. (Our units here are not those usually used by cell biologists, but they are the ones used by NEURON’s reaction-diffusion module as they are reasonable for neuronal electrophysiology.)
 
 Consider a 101 micron long section of dendrite discretized into 101 compartments. Set IP3 at an initial concentration of 1 μM for 0.4 ≤ seg.x ≤ 0.6 and 0 elsewhere. (Be careful about units.) How long does it take the concentration at seg.x = 0.7 to rise to a concentration of 100 nM? What is the peak concentration obtained at this point over all time? What is the limiting value as :math:`t \to \infty`?
 
-In 25 °C water, calcium has a diffusion coefficient of :math:`1.97 \times 10^{-5}` cm :sup:`2`/s according to `physiologyweb <http://www.physiologyweb.com/calculators/diffusion_time_calculator.html>`_. What is this in NEURON's units of μm :sup:`2`/ms? (Note: calcium will have a different effective diffusion constant in a cell than in water due to buffering molecules, etc.) Answer the question about time for a concentration increase at seg.x = 0.7 for calcium in water. Do the same for glucose which has a diffusion coefficient of :math:`6 \times 10^{-6}` cm :sup:`2`/s according to the same source. How does varying the diffusion coefficient affect the time it takes to raise concentration at a given distance by a given amount?
+In 25 °C water, calcium has a diffusion coefficient of :math:`1.97 \times 10^{-5}` cm\ :sup:`2`/s according to `physiologyweb <http://www.physiologyweb.com/calculators/diffusion_time_calculator.html>`_. What is this in NEURON's units of μm\ :sup:`2`/ms? (Note: calcium will have a different effective diffusion constant in a cell than in water due to buffering molecules, etc.) Answer the question about time for a concentration increase at seg.x = 0.7 for calcium in water. Do the same for glucose which has a diffusion coefficient of :math:`6 \times 10^{-6}` cm\ :sup:`2`/s according to the same source. How does varying the diffusion coefficient affect the time it takes to raise concentration at a given distance by a given amount?
 
  
 
@@ -26,7 +26,7 @@ How many molecules of calcium would be present in such a spine if it had an aver
 Exercise 3
 ----------
 
-Import a CA1 pyramidal cell into NEURON from `NeuroMorpho.Org <https://neuromorpho.org>`_. Declare chemical species ``X`` to diffuse across the entire cell at D=1 μm :sup:`2`/ms with initial concentration of 1 mM in the soma and 0 elsewhere. View the distribution of ``X`` at 5 and 25 ms on both a ShapePlot and along the apical as a function of distance from the soma. Plot a time series of the concentration of ``X`` at the center of the soma.
+Import a CA1 pyramidal cell into NEURON from `NeuroMorpho.Org <https://neuromorpho.org>`_. Declare chemical species ``X`` to diffuse across the entire cell at D=1 μm\ :sup:`2`/ms with initial concentration of 1 mM in the soma and 0 elsewhere. View the distribution of ``X`` at 5 and 25 ms on both a ShapePlot and along the apical as a function of distance from the soma. Plot a time series of the concentration of ``X`` at the center of the soma.
 
  
 

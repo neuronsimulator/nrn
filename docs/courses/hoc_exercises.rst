@@ -1,19 +1,19 @@
 .. _hoc_exercises:
 
-HOC exercises
-===========
 
-Executable lines below are shown with the hoc prompt. Typing these, although trivial, can be a valuable way to get familiar with the language.
+HOC Exercises
+=============
 
-.. code::
-    c++
+Executable lines below are shown with the hoc prompt ``oc>``.
+
+Typing these, although trivial, can be a valuable way to get familiar with the language.
+
+.. code-block:: c++
 
     oc> // A comment
 
     oc> /* ditto */
 
-Data types: numbers strings and objects
-=============
 
 Anything not explicitly declared is assumed to be a number
 -------------
@@ -156,6 +156,152 @@ Operators and numerical functions
 
 .. code::
     c++ 
+=======
+
+.. seealso::
+
+    :ref:`hoc_language_guide` and the :ref:`hoc_prog_ref`
+
+Data types: numbers, strings, and objects
+-----------------------------------------
+
+Anything not explicitly declared is assumed to be a number
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: c++
+
+    oc> x=5300 // no previous declaration as to what 'x' is
+
+.. note::
+
+    Numbers are all doubles (high-precision floating point numbers). In particular, there is no integer type in HOC.
+
+For scientific notation use ``e`` or ``E``.
+
+.. code-block:: c++
+
+    oc> print 5.3e3,5.3E3 // e preferred (see next)
+
+There are some useful built-in values:
+
+.. code-block:: c++
+
+    oc> print PI, E, FARADAY, R
+
+Do you have anything to declare?: objects and strings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Must declare an object reference (=object variable) before making an object
+
+Objref: manipulate references to objects, not the objects themselves
+
+- often names are chosen that make it easy to remember what an object reference is to be used for (eg g for a :hoc:class:`Graph` or vec for a :hoc:class:`Vector`) but it's important to remember that these are just for convenience and that any object reference can be used to point to any kind of object
+
+Objects include vectors, graphs, lists, ...
+###########################################
+
+.. code-block:: c++
+
+    oc> objref XO,YO // capital 'oh' not zero
+
+    oc> print XO,YO // these are object references
+
+    oc> XO = new List() // 'new' creates a new instance of the List class
+
+    oc> print XO,YO // XO now points to something, YO does not
+
+    oc> objref XO // redeclaring an objref breaks the link; if this is the only reference to that object the object is destroyed
+
+    oc> XO = new List() // a new new List
+
+    oc> print XO // notice the List[#] -- this is a different List, the old one is gone
+
+After creating object reference, can use it to point a new or old object
+########################################################################
+
+.. code-block:: c++
+
+    oc> objref vec,foo // two object refs
+
+    oc> vec = new Vector() // use 'new' to create something
+
+    oc> foo = vec // foo is now just another reference to the same thing
+
+    oc> print vec, foo // same thing
+
+    oc> vec=XO
+
+    oc> print vec, foo // vec no longer points to a vector
+
+    oc> objectvar vec // objref and objectvar are the same; redeclaring an objref breaks the link between it and the object it had pointed to
+
+    oc> print vec, foo // vec had no special status, foo still points equally well
+
+Can create an array of objrefs
+##############################
+
+.. code-block:: c++
+
+    oc> objref objarr[10]
+
+    oc> objarr[0]=XO
+
+    oc> print objarr, objarr[0] // two ways of saying same thing
+
+    oc> objarr[1]=foo
+
+    oc> objarr[2]=objarr[0] // piling up more references to the same thing
+
+    oc> print objarr[0],objarr[1],objarr[2]
+
+Exercises
+#########
+
+Lists are useful for maintaining pointers to objects so that they are maintained when explicit object references are removed.
+
+1. Make vec point to a new vector. Print out and record its identity (``print vec``). Now print using the object name (ie print Vector[#] with the right #). This confirms that the object exists. Destroy the object by reinitializing the vec reference. Now try to print using the object name. What does it say.
+
+2. As in Exercise 1: make vec point to a new :hoc:class:`Vector` and use print to find the vector name. Make XO a reference to a new list. Append the vector to the list: {XO.append(vec). Now dereference vec as in Exercise 1. Print out the object by name and confirm that it still exists. Even though the original objref is gone, it is still pointed to by the list.
+
+3. Identify the vector on the list: (``print XO.object(0)``). Remove the vector from the list (``print XO.remove(0)``). Confirm that this vector no longer exists.
+
+Strings
+#######
+
+Must declare a string before assigning it
+
+.. code-block:: c++
+
+    oc> mystr = "hello" // ERROR: needed to be declared
+
+    oc> strdef mystr // declaration
+
+    oc> mystr = "hello" // can't declare and set together
+
+    oc> print mystr
+
+    oc> printf("-%s-", mystr) // tab-string-newline; printf=print formatted; see documentation
+
+There are no string arrays; get around this using arrays of String objects
+ 
+Can also declare number arrays, but vectors are often more useful
+
+.. code-block:: c++
+
+    oc> x=5
+
+    oc> double x[10]
+
+    oc> print x // overwrote prior value
+
+    oc> x[0]=7
+
+    oc> print x, x[0] // these are the same
+
+Operators and numerical functions
+---------------------------------
+
+.. code-block:: c++
 
     oc> x=8 // assignment
 
@@ -173,11 +319,10 @@ Operators and numerical functions
 
     oc> print x, x+=5, x*=2, x-=1, x/=5, x // each changes value of x; no x++
 
-Blocks of code {}
-==========
+Blocks of code
+--------------
 
-.. code::
-    c++
+.. code-block:: c++
 
     oc> { x=7
 
@@ -223,118 +368,131 @@ Procedures and functions
 
     oc> hello()
 
-- Numerical arguments to procedures and functions
+Numerical arguments to procedures and functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    .. code::
-        c++
+.. code-block:: c++
 
-        oc> proc add () { print $1 + $2 } // first and second argument, then $3, $4...
+    oc> proc add () { print $1 + $2 } // first and second argument, then $3, $4...
 
-        oc> add(5, 3)
+    oc> add(5, 3)
 
-        oc> func add () { return $1 + $2 }
+    oc> func add () { return $1 + $2 }
 
-        oc> print 7*add(5, 3) // can use the returned value
+    oc> print 7*add(5, 3) // can use the returned value
 
-        oc> print add(add(2, 4), add(5, 3)) // nest as much as you want
+    oc> print add(add(2, 4), add(5, 3)) // nest as much as you want
 
-- String ($s1, $s2, ...) and object arguments ($o1, $o2, ...)
+String (``$s1``, ``$s2``, ...) and object arguments (``$o1``, ``$o2``, ...)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    .. code::
-        c++
+.. code-block:: c++
 
-        oc> proc prstuff () { print $1, "::", $s2, "::", $o3 }
+    oc> proc prstuff () { print $1, "::", $s2, "::", $o3 }
 
-        oc> prstuff(5.3, "hello", vec)
+    oc> prstuff(5.3, "hello", vec)
 
-- Exercises
+Exercises
+~~~~~~~~~
 
-    Use printf in a procedure to print out a formatted table of powers of 2
+1. Use printf in a procedure to print out a formatted table of powers of 2
 
-    Write a function that returns the average of 4 numbers
+2. Write a function that returns the average of 4 numbers
 
-    Write a procedure that creates a section called soma and sets diam and L to 2 args
+3. Write a procedure that creates a section called soma and sets diam and L to 2 args
 
 Built-in object types: graphs, vectors, lists, files
-==================
+----------------------------------------------------
 
-- Graph 
+Graph
+~~~~~
 
-    .. code::
-        c++
+.. code-block:: c++
 
-        oc> objref g[10]
+    oc> objref g[10]
 
-        oc> g = new Graph()
+    oc> g = new Graph()
 
-        oc> g.size(5, 10, 2, 30) // set x and y axes
+    oc> g.size(5, 10, 2, 30) // set x and y axes
 
-        oc> g.beginline("line", 2, 3) // start a red (2), thick (3) line
+    oc> g.beginline("line", 2, 3) // start a red (2), thick (3) line
 
-        oc> {g.line(6, 3) g.line(9, 25)} // draw a line (x, y) to (x, y)
+    oc> {g.line(6, 3) g.line(9, 25)} // draw a line (x, y) to (x, y)
 
-        oc> g.flush() // show the line
+    oc> g.flush() // show the line
 
-- Exercises
+.. seealso:: 
 
-    write proc that draws a colored line ($1) from (0, 0) to given coordinate ($2, $3) assume g is a graph object
+    :hoc:class:`Graph`
 
-    write a proc that puts up two new graphs
+Exercises
+#########
 
-    bring up a graph using GUI, on graph use right-button right pull-down to "Object Name"; set 'g' objectvar to point to this graph and use g.size() to resize it
+1. write ``proc`` that draws a colored line ($1) from (0, 0) to given coordinate ($2, $3) assume g is a :hoc:class:`Graph` object
 
-- Vector
+2. write a ``proc`` that puts up two new graphs
 
-    .. code::
-        c++
+3. bring up a graph using GUI, on graph use right-button right pull-down to "Object Name"; set 'g' objectvar to point to this graph and use ``g.size()`` to resize it
 
-        oc> objref vec[10]
+Vector
+~~~~~~
 
-        oc> for ii=0, 9 vec[ii]=new Vector()
+.. code-block:: c++
 
-        oc> vec.append(3, 12, 8, 7) // put 4 values in the vector
+    oc> objref vec[10]
 
-        oc> vec.append(4) // put on one more
+    oc> for ii=0, 9 vec[ii]=new Vector()
 
-        oc> vec.printf // look at them
+    oc> vec.append(3, 12, 8, 7) // put 4 values in the vector
 
-        oc> vec.size // how many are there?
+    oc> vec.append(4) // put on one more
 
-        oc> print vec.sum/vec.size, vec.mean // check average two ways
+    oc> vec.printf // look at them
 
-        oc> {vec.add(7) vec.mul(3) vec.div(4) vec.sub(2) vec.printf}
+    oc> vec.size // how many are there?
 
-        oc> vec.resize(vec.size-1) // get rid of last value
+    oc> print vec.sum/vec.size, vec.mean // check average two ways
 
-        oc> for ii=0, vec.size-1 print vec.x[ii] // print values
+    oc> {vec.add(7) vec.mul(3) vec.div(4) vec.sub(2) vec.printf}
 
-        oc> vec[1].copy(vec[0]) // copy vec into vec[1]
+    oc> vec.resize(vec.size-1) // get rid of last value
 
-        oc> vec[1].add(3)
+    oc> for ii=0, vec.size-1 print vec.x[ii] // print values
 
-        oc> vec.mul(vec[1]) // element by element; must be same size
+    oc> vec[1].copy(vec[0]) // copy vec into vec[1]
 
-- Exercises
+    oc> vec[1].add(3)
 
-    write a proc to make $o1 vec elements the product of $o2*$o3 elements
+    oc> vec.mul(vec[1]) // element by element; must be same size
 
-        (use resize to get $o1 to right size; generate error if sizes wrong eg. if ($o2.size!=$o3.size) { print "ERROR: wrong sizes" return }
+.. seealso::
 
-    graph vector values: vec.line(g, 1) or vec.mark(g, 1)
+    :hoc:class:`Vector`
 
-        play with colors and mark shapes (see doc for details)
+Exercises
+#########
 
-    graph one vec against another: vec.line(g, vec[1]); vec.mark(g, vec[1])
+1. 
+    Write a ``proc`` to make ``$o1`` vec elements the product of $o2*$o3 elements
 
-    write a proc to multiply the elements of a vector by sequential values from 1 to size-1
+    (Use :hoc:meth:`Vector.resize` to get ``$o1`` to right size; generate error if sizes wrong e.g. ``if ($o2.size!=$o3.size) { print "ERROR: wrong sizes" return }``)
 
-        hint: use ``vec.resize``, ``vec.indgen``, ``vec.mul``
+2.
+    Graph vector values: ``vec.line(g, 1)`` or ``vec.mark(g, 1)``
+
+    Play with colors and mark shapes (see documentation for details).
+
+3. Graph one vec against another: ``vec.line(g, vec[1])``; ``vec.mark(g, vec[1])``
+
+4.
+    Write a ``proc`` to multiply the elements of a vector by sequential values from ``1`` to ``size-1``
+
+    Hint: use :hoc:meth:`vec.resize <Vector.resize>`, :hoc:meth:`vec.indgen <Vector.indgen>`, :hoc:meth:`vec.mul <Vector.mul>`
 
 File
-====
+~~~~
 
-.. code::
-    c++
+.. code-block:: c++
 
     oc> objref file
 
@@ -356,19 +514,24 @@ File
 
     oc> if (vec.eq(vec[1])) print "SAME" // should be the same
 
-- Exercises
 
-    proc to write a vector ($o1) to file with name $s1
+.. seealso::
 
-    proc to read a vector ($o1) from file with name $s1
+    :hoc:class:`File`
 
-    proc to append a number to end of a file: ``tmpfile.aopen()``, ``tmpfile.printf``
+Exercises
+#########
+
+1. ``proc`` to write a vector (``$o1``) to file with name ``$s2``
+
+2. ``proc`` to read a vector (``$o1``) from file with name ``$s2``
+
+3. proc to append a number to end of a file: ``tmpfile.aopen()``, ``tmpfile.printf``
 
 List
-====
+~~~~
 
-.. code::
-    c++
+.. code-block:: c++
 
     oc> objref list
 
@@ -388,17 +551,23 @@ List
 
     oc> for ii=0, list.count-1 print list.object(ii) // remember list.count, vec.size
 
-**Excercise**
 
-- write proc that takes a list $o1 with a graph (.object(0)) followed by a vector (.object(1)) and shows the vector on the graph
+.. seealso::
 
-- modify this proc to read the vector out of file given in $s2
+    :hoc:class:`List`
+
+Exercises
+#########
+
+1. write ``proc`` that takes a list ``$o1`` with a graph (.object(0)) followed by a vector (.object(1)) and shows the vector on the graph
+
+2. modify this ``proc`` to read the vector out of file given in ``$s2``
+
 
 Simulation
-=====
+----------
 
-.. code::
-    c++
+.. code-block:: c++
 
     oc> create soma
 
@@ -427,9 +596,9 @@ Simulation
     oc> gnabar_hh /= 10 // put it back
 
 Recording the simulation
-===========
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code::
+.. code-block:: 
     c++
 
     oc> cvode_active(0) // this turns off variable time step
@@ -450,11 +619,14 @@ Recording the simulation
 
     oc> print vec.size()*dt, tstop // make sure stored the right amount of data
 
-Graphing and analyzing data
-==========
+.. seealso::
 
-.. code::
-    c++
+    :hoc:meth:`Vector.record`
+
+Graphing and analyzing data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: c++
 
     oc> g=new Graph()
 
@@ -468,19 +640,19 @@ Graphing and analyzing data
 
     oc> print vec[1].max, vec[1].max_ind*dt // steepest AP
 
-**Exercises**
+Exercises
+#########
 
-- change params (``stim.amp``, ``gnabar_hh``, ``gkbar_hh``), regraph and reanalyze
+1. change params (``stim.amp``, ``gnabar_hh``, ``gkbar_hh``), regraph and reanalyze
 
-- bring up the GUI and demonstrate that the GUI and command line control same parameters
+2. bring up the GUI and demonstrate that the GUI and command line control same parameters
 
-- write proc to count spikes and determine spike frequency (use vec.where)
+3. write ``proc`` to count spikes and determine spike frequency (use ``vec.where``)
 
 Roll your own GUI
-===========
+~~~~~~~~~~~~~~~~~
 
-.. code::
-    c++
+.. code-block:: c++
 
     oc> proc sety () { y=x print x }
 
@@ -494,9 +666,8 @@ Roll your own GUI
 
     oc> xpanel()
 
-**Exercises**
+Exercise
+########
 
-put up panel to run sim and display (in an xvalue) the average frequency
+1. put up panel to run sim and display (in an :hoc:func:`xvalue`) the average frequency
 
-
-*Last updated: Jun 16, 2003 (11:09)*

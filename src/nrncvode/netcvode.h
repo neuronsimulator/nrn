@@ -5,23 +5,24 @@
 
 #include "mymath.h"
 #include "tqueue.h"
+#include <cmath>
 #include <vector>
+#include <unordered_map>
 
 struct NrnThread;
 class PreSyn;
 class HocDataPaths;
-class PreSynTable;
+typedef std::unordered_map<double*, PreSyn*> PreSynTable;
 class NetCon;
 class DiscreteEvent;
 class TQItemPool;
 class SelfEventPool;
 class SelfEvent;
-class hoc_Item;
+struct hoc_Item;
 class PlayRecord;
 class PlayRecList;
 class IvocVect;
 class BAMechList;
-class MaxStateTable;
 class HTList;
 // nrn_nthread vectors of HTList* for fixed step method
 // Thread segregated HTList* of all the CVode.CvodeThreadData.HTList*
@@ -30,9 +31,10 @@ class HTList;
 using HTListList = std::vector<std::vector<HTList*>>;
 class NetCvode;
 class MaxStateItem;
+typedef std::unordered_map<void*, MaxStateItem*> MaxStateTable;
 class CvodeThreadData;
 class HocEvent;
-class HocEventList;
+typedef std::vector<HocEvent*> HocEventList;
 struct BAMech;
 struct Section;
 struct InterThreadEvent;
@@ -91,7 +93,6 @@ class NetCvode {
     void send2thread(double, DiscreteEvent*, NrnThread*);
     void null_event(double);
     void tstop_event(double);
-    void handle_tstop_event(double, NrnThread* nt);
     void hoc_event(double,
                    const char* hoc_stmt,
                    Object* ppobj = nil,
@@ -137,7 +138,7 @@ class NetCvode {
     void fixed_record_continuous(NrnThread*);
     void fixed_play_continuous(NrnThread*);
     static double eps(double x) {
-        return eps_ * Math::abs(x);
+        return eps_ * std::abs(x);
     }
     int condition_order() {
         return condition_order_;
@@ -220,7 +221,7 @@ class NetCvode {
     void fill_local_ba_cnt(int, int*, NetCvodeThreadData&);
     BAMechList* cvbml(int, BAMech*, Cvode*);
     void maxstate_analyse();
-    void maxstate_analyze_1(int, Cvode&, MaxStateItem*, CvodeThreadData&);
+    void maxstate_analyze_1(int, Cvode&, CvodeThreadData&);
     void fornetcon_prepare();
     int fornetcon_change_cnt_;
     double maxstate_analyse(Symbol*, double*);

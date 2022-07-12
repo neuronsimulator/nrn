@@ -13,9 +13,6 @@
    */
 #undef CRAY_STACKSEG_END
 
-/* define if using cygwin */
-#undef CYGWIN
-
 /* Define to 1 if using `alloca.c'. */
 #undef C_ALLOCA
 
@@ -105,6 +102,9 @@
 /* Define to 1 if you have the `mallinfo' function. */
 #undef HAVE_MALLINFO
 
+/* Define to 1 if you have the `mallinfo2' function. */
+#undef HAVE_MALLINFO2
+
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
@@ -128,12 +128,6 @@
 
 /* Define to 1 if you have the `posix_memalign' function. */
 #undef HAVE_POSIX_MEMALIGN
-
-/* Define if you have POSIX threads libraries and header files. */
-#undef HAVE_PTHREAD
-
-/* Define to 1 if you have the <pthread.h> header file. */
-#undef HAVE_PTHREAD_H
 
 /* Define to 1 if you have the `putenv' function. */
 #undef HAVE_PUTENV
@@ -302,10 +296,6 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Define to necessary symbol if this constant uses a non-standard name on
-   your system. */
-#undef PTHREAD_CREATE_JOINABLE
-
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
 
@@ -357,9 +347,6 @@
    `char[]'. */
 #undef YYTEXT_POINTER
 
-/* define if using Carbon libraries */
-#undef carbon
-
 /* Define to the type of a signed integer type of width exactly 64 bits if
    such a type exists and the standard includes do not define it. */
 #undef int64_t
@@ -373,22 +360,15 @@
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
 
-
+/* __cplusplus guard still needed because this header is included from C code in
+ * mesch (and maybe others)
+ */
 #if defined(__cplusplus)
 #include <ivstream.h>
 #endif
 
-#if defined(CYGWIN) || defined(MINGW)
+#ifdef MINGW
 #define WIN32 1
-#endif
-
-#if defined(MINGW)
-#define CYGWIN
-#endif
-
-#if defined(carbon) && defined(__cplusplus)
-#define MAC 1
-#include <Carbon/Carbon.h>
 #endif
 
 #endif /* H_nrnconf_included */

@@ -11,9 +11,7 @@
 #include "nrnpy_utils.h"
 #include "../nrniv/shapeplt.h"
 #include <vector>
-#if defined(HAVE_DLFCN_H)
-#include <dlfcn.h>
-#endif
+#include "nrnwrap_dlfcn.h"
 
 #if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
 // when compiled with different Python.h, force correct value

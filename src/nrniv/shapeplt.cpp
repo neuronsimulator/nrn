@@ -294,75 +294,43 @@ extern double nrniv_len_scale(void*);
 extern Object** nrniv_sh_nearest_seg(void*);
 extern Object** nrniv_sh_selected_seg(void*);
 
-static Member_func sh_members[] = {"hinton",
-                                   sh_hinton,
-                                   "nearest",
-                                   nrniv_sh_nearest,
-                                   "push_selected",
-                                   nrniv_sh_push,
-                                   "scale",
-                                   sh_scale,
-                                   "view",
-                                   sh_view,
-                                   "size",
-                                   ivoc_gr_size,
-                                   "view_count",
-                                   sh_view_count,
-                                   "flush",
-                                   sh_flush,
-                                   "fastflush",
-                                   fast_flush,
-                                   "begin",
-                                   sh_begin,
-                                   "variable",
-                                   sh_variable,
-                                   "save_name",
-                                   sh_save_name,
-                                   "unmap",
-                                   sh_unmap,
-                                   "color",
-                                   nrniv_sh_color,
-                                   "color_all",
-                                   nrniv_sh_color_all,
-                                   "color_list",
-                                   nrniv_sh_color_list,
-                                   "printfile",
-                                   sh_printfile,
-                                   "show",
-                                   sh_show,
-                                   "menu_action",
-                                   ivoc_gr_menu_action,
-                                   "menu_tool",
-                                   ivoc_gr_menu_tool,
-                                   "colormap",
-                                   s_colormap,
-                                   "exec_menu",
-                                   exec_menu,
-                                   "observe",
-                                   nrniv_sh_observe,
-                                   "rotate",
-                                   nrniv_sh_rotate,
-                                   "beginline",
-                                   ivoc_gr_begin_line,
-                                   "line",
-                                   ivoc_gr_line,
-                                   "label",
-                                   ivoc_gr_label,
-                                   "mark",
-                                   ivoc_gr_mark,
-                                   "erase",
-                                   ivoc_gr_erase,
-                                   "erase_all",
-                                   ivoc_erase_all,
-                                   "len_scale",
-                                   nrniv_len_scale,
-                                   "gif",
-                                   ivoc_gr_gif,
-                                   0,
-                                   0};
+static Member_func sh_members[] = {{"hinton", sh_hinton},
+                                   {"nearest", nrniv_sh_nearest},
+                                   {"push_selected", nrniv_sh_push},
+                                   {"scale", sh_scale},
+                                   {"view", sh_view},
+                                   {"size", ivoc_gr_size},
+                                   {"view_count", sh_view_count},
+                                   {"flush", sh_flush},
+                                   {"fastflush", fast_flush},
+                                   {"begin", sh_begin},
+                                   {"variable", sh_variable},
+                                   {"save_name", sh_save_name},
+                                   {"unmap", sh_unmap},
+                                   {"color", nrniv_sh_color},
+                                   {"color_all", nrniv_sh_color_all},
+                                   {"color_list", nrniv_sh_color_list},
+                                   {"printfile", sh_printfile},
+                                   {"show", sh_show},
+                                   {"menu_action", ivoc_gr_menu_action},
+                                   {"menu_tool", ivoc_gr_menu_tool},
+                                   {"colormap", s_colormap},
+                                   {"exec_menu", exec_menu},
+                                   {"observe", nrniv_sh_observe},
+                                   {"rotate", nrniv_sh_rotate},
+                                   {"beginline", ivoc_gr_begin_line},
+                                   {"line", ivoc_gr_line},
+                                   {"label", ivoc_gr_label},
+                                   {"mark", ivoc_gr_mark},
+                                   {"erase", ivoc_gr_erase},
+                                   {"erase_all", ivoc_erase_all},
+                                   {"len_scale", nrniv_len_scale},
+                                   {"gif", ivoc_gr_gif},
+                                   {0, 0}};
 
-static Member_ret_obj_func retobj_members[] =
-    {"nearest_seg", nrniv_sh_nearest_seg, "selected_seg", nrniv_sh_selected_seg, NULL, NULL};
+static Member_ret_obj_func retobj_members[] = {{"nearest_seg", nrniv_sh_nearest_seg},
+                                               {"selected_seg", nrniv_sh_selected_seg},
+                                               {NULL, NULL}};
 
 static void* sh_cons(Object* ho) {
     TRY_GUI_REDIRECT_OBJ("PlotShape", NULL);
@@ -621,12 +589,12 @@ void ShapePlot::scale(float min, float max) {
 }
 
 
-void ShapePlot::save_phase1(ostream& o) {
-    o << "{" << endl;
+void ShapePlot::save_phase1(std::ostream& o) {
+    o << "{" << std::endl;
     save_class(o, "PlotShape");
     char buf[256];
     sprintf(buf, "save_window_.variable(\"%s\")", spi_->sym_->name);
-    o << buf << endl;
+    o << buf << std::endl;
 }
 
 void ShapePlot::shape_plot() {}

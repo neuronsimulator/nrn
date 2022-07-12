@@ -29,18 +29,17 @@ On a PC using a version of NEURON before 7.7:
 Step 2:
 -------
 
-Using the location of :file:`hhkchan.mod`` as the working directory, start NEURON by typing ``python`` and then
+Using the location of :file:`hhkchan.mod` as the working directory, start NEURON by typing ``python`` and then
 
 .. code::
     python
 
     from neuron import h, gui
 
-This will automatically load the mechanisms compiled in Step 1. If NEURON doesn't find any compiled mechanisms, only the "built-in" mechanisms (hh, pas, IClamp, etc) will be available.
 
 Step 3:
 -------
-Bring up a single compartment model with surface area of 100 µm :sup:`2` (:menuselection:`Build --> single compartment`) and toggle the HHk button in the Distributed Mechanism Inserter ON. Verify that the new HHk model (along with the Na portion of the built-in HH channel) produces the same action potential as the built-in HH channel (using both its Na and K portions).
+Bring up a single compartment model with surface area of 100 µm\ :sup:`2` (:menuselection:`Build --> single compartment`) and toggle the HHk button in the Distributed Mechanism Inserter ON. Verify that the new HHk model (along with the Na portion of the built-in HH channel) produces the same action potential as the built-in HH channel (using both its Na and K portions).
 
  
 

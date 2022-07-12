@@ -41,10 +41,6 @@ void iv_display_scale(float);
 #include <IV-X11/ivx11_dynam.h>
 #endif
 
-#if defined(carbon)
-#undef MAC
-#endif
-
 #if MAC || defined(WIN32)
 #include "njconf.h"
 #else
@@ -68,7 +64,7 @@ static PropertyData properties[] = {{"*gui", "sgimotif"},
                                     {"*brush_width", "0"},
                                     {"*double_buffered", "on"},
                                     {"*flat", "#aaaaaa"},
-#if defined(WIN32) || defined(CYGWIN)
+#ifdef MINGW
                                     {"*font", "*Arial*bold*--12*"},
                                     {"*MenuBar*font", "*Arial*bold*--12*"},
                                     {"*MenuItem*font", "*Arial*bold*--12*"},
@@ -168,7 +164,7 @@ char* nrnpy_pyexe;
 int Oc::refcnt_ = 0;
 Session* Oc::session_ = 0;
 HandleStdin* Oc::handleStdin_ = 0;
-ostream* OcIdraw::idraw_stream = 0;
+std::ostream* OcIdraw::idraw_stream = 0;
 #endif
 /*****************************************************************************/
 extern void ivoc_cleanup();
@@ -188,7 +184,7 @@ extern double hoc_default_dll_loaded_;
 extern int hoc_print_first_instance;
 int nrnpy_nositeflag;
 
-#if !defined(WIN32) && !MAC && !defined(CYGWIN)
+#if !defined(MINGW) && !MAC
 extern void setneuronhome(const char*) {
     neuron_home = getenv("NEURONHOME");
 }
@@ -204,7 +200,7 @@ void penv() {
 #endif
 
 #if DARWIN || defined(__linux__)
-#include <dlfcn.h>
+#include "nrnwrap_dlfcn.h"
 #include <string>
 
 /* It is definitely now the case on mac and I think sometimes the case on
@@ -292,7 +288,7 @@ static void force_load() {
     }
 }
 
-#if defined(CYGWIN)
+#ifdef MINGW
 // see iv/src/OS/directory.cpp
 #include <sys/stat.h>
 static bool isdir(const char* p) {
@@ -557,7 +553,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     const char** our_argv = argv;
     int exit_status = 0;
     Session* session = NULL;
-#if !defined(WIN32) && !defined(MAC) && !defined(CYGWIN)
+#if !defined(MINGW) && !defined(MAC)
     // Gary Holt's first pass at this was:
     //
     // Set the NEURONHOME environment variable.  This should override any setting
@@ -629,7 +625,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     session = new Session("NEURON", our_argc, our_argv, options, properties);
     SIOUXSettings.asktosaveonclose = false;
 #else
-#if defined(WIN32) || carbon
+#if defined(WIN32)
     IFGUI
     session = new Session("NEURON", our_argc, (char**) our_argv, options, properties);
     ENDGUI
@@ -656,7 +652,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
             fclose(f);
             session->style()->load_file(String(nrn_props), -5);
         } else {
-#if defined(CYGWIN)
+#ifdef MINGW
             sprintf(nrn_props, "%s/%s", neuron_home, "lib/nrn.def");
 #else
             sprintf(nrn_props, "%s\\%s", neuron_home, "lib\\nrn.def");
@@ -792,13 +788,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
         units_on_flag_ = 1;
     }
     Oc oc(session, our_argv[0], env);
-#if defined(WIN32) && !defined(CYGWIN)
-    if (session->style()->find_attribute("showwinio", str) &&
-        !session->style()->value_is_on("showwinio")) {
-        ShowWindow(hCurrWnd, SW_HIDE);
-        hoc_obj_run("pwman_place(100,100)\n", 0);
-    }
-#endif
 #else
     hoc_main1_init(our_argv[0], env);
 #endif  // HAVE_IV
@@ -878,11 +867,6 @@ void ivoc_final_exit() {
     nrnmpi_terminate();
 #endif
 }
-
-extern "C" {
-extern double* getarg(int i);
-extern int ifarg(int);
-}  // extern "C"
 
 extern void hoc_ret(), hoc_pushx(double);
 

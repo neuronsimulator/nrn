@@ -198,8 +198,8 @@ from source.
 In order to build NEURON from source, the following packages must be available:
 
 - Bison
-- Flex
-- C/C++ compiler suite
+- Flex >= 2.6
+- C/C++ compiler suite supporting C++17
 - CMake 3.15.0
 
 The following packages are optional (see build options):
@@ -307,6 +307,12 @@ build system, and they can be installed together as shown below:
   git clone https://github.com/neuronsimulator/nrn -b 8.0.0  # specific release version 8.0.0
   cd nrn
   ```
+
+  > :warning: To build NEURON from source you either need to clone the NEURON Git repository or download a
+  > source code archive that includes Git submodules, such as the `full-src-package-X.Y.Z.tar.gz` file in
+  > the [NEURON releases](https://github.com/neuronsimulator/nrn/releases) on GitHub. The tarballs like
+  > `Source code (tar.gz)` or `Source code (zip)` created by GitHub are incomplete.
+
 
 2. Create a build directory:
 

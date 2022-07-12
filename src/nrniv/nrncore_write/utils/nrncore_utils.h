@@ -3,7 +3,7 @@
 
 #include <string>
 
-class NrnThread;
+struct NrnThread;
 
 void model_ready();
 int count_distinct(double* data, int len);
@@ -11,7 +11,7 @@ extern void nrnbbcore_register_mapping();
 bool file_exist(const std::string& path);
 extern "C" int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index);
 
-
+#include "nrnwrap_dlfcn.h"
 #if defined(HAVE_DLFCN_H)
 
 bool is_coreneuron_loaded();

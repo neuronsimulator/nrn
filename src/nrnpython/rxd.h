@@ -1,5 +1,15 @@
-#include <pthread.h>
-#include <matrix2.h>
+#pragma once
+#include "matrix2.h"
+// mesch defines many macros that interact badly with C++ headers
+#undef catch
+#undef max
+#undef min
+
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+#include <vector>
+
 /*borrowed from Meschach Version 1.2b*/
 #define v_get_val(x, i)    ((x)->ve[(i)])
 #define m_get_val(A, i, j) ((A)->me[(i)][(j)])
@@ -107,11 +117,10 @@ typedef struct TaskList {
 } TaskList;
 
 typedef struct TaskQueue {
-    pthread_mutex_t* task_mutex;
-    pthread_cond_t* task_cond;
-    pthread_mutex_t* waiting_mutex;
-    pthread_cond_t* waiting_cond;
-    int length;
+    std::condition_variable task_cond, waiting_cond;
+    std::mutex task_mutex, waiting_mutex;
+    std::vector<bool> exit;
+    int length{};
     struct TaskList* first;
     struct TaskList* last;
 } TaskQueue;
@@ -240,8 +249,7 @@ void get_all_reaction_rates(double*, double*, double*);
 void _ecs_ode_reinit(double*);
 void do_currents(Grid_node*, double*, double, int);
 void TaskQueue_add_task(TaskQueue*, void* (*task)(void* args), void*, void*);
-void* TaskQueue_exe_tasks(void*);
-void start_threads(const int);
+void TaskQueue_exe_tasks(std::size_t, TaskQueue*);
 void TaskQueue_sync(TaskQueue*);
 void ecs_atolscale(double*);
 void apply_node_flux3D(Grid_node*, double, double*);

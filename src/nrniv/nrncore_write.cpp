@@ -69,7 +69,8 @@
 // instances.
 /*
 Assumptions regarding the scope of possible models.(Incomplete list)
-All real cells have gids.
+All real cells have gids (possibly multiple, but no more than one gid
+for a PreSyn instance.)
 Artificial cells without gids connect only to cells in the same thread.
 No POINTER to data outside of NrnThread.
 No POINTER to data in ARTIFICIAL_CELL (that data is not cache_efficient)
@@ -106,23 +107,7 @@ correctness has not been validated for cells without gids.
 #include "nrncore_write/callbacks/nrncore_callbacks.h"
 #include <map>
 
-
-#ifdef MINGW
-#define RTLD_NOW    0
-#define RTLD_GLOBAL 0
-#define RTLD_NOLOAD 0
-extern "C" {
-extern void* dlopen_noerr(const char* name, int mode);
-#define dlopen dlopen_noerr
-extern void* dlsym(void* handle, const char* name);
-extern int dlclose(void* handle);
-extern char* dlerror();
-}
-#else
-#if defined(HAVE_DLFCN_H)
-#include <dlfcn.h>
-#endif
-#endif
+#include "nrnwrap_dlfcn.h"
 
 
 extern NetCvode* net_cvode_instance;
@@ -191,9 +176,18 @@ size_t nrncore_write() {
 
 static size_t part1() {
     size_t rankbytes = 0;
-    if (!bbcore_dparam_size) {
+    static int bbcore_dparam_size_size = -1;
+
+    // In nrn/test/pynrn, "python -m pytest ." calls this with
+    // n_memb_func of 27 and then with 29. I don't see any explicit
+    // intervening h.nrn_load_dll in that folder but ...
+    if (bbcore_dparam_size_size != n_memb_func) {
+        if (bbcore_dparam_size) {
+            delete[] bbcore_dparam_size;
+        }
         bbcore_dparam_size = new int[n_memb_func];
     }
+
     for (int i = 0; i < n_memb_func; ++i) {
         int sz = nrn_prop_dparam_size_[i];
         bbcore_dparam_size[i] = sz;

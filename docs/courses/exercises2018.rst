@@ -98,6 +98,7 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
 
     intro_to_gui.rst
     interactive_modeling.rst
+    the_cellbuilder.rst
     neuron_scripting_exercises.rst
     using_morphometric_data
     using_nmodl_files.rst

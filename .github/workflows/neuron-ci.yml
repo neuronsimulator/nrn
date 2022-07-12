@@ -43,38 +43,78 @@ jobs:
       matrix:
         os: [ macOS-10.15, ubuntu-18.04]
         config:
-          - { matrix_eval : "CC=gcc CXX=g++" ,      build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON" }
-          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "setuptools"  }
-          - { matrix_eval : "CC=gcc-5 CXX=g++-5",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON" }
-          - { matrix_eval : "CC=gcc-6 CXX=g++-6",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF" }
-          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON" }
-          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake",      python_dynamic : ON }
+        # GitHub Actions's ubuntu-18.04 image should provide g++ versions 9 and
+        # 10 even though those are not available in vanilla Ubuntu 18.04
+          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
+          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake"}
+          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake", python_dynamic: ON}
+          - { matrix_eval : "CC=gcc-7 CXX=g++-7" ,  build_mode: "cmake", cmake_option: "-DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-7 CXX=g++-7",   build_mode: "cmake", cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"}
+        include:
+          - os: ubuntu-22.04
+            config:
+              build_mode: cmake
+              # TODO: -DCORENRN_ENABLE_NMODL=ON -DNMODL_SANITIZERS=undefined
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON
+                -DNRN_ENABLE_INTERVIEWS=OFF -DCORENRN_SANITIZERS=undefined
+              flag_warnings: ON
+              sanitizer: undefined
+          - os: ubuntu-22.04
+            config:
+              build_mode: cmake
+              # TODO: -DCORENRN_ENABLE_NMODL=ON -DNMODL_SANITIZERS=address,leak
+              # TODO: CoreNEURON is only LeakSanitizer-clean if we disable MPI
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON
+                -DNRN_ENABLE_INTERVIEWS=OFF -DCORENRN_SANITIZERS=address
+              # TODO: address-leak is the dream, but there are many problems,
+              # including external ones from the MPI implementations
+              sanitizer: address
       fail-fast: false
 
     steps:
       - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@v1.4
+        uses: jwlawson/actions-setup-cmake@v1
         with:
           cmake-version: ${{ env.DESIRED_CMAKE_VERSION }}
 
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install coreutils doxygen mpich xz && brew unlink mpich && brew install openmpi && brew install --cask xquartz
+          brew install ccache coreutils doxygen flex mpich ninja xz
+          brew unlink mpich
+          brew install openmpi
+          brew install --cask xquartz
+          echo /usr/local/opt/flex/bin >> $GITHUB_PATH
+          # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+          echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> $GITHUB_ENV
+          echo CTEST_PARALLEL_LEVEL=3 >> $GITHUB_ENV
+          echo CI_OS_NAME=osx >> $GITHUB_ENV
         shell: bash
 
       - name: Install apt packages
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          sudo apt-get install build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf g++-5 g++-6 g++-8 g++-9
+          sudo apt-get install build-essential ccache libopenmpi-dev \
+            libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
+            openmpi-bin patchelf
+          # The sanitizer builds use ubuntu 22.04
+          if [[ "${{matrix.os}}" == "ubuntu-18.04" ]]; then
+            sudo apt-get install g++-7 g++-8
+          fi
+          # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+          echo CMAKE_BUILD_PARALLEL_LEVEL=2 >> $GITHUB_ENV
+          echo CTEST_PARALLEL_LEVEL=2 >> $GITHUB_ENV
+          echo CI_OS_NAME=linux >> $GITHUB_ENV
         shell: bash
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
-        uses: actions/setup-python@v2
+        if: ${{matrix.config.python_dynamic == 'ON'}}
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
 
@@ -85,7 +125,7 @@ jobs:
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ env.PY_MAX_VERSION }}
 
@@ -94,23 +134,47 @@ jobs:
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
+      - name: Register gcc problem matcher
+        if: ${{matrix.config.flag_warnings == 'ON'}}
+        run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+
+      - name: Register sanitizer problem matcher
+        if: ${{matrix.config.sanitizer}}
+        run: echo "::add-matcher::.github/problem-matchers/${{matrix.config.sanitizer}}.json"
+
+      - name: Hash config dictionary
+        run: |
+          cat << EOF > matrix.json
+          ${{toJSON(matrix.config)}}
+          EOF
+          echo matrix.config JSON:
+          cat matrix.json
+          echo -----
+
+      - name: Restore compiler cache
+        uses: pat-s/always-upload-cache@v3
+        with:
+          path: |
+            ${{runner.workspace}}/ccache
+          key: ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
+            ${{matrix.os}}-${{hashfiles('matrix.json')}}-
+
       - name: Build and Test
         id: build-test
         shell: bash
         working-directory: ${{runner.workspace}}/nrn
         run:  |
-
           # OS related
           if [ "$RUNNER_OS" == "Linux" ]; then
-            eval $MATRIX_EVAL;
-            export CI_OS_NAME="linux"
+            export ${MATRIX_EVAL};
             export SHELL="/bin/bash"
           else
             export CXX=${CXX:-g++};
             export CC=${CC:-gcc};
           fi
           if [ "$RUNNER_OS" == "macOS" ]; then
-            export CI_OS_NAME="osx"
             # TODO - this is a workaround that was implemented for Azure being reported as getting stuck.
             # However it does not get stuck: neuron module not found and script goes to interpreter, seeming stuck.
             # This needs to be addressed and SKIP_EMBEDED_PYTHON_TEST logic removed everywhere.
@@ -120,8 +184,8 @@ jobs:
           # Python setup
           export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/
           # Python setup
-          export PYTHON_MIN=$(which $PYTHON_MIN_NAME);
-          export PYTHON_MAX=$(which $PYTHON_MAX_NAME);
+          export PYTHON_MIN=$(command -v $PYTHON_MIN_NAME);
+          export PYTHON_MAX=$(command -v $PYTHON_MAX_NAME);
           export PYTHON=$PYTHON_MAX
           if [ "$RUNNER_OS" == "macOS" ]; then
             # Python is not installed as a framework, so we need to writ 'backend: TkAgg' to `matplotlibrc`.
@@ -133,89 +197,135 @@ jobs:
           # Some logging
           echo $LANG
           echo $LC_ALL
-          $CXX -v
           python3 -c 'import os,sys; os.set_blocking(sys.stdout.fileno(), True)'
           cmake --version
 
           # different builds with CMake
-          if [ "$BUILD_MODE" == "cmake" ]; then
-              ACTUAL_CMAKE_VERSION="`cmake --version|sed -n '1s/^.* //p'`";
-              if test "$DESIRED_CMAKE_VERSION" != "$ACTUAL_CMAKE_VERSION" ; then
-                echo "DESIRED_CMAKE_VERSION $DESIRED_CMAKE_VERSION";
-                echo "ACTUAL_CMAKE_VERSION $ACTUAL_CMAKE_VERSION";
-                echo "PATH=$PATH";
-                which cmake;
-                cmake --version;
-                exit 1;
-              fi;
-              export CMAKE_OPTION="${{ matrix.config.cmake_option }}"
-              if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-                export CMAKE_OPTION="-DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON";
-              else
-                export CMAKE_OPTION="$CMAKE_OPTION -DPYTHON_EXECUTABLE=${PYTHON}";
-              fi;
-              mkdir build && cd build;
-              echo "Building with: "$CMAKE_OPTION
-              echo "CC="$CC
-              echo "CXX="$CXX
-              cmake $CMAKE_OPTION  -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..;
-              # Autodetection does not seem to work well, compiler processes were getting killed.
-              # These core counts are taken from
-              # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
-              if [ "$RUNNER_OS" == "macOS" ]; then
-                BUILD_PARALLEL_LEVEL=3
-              else
-                BUILD_PARALLEL_LEVEL=2
+          if [[ "$BUILD_MODE" == "cmake" ]]; then
+              cmake_args=(-G Ninja)
+              # Sanitizer-specific setup
+              if [[ -n "${{matrix.config.sanitizer}}" ]]; then
+                CC=$(command -v clang-14)
+                CXX=$(command -v clang++-14)
+                symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
+                echo symbolizer_path=${symbolizer_path}
+                cmake_args+=(-DCMAKE_BUILD_TYPE=Custom \
+                             -DCMAKE_C_FLAGS="-O1 -g -Wno-writable-strings" \
+                             -DCMAKE_CXX_FLAGS="-O1 -g -Wno-writable-strings" \
+                             -DLLVM_SYMBOLIZER_PATH="${symbolizer_path}" \
+                             -DNRN_SANITIZERS=$(echo ${{matrix.config.sanitizer}} | sed -e 's/-/,/g'))
               fi
-              # The --parallel option to CMake was only added in v3.12
-              cmake --build . -- -j ${BUILD_PARALLEL_LEVEL}
-              if [ "$RUNNER_OS" == "macOS" ]; then
+              cmake_args+=(-DCMAKE_C_COMPILER="${CC}" \
+                           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                           -DCMAKE_CXX_COMPILER="${CXX}" \
+                           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+                           -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
+                           -DNRN_ENABLE_TESTS=ON \
+                           ${{matrix.config.cmake_option}})
+              if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
+                cmake_args+=(-DNRN_ENABLE_PYTHON=ON \
+                             -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
+                             -DNRN_PYTHON_DYNAMIC="${PYTHON_MIN};${PYTHON_MAX}" \
+                             -DNRN_ENABLE_CORENEURON=ON)
+              else
+                cmake_args+=(-DPYTHON_EXECUTABLE="${PYTHON}")
+              fi
+              # Enable more warnings in the builds whose compiler warnings we
+              # highlight in the GitHub UI
+              if [[ "${{matrix.config.flag_warnings}}" == "ON" ]]; then
+                cmake_args+=(-DNRN_EXTRA_CXX_FLAGS="-Wall \
+                                -Wno-char-subscripts \
+                                -Wno-unknown-pragmas \
+                                -Wno-unused-variable \
+                                -Wno-unused-function \
+                                -Wno-unused-but-set-variable \
+                                -Wno-reorder \
+                                -Wno-sign-compare" \
+                             -DNRN_EXTRA_MECH_CXX_FLAGS="-Wno-sometimes-uninitialized \
+                                -Wno-missing-braces")
+              fi
+              mkdir build && cd build
+              echo "Building with: ${cmake_args[@]}"
+              cmake .. "${cmake_args[@]}"
+              if ccache --version | grep -E '^ccache version 4\.(4|4\.1)$'
+              then
+                echo "------- Disable ccache direct mode -------"
+                # https://github.com/ccache/ccache/issues/935
+                export CCACHE_NODIRECT=1
+              fi
+              ccache -z
+              # Older versions don't support -v (verbose)
+              ccache -vs 2>/dev/null || ccache -s
+              cmake --build . --parallel
+              ccache -vs 2>/dev/null || ccache -s
+              if [ "$RUNNER_OS" == "macOS" ]
+              then
                 echo $'[install]\nprefix='>src/nrnpython/setup.cfg;
-              fi;
-              if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-                echo "--RUNNING BASIC TESTS FROM BUILD DIR--";
-                NEURONHOME=`pwd`/share/nrn  PYTHONPATH=`pwd`/lib/python PATH=`pwd`/bin LD_LIBRARY_PATH=`pwd`/lib DYLD_LIBRARY_PATH=`pwd`/lib $PYTHON_MIN -c "from neuron import h; import neuron; neuron.test()";
-                NEURONHOME=`pwd`/share/nrn  PYTHONPATH=`pwd`/lib/python PATH=`pwd`/bin LD_LIBRARY_PATH=`pwd`/lib DYLD_LIBRARY_PATH=`pwd`/lib $PYTHON_MAX -c "from neuron import h; import neuron; neuron.test()";
-              fi;
-              make install;
-              export PATH=$INSTALL_DIR/bin:$PATH;
-              ctest -VV;
-          elif [ "$BUILD_MODE" == "setuptools" ]; then
+              fi
+              if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
+                echo "--RUNNING BASIC TESTS FROM BUILD DIR--"
+                for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
+                do
+                  echo "Using ${python}"
+                  NEURONHOME="${PWD}/share/nrn" \
+                    PYTHONPATH="${PWD}/lib/python" \
+                    PATH="${PWD}/bin" \
+                    LD_LIBRARY_PATH="${PWD}/lib:${LD_LIBRARY_PATH}" \
+                    DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
+                    "${python}" -c "from neuron import h; import neuron; neuron.test()"
+                done
+              fi
+              ctest --output-on-failure
+              cmake --build . --target install
+              export PATH="${INSTALL_DIR}/bin:${PATH}"
+              if [[ -f "${INSTALL_DIR}/bin/nrn-enable-sanitizer" ]]; then
+                echo --- bin/nrn-enable-sanitizer ---
+                cat bin/nrn-enable-sanitizer
+                echo ---
+                nrn_enable_sanitizer=${INSTALL_DIR}/bin/nrn-enable-sanitizer
+                nrn_enable_sanitizer_preload="${nrn_enable_sanitizer} --preload"
+              else
+                echo nrn-enable-sanitizer not found, not using it
+              fi
+          elif [[ "$BUILD_MODE" == "setuptools" ]]; then
             ./packaging/python/build_wheels.bash CI;
           fi;
 
           # basic test for cmake when python is not disabled
-          if [[ "$BUILD_MODE" == "cmake" && "$CMAKE_OPTION" != *"NRN_ENABLE_PYTHON=OFF"* ]]; then
-            $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
+          if [[ "$BUILD_MODE" == "cmake" && ! "${cmake_args[*]}" =~ "NRN_ENABLE_PYTHON=OFF" ]]; then
+            $PYTHON --version && ${nrn_enable_sanitizer_preload} $PYTHON -c 'import neuron; neuron.test()'
           fi;
 
           # test neurondemo with cmake
-          if [ "$BUILD_MODE" != "setuptools" ]; then
-            neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()';
+          if [[ "$BUILD_MODE" != "setuptools" ]]; then
+            ${nrn_enable_sanitizer} neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
           fi;
 
           # with cmake dynamic check python_min and python_max together
           if [[ "$BUILD_MODE" == "cmake" && "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
-            $PYTHON_MAX -c 'import neuron; neuron.test()' && $PYTHON_MIN -c 'import neuron; neuron.test()';
+            ${nrn_enable_sanitizer_preload} $PYTHON_MAX -c 'import neuron; neuron.test()'
+            ${nrn_enable_sanitizer_preload} $PYTHON_MIN -c 'import neuron; neuron.test()'
           fi;
 
-          # run rxd tests manually
-          if [[ "$BUILD_MODE" == "cmake" && "$CMAKE_OPTION" != *"NRN_ENABLE_RX3D=OFF"* && "$CMAKE_OPTION" == *"NRN_ENABLE_CORENEURON=OFF"* ]]; then
-            $PYTHON ../share/lib/python/neuron/rxdtests/run_all.py;
+          # run rxd tests manually if rxd is enabled *and CoreNEURON is
+          # disabled -- otherwise hh-related tests fail
+          if [[ "$BUILD_MODE" == "cmake" \
+                && ! "${cmake_args[*]}" =~ "NRN_ENABLE_RX3D=OFF" \
+                && ! "${cmake_args[*]}" =~ "NRN_ENABLE_CORENEURON=ON" ]]; then
+            ${nrn_enable_sanitizer_preload} $PYTHON ../share/lib/python/neuron/rxdtests/run_all.py
           fi;
 
-          # with setuptools / pip, use wheel under virtual environment
           if [ "$BUILD_MODE" == "setuptools" ]; then
             neuron_wheel=wheelhouse/NEURON*.whl;
-            ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel;
-          fi;
-          # with setuptools / pip, use wheel for global install
-          if [ "$BUILD_MODE" == "setuptools" ]; then
-            neuron_wheel=wheelhouse/NEURON*.whl;
-            ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel false;
+            # test with virtual environment
+            ${nrn_enable_sanitizer_preload} ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel
+            # test with global installation
+            ${nrn_enable_sanitizer_preload} ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel false
           fi;
         env:
           BUILD_MODE: ${{ matrix.config.build_mode }}
+          CCACHE_BASEDIR: ${{runner.workspace}}/nrn
+          CCACHE_DIR: ${{runner.workspace}}/ccache
           NRN_ENABLE_PYTHON_DYNAMIC : ${{ matrix.config.python_dynamic }}
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"

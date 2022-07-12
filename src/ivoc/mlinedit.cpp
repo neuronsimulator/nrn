@@ -105,9 +105,9 @@ static const char** v_text(void* v) {
 }
 
 
-static Member_func members[] = {"readonly", readonly, "map", map, 0, 0};
+static Member_func members[] = {{"readonly", readonly}, {"map", map}, {0, 0}};
 
-static Member_ret_str_func retstr_members[] = {"text", v_text, 0, 0};
+static Member_ret_str_func retstr_members[] = {{"text", v_text}, {0, 0}};
 
 static void* cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("TextEditor", NULL);

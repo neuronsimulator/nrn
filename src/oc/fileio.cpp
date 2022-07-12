@@ -39,23 +39,6 @@ void debugfile(const char* format, ...) {
 #endif
 
 void hoc_stdout(void) {
-#if defined(WIN32) && !defined(CYGWIN)
-    extern FILE* hoc_redir_stdout;
-    if (ifarg(1)) {
-        if (hoc_redir_stdout) {
-            hoc_execerror("stdout already switched", (char*) 0);
-        }
-        hoc_redir_stdout = fopen(gargstr(1), "wb");
-    } else if (hoc_redir_stdout) {
-        fclose(hoc_redir_stdout);
-        hoc_redir_stdout = (FILE*) 0;
-    }
-    ret();
-    pushx((hoc_redir_stdout) ? (double) fileno(hoc_redir_stdout) : 1.);
-#else
-#if defined(MAC) && !defined(DARWIN)
-    hoc_execerror("hoc_stdout", "not implemented for MAC");
-#else /*UNIX */
     static int prev = -1;
     if (ifarg(1)) {
         FILE* f1;
@@ -84,8 +67,6 @@ void hoc_stdout(void) {
     }
     ret();
     pushx((double) fileno(stdout));
-#endif
-#endif
 }
 
 void ropen(void) /* open file for reading */
@@ -139,7 +120,7 @@ void wopen(void) /* open file for writing */
     pushx(d);
 }
 
-extern "C" const char* expand_env_var(const char* s) {
+const char* expand_env_var(const char* s) {
     static HocStr* hs;
     const char* cp1;
     char* cp2;
@@ -817,7 +798,7 @@ static int hoc_Load_file(int always, const char* name) {
 
     return b;
 }
-extern "C" char* hoc_back2forward(char*);
+char* hoc_back2forward(char*);
 void hoc_getcwd(void) {
     int len;
     static char* buf;

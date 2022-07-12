@@ -68,11 +68,12 @@ Here is the complete specification of the computational model:
      - 
        hh
 
-"*" --gnabar_hh, gkbar_hh, and gl_hh in the apical dendrites decrease linearly with path distance from the soma. Density is 100% at the origin of the tree, and falls to 0% at the most distant termination.
+
+\* -- ``gnabar_hh``, ``gkbar_hh``, and ``gl_hh`` in the apical dendrites decrease linearly with path distance from the soma. Density is 100% at the origin of the tree, and falls to 0% at the most distant termination.
 
 To ensure that resting potential is -65 mV throughout the cell, e_pas in the basilar dendrite is -65 mV.
 
-Other parameters: cm = 1 uf/cm^2, Ra = 160 ohm cm, nseg governed by d_lambda = 0.1.
+Other parameters: cm = 1 uf/cm^2, Ra = 160 ohm cm, :data:`nseg` governed by d_lambda = 0.1.
 
 
 The exercise
@@ -102,15 +103,16 @@ The exercise
 
         gnabar_hh = gnabar_max * (1 - distance/max_distance)
 
-        where
+
+    where
 
         distance = distance from origin of the apical tree to x
 
-        and
+    and
 
         max_distance = distance from {origin of the apical tree} to {the most remote dendritic termination in the apical tree}.
 
-    The formulas for gk_hh and gl_hh are similar.
+    The formulas for ``gk_hh`` and ``gl_hh`` are similar.
 
     distance/max_distance is "normalized distance into the apical tree from its origin." So the distance metric p should be 0 at the origin of the apical tree, and 1 at the end of the most remote dendritic termination in the apical tree.
 

@@ -4,13 +4,13 @@
 #endif
 
 #include <stdio.h>
-#include <OS/list.h>
 #include <OS/string.h>
 #include "classreg.h"
 #include "oclist.h"
 #include "oc2iv.h"
 #include "hoclist.h"
 #include "ocobserv.h"
+#include "oc_ansi.h"
 #if HAVE_IV
 #include <InterViews/adjust.h>
 #include <InterViews/hit.h>
@@ -29,7 +29,6 @@
 extern Object** hoc_temp_objptr(Object*);
 extern Symlist* hoc_top_level_symlist;
 int ivoc_list_count(Object*);
-extern "C" Object* ivoc_list_item(Object*, int);
 
 
 extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
@@ -78,9 +77,6 @@ void handle_old_focus();
 class OcListBrowser {};
 #endif
 
-declarePtrList(OcListImpl, Object);
-implementPtrList(OcListImpl, Object);
-
 static Symbol* list_class_sym_;
 static void chk_list(Object* o) {
     if (!o || o->ctemplate != list_class_sym_->u.ctemplate) {
@@ -98,7 +94,7 @@ void OcList::append(Object* ob) {
     if (!ob)
         return;
     oref(ob);
-    oli_->append(ob);
+    oli_.push_back(ob);
 #if HAVE_IV
     if (b_) {
         b_->load_item(count() - 1);
@@ -156,7 +152,7 @@ void OcList::prepend(Object* ob) {
     if (!ob)
         return;
     oref(ob);
-    oli_->prepend(ob);
+    oli_.insert(oli_.begin(), ob);
 #if HAVE_IV
     if (b_) {
         b_->reload();
@@ -175,7 +171,7 @@ void OcList::insert(long i, Object* ob) {
     if (!ob)
         return;
     oref(ob);
-    oli_->insert(i, ob);
+    oli_.insert(oli_.begin() + i, ob);
 #if HAVE_IV
     if (b_) {
         b_->reload();
@@ -189,7 +185,7 @@ static double l_count(void* v) {
     return o->count();
 }
 long OcList::count() {
-    return oli_->count();
+    return oli_.size();
 }
 
 static double l_remove(void* v) {
@@ -199,8 +195,8 @@ static double l_remove(void* v) {
     return o->count();
 }
 void OcList::remove(long i) {
-    Object* ob = oli_->item(i);
-    oli_->remove(i);
+    Object* ob = oli_[i];
+    oli_.erase(oli_.begin() + i);
 #if HAVE_IV
     if (b_) {
         b_->select(-1);
@@ -219,9 +215,8 @@ static double l_index(void* v) {
     return o->index(ob);
 }
 long OcList::index(Object* ob) {
-    long i, cnt = oli_->count();
-    for (i = 0; i < cnt; ++i) {
-        if (oli_->item(i) == ob) {
+    for (long i = 0; i < oli_.size(); ++i) {
+        if (oli_[i] == ob) {
             return i;
         }
     }
@@ -234,7 +229,7 @@ static Object** l_object(void* v) {
     return hoc_temp_objptr(o->object(i));
 }
 Object* OcList::object(long i) {
-    return oli_->item(i);
+    return oli_[i];
 }
 
 static double l_remove_all(void* v) {
@@ -243,12 +238,10 @@ static double l_remove_all(void* v) {
     return o->count();
 }
 void OcList::remove_all() {
-    long i, cnt = oli_->count();
-    for (i = 0; i < cnt; ++i) {
-        Object* ob = oli_->item(i);
+    for (auto& ob: oli_) {
         ounref(ob);
     }
-    oli_->remove_all();
+    oli_.clear();
 #if HAVE_IV
     if (b_) {
         b_->select(-1);
@@ -378,36 +371,24 @@ static double l_scroll_pos(void* v) {
 }
 
 
-static Member_func l_members[] = {"append",
-                                  l_append,
-                                  "prepend",
-                                  l_prepend,
-                                  "insrt",
-                                  l_insert,
-                                  "remove",
-                                  l_remove,
-                                  "remove_all",
-                                  l_remove_all,
-                                  "index",
-                                  l_index,
-                                  "count",
-                                  l_count,
-                                  "browser",
-                                  l_browser,
-                                  "selected",
-                                  l_selected,
-                                  "select",
-                                  l_select,
-                                  "select_action",
-                                  l_select_action,
-                                  "accept_action",
-                                  l_accept_action,
-                                  "scroll_pos",
-                                  l_scroll_pos,
-                                  0,
-                                  0};
+static Member_func l_members[] = {{"append", l_append},
+                                  {"prepend", l_prepend},
+                                  {"insrt", l_insert},
+                                  {"remove", l_remove},
+                                  {"remove_all", l_remove_all},
+                                  {"index", l_index},
+                                  {"count", l_count},
+                                  {"browser", l_browser},
+                                  {"selected", l_selected},
+                                  {"select", l_select},
+                                  {"select_action", l_select_action},
+                                  {"accept_action", l_accept_action},
+                                  {"scroll_pos", l_scroll_pos},
+                                  {nullptr, nullptr}};
 
-static Member_ret_obj_func l_retobj_members[] = {"object", l_object, "o", l_object, 0, 0};
+static Member_ret_obj_func l_retobj_members[] = {{"object", l_object},
+                                                 {"o", l_object},
+                                                 {nullptr, nullptr}};
 
 static void* l_cons(Object*) {
     OcList* o;
@@ -429,7 +410,8 @@ int ivoc_list_count(Object* olist) {
     OcList* list = (OcList*) olist->u.this_pointer;
     return list->count();
 }
-extern "C" Object* ivoc_list_item(Object* olist, int i) {
+
+Object* ivoc_list_item(Object* olist, int i) {
     chk_list(olist);
     OcList* list = (OcList*) olist->u.this_pointer;
     if (i >= 0 && i < list->count()) {
@@ -440,9 +422,8 @@ extern "C" Object* ivoc_list_item(Object* olist, int i) {
 }
 
 OcList::OcList(long n) {
-    oli_ = new OcListImpl(n);
-    b_ = NULL;
-    ct_ = NULL;
+    b_ = nullptr;
+    ct_ = nullptr;
 }
 
 OcList::OcList(const char* name) {
@@ -456,8 +437,7 @@ OcList::OcList(const char* name) {
     ct_ = s->u.ctemplate;
     int cnt = ct_->count;
     cnt = (cnt) ? cnt : 5;
-    oli_ = new OcListImpl(cnt);
-    b_ = NULL;
+    b_ = nullptr;
     hoc_Item* q;
     ITERATE(q, ct_->olist) {
         append(OBJ(q));
@@ -481,7 +461,6 @@ OcList::~OcList() {
 #endif
     b_ = NULL;
     remove_all();
-    delete oli_;
 }
 
 static int l_chkpt(void** vp) {

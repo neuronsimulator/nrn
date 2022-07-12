@@ -597,11 +597,11 @@ General
             ns2.number = 3
             ns2.start=30
             nctrig = h.NetCon(ns2, ns)
-            nctrig.delay = .1
+            nctrig.delay = 0.1
             nctrig.weight[0] = 1
             
             h.tstop=500
-            h.cvode_active(1)
+            h.cvode_active(True)
             h.run()
             
     Output:
@@ -760,6 +760,63 @@ General
          
         See `<nrn src dir>/src/nrnoc/intfire1.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/intfire1.mod>`_
 
+    Example:
+    
+        .. code-block::
+            python
+
+            from neuron import h
+            from neuron.units import ms, mV
+            import matplotlib.pyplot as plt
+            h.load_file("stdrun.hoc")
+
+            my_cell = h.IntFire1()
+            my_cell.tau = 4 * ms
+            my_cell.refrac = 10 * ms
+
+            # stimuli
+            e_stims = h.NetStim()
+            e_stims.noise = True
+            e_stims.interval = 3 * ms
+            e_stims.start = 0 * ms
+            e_stims.number = 1e10
+            nc = h.NetCon(e_stims, my_cell)
+            nc.weight[0] = 0.5
+            nc.delay = 0 * ms
+
+            # setup recording
+            stim_times = h.Vector()
+            output_times = h.Vector()
+            stim_times_nc = h.NetCon(e_stims, None)
+            stim_times_nc.record(stim_times)
+            output_times_nc = h.NetCon(my_cell, None)
+            output_times_nc.record(output_times)
+
+            # run the simulation
+            h.finitialize(-65 * mV)
+            h.continuerun(100 * ms)
+
+
+            # show a raster plot of the output spikes and the stimulus times
+            fig, ax = plt.subplots(figsize=(8, 2))
+
+            for c, (color, data) in enumerate([("red", stim_times), ("black", output_times)]):
+                ax.vlines(data, c - 0.4, c + 0.4, colors=color)
+
+            ax.set_yticks([0, 1])
+            ax.set_yticklabels(['excitatory\nstimuli','output\nevents'])
+
+            ax.set_xlim([0, h.t])
+            ax.set_xlabel('time (ms)')
+            
+        `Click here <https://colab.research.google.com/drive/1c02kKjinPAfwdabxMv79fErlqugFVOPo?usp=sharing>`_
+        for a runnable version of this example. 
+        (To interactively run it, either make a copy or choose
+        File - Open in playground mode.)
+
+    .. seealso:
+    
+         IntFire1 is used in the example for :class:`PatternStim`
 
 ----
 

@@ -13,46 +13,35 @@ Type 3 are at the very beginning of finitialize. ie structure changes
   are allowed.
 */
 
-#include <stdio.h>
+#include <vector>
+#include <cstdio>
 #include <OS/list.h>
 #include <nrnoc2iv.h>
 #include <classreg.h>
 #include <objcmd.h>
 
-class FInitialHandler;
-declarePtrList(FIHList, FInitialHandler) implementPtrList(FIHList, FInitialHandler)
-
-    class FInitialHandler {
+class FInitialHandler {
   public:
     FInitialHandler(int, const char*, Object*, Object* pyact = NULL);
     virtual ~FInitialHandler();
     HocCommand* stmt_;
     int type_;
-    static FIHList* fihlist_[4];
+    static std::vector<FInitialHandler*> fihlist_[4];
 };
 
 void nrn_fihexec(int type);
 void nrn_fihexec(int type) {
-    FIHList* fl = FInitialHandler::fihlist_[type];
-    if (fl) {
-        int i, cnt;
-        cnt = fl->count();
-        for (i = 0; i < cnt; ++i) {
-            FInitialHandler* f = fl->item(i);
-            f->stmt_->execute();
-        }
+    for (auto& f: FInitialHandler::fihlist_[type]) {
+        f->stmt_->execute();
     }
 }
 
 static double allprint(void* v) {
-    int type, i, cnt;
-    for (type = 0; type < 4; ++type) {
-        FIHList* fl = FInitialHandler::fihlist_[type];
-        if (fl && fl->count() > 0) {
-            cnt = fl->count();
+    for (int type = 0; type < 4; ++type) {
+        std::vector<FInitialHandler*> fl = FInitialHandler::fihlist_[type];
+        if (!fl.empty()) {
             Printf("Type %d FInitializeHandler statements\n", type);
-            for (i = 0; i < cnt; ++i) {
-                FInitialHandler* f = fl->item(i);
+            for (auto& f: fl) {
                 if (f->stmt_->pyobject()) {
                     Printf("\t%s\n", hoc_object_name(f->stmt_->pyobject()));
                 } else if (f->stmt_->object()) {
@@ -66,7 +55,7 @@ static double allprint(void* v) {
     return 0.;
 }
 
-static Member_func members[] = {"allprint", allprint, 0, 0};
+static Member_func members[] = {{"allprint", allprint}, {nullptr, nullptr}};
 
 static void* finithnd_cons(Object*) {
     int type = 1;  // default is after INITIAL blocks are called
@@ -103,28 +92,23 @@ void FInitializeHandler_reg() {
     class2oc("FInitializeHandler", finithnd_cons, finithnd_destruct, members, NULL, NULL, NULL);
 }
 
-FIHList* FInitialHandler::fihlist_[4];
+std::vector<FInitialHandler*> FInitialHandler::fihlist_[4];
 
 FInitialHandler::FInitialHandler(int i, const char* s, Object* obj, Object* pyact) {
-    if (!fihlist_[i]) {
-        fihlist_[i] = new FIHList(10);
-    }
     type_ = i;
     if (pyact) {
         stmt_ = new HocCommand(pyact);
     } else {
         stmt_ = new HocCommand(s, obj);
     }
-    fihlist_[i]->append(this);
+    fihlist_[i].push_back(this);
 }
 
 FInitialHandler::~FInitialHandler() {
     delete stmt_;
-    int i, cnt;
-    cnt = fihlist_[type_]->count();
-    for (i = 0; i < cnt; ++i) {
-        if (fihlist_[type_]->item(i) == this) {
-            fihlist_[type_]->remove(i);
+    for (auto it = fihlist_[type_].begin(); it != fihlist_[type_].end(); ++it) {
+        if ((*it) == this) {
+            fihlist_[type_].erase(it);
             return;
         }
     }

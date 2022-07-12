@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #undef check
+#include "nrniv_mf.h"
 #include "nrnmpi.h"
 #include "nonlinz.h"
 #include <InterViews/resource.h>
@@ -11,8 +12,6 @@
 #include "membfunc.h"
 extern void nrn_rhs(NrnThread*);
 extern void nrn_lhs(NrnThread*);
-extern int tree_changed;
-extern "C" int v_structure_change;
 extern void setup_topology();
 extern void recalc_diam();
 
@@ -142,24 +141,15 @@ static double deltafac(void* v) {
     return imp->deltafac_;
 }
 
-static Member_func members[] = {"compute",
-                                compute,
-                                "loc",
-                                location,
-                                "input",
-                                input_amp,
-                                "transfer",
-                                transfer_amp,
-                                "ratio",
-                                ratio_amp,
-                                "input_phase",
-                                input_phase,
-                                "transfer_phase",
-                                transfer_phase,
-                                "deltafac",
-                                deltafac,
-                                0,
-                                0};
+static Member_func members[] = {{"compute", compute},
+                                {"loc", location},
+                                {"input", input_amp},
+                                {"transfer", transfer_amp},
+                                {"ratio", ratio_amp},
+                                {"input_phase", input_phase},
+                                {"transfer_phase", transfer_phase},
+                                {"deltafac", deltafac},
+                                {0, 0}};
 
 void Impedance_reg() {
     class2oc("Impedance", cons, destruct, members, nullptr, nullptr, nullptr);

@@ -1,21 +1,21 @@
-#include <iostream>
-#if HAVE_CXXABI_H
-#include <cxxabi.h>
-#endif
-#include <cstring>
-#include <regex>
-#include <string>
+#include "backtrace_utils.h"
 
 #ifdef USE_BACKWARD
 #include "backward.hpp"
 #endif
 
+#if HAVE_CXXABI_H
+#include <cxxabi.h>
+#endif
+
+#include <cstring>
+#include <iostream>
+#include <regex>
+#include <string>
+
 /*
  * Small utility to bring C++ symbol demangling to C
  */
-
-extern "C" {
-
 int parse_bt_symbol(char* backtrace_line, void** addr, char* symbol, char* offset) {
 #ifndef _WIN32
 #ifdef __APPLE__
@@ -63,5 +63,4 @@ void backward_wrapper() {
     backward::Printer p;
     p.print(st);
 #endif
-}
 }

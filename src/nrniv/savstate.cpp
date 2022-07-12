@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include "ocfile.h"
+#include "nrncvode.h"
 #include "nrnoc2iv.h"
 #include "classreg.h"
 #include "ndatclas.h"
@@ -22,7 +23,6 @@ extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-extern "C" void clear_event_queue();
 extern hoc_Item* net_cvode_instance_psl();
 extern PlayRecList* net_cvode_instance_prl();
 extern double t;
@@ -186,6 +186,7 @@ SaveState::~SaveState() {
     ssfree();
     delete tqs_;
     delete[] acell_;
+    delete[] ssi;
 }
 
 void SaveState::fread_NodeState(NodeState* ns, int cnt, FILE* f) {
@@ -291,95 +292,99 @@ bool SaveState::check(bool warn) {
     }
     if (nsec_ && ss_[0].sec == NULL) {  // got the data from a read
         isec = 0;
-        ForAllSections(sec) ss_[isec].sec = sec;
-        section_ref(ss_[isec].sec);
-        ++isec;
+        // ForAllSections(sec)
+        ITERATE(qsec, section_list) {
+            Section* sec = hocSEC(qsec);
+            ss_[isec].sec = sec;
+            section_ref(ss_[isec].sec);
+            ++isec;
+        }
     }
-}
-for (int i = 0, j = 0; i < n_memb_func; ++i)
-    if (nrn_is_artificial_[i]) {
-        if (!checkacell(acell_[j], i, warn)) {
+    for (int i = 0, j = 0; i < n_memb_func; ++i)
+        if (nrn_is_artificial_[i]) {
+            if (!checkacell(acell_[j], i, warn)) {
+                return false;
+            }
+            ++j;
+        }
+    for (int isec = 0; isec < nsec_; ++isec) {
+        SecState& ss = ss_[isec];
+        Section* sec = ss.sec;
+        if (!sec->prop || sec->nnode != ss.nnode) {
+            if (warn) {
+                if (!sec->prop) {
+                    fprintf(stderr, "SaveState warning: saved section no longer exists\n");
+                } else {
+                    fprintf(stderr,
+                            "SaveState warning: %s has %d nodes but saved %d\n",
+                            secname(sec),
+                            sec->nnode,
+                            ss.nnode);
+                }
+            }
             return false;
         }
-        ++j;
-    }
-for (int isec = 0; isec < nsec_; ++isec) {
-    SecState& ss = ss_[isec];
-    Section* sec = ss.sec;
-    if (!sec->prop || sec->nnode != ss.nnode) {
-        if (warn) {
-            if (!sec->prop) {
-                fprintf(stderr, "SaveState warning: saved section no longer exists\n");
-            } else {
-                fprintf(stderr,
-                        "SaveState warning: %s has %d nodes but saved %d\n",
-                        secname(sec),
-                        sec->nnode,
-                        ss.nnode);
-            }
-        }
-        return false;
-    }
-    for (int inode = 0; inode < ss.nnode; ++inode) {
-        NodeState& ns = ss.ns[inode];
-        Node* nd = sec->pnode[inode];
-        int i = 0;
-        Prop* p;
-        for (p = nd->prop; p; p = p->next) {
-            if (ssi[p->type].size == 0) {
-                continue;
-            }
-            if (i >= ns.nmemb) {
-                if (warn) {
-                    fprintf(stderr,
-                            "SaveState warning: \
+        for (int inode = 0; inode < ss.nnode; ++inode) {
+            NodeState& ns = ss.ns[inode];
+            Node* nd = sec->pnode[inode];
+            int i = 0;
+            Prop* p;
+            for (p = nd->prop; p; p = p->next) {
+                if (ssi[p->type].size == 0) {
+                    continue;
+                }
+                if (i >= ns.nmemb) {
+                    if (warn) {
+                        fprintf(stderr,
+                                "SaveState warning: \
 fewer mechanisms saved than exist at node %d of %s\n",
-                            inode,
-                            secname(sec));
+                                inode,
+                                secname(sec));
+                    }
+                    return false;
                 }
-                return false;
-            }
-            if (p->type != ns.type[i]) {
-                if (warn) {
-                    fprintf(stderr,
-                            "SaveState warning: mechanisms out of order at node %d of %s\n\
+                if (p->type != ns.type[i]) {
+                    if (warn) {
+                        fprintf(stderr,
+                                "SaveState warning: mechanisms out of order at node %d of %s\n\
 saved %s but need %s\n",
-                            inode,
-                            secname(sec),
-                            memb_func[i].sym->name,
-                            memb_func[p->type].sym->name);
+                                inode,
+                                secname(sec),
+                                memb_func[i].sym->name,
+                                memb_func[p->type].sym->name);
+                    }
+                    return false;
                 }
-                return false;
+                ++i;
             }
-            ++i;
-        }
-        if (i != ns.nmemb) {
-            if (warn) {
-                fprintf(stderr,
+            if (i != ns.nmemb) {
+                if (warn) {
+                    fprintf(
+                        stderr,
                         "SaveState warning: more mechanisms saved than exist at node %d of %s\n",
                         inode,
                         secname(sec));
-            }
-            return false;
-        }
-    }
-    if (!sec->parentsec || ss.root) {
-        if (sec->parentsec || !ss.root) {
-            if (warn) {
-                fprintf(stderr,
-                        "SaveState warning: Saved section and %s are not both root sections.\n",
-                        secname(sec));
+                }
+                return false;
             }
         }
-        if (!checknode(*ss.root, sec->parentnode, warn)) {
-            return false;
+        if (!sec->parentsec || ss.root) {
+            if (sec->parentsec || !ss.root) {
+                if (warn) {
+                    fprintf(stderr,
+                            "SaveState warning: Saved section and %s are not both root sections.\n",
+                            secname(sec));
+                }
+            }
+            if (!checknode(*ss.root, sec->parentnode, warn)) {
+                return false;
+            }
         }
     }
-}
-if (!checknet(warn)) {
-    return false;
-}
-return true;
+    if (!checknet(warn)) {
+        return false;
+    }
+    return true;
 }
 
 bool SaveState::checknode(NodeState& ns, Node* nd, bool warn) {
@@ -435,42 +440,47 @@ void SaveState::alloc() {
     int inode, isec;
     hoc_Item* qsec;
     nsec_ = section_count;
-    ss_ = new SecState[nsec_];
+    if (nsec_) {
+        ss_ = new SecState[nsec_];
+    }
     nroot_ = 0;
     isec = 0;
-    ForAllSections(sec) SecState& ss = ss_[isec];
-    ss.sec = sec;
-    section_ref(ss.sec);
-    ss.nnode = ss.sec->nnode;
-    ss.ns = new NodeState[ss.nnode];
-    for (inode = 0; inode < ss.nnode; ++inode) {
-        Node* nd = ss.sec->pnode[inode];
-        NodeState& ns = ss.ns[inode];
-        allocnode(ns, nd);
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        SecState& ss = ss_[isec];
+        ss.sec = sec;
+        section_ref(ss.sec);
+        ss.nnode = ss.sec->nnode;
+        ss.ns = new NodeState[ss.nnode];
+        for (inode = 0; inode < ss.nnode; ++inode) {
+            Node* nd = ss.sec->pnode[inode];
+            NodeState& ns = ss.ns[inode];
+            allocnode(ns, nd);
+        }
+        if (!sec->parentsec) {
+            assert(sec->parentnode);
+            ss.root = new NodeState;
+            allocnode(*ss.root, sec->parentnode);
+            ++nroot_;
+        } else {
+            ss.root = 0;
+        }
+        ++isec;
     }
-    if (!sec->parentsec) {
-        assert(sec->parentnode);
-        ss.root = new NodeState;
-        allocnode(*ss.root, sec->parentnode);
-        ++nroot_;
-    } else {
-        ss.root = 0;
+    assert(isec == section_count);
+    assert(nroot_ == nrn_global_ncell);
+    for (int i = 0, j = 0; i < n_memb_func; ++i)
+        if (nrn_is_artificial_[i]) {
+            allocacell(acell_[j], i);
+            ++j;
+        }
+    PlayRecList* prl = net_cvode_instance_prl();
+    nprs_ = prl->count();
+    if (nprs_) {
+        prs_ = new PlayRecordSave*[nprs_];
     }
-    ++isec;
-}
-assert(isec == section_count);
-assert(nroot_ == nrn_global_ncell);
-for (int i = 0, j = 0; i < n_memb_func; ++i)
-    if (nrn_is_artificial_[i]) {
-        allocacell(acell_[j], i);
-        ++j;
-    }
-PlayRecList* prl = net_cvode_instance_prl();
-nprs_ = prl->count();
-if (nprs_) {
-    prs_ = new PlayRecordSave*[nprs_];
-}
-allocnet();
+    allocnet();
 }
 
 void SaveState::allocnode(NodeState& ns, Node* nd) {
@@ -506,7 +516,9 @@ void SaveState::allocacell(ACellState& ac, int type) {
     Memb_list& ml = memb_list[type];
     ac.type = type;
     ac.ncell = ml.nodecount;
-    ac.state = new double[ac.ncell * ssi[type].size];
+    if (ac.ncell) {
+        ac.state = new double[ac.ncell * ssi[type].size];
+    }
 }
 
 void SaveState::ssfree() {
@@ -778,8 +790,10 @@ void SaveState::read(OcFile* ocf, bool close) {
     // to enable comparison of SaveState files, we avoid
     // putting pointers in the files and instead explicitly read/write
     // structure elements.
-    ss_ = new SecState[nsec_];
-    fread_SecState(ss_, nsec_, f);
+    if (nsec_) {
+        ss_ = new SecState[nsec_];
+        fread_SecState(ss_, nsec_, f);
+    }
     for (int isec = 0; isec < nsec_; ++isec) {
         SecState& ss = ss_[isec];
         ss.sec = NULL;
@@ -821,8 +835,10 @@ void SaveState::read(OcFile* ocf, bool close) {
             assert(nt == i && nc == memb_list[i].nodecount);
             assert(ns == nc * ssi[i].size);
             acell_[j].ncell = nc;
-            acell_[j].state = new double[ns];
-            ASSERTfread(acell_[j].state, sizeof(double), ns, f);
+            if (nc) {
+                acell_[j].state = new double[ns];
+                ASSERTfread(acell_[j].state, sizeof(double), ns, f);
+            }
             ++j;
         }
     ASSERTfgets(buf, 20, f);
@@ -1059,9 +1075,6 @@ void SaveState::readnet(FILE* f) {
             case DiscreteEventType:
                 de = DiscreteEvent::savestate_read(f);
                 break;
-            case TstopEventType:
-                de = TstopEvent::savestate_read(f);
-                break;
             case NetConType:
                 de = NetCon::savestate_read(f);
                 break;
@@ -1287,8 +1300,11 @@ static double sswrite(void* v) {
     return 1.;
 }
 
-static Member_func members[] =
-    {"save", save, "restore", restore, "fread", ssread, "fwrite", sswrite, 0, 0};
+static Member_func members[] = {{"save", save},
+                                {"restore", restore},
+                                {"fread", ssread},
+                                {"fwrite", sswrite},
+                                {0, 0}};
 
 void SaveState_reg() {
     class2oc("SaveState", cons, destruct, members, NULL, NULL, NULL);

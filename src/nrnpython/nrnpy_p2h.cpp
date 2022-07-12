@@ -102,7 +102,7 @@ static void p_destruct(void* v) {
     delete (Py2Nrn*) v;
 }
 
-Member_func p_members[] = {0, 0};
+Member_func p_members[] = {{0, 0}};
 
 static void call_python_with_section(Object* pyact, Section* sec) {
     PyObject* po = ((Py2Nrn*) pyact->u.this_pointer)->po_;

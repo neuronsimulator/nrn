@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/ocmain.cpp,v 1.7 1997/07/29 20:23:33 hines Exp */
+#include "isoc99.h"
 
 #include <stdio.h>
 #include <stdlib.h>

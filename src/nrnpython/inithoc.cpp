@@ -1,5 +1,4 @@
 #include "nrnmpiuse.h"
-#include "nrnpthread.h"
 #include <stdio.h>
 #include <stdint.h>
 #include "nrnmpi.h"
@@ -39,9 +38,9 @@ extern char* nrnmpi_load(int is_python);
 extern int nrnpy_site_problem;
 #endif
 
-#if USE_PTHREAD
-#include <pthread.h>
-static pthread_t main_thread_;
+#if NRN_ENABLE_THREADS
+#include <thread>
+static std::thread::id main_thread_;
 #endif
 
 /**
@@ -216,9 +215,8 @@ static int have_opt(const char* arg) {
 }
 
 void nrnpython_finalize() {
-#if USE_PTHREAD
-    pthread_t now = pthread_self();
-    if (pthread_equal(main_thread_, now)) {
+#if NRN_ENABLE_THREADS
+    if (main_thread_ == std::this_thread::get_id()) {
 #else
     {
 #endif
@@ -235,8 +233,8 @@ static char* env[] = {0};
 extern "C" PyObject* PyInit_hoc() {
     char buf[200];
 
-#if USE_PTHREAD
-    main_thread_ = pthread_self();
+#if NRN_ENABLE_THREADS
+    main_thread_ = std::this_thread::get_id();
 #endif
 
     if (nrn_global_argv) {  // ivocmain was already called so already loaded
@@ -315,7 +313,6 @@ extern "C" PyObject* PyInit_hoc() {
 
 #endif  // NRNMPI
 
-#if !defined(__CYGWIN__)
     sprintf(buf, "%s/.libs/libnrnmech.so", NRNHOSTCPU);
     // printf("buf = |%s|\n", buf);
     FILE* f;
@@ -323,7 +320,6 @@ extern "C" PyObject* PyInit_hoc() {
         fclose(f);
         add_arg("-dll", buf);
     }
-#endif  // !defined(__CYGWIN__)
     nrn_is_python_extension = 1;
     nrn_nobanner_ = 1;
     const char* pyver = Py_GetVersion();
@@ -390,6 +386,6 @@ extern "C" PyObject* PyInit_hoc() {
     return nrnpy_hoc();
 }
 
-#if !defined(CYGWIN)
+#if !defined(MINGW)
 extern "C" void modl_reg() {}
-#endif  // !defined(CYGWIN)
+#endif  // !defined(MINGW)

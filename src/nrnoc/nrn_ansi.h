@@ -1,10 +1,6 @@
 #ifndef nrn_ansi_h
 #define nrn_ansi_h
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 // nocpout.cpp
 extern void hoc_register_limits(int, HocParmLimits*);
 extern void hoc_register_units(int, HocParmUnits*);
@@ -15,7 +11,7 @@ extern void hoc_register_tolerance(int, HocStateTolerance*, Symbol***);
 extern void oc_save_cabcode(int* a1, int* a2);
 extern void oc_restore_cabcode(int* a1, int* a2);
 
-extern void modl_reg(void);
+extern "C" void modl_reg(void);
 
 // nrnmech stuff
 extern void _nrn_free_fornetcon(void**);
@@ -43,10 +39,6 @@ extern void nrn_popsec(void);
 extern Section* chk_access(void);
 
 extern Node* node_exact(Section*, double);
-
-#if defined(__cplusplus)
-}
-#endif
 
 extern int state_discon_allowed_;
 extern int section_object_seen;

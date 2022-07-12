@@ -3,7 +3,7 @@
 #include "membfunc.h"
 #include "nrniv_mf.h"
 #include "netcon.h"
-#include "OS/table.h"
+#include <map>
 #include "OS/list.h"
 #include "neuron.h"
 
@@ -11,18 +11,18 @@
 
 void nrn_prcellstate(int gid, const char* filesuffix);
 
-declarePtrList(NetConList, NetCon)        // NetCons in same order as Point_process
-    implementPtrList(NetConList, NetCon)  // and there may be several per pp.
-    declareTable(PV2I, void*, int)
-        implementTable(PV2I, void*, int) static PV2I* pnt2index;  // for deciding if NetCon is to be
-                                                                  // printed
-static int pntindex;  // running count of printed point processes.
+declarePtrList(NetConList, NetCon);    // NetCons in same order as Point_process
+implementPtrList(NetConList, NetCon);  // and there may be several per pp.
 
 
-static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE* f) {
+static void pr_memb(int type,
+                    Memb_list* ml,
+                    int* cellnodes,
+                    NrnThread& nt,
+                    FILE* f,
+                    std::map<void*, int>& pnt2index) {
     int header_printed = 0;
     int size = nrn_prop_param_size_[type];
-    int psize = nrn_prop_dparam_size_[type];
     int receives_events = pnt_receive[type] ? 1 : 0;
     for (int i = 0; i < ml->nodecount; ++i) {
         int inode = ml->nodeindices[i];
@@ -32,10 +32,9 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
                 fprintf(f, "type=%d %s size=%d\n", type, memb_func[type].sym->name, size);
             }
             if (receives_events) {
-                fprintf(f, "%d nri %d\n", cellnodes[inode], pntindex);
+                fprintf(f, "%d nri %lu\n", cellnodes[inode], pnt2index.size());
                 Point_process* pp = (Point_process*) ml->pdata[i][1]._pvoid;
-                pnt2index->insert(pp, pntindex);
-                ++pntindex;
+                pnt2index.emplace(pp, pnt2index.size());
             }
             for (int j = 0; j < size; ++j) {
                 fprintf(f, " %d %d %.*g\n", cellnodes[inode], j, precision, ml->data[i][j]);
@@ -44,16 +43,16 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
     }
 }
 
-static void pr_netcon(NrnThread& nt, FILE* f) {
-    if (pntindex == 0) {
+static void pr_netcon(NrnThread& nt, FILE* f, const std::map<void*, int>& pnt2index) {
+    if (pnt2index.empty()) {
         return;
     }
     // pnt2index table has been filled
 
     // List of NetCon for each of the NET_RECEIVE point process instances
     // ... all NetCon list in the hoc NetCon cTemplate
-    NetConList** nclist = new NetConList*[pntindex];
-    for (int i = 0; i < pntindex; ++i) {
+    NetConList** nclist = new NetConList*[pnt2index.size()];
+    for (size_t i = 0; i < pnt2index.size(); ++i) {
         nclist[i] = new NetConList(1);
     }
     int nc_cnt = 0;
@@ -63,26 +62,26 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
         Object* obj = OBJ(q);
         NetCon* nc = (NetCon*) obj->u.this_pointer;
         Point_process* pp = nc->target_;
-        int index;
-        if (pnt2index->find(index, pp)) {
-            nclist[index]->append(nc);
+        const auto& it = pnt2index.find(pp);
+        if (it != pnt2index.end()) {
+            nclist[it->second]->append(nc);
             ++nc_cnt;
         }
     }
     fprintf(f, "netcons %d\n", nc_cnt);
     fprintf(f, " pntindex srcgid active delay weights\n");
-    for (int i = 0; i < pntindex; ++i) {
+    for (size_t i = 0; i < pnt2index.size(); ++i) {
         for (int j = 0; j < nclist[i]->count(); ++j) {
             NetCon* nc = nclist[i]->item(j);
             int srcgid = -3;
             srcgid = (nc->src_) ? nc->src_->gid_ : -3;
             if (srcgid < 0 && nc->src_ && nc->src_->osrc_) {
                 const char* name = nc->src_->osrc_->ctemplate->sym->name;
-                fprintf(f, "%d %s %d %.*g", i, name, nc->active_ ? 1 : 0, precision, nc->delay_);
+                fprintf(f, "%zd %s %d %.*g", i, name, nc->active_ ? 1 : 0, precision, nc->delay_);
             } else if (srcgid < 0 && nc->src_ && nc->src_->ssrc_) {
-                fprintf(f, "%d %s %d %.*g", i, "v", nc->active_ ? 1 : 0, precision, nc->delay_);
+                fprintf(f, "%zd %s %d %.*g", i, "v", nc->active_ ? 1 : 0, precision, nc->delay_);
             } else {
-                fprintf(f, "%d %d %d %.*g", i, srcgid, nc->active_ ? 1 : 0, precision, nc->delay_);
+                fprintf(f, "%zd %d %d %.*g", i, srcgid, nc->active_ ? 1 : 0, precision, nc->delay_);
             }
             int wcnt = pnt_receive_size[nc->target_->prop->type];
             for (int k = 0; k < wcnt; ++k) {
@@ -92,18 +91,13 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
         }
     }
     // cleanup
-    for (int i = 0; i < pntindex; ++i) {
+    for (size_t i = 0; i < pnt2index.size(); ++i) {
         delete nclist[i];
     }
     delete[] nclist;
 }
 
 static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
-    // for associating NetCons with Point_process identifiers
-    pnt2index = new PV2I(1000);
-
-    pntindex = 0;
-
     // threshold variable is a voltage
     printf("thvar=%p actual_v=%p end=%p\n", ps.thvar_, nt._actual_v, nt._actual_v + nt.end);
     int inode = -1;
@@ -174,16 +168,17 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
             fprintf(f, "%d %.*g\n", cellnodes[i], precision, NODEV(nd));
         }
 
-    // each mechanism
-    for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
-        pr_memb(tml->index, tml->ml, cellnodes, nt, f);
+    {
+        std::map<void*, int> pnt2index;
+        // each mechanism
+        for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+            pr_memb(tml->index, tml->ml, cellnodes, nt, f, pnt2index);
+        }
+
+        // the NetCon info
+        pr_netcon(nt, f, pnt2index);
     }
-
-    // the NetCon info (uses pnt2index)
-    pr_netcon(nt, f);
-
     delete[] cellnodes;
-    delete pnt2index;
 }
 
 void nrn_prcellstate(int gid, const char* suffix) {

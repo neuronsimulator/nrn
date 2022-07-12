@@ -84,7 +84,7 @@ Use the CellBuilder to make a simple ball and stick model that has these propert
      - 
        ``Ra = 160`` ohm cm, 
        
-       ``Cm = 1`` µf / cm :sup:`2`
+       ``Cm = 1`` µf / cm\ :sup:`2`
        
        Hodgkin-Huxley channels
    * - dend
@@ -96,9 +96,9 @@ Use the CellBuilder to make a simple ball and stick model that has these propert
      - 
        ``Ra = 160`` ohm cm, 
        
-       ``Cm = 1`` µf / cm :sup:`2`
+       ``Cm = 1`` µf / cm\ :sup:`2`
        
-       passive with Rm = 10,000 ohm cm :sup:`2`
+       passive with Rm = 10,000 ohm cm\ :sup:`2`
 
 
 **Hints:**

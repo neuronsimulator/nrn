@@ -40,36 +40,21 @@ pval = pval_praxis(i, Vector)
 #include "hocdec.h"
 #include "parse.hpp"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+extern "C" double praxis(double* t0,
+                         double* machep,
+                         double* h0,
+                         long int nval,
+                         long int* prin,
+                         double* x,
+                         double (*f)(double*, long int),
+                         double* fmin,
+                         char* after_quad);
+extern "C" double praxis_pval(int), *praxis_paxis(int);
+extern "C" int praxis_stop(int);
 
-extern double praxis(double* t0,
-                     double* machep,
-                     double* h0,
-                     long int nval,
-                     long int* prin,
-                     double* x,
-                     double (*f)(double*, long int),
-                     double* fmin,
-                     char* after_quad);
-extern double praxis_pval(int), *praxis_paxis(int);
-extern int praxis_stop(int);
-
-#if defined(__cplusplus)
-}
-#endif
-
-extern int stoprun;
 extern double chkarg(int, double, double);
-
-extern void vector_resize(IvocVect*, int);
-extern double* vector_vec(IvocVect*);
-extern IvocVect* vector_arg(int);  // TODO: IvocVect?
 extern IvocVect* vector_new2(IvocVect* vec);
 extern void vector_delete(IvocVect* vec);
-extern int vector_capacity(IvocVect*);
-extern Object** vector_pobj(IvocVect* v);
 extern int nrn_praxis_ran_index;
 extern Object** hoc_objgetarg(int);
 

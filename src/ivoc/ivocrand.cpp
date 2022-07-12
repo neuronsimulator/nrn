@@ -11,7 +11,7 @@
 #include "oc2iv.h"
 #include "nrnisaac.h"
 
-#include <OS/list.h>
+#include <vector>
 #include <ocnotify.h>
 #include "ocobserv.h"
 #include <nrnran123.h>
@@ -55,19 +55,8 @@ class RandomPlay: public Observer, public Resource {
     double* px_;
 };
 
-declarePtrList(RandomPlayList, RandomPlay)
-    implementPtrList(RandomPlayList, RandomPlay) static RandomPlayList* random_play_list_;
-
-extern "C" {
-double nrn_random_pick(Rand* r);
-void nrn_random_reset(Rand* r);
-Rand* nrn_random_arg(int);
-long nrn_get_random_sequence(Rand* r);
-void nrn_set_random_sequence(Rand* r, long seq);
-int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
-int nrn_random123_setseq(Rand* r, uint32_t seq, char which);
-int nrn_random123_getseq(Rand* r, uint32_t* seq, char* which);
-}  // extern "C"
+using RandomPlayList = std::vector<RandomPlay*>;
+static RandomPlayList* random_play_list_;
 
 #include <mcran4.h>
 
@@ -185,7 +174,7 @@ RandomPlay::RandomPlay(Rand* r, double* px) {
     // printf("RandomPlay\n");
     r_ = r;
     px_ = px;
-    random_play_list_->append(this);
+    random_play_list_->push_back(this);
     ref();
     nrn_notify_when_double_freed(px_, this);
     nrn_notify_when_void_freed((void*) r->obj_, this);
@@ -198,11 +187,10 @@ void RandomPlay::play() {
     *px_ = (*(r_->rand))();
 }
 void RandomPlay::list_remove() {
-    long i, cnt = random_play_list_->count();
-    for (i = 0; i < cnt; ++i) {
-        if (random_play_list_->item(i) == (RandomPlay*) this) {
+    for (auto it = random_play_list_->begin(); it != random_play_list_->end(); ++it) {
+        if (*it == (RandomPlay*) this) {
             // printf("RandomPlay %p removed from list cnt=%d i=%d %p\n", this, cnt, i);
-            random_play_list_->remove(i);
+            random_play_list_->erase(it);
             unref_deferred();
             break;
         }
@@ -322,19 +310,19 @@ static double r_MCellRan4(void* r) {
     return (double) mcr->orig_;
 }
 
-extern "C" long nrn_get_random_sequence(Rand* r) {
+long nrn_get_random_sequence(Rand* r) {
     assert(r->type_ == 2);
     MCellRan4* mcr = (MCellRan4*) r->gen;
     return mcr->ihigh_;
 }
 
-extern "C" void nrn_set_random_sequence(Rand* r, long seq) {
+void nrn_set_random_sequence(Rand* r, long seq) {
     assert(r->type_ == 2);
     MCellRan4* mcr = (MCellRan4*) r->gen;
     mcr->ihigh_ = seq;
 }
 
-extern "C" int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
+int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
     if (r->type_ == 4) {
         NrnRandom123* nr = (NrnRandom123*) r->gen;
         nrnran123_getids3(nr->s_, id1, id2, id3);
@@ -437,7 +425,7 @@ static double r_repick(void* r) {
     return (*(x->rand))();
 }
 
-extern "C" double nrn_random_pick(Rand* r) {
+double nrn_random_pick(Rand* r) {
     if (r) {
         return (*(r->rand))();
     } else {
@@ -445,13 +433,13 @@ extern "C" double nrn_random_pick(Rand* r) {
     }
 }
 
-extern "C" void nrn_random_reset(Rand* r) {
+void nrn_random_reset(Rand* r) {
     if (r) {
         r->gen->reset();
     }
 }
 
-extern "C" Rand* nrn_random_arg(int i) {
+Rand* nrn_random_arg(int i) {
     Object* ob = *hoc_objgetarg(i);
     check_obj_type(ob, "Random");
     Rand* r = (Rand*) (ob->u.this_pointer);
@@ -618,57 +606,58 @@ static double r_play(void* r) {
 }
 
 extern "C" void nrn_random_play() {
-    long i, cnt = random_play_list_->count();
-    for (i = 0; i < cnt; ++i) {
-        random_play_list_->item(i)->play();
+    for (const auto& rp: *random_play_list_) {
+        rp->play();
     }
 }
 
 
-static Member_func r_members[] = {"ACG",
-                                  r_ACG,
-                                  "MLCG",
-                                  r_MLCG,
-                                  "Isaac64",
-                                  r_Isaac64,
-                                  "MCellRan4",
-                                  r_MCellRan4,
-                                  "Random123",
-                                  r_nrnran123,
-                                  "Random123_globalindex",
-                                  r_ran123_globalindex,
-                                  "seq",
-                                  r_sequence,
-                                  "repick",
-                                  r_repick,
-                                  "uniform",
-                                  r_uniform,
-                                  "discunif",
-                                  r_discunif,
-                                  "normal",
-                                  r_normal,
-                                  "lognormal",
-                                  r_lognormal,
-                                  "binomial",
-                                  r_binomial,
-                                  "poisson",
-                                  r_poisson,
-                                  "geometric",
-                                  r_geometric,
-                                  "hypergeo",
-                                  r_hypergeo,
-                                  "negexp",
-                                  r_negexp,
-                                  "erlang",
-                                  r_erlang,
-                                  "weibull",
-                                  r_weibull,
-                                  "play",
-                                  r_play,
-                                  0,
-                                  0};
+static Member_func r_members[] = {{"ACG", r_ACG},
+                                  {"MLCG", r_MLCG},
+                                  {"Isaac64", r_Isaac64},
+                                  {"MCellRan4", r_MCellRan4},
+                                  {"Random123", r_nrnran123},
+                                  {"Random123_globalindex", r_ran123_globalindex},
+                                  {"seq", r_sequence},
+                                  {"repick", r_repick},
+                                  {"uniform", r_uniform},
+                                  {"discunif", r_discunif},
+                                  {"normal", r_normal},
+                                  {"lognormal", r_lognormal},
+                                  {"binomial", r_binomial},
+                                  {"poisson", r_poisson},
+                                  {"geometric", r_geometric},
+                                  {"hypergeo", r_hypergeo},
+                                  {"negexp", r_negexp},
+                                  {"erlang", r_erlang},
+                                  {"weibull", r_weibull},
+                                  {"play", r_play},
+                                  {nullptr, nullptr}};
 
 void Random_reg() {
     class2oc("Random", r_cons, r_destruct, r_members, NULL, NULL, NULL);
-    random_play_list_ = new RandomPlayList();
+    random_play_list_ = new RandomPlayList;
+}
+
+// Deprecated backwards-compatibility definitions
+long nrn_get_random_sequence(void* r) {
+    return nrn_get_random_sequence(static_cast<Rand*>(r));
+}
+int nrn_random_isran123(void* r, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
+    return nrn_random_isran123(static_cast<Rand*>(r), id1, id2, id3);
+}
+double nrn_random_pick(void* r) {
+    return nrn_random_pick(static_cast<Rand*>(r));
+}
+void nrn_random_reset(void* r) {
+    nrn_random_reset(static_cast<Rand*>(r));
+}
+int nrn_random123_getseq(void* r, uint32_t* seq, char* which) {
+    return nrn_random123_getseq(static_cast<Rand*>(r), seq, which);
+}
+int nrn_random123_setseq(void* r, uint32_t seq, char which) {
+    return nrn_random123_setseq(static_cast<Rand*>(r), seq, which);
+}
+void nrn_set_random_sequence(void* r, int seq) {
+    nrn_set_random_sequence(static_cast<Rand*>(r), static_cast<long>(seq));
 }
