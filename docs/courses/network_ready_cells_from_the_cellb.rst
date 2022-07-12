@@ -37,13 +37,21 @@ Ball-Stick cell model
 
 Start with the ball-stick specification in :menuselection:`exercises --> continuous_simulations_of_nets --> start.ses`. This model has
 
-soma area = 500 um2 with hh channels (standard density)
+.. list-table:: 
+   :header-rows: 1
 
-dendrite L = 200 um, diam = 1 um with pas channel ( g_pas = .001 S/um2 and e_pas = -65 mV )
+   * - Soma area
+     - Dendrite
+     - Ra
+     - cm
+   * - 500 um2 with hh channels (standard density)
+     -
+       L = 200 um, diam = 1 um with pas channel ( g_pas = .001 S/um2 and e_pas = -65 mV )
+     - 100 ohm-cm
+     - 
+       1 uF/cm^2
+   
 
-Ra = 100 ohm-cm
-
-cm = 1 uF/cm^2
 
 and uses d_lambda=.1 compartmentalization policy.
 
@@ -64,15 +72,15 @@ This starts a NetReadyCellGUI window (nrc) and a SynTypeGUI window. (It would ha
     img/net2nrc1.gif
     :align: center
 
-From the SynTypeGUI window, create a "E" synapse type via a New/ExpSyn followed by a Rename. Since the reversal potential for the standard `ExpSyn <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/mech.html?highlight=expsyn#ExpSyn>`_ is 0 mV, it is already excitatory. However, change the time constant from 0.1 to 2 ms.
+From the SynTypeGUI window, create a "E" synapse type via a :menuselection:`New --> ExpSyn` followed by a Rename. Since the reversal potential for the standard `ExpSyn <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/mech.html?highlight=expsyn#ExpSyn>`_ is 0 mV, it is already excitatory. However, change the time constant from 0.1 to 2 ms.
 
-In the same SynTypeGUI window create a "I" synapse type via a New/ExpSyn followed by a Rename. Set the reversal potential "e" to -80 mV so that it will be inhibitory and set tau to 5ms.
+In the same SynTypeGUI window create a "I" synapse type via a :menuselection:`New --> ExpSyn` followed by a Rename. Set the reversal potential "e" to -80 mV so that it will be inhibitory and set tau to 5ms.
 
 In the NetReadyCellGUI, press the Refresh button so that the new SynTypes appear.
 
 Change the cell name to "B" so the label won't take up so much space later on when we use it in a NetGUI tool.
 
-In the NetReadyCellGUI, press the "Locate" radiobutton and drag an E to location .8 on the dendrite. Then drag an I to location .1 on the dendrite. The label in the canvas will show whether the synapse type is close enough to be attached or not. Each synapse on the cell is given an index which is the order of creation. Several synapses can be attached to the same location. The synapse label can be dragged up to two font sizes above or below the location to avoid label overlap. If a label is dragged too far away from the cell it will become detached and the larger synapse indices will be reduced by 1. The interface at this point should look something like this
+In the NetReadyCellGUI, press the "Locate" radiobutton and drag an E to location 0.8 on the dendrite. Then drag an I to location 0.1 on the dendrite. The label in the canvas will show whether the synapse type is close enough to be attached or not. Each synapse on the cell is given an index which is the order of creation. Several synapses can be attached to the same location. The synapse label can be dragged up to two font sizes above or below the location to avoid label overlap. If a label is dragged too far away from the cell it will become detached and the larger synapse indices will be reduced by 1. The interface at this point should look something like this
 
 .. image::
     img/net2nrc2.gif
@@ -155,10 +163,9 @@ Use the "Weights" button to pop up a NetEdgeGUI panel and enter the following we
 Simulation 
 ++++++++++
 
-In the NetGUI window, press the "Create" button. The ``topology()`` statement should produce
+In the NetGUI window, press the "Create" button. The :hoc:func:`topology()` statement should produce
 
 .. code::
-    python
 
     oc>topology()
 

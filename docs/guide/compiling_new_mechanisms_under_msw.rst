@@ -51,7 +51,7 @@ For this particular example, I have chosen a mod file that illustrates what happ
     fig/modlunit5.gif
     :align: center
 
-Feeding ``c:\nrn\demo\release\release.mod`` to modlunit generates this message. The DOS box stays on your monitor until you press the Return key.
+Feeding :file:`c:\nrn\demo\release\release.mod` to modlunit generates this message. The DOS box stays on your monitor until you press the Return key.
 
 FYI this particular mod file is really OK despite the rather intimidating message that is printed.
 
@@ -111,6 +111,9 @@ Compiling mechanisms in NEURON 5.0.1 and earlier
 
 When you're ready to compile mod files, go to :menuselection:`Start --> Programs --> NEURON` and select the item
 
+.. code::
+    python
+
     mknrndll DOS box
 
 (I put a shortcut to this on my desktop, so it's always just a double-click away).
@@ -145,11 +148,5 @@ Troubleshooting mknrndll in NEURON 5.0.1 and earlier
 
 **Q :** After I enter the mknrndll command, the error message "Out of environment space" appears in the DOS box and no ``nrnmech.dll`` is produced.
 
-**A :** Set the environment space of the mknrndll DOS box to 4096. Details of how to do this depend on the version of MSWindows you're using, but typically it involves right-clicking on the mknrndll DOS box icon on your desktop, selecting the Properties item from the popup window, and then changing the appropriate numeric field. If you didn't put a shortcut to this icon on your desktop, you're probably bringing up the mknrndll DOS box from the MSWindows Start menu, in which case you'll have to use Windows Explorer to go to :menuselection:`Start Menu --> Programs --> NEURON`, then right click on the mknrndll DOS ``box.pif`` file and set the environment to 4096.
-
-
-
-
-
-
+**A :** Set the environment space of the mknrndll DOS box to 4096. Details of how to do this depend on the version of MSWindows you're using, but typically it involves right-clicking on the mknrndll DOS box icon on your desktop, selecting the Properties item from the popup window, and then changing the appropriate numeric field. If you didn't put a shortcut to this icon on your desktop, you're probably bringing up the mknrndll DOS box from the MSWindows Start menu, in which case you'll have to use Windows Explorer to go to :menuselection:`Start Menu --> Programs --> NEURON`, then right click on the mknrndll DOS :file:`box.pif` file and set the environment to 4096.
 

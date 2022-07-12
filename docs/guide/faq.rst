@@ -180,7 +180,7 @@ There is an upper limit on the size of a procedure that the hoc parser can handl
 Instead of having a single giant procedure, break it into several smaller procedures, and then call these procedures one after another. For example, suppose your procedure is 
 
 .. code::
-    Python
+    c++
 
     proc buildcell() {
    ... lots of hoc statements ...
@@ -189,7 +189,7 @@ Instead of having a single giant procedure, break it into several smaller proced
 just chop it into smaller chunks like this
 
 .. code::
-    Python
+    c++
 
     proc buildcell_1() {
    ... some hoc statements ...
@@ -202,7 +202,7 @@ just chop it into smaller chunks like this
 then execute them with
 
 .. code::
-    Python
+    c++
 
     buildcell_1()
    buildcell_2()
@@ -223,7 +223,7 @@ Depends on whether you're running NEURON under :ref:`MSWindows <compiling_new_me
 I can't get mod files to compile.
 -------------------
 
-Go to `The NEURON Forum <https://www.neuron.yale.edu/phpBB/index.php>`_ and check out the "NEURON installation and configuration" discussions for your particular operating system (OS X, MSWin, UNIX/Linux). For OS X and UNIX/Linux this problem often means that the software development environment (compilers and associated libraries) is missing or incomplete.
+Go to `The NEURON Forum <https://www.neuron.yale.edu/phpBB/index.php>`_ and check out the "NEURON installation and configuration" discussions for your particular operating system (MacOS, MSWin, UNIX/Linux). For MacOS and UNIX/Linux this problem often means that the software development environment (compilers and associated libraries) is missing or incomplete.
 
 I installed a new version of NEURON, and now I see error messages like this: 'mecanisms fooba needs to be re-translated. its version 5.2 "c" code is incompatible with this neuron version'.
 ------------------
@@ -262,7 +262,7 @@ After entering a new value, be sure to click on the button next to the numeric f
 What is the difference between SEClamp and VClamp, and which should I use?
 ----------------------------
 
-SEClamp is just an ideal voltage source in series with a resistance (Single Electrode Clamp), while VClamp is a model of a two electrode voltage clamp with this equivalent circuit:
+:class:`SEClamp` is just an ideal voltage source in series with a resistance (Single Electrode Clamp), while :class:`VClamp` is a model of a two electrode voltage clamp with this equivalent circuit:
 
 .. code::
 
@@ -277,12 +277,12 @@ SEClamp is just an ideal voltage source in series with a resistance (Single Elec
                       tau1 
 
 
-If the purpose of your model is to study the properties of a cell, use SEClamp. If the purpose is to study how instrumentation artefacts affect voltage clamp data, use VClamp. 
+If the purpose of your model is to study the properties of a cell, use :class:`SEClamp`. If the purpose is to study how instrumentation artefacts affect voltage clamp data, use :class:`VClamp`. 
 
 SEClamp and IClamp just deliver rectangular step waveforms. How can I make them produce an arbitrary waveform, e.g. something that I calculated or recorded from a real cell?
 -----------------------
 
-The Vector class's play method can be used to drive any variable with a sequence of values stored in a Vector. For example, you can play a Vector into an IClamp's amp, an SEClamp's amp1, an SEClamp's series resistance rs (e.g. if you have an experimentally measured synaptic conductance time course). To learn how to do this, get :download:`data/vecplay.hoc`, which contains an exercise from one of our 5-day hands-on NEURON courses. Unzip it in an empty directory. This creates a subdirectory called vectorplay, where you will find a file called arbforc.html
+The Vector class's play method can be used to drive any variable with a sequence of values stored in a Vector. For example, you can play a Vector into an IClamp's amp, an SEClamp's amp1, an SEClamp's series resistance rs (e.g. if you have an experimentally measured synaptic conductance time course). To learn how to do this, get :download:`data/vecplay.hoc`, which contains an exercise from one of our 5-day hands-on NEURON courses. Unzip it in an empty directory. This creates a subdirectory called :file:`vectorplay`, where you will find a file called :file:`arbforc.html`
 
 Open this file with your browser and start the exercise.
 

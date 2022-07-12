@@ -162,32 +162,32 @@ Exercises
 
 - enclose the weight exploration above in a procedure
 
-- write a similar routine to explore cell time constant (param is called ta; set with tau(ta)); run it
+- write a similar routine to explore cell time constant (``param`` is called ``ta``; set with ``tau(ta)``); run it
 
-- write a similar routine to explore synaptic delay (param is called del; set with delay(del)); run it
+- write a similar routine to explore synaptic delay (``param`` is called ``del``; set with ``delay(del)``); run it
 
-- write a general proc that takes 3 args: min,max,iter that can be used to explore any of the params
+- write a general proc that takes 3 args: ``min``, ``max``, ``iter`` that can be used to explore any of the params
 
-(hint: call a general *setpar()* procedure that can be redefined eg *def setpar(x): weight(x)* depending on which param you are changing
+(hint: call a general ``setpar()`` procedure that can be redefined eg def ``setpar(x): weight(x)`` depending on which param you are changing
 
 
 Procedure interval2() in ocomm.hoc sets cell periods randomly
 =========
 
-- can be used instead of interval() in ``synchronize.hoc``
+- can be used instead of ``interval()`` in :file:`synchronize.hoc`
 
 - randomizing cell identities is easier than randomizing connections
 
 - with randomized identities can attach cell 0 to cells 1-50 and not have interval uniformity
 
-- To replace interval() with interval2(), overwrite interval():
+- To replace ``interval()`` with ``interval2()``, overwrite ``interval()``:
 
     .. code::
         python
 
         >>> def interval (x,y): interval2(x,y)
         
-- Run interval() from command line or by changing low and high in GUI panel
+- Run ``interval()`` from command line or by changing low and high in GUI panel
 
 - Check results
 
@@ -203,7 +203,7 @@ Rewiring the network
 
 All of the programs discussed in the lecture are available in ocomm.hoc. The student may wish to use or rewrite any of these procedures. Below we suggest a different approach to wiring the network.
  
-procedure wire() in ``ocomm.hoc`` is slightly simplified from that in ``synchronize.hoc`` but does the same thing
+procedure wire() in :file:`ocomm.hoc` is slightly simplified from that in :file:`synchronize.hoc` but does the same thing
 
 
 .. code::
@@ -220,7 +220,7 @@ procedure wire() in ``ocomm.hoc`` is slightly simplified from that in ``synchron
 Exercises
 --------
 
-rewrite wire() to connect each neuron to half of the neurons
+rewrite ``wire()`` to connect each neuron to half of the neurons
 
 
 suggestion: for each neuron, pick an initial projection randomly
@@ -243,7 +243,7 @@ This algorithm is not very good since cells in center get more convergence
 
 suggestions: counting upwards from ``proj``, use modulus (%) to wrap-around and get values between 0 and ncell-1
 
-- run(), graph and check synchrony
+- ``run()``, graph and check synchrony
 
 - generalize your procedure to take argument ``pij`` that defines connection density
 
