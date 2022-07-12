@@ -1,6 +1,7 @@
 #include <../../nmodlconf.h>
 /* /local/src/master/nrn/src/modlunit/units.c,v 1.5 1997/11/24 16:19:13 hines Exp */
 /* Mostly from Berkeley */
+#include "nrnassrt.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -948,7 +949,7 @@ l0:
         y_or_n = get();
         assert(y_or_n == 'Y' || y_or_n == 'N');
         legacy = (y_or_n == 'Y') ? 1 : 0;
-        assert(get() == '@');
+        nrn_assert(get() == '@');
         if (dynam[legacy].table != table) { /* skip the line */
             while (c != '\n' && c != 0) {
                 c = get();
