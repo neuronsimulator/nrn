@@ -200,7 +200,6 @@ void nrn_wrote_conc(int type,
         pe[0] = nrn_nernst(pe[1 * _STRIDE], pe[2 * _STRIDE], gimap[type][2], celsius);
     }
 }
-nrn_pragma_omp(end declare target)
 
 static double efun(double x) {
     if (fabs(x) < 1e-4) {
@@ -209,6 +208,8 @@ static double efun(double x) {
         return x / (exp(x) - 1);
     }
 }
+
+nrn_pragma_omp(end declare target)
 
 double nrn_ghk(double v, double ci, double co, double z) {
     double temp = z * v / ktf;
