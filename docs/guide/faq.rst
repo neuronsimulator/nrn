@@ -172,7 +172,7 @@ How do I change the color scale used in shape plots?
 
 :ref:`Create a file that specifies the desired RGB values. <nrn_defaults>`
 
-I see an error message that says ... procedure too bi in ./foo.hoc ...
+I see an error message that says ... procedure too big in ./foo.hoc ...
 ----------------
 
 There is an upper limit on the size of a procedure that the hoc parser can handle. The workaround is simple. 
@@ -218,7 +218,9 @@ See the NMODL tops on :ref:`the "getting started" page. <how_to_get_started_with
 How do I compile mod files?
 ----------------
 
-Depends on whether you're running NEURON under :ref:`MSWindows <compiling_new_mechanisms_under_mswindows>`, :ref:`UNIX/Linux <compiling_new_mechanisms_under_unix_linux>`, OS X, or :ref:`MacOS <compiling_new_mechanisms_under_macos>`. Whichever you use, it's a good idea to keep related mod files in the same directory as the hoc files that need them.
+If the folder with your NEURON scripts (HOC or Python) is the same as the folder with the mod files, open it in a terminal and type `nrnivmodl`. You can also specify paths; e.g. if all the mod files are in a subfolder called `mod` but you're running NEURON from the current folder, type `nrnivmodl mod`.
+
+Windows and Mac also provide graphical tools that can be used to compile mod files.
 
 I can't get mod files to compile.
 -------------------
@@ -359,9 +361,6 @@ For functions available when defining ion channel mechanisms etc with NMODL, see
     using_the_d_lambda_rule.rst
     nrn_defaults.rst
     how_to_get_started_with_neuron.rst
-    compiling_new_mechanisms_under_msw.rst
-    compiling_new_mechanisms_under_unix.rst
-    compiling_new_mechanisms_under_macos.rst
     nmodls_built_in_functions.rst
     units_tutorial.rst
     finitialize_handler.rst

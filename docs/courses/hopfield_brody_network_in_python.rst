@@ -174,7 +174,7 @@ Exercises
 Procedure interval2() in ocomm.hoc sets cell periods randomly
 =========
 
-- can be used instead of ``interval()`` in :file:`synchronize.hoc`
+- can be used instead of ``interval()`` in :download:`synchronize.hoc <data/synchronize.hoc>`
 
 - randomizing cell identities is easier than randomizing connections
 
