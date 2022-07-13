@@ -36,7 +36,6 @@ Using the location of :file:`hhkchan.mod` as the working directory, start NEURON
 
     from neuron import h, gui
 
-This will automatically load the mechanisms compiled in Step 1. If NEURON doesn't find any compiled mechanisms, only the "built-in" mechanisms (hh, pas, :class:`IClamp`, etc) will be available.
 
 Step 3:
 -------

@@ -1,4 +1,4 @@
-.. _units:
+.. _units_used_in_neuron:
 
 Units used in NEURON
 ====================
