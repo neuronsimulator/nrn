@@ -412,6 +412,12 @@ def test_errorcode():
     assert process.returncode > 0
 
 
+def test_hocObj_error_in_construction():
+    # test unref hoc obj when error during construction
+    expect_hocerr(h.List, "A")
+    expect_hocerr(h.List, h.NetStim())
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()
