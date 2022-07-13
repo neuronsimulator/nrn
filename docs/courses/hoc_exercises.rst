@@ -1,5 +1,6 @@
 .. _hoc_exercises:
 
+
 HOC Exercises
 =============
 
@@ -13,6 +14,149 @@ Typing these, although trivial, can be a valuable way to get familiar with the l
 
     oc> /* ditto */
 
+
+Anything not explicitly declared is assumed to be a number
+-------------
+.. code::
+    c++
+
+    oc> x=5300 // no previous declaration as to what 'x' is
+
+- numbers are all doubles (high precision numbers)
+
+    there is no integer type in Hoc
+
+- Scientific notation use e or E
+
+    .. code::
+        c++
+
+        oc> print 5.3e3,5.3E3 // e preferred (see next)
+
+- there are some useful built-in values
+    
+    .. code::
+        c++
+
+        oc> print PI, E, FARADAY, R
+
+Do you have anything to declare?: objects and strings
+----------
+
+- Must declare an object reference (=object variable) before making an object
+
+- Objref: manipulate references to objects, not the objects themselves
+
+    often names are chosen that make it easy to remember what an object reference is to be used for (eg g for a Graph or vec for a Vector) but it's important to remember that these are just for convenience and that any object reference can be used to point to any kind of object
+
+- Objects include vectors, graphs, lists, ...
+
+    .. code::
+        c++
+
+        oc> objref XO,YO // capital 'oh' not zero
+
+        oc> print XO,YO // these are object references
+
+        oc> XO = new List() // 'new' creates a new instance of the List class
+
+        oc> print XO,YO // XO now points to something, YO does not
+
+        oc> objref XO // redeclaring an objref breaks the link; if this is the only reference to that object the object is destroyed
+
+        oc> XO = new List() // a new new List
+
+        oc> print XO // notice the List[#] -- this is a different List, the old one is gone
+
+- After creating object reference, can use it to point a new or old object
+
+    .. code::
+        c++
+
+        oc> objref vec,foo // two object refs
+
+        oc> vec = new Vector() // use 'new' to create something
+
+        oc> foo = vec // foo is now just another reference to the same thing
+
+        oc> print vec, foo // same thing
+
+        oc> vec=XO
+
+        oc> print vec, foo // vec no longer points to a vector
+
+        oc> objectvar vec // objref and objectvar are the same; redeclaring an objref breaks the link between it and the object it had pointed to
+
+        oc> print vec, foo // vec had no special status, foo still points equally well
+
+- Can create an array of objrefs
+
+    .. code::
+        c++
+
+        oc> objref objarr[10]
+
+        oc> objarr[0]=XO
+
+        oc> print objarr, objarr[0] // two ways of saying same thing
+
+        oc> objarr[1]=foo
+
+        oc> objarr[2]=objarr[0] // piling up more references to the same thing
+
+        oc> print objarr[0],objarr[1],objarr[2]
+
+- Exercises: Lists are useful for maintaining pointers to objects so that they are maintained when explicit object references are removed
+
+    1. 
+        Make vec point to a new vector. Print out and record its identity (*print vec*). Now print using the object name (ie *print Vector[#] with the right #*). This confirms that the object exists. Destroy the object by reinitializing the vec reference. Now try to print using the object name. What does it say.
+
+    2. 
+        As in Exercise 1: make vec point to a new vector and use print to find the vector name. Make XO a reference to a new list. Append the vector to the list: {XO.append(vec). Now dereference vec as in Exercise 1. Print out the object by name and confirm that it still exists. Even though the original objref is gone, it is still point to by the list.
+
+    3.
+        Identify the vector on the list: (*print XO.object(0)*). Remove the vector from the list (*print XO.remove(0)*). Confirm that this vector no longer exists.
+
+- Strings 
+
+- Must declare a string before assigning it
+
+    .. code::
+        c++
+
+        oc> mystr = "hello" // ERROR: needed to be declared
+
+        oc> strdef mystr // declaration
+
+        oc> mystr = "hello" // can't declare and set together
+
+        oc> print mystr
+
+        oc> printf("-%s-", mystr) // tab-string-newline; printf=print formatted; see documentation
+
+- There are no string arrays; get around this using arrays of String objects
+
+- Can also declare number arrays, but vectors are often more useful
+
+    .. code::
+        c++
+
+        oc> x=5
+
+        oc> double x[10]
+
+        oc> print x // overwrote prior value
+
+        oc> x[0]=7
+
+        oc> print x, x[0] // these are the same
+
+Operators and numerical functions
+==========
+
+.. code::
+    c++ 
+=======
 
 .. seealso::
 
@@ -191,9 +335,10 @@ Blocks of code
     }
 
 Conditionals
-------------
+=========
 
-.. code-block:: c++
+.. code::
+    c++
 
     oc> x=8
 
@@ -209,11 +354,11 @@ Conditionals
 
     oc> for (x=1;x<=7;x+=2) print x // (init;until;change)
 
-
 Procedures and functions
-------------------------
+===========
 
-.. code-block:: c++
+.. code::
+    c++
 
     oc> proc hello () { print "hello" }
 
@@ -369,6 +514,7 @@ File
 
     oc> if (vec.eq(vec[1])) print "SAME" // should be the same
 
+
 .. seealso::
 
     :hoc:class:`File`
@@ -404,6 +550,7 @@ List
     oc> list.remove(2) // remove this object
 
     oc> for ii=0, list.count-1 print list.object(ii) // remember list.count, vec.size
+
 
 .. seealso::
 
@@ -451,7 +598,8 @@ Simulation
 Recording the simulation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: c++
+.. code-block:: 
+    c++
 
     oc> cvode_active(0) // this turns off variable time step
 
