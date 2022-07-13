@@ -57,10 +57,8 @@ void CodegenAccVisitor::print_channel_iteration_block_parallel_hint(BlockType ty
 
 
 void CodegenAccVisitor::print_atomic_reduction_pragma() {
-    if (!info.artificial_cell) {
-        printer->add_line("nrn_pragma_acc(atomic update)");
-        printer->add_line("nrn_pragma_omp(atomic update)");
-    }
+    printer->add_line("nrn_pragma_acc(atomic update)");
+    printer->add_line("nrn_pragma_omp(atomic update)");
 }
 
 
@@ -197,9 +195,13 @@ void CodegenAccVisitor::print_net_init_acc_serial_annotation_block_end() {
 void CodegenAccVisitor::print_nrn_cur_matrix_shadow_update() {
     auto rhs_op = operator_for_rhs();
     auto d_op = operator_for_d();
-    print_atomic_reduction_pragma();
+    if (info.point_process) {
+        print_atomic_reduction_pragma();
+    }
     printer->add_line(fmt::format("vec_rhs[node_id] {} rhs;", rhs_op));
-    print_atomic_reduction_pragma();
+    if (info.point_process) {
+        print_atomic_reduction_pragma();
+    }
     printer->add_line(fmt::format("vec_d[node_id] {} g;", d_op));
 }
 
@@ -211,9 +213,13 @@ void CodegenAccVisitor::print_fast_imem_calculation() {
     auto rhs_op = operator_for_rhs();
     auto d_op = operator_for_d();
     printer->start_block("if (nt->nrn_fast_imem)");
-    print_atomic_reduction_pragma();
+    if (info.point_process) {
+        print_atomic_reduction_pragma();
+    }
     printer->add_line(fmt::format("nt->nrn_fast_imem->nrn_sav_rhs[node_id] {} rhs;", rhs_op));
-    print_atomic_reduction_pragma();
+    if (info.point_process) {
+        print_atomic_reduction_pragma();
+    }
     printer->add_line(fmt::format("nt->nrn_fast_imem->nrn_sav_d[node_id] {} g;", d_op));
     printer->end_block(1);
 }
