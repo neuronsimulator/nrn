@@ -2070,7 +2070,9 @@ printf("unreffing %s with refcount %d\n", hoc_object_name(obj), obj->refcount);
             hoc_template_notify(obj, 0);
         }
         if (obj->ctemplate->sym->subtype & (CPLUSOBJECT | JAVAOBJECT)) {
-            (obj->ctemplate->destructor)(obj->u.this_pointer);
+            if (obj->u.this_pointer) {
+                (obj->ctemplate->destructor)(obj->u.this_pointer);
+            }
         } else {
             obsav = hoc_thisobject;
             hoc_thisobject = obj;

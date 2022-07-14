@@ -45,14 +45,3 @@ When "Change" is selected, clicking on a component label pops up a string input 
 
 .. image:: img/4chlabel.gif
     :align: center
-
-    
-
-
-
-
-
-
-
-
-
