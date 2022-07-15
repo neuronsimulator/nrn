@@ -712,7 +712,8 @@ static double nc_event(void* v) {
     }
     d->chktar();
     NrnThread* nt = PP2NT(d->target_);
-    assert(nt && nt >= nrn_threads && nt < (nrn_threads + nrn_nthread));
+    const auto nrn_thread_not_initialized_for_nc_target = nt && nt >= nrn_threads && nt < (nrn_threads + nrn_nthread);
+    nrn_assert(nrn_thread_not_initialized_for_nc_target);
     if (ifarg(2)) {
         double flag = *getarg(2);
         Point_process* pnt = d->target_;
