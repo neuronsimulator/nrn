@@ -45,5 +45,5 @@ To that end, the following table's columns constitute:
      - 8fecd77
    * - LINDA
      - Linda is a coordination model that aids communication in parallel computing environments.
-     - `#xyz <https://github.com/neuronsimulator/nrn/pull/xyz>`_
+     - `#1919 <https://github.com/neuronsimulator/nrn/pull/1919>`_
      - a5c36e9
