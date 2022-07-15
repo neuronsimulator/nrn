@@ -121,10 +121,6 @@ double errcheck(double d, const char* s) /* check result of library call */
 
 int hoc_errno_check(void) {
     int ierr;
-#if LINDA
-    static parallel_eagain = 0;
-#endif
-
 #if 1
     errno = 0;
     return 0;
@@ -158,17 +154,6 @@ int hoc_errno_check(void) {
         case ERANGE:
             fprintf(stderr, "A math function was called that returned an out of range value\n");
             break;
-#if LINDA
-            /* regularly set by eval() and perhaps other linda commands */
-        case EAGAIN:
-            if (parallel_eagain++ == 0) {
-                perror("oc");
-                fprintf(stderr,
-                        "oc: This error occurs often from LINDA and thus will not be further "
-                        "reported.\n");
-            }
-            break;
-#endif
         default:
             perror("oc");
             break;

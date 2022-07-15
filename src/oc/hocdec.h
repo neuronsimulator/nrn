@@ -299,21 +299,7 @@ int ilint;
 #define Printf  nrnpy_pr
 #endif
 
-/* EINTR handling for LINDA */
-#if LINDA
-#include <errno.h>
-#define ERRCHK(c1)               \
-    {                            \
-        errno = EINTR;           \
-        while (errno == EINTR) { \
-            errno = 0;           \
-            c1                   \
-        }                        \
-    }
-
-#else
 #define ERRCHK(c1) c1
-#endif
 
 #define IFGUI  if (hoc_usegui) {
 #define ENDGUI }

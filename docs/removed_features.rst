@@ -43,3 +43,7 @@ To that end, the following table's columns constitute:
      - This legacy macOS toolkit was deprecated in 2012 and removed from macOS 10.15
      - `#1869 <https://github.com/neuronsimulator/nrn/pull/1869>`_
      - 8fecd77
+   * - LINDA
+     - Linda is a coordination model that aids communication in parallel computing environments.
+     - `#xyz <https://github.com/neuronsimulator/nrn/pull/xyz>`_
+     - a5c36e9
