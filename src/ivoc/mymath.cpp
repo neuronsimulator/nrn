@@ -3,8 +3,8 @@
 #include "mymath.h"
 #include "classreg.h"
 #include "oc2iv.h"
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
+#include <cstdio>
 
 extern int hoc_return_type_code;
 
@@ -63,16 +63,11 @@ static double feround(void*) {
     return (double) nrn_feround(arg);
 }
 
-static Member_func members[] = {"d2line",
-                                distance_to_line,
-                                "d2line_seg",
-                                distance_to_line_segment,
-                                "inside",
-                                inside,
-                                "feround",
-                                feround,
-                                0,
-                                0};
+static Member_func members[] = {{"d2line", distance_to_line},
+                                {"d2line_seg", distance_to_line_segment},
+                                {"inside", inside},
+                                {"feround", feround},
+                                {0, 0}};
 
 static void* cons(Object*) {
     return NULL;
@@ -115,10 +110,10 @@ float MyMath::max(int count, const float* x) {
 
 bool MyMath::near_line(Coord x, Coord y, Coord x1, Coord y1, Coord x2, Coord y2, float epsilon) {
     // printf("near_line %g %g %g %g %g %g %g\n", x,y,x1,y1,x2,y2,epsilon);
-    if (Math::equal(x, x1, epsilon) && Math::equal(y, y1, epsilon)) {
+    if (eq(x, x1, epsilon) && eq(y, y1, epsilon)) {
         return true;
     }
-    if (Math::equal(x1, x2, epsilon) && Math::equal(y1, y2, epsilon)) {
+    if (eq(x1, x2, epsilon) && eq(y1, y2, epsilon)) {
         return false;
     }
     Coord d, norm, norm2, dot;
@@ -133,11 +128,7 @@ bool MyMath::near_line(Coord x, Coord y, Coord x1, Coord y1, Coord x2, Coord y2,
     dot = dx * dx2 + dy * dy2;
     d = norm - dot * dot / norm2;
     // printf("near_line %g\n", d);
-    if (d <= epsilon * epsilon) {
-        return true;
-    } else {
-        return false;
-    }
+    return d <= epsilon * epsilon;
 }
 
 float MyMath::distance_to_line(Coord x, Coord y, Coord x1, Coord y1, Coord x2, Coord y2) {
@@ -207,72 +198,6 @@ bool MyMath::near_line_segment(Coord x,
            MyMath::near_line(x, y, x1, y1, x2, y2, epsilon);
 }
 
-#if 0
-void MyMath::round_range(Coord x1, Coord x2, double& y1, double& y2, int& ntic) {
-	double d = x2 - x1;
-	int e = 0;
-	while (d > 10) {
-		d /= 10.;
-		++e;
-	}
-	while (d < 10) {
-		d *= 10.;
-		--e;
-	}
-
-	if (d > 76.) {
-		d = 100.; ntic = 5;
-	}else if (d > 51.) {
-		d = 75.; ntic = 3;
-	}else if (d > 31.) {
-		d = 50.; ntic = 5;
-	}else if (d > 26.) {
-		d = 30.; ntic = 3;
-	}else if (d > 21.) {
-		d = 25.; ntic = 5;
-	}else if (d > 16) {
-		d = 20; ntic = 4;
-#if 0
-	}else if (d > 11) {
-		d = 15; ntic = 3;
-	}else{
-		d = 10.; ntic = 5;
-	}
-#else
-	}else{
-		int i = int(d);
-		d = double(i);
-		if (i > 6) {
-			if ((i%2) == 0) {
-				ntic = i/2;
-			}else if ((i%3) == 0) {
-				ntic = i/3;
-			} else {
-				i = i+1;
-				d = double(i);
-				ntic = i/2;
-			}
-		}else{
-			ntic = i;
-		}
-	}
-#endif
-	
-	while (e > 0) {
-		d *= 10.;
-		--e;
-	}
-	while (e < 0) {
-		d /= 10.;
-		++e;
-	}
-
-	d /= double(ntic);
-	y1 = d*double(int(x1/d - .5));
-	y2 = d*double(int(x2/d + .5));
-	ntic = int((y2 - y1)/d + .5);
-}
-#else
 void MyMath::round_range(Coord x1, Coord x2, double& y1, double& y2, int& ntic) {
     double d = x2 - x1;
     d = pow(10, floor(log10(d))) / 10;
@@ -296,7 +221,6 @@ void MyMath::round_range(Coord x1, Coord x2, double& y1, double& y2, int& ntic) 
         i += 2;
     }
 }
-#endif
 
 void MyMath::round_range_down(Coord x1, Coord x2, double& y1, double& y2, int& ntic) {
     double d = x2 - x1;
@@ -332,7 +256,7 @@ double MyMath::round(float& x1, float& x2, int direction, int digits) {
     if (x2 > x1) {
         d = x2 - x1;
     } else {
-        d = Math::abs(x1);
+        d = std::abs(x1);
     }
     double e = pow(10, floor(log10(d)) + 1 - digits);
     switch (direction) {
@@ -366,8 +290,7 @@ void MyMath::box(Requisition& req, Coord& x1, Coord& y1, Coord& x2, Coord& y2) {
 }
 
 bool MyMath::unit_normal(Coord x, Coord y, Coord* perp) {
-    float d;
-    d = sqrt(x * x + y * y);
+    float d = sqrt(x * x + y * y);
     if (d < 1e-6) {
         perp[0] = 0.;
         perp[1] = 1.;

@@ -2,10 +2,10 @@
 
 #include <OS/list.h>
 #include <OS/string.h>
-#include <OS/math.h>
 #if HAVE_IV
 #include "ivoc.h"
 #endif
+#include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "ocobserv.h"
 #include "ivocvect.h"
@@ -18,7 +18,6 @@
 
 extern double t;
 extern NetCvode* net_cvode_instance;
-extern "C" Point_process* ob2pntproc(Object*);
 
 // Vector.play_remove()
 void nrn_vecsim_remove(void* v) {
@@ -220,8 +219,8 @@ void VecPlayStep::deliver(double tt, NetCvode* ns) {
 
 
 void VecPlayStep::pr() {
-    printf("VecPlayStep ");
-    printf("%s.x[%d]\n", hoc_object_name(y_->obj_), current_index_);
+    Printf("VecPlayStep ");
+    Printf("%s.x[%d]\n", hoc_object_name(y_->obj_), current_index_);
 }
 
 VecPlayContinuous::VecPlayContinuous(double* pd,

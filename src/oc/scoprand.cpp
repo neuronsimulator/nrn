@@ -22,6 +22,7 @@ static char RCSid[] = "random.cpp,v 1.4 1999/01/04 12:46:49 hines Exp";
 
 #include <math.h>
 #include <mcran4.h>
+#include "scoplib.h"
 static uint32_t value = 1;
 
 /*-----------------------------------------------------------------------------
@@ -54,7 +55,7 @@ static uint32_t value = 1;
  *
  *--------------------------------------------------------------------------- */
 
-extern "C" double scop_random(void) {
+double scop_random(void) {
     extern int use_mcell_ran4_;
     if (use_mcell_ran4_) {
         /*perhaps 4 times slower but much higher quality*/
@@ -92,6 +93,6 @@ extern "C" double scop_random(void) {
  *
  */
 
-extern "C" void set_seed(double seed) {
+void set_seed(double seed) {
     value = (uint32_t) seed;
 }

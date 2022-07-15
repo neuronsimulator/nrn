@@ -222,6 +222,7 @@ int nrnthread_dat1(int tid,
 
 // sizes and total data count
 int nrnthread_dat2_1(int tid,
+                     int& ncell,
                      int& ngid,
                      int& n_real_gid,
                      int& nnode,
@@ -238,6 +239,7 @@ int nrnthread_dat2_1(int tid,
     CellGroup& cg = cellgroups_[tid];
     NrnThread& nt = nrn_threads[tid];
 
+    ncell = cg.n_real_cell;
     ngid = cg.n_output;
     n_real_gid = cg.n_real_output;
     nnode = nt.end;
@@ -288,7 +290,7 @@ int nrnthread_dat2_2(int tid,
     CellGroup& cg = cellgroups_[tid];
     NrnThread& nt = nrn_threads[tid];
 
-    assert(cg.n_real_output == nt.ncell);
+    assert(cg.n_real_cell == nt.ncell);
 
     // If direct transfer, copy, because target space already allocated
     bool copy = corenrn_direct;
@@ -811,8 +813,6 @@ static void set_info(TQItem* tqi,
     switch (type) {
     case DiscreteEventType: {  // 0
     } break;
-    case TstopEventType: {  // 1
-    } break;
     case NetConType: {  // 2
         NetCon* nc = (NetCon*) de;
         // To find the i for cg.netcons[i] == nc
@@ -1202,9 +1202,7 @@ void core2nrn_watch_activate(int tid, int type, int watch_begin, Core2NrnWatchIn
 
 // nrn<->corenrn PatternStim
 
-extern "C" {
 void* nrn_patternstim_info_ref(Datum*);
-}
 static int patternstim_type;
 
 // Info from NEURON PatternStim at beginning of psolve.

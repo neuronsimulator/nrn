@@ -5,6 +5,7 @@ nrn_add_test_group(
   CORENEURON
   NAME external_ringtest
   SUBMODULE tests/ringtest # git submodule where the relevant tests are defined
+  ENVIRONMENT OMP_NUM_THREADS=1
   MODFILE_PATTERNS "mod/*.mod"
   OUTPUT asciispikes::spk2.std # which output data to compare
   SCRIPT_PATTERNS "*.py" "*.hoc")
@@ -24,7 +25,7 @@ nrn_add_test(
   GROUP external_ringtest
   NAME neuron
   REQUIRES mod_compatibility python
-  COMMAND OMP_NUM_THREADS=1 special -python ringtest.py -tstop 100
+  COMMAND special -python ringtest.py -tstop 100
   OUTPUT asciispikes::spk1.std)
 
 nrn_add_test(
@@ -32,7 +33,7 @@ nrn_add_test(
   NAME neuron_mpi
   REQUIRES mod_compatibility mpi python
   PROCESSORS ${ringtest_mpi_ranks}
-  COMMAND OMP_NUM_THREADS=1 ${ringtest_special} -tstop 100)
+  COMMAND ${ringtest_special} -tstop 100)
 
 foreach(processor cpu gpu)
   if("${processor}" STREQUAL "gpu")
@@ -74,16 +75,16 @@ foreach(processor cpu gpu)
     NAME coreneuron_${processor}_mpi
     REQUIRES coreneuron mpi python ${processor}
     PROCESSORS ${ringtest_mpi_ranks}
-    COMMAND OMP_NUM_THREADS=1 ${ringtest_special} -tstop 100 -coreneuron ${gpu_arg})
+    COMMAND ${ringtest_special} -tstop 100 -coreneuron ${gpu_arg})
   nrn_add_test(
     GROUP external_ringtest
     NAME coreneuron_${processor}_mpi_offline
     REQUIRES coreneuron mpi python ${processor}
     CONFLICTS mpi_dynamic
     PROCESSORS ${ringtest_mpi_ranks}
-    PRECOMMAND OMP_NUM_THREADS=1 ${ringtest_special} -tstop 0 -coreneuron -dumpmodel
-    COMMAND OMP_NUM_THREADS=1 LIBSONATA_ZERO_BASED_GIDS=1 ${ringtest_special_core} --mpi -d coredat/
-            -e 100 ${special_gpu_arg}
+    ENVIRONMENT OMP_NUM_THREADS=1 LIBSONATA_ZERO_BASED_GIDS=1
+    PRECOMMAND ${ringtest_special} -tstop 0 -coreneuron -dumpmodel
+    COMMAND ${ringtest_special_core} --mpi -d coredat/ -e 100 ${special_gpu_arg}
     OUTPUT asciispikes::out.dat)
 
   # Following suggestion on #1552, run a test with more threads than datasets.
@@ -95,8 +96,8 @@ foreach(processor cpu gpu)
     NAME coreneuron_${processor}_mpi_threads
     REQUIRES coreneuron mpi python ${processor}
     PROCESSORS ${ringtest_mpi_ranks_times_threads}
-    COMMAND OMP_NUM_THREADS=${ringtest_num_threads} ${ringtest_special} -tstop 100 -coreneuron -nt
-            ${ringtest_num_datasets} ${gpu_arg})
+    ENVIRONMENT OMP_NUM_THREADS=${ringtest_num_threads}
+    COMMAND ${ringtest_special} -tstop 100 -coreneuron -nt ${ringtest_num_datasets} ${gpu_arg})
 endforeach()
 # Step 3 -- add a job that compares the outputs of all the tests added in Step 2
 nrn_add_test_group_comparison(

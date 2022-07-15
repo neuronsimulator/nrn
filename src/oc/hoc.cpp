@@ -11,6 +11,7 @@
 #include <errno.h>
 #include "parse.hpp"
 #include "hocparse.h"
+#include "oc_ansi.h"
 #include "ocfunc.h"
 #include "ocmisc.h"
 #include "nrnmpi.h"
@@ -21,6 +22,9 @@
 #endif
 #include "../nrniv/backtrace_utils.h"
 
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 
 /* for eliminating "ignoreing return value" warnings. */
 int nrnignore;
@@ -41,8 +45,7 @@ int (*p_nrnpy_pyrun)(const char* fname);
 #define use_rl_getc_function
 #endif
 
-#if carbon || defined(MINGW)
-#include <pthread.h>
+#if defined(MINGW)
 extern int stdin_event_ready();
 #endif
 
@@ -216,7 +219,7 @@ static int Getc(NrnFILEWrap* fp);
 static void unGetc(int c, NrnFILEWrap* fp);
 static int backslash(int c);
 
-extern "C" void nrn_exit(int i) {
+void nrn_exit(int i) {
 #if defined(WIN32)
     printf("NEURON exiting abnormally, press return to quit\n");
     fgetc(stdin);
@@ -743,9 +746,6 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     if (fin && pipeflag == 0 && (!nrn_fw_eq(fin, stdin) || !nrn_istty_))
         IGNORE(nrn_fw_fseek(fin, 0L, 2)); /* flush rest of file */
     hoc_oop_initaftererror();
-#if defined(WIN32) && !defined(CYGWIN)
-    hoc_win_normal_cursor();
-#endif
     if (hoc_oc_jmpbuf) {
         hoc_newobj1_err();
         longjmp(hoc_oc_begin, 1);
@@ -977,7 +977,7 @@ void hocstr_copy(HocStr* hs, const char* buf) {
     strcpy(hs->buf, buf);
 }
 
-#if defined(CYGWIN)
+#ifdef MINGW
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
@@ -1044,17 +1044,9 @@ int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
 
     if (gargc == 1) /* fake an argument list */
     {
-#if 1
-        /* who knows why this ancient code no longer works under cygwin
-        when the @@ to ' ' was introduced in moreinput*/
         static const char* stdinonly[] = {"-"};
-#else
-        static char* stdinonly[1];
-        stdinonly[0] = static_cast<char*>(emalloc(2 * sizeof(char)));
-        strcpy(stdinonly[0], "-");
-#endif
 
-#if defined(CYGWIN)
+#ifdef MINGW
         cygonce = 1;
 #endif
         gargv = stdinonly;
@@ -1068,72 +1060,28 @@ int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
     return exit_status;
 }
 
-#if carbon
-#include <sys/select.h>
-static pthread_t* inputReady_;
-static pthread_mutex_t inputMutex_;
-static pthread_cond_t inputCond_;
-static int inputReadyFlag_;
-
-void* inputReadyThread(void* input) {
-    fd_set readfds;
-    int i, j;
-    char c;
-    //	printf("inputReadyThread started\n");
-    //	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &j);
-    FD_ZERO(&readfds);
-    FD_SET(fileno(stdin), &readfds);
-    for (;;) {
-        i = select(1, &readfds, 0, 0, 0);
-        pthread_testcancel();
-        if (FD_ISSET(fileno(stdin), &readfds)) {
-            if (!stdin_event_ready()) {
-                // dialog is open. cannot accept input now.
-                printf("Discarding input til Dialog is closed.\n");
-                read(fileno(stdin), &c, 1);
-                continue;
-            }
-        }
-        pthread_mutex_lock(&inputMutex_);
-        pthread_cond_wait(&inputCond_, &inputMutex_);
-        pthread_mutex_unlock(&inputMutex_);
-    }
-    printf("inputReadyThread done\n");
-}
-#endif
-
-#if defined(MINGW)
-static pthread_t* inputReady_;
-static pthread_mutex_t inputMutex_;
-static pthread_cond_t inputCond_;
-static int inputReadyFlag_;
-static int inputReadyVal_;
+#ifdef MINGW
+namespace {
+std::mutex inputMutex_;
+std::condition_variable inputCond_;
+// This is intentionally leaked because it is never joined, and the destructor
+// would call terminate.
+std::thread* inputReady_;
+int inputReadyFlag_;
+int inputReadyVal_;
+}  // namespace
 extern "C" int getch();
 
-void* inputReadyThread(void* input) {
-    int i, j;
-    char c;
-    //	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &j);
+void inputReadyThread() {
     for (;;) {
-        pthread_testcancel();
-#if 0
-		//if (kbhit()) {
-			if (!stdin_event_ready()) {
-				// dialog is open. cannot accept input now.
-printf("Discarding input til Dialog is closed.\n");
-				read(fileno(stdin), &c, 1);
-				continue;
-			}
-		} // extern "C"
-#endif
-        i = getch();
-        // printf("see %d %c\n", i, i);
-        pthread_mutex_lock(&inputMutex_);
+        // The pthread version had pthread_testcancel() here, but the thread was
+        // never cancelled.
+        int i = getch();
+        std::unique_lock<std::mutex> lock{inputMutex_};
         inputReadyFlag_ = 1;
         inputReadyVal_ = i;
         stdin_event_ready();
-        pthread_cond_wait(&inputCond_, &inputMutex_);
-        pthread_mutex_unlock(&inputMutex_);
+        inputCond_.wait(lock);
     }
     printf("inputReadyThread done\n");
 }
@@ -1152,14 +1100,7 @@ void hoc_final_exit(void) {
     /* Don't close the plots for the sub-processes when they finish,
        by default they are then closed when the master process ends */
     NOT_PARALLEL_SUB(hoc_close_plot();)
-#if defined(WIN32) && HAVE_IV
-#ifndef CYGWIN
-    if (winio_exists()) {
-        winio_closeall();
-    }
-#endif
-#endif
-#if READLINE && (!defined(WIN32) || defined(CYGWIN)) && !defined(MAC)
+#if READLINE && !defined(MINGW) && !defined(MAC)
     rl_deprep_terminal();
 #endif
     ivoc_cleanup();
@@ -1178,13 +1119,6 @@ void hoc_final_exit(void) {
 }
 
 void hoc_quit(void) {
-#if carbon
-    if (0 && inputReady_) {
-        pthread_cancel(*inputReady_);
-        pthread_kill(*inputReady_, SIGHUP);
-        pthread_join(*inputReady_, 0);
-    }
-#endif
     hoc_final_exit();
     ivoc_final_exit();
 #if defined(USE_PYTHON)
@@ -1201,7 +1135,7 @@ void hoc_quit(void) {
     exit(exit_code);
 }
 
-#if defined(CYGWIN)
+#ifdef MINGW
 static const char* double_at2space(const char* infile) {
     char* buf;
     const char* cp1;
@@ -1228,7 +1162,7 @@ static const char* double_at2space(const char* infile) {
     *cp2 = '\0';
     return buf;
 }
-#endif /*CYGWIN*/
+#endif /*MINGW*/
 
 int moreinput(void) {
     if (pipeflag) {
@@ -1236,18 +1170,9 @@ int moreinput(void) {
         return 1;
     }
 #if defined(WIN32)
-#ifndef CYGWIN
-    if (!winio_exists()) {
-        return 0;
-    }
-#endif
-#if defined(CYGWIN)
     /* like mswin, do not need a '-' after hoc files, but ^D works */
     if (gargc == 0 && cygonce == 0) {
         cygonce = 1;
-#else
-    if (gargc == 0) {
-#endif
         fin = nrn_fw_set_stdin();
         infile = 0;
         hoc_xopen_file_[0] = 0;
@@ -1257,7 +1182,7 @@ int moreinput(void) {
         return 1;
 #endif
     }
-#endif
+#endif  // WIN32
 #if MAC
     if (gargc == 0) {
         fin = nrn_fw_set_stdin();
@@ -1269,7 +1194,7 @@ int moreinput(void) {
         return 1;
 #endif
     }
-#endif
+#endif  // MAC
     if (fin && !nrn_fw_eq(fin, stdin)) {
         IGNORE(nrn_fw_fclose(fin));
     }
@@ -1291,8 +1216,8 @@ int moreinput(void) {
         }
         infile = cp;
     }
-#endif
-#if defined(CYGWIN)
+#endif  // WIN32
+#ifdef MINGW
     /* have difficulty passing spaces within arguments from neuron.exe
     through the neuron.sh shell script to nrniv.exe. Therefore
     neuron.exe converts the ' ' to "@@" and here we need to convert
@@ -1325,7 +1250,7 @@ int moreinput(void) {
         HocStr* hs;
         infile = *gargv++;
         gargc--;
-#if defined(CYGWIN)
+#ifdef MINGW
         infile = double_at2space(infile);
 #endif
         hs = hocstr_create(strlen(infile) + 2);
@@ -1338,7 +1263,7 @@ int moreinput(void) {
         hoc_print_first_instance = hpfi;
         hocstr_delete(hs);
         if (err) {
-            hoc_warning("arg not valid statement:", infile);
+            hoc_execerror("arg not valid statement:", infile);
         }
         return moreinput();
     } else if (strlen(infile) > 3 && strcmp(infile + strlen(infile) - 3, ".py") == 0) {
@@ -1422,17 +1347,9 @@ static int hoc_run1(void) /* execute until EOF */
     }
     hoc_execerror_messages = 1;
     pipeflag = 0;  // reset pipeflag
-#if defined(WIN32) && !defined(CYGWIN)
-    if (!nrn_fw_eq(fin, stdin)) {
-        hoc_win_wait_cursor();
-    }
-#endif
     for (initcode(); hoc_yyparse(); initcode()) {
         execute(progbase);
     }
-#if defined(WIN32) && !defined(CYGWIN)
-    hoc_win_normal_cursor();
-#endif
     if (intset)
         execerror("interrupted", (char*) 0);
     if (!controlled) {
@@ -1490,13 +1407,13 @@ static void nrn_inputbuf_getline(void) {
 }
 
 // used by ocjump.cpp
-extern "C" void oc_save_input_info(const char** i1, int* i2, int* i3, NrnFILEWrap** i4) {
+void oc_save_input_info(const char** i1, int* i2, int* i3, NrnFILEWrap** i4) {
     *i1 = nrn_inputbufptr;
     *i2 = pipeflag;
     *i3 = lineno;
     *i4 = fin;
 }
-extern "C" void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
+void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
     nrn_inputbufptr = i1;
     pipeflag = i2;
     lineno = i3;
@@ -1691,36 +1608,14 @@ extern int run_til_stdin(); /* runs the interviews event loop. Returns 1
 extern void hoc_notify_value(void);
 
 #if READLINE
-#if carbon
-extern int (*rl_event_hook)(void);
-static int event_hook(void) {
-    if (!inputReady_) {
-        inputReady_ = (pthread_t*) emalloc(sizeof(pthread_t));
-        pthread_mutex_init(&inputMutex_, 0);
-        pthread_cond_init(&inputCond_, 0);
-        pthread_create(inputReady_, 0, inputReadyThread, 0);
-    } else {
-        pthread_mutex_unlock(&inputMutex_);
-    }
-    //	printf("run til stdin\n");
-    run_til_stdin();
-    pthread_mutex_lock(&inputMutex_);
-    pthread_cond_signal(&inputCond_);
-    return 1;
-}
-#else /* not carbon */
-#if defined(MINGW)
+#ifdef MINGW
 extern int (*rl_getc_function)(void);
 static int getc_hook(void) {
-    int i;
     if (!inputReady_) {
         stdin_event_ready(); /* store main thread id */
-        inputReady_ = (pthread_t*) emalloc(sizeof(pthread_t));
-        pthread_mutex_init(&inputMutex_, 0);
-        pthread_cond_init(&inputCond_, 0);
-        pthread_create(inputReady_, 0, inputReadyThread, 0);
+        inputReady_ = new std::thread{inputReadyThread};
     } else {
-        pthread_mutex_unlock(&inputMutex_);
+        inputMutex_.unlock();
     }
     //	printf("run til stdin\n");
     while (!inputReadyFlag_) {
@@ -1728,13 +1623,12 @@ static int getc_hook(void) {
         usleep(10000);
     }
     inputReadyFlag_ = 0;
-    i = inputReadyVal_;
-    pthread_mutex_lock(&inputMutex_);
-    pthread_cond_signal(&inputCond_);
-    // printf("getc_hook returning %d\n", i);
+    int i = inputReadyVal_;
+    inputMutex_.lock();
+    inputCond_.notify_one();
     return i;
 }
-#else /* not carbon and not MINGW */
+#else /* not MINGW */
 
 #if defined(use_rl_getc_function)
 /* e.g. mac libedit.3.dylib missing rl_event_hook */
@@ -1780,8 +1674,7 @@ static int event_hook(void) {
 
 #endif /* not use_rl_getc_function */
 
-#endif /* not carbon and not MINGW */
-#endif /* not carbon */
+#endif /* not MINGW */
 #endif /* READLINE */
 #endif /* INTERVIEWS */
 

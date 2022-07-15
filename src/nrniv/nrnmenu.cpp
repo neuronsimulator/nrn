@@ -10,6 +10,7 @@
 #include "secbrows.h"
 #include "ivoc.h"
 #endif
+#include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "nrnmenu.h"
 #include "classreg.h"
@@ -26,7 +27,6 @@ extern int hoc_return_type_code;
 extern Symlist* hoc_built_in_symlist;
 extern Symbol** pointsym;
 extern double* point_process_pointer(Point_process*, Symbol*, int);
-extern "C" Point_process* ob2pntproc(Object*);
 extern ReceiveFunc* pnt_receive;
 extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;
@@ -631,7 +631,7 @@ static double ms_name(void* v) {
 
 static double ms_save(void* v) {
 #if HAVE_IV
-    ostream* o = Oc::save_stream;
+    std::ostream* o = Oc::save_stream;
     if (o) {
         ((MechanismStandard*) v)->save(gargstr(1), o);
     }
@@ -655,10 +655,17 @@ static void ms_destruct(void* v) {
     Resource::unref((MechanismStandard*) v);
 }
 
-static Member_func ms_members[] = {"panel", ms_panel, "action", ms_action, "in",   ms_in,
-                                   "_in",   ms_in,    "out",    ms_out,    "set",  ms_set,
-                                   "get",   ms_get,   "count",  ms_count,  "name", ms_name,
-                                   "save",  ms_save,  0,        0};
+static Member_func ms_members[] = {{"panel", ms_panel},
+                                   {"action", ms_action},
+                                   {"in", ms_in},
+                                   {"_in", ms_in},
+                                   {"out", ms_out},
+                                   {"set", ms_set},
+                                   {"get", ms_get},
+                                   {"count", ms_count},
+                                   {"name", ms_name},
+                                   {"save", ms_save},
+                                   {0, 0}};
 
 void MechanismStandard_reg() {
     class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, NULL, NULL, NULL);
@@ -1094,33 +1101,22 @@ static void mt_destruct(void* v) {
     MechanismType* mt = (MechanismType*) v;
     mt->unref();
 }
-static Member_func mt_members[] = {"select",
-                                   mt_select,
-                                   "selected",
-                                   mt_selected,
-                                   "make",
-                                   mt_make,
-                                   "remove",
-                                   mt_remove,
-                                   "count",
-                                   mt_count,
-                                   "menu",
-                                   mt_menu,
-                                   "action",
-                                   mt_action,
-                                   "is_netcon_target",
-                                   mt_is_target,
-                                   "has_net_event",
-                                   mt_has_net_event,
-                                   "is_artificial",
-                                   mt_is_artificial,
-                                   "internal_type",
-                                   mt_internal_type,
-                                   0,
-                                   0};
-static Member_ret_obj_func mt_retobj_members[] =
-    {"pp_begin", mt_pp_begin, "pp_next", mt_pp_next, 0, 0};
-static Member_ret_str_func mt_retstr_func[] = {"code", mt_code, "file", mt_file, 0, 0};
+static Member_func mt_members[] = {{"select", mt_select},
+                                   {"selected", mt_selected},
+                                   {"make", mt_make},
+                                   {"remove", mt_remove},
+                                   {"count", mt_count},
+                                   {"menu", mt_menu},
+                                   {"action", mt_action},
+                                   {"is_netcon_target", mt_is_target},
+                                   {"has_net_event", mt_has_net_event},
+                                   {"is_artificial", mt_is_artificial},
+                                   {"internal_type", mt_internal_type},
+                                   {0, 0}};
+static Member_ret_obj_func mt_retobj_members[] = {{"pp_begin", mt_pp_begin},
+                                                  {"pp_next", mt_pp_next},
+                                                  {0, 0}};
+static Member_ret_str_func mt_retstr_func[] = {{"code", mt_code}, {"file", mt_file}, {0, 0}};
 void MechanismType_reg() {
     class2oc(
         "MechanismType", mt_cons, mt_destruct, mt_members, NULL, mt_retobj_members, mt_retstr_func);

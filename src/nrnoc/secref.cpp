@@ -19,6 +19,7 @@ access s1.sec	// soma becomes the default section
 #include "section.h"
 #include "parse.hpp"
 #include "hoc_membf.h"
+#include "oc_ansi.h"
 #include <nrnpython_config.h>
 
 extern int hoc_return_type_code;
@@ -79,8 +80,6 @@ static double s_unname(void* v) {
     sec->prop->dparam[0].sym = (Symbol*) 0;
     return 1.;
 }
-
-extern "C" Object* ivoc_list_item(Object*, int);
 
 static double s_rename(void* v) {
     extern Objectdata* hoc_top_level_data;
@@ -281,32 +280,19 @@ static double s_cas(void* v) { /* return 1 if currently accessed section */
     return 0.;
 }
 
-static Member_func members[] = {"sec",
-                                s_rename, /* will actually become a SECTIONREF below */
-                                "parent",
-                                s_rename,
-                                "trueparent",
-                                s_rename,
-                                "root",
-                                s_rename,
-                                "child",
-                                s_rename,
-                                "nchild",
-                                s_nchild,
-                                "has_parent",
-                                s_has_parent,
-                                "has_trueparent",
-                                s_has_trueparent,
-                                "exists",
-                                s_exists,
-                                "rename",
-                                s_rename,
-                                "unname",
-                                s_unname,
-                                "is_cas",
-                                s_cas,
-                                0,
-                                0};
+static Member_func members[] = {{"sec", s_rename}, /* will actually become a SECTIONREF below */
+                                {"parent", s_rename},
+                                {"trueparent", s_rename},
+                                {"root", s_rename},
+                                {"child", s_rename},
+                                {"nchild", s_nchild},
+                                {"has_parent", s_has_parent},
+                                {"has_trueparent", s_has_trueparent},
+                                {"exists", s_exists},
+                                {"rename", s_rename},
+                                {"unname", s_unname},
+                                {"is_cas", s_cas},
+                                {0, 0}};
 
 Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex) {
     Section* s = 0;

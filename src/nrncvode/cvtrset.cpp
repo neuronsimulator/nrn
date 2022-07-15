@@ -10,9 +10,6 @@
 #include "membfunc.h"
 #include "neuron.h"
 
-extern int diam_changed;
-extern int tree_changed;
-
 void Cvode::rhs(NrnThread* _nt) {
     int i;
 

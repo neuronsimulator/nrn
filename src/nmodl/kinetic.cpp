@@ -917,11 +917,17 @@ for(_i=%d;_i<%d;_i++){\n",
 
             } else { /*for sparse matrix solver*/
                 /* boilerplate for using sparse matrix solver */
-                Sprintf(buf, "static double *_coef%d;\n", fun->u.i);
-                qv = linsertstr(procfunc, buf);
+                {
+                    static int first = 1;
+                    if (first) {
+                        first = 0;
+                        Sprintf(buf, "static double *_coef%d;\n", fun->u.i);
+                        qv = linsertstr(procfunc, buf);
 #if VECTORIZE
-                vectorize_substitute(qv, "");
+                        vectorize_substitute(qv, "");
 #endif
+                    }
+                }
                 Sprintf(buf, "\n#define _RHS%d(_arg) _coef%d[_arg + 1]\n", fun->u.i, fun->u.i);
                 qv = linsertstr(procfunc, buf);
 #if VECTORIZE
@@ -935,8 +941,8 @@ for(_i=%d;_i<%d;_i++){\n",
                 qv = linsertstr(procfunc, buf);
 #if VECTORIZE
                 Sprintf(buf,
-                        "\n#define _MATELM%d(_row,_col) *(_nrn_thread_getelm(_so, _row + 1, _col + "
-                        "1))\n",
+                        "\n#define _MATELM%d(_row,_col) "
+                        "*(_nrn_thread_getelm(static_cast<SparseObj*>(_so), _row + 1, _col + 1))\n",
                         fun->u.i);
                 vectorize_substitute(qv, buf);
 #endif
@@ -944,7 +950,7 @@ for(_i=%d;_i<%d;_i++){\n",
                     static int first = 1;
                     if (first) {
                         first = 0;
-                        Sprintf(buf, "extern double *_getelm();\n");
+                        Sprintf(buf, "extern double *_getelm(int, int);\n");
                         qv = linsertstr(procfunc, buf);
 #if VECTORIZE
                         Sprintf(buf, "extern double *_nrn_thread_getelm(SparseObj*, int, int);\n");

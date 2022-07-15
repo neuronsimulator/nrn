@@ -2,6 +2,7 @@
 # Lists of header files to install
 # =============================================================================
 set(HEADER_FILES_TO_INSTALL
+    bbsavestate.h
     cabvars.h
     cspmatrix.h
     cspredef.h
@@ -14,6 +15,7 @@ set(HEADER_FILES_TO_INSTALL
     hocparse.h
     isoc99.h
     ivstream.h
+    mcran4.h
     md1redef.h
     md2redef.h
     mech_api.h
@@ -42,10 +44,12 @@ set(HEADER_FILES_TO_INSTALL
     ocfunc.h
     ocmisc.h
     options.h
+    parse_with_deps.hpp
     scoplib.h
     section.h
     spconfig.h
-    spmatrix.h)
+    spmatrix.h
+    treeset.h)
 
 # =============================================================================
 # Lists of headers populated using check_include_files
@@ -66,7 +70,6 @@ set(OC_FILE_LIST
     axis.cpp
     code.cpp
     code2.cpp
-    cygwinprt.cpp
     debug.cpp
     fileio.cpp
     fmenu.cpp
@@ -80,6 +83,7 @@ set(OC_FILE_LIST
     isoc99.cpp
     list.cpp
     math.cpp
+    mswinprt.cpp
     nonlin.cpp
     nrnfilewrap.cpp
     ocerf.cpp
@@ -532,16 +536,7 @@ set(NMODL_FILES_LIST
     units.cpp
     version.cpp)
 
-set(IVOS_FILES_LIST
-    file.cpp
-    listimpl.cpp
-    math.cpp
-    memory.cpp
-    string.cpp
-    ustring.cpp
-    observe.cpp
-    regexp.cpp
-    resource.cpp)
+set(IVOS_FILES_LIST listimpl.cpp string.cpp observe.cpp regexp.cpp resource.cpp)
 
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
 

@@ -237,12 +237,7 @@ void parout() {
     if (brkpnt_exists) {
         brkpnt_str_ = "nrn_cur, nrn_jacob, nrn_state";
     } else {
-        brkpnt_str_ = "0, 0, 0";
-#if 1 || defined(__MINGW32__)
-        /* x86_64-w64-mingw32-gcc passed 0 without zeroing the high 32 bits */
-        /* also cygwin64 gcc 4.8.1, so cast to void* universally */
-        brkpnt_str_ = "(void*)0, (void*)0, (void*)0";
-#endif
+        brkpnt_str_ = "nullptr, nullptr, nullptr";
     }
 
     for (modbase = modprefix + strlen(modprefix); modbase != modprefix; modbase--) {
@@ -279,7 +274,7 @@ void parout() {
 \n#if METHOD3\nextern int _method3;\n#endif\n\
 \n#if !NRNGPU\
 \n#undef exp\
-\n#define exp hoc_Exp\nextern double hoc_Exp(double);\
+\n#define exp hoc_Exp\
 \n#endif\n\
 ");
     if (protect_include_) {
@@ -341,7 +336,7 @@ void parout() {
 	/*SUPPRESS 763*/\n\
 	/*SUPPRESS 765*/\n\
 	");
-    Lappendstr(defs_list, "extern double *getarg();\n");
+    Lappendstr(defs_list, "extern double *hoc_getarg(int);\n");
 #if VECTORIZE
     if (vectorize) {
         Sprintf(buf, "/* Thread safe. No static _p or _ppvar. */\n");
@@ -359,7 +354,6 @@ void parout() {
     Lappendstr(defs_list,
                "\n#if MAC\n#if !defined(v)\n#define v _mlhv\n#endif\n#if !defined(h)\n#define h "
                "_mlhh\n#endif\n#endif\n");
-    Lappendstr(defs_list, "\n#if defined(__cplusplus)\nextern \"C\" {\n#endif\n");
     Lappendstr(defs_list, "static int hoc_nrnpointerindex = ");
     if (pointercount) {
         q = nrnpointers->next;
@@ -429,11 +423,8 @@ extern Memb_func* memb_func;\n\
                    "\n"
                    "#define NMODL_TEXT 1\n"
                    "#if NMODL_TEXT\n"
-                   "static const char* nmodl_file_text;\n"
-                   "static const char* nmodl_filename;\n"
-                   "extern void hoc_reg_nmodl_text(int, const char*);\n"
-                   "extern void hoc_reg_nmodl_filename(int, const char*);\n"
-                   "#endif\n\n");
+                   "static void register_nmodl_text_and_filename(int mechtype);\n"
+                   "#endif\n");
     }
 
     /**** create special point process functions */
@@ -490,26 +481,26 @@ extern Memb_func* memb_func;\n\
     Lappendstr(defs_list, "/* connect user functions to hoc names */\n");
     Lappendstr(defs_list, "static VoidFunc hoc_intfunc[] = {\n");
     if (point_process) {
-        Lappendstr(defs_list, "0,0\n};\n");
+        Lappendstr(defs_list, "{0, 0}\n};\n");
         Lappendstr(defs_list, "static Member_func _member_func[] = {\n");
-        Sprintf(buf, "\"loc\", _hoc_loc_pnt,\n");
+        Sprintf(buf, "{\"loc\", _hoc_loc_pnt},\n");
         Lappendstr(defs_list, buf);
-        Sprintf(buf, "\"has_loc\", _hoc_has_loc,\n");
+        Sprintf(buf, "{\"has_loc\", _hoc_has_loc},\n");
         Lappendstr(defs_list, buf);
-        Sprintf(buf, "\"get_loc\", _hoc_get_loc_pnt,\n");
+        Sprintf(buf, "{\"get_loc\", _hoc_get_loc_pnt},\n");
         Lappendstr(defs_list, buf);
     } else {
-        Sprintf(buf, "\"setdata_%s\", _hoc_setdata,\n", mechname);
+        Sprintf(buf, "{\"setdata_%s\", _hoc_setdata},\n", mechname);
         Lappendstr(defs_list, buf);
     }
     SYMLISTITER {
         s = SYM(q);
         if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
-            Sprintf(buf, "\"%s%s\", _hoc_%s,\n", s->name, rsuffix, s->name);
+            Sprintf(buf, "{\"%s%s\", _hoc_%s},\n", s->name, rsuffix, s->name);
             Lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "0, 0\n};\n");
+    Lappendstr(defs_list, "{0, 0}\n};\n");
 
 #if GLOBFUNCT
     /* FUNCTION's are now global so callable from other models */
@@ -693,15 +684,15 @@ extern Memb_func* memb_func;\n\
             double d1 = 0., d2 = 0.;
             if (decode_limits(s, &d1, &d2)) {
                 if (s->nrntype & NRNGLOBAL || !point_process) {
-                    Sprintf(buf, "\"%s%s\", %g, %g,\n", s->name, suffix, d1, d2);
+                    Sprintf(buf, "{\"%s%s\", %g, %g},\n", s->name, suffix, d1, d2);
                 } else {
-                    Sprintf(buf, "\"%s\", %g, %g,\n", s->name, d1, d2);
+                    Sprintf(buf, "{\"%s\", %g, %g},\n", s->name, d1, d2);
                 }
                 Lappendstr(defs_list, buf);
             }
         }
     }
-    Lappendstr(defs_list, "0,0,0\n};\n");
+    Lappendstr(defs_list, "{0, 0, 0}\n};\n");
 
     units_reg();
 
@@ -727,22 +718,22 @@ extern Memb_func* memb_func;\n\
     ITERATE(q, syminorder) {
         s = SYM(q);
         if (s->nrntype & NRNGLOBAL && !(s->subtype & ARRAY)) {
-            Sprintf(buf, "\"%s%s\", &%s%s,\n", s->name, suffix, s->name, suffix);
+            Sprintf(buf, "{\"%s%s\", &%s%s},\n", s->name, suffix, s->name, suffix);
             Lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "0,0\n};\n");
+    Lappendstr(defs_list, "{0, 0}\n};\n");
 
     /* double vectors */
     Lappendstr(defs_list, "static DoubVec hoc_vdoub[] = {\n");
     ITERATE(q, syminorder) {
         s = SYM(q);
         if (s->nrntype & NRNGLOBAL && (s->subtype & ARRAY)) {
-            Sprintf(buf, "\"%s%s\", %s%s, %d,\n", s->name, suffix, s->name, suffix, s->araydim);
+            Sprintf(buf, "{\"%s%s\", %s%s, %d},\n", s->name, suffix, s->name, suffix, s->araydim);
             Lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "0,0,0\n};\n");
+    Lappendstr(defs_list, "{0, 0, 0}\n};\n");
     Lappendstr(defs_list, "static double _sav_indep;\n");
     if (ba_index_ > 0) {
         Lappendstr(
@@ -762,12 +753,12 @@ extern Memb_func* memb_func;\n\
     /*declaration of the range variables names to HOC */
     Lappendstr(
         defs_list,
-        "static void nrn_alloc(Prop*);\nstatic void  nrn_init(NrnThread*, _Memb_list*, int);\nstatic void nrn_state(NrnThread*, _Memb_list*, int);\n\
+        "static void nrn_alloc(Prop*);\nstatic void  nrn_init(NrnThread*, Memb_list*, int);\nstatic void nrn_state(NrnThread*, Memb_list*, int);\n\
 ");
     if (brkpnt_exists) {
         Lappendstr(defs_list,
-                   "static void nrn_cur(NrnThread*, _Memb_list*, int);\nstatic void  "
-                   "nrn_jacob(NrnThread*, _Memb_list*, int);\n");
+                   "static void nrn_cur(NrnThread*, Memb_list*, int);\nstatic void  "
+                   "nrn_jacob(NrnThread*, Memb_list*, int);\n");
     }
     /* count the number of pointers needed */
     ppvar_cnt = ioncount + diamdec + pointercount + areadec;
@@ -1073,14 +1064,14 @@ static void _constructor(Prop* _prop) {\n\
             s = SYM(q);
             if (decode_tolerance(s, &d1)) {
                 if (!point_process) {
-                    Sprintf(buf, "\"%s%s\", %g,\n", s->name, suffix, d1);
+                    Sprintf(buf, "{\"%s%s\", %g},\n", s->name, suffix, d1);
                 } else {
-                    Sprintf(buf, "\"%s\", %g,\n", s->name, d1);
+                    Sprintf(buf, "{\"%s\", %g},\n", s->name, d1);
                 }
                 Lappendstr(defs_list, buf);
             }
         }
-        Lappendstr(defs_list, "0,0\n};\n");
+        Lappendstr(defs_list, "{0, 0}\n};\n");
     }
     if (singlechan_) {
         sprintf(buf, "static _singlechan_declare%d();\n", singlechan_);
@@ -1138,7 +1129,7 @@ extern void hoc_register_tolerance(int, HocStateTolerance*, Symbol***);\n\
 extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 ");
     Sprintf(buf,
-            "void _%s_reg() {\n\
+            "extern \"C\" void _%s_reg() {\n\
 	int _vectorized = %d;\n",
             modbase,
             vectorize);
@@ -1146,7 +1137,7 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
     q = lappendstr(defs_list, "");
     Lappendstr(defs_list, "_initlists();\n");
 #else
-    Sprintf(buf, "void _%s_reg() {\n	_initlists();\n", modbase);
+    Sprintf(buf, "extern \"C\" void _%s_reg() {\n	_initlists();\n", modbase);
     Lappendstr(defs_list, buf);
 #endif
 
@@ -1220,8 +1211,7 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
         }
         if (nmodl_text) {
             lappendstr(defs_list,
-                       "#if NMODL_TEXT\n  hoc_reg_nmodl_text(_mechtype, nmodl_file_text);\n  "
-                       "hoc_reg_nmodl_filename(_mechtype, nmodl_filename);\n#endif\n");
+                       "#if NMODL_TEXT\n  register_nmodl_text_and_filename(_mechtype);\n#endif\n");
         }
         sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", parraycount, ppvar_cnt);
         Lappendstr(defs_list, buf);
@@ -1447,7 +1437,7 @@ void ldifusreg() {
         dfdcur = STR(q);
         ++n;
         sprintf(buf,
-                "static void* _difspace%d;\nextern double nrn_nernst_coef();\n\
+                "static void* _difspace%d;\nextern double nrn_nernst_coef(int);\n\
 static double _difcoef%d(int _i, double* _p, Datum* _ppvar, double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt) {\n  \
  *_pdvol = ",
                 n,
@@ -1635,7 +1625,7 @@ void units_reg() {
         if (s->nrntype & NRNGLOBAL) {
             decode_ustr(s, &d1, &d2, u);
             if (u[0]) {
-                sprintf(buf, "\"%s%s\", \"%s\",\n", s->name, suffix, u);
+                sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, suffix, u);
                 lappendstr(defs_list, buf);
             }
         }
@@ -1644,7 +1634,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            sprintf(buf, "\"%s%s\", \"%s\",\n", s->name, rsuffix, u);
+            sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
@@ -1652,7 +1642,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            sprintf(buf, "\"%s%s\", \"%s\",\n", s->name, rsuffix, u);
+            sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
@@ -1660,7 +1650,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            sprintf(buf, "\"%s%s\", \"%s\",\n", s->name, rsuffix, u);
+            sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
@@ -1668,11 +1658,11 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            sprintf(buf, "\"%s%s\", \"%s\",\n", s->name, rsuffix, u);
+            sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "0,0\n};\n");
+    Lappendstr(defs_list, "{0, 0}\n};\n");
 }
 
 static void var_count(Symbol* s) {
@@ -2573,8 +2563,8 @@ static int _ode_count(int _type){ hoc_execerror(\"%s\", \"cannot be used with CV
                    "\n\
 static int _ode_count(int);\n\
 static void _ode_map(int, double**, double**, double*, Datum*, double*, int);\n\
-static void _ode_spec(NrnThread*, _Memb_list*, int);\n\
-static void _ode_matsol(NrnThread*, _Memb_list*, int);\n\
+static void _ode_spec(NrnThread*, Memb_list*, int);\n\
+static void _ode_matsol(NrnThread*, Memb_list*, int);\n\
 ");
         sprintf(buf,
                 "\n\
@@ -2588,7 +2578,7 @@ static int _ode_count(int _type){ return %d;}\n",
             cvode_proced_emit();
         } else {
             Lappendstr(procfunc,
-                       "\nstatic void _ode_spec(NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
+                       "\nstatic void _ode_spec(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
             out_nt_ml_frag(procfunc);
             lst = get_ion_variables(1);
             if (lst->next->itemtype)
@@ -2670,7 +2660,7 @@ static void _ode_synonym(int _cnt, double** _pp, Datum** _ppd) {");
             }
             Lappendstr(procfunc, "}\n");
             Lappendstr(procfunc,
-                       "\nstatic void _ode_matsol(NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
+                       "\nstatic void _ode_matsol(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
             out_nt_ml_frag(procfunc);
             lst = get_ion_variables(1);
             if (lst->next->itemtype)
@@ -2814,9 +2804,8 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
             insertstr(qstmt, " assert(_tsav <= t); _tsav = t;");
         } else {
             insertstr(qstmt,
-                      " if (_tsav > t){ extern char* hoc_object_name(); "
-                      "hoc_execerror(hoc_object_name(_pnt->ob), \":Event arrived out of order. "
-                      "Must call ParallelContext.set_maxstep AFTER assigning minimum "
+                      " if (_tsav > t){ hoc_execerror(hoc_object_name(_pnt->ob), \":Event arrived "
+                      "out of order. Must call ParallelContext.set_maxstep AFTER assigning minimum "
                       "NetCon.delay\");}\n _tsav = t;");
         }
     }

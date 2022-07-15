@@ -49,8 +49,7 @@ static char RCSid[] = "erf.cpp,v 1.5 1997/11/24 16:21:37 hines Exp";
 #define a3 1.421413741
 #define a4 -1.453152027
 #define a5 1.061405429
-double erf(z) double z;
-{
+double erf(double z) {
     double t, value;
 
     t = 1. / (1. + 0.3275911 * fabs(z));
@@ -62,7 +61,8 @@ double erf(z) double z;
         return (-value);
 }
 
-double erfc(z) double z;
-{ return 1. - erf(z); }
+double erfc(double z) {
+    return 1. - erf(z);
+}
 #endif
 #endif

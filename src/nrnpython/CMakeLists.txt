@@ -2,6 +2,7 @@
 # targets from included projects like CoreNEURON and NMODL
 add_compile_options(${NRN_COMPILE_FLAGS})
 add_compile_definitions(${NRN_COMPILE_DEFS})
+add_link_options(${NRN_LINK_FLAGS})
 
 # =============================================================================
 # Definitions used in setup.py
@@ -71,11 +72,9 @@ endif()
 if(NRN_MACOS_BUILD)
   set(MAC_DARWIN_TRUE "")
   set(MAC_DARWIN_FALSE "#")
-  set(setup_extra_link_args "#extra_link_args")
 else()
   set(MAC_DARWIN_TRUE "#")
   set(MAC_DARWIN_FALSE "")
-  set(setup_extra_link_args "extra_link_args")
 endif()
 
 if(NRN_WINDOWS_BUILD)
@@ -183,7 +182,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
   set(source_dir_filename ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
   set(inithoc_hdeps
       ${CMAKE_CURRENT_SOURCE_DIR}/../oc/nrnmpi.h ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnmpiuse.h
-      ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnpthread.h ${CMAKE_CURRENT_BINARY_DIR}/nrnpython_config.h)
+      ${CMAKE_CURRENT_BINARY_DIR}/nrnpython_config.h)
 
   add_custom_command(
     OUTPUT ${binary_dir_filename}
@@ -220,6 +219,15 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # Build python module
   # =============================================================================
   # for each python detected / provided by user, install module at install time
+  if(NRN_SANITIZERS)
+    # Make sure the same compiler (currently always clang in the sanitizer builds) is used to link
+    # as was used to build. By default, Python will try to use the compiler that was used to build
+    # Python, which is often gcc.
+    set(extra_env
+        ${CMAKE_COMMAND} -E env
+        "LDCSHARED=${CMAKE_C_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS}"
+        "LDCXXSHARED=${CMAKE_CXX_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS}")
+  endif()
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     add_custom_command(
       TARGET hoc_module
@@ -230,7 +238,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
         ${CMAKE_COMMAND} -E copy_if_different
         ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
         ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/help_data.dat
-        COMMAND ${pyexe} setup.py build_ext --inplace --build-lib=${NRN_PYTHON_BUILD_LIB}
+        COMMAND ${extra_env} ${pyexe} setup.py build_ext --inplace --build-lib=${NRN_PYTHON_BUILD_LIB}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Building python module with: ${pyexe}")
   endforeach(pyexe)

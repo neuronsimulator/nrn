@@ -355,11 +355,15 @@ int Regexp::EndOfMatch (int subexp) {
 /*
  * Utility definitions.
  */
-#ifndef RE_CHARBITS
-#define RE_CHARBITS	0xff
-#endif
 
-#define	UCHARAT(p)	((int)*(p)&RE_CHARBITS)
+/**
+ * This replaces a macro of the same name with some bit manipulation magic in
+ * it. The does not seem well-suited now, but it's not clear that it was before
+ * either.
+ */
+inline int UCHARAT(const char* p) {
+	return *p;
+}
 
 #define	FAIL(m)	{ regerror(m); return(nil); }
 #define	ISMULT(c)	((c) == '*' || (c) == '+' || (c) == '?')

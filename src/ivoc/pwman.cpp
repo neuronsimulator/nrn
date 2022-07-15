@@ -5,7 +5,7 @@ extern char* ivoc_get_temp_file();
 extern int hoc_return_type_code;
 
 #if HAVE_IV
-#if (MAC && !defined(carbon)) || defined(WIN32)
+#if MAC || defined(WIN32)
 #define MACPRINT 1
 #else
 #define MACPRINT 0
@@ -27,6 +27,7 @@ extern int hoc_return_type_code;
 #include <stdlib.h>
 #include "classreg.h"
 #include "oc2iv.h"
+#include <cmath>
 
 #if HAVE_IV
 #include "utility.h"
@@ -34,35 +35,14 @@ extern int hoc_return_type_code;
 void single_event_run();
 extern char** hoc_strpop();
 
-#if defined(CYGWIN)
+#ifdef MINGW
 #include <IV-Win/mprinter.h>
 void iv_display_scale(float);
 void iv_display_scale(Coord, Coord);  // Make if fit into the screen
-extern "C" char* hoc_back2forward(char*);
+char* hoc_back2forward(char*);
 #endif
 
-#if defined(WIN32) && !defined(CYGWIN)
-#include <IV-Win/mprinter.h>
-#include "../winio/debug.h"
-void iv_display_scale(float);
-void iv_display_scale(Coord, Coord);  // Make if fit into the screen
-#if defined(__MWERKS__)
-#include <OS/dirent.h>
-extern char* mktemp(char*);
-extern int unlink(const char*);
-
-#else  //!__MWERKS__
-#include <dir.h>
-#endif  // __MWERKS__
-
-#include <fstream.h>
-// there seems to be a bug here in that writing goes to the beginning
-// but any existing trailing info remains! So be sure to unlink first.
-#undef IOS_OUT
-#define IOS_OUT (ios::out)
-extern "C" char* hoc_back2forward(char*);
-#else  //! WIN32
-#if MAC && !defined(carbon)
+#if MAC
 #include <fstream.h>
 #include <file_io.h>
 #undef IOS_OUT
@@ -75,7 +55,7 @@ extern void debugfile(const char*, ...);
 #include <unistd.h>
 #define Output output
 #endif  // MAC
-#endif  // WIN32
+
 
 #include <IV-look/kit.h>
 #include <IV-look/dialogs.h>
@@ -137,7 +117,7 @@ static bool ivoc_snapshot(const Event*);
 #define pwm_impl PrintableWindowManager::current()->pwmi_
 class HocPanel {
   public:
-    static void save_all(ostream&);
+    static void save_all(std::ostream&);
 };
 
 int inside(Coord x, Coord y, const Allocation& a) {
@@ -199,7 +179,7 @@ bool (*p_java2nrn_identity)(Object* o1, Object* o2);
     virtual void pmove(int l, int t);
     virtual void presize(int w, int h);
     virtual int priority();
-    virtual void save_session(const char* fname, ostream& o);
+    virtual void save_session(const char* fname, std::ostream& o);
     void ref();
     void unref();
     Coord l();
@@ -358,9 +338,7 @@ class PaperItem;
     FileChooser* fc_save_;
     const Color* window_outline_;
     CopyString cur_ses_name_;
-#if carbon
-    void all2front();
-#endif
+
   private:
     friend class PrintableWindowManager;
     PWMImpl(ScreenScene*, PaperScene*, Rect*);
@@ -370,10 +348,10 @@ class PaperItem;
     GlyphIndex upper_left();
     void redraw(Window*);
     bool none_selected(const char*, const char*) const;
-    void ses_group(ScreenItem* si, ostream& o);
+    void ses_group(ScreenItem* si, std::ostream& o);
     int ses_group_first_;
-    void save_begin(ostream&);
-    void save_list(int, ScreenItem**, ostream&);
+    void save_begin(std::ostream&);
+    void save_list(int, ScreenItem**, std::ostream&);
 
   private:
     StandardWindow* w_;
@@ -486,8 +464,8 @@ void PWMDismiss::execute() {
 }
 
 #else  //! HAVE_IV
-#if defined(CYGWIN)
-extern "C" char* hoc_back2forward(char*);
+#ifdef MINGW
+char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV
 
@@ -603,7 +581,7 @@ static double pwman_close(void* v) {
 #endif
     return 0.;
 }
-#if defined(MINGW)
+#ifdef MINGW
 static void pwman_iconify1(void* v) {
 #if HAVE_IV
     IFGUI((PrintableWindow*) v)->dismiss();
@@ -617,7 +595,7 @@ static double pwman_iconify(void* v) {
 #if HAVE_IV
     IFGUI
     PrintableWindow* pw = PrintableWindow::leader();
-#if defined(MINGW)
+#ifdef MINGW
     if (!nrn_is_gui_thread()) {
         nrn_gui_exec(pwman_iconify1, pw);
         return 0.;
@@ -762,7 +740,7 @@ static double pwman_jwindow(void* v) {
     return -1;
 }
 
-#if defined(MINGW)
+#ifdef MINGW
 static double scale_;
 static void pwman_scale1(void*) {
 #if HAVE_IV
@@ -779,7 +757,7 @@ static double pwman_scale(void* v) {
 #if HAVE_IV
     IFGUI
 #if defined(WIN32)
-#if defined(MINGW)
+#ifdef MINGW
     if (!nrn_is_gui_thread()) {
         scale_ = scale;
         nrn_gui_exec(pwman_scale1, (void*) ((intptr_t) 1));
@@ -887,48 +865,29 @@ static double pwman_deco(void* v) {
     return 1.;
 }
 
-static Member_func members[] = {"count",
-                                pwman_count,
-                                "is_mapped",
-                                pwman_is_mapped,
-                                "map",
-                                pwman_map,
-                                "hide",
-                                pwman_hide,
-                                "close",
-                                pwman_close,
-                                "iconify",
-                                pwman_iconify,
-                                "deiconify",
-                                pwman_deiconify,
-                                "leader",
-                                pwman_leader,
-                                "manager",
-                                pwman_manager,
-                                "save",
-                                pwman_save,
-                                "snap",
-                                pwman_snap,
-                                "jwindow",
-                                pwman_jwindow,
-                                "scale",
-                                pwman_scale,
-                                "window_place",
-                                pwman_window_place,
-                                "paper_place",
-                                pwman_paper_place,
-                                "printfile",
-                                pwman_printfile,
-                                "landscape",
-                                pwman_landscape,
-                                "deco",
-                                pwman_deco,
-                                0,
-                                0};
+static Member_func members[] = {{"count", pwman_count},
+                                {"is_mapped", pwman_is_mapped},
+                                {"map", pwman_map},
+                                {"hide", pwman_hide},
+                                {"close", pwman_close},
+                                {"iconify", pwman_iconify},
+                                {"deiconify", pwman_deiconify},
+                                {"leader", pwman_leader},
+                                {"manager", pwman_manager},
+                                {"save", pwman_save},
+                                {"snap", pwman_snap},
+                                {"jwindow", pwman_jwindow},
+                                {"scale", pwman_scale},
+                                {"window_place", pwman_window_place},
+                                {"paper_place", pwman_paper_place},
+                                {"printfile", pwman_printfile},
+                                {"landscape", pwman_landscape},
+                                {"deco", pwman_deco},
+                                {0, 0}};
 
-static Member_ret_obj_func retobj_members[] = {"group", pwman_group, 0, 0};
+static Member_ret_obj_func retobj_members[] = {{"group", pwman_group}, {0, 0}};
 
-static Member_ret_str_func s_memb[] = {"name", pwman_name, 0, 0};
+static Member_ret_str_func s_memb[] = {{"name", pwman_name}, {0, 0}};
 
 void PWManager_reg() {
     class2oc("PWManager", pwman_cons, pwman_destruct, members, NULL, retobj_members, s_memb);
@@ -1006,13 +965,13 @@ void PaperItem_handler::resize_action(Coord x, Coord y) {
     pwm_impl->paper()->allotment(index_, Dimension_Y, ay);
     Coord xs, ys;
     t_.transform(x, y, xs, ys);
-    float scl = Math::max((xs - ax.begin()) / ax.span(), (ys - ay.begin()) / ay.span());
+    float scl = std::max((xs - ax.begin()) / ax.span(), (ys - ay.begin()) / ay.span());
     // printf("scl = %g\n", scl);
     scl = pi_->scale() * scl;
     scl = (scl > .1) ? scl : .1;
     Coord w1;
     w1 = pwm_impl->round(scl * pi_->width());
-    w1 = Math::max(w1, pwm_impl->round_factor());
+    w1 = std::max(w1, pwm_impl->round_factor());
     scl = w1 / pi_->width();
     pi_->scale(scl);
     pwm_impl->paper()->modified(index_);
@@ -1059,7 +1018,7 @@ VirtualWindow::~VirtualWindow() {
     view_->unref();
     virt_win_ = NULL;
 }
-#if defined(WIN32) || carbon
+#if defined(WIN32)
 extern void ivoc_bring_to_top(Window*);
 #endif
 
@@ -1254,11 +1213,11 @@ PrintableWindowManager::PrintableWindowManager() {
 
     Coord wp = pagewidth / pr_scl;
     Coord hp = pageheight / pr_scl;
-    Coord max = Math::max(wp, hp);
+    Coord max = std::max(wp, hp);
     Rect* r = new Rect(0, 0, wp, hp, outline_color);
     //        wp1 = wp1*1.2;
     //	Scene* paper = new Scene(-5, -1, hp*1.2, hp+1, r);
-    PaperScene* paper = new PaperScene(-5, -2, Math::max(max, d->width() / Scl), max + 2, r);
+    PaperScene* paper = new PaperScene(-5, -2, std::max(max, d->width() / Scl), max + 2, r);
 
     // PGH end
     pwmi_ = new PWMImpl(screen, paper, r);
@@ -1350,7 +1309,7 @@ PrintableWindowManager::PrintableWindowManager() {
     mi = K::menu_item("Ascii");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::ascii_control));
-#if MAC && !defined(carbon)
+#if MAC
     mi = K::menu_item("Setup Printer");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::paperscale));
@@ -1558,11 +1517,6 @@ void PrintableWindowManager::update(Observable* o) {
     PrintableWindow* w = (PrintableWindow*) o;
     // printf("PrintableWindowManager::update(%p)\n", w);
     reconfigured(w);
-#if carbon
-    if (w->leader() == w) {
-        pwmi_->all2front();
-    }
-#endif
 }
 
 void PrintableWindowManager::disconnect(Observable* o) {
@@ -1814,7 +1768,7 @@ void PWMImpl::do_print0() {
         if (none_selected("No windows to print", "Print Anyway")) {
             return;
         }
-#if MAC && !defined(carbon)
+#if MAC
         if (!mprinter_) {
             continue_dialog("First select SetupPrinter");
         } else {
@@ -1842,7 +1796,7 @@ void PWMImpl::do_print0() {
 }
 
 void PWMImpl::do_print(bool use_printer, const char* name) {
-#if MAC && !defined(carbon)
+#if MAC
     if (use_printer) {
         mac_do_print();
         return;
@@ -1882,7 +1836,7 @@ void PWMImpl::do_print_session(bool also_leader) {
     float yoff = mprinter()->height() / 2 / sfac - (e.top() + e.bottom() + 23.) / 2.;
     Transformer t;
     t.translate(xoff, yoff);
-#if MAC && !defined(carbon)
+#if MAC
     mprinter()->prolog();
     t.scale(sfac, sfac);
 #else
@@ -1925,7 +1879,7 @@ void PWMImpl::do_print_session(bool use_printer, const char* name) {
 void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style, bool ses_style) {
     Style* s = Session::instance()->style();
     static char* tmpfile = (char*) 0;
-    filebuf obuf;
+    std::filebuf obuf;
 #if MAC && !DARWIN
     obuf.open(name, IOS_OUT);
 #else
@@ -1937,7 +1891,7 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
 #endif
     obuf.open(tmpfile, IOS_OUT);
 #endif
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     Printer* pr = new Printer(&o);
     pr->prolog();
 
@@ -2232,16 +2186,8 @@ void PrintableWindowManager::psfilter(const char* filename) {
     char buf[512];
     String filt("cat");
     if (s->find_attribute("pwm_postscript_filter", filt)) {
-#if defined(WIN32) && !defined(CYGWIN)
-        if (!hoc_copyfile(filename, tmpfile)) {
-            hoc_warning("CopyFile failed.", "Did not run pwm_postscript_filter");
-            return;
-        }
-        sprintf(buf, "%s %s > %s", filt.string(), tmpfile, filename);
-#else
         sprintf(
             buf, "cat %s > %s; %s < %s > %s", filename, tmpfile, filt.string(), tmpfile, filename);
-#endif
         nrnignore = system(buf);
         unlink(tmpfile);
     }
@@ -2438,7 +2384,7 @@ Coord PaperItem::fsize_;
 
 void PaperItem::request(Requisition& req) const {
     Requirement rx(scale_ * si_->w_->width_pw() / Scl);
-    Requirement ry(Math::max(fsize_, scale_ * si_->w_->height_pw() / Scl));
+    Requirement ry(std::max(fsize_, scale_ * si_->w_->height_pw() / Scl));
     req.require_x(rx);
     req.require_y(ry);
 #if DBG
@@ -2572,21 +2518,6 @@ MacPrinter* PWMImpl::mprinter() {
 }
 #endif
 
-#if carbon
-void PWMImpl::all2front() {
-    int i;
-    PrintableWindow* w;
-    if (screen_)
-        for (i = 0; i < screen_->count(); ++i) {
-            ScreenItem* si = (ScreenItem*) (screen_->component(i));
-            w = si->window();
-            if (w && w != w->leader() && w->is_mapped()) {
-                ivoc_bring_to_top(w);
-            }
-        }
-}
-#endif
-
 void PWMImpl::map_all() {
     GlyphIndex i;
     PrintableWindow* pw = PrintableWindow::leader();
@@ -2700,7 +2631,7 @@ GlyphIndex PWMImpl::paper_index(PaperItem* pi) {
 }
 
 float PWMImpl::round(float x) {
-    return Math::round(x / round_factor_) * round_factor_;
+    return std::round(x / round_factor_) * round_factor_;
 }
 
 #if MACPRINT
@@ -2882,9 +2813,9 @@ void PWMImpl::file_control() {
 #if SNAPSHOT
 void PWMImpl::snapshot(const Event* e) {
     snap_event_ = e;
-    filebuf obuf;
+    std::filebuf obuf;
     obuf.open(fc_print_->selected()->string(), IOS_OUT);
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     Printer* pr = new Printer(&o);
     pr->prolog();
     pr->resize(0, 0, 1200, 1000);
@@ -3031,9 +2962,9 @@ void PWMImpl::idraw_write(const char* fname, bool ses_style) {
 #ifdef WIN32
     unlink(fname);
 #endif
-    filebuf obuf;
+    std::filebuf obuf;
     obuf.open(fname, IOS_OUT);
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     OcIdraw::idraw_stream = &o;
     OcIdraw::prologue();
     Scene* p = paper();
@@ -3087,12 +3018,12 @@ void PWMImpl::ascii_control() {
 }
 
 void PWMImpl::ascii_write(const char* fname, bool ses_style) {
-    filebuf obuf;
+    std::filebuf obuf;
 #ifdef WIN32
     unlink(fname);
 #endif
     obuf.open(fname, IOS_OUT);
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     Graph::ascii(&o);
     Scene* p = paper();
     GlyphIndex count = p->count();
@@ -3114,7 +3045,7 @@ void PWMImpl::ascii_write(const char* fname, bool ses_style) {
     Graph::ascii(NULL);
 }
 
-ostream* Oc::save_stream;
+std::ostream* Oc::save_stream;
 
 void PWMImpl::save_selected_control() {
     save_control(1);
@@ -3189,12 +3120,12 @@ int PWMImpl::save_group(Object* ho, const char* filename) {
     }
     if (nwin > 0) {
         cur_ses_name_ = filename;
-        filebuf obuf;
+        std::filebuf obuf;
 #ifdef WIN32
         unlink(filename);
 #endif
         obuf.open(filename, IOS_OUT);
-        ostream o(&obuf);
+        std::ostream o(&obuf);
         save_begin(o);
         save_list(nwin, sivec, o);
         obuf.close();
@@ -3210,7 +3141,7 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
     ScreenItem* si;
     ScreenItem** sivec = NULL;
 
-    filebuf obuf;
+    std::filebuf obuf;
     cur_ses_name_ = filename;
 #ifdef WIN32
     unlink(filename);
@@ -3219,9 +3150,9 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
     if (!obuf.is_open()) {
         hoc_execerror(filename, "is not open for writing");
     }
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     if (head) {
-        o << head << endl;
+        o << head << std::endl;
     }
     save_begin(o);
 
@@ -3281,15 +3212,15 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
     }
 }
 
-void PWMImpl::save_begin(ostream& o) {
+void PWMImpl::save_begin(std::ostream& o) {
     Oc::save_stream = &o;
     Scene::save_all(o);
     HocPanel::save_all(o);
-    o << "objectvar ocbox_, ocbox_list_, scene_, scene_list_" << endl;
-    o << "{ocbox_list_ = new List()  scene_list_ = new List()}" << endl;
+    o << "objectvar ocbox_, ocbox_list_, scene_, scene_list_" << std::endl;
+    o << "{ocbox_list_ = new List()  scene_list_ = new List()}" << std::endl;
 }
 
-void PWMImpl::save_list(int nwin, ScreenItem** sivec, ostream& o) {
+void PWMImpl::save_list(int nwin, ScreenItem** sivec, std::ostream& o) {
     // save highest first, only a few priorities
     OcGlyph* ocg;
     int i, pri, max, working;
@@ -3320,10 +3251,10 @@ void PWMImpl::save_list(int nwin, ScreenItem** sivec, ostream& o) {
         }
     }
     Oc::save_stream = NULL;
-    o << "objectvar scene_vector_[1]\n{doNotify()}" << endl;
+    o << "objectvar scene_vector_[1]\n{doNotify()}" << std::endl;
 }
 
-void PWMImpl::ses_group(ScreenItem* si, ostream& o) {
+void PWMImpl::ses_group(ScreenItem* si, std::ostream& o) {
     char buf[512];
     char* name;
     if (si->group_obj_) {
@@ -3373,7 +3304,7 @@ class OcLabelGlyph: public OcGlyph {
   public:
     OcLabelGlyph(const char*, OcGlyph*, Glyph*);
     virtual ~OcLabelGlyph();
-    virtual void save(ostream&);
+    virtual void save(std::ostream&);
 
   private:
     CopyString label_;
@@ -3393,12 +3324,12 @@ OcLabelGlyph::~OcLabelGlyph() {
     Resource::unref(og_);
 }
 
-void OcLabelGlyph::save(ostream& o) {
+void OcLabelGlyph::save(std::ostream& o) {
     char buf[256];
-    o << "{xpanel(\"\")" << endl;
+    o << "{xpanel(\"\")" << std::endl;
     sprintf(buf, "xlabel(\"%s\")", label_.string());
-    o << buf << endl;
-    o << "xpanel()}" << endl;
+    o << buf << std::endl;
+    o << "xpanel()}" << std::endl;
     og_->save(o);
 }
 
@@ -3696,7 +3627,7 @@ int JavaWindow::priority() {
     return i;
 }
 
-void JavaWindow::save_session(const char* fname, ostream& o) {
+void JavaWindow::save_session(const char* fname, std::ostream& o) {
     // minimum save is, if ho is not NULL, to
     // load_java and create an object ocbox_ with the noarg constructor,
     // which is then unreffed.
@@ -3806,7 +3737,7 @@ void nrnjava_pwm_event(size_t ic, int type, int l, int t, int w, int h) {
 
 char* ivoc_get_temp_file() {
     char* tmpfile;
-#if MAC && !defined(carbon)
+#if MAC
     FSSpec spec;
     tmpfile = new char[512];
     __temp_file_name(tmpfile, &spec);

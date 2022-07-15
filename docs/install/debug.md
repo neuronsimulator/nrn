@@ -127,6 +127,73 @@ Every press of the 'c' key in the gdb shell will move to the location of
 the next valgrind error.
 
 
+#### Sanitizers
+The `AddressSanitizer` (ASan), `LeakSanitizer` (LSan), `ThreadSanitizer` (TSan,
+see below) and `UndefinedBehaviorSanitizer` (UBSan) are a collection of tools
+that rely on compiler instrumentation to catch dangerous behaviour at runtime.
+Compiler support is widespread but not ubiquitous, but both Clang and GCC
+provide support.
+
+They are all enabled by passing extra compiler options (typically
+`-fsanitize=XXX`), and can be steered at runtime using environment variables
+(typically `{...}SAN_OPTIONS=...`).
+ASan in particular requires that its runtime library is loaded very early during
+execution -- this is typically not a problem if you are directly launching an
+executable that has been built with ASan enabled, but more care is required if
+the launched executable was not built with ASan.
+The typical example of this case is loading NEURON from Python, where the
+`python` executable is not built with ASan.
+
+As of [#1842](https://github.com/neuronsimulator/nrn/pull/1842), the NEURON
+build system is aware of ASan, LSan and UBSan, and it tries to configure the
+sanitizers correctly based on the `NRN_SANITIZERS` CMake variable.
+For example, `cmake -DNRN_SANITIZERS=address,leak ...` will enable ASan and
+LSan, while `-DNRN_SANITIZERS=undefined` will enable UBSan.
+Not all combinations of sanitizers are possible, so far ASan, ASan+LSan and
+UBSan have been tested with Clang, GCC has not been tested and likely needs
+minor changes.
+Support for standalone LSan and for TSan (see below for manual instructions)
+should be possible without major difficulties, but is not yet implemented.
+
+Depending on your system, you may also need to set the `LLVM_SYMBOLIZER_PATH`
+variable to point to the `llvm-symbolizer` executable matching your Clang.
+On systems where multiple LLVM versions are installed, such as Ubuntu, this may
+need to be the path to the actual executable named `llvm-symbolizer` and not the
+path to a versioned symlink such as `llvm-symbolizer-14`.
+
+NEURON should automatically add the relevant compiler flags and configure the
+CTest suite with the extra environment variables that are needed; `ctest` should
+work as expected.
+
+If `NRN_SANITIZERS` is set then an additional helper script will be written to
+`bin/nrn-enable-sanitizer` under the build and installation directories.
+This contains the relevant environment variable settings, and if `--preload` is
+passed as the first argument then it also sets `LD_PRELOAD` to point to the
+relevant sanitizer runtime library.
+For example if you have a NEURON installation with sanitizers enabled, you might
+use `nrn-enable-sanitizer special -python path/to/script.py` or
+`nrn-enable-sanitizer --preload python path/to/script.py` (`--preload` required
+because the `python` binary is (presumably) not linked against the sanitizer
+runtime library.
+
+LSan and UBSan support suppression files, which can be used to prevent tests
+failing due to known issues.
+NEURON includes a suppression file for UBSan under `.sanitizers/undefined.supp`
+in the GitHub repository, no LSan equivalent exists for the moment.
+
+Note that LSan and MPI implementations typically do not play nicely together, so
+if you want to use LSan with NEURON, you may need to disable MPI or add a
+suppression file that is tuned to your MPI implementation.
+
+The GitHub Actions CI for NEURON at the time of writing includes test jobs for
+ASan and UBSan using Clang 14, but does not enable LSan.
+
+CoreNEURON and NMODL both support the sanitizers in a similar way, but this has
+to be enabled explicitly: `-DNRN_SANITIZERS=undefined` will not compile
+CoreNEURON code with UBSan enabled, you must additionally pass
+`-DCORENRN_SANITIZERS=undefined` to enable instrumentation of CoreNEURON code.
+The equivalent variable for NMODL is `NMODL_SANITIZERS`.
+
 #### ThreadSanitizer (TSAN)
 `ThreadSanitizer` is a tool that detects data races. Be aware that a slowdown is incurred by using ThreadSanitizer of about 5x-15x, with typical memory overhead of about 5x-10x.  
 

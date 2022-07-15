@@ -72,7 +72,6 @@ class SymChooserImpl {
     SymChooserImpl(int nbrowser);
     ~SymChooserImpl();
 
-    String* name_;
     WidgetKit* kit_;
     SymChooser* fchooser_;
     int nbrowser_;
@@ -210,7 +209,7 @@ static double text(void* v) {
     return 0.;
 #endif /* HAVE_IV */
 }
-static Member_func members[] = {"run", srun, "text", text, 0, 0};
+static Member_func members[] = {{"run", srun}, {"text", text}, {0, 0}};
 void SymChooser_reg() {
     class2oc("SymChooser", scons, sdestruct, members, NULL, NULL, NULL);
 }
@@ -239,7 +238,6 @@ declareActionCallback(SymChooserImpl) implementActionCallback(SymChooserImpl)
 #endif
     }
     Resource::ref(dir);
-    //    fc.name_ = new CopyString(dir->name());
     fc.kit_ = kit;
     fc.init(this, s, a);
 }
@@ -309,7 +307,6 @@ void SymChooserImpl::init(SymChooser* chooser, Style* s, SymChooserAction* a) {
 }
 
 void SymChooserImpl::scfree() {
-    //    delete name_;
     for (int i = nbrowser_ - 1; i >= 0; --i) {
         Resource::unref(dir_[i]);
     }

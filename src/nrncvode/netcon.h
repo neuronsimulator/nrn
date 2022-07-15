@@ -7,7 +7,6 @@
 #endif
 
 #include <InterViews/observe.h>
-#include <OS/list.h>
 #include "htlist.h"
 #include "nrnneosm.h"
 #include "nrnmpi.h"
@@ -30,18 +29,18 @@ struct NrnThread;
 class NetCvode;
 class HocEventPool;
 class HocCommand;
-class NetConSaveWeightTable;
-class NetConSaveIndexTable;
-class PreSynSaveIndexTable;
 class STETransition;
 class IvocVect;
 class BGP_DMASend;
 class BGP_DMASend_Phase2;
-class Point_process;
+struct hoc_Item;
+struct Object;
+struct Point_process;
+struct Section;
 using SelfEventPPTable = std::unordered_map<long, Point_process*>;
 
 #define DiscreteEventType   0
-#define TstopEventType      1
+#define TstopEventType      1  // no longer used
 #define NetConType          2
 #define SelfEventType       3
 #define PreSynType          4
@@ -86,7 +85,6 @@ class DiscreteEvent {
 
 class NetCon: public DiscreteEvent {
   public:
-    NetCon();
     NetCon(PreSyn* src, Object* target);
     virtual ~NetCon();
     virtual void send(double sendtime, NetCvode*, NrnThread*);
@@ -123,6 +121,10 @@ class NetCon: public DiscreteEvent {
     static unsigned long netcon_send_inactive_;
     static unsigned long netcon_deliver_;
 };
+
+typedef std::unordered_map<void*, NetCon*> NetConSaveWeightTable;
+typedef std::unordered_map<long, NetCon*> NetConSaveIndexTable;
+
 class NetConSave: public DiscreteEvent {
   public:
     NetConSave(NetCon*);
@@ -327,6 +329,9 @@ class PreSyn: public ConditionEvent {
     static unsigned long presyn_deliver_direct_;
     static unsigned long presyn_deliver_ncsend_;
 };
+
+typedef std::unordered_map<long, PreSyn*> PreSynSaveIndexTable;
+
 class PreSynSave: public DiscreteEvent {
   public:
     PreSynSave(PreSyn*);
@@ -381,27 +386,6 @@ class HocEvent: public DiscreteEvent {
     int reinit_;
     static HocEvent* next_del_;
     static HocEventPool* hepool_;
-};
-
-class TstopEvent: public DiscreteEvent {
-  public:
-    TstopEvent();
-    virtual ~TstopEvent();
-    virtual void deliver(double t, NetCvode*, NrnThread*);
-    virtual void pr(const char*, double t, NetCvode*);
-    virtual int pgvts_op(int& i) {
-        i = 0;
-        return 2;
-    }
-    virtual void pgvts_deliver(double t, NetCvode*);
-
-    virtual int type() {
-        return TstopEventType;
-    }
-    virtual DiscreteEvent* savestate_save();
-    virtual void savestate_restore(double deliverytime, NetCvode*);
-    virtual void savestate_write(FILE*);
-    static DiscreteEvent* savestate_read(FILE*);
 };
 
 class NetParEvent: public DiscreteEvent {

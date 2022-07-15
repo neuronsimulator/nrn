@@ -554,6 +554,7 @@ sprint(cmd.s, "for (hoc_ac_, 0) hoc_obj_.append(new %s(hoc_ac_))", s.s)
 	}
 	// separate the zero-area_node and the capacitance
 	ct.setrow(0, ct.getrow(0).sub(ct.getrow(1)).div(ns-1)) // single zero-area-node
+
 	ct.setrow(1, ct.getrow(1).sub(ct.getrow(0).mul(2)).div(ns)) // single capacitance after subtract two zero nodes
 
 	// subtract ions from mechanisms
@@ -570,8 +571,11 @@ sprint(cmd.s, "for (hoc_ac_, 0) hoc_obj_.append(new %s(hoc_ac_))", s.s)
 
 	f = new File()
 	f.wopen("mcomplex.dat")
-	// scale to capacitance
-	j = ct.getrow(1).mean
+	// scale to hh/5 (We suspect that due to timing noise, capacitance
+	// could sometimes be negative after zero-area-node got subtracted
+	// from it. Or at least, if too small, could be a poor
+	// normalization factor.)
+	j = ct.getrow(7).mean()/5.0
 	for i=0, ct.nrow-1 {
 		// take average. negative is artificial and undone
 		k = ct.getrow(i).mean

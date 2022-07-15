@@ -35,3 +35,11 @@ To that end, the following table's columns constitute:
      - NEURON support for RTAI - Real Time Application Interface for Linux. Also relates to `ni_pci_6229`
      - `#1401 <https://github.com/neuronsimulator/nrn/pull/1401>`_
      - d5f6139
+   * - CYGWIN
+     - Windows versions now use MINGW (more native to WINDOWS).
+     - `#1802 <https://github.com/neuronsimulator/nrn/pull/1802>`_
+     - 2f90f37
+   * - Carbon
+     - This legacy macOS toolkit was deprecated in 2012 and removed from macOS 10.15
+     - `#1869 <https://github.com/neuronsimulator/nrn/pull/1869>`_
+     - 8fecd77

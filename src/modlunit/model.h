@@ -136,11 +136,7 @@ extern List* _LST(Item* q, char* file, int line);
 
 #define EXPLICIT_DECL 01 /* usage field, variable occurs in input file */
 
-#if LINT
-extern double* emalloc(unsigned); /* lint thinks doubles align with anything*/
-#else
-extern char* emalloc(unsigned); /* malloc with out of space checking */
-#endif
+extern char* emalloc(unsigned);      /* malloc with out of space checking */
 extern char* stralloc(char*, char*); /* copies string to new space */
 
 extern char *inputline(), /* used only by parser to get title line */

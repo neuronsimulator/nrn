@@ -6,7 +6,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <OS/string.h>
-#include <OS/file.h>
+#include <fstream>
+#include <string>
 #include <InterViews/regexp.h>
 #include "nrnbbs.h"
 
@@ -49,18 +50,22 @@ int main(int argc, const char** argv) {
     }
     //	printf("started hel2mos\n");
 
-    char buf[256];
-    sprintf(buf, "%s/lib/helpdict", neuronhome());
-    String sf(buf);
-    InputFile* f = InputFile::open(sf);
-    if (f == nil) {
-        printf("Can't open %s\n", sf.string());
-        return 1;
+    {
+        std::string name = std::string(neuronhome()) + "/lib/helpdict";
+        std::ifstream f(name, std::ios::in | std::ios::binary);
+        if (!f.is_open()) {
+            printf("Can't open %s\n", name.c_str());
+            return 1;
+        }
+        std::string content;
+        f.seekg(0, std::ios::end);
+        size_t flen = f.tellg();
+        content.resize(flen);
+        f.seekg(0, std::ios::beg);
+        f.read(&content[0], content.size());
+        f.close();
+        shelp = new CopyString(content.c_str(), flen);
     }
-    const char* st;
-    int flen = f->read(st);
-    shelp = new CopyString(st, flen);
-    f->close();
 
     nrnbbs_connect();
     nrnbbs_post("ochelp running");

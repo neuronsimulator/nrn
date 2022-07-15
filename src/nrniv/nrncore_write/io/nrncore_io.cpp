@@ -22,8 +22,7 @@ extern NetCvode* net_cvode_instance;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 
 int chkpnt;
-const char* bbcore_write_version = "1.5";  // Generalize POINTER to allow pointing to any RANGE
-                                           // variable
+const char* bbcore_write_version = "1.6";  // Allow muliple gid and PreSyn per real cell.
 
 /// create directory with given path
 void create_dir_path(const std::string& path) {
@@ -153,8 +152,10 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     fprintf(f, "%s\n", bbcore_write_version);
 
     // sizes and total data count
-    int ngid, n_real_gid, nnode, ndiam, nmech, *tml_index, *ml_nodecount, nidata, nvdata, nweight;
+    int ncell, ngid, n_real_gid, nnode, ndiam, nmech;
+    int *tml_index, *ml_nodecount, nidata, nvdata, nweight;
     nrnthread_dat2_1(nt.id,
+                     ncell,
                      ngid,
                      n_real_gid,
                      nnode,
@@ -166,6 +167,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
                      nvdata,
                      nweight);
 
+    fprintf(f, "%d n_real_cell\n", ncell);
     fprintf(f, "%d ngid\n", ngid);
     fprintf(f, "%d n_real_gid\n", n_real_gid);
     fprintf(f, "%d nnode\n", nnode);
@@ -187,7 +189,6 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     int* v_parent_index = NULL;
     double *a = NULL, *b = NULL, *area = NULL, *v = NULL, *diamvec = NULL;
     nrnthread_dat2_2(nt.id, v_parent_index, a, b, area, v, diamvec);
-    assert(cg.n_real_output == nt.ncell);
     writeint(nt._v_parent_index, nt.end);
     writedbl(nt._actual_a, nt.end);
     writedbl(nt._actual_b, nt.end);

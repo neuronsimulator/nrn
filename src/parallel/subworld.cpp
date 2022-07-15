@@ -49,7 +49,7 @@ void BBSImpl::subworld_worker_execute() {
         int size;
         nrnmpi_int_broadcast(&size, 1, 0);  // includes terminator
         // printf("%d subworld hoc function string size = %d\n", nrnmpi_myid_world, size);
-        s = new char(size);
+        s = new char[size];
         nrnmpi_char_broadcast(s, size, 0);
         fname = hoc_lookup(s);
         if (!fname) {
@@ -73,7 +73,7 @@ void BBSImpl::subworld_worker_execute() {
         } else if (i == 2) {  // string
             int size;
             nrnmpi_int_broadcast(&size, 1, 0);
-            sarg[ns] = new char(size);
+            sarg[ns] = new char[size];
             nrnmpi_char_broadcast(sarg[ns], size, 0);
             hoc_pushstr(sarg + ns);
             ns++;

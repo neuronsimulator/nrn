@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "bbslsrv.h"
+#include "oc_ansi.h"
 
 #define INT    1
 #define DOUBLE 2
@@ -103,7 +104,6 @@ class MessageList {};
 class WorkList {};
 class ReadyList {};
 class ResultList {};
-extern "C" void hoc_execerror(const char*, const char*);
 static void nostl() {
     hoc_execerror("BBSLocalServer not working", "Compiled without STL");
 }

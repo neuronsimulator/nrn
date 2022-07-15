@@ -8,7 +8,7 @@ static struct { /* USERPROPERTY */
     char* name;
     short type;
     short index;
-} usrprop[] = {"nseg", 0, 0, "L", 1, 2, "rallbranch", 1, 4, "Ra", 1, 7, 0, 0, 0};
+} usrprop[] = {{"nseg", 0, 0}, {"L", 1, 2}, {"rallbranch", 1, 4}, {"Ra", 1, 7}, {nullptr, 0, 0}};
 
 extern "C" {
 void capac_reg_(), passive0_reg_(), _passive_reg_(),

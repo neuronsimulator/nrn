@@ -45,8 +45,9 @@ BBSaveState
     an ascii format.
 
     BBSaveState has a c++ API that allows one to replace the file reader and
-    writer. See nrn/src/nrniv/bbsavestate.cpp for a description of this API.
-    The undocumented methods, save_test_bin and restore_test_bin demonstrate
+    writer. See `nrn/src/nrniv/bbsavestate.cpp <https://github.com/neuronsimulator/nrn/blob/master/src/nrniv/bbsavestate.cpp>`_
+    for a description of this API.
+    The undocumented methods, ``save_test_bin`` and ``restore_test_bin`` demonstrate
     the use of this API.
 
     The user can mark a point process IGNORE by calling the method
@@ -56,9 +57,9 @@ BBSaveState
     bbss.ignore()
     
     Because a restore clears the event queue and because one cannot call
-    finitialize from hoc without vitiating the restore, Vector.play will
-    not work unless one calls BBSaveState.vector_play_init() after a
-    restore (similarly frecord() must be called for Vector.record to work.
+    finitialize from hoc without vitiating the restore, :meth:`Vector.play` will
+    not work unless one calls :meth:`BBSaveState.vector_play_init` after a
+    restore (similarly :func:`frecord` must be called for :meth:`Vector.record` to work.
     Note that it is necessary that Vector.play use a tvec argument with
     a first element greater than or equal to the restore time.
     
@@ -92,7 +93,7 @@ BBSaveState
     For example
 
     .. code-block::
-       none
+       C++
 
           FUNCTION bbsavestate() {
             bbsavestate = 0
@@ -134,7 +135,7 @@ BBSaveState
         efficiently).
 
         .. code-block::
-          none
+          bash
 
           #!/usr/bin/env bash
           rm -f in/*

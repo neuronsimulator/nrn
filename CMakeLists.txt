@@ -17,14 +17,14 @@ if(DEFINED ENV{CRAYPE_VERSION})
 endif()
 project(
   NEURON
-  VERSION 8.2.0
+  VERSION 9.0.0
   LANGUAGES C CXX
   HOMEPAGE_URL "https://www.neuron.yale.edu/neuron/")
 
 # =============================================================================
 # CMake common project settings
 # =============================================================================
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -61,16 +61,17 @@ option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of D
        ${NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT})
 option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)"
        ${NRN_ENABLE_PYTHON_DEFAULT})
-option(NRN_ENABLE_THREADS "Allow use of Pthreads" ${NRN_ENABLE_THREADS_DEFAULT})
+option(NRN_ENABLE_THREADS "Allow use of multithreading" ${NRN_ENABLE_THREADS_DEFAULT})
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
-option(NRN_ENABLE_MODEL_TESTS "Enable tests with detailed models specified"
-       ${NRN_ENABLE_MODEL_TESTS_DEFAULT})
+set(NRN_ENABLE_MODEL_TESTS
+    "${NRN_ENABLE_MODEL_TESTS_DEFAULT}"
+    CACHE STRING "Comma-separated list of detailed models to enable tests of.")
 # parse NRN_ENABLE_MODEL_TESTS as list
-string(REPLACE "," ";" NRN_ENABLE_MODEL_TESTS ${NRN_ENABLE_MODEL_TESTS})
+string(REPLACE "," ";" NRN_ENABLE_MODEL_TESTS "${NRN_ENABLE_MODEL_TESTS}")
 # This can be helpful in very specific CI build configurations, where ccache is used *and* different
 # CI builds are built under different directories.
 option(NRN_AVOID_ABSOLUTE_PATHS
@@ -159,6 +160,17 @@ set(NRN_NMODL_CXX_FLAGS
     CACHE STRING "space separated list of flags to be added to host tools (nocmodl, modlunit")
 separate_arguments(NRN_NMODL_CXX_FLAGS UNIX_COMMAND ${NRN_NMODL_CXX_FLAGS})
 
+set(NRN_EXTRA_CXX_FLAGS
+    ""
+    CACHE STRING "Extra compiler flags for NEURON source files")
+separate_arguments(NRN_EXTRA_CXX_FLAGS)
+list(APPEND NRN_COMPILE_FLAGS ${NRN_EXTRA_CXX_FLAGS})
+
+set(NRN_EXTRA_MECH_CXX_FLAGS
+    ""
+    CACHE STRING "Extra compiler flags for translated NEURON mechanisms")
+separate_arguments(NRN_EXTRA_MECH_CXX_FLAGS)
+
 option(NRN_ENABLE_PROFILING "Enable profiling" ${NRN_ENABLE_PROFILING_DEFAULT})
 set(NRN_PROFILER
     "${NRN_PROFILER_DEFAULT}"
@@ -231,10 +243,15 @@ include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
 
 # =============================================================================
+# Enable sanitizer support if the NRN_SANITIZERS variable is set
+# =============================================================================
+include(cmake/SanitizerHelper.cmake)
+
+# =============================================================================
 # Find required packages
 # =============================================================================
 find_package(BISON REQUIRED)
-find_package(FLEX REQUIRED)
+find_package(FLEX 2.6 REQUIRED)
 
 # When shipping the wheels we want to link readline libs statically.
 if(NRN_WHEEL_STATIC_READLINE)
@@ -398,11 +415,10 @@ endif()
 # Enable Threads support
 # =============================================================================
 if(NRN_ENABLE_THREADS)
+  # Note that at least GCC requires -pthread to be passed even when using std::thread.
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
-  set(USE_PTHREAD 1)
-else()
-  set(USE_PTHREAD 0)
+  list(APPEND NRN_COMPILE_DEFS NRN_ENABLE_THREADS)
 endif()
 
 # =============================================================================
@@ -726,11 +742,14 @@ endif()
 # Add tests if enabled
 # =============================================================================
 if(NRN_ENABLE_TESTS)
-  nrn_add_external_project(catch2)
-  set(CATCH_DIR ${PROJECT_SOURCE_DIR}/external/catch2)
-  list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
+  # If CoreNEURON + NMODL are enabled, Catch2 will already have been set up...
+  if(NOT TARGET Catch2::Catch2)
+    nrn_add_external_project(catch2)
+    set(CATCH_DIR ${PROJECT_SOURCE_DIR}/external/catch2)
+    list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
+    include(Catch)
+  endif()
   include(CTest)
-  include(Catch)
   nrn_find_python_module(pytest)
   nrn_find_python_module(pytest_cov)
   if(NRN_ENABLE_PYTHON)
@@ -775,7 +794,7 @@ install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
 # find headers to install
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
 file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/nrnoc/nrnsemanticversion.h
-          ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h DESTINATION ${PROJECT_BINARY_DIR}/include)
+     DESTINATION ${PROJECT_BINARY_DIR}/include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 if(NRN_MACOS_BUILD)
@@ -826,6 +845,7 @@ if(BUILD_TYPE_UPPER MATCHES "CUSTOM")
 else()
   set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
 endif()
+string(JOIN " " COMPILER_FLAGS "${COMPILER_FLAGS}" ${NRN_COMPILE_FLAGS})
 
 message(STATUS "")
 message(STATUS "Configured NEURON ${PROJECT_VERSION}")

@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
 #undef small
@@ -1711,14 +1712,14 @@ L3:
     goto L3;
 } /* maprnt_ */
 
-#include <../oc/mcran4.h>
+double mcell_ran4_legacy(uint32_t *idx1, double *x, unsigned int n, double range);
 uint32_t nrn_praxis_ran_index;
 
 static doublereal random_(naught)
 integer *naught;
 {
 	double x;
-	return mcell_ran4(&nrn_praxis_ran_index, &x, 1, 1.);
+	return mcell_ran4_legacy(&nrn_praxis_ran_index, &x, 1, 1.);
 #if 0
     /* Initialized data */
 
