@@ -752,14 +752,14 @@ def interthread():
 
 
 def nc_event_before_init():
-    soma=h.Section()
-    soma.insert('pas')
+    soma = h.Section()
+    soma.insert("pas")
 
     syn = h.ExpSyn(soma(0.5))
     nc = h.NetCon(None, syn)
     nc.weight[0] = 1.0
-    #h.finitialize()
-    expect_err("nc.event(0)")       # nrn_assert triggered if outside of finitialize
+    # h.finitialize()
+    expect_err("nc.event(0)")  # nrn_assert triggered if outside of finitialize
 
 
 def test_netcvode_cover():
