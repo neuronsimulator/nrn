@@ -20,7 +20,7 @@
 static char nmodl_version_[] = "7.7.0";
 
 static char banner[] =
-    "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2021\n\
+    "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2022\n\
 See http://neuron.yale.edu/neuron/credits\n";
 
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
