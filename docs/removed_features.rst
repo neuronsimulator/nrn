@@ -45,5 +45,6 @@ To that end, the following table's columns constitute:
      - 8fecd77
    * - LINDA
      - Linda is a coordination model that aids communication in parallel computing environments.
+       Side note: the bulletin board implemented within the ParallelContext is NEURON's analogy to LINDA's conceptual functionality of tuple space.
      - `#1919 <https://github.com/neuronsimulator/nrn/pull/1919>`_
      - a5c36e9
