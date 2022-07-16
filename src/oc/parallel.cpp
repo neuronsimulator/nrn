@@ -81,36 +81,11 @@ void hoc_parallel_begin(void) {
                 strcpy(pnt, buf);
             }
             /* farm-out all but the first instance of the loop */
-#if LINDA
-            /* place arguments for eval() into tuple space, Linda
-               doesn't seem to want to let the fxn in an eval take
-               arrays as args */
-            __linda_out("parallel sargs", sargv, senvp);
-            __linda_out("parallel args", parallel_argv : sargv, parallel_envp : senvp);
-            __linda_eval("parallel run", parallel_hoc_main(i), i);
-#endif
         }
 
-#if LINDA
-        /* do first pass though loop on master node (first to first) */
-        pushx(first);
-        pushx(first);
-#else
-        /* run in serial if not LINDA */
+        /* run in serial */
         pushx(first);
         pushx(last);
-#endif
-
-        /* block until all instances of loop have finished */
-#if LINDA
-        i = (int) last - (int) first;
-        while (i-- > 0) {
-            int err_val, err_num;
-
-        __linda_in("parallel run", ?err_val, ?err_num);
-        /* could test err_val != 0 but currently will always equal 0 */
-        }
-#endif
 
         /* assign value of symbol to last+1 as would be upon exiting a serial loop */
         if (!ISARRAY(sym)) {
@@ -143,12 +118,7 @@ void hoc_parallel_end(void) {
     /* need to exit after for-loop for all sub-processes */
     if (parallel_sub) {
         hoc_final_exit();
-#if LINDA
-        lexit(0);
-#else
         exit(0);
-#endif
-
     } else {
         /* assign loop counter the proper end value */
         *pval = end_val;
@@ -166,20 +136,8 @@ int parallel_hoc_main(int i) {
     int j, _largc;
     _largv = static_cast<const char**>(emalloc(NUM_ARGS * sizeof(char*)));
     _lenvp = static_cast<const char**>(emalloc(NUM_ARGS * sizeof(char*)));
-#if LINDA
-    char name[20];
-
-    gethostname(name, 20);
-    Fprintf(stderr, "\nLaunching sub-process on %s.\n\t1\n", name);
-
-    __linda_in("parallel sargs", ?sargv, ?senvp);
-#endif
     targv = static_cast<char*>(emalloc(sargv));
     tenvp = static_cast<char*>(emalloc(senvp));
-    /* pointers need to point to memory that will be filled by __linda_in() */
-#if LINDA
-    __linda_in("parallel args", ? targv :, ? tenvp :);
-#endif
 
     pnt = targv;
     for (j = 0; *pnt; j++) {
@@ -247,45 +205,5 @@ void save_parallel_argv(int argc, const char** argv) {
     }
     *pnt = '\0'; /* place extra '\0' at end */
 #endif
-#endif
-}
-
-void save_parallel_envp(void) {
-#if LINDA
-#if !defined(__APPLE__)
-    extern char** environ;
-    char** envp = environ;
-#endif
-#if defined(__APPLE__)
-    char** envp = (*_NSGetEnviron());
-#endif
-    char* pnt;
-    int j;
-    char** envp = environ;
-
-    /* count how long the block of memory should be */
-    for (j = 0; envp[j]; j++) {
-        pnt = envp[j];
-        while (*pnt++) {
-            senvp++;
-        }
-        senvp++; /* add room for '\0' */
-    }
-
-    /* need room for extra '\0' at end, each space is of size (char) */
-    senvp = (senvp + 1) * sizeof(char);
-
-    /* malloc blocks of memory */
-    parallel_envp = static_cast<char*>(emalloc(senvp));
-
-    /* place the strings into the memory block separated by '\0' */
-    pnt = parallel_envp;
-    for (j = 0; envp[j]; j++) {
-        strcpy(pnt, envp[j]);
-        /*EMPTY*/
-        while (*pnt++)
-            ;
-    }
-    *pnt = '\0'; /* place extra '\0' at end */
 #endif
 }

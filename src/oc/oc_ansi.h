@@ -231,7 +231,6 @@ std::size_t hoc_total_array(Symbol*);
 void hoc_menu_cleanup();
 void frame_debug();
 void hoc_oop_initaftererror();
-void save_parallel_envp();
 void save_parallel_argv(int, const char**);
 void hoc_init();
 void initplot();
