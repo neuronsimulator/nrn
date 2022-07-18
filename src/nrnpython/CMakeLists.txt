@@ -231,9 +231,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # Workaround for: https://github.com/neuronsimulator/nrn/issues/1605 See:
   # https://setuptools.pypa.io/en/latest/deprecated/distutils-legacy.html
   # https://setuptools.pypa.io/en/latest/history.html#id228
-  set(extra_env_distutils
-        ${CMAKE_COMMAND} -E env
-        "SETUPTOOLS_USE_DISTUTILS=stdlib")
+  set(extra_env_distutils ${CMAKE_COMMAND} -E env "SETUPTOOLS_USE_DISTUTILS=stdlib")
 
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     add_custom_command(
@@ -245,7 +243,8 @@ if(NRN_ENABLE_MODULE_INSTALL)
         ${CMAKE_COMMAND} -E copy_if_different
         ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
         ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/help_data.dat
-      COMMAND ${extra_env} ${extra_env_distutils} ${pyexe} setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB}
+      COMMAND ${extra_env} ${extra_env_distutils} ${pyexe} setup.py --quiet build
+              --build-lib=${NRN_PYTHON_BUILD_LIB}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Building python module with: ${pyexe}")
   endforeach(pyexe)
