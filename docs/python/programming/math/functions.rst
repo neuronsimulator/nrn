@@ -28,7 +28,7 @@ Diagnostics:
 
         .. note::
 
-            In Python code, use Python's ``abs`` function, which works on both numbers and numpy arrays:
+            In Python code, use Python's ``abs`` function, which works on both numbers and numpy arrays, as well as Vectors (Vectors do not print their contents) :
 
             .. code-block::
                 python

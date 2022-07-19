@@ -12,5 +12,14 @@ Guides
    cellbuilder
    import3d
    optimization
+
+.. toctree::
+   :maxdepth: 1 
+
+   modelview_compact_display
+
+.. toctree::
+   :maxdepth: 2
+
    randomness
    faq

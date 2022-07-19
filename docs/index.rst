@@ -167,4 +167,4 @@ Installation
 
 |
 
-See also the NEURON documentation `index <genindex.html>`_.
+See also the NEURON documentation `index <genindex.html>`_ and the `NEURON forum <https://www.neuron.yale.edu/phpbb/>`_.
