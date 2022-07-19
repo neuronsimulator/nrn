@@ -68,6 +68,9 @@ echo runpy $*\n\
 pyexe=$1\n\
 mingw=${MINGW}\n\
 shift\n\
+export LDCSHARED=\"${CMAKE_C_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS}\"\n\
+export LDCXXSHARED=\"${CMAKE_CXX_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS}\"\n\
+export SETUPTOOLS_USE_DISTUTILS=stdlib
 if test x$mingw = x1 ; then\n\
   pyver=`$pyexe -c 'import sys; print (sys.version_info[0]); quit()'`\n\
   echo pyver=$pyver\n\
