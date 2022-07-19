@@ -227,34 +227,6 @@ void nrn_exit(int i) {
     exit(i);
 }
 
-#if LINDA
-
-int hoc_retreat_flag;
-#define RETREAT_SIGNAL SIGHUP
-
-static RETSIGTYPE retreat_handler(int sig) /* catch interrupt */
-{
-    /*ARGSUSED*/
-    if (hoc_retreat_flag++) {
-        /* never managed the first one properly */
-        nrn_exit(1);
-    }
-    if (!lookup("linda_retreat")) {
-        hoc_retreat_flag = 0;
-        /* user did not give us a safe retreat so it would be nice */
-        /* to take up later exactly at this point */
-        nrn_exit(1);
-    }
-    IGNORE(signal(RETREAT_SIGNAL, retreat_handler));
-}
-
-void hoc_retreat(void) {
-    hoc_obj_run("linda_retreat()\n", nullptr);
-    exit(0);
-}
-
-#endif
-
 #if defined(WIN32) || defined(MAC)
 #define HAS_SIGPIPE 0
 #else
@@ -935,8 +907,6 @@ void hoc_main1_init(const char* pname, const char** envp) {
         nrn_exit(1);
     }
 
-    save_parallel_envp();
-
     hoc_init();
     initplot();
 #if defined(__GO32__)
@@ -1000,9 +970,6 @@ int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
 
     hoc_audit_from_hoc_main1(argc, argv, envp);
     hoc_main1_init(argv[0], envp);
-#if LINDA
-    signal(RETREAT_SIGNAL, retreat_handler);
-#endif
 #if HAS_SIGPIPE
     signal(SIGPIPE, sigpipe_handler);
 #endif

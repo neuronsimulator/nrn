@@ -327,6 +327,18 @@ in a thread has changed.
 static int fast_imem_nthread_ = 0;
 static int* fast_imem_size_ = NULL;
 static _nrn_Fast_Imem* fast_imem_;
+static std::vector<double*> imem_defer_free_;
+
+void nrn_imem_defer_free(double* pd) {
+    if (pd) {
+        imem_defer_free_.push_back(pd);
+    } else {
+        for (const auto& pd: imem_defer_free_) {
+            free(pd);
+        }
+        imem_defer_free_.clear();
+    }
+}
 
 static void fast_imem_free() {
     int i;
@@ -335,7 +347,7 @@ static void fast_imem_free() {
     }
     for (i = 0; i < fast_imem_nthread_; ++i) {
         if (fast_imem_size_[i] > 0) {
-            free(fast_imem_[i]._nrn_sav_rhs);
+            nrn_imem_defer_free(fast_imem_[i]._nrn_sav_rhs);
             free(fast_imem_[i]._nrn_sav_d);
         }
     }
@@ -362,7 +374,7 @@ static void fast_imem_alloc() {
         _nrn_Fast_Imem* fi = fast_imem_ + i;
         if (n != fast_imem_size_[i]) {
             if (fast_imem_size_[i] > 0) {
-                free(fi->_nrn_sav_rhs);
+                nrn_imem_defer_free(fi->_nrn_sav_rhs);
                 free(fi->_nrn_sav_d);
             }
             if (n > 0) {
@@ -383,6 +395,7 @@ void nrn_fast_imem_alloc() {
         }
     } else {
         fast_imem_free();
+        nrn_imem_defer_free(nullptr);
     }
 }
 
