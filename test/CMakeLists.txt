@@ -243,9 +243,9 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     # see #1619, required when coreneuron is linked to sonata library
     set(sonata_zero_gid_env LIBSONATA_ZERO_BASED_GIDS=1)
   endif()
-  # If CoreNEURON is linked statically then it cannot be dynamically loaded by
-  # Python or nrniv, so we need to launch tests with `special [-python]`. If you consider changing
-  # how ${modtests_launch_py_mpi} is constructed (notably the use of ${MPIEXEC_NAME} instead of
+  # If CoreNEURON is linked statically then it cannot be dynamically loaded by Python or nrniv, so
+  # we need to launch tests with `special [-python]`. If you consider changing how
+  # ${modtests_launch_py_mpi} is constructed (notably the use of ${MPIEXEC_NAME} instead of
   # ${MPIEXEC}) then first refer to GitHub issue #894 and note that nrn_add_test prefixes the
   # command with ${CMAKE_COMMAND} -E env.
   if(NOT ${CORENRN_ENABLE_SHARED})
@@ -271,9 +271,9 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   endif()
 
   # External coreneuron can be used for testing but for simplicity we are testing only submodule
-  # builds (in near future we want to support only internal builds anyway). This
-  # test uses the standard NEURON installation that does not have a `special`
-  # statically linked against CoreNEURON, so we cannot run this in static builds.
+  # builds (in near future we want to support only internal builds anyway). This test uses the
+  # standard NEURON installation that does not have a `special` statically linked against
+  # CoreNEURON, so we cannot run this in static builds.
   if(NOT nrn_using_ext_corenrn AND ${CORENRN_ENABLE_SHARED})
     nrn_add_test_group(
       CORENEURON
