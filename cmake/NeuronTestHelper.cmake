@@ -382,20 +382,15 @@ function(nrn_add_test)
       "${group_members}"
       PARENT_SCOPE)
   set(test_env "${NRN_RUN_FROM_BUILD_DIR_ENV}")
-  if(requires_coreneuron)
+  if(requires_coreneuron AND CORENRN_ENABLE_SHARED)
+    # Did we run nrnivmodl specifically for this test, or does it just use
+    # default mechanisms?
     if(DEFINED nrnivmodl_directory)
-      list(
-        APPEND
-        test_env
-        "CORENEURONLIB=${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/libcorenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
-      )
+      set(build_prefix "${nrnivmodl_directory}")
     else()
-      list(
-        APPEND
-        test_env
-        "CORENEURONLIB=${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/libcorenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
-      )
+      set(build_prefix "${CMAKE_BINARY_DIR}/bin")
     endif()
+    list(APPEND test_env "CORENEURONLIB=${build_prefix}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}coreneuron${CMAKE_SHARED_LIBRARY_SUFFIX}")
   endif()
   # Get [VAR1, VAR2, ...] from [VAR1=VAL1, VAR2=VAL2, ...]
   set(test_env_var_names ${test_env})
