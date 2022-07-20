@@ -23,6 +23,7 @@
    d and rhs is calculated from the property list.
 */
 
+#include "neuron/container/node.hpp"
 
 #include "nrnredef.h"
 #include "options.h"
@@ -108,14 +109,14 @@ the notify_free_val parameter in node_free in solve.cpp
 #define NODEV(n)    ((n)->_v)
 #define NODEAREA(n) ((n)->_area)
 #else /* CACHEVEC */
-#define NODEV(n)    (*((n)->_v))
+#define NODEV(n)    ((n)->_node_handle.v_ref())
 #define NODEAREA(n) ((n)->_area)
 #define NODERINV(n) ((n)->_rinv)
 #define VEC_A(i)    (_nt->_actual_a[(i)])
 #define VEC_B(i)    (_nt->_actual_b[(i)])
 #define VEC_D(i)    (_nt->_actual_d[(i)])
 #define VEC_RHS(i)  (_nt->_actual_rhs[(i)])
-#define VEC_V(i)    (_nt->_actual_v[(i)])
+#define VEC_V(i)    (_nt->_actual_v[(i)])  // TODO
 #define VEC_AREA(i) (_nt->_actual_area[(i)])
 #define NODEA(n)    (VEC_A((n)->v_node_index))
 #define NODEB(n)    (VEC_B((n)->v_node_index))
@@ -126,14 +127,18 @@ extern int use_cachevec;
 extern int secondorder;
 extern int cvode_active_;
 
-typedef struct Node {
+struct Node {
+    // Eventually the old Node class should become an alias for
+    // neuron::container::handle::Node, but as an intermediate measure we can
+    // add one of those as a member and forward some access/modifications to it.
+    neuron::container::Node::handle _node_handle;
 #if CACHEVEC == 0
     double _v;    /* membrane potential */
     double _area; /* area in um^2 but see treesetup.cpp */
     double _a;    /* effect of node in parent equation */
     double _b;    /* effect of parent in node equation */
 #else             /* CACHEVEC */
-    double* _v;     /* membrane potential */
+    // double* _v;     /* membrane potential */
     double _area;   /* area in um^2 but see treesetup.cpp */
     double _rinv;   /* conductance uS from node to parent */
     double _v_temp; /* vile necessity til actual_v allocated */
@@ -169,7 +174,7 @@ typedef struct Node {
 #endif                   /*DEBUGSOLVE*/
     int v_node_index;    /* only used to calculate parent_node_indices*/
     int sec_node_index_; /* to calculate segment index from *Node */
-} Node;
+};
 
 #if EXTRACELLULAR
 /* pruned to only work with sparse13 */
