@@ -4,7 +4,9 @@
 #define PRINT_EVENT 1
 
 #include "mymath.h"
+#include "neuron/container/generic_handle.hpp"
 #include "tqueue.h"
+
 #include <cmath>
 #include <vector>
 #include <unordered_map>
@@ -12,7 +14,7 @@
 struct NrnThread;
 class PreSyn;
 class HocDataPaths;
-typedef std::unordered_map<double*, PreSyn*> PreSynTable;
+using PreSynTable = std::unordered_map<neuron::container::generic_handle<double>, PreSyn*>;
 class NetCon;
 class DiscreteEvent;
 class TQItemPool;

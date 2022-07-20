@@ -6,12 +6,15 @@
 #define NetCon nrniv_Dinfo
 #endif
 
-#include <InterViews/observe.h>
 #include "htlist.h"
-#include "nrnneosm.h"
+#include "neuron/container/generic_handle.hpp"
 #include "nrnmpi.h"
-#include <unordered_map>
+#include "nrnneosm.h"
+
+#include <InterViews/observe.h>
+
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #if 0
@@ -257,7 +260,7 @@ class STECondition: public WatchCondition {
 
 class PreSyn: public ConditionEvent {
   public:
-    PreSyn(double* src, Object* osrc, Section* ssrc = nil);
+    PreSyn(neuron::container::generic_handle<double> src, Object* osrc, Section* ssrc = nil);
     virtual ~PreSyn();
     virtual void send(double sendtime, NetCvode*, NrnThread*);
     virtual void deliver(double, NetCvode*, NrnThread*);
@@ -277,6 +280,7 @@ class PreSyn: public ConditionEvent {
     static DiscreteEvent* savestate_read(FILE*);
 
     virtual double value() {
+        assert(thvar_);
         return *thvar_ - threshold_;
     }
 
@@ -294,11 +298,7 @@ class PreSyn: public ConditionEvent {
     NetConPList dil_;
     double threshold_;
     double delay_;
-    // pointer to the voltage of some Node; in this case it is always a node
-    // voltage so we could assert that statically. this seems like the use-case
-    // for a non-owning handle (i.e. something that is valid over multiple
-    // permutations, but which does not manage lifetime)
-    double* thvar_;
+    neuron::container::generic_handle<double> thvar_{};
     Object* osrc_;
     Section* ssrc_;
     IvocVect* tvec_;

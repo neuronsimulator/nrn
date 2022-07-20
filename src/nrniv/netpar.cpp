@@ -1215,7 +1215,7 @@ Object** BBS::gid_connect(int gid) {
         } else {
             // printf("%d connect %s from new PreSyn for %d\n", nrnmpi_myid,
             // hoc_object_name(target), gid);
-            ps = new PreSyn(NULL, NULL, NULL);
+            ps = new PreSyn({}, nullptr, nullptr);
             net_cvode_instance->psl_append(ps);
             gid2in_[gid] = ps;
             ps->gid_ = gid;
