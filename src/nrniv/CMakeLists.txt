@@ -361,6 +361,8 @@ target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1)
   target_link_libraries(nrniv_lib stdc++fs)
 endif()
+# -meta is a cheap hack around the makefile generation
+target_link_libraries(nrniv_lib Boost::headers range-v3-meta)
 if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv_lib Threads::Threads)
 endif()

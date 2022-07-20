@@ -256,7 +256,9 @@ endif()
 # Find required packages
 # =============================================================================
 find_package(BISON REQUIRED)
+find_package(Boost REQUIRED)
 find_package(FLEX 2.6 REQUIRED)
+find_package(range-v3 REQUIRED)
 
 # When shipping the wheels we want to link readline libs statically.
 if(NRN_WHEEL_STATIC_READLINE)
@@ -811,6 +813,9 @@ install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
 
 # find headers to install
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
+# TODO support structured headers via HEADER_FILES_TO_INSTALL file(COPY
+# src/neuron/container/soa_container.hpp src/neuron/container/soa_identifier.hpp DESTINATION
+# ${PROJECT_BINARY_DIR}/include/neuron/container)
 file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/nrnoc/nrnsemanticversion.h
      DESTINATION ${PROJECT_BINARY_DIR}/include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
