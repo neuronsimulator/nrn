@@ -84,6 +84,11 @@ template <typename DataContainer, typename NonOwningElementHandle>
 struct OwningElementHandle {
     OwningElementHandle(DataContainer& data_container)
         : m_ptr{new std::size_t, data_container} {}
+    /** @brief Does the handle refer to a valid row?
+     */
+    explicit operator bool() const {
+        return m_ptr && (*m_ptr != invalid_row);
+    }
     operator NonOwningElementHandle() const {
         return {m_ptr.get()};
     }

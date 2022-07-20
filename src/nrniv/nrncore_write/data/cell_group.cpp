@@ -493,7 +493,7 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
                 cgs[ith].netcon_srcgid[i] = ps->gid_;
             } else {
                 if (ps->osrc_) {
-                    assert(ps->thvar_ == NULL);
+                    assert(!ps->thvar_);
                     if (nrn_nthread > 1) {  // negative gid and multiple threads.
                         cgs[ith].netcon_negsrcgid_tid.push_back(ps->nt_->id);
                         // Raise error if file mode transfer and nc and ps not
