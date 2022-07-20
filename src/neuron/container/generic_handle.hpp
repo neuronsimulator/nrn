@@ -101,4 +101,14 @@ struct generic_handle {
     // std::reference_wrapper<std::vector<T>> m_container;
     T* m_raw_ptr{};
 };
+
 }  // namespace neuron::container
+
+// Enable generic_handle<T> as a key type in std::unordered_map
+template <typename T>
+struct std::hash<neuron::container::generic_handle<T>> {
+    std::size_t operator()(neuron::container::generic_handle<T> const& s) const noexcept {
+        static_assert(sizeof(std::size_t) == sizeof(T const*));
+        return reinterpret_cast<std::size_t>(static_cast<T const*>(s));
+    }
+};
