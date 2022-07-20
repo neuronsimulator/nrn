@@ -42,7 +42,7 @@ struct generic_handle {
         : m_offset{std::move(offset)}
         , m_container{&container} {}
 
-    operator bool() const {
+    explicit operator bool() const {
         return m_raw_ptr ? static_cast<bool>(m_raw_ptr) : bool{m_offset};
     }
 
@@ -82,6 +82,15 @@ struct generic_handle {
             assert(m_container && m_offset);
             return std::next(m_container->data(), m_offset.current_row());
         }
+    }
+
+    friend bool operator==(generic_handle const& lhs, generic_handle const& rhs) {
+        return lhs.m_offset == rhs.m_offset && lhs.m_container == rhs.m_container &&
+               lhs.m_raw_ptr == rhs.m_raw_ptr;
+    }
+
+    friend bool operator!=(generic_handle const& lhs, generic_handle const& rhs) {
+        return !(lhs == rhs);
     }
 
   private:
