@@ -450,16 +450,17 @@ static double nc_preloc(void* v) {  // user must pop section stack after call
     }
     if (s) {
         nrn_pushsec(s);
-        double* v = d->src_->thvar_;
+        // This is a special handle, not just a pointer.
+        auto const& v = d->src_->thvar_;
         nrn_parent_info(s);  // make sure parentnode exists
         // there is no efficient search for the location of
         // an arbitrary variable. Search only for v at 0 - 1.
         // Otherwise return .5 .
-        if (v == &NODEV(s->parentnode)) {
+        if (v == s->parentnode->v_handle()) {
             return nrn_arc_position(s, s->parentnode);
         }
         for (int i = 0; i < s->nnode; ++i) {
-            if (v == &NODEV(s->pnode[i])) {
+            if (v == s->pnode[i]->v_handle()) {
                 return nrn_arc_position(s, s->pnode[i]);
             }
         }
@@ -478,16 +479,16 @@ static Object** nc_preseg(void* v) {  // user must pop section stack after call
         s = d->src_->ssrc_;
     }
     if (s && nrnpy_seg_from_sec_x) {
-        double* v = d->src_->thvar_;
+        auto const& v = d->src_->thvar_;
         nrn_parent_info(s);  // make sure parentnode exists
         // there is no efficient search for the location of
         // an arbitrary variable. Search only for v at 0 -  1.
         // Otherwise return NULL.
-        if (v == &NODEV(s->parentnode)) {
+        if (v == s->parentnode->v_handle()) {
             x = nrn_arc_position(s, s->parentnode);
         }
         for (int i = 0; i < s->nnode; ++i) {
-            if (v == &NODEV(s->pnode[i])) {
+            if (v == s->pnode[i]->v_handle()) {
                 x = nrn_arc_position(s, s->pnode[i]);
                 continue;
             }
@@ -822,7 +823,10 @@ static void steer_val(void* v) {
         static double dummy = 0.;
         d->chksrc();
         if (d->src_->thvar_) {
-            hoc_pushpx(d->src_->thvar_);
+            // Danger! This is returning the current address of the variable
+            // referred to by thvar_, but this may be invalidated by future
+            // permutations and modifications of the model.
+            hoc_pushpx(static_cast<double*>(d->src_->thvar_));
         } else {
             dummy = 0.;
             hoc_pushpx(&dummy);
@@ -5033,14 +5037,14 @@ void NetCvode::p_construct(int n) {
     }
 }
 
-PreSyn::PreSyn(double* src, Object* osrc, Section* ssrc) {
+PreSyn::PreSyn(neuron::container::generic_handle<double> src, Object* osrc, Section* ssrc)
+    : thvar_{std::move(src)} {
     //	printf("Presyn %x %s\n", (long)this, osrc?hoc_object_name(osrc):"nil");
     PreSynSave::invalid();
     hi_index_ = -1;
     hi_th_ = nil;
     flag_ = false;
     valthresh_ = 0;
-    thvar_ = src;
     osrc_ = osrc;
     ssrc_ = ssrc;
     threshold_ = 10.;
