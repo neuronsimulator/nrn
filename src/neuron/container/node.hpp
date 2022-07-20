@@ -32,7 +32,7 @@ struct interface: view_base<View> {
         return this->template get<field::Voltage>();
     }
     /** Return a generic handle to a value (double in this case) that is stable
-     *  over permutations.
+     *  over permutations but doesn't know that it is a Node voltage.
      */
     generic_handle<field::Voltage::type> v_handle() {
         return {this->id(), this->template get_container<field::Voltage>()};
@@ -48,7 +48,7 @@ struct interface: view_base<View> {
     }
 };
 
-// Reconsider the name. At the moment a handle is an owning thing that can have
+// Reconsider the name. At the moment an [owning_]handle is an (owning) thing that can have
 // a long lifetime, while a view is a non-owning thing that may only be used
 // transiently.
 struct owning_handle;
@@ -65,10 +65,10 @@ struct view: interface<view> {
     }
 
   private:
-    friend struct view_base<view>;
     std::size_t m_row;
     std::reference_wrapper<storage> m_node_data;
     // Interface for neuron::container::view_base
+    friend struct view_base<view>;
     std::size_t offset() const {
         return m_row;
     }
