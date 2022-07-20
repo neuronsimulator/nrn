@@ -61,6 +61,7 @@ struct ElementHandle {
     friend struct SOAContainer;
     template <typename, typename>
     friend struct OwningElementHandle;
+    friend struct std::hash<ElementHandle>;
     /** This is needed for converting owning to non-owning handles, and is also
      *  useful for assertions.
      */
@@ -131,4 +132,11 @@ struct OwningElementHandle {
         std::reference_wrapper<DataContainer> m_data_ref;
     };
     std::unique_ptr<std::size_t, deleter> m_ptr;
+};
+
+template <>
+struct std::hash<ElementHandle> {
+    std::size_t operator()(ElementHandle const& o) noexcept {
+        return reinterpret_cast<std::size_t>(o.m_ptr);
+    }
 };
