@@ -596,21 +596,20 @@ static void section_unlink(Section* sec) /* other sections no longer reference t
 }
 
 Node** node_construct(int n) {
-    Node *nd, **pnode;
-    int i;
-
-    pnode = (Node**) ecalloc((unsigned) n, sizeof(Node*));
-    for (i = n - 1; i >= 0; i--) {
-        nd = (Node*) ecalloc(1, sizeof(Node));
+    auto* pnode = new Node* [n] {};
+    for (auto i = n - 1; i >= 0; --i) {
+        auto* nd = new Node{};
+        pnode[i] = nd;
+        // TODO move the following to the Node struct definition
+        // TODO with the new data structures, how do we specify default values
+        // for fields? I guess in the field struct declarations.
 #if CACHEVEC
-        nd->_v = &nd->_v_temp;
         nd->_area = 100.;
         nd->_rinv = 0.;
 #endif
         nd->sec_node_index_ = i;
-        pnode[i] = nd;
         nd->prop = (Prop*) 0;
-        NODEV(nd) = DEF_vrest;
+        NODEV(nd) = DEF_vrest;  // TODO move to the Voltage struct?
 #if EXTRACELLULAR
         nd->extnode = (Extnode*) 0;
 #endif
@@ -622,23 +621,25 @@ Node** node_construct(int n) {
 }
 
 Node* nrn_node_construct1(void) {
-    Node* nd;
-    Node** ndp;
-    ndp = node_construct(1);
-    nd = ndp[0];
-    free(ndp);
+    // TODO this is just `return new Node{}`
+    Node** ndp = node_construct(1);
+    Node* nd = ndp[0];
+    delete[] ndp;
     return nd;
 }
 
+// TODO this should all be in the node destructor
 void nrn_node_destruct1(Node* nd) {
     if (!nd) {
         return;
     }
     prop_free(&(nd->prop));
 #if CACHEVEC
+    // TODO probably broken
     notify_freed_val_array(&NODEV(nd), 1);
     notify_freed_val_array(&NODEAREA(nd), 2);
 #else
+    // TODO probably broken
     notify_freed_val_array(&NODEV(nd), 2);
 #endif
 #if EXTRACELLULAR
@@ -661,38 +662,31 @@ void nrn_node_destruct1(Node* nd) {
         free((char*) nd->extnode);
     }
 #endif
-    free(nd);
+    delete nd;
 }
 
+// this is delete[]...apart from the order?
 void node_destruct(Node** pnode, int n) {
-    int i;
-    Node* nd;
-
-    for (i = n - 1; i >= 0; i--) {
+    for (int i = n - 1; i >= 0; --i) {
         if (pnode[i]) {
             nrn_node_destruct1(pnode[i]);
         }
     }
-    free((char*) pnode);
+    delete[] pnode;
 }
 
 #if KEEP_NSEG_PARM
 
 extern int keep_nseg_parm_;
 
+// TODO this logic should just be in the copy constructor...probably some of it
+// already does the right thing by default
 static Node* node_clone(Node* nd1) {
-    Node* nd2;
-    Prop *p1, *p2;
-    extern Prop* prop_alloc(Prop**, int, Node*);
-    int i, imax;
-    nd2 = (Node*) ecalloc(1, sizeof(Node));
-#if CACHEVEC
-    nd2->_v = &nd2->_v_temp;
-#endif
+    Node* nd2 = new Node{};
     NODEV(nd2) = NODEV(nd1);
-    for (p1 = nd1->prop; p1; p1 = p1->next) {
+    for (Prop* p1 = nd1->prop; p1; p1 = p1->next) {
         if (!memb_func[p1->_type].is_point) {
-            p2 = prop_alloc(&(nd2->prop), p1->_type, nd2);
+            Prop* p2 = prop_alloc(&(nd2->prop), p1->_type, nd2);
             if (p2->ob) {
                 Symbol *s, *ps;
                 double *px, *py;
@@ -703,13 +697,13 @@ static Node* node_clone(Node* nd1) {
                     ps = s->u.ppsym[j];
                     px = p2->ob->u.dataspace[ps->u.rng.index].pval;
                     py = p1->ob->u.dataspace[ps->u.rng.index].pval;
-                    imax = hoc_total_array_data(ps, 0);
-                    for (i = 0; i < imax; ++i) {
+                    std::size_t imax{hoc_total_array_data(ps, 0)};
+                    for (std::size_t i = 0; i < imax; ++i) {
                         px[i] = py[i];
                     }
                 }
             } else {
-                for (i = 0; i < p1->param_size; ++i) {
+                for (int i = 0; i < p1->param_size; ++i) {
                     p2->param[i] = p1->param[i];
                 }
             }
@@ -717,9 +711,9 @@ static Node* node_clone(Node* nd1) {
     }
     /* in case the user defined an explicit ion_style, make sure
        the new node has the same style for all ions. */
-    for (p1 = nd1->prop; p1; p1 = p1->next) {
+    for (Prop* p1 = nd1->prop; p1; p1 = p1->next) {
         if (nrn_is_ion(p1->_type)) {
-            p2 = nd2->prop;
+            Prop* p2 = nd2->prop;
             while (p2 && p2->_type != p1->_type) {
                 p2 = p2->next;
             }
