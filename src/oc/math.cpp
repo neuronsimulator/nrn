@@ -63,9 +63,9 @@ double hoc_Exp(double x) {
         return 0.;
     } else if (x > 700 && nrn_feenableexcept_ == 0) {
         errno = ERANGE;
-        if(check_fe_except) {
+        if (check_fe_except) {
             std::feraiseexcept(FE_OVERFLOW);
-        } 
+        }
         if (++hoc_errno_count < MAXERRCOUNT) {
             fprintf(stderr, "exp(%g) out of range, returning exp(700)\n", x);
         }
@@ -83,7 +83,7 @@ double hoc1_Exp(double x) {
         return 0.;
     } else if (x > 700) {
         errno = ERANGE;
-        if(check_fe_except) {
+        if (check_fe_except) {
             std::feraiseexcept(FE_OVERFLOW);
         }
         return errcheck(exp(700.), "exp");
