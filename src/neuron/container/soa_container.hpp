@@ -143,7 +143,6 @@ struct SOAContainer {
         return get<Tag>().at(offset);
     }
 
-  private:
     /** @brief Get the column container named by Tag.
      */
     template <typename Tag>
@@ -162,6 +161,7 @@ struct SOAContainer {
         return std::get<tag_index_t::value>(m_data);
     }
 
+  private:
     /** @brief Apply some transformation to all of the data columns at once.
      */
     template <typename Permutation>
