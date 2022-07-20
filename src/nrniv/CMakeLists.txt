@@ -392,6 +392,8 @@ target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
   target_include_directories(nrniv_lib PUBLIC "${NRN_DEFAULT_PYTHON_INCLUDES}")
 endif()
+# -meta is a cheap hack around the makefile generation
+target_link_libraries(nrniv_lib Boost::headers range-v3-meta)
 if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv_lib Threads::Threads)
 endif()
