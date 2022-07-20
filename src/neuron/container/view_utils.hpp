@@ -1,0 +1,45 @@
+#pragma once
+namespace neuron::container {
+/** @brief Base class for SOAContainer views/handles.
+ *
+ *  This provides some common methods that are not specific to a particular data
+ *  structure (Node, ...). The typical hierarchy would be:
+ *
+ *  view_base <--- Node::interface <--- Node::owning_handle
+ *             \                    \-- Node::handle
+ *              \                    \- Node::view
+ *               \- Foo::interface <--- Foo::owning_handle
+ *                                  \-- Foo::handle
+ *                                   \- Foo::view
+ *
+ *  Where the grandchild types (Node::handle, etc.) are expected to implement
+ *  the interface:
+ *   - underlying_storage(): return a (const) reference to the underlying
+ *     storage container (Node::storage, etc.)
+ *   - std::size_t offset(): return the current offset into the underlying
+ *     storage container
+ */
+template <typename View>
+struct view_base {
+    auto id() const {
+        return derived().underlying_storage().identifier(derived().offset());
+    }
+
+  protected:
+    View& derived() {
+        return static_cast<View&>(*this);
+    }
+    View const& derived() const {
+        return static_cast<View const&>(*this);
+    }
+    template <typename Tag>
+    auto& get() {
+        return derived().underlying_storage().template get<Tag>(derived().offset());
+    }
+    template <typename Tag>
+    auto const& get() const {
+        return derived().underlying_storage().template get<Tag>(derived().offset());
+    }
+};
+
+}  // namespace neuron::container

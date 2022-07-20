@@ -102,25 +102,28 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
     printf("thvar=%p actual_v=%p end=%p\n", ps.thvar_, nt._actual_v, nt._actual_v + nt.end);
     int inode = -1;
     if (ps.thvar_ < nt._actual_v || ps.thvar_ >= (nt._actual_v + nt.end)) {
-        if (ps.ssrc_) { /* not cache efficient, search the nodes in this section */
-            printf("%s\n", ps.ssrc_ ? secname(ps.ssrc_) : "unknown");
-            for (int i = 0; i < ps.ssrc_->nnode; ++i) {
-                Node* nd = ps.ssrc_->pnode[i];
-                if (ps.thvar_ == nd->_v) {
-                    inode = nd->v_node_index;
-                    break;
-                }
-            }
-            if (inode < 0) { /* check parent node */
-                Node* nd = ps.ssrc_->parentnode;
-                if (ps.thvar_ == nd->_v) {
-                    inode = nd->v_node_index;
-                }
-            }
-        }
-        if (inode < 0) {
-            hoc_execerror("gid not associated with a voltage", 0);
-        }
+        assert(false);
+        // if (ps.ssrc_) { /* not cache efficient, search the nodes in this section */
+        //     printf("%s\n", ps.ssrc_ ? secname(ps.ssrc_) : "unknown");
+        //     for (int i = 0; i < ps.ssrc_->nnode; ++i) {
+        //         Node* nd = ps.ssrc_->pnode[i];
+        //         // TODO this is broken
+        //         if (ps.thvar_ == nd->_v) {
+        //             inode = nd->v_node_index;
+        //             break;
+        //         }
+        //     }
+        //     if (inode < 0) { /* check parent node */
+        //         Node* nd = ps.ssrc_->parentnode;
+        //         // TODO this is broken
+        //         if (ps.thvar_ == nd->_v) {
+        //             inode = nd->v_node_index;
+        //         }
+        //     }
+        // }
+        // if (inode < 0) {
+        //     hoc_execerror("gid not associated with a voltage", 0);
+        // }
     } else {
         inode = ps.thvar_ - nt._actual_v;
     }

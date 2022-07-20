@@ -17,7 +17,6 @@
 #undef pdata
 #undef prop
 #undef nodecount
-
 #define nodelist    _nodelist
 #define nodeindices _nodeindices
 #define pdata       _pdata
