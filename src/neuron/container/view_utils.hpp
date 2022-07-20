@@ -21,6 +21,13 @@ namespace neuron::container {
  */
 template <typename View>
 struct view_base {
+    /** @brief Return the (ElementHandle-derived) identifier of the pointed-to
+     *  object.
+     *
+     *  @todo In some cases (handle, owning_handle) we already know the
+     *  std::size_t* value that is needed, so we should be able to get this more
+     *  directly (or add an extra assertion).
+     */
     auto id() const {
         return derived().underlying_storage().identifier(derived().offset());
     }
@@ -31,6 +38,14 @@ struct view_base {
     }
     View const& derived() const {
         return static_cast<View const&>(*this);
+    }
+    template <typename Tag>
+    auto& get_container() {
+        return derived().underlying_storage().template get<Tag>();
+    }
+    template <typename Tag>
+    auto const& get_container() const {
+        return derived().underlying_storage().template get<Tag>();
     }
     template <typename Tag>
     auto& get() {
