@@ -94,6 +94,7 @@ struct generic_handle {
     }
 
   private:
+    friend struct std::hash<generic_handle>;
     ElementHandle m_offset{};
     // This should be std::reference_wrapper and never null, only use a plain
     // pointer because of the compatibility mode that wraps a raw pointer.
@@ -109,6 +110,14 @@ template <typename T>
 struct std::hash<neuron::container::generic_handle<T>> {
     std::size_t operator()(neuron::container::generic_handle<T> const& s) const noexcept {
         static_assert(sizeof(std::size_t) == sizeof(T const*));
-        return reinterpret_cast<std::size_t>(static_cast<T const*>(s));
+        if (s.m_raw_ptr) {
+            return reinterpret_cast<std::size_t>(s.m_raw_ptr);
+        } else {
+            // The hash should not include the current row number, but rather the
+            // std::size_t* that is dereferenced to *get* the current row number,
+            // and which container this generic value lives in.
+            return std::hash<ElementHandle>{}(s.m_offset) ^
+                   reinterpret_cast<std::size_t>(s.m_container);
+        }
     }
 };
