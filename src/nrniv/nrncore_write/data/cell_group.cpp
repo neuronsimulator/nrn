@@ -75,8 +75,10 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
             hoc_Item* q;
             ITERATE(q, pth) {
                 auto* ps = static_cast<PreSyn*>(VOIDITM(q));
-                auto* pv = ps->thvar_;
-                assert(pv);
+                // auto* pv = ps->thvar_;
+                // assert(pv);
+                // The PreSyn should refer to a valid Node
+                assert(ps->thvar_);
                 // TODO: assert that pv (which is a double*) refers to a node voltage
                 // if (pv < nt._actual_v || pv >= (nt._actual_v + nt.end)) {
                 //     hoc_execerr_ext("NetCon range variable reference source not a voltage");
