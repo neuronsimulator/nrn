@@ -12,10 +12,4 @@ struct Voltage {
 /** @brief Underlying storage for all Nodes.
  */
 struct storage: SOAContainer<identifier, field::Voltage> {};
-
-/**
- * Global instance of neuron::container::Node. All Node handles/views/...
- * ultimately refer back to rows of this container.
- */
-inline storage data{};
 }  // namespace neuron::container::Node

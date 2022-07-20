@@ -74,12 +74,13 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
         if (pth) {
             hoc_Item* q;
             ITERATE(q, pth) {
-                PreSyn* ps = (PreSyn*) VOIDITM(q);
-                auto& pv = ps->thvar_;
+                auto* ps = static_cast<PreSyn*>(VOIDITM(q));
+                auto* pv = ps->thvar_;
                 assert(pv);
-                if (pv < nt._actual_v || pv >= (nt._actual_v + nt.end)) {
-                    hoc_execerr_ext("NetCon range variable reference source not a voltage");
-                }
+                // TODO: assert that pv (which is a double*) refers to a node voltage
+                // if (pv < nt._actual_v || pv >= (nt._actual_v + nt.end)) {
+                //     hoc_execerr_ext("NetCon range variable reference source not a voltage");
+                // }
                 if (ps->gid_ < 0) {
                     bool b1 = !ps->dil_.empty();
                     bool b2 = b1 && bool(ps->dil_[0]->target_);
