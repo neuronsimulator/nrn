@@ -132,7 +132,7 @@ struct Node {
     // Eventually the old Node class should become an alias for
     // neuron::container::handle::Node, but as an intermediate measure we can
     // add one of those as a member and forward some access/modifications to it.
-    neuron::container::Node::handle _node_handle;
+    neuron::container::Node::owning_handle _node_handle;
 #if CACHEVEC == 0
     double _v;    /* membrane potential */
     double _area; /* area in um^2 but see treesetup.cpp */
