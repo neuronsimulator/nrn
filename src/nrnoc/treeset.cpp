@@ -2219,11 +2219,11 @@ void nrn_recalc_node_ptrs(void) {
     }
     FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
         Node* nd = nt->_v_node[i];
-        nt->_actual_v[i] = *nd->_v;
+        nt->_actual_v[i] = NODEV(nd);
         recalc_ptr_new_vp_[ii] = nt->_actual_v + i;
-        recalc_ptr_old_vp_[ii] = nd->_v;
+        recalc_ptr_old_vp_[ii] = &NODEV(nd);  // TODO: broken!
         nt->_actual_area[i] = nd->_area;
-        *nd->_v = (double) ii;
+        NODEV(nd) = (double) ii;
         ++ii;
     }
     /* update POINT_PROCESS pointers to NODEAREA */
@@ -2257,7 +2257,7 @@ void nrn_recalc_node_ptrs(void) {
     ii = 0;
     FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
         Node* nd = nt->_v_node[i];
-        nd->_v = recalc_ptr_new_vp_[ii];
+        // nd->_v = recalc_ptr_new_vp_[ii]; TODO BROKEN!
         ++ii;
     }
     free(recalc_ptr_old_vp_);
