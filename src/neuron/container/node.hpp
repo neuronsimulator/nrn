@@ -1,6 +1,7 @@
 #pragma once
 #include "neuron/model_data.hpp"
 #include "neuron/container/node_data.hpp"
+#include "neuron/container/view_utils.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -13,39 +14,30 @@ namespace neuron::container::Node {
  *  @tparam NodeView  This is a cheap workaround for parent().
  *
  *  This allows the same struct-like accessors (v(), v_ref(), set_v(), ...) to be
- *  used both on "owning" Node objects and "non-owning" NodeView objects.
+ *  used on all of the different types of objects that represent a single Node:
+ *  - owning_handle: stable over permutations of underlying data, manages
+ *    lifetime of a row in the underlying storage
+ *  - handle: stable over permutations of underlying data, produces runtime
+ *    error if it is dereferenced after the corresponding owning_handle has gone
+ *    out of scope
+ *  - view: not stable over permutations of underlying data, must not be
+ *    dereferenced after the corresponding owning_handle has gone out of scope.
+ *
+ *  @todo Discuss and improve the three names above.
  */
 template <typename Derived, typename NodeView>
-struct interface {
+struct interface: view_base<Derived> {
     field::Voltage::type v() const {
-        return get<field::Voltage>();
+        return this->template get<field::Voltage>();
     }
     field::Voltage::type& v_ref() {
-        return get<field::Voltage>();
+        return this->template get<field::Voltage>();
     }
     field::Voltage::type const& v_ref() const {
-        return get<field::Voltage>();
+        return this->template get<field::Voltage>();
     }
     void set_v(field::Voltage::type v) {
-        get<field::Voltage>() = v;
-    }
-    // TODO: could this go in some neuron::container::interface::base class?
-    identifier id() const {
-        return derived().node_data().identifier(derived().offset());
-    }
-
-  private:
-    // TODO: could the rest go in some neuron::container::interface::base class?
-    Derived const& derived() const {
-        return static_cast<Derived const&>(*this);
-    }
-    template <typename Tag>
-    auto& get() {
-        return derived().node_data().template get<Tag>(derived().offset());
-    }
-    template <typename Tag>
-    auto const& get() const {
-        return derived().node_data().template get<Tag>(derived().offset());
+        this->template get<field::Voltage>() = v;
     }
 };
 
@@ -73,16 +65,19 @@ struct view: interface<view, view> {
     std::size_t offset() const {
         return m_row;
     }
-    storage& node_data() const {
+    storage& underlying_storage() const {
         return m_node_data;
     }
 };
 
-// TODO: what are the pitfalls of rebinding a Node to a different NodeData?
+// TODO: what are the pitfalls of rebinding a Node::handle to a different Node::storage?
 struct handle: interface<handle, view> {
     /** @brief Create a new Node at the end of `node_data`.
+     *  @todo  For Node, probably just assume that all Nodes belong to the same
+     *  neuron::model().node_data() global structure and don't bother holding a
+     *  reference to it. This will probably be different for other types of data.
      */
-    handle(storage& node_data = data)
+    handle(storage& node_data = neuron::model().node_data())
         : m_node_data_offset{node_data} {
         node_data.emplace_back(m_node_data_offset);
     }
@@ -113,10 +108,11 @@ struct handle: interface<handle, view> {
 
   private:
     friend struct view;
+    friend struct view_base<handle>;
     friend struct interface<handle, view>;
     OwningElementHandle<storage, identifier> m_node_data_offset;
-    // Interface for CRTP base class.
-    storage& node_data() const {
+    // Interface for neuron::container::view_base
+    storage& underlying_storage() const {
         return m_node_data_offset.data_container();
     }
     std::size_t offset() const {
@@ -126,5 +122,5 @@ struct handle: interface<handle, view> {
 
 inline view::view(handle const& node)
     : m_row{node.offset()}
-    , m_node_data{node.node_data()} {}
+    , m_node_data{node.underlying_storage()} {}
 }  // namespace neuron::container::Node
