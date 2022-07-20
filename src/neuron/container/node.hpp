@@ -1,5 +1,6 @@
 #pragma once
 #include "neuron/model_data.hpp"
+#include "neuron/container/generic_handle.hpp"
 #include "neuron/container/node_data.hpp"
 #include "neuron/container/view_utils.hpp"
 
@@ -29,6 +30,12 @@ template <typename View>
 struct interface: view_base<View> {
     field::Voltage::type v() const {
         return this->template get<field::Voltage>();
+    }
+    /** Return a generic handle to a value (double in this case) that is stable
+     *  over permutations.
+     */
+    generic_handle<field::Voltage::type> v_handle() {
+        return {this->id(), this->template get_container<field::Voltage>()};
     }
     field::Voltage::type& v_ref() {
         return this->template get<field::Voltage>();
