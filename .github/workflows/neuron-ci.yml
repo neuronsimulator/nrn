@@ -21,7 +21,6 @@ on:
 
 env:
   BUILD_TYPE: Release
-  DEVELOPER_DIR: /Applications/Xcode_11.3.1.app/Contents/Developer
   DESIRED_CMAKE_VERSION: 3.15.0
   PY_MIN_VERSION: '3.7'
   PY_MAX_VERSION: '3.10'
@@ -41,7 +40,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ macOS-10.15, ubuntu-18.04]
+        os: [ macOS-11, ubuntu-18.04]
         config:
           - { matrix_eval : "CC=gcc CXX=g++" ,      build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON" }
           - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "setuptools"  }
