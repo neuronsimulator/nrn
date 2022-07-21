@@ -27,6 +27,10 @@ int hoc_errno_count;
 #ifdef MINGW
 static const auto errno_enabled = true;
 static const auto check_fe_except = false;
+#elif defined(NVHPC_CHECK_FE_EXCEPTIONS) && (NVHPC_CHECK_FE_EXCEPTIONS == 1)
+static const auto errno_enabled = false;
+static const auto check_fe_except = true;
+static_assert(math_errhandling & MATH_ERREXCEPT);
 #else
 static const auto errno_enabled = math_errhandling & MATH_ERRNO;
 static const auto check_fe_except = !errno_enabled && math_errhandling & MATH_ERREXCEPT;
@@ -114,6 +118,11 @@ double errcheck(double d, const char* s) /* check result of library call */
 {
     // errno may not be enabled, rely on FE exceptions in that case. See:
     // https://en.cppreference.com/w/cpp/numeric/math/math_errhandling
+#if defined(NVHPC_CHECK_FE_EXCEPTIONS)
+    std::cout << "errno_enabled = " << errno_enabled << " ; check_fe_except = " << check_fe_except << std::endl;
+    // Without this printed out, FE exception is not raised (i.e. nrniv -> sqrt(-1))
+    std::cout << "math_errhandling & MATH_ERRNO " << bool(math_errhandling & MATH_ERRNO) << " ; math_errhandling & MATH_ERREXCEPT" << bool(math_errhandling & MATH_ERREXCEPT) << std::endl;
+#endif
     if ((errno_enabled && errno == EDOM) || (check_fe_except && std::fetestexcept(FE_INVALID))) {
         clear_fe_except();
         errno = 0;
