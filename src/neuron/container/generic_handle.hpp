@@ -29,6 +29,8 @@ namespace neuron::container {
  *  underlying storage is always std::vector<T> (or a custom allocator that is
  *  always the same type in neuron::container::*). Note that storing T* or
  *  span<T> would not work if the underlying storage is reallocated.
+ *
+ *  @todo Maybe this should be called `data_handle`? Or just `handle`?
  */
 template <typename T>
 struct generic_handle {
@@ -37,6 +39,10 @@ struct generic_handle {
     /** @brief Construct a generic_handle from a plain pointer.
      */
     generic_handle(T* raw_ptr) {
+        // Null pointer -> null handle.
+        if (!raw_ptr) {
+            return;
+        }
         // First see if we can find a neuron::container that contains the current
         // value of `raw_ptr` and promote it into a container/handle pair. This is
         // ugly and inefficient; you should prefer using the other constructor.

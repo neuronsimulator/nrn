@@ -120,7 +120,7 @@ class NetCvode {
     void local_retreat(double, Cvode*);
     void retreat(double, Cvode*);
     Object** netconlist();
-    int owned_by_thread(double*);
+    int owned_by_thread(neuron::container::generic_handle<double> const&);
     PlayRecord* playrec_uses(void*);
     void playrec_add(PlayRecord*);
     void playrec_remove(PlayRecord*);
