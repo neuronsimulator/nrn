@@ -59,7 +59,7 @@ struct data_handle {
         return !m_raw_ptr;
     }
 
-    data_handle(ElementHandle offset, std::vector<T>& container)
+    data_handle(identifier_base offset, std::vector<T>& container)
         : m_offset{std::move(offset)}
         , m_container{&container} {}
 
@@ -130,7 +130,7 @@ struct data_handle {
 
   private:
     friend struct std::hash<data_handle>;
-    ElementHandle m_offset{};
+    identifier_base m_offset{};
     // This should be std::reference_wrapper and never null, only use a plain
     // pointer because of the compatibility mode that wraps a raw pointer.
     std::vector<T>* m_container{};
@@ -151,7 +151,7 @@ struct std::hash<neuron::container::data_handle<T>> {
             // The hash should not include the current row number, but rather the
             // std::size_t* that is dereferenced to *get* the current row number,
             // and which container this generic value lives in.
-            return std::hash<ElementHandle>{}(s.m_offset) ^
+            return std::hash<neuron::container::identifier_base>{}(s.m_offset) ^
                    reinterpret_cast<std::size_t>(s.m_container);
         }
     }
