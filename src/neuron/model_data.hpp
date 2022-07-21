@@ -16,12 +16,12 @@ struct Model {
         return m_node_data;
     }
 
-    /** @brief T* -> generic_handle<T> if ptr is in model data.
+    /** @brief T* -> data_handle<T> if ptr is in model data.
      */
     template <typename T>
-    container::generic_handle<T> find_generic_handle(T* ptr) {
+    container::data_handle<T> find_data_handle(T* ptr) {
         // For now it could only be in m_node_data.
-        return m_node_data.find_generic_handle(ptr);
+        return m_node_data.find_data_handle(ptr);
     }
 
   private:
@@ -46,8 +46,8 @@ inline Model& model() {
 
 namespace container::utils {
 template <typename T>
-generic_handle<T> find_generic_handle(T* ptr) {
-    return model().find_generic_handle(ptr);
+data_handle<T> find_data_handle(T* ptr) {
+    return model().find_data_handle(ptr);
 }
 }  // namespace container::utils
 
