@@ -1,5 +1,6 @@
 #pragma once
 #include "neuron/container/soa_identifier.hpp"
+#include "neuron/model_data_fwd.hpp"
 
 #include <vector>
 
@@ -32,18 +33,48 @@ namespace neuron::container {
 template <typename T>
 struct generic_handle {
     generic_handle() = default;
-    /** @brief Construct a dummy generic_handle that wraps a plain pointer.
-     *  @todo Fix all usage of this and then remove it. It is purely meant as an
-     *  intermediate step, if you use it then the guarantees above will be broken.
+
+    /** @brief Construct a generic_handle from a plain pointer.
      */
-    generic_handle(T* raw_ptr)
-        : m_raw_ptr{raw_ptr} {}
+    generic_handle(T* raw_ptr) {
+        // First see if we can find a neuron::container that contains the current
+        // value of `raw_ptr` and promote it into a container/handle pair. This is
+        // ugly and inefficient; you should prefer using the other constructor.
+        auto needle = utils::find_generic_handle(raw_ptr);
+        if (needle) {
+            *this = std::move(needle);
+        } else {
+            // If that didn't work, just save the plain pointer value. This is unsafe
+            // and should be removed. It is purely meant as an intermediate step, if
+            // you use it then the guarantees above will be broken.
+            m_raw_ptr = raw_ptr;
+        }
+    }
+
+    bool refers_to_a_modern_data_structure() const {
+        return !m_raw_ptr;
+    }
+
     generic_handle(ElementHandle offset, std::vector<T>& container)
         : m_offset{std::move(offset)}
         , m_container{&container} {}
 
     explicit operator bool() const {
         return m_raw_ptr ? static_cast<bool>(m_raw_ptr) : bool{m_offset};
+    }
+
+    /** Query whether this generic handle points to a value from the `Tag` field
+     *  of the given container.
+     */
+    template <typename Tag, typename Container>
+    bool refers_to(Container const& container) const {
+        static_assert(Container::template has_tag_v<Tag>);
+        if (m_raw_ptr) {
+            return false;
+        } else {
+            return m_container == &(container.template get<Tag>()) &&
+                   m_offset.current_row() < m_container->size();
+        }
     }
 
     T& operator*() {

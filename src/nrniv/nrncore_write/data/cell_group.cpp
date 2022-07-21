@@ -75,14 +75,16 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
             hoc_Item* q;
             ITERATE(q, pth) {
                 auto* ps = static_cast<PreSyn*>(VOIDITM(q));
-                // auto* pv = ps->thvar_;
-                // assert(pv);
                 // The PreSyn should refer to a valid Node
                 assert(ps->thvar_);
-                // TODO: assert that pv (which is a double*) refers to a node voltage
-                // if (pv < nt._actual_v || pv >= (nt._actual_v + nt.end)) {
-                //     hoc_execerr_ext("NetCon range variable reference source not a voltage");
-                // }
+                // The old code says this should always be a voltage, and
+                // voltage is the thing we are moving to a new data structure,
+                // so we should not be hitting the backwards-compatibility layer
+                assert(ps->thvar_.refers_to_a_modern_data_structure());
+                if (!ps->thvar_.refers_to<neuron::container::Node::field::Voltage>(
+                        neuron::model().node_data())) {
+                    hoc_execerr_ext("NetCon range variable reference source not a voltage");
+                }
                 if (ps->gid_ < 0) {
                     bool b1 = !ps->dil_.empty();
                     bool b2 = b1 && bool(ps->dil_[0]->target_);
