@@ -2219,6 +2219,7 @@ void nrn_recalc_node_ptrs(void) {
         nt->_actual_v = (double*) ecalloc(nt->end, sizeof(double));
         nt->_actual_area = (double*) ecalloc(nt->end, sizeof(double));
     }
+    assert(false);
     FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
         Node* nd = nt->_v_node[i];
         // old value into new array
