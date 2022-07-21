@@ -99,12 +99,12 @@ static void pr_netcon(NrnThread& nt, FILE* f, const std::map<void*, int>& pnt2in
 
 static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
     // threshold variable is a voltage
-    printf("thvar=%p actual_v=%p end=%p\n",
-           static_cast<double*>(ps.thvar_),
-           nt._actual_v,
-           nt._actual_v + nt.end);
-    int inode = -1;
     assert(false);
+    // printf("thvar=%p actual_v=%p end=%p\n",
+    //        static_cast<double*>(ps.thvar_),
+    //        nt._actual_v,
+    //        nt._actual_v + nt.end);
+    int inode = -1;
     // if (ps.thvar_ < nt._actual_v || ps.thvar_ >= (nt._actual_v + nt.end)) {
     //     assert(false);
     // if (ps.ssrc_) { /* not cache efficient, search the nodes in this section */

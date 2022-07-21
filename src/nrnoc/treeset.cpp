@@ -2137,10 +2137,10 @@ All PreSyn threshold detectors that watch v.
 static int n_recalc_ptr_callback;
 static void (*recalc_ptr_callback[20])();
 static int recalc_cnt_;
-static double **recalc_ptr_new_vp_, **recalc_ptr_old_vp_;
+// static double **recalc_ptr_new_vp_, **recalc_ptr_old_vp_;
 static int n_old_thread_;
-static int* old_actual_v_size_;
-static double** old_actual_v_;
+// static int* old_actual_v_size_;
+// static double** old_actual_v_;
 static double** old_actual_area_;
 
 /* defer freeing a few things which may have pointers to them
@@ -2148,17 +2148,17 @@ until ready to update those pointers */
 void nrn_old_thread_save(void) {
     int i;
     int n = nrn_nthread;
-    if (old_actual_v_) {
+    if (old_actual_area_) {
         return;
     } /* one is already outstanding */
     n_old_thread_ = n;
-    old_actual_v_size_ = (int*) ecalloc(n, sizeof(int));
-    old_actual_v_ = (double**) ecalloc(n, sizeof(double*));
+    // old_actual_v_size_ = (int*) ecalloc(n, sizeof(int));
+    // old_actual_v_ = (double**) ecalloc(n, sizeof(double*));
     old_actual_area_ = (double**) ecalloc(n, sizeof(double*));
     for (i = 0; i < n; ++i) {
         NrnThread* nt = nrn_threads + i;
-        old_actual_v_size_[i] = nt->end;
-        old_actual_v_[i] = nt->_actual_v;
+        // old_actual_v_size_[i] = nt->end;
+        // old_actual_v_[i] = nt->_actual_v;
         old_actual_area_[i] = nt->_actual_area;
     }
 }
@@ -2169,14 +2169,16 @@ double* nrn_recalc_ptr(double* old) {
     if (recalc_ptr_) {
         return (*recalc_ptr_)(old);
     }
-    if (!recalc_ptr_old_vp_) {
-        return old;
-    }
+    assert(false);
+    // if (!recalc_ptr_old_vp_) {
+    //     return old;
+    // }
     if (nrn_isdouble(old, 0.0, (double) recalc_cnt_)) {
         int k = (int) (*old);
-        if (old == recalc_ptr_old_vp_[k]) {
-            return recalc_ptr_new_vp_[k];
-        }
+        assert(false);
+        // if (old == recalc_ptr_old_vp_[k]) {
+        //     return recalc_ptr_new_vp_[k];
+        // }
     }
     return old;
 }
@@ -2215,8 +2217,8 @@ void nrn_recalc_node_ptrs(void) {
     FOR_THREADS(nt) {
         recalc_cnt_ += nt->end;
     }
-    recalc_ptr_new_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
-    recalc_ptr_old_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
+    //recalc_ptr_new_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
+    //recalc_ptr_old_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
 
 
     /* first update the pointers without messing with the old NODEV,NODEAREA */
@@ -2226,19 +2228,18 @@ void nrn_recalc_node_ptrs(void) {
     /* if the pointer points to what v_node[i]->_v points to. */
     ii = 0;
     FOR_THREADS(nt) {
-        nt->_actual_v = (double*) ecalloc(nt->end, sizeof(double));
+        //nt->_actual_v = (double*) ecalloc(nt->end, sizeof(double));
         nt->_actual_area = (double*) ecalloc(nt->end, sizeof(double));
     }
-    assert(false);
     FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
         Node* nd = nt->_v_node[i];
         // old value into new array
-        nt->_actual_v[i] = NODEV(nd);
+        //nt->_actual_v[i] = NODEV(nd);
         // address in the new _actual_v array we just allocated
-        recalc_ptr_new_vp_[ii] = nt->_actual_v + i;
-        recalc_ptr_old_vp_[ii] = &NODEV(nd);  // TODO: broken!
+        //recalc_ptr_new_vp_[ii] = nt->_actual_v + i;
+        //recalc_ptr_old_vp_[ii] = &NODEV(nd);  // TODO: broken!
         nt->_actual_area[i] = nd->_area;
-        NODEV(nd) = (double) ii;  // ???
+        //NODEV(nd) = (double) ii;  // ???
         ++ii;
     }
     /* update POINT_PROCESS pointers to NODEAREA */
@@ -2257,10 +2258,11 @@ void nrn_recalc_node_ptrs(void) {
                 double* pval = p->dparam[j].pval;
                 if (nrn_isdouble(pval, 0., (double) recalc_cnt_)) {
                     /* possible pointer to v */
-                    k = (int) (*pval);
-                    if (pval == recalc_ptr_old_vp_[k]) {
-                        p->dparam[j].pval = recalc_ptr_new_vp_[k];
-                    }
+                    assert(false);
+                    // k = (int) (*pval);
+                    // if (pval == recalc_ptr_old_vp_[k]) {
+                    //     p->dparam[j].pval = recalc_ptr_new_vp_[k];
+                    // }
                 }
             }
         }
@@ -2269,28 +2271,28 @@ void nrn_recalc_node_ptrs(void) {
     nrn_recalc_ptrs(nullptr);
 
     /* now that all the pointers are updated we update the NODEV */
-    ii = 0;
-    FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
-        Node* nd = nt->_v_node[i];
-        // nd->_v = recalc_ptr_new_vp_[ii]; TODO BROKEN!
-        ++ii;
-    }
-    free(recalc_ptr_old_vp_);
-    free(recalc_ptr_new_vp_);
-    recalc_ptr_old_vp_ = (double**) 0;
-    recalc_ptr_new_vp_ = (double**) 0;
+    // ii = 0;
+    // FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
+    //     Node* nd = nt->_v_node[i];
+    //     // nd->_v = recalc_ptr_new_vp_[ii]; TODO BROKEN!
+    //     ++ii;
+    // }
+    // free(recalc_ptr_old_vp_);
+    // free(recalc_ptr_new_vp_);
+    // recalc_ptr_old_vp_ = (double**) 0;
+    // recalc_ptr_new_vp_ = (double**) 0;
     /* and free the old thread arrays if new ones were allocated */
     for (i = 0; i < n_old_thread_; ++i) {
-        if (old_actual_v_[i])
-            hoc_free_val_array(old_actual_v_[i], old_actual_v_size_[i]);
+        // if (old_actual_v_[i])
+        //     hoc_free_val_array(old_actual_v_[i], old_actual_v_size_[i]);
         if (old_actual_area_[i])
             free(old_actual_area_[i]);
     }
-    free(old_actual_v_size_);
-    free(old_actual_v_);
+    // free(old_actual_v_size_);
+    // free(old_actual_v_);
     free(old_actual_area_);
-    old_actual_v_size_ = 0;
-    old_actual_v_ = 0;
+    // old_actual_v_size_ = 0;
+    // old_actual_v_ = 0;
     old_actual_area_ = 0;
     n_old_thread_ = 0;
 

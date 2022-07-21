@@ -113,11 +113,16 @@ the notify_free_val parameter in node_free in solve.cpp
 #define NODEV(n)    ((n)->_node_handle.v_ref())
 #define NODEAREA(n) ((n)->_area)
 #define NODERINV(n) ((n)->_rinv)
+// The VEC_* vectors access the underlying array storage, i.e. the vectors that
+// live inside structures like neuron::model().node_data().
+// TODO: note that the new draft has one set of underlying storage vectors for
+// all threads, while the old version had separate vectors for each NrnThread
 #define VEC_A(i)    (_nt->_actual_a[(i)])
 #define VEC_B(i)    (_nt->_actual_b[(i)])
 #define VEC_D(i)    (_nt->_actual_d[(i)])
 #define VEC_RHS(i)  (_nt->_actual_rhs[(i)])
-#define VEC_V(i)    (_nt->_actual_v[(i)])  // TODO
+// #define VEC_V(i)    (_nt->_actual_v[(i)])
+#define VEC_V(i)    neuron::model().node_data().get<neuron::container::Node::field::Voltage>(_nt->_node_data_offset + i)
 #define VEC_AREA(i) (_nt->_actual_area[(i)])
 #define NODEA(n)    (VEC_A((n)->v_node_index))
 #define NODEB(n)    (VEC_B((n)->v_node_index))

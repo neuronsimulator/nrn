@@ -53,6 +53,8 @@ typedef struct _nrn_Fast_Imem {
  *
  * NrnThread represent collection of cells or part of a cell computed
  * by single thread within NEURON process.
+ * 
+ * @warning The constructor/destructor of this struct are not called.
  */
 struct NrnThread {
     double _t;
@@ -66,11 +68,15 @@ struct NrnThread {
     int _stop_stepping;   /* delivered an all thread HocEvent */
     int _ecell_child_cnt; /* see _ecell_children below */
 
+    /** @brief Offset in the global node data where this NrnThread's values start.
+     */
+    std::size_t _node_data_offset{};
+
     double* _actual_rhs;
     double* _actual_d;
     double* _actual_a;
     double* _actual_b;
-    double* _actual_v;
+    //double* _actual_v;
     double* _actual_area;
     int* _v_parent_index;
     Node** _v_node;

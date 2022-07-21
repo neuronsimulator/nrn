@@ -140,8 +140,8 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                 cgs[i].output_ps[npre] = ps;
                 cgs[i].output_gid[npre] = ps->output_index_;
                 // TODO: this isn't going to get the right answer anyway
-                assert(false);
-                cgs[i].output_vindex[npre] = static_cast<double*>(ps->thvar_) - nt._actual_v;
+                //assert(false);
+                //cgs[i].output_vindex[npre] = static_cast<double*>(ps->thvar_) - nt._actual_v;
                 ++npre;
             }
         }
