@@ -157,7 +157,7 @@ struct SOAContainer {
      */
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type>& get() {
-        static_assert(tag_index_t<Tag>::value < sizeof...(Tags));
+        static_assert(has_tag_v<Tag>);
         return std::get<tag_index_t<Tag>::value>(m_data);
     }
 
@@ -165,7 +165,7 @@ struct SOAContainer {
      */
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type> const& get() const {
-        static_assert(tag_index_t<Tag>::value < sizeof...(Tags));
+        static_assert(has_tag_v<Tag>);
         return std::get<tag_index_t<Tag>::value>(m_data);
     }
 

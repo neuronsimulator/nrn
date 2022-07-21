@@ -233,7 +233,8 @@ class Cvode {
   private:
     // segregation of old vectorized information to per cell info
     friend class NetCvode;
-    bool is_owner(double*);  // for play and record in local step context.
+    bool is_owner(neuron::container::generic_handle<double> const&);  // for play and record in
+                                                                      // local step context.
     bool local_;
     void daspk_setup1_tree_matrix();  // unused
     void daspk_setup2_tree_matrix();  // unused

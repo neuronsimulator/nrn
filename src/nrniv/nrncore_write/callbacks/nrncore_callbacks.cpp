@@ -678,10 +678,12 @@ int nrnthread_dat2_vecplay_inst(int tid,
 
     PlayRecList* fp = net_cvode_instance->fixed_play_;
     if (fp->item(i)->type() == VecPlayContinuousType) {
-        auto* const vp = static_cast<VecPlayContinuous*>(fp->item(i));
-        if (!vp->discon_indices_) {
+        VecPlayContinuous* vp = (VecPlayContinuous*) fp->item(i);
+        if (vp->discon_indices_ == NULL) {
             if (vp->ith_ == nt.id) {
+                // TODO probably wrong
                 auto* pd = static_cast<double*>(vp->pd_);
+                assert(false);
                 int found = 0;
                 vptype = vp->type();
                 for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
@@ -855,15 +857,13 @@ static void set_info(TQItem* tqi,
             weight2intdata[wt].push_back(iloc_wt);
         }
         core_te->intdata.push_back(-1);  // If NULL weight this is the indicator
-        // Each of these holds a TQItem*
-        Datum* const movable = se->movable_;
-        Datum* const pnt_movable = pnt->prop->dparam + movable_index;
-        // Only one SelfEvent on the queue for a given point process can be
-        // movable
-        bool const condition = movable && (*movable).get<TQItem*>() == tqi;
-        core_te->intdata.push_back(condition);
-        if (condition) {
-            assert(pnt_movable && (*pnt_movable).get<TQItem*>() == tqi);
+
+        TQItem** movable = (TQItem**) se->movable_;
+        TQItem** pnt_movable = (TQItem**) (&pnt->prop->dparam[movable_index]);
+        // Only one SelfEvent on the queue for a given point process can be movable
+        core_te->intdata.push_back((movable && *movable == tqi) ? 1 : 0);
+        if (movable && *movable == tqi) {
+            assert(pnt_movable && *pnt_movable == tqi);
         }
 
     } break;
@@ -1056,26 +1056,27 @@ static void core2nrn_SelfEvent_helper(int tid,
     Memb_list* ml = nrn_threads[tid]._ml_list[tar_type];
     Point_process* pnt;
     if (ml) {
-        pnt = ml->pdata[tar_index][1].get<Point_process*>();
+        pnt = (Point_process*) ml->pdata[tar_index][1]._pvoid;
     } else {
         // In NEURON world, ARTIFICIAL_CELLs do not live in NrnThread.
         // And the old deferred_type2artdata_ only gave us data, not pdata.
         // So this is where I decided to replace the more
         // expensive deferred_type2artml_.
         ml = CellGroup::deferred_type2artml_[tid][tar_type];
-        pnt = ml->pdata[tar_index][1].get<Point_process*>();
+        pnt = (Point_process*) ml->pdata[tar_index][1]._pvoid;
     }
 
     // Needs to be tested when permuted on CoreNEURON side.
     assert(tar_type == pnt->prop->_type);
     //  assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, tar_type));
 
-    int const movable_index = type2movable[tar_type];
-    auto* const movable_arg = pnt->prop->dparam + movable_index;
-    auto* const old_movable_arg = (*movable_arg).get<TQItem*>();
-    nrn_net_send(movable_arg, weight, pnt, td, flag);
+    int movable_index = type2movable[tar_type];
+    void** movable_arg = &(pnt->prop->dparam[movable_index]._pvoid);
+    TQItem* old_movable_arg = (TQItem*) (*movable_arg);
+
+    nrn_net_send(&(pnt->prop->dparam[movable_index]._pvoid), weight, pnt, td, flag);
     if (!is_movable) {
-        *movable_arg = old_movable_arg;
+        *movable_arg = (void*) old_movable_arg;
     }
 }
 
@@ -1092,7 +1093,7 @@ void core2nrn_SelfEvent_event(int tid,
 #if 1
     // verify nc->target_ consistent with tar_type, tar_index.
     Memb_list* ml = nrn_threads[tid]._ml_list[tar_type];
-    auto* pnt = ml->pdata[tar_index][1].get<Point_process*>();
+    Point_process* pnt = (Point_process*) ml->pdata[tar_index][1]._pvoid;
     assert(nc->target_ == pnt);
 #endif
 
@@ -1135,7 +1136,9 @@ void core2nrn_PreSyn_flag(int tid, std::set<int> presyns_flag_true) {
             if (ps->thvar_) {
                 int type = 0;
                 int index_v = -1;
-                nrn_dblpntr2nrncore(ps->thvar_, *ps->nt_, type, index_v);
+                // TODO fixme!
+                assert(false);
+                nrn_dblpntr2nrncore(static_cast<double*>(ps->thvar_), *ps->nt_, type, index_v);
                 assert(type == voltage);
                 if (presyns_flag_true.erase(index_v)) {
                     ps->flag_ = true;
@@ -1158,11 +1161,13 @@ void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true) {
     if (pth) {
         hoc_Item* q;
         ITERATE(q, pth) {
-            auto* ps = static_cast<PreSyn*>(VOIDITM(q));
+            PreSyn* ps = (PreSyn*) VOIDITM(q);
             assert(ps->nt_ == (nrn_threads + tid));
-            if (ps->flag_ && ps->thvar_) {
+            if (ps->flag_ == true && ps->thvar_) {
                 int type = 0;
                 int index_v = -1;
+                // TODO fixme!
+                assert(false);
                 nrn_dblpntr2nrncore(static_cast<double*>(ps->thvar_), *ps->nt_, type, index_v);
                 assert(type == voltage);
                 presyns_flag_true.insert(index_v);
@@ -1185,11 +1190,11 @@ void core2nrn_watch_activate(int tid, int type, int watch_begin, Core2NrnWatchIn
         for (auto watch_item: active_watch_items) {
             int watch_index = watch_item.first;
             bool above_thresh = watch_item.second;
-            auto* wc = pd[watch_index].get<WatchCondition*>();
+            WatchCondition* wc = (WatchCondition*) pd[watch_index]._pvoid;
             if (!wc) {  // if any do not exist in this instance, create them all
                         // with proper callback and flag.
                 (*(nrn_watch_allocate_[type]))(pd);
-                wc = pd[watch_index].get<WatchCondition*>();
+                wc = (WatchCondition*) pd[watch_index]._pvoid;
             }
             _nrn_watch_activate(
                 pd + watch_begin, wc->c_, watch_index - watch_begin, wc->pnt_, r++, wc->nrflag_);
