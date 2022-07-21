@@ -142,10 +142,12 @@ extern "C" int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& in
     assert(use_cachevec);
     int nnode = nt.end;
     type = 0;
-    if (pd >= nt._actual_v && pd < (nt._actual_v + nnode)) {
-        type = voltage;  // signifies an index into voltage array portion of _data
-        index = pd - nt._actual_v;
-    } else if (nt._nrn_fast_imem && pd >= nt._nrn_fast_imem->_nrn_sav_rhs &&
+    assert(false);
+    // if (pd >= nt._actual_v && pd < (nt._actual_v + nnode)) {
+    //     type = voltage;  // signifies an index into voltage array portion of _data
+    //     index = pd - nt._actual_v;
+    // } else
+    if (nt._nrn_fast_imem && pd >= nt._nrn_fast_imem->_nrn_sav_rhs &&
                pd < (nt._nrn_fast_imem->_nrn_sav_rhs + nnode)) {
         type = i_membrane_;  // signifies an index into i_membrane_ array portion of _data
         index = pd - nt._nrn_fast_imem->_nrn_sav_rhs;
