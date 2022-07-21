@@ -309,8 +309,8 @@ int nrnthread_dat2_2(int tid,
         a = nt._actual_a;
         b = nt._actual_b;
         area = nt._actual_area;
-        assert(false);
-        // v = nt._actual_v;
+        // Beware: even creating or destroying a Node object invalidates this array.
+        v = nt.node_voltage_storage();
     }
     if (cg.ndiam) {
         if (!copy) {
