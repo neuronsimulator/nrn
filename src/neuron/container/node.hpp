@@ -61,7 +61,7 @@ struct view: interface<view> {
     view(storage& node_data, identifier const& id)
         : m_row{id.current_row()}
         , m_node_data{node_data} {
-        assert(m_row != invalid_row);
+        assert(m_row != detail::invalid_row);
     }
 
   private:
@@ -141,7 +141,7 @@ struct owning_handle: interface<owning_handle> {
   private:
     friend struct view;
     friend struct view_base<owning_handle>;
-    OwningElementHandle<storage, identifier> m_node_data_offset;
+    owning_identifier_base<storage, identifier> m_node_data_offset;
     // Interface for neuron::container::view_base
     storage& underlying_storage() const {
         return m_node_data_offset.data_container();

@@ -4,5 +4,5 @@
 namespace neuron::container::Node {
 /** @brief Unique identifier for a Node.
  */
-struct identifier: ElementHandle {};
+struct identifier: identifier_base {};
 }  // namespace neuron::container::Node

@@ -13,6 +13,8 @@
 
 #include <vector>
 
+namespace neuron::container {
+
 /** @brief ADL-visible swap overload for ranges::common_tuple<Ts...>.
  *
  *  It seems that because range-v3 provides ranges::swap, which is a Niebloid
@@ -42,20 +44,19 @@ void swap(ranges::common_pair<T, U>&& lhs, ranges::common_pair<T, U>&& rhs) noex
 /** @brief Utility for generating SOA data structures.
  *  @tparam Tags Parameter pack of tag types that define the columns included in
  *               the container. Types may not be repeated.
- *  @todo Put this into the neuron::container namespace somewhere.
  */
 template <typename RowIdentifier, typename... Tags>
-struct SOAContainer {
+struct soa {
     // All elements of `Tags` should be unique.
     static_assert(boost::mp11::mp_is_set<boost::mp11::mp_list<Tags...>>::value);
 
-    SOAContainer() = default;
+    soa() = default;
     // Make it harder to invalidate the pointers/references to instances of
     // this struct that are stored in Node objects.
-    SOAContainer(SOAContainer&&) = delete;
-    SOAContainer(SOAContainer const&) = delete;
-    SOAContainer& operator=(SOAContainer&&) = delete;
-    SOAContainer& operator=(SOAContainer const&) = delete;
+    soa(soa&&) = delete;
+    soa(soa const&) = delete;
+    soa& operator=(soa&&) = delete;
+    soa& operator=(soa const&) = delete;
 
     /** @brief Get the size of the container.
      */
@@ -262,3 +263,4 @@ struct SOAContainer {
      */
     std::tuple<std::vector<typename Tags::type>...> m_data{};
 };
+}  // namespace neuron::container
