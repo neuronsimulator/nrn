@@ -1212,6 +1212,7 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
                 ix = d - ml._data[0];
             } else {  // is a voltage source
                 // TODO this is probably broken!
+                assert(false);
                 ix = nd->_d - nrn_threads[tid]._actual_d;
                 assert(nd->extnode == NULL);  // only if v
                 assert(ix >= 0 && ix < nrn_threads[tid].end);
