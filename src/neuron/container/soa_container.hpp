@@ -1,5 +1,5 @@
 #pragma once
-#include "neuron/container/generic_handle.hpp"
+#include "neuron/container/data_handle.hpp"
 
 #include <boost/algorithm/apply_permutation.hpp>
 #include <boost/mp11/algorithm.hpp>
@@ -31,6 +31,7 @@ void swap(ranges::common_tuple<Ts...>&& lhs, ranges::common_tuple<Ts...>&& rhs) 
 /** @brief Utility for generating SOA data structures.
  *  @tparam Tags Parameter pack of tag types that define the columns included in
  *               the container. Types may not be repeated.
+ *  @todo Put this into the neuron::container namespace somewhere.
  */
 template <typename RowIdentifier, typename... Tags>
 struct SOAContainer {
@@ -157,7 +158,7 @@ struct SOAContainer {
      */
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type>& get() {
-        static_assert(tag_index_t<Tag>::value < sizeof...(Tags));
+        static_assert(has_tag_v<Tag>);
         return std::get<tag_index_t<Tag>::value>(m_data);
     }
 
@@ -165,7 +166,7 @@ struct SOAContainer {
      */
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type> const& get() const {
-        static_assert(tag_index_t<Tag>::value < sizeof...(Tags));
+        static_assert(has_tag_v<Tag>);
         return std::get<tag_index_t<Tag>::value>(m_data);
     }
 
@@ -173,25 +174,25 @@ struct SOAContainer {
      *  @todo Check const-correctness.
      */
     template <typename T>
-    [[nodiscard]] neuron::container::generic_handle<T> find_generic_handle(T* ptr) {
-        neuron::container::generic_handle<T> handle{};
-        find_generic_handle(handle, m_indices, ptr) ||
-            (find_generic_handle(handle, get<Tags>(), ptr) || ...);
+    [[nodiscard]] neuron::container::data_handle<T> find_data_handle(T* ptr) {
+        neuron::container::data_handle<T> handle{};
+        find_data_handle(handle, m_indices, ptr) ||
+            (find_data_handle(handle, get<Tags>(), ptr) || ...);
         return handle;
     }
 
   private:
     template <typename T, typename U>
-    constexpr bool find_generic_handle(neuron::container::generic_handle<T>& handle,
-                                       std::vector<U>& container,
-                                       T* ptr) {
+    constexpr bool find_data_handle(neuron::container::data_handle<T>& handle,
+                                    std::vector<U>& container,
+                                    T* ptr) {
         assert(!handle);
         if constexpr (std::is_same_v<T, U>) {
             if (!container.empty() && ptr >= container.data() &&
                 ptr < std::next(container.data(), container.size())) {
                 auto const row = ptr - container.data();
                 assert(row < container.size());
-                handle = neuron::container::generic_handle<T>{identifier(row), container};
+                handle = neuron::container::data_handle<T>{identifier(row), container};
                 assert(handle.refers_to_a_modern_data_structure());
                 return true;
             } else {
