@@ -194,7 +194,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     writedbl(nt._actual_b, nt.end);
     writedbl(nt._actual_area, nt.end);
     assert(false);
-    //writedbl(nt._actual_v, nt.end);
+    // writedbl(nt._actual_v, nt.end);
     if (cg.ndiam) {
         writedbl(diamvec, nt.end);
         delete[] diamvec;
