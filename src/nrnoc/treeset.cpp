@@ -2216,8 +2216,8 @@ void nrn_recalc_node_ptrs(void) {
     FOR_THREADS(nt) {
         recalc_cnt_ += nt->end;
     }
-    //recalc_ptr_new_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
-    //recalc_ptr_old_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
+    // recalc_ptr_new_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
+    // recalc_ptr_old_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
 
 
     /* first update the pointers without messing with the old NODEV,NODEAREA */
@@ -2227,18 +2227,18 @@ void nrn_recalc_node_ptrs(void) {
     /* if the pointer points to what v_node[i]->_v points to. */
     ii = 0;
     FOR_THREADS(nt) {
-        //nt->_actual_v = (double*) ecalloc(nt->end, sizeof(double));
+        // nt->_actual_v = (double*) ecalloc(nt->end, sizeof(double));
         nt->_actual_area = (double*) ecalloc(nt->end, sizeof(double));
     }
     FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
         Node* nd = nt->_v_node[i];
         // old value into new array
-        //nt->_actual_v[i] = NODEV(nd);
+        // nt->_actual_v[i] = NODEV(nd);
         // address in the new _actual_v array we just allocated
-        //recalc_ptr_new_vp_[ii] = nt->_actual_v + i;
-        //recalc_ptr_old_vp_[ii] = &NODEV(nd);  // TODO: broken!
+        // recalc_ptr_new_vp_[ii] = nt->_actual_v + i;
+        // recalc_ptr_old_vp_[ii] = &NODEV(nd);  // TODO: broken!
         nt->_actual_area[i] = nd->_area;
-        //NODEV(nd) = (double) ii;  // ???
+        // NODEV(nd) = (double) ii;  // ???
         ++ii;
     }
     /* update POINT_PROCESS pointers to NODEAREA */

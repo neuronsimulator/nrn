@@ -28,6 +28,17 @@ void swap(ranges::common_tuple<Ts...>&& lhs, ranges::common_tuple<Ts...>&& rhs) 
     std::swap(lhs_std, rhs_std);
 }
 
+/** @brief ADL-visible swap overload for ranges::common_pair<T, U>.
+ *
+ *  This is needed instead of the ranges::common_tuple<Ts...> overload for zips
+ *  of width two.
+ */
+template <typename T, typename U>
+void swap(ranges::common_pair<T, U>&& lhs, ranges::common_pair<T, U>&& rhs) noexcept {
+    std::tuple<T, U> lhs_std{std::move(lhs)}, rhs_std(std::move(rhs));
+    std::swap(lhs_std, rhs_std);
+}
+
 /** @brief Utility for generating SOA data structures.
  *  @tparam Tags Parameter pack of tag types that define the columns included in
  *               the container. Types may not be repeated.
@@ -68,11 +79,32 @@ struct SOAContainer {
         permute_zip([](auto zip) { std::reverse(ranges::begin(zip), ranges::end(zip)); });
     }
 
+  private:
+    /** Check if the given range is a permutation of the first N integers.
+     */
+    template <typename Rng>
+    [[nodiscard]] bool is_permutation_vector(Rng const& range) {
+        std::vector<bool> seen(range.size(), false);
+        assert(seen.size() == range.size());
+        for (auto val: range) {
+            if (!(val >= 0 && val < seen.size())) {
+                return false;
+            }
+            if (seen[val]) {
+                return false;
+            }
+            seen[val] = true;
+        }
+        return true;
+    }
+
+  public:
     /** @brief Permute the SOA-format data using an arbitrary vector.
      */
     template <typename Range>
     void apply_permutation(Range& permutation) {
         assert(ranges::size(permutation) == size());
+        assert(is_permutation_vector(permutation));
         permute_zip(
             [&permutation](auto zip) { boost::algorithm::apply_permutation(zip, permutation); });
     }
@@ -82,6 +114,7 @@ struct SOAContainer {
     template <typename Range>
     void apply_reverse_permutation(Range& permutation) {
         assert(ranges::size(permutation) == size());
+        assert(is_permutation_vector(permutation));
         permute_zip([&permutation](auto zip) {
             boost::algorithm::apply_reverse_permutation(zip, permutation);
         });
