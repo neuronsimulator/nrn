@@ -31,6 +31,7 @@ void swap(ranges::common_tuple<Ts...>&& lhs, ranges::common_tuple<Ts...>&& rhs) 
 /** @brief Utility for generating SOA data structures.
  *  @tparam Tags Parameter pack of tag types that define the columns included in
  *               the container. Types may not be repeated.
+ *  @todo Put this into the neuron::container namespace somewhere.
  */
 template <typename RowIdentifier, typename... Tags>
 struct SOAContainer {
