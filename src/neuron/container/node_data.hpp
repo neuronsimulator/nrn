@@ -11,5 +11,5 @@ struct Voltage {
 
 /** @brief Underlying storage for all Nodes.
  */
-struct storage: SOAContainer<identifier, field::Voltage> {};
+struct storage: soa<identifier, field::Voltage> {};
 }  // namespace neuron::container::Node
