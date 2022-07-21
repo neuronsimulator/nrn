@@ -635,11 +635,10 @@ void nrn_node_destruct1(Node* nd) {
     prop_free(&(nd->prop));
 #if CACHEVEC
     // TODO probably broken
-    notify_freed_val_array(&NODEV(nd), 1);
+    // notify_freed_val_array(&NODEV(nd), 1);
     notify_freed_val_array(&NODEAREA(nd), 2);
 #else
-    // TODO probably broken
-    notify_freed_val_array(&NODEV(nd), 2);
+    // notify_freed_val_array(&NODEV(nd), 2);
 #endif
 #if EXTRACELLULAR
     if (nd->extnode) {
