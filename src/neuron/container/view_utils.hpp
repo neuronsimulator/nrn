@@ -1,6 +1,6 @@
 #pragma once
 namespace neuron::container {
-/** @brief Base class for SOAContainer views/handles.
+/** @brief Base class for neuron::container::soa<...> views/handles.
  *
  *  This provides some common methods that are not specific to a particular data
  *  structure (Node, ...). The typical hierarchy would be:
@@ -21,7 +21,7 @@ namespace neuron::container {
  */
 template <typename View>
 struct view_base {
-    /** @brief Return the (ElementHandle-derived) identifier of the pointed-to
+    /** @brief Return the (identifier_base-derived) identifier of the pointed-to
      *  object.
      *
      *  @todo In some cases (handle, owning_handle) we already know the
@@ -29,7 +29,9 @@ struct view_base {
      *  directly (or add an extra assertion).
      */
     auto id() const {
-        return derived().underlying_storage().identifier(derived().offset());
+        auto const tmp = derived().underlying_storage().identifier(derived().offset());
+        static_assert(std::is_base_of_v<identifier_base, decltype(tmp)>);
+        return tmp;
     }
 
   protected:
