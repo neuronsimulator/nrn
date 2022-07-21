@@ -297,7 +297,7 @@ void nrn_threads_create(int n, bool parallel) {
                 nt->_actual_d = 0;
                 nt->_actual_a = 0;
                 nt->_actual_b = 0;
-                nt->_actual_v = 0;
+                //nt->_actual_v = 0;
                 nt->_actual_area = 0;
                 nt->_v_parent_index = 0;
                 nt->_v_node = 0;
@@ -309,6 +309,7 @@ void nrn_threads_create(int n, bool parallel) {
                 nt->_ctime = 0.0;
                 nt->_vcv = 0;
                 nt->_nrn_fast_imem = 0;
+                nt->_node_data_offset = 0;
             }
         }
         v_structure_change = 1;
@@ -495,7 +496,7 @@ void nrn_threads_free() {
         nt->_nrn_fast_imem = NULL;
         /* following freed by nrn_recalc_node_ptrs */
         nrn_old_thread_save();
-        nt->_actual_v = 0;
+        //nt->_actual_v = 0;
         nt->_actual_area = 0;
         nt->end = 0;
         nt->ncell = 0;
