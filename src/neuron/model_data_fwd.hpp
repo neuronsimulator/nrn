@@ -4,10 +4,10 @@ struct Model;
 inline Model& model();
 namespace container {
 template <typename>
-struct generic_handle;
+struct data_handle;
 namespace utils {
 template <typename T>
-generic_handle<T> find_generic_handle(T*);
+data_handle<T> find_data_handle(T*);
 }
 }  // namespace container
 }  // namespace neuron

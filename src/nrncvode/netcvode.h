@@ -6,7 +6,7 @@
 #include "mymath.h"
 
 #include "cvodeobj.h"
-#include "neuron/container/generic_handle.hpp"
+#include "neuron/container/data_handle.hpp"
 #include "tqueue.h"
 
 #include <cmath>
@@ -16,7 +16,7 @@
 struct NrnThread;
 class PreSyn;
 class HocDataPaths;
-using PreSynTable = std::unordered_map<neuron::container::generic_handle<double>, PreSyn*>;
+using PreSynTable = std::unordered_map<neuron::container::data_handle<double>, PreSyn*>;
 class NetCon;
 class DiscreteEvent;
 class SelfEvent;
@@ -122,7 +122,7 @@ class NetCvode {
     void local_retreat(double, Cvode*);
     void retreat(double, Cvode*);
     Object** netconlist();
-    int owned_by_thread(double*);
+    int owned_by_thread(neuron::container::data_handle<double> const&);
     PlayRecord* playrec_uses(void*);
     void playrec_add(PlayRecord*);
     void playrec_remove(PlayRecord*);
