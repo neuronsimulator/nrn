@@ -4,7 +4,6 @@
 #include "cvodeobj.h"
 #include "membfunc.h"
 #include "multisplit.h"
-#include "nrn_ansi.h"
 #include "neuron.h"
 #include "nonvintblock.h"
 #include "nrndae_c.h"
@@ -693,28 +692,31 @@ Prop* prop_alloc(Prop** pp, int type, Node* nd) {
     /* returning *Prop because allocation may */
     /* cause other properties to be linked ahead */
     /* some models need the node (to find area) */
+    Prop* p;
+
     if (nd) {
         nrn_alloc_node_ = nd;
     }
     v_structure_change = 1;
     current_prop_list = pp;
-    auto* p = (Prop*) emalloc(sizeof(Prop));
+    p = (Prop*) emalloc(sizeof(Prop));
     p->_type = type;
     p->next = *pp;
     p->ob = nullptr;
     p->_alloc_seq = -1;
     *pp = p;
     assert(memb_func[type].alloc);
-    p->dparam = nullptr;
-    p->param = nullptr;
+    p->dparam = (Datum*) 0;
+    p->param = (double*) 0;
     p->param_size = 0;
     (memb_func[type].alloc)(p);
     return p;
 }
 
 Prop* prop_alloc_disallow(Prop** pp, short type, Node* nd) {
+    Prop* p;
     disallow_needmemb = 1;
-    auto* p = prop_alloc(pp, type, nd);
+    p = prop_alloc(pp, type, nd);
     disallow_needmemb = 0;
     return p;
 }
@@ -744,7 +746,7 @@ void single_prop_free(Prop* p) {
     }
     if (p->dparam) {
         if (p->_type == CABLESECTION) {
-            notify_freed_val_array(&(p->dparam[2].literal_value<double>()), 6);
+            notify_freed_val_array(&p->dparam[2].val, 6);
         }
         nrn_prop_datum_free(p->_type, p->dparam);
     }
@@ -776,7 +778,7 @@ void nrn_area_ri(Section* sec) {
     }
 #if DIAMLIST
     if (sec->npt3d) {
-        sec->prop->dparam[2] = sec->pt3d[sec->npt3d - 1].arc;
+        sec->prop->dparam[2].val = sec->pt3d[sec->npt3d - 1].arc;
     }
 #endif
     ra = nrn_ra(sec);
@@ -894,7 +896,7 @@ void connection_coef(void) /* setup a and b */
         nd = sec->pnode[0];
         area = NODEAREA(sec->parentnode);
         /* dparam[4] is rall_branch */
-        ClassicalNODEA(nd) = -1.e2 * sec->prop->dparam[4].get<double>() * NODERINV(nd) / area;
+        ClassicalNODEA(nd) = -1.e2 * sec->prop->dparam[4].val * NODERINV(nd) / area;
         for (j = 1; j < sec->nnode; j++) {
             nd = sec->pnode[j];
             area = NODEAREA(sec->pnode[j - 1]);
@@ -1101,7 +1103,7 @@ static void nrn_pt3dmodified(Section* sec, int i0) {
         t3 = sec->pt3d[i].z - p->z;
         sec->pt3d[i].arc = p->arc + sqrt(t1 * t1 + t2 * t2 + t3 * t3);
     }
-    sec->prop->dparam[2] = sec->pt3d[n - 1].arc;
+    sec->prop->dparam[2].val = sec->pt3d[n - 1].arc;
 }
 
 void nrn_pt3dclear(Section* sec, int req) {
@@ -1486,7 +1488,7 @@ void nrn_define_shape(void) {
         stor_pt3d(sec, x1, y1, z, nrn_diameter(sec->pnode[sec->nnode - 2]));
         /* don't let above change length due to round-off errors*/
         sec->pt3d[sec->npt3d - 1].arc = len;
-        sec->prop->dparam[2] = len;
+        sec->prop->dparam[2].val = len;
     }
     changed_ = nrn_shape_changed_;
 }
@@ -1636,7 +1638,7 @@ void v_setup_vectors(void) {
     nrn_threads_free();
 
     for (i = 0; i < n_memb_func; ++i)
-        if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
+        if (nrn_is_artificial_[i] && memb_func[i].initialize) {
             if (memb_list[i].nodecount) {
                 memb_list[i].nodecount = 0;
                 free(memb_list[i].nodelist);
@@ -1655,7 +1657,7 @@ void v_setup_vectors(void) {
 #if 1 /* see finitialize */
     /* and count the artificial cells */
     for (i = 0; i < n_memb_func; ++i)
-        if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
+        if (nrn_is_artificial_[i] && memb_func[i].initialize) {
             cTemplate* tmp = nrn_pnt_template_[i];
             memb_list[i].nodecount = tmp->count;
         }
@@ -1664,7 +1666,7 @@ void v_setup_vectors(void) {
     /* allocate it*/
 
     for (i = 0; i < n_memb_func; ++i)
-        if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
+        if (nrn_is_artificial_[i] && memb_func[i].initialize) {
             if (memb_list[i].nodecount) {
                 memb_list[i].nodelist = (Node**) emalloc(memb_list[i].nodecount * sizeof(Node*));
 #if CACHEVEC
@@ -1720,9 +1722,10 @@ void v_setup_vectors(void) {
 
     nrn_thread_memblist_setup();
 
+#if 1 /* see finitialize */
     /* fill in artificial cell info */
-    for (i = 0; i < n_memb_func; ++i) {
-        if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
+    for (i = 0; i < n_memb_func; ++i)
+        if (nrn_is_artificial_[i] && memb_func[i].initialize) {
             hoc_Item* q;
             hoc_List* list;
             int j, nti;
@@ -1731,11 +1734,16 @@ void v_setup_vectors(void) {
             nti = 0;
             j = 0;
             list = tmp->olist;
+#if 0
+		if (memb_func[i].vectorized == 0 && list->next != list) {
+hoc_execerror(memb_func[i].sym->name, "is not thread safe");
+		}
+#endif
             ITERATE(q, list) {
                 Object* obj = OBJ(q);
-                auto* pnt = static_cast<Point_process*>(obj->u.this_pointer);
+                Point_process* pnt = (Point_process*) obj->u.this_pointer;
                 p = pnt->prop;
-                memb_list[i].nodelist[j] = nullptr;
+                memb_list[i].nodelist[j] = (Node*) 0;
                 memb_list[i]._data[j] = p->param;
                 memb_list[i].pdata[j] = p->dparam;
                 /* for now, round robin all the artificial cells */
@@ -1746,16 +1754,17 @@ void v_setup_vectors(void) {
                  data. For this reason, for now, an otherwise thread-safe artificial
                  cell model is declared by nmodl as thread-unsafe.
                 */
+
                 if (memb_func[i].vectorized == 0) {
-                    pnt->_vnt = nrn_threads;
+                    pnt->_vnt = (void*) (nrn_threads);
                 } else {
-                    pnt->_vnt = nrn_threads + nti;
+                    pnt->_vnt = (void*) (nrn_threads + nti);
                     nti = (nti + 1) % nrn_nthread;
                 }
                 ++j;
             }
         }
-    }
+#endif
     nrn_recalc_node_ptrs();
     v_structure_change = 0;
     nrn_update_ps2nt();
@@ -1892,7 +1901,7 @@ void nrn_complain(double* pp) {
     fprintf(stderr, "Don't know the location of params at %p\n", pp);
 }
 
-void nrn_matrix_node_free() {
+void nrn_matrix_node_free(void) {
     NrnThread* nt;
     FOR_THREADS(nt) {
         if (nt->_actual_rhs) {
@@ -2127,10 +2136,10 @@ All PreSyn threshold detectors that watch v.
 static int n_recalc_ptr_callback;
 static void (*recalc_ptr_callback[20])();
 static int recalc_cnt_;
-static double **recalc_ptr_new_vp_, **recalc_ptr_old_vp_;
+// static double **recalc_ptr_new_vp_, **recalc_ptr_old_vp_;
 static int n_old_thread_;
-static int* old_actual_v_size_;
-static double** old_actual_v_;
+// static int* old_actual_v_size_;
+// static double** old_actual_v_;
 static double** old_actual_area_;
 
 /* defer freeing a few things which may have pointers to them
@@ -2138,17 +2147,17 @@ until ready to update those pointers */
 void nrn_old_thread_save(void) {
     int i;
     int n = nrn_nthread;
-    if (old_actual_v_) {
+    if (old_actual_area_) {
         return;
     } /* one is already outstanding */
     n_old_thread_ = n;
-    old_actual_v_size_ = (int*) ecalloc(n, sizeof(int));
-    old_actual_v_ = (double**) ecalloc(n, sizeof(double*));
+    // old_actual_v_size_ = (int*) ecalloc(n, sizeof(int));
+    // old_actual_v_ = (double**) ecalloc(n, sizeof(double*));
     old_actual_area_ = (double**) ecalloc(n, sizeof(double*));
     for (i = 0; i < n; ++i) {
         NrnThread* nt = nrn_threads + i;
-        old_actual_v_size_[i] = nt->end;
-        old_actual_v_[i] = nt->_actual_v;
+        // old_actual_v_size_[i] = nt->end;
+        // old_actual_v_[i] = nt->_actual_v;
         old_actual_area_[i] = nt->_actual_area;
     }
 }
@@ -2159,14 +2168,16 @@ double* nrn_recalc_ptr(double* old) {
     if (recalc_ptr_) {
         return (*recalc_ptr_)(old);
     }
-    if (!recalc_ptr_old_vp_) {
-        return old;
-    }
+    assert(false);
+    // if (!recalc_ptr_old_vp_) {
+    //     return old;
+    // }
     if (old && *old >= 0 && *old <= recalc_cnt_) {
         int k = (int) (*old);
-        if (old == recalc_ptr_old_vp_[k]) {
-            return recalc_ptr_new_vp_[k];
-        }
+        assert(false);
+        // if (old == recalc_ptr_old_vp_[k]) {
+        //     return recalc_ptr_new_vp_[k];
+        // }
     }
     return old;
 }
@@ -2205,8 +2216,8 @@ void nrn_recalc_node_ptrs(void) {
     FOR_THREADS(nt) {
         recalc_cnt_ += nt->end;
     }
-    recalc_ptr_new_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
-    recalc_ptr_old_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
+    //recalc_ptr_new_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
+    //recalc_ptr_old_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
 
 
     /* first update the pointers without messing with the old NODEV,NODEAREA */
@@ -2216,19 +2227,18 @@ void nrn_recalc_node_ptrs(void) {
     /* if the pointer points to what v_node[i]->_v points to. */
     ii = 0;
     FOR_THREADS(nt) {
-        nt->_actual_v = (double*) ecalloc(nt->end, sizeof(double));
+        //nt->_actual_v = (double*) ecalloc(nt->end, sizeof(double));
         nt->_actual_area = (double*) ecalloc(nt->end, sizeof(double));
     }
-    assert(false);
     FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
         Node* nd = nt->_v_node[i];
         // old value into new array
-        nt->_actual_v[i] = NODEV(nd);
+        //nt->_actual_v[i] = NODEV(nd);
         // address in the new _actual_v array we just allocated
-        recalc_ptr_new_vp_[ii] = nt->_actual_v + i;
-        recalc_ptr_old_vp_[ii] = &NODEV(nd);  // TODO: broken!
+        //recalc_ptr_new_vp_[ii] = nt->_actual_v + i;
+        //recalc_ptr_old_vp_[ii] = &NODEV(nd);  // TODO: broken!
         nt->_actual_area[i] = nd->_area;
-        NODEV(nd) = (double) ii;  // ???
+        //NODEV(nd) = (double) ii;  // ???
         ++ii;
     }
     /* update POINT_PROCESS pointers to NODEAREA */
@@ -2240,17 +2250,18 @@ void nrn_recalc_node_ptrs(void) {
         int dpend;
         for (p = nd->prop; p; p = p->next) {
             if (memb_func[p->_type].is_point && !nrn_is_artificial_[p->_type]) {
-                p->dparam[0] = nt->_actual_area + i;
+                p->dparam[0].pval = nt->_actual_area + i;
             }
             dpend = nrn_dparam_ptr_end_[p->_type];
             for (j = nrn_dparam_ptr_start_[p->_type]; j < dpend; ++j) {
-                if (double* pval = p->dparam[j].get<double*>();
+                if (double* pval = p->dparam[j].pval;
                     pval && *pval >= 0.0 && *pval <= recalc_cnt_) {
                     /* possible pointer to v */
-                    k = (int) (*pval);
-                    if (pval == recalc_ptr_old_vp_[k]) {
-                        p->dparam[j] = recalc_ptr_new_vp_[k];
-                    }
+                    assert(false);
+                    // k = (int) (*pval);
+                    // if (pval == recalc_ptr_old_vp_[k]) {
+                    //     p->dparam[j].pval = recalc_ptr_new_vp_[k];
+                    // }
                 }
             }
         }
@@ -2259,28 +2270,28 @@ void nrn_recalc_node_ptrs(void) {
     nrn_recalc_ptrs(nullptr);
 
     /* now that all the pointers are updated we update the NODEV */
-    ii = 0;
-    FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
-        Node* nd = nt->_v_node[i];
-        // nd->_v = recalc_ptr_new_vp_[ii]; TODO BROKEN!
-        ++ii;
-    }
-    free(recalc_ptr_old_vp_);
-    free(recalc_ptr_new_vp_);
-    recalc_ptr_old_vp_ = (double**) 0;
-    recalc_ptr_new_vp_ = (double**) 0;
+    // ii = 0;
+    // FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
+    //     Node* nd = nt->_v_node[i];
+    //     // nd->_v = recalc_ptr_new_vp_[ii]; TODO BROKEN!
+    //     ++ii;
+    // }
+    // free(recalc_ptr_old_vp_);
+    // free(recalc_ptr_new_vp_);
+    // recalc_ptr_old_vp_ = (double**) 0;
+    // recalc_ptr_new_vp_ = (double**) 0;
     /* and free the old thread arrays if new ones were allocated */
     for (i = 0; i < n_old_thread_; ++i) {
-        if (old_actual_v_[i])
-            hoc_free_val_array(old_actual_v_[i], old_actual_v_size_[i]);
+        // if (old_actual_v_[i])
+        //     hoc_free_val_array(old_actual_v_[i], old_actual_v_size_[i]);
         if (old_actual_area_[i])
             free(old_actual_area_[i]);
     }
-    free(old_actual_v_size_);
-    free(old_actual_v_);
+    // free(old_actual_v_size_);
+    // free(old_actual_v_);
     free(old_actual_area_);
-    old_actual_v_size_ = 0;
-    old_actual_v_ = 0;
+    // old_actual_v_size_ = 0;
+    // old_actual_v_ = 0;
     old_actual_area_ = 0;
     n_old_thread_ = 0;
 

@@ -157,7 +157,8 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
     }
     NrnThread& nt = nrn_threads[tid];
     if (type == voltage) {
-        data = nt._actual_v;
+        assert(false);
+        //data = nt._actual_v;
         n = size_t(nt.end);
     } else if (type == i_membrane_) {  // i_membrane_
         data = nt._nrn_fast_imem->_nrn_sav_rhs;
@@ -300,14 +301,16 @@ int nrnthread_dat2_2(int tid,
             a[i] = nt._actual_a[i];
             b[i] = nt._actual_b[i];
             area[i] = nt._actual_area[i];
-            v[i] = nt._actual_v[i];
+            assert(false);
+            //v[i] = nt._actual_v[i];
         }
     } else {
         v_parent_index = nt._v_parent_index;
         a = nt._actual_a;
         b = nt._actual_b;
         area = nt._actual_area;
-        v = nt._actual_v;
+        assert(false);
+        //v = nt._actual_v;
     }
     if (cg.ndiam) {
         if (!copy) {
