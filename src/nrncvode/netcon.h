@@ -7,7 +7,7 @@
 #endif
 
 #include "htlist.h"
-#include "neuron/container/generic_handle.hpp"
+#include "neuron/container/data_handle.hpp"
 #include "nrnmpi.h"
 #include "nrnneosm.h"
 
@@ -260,7 +260,7 @@ class STECondition: public WatchCondition {
 
 class PreSyn: public ConditionEvent {
   public:
-    PreSyn(neuron::container::generic_handle<double> src, Object* osrc, Section* ssrc = nil);
+    PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section* ssrc = nil);
     virtual ~PreSyn();
     virtual void send(double sendtime, NetCvode*, NrnThread*);
     virtual void deliver(double, NetCvode*, NrnThread*);
@@ -298,7 +298,7 @@ class PreSyn: public ConditionEvent {
     NetConPList dil_;
     double threshold_;
     double delay_;
-    neuron::container::generic_handle<double> thvar_{};
+    neuron::container::data_handle<double> thvar_{};
     Object* osrc_;
     Section* ssrc_;
     IvocVect* tvec_;
