@@ -5091,7 +5091,10 @@ PreSyn::PreSyn(neuron::container::generic_handle<double> src, Object* osrc, Sect
 #endif
 #if DISCRETE_EVENT_OBSERVER
     if (thvar_) {
-        nrn_notify_when_double_freed(thvar_, this);
+        // FIXME: this is taking the current address, which may be invalidated
+        // in future. Better for the underlying Observer to take a handle (that
+        // may become invalid later if the relevant owning_handle is deleted)?
+        // nrn_notify_when_double_freed(static_cast<double*>(thvar_), this);
     } else if (osrc_) {
         nrn_notify_when_void_freed(osrc_, this);
     }
@@ -5726,7 +5729,7 @@ void NetCvode::fixed_play_continuous(NrnThread* nt) {
 static int trajec_buffered(NrnThread& nt,
                            int bsize,
                            IvocVect* v,
-                           double* pd,
+                           neuron::container::generic_handle<double> pd,
                            int i_pr,
                            PlayRecord* pr,
                            void** vpr,
@@ -5745,14 +5748,16 @@ static int trajec_buffered(NrnThread& nt,
         v->resize(bsize + cur_size);
         varrays[i_trajec] = vector_vec(v) + cur_size;  // begin filling here
     } else {
-        pvars[i_trajec] = pd;
+        // TODO fixme
+        // pvars[i_trajec] = pd;
     }
     vpr[i_pr] = pr;
     if (pd == &nt._t) {
         types[i_trajec] = 0;
         indices[i_trajec] = 0;
     } else {
-        err = nrn_dblpntr2nrncore(pd, nt, types[i_trajec], indices[i_trajec]);
+        // TODO fixme
+        // err = nrn_dblpntr2nrncore(pd, nt, types[i_trajec], indices[i_trajec]);
         if (err) {
             Fprintf(stderr,
                     "Pointer %p of PlayRecord type %d ignored because not a Range Variable",
@@ -6273,14 +6278,14 @@ PlayRecord* NetCvode::playrec_uses(void* v) {
     return nil;
 }
 
-PlayRecord::PlayRecord(double* pd, Object* ppobj) {
+PlayRecord::PlayRecord(neuron::container::generic_handle<double> pd, Object* ppobj)
+    : pd_{std::move(pd)} {
     // printf("PlayRecord::PlayRecord %p\n", this);
-    pd_ = pd;
     cvode_ = nil;
     ith_ = 0;
-    if (pd_) {
-        nrn_notify_when_double_freed(pd_, this);
-    }
+    // if (pd_) {
+    //     nrn_notify_when_double_freed(pd_, this);
+    // }
     ppobj_ = ppobj;
     if (ppobj_) {
         ObjObservable::Attach(ppobj_, this);
@@ -6590,15 +6595,17 @@ void NetCvode::playrec_setup() {
     playrec_change_cnt_ = structure_change_cnt_;
 }
 
-bool Cvode::is_owner(double* pd) {  // is a pointer to range variable in this cell
+// is a pointer to range variable in this cell
+bool Cvode::is_owner(neuron::container::generic_handle<double> const& handle) {
     int in, it;
     for (it = 0; it < nrn_nthread; ++it) {
         CvodeThreadData& z = CTD(it);
         for (in = 0; in < z.v_node_count_; ++in) {
             Node* nd = z.v_node_[in];
-            if (&NODEV(nd) == pd) {
+            if (handle == nd->v_handle()) {
                 return true;
             }
+            auto* pd = static_cast<double const*>(handle);
             Prop* p;
             for (p = nd->prop; p; p = p->next) {
                 if (pd >= p->param && pd < (p->param + p->param_size)) {
@@ -6620,7 +6627,7 @@ bool Cvode::is_owner(double* pd) {  // is a pointer to range variable in this ce
     return false;
 }
 
-int NetCvode::owned_by_thread(double* pd) {
+int NetCvode::owned_by_thread(neuron::container::generic_handle<double> const& handle) {
     if (nrn_nthread == 1) {
         return 0;
     }
@@ -6631,9 +6638,10 @@ int NetCvode::owned_by_thread(double* pd) {
         int i3 = nt.end;
         for (in = i1; in < i3; ++in) {
             Node* nd = nt._v_node[in];
-            if (&NODEV(nd) == pd) {
+            if (handle == nd->v_handle()) {
                 return it;
             }
+            auto* pd = static_cast<double const*>(handle);
             Prop* p;
             for (p = nd->prop; p; p = p->next) {
                 if (pd >= p->param && pd < (p->param + p->param_size)) {
@@ -6833,27 +6841,29 @@ double NetCvode::maxstate_analyse(Symbol* sym, double* pamax) {
 void NetCvode::recalc_ptrs() {
 #if CACHEVEC
     // update PlayRecord pointers to v
-    int i, cnt = prl_->count();
-    for (i = 0; i < cnt; ++i) {
-        PlayRecord* pr = prl_->item(i);
-        if (pr->pd_) {
-            pr->update_ptr(nrn_recalc_ptr(pr->pd_));
-        }
-    }
+    // int i, cnt = prl_->count();
+    // for (i = 0; i < cnt; ++i) {
+    //     PlayRecord* pr = prl_->item(i);
+    //     if (pr->pd_) {
+    //         pr->update_ptr(nrn_recalc_ptr(pr->pd_));
+    //     }
+    // }
     // update PreSyn pointers to v
-    hoc_Item* q;
-    if (psl_)
-        ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
-            if (ps->thvar_) {
-                double* pd = nrn_recalc_ptr(ps->thvar_);
-                if (pd != ps->thvar_) {
-                    pst_->erase(ps->thvar_);
-                    (*pst_)[pd] = ps;
-                    ps->update_ptr(pd);
-                }
-            }
-        }
+    // assert(false);
+    // hoc_Item* q;
+    // if (psl_) {
+    //     ITERATE(q, psl_) {
+    //         PreSyn* ps = (PreSyn*) VOIDITM(q);
+    //         if (ps->thvar_) {
+    //             double* pd = nrn_recalc_ptr(ps->thvar_);
+    //             if (pd != ps->thvar_) {
+    //                 pst_->erase(ps->thvar_);
+    //                 (*pst_)[pd] = ps;
+    //                 ps->update_ptr(pd);
+    //             }
+    //         }
+    //     }
+    // }
 #endif
 }
 

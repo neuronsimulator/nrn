@@ -681,7 +681,9 @@ int nrnthread_dat2_vecplay_inst(int tid,
         VecPlayContinuous* vp = (VecPlayContinuous*) fp->item(i);
         if (vp->discon_indices_ == NULL) {
             if (vp->ith_ == nt.id) {
-                double* pd = vp->pd_;
+                // TODO probably wrong
+                auto* pd = static_cast<double*>(vp->pd_);
+                assert(false);
                 int found = 0;
                 vptype = vp->type();
                 for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
@@ -1134,7 +1136,9 @@ void core2nrn_PreSyn_flag(int tid, std::set<int> presyns_flag_true) {
             if (ps->thvar_) {
                 int type = 0;
                 int index_v = -1;
-                nrn_dblpntr2nrncore(ps->thvar_, *ps->nt_, type, index_v);
+                // TODO fixme!
+                assert(false);
+                nrn_dblpntr2nrncore(static_cast<double*>(ps->thvar_), *ps->nt_, type, index_v);
                 assert(type == voltage);
                 if (presyns_flag_true.erase(index_v)) {
                     ps->flag_ = true;
@@ -1162,7 +1166,9 @@ void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true) {
             if (ps->flag_ == true && ps->thvar_) {
                 int type = 0;
                 int index_v = -1;
-                nrn_dblpntr2nrncore(ps->thvar_, *ps->nt_, type, index_v);
+                // TODO fixme!
+                assert(false);
+                nrn_dblpntr2nrncore(static_cast<double*>(ps->thvar_), *ps->nt_, type, index_v);
                 assert(type == voltage);
                 presyns_flag_true.insert(index_v);
             }

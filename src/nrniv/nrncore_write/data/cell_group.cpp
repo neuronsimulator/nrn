@@ -135,11 +135,12 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
         if (pth) {
             hoc_Item* q;
             ITERATE(q, pth) {
-                PreSyn* ps = (PreSyn*) VOIDITM(q);
-                auto& pv = ps->thvar_;
+                auto* ps = static_cast<PreSyn*>(VOIDITM(q));
+                assert(ps->thvar_);
                 cgs[i].output_ps[npre] = ps;
                 cgs[i].output_gid[npre] = ps->output_index_;
-                cgs[i].output_vindex[npre] = pv - nt._actual_v;
+                // TODO: this isn't going to get the right answer anyway
+                cgs[i].output_vindex[npre] = static_cast<double*>(ps->thvar_) - nt._actual_v;
                 ++npre;
             }
         }
