@@ -1,4 +1,5 @@
 #pragma once
+#include "neuron/model_data_fwd.hpp"
 #include "neuron/container/node_data.hpp"
 
 namespace neuron {
@@ -13,6 +14,14 @@ struct Model {
      */
     container::Node::storage& node_data() {
         return m_node_data;
+    }
+
+    /** @brief T* -> generic_handle<T> if ptr is in model data.
+     */
+    template <typename T>
+    container::generic_handle<T> find_generic_handle(T* ptr) {
+        // For now it could only be in m_node_data.
+        return m_node_data.find_generic_handle(ptr);
     }
 
   private:
@@ -34,5 +43,13 @@ inline Model model_data{};
 inline Model& model() {
     return detail::model_data;
 }
+
+namespace container::utils {
+template <typename T>
+generic_handle<T> find_generic_handle(T* ptr) {
+    return model().find_generic_handle(ptr);
+}
+}  // namespace container::utils
+
 
 }  // namespace neuron
