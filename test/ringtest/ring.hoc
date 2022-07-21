@@ -141,7 +141,7 @@ proc spikeout() { local i, rank localobj outdat
 
 spikeout()
 
-//{pc.nrnbbcore_write()}
+{pc.nrnbbcore_write()}
 
 {pc.runworker()}
 {pc.done()}

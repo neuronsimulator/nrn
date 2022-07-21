@@ -120,10 +120,7 @@ the notify_free_val parameter in node_free in solve.cpp
 #define VEC_B(i)    (_nt->_actual_b[(i)])
 #define VEC_D(i)    (_nt->_actual_d[(i)])
 #define VEC_RHS(i)  (_nt->_actual_rhs[(i)])
-// #define VEC_V(i)    (_nt->_actual_v[(i)])
-#define VEC_V(i)                                                              \
-    neuron::model().node_data().get<neuron::container::Node::field::Voltage>( \
-        _nt->_node_data_offset + i)
+#define VEC_V(i)    (_nt->node_voltage_storage()[i])
 #define VEC_AREA(i) (_nt->_actual_area[(i)])
 #define NODEA(n)    (VEC_A((n)->v_node_index))
 #define NODEB(n)    (VEC_B((n)->v_node_index))
@@ -148,7 +145,6 @@ struct Node {
     double _a;    /* effect of node in parent equation */
     double _b;    /* effect of parent in node equation */
 #else             /* CACHEVEC */
-    // double* _v;     /* membrane potential */
     double _area;   /* area in um^2 but see treesetup.cpp */
     double _rinv;   /* conductance uS from node to parent */
     double _v_temp; /* vile necessity til actual_v allocated */
