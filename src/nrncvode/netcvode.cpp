@@ -5054,7 +5054,7 @@ void NetCvode::p_construct(int n) {
     }
 }
 
-PreSyn::PreSyn(neuron::container::generic_handle<double> src, Object* osrc, Section* ssrc)
+PreSyn::PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section* ssrc)
     : thvar_{std::move(src)} {
     //	printf("Presyn %x %s\n", (long)this, osrc?hoc_object_name(osrc):"nil");
     PreSynSave::invalid();
@@ -5730,7 +5730,7 @@ void NetCvode::fixed_play_continuous(NrnThread* nt) {
 static int trajec_buffered(NrnThread& nt,
                            int bsize,
                            IvocVect* v,
-                           neuron::container::generic_handle<double> pd,
+                           neuron::container::data_handle<double> pd,
                            int i_pr,
                            PlayRecord* pr,
                            void** vpr,
@@ -6279,7 +6279,7 @@ PlayRecord* NetCvode::playrec_uses(void* v) {
     return nil;
 }
 
-PlayRecord::PlayRecord(neuron::container::generic_handle<double> pd, Object* ppobj)
+PlayRecord::PlayRecord(neuron::container::data_handle<double> pd, Object* ppobj)
     : pd_{std::move(pd)} {
     // printf("PlayRecord::PlayRecord %p\n", this);
     cvode_ = nil;
@@ -6597,7 +6597,7 @@ void NetCvode::playrec_setup() {
 }
 
 // is a pointer to range variable in this cell
-bool Cvode::is_owner(neuron::container::generic_handle<double> const& handle) {
+bool Cvode::is_owner(neuron::container::data_handle<double> const& handle) {
     int in, it;
     for (it = 0; it < nrn_nthread; ++it) {
         CvodeThreadData& z = CTD(it);
@@ -6628,7 +6628,7 @@ bool Cvode::is_owner(neuron::container::generic_handle<double> const& handle) {
     return false;
 }
 
-int NetCvode::owned_by_thread(neuron::container::generic_handle<double> const& handle) {
+int NetCvode::owned_by_thread(neuron::container::data_handle<double> const& handle) {
     if (nrn_nthread == 1) {
         return 0;
     }
