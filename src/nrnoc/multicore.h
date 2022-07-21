@@ -72,6 +72,11 @@ struct NrnThread {
      */
     std::size_t _node_data_offset{};
 
+    double* node_voltage_storage() {
+        return neuron::model().node_data().get<neuron::container::Node::field::Voltage>().data() +
+               _node_data_offset;
+    }
+
     double* _actual_rhs;
     double* _actual_d;
     double* _actual_a;
