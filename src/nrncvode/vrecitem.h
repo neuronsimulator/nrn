@@ -50,7 +50,7 @@ class PlayRecordEvent: public DiscreteEvent {
 // common interface for Play and Record for all integration methods.
 class PlayRecord: public Observer {
   public:
-    PlayRecord(neuron::container::generic_handle<double> pd, Object* ppobj = nil);
+    PlayRecord(neuron::container::data_handle<double> pd, Object* ppobj = nil);
     virtual ~PlayRecord();
     virtual void install(Cvode* cv) {
         cvode_ = cv;
@@ -89,8 +89,8 @@ class PlayRecord: public Observer {
     static PlayRecordSave* savestate_read(FILE*);
 
     // pd_ can refer to a voltage, and those are stored in a modern container,
-    // so we need to use generic_handle
-    neuron::container::generic_handle<double> pd_;
+    // so we need to use data_handle
+    neuron::container::data_handle<double> pd_;
     Object* ppobj_;
     Cvode* cvode_;
     int ith_;  // The thread index

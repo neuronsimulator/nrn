@@ -10,7 +10,7 @@ namespace neuron::container {
  *
  *  Without this type one can already hold a Node::handle `foo` and call
  *  something like `foo.v()` to get that Node's voltage in a way that is stable
- *  against permutations of the underlying data. The generic_handle concept is
+ *  against permutations of the underlying data. The data_handle concept is
  *  intended to be used if we want to erase the detail that the quantity is a
  *  voltage, or that it belongs to a Node, and simply treat it as a
  *  floating-point value that we may want to dereference later -- essentially a
@@ -29,16 +29,14 @@ namespace neuron::container {
  *  underlying storage is always std::vector<T> (or a custom allocator that is
  *  always the same type in neuron::container::*). Note that storing T* or
  *  span<T> would not work if the underlying storage is reallocated.
- *
- *  @todo Maybe this should be called `data_handle`? Or just `handle`?
  */
 template <typename T>
-struct generic_handle {
-    generic_handle() = default;
+struct data_handle {
+    data_handle() = default;
 
-    /** @brief Construct a generic_handle from a plain pointer.
+    /** @brief Construct a data_handle from a plain pointer.
      */
-    generic_handle(T* raw_ptr) {
+    data_handle(T* raw_ptr) {
         // Null pointer -> null handle.
         if (!raw_ptr) {
             return;
@@ -46,7 +44,7 @@ struct generic_handle {
         // First see if we can find a neuron::container that contains the current
         // value of `raw_ptr` and promote it into a container/handle pair. This is
         // ugly and inefficient; you should prefer using the other constructor.
-        auto needle = utils::find_generic_handle(raw_ptr);
+        auto needle = utils::find_data_handle(raw_ptr);
         if (needle) {
             *this = std::move(needle);
         } else {
@@ -61,7 +59,7 @@ struct generic_handle {
         return !m_raw_ptr;
     }
 
-    generic_handle(ElementHandle offset, std::vector<T>& container)
+    data_handle(ElementHandle offset, std::vector<T>& container)
         : m_offset{std::move(offset)}
         , m_container{&container} {}
 
@@ -121,17 +119,17 @@ struct generic_handle {
         }
     }
 
-    friend bool operator==(generic_handle const& lhs, generic_handle const& rhs) {
+    friend bool operator==(data_handle const& lhs, data_handle const& rhs) {
         return lhs.m_offset == rhs.m_offset && lhs.m_container == rhs.m_container &&
                lhs.m_raw_ptr == rhs.m_raw_ptr;
     }
 
-    friend bool operator!=(generic_handle const& lhs, generic_handle const& rhs) {
+    friend bool operator!=(data_handle const& lhs, data_handle const& rhs) {
         return !(lhs == rhs);
     }
 
   private:
-    friend struct std::hash<generic_handle>;
+    friend struct std::hash<data_handle>;
     ElementHandle m_offset{};
     // This should be std::reference_wrapper and never null, only use a plain
     // pointer because of the compatibility mode that wraps a raw pointer.
@@ -142,10 +140,10 @@ struct generic_handle {
 
 }  // namespace neuron::container
 
-// Enable generic_handle<T> as a key type in std::unordered_map
+// Enable data_handle<T> as a key type in std::unordered_map
 template <typename T>
-struct std::hash<neuron::container::generic_handle<T>> {
-    std::size_t operator()(neuron::container::generic_handle<T> const& s) const noexcept {
+struct std::hash<neuron::container::data_handle<T>> {
+    std::size_t operator()(neuron::container::data_handle<T> const& s) const noexcept {
         static_assert(sizeof(std::size_t) == sizeof(T const*));
         if (s.m_raw_ptr) {
             return reinterpret_cast<std::size_t>(s.m_raw_ptr);
