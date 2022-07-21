@@ -37,9 +37,19 @@ struct interface: view_base<View> {
     data_handle<field::Voltage::type> v_handle() {
         return {this->id(), this->template get_container<field::Voltage>()};
     }
+    /** @brief Return a reference to the underlying voltage storage.
+     *  @todo Deprecate and remove this? Taking/storing the address of the
+     *  return value is unsafe. If you really want that address, you can get it
+     *  by explicitly casting the handle from v_handle() to a pointer. The main
+     *  advantage of v_ref() is it allows `NODEV(node) = 42.0` to work as an
+     *  interim measure.
+     */
     field::Voltage::type& v_ref() {
         return this->template get<field::Voltage>();
     }
+    /** @brief Return a const reference to the underlying voltage storage.
+     *  @todo See note for the non-const version.
+     */
     field::Voltage::type const& v_ref() const {
         return this->template get<field::Voltage>();
     }
@@ -61,7 +71,7 @@ struct view: interface<view> {
     view(storage& node_data, identifier const& id)
         : m_row{id.current_row()}
         , m_node_data{node_data} {
-        assert(m_row != invalid_row);
+        assert(m_row != detail::invalid_row);
     }
 
   private:
@@ -141,7 +151,7 @@ struct owning_handle: interface<owning_handle> {
   private:
     friend struct view;
     friend struct view_base<owning_handle>;
-    OwningElementHandle<storage, identifier> m_node_data_offset;
+    owning_identifier_base<storage, identifier> m_node_data_offset;
     // Interface for neuron::container::view_base
     storage& underlying_storage() const {
         return m_node_data_offset.data_container();

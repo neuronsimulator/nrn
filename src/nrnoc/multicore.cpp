@@ -820,6 +820,7 @@ void reorder_secorder() {
         global_node_data_offset += inode;
     }
     neuron::model().node_data().apply_permutation(global_node_data_permutation);
+    neuron::model().node_data().mark_as_sorted();
     assert(order == section_count);
     /*assert(inode == v_node_count);*/
     /* not missing any */
