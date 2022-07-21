@@ -53,7 +53,7 @@ typedef struct _nrn_Fast_Imem {
  *
  * NrnThread represent collection of cells or part of a cell computed
  * by single thread within NEURON process.
- * 
+ *
  * @warning The constructor/destructor of this struct are not called.
  */
 struct NrnThread {
@@ -76,7 +76,7 @@ struct NrnThread {
     double* _actual_d;
     double* _actual_a;
     double* _actual_b;
-    //double* _actual_v;
+    // double* _actual_v;
     double* _actual_area;
     int* _v_parent_index;
     Node** _v_node;
