@@ -122,7 +122,9 @@ the notify_free_val parameter in node_free in solve.cpp
 #define VEC_D(i)    (_nt->_actual_d[(i)])
 #define VEC_RHS(i)  (_nt->_actual_rhs[(i)])
 // #define VEC_V(i)    (_nt->_actual_v[(i)])
-#define VEC_V(i)    neuron::model().node_data().get<neuron::container::Node::field::Voltage>(_nt->_node_data_offset + i)
+#define VEC_V(i)                                                              \
+    neuron::model().node_data().get<neuron::container::Node::field::Voltage>( \
+        _nt->_node_data_offset + i)
 #define VEC_AREA(i) (_nt->_actual_area[(i)])
 #define NODEA(n)    (VEC_A((n)->v_node_index))
 #define NODEB(n)    (VEC_B((n)->v_node_index))

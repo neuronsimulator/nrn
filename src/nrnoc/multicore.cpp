@@ -296,7 +296,7 @@ void nrn_threads_create(int n, bool parallel) {
                 nt->_actual_d = 0;
                 nt->_actual_a = 0;
                 nt->_actual_b = 0;
-                //nt->_actual_v = 0;
+                // nt->_actual_v = 0;
                 nt->_actual_area = 0;
                 nt->_v_parent_index = 0;
                 nt->_v_node = 0;
@@ -495,7 +495,7 @@ void nrn_threads_free() {
         nt->_nrn_fast_imem = NULL;
         /* following freed by nrn_recalc_node_ptrs */
         nrn_old_thread_save();
-        //nt->_actual_v = 0;
+        // nt->_actual_v = 0;
         nt->_actual_area = 0;
         nt->end = 0;
         nt->ncell = 0;
@@ -708,6 +708,7 @@ void reorder_secorder() {
         sec->order = -1;
     }
     order = 0;
+    std::size_t global_node_data_size_check{};
     FOR_THREADS(_nt) {
         /* roots of this thread */
         sl = _nt->roots;
@@ -747,6 +748,7 @@ void reorder_secorder() {
         CACHELINE_CALLOC(_nt->_v_node, Node*, inode);
         CACHELINE_CALLOC(_nt->_v_parent, Node*, inode);
         CACHELINE_CALLOC(_nt->_v_parent_index, int, inode);
+        global_node_data_size_check += inode;
     }
     /* do it again and fill _v_node and _v_parent */
     /* index each cell section in relative order. Do offset later */
@@ -756,6 +758,10 @@ void reorder_secorder() {
         sec->order = -1;
     }
     order = 0;
+    std::size_t const global_node_data_size{neuron::model().node_data().size()};
+    assert(global_node_data_size_check == global_node_data_size);
+    std::size_t global_node_data_offset{};
+    std::vector<std::size_t> global_node_data_permutation(global_node_data_size);
     FOR_THREADS(_nt) {
         /* roots of this thread */
         sl = _nt->roots;
@@ -769,8 +775,13 @@ void reorder_secorder() {
             nd = sec->parentnode;
             nd->_nt = _nt;
             _nt->_v_node[inode] = nd;
-            _nt->_v_parent[inode] = (Node*) 0;
+            _nt->_v_parent[inode] = nullptr;  // because this is a root node
             _nt->_v_node[inode]->v_node_index = inode;
+            auto const current_node_row = nd->_node_handle.id().current_row();
+            auto const new_node_row = global_node_data_offset + inode;
+            assert(current_node_row < global_node_data_size);
+            assert(new_node_row < global_node_data_size);
+            global_node_data_permutation[new_node_row] = current_node_row;
             inode += 1;
         }
         /* all children of what is already in secorder */
@@ -788,6 +799,11 @@ void reorder_secorder() {
                     _nt->_v_parent[inode] = sec->parentnode;
                 }
                 _nt->_v_node[inode]->v_node_index = inode;
+                auto const current_node_row = nd->_node_handle.id().current_row();
+                auto const new_node_row = global_node_data_offset + inode;
+                assert(current_node_row < global_node_data_size);
+                assert(new_node_row < global_node_data_size);
+                global_node_data_permutation[new_node_row] = current_node_row;
                 inode += 1;
             }
             for (ch = sec->child; ch; ch = ch->sibling) {
@@ -798,7 +814,12 @@ void reorder_secorder() {
             }
         }
         _nt->end = inode;
+        // What offset in the global structure do the values for this thread
+        // start at
+        _nt->_node_data_offset = global_node_data_offset;
+        global_node_data_offset += inode;
     }
+    neuron::model().node_data().apply_permutation(global_node_data_permutation);
     assert(order == section_count);
     /*assert(inode == v_node_count);*/
     /* not missing any */
