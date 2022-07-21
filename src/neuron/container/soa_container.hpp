@@ -1,4 +1,6 @@
 #pragma once
+#include "neuron/container/generic_handle.hpp"
+
 #include <boost/algorithm/apply_permutation.hpp>
 #include <boost/mp11/algorithm.hpp>
 #include <boost/mp11/set.hpp>
@@ -143,25 +145,63 @@ struct SOAContainer {
         return get<Tag>().at(offset);
     }
 
+  private:
+    template <typename Tag>
+    using tag_index_t = boost::mp11::mp_find<boost::mp11::mp_list<Tags...>, Tag>;
+
+  public:
+    template <typename Tag>
+    static constexpr bool has_tag_v = (tag_index_t<Tag>::value < sizeof...(Tags));
+
     /** @brief Get the column container named by Tag.
      */
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type>& get() {
-        using tag_index_t = boost::mp11::mp_find<boost::mp11::mp_list<Tags...>, Tag>;
-        static_assert(tag_index_t::value < sizeof...(Tags));
-        return std::get<tag_index_t::value>(m_data);
+        static_assert(tag_index_t<Tag>::value < sizeof...(Tags));
+        return std::get<tag_index_t<Tag>::value>(m_data);
     }
 
     /** @brief Get the column container named by Tag.
      */
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type> const& get() const {
-        using tag_index_t = boost::mp11::mp_find<boost::mp11::mp_list<Tags...>, Tag>;
-        static_assert(tag_index_t::value < sizeof...(Tags));
-        return std::get<tag_index_t::value>(m_data);
+        static_assert(tag_index_t<Tag>::value < sizeof...(Tags));
+        return std::get<tag_index_t<Tag>::value>(m_data);
+    }
+
+    /** @brief Return a permutation-stable handle if ptr is inside us.
+     *  @todo Check const-correctness.
+     */
+    template <typename T>
+    [[nodiscard]] neuron::container::generic_handle<T> find_generic_handle(T* ptr) {
+        neuron::container::generic_handle<T> handle{};
+        find_generic_handle(handle, m_indices, ptr) ||
+            (find_generic_handle(handle, get<Tags>(), ptr) || ...);
+        return handle;
     }
 
   private:
+    template <typename T, typename U>
+    constexpr bool find_generic_handle(neuron::container::generic_handle<T>& handle,
+                                       std::vector<U>& container,
+                                       T* ptr) {
+        assert(!handle);
+        if constexpr (std::is_same_v<T, U>) {
+            if (!container.empty() && ptr >= container.data() &&
+                ptr < std::next(container.data(), container.size())) {
+                auto const row = ptr - container.data();
+                assert(row < container.size());
+                handle = neuron::container::generic_handle<T>{identifier(row), container};
+                assert(handle.refers_to_a_modern_data_structure());
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
     /** @brief Apply some transformation to all of the data columns at once.
      */
     template <typename Permutation>
