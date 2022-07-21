@@ -825,7 +825,9 @@ static void steer_val(void* v) {
         if (d->src_->thvar_) {
             // Danger! This is returning the current address of the variable
             // referred to by thvar_, but this may be invalidated by future
-            // permutations and modifications of the model.
+            // permutations and modifications of the model -- even allocating a
+            // new Node object might invalidate it.
+            assert(false);
             hoc_pushpx(static_cast<double*>(d->src_->thvar_));
         } else {
             dummy = 0.;
@@ -5751,6 +5753,7 @@ static int trajec_buffered(NrnThread& nt,
     } else {
         // TODO fixme
         // pvars[i_trajec] = pd;
+        assert(false);
     }
     vpr[i_pr] = pr;
     if (pd == &nt._t) {
@@ -5758,7 +5761,9 @@ static int trajec_buffered(NrnThread& nt,
         indices[i_trajec] = 0;
     } else {
         // TODO fixme
-        // err = nrn_dblpntr2nrncore(pd, nt, types[i_trajec], indices[i_trajec]);
+        // err = nrn_dblpntr2nrncore(pd, nt, types[i_trajec],
+        // indices[i_trajec]);
+        assert(false);
         if (err) {
             Fprintf(stderr,
                     "Pointer %p of PlayRecord type %d ignored because not a Range Variable",

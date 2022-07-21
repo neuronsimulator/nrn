@@ -104,6 +104,7 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
            nt._actual_v,
            nt._actual_v + nt.end);
     int inode = -1;
+    assert(false);
     // if (ps.thvar_ < nt._actual_v || ps.thvar_ >= (nt._actual_v + nt.end)) {
     //     assert(false);
     // if (ps.ssrc_) { /* not cache efficient, search the nodes in this section */
