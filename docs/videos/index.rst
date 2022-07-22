@@ -12,4 +12,4 @@ with NEURON videos.
    neuron-course-2021
    netpyne-course-2021
    cns-tutorial-2021
-   cns-tutorial-2022
+   incfcns-tutorial-2022
