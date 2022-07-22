@@ -813,9 +813,20 @@ install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
 
 # find headers to install
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
-# TODO support structured headers via HEADER_FILES_TO_INSTALL file(COPY
-# src/neuron/container/soa_container.hpp src/neuron/container/soa_identifier.hpp DESTINATION
-# ${PROJECT_BINARY_DIR}/include/neuron/container)
+# TODO support structured headers via HEADER_FILES_TO_INSTALL
+foreach(
+  header
+  neuron/model_data.hpp
+  neuron/model_data_fwd.hpp
+  neuron/container/data_handle.hpp
+  neuron/container/node.hpp
+  neuron/container/node_data.hpp
+  neuron/container/node_identifier.hpp
+  neuron/container/soa_container.hpp
+  neuron/container/soa_identifier.hpp
+  neuron/container/view_utils.hpp)
+  configure_file("src/${header}" "${PROJECT_BINARY_DIR}/include/${header}" COPYONLY)
+endforeach()
 file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/nrnoc/nrnsemanticversion.h
      DESTINATION ${PROJECT_BINARY_DIR}/include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
