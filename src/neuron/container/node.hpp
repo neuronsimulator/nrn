@@ -37,9 +37,19 @@ struct interface: view_base<View> {
     data_handle<field::Voltage::type> v_handle() {
         return {this->id(), this->template get_container<field::Voltage>()};
     }
+    /** @brief Return a reference to the underlying voltage storage.
+     *  @todo Deprecate and remove this? Taking/storing the address of the
+     *  return value is unsafe. If you really want that address, you can get it
+     *  by explicitly casting the handle from v_handle() to a pointer. The main
+     *  advantage of v_ref() is it allows `NODEV(node) = 42.0` to work as an
+     *  interim measure.
+     */
     field::Voltage::type& v_ref() {
         return this->template get<field::Voltage>();
     }
+    /** @brief Return a const reference to the underlying voltage storage.
+     *  @todo See note for the non-const version.
+     */
     field::Voltage::type const& v_ref() const {
         return this->template get<field::Voltage>();
     }

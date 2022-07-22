@@ -376,7 +376,7 @@ void nrn_partrans_update_ptrs() {
         if (it != non_vsrc_update_info_.end()) {
             poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
         } else if (!nd->extnode) {
-            poutsrc_[i] = nd->_node_handle.v_handle();
+            poutsrc_[i] = nd->v_handle();
         } else {
             // pointers into SourceViBuf updated when
             // latter is (re-)created
@@ -591,7 +591,7 @@ static void mk_ttd() {
                 nrn_assert(search != ndvi2pd->end());
                 ttd.sv[j] = search->second;
             } else {
-                ttd.sv[j] = nd->_node_handle.v_handle();
+                ttd.sv[j] = nd->v_handle();
             }
         } else {
             auto search = sid2insrc_.find(sid);
@@ -878,7 +878,7 @@ void nrnmpi_setup_transfer() {
             if (it != non_vsrc_update_info_.end()) {
                 poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
             } else if (!nd->extnode) {
-                poutsrc_[i] = nd->_node_handle.v_handle();
+                poutsrc_[i] = nd->v_handle();
             } else {
                 // the v+vext case can only be done after mk_svib()
             }

@@ -4,6 +4,8 @@
 
 namespace neuron::container::Node {
 namespace field {
+/** @brief Membrane potential.
+ */
 struct Voltage {
     using type = double;
 };
