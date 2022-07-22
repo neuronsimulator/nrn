@@ -67,9 +67,35 @@ struct soa {
         return m_indices.size();
     }
 
+    /** @brief Mark that the underlying vectors are now "sorted".
+     *
+     *  Is is user-defined precisely what "sorted" means, but the soa<...> class
+     *  will reset this flag after any operation that invalidates pointers to
+     *  the storage vectors, such as applying a permutation, adding a new
+     *  element, or deleting an element.
+     *
+     *  @todo Clarify whether the flag means that pointers *might* have been
+     *  invalidated, or that they actually were.
+     *  @todo Consider the difference between invalidating pointers and
+     *  invalidating indices, and whether it's important to us.
+     */
+    void mark_as_sorted() {
+        m_sorted = true;
+    }
+
+    /** @brief Query if the underlying vectors are still "sorted".
+     *
+     *  This returns true after a call to mark_as_sorted() if nothing has
+     *  modified the storage vector layout.
+     */
+    [[nodiscard]] bool is_sorted() const {
+        return m_sorted;
+    }
+
     /** @brief Resize the container.
      */
     void resize(std::size_t size) {
+        m_sorted = false;  // resize might trigger reallocation
         m_indices.resize(size);
         (get<Tags>().resize(size), ...);
     }
@@ -82,6 +108,8 @@ struct soa {
 
   private:
     /** Check if the given range is a permutation of the first N integers.
+     *  @todo Assert that the given range has an integral value type and that
+     *  there is no overflow?
      */
     template <typename Rng>
     [[nodiscard]] bool is_permutation_vector(Rng const& range) {
@@ -136,6 +164,9 @@ struct soa {
     /** @brief Remove the i-th row from the container.
      */
     void erase(std::size_t i) {
+        // pointers to the last element will be invalidated, as it gets swapped
+        // into position `i`
+        m_sorted = false;
         auto const old_size = size();
         assert(i < old_size);
         if (i != old_size - 1) {
@@ -154,6 +185,8 @@ struct soa {
      *  @todo Return non-owning view/reference to the newly added entry?
      */
     void emplace_back(RowIdentifier index) {
+        // this can trigger reallocation
+        m_sorted = false;
         index.set_current_row(size());
         m_indices.push_back(std::move(index));
         // Append a new element to all the data columns too.
@@ -241,6 +274,11 @@ struct soa {
      */
     template <typename Permutation>
     void permute_zip(Permutation permutation) {
+        // uncontroversial that applying a permutation changes the underlying
+        // storage organisation and potentially invalidates pointers. slightly
+        // more controversial: should explicitly permuting the data implicitly
+        // mark the container as "sorted"?
+        m_sorted = false;
         auto zip = get_zip();
         permutation(zip);
         std::size_t const my_size{size()};
@@ -254,6 +292,10 @@ struct soa {
     [[nodiscard]] auto get_zip() {
         return ranges::views::zip(m_indices, get<Tags>()...);
     }
+
+    /** @brief Flag for mark_as_sorted and is_sorted().
+     */
+    bool m_sorted{false};
 
     /** @brief Pointers to identifiers that record the current physical row.
      */
