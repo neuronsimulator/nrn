@@ -28,7 +28,7 @@ Diagnostics:
 
         .. note::
 
-            In Python code, use Python's ``abs`` function, which works on both numbers and numpy arrays:
+            In Python code, use Python's ``abs`` function, which works on both numbers and numpy arrays, as well as Vectors (Vectors do not print their contents) :
 
             .. code-block::
                 python
@@ -38,8 +38,9 @@ Diagnostics:
                 >>> abs(-3 + 4j)
                 5.0
                 >>> v = h.Vector([1, 6, -2, -65])
-                >>> abs(v.as_numpy())
-                array([  1.,   6.,   2.,  65.])
+                >>> abs(v).printf()
+                1       6       2       65
+                4
 
 
 
