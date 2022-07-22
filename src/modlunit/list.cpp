@@ -157,12 +157,6 @@ void remove(Item* item) {
 static long mallocsize = 0;
 static long mallocpieces = 0;
 
-#if LINT
-double* emalloc(unsigned n) { /* check return from malloc */
-    assert(0);
-    return (double*) 0;
-}
-#else
 char* emalloc(unsigned n) { /* check return from malloc */
     char* p;
 
@@ -175,7 +169,6 @@ char* emalloc(unsigned n) { /* check return from malloc */
     mallocpieces++;
     return p;
 }
-#endif /*LINT*/
 
 void memory_usage() {
     Fprintf(stderr, "malloc'ed a total of %ld bytes in %ld pieces\n", mallocsize, mallocpieces);

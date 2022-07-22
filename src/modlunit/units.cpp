@@ -1,6 +1,7 @@
 #include <../../nmodlconf.h>
 /* /local/src/master/nrn/src/modlunit/units.c,v 1.5 1997/11/24 16:19:13 hines Exp */
 /* Mostly from Berkeley */
+#include "nrnassrt.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -118,10 +119,23 @@ static struct dynam {
 static struct prefix {
     double factor;
     char* pname;
-} prefix[] = {1e-18,   "atto",  1e-15,   "femto", 1e-12,   "pico", 1e-9,   "nano", 1e-6,
-              "micro", 1e-3,    "milli", 1e-2,    "centi", 1e-1,   "deci", 1e1,    "deka",
-              1e2,     "hecta", 1e2,     "hecto", 1e3,     "kilo", 1e6,    "mega", 1e6,
-              "meg",   1e9,     "giga",  1e12,    "tera",  0.0,    0};
+} prefix[] = {{1e-18, "atto"},
+              {1e-15, "femto"},
+              {1e-12, "pico"},
+              {1e-9, "nano"},
+              {1e-6, "micro"},
+              {1e-3, "milli"},
+              {1e-2, "centi"},
+              {1e-1, "deci"},
+              {1e1, "deka"},
+              {1e2, "hecta"},
+              {1e2, "hecto"},
+              {1e3, "kilo"},
+              {1e6, "mega"},
+              {1e6, "meg"},
+              {1e9, "giga"},
+              {1e12, "tera"},
+              {0.0, nullptr}};
 static FILE* inpfile;
 static int fperrc;
 static int peekc;
@@ -935,7 +949,7 @@ l0:
         y_or_n = get();
         assert(y_or_n == 'Y' || y_or_n == 'N');
         legacy = (y_or_n == 'Y') ? 1 : 0;
-        assert(get() == '@');
+        nrn_assert(get() == '@');
         if (dynam[legacy].table != table) { /* skip the line */
             while (c != '\n' && c != 0) {
                 c = get();
@@ -1176,14 +1190,12 @@ void nrnunit_dynamic_str(char* buf, const char* name, char* u1, char* u2) {
     sprintf(buf,
             "\n"
             "#define %s _nrnunit_%s[_nrnunit_use_legacy_]\n"
-            /*since c++17/c99, %a instead of %.18g for exact hex representation of double*/
-            "static double _nrnunit_%s[2] = {%a, %g}; /* %.18g */\n",
+            "static double _nrnunit_%s[2] = {%a, %g};\n",
             name,
             name,
             name,
             modern,
-            legacy,
-            modern);
+            legacy);
 
 #else
 

@@ -14,7 +14,6 @@ static Symbol* smat_;
 extern int hoc_return_type_code;
 
 extern double hoc_scan(FILE*);
-extern "C" FILE* hoc_obj_file_arg(int i);
 extern Object** hoc_temp_objptr(Object*);
 
 #if 0
@@ -203,7 +202,7 @@ static Object** m_mulv(void* v) {
         vout = vector_arg(2);
     } else {
 #ifdef WIN32
-        vout = vector_new1(m->nrow());
+        vout = vector_new(m->nrow());
 #else
         vout = new Vect(m->nrow());
 #endif
@@ -332,7 +331,7 @@ static Object** m_symmeig(void* v) {
     out->resize(m->nrow(), m->ncol());
     Vect* vout;
 #ifdef WIN32
-    vout = vector_new1(m->nrow());
+    vout = vector_new(m->nrow());
     p = vector_temp_objvar(vout);
 #else
     vout = new Vect(m->nrow());
@@ -355,7 +354,7 @@ static Object** m_svd(void* vv) {
     Vect* d;
     int dsize = m->nrow() < m->ncol() ? m->nrow() : m->ncol();
 #ifdef WIN32
-    d = vector_new1(dsize);
+    d = vector_new(dsize);
     p = vector_temp_objvar(d);
 #else
     d = new Vect(dsize);
@@ -393,7 +392,7 @@ static Object** m_getrow(void* v) {
 #endif
     } else {
 #ifdef WIN32
-        vout = vector_new1(m->ncol());
+        vout = vector_new(m->ncol());
 #else
         vout = new Vect(m->ncol());
 #endif
@@ -419,7 +418,7 @@ static Object** m_getcol(void* v) {
 #endif
     } else {
 #ifdef WIN32
-        vout = vector_new1(m->nrow());
+        vout = vector_new(m->nrow());
 #else
         vout = new Vect(m->nrow());
 #endif
@@ -496,7 +495,7 @@ static Object** m_getdiag(void* v) {
 #endif
     } else {
 #ifdef WIN32
-        vout = vector_new1(m->nrow());
+        vout = vector_new(m->nrow());
 #else
         vout = new Vect(m->nrow());
 #endif
@@ -579,7 +578,7 @@ static Object** m_solv(void* v) {
     }
     if (!vout) {
 #ifdef WIN32
-        vout = vector_new1(m->nrow());
+        vout = vector_new(m->nrow());
 #else
         vout = new Vect(m->nrow());
 #endif
@@ -634,7 +633,7 @@ static Object** m_to_vector(void* v) {
         vout = vector_arg(1);
         vector_resize(vout, nrow * ncol);
     } else {
-        vout = vector_new1(nrow * ncol);
+        vout = vector_new(nrow * ncol);
     }
     k = 0;
     double* ve = vector_vec(vout);
@@ -664,67 +663,49 @@ static Object** m_from_vector(void* v) {
 
 static Member_func m_members[] = {
     // returns double scalar
-    "x",        m_nrow,  // will be changed below
-    "nrow",     m_nrow,     "ncol",        m_ncol,        "getval", m_getval, "setval", m_setval,
-    "sprowlen", m_sprowlen, "spgetrowval", m_spgetrowval, "det",    m_det,
+    {"x", m_nrow},  // will be changed below
+    {"nrow", m_nrow},
+    {"ncol", m_ncol},
+    {"getval", m_getval},
+    {"setval", m_setval},
+    {"sprowlen", m_sprowlen},
+    {"spgetrowval", m_spgetrowval},
+    {"det", m_det},
 
-    "printf",   m_printf,   "fprint",      m_fprint,      "scanf",  m_scanf,  0,        0};
+    {"printf", m_printf},
+    {"fprint", m_fprint},
+    {"scanf", m_scanf},
+    {0, 0}};
 
 static Member_ret_obj_func m_retobj_members[] = {
     // returns Vector
-    "mulv",
-    m_mulv,
-    "getrow",
-    m_getrow,
-    "getcol",
-    m_getcol,
-    "getdiag",
-    m_getdiag,
-    "solv",
-    m_solv,
-    "symmeig",
-    m_symmeig,
-    "svd",
-    m_svd,
+    {"mulv", m_mulv},
+    {"getrow", m_getrow},
+    {"getcol", m_getcol},
+    {"getdiag", m_getdiag},
+    {"solv", m_solv},
+    {"symmeig", m_symmeig},
+    {"svd", m_svd},
     // returns Matrix
-    "c",
-    m_c,
-    "add",
-    m_add,
-    "bcopy",
-    m_bcopy,
-    "resize",
-    m_resize,
-    "mulm",
-    m_mulm,
-    "muls",
-    m_muls,
-    "setrow",
-    m_setrow,
-    "setcol",
-    m_setcol,
-    "setdiag",
-    m_setdiag,
-    "zero",
-    m_zero,
-    "ident",
-    m_ident,
-    "exp",
-    m_exp,
-    "pow",
-    m_pow,
-    "inverse",
-    m_inverse,
-    "transpose",
-    m_transpose,
-    "set",
-    m_set,
-    "to_vector",
-    m_to_vector,
-    "from_vector",
-    m_from_vector,
-    0,
-    0};
+    {"c", m_c},
+    {"add", m_add},
+    {"bcopy", m_bcopy},
+    {"resize", m_resize},
+    {"mulm", m_mulm},
+    {"muls", m_muls},
+    {"setrow", m_setrow},
+    {"setcol", m_setcol},
+    {"setdiag", m_setdiag},
+    {"zero", m_zero},
+    {"ident", m_ident},
+    {"exp", m_exp},
+    {"pow", m_pow},
+    {"inverse", m_inverse},
+    {"transpose", m_transpose},
+    {"set", m_set},
+    {"to_vector", m_to_vector},
+    {"from_vector", m_from_vector},
+    {0, 0}};
 
 static void* m_cons(Object* o) {
     int i = 1, j = 1, storage_type = Matrix::MFULL;

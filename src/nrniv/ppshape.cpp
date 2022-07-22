@@ -26,11 +26,9 @@ static double pp_append(void* v) {
 }
 
 static Member_func pp_members[] = {
-    //	"view", pp_view,
-    "append",
-    pp_append,
-    0,
-    0};
+    //	{"view", pp_view},
+    {"append", pp_append},
+    {0, 0}};
 
 static void* pp_cons(Object* ho) {
     TRY_GUI_REDIRECT_OBJ("PPShape", NULL);

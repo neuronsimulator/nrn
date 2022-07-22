@@ -11,6 +11,7 @@
 #include "parse.hpp"
 #include "section.h"
 #include "membfunc.h"
+#include "multicore.h"
 #include "utils/profile/profiler_interface.h"
 #include <nrnmpi.h>
 #include <errno.h>
@@ -43,19 +44,7 @@ double nrnmpi_transfer_wait_;
 double nrnmpi_splitcell_wait_;
 #endif
 #if NRNMPI
-extern "C" {
-void nrnmpi_barrier();
-double nrnmpi_dbl_allreduce(double, int);
-void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
-void nrnmpi_dbl_allgather(double*, double*, int);
-void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
-void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
-double nrmpi_wtime();
-void nrnmpi_int_broadcast(int*, int, int);
-void nrnmpi_char_broadcast(char*, int, int);
-void nrnmpi_dbl_broadcast(double*, int, int);
-extern void nrnmpi_subworld_size(int n);
-}  // extern "C"
+#include "nrnmpidec.h"
 #else
 static void nrnmpi_int_broadcast(int*, int, int) {}
 static void nrnmpi_char_broadcast(char*, int, int) {}
@@ -63,9 +52,7 @@ static void nrnmpi_dbl_broadcast(double*, int, int) {}
 #endif
 extern double* nrn_mech_wtime_;
 extern int nrn_nthread;
-extern void nrn_threads_create(int, int);
 extern void nrn_thread_partition(int, Object*);
-extern void nrn_thread_stat();
 extern int nrn_allow_busywait(int);
 extern int nrn_how_many_processors();
 extern size_t nrncore_write();
@@ -915,11 +902,11 @@ static double broadcast(void*) {
 }
 
 static double nthrd(void*) {
-    int ip = 1;
+    bool ip{true};
     hoc_return_type_code = 1;  // integer
     if (ifarg(1)) {
         if (ifarg(2)) {
-            ip = int(chkarg(2, 0, 1));
+            ip = bool(chkarg(2, 0, 1));
         }
         nrn_threads_create(int(chkarg(1, 1, 1e5)), ip);
     }
@@ -947,7 +934,7 @@ static double partition(void*) {
 }
 
 static double thread_stat(void*) {
-    nrn_thread_stat();
+    // nrn_thread_stat was called here but didn't do anything
     return 0.0;
 }
 
@@ -1036,161 +1023,98 @@ static Object** gid_connect(void* v) {
     return bbs->gid_connect(int(chkarg(1, 0, MD)));
 }
 
-static Member_func members[] = {"submit",
-                                submit,
-                                "working",
-                                working,
-                                "retval",
-                                retval,
-                                "userid",
-                                userid,
-                                "pack",
-                                pack,
-                                "post",
-                                post,
-                                "unpack",
-                                unpack,
-                                "upkscalar",
-                                upkscalar,
-                                "take",
-                                take,
-                                "look",
-                                look,
-                                "look_take",
-                                look_take,
-                                "runworker",
-                                worker,
-                                "master_works_on_jobs",
-                                master_works,
-                                "done",
-                                done,
-                                "id",
-                                nrn_rank,
-                                "nhost",
-                                nhost,
-                                "id_world",
-                                rank_world,
-                                "nhost_world",
-                                nhost_world,
-                                "id_bbs",
-                                rank_bbs,
-                                "nhost_bbs",
-                                nhost_bbs,
-                                "subworlds",
-                                subworlds,
-                                "context",
-                                context,
+static Member_func members[] = {{"submit", submit},
+                                {"working", working},
+                                {"retval", retval},
+                                {"userid", userid},
+                                {"pack", pack},
+                                {"post", post},
+                                {"unpack", unpack},
+                                {"upkscalar", upkscalar},
+                                {"take", take},
+                                {"look", look},
+                                {"look_take", look_take},
+                                {"runworker", worker},
+                                {"master_works_on_jobs", master_works},
+                                {"done", done},
+                                {"id", nrn_rank},
+                                {"nhost", nhost},
+                                {"id_world", rank_world},
+                                {"nhost_world", nhost_world},
+                                {"id_bbs", rank_bbs},
+                                {"nhost_bbs", nhost_bbs},
+                                {"subworlds", subworlds},
+                                {"context", context},
 
-                                "time",
-                                pctime,
-                                "wait_time",
-                                wait_time,
-                                "step_time",
-                                step_time,
-                                "step_wait",
-                                step_wait,
-                                "send_time",
-                                send_time,
-                                "event_time",
-                                event_time,
-                                "integ_time",
-                                integ_time,
-                                "vtransfer_time",
-                                vtransfer_time,
-                                "mech_time",
-                                mech_time,
-                                "timeout",
-                                set_timeout,
-                                "mpiabort_on_error",
-                                set_mpiabort_on_error,
+                                {"time", pctime},
+                                {"wait_time", wait_time},
+                                {"step_time", step_time},
+                                {"step_wait", step_wait},
+                                {"send_time", send_time},
+                                {"event_time", event_time},
+                                {"integ_time", integ_time},
+                                {"vtransfer_time", vtransfer_time},
+                                {"mech_time", mech_time},
+                                {"timeout", set_timeout},
+                                {"mpiabort_on_error", set_mpiabort_on_error},
 
-                                "set_gid2node",
-                                set_gid2node,
-                                "gid_exists",
-                                gid_exists,
-                                "outputcell",
-                                outputcell,
-                                "cell",
-                                cell,
-                                "threshold",
-                                threshold,
-                                "spike_record",
-                                spike_record,
-                                "psolve",
-                                psolve,
-                                "set_maxstep",
-                                set_maxstep,
-                                "spike_statistics",
-                                spike_stat,
-                                "max_histogram",
-                                maxhist,
-                                "spike_compress",
-                                spcompress,
-                                "gid_clear",
-                                gid_clear,
-                                "prcellstate",
-                                prcellstate,
+                                {"set_gid2node", set_gid2node},
+                                {"gid_exists", gid_exists},
+                                {"outputcell", outputcell},
+                                {"cell", cell},
+                                {"threshold", threshold},
+                                {"spike_record", spike_record},
+                                {"psolve", psolve},
+                                {"set_maxstep", set_maxstep},
+                                {"spike_statistics", spike_stat},
+                                {"max_histogram", maxhist},
+                                {"spike_compress", spcompress},
+                                {"gid_clear", gid_clear},
+                                {"prcellstate", prcellstate},
 
-                                "source_var",
-                                source_var,
-                                "target_var",
-                                target_var,
-                                "setup_transfer",
-                                setup_transfer,
-                                "splitcell_connect",
-                                splitcell_connect,
-                                "multisplit",
-                                multisplit,
+                                {"source_var", source_var},
+                                {"target_var", target_var},
+                                {"setup_transfer", setup_transfer},
+                                {"splitcell_connect", splitcell_connect},
+                                {"multisplit", multisplit},
 
-                                "barrier",
-                                barrier,
-                                "allreduce",
-                                allreduce,
-                                "allgather",
-                                allgather,
-                                "alltoall",
-                                alltoall,
-                                "broadcast",
-                                broadcast,
+                                {"barrier", barrier},
+                                {"allreduce", allreduce},
+                                {"allgather", allgather},
+                                {"alltoall", alltoall},
+                                {"broadcast", broadcast},
 
-                                "nthread",
-                                nthrd,
-                                "partition",
-                                partition,
-                                "thread_stat",
-                                thread_stat,
-                                "thread_busywait",
-                                thread_busywait,
-                                "thread_how_many_proc",
-                                thread_how_many_proc,
-                                "sec_in_thread",
-                                sec_in_thread,
-                                "thread_ctime",
-                                thread_ctime,
-                                "dt",
-                                thread_dt,
-                                "t",
-                                nrn_thread_t,
+                                {"nthread", nthrd},
+                                {"partition", partition},
+                                {"thread_stat", thread_stat},
+                                {"thread_busywait", thread_busywait},
+                                {"thread_how_many_proc", thread_how_many_proc},
+                                {"sec_in_thread", sec_in_thread},
+                                {"thread_ctime", thread_ctime},
+                                {"dt", thread_dt},
+                                {"t", nrn_thread_t},
 
-                                "nrnbbcore_write",
-                                nrncorewrite_argvec,
-                                "nrncore_write",
-                                nrncorewrite_argappend,
-                                "nrnbbcore_register_mapping",
-                                nrnbbcore_register_mapping,
-                                "nrncore_run",
-                                nrncorerun,
+                                {"nrnbbcore_write", nrncorewrite_argvec},
+                                {"nrncore_write", nrncorewrite_argappend},
+                                {"nrnbbcore_register_mapping", nrnbbcore_register_mapping},
+                                {"nrncore_run", nrncorerun},
 
-                                0,
-                                0};
+                                {0, 0}};
 
-static Member_ret_str_func retstr_members[] = {"upkstr", upkstr, 0, 0};
+static Member_ret_str_func retstr_members[] = {{"upkstr", upkstr}, {0, 0}};
 
-static Member_ret_obj_func retobj_members[] = {
-    "upkvec",       upkvec,       "gid2obj",      gid2obj,      "gid2cell",  gid2cell,
-    "gid_connect",  gid_connect,  "upkpyobj",     upkpyobj,     "pyret",     pyret,
-    "py_alltoall",  py_alltoall,  "py_allgather", py_allgather, "py_gather", py_gather,
-    "py_broadcast", py_broadcast, "py_scatter",   py_scatter,   0,           0};
+static Member_ret_obj_func retobj_members[] = {{"upkvec", upkvec},
+                                               {"gid2obj", gid2obj},
+                                               {"gid2cell", gid2cell},
+                                               {"gid_connect", gid_connect},
+                                               {"upkpyobj", upkpyobj},
+                                               {"pyret", pyret},
+                                               {"py_alltoall", py_alltoall},
+                                               {"py_allgather", py_allgather},
+                                               {"py_gather", py_gather},
+                                               {"py_broadcast", py_broadcast},
+                                               {"py_scatter", py_scatter},
+                                               {0, 0}};
 
 static void* cons(Object*) {
     // not clear at moment what is best way to handle nested context

@@ -30,12 +30,12 @@ save 20 dict begin\n\
 \n\
 ";
 
-EPSPrinter::EPSPrinter(ostream* o)
+EPSPrinter::EPSPrinter(std::ostream* o)
     : Printer(o) {}
 
 EPSPrinter::~EPSPrinter() {}
 
-void EPSPrinter::eps_prolog(ostream& out, Coord width, Coord height, const char* creator) {
+void EPSPrinter::eps_prolog(std::ostream& out, Coord width, Coord height, const char* creator) {
     int bbw = int(width);
     int bbh = int(height);
     // need to describe it as EPSF = "encapsulated postscript"

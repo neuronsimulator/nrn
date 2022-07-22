@@ -41,10 +41,6 @@ void iv_display_scale(float);
 #include <IV-X11/ivx11_dynam.h>
 #endif
 
-#if defined(carbon)
-#undef MAC
-#endif
-
 #if MAC || defined(WIN32)
 #include "njconf.h"
 #else
@@ -168,7 +164,7 @@ char* nrnpy_pyexe;
 int Oc::refcnt_ = 0;
 Session* Oc::session_ = 0;
 HandleStdin* Oc::handleStdin_ = 0;
-ostream* OcIdraw::idraw_stream = 0;
+std::ostream* OcIdraw::idraw_stream = 0;
 #endif
 /*****************************************************************************/
 extern void ivoc_cleanup();
@@ -629,7 +625,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     session = new Session("NEURON", our_argc, our_argv, options, properties);
     SIOUXSettings.asktosaveonclose = false;
 #else
-#if defined(WIN32) || carbon
+#if defined(WIN32)
     IFGUI
     session = new Session("NEURON", our_argc, (char**) our_argv, options, properties);
     ENDGUI
@@ -871,11 +867,6 @@ void ivoc_final_exit() {
     nrnmpi_terminate();
 #endif
 }
-
-extern "C" {
-extern double* getarg(int i);
-extern int ifarg(int);
-}  // extern "C"
 
 extern void hoc_ret(), hoc_pushx(double);
 

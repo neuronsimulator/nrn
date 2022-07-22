@@ -170,6 +170,7 @@ callback to bbss_early when needed.
 #include "bbsavestate.h"
 #include "classreg.h"
 #include "ndatclas.h"
+#include "nrncvode.h"
 #include "nrnoc2iv.h"
 #include "ocfile.h"
 #include <cmath>
@@ -205,7 +206,6 @@ extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-extern "C" void clear_event_queue();
 extern cTemplate** nrn_pnt_template_;
 extern hoc_Item* net_cvode_instance_psl();
 extern PlayRecList* net_cvode_instance_prl();
@@ -214,16 +214,11 @@ extern double t;
 typedef void (*PFIO)(int, Object*);
 extern void nrn_gidout_iter(PFIO);
 extern short* nrn_is_artificial_;
-extern "C" {
-extern void net_send(void**, double*, Point_process*, double, double);
-extern void nrn_fake_fire(int gid, double firetime, int fake_out);
-}  // extern "C"
 extern Object* nrn_gid2obj(int gid);
 extern PreSyn* nrn_gid2presyn(int gid);
 extern int nrn_gid_exists(int gid);
 
 #if NRNMPI
-extern void nrn_spike_exchange(NrnThread*);
 extern void nrnmpi_barrier();
 extern void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
 extern void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
@@ -232,7 +227,6 @@ extern void nrnmpi_int_allgather(int* s, int* r, int n);
 extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
 #else
-static void nrn_spike_exchange(NrnThread*) {}
 static void nrnmpi_barrier() {}
 static void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) {
     for (int i = 0; i < scnt[0]; ++i) {
@@ -273,7 +267,6 @@ static void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
 extern bool use_bgpdma_;
 #endif
 
-extern "C" Point_process* ob2pntproc(Object*);
 extern void nrn_play_init();
 extern Symlist* hoc_built_in_symlist;
 
@@ -296,68 +289,6 @@ static TQItemList* tq_removal_list;
 #if QUEUECHECK
 static void bbss_queuecheck();
 #endif
-
-// API
-// see save_test_bin and restore_test_bin for an example of
-// the use of this following interface. Note in particular the
-// use in restore_test_bin of a prior clear_event_queue() in order
-// to allow bbss_buffer_counts to pass an assert during the restore
-// process.
-
-extern "C" void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size);
-// First call to return the information needed to make the other
-// calls. Returns a pointer used by the other methods.
-// Caller is reponsible for freeing (using free() and not delete [])
-// the returned gids and sizes arrays
-// when finished. The sizes array and global_size are needed for the
-// caller to construct proper buffer sizes to pass to
-// bbss_save_global and bbss_save for filling in. The size of these
-// arrays is returned in *len.
-// They are not needed for restoring
-// (since the caller is passing already filled in buffers that are read
-// by bbss_restore_global and bbss_restore
-// The gids returned are base gids. It is the callers responsibility
-// to somehow concatenate buffers with the same gid (from different hosts)
-// either after save or before restore and preserve the piece count
-// of the number of concatenated buffers for each base gid.
-// Global_size will only be non_zero for host 0.
-
-extern "C" void bbss_save_global(void* bbss, char* buffer, int sz);
-// call only on host 0 with a buffer of size equal to the
-// global_size returned from the bbss_buffer_counts call on host 0
-// sz is the size of the buffer (for error checking only, buffer+sz is
-// out of bounds)
-
-extern "C" void bbss_restore_global(void* bbss, char* buffer, int sz);
-// call on all hosts with the buffer contents returned from the call
-// to bbss_save_global
-// This must be called prior to any calls to bbss_restore
-// sz is the size of the buffer (error checking only)
-// This also does some other important restore initializations.
-
-extern "C" void bbss_save(void* bbss, int gid, char* buffer, int sz);
-// Call this for each item of the gids from bbss_buffer_counts along with
-// a buffer of size from the corresponding sizes array. The buffer will
-// be filled in with savestate information. The gid may be the same on
-// different hosts, in which case it is the callers responsibility to
-// concatentate buffers at some point to allow calling of bbss_restore
-// sz is the size of the buffer (error checking only)
-
-extern "C" void bbss_restore(void* bbss, int gid, int npiece, char* buffer, int sz);
-// Call this for each item of the gids from bbss_buffer_counts, the
-// number of buffers that were concatenated for the gid, and the
-// concatenated buffer (the concatenated buffer does NOT contain npiece
-// as the first value in the char* buffer pointer)
-// sz is the size of the buffer (error checking only)
-
-extern "C" void bbss_save_done(void* bbss);
-// At the end of the save process, call this to cleanup.
-// when this call returns, bbss will be invalid.
-
-extern "C" void bbss_restore_done(void* bbss);
-// At the end of the restore process, call this to do
-// some extra setting up and cleanup.
-// when this call returns, bbss will be invalid.
 
 // 0 no debug, 1 print to stdout, 2 read/write to IO file
 #define DEBUG 0
@@ -787,7 +718,7 @@ static int ignored(Prop* p) {
     return 0;
 }
 
-extern "C" void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
+void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
     usebin_ = 1;
     BBSaveState* ss = new BBSaveState();
     *global_size = 0;
@@ -800,15 +731,15 @@ extern "C" void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* glob
     *len = ss->counts(gids, sizes);
     return ss;
 }
-extern "C" void bbss_save_global(void* bbss, char* buffer,
-                                 int sz) {  // call only on host 0
+void bbss_save_global(void* bbss, char* buffer,
+                      int sz) {  // call only on host 0
     usebin_ = 1;
     BBSS_IO* io = new BBSS_BufferOut(buffer, sz);
     io->d(1, nrn_threads->_t);
     delete io;
 }
-extern "C" void bbss_restore_global(void* bbss, char* buffer,
-                                    int sz) {  // call on all hosts
+void bbss_restore_global(void* bbss, char* buffer,
+                         int sz) {  // call on all hosts
     usebin_ = 1;
     BBSS_IO* io = new BBSS_BufferIn(buffer, sz);
     io->d(1, nrn_threads->_t);
@@ -816,7 +747,7 @@ extern "C" void bbss_restore_global(void* bbss, char* buffer,
     delete io;
     bbss_restore_begin();
 }
-extern "C" void bbss_save(void* bbss, int gid, char* buffer, int sz) {
+void bbss_save(void* bbss, int gid, char* buffer, int sz) {
     usebin_ = 1;
     BBSaveState* ss = (BBSaveState*) bbss;
     BBSS_IO* io = new BBSS_BufferOut(buffer, sz);
@@ -824,7 +755,7 @@ extern "C" void bbss_save(void* bbss, int gid, char* buffer, int sz) {
     ss->gidobj(gid);
     delete io;
 }
-extern "C" void bbss_restore(void* bbss, int gid, int ngroup, char* buffer, int sz) {
+void bbss_restore(void* bbss, int gid, int ngroup, char* buffer, int sz) {
     usebin_ = 1;
     BBSaveState* ss = (BBSaveState*) bbss;
     BBSS_IO* io = new BBSS_BufferIn(buffer, sz);
@@ -835,7 +766,7 @@ extern "C" void bbss_restore(void* bbss, int gid, int ngroup, char* buffer, int 
     }
     delete io;
 }
-extern "C" void bbss_save_done(void* bbss) {
+void bbss_save_done(void* bbss) {
     BBSaveState* ss = (BBSaveState*) bbss;
     delete ss;
 }
@@ -873,7 +804,7 @@ static void bbss_remove_delivered() {
     delete tq_removal_list;
 }
 
-extern "C" void bbss_restore_done(void* bbss) {
+void bbss_restore_done(void* bbss) {
     if (bbss) {
         BBSaveState* ss = (BBSaveState*) bbss;
         delete ss;
@@ -1012,24 +943,22 @@ static double vector_play_init(void* v) {
     return 0.;
 }
 
-static Member_func members[] = {
-    // text test
-    {"save", save},
-    {"restore", restore},
-    {"save_test", save_test},
-    {"restore_test", restore_test},
-    // binary test
-    {"save_test_bin", save_test_bin},
-    {"restore_test_bin", restore_test_bin},
-    // binary save/restore interface to interpreter
-    {"save_request", save_request},
-    {"save_gid", save_gid},
-    {"restore_gid", restore_gid},
-    // indicate which point processes are to be ignored
-    {"ignore", ppignore},
-    // allow Vector.play to work
-    {"vector_play_init", vector_play_init},
-    {0, 0}};
+static Member_func members[] = {{"save", save},
+                                {"restore", restore},
+                                {"save_test", save_test},
+                                {"restore_test", restore_test},
+                                // binary test
+                                {"save_test_bin", save_test_bin},
+                                {"restore_test_bin", restore_test_bin},
+                                // binary save/restore interface to interpreter
+                                {"save_request", save_request},
+                                {"save_gid", save_gid},
+                                {"restore_gid", restore_gid},
+                                // indicate which point processes are to be ignored
+                                {"ignore", ppignore},
+                                // allow Vector.play to work
+                                {"vector_play_init", vector_play_init},
+                                {0, 0}};
 
 void BBSaveState_reg() {
     class2oc("BBSaveState", cons, destruct, members, NULL, NULL, NULL);
@@ -1751,34 +1680,36 @@ static void pycell_name2sec_maps_clear() {
 static void pycell_name2sec_maps_fill() {
     pycell_name2sec_maps_clear();
     hoc_Item* qsec;
-    ForAllSections(sec)                                              // macro has the {
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
         if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {  // PythonSection
-        // Assume we can associate with a Python Cell
-        // Sadly, cannot use nrn_sec2cell Object* as the key because it
-        // is not unique and the map needs definite PyObject* keys.
-        Object* ho = nrn_sec2cell(sec);
-        if (ho) {
-            void* pycell = nrn_opaque_obj2pyobj(ho);
-            hoc_obj_unref(ho);
-            if (pycell) {
-                SecName2Sec& sn2s = pycell_name2sec_maps[pycell];
-                std::string name = secname(sec);
-                // basename is after the cell name component that ends in '.'.
-                size_t last_dot = name.rfind(".");
-                assert(last_dot != std::string::npos);
-                assert(name.size() > (last_dot + 1));
-                std::string basename = name.substr(last_dot + 1);
-                if (sn2s.find(basename) != sn2s.end()) {
-                    hoc_execerr_ext("Python Section name, %s, is not unique in the Python cell",
-                                    name.c_str());
+            // Assume we can associate with a Python Cell
+            // Sadly, cannot use nrn_sec2cell Object* as the key because it
+            // is not unique and the map needs definite PyObject* keys.
+            Object* ho = nrn_sec2cell(sec);
+            if (ho) {
+                void* pycell = nrn_opaque_obj2pyobj(ho);
+                hoc_obj_unref(ho);
+                if (pycell) {
+                    SecName2Sec& sn2s = pycell_name2sec_maps[pycell];
+                    std::string name = secname(sec);
+                    // basename is after the cell name component that ends in '.'.
+                    size_t last_dot = name.rfind(".");
+                    assert(last_dot != std::string::npos);
+                    assert(name.size() > (last_dot + 1));
+                    std::string basename = name.substr(last_dot + 1);
+                    if (sn2s.find(basename) != sn2s.end()) {
+                        hoc_execerr_ext("Python Section name, %s, is not unique in the Python cell",
+                                        name.c_str());
+                    }
+                    sn2s[basename] = sec;
+                    continue;
                 }
-                sn2s[basename] = sec;
-                continue;
             }
+            hoc_execerr_ext("Python Section, %s, not associated with Python Cell.", secname(sec));
         }
-        hoc_execerr_ext("Python Section, %s, not associated with Python Cell.", secname(sec));
     }
-}
 }
 
 static SecName2Sec& pycell_name2sec_map(Object* c) {

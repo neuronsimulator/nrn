@@ -2,7 +2,7 @@ from neuron import h
 from neuron.expect_hocerr import expect_err
 from checkresult import Chk
 
-import os, sys, io, re
+import io, math, os, re, sys
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 chk = Chk(os.path.join(dir_path, "test_netcvode.json"))
@@ -14,7 +14,9 @@ pc = h.ParallelContext()
 
 # remove address info from cv.debug_event output
 def debug_event_filter(s):
-    return re.sub(r"cvode_0x[0-9abcdef]* ", "cvode_0x... ", s)
+    s = re.sub(r"cvode_0x[0-9abcdef]* ", "cvode_0x... ", s)
+    s = re.sub(r"Vector\[\d+\]", "Vector[N]", s)
+    return s
 
 
 # helpful for debugging when expect no NetCon exist
@@ -80,7 +82,9 @@ def node():
 
     def ev(*arg):
         print("ev t=%g v=%g x=%g nc.x=%g" % (h.t, s(0.5).v, src.x, nc.x))
-        assert (h.t, src.x) == results[arg[0]][arg[1]]
+        ref_t, ref_x = results[arg[0]][arg[1]]
+        assert h.t == ref_t
+        assert math.isclose(src.x, ref_x, rel_tol=1e-13)
 
     def run():
         order = 0
@@ -403,14 +407,14 @@ def cvode_meth():
     snames = [(cv.statename(i, sref), sref[0])[1] for i in range(len(s))]
     print(snames)
     chk("cv.statename", snames)
-    chk("cv.states", s)
+    chk("cv.states", s, tol=1e-8)
     cv.dstates(ds)
-    chk("cv.dstates", ds)
+    chk("cv.dstates", ds, tol=1e-8)
     vec = h.Vector()
     cv.error_weights(vec)
     chk("cv.error_weights", vec)
     cv.acor(vec)
-    chk("cv.acor", vec)
+    chk("cv.acor", vec, tol=1e-7)
     std = (h.t, s.to_python(), ds.to_python())
     ds.fill(0)
     cv.f(1.0, s, ds)
@@ -436,13 +440,13 @@ def cvode_meth():
     sref = h.ref("")
     snames = [(cv.statename(i, sref), sref[0])[1] for i in range(len(s))]
     chk("cv.statename lvardt", snames)
-    chk("cv.states lvardt", s)
+    chk("cv.states lvardt", s, tol=1e-8)
     cv.dstates(ds)
-    chk("cv.dstates lvardt", ds)
+    chk("cv.dstates lvardt", ds, tol=1e-8)
     cv.error_weights(vec)
     chk("cv.error_weights lvardt", vec)
     cv.acor(vec)
-    chk("cv.acor lvardt", vec, 1e-18)
+    chk("cv.acor lvardt", vec, tol=5e-7)
     h.stoprun = 1
     cv.solve()
     cv.use_local_dt(0)
@@ -472,7 +476,7 @@ def state_magnitudes():
         xtra = " lvardt" if cv.use_local_dt() else ""
         atool.anrun()
         r = [[i.name, i.max, i.acmax] for i in atool.states]
-        chk("AtolTool" + xtra, r)
+        chk("AtolTool" + xtra, r, tol=5e-7)
         h.init()
         atool.activate(1)
         h.run()
@@ -480,9 +484,9 @@ def state_magnitudes():
         vec = h.Vector()
         cv.state_magnitudes(vec, 0)
         # bug for lvardt. slot for second cell is all 0
-        chk("state_magnitudes states" + xtra, vec)
+        chk("state_magnitudes states" + xtra, vec, tol=5e-8)
         cv.state_magnitudes(vec, 1)
-        chk("state_magnitudes acor" + xtra, vec)
+        chk("state_magnitudes acor" + xtra, vec, tol=5e-7)
         cv.state_magnitudes(0)
 
     run()
@@ -515,17 +519,17 @@ def vec_record_discrete():
         pc.psolve(tstop)
 
     run(1)
-    chk("record discrete tvec", vec)
+    chk("record discrete tvec", vec, tol=1e-9)
     tvec.indgen(1.1, 1.8, 0.1)
     ssrun(2)
-    chk("record discrete savestate tvec", vec)
+    chk("record discrete savestate tvec", vec, tol=5e-7)
     cv.record_remove(vec)
     vec.record(net.cells[0].soma(0.5)._ref_v, 0.1, sec=net.cells[0].soma)
     trecord.record(h._ref_t, 0.1, sec=net.cells[0].soma)
     run(1)
-    chk("record discrete dt", vec)
+    chk("record discrete dt", vec, tol=5e-9)
     ssrun(2)
-    chk("record discrete savestate dt", vec)
+    chk("record discrete savestate dt", vec, tol=5e-7)
 
 
 def integrator_properties():
@@ -543,8 +547,8 @@ def integrator_properties():
     def run1(key):
         h.finitialize(0.001)
         cv.solve(2)
-        chk(key + " tvec", tvec)
-        chk(key + " vvec", vvec)
+        chk(key + " tvec", tvec, tol=5e-13)
+        chk(key + " vvec", vvec, tol=1e-12)
 
     cv.rtol(1e-3)
     cv.atol(0)
@@ -562,7 +566,9 @@ def integrator_properties():
     def run2(key):
         h.finitialize(-65)
         cv.solve(2)
-        chk(key + " tvec size", tvec.size())
+        # Note the very large tolerance, this seems relatively unstable with the
+        # NVIDIA compilers
+        chk(key + " tvec size", tvec.size(), tol=0.25)
 
     cv.use_local_dt(1)
     cv.stiff(0)
@@ -629,24 +635,29 @@ def event_queue():
     h.finitialize()
     cv.solve(13)  # two NetCon from fast cell 0 and 1 presyn from slower cell 1
     cv.store_events()
-    chk("store_events", vecstore)
-    chk("event queue spikes", [net[2].to_python(), net[3].to_python()])
+    chk("store_events", vecstore, tol=1e-14)
+    chk("event queue spikes", [net[2].to_python(), net[3].to_python()], tol=5e-16)
     old_stdout = sys.stdout
     sys.stdout = mystdout = io.StringIO()
     cv.print_event_queue()
     sys.stdout = old_stdout
-    chk("print_event_queue", mystdout.getvalue())
+    chk("print_event_queue", mystdout.getvalue(), tol=1e-14)
     tvec = h.Vector()
     cv.print_event_queue(tvec)
-    chk("print_event_queue tvec", tvec)
+    chk("print_event_queue tvec", tvec, tol=1e-14)
     objs = h.List()
     flagvec = h.Vector()
     cv.event_queue_info(2, tvec, objs)
-    chk("event_queue_info(2...)", [tvec.to_python(), [o.hname() for o in objs]])
+    chk(
+        "event_queue_info(2...)",
+        [tvec.to_python(), [o.hname() for o in objs]],
+        tol=5e-16,
+    )
     cv.event_queue_info(3, tvec, flagvec, objs)
     chk(
         "event_queue_info(3...)",
         [tvec.to_python(), flagvec.to_python(), [o.hname() for o in objs]],
+        tol=5e-16,
     )
 
     # some savestate coverage
@@ -673,7 +684,7 @@ def event_queue():
     ss.fread(sf)
     ss.restore()
     cv.solve(25)
-    chk("SaveState restore at 13", [net[2].to_python(), net[3].to_python()])
+    chk("SaveState restore at 13", [net[2].to_python(), net[3].to_python()], tol=5e-16)
 
 
 def scatter_gather():
@@ -740,6 +751,17 @@ def interthread():
     cv.debug_event(0)
 
 
+def nc_event_before_init():
+    soma = h.Section()
+    soma.insert("pas")
+
+    syn = h.ExpSyn(soma(0.5))
+    nc = h.NetCon(None, syn)
+    nc.weight[0] = 1.0
+    # h.finitialize()
+    expect_err("nc.event(0)")  # nrn_assert triggered if outside of finitialize
+
+
 def test_netcvode_cover():
     nrn_use_daspk()
     node()
@@ -752,6 +774,7 @@ def test_netcvode_cover():
     scatter_gather()
     playrecord()
     interthread()
+    nc_event_before_init()
 
 
 if __name__ == "__main__":

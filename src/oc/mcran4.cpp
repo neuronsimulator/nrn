@@ -50,11 +50,11 @@ contained the header:
 
 static uint32_t lowindex = 0;
 
-extern "C" void mcell_ran4_init(uint32_t low) {
+void mcell_ran4_init(uint32_t low) {
     lowindex = low;
 }
 
-extern "C" double mcell_ran4(uint32_t* high, double* x, unsigned int n, double range) {
+double mcell_ran4(uint32_t* high, double* x, unsigned int n, double range) {
     int i;
     for (i = 0; i < n; i++) {
         x[i] = range * nrnRan4dbl(high, lowindex);
@@ -62,11 +62,16 @@ extern "C" double mcell_ran4(uint32_t* high, double* x, unsigned int n, double r
     return x[0];
 }
 
-extern "C" double mcell_ran4a(uint32_t* high) {
+// Allow mcell_ran4 to be called from C code in praxis.c
+extern "C" double mcell_ran4_legacy(uint32_t* idx1, double* x, unsigned int n, double range) {
+    return mcell_ran4(idx1, x, n, range);
+}
+
+double mcell_ran4a(uint32_t* high) {
     return nrnRan4dbl(high, lowindex);
 }
 
-extern "C" uint32_t mcell_iran4(uint32_t* high) {
+uint32_t mcell_iran4(uint32_t* high) {
     return nrnRan4int(high, lowindex);
 }
 
@@ -104,7 +109,7 @@ void hoc_usemcran4() {
     hoc_pushx(prev);
 }
 
-extern "C" uint32_t nrnRan4int(uint32_t* idx1, uint32_t idx2) {
+uint32_t nrnRan4int(uint32_t* idx1, uint32_t idx2) {
     uint32_t u, v, w, m, n;
     /* 64-bit hash */
     n = (*idx1)++;
@@ -159,7 +164,7 @@ extern "C" uint32_t nrnRan4int(uint32_t* idx1, uint32_t idx2) {
 //
 */
 static const double SHIFT32 = 1.0 / 4294967296.0; /* 2^-32 */
-extern "C" double nrnRan4dbl(uint32_t* idx1, uint32_t idx2) {
+double nrnRan4dbl(uint32_t* idx1, uint32_t idx2) {
     uint32_t hi, lo, extra;
     hi = (uint32_t) nrnRan4int(idx1, idx2); /*top 32 bits*/
                                             /*

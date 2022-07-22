@@ -211,7 +211,7 @@ void c_out() {
 #if NMODL
     /* generation of initmodel interface */
 #if VECTORIZE
-    P("\nstatic void nrn_init(NrnThread* _nt, _Memb_list* _ml, int _type){\n");
+    P("\nstatic void nrn_init(NrnThread* _nt, Memb_list* _ml, int _type){\n");
     P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
     P("#if CACHEVEC\n");
     P("    _ni = _ml->_nodeindices;\n");
@@ -262,7 +262,7 @@ void c_out() {
        well as make sure all currents accumulated properly (currents list) */
 
     if (brkpnt_exists) {
-        P("\nstatic void nrn_cur(NrnThread* _nt, _Memb_list* _ml, int _type){\n");
+        P("\nstatic void nrn_cur(NrnThread* _nt, Memb_list* _ml, int _type){\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
         P("#if CACHEVEC\n");
         P("    _ni = _ml->_nodeindices;\n");
@@ -336,7 +336,7 @@ void c_out() {
 
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
-        P("\nstatic void nrn_jacob(NrnThread* _nt, _Memb_list* _ml, int _type){\n");
+        P("\nstatic void nrn_jacob(NrnThread* _nt, Memb_list* _ml, int _type){\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
         P("#if CACHEVEC\n");
         P("    _ni = _ml->_nodeindices;\n");
@@ -385,7 +385,7 @@ void c_out() {
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
 #if VECTORIZE
-    P("\nstatic void nrn_state(NrnThread* _nt, _Memb_list* _ml, int _type){\n");
+    P("\nstatic void nrn_state(NrnThread* _nt, Memb_list* _ml, int _type){\n");
 #else
     P("\nstatic nrn_state(_prop, _v) Prop *_prop; double _v; {\n");
 #endif
@@ -697,7 +697,7 @@ void c_out_vectorize() {
     Fflush(fcout);
 
     /* generation of initmodel interface */
-    P("\nstatic void nrn_init(NrnThread* _nt, _Memb_list* _ml, int _type){\n");
+    P("\nstatic void nrn_init(NrnThread* _nt, Memb_list* _ml, int _type){\n");
     P("double* _p; Datum* _ppvar; Datum* _thread;\n");
     P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
     P("#if CACHEVEC\n");
@@ -756,7 +756,7 @@ void c_out_vectorize() {
        well as make sure all currents accumulated properly (currents list) */
 
     if (brkpnt_exists) {
-        P("\nstatic void nrn_cur(NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
+        P("\nstatic void nrn_cur(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
         P("double* _p; Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
         P("#if CACHEVEC\n");
@@ -842,7 +842,7 @@ void c_out_vectorize() {
         P(" \n}\n");
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
-        P("\nstatic void nrn_jacob(NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
+        P("\nstatic void nrn_jacob(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
         P("double* _p; Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
         P("#if CACHEVEC\n");
@@ -893,7 +893,7 @@ void c_out_vectorize() {
 
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
-    P("\nstatic void nrn_state(NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
+    P("\nstatic void nrn_state(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
     if (nrnstate || currents->next == currents) {
         P("double* _p; Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
@@ -940,7 +940,6 @@ void c_out_vectorize() {
     P("  if (!_first) return;\n");
     printlist(initlist);
     P("_first = 0;\n}\n");
-    P("\n#if defined(__cplusplus)\n} /* extern \"C\" */\n#endif\n");
 }
 
 void vectorize_substitute(Item* q, char* str) {

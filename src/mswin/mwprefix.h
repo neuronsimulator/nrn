@@ -16,11 +16,9 @@
 #ifndef _Windows
 #define _Windows 1
 #endif
-#if __cplusplus
 struct Section;
 struct Object;
 struct Symbol;
-#endif
 #define motif_kit
 #define sgi_motif_kit
 #define printf  myprintf

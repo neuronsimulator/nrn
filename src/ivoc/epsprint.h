@@ -5,10 +5,10 @@
 
 class EPSPrinter: public Printer {
   public:
-    EPSPrinter(ostream*);
+    EPSPrinter(std::ostream*);
     virtual ~EPSPrinter();
 
-    virtual void eps_prolog(ostream&,
+    virtual void eps_prolog(std::ostream&,
                             Coord width,
                             Coord height,
                             const char* creator = "InterViews");

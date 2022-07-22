@@ -141,7 +141,7 @@ static void open_fail(const char* s, Window* w, const char* io) {
 }
 
 bool ok_to_write(const char* s, Window* w) {
-    filebuf obuf;
+    std::filebuf obuf;
     if (obuf.open(s, Input)) {
         obuf.close();
         if (!ok_if_already_exists(s, w)) {
@@ -161,7 +161,7 @@ bool ok_to_write(const char* s, Window* w) {
 }
 
 bool ok_to_read(const char* s, Window* w) {
-    filebuf obuf;
+    std::filebuf obuf;
     if (obuf.open(s, Input)) {
         obuf.close();
         errno = 0;

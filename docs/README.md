@@ -29,12 +29,12 @@ pip3 install --user -r docs/docs_requirements.txt --upgrade
 Also, make sure to have `Doxygen` and `pandoc` installed, and the dependencies listed in [conda_environment.yml](conda_environment.yml)
 Note that this file is tailored to the ReadTheDocs setup, but lists all desired requirements.
 
-With all dependencies installed, configure project with CMake as described in [README](../README.md).
+With all dependencies installed, configure project with CMake as described in [CMake Build Options](cmake_doc/options.rst#nrn_enable_docsbooloff).
 
 e.g. in your CMake build folder:
 
 ```
-cmake .. -DCMAKE_INSTALL_PREFIX=`pwd`/install
+cmake .. -DNRN_ENABLE_DOCS=ON
 ```
 
 #### Building the documentation

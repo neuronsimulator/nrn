@@ -250,7 +250,7 @@ JNIEXPORT jstring JNICALL Java_neuron_Neuron_getHocArgSig(JNIEnv* env, jclass) {
 }
 
 JNIEXPORT jlong JNICALL Java_neuron_Neuron_vectorNew(JNIEnv* env, jclass, jint size) {
-    jnisave Vect* v = vector_new1(size);
+    jnisave Vect* v = vector_new(size);
     Object* ho = hoc_new_object(nrn_vec_sym, v);
     hoc_obj_ref(ho);
     jlong jc = (jlong) ho;

@@ -13,12 +13,17 @@
 #define _XOPEN_SOURCE 600
 #endif
 
+#include "hoc.h"
+#include "hocdec.h"
+#include "hoclist.h"
+#include "oc_ansi.h"
+#include "ocnotify.h"
+#include "parse.hpp"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "hoc.h"
-#include "parse.hpp"
-#include "hoclist.h"
+
 #if MAC
 #undef HAVE_MALLOC_H
 #endif
@@ -179,14 +184,14 @@ void hoc_link_symbol(Symbol* sp, Symlist* list) {
 
 static int emalloc_error = 0;
 
-extern "C" void hoc_malchk(void) {
+void hoc_malchk(void) {
     if (emalloc_error) {
         emalloc_error = 0;
         execerror("out of memory", nullptr);
     }
 }
 
-extern "C" void* hoc_Emalloc(size_t n) { /* check return from malloc */
+void* hoc_Emalloc(size_t n) { /* check return from malloc */
     void* p = malloc(n);
     if (p == nullptr)
         emalloc_error = 1;
@@ -201,7 +206,7 @@ void* emalloc(size_t n) {
     return p;
 }
 
-extern "C" void* hoc_Ecalloc(size_t n, size_t size) { /* check return from calloc */
+void* hoc_Ecalloc(size_t n, size_t size) { /* check return from calloc */
     if (n == 0) {
         return nullptr;
     }
@@ -211,7 +216,7 @@ extern "C" void* hoc_Ecalloc(size_t n, size_t size) { /* check return from callo
     return p;
 }
 
-extern "C" void* ecalloc(size_t n, size_t size) {
+void* ecalloc(size_t n, size_t size) {
     void* p = hoc_Ecalloc(n, size);
     if (emalloc_error) {
         hoc_malchk();
@@ -259,7 +264,7 @@ void* hoc_Erealloc(void* ptr, size_t size) { /* check return from realloc */
     return p;
 }
 
-extern "C" void* erealloc(void* ptr, size_t size) {
+void* erealloc(void* ptr, size_t size) {
     void* p = hoc_Erealloc(ptr, size);
     if (emalloc_error) {
         hoc_malchk();
@@ -403,7 +408,7 @@ void hoc_free_pstring(char** p) {
     }
 }
 
-extern "C" size_t nrn_mallinfo(int item) {
+size_t nrn_mallinfo(int item) {
 #if defined(__APPLE__) && defined(__MACH__)
     /* OSX ------------------------------------------------------
      * Returns the current resident set size (physical memory use) measured
@@ -415,10 +420,15 @@ extern "C" size_t nrn_mallinfo(int item) {
         KERN_SUCCESS)
         return (size_t) 0L; /* Can't access? */
     return (size_t) info.resident_size;
-#elif HAVE_MALLINFO2
-    /* *NIX PLATFORMS WITH MALLINFO ------------------------------ */
+#elif HAVE_MALLINFO || HAVE_MALLINFO2
+    // *nix platforms with mallinfo[2]()
     size_t r;
-    struct mallinfo2 m = mallinfo2();
+    // prefer mallinfo2, fall back to mallinfo
+#if HAVE_MALLINFO2
+    auto const m = mallinfo2();
+#else
+    auto const m = mallinfo();
+#endif
     if (item == 1) {
         r = m.uordblks;
     } else if (item == 2) {
@@ -441,11 +451,9 @@ extern "C" size_t nrn_mallinfo(int item) {
 #endif
 }
 
-int hoc_mallinfo(void) {
-    extern double chkarg(int, double, double);
-    int i = (int) chkarg(1, 0., 10.);
-    size_t x = nrn_mallinfo(i);
+void hoc_mallinfo() {
+    int const i = chkarg(1, 0, 6);
+    auto const x = nrn_mallinfo(i);
     hoc_ret();
-    pushx((double) x);
-    return 0;
+    hoc_pushx(x);
 }

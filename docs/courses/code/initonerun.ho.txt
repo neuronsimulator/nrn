@@ -1,0 +1,74 @@
+// $Id: initonerun.hoc,v 1.2 2011/06/09 18:49:46 ted Exp $
+
+// Executes one simulation with specified stimulus
+// Displays response and reports spike frequency
+
+load_file("stdgui.hoc") // load standard library but don't open NMM toolbar
+
+///// Simulation parameters
+
+TSTOP = 500 // ms, more than long enough for 15 spikes at ISI = 25 ms
+
+///// Model specification
+
+load_file("cell.hoc")
+
+///// Instrumentation
+
+// experimental manipulations
+
+objref stim
+soma stim = new IClamp(0.5)
+stim.del = 1 // ms
+stim.dur = 1e9
+stim.amp = 0.1 // nA
+
+// data recording and analysis
+
+objref nc, spvec, nil // to record spike times
+// count only those spikes that get to distal end of dend
+dend nc = new NetCon(&v(1), nil)
+nc.threshold = -10 // mV
+spvec = new Vector()
+nc.record(spvec)
+
+NSETTLE = 5 // ignore the first NSETTLE ISI (allow freq to stablize)
+NINVL = 10 // # ISI from which frequency will be calculated
+NMIN = NSETTLE + NINVL // ignore recordings with fewer than this # of ISIs
+
+freq = 0
+
+proc postproc() { local nspikes, t1, t2
+  freq = 0
+  nspikes = spvec.size()
+  if (nspikes > NMIN) {
+    t2 = spvec.x(nspikes-1) // last spike
+    t1 = spvec.x(nspikes-1-NINVL) // NINVL prior to last spike
+    freq = NINVL*1e3/(t2-t1) // t1 and t2 are separated by NINVL ISIs
+  }
+}
+
+///// Simulation control and reporting of results
+
+tstop = TSTOP
+
+objref g
+
+// $1 is amplitude of stimulus current
+
+proc onerun() {
+  // control graph position and axes
+  g = new Graph(0)
+  g.size(0,500,-80,40)
+  g.view(0, -80, 500, 120, 2, 105, 300.48, 200.32)
+  // update graph throughout the simulation
+  graphList[0].append(g)
+  // plot v at distal end of dend
+  g.addexpr("dend.v(1)", 1, 1, 0.8, 0.9, 2)
+  stim.amp = $1
+  run()
+  postproc() // analyze the data
+  print "stimulus ", $1, " frequency ", freq
+}
+
+onerun(0.15)

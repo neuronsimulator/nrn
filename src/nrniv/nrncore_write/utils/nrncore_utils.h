@@ -3,7 +3,7 @@
 
 #include <string>
 
-class NrnThread;
+struct NrnThread;
 
 void model_ready();
 int count_distinct(double* data, int len);

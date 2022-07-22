@@ -8,8 +8,6 @@
 #include <errno.h>
 #include <time.h>
 #include <InterViews/resource.h>
-#include <OS/math.h>
-#include <OS/table.h>
 #include <InterViews/regexp.h>
 #include "classreg.h"
 #include "nrnoc2iv.h"
@@ -38,8 +36,10 @@
 #include "netcon.h"
 #include "netcvode.h"
 #include "nrncore_write/utils/nrncore_utils.h"
+#include "nrniv_mf.h"
 #include "nrnste.h"
 #include "profile.h"
+#include "treeset.h"
 #include "utils/profile/profiler_interface.h"
 #include <unordered_map>
 #include <unordered_set>
@@ -65,13 +65,8 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 #include "membfunc.h"
 extern void single_event_run();
 extern void setup_topology(), v_setup_vectors();
-extern "C" int structure_change_cnt;
-extern int v_structure_change;
-extern int tree_changed, nrn_matrix_cnt_;
-extern int diam_changed;
 extern int nrn_errno_check(int);
 extern void nrn_ba(NrnThread*, int);
-extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
 extern cTemplate** nrn_pnt_template_;
 extern double t, dt;
@@ -84,29 +79,14 @@ extern Object* nrn_sec2cell(Section*);
 extern int nrn_sec2cell_equals(Section*, Object*);
 extern ReceiveFunc* pnt_receive;
 extern ReceiveFunc* pnt_receive_init;
-extern short* pnt_receive_size;
 extern short* nrn_is_artificial_;  // should be bool but not using that type in c
 extern short* nrn_artcell_qindex_;
-extern "C" void net_send(void**, double*, Point_process*, double, double);
-extern "C" void net_move(void**, Point_process*, double);
-extern "C" void artcell_net_send(void**, double*, Point_process*, double, double);
-extern "C" void artcell_net_move(void**, Point_process*, double);
 int nrn_use_selfqueue_;
 void nrn_pending_selfqueue(double tt, NrnThread*);
 static void all_pending_selfqueue(double tt);
 static void* pending_selfqueue(NrnThread*);
-extern "C" void net_event(Point_process*, double);
-extern "C" void _nrn_watch_activate(Datum*,
-                                    double (*)(Point_process*),
-                                    int,
-                                    Point_process*,
-                                    int,
-                                    double);
-extern "C" void _nrn_free_watch(Datum*, int, int);
 extern int hoc_araypt(Symbol*, int);
 extern int hoc_stacktype();
-extern "C" Point_process* ob2pntproc(Object*);
-extern "C" Point_process* ob2pntproc_0(Object*);
 void nrn_use_daspk(int);
 extern int nrn_use_daspk_;
 int linmod_extra_eqn_count();
@@ -118,7 +98,6 @@ extern hoc_Item* net_cvode_instance_psl();
 extern PlayRecList* net_cvode_instance_prl();
 extern void nrn_update_ps2nt();
 extern void nrn_use_busywait(int);
-extern "C" double* nrn_recalc_ptr(double*);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 Object* (*nrnpy_seg_from_sec_x)(Section*, double);
@@ -148,8 +127,6 @@ extern int hoc_return_type_code;
 extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_index_;
 extern int* nrn_fornetcon_type_;
-void _nrn_free_fornetcon(void**);
-// int _nrn_netcon_args(void*, double***);
 
 // for use in mod files
 double nrn_netcon_get_delay(NetCon* nc) {
@@ -162,7 +139,7 @@ int nrn_netcon_weight(NetCon* nc, double** pw) {
     *pw = nc->weight_;
     return nc->cnt_;
 }
-extern "C" double nrn_event_queue_stats(double* stats) {
+double nrn_event_queue_stats(double* stats) {
 #if COLLECT_TQueue_STATISTICS
     net_cvode_instance_event_queue(nrn_threads)->spike_stat(stats);
     return (stats[0] - stats[2]);
@@ -735,7 +712,9 @@ static double nc_event(void* v) {
     }
     d->chktar();
     NrnThread* nt = PP2NT(d->target_);
-    assert(nt && nt >= nrn_threads && nt < (nrn_threads + nrn_nthread));
+    const auto nrn_thread_not_initialized_for_nc_target = nt && nt >= nrn_threads &&
+                                                          nt < (nrn_threads + nrn_nthread);
+    nrn_assert(nrn_thread_not_initialized_for_nc_target);
     if (ifarg(2)) {
         double flag = *getarg(2);
         Point_process* pnt = d->target_;
@@ -2331,7 +2310,7 @@ int Cvode::handle_step(NetCvode* ns, double te) {
     return err;
 }
 
-extern "C" void net_move(void** v, Point_process* pnt, double tt) {
+void net_move(void** v, Point_process* pnt, double tt) {
     if (!(*v)) {
         hoc_execerror("No event with flag=1 for net_move in ", hoc_object_name(pnt->ob));
     }
@@ -2348,7 +2327,7 @@ extern "C" void net_move(void** v, Point_process* pnt, double tt) {
     net_cvode_instance->move_event(q, tt, PP2NT(pnt));
 }
 
-extern "C" void artcell_net_move(void** v, Point_process* pnt, double tt) {
+void artcell_net_move(void** v, Point_process* pnt, double tt) {
     if (nrn_use_selfqueue_) {
         if (!(*v)) {
             hoc_execerror("No event with flag=1 for net_move in ", hoc_object_name(pnt->ob));
@@ -2409,7 +2388,7 @@ void NetCvode::remove_event(TQItem* q, int tid) {
 
 // for threads, revised net_send to use absolute time (in the
 // mod file we add the thread time when we call it).
-extern "C" void net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
+void nrn_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
     STATISTICS(SelfEvent::selfevent_send_);
     NrnThread* nt = PP2NT(pnt);
     NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
@@ -2444,11 +2423,7 @@ extern "C" void net_send(void** v, double* weight, Point_process* pnt, double td
     // printf("net_send %g %s %g %p\n", td, hoc_object_name(pnt->ob), flag, *v);
 }
 
-extern "C" void artcell_net_send(void** v,
-                                 double* weight,
-                                 Point_process* pnt,
-                                 double td,
-                                 double flag) {
+void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
     if (nrn_use_selfqueue_ && flag == 1.0) {
         STATISTICS(SelfEvent::selfevent_send_);
         NrnThread* nt = PP2NT(pnt);
@@ -2483,7 +2458,16 @@ extern "C" void artcell_net_send(void** v,
     }
 }
 
-extern "C" void net_event(Point_process* pnt, double time) {
+// Deprecated overloads for backwards compatibility
+void artcell_net_send(void** v, double* weight, void* pnt, double td, double flag) {
+    artcell_net_send(v, weight, static_cast<Point_process*>(pnt), td, flag);
+}
+
+void nrn_net_send(void** v, double* weight, void* pnt, double td, double flag) {
+    nrn_net_send(v, weight, static_cast<Point_process*>(pnt), td, flag);
+}
+
+void net_event(Point_process* pnt, double time) {
     STATISTICS(net_event_cnt_);
     PreSyn* ps = (PreSyn*) pnt->presyn_;
     if (ps) {
@@ -2505,12 +2489,12 @@ extern "C" void net_event(Point_process* pnt, double time) {
     }
 }
 
-extern "C" void _nrn_watch_activate(Datum* d,
-                                    double (*c)(Point_process*),
-                                    int i,
-                                    Point_process* pnt,
-                                    int r,
-                                    double flag) {
+void _nrn_watch_activate(Datum* d,
+                         double (*c)(Point_process*),
+                         int i,
+                         Point_process* pnt,
+                         int r,
+                         double flag) {
     if (!d[i]._pvoid || !d[0]._pvoid) {
         // When c is NULL, i.e. called from CoreNEURON,
         // we never get here because we made sure
@@ -2592,11 +2576,11 @@ Here are some more notes about WatchCondition, HTList, HTListList, and
  *  because the allocated WatchCondition has double (*c_)(Point_process)
  *  and flag_ filled in.
  **/
-extern "C" void _nrn_watch_allocate(Datum* d,
-                                    double (*c)(Point_process*),
-                                    int i,
-                                    Point_process* pnt,
-                                    double flag) {
+void _nrn_watch_allocate(Datum* d,
+                         double (*c)(Point_process*),
+                         int i,
+                         Point_process* pnt,
+                         double flag) {
     if (!d->_pvoid) {
         d->_pvoid = (void*) new WatchList();
     }
@@ -2618,7 +2602,7 @@ extern "C" void _nrn_watch_allocate(Datum* d,
  *  WatchCondition be deactivated prior to mirroring the activation
  *  that exists on the corenrn side.
  **/
-extern "C" void nrn_watch_clear() {
+void nrn_watch_clear() {
     assert(net_cvode_instance->wl_list_.size() == (size_t) nrn_nthread);
     for (auto& htlists_of_thread: net_cvode_instance->wl_list_) {
         for (HTList* wl: htlists_of_thread) {
@@ -2631,7 +2615,7 @@ extern "C" void nrn_watch_clear() {
 }
 
 /** Called by Point_process destructor in translated mod file **/
-extern "C" void _nrn_free_watch(Datum* d, int offset, int n) {
+void _nrn_free_watch(Datum* d, int offset, int n) {
     int i;
     int nn = offset + n;
     if (d[offset]._pvoid) {
@@ -2842,7 +2826,7 @@ static void point_receive_job(NrnThread* nt) {
 }
 
 void NetCvode::point_receive(int type, Point_process* pp, double* w, double f) {
-	// this is the master thread. need to execute the pthread associated
+	// this is the master thread. need to execute the thread associated
 	// with the pp.
 	int id = PP2NT(pp)->id;
 	if (id == 0) { // execute on this, the master thread
@@ -4234,14 +4218,14 @@ void NetCvode::fornetcon_prepare() {
     delete[] t2i;
 }
 
-extern "C" int _nrn_netcon_args(void* v, double*** argslist) {
+int _nrn_netcon_args(void* v, double*** argslist) {
     ForNetConsInfo* fnc = (ForNetConsInfo*) v;
     assert(fnc);
     *argslist = fnc->argslist;
     return fnc->size;
 }
 
-extern "C" void _nrn_free_fornetcon(void** v) {
+void _nrn_free_fornetcon(void** v) {
     ForNetConsInfo* fnc = (ForNetConsInfo*) (*v);
     if (fnc) {
         if (fnc->argslist) {
@@ -6472,7 +6456,7 @@ void VecRecordDiscrete::frecord_init(TQItem* q) {
 
 void VecRecordDiscrete::deliver(double tt, NetCvode* nc) {
     y_->push_back(*pd_);
-    assert(Math::equal(t_->elem(y_->size() - 1), tt, 1e-8));
+    assert(MyMath::eq(t_->elem(y_->size() - 1), tt, 1e-8));
     if (y_->size() < t_->size()) {
         e_->send(t_->elem(y_->size()), nc, nrn_threads);
     }

@@ -11,6 +11,7 @@
 #include <errno.h>
 #include "parse.hpp"
 #include "hocparse.h"
+#include "oc_ansi.h"
 #include "ocfunc.h"
 #include "ocmisc.h"
 #include "nrnmpi.h"
@@ -21,6 +22,9 @@
 #endif
 #include "../nrniv/backtrace_utils.h"
 
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 
 /* for eliminating "ignoreing return value" warnings. */
 int nrnignore;
@@ -41,8 +45,7 @@ int (*p_nrnpy_pyrun)(const char* fname);
 #define use_rl_getc_function
 #endif
 
-#if carbon || defined(MINGW)
-#include <pthread.h>
+#if defined(MINGW)
 extern int stdin_event_ready();
 #endif
 
@@ -216,41 +219,13 @@ static int Getc(NrnFILEWrap* fp);
 static void unGetc(int c, NrnFILEWrap* fp);
 static int backslash(int c);
 
-extern "C" void nrn_exit(int i) {
+void nrn_exit(int i) {
 #if defined(WIN32)
     printf("NEURON exiting abnormally, press return to quit\n");
     fgetc(stdin);
 #endif
     exit(i);
 }
-
-#if LINDA
-
-int hoc_retreat_flag;
-#define RETREAT_SIGNAL SIGHUP
-
-static RETSIGTYPE retreat_handler(int sig) /* catch interrupt */
-{
-    /*ARGSUSED*/
-    if (hoc_retreat_flag++) {
-        /* never managed the first one properly */
-        nrn_exit(1);
-    }
-    if (!lookup("linda_retreat")) {
-        hoc_retreat_flag = 0;
-        /* user did not give us a safe retreat so it would be nice */
-        /* to take up later exactly at this point */
-        nrn_exit(1);
-    }
-    IGNORE(signal(RETREAT_SIGNAL, retreat_handler));
-}
-
-void hoc_retreat(void) {
-    hoc_obj_run("linda_retreat()\n", nullptr);
-    exit(0);
-}
-
-#endif
 
 #if defined(WIN32) || defined(MAC)
 #define HAS_SIGPIPE 0
@@ -932,8 +907,6 @@ void hoc_main1_init(const char* pname, const char** envp) {
         nrn_exit(1);
     }
 
-    save_parallel_envp();
-
     hoc_init();
     initplot();
 #if defined(__GO32__)
@@ -997,9 +970,6 @@ int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
 
     hoc_audit_from_hoc_main1(argc, argv, envp);
     hoc_main1_init(argv[0], envp);
-#if LINDA
-    signal(RETREAT_SIGNAL, retreat_handler);
-#endif
 #if HAS_SIGPIPE
     signal(SIGPIPE, sigpipe_handler);
 #endif
@@ -1057,72 +1027,28 @@ int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
     return exit_status;
 }
 
-#if carbon
-#include <sys/select.h>
-static pthread_t* inputReady_;
-static pthread_mutex_t inputMutex_;
-static pthread_cond_t inputCond_;
-static int inputReadyFlag_;
-
-void* inputReadyThread(void* input) {
-    fd_set readfds;
-    int i, j;
-    char c;
-    //	printf("inputReadyThread started\n");
-    //	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &j);
-    FD_ZERO(&readfds);
-    FD_SET(fileno(stdin), &readfds);
-    for (;;) {
-        i = select(1, &readfds, 0, 0, 0);
-        pthread_testcancel();
-        if (FD_ISSET(fileno(stdin), &readfds)) {
-            if (!stdin_event_ready()) {
-                // dialog is open. cannot accept input now.
-                printf("Discarding input til Dialog is closed.\n");
-                read(fileno(stdin), &c, 1);
-                continue;
-            }
-        }
-        pthread_mutex_lock(&inputMutex_);
-        pthread_cond_wait(&inputCond_, &inputMutex_);
-        pthread_mutex_unlock(&inputMutex_);
-    }
-    printf("inputReadyThread done\n");
-}
-#endif
-
 #ifdef MINGW
-static pthread_t* inputReady_;
-static pthread_mutex_t inputMutex_;
-static pthread_cond_t inputCond_;
-static int inputReadyFlag_;
-static int inputReadyVal_;
+namespace {
+std::mutex inputMutex_;
+std::condition_variable inputCond_;
+// This is intentionally leaked because it is never joined, and the destructor
+// would call terminate.
+std::thread* inputReady_;
+int inputReadyFlag_;
+int inputReadyVal_;
+}  // namespace
 extern "C" int getch();
 
-void* inputReadyThread(void* input) {
-    int i, j;
-    char c;
-    //	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &j);
+void inputReadyThread() {
     for (;;) {
-        pthread_testcancel();
-#if 0
-		//if (kbhit()) {
-			if (!stdin_event_ready()) {
-				// dialog is open. cannot accept input now.
-printf("Discarding input til Dialog is closed.\n");
-				read(fileno(stdin), &c, 1);
-				continue;
-			}
-		} // extern "C"
-#endif
-        i = getch();
-        // printf("see %d %c\n", i, i);
-        pthread_mutex_lock(&inputMutex_);
+        // The pthread version had pthread_testcancel() here, but the thread was
+        // never cancelled.
+        int i = getch();
+        std::unique_lock<std::mutex> lock{inputMutex_};
         inputReadyFlag_ = 1;
         inputReadyVal_ = i;
         stdin_event_ready();
-        pthread_cond_wait(&inputCond_, &inputMutex_);
-        pthread_mutex_unlock(&inputMutex_);
+        inputCond_.wait(lock);
     }
     printf("inputReadyThread done\n");
 }
@@ -1160,13 +1086,6 @@ void hoc_final_exit(void) {
 }
 
 void hoc_quit(void) {
-#if carbon
-    if (0 && inputReady_) {
-        pthread_cancel(*inputReady_);
-        pthread_kill(*inputReady_, SIGHUP);
-        pthread_join(*inputReady_, 0);
-    }
-#endif
     hoc_final_exit();
     ivoc_final_exit();
 #if defined(USE_PYTHON)
@@ -1311,7 +1230,7 @@ int moreinput(void) {
         hoc_print_first_instance = hpfi;
         hocstr_delete(hs);
         if (err) {
-            hoc_warning("arg not valid statement:", infile);
+            hoc_execerror("arg not valid statement:", infile);
         }
         return moreinput();
     } else if (strlen(infile) > 3 && strcmp(infile + strlen(infile) - 3, ".py") == 0) {
@@ -1455,13 +1374,13 @@ static void nrn_inputbuf_getline(void) {
 }
 
 // used by ocjump.cpp
-extern "C" void oc_save_input_info(const char** i1, int* i2, int* i3, NrnFILEWrap** i4) {
+void oc_save_input_info(const char** i1, int* i2, int* i3, NrnFILEWrap** i4) {
     *i1 = nrn_inputbufptr;
     *i2 = pipeflag;
     *i3 = lineno;
     *i4 = fin;
 }
-extern "C" void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
+void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
     nrn_inputbufptr = i1;
     pipeflag = i2;
     lineno = i3;
@@ -1656,36 +1575,14 @@ extern int run_til_stdin(); /* runs the interviews event loop. Returns 1
 extern void hoc_notify_value(void);
 
 #if READLINE
-#if carbon
-extern int (*rl_event_hook)(void);
-static int event_hook(void) {
-    if (!inputReady_) {
-        inputReady_ = (pthread_t*) emalloc(sizeof(pthread_t));
-        pthread_mutex_init(&inputMutex_, 0);
-        pthread_cond_init(&inputCond_, 0);
-        pthread_create(inputReady_, 0, inputReadyThread, 0);
-    } else {
-        pthread_mutex_unlock(&inputMutex_);
-    }
-    //	printf("run til stdin\n");
-    run_til_stdin();
-    pthread_mutex_lock(&inputMutex_);
-    pthread_cond_signal(&inputCond_);
-    return 1;
-}
-#else /* not carbon */
 #ifdef MINGW
 extern int (*rl_getc_function)(void);
 static int getc_hook(void) {
-    int i;
     if (!inputReady_) {
         stdin_event_ready(); /* store main thread id */
-        inputReady_ = (pthread_t*) emalloc(sizeof(pthread_t));
-        pthread_mutex_init(&inputMutex_, 0);
-        pthread_cond_init(&inputCond_, 0);
-        pthread_create(inputReady_, 0, inputReadyThread, 0);
+        inputReady_ = new std::thread{inputReadyThread};
     } else {
-        pthread_mutex_unlock(&inputMutex_);
+        inputMutex_.unlock();
     }
     //	printf("run til stdin\n");
     while (!inputReadyFlag_) {
@@ -1693,13 +1590,12 @@ static int getc_hook(void) {
         usleep(10000);
     }
     inputReadyFlag_ = 0;
-    i = inputReadyVal_;
-    pthread_mutex_lock(&inputMutex_);
-    pthread_cond_signal(&inputCond_);
-    // printf("getc_hook returning %d\n", i);
+    int i = inputReadyVal_;
+    inputMutex_.lock();
+    inputCond_.notify_one();
     return i;
 }
-#else /* not carbon and not MINGW */
+#else /* not MINGW */
 
 #if defined(use_rl_getc_function)
 /* e.g. mac libedit.3.dylib missing rl_event_hook */
@@ -1745,8 +1641,7 @@ static int event_hook(void) {
 
 #endif /* not use_rl_getc_function */
 
-#endif /* not carbon and not MINGW */
-#endif /* not carbon */
+#endif /* not MINGW */
 #endif /* READLINE */
 #endif /* INTERVIEWS */
 

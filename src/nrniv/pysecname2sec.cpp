@@ -28,11 +28,14 @@ static void activate() {
         // printf("first activation\n");
         activated = true;
         hoc_Item* qsec;
-        ForAllSections(sec) if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-            nrnpy_pysecname2sec_add(sec);
+        // ForAllSections(sec)
+        ITERATE(qsec, section_list) {
+            Section* sec = hocSEC(qsec);
+            if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+                nrnpy_pysecname2sec_add(sec);
+            }
         }
     }
-}
 #endif
 }
 

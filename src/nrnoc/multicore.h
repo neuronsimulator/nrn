@@ -55,7 +55,7 @@ typedef struct _nrn_Fast_Imem {
  * NrnThread represent collection of cells or part of a cell computed
  * by single thread within NEURON process.
  */
-typedef struct NrnThread {
+struct NrnThread {
     double _t;
     double _dt;
     double cj;
@@ -89,12 +89,12 @@ typedef struct NrnThread {
     NrnThreadBAList* tbl[BEFORE_AFTER_SIZE]; /* wasteful since almost all empty */
     hoc_List* roots;                         /* ncell of these */
     Object* userpart; /* the SectionList if this is a user defined partition */
-
-} NrnThread;
+};
 
 
 extern int nrn_nthread;
 extern NrnThread* nrn_threads;
+void nrn_threads_create(int n, bool parallel);
 extern void nrn_thread_error(const char*);
 extern void nrn_multithread_job(void* (*) (NrnThread*) );
 extern void nrn_onethread_job(int, void* (*) (NrnThread*) );

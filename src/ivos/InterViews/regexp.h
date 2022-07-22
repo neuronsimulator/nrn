@@ -54,9 +54,12 @@ struct regexp {
 
 /*
  * The first byte of the regexp internal "program" is actually this magic
- * number; the start node begins in the second byte.
+ * number; the start node begins in the second byte. This used to be the octal
+ * integer literal 0234 = 156, which would be implicitly converted to -100 when
+ * narrowing to signed 8 bit char. This conversion was implementation defined
+ * before C++20.
  */
-#define	REGEXP_MAGIC	0234
+#define	REGEXP_MAGIC	static_cast<char>(-100)
 
 class Regexp {
 public:

@@ -12,7 +12,6 @@
 #undef i
 #undef sec
 
-#undef Memb_list
 #undef nodelist
 #undef nodeindices
 #undef data

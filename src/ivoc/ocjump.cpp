@@ -7,6 +7,7 @@
 #else
 #include "oc2iv.h"
 #endif
+#include "ocfunc.h"
 #include "ocjump.h"
 #include "nrnfilewrap.h"
 #if HAVE_IV
@@ -62,7 +63,6 @@ void hoc_execute1() {
 }
 
 // safely? return from an execution even in the presence of an execerror
-#define OcFrame void
 
 class OcJumpImpl {
   public:
@@ -92,7 +92,6 @@ class OcJumpImpl {
     // hoc_oop
     Object* o1;
     Objectdata* o2;
-    int* o3;
     int o4;
     Symlist* o5;
 
@@ -100,18 +99,18 @@ class OcJumpImpl {
     Inst* c1;
     Inst* c2;
     Datum* c3;
-    OcFrame* c4;
+    nrn::oc::frame* c4;
     int c5;
     int c6;
     Inst* c7;
-    OcFrame* c8;
+    nrn::oc::frame* c8;
     Datum* c9;
     Symlist* c10;
     Inst* c11;
     int c12;
 
     // input_info
-    char* i1;
+    const char* i1;
     int i2;
     int i3;
     NrnFILEWrap* i4;
@@ -234,44 +233,9 @@ void* OcJumpImpl::fpycall(void* (*f)(void*, void*), void* a, void* b) {
 extern void (*oc_jump_target_)(void);
 extern int hoc_intset;
 //	extern int hoc_pipeflag;
-extern "C" {
-void oc_save_hoc_oop(Object**, Objectdata**, int**, int*, Symlist**);
-void oc_restore_hoc_oop(Object**, Objectdata**, int**, int*, Symlist**);
-void oc_save_code(Inst**,
-                  Inst**,
-                  Datum**,
-                  OcFrame**,
-                  int*,
-                  int*,
-                  Inst**,
-                  OcFrame**,
-                  Datum**,
-                  Symlist**,
-                  Inst**,
-                  int*);
-void oc_restore_code(Inst**,
-                     Inst**,
-                     Datum**,
-                     OcFrame**,
-                     int*,
-                     int*,
-                     Inst**,
-                     OcFrame**,
-                     Datum**,
-                     Symlist**,
-                     Inst**,
-                     int*);
-void oc_save_input_info(char**, int*, int*, NrnFILEWrap**);
-void oc_restore_input_info(char*, int, int, NrnFILEWrap*);
-#if CABLE
-void oc_save_cabcode(int*, int*);
-void oc_restore_cabcode(int*, int*);
-#endif
-}  // extern "C"
-
 void OcJumpImpl::begin() {
     // not complete but it is good for expressions and it can be improved
-    oc_save_hoc_oop(&o1, &o2, &o3, &o4, &o5);
+    oc_save_hoc_oop(&o1, &o2, &o4, &o5);
     oc_save_code(&c1, &c2, &c3, &c4, &c5, &c6, &c7, &c8, &c9, &c10, &c11, &c12);
     oc_save_input_info(&i1, &i2, &i3, &i4);
 #if CABLE
@@ -284,7 +248,7 @@ void OcJumpImpl::begin() {
     oji_ = this;
 }
 void OcJumpImpl::restore() {
-    oc_restore_hoc_oop(&o1, &o2, &o3, &o4, &o5);
+    oc_restore_hoc_oop(&o1, &o2, &o4, &o5);
     oc_restore_code(&c1, &c2, &c3, &c4, &c5, &c6, &c7, &c8, &c9, &c10, &c11, &c12);
     oc_restore_input_info(i1, i2, i3, i4);
 #if CABLE
@@ -304,7 +268,7 @@ void OcJumpImpl::finish() {
 }
 
 ObjectContext::ObjectContext(Object* obj) {
-    oc_save_hoc_oop(&a1, &a2, &a3, &a4, &a5);
+    oc_save_hoc_oop(&a1, &a2, &a4, &a5);
     hoc_thisobject = obj;
     if (obj) {
         hoc_objectdata = obj->u.dataspace;
@@ -323,6 +287,6 @@ ObjectContext::~ObjectContext() {
 }
 
 void ObjectContext::restore() {
-    oc_restore_hoc_oop(&a1, &a2, &a3, &a4, &a5);
+    oc_restore_hoc_oop(&a1, &a2, &a4, &a5);
     restored_ = true;
 }

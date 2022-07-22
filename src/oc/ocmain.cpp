@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/ocmain.cpp,v 1.7 1997/07/29 20:23:33 hines Exp */
+#include "isoc99.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,11 +54,7 @@ static void setnrnhome(const char* arg) {
 #endif
 }
 
-#if LINDA /* LINDA (SAF) */
-real_main(int argc, const char** argv, const char** envp) {
-#else
 int main(int argc, const char** argv, const char** envp) {
-#endif
     int err;
     nrn_isdouble(nullptr, 0., 0.);
 #if MAC
@@ -75,22 +72,12 @@ int main(int argc, const char** argv, const char** envp) {
 #if EXPRESS
     exit(0);
 #else
-#if LINDA
-    lexit(0);
-#else
     return err;
-#endif
 #endif
 }
 
 
 void hoc_single_event_run() { /* for interviews, ivoc make use of own main */
-#if LINDA
-    extern int hoc_retreat_flag;
-    if (hoc_retreat_flag) {
-        hoc_retreat();
-    }
-#endif
 #if INTERVIEWS && 0
     single_event_run();
 #endif

@@ -1,27 +1,21 @@
-#ifndef nrnfilewrap_h
-#define nrnfilewrap_h
-
+#pragma once
+#include "hocstr.h"
+#include "nrnmpiuse.h"  // defines USE_NRNFILEWRAP
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <nrnmpiuse.h>
 
 #if !defined(USE_NRNFILEWRAP)
 #define USE_NRNFILEWRAP 0
 #endif
 
-
-#include "hocstr.h"
-
 #if USE_NRNFILEWRAP
-
-typedef struct NrnFILEWrap {
+struct NrnFILEWrap {
     FILE* f;
     unsigned char* buf;
     size_t ip, cnt;
-} NrnFILEWrap;
+};
 
-extern char* fgets_unlimited(HocStr* s, NrnFILEWrap* f);
 extern NrnFILEWrap* nrn_fw_wrap(FILE* f);
 extern void nrn_fw_delete(NrnFILEWrap* fw);
 #define nrn_fw_eq(fw, ff) (fw->f == ff)
@@ -35,9 +29,7 @@ extern int nrn_fw_fscanf(NrnFILEWrap* fw, const char* format, ...);
 extern int nrn_fw_readaccess(const char* path);
 
 #else /* not USE_NRNFILEWRAP */
-
-#define NrnFILEWrap          FILE
-extern char* fgets_unlimited(HocStr* s, NrnFILEWrap* f);
+using NrnFILEWrap = FILE;
 #define nrn_fw_wrap(f)       f
 #define nrn_fw_delete(fw)    /**/
 #define nrn_fw_eq(fw, ff)    (fw == ff)
@@ -50,8 +42,5 @@ extern char* fgets_unlimited(HocStr* s, NrnFILEWrap* f);
 #define nrn_fw_fscanf        fscanf
 
 #endif
-
+extern char* fgets_unlimited(HocStr* s, NrnFILEWrap* f);
 extern NrnFILEWrap* hoc_fin;
-
-
-#endif
