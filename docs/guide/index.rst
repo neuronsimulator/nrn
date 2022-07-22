@@ -13,5 +13,14 @@ Guides
    import3d
    network_builder_tutorials
    optimization
+
+.. toctree::
+   :maxdepth: 1 
+
+   modelview_compact_display
+
+.. toctree::
+   :maxdepth: 2
+
    randomness
    faq
