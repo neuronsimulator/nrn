@@ -145,7 +145,6 @@ struct Node {
     double _a;    /* effect of node in parent equation */
     double _b;    /* effect of parent in node equation */
 #else             /* CACHEVEC */
-    // double* _v;     /* membrane potential */
     double _area;   /* area in um^2 but see treesetup.cpp */
     double _rinv;   /* conductance uS from node to parent */
     double _v_temp; /* vile necessity til actual_v allocated */
