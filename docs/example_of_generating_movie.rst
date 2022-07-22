@@ -3,6 +3,8 @@
 Example of Generating a Movie 
 ============
 
+`ipynb from google colab <https://colab.research.google.com/drive/1YuDWJt2osDaAqVlMKZ2AZBhqrabWDmjz?usp=sharing#scrollTo=Gn45M0sd_GlD>`_ to google colab
+
 Install NEURON, update matplotlib
 ----------
 
@@ -134,4 +136,3 @@ Let's look at the MP4
 
     show_video("neuron_movie.mp4")
 
-`Link <https://colab.research.google.com/drive/1YuDWJt2osDaAqVlMKZ2AZBhqrabWDmjz?usp=sharing#scrollTo=Gn45M0sd_GlD>`_ to google colab

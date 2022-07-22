@@ -38,8 +38,9 @@ Diagnostics:
                 >>> abs(-3 + 4j)
                 5.0
                 >>> v = h.Vector([1, 6, -2, -65])
-                >>> abs(v.as_numpy())
-                array([  1.,   6.,   2.,  65.])
+                >>> abs(v).printf()
+                1       6       2       65
+                4
 
 
 

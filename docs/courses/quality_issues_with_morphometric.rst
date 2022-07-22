@@ -1,26 +1,24 @@
 .. _quality_issues_with_morphometric_data:
 
 Quality Issues with Morphometric Data
-============
+=====================================
 
 Like any other experimental measurements, morphometric data are subject to their own sources of error. Many pitfalls await the uninformed. The investigator who lacks practical experience in microscopic neuroanatomy in general, and in the acquisition of morphometric data in particular, would do well to find a colleague who has such experience, and ask that person how it is done, what are criteria for "quality," and what caveats apply--maybe even offer to do a reconstruction for the sake of gaining experience.
 
-MicroBrightfield's web site can be a useful source of information. Also, there is a scientific literature about the quality of morphometric data from the perspective of computational modeling. These two articles could serve as a starting point--they discuss various artifacts that frequenly affect morphometric data and can have serious adverse effects on simulation results:
+`MBF Bioscience's website <https://www.mbfbioscience.com/>`_ can be a useful source of information. Also, there is a scientific literature about the quality of morphometric data from the perspective of computational modeling. These two articles could serve as a starting point--they discuss various artifacts that frequenly affect morphometric data and can have serious adverse effects on simulation results:
 
-Kaspirzhny AV, Gogan P, Horcholle-Bossavit G, Tyc-Dumont S.
-Neuronal morphology data bases: morphological noise and assesment
-of data quality. Network: Computation in Neural Systems 13:357-380, 2002.
+Kaspirzhny AV, Gogan P, Horcholle-Bossavit G, Tyc-Dumont S. 2002. Neuronal morphology data bases: morphological noise and assesment of data quality. Network: Computation in Neural Systems 13:357-380. `doi:10.1088/0954-898X_13_3_307 <https://www.tandfonline.com/doi/abs/10.1088/0954-898X_13_3_307>`_
 
-Scorcioni, R., Lazarewicz, M.T., and Ascoli, G.A. Quantitative morphometry
-of hippocampal pyramidal cells: differences between anatomical classes and
-reconstructing laboratories. Journal of Comparative Neurology 473:177-193, 2004.
+Scorcioni, R., Lazarewicz, M.T., and Ascoli, G.A. Quantitative morphometry of hippocampal pyramidal cells: differences between anatomical classes and reconstructing laboratories. Journal of Comparative Neurology 473:177-193, 2004. `doi:10.1002/cne.20067 <https://onlinelibrary.wiley.com/doi/10.1002/cne.20067>`_
+
+These also appear on the :ref:`working with morphometric data <_using_morphometric_data>` page.
 
 A more recent source of information is **Chapter 6. Methods** in Corinne Teeter's dissertation
 **Characterizing the Spatial Density Functions of Neural Arbors**
 which is available at `this link <https://escholarship.org/uc/item/2jq2z2xq>`_.
 
 Important things to keep in mind
------------
+--------------------------------
 
 There is no guarantee that any morphometric data file will be suitable for any use other than that which motivated the authors from whose lab it came.
 

@@ -17,7 +17,7 @@ Quick Links
     `Random <programming/math/random.html>`_, `StringFunctions <programming/strfun.html>`_,
     `SymChooser <programming/gui/symchooser.html>`_,
     `TextEditor <programming/gui/texteditor.html>`_, `Timer <programming/timer.html>`_, `ValueFieldEditor <programming/gui/vfe.html>`_,
-    :class:`VBox`, `Vector <programming/math/vector.html>`_, :class:`h.Section`
+    :class:`VBox`, `Vector <programming/math/vector.html>`_
     
     `BBSaveState <simctrl/bbsavestate.html>`_, `CVode <simctrl/cvode.html>`_, :class:`FInitializeHandler`, `Impedance <analysis/programmatic/impedance.html>`_,
     `KSChan <modelspec/programmatic/kschan.html>`_, `LinearMechanism <modelspec/programmatic/linmod.html>`_,
