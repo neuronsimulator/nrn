@@ -32,8 +32,6 @@ jobs:
               flag_warnings: ON
               os: ubuntu-22.04
           - config:
-              os: macos-10.15
-          - config:
               os: macos-11
           # TODO: might be interesting to add the thread sanitizer too
           - config:
