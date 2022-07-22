@@ -1,18 +1,10 @@
 INCF/CNS 2022 Online Tutorial
 =========================
 
-A free online webinar series was offered on July 16, 2022.
-
-The tutorial introduced multiscale modeling using the NEURON 8.0 simulator, including the Reaction-Diffusion (RxD) module, and the NetPyNE tool. 
-The tutorial combined background, examples and hands on exercises covering the implementation of models at four key scales: (1) intracellular dynamics (e.g. calcium buffering, protein interactions), (2) single neuron electrophysiology (e.g. action potential propagation), (3) neurons in extracellular space (e.g. spreading depression), and (4) networks of neurons.
-
-For network simulations, NetPyNE -- a high-level interface to NEURON supporting both programmatic and GUI specification that facilitates the development, parallel simulation, and analysis of biophysically detailed neuronal circuits -- was used. 
-An example combining all three tools that links intracellular molecular dynamics with network spiking activity and local field potentials concluded the tutorial. 
-
-The tutorial incorporated the recent substantial developments and nre features in both the NEURON and NetPyNE tools
+A free online webinar series was offered on June 28, 2022.
 
 For those who prefer, this video series may also be accessed as a 
-`YouTube playlist <https://youtube.com/playlist?list=PLydMjAmHmOmj8gCwQPvedIwJqqJAmMqYe>`_.
+ `YouTube playlist <https://youtube.com/playlist?list=PLydMjAmHmOmj8gCwQPvedIwJqqJAmMqYe>`_.
 
 Course Welcome
 ----------------------
