@@ -9,6 +9,7 @@ with NEURON videos.
 .. toctree::
    :maxdepth: 2
 
+   cns-tutorial-2022
    neuron-course-2021
    netpyne-course-2021
    cns-tutorial-2021
