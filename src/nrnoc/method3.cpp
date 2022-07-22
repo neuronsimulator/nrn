@@ -103,8 +103,6 @@ method3.cpp,v
 #include "neuron.h"
 #include "parse.hpp"
 
-extern int diam_changed;
-extern int tree_changed;
 extern double chkarg();
 extern double nrn_ra();
 
@@ -134,7 +132,6 @@ int spatial_method() {
 When properties are allocated to nodes or freed, v_structure_change is
 set to 1. This means that the mechanism vectors need to be re-determined.
 */
-extern "C" int v_structure_change;
 extern int v_node_count;
 extern Node** v_node;
 extern Node** v_parent;
@@ -302,7 +299,7 @@ method3_connection_coef() /* setup a and b */
     hoc_Item* qsec;
     Section* sec;
     Node* nd;
-    Prop *p, *nrn_mechanism();
+    Prop* p;
     float r, s, t;
 
     if (tree_changed) {
@@ -331,43 +328,46 @@ method3_connection_coef() /* setup a and b */
         t = 0.;
     }
 
-    ForAllSections(sec) dx = section_length(sec) / ((double) (sec->nnode));
-    for (j = 0; j < sec->nnode; ++j) {
-        nd = sec->pnode[j];
-        p = nrn_mechanism(MORPHOLOGY, nd);
-        assert(p);
-        diam = p->param[0];
-        /* dv/(ra*dx) is nanoamps */
-        ra = nrn_ra(sec) * 4.e-2 / (PI * diam * diam);
-        /* coef*dx* mA/cm^2 should be nanoamps */
-        coef = PI * 1e-2 * diam;
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        dx = section_length(sec) / ((double) (sec->nnode));
+        for (j = 0; j < sec->nnode; ++j) {
+            nd = sec->pnode[j];
+            p = nrn_mechanism(MORPHOLOGY, nd);
+            assert(p);
+            diam = p->param[0];
+            /* dv/(ra*dx) is nanoamps */
+            ra = nrn_ra(sec) * 4.e-2 / (PI * diam * diam);
+            /* coef*dx* mA/cm^2 should be nanoamps */
+            coef = PI * 1e-2 * diam;
 
-        nd->area = 100.;
-        sec->parentnode->area = 100.;
+            nd->area = 100.;
+            sec->parentnode->area = 100.;
 
-        nd->toparent.coef0 = coef * r * dx / 12.;
-        nd->fromparent.coef0 = coef * r * dx / 12.;
-        nd->toparent.coefn = coef * s * dx / 12.;
-        nd->fromparent.coefn = coef * s * dx / 12.;
-        nd->toparent.coefjdot = t * ra * coef * dx * dx / 12.;
-        nd->fromparent.coefjdot = t * ra * coef * dx * dx / 12.;
-        nd->toparent.coefdg = t * coef * dx / 12.;
-        nd->fromparent.coefdg = t * coef * dx / 12.;
-        nd->toparent.coefj = 1. / (ra * dx);
-        nd->fromparent.coefj = 1. / (ra * dx);
-        nd->toparent.nd2 = 0;
-        nd->fromparent.nd2 = 0;
-    }
-    if (sec->nnode > 1) {
-        sec->pnode[0]->toparent.nd2 = sec->pnode[1];
-        if (sec->nnode > 2) {
-            sec->pnode[sec->nnode - 2]->fromparent.nd2 = sec->pnode[sec->nnode - 3];
-        } else {
-            sec->pnode[sec->nnode - 2]->fromparent.nd2 =
-                sec->parentsec->pnode[sec->parentsec->nnode - 1];
+            nd->toparent.coef0 = coef * r * dx / 12.;
+            nd->fromparent.coef0 = coef * r * dx / 12.;
+            nd->toparent.coefn = coef * s * dx / 12.;
+            nd->fromparent.coefn = coef * s * dx / 12.;
+            nd->toparent.coefjdot = t * ra * coef * dx * dx / 12.;
+            nd->fromparent.coefjdot = t * ra * coef * dx * dx / 12.;
+            nd->toparent.coefdg = t * coef * dx / 12.;
+            nd->fromparent.coefdg = t * coef * dx / 12.;
+            nd->toparent.coefj = 1. / (ra * dx);
+            nd->fromparent.coefj = 1. / (ra * dx);
+            nd->toparent.nd2 = 0;
+            nd->fromparent.nd2 = 0;
+        }
+        if (sec->nnode > 1) {
+            sec->pnode[0]->toparent.nd2 = sec->pnode[1];
+            if (sec->nnode > 2) {
+                sec->pnode[sec->nnode - 2]->fromparent.nd2 = sec->pnode[sec->nnode - 3];
+            } else {
+                sec->pnode[sec->nnode - 2]->fromparent.nd2 =
+                    sec->parentsec->pnode[sec->parentsec->nnode - 1];
+            }
         }
     }
-}
 }
 
 

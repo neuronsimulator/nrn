@@ -3,8 +3,6 @@ set(prefix "benchmark/channels") # everything is under this prefix in the reposi
 set(channel_benchmark_sim_time 10)
 set(channel_benchmark_mpi_ranks 1)
 set(channel_benchmark_neuron_prefix
-    OMP_NUM_THREADS=1
-    "HOC_LIBRARY_PATH=${prefix}/lib/hoclib"
     ${MPIEXEC_NAME}
     ${MPIEXEC_NUMPROC_FLAG}
     ${channel_benchmark_mpi_ranks}
@@ -23,6 +21,7 @@ foreach(model hippo sscx)
     NAME channel_benchmark_${model}
     SUBMODULE tests/channel-benchmark
     OUTPUT asciispikes::out.dat
+    ENVIRONMENT OMP_NUM_THREADS=1 "HOC_LIBRARY_PATH=${prefix}/lib/hoclib"
     MODFILE_PATTERNS "${prefix}/lib/modlib/*.mod"
     SCRIPT_PATTERNS "${prefix}/lib/hoclib/*.hoc" "${prefix}/${model}/*.txt"
                     "${prefix}/${model}/morphologies/*.asc")

@@ -3,6 +3,7 @@ nrn_add_test_group(
   CORENEURON
   NAME reduced_dentate
   SUBMODULE tests/reduced_dentate
+  ENVIRONMENT HOC_LIBRARY_PATH=templates OMP_NUM_THREADS=1
   OUTPUT "asciispikes::results/dentatenet_spikeout_*.dat"
   MODFILE_PATTERNS "mechanisms/*.mod"
   SCRIPT_PATTERNS "commonutils.py" "dat/*.dat" "datasets/Control/*.dat" "*.hoc" "templates/*.hoc")
@@ -14,8 +15,6 @@ set(reduced_dentate_sim_time 10)
 # but it should be revisited. Ideally we would use a small model based on a newer version of
 # https://github.com/soltesz-lab/dentate.
 set(reduced_dentate_neuron_prefix
-    OMP_NUM_THREADS=1
-    HOC_LIBRARY_PATH=templates
     ${MPIEXEC_NAME}
     ${MPIEXEC_NUMPROC_FLAG}
     ${reduced_dentate_mpi_ranks}

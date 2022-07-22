@@ -5,16 +5,16 @@
 #endif
 
 //#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <ivstream.h>
-#include <math.h>
-#include <errno.h>
+#include <cmath>
+#include <cerrno>
 #include <numeric>
 #include <functional>
 
-#include <OS/math.h>
 #include "fourier.h"
+#include "mymath.h"
 
 #if HAVE_IV
 #include <InterViews/glyph.h>
@@ -129,23 +129,16 @@ static double dmaxint_ = 9007199254740992;
 #include "utility.h"
 #endif
 #include "oc2iv.h"
-#include "parse.hpp"
+#include "oc_ansi.h"
 #include "ocfile.h"
+#include "ocfunc.h"
+#include "parse.hpp"
 
 extern Object* hoc_thisobject;
 extern Symlist* hoc_top_level_symlist;
-extern "C" void nrn_exit(int);
 IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 Object** (*nrnpy_vec_to_python_p_)(void*);
 Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
-
-// math functions with error checking defined in oc/SRC/math.cpp
-extern double hoc_Log(double x), hoc_Log10(double x), /*hoc_Exp(double x), */ hoc_Sqrt(double x);
-extern double hoc_scan(FILE*);
-
-extern "C" {
-extern double hoc_Exp(double);
-}  // extern "C"
 
 static int narg() {
     int i = 0;
@@ -166,16 +159,8 @@ static int narg() {
 int cmpfcn(double a, double b) {
     return ((a) <= (b)) ? (((a) == (b)) ? 0 : -1) : 1;
 }
-typedef int (*doubleComparator)(double, double);
-
-extern "C" {
-extern void install_vector_method(const char* name, Pfrd_vp);
-extern int vector_instance_px(void*, double**);
-extern int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, doubleComparator cmp);
-}  // extern "C"
 
 extern int vector_arg_px(int, double**);
-extern void notify_freed_val_array(double*, size_t);
 
 extern int hoc_return_type_code;
 
@@ -298,38 +283,60 @@ static Symbol* svec_;
 
 // extern "C" vector functions used by ocmatrix.dll
 // can also be used in mod files
-Vect* vector_new(int n, Object* o) {
-    return new Vect(n, o);
-}
-Vect* vector_new0() {
-    return new Vect();
-}
-Vect* vector_new1(int n) {
-    return new Vect(n);
-}
-Vect* vector_new2(Vect* v) {
-    return new Vect(*v);
-}
 void vector_delete(Vect* v) {
     delete v;
 }
-int vector_buffer_size(Vect* v) {
+IvocVect* vector_arg(int i) {
+    Object* ob = *hoc_objgetarg(i);
+    if (!ob || ob->ctemplate != svec_->u.ctemplate) {
+        check_obj_type(ob, "Vector");
+    }
+    return static_cast<IvocVect*>(ob->u.this_pointer);
+}
+int vector_buffer_size(IvocVect* v) {
     return v->buffer_size();
 }
-int vector_capacity(Vect* v) {
+int vector_buffer_size(void* v) {
+    return vector_buffer_size(static_cast<IvocVect*>(v));
+}
+int vector_capacity(IvocVect* v) {
     return v->size();
 }
-void vector_resize(Vect* v, int n) {
+int vector_capacity(void* v) {
+    return vector_capacity(static_cast<IvocVect*>(v));
+}
+IvocVect* vector_new(int n, Object* o) {
+    return new IvocVect(n, o);
+}
+IvocVect* vector_new0() {
+    return new IvocVect();
+}
+IvocVect* vector_new1(int n) {
+    return new IvocVect(n);
+}
+IvocVect* vector_new2(IvocVect* v) {
+    return new IvocVect(*v);
+}
+Object** vector_pobj(IvocVect* v) {
+    return &v->obj_;
+}
+Object** vector_pobj(void* v) {
+    return vector_pobj(static_cast<IvocVect*>(v));
+}
+void vector_resize(IvocVect* v, int n) {
     v->resize(n);
+}
+void vector_resize(void* v, int n) {
+    vector_resize(static_cast<IvocVect*>(v), n);
+}
+double* vector_vec(IvocVect* v) {
+    return v->data();
+}
+double* vector_vec(void* v) {
+    return vector_vec(static_cast<IvocVect*>(v));
 }
 Object** vector_temp_objvar(Vect* v) {
     return v->temp_objvar();
-}
-double* vector_vec(Vect* v) {
-    return v->data();
-}
-Object** vector_pobj(Vect* v) {
-    return &v->obj_;
 }
 char* vector_get_label(Vect* v) {
     return v->label_;
@@ -375,7 +382,6 @@ Object** IvocVect::temp_objvar() {
     return po;
 }
 
-extern "C" {  // bug in cray compiler requires this
 void install_vector_method(const char* name, double (*f)(void*)) {
     Symbol* s_meth;
     if (hoc_table_lookup(name, svec_->u.ctemplate->symtable)) {
@@ -386,20 +392,11 @@ void install_vector_method(const char* name, double (*f)(void*)) {
 #define PUBLIC_TYPE 1
     s_meth->cpublic = PUBLIC_TYPE;
 }
-}  // extern "C"
 
-extern "C" int vector_instance_px(void* v, double** px) {
+int vector_instance_px(void* v, double** px) {
     Vect* x = (Vect*) v;
     *px = x->data();
     return x->size();
-}
-
-extern "C" Vect* vector_arg(int i) {
-    Object* ob = *hoc_objgetarg(i);
-    if (!ob || ob->ctemplate != svec_->u.ctemplate) {
-        check_obj_type(ob, "Vector");
-    }
-    return (Vect*) (ob->u.this_pointer);
 }
 
 int is_vector_arg(int i) {
@@ -1480,7 +1477,7 @@ static double v_contains(void* v) {
     double g = *getarg(1);
     hoc_return_type_code = 2;
     for (int i = 0; i < x->size(); i++) {
-        if (Math::equal(x->elem(i), g, hoc_epsilon))
+        if (MyMath::eq(x->elem(i), g, hoc_epsilon))
             return 1.;
     }
     return 0.;
@@ -1570,23 +1567,21 @@ static Object** v_copy(void* v) {
 
 
 static Object** v_at(void* v) {
-    Vect* x = (Vect*) v;
-
-    int top = x->size() - 1;
-    int start = 0;
-    int end = top;
+    auto* x = static_cast<Vect*>(v);
+    std::size_t start{};
+    std::size_t end{x->size()};
     if (ifarg(1)) {
-        start = int(chkarg(1, 0, top));
+        start = chkarg(1, 0, x->size() - 1);
     }
     if (ifarg(2)) {
-        end = int(chkarg(2, start, top));
+        end = chkarg(2, start, x->size() - 1) + 1.0;
     }
-    int size = end - start + 1;
-    Vect* y = new Vect(size);
+    std::size_t size{end - start};
+    auto* y = new Vect(size);
     // ZFM: fixed bug -- i<size, not i<=size
-    for (int i = 0; i < size; i++)
+    for (std::size_t i = 0; i < size; ++i) {
         y->elem(i) = x->elem(i + start);
-
+    }
     return y->temp_objvar();
 }
 
@@ -1719,7 +1714,7 @@ static Object** v_where(void* v) {
 
     if (!strcmp(op, "==")) {
         for (i = 0; i < n; i++) {
-            if (Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 //	      y->resize_chunk(++m);
                 //	      y->elem(m-1) = x->elem(i);
                 y->push_back(x->elem(i));
@@ -1727,7 +1722,7 @@ static Object** v_where(void* v) {
         }
     } else if (!strcmp(op, "!=")) {
         for (i = 0; i < n; i++) {
-            if (!Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (!MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 y->push_back(x->elem(i));
             }
         }
@@ -1807,13 +1802,13 @@ static double v_indwhere(void* v) {
 
     if (!strcmp(op, "==")) {
         for (i = 0; i < n; i++) {
-            if (Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 return i;
             }
         }
     } else if (!strcmp(op, "!=")) {
         for (i = 0; i < n; i++) {
-            if (!Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (!MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 return i;
             }
         }
@@ -1893,13 +1888,13 @@ static Object** v_indvwhere(void* v) {
 
     if (!strcmp(op, "==")) {
         for (i = 0; i < n; i++) {
-            if (Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 y->push_back(i);
             }
         }
     } else if (!strcmp(op, "!=")) {
         for (i = 0; i < n; i++) {
-            if (!Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (!MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 y->push_back(i);
             }
         }
@@ -1966,15 +1961,14 @@ static Object** v_indvwhere(void* v) {
 }
 
 static Object** v_fill(void* v) {
-    Vect* x = (Vect*) v;
-    int top = x->size() - 1;
-    int start = 0;
-    int end = top;
+    auto* x = static_cast<Vect*>(v);
+    std::size_t start{};
+    std::size_t end{x->size()};
     if (ifarg(2)) {
-        start = int(chkarg(2, 0, top));
-        end = int(chkarg(3, start, top));
+        start = chkarg(2, 0, x->size() - 1);
+        end = chkarg(3, start, x->size() - 1) + 1.0;
     }
-    std::fill(x->begin() + start, x->begin() + end + 1, *getarg(1));
+    std::fill(x->begin() + start, x->begin() + end, *getarg(1));
     return x->temp_objvar();
 }
 
@@ -1992,7 +1986,7 @@ static Object** v_indgen(void* v) {
             start = *getarg(1);
             end = *getarg(2);
             step =
-                chkarg(3, Math::min(start - end, end - start), Math::max(start - end, end - start));
+                chkarg(3, std::min(start - end, end - start), std::max(start - end, end - start));
             double xn = floor((end - start) / step + EPSILON) + 1.;
             if (xn > dmaxint_) {
                 hoc_execerror("size too large", 0);
@@ -2414,7 +2408,7 @@ static double v_eq(void* v1) {
         return false;
     }
     for (i = 0; i < n; ++i) {
-        if (!Math::equal(x->elem(i), y->elem(i), hoc_epsilon)) {
+        if (!MyMath::eq(x->elem(i), y->elem(i), hoc_epsilon)) {
             return false;
         }
     }
@@ -3110,7 +3104,7 @@ static Object** v_rotate(void* v) {
     if (r > n)
         r = r % n;
     if (r < 0) {
-        r = n - (Math::abs(r) % n);
+        r = n - (std::abs(r) % n);
         rev = 1;
     }
 
@@ -3600,7 +3594,7 @@ static Object** v_abs(void* v) {
         ans->resize(n);
 
     for (int i = 0; i < n; i++) {
-        ans->elem(i) = Math::abs(v1->elem(i));
+        ans->elem(i) = std::abs(v1->elem(i));
     }
     return ans->temp_objvar();
 }
@@ -3712,227 +3706,126 @@ Object** v_as_numpy(void* v) {
 
 static Member_func v_members[] = {
 
-    "x",
-    v_size,  // will be changed below
-    "size",
-    v_size,
-    "buffer_size",
-    v_buffer_size,
-    "get",
-    v_get,
-    "reduce",
-    v_reduce,
-    "min",
-    v_min,
-    "max",
-    v_max,
-    "min_ind",
-    v_min_ind,
-    "max_ind",
-    v_max_ind,
-    "sum",
-    v_sum,
-    "sumsq",
-    v_sumsq,
-    "mean",
-    v_mean,
-    "var",
-    v_var,
-    "stdev",
-    v_stdev,
-    "stderr",
-    v_stderr,
-    "meansqerr",
-    v_meansqerr,
-    "mag",
-    v_mag,
-    "contains",
-    v_contains,
-    "median",
-    v_median,
+    {"x", v_size},  // will be changed below
+    {"size", v_size},
+    {"buffer_size", v_buffer_size},
+    {"get", v_get},
+    {"reduce", v_reduce},
+    {"min", v_min},
+    {"max", v_max},
+    {"min_ind", v_min_ind},
+    {"max_ind", v_max_ind},
+    {"sum", v_sum},
+    {"sumsq", v_sumsq},
+    {"mean", v_mean},
+    {"var", v_var},
+    {"stdev", v_stdev},
+    {"stderr", v_stderr},
+    {"meansqerr", v_meansqerr},
+    {"mag", v_mag},
+    {"contains", v_contains},
+    {"median", v_median},
 
-    "dot",
-    v_dot,
-    "eq",
-    v_eq,
+    {"dot", v_dot},
+    {"eq", v_eq},
 
-    "play_remove",
-    v_play_remove,
+    {"play_remove", v_play_remove},
 
-    "fwrite",
-    v_fwrite,
-    "fread",
-    v_fread,
-    "vwrite",
-    v_vwrite,
-    "vread",
-    v_vread,
-    "printf",
-    v_printf,
-    "scanf",
-    v_scanf,
-    "scantil",
-    v_scantil,
+    {"fwrite", v_fwrite},
+    {"fread", v_fread},
+    {"vwrite", v_vwrite},
+    {"vread", v_vread},
+    {"printf", v_printf},
+    {"scanf", v_scanf},
+    {"scantil", v_scantil},
 
-    "fit",
-    v_fit,
-    "trigavg",
-    v_trigavg,
-    "indwhere",
-    v_indwhere,
+    {"fit", v_fit},
+    {"trigavg", v_trigavg},
+    {"indwhere", v_indwhere},
 
-    "scale",
-    v_scale,
+    {"scale", v_scale},
 
-    0,
-    0};
+    {0, 0}};
 
-static Member_ret_obj_func v_retobj_members[] = {"c",
-                                                 v_c,
-                                                 "cl",
-                                                 v_cl,
-                                                 "at",
-                                                 v_at,
-                                                 "ind",
-                                                 v_ind,
-                                                 "histogram",
-                                                 v_histogram,
-                                                 "sumgauss",
-                                                 v_sumgauss,
+static Member_ret_obj_func v_retobj_members[] = {{"c", v_c},
+                                                 {"cl", v_cl},
+                                                 {"at", v_at},
+                                                 {"ind", v_ind},
+                                                 {"histogram", v_histogram},
+                                                 {"sumgauss", v_sumgauss},
 
-                                                 "resize",
-                                                 v_resize,
-                                                 "clear",
-                                                 v_clear,
-                                                 "set",
-                                                 v_set,
-                                                 "append",
-                                                 v_append,
-                                                 "copy",
-                                                 v_copy,
-                                                 "insrt",
-                                                 v_insert,
-                                                 "remove",
-                                                 v_remove,
-                                                 "interpolate",
-                                                 v_interpolate,
-                                                 "from_double",
-                                                 v_from_double,
+                                                 {"resize", v_resize},
+                                                 {"clear", v_clear},
+                                                 {"set", v_set},
+                                                 {"append", v_append},
+                                                 {"copy", v_copy},
+                                                 {"insrt", v_insert},
+                                                 {"remove", v_remove},
+                                                 {"interpolate", v_interpolate},
+                                                 {"from_double", v_from_double},
 
-                                                 "index",
-                                                 v_index,
-                                                 "apply",
-                                                 v_apply,
-                                                 "add",
-                                                 v_add,
-                                                 "sub",
-                                                 v_sub,
-                                                 "mul",
-                                                 v_mul,
-                                                 "div",
-                                                 v_div,
-                                                 "fill",
-                                                 v_fill,
-                                                 "indgen",
-                                                 v_indgen,
-                                                 "addrand",
-                                                 v_addrand,
-                                                 "setrand",
-                                                 v_setrand,
-                                                 "deriv",
-                                                 v_deriv,
-                                                 "integral",
-                                                 v_integral,
+                                                 {"index", v_index},
+                                                 {"apply", v_apply},
+                                                 {"add", v_add},
+                                                 {"sub", v_sub},
+                                                 {"mul", v_mul},
+                                                 {"div", v_div},
+                                                 {"fill", v_fill},
+                                                 {"indgen", v_indgen},
+                                                 {"addrand", v_addrand},
+                                                 {"setrand", v_setrand},
+                                                 {"deriv", v_deriv},
+                                                 {"integral", v_integral},
 
-                                                 "sqrt",
-                                                 v_sqrt,
-                                                 "abs",
-                                                 v_abs,
-                                                 "floor",
-                                                 v_floor,
-                                                 "sin",
-                                                 v_sin,
-                                                 "pow",
-                                                 v_pow,
-                                                 "log",
-                                                 v_log,
-                                                 "log10",
-                                                 v_log10,
-                                                 "tanh",
-                                                 v_tanh,
+                                                 {"sqrt", v_sqrt},
+                                                 {"abs", v_abs},
+                                                 {"floor", v_floor},
+                                                 {"sin", v_sin},
+                                                 {"pow", v_pow},
+                                                 {"log", v_log},
+                                                 {"log10", v_log10},
+                                                 {"tanh", v_tanh},
 
-                                                 "correl",
-                                                 v_correl,
-                                                 "convlv",
-                                                 v_convlv,
-                                                 "spctrm",
-                                                 v_spctrm,
-                                                 "filter",
-                                                 v_filter,
-                                                 "fft",
-                                                 v_fft,
-                                                 "rotate",
-                                                 v_rotate,
-                                                 "smhist",
-                                                 v_smhist,
-                                                 "hist",
-                                                 v_hist,
-                                                 "spikebin",
-                                                 v_spikebin,
-                                                 "rebin",
-                                                 v_rebin,
-                                                 "medfltr",
-                                                 v_medfltr,
-                                                 "sort",
-                                                 v_sort,
-                                                 "sortindex",
-                                                 v_sortindex,
-                                                 "reverse",
-                                                 v_reverse,
-                                                 "resample",
-                                                 v_resample,
-                                                 "psth",
-                                                 v_psth,
-                                                 "inf",
-                                                 v_inf,
+                                                 {"correl", v_correl},
+                                                 {"convlv", v_convlv},
+                                                 {"spctrm", v_spctrm},
+                                                 {"filter", v_filter},
+                                                 {"fft", v_fft},
+                                                 {"rotate", v_rotate},
+                                                 {"smhist", v_smhist},
+                                                 {"hist", v_hist},
+                                                 {"spikebin", v_spikebin},
+                                                 {"rebin", v_rebin},
+                                                 {"medfltr", v_medfltr},
+                                                 {"sort", v_sort},
+                                                 {"sortindex", v_sortindex},
+                                                 {"reverse", v_reverse},
+                                                 {"resample", v_resample},
+                                                 {"psth", v_psth},
+                                                 {"inf", v_inf},
 
-                                                 "index",
-                                                 v_index,
-                                                 "indvwhere",
-                                                 v_indvwhere,
+                                                 {"index", v_index},
+                                                 {"indvwhere", v_indvwhere},
 
-                                                 "where",
-                                                 v_where,
+                                                 {"where", v_where},
 
-                                                 "plot",
-                                                 v_plot,
-                                                 "line",
-                                                 v_line,
-                                                 "mark",
-                                                 v_mark,
-                                                 "ploterr",
-                                                 v_ploterr,
+                                                 {"plot", v_plot},
+                                                 {"line", v_line},
+                                                 {"mark", v_mark},
+                                                 {"ploterr", v_ploterr},
 
-                                                 "record",
-                                                 v_record,
-                                                 "play",
-                                                 v_play,
+                                                 {"record", v_record},
+                                                 {"play", v_play},
 
-                                                 "from_python",
-                                                 v_from_python,
-                                                 "to_python",
-                                                 v_to_python,
-                                                 "as_numpy",
-                                                 v_as_numpy,
+                                                 {"from_python", v_from_python},
+                                                 {"to_python", v_to_python},
+                                                 {"as_numpy", v_as_numpy},
 
-                                                 0,
-                                                 0};
+                                                 {0, 0}};
 
-static Member_ret_str_func v_retstr_members[] = {"label",
-                                                 v_label,
+static Member_ret_str_func v_retstr_members[] = {{"label", v_label},
 
-                                                 0,
-                                                 0};
+                                                 {0, 0}};
 
 extern int hoc_araypt(Symbol*, int);
 
@@ -4036,7 +3929,7 @@ static inline void SWAP(int* A, int* B) {
       smaller partition.  This *guarantees* no more than log (n)
       stack size is needed! */
 
-extern "C" int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, doubleComparator cmp) {
+int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, int (*cmp)(double, double)) {
     /* Stack node declarations used to store unfulfilled partition obligations. */
     struct stack_node {
         int* lo;

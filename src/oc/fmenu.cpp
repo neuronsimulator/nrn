@@ -633,7 +633,7 @@ static void prs(int oldnew, int row, int col, const char* string) {
         sprintf(buf, "%13c", SPACE);
         plprint(buf);
         xcursor(row, col);
-        sprintf(buf, "<%s>", string);
+        snprintf(buf, 100, "<%s>", string);
         plprint(buf);
     }
 }

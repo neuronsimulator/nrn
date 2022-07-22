@@ -128,7 +128,6 @@
 // double* KSSingleNodeData.statepop_ which points into the prop->param.
 //----------------
 
-extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
 
 double KSSingle::vres_;
@@ -142,7 +141,7 @@ KSSingle::KSSingle(KSChan* c) {
     states_ = new KSSingleState[nstate_];
     ntrans_ = 2 * c->ntrans_;
     transitions_ = new KSSingleTrans[ntrans_];
-    rval_ = new double[Math::max(ntrans_, nstate_)];
+    rval_ = new double[std::max(ntrans_, nstate_)];
     uses_ligands_ = false;
     for (i = 0; i < c->ntrans_; ++i) {
         {

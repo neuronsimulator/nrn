@@ -64,8 +64,6 @@ static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
 #else
 #define Free(arg)	myfree((char *)arg)
 #endif
-extern void nrn_malloc_lock();
-extern void nrn_malloc_unlock();
 extern void* nrn_pool_create(long count, int itemsize);
 extern void nrn_pool_delete(void* pool);
 extern void nrn_pool_freeall(void* pool);
@@ -134,7 +132,6 @@ static void prmat(SparseObj* so);
 static void initeqn(SparseObj* so, unsigned maxeqn);
 static void free_elm(SparseObj* so);
 static Elm* getelm(SparseObj* so,unsigned row, unsigned col, Elm* new);
-double* _nrn_thread_getelm(SparseObj* so, int row, int col);
 static void create_coef_list(SparseObj* so, int n, FUN fun, double* p, void* ppvar, void* thread, void* nt);
 static void init_coef_list(SparseObj* so);
 static void init_minorder(SparseObj* so);
@@ -717,9 +714,7 @@ static void delete(Item* item) {
 
 static void *emalloc(unsigned n) { /* check return from malloc */
 	void *p;
-	nrn_malloc_lock();
 	p = malloc(n);
-	nrn_malloc_unlock();
 	if (p == (void *)0) {
 		abort_run(LOWMEM);
 	}
@@ -727,9 +722,7 @@ static void *emalloc(unsigned n) { /* check return from malloc */
 }
 
 void myfree(void* ptr) {
-	nrn_malloc_lock();
 	free(ptr);
-	nrn_malloc_unlock();
 }
 
 static void check_assert(SparseObj* so) {
@@ -822,9 +815,7 @@ static SparseObj* create_sparseobj() {
 	SparseObj* so;
 
 	so = emalloc(sizeof(SparseObj));
-	nrn_malloc_lock();
 	so->elmpool = nrn_pool_create(100, sizeof(Elm));
-	nrn_malloc_unlock();
 	so->rowst = 0;
 	so->diag = 0;
 	so->neqn = 0;

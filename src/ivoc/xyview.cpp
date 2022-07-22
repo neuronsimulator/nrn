@@ -2,8 +2,9 @@
 #if HAVE_IV  // to end of file
 
 #include <ivstream.h>
-#include <stdio.h>
-#include <assert.h>
+#include <cstdio>
+#include <cassert>
+#include <cmath>
 
 #include <InterViews/event.h>
 #include <InterViews/hit.h>
@@ -286,10 +287,10 @@ void XYView::damage(Coord x1, Coord y1, Coord x2, Coord y2) {
         t.transform(x1, y1, tx1, ty1);
         t.transform(x2, y2, tx2, ty2);
         const float off = canvas_->to_coord(1);
-        tx1 = Math::max(tx1 - off, Coord(0));
-        ty1 = Math::max(ty1 - off, Coord(0));
-        tx2 = Math::min(tx2 + off, canvas_->width());
-        ty2 = Math::min(ty2 + off, canvas_->height());
+        tx1 = std::max(tx1 - off, Coord(0));
+        ty1 = std::max(ty1 - off, Coord(0));
+        tx2 = std::min(tx2 + off, canvas_->width());
+        ty2 = std::min(ty2 + off, canvas_->height());
         canvas_->damage(tx1, ty1, tx2, ty2);
     }
 }
@@ -380,10 +381,10 @@ void XYView::ratio_view(Coord x, Coord y, float& xrat, float& yrat) const {
 }
 
 void XYView::size(Coord x1, Coord y1, Coord x2, Coord y2) {
-    x1_ = Math::min(x1, x2);
-    y1_ = Math::min(y1, y2);
-    x_span_ = Math::abs(x2 - x1);
-    y_span_ = Math::abs(y2 - y1);
+    x1_ = std::min(x1, x2);
+    y1_ = std::min(y1, y2);
+    x_span_ = std::abs(x2 - x1);
+    y_span_ = std::abs(y2 - y1);
     notify();
 }
 
@@ -442,7 +443,7 @@ void XYView::zin(Coord& x1, Coord& y1, Coord& x2, Coord& y2) const {
     y2 -= dy;
 }
 
-void XYView::save(ostream& o) {
+void XYView::save(std::ostream& o) {
     PrintableWindow* w;
     if (!canvas_) {
         if (!parent() || !parent()->has_window()) {
@@ -465,7 +466,7 @@ void XYView::save(ostream& o) {
             w->save_bottom(),
             xsize_,
             ysize_);
-    o << buf << endl;
+    o << buf << std::endl;
 }
 
 void XYView::scene2view(const Allocation& a) const {
@@ -600,7 +601,7 @@ void View::transform(Transformer& t, const Allocation& a, const Allocation&) con
     // end=%g\n", ay.origin(), ay.span(), ay.alignment(), ay.begin(), ay.end());
     Coord x1, y1;
     t.transform(x() - x_span_ / 2, y() - y_span_ / 2, x1, y1);
-    if (!Math::equal(ax.begin(), x1, 1) || !Math::equal(ay.begin(), y1, 1)) {
+    if (!MyMath::eq(ax.begin(), x1, 1.f) || !MyMath::eq(ay.begin(), y1, 1.f)) {
         t.inverse_transform(ax.begin(), ay.begin(), x1, y1);
         v->x_span_ = 2 * (x() - x1);
         v->y_span_ = 2 * (y() - y1);
@@ -611,8 +612,8 @@ void View::transform(Transformer& t, const Allocation& a, const Allocation&) con
 void XYView::move_view(Coord dx1, Coord dy1) {
     //	printf("move by %g %g \n", dx1, dy1);
     Coord x0, x1, y0, y1;
-    Coord dx = Math::abs(dx1);
-    Coord dy = Math::abs(dy1);
+    Coord dx = std::abs(dx1);
+    Coord dy = std::abs(dy1);
     if (dx < .9 * dy) {
         dx = 0.;
         dy = dy1;
@@ -654,8 +655,8 @@ void View::move_view(Coord dx, Coord dy) {
 
 void XYView::scale_view(Coord xorg, Coord yorg, float dxscl, float dyscl) {
     Coord x0, y0, l, b, r, t;
-    Coord dx = Math::abs(dxscl);
-    Coord dy = Math::abs(dyscl);
+    Coord dx = std::abs(dxscl);
+    Coord dy = std::abs(dyscl);
     if (dx < .9 * dy) {
         dx = 0.;
         dy = dyscl;
@@ -746,7 +747,7 @@ OcViewGlyph::~OcViewGlyph() {
     Resource::unref(g_);
 }
 
-void OcViewGlyph::save(ostream& o) {
+void OcViewGlyph::save(std::ostream& o) {
     Scene* s = v_->scene();
     char buf[256];
     long i = Scene::scene_list_index(s);
@@ -756,7 +757,7 @@ void OcViewGlyph::save(ostream& o) {
     } else {
         sprintf(buf, "save_window_ = scene_vector_[%ld]", i);
     }
-    o << buf << endl;
+    o << buf << std::endl;
     v_->save(o);
     if (!s->mark()) {
         s->save_phase2(o);

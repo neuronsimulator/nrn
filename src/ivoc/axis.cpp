@@ -1,14 +1,14 @@
 #include <../../nrnconf.h>
 #if HAVE_IV  // to end of file
 
-#include <stdio.h>
+#include <cstdio>
 #include <ivstream.h>
 #include <InterViews/background.h>
 #include <InterViews/canvas.h>
 #include <InterViews/printer.h>
 #include <InterViews/label.h>
 #include <IV-look/kit.h>
-#include <math.h>
+#include <cmath>
 #include "scenevie.h"
 #include "mymath.h"
 #include "axis.h"
@@ -21,7 +21,7 @@
     GAxisItem(Glyph* g)
         : GraphItem(g) {}
     virtual ~GAxisItem(){};
-    virtual void save(ostream&, Coord, Coord) {}
+    virtual void save(std::ostream&, Coord, Coord) {}
     virtual void erase(Scene* s, GlyphIndex i, int type) {
         if (type & GraphItem::ERASE_AXIS) {
             s->remove(i);
@@ -85,7 +85,7 @@ void Axis::size(float& min, float& max) {
     max = float(amax_);
 }
 
-void Axis::save(ostream& o) {
+void Axis::save(std::ostream& o) {
     char buf[256];
     int c;
     if (d_ == Dimension_X) {
@@ -103,7 +103,7 @@ void Axis::save(ostream& o) {
             nminor_,
             invert_,
             number_);
-    o << buf << endl;
+    o << buf << std::endl;
 }
 
 void Axis::update(Observable*) {}
@@ -207,7 +207,7 @@ void Axis::install() {
 
         for (i = 0; i <= ntic_; ++i) {
             x = amin_ + i * tic_space;
-            if (Math::abs(x) < 1e-10) {
+            if (std::abs(x) < 1e-10) {
                 x = 0.;
             }
             if (invert_ >= 0) {
@@ -314,7 +314,7 @@ void Axis::install() {
         tic->ref();
         for (i = 0; i <= ntic_; ++i) {
             x = amin_ + i * (amax_ - amin_) / float(ntic_);
-            if (Math::abs(x) < 1e-10) {
+            if (std::abs(x) < 1e-10) {
                 x = 0.;
             }
             s_->append_fixed(new GAxisItem(tic));

@@ -225,21 +225,11 @@ typedef struct Prop {
     Object* ob;        /* nil if normal property, otherwise the object containing the data*/
 } Prop;
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 extern double* nrn_prop_data_alloc(int type, int count, Prop* p);
 extern Datum* nrn_prop_datum_alloc(int type, int count, Prop* p);
 extern void nrn_prop_data_free(int type, double* pd);
 extern void nrn_prop_datum_free(int type, Datum* ppd);
-extern Section* chk_access();
 extern double nrn_ghk(double, double, double, double);
-
-
-#if defined(__cplusplus)
-}
-#endif
 
 /* a point process is computed just like regular mechanisms. Ie it appears
 in the property list whose type specifies which allocation, current, and
@@ -315,18 +305,12 @@ extern Section* nrn_section_alloc();
 extern void nrn_section_free(Section*);
 extern int nrn_is_valid_section_ptr(void*);
 
-/* loop over sections. Must previously declare Item* qsec. Contains the {! */
-#define ForAllSections(sec)       \
-    ITERATE(qsec, section_list) { \
-        Section* sec = hocSEC(qsec);
-
 #if METHOD3
 extern int _method3;
 #endif
 
 #include <multicore.h>
 
-extern int stoprun;
 #define tstopbit   (1 << 15)
 #define tstopset   stoprun |= tstopbit
 #define tstopunset stoprun &= (~tstopbit)

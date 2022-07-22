@@ -1,10 +1,7 @@
 #ifndef mymath_h
 #define mymath_h
 
-#include <OS/math.h>
 #include <InterViews/geometry.h>
-
-extern "C" int nrn_isdouble(double*, double, double);
 
 class Extension;
 
@@ -63,8 +60,9 @@ class MyMath {
     static bool le(double x, double y, double e) {
         return x <= (y + e);
     }
-    static bool eq(double x, double y, double e) {
-        return Math::equal(x, y, e);
+    template <typename T>
+    static bool eq(T x, T y, T e) {
+        return x - y < e && y - x < e;
     }
     static bool eq2(double x, double y, double e) {
         return x - y <= e && y - x <= e;

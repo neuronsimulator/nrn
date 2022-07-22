@@ -56,8 +56,12 @@ else:
 
     define_macros=[]
 
-    extra_compile_args = ['-O'+olevel] if olevel != "" else []
-    if using_pgi: extra_compile_args.append(pgi_compiler_flags)
+    extra_compile_args = [@NRN_COMPILE_FLAGS_COMMA_SEPARATED_STRINGS@]
+    extra_link_args = [@NRN_LINK_FLAGS_COMMA_SEPARATED_STRINGS@]
+    if olevel != "":
+        extra_compile_args.append('-O' + olevel)
+    if using_pgi:
+        extra_compile_args.append(pgi_compiler_flags)
 
     include_dirs = [nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d', '.', numpy.get_include()]
 
@@ -70,16 +74,19 @@ else:
                                  sources=["graphicsPrimitives.cpp"],
                                  define_macros=define_macros,
                                  extra_compile_args=extra_compile_args,
+                                 extra_link_args=extra_link_args,
                                  include_dirs=include_dirs),
                        Extension("neuron.rxd.geometry3d.ctng",
                                  sources=["ctng.cpp"],
                                  define_macros=define_macros,
                                  extra_compile_args=extra_compile_args,
+                                 extra_link_args=extra_link_args,
                                  include_dirs=include_dirs),
                        Extension("neuron.rxd.geometry3d.surfaces",
                                  sources=["surfaces.cpp", nrn_srcdir + "/src/nrnpython/rxd_marching_cubes.cpp", nrn_srcdir + "/src/nrnpython/rxd_llgramarea.cpp"],
                                  define_macros=define_macros,
                                  extra_compile_args=extra_compile_args,
+                                 extra_link_args=extra_link_args,
                                  include_dirs=include_dirs)],
     )
     #    package_dir = {'': instdir + '/share/lib/python/neuron/rxd/geometry3d'}

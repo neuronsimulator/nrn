@@ -1,12 +1,13 @@
 #include <../../nrnconf.h>
 
-#include <OS/list.h>
+#include <vector>
 #include <ocnotify.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <nrnmutdec.h>
 #include "oc2iv.h"
 #include "ocfunc.h"
+#include "ocnotify.h"
 
 extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
 extern double (*nrnpy_object_to_double_)(Object*);
@@ -18,13 +19,12 @@ extern double (*nrnpy_object_to_double_)(Object*);
 
 #include "bimap.hpp"
 
-#if USE_PTHREAD
-static MUTDEC
+#if NRN_ENABLE_THREADS
+static MUTDEC;
 #endif
 
-    typedef void (*PF)(void*, int);
-declareList(FList, PF);
-implementList(FList, PF);
+using PF = void (*)(void*, int);
+using FList = std::vector<PF>;
 
 static FList* f_list;
 
@@ -47,8 +47,7 @@ void nrn_notify_freed(PF pf) {
     if (!f_list) {
         f_list = new FList;
     }
-    f_list->append(pf);
-    //	printf("appended to f_list in ivoc.cpp\n");
+    f_list->push_back(pf);
 }
 
 void nrn_notify_when_void_freed(void* p, Observer* ob) {
@@ -94,18 +93,16 @@ void notify_pointer_freed(void* pt) {
 }
 void notify_freed(void* p) {
     if (f_list) {
-        long i, n = f_list->count();
-        for (i = 0; i < n; ++i) {
-            (*f_list->item(i))(p, 1);
+        for (PF f: *f_list) {
+            f(p, 1);
         }
     }
     notify_pointer_freed(p);
 }
 void notify_freed_val_array(double* p, size_t size) {
     if (f_list) {
-        long i, n = f_list->count();
-        for (i = 0; i < n; ++i) {
-            (*f_list->item(i))((void*) p, size);
+        for (PF f: *f_list) {
+            f((void*) p, size);
         }
     }
     if (pdob) {
@@ -214,7 +211,7 @@ if (WidgetKit::instance()->style()->find_attribute(gargstr(1)+1, s)) {
     hoc_pushx(1.);
 }
 
-#if !defined(MINGW) && !defined(MAC) && !defined(carbon)
+#if !defined(MINGW) && !defined(MAC)
 /*static*/ class ReqErr1: public ReqErr {
   public:
     ReqErr1();
@@ -278,7 +275,7 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
     notify_change_ = new Observable();
     if (s) {
         helpmode_ = false;
-#if !defined(WIN32) && !defined(MAC) && !defined(carbon)
+#if !defined(WIN32) && !defined(MAC)
         reqerr1 = new ReqErr1;
         reqerr1->Install();
 #endif
@@ -309,7 +306,7 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
 Oc::~Oc() {
     MUTLOCK
     if (--refcnt_ == 0) {
-#if !defined(MINGW) && !defined(MAC) && !defined(carbon)
+#if !defined(MINGW) && !defined(MAC)
         if (reqerr1 && reqerr1->count()) {
             fprintf(stderr, "total X Errors: %d\n", reqerr1->count());
         }
@@ -405,7 +402,7 @@ int run_til_stdin() {
 #endif
     session->run();
     WinDismiss::dismiss_defer();  // in case window was dismissed
-#if MAC && !defined(carbon)
+#if MAC
     extern Boolean IVOCGoodLine;
     if (IVOCGoodLine) {
         return 1;

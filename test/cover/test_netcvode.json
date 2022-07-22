@@ -540,5 +540,5 @@
     25.055259369907365
   ],
   "interthread debug_event 2 serial threads": "send NetParEvent 0 t=4.975 tt-t=4.975\nsend NetParEvent 1 t=4.975 tt-t=4.975\nsend PreSyn src=Cell0.soma 6.7250000001\ninterthread send td=6.7250000001 DE type=4 thread=1 target=-1 ?\ninterthread enqueue td=6.7250000001 DE type=4 thread=1 target=-1 ?\nsend PreSyn src=Cell0.soma 6.7250000001\ndeliver NetParEvent 1 t=4.975 tt-t=-3.73035e-14\nsend NetParEvent 1 t=9.95 tt-t=4.975\ndeliver NetParEvent 0 t=4.975 tt-t=-3.73035e-14\nsend NetParEvent 0 t=9.95 tt-t=4.975\ndeliver PreSyn src=Cell0.soma 6.7250000001\ndeliver PreSyn src=Cell0.soma 6.7250000001\ndeliver NetParEvent 1 t=9.95 tt-t=3.01981e-14\nsend NetParEvent 1 t=14.925 tt-t=4.975\ndeliver NetParEvent 0 t=9.95 tt-t=3.01981e-14\nsend NetParEvent 0 t=14.925 tt-t=4.975\n",
-  "playrecord debug_event": "send PlayRecordEvent 0 VecPlayStep Vector[42].x[0]\ndeliver PlayRecordEvent 0 VecPlayStep Vector[42].x[0]\nsend PlayRecordEvent 1 VecPlayStep Vector[42].x[1]\nmicrostep retreat from 1 (cvode_0x... is at 1) for event onset=1\n"
+  "playrecord debug_event": "send PlayRecordEvent 0 VecPlayStep Vector[N].x[0]\ndeliver PlayRecordEvent 0 VecPlayStep Vector[N].x[0]\nsend PlayRecordEvent 1 VecPlayStep Vector[N].x[1]\nmicrostep retreat from 1 (cvode_0x... is at 1) for event onset=1\n"
 }

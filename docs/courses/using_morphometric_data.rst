@@ -159,14 +159,14 @@ This Python code checks for pt3d diameters smaller than 0.1 μm, and reports whe
     python
 
     for sec in h.allsec():
-    for i in range(sec.n3d()):
-        if sec.diam3d(i) < 0.1:
-            print(f'{sec} {i} {sec.diam3d(i)}')
+        for i in range(sec.n3d()):
+            if sec.diam3d(i) < 0.1:
+                print(f'{sec} {i} {sec.diam3d(i)}')
 
 If you're reusing someone's HOC files, you could use the equivalent HOC statement
 
 .. code::
-    python
+    c++
 
     forall for i=0, n3d()-1 if (diam3d(i) < 0.1) print secname(), i, diam3d(i)
 
@@ -188,9 +188,7 @@ Kaspirzhny AV, Gogan P, Horcholle-Bossavit G, Tyc-Dumont S. 2002. Neuronal morph
 
 Scorcioni, R., Lazarewicz, M.T., and Ascoli, G.A. Quantitative morphometry of hippocampal pyramidal cells: differences between anatomical classes and reconstructing laboratories. Journal of Comparative Neurology 473:177-193, 2004. `doi:10.1002/cne.20067 <https://onlinelibrary.wiley.com/doi/10.1002/cne.20067>`_
 
-
 :ref:`Quality issues with Morphometric Data <quality_issues_with_morphometric_data>`
-
 
 
 .. toctree::

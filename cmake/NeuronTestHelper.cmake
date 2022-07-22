@@ -5,6 +5,7 @@
 #
 # 1. nrn_add_test_group(NAME name
 #                       [CORENEURON]
+#                       [ENVIRONMENT var1=val2 ...]
 #                       [MODFILE_PATTERNS mod/file/dir/*.mod ...]
 #                       [NRNIVMODL_ARGS arg1 ...]
 #                       [OUTPUT datatype::file.ext ...]
@@ -21,6 +22,9 @@
 #                       CoreNEURON if CoreNEURON is enabled. You should pass
 #                       this if any test in the group is going to include
 #                       `coreneuron` in its REQUIRES clause.
+#    ENVIRONMENT      - extra environment variables that should be set when the
+#                       test is run. These must not overlap with the variables
+#                       that are automatically set internally, such as PATH.
 #    MODFILE_PATTERNS - a list of patterns that will be matched against the
 #                       submodule directory tree to find the modfiles that must
 #                       be compiled (using nrnivmodl) to run the test. The special
@@ -42,14 +46,16 @@
 #                       assumptions about directory layout.
 #    SUBMODULE        - the name of the git submodule containing test data.
 #
-#    The OUTPUT, SCRIPT_PATTERNS and SIM_DIRECTORY arguments are default values
-#    that will be inherited by tests that are added to this group using
-#    nrn_add_test. They can be overriden for specific tests by passing the same
-#    keyword arguments to nrn_add_test.
+#    The ENVIRONMENT, OUTPUT, SCRIPT_PATTERNS and SIM_DIRECTORY arguments are
+#    default values that will be inherited by tests that are added to this
+#    group using nrn_add_test. They can be overriden for specific tests by
+#    passing the same keyword arguments to nrn_add_test.
 #
 # 2. nrn_add_test(GROUP group_name
 #                 NAME test_name
 #                 COMMAND command [arg ...]
+#                 [ENVIRONMENT VAR1=value1 ...]
+#                 [PRELOAD_SANITIZER]
 #                 [CONFLICTS feature1 ...]
 #                 [PRECOMMAND command ...]
 #                 [PROCESSORS required_processors]
@@ -71,7 +77,10 @@
 #    prepare input data for simulations. The PROCESSORS argument specifies the
 #    number of processors used by the test. This is passed to CTest and allows
 #    invocations such as `ctest -j 16` to avoid overcommitting resources by
-#    running too many tests with internal parallelism.
+#    running too many tests with internal parallelism. The PRELOAD_SANITIZER
+#    flag controls whether or not the PRELOAD flag is passed to
+#    cpp_cc_configure_sanitizers; this needs to be set when the test executable
+#    is *not* built by NEURON, typically because it is `python`.
 #    The remaining arguments can documented in nrn_add_test_group. The default
 #    values specified there can be overriden on a test-by-test basis by passing
 #    the same arguments here.
@@ -93,7 +102,8 @@ function(nrn_add_test_group)
   # subsequent calls to nrn_add_test that actually set up CTest tests.
   set(options CORENEURON)
   set(oneValueArgs NAME SUBMODULE)
-  set(multiValueArgs MODFILE_PATTERNS NRNIVMODL_ARGS OUTPUT SCRIPT_PATTERNS SIM_DIRECTORY)
+  set(multiValueArgs ENVIRONMENT MODFILE_PATTERNS NRNIVMODL_ARGS OUTPUT SCRIPT_PATTERNS
+                     SIM_DIRECTORY)
   cmake_parse_arguments(NRN_ADD_TEST_GROUP "${options}" "${oneValueArgs}" "${multiValueArgs}"
                         ${ARGN})
   if(DEFINED NRN_ADD_TEST_GROUP_MISSING_VALUES)
@@ -107,6 +117,9 @@ function(nrn_add_test_group)
 
   # Store the default values for this test group in parent-scope variables based on the group name
   set(prefix NRN_TEST_GROUP_${NRN_ADD_TEST_GROUP_NAME})
+  set(${prefix}_DEFAULT_ENVIRONMENT
+      "${NRN_ADD_TEST_GROUP_ENVIRONMENT}"
+      PARENT_SCOPE)
   set(${prefix}_DEFAULT_OUTPUT
       "${NRN_ADD_TEST_GROUP_OUTPUT}"
       PARENT_SCOPE)
@@ -139,6 +152,9 @@ function(nrn_add_test_group)
     # Add a rule to build the modfiles for this test group. Multiple groups may ask for exactly the
     # same thing (testcorenrn), so it's worth deduplicating.
     set(hash_components ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
+    # Escape special characters (problematic with Windows paths when calling nrnivmodl)
+    string(REGEX REPLACE "([][+.*()^])" "\\\\\\1" NRN_RUN_FROM_BUILD_DIR_ENV
+                         "${NRN_RUN_FROM_BUILD_DIR_ENV}")
     set(nrnivmodl_command cmake -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
                           ${CMAKE_BINARY_DIR}/bin/nrnivmodl ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
     # The user decides whether or not this test group should have its MOD files compiled for
@@ -231,13 +247,15 @@ function(nrn_add_test)
   set(oneValueArgs GROUP NAME PROCESSORS)
   set(multiValueArgs
       COMMAND
+      ENVIRONMENT
       CONFLICTS
       PRECOMMAND
       REQUIRES
       OUTPUT
       SCRIPT_PATTERNS
       SIM_DIRECTORY)
-  cmake_parse_arguments(NRN_ADD_TEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  cmake_parse_arguments(NRN_ADD_TEST "PRELOAD_SANITIZER" "${oneValueArgs}" "${multiValueArgs}"
+                        ${ARGN})
   if(DEFINED NRN_ADD_TEST_MISSING_VALUES)
     message(
       WARNING "nrn_add_test: missing values for keyword arguments: ${NRN_ADD_TEST_MISSING_VALUES}")
@@ -298,10 +316,14 @@ function(nrn_add_test)
   # Path to the test repository.
   set(test_source_directory "${${prefix}_TEST_SOURCE_DIRECTORY}")
   # Get the variables that have global defaults but which can be overriden locally
+  set(extra_environment "${${prefix}_DEFAULT_ENVIRONMENT}")
   set(output_files "${${prefix}_DEFAULT_OUTPUT}")
   set(script_patterns "${${prefix}_DEFAULT_SCRIPT_PATTERNS}")
   set(sim_directory "${${prefix}_DEFAULT_SIM_DIRECTORY}")
   # Override them locally if appropriate
+  if(DEFINED NRN_ADD_TEST_ENVIRONMENT)
+    set(extra_environment "${NRN_ADD_TEST_ENVIRONMENT}")
+  endif()
   if(DEFINED NRN_ADD_TEST_OUTPUT)
     set(output_files "${NRN_ADD_TEST_OUTPUT}")
   endif()
@@ -359,30 +381,6 @@ function(nrn_add_test)
   set(${prefix}_TESTS
       "${group_members}"
       PARENT_SCOPE)
-  # Add the actual test job, including the `special` and `special-core` binaries in the path. TODOs:
-  #
-  # * Do we need to manipulate PYTHONPATH more to make `python options.py` invocations work?
-  # * Using CORENEURONLIB here introduces some differences between the tests and the standard way
-  #   that users run nrnivmodl and special. Ideally we would reduce such differences, without
-  #   increasing build time too much (by running nrnivmodl multiple times) or compromising our
-  #   ability to execute the tests in parallel (which precludes blindly running everything in the
-  #   same directory).
-  add_test(
-    NAME "${test_name}"
-    COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_COMMAND}
-    WORKING_DIRECTORY "${simulation_directory}")
-  set(test_names ${test_name})
-  if(DEFINED NRN_ADD_TEST_PRECOMMAND)
-    add_test(
-      NAME ${test_name}::preparation
-      COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_PRECOMMAND}
-      WORKING_DIRECTORY "${simulation_directory}")
-    list(APPEND test_names ${test_name}::preparation)
-    set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
-  endif()
-  if(DEFINED NRN_ADD_TEST_PROCESSORS)
-    set_tests_properties(${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
-  endif()
   set(test_env "${NRN_RUN_FROM_BUILD_DIR_ENV}")
   if(requires_coreneuron)
     if(DEFINED nrnivmodl_directory)
@@ -399,12 +397,58 @@ function(nrn_add_test)
       )
     endif()
   endif()
+  # Get [VAR1, VAR2, ...] from [VAR1=VAL1, VAR2=VAL2, ...]
+  set(test_env_var_names ${test_env})
+  list(TRANSFORM test_env_var_names REPLACE "^([^=]+)=.*$" "\\1")
   if(DEFINED nrnivmodl_directory)
-    set(path_additions "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:")
+    if(NOT "PATH" IN_LIST test_env_var_names)
+      message(FATAL_ERROR "Expected to find PATH in ${test_env_var_names} but didn't")
+    endif()
+    # PATH will already be set in test_env
+    list(TRANSFORM test_env REPLACE "^PATH="
+                                    "PATH=${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:")
   endif()
-  list(APPEND test_env "PATH=${path_additions}${CMAKE_BINARY_DIR}/bin:$ENV{PATH}")
-  set_tests_properties(${test_names} PROPERTIES ENVIRONMENT "${test_env}")
-
+  # Get the list of variables being set
+  set(extra_env_var_names ${extra_environment})
+  list(TRANSFORM extra_env_var_names REPLACE "^([^=]+)=.*$" "\\1")
+  # Make sure the new variables don't overlap with the old ones; otherwise we'd need to do some
+  # merging, which sounds hard in the general case.
+  list(APPEND new_vars_being_set ${extra_env_var_names})
+  list(REMOVE_ITEM new_vars_being_set ${test_env_var_names})
+  if(NOT "${new_vars_being_set}" STREQUAL "${extra_env_var_names}")
+    message(FATAL_ERROR "New (${extra_env_var_names}) vars overlap old (${test_env_var_names}). "
+                        "This is not supported.")
+  endif()
+  list(APPEND test_env ${extra_environment})
+  if(NRN_ADD_TEST_PRELOAD_SANITIZER AND NRN_SANITIZER_LIBRARY_PATH)
+    list(APPEND test_env LD_PRELOAD=${NRN_SANITIZER_LIBRARY_PATH})
+  endif()
+  list(APPEND test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
+  # Add the actual test job, including the `special` and `special-core` binaries in the path. TODOs:
+  #
+  # * Do we need to manipulate PYTHONPATH more to make `python options.py` invocations work?
+  # * Using CORENEURONLIB here introduces some differences between the tests and the standard way
+  #   that users run nrnivmodl and special. Ideally we would reduce such differences, without
+  #   increasing build time too much (by running nrnivmodl multiple times) or compromising our
+  #   ability to execute the tests in parallel (which precludes blindly running everything in the
+  #   same directory).
+  add_test(
+    NAME "${test_name}"
+    COMMAND ${CMAKE_COMMAND} -E env ${test_env} ${NRN_ADD_TEST_COMMAND}
+    WORKING_DIRECTORY "${simulation_directory}")
+  set(test_names ${test_name})
+  if(NRN_ADD_TEST_PRECOMMAND)
+    add_test(
+      NAME ${test_name}::preparation
+      COMMAND ${CMAKE_COMMAND} -E env ${test_env} ${NRN_ADD_TEST_PRECOMMAND}
+      WORKING_DIRECTORY "${simulation_directory}")
+    list(APPEND test_names ${test_name}::preparation)
+    set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
+  endif()
+  set_tests_properties(${test_names} PROPERTIES TIMEOUT 300)
+  if(DEFINED NRN_ADD_TEST_PROCESSORS)
+    set_tests_properties(${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
+  endif()
   # Construct an expression containing the names of the test output files that will be passed to the
   # comparison script.
   set(output_file_string "${NRN_ADD_TEST_NAME}")

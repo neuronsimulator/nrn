@@ -965,7 +965,7 @@ double fProduct;
         if ((*pMarkowitzRow > LARGEST_SHORT_INTEGER AND *pMarkowitzCol != 0) OR
             (*pMarkowitzCol > LARGEST_SHORT_INTEGER AND *pMarkowitzRow != 0))
         {   fProduct = (double)(*pMarkowitzRow++) * (double)(*pMarkowitzCol++);
-            if (fProduct >= LARGEST_LONG_INTEGER)
+            if (fProduct >= (double)LARGEST_LONG_INTEGER)
                 *pMarkowitzProduct++ = LARGEST_LONG_INTEGER;
             else
                 *pMarkowitzProduct++ = fProduct;
@@ -2910,7 +2910,7 @@ double Product;
         if ((MarkoRow[Row] > LARGEST_SHORT_INTEGER AND MarkoCol[Row] != 0) OR
             (MarkoCol[Row] > LARGEST_SHORT_INTEGER AND MarkoRow[Row] != 0))
         {   Product = MarkoCol[Row] * MarkoRow[Row];
-            if (Product >= LARGEST_LONG_INTEGER)
+            if (Product >= (double)LARGEST_LONG_INTEGER)
                 Matrix->MarkowitzProd[Row] = LARGEST_LONG_INTEGER;
             else
                 Matrix->MarkowitzProd[Row] = Product;
@@ -2928,7 +2928,7 @@ double Product;
         if ((MarkoRow[Col] > LARGEST_SHORT_INTEGER AND MarkoCol[Col] != 0) OR
             (MarkoCol[Col] > LARGEST_SHORT_INTEGER AND MarkoRow[Col] != 0))
         {   Product = MarkoCol[Col] * MarkoRow[Col];
-            if (Product >= LARGEST_LONG_INTEGER)
+            if (Product >= (double)LARGEST_LONG_INTEGER)
                 Matrix->MarkowitzProd[Col] = LARGEST_LONG_INTEGER;
             else
                 Matrix->MarkowitzProd[Col] = Product;

@@ -2,12 +2,13 @@
 /* a fake change */
 /* /local/src/master/nrn/src/oc/math.cpp,v 1.6 1999/07/16 13:43:10 hines Exp */
 
-#include <math.h>
-#include <errno.h>
-#include <stdio.h>
+#include "hoc.h"
 #include "nrnmpiuse.h"
 #include "ocfunc.h"
-#include "hoc.h"
+#include <cfenv>
+#include <cmath>
+#include <errno.h>
+#include <stdio.h>
 
 
 #define EPS         hoc_epsilon
@@ -41,7 +42,7 @@ double Log10(double x) {
 }
 
 /* used by nmodl and other c, c++ code */
-extern "C" double hoc_Exp(double x) {
+double hoc_Exp(double x) {
     if (x < -700.) {
         return 0.;
     } else if (x > 700 && nrn_feenableexcept_ == 0) {
@@ -86,14 +87,27 @@ double integer(double x) {
 
 double errcheck(double d, const char* s) /* check result of library call */
 {
-    if (errno == EDOM) {
+    // errno may not be enabled, rely on FE exceptions in that case. See:
+    // https://en.cppreference.com/w/cpp/numeric/math/math_errhandling
+#ifdef MINGW
+    const auto errno_enabled = true;
+    const auto check_fe_except = false;
+#else
+    const auto errno_enabled = math_errhandling & MATH_ERRNO;
+    const auto check_fe_except = !errno_enabled && math_errhandling & MATH_ERREXCEPT;
+#endif
+    if ((errno_enabled && errno == EDOM) || (check_fe_except && std::fetestexcept(FE_INVALID))) {
+        if (check_fe_except)
+            std::feclearexcept(FE_ALL_EXCEPT);
         errno = 0;
         hoc_execerror(s, "argument out of domain");
-    } else if (errno == ERANGE) {
+    } else if ((errno_enabled && errno == ERANGE) ||
+               (check_fe_except &&
+                (std::fetestexcept(FE_DIVBYZERO) || std::fetestexcept(FE_OVERFLOW) ||
+                 std::fetestexcept(FE_UNDERFLOW)))) {
+        if (check_fe_except)
+            std::feclearexcept(FE_ALL_EXCEPT);
         errno = 0;
-#if 0
-        hoc_execerror(s, "result out of range");
-#else
         if (++hoc_errno_count > MAXERRCOUNT) {
         } else {
             hoc_warning(s, "result out of range");
@@ -101,17 +115,12 @@ double errcheck(double d, const char* s) /* check result of library call */
                 fprintf(stderr, "No more errno warnings during this execution\n");
             }
         }
-#endif
     }
     return d;
 }
 
 int hoc_errno_check(void) {
     int ierr;
-#if LINDA
-    static parallel_eagain = 0;
-#endif
-
 #if 1
     errno = 0;
     return 0;
@@ -145,17 +154,6 @@ int hoc_errno_check(void) {
         case ERANGE:
             fprintf(stderr, "A math function was called that returned an out of range value\n");
             break;
-#if LINDA
-            /* regularly set by eval() and perhaps other linda commands */
-        case EAGAIN:
-            if (parallel_eagain++ == 0) {
-                perror("oc");
-                fprintf(stderr,
-                        "oc: This error occurs often from LINDA and thus will not be further "
-                        "reported.\n");
-            }
-            break;
-#endif
         default:
             perror("oc");
             break;

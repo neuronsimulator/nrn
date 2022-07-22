@@ -20,7 +20,7 @@ Sanity checks
 - [ ] Create `release/x.y` branch and make sure GitHub, Azure and CircleCI builds pass
 - [ ] Run [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci/actions/workflows/build-neuron.yml) for the respective Azure build; see [Azure drop guide](https://github.com/neuronsimulator/nrn-build-ci#azure-wheels-testing---manual-workflow) 
 - [ ] Activate ReadTheDocs build for `release/x.y` & make it hidden. Check docs are fine after build is done.
-- [ ] Run BBP Simulation Stack & other relevant tests
+- [ ] Run BBP Simulation Stack, CoreNEURON CI & other relevant tests
 - [ ] Build release wheels but WITHOUT upload ([see details](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure))
 
 

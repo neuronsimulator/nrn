@@ -1,21 +1,22 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
 
-include_directories(${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/src/nrnoc
-                    ${PROJECT_SOURCE_DIR}/src/nrniv ${PROJECT_SOURCE_DIR}/src/oc)
+include_directories(${NRN_INCLUDE_DIRS})
 
 # Add directory-level default compiler flags -- these should be added to all NEURON targets, but not
 # targets from included projects like CoreNEURON and NMODL
 add_compile_options(${NRN_COMPILE_FLAGS})
 add_compile_definitions(${NRN_COMPILE_DEFS})
+add_link_options(${NRN_LINK_FLAGS})
 
 # =============================================================================
 # Test executables
 # =============================================================================
 set(TEST_SOURCES unit_tests/oc/hoc_interpreter.cpp)
 add_executable(testneuron unit_tests/unit_test.cpp ${TEST_SOURCES})
+cpp_cc_configure_sanitizers(TARGET testneuron)
 target_compile_features(testneuron PUBLIC cxx_std_11)
 target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
-if(${USE_PTHREAD} EQUAL 1)
+if(NRN_ENABLE_THREADS)
   target_link_libraries(testneuron Threads::Threads)
 endif()
 if(NOT MINGW)
@@ -122,31 +123,42 @@ foreach(mpiexec "" "_mpiexec")
   nrn_add_test(
     GROUP mpi_init
     NAME python${mpiexec}_nrnmpi_init
+    PRELOAD_SANITIZER
     REQUIRES python ${mpi_init_requires${mpiexec}}
     COMMAND ${python} -c "from neuron import h$<SEMICOLON> h.nrnmpi_init()$<SEMICOLON> h.quit()")
   nrn_add_test(
     GROUP mpi_init
     NAME python${mpiexec}_mpienv
+    PRELOAD_SANITIZER
     REQUIRES python ${mpi_init_requires${mpiexec}}
-    COMMAND NEURON_INIT_MPI=1 ${python} -c "from neuron import h$<SEMICOLON> h.quit()")
+    ENVIRONMENT NEURON_INIT_MPI=1
+    COMMAND ${python} -c "from neuron import h$<SEMICOLON> h.quit()")
 endforeach()
 
 # =============================================================================
 # Add pytest
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
+  set(pytest -m pytest)
+  if(NRN_SANITIZERS)
+    # We configure the santiziers to abort on errors, which can lead to unhelpful output from
+    # pytest. Passing -s means the sanitizer output will be visible in the log.
+    list(APPEND pytest -s)
+  endif()
   if(PYTEST_COV_FOUND)
-    set(PYTEST_COVERAGE_ARGS --cov-report=xml --cov=neuron)
-  else()
-    unset(PYTEST_COVERAGE_ARGS)
+    list(APPEND pytest --cov-report=xml --cov=neuron)
   endif()
   # TODO: consider allowing the group-related parts to be dropped here
-  nrn_add_test_group(NAME pynrn MODFILE_PATTERNS test/pynrn/*.mod)
+  nrn_add_test_group(
+    CORENEURON
+    NAME pynrn
+    MODFILE_PATTERNS test/pynrn/*.mod)
   nrn_add_test(
     GROUP pynrn
     NAME basic_tests
-    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest
-            ${PYTEST_COVERAGE_ARGS} ./test/pynrn
+    PRELOAD_SANITIZER
+    ENVIRONMENT COVERAGE_FILE=.coverage.basic_tests
+    COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/pynrn
     SCRIPT_PATTERNS test/pynrn/*.py)
 
   # Mostly to increase coverage
@@ -154,8 +166,9 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   nrn_add_test(
     GROUP coverage_tests
     NAME cover_tests
-    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest
-            ${PYTEST_COVERAGE_ARGS} ./test/cover
+    PRELOAD_SANITIZER
+    ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests
+    COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/cover
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
 
   if(NRN_ENABLE_RX3D)
@@ -173,50 +186,55 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     nrn_add_test(
       GROUP rxdmod_tests
       NAME rxd_tests
-      COMMAND COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance} ${PYTHON_EXECUTABLE} -m
-              pytest ${PYTEST_COVERAGE_ARGS} ./test/rxd)
+      PRELOAD_SANITIZER
+      ENVIRONMENT COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance}
+      COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/rxd)
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(mpi4py)
       if(mpi4py_FOUND)
         nrn_add_test(
           GROUP rxdmod_tests
           NAME rxd_mpi_tests
-          COMMAND
-            COVERAGE_FILE=.coverage.rxd_mpi_tests ${change_test_tolerance} ${MPIEXEC_NAME}
-            ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
-            -m pytest ${PYTEST_COVERAGE_ARGS} ./test/rxd --mpi)
+          PRELOAD_SANITIZER
+          ENVIRONMENT COVERAGE_FILE=.coverage.rxd_mpi_tests ${change_test_tolerance}
+          COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
+                  ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} ${pytest} ./test/rxd --mpi)
       endif()
     endif()
   endif()
-  if(NRN_ENABLE_MPI)
-    add_test(
-      NAME parallel_tests
-      COMMAND
-        ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 6 ${MPIEXEC_OVERSUBSCRIBE}
-        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
-        ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
-    add_test(
-      NAME parallel_partrans
-      COMMAND
-        ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
-        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
-        ${PROJECT_SOURCE_DIR}/test/pynrn/test_partrans.py)
-    list(APPEND TESTS parallel_tests parallel_partrans)
-    add_test(
-      NAME parallel_netpar
-      COMMAND
-        ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
-        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
-        ${PROJECT_SOURCE_DIR}/test/pynrn/test_netpar.py)
-    list(APPEND TESTS parallel_tests parallel_netpar)
-    add_test(
-      NAME parallel_bas
-      COMMAND
-        ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
-        ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
-        ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_bas.py)
-    list(APPEND TESTS parallel_tests parallel_bas)
-  endif()
+  nrn_add_test_group(NAME parallel MODFILE_PATTERNS NONE)
+  nrn_add_test(
+    GROUP parallel
+    NAME subworld
+    PROCESSORS 6
+    REQUIRES mpi
+    SCRIPT_PATTERNS test/parallel_tests/test_subworld.py
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 6 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/parallel_tests/test_subworld.py)
+  nrn_add_test(
+    GROUP parallel
+    NAME partrans
+    PROCESSORS 2
+    REQUIRES mpi
+    SCRIPT_PATTERNS test/pynrn/test_partrans.py
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/pynrn/test_partrans.py)
+  nrn_add_test(
+    GROUP parallel
+    NAME netpar
+    PROCESSORS 2
+    REQUIRES mpi
+    SCRIPT_PATTERNS test/pynrn/test_hoc_po.py test/pynrn/test_netpar.py
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/pynrn/test_netpar.py)
+  nrn_add_test(
+    GROUP parallel
+    NAME bas
+    PROCESSORS 2
+    REQUIRES mpi
+    SCRIPT_PATTERNS test/parallel_tests/test_bas.py
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} nrniv
+            ${MPIEXEC_POSTFLAGS} -mpi -python test/parallel_tests/test_bas.py)
   # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude
   # workaround.
   if(CORENRN_ENABLE_REPORTING)
@@ -235,8 +253,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     # ${nrniv_mpi_arg} is not enough here, it crashes without -mpi even if CoreNEURON reports are
     # disabled.
     set(modtests_launch_hoc special -notatty -mpi)
-    set(modtests_launch_py ${sonata_zero_gid_env} ${modtests_launch_hoc} -python -pyexe
-                           ${PYTHON_EXECUTABLE})
+    set(modtests_launch_py ${modtests_launch_hoc} -python)
     set(modtests_launch_py_mpi
         ${MPIEXEC_NAME}
         ${MPIEXEC_NUMPROC_FLAG}
@@ -245,14 +262,11 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         special
         ${MPIEXEC_POSTFLAGS}
         -notatty
-        -python
-        -pyexe
-        ${PYTHON_EXECUTABLE})
+        -python)
   else()
-    set(py_args -m pytest ${PYTEST_COVERAGE_ARGS} -s)
-    set(modtests_launch_py ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE}
-                           ${py_args})
-    set(modtests_launch_hoc ${CMAKE_BINARY_DIR}/bin/nrniv ${nrniv_mpi_arg})
+    set(modtests_preload_sanitizer PRELOAD_SANITIZER)
+    set(modtests_launch_py ${PYTHON_EXECUTABLE} ${pytest})
+    set(modtests_launch_hoc nrniv ${nrniv_mpi_arg})
     set(modtests_launch_py_mpi ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
                                ${PYTHON_EXECUTABLE})
   endif()
@@ -268,14 +282,15 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     nrn_add_test(
       GROUP coreneuron_standalone
       NAME test_nrn_corenrn_standalone
-      REQUIRES coreneuron
+      REQUIRES coreneuron ${modtests_preload_sanitizer}
       # In a GPU build ${modtests_launch_py} needs to be a statically-linked `special`. As a
       # standard NEURON installation doesn't include `special` but only `nrniv` (without link to
       # `libcorenrnmech.a`), we can not run this test on GPUs.
       CONFLICTS gpu
       SCRIPT_PATTERNS test/coreneuron/test_psolve.py
-      COMMAND COVERAGE_FILE=.coverage.coreneuron_standalone_test_psolve_py ${modtests_launch_py}
-              test/coreneuron/test_psolve.py)
+      ENVIRONMENT COVERAGE_FILE=.coverage.coreneuron_standalone_test_psolve_py
+                  ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+      COMMAND ${modtests_launch_py} test/coreneuron/test_psolve.py)
   endif()
 
   nrn_add_test_group(
@@ -289,119 +304,135 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   nrn_add_test(
     GROUP coreneuron_modtests
     NAME version_macros
-    REQUIRES coreneuron
+    REQUIRES coreneuron ${modtests_preload_sanitizer}
     SCRIPT_PATTERNS test/pynrn/test_version_macros.py
-    COMMAND COVERAGE_FILE=.coverage.coreneuron_version_macros NRN_CORENEURON_ENABLE=true
-            ${modtests_launch_py} test/pynrn/test_version_macros.py)
+    ENVIRONMENT COVERAGE_FILE=.coverage.coreneuron_version_macros NRN_CORENEURON_ENABLE=true
+                ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/pynrn/test_version_macros.py)
   # In GPU builds run all of the tests on both CPU and GPU
   set(coreneuron_modtests_gpu_env CORENRN_ENABLE_GPU=true)
   foreach(processor cpu gpu)
     set(processor_env ${coreneuron_modtests_${processor}_env})
+    set(modtests_processor_env ${processor_env} ${sonata_zero_gid_env})
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME fornetcon_py_${processor}
-      REQUIRES coreneuron ${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_fornetcon.py
-      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_fornetcon_py
-              ${modtests_launch_py} test/coreneuron/test_fornetcon.py)
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_fornetcon_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_fornetcon.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME direct_py_${processor}
-      REQUIRES coreneuron ${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_direct.py
-      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_direct_py ${modtests_launch_py}
-              test/coreneuron/test_direct.py)
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_direct_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_direct.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME direct_hoc_${processor}
-      REQUIRES coreneuron ${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_direct.hoc
-      COMMAND ${processor_env} ${modtests_launch_hoc} test/coreneuron/test_direct.hoc)
+      ENVIRONMENT ${processor_env}
+      COMMAND ${modtests_launch_hoc} test/coreneuron/test_direct.hoc)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME spikes_py_${processor}
-      REQUIRES coreneuron ${processor}
-      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_spikes_py ${modtests_launch_py}
-              test/coreneuron/test_spikes.py)
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_spikes_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_spikes.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME spikes_file_mode_py_${processor}
-      REQUIRES coreneuron ${processor}
-      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_spikes_file_mode_py
-              NRN_TEST_SPIKES_FILE_MODE=1 ${modtests_launch_py} test/coreneuron/test_spikes.py)
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_spikes_file_mode_py NRN_TEST_SPIKES_FILE_MODE=1
+      COMMAND ${modtests_launch_py} test/coreneuron/test_spikes.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME fast_imem_py_${processor}
-      REQUIRES coreneuron ${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/pynrn/test_fast_imem.py
-      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_fast_imem_py
-              ${modtests_launch_py} test/pynrn/test_fast_imem.py)
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_fast_imem_py
+      COMMAND ${modtests_launch_py} test/pynrn/test_fast_imem.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME datareturn_py_${processor}
-      REQUIRES coreneuron ${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_datareturn.py
-      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_datareturn_py
-              ${modtests_launch_py} test/coreneuron/test_datareturn.py)
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_datareturn_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_datareturn.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME test_units_py_${processor}
-      REQUIRES coreneuron ${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_units.py
-      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_test_units_py
-              ${modtests_launch_py} test/coreneuron/test_units.py)
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_test_units_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_units.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME test_netmove_py_${processor}
-      REQUIRES coreneuron ${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_netmove.py
-      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_test_netmove_py
-              ${modtests_launch_py} test/coreneuron/test_netmove.py)
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_test_netmove_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_netmove.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME test_pointer_py_${processor}
-      REQUIRES coreneuron ${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_pointer.py
-      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_test_pointer_py
-              ${modtests_launch_py} test/coreneuron/test_pointer.py)
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_test_pointer_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_pointer.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME test_watchrange_py_${processor}
-      REQUIRES coreneuron ${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_watchrange.py
-      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_test_watchrange_py
-              ${modtests_launch_py} test/coreneuron/test_watchrange.py)
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_test_watchrange_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_watchrange.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME test_psolve_py_${processor}
-      REQUIRES coreneuron ${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_psolve.py
-      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_test_psolve_py
-              ${modtests_launch_py} test/coreneuron/test_psolve.py)
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_test_psolve_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_psolve.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME test_ba_py_${processor}
-      REQUIRES coreneuron ${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_ba.py
-      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_test_psolve_py
-              ${modtests_launch_py} test/coreneuron/test_ba.py)
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_test_ba_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_ba.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME test_natrans_py_${processor}
-      REQUIRES coreneuron ${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/gjtests/test_natrans.py
-      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_test_natrans_py
-              ${modtests_launch_py} test/gjtests/test_natrans.py)
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_test_natrans_py
+      COMMAND ${modtests_launch_py} test/gjtests/test_natrans.py)
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(mpi4py)
       if(mpi4py_FOUND)
         nrn_add_test(
           GROUP coreneuron_modtests
           NAME spikes_mpi_py_${processor}
-          REQUIRES coreneuron ${processor}
+          REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
           PROCESSORS 2
-          COMMAND ${processor_env} NRN_TEST_SPIKES_MPI4PY=1 ${modtests_launch_py_mpi}
-                  test/coreneuron/test_spikes.py)
+          ENVIRONMENT ${processor_env} NRN_TEST_SPIKES_MPI4PY=1
+          COMMAND ${modtests_launch_py_mpi} test/coreneuron/test_spikes.py)
       endif()
       # See https://www.neuron.yale.edu/phpBB/viewtopic.php?t=4297 and links therein for more
       # discussion. Launching this test via `python` (not `special`) does not work on Linux with
@@ -417,9 +448,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
             ${MPIEXEC_PREFLAGS}
             special
             ${MPIEXEC_POSTFLAGS}
-            -python
-            -pyexe
-            ${PYTHON_EXECUTABLE})
+            -python)
         message(STATUS "Hitting workaround")
       else()
         set(launch_spikes_mpi_file_mode_py ${modtests_launch_py_mpi})
@@ -427,14 +456,14 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       nrn_add_test(
         GROUP coreneuron_modtests
         NAME spikes_mpi_file_mode_py_${processor}
-        REQUIRES coreneuron ${processor}
+        REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
         PROCESSORS 2
-        COMMAND ${processor_env} NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1
-                ${launch_spikes_mpi_file_mode_py} test/coreneuron/test_spikes.py)
+        ENVIRONMENT ${processor_env} NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1
+        COMMAND ${launch_spikes_mpi_file_mode_py} test/coreneuron/test_spikes.py)
       nrn_add_test(
         GROUP coreneuron_modtests
         NAME inputpresyn_py_${processor}
-        REQUIRES coreneuron ${processor}
+        REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
         PROCESSORS 2
         COMMAND
           ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special
@@ -465,6 +494,7 @@ add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod")
 set_property(TEST modlunit_pattern PROPERTY WILL_FAIL ON)
 
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}")
+cpp_cc_configure_sanitizers(TEST ${TESTS})
 # If profiling is enabled, run ringtest with profiler
 if(NRN_ENABLE_PROFILING)
   set(TEST_PROFILING_ENV ${NRN_RUN_FROM_BUILD_DIR_ENV})

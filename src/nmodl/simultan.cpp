@@ -11,7 +11,7 @@ int nonlin_common(Item*, int);
 
 void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum) {
     Sprintf(buf,
-            "%s(%d,_slist%d, _p, %s, _dlist%d);\n",
+            "%s(%d,_slist%d, _p, %s_wrapper_returning_int, _dlist%d);\n",
             method->name,
             numeqn,
             listnum,
@@ -59,7 +59,11 @@ void massagenonlin(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) {
     Symbol* nonfun;
 
     /* all this junk is still in the intoken list */
-    Sprintf(buf, "static void %s();\n", SYM(q2)->name);
+    Sprintf(buf,
+            "static void %s();\nstatic int %s_wrapper_returning_int() { %s(); return 42; }",
+            SYM(q2)->name,
+            SYM(q2)->name,
+            SYM(q2)->name);
     Linsertstr(procfunc, buf);
     replacstr(q1, "\nstatic void");
     Insertstr(q3, "()\n");
@@ -195,8 +199,8 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
             numlist);
     qret = insertstr(q3, buf);
     Sprintf(buf,
-            "error = nrn_newton_thread(_newtonspace%d, %d,_slist%d, _p, %s, _dlist%d, _ppvar, "
-            "_thread, _nt);\n",
+            "error = nrn_newton_thread(static_cast<NewtonSpace*>(_newtonspace%d), %d,_slist%d, _p, "
+            "%s, _dlist%d, _ppvar, _thread, _nt);\n",
             numlist - 1,
             counts,
             numlist,

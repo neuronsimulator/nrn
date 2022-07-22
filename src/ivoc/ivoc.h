@@ -10,6 +10,7 @@
 #include "gui-redirect.h"
 extern int nrn_err_dialog_active_;
 
+#include <ostream>
 
 #ifdef MINGW
 extern bool nrn_is_gui_thread();
@@ -74,7 +75,7 @@ class Oc {
     static void helpmode(Window*);
     static void help(const char*);
 
-    static ostream* save_stream;
+    static std::ostream* save_stream;
     static void cleanup();
 
   private:

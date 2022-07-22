@@ -1,10 +1,10 @@
 # for x86_64-w64-mingw64 need the full name of the compiler.
-@BUILD_MINGW_TRUE@CC = @CC@
-@BUILD_MINGW_FALSE@CC = gcc
+@BUILD_MINGW_TRUE@CXX = @CXX@
+@BUILD_MINGW_FALSE@CXX = g++
 
 EXTRA_FLAGS = @MINGW_CFLAG@
 
-CFLAGS = \
+CXXFLAGS = \
 -DDLL_EXPORT -DPIC \
 -I$N/include -I$N/src/scopmath -I$N/src/nrnoc -I$N/src/oc \
 $(EXTRA_FLAGS)
@@ -15,36 +15,36 @@ bin = bin@binsuffix@
 
 # to handle variations of filename extensions
 .SUFFIXES: .o .mod .moD .mOd .mOD .Mod .MoD .MOd .MOD
-.PRECIOUS: %.c
+.PRECIOUS: %.cpp
 
 %.o : %.mod
 
-%.c : %.mod
+%.cpp : %.mod
 	nocmodl $*
 
-%.o : %.c
-	$(CC) $(CFLAGS) -c $*.c
+%.o : %.cpp
+	$(CXX) $(CXXFLAGS) -c $*.cpp
 
 # additional rules to handle variations of filename extensions
-%.c : %.moD
+%.cpp : %.moD
 	nocmodl $*
 
-%.c : %.mOd
+%.cpp : %.mOd
 	nocmodl $*
 
-%.c : %.mOD
+%.cpp : %.mOD
 	nocmodl $*
 
-%.c : %.Mod
+%.cpp : %.Mod
 	nocmodl $*
 
-%.c : %.MoD
+%.cpp : %.MoD
 	nocmodl $*
 
-%.c : %.MOd
+%.cpp : %.MOd
 	nocmodl $*
 
-%.c : %.MOD
+%.cpp : %.MOD
 	nocmodl $*
 
 %.o : %.moD
@@ -61,11 +61,11 @@ bin = bin@binsuffix@
 
 %.o : %.MOD
 
-mod_func.o: mod_func.c
-	$(CC) $(CFLAGS) -c $*.c
+mod_func.o: mod_func.cpp
+	$(CXX) $(CXXFLAGS) -c $*.cpp
 
 nrnmech.dll: mod_func.o $(MODOBJFILES)
-	$(CC) $(EXTRA_FLAGS) -shared mod_func.o $(MODOBJFILES) \
+	$(CXX) $(EXTRA_FLAGS) -shared mod_func.o $(MODOBJFILES) \
   -L$N/$(bin) -lnrniv -lpthread -o $(TARGET)
 	@nrnskip_rebase@rebase -b 0x64000000 -v nrnmech.dll
 

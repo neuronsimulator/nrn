@@ -87,7 +87,7 @@ static struct option long_options[] = {{"version", no_argument, 0, 'v'},
                                        {0, 0, 0, 0}};
 
 static void show_options(char** argv) {
-    fprintf(stderr, "Source to source compiler from NMODL to C\n");
+    fprintf(stderr, "Source to source compiler from NMODL to C++\n");
     fprintf(stderr, "Usage: %s [options] Inputfile\n", argv[0]);
     fprintf(stderr, "Options:\n");
     fprintf(stderr,
@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
 #if NMODL || HMODL
 #else
 #if !SIMSYS
-    Fprintf(stderr, "Translating %s into %s.c and %s.var\n", finname, modprefix, modprefix);
+    Fprintf(stderr, "Translating %s into %s.cpp and %s.var\n", finname, modprefix, modprefix);
 #endif
 #endif
     IGNORE(yyparse());
@@ -224,17 +224,18 @@ no longer adequate for saying we can not */
 #endif
     if (nmodl_text) {
         Item* q;
-        char* pf = NULL;
+        char* pf{nullptr};
 #if HAVE_REALPATH && !defined(NRN_AVOID_ABSOLUTE_PATHS)
-        pf = realpath(finname, NULL);
+        pf = realpath(finname, nullptr);
 #endif
-        fprintf(fcout,
-                "\n#if NMODL_TEXT\nstatic const char* nmodl_filename = \"%s\";\nstatic const char* "
-                "nmodl_file_text = \n",
-                pf ? pf : finname);
+        fprintf(
+            fcout,
+            "\n#if NMODL_TEXT\nstatic void register_nmodl_text_and_filename(int mech_type) {\n");
+        fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", pf ? pf : finname);
         if (pf) {
             free(pf);
         }
+        fprintf(fcout, "    const char* nmodl_file_text = \n");
         ITERATE(q, filetxtlist) {
             char* s = STR(q);
             char* cp;
@@ -250,7 +251,11 @@ no longer adequate for saying we can not */
                 fputc(*cp, fcout);
             }
         }
-        fprintf(fcout, "  ;\n#endif\n");
+        fprintf(fcout, "  ;\n");
+        fprintf(fcout, "    hoc_reg_nmodl_filename(mech_type, nmodl_filename);\n");
+        fprintf(fcout, "    hoc_reg_nmodl_text(mech_type, nmodl_file_text);\n");
+        fprintf(fcout, "}\n");
+        fprintf(fcout, "#endif\n");
     }
 #endif
 
@@ -264,7 +269,7 @@ no longer adequate for saying we can not */
         fprintf(stderr,
                 "Derivatives of STATE array variables are not translated correctly and compile "
                 "time errors will be generated.\n");
-        fprintf(stderr, "The %s.c file may be manually edited to fix these errors.\n", modprefix);
+        fprintf(stderr, "The %s.cpp file may be manually edited to fix these errors.\n", modprefix);
     }
 #endif
 
@@ -323,12 +328,12 @@ static void openfiles(char* given_filename, char* output_dir) {
         }
         char* basename = strrchr(modprefix, '/');
         if (basename) {
-            Sprintf(output_filename, "%s%s.c", output_dir, basename);
+            Sprintf(output_filename, "%s%s.cpp", output_dir, basename);
         } else {
-            Sprintf(output_filename, "%s/%s.c", output_dir, modprefix);
+            Sprintf(output_filename, "%s/%s.cpp", output_dir, modprefix);
         }
     } else {
-        Sprintf(output_filename, "%s.c", modprefix);
+        Sprintf(output_filename, "%s.cpp", modprefix);
     }
 
     if ((fcout = fopen(output_filename, "w")) == (FILE*) 0) {
@@ -355,24 +360,7 @@ static void openfiles(char* given_filename, char* output_dir) {
 #endif
 }
 
-static std::string str_replace(std::string str,
-                               const std::string& search_str,
-                               const std::string& replace_str) {
-    if (search_str.empty()) {
-        return str;
-    }
-
-    size_t pos;
-    while ((pos = str.find(search_str)) != std::string::npos) {
-        str.replace(pos, search_str.size(), replace_str);
-    }
-
-    return str;
-}
-
 // Post-adjustments for VERBATIM blocks  (i.e  make them compatible with CPP).
 void verbatim_adjust(char* q) {
-    // template is a reserved CPP keyword
-    const std::string repl = str_replace(q, "u.template", "u.ctemplate");
-    Fprintf(fcout, "%s", repl.c_str());
+    Fprintf(fcout, "%s", q);
 }

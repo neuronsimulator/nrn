@@ -1080,7 +1080,8 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
             if (blocktype == NETRECEIVE) {
                 Insertstr(qpar1->next, "_tqitem, _args, _pnt,");
             } else if (blocktype == INITIAL1) {
-                Insertstr(qpar1->next, "_tqitem, (double*)0, _ppvar[1]._pvoid,");
+                Insertstr(qpar1->next,
+                          "_tqitem, nullptr, static_cast<Point_process*>(_ppvar[1]._pvoid),");
             } else {
                 diag("net_send allowed only in INITIAL and NET_RECEIVE blocks", (char*) 0);
             }

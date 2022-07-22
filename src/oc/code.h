@@ -3,17 +3,8 @@
 
 #include "redef.h"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 extern void nopop(void);
 extern void edit(void);
-
-#if defined(__cplusplus)
-}
-#endif
-
 
 extern void eval(void);
 extern void add(void), hoc_sub(void), mul(void), hoc_div(void), hoc_cyclic(void), negate(void),
