@@ -1,0 +1,13 @@
+tools:
+  ClangFormat:
+    enable: True
+    exclude:
+      match:
+      - ext/.*
+      - src/language/templates/*
+  CMakeFormat:
+    enable: True
+    exclude:
+      match:
+      - ext/.*
+      - src/language/templates/*

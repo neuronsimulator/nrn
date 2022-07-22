@@ -81,20 +81,12 @@ project(
 # =============================================================================
 # HPC Coding Conventions
 # =============================================================================
-set(NMODL_ClangFormat_EXCLUDES_RE
-    "ext/.*$$" "src/language/templates/.*$$"
-    CACHE STRING "list of regular expressions to exclude C/C++ files from formatting" FORCE)
-set(NMODL_CMakeFormat_EXCLUDES_RE
-    "ext/.*$$" "src/language/templates/.*$$"
-    CACHE STRING "list of regular expressions to exclude CMake files from formatting" FORCE)
-
 # initialize submodule of coding conventions under cmake
 if(NOT EXISTS "${PROJECT_SOURCE_DIR}/cmake/hpc-coding-conventions/cpp/CMakeLists.txt")
   initialize_submodule("${PROJECT_SOURCE_DIR}/cmake/hpc-coding-conventions")
 endif()
 set(CODING_CONV_PREFIX NMODL)
 add_subdirectory(cmake/hpc-coding-conventions/cpp)
-include(cmake/hpc-coding-conventions/cpp/cmake/FindClangFormat.cmake)
 
 # =============================================================================
 # Enable sanitizer support if the NMODL_SANITIZERS variable is set
@@ -271,12 +263,6 @@ message(STATUS "Python Bindings     | ${NMODL_ENABLE_PYTHON_BINDINGS}")
 message(STATUS "Flex                | ${FLEX_EXECUTABLE}")
 message(STATUS "Bison               | ${BISON_EXECUTABLE}")
 message(STATUS "Python              | ${PYTHON_EXECUTABLE}")
-if(NMODL_CLANG_FORMAT)
-  message(STATUS "Clang Format        | ${ClangFormat_EXECUTABLE}")
-endif()
-if(NMODL_CMAKE_FORMAT)
-  message(STATUS "Cmake Format        | ${CMakeFormat_EXECUTABLE}")
-endif()
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS " See documentation : https://github.com/BlueBrain/nmodl/")
 message(STATUS "--------------+--------------------------------------------------------------")

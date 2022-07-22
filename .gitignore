@@ -49,3 +49,4 @@ venv.bak/
 .cmake-format.yaml
 .pre-commit-config.yaml
 .ipynb_checkpoints
+.bbp-project-venv/

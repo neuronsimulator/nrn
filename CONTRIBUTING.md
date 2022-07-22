@@ -47,9 +47,13 @@ When you wish to contribute to the code base, please consider the following guid
      git checkout -b my-fix-branch master
      ```
 * Create your patch, **including appropriate test cases**.
-* Enable `NMODL_FORMATTING` and `NMODL_PRECOMMIT` CMake variables
-  to ensure that your change follows coding conventions of this project.
-  Please see [README.md](./README.md) for more information.
+* Enable `NMODL_TEST_FORMATTING` CMake variable
+  to ensure that your change follows the coding conventions of this project when running the tests.
+  The formatting utility can also be used directly:
+  * to format CMake and C++ files: `cmake/hpc-coding-conventions/bin/format`
+  * to format only the C++ files: `cmake/hpc-coding-conventions/bin/format --lang c++`
+  * to format a subset of files or directories: `cmake/hpc-coding-conventions/bin/format src/codegen/ src/main.cpp`
+  * to check the formatting of CMake files: `cmake/hpc-coding-conventions/bin/format --dry-run --lang cmake`
 * Run the full test suite, and ensure that all tests pass.
 * Commit your changes using a descriptive commit message.
 
