@@ -3,7 +3,7 @@
 Working with Morphometric Data
 ==============================
 
-If you have detailed morphometric data, why not use it? This may be easier said than done, since quantitative morphometry typically produces hundreds or thousands of measurements for a single cell -- you wouldn't want to translate this into a model by hand. Several programs have been written to generate NEURON code from morphometric data files, but NEURON's own Import3D tool is probably the most powerful and up-to-date. Currently Import3D can read Eutectic, Neurolucida (v1 and v3 text files), swc, and MorphML files. It can also detect and localize errors in these files, and repair many of the more common errors automatically or with user guidance.
+If you have detailed morphometric data, why not use it? This may be easier said than done, since quantitative morphometry typically produces hundreds or thousands of measurements for a single cell -- you wouldn't want to translate this into a model by hand. Several programs have been written to generate NEURON code from morphometric data files, but NEURON's own :ref:`Import3D tool <import_3d.rst>` is probably the most powerful and up-to-date. Currently Import3D can read Eutectic, Neurolucida (v1 and v3 text files), swc, and MorphML files. It can also detect and localize errors in these files, and repair many of the more common errors automatically or with user guidance.
 
 Exercises
 ---------
@@ -59,7 +59,7 @@ That's a very dense and complex branching pattern.
 D. Exporting the model.
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The Import3D tool allows us to export the topology (branched architecture) and geometry (anatomical dimensions) of these data to a CellBuilder, or straight to the hoc interpreter. It's generally best to send the data to the CellBuilder, which we can then save to a session file for future re-use. The CellBuilder, which has its own tutorial, is a very convenient tool for managing the biophysical properties and spatial discretization of anatomically complex cell models.
+The Import3D tool allows us to export the topology (branched architecture) and geometry (anatomical dimensions) of these data to a CellBuilder, or straight to the hoc interpreter. It's generally best to send the data to :ref:`the CellBuilder <cellbuilder.rst>`, which we can then save to a session file for future re-use. The CellBuilder, which has its own tutorial, is a very convenient tool for managing the biophysical properties and spatial discretization of anatomically complex cell models.
 
 So click on the Export button and select the CellBuilder option.
 
@@ -188,8 +188,13 @@ Kaspirzhny AV, Gogan P, Horcholle-Bossavit G, Tyc-Dumont S. 2002. Neuronal morph
 
 Scorcioni, R., Lazarewicz, M.T., and Ascoli, G.A. Quantitative morphometry of hippocampal pyramidal cells: differences between anatomical classes and reconstructing laboratories. Journal of Comparative Neurology 473:177-193, 2004. `doi:10.1002/cne.20067 <https://onlinelibrary.wiley.com/doi/10.1002/cne.20067>`_
 
+:ref:`Quality issues with Morphometric Data <quality_issues_with_morphometric_data>`
 
 
+.. toctree::
+    :hidden:
+
+    quality_issues_with_morphometric.rst
 
 
 
