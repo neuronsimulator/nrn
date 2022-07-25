@@ -17,6 +17,8 @@
 #include "ivocvect.h"
 #include "matrixmap.h"
 
+#include "neuron/container/data_handle.hpp"
+
 #include <list>
 #include <vector>
 
@@ -84,7 +86,7 @@ class NrnDAE {
      * @param pvdot         pointers to voltage derivatives (set by this
      *                      function)
      */
-    void dkmap(double** pv, double** pvdot);
+    void dkmap(std::vector<neuron::container::data_handle<double>>& pv, double** pvdot);
 
     /**
      * Destructor.
