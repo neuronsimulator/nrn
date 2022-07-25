@@ -1,21 +1,10 @@
 #include <../../nrnconf.h>
 #include <cstdio>
 #include "nrndae.h"
+#include "nrndae_c.h"
 #include "nrnoc2iv.h"
 
-extern void nrndae_alloc();
-extern int nrndae_extra_eqn_count();
-extern void nrndae_init();
-extern void nrndae_rhs();  // relative to c*dy/dt = -g*y + b
-extern void nrndae_lhs();
-extern void nrndae_dkmap(double**, double**);
-extern void nrndae_dkres(double*, double*, double*);
-extern void nrndae_dkpsol(double);
-extern void nrndae_update();
-extern void nrn_matrix_node_free();
-extern int nrn_use_daspk_;
 extern int secondorder;
-extern int nrndae_list_is_empty();
 
 static NrnDAEPtrList nrndae_list;
 
@@ -82,7 +71,7 @@ void nrndae_lhs() {
     }
 }
 
-void nrndae_dkmap(double** pv, double** pvdot) {
+void nrndae_dkmap(std::vector<neuron::container::data_handle<double>>& pv, double** pvdot) {
     for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
         (*m)->dkmap(pv, pvdot);
     }
@@ -203,7 +192,7 @@ int NrnDAE::extra_eqn_count() {
     return c_->nrow() - nnode_;
 }
 
-void NrnDAE::dkmap(double** pv, double** pvdot) {
+void NrnDAE::dkmap(std::vector<neuron::container::data_handle<double>>& pv, double** pvdot) {
     // printf("NrnDAE::dkmap\n");
     NrnThread* _nt = nrn_threads;
     for (int i = nnode_; i < size_; ++i) {

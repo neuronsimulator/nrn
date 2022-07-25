@@ -940,17 +940,17 @@ void nrn_rangeconst(Section* sec, Symbol* s, double* pd, int op) {
         if (op) {
             *pd = hoc_opasgn(op, NODEV(nd), d);
         }
-        NODEV(nd) = *pd;
+        nd->set_v(*pd);
         nd = node_ptr(sec, 1., (double*) 0);
         if (op) {
             *pd = hoc_opasgn(op, NODEV(nd), d);
         }
-        NODEV(nd) = *pd;
+        nd->set_v(*pd);
         for (i = 0; i < n; i++) {
             if (op) {
                 *pd = hoc_opasgn(op, NODEV(sec->pnode[i]), d);
             }
-            NODEV(sec->pnode[i]) = *pd;
+            sec->pnode[i]->set_v(*pd);
         }
     } else {
         if (s->u.rng.type == IMEMFAST) {
@@ -1174,17 +1174,17 @@ void range_interpolate(void) /*symbol at pc, 4 values on stack*/
         if (x1 == 0. || x1 == 1.) {
             nd = node_ptr(sec, x1, (double*) 0);
             if (op) {
-                NODEV(nd) = hoc_opasgn(op, NODEV(nd), y1);
+                nd->set_v(hoc_opasgn(op, NODEV(nd), y1));
             } else {
-                NODEV(nd) = y1;
+                nd->set_v(y1);
             }
         }
         if (x2 == 1. || x2 == 0.) {
             nd = node_ptr(sec, x2, (double*) 0);
             if (op) {
-                NODEV(nd) = hoc_opasgn(op, NODEV(nd), y2);
+                nd->set_v(hoc_opasgn(op, NODEV(nd), y2));
             } else {
-                NODEV(nd) = y2;
+                nd->set_v(y2);
             }
         }
         for (i = i1; i != i2; i += di) {
@@ -1197,9 +1197,9 @@ void range_interpolate(void) /*symbol at pc, 4 values on stack*/
             if (thet >= -1e-9 && thet <= 1. + 1e-9) {
                 y = y1 * (1. - thet) + y2 * thet;
                 if (op) {
-                    NODEV(nd) = hoc_opasgn(op, NODEV(nd), y);
+                    nd->set_v(hoc_opasgn(op, NODEV(nd), y));
                 } else {
-                    NODEV(nd) = y;
+                    nd->set_v(y);
                 }
             }
         }
@@ -1287,8 +1287,9 @@ double* nrn_rangepointer(Section* sec, Symbol* s, double d) {
     int indx;
 
     if (s->u.rng.type == VINDEX) {
-        nd = node_ptr(sec, d, (double*) 0);
-        return &NODEV(nd);
+        nd = node_ptr(sec, d, nullptr);
+        assert(false);
+        return static_cast<double*>(nd->v_handle());
     }
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
@@ -1327,7 +1328,9 @@ double* nrnpy_rangepointer(Section* sec, Symbol* s, double d, int* err) {
 
     *err = 0;
     if (s->u.rng.type == VINDEX) {
-        return &NODEV(node_ptr(sec, d, (double*) 0));
+        auto* nd = node_ptr(sec, d, nullptr);
+        assert(false);
+        return static_cast<double*>(nd->v_handle());
     }
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
@@ -1367,8 +1370,9 @@ void rangevarevalpointer(void) /* symbol at pc, location on stack, return pointe
     d = xpop();
     sec = nrn_sec_pop();
     if (s->u.rng.type == VINDEX) {
-        nd = node_ptr(sec, d, (double*) 0);
-        hoc_pushpx(&NODEV(nd));
+        nd = node_ptr(sec, d, nullptr);
+        assert(false);
+        hoc_pushpx(static_cast<double*>(nd->v_handle()));
         return;
     }
     if (s->u.rng.type == IMEMFAST) {

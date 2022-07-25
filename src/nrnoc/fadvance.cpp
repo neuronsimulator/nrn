@@ -589,11 +589,13 @@ static void update(NrnThread* _nt) {
     { /* use original non-vectorized update */
         if (secondorder) {
             for (i = i1; i < i2; ++i) {
-                NODEV(_nt->_v_node[i]) += 2. * NODERHS(_nt->_v_node[i]);
+                auto* node = _nt->_v_node[i];
+                node->set_v(node->v() + 2. * NODERHS(node));
             }
         } else {
             for (i = i1; i < i2; ++i) {
-                NODEV(_nt->_v_node[i]) += NODERHS(_nt->_v_node[i]);
+                auto* node = _nt->_v_node[i];
+                node->set_v(node->v() + NODERHS(_nt->_v_node[i]));
             }
             if (use_sparse13) {
                 nrndae_update();
@@ -870,7 +872,7 @@ void nrn_finitialize(int setv, double v) {
     if (setv) {
         FOR_THREADS(_nt)
         for (i = 0; i < _nt->end; ++i) {
-            NODEV(_nt->_v_node[i]) = v;
+            _nt->_v_node[i]->set_v(v);
         }
     }
 #if 1 || PARANEURON

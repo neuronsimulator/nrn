@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <InterViews/resource.h>
 #include <OS/string.h>
+#include "nrndae_c.h"
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "nrndaspk.h"
@@ -24,7 +25,6 @@ extern void long_difus_solve(int, NrnThread*);
 extern Symlist* hoc_built_in_symlist;
 
 #include "spmatrix.h"
-extern void nrndae_dkmap(double**, double**);
 extern double* sp13mat;
 
 #if 1 || PARANEURON
@@ -151,14 +151,12 @@ void Cvode::init_eqn() {
             }
         }
         z.nonvint_extra_offset_ = zneq;
-        if (z.pv_) {
-            delete[] z.pv_;
-            delete[] z.pvdot_;
-            z.pv_ = 0;
-            z.pvdot_ = 0;
+        if (!z.pv_.empty()) {
+            z.pv_.clear();
+            delete[] std::exchange(z.pvdot_, nullptr);
         }
         if (z.nonvint_extra_offset_) {
-            z.pv_ = new double*[z.nonvint_extra_offset_];
+            z.pv_.resize(z.nonvint_extra_offset_);
             z.pvdot_ = new double*[z.nonvint_extra_offset_];
         }
         zneq += nrn_nonvint_block_ode_count(zneq, _nt->id);
@@ -214,7 +212,7 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
         }
         for (i = 0; i < zneq_cap_v; ++i) {
             ml = z.cmlcap_->ml;
-            z.pv_[i] = &NODEV(ml->nodelist[i]);
+            z.pv_[i] = ml->nodelist[i]->v_handle();
             z.pvdot_[i] = &(NODERHS(ml->nodelist[i]));
             *z.pvdot_[i] = 0.;  // only ones = 1 are no_cap
         }
@@ -243,6 +241,8 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
 
         // map the membrane mechanism ode state and dstate pointers
         int ieq = zneq_v;
+        // convert data_handle<double> -> double* for calling nrn_ode_map_t below
+        auto pv_raw_ptrs = z.raw_pv_pointers();
         for (cml = z.cv_memb_list_; cml; cml = cml->next) {
             int n;
             ml = cml->ml;
@@ -258,7 +258,7 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
                 nrn_ode_map_t s = mf->ode_map;
                 for (j = 0; j < ml->nodecount; ++j) {
                     (*s)(ieq,
-                         z.pv_ + ieq,
+                         pv_raw_ptrs.data() + ieq,
                          z.pvdot_ + ieq,
                          ml->_data[j],
                          ml->pdata[j],
@@ -375,11 +375,11 @@ void Cvode::daspk_init_eqn() {
     z.nvoffset_ = neq_;
     neq_ = z.nvsize_;
     // printf("Cvode::daspk_init_eqn: neq_v_=%d neq_=%d\n", neq_v_, neq_);
-    if (z.pv_) {
-        delete[] z.pv_;
+    if (!z.pv_.empty()) {
+        z.pv_.clear();
         delete[] z.pvdot_;
     }
-    z.pv_ = new double*[z.nonvint_extra_offset_];
+    z.pv_.resize(z.nonvint_extra_offset_);
     z.pvdot_ = new double*[z.nonvint_extra_offset_];
     atolvec_alloc(neq_);
     double* atv = n_vector_data(atolnvec_, 0);
@@ -407,7 +407,7 @@ void Cvode::daspk_init_eqn() {
             nd = _nt->_v_node[in];
             nde = nd->extnode;
             i = nd->eqn_index_ - 1;  // the sparse matrix index starts at 1
-            z.pv_[i] = &NODEV(nd);
+            z.pv_[i] = nd->v_handle();
             z.pvdot_[i] = nd->_rhs;
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
@@ -425,6 +425,8 @@ void Cvode::daspk_init_eqn() {
 
     // map the membrane mechanism ode state and dstate pointers
     int ieq = z.neq_v_;
+    // convert data_handle<double> -> double* for calling nrn_ode_map_t below
+    auto pv_raw_ptrs = z.raw_pv_pointers();
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {
         int n;
         mf = memb_func + cml->index;
@@ -434,7 +436,7 @@ void Cvode::daspk_init_eqn() {
             nrn_ode_map_t s = mf->ode_map;
             for (j = 0; j < ml->nodecount; ++j) {
                 (*s)(ieq,
-                     z.pv_ + ieq,
+                     pv_raw_ptrs.data() + ieq,
                      z.pvdot_ + ieq,
                      ml->_data[j],
                      ml->pdata[j],
@@ -843,7 +845,7 @@ void Cvode::nocap_v(NrnThread* _nt) {
 
     for (i = 0; i < z.no_cap_count_; ++i) {
         Node* nd = z.no_cap_node_[i];
-        NODEV(nd) = NODERHS(nd) / NODED(nd);
+        nd->set_v(NODERHS(nd) / NODED(nd));
         //		printf("%d %d %g v=%g\n", nrnmpi_myid, i, _nt->_t, NODEV(nd));
     }
     // no_cap v's are now consistent with adjacent v's
@@ -891,7 +893,7 @@ void Cvode::nocap_v_part3(NrnThread* _nt) {
     CvodeThreadData& z = ctd_[_nt->id];
     for (i = 0; i < z.no_cap_count_; ++i) {
         Node* nd = z.no_cap_node_[i];
-        NODEV(nd) = NODERHS(nd) / NODED(nd);
+        nd->set_v(NODERHS(nd) / NODED(nd));
         //		printf("%d %d %g v=%g\n", nrnmpi_myid, i, t, NODEV(nd));
     }
     // no_cap v's are now consistent with adjacent v's

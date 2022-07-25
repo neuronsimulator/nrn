@@ -110,7 +110,7 @@ the notify_free_val parameter in node_free in solve.cpp
 #define NODEV(n)    ((n)->_v)
 #define NODEAREA(n) ((n)->_area)
 #else /* CACHEVEC */
-#define NODEV(n)    ((n)->_node_handle.v_ref())
+#define NODEV(n)    ((n)->voltage())
 #define NODEAREA(n) ((n)->_area)
 #define NODERINV(n) ((n)->_rinv)
 // The VEC_* vectors access the underlying array storage, i.e. the vectors that
@@ -137,6 +137,15 @@ struct Node {
     // neuron::container::handle::Node, but as an intermediate measure we can
     // add one of those as a member and forward some access/modifications to it.
     neuron::container::Node::owning_handle _node_handle;
+    [[nodiscard]] auto v() const {
+        return _node_handle.v();
+    }
+    [[nodiscard]] auto voltage() const {
+        return v();
+    }
+    void set_v(neuron::container::Node::field::Voltage::type v) {
+        _node_handle.set_v(v);
+    }
     auto v_handle() {
         return _node_handle.v_handle();
     }

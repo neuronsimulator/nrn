@@ -422,7 +422,10 @@ void HocDataPathImpl::search(Node* nd, double x) {
     CopyString cs("");
     if (NODEV(nd) == sentinal) {
         sprintf(buf, "v(%g)", x);
-        found(&NODEV(nd), buf, sym_v);
+        // the conversion below yields a pointer that is potentially invalidated
+        // by almost any Node operation
+        assert(false);
+        found(static_cast<double*>(nd->v_handle()), buf, sym_v);
     }
 
 #if EXTRACELLULAR
