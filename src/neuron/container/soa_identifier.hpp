@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstddef>
 #include <memory>
+#include <ostream>
 #include <vector>
 
 namespace neuron::container {
@@ -53,6 +54,16 @@ struct identifier_base {
         auto const value = *m_ptr;
         assert(value != detail::invalid_row);
         return value;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, identifier_base const& id) {
+        if (!id.m_ptr) {
+            return os << "null";
+        } else if (*id.m_ptr == detail::invalid_row) {
+            return os << "died";
+        } else {
+            return os << "row=" << *id.m_ptr;
+        }
     }
 
     /** @brief Test if two handles are both null or refer to the same valid row.
