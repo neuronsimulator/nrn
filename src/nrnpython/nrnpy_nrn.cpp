@@ -1862,7 +1862,8 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
     } else if (strncmp(n, "_ref_", 5) == 0) {
         if (strcmp(n + 5, "v") == 0) {
             Node* nd = node_exact(sec, self->x_);
-            result = nrn_hocobj_ptr(&(NODEV(nd)));
+            assert(false);
+            result = nrn_hocobj_ptr(static_cast<double*>(nd->v_handle()));
         } else if ((sym = hoc_table_lookup(n + 5, hoc_built_in_symlist)) != 0 &&
                    sym->type == RANGEVAR) {
             if (ISARRAY(sym)) {

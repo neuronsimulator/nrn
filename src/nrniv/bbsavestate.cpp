@@ -1928,7 +1928,9 @@ void BBSaveState::node(Node* nd) {
     }
     int i;
     Prop* p;
-    f->d(1, NODEV(nd));
+    // f->d() needs an lvalue
+    auto v = nd->v();
+    f->d(1, v);
     // count
     // On restore, new point processes may have been inserted in
     // the section and marked IGNORE. So we need to count only the
@@ -1967,7 +1969,9 @@ void BBSaveState::node01(Section* sec, Node* nd) {
     // It is not clear why the zero area node voltages need to be saved.
     // Without them, we get correct simulations after a restore for
     // whole cells but not for split cells.
-    f->d(1, NODEV(nd));
+    // f->d needs an lvalue
+    auto v = nd->v();
+    f->d(1, v);
     // count
     for (i = 0, p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
