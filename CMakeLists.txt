@@ -265,7 +265,7 @@ endif()
 find_package(BISON REQUIRED)
 find_package(Boost REQUIRED)
 find_package(FLEX 2.6 REQUIRED)
-find_package(range-v3 REQUIRED)
+find_package(Range-v3 REQUIRED)
 
 # When shipping the wheels we want to link readline libs statically.
 if(NRN_WHEEL_STATIC_READLINE)
