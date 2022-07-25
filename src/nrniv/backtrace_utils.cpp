@@ -4,8 +4,15 @@
 #include "backward.hpp"
 #endif
 
+#if __has_include(<cxxabi.h>)
+#define USE_CXXABI
+#include <cxxabi.h>
+#endif
+
+#include <cassert>
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include <regex>
 #include <string>
 
@@ -50,6 +57,28 @@ int cxx_demangle(const char* symbol, char** funcname, size_t* funcname_sz) {
     // cxa_demangle can return 3 error codes: -1, -2, -3, we extend by one more error code
     return -4;
 #endif
+}
+
+namespace {
+struct free_deleter {
+    void operator()(char* p) {
+        free(p);
+    }
+};
+}  // namespace
+std::string cxx_demangle(const char* mangled) {
+    char* demangled{nullptr};
+    std::size_t demangled_size{};
+    auto const status = cxx_demangle(mangled, &demangled, &demangled_size);
+    std::unique_ptr<char, free_deleter> p{demangled};
+    if (status != 0) {
+        // There was an error
+        return mangled;
+    }
+    // demangled_size gives the buffer length, which is 1 more than the
+    // string length
+    assert(demangled_size);
+    return {demangled, demangled + demangled_size - 1};
 }
 
 void backward_wrapper() {

@@ -41,7 +41,12 @@ struct interface: view_base<View> {
      *  over permutations but doesn't know that it is a Node voltage.
      */
     [[nodiscard]] data_handle<field::Voltage::type> v_handle() {
-        return {this->id(), this->template get_container<field::Voltage>()};
+        data_handle<field::Voltage::type> const rval{
+            this->id(), this->template get_container<field::Voltage>()};
+        assert(bool{rval});
+        assert(rval.refers_to_a_modern_data_structure());
+        assert(rval.refers_to<field::Voltage>(neuron::model().node_data()));
+        return rval;
     }
 
     /** @brief Set the membrane potentials.
