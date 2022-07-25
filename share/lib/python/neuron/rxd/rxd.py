@@ -1459,7 +1459,7 @@ def _compile_reactions():
                         summed_mults = collections.defaultdict(lambda: 0)
                         for (mult, sp) in zip(r._mult, r._sources + r._dests):
                             summed_mults[creg._species_ids.get(sp()._id)] += mult
-                        for idx in sorted(summed_mults.keys()):
+                        for idx in sorted([k for k in summed_mults if k is not None]):
                             operator = "+=" if species_ids_used[idx][region_id] else "="
                             species_ids_used[idx][region_id] = True
                             fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (
