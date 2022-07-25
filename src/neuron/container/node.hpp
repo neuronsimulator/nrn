@@ -13,7 +13,7 @@ namespace neuron::container::Node {
 /** @brief Base class defining the public API of Node handles/views.
  *  @tparam View The concrete [owning_]handle/view type.
  *
- *  This allows the same struct-like accessors (v(), v_ref(), set_v(), ...) to be
+ *  This allows the same struct-like accessors (v(), set_v(), ...) to be
  *  used on all of the different types of objects that represent a single Node:
  *  - owning_handle: stable over permutations of underlying data, manages
  *    lifetime of a row in the underlying storage. Can be null.
@@ -28,31 +28,24 @@ namespace neuron::container::Node {
  */
 template <typename View>
 struct interface: view_base<View> {
-    field::Voltage::type v() const {
+    /** @brief Return the membrane potential.
+     *
+     *  Note that in translated MOD files this gets included with v redefined to
+     *  _v.
+     */
+    [[nodiscard]] field::Voltage::type v() const {
         return this->template get<field::Voltage>();
     }
+
     /** Return a generic handle to a value (double in this case) that is stable
      *  over permutations but doesn't know that it is a Node voltage.
      */
-    data_handle<field::Voltage::type> v_handle() {
+    [[nodiscard]] data_handle<field::Voltage::type> v_handle() {
         return {this->id(), this->template get_container<field::Voltage>()};
     }
-    /** @brief Return a reference to the underlying voltage storage.
-     *  @todo Deprecate and remove this? Taking/storing the address of the
-     *  return value is unsafe. If you really want that address, you can get it
-     *  by explicitly casting the handle from v_handle() to a pointer. The main
-     *  advantage of v_ref() is it allows `NODEV(node) = 42.0` to work as an
-     *  interim measure.
+
+    /** @brief Set the membrane potentials.
      */
-    field::Voltage::type& v_ref() {
-        return this->template get<field::Voltage>();
-    }
-    /** @brief Return a const reference to the underlying voltage storage.
-     *  @todo See note for the non-const version.
-     */
-    field::Voltage::type const& v_ref() const {
-        return this->template get<field::Voltage>();
-    }
     void set_v(field::Voltage::type v) {
         this->template get<field::Voltage>() = v;
     }

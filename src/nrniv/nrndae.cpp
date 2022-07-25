@@ -71,7 +71,7 @@ void nrndae_lhs() {
     }
 }
 
-void nrndae_dkmap(double** pv, double** pvdot) {
+void nrndae_dkmap(std::vector<neuron::container::data_handle<double>>& pv, double** pvdot) {
     for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
         (*m)->dkmap(pv, pvdot);
     }
@@ -192,7 +192,7 @@ int NrnDAE::extra_eqn_count() {
     return c_->nrow() - nnode_;
 }
 
-void NrnDAE::dkmap(double** pv, double** pvdot) {
+void NrnDAE::dkmap(std::vector<neuron::container::data_handle<double>>& pv, double** pvdot) {
     // printf("NrnDAE::dkmap\n");
     NrnThread* _nt = nrn_threads;
     for (int i = nnode_; i < size_; ++i) {
