@@ -8,6 +8,8 @@
 #include "membfunc.h"
 #include "netcon.h"
 
+#include <algorithm>
+
 class NetCvode;
 class Daspk;
 class TQItem;
