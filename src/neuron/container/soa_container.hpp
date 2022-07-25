@@ -259,6 +259,12 @@ struct soa {
                 ptr < std::next(container.data(), container.size())) {
                 auto const row = ptr - container.data();
                 assert(row < container.size());
+                // This pointer seems to live inside this container. This is all
+                // a bit fragile; these pointers can be invalidated by almost
+                // all mutating operations on the container. To make things a
+                // bit more robust, we can insist that the container is
+                // "sorted".
+                // assert(is_sorted());
                 handle = neuron::container::data_handle<T>{identifier(row), container};
                 assert(handle.refers_to_a_modern_data_structure());
                 return true;
