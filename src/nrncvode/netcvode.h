@@ -188,7 +188,7 @@ class NetCvode {
     //	int nlist() { return nlist_; }
     //	Cvode* list() { return list_; }
     bool initialized_;  // for global step solve.
-    void consist_sec_pd(const char*, Section*, double*);
+    void consist_sec_pd(const char*, Section*, neuron::container::data_handle<double> const&);
     double state_magnitudes();
     Symbol* name2sym(const char*);
     const char* sym2name(Symbol*);
