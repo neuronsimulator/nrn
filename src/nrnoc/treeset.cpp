@@ -2257,7 +2257,7 @@ void nrn_recalc_node_ptrs(void) {
                 if (double* pval = p->dparam[j].pval;
                     pval && *pval >= 0.0 && *pval <= recalc_cnt_) {
                     /* possible pointer to v */
-                    assert(false);
+                    assert(false);  // this is hit by reduced_dentate
                     // k = (int) (*pval);
                     // if (pval == recalc_ptr_old_vp_[k]) {
                     //     p->dparam[j].pval = recalc_ptr_new_vp_[k];

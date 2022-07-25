@@ -726,8 +726,7 @@ void SaveState::restore(int type) {
 }
 
 void SaveState::restorenode(NodeState& ns, Node* nd) {
-    NODEV(nd) = ns.v;
-    ;
+    nd->set_v(ns.v);
     int istate = 0;
     Prop* p;
     for (p = nd->prop; p; p = p->next) {
