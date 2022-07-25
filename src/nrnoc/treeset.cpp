@@ -2245,24 +2245,9 @@ void nrn_recalc_node_ptrs(void) {
     /* and relevant POINTER pointers to NODEV */
     FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
         Node* nd = nt->_v_node[i];
-        Prop* p;
-        Datum* d;
-        int dpend;
-        for (p = nd->prop; p; p = p->next) {
+        for (Prop* p = nd->prop; p; p = p->next) {
             if (memb_func[p->_type].is_point && !nrn_is_artificial_[p->_type]) {
                 p->dparam[0].pval = nt->_actual_area + i;
-            }
-            dpend = nrn_dparam_ptr_end_[p->_type];
-            for (j = nrn_dparam_ptr_start_[p->_type]; j < dpend; ++j) {
-                if (double* pval = p->dparam[j].pval;
-                    pval && *pval >= 0.0 && *pval <= recalc_cnt_) {
-                    /* possible pointer to v */
-                    assert(false);  // this is hit by reduced_dentate
-                    // k = (int) (*pval);
-                    // if (pval == recalc_ptr_old_vp_[k]) {
-                    //     p->dparam[j].pval = recalc_ptr_new_vp_[k];
-                    // }
-                }
             }
         }
     }

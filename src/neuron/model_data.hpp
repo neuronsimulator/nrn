@@ -2,6 +2,8 @@
 #include "neuron/model_data_fwd.hpp"
 #include "neuron/container/node_data.hpp"
 
+#include <sstream>
+
 namespace neuron {
 /** @brief Top-level structure.
  *
@@ -19,9 +21,21 @@ struct Model {
     /** @brief T* -> data_handle<T> if ptr is in model data.
      */
     template <typename T>
-    container::data_handle<T> find_data_handle(T* ptr) {
+    [[nodiscard]] container::data_handle<T> find_data_handle(T* ptr) {
         // For now it could only be in m_node_data.
         return m_node_data.find_data_handle(ptr);
+    }
+
+    template <typename T>
+    [[nodiscard]] std::string find_container_name(std::vector<T> const& cont) const {
+        // For now it could only be m_node_data
+        auto const name = m_node_data.find_container_name(cont);
+        if (!name.empty()) {
+            return name;
+        }
+        std::ostringstream oss;
+        oss << &cont;
+        return oss.str();
     }
 
   private:
@@ -49,6 +63,12 @@ template <typename T>
 data_handle<T> find_data_handle(T* ptr) {
     return model().find_data_handle(ptr);
 }
+
+template <typename T>
+std::string find_container_name(std::vector<T> const& c) {
+    return model().find_container_name(c);
+}
+
 }  // namespace container::utils
 
 
