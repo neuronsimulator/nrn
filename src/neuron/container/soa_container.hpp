@@ -1,4 +1,5 @@
 #pragma once
+#include "backtrace_utils.h"
 #include "neuron/container/data_handle.hpp"
 
 #include <boost/algorithm/apply_permutation.hpp>
@@ -11,6 +12,7 @@
 #include <range/v3/utility/swap.hpp>
 #include <range/v3/view/zip.hpp>
 
+#include <string_view>
 #include <vector>
 
 namespace neuron::container {
@@ -238,7 +240,8 @@ struct soa {
     }
 
     /** @brief Return a permutation-stable handle if ptr is inside us.
-     *  @todo Check const-correctness.
+     *  @todo Check const-correctness. Presumably a const version would return
+     *  data_handle<T const>, which would hold a pointer-to-const for the container?
      */
     template <typename T>
     [[nodiscard]] neuron::container::data_handle<T> find_data_handle(T* ptr) {
@@ -246,6 +249,38 @@ struct soa {
         find_data_handle(handle, m_indices, ptr) ||
             (find_data_handle(handle, get<Tags>(), ptr) || ...);
         return handle;
+    }
+
+  private:
+    template <typename Tag, typename T, typename U>
+    constexpr bool find_container_name(std::string& name,
+                                       std::vector<T> const& cont1,
+                                       std::vector<U> const& cont2) const {
+        assert(name.empty());
+        if constexpr (std::is_same_v<T, U>) {
+            if (&cont1 == &cont2) {
+                name = cxx_demangle(typeid(Tag).name());
+                constexpr std::string_view prefix{"neuron::container::"};
+                if (std::string_view{name}.substr(0, prefix.size()) == prefix) {
+                    name.erase(0, prefix.size());
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+  public:
+    template <typename T>
+    [[nodiscard]] std::string find_container_name(std::vector<T> const& cont) const {
+        std::string name{};
+        // FIXME: generate a proper tag type for the index column?
+        find_container_name<RowIdentifier>(name, m_indices, cont) ||
+            (find_container_name<Tags>(name, get<Tags>(), cont) || ...);
+        return name;
     }
 
   private:
@@ -262,8 +297,8 @@ struct soa {
                 // This pointer seems to live inside this container. This is all
                 // a bit fragile; these pointers can be invalidated by almost
                 // all mutating operations on the container. To make things a
-                // bit more robust, we can insist that the container is
-                // "sorted".
+                // bit more robust, we could insist that the container is
+                // "sorted". FIXME: re-enable this
                 // assert(is_sorted());
                 handle = neuron::container::data_handle<T>{identifier(row), container};
                 assert(handle.refers_to_a_modern_data_structure());
