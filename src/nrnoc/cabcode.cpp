@@ -1358,26 +1358,22 @@ double* nrnpy_rangepointer(Section* sec, Symbol* s, double d, int* err) {
     return nrnpy_dprop(s, 0, sec, i, err);
 }
 
-void rangevarevalpointer(void) /* symbol at pc, location on stack, return pointer on stack */
-{
-    short i;
-    Section* sec;
-    double d;
-    Symbol* s = (pc++)->sym;
-    Node* nd;
-    int indx;
-
-    d = xpop();
-    sec = nrn_sec_pop();
+// symbol at pc, location on stack, return pointer on stack
+void rangevarevalpointer() {
+    Symbol* s{(pc++)->sym};
+    double d = xpop();
+    Section* sec{nrn_sec_pop()};
     if (s->u.rng.type == VINDEX) {
-        nd = node_ptr(sec, d, nullptr);
-        assert(false);
+        auto* nd = node_ptr(sec, d, nullptr);
+        // This returns a pointer that is invalidated by a wide variety of
+        // operations on Nodes. It would probably be better to modify the HOC
+        // interpreter so that it can hold data handles.
         hoc_pushpx(static_cast<double*>(nd->v_handle()));
         return;
     }
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
-            nd = node_ptr(sec, d, (double*) 0);
+            auto* nd = node_ptr(sec, d, nullptr);
             if (!nd->_nt) {
                 v_setup_vectors();
                 assert(nd->_nt);
@@ -1389,19 +1385,18 @@ void rangevarevalpointer(void) /* symbol at pc, location on stack, return pointe
         }
         return;
     }
-    indx = range_vec_indx(s);
+    auto const indx = range_vec_indx(s);
     if (s->u.rng.type == MORPHOLOGY && sec->recalc_area_) {
         nrn_area_ri(sec);
     }
     if (s->u.rng.type == EXTRACELL) {
-        double* pd;
-        pd = nrn_vext_pd(s, indx, node_ptr(sec, d, (double*) 0));
+        double* pd{nrn_vext_pd(s, indx, node_ptr(sec, d, nullptr))};
         if (pd) {
             hoc_pushpx(pd);
             return;
         }
     }
-    i = node_index(sec, d);
+    auto const i = node_index(sec, d);
     hoc_pushpx(dprop(s, indx, sec, i));
 }
 
