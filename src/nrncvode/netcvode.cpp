@@ -1369,7 +1369,6 @@ CvodeThreadData::CvodeThreadData() {
     v_parent_ = nil;
     psl_th_ = nil;
     watch_list_ = nil;
-    pv_ = nil;
     pvdot_ = nil;
     nvoffset_ = 0;
     nvsize_ = 0;
@@ -1382,8 +1381,7 @@ CvodeThreadData::~CvodeThreadData() {
     if (no_cap_memb_) {
         delete_memb_list(no_cap_memb_);
     }
-    if (pv_) {
-        delete[] pv_;
+    if (!pv_.empty()) {
         delete[] pvdot_;
     }
     if (no_cap_node_) {
@@ -4465,7 +4463,6 @@ const char* NetCvode::statename(int is, int style) {
     if (!cvode_active_) {
         hoc_execerror("Cvode is not active", 0);
     }
-    double** pv;
     n = 0;
     if (gcv_) {
         n += gcv_->neq_;
@@ -4486,17 +4483,19 @@ const char* NetCvode::statename(int is, int style) {
             for (it = 0; it < nrn_nthread; ++it) {
                 CvodeThreadData& z = gcv_->ctd_[it];
                 neq = z.nvsize_;
-                pv = z.pv_;
+                auto& pv = z.pv_;
                 for (j = 0; j < z.nonvint_extra_offset_; ++j) {
-                    hdp_->append(pv[j]);
+                    assert(false);
+                    hdp_->append(static_cast<double*>(pv[j]));
                 }
             }
         } else {
             lvardtloop(it, i) {
                 neq = p[it].lcv_[i].ctd_[0].nvsize_;
-                pv = p[it].lcv_[i].ctd_[0].pv_;
+                auto& pv = p[it].lcv_[i].ctd_[0].pv_;
                 for (j = 0; j < neq; ++j) {
-                    hdp_->append(pv[j]);
+                    assert(false);
+                    hdp_->append(static_cast<double*>(pv[j]));
                 }
             }
         }
@@ -4508,11 +4507,13 @@ const char* NetCvode::statename(int is, int style) {
             CvodeThreadData& z = gcv_->ctd_[it];
             if (j + z.nvoffset_ + z.nvsize_ > is) {
                 if (style == 2) {
-                    Symbol* sym = hdp_->retrieve_sym(z.pv_[is - j]);
+                    assert(false);
+                    Symbol* sym = hdp_->retrieve_sym(static_cast<double*>(z.pv_[is - j]));
                     assert(sym);
                     return sym2name(sym);
                 } else {
-                    String* s = hdp_->retrieve(z.pv_[is - j]);
+                    assert(false);
+                    String* s = hdp_->retrieve(static_cast<double*>(z.pv_[is - j]));
                     if (s) {
                         return s->string();
                     } else {
@@ -4527,11 +4528,12 @@ const char* NetCvode::statename(int is, int style) {
             if (j + p[it].lcv_[i].neq_ > is) {
                 CvodeThreadData& z = p[it].lcv_[i].ctd_[0];
                 if (style == 2) {
-                    Symbol* sym = hdp_->retrieve_sym(z.pv_[is - j]);
+                    assert(false);
+                    Symbol* sym = hdp_->retrieve_sym(static_cast<double*>(z.pv_[is - j]));
                     assert(sym);
                     return sym2name(sym);
                 } else {
-                    String* s = hdp_->retrieve(z.pv_[is - j]);
+                    String* s = hdp_->retrieve(static_cast<double*>(z.pv_[is - j]));
                     if (s) {
                         return s->string();
                     } else {
@@ -6340,7 +6342,7 @@ void PlayRecord::pr() {
 }
 
 TvecRecord::TvecRecord(Section* sec, IvocVect* t, Object* ppobj)
-    : PlayRecord(&NODEV(sec->pnode[0]), ppobj) {
+    : PlayRecord(sec->pnode[0]->v_handle(), ppobj) {
     // printf("TvecRecord\n");
     t_ = t;
     ObjObservable::Attach(t_->obj_, this);
@@ -6666,7 +6668,9 @@ int NetCvode::owned_by_thread(neuron::container::data_handle<double> const& hand
     return -1;
 }
 
-void NetCvode::consist_sec_pd(const char* msg, Section* sec, double* pd) {
+void NetCvode::consist_sec_pd(const char* msg,
+                              Section* sec,
+                              neuron::container::data_handle<double> const& handle) {
     int in;
     Node* nd;
     for (in = -1; in < sec->nnode; ++in) {
@@ -6678,10 +6682,11 @@ void NetCvode::consist_sec_pd(const char* msg, Section* sec, double* pd) {
         } else {
             nd = sec->pnode[in];
         }
-        if (&NODEV(nd) == pd) {
+        if (nd->v_handle() == handle) {
             return;
         }
         Prop* p;
+        auto* const pd = static_cast<double const*>(handle);
         for (p = nd->prop; p; p = p->next) {
             if (pd >= p->param && pd < (p->param + p->param_size)) {
                 return;
@@ -6780,7 +6785,8 @@ void NetCvode::maxstate_analyze_1(int it, Cvode& cv, CvodeThreadData& z) {
     ms = cv.n_vector_data(cv.maxstate_, it);
     ma = cv.n_vector_data(cv.maxacor_, it);
     for (j = 0; j < n; ++j) {
-        sym = hdp_->retrieve_sym(z.pv_[j]);
+        assert(false);
+        sym = hdp_->retrieve_sym(static_cast<double*>(z.pv_[j]));
         auto msti = mst_->find((void*) sym);
         MaxStateItem* msi;
         if (msti == mst_->end()) {

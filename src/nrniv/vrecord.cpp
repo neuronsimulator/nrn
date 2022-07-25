@@ -134,7 +134,7 @@ VecPlayStep::VecPlayStep(double* pd, IvocVect* y, IvocVect* t, double dt, Object
 }
 
 VecPlayStep::VecPlayStep(const char* s, IvocVect* y, IvocVect* t, double dt, Object* ppobj)
-    : PlayRecord(&NODEV(chk_access()->pnode[0]), ppobj) {
+    : PlayRecord(chk_access()->pnode[0]->v_handle(), ppobj) {
     // printf("VecPlayStep\n");
     init(y, t, dt);
     si_ = new StmtInfo(s);
@@ -238,7 +238,7 @@ VecPlayContinuous::VecPlayContinuous(const char* s,
                                      IvocVect* t,
                                      IvocVect* discon,
                                      Object* ppobj)
-    : PlayRecord(&NODEV(chk_access()->pnode[0]), ppobj) {
+    : PlayRecord(chk_access()->pnode[0]->v_handle(), ppobj) {
     // printf("VecPlayContinuous\n");
     init(y, t, discon);
     si_ = new StmtInfo(s);
