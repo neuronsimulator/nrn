@@ -825,9 +825,8 @@ static void steer_val(void* v) {
         if (d->src_->thvar_) {
             // Danger! This is returning the current address of the variable
             // referred to by thvar_, but this may be invalidated by future
-            // permutations and modifications of the model -- even allocating a
-            // new Node object might invalidate it.
-            assert(false);
+            // permutations and modifications of the model -- even allocating or
+            // deleting a new Node object might invalidate it.
             hoc_pushpx(static_cast<double*>(d->src_->thvar_));
         } else {
             dummy = 0.;
