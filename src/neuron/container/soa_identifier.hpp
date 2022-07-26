@@ -1,6 +1,7 @@
 #pragma once
 #include <cassert>
 #include <cstddef>
+#include <limits>
 #include <memory>
 #include <ostream>
 #include <vector>
