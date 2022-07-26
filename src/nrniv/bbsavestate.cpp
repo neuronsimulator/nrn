@@ -310,11 +310,12 @@ class BBSS_Cnt: public BBSS_IO {
   public:
     BBSS_Cnt();
     virtual ~BBSS_Cnt();
-    virtual void i(int& j, int chk = 0);
-    virtual void d(int n, double& p);
-    virtual void d(int n, double* p);
-    virtual void s(char* cp, int chk = 0);
-    virtual Type type();
+    virtual void i(int& j, int chk = 0) override;
+    virtual void d(int n, double& p) override;
+    virtual void d(int n, double* p) override;
+    virtual void d(int n, neuron::container::data_handle<double> h) override;
+    virtual void s(char* cp, int chk = 0) override;
+    virtual Type type() override;
     int bytecnt();
     int ni, nd, ns, nl;
 
@@ -338,6 +339,10 @@ void BBSS_Cnt::d(int n, double* p) {
     nd += n;
     ++nl;
 }
+void BBSS_Cnt::d(int n, neuron::container::data_handle<double>) {
+    nd += n;
+    ++nl;
+}
 void BBSS_Cnt::s(char* cp, int chk) {
     ns += strlen(cp) + 1;
 }
@@ -358,11 +363,12 @@ class BBSS_TxtFileOut: public BBSS_IO {
   public:
     BBSS_TxtFileOut(const char*);
     virtual ~BBSS_TxtFileOut();
-    virtual void i(int& j, int chk = 0);
-    virtual void d(int n, double& p);
-    virtual void d(int n, double* p);
-    virtual void s(char* cp, int chk = 0);
-    virtual Type type();
+    virtual void i(int& j, int chk = 0) override;
+    virtual void d(int n, double& p) override;
+    virtual void d(int n, double* p) override;
+    virtual void d(int n, neuron::container::data_handle<double> h) override;
+    virtual void s(char* cp, int chk = 0) override;
+    virtual Type type() override;
     FILE* f;
 };
 BBSS_TxtFileOut::BBSS_TxtFileOut(const char* fname) {
@@ -384,6 +390,11 @@ void BBSS_TxtFileOut::d(int n, double* p) {
     }
     fprintf(f, "\n");
 }
+void BBSS_TxtFileOut::d(int n, neuron::container::data_handle<double> h) {
+    assert(n == 1);  // Cannot read n values "starting at" a data handle
+    assert(h);
+    fprintf(f, " %22.15g\n", *h);
+}
 void BBSS_TxtFileOut::s(char* cp, int chk) {
     fprintf(f, "%s\n", cp);
 }
@@ -395,16 +406,17 @@ class BBSS_TxtFileIn: public BBSS_IO {
   public:
     BBSS_TxtFileIn(const char*);
     virtual ~BBSS_TxtFileIn();
-    virtual void i(int& j, int chk = 0);
-    virtual void d(int n, double& p) {
+    virtual void i(int& j, int chk = 0) override;
+    virtual void d(int n, double& p) override {
         d(n, &p);
     }
-    virtual void d(int n, double* p);
-    virtual void s(char* cp, int chk = 0);
-    virtual Type type() {
+    virtual void d(int n, double* p) override;
+    virtual void d(int n, neuron::container::data_handle<double> h) override;
+    virtual void s(char* cp, int chk = 0) override;
+    virtual Type type() override {
         return BBSS_IO::IN;
     }
-    virtual void skip(int);
+    virtual void skip(int) override;
     FILE* f;
 };
 BBSS_TxtFileIn::BBSS_TxtFileIn(const char* fname) {
@@ -431,6 +443,13 @@ void BBSS_TxtFileIn::d(int n, double* p) {
     }
     nrn_assert(fscanf(f, "\n") == 0);
 }
+void BBSS_TxtFileIn::d(int n, neuron::container::data_handle<double> h) {
+    assert(n == 1);
+    assert(h);
+    double v{};
+    nrn_assert(fscanf(f, " %lf\n", &v) == 1);
+    *h = v;
+}
 void BBSS_TxtFileIn::s(char* cp, int chk) {
     char buf[100];
     nrn_assert(fscanf(f, "%[^\n]\n", buf) == 1);
@@ -449,11 +468,12 @@ class BBSS_BufferOut: public BBSS_IO {
   public:
     BBSS_BufferOut(char* buffer, int size);
     virtual ~BBSS_BufferOut();
-    virtual void i(int& j, int chk = 0);
-    virtual void d(int n, double& p);
-    virtual void d(int n, double* p);
-    virtual void s(char* cp, int chk = 0);
-    virtual Type type();
+    virtual void i(int& j, int chk = 0) override;
+    virtual void d(int n, double& p) override;
+    virtual void d(int n, double* p) override;
+    virtual void d(int n, neuron::container::data_handle<double> h) override;
+    virtual void s(char* cp, int chk = 0) override;
+    virtual Type type() override;
     virtual void a(int);
     virtual void cpy(int size, char* cp);
     int sz;
@@ -474,6 +494,10 @@ void BBSS_BufferOut::d(int n, double& d) {
 }
 void BBSS_BufferOut::d(int n, double* d) {
     cpy(n * sizeof(double), (char*) d);
+}
+void BBSS_BufferOut::d(int n, neuron::container::data_handle<double> h) {
+    assert(n == 1);
+    cpy(sizeof(double), reinterpret_cast<char*>(static_cast<double*>(h)));
 }
 void BBSS_BufferOut::s(char* cp, int chk) {
     cpy(strlen(cp) + 1, cp);
@@ -1927,9 +1951,7 @@ void BBSaveState::node(Node* nd) {
     }
     int i;
     Prop* p;
-    // f->d() needs an lvalue
-    auto v = nd->v();
-    f->d(1, v);
+    f->d(1, nd->v_handle());
     // count
     // On restore, new point processes may have been inserted in
     // the section and marked IGNORE. So we need to count only the
@@ -1968,9 +1990,7 @@ void BBSaveState::node01(Section* sec, Node* nd) {
     // It is not clear why the zero area node voltages need to be saved.
     // Without them, we get correct simulations after a restore for
     // whole cells but not for split cells.
-    // f->d needs an lvalue
-    auto v = nd->v();
-    f->d(1, v);
+    f->d(1, nd->v_handle());
     // count
     for (i = 0, p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
