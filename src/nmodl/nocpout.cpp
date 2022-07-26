@@ -2791,7 +2791,7 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
         for (q = qstmt; q != qend; q = q->next) {
             if (q->itemtype == SYMBOL && SYM(q) == vsym) {
                 insertstr(qstmt, " v = NODEV(_pnt->node);\n");
-                insertstr(qend, "\n _pnt->node.set_v(v);\n");
+                insertstr(qend, "\n _pnt->node->set_v(v);\n");
                 netrec_need_v = 0;
                 break;
             }
