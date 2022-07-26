@@ -1657,7 +1657,7 @@ void v_setup_vectors(void) {
                 if (memb_func[i].hoc_mech) {
                     free(memb_list[i].prop);
                 } else {
-                    free(memb_list[i].data);
+                    free(memb_list[i]._data);
                     free(memb_list[i].pdata);
                 }
             }
@@ -1684,8 +1684,8 @@ void v_setup_vectors(void) {
                 if (memb_func[i].hoc_mech) {
                     memb_list[i].prop = (Prop**) emalloc(memb_list[i].nodecount * sizeof(Prop*));
                 } else {
-                    memb_list[i].data = (double**) emalloc(memb_list[i].nodecount *
-                                                           sizeof(double*));
+                    memb_list[i]._data = (double**) emalloc(memb_list[i].nodecount *
+                                                            sizeof(double*));
                     memb_list[i].pdata = (Datum**) emalloc(memb_list[i].nodecount * sizeof(Datum*));
                 }
                 memb_list[i].nodecount = 0; /* counted again below */
@@ -1753,7 +1753,7 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
                 Point_process* pnt = (Point_process*) obj->u.this_pointer;
                 p = pnt->prop;
                 memb_list[i].nodelist[j] = (Node*) 0;
-                memb_list[i].data[j] = p->param;
+                memb_list[i]._data[j] = p->param;
                 memb_list[i].pdata[j] = p->dparam;
                 /* for now, round robin all the artificial cells */
                 /* but put the non-threadsafe ones in thread 0 */
@@ -1849,7 +1849,7 @@ void node_data_values(void) {
             Pd(cnt);
         }
         for (j = 0; j < memb_list[i].nodecount; ++j) {
-            pd = memb_list[i].data[j];
+            pd = memb_list[i]._data[j];
             for (k = 0; k < cnt; ++k) {
                 Pg(pd[k]);
             }

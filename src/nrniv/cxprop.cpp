@@ -58,7 +58,7 @@ called, how many needed for this thread
 // note that the pool chain order is the same as the thread order
 // there are nthread of the following lists
 cnt // number of mechanisms in thread
-type i seq // i is the tml->ml->data[i], seq is the allocation order
+type i seq // i is the tml->ml->_data[i], seq is the allocation order
 // ie we want
 
 Note that the overall memory allocation sequence has to be identical
@@ -365,9 +365,9 @@ int nrn_prop_is_cache_efficient() {
                     continue;
                 }
                 for (int j = 0; j < ml->nodecount; ++j) {
-                    if (p[i]->element(j) != ml->data[j]) {
+                    if (p[i]->element(j) != ml->_data[j]) {
                         // printf("thread %d mechanism %s instance %d  element %p data %p\n",
-                        // it, memb_func[i].sym->name, j, p[i]->element(j), (ml->data + j));
+                        // it, memb_func[i].sym->name, j, p[i]->element(j), (ml->_data + j));
                         r = 0;
                     }
                 }
@@ -461,17 +461,17 @@ static int in_place_data_realloc() {
                 newpool->grow(extra);
             }
             newpool->free_all();  // items in pool data order
-            // reset ml->data pointers to the new pool and copy the values
+            // reset ml->_data pointers to the new pool and copy the values
             FOR_THREADS(nt) {
                 for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next)
                     if (i == tml->index) {
                         Memb_list* ml = tml->ml;
                         for (int j = 0; j < ml->nodecount; ++j) {
-                            double* data = ml->data[j];
+                            double* data = ml->_data[j];
                             int ntget = newpool->ntget();
-                            ml->data[j] = newpool->alloc();
+                            ml->_data[j] = newpool->alloc();
                             for (int k = 0; k < newpool->d2(); ++k) {
-                                ml->data[j][k] = data[k];
+                                ml->_data[j][k] = data[k];
                             }
                             // store in old location enough info
                             // to construct a pointer to the new location
@@ -559,7 +559,7 @@ static int in_place_data_realloc() {
                     Memb_list* ml = mlmap[p->type];
                     assert(ml->nodelist[ml->nodecount] == nd);
                     if (!memb_func[p->type].hoc_mech) {
-                        p->param = ml->data[ml->nodecount];
+                        p->param = ml->_data[ml->nodecount];
                     }
                     ++ml->nodecount;
                 }

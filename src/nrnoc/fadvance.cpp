@@ -1103,7 +1103,7 @@ void nrn_ba(NrnThread* nt, int bat) {
         int type = tbl->bam->type;
         Memb_list* ml = tbl->ml;
         for (i = 0; i < ml->nodecount; ++i) {
-            (*f)(ml->nodelist[i], ml->data[i], ml->pdata[i], ml->_thread, nt);
+            (*f)(ml->nodelist[i], ml->_data[i], ml->pdata[i], ml->_thread, nt);
         }
     }
 }

@@ -14,7 +14,6 @@
 
 #undef nodelist
 #undef nodeindices
-#undef data
 #undef pdata
 #undef prop
 #undef nodecount

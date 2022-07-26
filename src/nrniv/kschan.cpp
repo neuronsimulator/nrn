@@ -66,7 +66,7 @@ static void nrn_alloc(Prop* prop) {
 static void nrn_init(NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_init\n");
     KSChan* c = (*channels)[type];
-    c->init(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
+    c->init(ml->nodecount, ml->nodelist, ml->_data, ml->pdata, nt);
 }
 
 static void nrn_cur(NrnThread* nt, Memb_list* ml, int type) {
@@ -74,11 +74,11 @@ static void nrn_cur(NrnThread* nt, Memb_list* ml, int type) {
     KSChan* c = (*channels)[type];
 #if CACHEVEC
     if (use_cachevec) {
-        c->cur(ml->nodecount, ml->nodeindices, ml->data, ml->pdata, nt);
+        c->cur(ml->nodecount, ml->nodeindices, ml->_data, ml->pdata, nt);
     } else
 #endif /* CACHEVEC */
     {
-        c->cur(ml->nodecount, ml->nodelist, ml->data, ml->pdata);
+        c->cur(ml->nodecount, ml->nodelist, ml->_data, ml->pdata);
     }
 }
 
@@ -87,11 +87,11 @@ static void nrn_jacob(NrnThread* nt, Memb_list* ml, int type) {
     KSChan* c = (*channels)[type];
 #if CACHEVEC
     if (use_cachevec) {
-        c->jacob(ml->nodecount, ml->nodeindices, ml->data, ml->pdata, nt);
+        c->jacob(ml->nodecount, ml->nodeindices, ml->_data, ml->pdata, nt);
     } else
 #endif /* CACHEVEC */
     {
-        c->jacob(ml->nodecount, ml->nodelist, ml->data, ml->pdata);
+        c->jacob(ml->nodecount, ml->nodelist, ml->_data, ml->pdata);
     }
 }
 
@@ -100,11 +100,11 @@ static void nrn_state(NrnThread* nt, Memb_list* ml, int type) {
     KSChan* c = (*channels)[type];
 #if CACHEVEC
     if (use_cachevec) {
-        c->state(ml->nodecount, ml->nodeindices, ml->nodelist, ml->data, ml->pdata, nt);
+        c->state(ml->nodecount, ml->nodeindices, ml->nodelist, ml->_data, ml->pdata, nt);
     } else
 #endif /* CACHEVEC */
     {
-        c->state(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
+        c->state(ml->nodecount, ml->nodelist, ml->_data, ml->pdata, nt);
     }
 }
 
@@ -122,17 +122,17 @@ ode_map(int ieq, double** pv, double** pvdot, double* p, Datum* pd, double* atol
 static void ode_spec(NrnThread*, Memb_list* ml, int type) {
     // printf("ode_spec\n");
     KSChan* c = (*channels)[type];
-    c->spec(ml->nodecount, ml->nodelist, ml->data, ml->pdata);
+    c->spec(ml->nodecount, ml->nodelist, ml->_data, ml->pdata);
 }
 static void ode_matsol(NrnThread* nt, Memb_list* ml, int type) {
     // printf("ode_matsol\n");
     KSChan* c = (*channels)[type];
-    c->matsol(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
+    c->matsol(ml->nodecount, ml->nodelist, ml->_data, ml->pdata, nt);
 }
 static void singchan(NrnThread* nt, Memb_list* ml, int type) {
     // printf("singchan_\n");
     KSChan* c = (*channels)[type];
-    c->cv_sc_update(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
+    c->cv_sc_update(ml->nodecount, ml->nodelist, ml->_data, ml->pdata, nt);
 }
 static void* hoc_create_pnt(Object* ho) {
     return create_point_process(ho->ctemplate->is_point_, ho);

@@ -1183,7 +1183,7 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
             int tid = nt ? nt->id : 0;
             int type = pp->prop->type;
             Memb_list& ml = *(nrn_threads[tid]._ml_list[type]);
-            int ix = targets_[i] - ml.data[0];
+            int ix = targets_[i] - ml._data[0];
 
             auto& g = gi[tid];
             g.tar_sid.push_back(sid);
@@ -1209,7 +1209,7 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
                 double* d = non_vsrc_update(nd, type, ix);
                 NrnThread* nt = nd->_nt ? nd->_nt : nrn_threads;
                 Memb_list& ml = *nt->_ml_list[type];
-                ix = d - ml.data[0];
+                ix = d - ml._data[0];
             } else {  // is a voltage source
                 ix = nd->_v - nrn_threads[tid]._actual_v;
                 assert(nd->extnode == NULL);  // only if v

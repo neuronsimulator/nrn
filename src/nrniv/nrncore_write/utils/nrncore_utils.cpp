@@ -156,9 +156,9 @@ extern "C" int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& in
             }
             Memb_list* ml1 = tml->ml;
             int nn = nrn_prop_param_size_[tml->index] * ml1->nodecount;
-            if (pd >= ml1->data[0] && pd < (ml1->data[0] + nn)) {
+            if (pd >= ml1->_data[0] && pd < (ml1->_data[0] + nn)) {
                 type = tml->index;
-                index = pd - ml1->data[0];
+                index = pd - ml1->_data[0];
                 break;
             }
         }

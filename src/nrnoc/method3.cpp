@@ -160,7 +160,7 @@ method3_setup_tree_matrix() /* construct diagonal elements */
             if (memb_func[i].vectorized) {
                 memb_func[i].current(memb_list[i].nodecount,
                                      memb_list[i].nodelist,
-                                     memb_list[i].data,
+                                     memb_list[i]._data,
                                      memb_list[i].pdata);
             } else {
                 int j, count;

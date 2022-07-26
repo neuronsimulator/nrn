@@ -25,7 +25,7 @@ extern "C" void passive0_reg_(void) {
 static void pas_cur(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** vdata = ml->data;
+    double** vdata = ml->_data;
     Datum** vpdata = ml->pdata;
     int i;
 #if _CRAY
@@ -39,7 +39,7 @@ static void pas_cur(NrnThread* nt, Memb_list* ml, int type) {
 static void pas_jacob(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** vdata = ml->data;
+    double** vdata = ml->_data;
     Datum** vpdata = ml->pdata;
     int i;
 #if _CRAY

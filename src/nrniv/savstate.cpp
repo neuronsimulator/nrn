@@ -669,7 +669,7 @@ void SaveState::saveacell(ACellState& ac, int type) {
     int sz = ssi[type].size;
     double* p = ac.state;
     for (int i = 0; i < ml.nodecount; ++i) {
-        double* d = ml.data[i];
+        double* d = ml._data[i];
         for (int j = 0; j < sz; ++j) {
             (*p++) = d[j];
         }
@@ -756,7 +756,7 @@ void SaveState::restoreacell(ACellState& ac, int type) {
     int sz = ssi[type].size;
     double* p = ac.state;
     for (int i = 0; i < ml.nodecount; ++i) {
-        double* d = ml.data[i];
+        double* d = ml._data[i];
         for (int j = 0; j < sz; ++j) {
             d[j] = (*p++);
         }

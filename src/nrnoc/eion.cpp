@@ -559,7 +559,7 @@ void nrn_promote(Prop* p, int conc, int rev) {
 static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** pd = ml->data;
+    double** pd = ml->_data;
     Datum** ppd = ml->pdata;
     int i;
 /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
@@ -581,7 +581,7 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** pd = ml->data;
+    double** pd = ml->_data;
     Datum** ppd = ml->pdata;
     int i;
 /*printf("ion_init %s\n", memb_func[type].sym->name);*/
@@ -649,7 +649,7 @@ void second_order_cur(NrnThread* nt) {
                 ml = tml->ml;
                 i2 = ml->nodecount;
                 for (i = 0; i < i2; ++i) {
-                    ml->data[i][c] += ml->data[i][dc] * (NODERHS(ml->nodelist[i]));
+                    ml->_data[i][c] += ml->_data[i][dc] * (NODERHS(ml->nodelist[i]));
                 }
             }
     }
