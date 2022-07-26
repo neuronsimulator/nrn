@@ -31,6 +31,12 @@ namespace neuron::container {
  *  underlying storage is always std::vector<T> (or a custom allocator that is
  *  always the same type in neuron::container::*). Note that storing T* or
  *  span<T> would not work if the underlying storage is reallocated.
+ *
+ *  @todo Save some space by using the same storage for m_offset and m_raw_ptr.
+ *  @todo Const correctness -- data_handle should be like span:
+ *  data_handle<double> can read + write the value, data_handle<double const>
+ *  can only read the value. const applied to the data_handle itself should just
+ *  control whether or not it can be rebound to refer elsewhere.
  */
 template <typename T>
 struct data_handle {
@@ -86,6 +92,12 @@ struct data_handle {
             return m_container == &(container.template get<Tag>()) &&
                    m_offset.current_row() < m_container->size();
         }
+    }
+
+    [[nodiscard]] std::size_t current_row() const {
+        assert(refers_to_a_modern_data_structure());
+        assert(m_offset);
+        return m_offset.current_row();
     }
 
     T& operator*() {
@@ -159,7 +171,7 @@ struct data_handle {
   private:
     friend struct std::hash<data_handle>;
     identifier_base m_offset{};
-    // This should be std::reference_wrapper and never null, only use a plain
+    // This "should" be std::reference_wrapper and never null, only use a plain
     // pointer because of the compatibility mode that wraps a raw pointer.
     std::vector<T>* m_container{};
     // std::reference_wrapper<std::vector<T>> m_container;
