@@ -30,8 +30,9 @@ jobs:
       - name: Install apt packages
         run: |
           sudo apt-get update --fix-missing
-          sudo apt-get install build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf
-          sudo apt-get install ffmpeg doxygen pandoc
+          sudo apt-get install build-essential doxygen ffmpeg libboost-all-dev \
+            libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich \
+            openmpi-bin pandoc patchelf
         shell: bash
 
       - name: Set up Python@${{ env.DEFAULT_PY_VERSION }}
