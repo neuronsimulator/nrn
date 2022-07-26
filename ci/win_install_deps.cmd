@@ -59,6 +59,7 @@ git ^
 zip ^
 unzip ^
 base-devel ^
+mingw-w64-x86_64-boost ^
 mingw-w64-x86_64-cmake ^
 mingw-w64-x86_64-ninja ^
 mingw-w64-x86_64-ncurses ^
