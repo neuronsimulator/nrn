@@ -243,7 +243,7 @@ class NetCvode {
     int playrec_change_cnt_;
     PlayRecList* prl_;
     IvocVect* vec_event_store_;
-    HocDataPaths* hdp_;
+    HocDataPaths create_hdp(int style);
 
   public:
     Cvode* gcv_;

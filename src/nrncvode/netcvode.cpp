@@ -1211,7 +1211,6 @@ NetCvode::NetCvode(bool single) {
     condition_order_ = 1;
     null_event_ = new DiscreteEvent();
     eps_ = 100. * UNIT_ROUNDOFF;
-    hdp_ = nil;
     print_event_ = 0;
     nrn_use_fifo_queue_ = false;
     single_ = single;
@@ -1249,9 +1248,6 @@ NetCvode::~NetCvode() {
     MUTDESTRUCT
     if (net_cvode_instance == (NetCvode*) this) {
         net_cvode_instance = nil;
-    }
-    if (hdp_) {
-        hdp_ = nil;
     }
     delete_list();
     p_construct(0);
@@ -1615,10 +1611,6 @@ bool NetCvode::init_global() {
     structure_change_cnt_ = structure_change_cnt;
     matrix_change_cnt_ = -1;
     playrec_change_cnt_ = 0;
-    if (hdp_) {
-        delete hdp_;
-        hdp_ = nil;
-    }
     NrnThread* _nt;
     if (single_) {
         if (!gcv_ || gcv_->nctd_ != nrn_nthread) {
@@ -4458,8 +4450,47 @@ void NetCvode::acor() {
     }
 }
 
+/** @brief Create a lookup table for variable names.
+ *
+ *  This is only created on-demand because it involves building a lookup table
+ *  of pointers, some of which are obtained from data_handles (and are therefore
+ *  unstable). Eventually the operator<< of data_handle might provide the
+ *  necessary functionality and this could be dropped completely.
+ */
+HocDataPaths NetCvode::create_hdp(int style) {
+    int n{};
+    if (gcv_) {
+        n += gcv_->neq_;
+    } else {
+        int i, j;
+        lvardtloop(i, j) {
+            n += p[i].lcv_[j].neq_;
+        }
+    }
+    HocDataPaths hdp{2 * n, style};
+    if (gcv_) {
+        for (int it = 0; it < nrn_nthread; ++it) {
+            CvodeThreadData& z = gcv_->ctd_[it];
+            for (int j = 0; j < z.nonvint_extra_offset_; ++j) {
+                hdp.append(static_cast<double*>(z.pv_[j]));
+            }
+        }
+    } else {
+        int i, it;
+        lvardtloop(it, i) {
+            auto const neq = p[it].lcv_[i].ctd_[0].nvsize_;
+            auto& pv = p[it].lcv_[i].ctd_[0].pv_;
+            for (int j = 0; j < neq; ++j) {
+                hdp.append(static_cast<double*>(pv[j]));
+            }
+        }
+    }
+    hdp.search();
+    return hdp;
+}
+
 const char* NetCvode::statename(int is, int style) {
-    int i, it, j, n, neq;
+    int i, it, j, n;
     if (!cvode_active_) {
         hoc_execerror("Cvode is not active", 0);
     }
@@ -4474,46 +4505,18 @@ const char* NetCvode::statename(int is, int style) {
     if (is >= n) {
         hoc_execerror("Cvode::statename argument out of range", 0);
     }
-    if (!hdp_ || hdp_->style() != style) {
-        if (hdp_) {
-            delete hdp_;
-        }
-        hdp_ = new HocDataPaths(2 * n, style);
-        if (gcv_) {
-            for (it = 0; it < nrn_nthread; ++it) {
-                CvodeThreadData& z = gcv_->ctd_[it];
-                neq = z.nvsize_;
-                auto& pv = z.pv_;
-                for (j = 0; j < z.nonvint_extra_offset_; ++j) {
-                    assert(false);
-                    hdp_->append(static_cast<double*>(pv[j]));
-                }
-            }
-        } else {
-            lvardtloop(it, i) {
-                neq = p[it].lcv_[i].ctd_[0].nvsize_;
-                auto& pv = p[it].lcv_[i].ctd_[0].pv_;
-                for (j = 0; j < neq; ++j) {
-                    assert(false);
-                    hdp_->append(static_cast<double*>(pv[j]));
-                }
-            }
-        }
-        hdp_->search();
-    }
+    auto const hdp = create_hdp(style);
     j = 0;
     if (gcv_) {
         for (it = 0; it < nrn_nthread; ++it) {
             CvodeThreadData& z = gcv_->ctd_[it];
             if (j + z.nvoffset_ + z.nvsize_ > is) {
                 if (style == 2) {
-                    assert(false);
-                    Symbol* sym = hdp_->retrieve_sym(static_cast<double*>(z.pv_[is - j]));
+                    Symbol* sym = hdp.retrieve_sym(static_cast<double*>(z.pv_[is - j]));
                     assert(sym);
                     return sym2name(sym);
                 } else {
-                    assert(false);
-                    String* s = hdp_->retrieve(static_cast<double*>(z.pv_[is - j]));
+                    String* s = hdp.retrieve(static_cast<double*>(z.pv_[is - j]));
                     if (s) {
                         return s->string();
                     } else {
@@ -4524,16 +4527,17 @@ const char* NetCvode::statename(int is, int style) {
             j += z.nvsize_;
         }
     } else {
+        int it, i;
         lvardtloop(it, i) {
             if (j + p[it].lcv_[i].neq_ > is) {
                 CvodeThreadData& z = p[it].lcv_[i].ctd_[0];
                 if (style == 2) {
                     assert(false);
-                    Symbol* sym = hdp_->retrieve_sym(static_cast<double*>(z.pv_[is - j]));
+                    Symbol* sym = hdp.retrieve_sym(static_cast<double*>(z.pv_[is - j]));
                     assert(sym);
                     return sym2name(sym);
                 } else {
-                    String* s = hdp_->retrieve(static_cast<double*>(z.pv_[is - j]));
+                    String* s = hdp.retrieve(static_cast<double*>(z.pv_[is - j]));
                     if (s) {
                         return s->string();
                     } else {
@@ -6784,9 +6788,9 @@ void NetCvode::maxstate_analyze_1(int it, Cvode& cv, CvodeThreadData& z) {
     n = z.nvsize_;
     ms = cv.n_vector_data(cv.maxstate_, it);
     ma = cv.n_vector_data(cv.maxacor_, it);
+    auto const hdp = create_hdp(2);
     for (j = 0; j < n; ++j) {
-        assert(false);
-        sym = hdp_->retrieve_sym(static_cast<double*>(z.pv_[j]));
+        sym = hdp.retrieve_sym(static_cast<double*>(z.pv_[j]));
         auto msti = mst_->find((void*) sym);
         MaxStateItem* msi;
         if (msti == mst_->end()) {
