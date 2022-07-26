@@ -2,6 +2,7 @@
 # Lists of header files to install
 # =============================================================================
 set(HEADER_FILES_TO_INSTALL
+    backtrace_utils.h
     bbsavestate.h
     cabvars.h
     cspmatrix.h
