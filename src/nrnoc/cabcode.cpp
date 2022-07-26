@@ -1323,38 +1323,34 @@ double* nrn_rangepointer(Section* sec, Symbol* s, double d) {
 */
 double* nrnpy_rangepointer(Section* sec, Symbol* s, double d, int* err) {
     /* if you change this change nrnpy_rangepointer as well */
-    short i;
-    Node* nd;
-
     *err = 0;
     if (s->u.rng.type == VINDEX) {
         auto* nd = node_ptr(sec, d, nullptr);
-        assert(false);
+        // This is dangerous!
         return static_cast<double*>(nd->v_handle());
     }
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
-            nd = node_ptr(sec, d, (double*) 0);
+            auto* nd = node_ptr(sec, d, nullptr);
             if (!nd->_nt) {
                 v_setup_vectors();
                 assert(nd->_nt);
             }
             return nd->_nt->_nrn_fast_imem->_nrn_sav_rhs + nd->v_node_index;
         } else {
-            return (double*) 0;
+            return nullptr;
         }
     }
 #if EXTRACELLULAR
     if (s->u.rng.type == EXTRACELL) {
-        double* pd;
-        nd = node_ptr(sec, d, (double*) 0);
-        pd = nrn_vext_pd(s, 0, nd);
+        auto* nd = node_ptr(sec, d, nullptr);
+        double* pd{nrn_vext_pd(s, 0, nd)};
         if (pd) {
             return pd;
         }
     }
 #endif
-    i = node_index(sec, d);
+    auto const i = node_index(sec, d);
     return nrnpy_dprop(s, 0, sec, i, err);
 }
 
