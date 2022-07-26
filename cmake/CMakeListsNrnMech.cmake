@@ -42,8 +42,11 @@ foreach(link_lib ${NRN_LINK_LIBS})
       include_dirs
       TARGET ${link_lib}
       PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-    foreach(include_dir ${include_dirs})
-      string(GENEX_STRIP "${include_dir}" include_dir)
+    # TODO support generator expressions. I think this can be done with some combination of
+    # file(GENERATE OUTPUT ...) to get the build-time values of the expressions and install(EXPORT
+    # ...) to get the installed values?
+    foreach(include_dir_genex ${include_dirs})
+      string(GENEX_STRIP "${include_dir_genex}" include_dir)
       if(include_dir)
         list(APPEND NRN_COMPILE_FLAGS "-I${include_dir}")
       endif()

@@ -243,6 +243,7 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
         int ieq = zneq_v;
         // convert data_handle<double> -> double* for calling nrn_ode_map_t below
         auto pv_raw_ptrs = z.raw_pv_pointers();
+        assert(pv_raw_ptrs.size() == z.pv_.size());
         for (cml = z.cv_memb_list_; cml; cml = cml->next) {
             int n;
             ml = cml->ml;
@@ -463,14 +464,16 @@ double* Cvode::n_vector_data(N_Vector v, int tid) {
 extern void nrn_extra_scatter_gather(int, int);
 
 void Cvode::scatter_y(double* y, int tid) {
-    int i;
     CvodeThreadData& z = CTD(tid);
-    for (i = 0; i < z.nonvint_extra_offset_; ++i) {
-        *(z.pv_[i]) = y[i];
+    assert(z.nonvint_extra_offset_ == z.pv_.size());
+    for (int i = 0; i < z.nonvint_extra_offset_; ++i) {
+        // TODO: understand why this wasn't needed before
+        if (z.pv_[i]) {
+            *(z.pv_[i]) = y[i];
+        }
         // printf("%d scatter_y %d %d %g\n", nrnmpi_myid, tid, i,  y[i]);
     }
-    CvMembList* cml;
-    for (cml = z.cv_memb_list_; cml; cml = cml->next) {
+    for (CvMembList* cml = z.cv_memb_list_; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
         if (mf->ode_synonym) {
             nrn_ode_synonym_t s = mf->ode_synonym;
@@ -498,11 +501,14 @@ void Cvode::gather_y(N_Vector y) {
     nrn_multithread_job(gather_y_thread);
 }
 void Cvode::gather_y(double* y, int tid) {
-    int i;
     CvodeThreadData& z = CTD(tid);
     nrn_extra_scatter_gather(1, tid);
-    for (i = 0; i < z.nonvint_extra_offset_; ++i) {
-        y[i] = *(z.pv_[i]);
+    assert(z.nonvint_extra_offset_ == z.pv_.size());
+    for (int i = 0; i < z.nonvint_extra_offset_; ++i) {
+        // TODO: understand why this wasn't needed before
+        if (z.pv_[i]) {
+            y[i] = *(z.pv_[i]);
+        }
         // printf("gather_y %d %d %g\n", tid, i,  y[i]);
     }
 }

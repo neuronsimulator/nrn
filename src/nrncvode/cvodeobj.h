@@ -70,6 +70,7 @@ class CvodeThreadData {
         std::transform(pv_.begin(), pv_.end(), std::back_inserter(ret), [](auto& handle) {
             return static_cast<double*>(handle);
         });
+        assert(ret.size() == pv_.size());
         return ret;
     }
     double** pvdot_;
