@@ -453,7 +453,6 @@ endif()
 # =============================================================================
 include(NeuronFileLists)
 include(MPIDynamicHelper)
-include(ConfigFileSetting)
 include(PythonDynamicHelper)
 
 # Set variable to include mpi headers
@@ -507,7 +506,8 @@ if(NRN_ENABLE_CORENEURON)
     set(cnrn_prefix "${CMAKE_INSTALL_PREFIX}")
     # CoreNEURON exports this list of flags as a property; turn it into a variable in this scope. If
     # CoreNEURON is installed externally then this is exported into coreneuron-config.cmake.
-    get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
+    get_property(CORENRN_LIB_LINK_FLAGS GLOBAL PROPERTY CORENRN_LIB_LINK_FLAGS)
+    get_property(CORENRN_NEURON_LINK_FLAGS GLOBAL PROPERTY CORENRN_NEURON_LINK_FLAGS)
     get_property(CORENRN_VERSION_MAJOR GLOBAL PROPERTY CORENRN_VERSION_MAJOR)
     get_property(CORENRN_VERSION_MINOR GLOBAL PROPERTY CORENRN_VERSION_MINOR)
     get_property(CORENRN_VERSION_PATCH GLOBAL PROPERTY CORENRN_VERSION_PATCH)
@@ -530,7 +530,19 @@ if(NRN_ENABLE_CORENEURON)
               "${NRN_VERSION_MAJOR}.${NRN_VERSION_MINOR}.${NRN_VERSION_PATCH} "
               "you should probably update the CoreNEURON version")
   endif()
+  # When we are using CoreNEURON, OpenACC and shared libraries then it is important that the first
+  # library *compiled by nvc++* to be opened is linked against OpenACC, to avoid the NVIDIA runtime
+  # being initialised without OpenACC. See:
+  # https://forums.developer.nvidia.com/t/dynamically-loading-an-openacc-enabled-shared-library-from-an-executable-compiled-with-nvc-does-not-work/210968/5
+  # When we build CoreNEURON with NVHPC then we often build NEURON with NVHPC too, and if we load
+  # NEURON from Python then the first compiled-by-nvc++ thing to be loaded is the NEURON Python
+  # module (hoc.XXX.so). It is, therefore, important that we link that with -acc.
+  separate_arguments(CORENRN_NEURON_LINK_FLAGS)
+  list(APPEND NRN_LINK_FLAGS ${CORENRN_NEURON_LINK_FLAGS})
 endif()
+
+# This needs to be after all modifications to NRN_LINK_FLAGS
+include(ConfigFileSetting)
 
 # =============================================================================
 # Set install location for libraries (before src/nrniv)
@@ -956,7 +968,7 @@ endif()
 message(STATUS "CoreNEURON    | ${NRN_ENABLE_CORENEURON}")
 if(NRN_ENABLE_CORENEURON)
   message(STATUS "  PATH        | ${CORENEURON_DIR}")
-  message(STATUS "  LINK FLAGS  | ${CORENEURON_LIB_LINK_FLAGS}")
+  message(STATUS "  LINK FLAGS  | ${CORENRN_LIB_LINK_FLAGS}")
   if(NOT coreneuron_FOUND)
     message(STATUS "  Legacy Units| ${CORENRN_ENABLE_LEGACY_UNITS}")
   endif()

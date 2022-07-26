@@ -100,7 +100,7 @@ endif
 
 # add coreneuron flags
 ifeq ($(LinkCoreNEURON), true)
-    EXTRA_LDFLAGS = @CORENEURON_LIB_LINK_FLAGS@
+    EXTRA_LDFLAGS = @CORENRN_LIB_LINK_FLAGS@
 endif
 
 # If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)
