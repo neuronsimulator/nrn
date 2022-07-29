@@ -120,7 +120,6 @@ double errcheck(double d, const char* s) /* check result of library call */
     // https://en.cppreference.com/w/cpp/numeric/math/math_errhandling
     if ((errno_enabled && errno == EDOM) || (check_fe_except && std::fetestexcept(FE_INVALID))) {
         clear_fe_except();
-
         errno = 0;
         hoc_execerror(s, "argument out of domain");
     } else if ((errno_enabled && errno == ERANGE) ||
