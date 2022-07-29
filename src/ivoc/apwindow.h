@@ -136,7 +136,6 @@ class StandardWindow: public PrintableWindow {
 };
 
 class PWMImpl;
-class JavaWindow;
 
 class PrintableWindowManager: public Observer {
   public:
@@ -149,9 +148,6 @@ class PrintableWindowManager: public Observer {
     void append(PrintableWindow*);
     void remove(PrintableWindow*);
     void reconfigured(PrintableWindow*);
-    void append(JavaWindow*);
-    void remove(JavaWindow*);
-    void reconfigured(JavaWindow*);
     void doprint();
 
     virtual void update(Observable*);
