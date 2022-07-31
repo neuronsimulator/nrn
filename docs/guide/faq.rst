@@ -30,13 +30,6 @@ To make NEURON read a file called ``foo.hoc`` when it starts :
 
 To exit NEURON : type ``quit()`` or ``^D`` ("control D") at the ``oc>`` or ``>>>`` prompt, or use :menuselection:`File --> Quit` in the NEURON Main Menu toolbar.
 
-
-Installation went smoothly, but every time I bring NEURON up, the interpreter prints this strange message: "jvmdll" not defined in nrn.def JNI_CreateJavaVM returned -1
-++++++++++++++++++++++++++++++++++++
-
-You must be running an old version of NEURON. Warnings about Java, such as "Can't create Java VM" or "Info: optional feature is not present" mean that NEURON can't find a Java run-time environment. This is of interest only to individuals who are using Java to develop new tools. NEURON's computational engine, standard GUI library, etc. don't use Java.
-
-
 What's the best way to learn how to use NEURON?
 -----------------------------------------------
 First be sure to join `The NEURON Forum <https://www.neuron.yale.edu/phpBB/index.php>`_. 

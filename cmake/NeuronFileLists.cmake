@@ -31,7 +31,6 @@ set(HEADER_FILES_TO_INSTALL
     nrncvode.h
     nrnisaac.h
     nrniv_mf.h
-    nrnjava.h
     nrnoc_ml.h
     nrnmpi.h
     nrnmpidec.h
