@@ -112,17 +112,6 @@
 // Following useful for one button mouse. Mac has this as 10 by default
 *scene_menu_box_size: 10.
 
-// The full pathname for the Java VM dynamically loadable
-//   library is specified here
-// two examples for mswin on my machines are
-//*jvmdll: c:\Java\jre1.5.0_01\bin\client\jvm.dll
-//*jvmdll: c:\jdk1.3.1\jre\bin\classic\jvm.dll
-// for gnu-linux it should be set as below and the LD_LIBRARY_PATH set
-// so that libjvm.so can itself find other libraries. For example
-// export LD_LIBRARY_PATH=/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server
-@nrndef_unix@*jvmdll: libjvm.so
-@nrndef_mac@*jvmdll: libjvm.dylib
-
 // The default stack size is 1000 and the frame (recursion depth) size is 512 unless explicitly set nonzero below
 // One may also use the -NSTACK stacksize   -NFRAME framesize options at launch.
 *NSTACK: 0

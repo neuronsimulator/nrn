@@ -48,3 +48,7 @@ To that end, the following table's columns constitute:
        Side note: the bulletin board implemented within the ParallelContext is NEURON's analogy to LINDA's conceptual functionality of tuple space.
      - `#1919 <https://github.com/neuronsimulator/nrn/pull/1919>`_
      - a5c36e9
+   * - Java
+     - NEURON Java support.
+     - `#1937 <https://github.com/neuronsimulator/nrn/pull/1937>`_
+     - 5a67957
