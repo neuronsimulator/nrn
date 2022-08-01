@@ -94,7 +94,6 @@ char* nrnmpi_load(int is_python) {
                 handle = load_mpi(info.dli_fname, pmes + strlen(pmes));
                 if (handle) {
                     corenrn_mpi_library = info.dli_fname;
-                    printf("already loaded: %s\n", info.dli_fname);
                 } else {
                     ismes = 1;
                 }
