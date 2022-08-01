@@ -14,7 +14,6 @@
 #include <setjmp.h>
 #include <errno.h>
 #include "nrnfilewrap.h"
-#include "nrnjava.h"
 
 
 extern jmp_buf begin;
@@ -594,16 +593,6 @@ static void hoc_load(const char* stype) {
             }
         }
     }
-}
-
-Pfri p_hoc_load_java;
-void hoc_load_java(void) {
-    int r = 0;
-    if (p_hoc_load_java) {
-        r = (*p_hoc_load_java)();
-    }
-    ret();
-    pushx((double) r);
 }
 
 void hoc_load_proc(void) {
