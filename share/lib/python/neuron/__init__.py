@@ -174,6 +174,56 @@ from neuron import config
 
 config._parse_arguments(h)
 
+def _check_for_intel_openmp():
+    """Check if Intel's OpenMP runtime has already been loaded.
+
+    This does not interact well with the NVIDIA OpenMP runtime in CoreNEURON GPU
+    builds. See
+    https://forums.developer.nvidia.com/t/nvc-openacc-runtime-segfaults-if-intel-mkl-numpy-is-already-loaded/212739
+    for more information.
+    """
+    import ctypes
+    from neuron.config import arguments
+
+    # These checks are only relevant for shared library builds with CoreNEURON GPU support enabled.
+    if (
+        not arguments["NRN_ENABLE_CORENEURON"]
+        or not arguments["CORENRN_ENABLE_GPU"]
+        or not arguments["CORENRN_ENABLE_SHARED"]
+    ):
+        return
+
+    current_exe = ctypes.CDLL(None)
+    try:
+        # Picked quasi-randomly from `nm libiomp5.so`
+        current_exe["_You_must_link_with_Intel_OpenMP_library"]
+    except:
+        # No Intel symbol found, all good
+        pass
+    else:
+        # Intel symbol was found: danger! danger!
+        raise Exception(
+            "Intel OpenMP runtime detected. Try importing NEURON before Intel MKL and/or Numpy"
+        )
+
+    # Try to load the CoreNEURON shared library so that the various NVIDIA
+    # runtime libraries also get loaded, before we import numpy lower down this
+    # file.
+    loaded_coreneuron = bool(h.coreneuron_handle())
+    if not loaded_coreneuron:
+        warnings.warn(
+            "Failed to pre-load CoreNEURON when importing NEURON. "
+            "Try running from the same directory where you ran "
+            "nrnivmodl, or setting CORENEURONLIB. If you import "
+            "something (e.g. Numpy with Intel MKL) that brings in "
+            "an incompatible OpenMP runtime before launching a "
+            "CoreNEURON GPU simulation then you may encounter "
+            "errors."
+        )
+
+
+_check_for_intel_openmp()
+
 _original_hoc_file = None
 if not hasattr(hoc, "__file__"):
     # first try is to derive from neuron.__file__
