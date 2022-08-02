@@ -60,6 +60,9 @@
 /* Define to 1 if you have the `feenableexcept' function. */
 #undef HAVE_FEENABLEEXCEPT
 
+/* Define to 1 if you have the `fegetenv' function. */
+#undef HAVE_FEGETENV
+
 /* Define to 1 if you have the <float.h> header file. */
 #undef HAVE_FLOAT_H
 

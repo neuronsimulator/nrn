@@ -49,7 +49,7 @@ int (*p_nrnpy_pyrun)(const char* fname);
 extern int stdin_event_ready();
 #endif
 
-#if HAVE_FEENABLEEXCEPT
+#if HAVE_FEENABLEEXCEPT || HAVE_FEGETENV
 #define NRN_FLOAT_EXCEPTION 1
 #else
 #define NRN_FLOAT_EXCEPTION 0
@@ -58,24 +58,33 @@ extern int stdin_event_ready();
 #if NRN_FLOAT_EXCEPTION
 #if !defined(__USE_GNU)
 #define __USE_GNU
-#endif
+#endif // __USE_GNU
 #include <fenv.h>
+#if DARWIN
+//#pragma STDC FENV_ACCESS ON
+#endif // DARWIN
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)
 static void matherr1(void) {
     /* above gives the signal but for some reason fegetexcept returns 0 */
-    switch (fegetexcept()) {
-    case FE_DIVBYZERO:
+#if HAVE_FEENABLEEXCEPT
+    int i = fegetexcept();
+#elif HAVE_FEGETENV
+    int i = fetestexcept(FEEXCEPT);
+#endif
+fprintf(stderr,"matherr FEEXCEPT=%x i=%x\n", FEEXCEPT, i);
+fprintf(stderr,"matherr errno=%d\n", errno);
+fenv_t env;
+fegetenv(&env);
+fprintf(stderr,"matherr fpsr=%llx fpcr=%llx\n", env.__fpsr, env.__fpcr);
+    if (i & FE_DIVBYZERO) {
         fprintf(stderr, "Floating exception: Divide by zero\n");
-        break;
-    case FE_INVALID:
+    }else if (i & FE_INVALID) {
         fprintf(stderr, "Floating exception: Invalid (no well defined result\n");
-        break;
-    case FE_OVERFLOW:
+    }else if (i & FE_OVERFLOW) {
         fprintf(stderr, "Floating exception: Overflow\n");
-        break;
     }
 }
-#endif
+#endif //NRN_FLOAT_EXCEPTION
 
 int nrn_mpiabort_on_error_{1};
 
@@ -84,12 +93,37 @@ int nrn_feenableexcept_ = 0;  // 1 if feenableexcept(FEEXCEPT) is successful
 void nrn_feenableexcept() {
     int result = -2;  // feenableexcept does not exist.
     nrn_feenableexcept_ = 0;
-#if NRN_FLOAT_EXCEPTION
+#if HAVE_FEENABLE_EXCEPT
     if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
         result = fedisableexcept(FEEXCEPT);
     } else {
         result = feenableexcept(FEEXCEPT);
         nrn_feenableexcept_ = (result == -1) ? 0 : 1;
+    }
+#elif HAVE_FEGETENV && defined(__arm64__)
+    fenv_t env;
+    if (fegetenv(&env) != 0) {
+        result = -1;
+    }else {
+        const unsigned long long x =  __fpcr_trap_divbyzero | __fpcr_trap_invalid | __fpcr_trap_overflow;
+        if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
+            env.__fpcr = env.__fpcr & (~x);
+            if (fesetenv(&env) != 0) {
+                result = -1;
+            }else{
+                result = env.__fpcr;
+fprintf(stderr, "arg=0 env.__fpcr=%llx\n", env.__fpcr);
+            }                
+        }else{
+            env.__fpcr = env.__fpcr | x;
+            if (fesetenv(&env) != 0) {
+                result = -1;
+            }else{
+                result = env.__fpcr;
+fprintf(stderr, "arg=1 env.__fpcr=%llx\n", env.__fpcr);
+            }
+            nrn_feenableexcept_ = 1;
+        }
     }
 #endif
     hoc_ret();
@@ -808,6 +842,7 @@ void print_bt() {
 
 RETSIGTYPE fpecatch(int sig) /* catch floating point exceptions */
 {
+fprintf(stderr, "fpecatch %d\n", sig);
     /*ARGSUSED*/
 #if DOS
     _fpreset();
@@ -820,7 +855,11 @@ RETSIGTYPE fpecatch(int sig) /* catch floating point exceptions */
     if (coredump) {
         abort();
     }
-    signal(SIGFPE, fpecatch);
+#if DARWIN && defined(__arm64__)
+    signal(sig, fpecatch);
+#else
+    signal(sig, fpecatch);
+#endif
     execerror("Floating point exception.", (char*) 0);
 }
 
@@ -1273,7 +1312,7 @@ void hoc_run(void) {
 
 typedef RETSIGTYPE (*SignalType)(int);
 
-static SignalType signals[4];
+static SignalType signals[5];
 
 static void set_signals(void) {
     signals[0] = signal(SIGINT, onintr);
@@ -1283,6 +1322,9 @@ static void set_signals(void) {
 #endif
 #if HAVE_SIGBUS
     signals[3] = signal(SIGBUS, sigbuscatch);
+#endif
+#if DARWIN && defined(__arm64__)
+    signals[4] = signal(SIGILL, fpecatch);
 #endif
 }
 
@@ -1294,6 +1336,9 @@ static void restore_signals(void) {
 #endif
 #if HAVE_SIGBUS
     signals[3] = signal(SIGBUS, signals[3]);
+#endif
+#if DARWIN && defined(__arm64__)
+    signals[4] = signal(SIGILL, fpecatch);
 #endif
 }
 
