@@ -274,7 +274,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   # builds (in near future we want to support only internal builds anyway). This test uses the
   # standard NEURON installation that does not have a `special` statically linked against
   # CoreNEURON, so we cannot run this in static builds.
-  if(NOT nrn_using_ext_corenrn AND ${CORENRN_ENABLE_SHARED})
+  if(NOT nrn_using_ext_corenrn AND CORENRN_ENABLE_SHARED)
     nrn_add_test_group(
       CORENEURON
       NAME coreneuron_standalone

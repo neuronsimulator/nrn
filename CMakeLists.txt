@@ -512,7 +512,7 @@ if(NRN_ENABLE_CORENEURON)
     get_property(CORENRN_VERSION_MINOR GLOBAL PROPERTY CORENRN_VERSION_MINOR)
     get_property(CORENRN_VERSION_PATCH GLOBAL PROPERTY CORENRN_VERSION_PATCH)
     # NEURON tests that link against CoreNEURON need to depend on it.
-    set(CORENEURON_TARGET_TO_DEPEND coreneuron-all)
+    set(CORENEURON_TARGET_TO_DEPEND coreneuron-for-tests)
   endif()
   # Check if CoreNEURON is claiming compatibility with the correct NEURON
   if(NOT DEFINED CORENRN_VERSION_MAJOR

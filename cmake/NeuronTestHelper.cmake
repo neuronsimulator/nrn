@@ -210,12 +210,12 @@ function(nrn_add_test_group)
       # Add the custom command to generate the binaries. Get nrnivmodl from the build directory. At
       # the moment it seems that `nrnivmodl` is generated at configure time, so there is no target
       # to depend on and it should always be available, but it will try and link against libnrniv.so
-      # and libcoreneuron.so so we must depend on those. TODO: could the logic of `nrnivmodl` be
+      # and libcorenrnmech.so so we must depend on those. TODO: could the logic of `nrnivmodl` be
       # translated to CMake, so it can be called natively here and the `nrnivmodl` executable would
       # be a wrapper that invokes CMake?
       set(output_binaries "${special}")
       list(APPEND nrnivmodl_dependencies nrniv_lib)
-      if(NRN_ADD_TEST_GROUP_CORENEURON)
+      if(NRN_ENABLE_CORENEURON AND NRN_ADD_TEST_GROUP_CORENEURON)
         list(APPEND output_binaries "${special}-core")
         if((NOT coreneuron_FOUND) AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES))
           message(WARNING "nrn_add_test_group couldn't find the names of the builtin "
@@ -392,7 +392,7 @@ function(nrn_add_test)
     list(
       APPEND
       test_env
-      "CORENEURONLIB=${build_prefix}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}coreneuron${CMAKE_SHARED_LIBRARY_SUFFIX}"
+      "CORENEURONLIB=${build_prefix}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}corenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
     )
   endif()
   # Get [VAR1, VAR2, ...] from [VAR1=VAL1, VAR2=VAL2, ...]
