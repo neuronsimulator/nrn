@@ -198,7 +198,6 @@ static struct { /* Builtin functions with multiple or variable args */
                  {"load_func", hoc_load_func},
                  {"load_template", hoc_load_template},
                  {"load_file", hoc_load_file},
-                 {"load_java", hoc_load_java},
                  {"unix_mac_pc", hoc_unix_mac_pc},
                  {"show_winio", hoc_show_winio},
                  {"nrn_load_dll", hoc_nrn_load_dll},
