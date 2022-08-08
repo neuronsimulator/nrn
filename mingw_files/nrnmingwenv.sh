@@ -28,7 +28,7 @@ cp $HOME/.inputrc $NM/etc/inputrc
 #cp /msys2.ini $NM
 #cp /msys2_shell.cmd $NM
 
-binprog="basename bash cat cp dirname echo find grep ls make mintty
+binprog="basename bash cat cp dirname echo env find git grep ls make mintty
   mkdir mv rebase rm sed sh sort unzip which cygpath cygcheck uname"
 for i in $binprog ; do
   echo $i
