@@ -92,7 +92,17 @@ int nrn_mpiabort_on_error_{1};
 
 int nrn_feenableexcept_ = 0;  // 1 if feenableexcept(FEEXCEPT) is successful
 
+static RETSIGTYPE fpecatch(int sig); /* catch floating point exceptions */
+
 void nrn_feenableexcept() {
+    if (chkarg(1, 0., 10.) == 2.0) {
+        auto foo = signal(SIGFPE, SIG_IGN);
+        signal(SIGFPE, fpecatch);
+    hoc_ret();
+        int result =  foo == fpecatch;
+    hoc_pushx((double) result);
+    return;
+    }
     int result = -2;  // feenableexcept does not exist.
     nrn_feenableexcept_ = 0;
     bool enable = (ifarg(1) && chkarg(1, 0., 1.) == 0.) ? false : true;
