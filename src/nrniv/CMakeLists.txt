@@ -316,7 +316,7 @@ if(NRN_HAVE_NVHPC_COMPILER)
   # is not raised. See https://github.com/neuronsimulator/nrn/pull/1930
   set_source_files_properties(${PROJECT_SOURCE_DIR}/src/oc/math.cpp
                               PROPERTIES COMPILE_DEFINITIONS NVHPC_CHECK_FE_EXCEPTIONS=1)
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/oc/math.cpp PROPERTIES COMPILE_FLAGS -O1)
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/oc/math.cpp PROPERTIES COMPILE_OPTIONS -O1)
 
 endif()
 
