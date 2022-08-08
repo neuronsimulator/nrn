@@ -304,9 +304,9 @@ if(NRN_USE_BACKWARD)
     PROPERTY COMPILE_DEFINITIONS USE_BACKWARD=1)
 endif()
 
-# NVHPC/21.7 cannot compile znorm.c with -O2 or above. See also:
-# https://forums.developer.nvidia.com/t/nvc-21-7-regression-internal-compiler-error-can-only-coerce-indirect-args/184847
 if(NRN_HAVE_NVHPC_COMPILER)
+  # NVHPC/21.7 cannot compile znorm.c with -O2 or above. See also:
+  # https://forums.developer.nvidia.com/t/nvc-21-7-regression-internal-compiler-error-can-only-coerce-indirect-args/184847
   if(${CMAKE_C_COMPILER_VERSION} VERSION_EQUAL 21.7)
     set_source_files_properties(${PROJECT_SOURCE_DIR}/src/mesch/znorm.c PROPERTIES COMPILE_OPTIONS
                                                                                    -Mnovect)
