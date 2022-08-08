@@ -60,8 +60,8 @@ extern int stdin_event_ready();
 #define __USE_GNU
 #endif // __USE_GNU
 #include <fenv.h>
-#if DARWIN
-//#pragma STDC FENV_ACCESS ON
+#if DARWIN && !defined(__arm64__)
+#pragma STDC FENV_ACCESS ON
 #endif // DARWIN
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)
 static void matherr1(void) {
@@ -75,7 +75,9 @@ fprintf(stderr,"matherr FEEXCEPT=%x i=%x\n", FEEXCEPT, i);
 fprintf(stderr,"matherr errno=%d\n", errno);
 fenv_t env;
 fegetenv(&env);
+#if __arm64__
 fprintf(stderr,"matherr fpsr=%llx fpcr=%llx\n", env.__fpsr, env.__fpcr);
+#endif
     if (i & FE_DIVBYZERO) {
         fprintf(stderr, "Floating exception: Divide by zero\n");
     }else if (i & FE_INVALID) {
@@ -93,20 +95,22 @@ int nrn_feenableexcept_ = 0;  // 1 if feenableexcept(FEEXCEPT) is successful
 void nrn_feenableexcept() {
     int result = -2;  // feenableexcept does not exist.
     nrn_feenableexcept_ = 0;
+    bool enable = (ifarg(1) && chkarg(1, 0., 1.) == 0.) ? false : true;
 #if HAVE_FEENABLE_EXCEPT
-    if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
+    if (!enable) {
         result = fedisableexcept(FEEXCEPT);
     } else {
         result = feenableexcept(FEEXCEPT);
         nrn_feenableexcept_ = (result == -1) ? 0 : 1;
     }
-#elif HAVE_FEGETENV && defined(__arm64__)
+#elif HAVE_FEGETENV
     fenv_t env;
     if (fegetenv(&env) != 0) {
         result = -1;
     }else {
+#if defined __arm64__
         const unsigned long long x =  __fpcr_trap_divbyzero | __fpcr_trap_invalid | __fpcr_trap_overflow;
-        if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
+        if (!enable) {
             env.__fpcr = env.__fpcr & (~x);
             if (fesetenv(&env) != 0) {
                 result = -1;
@@ -125,7 +129,31 @@ fprintf(stderr, "arg=1 env.__fpcr=%llx\n", env.__fpcr);
             nrn_feenableexcept_ = 1;
         }
     }
-#endif
+#else // not __arm64__
+        const unsigned int x =  FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW;
+        if (!enable) {
+            env.__control |= x;
+            env.__mxcsr |= (x << 7);
+            if (fesetenv(&env) != 0) {
+                result = -1;
+            }else{
+                result = env.__control;
+fprintf(stderr, "arg=0 env.__control=%hx\n", env.__control);
+            }                
+        }else{
+            env.__control &= ~x;
+            env.__mxcsr &= ~(x << 7);
+            if (fesetenv(&env) != 0) {
+                result = -1;
+            }else{
+                result = env.__control;
+fprintf(stderr, "arg=1 env.__control=%hx\n", env.__control);
+            }
+            nrn_feenableexcept_ = 1;
+        }
+    }
+#endif // not __arm64
+#endif // HAVE...
     hoc_ret();
     hoc_pushx((double) result);
 }
@@ -850,7 +878,7 @@ fprintf(stderr, "fpecatch %d\n", sig);
 #if NRN_FLOAT_EXCEPTION
     matherr1();
 #endif
-    Fprintf(stderr, "Floating point exception\n");
+    fprintf(stderr, "Floating point exception\n");
     print_bt();
     if (coredump) {
         abort();
