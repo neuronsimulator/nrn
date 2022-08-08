@@ -16,9 +16,8 @@ DESTDIR =
 TARGET_LIB_TYPE = $(BUILD_TYPE)
 
 # required for OSX to execute nrnivmodl-core
-OSX_SYSROOT=@CMAKE_OSX_SYSROOT@
-ifneq ($(OSX_SYSROOT),)
-  export SDKROOT := $(OSX_SYSROOT)
+ifneq ($(SDKROOT),)
+  export SDKROOT := $(shell xcrun --sdk macosx --show-sdk-path)
 endif
 
 # CoreNEURON installation directories
