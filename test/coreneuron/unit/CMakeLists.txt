@@ -22,7 +22,8 @@ endif()
 set(CMAKE_BUILD_RPATH ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR})
 
 set(Boost_NO_BOOST_CMAKE TRUE)
-find_package(Boost 1.41.0 QUIET COMPONENTS filesystem system atomic unit_test_framework)
+# Minimum set by needing the multi-argument version of BOOST_AUTO_TEST_CASE.
+find_package(Boost 1.59 QUIET COMPONENTS filesystem system atomic unit_test_framework)
 
 if(Boost_FOUND)
   if(CORENRN_ENABLE_UNIT_TESTS)
