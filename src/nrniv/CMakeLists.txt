@@ -314,9 +314,11 @@ if(NRN_HAVE_NVHPC_COMPILER)
   # For NVHPC we will rely on FE exceptions as opposed to errno in order to make use of faster
   # builtins. One caveat is that if we use an optimization level greater than -O1, the FE exception
   # is not raised. See https://github.com/neuronsimulator/nrn/pull/1930
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/oc/math.cpp
-                              PROPERTIES COMPILE_DEFINITIONS NVHPC_CHECK_FE_EXCEPTIONS=1)
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/oc/math.cpp PROPERTIES COMPILE_OPTIONS -O1)
+  set_source_files_properties(
+      ${PROJECT_SOURCE_DIR}/src/oc/math.cpp
+      PROPERTIES 
+          COMPILE_DEFINITIONS NVHPC_CHECK_FE_EXCEPTIONS=1
+          COMPILE_OPTIONS -O1)
 
 endif()
 
