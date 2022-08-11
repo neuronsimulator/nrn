@@ -1,12 +1,17 @@
-#define BOOST_TEST_MODULE LFPTest
-#define BOOST_TEST_MAIN
-
-#include <iostream>
-
-#include <boost/test/unit_test.hpp>
-
+/*
+# =============================================================================
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
+#
+# See top-level LICENSE file for details.
+# =============================================================================.
+*/
 #include "coreneuron/io/lfp.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
+
+#define BOOST_TEST_MODULE LFPTest
+#include <boost/test/included/unit_test.hpp>
+
+#include <iostream>
 
 using namespace coreneuron;
 using namespace coreneuron::lfputils;

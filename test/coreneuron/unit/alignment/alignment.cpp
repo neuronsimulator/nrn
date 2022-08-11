@@ -1,22 +1,18 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
 */
-
-
-#define BOOST_TEST_MODULE PaddingCheck
-#define BOOST_TEST_MAIN
-
-#include <cstring>
-#include <stdint.h>
+#include "coreneuron/utils/memory.h"
 
 #include <boost/mpl/list.hpp>
-#include <boost/test/unit_test.hpp>
+#define BOOST_TEST_MODULE PaddingCheck
+#include <boost/test/included/unit_test.hpp>
 
-#include "coreneuron/utils/memory.h"
+#include <cstdint>
+#include <cstring>
 
 template <class T, int n = 1>
 struct data {

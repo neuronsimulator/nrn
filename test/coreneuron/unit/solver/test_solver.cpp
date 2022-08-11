@@ -1,11 +1,18 @@
-#define BOOST_TEST_MODULE CoreNEURON solver
-#include <boost/test/included/unit_test.hpp>
-
+/*
+# =============================================================================
+# Copyright (c) 2022 Blue Brain Project/EPFL
+#
+# See top-level LICENSE file for details.
+# =============================================================================.
+*/
 #include "coreneuron/apps/corenrn_parameters.hpp"
 #include "coreneuron/gpu/nrn_acc_manager.hpp"
 #include "coreneuron/permute/cellorder.hpp"
 #include "coreneuron/permute/node_permute.h"
 #include "coreneuron/sim/multicore.hpp"
+
+#define BOOST_TEST_MODULE CoreNEURON solver
+#include <boost/test/included/unit_test.hpp>
 
 #include <iostream>
 #include <functional>

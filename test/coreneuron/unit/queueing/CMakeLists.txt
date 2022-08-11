@@ -1,17 +1,11 @@
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================
 add_executable(queuing_test_bin test_queueing.cpp)
-target_link_libraries(
-  queuing_test_bin
-  ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
-  ${Boost_SYSTEM_LIBRARY}
-  coreneuron
-  ${corenrn_mech_library}
-  ${reportinglib_LIBRARY}
-  ${sonatareport_LIBRARY})
+target_link_libraries(queuing_test_bin ${Boost_SYSTEM_LIBRARY} coreneuron ${corenrn_mech_library}
+                      ${reportinglib_LIBRARY} ${sonatareport_LIBRARY})
 add_dependencies(queuing_test_bin nrniv-core)
 # Tell CMake *not* to run an explicit device code linker step (which will produce errors); let the
 # NVHPC C++ compiler handle this implicitly.

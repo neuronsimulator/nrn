@@ -1,17 +1,17 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
 */
+#include "coreneuron/permute/cellorder.hpp"
 
 #define BOOST_TEST_MODULE cmdline_interface
-#define BOOST_TEST_MAIN
+#include <boost/test/included/unit_test.hpp>
 
-#include <boost/test/unit_test.hpp>
-#include "coreneuron/permute/cellorder.hpp"
 using namespace coreneuron;
+
 BOOST_AUTO_TEST_CASE(interleave_info_test) {
     size_t nwarp = 4;
     size_t nstride = 6;

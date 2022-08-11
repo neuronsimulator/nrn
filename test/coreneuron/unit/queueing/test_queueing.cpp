@@ -1,25 +1,20 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
 */
+#include "coreneuron/network/netcvode.hpp"
+#include "coreneuron/network/tqueue.hpp"
 
 #define BOOST_TEST_MODULE QueueingTest
-#define TYPE              T::cont
-
-#include <boost/filesystem.hpp>
-#include <boost/test/unit_test.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 #include <cstdlib>
 #include <vector>
 #include <iostream>
-//#include "test/unit/queueing/test_header.hpp"
-#include "coreneuron/network/netcvode.hpp"
-#include "coreneuron/network/tqueue.hpp"
 
-namespace bfs = ::boost::filesystem;
 using namespace coreneuron;
 // UNIT TESTS
 BOOST_AUTO_TEST_CASE(priority_queue_nq_dq) {

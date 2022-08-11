@@ -6,8 +6,7 @@
 
 include_directories(${CMAKE_SOURCE_DIR}/coreneuron ${Boost_INCLUDE_DIRS})
 add_executable(test-solver test_solver.cpp)
-target_link_libraries(test-solver ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} coreneuron
-                      ${corenrn_mech_library})
+target_link_libraries(test-solver coreneuron ${corenrn_mech_library})
 target_include_directories(test-solver SYSTEM
                            PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11/include)
 
