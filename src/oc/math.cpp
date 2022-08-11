@@ -27,6 +27,10 @@ int hoc_errno_count;
 #ifdef MINGW
 static const auto errno_enabled = true;
 static const auto check_fe_except = false;
+#elif defined(NVHPC_CHECK_FE_EXCEPTIONS)
+static constexpr auto errno_enabled = false;
+static constexpr auto check_fe_except = true;
+static_assert(math_errhandling & MATH_ERREXCEPT);
 #else
 static const auto errno_enabled = math_errhandling & MATH_ERRNO;
 static const auto check_fe_except = !errno_enabled && math_errhandling & MATH_ERREXCEPT;
