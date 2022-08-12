@@ -99,9 +99,9 @@ void nrnbbcore_register_mapping() {
     Vect* seg = vector_arg(4);
     Vect* lfp = vector_arg(5);
 
-    double* sections  = vector_vec(sec);
-    double* segments  = vector_vec(seg);
-    double* seg_lfp_factors  = vector_vec(lfp);
+    double* sections = vector_vec(sec);
+    double* segments = vector_vec(seg);
+    double* seg_lfp_factors = vector_vec(lfp);
 
     int nsec = vector_capacity(sec);
     int nseg = vector_capacity(seg);
@@ -115,10 +115,10 @@ void nrnbbcore_register_mapping() {
     // number of unique sections
     nsec = count_distinct(sections, nsec);
 
-    SecMapping *smap = new SecMapping(nsec, name);
-    smap->sections.assign(sections, sections+nseg);
-    smap->segments.assign(segments, segments+nseg);
-    smap->seglfp_factors.assign(seg_lfp_factors, seg_lfp_factors+nlfp);
+    SecMapping* smap = new SecMapping(nsec, name);
+    smap->sections.assign(sections, sections + nseg);
+    smap->segments.assign(segments, segments + nseg);
+    smap->seglfp_factors.assign(seg_lfp_factors, seg_lfp_factors + nlfp);
 
     // store mapping information
     mapinfo.add_sec_mapping(gid, smap);
