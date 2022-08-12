@@ -15,7 +15,7 @@ jobs:
     machine:
       image: ubuntu-2004:202101-01
     environment:
-      NEURON_WHEEL_VERSION: 8.2
+      NEURON_WHEEL_VERSION: 8.2.1
       NEURON_NIGHTLY_TAG: ""
       NRN_NIGHTLY_UPLOAD: false
       NRN_RELEASE_UPLOAD: false
