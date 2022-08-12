@@ -31,7 +31,7 @@ stages:
     - job: 'ManyLinuxWheels'
       timeoutInMinutes: 30
       pool:
-        vmImage: 'ubuntu-18.04'
+        vmImage: 'ubuntu-20.04'
       strategy:
         matrix:
           Python37:
@@ -84,7 +84,7 @@ stages:
     - job: 'ManyLinuxGPUWheels'
       timeoutInMinutes: 30
       pool:
-        vmImage: 'ubuntu-18.04'
+        vmImage: 'ubuntu-20.04'
       variables:
         GPU_BUILD: 'true'
       strategy:
@@ -244,7 +244,7 @@ stages:
     jobs:
       - job: AzureDropURL
         pool:
-          vmImage: 'ubuntu-18.04'
+          vmImage: 'ubuntu-20.04'
         condition: eq(variables['Build.Reason'], 'PullRequest')
         steps:
           - checkout: none
