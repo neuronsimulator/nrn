@@ -478,13 +478,12 @@ static void bksub_interleaved(NrnThread* nt,
 }
 
 // icore ranges [0:warpsize) ; stride[ncycle]
+nrn_pragma_acc(routine vector)
 static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* stride, int lastnode) {
     int icycle = ncycle - 1;
     int istride = stride[icycle];
     int i = lastnode - istride + icore;
-#ifndef CORENEURON_ENABLE_GPU
     int ii = i;
-#endif
 
     // execute until all tree depths are executed
     bool has_subtrees_to_compute = true;
@@ -492,11 +491,11 @@ static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* strid
     // clang-format off
     nrn_pragma_acc(loop seq)
     for (; has_subtrees_to_compute; ) {  // ncycle loop
-#ifndef CORENEURON_ENABLE_GPU
         // serial test, gpu does this in parallel
+        nrn_pragma_acc(loop vector)
+        nrn_pragma_omp(loop bind(parallel))
         for (int icore = 0; icore < warpsize; ++icore) {
             int i = ii + icore;
-#endif
             if (icore < istride) {  // most efficient if istride equal  warpsize
                 // what is the index
                 int ip = GPU_PARENT(i);
@@ -508,9 +507,7 @@ static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* strid
                 nrn_pragma_omp(atomic update)
                 GPU_RHS(ip) -= p * GPU_RHS(i);
             }
-#ifndef CORENEURON_ENABLE_GPU
         }
-#endif
         // if finished with all tree depths then ready to break
         // (note that break is not allowed in OpenACC)
         if (icycle == 0) {
@@ -520,14 +517,12 @@ static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* strid
         --icycle;
         istride = stride[icycle];
         i -= istride;
-#ifndef CORENEURON_ENABLE_GPU
         ii -= istride;
-#endif
     }
-    // clang-format on
 }
 
 // icore ranges [0:warpsize) ; stride[ncycle]
+nrn_pragma_acc(routine vector)
 static void bksub_interleaved2(NrnThread* nt,
                                int root,
                                int lastroot,
@@ -535,36 +530,29 @@ static void bksub_interleaved2(NrnThread* nt,
                                int ncycle,
                                int* stride,
                                int firstnode) {
-#ifndef CORENEURON_ENABLE_GPU
-    for (int i = root; i < lastroot; i += 1) {
-#else
     nrn_pragma_acc(loop seq)
-    for (int i = root; i < lastroot; i += warpsize) {
-#endif
+    for (int i = root; i < lastroot; i += 1) {
         GPU_RHS(i) /= GPU_D(i);  // the root
     }
 
     int i = firstnode + icore;
-#ifndef CORENEURON_ENABLE_GPU
     int ii = i;
-#endif
+    nrn_pragma_acc(loop seq)
     for (int icycle = 0; icycle < ncycle; ++icycle) {
         int istride = stride[icycle];
-#ifndef CORENEURON_ENABLE_GPU
         // serial test, gpu does this in parallel
+        nrn_pragma_acc(loop vector)
+        nrn_pragma_omp(loop bind(parallel))
         for (int icore = 0; icore < warpsize; ++icore) {
             int i = ii + icore;
-#endif
             if (icore < istride) {
                 int ip = GPU_PARENT(i);
                 GPU_RHS(i) -= GPU_B(i) * GPU_RHS(ip);
                 GPU_RHS(i) /= GPU_D(i);
             }
             i += istride;
-#ifndef CORENEURON_ENABLE_GPU
         }
         ii += istride;
-#endif
     }
 }
 
@@ -600,15 +588,24 @@ void solve_interleaved2(int ith) {
     defined(_OPENACC)
         int nstride = stridedispl[nwarp];
 #endif
-        nrn_pragma_acc(parallel loop gang vector vector_length(
-            warpsize) present(nt [0:1],
+        /* If we compare this loop with the one from cellorder.cu (CUDA version), we will understand 
+         * that the parallelism here is exposed in steps, while in the CUDA version all the parallelism 
+         * is exposed from the very beginning of the loop. In more details, here we initially distribute
+         * the outermost loop, e.g. in the CUDA blocks, and for the innermost loops we explicitly use multiple
+         * threads for the parallelization (see for example the loop directives in triang/bksub_interleaved2). 
+         * On the other hand, in the CUDA version the outermost loop is distributed to all the available threads,
+         * and therefore there is no need to have the innermost loops. Here, the loop/icore jumps every warpsize,
+         * while in the CUDA version the icore increases by one. Other than this, the two loop versions
+         * are equivalent (same results).
+         */
+        nrn_pragma_acc(parallel loop gang present(nt [0:1],
                               strides [0:nstride],
                               ncycles [0:nwarp],
                               stridedispl [0:nwarp + 1],
                               rootbegin [0:nwarp + 1],
                               nodebegin [0:nwarp + 1]) if (nt->compute_gpu) async(nt->stream_id))
-        nrn_pragma_omp(target teams distribute parallel for simd if(nt->compute_gpu))
-        for (int icore = 0; icore < ncore; ++icore) {
+        nrn_pragma_omp(target teams loop if(nt->compute_gpu))
+        for (int icore = 0; icore < ncore; icore += warpsize) {
             int iwarp = icore / warpsize;     // figure out the >> value
             int ic = icore & (warpsize - 1);  // figure out the & mask
             int ncycle = ncycles[iwarp];
@@ -617,14 +614,9 @@ void solve_interleaved2(int ith) {
             int lastroot = rootbegin[iwarp + 1];
             int firstnode = nodebegin[iwarp];
             int lastnode = nodebegin[iwarp + 1];
-#ifndef CORENEURON_ENABLE_GPU
-            if (ic == 0) {  // serial test mode. triang and bksub do all cores in warp
-#endif
-                triang_interleaved2(nt, ic, ncycle, stride, lastnode);
-                bksub_interleaved2(nt, root + ic, lastroot, ic, ncycle, stride, firstnode);
-#ifndef CORENEURON_ENABLE_GPU
-            }  // serial test mode
-#endif
+            
+            triang_interleaved2(nt, ic, ncycle, stride, lastnode);
+            bksub_interleaved2(nt, root + ic, lastroot, ic, ncycle, stride, firstnode);
         }
         nrn_pragma_acc(wait(nt->stream_id))
 #ifdef _OPENACC

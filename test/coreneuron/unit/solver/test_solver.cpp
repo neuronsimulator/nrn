@@ -33,12 +33,12 @@ struct SolverData {
 constexpr auto magic_index_value = -2;
 constexpr auto magic_double_value = std::numeric_limits<double>::lowest();
 
-// TODO: check out adding a CellPermute2_CPU version?
 enum struct SolverImplementation {
     CellPermute0_CPU,
     CellPermute0_GPU,
     CellPermute1_CPU,
     CellPermute1_GPU,
+    CellPermute2_CPU,
     CellPermute2_GPU,
     CellPermute2_CUDA
 };
@@ -52,6 +52,8 @@ std::ostream& operator<<(std::ostream& os, SolverImplementation impl) {
         return os << "SolverImplementation::CellPermute1_CPU";
     } else if (impl == SolverImplementation::CellPermute1_GPU) {
         return os << "SolverImplementation::CellPermute1_GPU";
+    } else if (impl == SolverImplementation::CellPermute2_CPU) {
+        return os << "SolverImplementation::CellPermute2_CPU";
     } else if (impl == SolverImplementation::CellPermute2_GPU) {
         return os << "SolverImplementation::CellPermute2_GPU";
     } else if (impl == SolverImplementation::CellPermute2_CUDA) {
@@ -91,8 +93,11 @@ struct SetupThreads {
                 break;
             case SolverImplementation::CellPermute2_CUDA:
                 corenrn_param.cuda_interface = true;
+                [[fallthrough]];
             case SolverImplementation::CellPermute2_GPU:
                 corenrn_param.gpu = true;
+                [[fallthrough]];
+            case SolverImplementation::CellPermute2_CPU:
                 interleave_permute_type = 2;
                 break;
         }
@@ -259,9 +264,10 @@ auto solve_and_dump(Args&&... args) {
 }
 
 auto active_implementations() {
-    // These two are always available
+    // These are always available
     std::vector<SolverImplementation> ret{SolverImplementation::CellPermute0_CPU,
-                                          SolverImplementation::CellPermute1_CPU};
+                                          SolverImplementation::CellPermute1_CPU,
+                                          SolverImplementation::CellPermute2_CPU};
 #ifdef CORENEURON_ENABLE_GPU
     // Consider making these steerable via a runtime switch in GPU builds
     ret.push_back(SolverImplementation::CellPermute0_GPU);
