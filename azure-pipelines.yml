@@ -74,10 +74,10 @@ stages:
     NEURON_BRANCH: $[stageDependencies.fetch_config.github.outputs['prdesc.NEURON_BRANCH']]
     CORENEURON_BRANCH: $[stageDependencies.fetch_config.github.outputs['prdesc.CORENEURON_BRANCH']]
   jobs:
-  - job: 'ubuntu1804'
+  - job: 'ubuntu2004'
     pool:
-      vmImage: 'ubuntu-18.04'
-    displayName: 'Ubuntu (18.04), GCC 8.4'
+      vmImage: 'ubuntu-20.04'
+    displayName: 'Ubuntu (20.04), GCC 8.4'
     steps:
     - checkout: self
       submodules: False
@@ -241,7 +241,7 @@ stages:
   - job: 'manylinux_wheels'
     timeoutInMinutes: 45
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
     strategy:
       matrix:
         ${{ if eq(variables.buildWheel, True) }}:
