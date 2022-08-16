@@ -107,6 +107,7 @@ const static std::map<std::string, TokenType> keywords = {
     {"RANGE", Token::RANGE},
     {"USEION", Token::USEION},
     {"READ", Token::READ},
+    {"REPRESENTS", Token::REPRESENTS},
     {"WRITE", Token::WRITE},
     {"VALENCE", Token::VALENCE},
     {"CHARGE", Token::VALENCE},
