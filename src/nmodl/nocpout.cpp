@@ -1393,6 +1393,42 @@ static void _destructor(Prop* _prop) {\n\
     }
 }
 
+
+// Check if read/write variable from USEION is declared in a
+// CONSTANT block. There are certain MOD files where this pattern
+// is used and it doesn't produce a desired code. Hence, we check
+// all ion variables and error if any variable is declared as CONSTANT.
+void check_ion_vars_as_constant(char* ion_name, const List* ion_var_list) {
+    const Item* var;
+    ITERATE(var, ion_var_list) {
+        const Symbol *var_sym = SYM(var);
+        int type = iontype(var_sym->name, ion_name);
+        if (type == IONIN ||
+                type == IONOUT ||
+                type == IONCUR ||
+                type == IONCONC ||
+                type == IONEREV) {
+            if (var_sym->subtype & nmodlCONST) {
+                diag(var_sym->name, " used in USEION statement can not be re-declared in a CONSTANT block");
+            }
+        }
+    }
+}
+
+
+// check semantics of read & write variables from USEION statements
+void check_useion_variables() {
+    const Item *ion_var;
+    ITERATE(ion_var, useion) {
+        // read variables
+        check_ion_vars_as_constant(SYM(ion_var)->name, LST(ion_var->next));
+        // write variables
+        check_ion_vars_as_constant(SYM(ion_var)->name, LST(ion_var->next->next));
+        ion_var = ion_var->next->next->next;
+    }
+}
+
+
 void warn_ignore(Symbol* s) {
     int b;
     double d1, d2;
