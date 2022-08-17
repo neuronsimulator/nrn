@@ -1401,15 +1401,13 @@ static void _destructor(Prop* _prop) {\n\
 void check_ion_vars_as_constant(char* ion_name, const List* ion_var_list) {
     const Item* var;
     ITERATE(var, ion_var_list) {
-        const Symbol *var_sym = SYM(var);
+        const Symbol* var_sym = SYM(var);
         int type = iontype(var_sym->name, ion_name);
-        if (type == IONIN ||
-                type == IONOUT ||
-                type == IONCUR ||
-                type == IONCONC ||
-                type == IONEREV) {
+        if (type == IONIN || type == IONOUT || type == IONCUR || type == IONCONC ||
+            type == IONEREV) {
             if (var_sym->subtype & nmodlCONST) {
-                diag(var_sym->name, " used in USEION statement can not be re-declared in a CONSTANT block");
+                diag(var_sym->name,
+                     " used in USEION statement can not be re-declared in a CONSTANT block");
             }
         }
     }
@@ -1418,7 +1416,7 @@ void check_ion_vars_as_constant(char* ion_name, const List* ion_var_list) {
 
 // check semantics of read & write variables from USEION statements
 void check_useion_variables() {
-    const Item *ion_var;
+    const Item* ion_var;
     ITERATE(ion_var, useion) {
         // read variables
         check_ion_vars_as_constant(SYM(ion_var)->name, LST(ion_var->next));
