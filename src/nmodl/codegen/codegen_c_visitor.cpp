@@ -42,7 +42,6 @@ using visitor::VarUsageVisitor;
 using symtab::syminfo::NmodlType;
 using SymbolType = std::shared_ptr<symtab::Symbol>;
 
-using nmodl::utils::UseNumbersInString;
 namespace codegen_utils = nmodl::codegen::utils;
 
 /****************************************************************************************/
@@ -109,7 +108,7 @@ void CodegenCVisitor::visit_unit(const ast::Unit& node) {
 }
 
 
-void CodegenCVisitor::visit_prime_name(const PrimeName& node) {
+void CodegenCVisitor::visit_prime_name(const PrimeName& /* node */) {
     throw std::runtime_error("PRIME encountered during code generation, ODEs not solved?");
 }
 
@@ -330,7 +329,7 @@ void CodegenCVisitor::visit_update_dt(const ast::UpdateDt& node) {
  * statement and hence we have to check inner expression. It's also true
  * for the initial block defined inside net receive block.
  */
-bool CodegenCVisitor::statement_to_skip(const Statement& node) const {
+bool CodegenCVisitor::statement_to_skip(const Statement& node) {
     // clang-format off
     if (node.is_unit_state()
         || node.is_line_comment()
@@ -467,7 +466,7 @@ std::string CodegenCVisitor::format_float_string(const std::string& s_value) {
  * block can appear as statement using expression statement which need to
  * be inspected.
  */
-bool CodegenCVisitor::need_semicolon(Statement* node) const {
+bool CodegenCVisitor::need_semicolon(Statement* node) {
     // clang-format off
     if (node->is_if_statement()
         || node->is_else_if_statement()
@@ -638,7 +637,7 @@ std::vector<std::string> CodegenCVisitor::ion_read_statements_optimized(BlockTyp
     return statements;
 }
 
-
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 std::vector<ShadowUseStatement> CodegenCVisitor::ion_write_statements(BlockType type) {
     std::vector<ShadowUseStatement> statements;
     for (const auto& ion: info.ions) {
@@ -760,6 +759,7 @@ bool CodegenCVisitor::is_constant_variable(const std::string& name) const {
 /**
  * \details Once variables are populated, update index semantics to register with coreneuron
  */
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void CodegenCVisitor::update_index_semantics() {
     int index = 0;
     info.semantics.clear();
@@ -882,6 +882,7 @@ std::vector<SymbolType> CodegenCVisitor::get_float_variables() {
  *  - read ion variables are read only
  *  - style_ionname is index / offset
  */
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 std::vector<IndexVariableInfo> CodegenCVisitor::get_int_variables() {
     std::vector<IndexVariableInfo> variables;
     if (info.point_process) {
@@ -905,7 +906,7 @@ std::vector<IndexVariableInfo> CodegenCVisitor::get_int_variables() {
             const std::string name = naming::ION_VARNAME_PREFIX + var;
             variables.emplace_back(make_symbol(name));
             variables.back().is_constant = true;
-            ion_vars[name] = variables.size() - 1;
+            ion_vars[name] = static_cast<int>(variables.size() - 1);
         }
 
         /// symbol for di_ion_dv var
@@ -966,7 +967,7 @@ std::vector<IndexVariableInfo> CodegenCVisitor::get_int_variables() {
             variables.emplace_back(make_symbol(naming::TQITEM_VARIABLE), false, false, true);
             variables.back().is_constant = true;
         }
-        info.tqitem_index = variables.size() - 1;
+        info.tqitem_index = static_cast<int>(variables.size() - 1);
     }
 
     /**
@@ -1028,7 +1029,7 @@ std::string CodegenCVisitor::get_parameter_str(const ParamVector& params) {
 }
 
 
-void CodegenCVisitor::print_channel_iteration_tiling_block_begin(BlockType type) {
+void CodegenCVisitor::print_channel_iteration_tiling_block_begin(BlockType /* type */) {
     // no tiling for cpu backend, just get loop bounds
     printer->add_line("int start = 0;");
     printer->add_line("int end = nodecount;");
@@ -1114,7 +1115,7 @@ void CodegenCVisitor::print_net_init_acc_serial_annotation_block_end() {
  *      for(int id = 0; id < nodecount; id++) {
  * \endcode
  */
-void CodegenCVisitor::print_channel_iteration_block_parallel_hint(BlockType type) {
+void CodegenCVisitor::print_channel_iteration_block_parallel_hint(BlockType /* type */) {
     printer->add_line("#pragma ivdep");
     printer->add_line("#pragma omp simd");
 }
@@ -1305,7 +1306,7 @@ void CodegenCVisitor::print_global_var_struct_decl() {
 /****************************************************************************************/
 
 
-void CodegenCVisitor::visit_watch_statement(const ast::WatchStatement& node) {
+void CodegenCVisitor::visit_watch_statement(const ast::WatchStatement& /* node */) {
     printer->add_text(fmt::format("nrn_watch_activate(inst, id, pnodecount, {}, v, watch_remove)",
                                   current_watch_statement++));
 }
@@ -1753,8 +1754,9 @@ bool is_functor_const(const ast::StatementBlock& variable_block,
         const auto& chain = v.analyze(complete_block, variable->get_node_name());
         is_functor_const = !(chain.eval() == DUState::D || chain.eval() == DUState::LD ||
                              chain.eval() == DUState::CD);
-        if (!is_functor_const)
+        if (!is_functor_const) {
             break;
+        }
     }
 
     return is_functor_const;
@@ -1918,12 +1920,12 @@ CodegenCVisitor::ParamVector CodegenCVisitor::internal_method_parameters() {
 }
 
 
-std::string CodegenCVisitor::external_method_arguments() const {
+std::string CodegenCVisitor::external_method_arguments() {
     return "id, pnodecount, data, indexes, thread, nt, v";
 }
 
 
-std::string CodegenCVisitor::external_method_parameters(bool table) const {
+std::string CodegenCVisitor::external_method_parameters(bool table) {
     if (table) {
         return "int id, int pnodecount, double* data, Datum* indexes, "
                "ThreadDatum* thread, NrnThread* nt, int tml_id";
@@ -1986,7 +1988,7 @@ std::string CodegenCVisitor::replace_if_verbatim_variable(std::string name) {
  * @todo : this is still ad-hoc and requires re-implementation to
  * handle it more elegantly.
  */
-std::string CodegenCVisitor::process_verbatim_text(std::string text) {
+std::string CodegenCVisitor::process_verbatim_text(std::string const& text) {
     parser::CDriver driver;
     driver.scan_string(text);
     auto tokens = driver.all_tokens();
@@ -2002,7 +2004,7 @@ std::string CodegenCVisitor::process_verbatim_text(std::string text) {
         auto name = process_verbatim_token(token);
 
         if (token == (std::string("_") + naming::TQITEM_VARIABLE)) {
-            name = "&" + name;
+            name.insert(0, 1, '&');
         }
         if (token == "_STRIDE") {
             name = "pnodecount+id";
@@ -2027,13 +2029,13 @@ std::string CodegenCVisitor::register_mechanism_arguments() const {
 
 
 std::pair<std::string, std::string> CodegenCVisitor::read_ion_variable_name(
-    const std::string& name) const {
+    const std::string& name) {
     return {name, naming::ION_VARNAME_PREFIX + name};
 }
 
 
 std::pair<std::string, std::string> CodegenCVisitor::write_ion_variable_name(
-    const std::string& name) const {
+    const std::string& name) {
     return {naming::ION_VARNAME_PREFIX + name, name};
 }
 
@@ -2066,7 +2068,7 @@ std::string CodegenCVisitor::conc_write_statement(const std::string& ion_name,
  * to queue that will be used in reduction queue.
  */
 std::string CodegenCVisitor::process_shadow_update_statement(const ShadowUseStatement& statement,
-                                                             BlockType type) {
+                                                             BlockType /* type */) {
     // when there is no operator or rhs then that statement doesn't need shadow update
     if (statement.op.empty() && statement.rhs.empty()) {
         auto text = statement.lhs + ";";
@@ -2287,7 +2289,7 @@ std::string CodegenCVisitor::global_variable_name(const SymbolType& symbol) cons
 }
 
 
-std::string CodegenCVisitor::ion_shadow_variable_name(const SymbolType& symbol) const {
+std::string CodegenCVisitor::ion_shadow_variable_name(const SymbolType& symbol) {
     return fmt::format("inst->{}[id]", symbol->get_name());
 }
 
@@ -2374,7 +2376,7 @@ std::string CodegenCVisitor::get_variable_name(const std::string& name, bool use
 
 
 void CodegenCVisitor::print_backend_info() {
-    time_t tr;
+    time_t tr{};
     time(&tr);
     auto date = std::string(asctime(localtime(&tr)));
     auto version = nmodl::Version::NMODL_VERSION + " [" + nmodl::Version::GIT_REVISION + "]";
@@ -2438,6 +2440,7 @@ void CodegenCVisitor::print_coreneuron_includes() {
  * Note that static variables are already initialized to 0. We do the
  * same for some variables to keep same code as neuron.
  */
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void CodegenCVisitor::print_mechanism_global_var_structure() {
     const auto qualifier = global_var_struct_type_qualifier();
 
@@ -2678,13 +2681,15 @@ void CodegenCVisitor::print_global_variables_for_hoc() {
  */
 static size_t get_register_type_for_ba_block(const ast::Block* block) {
     size_t register_type = 0;
-    BAType ba_type;
+    BAType ba_type{};
     /// before block have value 10 and after block 20
     if (block->is_before_block()) {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
         register_type = 10;
         ba_type =
             dynamic_cast<const ast::BeforeBlock*>(block)->get_bablock()->get_type()->get_value();
     } else {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
         register_type = 20;
         ba_type =
             dynamic_cast<const ast::AfterBlock*>(block)->get_bablock()->get_type()->get_value();
@@ -2725,6 +2730,7 @@ static size_t get_register_type_for_ba_block(const ast::Block* block) {
  *  - We assume net receive buffer is on. This is because generated code is
  *    compatible for cpu as well as gpu target.
  */
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void CodegenCVisitor::print_mechanism_register() {
     printer->add_newline(2);
     printer->add_line("/** register channel with the simulator */");
@@ -2764,9 +2770,12 @@ void CodegenCVisitor::print_mechanism_register() {
 
     // types for ion
     for (const auto& ion: info.ions) {
-        const auto& type = get_variable_name(ion.name + "_type");
+        std::string line = get_variable_name(ion.name + "_type");
         const auto& name = add_escape_quote(ion.name + "_ion");
-        printer->add_line(type + " = nrn_get_mechtype(" + name + ");");
+        line.append(" = nrn_get_mechtype(");
+        line.append(name);
+        line.append(");");
+        printer->add_line(line);
     }
     printer->add_newline();
 
@@ -3036,7 +3045,7 @@ void CodegenCVisitor::print_global_variable_device_update_annotation() {
     // nothing for cpu
 }
 
-
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void CodegenCVisitor::print_global_variable_setup() {
     std::vector<std::string> allocated_variables;
 
@@ -3263,7 +3272,7 @@ void CodegenCVisitor::print_instance_variable_setup() {
     for (auto& var: codegen_int_variables) {
         auto name = var.symbol->get_name();
         std::string variable = name;
-        std::string type = "";
+        std::string type;
         if (var.is_index || var.is_integer) {
             variable = "ml->pdata";
             type = int_type_pointer;
@@ -3327,7 +3336,7 @@ void CodegenCVisitor::print_initial_block(const InitialBlock* node) {
     // initial block
     if (node != nullptr) {
         const auto& block = node->get_statement_block();
-        print_statement_block(*block.get(), false, false);
+        print_statement_block(*block, false, false);
     }
 
     // write ion statements
@@ -3535,7 +3544,7 @@ void CodegenCVisitor::print_nrn_constructor() {
     print_global_function_common_code(BlockType::Constructor);
     if (info.constructor_node != nullptr) {
         const auto& block = info.constructor_node->get_statement_block();
-        print_statement_block(*block.get(), false, false);
+        print_statement_block(*block, false, false);
     }
     printer->add_line("#endif");
     printer->end_block(1);
@@ -3547,7 +3556,7 @@ void CodegenCVisitor::print_nrn_destructor() {
     print_global_function_common_code(BlockType::Destructor);
     if (info.destructor_node != nullptr) {
         const auto& block = info.destructor_node->get_statement_block();
-        print_statement_block(*block.get(), false, false);
+        print_statement_block(*block, false, false);
     }
     printer->add_line("#endif");
     printer->end_block(1);
@@ -3741,7 +3750,7 @@ void CodegenCVisitor::print_net_receive_common_code(const Block& node, bool need
 
 
 void CodegenCVisitor::print_net_send_call(const FunctionCall& node) {
-    auto arguments = node.get_arguments();
+    auto const& arguments = node.get_arguments();
     auto tqitem = get_variable_name("tqitem");
     std::string weight_index = "weight_index";
     std::string pnt = "pnt";
@@ -3777,7 +3786,7 @@ void CodegenCVisitor::print_net_move_call(const FunctionCall& node) {
         abort();
     }
 
-    auto arguments = node.get_arguments();
+    auto const& arguments = node.get_arguments();
     auto tqitem = get_variable_name("tqitem");
     std::string weight_index = "-1";
     std::string pnt = "pnt";

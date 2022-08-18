@@ -39,6 +39,7 @@ SympyReplaceSolutionsVisitor::SympyReplaceSolutionsVisitor(
     const size_t n_next_equations,
     const std::string& tmp_unique_prefix)
     : pre_solve_statements(pre_solve_statements.begin(), pre_solve_statements.end(), 2)
+    , is_top_level_statement_block{true}
     , to_be_removed(&to_be_removed)
     , policy(policy)
     , n_next_equations(n_next_equations)
@@ -57,10 +58,9 @@ SympyReplaceSolutionsVisitor::SympyReplaceSolutionsVisitor(
     solution_statements = StatementDispenser(ss_tmp_delimeter, solutions.end(), -1);
 
     replacements.clear();
-    is_top_level_statement_block = true;
 }
 
-
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void SympyReplaceSolutionsVisitor::visit_statement_block(ast::StatementBlock& node) {
     const bool current_is_top_level_statement_block =
         is_top_level_statement_block;  // we mark it down since we are going to change it for
@@ -96,22 +96,22 @@ void SympyReplaceSolutionsVisitor::visit_statement_block(ast::StatementBlock& no
         node.visit_children(*this);
     }
 
-    const auto& old_statements = node.get_statements();
+    auto const& old_statements = node.get_statements();
 
     ast::StatementVector new_statements;
     new_statements.reserve(2 * old_statements.size());
-    for (const auto& old_statement: old_statements) {
+    for (auto& old_statement: old_statements) {
         const auto& replacement_ptr = replacements.find(old_statement);
         if (replacement_ptr != replacements.end()) {
             if (replaced_statements_range.first == -1) {
-                replaced_statements_range.first = new_statements.size();
+                replaced_statements_range.first = static_cast<int>(new_statements.size());
             }
 
             new_statements.insert(new_statements.end(),
                                   replacement_ptr->second.begin(),
                                   replacement_ptr->second.end());
 
-            replaced_statements_range.second = new_statements.size();
+            replaced_statements_range.second = static_cast<int>(new_statements.size());
 
             logger->debug("SympyReplaceSolutionsVisitor :: erasing {}", to_nmodl(old_statement));
             for (const auto& replacement: replacement_ptr->second) {
@@ -121,7 +121,7 @@ void SympyReplaceSolutionsVisitor::visit_statement_block(ast::StatementBlock& no
                    to_be_removed->find(&(*old_statement)) == to_be_removed->end()) {
             logger->debug("SympyReplaceSolutionsVisitor :: found {}, nothing to do",
                           to_nmodl(old_statement));
-            new_statements.emplace_back(std::move(old_statement));
+            new_statements.emplace_back(old_statement);
         } else {
             logger->debug("SympyReplaceSolutionsVisitor :: erasing {}", to_nmodl(old_statement));
         }
@@ -149,10 +149,10 @@ void SympyReplaceSolutionsVisitor::visit_statement_block(ast::StatementBlock& no
         }
 
         if (replaced_statements_range.first == -1) {
-            replaced_statements_range.first = new_statements.size();
+            replaced_statements_range.first = static_cast<int>(new_statements.size());
         }
         if (replaced_statements_range.second == -1) {
-            replaced_statements_range.second = new_statements.size();
+            replaced_statements_range.second = static_cast<int>(new_statements.size());
         }
     }
 
@@ -213,11 +213,11 @@ void SympyReplaceSolutionsVisitor::try_replace_tagged_statement(
 void SympyReplaceSolutionsVisitor::visit_diff_eq_expression(ast::DiffEqExpression& node) {
     logger->debug("SympyReplaceSolutionsVisitor :: visit {}", to_nmodl(node));
     auto get_lhs = [](const ast::Node& node) -> const std::shared_ptr<ast::Expression>& {
-        return static_cast<const ast::DiffEqExpression&>(node).get_expression()->get_lhs();
+        return dynamic_cast<const ast::DiffEqExpression&>(node).get_expression()->get_lhs();
     };
 
     auto get_rhs = [](const ast::Node& node) -> const std::shared_ptr<ast::Expression>& {
-        return static_cast<const ast::DiffEqExpression&>(node).get_expression()->get_rhs();
+        return dynamic_cast<const ast::DiffEqExpression&>(node).get_expression()->get_rhs();
     };
 
     try_replace_tagged_statement(node, get_lhs, get_rhs);
@@ -226,11 +226,11 @@ void SympyReplaceSolutionsVisitor::visit_diff_eq_expression(ast::DiffEqExpressio
 void SympyReplaceSolutionsVisitor::visit_lin_equation(ast::LinEquation& node) {
     logger->debug("SympyReplaceSolutionsVisitor :: visit {}", to_nmodl(node));
     auto get_lhs = [](const ast::Node& node) -> const std::shared_ptr<ast::Expression>& {
-        return static_cast<const ast::LinEquation&>(node).get_left_linxpression();
+        return dynamic_cast<const ast::LinEquation&>(node).get_left_linxpression();
     };
 
     auto get_rhs = [](const ast::Node& node) -> const std::shared_ptr<ast::Expression>& {
-        return static_cast<const ast::LinEquation&>(node).get_left_linxpression();
+        return dynamic_cast<const ast::LinEquation&>(node).get_left_linxpression();
     };
 
     try_replace_tagged_statement(node, get_lhs, get_rhs);
@@ -240,11 +240,11 @@ void SympyReplaceSolutionsVisitor::visit_lin_equation(ast::LinEquation& node) {
 void SympyReplaceSolutionsVisitor::visit_non_lin_equation(ast::NonLinEquation& node) {
     logger->debug("SympyReplaceSolutionsVisitor :: visit {}", to_nmodl(node));
     auto get_lhs = [](const ast::Node& node) -> const std::shared_ptr<ast::Expression>& {
-        return static_cast<const ast::NonLinEquation&>(node).get_lhs();
+        return dynamic_cast<const ast::NonLinEquation&>(node).get_lhs();
     };
 
     auto get_rhs = [](const ast::Node& node) -> const std::shared_ptr<ast::Expression>& {
-        return static_cast<const ast::NonLinEquation&>(node).get_rhs();
+        return dynamic_cast<const ast::NonLinEquation&>(node).get_rhs();
     };
 
     try_replace_tagged_statement(node, get_lhs, get_rhs);
@@ -307,6 +307,7 @@ SympyReplaceSolutionsVisitor::StatementDispenser::StatementDispenser(
  * - b : 1
  *
  */
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void SympyReplaceSolutionsVisitor::StatementDispenser::build_maps() {
     for (size_t ii = 0; ii < statements.size(); ++ii) {
         const auto& statement = statements[ii];

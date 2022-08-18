@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -22,6 +23,10 @@
  * \file
  * \brief Units processing while being processed from lexer and parser
  */
+
+namespace {
+constexpr std::size_t output_precision{8};
+}
 
 namespace nmodl {
 namespace units {
@@ -42,6 +47,8 @@ void Unit::add_base_unit(const std::string& name) {
     // name = "*[a-j]*" which is a base unit
     const auto dim_name = name[1];
     const int dim_no = dim_name - 'a';
+    assert(dim_no >= 0 && dim_no < unit_dimensions.size());
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index)
     unit_dimensions[dim_no] = 1;
     add_nominator_unit(name);
 }
@@ -87,7 +94,7 @@ void Unit::mul_factor(const double double_factor) {
 }
 
 void Unit::add_fraction(const std::string& fraction_string) {
-    double nom, denom;
+    double nom{}, denom{};
     std::string nominator;
     std::string denominator;
     std::string::const_iterator it;
@@ -105,8 +112,8 @@ void Unit::add_fraction(const std::string& fraction_string) {
 }
 
 double Unit::parse_double(std::string double_string) {
-    long double d_number;
-    double d_magnitude;
+    long double d_number{};
+    double d_magnitude{};
     std::string s_number;
     std::string s_magnitude;
     std::string::const_iterator it;
@@ -135,9 +142,11 @@ double Unit::parse_double(std::string double_string) {
     } else {
         d_magnitude = std::stod(s_magnitude);
     }
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     return static_cast<double>(d_number * powl(10.0, d_magnitude) * sign);
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void UnitTable::calc_nominator_dims(const std::shared_ptr<Unit>& unit, std::string nominator_name) {
     double nominator_prefix_factor = 1.0;
     int nominator_power = 1;
@@ -163,7 +172,8 @@ void UnitTable::calc_nominator_dims(const std::shared_ptr<Unit>& unit, std::stri
                     changed_nominator_name = 1;
                     nominator_prefix_factor *= it.second;
                     nominator_name.erase(nominator_name.begin(),
-                                         nominator_name.begin() + it.first.size());
+                                         nominator_name.begin() +
+                                             static_cast<std::ptrdiff_t>(it.first.size()));
                 }
             }
         }
@@ -211,6 +221,7 @@ void UnitTable::calc_nominator_dims(const std::shared_ptr<Unit>& unit, std::stri
     }
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void UnitTable::calc_denominator_dims(const std::shared_ptr<Unit>& unit,
                                       std::string denominator_name) {
     double denominator_prefix_factor = 1.0;
@@ -238,7 +249,8 @@ void UnitTable::calc_denominator_dims(const std::shared_ptr<Unit>& unit,
                     changed_denominator_name = 1;
                     denominator_prefix_factor *= it.second;
                     denominator_name.erase(denominator_name.begin(),
-                                           denominator_name.begin() + it.first.size());
+                                           denominator_name.begin() +
+                                               static_cast<std::ptrdiff_t>(it.first.size()));
                 }
             }
         }
@@ -293,7 +305,10 @@ void UnitTable::insert(const std::shared_ptr<Unit>& unit) {
         (unit_nominator.front().front() == '*' && unit_nominator.front().back() == '*');
     if (only_base_unit_nominator) {
         // base_units_names[i] = "*i-th base unit*" (ex. base_units_names[0] = "*a*")
-        base_units_names[unit_nominator.front()[1] - 'a'] = unit->get_name();
+        auto const index = unit_nominator.front()[1] - 'a';
+        assert(index >= 0 && index < base_units_names.size());
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index)
+        base_units_names[index] = unit->get_name();
         // if  unit is found in table replace it
         auto find_unit_name = table.find(unit->get_name());
         if (find_unit_name == table.end()) {
@@ -328,7 +343,7 @@ void UnitTable::insert_prefix(const std::shared_ptr<Prefix>& prfx) {
 
 void UnitTable::print_units() const {
     for (const auto& it: table) {
-        std::cout << std::fixed << std::setprecision(8) << it.first << ' '
+        std::cout << std::fixed << std::setprecision(output_precision) << it.first << ' '
                   << it.second->get_factor() << ':';
         for (const auto& dims: it.second->get_dimensions()) {
             std::cout << ' ' << dims;
@@ -357,7 +372,7 @@ void UnitTable::print_units_sorted(std::ostream& units_details) const {
                                                                                table.end());
     std::sort(sorted_elements.begin(), sorted_elements.end());
     for (const auto& it: sorted_elements) {
-        units_details << std::fixed << std::setprecision(8) << it.first << ' '
+        units_details << std::fixed << std::setprecision(output_precision) << it.first << ' '
                       << it.second->get_factor() << ':';
         for (const auto& dims: it.second->get_dimensions()) {
             units_details << ' ' << dims;

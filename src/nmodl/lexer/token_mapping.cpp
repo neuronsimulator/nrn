@@ -323,7 +323,8 @@ bool needs_neuron_thread_first_arg(const std::string& token) {
  * The passes like scope checker needs to know if certain variable is
  * undefined and hence these needs to be inserted into symbol table
  */
-static std::vector<std::string> NEURON_VARIABLES = {"t", "dt", "celsius", "v", "diam", "area"};
+static std::vector<std::string> const NEURON_VARIABLES =
+    {"t", "dt", "celsius", "v", "diam", "area"};
 
 
 /// Return token type for the keyword

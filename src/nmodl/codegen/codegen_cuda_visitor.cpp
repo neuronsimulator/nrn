@@ -125,7 +125,7 @@ void CodegenCudaVisitor::print_fast_imem_calculation() {
  * For GPU backend its thread id less than total channel instances. Below we
  * assume we launch 1-d grid.
  */
-void CodegenCudaVisitor::print_channel_iteration_block_begin(BlockType type) {
+void CodegenCudaVisitor::print_channel_iteration_block_begin(BlockType /* type */) {
     printer->add_line("int id = blockIdx.x * blockDim.x + threadIdx.x;");
     printer->start_block("if (id < end) ");
 }

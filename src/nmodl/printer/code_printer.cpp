@@ -33,9 +33,9 @@ void CodePrinter::start_block() {
     indent_level++;
 }
 
-void CodePrinter::start_block(std::string&& text) {
+void CodePrinter::start_block(std::string&& expression) {
     add_indent();
-    *result << text << " {";
+    *result << expression << " {";
     add_newline();
     indent_level++;
 }

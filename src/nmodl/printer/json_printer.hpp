@@ -84,7 +84,7 @@ class JSONPrinter {
 
     void push_block(const std::string& value, const std::string& key = "name");
     void add_node(std::string value, const std::string& key = "name");
-    void add_block_property(std::string name, const std::string& value);
+    void add_block_property(std::string const& name, const std::string& value);
     void pop_block();
     void flush();
 

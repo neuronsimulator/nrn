@@ -7,14 +7,17 @@
 
 #include "utils/string_utils.hpp"
 
+#include <cassert>
+
 namespace nmodl {
 namespace test_utils {
 
 int count_leading_spaces(std::string text) {
-    int length = text.size();
+    auto const length = text.size();
     nmodl::stringutils::ltrim(text);
-    int num_whitespaces = length - text.size();
-    return num_whitespaces;
+    auto const num_whitespaces = length - text.size();
+    assert(num_whitespaces <= std::numeric_limits<int>::max());
+    return static_cast<int>(num_whitespaces);
 }
 
 /// check if string has only whitespaces

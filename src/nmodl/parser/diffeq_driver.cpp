@@ -24,7 +24,9 @@ void DiffeqDriver::parse_equation(const std::string& equation,
     rhs = stringutils::trim(parts[1]);
 
     /// expect prime on lhs, find order and remove quote
-    order = std::count(state.begin(), state.end(), '\'');
+    auto const wide_order = std::count(state.begin(), state.end(), '\'');
+    assert(wide_order >= 0 && wide_order <= std::numeric_limits<int>::max());
+    order = static_cast<int>(wide_order);
     stringutils::remove_character(state, '\'');
 
     /// error if no prime in equation or not an assignment statement
@@ -36,7 +38,7 @@ void DiffeqDriver::parse_equation(const std::string& equation,
 std::string DiffeqDriver::solve(const std::string& equation, std::string method, bool debug) {
     std::string state, rhs;
     int order = 0;
-    bool cnexp_possible;
+    bool cnexp_possible{};
     parse_equation(equation, state, rhs, order);
     return solve_equation(state, order, rhs, method, cnexp_possible, debug);
 }
@@ -62,7 +64,7 @@ std::string DiffeqDriver::solve_equation(std::string& state,
 bool DiffeqDriver::cnexp_possible(const std::string& equation, std::string& solution) {
     std::string state, rhs;
     int order = 0;
-    bool cnexp_possible;
+    bool cnexp_possible{};
     std::string method = "cnexp";
     parse_equation(equation, state, rhs, order);
     solution = solve_equation(state, order, rhs, method, cnexp_possible);

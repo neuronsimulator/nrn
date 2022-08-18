@@ -62,7 +62,7 @@ void KineticBlockVisitor::process_reac_var(const std::string& varname, int count
 
 void KineticBlockVisitor::process_conserve_reac_var(const std::string& varname, int count) {
     // subtract previous term from both sides of equation
-    if (conserve_equation_statevar != "") {
+    if (!conserve_equation_statevar.empty()) {
         if (conserve_equation_factor.empty()) {
             conserve_equation_str += " - " + conserve_equation_statevar;
 
@@ -134,9 +134,9 @@ void KineticBlockVisitor::visit_conserve(ast::Conserve& node) {
                                       conserve_equation_str);
     auto expr = std::dynamic_pointer_cast<ast::Conserve>(statement);
     // set react (lhs) of CONSERVE to the state variable whose ODE should be replaced
-    node.set_react(std::move(expr->get_react()));
+    node.set_react(expr->get_react());
     // set expr (rhs) of CONSERVE to the equation that should replace the ODE
-    node.set_expr(std::move(expr->get_expr()));
+    node.set_expr(expr->get_expr());
 
     logger->debug("KineticBlockVisitor :: --> {}", to_nmodl(node));
 }
@@ -176,7 +176,8 @@ void KineticBlockVisitor::visit_reaction_operator(ast::ReactionOperator& node) {
     }
 }
 
-void KineticBlockVisitor::visit_react_var_name(ast::ReactVarName& node) {
+void KineticBlockVisitor::visit_react_var_name(
+    ast::ReactVarName& node) {  // NOLINT(readability-function-cognitive-complexity)
     // ReactVarName node contains a VarName and an Integer
     // the VarName is the state variable which we convert to an index
     // the Integer is the value to be added to the stoichiometric matrix at this index
@@ -196,6 +197,7 @@ void KineticBlockVisitor::visit_react_var_name(ast::ReactVarName& node) {
     }
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void KineticBlockVisitor::visit_reaction_statement(ast::ReactionStatement& node) {
     statements_to_remove.insert(&node);
 
@@ -475,9 +477,9 @@ void KineticBlockVisitor::visit_program(ast::Program& node) {
     for (auto* kinetic_block: kinetic_blocks) {
         for (auto it = blocks.begin(); it != blocks.end(); ++it) {
             if (it->get() == kinetic_block) {
-                auto dblock = std::make_shared<ast::DerivativeBlock>(
-                    std::move(kinetic_block->get_name()),
-                    std::move(kinetic_block->get_statement_block()));
+                auto dblock =
+                    std::make_shared<ast::DerivativeBlock>(kinetic_block->get_name(),
+                                                           kinetic_block->get_statement_block());
                 ModToken tok{};
                 dblock->set_token(tok);
                 *it = dblock;

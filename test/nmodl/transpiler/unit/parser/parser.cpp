@@ -217,8 +217,7 @@ SCENARIO("Check parents in valid NMODL constructs") {
 //=============================================================================
 
 std::string solve_construct(const std::string& equation, std::string method) {
-    nmodl::parser::DiffeqDriver driver;
-    auto solution = driver.solve(equation, std::move(method));
+    auto solution = nmodl::parser::DiffeqDriver::solve(equation, std::move(method));
     return solution;
 }
 

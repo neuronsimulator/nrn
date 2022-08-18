@@ -19,7 +19,6 @@ using namespace nmodl;
 using namespace visitor;
 using namespace test_utils;
 
-using ast::AstNodeType;
 using nmodl::parser::NmodlDriver;
 using symtab::syminfo::NmodlType;
 

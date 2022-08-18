@@ -35,27 +35,27 @@ class DiffeqParser;
  */
 class DiffeqDriver {
   private:
-    std::string solve_equation(std::string& state,
-                               int order,
-                               std::string& rhs,
-                               std::string& method,
-                               bool& cnexp_possible,
-                               bool debug = false);
+    static std::string solve_equation(std::string& state,
+                                      int order,
+                                      std::string& rhs,
+                                      std::string& method,
+                                      bool& cnexp_possible,
+                                      bool debug = false);
 
     /// parse given equation into lhs, rhs and find it's order and state variable
-    void parse_equation(const std::string& equation,
-                        std::string& state,
-                        std::string& rhs,
-                        int& order);
+    static void parse_equation(const std::string& equation,
+                               std::string& state,
+                               std::string& rhs,
+                               int& order);
 
   public:
     DiffeqDriver() = default;
 
     /// solve equation using provided method
-    std::string solve(const std::string& equation, std::string method, bool debug = false);
+    static std::string solve(const std::string& equation, std::string method, bool debug = false);
 
     /// check if given equation can be solved using cnexp method
-    bool cnexp_possible(const std::string& equation, std::string& solution);
+    static bool cnexp_possible(const std::string& equation, std::string& solution);
 };
 
 /** @} */  // end of parser

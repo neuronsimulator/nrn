@@ -17,6 +17,7 @@ namespace symtab {
 namespace syminfo {
 
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 std::vector<std::string> to_string_vector(const NmodlType& obj) {
     std::vector<std::string> properties;
 

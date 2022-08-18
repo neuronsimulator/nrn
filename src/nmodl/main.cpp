@@ -57,6 +57,7 @@ using namespace codegen;
 using namespace visitor;
 using nmodl::parser::NmodlDriver;
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 int main(int argc, const char* argv[]) {
     CLI::App app{fmt::format("NMODL : Source-to-Source Code Generation Framework [{}]",
                              Version::to_string())};
@@ -155,6 +156,7 @@ int main(int argc, const char* argv[]) {
     /// floating point data type
     std::string data_type("double");
 
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     app.get_formatter()->column_width(40);
     app.set_help_all_flag("-H,--help-all", "Print this help message including all sub-commands");
 
@@ -402,7 +404,10 @@ int main(int argc, const char* argv[]) {
         ast_to_nmodl(*ast, filepath("ast"));
 
         if (json_ast) {
-            auto file = scratch_dir + "/" + modfile + ".ast.json";
+            std::string file{scratch_dir};
+            file += "/";
+            file += modfile;
+            file += ".ast.json";
             logger->info("Writing AST into {}", file);
             JSONVisitor(file).write(*ast);
         }
@@ -516,7 +521,10 @@ int main(int argc, const char* argv[]) {
         }
 
         if (json_perfstat) {
-            auto file = scratch_dir + "/" + modfile + ".perf.json";
+            std::string file{scratch_dir};
+            file.append("/");
+            file.append(modfile);
+            file.append(".perf.json");
             logger->info("Writing performance statistics to {}", file);
             PerfVisitor(file).visit_program(*ast);
         }

@@ -20,7 +20,7 @@ using syminfo::NmodlType;
 using syminfo::Status;
 
 
-int SymbolTable::Table::counter = 0;
+int SymbolTable::Table::counter = 0;  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
 /**
  *  Insert symbol into current symbol table. There are certain
@@ -46,13 +46,11 @@ std::shared_ptr<Symbol> SymbolTable::Table::lookup(const std::string& name) cons
 }
 
 
-SymbolTable::SymbolTable(const SymbolTable& table) {
-    symtab_name = table.name();
-    global = table.global_scope();
-    node = nullptr;
-    parent = nullptr;
-}
-
+SymbolTable::SymbolTable(const SymbolTable& table)
+    : symtab_name{table.name()}
+    , global{table.global_scope()}
+    , node{nullptr}
+    , parent{nullptr} {}
 
 bool SymbolTable::is_method_defined(const std::string& name) const {
     auto symbol = lookup_in_scope(name);
@@ -108,7 +106,8 @@ std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables_with_properties(
 }
 
 /// return all symbol which has all "with" properties and none of the "without" properties
-std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables(NmodlType with, NmodlType without) {
+std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables(NmodlType with,
+                                                                NmodlType without) const {
     auto variables = get_variables_with_properties(with, true);
     decltype(variables) result;
     for (auto& variable: variables) {

@@ -24,6 +24,10 @@ using namespace test_utils;
 
 using nmodl::parser::NmodlDriver;
 
+namespace {
+constexpr std::size_t output_precision{8};
+}
+
 //=============================================================================
 // Unit visitor tests
 //=============================================================================
@@ -55,8 +59,8 @@ std::string run_units_visitor(const std::string& text) {
         auto unit_name = unit_def->get_node_name();
         unit_name.erase(remove_if(unit_name.begin(), unit_name.end(), isspace), unit_name.end());
         auto unit = units_driver.table->get_unit(unit_name);
-        ss << std::fixed << std::setprecision(8) << unit->get_name() << ' ' << unit->get_factor()
-           << ':';
+        ss << std::fixed << std::setprecision(output_precision) << unit->get_name() << ' '
+           << unit->get_factor() << ':';
         // Dimensions of the unit are printed to check that the units are successfully
         // parsed to the units::UnitTable
         int dimension_id = 0;
@@ -80,7 +84,7 @@ std::string run_units_visitor(const std::string& text) {
     const auto& factor_defs = collect_nodes(*ast, {ast::AstNodeType::FACTOR_DEF});
     for (const auto& factor_def: factor_defs) {
         auto unit = units_driver.table->get_unit(factor_def->get_node_name());
-        ss << std::fixed << std::setprecision(8) << unit->get_name() << ' ';
+        ss << std::fixed << std::setprecision(output_precision) << unit->get_name() << ' ';
         auto factor_def_class = std::dynamic_pointer_cast<const nmodl::ast::FactorDef>(factor_def);
         ss << factor_def_class->get_value()->eval() << ':';
         // Dimensions of the unit are printed to check that the units are successfully

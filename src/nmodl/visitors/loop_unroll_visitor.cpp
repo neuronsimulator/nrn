@@ -61,18 +61,18 @@ class IndexRemover: public AstVisitor {
         if (under_indexed_name) {
             /// first recursively replaces children
             /// replace lhs & rhs if they have matching index variable
-            const auto& lhs = replace_for_name(node.get_lhs());
-            const auto& rhs = replace_for_name(node.get_rhs());
+            auto lhs = replace_for_name(node.get_lhs());
+            auto rhs = replace_for_name(node.get_rhs());
             node.set_lhs(std::move(lhs));
             node.set_rhs(std::move(rhs));
         }
     }
 
-    virtual void visit_indexed_name(ast::IndexedName& node) override {
+    void visit_indexed_name(ast::IndexedName& node) override {
         under_indexed_name = true;
         node.visit_children(*this);
         /// once all children are replaced, do the same for index
-        const auto& length = replace_for_name(node.get_length());
+        auto length = replace_for_name(node.get_length());
         node.set_length(std::move(length));
         under_indexed_name = false;
     }
