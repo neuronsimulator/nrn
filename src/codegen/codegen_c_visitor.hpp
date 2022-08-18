@@ -501,7 +501,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * \param node The AST Statement node to check
      * \return     \c true if this Statement is to be skipped
      */
-    bool statement_to_skip(const ast::Statement& node) const;
+    static bool statement_to_skip(const ast::Statement& node);
 
 
     /**
@@ -509,7 +509,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * \param node The AST Statement node to check
      * \return     \c true if this Statement requires a semicolon
      */
-    bool need_semicolon(ast::Statement* node) const;
+    static bool need_semicolon(ast::Statement* node);
 
 
     /**
@@ -624,7 +624,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * \param symbol The symbol of a variable for which we want to obtain its name
      * \return       The C string representing the access to the shadow variable
      */
-    std::string ion_shadow_variable_name(const SymbolType& symbol) const;
+    static std::string ion_shadow_variable_name(const SymbolType& symbol);
 
 
     /**
@@ -699,7 +699,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * \param params The parameters that should be concatenated into the function parameter
      * declaration \return The string representing the declaration of function parameters
      */
-    std::string get_parameter_str(const ParamVector& params);
+    static std::string get_parameter_str(const ParamVector& params);
 
 
     /**
@@ -729,7 +729,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * \param text The verbatim code to be processed
      * \return     The code with all variables renamed as needed
      */
-    std::string process_verbatim_text(std::string text);
+    std::string process_verbatim_text(std::string const& text);
 
 
     /**
@@ -778,7 +778,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * \param name The ion variable name
      * \return     The ion read variable name
      */
-    std::pair<std::string, std::string> read_ion_variable_name(const std::string& name) const;
+    static std::pair<std::string, std::string> read_ion_variable_name(const std::string& name);
 
 
     /**
@@ -786,7 +786,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * \param name The ion variable name
      * \return     The ion write variable name
      */
-    std::pair<std::string, std::string> write_ion_variable_name(const std::string& name) const;
+    static std::pair<std::string, std::string> write_ion_variable_name(const std::string& name);
 
 
     /**
@@ -819,7 +819,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * Arguments for external functions called from generated code
      * \return A string representing the arguments passed to an external function
      */
-    std::string external_method_arguments() const;
+    static std::string external_method_arguments();
 
 
     /**
@@ -831,7 +831,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * \param table
      * \return      A string representing the parameters of the function
      */
-    std::string external_method_parameters(bool table = false) const;
+    static std::string external_method_parameters(bool table = false);
 
 
     /**

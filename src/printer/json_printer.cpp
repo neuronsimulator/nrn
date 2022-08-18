@@ -32,17 +32,16 @@ JSONPrinter::JSONPrinter(const std::string& filename) {
 /// Add node to json (typically basic type)
 void JSONPrinter::add_node(std::string value, const std::string& key) {
     if (!block) {
-        auto text = "Block not initialized (push_block missing?)";
-        throw std::logic_error(text);
+        throw std::logic_error{"Block not initialized (push_block missing?)"};
     }
 
     json j;
-    j[key] = value;
-    block->front().push_back(j);
+    j[key] = std::move(value);
+    block->front().push_back(std::move(j));
 }
 
 /// Add property to the block which is added last
-void JSONPrinter::add_block_property(std::string name, const std::string& value) {
+void JSONPrinter::add_block_property(std::string const& name, const std::string& value) {
     if (block == nullptr) {
         logger->warn("JSONPrinter : can't add property without block");
         return;

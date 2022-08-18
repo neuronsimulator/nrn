@@ -44,7 +44,7 @@ using symtab::syminfo::Status;
  * Note that variables in double array do not need this transformation
  * and it seems like they should just follow definition order.
  */
-void CodegenHelperVisitor::sort_with_mod2c_symbol_order(std::vector<SymbolType>& symbols) const {
+void CodegenHelperVisitor::sort_with_mod2c_symbol_order(std::vector<SymbolType>& symbols) {
     /// first sort by global id to get in reverse order
     std::sort(symbols.begin(),
               symbols.end(),
@@ -64,6 +64,7 @@ void CodegenHelperVisitor::sort_with_mod2c_symbol_order(std::vector<SymbolType>&
 /**
  * Find all ions used in mod file
  */
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void CodegenHelperVisitor::find_ion_variables(const ast::Program& node) {
     // collect all use ion statements
     const auto& ion_nodes = collect_nodes(node, {AstNodeType::USEION});
@@ -256,7 +257,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
 
     /// find number of prime variables and total size
     auto primes = psymtab->get_variables_with_properties(NmodlType::prime_name);
-    info.num_primes = primes.size();
+    info.num_primes = static_cast<int>(primes.size());
     for (auto& variable: primes) {
         info.primes_size += variable->get_length();
     }
@@ -474,7 +475,7 @@ void CodegenHelperVisitor::visit_suffix(const Suffix& node) {
 }
 
 
-void CodegenHelperVisitor::visit_electrode_current(const ElectrodeCurrent& node) {
+void CodegenHelperVisitor::visit_electrode_current(const ElectrodeCurrent& /* node */) {
     info.electrode_current = true;
 }
 
@@ -504,7 +505,7 @@ void CodegenHelperVisitor::visit_destructor_block(const DestructorBlock& node) {
 void CodegenHelperVisitor::visit_net_receive_block(const NetReceiveBlock& node) {
     under_net_receive_block = true;
     info.net_receive_node = &node;
-    info.num_net_receive_parameters = node.get_parameters().size();
+    info.num_net_receive_parameters = static_cast<int>(node.get_parameters().size());
     node.visit_children(*this);
     under_net_receive_block = false;
 }
@@ -655,12 +656,12 @@ void CodegenHelperVisitor::visit_binary_expression(const BinaryExpression& node)
 }
 
 
-void CodegenHelperVisitor::visit_bbcore_pointer(const BbcorePointer& node) {
+void CodegenHelperVisitor::visit_bbcore_pointer(const BbcorePointer& /* node */) {
     info.bbcore_pointer_used = true;
 }
 
 
-void CodegenHelperVisitor::visit_watch(const ast::Watch& node) {
+void CodegenHelperVisitor::visit_watch(const ast::Watch& /* node */) {
     info.watch_count++;
 }
 
@@ -671,12 +672,12 @@ void CodegenHelperVisitor::visit_watch_statement(const ast::WatchStatement& node
 }
 
 
-void CodegenHelperVisitor::visit_for_netcon(const ast::ForNetcon& node) {
+void CodegenHelperVisitor::visit_for_netcon(const ast::ForNetcon& /* node */) {
     info.for_netcon_used = true;
 }
 
 
-void CodegenHelperVisitor::visit_table_statement(const ast::TableStatement& node) {
+void CodegenHelperVisitor::visit_table_statement(const ast::TableStatement& /* node */) {
     info.table_count++;
     table_statement_used = true;
 }
@@ -704,19 +705,19 @@ CodegenInfo CodegenHelperVisitor::analyze(const ast::Program& node) {
     return info;
 }
 
-void CodegenHelperVisitor::visit_linear_block(const ast::LinearBlock& node) {
+void CodegenHelperVisitor::visit_linear_block(const ast::LinearBlock& /* node */) {
     info.vectorize = false;
 }
 
-void CodegenHelperVisitor::visit_non_linear_block(const ast::NonLinearBlock& node) {
+void CodegenHelperVisitor::visit_non_linear_block(const ast::NonLinearBlock& /* node */) {
     info.vectorize = false;
 }
 
-void CodegenHelperVisitor::visit_discrete_block(const ast::DiscreteBlock& node) {
+void CodegenHelperVisitor::visit_discrete_block(const ast::DiscreteBlock& /* node */) {
     info.vectorize = false;
 }
 
-void CodegenHelperVisitor::visit_partial_block(const ast::PartialBlock& node) {
+void CodegenHelperVisitor::visit_partial_block(const ast::PartialBlock& /* node */) {
     info.vectorize = false;
 }
 

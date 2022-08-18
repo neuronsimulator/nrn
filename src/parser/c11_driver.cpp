@@ -49,7 +49,7 @@ bool CDriver::parse_string(const std::string& input) {
     return parse_stream(iss);
 }
 
-void CDriver::error(const std::string& m) const {
+void CDriver::error(const std::string& m) {
     std::cerr << m << '\n';
 }
 
@@ -58,7 +58,7 @@ void CDriver::add_token(const std::string& text) {
     // here we will query and look into symbol table or register callback
 }
 
-void CDriver::error(const std::string& m, const location& l) const {
+void CDriver::error(const std::string& m, const location& l) {
     std::cerr << l << " : " << m << '\n';
 }
 

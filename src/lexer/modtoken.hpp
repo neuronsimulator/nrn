@@ -153,7 +153,7 @@ class ModToken {
      *      (a + b) at [118.9-121.5]
      * \endcode
      */
-    friend ModToken operator+(ModToken adder1, ModToken adder2);
+    friend ModToken operator+(ModToken const& adder1, ModToken const& adder2);
 };
 
 /** @} */  // end of token_modtoken

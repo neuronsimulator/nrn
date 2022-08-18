@@ -68,7 +68,7 @@ class CDriver {
     CDriver(bool strace, bool ptrace);
     ~CDriver();
 
-    void error(const std::string& m) const;
+    static void error(const std::string& m);
 
     bool parse_stream(std::istream& in);
     bool parse_string(const std::string& input);
@@ -76,7 +76,7 @@ class CDriver {
     void scan_string(const std::string& text);
     void add_token(const std::string&);
 
-    void error(const std::string& m, const location& l) const;
+    static void error(const std::string& m, const location& l);
 
     void set_verbose(bool b) noexcept {
         verbose = b;

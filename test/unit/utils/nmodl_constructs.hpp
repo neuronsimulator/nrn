@@ -55,9 +55,9 @@ struct DiffEqTestCase {
     std::string method;
 };
 
-extern std::map<std::string, NmodlTestCase> nmodl_invalid_constructs;
-extern std::map<std::string, NmodlTestCase> nmodl_valid_constructs;
-extern std::vector<DiffEqTestCase> diff_eq_constructs;
+extern std::map<std::string, NmodlTestCase> const nmodl_invalid_constructs;
+extern std::map<std::string, NmodlTestCase> const nmodl_valid_constructs;
+extern std::vector<DiffEqTestCase> const diff_eq_constructs;
 
 }  // namespace test_utils
 }  // namespace nmodl

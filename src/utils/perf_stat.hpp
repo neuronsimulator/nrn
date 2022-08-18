@@ -99,9 +99,9 @@ struct PerfStat {
 
     friend PerfStat operator+(const PerfStat& first, const PerfStat& second);
 
-    void print(std::stringstream& stream);
+    void print(std::stringstream& stream) const;
 
-    std::vector<std::string> keys() const;
+    static std::vector<std::string> keys();
 
     std::vector<std::string> values() const;
 };

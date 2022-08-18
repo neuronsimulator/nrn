@@ -5,6 +5,12 @@ tools:
       match:
       - ext/.*
       - src/language/templates/*
+  ClangTidy:
+    enable: true
+    option: ''
+    exclude:
+      match:
+      - src/language/templates/*
   CMakeFormat:
     enable: True
     exclude:

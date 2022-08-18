@@ -44,7 +44,7 @@ void SemanticAnalysisVisitor::visit_function_block(const ast::FunctionBlock& nod
     /// -->
 }
 
-void SemanticAnalysisVisitor::visit_table_statement(const ast::TableStatement&) {
+void SemanticAnalysisVisitor::visit_table_statement(const ast::TableStatement& /* node */) {
     /// <-- This code is for check 1
     if (in_procedure_function && !one_arg_in_procedure_function) {
         logger->critical(
@@ -55,7 +55,7 @@ void SemanticAnalysisVisitor::visit_table_statement(const ast::TableStatement&) 
     /// -->
 }
 
-void SemanticAnalysisVisitor::visit_destructor_block(const ast::DestructorBlock& node) {
+void SemanticAnalysisVisitor::visit_destructor_block(const ast::DestructorBlock& /* node */) {
     /// <-- This code is for check 2
     if (!is_point_process) {
         logger->warn(

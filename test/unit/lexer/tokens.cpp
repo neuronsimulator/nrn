@@ -53,13 +53,13 @@ bool check_token_type(const std::string& name, TokenType type) {
         token_type == get_token_type(Token::DEL) ||
         token_type == get_token_type(Token::DEL2)) {
         auto value = sym.value.as<ast::Name>();
-        REQUIRE(value.get_node_name() != "");
+        REQUIRE(!value.get_node_name().empty());
     }
     // clang-format on
     // prime variable
     else if (token_type == get_token_type(Token::PRIME)) {
         auto value = sym.value.as<ast::PrimeName>();
-        REQUIRE(value.get_node_name() != "");
+        REQUIRE(!value.get_node_name().empty());
     }
     // integer constant
     else if (token_type == get_token_type(Token::INTEGER)) {
@@ -74,19 +74,19 @@ bool check_token_type(const std::string& name, TokenType type) {
     // const char*
     else if (token_type == get_token_type(Token::STRING)) {
         auto value = sym.value.as<ast::String>();
-        REQUIRE(value.get_value() != "");
+        REQUIRE(!value.get_value().empty());
     }
     // string block representation verbatim or block comment
     else if (token_type == get_token_type(Token::VERBATIM) ||
              token_type == get_token_type(Token::BLOCK_COMMENT) ||
              token_type == get_token_type(Token::LINE_PART)) {
         auto value = sym.value.as<std::string>();
-        REQUIRE(value != "");
+        REQUIRE(!value.empty());
     }
     // rest of the tokens
     else {
         auto value = sym.value.as<ModToken>();
-        REQUIRE(value.text() != "");
+        REQUIRE(!value.text().empty());
     }
 
     return sym.type_get() == get_token_type(type);

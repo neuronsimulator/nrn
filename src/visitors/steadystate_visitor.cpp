@@ -15,8 +15,6 @@
 namespace nmodl {
 namespace visitor {
 
-using symtab::syminfo::NmodlType;
-
 std::shared_ptr<ast::DerivativeBlock> SteadystateVisitor::create_steadystate_block(
     const std::shared_ptr<ast::SolveBlock>& solve_block,
     const std::vector<std::shared_ptr<ast::Ast>>& deriv_blocks) {

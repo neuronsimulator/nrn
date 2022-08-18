@@ -137,7 +137,7 @@ void LocalizeVisitor::visit_program(const ast::Program& node) {
                 for (auto& block: block_usage[state]) {
                     auto block_ptr = dynamic_cast<ast::Block*>(block.get());
                     const auto& statement_block = block_ptr->get_statement_block();
-                    ast::LocalVar* variable;
+                    ast::LocalVar* variable{};
                     auto symbol = program_symtab->lookup(varname);
 
                     if (symbol->is_array()) {

@@ -134,7 +134,7 @@ void CodegenAccVisitor::print_net_send_buffering_grow() {
     // can not grow buffer during gpu execution
 }
 
-void CodegenAccVisitor::print_eigen_linear_solver(const std::string& float_type, int N) {
+void CodegenAccVisitor::print_eigen_linear_solver(const std::string& /* float_type */, int N) {
     if (N <= 4) {
         printer->add_line("nmodl_eigen_xm = nmodl_eigen_jm.inverse()*nmodl_eigen_fm;");
     } else {
@@ -275,7 +275,7 @@ void CodegenAccVisitor::print_global_variable_device_update_annotation() {
 
 
 std::string CodegenAccVisitor::get_variable_device_pointer(const std::string& variable,
-                                                           const std::string& type) const {
+                                                           const std::string& /* type */) const {
     if (info.artificial_cell) {
         return variable;
     }

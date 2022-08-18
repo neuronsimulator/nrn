@@ -40,7 +40,7 @@ SCENARIO("Symbol properties can be added and converted to string") {
             }
         }
         WHEN("adding another empty property") {
-            NmodlType result = prop1 | prop1;
+            NmodlType result = prop1 | prop1;  // NOLINT(misc-redundant-expression)
             THEN("to_string still returns empty string") {
                 REQUIRE(to_string(result).empty());
             }
@@ -75,7 +75,7 @@ SCENARIO("Symbol properties can be added and converted to string") {
         }
         WHEN("properties manipulated with bitwise operators") {
             THEN("& applied correctly") {
-                NmodlType result1 = prop2 & prop2;
+                NmodlType result1 = prop2 & prop2;  // NOLINT(misc-redundant-expression)
                 NmodlType result2 = prop1 & prop2;
                 NmodlType result3 = prop1 & prop2 & prop3;
                 REQUIRE(to_string(result1) == "local");

@@ -29,7 +29,9 @@ struct Logger {
     }
 };
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 Logger nmodl_logger("NMODL", "[%n] [%^%l%$] :: %v");
 logger_type logger = nmodl_logger.logger;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 }  // namespace nmodl

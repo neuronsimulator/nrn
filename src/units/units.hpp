@@ -147,7 +147,7 @@ class Unit {
 
     /// Parse a double number given as string. The double can be positive or negative and
     /// have all kinds of representations
-    double parse_double(std::string double_string);
+    static double parse_double(std::string double_string);
 
     /// Getter for the vector of nominators of the Unit
     const std::vector<std::string>& get_nominator_unit() const noexcept {

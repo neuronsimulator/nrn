@@ -68,12 +68,12 @@ class UnitDriver {
 
     /// \}
 
-    void error(const std::string& m);
+    static void error(const std::string& m);
     bool parse_stream(std::istream& in);
     bool parse_string(const std::string& input);
     bool parse_file(const std::string& filename);
     void scan_string(std::string& text);
-    void error(const std::string& m, const location& l);
+    static void error(const std::string& m, const location& l);
 
     void set_verbose(bool b) {
         verbose = b;

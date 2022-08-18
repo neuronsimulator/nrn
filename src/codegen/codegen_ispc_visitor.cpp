@@ -197,7 +197,7 @@ std::string CodegenIspcVisitor::backend_name() const {
 }
 
 
-void CodegenIspcVisitor::print_channel_iteration_tiling_block_begin(BlockType type) {
+void CodegenIspcVisitor::print_channel_iteration_tiling_block_begin(BlockType /* type */) {
     // no tiling for ispc backend but make sure variables are declared as uniform
     printer->add_line("int uniform start = 0;");
     printer->add_line("int uniform end = nodecount;");
@@ -209,7 +209,7 @@ void CodegenIspcVisitor::print_channel_iteration_tiling_block_begin(BlockType ty
  *
  * Use ispc foreach loop
  */
-void CodegenIspcVisitor::print_channel_iteration_block_begin(BlockType type) {
+void CodegenIspcVisitor::print_channel_iteration_block_begin(BlockType /* type */) {
     printer->start_block("foreach (id = start ... end)");
 }
 
@@ -341,7 +341,7 @@ void CodegenIspcVisitor::print_backend_namespace_stop() {
 
 
 CodegenIspcVisitor::ParamVector CodegenIspcVisitor::get_global_function_parms(
-    const std::string& arg_qualifier) {
+    const std::string& /* arg_qualifier */) {
     auto params = ParamVector();
     params.emplace_back(param_type_qualifier(),
                         fmt::format("{}*", instance_struct()),
@@ -366,7 +366,7 @@ void CodegenIspcVisitor::print_global_function_common_code(BlockType type,
                                                            const std::string& function_name) {
     // If we are printing the cpp file, we have to use the c version of this function
     if (wrapper_codegen) {
-        return CodegenCVisitor::print_global_function_common_code(type);
+        return CodegenCVisitor::print_global_function_common_code(type, function_name);
     }
 
     std::string method = compute_method_name(type);
@@ -398,16 +398,12 @@ void CodegenIspcVisitor::print_global_function_common_code(BlockType type,
 
 void CodegenIspcVisitor::print_compute_functions() {
     for (const auto& function: info.functions) {
-        if (!program_symtab->lookup(function->get_node_name())
-                 .get()
-                 ->has_all_status(Status::inlined)) {
+        if (!program_symtab->lookup(function->get_node_name())->has_all_status(Status::inlined)) {
             print_function(*function);
         }
     }
     for (const auto& procedure: info.procedures) {
-        if (!program_symtab->lookup(procedure->get_node_name())
-                 .get()
-                 ->has_all_status(Status::inlined)) {
+        if (!program_symtab->lookup(procedure->get_node_name())->has_all_status(Status::inlined)) {
             print_procedure(*procedure);
         }
     }

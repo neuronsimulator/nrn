@@ -143,7 +143,7 @@ class SymbolTable {
      */
     std::vector<std::shared_ptr<Symbol>> get_variables(
         syminfo::NmodlType with = syminfo::NmodlType::empty,
-        syminfo::NmodlType without = syminfo::NmodlType::empty);
+        syminfo::NmodlType without = syminfo::NmodlType::empty) const;
 
     /**
      * get variables with properties

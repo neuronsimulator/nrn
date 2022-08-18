@@ -63,7 +63,7 @@ PerfStat operator+(const PerfStat& first, const PerfStat& second) {
     return result;
 }
 
-void PerfStat::print(std::stringstream& stream) {
+void PerfStat::print(std::stringstream& stream) const {
     TableData table;
     table.headers = keys();
     table.rows.push_back(values());
@@ -73,7 +73,7 @@ void PerfStat::print(std::stringstream& stream) {
     table.print(stream);
 }
 
-std::vector<std::string> PerfStat::keys() const {
+std::vector<std::string> PerfStat::keys() {
     return {"+",       "-",       "x",          "/",          "exp",     "log",     "GM-R(T)",
             "GM-R(U)", "GM-W(T)", "GM-W(U)",    "CM-R(T)",    "CM-R(U)", "CM-W(T)", "CM-W(U)",
             "LM-R(T)", "LM-W(T)", "calls(ext)", "calls(int)", "compare", "unary",   "conditional"};

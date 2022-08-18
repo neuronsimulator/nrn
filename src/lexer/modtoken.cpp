@@ -24,11 +24,12 @@ std::string ModToken::position() const {
 }
 
 std::ostream& operator<<(std::ostream& stream, const ModToken& mt) {
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     stream << std::setw(15) << mt.name << " at [" << mt.position() << "]";
     return stream << " type " << mt.token;
 }
 
-ModToken operator+(ModToken adder1, ModToken adder2) {
+ModToken operator+(ModToken const& adder1, ModToken const& adder2) {
     LocationType sum_pos = adder1.pos + adder2.pos;
     ModToken sum(adder1.name, adder1.token, sum_pos);
 

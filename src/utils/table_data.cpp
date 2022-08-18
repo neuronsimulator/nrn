@@ -5,6 +5,7 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
+#include <cassert>
 #include <iostream>
 #include <numeric>
 
@@ -29,7 +30,7 @@ namespace utils {
  */
 
 void TableData::print(std::ostream& stream, int indent) const {
-    const int PADDING = 1;
+    constexpr std::size_t PADDING{1};
 
     /// not necessary to print empty table
     if (rows.empty() || headers.empty()) {
@@ -37,10 +38,11 @@ void TableData::print(std::ostream& stream, int indent) const {
     }
 
     /// based on indentation level, spaces to prefix
-    auto gutter = std::string(indent * 4, ' ');
+    assert(indent >= 0);
+    auto gutter = std::string(static_cast<std::size_t>(indent) * 4, ' ');
 
-    auto ncolumns = headers.size();
-    std::vector<unsigned> col_width(ncolumns);
+    auto const ncolumns = headers.size();
+    std::vector<std::size_t> col_width(ncolumns);
 
     /// alignment is optional, so fill remaining with right alignment
     auto all_alignments = alignments;
@@ -50,7 +52,7 @@ void TableData::print(std::ostream& stream, int indent) const {
     }
 
     /// calculate space required for each column
-    unsigned row_width = 0;
+    std::size_t row_width{};
     for (unsigned i = 0; i < headers.size(); i++) {
         col_width[i] = headers[i].length() + PADDING;
         row_width += col_width[i];
@@ -59,8 +61,8 @@ void TableData::print(std::ostream& stream, int indent) const {
     /// if title is larger than headers then every column
     /// width needs to be scaled
     if (title.length() > row_width) {
-        int extra_size = title.length() - row_width;
-        int column_pad = extra_size / ncolumns;
+        auto const extra_size = title.length() - row_width;
+        auto column_pad = extra_size / ncolumns;
         if ((extra_size % ncolumns) != 0) {
             column_pad++;
         }
@@ -81,8 +83,10 @@ void TableData::print(std::ostream& stream, int indent) const {
     std::stringstream header;
     header << "| ";
     for (size_t i = 0; i < headers.size(); i++) {
-        auto text =
-            stringutils::align_text(headers[i], col_width[i], stringutils::text_alignment::center);
+        assert(col_width[i] <= std::numeric_limits<int>::max());
+        auto text = stringutils::align_text(headers[i],
+                                            static_cast<int>(col_width[i]),
+                                            stringutils::text_alignment::center);
         header << text << " | ";
     }
 
@@ -91,8 +95,10 @@ void TableData::print(std::ostream& stream, int indent) const {
 
     /// title row
     if (!title.empty()) {
-        auto fmt_title =
-            stringutils::align_text(title, row_width - 3, stringutils::text_alignment::center);
+        assert(row_width >= 3 && row_width - 3 <= std::numeric_limits<int>::max());
+        auto fmt_title = stringutils::align_text(title,
+                                                 static_cast<int>(row_width - 3),
+                                                 stringutils::text_alignment::center);
         stream << '\n' << gutter << separator_line;
         stream << '\n' << gutter << '|' << fmt_title << '|';
     }
@@ -106,7 +112,11 @@ void TableData::print(std::ostream& stream, int indent) const {
     for (const auto& row: rows) {
         stream << '\n' << gutter << "| ";
         for (unsigned i = 0; i < row.size(); i++) {
-            stream << stringutils::align_text(row[i], col_width[i], all_alignments[i]) << " | ";
+            assert(col_width[i] <= std::numeric_limits<int>::max());
+            stream << stringutils::align_text(row[i],
+                                              static_cast<int>(col_width[i]),
+                                              all_alignments[i])
+                   << " | ";
         }
     }
 

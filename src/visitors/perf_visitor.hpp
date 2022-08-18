@@ -133,11 +133,11 @@ class PerfVisitor: public ConstAstVisitor {
 
     void update_memory_ops(const std::string& name);
 
-    bool symbol_to_skip(const std::shared_ptr<symtab::Symbol>& symbol);
+    bool symbol_to_skip(const std::shared_ptr<symtab::Symbol>& symbol) const;
 
-    bool is_local_variable(const std::shared_ptr<symtab::Symbol>& symbol) const;
+    static bool is_local_variable(const std::shared_ptr<symtab::Symbol>& symbol);
 
-    bool is_constant_variable(const std::shared_ptr<symtab::Symbol>& symbol) const;
+    static bool is_constant_variable(const std::shared_ptr<symtab::Symbol>& symbol);
 
     void count_variables();
 

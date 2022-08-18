@@ -7,6 +7,7 @@
 
 #include "common_utils.hpp"
 
+#include <array>
 #include <cassert>
 #include <cerrno>
 #include <fstream>
@@ -14,6 +15,7 @@
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <sys/stat.h>
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
@@ -32,7 +34,7 @@ bool is_dir_exist(const std::string& path) {
 }
 
 bool file_exists(const std::string& path) {
-    struct stat info;
+    struct stat info {};
     return stat(path.c_str(), &info) == 0;
 }
 
@@ -45,15 +47,14 @@ bool file_is_abs(const std::string& path) {
 }
 
 std::string cwd() {
-    char cwd[MAXPATHLEN + 1];
-
-    if (nullptr == getcwd(cwd, MAXPATHLEN + 1)) {
+    std::array<char, MAXPATHLEN + 1> cwd{};
+    if (nullptr == getcwd(cwd.data(), MAXPATHLEN + 1)) {
         throw std::runtime_error("working directory name too long");
     }
-    return {cwd};
+    return {cwd.data()};
 }
 bool make_path(const std::string& path) {
-    mode_t mode = 0755;
+    mode_t mode = 0755;  // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     int ret = mkdir(path.c_str(), mode);
     if (ret == 0) {
         return true;
@@ -63,7 +64,7 @@ bool make_path(const std::string& path) {
     case ENOENT:
         // parent didn't exist, try to create it
         {
-            int pos = path.find_last_of('/');
+            auto const pos = path.find_last_of('/');
             if (pos == std::string::npos) {
                 return false;
             }
@@ -103,14 +104,16 @@ TempFile::~TempFile() {
 
 std::string generate_random_string(const int len, UseNumbersInString use_numbers) {
     std::string s(len, 0);
-    static const char alphanum[] =
+    constexpr std::size_t number_of_numbers{10};
+    constexpr std::string_view alphanum{
         "0123456789"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
+        "abcdefghijklmnopqrstuvwxyz"};
     std::random_device dev;
     std::mt19937 rng(dev());
-    std::uniform_int_distribution<std::mt19937::result_type> dist(use_numbers ? 0 : 10,
-                                                                  sizeof(alphanum) - 2);
+    std::uniform_int_distribution<std::mt19937::result_type> dist(use_numbers ? 0
+                                                                              : number_of_numbers,
+                                                                  alphanum.size() - 1);
     for (int i = 0; i < len; ++i) {
         s[i] = alphanum[dist(rng)];
     }

@@ -1,0 +1,26 @@
+Checks: >
+  boost-*,
+  bugprone-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  misc-*,
+  mpi-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-exception-escape,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -misc-no-recursion,
+  -misc-non-private-member-variables-in-classes,
+  -readability-else-after-return,
+  -readability-identifier-length,
+  -readability-implicit-bool-conversion,
+  -readability-isolate-declaration,
+  -readability-qualified-auto,
+  -readability-uppercase-literal-suffix,
+CheckOptions:
+  - key:   readability-function-cognitive-complexity.IgnoreMacros
+    value: true
+FormatStyle:     none

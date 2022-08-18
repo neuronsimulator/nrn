@@ -78,6 +78,7 @@ TEST_CASE("Addition of two ModToken objects", "[token][modtoken]") {
         {
             std::stringstream ss;
 
+            // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
             nmodl::parser::position adder1_begin(nullptr, 1, 1);
             nmodl::parser::position adder1_end(nullptr, 1, 5);
             LocationType adder1_location(adder1_begin, adder1_end);
@@ -85,6 +86,7 @@ TEST_CASE("Addition of two ModToken objects", "[token][modtoken]") {
 
             nmodl::parser::position adder2_begin(nullptr, 2, 1);
             nmodl::parser::position adder2_end(nullptr, 2, 5);
+            // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
             LocationType adder2_location(adder2_begin, adder2_end);
             ModToken adder2("text", 2, adder2_location);
 

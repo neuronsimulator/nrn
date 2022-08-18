@@ -91,15 +91,16 @@ class SympySolverVisitor: public AstVisitor {
 
     /// Function used by SympySolverVisitor::filter_X to replace the name X in a std::string
     /// to X_operator
-    std::string& replaceAll(std::string& context,
-                            const std::string& from,
-                            const std::string& to) const;
+    static std::string& replaceAll(std::string& context,
+                                   const std::string& from,
+                                   const std::string& to);
 
     /// Check original_vector for elements that contain a variable named original_string and
     /// rename it to substitution_string
-    std::vector<std::string> filter_string_vector(const std::vector<std::string>& original_vector,
-                                                  const std::string& original_string,
-                                                  const std::string& substitution_string) const;
+    static std::vector<std::string> filter_string_vector(
+        const std::vector<std::string>& original_vector,
+        const std::string& original_string,
+        const std::string& substitution_string);
 
     /// global variables
     std::set<std::string> global_vars;

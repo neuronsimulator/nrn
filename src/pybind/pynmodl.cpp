@@ -33,18 +33,18 @@ namespace nmodl {
 /** \brief docstring of Python exposed API */
 namespace docstring {
 
-static const char* driver = R"(
+static const char* const driver = R"(
     This is the NmodlDriver class documentation
 )";
 
-static const char* driver_ast = R"(
+static const char* const driver_ast = R"(
     Get ast
 
     Returns:
         Instance of :py:class:`Program`
 )";
 
-static const char* driver_parse_string = R"(
+static const char* const driver_parse_string = R"(
     Parse NMODL provided as a string
 
     Args:
@@ -55,7 +55,7 @@ static const char* driver_parse_string = R"(
     >>> ast = driver.parse_string("DEFINE NSTEP 6")
 )";
 
-static const char* driver_parse_file = R"(
+static const char* const driver_parse_file = R"(
     Parse NMODL provided as a file
 
     Args:
@@ -65,7 +65,7 @@ static const char* driver_parse_file = R"(
         AST: ast root node if success, throws an exception otherwise
 )";
 
-static const char* driver_parse_stream = R"(
+static const char* const driver_parse_stream = R"(
     Parse NMODL file provided as istream
 
     Args:
@@ -75,7 +75,7 @@ static const char* driver_parse_stream = R"(
         AST: ast root node if success, throws an exception otherwise
 )";
 
-static const char* to_nmodl = R"(
+static const char* const to_nmodl = R"(
     Given AST node, return the NMODL string representation
 
     Args:
@@ -90,7 +90,7 @@ static const char* to_nmodl = R"(
     'NEURON {\n}\n'
 )";
 
-static const char* to_json = R"(
+static const char* const to_json = R"(
     Given AST node, return the JSON string representation
 
     Args:
@@ -114,7 +114,7 @@ static const char* to_json = R"(
  */
 class PyNmodlDriver: public nmodl::parser::NmodlDriver {
   public:
-    std::shared_ptr<nmodl::ast::Program> parse_stream(py::object object) {
+    std::shared_ptr<nmodl::ast::Program> parse_stream(py::object const& object) {
         py::object tiob = py::module::import("io").attr("TextIOBase");
         if (py::isinstance(object, tiob)) {
             py::detail::pythonibuf<py::str> buf(object);
@@ -139,7 +139,7 @@ PYBIND11_MODULE(_nmodl, m_nmodl) {
     m_nmodl.doc() = "NMODL : Source-to-Source Code Generation Framework";
     m_nmodl.attr("__version__") = nmodl::Version::NMODL_VERSION;
 
-    py::class_<nmodl::parser::NmodlDriver>(m_nmodl, "nmodl::parser::NmodlDriver");
+    py::class_<nmodl::parser::NmodlDriver> _{m_nmodl, "nmodl::parser::NmodlDriver"};
     py::class_<nmodl::PyNmodlDriver, nmodl::parser::NmodlDriver> nmodl_driver(
         m_nmodl, "NmodlDriver", nmodl::docstring::driver);
     nmodl_driver.def(py::init<>())

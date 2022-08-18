@@ -159,7 +159,7 @@ class InlineVisitor: public AstVisitor {
     std::map<std::string, int> inlined_variables;
 
     /// true if given statement block can be inlined
-    bool can_inline_block(const ast::StatementBlock& block) const;
+    static bool can_inline_block(const ast::StatementBlock& block);
 
     /// true if statement can be replaced with inlined body
     /// this is possible for standalone function/procedure call as statement
@@ -182,7 +182,7 @@ class InlineVisitor: public AstVisitor {
 
     /// add assignment statement at end of block (to use as a return statement
     /// in case of procedure blocks)
-    void add_return_variable(ast::StatementBlock& block, std::string& varname);
+    static void add_return_variable(ast::StatementBlock& block, std::string& varname);
 
   public:
     InlineVisitor() = default;

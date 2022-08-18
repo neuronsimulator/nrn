@@ -45,7 +45,6 @@ venv.bak/
 
 # HPC coding conventions
 .clang-format
-.clang-tidy
 .cmake-format.yaml
 .pre-commit-config.yaml
 .ipynb_checkpoints

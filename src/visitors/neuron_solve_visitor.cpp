@@ -54,12 +54,10 @@ void NeuronSolveVisitor::visit_binary_expression(ast::BinaryExpression& node) {
 
     if (name->is_prime_name()) {
         auto equation = to_nmodl(node);
-        parser::DiffeqDriver diffeq_driver;
-
         if (solve_method == codegen::naming::CNEXP_METHOD) {
             std::string solution;
             /// check if ode can be solved with cnexp method
-            if (diffeq_driver.cnexp_possible(equation, solution)) {
+            if (parser::DiffeqDriver::cnexp_possible(equation, solution)) {
                 auto statement = create_statement(solution);
                 auto expr_statement = std::dynamic_pointer_cast<ast::ExpressionStatement>(
                     statement);
@@ -72,7 +70,7 @@ void NeuronSolveVisitor::visit_binary_expression(ast::BinaryExpression& node) {
                              to_nmodl(node));
             }
         } else if (solve_method == codegen::naming::EULER_METHOD) {
-            std::string solution = diffeq_driver.solve(equation, solve_method);
+            std::string solution = parser::DiffeqDriver::solve(equation, solve_method);
             auto statement = create_statement(solution);
             auto expr_statement = std::dynamic_pointer_cast<ast::ExpressionStatement>(statement);
             const auto bin_expr = std::dynamic_pointer_cast<const ast::BinaryExpression>(

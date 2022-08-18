@@ -16,8 +16,6 @@
 namespace nmodl {
 namespace codegen {
 
-using symtab::syminfo::NmodlType;
-
 const std::map<ast::AstNodeType, CodegenCompatibilityVisitor::FunctionPointer>
     CodegenCompatibilityVisitor::unhandled_ast_types_func(
         {{AstNodeType::MATCH_BLOCK,
@@ -39,13 +37,14 @@ const std::map<ast::AstNodeType, CodegenCompatibilityVisitor::FunctionPointer>
 
 
 std::string CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandled(
-    ast::Ast& node,
+    ast::Ast& /* node */,
     const std::shared_ptr<ast::Ast>& ast_node) {
     auto solve_block_ast_node = std::dynamic_pointer_cast<ast::SolveBlock>(ast_node);
     std::stringstream unhandled_method_error_message;
     auto method = solve_block_ast_node->get_method();
-    if (method == nullptr)
+    if (!method) {
         return "";
+    }
     auto unhandled_solver_method = handled_solvers.find(method->get_node_name()) ==
                                    handled_solvers.end();
     if (unhandled_solver_method) {
@@ -58,6 +57,7 @@ std::string CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandl
     return unhandled_method_error_message.str();
 }
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::string CodegenCompatibilityVisitor::return_error_global_var(
     ast::Ast& node,
     const std::shared_ptr<ast::Ast>& ast_node) {
@@ -73,6 +73,7 @@ std::string CodegenCompatibilityVisitor::return_error_global_var(
     return error_message_global_var.str();
 }
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::string CodegenCompatibilityVisitor::return_error_param_var(
     ast::Ast& node,
     const std::shared_ptr<ast::Ast>& ast_node) {
@@ -88,9 +89,10 @@ std::string CodegenCompatibilityVisitor::return_error_param_var(
     return error_message_global_var.str();
 }
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::string CodegenCompatibilityVisitor::return_error_if_no_bbcore_read_write(
     ast::Ast& node,
-    const std::shared_ptr<ast::Ast>& ast_node) {
+    const std::shared_ptr<ast::Ast>& /* ast_node */) {
     std::stringstream error_message_no_bbcore_read_write;
     const auto& verbatim_nodes = collect_nodes(node, {AstNodeType::VERBATIM});
     auto found_bbcore_read = false;
@@ -154,8 +156,9 @@ bool CodegenCompatibilityVisitor::find_unhandled_ast_nodes(Ast& node) {
         std::string line;
         std::istringstream ss_stringstream(ss.str());
         while (std::getline(ss_stringstream, line)) {
-            if (!line.empty())
+            if (!line.empty()) {
                 logger->error(fmt::format("Code Incompatibility :: {}", line));
+            }
         }
         return true;
     }

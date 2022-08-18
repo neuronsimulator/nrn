@@ -115,7 +115,7 @@ void PerfVisitor::visit_binary_expression(const ast::BinaryExpression& node) {
 
 /// add performance stats to json printer
 void PerfVisitor::add_perf_to_printer(const PerfStat& perf) const {
-    const auto& keys = perf.keys();
+    const auto& keys = nmodl::utils::PerfStat::keys();
     const auto& values = perf.values();
     assert(keys.size() == values.size());
 
@@ -249,12 +249,12 @@ void PerfVisitor::count_variables() {
     /// state variables have state_var property
     property = NmodlType::state_var;
     variables = current_symtab->get_variables_with_properties(property);
-    num_state_variables = variables.size();
+    num_state_variables = static_cast<int>(variables.size());
 
     /// pointer variables have pointer/bbcorepointer
     property = NmodlType::pointer_var | NmodlType::bbcore_pointer_var;
     variables = current_symtab->get_variables_with_properties(property);
-    num_pointer_variables = variables.size();
+    num_pointer_variables = static_cast<int>(variables.size());
 
 
     /// number of global variables : parameters and pointers could appear also
@@ -497,7 +497,7 @@ void PerfVisitor::visit_unary_expression(const ast::UnaryExpression& node) {
  * count for "exp" symbol. Same for solve statement where name will
  * be derivative block name and neuron solver method.
  */
-bool PerfVisitor::symbol_to_skip(const std::shared_ptr<Symbol>& symbol) {
+bool PerfVisitor::symbol_to_skip(const std::shared_ptr<Symbol>& symbol) const {
     bool skip = false;
 
     auto is_method = symbol->has_any_property(NmodlType::extern_method | NmodlType::function_block);
@@ -513,7 +513,7 @@ bool PerfVisitor::symbol_to_skip(const std::shared_ptr<Symbol>& symbol) {
     return skip;
 }
 
-bool PerfVisitor::is_local_variable(const std::shared_ptr<Symbol>& symbol) const {
+bool PerfVisitor::is_local_variable(const std::shared_ptr<Symbol>& symbol) {
     bool is_local = false;
     /// in the function when we write to function variable then consider it as local variable
     auto properties = NmodlType::local_var | NmodlType::argument | NmodlType::function_block;
@@ -523,7 +523,7 @@ bool PerfVisitor::is_local_variable(const std::shared_ptr<Symbol>& symbol) const
     return is_local;
 }
 
-bool PerfVisitor::is_constant_variable(const std::shared_ptr<Symbol>& symbol) const {
+bool PerfVisitor::is_constant_variable(const std::shared_ptr<Symbol>& symbol) {
     bool is_constant = false;
     auto properties = NmodlType::param_assign;
     if (symbol->has_any_property(properties)) {
