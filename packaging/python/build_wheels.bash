@@ -172,6 +172,14 @@ build_wheel_osx() {
       fi
     fi
 
+    if [[ -n ${MACOSX_DEPLOYMENT_TARGET+x} && -n ${_PYTHON_HOST_PLATFORM+x} ]]; then
+      shopt -s extglob
+      new=${_PYTHON_HOST_PLATFORM/-+([[:digit:]]).+([[:digit:]])-/-${MACOSX_DEPLOYMENT_TARGET}-}
+      shopt -u extglob
+      echo " - Modifying _PYTHON_HOST_PLATFORM from ${_PYTHON_HOST_PLATFORM} to ${new}"
+      export _PYTHON_HOST_PLATFORM="${new}"
+    fi
+
     python setup.py build_ext --cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
     echo " - Calling delocate-listdeps"

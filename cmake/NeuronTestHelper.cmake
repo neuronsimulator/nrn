@@ -169,7 +169,8 @@ function(nrn_add_test_group)
     # Collect the list of modfiles that need to be compiled.
     set(modfiles)
     foreach(modfile_pattern ${NRN_ADD_TEST_GROUP_MODFILE_PATTERNS})
-      file(GLOB pattern_modfiles "${test_source_directory}/${modfile_pattern}")
+      file(GLOB pattern_modfiles
+           "${test_source_directory}/${NRN_ADD_TEST_GROUP_SIM_DIRECTORY}/${modfile_pattern}")
       list(APPEND modfiles ${pattern_modfiles})
     endforeach()
     if("${modfiles}" STREQUAL "")
@@ -287,7 +288,7 @@ function(nrn_add_test)
     if(NOT DEFINED feature_${required_feature}_enabled)
       message(FATAL_ERROR "Unknown feature ${required_feature} used in REQUIRES expression")
     endif()
-    if(NOT ${feature_${required_feature}_enabled})
+    if(NOT feature_${required_feature}_enabled)
       message(
         STATUS
           "Disabling ${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}: ${required_feature} not enabled")
@@ -300,9 +301,9 @@ function(nrn_add_test)
   # Check CONFLICTS
   foreach(conflicting_feature ${NRN_ADD_TEST_CONFLICTS})
     if(NOT DEFINED feature_${conflicting_feature}_enabled)
-      message(FATAL_ERROR "Unknown feature ${conflicting_feature} used in REQUIRES expression")
+      message(FATAL_ERROR "Unknown feature ${conflicting_feature} used in CONFLICTS expression")
     endif()
-    if(${feature_${conflicting_feature}_enabled})
+    if(feature_${conflicting_feature}_enabled)
       message(
         STATUS
           "Disabling ${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}: ${conflicting_feature} enabled")
@@ -341,11 +342,6 @@ function(nrn_add_test)
   # Finally a working directory for this specific test within the group
   set(working_directory "${PROJECT_BINARY_DIR}/test/${NRN_ADD_TEST_GROUP}/${NRN_ADD_TEST_NAME}")
   file(MAKE_DIRECTORY "${working_directory}")
-  if(NOT ${sim_directory} STREQUAL "")
-    set(simulation_directory ${working_directory}/${sim_directory})
-  else()
-    set(simulation_directory ${working_directory})
-  endif()
   if(DEFINED nrnivmodl_directory)
     execute_process(
       COMMAND
@@ -359,14 +355,14 @@ function(nrn_add_test)
     # end up with {build_directory}/path/to/test_working_directory/path/to/script.py
     file(
       GLOB_RECURSE script_files
-      RELATIVE "${test_source_directory}"
-      "${test_source_directory}/${script_pattern}")
+      RELATIVE "${test_source_directory}/${sim_directory}"
+      "${test_source_directory}/${sim_directory}/${script_pattern}")
     foreach(script_file ${script_files})
       # We use NO_TARGET because otherwise we would in some cases generate a lot of
       # build-time-copy-{hash} top-level targets, which the Makefile build system struggles with.
       # Instead we make a single top-level target that depends on all scripts copied for this test.
       cpp_cc_build_time_copy(
-        INPUT "${test_source_directory}/${script_file}"
+        INPUT "${test_source_directory}/${sim_directory}/${script_file}"
         OUTPUT "${working_directory}/${script_file}"
         NO_TARGET)
       list(APPEND all_copied_script_files "${working_directory}/${script_file}")
@@ -438,13 +434,13 @@ function(nrn_add_test)
   add_test(
     NAME "${test_name}"
     COMMAND ${CMAKE_COMMAND} -E env ${test_env} ${NRN_ADD_TEST_COMMAND}
-    WORKING_DIRECTORY "${simulation_directory}")
+    WORKING_DIRECTORY "${working_directory}")
   set(test_names ${test_name})
   if(NRN_ADD_TEST_PRECOMMAND)
     add_test(
       NAME ${test_name}::preparation
       COMMAND ${CMAKE_COMMAND} -E env ${test_env} ${NRN_ADD_TEST_PRECOMMAND}
-      WORKING_DIRECTORY "${simulation_directory}")
+      WORKING_DIRECTORY "${working_directory}")
     list(APPEND test_names ${test_name}::preparation)
     set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
   endif()
@@ -457,7 +453,7 @@ function(nrn_add_test)
   set(output_file_string "${NRN_ADD_TEST_NAME}")
   foreach(output_file ${output_files})
     # output_file is `type1::fname1` output_full_path is `type1::${working_directory}/fname1`
-    string(REGEX REPLACE "^([^:]+)::(.*)$" "\\1::${simulation_directory}/\\2" output_full_path
+    string(REGEX REPLACE "^([^:]+)::(.*)$" "\\1::${working_directory}/\\2" output_full_path
                          "${output_file}")
     set(output_file_string "${output_file_string}::${output_full_path}")
   endforeach()

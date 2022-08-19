@@ -1,26 +1,34 @@
 include(NeuronTestHelper)
-set(prefix "sim") # everything is under this prefix in the repository
 set(olfactory_bulb_3d_sim_time 50)
 set(olfactory_bulb_3d_mpi_ranks 4)
+if(NRN_ENABLE_CORENEURON AND NOT CORENRN_ENABLE_SHARED)
+  set(launch_executable special)
+  set(olfactory_bulb_3d_neuron_args -mpi -python)
+else()
+  set(launch_executable ${PYTHON_EXECUTABLE})
+  # SIM_DIRECTORY means that the working directory is one level below the one where nrnivmodl was
+  # run... NRN_NMODL_PATH=..
+  set(extra_env NEURON_INIT_MPI=1)
+endif()
+list(APPEND olfactory_bulb_3d_neuron_args bulb3dtest.py)
 set(olfactory_bulb_3d_neuron_prefix
     ${MPIEXEC_NAME}
     ${MPIEXEC_NUMPROC_FLAG}
     ${olfactory_bulb_3d_mpi_ranks}
     ${MPIEXEC_OVERSUBSCRIBE}
     ${MPIEXEC_PREFLAGS}
-    special
+    ${launch_executable}
     ${MPIEXEC_POSTFLAGS})
 
 nrn_add_test_group(
   CORENEURON
   NAME olfactory-bulb-3d
   SUBMODULE tests/olfactory-bulb-3d
-  ENVIRONMENT OMP_NUM_THREADS=1
+  ENVIRONMENT OMP_NUM_THREADS=1 ${extra_env}
   OUTPUT asciispikes::olfactory_bulb.spikes.dat.000
-  MODFILE_PATTERNS "${prefix}/*.mod"
-  SCRIPT_PATTERNS "${prefix}/*.py" "${prefix}/*.txt" "${prefix}/*.hoc" "${prefix}/*.dic"
-  SIM_DIRECTORY ${prefix})
-set(olfactory_bulb_3d_neuron_args -mpi -python "bulb3dtest.py")
+  MODFILE_PATTERNS "*.mod"
+  SCRIPT_PATTERNS "*.py" "*.txt" "*.hoc" "*.dic"
+  SIM_DIRECTORY sim)
 nrn_add_test(
   GROUP olfactory-bulb-3d
   NAME neuron
