@@ -15,6 +15,7 @@ set(ringtest_prefix ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${ringtest_mpi_ranks
                     ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS})
 set(ringtest_special ${ringtest_prefix} special ${MPIEXEC_POSTFLAGS} -mpi -python ringtest.py)
 set(ringtest_special_core ${ringtest_prefix} special-core ${MPIEXEC_POSTFLAGS})
+set(ringtest_python ${ringtest_prefix} ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} ringtest.py)
 
 # Step 2 -- add configurations to the group (e.g. here NEURON without MPI) When CoreNEURON is
 # enabled then TABLE statements are disabled in hh.mod, which causes slight numerical differences in
@@ -34,6 +35,14 @@ nrn_add_test(
   REQUIRES mod_compatibility mpi python
   PROCESSORS ${ringtest_mpi_ranks}
   COMMAND ${ringtest_special} -tstop 100)
+
+nrn_add_test(
+  GROUP external_ringtest
+  NAME neuron_mpi_python
+  REQUIRES mod_compatibility mpi python
+  PROCESSORS ${ringtest_mpi_ranks}
+  ENVIRONMENT NEURON_INIT_MPI=1
+  COMMAND ${ringtest_python} -tstop 100)
 
 foreach(processor cpu gpu)
   if("${processor}" STREQUAL "gpu")
@@ -78,6 +87,13 @@ foreach(processor cpu gpu)
     COMMAND ${ringtest_special} -tstop 100 -coreneuron ${gpu_arg})
   nrn_add_test(
     GROUP external_ringtest
+    NAME coreneuron_${processor}_mpi_python
+    REQUIRES coreneuron_shared mpi python ${processor}
+    PROCESSORS ${ringtest_mpi_ranks}
+    ENVIRONMENT NEURON_INIT_MPI=1
+    COMMAND ${ringtest_python} -tstop 100 -coreneuron ${gpu_arg})
+  nrn_add_test(
+    GROUP external_ringtest
     NAME coreneuron_${processor}_mpi_offline
     REQUIRES coreneuron mpi python ${processor}
     CONFLICTS mpi_dynamic
@@ -98,6 +114,13 @@ foreach(processor cpu gpu)
     PROCESSORS ${ringtest_mpi_ranks_times_threads}
     ENVIRONMENT OMP_NUM_THREADS=${ringtest_num_threads}
     COMMAND ${ringtest_special} -tstop 100 -coreneuron -nt ${ringtest_num_datasets} ${gpu_arg})
+  nrn_add_test(
+    GROUP external_ringtest
+    NAME coreneuron_${processor}_mpi_threads_python
+    REQUIRES coreneuron_shared mpi python ${processor}
+    PROCESSORS ${ringtest_mpi_ranks_times_threads}
+    ENVIRONMENT OMP_NUM_THREADS=${ringtest_num_threads} NEURON_INIT_MPI=1
+    COMMAND ${ringtest_python} -tstop 100 -coreneuron -nt ${ringtest_num_datasets} ${gpu_arg})
 endforeach()
 # Step 3 -- add a job that compares the outputs of all the tests added in Step 2
 nrn_add_test_group_comparison(

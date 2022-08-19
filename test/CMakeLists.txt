@@ -248,7 +248,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   # ${modtests_launch_py_mpi} is constructed (notably the use of ${MPIEXEC_NAME} instead of
   # ${MPIEXEC}) then first refer to GitHub issue #894 and note that nrn_add_test prefixes the
   # command with ${CMAKE_COMMAND} -E env.
-  if(NOT ${CORENRN_ENABLE_SHARED})
+  if(NOT CORENRN_ENABLE_SHARED)
     # ${nrniv_mpi_arg} is not enough here, it crashes without -mpi even if CoreNEURON reports are
     # disabled.
     set(modtests_launch_hoc special -notatty -mpi)
