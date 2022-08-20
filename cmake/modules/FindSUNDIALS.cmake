@@ -30,7 +30,11 @@ ExternalProject_Add(
             -DPTHREAD_ENABLE=ON -DSUNDIALS_PRECISION=double
             -DUSE_GENERIC_MATH=ON -DCMAKE_BUILD_TYPE=RelWitDebInfo
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_SHARED_LIBS=OFF
-          
+          BUILD_BYPRODUCTS  <INSTALL_DIR>/lib/libsundials_ida.a 
+                            <INSTALL_DIR>/lib/libsundials_cvode.a
+                            <INSTALL_DIR>/lib/libsundials_nvecserial.a
+                            <INSTALL_DIR>/lib/libsundials_nvecpthreads.a
+                            <INSTALL_DIR>/lib/libsundials_nvecparallel.a  
  )
 
 add_library(SUNDIALS INTERFACE IMPORTED)
