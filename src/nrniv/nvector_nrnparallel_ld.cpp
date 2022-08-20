@@ -17,7 +17,8 @@
  */
 
 #define USELONGDOUBLE 1
-
+#define SUNTRUE true
+#define SUNFALSE false
 #include <../../nrnconf.h>
 #include <hocassrt.h>
 
@@ -41,8 +42,8 @@ extern int nrnmpi_numprocs;
 #else
 extern MPI_Comm nrnmpi_comm;
 #endif
-#include "sundialsmath.h"
-#include "sundialstypes.h"
+#include <sundials/sundials_math.h>
+#include <sundials/sundials_types.h> /* definition of type realtype*/
 
 #define ZERO   RCONST(0.0)
 #define HALF   RCONST(0.5)
@@ -171,7 +172,7 @@ N_Vector N_VNewEmpty_NrnParallelLD(MPI_Comm comm, long int local_length, long in
     content->local_length = local_length;
     content->global_length = global_length;
     content->comm = comm;
-    content->own_data = FALSE;
+    content->own_data = SUNFALSE;
     content->data = NULL;
 
     /* Attach content and ops */
@@ -205,7 +206,7 @@ extern "C" N_Vector N_VNew_NrnParallelLD(MPI_Comm comm,
         }
 
         /* Attach data */
-        NV_OWN_DATA_P_LD(v) = TRUE;
+        NV_OWN_DATA_P_LD(v) = SUNTRUE;
         NV_DATA_P_LD(v) = data;
     }
 
@@ -273,7 +274,7 @@ N_Vector N_VCloneEmpty_NrnParallelLD(N_Vector w) {
     content->local_length = NV_LOCLENGTH_P_LD(w);
     content->global_length = NV_GLOBLENGTH_P_LD(w);
     content->comm = NV_COMM_P_LD(w);
-    content->own_data = FALSE;
+    content->own_data = SUNFALSE;
     content->data = NULL;
 
     /* Attach content and ops */
@@ -299,7 +300,7 @@ N_Vector N_VMake_NrnParallelLD(MPI_Comm comm,
 
     if (local_length > 0) {
         /* Attach data */
-        NV_OWN_DATA_P_LD(v) = FALSE;
+        NV_OWN_DATA_P_LD(v) = SUNFALSE;
         NV_DATA_P_LD(v) = v_data;
     }
 
@@ -428,7 +429,7 @@ N_Vector N_VClone_NrnParallelLD(N_Vector w) {
         }
 
         /* Attach data */
-        NV_OWN_DATA_P_LD(v) = TRUE;
+        NV_OWN_DATA_P_LD(v) = SUNTRUE;
         NV_DATA_P_LD(v) = data;
     }
 
@@ -436,14 +437,14 @@ N_Vector N_VClone_NrnParallelLD(N_Vector w) {
 }
 
 void N_VDestroy_NrnParallelLD(N_Vector v) {
-    if ((NV_OWN_DATA_P_LD(v) == TRUE) && (NV_DATA_P_LD(v) != NULL))
+    if ((NV_OWN_DATA_P_LD(v) == SUNTRUE) && (NV_DATA_P_LD(v) != NULL))
         free(NV_DATA_P_LD(v));
     free(v->content);
     free(v->ops);
     free(v);
 }
 
-void N_VSpace_NrnParallelLD(N_Vector v, long int* lrw, long int* liw) {
+void N_VSpace_NrnParallelLD(N_Vector v, long * lrw, long * liw) {
     MPI_Comm comm;
     int npes;
 
@@ -621,7 +622,7 @@ void N_VAbs_NrnParallelLD(N_Vector x, N_Vector z) {
     zd = NV_DATA_P_LD(z);
 
     for (i = 0; i < N; i++, xd++, zd++)
-        *zd = ABS(*xd);
+        *zd = SUNRabs(*xd);
 }
 
 void N_VInv_NrnParallelLD(N_Vector x, N_Vector z) {
@@ -677,8 +678,8 @@ realtype N_VMaxNorm_NrnParallelLD(N_Vector x) {
     max = ZERO;
 
     for (i = 0; i < N; i++, xd++) {
-        if (ABS(*xd) > max)
-            max = ABS(*xd);
+        if (SUNRabs(*xd) > max)
+            max = SUNRabs(*xd);
     }
 
     gmax = VAllReduce_NrnParallelLD(max, 2, comm);
@@ -703,7 +704,7 @@ realtype N_VWrmsNorm_NrnParallelLD(N_Vector x, N_Vector w) {
     }
 
     gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
-    return (RSqrt((realtype) gsum / N_global));
+    return (SUNRsqrt((realtype) gsum / N_global));
 }
 
 realtype N_VWrmsNormMask_NrnParallelLD(N_Vector x, N_Vector w, N_Vector id) {
@@ -727,7 +728,7 @@ realtype N_VWrmsNormMask_NrnParallelLD(N_Vector x, N_Vector w, N_Vector id) {
     }
 
     gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
-    return (RSqrt((realtype) gsum / N_global));
+    return (SUNRsqrt((realtype) gsum / N_global));
 }
 
 realtype N_VMin_NrnParallelLD(N_Vector x) {
@@ -773,7 +774,7 @@ realtype N_VWL2Norm_NrnParallelLD(N_Vector x, N_Vector w) {
     }
 
     gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
-    return (RSqrt((realtype) gsum));
+    return (SUNRsqrt((realtype) gsum));
 }
 
 realtype N_VL1Norm_NrnParallelLD(N_Vector x) {
@@ -787,7 +788,7 @@ realtype N_VL1Norm_NrnParallelLD(N_Vector x) {
     comm = NV_COMM_P_LD(x);
 
     for (i = 0; i < N; i++, xd++)
-        sum += ABS(*xd);
+        sum += SUNRabs(*xd);
 
     gsum = VAllReduce_long_NrnParallelLD((realtype) sum, 1, comm);
     return (gsum);
@@ -802,7 +803,7 @@ void N_VCompare_NrnParallelLD(realtype c, N_Vector x, N_Vector z) {
     zd = NV_DATA_P_LD(z);
 
     for (i = 0; i < N; i++, xd++, zd++) {
-        *zd = (ABS(*xd) >= c) ? ONE : ZERO;
+        *zd = (SUNRabs(*xd) >= c) ? ONE : ZERO;
     }
 }
 
@@ -826,9 +827,9 @@ booleantype N_VInvTest_NrnParallelLD(N_Vector x, N_Vector z) {
 
     gval = VAllReduce_NrnParallelLD(val, 3, comm);
     if (gval == ZERO)
-        return (FALSE);
+        return (SUNFALSE);
     else
-        return (TRUE);
+        return (SUNTRUE);
 }
 
 booleantype N_VConstrMask_NrnParallelLD(N_Vector c, N_Vector x, N_Vector m) {
@@ -843,7 +844,7 @@ booleantype N_VConstrMask_NrnParallelLD(N_Vector c, N_Vector x, N_Vector m) {
     md = NV_DATA_P_LD(m);
     comm = NV_COMM_P_LD(x);
 
-    test = TRUE;
+    test = SUNTRUE;
 
     for (i = 0; i < N; i++, cd++, xd++, md++) {
         *md = ZERO;
@@ -851,14 +852,14 @@ booleantype N_VConstrMask_NrnParallelLD(N_Vector c, N_Vector x, N_Vector m) {
             continue;
         if (*cd > ONEPT5 || (*cd) < -ONEPT5) {
             if ((*xd) * (*cd) <= ZERO) {
-                test = FALSE;
+                test = SUNFALSE;
                 *md = ONE;
             }
             continue;
         }
         if ((*cd) > HALF || (*cd) < -HALF) {
             if ((*xd) * (*cd) < ZERO) {
-                test = FALSE;
+                test = SUNFALSE;
                 *md = ONE;
             }
         }
@@ -878,7 +879,7 @@ realtype N_VMinQuotient_NrnParallelLD(N_Vector num, N_Vector denom) {
     dd = NV_DATA_P_LD(denom);
     comm = NV_COMM_P_LD(num);
 
-    notEvenOnce = TRUE;
+    notEvenOnce = SUNTRUE;
 
     for (i = 0; i < N; i++, nd++, dd++) {
         if (*dd == ZERO)
@@ -886,9 +887,9 @@ realtype N_VMinQuotient_NrnParallelLD(N_Vector num, N_Vector denom) {
         else {
             if (notEvenOnce) {
                 min = *nd / *dd;
-                notEvenOnce = FALSE;
+                notEvenOnce = SUNFALSE;
             } else
-                min = MIN(min, (*nd) / (*dd));
+                min = SUNMIN(min, (*nd) / (*dd));
         }
     }
 

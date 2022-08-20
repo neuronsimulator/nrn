@@ -33,8 +33,8 @@
 #include <stdlib.h>
 
 #include "nvector_nrnserial_ld.h"
-#include "shared/sundialsmath.h"
-#include "shared/sundialstypes.h"
+#include <sundials/sundials_types.h> /* defs. of realtype, sunindextype */
+#include <sundials/sundials_math.h>
 
 #define ZERO   RCONST(0.0)
 #define HALF   RCONST(0.5)
@@ -130,7 +130,7 @@ N_Vector N_VNewEmpty_NrnSerialLD(long int length) {
     }
 
     content->length = length;
-    content->own_data = FALSE;
+    content->own_data = SUNFALSE;
     content->data = NULL;
 
     /* Attach content and ops */
@@ -166,7 +166,7 @@ N_Vector N_VNew_NrnSerialLD(long int length) {
         }
 
         /* Attach data */
-        NV_OWN_DATA_S_LD(v) = TRUE;
+        NV_OWN_DATA_S_LD(v) = SUNTRUE;
         NV_DATA_S_LD(v) = data;
     }
 
@@ -231,7 +231,7 @@ N_Vector N_VCloneEmpty_NrnSerialLD(N_Vector w) {
     }
 
     content->length = NV_LENGTH_S_LD(w);
-    content->own_data = FALSE;
+    content->own_data = SUNFALSE;
     content->data = NULL;
 
     /* Attach content and ops */
@@ -254,7 +254,7 @@ N_Vector N_VMake_NrnSerialLD(long int length, realtype* v_data) {
 
     if (length > 0) {
         /* Attach data */
-        NV_OWN_DATA_S_LD(v) = FALSE;
+        NV_OWN_DATA_S_LD(v) = SUNFALSE;
         NV_DATA_S_LD(v) = v_data;
     }
 
@@ -380,7 +380,7 @@ N_Vector N_VClone_NrnSerialLD(N_Vector w) {
         }
 
         /* Attach data */
-        NV_OWN_DATA_S_LD(v) = TRUE;
+        NV_OWN_DATA_S_LD(v) = SUNTRUE;
         NV_DATA_S_LD(v) = data;
     }
 
@@ -388,14 +388,14 @@ N_Vector N_VClone_NrnSerialLD(N_Vector w) {
 }
 
 void N_VDestroy_NrnSerialLD(N_Vector v) {
-    if (NV_OWN_DATA_S_LD(v) == TRUE)
+    if (NV_OWN_DATA_S_LD(v) == SUNTRUE)
         free(NV_DATA_S_LD(v));
     free(v->content);
     free(v->ops);
     free(v);
 }
 
-void N_VSpace_NrnSerialLD(N_Vector v, long int* lrw, long int* liw) {
+void N_VSpace_NrnSerialLD(N_Vector v, long * lrw, long * liw) {
     *lrw = NV_LENGTH_S_LD(v);
     *liw = 1;
 }
@@ -563,7 +563,7 @@ void N_VAbs_NrnSerialLD(N_Vector x, N_Vector z) {
     zd = NV_DATA_S_LD(z);
 
     for (i = 0; i < N; i++, xd++, zd++)
-        *zd = ABS(*xd);
+        *zd = SUNRabs(*xd);
 }
 
 void N_VInv_NrnSerialLD(N_Vector x, N_Vector z) {
@@ -612,8 +612,8 @@ realtype N_VMaxNorm_NrnSerialLD(N_Vector x) {
     xd = NV_DATA_S_LD(x);
 
     for (i = 0; i < N; i++, xd++) {
-        if (ABS(*xd) > max)
-            max = ABS(*xd);
+        if (SUNRabs(*xd) > max)
+            max = SUNRabs(*xd);
     }
 
     return (max);
@@ -633,7 +633,7 @@ realtype N_VWrmsNorm_NrnSerialLD(N_Vector x, N_Vector w) {
         sum += prodi * prodi;
     }
 
-    return (RSqrt((realtype) sum / N));
+    return (SUNRsqrt((realtype) sum / N));
 }
 
 realtype N_VWrmsNormMask_NrnSerialLD(N_Vector x, N_Vector w, N_Vector id) {
@@ -653,7 +653,7 @@ realtype N_VWrmsNormMask_NrnSerialLD(N_Vector x, N_Vector w, N_Vector id) {
         }
     }
 
-    return (RSqrt((realtype) sum / N));
+    return (SUNRsqrt((realtype) sum / N));
 }
 
 realtype N_VMin_NrnSerialLD(N_Vector x) {
@@ -688,7 +688,7 @@ realtype N_VWL2Norm_NrnSerialLD(N_Vector x, N_Vector w) {
         sum += prodi * prodi;
     }
 
-    return (RSqrt((realtype) sum));
+    return (SUNRsqrt((realtype) sum));
 }
 
 realtype N_VL1Norm_NrnSerialLD(N_Vector x) {
@@ -700,7 +700,7 @@ realtype N_VL1Norm_NrnSerialLD(N_Vector x) {
     xd = NV_DATA_S_LD(x);
 
     for (i = 0; i < N; i++)
-        sum += ABS(xd[i]);
+        sum += SUNRabs(xd[i]);
 
     return ((realtype) sum);
 }
@@ -727,7 +727,7 @@ void N_VCompare_NrnSerialLD(realtype c, N_Vector x, N_Vector z) {
     zd = NV_DATA_S_LD(z);
 
     for (i = 0; i < N; i++, xd++, zd++) {
-        *zd = (ABS(*xd) >= c) ? ONE : ZERO;
+        *zd = (SUNRabs(*xd) >= c) ? ONE : ZERO;
     }
 }
 
@@ -741,11 +741,11 @@ booleantype N_VInvTest_NrnSerialLD(N_Vector x, N_Vector z) {
 
     for (i = 0; i < N; i++) {
         if (*xd == ZERO)
-            return (FALSE);
+            return (SUNFALSE);
         *zd++ = ONE / (*xd++);
     }
 
-    return (TRUE);
+    return (SUNTRUE);
 }
 
 booleantype N_VConstrMask_NrnSerialLD(N_Vector c, N_Vector x, N_Vector m) {
@@ -758,7 +758,7 @@ booleantype N_VConstrMask_NrnSerialLD(N_Vector c, N_Vector x, N_Vector m) {
     cd = NV_DATA_S_LD(c);
     md = NV_DATA_S_LD(m);
 
-    test = TRUE;
+    test = SUNTRUE;
 
     for (i = 0; i < N; i++, cd++, xd++, md++) {
         *md = ZERO;
@@ -766,14 +766,14 @@ booleantype N_VConstrMask_NrnSerialLD(N_Vector c, N_Vector x, N_Vector m) {
             continue;
         if (*cd > ONEPT5 || (*cd) < -ONEPT5) {
             if ((*xd) * (*cd) <= ZERO) {
-                test = FALSE;
+                test = SUNFALSE;
                 *md = ONE;
             }
             continue;
         }
         if ((*cd) > HALF || (*cd) < -HALF) {
             if ((*xd) * (*cd) < ZERO) {
-                test = FALSE;
+                test = SUNFALSE;
                 *md = ONE;
             }
         }
@@ -790,7 +790,7 @@ realtype N_VMinQuotient_NrnSerialLD(N_Vector num, N_Vector denom) {
     nd = NV_DATA_S_LD(num);
     dd = NV_DATA_S_LD(denom);
 
-    notEvenOnce = TRUE;
+    notEvenOnce = SUNTRUE;
 
     for (i = 0; i < N; i++, nd++, dd++) {
         if (*dd == ZERO)
@@ -798,9 +798,9 @@ realtype N_VMinQuotient_NrnSerialLD(N_Vector num, N_Vector denom) {
         else {
             if (notEvenOnce) {
                 min = *nd / *dd;
-                notEvenOnce = FALSE;
+                notEvenOnce = SUNFALSE;
             } else
-                min = MIN(min, (*nd) / (*dd));
+                min = SUNMIN(min, (*nd) / (*dd));
         }
     }
 

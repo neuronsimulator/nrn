@@ -20,7 +20,6 @@
 #include "nrnneosm.h"
 #include "datapath.h"
 #include "objcmd.h"
-#include "shared/sundialsmath.h"
 #include "kssingle.h"
 #include "ocnotify.h"
 #if HAVE_IV
@@ -43,6 +42,8 @@
 #include "utils/profile/profiler_interface.h"
 #include <unordered_map>
 #include <unordered_set>
+#include <sundials/sundials_math.h>
+#include "netcon.h"
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
@@ -1435,6 +1436,7 @@ void NetCvode::del_cv_memb_list() {
         }
     }
 }
+
 void NetCvode::del_cv_memb_list(Cvode* cvode) {
     if (!cvode) {
         return;
