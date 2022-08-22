@@ -7,6 +7,7 @@
 #include "equation.h"
 #include "nrnunits_modern.h"
 
+#include "nrn_ansi.h"
 #include "ocfunc.h"
 
 
@@ -221,6 +222,7 @@ static struct { /* Builtin functions with multiple or variable args */
                  {"mcell_ran4_init", hoc_mcran4init},
                  {"nrn_feenableexcept", nrn_feenableexcept},
                  {"nrnmpi_init", hoc_nrnmpi_init},
+                 {"nrn_num_config_keys", hoc_num_config_keys},
 #if PVM
                  {"numprocs", numprocs},
                  {"myproc", myproc},
@@ -242,6 +244,8 @@ static struct { /* functions that return a string */
                     {"neuronhome", hoc_neuronhome},
                     {"getcwd", hoc_getcwd},
                     {"nrnversion", hoc_nrnversion},
+                    {"nrn_get_config_key", hoc_get_config_key},
+                    {"nrn_get_config_val", hoc_get_config_val},
                     {0, 0}};
 
 static struct { /* functions that return an object */
@@ -394,6 +398,28 @@ void hoc_nrnversion(void) {
     hoc_ret();
     *p = nrn_version(i);
     hoc_pushstr(p);
+}
+
+void hoc_get_config_key() {
+    nrn_assert(nrn_num_config_keys() > 0);
+    auto const i = static_cast<std::size_t>(chkarg(1, 0, nrn_num_config_keys() - 1));
+    char** p = hoc_temp_charptr();
+    hoc_ret();
+    *p = nrn_get_config_key(i);
+    hoc_pushstr(p);
+}
+
+void hoc_get_config_val() {
+    nrn_assert(nrn_num_config_keys() > 0);
+    auto const i = static_cast<std::size_t>(chkarg(1, 0, nrn_num_config_keys() - 1));
+    char** p = hoc_temp_charptr();
+    hoc_ret();
+    *p = nrn_get_config_val(i);
+    hoc_pushstr(p);
+}
+
+void hoc_num_config_keys() {
+    hoc_retpushx(nrn_num_config_keys());
 }
 
 void hoc_Execerror(void) {

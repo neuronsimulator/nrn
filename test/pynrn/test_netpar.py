@@ -7,7 +7,7 @@ import os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
-from neuron import h
+from neuron import config, h
 
 pc = h.ParallelContext()
 
@@ -87,7 +87,7 @@ def err_test2():
     r.ncs[0].delay = h.dt
     pc.set_maxstep(h.dt)
     h.finitialize(-65)
-    if "'NRN_ENABLE_MPI=OFF'" not in h.nrnversion(6):
+    if config.arguments["NRN_ENABLE_MPI"]:
         # Fixed step method does not allow a mindelay < dt + 1e-10
         expect_err("pc.psolve(1.0)")  # wonder if this is too stringent an error
     else:
