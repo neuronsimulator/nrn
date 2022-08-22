@@ -1,4 +1,17 @@
 #pragma once
+#include "membfunc.h"  // nrn_bamech_t
+union Datum;
+struct Extnode;
+struct hoc_Item;
+struct HocParmLimits;
+struct HocParmUnits;
+struct HocStateTolerance;
+struct Node;
+struct Object;
+struct Point_process;
+struct Prop;
+struct Section;
+struct Symbol;
 
 // nocpout.cpp
 extern void hoc_register_limits(int, HocParmLimits*);
