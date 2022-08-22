@@ -12,7 +12,7 @@ Action items
 
 Pre-release
 ---
-- [ ] Create a cherrypicks branch where all commits go into new release and open a PR against `realease/x.y` branch
+- [ ] Create a cherrypicks branch where all commits go into new release and open a PR against `release/x.y` branch
 - [ ] Create CoreNEURON tag on the `release/x.y` branch after cherrypicking required commits, update semantic version in its `CMakeLists.txt`, tag it & update submodule in cherrypicks PR
 - [ ] Look out for ModelDB regressions by manually submitting and analyzing [nrn-modeldb-ci](https://github.com/neuronsimulator/nrn-modeldb-ci/actions/workflows/nrn-modeldb-ci.yaml?query=event%3Aschedule++) for the cherrypicks branch vs previous version
 - [ ] Update cherrypicks PR:
@@ -22,7 +22,7 @@ Pre-release
 
 Sanity checks
 ---
-- [ ]  After cherrypicks PR is merged, make sure GitHub, Azure and CircleCI builds pass for `release/x.y` branch
+- [ ] After cherrypicks PR is merged, make sure GitHub, Azure and CircleCI builds pass for `release/x.y` branch
 - [ ] Run [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci/actions/workflows/build-neuron.yml) for the `release/x.y` branch; see [nrn-build-ci guide](https://github.com/neuronsimulator/nrn-build-ci#azure-wheels-testing---manual-workflow) 
 - [ ] Activate ReadTheDocs build for `release/x.y` & make it hidden. Check docs are fine after build is done.
 - [ ] Run BBP Simulation Stack, CoreNEURON CI & other relevant tests
@@ -31,21 +31,22 @@ Sanity checks
 
 Releasing
 ---
-- [ ] Create new release+tag on GitHub via [release workflow](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml?query=workflow%3A%22NEURON+Release%22)
+- [ ] Create new release+tag on GitHub via [release workflow](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml?query=workflow%3A%22NEURON+Release%22). Note that the GitHub release will be marked as pre-release.
 - [ ] Create, test and upload manual artifacts 
   - [ ] MacOS package installer (manual task, ask Michael)
   - [ ] arm64 wheels (manual task, check with Alex or Pramod)
   - [ ] aarch64 wheels (use existing `release/x.y-aarch64` branch for this, see [guide](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-circleci))
-- [ ] Publish the `x.y.z` wheels on Pypi; see [wheel publishing instructions](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure)
+- [ ] Publish the `x.y.z` wheels on PyPI; see [wheel publishing instructions](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure)
 - [ ] Once wheels are published, activate the `x.y.z` tag on ReadTheDocs
 - [ ] Upload Windows installer from the wheels publishing Azure run (to get correct tag)
-- [ ] Publish release on GitHub (edit https://github.com/neuronsimulator/nrn/releases/tag/x.y.z)
+- [ ] Publish release on GitHub (edit https://github.com/neuronsimulator/nrn/releases/tag/x.y.z and un-tick the pre-release checkbox) 
 
 
 Post-release
 ---
 - [ ] Deactivate ReadTheDocs build for `release/x.y`
 - [ ] Let people know :rocket:
+- [ ] Cherrypick changelog and installer links to `master`
 
 
 Changelog

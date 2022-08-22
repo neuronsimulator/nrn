@@ -30,7 +30,7 @@ Releasing
 - [ ] Update changelog below and agree on it with everyone; then commit it to `docs/changelog` (copy structure as-is)
 - [ ] Update `docs/index.rst` accordingly with the new `.pkg` and `.exe` links for `PKG installer` and `Windows Installer`
 - [ ] Run the ReadTheDocs build again for `release-x.y`, make sure the build passes and inspect the Changelog page.
-- [ ] Create new release+tag on GitHub via [release workflow](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml?query=workflow%3A%22NEURON+Release%22)
+- [ ] Create new release+tag on GitHub via [release workflow](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml?query=workflow%3A%22NEURON+Release%22). Note that the GitHub release will be marked as pre-release.
 - [ ] Create, test and upload manual artifacts 
   - [ ] MacOS package installer (manual task, ask Michael)
   - [ ] arm64 wheels (manual task, check with Alex or Pramod)
@@ -38,7 +38,7 @@ Releasing
 - [ ] Publish the `x.y.z` wheels on Pypi; see [wheel publishing instructions](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure)
 - [ ] Once wheels are published, activate the `x.y.z` tag on ReadTheDocs
 - [ ] Upload Windows installer from the wheels publishing Azure run (to get correct tag)
-- [ ] Publish release on GitHub (edit https://github.com/neuronsimulator/nrn/releases/tag/x.y.z)
+- [ ] Publish release on GitHub (edit https://github.com/neuronsimulator/nrn/releases/tag/x.y.z and un-tick the pre-release checkbox)
 
 
 Post-release
@@ -48,7 +48,7 @@ Post-release
   - major version: `(x+1).0.dev`
 - [ ] Deactivate ReadTheDocs build for `release/x.y`
 - [ ] Let people know :rocket:
-
+- [ ] Cherrypick changelog and installer links to `master`
 
 Changelog
 ======
