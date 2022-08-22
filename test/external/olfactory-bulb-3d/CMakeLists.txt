@@ -5,6 +5,7 @@ if(NRN_ENABLE_CORENEURON AND NOT CORENRN_ENABLE_SHARED)
   set(launch_executable special)
   set(olfactory_bulb_3d_neuron_args -mpi -python)
 else()
+  set(preload_sanitizer PRELOAD_SANITIZER)
   set(launch_executable ${PYTHON_EXECUTABLE})
   # SIM_DIRECTORY means that the working directory is one level below the one where nrnivmodl was
   # run... NRN_NMODL_PATH=..
@@ -31,7 +32,7 @@ nrn_add_test_group(
   SIM_DIRECTORY sim)
 nrn_add_test(
   GROUP olfactory-bulb-3d
-  NAME neuron
+  NAME neuron ${preload_sanitizer}
   REQUIRES mpi python
   PROCESSORS ${olfactory_bulb_3d_mpi_ranks}
   PRECOMMAND sed -i.bak "s/runsim.build_part_model(.*/runsim.build_part_model([5], [])/g"
@@ -52,7 +53,7 @@ foreach(processor gpu cpu)
     endif()
     nrn_add_test(
       GROUP olfactory-bulb-3d
-      NAME coreneuron_${processor}_${mode}
+      NAME coreneuron_${processor}_${mode} ${preload_sanitizer}
       REQUIRES coreneuron python ${processor}
       PROCESSORS ${olfactory_bulb_3d_mpi_ranks}
       PRECOMMAND sed -i.bak "s/runsim.build_part_model(.*/runsim.build_part_model([5], [])/g"

@@ -39,6 +39,7 @@ nrn_add_test(
 nrn_add_test(
   GROUP external_ringtest
   NAME neuron_mpi_python
+  PRELOAD_SANITIZER
   REQUIRES mod_compatibility mpi python
   PROCESSORS ${ringtest_mpi_ranks}
   ENVIRONMENT NEURON_INIT_MPI=1
@@ -88,6 +89,7 @@ foreach(processor cpu gpu)
   nrn_add_test(
     GROUP external_ringtest
     NAME coreneuron_${processor}_mpi_python
+    PRELOAD_SANITIZER
     REQUIRES coreneuron_shared mpi python ${processor}
     PROCESSORS ${ringtest_mpi_ranks}
     ENVIRONMENT NEURON_INIT_MPI=1
@@ -117,6 +119,7 @@ foreach(processor cpu gpu)
   nrn_add_test(
     GROUP external_ringtest
     NAME coreneuron_${processor}_mpi_threads_python
+    PRELOAD_SANITIZER
     REQUIRES coreneuron_shared mpi python ${processor}
     PROCESSORS ${ringtest_mpi_ranks_times_threads}
     ENVIRONMENT OMP_NUM_THREADS=${ringtest_num_threads} NEURON_INIT_MPI=1

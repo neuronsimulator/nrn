@@ -106,32 +106,6 @@ import weakref
 
 embedded = True if "hoc" in sys.modules else False
 
-def _check_for_intel_openmp():
-    """Check if Intel's OpenMP runtime has already been loaded.
-
-    This does not interact well with the NVIDIA OpenMP runtime in CoreNEURON GPU
-    builds. See
-    https://forums.developer.nvidia.com/t/nvc-openacc-runtime-segfaults-if-intel-mkl-numpy-is-already-loaded/212739
-    for more information.
-
-    TODO: constrain the check more, only CoreNEURON GPU builds, etc.
-    TODO: if the check passes, eagerly load a dummy .so that pulls in the NVIDIA
-    runtime libraries, so that Intel stuff does not get loaded in between now
-    and the CoreNEURON library being loaded and take precedence.
-    """
-    import ctypes
-    current_exe = ctypes.CDLL(None)
-    try:
-        # Picked quasi-randomly from `nm libiomp5.so`
-        current_exe["_You_must_link_with_Intel_OpenMP_library"]
-    except:
-        # No Intel symbol found, all good
-        pass
-    else:
-        # Intel symbol was found: danger! danger!
-        raise Exception("Intel OpenMP runtime detected: this will not interact well with the NVIDIA OpenMP runtime that is normally enabled in GPU builds. You can try to avoid this message by importing and initialising NEURON and CoreNEURON before anything that might pull in the Intel library.")
-_check_for_intel_openmp()
-
 try:  # needed since python 3.8 on windows if python launched
     # do this here as NEURONHOME may be changed below
     nrnbindir = os.path.abspath(os.environ["NEURONHOME"] + "/bin")
@@ -173,6 +147,7 @@ __version__ = version
 from neuron import config
 
 config._parse_arguments(h)
+
 
 def _check_for_intel_openmp():
     """Check if Intel's OpenMP runtime has already been loaded.

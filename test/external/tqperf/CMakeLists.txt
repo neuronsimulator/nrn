@@ -17,10 +17,11 @@ set(python_requires coreneuron_shared)
 set(special_requires coreneuron)
 set(special_args -mpi -python)
 set(python_environment NEURON_INIT_MPI=1)
+set(python_preload_sanitizer PRELOAD_SANITIZER)
 foreach(binary special python)
   nrn_add_test(
     GROUP tqperf
-    NAME coreneuron_${binary}
+    NAME coreneuron_${binary} ${${binary}_preload_sanitizer}
     CONFLICTS nmodl # https://github.com/BlueBrain/nmodl/issues/794
     REQUIRES mpi python ${${binary}_requires}
     PROCESSORS ${tqperf_mpi_ranks}
