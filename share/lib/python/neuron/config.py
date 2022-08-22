@@ -1,3 +1,23 @@
+def _convert_value(key, value):
+    """Convert a string representing a CMake variable value into a Python value.
+
+    This does some basic conversion of values that CMake interprets as boolean
+    values into Python's True/False, and includes some special cases for
+    variables that are known to represent lists. See also:
+    https://cmake.org/cmake/help/latest/command/if.html#basic-expressions.
+    """
+    if key.upper() in {"NRN_ENABLE_MODEL_TESTS"}:
+        return tuple(value.split(";"))
+    elif value.upper() in {"ON", "YES", "TRUE", "Y"}:
+        return True
+    elif value.upper() in {"OFF", "NO", "FALSE", "N"}:
+        return False
+    try:
+        return int(value)
+    except ValueError:
+        return value
+
+
 def _parse_arguments(h):
     """Map the C++ structure neuron::config::arguments into Python.
 
@@ -12,7 +32,4 @@ def _parse_arguments(h):
         key = h.nrn_get_config_key(i)
         val = h.nrn_get_config_val(i)
         assert key not in arguments
-        if key == "NRN_ENABLE_MODEL_TESTS":
-            val = tuple(val.split(";"))
-        val = {"ON": True, "OFF": False}.get(val, val)
-        arguments[key] = val
+        arguments[key] = _convert_value(key, val)
