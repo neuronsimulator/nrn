@@ -14,7 +14,6 @@ endif()
 nrn_add_test(
   GROUP tqperf
   NAME coreneuron
-  CONFLICTS nmodl # https://github.com/BlueBrain/nmodl/issues/794
   REQUIRES mpi python coreneuron
   PROCESSORS ${tqperf_mpi_ranks}
   COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${tqperf_mpi_ranks} ${MPIEXEC_OVERSUBSCRIBE}
