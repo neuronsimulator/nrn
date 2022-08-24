@@ -222,6 +222,7 @@ static struct { /* Builtin functions with multiple or variable args */
                  {"mcell_ran4_init", hoc_mcran4init},
                  {"nrn_feenableexcept", nrn_feenableexcept},
                  {"nrnmpi_init", hoc_nrnmpi_init},
+                 {"coreneuron_handle", hoc_coreneuron_handle},
                  {"nrn_num_config_keys", hoc_num_config_keys},
 #if PVM
                  {"numprocs", numprocs},
@@ -388,7 +389,6 @@ void hoc_show_winio(void) {
 int nrn_main_launch;
 
 void hoc_nrnversion(void) {
-    extern char* nrn_version(int);
     char** p = hoc_temp_charptr();
     int i;
     i = 1;

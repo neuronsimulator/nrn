@@ -10,6 +10,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include <iostream>
+#include <string>
+
 #if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
 // when compiled with different Python.h, force correct value
 #undef NRNPYTHON_DYNAMICLOAD
@@ -32,7 +35,7 @@ extern PyObject* nrnpy_hoc();
 
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
-extern char* nrnmpi_load(int is_python);
+extern std::string nrnmpi_load(int is_python);
 #endif
 #if NRNPYTHON_DYNAMICLOAD
 extern int nrnpy_site_problem;
@@ -250,7 +253,7 @@ extern "C" PyObject* PyInit_hoc() {
     int flag = 0;                 // true if MPI_Initialized is called
     int mpi_mes = 0;              // for printing mpi message only once
     int libnrnmpi_is_loaded = 1;  // becomes 0 if NEURON_INIT_MPI == 0 with dynamic mpi
-    char* pmes = NULL;            // error message
+    std::string pmes;             // error message
     char* env_mpi = getenv("NEURON_INIT_MPI");
 
 #if NRNMPI_DYNAMICLOAD
@@ -267,16 +270,15 @@ extern "C" PyObject* PyInit_hoc() {
     }
     if (libnrnmpi_is_loaded) {
         pmes = nrnmpi_load(1);
-        if (pmes && env_mpi == NULL) {
+        if (!pmes.empty() && env_mpi == NULL) {
             // common case on MAC distribution is no NEURON_INIT_MPI and
             // no MPI installed (so nrnmpi_load fails)
             libnrnmpi_is_loaded = 0;
         }
-        if (pmes && libnrnmpi_is_loaded) {
-            printf(
-                "NEURON_INIT_MPI nonzero in env (or -mpi arg) but NEURON cannot initialize MPI "
-                "because:\n%s\n",
-                pmes);
+        if (!pmes.empty() && libnrnmpi_is_loaded) {
+            std::cout << "NEURON_INIT_MPI nonzero in env (or -mpi arg) but NEURON cannot "
+                         "initialize MPI because:\n"
+                      << pmes << std::endl;
             exit(1);
         }
     }
@@ -307,7 +309,7 @@ extern "C" PyObject* PyInit_hoc() {
     }
 
     // merely avoids unused variable warning
-    if (pmes && mpi_mes == 2) {
+    if (!pmes.empty() && mpi_mes == 2) {
         exit(1);
     }
 
@@ -349,9 +351,6 @@ extern "C" PyObject* PyInit_hoc() {
 		}
 	}
 #endif  // 0 && !defined(NRNMPI_DYNAMICLOAD)
-    if (pmes) {
-        free(pmes);
-    }
 #endif  // NRNMPI
 
     char* env_nframe = getenv("NEURON_NFRAME");

@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <nrnmpiuse.h>
+#include "nrn_ansi.h"
 #include "oc_ansi.h"
 #include <stdio.h>
 #include <errno.h>
@@ -318,7 +319,6 @@ void hoc_last_init(void) {
 
     if (nrnmpi_myid < 1)
         if (nrn_nobanner_ == 0) {
-            extern char* nrn_version(int i);
             Fprintf(stderr, "%s\n", nrn_version(1));
             Fprintf(stderr, "%s\n", banner);
             IGNORE(fflush(stderr));
