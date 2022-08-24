@@ -3827,7 +3827,7 @@ void CodegenCVisitor::print_net_move_call(const FunctionCall& node) {
     // artificial cells don't use spike buffering
     // clang-format off
     if (info.artificial_cell) {
-        printer->add_text(fmt::format("artcell_net_move(&{}, {}, nt->_t+", tqitem, pnt));
+        printer->add_text(fmt::format("artcell_net_move(&{}, {}, ", tqitem, pnt));
         print_vector_elements(arguments, ", ");
         printer->add_text(")");
     } else {
