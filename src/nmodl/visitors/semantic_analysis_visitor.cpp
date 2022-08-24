@@ -28,29 +28,41 @@ bool SemanticAnalysisVisitor::check(const ast::Program& node) {
 
 void SemanticAnalysisVisitor::visit_procedure_block(const ast::ProcedureBlock& node) {
     /// <-- This code is for check 1
-    in_procedure_function = true;
+    in_procedure = true;
     one_arg_in_procedure_function = node.get_parameters().size() == 1;
     node.visit_children(*this);
-    in_procedure_function = false;
+    in_procedure = false;
     /// -->
 }
 
 void SemanticAnalysisVisitor::visit_function_block(const ast::FunctionBlock& node) {
     /// <-- This code is for check 1
-    in_procedure_function = true;
+    in_function = true;
     one_arg_in_procedure_function = node.get_parameters().size() == 1;
     node.visit_children(*this);
-    in_procedure_function = false;
+    in_function = false;
     /// -->
 }
 
-void SemanticAnalysisVisitor::visit_table_statement(const ast::TableStatement& /* node */) {
+void SemanticAnalysisVisitor::visit_table_statement(const ast::TableStatement& tableStmt) {
     /// <-- This code is for check 1
-    if (in_procedure_function && !one_arg_in_procedure_function) {
+    if ((in_function || in_procedure) && !one_arg_in_procedure_function) {
         logger->critical(
             "SemanticAnalysisVisitor :: The procedure or function containing the TABLE statement "
             "should contains exactly one argument.");
         check_fail = true;
+    }
+    /// -->
+    /// <-- This code is for check 3
+    const auto& table_vars = tableStmt.get_table_vars();
+    if (in_function && !table_vars.empty()) {
+        logger->critical(
+            "SemanticAnalysisVisitor :: TABLE statement in FUNCTION cannot have a table name "
+            "list.");
+    }
+    if (in_procedure && table_vars.empty()) {
+        logger->critical(
+            "SemanticAnalysisVisitor :: TABLE statement in PROCEDURE must have a table name list.");
     }
     /// -->
 }

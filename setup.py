@@ -134,7 +134,7 @@ setup(
         "jupyter-client",
         "jupyter",
         "myst_parser",
-        "mistune<2",  # prevents a version conflict with nbconvert
+        "mistune<3",  # prevents a version conflict with nbconvert
         "nbconvert",
         "nbsphinx>=0.3.2",
         "pytest>=3.7.2",

@@ -57,7 +57,12 @@ DERIVATIVE state {
 }
 
 : to test code generation for TABLE statement
-PROCEDURE test_table(br) {
+FUNCTION test_table_f(br) {
+    TABLE FROM 0 TO FOO WITH 1
+    test_table_f = 1
+}
+
+PROCEDURE test_table_p(br) {
     TABLE ainf FROM 0 TO FOO WITH 1
     ainf = 1
 }
