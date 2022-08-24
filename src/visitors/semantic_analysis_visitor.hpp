@@ -26,6 +26,7 @@
  * 1. Check that a function or a procedure containing a TABLE statement contains only one argument
  * (mandatory in mod2c).
  * 2. Check that destructor blocks are only inside mod file that are point_process
+ * 3. A TABLE statement in functions cannot have name list, and should have one in procedures
  */
 #include "ast/ast.hpp"
 #include "visitors/ast_visitor.hpp"
@@ -39,8 +40,10 @@ class SemanticAnalysisVisitor: public ConstAstVisitor {
 
     /// true if the procedure or the function contains only one argument
     bool one_arg_in_procedure_function = false;
-    /// true if we are in a procedure or a function block
-    bool in_procedure_function = false;
+    /// true if we are in a procedure block
+    bool in_procedure = false;
+    /// true if we are in a function block
+    bool in_function = false;
     /// true if the mod file is of type point process
     bool is_point_process = false;
 
