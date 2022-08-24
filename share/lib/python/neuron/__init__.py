@@ -142,6 +142,12 @@ import _neuron_section
 h = hoc.HocObject()
 version = h.nrnversion(5)
 __version__ = version
+
+# Initialise neuron.config.arguments
+from neuron import config
+
+config._parse_arguments(h)
+
 _original_hoc_file = None
 if not hasattr(hoc, "__file__"):
     # first try is to derive from neuron.__file__

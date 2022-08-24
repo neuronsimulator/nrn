@@ -4,7 +4,7 @@
 import distutils.util
 import os
 
-from neuron import h
+from neuron import config, h
 
 h.load_file("stdrun.hoc")  # for h.cvode_active
 
@@ -209,9 +209,7 @@ def test_fastimem():
 
 
 def coreneuron_available():
-    if "NRN_ENABLE_CORENEURON=ON" not in h.nrnversion(6):
-        # Not ideal. Maybe someday it will be default ON and then
-        # will not appear in h.nrnversion(6)
+    if not config.arguments["NRN_ENABLE_CORENEURON"]:
         return False
     # But can it be loaded?
     cvode = h.CVode()

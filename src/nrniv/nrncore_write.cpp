@@ -271,7 +271,13 @@ int nrncore_run(const char* arg) {
     model_ready();
 
     // get coreneuron library handle
-    void* handle = get_coreneuron_handle();
+    void* handle = [] {
+        try {
+            return get_coreneuron_handle();
+        } catch (std::runtime_error const& e) {
+            hoc_execerror(e.what(), nullptr);
+        }
+    }();
 
     // make sure coreneuron & neuron are compatible
     check_coreneuron_compatibility(handle);
@@ -280,8 +286,10 @@ int nrncore_run(const char* arg) {
     map_coreneuron_callbacks(handle);
 
     // lookup symbol from coreneuron for launching
-    void* launcher_sym = dlsym(handle, "corenrn_embedded_run");
-    if (!launcher_sym) {
+    using launcher_t = int (*)(int, int, int, int, const char*, const char*);
+    auto* const coreneuron_launcher = reinterpret_cast<launcher_t>(
+        dlsym(handle, "corenrn_embedded_run"));
+    if (!coreneuron_launcher) {
         hoc_execerror("Could not get symbol corenrn_embedded_run from", NULL);
     }
 
@@ -292,10 +300,6 @@ int nrncore_run(const char* arg) {
 #if !NRNMPI
 #define nrnmpi_use 0
 #endif
-
-    // typecast function pointer pointer
-    int (*coreneuron_launcher)(int, int, int, int, const char*, const char*) =
-        (int (*)(int, int, int, int, const char*, const char*)) launcher_sym;
 
     // launch coreneuron
     int result = coreneuron_launcher(

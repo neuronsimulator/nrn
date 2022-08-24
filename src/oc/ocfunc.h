@@ -37,6 +37,10 @@ extern void hoc_Setcolor(void);
 extern void hoc_init_space(void);
 extern void hoc_install_hoc_obj(void);
 extern void nrn_feenableexcept(void);
+void hoc_coreneuron_handle();
+void hoc_get_config_key();
+void hoc_get_config_val();
+void hoc_num_config_keys();
 extern int nrn_feenableexcept_;
 #if DOS
 extern void hoc_settext(void);

@@ -1,5 +1,29 @@
 # NEURON 8.2
 
+## 8.2.1
+_Release Date_ : 12-08-2022
+
+### What's New
+
+- Change mcomplex.dat normalization to hh/5. (#1895)
+- Jupyter support for ModelView #1907
+
+### Bug Fixes
+
+- nrnivmodl_core_makefile: fix SDKROOT (#1942)
+- First time declaration of section in template must be at command level. (#1914)
+- setup.exe installer must distribute env.exe (https://github.com/neuronsimulator/nrn/pull/1941)
+
+### Improvements /  Other Changes
+
+- Documentation
+  - added new INCF/CNS 2022 online material (#1932)
+  - updates (dealing with sims, generating movie, modelview, more #1925 )
+  - transfer from Yale website (#1867) 
+- nrnmpi_load: drop printf for already loaded lib (#1938)
+
+For the complete list of commits, see the list in [GitHub Issue #1944](https://github.com/neuronsimulator/nrn/issues/1944)
+
 ## 8.2.0
 _Release Date_ : 01-07-2022
 
