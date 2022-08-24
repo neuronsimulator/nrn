@@ -6,7 +6,7 @@ def test_parameter_reaction(neuron_instance):
     """Test a simple rxd.Reaction involving a rxd.Parameter"""
     h, rxd, data, save_path = neuron_instance
     sec = h.Section(name="sec")
-    cyt = rxd.Region(h.allsec(), name="cyt", nrn_region="i")
+    cyt = rxd.Region([sec], name="cyt", nrn_region="i")
     ca = rxd.Species(cyt, name="ca", charge=2, initial=0.001)
     buf = rxd.Parameter(cyt, name="buf", value=0.001)
     cabuf = rxd.Species(cyt, name="cabuf", initial=0)
