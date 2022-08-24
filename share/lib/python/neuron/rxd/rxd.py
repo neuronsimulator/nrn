@@ -1359,7 +1359,10 @@ def _compile_reactions():
                 if isinstance(r, rate.Rate):
                     s = r._species()
                     if s._id in creg._params_ids:
-                        warn("Parameters values are fixed, %r will not change the value of %r" % (r, s))
+                        warn(
+                            "Parameters values are fixed, %r will not change the value of %r"
+                            % (r, s)
+                        )
                         continue
                     species_id = creg._species_ids[s._id]
                     for reg in creg._react_regions[rptr]:
