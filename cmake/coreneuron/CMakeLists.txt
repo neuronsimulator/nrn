@@ -85,17 +85,6 @@ list(APPEND CMAKE_MODULE_PATH ${CORENEURON_PROJECT_SOURCE_DIR}/CMake
 # =============================================================================
 set(CODING_CONV_PREFIX "CORENRN")
 set(CORENRN_3RDPARTY_DIR "external")
-# Adds .cu with respect to the current default in hpc-coding-conventions, and drops various patterns
-# that don't match anything in CoreNEURON.
-set(CORENRN_ClangFormat_FILES_RE
-    "^.*\\\\.cu$$" "^.*\\\\.h$$" "^.*\\\\.[chi]pp$$"
-    CACHE STRING "List of regular expressions matching C/C++ filenames" FORCE)
-set(CORENRN_ClangFormat_EXCLUDES_RE
-    ""
-    CACHE STRING "list of regular expressions to exclude C/C++ files from formatting" FORCE)
-set(CORENRN_CMakeFormat_EXCLUDES_RE
-    "CMake/packages/.*$$"
-    CACHE STRING "list of regular expressions to exclude CMake files from formatting" FORCE)
 include(AddHpcCodingConvSubmodule)
 add_subdirectory(CMake/hpc-coding-conventions/cpp)
 

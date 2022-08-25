@@ -4,6 +4,7 @@
 # See top-level LICENSE file for details.
 # =============================================================================
 
+# ~~~
 # Findnmodl
 # -------------
 #
@@ -26,11 +27,13 @@
 #   nmodl_FOUND   - set to true if the library is found
 #   nmodl_INCLUDE - list of required include directories
 #   nmodl_BINARY  - the nmodl binary
-
+# ~~~
 
 # UNIX paths are standard, no need to write.
-find_program(nmodl_BINARY NAMES nmodl${CMAKE_EXECUTABLE_SUFFIX}
-        HINTS "${CORENRN_NMODL_DIR}/bin" QUIET)
+find_program(
+  nmodl_BINARY
+  NAMES nmodl${CMAKE_EXECUTABLE_SUFFIX}
+  HINTS "${CORENRN_NMODL_DIR}/bin" QUIET)
 
 find_path(nmodl_INCLUDE "nmodl/fast_math.ispc" HINTS "${CORENRN_NMODL_DIR}/include")
 find_path(nmodl_PYTHONPATH "nmodl/__init__.py" HINTS "${CORENRN_NMODL_DIR}/lib")
@@ -38,7 +41,7 @@ find_path(nmodl_PYTHONPATH "nmodl/__init__.py" HINTS "${CORENRN_NMODL_DIR}/lib")
 # Checks 'REQUIRED', 'QUIET' and versions.
 include(FindPackageHandleStandardArgs)
 
-find_package_handle_standard_args(nmodl
+find_package_handle_standard_args(
+  nmodl
   FOUND_VAR nmodl_FOUND
   REQUIRED_VARS nmodl_BINARY nmodl_INCLUDE nmodl_PYTHONPATH)
-
