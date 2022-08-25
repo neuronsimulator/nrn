@@ -1,11 +1,12 @@
 #include <../../nrnconf.h>
+#include "nrn_ansi.h"
+#include "nrnassrt.h"
+#include "nrnconfigargs.h"
+#include "nrnversion.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <nrnversion.h>
-#include <nrnconfigargs.h>
-#include <assert.h>
-#include "nrnassrt.h"
 
 
 extern int nrn_global_argc;
@@ -79,4 +80,18 @@ char* nrn_version(int i) {
     }
 
     return ver[i];
+}
+
+std::size_t nrn_num_config_keys() {
+    return neuron::config::arguments.size();
+}
+
+char* nrn_get_config_key(std::size_t i) {
+    nrn_assert(i < nrn_num_config_keys());
+    return const_cast<char*>(std::next(neuron::config::arguments.begin(), i)->first);
+}
+
+char* nrn_get_config_val(std::size_t i) {
+    nrn_assert(i < nrn_num_config_keys());
+    return const_cast<char*>(std::next(neuron::config::arguments.begin(), i)->second);
 }

@@ -108,11 +108,9 @@ class _c_region:
             if isinstance(s, ParameterOnRegion):
                 if s._species() and s._species not in self._react_params:
                     self._react_params.append(s._species)
-            elif (
-                isinstance(s._species(), Parameter)
-                and s._species not in self._react_params
-            ):
-                self._react_params.append(weakref.ref(s))
+            elif isinstance(s, Parameter):
+                if s._species not in self._react_params:
+                    self._react_params.append(s._species)
             elif isinstance(s, SpeciesOnRegion):
                 if s._species() and s._species not in self._react_species:
                     self._react_species.append(s._species)
