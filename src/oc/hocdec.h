@@ -4,7 +4,7 @@
 #define INCLUDEHOCH 1
 #define OOP         1
 
-
+#include "neuron/container/generic_data_handle.hpp"
 #include "nrnapi.h"
 #include "hocassrt.h" /* hoc_execerror instead of abort */
 #include "nrnassrt.h" /* assert in case of side effects (eg. scanf) */
@@ -140,6 +140,10 @@ struct Symbol { /* symbol table entry */
 
 using hoc_List = hoc_Item;
 
+/**
+ * @brief Interpreter stack type.
+ * @todo Consider replacing with std::variant.
+ */
 union Datum { /* interpreter stack type */
     double val;
     Symbol* sym;
@@ -151,6 +155,9 @@ union Datum { /* interpreter stack type */
     hoc_Item* itm;
     hoc_List* lst;
     void* _pvoid; /* not used on stack, see nrnoc/point.cpp */
+    // Used to store data_handle<T> on the stack. Note that this is larger (3x?)
+    // than the other member types above.
+    neuron::container::generic_data_handle generic_handle;
 };
 
 #if OOP
