@@ -268,7 +268,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     set(modtests_launch_py ${PYTHON_EXECUTABLE} ${pytest})
     set(modtests_launch_hoc nrniv ${nrniv_mpi_arg})
     set(modtests_launch_py_mpi ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
-                               ${PYTHON_EXECUTABLE})
+                               ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS})
   endif()
 
   # External coreneuron can be used for testing but for simplicity we are testing only submodule

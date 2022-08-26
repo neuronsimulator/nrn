@@ -483,19 +483,39 @@ def mac_osx_setenv():
     log.info("Setting SDKROOT=%s", sdk_root)
     os.environ["SDKROOT"] = sdk_root
 
-    # Match Python OSX framework
+    # Extract the macOS version targeted by the Python framework
     py_osx_framework = extract_macosx_min_system_version(sys.executable)
-    if py_osx_framework is None:
-        py_osx_framework = [10, 9]
-    if py_osx_framework[1] > 9:
-        log.warn(
-            "[ WARNING ] You are building a wheel with a Python built"
-            " for a recent MACOS version (from brew?). Your wheel won't be portable."
-            " Consider using an official Python build from python.org"
+
+    def fmt(version):
+        return ".".join(str(x) for x in version)
+
+    if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
+        # Don't override the value if it is set explicitly, but try and print a
+        # helpful message
+        explicit_target = tuple(
+            int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split(".")
         )
-    macos_target = "%d.%d" % tuple(py_osx_framework[:2])
-    log.info("Setting MACOSX_DEPLOYMENT_TARGET=%s", macos_target)
-    os.environ["MACOSX_DEPLOYMENT_TARGET"] = macos_target
+        if py_osx_framework is not None and explicit_target > py_osx_framework:
+            log.warn(
+                "You are building wheels for macOS >={}; this is more "
+                "restrictive than your Python framework, which supports "
+                ">={}".format(fmt(explicit_target), fmt(py_osx_framework))
+            )
+    else:
+        # Target not set explicitly, set MACOSX_DEPLOYMENT_TARGET to match the
+        # Python framework, or 10.9 if the version targeted by the framework
+        # cannot be determined
+        if py_osx_framework is None:
+            py_osx_framework = (10, 9)
+        if py_osx_framework > (10, 9):
+            log.warn(
+                "You are building a wheel with a Python built for macOS >={}. "
+                "Your wheel won't run on older versions, consider using an "
+                "official Python build from python.org".format(fmt(py_osx_framework))
+            )
+        macos_target = "%d.%d" % tuple(py_osx_framework[:2])
+        log.warn("Setting MACOSX_DEPLOYMENT_TARGET=%s", macos_target)
+        os.environ["MACOSX_DEPLOYMENT_TARGET"] = macos_target
 
 
 if __name__ == "__main__":
