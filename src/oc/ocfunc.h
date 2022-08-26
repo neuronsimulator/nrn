@@ -1,5 +1,7 @@
 #pragma once
+#include "neuron/container/generic_data_handle.hpp"
 #include "nrnfilewrap.h"
+#include <variant>
 
 #include <cstddef>
 
@@ -58,6 +60,7 @@ struct frame;
 union Inst;
 struct Object;
 union Objectdata;
+struct Symbol;
 struct Symlist;
 void oc_restore_code(Inst** a1,
                      Inst** a2,
