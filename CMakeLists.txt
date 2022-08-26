@@ -819,6 +819,7 @@ foreach(
   neuron/model_data.hpp
   neuron/model_data_fwd.hpp
   neuron/container/data_handle.hpp
+  neuron/container/generic_data_handle.hpp
   neuron/container/node.hpp
   neuron/container/node_data.hpp
   neuron/container/node_identifier.hpp
