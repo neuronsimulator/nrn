@@ -7,6 +7,7 @@
 #include <vector>
 
 namespace neuron::container {
+struct generic_data_handle;
 
 /** @brief Stable handle to a generic value.
  *
@@ -134,7 +135,7 @@ struct data_handle {
         }
     }
 
-    explicit operator T const *() const {
+    explicit operator T const*() const {
         if (m_raw_ptr) {
             return m_raw_ptr;
         } else if (!m_offset) {
@@ -169,6 +170,7 @@ struct data_handle {
     }
 
   private:
+    friend struct generic_data_handle;
     friend struct std::hash<data_handle>;
     identifier_base m_offset{};
     // This "should" be std::reference_wrapper and never null, only use a plain
