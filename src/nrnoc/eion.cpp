@@ -293,15 +293,15 @@ void nernst(void) {
             Section* sec = chk_access();
             Symbol* ion = memb_func[s->u.rng.type].sym;
             double z = global_charge(s->u.rng.type);
-            double *ci, *co, *e, x;
+            double x;
             if (ifarg(2)) {
                 x = chkarg(2, 0., 1.);
             } else {
                 x = .5;
             }
-            ci = nrn_rangepointer(sec, ion->u.ppsym[1], x);
-            co = nrn_rangepointer(sec, ion->u.ppsym[2], x);
-            e = nrn_rangepointer(sec, ion->u.ppsym[0], x);
+            auto ci = nrn_rangepointer(sec, ion->u.ppsym[1], x);
+            auto co = nrn_rangepointer(sec, ion->u.ppsym[2], x);
+            auto e = nrn_rangepointer(sec, ion->u.ppsym[0], x);
             switch (s->u.rng.index) {
             case 0:
                 val = nrn_nernst(*ci, *co, z);

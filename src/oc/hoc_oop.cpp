@@ -1261,7 +1261,7 @@ void hoc_ob_pointer(void) {
             } else {
                 x = .5;
             }
-            hoc_pushpx(nrn_rangepointer(sec, sym, x));
+            hoc_push(nrn_rangepointer(sec, sym, x));
         } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
             hoc_pushpx(cable_prop_eval_pointer(hoc_spop()));
         } else {
