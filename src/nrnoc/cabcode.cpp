@@ -1109,7 +1109,6 @@ void range_interpolate_single(void) /*symbol at pc, 2 values on stack*/
     double x, y;
     Symbol* s;
     Section* sec;
-    double* pd;
     int op;
 
     s = (pc++)->sym;
@@ -1128,7 +1127,7 @@ void range_interpolate_single(void) /*symbol at pc, 2 values on stack*/
         }
     }
 
-    pd = nrn_rangepointer(sec, s, x);
+    auto pd = nrn_rangepointer(sec, s, x);
     if (op) {
         y = hoc_opasgn(op, *pd, y);
     }
@@ -1280,7 +1279,7 @@ int nrn_exists(Symbol* s, Node* node) {
     }
 }
 
-double* nrn_rangepointer(Section* sec, Symbol* s, double d) {
+neuron::container::data_handle<double> nrn_rangepointer(Section* sec, Symbol* s, double d) {
     /* if you change this change nrnpy_rangepointer as well */
     short i;
     Node* nd;
@@ -1288,8 +1287,7 @@ double* nrn_rangepointer(Section* sec, Symbol* s, double d) {
 
     if (s->u.rng.type == VINDEX) {
         nd = node_ptr(sec, d, nullptr);
-        assert(false);
-        return static_cast<double*>(nd->v_handle());
+        return nd->v_handle();
     }
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
