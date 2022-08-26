@@ -32,6 +32,12 @@ struct Symbol;
 struct Symlist;
 struct VoidFunc;
 
+namespace neuron::container {
+struct generic_data_handle;
+template <typename>
+struct data_handle;
+}  // namespace neuron::container
+
 // nocpout.cpp
 Symbol* hoc_get_symbol(const char* var);
 void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
@@ -123,6 +129,11 @@ void hoc_plt(int, double, double);
 void hoc_plprint(const char*);
 void hoc_ret(); /* but need to push before returning */
 
+void hoc_push(neuron::container::generic_data_handle const& handle);
+template <typename T>
+void hoc_push(neuron::container::data_handle<T> const& handle) {
+    hoc_push(neuron::container::generic_data_handle{handle});
+}
 void hoc_pushx(double);
 void hoc_pushstr(char**);
 void hoc_pushobj(Object**);
