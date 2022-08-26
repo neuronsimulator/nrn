@@ -40,28 +40,13 @@ extern void debugzz(Inst*);
 int hoc_return_type_code = 0; /* flag for allowing integers (1) and booleans (2) to be recognized as
                                  such */
 
-// array indices on the stack have their own type to help with determining when
-// a compiled fragment of HOC code is processing a variable whose number of
-// dimensions was changed.
-struct stack_ndim_datum {
-    stack_ndim_datum(int ndim) {
-        i = ndim;
-    }
-    int i;
-};
-std::ostream& operator<<(std::ostream& os, const stack_ndim_datum& d) {
-    os << d.i;
-    return os;
-}
-
 using StackDatum = std::variant<double,
                                 Symbol*,
                                 int,
-                                stack_ndim_datum,
                                 Object**,
                                 Object*,
                                 char**,
-                                double*,
+                                neuron::container::generic_data_handle,
                                 std::nullptr_t>;
 
 /** @brief The stack.
@@ -227,7 +212,6 @@ template <typename T>
                                oss << " -> " << sym->name;
                            }
                        },
-                       [&oss](stack_ndim_datum& d) { oss << " -> ndim " << d.i; },
                        [&oss](std::nullptr_t) { oss << " already unreffed on stack"; },
                        [](auto const&) {}}(val);
             hoc_execerror(oss.str().c_str(), nullptr);
@@ -266,7 +250,7 @@ template int const& hoc_look_inside_stack(int);
 template Object** const& hoc_look_inside_stack(int);
 template Object* const& hoc_look_inside_stack(int);
 template char** const& hoc_look_inside_stack(int);
-template double* const& hoc_look_inside_stack(int);
+template neuron::container::generic_data_handle const& hoc_look_inside_stack(int);
 template std::nullptr_t const& hoc_look_inside_stack(int);
 namespace {
 bool stack_entry_is_tmpobject(StackDatum const& entry) {
@@ -288,7 +272,7 @@ void unref_if_tmpobject(StackDatum& entry) {
 int get_legacy_int_type(StackDatum const& entry) {
     if (std::holds_alternative<char**>(entry)) {
         return STRING;
-    } else if (std::holds_alternative<double*>(entry)) {
+    } else if (std::holds_alternative<neuron::container::generic_data_handle>(entry)) {
         return VAR;
     } else if (std::holds_alternative<double>(entry)) {
         return NUMBER;
@@ -312,10 +296,6 @@ int get_legacy_int_type(StackDatum const& entry) {
  */
 int hoc_stack_type() {
     return get_legacy_int_type(get_stack_entry_variant(0));
-}
-
-bool hoc_stack_type_is_ndim() {
-    return std::holds_alternative<stack_ndim_datum>(get_stack_entry_variant(0));
 }
 
 void hoc_pop_defer() {
@@ -675,10 +655,6 @@ int hoc_xopen_run(Symbol* sp, const char* str) { /*recursively parse and execute
     Frame *sframe = rframe, *sfp = fp;
     Inst *sprogbase = progbase, *sprogp = progp, *spc = pc,
          *sprog_parse_recover = prog_parse_recover;
-    Symlist* sp_symlist = p_symlist;
-    std::size_t sstack{rstack}, sstackp{stack.size()};
-    rframe = fp;
-    rstack = stack.size();
     progbase = progp;
     p_symlist = (Symlist*) 0;
 
@@ -836,7 +812,7 @@ void hoc_push_string() {
 
 // push double pointer onto stack
 void hoc_pushpx(double* d) {
-    push_value(d);
+    hoc_push(neuron::container::data_handle<double>{d});
 }
 
 // push symbol pointer onto stack
@@ -849,9 +825,8 @@ void hoc_pushi(int d) {
     push_value(d);
 }
 
-/* push index onto stack */
-void hoc_push_ndim(int d) {
-    push_value(stack_ndim_datum(d));
+void hoc_push(neuron::container::generic_data_handle handle) {
+    push_value(std::move(handle));
 }
 
 // type of nth arg
@@ -902,19 +877,23 @@ double hoc_xpop() {
     return pop_value<double>();
 }
 
+namespace neuron {
+/** @brief hoc_pop<generic_data_handle>()
+ */
+container::generic_data_handle oc::detail::hoc_pop_helper<container::generic_data_handle>::impl() {
+    return pop_value<neuron::container::generic_data_handle>();
+}
+}  // namespace neuron
+
 // pop double pointer and return top elem from stack
 double* hoc_pxpop() {
-    return pop_value<double*>();
+    // All pointers are actually stored on the stack as data handles
+    return static_cast<double*>(hoc_pop<neuron::container::data_handle<double>>());
 }
 
 // pop symbol pointer and return top elem from stack
 Symbol* hoc_spop() {
     return pop_value<Symbol*>();
-}
-
-// pop array index and return top elem from stack
-int hoc_pop_ndim() {
-    return pop_value<stack_ndim_datum>().i;
 }
 
 /** @brief Pop pointer to object pointer and return top elem from stack.
@@ -1586,17 +1565,18 @@ void hoc_Argtype() {
         itype = -1;
     } else {
         auto const& entry = f->argn[iarg - f->nargs];
-        itype = std::visit(overloaded{[](double) { return 0; },
-                                      [](Object*) { return 1; },
-                                      [](Object**) { return 1; },
-                                      [](char**) { return 2; },
-                                      [](double*) { return 3; },
-                                      [](auto const& x) -> int {
-                                          throw std::runtime_error(
-                                              "hoc_Argtype didn't expect argument of type " +
-                                              cxx_demangle(typeid(decltype(x)).name()));
-                                      }},
-                           entry);
+        itype =
+            std::visit(overloaded{[](double) { return 0; },
+                                  [](Object*) { return 1; },
+                                  [](Object**) { return 1; },
+                                  [](char**) { return 2; },
+                                  [](neuron::container::generic_data_handle const&) { return 3; },
+                                  [](auto const& x) -> int {
+                                      throw std::runtime_error(
+                                          "hoc_Argtype didn't expect argument of type " +
+                                          cxx_demangle(typeid(decltype(x)).name()));
+                                  }},
+                       entry);
     }
     hoc_retpushx(itype);
 }
@@ -1637,7 +1617,7 @@ char** hoc_pgargstr(int narg) {
 // return pointer to nth argument
 double* hoc_pgetarg(int narg) {
     auto const& arg_entry = get_argument(narg);
-    return cast<double*>(arg_entry);
+    return static_cast<double*>(cast<neuron::container::generic_data_handle>(arg_entry));
 }
 
 // return pointer to nth argument
@@ -2379,21 +2359,10 @@ void hoc_chk_sym_has_ndim() {
 int hoc_araypt(Symbol* sp, int type) {
     Arrayinfo* const aray{type == OBJECTVAR ? OPARINFO(sp) : sp->arayinfo};
     int total{};
-    int ndim{0};
-    if (hoc_stack_type_is_ndim()) {  // if sp compiled as scalar
-        ndim = hoc_pop_ndim();       // do not raise error here but below.
-    }
-    if (ndim != aray->nsub) {
-        hoc_execerr_ext("array dimension of %s now %d (at compile time it was %d)",
-                        sp->name,
-                        aray->nsub,
-                        ndim);
-    }
     for (int i = 0; i < aray->nsub; ++i) {
         int const d = hoc_look_inside_stack<double>(aray->nsub - 1 - i) + hoc_epsilon;
         if (d < 0 || d >= aray->sub[i]) {
-            hoc_execerr_ext(
-                "subscript %d index %d of %s out of range %d", i, d, sp->name, aray->sub[i]);
+            hoc_execerror("subscript out of range", sp->name);
         }
         total = total * (aray->sub[i]) + d;
     }

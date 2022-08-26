@@ -3,17 +3,14 @@
 #define hocdec_h
 #define INCLUDEHOCH 1
 
-
+#include "neuron/container/generic_data_handle.hpp"
 #include "nrnapi.h"
 #include "hocassrt.h" /* hoc_execerror instead of abort */
 #include "nrnassrt.h" /* assert in case of side effects (eg. scanf) */
 #include "wrap_sprintf.h"
 
-#include <iostream>
-#include <cstdint>
-#include <cstring>
-#include <vector>
-
+#include <stdio.h>
+#include <string.h>
 
 #define gargstr hoc_gargstr
 #define getarg  hoc_getarg
@@ -24,7 +21,7 @@ struct Symbol;
 struct Arrayinfo;
 struct Proc;
 struct Symlist;
-struct Datum;
+union Datum;
 struct cTemplate;
 union Objectdata;
 struct Object;
@@ -143,41 +140,24 @@ struct Symbol { /* symbol table entry */
 
 using hoc_List = hoc_Item;
 
-struct Datum { /* interpreter stack type */
-    template <typename T>
-    [[nodiscard]] T& literal_value() {
-        static_assert(std::is_trivially_copyable_v<T> && std::is_trivially_destructible_v<T> &&
-                      sizeof(T) <= sizeof(this));
-        return *reinterpret_cast<T*>(&*this);  // Eww
-    }
-
-    template <typename T>
-    explicit operator T() = delete;
-
-    template <typename T>
-    T get() {
-        return literal_value<T>();
-    }
-
-    template <typename T>
-    Datum& operator=(const T& value) {
-        literal_value<T>() = value;
-        return *this;
-    }
-
-  private:
-    union {
-        double val;
-        Symbol* sym;
-        int i;
-        double* pval; /* first used with Eion in NEURON */
-        Object** pobj;
-        Object* obj; /* sections keep this to construct a name */
-        char** pstr;
-        hoc_Item* itm;
-        hoc_List* lst;
-        void* _pvoid; /* not used on stack, see nrnoc/point.cpp */
-    };
+/**
+ * @brief Interpreter stack type.
+ * @todo Consider replacing with std::variant.
+ */
+union Datum { /* interpreter stack type */
+    double val;
+    Symbol* sym;
+    int i;
+    double* pval; /* first used with Eion in NEURON */
+    Object** pobj;
+    Object* obj; /* sections keep this to construct a name */
+    char** pstr;
+    hoc_Item* itm;
+    hoc_List* lst;
+    void* _pvoid; /* not used on stack, see nrnoc/point.cpp */
+    // Used to store data_handle<T> on the stack. Note that this is larger (3x?)
+    // than the other member types above.
+    neuron::container::generic_data_handle generic_handle;
 };
 
 struct cTemplate {
