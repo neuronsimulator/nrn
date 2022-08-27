@@ -739,7 +739,7 @@ static void node_realloc(Section* sec, short nseg) {
     double x;
     pn1 = sec->pnode;
     n1 = sec->nnode;
-    pn2 = (Node**) ecalloc((unsigned) nseg, sizeof(Node*));
+    pn2 = new Node*[nseg]{};
     n2 = nseg;
     sec->pnode = pn2;
     sec->nnode = n2;
