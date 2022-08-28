@@ -461,6 +461,19 @@ void CodegenHelperVisitor::find_table_variables() {
     info.table_assigned_variables = psymtab->get_variables_with_properties(property);
 }
 
+void CodegenHelperVisitor::find_neuron_global_variables() {
+    // TODO: it would be nicer not to have this hardcoded list
+    using pair = std::pair<const char*, const char*>;
+    for (auto [var, type]: {pair{naming::CELSIUS_VARIABLE, "double"},
+                            pair{"secondorder", "int"},
+                            pair{"pi", "double"}}) {
+        auto sym = psymtab->lookup(var);
+        if (sym && (sym->get_read_count() || sym->get_write_count())) {
+            info.neuron_global_variables.emplace_back(std::move(sym), type);
+        }
+    }
+}
+
 
 void CodegenHelperVisitor::visit_suffix(const Suffix& node) {
     const auto& type = node.get_type()->get_node_name();
@@ -697,6 +710,7 @@ void CodegenHelperVisitor::visit_program(const ast::Program& node) {
     find_range_variables();
     find_non_range_variables();
     find_table_variables();
+    find_neuron_global_variables();
 }
 
 

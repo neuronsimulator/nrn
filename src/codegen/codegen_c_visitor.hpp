@@ -21,6 +21,7 @@
 #include <numeric>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "codegen/codegen_info.hpp"
@@ -394,10 +395,18 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * Name of structure that wraps range variables
+     * Name of structure that wraps global variables
      */
     std::string global_struct() const {
         return fmt::format("{}_Store", info.mod_suffix);
+    }
+
+
+    /**
+     * Name of the (host-only) global instance of `global_struct`
+     */
+    std::string global_struct_instance() const {
+        return info.mod_suffix + "_global";
     }
 
 
@@ -614,9 +623,11 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
     /**
      * Determine the variable name for a global variable given its symbol
      * \param symbol The symbol of a variable for which we want to obtain its name
+     * \param use_instance Should the variable be accessed via the (host-only)
+     * global variable or the instance-specific copy (also available on GPU).
      * \return       The C string representing the access to the global variable
      */
-    std::string global_variable_name(const SymbolType& symbol) const;
+    std::string global_variable_name(const SymbolType& symbol, bool use_instance = true) const;
 
 
     /**
@@ -896,6 +907,13 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
     virtual void print_global_var_struct_decl();
 
     /**
+     * Print static assertions about the global variable struct.
+     *
+     * For ISPC this has to be disabled.
+     */
+    virtual void print_global_var_struct_assertions() const;
+
+    /**
      * The used parameter type qualifier
      * \return an empty string
      */
@@ -1022,8 +1040,11 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
     /**
      * Print the structure that wraps all global variables used in the NMODL
+     *
+     * @param print_initialisers Whether to include default values in the struct
+     *                           definition (true: int foo{42}; false: int foo;)
      */
-    void print_mechanism_global_var_structure();
+    void print_mechanism_global_var_structure(bool print_initialisers);
 
 
     /**
@@ -1059,9 +1080,19 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * Print the code to copy instance variable to device
+     * Print the code to copy instance struct members to the device,
+     * substituting host pointers for device ones.
+     *
+     * \param ptr_members Members to update.
      */
-    virtual void print_instance_variable_transfer_to_device() const;
+    virtual void print_instance_variable_transfer_to_device(
+        std::vector<std::string> const& ptr_members) const;
+
+
+    /**
+     * Print the code to delete the instance structure from the device.
+     */
+    virtual void print_instance_variable_deletion_from_device() const;
 
 
     /**
@@ -1145,31 +1176,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      */
     void print_mech_type_getter();
 
-
-    /**
-     * Print the setup method that initializes all global variables
-     *
-     */
-    void print_global_variable_setup();
-
-
-    /**
-     * Print the pragma annotation needed before a global variable that must be
-     * created on the device. This always comes before a matching call to
-     * print_global_variable_device_create_annotation_post.
-     *
-     * \note This is not used for the C backend
-     */
-    virtual void print_global_variable_device_create_annotation_pre();
-
-    /**
-     * Print the pragma annotation needed after a global variables that must be
-     * created on the device. This always comes after a matching call to
-     * print_global_variable_device_create_annotation_pre.
-     *
-     * \note This is not used for the C backend
-     */
-    virtual void print_global_variable_device_create_annotation_post();
 
     /**
      * Print the pragma annotation to update global variables from host to the device
@@ -1606,9 +1612,9 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
     /**
      * Print all classes
-     *
+     * @param print_initialisers Whether to include default values.
      */
-    void print_data_structures();
+    void print_data_structures(bool print_initialisers);
 
 
     /**
@@ -1641,13 +1647,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * Print entry point to code generation for wrappers
      */
     virtual void print_wrapper_routines();
-
-
-    /**
-     * Get device variable pointer for corresponding host variable
-     */
-    virtual std::string get_variable_device_pointer(const std::string& variable,
-                                                    const std::string& type) const;
 
 
     CodegenCVisitor(const std::string& mod_filename,
@@ -1866,8 +1865,11 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
     /**
      * Print the structure that wraps all range and int variables required for the NMODL
+     *
+     * @param print_initialisers Whether or not default values for variables
+     *                           be included in the struct declaration.
      */
-    void print_mechanism_range_var_structure();
+    void print_mechanism_range_var_structure(bool print_initialisers);
 
     /**
      * Print the function that initialize instance structure

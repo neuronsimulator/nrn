@@ -36,6 +36,7 @@ add_executable(
   visitor/constant_folder.cpp
   visitor/defuse_analyze.cpp
   visitor/global_to_range.cpp
+  visitor/implicit_argument.cpp
   visitor/inline.cpp
   visitor/ispc_rename.cpp
   visitor/json.cpp

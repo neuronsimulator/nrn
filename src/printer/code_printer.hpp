@@ -20,6 +20,7 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <string_view>
 
 namespace nmodl {
 /// implementation of various printers
@@ -100,6 +101,9 @@ class CodePrinter {
 
     /// end of current block scope (i.e. end with "}")
     void end_block(int num_newlines = 0);
+
+    /// end a block with `suffix` before the newline(s) (i.e. [indent]}[suffix]\n*num_newlines)
+    void end_block(std::string_view suffix, std::size_t num_newlines = 1);
 
     int indent_spaces() {
         return NUM_SPACES * indent_level;

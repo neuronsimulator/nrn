@@ -324,7 +324,7 @@ bool needs_neuron_thread_first_arg(const std::string& token) {
  * undefined and hence these needs to be inserted into symbol table
  */
 static std::vector<std::string> const NEURON_VARIABLES =
-    {"t", "dt", "celsius", "v", "diam", "area"};
+    {"t", "dt", "celsius", "v", "diam", "area", "pi", "secondorder"};
 
 
 /// Return token type for the keyword

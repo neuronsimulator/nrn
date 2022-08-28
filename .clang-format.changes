@@ -1,1 +1,1 @@
-StatementMacros: [InstantiatePartialPivLu, nrn_pragma_acc, nrn_pragma_omp]
+StatementMacros: [InstantiatePartialPivLu, PartialPivLuInstantiations, nrn_pragma_acc, nrn_pragma_omp]

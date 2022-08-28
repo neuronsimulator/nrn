@@ -25,6 +25,7 @@
 #include "visitors/ast_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/global_var_visitor.hpp"
+#include "visitors/implicit_argument_visitor.hpp"
 #include "visitors/indexedname_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/ispc_rename_visitor.hpp"
@@ -528,6 +529,11 @@ int main(int argc, const char* argv[]) {
             logger->info("Writing performance statistics to {}", file);
             PerfVisitor(file).visit_program(*ast);
         }
+
+        // Add implicit arguments (like celsius, nt) to NEURON functions (like
+        // nrn_ghk, at_time) whose signatures we have to massage.
+        ImplicitArgumentVisitor{}.visit_program(*ast);
+        SymtabVisitor(update_symtab).visit_program(*ast);
 
         {
             // make sure to run perf visitor because code generator

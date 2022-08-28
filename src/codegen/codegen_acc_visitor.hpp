@@ -86,19 +86,18 @@ class CodegenAccVisitor: public CodegenCVisitor {
     /// if reduction block in nrn_cur required
     bool nrn_cur_reduction_loop_required() override;
 
-
-    /// create global variable on the device
-    void print_global_variable_device_create_annotation_pre() override;
-    void print_global_variable_device_create_annotation_post() override;
-
     /// update global variable from host to the device
     void print_global_variable_device_update_annotation() override;
 
     /// transfer newtonspace structure to device
     void print_newtonspace_transfer_to_device() const override;
 
-    // update instance variable object pointer on the gpu device
-    void print_instance_variable_transfer_to_device() const override;
+    /// copy the instance struct to the device
+    void print_instance_variable_transfer_to_device(
+        std::vector<std::string> const& ptr_members) const override;
+
+    /// delete the instance struct from the device
+    void print_instance_variable_deletion_from_device() const override;
 
     // update derivimplicit advance flag on the gpu device
     void print_deriv_advance_flag_transfer_to_device() const override;
@@ -120,10 +119,6 @@ class CodegenAccVisitor: public CodegenCVisitor {
 
     // print atomic capture pragma
     void print_device_atomic_capture_annotation() const override;
-
-    std::string get_variable_device_pointer(const std::string& variable,
-                                            const std::string& type) const override;
-
 
     void print_net_send_buffering_grow() override;
 
