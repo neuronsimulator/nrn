@@ -343,6 +343,9 @@ struct CodegenInfo {
     std::vector<SymbolType> table_statement_variables;
     std::vector<SymbolType> table_assigned_variables;
 
+    /// [Core]NEURON global variables used (e.g. celsius) and their types
+    std::vector<std::pair<SymbolType, std::string>> neuron_global_variables;
+
     /// function or procedures with table statement
     std::vector<const ast::Block*> functions_with_table;
 

@@ -13,6 +13,7 @@ add_library(
   constant_folder_visitor.cpp
   defuse_analyze_visitor.cpp
   global_var_visitor.cpp
+  implicit_argument_visitor.cpp
   indexedname_visitor.cpp
   inline_visitor.cpp
   kinetic_block_visitor.cpp

@@ -82,5 +82,11 @@ void CodePrinter::end_block(int num_newlines) {
     add_newline(num_newlines);
 }
 
+void CodePrinter::end_block(std::string_view suffix, std::size_t num_newlines) {
+    end_block(0);
+    *result << suffix;
+    add_newline(num_newlines);
+}
+
 }  // namespace printer
 }  // namespace nmodl
