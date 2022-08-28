@@ -196,7 +196,9 @@ struct SetupThreads {
     }
 
     ~SetupThreads() {
-        delete_nrnthreads_on_device(nrn_threads, nrn_nthread);
+        if (corenrn_param.gpu) {
+            delete_nrnthreads_on_device(nrn_threads, nrn_nthread);
+        }
         for (auto& nt: *this) {
             free_memory(std::exchange(nt._data, nullptr));
             delete[] std::exchange(nt._permute, nullptr);

@@ -16,14 +16,14 @@ namespace coreneuron {
 
 #define _STRIDE _cntml_padded + _iml
 
-#define _threadargscomma_ _iml, _cntml_padded, _p, _ppvar, _thread, _nt, _v,
+#define _threadargscomma_ _iml, _cntml_padded, _p, _ppvar, _thread, _nt, _ml, _v,
 #define _threadargsprotocomma_                                                                    \
     int _iml, int _cntml_padded, double *_p, Datum *_ppvar, ThreadDatum *_thread, NrnThread *_nt, \
-        double _v,
-#define _threadargs_ _iml, _cntml_padded, _p, _ppvar, _thread, _nt, _v
+        Memb_list *_ml, double _v,
+#define _threadargs_ _iml, _cntml_padded, _p, _ppvar, _thread, _nt, _ml, _v
 #define _threadargsproto_                                                                         \
     int _iml, int _cntml_padded, double *_p, Datum *_ppvar, ThreadDatum *_thread, NrnThread *_nt, \
-        double _v
+        Memb_list *_ml, double _v
 
 struct Elm {
     unsigned row;        /* Row location */

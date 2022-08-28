@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "coreneuron/apps/corenrn_parameters.hpp"
+#include "coreneuron/gpu/nrn_acc_manager.hpp"
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/network/netcon.hpp"
 #include "coreneuron/nrniv/nrniv_decl.h"
@@ -31,14 +32,197 @@
 #include <cuda_runtime_api.h>
 #endif
 
+#if __has_include(<cxxabi.h>)
+#define USE_CXXABI
+#include <cxxabi.h>
+#include <memory>
+#include <string>
+#endif
+
+#ifdef CORENEURON_ENABLE_PRESENT_TABLE
+#include <cassert>
+#include <cstddef>
+#include <iostream>
+#include <map>
+#include <shared_mutex>
+namespace {
+struct present_table_value {
+    std::size_t ref_count{}, size{};
+    std::byte* dev_ptr{};
+};
+std::map<std::byte const*, present_table_value> present_table;
+std::shared_mutex present_table_mutex;
+}  // namespace
+#endif
+
+namespace {
+/** @brief Try to demangle a type name, return the mangled name on failure.
+ */
+std::string cxx_demangle(const char* mangled) {
+#ifdef USE_CXXABI
+    int status{};
+    // Note that the third argument to abi::__cxa_demangle returns the length of
+    // the allocated buffer, which may be larger than strlen(demangled) + 1.
+    std::unique_ptr<char, decltype(free)*> demangled{
+        abi::__cxa_demangle(mangled, nullptr, nullptr, &status), free};
+    return status ? mangled : demangled.get();
+#else
+    return mangled;
+#endif
+}
+bool cnrn_target_debug_output_enabled() {
+    const char* env = std::getenv("CORENEURON_GPU_DEBUG");
+    if (!env) {
+        return false;
+    }
+    std::string env_s{env};
+    if (env_s == "1") {
+        return true;
+    } else if (env_s == "0") {
+        return false;
+    } else {
+        throw std::runtime_error("CORENEURON_GPU_DEBUG must be set to 0 or 1 (got " + env_s + ")");
+    }
+}
+bool cnrn_target_enable_debug{cnrn_target_debug_output_enabled()};
+}  // namespace
+
 namespace coreneuron {
 extern InterleaveInfo* interleave_info;
-void copy_ivoc_vect_to_device(const IvocVect& iv, IvocVect& div);
-void delete_ivoc_vect_from_device(IvocVect&);
 void nrn_ion_global_map_copyto_device();
 void nrn_ion_global_map_delete_from_device();
 void nrn_VecPlay_copyto_device(NrnThread* nt, void** d_vecplay);
 void nrn_VecPlay_delete_from_device(NrnThread* nt);
+
+void cnrn_target_copyin_debug(std::string_view file,
+                              int line,
+                              std::size_t sizeof_T,
+                              std::type_info const& typeid_T,
+                              void const* h_ptr,
+                              std::size_t len,
+                              void* d_ptr) {
+    if (!cnrn_target_enable_debug) {
+        return;
+    }
+    std::cerr << file << ':' << line << ": cnrn_target_copyin<" << cxx_demangle(typeid_T.name())
+              << ">(" << h_ptr << ", " << len << " * " << sizeof_T << " = " << len * sizeof_T
+              << ") -> " << d_ptr << std::endl;
+}
+void cnrn_target_delete_debug(std::string_view file,
+                              int line,
+                              std::size_t sizeof_T,
+                              std::type_info const& typeid_T,
+                              void const* h_ptr,
+                              std::size_t len) {
+    if (!cnrn_target_enable_debug) {
+        return;
+    }
+    std::cerr << file << ':' << line << ": cnrn_target_delete<" << cxx_demangle(typeid_T.name())
+              << ">(" << h_ptr << ", " << len << " * " << sizeof_T << " = " << len * sizeof_T << ')'
+              << std::endl;
+}
+void cnrn_target_deviceptr_debug(std::string_view file,
+                                 int line,
+                                 std::type_info const& typeid_T,
+                                 void const* h_ptr,
+                                 void* d_ptr) {
+    if (!cnrn_target_enable_debug) {
+        return;
+    }
+    std::cerr << file << ':' << line << ": cnrn_target_deviceptr<" << cxx_demangle(typeid_T.name())
+              << ">(" << h_ptr << ") -> " << d_ptr << std::endl;
+}
+void cnrn_target_is_present_debug(std::string_view file,
+                                  int line,
+                                  std::type_info const& typeid_T,
+                                  void const* h_ptr,
+                                  void* d_ptr) {
+    if (!cnrn_target_enable_debug) {
+        return;
+    }
+    std::cerr << file << ':' << line << ": cnrn_target_is_present<" << cxx_demangle(typeid_T.name())
+              << ">(" << h_ptr << ") -> " << d_ptr << std::endl;
+}
+void cnrn_target_memcpy_to_device_debug(std::string_view file,
+                                        int line,
+                                        std::size_t sizeof_T,
+                                        std::type_info const& typeid_T,
+                                        void const* h_ptr,
+                                        std::size_t len,
+                                        void* d_ptr) {
+    if (!cnrn_target_enable_debug) {
+        return;
+    }
+    std::cerr << file << ':' << line << ": cnrn_target_memcpy_to_device<"
+              << cxx_demangle(typeid_T.name()) << ">(" << d_ptr << ", " << h_ptr << ", " << len
+              << " * " << sizeof_T << " = " << len * sizeof_T << ')' << std::endl;
+}
+
+#ifdef CORENEURON_ENABLE_PRESENT_TABLE
+std::pair<void*, bool> cnrn_target_deviceptr_impl(bool must_be_present_or_null, void const* h_ptr) {
+    if (!h_ptr) {
+        return {nullptr, false};
+    }
+    // Concurrent calls to this method are safe, but they must be serialised
+    // w.r.t. calls to the cnrn_target_*_update_present_table methods.
+    std::shared_lock _{present_table_mutex};
+    if (present_table.empty()) {
+        return {nullptr, must_be_present_or_null};
+    }
+    // prev(first iterator greater than h_ptr or last if not found) gives the first iterator less
+    // than or equal to h_ptr
+    auto const iter = std::prev(std::upper_bound(
+        present_table.begin(), present_table.end(), h_ptr, [](void const* hp, auto const& entry) {
+            return hp < entry.first;
+        }));
+    if (iter == present_table.end()) {
+        return {nullptr, must_be_present_or_null};
+    }
+    std::byte const* const h_byte_ptr{static_cast<std::byte const*>(h_ptr)};
+    std::byte const* const h_start_of_block{iter->first};
+    std::size_t const block_size{iter->second.size};
+    std::byte* const d_start_of_block{iter->second.dev_ptr};
+    bool const is_present{h_byte_ptr < h_start_of_block + block_size};
+    if (!is_present) {
+        return {nullptr, must_be_present_or_null};
+    }
+    return {d_start_of_block + (h_byte_ptr - h_start_of_block), false};
+}
+
+void cnrn_target_copyin_update_present_table(void const* h_ptr, void* d_ptr, std::size_t len) {
+    if (!h_ptr) {
+        assert(!d_ptr);
+        return;
+    }
+    std::lock_guard _{present_table_mutex};
+    // TODO include more pedantic overlap checking?
+    present_table_value new_val{};
+    new_val.size = len;
+    new_val.ref_count = 1;
+    new_val.dev_ptr = static_cast<std::byte*>(d_ptr);
+    auto const [iter, inserted] = present_table.emplace(static_cast<std::byte const*>(h_ptr),
+                                                        std::move(new_val));
+    if (!inserted) {
+        // Insertion didn't occur because h_ptr was already in the present table
+        assert(iter->second.size == len);
+        assert(iter->second.dev_ptr == new_val.dev_ptr);
+        ++(iter->second.ref_count);
+    }
+}
+void cnrn_target_delete_update_present_table(void const* h_ptr, std::size_t len) {
+    if (!h_ptr) {
+        return;
+    }
+    std::lock_guard _{present_table_mutex};
+    auto const iter = present_table.find(static_cast<std::byte const*>(h_ptr));
+    assert(iter != present_table.end());
+    assert(iter->second.size == len);
+    --(iter->second.ref_count);
+    if (iter->second.ref_count == 0) {
+        present_table.erase(iter);
+    }
+}
+#endif
 
 int cnrn_target_get_num_devices() {
 #if defined(CORENEURON_ENABLE_GPU) && !defined(CORENEURON_PREFER_OPENMP_OFFLOAD) && \
@@ -76,7 +260,7 @@ void cnrn_target_set_default_device(int device_num) {
 }
 
 #ifdef CORENEURON_ENABLE_GPU
-
+#ifndef CORENEURON_UNIFIED_MEMORY
 static Memb_list* copy_ml_to_device(const Memb_list* ml, int type) {
     // As we never run code for artificial cell inside GPU we don't copy it.
     int is_art = corenrn.get_is_artificial()[type];
@@ -85,6 +269,14 @@ static Memb_list* copy_ml_to_device(const Memb_list* ml, int type) {
     }
 
     auto d_ml = cnrn_target_copyin(ml);
+
+    if (ml->global_variables) {
+        assert(ml->global_variables_size);
+        void* d_inst = cnrn_target_copyin(static_cast<std::byte*>(ml->global_variables),
+                                          ml->global_variables_size);
+        cnrn_target_memcpy_to_device(&(d_ml->global_variables), &d_inst);
+    }
+
 
     int n = ml->nodecount;
     int szp = corenrn.get_prop_param_size()[type];
@@ -168,6 +360,7 @@ static Memb_list* copy_ml_to_device(const Memb_list* ml, int type) {
 
     return d_ml;
 }
+#endif
 
 static void update_ml_on_host(const Memb_list* ml, int type) {
     int is_art = corenrn.get_is_artificial()[type];
@@ -257,6 +450,13 @@ static void delete_ml_from_device(Memb_list* ml, int type) {
         cnrn_target_delete(ml->pdata, pcnt);
     }
     cnrn_target_delete(ml->nodeindices, n);
+
+    if (ml->global_variables) {
+        assert(ml->global_variables_size);
+        cnrn_target_delete(static_cast<std::byte*>(ml->global_variables),
+                           ml->global_variables_size);
+    }
+
     cnrn_target_delete(ml);
 }
 
@@ -603,9 +803,8 @@ void delete_ivoc_vect_from_device(IvocVect& vec) {
     if (n) {
         cnrn_target_delete(vec.data(), n);
     }
-    cnrn_target_delete(&vec);
 #else
-    (void) vec;
+    static_cast<void>(vec);
 #endif
 }
 
@@ -1108,7 +1307,7 @@ void nrn_newtonspace_delete_from_device(NewtonSpace* ns) {
 }
 
 void nrn_sparseobj_copyto_device(SparseObj* so) {
-#ifdef CORENEURON_ENABLE_GPU
+#if defined(CORENEURON_ENABLE_GPU) && !defined(CORENEURON_UNIFIED_MEMORY)
     // FIXME this check needs to be tweaked if we ever want to run with a mix
     //       of CPU and GPU threads.
     if (nrn_threads[0].compute_gpu == 0) {
@@ -1191,7 +1390,7 @@ void nrn_sparseobj_copyto_device(SparseObj* so) {
 }
 
 void nrn_sparseobj_delete_from_device(SparseObj* so) {
-#ifdef CORENEURON_ENABLE_GPU
+#if defined(CORENEURON_ENABLE_GPU) && !defined(CORENEURON_UNIFIED_MEMORY)
     // FIXME this check needs to be tweaked if we ever want to run with a mix
     //       of CPU and GPU threads.
     if (nrn_threads[0].compute_gpu == 0) {
@@ -1312,7 +1511,7 @@ void nrn_VecPlay_copyto_device(NrnThread* nt, void** d_vecplay) {
 
 void nrn_VecPlay_delete_from_device(NrnThread* nt) {
     for (int i = 0; i < nt->n_vecplay; i++) {
-        auto* vecplay_instance = reinterpret_cast<VecPlayContinuous*>(nt->_vecplay[i]);
+        auto* vecplay_instance = static_cast<VecPlayContinuous*>(nt->_vecplay[i]);
         cnrn_target_delete(vecplay_instance->e_);
         if (vecplay_instance->discon_indices_) {
             delete_ivoc_vect_from_device(*(vecplay_instance->discon_indices_));

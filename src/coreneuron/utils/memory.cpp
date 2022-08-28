@@ -15,7 +15,7 @@
 #include <cassert>
 
 namespace coreneuron {
-bool unified_memory_enabled() {
+bool gpu_enabled() {
 #ifdef CORENEURON_ENABLE_GPU
     return corenrn_param.gpu;
 #else

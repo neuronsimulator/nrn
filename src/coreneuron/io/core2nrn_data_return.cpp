@@ -137,7 +137,7 @@ static void core2nrn_corepointer(int tid, NrnThreadMembList* tml) {
         d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz, layout);
         pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz, layout);
         (*corenrn.get_bbcore_write()[type])(
-            nullptr, nullptr, &dcnt, &icnt, 0, aln_cntml, d, pd, ml->_thread, &nt, 0.0);
+            nullptr, nullptr, &dcnt, &icnt, 0, aln_cntml, d, pd, ml->_thread, &nt, ml, 0.0);
     }
 
     std::unique_ptr<int[]> iArray;
@@ -159,8 +159,18 @@ static void core2nrn_corepointer(int tid, NrnThreadMembList* tml) {
         d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz, layout);
         pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz, layout);
 
-        (*corenrn.get_bbcore_write()[type])(
-            dArray.get(), iArray.get(), &dcnt, &icnt, 0, aln_cntml, d, pd, ml->_thread, &nt, 0.0);
+        (*corenrn.get_bbcore_write()[type])(dArray.get(),
+                                            iArray.get(),
+                                            &dcnt,
+                                            &icnt,
+                                            0,
+                                            aln_cntml,
+                                            d,
+                                            pd,
+                                            ml->_thread,
+                                            &nt,
+                                            ml,
+                                            0.0);
     }
 
     (*core2nrn_corepointer_mech_)(tid, type, icnt, dcnt, iArray.get(), dArray.get());

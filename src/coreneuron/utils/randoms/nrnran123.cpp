@@ -5,20 +5,21 @@
 # See top-level LICENSE file for details.
 # =============================================================================.
 */
+#include "coreneuron/gpu/nrn_acc_manager.hpp"
 #include "coreneuron/mpi/core/nrnmpi.hpp"
 #include "coreneuron/utils/memory.h"
 #include "coreneuron/utils/nrnmutdec.hpp"
 #include "coreneuron/utils/randoms/nrnran123.h"
 
-#include <cmath>
-#include <iostream>
-#include <memory>
-#include <mutex>
-
 #ifdef CORENEURON_USE_BOOST_POOL
 #include <boost/pool/pool_alloc.hpp>
 #include <unordered_map>
 #endif
+
+#include <cmath>
+#include <iostream>
+#include <memory>
+#include <mutex>
 
 // Defining these attributes seems to help nvc++ in OpenMP target offload mode.
 #if defined(CORENEURON_ENABLE_GPU) && defined(CORENEURON_PREFER_OPENMP_OFFLOAD) && \
@@ -76,24 +77,27 @@ using random123_allocator = coreneuron::unified_allocator<coreneuron::nrnran123_
  * shutdown. If the destructor calls cudaFree and the CUDA runtime has already
  * been shut down then tools like cuda-memcheck reports errors.
  */
-nrn_pragma_omp(declare target)
-philox4x32_key_t g_k{};
-nrn_pragma_omp(end declare target)
-nrn_pragma_acc(declare create(g_k))
-
 OMP_Mutex g_instance_count_mutex;
-
 std::size_t g_instance_count{};
 
-constexpr double SHIFT32 = 1.0 / 4294967297.0; /* 1/(2^32 + 1) */
-
-/** @brief Provide a helper function in global namespace that is declared target for OpenMP
- * offloading to function correctly with NVHPC
- */
-CORENRN_HOST_DEVICE philox4x32_ctr_t philox4x32_helper(coreneuron::nrnran123_State* s) {
-    return philox4x32(s->c, g_k);
+#ifdef __CUDACC__
+#define g_k_qualifiers __device__ __constant__
+#else
+#define g_k_qualifiers
+#endif
+g_k_qualifiers philox4x32_key_t g_k{};
+// Cannot refer to g_k directly from a nrn_pragma_acc(routine seq) method like
+// coreneuron_random123_philox4x32_helper, and cannot have this inlined there at
+// higher optimisation levels
+__attribute__((noinline)) philox4x32_key_t& global_state() {
+    return g_k;
 }
 }  // namespace
+
+CORENRN_HOST_DEVICE philox4x32_ctr_t
+coreneuron_random123_philox4x32_helper(coreneuron::nrnran123_State* s) {
+    return philox4x32(s->c, global_state());
+}
 
 namespace coreneuron {
 std::size_t nrnran123_instance_count() {
@@ -102,84 +106,13 @@ std::size_t nrnran123_instance_count() {
 
 /* if one sets the global, one should reset all the stream sequences. */
 uint32_t nrnran123_get_globalindex() {
-    return g_k.v[0];
-}
-
-void nrnran123_getseq(nrnran123_State* s, uint32_t* seq, char* which) {
-    *seq = s->c.v[0];
-    *which = s->which_;
-}
-
-void nrnran123_setseq(nrnran123_State* s, uint32_t seq, char which) {
-    if (which > 3) {
-        s->which_ = 0;
-    } else {
-        s->which_ = which;
-    }
-    s->c.v[0] = seq;
-    s->r = philox4x32_helper(s);
-}
-
-void nrnran123_getids(nrnran123_State* s, uint32_t* id1, uint32_t* id2) {
-    *id1 = s->c.v[2];
-    *id2 = s->c.v[3];
-}
-
-void nrnran123_getids3(nrnran123_State* s, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
-    *id3 = s->c.v[1];
-    *id1 = s->c.v[2];
-    *id2 = s->c.v[3];
-}
-
-uint32_t nrnran123_ipick(nrnran123_State* s) {
-    uint32_t rval;
-    char which = s->which_;
-    rval = s->r.v[int{which++}];
-    if (which > 3) {
-        which = 0;
-        s->c.v[0]++;
-        s->r = philox4x32_helper(s);
-    }
-    s->which_ = which;
-    return rval;
-}
-
-double nrnran123_dblpick(nrnran123_State* s) {
-    return nrnran123_uint2dbl(nrnran123_ipick(s));
-}
-
-double nrnran123_negexp(nrnran123_State* s) {
-    /* min 2.3283064e-10 to max 22.18071 */
-    return -std::log(nrnran123_dblpick(s));
-}
-
-/* at cost of a cached  value we could compute two at a time. */
-double nrnran123_normal(nrnran123_State* s) {
-    double w, x, y;
-    double u1, u2;
-
-    do {
-        u1 = nrnran123_dblpick(s);
-        u2 = nrnran123_dblpick(s);
-        u1 = 2. * u1 - 1.;
-        u2 = 2. * u2 - 1.;
-        w = (u1 * u1) + (u2 * u2);
-    } while (w > 1);
-
-    y = std::sqrt((-2. * log(w)) / w);
-    x = u1 * y;
-    return x;
-}
-
-double nrnran123_uint2dbl(uint32_t u) {
-    /* 0 to 2^32-1 transforms to double value in open (0,1) interval */
-    /* min 2.3283064e-10 to max (1 - 2.3283064e-10) */
-    return ((double) u + 1.0) * SHIFT32;
+    return global_state().v[0];
 }
 
 /* nrn123 streams are created from cpu launcher routine */
 void nrnran123_set_globalindex(uint32_t gix) {
     // If the global seed is changing then we shouldn't have any active streams.
+    auto& g_k = global_state();
     {
         std::lock_guard<OMP_Mutex> _{g_instance_count_mutex};
         if (g_instance_count != 0 && nrnmpi_myid == 0) {
@@ -190,9 +123,40 @@ void nrnran123_set_globalindex(uint32_t gix) {
                 << g_k.v[0] << ')' << std::endl;
         }
     }
-    g_k.v[0] = gix;
-    nrn_pragma_acc(update device(g_k))
-    nrn_pragma_omp(target update to(g_k))
+    if (g_k.v[0] != gix) {
+        g_k.v[0] = gix;
+        if (coreneuron::gpu_enabled()) {
+#ifdef __CUDACC__
+            {
+                auto const code = cudaMemcpyToSymbol(g_k, &g_k, sizeof(g_k));
+                assert(code == cudaSuccess);
+            }
+            {
+                auto const code = cudaDeviceSynchronize();
+                assert(code == cudaSuccess);
+            }
+#else
+            nrn_pragma_acc(update device(g_k))
+            nrn_pragma_omp(target update to(g_k))
+#endif
+        }
+    }
+}
+
+void nrnran123_initialise_global_state_on_device() {
+    if (coreneuron::gpu_enabled()) {
+#ifndef __CUDACC__
+        nrn_pragma_acc(enter data copyin(g_k))
+#endif
+    }
+}
+
+void nrnran123_destroy_global_state_on_device() {
+    if (coreneuron::gpu_enabled()) {
+#ifndef __CUDACC__
+        nrn_pragma_acc(exit data delete (g_k))
+#endif
+    }
 }
 
 /** @brief Allocate a new Random123 stream.

@@ -38,11 +38,6 @@ MOD_OBJS_DIR = $(OUTPUT_DIR)/corenrn/build
 
 # Linked libraries gathered by CMake
 LDFLAGS = $(LINKFLAGS) @CORENRN_COMMON_LDFLAGS@
-CORENRNLIB_FLAGS = -L$(CORENRN_LIB_DIR) -lcoreneuron
-CORENRNLIB_FLAGS += $(if @reportinglib_LIB_DIR@, -W$(subst ;, -W,l,-rpath,@reportinglib_LIB_DIR@),)
-CORENRNLIB_FLAGS += $(if @sonatareport_LIB_DIR@, -W$(subst ;, -W,l,-rpath,@sonatareport_LIB_DIR@),)
-CORENRNLIB_FLAGS += $(if @caliper_LIB_DIR@, -W$(subst ;, -W,l,-rpath,@caliper_LIB_DIR@),)
-CORENRNLIB_FLAGS += $(if @caliper_LIB_DIR@,-L@caliper_LIB_DIR@,)
 
 # Includes paths gathered by CMake
 # coreneuron/utils/randoms goes first because it needs to override the NEURON
@@ -82,7 +77,7 @@ ifeq ($(wildcard $(CORENRN_PERLEXE)),)
 endif
 
 CXXFLAGS = @CORENRN_CXX_FLAGS@
-CXX_COMPILE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ @CORENRN_COMMON_COMPILE_DEFS@ $(INCLUDES)
+CXX_COMPILE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ $(INCLUDES)
 CXX_LINK_EXE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@
 CXX_SHARED_LIB_CMD = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
 
@@ -207,34 +202,39 @@ endif
 
 
 # main target to build binary
-$(SPECIAL_EXE): coremech_lib_target
+$(SPECIAL_EXE): $(corenrnmech_lib_target)
 	@printf " => $(C_GREEN)Binary$(C_RESET) creating $(SPECIAL_EXE)\n"
 	$(CXX_LINK_EXE_CMD) -o $(SPECIAL_EXE) $(CORENRN_SHARE_CORENRN_DIR)/coreneuron.cpp \
 	  -I$(CORENRN_INC_DIR) $(INCFLAGS) \
-	  -L$(OUTPUT_DIR) -l$(COREMECH_LIB_NAME) $(CORENRNLIB_FLAGS) $(LDFLAGS) \
+	  -L$(OUTPUT_DIR) -l$(COREMECH_LIB_NAME) $(LDFLAGS) \
+	  -L$(CORENRN_LIB_DIR) \
 	  -Wl,-rpath,'$(LIB_RPATH)' -Wl,-rpath,$(CORENRN_LIB_DIR) -Wl,-rpath,'$(INSTALL_LIB_RPATH)'
-
-coremech_lib_target: $(corenrnmech_lib_target)
-	rm -rf $(OUTPUT_DIR)/.libs/lib$(COREMECH_LIB_NAME)$(LIB_SUFFIX); \
-	mkdir -p $(OUTPUT_DIR)/.libs; \
-	ln -s ../lib$(COREMECH_LIB_NAME)$(LIB_SUFFIX) $(OUTPUT_DIR)/.libs/lib$(COREMECH_LIB_NAME)$(LIB_SUFFIX)
 
 $(ENGINEMECH_OBJ): $(CORENRN_SHARE_CORENRN_DIR)/enginemech.cpp | $(MOD_OBJS_DIR)
 	$(CXX_COMPILE_CMD) -c -DADDITIONAL_MECHS $(CORENRN_SHARE_CORENRN_DIR)/enginemech.cpp -o $(ENGINEMECH_OBJ)
 
 # build shared library of mechanisms
 coremech_lib_shared: $(ALL_OBJS) $(ENGINEMECH_OBJ) build_always
+	# extract the object files from libcoreneuron-core.a
+	mkdir -p $(MOD_OBJS_DIR)/libcoreneuron-core
+	rm -f $(MOD_OBJS_DIR)/libcoreneuron-core/*.o
+	# --output is only supported by modern versions of ar
+	(cd $(MOD_OBJS_DIR)/libcoreneuron-core && ar x $(CORENRN_LIB_DIR)/libcoreneuron-core.a)
 	$(CXX_SHARED_LIB_CMD) $(ENGINEMECH_OBJ) -o ${COREMECH_LIB_PATH} $(ALL_OBJS) \
 	  -I$(CORENRN_INC_DIR) $(INCFLAGS) \
-	  $(LDFLAGS) $(CORENRN_LIB_DIR)/libscopmath.a \
-	  ${SONAME_OPTION} $(CORENRNLIB_FLAGS) -Wl,-rpath,$(CORENRN_LIB_DIR);
+	  @CORENEURON_LINKER_START_GROUP@ \
+	  $(MOD_OBJS_DIR)/libcoreneuron-core/*.o @CORENEURON_LINKER_END_GROUP@ \
+		$(LDFLAGS) ${SONAME_OPTION} \
+		-Wl,-rpath,$(CORENRN_LIB_DIR) -L$(CORENRN_LIB_DIR)
+	# cleanup
+	rm $(MOD_OBJS_DIR)/libcoreneuron-core/*.o
 
 # build static library of mechanisms
 coremech_lib_static: $(ALL_OBJS) $(ENGINEMECH_OBJ) build_always
-	mkdir -p $(MOD_OBJS_DIR)/scopmath; \
-	cd $(MOD_OBJS_DIR)/scopmath && ar -x $(CORENRN_LIB_DIR)/libscopmath.a && cd -;\
-	rm -f ${COREMECH_LIB_PATH}; \
-	ar cq ${COREMECH_LIB_PATH} $(ENGINEMECH_OBJ) $(ALL_OBJS) $(MOD_OBJS_DIR)/scopmath/*.o;
+	# make a libcorenrnmech.a by copying libcoreneuron-core.a and then appending
+	# the newly compiled objects
+	cp $(CORENRN_LIB_DIR)/libcoreneuron-core.a ${COREMECH_LIB_PATH}
+	ar r ${COREMECH_LIB_PATH} $(ENGINEMECH_OBJ) $(ALL_OBJS)
 
 # compile cpp files to .o
 $(MOD_OBJS_DIR)/%.o: $(MOD_TO_CPP_DIR)/%.cpp | $(MOD_OBJS_DIR)
@@ -273,7 +273,7 @@ $(MOD_OBJS_DIR):
 	mkdir -p $(MOD_OBJS_DIR)
 
 # install binary and libraries
-install: $(SPECIAL_EXE) coremech_lib_target
+install: $(SPECIAL_EXE)
 	install -d $(DESTDIR)/bin $(DESTDIR)/lib
 	install ${COREMECH_LIB_PATH} $(DESTDIR)/lib
 	install $(SPECIAL_EXE) $(DESTDIR)/bin

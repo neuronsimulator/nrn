@@ -1,18 +1,14 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
 */
-
 #pragma once
-
+#include <memory>
+#include <ostream>
 #include <string>
-#include <fstream>
-#include <iostream>
-#include <iomanip>
-#include <CLI/CLI.hpp>
 
 /**
  * \class corenrn_parameters
@@ -31,6 +27,10 @@
  * parameter. e.g. --mpi --gpu gpu --nwarp
  * Also single dash long options are not supported anymore (-mpi -> --mpi).
  */
+
+namespace CLI {
+struct App;
+}
 
 namespace coreneuron {
 
@@ -94,10 +94,8 @@ struct corenrn_parameters_data {
 };
 
 struct corenrn_parameters: corenrn_parameters_data {
-    CLI::App app{"CoreNeuron - Optimised Simulator Engine for NEURON."};  /// CLI app that performs
-                                                                          /// CLI parsing
-
-    corenrn_parameters();  /// Constructor that initializes the CLI11 app.
+    corenrn_parameters();   /// Constructor that initializes the CLI11 app.
+    ~corenrn_parameters();  /// Destructor defined in .cpp where CLI11 types are complete.
 
     void parse(int argc, char* argv[]);  /// Runs the CLI11_PARSE macro.
 
@@ -111,6 +109,22 @@ struct corenrn_parameters: corenrn_parameters_data {
     inline bool is_quiet() {
         return verbose == verbose_level::NONE;
     }
+
+    /** @brief Return a string summarising the current parameter values.
+     *
+     * This forwards to the CLI11 method of the same name. Returns a string that
+     * could be read in as a config of the current values of the App.
+     *
+     * @param default_also Include any defaulted arguments.
+     * @param write_description Include option descriptions and the App description.
+     */
+    std::string config_to_str(bool default_also = false, bool write_description = false) const;
+
+  private:
+    // CLI app that performs CLI parsing. std::unique_ptr avoids having to
+    // include CLI11 headers from CoreNEURON headers, and therefore avoids
+    // CoreNEURON having to install CLI11 when using it from a submodule.
+    std::unique_ptr<CLI::App> m_app;
 };
 
 std::ostream& operator<<(std::ostream& os,

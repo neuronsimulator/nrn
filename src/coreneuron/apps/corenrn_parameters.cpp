@@ -5,15 +5,17 @@
 # See top-level LICENSE file for details.
 # =============================================================================.
 */
-
 #include "coreneuron/apps/corenrn_parameters.hpp"
 
+#include <CLI/CLI.hpp>
 
 namespace coreneuron {
 
 extern std::string cnrn_version();
 
-corenrn_parameters::corenrn_parameters() {
+corenrn_parameters::corenrn_parameters()
+    : m_app{std::make_unique<CLI::App>("CoreNeuron - Optimised Simulator Engine for NEURON.")} {
+    auto& app = *m_app;
     app.set_config("--read-config", "", "Read parameters from ini file", false)
         ->check(CLI::ExistingFile);
     app.add_option("--write-config",
@@ -167,14 +169,21 @@ corenrn_parameters::corenrn_parameters() {
     CLI::retire_option(app, "--show");
 }
 
+// Implementation in .cpp file where CLI types are complete.
+corenrn_parameters::~corenrn_parameters() = default;
+
+std::string corenrn_parameters::config_to_str(bool default_also, bool write_description) const {
+    return m_app->config_to_str(default_also, write_description);
+}
+
 void corenrn_parameters::reset() {
     static_cast<corenrn_parameters_data&>(*this) = corenrn_parameters_data{};
-    app.clear();
+    m_app->clear();
 }
 
 void corenrn_parameters::parse(int argc, char** argv) {
     try {
-        app.parse(argc, argv);
+        m_app->parse(argc, argv);
         if (verbose == verbose_level::NONE) {
             nrn_nobanner_ = 1;
         }
@@ -182,11 +191,11 @@ void corenrn_parameters::parse(int argc, char** argv) {
         // in case of parsing errors, show message with exception
         std::cerr << "CLI parsing error, see nrniv-core --help for more information. \n"
                   << std::endl;
-        app.exit(e);
+        m_app->exit(e);
         throw e;
     } catch (const CLI::ParseError& e) {
         // use --help is also ParseError; in this case exit by showing all options
-        app.exit(e);
+        m_app->exit(e);
         exit(0);
     }
 

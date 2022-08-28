@@ -337,7 +337,7 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
         offset += nrn_soa_padded_size(nodecounts[i], layout) * param_sizes[type];
         if (nodeindices_) {
             std::copy(nodeindices_, nodeindices_ + nodecounts[i], tml.nodeindices.data());
-            free_memory(nodeindices_);
+            free(nodeindices_);  // not free_memory because this is allocated by NEURON?
         }
         if (corenrn.get_is_artificial()[type]) {
             assert(nodeindices_ == nullptr);
@@ -867,6 +867,7 @@ void Phase2::get_info_from_bbcore(NrnThread& nt,
                                                pd,
                                                ml->_thread,
                                                &nt,
+                                               ml,
                                                0.0);
         }
         assert(dk == static_cast<int>(tmls[i].dArray.size()));
@@ -958,7 +959,8 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
 
     NrnThreadMembList* tml_last = nullptr;
     for (int i = 0; i < n_mech; ++i) {
-        auto tml = create_tml(i, memb_func[mech_types[i]], shadow_rhs_cnt, mech_types, nodecounts);
+        auto tml =
+            create_tml(nt, i, memb_func[mech_types[i]], shadow_rhs_cnt, mech_types, nodecounts);
 
         nt._ml_list[tml->index] = tml->ml;
 

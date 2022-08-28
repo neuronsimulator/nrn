@@ -4,13 +4,6 @@
 # See top-level LICENSE file for details.
 # =============================================================================
 add_executable(interleave_info_bin check_constructors.cpp)
-target_link_libraries(interleave_info_bin ${MPI_CXX_LIBRARIES} coreneuron ${corenrn_mech_library}
-                      ${reportinglib_LIBRARY} ${sonatareport_LIBRARY})
-add_dependencies(interleave_info_bin nrniv-core)
-# Tell CMake *not* to run an explicit device code linker step (which will produce errors); let the
-# NVHPC C++ compiler handle this implicitly.
-set_target_properties(interleave_info_bin PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS OFF)
-target_compile_options(interleave_info_bin PRIVATE ${CORENEURON_BOOST_UNIT_TEST_COMPILE_FLAGS})
-add_test(NAME interleave_info_constructor_test COMMAND ${TEST_EXEC_PREFIX}
-                                                       $<TARGET_FILE:interleave_info_bin>)
+target_link_libraries(interleave_info_bin coreneuron-unit-test)
+add_test(NAME interleave_info_constructor_test COMMAND $<TARGET_FILE:interleave_info_bin>)
 cpp_cc_configure_sanitizers(TARGET interleave_info_bin TEST interleave_info_constructor_test)

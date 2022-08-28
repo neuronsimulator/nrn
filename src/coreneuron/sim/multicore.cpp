@@ -61,7 +61,8 @@ static int table_check_cnt_;
 static ThreadDatum* table_check_;
 
 
-NrnThreadMembList* create_tml(int mech_id,
+NrnThreadMembList* create_tml(NrnThread& nt,
+                              int mech_id,
                               Memb_func& memb_func,
                               int& shadow_rhs_cnt,
                               const std::vector<int>& mech_types,
@@ -89,6 +90,10 @@ NrnThreadMembList* create_tml(int mech_id,
         if (tml->ml->nodecount > shadow_rhs_cnt) {
             shadow_rhs_cnt = tml->ml->nodecount;
         }
+    }
+
+    if (auto* const priv_ctor = corenrn.get_memb_func(tml->index).private_constructor) {
+        priv_ctor(&nt, tml->ml, tml->index);
     }
 
     return tml;
@@ -166,7 +171,7 @@ void nrn_thread_table_check() {
         auto tml = static_cast<NrnThreadMembList*>(table_check_[i + 1]._pvoid);
         Memb_list* ml = tml->ml;
         (*corenrn.get_memb_func(tml->index).thread_table_check_)(
-            0, ml->_nodecount_padded, ml->data, ml->pdata, ml->_thread, &nt, tml->index);
+            0, ml->_nodecount_padded, ml->data, ml->pdata, ml->_thread, &nt, ml, tml->index);
     }
 }
 }  // namespace coreneuron

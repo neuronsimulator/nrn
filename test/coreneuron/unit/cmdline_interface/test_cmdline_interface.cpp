@@ -130,5 +130,5 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
 
     // Everything has its default value, and the first `false` says not to
     // include default values in the output, so this should be empty
-    BOOST_CHECK(corenrn_param_test.app.config_to_str(false, false).empty());
+    BOOST_CHECK(corenrn_param_test.config_to_str(false, false).empty());
 }

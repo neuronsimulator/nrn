@@ -1,16 +1,33 @@
-/******************************************************************************
- *
- * File: errcodes.h
- *
- * Copyright (c) 1984, 1985, 1986, 1987, 1988, 1989, 1990
- *   Duke University
- *
- * errcodes.h,v 1.1.1.1 1994/10/12 17:22:18 hines Exp
- *
- ******************************************************************************/
+/*
+# =============================================================================
+# Originally errcodes.h from SCoP library, Copyright (c) 1984-90 Duke University
+# =============================================================================
+# Subsequent extensive prototype and memory layout changes for CoreNEURON
+#
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
+#
+# See top-level LICENSE file for details.
+# =============================================================================.
+*/
+#pragma once
 namespace coreneuron {
 extern int abort_run(int);
-}
+namespace scopmath {
+/** @brief Flag to disable some code sections at compile time.
+ *
+ *  Some methods, such as coreneuron::scopmath::sparse::getelm(...), decide at
+ *  runtime whether they are simply accessors, or if they dynamically modify the
+ *  matrix in question, possibly allocating new memory. Typically the second
+ *  mode will be used during model initialisation, while the first will be used
+ *  during computation/simulation. Compiling the more complicated code for the
+ *  second mode can be problematic for targets such as GPU, where dynamic
+ *  allocation and global state are complex. This enum is intended to be used as
+ *  a template parameter to flag (at compile time) when this code can be
+ *  omitted.
+ */
+enum struct enabled_code { all, compute_only };
+}  // namespace scopmath
+}  // namespace coreneuron
 #define ROUNDOFF       1.e-20
 #define ZERO           1.e-8
 #define STEP           1.e-6

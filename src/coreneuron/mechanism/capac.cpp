@@ -32,10 +32,12 @@ void capacitance_reg(void) {
     /* all methods deal with capacitance in special ways */
     register_mech(mechanism,
                   nrn_alloc_capacitance,
-                  (mod_f_t) 0,
-                  (mod_f_t) 0,
-                  (mod_f_t) 0,
-                  (mod_f_t) nrn_init_capacitance,
+                  nullptr,
+                  nullptr,
+                  nullptr,
+                  nrn_init_capacitance,
+                  nullptr,
+                  nullptr,
                   -1,
                   1);
     int mechtype = nrn_get_mechtype(mechanism[1]);

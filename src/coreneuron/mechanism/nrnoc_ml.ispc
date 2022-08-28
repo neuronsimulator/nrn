@@ -57,6 +57,8 @@ struct Memb_list {
     uniform int nodecount;
     uniform int _nodecount_padded;
     void* uniform instance;
+    void* uniform global_variables;
+    uniform size_t global_variables_size;
 };
 
 struct Point_process {
@@ -152,8 +154,6 @@ struct NrnThread {
     int* _watch_types;
     void* mapping;
 };
-
-extern uniform double ispc_celsius;
 
 // NOTE : this implementation is duplicated from "coreneuron/network/cvodestb.cpp"
 // If changes are required, make sure to change CPP as well.

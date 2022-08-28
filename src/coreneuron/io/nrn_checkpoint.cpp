@@ -449,7 +449,7 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
                 d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz, layout);
                 pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz, layout);
                 (*corenrn.get_bbcore_write()[type])(
-                    nullptr, nullptr, &dcnt, &icnt, 0, aln_cntml, d, pd, ml->_thread, &nt, 0.0);
+                    nullptr, nullptr, &dcnt, &icnt, 0, aln_cntml, d, pd, ml->_thread, &nt, ml, 0.0);
             }
             fh << icnt << "\n";
             fh << dcnt << "\n";
@@ -478,7 +478,7 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
                 pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz, layout);
 
                 (*corenrn.get_bbcore_write()[type])(
-                    dArray, iArray, &dcnt, &icnt, 0, aln_cntml, d, pd, ml->_thread, &nt, 0.0);
+                    dArray, iArray, &dcnt, &icnt, 0, aln_cntml, d, pd, ml->_thread, &nt, ml, 0.0);
             }
 
             if (icnt) {
@@ -592,6 +592,7 @@ bool CheckPoints::initialize() {
                                            ml->pdata,
                                            ml->_thread,
                                            nrn_threads,
+                                           ml,
                                            0.0);
             break;
         }
@@ -802,6 +803,7 @@ void CheckPoints::write_tqueue(NrnThread& nt, FileHandler& fh) const {
                 ml->pdata,
                 ml->_thread,
                 nrn_threads,
+                ml,
                 0.0);
             break;
         }

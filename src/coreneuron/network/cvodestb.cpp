@@ -84,16 +84,4 @@ void fixed_play_continuous(NrnThread* nt) {
     }
 }
 
-// NOTE : this implementation is duplicated in "coreneuron/mechanism/nrnoc_ml.ispc"
-// for the ISPC backend. If changes are required, make sure to change ISPC as well.
-nrn_pragma_omp(declare target)
-int at_time(NrnThread* nt, double te) {
-    double x = te - 1e-11;
-    if (x <= nt->_t && x > (nt->_t - nt->_dt)) {
-        return 1;
-    }
-    return 0;
-}
-nrn_pragma_omp(end declare target)
-
 }  // namespace coreneuron

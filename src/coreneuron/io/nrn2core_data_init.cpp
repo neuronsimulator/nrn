@@ -407,6 +407,7 @@ extern void** pattern_stim_info_ref(int icnt,
                                     Datum* _ppvar,
                                     ThreadDatum* _thread,
                                     NrnThread* _nt,
+                                    Memb_list* ml,
                                     double v);
 
 extern "C" {
@@ -437,7 +438,7 @@ void nrn2core_patstim_share_info() {
             assert(0);
         }
 
-        void** info = pattern_stim_info_ref(_iml, _cntml, _p, _ppvar, nullptr, nt, 0.0);
+        void** info = pattern_stim_info_ref(_iml, _cntml, _p, _ppvar, nullptr, nt, ml, 0.0);
         (*nrn2core_patternstim_)(info);
     }
 }

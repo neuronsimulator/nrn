@@ -36,7 +36,8 @@ struct NrnThreadMembList { /* patterned after CvMembList in cvodeobj.h */
     int* dependencies; /* list of mechanism types that this mechanism depends on*/
     int ndependencies; /* for scheduling we need to know the dependency count */
 };
-NrnThreadMembList* create_tml(int mech_id,
+NrnThreadMembList* create_tml(NrnThread& nt,
+                              int mech_id,
                               Memb_func& memb_func,
                               int& shadow_rhs_cnt,
                               const std::vector<int>& mech_types,
@@ -163,6 +164,7 @@ void nrn_multithread_job(F&& job, Args&&... args) {
 
     #pragma omp parallel for private(i) shared(nrn_threads, job, nrn_nthread, \
                                            nrnmpi_myid) schedule(static, 1)
+    // FIXME: multiple forwarding of the same arguments...
     for (i = 0; i < nrn_nthread; ++i) {
         job(nrn_threads + i, std::forward<Args>(args)...);
     }
@@ -192,6 +194,13 @@ extern void direct_mode_initialize();
 extern void nrn_mk_table_check(void);
 extern void nonvint(NrnThread* _nt);
 extern void update(NrnThread*);
-
-
+// NOTE : this implementation is duplicated in "coreneuron/mechanism/nrnoc_ml.ispc"
+// for the ISPC backend. If changes are required, make sure to change ISPC as well.
+constexpr int at_time(NrnThread* nt, double te) {
+    double x = te - 1e-11;
+    if (x <= nt->_t && x > (nt->_t - nt->_dt)) {
+        return 1;
+    }
+    return 0;
+}
 }  // namespace coreneuron

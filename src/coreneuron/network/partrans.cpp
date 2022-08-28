@@ -133,12 +133,9 @@ void nrnthread_v_transfer(NrnThread* _nt) {
 void nrn_partrans::copy_gap_indices_to_device() {
     // Ensure index vectors, src_gather, and insrc_buf_ are on the gpu.
     if (insrcdspl_) {
-        int n_insrc_buf = insrcdspl_[nrnmpi_numprocs];
-        static_cast<void>(n_insrc_buf);
-        nrn_pragma_acc(enter data create(insrc_buf_[:n_insrc_buf]))
-        // clang-format off
-        nrn_pragma_omp(target enter data map(alloc: insrc_buf_[:n_insrc_buf]))
-        // clang-format off
+        // TODO: we don't actually need to copy here, just allocate + associate
+        // storage on the device
+        cnrn_target_copyin(insrc_buf_, insrcdspl_[nrnmpi_numprocs]);
     }
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         const NrnThread* nt = nrn_threads + tid;
@@ -150,13 +147,9 @@ void nrn_partrans::copy_gap_indices_to_device() {
 
         if (!ttd.src_indices.empty()) {
             cnrn_target_copyin(ttd.src_indices.data(), ttd.src_indices.size());
-
-            size_t n_src_gather = ttd.src_gather.size();
-            const double* src_gather = ttd.src_gather.data();
-            static_cast<void>(n_src_gather);
-            static_cast<void>(src_gather);
-            nrn_pragma_acc(enter data create(src_gather[:n_src_gather]))
-            nrn_pragma_omp(target enter data map(alloc: src_gather[:n_src_gather]))
+            // TODO: we don't actually need to copy here, just allocate +
+            // associate storage on the device.
+            cnrn_target_copyin(ttd.src_gather.data(), ttd.src_gather.size());
         }
 
         if (ttd.insrc_indices.size()) {

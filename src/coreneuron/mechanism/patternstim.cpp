@@ -38,6 +38,7 @@ extern void pattern_stim_setup_helper(int size,
                                       Datum* _ppvar,
                                       ThreadDatum* _thread,
                                       NrnThread* _nt,
+                                      Memb_list* ml,
                                       double v);
 
 static size_t read_raster_file(const char* fname, double** tvec, int** gidvec, double tstop);
@@ -93,7 +94,7 @@ void nrn_mkPatternStim(const char* fname, double tstop) {
     } else {
         assert(0);
     }
-    pattern_stim_setup_helper(size, tvec, gidvec, _iml, _cntml, _p, _ppvar, nullptr, nt, 0.0);
+    pattern_stim_setup_helper(size, tvec, gidvec, _iml, _cntml, _p, _ppvar, nullptr, nt, ml, 0.0);
 }
 
 size_t read_raster_file(const char* fname, double** tvec, int** gidvec, double tstop) {
@@ -136,8 +137,8 @@ size_t read_raster_file(const char* fname, double** tvec, int** gidvec, double t
 }
 
 // see nrn_setup.cpp:read_phase2 for how it creates NrnThreadMembList instances.
-static NrnThreadMembList* alloc_nrn_thread_memb(int type) {
-    NrnThreadMembList* tml = (NrnThreadMembList*) emalloc(sizeof(NrnThreadMembList));
+static NrnThreadMembList* alloc_nrn_thread_memb(NrnThread* nt, int type) {
+    NrnThreadMembList* tml = (NrnThreadMembList*) ecalloc(1, sizeof(NrnThreadMembList));
     tml->dependencies = nullptr;
     tml->ndependencies = 0;
     tml->index = type;
@@ -148,7 +149,7 @@ static NrnThreadMembList* alloc_nrn_thread_memb(int type) {
     int psize = corenrn.get_prop_param_size()[type];
     int dsize = corenrn.get_prop_dparam_size()[type];
     int layout = corenrn.get_mech_data_layout()[type];
-    tml->ml = (Memb_list*) emalloc(sizeof(Memb_list));
+    tml->ml = (Memb_list*) ecalloc(1, sizeof(Memb_list));
     tml->ml->nodecount = 1;
     tml->ml->_nodecount_padded = tml->ml->nodecount;
     tml->ml->nodeindices = nullptr;
@@ -159,6 +160,10 @@ static NrnThreadMembList* alloc_nrn_thread_memb(int type) {
     tml->ml->_net_receive_buffer = nullptr;
     tml->ml->_net_send_buffer = nullptr;
     tml->ml->_permute = nullptr;
+
+    if (auto* const priv_ctor = corenrn.get_memb_func(tml->index).private_constructor) {
+        priv_ctor(nt, tml->ml, tml->index);
+    }
 
     return tml;
 }
@@ -177,7 +182,7 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
     // printf("nrn_artcell_instantiate %s type=%d\n", mechname, type);
 
     // create and append to nt.tml
-    auto tml = alloc_nrn_thread_memb(type);
+    auto tml = alloc_nrn_thread_memb(nt, type);
 
     assert(nt->_ml_list[type] == nullptr);  // FIXME
     nt->_ml_list[type] = tml->ml;

@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
@@ -51,15 +51,12 @@ const char* corenrn_version() {
     return coreneuron::bbcore_write_version;
 }
 
-// the CORENRN_USE_LEGACY_UNITS determined by CORENRN_ENABLE_LEGACY_UNITS
+// the CORENEURON_USE_LEGACY_UNITS determined by CORENRN_ENABLE_LEGACY_UNITS
 bool corenrn_units_use_legacy() {
-    return CORENRN_USE_LEGACY_UNITS;
+    return CORENEURON_USE_LEGACY_UNITS;
 }
 
 void (*nrn2core_part2_clean_)();
-
-// cf. utils/ispc_globals.c
-extern double ispc_celsius;
 
 /**
  * If "export OMP_NUM_THREADS=n" is not set then omp by default sets
@@ -243,9 +240,6 @@ void nrn_init_and_load_data(int argc,
     }
 
     corenrn_param.celsius = celsius;
-
-    // for ispc backend
-    ispc_celsius = celsius;
 
     // create net_cvode instance
     mk_netcvode();
@@ -456,7 +450,7 @@ std::unique_ptr<ReportHandler> create_report_handler(ReportConfiguration& config
 
 using namespace coreneuron;
 
-#if NRNMPI && defined CORENRN_ENABLE_MPI_DYNAMIC
+#if NRNMPI && defined(CORENEURON_ENABLE_MPI_DYNAMIC)
 static void* load_dynamic_mpi(const std::string& libname) {
     dlerror();
     void* handle = dlopen(libname.c_str(), RTLD_NOW | RTLD_GLOBAL);
@@ -478,7 +472,7 @@ extern "C" void mk_mech_init(int argc, char** argv) {
 
 #if NRNMPI
     if (corenrn_param.mpi_enable) {
-#ifdef CORENRN_ENABLE_MPI_DYNAMIC
+#ifdef CORENEURON_ENABLE_MPI_DYNAMIC
         // coreneuron rely on neuron to detect mpi library distribution and
         // the name of the library itself. Make sure the library name is specified
         // via CLI option.
@@ -506,12 +500,16 @@ extern "C" void mk_mech_init(int argc, char** argv) {
 #ifdef CORENEURON_ENABLE_GPU
     if (corenrn_param.gpu) {
         init_gpu();
+        cnrn_target_copyin(&celsius);
+        cnrn_target_copyin(&pi);
+        cnrn_target_copyin(&secondorder);
+        nrnran123_initialise_global_state_on_device();
     }
 #endif
 
     if (!corenrn_param.writeParametersFilepath.empty()) {
         std::ofstream out(corenrn_param.writeParametersFilepath, std::ios::trunc);
-        out << corenrn_param.app.config_to_str(false, false);
+        out << corenrn_param.config_to_str(false, false);
         out.close();
     }
 
@@ -685,6 +683,10 @@ extern "C" int run_solve_core(int argc, char** argv) {
         if (nrn_have_gaps) {
             nrn_partrans::delete_gap_indices_from_device();
         }
+        nrnran123_destroy_global_state_on_device();
+        cnrn_target_delete(&secondorder);
+        cnrn_target_delete(&pi);
+        cnrn_target_delete(&celsius);
     }
 
     // Cleaning the memory
