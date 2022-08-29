@@ -539,7 +539,7 @@ if(NRN_ENABLE_CORENEURON)
   # NEURON from Python then the first compiled-by-nvc++ thing to be loaded is the NEURON Python
   # module (hoc.XXX.so). It is, therefore, important that we link that with -acc.
   separate_arguments(CORENRN_NEURON_LINK_FLAGS)
-  list(APPEND NRN_LINK_FLAGS ${CORENRN_NEURON_LINK_FLAGS})
+  set(NRN_LINK_FLAGS_FOR_ENTRY_POINTS ${CORENRN_NEURON_LINK_FLAGS})
 endif()
 
 # This needs to be after all modifications to NRN_LINK_FLAGS
