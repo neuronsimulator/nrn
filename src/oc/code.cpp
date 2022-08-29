@@ -824,6 +824,10 @@ void hoc_pushi(int d) {
     push_value(d);
 }
 
+void hoc_push(neuron::container::generic_data_handle handle) {
+    push_value(std::move(handle));
+}
+
 // type of nth arg
 int hoc_argtype(int narg) {
     return get_legacy_int_type(get_argument(narg));
