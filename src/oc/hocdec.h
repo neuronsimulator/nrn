@@ -155,9 +155,9 @@ union Datum { /* interpreter stack type */
     hoc_Item* itm;
     hoc_List* lst;
     void* _pvoid; /* not used on stack, see nrnoc/point.cpp */
-    // Used to store data_handle<T> on the stack. Note that this is larger (3x?)
-    // than the other member types above.
-    neuron::container::generic_data_handle generic_handle;
+    // Used to store data_handle<T> on the stack. TODO: fix things so that this
+    // can be stored by value...
+    neuron::container::generic_data_handle* generic_handle;
 };
 
 struct cTemplate {
