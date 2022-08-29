@@ -41,7 +41,7 @@ int hoc_return_type_code = 0; /* flag for allowing integers (1) and booleans (2)
 
 
 using StackDatum =
-    std::variant<double, Symbol*, int, Object**, Object*, char**, double*, std::nullptr_t>;
+    std::variant<double, Symbol*, int, Object**, Object*, char**, neuron::container::generic_data_handle, std::nullptr_t>;
 
 /** @brief The stack.
  *
