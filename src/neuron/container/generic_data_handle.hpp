@@ -34,6 +34,8 @@ struct generic_data_handle {
         return {m_offset, *static_cast<std::vector<T>*>(m_container)};
     }
 
+    [[nodiscard]] std::string type_name() const { return cxx_demangle(m_type.name()); }
+
   private:
     identifier_base m_offset{};
     // std::vector<T>* for the T encoded in m_type
