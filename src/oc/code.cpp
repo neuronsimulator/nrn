@@ -39,29 +39,9 @@ extern void debugzz(Inst*);
 int hoc_return_type_code = 0; /* flag for allowing integers (1) and booleans (2) to be recognized as
                                  such */
 
-// array indices on the stack have their own type to help with determining when
-// a compiled fragment of HOC code is processing a variable whose number of
-// dimensions was changed.
-struct stack_ndim_datum {
-    stack_ndim_datum(int ndim) {
-        i = ndim;
-    }
-    int i;
-};
-std::ostream& operator<<(std::ostream& os, const stack_ndim_datum& d) {
-    os << d.i;
-    return os;
-}
 
-using StackDatum = std::variant<double,
-                                Symbol*,
-                                int,
-                                stack_ndim_datum,
-                                Object**,
-                                Object*,
-                                char**,
-                                double*,
-                                std::nullptr_t>;
+using StackDatum =
+    std::variant<double, Symbol*, int, Object**, Object*, char**, neuron::container::generic_data_handle, std::nullptr_t>;
 
 /** @brief The stack.
  *
@@ -227,7 +207,6 @@ template <typename T>
                                oss << " -> " << sym->name;
                            }
                        },
-                       [&oss](stack_ndim_datum& d) { oss << " -> ndim " << d.i; },
                        [&oss](std::nullptr_t) { oss << " already unreffed on stack"; },
                        [](auto const&) {}}(val);
             hoc_execerror(oss.str().c_str(), nullptr);
@@ -312,10 +291,6 @@ int get_legacy_int_type(StackDatum const& entry) {
  */
 int hoc_stack_type() {
     return get_legacy_int_type(get_stack_entry_variant(0));
-}
-
-bool hoc_stack_type_is_ndim() {
-    return std::holds_alternative<stack_ndim_datum>(get_stack_entry_variant(0));
 }
 
 void hoc_pop_defer() {
@@ -849,11 +824,6 @@ void hoc_pushi(int d) {
     push_value(d);
 }
 
-/* push index onto stack */
-void hoc_push_ndim(int d) {
-    push_value(stack_ndim_datum(d));
-}
-
 // type of nth arg
 int hoc_argtype(int narg) {
     return get_legacy_int_type(get_argument(narg));
@@ -910,11 +880,6 @@ double* hoc_pxpop() {
 // pop symbol pointer and return top elem from stack
 Symbol* hoc_spop() {
     return pop_value<Symbol*>();
-}
-
-// pop array index and return top elem from stack
-int hoc_pop_ndim() {
-    return pop_value<stack_ndim_datum>().i;
 }
 
 /** @brief Pop pointer to object pointer and return top elem from stack.
@@ -2379,21 +2344,10 @@ void hoc_chk_sym_has_ndim() {
 int hoc_araypt(Symbol* sp, int type) {
     Arrayinfo* const aray{type == OBJECTVAR ? OPARINFO(sp) : sp->arayinfo};
     int total{};
-    int ndim{0};
-    if (hoc_stack_type_is_ndim()) {  // if sp compiled as scalar
-        ndim = hoc_pop_ndim();       // do not raise error here but below.
-    }
-    if (ndim != aray->nsub) {
-        hoc_execerr_ext("array dimension of %s now %d (at compile time it was %d)",
-                        sp->name,
-                        aray->nsub,
-                        ndim);
-    }
     for (int i = 0; i < aray->nsub; ++i) {
         int const d = hoc_look_inside_stack<double>(aray->nsub - 1 - i) + hoc_epsilon;
         if (d < 0 || d >= aray->sub[i]) {
-            hoc_execerr_ext(
-                "subscript %d index %d of %s out of range %d", i, d, sp->name, aray->sub[i]);
+            hoc_execerror("subscript out of range", sp->name);
         }
         total = total * (aray->sub[i]) + d;
     }
