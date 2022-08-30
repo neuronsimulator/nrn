@@ -2637,10 +2637,6 @@ void CodegenCVisitor::print_mechanism_global_var_structure(bool print_initialise
             printer->fmt_line("{}{} mfac_{}{};", qualifier, float_type, name, value_initialise);
             codegen_global_variables.push_back(make_symbol("tmin_" + name));
             codegen_global_variables.push_back(make_symbol("mfac_" + name));
-            if (block->is_function_block()) {
-                printer->fmt_line("{}* {}t_{};", float_type, qualifier, name);
-                codegen_global_variables.push_back(make_symbol("t_" + name));
-            }
         }
 
         for (const auto& variable: info.table_statement_variables) {

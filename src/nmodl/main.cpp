@@ -16,6 +16,7 @@
 #include "codegen/codegen_compatibility_visitor.hpp"
 #include "codegen/codegen_cuda_visitor.hpp"
 #include "codegen/codegen_ispc_visitor.hpp"
+#include "codegen/codegen_transform_visitor.hpp"
 #include "config/config.h"
 #include "parser/nmodl_driver.hpp"
 #include "pybind/pyembed.hpp"
@@ -539,6 +540,12 @@ int main(int argc, const char* argv[]) {
             // make sure to run perf visitor because code generator
             // looks for read/write counts const/non-const declaration
             PerfVisitor().visit_program(*ast);
+        }
+
+        {
+            CodegenTransformVisitor{}.visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("TransformVisitor"));
+            SymtabVisitor(update_symtab).visit_program(*ast);
         }
 
         {
