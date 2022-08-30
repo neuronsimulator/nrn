@@ -119,6 +119,14 @@ cpp_cc_git_submodule(fmt BUILD PACKAGE fmt REQUIRED)
 if(NMODL_3RDPARTY_USE_FMT)
   set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif()
+if(NOT NMODL_3RDPARTY_USE_FMT
+   AND ((NMODL_PGI_COMPILER AND CMAKE_CXX_COMPILER_VERSION LESS_EQUAL 22.3.0)
+        OR CMAKE_CXX_COMPILER_ID STREQUAL "Intel"))
+  message(
+    WARNING
+      "fmt might generate issues with NVHPC <=22.3 and Intel compiler when installed with C++11 or later standard enabled"
+  )
+endif()
 cpp_cc_git_submodule(json BUILD PACKAGE nlohmann_json REQUIRED)
 cpp_cc_git_submodule(pybind11 BUILD PACKAGE pybind11 REQUIRED)
 # Tell spdlog not to use its bundled fmt, it should either use the fmt submodule or a truly external
