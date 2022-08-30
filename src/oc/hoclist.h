@@ -25,7 +25,6 @@
 #define lappendobj  hoc_l_lappendobj
 #define lappendvoid hoc_l_lappendvoid
 #define delitems    hoc_l_delitems
-#define move        hoc_l_move
 #define movelist    hoc_l_movelist
 #define replacstr   hoc_l_replacstr
 #define Item        hoc_Item

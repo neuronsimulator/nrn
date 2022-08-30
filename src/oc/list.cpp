@@ -223,7 +223,7 @@ void delitems(Item* q1, Item* q2) { /* delete tokens from q1 to q2 */
     hoc_l_delete(q2);
 }
 
-void move(Item* q1, Item* q2, Item* q3) { /* move q1 to q2 and insert before q3*/
+void hoc_l_move(Item* q1, Item* q2, Item* q3) { /* move q1 to q2 and insert before q3*/
     /* it is a serious error if q2 precedes q1 */
     assert(q1 && q2);
     assert(q1->itemtype && q2->itemtype);
@@ -238,7 +238,7 @@ void move(Item* q1, Item* q2, Item* q3) { /* move q1 to q2 and insert before q3*
 
 void movelist(Item* q1, Item* q2, List* s) {
     /* move q1 to q2 from old list to end of list s*/
-    move(q1, q2, s);
+    hoc_l_move(q1, q2, s);
 }
 
 void replacstr(Item* q, const char* s) {
