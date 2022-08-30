@@ -195,7 +195,7 @@ Item* lappendvoid(List* list, void* obj) {
     return insertvoid(list, obj);
 }
 
-void delete (Item* item) {
+void hoc_l_delete(Item* item) {
     assert(item->itemtype); /* can't delete list */
     item->next->prev = item->prev;
     item->prev->next = item->next;
@@ -218,9 +218,9 @@ void delitems(Item* q1, Item* q2) { /* delete tokens from q1 to q2 */
     Item* q;
     for (q = q1; q != q2;) {
         q = q->next;
-        delete (q->prev);
+        hoc_l_delete(q->prev);
     }
-    delete (q2);
+    hoc_l_delete(q2);
 }
 
 void move(Item* q1, Item* q2, Item* q3) { /* move q1 to q2 and insert before q3*/
