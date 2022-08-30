@@ -1358,11 +1358,8 @@ void rangevarevalpointer() {
     double d = xpop();
     Section* sec{nrn_sec_pop()};
     if (s->u.rng.type == VINDEX) {
-        auto* nd = node_ptr(sec, d, nullptr);
-        // This returns a pointer that is invalidated by a wide variety of
-        // operations on Nodes. It would probably be better to modify the HOC
-        // interpreter so that it can hold data handles.
-        hoc_pushpx(static_cast<double*>(nd->v_handle()));
+        auto* const nd = node_ptr(sec, d, nullptr);
+        hoc_push(nd->v_handle());
         return;
     }
     if (s->u.rng.type == IMEMFAST) {
