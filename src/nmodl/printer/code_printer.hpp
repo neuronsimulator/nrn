@@ -82,9 +82,16 @@ class CodePrinter {
         add_line(fmt::format(std::forward<Args>(args)...));
     }
 
+    /// fmt_start_block(args...) is just shorthand for start_block(fmt::format(args...))
     template <typename... Args>
     void fmt_start_block(Args&&... args) {
         start_block(fmt::format(std::forward<Args>(args)...));
+    }
+
+    /// fmt_text(args...) is just shorthand for add_text(fmt::format(args...))
+    template <typename... Args>
+    void fmt_text(Args&&... args) {
+        add_text(fmt::format(std::forward<Args>(args)...));
     }
 
     void add_multi_line(const std::string&);
