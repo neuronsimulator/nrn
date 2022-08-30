@@ -5,8 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
 #include <nrnpython_config.h>
 #include "section.h"
+#include "nrn_ansi.h"
 #include "nrniv_mf.h"
 #include "membfunc.h"
 #include "parse.hpp"
@@ -928,7 +930,7 @@ void mech_uninsert1(Section* sec, Symbol* s) {
     }
 }
 
-void nrn_rangeconst(Section* sec, Symbol* s, double* pd, int op) {
+void nrn_rangeconst(Section* sec, Symbol* s, neuron::container::data_handle<double> pd, int op) {
     short n, i;
     Node* nd;
     int indx;
@@ -1014,7 +1016,6 @@ void range_const(void) /* rangevariable symbol at pc, value on stack */
     op = (pc++)->i;
     d = xpop();
     sec = nrn_sec_pop();
-
     nrn_rangeconst(sec, s, &d, op);
     hoc_pushx(d);
 }
@@ -1319,13 +1320,15 @@ neuron::container::data_handle<double> nrn_rangepointer(Section* sec, Symbol* s,
 /* return nil if failure instead of hoc_execerror
    and return pointer to the 0 element if an array
 */
-double* nrnpy_rangepointer(Section* sec, Symbol* s, double d, int* err) {
-    /* if you change this change nrnpy_rangepointer as well */
+neuron::container::data_handle<double> nrnpy_rangepointer(Section* sec,
+                                                          Symbol* s,
+                                                          double d,
+                                                          int* err) {
+    /* if you change this change nrn_rangepointer as well */
     *err = 0;
     if (s->u.rng.type == VINDEX) {
         auto* nd = node_ptr(sec, d, nullptr);
-        // This is dangerous!
-        return static_cast<double*>(nd->v_handle());
+        return nd->v_handle();
     }
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
