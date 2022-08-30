@@ -1,5 +1,5 @@
-
-#include <nrnpython.h>
+#include "nrn_ansi.h"
+#include "nrnpython.h"
 #include <structmember.h>
 #include <InterViews/resource.h>
 #include "nrniv_mf.h"
@@ -24,7 +24,6 @@ extern void nrn_area_ri(Section* sec);
 extern void sec_free(hoc_Item*);
 extern Symlist* hoc_built_in_symlist;
 extern Section* nrn_noerr_access();
-double* nrnpy_rangepointer(Section*, Symbol*, double, int*);
 extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
 extern int has_membrane(char*, Section*);
 typedef struct {
@@ -102,8 +101,6 @@ extern void nrn_diam_change(Section*);
 extern void nrn_length_change(Section*, double);
 extern void mech_insert1(Section*, int);
 extern void mech_uninsert1(Section*, Symbol*);
-extern "C" PyObject* nrn_hocobj_ptr(double*);
-extern int nrn_is_hocobj_ptr(PyObject*, double*&);
 extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
 extern Object* nrnpy_po2ho(PyObject*);
 extern Object* nrnpy_pyobject_in_obj(PyObject*);
@@ -1617,10 +1614,10 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
             result = (PyObject*) r;
         } else {
             int err;
-            double* d = nrnpy_rangepointer(sec, sym, 0.5, &err);
+            auto const d = nrnpy_rangepointer(sec, sym, 0.5, &err);
             if (!d) {
                 rv_noexist(sec, n, 0.5, err);
-                result = NULL;
+                result = nullptr;
             } else {
                 if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
                     nrn_area_ri(sec);
@@ -1704,11 +1701,11 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
             err = -1;
         } else {
             int errp;
-            double* d = nrnpy_rangepointer(sec, sym, 0.5, &errp);
+            auto const d = nrnpy_rangepointer(sec, sym, 0.5, &errp);
             if (!d) {
                 rv_noexist(sec, n, 0.5, errp);
                 err = -1;
-            } else if (!PyArg_Parse(value, "d", d)) {
+            } else if (!PyArg_Parse(value, "d", static_cast<double const*>(d))) {
                 PyErr_SetString(PyExc_ValueError, "bad value");
                 err = -1;
             } else {
@@ -1839,7 +1836,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             result = (PyObject*) r;
         } else {
             int err;
-            double* d = nrnpy_rangepointer(sec, sym, self->x_, &err);
+            auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err);
             if (!d) {
                 rv_noexist(sec, n, self->x_, err);
                 result = NULL;
@@ -1853,9 +1850,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
     } else if (strncmp(n, "_ref_", 5) == 0) {
         if (strcmp(n + 5, "v") == 0) {
             Node* nd = node_exact(sec, self->x_);
-            // This is dangerous, it is wrapping an easy-to-invalidate pointer
-            // up in a HOC object.
-            result = nrn_hocobj_ptr(static_cast<double*>(nd->v_handle()));
+            result = nrn_hocobj_handle(nd->v_handle());
         } else if ((sym = hoc_table_lookup(n + 5, hoc_built_in_symlist)) != 0 &&
                    sym->type == RANGEVAR) {
             if (ISARRAY(sym)) {
@@ -1869,12 +1864,12 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                 result = (PyObject*) r;
             } else {
                 int err;
-                double* d = nrnpy_rangepointer(sec, sym, self->x_, &err);
+                auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err);
                 if (!d) {
                     rv_noexist(sec, n + 5, self->x_, err);
                     result = NULL;
                 } else {
-                    result = nrn_hocobj_ptr(d);
+                    result = nrn_hocobj_handle(d);
                 }
             }
         } else {
@@ -1907,11 +1902,12 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
 int nrn_pointer_assign(Prop* prop, Symbol* sym, PyObject* value) {
     int err = 0;
     if (sym->subtype == NRNPOINTER) {
-        double* pd;
+        neuron::container::data_handle<double> pd{};
         double** ppd = &prop->dparam[sym->u.rng.index].pval;
         assert(ppd);
         if (nrn_is_hocobj_ptr(value, pd)) {
-            *ppd = pd;
+            assert(false);
+            *ppd = static_cast<double*>(pd);
         } else {
             PyErr_SetString(PyExc_ValueError, "must be a hoc pointer");
             err = -1;
@@ -1966,13 +1962,13 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
             err = -1;
         } else {
             int errp;
-            double* d = nrnpy_rangepointer(sec, sym, self->x_, &errp);
+            auto const d = nrnpy_rangepointer(sec, sym, self->x_, &errp);
             if (!d) {
                 rv_noexist(sec, n, self->x_, errp);
                 Py_DECREF(pyname);
                 return -1;
             }
-            if (!PyArg_Parse(value, "d", d)) {
+            if (!PyArg_Parse(value, "d", static_cast<double const*>(d))) {
                 PyErr_SetString(PyExc_ValueError, "bad value");
                 Py_DECREF(pyname);
                 return -1;
@@ -2193,14 +2189,14 @@ static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
         return NULL;
     }
     int err;
-    double* d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err);
+    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err);
     if (!d) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
         return NULL;
     }
-    d += ix;
+    assert(ix == 0);  // d += ix;
     if (r->isptr_) {
-        result = nrn_hocobj_ptr(d);
+        result = nrn_hocobj_handle(d);
     } else {
         result = Py_BuildValue("d", *d);
     }
@@ -2219,7 +2215,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
         return -1;
     }
     int err;
-    double* d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err);
+    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err);
     if (!d) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
         return -1;
@@ -2235,7 +2231,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
         hoc_pushx(double(ix));
         nrn_rangeconst(r->pymech_->pyseg_->pysec_->sec_, r->sym_, &x, 0);
     } else {
-        d += ix;
+        assert(ix == 0);  // d += ix;
         if (!PyArg_Parse(value, "d", d)) {
             PyErr_SetString(PyExc_ValueError, "bad value");
             return -1;

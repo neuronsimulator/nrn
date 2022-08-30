@@ -1,4 +1,5 @@
 #include "ivocvect.h"
+#include "neuron/container/data_handle.hpp"
 #include "nrniv_mf.h"
 #include "nrn_pyhocobject.h"
 #include "nrnoc2iv.h"
@@ -12,6 +13,11 @@
 
 #include <InterViews/resource.h>
 #include <structmember.h>  // for PyMemberDef
+
+#include <cstdint>
+#include <vector>
+
+#include <InterViews/resource.h>
 
 #include <cstdint>
 #include <vector>
@@ -367,7 +373,7 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
             } else if (tp == PyHoc::HocRefObj) {
                 hoc_pushobj(&pho->u.ho_);
             } else if (tp == PyHoc::HocScalarPtr) {
-                hoc_pushpx(pho->u.px_);
+                hoc_push(pho->u.px_);
             } else if (tp == PyHoc::HocRefPStr) {
                 hoc_pushstr(pho->u.pstr_);
             } else {
@@ -849,18 +855,22 @@ static void eval_component(PyHocObject* po, int ix) {
     --po->nindex_;
 }
 
-extern "C" PyObject* nrn_hocobj_ptr(double* pd) {
+PyObject* nrn_hocobj_handle(neuron::container::data_handle<double> d) {
     PyObject* result = hocobj_new(hocobject_type, 0, 0);
-    PyHocObject* po = (PyHocObject*) result;
+    auto* const po = reinterpret_cast<PyHocObject*>(result);
     po->type_ = PyHoc::HocScalarPtr;
-    po->u.px_ = pd;
+    po->u.px_ = d;
     return result;
 }
 
-int nrn_is_hocobj_ptr(PyObject* po, double*& pd) {
+extern "C" PyObject* nrn_hocobj_ptr(double* pd) {
+    return nrn_hocobj_handle(pd);
+}
+
+int nrn_is_hocobj_ptr(PyObject* po, neuron::container::data_handle<double>& pd) {
     int ret = 0;
     if (PyObject_TypeCheck(po, hocobject_type)) {
-        PyHocObject* hpo = (PyHocObject*) po;
+        auto* const hpo = reinterpret_cast<PyHocObject*>(po);
         if (hpo->type_ == PyHoc::HocScalarPtr) {
             pd = hpo->u.px_;
             ret = 1;
@@ -1753,7 +1763,8 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
             return NULL;
         }
         if (po->type_ == PyHoc::HocScalarPtr) {
-            result = Py_BuildValue("d", po->u.px_[ix]);
+            assert(ix == 0);
+            result = Py_BuildValue("d", *(po->u.px_));
         } else if (po->type_ == PyHoc::HocRefNum) {
             result = Py_BuildValue("d", po->u.x_);
         } else if (po->type_ == PyHoc::HocRefStr) {
@@ -1883,7 +1894,8 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
             return -1;
         }
         if (po->type_ == PyHoc::HocScalarPtr) {
-            PyArg_Parse(arg, "d", po->u.px_ + i);
+            assert(i == 0);
+            PyArg_Parse(arg, "d", static_cast<double*>(po->u.px_));
         } else if (po->type_ == PyHoc::HocRefNum) {
             PyArg_Parse(arg, "d", &po->u.x_);
         } else if (po->type_ == PyHoc::HocRefStr) {
@@ -2057,7 +2069,8 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
                 goto done;
             }
         }
-        *ppd = href->u.px_;
+        assert(false);
+        *ppd = static_cast<double*>(href->u.px_);
         result = Py_None;
         Py_INCREF(result);
     }
@@ -2116,11 +2129,12 @@ PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op) {
 
 // TODO: unfortunately, this duplicates code from hocobj_same; consolidate?
 static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
-    void* self_ptr = (void*) (self->ho_);
-    void* other_ptr = (void*) other;
+    auto* pyhoc_other = reinterpret_cast<PyHocObject*>(other);
+    void* self_ptr = self->ho_;
+    void* other_ptr = other;
     bool are_equal = true;
     if (PyObject_TypeCheck(other, hocobject_type)) {
-        if (((PyHocObject*) other)->type_ == self->type_) {
+        if (pyhoc_other->type_ == self->type_) {
             switch (self->type_) {
             case PyHoc::HocRefNum:
             case PyHoc::HocRefStr:
@@ -2130,7 +2144,7 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
                 self_ptr = (void*) self;
                 break;
             case PyHoc::HocFunction:
-                if (self->ho_ != (void*) (((PyHocObject*) other)->ho_)) {
+                if (self->ho_ != pyhoc_other->ho_) {
                     if (op == Py_NE) {
                         Py_RETURN_TRUE;
                     } else if (op == Py_EQ) {
@@ -2140,12 +2154,13 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
                     PyErr_SetString(PyExc_TypeError, "this comparison is undefined");
                     return NULL;
                 }
-                self_ptr = (void*) self->sym_;
-                other_ptr = (void*) (((PyHocObject*) other)->sym_);
+                self_ptr = self->sym_;
+                other_ptr = pyhoc_other->sym_;
                 break;
             case PyHoc::HocScalarPtr:
-                self_ptr = self->u.px_;
-                other_ptr = (void*) (((PyHocObject*) other)->u.px_);
+                // this seems rather dubious
+                self_ptr = static_cast<double*>(self->u.px_);
+                other_ptr = static_cast<double*>(pyhoc_other->u.px_);
                 break;
             case PyHoc::HocArrayIncomplete:
             case PyHoc::HocArray:
@@ -2154,20 +2169,19 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
                     PyErr_SetString(PyExc_TypeError, "this comparison is undefined");
                     return NULL;
                 }
-                if (self->ho_ != (void*) (((PyHocObject*) other)->ho_)) {
+                if (self->ho_ != pyhoc_other->ho_) {
                     /* different objects */
-                    other_ptr = (void*) (((PyHocObject*) other)->ho_);
+                    other_ptr = pyhoc_other->ho_;
                     break;
                 }
-                if (self->nindex_ != (((PyHocObject*) other)->nindex_) ||
-                    self->sym_ != (((PyHocObject*) other)->sym_)) {
+                if (self->nindex_ != pyhoc_other->nindex_ || self->sym_ != pyhoc_other->sym_) {
                     if (op == Py_NE) {
                         Py_RETURN_TRUE;
                     }
                     Py_RETURN_FALSE;
                 }
                 for (int i = 0; i < self->nindex_; i++) {
-                    if (self->indices_[i] != ((PyHocObject*) other)->indices_[i]) {
+                    if (self->indices_[i] != pyhoc_other->indices_[i]) {
                         are_equal = false;
                     }
                 }
@@ -2176,7 +2190,7 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
                 }
                 Py_RETURN_FALSE;
             default:
-                other_ptr = (void*) (((PyHocObject*) other)->ho_);
+                other_ptr = pyhoc_other->ho_;
             }
         } else {
             if (op == Py_EQ) {
