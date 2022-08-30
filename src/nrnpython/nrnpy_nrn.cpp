@@ -26,7 +26,6 @@ extern void nrn_area_ri(Section* sec);
 extern void sec_free(hoc_Item*);
 extern Symlist* hoc_built_in_symlist;
 extern Section* nrn_noerr_access();
-double* nrnpy_rangepointer(Section*, Symbol*, double, int*, int);
 extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
 extern int has_membrane(char*, Section*);
 typedef struct {
@@ -113,8 +112,6 @@ extern void nrn_diam_change(Section*);
 extern void nrn_length_change(Section*, double);
 extern void mech_insert1(Section*, int);
 extern void mech_uninsert1(Section*, Symbol*);
-extern "C" PyObject* nrn_hocobj_ptr(double*);
-extern int nrn_is_hocobj_ptr(PyObject*, double*&);
 extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
 extern Object* nrnpy_po2ho(PyObject*);
 extern Object* nrnpy_pyobject_in_obj(PyObject*);
@@ -150,7 +147,7 @@ void nrnpy_sec_referr() {
 static char* pysec_name(Section* sec) {
     static char buf[512];
     if (sec->prop) {
-        auto* ps = static_cast<NPySecObj*>(sec->prop->dparam[PROP_PY_INDEX].get<void*>());
+        NPySecObj* ps = (NPySecObj*) sec->prop->dparam[PROP_PY_INDEX]._pvoid;
         buf[0] = '\0';
         char* cp = buf + strlen(buf);
         if (ps->name_) {
@@ -164,8 +161,9 @@ static char* pysec_name(Section* sec) {
 }
 
 static Object* pysec_cell(Section* sec) {
-    if (auto* pv = sec->prop->dparam[PROP_PY_INDEX].get<void*>(); sec->prop && pv) {
-        PyObject* cell_weakref = static_cast<NPySecObj*>(pv)->cell_weakref_;
+    if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+        PyObject* cell_weakref =
+            ((NPySecObj*) sec->prop->dparam[PROP_PY_INDEX]._pvoid)->cell_weakref_;
         if (cell_weakref) {
             PyObject* cell = PyWeakref_GetObject(cell_weakref);
             if (!cell) {
@@ -195,8 +193,9 @@ static int NPySecObj_contains(PyObject* sec, PyObject* obj) {
 }
 
 static int pysec_cell_equals(Section* sec, Object* obj) {
-    if (auto* pv = sec->prop->dparam[PROP_PY_INDEX].get<void*>(); sec->prop && pv) {
-        PyObject* cell_weakref = static_cast<NPySecObj*>(pv)->cell_weakref_;
+    if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+        PyObject* cell_weakref =
+            ((NPySecObj*) sec->prop->dparam[PROP_PY_INDEX]._pvoid)->cell_weakref_;
         if (cell_weakref) {
             PyObject* cell = PyWeakref_GetObject(cell_weakref);
             if (!cell) {
@@ -219,10 +218,10 @@ static void NPySecObj_dealloc(NPySecObj* self) {
         }
         Py_XDECREF(self->cell_weakref_);
         if (self->sec_->prop) {
-            self->sec_->prop->dparam[PROP_PY_INDEX] = nullptr;
+            self->sec_->prop->dparam[PROP_PY_INDEX]._pvoid = 0;
         }
-        if (self->sec_->prop && !self->sec_->prop->dparam[0].get<Symbol*>()) {
-            sec_free(self->sec_->prop->dparam[8].get<hoc_Item*>());
+        if (self->sec_->prop && !self->sec_->prop->dparam[0].sym) {
+            sec_free(self->sec_->prop->dparam[8].itm);
         } else {
             section_unref(self->sec_);
         }
@@ -865,7 +864,7 @@ static PyObject* NPySecObj_psection(NPySecObj* self) {
 
 static PyObject* is_pysec(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
-    if (self->sec_->prop && self->sec_->prop->dparam[PROP_PY_INDEX].get<void*>()) {
+    if (self->sec_->prop && self->sec_->prop->dparam[PROP_PY_INDEX]._pvoid) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
@@ -876,8 +875,8 @@ NPySecObj* newpysechelp(Section* sec) {
         return NULL;
     }
     NPySecObj* pysec = NULL;
-    if (auto* pv = sec->prop->dparam[PROP_PY_INDEX].get<void*>(); pv) {
-        pysec = static_cast<NPySecObj*>(pv);
+    if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+        pysec = (NPySecObj*) sec->prop->dparam[PROP_PY_INDEX]._pvoid;
         Py_INCREF(pysec);
         assert(pysec->sec_ == sec);
     } else {
@@ -1019,8 +1018,8 @@ static PyObject* pysec2cell(NPySecObj* self) {
     if (self->cell_weakref_) {
         result = PyWeakref_GET_OBJECT(self->cell_weakref_);
         Py_INCREF(result);
-    } else if (auto* o = self->sec_->prop->dparam[6].get<Object*>(); self->sec_->prop && o) {
-        result = nrnpy_ho2po(o);
+    } else if (self->sec_->prop && self->sec_->prop->dparam[6].obj) {
+        result = nrnpy_ho2po(self->sec_->prop->dparam[6].obj);
     } else {
         result = Py_None;
         Py_INCREF(result);
@@ -1366,7 +1365,7 @@ static PyObject* seg_point_processes(NPySegObj* self) {
     PyObject* result = PyList_New(0);
     for (Prop* p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
-            auto* pp = p->dparam[1].get<Point_process*>();
+            Point_process* pp = (Point_process*) p->dparam[1]._pvoid;
             PyObject* item = nrnpy_ho2po(pp->ob);
             int err = PyList_Append(result, item);
             assert(err == 0);
@@ -1539,7 +1538,7 @@ static PyObject* mech_of_segment_iter(NPySegObj* self) {
 static Object* seg_from_sec_x(Section* sec, double x) {
     PyObject* pyseg = (PyObject*) PyObject_New(NPySegObj, psegment_type);
     NPySegObj* pseg = (NPySegObj*) pyseg;
-    auto* pysec = static_cast<NPySecObj*>(sec->prop->dparam[PROP_PY_INDEX].get<void*>());
+    NPySecObj* pysec = (NPySecObj*) sec->prop->dparam[PROP_PY_INDEX]._pvoid;
     if (pysec) {
         pseg->pysec_ = pysec;
         Py_INCREF(pysec);
@@ -1626,7 +1625,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
             result = (PyObject*) r;
         } else {
             int err;
-            auto const d = nrnpy_rangepointer(sec, sym, 0.5, &err, 0 /* idx */);
+            auto const d = nrnpy_rangepointer(sec, sym, 0.5, &err);
             if (!d) {
                 rv_noexist(sec, n, 0.5, err);
                 result = nullptr;
@@ -1638,7 +1637,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
             }
         }
     } else if (strcmp(n, "rallbranch") == 0) {
-        result = Py_BuildValue("d", sec->prop->dparam[4].get<double>());
+        result = Py_BuildValue("d", sec->prop->dparam[4].val);
     } else if (strcmp(n, "__dict__") == 0) {
         result = PyDict_New();
         int err = PyDict_SetItemString(result, "L", Py_None);
@@ -1677,7 +1676,7 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
         double x;
         if (PyArg_Parse(value, "d", &x) == 1 && x > 0.) {
             if (can_change_morph(sec)) {
-                sec->prop->dparam[2] = x;
+                sec->prop->dparam[2].val = x;
                 nrn_length_change(sec, x);
                 diam_changed = 1;
                 sec->recalc_area_ = 1;
@@ -1689,7 +1688,7 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
     } else if (strcmp(n, "Ra") == 0) {
         double x;
         if (PyArg_Parse(value, "d", &x) == 1 && x > 0.) {
-            sec->prop->dparam[7] = x;
+            sec->prop->dparam[7].val = x;
             diam_changed = 1;
             sec->recalc_area_ = 1;
         } else {
@@ -1713,7 +1712,7 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
             err = -1;
         } else {
             int errp;
-            auto const d = nrnpy_rangepointer(sec, sym, 0.5, &errp, 0 /* idx */);
+            auto const d = nrnpy_rangepointer(sec, sym, 0.5, &errp);
             if (!d) {
                 rv_noexist(sec, n, 0.5, errp);
                 err = -1;
@@ -1728,7 +1727,7 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
     } else if (strcmp(n, "rallbranch") == 0) {
         double x;
         if (PyArg_Parse(value, "d", &x) == 1 && x > 0.) {
-            sec->prop->dparam[4] = x;
+            sec->prop->dparam[4].val = x;
             diam_changed = 1;
             sec->recalc_area_ = 1;
         } else {
@@ -1848,7 +1847,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             result = (PyObject*) r;
         } else {
             int err;
-            auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
+            auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err);
             if (!d) {
                 rv_noexist(sec, n, self->x_, err);
                 result = NULL;
@@ -1862,9 +1861,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
     } else if (strncmp(n, "_ref_", 5) == 0) {
         if (strcmp(n + 5, "v") == 0) {
             Node* nd = node_exact(sec, self->x_);
-            // This is dangerous, it is wrapping an easy-to-invalidate pointer
-            // up in a HOC object.
-            result = nrn_hocobj_ptr(static_cast<double*>(nd->v_handle()));
+            result = nrn_hocobj_handle(nd->v_handle());
         } else if ((sym = hoc_table_lookup(n + 5, hoc_built_in_symlist)) != 0 &&
                    sym->type == RANGEVAR) {
             if (ISARRAY(sym)) {
@@ -1878,12 +1875,12 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                 result = (PyObject*) r;
             } else {
                 int err;
-                auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
+                auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err);
                 if (!d) {
                     rv_noexist(sec, n + 5, self->x_, err);
                     result = NULL;
                 } else {
-                    result = nrn_hocobj_ptr(d);
+                    result = nrn_hocobj_handle(d);
                 }
             }
         } else {
@@ -1916,11 +1913,12 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
 int nrn_pointer_assign(Prop* prop, Symbol* sym, PyObject* value) {
     int err = 0;
     if (sym->subtype == NRNPOINTER) {
-        double* pd;
-        double** ppd = &prop->dparam[sym->u.rng.index].literal_value<double*>();
+        neuron::container::data_handle<double> pd{};
+        double** ppd = &prop->dparam[sym->u.rng.index].pval;
         assert(ppd);
         if (nrn_is_hocobj_ptr(value, pd)) {
-            *ppd = pd;
+            assert(false);
+            *ppd = static_cast<double*>(pd);
         } else {
             PyErr_SetString(PyExc_ValueError, "must be a hoc pointer");
             err = -1;
@@ -1975,7 +1973,7 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
             err = -1;
         } else {
             int errp;
-            auto const d = nrnpy_rangepointer(sec, sym, self->x_, &errp, 0 /* idx */);
+            auto const d = nrnpy_rangepointer(sec, sym, self->x_, &errp);
             if (!d) {
                 rv_noexist(sec, n, self->x_, errp);
                 Py_DECREF(pyname);
@@ -2151,7 +2149,7 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
 
 double** nrnpy_setpointer_helper(PyObject* pyname, PyObject* mech) {
     if (PyObject_TypeCheck(mech, pmech_generic_type) == 0) {
-        return nullptr;
+        return NULL;
     }
     NPyMechObj* m = (NPyMechObj*) mech;
     NrnProperty np(m->prop_);
@@ -2159,14 +2157,14 @@ double** nrnpy_setpointer_helper(PyObject* pyname, PyObject* mech) {
     Py2NRNString name(pyname);
     char* n = name.c_str();
     if (!n) {
-        return nullptr;
+        return NULL;
     }
     Sprintf(buf, "%s_%s", n, memb_func[m->prop_->_type].sym->name);
     Symbol* sym = np.find(buf);
     if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
-        return nullptr;
+        return 0;
     }
-    return &m->prop_->dparam[np.prop_index(sym)].literal_value<double*>();
+    return &m->prop_->dparam[np.prop_index(sym)].pval;
 }
 
 static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
@@ -2201,25 +2199,15 @@ static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
         PyErr_SetString(PyExc_IndexError, r->sym_->name);
         return NULL;
     }
-    if (ISARRAY(r->sym_)) {
-        assert(r->sym_->arayinfo->nsub == 1);
-        auto const array_dim = r->sym_->arayinfo->sub[0];
-        assert(ix < array_dim);
-        // r represents a range variable that is an array of size array_dim, and
-        // we need to apply the offset `ix` to get the correct element of that
-        // array.
-    } else {
-        // Not an array variable, so the index should always be zero
-        assert(ix == 0);
-    }
     int err;
-    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, ix);
+    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err);
     if (!d) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
         return NULL;
     }
+    assert(ix == 0);  // d += ix;
     if (r->isptr_) {
-        result = nrn_hocobj_ptr(d);
+        result = nrn_hocobj_handle(d);
     } else {
         result = Py_BuildValue("d", *d);
     }
@@ -2238,7 +2226,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
         return -1;
     }
     int err;
-    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, 0 /* idx */);
+    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err);
     if (!d) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
         return -1;
@@ -2252,7 +2240,6 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
             return -1;
         }
         hoc_pushx(double(ix));
-        hoc_push_ndim(1);
         nrn_rangeconst(r->pymech_->pyseg_->pysec_->sec_, r->sym_, &x, 0);
     } else {
         assert(ix == 0);  // d += ix;
