@@ -811,7 +811,7 @@ void hoc_push_string() {
 
 // push double pointer onto stack
 void hoc_pushpx(double* d) {
-    push_value(d);
+    hoc_push(neuron::container::data_handle<double>{d});
 }
 
 // push symbol pointer onto stack
@@ -876,9 +876,19 @@ double hoc_xpop() {
     return pop_value<double>();
 }
 
+namespace neuron {
+/** @brief hoc_pop<generic_data_handle>()
+ */
+container::generic_data_handle oc::detail::hoc_pop_helper<container::generic_data_handle>::impl() {
+    // We allocated a generic_data_handle with `new` when pushing to the stack
+    return *std::unique_ptr<container::generic_data_handle>{pop_value(VAR).generic_handle};
+}
+}  // namespace neuron
+
 // pop double pointer and return top elem from stack
 double* hoc_pxpop() {
-    return pop_value<double*>();
+    // All pointers are actually stored on the stack as data handles
+    return static_cast<double*>(hoc_pop<neuron::container::data_handle<double>>());
 }
 
 // pop symbol pointer and return top elem from stack
@@ -1606,7 +1616,7 @@ char** hoc_pgargstr(int narg) {
 // return pointer to nth argument
 double* hoc_pgetarg(int narg) {
     auto const& arg_entry = get_argument(narg);
-    return cast<double*>(arg_entry);
+    return static_cast<double*>(cast<neuron::container::generic_data_handle>(arg_entry));
 }
 
 // return pointer to nth argument
