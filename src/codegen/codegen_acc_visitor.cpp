@@ -96,17 +96,17 @@ void CodegenAccVisitor::print_memory_allocation_routine() const {
     }
     printer->add_newline(2);
     auto args = "size_t num, size_t size, size_t alignment = 16";
-    printer->add_line(fmt::format("static inline void* mem_alloc({}) {}", args, "{"));
-    printer->add_line("    void* ptr;");
-    printer->add_line("    cudaMallocManaged(&ptr, num*size);");
-    printer->add_line("    cudaMemset(ptr, 0, num*size);");
-    printer->add_line("    return ptr;");
-    printer->add_line("}");
+    printer->fmt_start_block("static inline void* mem_alloc({})", args);
+    printer->add_line("void* ptr;");
+    printer->add_line("cudaMallocManaged(&ptr, num*size);");
+    printer->add_line("cudaMemset(ptr, 0, num*size);");
+    printer->add_line("return ptr;");
+    printer->end_block(1);
 
     printer->add_newline(2);
-    printer->add_line("static inline void mem_free(void* ptr) {");
-    printer->add_line("    cudaFree(ptr);");
-    printer->add_line("}");
+    printer->start_block("static inline void mem_free(void* ptr)");
+    printer->add_line("cudaFree(ptr);");
+    printer->end_block(1);
 }
 
 /**
@@ -121,10 +121,10 @@ void CodegenAccVisitor::print_memory_allocation_routine() const {
  */
 void CodegenAccVisitor::print_abort_routine() const {
     printer->add_newline(2);
-    printer->add_line("static inline void coreneuron_abort() {");
-    printer->add_line("    printf(\"Error : Issue while running OpenACC kernel \\n\");");
-    printer->add_line("    assert(0==1);");
-    printer->add_line("}");
+    printer->start_block("static inline void coreneuron_abort()");
+    printer->add_line("printf(\"Error : Issue while running OpenACC kernel \\n\");");
+    printer->add_line("assert(0==1);");
+    printer->end_block(1);
 }
 
 void CodegenAccVisitor::print_net_send_buffering_grow() {
@@ -135,8 +135,7 @@ void CodegenAccVisitor::print_eigen_linear_solver(const std::string& /* float_ty
     if (N <= 4) {
         printer->add_line("nmodl_eigen_xm = nmodl_eigen_jm.inverse()*nmodl_eigen_fm;");
     } else {
-        printer->add_line(
-            fmt::format("nmodl_eigen_xm = partialPivLu<{}>nmodl_eigen_jm, nmodl_eigen_fm);", N));
+        printer->fmt_line("nmodl_eigen_xm = partialPivLu<{}>nmodl_eigen_jm, nmodl_eigen_fm);", N);
     }
 }
 
@@ -191,11 +190,11 @@ void CodegenAccVisitor::print_nrn_cur_matrix_shadow_update() {
     if (info.point_process) {
         print_atomic_reduction_pragma();
     }
-    printer->add_line(fmt::format("vec_rhs[node_id] {} rhs;", rhs_op));
+    printer->fmt_line("vec_rhs[node_id] {} rhs;", rhs_op);
     if (info.point_process) {
         print_atomic_reduction_pragma();
     }
-    printer->add_line(fmt::format("vec_d[node_id] {} g;", d_op));
+    printer->fmt_line("vec_d[node_id] {} g;", d_op);
 }
 
 void CodegenAccVisitor::print_fast_imem_calculation() {
@@ -209,11 +208,11 @@ void CodegenAccVisitor::print_fast_imem_calculation() {
     if (info.point_process) {
         print_atomic_reduction_pragma();
     }
-    printer->add_line(fmt::format("nt->nrn_fast_imem->nrn_sav_rhs[node_id] {} rhs;", rhs_op));
+    printer->fmt_line("nt->nrn_fast_imem->nrn_sav_rhs[node_id] {} rhs;", rhs_op);
     if (info.point_process) {
         print_atomic_reduction_pragma();
     }
-    printer->add_line(fmt::format("nt->nrn_fast_imem->nrn_sav_d[node_id] {} g;", d_op));
+    printer->fmt_line("nt->nrn_fast_imem->nrn_sav_d[node_id] {} g;", d_op);
     printer->end_block(1);
 }
 
@@ -258,12 +257,10 @@ void CodegenAccVisitor::print_newtonspace_transfer_to_device() const {
     printer->add_line("double* device_vec = cnrn_target_copyin(vec, vec_size / sizeof(double));");
     printer->add_line("void* device_ns = cnrn_target_deviceptr(*ns);");
     printer->add_line("ThreadDatum* device_thread = cnrn_target_deviceptr(thread);");
-    printer->add_line(
-        fmt::format("cnrn_target_memcpy_to_device(&(device_thread[{}]._pvoid), &device_ns);",
-                    info.thread_data_index - 1));
-    printer->add_line(
-        fmt::format("cnrn_target_memcpy_to_device(&(device_thread[dith{}()].pval), &device_vec);",
-                    list_num));
+    printer->fmt_line("cnrn_target_memcpy_to_device(&(device_thread[{}]._pvoid), &device_ns);",
+                      info.thread_data_index - 1);
+    printer->fmt_line("cnrn_target_memcpy_to_device(&(device_thread[dith{}()].pval), &device_vec);",
+                      list_num);
     printer->end_block(1);
 }
 
@@ -341,8 +338,8 @@ void CodegenAccVisitor::print_net_send_buf_count_update_to_device() const {
 
 
 void CodegenAccVisitor::print_dt_update_to_device() const {
-    printer->add_line(fmt::format("#pragma acc update device({}) if (nt->compute_gpu)",
-                                  get_variable_name(naming::NTHREAD_DT_VARIABLE)));
+    printer->fmt_line("#pragma acc update device({}) if (nt->compute_gpu)",
+                      get_variable_name(naming::NTHREAD_DT_VARIABLE));
 }
 
 }  // namespace codegen
