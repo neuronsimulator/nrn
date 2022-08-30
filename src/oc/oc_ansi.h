@@ -1,4 +1,6 @@
 #pragma once
+#include "neuron/container/generic_data_handle.hpp"
+
 #include <cstdio>
 #include <memory>
 /**
@@ -148,38 +150,38 @@ void hoc_pushpx(double*);
 void hoc_pushs(Symbol*);
 void hoc_pushi(int);
 
-namespace nrn::oc::detail {
+namespace neuron::oc::detail {
 template <typename T>
-struct hoc_pop;
+struct hoc_pop_helper;
 }
 
 /** @brief Pop an object of type T from the HOC stack.
  *
- *  The helper type nrn::oc::detail::hoc_pop must be specialised for all
+ *  The helper type neuron::oc::detail::hoc_pop must be specialised for all
  *  supported (families of) T.
  */
 template <typename T>
 T hoc_pop() {
-    return nrn::oc::detail::hoc_pop<T>::impl();
+    return neuron::oc::detail::hoc_pop_helper<T>::impl();
 }
 
-namespace nrn::oc::detail {
+namespace neuron::oc::detail {
 template <>
-struct hoc_pop<neuron::container::generic_data_handle> {
+struct hoc_pop_helper<neuron::container::generic_data_handle> {
     /** @brief Pop a generic data handle from the HOC stack.
      */
     static neuron::container::generic_data_handle impl();
 };
 
 template <typename T>
-struct hoc_pop<neuron::container::data_handle<T>> {
+struct hoc_pop_helper<neuron::container::data_handle<T>> {
     /** @brief Pop a data_handle<T> from the HOC stack.
      */
     static neuron::container::data_handle<T> impl() {
         return neuron::container::data_handle<T>{hoc_pop<neuron::container::generic_data_handle>()};
     }
 };
-}  // namespace nrn::oc::detail
+}  // namespace neuron::oc::detail
 
 double hoc_xpop();
 Symbol* hoc_spop();
