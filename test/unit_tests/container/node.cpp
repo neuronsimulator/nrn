@@ -190,8 +190,61 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                            node.set_v(v);
                            return node;
                        });
-        THEN("Check we can read back the same voltages") {
-            REQUIRE(get_voltages(nodes) == reference_voltages);
+        auto& node_data = neuron::model().node_data();
+        auto const& voltage_storage = node_data.get<neuron::container::Node::field::Voltage>();
+        REQUIRE(nodes.size() == voltage_storage.size());
+        auto const require_logical_match = [&]() {
+            THEN("Check the logical voltages still match") {
+                REQUIRE(get_voltages(nodes) == reference_voltages);
+            }
+        };
+        auto const require_logical_and_storage_match = [&]() {
+            require_logical_match();
+            THEN("Check the underlying storage also matches") {
+                REQUIRE(voltage_storage == reference_voltages);
+            }
+        };
+        auto const require_logical_match_and_storage_different = [&]() {
+            require_logical_match();
+            THEN("Check the underlying storage no longer matches") {
+                REQUIRE_FALSE(voltage_storage == reference_voltages);
+            }
+        };
+        WHEN("Values are read back immediately") {
+            require_logical_and_storage_match();
+        }
+        WHEN("The underlying storage is rotated") {
+            node_data.rotate(1);
+            require_logical_match_and_storage_different();
+        }
+        WHEN("The underlying storage is reversed") {
+            node_data.reverse();
+            require_logical_match_and_storage_different();
+        }
+        std::vector<std::size_t> perm_vector(nodes.size());
+        std::iota(perm_vector.begin(), perm_vector.end(), 0);
+        WHEN("A unit permutation is applied to the underlying storage") {
+            node_data.apply_permutation(perm_vector);
+            require_logical_and_storage_match();
+        }
+        WHEN("A unit reverse permutation is applied to the underlying storage") {
+            node_data.apply_reverse_permutation(perm_vector);
+            require_logical_and_storage_match();
+        }
+        WHEN("A random permutation is applied to the underlying storage") {
+            std::mt19937 g{42};
+            std::shuffle(perm_vector.begin(), perm_vector.end(), g);
+            node_data.apply_permutation(perm_vector);
+            // the permutation is random, so we don't know if voltage_storage
+            // will match reference_voltages or not
+            require_logical_match();
+        }
+        WHEN("An invalid permutation is applied to the underlying storage") {
+            std::vector<std::size_t> bad_perm(nodes.size() - 1);
+            std::iota(bad_perm.begin(), bad_perm.end(), 0);
+            THEN("An exception is thrown") {
+                REQUIRE_THROWS(node_data.apply_permutation(bad_perm));
+            }
         }
     }
 }
