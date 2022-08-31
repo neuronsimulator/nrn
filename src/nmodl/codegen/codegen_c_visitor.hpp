@@ -1080,19 +1080,39 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * Print the code to copy instance struct members to the device,
-     * substituting host pointers for device ones.
-     *
-     * \param ptr_members Members to update.
+     * Print declarations of the functions used by \ref
+     * print_instance_struct_copy_to_device and \ref
+     * print_instance_struct_delete_from_device.
      */
-    virtual void print_instance_variable_transfer_to_device(
-        std::vector<std::string> const& ptr_members) const;
+    virtual void print_instance_struct_transfer_routine_declarations() {}
+
+    /**
+     * Print the definitions of the functions used by \ref
+     * print_instance_struct_copy_to_device and \ref
+     * print_instance_struct_delete_from_device. Declarations of these functions
+     * are printed by \ref print_instance_struct_transfer_routine_declarations.
+     *
+     * This updates the (pointer) member variables in the device copy of the
+     * instance struct to contain device pointers, which is why you must pass a
+     * list of names of those member variables.
+     *
+     * \param ptr_members List of instance struct member names.
+     */
+    virtual void print_instance_struct_transfer_routines(
+        std::vector<std::string> const& /* ptr_members */) {}
 
 
     /**
-     * Print the code to delete the instance structure from the device.
+     * Transfer the instance struct to the device. This calls a function
+     * declared by \ref print_instance_struct_transfer_routine_declarations.
      */
-    virtual void print_instance_variable_deletion_from_device() const;
+    virtual void print_instance_struct_copy_to_device() {}
+
+    /**
+     * Delete the instance struct from the device. This calls a function
+     * declared by \ref print_instance_struct_transfer_routine_declarations.
+     */
+    virtual void print_instance_struct_delete_from_device() {}
 
 
     /**

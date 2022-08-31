@@ -1041,17 +1041,6 @@ void CodegenCVisitor::print_channel_iteration_tiling_block_end() {
 }
 
 
-void CodegenCVisitor::print_instance_variable_transfer_to_device(
-    std::vector<std::string> const& ptr_members) const {
-    // backend specific, do nothing
-}
-
-
-void CodegenCVisitor::print_instance_variable_deletion_from_device() const {
-    // backend specific, do nothing
-}
-
-
 void CodegenCVisitor::print_deriv_advance_flag_transfer_to_device() const {
     // backend specific, do nothing
 }
@@ -1892,9 +1881,9 @@ void CodegenCVisitor::print_eigen_linear_solver(const std::string& float_type, i
 
 std::string CodegenCVisitor::internal_method_arguments() {
     if (ion_variable_struct_required()) {
-        return "id, pnodecount, inst, ionvar, data, indexes, thread, nt, ml, v";
+        return "id, pnodecount, inst, ionvar, data, indexes, thread, nt, v";
     }
-    return "id, pnodecount, inst, data, indexes, thread, nt, ml, v";
+    return "id, pnodecount, inst, data, indexes, thread, nt, v";
 }
 
 
@@ -1926,7 +1915,6 @@ CodegenCVisitor::ParamVector CodegenCVisitor::internal_method_parameters() {
     params.emplace_back("const ", "Datum*", "", "indexes");
     params.emplace_back(param_type_qualifier(), "ThreadDatum*", "", "thread");
     params.emplace_back(param_type_qualifier(), "NrnThread*", param_ptr_qualifier(), "nt");
-    params.emplace_back(param_type_qualifier(), "Memb_list*", param_ptr_qualifier(), "ml");
     params.emplace_back("", "double", "", "v");
     return params;
 }
@@ -1961,9 +1949,9 @@ std::string CodegenCVisitor::nrn_thread_arguments() {
  */
 std::string CodegenCVisitor::nrn_thread_internal_arguments() {
     if (ion_variable_struct_required()) {
-        return "id, pnodecount, inst, ionvar, data, indexes, thread, nt, ml, v";
+        return "id, pnodecount, inst, ionvar, data, indexes, thread, nt, v";
     }
-    return "id, pnodecount, inst, data, indexes, thread, nt, ml, v";
+    return "id, pnodecount, inst, data, indexes, thread, nt, v";
 }
 
 
@@ -3200,18 +3188,15 @@ void CodegenCVisitor::print_instance_variable_setup() {
         printer->fmt_line("assert(ml->global_variables_size == sizeof({}));", global_struct());
     };
 
-    printer->fmt_line(
-        "static inline void copy_instance_to_device(NrnThread* nt, Memb_list* ml, {} const* inst);",
-        instance_struct());
-    printer->fmt_line("static inline void delete_instance_from_device({}& inst);",
-                      instance_struct());
-    printer->add_newline();
+    // Must come before print_instance_struct_copy_to_device and
+    // print_instance_struct_delete_from_device
+    print_instance_struct_transfer_routine_declarations();
 
     printer->add_line("// Deallocate the instance structure");
     printer->fmt_start_block("static void {}(NrnThread* nt, Memb_list* ml, int type)",
                              method_name(naming::NRN_PRIVATE_DESTRUCTOR_METHOD));
     cast_inst_and_assert_validity();
-    printer->add_line("delete_instance_from_device(*inst);");
+    print_instance_struct_delete_from_device();
     printer->add_line("delete inst;");
     printer->add_line("ml->instance = nullptr;");
     printer->add_line("ml->global_variables = nullptr;");
@@ -3269,20 +3254,10 @@ void CodegenCVisitor::print_instance_variable_setup() {
         printer->fmt_line("inst->{} = {};", name, variable);
         ptr_members.push_back(std::move(name));
     }
-    printer->add_line("copy_instance_to_device(nt, ml, inst);");
+    print_instance_struct_copy_to_device();
     printer->end_block(2);  // setup_instance
 
-    printer->add_line("// Set up the device-side copy of the instance structure");
-    printer->fmt_start_block(
-        "static inline void copy_instance_to_device(NrnThread* nt, Memb_list* ml, {} const* inst)",
-        instance_struct());
-    print_instance_variable_transfer_to_device(ptr_members);
-    printer->end_block(2);  // copy_instance_to_device
-
-    printer->fmt_start_block("static inline void delete_instance_from_device({}& inst)",
-                             instance_struct());
-    print_instance_variable_deletion_from_device();
-    printer->end_block(2);  // delete_instance_from_device
+    print_instance_struct_transfer_routines(ptr_members);
 }
 
 

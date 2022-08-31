@@ -265,11 +265,26 @@ void CodegenAccVisitor::print_newtonspace_transfer_to_device() const {
 }
 
 
-void CodegenAccVisitor::print_instance_variable_transfer_to_device(
-    std::vector<std::string> const& ptr_members) const {
+void CodegenAccVisitor::print_instance_struct_transfer_routine_declarations() {
     if (info.artificial_cell) {
         return;
     }
+    printer->fmt_line(
+        "static inline void copy_instance_to_device(NrnThread* nt, Memb_list* ml, {} const* inst);",
+        instance_struct());
+    printer->fmt_line("static inline void delete_instance_from_device({}* inst);",
+                      instance_struct());
+}
+
+
+void CodegenAccVisitor::print_instance_struct_transfer_routines(
+    std::vector<std::string> const& ptr_members) {
+    if (info.artificial_cell) {
+        return;
+    }
+    printer->fmt_start_block(
+        "static inline void copy_instance_to_device(NrnThread* nt, Memb_list* ml, {} const* inst)",
+        instance_struct());
     printer->start_block("if (!nt->compute_gpu)");
     printer->add_line("return;");
     printer->end_block(1);
@@ -285,17 +300,32 @@ void CodegenAccVisitor::print_instance_variable_transfer_to_device(
     printer->add_line("auto* d_ml = cnrn_target_deviceptr(ml);");
     printer->add_line("void* d_inst_void = d_inst;");
     printer->add_line("cnrn_target_memcpy_to_device(&(d_ml->instance), &d_inst_void);");
+    printer->end_block(2);  // copy_instance_to_device
+
+    printer->fmt_start_block("static inline void delete_instance_from_device({}* inst)",
+                             instance_struct());
+    printer->start_block("if (cnrn_target_is_present(inst))");
+    printer->add_line("cnrn_target_delete(inst);");
+    printer->end_block(1);
+    printer->end_block(2);  // delete_instance_from_device
 }
 
 
-void CodegenAccVisitor::print_instance_variable_deletion_from_device() const {
+void CodegenAccVisitor::print_instance_struct_copy_to_device() {
     if (info.artificial_cell) {
         return;
     }
-    printer->start_block("if (cnrn_target_is_present(&inst))");
-    printer->add_line("cnrn_target_delete(&inst);");
-    printer->end_block(1);
+    printer->add_line("copy_instance_to_device(nt, ml, inst);");
 }
+
+
+void CodegenAccVisitor::print_instance_struct_delete_from_device() {
+    if (info.artificial_cell) {
+        return;
+    }
+    printer->add_line("delete_instance_from_device(inst);");
+}
+
 
 void CodegenAccVisitor::print_deriv_advance_flag_transfer_to_device() const {
     printer->add_line("nrn_pragma_acc(update device (deriv_advance_flag) if(nt->compute_gpu))");
