@@ -82,7 +82,7 @@ Item* hoc_l_next(Item* item) {
     return item->next;
 }
 
-Item* prev(Item* item) {
+Item* hoc_l_prev(Item* item) {
     assert(item->prev->element.lst); /* never return the list item */
     return item->prev;
 }
