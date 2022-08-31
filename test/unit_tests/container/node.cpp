@@ -10,12 +10,29 @@
 
 using namespace neuron::container;
 
+// We want to check that the tests pass for all of:
+// - data_handle<T>
+// - data_handle<T> -> T* -> data_handle<T>
+// - data_handle<T> -> generic_data_handle -> data_handle<T>
+enum struct Transform { None, ViaRawPointer, ViaGenericDataHandle };
+template <typename T>
+data_handle<T> transform(data_handle<T> handle, Transform type) {
+    if (type == Transform::None) {
+        return handle;
+    } else if (type == Transform::ViaRawPointer) {
+        return {static_cast<T*>(handle)};
+    } else {
+        assert(type == Transform::ViaGenericDataHandle);
+        return {generic_data_handle{handle}};
+    }
+}
+
 TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
     GIVEN("A null handle") {
-        // Generate a null handle both directly and via round trip to generic_data_handle
-        auto const handle =
-            GENERATE(data_handle<double>{},
-                     static_cast<data_handle<double>>(generic_data_handle{data_handle<double>{}}));
+        data_handle<double> handle{};
+        auto const transformation =
+            GENERATE(Transform::None, Transform::ViaRawPointer, Transform::ViaGenericDataHandle);
+        handle = transform(handle, transformation);
         THEN("Check it is really null") {
             REQUIRE_FALSE(handle);
         }
@@ -26,14 +43,11 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
     }
     constexpr double magic_voltage_value = 42.;
     GIVEN("A handle wrapping a raw pointer (compatibility mode)") {
-        static double foo{42};
-        // Generate a compatibility-mode handle both directly and via round trip
-        // to generic_data_handle
-        auto round_trip = GENERATE(false, true);
+        double foo{magic_voltage_value};
         data_handle<double> handle{&foo};
-        if (round_trip) {
-            handle = static_cast<data_handle<double>>(generic_data_handle{handle});
-        }
+        auto const transformation =
+            GENERATE(Transform::None, Transform::ViaRawPointer, Transform::ViaGenericDataHandle);
+        handle = transform(handle, transformation);
         THEN("Check it is not null") {
             REQUIRE(handle);
         }
@@ -65,12 +79,10 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
     GIVEN("A handle referring to an entry in an SOA container") {
         std::optional<::Node> node{std::in_place};
         node->set_v(magic_voltage_value);
-        // Generate a handle both directly and via round trip to generic_data_handle
         auto handle = node->v_handle();
-        auto round_trip = GENERATE(false, true);
-        if (round_trip) {
-            handle = static_cast<data_handle<double>>(generic_data_handle{handle});
-        }
+        auto const transformation =
+            GENERATE(Transform::None, Transform::ViaRawPointer, Transform::ViaGenericDataHandle);
+        handle = transform(handle, transformation);
         THEN("Check it is not null") {
             REQUIRE(handle);
         }
@@ -102,6 +114,22 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
             actual << handle;
             REQUIRE(actual.str() == "data_handle<double>{cont=Node::field::Voltage died/0}");
         }
+        THEN(
+            "Check that mutating the underlying container while holding a raw pointer has the "
+            "expected effect") {
+            auto* raw_ptr = static_cast<double*>(handle);
+            REQUIRE(raw_ptr);
+            REQUIRE(*raw_ptr == magic_voltage_value);
+            node.reset();  // delete the underlying Node object, handle is now invalid
+            REQUIRE_FALSE(handle);
+            REQUIRE(raw_ptr);  // no magic here, we have a dangling pointer
+            data_handle<double> new_handle{raw_ptr};
+            REQUIRE(new_handle);  // handle refers to no-longer-valid memory, but we can't detect
+                                  // that
+            REQUIRE(handle != new_handle);
+            REQUIRE_FALSE(new_handle.refers_to_a_modern_data_structure());
+            // dereferencing raw_ptr is undefined behaviour
+        }
     }
 }
 
@@ -130,6 +158,9 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
         }
         THEN("Check it can be converted back to data_handle<double>") {
             REQUIRE_NOTHROW(static_cast<data_handle<double>>(handle));
+        }
+        THEN("Check it cannot be converted to data_handle<int>") {
+            REQUIRE_THROWS(static_cast<data_handle<int>>(handle));
         }
     }
 }
