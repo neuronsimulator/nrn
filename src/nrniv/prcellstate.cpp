@@ -83,7 +83,7 @@ static void pr_netcon(NrnThread& nt, FILE* f, const std::map<void*, int>& pnt2in
             } else {
                 fprintf(f, "%zd %d %d %.*g", i, srcgid, nc->active_ ? 1 : 0, precision, nc->delay_);
             }
-            int wcnt = pnt_receive_size[nc->target_->prop->type];
+            int wcnt = pnt_receive_size[nc->target_->prop->_type];
             for (int k = 0; k < wcnt; ++k) {
                 fprintf(f, " %.*g", precision, nc->weight_[k]);
             }

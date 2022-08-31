@@ -554,11 +554,11 @@ static int in_place_data_realloc() {
         for (int i = 0; i < nt->end; ++i) {
             Node* nd = nt->_v_node[i];
             for (Prop* p = nd->prop; p; p = p->next) {
-                if (memb_func[p->type].current || memb_func[p->type].state ||
-                    memb_func[p->type].initialize) {
-                    Memb_list* ml = mlmap[p->type];
+                if (memb_func[p->_type].current || memb_func[p->_type].state ||
+                    memb_func[p->_type].initialize) {
+                    Memb_list* ml = mlmap[p->_type];
                     assert(ml->nodelist[ml->nodecount] == nd);
-                    if (!memb_func[p->type].hoc_mech) {
+                    if (!memb_func[p->_type].hoc_mech) {
                         p->param = ml->_data[ml->nodecount];
                     }
                     ++ml->nodecount;
@@ -666,14 +666,14 @@ void nrn_cache_prop_realloc() {
         for (i = 0; i < nt->end; ++i) {
             Node* nd = nt->_v_node[i];
             for (Prop* p = nd->prop; p; p = p->next) {
-                if (memb_func[p->type].current || memb_func[p->type].state ||
-                    memb_func[p->type].initialize) {
-                    Memb_list* ml = mlmap[p->type];
+                if (memb_func[p->_type].current || memb_func[p->_type].state ||
+                    memb_func[p->_type].initialize) {
+                    Memb_list* ml = mlmap[p->_type];
                     if (!ml || nd != ml->nodelist[ml->nodecount]) {
                         abort();
                     }
                     assert(ml && nd == ml->nodelist[ml->nodecount]);
-                    nrn_assert(fprintf(f, "%d %d %ld\n", p->type, ml->nodecount++, p->_alloc_seq) >
+                    nrn_assert(fprintf(f, "%d %d %ld\n", p->_type, ml->nodecount++, p->_alloc_seq) >
                                0);
                     ++cnt2;
                 }

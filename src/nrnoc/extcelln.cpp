@@ -314,12 +314,12 @@ void extcell_node_create(Node* nd) {
         }
         nde->param = (double*) 0;
         for (p = nd->prop; p; p = p->next) {
-            if (p->type == EXTRACELL) {
+            if (p->_type == EXTRACELL) {
                 nde->param = p->param;
                 break;
             }
         }
-        assert(p && p->type == EXTRACELL);
+        assert(p && p->_type == EXTRACELL);
     }
 }
 

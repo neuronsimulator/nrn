@@ -1075,14 +1075,14 @@ static PyObject* NPyMechObj_name(NPyMechObj* self) {
     CHECK_SEC_INVALID(self->pyseg_->pysec_->sec_);
     PyObject* result = NULL;
     if (self->prop_) {
-        result = PyString_FromString(memb_func[self->prop_->type].sym->name);
+        result = PyString_FromString(memb_func[self->prop_->_type].sym->name);
     }
     return result;
 }
 
 static PyObject* NPyMechObj_is_ion(NPyMechObj* self) {
     CHECK_SEC_INVALID(self->pyseg_->pysec_->sec_);
-    if (self->prop_ && nrn_is_ion(self->prop_->type)) {
+    if (self->prop_ && nrn_is_ion(self->prop_->_type)) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
@@ -1356,7 +1356,7 @@ static PyObject* seg_point_processes(NPySegObj* self) {
     Node* nd = node_exact(sec, self->x_);
     PyObject* result = PyList_New(0);
     for (Prop* p = nd->prop; p; p = p->next) {
-        if (memb_func[p->type].is_point) {
+        if (memb_func[p->_type].is_point) {
             Point_process* pp = (Point_process*) p->dparam[1]._pvoid;
             PyObject* item = nrnpy_ho2po(pp->ob);
             int err = PyList_Append(result, item);
@@ -1466,7 +1466,7 @@ static PyObject* seg_volume(NPySegObj* self) {
             // 0 or 1 3D points... so give cylinder volume
             Node* nd = node_exact(sec, x);
             for (Prop* p = nd->prop; p; p = p->next) {
-                if (p->type == MORPHOLOGY) {
+                if (p->_type == MORPHOLOGY) {
                     double diam = p->param[0];
                     a = M_PI * diam * diam / 4 * length;
                     break;
@@ -1501,8 +1501,8 @@ static Prop* mech_of_segment_prop(Prop* p) {
         if (!p) {
             break;
         }
-        // printf("segment_iter %d %s\n", p->type, memb_func[p->type].sym->name);
-        if (PyDict_GetItemString(pmech_types, memb_func[p->type].sym->name)) {
+        // printf("segment_iter %d %s\n", p->_type, memb_func[p->_type].sym->name);
+        if (PyDict_GetItemString(pmech_types, memb_func[p->_type].sym->name)) {
             // printf("segment_iter found\n");
             break;
         }
@@ -1764,7 +1764,7 @@ static PyObject* var_of_mech_iter(NPyMechObj* self) {
     }
     vmi->pymech_ = self;
     Py_INCREF(vmi->pymech_);
-    vmi->msym_ = memb_func[self->prop_->type].sym;
+    vmi->msym_ = memb_func[self->prop_->_type].sym;
     vmi->i_ = 0;
     return (PyObject*) vmi;
 }
@@ -1889,8 +1889,8 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
         PyDict_SetItemString(result, "cm", Py_None);
         assert(err == 0);
         for (Prop* p = nd->prop; p; p = p->next) {
-            if (p->type > CAP && !memb_func[p->type].is_point) {
-                char* pn = memb_func[p->type].sym->name;
+            if (p->_type > CAP && !memb_func[p->_type].is_point) {
+                char* pn = memb_func[p->_type].sym->name;
                 err = PyDict_SetItemString(result, pn, Py_None);
                 assert(err == 0);
             }
@@ -2035,11 +2035,11 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     PyObject* result = NULL;
     NrnProperty np(self->prop_);
     int isptr = (strncmp(n, "_ref_", 5) == 0);
-    char* mname = memb_func[self->prop_->type].sym->name;
+    char* mname = memb_func[self->prop_->_type].sym->name;
     int mnamelen = strlen(mname);
     int bufsz = strlen(n) + mnamelen + 2;
     char* buf = new char[bufsz];
-    if (nrn_is_ion(self->prop_->type)) {
+    if (nrn_is_ion(self->prop_->_type)) {
         strcpy(buf, isptr ? n + 5 : n);
     } else {
         sprintf(buf, "%s_%s", isptr ? n + 5 : n, mname);
@@ -2102,11 +2102,11 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
     // printf("mech_setattro %s\n", n);
     NrnProperty np(self->prop_);
     int isptr = (strncmp(n, "_ref_", 5) == 0);
-    char* mname = memb_func[self->prop_->type].sym->name;
+    char* mname = memb_func[self->prop_->_type].sym->name;
     int mnamelen = strlen(mname);
     int bufsz = strlen(n) + mnamelen + 2;
     char* buf = new char[bufsz];
-    if (nrn_is_ion(self->prop_->type)) {
+    if (nrn_is_ion(self->prop_->_type)) {
         strcpy(buf, isptr ? n + 5 : n);
     } else {
         sprintf(buf, "%s_%s", isptr ? n + 5 : n, mname);
@@ -2150,7 +2150,7 @@ double** nrnpy_setpointer_helper(PyObject* pyname, PyObject* mech) {
     if (!n) {
         return NULL;
     }
-    sprintf(buf, "%s_%s", n, memb_func[m->prop_->type].sym->name);
+    sprintf(buf, "%s_%s", n, memb_func[m->prop_->_type].sym->name);
     Symbol* sym = np.find(buf);
     if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
         return 0;

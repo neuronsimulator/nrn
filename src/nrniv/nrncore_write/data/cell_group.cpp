@@ -356,7 +356,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 Node* nd = ml->nodelist[i];
                 double* pdiam = NULL;
                 for (Prop* p = nd->prop; p; p = p->next) {
-                    if (p->type == MORPHOLOGY) {
+                    if (p->_type == MORPHOLOGY) {
                         pdiam = p->param;
                         break;
                     }
@@ -467,7 +467,7 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
         cgs[ith].netcons[i] = nc;
 
         if (nc->target_) {
-            int type = nc->target_->prop->type;
+            int type = nc->target_->prop->_type;
             cgs[ith].netcon_pnttype[i] = type;
             if (nrn_is_artificial_[type]) {
                 cgs[ith].netcon_pntindex[i] = nrncore_art2index(nc->target_->prop->param);
@@ -505,7 +505,7 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
                         }
                     }
                     Point_process* pnt = (Point_process*) ps->osrc_->u.this_pointer;
-                    int type = pnt->prop->type;
+                    int type = pnt->prop->_type;
                     if (nrn_is_artificial_[type]) {
                         int ix = nrncore_art2index(pnt->prop->param);
                         cgs[ith].netcon_srcgid[i] = -(type + 1000 * ix);

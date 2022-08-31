@@ -513,9 +513,9 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
     for (i = 0; i < _nt->end; ++i) {
         nd = _nt->_v_node[i];
         for (p = nd->prop; p; p = p->next) {
-            if (memb_func[p->type].current || memb_func[p->type].state ||
-                memb_func[p->type].initialize) {
-                ++mlcnt[p->type];
+            if (memb_func[p->_type].current || memb_func[p->_type].state ||
+                memb_func[p->_type].initialize) {
+                ++mlcnt[p->_type];
             }
         }
     }
@@ -565,12 +565,12 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
     for (i = 0; i < _nt->end; ++i) {
         nd = _nt->_v_node[i];
         for (p = nd->prop; p; p = p->next) {
-            if (memb_func[p->type].current || memb_func[p->type].state ||
-                memb_func[p->type].initialize) {
-                Memb_list* ml = mlmap[p->type];
+            if (memb_func[p->_type].current || memb_func[p->_type].state ||
+                memb_func[p->_type].initialize) {
+                Memb_list* ml = mlmap[p->_type];
                 ml->nodelist[ml->nodecount] = nd;
                 ml->nodeindices[ml->nodecount] = nd->v_node_index;
-                if (memb_func[p->type].hoc_mech) {
+                if (memb_func[p->_type].hoc_mech) {
                     ml->prop[ml->nodecount] = p;
                 } else {
                     ml->_data[ml->nodecount] = p->param;

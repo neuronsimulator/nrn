@@ -851,7 +851,7 @@ int nrn_errno_check(Prop* p, int inode, Section* sec) {
                 "%d errno set at t=%g during call to mechanism %s at node %d in section %s\n",
                 nrnmpi_myid,
                 t,
-                memb_func[p->type].sym->name,
+                memb_func[p->_type].sym->name,
                 inode,
                 secname(sec));
     }

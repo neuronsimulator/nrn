@@ -938,14 +938,14 @@ void mech_uninsert1(Section* sec, Symbol* s) {
     n = sec->nnode;
     for (i = 0; i < n; ++i) {
         mnext = sec->pnode[i]->prop;
-        if (mnext && mnext->type == type) {
+        if (mnext && mnext->_type == type) {
             sec->pnode[i]->prop = mnext->next;
             single_prop_free(mnext);
             continue;
         }
         for (m = mnext; m; m = mnext) {
             mnext = m->next;
-            if (mnext && mnext->type == type) {
+            if (mnext && mnext->_type == type) {
                 m->next = mnext->next;
                 single_prop_free(mnext);
                 break;
@@ -1079,7 +1079,7 @@ static int range_vec_indx(Symbol* s) {
 Prop* nrn_mechanism(int type, Node* nd) {
     Prop* m;
     for (m = nd->prop; m; m = m->next) {
-        if (m->type == type) {
+        if (m->_type == type) {
             break;
         }
     }
@@ -2064,9 +2064,9 @@ double* dprop(Symbol* s, int indx, Section* sec, short inode) {
 #if EXTRACELLULAR
 /* this does not handle vext(0) and vext(1) properly at this time */
 #if I_MEMBRANE
-    if (m->type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 2) {
+    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 2) {
 #else
-    if (m->type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 1) {
+    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 1) {
 #endif
         return sec->pnode[inode]->extnode->v + indx;
     }
@@ -2099,9 +2099,9 @@ double* nrnpy_dprop(Symbol* s, int indx, Section* sec, short inode, int* err) {
 #if EXTRACELLULAR
 /* this does not handle vext(0) and vext(1) properly at this time */
 #if I_MEMBRANE
-    if (m->type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 2) {
+    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 2) {
 #else
-    if (m->type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 1) {
+    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 1) {
 #endif
         return sec->pnode[inode]->extnode->v + indx;
     }
@@ -2237,7 +2237,7 @@ int has_membrane(char* mechanism_name, Section* sec) {
         section sec */
     Prop* p;
     for (p = sec->pnode[0]->prop; p; p = p->next) {
-        if (strcmp(memb_func[p->type].sym->name, mechanism_name) == 0) {
+        if (strcmp(memb_func[p->_type].sym->name, mechanism_name) == 0) {
             return (1);
         }
     }

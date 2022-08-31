@@ -19,7 +19,6 @@
 #undef nodecount
 #undef pval
 
-#undef type
 #undef id
 
 #endif

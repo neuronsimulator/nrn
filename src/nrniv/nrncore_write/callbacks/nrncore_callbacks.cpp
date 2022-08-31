@@ -317,7 +317,7 @@ int nrnthread_dat2_2(int tid,
             Node* nd = nt._v_node[i];
             double diam = 0.0;
             for (Prop* p = nd->prop; p; p = p->next) {
-                if (p->type == MORPHOLOGY) {
+                if (p->_type == MORPHOLOGY) {
                     diam = p->param[0];
                     break;
                 }
@@ -743,7 +743,7 @@ void nrn2core_transfer_WatchCondition(WatchCondition* wc, void (*cb)(int, int, i
     Point_process* pnt = wc->pnt_;
     assert(pnt);
     int tid = ((NrnThread*) (pnt->_vnt))->id;
-    int pnttype = pnt->prop->type;
+    int pnttype = pnt->prop->_type;
     int watch_index = wc->watch_index_;
     int triggered = wc->flag_ ? 1 : 0;
     int pntindex = CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, pnttype);
@@ -829,7 +829,7 @@ static void set_info(TQItem* tqi,
     case SelfEventType: {  // 3
         SelfEvent* se = (SelfEvent*) de;
         Point_process* pnt = se->target_;
-        int type = pnt->prop->type;
+        int type = pnt->prop->_type;
         int movable_index = type2movable[type];
         double* wt = se->weight_;
 
@@ -1065,7 +1065,7 @@ static void core2nrn_SelfEvent_helper(int tid,
     }
 
     // Needs to be tested when permuted on CoreNEURON side.
-    assert(tar_type == pnt->prop->type);
+    assert(tar_type == pnt->prop->_type);
     //  assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, tar_type));
 
     int movable_index = type2movable[tar_type];
