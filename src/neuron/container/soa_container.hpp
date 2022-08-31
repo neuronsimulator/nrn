@@ -114,19 +114,20 @@ struct soa {
      *  there is no overflow?
      */
     template <typename Rng>
-    [[nodiscard]] bool is_permutation_vector(Rng const& range) {
-        std::vector<bool> seen(range.size(), false);
-        assert(seen.size() == range.size());
+    void check_permutation_vector(Rng const& range) {
+        if (ranges::size(range) != size()) {
+            throw std::runtime_error("invalid permutation vector: wrong size");
+        }
+        std::vector<bool> seen(ranges::size(range), false);
         for (auto val: range) {
             if (!(val >= 0 && val < seen.size())) {
-                return false;
+                throw std::runtime_error("invalid permutation vector: value out of range");
             }
             if (seen[val]) {
-                return false;
+                throw std::runtime_error("invalid permutation vector: repeated value");
             }
             seen[val] = true;
         }
-        return true;
     }
 
   public:
@@ -134,8 +135,7 @@ struct soa {
      */
     template <typename Range>
     void apply_permutation(Range& permutation) {
-        assert(ranges::size(permutation) == size());
-        assert(is_permutation_vector(permutation));
+        check_permutation_vector(permutation);
         permute_zip(
             [&permutation](auto zip) { boost::algorithm::apply_permutation(zip, permutation); });
     }
@@ -144,8 +144,7 @@ struct soa {
      */
     template <typename Range>
     void apply_reverse_permutation(Range& permutation) {
-        assert(ranges::size(permutation) == size());
-        assert(is_permutation_vector(permutation));
+        check_permutation_vector(permutation);
         permute_zip([&permutation](auto zip) {
             boost::algorithm::apply_reverse_permutation(zip, permutation);
         });
