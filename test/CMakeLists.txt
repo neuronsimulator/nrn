@@ -14,7 +14,7 @@ include(NeuronTestHelper)
 # Test executables
 # =============================================================================
 add_executable(testneuron common/catch2_main.cpp unit_tests/basic.cpp
-                          unit_tests/oc/hoc_interpreter.cpp)
+                          unit_tests/container/node.cpp unit_tests/oc/hoc_interpreter.cpp)
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
   add_executable(nrn-benchmarks common/catch2_main.cpp benchmarks/threads/test_multicore.cpp)
