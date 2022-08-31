@@ -239,12 +239,27 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             // will match reference_voltages or not
             require_logical_match();
         }
-        WHEN("An invalid permutation is applied to the underlying storage") {
+        auto const require_exception = [&](auto& perm) {
+            THEN("An exception is thrown") {
+                REQUIRE_THROWS(node_data.apply_permutation(perm));
+            }
+        };
+        WHEN("A too-short permutation is applied to the underlying storage") {
             std::vector<std::size_t> bad_perm(nodes.size() - 1);
             std::iota(bad_perm.begin(), bad_perm.end(), 0);
-            THEN("An exception is thrown") {
-                REQUIRE_THROWS(node_data.apply_permutation(bad_perm));
-            }
+            require_exception(bad_perm);
+        }
+        WHEN("A permutation with a repeated entry is applied to the underlying storage") {
+            std::vector<std::size_t> bad_perm(nodes.size());
+            std::iota(bad_perm.begin(), bad_perm.end(), 0);
+            bad_perm[0] = 1;  // repeated entry
+            require_exception(bad_perm);
+        }
+        WHEN("A permutation with an invalid value is applied to the underlying storage") {
+            std::vector<std::size_t> bad_perm(nodes.size());
+            std::iota(bad_perm.begin(), bad_perm.end(), 0);
+            bad_perm[0] = std::numeric_limits<std::size_t>::max();  // out of range
+            require_exception(bad_perm);
         }
     }
 }
