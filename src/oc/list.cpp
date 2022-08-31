@@ -77,7 +77,7 @@ static Item* linkitem(Item* item) {
     return i;
 }
 
-Item* next(Item* item) {
+Item* hoc_l_next(Item* item) {
     assert(item->next->element.lst); /* never return the list item */
     return item->next;
 }

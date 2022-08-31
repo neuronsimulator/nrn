@@ -6,7 +6,6 @@
 #define newitem     hoc_l_newitem
 #define newlist     hoc_l_newlist
 #define freelist    hoc_l_freelist
-#define next        hoc_l_next
 #define prev        hoc_l_prev
 #define insertstr   hoc_l_insertstr
 #define insertitem  hoc_l_insertitem
