@@ -66,7 +66,7 @@ struct data_handle {
         }
     }
 
-    bool refers_to_a_modern_data_structure() const {
+    [[nodiscard]] bool refers_to_a_modern_data_structure() const {
         return !m_raw_ptr;
     }
 
