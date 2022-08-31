@@ -30,9 +30,10 @@ data_handle<T> transform(data_handle<T> handle, Transform type) {
 TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
     GIVEN("A null handle") {
         data_handle<double> handle{};
-        auto const transformation =
-            GENERATE(Transform::None, Transform::ViaRawPointer, Transform::ViaGenericDataHandle);
-        handle = transform(handle, transformation);
+        handle = transform(handle,
+                           GENERATE(Transform::None,
+                                    Transform::ViaRawPointer,
+                                    Transform::ViaGenericDataHandle));
         THEN("Check it is really null") {
             REQUIRE_FALSE(handle);
         }
@@ -45,9 +46,10 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
     GIVEN("A handle wrapping a raw pointer (compatibility mode)") {
         double foo{magic_voltage_value};
         data_handle<double> handle{&foo};
-        auto const transformation =
-            GENERATE(Transform::None, Transform::ViaRawPointer, Transform::ViaGenericDataHandle);
-        handle = transform(handle, transformation);
+        handle = transform(handle,
+                           GENERATE(Transform::None,
+                                    Transform::ViaRawPointer,
+                                    Transform::ViaGenericDataHandle));
         THEN("Check it is not null") {
             REQUIRE(handle);
         }
@@ -80,9 +82,10 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
         std::optional<::Node> node{std::in_place};
         node->set_v(magic_voltage_value);
         auto handle = node->v_handle();
-        auto const transformation =
-            GENERATE(Transform::None, Transform::ViaRawPointer, Transform::ViaGenericDataHandle);
-        handle = transform(handle, transformation);
+        handle = transform(handle,
+                           GENERATE(Transform::None,
+                                    Transform::ViaRawPointer,
+                                    Transform::ViaGenericDataHandle));
         THEN("Check it is not null") {
             REQUIRE(handle);
         }
@@ -199,15 +202,19 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             }
         };
         auto const require_logical_and_storage_match = [&]() {
-            require_logical_match();
-            THEN("Check the underlying storage also matches") {
-                REQUIRE(voltage_storage == reference_voltages);
+            THEN("Check the logical voltages still match") {
+                REQUIRE(get_voltages(nodes) == reference_voltages);
+                AND_THEN("Check the underlying storage also matches") {
+                    REQUIRE(voltage_storage == reference_voltages);
+                }
             }
         };
         auto const require_logical_match_and_storage_different = [&]() {
-            require_logical_match();
-            THEN("Check the underlying storage no longer matches") {
-                REQUIRE_FALSE(voltage_storage == reference_voltages);
+            THEN("Check the logical voltages still match") {
+                REQUIRE(get_voltages(nodes) == reference_voltages);
+                AND_THEN("Check the underlying storage no longer matches") {
+                    REQUIRE_FALSE(voltage_storage == reference_voltages);
+                }
             }
         };
         WHEN("Values are read back immediately") {
@@ -260,6 +267,16 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             std::iota(bad_perm.begin(), bad_perm.end(), 0);
             bad_perm[0] = std::numeric_limits<std::size_t>::max();  // out of range
             require_exception(bad_perm);
+        }
+        WHEN("The last Node is removed") {
+            nodes.pop_back();
+            reference_voltages.pop_back();
+            require_logical_and_storage_match();
+        }
+        WHEN("The first Node is removed") {
+            nodes.erase(nodes.begin());
+            reference_voltages.erase(reference_voltages.begin());
+            require_logical_match_and_storage_different();
         }
     }
 }
