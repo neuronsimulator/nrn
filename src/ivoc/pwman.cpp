@@ -35,11 +35,11 @@ extern int hoc_return_type_code;
 void single_event_run();
 extern char** hoc_strpop();
 
-#ifdef MINGW
+#if defined(MINGW) || defined(WIN32)
 #include <IV-Win/mprinter.h>
 void iv_display_scale(float);
 void iv_display_scale(Coord, Coord);  // Make if fit into the screen
-char* hoc_back2forward(char*);
+extern char* hoc_back2forward(char*);
 #endif
 
 #if MAC
@@ -429,7 +429,7 @@ void PWMDismiss::execute() {
 }
 
 #else  //! HAVE_IV
-#ifdef MINGW
+#if defined(MINGW) || defined(WIN32)
 extern "C" char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV

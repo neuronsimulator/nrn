@@ -235,6 +235,7 @@ endmacro()
 # Run nocmodl to convert NMODL to C
 # =============================================================================
 macro(nocmodl_mod_to_cpp modfile_basename)
+  message(WARNING "foo::: ${modfile_basename}.cpp")
   add_custom_command(
     OUTPUT ${modfile_basename}.cpp
     COMMAND ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
