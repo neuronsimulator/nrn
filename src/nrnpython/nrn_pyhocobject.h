@@ -1,4 +1,5 @@
 #pragma once
+#include "neuron/container/data_handle.hpp"
 #include "nrnpython.h"
 
 struct Object;
@@ -11,7 +12,7 @@ struct PyHocObject {
         char* s_;
         char** pstr_;
         Object* ho_;
-        double* px_;
+        neuron::container::data_handle<double> px_;
         PyHoc::IteratorState its_;
     } u;
     Symbol* sym_;             // for functions and arrays
