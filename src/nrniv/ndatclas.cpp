@@ -25,7 +25,7 @@ extern Symlist* hoc_top_level_symlist;
 NrnPropertyImpl::NrnPropertyImpl(Prop* p) {
     p_ = p;
     iterator_ = -1;
-    sym_ = memb_func[p_->type].sym;
+    sym_ = memb_func[p_->_type].sym;
     del_ = false;
 }
 
@@ -113,11 +113,11 @@ const char* NrnProperty::name() const {
 }
 
 bool NrnProperty::is_point() const {
-    return memb_func[npi_->p_->type].is_point;
+    return memb_func[npi_->p_->_type].is_point;
 }
 
 int NrnProperty::type() const {
-    return npi_->p_->type;
+    return npi_->p_->_type;
 }
 
 Prop* NrnProperty::prop() const {
@@ -157,9 +157,9 @@ int NrnProperty::var_type(Symbol* sym) const {
 bool NrnProperty::assign(Prop* src, Prop* dest, int vartype) {
     int n;
     assert(vartype != NRNPOINTER);
-    if (src && dest && src != dest && src->type == dest->type) {
+    if (src && dest && src != dest && src->_type == dest->_type) {
         if (src->ob) {
-            Symbol* msym = memb_func[src->type].sym;
+            Symbol* msym = memb_func[src->_type].sym;
             int i, j, jmax, cnt = msym->s_varn;
             for (i = 0; i < cnt; ++i) {
                 Symbol* sym = msym->u.ppsym[i];
@@ -181,7 +181,7 @@ bool NrnProperty::assign(Prop* src, Prop* dest, int vartype) {
                     dest->param[i] = src->param[i];
                 }
             } else {
-                Symbol* msym = memb_func[src->type].sym;
+                Symbol* msym = memb_func[src->_type].sym;
                 int i, j, jmax, cnt = msym->s_varn;
                 for (i = 0; i < cnt; ++i) {
                     Symbol* sym = msym->u.ppsym[i];

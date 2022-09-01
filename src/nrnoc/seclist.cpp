@@ -163,7 +163,7 @@ static double seclist_remove(void* v) {
         sec = nrn_secarg(1);
         ITERATE_REMOVE(q, q1, sl) /*{*/
         if (sec == q->element.sec) {
-            delete (q);
+            hoc_l_delete(q);
             section_unref(sec);
             return 1.;
         }
@@ -189,7 +189,7 @@ for (q = sl->next; q != sl; q = q1) {
     q1 = q->next;
     s = hocSEC(q);
     if (s->volatile_mark) {
-        delete (q);
+        hoc_l_delete(q);
         section_unref(s);
         ++i;
     }
@@ -213,7 +213,7 @@ for (q = sl->next; q != sl; q = q1) {
     q1 = q->next;
     s = hocSEC(q);
     if (s->volatile_mark++) {
-        delete (q);
+        hoc_l_delete(q);
         section_unref(s);
         ++i;
     }
@@ -307,7 +307,7 @@ void forall_sectionlist(void) {
         q1 = q->next;
         sec = q->element.sec;
         if (!sec->prop) {
-            delete (q);
+            hoc_l_delete(q);
             section_unref(sec);
             continue;
         }

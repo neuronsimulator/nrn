@@ -851,7 +851,7 @@ int nrn_errno_check(Prop* p, int inode, Section* sec) {
                 "%d errno set at t=%g during call to mechanism %s at node %d in section %s\n",
                 nrnmpi_myid,
                 t,
-                memb_func[p->type].sym->name,
+                memb_func[p->_type].sym->name,
                 inode,
                 secname(sec));
     }
@@ -1103,7 +1103,7 @@ void nrn_ba(NrnThread* nt, int bat) {
         int type = tbl->bam->type;
         Memb_list* ml = tbl->ml;
         for (i = 0; i < ml->nodecount; ++i) {
-            (*f)(ml->nodelist[i], ml->data[i], ml->pdata[i], ml->_thread, nt);
+            (*f)(ml->nodelist[i], ml->_data[i], ml->pdata[i], ml->_thread, nt);
         }
     }
 }

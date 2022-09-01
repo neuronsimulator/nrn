@@ -168,13 +168,13 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
     } else if (type > 0 && type < n_memb_func) {
         Memb_list* ml = nt._ml_list[type];
         if (ml) {
-            mdata = ml->data;
+            mdata = ml->_data;
             n = ml->nodecount;
         } else {
             // The single thread case is easy
             if (nrn_nthread == 1) {
                 ml = memb_list + type;
-                mdata = ml->data;
+                mdata = ml->_data;
                 n = ml->nodecount;
             } else {
                 // mk_tml_with_art() created a cgs[id].mlwithart which appended
@@ -185,7 +185,7 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
                 // cellgroups_ portion (deleting it on return from nrncore_run).
                 auto& ml = CellGroup::deferred_type2artml_[tid][type];
                 n = size_t(ml->nodecount);
-                mdata = ml->data;
+                mdata = ml->_data;
             }
         }
     }
@@ -317,7 +317,7 @@ int nrnthread_dat2_2(int tid,
             Node* nd = nt._v_node[i];
             double diam = 0.0;
             for (Prop* p = nd->prop; p; p = p->next) {
-                if (p->type == MORPHOLOGY) {
+                if (p->_type == MORPHOLOGY) {
                     diam = p->param[0];
                     break;
                 }
@@ -351,12 +351,12 @@ int nrnthread_dat2_mech(int tid,
     int n = ml->nodecount;
     int sz = nrn_prop_param_size_[type];
     double* data1;
-    if (isart) {                                       // data may not be contiguous
-        data1 = contiguous_art_data(ml->data, n, sz);  // delete after use
+    if (isart) {                                        // data may not be contiguous
+        data1 = contiguous_art_data(ml->_data, n, sz);  // delete after use
         nodeindices = NULL;
     } else {
         nodeindices = ml->nodeindices;  // allocated below if copy
-        data1 = ml->data[0];            // do not delete after use
+        data1 = ml->_data[0];           // do not delete after use
     }
     if (copy) {
         if (!isart) {
@@ -478,7 +478,7 @@ int nrnthread_dat2_corepointer_mech(int tid,
     // data size and allocate
     for (int i = 0; i < ml->nodecount; ++i) {
         (*nrn_bbcore_write_[type])(
-            NULL, NULL, &dcnt, &icnt, ml->data[i], ml->pdata[i], ml->_thread, &nt);
+            NULL, NULL, &dcnt, &icnt, ml->_data[i], ml->pdata[i], ml->_thread, &nt);
     }
     dArray = NULL;
     iArray = NULL;
@@ -492,7 +492,7 @@ int nrnthread_dat2_corepointer_mech(int tid,
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
         (*nrn_bbcore_write_[type])(
-            dArray, iArray, &dcnt, &icnt, ml->data[i], ml->pdata[i], ml->_thread, &nt);
+            dArray, iArray, &dcnt, &icnt, ml->_data[i], ml->pdata[i], ml->_thread, &nt);
     }
 
     return 1;
@@ -519,7 +519,7 @@ int core2nrn_corepointer_mech(int tid, int type, int icnt, int dcnt, int* iArray
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
         (*nrn_bbcore_read_[type])(
-            dArray, iArray, &dk, &ik, ml->data[i], ml->pdata[i], ml->_thread, &nt);
+            dArray, iArray, &dk, &ik, ml->_data[i], ml->pdata[i], ml->_thread, &nt);
     }
     assert(dk == dcnt);
     assert(ik == icnt);
@@ -690,9 +690,9 @@ int nrnthread_dat2_vecplay_inst(int tid,
                     }
                     Memb_list* ml = tml->ml;
                     int nn = nrn_prop_param_size_[tml->index] * ml->nodecount;
-                    if (pd >= ml->data[0] && pd < (ml->data[0] + nn)) {
+                    if (pd >= ml->_data[0] && pd < (ml->_data[0] + nn)) {
                         mtype = tml->index;
-                        ix = (pd - ml->data[0]);
+                        ix = (pd - ml->_data[0]);
                         sz = vector_capacity(vp->y_);
                         yvec = vector_vec(vp->y_);
                         tvec = vector_vec(vp->t_);
@@ -743,7 +743,7 @@ void nrn2core_transfer_WatchCondition(WatchCondition* wc, void (*cb)(int, int, i
     Point_process* pnt = wc->pnt_;
     assert(pnt);
     int tid = ((NrnThread*) (pnt->_vnt))->id;
-    int pnttype = pnt->prop->type;
+    int pnttype = pnt->prop->_type;
     int watch_index = wc->watch_index_;
     int triggered = wc->flag_ ? 1 : 0;
     int pntindex = CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, pnttype);
@@ -829,7 +829,7 @@ static void set_info(TQItem* tqi,
     case SelfEventType: {  // 3
         SelfEvent* se = (SelfEvent*) de;
         Point_process* pnt = se->target_;
-        int type = pnt->prop->type;
+        int type = pnt->prop->_type;
         int movable_index = type2movable[type];
         double* wt = se->weight_;
 
@@ -1065,7 +1065,7 @@ static void core2nrn_SelfEvent_helper(int tid,
     }
 
     // Needs to be tested when permuted on CoreNEURON side.
-    assert(tar_type == pnt->prop->type);
+    assert(tar_type == pnt->prop->_type);
     //  assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, tar_type));
 
     int movable_index = type2movable[tar_type];

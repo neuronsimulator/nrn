@@ -491,7 +491,7 @@ void HocDataPathImpl::search(Node* nd, double x) {
 
     Prop* p;
     for (p = nd->prop; p; p = p->next) {
-        if (!memb_func[p->type].is_point) {
+        if (!memb_func[p->_type].is_point) {
             search(p, x);
         }
     }
@@ -505,7 +505,7 @@ void HocDataPathImpl::search(Point_process* pp, Symbol*) {
 
 void HocDataPathImpl::search(Prop* prop, double x) {
     char buf[200];
-    int type = prop->type;
+    int type = prop->_type;
     Symbol* sym = memb_func[type].sym;
     Symbol* psym;
     double* pd;

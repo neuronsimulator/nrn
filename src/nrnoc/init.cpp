@@ -1005,7 +1005,7 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
                     into the p->param array */
                 assert(p);
                 /* need to find symbol for this */
-                msym = memb_func[p->type].sym;
+                msym = memb_func[p->_type].sym;
                 for (j = 0; j < msym->s_varn; ++j) {
                     vsym = msym->u.ppsym[j];
                     if (vsym->type == RANGEVAR && vsym->u.rng.index == index) {
