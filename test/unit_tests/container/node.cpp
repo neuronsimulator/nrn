@@ -112,6 +112,7 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
         THEN("Check that deleting the (Node) object it refers to invalidates the handle") {
             node.reset();  // delete the underlying Node object
             REQUIRE_FALSE(handle);
+            // REQUIRE(handle == data_handle<double>{});
             REQUIRE(handle.refers_to_a_modern_data_structure());
             std::ostringstream actual;
             actual << handle;
