@@ -2994,9 +2994,9 @@ void NetCvode::init_events() {
     }
     ITERATE(q, nclist) {
         Object* obj = OBJ(q);
-        NetCon* d = (NetCon*) obj->u.this_pointer;
+        auto* d = static_cast<NetCon*>(obj->u.this_pointer);
         if (d->target_) {
-            int type = d->target_->prop->_type;
+            int type = d->target_->prop->_type;  // somehow prop is non-deterministically-null here
             if (pnt_receive_init[type]) {
                 (*pnt_receive_init[type])(d->target_, d->weight_, 0);
             } else {
