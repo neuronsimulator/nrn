@@ -1,4 +1,5 @@
 from neuron import h
+from neuron.expect_hocerr import expect_err, set_quiet
 
 pc = h.ParallelContext()
 
@@ -25,6 +26,24 @@ def test_1():
     a.nseg = 5
     cmp(30)
 
+def test_2():
+    a = h.Section(name="axon")
+    a.nseg = 5
+    rv = {seg.x: seg._ref_v for seg in a.allseg()}
+    h.finitialize(-65)
+    assert rv[.3][0] == -65.0
+    a.nseg = 3
+    print(rv[0.3])
+    expect_err("print(rv[0.3][0])")
+    assert rv[.5][0] == -65.0
+    del a
+    expect_err("print(rv[0.5][0])")
+
+    del rv
+    locals()
 
 if __name__ == "__main__":
+    set_quiet(False)
     test_1()
+    test_2()
+    h.topology()
