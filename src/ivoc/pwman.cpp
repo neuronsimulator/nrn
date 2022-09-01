@@ -430,7 +430,7 @@ void PWMDismiss::execute() {
 
 #else  //! HAVE_IV
 #if defined(MINGW) || defined(WIN32)
-extern "C" char* hoc_back2forward(char*);
+extern char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV
 
