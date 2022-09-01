@@ -880,6 +880,14 @@ int nrn_is_hocobj_ptr(PyObject* po, neuron::container::data_handle<double>& pd) 
     return ret;
 }
 
+bool nrn_chk_data_handle(neuron::container::data_handle<double>& pd) {
+    if (pd) {
+        return true;
+    }
+    PyErr_SetString(PyExc_ValueError, "Invalid data_handle");
+    return false;
+}
+
 static void symlist2dict(Symlist* sl, PyObject* dict) {
     PyObject* nn = Py_BuildValue("");
     for (Symbol* s = sl->first; s; s = s->next) {
@@ -1765,7 +1773,9 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
         }
         if (po->type_ == PyHoc::HocScalarPtr) {
             assert(ix == 0);
-            result = Py_BuildValue("d", *(po->u.px_));
+            if (nrn_chk_data_handle(po->u.px_)) {
+                result = Py_BuildValue("d", *(po->u.px_));
+            }
         } else if (po->type_ == PyHoc::HocRefNum) {
             result = Py_BuildValue("d", po->u.x_);
         } else if (po->type_ == PyHoc::HocRefStr) {
