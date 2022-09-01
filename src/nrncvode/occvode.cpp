@@ -244,6 +244,7 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
         int ieq = zneq_v;
         // convert data_handle<double> -> double* for calling nrn_ode_map_t below
         auto pv_raw_ptrs = z.raw_pv_pointers();
+        auto const pv_raw_ptrs_prev = pv_raw_ptrs;
         assert(pv_raw_ptrs.size() == z.pv_.size());
         for (cml = z.cv_memb_list_; cml; cml = cml->next) {
             int n;
@@ -268,6 +269,12 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
                          cml->index);
                     ieq += n;
                 }
+            }
+        }
+        // pv_raw_ptrs may have been modified, propagate the modifications back
+        for (auto i = 0ul; i < pv_raw_ptrs.size(); ++i) {
+            if (pv_raw_ptrs[i] != pv_raw_ptrs_prev[i]) {
+                z.pv_[i] = pv_raw_ptrs[i];
             }
         }
         nrn_nonvint_block_ode_abstol(z.nvsize_, atv, id);
@@ -429,6 +436,7 @@ void Cvode::daspk_init_eqn() {
     int ieq = z.neq_v_;
     // convert data_handle<double> -> double* for calling nrn_ode_map_t below
     auto pv_raw_ptrs = z.raw_pv_pointers();
+    auto const pv_raw_ptrs_prev = pv_raw_ptrs;
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {
         int n;
         mf = memb_func + cml->index;
@@ -446,6 +454,12 @@ void Cvode::daspk_init_eqn() {
                      cml->index);
                 ieq += n;
             }
+        }
+    }
+    // pv_raw_ptrs may have been modified, propagate the modifications back
+    for (auto i = 0ul; i < pv_raw_ptrs.size(); ++i) {
+        if (pv_raw_ptrs[i] != pv_raw_ptrs_prev[i]) {
+            z.pv_[i] = pv_raw_ptrs[i];
         }
     }
     structure_change_ = false;
