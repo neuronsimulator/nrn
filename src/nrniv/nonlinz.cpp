@@ -295,10 +295,11 @@ void NonLinImpRep::delta(double deltafac) {  // also defines pv_,pvdot_ map for 
         deltavec_[i] = deltafac;  // all v's wasted but no matter.
     }
     ieq = neq_v_;
-    std::vector<double*> raw_pv_ptrs;
-    std::transform(pv_.begin(), pv_.end(), std::back_inserter(raw_pv_ptrs), [](auto& handle) {
+    std::vector<double*> pv_raw_ptrs;
+    std::transform(pv_.begin(), pv_.end(), std::back_inserter(pv_raw_ptrs), [](auto& handle) {
         return static_cast<double*>(handle);
     });
+    auto const pv_raw_ptrs_prev = pv_raw_ptrs;
     for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
         Memb_list* ml = tml->ml;
         i = tml->index;
@@ -308,7 +309,7 @@ void NonLinImpRep::delta(double deltafac) {  // also defines pv_,pvdot_ map for 
             nrn_ode_map_t m = memb_func[i].ode_map;
             for (j = 0; j < nc; ++j) {
                 (*m)(ieq,
-                     raw_pv_ptrs.data() + ieq,
+                     pv_raw_ptrs.data() + ieq,
                      pvdot_ + ieq,
                      ml->_data[j],
                      ml->pdata[j],
@@ -316,6 +317,12 @@ void NonLinImpRep::delta(double deltafac) {  // also defines pv_,pvdot_ map for 
                      i);
                 ieq += cnt;
             }
+        }
+    }
+    // pv_raw_ptrs may have been modified, propagate the modifications back
+    for (auto i = 0ul; i < pv_raw_ptrs.size(); ++i) {
+        if (pv_raw_ptrs[i] != pv_raw_ptrs_prev[i]) {
+            pv_[i] = pv_raw_ptrs[i];
         }
     }
     delta_ = (vsymtol_ && (*vsymtol_ != 0.)) ? *vsymtol_ : 1.;
