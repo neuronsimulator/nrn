@@ -160,6 +160,9 @@ struct data_handle {
         return os << '}';
     }
 
+    // TODO should a "modern" handle that has become invalid compare equal to a
+    // null handle that was never valid? Perhaps yes, as both evaluate to
+    // boolean false, but their string representations are different.
     friend bool operator==(data_handle const& lhs, data_handle const& rhs) {
         return lhs.m_offset == rhs.m_offset && lhs.m_container == rhs.m_container &&
                lhs.m_raw_ptr == rhs.m_raw_ptr;
