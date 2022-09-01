@@ -77,7 +77,7 @@ class NetCvode {
     int fun(double t, double* y, double* ydot);
     void error_weights();
     void acor();
-    const char* statename(int, int style = 1);
+    std::string statename(int, int style = 1);
     void localstep(bool);
     bool localstep();
     bool is_local();

@@ -4484,7 +4484,7 @@ HocDataPaths NetCvode::create_hdp(int style) {
     return hdp;
 }
 
-const char* NetCvode::statename(int is, int style) {
+std::string NetCvode::statename(int is, int style) {
     int i, it, j, n;
     if (!cvode_active_) {
         hoc_execerror("Cvode is not active", 0);
@@ -4511,7 +4511,7 @@ const char* NetCvode::statename(int is, int style) {
                     assert(sym);
                     return sym2name(sym);
                 } else {
-                    String* s = hdp.retrieve(static_cast<double*>(z.pv_[is - j]));
+                    auto* s = hdp.retrieve(static_cast<double*>(z.pv_[is - j]));
                     if (s) {
                         return s->string();
                     } else {
