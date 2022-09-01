@@ -303,7 +303,7 @@ static double statename(void* v) {
     if (ifarg(3)) {
         style = (int) chkarg(3, 0, 2);
     }
-    hoc_assign_str(hoc_pgargstr(2), d->statename(i, style));
+    hoc_assign_str(hoc_pgargstr(2), d->statename(i, style).c_str());
     return 0.;
 }
 
