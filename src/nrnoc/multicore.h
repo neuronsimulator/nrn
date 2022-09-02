@@ -77,6 +77,12 @@ struct NrnThread {
                _node_data_offset;
     }
 
+    double& actual_v(std::size_t row) {
+        assert(neuron::model().node_data().is_sorted());
+        return neuron::model().node_data().get<neuron::container::Node::field::Voltage>(
+            _node_data_offset + row);
+    }
+
     double* _actual_rhs;
     double* _actual_d;
     double* _actual_a;
