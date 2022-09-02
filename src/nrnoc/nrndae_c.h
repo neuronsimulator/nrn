@@ -12,7 +12,7 @@ void nrndae_dkmap(std::vector<neuron::container::data_handle<double>>&, double**
 extern void nrndae_dkres(double*, double*, double*);
 extern void nrndae_dkpsol(double);
 extern void nrndae_update(void);
-extern void nrn_matrix_node_free(void);
+void nrn_matrix_node_free();
 extern int nrndae_list_is_empty(void);
 
 extern int nrn_use_daspk_;
