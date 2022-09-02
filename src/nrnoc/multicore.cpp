@@ -53,6 +53,8 @@ the handling of v_structure_change as long as possible.
 
 int nrn_nthread;
 NrnThread* nrn_threads;
+
+// see model_data.hpp
 namespace neuron::detail {
 Model model_data{};
 }
