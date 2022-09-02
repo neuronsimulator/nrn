@@ -59,26 +59,17 @@ int cxx_demangle(const char* symbol, char** funcname, size_t* funcname_sz) {
 #endif
 }
 
-namespace {
-struct free_deleter {
-    void operator()(char* p) {
-        free(p);
-    }
-};
-}  // namespace
 std::string cxx_demangle(const char* mangled) {
-    char* demangled{nullptr};
-    std::size_t demangled_size{};
-    auto const status = cxx_demangle(mangled, &demangled, &demangled_size);
-    std::unique_ptr<char, free_deleter> p{demangled};
-    if (status != 0) {
-        // There was an error
-        return mangled;
-    }
-    // demangled_size gives the buffer length, which is 1 more than the
-    // string length
-    assert(demangled_size);
-    return {demangled, demangled + demangled_size - 1};
+#ifdef USE_CXXABI
+    int status{};
+    // Note that the third argument to abi::__cxa_demangle returns the length of
+    // the allocated buffer, which may be larger than strlen(demangled) + 1.
+    std::unique_ptr<char, decltype(free)*> demangled{
+        abi::__cxa_demangle(mangled, nullptr, nullptr, &status), free};
+    return status ? mangled : demangled.get();
+#else
+    return mangled;
+#endif
 }
 
 void backward_wrapper() {
