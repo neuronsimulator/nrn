@@ -4,6 +4,7 @@
 #include "cvodeobj.h"
 #include "membfunc.h"
 #include "multisplit.h"
+#include "nrn_ansi.h"
 #include "neuron.h"
 #include "nonvintblock.h"
 #include "nrndae_c.h"
@@ -1706,7 +1707,7 @@ void v_setup_vectors(void) {
         }
     }
     /* reorder. also fill NrnThread node indices, v_node, and v_parent */
-    reorder_secorder();  // TODO does this need to permute the new voltage?
+    reorder_secorder();
 #endif
 
 #if CACHEVEC
@@ -1901,7 +1902,7 @@ void nrn_complain(double* pp) {
     fprintf(stderr, "Don't know the location of params at %p\n", pp);
 }
 
-void nrn_matrix_node_free(void) {
+void nrn_matrix_node_free() {
     NrnThread* nt;
     FOR_THREADS(nt) {
         if (nt->_actual_rhs) {
@@ -2205,7 +2206,56 @@ void nrn_recalc_ptrs(double* (*r)(double*) ) {
     recalc_ptr_ = nullptr;
 }
 
-void nrn_recalc_node_ptrs(void) {
+/** @brief Sort the underlying storage for Nodes is sorted.
+ *
+ *  After model building is complete the storage vectors backing all Node
+ *  objects can be permuted to ensure that preconditions are met for the
+ *  computations performed while time-stepping.
+ *
+ *  This method ensures that the Node data is ready for this compute phase.
+ */
+static void nrn_sort_node_data() {
+    // Make sure the voltage storage follows the order encoded in _v_node.
+    // Generate the permutation vector to update the underlying storage for
+    // Nodes. This must come after nrn_multisplit_setup_, which can change the
+    // Node order.
+    std::size_t const global_node_data_size{neuron::model().node_data().size()};
+    std::size_t global_node_data_offset{};
+    std::vector<std::size_t> global_node_data_permutation(global_node_data_size);
+    std::size_t global_i{};
+    // Process threads one at a time -- this means that the data for each
+    // NrnThread will be contiguous.
+    NrnThread* nt{};
+    FOR_THREADS(nt) {
+        // What offset in the global node data structure do the values for this thread
+        // start at
+        nt->_node_data_offset = global_i;
+        for (int i = 0; i < nt->end; ++i, ++global_i) {
+            Node* nd = nt->_v_node[i];
+            auto const current_node_row = nd->_node_handle.id().current_row();
+            assert(current_node_row < global_node_data_size);
+            assert(global_i < global_node_data_size);
+            global_node_data_permutation.at(global_i) = current_node_row;
+        }
+    }
+    assert(global_i == global_node_data_size);
+    neuron::model().node_data().apply_permutation(global_node_data_permutation);
+    neuron::model().node_data().mark_as_sorted();
+}
+
+/** @brief Ensure neuron::container::* data are sorted.
+ *
+ *  So far this only affects Node voltages, which are use backing storage in
+ *  neuron::model().node_data().
+ */
+void nrn_ensure_model_data_are_sorted() {
+    if (!neuron::model().node_data().is_sorted()) {
+        nrn_sort_node_data();
+    }
+    assert(neuron::model().node_data().is_sorted())
+}
+
+void nrn_recalc_node_ptrs() {
     int i, ii, j, k;
     NrnThread* nt;
     if (use_cachevec == 0) {
@@ -2219,7 +2269,6 @@ void nrn_recalc_node_ptrs(void) {
     // recalc_ptr_new_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
     // recalc_ptr_old_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
 
-
     /* first update the pointers without messing with the old NODEV,NODEAREA */
     /* to prepare for the update, copy all the v and area values into the */
     /* new arrays are replace the old values by index value. */
@@ -2232,13 +2281,7 @@ void nrn_recalc_node_ptrs(void) {
     }
     FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
         Node* nd = nt->_v_node[i];
-        // old value into new array
-        // nt->_actual_v[i] = NODEV(nd);
-        // address in the new _actual_v array we just allocated
-        // recalc_ptr_new_vp_[ii] = nt->_actual_v + i;
-        // recalc_ptr_old_vp_[ii] = &NODEV(nd);  // TODO: broken!
         nt->_actual_area[i] = nd->_area;
-        // NODEV(nd) = (double) ii;  // ???
         ++ii;
     }
     /* update POINT_PROCESS pointers to NODEAREA */
@@ -2254,29 +2297,12 @@ void nrn_recalc_node_ptrs(void) {
 
     nrn_recalc_ptrs(nullptr);
 
-    /* now that all the pointers are updated we update the NODEV */
-    // ii = 0;
-    // FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
-    //     Node* nd = nt->_v_node[i];
-    //     // nd->_v = recalc_ptr_new_vp_[ii]; TODO BROKEN!
-    //     ++ii;
-    // }
-    // free(recalc_ptr_old_vp_);
-    // free(recalc_ptr_new_vp_);
-    // recalc_ptr_old_vp_ = (double**) 0;
-    // recalc_ptr_new_vp_ = (double**) 0;
     /* and free the old thread arrays if new ones were allocated */
     for (i = 0; i < n_old_thread_; ++i) {
-        // if (old_actual_v_[i])
-        //     hoc_free_val_array(old_actual_v_[i], old_actual_v_size_[i]);
         if (old_actual_area_[i])
             free(old_actual_area_[i]);
     }
-    // free(old_actual_v_size_);
-    // free(old_actual_v_);
     free(old_actual_area_);
-    // old_actual_v_size_ = 0;
-    // old_actual_v_ = 0;
     old_actual_area_ = 0;
     n_old_thread_ = 0;
 
