@@ -107,7 +107,7 @@ extern void nrn_sec_ref(Section**, Section*);
 extern void hoc_level_pushsec(Section*);
 extern double nrn_ra(Section*);
 extern int node_index_exact(Section*, double);
-extern void nrn_cachevec(int);
+void nrn_cachevec(int);
 extern void nrn_ba(NrnThread*, int);
 extern void nrniv_recalc_ptrs(void);
 extern void nrn_recalc_ptrvector(void);
@@ -121,7 +121,7 @@ extern void nrn_multisplit_ptr_update(void);
 extern void nrn_cache_prop_realloc();
 extern void nrn_use_daspk(int);
 extern void nrn_update_ps2nt(void);
-
+void nrn_ensure_model_data_are_sorted();
 
 extern void activstim_rhs(void);
 extern void activclamp_rhs(void);
