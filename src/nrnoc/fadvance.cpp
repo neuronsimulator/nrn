@@ -850,6 +850,8 @@ void nrn_finitialize(int setv, double v) {
     nrn::Instrumentor::phase_begin("finitialize");
     nrn_fihexec(3); /* model structure changes can be made */
     verify_structure();
+    // Is this the right place to call this?
+    nrn_ensure_model_data_are_sorted();
 #if ELIMINATE_T_ROUNDOFF
     nrn_ndt_ = 0.;
     nrn_dt_ = dt;

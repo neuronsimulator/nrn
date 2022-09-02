@@ -17,6 +17,7 @@ extern int hoc_return_type_code;
 #include "cvodeobj.h"
 #include "netcvode.h"
 #include "membfunc.h"
+#include "nrn_ansi.h"
 #include "nrndaspk.h"
 #include "nrniv_mf.h"
 #include "tqueue.h"
@@ -64,7 +65,6 @@ extern int linmod_extra_eqn_count();
 extern int nrn_modeltype();
 extern int nrn_use_selfqueue_;
 extern int use_cachevec;
-extern void nrn_cachevec(int);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 extern void (*nrnmpi_v_transfer_)();
 

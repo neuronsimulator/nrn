@@ -45,8 +45,10 @@ struct Model {
 };
 
 namespace detail {
-inline Model model_data{};
-}
+// Defining this inline seems to lead to duplicate copies when we
+// dlopen(libnrnmech.so) -- need to investigate that more later.
+extern Model model_data;
+}  // namespace detail
 
 /** @brief Access the global Model instance.
  *
