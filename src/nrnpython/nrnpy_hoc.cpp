@@ -1906,6 +1906,9 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
         }
         if (po->type_ == PyHoc::HocScalarPtr) {
             assert(i == 0);
+            if (!nrn_chk_data_handle(po->u.px_)) {
+                return -1;
+            }
             PyArg_Parse(arg, "d", static_cast<double*>(po->u.px_));
         } else if (po->type_ == PyHoc::HocRefNum) {
             PyArg_Parse(arg, "d", &po->u.x_);
