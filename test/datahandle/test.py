@@ -15,8 +15,14 @@ def test_1():
 
     def cmp(val):
         set(val)
+        # test evaluation
         for x in rv:
             assert a(x).v == rv[x][0]
+        # test assignment
+        x = 0.5
+        y = a(x).v * 2.0
+        rv[x][0] = y
+        assert a(x).v == y
 
     cmp(10)
 
@@ -26,21 +32,24 @@ def test_1():
     a.nseg = 5
     cmp(30)
 
+
 def test_2():
     a = h.Section(name="axon")
     a.nseg = 5
     rv = {seg.x: seg._ref_v for seg in a.allseg()}
     h.finitialize(-65)
-    assert rv[.3][0] == -65.0
+    assert rv[0.3][0] == -65.0
     a.nseg = 3
     print(rv[0.3])
     expect_err("print(rv[0.3][0])")
-    assert rv[.5][0] == -65.0
+    expect_err("rv[0.3][0] = 0.1")
+    assert rv[0.5][0] == -65.0
     del a
     expect_err("print(rv[0.5][0])")
 
     del rv
     locals()
+
 
 if __name__ == "__main__":
     set_quiet(False)
