@@ -2252,7 +2252,7 @@ void nrn_ensure_model_data_are_sorted() {
     if (!neuron::model().node_data().is_sorted()) {
         nrn_sort_node_data();
     }
-    assert(neuron::model().node_data().is_sorted())
+    assert(neuron::model().node_data().is_sorted());
 }
 
 void nrn_recalc_node_ptrs() {
