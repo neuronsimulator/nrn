@@ -5,9 +5,9 @@ make_directory(${RANGE_V3_INCLUDE_DIR})
 
 ExternalProject_Add(
   range-v3-external
-  PREFIX "${RANGE_V3_PREFIX}"
+  PREFIX "${CMAKE_BINARY_DIR}"
   URL https://github.com/ericniebler/range-v3/archive/refs/tags/0.12.0.tar.gz
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${RANGE_V3_PREFIX}
              -DCMAKE_BUILD_TYPE="Release"
              -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
              -DRANGES_CXX_STD=${CMAKE_CXX_STANDARD}
