@@ -184,14 +184,17 @@ if(CORENRN_ENABLE_MPI AND NOT CORENRN_ENABLE_MPI_DYNAMIC)
   target_link_libraries(coreneuron-core PUBLIC ${MPI_CXX_LIBRARIES})
 endif()
 
+# ~~~
+# main coreneuron library needs to be linked to libdl.so
+# only in case of dynamic mpi build. But on old system
+# like centos7, we saw mpich library require explici
+# link to libdl.so. See
+#   https://github.com/neuronsimulator/nrn-build-ci/pull/51
+# ~~~
+target_link_libraries(coreneuron-core PUBLIC ${CMAKE_DL_LIBS})
+
 # this is where we handle dynamic mpi library build
 if(CORENRN_ENABLE_MPI AND CORENRN_ENABLE_MPI_DYNAMIC)
-  # ~~~
-  # main coreneuron library needs to be linked to libdl.so and
-  # and should be aware of shared library suffix on different platforms.
-  # ~~~
-  target_link_libraries(coreneuron-core PUBLIC ${CMAKE_DL_LIBS})
-
   # store mpi library targets that will be built
   list(APPEND corenrn_mpi_targets "")
 
