@@ -23,7 +23,7 @@ data_handle<T> transform(data_handle<T> handle, Transform type) {
         return {static_cast<T*>(handle)};
     } else {
         assert(type == Transform::ViaGenericDataHandle);
-        return {generic_data_handle{handle}};
+        return static_cast<data_handle<T>>(generic_data_handle{handle});
     }
 }
 
