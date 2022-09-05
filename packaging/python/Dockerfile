@@ -18,6 +18,7 @@ RUN yum -y install \
     curl \
     unzip \
     bison \
+    boost169-devel \
     autoconf \
     automake \
     openssh-server \
