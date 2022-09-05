@@ -81,7 +81,7 @@ build_wheel_linux() {
     echo " - Building..."
     rm -rf dist build
 
-    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
+    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3,BOOST_INCLUDEDIR=/usr/include/boost169"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
       CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
     fi
