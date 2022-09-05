@@ -208,8 +208,7 @@ static double active(void* v) {
     if (ifarg(1)) {
         cvode_active_ = (int) chkarg(1, 0, 1);
         if (cvode_active_) {
-            NetCvode* d = (NetCvode*) v;
-            d->re_init(nt_t);
+            static_cast<NetCvode*>(v)->re_init(nt_t);
         }
     }
     hoc_return_type_code = 2;  // boolean

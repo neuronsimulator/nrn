@@ -57,9 +57,11 @@ void Cvode::rhs(NrnThread* _nt) {
 }
 
 void Cvode::rhs_memb(CvMembList* cmlist, NrnThread* _nt) {
-    CvMembList* cml;
+    // The current kernels operate on the underlying (SOA) storage of modern
+    // data structures, so we must ensure that those data are sorted
+    nrn_ensure_model_data_are_sorted();
     errno = 0;
-    for (cml = cmlist; cml; cml = cml->next) {
+    for (CvMembList* cml = cmlist; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
         Pvmi s = mf->current;
         if (s) {
