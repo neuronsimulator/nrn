@@ -55,6 +55,11 @@ stages:
         inputs:
           secureFile: 'mpt_headears.2.21.tar.gz'
 
+      - script: |
+          sudo apt update
+          sudo apt install -y libboost-all-dev
+        displayName: 'Install build system dependencies'
+
       # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
@@ -74,8 +79,7 @@ stages:
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
-          sudo apt update
-          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev libboost-all-dev
+          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
         displayName: 'Install Test System Depdendencies'
 
       - template: ci/azure-wheel-test-upload.yml
@@ -110,6 +114,11 @@ stages:
         inputs:
           secureFile: 'mpt_headears.2.21.tar.gz'
 
+      - script: |
+          sudo apt update
+          sudo apt install -y libboost-all-dev
+        displayName: 'Install build system dependencies'
+
       # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
@@ -129,8 +138,7 @@ stages:
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
-          sudo apt update
-          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev libboost-all-dev
+          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
         displayName: 'Install Test System Depdendencies'
 
       - template: ci/azure-wheel-test-upload.yml
