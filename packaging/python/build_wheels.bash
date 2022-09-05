@@ -100,7 +100,7 @@ build_wheel_linux() {
         # the default is currently 70;80, partly because NVHPC does not
         # support OpenMP target offload with 60. Wheels use mod2c and
         # OpenACC for now, so we can be a little more generic.
-        CMAKE_DEFS="${CMAKE_DEFS},CMAKE_CUDA_ARCHITECTURES=60;70;80,CMAKE_C_FLAGS=-tp=haswell,CMAKE_CXX_FLAGS=-tp=haswell,NRN_LINK_FLAGS=-lstdc++fs"
+        CMAKE_DEFS="${CMAKE_DEFS},CMAKE_CUDA_ARCHITECTURES=60;70;80,CMAKE_C_FLAGS=-tp=haswell,CMAKE_CXX_FLAGS=-tp=haswell"
     fi
 
     # Workaround for https://github.com/pypa/manylinux/issues/1309
