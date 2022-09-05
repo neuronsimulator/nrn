@@ -55,11 +55,6 @@ stages:
         inputs:
           secureFile: 'mpt_headears.2.21.tar.gz'
 
-      - script: |
-          sudo apt update
-          sudo apt install -y libboost-all-dev
-        displayName: 'Install build system dependencies'
-
       # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
@@ -75,11 +70,12 @@ stages:
             -e NEURON_WHEEL_VERSION \
             -e NRN_BUILD_FOR_UPLOAD=1 \
             -e SETUPTOOLS_USE_DISTUTILS=stdlib \
-            'neuronsimulator/neuron_wheel:latest-gcc9-x86_64' \
+            'neuronsimulator/neuron_wheel:boost-x86_64' \
             packaging/python/build_wheels.bash linux $(python.version) coreneuron
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
+          sudo apt update
           sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
         displayName: 'Install Test System Depdendencies'
 
@@ -115,11 +111,6 @@ stages:
         inputs:
           secureFile: 'mpt_headears.2.21.tar.gz'
 
-      - script: |
-          sudo apt update
-          sudo apt install -y libboost-all-dev
-        displayName: 'Install build system dependencies'
-
       # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
@@ -134,11 +125,12 @@ stages:
             -e NRN_RELEASE_UPLOAD \
             -e NEURON_WHEEL_VERSION \
             -e NRN_BUILD_FOR_UPLOAD=1 \
-            'neuronsimulator/neuron_wheel_gpu:nvhpc-22.1-cuda-11.5-gcc9' \
+            'neuronsimulator/neuron_wheel_gpu:nvhpc-22.1-cuda-11.5-boost' \
             packaging/python/build_wheels.bash linux $(python.version) coreneuron-gpu
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
+          sudo apt update
           sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
         displayName: 'Install Test System Depdendencies'
 
