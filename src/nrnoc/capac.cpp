@@ -32,7 +32,7 @@ It used to be static but is now a thread data variable
 void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** vdata = ml->data;
+    double** vdata = ml->_data;
     int i;
     double cfac = .001 * _nt->cj;
 #if CACHEVEC
@@ -52,7 +52,7 @@ void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
 
 static void cap_init(NrnThread* _nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
-    double** vdata = ml->data;
+    double** vdata = ml->_data;
     int i;
     for (i = 0; i < count; ++i) {
         i_cap = 0;
@@ -62,7 +62,7 @@ static void cap_init(NrnThread* _nt, Memb_list* ml, int type) {
 void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** vdata = ml->data;
+    double** vdata = ml->_data;
     int i;
     double cfac = .001 * _nt->cj;
     /* since rhs is dvm for a full or half implicit step */
@@ -88,7 +88,7 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
 void nrn_mul_capacity(NrnThread* _nt, Memb_list* ml) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** vdata = ml->data;
+    double** vdata = ml->_data;
     int i;
     double cfac = .001 * _nt->cj;
 #if CACHEVEC
@@ -109,7 +109,7 @@ void nrn_mul_capacity(NrnThread* _nt, Memb_list* ml) {
 void nrn_div_capacity(NrnThread* _nt, Memb_list* ml) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** vdata = ml->data;
+    double** vdata = ml->_data;
     int i;
 #if CACHEVEC
     if (use_cachevec) {

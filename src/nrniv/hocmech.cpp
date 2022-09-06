@@ -119,7 +119,7 @@ int special_pnt_call(Object* ob, Symbol* sym, int narg) {
 }
 
 static void alloc_mech(Prop* p) {
-    Symbol* mech = ((HocMech*) memb_func[p->type].hoc_mech)->mech;
+    Symbol* mech = ((HocMech*) memb_func[p->_type].hoc_mech)->mech;
     p->ob = hoc_newobj1(mech, 0);
     // printf("alloc_mech %s\n", hoc_object_name(p->ob));
 }
@@ -139,7 +139,7 @@ static void alloc_pnt(Prop* p) {
             p->ob = last_created_pp_ob_;
             // printf("p->ob comes from last_created %s\n", hoc_object_name(p->ob));
         } else {
-            Symbol* mech = ((HocMech*) memb_func[p->type].hoc_mech)->mech;
+            Symbol* mech = ((HocMech*) memb_func[p->_type].hoc_mech)->mech;
             skip_ = true;
             // printf("p->ob comes from hoc_newobj1 %s\n", mech->name);
             p->ob = hoc_newobj1(mech, 0);

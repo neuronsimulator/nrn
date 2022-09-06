@@ -29,7 +29,6 @@
 #define argassign          hoc_argassign
 #define assign             hoc_assign
 #define assstr             hoc_assstr
-#define begin              hoc_begin
 #define bltin              hoc_bltin
 #define call               hoc_call
 #define call_ob_proc       hoc_call_ob_proc
