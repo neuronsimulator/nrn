@@ -223,12 +223,12 @@ void VecPlayStep::pr() {
     Printf("%s.x[%d]\n", hoc_object_name(y_->obj_), current_index_);
 }
 
-VecPlayContinuous::VecPlayContinuous(double* pd,
+VecPlayContinuous::VecPlayContinuous(neuron::container::data_handle<double> pd,
                                      IvocVect* y,
                                      IvocVect* t,
                                      IvocVect* discon,
                                      Object* ppobj)
-    : PlayRecord(pd, ppobj) {
+    : PlayRecord(std::move(pd), ppobj) {
     // printf("VecPlayContinuous\n");
     init(y, t, discon);
 }

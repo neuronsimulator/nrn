@@ -5750,10 +5750,7 @@ static int trajec_buffered(NrnThread& nt,
         types[i_trajec] = 0;
         indices[i_trajec] = 0;
     } else {
-        // TODO fixme
-        // err = nrn_dblpntr2nrncore(pd, nt, types[i_trajec],
-        // indices[i_trajec]);
-        assert(false);
+        err = nrn_dblpntr2nrncore(pd, nt, types[i_trajec], indices[i_trajec]);
         if (err) {
             Fprintf(stderr,
                     "Pointer %p of PlayRecord type %d ignored because not a Range Variable",
@@ -6841,29 +6838,13 @@ double NetCvode::maxstate_analyse(Symbol* sym, double* pamax) {
 void NetCvode::recalc_ptrs() {
 #if CACHEVEC
     // update PlayRecord pointers to v
-    // int i, cnt = prl_->count();
-    // for (i = 0; i < cnt; ++i) {
-    //     PlayRecord* pr = prl_->item(i);
-    //     if (pr->pd_) {
-    //         pr->update_ptr(nrn_recalc_ptr(pr->pd_));
-    //     }
-    // }
-    // update PreSyn pointers to v
-    // assert(false);
-    // hoc_Item* q;
-    // if (psl_) {
-    //     ITERATE(q, psl_) {
-    //         PreSyn* ps = (PreSyn*) VOIDITM(q);
-    //         if (ps->thvar_) {
-    //             double* pd = nrn_recalc_ptr(ps->thvar_);
-    //             if (pd != ps->thvar_) {
-    //                 pst_->erase(ps->thvar_);
-    //                 (*pst_)[pd] = ps;
-    //                 ps->update_ptr(pd);
-    //             }
-    //         }
-    //     }
-    // }
+    int cnt = prl_->count();
+    for (int i = 0; i < cnt; ++i) {
+        PlayRecord* pr = prl_->item(i);
+        if (pr->pd_) {
+            pr->update_ptr(nrn_recalc_ptr(static_cast<double*>(pr->pd_)));
+        }
+    }
 #endif
 }
 
