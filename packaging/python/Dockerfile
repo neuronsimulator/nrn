@@ -3,6 +3,12 @@ ARG MANYLINUX_IMAGE=manylinux2014_x86_64
 FROM quay.io/pypa/$MANYLINUX_IMAGE
 LABEL authors="Pramod Kumbhar, Fernando Pereira, Alexandru Savulescu"
 
+# Enable devtoolset-9 in order to get GCC 9
+RUN yum install -y centos-release-scl && yum install -y devtoolset-9
+SHELL [ "/usr/bin/scl", "enable", "devtoolset-9" ]
+
+RUN gcc --version && python --version
+
 # install basic packages
 RUN yum -y install \
     git \
@@ -40,7 +46,7 @@ RUN wget http://ftpmirror.gnu.org/ncurses/ncurses-6.2.tar.gz \
 RUN curl -L -o mpich-3.3.2.tar.gz http://www.mpich.org/static/downloads/3.3.2/mpich-3.3.2.tar.gz \
     && tar -xvzf mpich-3.3.2.tar.gz \
     && cd mpich-3.3.2 \
-    && ./configure --prefix=/nrnwheel/mpich FFLAGS="-w -fallow-argument-mismatch -O2" \
+    && ./configure --disable-fortran --prefix=/nrnwheel/mpich \
     && make -j install
 
 RUN curl -L -o openmpi-4.0.3.tar.gz  https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.3.tar.gz \
@@ -71,3 +77,7 @@ COPY Dockerfile .
 
 # build wheels from there
 WORKDIR /root
+
+ENV BASH_ENV=/opt/rh/devtoolset-9/enable  \
+    ENV=/opt/rh/devtoolset-9/enable  \
+    PROMPT_COMMAND=". /opt/rh/devtoolset-9/enable "
