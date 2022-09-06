@@ -81,8 +81,8 @@ struct soa {
      *  @todo Consider the difference between invalidating pointers and
      *  invalidating indices, and whether it's important to us.
      */
-    void mark_as_sorted() {
-        m_sorted = true;
+    void mark_as_sorted(bool value = true) {
+        m_sorted = value;
     }
 
     /** @brief Query if the underlying vectors are still "sorted".
