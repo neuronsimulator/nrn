@@ -5088,7 +5088,7 @@ PreSyn::PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section
         // FIXME: this is taking the current address, which may be invalidated
         // in future. Better for the underlying Observer to take a handle (that
         // may become invalid later if the relevant owning_handle is deleted)?
-        assert(thvar_.refers_to_a_modern_data_structure());
+        // assert(thvar_.refers_to_a_modern_data_structure());
         // nrn_notify_when_double_freed(static_cast<double*>(thvar_), this);
     } else if (osrc_) {
         nrn_notify_when_void_freed(osrc_, this);
