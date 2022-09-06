@@ -1915,7 +1915,7 @@ int nrn_pointer_assign(Prop* prop, Symbol* sym, PyObject* value) {
         double** ppd = &prop->dparam[sym->u.rng.index].pval;
         assert(ppd);
         if (nrn_is_hocobj_ptr(value, pd)) {
-            assert(false);
+            // assert(false);
             *ppd = static_cast<double*>(pd);
         } else {
             PyErr_SetString(PyExc_ValueError, "must be a hoc pointer");
