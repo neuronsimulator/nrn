@@ -4994,6 +4994,7 @@ void NetCvode::ps_thread_link(PreSyn* ps) {
         if (ps->osrc_) {
             ps->nt_ = PP2NT(ob2pntproc(ps->osrc_));
         } else if (ps->ssrc_) {
+            // prop is sometimes null here
             ps->nt_ = (NrnThread*) ps->ssrc_->prop->dparam[9]._pvoid;
         }
     }
@@ -5087,6 +5088,7 @@ PreSyn::PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section
         // FIXME: this is taking the current address, which may be invalidated
         // in future. Better for the underlying Observer to take a handle (that
         // may become invalid later if the relevant owning_handle is deleted)?
+        assert(thvar_.refers_to_a_modern_data_structure());
         // nrn_notify_when_double_freed(static_cast<double*>(thvar_), this);
     } else if (osrc_) {
         nrn_notify_when_void_freed(osrc_, this);
@@ -5741,9 +5743,8 @@ static int trajec_buffered(NrnThread& nt,
         v->resize(bsize + cur_size);
         varrays[i_trajec] = vector_vec(v) + cur_size;  // begin filling here
     } else {
-        // TODO fixme
-        // pvars[i_trajec] = pd;
-        assert(false);
+        // Danger, think this through better
+        pvars[i_trajec] = static_cast<double*>(pd);
     }
     vpr[i_pr] = pr;
     if (pd == &nt._t) {
@@ -6276,9 +6277,9 @@ PlayRecord::PlayRecord(neuron::container::data_handle<double> pd, Object* ppobj)
     // printf("PlayRecord::PlayRecord %p\n", this);
     cvode_ = nil;
     ith_ = 0;
-    // if (pd_) {
-    //     nrn_notify_when_double_freed(pd_, this);
-    // }
+    if (!pd_.refers_to_a_modern_data_structure()) {
+        nrn_notify_when_double_freed(static_cast<double*>(pd_), this);
+    }
     ppobj_ = ppobj;
     if (ppobj_) {
         ObjObservable::Attach(ppobj_, this);
@@ -6841,7 +6842,7 @@ void NetCvode::recalc_ptrs() {
     int cnt = prl_->count();
     for (int i = 0; i < cnt; ++i) {
         PlayRecord* pr = prl_->item(i);
-        if (pr->pd_) {
+        if (pr->pd_ && !pr->pd_.refers_to_a_modern_data_structure()) {
             pr->update_ptr(nrn_recalc_ptr(static_cast<double*>(pr->pd_)));
         }
     }
