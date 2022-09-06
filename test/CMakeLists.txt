@@ -415,6 +415,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_spikes_file_mode_py NRN_TEST_SPIKES_FILE_MODE=1
       COMMAND ${modtests_launch_py} test/coreneuron/test_spikes.py)
+    # TODO this test does some NEURON vs. NEURON testing too
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME fast_imem_py_${processor}
