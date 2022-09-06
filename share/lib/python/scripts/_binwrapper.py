@@ -44,12 +44,19 @@ def _set_default_compiler():
 def _check_cpp_compiler_version():
     """Check if GCC compiler is >= 9.0 otherwise show warning"""
     try:
-        cpp_compiler = os.environ.get('CXX', "")
-        version = subprocess.run([cpp_compiler, '--version'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+        cpp_compiler = os.environ.get("CXX", "")
+        version = subprocess.run(
+            [cpp_compiler, "--version"], stdout=subprocess.PIPE
+        ).stdout.decode("utf-8")
         if "GCC" in version:
-            version = subprocess.run([cpp_compiler, '-dumpversion'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            version = subprocess.run(
+                [cpp_compiler, "-dumpversion"], stdout=subprocess.PIPE
+            ).stdout.decode("utf-8")
             if LooseVersion(version) <= LooseVersion("9.0"):
-                print("Warning: GCC >= 9.0 is required with this version of NEURON but found", version)
+                print(
+                    "Warning: GCC >= 9.0 is required with this version of NEURON but found",
+                    version,
+                )
     except Exception as e:
         pass
 
