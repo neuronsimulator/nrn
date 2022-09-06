@@ -1292,7 +1292,7 @@ neuron::container::data_handle<double> nrn_rangepointer(Section* sec, Symbol* s,
     }
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
-            nd = node_ptr(sec, d, (double*) 0);
+            nd = node_ptr(sec, d, nullptr);
             if (!nd->_nt) {
                 v_setup_vectors();
                 assert(nd->_nt);

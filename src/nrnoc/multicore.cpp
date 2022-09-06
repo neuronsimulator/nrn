@@ -318,6 +318,10 @@ void nrn_threads_create(int n, bool parallel) {
         }
         v_structure_change = 1;
         diam_changed = 1;
+        // If the number of threads changes then the node storage data is
+        // implicitly no longer sorted, as "sorted" includes being partitioned
+        // by NrnThread
+        neuron::model().node_data().mark_as_sorted(false);
     }
 #if NRN_ENABLE_THREADS
     // Check if we are enabling/disabling parallelisation over threads
