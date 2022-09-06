@@ -143,7 +143,10 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                 assert(ps->thvar_.refers_to<neuron::container::Node::field::Voltage>(
                     neuron::model().node_data()));
                 assert(neuron::model().node_data().is_sorted());
-                cgs[i].output_vindex[npre] = ps->thvar_.current_row();
+                // Convert back to an old-style index, i.e. the index of the
+                // voltage within this NrnThread after sorting
+                cgs[i].output_vindex[npre] = static_cast<double*>(ps->thvar_) -
+                                             nt.node_voltage_storage();
                 ++npre;
             }
         }
