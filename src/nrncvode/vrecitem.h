@@ -265,7 +265,11 @@ class VecPlayStepSave: public PlayRecordSave {
 
 class VecPlayContinuous: public PlayRecord {
   public:
-    VecPlayContinuous(double*, IvocVect* y, IvocVect* t, IvocVect* discon, Object* ppobj = nil);
+    VecPlayContinuous(neuron::container::data_handle<double> pd,
+                      IvocVect* y,
+                      IvocVect* t,
+                      IvocVect* discon,
+                      Object* ppobj = nil);
     VecPlayContinuous(const char* s,
                       IvocVect* y,
                       IvocVect* t,

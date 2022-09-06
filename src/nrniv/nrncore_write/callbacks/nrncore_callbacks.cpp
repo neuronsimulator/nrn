@@ -157,8 +157,8 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
     }
     NrnThread& nt = nrn_threads[tid];
     if (type == voltage) {
-        assert(false);
-        // data = nt._actual_v;
+        assert(neuron::model().node_data().is_sorted());
+        data = nt.node_voltage_storage();
         n = size_t(nt.end);
     } else if (type == i_membrane_) {  // i_membrane_
         data = nt._nrn_fast_imem->_nrn_sav_rhs;
@@ -301,15 +301,16 @@ int nrnthread_dat2_2(int tid,
             a[i] = nt._actual_a[i];
             b[i] = nt._actual_b[i];
             area[i] = nt._actual_area[i];
-            assert(false);
-            // v[i] = nt._actual_v[i];
+            v[i] = nt.actual_v(i);
         }
     } else {
         v_parent_index = nt._v_parent_index;
         a = nt._actual_a;
         b = nt._actual_b;
         area = nt._actual_area;
-        // Beware: even creating or destroying a Node object invalidates this array.
+        // This is still dangerous, practically any operation on the NEURON side
+        // can affect `v`
+        assert(neuron::model().node_data().is_sorted());
         v = nt.node_voltage_storage();
     }
     if (cg.ndiam) {
@@ -681,12 +682,11 @@ int nrnthread_dat2_vecplay_inst(int tid,
 
     PlayRecList* fp = net_cvode_instance->fixed_play_;
     if (fp->item(i)->type() == VecPlayContinuousType) {
-        VecPlayContinuous* vp = (VecPlayContinuous*) fp->item(i);
-        if (vp->discon_indices_ == NULL) {
+        auto* const vp = static_cast<VecPlayContinuous*>(fp->item(i));
+        if (!vp->discon_indices_) {
             if (vp->ith_ == nt.id) {
-                // TODO probably wrong
+                assert(!vp->pd_.refers_to_a_modern_data_structure());
                 auto* pd = static_cast<double*>(vp->pd_);
-                assert(false);
                 int found = 0;
                 vptype = vp->type();
                 for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
@@ -1139,9 +1139,7 @@ void core2nrn_PreSyn_flag(int tid, std::set<int> presyns_flag_true) {
             if (ps->thvar_) {
                 int type = 0;
                 int index_v = -1;
-                // TODO fixme!
-                assert(false);
-                nrn_dblpntr2nrncore(static_cast<double*>(ps->thvar_), *ps->nt_, type, index_v);
+                nrn_dblpntr2nrncore(ps->thvar_, *ps->nt_, type, index_v);
                 assert(type == voltage);
                 if (presyns_flag_true.erase(index_v)) {
                     ps->flag_ = true;
@@ -1164,13 +1162,13 @@ void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true) {
     if (pth) {
         hoc_Item* q;
         ITERATE(q, pth) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+            auto* ps = static_cast<PreSyn*>(VOIDITM(q));
             assert(ps->nt_ == (nrn_threads + tid));
-            if (ps->flag_ == true && ps->thvar_) {
+            if (ps->flag_ && ps->thvar_) {
                 int type = 0;
                 int index_v = -1;
-                // TODO fixme!
-                assert(false);
+                // WARNING: must avoid modifying Nodes while these indices are stored
+                assert(neuron::model().node_data().is_sorted());
                 nrn_dblpntr2nrncore(static_cast<double*>(ps->thvar_), *ps->nt_, type, index_v);
                 assert(type == voltage);
                 presyns_flag_true.insert(index_v);
