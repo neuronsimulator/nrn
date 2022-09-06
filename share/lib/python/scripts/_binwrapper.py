@@ -57,7 +57,7 @@ def _check_cpp_compiler_version():
                     "Warning: GCC >= 9.0 is required with this version of NEURON but found",
                     version,
                 )
-    except Exception as e:
+    except:
         pass
 
 
