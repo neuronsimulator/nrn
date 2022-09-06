@@ -2168,19 +2168,9 @@ static double* (*recalc_ptr_)(double*);
 double* nrn_recalc_ptr(double* old) {
     if (recalc_ptr_) {
         return (*recalc_ptr_)(old);
+    } else {
+        return old;
     }
-    assert(false);
-    // if (!recalc_ptr_old_vp_) {
-    //     return old;
-    // }
-    if (old && *old >= 0 && *old <= recalc_cnt_) {
-        int k = (int) (*old);
-        assert(false);
-        // if (old == recalc_ptr_old_vp_[k]) {
-        //     return recalc_ptr_new_vp_[k];
-        // }
-    }
-    return old;
 }
 
 void nrn_register_recalc_ptr_callback(Pfrv f) {

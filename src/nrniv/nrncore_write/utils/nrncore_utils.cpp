@@ -138,15 +138,22 @@ void nrnbbcore_register_mapping() {
 // Requires cache_efficient mode.
 // Input double* and NrnThread. Output type and index.
 // type == 0 means could not determine index.
-extern "C" int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
+int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
+                        NrnThread& nt,
+                        int& type,
+                        int& index) {
     assert(use_cachevec);
     int nnode = nt.end;
     type = 0;
-    assert(false);
-    // if (pd >= nt._actual_v && pd < (nt._actual_v + nnode)) {
-    //     type = voltage;  // signifies an index into voltage array portion of _data
-    //     index = pd - nt._actual_v;
-    // } else
+    if (dh.refers_to<neuron::container::Node::field::Voltage>(neuron::model().node_data())) {
+        assert(neuron::model().node_data().is_sorted());
+        type = voltage;
+        // In the CoreNEURON world this is an offset into the voltage array part
+        // of _data
+        index = dh.current_row();
+        return 0;
+    }
+    auto* pd = static_cast<double*>(dh);
     if (nt._nrn_fast_imem && pd >= nt._nrn_fast_imem->_nrn_sav_rhs &&
         pd < (nt._nrn_fast_imem->_nrn_sav_rhs + nnode)) {
         type = i_membrane_;  // signifies an index into i_membrane_ array portion of _data
