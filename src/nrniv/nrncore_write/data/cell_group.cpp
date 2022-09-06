@@ -139,9 +139,11 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                 assert(ps->thvar_);
                 cgs[i].output_ps[npre] = ps;
                 cgs[i].output_gid[npre] = ps->output_index_;
-                // TODO: this isn't going to get the right answer anyway
-                // assert(false);
-                // cgs[i].output_vindex[npre] = static_cast<double*>(ps->thvar_) - nt._actual_v;
+                assert(ps->thvar_.refers_to_a_modern_data_structure());
+                assert(ps->thvar_.refers_to<neuron::container::Node::field::Voltage>(
+                    neuron::model().node_data()));
+                assert(neuron::model().node_data().is_sorted());
+                cgs[i].output_vindex[npre] = ps->thvar_.current_row();
                 ++npre;
             }
         }

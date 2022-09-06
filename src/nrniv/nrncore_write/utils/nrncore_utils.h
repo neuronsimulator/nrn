@@ -1,5 +1,5 @@
-#ifndef NRN_NRNCORE_UTILS_H
-#define NRN_NRNCORE_UTILS_H
+#pragma once
+#include "neuron/container/data_handle.hpp"
 
 #include <string>
 
@@ -8,7 +8,10 @@ struct NrnThread;
 void model_ready();
 int count_distinct(double* data, int len);
 extern void nrnbbcore_register_mapping();
-extern "C" int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index);
+int nrn_dblpntr2nrncore(neuron::container::data_handle<double> pd,
+                        NrnThread& nt,
+                        int& type,
+                        int& index);
 
 #include "nrnwrap_dlfcn.h"
 #if defined(HAVE_DLFCN_H)
@@ -18,6 +21,3 @@ void* get_coreneuron_handle();
 void check_coreneuron_compatibility(void* handle);
 
 #endif
-
-
-#endif  // NRN_NRNCORE_UTILS_H
