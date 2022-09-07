@@ -1,4 +1,5 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
 
 include_directories(${NRN_INCLUDE_DIRS})
 
@@ -343,6 +344,12 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     MODFILE_PATTERNS
       "test/coreneuron/mod files/*.mod" "test/coreneuron/mod files/axial.inc"
       test/pynrn/unitstest.mod test/pynrn/version_macros.mod test/gjtests/natrans.mod)
+  nrn_add_test_group(
+    CORENEURON
+    NAME nmodl_tests
+    # This get used in 4 tests so make it the default and override in other tests.
+    SCRIPT_PATTERNS test/nmodl/*.py
+    MODFILE_PATTERNS "docs/nmodl/mod/*.mod")
   nrn_add_test(
     GROUP coreneuron_modtests
     NAME version_macros
@@ -356,6 +363,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   foreach(processor cpu gpu)
     set(processor_env ${coreneuron_modtests_${processor}_env})
     set(modtests_processor_env ${processor_env} ${sonata_zero_gid_env})
+    nrn_add_test(
+      GROUP nmodl_tests
+      NAME test_table_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/nmodl/test_table.py
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+      COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME fornetcon_py_${processor}
