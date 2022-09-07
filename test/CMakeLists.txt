@@ -233,8 +233,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     PROCESSORS 2
     REQUIRES mpi
     SCRIPT_PATTERNS test/parallel_tests/test_bas.py
-    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} nrniv
-            ${MPIEXEC_POSTFLAGS} -mpi -python test/parallel_tests/test_bas.py)
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/parallel_tests/test_bas.py)
   # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude
   # workaround.
   if(CORENRN_ENABLE_REPORTING)
@@ -257,6 +257,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${MPIEXEC_NAME}
         ${MPIEXEC_NUMPROC_FLAG}
         2
+        ${MPIEXEC_OVERSUBSCRIBE}
         ${MPIEXEC_PREFLAGS}
         special
         ${MPIEXEC_POSTFLAGS}
@@ -266,8 +267,14 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     set(modtests_preload_sanitizer PRELOAD_SANITIZER)
     set(modtests_launch_py ${PYTHON_EXECUTABLE} ${pytest})
     set(modtests_launch_hoc nrniv ${nrniv_mpi_arg})
-    set(modtests_launch_py_mpi ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
-                               ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS})
+    set(modtests_launch_py_mpi
+        ${MPIEXEC_NAME}
+        ${MPIEXEC_NUMPROC_FLAG}
+        2
+        ${MPIEXEC_OVERSUBSCRIBE}
+        ${MPIEXEC_PREFLAGS}
+        ${PYTHON_EXECUTABLE}
+        ${MPIEXEC_POSTFLAGS})
   endif()
 
   # External coreneuron can be used for testing but for simplicity we are testing only submodule
@@ -442,6 +449,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
             ${MPIEXEC_NAME}
             ${MPIEXEC_NUMPROC_FLAG}
             2
+            ${MPIEXEC_OVERSUBSCRIBE}
             ${MPIEXEC_PREFLAGS}
             special
             ${MPIEXEC_POSTFLAGS}
@@ -463,8 +471,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
         PROCESSORS 2
         COMMAND
-          ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special
-          ${MPIEXEC_POSTFLAGS} -mpi -python
+          ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+          special ${MPIEXEC_POSTFLAGS} -mpi -python
           ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
     endif()
   endforeach()
