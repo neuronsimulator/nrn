@@ -528,7 +528,6 @@ set(NMODL_FILES_LIST
     parsact.cpp
     netrec_discon.cpp
     partial.cpp
-    sens.cpp
     simultan.cpp
     solve.cpp
     symbol.cpp

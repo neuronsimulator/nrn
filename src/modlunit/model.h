@@ -126,7 +126,6 @@ extern List* _LST(Item* q, char* file, int line);
 #define LINF          02000L
 #define NLINF         04000L
 #define DISCF         010000L
-#define STEP1         020000L
 #define PARF          040000L
 #define EXTDEF        0100000L
 #define KINF          0200000L

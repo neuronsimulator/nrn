@@ -59,8 +59,8 @@ extern int lexcontext;
 
 %token	<qp>	VERBATIM COMMENT TITLE CONSTANT INDEPENDENT ASSIGNED STATE
 %token	<qp>	END_VERBATIM END_COMMENT UNITS BREAKPOINT PARAMETER INT
-%token	<qp>	INITIAL1 DERIVATIVE SOLVE USING WITH STEPPED DISCRETE
-%token	<qp>	FROM TO BY WHILE IF ELSE START1 STEP SENS SOLVEFOR
+%token	<qp>	INITIAL1 DERIVATIVE SOLVE USING WITH DISCRETE
+%token	<qp>	FROM TO BY WHILE IF ELSE START1 STEP SOLVEFOR
 %token	<qp>	PROCEDURE PARTIAL DEL DEL2 DEFINE1 IFERROR
 %token	<qp>	DERFUNC EQUATION LINEAR NONLINEAR FUNCTION1 LOCAL
 %token	<qp>	METHOD LIN1 NONLIN1 FUNCTION_TABLE
@@ -70,18 +70,17 @@ extern int lexcontext;
 %token	<qp>	OR AND GT GE LT LE EQ NE NOT
 %token	<qp>	NAME PRIME REAL INTEGER DEFINEDVAR
 %token	<qp>	KINETIC CONSERVE REACTION REACT1 COMPARTMENT LONGDIFUS PARTEQN
-%token	<qp>	STRING PLOT VS LAG RESET MATCH MODEL_LEVEL SWEEP FIRST LAST
+%token	<qp>	STRING VS LAG RESET MATCH MODEL_LEVEL SWEEP FIRST LAST
 %token	<qp>	SPACE NEWLINE TO_EOL STUFF
 %token	<qp>	UNITBLK UNITSON UNITSOFF
 %token	<qp>	TABLE DEPEND
 
 %type	<qp>	top all all1 title verbatim comment define1 declare declare1
 %type	<qp>	constblk constbody constasgn units limits tolerance
-%type	<qp>	stepblk stepbdy stepped
-%type	<qp>	Name numlist name number NUMBER integer real
+%type	<qp>	Name name number NUMBER integer real
 %type	<qp>	indepblk indepbody indepdef withby
 %type	<qp>	depblk depbody depdef opstart stateblk statbody discretblk
-%type	<qp>	plotdecl pvlist optindex proc initblk
+%type	<qp>	proc initblk
 %type	<qp>	stmtlist stmtlist1 locallist locallist1 locoptarray stmt
 %type	<qp>	asgn varname intexpr expr funccall exprlist exprlist1
 %type	<qp>	fromstmt opinc whilestmt ifstmt optelseif optelse
@@ -91,7 +90,7 @@ extern int lexcontext;
 %type	<qp>	funcblk arglist arglist1 procedblk solveblk ifsolerr functbl
 %type	<qp>	solvefor1 solvefor netrecblk fornetcon
 %type	<qp>	watchstmt watch1
-%type	<qp>	eqnblk sens compartlist ldifuslist longdifus
+%type	<qp>	eqnblk compartlist ldifuslist longdifus
 %type	<qp>	conserve compart namelist optnamelist kineticblk reaction react consreact
 %type	<qp>	lagstmt matchblk matchlist match matchname
 %type	<qp>	unitblk unitflag unitbody unitdef Units factordef include1
@@ -153,8 +152,8 @@ declare: declare1
 	| MODEL_LEVEL INTEGER {declare_level = atoi(STR($2));} declare1
 		{declare_level = 0;}
 	;
-declare1: constblk | indepblk | depblk | stateblk | stepblk
-	| plotdecl | unitblk | neuronblk
+declare1: constblk | indepblk | depblk | stateblk
+	| unitblk | neuronblk
 	;
 constblk: CONSTANT '{' constbody '}'
 	| PARAMETER '{' constbody '}'
@@ -188,18 +187,6 @@ limits: /*nothing*/
 tolerance: /*nothing*/
 		{$$ = ITEM0;}
 	| LT number GT
-	;
-stepblk: STEPPED '{' stepbdy '}'
-	;
-stepbdy: /*nothing*/
-		{$$ = ITEM0;}
-	| stepbdy stepped
-	;
-stepped: NAME '=' numlist units
-		{P1{$$ = itemarray(3,$1, $4, $3); declare(STEP1, $1, $$);}}
-	;
-numlist: number ',' number
-	| numlist ',' number
 	;
 name:	Name	{lastok = $1;}
 	| PRIME {lastok = $1;}
@@ -263,17 +250,6 @@ statbody: /*nothing*/
 		{$$ = ITEM0;}
 	| statbody depdef
 		{P1{declare(STAT, ITMA($2)[0], $2);}}
-	;
-plotdecl: PLOT pvlist VS name optindex
-	| PLOT error { myerr("PLOT namelist VS name");}
-	;
-pvlist:	name optindex
-	| pvlist ',' name optindex
-	;
-optindex: /*nothing*/
-		{ $$ = ITEM0;}
-	| '[' integer ']'
-		{ $$ = $2;}
 	;
 unitblk: UNITBLK '{' unitbody '}'
 	;
@@ -399,7 +375,6 @@ stmt:	asgn
 	| solveblk
 	| verbatim 
 	| comment
-	| sens
 	| reaction
 	| conserve
 	| compart
@@ -719,10 +694,6 @@ solvefor1: SOLVEFOR NAME
 	;
 eqnblk: BREAKPOINT stmtlist
 	;
-sens:	SENS namelist
-	|SENS error {myerr("syntax is SENS var1, var2, var3, etc");}
-	;
-
 conserve: CONSERVE consreact '=' expr
 		{P3{unit_cmp($2, $3, lastok);}}
 	| CONSERVE error {myerr("Illegal CONSERVE syntax");}
