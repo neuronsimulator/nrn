@@ -340,11 +340,7 @@ void massage_linblk(Item* q1, Item* q2, Item* q3, Item* q4) /* LINEAR NAME stmtl
 #endif
     }
     linblk->used = nstate;
-    Sprintf(buf,
-            "static int _slist%d[%d];static double **_coef%d;\n",
-            numlist,
-            nstate,
-            numlist);
+    Sprintf(buf, "static int _slist%d[%d];static double **_coef%d;\n", numlist, nstate, numlist);
     Linsertstr(procfunc, buf);
     Sprintf(buf, "\n#define _RHS%d(arg) _coef%d[arg][%d]\n", numlist, numlist, nstate);
     Linsertstr(procfunc, buf);

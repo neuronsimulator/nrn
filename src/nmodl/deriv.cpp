@@ -565,12 +565,7 @@ is not allowed on the left hand side.");
         diag("DERIVATIVE contains no derivatives", (char*) 0);
     }
     derfun->used = count;
-    Sprintf(buf,
-            "static int _slist%d[%d], _dlist%d[%d];\n",
-            numlist,
-            count,
-            numlist,
-            count);
+    Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n", numlist, count, numlist, count);
     Linsertstr(procfunc, buf);
 
 #if CVODE
