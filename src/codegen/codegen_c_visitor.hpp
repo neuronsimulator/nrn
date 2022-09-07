@@ -1025,6 +1025,12 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      */
     virtual bool is_constant_variable(const std::string& name) const;
 
+    /**
+     * Check if the given name exist in the symbol
+     * \return \c return a tuple <true, array_length> if variable
+     *            is an array otherwise <false, 0>
+     */
+    std::tuple<bool, int> check_if_var_is_array(const std::string& name);
 
     /**
      * Print declaration of macro NRN_PRCELLSTATE for debugging

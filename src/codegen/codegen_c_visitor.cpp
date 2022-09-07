@@ -1459,6 +1459,20 @@ static const TableStatement* get_table_statement(const ast::Block& node) {
 }
 
 
+std::tuple<bool, int> CodegenCVisitor::check_if_var_is_array(const std::string& name) {
+    auto symbol = program_symtab->lookup_in_scope(name);
+    if (!symbol) {
+        throw std::runtime_error(
+            fmt::format("CodegenCVisitor:: {} not found in symbol table!", name));
+    }
+    if (symbol->is_array()) {
+        return {true, symbol->get_length()};
+    } else {
+        return {false, 0};
+    }
+}
+
+
 void CodegenCVisitor::print_table_check_function(const Block& node) {
     auto statement = get_table_statement(node);
     auto table_variables = statement->get_table_vars();
@@ -1525,7 +1539,15 @@ void CodegenCVisitor::print_table_check_function(const Block& node) {
                     auto name = variable->get_node_name();
                     auto instance_name = get_variable_name(name);
                     auto table_name = get_variable_name("t_" + name);
-                    printer->fmt_line("{}[i] = {};", table_name, instance_name);
+                    auto [is_array, array_length] = check_if_var_is_array(name);
+                    if (is_array) {
+                        for (int j = 0; j < array_length; j++) {
+                            printer->fmt_line(
+                                "{}[{}][i] = {}[{}];", table_name, j, instance_name, j);
+                        }
+                    } else {
+                        printer->fmt_line("{}[i] = {};", table_name, instance_name);
+                    }
                 }
             } else {
                 auto table_name = get_variable_name("t_" + name);
@@ -1587,7 +1609,14 @@ void CodegenCVisitor::print_table_replacement_function(const ast::Block& node) {
         if (node.is_procedure_block()) {
             for (const auto& var: table_variables) {
                 auto name = get_variable_name(var->get_node_name());
-                printer->fmt_line("{} = xi;", name);
+                auto [is_array, array_length] = check_if_var_is_array(var->get_node_name());
+                if (is_array) {
+                    for (int j = 0; j < array_length; j++) {
+                        printer->fmt_line("{}[{}] = xi;", name, j);
+                    }
+                } else {
+                    printer->fmt_line("{} = xi;", name);
+                }
             }
             printer->add_line("return 0;");
         } else {
@@ -1602,7 +1631,15 @@ void CodegenCVisitor::print_table_replacement_function(const ast::Block& node) {
                 auto name = variable->get_node_name();
                 auto instance_name = get_variable_name(name);
                 auto table_name = get_variable_name("t_" + name);
-                printer->fmt_line("{} = {}[index];", instance_name, table_name);
+                auto [is_array, array_length] = check_if_var_is_array(name);
+                if (is_array) {
+                    for (int j = 0; j < array_length; j++) {
+                        printer->fmt_line(
+                            "{}[{}] = {}[{}][index];", instance_name, j, table_name, j);
+                    }
+                } else {
+                    printer->fmt_line("{} = {}[index];", instance_name, table_name);
+                }
             }
             printer->add_line("return 0;");
         } else {
@@ -1615,11 +1652,23 @@ void CodegenCVisitor::print_table_replacement_function(const ast::Block& node) {
         printer->add_line("double theta = xi - double(i);");
         if (node.is_procedure_block()) {
             for (const auto& var: table_variables) {
-                auto instance_name = get_variable_name(var->get_node_name());
-                auto table_name = get_variable_name("t_" + var->get_node_name());
-                printer->fmt_line("{0} = {1}[i] + theta*({1}[i+1]-{1}[i]);",
-                                  instance_name,
-                                  table_name);
+                auto name = var->get_node_name();
+                auto instance_name = get_variable_name(name);
+                auto table_name = get_variable_name("t_" + name);
+                auto [is_array, array_length] = check_if_var_is_array(var->get_node_name());
+                if (is_array) {
+                    for (size_t j = 0; j < array_length; j++) {
+                        printer->fmt_line(
+                            "{0}[{1}] = {2}[{1}][i] + theta*({2}[{1}][i+1]-{2}[{1}][i]);",
+                            instance_name,
+                            j,
+                            table_name);
+                    }
+                } else {
+                    printer->fmt_line("{0} = {1}[i] + theta*({1}[i+1]-{1}[i]);",
+                                      instance_name,
+                                      table_name);
+                }
             }
             printer->add_line("return 0;");
         } else {
@@ -2630,8 +2679,19 @@ void CodegenCVisitor::print_mechanism_global_var_structure(bool print_initialise
         for (const auto& variable: info.table_statement_variables) {
             auto const name = "t_" + variable->get_name();
             auto const num_values = variable->get_num_values();
-            printer->fmt_line(
-                "{}{} {}[{}]{};", qualifier, float_type, name, num_values, value_initialise);
+            if (variable->is_array()) {
+                int array_len = variable->get_length();
+                printer->fmt_line("{}{} {}[{}][{}]{};",
+                                  qualifier,
+                                  float_type,
+                                  name,
+                                  array_len,
+                                  num_values,
+                                  value_initialise);
+            } else {
+                printer->fmt_line(
+                    "{}{} {}[{}]{};", qualifier, float_type, name, num_values, value_initialise);
+            }
             codegen_global_variables.push_back(make_symbol(name));
         }
     }
