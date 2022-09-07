@@ -13,7 +13,11 @@
 #include "parser/nmodl_driver.hpp"
 #include "test/unit/utils/test_utils.hpp"
 #include "visitors/implicit_argument_visitor.hpp"
+#include "visitors/inline_visitor.hpp"
+#include "visitors/neuron_solve_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
+#include "visitors/solve_block_visitor.hpp"
+#include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 
 using Catch::Matchers::Contains;  // ContainsSubstring in newer Catch2
@@ -32,6 +36,11 @@ std::shared_ptr<CodegenCVisitor> create_c_visitor(const std::shared_ptr<ast::Pro
     /// construct symbol table
     SymtabVisitor().visit_program(*ast);
 
+    /// run all necessary pass
+    InlineVisitor().visit_program(*ast);
+    NeuronSolveVisitor().visit_program(*ast);
+    SolveBlockVisitor().visit_program(*ast);
+
     /// create C code generation visitor
     auto cv = std::make_shared<CodegenCVisitor>("temp.mod", ss, "double", false);
     cv->setup(*ast);
@@ -44,6 +53,15 @@ std::string get_instance_var_setup_function(std::string& nmodl_text) {
     std::stringstream ss;
     auto cvisitor = create_c_visitor(ast, nmodl_text, ss);
     cvisitor->print_instance_variable_setup();
+    return reindent_text(ss.str());
+}
+
+/// print entire code
+std::string get_cpp_code(const std::string& nmodl_text) {
+    const auto& ast = NmodlDriver().parse_string(nmodl_text);
+    std::stringstream ss;
+    auto cvisitor = create_c_visitor(ast, nmodl_text, ss);
+    cvisitor->visit_program(*ast);
     return reindent_text(ss.str());
 }
 
@@ -342,6 +360,60 @@ SCENARIO("Check NEURON globals are added to the instance struct on demand",
             REQUIRE_THAT(generated, !Contains("celsius"));
             REQUIRE_THAT(generated, !Contains("pi"));
             REQUIRE_THAT(generated, !Contains("secondorder"));
+        }
+    }
+}
+
+SCENARIO("Check code generation for TABLE statements", "[codegen][array_variables]") {
+    GIVEN("A MOD file that uses global and array variables in TABLE") {
+        std::string const nmodl_text = R"(
+            NEURON {
+                SUFFIX glia_Cav2_3
+                RANGE inf
+                GLOBAL tau
+            }
+
+            STATE { m }
+
+            PARAMETER {
+                tau = 1
+            }
+
+            ASSIGNED {
+                inf[2]
+            }
+
+            BREAKPOINT {
+                 SOLVE states METHOD cnexp
+            }
+
+            DERIVATIVE states {
+                mhn(v)
+                m' =  (inf[0] - m)/tau
+            }
+
+            PROCEDURE mhn(v (mV)) {
+                TABLE inf, tau DEPEND celsius FROM -100 TO 100 WITH 200
+                FROM i=0 TO 1 {
+                    inf[i] = v + tau
+                }
+            }
+        )";
+        THEN("Array and global variables should be correctly generated") {
+            auto const generated = get_cpp_code(nmodl_text);
+            REQUIRE_THAT(generated, Contains("double t_inf[2][201]{};"));
+            REQUIRE_THAT(generated, Contains("double t_tau[201]{};"));
+
+            REQUIRE_THAT(generated, Contains("inst->global->t_inf[0][i] = (inst->inf+id*2)[0];"));
+            REQUIRE_THAT(generated, Contains("inst->global->t_inf[1][i] = (inst->inf+id*2)[1];"));
+            REQUIRE_THAT(generated, Contains("inst->global->t_tau[i] = inst->global->tau;"));
+
+            REQUIRE_THAT(generated,
+                         Contains("(inst->inf+id*2)[0] = inst->global->t_inf[0][index];"));
+
+            REQUIRE_THAT(generated, Contains("(inst->inf+id*2)[0] = inst->global->t_inf[0][i]"));
+            REQUIRE_THAT(generated, Contains("(inst->inf+id*2)[1] = inst->global->t_inf[1][i]"));
+            REQUIRE_THAT(generated, Contains("inst->global->tau = inst->global->t_tau[i]"));
         }
     }
 }
