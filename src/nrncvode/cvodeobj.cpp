@@ -431,7 +431,7 @@ static double tstop_event(void* v) {
         if (ifarg(3)) {
             ppobj = *hoc_objgetarg(3);
             if (!ppobj || ppobj->ctemplate->is_point_ <= 0 ||
-                nrn_is_artificial_[ob2pntproc(ppobj)->prop->type]) {
+                nrn_is_artificial_[ob2pntproc(ppobj)->prop->_type]) {
                 hoc_execerror(hoc_object_name(ppobj), "is not a POINT_PROCESS");
             }
             reinit = int(chkarg(4, 0, 1));

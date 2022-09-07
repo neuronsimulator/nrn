@@ -213,7 +213,7 @@ typedef struct Extnode {
 
 typedef struct Prop {
     struct Prop* next; /* linked list of properties */
-    short type;        /* type of membrane, e.g. passive, HH, etc. */
+    short _type;       /* type of membrane, e.g. passive, HH, etc. */
     short unused1;     /* gcc and borland need pairs of shorts to align the same.*/
     int param_size;    /* for notifying hoc_free_val_array */
     double* param;     /* vector of doubles for this property */

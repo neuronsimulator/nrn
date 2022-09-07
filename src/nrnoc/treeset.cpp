@@ -652,7 +652,7 @@ Prop* need_memb(Symbol* sym) {
     type = sym->subtype;
     mprev = (Prop*) 0; /* may need to relink m */
     for (m = *current_prop_list; m; mprev = m, m = m->next) {
-        if (m->type == type) {
+        if (m->_type == type) {
             break;
         }
     }
@@ -704,7 +704,7 @@ Prop* prop_alloc(Prop** pp, int type, Node* nd) {
 #endif
     current_prop_list = pp;
     p = (Prop*) emalloc(sizeof(Prop));
-    p->type = type;
+    p->_type = type;
     p->next = *pp;
     p->ob = nullptr;
     p->_alloc_seq = -1;
@@ -742,19 +742,19 @@ void single_prop_free(Prop* p) {
 #if VECTORIZE
     v_structure_change = 1;
 #endif
-    if (pnt_map[p->type]) {
+    if (pnt_map[p->_type]) {
         clear_point_process_struct(p);
         return;
     }
     if (p->param) {
         notify_freed_val_array(p->param, p->param_size);
-        nrn_prop_data_free(p->type, p->param);
+        nrn_prop_data_free(p->_type, p->param);
     }
     if (p->dparam) {
-        if (p->type == CABLESECTION) {
+        if (p->_type == CABLESECTION) {
             notify_freed_val_array(&p->dparam[2].val, 6);
         }
-        nrn_prop_datum_free(p->type, p->dparam);
+        nrn_prop_datum_free(p->_type, p->dparam);
     }
     if (p->ob) {
         hoc_obj_unref(p->ob);
@@ -793,7 +793,7 @@ void nrn_area_ri(Section* sec) {
     for (j = 0; j < sec->nnode - 1; j++) {
         nd = sec->pnode[j];
         for (p = nd->prop; p; p = p->next) {
-            if (p->type == MORPHOLOGY) {
+            if (p->_type == MORPHOLOGY) {
                 break;
             }
         }
@@ -1657,7 +1657,7 @@ void v_setup_vectors(void) {
                 if (memb_func[i].hoc_mech) {
                     free(memb_list[i].prop);
                 } else {
-                    free(memb_list[i].data);
+                    free(memb_list[i]._data);
                     free(memb_list[i].pdata);
                 }
             }
@@ -1684,8 +1684,8 @@ void v_setup_vectors(void) {
                 if (memb_func[i].hoc_mech) {
                     memb_list[i].prop = (Prop**) emalloc(memb_list[i].nodecount * sizeof(Prop*));
                 } else {
-                    memb_list[i].data = (double**) emalloc(memb_list[i].nodecount *
-                                                           sizeof(double*));
+                    memb_list[i]._data = (double**) emalloc(memb_list[i].nodecount *
+                                                            sizeof(double*));
                     memb_list[i].pdata = (Datum**) emalloc(memb_list[i].nodecount * sizeof(Datum*));
                 }
                 memb_list[i].nodecount = 0; /* counted again below */
@@ -1753,7 +1753,7 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
                 Point_process* pnt = (Point_process*) obj->u.this_pointer;
                 p = pnt->prop;
                 memb_list[i].nodelist[j] = (Node*) 0;
-                memb_list[i].data[j] = p->param;
+                memb_list[i]._data[j] = p->param;
                 memb_list[i].pdata[j] = p->dparam;
                 /* for now, round robin all the artificial cells */
                 /* but put the non-threadsafe ones in thread 0 */
@@ -1849,7 +1849,7 @@ void node_data_values(void) {
             Pd(cnt);
         }
         for (j = 0; j < memb_list[i].nodecount; ++j) {
-            pd = memb_list[i].data[j];
+            pd = memb_list[i]._data[j];
             for (k = 0; k < cnt; ++k) {
                 Pg(pd[k]);
             }
@@ -2253,11 +2253,11 @@ void nrn_recalc_node_ptrs(void) {
         Datum* d;
         int dpend;
         for (p = nd->prop; p; p = p->next) {
-            if (memb_func[p->type].is_point && !nrn_is_artificial_[p->type]) {
+            if (memb_func[p->_type].is_point && !nrn_is_artificial_[p->_type]) {
                 p->dparam[0].pval = nt->_actual_area + i;
             }
-            dpend = nrn_dparam_ptr_end_[p->type];
-            for (j = nrn_dparam_ptr_start_[p->type]; j < dpend; ++j) {
+            dpend = nrn_dparam_ptr_end_[p->_type];
+            for (j = nrn_dparam_ptr_start_[p->_type]; j < dpend; ++j) {
                 double* pval = p->dparam[j].pval;
                 if (nrn_isdouble(pval, 0., (double) recalc_cnt_)) {
                     /* possible pointer to v */

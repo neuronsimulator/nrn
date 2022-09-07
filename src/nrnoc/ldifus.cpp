@@ -165,7 +165,7 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
         if (sindex < 0) {
             pld->state[i] = ml->pdata[mi][-sindex - 1].pval;
         } else {
-            pld->state[i] = ml->data[mi] + sindex;
+            pld->state[i] = ml->_data[mi] + sindex;
         }
         nd = ml->nodelist[mi];
         pindex = pld->pindex[i];
@@ -347,7 +347,7 @@ stagger(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, 
     ml = v2ml(v, _nt->id);
 
     n = ml->nodecount;
-    data = ml->data;
+    data = ml->_data;
     pdata = ml->pdata;
     thread = ml->_thread;
 
@@ -420,7 +420,7 @@ ode(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnT
     ml = v2ml(v, _nt->id);
 
     n = ml->nodecount;
-    data = ml->data;
+    data = ml->_data;
     pdata = ml->pdata;
     thread = ml->_thread;
 
@@ -479,7 +479,7 @@ matsol(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, N
     ml = v2ml(v, _nt->id);
 
     n = ml->nodecount;
-    data = ml->data;
+    data = ml->_data;
     pdata = ml->pdata;
     thread = ml->_thread;
 

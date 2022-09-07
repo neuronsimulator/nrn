@@ -59,14 +59,14 @@ static void check_table_thread_(double* p, Datum* ppvar, Datum* thread, NrnThrea
 }
 
 static void nrn_alloc(Prop* prop) {
-    KSChan* c = (*channels)[prop->type];
+    KSChan* c = (*channels)[prop->_type];
     c->alloc(prop);
 }
 
 static void nrn_init(NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_init\n");
     KSChan* c = (*channels)[type];
-    c->init(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
+    c->init(ml->nodecount, ml->nodelist, ml->_data, ml->pdata, nt);
 }
 
 static void nrn_cur(NrnThread* nt, Memb_list* ml, int type) {
@@ -74,11 +74,11 @@ static void nrn_cur(NrnThread* nt, Memb_list* ml, int type) {
     KSChan* c = (*channels)[type];
 #if CACHEVEC
     if (use_cachevec) {
-        c->cur(ml->nodecount, ml->nodeindices, ml->data, ml->pdata, nt);
+        c->cur(ml->nodecount, ml->nodeindices, ml->_data, ml->pdata, nt);
     } else
 #endif /* CACHEVEC */
     {
-        c->cur(ml->nodecount, ml->nodelist, ml->data, ml->pdata);
+        c->cur(ml->nodecount, ml->nodelist, ml->_data, ml->pdata);
     }
 }
 
@@ -87,11 +87,11 @@ static void nrn_jacob(NrnThread* nt, Memb_list* ml, int type) {
     KSChan* c = (*channels)[type];
 #if CACHEVEC
     if (use_cachevec) {
-        c->jacob(ml->nodecount, ml->nodeindices, ml->data, ml->pdata, nt);
+        c->jacob(ml->nodecount, ml->nodeindices, ml->_data, ml->pdata, nt);
     } else
 #endif /* CACHEVEC */
     {
-        c->jacob(ml->nodecount, ml->nodelist, ml->data, ml->pdata);
+        c->jacob(ml->nodecount, ml->nodelist, ml->_data, ml->pdata);
     }
 }
 
@@ -100,11 +100,11 @@ static void nrn_state(NrnThread* nt, Memb_list* ml, int type) {
     KSChan* c = (*channels)[type];
 #if CACHEVEC
     if (use_cachevec) {
-        c->state(ml->nodecount, ml->nodeindices, ml->nodelist, ml->data, ml->pdata, nt);
+        c->state(ml->nodecount, ml->nodeindices, ml->nodelist, ml->_data, ml->pdata, nt);
     } else
 #endif /* CACHEVEC */
     {
-        c->state(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
+        c->state(ml->nodecount, ml->nodelist, ml->_data, ml->pdata, nt);
     }
 }
 
@@ -122,17 +122,17 @@ ode_map(int ieq, double** pv, double** pvdot, double* p, Datum* pd, double* atol
 static void ode_spec(NrnThread*, Memb_list* ml, int type) {
     // printf("ode_spec\n");
     KSChan* c = (*channels)[type];
-    c->spec(ml->nodecount, ml->nodelist, ml->data, ml->pdata);
+    c->spec(ml->nodecount, ml->nodelist, ml->_data, ml->pdata);
 }
 static void ode_matsol(NrnThread* nt, Memb_list* ml, int type) {
     // printf("ode_matsol\n");
     KSChan* c = (*channels)[type];
-    c->matsol(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
+    c->matsol(ml->nodecount, ml->nodelist, ml->_data, ml->pdata, nt);
 }
 static void singchan(NrnThread* nt, Memb_list* ml, int type) {
     // printf("singchan_\n");
     KSChan* c = (*channels)[type];
-    c->cv_sc_update(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
+    c->cv_sc_update(ml->nodecount, ml->nodelist, ml->_data, ml->pdata, nt);
 }
 static void* hoc_create_pnt(Object* ho) {
     return create_point_process(ho->ctemplate->is_point_, ho);
@@ -141,7 +141,7 @@ static void hoc_destroy_pnt(void* v) {
     // first free the KSSingleNodeData if it exists.
     Point_process* pp = (Point_process*) v;
     if (pp->prop) {
-        KSChan* c = (*channels)[pp->prop->type];
+        KSChan* c = (*channels)[pp->prop->_type];
         c->destroy_pnt(pp);
     }
 }
@@ -167,7 +167,7 @@ static double hoc_get_loc_pnt(void* v) {
 }
 static double hoc_nsingle(void* v) {
     Point_process* pp = (Point_process*) v;
-    KSChan* c = (*channels)[pp->prop->type];
+    KSChan* c = (*channels)[pp->prop->_type];
     if (ifarg(1)) {
         c->nsingle(pp, (int) chkarg(1, 1, 1e9));
     }
@@ -2236,7 +2236,7 @@ void KSChan::alloc(Prop* prop) {
         prop->param = nrn_point_prop_->param;
         prop->dparam = nrn_point_prop_->dparam;
     } else {
-        prop->param = nrn_prop_data_alloc(prop->type, prop->param_size, prop);
+        prop->param = nrn_prop_data_alloc(prop->_type, prop->param_size, prop);
         prop->param[gmaxoffset_] = gmax_deflt_;
         if (is_point()) {
             prop->param[NSingleIndex] = 1.;
@@ -2253,7 +2253,7 @@ void KSChan::alloc(Prop* prop) {
     }
     if (!is_point() || nrn_point_prop_ == 0) {
         if (ppsize > 0) {
-            prop->dparam = nrn_prop_datum_alloc(prop->type, ppsize, prop);
+            prop->dparam = nrn_prop_datum_alloc(prop->_type, ppsize, prop);
             if (is_point()) {
                 prop->dparam[2]._pvoid = NULL;
             }
@@ -2294,14 +2294,14 @@ Prop* KSChan::needion(Symbol* s, Node* nd, Prop* pm) {
     Prop *p, *pion;
     int type = s->subtype;
     for (p = nd->prop; p; p = p->next) {
-        if (p->type == type) {
+        if (p->_type == type) {
             break;
         }
     }
     pion = p;
     // printf("KSChan::needion %s\n", s->name);
     // printf("before ion rearrangement\n");
-    // for (p=nd->prop; p; p=p->next) {printf("\t%s\n", memb_func[p->type].sym->name);}
+    // for (p=nd->prop; p; p=p->next) {printf("\t%s\n", memb_func[p->_type].sym->name);}
     if (!pion) {
         pion = prop_alloc(&nd->prop, type, nd);
     } else {  // if after then move to beginning
@@ -2315,7 +2315,7 @@ Prop* KSChan::needion(Symbol* s, Node* nd, Prop* pm) {
         }
     }
     // printf("after ion rearrangement\n");
-    // for (p=nd->prop; p; p=p->next) {printf("\t%s\n", memb_func[p->type].sym->name);}
+    // for (p=nd->prop; p; p=p->next) {printf("\t%s\n", memb_func[p->_type].sym->name);}
     return pion;
 }
 
@@ -2340,7 +2340,7 @@ void KSChan::ion_consist() {
             nd = sec->pnode[i];
             Prop *p, *pion;
             for (p = nd->prop; p; p = p->next) {
-                if (p->type == mtype) {
+                if (p->_type == mtype) {
                     break;
                 }
             }
@@ -2395,7 +2395,7 @@ void KSChan::state_consist(int shift) {  // shift when Nsingle winks in and out 
             nd = sec->pnode[i];
             Prop* p;
             for (p = nd->prop; p; p = p->next) {
-                if (p->type == mtype) {
+                if (p->_type == mtype) {
                     if (p->param_size != ns) {
                         v_structure_change = 1;
                         double* oldp = p->param;
