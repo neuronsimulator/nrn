@@ -16,7 +16,7 @@ DESTDIR =
 TARGET_LIB_TYPE = $(BUILD_TYPE)
 
 # required for OSX to execute nrnivmodl-core
-ifneq ($(SDKROOT),)
+ifeq ($(origin SDKROOT), undefined)
   export SDKROOT := $(shell xcrun --sdk macosx --show-sdk-path)
 endif
 

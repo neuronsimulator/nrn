@@ -314,6 +314,12 @@ add_custom_command(
   COMMENT "Running nrnivmodl-core with halfgap.mod")
 add_custom_target(nrniv-core ALL DEPENDS ${output_binaries})
 
+# Build a target representing the libcorenrnmech.so that is produced under bin/x86_64, which
+# executables such as the unit tests must link against
+add_library(builtin-libcorenrnmech SHARED IMPORTED)
+add_dependencies(builtin-libcorenrnmech nrniv-core)
+set_target_properties(builtin-libcorenrnmech PROPERTIES IMPORTED_LOCATION "${corenrn_mech_library}")
+
 if(CORENRN_ENABLE_GPU)
   separate_arguments(CORENRN_ACC_FLAGS UNIX_COMMAND "${NVHPC_ACC_COMP_FLAGS}")
   target_compile_options(coreneuron-core PRIVATE ${CORENRN_ACC_FLAGS})
@@ -328,7 +334,7 @@ add_dependencies(coreneuron-for-tests coreneuron-core ${NMODL_TARGET_TO_DEPEND})
 # ${corenrn_mech_library} is libcorenrnmech.{a,so}, which contains both the compiled default
 # mechanisms and the content of libcoreneuron-core.a.
 add_library(coreneuron-all INTERFACE)
-target_link_libraries(coreneuron-all INTERFACE "${corenrn_mech_library}")
+target_link_libraries(coreneuron-all INTERFACE builtin-libcorenrnmech)
 # Also copy the dependencies of libcoreneuron-core as interface dependencies of this new target
 # (example: ${corenrn_mech_library} will probably depend on MPI, so when the unit tests link against
 # ${corenrn_mech_library} they need to know to link against MPI too).
