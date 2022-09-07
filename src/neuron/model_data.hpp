@@ -26,16 +26,14 @@ struct Model {
         return m_node_data.find_data_handle(ptr);
     }
 
-    template <typename T>
-    [[nodiscard]] std::string find_container_name(std::vector<T> const& cont) const {
+    [[nodiscard]] std::optional<container::utils::storage_info> find_container_info(
+        void const* cont) const {
         // For now it could only be m_node_data
-        auto const name = m_node_data.find_container_name(cont);
-        if (!name.empty()) {
-            return name;
+        auto maybe_info = m_node_data.find_container_info(cont);
+        if (maybe_info) {
+            return maybe_info;
         }
-        std::ostringstream oss;
-        oss << &cont;
-        return oss.str();
+        return {std::nullopt};
     }
 
   private:
@@ -66,9 +64,8 @@ data_handle<T> find_data_handle(T* ptr) {
     return model().find_data_handle(ptr);
 }
 
-template <typename T>
-std::string find_container_name(std::vector<T> const& c) {
-    return model().find_container_name(c);
+[[nodiscard]] inline std::optional<storage_info> find_container_info(void const* c) {
+    return model().find_container_info(c);
 }
 
 }  // namespace container::utils
