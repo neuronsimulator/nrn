@@ -152,6 +152,11 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
         THEN("Check it cannot be converted to data_handle<int>") {
             REQUIRE_THROWS(static_cast<data_handle<int>>(null_handle));
         }
+        THEN("Check it has the expected string representation") {
+            std::ostringstream actual;
+            actual << null_handle;
+            REQUIRE(actual.str() == "generic_data_handle{raw=nullptr, type=double}");
+        }
     }
     GIVEN("A handle wrapping a raw pointer (compatibility mode)") {
         double foo{};
@@ -165,6 +170,12 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
         }
         THEN("Check it cannot be converted to data_handle<int>") {
             REQUIRE_THROWS(static_cast<data_handle<int>>(handle));
+        }
+        THEN("Check it has the expected string representation") {
+            std::ostringstream actual, expected;
+            actual << handle;
+            expected << "generic_data_handle{raw=" << &foo << ", type=double}";
+            REQUIRE(actual.str() == expected.str());
         }
     }
 }
