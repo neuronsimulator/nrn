@@ -251,35 +251,32 @@ struct soa {
     }
 
   private:
-    template <typename Tag, typename T, typename U>
-    constexpr bool find_container_name(std::string& name,
+    template <typename Tag, typename T>
+    constexpr bool find_container_info(utils::storage_info& info,
                                        std::vector<T> const& cont1,
-                                       std::vector<U> const& cont2) const {
-        assert(name.empty());
-        if constexpr (std::is_same_v<T, U>) {
-            if (&cont1 == &cont2) {
-                name = cxx_demangle(typeid(Tag).name());
-                constexpr std::string_view prefix{"neuron::container::"};
-                if (std::string_view{name}.substr(0, prefix.size()) == prefix) {
-                    name.erase(0, prefix.size());
-                }
-                return true;
-            } else {
-                return false;
-            }
-        } else {
+                                       void const* cont2) const {
+        if (&cont1 != cont2) {
             return false;
         }
+        info.name = cxx_demangle(typeid(Tag).name());
+        info.size = cont1.size();
+        constexpr std::string_view prefix{"neuron::container::"};
+        if (std::string_view{info.name}.substr(0, prefix.size()) == prefix) {
+            info.name.erase(0, prefix.size());
+        }
+        return true;
     }
 
   public:
-    template <typename T>
-    [[nodiscard]] std::string find_container_name(std::vector<T> const& cont) const {
-        std::string name{};
+    [[nodiscard]] std::optional<utils::storage_info> find_container_info(void const* cont) const {
+        utils::storage_info info{};
         // FIXME: generate a proper tag type for the index column?
-        find_container_name<RowIdentifier>(name, m_indices, cont) ||
-            (find_container_name<Tags>(name, get<Tags>(), cont) || ...);
-        return name;
+        if (find_container_info<RowIdentifier>(info, m_indices, cont) ||
+            (find_container_info<Tags>(info, get<Tags>(), cont) || ...)) {
+            return info;
+        } else {
+            return {std::nullopt};
+        }
     }
 
   private:

@@ -150,10 +150,10 @@ struct data_handle {
     }
 
     friend std::ostream& operator<<(std::ostream& os, data_handle const& dh) {
+        auto const maybe_info = utils::find_container_info(dh.m_container);
         os << "data_handle<" << cxx_demangle(typeid(T).name()) << ">{";
-        if (dh.m_container) {
-            os << "cont=" << utils::find_container_name(*dh.m_container) << " " << dh.m_offset
-               << '/' << dh.m_container->size();
+        if (maybe_info) {
+            os << "cont=" << maybe_info->name << ' ' << dh.m_offset << '/' << maybe_info->size;
         } else {
             os << "raw=" << dh.m_raw_ptr;
         }
