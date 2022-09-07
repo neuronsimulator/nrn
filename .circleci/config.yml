@@ -31,7 +31,7 @@ jobs:
                 -e NRN_RELEASE_UPLOAD \
                 -e NEURON_WHEEL_VERSION \
                 -e NRN_BUILD_FOR_UPLOAD=1 \
-                'neuronsimulator/neuron_wheel:latest-aarch64' \
+                'neuronsimulator/neuron_wheel:latest-gcc9-aarch64' \
                 packaging/python/build_wheels.bash linux << parameters.NRN_PYTHON_VERSION >> coreneuron
 
       - store_artifacts:
