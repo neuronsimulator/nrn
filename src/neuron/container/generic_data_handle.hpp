@@ -1,6 +1,7 @@
 #pragma once
 #include "backtrace_utils.h"
 #include "neuron/container/soa_identifier.hpp"
+#include "neuron/model_data_fwd.hpp"
 
 #include <typeindex>
 #include <vector>
@@ -42,6 +43,18 @@ struct generic_data_handle {
             return {static_cast<T*>(m_container)};
         }
     }
+
+    friend std::ostream& operator<<(std::ostream& os, generic_data_handle const& dh) {
+        auto const maybe_info = utils::find_container_info(dh.m_container);
+        os << "generic_data_handle{";
+        if (maybe_info) {
+            os << "cont=" << maybe_info->name << ' ' << dh.m_offset << '/' << maybe_info->size;
+        } else {
+            os << "raw=" << dh.m_container;
+        }
+        return os << ", type=" << cxx_demangle(dh.m_type.name()) << '}';
+    }
+
 
     [[nodiscard]] std::string type_name() const {
         return cxx_demangle(m_type.name());
