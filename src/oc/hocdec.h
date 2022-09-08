@@ -4,6 +4,7 @@
 #define INCLUDEHOCH 1
 #define OOP         1
 
+#include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 #include "nrnapi.h"
 #include "hocassrt.h" /* hoc_execerror instead of abort */
@@ -148,7 +149,7 @@ union Datum { /* interpreter stack type */
     double val;
     Symbol* sym;
     int i;
-    double* pval; /* first used with Eion in NEURON */
+    //double* pval; /* first used with Eion in NEURON */
     Object** pobj;
     Object* obj; /* sections keep this to construct a name */
     char** pstr;
@@ -159,6 +160,15 @@ union Datum { /* interpreter stack type */
     // can be stored by value...
     neuron::container::generic_data_handle* generic_handle;
 };
+// Temporary, deprecate these
+inline neuron::container::generic_data_handle& nrn_get_pval(Datum& datum) {
+    return *datum.generic_handle;
+    //return static_cast<double*>(static_cast<neuron::container::data_handle<double>>(*datum.generic_handle));
+}
+template <typename T>
+inline void nrn_set_pval(Datum& datum, T* pval) {
+    datum.generic_handle = new neuron::container::generic_data_handle{neuron::container::data_handle<T>{pval}};
+}
 
 #if OOP
 struct cTemplate {

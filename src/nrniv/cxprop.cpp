@@ -592,10 +592,12 @@ void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip) {
     assert(ip < op->d2());
     assert(1);  //  should point into pool() for one of the op pool chains
     // and the index should be a pointer to the double in np
-    long i = (long) (*dp[id].pval);
+    auto& generic_handle = *dp[id].generic_handle;
+    long i = *static_cast<neuron::container::data_handle<double>>(generic_handle);
     assert(i >= 0 && i < np->size());
     double* pvar = np->items()[i];
-    dp[id].pval = pvar + ip;
+    // TODO provide an assignment operator
+    generic_handle = neuron::container::generic_data_handle{neuron::container::data_handle<double>{pvar + ip}};
 }
 
 void nrn_cache_prop_realloc() {

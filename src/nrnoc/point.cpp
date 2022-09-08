@@ -120,14 +120,14 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
 
     nrn_point_prop_ = (Prop*) 0;
     if (pnt->prop) {
-        pnt->prop->param = (double*) 0;
-        pnt->prop->dparam = (Datum*) 0;
+        pnt->prop->param = nullptr;
+        pnt->prop->dparam = nullptr;
         free_one_point(pnt);
     }
     nrn_sec_ref(&pnt->sec, sec);
     pnt->node = node;
     pnt->prop = p;
-    pnt->prop->dparam[0].pval = &NODEAREA(node);
+    nrn_set_pval(pnt->prop->dparam[0], &NODEAREA(node));
     pnt->prop->dparam[1]._pvoid = (void*) pnt;
     if (pnt->ob) {
         if (pnt->ob->observers) {
@@ -143,7 +143,7 @@ static void create_artcell_prop(Point_process* pnt, short type) {
     Prop* p = (Prop*) 0;
     nrn_point_prop_ = (Prop*) 0;
     pnt->prop = prop_alloc(&p, type, (Node*) 0);
-    pnt->prop->dparam[0].pval = (double*) 0;
+    nrn_set_pval(pnt->prop->dparam[0], nullptr);
     pnt->prop->dparam[1]._pvoid = (void*) pnt;
     if (pnt->ob) {
         if (pnt->ob->observers) {
@@ -254,27 +254,26 @@ double has_loc_point(void* v) {
 double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
     static double dummy;
     double* pd;
-    if (pnt->prop == (Prop*) 0) {
+    if (!pnt->prop) {
         if (nrn_inpython_ == 1) { /* python will handle the error */
-            hoc_warning("point process not located in a section", (char*) 0);
+            hoc_warning("point process not located in a section", nullptr);
             nrn_inpython_ = 2;
-            return NULL;
+            return nullptr;
         } else {
-            hoc_execerror("point process not located in a section", (char*) 0);
+            hoc_execerror("point process not located in a section", nullptr);
         }
     }
     if (sym->subtype == NRNPOINTER) {
-        pd = (pnt->prop->dparam)[sym->u.rng.index + index].pval;
+        auto* gh = (pnt->prop->dparam)[sym->u.rng.index + index].generic_handle;
+        auto dh = static_cast<neuron::container::data_handle<double>>(*gh);
+        pd = static_cast<double*>(dh);
         if (cppp_semaphore) {
             ++cppp_semaphore;
-            cppp_pointer = &((pnt->prop->dparam)[sym->u.rng.index + index].pval);
+            assert(false);
+            cppp_pointer = nullptr;//&(nrn_get_pval((pnt->prop->dparam)[sym->u.rng.index + index]));
             pd = &dummy;
         } else if (!pd) {
-#if 0
-		  hoc_execerror(sym->name, "wasn't made to point to anything");
-#else
-            return (double*) 0;
-#endif
+            return nullptr;
         }
     } else {
         if (pnt->prop->ob) {

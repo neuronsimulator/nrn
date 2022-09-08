@@ -196,6 +196,13 @@ char** hoc_strpop();
 int hoc_ipop();
 void hoc_nopop();
 
+/** @brief Shorthand for hoc_pop<data_handle<T>>().
+ */
+template <typename T>
+neuron::container::data_handle<T> hoc_pop_handle() {
+    return hoc_pop<neuron::container::data_handle<T>>();
+}
+
 [[noreturn]] void hoc_execerror_mes(const char*, const char*, int);
 void hoc_warning(const char*, const char*);
 double* hoc_val_pointer(const char*);

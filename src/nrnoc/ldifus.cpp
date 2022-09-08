@@ -163,7 +163,7 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
         /* Also child may butte end to end with parent or attach to middle */
         mi = pld->mindex[i];
         if (sindex < 0) {
-            pld->state[i] = ml->pdata[mi][-sindex - 1].pval;
+            pld->state[i] = nrn_get_pval(ml->pdata[mi][-sindex - 1]);
         } else {
             pld->state[i] = ml->_data[mi] + sindex;
         }
