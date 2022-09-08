@@ -94,7 +94,6 @@ extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
 extern Object* (*nrnpy_rvp_rxd_to_callable)(Object*);
 extern "C" int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*) );  // called by ctypes.
 extern "C" int nrnpy_set_gui_callback(PyObject*);
-extern double** nrnpy_setpointer_helper(PyObject*, PyObject*);
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
 class NetCon;
 extern int nrn_netcon_weight(NetCon*, double**);
@@ -546,8 +545,7 @@ PyObject* nrnpy_hoc_pop() {
         result = Py_BuildValue("s", *hoc_strpop());
         break;
     case VAR: {
-        double* px = hoc_pxpop();
-        if (px) {
+        if (auto const px = hoc_pop_handle<double>()) {
             // unfortunately, this is nonsense if NMODL POINTER is pointing
             // to something other than a double.
             result = Py_BuildValue("d", *px);
@@ -584,10 +582,8 @@ static int set_final_from_stk(PyObject* po) {
         }
         break;
     case VAR: {
-        double x;
-        double* px;
-        if (PyArg_Parse(po, "d", &x) == 1) {
-            px = hoc_pxpop();
+        if (double x; PyArg_Parse(po, "d", &x) == 1) {
+            auto px = hoc_pop_handle<double>();
             if (px) {
                 // This is a future crash if NMODL POINTER is pointing
                 // to something other than a double.
@@ -655,7 +651,7 @@ static void* fcall(void* vself, void* vargs) {
         case 1:
             return nrnpy_hoc_int_pop();
         default:
-            return (void*) nrnpy_hoc_pop();
+            return nrnpy_hoc_pop();
         }
     }
     if (self->sym_->type == BLTIN) {
@@ -685,7 +681,7 @@ static void* fcall(void* vself, void* vargs) {
     }
     hocobj_pushargs_free_strings(strings_to_free);
 
-    return (void*) nrnpy_hoc_pop();
+    return nrnpy_hoc_pop();
 }
 
 static PyObject* curargs_;
@@ -1150,7 +1146,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                     return result;
                 } else {
                     if (isptr) {
-                        return nrn_hocobj_ptr(hoc_pxpop());
+                        auto handle = hoc_pop_handle<double>();
+                        return nrn_hocobj_handle(std::move(handle));
                     } else {
                         return nrnpy_hoc_pop();
                     }
@@ -1347,7 +1344,6 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
             PyObject* p = nrnpy_hoc2pyobject(self->ho_);
             return PyObject_GenericSetAttr(p, pyname, value);
         } else if (strncmp(n, "_ref_", 5) == 0) {
-            extern int nrn_pointer_assign(Prop*, Symbol*, PyObject*);
             Symbol* rvsym = getsym(n + 5, self->ho_, 0);
             if (rvsym && rvsym->type == RANGEVAR) {
                 Prop* prop = ob2pntproc_0(self->ho_)->prop;
@@ -2056,6 +2052,7 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
         if (href->type_ != PyHoc::HocScalarPtr) {
             goto done;
         }
+        neuron::container::generic_data_handle* gh{};
         if (PyObject_TypeCheck(pp, hocobject_type)) {
             PyHocObject* hpp = (PyHocObject*) pp;
             if (hpp->type_ != PyHoc::HocObject) {
@@ -2076,15 +2073,14 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
                 PyErr_SetString(PyExc_TypeError, "Point_process not located in a section");
                 return NULL;
             }
-            ppd = &prop->dparam[sym->u.rng.index].pval;
+            gh = prop->dparam[sym->u.rng.index].generic_handle;
         } else {
-            ppd = nrnpy_setpointer_helper(name, pp);
-            if (!ppd) {
+            gh = nrnpy_setpointer_helper(name, pp);
+            if (!gh) {
                 goto done;
             }
         }
-        assert(false);
-        *ppd = static_cast<double*>(href->u.px_);
+        *gh = neuron::container::generic_data_handle{href->u.px_};
         result = Py_None;
         Py_INCREF(result);
     }

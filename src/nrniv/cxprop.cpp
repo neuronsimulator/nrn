@@ -81,16 +81,18 @@ double* nrn_prop_data_alloc(int type, int count, Prop* p) {
 }
 
 Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
+    int i;
+    Datum* ppd;
     if (!datumpools_[type]) {
         datumpools_[type] = new DatumArrayPool(APSIZE, count);
     }
     assert(datumpools_[type]->d2() == count);
     p->_alloc_seq = datumpools_[type]->ntget();
-    auto* ppd = datumpools_[type]->alloc();  // allocates storage for the datums
+    ppd = datumpools_[type]->alloc();
     // if (type > 1) printf("nrn_prop_datum_alloc %d %s %d %p\n", type, memb_func[type].sym->name,
     // count, ppd);
-    for (int i = 0; i < count; ++i) {
-        ppd[i] = nullptr;
+    for (i = 0; i < count; ++i) {
+        ppd[i]._pvoid = 0;
     }
     return ppd;
 }
@@ -344,7 +346,7 @@ static int in_place_data_realloc() {
             Node* nd = nt->_v_node[i];
             for (Prop* p = nd->prop; p; p = p->next) {
                 if (memb_func[p->_type].current || memb_func[p->_type].state ||
-                    memb_func[p->_type].has_initialize()) {
+                    memb_func[p->_type].initialize) {
                     Memb_list* ml = mlmap[p->_type];
                     assert(ml->nodelist[ml->nodecount] == nd);
                     if (!memb_func[p->_type].hoc_mech) {
@@ -381,10 +383,12 @@ void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip) {
     assert(ip < op->d2());
     assert(1);  //  should point into pool() for one of the op pool chains
     // and the index should be a pointer to the double in np
-    long i = *dp[id].get<double*>();
+    auto& generic_handle = *dp[id].generic_handle;
+    long i = *static_cast<neuron::container::data_handle<double>>(generic_handle);
     assert(i >= 0 && i < np->size());
     double* pvar = np->items()[i];
-    dp[id] = pvar + ip;
+    // TODO provide an assignment operator
+    generic_handle = neuron::container::generic_data_handle{neuron::container::data_handle<double>{pvar + ip}};
 }
 
 

@@ -312,26 +312,26 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                     etype = -1;
                     eindex = -1;  // the signal to ignore in bbcore.
                 } else {
-                    if (dparam[j].pval == &ml->nodelist[i]->_area) {
+                    if (nrn_get_pval(dparam[j]) == &ml->nodelist[i]->_area) {
                         // possibility it points directly into Node._area instead of
                         // _actual_area. For our purposes we need to figure out the
                         // _actual_area index.
                         etype = -1;
                         eindex = ml->nodeindices[i];
-                        assert(a[ml->nodeindices[i]] == *dparam[j].pval);
+                        assert(a[ml->nodeindices[i]] == *nrn_get_pval(dparam[j]));
                     } else {
-                        if (dparam[j].pval < a || dparam[j].pval >= (a + nnode)) {
+                        if (nrn_get_pval(dparam[j]) < a || nrn_get_pval(dparam[j]) >= (a + nnode)) {
                             printf("%s dparam=%p a=%p a+nnode=%p j=%d\n",
                                    memb_func[di.type].sym->name,
-                                   dparam[j].pval,
+                                   nrn_get_pval(dparam[j]),
                                    a,
                                    a + nnode,
                                    j);
                             abort();
                         }
-                        assert(dparam[j].pval >= a && dparam[j].pval < (a + nnode));
+                        assert(nrn_get_pval(dparam[j]) >= a && nrn_get_pval(dparam[j]) < (a + nnode));
                         etype = -1;
-                        eindex = dparam[j].pval - a;
+                        eindex = nrn_get_pval(dparam[j]) - a;
                     }
                 }
             } else if (dmap[j] == -2) {  // this is an ion and dparam[j][0].i is the iontype
@@ -373,12 +373,12 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                         break;
                     }
                 }
-                assert(dparam[j].pval == pdiam);
+                assert(nrn_get_pval(dparam[j]) == pdiam);
                 eindex = ml->nodeindices[i];
             } else if (dmap[j] == -5) {  // POINTER
                 // must be a pointer into nt->_data. Handling is similar to eion so
                 // give proper index into the type.
-                double* pd = dparam[j].pval;
+                double* pd = nrn_get_pval(dparam[j]);
                 nrn_dblpntr2nrncore(pd, nt, etype, eindex);
                 if (etype == 0) {
                     fprintf(stderr,
@@ -390,23 +390,23 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] > 0 && dmap[j] < 1000) {  // double* into eion type data
                 Memb_list* eml = cg.type2ml[dmap[j]];
                 assert(eml);
-                if (dparam[j].pval < eml->_data[0]) {
+                if (nrn_get_pval(dparam[j]) < eml->_data[0]) {
                     printf("%s dparam=%p data=%p j=%d etype=%d %s\n",
                            memb_func[di.type].sym->name,
-                           dparam[j].pval,
+                           nrn_get_pval(dparam[j]),
                            eml->_data[0],
                            j,
                            dmap[j],
                            memb_func[dmap[j]].sym->name);
                     abort();
                 }
-                assert(dparam[j].pval >= eml->_data[0]);
+                assert(nrn_get_pval(dparam[j]) >= eml->_data[0]);
                 etype = dmap[j];
-                if (dparam[j].pval >=
+                if (nrn_get_pval(dparam[j]) >=
                     (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount))) {
                     printf("%s dparam=%p data=%p j=%d psize=%d nodecount=%d etype=%d %s\n",
                            memb_func[di.type].sym->name,
-                           dparam[j].pval,
+                           nrn_get_pval(dparam[j]),
                            eml->_data[0],
                            j,
                            nrn_prop_param_size_[etype],
@@ -414,9 +414,9 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                            etype,
                            memb_func[etype].sym->name);
                 }
-                assert(dparam[j].pval <
+                assert(nrn_get_pval(dparam[j]) <
                        (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount)));
-                eindex = dparam[j].pval - eml->_data[0];
+                eindex = nrn_get_pval(dparam[j]) - eml->_data[0];
             } else if (dmap[j] > 1000) {  // int* into ion dparam[xxx][0]
                 // store the actual ionstyle
                 etype = dmap[j];
