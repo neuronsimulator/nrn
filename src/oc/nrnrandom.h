@@ -1,7 +1,9 @@
 #pragma once
+// Definition of Rand
+#include "random1.h"
+
 #include <stdint.h>
 
-class Rand;
 long nrn_get_random_sequence(Rand* r);
 Rand* nrn_random_arg(int);
 int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
