@@ -143,8 +143,8 @@ static void create_artcell_prop(Point_process* pnt, short type) {
     Prop* p = (Prop*) 0;
     nrn_point_prop_ = (Prop*) 0;
     pnt->prop = prop_alloc(&p, type, (Node*) 0);
-    nrn_set_pval(pnt->prop->dparam[0], nullptr);
-    pnt->prop->dparam[1]._pvoid = (void*) pnt;
+    nrn_set_pval(pnt->prop->dparam[0], static_cast<double*>(nullptr));
+    pnt->prop->dparam[1]._pvoid = pnt;
     if (pnt->ob) {
         if (pnt->ob->observers) {
             hoc_obj_notify(pnt->ob);
