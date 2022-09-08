@@ -66,7 +66,7 @@ INITIAL {
     if(_p_donotuse && _ran_compat == 2) {
 #endif
         /* only this style initializes the stream on finitialize */
-        nrnran123_setseq(reinterpret_cast<nrnran123_State*>(_p_donotuse), 0, 0);
+        nrnran123_setseq(static_cast<nrnran123_State*>(_p_donotuse), 0, 0);
     }
     ENDVERBATIM
     on = 0 : off
@@ -119,12 +119,12 @@ VERBATIM
         */
 #if !NRNBBCORE
         if (_ran_compat == 2) {
-            _lerand = nrnran123_negexp(reinterpret_cast<nrnran123_State*>(_p_donotuse));
+            _lerand = nrnran123_negexp(static_cast<nrnran123_State*>(_p_donotuse));
         } else {
-            _lerand = nrn_random_pick(reinterpret_cast<Rand*>(_p_donotuse));
+            _lerand = nrn_random_pick(static_cast<Rand*>(_p_donotuse));
         }
 #else
-        _lerand = nrnran123_negexp(reinterpret_cast<nrnran123_State*>(_p_donotuse));
+        _lerand = nrnran123_negexp(static_cast<nrnran123_State*>(_p_donotuse));
 #endif
         return _lerand;
     } else {
@@ -156,12 +156,13 @@ VERBATIM
         assert(0);
     }
     _ran_compat = 1;
-    auto& randstate = reinterpret_cast<Rand*&>(_p_donotuse);
+    auto* randstate = static_cast<Rand*>(_p_donotuse);
     if (ifarg(1)) {
         randstate = nrn_random_arg(1);
     } else {
         randstate = nullptr;
     }
+    _p_donotuse = randstate;
  }
 #endif
 ENDVERBATIM
@@ -175,7 +176,7 @@ VERBATIM
         assert(0);
     }
     _ran_compat = 2;
-    auto& r123state = reinterpret_cast<nrnran123_State*&>(_p_donotuse);
+    auto* r123state = static_cast<nrnran123_State*>(_p_donotuse);
     if (r123state) {
         nrnran123_deletestream(r123state);
         r123state = nullptr;
@@ -185,6 +186,7 @@ VERBATIM
     } else if (ifarg(2)) {
         r123state = nrnran123_newstream(static_cast<uint32_t>(*getarg(1)), static_cast<uint32_t>(*getarg(2)));
     }
+    _p_donotuse = r123state;
 #endif
 ENDVERBATIM
 }
@@ -198,9 +200,10 @@ VERBATIM
 #else
         if (_ran_compat == 2) {
 #endif
-            auto& r123state = reinterpret_cast<nrnran123_State*&>(_p_donotuse);
+            auto* r123state = static_cast<nrnran123_State*>(_p_donotuse);
             nrnran123_deletestream(r123state);
             r123state = nullptr;
+            _p_donotuse = r123state;
         }
     }
 ENDVERBATIM
@@ -219,7 +222,7 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
         uint32_t* di = reinterpret_cast<uint32_t*>(d) + *offset;
 #if !NRNBBCORE
         if (_ran_compat == 1) {
-            auto* rand = reinterpret_cast<Rand*>(_p_donotuse);
+            auto* rand = static_cast<Rand*>(_p_donotuse);
             /* error if not using Random123 generator */
             if (!nrn_random_isran123(rand, di, di+1, di+2)) {
                 fprintf(stderr, "NetStim: Random123 generator is required\n");
@@ -231,7 +234,7 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
 #else
     {
 #endif
-            auto& r123state = reinterpret_cast<nrnran123_State*&>(_p_donotuse);
+            auto* r123state = static_cast<nrnran123_State*>(_p_donotuse);
             nrnran123_getids3(r123state, di, di+1, di+2);
             nrnran123_getseq(r123state, di+3, &which);
             di[4] = which;
@@ -239,6 +242,7 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
             /* CoreNEURON does not call DESTRUCTOR so... */
             nrnran123_deletestream(r123state);
             r123state = nullptr;
+            _p_donotuse = r123state;
 #endif
         }
         /*printf("Netstim bbcore_write %d %d %d\n", di[0], di[1], di[3]);*/
@@ -259,7 +263,7 @@ static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsprot
      */
     uint32_t* di = reinterpret_cast<uint32_t*>(d) + *offset;
 #if NRNBBCORE
-    auto& r123state = reinterpret_cast<nrnran123_State*&>(_p_donotuse);
+    auto* r123state = static_cast<nrnran123_State*>(_p_donotuse);
     assert(!r123state);
     r123state = nrnran123_newstream3(di[0], di[1], di[2]);
     nrnran123_setseq(r123state, di[3], di[4]);
@@ -267,13 +271,13 @@ static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsprot
     uint32_t id1, id2, id3;
     assert(_p_donotuse);
     if (_ran_compat == 1) { /* Hoc Random.Random123 */
-        auto* pv = reinterpret_cast<Rand*>(_p_donotuse);
+        auto* pv = static_cast<Rand*>(_p_donotuse);
         int b = nrn_random_isran123(pv, &id1, &id2, &id3);
         assert(b);
         nrn_random123_setseq(pv, di[3], (char)di[4]);
     } else {
         assert(_ran_compat == 2);
-        auto* r123state = reinterpret_cast<nrnran123_State*>(_p_donotuse);
+        auto* r123state = static_cast<nrnran123_State*>(_p_donotuse);
         nrnran123_getids3(r123state, &id1, &id2, &id3);
         nrnran123_setseq(r123state, di[3], di[4]);
     }
@@ -329,7 +333,7 @@ FUNCTION bbsavestate() {
 VERBATIM
 #if !NRNBBCORE
     if (_ran_compat == 2) {
-        auto r123state = reinterpret_cast<nrnran123_State*>(_p_donotuse);
+        auto r123state = static_cast<nrnran123_State*>(_p_donotuse);
         if (!r123state) { return 0.0; }
         double* xdir = hoc_pgetarg(1);
         if (*xdir == -1.) {
