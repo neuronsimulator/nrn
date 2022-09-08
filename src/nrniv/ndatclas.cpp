@@ -225,7 +225,9 @@ double* NrnProperty::prop_pval(const Symbol* s, int index) const {
         return npi_->p_->ob->u.dataspace[prop_index(s)].pval + index;
     } else {
         if (s->subtype == NRNPOINTER) {
-            return npi_->p_->dparam[prop_index(s) + index].get<double*>();
+            assert(false);
+            auto* gh = npi_->p_->dparam[prop_index(s) + index].generic_handle;
+            return static_cast<double*>(static_cast<neuron::container::data_handle<double>>(*gh));
         } else {
             return npi_->p_->param + prop_index(s) + index;
         }

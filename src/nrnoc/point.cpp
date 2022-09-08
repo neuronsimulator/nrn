@@ -20,9 +20,8 @@ extern Symbol** pointsym; /*list of variable symbols in s->u.ppsym[k]
 extern short* nrn_is_artificial_;
 extern Prop* prop_alloc(Prop**, int, Node*);
 
-static double ppp_dummy = 42.0;
 static int cppp_semaphore = 0; /* connect point process pointer semaphore */
-static Datum* cppp_datum = nullptr;
+static double** cppp_pointer;
 static void free_one_point(Point_process* pnt);
 static void create_artcell_prop(Point_process* pnt, short type);
 
@@ -128,8 +127,8 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
     nrn_sec_ref(&pnt->sec, sec);
     pnt->node = node;
     pnt->prop = p;
-    pnt->prop->dparam[0] = &NODEAREA(node);
-    pnt->prop->dparam[1] = pnt;
+    nrn_set_pval(pnt->prop->dparam[0], &NODEAREA(node));
+    pnt->prop->dparam[1]._pvoid = (void*) pnt;
     if (pnt->ob) {
         if (pnt->ob->observers) {
             hoc_obj_notify(pnt->ob);
@@ -144,8 +143,8 @@ static void create_artcell_prop(Point_process* pnt, short type) {
     Prop* p = (Prop*) 0;
     nrn_point_prop_ = (Prop*) 0;
     pnt->prop = prop_alloc(&p, type, (Node*) 0);
-    pnt->prop->dparam[0] = static_cast<double*>(nullptr);
-    pnt->prop->dparam[1] = pnt;
+    nrn_set_pval(pnt->prop->dparam[0], nullptr);
+    pnt->prop->dparam[1]._pvoid = (void*) pnt;
     if (pnt->ob) {
         if (pnt->ob->observers) {
             hoc_obj_notify(pnt->ob);
@@ -157,15 +156,25 @@ static void create_artcell_prop(Point_process* pnt, short type) {
 }
 
 void nrn_relocate_old_points(Section* oldsec, Node* oldnode, Section* sec, Node* node) {
+    Point_process* pnt;
+    Prop *p, *pn;
     if (oldnode)
-        for (Prop *p = oldnode->prop, *pn; p; p = pn) {
+        for (p = oldnode->prop; p; p = pn) {
             pn = p->next;
             if (memb_func[p->_type].is_point) {
-                auto* pnt = p->dparam[1].get<Point_process*>();
+                pnt = (Point_process*) p->dparam[1]._pvoid;
                 if (oldsec == pnt->sec) {
                     if (oldnode == node) {
                         nrn_sec_ref(&pnt->sec, sec);
                     } else {
+#if 0
+double nrn_arc_position();
+char* secname();
+printf("relocating a %s to %s(%d)\n",
+memb_func[p->_type].sym->name,
+secname(sec), nrn_arc_position(sec, node)
+);
+#endif
                         nrn_loc_point_process(pnt_map[p->_type], pnt, sec, node);
                     }
                 }
@@ -243,6 +252,8 @@ double has_loc_point(void* v) {
 }
 
 double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
+    static double dummy;
+    double* pd;
     if (!pnt->prop) {
         if (nrn_inpython_ == 1) { /* python will handle the error */
             hoc_warning("point process not located in a section", nullptr);
@@ -253,21 +264,26 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
         }
     }
     if (sym->subtype == NRNPOINTER) {
-        auto& datum = pnt->prop->dparam[sym->u.rng.index + index];
+        auto* gh = (pnt->prop->dparam)[sym->u.rng.index + index].generic_handle;
+        auto dh = static_cast<neuron::container::data_handle<double>>(*gh);
+        pd = static_cast<double*>(dh);
         if (cppp_semaphore) {
             ++cppp_semaphore;
-            cppp_datum = &datum;  // we will store a value in `datum` later
-            return &ppp_dummy;
-        } else {
-            return datum.get<double*>();
+            assert(false);
+            cppp_pointer = nullptr;//&(nrn_get_pval((pnt->prop->dparam)[sym->u.rng.index + index]));
+            pd = &dummy;
+        } else if (!pd) {
+            return nullptr;
         }
     } else {
         if (pnt->prop->ob) {
-            return pnt->prop->ob->u.dataspace[sym->u.rng.index].pval + index;
+            pd = pnt->prop->ob->u.dataspace[sym->u.rng.index].pval + index;
         } else {
-            return &(pnt->prop->param[sym->u.rng.index + index]);
+            pd = pnt->prop->param + sym->u.rng.index + index;
         }
     }
+    /*printf("point_process_pointer %s pd=%lx *pd=%g\n", sym->name, pd, *pd);*/
+    return pd;
 }
 
 /* put the right double pointer on the stack */
@@ -294,18 +310,20 @@ void connect_point_process_pointer(void) {
         hoc_execerror("not a point process pointer", (char*) 0);
     }
     cppp_semaphore = 0;
-    *cppp_datum = hoc_pxpop();
+    *cppp_pointer = hoc_pxpop();
     hoc_nopop();
 }
 
-// must unlink from node property list also
-static void free_one_point(Point_process* pnt) {
-    auto* p = pnt->prop;
+static void free_one_point(Point_process* pnt) /* must unlink from node property list also */
+{
+    Prop *p, *p1;
+
+    p = pnt->prop;
     if (!p) {
         return;
     }
     if (!nrn_is_artificial_[p->_type]) {
-        auto* p1 = pnt->node->prop;
+        p1 = pnt->node->prop;
         if (p1 == p) {
             pnt->node->prop = p1->next;
         } else
@@ -336,9 +354,10 @@ static void free_one_point(Point_process* pnt) {
     pnt->sec = (Section*) 0;
 }
 
-// called from prop_free
-void clear_point_process_struct(Prop* p) {
-    auto* const pnt = p->dparam[1].get<Point_process*>();
+void clear_point_process_struct(Prop* p) /* called from prop_free */
+{
+    Point_process* pnt;
+    pnt = (Point_process*) p->dparam[1]._pvoid;
     if (pnt) {
         free_one_point(pnt);
         if (pnt->ob) {
