@@ -161,13 +161,19 @@ union Datum { /* interpreter stack type */
     neuron::container::generic_data_handle* generic_handle;
 };
 // Temporary, deprecate these
-inline neuron::container::generic_data_handle& nrn_get_pval(Datum& datum) {
+inline neuron::container::generic_data_handle& nrn_get_any(Datum& datum) {
     return *datum.generic_handle;
-    //return static_cast<double*>(static_cast<neuron::container::data_handle<double>>(*datum.generic_handle));
+}
+inline double* nrn_get_pval(Datum& datum) {
+    return static_cast<double*>(nrn_get_any(datum));
+    // return
+    // static_cast<double*>(static_cast<neuron::container::data_handle<double>>(*datum.generic_handle));
 }
 template <typename T>
 inline void nrn_set_pval(Datum& datum, T* pval) {
-    datum.generic_handle = new neuron::container::generic_data_handle{neuron::container::data_handle<T>{pval}};
+    // big leak!
+    datum.generic_handle = new neuron::container::generic_data_handle{
+        neuron::container::data_handle<T>{pval}};
 }
 
 #if OOP

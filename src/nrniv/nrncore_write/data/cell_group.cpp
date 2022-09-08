@@ -312,26 +312,27 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                     etype = -1;
                     eindex = -1;  // the signal to ignore in bbcore.
                 } else {
-                    if (nrn_get_pval(dparam[j]) == &ml->nodelist[i]->_area) {
+                    double* const pval{nrn_get_pval(dparam[j])};
+                    if (pval == &ml->nodelist[i]->_area) {
                         // possibility it points directly into Node._area instead of
                         // _actual_area. For our purposes we need to figure out the
                         // _actual_area index.
                         etype = -1;
                         eindex = ml->nodeindices[i];
-                        assert(a[ml->nodeindices[i]] == *nrn_get_pval(dparam[j]));
+                        assert(a[ml->nodeindices[i]] == *pval);
                     } else {
-                        if (nrn_get_pval(dparam[j]) < a || nrn_get_pval(dparam[j]) >= (a + nnode)) {
+                        if (pval < a || pval >= (a + nnode)) {
                             printf("%s dparam=%p a=%p a+nnode=%p j=%d\n",
                                    memb_func[di.type].sym->name,
-                                   nrn_get_pval(dparam[j]),
+                                   pval,
                                    a,
                                    a + nnode,
                                    j);
                             abort();
                         }
-                        assert(nrn_get_pval(dparam[j]) >= a && nrn_get_pval(dparam[j]) < (a + nnode));
+                        assert(pval >= a && pval < (a + nnode));
                         etype = -1;
-                        eindex = nrn_get_pval(dparam[j]) - a;
+                        eindex = pval - a;
                     }
                 }
             } else if (dmap[j] == -2) {  // this is an ion and dparam[j][0].i is the iontype
@@ -390,23 +391,23 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] > 0 && dmap[j] < 1000) {  // double* into eion type data
                 Memb_list* eml = cg.type2ml[dmap[j]];
                 assert(eml);
-                if (nrn_get_pval(dparam[j]) < eml->_data[0]) {
+                double* const pval{nrn_get_pval(dparam[j])};
+                if (pval < eml->_data[0]) {
                     printf("%s dparam=%p data=%p j=%d etype=%d %s\n",
                            memb_func[di.type].sym->name,
-                           nrn_get_pval(dparam[j]),
+                           pval,
                            eml->_data[0],
                            j,
                            dmap[j],
                            memb_func[dmap[j]].sym->name);
                     abort();
                 }
-                assert(nrn_get_pval(dparam[j]) >= eml->_data[0]);
+                assert(pval >= eml->_data[0]);
                 etype = dmap[j];
-                if (nrn_get_pval(dparam[j]) >=
-                    (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount))) {
+                if (pval >= (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount))) {
                     printf("%s dparam=%p data=%p j=%d psize=%d nodecount=%d etype=%d %s\n",
                            memb_func[di.type].sym->name,
-                           nrn_get_pval(dparam[j]),
+                           pval,
                            eml->_data[0],
                            j,
                            nrn_prop_param_size_[etype],
@@ -414,9 +415,8 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                            etype,
                            memb_func[etype].sym->name);
                 }
-                assert(nrn_get_pval(dparam[j]) <
-                       (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount)));
-                eindex = nrn_get_pval(dparam[j]) - eml->_data[0];
+                assert(pval < (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount)));
+                eindex = pval - eml->_data[0];
             } else if (dmap[j] > 1000) {  // int* into ion dparam[xxx][0]
                 // store the actual ionstyle
                 etype = dmap[j];

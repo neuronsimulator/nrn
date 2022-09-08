@@ -44,6 +44,30 @@ struct generic_data_handle {
         }
     }
 
+    explicit operator bool() const {
+        // Branches follow the data_handle<T> conversion just above
+        return bool{m_offset} ? true : (m_offset.m_ptr ? false : static_cast<bool>(m_container));
+    }
+
+    template <typename T>
+    explicit operator T* const() {
+        return static_cast<T*>(static_cast<data_handle<T>>(*this));
+    }
+
+    generic_data_handle& operator=(std::nullptr_t) {
+        return (*this = {});
+    }
+
+    template <typename T>
+    generic_data_handle& operator=(data_handle<T> const& rhs) {
+        return (*this = static_cast<generic_data_handle>(rhs));
+    }
+
+    template <typename T>
+    generic_data_handle& operator=(T* ptr) {
+        return (*this = data_handle<T>{ptr});
+    }
+
     friend std::ostream& operator<<(std::ostream& os, generic_data_handle const& dh) {
         auto const maybe_info = utils::find_container_info(dh.m_container);
         os << "generic_data_handle{";
