@@ -1911,12 +1911,18 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
 int nrn_pointer_assign(Prop* prop, Symbol* sym, PyObject* value) {
     int err = 0;
     if (sym->subtype == NRNPOINTER) {
-        neuron::container::data_handle<double> pd{};
-        double** ppd = &prop->dparam[sym->u.rng.index].pval;
-        assert(ppd);
-        if (nrn_is_hocobj_ptr(value, pd)) {
-            // assert(false);
-            *ppd = static_cast<double*>(pd);
+        if (neuron::container::data_handle<double> pd{}; nrn_is_hocobj_ptr(value, pd)) {
+            // The challenge is that we need to store a data handle here,
+            // because POINTER variables are set up before the data are
+            // permuted, but that handle then gets read as part of the
+            // translated mechanism code, inside the translated MOD files, where
+            // we might not otherwise like to pay the extra cost of indirection.
+            // TODO fix things so this can be stored by value
+            auto* gh_ptr = new neuron::container::generic_data_handle{pd};
+            auto& datum = prop->dparam[sym->u.rng.index];
+            datum.generic_handle = gh_ptr;
+            //datum.pval = static_cast<double*>(pd);
+            //std::cout << "stored " << pd << ' ' << *datum.generic_handle << std::endl;
         } else {
             PyErr_SetString(PyExc_ValueError, "must be a hoc pointer");
             err = -1;
@@ -2145,9 +2151,9 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
     return err;
 }
 
-double** nrnpy_setpointer_helper(PyObject* pyname, PyObject* mech) {
+neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject* pyname, PyObject* mech) {
     if (PyObject_TypeCheck(mech, pmech_generic_type) == 0) {
-        return NULL;
+        return nullptr;
     }
     NPyMechObj* m = (NPyMechObj*) mech;
     NrnProperty np(m->prop_);
@@ -2155,14 +2161,14 @@ double** nrnpy_setpointer_helper(PyObject* pyname, PyObject* mech) {
     Py2NRNString name(pyname);
     char* n = name.c_str();
     if (!n) {
-        return NULL;
+        return nullptr;
     }
     sprintf(buf, "%s_%s", n, memb_func[m->prop_->_type].sym->name);
     Symbol* sym = np.find(buf);
     if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
-        return 0;
+        return nullptr;
     }
-    return &m->prop_->dparam[np.prop_index(sym)].pval;
+    return m->prop_->dparam[np.prop_index(sym)].generic_handle;
 }
 
 static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
