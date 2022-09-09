@@ -183,6 +183,45 @@ struct data_handle {
     T* m_raw_ptr{};
 };
 
+/**
+ * @brief Explicit specialisation data_handle<void>.
+ *
+ * This is convenient as it allows void* to be stored in generic_data_handle.
+ * The default implementation of data_handle<T> would otherwise need several
+ * special cases to avoid instantiating std::vector<void> and forming references
+ * to void. The "modern style" data handles that hold a reference to a container
+ * and a way of determining an offset into that container do not make sense with
+ * a void value type, so this only supports the "legacy" mode where a data
+ * handle wraps a plain pointer.
+ */
+template <>
+struct data_handle<void> {
+    data_handle() = default;
+    data_handle(void* raw_ptr)
+        : m_raw_ptr{raw_ptr} {}
+    [[nodiscard]] bool refers_to_a_modern_data_structure() const {
+        return false;
+    }
+    explicit operator bool() const {
+        return m_raw_ptr;
+    }
+    explicit operator void*() {
+        return m_raw_ptr;
+    }
+    explicit operator void const *() const {
+        return m_raw_ptr;
+    }
+    friend std::ostream& operator<<(std::ostream& os, data_handle<void> const& dh) {
+        return os << "data_handle<void>{raw=" << dh.m_raw_ptr << '}';
+    }
+    friend bool operator==(data_handle<void> const& lhs, data_handle<void> const& rhs) {
+        return lhs.m_raw_ptr == rhs.m_raw_ptr;
+    }
+
+  private:
+    void* m_raw_ptr;
+};
+
 }  // namespace neuron::container
 
 // Enable data_handle<T> as a key type in std::unordered_map
