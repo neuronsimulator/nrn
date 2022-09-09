@@ -1296,12 +1296,6 @@
                             type: Expression
                             prefix: {value: " "}
 
-                  - QueueExpressionType:
-                      brief: "TODO"
-                      members:
-                        - value:
-                            brief: "TODO"
-                            type: QueueType
                   - Match:
                       brief: "TODO"
                       members:
@@ -1891,17 +1885,6 @@
                                         if (ena < 70) {ena = 70}
                                     }
                                 \endcode
-
-                  - QueueStatement:
-                      members:
-                        - qtype:
-                            brief: "queue type (put/get)"
-                            type: QueueExpressionType
-                        - name:
-                            brief: "Name of the variable"
-                            type: Identifier
-                            prefix: {value: " "}
-                      brief: "Represent queue statement in NMODL"
 
                   - ConstantStatement:
                       members:

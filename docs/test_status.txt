@@ -50,8 +50,6 @@ The following symbols are used in the document to descrive the status :
 |LOCAL | ✅ |
 | ~ | ✅ |
 |~+ | ❓ |
-|PUTQ | ✅ |
-|GETQ | ✅ |
 |TABLE | ✅ |
 |DEPEND | ✅ |
 |BREAKPOINT | ✅ |

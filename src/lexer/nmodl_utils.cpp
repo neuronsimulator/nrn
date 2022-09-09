@@ -195,8 +195,6 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_FUNCTION1(token, pos);
     case Token::FUNCTION_TABLE:
         return Parser::make_FUNCTION_TABLE(token, pos);
-    case Token::GETQ:
-        return Parser::make_GETQ(token, pos);
     case Token::GLOBAL:
         return Parser::make_GLOBAL(token, pos);
     case Token::IF:
@@ -251,8 +249,6 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_PROCEDURE(token, pos);
     case Token::PROTECT:
         return Parser::make_PROTECT(token, pos);
-    case Token::PUTQ:
-        return Parser::make_PUTQ(token, pos);
     case Token::RANGE:
         return Parser::make_RANGE(token, pos);
     case Token::READ:

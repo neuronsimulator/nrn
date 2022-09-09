@@ -106,7 +106,6 @@
 %token  <ModToken>              FROM
 %token  <ModToken>              FUNCTION1
 %token  <ModToken>              FUNCTION_TABLE
-%token  <ModToken>              GETQ
 %token  <ModToken>              GLOBAL
 %token  <ModToken>              IF
 %token  <ModToken>              IFERROR
@@ -136,7 +135,6 @@
 %token  <ModToken>              POINTER
 %token  <ModToken>              PROCEDURE
 %token  <ModToken>              PROTECT
-%token  <ModToken>              PUTQ
 %token  <ModToken>              RANGE
 %token  <ModToken>              REACT1
 %token  <ModToken>              REACTION
@@ -259,7 +257,6 @@
 %type   <ast::LocalVarVector>               local_var_list
 %type   <ast::ExpressionVector>             expression_list
 %type   <ast::Define*>                      define
-%type   <ast::QueueStatement*>              queue_statement
 %type   <ast::Expression*>                  assignment
 %type   <ast::FromStatement*>               from_statement
 %type   <ast::WhileStatement*>              while_statement
@@ -1147,10 +1144,6 @@ statement_type1 :   from_statement
                         $$ = $1;
                     }
                 |   lag_statement
-                    {
-                        $$ = $1;
-                    }
-                |   queue_statement
                     {
                         $$ = $1;
                     }
@@ -2060,17 +2053,6 @@ lag_statement   :   LAG name BY NAME_PTR
                 |   LAG error
                     {
                         error(scanner.loc, "lag_statement");
-                    }
-                ;
-
-
-queue_statement :   PUTQ name
-                    {
-                        $$ = new ast::QueueStatement(new ast::QueueExpressionType(ast::PUT_QUEUE), $2);
-                    }
-                |   GETQ name
-                    {
-                        $$ = new ast::QueueStatement(new ast::QueueExpressionType(ast::GET_QUEUE), $2);
                     }
                 ;
 

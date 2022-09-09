@@ -82,12 +82,6 @@ typedef enum { PEQ_FIRST, PEQ_LAST } FirstLastType;
 /// string representation of ast::FirstLastType
 static const std::string FirstLastTypeNames[] = {"FIRST", "LAST"};
 
-/// enum type for queue types
-typedef enum { PUT_QUEUE, GET_QUEUE } QueueType;
-
-/// string representation of ast::QueueType
-static const std::string QueueTypeNames[] = {"PUTQ", "GETQ"};
-
 /// enum type to distinguish BEFORE or AFTER blocks
 typedef enum { BATYPE_BREAKPOINT, BATYPE_SOLVE, BATYPE_INITIAL, BATYPE_STEP } BAType;
 
