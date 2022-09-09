@@ -17,12 +17,23 @@ struct data_handle;
  */
 struct generic_data_handle {
     generic_data_handle() = default;
-    template <typename T>
+    // Avoid trying to access members of the data_handle<void> specialisation.
+    template <typename T, std::enable_if_t<std::is_same_v<T, void>, int> = 0>
+    explicit generic_data_handle(data_handle<T> const& handle)
+        : m_container{handle.m_raw_ptr}
+        , m_type{typeid(T)} {
+        static_assert(std::is_same_v<T, void>);
+    }
+
+    // Avoid trying to access members of the data_handle<void> specialisation.
+    template <typename T, std::enable_if_t<!std::is_same_v<T, void>, int> = 0>
     explicit generic_data_handle(data_handle<T> const& handle)
         : m_offset{handle.m_raw_ptr ? nullptr : handle.m_offset.m_ptr}
         , m_container{handle.m_raw_ptr ? static_cast<void*>(handle.m_raw_ptr)
                                        : static_cast<void*>(handle.m_container)}
-        , m_type{typeid(T)} {}
+        , m_type{typeid(T)} {
+        static_assert(!std::is_same_v<T, void>);
+    }
 
     template <typename T>
     explicit operator data_handle<T> const() {
