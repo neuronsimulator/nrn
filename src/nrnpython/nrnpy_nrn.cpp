@@ -1913,18 +1913,13 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
 int nrn_pointer_assign(Prop* prop, Symbol* sym, PyObject* value) {
     int err = 0;
     if (sym->subtype == NRNPOINTER) {
-        if (neuron::container::data_handle<double> pd{}; nrn_is_hocobj_ptr(value, pd)) {
+        if (neuron::container::data_handle<double> dh{}; nrn_is_hocobj_ptr(value, dh)) {
             // The challenge is that we need to store a data handle here,
             // because POINTER variables are set up before the data are
             // permuted, but that handle then gets read as part of the
             // translated mechanism code, inside the translated MOD files, where
             // we might not otherwise like to pay the extra cost of indirection.
-            // TODO fix things so this can be stored by value
-            auto* gh_ptr = new neuron::container::generic_data_handle{pd};
-            auto& datum = prop->dparam[sym->u.rng.index];
-            datum.generic_handle = gh_ptr;
-            //datum.pval = static_cast<double*>(pd);
-            //std::cout << "stored " << pd << ' ' << *datum.generic_handle << std::endl;
+            nrn_set_handle(prop->dparam[sym->u.rng.index], dh);
         } else {
             PyErr_SetString(PyExc_ValueError, "must be a hoc pointer");
             err = -1;
