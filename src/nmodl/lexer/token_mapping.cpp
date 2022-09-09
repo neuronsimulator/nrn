@@ -87,8 +87,6 @@ const static std::map<std::string, TokenType> keywords = {
     {"LAST", Token::LAST},
     {"COMPARTMENT", Token::COMPARTMENT},
     {"LONGITUDINAL_DIFFUSION", Token::LONGDIFUS},
-    {"PUTQ", Token::PUTQ},
-    {"GETQ", Token::GETQ},
     {"IFERROR", Token::IFERROR},
     {"SOLVEFOR", Token::SOLVEFOR},
     {"UNITS", Token::UNITS},

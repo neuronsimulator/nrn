@@ -26,7 +26,6 @@ INTEGRAL_TYPES = {"short",
                   "UnaryOp",
                   "ReactionOp",
                   "FirstLastType",
-                  "QueueType",
                   "BAType",
                   "UnitStateType",
                   }
@@ -38,7 +37,6 @@ ENUM_BASE_TYPES = {"BinaryOp",
                    "UnaryOp",
                    "ReactionOp",
                    "FirstLastType",
-                   "QueueType",
                    "BAType",
                    "UnitStateType",
                    }
@@ -54,7 +52,6 @@ DATA_TYPES = {"Boolean": "bool",
               "ReactionOperator": "ReactionOp",
               "UnitState": "UnitStateType",
               "BABlockType": "BAType",
-              "QueueExpressionType": "QueueType",
               "FirstLastTypeIndex": "FirstLastType",
               }
 
