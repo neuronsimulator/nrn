@@ -116,7 +116,6 @@ void statdefault(Symbol* n, int index, char* units, Item* qs, int makeconst);
 void vectorize_scan_for_func(Item* q1, Item* q2);
 void defarg(Item* q1, Item* q2);
 void lag_stmt(Item* q1, int blocktype);
-void queue_stmt(Item* q1, Item* q2);
 void add_reset_args(Item*);
 void add_nrnthread_arg(Item*);
 void check_tables();

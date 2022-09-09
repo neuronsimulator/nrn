@@ -85,7 +85,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	FROM FORALL1 TO BY WHILE IF ELSE START1 STEP SENS SOLVEFOR
 %token	<qp>	PROCEDURE PARTIAL DEL DEL2 DEFINE1 IFERROR PARAMETER INT
 %token	<qp>	DERFUNC EQUATION TERMINAL LINEAR NONLINEAR FUNCTION1 LOCAL
-%token	<qp>	METHOD LIN1 NONLIN1 PUTQ GETQ TABLE DEPEND BREAKPOINT
+%token	<qp>	METHOD LIN1 NONLIN1 TABLE DEPEND BREAKPOINT
 %token	<qp>	INCLUDE1 FUNCTION_TABLE PROTECT NRNMUTEXLOCK NRNMUTEXUNLOCK
 %token	<qp>	'{' '}' '(' ')' '[' ']' '@' '+' '*' '-' '/' '=' '^' ':' ','
 %token	<qp>	'~'
@@ -96,7 +96,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %type	<str>	line model units optindex unit limits abstol
 %type	<qp>	name number nonlineqn primary term linexpr numlist
 %type	<qp>	expr aexpr ostmt astmt stmtlist locallist locallist1
-%type	<qp>	varname exprlist define1 queuestmt
+%type	<qp>	varname exprlist define1
 %type	<qp>	asgn fromstmt whilestmt ifstmt solveblk funccall ifsolerr
 %type	<qp>	opinc opstart senslist sens lagstmt forallstmt
 %type	<qp>	parmasgn stepped indepdef depdef withby
@@ -474,7 +474,6 @@ ostmt:	fromstmt
 	| ldifus	{check_block(KINETIC, blocktype, "LONGDIFUS");}
 	| conserve	{check_block(KINETIC, blocktype, "CONSERVE");}
 	| lagstmt
-	| queuestmt
 	| RESET
 		{ replacstr($1, " _reset = 1;\n"); }
 	| matchblk
@@ -1075,9 +1074,6 @@ react:	varname {reactname($1, lastok, ITEM0);}
 lagstmt: LAG name BY NAME
 		{lag_stmt($1, blocktype);}
 	| LAG error {myerr("Lag syntax is: LAG name BY const");}
-	;
-queuestmt: PUTQ name {queue_stmt($1, $2);}
-	| GETQ name {queue_stmt($1, $2);}
 	;
 matchblk: MATCH {checkmatch(blocktype);} '{' matchlist '}'
 		{deltokens($1, $5);}

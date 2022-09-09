@@ -67,8 +67,6 @@ static struct { /* Keywords */
                 {"LAST", LAST},
                 {"COMPARTMENT", COMPARTMENT},
                 {"LONGITUDINAL_DIFFUSION", LONGDIFUS},
-                {"PUTQ", PUTQ},
-                {"GETQ", GETQ},
                 {"IFERROR", IFERROR},
                 {"SOLVEFOR", SOLVEFOR},
                 {"UNITS", UNITS},
