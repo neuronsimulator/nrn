@@ -264,13 +264,11 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
         }
     }
     if (sym->subtype == NRNPOINTER) {
-        auto* gh = (pnt->prop->dparam)[sym->u.rng.index + index].generic_handle;
-        auto dh = static_cast<neuron::container::data_handle<double>>(*gh);
-        pd = static_cast<double*>(dh);
+        pd = nrn_get_pval(pnt->prop->dparam[sym->u.rng.index + index]);
         if (cppp_semaphore) {
             ++cppp_semaphore;
             assert(false);
-            cppp_pointer = nullptr;//&(nrn_get_pval((pnt->prop->dparam)[sym->u.rng.index + index]));
+            // old code: cppp_pointer = &((pnt->prop->dparam)[sym->u.rng.index + index].pval);
             pd = &dummy;
         } else if (!pd) {
             return nullptr;
@@ -279,7 +277,7 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
         if (pnt->prop->ob) {
             pd = pnt->prop->ob->u.dataspace[sym->u.rng.index].pval + index;
         } else {
-            pd = pnt->prop->param + sym->u.rng.index + index;
+            pd = &(pnt->prop->param[sym->u.rng.index + index]);
         }
     }
     /*printf("point_process_pointer %s pd=%lx *pd=%g\n", sym->name, pd, *pd);*/
