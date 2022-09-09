@@ -36,7 +36,7 @@ struct generic_data_handle {
     }
 
     template <typename T>
-    explicit operator data_handle<T> const() {
+    explicit operator data_handle<T>() const {
         bool const is_typeless_null{m_type == std::type_index{typeid(typeless_null)}};
         if (!is_typeless_null && std::type_index{typeid(T)} != m_type) {
             throw std::runtime_error("Cannot convert generic_data_handle(" +
@@ -70,7 +70,7 @@ struct generic_data_handle {
     }
 
     template <typename T>
-    explicit operator T* const() {
+    explicit operator T*() const {
         return static_cast<T*>(static_cast<data_handle<T>>(*this));
     }
 
