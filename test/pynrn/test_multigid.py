@@ -116,15 +116,10 @@ def test_multigid():
         s = h.Section("soma", net.cells[0])
         pc.cell(10002, h.NetCon(s(0.5)._ref_v, None, sec=s), 0)  # line of coverage
 
-        if cn_avail:
-            s.insert("hh")
-            pc.set_gid2node(10003, pc.id())
-            pc.cell(10003, h.NetCon(s(0.5).hh._ref_m, None, sec=s), 0)
-            coreneuron.enable = True
-            h.CVode().cache_efficient(1)
-            expect_err("run(10)")
-            coreneuron.enable = False
-            h.CVode().cache_efficient(0)
+        s.insert("hh")
+        pc.set_gid2node(10003, pc.id())
+        # About to create a NetCon with a source that is not a voltage
+        expect_err("pc.cell(10003, h.NetCon(s(0.5).hh._ref_m, None, sec=s), 0)")
 
     pc.gid_clear()
     del s, net, std
