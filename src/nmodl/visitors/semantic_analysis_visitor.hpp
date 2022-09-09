@@ -25,8 +25,9 @@
  *
  * 1. Check that a function or a procedure containing a TABLE statement contains only one argument
  * (mandatory in mod2c).
- * 2. Check that destructor blocks are only inside mod file that are point_process
- * 3. A TABLE statement in functions cannot have name list, and should have one in procedures
+ * 2. Check that destructor blocks are only inside mod file that are point_process.
+ * 3. A TABLE statement in functions cannot have name list, and should have one in procedures.
+ * 4. Check if ion variables from a `USEION` statement are not declared in `CONSTANT` block.
  */
 #include "ast/ast.hpp"
 #include "visitors/ast_visitor.hpp"

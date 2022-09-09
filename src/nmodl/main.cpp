@@ -329,18 +329,18 @@ int main(int argc, const char* argv[]) {
         /// just visit the ast
         AstVisitor().visit_program(*ast);
 
+        /// construct symbol table
+        {
+            logger->info("Running symtab visitor");
+            SymtabVisitor(update_symtab).visit_program(*ast);
+        }
+
         /// Check some rules that ast should follow
         {
             logger->info("Running semantic analysis visitor");
             if (SemanticAnalysisVisitor().check(*ast)) {
                 return 1;
             }
-        }
-
-        /// construct symbol table
-        {
-            logger->info("Running symtab visitor");
-            SymtabVisitor(update_symtab).visit_program(*ast);
         }
 
         /// use cnexp instead of after_cvode solve method
