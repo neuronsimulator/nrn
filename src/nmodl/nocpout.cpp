@@ -579,9 +579,10 @@ extern Memb_func* memb_func;\n\
                 "_thread1data_inuse = 1;\n }\n",
                 gind);
         lappendstr(thread_mem_init_list, buf);
-        lappendstr(thread_cleanup_list,
-                   " if (nrn_get_pval(_thread[_gth]) == _thread1data) {\n   _thread1data_inuse = 0;\n  "
-                   "}else{\n   free(nrn_get_pval(_thread[_gth]));\n  }\n");
+        lappendstr(
+            thread_cleanup_list,
+            " if (nrn_get_pval(_thread[_gth]) == _thread1data) {\n   _thread1data_inuse = 0;\n  "
+            "}else{\n   free(nrn_get_pval(_thread[_gth]));\n  }\n");
         ++thread_data_index;
     }
     gind = 0;
@@ -2154,7 +2155,10 @@ int iondef(int* p_pointercount) {
             if (SYM(q1)->nrntype & NRNIONFLAG) {
                 SYM(q1)->nrntype &= ~NRNIONFLAG;
             } else {
-                Sprintf(buf, "#define _ion_%s	*nrn_get_pval(_ppvar[%d])\n", SYM(q1)->name, ioncount);
+                Sprintf(buf,
+                        "#define _ion_%s	*nrn_get_pval(_ppvar[%d])\n",
+                        SYM(q1)->name,
+                        ioncount);
                 q2 = lappendstr(defs_list, buf);
                 q2->itemtype = VERBATIM;
                 sprintf(buf,
@@ -2170,7 +2174,10 @@ int iondef(int* p_pointercount) {
             it = iontype(SYM(q1)->name, sion->name);
             if (it == IONCUR) {
                 dcurdef = 1;
-                Sprintf(buf, "#define _ion_di%sdv\t*nrn_get_pval(_ppvar[%d])\n", sion->name, ioncount);
+                Sprintf(buf,
+                        "#define _ion_di%sdv\t*nrn_get_pval(_ppvar[%d])\n",
+                        sion->name,
+                        ioncount);
                 q2 = lappendstr(defs_list, buf);
                 q2->itemtype = VERBATIM;
                 sprintf(buf,
@@ -2210,11 +2217,17 @@ int iondef(int* p_pointercount) {
     *p_pointercount = 0;
     ITERATE(q, nrnpointers) {
         sion = SYM(q);
-        Sprintf(buf, "#define %s	*nrn_get_pval(_ppvar[%d])\n", sion->name, ioncount + *p_pointercount);
+        Sprintf(buf,
+                "#define %s	*nrn_get_pval(_ppvar[%d])\n",
+                sion->name,
+                ioncount + *p_pointercount);
         sion->used = ioncount + *p_pointercount;
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
-        Sprintf(buf, "#define _p_%s	nrn_get_any(_ppvar[%d])\n", sion->name, ioncount + *p_pointercount);
+        Sprintf(buf,
+                "#define _p_%s	nrn_get_any(_ppvar[%d])\n",
+                sion->name,
+                ioncount + *p_pointercount);
         sion->used = ioncount + *p_pointercount;
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
@@ -2233,7 +2246,9 @@ int iondef(int* p_pointercount) {
     }              /* notice that ioncount is not incremented */
     if (areadec) { /* must be last, if we add any more the administrative
             procedures must be redone */
-        Sprintf(buf, "#define area	*nrn_get_pval(_ppvar[%d])\n", ioncount + *p_pointercount + diamdec);
+        Sprintf(buf,
+                "#define area	*nrn_get_pval(_ppvar[%d])\n",
+                ioncount + *p_pointercount + diamdec);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
     } /* notice that ioncount is not incremented */
