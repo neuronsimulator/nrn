@@ -4,6 +4,7 @@
 #include "ast/program.hpp"
 #include "ast/suffix.hpp"
 #include "ast/table_statement.hpp"
+#include "symtab/symbol_properties.hpp"
 #include "utils/logger.hpp"
 #include "visitors/visitor_utils.hpp"
 
@@ -19,6 +20,28 @@ bool SemanticAnalysisVisitor::check(const ast::Program& node) {
         const auto& suffix = std::dynamic_pointer_cast<const ast::Suffix>(suffix_node[0]);
         const auto& type = suffix->get_type()->get_node_name();
         is_point_process = (type == "POINT_PROCESS" || type == "ARTIFICIAL_CELL");
+    }
+    /// -->
+
+    /// <-- This code is for check 4
+    using namespace symtab::syminfo;
+    const auto& with_prop = NmodlType::read_ion_var | NmodlType::write_ion_var;
+
+    const auto& sym_table = node.get_symbol_table();
+    assert(sym_table != nullptr);
+
+    // get all ion variables
+    const auto& ion_variables = sym_table->get_variables_with_properties(with_prop, false);
+
+    /// make sure ion variables aren't redefined in a `CONSTANT` block.
+    for (const auto& var: ion_variables) {
+        if (var->has_any_property(NmodlType::constant_var)) {
+            logger->critical(
+                fmt::format("SemanticAnalysisVisitor :: ion variable {} from the USEION statement "
+                            "can not be re-declared in a CONSTANT block",
+                            var->get_name()));
+            check_fail = true;
+        }
     }
     /// -->
 

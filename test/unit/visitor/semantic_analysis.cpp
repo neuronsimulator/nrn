@@ -11,6 +11,7 @@
 #include "parser/nmodl_driver.hpp"
 #include "test/unit/utils/test_utils.hpp"
 #include "visitors/semantic_analysis_visitor.hpp"
+#include "visitors/symtab_visitor.hpp"
 
 
 using namespace nmodl;
@@ -26,6 +27,7 @@ using nmodl::parser::NmodlDriver;
 bool run_semantic_analysis_visitor(const std::string& text) {
     NmodlDriver driver;
     const auto& ast = driver.parse_string(text);
+    SymtabVisitor().visit_program(*ast);
     return SemanticAnalysisVisitor{}.check(*ast);
 }
 
@@ -101,6 +103,21 @@ SCENARIO("Destructor block", "[visitor][semantic_analysis]") {
             }
         )";
         THEN("fail") {
+            REQUIRE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+}
+
+SCENARIO("Ion variable in CONSTANT block", "[visitor][semantic_analysis]") {
+    GIVEN("A mod file with ion variable redeclared in a CONSTANT block") {
+        std::string nmodl_text = R"(
+            NEURON {
+                SUFFIX cdp4Nsp
+                USEION ca READ cao, cai, ica WRITE cai
+            }
+            CONSTANT { cao = 2  (mM) }
+        )";
+        THEN("Semantic analysis fails") {
             REQUIRE(run_semantic_analysis_visitor(nmodl_text));
         }
     }
