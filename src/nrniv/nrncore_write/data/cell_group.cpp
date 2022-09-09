@@ -80,7 +80,6 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                 // The old code says this should always be a voltage, and
                 // voltage is the thing we are moving to a new data structure,
                 // so we should not be hitting the backwards-compatibility layer
-                assert(ps->thvar_.refers_to_a_modern_data_structure());
                 if (!ps->thvar_.refers_to<neuron::container::Node::field::Voltage>(
                         neuron::model().node_data())) {
                     hoc_execerr_ext("NetCon range variable reference source not a voltage");
