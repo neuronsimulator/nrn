@@ -63,7 +63,7 @@ extern int lexcontext;
 %token	<qp>	FROM TO BY WHILE IF ELSE START1 STEP SENS SOLVEFOR
 %token	<qp>	PROCEDURE PARTIAL DEL DEL2 DEFINE1 IFERROR
 %token	<qp>	DERFUNC EQUATION TERMINAL LINEAR NONLINEAR FUNCTION1 LOCAL
-%token	<qp>	METHOD LIN1 NONLIN1 PUTQ GETQ FUNCTION_TABLE
+%token	<qp>	METHOD LIN1 NONLIN1 FUNCTION_TABLE
 %token	<qp>	INCLUDE1 PROTECT
 %token	<qp>	'{' '}' '(' ')' '[' ']' '@' '+' '*' '-' '/' '=' '^' ':' ','
 %token	<qp>	'~'
@@ -93,7 +93,7 @@ extern int lexcontext;
 %type	<qp>	watchstmt watch1
 %type	<qp>	eqnblk terminalblk sens compartlist ldifuslist longdifus
 %type	<qp>	conserve compart namelist optnamelist kineticblk reaction react consreact
-%type	<qp>	lagstmt queuestmt matchblk matchlist match matchname
+%type	<qp>	lagstmt matchblk matchlist match matchname
 %type	<qp>	unitblk unitflag unitbody unitdef Units factordef include1
 
 /* interface to NEURON */
@@ -409,7 +409,6 @@ stmt:	asgn
 	| lagstmt
 	| tablestmt
 	| pareqn
-	| queuestmt
 	| RESET
 	| matchblk
 	| unitflag
@@ -807,9 +806,6 @@ tablst: /*Nothing*/
 dependlst: /*Nothing*/
 		{$$ = ITEM0;}
 	| DEPEND namelist
-	;
-queuestmt: PUTQ name
-	| GETQ name
 	;
 matchblk: MATCH '{' matchlist '}'
 	;

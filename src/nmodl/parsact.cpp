@@ -477,33 +477,6 @@ void lag_stmt(Item* q1, int blocktype) /* LAG name1 BY name2 */
     replacstr(q1, buf);
 }
 
-void queue_stmt(Item* q1, Item* q2) {
-    Symbol* s;
-    static int first = 1;
-
-    if (first) {
-        first = 0;
-        Linsertstr(initfunc, "initqueue();\n");
-    }
-    if (SYM(q1)->type == PUTQ) {
-        replacstr(q1, "enqueue(");
-    } else {
-        replacstr(q1, "dequeue(");
-    }
-
-    s = SYM(q2);
-    s->usage |= DEP;
-    if (!(s->subtype)) {
-        diag(s->name, "not declared");
-    }
-    if (s->subtype & ARRAY) {
-        Sprintf(buf, "%s, %d);\n", s->name, s->araydim);
-    } else {
-        Sprintf(buf, "&(%s), 1);\n", s->name);
-    }
-    replacstr(q2, buf);
-}
-
 void add_reset_args(Item* q) {
     static int reset_fun_cnt = 0;
 
