@@ -14,13 +14,11 @@
 
 #undef nodelist
 #undef nodeindices
-#undef data
 #undef pdata
 #undef prop
 #undef nodecount
 #undef pval
 
-#undef type
 #undef id
 
 #endif

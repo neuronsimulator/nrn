@@ -698,13 +698,13 @@ static Node* node_clone(Node* nd1) {
 #endif
     NODEV(nd2) = NODEV(nd1);
     for (p1 = nd1->prop; p1; p1 = p1->next) {
-        if (!memb_func[p1->type].is_point) {
-            p2 = prop_alloc(&(nd2->prop), p1->type, nd2);
+        if (!memb_func[p1->_type].is_point) {
+            p2 = prop_alloc(&(nd2->prop), p1->_type, nd2);
             if (p2->ob) {
                 Symbol *s, *ps;
                 double *px, *py;
                 int j, jmax;
-                s = memb_func[p1->type].sym;
+                s = memb_func[p1->_type].sym;
                 jmax = s->s_varn;
                 for (j = 0; j < jmax; ++j) {
                     ps = s->u.ppsym[j];
@@ -725,12 +725,12 @@ static Node* node_clone(Node* nd1) {
     /* in case the user defined an explicit ion_style, make sure
        the new node has the same style for all ions. */
     for (p1 = nd1->prop; p1; p1 = p1->next) {
-        if (nrn_is_ion(p1->type)) {
+        if (nrn_is_ion(p1->_type)) {
             p2 = nd2->prop;
-            while (p2 && p2->type != p1->type) {
+            while (p2 && p2->_type != p1->_type) {
                 p2 = p2->next;
             }
-            assert(p2 && p1->type == p2->type);
+            assert(p2 && p1->_type == p2->_type);
             p2->dparam[0].i = p1->dparam[0].i;
         }
     }

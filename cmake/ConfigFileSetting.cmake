@@ -60,11 +60,16 @@ endif()
 # separated 'option=value' where value differs from the default value.
 # ~~~
 set(neuron_config_args "cmake option default differences:")
+set(neuron_config_args_all)
 foreach(_name ${NRN_OPTION_NAME_LIST})
   if(NOT ("${${_name}}" STREQUAL "${${_name}_DEFAULT}"))
     string(APPEND neuron_config_args " '${_name}=${${_name}}'")
   endif()
+  string(REPLACE ";" "\\;" escaped_value "${${_name}}")
+  string(REPLACE "\"" "\\\"" escaped_value "${escaped_value}")
+  list(APPEND neuron_config_args_all "{\"${_name}\", \"${escaped_value}\"}")
 endforeach()
+string(JOIN ",\n  " neuron_config_args_all ${neuron_config_args_all})
 
 # =============================================================================
 # Platform specific options (get expanded to comments)
@@ -309,7 +314,7 @@ endif()
 
 # Prepare some variables for @VAR@ expansion in setup.py.in (nrnpython and rx3d)
 set(NRN_COMPILE_FLAGS_QUOTED ${NRN_COMPILE_FLAGS})
-set(NRN_LINK_FLAGS_QUOTED ${NRN_LINK_FLAGS})
+set(NRN_LINK_FLAGS_QUOTED ${NRN_LINK_FLAGS} ${NRN_LINK_FLAGS_FOR_ENTRY_POINTS})
 list(TRANSFORM NRN_COMPILE_FLAGS_QUOTED APPEND "'")
 list(TRANSFORM NRN_COMPILE_FLAGS_QUOTED PREPEND "'")
 list(TRANSFORM NRN_LINK_FLAGS_QUOTED APPEND "'")

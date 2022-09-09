@@ -4,7 +4,7 @@ from neuron.expect_hocerr import expect_hocerr, expect_err, set_quiet
 
 import numpy as np
 
-from neuron import h, hoc
+from neuron import config, h, hoc
 
 
 def test_soma():
@@ -382,13 +382,8 @@ def test_nosection():
 
 def test_nrn_mallinfo():
     # figure out if ASan was enabled, see comment in unit_test.cpp
-    cmake_args = h.nrnversion(6)
-    if re.search("'NRN_SANITIZERS=[a-z,]*address[a-z,]*'", cmake_args):
-        print(
-            "Skipping nrn_mallinfo checks because ASan was enabled ({})".format(
-                cmake_args
-            )
-        )
+    if "address" in config.arguments["NRN_SANITIZERS"]:
+        print("Skipping nrn_mallinfo checks because ASan was enabled")
         return
     assert h.nrn_mallinfo(0) > 0
 

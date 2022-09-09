@@ -225,9 +225,9 @@ static void delete_imped_info() {
 static bool non_vsrc_setinfo(sgid_t ssid, Node* nd, double* pv) {
     for (Prop* p = nd->prop; p; p = p->next) {
         if (pv >= p->param && pv < (p->param + p->param_size)) {
-            non_vsrc_update_info_[ssid] = std::pair<int, int>(p->type, pv - p->param);
-            // printf("non_vsrc_setinfo %p %d %ld %s\n", pv, p->type, pv-p->param,
-            // memb_func[p->type].sym->name);
+            non_vsrc_update_info_[ssid] = std::pair<int, int>(p->_type, pv - p->param);
+            // printf("non_vsrc_setinfo %p %d %ld %s\n", pv, p->_type, pv-p->param,
+            // memb_func[p->_type].sym->name);
             return true;
         }
     }
@@ -236,7 +236,7 @@ static bool non_vsrc_setinfo(sgid_t ssid, Node* nd, double* pv) {
 
 static double* non_vsrc_update(Node* nd, int type, int ix) {
     for (Prop* p = nd->prop; p; p = p->next) {
-        if (type == p->type) {
+        if (type == p->_type) {
             return p->param + ix;
         }
     }
@@ -953,7 +953,7 @@ void pargap_jacobi_setup(int mode) {
                         "to the POINT_PROCESS",
                         0);
                 }
-                int type = pp->prop->type;
+                int type = pp->prop->_type;
                 if (imped_current_type_count_ == 0) {
                     imped_current_type_count_ = 1;
                     imped_current_type_ = new int[5];
@@ -1181,9 +1181,9 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
             Point_process* pp = target_pntlist_[i];
             NrnThread* nt = (NrnThread*) pp->_vnt;
             int tid = nt ? nt->id : 0;
-            int type = pp->prop->type;
+            int type = pp->prop->_type;
             Memb_list& ml = *(nrn_threads[tid]._ml_list[type]);
-            int ix = targets_[i] - ml.data[0];
+            int ix = targets_[i] - ml._data[0];
 
             auto& g = gi[tid];
             g.tar_sid.push_back(sid);
@@ -1209,7 +1209,7 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
                 double* d = non_vsrc_update(nd, type, ix);
                 NrnThread* nt = nd->_nt ? nd->_nt : nrn_threads;
                 Memb_list& ml = *nt->_ml_list[type];
-                ix = d - ml.data[0];
+                ix = d - ml._data[0];
             } else {  // is a voltage source
                 ix = nd->_v - nrn_threads[tid]._actual_v;
                 assert(nd->extnode == NULL);  // only if v

@@ -48,7 +48,7 @@ extern "C" void* hoc_Emalloc(size_t size);
 extern "C" void hoc_malchk();
 // olupton 2022-05-30: This has to have C linkage for now because it is used in
 //                     abort.c and praxis.c
-extern "C" void hoc_execerror(const char*, const char*);
+extern "C" [[noreturn]] void hoc_execerror(const char*, const char*);
 void hoc_execerr_ext(const char* fmt, ...);
 char* hoc_object_name(Object*);
 void hoc_retpushx(double);
@@ -145,7 +145,7 @@ char** hoc_strpop();
 int hoc_ipop();
 void hoc_nopop();
 
-void hoc_execerror_mes(const char*, const char*, int);
+[[noreturn]] void hoc_execerror_mes(const char*, const char*, int);
 void hoc_warning(const char*, const char*);
 double* hoc_val_pointer(const char*);
 Symbol* hoc_table_lookup(const char*, Symlist*);

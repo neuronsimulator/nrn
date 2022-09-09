@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <nrnmpiuse.h>
+#include "nrn_ansi.h"
 #include "oc_ansi.h"
 #include <stdio.h>
 #include <errno.h>
@@ -318,7 +319,6 @@ void hoc_last_init(void) {
 
     if (nrnmpi_myid < 1)
         if (nrn_nobanner_ == 0) {
-            extern char* nrn_version(int i);
             Fprintf(stderr, "%s\n", nrn_version(1));
             Fprintf(stderr, "%s\n", banner);
             IGNORE(fflush(stderr));
@@ -1005,7 +1005,7 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
                     into the p->param array */
                 assert(p);
                 /* need to find symbol for this */
-                msym = memb_func[p->type].sym;
+                msym = memb_func[p->_type].sym;
                 for (j = 0; j < msym->s_varn; ++j) {
                     vsym = msym->u.ppsym[j];
                     if (vsym->type == RANGEVAR && vsym->u.rng.index == index) {

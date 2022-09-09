@@ -191,6 +191,8 @@ no longer adequate for saying we can not */
 #endif
     chk_thread_safe();
     chk_global_state();
+    check_useion_variables();
+
     parout(); /* print .var file.
                * Also #defines which used to be in defs.h
                * are printed into .c file at beginning.

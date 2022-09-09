@@ -15,7 +15,7 @@ struct Memb_list {
      * cache-efficient */
     int* nodeindices;
 #endif /* CACHEVEC */
-    double** data;
+    double** _data;
     Datum** pdata;
     Prop** prop;
     Datum* _thread; /* thread specific data (when static is no good) */

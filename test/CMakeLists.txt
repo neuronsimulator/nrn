@@ -233,8 +233,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     PROCESSORS 2
     REQUIRES mpi
     SCRIPT_PATTERNS test/parallel_tests/test_bas.py
-    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} nrniv
-            ${MPIEXEC_POSTFLAGS} -mpi -python test/parallel_tests/test_bas.py)
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/parallel_tests/test_bas.py)
   # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude
   # workaround.
   if(CORENRN_ENABLE_REPORTING)
@@ -243,13 +243,12 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     # see #1619, required when coreneuron is linked to sonata library
     set(sonata_zero_gid_env LIBSONATA_ZERO_BASED_GIDS=1)
   endif()
-  # When GPU support is enabled then CoreNEURON is linked statically (libcorenrnmech.a) and cannot
-  # be dynamically loaded by Python or nrniv. In that case (and only in that case, so we still test
-  # the dynamic loading) then launch the tests with `special [-python]`. If you consider changing
-  # how ${modtests_launch_py_mpi} is constructed (notably the use of ${MPIEXEC_NAME} instead of
+  # If CoreNEURON is linked statically then it cannot be dynamically loaded by Python or nrniv, so
+  # we need to launch tests with `special [-python]`. If you consider changing how
+  # ${modtests_launch_py_mpi} is constructed (notably the use of ${MPIEXEC_NAME} instead of
   # ${MPIEXEC}) then first refer to GitHub issue #894 and note that nrn_add_test prefixes the
   # command with ${CMAKE_COMMAND} -E env.
-  if(${CORENRN_ENABLE_GPU})
+  if(NOT CORENRN_ENABLE_SHARED)
     # ${nrniv_mpi_arg} is not enough here, it crashes without -mpi even if CoreNEURON reports are
     # disabled.
     set(modtests_launch_hoc special -notatty -mpi)
@@ -258,6 +257,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${MPIEXEC_NAME}
         ${MPIEXEC_NUMPROC_FLAG}
         2
+        ${MPIEXEC_OVERSUBSCRIBE}
         ${MPIEXEC_PREFLAGS}
         special
         ${MPIEXEC_POSTFLAGS}
@@ -267,13 +267,21 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     set(modtests_preload_sanitizer PRELOAD_SANITIZER)
     set(modtests_launch_py ${PYTHON_EXECUTABLE} ${pytest})
     set(modtests_launch_hoc nrniv ${nrniv_mpi_arg})
-    set(modtests_launch_py_mpi ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
-                               ${PYTHON_EXECUTABLE})
+    set(modtests_launch_py_mpi
+        ${MPIEXEC_NAME}
+        ${MPIEXEC_NUMPROC_FLAG}
+        2
+        ${MPIEXEC_OVERSUBSCRIBE}
+        ${MPIEXEC_PREFLAGS}
+        ${PYTHON_EXECUTABLE}
+        ${MPIEXEC_POSTFLAGS})
   endif()
 
   # External coreneuron can be used for testing but for simplicity we are testing only submodule
-  # builds (in near future we want to support only internal builds anyway)
-  if(NOT nrn_using_ext_corenrn)
+  # builds (in near future we want to support only internal builds anyway). This test uses the
+  # standard NEURON installation that does not have a `special` statically linked against
+  # CoreNEURON, so we cannot run this in static builds.
+  if(NOT nrn_using_ext_corenrn AND CORENRN_ENABLE_SHARED)
     nrn_add_test_group(
       CORENEURON
       NAME coreneuron_standalone
@@ -283,10 +291,6 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP coreneuron_standalone
       NAME test_nrn_corenrn_standalone
       REQUIRES coreneuron ${modtests_preload_sanitizer}
-      # In a GPU build ${modtests_launch_py} needs to be a statically-linked `special`. As a
-      # standard NEURON installation doesn't include `special` but only `nrniv` (without link to
-      # `libcorenrnmech.a`), we can not run this test on GPUs.
-      CONFLICTS gpu
       SCRIPT_PATTERNS test/coreneuron/test_psolve.py
       ENVIRONMENT COVERAGE_FILE=.coverage.coreneuron_standalone_test_psolve_py
                   ${sonata_zero_gid_env} ${nrnpython_mpi_env}
@@ -445,6 +449,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
             ${MPIEXEC_NAME}
             ${MPIEXEC_NUMPROC_FLAG}
             2
+            ${MPIEXEC_OVERSUBSCRIBE}
             ${MPIEXEC_PREFLAGS}
             special
             ${MPIEXEC_POSTFLAGS}
@@ -466,8 +471,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
         PROCESSORS 2
         COMMAND
-          ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special
-          ${MPIEXEC_POSTFLAGS} -mpi -python
+          ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+          special ${MPIEXEC_POSTFLAGS} -mpi -python
           ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
     endif()
   endforeach()
