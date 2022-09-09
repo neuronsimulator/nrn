@@ -7,6 +7,7 @@
 #include "classreg.h"
 #include "kschan.h"
 #include "kssingle.h"
+#include "ocnotify.h"
 #include "parse.hpp"
 #include "nrniv_mf.h"
 
