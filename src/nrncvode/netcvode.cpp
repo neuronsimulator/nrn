@@ -5050,6 +5050,19 @@ void NetCvode::p_construct(int n) {
 PreSyn::PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section* ssrc)
     : thvar_{std::move(src)} {
     //	printf("Presyn %x %s\n", (long)this, osrc?hoc_object_name(osrc):"nil");
+    if (thvar_ &&
+        (!thvar_.refers_to_a_modern_data_structure() ||
+         !thvar_.refers_to<neuron::container::Node::field::Voltage>(neuron::model().node_data()))) {
+        std::ostringstream oss;
+        oss << "PreSyn::PreSyn(src=" << thvar_ << ", osrc=";
+        if (osrc) {
+            oss << hoc_object_name(osrc);
+        } else {
+            oss << nullptr;
+        }
+        oss << ", ssrc=" << ssrc << ") src is not a voltage";
+        hoc_execerror(oss.str().c_str(), nullptr);
+    }
     PreSynSave::invalid();
     hi_index_ = -1;
     hi_th_ = nil;
