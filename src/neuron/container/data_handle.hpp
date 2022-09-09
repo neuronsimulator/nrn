@@ -219,6 +219,8 @@ struct data_handle<void> {
     }
 
   private:
+    friend struct generic_data_handle;
+    friend struct std::hash<data_handle<void>>;
     void* m_raw_ptr;
 };
 
@@ -238,5 +240,13 @@ struct std::hash<neuron::container::data_handle<T>> {
             return std::hash<neuron::container::identifier_base>{}(s.m_offset) ^
                    reinterpret_cast<std::size_t>(s.m_container);
         }
+    }
+};
+
+template <>
+struct std::hash<neuron::container::data_handle<void>> {
+    std::size_t operator()(neuron::container::data_handle<void> const& s) const noexcept {
+        static_assert(sizeof(std::size_t) == sizeof(void*));
+        return reinterpret_cast<std::size_t>(s.m_raw_ptr);
     }
 };
