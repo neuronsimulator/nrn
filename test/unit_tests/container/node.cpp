@@ -153,10 +153,9 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
             REQUIRE_THROWS(static_cast<data_handle<int>>(null_handle));
         }
         THEN("Check it has the expected string representation") {
-            std::ostringstream actual, expected;
+            std::ostringstream actual;
             actual << null_handle;
-            expected << "generic_data_handle{raw=" << nullptr << ", type=double}";
-            REQUIRE(actual.str() == expected.str());
+            REQUIRE(actual.str() == "generic_data_handle{raw=nullptr, type=double}");
         }
     }
     GIVEN("A handle wrapping a raw pointer (compatibility mode)") {
