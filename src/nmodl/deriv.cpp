@@ -111,13 +111,13 @@ void solv_diffeq(Item* qsol,
                     thread_data_index + 3);
             vectorize_substitute(q, buf);
             Sprintf(buf,
-                    "  _thread[_dith%d]._pval = (double*)ecalloc(%d, sizeof(double));\n",
+                    "  nrn_set_pval(_thread[_dith%d], (double*)ecalloc(%d, sizeof(double)));\n",
                     listnum,
                     2 * numeqn);
             lappendstr(thread_mem_init_list, buf);
             Sprintf(buf, "  _newtonspace%d = nrn_cons_newtonspace(%d);\n", listnum, numeqn);
             lappendstr(thread_mem_init_list, buf);
-            Sprintf(buf, "  free((void*)(_thread[_dith%d]._pval));\n", listnum);
+            Sprintf(buf, "  free(nrn_get_pval(_thread[_dith%d]));\n", listnum);
             lappendstr(thread_cleanup_list, buf);
             Sprintf(buf,
                     "  nrn_destroy_newtonspace(static_cast<NewtonSpace*>(_newtonspace%d));\n",

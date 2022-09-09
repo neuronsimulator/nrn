@@ -171,8 +171,8 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
     Insertstr(q4, "}");
     q = insertstr(q3, "{ static int _recurse = 0;\n int _counte = -1;\n");
     sprintf(buf,
-            "{ double* _savstate%d = _thread[_dith%d]._pval;\n\
- double* _dlist%d = _thread[_dith%d]._pval + %d;\n int _counte = -1;\n",
+            "{ double* _savstate%d = nrn_get_pval(_thread[_dith%d]);\n\
+ double* _dlist%d = nrn_get_pval(_thread[_dith%d]) + %d;\n int _counte = -1;\n",
             numlist - 1,
             numlist - 1,
             numlist,
