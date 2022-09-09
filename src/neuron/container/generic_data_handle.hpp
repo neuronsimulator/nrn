@@ -31,8 +31,13 @@ struct generic_data_handle {
                                      cxx_demangle(typeid(T).name()) + ">");
         }
         if (m_offset) {
-            // A real and still-valid data handle
-            return {m_offset, *static_cast<std::vector<T>*>(m_container)};
+            if constexpr (std::is_same_v<T, void>) {
+                throw std::runtime_error(
+                    "generic_data_handle referring to void should never be in 'modern' mode.");
+            } else {
+                // A real and still-valid data handle
+                return {m_offset, *static_cast<std::vector<T>*>(m_container)};
+            }
         } else if (m_offset.m_ptr) {
             // This used to be a valid data handle, but it has since been
             // invalidated. Invalid data handles never become valid again.
