@@ -16,6 +16,7 @@ struct data_handle;
  *  This is a type-erased version of data_handle<T>.
  */
 struct generic_data_handle {
+    generic_data_handle() = default;
     template <typename T>
     explicit generic_data_handle(data_handle<T> const& handle)
         : m_offset{handle.m_raw_ptr ? nullptr : handle.m_offset.m_ptr}
@@ -25,12 +26,14 @@ struct generic_data_handle {
 
     template <typename T>
     explicit operator data_handle<T> const() {
-        if (std::type_index{typeid(T)} != m_type) {
+        bool const is_typeless_null{m_type == std::type_index{typeid(typeless_null)}};
+        if (!is_typeless_null && std::type_index{typeid(T)} != m_type) {
             throw std::runtime_error("Cannot convert generic_data_handle(" +
                                      cxx_demangle(m_type.name()) + ") to data_handle<" +
                                      cxx_demangle(typeid(T).name()) + ">");
         }
         if (m_offset) {
+            assert(!is_typeless_null);
             if constexpr (std::is_same_v<T, void>) {
                 throw std::runtime_error(
                     "generic_data_handle referring to void should never be in 'modern' mode.");
@@ -39,6 +42,7 @@ struct generic_data_handle {
                 return {m_offset, *static_cast<std::vector<T>*>(m_container)};
             }
         } else if (m_offset.m_ptr) {
+            assert(!is_typeless_null);
             // This used to be a valid data handle, but it has since been
             // invalidated. Invalid data handles never become valid again.
             return {};
@@ -79,7 +83,12 @@ struct generic_data_handle {
         if (maybe_info) {
             os << "cont=" << maybe_info->name << ' ' << dh.m_offset << '/' << maybe_info->size;
         } else {
-            os << "raw=" << dh.m_container;
+            os << "raw=";
+            if (dh.m_container) {
+                os << dh.m_container;
+            } else {
+                os << nullptr;
+            }
         }
         return os << ", type=" << cxx_demangle(dh.m_type.name()) << '}';
     }
@@ -97,8 +106,14 @@ struct generic_data_handle {
     // std::vector<T>* for the T encoded in m_type if m_offset is non-null,
     // otherwise T*
     void* m_container{};
-    // Reference to typeid(T) for the
-    std::type_index m_type;
+    // Helper type used to flag when the value contains a "typeless" null value,
+    // for example after being default constructed. Attempting to convert a
+    // typeless null to some T* returns a null pointer of type T*, whereas (for
+    // example), converting a wrapped null void* to T* would give an error if T
+    // is not void.
+    struct typeless_null {};
+    // Reference to typeid(T) for the wrapped type
+    std::type_index m_type{typeid(typeless_null)};
 };
 
 }  // namespace neuron::container
