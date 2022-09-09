@@ -87,7 +87,7 @@ struct generic_data_handle {
             if (dh.m_container) {
                 os << dh.m_container;
             } else {
-                os << nullptr;
+                os << "nullptr";
             }
         }
         return os << ", type=" << cxx_demangle(dh.m_type.name()) << '}';
