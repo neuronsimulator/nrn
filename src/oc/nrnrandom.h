@@ -1,6 +1,5 @@
 #pragma once
-// Definition of Rand
-#include "random1.h"
+#include "random1_fwd.h"
 
 #include <stdint.h>
 
