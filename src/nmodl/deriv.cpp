@@ -98,10 +98,10 @@ void solv_diffeq(Item* qsol,
             Sprintf(buf, "static int _deriv%d_advance = 0;\n", listnum);
             q = linsertstr(procfunc, buf);
             Sprintf(buf,
-                    "\n#define _deriv%d_advance _thread[%d].literal_value<int>()\n"
+                    "\n#define _deriv%d_advance _thread[%d]._i\n"
                     "#define _dith%d %d\n"
-                    "#define _recurse _thread[%d].literal_value<int>()\n"
-                    "#define _newtonspace%d _thread[%d].literal_value<NewtonSpace*>()\n",
+                    "#define _recurse _thread[%d]._i\n"
+                    "#define _newtonspace%d _thread[%d]._pvoid\n",
                     listnum,
                     thread_data_index,
                     listnum,
@@ -110,13 +110,18 @@ void solv_diffeq(Item* qsol,
                     listnum,
                     thread_data_index + 3);
             vectorize_substitute(q, buf);
-            Sprintf(buf, "  _thread[_dith%d] = new double[%d]{};\n", listnum, 2 * numeqn);
+            Sprintf(buf,
+                    "  nrn_set_pval(_thread[_dith%d], (double*)ecalloc(%d, sizeof(double)));\n",
+                    listnum,
+                    2 * numeqn);
             lappendstr(thread_mem_init_list, buf);
             Sprintf(buf, "  _newtonspace%d = nrn_cons_newtonspace(%d);\n", listnum, numeqn);
             lappendstr(thread_mem_init_list, buf);
-            Sprintf(buf, "  delete[] _thread[_dith%d].get<double*>();\n", listnum);
+            Sprintf(buf, "  free(nrn_get_pval(_thread[_dith%d]));\n", listnum);
             lappendstr(thread_cleanup_list, buf);
-            Sprintf(buf, "  nrn_destroy_newtonspace(_newtonspace%d);\n", listnum);
+            Sprintf(buf,
+                    "  nrn_destroy_newtonspace(static_cast<NewtonSpace*>(_newtonspace%d));\n",
+                    listnum);
             lappendstr(thread_cleanup_list, buf);
             thread_data_index += 4;
         } else {
