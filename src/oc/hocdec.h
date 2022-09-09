@@ -156,24 +156,35 @@ union Datum { /* interpreter stack type */
     hoc_Item* itm;
     hoc_List* lst;
     void* _pvoid; /* not used on stack, see nrnoc/point.cpp */
-    // Used to store data_handle<T> on the stack. TODO: fix things so that this
-    // can be stored by value...
+    // Used to store data_handle<T> on the stack and POINTER variables in
+    // mechanisms. TODO: fix things so that this can be stored by value, or at
+    // least so that memory management is automatic
     neuron::container::generic_data_handle* generic_handle;
 };
 // Temporary, deprecate these
 inline neuron::container::generic_data_handle& nrn_get_any(Datum& datum) {
+    // DANGER DANGER this family of methods blindly assumes that generic_handle
+    // is always the active member of the Datum union.
+    if (!datum.generic_handle) {
+        // DANGER DANGER leak
+        datum.generic_handle = new neuron::container::generic_data_handle{};
+    }
     return *datum.generic_handle;
 }
 inline double* nrn_get_pval(Datum& datum) {
     return static_cast<double*>(nrn_get_any(datum));
-    // return
-    // static_cast<double*>(static_cast<neuron::container::data_handle<double>>(*datum.generic_handle));
 }
 template <typename T>
-inline void nrn_set_pval(Datum& datum, T* pval) {
-    // big leak!
-    datum.generic_handle = new neuron::container::generic_data_handle{
-        neuron::container::data_handle<T>{pval}};
+void nrn_set_handle(Datum& datum, neuron::container::data_handle<T> dh) {
+    if (!datum.generic_handle) {
+        // DANGER DANGER leak
+        datum.generic_handle = new neuron::container::generic_data_handle{};
+    }
+    *datum.generic_handle = std::move(dh);
+}
+template <typename T>
+void nrn_set_pval(Datum& datum, T* pval) {
+    nrn_set_handle(datum, neuron::container::data_handle<T>{pval});
 }
 
 struct cTemplate {
