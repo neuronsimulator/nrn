@@ -306,7 +306,11 @@ static PyObject* hocobj_name(PyObject* pself, PyObject* args) {
     } else if (self->type_ == PyHoc::HocSectionListIterator) {
         sprintf(cp, "<SectionList iterator>");
     } else if (self->type_ == PyHoc::HocScalarPtr) {
-        sprintf(cp, "<pointer to hoc scalar %g>", self->u.px_ ? *self->u.px_ : -1e100);
+        if (self->u.px_) {
+            sprintf(cp, "<pointer to hoc scalar %g>", *self->u.px_);
+        } else {
+            sprintf(cp, "<pointer to hoc scalar (Invalid)>");
+        }
     } else if (self->type_ == PyHoc::HocArrayIncomplete) {
         sprintf(cp, "<incomplete pointer to hoc array %s>", self->sym_->name);
     } else {
@@ -373,6 +377,9 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
             } else if (tp == PyHoc::HocRefObj) {
                 hoc_pushobj(&pho->u.ho_);
             } else if (tp == PyHoc::HocScalarPtr) {
+                if (!pho->u.px_) {
+                    hoc_execerr_ext("Invalid pointer (arg %d)", i);
+                }
                 hoc_push(pho->u.px_);
             } else if (tp == PyHoc::HocRefPStr) {
                 hoc_pushstr(pho->u.pstr_);
