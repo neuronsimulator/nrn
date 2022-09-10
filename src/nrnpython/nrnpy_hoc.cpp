@@ -388,6 +388,9 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
             } else if (tp == PyHoc::HocRefObj) {
                 hoc_pushobj(&pho->u.ho_);
             } else if (tp == PyHoc::HocScalarPtr) {
+                if (!pho->u.px_) {
+                    hoc_execerr_ext("Invalid pointer (arg %d)", i);
+                }
                 hoc_push(pho->u.px_);
             } else if (tp == PyHoc::HocRefPStr) {
                 hoc_pushstr(pho->u.pstr_);

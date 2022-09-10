@@ -51,8 +51,20 @@ def test_2():
     locals()
 
 
+def test_3():
+    a = h.Section(name="axon")
+    a.nseg = 5
+    pv = a(0.1)._ref_v
+    a.nseg = 1
+    v = h.Vector()
+    expect_err("v.record(pv, v, sec=a)")
+    del v, a
+    locals()
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_1()
     test_2()
+    test_3()
     h.topology()
