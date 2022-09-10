@@ -208,7 +208,7 @@ struct data_handle<void> {
     explicit operator void*() {
         return m_raw_ptr;
     }
-    explicit operator void const *() const {
+    explicit operator void const*() const {
         return m_raw_ptr;
     }
     friend std::ostream& operator<<(std::ostream& os, data_handle<void> const& dh) {
