@@ -5,7 +5,10 @@ class Cell:
     section = None
     record_vectors = {}
 
-    def create_cell(self):
+    def __init__(self):
+        self._create_cell()
+
+    def _create_cell(self):
         pass
 
     def create_circuit(self):
@@ -26,3 +29,6 @@ class Cell:
             values = self.record_vectors[variable]
             for i in range(0,len(values)):
                 print("{} {}".format(i, values[i]))
+
+    def __del__(self):
+        self.record_vectors.clear()

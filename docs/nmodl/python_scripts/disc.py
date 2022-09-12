@@ -5,7 +5,7 @@ from utils.cell import Cell
 
 class DiscCell(Cell):
 
-    def create_cell(self):
+    def _create_cell(self):
         self.section = h.Section()
         self.section.insert("disc")
         h.k_disc = 0.1
@@ -20,7 +20,7 @@ class DiscCell(Cell):
 
 if __name__ == '__main__':
     disc_cell = DiscCell()
-    disc_cell.create_cell()
     disc_cell.record()
     disc_cell.simulate(1, 0.1)
     disc_cell.output()
+    del disc_cell

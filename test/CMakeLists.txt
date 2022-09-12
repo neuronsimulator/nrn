@@ -345,7 +345,6 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       "test/coreneuron/mod files/*.mod" "test/coreneuron/mod files/axial.inc"
       test/pynrn/unitstest.mod test/pynrn/version_macros.mod test/gjtests/natrans.mod)
   nrn_add_test_group(
-    CORENEURON
     NAME nmodl_tests
     # This get used in 4 tests so make it the default and override in other tests.
     SCRIPT_PATTERNS test/nmodl/*.py
@@ -370,6 +369,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       SCRIPT_PATTERNS test/nmodl/test_table.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
       COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
+    nrn_add_test(
+      GROUP nmodl_tests
+      NAME test_disc_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/nmodl/test_disc.py
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+      COMMAND ${modtests_launch_py} test/nmodl/test_disc.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME fornetcon_py_${processor}

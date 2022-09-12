@@ -4,7 +4,6 @@ from table import TableCell
 
 def test_table():
     table_cell = TableCell()
-    table_cell.create_cell()
     table_cell.record()
     table_cell.simulate(1, 0.1)
 
