@@ -180,13 +180,16 @@ SCENARIO("Check instance variable definition order", "[codegen][var_order]") {
     // In the below mod file, ion variables ncai and lcai are declared
     // as state variables as well as range variables. The issue about
     // this mod file ordering was fixed in #443.
+    // We also use example from #888 where mod file declared `g` as a
+    // conductance variable in a non-threadsafe mod file and resulting
+    // into duplicate definition of `g` in the instance structure.
     GIVEN("ccanl.mod: mod file from reduced_dentate model") {
         std::string nmodl_text = R"(
             NEURON {
               SUFFIX ccanl
               USEION nca READ ncai, inca, enca WRITE enca, ncai VALENCE 2
               USEION lca READ lcai, ilca, elca WRITE elca, lcai VALENCE 2
-              RANGE caiinf, catau, cai, ncai, lcai, eca, elca, enca
+              RANGE caiinf, catau, cai, ncai, lcai, eca, elca, enca, g
             }
             UNITS {
               FARADAY = 96520(coul)
@@ -207,11 +210,14 @@ SCENARIO("Check instance variable definition order", "[codegen][var_order]") {
               enca(mV)
               elca(mV)
               eca(mV)
+              g(S/cm2)
             }
             STATE {
               ncai(mM)
               lcai(mM)
             }
+            BREAKPOINT {}
+            DISCRETE seq {}
         )";
 
         THEN("Ion variables are defined in the order of USEION") {
@@ -229,16 +235,16 @@ SCENARIO("Check instance variable definition order", "[codegen][var_order]") {
                     inst->caiinf = ml->data+1*pnodecount;
                     inst->cai = ml->data+2*pnodecount;
                     inst->eca = ml->data+3*pnodecount;
-                    inst->ica = ml->data+4*pnodecount;
-                    inst->inca = ml->data+5*pnodecount;
-                    inst->ilca = ml->data+6*pnodecount;
-                    inst->enca = ml->data+7*pnodecount;
-                    inst->elca = ml->data+8*pnodecount;
-                    inst->ncai = ml->data+9*pnodecount;
-                    inst->Dncai = ml->data+10*pnodecount;
-                    inst->lcai = ml->data+11*pnodecount;
-                    inst->Dlcai = ml->data+12*pnodecount;
-                    inst->v_unused = ml->data+13*pnodecount;
+                    inst->g = ml->data+4*pnodecount;
+                    inst->ica = ml->data+5*pnodecount;
+                    inst->inca = ml->data+6*pnodecount;
+                    inst->ilca = ml->data+7*pnodecount;
+                    inst->enca = ml->data+8*pnodecount;
+                    inst->elca = ml->data+9*pnodecount;
+                    inst->ncai = ml->data+10*pnodecount;
+                    inst->Dncai = ml->data+11*pnodecount;
+                    inst->lcai = ml->data+12*pnodecount;
+                    inst->Dlcai = ml->data+13*pnodecount;
                     inst->ion_ncai = nt->_data;
                     inst->ion_inca = nt->_data;
                     inst->ion_enca = nt->_data;
