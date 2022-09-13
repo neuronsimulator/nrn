@@ -857,11 +857,20 @@ std::vector<SymbolType> CodegenCVisitor::get_float_variables() {
     if (info.vectorize) {
         variables.push_back(make_symbol(naming::VOLTAGE_UNUSED_VARIABLE));
     }
+
     if (breakpoint_exist()) {
         std::string name = info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
                                           : naming::CONDUCTANCE_VARIABLE;
-        variables.push_back(make_symbol(name));
+
+        // make sure conductance variable like `g` is not already defined
+        if (auto r = std::find_if(variables.cbegin(),
+                                  variables.cend(),
+                                  [&](const auto& s) { return name == s->get_name(); });
+            r == variables.cend()) {
+            variables.push_back(make_symbol(name));
+        }
     }
+
     if (net_receive_exist()) {
         variables.push_back(make_symbol(naming::T_SAVE_VARIABLE));
     }
@@ -4582,6 +4591,9 @@ void CodegenCVisitor::print_data_structures(bool print_initialisers) {
 }
 
 void CodegenCVisitor::print_v_unused() const {
+    if (!info.vectorize) {
+        return;
+    }
     printer->add_line("#if NRN_PRCELLSTATE");
     printer->add_line("inst->v_unused[id] = v;");
     printer->add_line("#endif");
