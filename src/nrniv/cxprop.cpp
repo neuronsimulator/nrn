@@ -387,9 +387,7 @@ void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip) {
     long i = *static_cast<neuron::container::data_handle<double>>(generic_handle);
     assert(i >= 0 && i < np->size());
     double* pvar = np->items()[i];
-    // TODO provide an assignment operator
-    generic_handle = neuron::container::generic_data_handle{
-        neuron::container::data_handle<double>{pvar + ip}};
+    generic_handle = pvar + ip;
 }
 
 
