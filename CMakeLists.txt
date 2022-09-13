@@ -828,6 +828,19 @@ foreach(
   neuron/container/view_utils.hpp)
   configure_file("src/${header}" "${PROJECT_BINARY_DIR}/include/${header}" COPYONLY)
 endforeach()
+# TODO note that NEURON and CoreNEURON both try and install these headers to the same place. At the
+# moment NEURON needs to install these because the Random123 types need to be completely defined
+# when compiling translated MOD files, because of the requirements of
+# data_handle<Random123_derived_type>.
+file(
+  GLOB_RECURSE r123_headers CONFIGURE_DEPENDS
+  LIST_DIRECTORIES OFF
+  RELATIVE "${PROJECT_SOURCE_DIR}/external/Random123/include/Random123"
+  "external/Random123/include/Random123/*.h")
+foreach(r123_header ${r123_headers})
+  configure_file("external/Random123/include/Random123/${r123_header}"
+                 "${PROJECT_BINARY_DIR}/include/Random123/${r123_header}" COPYONLY)
+endforeach()
 file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/nrnoc/nrnsemanticversion.h
      DESTINATION ${PROJECT_BINARY_DIR}/include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
