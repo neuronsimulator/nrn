@@ -81,6 +81,7 @@ struct identifier_base {
 
   private:
     friend struct generic_data_handle;
+    friend struct generic_data_handle_proxy;
     template <typename, typename...>
     friend struct soa;
     template <typename, typename>
