@@ -67,6 +67,12 @@ jobs:
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
               sanitizer: address
+          - os: macOS-12
+            config:
+              build_mode: cmake
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON
+                -DNRN_ENABLE_INTERVIEWS=OFF -DCORENRN_SANITIZERS=address
+              sanitizer: address
       fail-fast: false
 
     steps:
