@@ -308,6 +308,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         2
         ${MPIEXEC_OVERSUBSCRIBE}
         ${MPIEXEC_PREFLAGS}
+        ${preload_sanitizer_mpiexec}
         ${PYTHON_EXECUTABLE}
         ${MPIEXEC_POSTFLAGS})
   endif()
