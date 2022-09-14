@@ -7,7 +7,10 @@
 #include <vector>
 
 namespace neuron::container {
+namespace detail {
+template <bool>
 struct generic_data_handle;
+}
 
 /** @brief Stable handle to a generic value.
  *
@@ -173,7 +176,8 @@ struct data_handle {
     }
 
   private:
-    friend struct generic_data_handle;
+    template <bool>
+    friend struct detail::generic_data_handle;
     friend struct std::hash<data_handle>;
     identifier_base m_offset{};
     // This "should" be std::reference_wrapper and never null, only use a plain
@@ -219,7 +223,8 @@ struct data_handle<void> {
     }
 
   private:
-    friend struct generic_data_handle;
+    template <bool>
+    friend struct detail::generic_data_handle;
     friend struct std::hash<data_handle<void>>;
     void* m_raw_ptr;
 };

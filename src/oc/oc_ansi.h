@@ -35,7 +35,6 @@ struct Symlist;
 struct VoidFunc;
 
 namespace neuron::container {
-struct generic_data_handle;
 template <typename>
 struct data_handle;
 }  // namespace neuron::container
@@ -169,6 +168,9 @@ namespace neuron::oc::detail {
 template <>
 struct hoc_pop_helper<neuron::container::generic_data_handle> {
     /** @brief Pop a generic data handle from the HOC stack.
+     *
+     *  This function is not used from translated MOD files, so we can assume
+     *  that the generic_data_handle is not in permissive mode.
      */
     static neuron::container::generic_data_handle impl();
 };
