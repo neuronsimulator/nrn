@@ -4,6 +4,7 @@
 #include "neuron/model_data_fwd.hpp"
 
 #include <typeindex>
+#include <type_traits>
 #include <vector>
 
 namespace neuron::container {
@@ -102,7 +103,7 @@ struct generic_data_handle {
     /** @brief Reset the generic_data_handle to typeless null state.
      */
     generic_data_handle& operator=(std::nullptr_t) {
-        return (*this = {});
+        return (*this = generic_data_handle{});
     }
 
     template <typename T>
@@ -119,6 +120,11 @@ struct generic_data_handle {
         }
     }
 
+    /** @brief Deploy a compatibility hack.
+     *
+     *  See "C.166: Overload unary & only as part of a system of smart pointers
+     *  and references", this is not very nice and may be a bad idea.
+     */
     [[deprecated(
         "this is only intended to support legacy patterns in VERBATIM "
         "blocks")]] generic_data_handle_proxy
@@ -170,8 +176,7 @@ template <typename T>
 generic_data_handle_proxy::operator T**() const {
     if (m_handle.m_offset || m_handle.m_offset.m_ptr) {
         throw std::runtime_error(
-            "Cannot convert (T**)(&generic_data_handle) pattern only supported for "
-            "generic_data_handle(" +
+            "(T**)(&generic_data_handle) pattern only supported for generic_data_handle(" +
             cxx_demangle(m_handle.m_type.name()) + ") in legacy mode");
     }
     bool const is_typeless_null{m_handle.m_type ==
