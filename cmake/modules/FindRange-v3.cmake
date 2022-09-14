@@ -1,7 +1,10 @@
 include(ExternalProject)
-set(RANGE_V3_PREFIX "${THIRD_PARTY_DIRECTORY}/range-v3")
+# TODO: go back to external folder once we hide range-v3 away.
+
+# set(RANGE_V3_PREFIX "${THIRD_PARTY_DIRECTORY}/range-v3")
+set(RANGE_V3_PREFIX "${CMAKE_BINARY_DIR}")
 set(RANGE_V3_INCLUDE_DIR "${RANGE_V3_PREFIX}/include")
-make_directory(${RANGE_V3_INCLUDE_DIR})
+# make_directory(${RANGE_V3_INCLUDE_DIR})
 
 ExternalProject_Add(
   range-v3-external
@@ -15,6 +18,7 @@ ExternalProject_Add(
              -DRANGE_V3_TESTS=OFF
              -DRANGE_V3_EXAMPLES=OFF)
 add_library(range-v3 INTERFACE IMPORTED)
+# By using INTERFACE we end up with -I${RANGE_V3_INCLUDE_DIR} in nrnmech_makefile
 set_target_properties(
   range-v3 PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${RANGE_V3_INCLUDE_DIR}
                       INTERFACE_INCLUDE_DIRECTORIES ${RANGE_V3_INCLUDE_DIR})
