@@ -515,7 +515,7 @@ extern Memb_func* memb_func;\n\
             }
         }
         Sprintf(buf,
-                "  nrn_set_pval(_thread[%d], ecalloc(%d, sizeof(double)));\n",
+                "  nrn_set_pval(_thread[%d], static_cast<double*>(ecalloc(%d, sizeof(double))));\n",
                 thread_data_index,
                 cnt);
         lappendstr(thread_mem_init_list, buf);
