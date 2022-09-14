@@ -31,7 +31,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   tqperf
   GIT_REPOSITORY https://github.com/neuronsimulator/tqperf.git
-  GIT_TAG add46f2899f1cde55032aa63cda54f3941e81155
+  GIT_TAG 90097fea0f3278e35e0ca5d5ec8741971743ce93
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/tqperf)
 
 FetchContent_MakeAvailable(nrntest reduced_dentate ringtest testcorenrn tqperf)
