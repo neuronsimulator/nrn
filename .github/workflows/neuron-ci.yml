@@ -250,6 +250,9 @@ jobs:
                              -DNRN_EXTRA_MECH_CXX_FLAGS="-Wno-sometimes-uninitialized \
                                 -Wno-missing-braces")
               fi
+              if [[ "${{ startsWith(matrix.os, 'macOS') }}" = "true" ]]; then
+                cmake_args+=(-DCORENRN_ENABLE_OPENMP=OFF)
+              fi
               mkdir build && cd build
               echo "Building with: ${cmake_args[@]}"
               cmake .. "${cmake_args[@]}"
