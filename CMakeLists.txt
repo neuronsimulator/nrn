@@ -392,6 +392,8 @@ if(NOT PYTHON_EXECUTABLE)
     NO_DEFAULT_PATH)
   message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
 endif()
+# Needed for using sanitizers on macOS
+cpp_cc_strip_python_shims(EXECUTABLE "${PYTHON_EXECUTABLE}" OUTPUT PYTHON_EXECUTABLE)
 
 find_package(PythonInterp 3.7 REQUIRED)
 if(NRN_ENABLE_PYTHON)

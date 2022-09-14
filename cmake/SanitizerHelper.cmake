@@ -50,7 +50,7 @@ if(NRN_SANITIZERS)
                  NRN_SANITIZER_ENABLE_ENVIRONMENT_STRING
                  "${NRN_SANITIZER_ENABLE_ENVIRONMENT_STRING}")
   if(NRN_SANITIZER_LIBRARY_PATH)
-    set(NRN_SANITIZER_LD_PRELOAD "LD_PRELOAD=${NRN_SANITIZER_LIBRARY_PATH}")
+    set(NRN_SANITIZER_LD_PRELOAD "${NRN_SANITIZER_PRELOAD_VAR}=${NRN_SANITIZER_LIBRARY_PATH}")
   endif()
   configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
   install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrn-enable-sanitizer
