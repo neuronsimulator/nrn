@@ -1,5 +1,6 @@
 #pragma once
 #include "backtrace_utils.h"
+#include "neuron/container/data_handle.hpp"
 #include "neuron/container/soa_identifier.hpp"
 #include "neuron/model_data_fwd.hpp"
 
@@ -12,8 +13,20 @@ namespace neuron::container {
 template <typename>
 struct data_handle;
 
+namespace detail {
+template <bool>
 struct generic_data_handle;
+}
 
+/** @brief Type-erased data_handle<T> with stronger checks.
+ */
+using generic_data_handle = detail::generic_data_handle<false>;
+
+/** @brief Type-erased data_handle<T> with weaker checks.
+ */
+using permissive_generic_data_handle = detail::generic_data_handle<true>;
+
+namespace detail {
 /** @brief Helper type to support backwards-compatibility hacks.
  *
  *  The (possibly misguided) goal here is to make (T**)(&_p_foo) work in
@@ -23,21 +36,35 @@ struct generic_data_handle;
  *  pattern will leave _p_foo thinking that it refers to a raw pointer of type T.
  */
 struct generic_data_handle_proxy {
-    generic_data_handle_proxy(generic_data_handle& handle)
+    generic_data_handle_proxy(permissive_generic_data_handle& handle)
         : m_handle{handle} {}
     template <typename T>
     explicit operator T**() const;
 
   private:
-    generic_data_handle& m_handle;
+    permissive_generic_data_handle& m_handle;
 };
+
+/** @brief Helper type used to flag when the generic_data_handle contains a null value.
+ */
+struct typeless_null {};
 
 /** @brief Non-template stable handle to a generic value.
  *
  *  This is a type-erased version of data_handle<T>.
+ *
+ *  @tparam permissive Whether to enable less-safe backwards compatibility
+ *  features or not. This is typically set for use inside translated MOD files
+ *  where there is a lot of legacy VERBATIM code in the world.
  */
+template <bool permissive = false>
 struct generic_data_handle {
     generic_data_handle() = default;
+    template <bool other_permissive>
+    generic_data_handle(generic_data_handle<other_permissive> const& other)
+        : m_offset{other.m_offset}
+        , m_container{other.m_container}
+        , m_type{other.m_type} {}
     // Avoid trying to access members of the data_handle<void> specialisation.
     template <typename T, std::enable_if_t<std::is_same_v<T, void>, int> = 0>
     explicit generic_data_handle(data_handle<T> const& handle)
@@ -95,8 +122,32 @@ struct generic_data_handle {
         return bool{m_offset} ? true : (m_offset.m_ptr ? false : static_cast<bool>(m_container));
     }
 
-    template <typename T>
+    /** @brief Explicit conversion to any T* in non-permissive mode.
+     */
+    template <typename T,
+              bool local_permissive = permissive,
+              std::enable_if_t<!local_permissive, int> = 0>
     explicit operator T*() const {
+        return static_cast<T*>(static_cast<data_handle<T>>(*this));
+    }
+
+    /** @brief Explicit conversion to non-void T in permissive mode.
+     */
+    template <typename T,
+              bool local_permissive = permissive,
+              std::enable_if_t<local_permissive && !std::is_same_v<std::decay_t<T>, void>, int> = 0>
+    explicit operator T*() const {
+        return static_cast<T*>(static_cast<data_handle<T>>(*this));
+    }
+
+    /** @brief Implicit conversion to void* when in permissive mode.
+     */
+    template <typename T,
+              bool local_permissive = permissive,
+              std::enable_if_t<local_permissive && std::is_same_v<std::decay_t<T>, void>, int> = 0>
+    [[deprecated(
+        "You should prefer explicit conversions to definite types when using generic_data_handle")]]
+    operator T*() const {
         return static_cast<T*>(static_cast<data_handle<T>>(*this));
     }
 
@@ -120,14 +171,15 @@ struct generic_data_handle {
         }
     }
 
-    /** @brief Deploy a compatibility hack.
+    /** @brief Deploy a compatibility hack in permissive mode.
      *
      *  See "C.166: Overload unary & only as part of a system of smart pointers
      *  and references", this is not very nice and may be a bad idea.
      */
+    template <bool local_permissive = permissive>
     [[deprecated(
         "this is only intended to support legacy patterns in VERBATIM "
-        "blocks")]] generic_data_handle_proxy
+        "blocks")]] std::enable_if_t<local_permissive, generic_data_handle_proxy>
     operator&() {
         return {*this};
     }
@@ -154,6 +206,7 @@ struct generic_data_handle {
     }
 
   private:
+    friend struct generic_data_handle<!permissive>;
     friend struct generic_data_handle_proxy;
     // Offset into the underlying storage container. If this generic_data_handle
     // refers to a data_handle<T*> in backwards-compatibility mode, where it
@@ -162,12 +215,6 @@ struct generic_data_handle {
     // std::vector<T>* for the T encoded in m_type if m_offset is non-null,
     // otherwise T*
     void* m_container{};
-    // Helper type used to flag when the value contains a "typeless" null value,
-    // for example after being default constructed. Attempting to convert a
-    // typeless null to some T* returns a null pointer of type T*, whereas (for
-    // example), converting a wrapped null void* to T* would give an error if T
-    // is not void.
-    struct typeless_null {};
     // Reference to typeid(T) for the wrapped type
     std::type_index m_type{typeid(typeless_null)};
 };
@@ -179,8 +226,7 @@ generic_data_handle_proxy::operator T**() const {
             "(T**)(&generic_data_handle) pattern only supported for generic_data_handle(" +
             cxx_demangle(m_handle.m_type.name()) + ") in legacy mode");
     }
-    bool const is_typeless_null{m_handle.m_type ==
-                                std::type_index{typeid(generic_data_handle::typeless_null)}};
+    bool const is_typeless_null{m_handle.m_type == std::type_index{typeid(typeless_null)}};
     if (!is_typeless_null && std::type_index{typeid(T)} != m_handle.m_type) {
         throw std::runtime_error("Cannot convert &generic_data_handle(" +
                                  cxx_demangle(m_handle.m_type.name()) + ") to " +
@@ -195,5 +241,5 @@ generic_data_handle_proxy::operator T**() const {
     return reinterpret_cast<T**>(&(m_handle.m_container));
 }
 
-
+}  // namespace detail
 }  // namespace neuron::container
