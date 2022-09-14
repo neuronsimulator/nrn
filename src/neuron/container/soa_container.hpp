@@ -39,7 +39,8 @@ void swap(ranges::common_tuple<Ts...>&& lhs, ranges::common_tuple<Ts...>&& rhs) 
  */
 template <typename T, typename U>
 void swap(ranges::common_pair<T, U>&& lhs, ranges::common_pair<T, U>&& rhs) noexcept {
-    std::tuple<T, U> lhs_std{std::move(lhs)}, rhs_std(std::move(rhs));
+    using pair_t = std::pair<T, U>;
+    std::tuple<T, U> lhs_std{pair_t{std::move(lhs)}}, rhs_std(pair_t{std::move(rhs)});
     std::swap(lhs_std, rhs_std);
 }
 
