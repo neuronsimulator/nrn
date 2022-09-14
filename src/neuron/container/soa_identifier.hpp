@@ -21,9 +21,11 @@ inline std::vector<std::unique_ptr<std::size_t>>& garbage() {
 }
 
 inline constexpr std::size_t invalid_row = std::numeric_limits<std::size_t>::max();
+template <bool>
+struct generic_data_handle;
+struct generic_data_handle_proxy;
 }  // namespace detail
 
-struct generic_data_handle;
 
 template <typename, typename...>
 struct soa;
@@ -80,8 +82,9 @@ struct identifier_base {
     }
 
   private:
-    friend struct generic_data_handle;
-    friend struct generic_data_handle_proxy;
+    template <bool>
+    friend struct detail::generic_data_handle;
+    friend struct detail::generic_data_handle_proxy;
     template <typename, typename...>
     friend struct soa;
     template <typename, typename>
