@@ -208,8 +208,10 @@ jobs:
               cmake_args=(-G Ninja)
               # Sanitizer-specific setup
               if [[ -n "${{matrix.config.sanitizer}}" ]]; then
-                CC=$(command -v clang-14)
-                CXX=$(command -v clang++-14)
+                if [ "$RUNNER_OS" == "Linux" ]; then
+                  CC=$(command -v clang-14)
+                  CXX=$(command -v clang++-14)
+                fi
                 symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
                 echo symbolizer_path=${symbolizer_path}
                 cmake_args+=(-DCMAKE_BUILD_TYPE=Custom \
