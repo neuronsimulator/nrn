@@ -162,14 +162,16 @@ union Datum { /* interpreter stack type */
     neuron::container::generic_data_handle* generic_handle;
 };
 // Temporary, deprecate these
-inline neuron::container::generic_data_handle& nrn_get_any(Datum& datum) {
+inline neuron::container::permissive_generic_data_handle& nrn_get_any(Datum& datum) {
     // DANGER DANGER this family of methods blindly assumes that generic_handle
     // is always the active member of the Datum union.
     if (!datum.generic_handle) {
         // DANGER DANGER leak
         datum.generic_handle = new neuron::container::generic_data_handle{};
     }
-    return *datum.generic_handle;
+    // Rely on permissive/non-permissive modes having the same layout...not very nice
+    return *reinterpret_cast<neuron::container::permissive_generic_data_handle*>(
+        datum.generic_handle);
 }
 inline double* nrn_get_pval(Datum& datum) {
     return static_cast<double*>(nrn_get_any(datum));
