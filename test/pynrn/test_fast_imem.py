@@ -253,11 +253,6 @@ def print_fast_imem():
 
 
 def test_fastimem_corenrn():
-
-    if not coreneuron_available():
-        return
-
-    print("test_fastimem_corenrn")
     pc = h.ParallelContext()
     ncell = 5
     cvode = h.CVode()
@@ -322,55 +317,58 @@ def test_fastimem_corenrn():
         run(tstop)
         compare()
 
-    print("direct mode (online) coreneuron")
-    from neuron import coreneuron
+    if coreneuron_available():
+        print("direct mode (online) coreneuron")
+        from neuron import coreneuron
 
-    coreneuron.enable = True
-    coreneuron.verbose = 0
-    coreneuron.gpu = distutils.util.strtobool(
-        os.environ.get("CORENRN_ENABLE_GPU", "false")
-    )
-    run(tstop)
-    compare()
-    coreneuron.enable = False
-
-    print("Are the i_membrane_ trajectories correct when ...")
-
-    tvec = h.Vector().record(h._ref_t)
-    init_v()
-    while h.t < tstop - h.dt / 2:
-        dt_above = 1.1 * h.dt  # comfortably above dt to avoid 0 step advance
         coreneuron.enable = True
-        told = h.t
-        pc.psolve(h.t + dt_above)
-        assert h.t > told
+        coreneuron.verbose = 0
+        coreneuron.gpu = distutils.util.strtobool(
+            os.environ.get("CORENRN_ENABLE_GPU", "false")
+        )
+        run(tstop)
+        compare()
         coreneuron.enable = False
-        pc.psolve(h.t + dt_above)
-    compare()
 
-    print("For file mode (offline) coreneuron comparison of i_membrane_ initialization")
+        print("Are the i_membrane_ trajectories correct when ...")
 
-    init_v()
-    print_fast_imem()
+        tvec = h.Vector().record(h._ref_t)
+        init_v()
+        while h.t < tstop - h.dt / 2:
+            dt_above = 1.1 * h.dt  # comfortably above dt to avoid 0 step advance
+            coreneuron.enable = True
+            told = h.t
+            pc.psolve(h.t + dt_above)
+            assert h.t > told
+            coreneuron.enable = False
+            pc.psolve(h.t + dt_above)
+        compare()
 
-    # The cells must have gids.
-    for i, cell in enumerate(cells):
-        pc.set_gid2node(i, pc.id())
-        sec = cell.secs[0]
-        pc.cell(i, h.NetCon(sec(0.5)._ref_v, None, sec=sec))
+        print(
+            "For file mode (offline) coreneuron comparison of i_membrane_ initialization"
+        )
 
-    # Write the data files
-    init_v()
-    pc.nrncore_write("./corenrn_data")
+        init_v()
+        print_fast_imem()
 
-    # args needed for offline run of coreneuron
-    coreneuron.enable = True
-    coreneuron.file_mode = True
+        # The cells must have gids.
+        for i, cell in enumerate(cells):
+            pc.set_gid2node(i, pc.id())
+            sec = cell.secs[0]
+            pc.cell(i, h.NetCon(sec(0.5)._ref_v, None, sec=sec))
 
-    arg = coreneuron.nrncore_arg(tstop)
-    coreneuron.enable = False
-    pc.gid_clear()
-    print(arg)
+        # Write the data files
+        init_v()
+        pc.nrncore_write("./corenrn_data")
+
+        # args needed for offline run of coreneuron
+        coreneuron.enable = True
+        coreneuron.file_mode = True
+
+        arg = coreneuron.nrncore_arg(tstop)
+        coreneuron.enable = False
+        pc.gid_clear()
+        print(arg)
 
     del imem_updater, imem
     cvode.use_fast_imem(0)
