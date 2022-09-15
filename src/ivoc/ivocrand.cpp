@@ -2,8 +2,8 @@
 
 // definition of random number generation from the g++ library
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include "random1.h"
 
 #include <InterViews/resource.h>
@@ -17,21 +17,10 @@
 #include <nrnran123.h>
 
 #include <RNG.h>
-#include <ACG.h>
-#include <MLCG.h>
+#include <RNG_random123.h>
 #include <Random.h>
-#include <Poisson.h>
-#include <Normal.h>
-#include <Uniform.h>
-#include <Binomial.h>
-#include <DiscUnif.h>
-#include <Erlang.h>
-#include <Geom.h>
-#include <LogNorm.h>
-#include <NegExp.h>
 #include <RndInt.h>
 #include <HypGeom.h>
-#include <Weibull.h>
 
 #if HAVE_IV
 #include "ivoc.h"
@@ -202,12 +191,10 @@ void RandomPlay::update(Observable*) {
     list_remove();
 }
 
-Rand::Rand(unsigned long seed, int size, Object* obj) {
+Rand::Rand() {
     // printf("Rand\n");
-    gen = new ACG(seed, size);
-    rand = new Normal(0., 1., gen);
-    type_ = 0;
-    obj_ = obj;
+    gen = new RNG_random123();
+    rand = new Normal_random123(0., 1., gen);
 }
 
 Rand::~Rand() {
@@ -232,7 +219,7 @@ static void* r_cons(Object* obj) {
     if (ifarg(2))
         size = int(chkarg(2, 7, 98));
 
-    Rand* r = new Rand(seed, size, obj);
+    Rand* r = new Rand();
     return (void*) r;
 }
 
@@ -240,56 +227,6 @@ static void* r_cons(Object* obj) {
 
 static void r_destruct(void* r) {
     delete (Rand*) r;
-}
-
-// Use a variant of the Linear Congruential Generator (algorithm M)
-// described in Knuth, Art of Computer Programming, Vol. III in
-// combination with a Fibonacci Additive Congruential Generator.
-// This is a "very high quality" random number generator,
-// Default size is 55, giving a size of 1244 bytes to the structure
-// minimum size is 7 (total 100 bytes), maximum size is 98 (total 2440 bytes)
-// syntax:
-// r.ACG([seed],[size])
-
-static double r_ACG(void* r) {
-    Rand* x = (Rand*) r;
-
-    unsigned long seed = 0;
-    int size = 55;
-
-    if (ifarg(1))
-        seed = long(*getarg(1));
-    if (ifarg(2))
-        size = int(chkarg(2, 7, 98));
-
-    x->rand->generator(new ACG(seed, size));
-    x->type_ = 0;
-    delete x->gen;
-    x->gen = x->rand->generator();
-    return 1.;
-}
-
-// Use a Multiplicative Linear Congruential Generator.  Not as high
-// quality as the ACG, but uses only 8 bytes
-// syntax:
-// r.MLCG([seed1],[seed2])
-
-static double r_MLCG(void* r) {
-    Rand* x = (Rand*) r;
-
-    unsigned long seed1 = 0;
-    unsigned long seed2 = 0;
-
-    if (ifarg(1))
-        seed1 = long(*getarg(1));
-    if (ifarg(2))
-        seed2 = long(*getarg(2));
-
-    x->rand->generator(new MLCG(seed1, seed2));
-    delete x->gen;
-    x->gen = x->rand->generator();
-    x->type_ = 1;
-    return 1.;
 }
 
 static double r_MCellRan4(void* r) {
@@ -425,6 +362,11 @@ static double r_repick(void* r) {
     return (*(x->rand))();
 }
 
+static double r_repick_random123(void* r) {
+    Rand* x = (Rand*) r;
+    return (*(x->rand))();
+}
+
 double nrn_random_pick(Rand* r) {
     if (r) {
         return (*(r->rand))();
@@ -449,86 +391,75 @@ Rand* nrn_random_arg(int i) {
 // uniform random variable over the open interval [low...high)
 // syntax:
 //     r.uniform(low,high)
-
 static double r_uniform(void* r) {
     Rand* x = (Rand*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
     delete x->rand;
-    x->rand = new Uniform(a1, a2, x->gen);
+    x->rand = new Uniform_random123(a1, a2, x->gen);
     return (*(x->rand))();
 }
 
 // uniform random variable over the closed interval [low...high]
 // syntax:
 //     r.discunif(low,high)
-
 static double r_discunif(void* r) {
     Rand* x = (Rand*) r;
     long a1 = long(*getarg(1));
     long a2 = long(*getarg(2));
     delete x->rand;
-    x->rand = new DiscreteUniform(a1, a2, x->gen);
+    x->rand = new DiscreteUniform_random123(a1, a2, x->gen);
     return (*(x->rand))();
 }
-
 
 // normal (gaussian) distribution
 // syntax:
 //     r.normal(mean,variance)
-
 static double r_normal(void* r) {
     Rand* x = (Rand*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
     delete x->rand;
-    x->rand = new Normal(a1, a2, x->gen);
+    x->rand = new Normal_random123(a1, a2, x->gen);
     return (*(x->rand))();
 }
-
 
 // logarithmic normal distribution
 // syntax:
 //     r.lognormal(mean)
-
 static double r_lognormal(void* r) {
     Rand* x = (Rand*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
     delete x->rand;
-    x->rand = new LogNormal(a1, a2, x->gen);
+    x->rand = new LogNormal_random123(a1, a2, x->gen);
     return (*(x->rand))();
 }
-
 
 // poisson distribution
 // syntax:
 //   r.poisson(mean)
-
 static double r_poisson(void* r) {
     Rand* x = (Rand*) r;
     double a1 = *getarg(1);
     delete x->rand;
-    x->rand = new Poisson(a1, x->gen);
+    x->rand = new Poisson_random123(a1, x->gen);
     return (*(x->rand))();
 }
-
 
 // binomial distribution, which models successfully drawing items from a pool
 // n is the number items in the pool and p is the probablity of each item
 // being successfully drawn (n>0, 0<=p<=1)
 // syntax:
 //     r.binomial(n,p)
-
 static double r_binomial(void* r) {
     Rand* x = (Rand*) r;
     int a1 = int(chkarg(1, 0, 1e99));
     double a2 = chkarg(2, 0, 1);
     delete x->rand;
-    x->rand = new Binomial(a1, a2, x->gen);
+    x->rand = new Binomial_random123(a1, a2, x->gen);
     return (*(x->rand))();
 }
-
 
 // discrete geometric distribution
 // Given 0<=mean<=1, returns the number of uniform random samples
@@ -536,15 +467,13 @@ static double r_binomial(void* r) {
 // greater than 0.
 // syntax:
 //     r.geometric(mean)
-
 static double r_geometric(void* r) {
     Rand* x = (Rand*) r;
     double a1 = chkarg(1, 0, 1);
     delete x->rand;
-    x->rand = new Geometric(a1, x->gen);
+    x->rand = new Geometric_random123(a1, x->gen);
     return (*(x->rand))();
 }
-
 
 // hypergeometric distribution
 // syntax:
@@ -563,26 +492,23 @@ static double r_hypergeo(void* r) {
 // negative exponential distribution
 // syntax:
 //     r.negexp(mean)
-
 static double r_negexp(void* r) {
     Rand* x = (Rand*) r;
     double a1 = *getarg(1);
     delete x->rand;
-    x->rand = new NegativeExpntl(a1, x->gen);
+    x->rand = new NegativeExpntl_random123(a1, x->gen);
     return (*(x->rand))();
 }
-
 
 // Erlang distribution
 // syntax:
 //     r.erlang(mean,variance)
-
 static double r_erlang(void* r) {
     Rand* x = (Rand*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
     delete x->rand;
-    x->rand = new Erlang(a1, a2, x->gen);
+    x->rand = new Erlang_random123(a1, a2, x->gen);
     return (*(x->rand))();
 }
 
@@ -590,13 +516,12 @@ static double r_erlang(void* r) {
 // Weibull distribution
 // syntax:
 //     r.weibull(alpha,beta)
-
 static double r_weibull(void* r) {
     Rand* x = (Rand*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
     delete x->rand;
-    x->rand = new Weibull(a1, a2, x->gen);
+    x->rand = new Weibull_random123(a1, a2, x->gen);
     return (*(x->rand))();
 }
 
@@ -612,14 +537,13 @@ extern "C" void nrn_random_play() {
 }
 
 
-static Member_func r_members[] = {{"ACG", r_ACG},
-                                  {"MLCG", r_MLCG},
-                                  {"Isaac64", r_Isaac64},
+static Member_func r_members[] = {{"Isaac64", r_Isaac64},
                                   {"MCellRan4", r_MCellRan4},
                                   {"Random123", r_nrnran123},
                                   {"Random123_globalindex", r_ran123_globalindex},
                                   {"seq", r_sequence},
                                   {"repick", r_repick},
+                                  {"repick_random123", r_repick_random123},
                                   {"uniform", r_uniform},
                                   {"discunif", r_discunif},
                                   {"normal", r_normal},

@@ -123,7 +123,6 @@ static double dmaxint_ = 9007199254740992;
 
 // definition of random numer generator
 #include "random1.h"
-#include <Uniform.h>
 
 #if HAVE_IV
 #include "utility.h"
