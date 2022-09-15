@@ -232,8 +232,10 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           NAME rxd_mpi_tests
           PRELOAD_SANITIZER
           ENVIRONMENT COVERAGE_FILE=.coverage.rxd_mpi_tests ${change_test_tolerance}
-          COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
-                  ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} ${pytest} ./test/rxd --mpi)
+          COMMAND
+            ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
+            ${preload_sanitizer_mpiexec} ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} ${pytest}
+            ./test/rxd --mpi)
       endif()
     endif()
   endif()
