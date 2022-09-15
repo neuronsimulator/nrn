@@ -70,17 +70,18 @@ class HTMLTranslator(sphinx.writers.html.HTMLTranslator):
             jump_table += ["<p>", " &middot; ".join(fn_jmps), "</p>"]
 
         for cl in class_names:
-            method_jmps = [
-                '<a href="#%s.%s" title="Link to this definition">%s</a>'
-                % (cl, name, name)
-                for name in methods_by_class[cl]
-            ]
-            jump_table += [
-                "<p>",
-                '<dl class="docutils"><dt><a href="#%s" title="Link to this definition">%s</a></dt><dd>%s</dd></dl>'
-                % (cl, cl, " &middot; ".join(method_jmps)),
-                "</p>",
-            ]
+            if cl.strip() and re.match("id[0-9]+", cl.strip()) is None:
+                method_jmps = [
+                    '<a href="#%s.%s" title="Link to this definition">%s</a>'
+                    % (cl, name, name)
+                    for name in methods_by_class[cl]
+                ]
+                jump_table += [
+                    "<p>",
+                    '<dl class="docutils"><dt><a href="#%s" title="Link to this definition">%s</a></dt><dd>%s</dd></dl>'
+                    % (cl, cl, " &middot; ".join(method_jmps)),
+                    "</p>",
+                ]
 
         self.body = jump_table + self.body
         sphinx.writers.html.HTMLTranslator.depart_document(self, node)
