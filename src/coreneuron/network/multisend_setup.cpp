@@ -421,8 +421,10 @@ static void fill_multisend_lists(bool use_phase2,
         PreSyn* ps = g.second;
         if (ps->output_index_ >= 0) {  // only ones that generate spikes
             int i = ps->multisend_index_;
-            max_ntarget_host = std::max(targets_phase1[i], max_ntarget_host);
-            max_multisend_targets = std::max(targets_phase1[i + 1], max_multisend_targets);
+            if (i >= 0) {  // only if the gid has targets on other ranks.
+                max_ntarget_host = std::max(targets_phase1[i], max_ntarget_host);
+                max_multisend_targets = std::max(targets_phase1[i + 1], max_multisend_targets);
+            }
         }
     }
     if (use_phase2) {
