@@ -50,6 +50,7 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade -r docs/docs_requirements.txt
+          python -c 'import plotnine; print(plotnine.__version__); print(plotnine)'
 
       - name: Documentation
         id: documentation
