@@ -35,7 +35,7 @@ jobs:
         shell: bash
 
       - name: Set up Python@${{ env.DEFAULT_PY_VERSION }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ env.DEFAULT_PY_VERSION }}
 
@@ -50,6 +50,7 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade -r docs/docs_requirements.txt
+          python -c 'import plotnine; print(plotnine.__version__); print(plotnine)'
 
       - name: Documentation
         id: documentation

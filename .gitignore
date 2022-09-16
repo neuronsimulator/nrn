@@ -1,3 +1,4 @@
+.bbp-project-venv/
 .clang-format
 .cmake-format.yaml
 external/tests/
