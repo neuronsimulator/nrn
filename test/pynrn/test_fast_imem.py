@@ -4,7 +4,7 @@
 import distutils.util
 import os
 
-from neuron import config, h
+from neuron import config, gui, h
 
 h.load_file("stdrun.hoc")  # for h.cvode_active
 
@@ -254,30 +254,32 @@ def print_fast_imem():
 
 def test_fastimem_corenrn():
     pc = h.ParallelContext()
-    ncell = 50
+    ncell = 5
     cvode = h.CVode()
     cvode.cache_efficient(0)
-    cells = [Cell(id, 100) for id in range(ncell)]
+    # If the gui has been imported (possibly by another test) then there is a
+    # thread asynchronously calling process_events -- make sure that doesn't
+    # happen partway through creating cells
+    with gui.disabled():
+        cells = [Cell(id, 10) for id in range(ncell)]
     cvode.use_fast_imem(1)
 
     # When nthread changes, or internal model data needs to be reallocated,
     # pointers need to be updated. Use of i_membrane_ requires that the user
     # update the pointers to i_membrane_.
     imem = []
-    do_update = True
 
     def imem_update():
-        imem.clear()
-        if do_update:
-            for cell in cells:
-                imem.append(
-                    h.Vector().record(cell.ics[0], cell.secs[3](0.5)._ref_i_membrane_)
-                )
+        nonlocal imem
+        with gui.disabled():
+            imem = [
+                h.Vector().record(cell.ics[0], cell.secs[3](0.5)._ref_i_membrane_)
+                for cell in cells
+            ]
 
     imem_updater = h.PtrVector(1)
     imem_updater.ptr_update_callback(imem_update)
     imem_update()
-    imem_update()  # kludge that seems to stop the max_abs_imem assert failing
 
     tstop = 1.0
 
@@ -293,8 +295,9 @@ def test_fastimem_corenrn():
 
     def run(tstop):
         pc.set_maxstep(10)
-        init_v()
-        pc.psolve(tstop)
+        with gui.disabled():
+            init_v()
+            pc.psolve(tstop)
 
     # standard
     run(tstop)
@@ -393,7 +396,6 @@ def test_fastimem_corenrn():
 
     del imem_updater, imem
     cvode.use_fast_imem(0)
-    do_update = False
 
 
 if __name__ == "__main__":
