@@ -1,0 +1,14 @@
+tools:
+  Black:
+    enable: True
+    include:
+      match:
+      - '.*\.(py|ipynb)$'
+    option: [--color, --diff, --target-version, py37]
+    version: '[jupyter] ~=22.3'
+  ClangFormat:
+    enable: True
+    version: == 12.0.1
+  CMakeFormat:
+    enable: True
+    version: == 0.6.13
