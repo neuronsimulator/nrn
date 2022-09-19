@@ -277,7 +277,16 @@ def basicRxD3D():
 
 
 def suite():
+    import os
 
+    # For sanitizer runtimes that need to be preloaded on macOS, we need to
+    # propagate this manually so multiprocessing.Process works
+    try:
+        os.environ[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
+            "NRN_SANITIZER_PRELOAD_VAL"
+        ]
+    except:
+        pass
     suite = unittest.makeSuite(NeuronTestCase, "test")
     return suite
 
