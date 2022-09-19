@@ -80,15 +80,15 @@ template <typename RowIdentifier, typename... Tags>
 template <typename Rng>
 inline void soa<RowIdentifier, Tags...>::check_permutation_vector(Rng const& range) {
     if (ranges::size(range) != size()) {
-        throw nrn_runtime_error("invalid permutation vector: wrong size");
+        throw std::runtime_error("invalid permutation vector: wrong size");
     }
     std::vector<bool> seen(ranges::size(range), false);
     for (auto val: range) {
         if (!(val >= 0 && val < seen.size())) {
-            throw nrn_runtime_error("invalid permutation vector: value out of range");
+            throw std::runtime_error("invalid permutation vector: value out of range");
         }
         if (seen[val]) {
-            throw nrn_runtime_error("invalid permutation vector: repeated value");
+            throw std::runtime_error("invalid permutation vector: repeated value");
         }
         seen[val] = true;
     }
