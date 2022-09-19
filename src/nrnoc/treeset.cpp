@@ -6,6 +6,7 @@
 #include "multisplit.h"
 #include "nrn_ansi.h"
 #include "neuron.h"
+#include "neuron/container/soa_container_impl.hpp"
 #include "nonvintblock.h"
 #include "nrndae_c.h"
 #include "nrniv_mf.h"
