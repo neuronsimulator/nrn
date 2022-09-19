@@ -14,6 +14,8 @@ namespace detail {
  * @todo Should this be templated on the container type? Or should the garbage
  *       vector live inside the relevant soa<...> instance? If it did, how
  *       would that work for the use-case of cloning/swapping those instances?
+ * @todo Do we end up with duplicate definitions of this vector because of
+ *       dlopen() etc. ?
  */
 inline std::vector<std::unique_ptr<std::size_t>>& garbage() {
     static std::vector<std::unique_ptr<std::size_t>> x{};
