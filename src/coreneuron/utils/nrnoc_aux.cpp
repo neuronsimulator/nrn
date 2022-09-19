@@ -101,14 +101,7 @@ void* erealloc(void* ptr, size_t size) {
 }
 
 void* nrn_cacheline_alloc(void** memptr, size_t size) {
-#if HAVE_MEMALIGN
-    if (posix_memalign(memptr, 64, size) != 0) {
-        fprintf(stderr, "posix_memalign not working\n");
-        assert(0);
-    }
-#else
-    *memptr = emalloc(size);
-#endif
+    alloc_memory(*memptr, size, 64);
     return *memptr;
 }
 
