@@ -2,57 +2,24 @@
 #include "backtrace_utils.h"
 #include "neuron/container/data_handle.hpp"
 
-#include <boost/algorithm/apply_permutation.hpp>
-#include <boost/mp11/algorithm.hpp>
-#include <boost/mp11/set.hpp>
-
-#include <range/v3/algorithm/rotate.hpp>
-// #include <range/v3/algorithm/unstable_remove_if.hpp>
-#include <range/v3/utility/common_tuple.hpp>
-#include <range/v3/utility/swap.hpp>
-#include <range/v3/view/zip.hpp>
-
 #include <string_view>
 #include <vector>
 
 namespace neuron::container {
-
-/** @brief ADL-visible swap overload for ranges::common_tuple<Ts...>.
- *
- *  It seems that because range-v3 provides ranges::swap, which is a Niebloid
- *  like std::ranges::swap, they do not provide an ADL-visible overload of the
- *  old-fashioned swap. This stops Boost's permute algorithm from finding an
- *  implementation when it is used with the types returned by zip iterators. We
- *  rely on this swap() being in the same namespace as one of the zip members
- *  (initialliy NodeIdentifier).
- */
-template <typename... Ts>
-void swap(ranges::common_tuple<Ts...>&& lhs, ranges::common_tuple<Ts...>&& rhs) noexcept {
-    std::tuple<Ts...> lhs_std{std::move(lhs)}, rhs_std(std::move(rhs));
-    std::swap(lhs_std, rhs_std);
-}
-
-/** @brief ADL-visible swap overload for ranges::common_pair<T, U>.
- *
- *  This is needed instead of the ranges::common_tuple<Ts...> overload for zips
- *  of width two.
- */
-template <typename T, typename U>
-void swap(ranges::common_pair<T, U>&& lhs, ranges::common_pair<T, U>&& rhs) noexcept {
-    using pair_t = std::pair<T, U>;
-    std::tuple<T, U> lhs_std{pair_t{std::move(lhs)}}, rhs_std(pair_t{std::move(rhs)});
-    std::swap(lhs_std, rhs_std);
-}
-
+namespace detail {
+// https://stackoverflow.com/a/67106430
+template <typename T, typename... Types>
+inline constexpr bool are_types_unique_v =
+    (!std::is_same_v<T, Types> && ...) && are_types_unique_v<Types...>;
+template <typename T>
+inline constexpr bool are_types_unique_v<T> = true;
+}  // namespace detail
 /** @brief Utility for generating SOA data structures.
  *  @tparam Tags Parameter pack of tag types that define the columns included in
  *               the container. Types may not be repeated.
  */
 template <typename RowIdentifier, typename... Tags>
 struct soa {
-    // All elements of `Tags` should be unique.
-    static_assert(boost::mp11::mp_is_set<boost::mp11::mp_list<Tags...>>::value);
-
     soa() = default;
     // Make it harder to invalidate the pointers/references to instances of
     // this struct that are stored in Node objects.
@@ -103,85 +70,23 @@ struct soa {
         (get<Tags>().resize(size), ...);
     }
 
-    /** @brief Reverse the order of the SOA-format data.
-     */
-    void reverse() {
-        permute_zip([](auto zip) { std::reverse(ranges::begin(zip), ranges::end(zip)); });
-    }
-
-  private:
-    /** Check if the given range is a permutation of the first N integers.
-     *  @todo Assert that the given range has an integral value type and that
-     *  there is no overflow?
-     */
+    // The following methods are defined in soa_container_impl.hpp because they
+    // require Boost and range::v3 headers.
+    template <typename Range>
+    inline void apply_permutation(Range& permutation);
+    template <typename Range>
+    inline void apply_reverse_permutation(Range& permutation);
     template <typename Rng>
-    void check_permutation_vector(Rng const& range) {
-        if (ranges::size(range) != size()) {
-            throw std::runtime_error("invalid permutation vector: wrong size");
-        }
-        std::vector<bool> seen(ranges::size(range), false);
-        for (auto val: range) {
-            if (!(val >= 0 && val < seen.size())) {
-                throw std::runtime_error("invalid permutation vector: value out of range");
-            }
-            if (seen[val]) {
-                throw std::runtime_error("invalid permutation vector: repeated value");
-            }
-            seen[val] = true;
-        }
-    }
+    inline void check_permutation_vector(Rng const& range);
+    inline void reverse();
+    inline void rotate(std::size_t i);
 
-  public:
-    /** @brief Permute the SOA-format data using an arbitrary vector.
-     */
-    template <typename Range>
-    void apply_permutation(Range& permutation) {
-        check_permutation_vector(permutation);
-        permute_zip(
-            [&permutation](auto zip) { boost::algorithm::apply_permutation(zip, permutation); });
-    }
-
-    /** @brief Permute the SOA-format data using an arbitrary vector.
-     */
-    template <typename Range>
-    void apply_reverse_permutation(Range& permutation) {
-        check_permutation_vector(permutation);
-        permute_zip([&permutation](auto zip) {
-            boost::algorithm::apply_reverse_permutation(zip, permutation);
-        });
-    }
-
-    /** @brief Rotate the SOA-format data by `i` positions.
-     *  @todo  See if std::rotate can be fixed here.
-     */
-    void rotate(std::size_t i) {
-        assert(i < size());
-        permute_zip([i](auto& zip) {
-            ranges::rotate(ranges::begin(zip),
-                           ranges::next(ranges::begin(zip), i),
-                           ranges::end(zip));
-        });
-    }
-
-    /** @brief Remove the i-th row from the container.
-     */
-    void erase(std::size_t i) {
-        // pointers to the last element will be invalidated, as it gets swapped
-        // into position `i`
-        m_sorted = false;
-        auto const old_size = size();
-        assert(i < old_size);
-        if (i != old_size - 1) {
-            auto zip = get_zip();
-            auto iter_i = ranges::next(ranges::begin(zip), i);
-            auto iter_last = ranges::prev(ranges::end(zip));
-            // Swap positions `i` and `old_size-1`
-            ranges::iter_swap(iter_i, iter_last);
-            // Tell the new entry at `i` that its index is `i` now.
-            std::get<0>(*iter_i).set_current_row(i);
-        }
-        resize(old_size - 1);
-    }
+    // The following method is defined in soa_container_impl.hpp because it
+    // requires range::v3 headers, but it cannot be declared inline because that
+    // would require that soa_container_impl.hpp is included in too many places.
+    // Instead, we have to make sure it is instantiated for each soa<...> type
+    // that we use.
+    void erase(std::size_t i);
 
     /** @brief Append a new entry to all elements of the container.
      *  @todo Return non-owning view/reference to the newly added entry?
@@ -216,19 +121,22 @@ struct soa {
     }
 
   private:
+    static_assert(detail::are_types_unique_v<RowIdentifier, Tags...>,
+                  "All tag types should be unique");
+
     template <typename Tag>
-    using tag_index_t = boost::mp11::mp_find<boost::mp11::mp_list<Tags...>, Tag>;
+    using storage_t = std::vector<typename Tag::type>;
 
   public:
     template <typename Tag>
-    static constexpr bool has_tag_v = (tag_index_t<Tag>::value < sizeof...(Tags));
+    static constexpr bool has_tag_v = std::disjunction_v<std::is_same<Tag, Tags>...>;
 
     /** @brief Get the column container named by Tag.
      */
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type>& get() {
         static_assert(has_tag_v<Tag>);
-        return std::get<tag_index_t<Tag>::value>(m_data);
+        return std::get<storage_t<Tag>>(m_data);
     }
 
     /** @brief Get the column container named by Tag.
@@ -236,7 +144,7 @@ struct soa {
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type> const& get() const {
         static_assert(has_tag_v<Tag>);
-        return std::get<tag_index_t<Tag>::value>(m_data);
+        return std::get<storage_t<Tag>>(m_data);
     }
 
     /** @brief Return a permutation-stable handle if ptr is inside us.
@@ -325,11 +233,7 @@ struct soa {
         }
     }
 
-    /** @brief Create a zip view of all the data columns in the container.
-     */
-    [[nodiscard]] auto get_zip() {
-        return ranges::views::zip(m_indices, get<Tags>()...);
-    }
+    [[nodiscard]] auto get_zip();
 
     /** @brief Flag for mark_as_sorted and is_sorted().
      */
@@ -341,6 +245,6 @@ struct soa {
 
     /** @brief Collection of data columns.
      */
-    std::tuple<std::vector<typename Tags::type>...> m_data{};
+    std::tuple<storage_t<Tags>...> m_data{};
 };
 }  // namespace neuron::container
