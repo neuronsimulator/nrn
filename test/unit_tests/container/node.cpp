@@ -1,4 +1,7 @@
 #include "neuron/container/node.hpp"
+// Need to include this explicitly because we call methods that external
+// dependency headers
+#include "neuron/container/soa_container_impl.hpp"
 #include "section.h"
 
 #include <catch2/catch.hpp>
