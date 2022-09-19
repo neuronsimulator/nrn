@@ -4,11 +4,6 @@
 #include "backward.hpp"
 #endif
 
-#if __has_include(<cxxabi.h>)
-#define USE_CXXABI
-#include <cxxabi.h>
-#endif
-
 #include <cassert>
 #include <cstring>
 #include <iostream>
@@ -56,19 +51,6 @@ int cxx_demangle(const char* symbol, char** funcname, size_t* funcname_sz) {
     // return something non-zero to indicate failure
     // cxa_demangle can return 3 error codes: -1, -2, -3, we extend by one more error code
     return -4;
-#endif
-}
-
-std::string cxx_demangle(const char* mangled) {
-#ifdef USE_CXXABI
-    int status{};
-    // Note that the third argument to abi::__cxa_demangle returns the length of
-    // the allocated buffer, which may be larger than strlen(demangled) + 1.
-    std::unique_ptr<char, decltype(free)*> demangled{
-        abi::__cxa_demangle(mangled, nullptr, nullptr, &status), free};
-    return status ? mangled : demangled.get();
-#else
-    return mangled;
 #endif
 }
 
