@@ -119,6 +119,7 @@ set(NRNOC_FILE_LIST
     cabcode.cpp
     capac.cpp
     clamp.cpp
+    container.cpp
     eion.cpp
     extcelln.cpp
     fadvance.cpp
