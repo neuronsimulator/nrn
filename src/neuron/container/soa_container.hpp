@@ -102,6 +102,10 @@ struct soa {
     inline void reverse();
     inline void rotate(std::size_t i);
 
+  private:
+    [[nodiscard]] inline auto get_zip();
+
+  public:
     /** @brief Append a new entry to all elements of the container.
      *  @todo Return non-owning view/reference to the newly added entry?
      */
@@ -246,8 +250,6 @@ struct soa {
             m_indices[i].set_current_row(i);
         }
     }
-
-    [[nodiscard]] auto get_zip();
 
     /** @brief Flag for mark_as_sorted and is_sorted().
      */
