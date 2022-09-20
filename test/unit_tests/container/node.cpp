@@ -293,5 +293,11 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             reference_voltages.erase(reference_voltages.begin());
             require_logical_match_and_storage_different();
         }
+        WHEN("The middle Node is removed") {
+            auto const index_to_remove = nodes.size() / 2;
+            nodes.erase(std::next(nodes.begin(), index_to_remove));
+            reference_voltages.erase(std::next(reference_voltages.begin(), index_to_remove));
+            require_logical_match_and_storage_different();
+        }
     }
 }
