@@ -28,6 +28,27 @@ struct soa {
     soa& operator=(soa&&) = delete;
     soa& operator=(soa const&) = delete;
 
+    /** @brief Remove the i-th row from the container.
+     *
+     *  This is currently implemented by swapping the last element into position
+     *  i (if those are not the same element) and reducing the size by one.
+     *  Iterators to the last element and the deleted element will be invalidated.
+     */
+    void erase(std::size_t i) {
+        m_sorted = false;
+        auto const old_size = size();
+        assert(i < old_size);
+        if (i != old_size - 1) {
+            // Swap positions `i` and `old_size - 1` in each vector
+            using std::swap;
+            swap(m_indices[i], m_indices.back());
+            (swap(get<Tags>()[i], get<Tags>().back()), ...);
+            // Tell the new entry at `i` that its index is `i` now.
+            m_indices[i].set_current_row(i);
+        }
+        resize(old_size - 1);
+    }
+
     /** @brief Get the size of the container.
      */
     [[nodiscard]] std::size_t size() const {
@@ -80,13 +101,6 @@ struct soa {
     inline void check_permutation_vector(Rng const& range);
     inline void reverse();
     inline void rotate(std::size_t i);
-
-    // The following method is defined in soa_container_impl.hpp because it
-    // requires range::v3 headers, but it cannot be declared inline because that
-    // would require that soa_container_impl.hpp is included in too many places.
-    // Instead, we have to make sure it is instantiated for each soa<...> type
-    // that we use.
-    void erase(std::size_t i);
 
     /** @brief Append a new entry to all elements of the container.
      *  @todo Return non-owning view/reference to the newly added entry?
