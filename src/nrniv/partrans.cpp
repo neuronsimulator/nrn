@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
 
-#include "partrans.h"  // sgid_t and SetupTransferInfo for CoreNEURON
 #include "treeset.h"
 
 #include <stdio.h>
@@ -15,10 +14,11 @@
 #include <stdint.h>
 #endif
 
+#include <vector>
+#include <utility>
 #include <map>            // Introduced for NonVSrcUpdateInfo
 #include <unordered_map>  // Replaces NrnHash for MapSgid2Int and MapNode2PDbl
-#include <utility>
-#include <vector>
+#include "partrans.h"     // sgid_t and SetupTransferInfo for CoreNEURON
 
 
 #if NRNLONGSGID
