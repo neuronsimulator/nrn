@@ -235,10 +235,13 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         WHEN("Values are read back immediately") {
             require_logical_and_storage_match();
         }
+// As of nvc++/22.7 the range::v3 code behind rotate gives compilation errors.
+#ifndef __NVCOMPILER
         WHEN("The underlying storage is rotated") {
             node_data.rotate(1);
             require_logical_match_and_storage_different();
         }
+#endif
         WHEN("The underlying storage is reversed") {
             node_data.reverse();
             require_logical_match_and_storage_different();
