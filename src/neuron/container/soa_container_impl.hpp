@@ -94,28 +94,6 @@ inline void soa<RowIdentifier, Tags...>::check_permutation_vector(Rng const& ran
     }
 }
 
-/** @brief Remove the i-th row from the container.
- */
-template <typename RowIdentifier, typename... Tags>
-void soa<RowIdentifier, Tags...>::erase(std::size_t i) {
-    // pointers to the last element will be invalidated, as it gets swapped
-    // into position `i`
-    m_sorted = false;
-    auto const old_size = size();
-    assert(i < old_size);
-    if (i != old_size - 1) {
-        auto zip = get_zip();
-        auto iter_i = ranges::next(ranges::begin(zip), i);
-        auto iter_last = ranges::prev(ranges::end(zip));
-        // Swap positions `i` and `old_size-1`
-        ranges::iter_swap(iter_i, iter_last);
-        // Tell the new entry at `i` that its index is `i` now.
-        std::get<0>(*iter_i).set_current_row(i);
-    }
-    resize(old_size - 1);
-}
-
-
 /** @brief Reverse the order of the SOA-format data.
  */
 template <typename RowIdentifier, typename... Tags>
