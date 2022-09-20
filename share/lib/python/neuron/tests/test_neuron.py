@@ -200,6 +200,12 @@ class NeuronTestCase(unittest.TestCase):
         return 0
 
     def testRxDexistence(self):
+        from neuron import config
+        enable_rx3d = config.arguments['NRN_ENABLE_RX3D']
+        if not enable_rx3d:
+            print("Skipping because NRN_ENABLE_RX3D={}".format(enable_rx3d))
+            return
+
         from multiprocessing import Process
 
         p = Process(target=NeuronTestCase.RxDexistence)
