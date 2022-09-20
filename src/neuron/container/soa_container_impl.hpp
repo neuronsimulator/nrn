@@ -2,8 +2,6 @@
 #include "neuron/container/soa_container.hpp"
 
 #include <boost/algorithm/apply_permutation.hpp>
-#include <boost/mp11/algorithm.hpp>
-#include <boost/mp11/set.hpp>
 
 #include <range/v3/algorithm/rotate.hpp>
 #include <range/v3/utility/common_tuple.hpp>
