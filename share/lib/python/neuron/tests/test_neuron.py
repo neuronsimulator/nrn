@@ -201,7 +201,8 @@ class NeuronTestCase(unittest.TestCase):
 
     def testRxDexistence(self):
         from neuron import config
-        enable_rx3d = config.arguments['NRN_ENABLE_RX3D']
+
+        enable_rx3d = config.arguments["NRN_ENABLE_RX3D"]
         if not enable_rx3d:
             print("Skipping because NRN_ENABLE_RX3D={}".format(enable_rx3d))
             return
