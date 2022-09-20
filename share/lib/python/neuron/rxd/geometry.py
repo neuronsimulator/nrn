@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import warnings
 import numpy
-import traceback
 from neuron import h, nrn
 from .rxdException import RxDException
 
@@ -10,9 +9,6 @@ try:
 
     has_geometry3d = True
 except ImportError:
-    print("Could not import neuron.rxd.geometry3d")
-    traceback.print_exc()
-    print("Setting has_geometry3d=False")
     has_geometry3d = False
 
 
