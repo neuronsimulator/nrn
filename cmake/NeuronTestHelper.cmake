@@ -420,7 +420,14 @@ function(nrn_add_test)
   endif()
   list(APPEND test_env ${extra_environment})
   if(NRN_ADD_TEST_PRELOAD_SANITIZER AND NRN_SANITIZER_LIBRARY_PATH)
-    list(APPEND test_env LD_PRELOAD=${NRN_SANITIZER_LIBRARY_PATH})
+    list(APPEND test_env ${NRN_SANITIZER_PRELOAD_VAR}=${NRN_SANITIZER_LIBRARY_PATH})
+    # On macOS with SIP then dynamic loader preload variables are not propagated to child processes.
+    # By passing the key/value in our own private variables we make it easy to manually re-set the
+    # preload variables in tests that spawn subprocesses. See also:
+    # https://jonasdevlieghere.com/sanitizing-python-modules/ and
+    # https://tobywf.com/2021/02/python-ext-asan/
+    list(APPEND test_env NRN_SANITIZER_PRELOAD_VAR=${NRN_SANITIZER_PRELOAD_VAR})
+    list(APPEND test_env NRN_SANITIZER_PRELOAD_VAL=${NRN_SANITIZER_LIBRARY_PATH})
   endif()
   list(APPEND test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
   # Add the actual test job, including the `special` and `special-core` binaries in the path. TODOs:
