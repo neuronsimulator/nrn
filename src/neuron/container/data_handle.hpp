@@ -4,7 +4,11 @@
 #include "neuron/model_data_fwd.hpp"
 
 #include <ostream>
+#include <sstream>
 #include <vector>
+
+// TODO: support throwing exceptions instead of using hoc_execerror
+extern "C" [[noreturn]] void hoc_execerror(const char*, const char*);
 
 namespace neuron::container {
 namespace detail {
@@ -59,8 +63,7 @@ struct data_handle {
         auto needle = utils::find_data_handle(raw_ptr);
         if (needle) {
             *this = std::move(needle);
-            assert(m_container);
-            assert(m_offset);
+            check_modern_mode_validity("data_handle(T*)");
         } else {
             // If that didn't work, just save the plain pointer value. This is unsafe
             // and should be removed. It is purely meant as an intermediate step, if
@@ -76,8 +79,7 @@ struct data_handle {
     data_handle(identifier_base offset, std::vector<T>& container)
         : m_offset{std::move(offset)}
         , m_container{&container} {
-        assert(m_container);
-        assert(m_offset);
+        check_modern_mode_validity("data_handle(row, container)");
     }
 
     explicit operator bool() const {
@@ -108,8 +110,7 @@ struct data_handle {
         if (m_raw_ptr) {
             return *m_raw_ptr;
         } else {
-            assert(m_container);
-            assert(m_offset);
+            check_modern_mode_validity("T& operator*()");
             return m_container->at(m_offset.current_row());
         }
     }
@@ -118,8 +119,7 @@ struct data_handle {
         if (m_raw_ptr) {
             return *m_raw_ptr;
         } else {
-            assert(m_container);
-            assert(m_offset);
+            check_modern_mode_validity("T const& operator*() const");
             return m_container->at(m_offset.current_row());
         }
     }
@@ -133,7 +133,6 @@ struct data_handle {
             return nullptr;
         } else {
             assert(m_container);
-            assert(m_offset);
             return std::next(m_container->data(), m_offset.current_row());
         }
     }
@@ -147,7 +146,6 @@ struct data_handle {
             return nullptr;
         } else {
             assert(m_container);
-            assert(m_offset);
             return std::next(m_container->data(), m_offset.current_row());
         }
     }
@@ -176,6 +174,15 @@ struct data_handle {
     }
 
   private:
+    void check_modern_mode_validity(const char* method) const {
+        assert(m_container);
+        if (!m_offset) {
+            // TODO: support throwing exceptions instead of using hoc_execerror
+            std::ostringstream oss;
+            oss << *this << " invalid " << method;
+            hoc_execerror(oss.str().c_str(), nullptr);
+        }
+    }
     template <bool>
     friend struct detail::generic_data_handle;
     friend struct std::hash<data_handle>;
