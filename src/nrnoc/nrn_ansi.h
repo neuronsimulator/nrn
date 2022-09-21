@@ -1,6 +1,8 @@
 #pragma once
 #include "membfunc.h"  // nrn_bamech_t
 #include "neuron/container/data_handle.hpp"
+#include "neuron/container/soa_container.hpp"
+#include "neuron/model_data.hpp"
 union Datum;
 struct Extnode;
 struct hoc_Item;
@@ -108,7 +110,7 @@ extern void hoc_level_pushsec(Section*);
 extern double nrn_ra(Section*);
 extern int node_index_exact(Section*, double);
 void nrn_cachevec(int);
-extern void nrn_ba(NrnThread*, int);
+void nrn_ba(NrnThread*, int);
 extern void nrniv_recalc_ptrs(void);
 extern void nrn_recalc_ptrvector(void);
 extern void nrn_recalc_ptrs(double* (*r)(double*) );
@@ -121,8 +123,7 @@ extern void nrn_multisplit_ptr_update(void);
 extern void nrn_cache_prop_realloc();
 extern void nrn_use_daspk(int);
 extern void nrn_update_ps2nt(void);
-void nrn_ensure_model_data_are_sorted();
-
+neuron::model_sorted_token nrn_ensure_model_data_are_sorted();
 extern void activstim_rhs(void);
 extern void activclamp_rhs(void);
 extern void activclamp_lhs(void);

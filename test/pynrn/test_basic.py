@@ -411,6 +411,7 @@ def test_hocObj_error_in_construction():
     expect_hocerr(h.List, "A")
     expect_hocerr(h.List, h.NetStim())
 
+
 def test_recording_deleted_node():
     soma = h.Section()
     soma_v = h.Vector().record(soma(0.5)._ref_v)
@@ -419,6 +420,7 @@ def test_recording_deleted_node():
     # dead. This should give an error, but we could also considering recording
     # None values in that case.
     expect_hocerr(h.finitialize, (-65,))
+
 
 if __name__ == "__main__":
     set_quiet(False)
