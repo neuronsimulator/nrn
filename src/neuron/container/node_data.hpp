@@ -13,5 +13,9 @@ struct Voltage {
 
 /** @brief Underlying storage for all Nodes.
  */
-struct storage: soa<identifier, field::Voltage> {};
+using storage = soa<identifier, field::Voltage>;
+
+/** @brief Owning identifier for a row in the Node storage;
+ */
+using owning_identifier = owning_identifier_base<storage, identifier>;
 }  // namespace neuron::container::Node

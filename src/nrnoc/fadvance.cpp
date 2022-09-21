@@ -5,6 +5,7 @@
 #include <errno.h>
 #include "neuron.h"
 #include "section.h"
+#include "nrn_ansi.h"
 #include "nrniv_mf.h"
 #include "multisplit.h"
 #define nrnoc_fadvance_c
@@ -497,7 +498,6 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 }
 
 extern void nrn_extra_scatter_gather(int direction, int tid);
-extern void nrn_ba(NrnThread*, int);
 
 void* nrn_fixed_step_lastpart(NrnThread* nth) {
     CTBEGIN
@@ -851,7 +851,7 @@ void nrn_finitialize(int setv, double v) {
     nrn_fihexec(3); /* model structure changes can be made */
     verify_structure();
     // Is this the right place to call this?
-    nrn_ensure_model_data_are_sorted();
+    auto const sorted_model = nrn_ensure_model_data_are_sorted();
 #if ELIMINATE_T_ROUNDOFF
     nrn_ndt_ = 0.;
     nrn_dt_ = dt;
@@ -1032,6 +1032,8 @@ void nrn_ba(NrnThread* nt, int bat) {
         int type = tbl->bam->type;
         Memb_list* ml = tbl->ml;
         for (i = 0; i < ml->nodecount; ++i) {
+            // Is ml->pdata[i] always double*/pval? Need to substitute transient
+            // flattened data here.
             (*f)(ml->nodelist[i], ml->_data[i], ml->pdata[i], ml->_thread, nt);
         }
     }

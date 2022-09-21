@@ -115,9 +115,7 @@ struct owning_handle: interface<owning_handle> {
      *  reference to it. This will probably be different for other types of data.
      */
     owning_handle(storage& node_data = neuron::model().node_data())
-        : m_node_data_offset{node_data} {
-        node_data.emplace_back(m_node_data_offset);
-    }
+        : m_node_data_offset{node_data.emplace_back()} {}
     owning_handle(owning_handle&&) = default;
     owning_handle(owning_handle const&) = delete;  // should be done(?)
     owning_handle& operator=(owning_handle&&) = default;
@@ -129,27 +127,11 @@ struct owning_handle: interface<owning_handle> {
     operator bool() const {
         return bool{m_node_data_offset};
     }
-    /** Create a new Node that is a clone of this one.
-     *  @todo Drop this if we make Node copiable.
-     */
-    // Node clone() const {
-    //   Node new_node{node_data()};
-    //   new_node.set_a(this->a());
-    //   new_node.set_b(this->b());
-    //   new_node.set_parent_id(this->id());
-    //   auto const& current_node_mechs = this->mechanisms();
-    //   auto& new_node_mechs = new_node.mechanisms();
-    //   new_node_mechs.reserve(current_node_mechs.size());
-    //   for (auto const& mech : current_node_mechs) {
-    //     new_node.insert(mech.type());
-    //   }
-    //   return new_node;
-    // }
 
   private:
     friend struct view;
     friend struct view_base<owning_handle>;
-    owning_identifier_base<storage, identifier> m_node_data_offset;
+    owning_identifier m_node_data_offset;
     // Interface for neuron::container::view_base
     storage& underlying_storage() const {
         return m_node_data_offset.data_container();

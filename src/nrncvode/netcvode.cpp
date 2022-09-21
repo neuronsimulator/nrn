@@ -35,6 +35,7 @@
 #include "ivocvect.h"
 #include "netcon.h"
 #include "netcvode.h"
+#include "nrn_ansi.h"
 #include "nrncore_write/utils/nrncore_utils.h"
 #include "nrniv_mf.h"
 #include "nrnste.h"
@@ -66,7 +67,6 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 extern void single_event_run();
 extern void setup_topology(), v_setup_vectors();
 extern int nrn_errno_check(int);
-extern void nrn_ba(NrnThread*, int);
 extern NetCvode* net_cvode_instance;
 extern cTemplate** nrn_pnt_template_;
 extern double t, dt;
