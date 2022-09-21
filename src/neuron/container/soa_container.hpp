@@ -1,6 +1,7 @@
 #pragma once
 #include "backtrace_utils.h"
 #include "neuron/container/data_handle.hpp"
+#include "neuron/container/soa_identifier.hpp"
 
 #include <string_view>
 #include <vector>
@@ -14,6 +15,33 @@ inline constexpr bool are_types_unique_v =
 template <typename T>
 inline constexpr bool are_types_unique_v<T> = true;
 }  // namespace detail
+
+/** @brief Token whose lifetime manages read-only state of a container.
+ */
+template <typename Container>
+struct sorted_token {
+    constexpr sorted_token(Container& container)
+        : m_container{&container} {
+        container.mark_read_only(true);
+    }
+    constexpr sorted_token(sorted_token&& other)
+        : m_container{std::exchange(other.m_container, nullptr)} {}
+    constexpr sorted_token(sorted_token const&) = delete;
+    constexpr sorted_token& operator=(sorted_token&& other) {
+        m_container = std::exchange(other.m_container, nullptr);
+        return *this;
+    }
+    constexpr sorted_token& operator=(sorted_token const&) = delete;
+    ~sorted_token() {
+        if (m_container) {
+            m_container->mark_read_only(false);
+        }
+    }
+
+  private:
+    Container* m_container{};
+};
+
 /** @brief Utility for generating SOA data structures.
  *  @tparam Tags Parameter pack of tag types that define the columns included in
  *               the container. Types may not be repeated.
@@ -35,6 +63,9 @@ struct soa {
      *  Iterators to the last element and the deleted element will be invalidated.
      */
     void erase(std::size_t i) {
+        if (m_read_only) {
+            throw std::runtime_error("soa<...>::erase called in read-only mode");
+        }
         m_sorted = false;
         auto const old_size = size();
         assert(i < old_size);
@@ -71,7 +102,33 @@ struct soa {
      *  invalidating indices, and whether it's important to us.
      */
     void mark_as_sorted(bool value = true) {
+        if (m_read_only) {
+            throw std::runtime_error("soa<...>::mark_as_sorted called in read-only mode");
+        }
         m_sorted = value;
+    }
+
+    /** @brief Mark that the underlying vectors are in read-only mode.
+     */
+    void mark_read_only(bool value = true) {
+        m_read_only = value;
+    }
+
+    /** @brief Return type of sorted_token()
+     */
+    using sorted_token_type = sorted_token<soa>;
+
+    /** @brief Mark that the container is in read-only mode until the token is destroyed.
+     *
+     *  The token has the semantics of a unique_ptr, i.e. it can be moved but
+     *  destroying a moved-from token has no effect.
+     */
+    sorted_token_type sorted_token() {
+        if (!m_sorted) {
+            throw std::runtime_error(
+                "soa<...>::sorted_token called when the container was not sorted");
+        }
+        return {*this};
     }
 
     /** @brief Query if the underlying vectors are still "sorted".
@@ -86,6 +143,9 @@ struct soa {
     /** @brief Resize the container.
      */
     void resize(std::size_t size) {
+        if (m_read_only) {
+            throw std::runtime_error("soa<...>::resize called in read-only mode");
+        }
         m_sorted = false;  // resize might trigger reallocation
         m_indices.resize(size);
         (get<Tags>().resize(size), ...);
@@ -107,15 +167,28 @@ struct soa {
 
   public:
     /** @brief Append a new entry to all elements of the container.
-     *  @todo Return non-owning view/reference to the newly added entry?
+     *  @todo  Perhaps the return type should be an owning view, not just an
+     *         owning row identifier.
+     *  @todo  Perhaps a different name would be better, given the comment below
+     *         about the semantics.
+     *
+     *  Note that this has slightly strange semantics: the returned object owns
+     *  row that has been added, so if you discard the return value then the
+     *  added row will immediately be deleted.
      */
-    void emplace_back(RowIdentifier index) {
+    [[nodiscard]] owning_identifier_base<soa, RowIdentifier> emplace_back() {
+        if (m_read_only) {
+            throw std::runtime_error("soa<...>::emplace_back called in read-only mode");
+        }
+        // Important that this comes after the m_read_only check
+        owning_identifier_base<soa, RowIdentifier> index{*this};
         // this can trigger reallocation
         m_sorted = false;
         index.set_current_row(size());
         m_indices.push_back(std::move(index));
         // Append a new element to all the data columns too.
         (get<Tags>().emplace_back(), ...);
+        return index;
     }
 
     /** @brief Get the offset-th identifier.
@@ -125,10 +198,16 @@ struct soa {
     }
 
     /** @brief Get the offset-th element of the column named by Tag.
+     *
+     *  Because this is returning a single value, it is permitted even in
+     *  read-only mode. The container being in read only mode means that
+     *  operations that would invalidate iterators/pointers are forbidden, not
+     *  that actual data values cannot change.
      */
     template <typename Tag>
     [[nodiscard]] typename Tag::type& get(std::size_t offset) {
-        return get<Tag>().at(offset);
+        static_assert(has_tag_v<Tag>);
+        return std::get<storage_t<Tag>>(m_data).at(offset);
     }
 
     /** @brief Get the offset-th element of the column named by Tag.
@@ -154,6 +233,9 @@ struct soa {
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type>& get() {
         static_assert(has_tag_v<Tag>);
+        if (m_read_only) {
+            throw std::runtime_error("non-const soa<...>::get() called in read-only mode");
+        }
         return std::get<storage_t<Tag>>(m_data);
     }
 
@@ -172,8 +254,9 @@ struct soa {
     template <typename T>
     [[nodiscard]] neuron::container::data_handle<T> find_data_handle(T* ptr) {
         neuron::container::data_handle<T> handle{};
+        // Don't go via non-const get<T>() because of the m_read_only check
         find_data_handle(handle, m_indices, ptr) ||
-            (find_data_handle(handle, get<Tags>(), ptr) || ...);
+            (find_data_handle(handle, std::get<storage_t<Tags>>(m_data), ptr) || ...);
         return handle;
     }
 
@@ -223,6 +306,7 @@ struct soa {
                 // bit more robust, we could insist that the container is
                 // "sorted". FIXME: re-enable this
                 // assert(is_sorted());
+                // Probably OK to call this in read-only mode?
                 handle = neuron::container::data_handle<T>{identifier(row), container};
                 assert(handle.refers_to_a_modern_data_structure());
                 return true;
@@ -238,6 +322,9 @@ struct soa {
      */
     template <typename Permutation>
     void permute_zip(Permutation permutation) {
+        if (m_read_only) {
+            throw std::runtime_error("non-const soa<...>::permute_zip called in read-only mode");
+        }
         // uncontroversial that applying a permutation changes the underlying
         // storage organisation and potentially invalidates pointers. slightly
         // more controversial: should explicitly permuting the data implicitly
@@ -254,6 +341,10 @@ struct soa {
     /** @brief Flag for mark_as_sorted and is_sorted().
      */
     bool m_sorted{false};
+
+    /** @brief Flag determining if the container is in read-only mode.
+     */
+    bool m_read_only{false};
 
     /** @brief Pointers to identifiers that record the current physical row.
      */

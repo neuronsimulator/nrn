@@ -2,6 +2,7 @@
 #include "neuron/model_data_fwd.hpp"
 #include "neuron/container/node_data.hpp"
 
+#include <optional>
 #include <sstream>
 
 namespace neuron {
@@ -42,9 +43,12 @@ struct Model {
     container::Node::storage m_node_data{};
 };
 
+using model_sorted_token = container::Node::storage::sorted_token_type;
+
 namespace detail {
-// Defining this inline seems to lead to duplicate copies when we
-// dlopen(libnrnmech.so) -- need to investigate that more later.
+// Defining this inline seems to lead to duplicate copies when we dlopen
+// libnrnmech.so , so we define it explicitly in container.cpp as part of
+// libnrniv.so
 extern Model model_data;
 }  // namespace detail
 
