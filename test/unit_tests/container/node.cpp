@@ -209,7 +209,8 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                            return node;
                        });
         auto& node_data = neuron::model().node_data();
-        auto const& voltage_storage = node_data.get<neuron::container::Node::field::Voltage>();
+        auto const& voltage_storage =
+            std::as_const(node_data).get<neuron::container::Node::field::Voltage>();
         REQUIRE(nodes.size() == voltage_storage.size());
         auto const require_logical_match = [&]() {
             THEN("Check the logical voltages still match") {
@@ -301,6 +302,31 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             nodes.erase(std::next(nodes.begin(), index_to_remove));
             reference_voltages.erase(std::next(reference_voltages.begin(), index_to_remove));
             require_logical_match_and_storage_different();
+        }
+        WHEN("The dense storage is sorted and marked read-only") {
+            // A rough sketch of the concept here is that if we have a
+            // SOA-backed quantity, like the node voltages, then referring
+            // stably to those values requires something like
+            // data_handle<double>. We might hold some complicated structure of
+            // those "in the interpreter", let's say
+            // std::list<data_handle<double>>, and want to flatten that into
+            // something simpler for use in the translated MOD file code --
+            // let's say std::vector<double*> -- while the data remain "sorted".
+            {
+                // Label the current order as "sorted"
+                node_data.mark_as_sorted(true);
+                // Acquire a token that locks the node data in read-only mode,
+                // and therefore enforces that it remains sorted.
+                auto const read_only_and_sorted_token = node_data.sorted_token();
+                THEN("New nodes cannot be created") {
+                    // Underlying node data is read-only, cannot allocate new Nodes.
+                    REQUIRE_THROWS(::Node{});
+                }
+            }
+            // read_only_and_sorted_token out of scope, underlying data no longer read-only
+            THEN("After the token is discarded, new Nodes can be allocated") {
+                REQUIRE_NOTHROW(::Node{});
+            }
         }
     }
 }
