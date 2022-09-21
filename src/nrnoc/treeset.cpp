@@ -2210,7 +2210,8 @@ static void nrn_sort_node_data() {
     // Generate the permutation vector to update the underlying storage for
     // Nodes. This must come after nrn_multisplit_setup_, which can change the
     // Node order.
-    std::size_t const global_node_data_size{neuron::model().node_data().size()};
+    auto& node_data = neuron::model().node_data();
+    std::size_t const global_node_data_size{node_data.size()};
     std::size_t global_node_data_offset{};
     std::vector<std::size_t> global_node_data_permutation(global_node_data_size);
     std::size_t global_i{};
@@ -2230,20 +2231,25 @@ static void nrn_sort_node_data() {
         }
     }
     assert(global_i == global_node_data_size);
-    neuron::model().node_data().apply_permutation(global_node_data_permutation);
-    neuron::model().node_data().mark_as_sorted();
+    node_data.apply_permutation(global_node_data_permutation);
+    node_data.mark_as_sorted(true);
 }
 
 /** @brief Ensure neuron::container::* data are sorted.
  *
+ *  Set the containers to be in read-only mode, until the returned token is
+ *  destroyed.
+ *
  *  So far this only affects Node voltages, which are use backing storage in
  *  neuron::model().node_data().
  */
-void nrn_ensure_model_data_are_sorted() {
-    if (!neuron::model().node_data().is_sorted()) {
+neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
+    auto& node_data = neuron::model().node_data();
+    if (!node_data.is_sorted()) {
         nrn_sort_node_data();
     }
-    assert(neuron::model().node_data().is_sorted());
+    assert(node_data.is_sorted());
+    return node_data.sorted_token();
 }
 
 void nrn_recalc_node_ptrs() {
