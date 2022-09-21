@@ -162,6 +162,12 @@ struct owning_identifier_base {
         std::reference_wrapper<DataContainer> m_data_ref;
     };
     std::unique_ptr<std::size_t, deleter> m_ptr;
+    template <typename, typename...>
+    friend struct soa;
+    void set_current_row(std::size_t new_row) {
+        assert(m_ptr);
+        *m_ptr = new_row;
+    }
 };
 
 }  // namespace neuron::container
