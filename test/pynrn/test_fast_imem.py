@@ -307,7 +307,7 @@ def test_fastimem_corenrn():
         print(max_abs_imem, flush=True)
         assert False
 
-    def compare(name):
+    def compare(name, rel_tol=0.0):
         print("Comparing {}".format(name), flush=True)
         keep_going = True
         for i, (ref_vec, new_vec) in enumerate(zip(imem_std, imem)):
@@ -322,10 +322,11 @@ def test_fastimem_corenrn():
                 )
                 keep_going = False
             for j, (ref_val, new_val) in enumerate(zip(ref_values, new_values)):
-                if ref_val != new_val:
+                rel_diff = abs(ref_val - new_val) / max(abs(ref_val), abs(new_val))
+                if rel_diff > rel_tol:
                     print(
-                        "cell {} value {} new={} ref={} diff={}".format(
-                            i, j, new_val, ref_val, new_val - ref_val
+                        "cell {} value {} new={} ref={} diff={}, rel_diff={}".format(
+                            i, j, new_val, ref_val, new_val - ref_val, rel_diff
                         ),
                         flush=True,
                     )
@@ -342,6 +343,7 @@ def test_fastimem_corenrn():
         run(tstop)
         compare("cache efficient NEURON with {} threads".format(nth))
 
+    # This leaves nthread=1, other values cause errors in the CoreNEURON tests below
     if coreneuron_available():
         cvode.cache_efficient(1)  # coreneuron_available() resets this
         from neuron import coreneuron
@@ -351,8 +353,9 @@ def test_fastimem_corenrn():
         coreneuron.gpu = distutils.util.strtobool(
             os.environ.get("CORENRN_ENABLE_GPU", "false")
         )
+        tolerance = 5e-11
         run(tstop)
-        compare("CoreNEURON online mode")
+        compare("CoreNEURON online mode", rel_tol=tolerance)
         coreneuron.enable = False
 
         tvec = h.Vector().record(h._ref_t)
@@ -365,7 +368,7 @@ def test_fastimem_corenrn():
             assert h.t > told
             coreneuron.enable = False
             pc.psolve(h.t + dt_above)
-        compare("Checking i_membrane_ trajectories")
+        compare("Checking i_membrane_ trajectories", rel_tol=tolerance)
 
         print(
             "For file mode (offline) coreneuron comparison of i_membrane_ initialization",
