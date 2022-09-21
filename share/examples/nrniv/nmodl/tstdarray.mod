@@ -1,3 +1,4 @@
+COMMENT POINTER arrays not implemented
 NEURON{
 	SUFFIX nothing
 	POINTER y
@@ -12,4 +13,4 @@ PROCEDURE set(i, x) {
 FUNCTION get(i) {
 	get = y[i]
 }
-
+ENDCOMMENT
