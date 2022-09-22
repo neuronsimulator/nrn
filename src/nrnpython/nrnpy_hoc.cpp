@@ -753,7 +753,7 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
     if (self->type_ == PyHoc::HocTopLevelInterpreter) {
         result = nrnexec((PyObject*) self, args);
     } else if (self->type_ == PyHoc::HocFunction) {
-        result = static_cast<PyObject*>(OcJump{}.fpycall(fcall, self, args));
+        result = static_cast<PyObject*>(OcJump::fpycall(fcall, self, args));
         if (!result) {
             PyErr_SetString(PyExc_RuntimeError, "hocobj_call error");
         }

@@ -12,6 +12,7 @@
 #include "parse.hpp"
 #include "hocparse.h"
 #include "oc_ansi.h"
+#include "ocjump.h"
 #include "ocfunc.h"
 #include "ocmisc.h"
 #include "nrnmpi.h"
@@ -649,27 +650,7 @@ void hoc_show_errmess_always(void) {
 }
 
 int hoc_execerror_messages;
-/** @brief How many NEURON try { ... } catch(...) { ... } blocks are in the call stack.
- *
- *  Errors inside NEURON are triggered using hoc_execerror, which ultimately
- *  throws an exception. To replicate the old logic, we sometimes need to insert
- *  a try/catch block *only if* there is no try/catch block less deeply nested
- *  on the call stack. This global variable tracks how many such blocks are
- *  currently present on the stack.
- */
 int nrn_try_catch_nest_depth{0};
-
-/** @brief Helper type for incrementing/decrementing nrn_try_catch_nest_depth.
- */
-struct try_catch_depth_increment {
-    try_catch_depth_increment() {
-        ++nrn_try_catch_nest_depth;
-    }
-    ~try_catch_depth_increment() {
-        --nrn_try_catch_nest_depth;
-    }
-};
-
 int yystart;
 
 void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from run-time error */
@@ -1410,7 +1391,7 @@ int hoc_oc(const char* buf) {
         kernel();
     } else {
         // This is the highest level try/catch
-        try_catch_depth_increment _{};
+        try_catch_depth_increment tell_children_we_will_catch{};
         try {
             signal_handler_guard _{};
             kernel();
