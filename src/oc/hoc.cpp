@@ -191,8 +191,8 @@ int lineno;
 #include <execinfo.h>
 #endif
 #include <signal.h>
-static int control_jmpbuf = 0; /* don't change jmp_buf if being controlled */
-static int hoc_oc_jmpbuf;
+static bool controlled_by_hoc_oc{false};
+static bool controlled_by_hoc_run1{false};
 int intset; /* safer interrupt handling */
 int indef;
 const char* infile; /* input file name */
@@ -696,9 +696,6 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     if (fin && pipeflag == 0 && (!nrn_fw_eq(fin, stdin) || !nrn_istty_))
         IGNORE(nrn_fw_fseek(fin, 0L, 2)); /* flush rest of file */
     hoc_oop_initaftererror();
-    if (hoc_oc_jmpbuf) {
-        throw std::runtime_error("hoc_oc_begin, 1");
-    }
     throw std::runtime_error("begin, 1");
 }
 
@@ -1259,11 +1256,11 @@ static void restore_signals(void) {
 
 // execute until EOF
 static int hoc_run1() {
-    int controlled = control_jmpbuf;
+    bool controlled = controlled_by_hoc_run1;
     NrnFILEWrap* sav_fin = fin;
     if (!controlled) {
         set_signals();
-        control_jmpbuf = 1;
+        controlled_by_hoc_run1 = true;
         intset = 0;
     }
     try {
@@ -1289,7 +1286,7 @@ static int hoc_run1() {
     }
     if (!controlled) {
         restore_signals();
-        control_jmpbuf = 0;
+        controlled_by_hoc_run1 = false;
     }
     return EXIT_SUCCESS;
 }
@@ -1357,26 +1354,22 @@ void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
 }
 
 int hoc_oc(const char* buf) {
-    char* cp;
-    int sav_pipeflag = pipeflag;
-    int sav_lineno = lineno;
-    const char* sav_inputbufptr = nrn_inputbufptr;
-    nrn_inputbufptr = buf;
-    pipeflag = 3;
-    lineno = 1;
+    int sav_pipeflag = std::exchange(hoc_pipeflag, 3);
+    int sav_lineno = std::exchange(hoc_lineno, 1);
+    const char* sav_inputbufptr = std::exchange(nrn_inputbufptr, buf);
     // is this controlled logic needed with exceptions?
-    int controlled = hoc_oc_jmpbuf || controlled_by_OcJumpImpl;
+    bool controlled{controlled_by_hoc_oc || controlled_by_OcJumpImpl};
     if (!controlled) {  // i.e. this is the highest level catch block?
-        hoc_oc_jmpbuf = 1;
+        controlled_by_hoc_oc = true;
     }
     try {
         set_signals();
-        intset = 0;
+        hoc_intset = 0;
         hocstr_resize(hoc_cbufstr, strlen(buf) + 10);
         nrn_inputbuf_getline();
-        while (*ctp || *nrn_inputbufptr) {
+        while (*hoc_ctp || *nrn_inputbufptr) {
             hoc_ParseExec(yystart);
-            if (intset) {
+            if (hoc_intset) {
                 hoc_execerror("interrupted", nullptr);
             }
         }
@@ -1385,22 +1378,22 @@ int hoc_oc(const char* buf) {
             // there's a higher catch block
             throw;
         } else {
-            hoc_oc_jmpbuf = 0;
+            controlled_by_hoc_oc = false;
             restore_signals();
             initcode();
-            intset = 0;
-            pipeflag = sav_pipeflag;
+            hoc_intset = 0;
+            hoc_pipeflag = sav_pipeflag;
             nrn_inputbufptr = sav_inputbufptr;
-            lineno = sav_lineno;
+            hoc_lineno = sav_lineno;
             return 1;
         }
     }
     if (!controlled) {
-        hoc_oc_jmpbuf = 0;
+        controlled_by_hoc_oc = false;
         restore_signals();
     }
-    lineno = sav_lineno;
-    pipeflag = sav_pipeflag;
+    hoc_lineno = sav_lineno;
+    hoc_pipeflag = sav_pipeflag;
     nrn_inputbufptr = sav_inputbufptr;
     hoc_execerror_messages = 1;
     return 0;
