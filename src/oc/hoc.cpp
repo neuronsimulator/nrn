@@ -192,8 +192,6 @@ int lineno;
 #include <execinfo.h>
 #endif
 #include <signal.h>
-static bool controlled_by_hoc_oc{false};
-static bool controlled_by_hoc_run1{false};
 int intset; /* safer interrupt handling */
 int indef;
 const char* infile; /* input file name */
@@ -651,7 +649,27 @@ void hoc_show_errmess_always(void) {
 }
 
 int hoc_execerror_messages;
-int OcJumpImpl_nest_depth{0};
+/** @brief How many NEURON try { ... } catch(...) { ... } blocks are in the call stack.
+ *
+ *  Errors inside NEURON are triggered using hoc_execerror, which ultimately
+ *  throws an exception. To replicate the old logic, we sometimes need to insert
+ *  a try/catch block *only if* there is no try/catch block less deeply nested
+ *  on the call stack. This global variable tracks how many such blocks are
+ *  currently present on the stack.
+ */
+int nrn_try_catch_nest_depth{0};
+
+/** @brief Helper type for incrementing/decrementing nrn_try_catch_nest_depth.
+ */
+struct try_catch_depth_increment {
+    try_catch_depth_increment() {
+        ++nrn_try_catch_nest_depth;
+    }
+    ~try_catch_depth_increment() {
+        --nrn_try_catch_nest_depth;
+    }
+};
+
 int yystart;
 
 void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from run-time error */
@@ -685,9 +703,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     ctp = cbuf;
     *ctp = '\0';
 
-    if (OcJumpImpl_nest_depth && (nrnmpi_numprocs_world == 1 || !nrn_mpiabort_on_error_)) {
-        throw std::runtime_error("oc_jump_target");
-    }
+    // There used to be some logic here to abort here if we are inside an OcJump call.
 #if NRNMPI
     if (nrnmpi_numprocs_world > 1 && nrn_mpiabort_on_error_) {
         nrnmpi_abort(-1);
@@ -697,7 +713,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     if (fin && pipeflag == 0 && (!nrn_fw_eq(fin, stdin) || !nrn_istty_))
         IGNORE(nrn_fw_fseek(fin, 0L, 2)); /* flush rest of file */
     hoc_oop_initaftererror();
-    throw std::runtime_error("begin, 1");
+    throw std::runtime_error("hoc_execerror");
 }
 
 extern "C" void hoc_execerror(const char* s, const char* t) /* recover from run-time error */
@@ -1286,7 +1302,7 @@ static int hoc_run1() {
             hoc_execerror("interrupted", nullptr);
         }
     };
-    if (controlled_by_hoc_run1) {
+    if (nrn_try_catch_nest_depth) {
         // This is not the most shallowly nested call to hoc_run1(), allow the
         // most shallowly nested call to handle exceptions.
         kernel();
@@ -1296,7 +1312,7 @@ static int hoc_run1() {
         signal_handler_guard _{};
         hoc_intset = 0;
         auto const sav_fin = hoc_fin;
-        auto const control_manager = temporarily_change{controlled_by_hoc_run1, true};
+        try_catch_depth_increment tell_children_we_will_catch{};
         try {
             kernel();
         } catch (...) {
@@ -1389,14 +1405,12 @@ int hoc_oc(const char* buf) {
     auto const lineno_manager = temporarily_change{hoc_lineno, 1};
     auto const pipeflag_manager = temporarily_change{hoc_pipeflag, 3};
     auto const inputbufptr_manager = temporarily_change{nrn_inputbufptr, buf};
-    // Should we try/catch, or is someone already doing that higher up?
-    bool controlled{controlled_by_hoc_oc || OcJumpImpl_nest_depth};
-    if (controlled) {
+    if (nrn_try_catch_nest_depth) {
         // Someone else is responsible for catching errors
         kernel();
     } else {
         // This is the highest level try/catch
-        auto const flag_manager = temporarily_change{controlled_by_hoc_oc, true};
+        try_catch_depth_increment _{};
         try {
             signal_handler_guard _{};
             kernel();

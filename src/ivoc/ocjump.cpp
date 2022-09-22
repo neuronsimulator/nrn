@@ -161,7 +161,7 @@ void* OcJumpImpl::fpycall(void* (*f)(void*, void*), void* a, void* b) {
     return c;
 }
 
-extern int OcJumpImpl_nest_depth;
+extern int nrn_try_catch_nest_depth;
 void OcJumpImpl::begin() {
     // not complete but it is good for expressions and it can be improved
     oc_save_hoc_oop(&o1, &o2, &o4, &o5);
@@ -170,7 +170,7 @@ void OcJumpImpl::begin() {
 #if CABLE
     oc_save_cabcode(&cc1, &cc2);
 #endif
-    ++OcJumpImpl_nest_depth;
+    ++nrn_try_catch_nest_depth;
 }
 void OcJumpImpl::restore() {
     oc_restore_hoc_oop(&o1, &o2, &o4, &o5);
@@ -181,7 +181,7 @@ void OcJumpImpl::restore() {
 #endif
 }
 void OcJumpImpl::finish() {
-    --OcJumpImpl_nest_depth;
+    --nrn_try_catch_nest_depth;
 }
 
 ObjectContext::ObjectContext(Object* obj) {
