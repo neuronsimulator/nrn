@@ -6,18 +6,15 @@ struct Symlist;
 struct Object;
 union Objectdata;
 
-class ObjectContext {
-  public:
+struct ObjectContext {
     ObjectContext(Object*);
-    virtual ~ObjectContext();
-    void restore();
+    ~ObjectContext();
 
   private:
     Object* a1;
     Objectdata* a2;
     int a4;
     Symlist* a5;
-    bool restored_;
 };
 
 struct OcJump {
@@ -26,6 +23,8 @@ struct OcJump {
     bool execute(Inst* p);
     bool execute(const char*, Object* ob = NULL);
     void* fpycall(void* (*) (void*, void*), void*, void*);
+
   private:
+    // https://en.cppreference.com/w/cpp/language/pimpl
     std::unique_ptr<OcJumpImpl> impl_;
 };

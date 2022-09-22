@@ -6062,7 +6062,6 @@ void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double tt) {  //
             Oc oc;
             oc.run("screen_update()\n");
         }
-        obc.restore();
 #else
         }
 #endif  // HAVE_IV

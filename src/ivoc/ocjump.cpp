@@ -224,16 +224,8 @@ ObjectContext::ObjectContext(Object* obj) {
         hoc_objectdata = hoc_top_level_data;
         hoc_symlist = hoc_top_level_symlist;
     }
-    restored_ = false;
 }
 
 ObjectContext::~ObjectContext() {
-    if (!restored_) {
-        restore();
-    }
-}
-
-void ObjectContext::restore() {
     oc_restore_hoc_oop(&a1, &a2, &a4, &a5);
-    restored_ = true;
 }
