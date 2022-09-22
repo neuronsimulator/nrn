@@ -658,32 +658,14 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     yystart = 1;
     hoc_menu_cleanup();
     hoc_errno_check();
-#if 0
-	hoc_xmenu_cleanup();
-#endif
     if (debug_message_ || prnt) {
-        warning(s, t);
+        hoc_warning(s, t);
         frame_debug();
         nrn_err_dialog(s);
-#if defined(__GO32__)
-        {
-            extern int egagrph;
-            if (egagrph) {
-                hoc_outtext("Error:");
-                hoc_outtext(s);
-                if (t) {
-                    hoc_outtext(" ");
-                    hoc_outtext(t);
-                }
-                hoc_outtext("\n");
-            }
-        }
-#endif
     }
-    /* in case warning not called */
-    ctp = cbuf;
-    *ctp = '\0';
-
+    // In case hoc_warning not called
+    hoc_ctp = hoc_cbuf;
+    *hoc_ctp = '\0';
     // There used to be some logic here to abort here if we are inside an OcJump call.
 #if NRNMPI
     if (nrnmpi_numprocs_world > 1 && nrn_mpiabort_on_error_) {
@@ -691,8 +673,9 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     }
 #endif
     hoc_execerror_messages = 1;
-    if (fin && pipeflag == 0 && (!nrn_fw_eq(fin, stdin) || !nrn_istty_))
-        IGNORE(nrn_fw_fseek(fin, 0L, 2)); /* flush rest of file */
+    if (hoc_fin && hoc_pipeflag == 0 && (!nrn_fw_eq(hoc_fin, stdin) || !nrn_istty_)) {
+        IGNORE(nrn_fw_fseek(hoc_fin, 0L, 2)); /* flush rest of file */
+    }
     hoc_oop_initaftererror();
     throw std::runtime_error("hoc_execerror");
 }
