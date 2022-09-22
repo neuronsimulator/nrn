@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 union Inst;
-class OcJumpImpl;
+struct OcJumpImpl;
 struct Symlist;
 struct Object;
 union Objectdata;
@@ -19,7 +19,7 @@ struct ObjectContext {
 
 struct OcJump {
     OcJump();
-    virtual ~OcJump();
+    ~OcJump();
     bool execute(Inst* p);
     bool execute(const char*, Object* ob = NULL);
     void* fpycall(void* (*) (void*, void*), void*, void*);

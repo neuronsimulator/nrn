@@ -18,54 +18,39 @@ extern Objectdata* hoc_top_level_data;
 extern Symlist* hoc_top_level_symlist;
 extern Symlist* hoc_symlist;
 extern Object* hoc_thisobject;
-extern void hoc_execute1();
-extern bool hoc_valid_stmt(const char* stmt, Object* ob);
 extern int hoc_execerror_messages;
 
-static bool valid_stmt1(const char* stmt, Object* ob) {
-    char* s = new char[strlen(stmt) + 2];
-    strcpy(s, stmt);
-    strcat(s, "\n");
-    OcJump oj;
-    bool val = oj.execute(s, ob);
-    delete[] s;
-    return val;
-}
-
 bool hoc_valid_stmt(const char* stmt, Object* ob) {
-    return valid_stmt1(stmt, ob);
+    std::string s{stmt};
+    s.append(1, '\n');
+    return OcJump{}.execute(s.c_str(), ob);
 }
 
 void hoc_execute1() {
-    Object* ob = NULL;
-    int hem = 1, hemold;
+    Object* ob{};
+    int hem{1};
     if (ifarg(2)) {
         if (hoc_is_object_arg(2)) {
             ob = *hoc_objgetarg(2);
             if (ifarg(3)) {
-                hem = (int) chkarg(3, 0., 1.);
+                hem = chkarg(3, 0., 1.);
             }
         } else {
-            hem = (int) chkarg(2, 0., 1.);
+            hem = chkarg(2, 0., 1.);
         }
     }
 
-    hemold = hoc_execerror_messages;
-    hoc_execerror_messages = hem;
-    int old_mpiabort_flag = nrn_mpiabort_on_error_;
-    nrn_mpiabort_on_error_ = 0;
-    bool b = valid_stmt1(gargstr(1), ob);
+    auto const hemold = std::exchange(hoc_execerror_messages, hem);
+    auto const old_mpiabort_flag = std::exchange(nrn_mpiabort_on_error_, 0);
+    bool const b = hoc_valid_stmt(hoc_gargstr(1), ob);
     nrn_mpiabort_on_error_ = old_mpiabort_flag;
     hoc_execerror_messages = hemold;
-    hoc_ret();
-    hoc_pushx(double(b));
+    hoc_retpushx(b);
 }
 
 // safely? return from an execution even in the presence of an execerror
 
-class OcJumpImpl {
-  public:
-    virtual ~OcJumpImpl() {}
+struct OcJumpImpl {
     bool execute(Inst* p);
     bool execute(const char*, Object* ob = NULL);
     void* fpycall(void* (*f)(void*, void*), void* a, void* b);
@@ -112,12 +97,11 @@ class OcJumpImpl {
 
 #if HAVE_IV
 bool Oc::valid_expr(Symbol* s) {
-    OcJump oj;
-    return oj.execute(s->u.u_proc->defn.in);
+    return OcJump{}.execute(s->u.u_proc->defn.in);
 }
 
 bool Oc::valid_stmt(const char* stmt, Object* ob) {
-    return valid_stmt1(stmt, ob);
+    return hoc_valid_stmt(stmt, ob);
 }
 #endif
 //------------------------------------------------------------------
