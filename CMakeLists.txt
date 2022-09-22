@@ -230,8 +230,6 @@ configure_file(src/nrnoc/nrnsemanticversion.h.in src/nrnoc/nrnsemanticversion.h 
 # =============================================================================
 set(CODING_CONV_PREFIX "NRN")
 set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "external")
-set(${CODING_CONV_PREFIX}_ClangFormat_REQUIRED_VERSION 12.0.1)
-set(${CODING_CONV_PREFIX}_ClangFormat_EXCLUDES_RE CACHE STRING "") # None needed
 set(CODING_CONV_CMAKE "${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/coding-conventions/cpp/cmake")
 if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
   # Abort with a helpful message if the current source tree lacks .git information, as in that case
@@ -241,6 +239,18 @@ if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
 endif()
 include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
+
+# Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE is not set, look it up
+# in the PATH exclusively. Need to set PYTHON_EXECUTABLE before calling SanitizerHelper.cmake
+if(NOT PYTHON_EXECUTABLE)
+  message(
+    STATUS "-DPYTHON_EXECUTABLE not specified. Looking for `python3` in the PATH exclusively...")
+  find_program(
+    PYTHON_EXECUTABLE python3
+    PATHS ENV PATH
+    NO_DEFAULT_PATH)
+  message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
+endif()
 
 # =============================================================================
 # Enable sanitizer support if the NRN_SANITIZERS variable is set
@@ -382,18 +392,6 @@ endif()
 # =============================================================================
 # Enable Python support
 # =============================================================================
-
-# Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE is not set, look it up
-# in the PATH exclusively.
-if(NOT PYTHON_EXECUTABLE)
-  message(
-    STATUS "-DPYTHON_EXECUTABLE not specified. Looking for `python3` in the PATH exclusively...")
-  find_program(
-    PYTHON_EXECUTABLE python3
-    PATHS ENV PATH
-    NO_DEFAULT_PATH)
-  message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
-endif()
 
 find_package(PythonInterp 3.7 REQUIRED)
 if(NRN_ENABLE_PYTHON)

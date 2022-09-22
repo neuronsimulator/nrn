@@ -22,7 +22,7 @@ pr:
 # Trigger build for certain branches only
 trigger:
 - master
-- releases/*
+- release/*
 
 stages:
   - stage: BuildTestDeploy

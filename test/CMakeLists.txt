@@ -88,12 +88,46 @@ if(NRN_ENABLE_MPI)
   # available version of OpenMPI does but those of HPE-MPI and MPICH do not).
   set(MPIEXEC_OVERSUBSCRIBE --oversubscribe)
   execute_process(
-    COMMAND ${MPIEXEC} ${MPIEXEC_OVERSUBSCRIBE} --version
+    COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_OVERSUBSCRIBE} --version
     RESULT_VARIABLE MPIEXEC_OVERSUBSCRIBE_TEST
     OUTPUT_QUIET ERROR_QUIET)
   if(NOT MPIEXEC_OVERSUBSCRIBE_TEST EQUAL 0)
     message(STATUS "mpiexec does not support ${MPIEXEC_OVERSUBSCRIBE}")
     unset(MPIEXEC_OVERSUBSCRIBE)
+  endif()
+  if(APPLE
+     AND NRN_ENABLE_PYTHON
+     AND NRN_SANITIZERS)
+    # Detect how to tell ${MPIEXEC_EXECUTABLE} to set extra environment variables when launching the
+    # child process. This is important for using the sanitizers on macOS, as there variables like
+    # DYLD_INSERT_LIBRARIES are not propagated from parent processes to their children.
+    # ~~~
+    # -env works with mpich, -genv works with HPE-MPI, -x works with OpenMPI
+    foreach(option
+            "-env;NRN_PROBE_VARIABLE=NRN_PROBE_VALUE" "-genv;NRN_PROBE_VARIABLE;NRN_PROBE_VALUE"
+            "-x;NRN_PROBE_VARIABLE=NRN_PROBE_VALUE")
+      set(probe_command
+          ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${option}
+          ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} -c
+          "import os\; print(os.environ['NRN_PROBE_VARIABLE'])")
+      execute_process(
+        COMMAND ${probe_command}
+        RESULT_VARIABLE mpiexec_env_test
+        OUTPUT_VARIABLE mpiexec_env_test_stdout
+        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE)
+      if(mpiexec_env_test EQUAL 0 AND mpiexec_env_test_stdout STREQUAL "NRN_PROBE_VALUE")
+        set(preload_sanitizer_mpiexec "${option}")
+        string(REPLACE "NRN_PROBE_VARIABLE" "${NRN_SANITIZER_PRELOAD_VAR}"
+                       preload_sanitizer_mpiexec "${preload_sanitizer_mpiexec}")
+        string(REPLACE "NRN_PROBE_VALUE" "${NRN_SANITIZER_LIBRARY_PATH}" preload_sanitizer_mpiexec
+                       "${preload_sanitizer_mpiexec}")
+        break()
+      endif()
+    endforeach()
+    if(NOT DEFINED preload_sanitizer_mpiexec)
+      message(WARNING "Could not detect how to preload sanitizer runtimes under mpiexec.")
+      message(WARNING "You may see failures in tests launched as mpiexec ... python ...")
+    endif()
   endif()
 endif()
 
@@ -118,7 +152,8 @@ foreach(mpiexec "" "_mpiexec")
   if(NRN_HAVE_OPENMPI2_OR_LESS AND NOT NRN_ENABLE_MPI_DYNAMIC)
     set(python ${mpi_init_prefix${mpiexec}} nrniv ${mpi_init_suffix${mpiexec}} -python)
   else()
-    set(python ${mpi_init_prefix${mpiexec}} ${PYTHON_EXECUTABLE} ${mpi_init_suffix${mpiexec}})
+    set(python ${mpi_init_prefix${mpiexec}} ${preload_sanitizer${mpiexec}} ${PYTHON_EXECUTABLE}
+               ${mpi_init_suffix${mpiexec}})
   endif()
   nrn_add_test(
     GROUP mpi_init
@@ -197,8 +232,10 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           NAME rxd_mpi_tests
           PRELOAD_SANITIZER
           ENVIRONMENT COVERAGE_FILE=.coverage.rxd_mpi_tests ${change_test_tolerance}
-          COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
-                  ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} ${pytest} ./test/rxd --mpi)
+          COMMAND
+            ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
+            ${preload_sanitizer_mpiexec} ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} ${pytest}
+            ./test/rxd --mpi)
       endif()
     endif()
   endif()
@@ -273,6 +310,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         2
         ${MPIEXEC_OVERSUBSCRIBE}
         ${MPIEXEC_PREFLAGS}
+        ${preload_sanitizer_mpiexec}
         ${PYTHON_EXECUTABLE}
         ${MPIEXEC_POSTFLAGS})
   endif()

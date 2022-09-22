@@ -67,6 +67,13 @@ jobs:
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
               sanitizer: address
+          - os: macOS-12
+            config:
+              build_mode: cmake
+              # TODO: investigate rxd test timeouts in this build and re-enable them
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
+                -DNRN_ENABLE_RX3D=OFF -DCORENRN_SANITIZERS=address
+              sanitizer: address
       fail-fast: false
 
     steps:
@@ -202,14 +209,15 @@ jobs:
               cmake_args=(-G Ninja)
               # Sanitizer-specific setup
               if [[ -n "${{matrix.config.sanitizer}}" ]]; then
-                CC=$(command -v clang-14)
-                CXX=$(command -v clang++-14)
-                symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
-                echo symbolizer_path=${symbolizer_path}
+                if [ "$RUNNER_OS" == "Linux" ]; then
+                  CC=$(command -v clang-14)
+                  CXX=$(command -v clang++-14)
+                  symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
+                  cmake_args+=(-DLLVM_SYMBOLIZER_PATH="${symbolizer_path}")
+                fi
                 cmake_args+=(-DCMAKE_BUILD_TYPE=Custom \
                              -DCMAKE_C_FLAGS="-O1 -g -Wno-writable-strings" \
                              -DCMAKE_CXX_FLAGS="-O1 -g -Wno-writable-strings" \
-                             -DLLVM_SYMBOLIZER_PATH="${symbolizer_path}" \
                              -DNRN_SANITIZERS=$(echo ${{matrix.config.sanitizer}} | sed -e 's/-/,/g'))
               fi
               cmake_args+=(-DCMAKE_C_COMPILER="${CC}" \

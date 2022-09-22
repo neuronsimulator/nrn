@@ -102,10 +102,10 @@ rm -f $NM/mingw64/bin/libwinpthread-1.dll # already in $N/bin
 copyinc() {
   echo "" > temp.cxx
   for i in $* ; do
-    echo "#include <$i>"
+    echo "#include $i"
   done >> temp.cxx
   echo "int main(int argc, char** argv){return 0;}" >> temp.cxx
-  g++ -E temp.cxx  | grep '^#.*include' > temp1
+  g++ -E -Iinclude temp.cxx  | grep '^#.*include' > temp1
   sed -n 's,^.*msys64/,,p' temp1 | sed -n 's,".*,,p' > temp2
   sort temp2 | uniq > temp3
   sed -n 's,/[^/]*$,,p' temp3 | sort  | uniq > temp4
@@ -117,46 +117,25 @@ copyinc() {
   done
 }
 
-
+# we rely on a couple of include groups, one from nocmodl and the other one hoisted from old gcc days and all (most) ModelDB include 
 copyinc '
-cstdio
-cstdint
-'
+"mech_api.h"
+"section.h"
+<math.h>
+<stdio.h>
+<stdlib.h>
 
-# from gcc days and all (most) ModelDB include
-copyinc '
-_mingw.h
-_mingw_mac.h
-_mingw_off_t.h
-_mingw_secapi.h
-assert.h
-corecrt.h
-corecrt_startup.h
-corecrt_wstdlib.h
-crtdefs.h
-ctype.h
-errno.h
-float.h
-inttypes.h
-limits.h
-malloc.h
-math.h
-process.h
-pthread.h
-pthread_compat.h
-pthread_signal.h
-pthread_unistd.h
-signal.h
-stddef.h
-stdint.h
-stdio.h
-stdlib.h
-string.h
-swprintf.inl
-time.h
-sys/time.h
-unistd.h
-vadefs.h
+<ctype.h>
+<float.h>
+<getopt.h>
+<io.h>
+<sys/time.h>
+<time.h>
+<unistd.h>
+<pthread.h>
+<pthread_compat.h>
+<pthread_signal.h>
+<pthread_unistd.h>
 '
 
 mlib=mingw64/x86_64-w64-mingw32/lib # gcc 11.2.0 Rev 1
