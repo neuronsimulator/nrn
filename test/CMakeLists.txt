@@ -205,6 +205,10 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests
     COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/cover
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
+  nrn_add_test(
+    GROUP coverage_tests
+    NAME example_nmodl
+    COMMAND ${PROJECT_BINARY_DIR}/bin/nrnivmodl ${PROJECT_SOURCE_DIR}/share/examples/nrniv/nmodl)
 
   if(NRN_ENABLE_RX3D)
     nrn_add_test_group(
