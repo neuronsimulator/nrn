@@ -12,6 +12,7 @@
 #include <vector>
 
 using namespace neuron::container;
+using namespace neuron::container::Node;
 
 // We want to check that the tests pass for all of:
 // - data_handle<T>
@@ -209,8 +210,7 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                            return node;
                        });
         auto& node_data = neuron::model().node_data();
-        auto const& voltage_storage =
-            std::as_const(node_data).get<neuron::container::Node::field::Voltage>();
+        auto const& voltage_storage = std::as_const(node_data).get<field::Voltage>();
         REQUIRE(nodes.size() == voltage_storage.size());
         auto const require_logical_match = [&]() {
             THEN("Check the logical voltages still match") {
@@ -303,6 +303,10 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             reference_voltages.erase(std::next(reference_voltages.begin(), index_to_remove));
             require_logical_match_and_storage_different();
         }
+        WHEN("A token guaranteeing sorted-ness is requested from an unsorted container") {
+            node_data.mark_as_sorted(false);
+            REQUIRE_THROWS(node_data.sorted_token());
+        }
         WHEN("The dense storage is sorted and marked read-only") {
             // A rough sketch of the concept here is that if we have a
             // SOA-backed quantity, like the node voltages, then referring
@@ -328,6 +332,19 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                     auto& node = nodes.front();
                     REQUIRE_NOTHROW(node.v());
                     REQUIRE_NOTHROW(node.set_v(node.v() + 42.0));
+                }
+                THEN("A non-const reference to the underlying storage cannot be obtained") {
+                    REQUIRE_THROWS(node_data.get<field::Voltage>());
+                }
+                THEN("A const reference to the underlying storage can be obtained") {
+                    REQUIRE_NOTHROW(std::as_const(node_data).get<field::Voltage>());
+                }
+                THEN("The sorted-ness flag cannot be modified") {
+                    REQUIRE_THROWS(node_data.mark_as_sorted(true));
+                    REQUIRE_THROWS(node_data.mark_as_sorted(false));
+                }
+                THEN("The storage cannot be permuted") {
+                    REQUIRE_THROWS(node_data.reverse());
                 }
                 // In read-only mode we cannot delete Nodes either, but because
                 // we cannot throw from destructors it is not easy to test this
