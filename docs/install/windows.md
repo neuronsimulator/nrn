@@ -4,10 +4,10 @@
 
 You need to install the following:
 
-*  Git: https://git-scm.com/
-*  Chocolatey: https://chocolatey.org/
-*  Visual Studio with C++: https://visualstudio.microsoft.com/vs/features/cplusplus/
-*  `pwsh` (grab the latest PowerShell release on GitHub: https://github.com/PowerShell/PowerShell/releases/latest)
+*  Git: [https://git-scm.com/](https://git-scm.com/)
+*  Chocolatey: [https://chocolatey.org/](https://chocolatey.org/)
+*  Visual Studio with C++: [https://visualstudio.microsoft.com/vs/features/cplusplus/](https://visualstudio.microsoft.com/vs/features/cplusplus/)
+*  `pwsh` (grab the latest PowerShell release on GitHub: [https://github.com/PowerShell/PowerShell/releases/latest](https://github.com/PowerShell/PowerShell/releases/latest))
 
 ## Build Environment installation
 
