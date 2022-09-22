@@ -1254,6 +1254,15 @@ static void restore_signals(void) {
 #endif
 }
 
+struct signal_handler_guard {
+    signal_handler_guard() {
+        set_signals();
+    }
+    ~signal_handler_guard() {
+        restore_signals();
+    }
+};
+
 // execute until EOF
 static int hoc_run1() {
     bool controlled = controlled_by_hoc_run1;
@@ -1353,17 +1362,26 @@ void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
     fin = i4;
 }
 
-int hoc_oc(const char* buf) {
-    int sav_pipeflag = std::exchange(hoc_pipeflag, 3);
-    int sav_lineno = std::exchange(hoc_lineno, 1);
-    const char* sav_inputbufptr = std::exchange(nrn_inputbufptr, buf);
-    // is this controlled logic needed with exceptions?
-    bool controlled{controlled_by_hoc_oc || controlled_by_OcJumpImpl};
-    if (!controlled) {  // i.e. this is the highest level catch block?
-        controlled_by_hoc_oc = true;
+// Helper to temporarily set a global to something and then restore the original
+// value when the helper goes out of scope
+template <typename T>
+struct temporarily_change {
+    temporarily_change(T& global, T new_value)
+        : m_global_value{global}
+        , m_saved_value{std::exchange(global, new_value)} {}
+    ~temporarily_change() {
+        m_global_value = m_saved_value;
     }
-    try {
-        set_signals();
+
+  private:
+    T& m_global_value;
+    T m_saved_value;
+};
+
+int hoc_oc(const char* buf) {
+    // the substantive code to execute, everything else is to do with handling
+    // errors here or elsewhere
+    auto const kernel = [buf]() {
         hoc_intset = 0;
         hocstr_resize(hoc_cbufstr, strlen(buf) + 10);
         nrn_inputbuf_getline();
@@ -1373,28 +1391,27 @@ int hoc_oc(const char* buf) {
                 hoc_execerror("interrupted", nullptr);
             }
         }
-    } catch (...) {
-        if (controlled) {
-            // there's a higher catch block
-            throw;
-        } else {
-            controlled_by_hoc_oc = false;
-            restore_signals();
-            initcode();
+    };
+    auto const lineno_manager = temporarily_change{hoc_lineno, 1};
+    auto const pipeflag_manager = temporarily_change{hoc_pipeflag, 3};
+    auto const inputbufptr_manager = temporarily_change{nrn_inputbufptr, buf};
+    // Should we try/catch, or is someone already doing that higher up?
+    bool controlled{controlled_by_hoc_oc || controlled_by_OcJumpImpl};
+    if (controlled) {
+        // Someone else is responsible for catching errors
+        kernel();
+    } else {
+        // This is the highest level try/catch
+        auto const flag_manager = temporarily_change{controlled_by_hoc_oc, true};
+        try {
+            signal_handler_guard _{};
+            kernel();
+        } catch (...) {
+            hoc_initcode();
             hoc_intset = 0;
-            hoc_pipeflag = sav_pipeflag;
-            nrn_inputbufptr = sav_inputbufptr;
-            hoc_lineno = sav_lineno;
             return 1;
         }
     }
-    if (!controlled) {
-        controlled_by_hoc_oc = false;
-        restore_signals();
-    }
-    hoc_lineno = sav_lineno;
-    hoc_pipeflag = sav_pipeflag;
-    nrn_inputbufptr = sav_inputbufptr;
     hoc_execerror_messages = 1;
     return 0;
 }
