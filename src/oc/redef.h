@@ -120,7 +120,6 @@
 #define pop_frame          hoc_pop_frame
 #define ret                hoc_ret
 #define ropen              hoc_ropen
-#define run                hoc_run
 #define solve              hoc_solve
 #define spinit             hoc_spinit
 #define symbols            hoc_symbols

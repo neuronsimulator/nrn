@@ -161,9 +161,7 @@ void* OcJumpImpl::fpycall(void* (*f)(void*, void*), void* a, void* b) {
     return c;
 }
 
-extern bool controlled_by_OcJumpImpl;
-extern int hoc_intset;
-//	extern int hoc_pipeflag;
+extern int OcJumpImpl_nest_depth;
 void OcJumpImpl::begin() {
     // not complete but it is good for expressions and it can be improved
     oc_save_hoc_oop(&o1, &o2, &o4, &o5);
@@ -172,16 +170,7 @@ void OcJumpImpl::begin() {
 #if CABLE
     oc_save_cabcode(&cc1, &cc2);
 #endif
-    // This instance of OcJumpImpl should only set controlled_by_OcJumpImpl to
-    // false in restore() if it was false now (i.e. we are the most shallowly
-    // nested instance).
-    if (controlled_by_OcJumpImpl) {
-        // already set, nothing to do, we shouldn't reset it in restore()
-        should_reset_global_flag = false;
-    } else {
-        controlled_by_OcJumpImpl = true;
-        should_reset_global_flag = true;  // we should undo this in restore()
-    }
+    ++OcJumpImpl_nest_depth;
 }
 void OcJumpImpl::restore() {
     oc_restore_hoc_oop(&o1, &o2, &o4, &o5);
@@ -192,10 +181,7 @@ void OcJumpImpl::restore() {
 #endif
 }
 void OcJumpImpl::finish() {
-    // most shallowly nested OcJumpImpl resets controlled_by_OcJumpImpl
-    if (should_reset_global_flag) {
-        controlled_by_OcJumpImpl = false;
-    }
+    --OcJumpImpl_nest_depth;
 }
 
 ObjectContext::ObjectContext(Object* obj) {

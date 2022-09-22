@@ -651,7 +651,7 @@ void hoc_show_errmess_always(void) {
 }
 
 int hoc_execerror_messages;
-bool controlled_by_OcJumpImpl;
+int OcJumpImpl_nest_depth{0};
 int yystart;
 
 void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from run-time error */
@@ -685,7 +685,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     ctp = cbuf;
     *ctp = '\0';
 
-    if (controlled_by_OcJumpImpl && (nrnmpi_numprocs_world == 1 || !nrn_mpiabort_on_error_)) {
+    if (OcJumpImpl_nest_depth && (nrnmpi_numprocs_world == 1 || !nrn_mpiabort_on_error_)) {
         throw std::runtime_error("oc_jump_target");
     }
 #if NRNMPI
@@ -918,7 +918,7 @@ void hocstr_copy(HocStr* hs, const char* buf) {
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
-static int hoc_run1(void);
+static int hoc_run1();
 
 // hoc6
 int hoc_main1(int argc, const char** argv, const char** envp) {
@@ -1220,16 +1220,6 @@ int hoc_moreinput() {
     return 1;
 }
 
-#if 1
-void hoc_run(void) {
-    hoc_run1();
-    while (pipeflag == 1) {
-        pipeflag = 0;
-        hoc_run1();
-    }
-}
-#endif
-
 typedef RETSIGTYPE (*SignalType)(int);
 
 static SignalType signals[4];
@@ -1265,39 +1255,57 @@ struct signal_handler_guard {
     }
 };
 
-// execute until EOF
-static int hoc_run1() {
-    bool controlled = controlled_by_hoc_run1;
-    NrnFILEWrap* sav_fin = fin;
-    if (!controlled) {
-        set_signals();
-        controlled_by_hoc_run1 = true;
-        intset = 0;
+// Helper to temporarily set a global to something and then restore the original
+// value when the helper goes out of scope
+template <typename T>
+struct temporarily_change {
+    temporarily_change(T& global, T new_value)
+        : m_global_value{global}
+        , m_saved_value{std::exchange(global, new_value)} {}
+    ~temporarily_change() {
+        m_global_value = m_saved_value;
     }
-    try {
+
+  private:
+    T& m_global_value;
+    T m_saved_value;
+};
+
+// execute until EOF
+// called from a try { ... } block in hoc_main1
+static int hoc_run1() {
+    // This is the actual code we want to execute, everything else is to do
+    // whether or not to handle errors
+    auto const kernel = []() {
         hoc_execerror_messages = 1;
-        pipeflag = 0;  // reset pipeflag
+        hoc_pipeflag = 0;  // reset pipeflag
         for (hoc_initcode(); hoc_yyparse(); hoc_initcode()) {
-            hoc_execute(progbase);
+            hoc_execute(hoc_progbase);
         }
-        if (intset) {
-            hoc_execerror("interrupted", (char*) 0);
+        if (hoc_intset) {
+            hoc_execerror("interrupted", nullptr);
         }
-    } catch (...) {
-        if (!controlled) {
-            // execute this if we catch an exception and !controlled
-            fin = sav_fin;
-            if (!nrn_fw_eq(fin, stdin)) {
+    };
+    if (controlled_by_hoc_run1) {
+        // This is not the most shallowly nested call to hoc_run1(), allow the
+        // most shallowly nested call to handle exceptions.
+        kernel();
+    } else {
+        // This is the most shallowly nested call to hoc_run1(), handle
+        // exceptions.
+        signal_handler_guard _{};
+        hoc_intset = 0;
+        auto const sav_fin = hoc_fin;
+        auto const control_manager = temporarily_change{controlled_by_hoc_run1, true};
+        try {
+            kernel();
+        } catch (...) {
+            hoc_fin = sav_fin;
+            if (!nrn_fw_eq(hoc_fin, stdin)) {
                 return EXIT_FAILURE;
             }
-            intset = 0;
-        } else {
-            throw;
+            hoc_intset = 0;
         }
-    }
-    if (!controlled) {
-        restore_signals();
-        controlled_by_hoc_run1 = false;
     }
     return EXIT_SUCCESS;
 }
@@ -1364,22 +1372,6 @@ void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
     fin = i4;
 }
 
-// Helper to temporarily set a global to something and then restore the original
-// value when the helper goes out of scope
-template <typename T>
-struct temporarily_change {
-    temporarily_change(T& global, T new_value)
-        : m_global_value{global}
-        , m_saved_value{std::exchange(global, new_value)} {}
-    ~temporarily_change() {
-        m_global_value = m_saved_value;
-    }
-
-  private:
-    T& m_global_value;
-    T m_saved_value;
-};
-
 int hoc_oc(const char* buf) {
     // the substantive code to execute, everything else is to do with handling
     // errors here or elsewhere
@@ -1398,7 +1390,7 @@ int hoc_oc(const char* buf) {
     auto const pipeflag_manager = temporarily_change{hoc_pipeflag, 3};
     auto const inputbufptr_manager = temporarily_change{nrn_inputbufptr, buf};
     // Should we try/catch, or is someone already doing that higher up?
-    bool controlled{controlled_by_hoc_oc || controlled_by_OcJumpImpl};
+    bool controlled{controlled_by_hoc_oc || OcJumpImpl_nest_depth};
     if (controlled) {
         // Someone else is responsible for catching errors
         kernel();
