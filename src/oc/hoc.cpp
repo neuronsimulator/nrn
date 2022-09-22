@@ -906,7 +906,7 @@ void hoc_main1_init(const char* pname, const char** envp) {
     hoc_init();
     initplot();
     hoc_main1_inited_ = 1;
-} 
+}
 
 HocStr* hocstr_create(size_t size) {
     HocStr* hs;
@@ -965,49 +965,48 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
     hoc_main1_init(argv[0], envp);
     try {
 #if HAS_SIGPIPE
-    signal(SIGPIPE, sigpipe_handler);
+        signal(SIGPIPE, sigpipe_handler);
 #endif
-    gargv = argv;
-    gargc = argc;
-    if (argc > 2 && strcmp(argv[1], "-bbs_nhost") == 0) {
-        /* if IV not running this may still be here */
-        gargv += 2;
-        gargc -= 2;
-    }
-    if (argc > 1 && argv[1][0] != '-') {
-        /* first file may be a checkpoint file */
-        extern int hoc_readcheckpoint(char*);
-        switch (hoc_readcheckpoint(const_cast<char*>(argv[1]))) {
-        case 1:
-            ++gargv;
-            --gargc;
-            break;
-        case 2:
-            nrn_exit(1);
-            break;
-        default:
-            break;
+        gargv = argv;
+        gargc = argc;
+        if (argc > 2 && strcmp(argv[1], "-bbs_nhost") == 0) {
+            /* if IV not running this may still be here */
+            gargv += 2;
+            gargc -= 2;
         }
-    }
+        if (argc > 1 && argv[1][0] != '-') {
+            /* first file may be a checkpoint file */
+            extern int hoc_readcheckpoint(char*);
+            switch (hoc_readcheckpoint(const_cast<char*>(argv[1]))) {
+            case 1:
+                ++gargv;
+                --gargc;
+                break;
+            case 2:
+                nrn_exit(1);
+                break;
+            default:
+                break;
+            }
+        }
 
-    if (gargc == 1) /* fake an argument list */
-    {
-        static const char* stdinonly[] = {"-"};
+        if (gargc == 1) /* fake an argument list */
+        {
+            static const char* stdinonly[] = {"-"};
 
 #ifdef MINGW
-        cygonce = 1;
+            cygonce = 1;
 #endif
-        gargv = stdinonly;
-        gargc = 1;
-    } else {
-        ++gargv;
-        --gargc;
-    }
-    while (moreinput())
-        exit_status = hoc_run1();
-    return exit_status;
-    } catch(...) {
-        std::cerr << "hoc_main1 caught an exception" << std::endl;
+            gargv = stdinonly;
+            gargc = 1;
+        } else {
+            ++gargv;
+            --gargc;
+        }
+        while (moreinput())
+            exit_status = hoc_run1();
+        return exit_status;
+    } catch (...) {
         nrn_exit(1);
     }
 }
@@ -1300,7 +1299,7 @@ static int hoc_run1() {
         if (intset) {
             hoc_execerror("interrupted", (char*) 0);
         }
-    } catch(...) {
+    } catch (...) {
         if (!controlled) {
             // execute this if we catch an exception and !controlled
             fin = sav_fin;
@@ -1382,15 +1381,15 @@ void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
 
 int hoc_oc(const char* buf) {
     char* cp;
-
     int sav_pipeflag = pipeflag;
     int sav_lineno = lineno;
     const char* sav_inputbufptr = nrn_inputbufptr;
     nrn_inputbufptr = buf;
     pipeflag = 3;
     lineno = 1;
+    // is this controlled logic needed with exceptions?
     int controlled = hoc_oc_jmpbuf || oc_jump_target_;
-    if (!controlled) { // i.e. this is the highest level catch block?
+    if (!controlled) {  // i.e. this is the highest level catch block?
         hoc_oc_jmpbuf = 1;
     }
     try {
@@ -1401,11 +1400,10 @@ int hoc_oc(const char* buf) {
         while (*ctp || *nrn_inputbufptr) {
             hoc_ParseExec(yystart);
             if (intset) {
-                execerror("interrupted", (char*) 0);
+                hoc_execerror("interrupted", nullptr);
             }
         }
-    } catch(...) {
-        std::cerr << "hoc_oc caught an exception" << std::endl;
+    } catch (...) {
         if (controlled) {
             // there's a higher catch block
             throw;

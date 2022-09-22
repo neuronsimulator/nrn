@@ -184,8 +184,7 @@ bool OcJumpImpl::execute(Inst* p) {
     try {
         hoc_execute(p);
         ret = true;
-    } catch(...) {
-        std::cerr << "OcJumpImpl::execute(stmt, ob) caught an exception" << std::endl;
+    } catch (...) {
         restore();
     }
     finish();
@@ -198,8 +197,7 @@ bool OcJumpImpl::execute(const char* stmt, Object* ob) {
     try {
         hoc_obj_run(stmt, ob);
         ret = true;
-    } catch(...) {
-        std::cerr << "OcJumpImpl::execute(stmt, ob) caught an exception" << std::endl;
+    } catch (...) {
         restore();
     }
     finish();
@@ -211,8 +209,7 @@ void* OcJumpImpl::fpycall(void* (*f)(void*, void*), void* a, void* b) {
     begin();
     try {
         c = (*f)(a, b);
-    } catch(...) {
-        std::cerr << "OcJump::fpycall caught an exception" << std::endl;
+    } catch (...) {
         restore();
     }
     finish();
