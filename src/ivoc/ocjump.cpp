@@ -1,7 +1,5 @@
 #include <../../nrnconf.h>
 #include <InterViews/resource.h>
-#include <setjmp.h>
-#include <string.h>
 #if CABLE
 #include "nrnoc2iv.h"
 #else
@@ -13,6 +11,8 @@
 #if HAVE_IV
 #include "ivoc.h"
 #endif
+
+#include <utility>
 
 extern Objectdata* hoc_top_level_data;
 extern Symlist* hoc_top_level_symlist;

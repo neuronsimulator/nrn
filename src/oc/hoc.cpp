@@ -977,8 +977,9 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
             ++gargv;
             --gargc;
         }
-        while (moreinput())
+        while (hoc_moreinput()) {
             exit_status = hoc_run1();
+        }
         return exit_status;
     } catch (...) {
         nrn_exit(1);
@@ -1089,7 +1090,7 @@ static const char* double_at2space(const char* infile) {
 }
 #endif /*MINGW*/
 
-int moreinput(void) {
+int hoc_moreinput() {
     if (pipeflag) {
         pipeflag = 0;
         return 1;
@@ -1157,7 +1158,7 @@ int moreinput(void) {
         with the hoc interpreter.
         */
         if (strlen(infile) < 4 || strcmp(infile + strlen(infile) - 4, ".hoc") != 0) {
-            return moreinput();
+            return hoc_moreinput();
         }
     }
 #endif
@@ -1169,7 +1170,7 @@ int moreinput(void) {
         /* ignore "val" as next argument */
         infile = *gargv++;
         gargc--;
-        return moreinput();
+        return hoc_moreinput();
     } else if (strcmp(infile, "-c") == 0) {
         int hpfi, err;
         HocStr* hs;
@@ -1190,13 +1191,13 @@ int moreinput(void) {
         if (err) {
             hoc_execerror("arg not valid statement:", infile);
         }
-        return moreinput();
+        return hoc_moreinput();
     } else if (strlen(infile) > 3 && strcmp(infile + strlen(infile) - 3, ".py") == 0) {
         if (!p_nrnpy_pyrun) {
             hoc_execerror("Python not available to interpret", infile);
         }
         (*p_nrnpy_pyrun)(infile);
-        return moreinput();
+        return hoc_moreinput();
     } else if ((fin = nrn_fw_fopen(infile, "r")) == (NrnFILEWrap*) 0) {
 #if OCSMALL
         hoc_menu_cleanup();
@@ -1207,7 +1208,7 @@ int moreinput(void) {
             nrnmpi_abort(-1);
         }
 #endif
-        return moreinput();
+        return hoc_moreinput();
     }
     if (infile) {
         if (strlen(infile) >= hoc_xopen_file_size_) {
