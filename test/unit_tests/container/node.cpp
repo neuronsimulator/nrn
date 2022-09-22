@@ -211,6 +211,9 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                        });
         auto& node_data = neuron::model().node_data();
         auto const& voltage_storage = std::as_const(node_data).get<field::Voltage>();
+        // Flag this original order as "sorted" so that the tests that it is no
+        // longer sorted after permutation are meaningful
+        node_data.mark_as_sorted(true);
         REQUIRE(nodes.size() == voltage_storage.size());
         auto const require_logical_match = [&]() {
             THEN("Check the logical voltages still match") {
@@ -230,6 +233,9 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                 REQUIRE(get_voltages(nodes) == reference_voltages);
                 AND_THEN("Check the underlying storage no longer matches") {
                     REQUIRE_FALSE(voltage_storage == reference_voltages);
+                }
+                AND_THEN("Check the container is not flagged as sorted") {
+                    REQUIRE_FALSE(node_data.is_sorted());
                 }
             }
         };
@@ -252,10 +258,14 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         WHEN("A unit permutation is applied to the underlying storage") {
             node_data.apply_permutation(perm_vector);
             require_logical_and_storage_match();
+            // Should the data still be sorted here or not? Should
+            // apply_permutation bother checking if the permutation did
+            // anything?
         }
         WHEN("A unit reverse permutation is applied to the underlying storage") {
             node_data.apply_reverse_permutation(perm_vector);
             require_logical_and_storage_match();
+            // See above, should the data be flagged as sorted here or not?
         }
         WHEN("A random permutation is applied to the underlying storage") {
             std::mt19937 g{42};
@@ -264,10 +274,16 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             // the permutation is random, so we don't know if voltage_storage
             // will match reference_voltages or not
             require_logical_match();
+            THEN("Check the storage is no longer flagged as sorted") {
+                REQUIRE_FALSE(node_data.is_sorted());
+            }
         }
         auto const require_exception = [&](auto& perm) {
             THEN("An exception is thrown") {
                 REQUIRE_THROWS(node_data.apply_permutation(perm));
+                AND_THEN("The container is still flagged as sorted") {
+                    REQUIRE(node_data.is_sorted());
+                }
             }
         };
         WHEN("A too-short permutation is applied to the underlying storage") {
@@ -344,6 +360,7 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                     REQUIRE_THROWS(node_data.mark_as_sorted(false));
                 }
                 THEN("The storage cannot be permuted") {
+                    // Checking one of the permuting operations should be enough
                     REQUIRE_THROWS(node_data.reverse());
                 }
                 // In read-only mode we cannot delete Nodes either, but because
