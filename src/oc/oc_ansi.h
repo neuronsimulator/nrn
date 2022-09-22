@@ -179,7 +179,7 @@ void* hoc_Erealloc(void* ptr, std::size_t size);
 
 void* nrn_cacheline_alloc(void** memptr, std::size_t size);
 void* nrn_cacheline_calloc(void** memptr, std::size_t nmemb, std::size_t size);
-void nrn_exit(int);
+[[noreturn]] void nrn_exit(int);
 void hoc_free_list(Symlist**);
 int hoc_errno_check();
 Symbol* hoc_parse_stmt(const char*, Symlist**);

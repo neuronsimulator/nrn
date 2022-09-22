@@ -219,7 +219,7 @@ static int Getc(NrnFILEWrap* fp);
 static void unGetc(int c, NrnFILEWrap* fp);
 static int backslash(int c);
 
-void nrn_exit(int i) {
+[[noreturn]] void nrn_exit(int i) {
 #if defined(WIN32)
     printf("NEURON exiting abnormally, press return to quit\n");
     fgetc(stdin);
@@ -720,10 +720,10 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     hoc_oop_initaftererror();
     if (hoc_oc_jmpbuf) {
         hoc_newobj1_err();
-        longjmp(hoc_oc_begin, 1);
+        throw std::runtime_error("hoc_oc_begin, 1");
     }
     hoc_newobj1_err();
-    longjmp(begin, 1);
+    throw std::runtime_error("begin, 1");
 }
 
 extern "C" void hoc_execerror(const char* s, const char* t) /* recover from run-time error */
@@ -903,17 +903,10 @@ void hoc_main1_init(const char* pname, const char** envp) {
         }
     }
     progname = pname;
-    if (setjmp(begin)) {
-        nrn_exit(1);
-    }
-
     hoc_init();
     initplot();
-#if defined(__GO32__)
-    setcbrk(0);
-#endif
     hoc_main1_inited_ = 1;
-}
+} 
 
 HocStr* hocstr_create(size_t size) {
     HocStr* hs;
@@ -953,8 +946,8 @@ static int cygonce; /* does not need the '-' after a list of hoc files */
 
 static int hoc_run1(void);
 
-int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
-{
+// hoc6
+int hoc_main1(int argc, const char** argv, const char** envp) {
     int exit_status = EXIT_SUCCESS;
 #ifdef WIN32
     extern void hoc_set_unhandled_exception_filter();
@@ -970,21 +963,9 @@ int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
 
     hoc_audit_from_hoc_main1(argc, argv, envp);
     hoc_main1_init(argv[0], envp);
+    try {
 #if HAS_SIGPIPE
     signal(SIGPIPE, sigpipe_handler);
-#endif
-#if 0
-	controlled = control_jmpbuf;
-	if (!controlled) {
-		control_jmpbuf = 1;
-		if (setjmp(begin)) {
-			control_jmpbuf = 0;
-			return 1;
-		}
-	}
-	if (!controlled) {
-		control_jmpbuf = 0;
-	}
 #endif
     gargv = argv;
     gargc = argc;
@@ -1025,6 +1006,10 @@ int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
     while (moreinput())
         exit_status = hoc_run1();
     return exit_status;
+    } catch(...) {
+        std::cerr << "hoc_main1 caught an exception" << std::endl;
+        nrn_exit(1);
+    }
 }
 
 #ifdef MINGW
@@ -1297,28 +1282,36 @@ static void restore_signals(void) {
 #endif
 }
 
-static int hoc_run1(void) /* execute until EOF */
-{
+// execute until EOF
+static int hoc_run1() {
     int controlled = control_jmpbuf;
     NrnFILEWrap* sav_fin = fin;
     if (!controlled) {
         set_signals();
         control_jmpbuf = 1;
-        if (setjmp(begin)) {
+        intset = 0;
+    }
+    try {
+        hoc_execerror_messages = 1;
+        pipeflag = 0;  // reset pipeflag
+        for (hoc_initcode(); hoc_yyparse(); hoc_initcode()) {
+            hoc_execute(progbase);
+        }
+        if (intset) {
+            hoc_execerror("interrupted", (char*) 0);
+        }
+    } catch(...) {
+        if (!controlled) {
+            // execute this if we catch an exception and !controlled
             fin = sav_fin;
             if (!nrn_fw_eq(fin, stdin)) {
                 return EXIT_FAILURE;
             }
+            intset = 0;
+        } else {
+            throw;
         }
-        intset = 0;
     }
-    hoc_execerror_messages = 1;
-    pipeflag = 0;  // reset pipeflag
-    for (initcode(); hoc_yyparse(); initcode()) {
-        execute(progbase);
-    }
-    if (intset)
-        execerror("interrupted", (char*) 0);
     if (!controlled) {
         restore_signals();
         control_jmpbuf = 0;
@@ -1389,10 +1382,6 @@ void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
 
 int hoc_oc(const char* buf) {
     char* cp;
-    int controlled;
-#if 0
-	int yret;
-#endif
 
     int sav_pipeflag = pipeflag;
     int sav_lineno = lineno;
@@ -1400,10 +1389,27 @@ int hoc_oc(const char* buf) {
     nrn_inputbufptr = buf;
     pipeflag = 3;
     lineno = 1;
-    controlled = hoc_oc_jmpbuf || oc_jump_target_;
-    if (!controlled) {
+    int controlled = hoc_oc_jmpbuf || oc_jump_target_;
+    if (!controlled) { // i.e. this is the highest level catch block?
         hoc_oc_jmpbuf = 1;
-        if (setjmp(hoc_oc_begin)) {
+    }
+    try {
+        set_signals();
+        intset = 0;
+        hocstr_resize(hoc_cbufstr, strlen(buf) + 10);
+        nrn_inputbuf_getline();
+        while (*ctp || *nrn_inputbufptr) {
+            hoc_ParseExec(yystart);
+            if (intset) {
+                execerror("interrupted", (char*) 0);
+            }
+        }
+    } catch(...) {
+        std::cerr << "hoc_oc caught an exception" << std::endl;
+        if (controlled) {
+            // there's a higher catch block
+            throw;
+        } else {
             hoc_oc_jmpbuf = 0;
             restore_signals();
             initcode();
@@ -1413,20 +1419,7 @@ int hoc_oc(const char* buf) {
             lineno = sav_lineno;
             return 1;
         }
-        set_signals();
     }
-    intset = 0;
-
-    hocstr_resize(hoc_cbufstr, strlen(buf) + 10);
-    nrn_inputbuf_getline();
-    while (*ctp || *nrn_inputbufptr) {
-        hoc_ParseExec(yystart);
-
-        if (intset) {
-            execerror("interrupted", (char*) 0);
-        }
-    }
-
     if (!controlled) {
         hoc_oc_jmpbuf = 0;
         restore_signals();

@@ -87,8 +87,6 @@ class OcJumpImpl {
 
   private:
     OcJumpImpl* prev_;
-    jmp_buf begin_;
-
     // hoc_oop
     Object* o1;
     Objectdata* o2;
@@ -173,7 +171,7 @@ void OcJumpImpl::ljmptarget() {
 }
 
 void OcJumpImpl::ljmp() {
-    longjmp(begin_, 1);
+    throw std::runtime_error("OcJumpImpl::ljmp");
 }
 
 OcJumpImpl* OcJumpImpl::oji_;
@@ -181,49 +179,41 @@ OcJumpImpl* OcJumpImpl::oji_;
 void hoc_execute(Inst*);
 
 bool OcJumpImpl::execute(Inst* p) {
+    bool ret{false};
     begin();
-#if 1
-    if (setjmp(begin_)) {
-        restore();
-        finish();
-        return false;
-    } else
-#endif
-    {
+    try {
         hoc_execute(p);
+        ret = true;
+    } catch(...) {
+        std::cerr << "OcJumpImpl::execute(stmt, ob) caught an exception" << std::endl;
+        restore();
     }
     finish();
-    return true;
+    return ret;
 }
 
 bool OcJumpImpl::execute(const char* stmt, Object* ob) {
+    bool ret{false};
     begin();
-#if 1
-    if (setjmp(begin_)) {
-        restore();
-        finish();
-        return false;
-    } else
-#endif
-    {
+    try {
         hoc_obj_run(stmt, ob);
+        ret = true;
+    } catch(...) {
+        std::cerr << "OcJumpImpl::execute(stmt, ob) caught an exception" << std::endl;
+        restore();
     }
     finish();
-    return true;
+    return ret;
 }
 
 void* OcJumpImpl::fpycall(void* (*f)(void*, void*), void* a, void* b) {
     void* c = 0;
     begin();
-#if 1
-    if (setjmp(begin_)) {
-        restore();
-        finish();
-        return c;
-    } else
-#endif
-    {
+    try {
         c = (*f)(a, b);
+    } catch(...) {
+        std::cerr << "OcJump::fpycall caught an exception" << std::endl;
+        restore();
     }
     finish();
     return c;
