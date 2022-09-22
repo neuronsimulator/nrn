@@ -11,12 +11,10 @@
 #include "hoclist.h"
 #include "parse.hpp"
 #include "hocparse.h"
-#include <setjmp.h>
 #include <errno.h>
 #include "nrnfilewrap.h"
 
 
-extern jmp_buf begin;
 extern char* neuron_home;
 
 NrnFILEWrap* frin;

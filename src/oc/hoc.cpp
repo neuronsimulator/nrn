@@ -191,11 +191,8 @@ int lineno;
 #include <execinfo.h>
 #endif
 #include <signal.h>
-#include <setjmp.h>
 static int control_jmpbuf = 0; /* don't change jmp_buf if being controlled */
-jmp_buf begin;
 static int hoc_oc_jmpbuf;
-static jmp_buf hoc_oc_begin;
 int intset; /* safer interrupt handling */
 int indef;
 const char* infile; /* input file name */
@@ -1321,8 +1318,9 @@ static int hoc_run1() {
    of hoc. But just maybe that is here. However hoc_oc may be called
    recursively. Or it may be called from the original hoc_run. Or it may be
    There is therefore a notion of the controlling routine for the jmp_buf begin.
-   We only do a setjmp and set the signals
-   when there is no other controlling routine.
+   We only do a setjmp and set the signals when there is no other controlling
+   routine. Note that setjmp is no longer used, but for now the same notion of a
+   controlling routine is maintained.
 */
 
 /* allow hoc_oc(buf) to handle any number of multiline statements */
