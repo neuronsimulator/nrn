@@ -1,6 +1,9 @@
 #pragma once
+#include "backtrace_utils.h"
+
 #include <cassert>
 #include <cstddef>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <ostream>
@@ -147,8 +150,28 @@ struct owning_identifier_base {
             assert(*p < data_container.size());
             // Prove that the bookkeeping works.
             assert(data_container.identifier(*p) == p);
+            bool terminate{false};
             // Delete the corresponding row from `data_container`
-            data_container.erase(*p);
+            try {
+                data_container.erase(*p);
+            } catch (std::exception const& e) {
+                // Cannot throw from unique_ptr release/reset/destructor, this
+                // is the best we can do. Most likely what has happened is
+                // something like:
+                //   auto const read_only_token = node_data.sorted_token();
+                //   list_of_nodes.pop_back();
+                // which tries to delete a row from a container in read-only mode.
+                std::cerr << "neuron::container::owning_identifier_base<"
+                          << cxx_demangle(typeid(DataContainer).name()) << ", "
+                          << cxx_demangle(typeid(NonOwningElementHandle).name())
+                          << "> destructor could not delete from the underlying storage: "
+                          << e.what() << " [" << cxx_demangle(typeid(e).name())
+                          << "]. This is not recoverable, aborting." << std::endl;
+                terminate = true;
+            }
+            if (terminate) {
+                std::terminate();
+            }
             // We don't know how many people know the pointer `p`, so write a sentinel
             // value to it and transfer ownership "elsewhere".
             *p = detail::invalid_row;
