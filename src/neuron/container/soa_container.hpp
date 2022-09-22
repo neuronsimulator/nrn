@@ -77,7 +77,8 @@ struct soa {
             // Tell the new entry at `i` that its index is `i` now.
             m_indices[i].set_current_row(i);
         }
-        resize(old_size - 1);
+        m_indices.resize(old_size - 1);
+        (get<Tags>().resize(old_size - 1), ...);
     }
 
     /** @brief Get the size of the container.
@@ -138,17 +139,6 @@ struct soa {
      */
     [[nodiscard]] bool is_sorted() const {
         return m_sorted;
-    }
-
-    /** @brief Resize the container.
-     */
-    void resize(std::size_t size) {
-        if (m_read_only) {
-            throw std::runtime_error("soa<...>::resize called in read-only mode");
-        }
-        m_sorted = false;  // resize might trigger reallocation
-        m_indices.resize(size);
-        (get<Tags>().resize(size), ...);
     }
 
     // The following methods are defined in soa_container_impl.hpp because they
