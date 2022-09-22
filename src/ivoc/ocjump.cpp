@@ -71,13 +71,6 @@ class OcJumpImpl {
     bool execute(const char*, Object* ob = NULL);
     void* fpycall(void* (*f)(void*, void*), void* a, void* b);
 
-    /* jmpbuf is not portable and I can't figure out how get a pointer to one.
-    therefore hoc_execerror looks at a function pointer and if it's non-NULL
-    (ljmptarget) calls it instead of doing a longjump. That means we are back
-    here and can do an explicit longjump using the begin_ */
-    static void ljmptarget();
-    void ljmp();
-
   private:
     void begin();
     void restore();
@@ -152,15 +145,6 @@ void* OcJump::fpycall(void* (*f)(void*, void*), void* a, void* b) {
 
 OcJumpImpl::OcJumpImpl() {}
 OcJumpImpl::~OcJumpImpl() {}
-
-void OcJumpImpl::ljmptarget() {
-    // This is never called
-    std::abort();
-}
-
-void OcJumpImpl::ljmp() {
-    throw std::runtime_error("OcJumpImpl::ljmp");
-}
 
 void hoc_execute(Inst*);
 
