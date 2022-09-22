@@ -653,14 +653,7 @@ void hoc_show_errmess_always(void) {
 }
 
 int hoc_execerror_messages;
-
-/* this is possibly non-portable since it is based on the declaration in
-    setjmp.h of
-    typedef int jmp_buf[_JBLEN];
-*/
-void (*oc_jump_target_)(); /* see ivoc/SRC/ocjump.cpp */
-
-
+bool controlled_by_OcJumpImpl;
 int yystart;
 
 void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from run-time error */
@@ -694,8 +687,8 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     ctp = cbuf;
     *ctp = '\0';
 
-    if (oc_jump_target_ && (nrnmpi_numprocs_world == 1 || !nrn_mpiabort_on_error_)) {
-        (*oc_jump_target_)();
+    if (controlled_by_OcJumpImpl && (nrnmpi_numprocs_world == 1 || !nrn_mpiabort_on_error_)) {
+        throw std::runtime_error("oc_jump_target");
     }
 #if NRNMPI
     if (nrnmpi_numprocs_world > 1 && nrn_mpiabort_on_error_) {
@@ -1374,7 +1367,7 @@ int hoc_oc(const char* buf) {
     pipeflag = 3;
     lineno = 1;
     // is this controlled logic needed with exceptions?
-    int controlled = hoc_oc_jmpbuf || oc_jump_target_;
+    int controlled = hoc_oc_jmpbuf || controlled_by_OcJumpImpl;
     if (!controlled) {  // i.e. this is the highest level catch block?
         hoc_oc_jmpbuf = 1;
     }

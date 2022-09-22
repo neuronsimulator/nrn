@@ -493,10 +493,6 @@ Object** hoc_temp_objvar(Symbol* symtemp, void* v) {
     return hoc_temp_objptr(hoc_new_object(symtemp, v));
 }
 
-
-extern void* nrn_get_oji();
-extern void (*oc_jump_target_)();
-
 struct guard_t {
     ~guard_t() {
         if (ob) {

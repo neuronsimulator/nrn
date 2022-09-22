@@ -21,7 +21,6 @@ extern Object* hoc_thisobject;
 extern void hoc_execute1();
 extern bool hoc_valid_stmt(const char* stmt, Object* ob);
 extern int hoc_execerror_messages;
-void* nrn_get_oji();
 
 static bool valid_stmt1(const char* stmt, Object* ob) {
     char* s = new char[strlen(stmt) + 2];
@@ -78,7 +77,6 @@ class OcJumpImpl {
     here and can do an explicit longjump using the begin_ */
     static void ljmptarget();
     void ljmp();
-    static OcJumpImpl* oji_;
 
   private:
     void begin();
@@ -86,7 +84,7 @@ class OcJumpImpl {
     void finish();
 
   private:
-    OcJumpImpl* prev_;
+    bool should_reset_global_flag;
     // hoc_oop
     Object* o1;
     Objectdata* o2;
@@ -119,15 +117,6 @@ class OcJumpImpl {
     int cc2;
 #endif
 };
-
-/** Return handle for the current longjump buffer info.
- *  Valid until finish is called on the oji_ instance.
- **/
-void* nrn_get_oji() {
-    return (void*) OcJumpImpl::oji_;
-}
-
-//------------------------------------------------------------------
 
 #if HAVE_IV
 bool Oc::valid_expr(Symbol* s) {
@@ -165,16 +154,13 @@ OcJumpImpl::OcJumpImpl() {}
 OcJumpImpl::~OcJumpImpl() {}
 
 void OcJumpImpl::ljmptarget() {
-    if (oji_) {
-        oji_->ljmp();
-    }
+    // This is never called
+    std::abort();
 }
 
 void OcJumpImpl::ljmp() {
     throw std::runtime_error("OcJumpImpl::ljmp");
 }
-
-OcJumpImpl* OcJumpImpl::oji_;
 
 void hoc_execute(Inst*);
 
@@ -216,8 +202,7 @@ void* OcJumpImpl::fpycall(void* (*f)(void*, void*), void* a, void* b) {
     return c;
 }
 
-
-extern void (*oc_jump_target_)(void);
+extern bool controlled_by_OcJumpImpl;
 extern int hoc_intset;
 //	extern int hoc_pipeflag;
 void OcJumpImpl::begin() {
@@ -228,11 +213,16 @@ void OcJumpImpl::begin() {
 #if CABLE
     oc_save_cabcode(&cc1, &cc2);
 #endif
-    // this may not be portable since it depends on the jmp_buf being
-    // an array of integers.
-    oc_jump_target_ = ljmptarget;
-    prev_ = oji_;
-    oji_ = this;
+    // This instance of OcJumpImpl should only set controlled_by_OcJumpImpl to
+    // false in restore() if it was false now (i.e. we are the most shallowly
+    // nested instance).
+    if (controlled_by_OcJumpImpl) {
+        // already set, nothing to do, we shouldn't reset it in restore()
+        should_reset_global_flag = false;
+    } else {
+        controlled_by_OcJumpImpl = true;
+        should_reset_global_flag = true;  // we should undo this in restore()
+    }
 }
 void OcJumpImpl::restore() {
     oc_restore_hoc_oop(&o1, &o2, &o4, &o5);
@@ -243,15 +233,10 @@ void OcJumpImpl::restore() {
 #endif
 }
 void OcJumpImpl::finish() {
-    if (!prev_) {
-        oc_jump_target_ = NULL;
+    // most shallowly nested OcJumpImpl resets controlled_by_OcJumpImpl
+    if (should_reset_global_flag) {
+        controlled_by_OcJumpImpl = false;
     }
-    oji_ = prev_;
-#if 0
-	if (hoc_intset) {
-		hoc_execerror("interrupted in OcJump", 0);
-	}
-#endif
 }
 
 ObjectContext::ObjectContext(Object* obj) {
