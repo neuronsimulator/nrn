@@ -205,8 +205,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests
     COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/cover
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
-  nrn_add_test_group(NAME example_nmodl
-    MODFILE_PATTERNS share/examples/nrniv/nmodl/*.mod share/examples/nrniv/nmodl/*.inc)
+  nrn_add_test_group(NAME example_nmodl MODFILE_PATTERNS share/examples/nrniv/nmodl/*.mod
+                                                         share/examples/nrniv/nmodl/*.inc)
   nrn_add_test(
     GROUP example_nmodl
     NAME example_nmodl
