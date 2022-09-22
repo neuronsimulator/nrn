@@ -493,22 +493,6 @@ Object** hoc_temp_objvar(Symbol* symtemp, void* v) {
     return hoc_temp_objptr(hoc_new_object(symtemp, v));
 }
 
-/** If hoc_newob1 fails after creating a new object, that object needs to be
-  unreffed. To handle the case of constructors themselves creating new objects
-  before the error or intervening recovery of error by a callee recovering from
-  execerror, the incomplete new object is put on a stack along with the
-  current longjump target, and removed from the stack when the object
-  is complete. There could be a problem if the destructor doesn't work
-  with a partially constructed object. In case of a execerror before newobj1
-  completion, all partially constructed objects with a longjump handle equal
-  to the current longjump handle are unreffed.
-**/
-
-#define NEWOBJ1_ERR_SIZE 32 /* starts with this size, and doubles on overflow */
-typedef struct {
-    Object* ob;
-    void* oji;
-} newobj1_err_t;
 
 extern void* nrn_get_oji();
 extern void (*oc_jump_target_)();
