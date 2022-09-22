@@ -65,8 +65,7 @@ void hoc_execute1() {
 
 class OcJumpImpl {
   public:
-    OcJumpImpl();
-    virtual ~OcJumpImpl();
+    virtual ~OcJumpImpl() {}
     bool execute(Inst* p);
     bool execute(const char*, Object* ob = NULL);
     void* fpycall(void* (*f)(void*, void*), void* a, void* b);
@@ -123,12 +122,9 @@ bool Oc::valid_stmt(const char* stmt, Object* ob) {
 #endif
 //------------------------------------------------------------------
 
-OcJump::OcJump() {
-    impl_ = new OcJumpImpl();
-}
-OcJump::~OcJump() {
-    delete impl_;
-}
+OcJump::OcJump()
+    : impl_{std::make_unique<OcJumpImpl>()} {}
+OcJump::~OcJump() {}
 bool OcJump::execute(Inst* p) {
     return impl_->execute(p);
 }
@@ -140,11 +136,6 @@ bool OcJump::execute(const char* stmt, Object* ob) {
 void* OcJump::fpycall(void* (*f)(void*, void*), void* a, void* b) {
     return impl_->fpycall(f, a, b);
 }
-
-//-------------------------------------------------------------------
-
-OcJumpImpl::OcJumpImpl() {}
-OcJumpImpl::~OcJumpImpl() {}
 
 void hoc_execute(Inst*);
 

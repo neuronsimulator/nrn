@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 union Inst;
 class OcJumpImpl;
 struct Symlist;
@@ -30,5 +31,5 @@ class OcJump {
     static void restore_context(ObjectContext*);
 
   private:
-    OcJumpImpl* impl_;
+    std::unique_ptr<OcJumpImpl> impl_;
 };
