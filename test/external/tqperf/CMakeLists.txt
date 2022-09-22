@@ -22,7 +22,6 @@ foreach(binary special python)
   nrn_add_test(
     GROUP tqperf
     NAME coreneuron_${binary} ${${binary}_preload_sanitizer}
-    CONFLICTS nmodl # https://github.com/BlueBrain/nmodl/issues/794
     REQUIRES mpi python ${${binary}_requires}
     PROCESSORS ${tqperf_mpi_ranks}
     ENVIRONMENT ${${binary}_environment}
