@@ -322,6 +322,16 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                     // Underlying node data is read-only, cannot allocate new Nodes.
                     REQUIRE_THROWS(::Node{});
                 }
+                // The token enforces that values cannot move in memory, but it
+                // does not mean that they cannot be read from and written to
+                THEN("Values in existing nodes can be modified") {
+                    auto& node = nodes.front();
+                    REQUIRE_NOTHROW(node.v());
+                    REQUIRE_NOTHROW(node.set_v(node.v() + 42.0));
+                }
+                // In read-only mode we cannot delete Nodes either, but because
+                // we cannot throw from destructors it is not easy to test this
+                // in this context. nodes.pop_back() would call std::terminate.
             }
             // read_only_and_sorted_token out of scope, underlying data no longer read-only
             THEN("After the token is discarded, new Nodes can be allocated") {
