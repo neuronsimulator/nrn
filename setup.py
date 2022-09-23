@@ -379,6 +379,7 @@ def setup_package():
                 "src/nrnpython",
                 "src/nrnmpi",
             ],
+            extra_compile_args=["-std=c++17"],
             extra_link_args=[
                 # use relative rpath to .data/lib
                 "-Wl,-rpath,{}".format(REL_RPATH + "/.data/lib/")

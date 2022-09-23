@@ -2578,7 +2578,6 @@ GraphLine::GraphLine(const char* expr,
             oc.notify_when_freed((void*) obj_, this);
             ObjectContext objc(obj_);
             expr_ = oc.parseExpr(expr, symlist);
-            objc.restore();
         } else {
             expr_ = oc.parseExpr(expr, symlist);
         }
@@ -2972,7 +2971,6 @@ void GraphLine::plot() {
         if (obj_) {
             ObjectContext obc(obj_);
             y_->add(oc.runExpr(expr_));
-            obc.restore();
         } else if (valid()) {
             y_->add(oc.runExpr(expr_));
         }
