@@ -2226,17 +2226,11 @@ int iondef(int* p_pointercount) {
     *p_pointercount = 0;
     ITERATE(q, nrnpointers) {
         sion = SYM(q);
-        Sprintf(buf,
-                "#define %s	*nrn_get_pval(_ppvar[%d])\n",
-                sion->name,
-                ioncount + *p_pointercount);
+        Sprintf(buf, "#define %s	*_ppvar[%d].pval\n", sion->name, ioncount + *p_pointercount);
         sion->used = ioncount + *p_pointercount;
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
-        Sprintf(buf,
-                "#define _p_%s	nrn_get_any(_ppvar[%d])\n",
-                sion->name,
-                ioncount + *p_pointercount);
+        Sprintf(buf, "#define _p_%s	_ppvar[%d]._pvoid\n", sion->name, ioncount + *p_pointercount);
         sion->used = ioncount + *p_pointercount;
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
