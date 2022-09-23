@@ -76,9 +76,13 @@ struct data_handle {
         return !m_raw_ptr;
     }
 
-    data_handle(identifier_base offset, std::vector<T>& container)
+    // TODO a const-ness cleanup. It should be possible to get
+    // data_handle<T> from a view into a frozen container, even though it
+    // isn't possible to get std::vector<T>& from a frozen container. And
+    // data_handle<T const> should forbid writing to the data value.
+    data_handle(identifier_base offset, std::vector<T> const& container)
         : m_offset{std::move(offset)}
-        , m_container{&container} {
+        , m_container{&const_cast<std::vector<T>&>(container)} {
         check_modern_mode_validity("data_handle(row, container)");
     }
 
