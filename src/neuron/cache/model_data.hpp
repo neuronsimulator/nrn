@@ -8,7 +8,9 @@
 
 namespace neuron {
 struct NodeDataCache {
-    std::vector<double*> m_voltages{};
+    // This is just a toy example for the unit tests, which should be updated to
+    // use something "realistic" when reasonable.
+    std::vector<double*> voltage_ptrs{};
 };
 
 /** @brief Collect temporary cache data that is needed to simulate the model.
@@ -19,7 +21,7 @@ struct NodeDataCache {
  *  addresses and offsets are constant.
  */
 struct ModelCache {
-    NodeDataCache m_node{};
+    NodeDataCache node_data{};
 };
 
 namespace detail {
@@ -34,7 +36,13 @@ struct model_token {
     ModelCache& operator*() {
         return m_model_cache.get();
     }
+    ModelCache const& operator*() const {
+        return m_model_cache.get();
+    }
     ModelCache* operator->() {
+        return &(m_model_cache.get());
+    }
+    ModelCache const* operator->() const {
         return &(m_model_cache.get());
     }
 
@@ -48,8 +56,18 @@ struct model_token {
  *  The token argument is what gives us confidence that the model is already sorted.
  */
 inline ModelCache generate_model_cache(neuron::model_sorted_token const&) {
-    auto const& model = neuron::model();
+    auto& model = neuron::model();
+    auto& node_data = model.node_data();
+    auto const node_size = node_data.size();
     ModelCache cache{};
+    // TODO: const-ness is a bit awkward here
+    // TODO: should be able to do a range-for over node_data and get non-owning
+    // Node views?
+    auto& vptrs = cache.node_data.voltage_ptrs;
+    vptrs.resize(node_size);
+    for (auto i = 0ul; i < node_size; ++i) {
+        vptrs[i] = &node_data.get<neuron::container::Node::field::Voltage>(i);
+    }
     return cache;
 }
 
