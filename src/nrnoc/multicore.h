@@ -26,7 +26,9 @@ ParallelContext methods.
 actual_v, etc.
 */
 
-#include <membfunc.h>
+#include "membfunc.h"
+#include "neuron/model_data.hpp"
+
 #include <cstddef>
 
 typedef struct NrnThreadMembList { /* patterned after CvMembList in cvodeobj.h */
