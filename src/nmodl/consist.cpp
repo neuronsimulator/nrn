@@ -31,16 +31,13 @@ int is_var_declared_as_function(Symbol* s) {
     int usage = s->usage;
 
     // if not function or procedure name then return already
-    if (! (usage & FUNCT) ) {
+    if (!(usage & FUNCT)) {
         return 0;
     }
 
     // conflicting name if presence of NEURON block variable type
-    return ( type & NRNRANGE
-            || type & NRNGLOBAL
-            || type & NRNPOINTER
-            || type & NRNBBCOREPOINTER
-            || type & NRNEXTRN);
+    return (type & NRNRANGE || type & NRNGLOBAL || type & NRNPOINTER || type & NRNBBCOREPOINTER ||
+            type & NRNEXTRN);
 }
 
 void consistency() {
@@ -81,7 +78,10 @@ void consistency() {
         // check for conflicting variable declaration with function
         // do not use diag() because line number might be misleading
         if (is_var_declared_as_function(s)) {
-            Fprintf(stderr, "Error: %s used as both variable and function in file %s\n", s->name, finname);
+            Fprintf(stderr,
+                    "Error: %s used as both variable and function in file %s\n",
+                    s->name,
+                    finname);
             exit(1);
         }
         if ((t == 0) && tu) {
