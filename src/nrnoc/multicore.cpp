@@ -317,8 +317,8 @@ void nrn_threads_create(int n, bool parallel) {
         // If the number of threads changes then the node storage data is
         // implicitly no longer sorted, as "sorted" includes being partitioned
         // by NrnThread. TODO: consider if we can be smarter about how/when we
-        // call mark_as_sorted(false) for different containers.
-        neuron::model().node_data().mark_as_sorted(false);
+        // call mark_as_unsorted() for different containers.
+        neuron::model().node_data().mark_as_unsorted();
     }
 #if NRN_ENABLE_THREADS
     // Check if we are enabling/disabling parallelisation over threads

@@ -2204,17 +2204,18 @@ void nrn_recalc_ptrs(double* (*r)(double*) ) {
  *  computations performed while time-stepping.
  *
  *  This method ensures that the Node data is ready for this compute phase.
+ *
+ *  @todo Is it worth "freezing" the data before any of the current_row() calls?
  */
-static void nrn_sort_node_data() {
+static neuron::model_sorted_token nrn_sort_node_data() {
     // Make sure the voltage storage follows the order encoded in _v_node.
     // Generate the permutation vector to update the underlying storage for
     // Nodes. This must come after nrn_multisplit_setup_, which can change the
     // Node order.
     auto& node_data = neuron::model().node_data();
     std::size_t const global_node_data_size{node_data.size()};
-    std::size_t global_node_data_offset{};
+    std::size_t global_node_data_offset{}, global_i{};
     std::vector<std::size_t> global_node_data_permutation(global_node_data_size);
-    std::size_t global_i{};
     // Process threads one at a time -- this means that the data for each
     // NrnThread will be contiguous.
     NrnThread* nt{};
@@ -2231,8 +2232,9 @@ static void nrn_sort_node_data() {
         }
     }
     assert(global_i == global_node_data_size);
+    // Should this and other permuting operations return a "sorted token"?
     node_data.apply_permutation(global_node_data_permutation);
-    node_data.mark_as_sorted(true);
+    return node_data.get_sorted_token();
 }
 
 /** @brief Ensure neuron::container::* data are sorted.
@@ -2245,11 +2247,12 @@ static void nrn_sort_node_data() {
  */
 neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
     auto& node_data = neuron::model().node_data();
-    if (!node_data.is_sorted()) {
-        nrn_sort_node_data();
+    if (node_data.is_sorted()) {
+        // Short-circuit
+        return node_data.get_sorted_token();
+    } else {
+        return nrn_sort_node_data();
     }
-    assert(node_data.is_sorted());
-    return node_data.sorted_token();
 }
 
 void nrn_recalc_node_ptrs() {
