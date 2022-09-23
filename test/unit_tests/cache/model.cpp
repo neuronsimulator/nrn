@@ -26,34 +26,34 @@ TEST_CASE("Cached model data", "[Neuron][data_structures][cache]") {
         auto& reference_voltages = std::get<1>(nodes_and_reference_voltages);
         auto& node_data = neuron::model().node_data();
         node_data.rotate(node_data.size() / 2);
-        THEN("Check the data are initially not sorted") {
-            REQUIRE_FALSE(node_data.is_sorted());
-        }
-        {
-            auto sorted_token = node_data.get_sorted_token();
-            AND_THEN("Check the data have been marked sorted") {
-                REQUIRE(node_data.is_sorted());
+        auto const assert_frozen_and_sorted = [&node_data](bool frozen, bool sorted) {
+            THEN((sorted ? "The data are sorted" : "The data are not sorted")) {
+                REQUIRE(node_data.is_sorted() == sorted);
+                AND_THEN((frozen ? "The data are frozen" : "The data are not frozen")) {
+                    REQUIRE(node_data.is_frozen() == frozen);
+                }
             }
-        }
-        // sorted_token went out of scope, but in this unit test we know that
-        // nothing has changed since then -- so the data are still sorted
-        AND_THEN("Check the data are still sorted after the token has died") {
-            REQUIRE(node_data.is_sorted());
-        }
-        WHEN("Cached data is requested for the model") {
+        };
+        assert_frozen_and_sorted(false, false);
+        WHEN("We decree that the data are sorted") {
+            {
+                auto sorted_token = node_data.get_sorted_token();
+                assert_frozen_and_sorted(true, true);
+            }
+            // sorted_token went out of scope, but in this unit test we know that
+            // nothing has changed since then -- so the data are still sorted
+            AND_WHEN("The sorted token goes out of scope") {
+                assert_frozen_and_sorted(false, true);
+            }
+            AND_WHEN("Cached data is requested for the model") {
             {
                 // This is not a toy implementation and would call NEURON's real
                 // sorting algorithm if the data were not already "sorted"
                 // above. The real algorithm depends on other global state that
                 // is not set up in the unit tests.
                 auto const model_cache = neuron::acquire_valid_model_cache();
-                THEN("The data structures should be frozen") {
-                    REQUIRE(node_data.is_frozen());
-                    AND_THEN("The data structures should be sorted") {
-                        REQUIRE(node_data.is_sorted());
-                    }
-                }
-                AND_THEN("The cache data should match the model data") {
+                assert_frozen_and_sorted(true, true);
+                THEN("The cache data should match the model data") {
                     // These should point to the entries of the voltage storage
                     auto const& cache_ptrs = model_cache->node_data.voltage_ptrs;
                     // Re-calculate the reference values
@@ -65,15 +65,18 @@ TEST_CASE("Cached model data", "[Neuron][data_structures][cache]") {
                                        reference_ptrs.begin(),
                                        reference_ptrs.end()));
                 }
+                AND_WHEN("There is a nested request for cached data") {
+                    auto const other_model_cache = neuron::acquire_valid_model_cache();
+                    assert_frozen_and_sorted(true, true);
+                }
+                AND_WHEN("The nested cache goes out of scope") {
+                    assert_frozen_and_sorted(true, true);
+                }
             }
             AND_WHEN("The cache token goes out of scope") {
-                THEN("The data structures should still be sorted") {
-                    REQUIRE(node_data.is_sorted());
-                }
-                AND_THEN("The data structures should no longer be frozen") {
-                    REQUIRE_FALSE(node_data.is_frozen());
-                }
+                assert_frozen_and_sorted(false, true);
             }
+        }
         }
     }
     GIVEN("Some nodes with integer voltages") {
