@@ -16,29 +16,32 @@ template <typename T>
 inline constexpr bool are_types_unique_v<T> = true;
 }  // namespace detail
 
-/** @brief Token whose lifetime manages read-only state of a container.
+template <typename RowIdentifier, typename... Tags>
+struct soa;
+
+/** @brief Token whose lifetime manages frozen/sorted state of a container.
  */
 template <typename Container>
-struct sorted_token {
-    constexpr sorted_token(Container& container)
-        : m_container{&container} {
-        container.mark_read_only(true);
-    }
-    constexpr sorted_token(sorted_token&& other)
+struct state_token {
+    constexpr state_token(state_token&& other)
         : m_container{std::exchange(other.m_container, nullptr)} {}
-    constexpr sorted_token(sorted_token const&) = delete;
-    constexpr sorted_token& operator=(sorted_token&& other) {
+    constexpr state_token(state_token const&) = delete;
+    constexpr state_token& operator=(state_token&& other) {
         m_container = std::exchange(other.m_container, nullptr);
         return *this;
     }
-    constexpr sorted_token& operator=(sorted_token const&) = delete;
-    ~sorted_token() {
+    constexpr state_token& operator=(state_token const&) = delete;
+    ~state_token() {
         if (m_container) {
-            m_container->mark_read_only(false);
+            m_container->thaw();
         }
     }
 
   private:
+    template <typename RowIdentifier, typename... Tags>
+    friend struct soa;
+    constexpr state_token(Container& container)
+        : m_container{&container} {}
     Container* m_container{};
 };
 
@@ -63,7 +66,7 @@ struct soa {
      *  Iterators to the last element and the deleted element will be invalidated.
      */
     void erase(std::size_t i) {
-        if (m_read_only) {
+        if (m_frozen) {
             throw std::runtime_error("soa<...>::erase called in read-only mode");
         }
         m_sorted = false;
@@ -90,52 +93,87 @@ struct soa {
         return m_indices.size();
     }
 
-    /** @brief Mark that the underlying vectors are now "sorted".
+    /** @brief Query if the storage is currently frozen.
+     *
+     *  When the container is frozen then no operations are allowed that would
+     *  change the address of any data, however the values themselves may still
+     *  be read from and written to. A container that is sorted and frozen is
+     *  guaranteed to remain sorted until it is thawed (unfrozen).
+     */
+    [[nodiscard]] bool is_frozen() const {
+        return m_frozen;
+    }
+
+  private:
+    friend struct state_token<soa>;
+
+    /** @brief Flag that the storage is no longer frozen.
+     *
+     *  This is called from the destructor of state_token.
+     */
+    void thaw() {
+        m_frozen = false;
+    }
+
+  public:
+    /** @brief Return type of get_sorted_token()
+     */
+    using sorted_token_type = state_token<soa>;
+
+    /** @brief Mark the container as sorted and return a token guaranteeing that.
      *
      *  Is is user-defined precisely what "sorted" means, but the soa<...> class
-     *  will reset this flag after any operation that invalidates pointers to
-     *  the storage vectors, such as applying a permutation, adding a new
-     *  element, or deleting an element.
+     *  makes some guarantees:
+     *  - if the container is frozen, no pointers to elements in the underlying
+     *    storage will be invalidated -- attempts to do so will throw or abort.
+     *  - if the container is not frozen, it will remain flagged as sorted until
+     *    a potentially-pointer-invalidating operation (insertion, deletion,
+     *    permutation) occurs, or mark_as_unsorted() is called.
      *
-     *  @todo Clarify whether the flag means that pointers *might* have been
-     *  invalidated, or that they actually were.
-     *  @todo Consider the difference between invalidating pointers and
-     *  invalidating indices, and whether it's important to us.
-     */
-    void mark_as_sorted(bool value = true) {
-        if (m_read_only) {
-            throw std::runtime_error("soa<...>::mark_as_sorted called in read-only mode");
-        }
-        m_sorted = value;
-    }
-
-    /** @brief Mark that the underlying vectors are in read-only mode.
-     */
-    void mark_read_only(bool value = true) {
-        m_read_only = value;
-    }
-
-    /** @brief Return type of sorted_token()
-     */
-    using sorted_token_type = sorted_token<soa>;
-
-    /** @brief Mark that the container is in read-only mode until the token is destroyed.
+     *  The container will be frozen for the lifetime of the token returned from
+     *  this function, and therefore also sorted for at least that time. This
+     *  token has the semantics of a unique_ptr, i.e. it cannot be copied but
+     *  can be moved, and destroying a moved-from token has no effect.
      *
-     *  The token has the semantics of a unique_ptr, i.e. it can be moved but
-     *  destroying a moved-from token has no effect.
+     *  @todo A future extension could be to preserve the sorted flag until
+     *        pointers are actually, not potentially, invalidated.
      */
-    sorted_token_type sorted_token() {
-        if (!m_sorted) {
+    [[nodiscard]] sorted_token_type get_sorted_token() {
+        if (m_frozen) {
             throw std::runtime_error(
-                "soa<...>::sorted_token called when the container was not sorted");
+                "soa<...>::get_sorted_token() called on an already-frozen container. Nested calls "
+                "to get_sorted_token are not (yet?) supported.");
         }
-        return {*this};
+        // Mark the container as frozen
+        m_frozen = true;
+        // Mark the container as sorted
+        m_sorted = true;
+        // Return a token that calls thaw() at the end of its lifetime
+        return sorted_token_type{*this};
+    }
+
+    /** @brief Tell the container it is no longer sorted.
+     *
+     *  The meaning of being sorted is externally defined, and it is possible
+     *  that some external change to an input of the (external) algorithm
+     *  defining the sort order can mean that the data are no longer considered
+     *  sorted, even if nothing has actually changed inside this container.
+     */
+    void mark_as_unsorted() {
+        if (m_frozen) {
+            // Currently you can only obtain a frozen container by calling
+            // get_sorted_token(), which explicitly guarantees that the
+            // container will remain sorted for the lifetime of the returned
+            // token.
+            throw std::runtime_error("soa<...>::mark_as_unsorted() called on a frozen container");
+        }
+        m_sorted = false;
     }
 
     /** @brief Query if the underlying vectors are still "sorted".
      *
-     *  This returns true after a call to mark_as_sorted() if nothing has
-     *  modified the storage vector layout.
+     *  See the documentation of get_sorted_token() for an explanation of what
+     *  this means.
      */
     [[nodiscard]] bool is_sorted() const {
         return m_sorted;
@@ -167,10 +205,10 @@ struct soa {
      *  added row will immediately be deleted.
      */
     [[nodiscard]] owning_identifier_base<soa, RowIdentifier> emplace_back() {
-        if (m_read_only) {
+        if (m_frozen) {
             throw std::runtime_error("soa<...>::emplace_back called in read-only mode");
         }
-        // Important that this comes after the m_read_only check
+        // Important that this comes after the m_frozen check
         owning_identifier_base<soa, RowIdentifier> index{*this};
         // this can trigger reallocation
         m_sorted = false;
@@ -223,7 +261,7 @@ struct soa {
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type>& get() {
         static_assert(has_tag_v<Tag>);
-        if (m_read_only) {
+        if (m_frozen) {
             throw std::runtime_error("non-const soa<...>::get() called in read-only mode");
         }
         return std::get<storage_t<Tag>>(m_data);
@@ -244,7 +282,7 @@ struct soa {
     template <typename T>
     [[nodiscard]] neuron::container::data_handle<T> find_data_handle(T* ptr) {
         neuron::container::data_handle<T> handle{};
-        // Don't go via non-const get<T>() because of the m_read_only check
+        // Don't go via non-const get<T>() because of the m_frozen check
         find_data_handle(handle, m_indices, ptr) ||
             (find_data_handle(handle, std::get<storage_t<Tags>>(m_data), ptr) || ...);
         return handle;
@@ -312,7 +350,7 @@ struct soa {
      */
     template <typename Permutation>
     void permute_zip(Permutation permutation) {
-        if (m_read_only) {
+        if (m_frozen) {
             throw std::runtime_error("non-const soa<...>::permute_zip called in read-only mode");
         }
         // uncontroversial that applying a permutation changes the underlying
@@ -328,13 +366,13 @@ struct soa {
         }
     }
 
-    /** @brief Flag for mark_as_sorted and is_sorted().
+    /** @brief Flag for get_sorted_token(), mark_as_unsorted() and is_sorted().
      */
     bool m_sorted{false};
 
     /** @brief Flag determining if the container is in read-only mode.
      */
-    bool m_read_only{false};
+    bool m_frozen{false};
 
     /** @brief Pointers to identifiers that record the current physical row.
      */
