@@ -46,37 +46,37 @@ TEST_CASE("Cached model data", "[Neuron][data_structures][cache]") {
                 assert_frozen_and_sorted(false, true);
             }
             AND_WHEN("Cached data is requested for the model") {
-            {
-                // This is not a toy implementation and would call NEURON's real
-                // sorting algorithm if the data were not already "sorted"
-                // above. The real algorithm depends on other global state that
-                // is not set up in the unit tests.
-                auto const model_cache = neuron::acquire_valid_model_cache();
-                assert_frozen_and_sorted(true, true);
-                THEN("The cache data should match the model data") {
-                    // These should point to the entries of the voltage storage
-                    auto const& cache_ptrs = model_cache->node_data.voltage_ptrs;
-                    // Re-calculate the reference values
-                    auto const reference_ptrs = get_reference_voltage_pointers(node_data);
-                    // Check that the vector we created on the fly contains the
-                    // same pointers as the vector in the model cache
-                    REQUIRE(std::equal(cache_ptrs.begin(),
-                                       cache_ptrs.end(),
-                                       reference_ptrs.begin(),
-                                       reference_ptrs.end()));
-                }
-                AND_WHEN("There is a nested request for cached data") {
-                    auto const other_model_cache = neuron::acquire_valid_model_cache();
+                {
+                    // This is not a toy implementation and would call NEURON's real
+                    // sorting algorithm if the data were not already "sorted"
+                    // above. The real algorithm depends on other global state that
+                    // is not set up in the unit tests.
+                    auto const model_cache = neuron::cache::acquire_valid();
                     assert_frozen_and_sorted(true, true);
+                    THEN("The cache data should match the model data") {
+                        // These should point to the entries of the voltage storage
+                        auto const& cache_ptrs = model_cache->node_data.voltage_ptrs;
+                        // Re-calculate the reference values
+                        auto const reference_ptrs = get_reference_voltage_pointers(node_data);
+                        // Check that the vector we created on the fly contains the
+                        // same pointers as the vector in the model cache
+                        REQUIRE(std::equal(cache_ptrs.begin(),
+                                           cache_ptrs.end(),
+                                           reference_ptrs.begin(),
+                                           reference_ptrs.end()));
+                    }
+                    AND_WHEN("There is a nested request for cached data") {
+                        auto const other_model_cache = neuron::cache::acquire_valid();
+                        assert_frozen_and_sorted(true, true);
+                    }
+                    AND_WHEN("The nested cache goes out of scope") {
+                        assert_frozen_and_sorted(true, true);
+                    }
                 }
-                AND_WHEN("The nested cache goes out of scope") {
-                    assert_frozen_and_sorted(true, true);
+                AND_WHEN("The cache token goes out of scope") {
+                    assert_frozen_and_sorted(false, true);
                 }
             }
-            AND_WHEN("The cache token goes out of scope") {
-                assert_frozen_and_sorted(false, true);
-            }
-        }
         }
     }
     GIVEN("Some nodes with integer voltages") {
@@ -104,7 +104,7 @@ TEST_CASE("Cached model data", "[Neuron][data_structures][cache]") {
             { auto const token = node_data.get_sorted_token(); }
             AND_THEN("The cache data should be correct") {
                 // get cache data for the newly permuted model
-                auto const model_cache = neuron::acquire_valid_model_cache();
+                auto const model_cache = neuron::cache::acquire_valid();
                 auto const& cache_ptrs = model_cache->node_data.voltage_ptrs;
                 auto const reference_ptrs = get_reference_voltage_pointers(node_data);
                 REQUIRE(std::equal(cache_ptrs.begin(),
