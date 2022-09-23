@@ -34,7 +34,7 @@ struct state_token {
     constexpr state_token& operator=(state_token const&) = delete;
     ~state_token() {
         if (m_container) {
-            m_container->thaw();
+            m_container->decrease_frozen_count();
         }
     }
 
@@ -67,7 +67,7 @@ struct soa {
      *  Iterators to the last element and the deleted element will be invalidated.
      */
     void erase(std::size_t i) {
-        if (m_frozen) {
+        if (m_frozen_count) {
             throw std::runtime_error("soa<...>::erase called in read-only mode");
         }
         mark_as_unsorted_impl<true>();
@@ -102,7 +102,7 @@ struct soa {
      *  guaranteed to remain sorted until it is thawed (unfrozen).
      */
     [[nodiscard]] bool is_frozen() const {
-        return m_frozen;
+        return m_frozen_count;
     }
 
   private:
@@ -112,8 +112,8 @@ struct soa {
      *
      *  This is called from the destructor of state_token.
      */
-    void thaw() {
-        m_frozen = false;
+    void decrease_frozen_count() {
+        --m_frozen_count;
     }
 
   public:
@@ -136,20 +136,18 @@ struct soa {
      *  token has the semantics of a unique_ptr, i.e. it cannot be copied but
      *  can be moved, and destroying a moved-from token has no effect.
      *
+     *  The tokens returned by this function are reference counted; the
+     *  container will be frozen for as long as any token is alive.
+     *
      *  @todo A future extension could be to preserve the sorted flag until
      *        pointers are actually, not potentially, invalidated.
      */
     [[nodiscard]] sorted_token_type get_sorted_token() {
-        if (m_frozen) {
-            throw std::runtime_error(
-                "soa<...>::get_sorted_token() called on an already-frozen container. Nested calls "
-                "to get_sorted_token are not (yet?) supported.");
-        }
-        // Mark the container as frozen
-        m_frozen = true;
+        // Increment the reference count, marking the container as frozen.
+        ++m_frozen_count;
         // Mark the container as sorted
         m_sorted = true;
-        // Return a token that calls thaw() at the end of its lifetime
+        // Return a token that calls decrease_frozen_count() at the end of its lifetime
         return sorted_token_type{*this};
     }
 
@@ -199,12 +197,12 @@ struct soa {
 
     template <bool internal>
     void mark_as_unsorted_impl() {
-        if (m_frozen) {
+        if (m_frozen_count) {
             // Currently you can only obtain a frozen container by calling
             // get_sorted_token(), which explicitly guarantees that the
             // container will remain sorted for the lifetime of the returned
             // token.
-            throw std::runtime_error("soa<...>::mark_as_unsorted() called on a frozen container");
+            throw_error("mark_as_unsorted() called on a frozen structure");
         }
         // Only execute the callback if we're transitioning from sorted to
         // or if this was an explicit mark_as_unsorted() call
@@ -228,10 +226,10 @@ struct soa {
      *  added row will immediately be deleted.
      */
     [[nodiscard]] owning_identifier_base<soa, RowIdentifier> emplace_back() {
-        if (m_frozen) {
-            throw std::runtime_error("soa<...>::emplace_back called in read-only mode");
+        if (m_frozen_count) {
+            throw_error("emplace_back() called on a frozen structure");
         }
-        // Important that this comes after the m_frozen check
+        // Important that this comes after the m_frozen_count check
         owning_identifier_base<soa, RowIdentifier> index{*this};
         // this can trigger reallocation
         mark_as_unsorted_impl<true>();
@@ -284,8 +282,8 @@ struct soa {
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type>& get() {
         static_assert(has_tag_v<Tag>);
-        if (m_frozen) {
-            throw std::runtime_error("non-const soa<...>::get() called in read-only mode");
+        if (m_frozen_count) {
+            throw_error("non-const get() called on frozen structure");
         }
         return std::get<storage_t<Tag>>(m_data);
     }
@@ -305,7 +303,7 @@ struct soa {
     template <typename T>
     [[nodiscard]] neuron::container::data_handle<T> find_data_handle(T* ptr) {
         neuron::container::data_handle<T> handle{};
-        // Don't go via non-const get<T>() because of the m_frozen check
+        // Don't go via non-const get<T>() because of the m_frozen_count check
         find_data_handle(handle, m_indices, ptr) ||
             (find_data_handle(handle, std::get<storage_t<Tags>>(m_data), ptr) || ...);
         return handle;
@@ -373,8 +371,8 @@ struct soa {
      */
     template <typename Permutation>
     void permute_zip(Permutation permutation) {
-        if (m_frozen) {
-            throw std::runtime_error("non-const soa<...>::permute_zip called in read-only mode");
+        if (m_frozen_count) {
+            throw_error("permute_zip() called on a frozen structure");
         }
         // uncontroversial that applying a permutation changes the underlying
         // storage organisation and potentially invalidates pointers. slightly
@@ -389,13 +387,20 @@ struct soa {
         }
     }
 
+    [[noreturn]] void throw_error(std::string_view message) {
+        std::ostringstream oss;
+        oss << cxx_demangle(typeid(soa).name()) << "[frozen_count=" << m_frozen_count
+            << ",sorted=" << std::boolalpha << m_sorted << "]: " << message;
+        throw std::runtime_error(std::move(oss).str());
+    }
+
     /** @brief Flag for get_sorted_token(), mark_as_unsorted() and is_sorted().
      */
     bool m_sorted{false};
 
-    /** @brief Flag determining if the container is in read-only mode.
+    /** @brief Reference count for tokens guaranteeing the container is in frozen mode.
      */
-    bool m_frozen{false};
+    std::size_t m_frozen_count{false};
 
     /** @brief Pointers to identifiers that record the current physical row.
      */
