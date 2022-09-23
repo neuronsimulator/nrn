@@ -49,6 +49,17 @@ struct view_base {
     auto const& get_container() const {
         return derived().underlying_storage().template get<Tag>();
     }
+    // TODO const-ness -- should a const view yield data_handle<T const>?
+    template <typename Tag>
+    auto get_handle() {
+        auto const* const_this = this;
+        auto const& container = const_this->template get_container<Tag>();
+        data_handle<typename Tag::type> const rval{this->id(), container};
+        assert(bool{rval});
+        assert(rval.refers_to_a_modern_data_structure());
+        assert(rval.template refers_to<Tag>(derived().underlying_storage()));
+        return rval;
+    }
     template <typename Tag>
     auto& get() {
         return derived().underlying_storage().template get<Tag>(derived().offset());
