@@ -3,6 +3,7 @@
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/soa_identifier.hpp"
 
+#include <functional>
 #include <string_view>
 #include <vector>
 
@@ -69,7 +70,7 @@ struct soa {
         if (m_frozen) {
             throw std::runtime_error("soa<...>::erase called in read-only mode");
         }
-        m_sorted = false;
+        mark_as_unsorted_impl<true>();
         auto const old_size = size();
         assert(i < old_size);
         if (i != old_size - 1) {
@@ -160,14 +161,17 @@ struct soa {
      *  sorted, even if nothing has actually changed inside this container.
      */
     void mark_as_unsorted() {
-        if (m_frozen) {
-            // Currently you can only obtain a frozen container by calling
-            // get_sorted_token(), which explicitly guarantees that the
-            // container will remain sorted for the lifetime of the returned
-            // token.
-            throw std::runtime_error("soa<...>::mark_as_unsorted() called on a frozen container");
-        }
-        m_sorted = false;
+        mark_as_unsorted_impl<false>();
+    }
+
+    /** @brief Set the callback that is invoked when the container becomes unsorted.
+     *
+     *  This is invoked by mark_as_unsorted() and when a container operation
+     *  (insertion, permutation, deletion) causes the container to transition
+     *  from being sorted to being unsorted.
+     */
+    void set_unsorted_callback(std::function<void()> unsorted_callback) {
+        m_unsorted_callback = std::move(unsorted_callback);
     }
 
     /** @brief Query if the underlying vectors are still "sorted".
@@ -193,6 +197,25 @@ struct soa {
   private:
     [[nodiscard]] inline auto get_zip();
 
+    template <bool internal>
+    void mark_as_unsorted_impl() {
+        if (m_frozen) {
+            // Currently you can only obtain a frozen container by calling
+            // get_sorted_token(), which explicitly guarantees that the
+            // container will remain sorted for the lifetime of the returned
+            // token.
+            throw std::runtime_error("soa<...>::mark_as_unsorted() called on a frozen container");
+        }
+        // Only execute the callback if we're transitioning from sorted to
+        // or if this was an explicit mark_as_unsorted() call
+        bool const execute_callback{m_sorted || !internal};
+        m_sorted = false;
+        if (execute_callback && m_unsorted_callback) {
+            m_unsorted_callback();
+        }
+    }
+
+
   public:
     /** @brief Append a new entry to all elements of the container.
      *  @todo  Perhaps the return type should be an owning view, not just an
@@ -211,7 +234,7 @@ struct soa {
         // Important that this comes after the m_frozen check
         owning_identifier_base<soa, RowIdentifier> index{*this};
         // this can trigger reallocation
-        m_sorted = false;
+        mark_as_unsorted_impl<true>();
         index.set_current_row(size());
         m_indices.push_back(std::move(index));
         // Append a new element to all the data columns too.
@@ -357,7 +380,7 @@ struct soa {
         // storage organisation and potentially invalidates pointers. slightly
         // more controversial: should explicitly permuting the data implicitly
         // mark the container as "sorted"?
-        m_sorted = false;
+        mark_as_unsorted_impl<true>();
         auto zip = get_zip();
         permutation(zip);
         std::size_t const my_size{size()};
@@ -381,5 +404,9 @@ struct soa {
     /** @brief Collection of data columns.
      */
     std::tuple<storage_t<Tags>...> m_data{};
+
+    /** @brief Callback that is invoked when the container becomes unsorted.
+     */
+    std::function<void()> m_unsorted_callback{};
 };
 }  // namespace neuron::container

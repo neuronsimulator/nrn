@@ -194,9 +194,10 @@ std::vector<double> get_node_voltages(std::vector<::Node> const& nodes) {
     });
     return ret;
 }
-std::tuple<std::vector<::Node>, std::vector<double>> get_nodes_and_reference_voltages() {
+std::tuple<std::vector<::Node>, std::vector<double>> get_nodes_and_reference_voltages(
+    std::size_t num_nodes) {
     std::vector<double> reference_voltages{};
-    std::generate_n(std::back_inserter(reference_voltages), 10, [i = 0]() mutable {
+    std::generate_n(std::back_inserter(reference_voltages), num_nodes, [i = 0]() mutable {
         auto x = i++;
         return x * x;
     });
