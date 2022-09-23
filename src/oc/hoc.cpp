@@ -1254,37 +1254,42 @@ struct temporarily_change {
 // execute until EOF
 // called from a try { ... } block in hoc_main1
 static int hoc_run1() {
-    // This is the actual code we want to execute, everything else is to do
-    // whether or not to handle errors
-    auto const kernel = []() {
-        hoc_execerror_messages = 1;
-        hoc_pipeflag = 0;  // reset pipeflag
-        for (hoc_initcode(); hoc_yyparse(); hoc_initcode()) {
-            hoc_execute(hoc_progbase);
+    auto* const sav_fin = hoc_fin;
+    hoc_pipeflag = 0;
+    hoc_execerror_messages = 1;
+    auto const loop_body = []() {
+        hoc_initcode();
+        if (!hoc_yyparse()) {
+            if (hoc_intset) {
+                hoc_execerror("interrupted", nullptr);
+            }
+            return false;
         }
-        if (hoc_intset) {
-            hoc_execerror("interrupted", nullptr);
-        }
+        hoc_execute(hoc_progbase);
+        return true;
     };
     if (nrn_try_catch_nest_depth) {
         // This is not the most shallowly nested call to hoc_run1(), allow the
         // most shallowly nested call to handle exceptions.
-        kernel();
+        while (loop_body())
+            ;
     } else {
-        // This is the most shallowly nested call to hoc_run1(), handle
-        // exceptions.
-        signal_handler_guard _{};
-        hoc_intset = 0;
-        auto const sav_fin = hoc_fin;
+        // This is the most shallowly nested call to hoc_run1(), handle exceptions.
+        signal_handler_guard _{};  // install signal handlers
         try_catch_depth_increment tell_children_we_will_catch{};
-        try {
-            kernel();
-        } catch (...) {
-            hoc_fin = sav_fin;
-            if (!nrn_fw_eq(hoc_fin, stdin)) {
-                return EXIT_FAILURE;
+        hoc_intset = 0;
+        for (;;) {
+            try {
+                if (!loop_body()) {
+                    break;
+                }
+            } catch (...) {
+                hoc_fin = sav_fin;
+                // Exit if we're not in interactive mode
+                if (!nrn_fw_eq(hoc_fin, stdin)) {
+                    return EXIT_FAILURE;
+                }
             }
-            hoc_intset = 0;
         }
     }
     return EXIT_SUCCESS;
