@@ -1,8 +1,9 @@
 #include "neuron/container/node.hpp"
-// Need to include this explicitly because we call methods that external
+// Need to include this explicitly because we call methods that need external
 // dependency headers
 #include "neuron/container/soa_container_impl.hpp"
 #include "section.h"
+#include "../model_test_utils.hpp"
 
 #include <catch2/catch.hpp>
 
@@ -184,45 +185,54 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
     }
 }
 
-template <typename Nodes>
-std::vector<double> get_voltages(Nodes const& nodes) {
+// Declared in model_test_utils.hpp so they can be reused in other tests too
+namespace neuron::test {
+std::vector<double> get_node_voltages(std::vector<::Node> const& nodes) {
     std::vector<double> ret{};
     std::transform(nodes.begin(), nodes.end(), std::back_inserter(ret), [](auto const& node) {
         return node.v();
     });
     return ret;
 }
+std::tuple<std::vector<::Node>, std::vector<double>> get_nodes_and_reference_voltages() {
+    std::vector<double> reference_voltages{};
+    std::generate_n(std::back_inserter(reference_voltages), 10, [i = 0]() mutable {
+        auto x = i++;
+        return x * x;
+    });
+    std::vector<::Node> nodes{};
+    std::transform(reference_voltages.begin(),
+                   reference_voltages.end(),
+                   std::back_inserter(nodes),
+                   [](auto v) {
+                       ::Node node{};
+                       node.set_v(v);
+                       return node;
+                   });
+    return {std::move(nodes), std::move(reference_voltages)};
+}
+}  // namespace neuron::test
 
 TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
     GIVEN("A series of nodes with increasing integer voltages") {
-        std::vector<double> reference_voltages{};
-        std::generate_n(std::back_inserter(reference_voltages), 10, [i = 0]() mutable {
-            auto x = i++;
-            return x * x;
-        });
-        std::vector<::Node> nodes{};
-        std::transform(reference_voltages.begin(),
-                       reference_voltages.end(),
-                       std::back_inserter(nodes),
-                       [](auto v) {
-                           ::Node node{};
-                           node.set_v(v);
-                           return node;
-                       });
+        using neuron::test::get_node_voltages;
+        auto nodes_and_voltages = neuron::test::get_nodes_and_reference_voltages();
+        auto& nodes = std::get<0>(nodes_and_voltages);
+        auto& reference_voltages = std::get<1>(nodes_and_voltages);
         auto& node_data = neuron::model().node_data();
         auto const& voltage_storage = std::as_const(node_data).get<field::Voltage>();
         // Flag this original order as "sorted" so that the tests that it is no
         // longer sorted after permutation are meaningful
-        node_data.mark_as_sorted(true);
+        { auto token = node_data.get_sorted_token(); }
         REQUIRE(nodes.size() == voltage_storage.size());
         auto const require_logical_match = [&]() {
             THEN("Check the logical voltages still match") {
-                REQUIRE(get_voltages(nodes) == reference_voltages);
+                REQUIRE(get_node_voltages(nodes) == reference_voltages);
             }
         };
         auto const require_logical_and_storage_match = [&]() {
             THEN("Check the logical voltages still match") {
-                REQUIRE(get_voltages(nodes) == reference_voltages);
+                REQUIRE(get_node_voltages(nodes) == reference_voltages);
                 AND_THEN("Check the underlying storage also matches") {
                     REQUIRE(voltage_storage == reference_voltages);
                 }
@@ -230,7 +240,7 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         };
         auto const require_logical_match_and_storage_different = [&]() {
             THEN("Check the logical voltages still match") {
-                REQUIRE(get_voltages(nodes) == reference_voltages);
+                REQUIRE(get_node_voltages(nodes) == reference_voltages);
                 AND_THEN("Check the underlying storage no longer matches") {
                     REQUIRE_FALSE(voltage_storage == reference_voltages);
                 }
@@ -242,8 +252,10 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         WHEN("Values are read back immediately") {
             require_logical_and_storage_match();
         }
-// As of nvc++/22.7 the range::v3 code behind rotate gives compilation errors.
-#ifndef __NVCOMPILER
+// As of nvc++/22.7 the range::v3 code behind rotate gives compilation errors,
+// which are apparently fixed in 22.9+:
+// https://forums.developer.nvidia.com/t/compilation-failures-with-range-v3-and-nvc-22-7/228444
+#if !defined(__NVCOMPILER) || (__NVCOMPILER_MAJOR__ >= 22 && __NVCOMPILER_MINOR__ >= 9)
         WHEN("The underlying storage is rotated") {
             node_data.rotate(1);
             require_logical_match_and_storage_different();
@@ -319,10 +331,6 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             reference_voltages.erase(std::next(reference_voltages.begin(), index_to_remove));
             require_logical_match_and_storage_different();
         }
-        WHEN("A token guaranteeing sorted-ness is requested from an unsorted container") {
-            node_data.mark_as_sorted(false);
-            REQUIRE_THROWS(node_data.sorted_token());
-        }
         WHEN("The dense storage is sorted and marked read-only") {
             // A rough sketch of the concept here is that if we have a
             // SOA-backed quantity, like the node voltages, then referring
@@ -333,11 +341,11 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             // something simpler for use in the translated MOD file code --
             // let's say std::vector<double*> -- while the data remain "sorted".
             {
-                // Label the current order as "sorted"
-                node_data.mark_as_sorted(true);
-                // Acquire a token that locks the node data in read-only mode,
-                // and therefore enforces that it remains sorted.
-                auto const read_only_and_sorted_token = node_data.sorted_token();
+                // Label the current order as sorted and acquire a token that
+                // freezes it that way. The data should be sorted until the
+                // token goes out of scope.
+                auto const sorted_token = node_data.get_sorted_token();
+                REQUIRE(node_data.is_sorted());
                 THEN("New nodes cannot be created") {
                     // Underlying node data is read-only, cannot allocate new Nodes.
                     REQUIRE_THROWS(::Node{});
@@ -356,8 +364,10 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                     REQUIRE_NOTHROW(std::as_const(node_data).get<field::Voltage>());
                 }
                 THEN("The sorted-ness flag cannot be modified") {
-                    REQUIRE_THROWS(node_data.mark_as_sorted(true));
-                    REQUIRE_THROWS(node_data.mark_as_sorted(false));
+                    REQUIRE_THROWS(node_data.mark_as_unsorted());
+                    AND_THEN("Attempts to do so fail") {
+                        REQUIRE(node_data.is_sorted());
+                    }
                 }
                 THEN("The storage cannot be permuted") {
                     // Checking one of the permuting operations should be enough
@@ -367,7 +377,7 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                 // we cannot throw from destructors it is not easy to test this
                 // in this context. nodes.pop_back() would call std::terminate.
             }
-            // read_only_and_sorted_token out of scope, underlying data no longer read-only
+            // sorted_token out of scope, underlying data no longer read-only
             THEN("After the token is discarded, new Nodes can be allocated") {
                 REQUIRE_NOTHROW(::Node{});
             }
