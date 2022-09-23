@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include "neuron.h"
+#include "neuron/cache/model_data.hpp"
 #include "section.h"
 #include "nrn_ansi.h"
 #include "nrniv_mf.h"
@@ -13,6 +14,7 @@
 #include "nonvintblock.h"
 #include "nrncvode.h"
 #include "spmatrix.h"
+
 #include <vector>
 
 /*
@@ -1025,16 +1027,27 @@ void batch_save(void) {
 }
 
 void nrn_ba(NrnThread* nt, int bat) {
-    NrnThreadBAList* tbl;
-    int i;
-    for (tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
-        nrn_bamech_t f = tbl->bam->f;
-        int type = tbl->bam->type;
-        Memb_list* ml = tbl->ml;
-        for (i = 0; i < ml->nodecount; ++i) {
+    // Calling before/after functions requires transient/cached model data
+    // TODO: pass this into nrn_ba from higher up the call stack, or at least
+    // have the option to do so
+    auto const model_cache = neuron::cache::acquire_valid();
+    // TODO would rather flatten this into double* or something
+    std::vector<Datum> ppvar;
+    for (NrnThreadBAList* tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
+        nrn_bamech_t const f{tbl->bam->f};
+        int const type{tbl->bam->type};
+        Memb_list* const ml{tbl->ml};
+        auto const& cached_pdata = model_cache->thread.at(nt->id).mech.at(type).pdata;
+        // cached_pdata[index_of_pointer_var][0 .. node_index .. nodecount-1]
+        ppvar.resize(cached_pdata.size());
+        for (int i = 0; i < ml->nodecount; ++i) {
             // Is ml->pdata[i] always double*/pval? Need to substitute transient
-            // flattened data here.
-            (*f)(ml->nodelist[i], ml->_data[i], ml->pdata[i], ml->_thread, nt);
+            // flattened data here. And possibly transpose this loop...
+            for (auto j = 0; j < cached_pdata.size(); ++j) {
+                ppvar[j] = cached_pdata[j][i];
+            }
+            (*f)(ml->nodelist[i], ml->_data[i], ppvar.data(), ml->_thread, nt);
+            // TODO check for modifications to ppvar?
         }
     }
 }
