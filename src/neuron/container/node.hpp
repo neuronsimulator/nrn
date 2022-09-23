@@ -41,12 +41,7 @@ struct interface: view_base<View> {
      *  over permutations but doesn't know that it is a Node voltage.
      */
     [[nodiscard]] data_handle<field::Voltage::type> v_handle() {
-        data_handle<field::Voltage::type> const rval{
-            this->id(), this->template get_container<field::Voltage>()};
-        assert(bool{rval});
-        assert(rval.refers_to_a_modern_data_structure());
-        assert(rval.refers_to<field::Voltage>(neuron::model().node_data()));
-        return rval;
+        return this->template get_handle<field::Voltage>();
     }
 
     /** @brief Set the membrane potentials.
@@ -65,7 +60,7 @@ struct owning_handle;
 // the real Node is deleted or a permute operation is performed
 // on the underlying data.
 struct view: interface<view> {
-    inline view(owning_handle const&);
+    inline view(owning_handle&);
     view(storage& node_data, identifier const& id)
         : m_row{id.current_row()}
         , m_node_data{node_data} {
@@ -80,7 +75,10 @@ struct view: interface<view> {
     std::size_t offset() const {
         return m_row;
     }
-    storage& underlying_storage() const {
+    storage& underlying_storage() {
+        return m_node_data;
+    }
+    storage const& underlying_storage() const {
         return m_node_data;
     }
 };
@@ -96,7 +94,10 @@ struct handle: interface<handle> {
 
   private:
     // Interface for neuron::container::view_base
-    storage& underlying_storage() const {
+    storage& underlying_storage() {
+        return m_node_data;
+    }
+    storage const& underlying_storage() const {
         return m_node_data;
     }
     std::size_t offset() const {
@@ -133,7 +134,10 @@ struct owning_handle: interface<owning_handle> {
     friend struct view_base<owning_handle>;
     owning_identifier m_node_data_offset;
     // Interface for neuron::container::view_base
-    storage& underlying_storage() const {
+    storage& underlying_storage() {
+        return m_node_data_offset.data_container();
+    }
+    storage const& underlying_storage() const {
         return m_node_data_offset.data_container();
     }
     std::size_t offset() const {
@@ -141,7 +145,7 @@ struct owning_handle: interface<owning_handle> {
     }
 };
 
-inline view::view(owning_handle const& node)
+inline view::view(owning_handle& node)
     : m_row{node.offset()}
     , m_node_data{node.underlying_storage()} {}
 }  // namespace neuron::container::Node
