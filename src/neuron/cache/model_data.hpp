@@ -83,4 +83,6 @@ inline model_token acquire_valid_model_cache() {
     }
     return {std::move(model_is_sorted), *detail::model_cache};
 }
+
+void invalidate_model_cache();
 }  // namespace neuron

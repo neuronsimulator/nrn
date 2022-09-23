@@ -158,7 +158,7 @@ struct owning_identifier_base {
                 // Cannot throw from unique_ptr release/reset/destructor, this
                 // is the best we can do. Most likely what has happened is
                 // something like:
-                //   auto const read_only_token = node_data.sorted_token();
+                //   auto const read_only_token = node_data.get_sorted_token();
                 //   list_of_nodes.pop_back();
                 // which tries to delete a row from a container in read-only mode.
                 std::cerr << "neuron::container::owning_identifier_base<"
