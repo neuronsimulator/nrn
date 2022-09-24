@@ -199,6 +199,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     ENVIRONMENT COVERAGE_FILE=.coverage.basic_tests
     COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/pynrn
     SCRIPT_PATTERNS test/pynrn/*.py)
+  nrn_add_test_group(NAME datahandle MODFILE_PATTERNS test/datahandle/*.mod)
+  nrn_add_test(
+    GROUP datahandle
+    NAME datahandle_tests
+    PRELOAD_SANITIZER
+    COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/datahandle
+    SCRIPT_PATTERNS test/datahandle/*.py)
 
   # Mostly to increase coverage
   nrn_add_test_group(NAME coverage_tests MODFILE_PATTERNS test/cover/mod/*.mod)
