@@ -29,7 +29,7 @@
 static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 8),
               "Python >= 3.8 required");
 
-extern PyObject* nrnpy_hoc_pop();
+extern PyObject* nrnpy_hoc_pop(const char* mes);
 extern int nrnpy_numbercheck(PyObject*);
 
 #if defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ > __SIZEOF_LONG__
@@ -89,7 +89,7 @@ Object* nrnpy_pyobject_in_obj(PyObject*);
 struct Prop;
 struct Symbol;
 
-bool nrn_chk_data_handle(neuron::container::data_handle<double>&);
+bool nrn_chk_data_handle(const neuron::container::data_handle<double>&);
 PyObject* nrn_hocobj_handle(neuron::container::data_handle<double> d);
 extern "C" PyObject* nrn_hocobj_ptr(double*);
 int nrn_is_hocobj_ptr(PyObject*, neuron::container::data_handle<double>&);
