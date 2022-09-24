@@ -207,6 +207,14 @@ if(NRN_ENABLE_PYTHON)
   # Add some tests that are specifically aimed at NEURON - Python integration, covering different
   # ways NEURON can be made to execute Python code.
   add_subdirectory(pyinit)
+  
+  nrn_add_test_group(NAME datahandle MODFILE_PATTERNS test/datahandle/*.mod)
+  nrn_add_test(
+    GROUP datahandle
+    NAME datahandle_tests
+    PRELOAD_SANITIZER
+    COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/datahandle
+    SCRIPT_PATTERNS test/datahandle/*.py)
 
   # Mostly to increase coverage
   nrn_add_test_group(NAME coverage_tests MODFILE_PATTERNS test/cover/mod/*.mod)
