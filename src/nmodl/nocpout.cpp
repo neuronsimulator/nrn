@@ -85,22 +85,6 @@ not thread safe and _p and _ppvar are static.
 */
 
 #endif
-#define NRNEXTRN     01 /* t, dt, celsius, etc. */
-#define NRNCURIN     02 /* input value used */
-#define NRNCUROUT    04 /* added to output value */
-#define NRNRANGE     010
-#define NRNPRANGEIN  020
-#define NRNPRANGEOUT 040
-#define NRNGLOBAL    0100 /* same for all sections, defined here */
-#define NRNSTATIC    0200 /* v */
-#define NRNNOTP      0400 /* doesn't belong in p array */
-#define NRNIONFLAG                                  \
-    01000 /* temporary flag to allow READ and WRITE \
- without declaring twice */
-#define NRNSECTION       02000
-#define NRNPOINTER       04000
-#define IONCONC          010000
-#define NRNBBCOREPOINTER 020000
 
 #define IONEREV 0 /* Parameter */
 #define IONIN   1

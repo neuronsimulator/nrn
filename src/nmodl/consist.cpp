@@ -19,6 +19,27 @@ extern Symbol* indepsym;
             err = 1;                                        \
         }
 
+/**
+ * Check if variable declared in NEURON block is conflicting with a PROCEDURE or FUNCTION
+ *
+ * In order to avoid "declaring" variable in NEURON block and then defining
+ * PROCEDURE or FUNCTION with the same name, we check if the variable is
+ * function and has one of the NRN* type.
+ */
+int is_var_declared_as_function(Symbol* s) {
+    int type = s->nrntype;
+    int usage = s->usage;
+
+    // if not function or procedure name then return already
+    if (!(usage & FUNCT)) {
+        return 0;
+    }
+
+    // conflicting name if presence of NEURON block variable type
+    return (type & NRNRANGE || type & NRNGLOBAL || type & NRNPOINTER || type & NRNBBCOREPOINTER ||
+            type & NRNEXTRN);
+}
+
 void consistency() {
     Symbol* s;
     Item* qs;
@@ -51,10 +72,21 @@ void consistency() {
         con("STEPPED", STEP1, 0);
         con("CONSTANT UNITS FACTOR", UNITDEF, 0);
         tu = s->usage;
-        if ((tu & DEP) && (tu & FUNCT))
+        if ((tu & DEP) && (tu & FUNCT)) {
             diag(s->name, " used as both variable and function");
-        if ((t == 0) && tu)
+        }
+        // check for conflicting variable declaration with function
+        // do not use diag() because line number might be misleading
+        if (is_var_declared_as_function(s)) {
+            Fprintf(stderr,
+                    "Error: %s used as both variable and function in file %s\n",
+                    s->name,
+                    finname);
+            exit(1);
+        }
+        if ((t == 0) && tu) {
             Fprintf(stderr, "Warning: %s undefined. (declared within VERBATIM?)\n", s->name);
+        }
     }
     if (err) {
         diag("multiple uses for same variable", (char*) 0);
