@@ -6313,6 +6313,9 @@ void YvecRecord::install(Cvode* cv) {
 }
 
 void YvecRecord::record_init() {
+    if (!pd_) {
+        hoc_execerr_ext("%s recording from invalid data reference.", hoc_object_name(y_->obj_));
+    }
     y_->resize(0);
 }
 
