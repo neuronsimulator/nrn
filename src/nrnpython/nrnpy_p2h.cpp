@@ -291,7 +291,13 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     if (isfunc) {
         args = PyTuple_New(nindex);
         for (i = 0; i < nindex; ++i) {
-            PyObject* arg = nrnpy_hoc_pop();
+            PyObject* arg = nrnpy_hoc_pop("isfunc py2n_component");
+            if (!arg) {
+                PyErr2NRNString e;
+                e.get_pyerr();
+                Py_DECREF(args);
+                hoc_execerr_ext("arg %d error: %s", i, e.c_str());
+            }
             // PyObject_Print(arg, stdout, 0);
             // printf(" %d   arg %d\n", arg->ob_refcnt,  i);
             if (PyTuple_SetItem(args, nindex - 1 - i, arg)) {
@@ -318,6 +324,7 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             return;
         }
     } else if (nindex) {
+        printf("nindex = %d\n", nindex);
         PyObject* arg;
         int n = hoc_pop_ndim();
         if (n > 1) {
@@ -330,7 +337,8 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         if (hoc_stack_type() == NUMBER) {
             arg = Py_BuildValue("l", (long) hoc_xpop());
         } else {
-            arg = nrnpy_hoc_pop();
+            // I don't think this is syntactically possible
+            arg = nrnpy_hoc_pop("nindex py2n_component");
         }
         result = PyObject_GetItem(tail, arg);
         if (!result) {
@@ -577,7 +585,7 @@ static Object* callable_with_args(Object* ho, int narg) {
         hoc_execerror("PyTuple_New failed", 0);
     }
     for (int i = 0; i < narg; ++i) {
-        PyObject* item = nrnpy_hoc_pop();
+        PyObject* item = nrnpy_hoc_pop("callable_with_args");
         if (item == NULL) {
             Py_XDECREF(args);
             hoc_execerror("nrnpy_hoc_pop failed", 0);
@@ -609,7 +617,7 @@ static double func_call(Object* ho, int narg, int* err) {
         hoc_execerror("PyTuple_New failed", 0);
     }
     for (int i = 0; i < narg; ++i) {
-        PyObject* item = nrnpy_hoc_pop();
+        PyObject* item = nrnpy_hoc_pop("func_call");
         if (item == NULL) {
             Py_XDECREF(args);
             hoc_execerror("nrnpy_hoc_pop failed", 0);
@@ -855,7 +863,7 @@ char* call_picklef(char* fname, size_t size, int narg, size_t* retsize) {
 
     args = PyTuple_New(narg);
     for (int i = 0; i < narg; ++i) {
-        PyObject* arg = nrnpy_hoc_pop();
+        PyObject* arg = nrnpy_hoc_pop("call_picklef");
         if (PyTuple_SetItem(args, narg - 1 - i, arg)) {
             assert(0);
         }

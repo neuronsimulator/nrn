@@ -151,6 +151,14 @@ static PyObject* nrnpy_rvp_pyobj_callback = NULL;
 PyTypeObject* hocobject_type;
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds);
 
+bool nrn_chk_data_handle(const neuron::container::data_handle<double>& pd) {
+    if (pd) {
+        return true;
+    }
+    PyErr_SetString(PyExc_ValueError, "Invalid data_handle");
+    return false;
+}
+
 static PyObject* nrnexec(PyObject* self, PyObject* args) {
     const char* cmd;
     if (!PyArg_ParseTuple(args, "s", &cmd)) {
@@ -554,7 +562,7 @@ Object* nrnpy_po2ho(PyObject* po) {
     return o;
 }
 
-PyObject* nrnpy_hoc_pop() {
+PyObject* nrnpy_hoc_pop(const char* mes) {
     PyObject* result = 0;
     Object* ho;
     Object** d;
@@ -563,12 +571,13 @@ PyObject* nrnpy_hoc_pop() {
         result = Py_BuildValue("s", *hoc_strpop());
         break;
     case VAR: {
-        if (auto const px = hoc_pop_handle<double>()) {
+        // remove mes arg when test coverage development completed
+        // printf("VAR nrnpy_hoc_pop %s\n", mes);
+        auto const px = hoc_pop_handle<double>();
+        if (nrn_chk_data_handle(px)) {
             // unfortunately, this is nonsense if NMODL POINTER is pointing
             // to something other than a double.
             result = Py_BuildValue("d", *px);
-        } else {
-            PyErr_SetString(PyExc_AttributeError, "POINTER is NULL");
         }
     } break;
     case NUMBER:
@@ -669,7 +678,7 @@ static void* fcall(void* vself, void* vargs) {
         case 1:
             return nrnpy_hoc_int_pop();
         default:
-            return nrnpy_hoc_pop();
+            return nrnpy_hoc_pop("self->ho_ fcall");
         }
     }
     if (self->sym_->type == BLTIN) {
@@ -699,7 +708,7 @@ static void* fcall(void* vself, void* vargs) {
     }
     hocobj_pushargs_free_strings(strings_to_free);
 
-    return nrnpy_hoc_pop();
+    return nrnpy_hoc_pop("laststatement fcall");
 }
 
 static PyObject* curargs_;
@@ -892,14 +901,6 @@ int nrn_is_hocobj_ptr(PyObject* po, neuron::container::data_handle<double>& pd) 
         }
     }
     return ret;
-}
-
-bool nrn_chk_data_handle(neuron::container::data_handle<double>& pd) {
-    if (pd) {
-        return true;
-    }
-    PyErr_SetString(PyExc_ValueError, "Invalid data_handle");
-    return false;
 }
 
 static void symlist2dict(Symlist* sl, PyObject* dict) {
@@ -1167,7 +1168,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                         auto handle = hoc_pop_handle<double>();
                         return nrn_hocobj_handle(std::move(handle));
                     } else {
-                        return nrnpy_hoc_pop();
+                        return nrnpy_hoc_pop("use-the-component-fork hocobj_getattr");
                     }
                 }
             } else {
@@ -1871,7 +1872,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 if (po->type_ == PyHoc::HocArrayIncomplete) {
                     result = nrn_hocobj_ptr(hoc_pxpop());
                 } else {
-                    result = nrnpy_hoc_pop();
+                    result = nrnpy_hoc_pop("po->ho_ hocobj_getitem");
                 }
             }
         } else {  // must be a top level intermediate
