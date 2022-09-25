@@ -324,7 +324,6 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             return;
         }
     } else if (nindex) {
-        printf("nindex = %d\n", nindex);
         PyObject* arg;
         int n = hoc_pop_ndim();
         if (n > 1) {
@@ -337,7 +336,10 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         if (hoc_stack_type() == NUMBER) {
             arg = Py_BuildValue("l", (long) hoc_xpop());
         } else {
-            // I don't think this is syntactically possible
+            // I don't think it is syntactically possible
+            // for this to be a VAR. It is possible for it to
+            // be an Object but the GetItem below will raise
+            // TypeError: list indices must be integers or slices, not hoc.HocObject
             arg = nrnpy_hoc_pop("nindex py2n_component");
         }
         result = PyObject_GetItem(tail, arg);
@@ -585,6 +587,7 @@ static Object* callable_with_args(Object* ho, int narg) {
         hoc_execerror("PyTuple_New failed", 0);
     }
     for (int i = 0; i < narg; ++i) {
+        // not used with datahandle args.
         PyObject* item = nrnpy_hoc_pop("callable_with_args");
         if (item == NULL) {
             Py_XDECREF(args);

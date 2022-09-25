@@ -678,6 +678,7 @@ static void* fcall(void* vself, void* vargs) {
         case 1:
             return nrnpy_hoc_int_pop();
         default:
+            // No callable hoc function returns a data handle.
             return nrnpy_hoc_pop("self->ho_ fcall");
         }
     }
@@ -1787,7 +1788,10 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
             return NULL;
         }
         if (po->type_ == PyHoc::HocScalarPtr) {
-            assert(ix == 0);
+            if (ix != 0) {
+                PyErr_SetString(PyExc_IndexError, "index of pointer to hoc scalar must be 0");
+                return NULL;
+            }
             if (nrn_chk_data_handle(po->u.px_)) {
                 result = Py_BuildValue("d", *(po->u.px_));
             }
@@ -1920,7 +1924,10 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
             return -1;
         }
         if (po->type_ == PyHoc::HocScalarPtr) {
-            assert(i == 0);
+            if (i != 0) {
+                PyErr_SetString(PyExc_IndexError, "index of pointer to hoc scalar must be 0");
+                return -1;
+            }
             if (!nrn_chk_data_handle(po->u.px_)) {
                 return -1;
             }
