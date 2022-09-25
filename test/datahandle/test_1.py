@@ -39,6 +39,8 @@ def test_2():
     rv = {seg.x: seg._ref_v for seg in a.allseg()}
     h.finitialize(-65)
     assert rv[0.3][0] == -65.0
+    expect_err("print(rv[0.3][1])")
+    expect_err("rv[0.3][1] = 50.0")
     a.nseg = 3
     print(rv[0.3])
     expect_err("print(rv[0.3][0])")
@@ -149,6 +151,16 @@ proc tst_py2n_component3() {
     print("leaving test_py2n_component")
 
 
+def test_hocobj_getitem():
+    v = h.Vector(5).indgen()
+    assert v.x[2] == 2.0  # will call nrnpy_hoc_pxpop when VAR on stack
+    # There appears no way to do that with a datahandle though
+    a = h.Section(name="axon")
+    h("objref test_hocobj_getitem_vref")
+    h.test_hocobj_getitem_vref = a(0.5)._ref_v
+    assert h.test_hocobj_getitem_vref is None
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_1()
@@ -156,4 +168,5 @@ if __name__ == "__main__":
     test_3()
     test_4()
     test_py2n_component()
+    test_hocobj_getitem()
     h.topology()
