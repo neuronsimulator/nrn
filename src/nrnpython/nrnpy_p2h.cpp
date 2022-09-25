@@ -324,7 +324,6 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             return;
         }
     } else if (nindex) {
-        printf("nindex = %d\n", nindex);
         PyObject* arg;
         int n = hoc_pop_ndim();
         if (n > 1) {
