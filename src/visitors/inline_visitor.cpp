@@ -8,6 +8,7 @@
 #include "visitors/inline_visitor.hpp"
 
 #include "ast/all.hpp"
+#include "ast/ast_decl.hpp"
 #include "parser/c11_driver.hpp"
 #include "utils/logger.hpp"
 #include "visitors/local_var_rename_visitor.hpp"
@@ -210,25 +211,21 @@ void InlineVisitor::visit_function_call(FunctionCall& node) {
         return;
     }
 
-    auto function_definition = symbol->get_node();
-    if (function_definition == nullptr) {
+    auto nodes = symbol->get_nodes_by_type(
+        {AstNodeType::FUNCTION_BLOCK, AstNodeType::PROCEDURE_BLOCK});
+    if (nodes.empty()) {
         throw std::runtime_error("symbol table doesn't have ast node for " + function_name);
     }
+    auto f_block = nodes.front();
 
     /// first inline called function
-    function_definition->visit_children(*this);
+    f_block->visit_children(*this);
 
     bool inlined = false;
 
-    if (function_definition->is_procedure_block()) {
-        auto proc = dynamic_cast<ProcedureBlock*>(function_definition);
-        assert(proc);
-        inlined = inline_function_call(*proc, node, *caller_block);
-    } else if (function_definition->is_function_block()) {
-        auto func = dynamic_cast<FunctionBlock*>(function_definition);
-        assert(func);
-        inlined = inline_function_call(*func, node, *caller_block);
-    }
+    auto block = dynamic_cast<ast::Block*>(f_block);
+    assert(block);
+    inlined = inline_function_call(*block, node, *caller_block);
 
     if (inlined) {
         symbol->mark_inlined();

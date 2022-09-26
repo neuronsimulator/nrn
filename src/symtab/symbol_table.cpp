@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "ast/ast.hpp"
+#include "ast/ast_decl.hpp"
 #include "symtab/symbol_table.hpp"
 #include "utils/logger.hpp"
 #include "utils/table_data.hpp"
@@ -54,15 +55,12 @@ SymbolTable::SymbolTable(const SymbolTable& table)
 
 bool SymbolTable::is_method_defined(const std::string& name) const {
     auto symbol = lookup_in_scope(name);
-    if (symbol != nullptr) {
-        auto node = symbol->get_node();
-        if (node != nullptr) {
-            if (node->is_procedure_block() || node->is_function_block()) {
-                return true;
-            }
-        }
+    if (symbol == nullptr) {
+        return false;
     }
-    return false;
+    auto nodes = symbol->get_nodes_by_type(
+        {AstNodeType::FUNCTION_BLOCK, AstNodeType::PROCEDURE_BLOCK});
+    return !nodes.empty();
 }
 
 
@@ -202,12 +200,13 @@ std::shared_ptr<Symbol> ModelSymbolTable::lookup(const std::string& name) {
 void ModelSymbolTable::emit_message(const std::shared_ptr<Symbol>& first,
                                     const std::shared_ptr<Symbol>& second,
                                     bool redefinition) {
-    auto node = first->get_node();
+    auto nodes = first->get_nodes();
     std::string name = first->get_name();
     auto properties = to_string(second->get_properties());
     std::string type = "UNKNOWN";
-    if (node != nullptr) {
-        type = node->get_node_type_name();
+    if (!nodes.empty()) {
+        // Here we take the first one, because this is a redefinition
+        type = nodes.front()->get_node_type_name();
     }
 
     if (redefinition) {
@@ -318,6 +317,9 @@ std::shared_ptr<Symbol> ModelSymbolTable::insert(const std::shared_ptr<Symbol>& 
             emit_message(symbol, search_symbol, true);
         } else {
             search_symbol->add_properties(symbol->get_properties());
+            for (const auto& n: symbol->get_nodes()) {
+                search_symbol->add_node(n);
+            }
         }
         return search_symbol;
     }
@@ -457,8 +459,9 @@ void SymbolTable::Table::print(std::ostream& stream, std::string title, int inde
         TableData table;
         table.title = std::move(title);
         table.headers = {
-            "NAME", "PROPERTIES", "STATUS", "LOCATION", "VALUE", "# READS", "# WRITES"};
+            "NAME", "# NODES", "PROPERTIES", "STATUS", "LOCATION", "VALUE", "# READS", "# WRITES"};
         table.alignments = {text_alignment::left,
+                            text_alignment::left,
                             text_alignment::left,
                             text_alignment::right,
                             text_alignment::right,
@@ -482,13 +485,14 @@ void SymbolTable::Table::print(std::ostream& stream, std::string title, int inde
             auto properties = syminfo::to_string(symbol->get_properties());
             auto status = syminfo::to_string(symbol->get_status());
             auto reads = std::to_string(symbol->get_read_count());
+            auto nodes = std::to_string(symbol->get_nodes().size());
             std::string value;
             auto sym_value = symbol->get_value();
             if (sym_value) {
                 value = std::to_string(*sym_value);
             }
             auto writes = std::to_string(symbol->get_write_count());
-            table.rows.push_back({name, properties, status, position, value, reads, writes});
+            table.rows.push_back({name, nodes, properties, status, position, value, reads, writes});
         }
         table.print(stream, indent);
     }

@@ -7,6 +7,7 @@
 
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
+#include <ast/ast.hpp>
 
 namespace nmodl {
 namespace symtab {
@@ -47,6 +48,20 @@ std::string Symbol::to_string() const {
         s += fmt::format(" [Status : {}]", syminfo::to_string(status));
     }
     return s;
+}
+
+std::vector<ast::Ast*> Symbol::get_nodes_by_type(
+    std::initializer_list<ast::AstNodeType> l) const noexcept {
+    std::vector<ast::Ast*> _nodes;
+    for (const auto& n: nodes) {
+        for (const auto& m: l) {
+            if (n->get_node_type() == m) {
+                _nodes.push_back(n);
+                break;
+            }
+        }
+    }
+    return _nodes;
 }
 
 }  // namespace symtab

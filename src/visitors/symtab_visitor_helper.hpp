@@ -135,7 +135,7 @@ void SymtabVisitor::setup_symbol(ast::Node* node, NmodlType property) {
         auto name = use_ion->get_name()->get_node_name();
         for (const auto& variable: codegen::Ion::get_possible_variables(name)) {
             std::string ion_variable(codegen::naming::ION_VARNAME_PREFIX + variable);
-            auto symbol = std::make_shared<symtab::Symbol>(ion_variable, nullptr, ModToken());
+            auto symbol = std::make_shared<symtab::Symbol>(ion_variable);
             symbol->add_property(NmodlType::codegen_var);
             modsymtab->insert(symbol);
         }
@@ -169,13 +169,13 @@ static void add_external_symbols(symtab::ModelSymbolTable* symtab) {
     ModToken tok(true);
     auto variables = nmodl::get_external_variables();
     for (auto variable: variables) {
-        auto symbol = std::make_shared<Symbol>(variable, nullptr, tok);
+        auto symbol = std::make_shared<Symbol>(variable, tok);
         symbol->add_property(NmodlType::extern_neuron_variable);
         symtab->insert(symbol);
     }
     auto methods = nmodl::get_external_functions();
     for (auto method: methods) {
-        auto symbol = std::make_shared<Symbol>(method, nullptr, tok);
+        auto symbol = std::make_shared<Symbol>(method, tok);
         symbol->add_property(NmodlType::extern_method);
         symtab->insert(symbol);
     }
