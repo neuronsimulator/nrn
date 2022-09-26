@@ -2216,11 +2216,17 @@ int iondef(int* p_pointercount) {
     *p_pointercount = 0;
     ITERATE(q, nrnpointers) {
         sion = SYM(q);
-        Sprintf(buf, "#define %s	*_ppvar[%d].pval\n", sion->name, ioncount + *p_pointercount);
+        Sprintf(buf,
+                "#define %s	*nrn_get_pval(_ppvar[%d])\n",
+                sion->name,
+                ioncount + *p_pointercount);
         sion->used = ioncount + *p_pointercount;
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
-        Sprintf(buf, "#define _p_%s	_ppvar[%d]._pvoid\n", sion->name, ioncount + *p_pointercount);
+        Sprintf(buf,
+                "#define _p_%s	nrn_get_any(_ppvar[%d])\n",
+                sion->name,
+                ioncount + *p_pointercount);
         sion->used = ioncount + *p_pointercount;
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
@@ -2758,11 +2764,8 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     if (watch_seen_) {
         insertstr(qstmt, "  int _watch_rm = 0;\n");
     }
-    q = insertstr(qstmt, "  _p = _pnt->_prop->param;\n");
-    vectorize_substitute(insertstr(q, ""), "  _thread = nullptr;\n");
-    vectorize_substitute(insertstr(q, ""), "  _nt = static_cast<NrnThread*>(_pnt->_vnt);\n");
-    q = insertstr(qstmt, "  assert(_nt->cache);\n");
-    q = insertstr(qstmt, "  _ppvar = _nt->mech_cache(_pnt->_prop->_type)._pdata[_pnt->_i_instance].data();\n");
+    q = insertstr(qstmt, "  _p = _pnt->_prop->param; _ppvar = _pnt->_prop->dparam;\n");
+    vectorize_substitute(insertstr(q, ""), "  _thread = (Datum*)0; _nt = (NrnThread*)_pnt->_vnt;");
     if (debugging_) {
         if (0) {
             insertstr(qstmt, " assert(_tsav <= t); _tsav = t;");
