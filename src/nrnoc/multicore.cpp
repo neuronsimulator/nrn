@@ -315,7 +315,7 @@ void nrn_threads_create(int n, bool parallel) {
                 nt->_vcv = 0;
                 nt->_nrn_fast_imem = 0;
                 nt->_node_data_offset = 0;
-                nt->cache = nullptr;
+                // nt->cache = nullptr;
             }
         }
         v_structure_change = 1;
@@ -597,10 +597,10 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
                 }
                 // This is where we know both the index (ml->nodecount)
                 // and...maybe...the Point_process pointer?
-                if (memb_func[p->_type].is_point) {
-                    auto* const pp = static_cast<Point_process*>(p->dparam[1]._pvoid);
-                    pp->_i_instance = ml->nodecount;
-                }
+                // if (memb_func[p->_type].is_point) {
+                //     auto* const pp = static_cast<Point_process*>(p->dparam[1]._pvoid);
+                //     pp->_i_instance = ml->nodecount;
+                // }
                 ++ml->nodecount;
             }
         }
