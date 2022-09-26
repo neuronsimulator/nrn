@@ -853,7 +853,7 @@ void nrn_finitialize(int setv, double v) {
     nrn_fihexec(3); /* model structure changes can be made */
     verify_structure();
     // Is this the right place to call this?
-    auto const sorted_model = nrn_ensure_model_data_are_sorted();
+    auto const model_cache_token = neuron::cache::acquire_valid();
 #if ELIMINATE_T_ROUNDOFF
     nrn_ndt_ = 0.;
     nrn_dt_ = dt;
@@ -910,9 +910,8 @@ void nrn_finitialize(int setv, double v) {
         nrn_nonvint_block_init(nt->id);
         NrnThreadMembList* tml;
         for (tml = nt->tml; tml; tml = tml->next) {
-            Pvmi s = memb_func[tml->index].initialize;
-            if (s) {
-                (*s)(nt, tml->ml, tml->index);
+            if (memb_func[tml->index].has_initialize()) {
+                memb_func[tml->index].invoke_initialize(nt, tml->ml, tml->index);
             }
         }
     }
@@ -921,10 +920,9 @@ void nrn_finitialize(int setv, double v) {
         i = memb_order_[iord];
         /* first clause due to MULTICORE */
         if (nrn_is_artificial_[i])
-            if (memb_func[i].initialize) {
-                Pvmi s = memb_func[i].initialize;
+            if (memb_func[i].has_initialize()) {
                 if (memb_list[i].nodecount) {
-                    (*s)(nrn_threads, memb_list + i, i);
+                    memb_func[i].invoke_initialize(nrn_threads, memb_list + i, i);
                 }
                 if (errno) {
                     if (nrn_errno_check(i)) {
@@ -1030,24 +1028,19 @@ void nrn_ba(NrnThread* nt, int bat) {
     // Calling before/after functions requires transient/cached model data
     // TODO: pass this into nrn_ba from higher up the call stack, or at least
     // have the option to do so
-    auto const model_cache = neuron::cache::acquire_valid();
-    // TODO would rather flatten this into double* or something
-    std::vector<Datum> ppvar;
+    auto model_cache = neuron::cache::acquire_valid();
+    std::vector<Datum> ppvar; // TODO would rather flatten this into double* or something
     for (NrnThreadBAList* tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
         nrn_bamech_t const f{tbl->bam->f};
         int const type{tbl->bam->type};
         Memb_list* const ml{tbl->ml};
-        auto const& cached_pdata = model_cache->thread.at(nt->id).mech.at(type).pdata;
-        // cached_pdata[index_of_pointer_var][0 .. node_index .. nodecount-1]
-        ppvar.resize(cached_pdata.size());
+        auto& cached_pdata = model_cache->thread[nt->id].mech[type].pdata;
         for (int i = 0; i < ml->nodecount; ++i) {
-            // Is ml->pdata[i] always double*/pval? Need to substitute transient
-            // flattened data here. And possibly transpose this loop...
-            for (auto j = 0; j < cached_pdata.size(); ++j) {
-                ppvar[j] = cached_pdata[j][i];
-            }
-            (*f)(ml->nodelist[i], ml->_data[i], ppvar.data(), ml->_thread, nt);
-            // TODO check for modifications to ppvar?
+            ppvar = cached_pdata[i];
+            (*f)(ml->nodelist[i], ml->_data[i], cached_pdata[i].data(), ml->_thread, nt);
+            assert(std::equal(ppvar.begin(), ppvar.end(), cached_pdata[i].begin(), [](Datum const& lhs, Datum const& rhs) {
+                return std::memcmp(&lhs, &rhs, sizeof(Datum)) == 0;
+            }));
         }
     }
 }

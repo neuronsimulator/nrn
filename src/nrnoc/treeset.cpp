@@ -1641,7 +1641,7 @@ void v_setup_vectors(void) {
     nrn_threads_free();
 
     for (i = 0; i < n_memb_func; ++i)
-        if (nrn_is_artificial_[i] && memb_func[i].initialize) {
+        if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
             if (memb_list[i].nodecount) {
                 memb_list[i].nodecount = 0;
                 free(memb_list[i].nodelist);
@@ -1660,7 +1660,7 @@ void v_setup_vectors(void) {
 #if 1 /* see finitialize */
     /* and count the artificial cells */
     for (i = 0; i < n_memb_func; ++i)
-        if (nrn_is_artificial_[i] && memb_func[i].initialize) {
+        if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
             cTemplate* tmp = nrn_pnt_template_[i];
             memb_list[i].nodecount = tmp->count;
         }
@@ -1669,7 +1669,7 @@ void v_setup_vectors(void) {
     /* allocate it*/
 
     for (i = 0; i < n_memb_func; ++i)
-        if (nrn_is_artificial_[i] && memb_func[i].initialize) {
+        if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
             if (memb_list[i].nodecount) {
                 memb_list[i].nodelist = (Node**) emalloc(memb_list[i].nodecount * sizeof(Node*));
 #if CACHEVEC
@@ -1727,7 +1727,7 @@ void v_setup_vectors(void) {
 
     /* fill in artificial cell info */
     for (i = 0; i < n_memb_func; ++i) {
-        if (nrn_is_artificial_[i] && memb_func[i].initialize) {
+        if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
             hoc_Item* q;
             hoc_List* list;
             int j, nti;
@@ -1751,18 +1751,13 @@ void v_setup_vectors(void) {
                  data. For this reason, for now, an otherwise thread-safe artificial
                  cell model is declared by nmodl as thread-unsafe.
                 */
-                NrnThread *nt{};
                 if (memb_func[i].vectorized == 0) {
-                    nt = nrn_threads;
+                    pnt->_vnt = nrn_threads;
                 } else {
-                    nt = nrn_threads + nti;
+                    pnt->_vnt = nrn_threads + nti;
                     nti = (nti + 1) % nrn_nthread;
                 }
-                pnt->_vnt = nt;
                 pnt->_i_instance = j;
-                // Multiple NrnThreads have _ml_list[i] pointing at the same
-                // Memb_list*
-                nt->_ml_list[i] = std::next(memb_list, i);
                 ++j;
             }
         }

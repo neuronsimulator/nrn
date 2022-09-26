@@ -34,6 +34,12 @@ namespace detail {
  *  is (regrettably) common in VERBATIM blocks. It can only realistically be
  *  made to work if the generic_data_handle is holding a raw pointer. Using this
  *  pattern will leave _p_foo thinking that it refers to a raw pointer of type T.
+ * 
+ *  The use of this pattern should be considered deprecated. The alternative:
+ *    auto* my_foo = static_cast<T*>(_p_foo);
+ *    my_foo = transform(my_foo);
+ *    _p_foo = my_foo;
+ *  Should be preferred.
  */
 struct generic_data_handle_proxy {
     generic_data_handle_proxy(permissive_generic_data_handle& handle)
