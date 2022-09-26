@@ -58,50 +58,12 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 #define UNLOCK(m)   /**/
 // classical and when DiscreteEvent::deliver is already in the right thread
 // via a future thread instance of NrnNetItem with its own tqe.
-#define POINT_RECEIVE(type, tar, w, f) ::call_net_receive(type, tar, w, f)
+#define POINT_RECEIVE(type, tar, w, f) (*pnt_receive[type])(tar, w, f)
 // when global tqe is managed by master thread and the correct thread
 // needs to be fired to execute the NET_RECEIVE block.
 //#define POINT_RECEIVE(type, tar, w, f) ns->point_receive(type, tar, w, f)
 
 #include "membfunc.h"
-
-void call_net_receive(int mech_type, Point_process* pp, double* weight, int flag) {
-    auto* const net_receive = pnt_receive[mech_type];
-    assert(net_receive);
-    auto model_cache = neuron::cache::acquire_valid();
-    auto* const nt = static_cast<NrnThread*>(pp->_vnt);
-    auto const& mech_pdata = nt->mech_cache(mech_type).pdata;
-    auto const ppvar = mech_pdata[pp->_i_instance];
-    net_receive(pp, weight, flag);
-    auto const datum_equal = [](Datum const& lhs, Datum const& rhs) {
-        return std::memcmp(&lhs, &rhs, sizeof(Datum)) == 0;
-    };
-    // This can definitely be optimised. If the cache were more SOA-like, i.e.
-    // the mechanism cache contained vector<span<T>> or vector<variant<span<T>,
-    // span<U>, ...>> where the vector size is the number of variables, then the
-    // variable semantics could be used to check which variants-of-spans needed
-    // to be checked for updates (POINTER variables in compatibility mode), and
-    // some of them could refer directly to the model data.
-    for (auto i = 0ul; i < ppvar.size(); ++i) {
-        auto const& old_value = ppvar[i];
-        auto const& new_value = mech_pdata[pp->_i_instance][i];
-        if (!datum_equal(old_value, new_value)) {
-            auto* ml = nrn_is_artificial_[mech_type] ? std::next(memb_list, mech_type) : nt->_ml_list[mech_type];
-            assert(ml);
-            // Sync the changes back out of the cache data into the main model
-            // TODO if this is a data handle then need to store it as one
-            auto const var_semantics = memb_func[mech_type].dparam_semantics[i];
-            if (var_semantics == -5) {
-                // POINTER variable
-                assert(false);
-            } else {
-                // 
-                ml->pdata[pp->_i_instance][i] = new_value;
-            }
-        }
-    }
-}
-
 extern void single_event_run();
 extern void setup_topology(), v_setup_vectors();
 extern int nrn_errno_check(int);
@@ -3552,9 +3514,6 @@ void SelfEvent::pgvts_deliver(double tt, NetCvode* ns) {
 }
 void SelfEvent::call_net_receive(NetCvode* ns) {
     STATISTICS(selfevent_deliver_);
-    // This next line calls MOD file code that looks at properties and so on --
-    // how to route that via the model cache? Or should there be an on-the-fly
-    // conversion here?
     POINT_RECEIVE(target_->prop->_type, target_, weight_, flag_);
     if (errno) {
         if (nrn_errno_check(target_->prop->_type)) {

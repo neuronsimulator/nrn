@@ -1025,22 +1025,11 @@ void batch_save(void) {
 }
 
 void nrn_ba(NrnThread* nt, int bat) {
-    // Calling before/after functions requires transient/cached model data
-    // TODO: pass this into nrn_ba from higher up the call stack, or at least
-    // have the option to do so
-    auto model_cache = neuron::cache::acquire_valid();
-    std::vector<Datum> ppvar; // TODO would rather flatten this into double* or something
     for (NrnThreadBAList* tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
         nrn_bamech_t const f{tbl->bam->f};
-        int const type{tbl->bam->type};
         Memb_list* const ml{tbl->ml};
-        auto& cached_pdata = model_cache->thread[nt->id].mech[type].pdata;
         for (int i = 0; i < ml->nodecount; ++i) {
-            ppvar = cached_pdata[i];
-            (*f)(ml->nodelist[i], ml->_data[i], cached_pdata[i].data(), ml->_thread, nt);
-            assert(std::equal(ppvar.begin(), ppvar.end(), cached_pdata[i].begin(), [](Datum const& lhs, Datum const& rhs) {
-                return std::memcmp(&lhs, &rhs, sizeof(Datum)) == 0;
-            }));
+            (*f)(ml->nodelist[i], ml->_data[i], ml->pdata[i], ml->_thread, nt);
         }
     }
 }

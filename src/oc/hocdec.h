@@ -148,7 +148,7 @@ union Datum { /* interpreter stack type */
     double val;
     Symbol* sym;
     int i;
-    double* pval; /* first used with Eion in NEURON */
+    // double* pval; /* first used with Eion in NEURON */
     Object** pobj;
     Object* obj; /* sections keep this to construct a name */
     char** pstr;
