@@ -10,7 +10,7 @@ namespace neuron::cache {
 /** @brief Structure to store cached data for a mechanism.
  */
 struct Mechanism {
-    std::vector<std::vector<Datum>> pdata{};
+    // std::vector<std::vector<Datum>> pdata{};
 };
 
 struct Node {
@@ -20,7 +20,7 @@ struct Node {
 };
 
 struct Thread {
-    std::vector<Mechanism> mech{};
+    // std::vector<Mechanism> mech{};
 };
 
 /** @brief Collect temporary cache data that is needed to simulate the model.
@@ -32,8 +32,8 @@ struct Thread {
  */
 struct Model {
     Node node_data{};
-    std::vector<Mechanism> art_cell{};
-    std::vector<Thread> thread{};
+    // std::vector<Mechanism> art_cell{};
+    // std::vector<Thread> thread{};
 };
 
 struct model_token {
