@@ -40,7 +40,9 @@ Model generate(model_sorted_token const&) {
     for (auto i = 0ul; i < node_size; ++i) {
         vptrs[i] = &node_data.get<neuron::container::Node::field::Voltage>(i);
     }
-    // Generate flat arrays of pointers from data_handles for POINTER variables
+    // Generate flat arrays of pointers from data_handles for POINTER variables.
+    // In the further future this could also be an opportunity to substitute
+    // device pointers for GPU execution..?
     {
         cache.thread.resize(nrn_nthread);
         for (auto nth = 0; nth < nrn_nthread; ++nth) {
@@ -78,7 +80,7 @@ Model generate(model_sorted_token const&) {
                             mech_pdata[j][i]._pvoid = pd;
                         } else {
                             // Not POINTER, copy the Datum as-is for now
-                            ml->pdata[i][j] = datum_value;
+                            mech_pdata[j][i] = datum_value;
                         }
                     }
                 }
