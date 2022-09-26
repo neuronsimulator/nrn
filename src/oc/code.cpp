@@ -1944,9 +1944,7 @@ void hoc_evalpointer() {
         }
         break;
     case AUTO: {
-        auto& entry = fp->argn[sym->u.u_auto];
-        // entry = 0.0;  // make double the active member
-        d = &(cast<double>(entry));
+        d = &(cast<double>(fp->argn[sym->u.u_auto]));
     } break;
     default:
         execerror("attempt to evaluate pointer to a non-variable", sym->name);
