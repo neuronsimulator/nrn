@@ -2758,7 +2758,9 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     if (watch_seen_) {
         insertstr(qstmt, "  int _watch_rm = 0;\n");
     }
-    q = insertstr(qstmt, "  _p = _pnt->_prop->param; _ppvar = _pnt->_prop->dparam;\n");
+    q = insertstr(qstmt, "  _p = _pnt->_prop->param;\n");
+    q = insertstr(qstmt, "  auto* _ml = _nt->_ml_list[_pnt->_prop->_type];\n");
+    q = insertstr(qstmt, "  _ppvar = _ml->_pdata[_pnt->_i_instance];\n");
     vectorize_substitute(insertstr(q, ""), "  _thread = (Datum*)0; _nt = (NrnThread*)_pnt->_vnt;");
     if (debugging_) {
         if (0) {
