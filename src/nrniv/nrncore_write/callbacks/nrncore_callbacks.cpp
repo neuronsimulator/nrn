@@ -167,10 +167,8 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
         data = &nt._t;
         n = 1;
     } else if (type > 0 && type < n_memb_func) {
-        // olupton 2022-09-26 this is now non-null for artificial cells, so we
-        // need the explicit test
         Memb_list* ml = nt._ml_list[type];
-        if (ml && !nrn_is_artificial_[type]) {
+        if (ml) {
             mdata = ml->_data;
             n = ml->nodecount;
         } else {
@@ -868,7 +866,7 @@ static void set_info(TQItem* tqi,
         // Only one SelfEvent on the queue for a given point process can be movable
         core_te->intdata.push_back((movable && *movable == tqi) ? 1 : 0);
         if (movable && *movable == tqi) {
-            assert(pnt_movable && *pnt_movable == tqi);
+            assert(pnt_movable && *pnt_movable == tqi); //
         }
 
     } break;
@@ -966,7 +964,7 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
     // BinQ items if present. So need separate iteration for that (hence the
     // factoring out of the loop bodies into set_info.)
     while ((tqi = tq->atomic_dq(1e15)) != NULL) {
-        set_info(tqi, tid, core_te, netcon2intdata, presyn2intdata, weight2intdata);
+        set_info(tqi, tid, core_te, netcon2intdata, presyn2intdata, weight2intdata); //
     }
     if (nrn_use_bin_queue_) {
         // does not remove items but the entire queue will be cleared
