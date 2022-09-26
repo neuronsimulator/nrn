@@ -167,8 +167,10 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
         data = &nt._t;
         n = 1;
     } else if (type > 0 && type < n_memb_func) {
+        // olupton 2022-09-26 this is now non-null for artificial cells, so we
+        // need the explicit test
         Memb_list* ml = nt._ml_list[type];
-        if (ml) {
+        if (ml && !nrn_is_artificial_[type]) {
             mdata = ml->_data;
             n = ml->nodecount;
         } else {

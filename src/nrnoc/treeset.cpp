@@ -1751,12 +1751,18 @@ void v_setup_vectors(void) {
                  data. For this reason, for now, an otherwise thread-safe artificial
                  cell model is declared by nmodl as thread-unsafe.
                 */
+                NrnThread *nt{};
                 if (memb_func[i].vectorized == 0) {
-                    pnt->_vnt = nrn_threads;
+                    nt = nrn_threads;
                 } else {
-                    pnt->_vnt = nrn_threads + nti;
+                    nt = nrn_threads + nti;
                     nti = (nti + 1) % nrn_nthread;
                 }
+                pnt->_vnt = nt;
+                pnt->_i_instance = j;
+                // Multiple NrnThreads have _ml_list[i] pointing at the same
+                // Memb_list*
+                nt->_ml_list[i] = std::next(memb_list, i);
                 ++j;
             }
         }
