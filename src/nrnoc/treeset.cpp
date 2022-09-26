@@ -1758,7 +1758,7 @@ void v_setup_vectors(void) {
                     pnt->_vnt = nrn_threads + nti;
                     nti = (nti + 1) % nrn_nthread;
                 }
-                pnt->_i_instance = j;
+                // pnt->_i_instance = j;
                 ++j;
             }
         }
