@@ -346,7 +346,7 @@ static int in_place_data_realloc() {
             Node* nd = nt->_v_node[i];
             for (Prop* p = nd->prop; p; p = p->next) {
                 if (memb_func[p->_type].current || memb_func[p->_type].state ||
-                    memb_func[p->_type].initialize) {
+                    memb_func[p->_type].has_initialize()) {
                     Memb_list* ml = mlmap[p->_type];
                     assert(ml->nodelist[ml->nodecount] == nd);
                     if (!memb_func[p->_type].hoc_mech) {

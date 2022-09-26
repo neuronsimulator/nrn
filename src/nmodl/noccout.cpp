@@ -585,7 +585,8 @@ void c_out_vectorize() {
     P("_thread = _ml->_thread;\n");
     /*check_tables();*/
     P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-    P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
+    P(" _p = _ml->_data[_iml];\n");
+    P(" _ppvar = _nt->mech_cache(_type)._pdata[_iml].data();\n");
     check_tables();
     if (debugging_ && net_receive_) {
         P(" _tsav = -1e20;\n");

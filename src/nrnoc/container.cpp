@@ -7,6 +7,62 @@
 extern int n_memb_func;
 extern Memb_func* memb_func;
 extern int* nrn_prop_dparam_size_;
+
+namespace {
+std::optional<neuron::cache::Model> model_cache{};
+neuron::cache::Mechanism generate_mech_cache(Memb_list const& ml, int mech_type) {
+    neuron::cache::Mechanism mech_cache{};
+    // Mechanism name
+    [[maybe_unused]] const char* mech_name = memb_func[mech_type].sym->name;
+    std::cout << "Setting up cache for " << ml.nodecount << " instances of mechanism type " << mech_type << " (" << mech_name << ')' << std::endl;
+    
+    auto& mech_pdata = mech_cache.pdata;
+    auto const dparam_size = nrn_prop_dparam_size_[mech_type];
+    // TODO: transpose this so mech_pdata.size() == dparam_size, this is already
+    // roughly what's done in CoreNEURON but not immediately doing it here for
+    // expedience
+    mech_pdata.resize(ml.nodecount);
+    // Allocate storage
+    for (int i = 0; i < mech_pdata.size(); ++i) {
+        mech_pdata[i].resize(dparam_size);
+    }
+    for (int i = 0; i < ml.nodecount; ++i) {
+        for (int j = 0; j < dparam_size; ++j) {
+            auto const var_semantics = memb_func[mech_type].dparam_semantics[j];
+            auto datum_value = ml.pdata[i][j];
+            if (var_semantics == -5) {
+                // POINTER variable, these are stored in ml->pdata as data handles
+                auto const& generic_handle = *datum_value.generic_handle;
+                auto* const pd = static_cast<double*>(generic_handle);
+                mech_pdata[i][j]._pvoid = pd;
+            } else {
+                // Not POINTER, copy the Datum as-is for now
+                mech_pdata[i][j] = datum_value;
+            }
+        }
+    }
+    return mech_cache;
+}
+neuron::cache::Thread generate_thread_cache(NrnThread& nt) {
+    neuron::cache::Thread nt_cache;
+    nt_cache.mech.resize(n_memb_func);
+    // Non-artificial cells
+    for (auto* tml = nt.tml; tml; tml = tml->next) {
+        Memb_list* const ml{tml->ml};
+        assert(ml);
+        if (!ml->nodecount) {
+            // No point setting up caches for a mechanism with no instances
+            continue;
+        }
+        // Mechanism type
+        int const type{tml->index};
+        assert(type < nt_cache.mech.size());
+        nt_cache.mech[type] = generate_mech_cache(*ml, type);
+    }
+    return nt_cache;
+}
+}
+
 namespace neuron {
 Model::Model() {
     m_node_data.set_unsorted_callback(cache::invalidate);
@@ -17,12 +73,17 @@ Model model_data;  // neuron/model_data.hpp
 }  // namespace neuron
 
 namespace neuron::cache {
-namespace detail {
-std::optional<Model> model_cache{};  // neuron/cache/model_data.hpp
-}  // namespace detail
 void invalidate() {
-    detail::model_cache = std::nullopt;
+    if (!model_cache.has_value()) {
+        return;
+    }
+    for (auto nth = 0; nth < nrn_nthread; ++nth) {
+        auto* const old_ptr = std::exchange(nrn_threads[nth].cache, nullptr);
+        assert(old_ptr);
+    }
+    model_cache.reset();
 }
+
 /** @brief Generate cache data, assuming the model is sorted.
  *
  *  The token argument is what gives us confidence that the model is already sorted.
@@ -43,49 +104,14 @@ Model generate(model_sorted_token const&) {
     // Generate flat arrays of pointers from data_handles for POINTER variables.
     // In the further future this could also be an opportunity to substitute
     // device pointers for GPU execution..?
-    {
-        cache.thread.resize(nrn_nthread);
-        for (auto nth = 0; nth < nrn_nthread; ++nth) {
-            auto const& nt = nrn_threads[nth];
-            auto& nt_cache = cache.thread.at(nth);
-            nt_cache.mech.resize(n_memb_func);
-            for (auto* tml = nt.tml; tml; tml = tml->next) {
-                Memb_list* const ml{tml->ml};
-                if (!ml->nodecount) {
-                    // No point setting up caches for a mechanism with no instances
-                    continue;
-                }
-                // Mechanism type
-                int const type{tml->index};
-                // Mechanism name
-                [[maybe_unused]] const char* mech_name = memb_func[type].sym->name;
-                assert(type < nt_cache.mech.size());
-                auto const dparam_size = nrn_prop_dparam_size_[type];
-                auto& mech_pdata = nt_cache.mech[type].pdata;
-                mech_pdata.resize(dparam_size);
-                // Allocate storage
-                for (int i = 0; i < dparam_size; ++i) {
-                    auto const var_semantics = memb_func[type].dparam_semantics[i];
-                    mech_pdata[i].resize(ml->nodecount);
-                }
-                for (int i = 0; i < ml->nodecount; ++i) {
-                    for (int j = 0; j < dparam_size; ++j) {
-                        auto const var_semantics = memb_func[type].dparam_semantics[j];
-                        auto datum_value = ml->pdata[i][j];
-                        if (var_semantics == -5) {
-                            // POINTER variable, these are stored in ml->pdata
-                            // as data handles
-                            auto const& generic_handle = *datum_value.generic_handle;
-                            auto* const pd = static_cast<double*>(generic_handle);
-                            mech_pdata[j][i]._pvoid = pd;
-                        } else {
-                            // Not POINTER, copy the Datum as-is for now
-                            mech_pdata[j][i] = datum_value;
-                        }
-                    }
-                }
-            }
+    std::transform(nrn_threads, nrn_threads + nrn_nthread, std::back_inserter(cache.thread), generate_thread_cache);
+    // Handle artificial cells that do not have thread-specific data
+    cache.art_cell.resize(n_memb_func);
+    for (int mech_type = 0; mech_type < n_memb_func; ++mech_type) {
+        if (!nrn_is_artificial_[mech_type]) {
+            continue;
         }
+        cache.art_cell[mech_type] = generate_mech_cache(memb_list[mech_type], mech_type);
     }
     return cache;
 }
@@ -97,11 +123,18 @@ model_token acquire_valid() {
     auto model_is_sorted = nrn_ensure_model_data_are_sorted();
     // If the cache already exists, it should be valid -- operations that
     // invalidate it are supposed to eagerly destroy it.
-    if (!detail::model_cache) {
+    if (!model_cache) {
         // Cache is not valid, but the data are fixed in read-only mode and the
         // `model_is_sorted` token ensures it will stay that way
-        detail::model_cache = generate(model_is_sorted);
+        model_cache = generate(model_is_sorted);
+        // Set up the pointer so it's possible to navigate to the cache from
+        // NrnThread objects -- this is just to ease migration and is
+        // conceptually a little dubious.
+        for (auto nth = 0; nth < nrn_nthread; ++nth) {
+            auto* const old_ptr = std::exchange(nrn_threads[nth].cache, &(*model_cache));
+            assert(!old_ptr);
+        }
     }
-    return {std::move(model_is_sorted), *detail::model_cache};
+    return {std::move(model_is_sorted), *model_cache};
 }
 }  // namespace neuron::cache
