@@ -32,13 +32,9 @@ struct Thread {
  */
 struct Model {
     Node node_data{};
+    std::vector<Mechanism> art_cell{};
     std::vector<Thread> thread{};
 };
-
-namespace detail {
-// Defined in container.cpp to avoid problems with dlopen and inline variables.
-extern std::optional<Model> model_cache;
-}  // namespace detail
 
 struct model_token {
     model_token(model_sorted_token token, Model& model_cache)

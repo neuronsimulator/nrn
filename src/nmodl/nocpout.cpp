@@ -2770,8 +2770,8 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     q = insertstr(qstmt, "  _p = _pnt->_prop->param;\n");
     vectorize_substitute(insertstr(q, ""), "  _thread = nullptr;\n");
     vectorize_substitute(insertstr(q, ""), "  _nt = static_cast<NrnThread*>(_pnt->_vnt);\n");
-    q = insertstr(qstmt, "  auto* _ml = _nt->_ml_list[_pnt->_prop->_type];\n");
-    q = insertstr(qstmt, "  _ppvar = _ml->_pdata[_pnt->_i_instance];\n");
+    q = insertstr(qstmt, "  assert(_nt->cache);\n");
+    q = insertstr(qstmt, "  _ppvar = _nt->mech_cache(_pnt->_prop->_type)._pdata[_pnt->_i_instance].data();\n");
     if (debugging_) {
         if (0) {
             insertstr(qstmt, " assert(_tsav <= t); _tsav = t;");
