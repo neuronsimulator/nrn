@@ -3514,6 +3514,9 @@ void SelfEvent::pgvts_deliver(double tt, NetCvode* ns) {
 }
 void SelfEvent::call_net_receive(NetCvode* ns) {
     STATISTICS(selfevent_deliver_);
+    // This next line calls MOD file code that looks at properties and so on --
+    // how to route that via the model cache? Or should there be an on-the-fly
+    // conversion here?
     POINT_RECEIVE(target_->prop->_type, target_, weight_, flag_);
     if (errno) {
         if (nrn_errno_check(target_->prop->_type)) {
