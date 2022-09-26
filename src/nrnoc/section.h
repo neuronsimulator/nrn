@@ -267,7 +267,7 @@ typedef struct Point_process {
     void* presyn_; /* non-threshold presynapse for NetCon */
     void* nvi_;    /* NrnVarIntegrator (for local step method) */
     void* _vnt;    /* NrnThread* (for NET_RECEIVE and multicore) */
-    int _i_instance;
+    // int _i_instance;
 } Point_process;
 
 #if EXTRAEQN
