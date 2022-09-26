@@ -1,5 +1,7 @@
 #pragma once
+#include "neuron/container/generic_data_handle.hpp"
 #include "nrnfilewrap.h"
+#include <variant>
 
 #include <cstddef>
 
@@ -58,7 +60,17 @@ struct frame;
 union Inst;
 struct Object;
 union Objectdata;
+struct Symbol;
 struct Symlist;
+// don't really want this here
+using StackDatum = std::variant<double /* val */,
+                                Symbol* /* sym */,
+                                int /* i */,
+                                Object** /* pobj */,
+                                Object* /* obj */,
+                                char** /* pstr */,
+                                neuron::container::generic_data_handle /* generic_handle */,
+                                std::nullptr_t>;
 void oc_restore_code(Inst** a1,
                      Inst** a2,
                      std::size_t& a3,

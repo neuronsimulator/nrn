@@ -267,7 +267,7 @@ void unref_if_tmpobject(StackDatum& entry) {
 int get_legacy_int_type(StackDatum const& entry) {
     if (std::holds_alternative<char**>(entry)) {
         return STRING;
-    } else if (std::holds_alternative<double*>(entry)) {
+    } else if (std::holds_alternative<neuron::container::generic_data_handle>(entry)) {
         return VAR;
     } else if (std::holds_alternative<double>(entry)) {
         return NUMBER;
@@ -650,10 +650,6 @@ int hoc_xopen_run(Symbol* sp, const char* str) { /*recursively parse and execute
     Frame *sframe = rframe, *sfp = fp;
     Inst *sprogbase = progbase, *sprogp = progp, *spc = pc,
          *sprog_parse_recover = prog_parse_recover;
-    Symlist* sp_symlist = p_symlist;
-    std::size_t sstack{rstack}, sstackp{stack.size()};
-    rframe = fp;
-    rstack = stack.size();
     progbase = progp;
     p_symlist = (Symlist*) 0;
 
@@ -880,8 +876,7 @@ namespace neuron {
 /** @brief hoc_pop<generic_data_handle>()
  */
 container::generic_data_handle oc::detail::hoc_pop_helper<container::generic_data_handle>::impl() {
-    // We allocated a generic_data_handle with `new` when pushing to the stack
-    return *std::unique_ptr<container::generic_data_handle>{pop_value(VAR).generic_handle};
+    return pop_value<neuron::container::generic_data_handle>();
 }
 }  // namespace neuron
 
