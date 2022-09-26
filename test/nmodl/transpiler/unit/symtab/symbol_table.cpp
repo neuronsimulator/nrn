@@ -7,11 +7,14 @@
 
 #define CATCH_CONFIG_MAIN
 
+#include <memory>
 #include <string>
 
 #include <catch2/catch.hpp>
 
+#include "ast/float.hpp"
 #include "ast/program.hpp"
+#include "ast/string.hpp"
 #include "symtab/symbol.hpp"
 #include "symtab/symbol_table.hpp"
 
@@ -165,7 +168,7 @@ SCENARIO("Symbol table allows operations like insert, lookup") {
     GIVEN("A global SymbolTable") {
         auto program = std::make_shared<ast::Program>();
         auto table = std::make_shared<SymbolTable>("Na", program.get(), true);
-        auto symbol = std::make_shared<Symbol>("alpha", ModToken());
+        auto symbol = std::make_shared<Symbol>("alpha");
 
         WHEN("checked methods and member variables") {
             THEN("all members are initialized") {
@@ -190,7 +193,7 @@ SCENARIO("Symbol table allows operations like insert, lookup") {
                 }
             }
             WHEN("inserting another symbol") {
-                auto next_symbol = std::make_shared<Symbol>("beta", ModToken());
+                auto next_symbol = std::make_shared<Symbol>("beta");
                 table->insert(next_symbol);
                 THEN("symbol gets added and table size increases") {
                     REQUIRE(table->symbol_count() == 2);
@@ -204,7 +207,7 @@ SCENARIO("Symbol table allows operations like insert, lookup") {
             THEN("table doesn't have any global variables") {
                 REQUIRE(variables.empty());
                 WHEN("added global symbol") {
-                    auto next_symbol = std::make_shared<Symbol>("gamma", ModToken());
+                    auto next_symbol = std::make_shared<Symbol>("gamma");
                     next_symbol->add_property(NmodlType::assigned_definition);
                     table->insert(next_symbol);
                     auto variables = table->get_variables_with_properties(
@@ -226,10 +229,10 @@ SCENARIO("Symbol table allows operations like insert, lookup") {
             }
         }
         WHEN("query for symbol with and without properties") {
-            auto symbol1 = std::make_shared<Symbol>("alpha", ModToken());
-            auto symbol2 = std::make_shared<Symbol>("beta", ModToken());
-            auto symbol3 = std::make_shared<Symbol>("gamma", ModToken());
-            auto symbol4 = std::make_shared<Symbol>("delta", ModToken());
+            auto symbol1 = std::make_shared<Symbol>("alpha");
+            auto symbol2 = std::make_shared<Symbol>("beta");
+            auto symbol3 = std::make_shared<Symbol>("gamma");
+            auto symbol4 = std::make_shared<Symbol>("delta");
 
             symbol1->add_property(NmodlType::range_var | NmodlType::param_assign);
             symbol2->add_property(NmodlType::range_var | NmodlType::param_assign |
@@ -280,9 +283,9 @@ SCENARIO("Global symbol table (ModelSymbol) allows scope based operations") {
         ModelSymbolTable mod_symtab;
 
         auto program = std::make_shared<ast::Program>();
-        auto symbol1 = std::make_shared<Symbol>("alpha", ModToken());
-        auto symbol2 = std::make_shared<Symbol>("alpha", ModToken());
-        auto symbol3 = std::make_shared<Symbol>("alpha", ModToken());
+        auto symbol1 = std::make_shared<Symbol>("alpha");
+        auto symbol2 = std::make_shared<Symbol>("alpha");
+        auto symbol3 = std::make_shared<Symbol>("alpha");
 
         symbol1->add_property(NmodlType::param_assign);
         symbol2->add_property(NmodlType::range_var);
@@ -303,7 +306,7 @@ SCENARIO("Global symbol table (ModelSymbol) allows scope based operations") {
         }
         WHEN("trying to insert without entering scope") {
             THEN("throws an exception") {
-                auto symbol = std::make_shared<Symbol>("alpha", ModToken());
+                auto symbol = std::make_shared<Symbol>("alpha");
                 REQUIRE_THROWS_WITH(mod_symtab.insert(symbol), Catch::Contains("Can not insert"));
             }
         }
@@ -342,6 +345,81 @@ SCENARIO("Global symbol table (ModelSymbol) allows scope based operations") {
                 mod_symtab.enter_scope("scope2", program.get(), false, old_symtab);
                 mod_symtab.insert(symbol3);
                 ///\todo : not sure how to capture std::cout
+            }
+        }
+    }
+}
+
+//=============================================================================
+// Symbol class tests
+//=============================================================================
+
+SCENARIO("Symbol class allows manipulation") {
+    GIVEN("A symbol can have several nodes") {
+        auto st = std::make_shared<ast::String>("node1");
+        auto fl = std::make_shared<ast::Float>("1.1");
+        Symbol symbol1("alpha");
+        symbol1.add_node(st.get());
+        symbol1.add_node(fl.get());
+
+        Symbol symbol2("beta");
+
+        WHEN("trying to get name") {
+            THEN("it works") {
+                REQUIRE(symbol1.get_name() == "alpha");
+                REQUIRE(symbol2.get_name() == "beta");
+            }
+        }
+
+        WHEN("trying to get all nodes") {
+            THEN("it works") {
+                REQUIRE(symbol1.get_nodes().size() == 2);
+                REQUIRE(symbol2.get_nodes().empty());
+            }
+        }
+
+        WHEN("trying to get specific node") {
+            auto nodes = symbol1.get_nodes_by_type({ast::AstNodeType::STRING});
+
+            THEN("it works") {
+                REQUIRE(nodes.size() == 1);
+                REQUIRE(nodes.front()->is_string());
+                REQUIRE(symbol2.get_nodes_by_type({ast::AstNodeType::STRING}).empty());
+            }
+        }
+        WHEN("read and write counters works") {
+            symbol1.read();
+            symbol1.read();
+            symbol1.write();
+
+            THEN("it works") {
+                REQUIRE(symbol1.get_read_count() == 2);
+                REQUIRE(symbol1.get_write_count() == 1);
+                REQUIRE(symbol2.get_read_count() == 0);
+                REQUIRE(symbol2.get_write_count() == 0);
+            }
+        }
+
+        WHEN("renaming a symbol") {
+            symbol2.set_name("gamma");
+            THEN("get_name return the new name") {
+                REQUIRE(symbol2.get_name() == "gamma");
+                REQUIRE(symbol2.get_original_name() == "beta");
+            }
+            symbol2.set_original_name("gamma");
+            THEN("get_original_name return the new name") {
+                REQUIRE(symbol2.get_original_name() == "gamma");
+            }
+        }
+
+        WHEN("set as array") {
+            symbol1.set_as_array(15);
+            THEN("recognized as an array") {
+                REQUIRE(symbol1.get_length() == 15);
+                REQUIRE(symbol1.is_array());
+
+                REQUIRE(symbol2.get_length() == 1);
+                REQUIRE(!symbol2.is_array());
             }
         }
     }

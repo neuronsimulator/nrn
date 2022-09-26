@@ -15,6 +15,7 @@
 #include <map>
 #include <memory>
 
+#include "ast/ast_decl.hpp"
 #include "lexer/modtoken.hpp"
 #include "symtab/symbol_properties.hpp"
 
@@ -61,14 +62,12 @@ class Symbol {
     /// unique id or index position when symbol is inserted into specific table
     int id = 0;
 
-    /// first AST node for which symbol is inserted
-    /// Variable can appear multiple times in the mod file. This node
-    /// represent the first occurance of the variable in the input. Currently
-    /// we don't track all AST nodes.
-    ast::Ast* node = nullptr;
+    /// All given AST nodes for this symbol.
+    /// Variable can appear multiple times in the mod file.
+    std::vector<ast::Ast*> nodes{};
 
     /// token associated with symbol (from node)
-    ModToken token;
+    ModToken token{};
 
     /// properties of symbol as a result of usage across whole mod file
     syminfo::NmodlType properties{syminfo::NmodlType::empty};
@@ -112,9 +111,13 @@ class Symbol {
 
     Symbol() = delete;
 
+    Symbol(std::string name)
+        : name(std::move(name)) {}
+
     Symbol(std::string name, ast::Ast* node)
-        : name(std::move(name))
-        , node(node) {}
+        : name(std::move(name)) {
+        nodes.push_back(node);
+    }
 
     Symbol(std::string name, ModToken token)
         : name(std::move(name))
@@ -122,8 +125,9 @@ class Symbol {
 
     Symbol(std::string name, ast::Ast* node, ModToken token)
         : name(std::move(name))
-        , node(node)
-        , token(std::move(token)) {}
+        , token(std::move(token)) {
+        nodes.push_back(node);
+    }
 
     /// \}
 
@@ -236,9 +240,16 @@ class Symbol {
         return status;
     }
 
-    ast::Ast* get_node() const noexcept {
-        return node;
+    void add_node(ast::Ast* node) noexcept {
+        nodes.push_back(node);
     }
+
+    std::vector<ast::Ast*> get_nodes() const noexcept {
+        return nodes;
+    }
+
+    std::vector<ast::Ast*> get_nodes_by_type(
+        std::initializer_list<ast::AstNodeType> l) const noexcept;
 
     ModToken get_token() const noexcept {
         return token;
