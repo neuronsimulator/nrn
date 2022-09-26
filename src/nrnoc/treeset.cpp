@@ -1725,9 +1725,8 @@ void v_setup_vectors(void) {
 
     nrn_thread_memblist_setup();
 
-#if 1 /* see finitialize */
     /* fill in artificial cell info */
-    for (i = 0; i < n_memb_func; ++i)
+    for (i = 0; i < n_memb_func; ++i) {
         if (nrn_is_artificial_[i] && memb_func[i].initialize) {
             hoc_Item* q;
             hoc_List* list;
@@ -1737,16 +1736,11 @@ void v_setup_vectors(void) {
             nti = 0;
             j = 0;
             list = tmp->olist;
-#if 0
-		if (memb_func[i].vectorized == 0 && list->next != list) {
-hoc_execerror(memb_func[i].sym->name, "is not thread safe");
-		}
-#endif
             ITERATE(q, list) {
                 Object* obj = OBJ(q);
-                Point_process* pnt = (Point_process*) obj->u.this_pointer;
+                auto* pnt = static_cast<Point_process*>(obj->u.this_pointer);
                 p = pnt->prop;
-                memb_list[i].nodelist[j] = (Node*) 0;
+                memb_list[i].nodelist[j] = nullptr;
                 memb_list[i]._data[j] = p->param;
                 memb_list[i].pdata[j] = p->dparam;
                 /* for now, round robin all the artificial cells */
@@ -1757,17 +1751,16 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
                  data. For this reason, for now, an otherwise thread-safe artificial
                  cell model is declared by nmodl as thread-unsafe.
                 */
-
                 if (memb_func[i].vectorized == 0) {
-                    pnt->_vnt = (void*) (nrn_threads);
+                    pnt->_vnt = nrn_threads;
                 } else {
-                    pnt->_vnt = (void*) (nrn_threads + nti);
+                    pnt->_vnt = nrn_threads + nti;
                     nti = (nti + 1) % nrn_nthread;
                 }
                 ++j;
             }
         }
-#endif
+    }
     nrn_recalc_node_ptrs();
     // The cache might contain pointers to data that were just reallocated.
     neuron::cache::invalidate();
