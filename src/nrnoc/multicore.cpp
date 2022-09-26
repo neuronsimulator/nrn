@@ -267,6 +267,11 @@ void nrn_threads_create(int n, bool parallel) {
     NrnThread* nt;
     if (nrn_nthread != n) {
         worker_threads.reset();
+        // If the number of threads changes then the node storage data is
+        // implicitly no longer sorted, as "sorted" includes being partitioned
+        // by NrnThread. TODO: consider if we can be smarter about how/when we
+        // call mark_as_unsorted() for different containers.
+        neuron::model().node_data().mark_as_unsorted();
         nrn_threads_free();
         for (i = 0; i < nrn_nthread; ++i) {
             nt = nrn_threads + i;
@@ -310,15 +315,11 @@ void nrn_threads_create(int n, bool parallel) {
                 nt->_vcv = 0;
                 nt->_nrn_fast_imem = 0;
                 nt->_node_data_offset = 0;
+                nt->cache = nullptr;
             }
         }
         v_structure_change = 1;
         diam_changed = 1;
-        // If the number of threads changes then the node storage data is
-        // implicitly no longer sorted, as "sorted" includes being partitioned
-        // by NrnThread. TODO: consider if we can be smarter about how/when we
-        // call mark_as_unsorted() for different containers.
-        neuron::model().node_data().mark_as_unsorted();
     }
 #if NRN_ENABLE_THREADS
     // Check if we are enabling/disabling parallelisation over threads
@@ -532,7 +533,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
         nd = _nt->_v_node[i];
         for (p = nd->prop; p; p = p->next) {
             if (memb_func[p->_type].current || memb_func[p->_type].state ||
-                memb_func[p->_type].initialize) {
+                memb_func[p->_type].has_initialize()) {
                 ++mlcnt[p->_type];
             }
         }
@@ -584,7 +585,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
         nd = _nt->_v_node[i];
         for (p = nd->prop; p; p = p->next) {
             if (memb_func[p->_type].current || memb_func[p->_type].state ||
-                memb_func[p->_type].initialize) {
+                memb_func[p->_type].has_initialize()) {
                 Memb_list* ml = mlmap[p->_type];
                 ml->nodelist[ml->nodecount] = nd;
                 ml->nodeindices[ml->nodecount] = nd->v_node_index;
