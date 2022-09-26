@@ -25,13 +25,9 @@ struct Memb_func {
     Pvmi current;
     Pvmi jacob;
     Pvmi state;
-    bool has_initialize() const {
-        return m_initialize;
-    }
+    bool has_initialize() const { return m_initialize; }
     void invoke_initialize(NrnThread* nt, Memb_list* ml, int type) const;
-    void set_initialize(Pvmi init) {
-        m_initialize = init;
-    }
+    void set_initialize(Pvmi init) { m_initialize = init; }
     Pvmp destructor; /* only for point processes */
     Symbol* sym;
     nrn_ode_count_t ode_count;
@@ -50,7 +46,7 @@ struct Memb_func {
     void* hoc_mech;
     void (*setdata_)(struct Prop*);
     int* dparam_semantics;  // for nrncore writing.
-  private:
+private:
     Pvmi m_initialize{};
 };
 
