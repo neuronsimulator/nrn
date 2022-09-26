@@ -15,6 +15,7 @@
 #include "spmatrix.h"
 #include "treeset.h"
 #include "utils/profile/profiler_interface.h"
+#include "multicore.h"
 
 #include <stdio.h>
 #if HAVE_STDLIB_H
@@ -1622,8 +1623,6 @@ static double diam_from_list(Section* sec, int inode, Prop* p, double rparent)
 }
 
 #endif /*DIAMLIST*/
-
-#include "multicore.cpp"
 
 #if VECTORIZE
 void v_setup_vectors(void) {
