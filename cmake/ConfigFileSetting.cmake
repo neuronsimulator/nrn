@@ -189,11 +189,6 @@ check_include_files("dlfcn.h;stdint.h;stddef.h;inttypes.h;stdlib.h;strings.h;str
 check_include_file_cxx("_G_config.h" HAVE__G_CONFIG_H)
 
 # =============================================================================
-# Check if this C++ compiler offers cxxabi.h (any that uses glibc should)
-# =============================================================================
-check_include_file_cxx("cxxabi.h" HAVE_CXXABI_H)
-
-# =============================================================================
 # Check symbol using check_cxx_symbol_exists but use ${NRN_HEADERS_INCLUDE_LIST}
 # =============================================================================
 # note that this must be called after all *check_include_files because we use

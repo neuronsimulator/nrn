@@ -15,7 +15,6 @@ extern Object* hoc_new_object(Symbol*, void*);
 extern int hoc_stack_type();
 extern char** hoc_strpop();
 extern Object** hoc_objpop();
-extern Object* hoc_pop_object();
 extern void hoc_tobj_unref(Object**);
 extern int hoc_ipop();
 PyObject* nrnpy_hoc2pyobject(Object*);

@@ -40,14 +40,8 @@ int hoc_return_type_code = 0; /* flag for allowing integers (1) and booleans (2)
                                  such */
 
 
-using StackDatum = std::variant<double,
-                                Symbol*,
-                                int,
-                                Object**,
-                                Object*,
-                                char**,
-                                double*,
-                                std::nullptr_t>;
+using StackDatum =
+    std::variant<double, Symbol*, int, Object**, Object*, char**, double*, std::nullptr_t>;
 
 /** @brief The stack.
  *
@@ -1544,18 +1538,17 @@ void hoc_Argtype() {
         itype = -1;
     } else {
         auto const& entry = f->argn[iarg - f->nargs];
-        itype =
-            std::visit(overloaded{[](double) { return 0; },
-                                  [](Object*) { return 1; },
-                                  [](Object**) { return 1; },
-                                  [](char**) { return 2; },
-                                  [](double*) { return 3; },
-                                  [](auto const& x) -> int {
-                                      throw std::runtime_error(
-                                          "hoc_Argtype didn't expect argument of type " +
-                                          cxx_demangle(typeid(decltype(x)).name()));
-                                  }},
-                       entry);
+        itype = std::visit(overloaded{[](double) { return 0; },
+                                      [](Object*) { return 1; },
+                                      [](Object**) { return 1; },
+                                      [](char**) { return 2; },
+                                      [](double*) { return 3; },
+                                      [](auto const& x) -> int {
+                                          throw std::runtime_error(
+                                              "hoc_Argtype didn't expect argument of type " +
+                                              cxx_demangle(typeid(decltype(x)).name()));
+                                      }},
+                           entry);
     }
     hoc_retpushx(itype);
 }
