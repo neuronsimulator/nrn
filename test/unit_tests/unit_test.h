@@ -3,7 +3,7 @@
 
 // pass_cell_template is a string containing a template for a Cell with inserted pas mechanism
 constexpr auto pass_cell_template = R"(
-begintemplate Cell
+begintemplate PasCell
 public init, topol, basic_shape, subsets, geom, biophys, geom_nseg, biophys_inhomo
 public synlist, x, y, z, position, connect2target
 public icl
@@ -82,7 +82,7 @@ obfunc connect2target() { localobj nc //$o1 target point process, optional $o2 r
   return nc
 }
 proc synapses() {}
-endtemplate Cell
+endtemplate PasCell
 )";
 
 /**
@@ -104,17 +104,16 @@ func prun() {local runtime
 )";
 
 
-// utility to create a given number of pas cells (nof_cells)
-std::string operator"" _pass_cells(unsigned long long nof_cells) {
+// utility to create a given number of passive membrane cells (nof_cells)
+std::string operator"" _pas_cells(unsigned long long nof_cells) {
     std::string cells = "ncell = " + std::to_string(nof_cells);
     cells += R"(
     objref cell[ncell]
     for i=0, ncell - 1 {
-        cell[i] = new Cell()
+        cell[i] = new PasCell()
         cell[i].icl.amp = i/ncell
         cell[i].position(0, 100*i, 0)
     }
     )";
-    // std::cout << "Got:" << cells;
     return cells;
 };
