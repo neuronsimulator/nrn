@@ -42,6 +42,15 @@ int hoc_return_type_code = 0; /* flag for allowing integers (1) and booleans (2)
 using StackDatum =
     std::variant<double, Symbol*, int, Object**, Object*, char**, neuron::container::generic_data_handle, std::nullptr_t>;
 
+using StackDatum = std::variant<double,
+                                Symbol*,
+                                int,
+                                Object**,
+                                Object*,
+                                char**,
+                                neuron::container::generic_data_handle,
+                                std::nullptr_t>;
+
 /** @brief The stack.
  *
  *  It would be nice to use std::stack, but it seems that for now its API is too
@@ -244,7 +253,7 @@ template int const& hoc_look_inside_stack(int);
 template Object** const& hoc_look_inside_stack(int);
 template Object* const& hoc_look_inside_stack(int);
 template char** const& hoc_look_inside_stack(int);
-template double* const& hoc_look_inside_stack(int);
+template neuron::container::generic_data_handle const& hoc_look_inside_stack(int);
 template std::nullptr_t const& hoc_look_inside_stack(int);
 namespace {
 bool stack_entry_is_tmpobject(StackDatum const& entry) {
