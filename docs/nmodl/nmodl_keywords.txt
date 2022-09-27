@@ -1,0 +1,24 @@
+# No reference in mod files inside nrn/share or
+# in the NMODL documentation (https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/nmodl.html,
+# https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/nmodl2.html)
+STEPPED
+PARTIAL
+FUNCTION_TABLE
+TERMINAL
+MATCH
+~
+~
+->
+SWEEP
+PLOT
+CONDUCTANCE
+FORALL
+WHILE
+IF
+ELSE IF
+ELSE
+~
+RESET
+SENS
+~
+LAG
