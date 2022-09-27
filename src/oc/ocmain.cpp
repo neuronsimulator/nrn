@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <hocdec.h>
 
-int hoc_nstack, hoc_nframe;
+int hoc_nframe;
 extern const char* neuron_home;
 
 extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj) = NULL;

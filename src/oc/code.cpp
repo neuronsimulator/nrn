@@ -39,9 +39,6 @@ extern void debugzz(Inst*);
 int hoc_return_type_code = 0; /* flag for allowing integers (1) and booleans (2) to be recognized as
                                  such */
 
-using StackDatum =
-    std::variant<double, Symbol*, int, Object**, Object*, char**, neuron::container::generic_data_handle, std::nullptr_t>;
-
 using StackDatum = std::variant<double,
                                 Symbol*,
                                 int,
