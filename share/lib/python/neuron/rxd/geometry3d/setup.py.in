@@ -56,7 +56,8 @@ else:
 
     define_macros=[]
 
-    extra_compile_args = [@NRN_COMPILE_FLAGS_COMMA_SEPARATED_STRINGS@]
+    extra_compile_args = ["@CMAKE_CXX17_STANDARD_COMPILE_OPTION@"]
+    extra_compile_args += [@NRN_COMPILE_FLAGS_COMMA_SEPARATED_STRINGS@]
     extra_link_args = [@NRN_LINK_FLAGS_COMMA_SEPARATED_STRINGS@]
     if olevel != "":
         extra_compile_args.append('-O' + olevel)

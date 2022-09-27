@@ -2592,7 +2592,7 @@ void varread(void) /* read into variable */
 Again:
     switch (nrn_fw_fscanf(fin, "%lf", OPVAL(var))) {
     case EOF:
-        if (moreinput())
+        if (hoc_moreinput())
             goto Again;
         d = *(OPVAL(var)) = 0.0;
         break;
