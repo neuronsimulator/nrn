@@ -193,7 +193,10 @@ template <typename T>
             assert((!std::is_same_v<std::decay_t<decltype(val)>, T>) );
             std::ostringstream oss;
             oss << "bad stack access: expecting " << cxx_demangle(typeid(T).name()) << "; really "
-                << cxx_demangle(typeid(decltype(val)).name()) << ' ' << val;
+                << cxx_demangle(typeid(decltype(val)).name());
+            if constexpr (!std::is_same_v<std::decay_t<decltype(val)>, std::nullptr_t>) {
+                oss << ' ' << val;
+            }
             // extra info for some types
             overloaded{[&oss](Object* o) { oss << " -> " << hoc_object_name(o); },
                        [&oss](Object** o) {
@@ -336,8 +339,7 @@ static void frameobj_clean(Frame* f) {
 
 /* unref items on the stack frame associated with localobj in case of error */
 static void frame_objauto_recover_on_err(Frame* ff) { /* only on error */
-    Frame* f;
-    for (f = fp; f > ff; --f) {
+    for (Frame* f = fp; f > ff; --f) {
         int i;
         Symbol* sp = f->sp;
         if (sp->u.u_proc == NULL) { /* skip if the procedure is not defined */
@@ -892,7 +894,8 @@ void TmpObjectDeleter::operator()(Object* o) const {
     hoc_obj_unref(o);
 }
 
-// pop object and return top elem from stack
+// pop object and return top elem from stack, the return value is wrapped up in
+// a unique_ptr that calls TmpObjectDeleter::operator() from its destructor.
 TmpObject hoc_pop_object() {
     return TmpObject{pop_value<Object*>()};
 }
@@ -1015,9 +1018,7 @@ void hoc_shortfor(void) {
         }
         break;
     case AUTO: {
-        auto& entry = fp->argn[sym->u.u_auto];
-        entry = 0.0;  // make double the active member
-        pval = &(cast<double>(entry));
+        pval = &(cast<double>(fp->argn[sym->u.u_auto]));
     } break;
     default:
         execerror("for loop non-variable", sym->name);
@@ -1349,13 +1350,13 @@ void pop_frame(void) {
     frameobj_clean(fp);
     for (i = 0; i < fp->nargs; i++) {
         // pop arguments
-        pop_value();
+        hoc_nopop();
     }
     --fp;
 }
 
-void call(void) /* call a function */
-{
+// call a function
+void hoc_call() {
     int i, isec;
     Symbol* sp = pc[0].sym; /* symbol table entry */
     /* for function */
@@ -1367,7 +1368,6 @@ void call(void) /* call a function */
     fp->nargs = pc[1].i;
     fp->retpc = pc + 2;
     fp->ob = hoc_thisobject;
-    /*SUPPRESS 26*/
     fp->argn = &stack.back();  // last argument
     BBSPOLL
     isec = nrn_isecstack();
@@ -1457,18 +1457,20 @@ double hoc_call_func(Symbol* s, int narg) {
 
 /* common return from func, proc, or iterator */
 void hoc_ret() {
-    /* unref all the auto object pointers */
+    // unref all the auto object pointers
+    for (int i = fp->sp->u.u_proc->nobjauto - 1; i >= 0; --i) {
+        // this is going from the deepest automatic object in the stack to the shallowest
+        // should this decremenet tobj_count?
+        hoc_obj_unref(hoc_look_inside_stack<Object*>(i));  //
+    }
+    // Pop off the autos
     for (auto i = 0; i < fp->sp->u.u_proc->nauto; ++i) {
-        if (i < fp->sp->u.u_proc->nobjauto) {
-            hoc_obj_unref(pop_value<Object*>());
-        } else {
-            pop_value();
-        }
+        pop_value();
     }
     frameobj_clean(fp);
     for (int i = 0; i < fp->nargs; i++) {
         // pop arguments
-        pop_value();
+        hoc_nopop();
     }
     hoc_pc = fp->retpc;
     --fp;
@@ -1932,7 +1934,7 @@ void hoc_evalpointer() {
         break;
     case AUTO: {
         auto& entry = fp->argn[sym->u.u_auto];
-        entry = 0.0;  // make double the active member
+        // entry = 0.0;  // make double the active member
         d = &(cast<double>(entry));
     } break;
     default:
@@ -2378,7 +2380,7 @@ int hoc_araypt(Symbol* sp, int type) {
         total = total * (aray->sub[i]) + d;
     }
     for (int i = 0; i < aray->nsub; ++i) {
-        pop_value();
+        hoc_nopop();
     }
     int varn;
     if (hoc_do_equation && sp->s_varn != 0 && (varn = (aray->a_varn)[total]) != 0 &&
