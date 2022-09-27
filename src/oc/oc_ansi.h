@@ -151,7 +151,13 @@ double* hoc_val_pointer(const char*);
 Symbol* hoc_table_lookup(const char*, Symlist*);
 Symbol* hoc_install(const char*, int, double, Symlist**);
 extern Objectdata* hoc_objectdata;
-Datum* hoc_look_inside_stack(int, int);
+/** @brief Get the stack entry at depth i.
+ *
+ *  i=0 is the most recently pushed entry. This will raise an error if the stack
+ *  is empty, or if the given entry does not have type T.
+ */
+template <typename T>
+T const& hoc_look_inside_stack(int i);
 Object* hoc_obj_look_inside_stack(int);
 int hoc_obj_look_inside_stack_index(int);
 void hoc_stkobj_unref(Object*, int stkindex);
