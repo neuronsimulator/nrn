@@ -230,10 +230,51 @@ Only a small part of the full model description language is relevant to
 neuron mechanisms.  The important concepts held in common are 
 the declaration of all variables as 
 
+TITLE
+"""""
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+COMMENT
+"""""""
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+INDEPENDENT
+"""""""""""
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+DEFINE
+""""""
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+INCLUDE
+"""""""
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+UNITS
+"""""
+
+Description:
+    TODO: Add description and existing example mod file
+
 
 .. _hoc_nmodl_parameter:
 
-Parameter
+PARAMETER
 """""""""
 
 
@@ -262,7 +303,7 @@ Description:
     value is to type it from the keyboard. (see :hoc:func:`xvalue`).
 
 
-State
+STATE
 """""
 
 
@@ -281,7 +322,7 @@ Description:
     only NEURON itself is allowed to calculate that value. 
 
 
-Assigned
+ASSIGNED
 """"""""
 
 
@@ -292,7 +333,7 @@ Description:
     to divide them between range variables and global variables. 
 
 
-Constant
+CONSTANT
 """"""""
 
 
@@ -300,7 +341,7 @@ Description:
     These are variables that cannot be changed during the simulation.
 
 
-Local
+LOCAL
 """""
 
 
@@ -309,7 +350,7 @@ Description:
     between all instances of a given mechanism. 
 
 
-Independent
+INDEPENDENT
 """""""""""
 
 
@@ -318,7 +359,7 @@ Description:
     For NMODL this statement is unnecessary since the independent variable 
     is always time, :hoc:data:`t`.
 
-Pointer
+POINTER
 """""""
 
 Basically what is needed is a way to implement the hoc statement 
@@ -411,7 +452,7 @@ one may declare it as LOCAL, but in that case the model cannot be vectorized
 and different instances cannot be called in parallel. 
 
 
-Include
+INCLUDE
 """""""
 
 
@@ -435,7 +476,7 @@ Description:
 
     Other blocks which play similar roles in NMODL and MODL are 
 
-Breakpoint
+BREAKPOINT
 """"""""""
 
 
@@ -457,7 +498,7 @@ Description:
     only be changed in a block called by a SOLVE statement. 
 
 
-Derivative
+DERIVATIVE
 """"""""""
 
 
@@ -490,7 +531,42 @@ Description:
     the states analytically.  The :file:`hh2.mod` example shows how to do this. 
 
 
-Nonlinear
+NET_RECEIVE
+"""""""""""
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+WATCH
+~~~~~
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+CONSTRUCTOR
+"""""""""""
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+DESTRUCTOR
+""""""""""
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+LINEAR
+""""""
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+NONLINEAR
 """""""""
 
 
@@ -509,7 +585,7 @@ Description:
     can also appear within a DERIVATIVE block. 
 
 
-Kinetic
+KINETIC
 """""""
 
 
@@ -521,7 +597,28 @@ Description:
     the computation may be much faster. 
 
 
-Procedure
+CONSERVE
+""""""""
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+COMPARTMENT
+"""""""""""
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+LONGITUDINAL_DIFFUSION
+""""""""""""""""""""""
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+PROCEDURE
 """""""""
 
 
@@ -570,7 +667,7 @@ Description:
 
 
 
-Function
+FUNCTION
 """"""""
 
 
@@ -583,7 +680,7 @@ Description:
     The user level caveats stated for procedures apply. 
 
 
-Table
+TABLE
 """""
 
 
@@ -636,7 +733,7 @@ Description:
     time than an interpolated table lookup. 
 
 
-Initial
+INITIAL
 """""""
 
 
@@ -678,3 +775,106 @@ Description:
     can be used to place c code within the model description file. 
 
 
+DISCRETE
+""""""""
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+STEPPED
+~~~~~~~
+
+Description:
+    TODO: Add description and new example mod file
+
+
+PARTIAL
+~~~~~~~
+
+Description:
+    TODO: Add description and new example mod file
+
+
+FUNCTION_TABLE
+~~~~~~~~~~~~~~
+
+Description:
+    TODO: Add description and new example mod file
+
+
+TERMINAL
+~~~~~~~~
+
+Description:
+    TODO: Add description and new example mod file
+
+
+MATCH
+~~~~~
+
+Description:
+    TODO: Add description and new example mod file
+
+
+SWEEP
+~~~~~
+
+Description:
+    TODO: Add description and new example mod file
+
+
+PLOT
+~~~~
+
+Description:
+    TODO: Add description and new example mod file
+
+
+CONDUCTANCE
+~~~~~~~~~~~
+
+Description:
+    TODO: Add description and new example mod file
+
+
+FORALL
+~~~~~~
+
+Description:
+    TODO: Add description and new example mod file
+
+
+WHILE
+~~~~~
+
+Description:
+    TODO: Add description and new example mod file
+
+
+IF /ELSE IF / ELSE
+~~~~~~~~~~~~~~~~~~
+
+Description:
+    TODO: Add description and new example mod file
+
+
+RESET
+~~~~~
+
+Description:
+    TODO: Add description and new example mod file
+
+
+SENS
+~~~~
+
+Description:
+    TODO: Add description and new example mod file
+
+
+LAG
+~~~
+
+Description:
+    TODO: Add description and new example mod file

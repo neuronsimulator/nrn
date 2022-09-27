@@ -29,7 +29,7 @@ user level. It declares:
 
 The syntax is (each statement can occur none or more times) : 
 
-Neuron
+NEURON
 ~~~~~~
 
 
@@ -51,7 +51,7 @@ Description:
 
 
 
-Suffix
+SUFFIX
 ~~~~~~
 
 
@@ -75,7 +75,7 @@ Description:
     from NEURON by the user and you want to specify those function names exactly. 
 
 
-Range
+RANGE
 ~~~~~
 
 
@@ -93,7 +93,7 @@ Description:
     ``NEURON`` block. 
 
 
-Global
+GLOBAL
 ~~~~~~
 
 
@@ -107,7 +107,7 @@ Description:
 
 .. nonspecific_current:
 
-Nonspecific Current
+NONSPECIFIC_CURRENT
 ~~~~~~~~~~~~~~~~~~~
 
 
@@ -120,7 +120,15 @@ Description:
     ``NEURON RANGE`` statement. 
 
 
-Useion
+ELECTRODE_CURRENT
+~~~~~~~~~~~~~~~~~
+
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+USEION
 ~~~~~~
 
 
@@ -157,7 +165,7 @@ Description:
     section. The rules are defined in the reference to the function 
     ion_style(). Three cases are noteworthy. 
 
-Read
+READ
 ====
 
     Assume only one model is inserted in a section. 
@@ -181,7 +189,7 @@ Read
     will be treated as constant PARAMETER's, and 3) eca will be computed 
     from the Nernst equation when finitialize() is called. 
 
-Write
+WRITE
 =====
 
     Lastly, insert a final model at the same location in addition to the 
@@ -220,7 +228,7 @@ Write
     your purposes.  Concentrations and reversal potentials should be considered 
     parameters unless explicitly calculated by some mechanism. 
 
-Valence
+VALENCE
 =======
 
     The ``READ`` list of a ``USEION`` specifies those ionic variables which 
@@ -259,10 +267,14 @@ Valence
     for use in the mechanism. Ion variables get updated on exit from these 
     functions such that WRITE currents are added to ion currents. 
 
-     
+REPRESENTS
+==========
+
+    TODO: Add description and existing example mod file
+
 .. point_process:
 
-Point_Process
+POINT_PROCESS
 ~~~~~~~~~~~~~
 
 
@@ -303,7 +315,7 @@ Description:
     functions such that WRITE currents are added to ion currents. 
 
 
-Pointer
+POINTER
 ~~~~~~~
 
 
@@ -324,7 +336,15 @@ Description:
     is up to the user to reconnect the POINTER to a valid actual variable. 
 
 
-External
+BBCOREPOINTER
+~~~~~~~~~~~~~~
+
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+EXTERNAL
 ~~~~~~~~
 
 
@@ -344,6 +364,49 @@ Description:
         extern double fname_othermodelsuffix(); 
 
     in a ``VERBATIM`` block and use them with the proper suffix. 
+
+
+THREADSAFE
+~~~~~~~~~~
+
+    TODO: Add description and existing example mod file (Link with other existing documentation as well)
+
+
+BEFORE
+~~~~~~
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+AFTER
+~~~~~
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+FOR_NETCONS
+~~~~~~~~~~~
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+PROTECT
+~~~~~~~
+
+Description:
+    TODO: Add description and existing example mod file
+
+
+MUTEXLOCK / MUTEXUNLOCK
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Description:
+    TODO: Add description and existing example mod file
+
+
 
 
 .. _hoc_connectingmechanismstogether:
