@@ -1370,15 +1370,13 @@ void hoc_object_asgn() {
         hoc_pushstr(pd);
     } break;
 #if USE_PYTHON
-    case OBJECTTMP: {                                       /* should be PythonObject */
-        int stkindex = hoc_obj_look_inside_stack_index(1);  // OBJECTTMP
-        Object* o = hoc_obj_look_inside_stack(1);  // the temporary object living at entry 1
+    case OBJECTTMP: { /* should be PythonObject */
+        Object* o = hoc_obj_look_inside_stack(1);
         assert(o->ctemplate->sym == nrnpy_pyobj_sym_);
         if (op) {
             hoc_execerror("Invalid assignment operator for PythonObject", nullptr);
         }
         (*nrnpy_hpoasgn)(o, type1);
-        hoc_stkobj_unref(o, stkindex);
     } break;
 #endif
     default:

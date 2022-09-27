@@ -417,7 +417,13 @@ void hoc_prstack() {
         std::visit(
             [i](auto& value) {
                 std::ostringstream oss;
-                oss << i << ' ' << value << ' ' << cxx_demangle(typeid(decltype(value)).name());
+                oss << i << ' ';
+                if constexpr (std::is_same_v<std::decay_t<decltype(value)>, std::nullptr_t>) {
+                    oss << "nullptr";
+                } else {
+                    oss << value;
+                }
+                oss << ' ' << cxx_demangle(typeid(decltype(value)).name());
                 Printf(oss.str().c_str());
             },
             *stkp);
@@ -849,16 +855,6 @@ Object* hoc_obj_look_inside_stack(int i) { /* stack pointer at depth i; i=0 is t
         entry);
 }
 
-/** @brief Translates an index-from-the-end to an index-from-the-beginning.
- *
- *  i=0 means the most recently pushed value, this function returns the index of
- *  that value in `stack`.
- */
-int hoc_obj_look_inside_stack_index(int i) {
-    assert(i < stack.size());
-    return stack.size() - 1 - i;
-}
-
 int hoc_inside_stacktype(int i) { /* 0 is top */
     return get_legacy_int_type(get_stack_entry_variant(i));
 }
@@ -891,9 +887,14 @@ Object** hoc_objpop() {
     return pop_value<Object**>();
 }
 
+void TmpObjectDeleter::operator()(Object* o) const {
+    --tobj_count;
+    hoc_obj_unref(o);
+}
+
 // pop object and return top elem from stack
-Object* hoc_pop_object() {
-    return pop_value<Object*>();
+TmpObject hoc_pop_object() {
+    return TmpObject{pop_value<Object*>()};
 }
 
 // pop pointer to string pointer and return top elem from stack

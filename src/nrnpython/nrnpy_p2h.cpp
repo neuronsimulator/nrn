@@ -380,8 +380,8 @@ static void hpoasgn(Object* o, int type) {
     } else {
         hoc_execerror("Cannot assign that type to PythonObject", (char*) 0);
     }
-    Object* stack_value = hoc_pop_object();
-    assert(o == stack_value);
+    auto stack_value = hoc_pop_object();
+    assert(o == stack_value.get());
     poleft = nrnpy_hoc2pyobject(o);
     sym = hoc_spop();
     nindex = hoc_ipop();
