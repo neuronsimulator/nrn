@@ -2548,7 +2548,7 @@ static void _ode_matsol(NrnThread*, Memb_list*, int);\n\
 static int _ode_count(int _type){ return %d;}\n",
                 cvode_neq_);
         Lappendstr(procfunc, buf);
-        sprintf(buf, "\n#define _cvode_ieq std::get<int>(_ppvar[%d])\n", cvode_ieq_index);
+        sprintf(buf, "\n#define _cvode_ieq _ppvar[%d]\n", cvode_ieq_index);
         Lappendstr(defs_list, buf);
 
         if (cvode_fun_->subtype == PROCED) {
