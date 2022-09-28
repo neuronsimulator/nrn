@@ -664,8 +664,7 @@ if(NRN_ENABLE_DOCS)
   add_custom_target(
     notebooks_nrnivmodl
     COMMAND ${PROJECT_BINARY_DIR}/bin/nrnivmodl mod
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs/nmodl
-  )
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs/nmodl)
   add_custom_target(
     notebooks
     COMMAND ${NRN_DOCS_COMMAND_PREFIX} NEURON_MODULE_OPTIONS="-nogui" bash
