@@ -695,21 +695,19 @@ Prop* prop_alloc(Prop** pp, int type, Node* nd) {
     /* returning *Prop because allocation may */
     /* cause other properties to be linked ahead */
     /* some models need the node (to find area) */
-    Prop* p;
-
     if (nd) {
         nrn_alloc_node_ = nd;
     }
     v_structure_change = 1;
     current_prop_list = pp;
-    p = (Prop*) emalloc(sizeof(Prop));
+    auto* p = (Prop*) emalloc(sizeof(Prop));
     p->_type = type;
     p->next = *pp;
     p->ob = nullptr;
     p->_alloc_seq = -1;
     *pp = p;
     assert(memb_func[type].alloc);
-    p->dparam = (Datum*) 0;
+    p->dparam = nullptr;
     p->param = nullptr;
     p->param_size = 0;
     (memb_func[type].alloc)(p);
@@ -717,9 +715,8 @@ Prop* prop_alloc(Prop** pp, int type, Node* nd) {
 }
 
 Prop* prop_alloc_disallow(Prop** pp, short type, Node* nd) {
-    Prop* p;
     disallow_needmemb = 1;
-    p = prop_alloc(pp, type, nd);
+    auto* p = prop_alloc(pp, type, nd);
     disallow_needmemb = 0;
     return p;
 }
@@ -749,7 +746,7 @@ void single_prop_free(Prop* p) {
     }
     if (p->dparam) {
         if (p->_type == CABLESECTION) {
-            notify_freed_val_array(&p->dparam[2].val, 6);
+            notify_freed_val_array(&std::get<double>(p->dparam[2]), 6);
         }
         nrn_prop_datum_free(p->_type, p->dparam);
     }
@@ -781,7 +778,7 @@ void nrn_area_ri(Section* sec) {
     }
 #if DIAMLIST
     if (sec->npt3d) {
-        sec->prop->dparam[2].val = sec->pt3d[sec->npt3d - 1].arc;
+        std::get<double>(sec->prop->dparam[2]) = sec->pt3d[sec->npt3d - 1].arc;
     }
 #endif
     ra = nrn_ra(sec);
@@ -899,7 +896,7 @@ void connection_coef(void) /* setup a and b */
         nd = sec->pnode[0];
         area = NODEAREA(sec->parentnode);
         /* dparam[4] is rall_branch */
-        ClassicalNODEA(nd) = -1.e2 * sec->prop->dparam[4].val * NODERINV(nd) / area;
+        ClassicalNODEA(nd) = -1.e2 * std::get<double>(sec->prop->dparam[4]) * NODERINV(nd) / area;
         for (j = 1; j < sec->nnode; j++) {
             nd = sec->pnode[j];
             area = NODEAREA(sec->pnode[j - 1]);
@@ -1106,7 +1103,7 @@ static void nrn_pt3dmodified(Section* sec, int i0) {
         t3 = sec->pt3d[i].z - p->z;
         sec->pt3d[i].arc = p->arc + sqrt(t1 * t1 + t2 * t2 + t3 * t3);
     }
-    sec->prop->dparam[2].val = sec->pt3d[n - 1].arc;
+    std::get<double>(sec->prop->dparam[2]) = sec->pt3d[n - 1].arc;
 }
 
 void nrn_pt3dclear(Section* sec, int req) {
@@ -1491,7 +1488,7 @@ void nrn_define_shape(void) {
         stor_pt3d(sec, x1, y1, z, nrn_diameter(sec->pnode[sec->nnode - 2]));
         /* don't let above change length due to round-off errors*/
         sec->pt3d[sec->npt3d - 1].arc = len;
-        sec->prop->dparam[2].val = len;
+        std::get<double>(sec->prop->dparam[2]) = len;
     }
     changed_ = nrn_shape_changed_;
 }
