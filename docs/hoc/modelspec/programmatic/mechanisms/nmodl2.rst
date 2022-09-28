@@ -432,7 +432,7 @@ MUTEXLOCK / MUTEXUNLOCK
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file (share/examples/nrniv/nmodl/cadif.mod)
 
 
 
