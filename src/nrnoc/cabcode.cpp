@@ -232,9 +232,10 @@ printf(" is a section name\n");
 }
 
 Object* nrn_sec2cell(Section* sec) {
+    using std::get;
     if (sec->prop) {
-        if (sec->prop->dparam[6].obj) {
-            return sec->prop->dparam[6].obj;
+        if (auto* o = get<Object*>(sec->prop->dparam[6]); o) {
+            return o;
         } else if (nrnpy_pysec_cell_p_) {
             Object* o = (*nrnpy_pysec_cell_p_)(sec);
             if (o) {
@@ -247,9 +248,10 @@ Object* nrn_sec2cell(Section* sec) {
 }
 
 int nrn_sec2cell_equals(Section* sec, Object* obj) {
+    using std::get;
     if (sec && sec->prop) {
-        if (sec->prop->dparam[6].obj) {
-            return sec->prop->dparam[6].obj == obj;
+        if (auto& o = get<Object*>(sec->prop->dparam[6]); o) {
+            return o == obj;
         } else if (nrnpy_pysec_cell_equals_p_) {
             return (*nrnpy_pysec_cell_equals_p_)(sec, obj);
         }
@@ -269,15 +271,11 @@ static Section* new_section(Object* ob, Symbol* sym, int i) {
     sec = sec_alloc();
     section_ref(sec);
     prop = prop_alloc(&(sec->prop), CABLESECTION, (Node*) 0);
-    prop->dparam[0].sym = sym;
-    prop->dparam[5].i = i;
-    if (ob) {
-        prop->dparam[6].obj = ob;
-    } else {
-        prop->dparam[6].obj = nullptr;
-    }
+    prop->dparam[0] = sym;
+    prop->dparam[5] = i;
+    prop->dparam[6] = ob;
 #if USE_PYTHON
-    prop->dparam[PROP_PY_INDEX]._pvoid = nullptr;
+    prop->dparam[PROP_PY_INDEX] = nullptr;
 #endif
     nrn_pushsec(sec);
     d = (double) DEF_nseg;
@@ -301,7 +299,7 @@ void new_sections(Object* ob, Symbol* sym, Item** pitm, int size) {
         } else {
             pitm[i] = lappendsec(section_list, sec);
         }
-        sec->prop->dparam[8].itm = pitm[i];
+        sec->prop->dparam[8] = pitm[i];
     }
 }
 
@@ -312,20 +310,17 @@ Section* nrnpy_newsection(NPySecObj* v) {
     Section* sec;
     sec = new_section((Object*) 0, (Symbol*) 0, 0);
 #if USE_PYTHON
-    sec->prop->dparam[PROP_PY_INDEX]._pvoid = v;
+    sec->prop->dparam[PROP_PY_INDEX] = static_cast<void*>(v);
 #endif
     itm = lappendsec(section_list, sec);
-    sec->prop->dparam[8].itm = itm;
+    sec->prop->dparam[8] = itm;
     return sec;
 }
 #endif
 
 void delete_section(void) {
     Section* sec;
-    Object* ob;
     Item** pitm;
-    Symbol* sym;
-    int i;
     if (ifarg(1)) {
         hoc_execerror(
             "delete_section takes no positional arguments and deletes the HOC currently accessed "
@@ -338,23 +333,24 @@ void delete_section(void) {
         return;
     }
 #if USE_PYTHON
-    if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) { /* Python Section */
+    using std::get;
+    if (get<void*>(sec->prop->dparam[PROP_PY_INDEX])) { /* Python Section */
         /* the Python Section will be a zombie section with a pointer
            to an invalid Section*.
         */
-        sec->prop->dparam[PROP_PY_INDEX]._pvoid = NULL;
+        sec->prop->dparam[PROP_PY_INDEX] = nullptr;
         section_ref(sec);
-        sec_free(sec->prop->dparam[8].itm);
+        sec_free(get<hoc_Item*>(sec->prop->dparam[8]));
         hoc_retpushx(0.0);
         return;
     }
 #endif
-    if (!sec->prop->dparam[0].sym) {
+    auto* sym = get<Symbol*>(sec->prop->dparam[0]);
+    if (!sym) {
         hoc_execerror("Cannot delete an unnamed hoc section", (char*) 0);
     }
-    sym = sec->prop->dparam[0].sym;
-    ob = sec->prop->dparam[6].obj;
-    i = sec->prop->dparam[5].i;
+    auto* ob = get<Object*>(sec->prop->dparam[6]);
+    auto i = get<int>(sec->prop->dparam[5]);
     if (ob) {
         pitm = ob->u.dataspace[sym->u.oboff].psecitm + i;
     } else {
@@ -386,23 +382,26 @@ i - (section[i].sym)->u.u_auto
 */
 
 double section_length(Section* sec) {
+    using std::get;
     double x;
     if (sec->recalc_area_ && sec->npt3d) {
-        sec->prop->dparam[2].val = sec->pt3d[sec->npt3d - 1].arc;
+        sec->prop->dparam[2] = sec->pt3d[sec->npt3d - 1].arc;
     }
-    x = sec->prop->dparam[2].val;
+    x = get<double>(sec->prop->dparam[2]);
     if (x <= 1e-9) {
-        x = sec->prop->dparam[2].val = 1e-9;
+        x = get<double>(sec->prop->dparam[2]) = 1e-9;
     }
     return x;
 }
 
 int arc0at0(Section* sec) {
-    return ((sec->prop->dparam[3].val) ? 0 : 1);
+    using std::get;
+    return (get<double>(sec->prop->dparam[3]) ? 0 : 1);
 }
 
 double nrn_ra(Section* sec) {
-    return sec->prop->dparam[7].val;
+    using std::get;
+    return get<double>(sec->prop->dparam[7]);
 }
 
 void cab_alloc(Prop* p) {
@@ -413,10 +412,11 @@ void cab_alloc(Prop* p) {
 #define CAB_SIZE 10
 #endif
     pd = nrn_prop_datum_alloc(CABLESECTION, CAB_SIZE, p);
-    pd[1].val = pd[3].val = 0.;
-    pd[2].val = DEF_L;
-    pd[4].val = DEF_rallbranch;
-    pd[7].val = DEF_Ra;
+    pd[1] = 0.0;
+    pd[2] = DEF_L;
+    pd[3] = 0.0;
+    pd[4] = DEF_rallbranch;
+    pd[7] = DEF_Ra;
     p->dparam = pd;
     p->param_size = CAB_SIZE; /* this one is special since it refers to dparam */
 }
@@ -640,8 +640,8 @@ static void connectsec_impl(Section* parent, Section* sec) {
         reverse_nodes(sec);
     }
     pd = sec->prop->dparam;
-    pd[1].val = d2;
-    pd[3].val = d1;
+    pd[1] = d2;
+    pd[3] = d1;
     section_ref(parent);
     sec->parentsec = parent;
     nrn_add_sibling_list(sec);
@@ -789,8 +789,10 @@ void* hoc_sec_internal_name2ptr(const char* s, int eflag) {
         return NULL;
     }
     sec = (Section*) vp;
+    using std::get;
     if (nrn_is_valid_section_ptr(vp) == 0 || !sec->prop || !sec->prop->dparam ||
-        !sec->prop->dparam[8].itm || sec->prop->dparam[8].itm->itemtype != SECTION) {
+        !get<hoc_Item*>(sec->prop->dparam[8]) ||
+        get<hoc_Item*>(sec->prop->dparam[8])->itemtype != SECTION) {
         if (eflag) {
             hoc_execerror("Section associated with internal name does not exist:", s);
         } else {
@@ -1423,7 +1425,8 @@ int node_index(Section* sec, double x) /* returns nearest index to x */
     if (i == (int) n) {
         i = n - 1;
     }
-    if (sec->prop->dparam[3].val) {
+    using std::get;
+    if (get<double>(sec->prop->dparam[3])) {
         i = n - i - 1;
     }
     return i;
@@ -1458,7 +1461,8 @@ double cable_prop_eval(Symbol* sym) {
     case 0: /* not in property list so must be nnode */
         return (double) sec->nnode - 1;
     case CABLESECTION:
-        return sec->prop->dparam[sym->u.rng.index].val;
+        using std::get;
+        return get<double>(sec->prop->dparam[sym->u.rng.index]);
     default:
         hoc_execerror(sym->name, " not a USERPROPERTY");
     }
@@ -1469,7 +1473,8 @@ double* cable_prop_eval_pointer(Symbol* sym) {
     sec = nrn_sec_pop();
     switch (sym->u.rng.type) {
     case CABLESECTION:
-        return &sec->prop->dparam[sym->u.rng.index].val;
+        using std::get;
+        return &get<double>(sec->prop->dparam[sym->u.rng.index]);
     default:
         hoc_execerror(sym->name, " not a USERPROPERTY that can be pointed to");
     }
@@ -1515,6 +1520,7 @@ void nrn_change_nseg(Section* sec, int n) {
     }
 }
 void cable_prop_assign(Symbol* sym, double* pd, int op) {
+    using std::get;
     Section* sec;
     sec = nrn_sec_pop();
     switch (sym->u.rng.type) {
@@ -1528,20 +1534,20 @@ void cable_prop_assign(Symbol* sym, double* pd, int op) {
         if (sym->u.rng.index == 2) {
             if (can_change_morph(sec)) {
                 if (op) {
-                    *pd = hoc_opasgn(op, sec->prop->dparam[2].val, *pd);
+                    *pd = hoc_opasgn(op, get<double>(sec->prop->dparam[2]), *pd);
                 }
-                sec->prop->dparam[2].val = *pd;
+                sec->prop->dparam[2] = *pd;
                 nrn_length_change(sec, *pd);
                 diam_changed = 1;
                 sec->recalc_area_ = 1;
             }
         } else {
             if (op) {
-                *pd = hoc_opasgn(op, sec->prop->dparam[sym->u.rng.index].val, *pd);
+                *pd = hoc_opasgn(op, get<double>(sec->prop->dparam[sym->u.rng.index]), *pd);
             }
             diam_changed = 1;
             sec->recalc_area_ = 1;
-            sec->prop->dparam[sym->u.rng.index].val = *pd;
+            sec->prop->dparam[sym->u.rng.index] = *pd;
         }
 #if RA_WARNING
         if (sym->u.rng.index == 7) {
@@ -1556,12 +1562,14 @@ void cable_prop_assign(Symbol* sym, double* pd, int op) {
 
 /* x of parent for this section */
 double nrn_connection_position(Section* sec) {
-    return sec->prop->dparam[1].val;
+    using std::get;
+    return get<double>(sec->prop->dparam[1]);
 }
 
 /* x=0,1 end connected to parent */
 double nrn_section_orientation(Section* sec) {
-    return sec->prop->dparam[3].val;
+    using std::get;
+    return get<double>(sec->prop->dparam[3]);
 }
 
 int nrn_at_beginning(Section* sec) {
@@ -1682,18 +1690,14 @@ void setup_topology(void) {
     ++nrn_shape_changed_;
 }
 
-const char* secname(Section* sec) /* name of section (for use in error messages) */
-{
+// name of section (for use in error messages)
+const char* secname(Section* sec) {
+    using std::get;
     static char name[512];
-    Symbol* s;
-    int indx;
-    Object* ob;
-
     if (sec && sec->prop) {
-        if (sec->prop->dparam[0].sym) {
-            s = sec->prop->dparam[0].sym;
-            indx = sec->prop->dparam[5].i;
-            ob = sec->prop->dparam[6].obj;
+        if (auto* s = get<Symbol*>(sec->prop->dparam[0]); s) {
+            auto indx = get<int>(sec->prop->dparam[5]);
+            auto* ob = get<Object*>(sec->prop->dparam[6]);
             if (ob) {
                 Sprintf(name,
                         "%s.%s%s",
@@ -1704,7 +1708,7 @@ const char* secname(Section* sec) /* name of section (for use in error messages)
                 Sprintf(name, "%s%s", s->name, hoc_araystr(s, indx, hoc_top_level_data));
             }
 #if USE_PYTHON
-        } else if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+        } else if (get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
             assert(nrnpy_pysec_name_p_);
             return (*nrnpy_pysec_name_p_)(sec);
 #endif
@@ -1718,10 +1722,12 @@ const char* secname(Section* sec) /* name of section (for use in error messages)
 }
 
 const char* nrn_sec2pysecname(Section* sec) {
+    using std::get;
 #if USE_PYTHON
     static char buf[256];
     const char* name = secname(sec);
-    if (sec && sec->prop->dparam[PROP_PY_INDEX]._pvoid && strncmp(name, "__nrnsec_0x", 11) != 0) {
+    if (sec && get<void*>(sec->prop->dparam[PROP_PY_INDEX]) &&
+        strncmp(name, "__nrnsec_0x", 11) != 0) {
         Sprintf(buf, "_pysec.%s", name);
     } else {
         strcpy(buf, name);
@@ -1742,15 +1748,11 @@ void section_owner(void) {
 }
 
 char* hoc_section_pathname(Section* sec) {
-    Symbol* s;
-    int indx;
+    using std::get;
     static char name[200];
-    Object* ob;
-
-    if (sec && sec->prop && sec->prop->dparam[0].sym) {
-        s = sec->prop->dparam[0].sym;
-        indx = sec->prop->dparam[5].i;
-        ob = sec->prop->dparam[6].obj;
+    if (auto* s = get<Symbol*>(sec->prop->dparam[0]); sec && sec->prop && s) {
+        auto indx = get<int>(sec->prop->dparam[5]);
+        auto* ob = get<Object*>(sec->prop->dparam[6]);
         if (ob) {
             char* p = hoc_object_pathname(ob);
             if (p) {
@@ -1764,7 +1766,7 @@ char* hoc_section_pathname(Section* sec) {
             Sprintf(name, "%s%s", s->name, hoc_araystr(s, indx, hoc_objectdata));
         }
 #if USE_PYTHON
-    } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+    } else if (sec && sec->prop && get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
         strcpy(name, nrn_sec2pysecname(sec));
 #endif
     } else {
@@ -1802,7 +1804,8 @@ double nrn_arc_position(Section* sec, int i)
 	}else{
 		x = (i+.5)/((double)n);
 	}
-	if (sec->prop->dparam[3].val) {
+    using std::get;
+	if (get<double>(sec->prop->dparam[3])) {
 		x = 1. - x;
 	}
 	return x;
@@ -1841,13 +1844,13 @@ Node* node_exact(Section* sec, double x) {
         x is 0 or 1 as well as in between
     */
     Node* node;
-
+    using std::get;
     assert(sec);
     {
         if (x <= 0. || x >= 1.) {
             x = (x < 0.) ? 0. : x;
             x = (x > 1.) ? 1. : x;
-            if (sec->prop->dparam[3].val) {
+            if (get<double>(sec->prop->dparam[3])) {
                 x = 1. - x;
             }
             if (x == 0.) {
@@ -2034,8 +2037,9 @@ void forall_section(void) {
     if (hoc_thisobject) {
         qsec = hoc_thisobject->secelm_;
         if (qsec) {
+            using std::get;
             for (first = qsec; first->prev->itemtype &&
-                               hocSEC(first->prev)->prop->dparam[6].obj == hoc_thisobject;
+                               get<Object*>(hocSEC(first->prev)->prop->dparam[6]) == hoc_thisobject;
                  first = first->prev) {
                 ;
             }
@@ -2272,8 +2276,9 @@ void push_section(void) {
     } else {
         sec = (Section*) (size_t) (*getarg(1));
     }
-    if (!sec || !sec->prop || !sec->prop->dparam || !sec->prop->dparam[8].itm ||
-        sec->prop->dparam[8].itm->itemtype != SECTION) {
+    using std::get;
+    if (!sec || !sec->prop || !sec->prop->dparam || !get<hoc_Item*>(sec->prop->dparam[8]) ||
+        get<hoc_Item*>(sec->prop->dparam[8])->itemtype != SECTION) {
         hoc_execerror("Not a Section pointer", (char*) 0);
     }
     hoc_level_pushsec(sec);

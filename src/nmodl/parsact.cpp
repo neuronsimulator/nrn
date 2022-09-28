@@ -964,7 +964,8 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
         watch_alloc = newlist();
         lappendstr(watch_alloc,
                    "\nstatic void _watch_alloc(Datum* _ppvar) {\n"
-                   "  auto* _pnt = _ppvar[1].get<Point_process*>();\n");
+                   "  using std::get;"
+                   "  auto* _pnt = get<Point_process*>(_ppvar[1]);\n");
     }
     Sprintf(buf,
             "  _nrn_watch_allocate(_watch_array, _watch%d_cond, %d, _pnt, %s);\n",
