@@ -17,7 +17,7 @@ class TableCell(Cell):
         self.record_vectors["ainf"] = avec
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     table_cell = TableCell()
     table_cell.record()
     table_cell.simulate(1, 0.1)

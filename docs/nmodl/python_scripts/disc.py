@@ -19,7 +19,7 @@ class DiscCell(Cell):
         self.record_vectors["a"] = avec
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     disc_cell = DiscCell()
     disc_cell.record()
     disc_cell.simulate(1, 0.1)
