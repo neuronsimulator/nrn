@@ -1,9 +1,9 @@
 #pragma once
+#include "hocdec.h"
 #include "membfunc.h"  // nrn_bamech_t
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/soa_container.hpp"
 #include "neuron/model_data.hpp"
-union Datum;
 struct Extnode;
 struct hoc_Item;
 struct HocParmLimits;

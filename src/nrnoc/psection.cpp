@@ -18,18 +18,21 @@ void psection(void) {
     p = sec->prop;
     Printf("%s {", secname(sec));
     Printf(" nseg=%d  L=%g  Ra=%g", sec->nnode - 1, section_length(sec), nrn_ra(sec));
-    if (p->dparam[4].val != 1) {
-        Printf(" rallbranch=%g", p->dparam[4].val);
+    if (std::get<double>(p->dparam[4]) != 1) {
+        Printf(" rallbranch=%g", std::get<double>(p->dparam[4]));
     }
     Printf("\n");
     if (sec->parentsec) {
         Printf("	%s ", secname(sec->parentsec));
-        Printf("connect %s (%g), %g\n", secname(sec), p->dparam[3].val, p->dparam[1].val);
+        Printf("connect %s (%g), %g\n",
+               secname(sec),
+               std::get<double>(p->dparam[3]),
+               std::get<double>(p->dparam[1]));
     } else {
         v_setup_vectors();
         /*SUPPRESS 440*/
         Printf("	/*location %g attached to cell %d*/\n",
-               p->dparam[3].val,
+               std::get<double>(p->dparam[3]),
                sec->parentnode->v_node_index);
     }
     if (sec->nnode) {

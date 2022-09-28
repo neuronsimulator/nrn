@@ -23,7 +23,6 @@
 
 struct Arrayinfo;
 struct cTemplate;
-union Datum;
 struct DoubScal;
 struct DoubVec;
 struct HocSymExtension;

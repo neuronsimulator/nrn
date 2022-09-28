@@ -368,7 +368,7 @@ ion_style("name_ion", [c_style, e_style, einit, eadvance, cinit])
  and models.
 */
 
-#define iontype ppd[i][0].i /* how _AMBIGUOUS is to be handled */
+#define iontype std::get<int>(ppd[i][0]) /* how _AMBIGUOUS is to be handled */
 /*the bitmap is
 03	concentration unused, nrnocCONST, DEP, STATE
 04	initialize concentrations
@@ -428,7 +428,7 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
     }
 
     chk_conc_[2 * p_ok->_type + i] |= ion_bit_[pion->_type];
-    if (pion->dparam[0].i & flag) {
+    if (std::get<int>(pion->dparam[0]) & flag) {
         /* now comes the hard part. Is the possibility in fact actual.*/
         for (p = pion->next; p; p = p->next) {
             if (p == p_ok) {
@@ -447,7 +447,8 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
             }
         }
     }
-    pion->dparam[0].i |= flag;
+    auto& ii = std::get<int>(pion->dparam[0]);
+    ii |= flag;
 }
 
 void ion_style(void) {
@@ -465,7 +466,7 @@ void ion_style(void) {
     p = nrn_mechanism(s->subtype, sec->pnode[0]);
     oldstyle = -1;
     if (p) {
-        oldstyle = p->dparam[0].i;
+        oldstyle = std::get<int>(p->dparam[0]);
     }
 
     if (ifarg(2)) {
@@ -491,8 +492,9 @@ void ion_style(void) {
             for (i = 0; i < sec->nnode; ++i) {
                 p = nrn_mechanism(s->subtype, sec->pnode[i]);
                 if (p) {
-                    p->dparam[0].i &= (0200 + 0400);
-                    p->dparam[0].i += istyle;
+                    auto&& ii = std::get<int>(p->dparam[0]);
+                    ii &= (0200 + 0400);
+                    ii += istyle;
                 }
             }
         }
@@ -513,7 +515,7 @@ int nrn_vartype(Symbol* sym) {
         }
         p = nrn_mechanism(sym->u.rng.type, sec->pnode[0]);
         if (p) {
-            int it = p->dparam[0].i;
+            auto it = std::get<int>(p->dparam[0]);
             if (sym->u.rng.index == 0) { /* erev */
                 i = (it & 030) >> 3;     /* unused, nrnocCONST, DEP, or STATE */
             } else {                     /* concentration */
@@ -527,7 +529,7 @@ int nrn_vartype(Symbol* sym) {
 /* the ion mechanism it flag  defines how _AMBIGUOUS is to be interpreted */
 void nrn_promote(Prop* p, int conc, int rev) {
     int oldconc, oldrev;
-    int* it = &p->dparam[0].i;
+    int* it = &std::get<int>(p->dparam[0]);
     oldconc = (*it & 03);
     oldrev = (*it & 030) >> 3;
     /* precedence */
@@ -623,7 +625,7 @@ static void ion_alloc(Prop* p) {
     p->param = pd[0];
 
     p->dparam = nrn_prop_datum_alloc(p->_type, 1, p);
-    p->dparam->i = 0;
+    p->dparam[0] = 0;
 }
 
 void second_order_cur(NrnThread* nt) {

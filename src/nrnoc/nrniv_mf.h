@@ -1,10 +1,9 @@
 #ifndef nrniv_mf_h
 #define nrniv_mf_h
-
+#include "hoc_membf.h"
+#include "hocdec.h"
 #include "membfunc.h"
-#include <hoc_membf.h>
 
-union Datum;
 struct NrnThread;
 struct Point_process;
 struct SparseObj;

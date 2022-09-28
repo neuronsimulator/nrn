@@ -29,15 +29,12 @@ Symbol* nrn_trueparent_sym;
 
 static hoc_Item** sec2pitm(Section* sec) {
     extern Objectdata* hoc_top_level_data;
-    Symbol* sym;
-    Object* ob;
-    int i;
-    if (!sec || !sec->prop || !sec->prop->dparam[0].sym) {
+    if (!sec || !sec->prop || !std::get<Symbol*>(sec->prop->dparam[0])) {
         hoc_execerror("section is unnamed", (char*) 0);
     }
-    sym = sec->prop->dparam[0].sym;
-    ob = sec->prop->dparam[6].obj;
-    i = sec->prop->dparam[5].i;
+    auto* sym = std::get<Symbol*>(sec->prop->dparam[0]);
+    auto* ob = std::get<Object*>(sec->prop->dparam[6]);
+    auto i = std::get<int>(sec->prop->dparam[5]);
     if (ob) {
         return ob->u.dataspace[sym->u.oboff].psecitm + i;
     } else {
@@ -71,13 +68,13 @@ static double s_unname(void* v) {
     sec = (Section*) v;
 #if USE_PYTHON
     /* Python Sections cannot be unnamed, return 0.0 */
-    if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+    if (sec->prop && std::get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
         return 0.0;
     }
 #endif
     pitm = sec2pitm(sec);
     *pitm = (hoc_Item*) 0;
-    sec->prop->dparam[0].sym = (Symbol*) 0;
+    sec->prop->dparam[0] = static_cast<Symbol*>(nullptr);
     return 1.;
 }
 
@@ -101,12 +98,12 @@ static double s_rename(void* v) {
     }
 #if USE_PYTHON
     /* Python Sections cannot be renamed, return 0.0 */
-    if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+    if (std::get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
         return 0.;
     }
 #endif
-    qsec = sec->prop->dparam[8].itm;
-    if (sec->prop->dparam[0].sym) {
+    qsec = std::get<hoc_Item*>(sec->prop->dparam[8]);
+    if (std::get<Symbol*>(sec->prop->dparam[0])) {
         Printf("%s must first be unnamed\n", secname(sec));
         return 0.;
     }
@@ -159,9 +156,9 @@ static double s_rename(void* v) {
 
     if (size == 0) {
         pitm[index] = qsec;
-        sec->prop->dparam[0].sym = sym;
-        sec->prop->dparam[5].i = index;
-        sec->prop->dparam[6].obj = nullptr;
+        sec->prop->dparam[0] = sym;
+        sec->prop->dparam[5] = index;
+        sec->prop->dparam[6] = static_cast<Object*>(nullptr);
         OPSECITM(sym)[0] = qsec;
     } else {
         for (i = 0; i < size; ++i) {
@@ -173,10 +170,10 @@ static double s_rename(void* v) {
                 hoc_objectdata = obdsav;
                 return 0;
             }
-            qsec = sec->prop->dparam[8].itm;
-            sec->prop->dparam[0].sym = sym;
-            sec->prop->dparam[5].i = i;
-            sec->prop->dparam[6].obj = nullptr;
+            qsec = std::get<hoc_Item*>(sec->prop->dparam[8]);
+            sec->prop->dparam[0] = sym;
+            sec->prop->dparam[5] = i;
+            sec->prop->dparam[6] = static_cast<Object*>(nullptr);
             OPSECITM(sym)[i] = qsec;
         }
     }
