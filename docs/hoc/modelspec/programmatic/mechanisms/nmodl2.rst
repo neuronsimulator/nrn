@@ -347,7 +347,9 @@ BBCOREPOINTER
 
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    See: :ref:`Memory Management for POINTER Variables`
+
+    ``TODO``: Add description (?) and existing example mod file (provided by link)
 
 
 EXTERNAL
