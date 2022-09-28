@@ -746,7 +746,8 @@ void single_prop_free(Prop* p) {
     }
     if (p->dparam) {
         if (p->_type == CABLESECTION) {
-            notify_freed_val_array(&std::get<double>(p->dparam[2]), 6);
+            using std::get;
+            notify_freed_val_array(&get<double>(p->dparam[2]), 6);
         }
         nrn_prop_datum_free(p->_type, p->dparam);
     }
@@ -778,7 +779,8 @@ void nrn_area_ri(Section* sec) {
     }
 #if DIAMLIST
     if (sec->npt3d) {
-        std::get<double>(sec->prop->dparam[2]) = sec->pt3d[sec->npt3d - 1].arc;
+        using std::get;
+        get<double>(sec->prop->dparam[2]) = sec->pt3d[sec->npt3d - 1].arc;
     }
 #endif
     ra = nrn_ra(sec);
@@ -896,7 +898,8 @@ void connection_coef(void) /* setup a and b */
         nd = sec->pnode[0];
         area = NODEAREA(sec->parentnode);
         /* dparam[4] is rall_branch */
-        ClassicalNODEA(nd) = -1.e2 * std::get<double>(sec->prop->dparam[4]) * NODERINV(nd) / area;
+        using std::get;
+        ClassicalNODEA(nd) = -1.e2 * get<double>(sec->prop->dparam[4]) * NODERINV(nd) / area;
         for (j = 1; j < sec->nnode; j++) {
             nd = sec->pnode[j];
             area = NODEAREA(sec->pnode[j - 1]);
@@ -1103,7 +1106,8 @@ static void nrn_pt3dmodified(Section* sec, int i0) {
         t3 = sec->pt3d[i].z - p->z;
         sec->pt3d[i].arc = p->arc + sqrt(t1 * t1 + t2 * t2 + t3 * t3);
     }
-    std::get<double>(sec->prop->dparam[2]) = sec->pt3d[n - 1].arc;
+    using std::get;
+    get<double>(sec->prop->dparam[2]) = sec->pt3d[n - 1].arc;
 }
 
 void nrn_pt3dclear(Section* sec, int req) {
@@ -1488,7 +1492,8 @@ void nrn_define_shape(void) {
         stor_pt3d(sec, x1, y1, z, nrn_diameter(sec->pnode[sec->nnode - 2]));
         /* don't let above change length due to round-off errors*/
         sec->pt3d[sec->npt3d - 1].arc = len;
-        std::get<double>(sec->prop->dparam[2]) = len;
+        using std::get;
+        get<double>(sec->prop->dparam[2]) = len;
     }
     changed_ = nrn_shape_changed_;
 }

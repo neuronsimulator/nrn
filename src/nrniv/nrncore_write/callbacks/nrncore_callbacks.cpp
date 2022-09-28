@@ -1058,15 +1058,16 @@ static void core2nrn_SelfEvent_helper(int tid,
     }
     Memb_list* ml = nrn_threads[tid]._ml_list[tar_type];
     Point_process* pnt;
+    using std::get;
     if (ml) {
-        pnt = std::get<Point_process*>(ml->pdata[tar_index][1]);
+        pnt = get<Point_process*>(ml->pdata[tar_index][1]);
     } else {
         // In NEURON world, ARTIFICIAL_CELLs do not live in NrnThread.
         // And the old deferred_type2artdata_ only gave us data, not pdata.
         // So this is where I decided to replace the more
         // expensive deferred_type2artml_.
         ml = CellGroup::deferred_type2artml_[tid][tar_type];
-        pnt = std::get<Point_process*>(ml->pdata[tar_index][1]);
+        pnt = get<Point_process*>(ml->pdata[tar_index][1]);
     }
 
     // Needs to be tested when permuted on CoreNEURON side.
@@ -1074,7 +1075,7 @@ static void core2nrn_SelfEvent_helper(int tid,
     //  assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, tar_type));
 
     int movable_index = type2movable[tar_type];
-    void** movable_arg = &(std::get<void*>(pnt->prop->dparam[movable_index]));
+    void** movable_arg = &get<void*>(pnt->prop->dparam[movable_index]);
     TQItem* old_movable_arg = (TQItem*) (*movable_arg);
 
     nrn_net_send(movable_arg, weight, pnt, td, flag);
@@ -1096,7 +1097,8 @@ void core2nrn_SelfEvent_event(int tid,
 #if 1
     // verify nc->target_ consistent with tar_type, tar_index.
     Memb_list* ml = nrn_threads[tid]._ml_list[tar_type];
-    auto* pnt = std::get<Point_process*>(ml->pdata[tar_index][1]);
+    using std::get;
+    auto* pnt = get<Point_process*>(ml->pdata[tar_index][1]);
     assert(nc->target_ == pnt);
 #endif
 
@@ -1191,11 +1193,12 @@ void core2nrn_watch_activate(int tid, int type, int watch_begin, Core2NrnWatchIn
         for (auto watch_item: active_watch_items) {
             int watch_index = watch_item.first;
             bool above_thresh = watch_item.second;
-            auto* wc = static_cast<WatchCondition*>(std::get<void*>(pd[watch_index]));
+            using std::get;
+            auto* wc = static_cast<WatchCondition*>(get<void*>(pd[watch_index]));
             if (!wc) {  // if any do not exist in this instance, create them all
                         // with proper callback and flag.
                 (*(nrn_watch_allocate_[type]))(pd);
-                wc = static_cast<WatchCondition*>(std::get<void*>(pd[watch_index]));
+                wc = static_cast<WatchCondition*>(get<void*>(pd[watch_index]));
             }
             _nrn_watch_activate(
                 pd + watch_begin, wc->c_, watch_index - watch_begin, wc->pnt_, r++, wc->nrflag_);
