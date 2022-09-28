@@ -81,18 +81,23 @@ double* nrn_prop_data_alloc(int type, int count, Prop* p) {
 }
 
 Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
-    int i;
-    Datum* ppd;
     if (!datumpools_[type]) {
         datumpools_[type] = new DatumArrayPool(APSIZE, count);
     }
     assert(datumpools_[type]->d2() == count);
     p->_alloc_seq = datumpools_[type]->ntget();
-    ppd = datumpools_[type]->alloc();
+    auto* ppd = datumpools_[type]->alloc(); // allocates storage for the datums
     // if (type > 1) printf("nrn_prop_datum_alloc %d %s %d %p\n", type, memb_func[type].sym->name,
     // count, ppd);
-    for (i = 0; i < count; ++i) {
-        ppd[i] = static_cast<void*>(nullptr);
+    for (int i = 0; i < count; ++i) {
+        auto* const semantics = memb_func[type].dparam_semantics;
+        // Call the Datum constructor, either setting it to be a
+        // generic_data_handle or a null void* value
+        if (semantics && (semantics[i] == -5 /* POINTER */ || semantics[i] == -7 /* BBCOREPOINTER */)) {
+            new (ppd + i) Datum(std::unique_ptr<neuron::container::generic_data_handle>{});
+        } else {
+            new (ppd + i) Datum(static_cast<void*>(nullptr));
+        }
     }
     return ppd;
 }
@@ -105,9 +110,17 @@ void nrn_prop_data_free(int type, double* pd) {
 }
 
 void nrn_prop_datum_free(int type, Datum* ppd) {
-    // if (type > 1) printf("nrn_prop_datum_free %d %s %p\n", type, memb_func[type].sym->name, ppd);
+    // if (type > 1) printf("nrn_prop_datum_free %d %s %p\n", type,
+    // memb_func[type].sym->name, ppd);
     if (ppd) {
-        datumpools_[type]->hpfree(ppd);
+        auto* const datumpool = datumpools_[type];
+        // Destruct the Datums
+        auto const count = datumpool->d2();
+        for (auto i = 0; i < count; ++i) {
+            ppd[i].~Datum();
+        }
+        // Deallocate them
+        datumpool->hpfree(ppd);
     }
 }
 
