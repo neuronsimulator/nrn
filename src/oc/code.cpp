@@ -246,12 +246,8 @@ T const& hoc_look_inside_stack(int i) {
 }
 template double const& hoc_look_inside_stack(int);
 template Symbol* const& hoc_look_inside_stack(int);
-template int const& hoc_look_inside_stack(int);
 template Object** const& hoc_look_inside_stack(int);
 template Object* const& hoc_look_inside_stack(int);
-template char** const& hoc_look_inside_stack(int);
-template neuron::container::generic_data_handle const& hoc_look_inside_stack(int);
-template std::nullptr_t const& hoc_look_inside_stack(int);
 namespace {
 bool stack_entry_is_tmpobject(StackDatum const& entry) {
     return std::holds_alternative<Object*>(entry);
@@ -655,6 +651,10 @@ int hoc_xopen_run(Symbol* sp, const char* str) { /*recursively parse and execute
     Frame *sframe = rframe, *sfp = fp;
     Inst *sprogbase = progbase, *sprogp = progp, *spc = pc,
          *sprog_parse_recover = prog_parse_recover;
+    Symlist* sp_symlist = p_symlist;
+    std::size_t sstack{rstack}, sstackp{stack.size()};
+    rframe = fp;
+    rstack = stack.size();
     progbase = progp;
     p_symlist = (Symlist*) 0;
 

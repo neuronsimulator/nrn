@@ -723,7 +723,8 @@ static double nc_event(void* v) {
         if (!nrn_is_artificial_[type]) {
             hoc_execerror("Can only send fake self-events to ARTIFICIAL_CELLs", 0);
         }
-        void** pq = (void**) (&pnt->prop->dparam[nrn_artcell_qindex_[type]]._pvoid);
+        using std::get;
+        void** pq = &get<void*>(pnt->prop->dparam[nrn_artcell_qindex_[type]]);
         net_send(pq, d->weight_, pnt, td, flag);
     } else {
         net_cvode_instance->event(td, d, PP2NT(d->target_));
@@ -1578,6 +1579,7 @@ bool NetCvode::init_global() {
     matrix_change_cnt_ = -1;
     playrec_change_cnt_ = 0;
     NrnThread* _nt;
+    using std::get;
     if (single_) {
         if (!gcv_ || gcv_->nctd_ != nrn_nthread) {
             delete_list();
@@ -1639,12 +1641,8 @@ bool NetCvode::init_global() {
                     Memb_list* ml = tml->ml;
                     int j;
                     for (j = 0; j < ml->nodecount; ++j) {
-                        Point_process* pp;
-                        if (mf->hoc_mech) {
-                            pp = (Point_process*) ml->prop[j]->dparam[1]._pvoid;
-                        } else {
-                            pp = (Point_process*) ml->pdata[j][1]._pvoid;
-                        }
+                        auto& datum = mf->hoc_mech ? ml->prop[j]->dparam[1] : ml->pdata[j][1];
+                        auto* pp = get<Point_process*>(datum);
                         pp->nvi_ = gcv_;
                     }
                 }
@@ -1819,12 +1817,8 @@ bool NetCvode::init_global() {
                     Memb_list* ml = tml->ml;
                     int j;
                     for (j = 0; j < ml->nodecount; ++j) {
-                        Point_process* pp;
-                        if (mf->hoc_mech) {
-                            pp = (Point_process*) ml->prop[j]->dparam[1]._pvoid;
-                        } else {
-                            pp = (Point_process*) ml->pdata[j][1]._pvoid;
-                        }
+                        auto& datum = mf->hoc_mech ? ml->prop[j]->dparam[1] : ml->pdata[j][1];
+                        auto* pp = get<Point_process*>(datum);
                         if (nrn_is_artificial_[i] == 0) {
                             int inode = ml->nodelist[j]->v_node_index;
                             pp->nvi_ = d.lcv_ + cellnum[inode];
@@ -2455,14 +2449,16 @@ void _nrn_watch_activate(Datum* d,
                          Point_process* pnt,
                          int r,
                          double flag) {
-    if (!d[i]._pvoid || !d[0]._pvoid) {
+    using std::get;
+    if (!get<void*>(d[i]) || !get<void*>(d[0])) {
         // When c is NULL, i.e. called from CoreNEURON,
         // we never get here because we made sure
         // _nrn_watch_allocated for this has been called earlier from
         // within the translated mod file.
         _nrn_watch_allocate(d, c, i, pnt, flag);  // d[0]._pvoid and d[i]._pvoid exist
     }
-    WatchList* wl = (WatchList*) d->_pvoid;
+    // TODO add WatchList* to variant?
+    auto* wl = static_cast<WatchList*>(get<void*>(*d));
     if (r == 0) {
         for (auto wc1: *wl) {
             wc1->Remove();
@@ -2473,7 +2469,7 @@ void _nrn_watch_activate(Datum* d,
         }
         wl->clear();
     }
-    WatchCondition* wc = (WatchCondition*) d[i]._pvoid;
+    auto* wc = static_cast<WatchCondition*>(get<void*>(d[i]));
     wl->push_back(wc);
     wc->activate(flag);  // nr_flag_ (NetReceive flag) not flag_ for above threshold.
 }
@@ -2541,14 +2537,15 @@ void _nrn_watch_allocate(Datum* d,
                          int i,
                          Point_process* pnt,
                          double flag) {
-    if (!d->_pvoid) {
-        d->_pvoid = (void*) new WatchList();
+    using std::get;
+    if (!get<void*>(*d)) {
+        *d = static_cast<void*>(new WatchList);
     }
-    if (!d[i]._pvoid) {
+    if (!get<void*>(d[i])) {
         WatchCondition* wc = new WatchCondition(pnt, c);
         wc->c_ = c;
         wc->nrflag_ = flag;
-        d[i]._pvoid = (void*) wc;
+        d[i] = static_cast<void*>(wc);
         // Simplify transfer to CoreNEURON
         // To avoid searching for the beginning of _watch_array after
         // transfer to CoreNEURON, compute the offset with respect to
@@ -2578,13 +2575,12 @@ void nrn_watch_clear() {
 void _nrn_free_watch(Datum* d, int offset, int n) {
     int i;
     int nn = offset + n;
-    if (d[offset]._pvoid) {
-        WatchList* wl = (WatchList*) d[offset]._pvoid;
-        delete wl;
+    using std::get;
+    if (auto* d_offset = get<void*>(d[offset]); d_offset) {
+        delete static_cast<WatchList*>(d_offset);
     }
     for (i = offset + 1; i < nn; ++i) {
-        if (d[i]._pvoid) {
-            WatchCondition* wc = (WatchCondition*) d[i]._pvoid;
+        if (auto* wc = static_cast<WatchCondition*>(get<void*>(d[i])); wc) {
             wc->Remove();
             delete wc;
         }
@@ -3157,7 +3153,8 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     assert(PP2NT(target_) == nt);
     Cvode* cv = (Cvode*) target_->nvi_;
     if (nrn_use_selfqueue_ && nrn_is_artificial_[type]) {
-        TQItem** pq = (TQItem**) (&target_->prop->dparam[nrn_artcell_qindex_[type]]._pvoid);
+        using std::get;
+        TQItem** pq = (TQItem**) (&get<void*>(target_->prop->dparam[nrn_artcell_qindex_[type]]));
         TQItem* q;
         while ((q = *(pq)) != nil && q->t_ < tt) {
             double t1 = q->t_;
@@ -3398,7 +3395,8 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
     se->flag_ = flag;
     se->movable_ = nil;
     if (moff >= 0) {
-        se->movable_ = &(se->target_->prop->dparam[moff]._pvoid);
+        using std::get;
+        se->movable_ = &get<void*>(se->target_->prop->dparam[moff]);
     }
     return se;
 }
@@ -3435,8 +3433,9 @@ void SelfEvent::savestate_write(FILE* f) {
     fprintf(f, "%d\n", SelfEventType);
     int moff = -1;
     if (movable_) {
+        using std::get;
         moff = (Datum*) (movable_) -target_->prop->dparam;
-        assert(movable_ == &(target_->prop->dparam[moff]._pvoid));
+        assert(movable_ == &get<void*>(target_->prop->dparam[moff]));
     }
 
     int ncindex = -1;
@@ -4077,6 +4076,7 @@ void NetCvode::re_init(double t) {
 }
 
 void NetCvode::fornetcon_prepare() {
+    using std::get;
     NrnThread* nt;
     NrnThreadMembList* tml;
     if (fornetcon_change_cnt_ == structure_change_cnt) {
@@ -4098,7 +4098,7 @@ void NetCvode::fornetcon_prepare() {
         if (nrn_is_artificial_[type]) {
             Memb_list* m = memb_list + type;
             for (j = 0; j < m->nodecount; ++j) {
-                void** v = &(m->pdata[j][index]._pvoid);
+                void** v = &get<void*>(m->pdata[j][index]);
                 _nrn_free_fornetcon(v);
                 ForNetConsInfo* fnc = new ForNetConsInfo;
                 *v = fnc;
@@ -4109,7 +4109,7 @@ void NetCvode::fornetcon_prepare() {
             FOR_THREADS(nt) for (tml = nt->tml; tml; tml = tml->next) if (tml->index == type) {
                 Memb_list* m = tml->ml;
                 for (j = 0; j < m->nodecount; ++j) {
-                    void** v = &(m->pdata[j][index]._pvoid);
+                    void** v = &get<void*>(m->pdata[j][index]);
                     _nrn_free_fornetcon(v);
                     ForNetConsInfo* fnc = new ForNetConsInfo;
                     *v = fnc;
@@ -4129,8 +4129,8 @@ void NetCvode::fornetcon_prepare() {
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
                 if (pnt && t2i[pnt->prop->_type] > -1) {
-                    ForNetConsInfo* fnc =
-                        (ForNetConsInfo*) pnt->prop->dparam[t2i[pnt->prop->_type]]._pvoid;
+                    auto* fnc = static_cast<ForNetConsInfo*>(
+                        get<void*>(pnt->prop->dparam[t2i[pnt->prop->_type]]));
                     assert(fnc);
                     fnc->size += 1;
                 }
@@ -4144,7 +4144,7 @@ void NetCvode::fornetcon_prepare() {
         if (nrn_is_artificial_[type]) {
             Memb_list* m = memb_list + type;
             for (j = 0; j < m->nodecount; ++j) {
-                ForNetConsInfo* fnc = (ForNetConsInfo*) m->pdata[j][index]._pvoid;
+                auto* fnc = static_cast<ForNetConsInfo*>(get<void*>(m->pdata[j][index]));
                 if (fnc->size > 0) {
                     fnc->argslist = new double*[fnc->size];
                     fnc->size = 0;
@@ -4156,7 +4156,7 @@ void NetCvode::fornetcon_prepare() {
                 if (tml->index == nrn_fornetcon_type_[i]) {
                     Memb_list* m = tml->ml;
                     for (j = 0; j < m->nodecount; ++j) {
-                        ForNetConsInfo* fnc = (ForNetConsInfo*) m->pdata[j][index]._pvoid;
+                        auto* fnc = static_cast<ForNetConsInfo*>(get<void*>(m->pdata[j][index]));
                         if (fnc->size > 0) {
                             fnc->argslist = new double*[fnc->size];
                             fnc->size = 0;
@@ -4173,8 +4173,8 @@ void NetCvode::fornetcon_prepare() {
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
                 if (pnt && t2i[pnt->prop->_type] > -1) {
-                    ForNetConsInfo* fnc =
-                        (ForNetConsInfo*) pnt->prop->dparam[t2i[pnt->prop->_type]]._pvoid;
+                    auto* fnc = static_cast<ForNetConsInfo*>(
+                        get<void*>(pnt->prop->dparam[t2i[pnt->prop->_type]]));
                     fnc->argslist[fnc->size] = d1->weight_;
                     fnc->size += 1;
                 }
@@ -4960,8 +4960,8 @@ void NetCvode::ps_thread_link(PreSyn* ps) {
         if (ps->osrc_) {
             ps->nt_ = PP2NT(ob2pntproc(ps->osrc_));
         } else if (ps->ssrc_) {
-            // prop is sometimes null here
-            ps->nt_ = (NrnThread*) ps->ssrc_->prop->dparam[9]._pvoid;
+            using std::get;
+            ps->nt_ = static_cast<NrnThread*>(get<void*>(ps->ssrc_->prop->dparam[9]));
         }
     }
     if (!ps->nt_) {  // premature, reorder_secorder() not called yet
@@ -5029,7 +5029,8 @@ PreSyn::PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section
         if (osrc) {
             nt_ = PP2NT(ob2pntproc(osrc));
         } else if (ssrc) {
-            nt_ = (NrnThread*) ssrc->prop->dparam[9]._pvoid;
+            using std::get;
+            nt_ = static_cast<NrnThread*>(get<void*>(ssrc->prop->dparam[9]));
         }
     }
     if (osrc_ && !thvar_) {

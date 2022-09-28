@@ -752,7 +752,8 @@ extern Memb_func* memb_func;\n\
         }
         if (for_netcons_) {
             Sprintf(buf,
-                    "  if (_prop) { _nrn_free_fornetcon(&(_prop->dparam[_fnc_index]._pvoid));}\n");
+                    "  if (_prop) { "
+                    "_nrn_free_fornetcon(&get<void*>(_prop->dparam[_fnc_index]));}\n");
             Lappendstr(defs_list, buf);
         }
         Lappendstr(defs_list, "  destroy_point_process(_vptr);\n}\n");
@@ -960,11 +961,11 @@ static void nrn_alloc(Prop* _prop) {\n\
             }
         }
         if (need_style) {
-            Sprintf(
-                buf,
-                "\t_ppvar[%d]._pvoid = (void*)(&(prop_ion->dparam[0]._i)); /* iontype for %s */\n",
-                ioncount++,
-                sion->name);
+            Sprintf(buf,
+                    "\t_ppvar[%d] = static_cast<void*>(&get<int>(prop_ion->dparam[0])); /* "
+                    "iontype for %s */\n",
+                    ioncount++,
+                    sion->name);
             Lappendstr(defs_list, buf);
         }
         q = q->next;
@@ -1026,7 +1027,7 @@ static void _constructor(Prop* _prop) {\n\
         if (!net_receive_) {
             diag("can't use net_send if there is no NET_RECEIVE block", (char*) 0);
         }
-        Sprintf(buf, "\n#define _tqitem &(_ppvar[%d]._pvoid)\n", tqitem_index);
+        Sprintf(buf, "\n#define _tqitem &get<void*>(_ppvar[%d])\n", tqitem_index);
         Lappendstr(defs_list, buf);
         if (net_send_delivered_) {
             insertstr(net_send_delivered_, "  if (_lflag == 1. ) {*(_tqitem) = 0;}\n");
@@ -2192,7 +2193,10 @@ int iondef(int* p_pointercount) {
             }
         }
         if (need_style) {
-            Sprintf(buf, "#define _style_%s\t*((int*)_ppvar[%d]._pvoid)\n", sion->name, ioncount);
+            Sprintf(buf,
+                    "#define _style_%s\t*static_cast<int*>(get<void*>(_ppvar[%d]))\n",
+                    sion->name,
+                    ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
             Sprintf(buf, "#%s", ionname);
@@ -2224,7 +2228,8 @@ int iondef(int* p_pointercount) {
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
         Sprintf(buf,
-                "#define _p_%s	nrn_get_any(_ppvar[%d])\n",
+                "#define _p_%s "
+                "_ppvar[%d].get<neuron::container::generic_data_handle>().raw_ptr<void>()\n",
                 sion->name,
                 ioncount + *p_pointercount);
         sion->used = ioncount + *p_pointercount;
@@ -2538,7 +2543,7 @@ static void _ode_matsol(NrnThread*, Memb_list*, int);\n\
 static int _ode_count(int _type){ return %d;}\n",
                 cvode_neq_);
         Lappendstr(procfunc, buf);
-        Sprintf(buf, "\n#define _cvode_ieq _ppvar[%d]._i\n", cvode_ieq_index);
+        Sprintf(buf, "\n#define _cvode_ieq _ppvar[%d]\n", cvode_ieq_index);
         Lappendstr(defs_list, buf);
 
         if (cvode_fun_->subtype == PROCED) {
@@ -2876,7 +2881,7 @@ void fornetcon(Item* keyword, Item* par1, Item* args, Item* par2, Item* stmt, It
     i = for_netcons_;
     Sprintf(buf,
             "{int _ifn%d, _nfn%d; double* _fnargs%d, **_fnargslist%d;\n\
-\t_nfn%d = _nrn_netcon_args(_ppvar[_fnc_index]._pvoid, &_fnargslist%d);\n\
+\t_nfn%d = _nrn_netcon_args(get<void*>(_ppvar[_fnc_index]), &_fnargslist%d);\n\
 \tfor (_ifn%d = 0; _ifn%d < _nfn%d; ++_ifn%d) {\n",
             i,
             i,
