@@ -147,7 +147,8 @@ void nrnpy_sec_referr() {
 static char* pysec_name(Section* sec) {
     static char buf[512];
     if (sec->prop) {
-        auto* ps = static_cast<NPySecObj*>(std::get<void*>(sec->prop->dparam[PROP_PY_INDEX]));
+        using std::get;
+        auto* ps = static_cast<NPySecObj*>(get<void*>(sec->prop->dparam[PROP_PY_INDEX]));
         buf[0] = '\0';
         char* cp = buf + strlen(buf);
         if (ps->name_) {
@@ -161,7 +162,8 @@ static char* pysec_name(Section* sec) {
 }
 
 static Object* pysec_cell(Section* sec) {
-    if (auto* pv = std::get<void*>(sec->prop->dparam[PROP_PY_INDEX]); sec->prop && pv) {
+    using std::get;
+    if (auto* pv = get<void*>(sec->prop->dparam[PROP_PY_INDEX]); sec->prop && pv) {
         PyObject* cell_weakref = static_cast<NPySecObj*>(pv)->cell_weakref_;
         if (cell_weakref) {
             PyObject* cell = PyWeakref_GetObject(cell_weakref);
@@ -192,7 +194,8 @@ static int NPySecObj_contains(PyObject* sec, PyObject* obj) {
 }
 
 static int pysec_cell_equals(Section* sec, Object* obj) {
-    if (auto* pv = std::get<void*>(sec->prop->dparam[PROP_PY_INDEX]); sec->prop && pv) {
+    using std::get;
+    if (auto* pv = get<void*>(sec->prop->dparam[PROP_PY_INDEX]); sec->prop && pv) {
         PyObject* cell_weakref = static_cast<NPySecObj*>(pv)->cell_weakref_;
         if (cell_weakref) {
             PyObject* cell = PyWeakref_GetObject(cell_weakref);
@@ -208,6 +211,7 @@ static int pysec_cell_equals(Section* sec, Object* obj) {
 }
 
 static void NPySecObj_dealloc(NPySecObj* self) {
+    using std::get;
     // printf("NPySecObj_dealloc %p %s\n", self, secname(self->sec_));
     if (self->sec_) {
         if (self->name_) {
@@ -218,8 +222,8 @@ static void NPySecObj_dealloc(NPySecObj* self) {
         if (self->sec_->prop) {
             self->sec_->prop->dparam[PROP_PY_INDEX] = static_cast<void*>(nullptr);
         }
-        if (self->sec_->prop && !std::get<Symbol*>(self->sec_->prop->dparam[0])) {
-            sec_free(std::get<hoc_Item*>(self->sec_->prop->dparam[8]));
+        if (self->sec_->prop && !get<Symbol*>(self->sec_->prop->dparam[0])) {
+            sec_free(get<hoc_Item*>(self->sec_->prop->dparam[8]));
         } else {
             section_unref(self->sec_);
         }
@@ -861,19 +865,21 @@ static PyObject* NPySecObj_psection(NPySecObj* self) {
 }
 
 static PyObject* is_pysec(NPySecObj* self) {
+    using std::get;
     CHECK_SEC_INVALID(self->sec_);
-    if (self->sec_->prop && std::get<void*>(self->sec_->prop->dparam[PROP_PY_INDEX])) {
+    if (self->sec_->prop && get<void*>(self->sec_->prop->dparam[PROP_PY_INDEX])) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
 }
 
 NPySecObj* newpysechelp(Section* sec) {
+    using std::get;
     if (!sec || !sec->prop) {
         return NULL;
     }
     NPySecObj* pysec = NULL;
-    if (auto* pv = std::get<void*>(sec->prop->dparam[PROP_PY_INDEX]); pv) {
+    if (auto* pv = get<void*>(sec->prop->dparam[PROP_PY_INDEX]); pv) {
         pysec = static_cast<NPySecObj*>(pv);
         Py_INCREF(pysec);
         assert(pysec->sec_ == sec);
@@ -1012,11 +1018,12 @@ static PyObject* pysec_wholetree(NPySecObj* const self) {
 }
 
 static PyObject* pysec2cell(NPySecObj* self) {
+    using std::get;
     PyObject* result;
     if (self->cell_weakref_) {
         result = PyWeakref_GET_OBJECT(self->cell_weakref_);
         Py_INCREF(result);
-    } else if (auto* o = std::get<Object*>(self->sec_->prop->dparam[6]); self->sec_->prop && o) {
+    } else if (auto* o = get<Object*>(self->sec_->prop->dparam[6]); self->sec_->prop && o) {
         result = nrnpy_ho2po(o);
     } else {
         result = Py_None;
@@ -1363,7 +1370,8 @@ static PyObject* seg_point_processes(NPySegObj* self) {
     PyObject* result = PyList_New(0);
     for (Prop* p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
-            auto* pp = std::get<Point_process*>(p->dparam[1]);
+            using std::get;
+            auto* pp = get<Point_process*>(p->dparam[1]);
             PyObject* item = nrnpy_ho2po(pp->ob);
             int err = PyList_Append(result, item);
             assert(err == 0);
@@ -1536,7 +1544,8 @@ static PyObject* mech_of_segment_iter(NPySegObj* self) {
 static Object* seg_from_sec_x(Section* sec, double x) {
     PyObject* pyseg = (PyObject*) PyObject_New(NPySegObj, psegment_type);
     NPySegObj* pseg = (NPySegObj*) pyseg;
-    auto* pysec = static_cast<NPySecObj*>(std::get<void*>(sec->prop->dparam[PROP_PY_INDEX]));
+    using std::get;
+    auto* pysec = static_cast<NPySecObj*>(get<void*>(sec->prop->dparam[PROP_PY_INDEX]));
     if (pysec) {
         pseg->pysec_ = pysec;
         Py_INCREF(pysec);
@@ -1635,7 +1644,8 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
             }
         }
     } else if (strcmp(n, "rallbranch") == 0) {
-        result = Py_BuildValue("d", std::get<double>(sec->prop->dparam[4]));
+        using std::get;
+        result = Py_BuildValue("d", get<double>(sec->prop->dparam[4]));
     } else if (strcmp(n, "__dict__") == 0) {
         result = PyDict_New();
         int err = PyDict_SetItemString(result, "L", Py_None);
@@ -2163,7 +2173,8 @@ neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject* pyname
     if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
         return nullptr;
     }
-    return std::get<std::unique_ptr<neuron::container::generic_data_handle>>(
+    using std::get;
+    return get<std::unique_ptr<neuron::container::generic_data_handle>>(
                m->prop_->dparam[np.prop_index(sym)])
         .get();
 }

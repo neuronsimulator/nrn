@@ -173,19 +173,20 @@ void solv_diffeq(Item* qsol,
         vectorize_substitute(qsol, buf);
     } else { /* kinetic */
         if (vectorize) {
-            Sprintf(buf,
-                    "%s%s_thread(&std::get<void*>(_thread[_spth%d]), %d, _slist%d, _dlist%d, _p, &%s, %s, %s\
+            Sprintf(
+                buf,
+                "%s%s_thread(&std::get<void*>(_thread[_spth%d]), %d, _slist%d, _dlist%d, _p, &%s, %s, %s\
 , _linmat%d, _ppvar, _thread, _nt);\n",
-                    ssprefix,
-                    method->name,
-                    listnum,
-                    numeqn,
-                    listnum,
-                    listnum,
-                    indepsym->name,
-                    dindepname,
-                    fun->name,
-                    listnum);
+                ssprefix,
+                method->name,
+                listnum,
+                numeqn,
+                listnum,
+                listnum,
+                indepsym->name,
+                dindepname,
+                fun->name,
+                listnum);
             vectorize_substitute(qsol, buf);
         }
     }

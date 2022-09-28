@@ -29,12 +29,13 @@ Symbol* nrn_trueparent_sym;
 
 static hoc_Item** sec2pitm(Section* sec) {
     extern Objectdata* hoc_top_level_data;
-    if (!sec || !sec->prop || !std::get<Symbol*>(sec->prop->dparam[0])) {
+    using std::get;
+    if (!sec || !sec->prop || !get<Symbol*>(sec->prop->dparam[0])) {
         hoc_execerror("section is unnamed", (char*) 0);
     }
-    auto* sym = std::get<Symbol*>(sec->prop->dparam[0]);
-    auto* ob = std::get<Object*>(sec->prop->dparam[6]);
-    auto i = std::get<int>(sec->prop->dparam[5]);
+    auto* sym = get<Symbol*>(sec->prop->dparam[0]);
+    auto* ob = get<Object*>(sec->prop->dparam[6]);
+    auto i = get<int>(sec->prop->dparam[5]);
     if (ob) {
         return ob->u.dataspace[sym->u.oboff].psecitm + i;
     } else {
@@ -68,7 +69,8 @@ static double s_unname(void* v) {
     sec = (Section*) v;
 #if USE_PYTHON
     /* Python Sections cannot be unnamed, return 0.0 */
-    if (sec->prop && std::get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
+    using std::get;
+    if (sec->prop && get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
         return 0.0;
     }
 #endif
@@ -97,13 +99,14 @@ static double s_rename(void* v) {
         return 0.;
     }
 #if USE_PYTHON
+    using std::get;
     /* Python Sections cannot be renamed, return 0.0 */
-    if (std::get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
+    if (get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
         return 0.;
     }
 #endif
-    qsec = std::get<hoc_Item*>(sec->prop->dparam[8]);
-    if (std::get<Symbol*>(sec->prop->dparam[0])) {
+    qsec = get<hoc_Item*>(sec->prop->dparam[8]);
+    if (get<Symbol*>(sec->prop->dparam[0])) {
         Printf("%s must first be unnamed\n", secname(sec));
         return 0.;
     }
@@ -170,7 +173,7 @@ static double s_rename(void* v) {
                 hoc_objectdata = obdsav;
                 return 0;
             }
-            qsec = std::get<hoc_Item*>(sec->prop->dparam[8]);
+            qsec = get<hoc_Item*>(sec->prop->dparam[8]);
             sec->prop->dparam[0] = sym;
             sec->prop->dparam[5] = i;
             sec->prop->dparam[6] = static_cast<Object*>(nullptr);

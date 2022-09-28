@@ -173,7 +173,8 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
             mpi = pld->mindex[pindex];
             pnd = ml->nodelist[mpi];
             if (nd->sec_node_index_ == 0) {
-                rall = std::get<double>(nd->sec->prop->dparam[4]);
+                using std::get;
+                rall = get<double>(nd->sec->prop->dparam[4]);
             } else {
                 rall = 1.;
             }

@@ -422,7 +422,8 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
     }
 
     chk_conc_[2 * p_ok->_type + i] |= ion_bit_[pion->_type];
-    if (std::get<int>(pion->dparam[0]) & flag) {
+    using std::get;
+    if (get<int>(pion->dparam[0]) & flag) {
         /* now comes the hard part. Is the possibility in fact actual.*/
         for (p = pion->next; p; p = p->next) {
             if (p == p_ok) {
@@ -441,11 +442,12 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
             }
         }
     }
-    auto& ii = std::get<int>(pion->dparam[0]);
+    auto& ii = get<int>(pion->dparam[0]);
     ii |= flag;
 }
 
 void ion_style(void) {
+    using std::get;
     Symbol* s;
     int istyle, i, oldstyle;
     Section* sec;
@@ -460,7 +462,7 @@ void ion_style(void) {
     p = nrn_mechanism(s->subtype, sec->pnode[0]);
     oldstyle = -1;
     if (p) {
-        oldstyle = std::get<int>(p->dparam[0]);
+        oldstyle = get<int>(p->dparam[0]);
     }
 
     if (ifarg(2)) {
@@ -486,7 +488,7 @@ void ion_style(void) {
             for (i = 0; i < sec->nnode; ++i) {
                 p = nrn_mechanism(s->subtype, sec->pnode[i]);
                 if (p) {
-                    auto&& ii = std::get<int>(p->dparam[0]);
+                    auto&& ii = get<int>(p->dparam[0]);
                     ii &= (0200 + 0400);
                     ii += istyle;
                 }
@@ -509,7 +511,8 @@ int nrn_vartype(Symbol* sym) {
         }
         p = nrn_mechanism(sym->u.rng.type, sec->pnode[0]);
         if (p) {
-            auto it = std::get<int>(p->dparam[0]);
+            using std::get;
+            auto it = get<int>(p->dparam[0]);
             if (sym->u.rng.index == 0) { /* erev */
                 i = (it & 030) >> 3;     /* unused, nrnocCONST, DEP, or STATE */
             } else {                     /* concentration */
@@ -522,8 +525,9 @@ int nrn_vartype(Symbol* sym) {
 
 /* the ion mechanism it flag  defines how _AMBIGUOUS is to be interpreted */
 void nrn_promote(Prop* p, int conc, int rev) {
+    using std::get;
     int oldconc, oldrev;
-    int* it = &std::get<int>(p->dparam[0]);
+    int* it = &get<int>(p->dparam[0]);
     oldconc = (*it & 03);
     oldrev = (*it & 030) >> 3;
     /* precedence */

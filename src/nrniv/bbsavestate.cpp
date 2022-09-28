@@ -733,8 +733,9 @@ static double ppignore(void* v) {
 }
 
 static int ignored(Prop* p) {
-    auto* pp = std::get<Point_process*>(p->dparam[1]);
     if (pp_ignore_map) {
+        using std::get;
+        auto* pp = get<Point_process*>(p->dparam[1]);
         if (pp_ignore_map->count(pp) > 0) {
             return 1;
         }
@@ -1707,7 +1708,8 @@ static void pycell_name2sec_maps_fill() {
     // ForAllSections(sec)
     ITERATE(qsec, section_list) {
         Section* sec = hocSEC(qsec);
-        if (sec->prop && std::get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {  // PythonSection
+        using std::get;
+        if (sec->prop && get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {  // PythonSection
             // Assume we can associate with a Python Cell
             // Sadly, cannot use nrn_sec2cell Object* as the key because it
             // is not unique and the map needs definite PyObject* keys.
@@ -1757,6 +1759,7 @@ static SecName2Sec& pycell_name2sec_map(Object* c) {
 // to be able to determine if it exists before reading with section(sec);
 
 void BBSaveState::cell(Object* c) {
+    using std::get;
     if (debug) {
         Sprintf(dbuf, "Enter cell(%s)", hoc_object_name(c));
         PDEBUG;
@@ -1774,7 +1777,7 @@ void BBSaveState::cell(Object* c) {
             qsec = c->secelm_;
             if (qsec) {  // Write HOC Cell
                 for (first = qsec;
-                     first->itemtype && std::get<Object*>(hocSEC(first)->prop->dparam[6]) == c;
+                     first->itemtype && get<Object*>(hocSEC(first)->prop->dparam[6]) == c;
                      first = first->prev) {
                     sec = hocSEC(first);
                     if (sec->prop) {
@@ -1811,7 +1814,7 @@ void BBSaveState::cell(Object* c) {
                     f->s(buf);
                     strcpy(buf, name.c_str());
                     f->s(buf);
-                    int indx = std::get<int>(sec->prop->dparam[5]);
+                    int indx = get<int>(sec->prop->dparam[5]);
                     f->i(indx);
                     int size = sectionsize(sec);
                     f->i(size, 1);
@@ -1874,35 +1877,38 @@ void BBSaveState::cell(Object* c) {
 }
 
 void BBSaveState::section_exist_info(Section* sec) {
+    using std::get;
     char buf[256];
     // not used for python sections
-    assert(!std::get<void*>(sec->prop->dparam[PROP_PY_INDEX]));
-    auto sym = std::get<Symbol*>(sec->prop->dparam[0]);
+    assert(!get<void*>(sec->prop->dparam[PROP_PY_INDEX]));
+    auto sym = get<Symbol*>(sec->prop->dparam[0]);
     if (sym) {
         Sprintf(buf, "%s", sym->name);
         f->s(buf);
     }
-    int indx = std::get<int>(sec->prop->dparam[5]);
+    int indx = get<int>(sec->prop->dparam[5]);
     f->i(indx);
     int size = sectionsize(sec);
     f->i(size, 1);
 }
 
 void BBSaveState::section(Section* sec) {
+    using std::get;
     if (debug) {
-        Sprintf(dbuf, "Enter section(%s)", std::get<Symbol*>(sec->prop->dparam[0])->name);
+        Sprintf(dbuf, "Enter section(%s)", get<Symbol*>(sec->prop->dparam[0])->name);
         PDEBUG;
     }
     seccontents(sec);
     if (debug) {
-        Sprintf(dbuf, "Leave section(%s)", std::get<Symbol*>(sec->prop->dparam[0])->name);
+        Sprintf(dbuf, "Leave section(%s)", get<Symbol*>(sec->prop->dparam[0])->name);
         PDEBUG;
     }
 }
 
 int BBSaveState::sectionsize(Section* sec) {
+    using std::get;
     if (debug == 1) {
-        Sprintf(dbuf, "Enter sectionsize(%s)", std::get<Symbol*>(sec->prop->dparam[0])->name);
+        Sprintf(dbuf, "Enter sectionsize(%s)", get<Symbol*>(sec->prop->dparam[0])->name);
         PDEBUG;
     }
     // should be same for both IN and OUT
@@ -1916,15 +1922,16 @@ int BBSaveState::sectionsize(Section* sec) {
         f = sav;
     }
     if (debug == 1) {
-        Sprintf(dbuf, "Leave sectionsize(%s)", std::get<Symbol*>(sec->prop->dparam[0])->name);
+        Sprintf(dbuf, "Leave sectionsize(%s)", get<Symbol*>(sec->prop->dparam[0])->name);
         PDEBUG;
     }
     return cnt;
 }
 
 void BBSaveState::seccontents(Section* sec) {
+    using std::get;
     if (debug) {
-        Sprintf(dbuf, "Enter seccontents(%s)", std::get<Symbol*>(sec->prop->dparam[0])->name);
+        Sprintf(dbuf, "Enter seccontents(%s)", get<Symbol*>(sec->prop->dparam[0])->name);
         PDEBUG;
     }
     int i, nseg;
@@ -1939,7 +1946,7 @@ void BBSaveState::seccontents(Section* sec) {
     node01(sec, sec->parentnode);
     node01(sec, sec->pnode[nseg]);
     if (debug) {
-        Sprintf(dbuf, "Leave seccontents(%s)", std::get<Symbol*>(sec->prop->dparam[0])->name);
+        Sprintf(dbuf, "Leave seccontents(%s)", get<Symbol*>(sec->prop->dparam[0])->name);
         PDEBUG;
     }
 }
@@ -1982,6 +1989,7 @@ void BBSaveState::node(Node* nd) {
 
 // only Point_process that belong to Section
 void BBSaveState::node01(Section* sec, Node* nd) {
+    using std::get;
     if (debug) {
         Sprintf(dbuf, "Enter node01(sec, nd)");
         PDEBUG;
@@ -1995,7 +2003,7 @@ void BBSaveState::node01(Section* sec, Node* nd) {
     // count
     for (i = 0, p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
-            auto* pp = std::get<Point_process*>(p->dparam[1]);
+            auto* pp = get<Point_process*>(p->dparam[1]);
             if (pp->sec == sec) {
                 if (!ignored(p)) {
                     ++i;
@@ -2006,7 +2014,7 @@ void BBSaveState::node01(Section* sec, Node* nd) {
     f->i(i, 1);
     for (p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
-            auto* pp = std::get<Point_process*>(p->dparam[1]);
+            auto* pp = get<Point_process*>(p->dparam[1]);
             if (pp->sec == sec) {
                 mech(p);
             }
@@ -2034,7 +2042,8 @@ void BBSaveState::mech(Prop* p) {
     f->d(ssi[p->_type].size, p->param + ssi[p->_type].offset);
     Point_process* pp{};
     if (memb_func[p->_type].is_point) {
-        pp = std::get<Point_process*>(p->dparam[1]);
+        using std::get;
+        pp = get<Point_process*>(p->dparam[1]);
         if (pnt_receive[p->_type]) {
             // associated NetCon and queue SelfEvent
             // if the NetCon has a unique non-gid source (art cell)
@@ -2212,7 +2221,8 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
             SelfEvent* se = (SelfEvent*) tqi->data_;
             se->flag_ = flag;
             if (moff >= 0) {
-                movable = &(std::get<void*>(pp->prop->dparam[moff]));
+                using std::get;
+                movable = &get<void*>(pp->prop->dparam[moff]);
                 if (flag == 1) {
                     *movable = tqi;
                 }

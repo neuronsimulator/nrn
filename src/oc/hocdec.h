@@ -146,17 +146,18 @@ using hoc_List = hoc_Item;
  * @brief Type of pdata in mechanisms.
  */
 struct Point_process;
-using Datum =
-    std::variant<double /* val */,
-                 Symbol* /* sym */,
-                 int /* i */,
-                 Object** /* pobj */,
-                 Object* /* obj */,
-                 char** /* pstr */,
-                 hoc_Item* /* itm */ /*, hoc_List */ /* lst */,
-                 void* /* _pvoid */,
-                 std::unique_ptr<neuron::container::generic_data_handle> /* generic_handle */,
-                 Point_process*>;
+
+// Dropped: char** pstr, hoc_List* lst, Object** pobj
+// With enough fiddling we could have a 3*sizeof(void*) "generic data handle
+// that can also store small trivial-type values"
+using Datum = std::variant<double,
+                           hoc_Item*,
+                           int,
+                           Object*,
+                           Point_process*,
+                           std::unique_ptr<neuron::container::generic_data_handle>,
+                           Symbol*,
+                           void*>;
 
 // Temporary, deprecate these
 inline neuron::container::permissive_generic_data_handle& nrn_get_any(Datum& datum) {
