@@ -413,7 +413,19 @@ PROTECT
 ~~~~~~~
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    Mod files that assign values to GLOBAL variables are not considered 
+    thread safe. If the mod file is using the GLOBAL as a counter, prefix 
+    the offending assignment statements with the PROTECT keyword so that 
+    multiple threads do not attempt to update the value at the same time 
+    (race condition). If the mod file is using the GLOBAL essentially as 
+    a file scope LOCAL along with the possibility of passing values back 
+    to hoc in response to calling a PROCEDURE, use the THREADSAFE keyword 
+    in the NEURON block to automatically treat those GLOBAL variables 
+    as thread specific variables. NEURON assigns and evaluates only 
+    the thread 0 version and if FUNCTIONs and PROCEDUREs are called from 
+    Python, the thread 0 version of these globals are used.
+
+    ``TODO``: Add existing example mod file (share/demo/release/mcna.mod)
 
 
 MUTEXLOCK / MUTEXUNLOCK
