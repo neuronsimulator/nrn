@@ -308,8 +308,6 @@ static void free_one_point(Point_process* pnt) {
     if (!p) {
         return;
     }
-    std::cout << p << ' ' << nrn_is_artificial_ << std::endl;
-    std::cout << p->_type << std::endl;
     if (!nrn_is_artificial_[p->_type]) {
         auto* p1 = pnt->node->prop;
         if (p1 == p) {
@@ -344,8 +342,9 @@ static void free_one_point(Point_process* pnt) {
 
 // called from prop_free
 void clear_point_process_struct(Prop* p) {
-    auto* pnt = std::get<Point_process*>(p->dparam[1]);
-    if (pnt) {
+    // If the datum holds Point_process* (ppnt) and that value (*ppnt) is non-null
+    if (auto* ppnt = std::get_if<Point_process*>(&p->dparam[1]); ppnt && *ppnt) {
+        auto* pnt = *ppnt;
         free_one_point(pnt);
         if (pnt->ob) {
             if (pnt->ob->observers) {
