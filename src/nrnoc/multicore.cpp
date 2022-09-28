@@ -679,7 +679,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
     for (tml = _nt->tml; tml; tml = tml->next)
         if (memb_func[tml->index].is_point) {
             for (i = 0; i < tml->ml->nodecount; ++i) {
-                auto* pnt = static_cast<Point_process*>(tml->ml->pdata[i][1]._pvoid);
+                auto* pnt = std::get<Point_process*>(tml->ml->pdata[i][1]);
                 pnt->_vnt = _nt;
             }
         }
@@ -739,7 +739,7 @@ void reorder_secorder() {
         for (isec = order - _nt->ncell; isec < order; ++isec) {
             sec = secorder[isec];
             /* to make it easy to fill in PreSyn.nt_*/
-            sec->prop->dparam[9]._pvoid = (void*) _nt;
+            sec->prop->dparam[9] = static_cast<void*>(_nt);
             for (j = 0; j < sec->nnode; ++j) {
                 nd = sec->pnode[j];
                 nd->_nt = _nt;
@@ -790,7 +790,7 @@ void reorder_secorder() {
         for (isec = order - _nt->ncell; isec < order; ++isec) {
             sec = secorder[isec];
             /* to make it easy to fill in PreSyn.nt_*/
-            sec->prop->dparam[9]._pvoid = (void*) _nt;
+            sec->prop->dparam[9] = static_cast<void*>(_nt);
             for (j = 0; j < sec->nnode; ++j) {
                 nd = sec->pnode[j];
                 nd->_nt = _nt;

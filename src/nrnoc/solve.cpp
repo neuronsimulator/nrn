@@ -63,8 +63,6 @@ node.v + extnode.v[0]
 #include <stdlib.h>
 #include <math.h>
 
-#include <utility>
-
 static void node_free();
 static void triang(NrnThread*), bksub(NrnThread*);
 
@@ -309,6 +307,7 @@ static void dashes(Section* sec, int offset, int first) {
     int i, scnt;
     Section* ch;
     char direc[30];
+
     i = (int) nrn_section_orientation(sec);
     Sprintf(direc, "(%d-%d)", i, 1 - i);
     for (i = 0; i < offset; i++)
@@ -316,13 +315,13 @@ static void dashes(Section* sec, int offset, int first) {
     Printf("%c", first);
     for (i = 2; i < sec->nnode; i++)
         Printf("-");
-    if (sec->prop->dparam[4].get<double>() == 1) {
+    if (std::get<double>(sec->prop->dparam[4]) == 1) {
         Printf("|       %s%s\n", secname(sec), direc);
     } else {
         Printf("|       %s%s with %g rall branches\n",
                secname(sec),
                direc,
-               sec->prop->dparam[4].get<double>());
+               std::get<double>(sec->prop->dparam[4]));
     }
     /* navigate the sibling list backwards */
     /* note that the sibling list is organized monotonically by
@@ -511,7 +510,7 @@ static void node_free(Section* sec) {
     sec->pnode = (Node**) 0;
     sec->nnode = 0;
 }
-void nrn_node_destruct1(Node*);
+
 static void section_unlink(Section* sec);
 /* free everything about sections */
 void sec_free(hoc_Item* secitem) {
@@ -524,13 +523,16 @@ void sec_free(hoc_Item* secitem) {
     assert(sec);
     /*printf("sec_free %s\n", secname(sec));*/
     section_unlink(sec);
-    if (auto* ob = sec->prop->dparam[6].get<Object*>();
-        ob && ob->secelm_ == secitem) { /* it is the last */
-        hoc_Item* q = secitem->prev;
-        if (q->itemtype && hocSEC(q)->prop && hocSEC(q)->prop->dparam[6].get<Object*>() == ob) {
-            ob->secelm_ = q;
-        } else {
-            ob->secelm_ = (hoc_Item*) 0;
+    {
+        auto* ob = std::get<Object*>(sec->prop->dparam[6]);
+        if (ob && ob->secelm_ == secitem) { /* it is the last */
+            hoc_Item* q = secitem->prev;
+            if (q->itemtype && hocSEC(q)->prop &&
+                std::get<Object*>(hocSEC(q)->prop->dparam[6]) == ob) {
+                ob->secelm_ = q;
+            } else {
+                ob->secelm_ = (hoc_Item*) 0;
+            }
         }
     }
     hoc_l_delete(secitem);
@@ -716,7 +718,7 @@ static Node* node_clone(Node* nd1) {
                 p2 = p2->next;
             }
             assert(p2 && p1->_type == p2->_type);
-            p2->dparam[0] = p1->dparam[0].get<int>();
+            std::get<int>(p2->dparam[0]) = std::get<int>(p1->dparam[0]);
         }
     }
 

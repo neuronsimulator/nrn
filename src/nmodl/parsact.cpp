@@ -854,7 +854,7 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
             if (blocktype == NETRECEIVE) {
                 Insertstr(qpar1->next, "_tqitem, _args, _pnt,");
             } else if (blocktype == INITIAL1) {
-                Insertstr(qpar1->next, "_tqitem, nullptr, _ppvar[1].get<Point_process*>(),");
+                Insertstr(qpar1->next, "_tqitem, nullptr, std::get<Point_process*>(_ppvar[1]),");
             } else {
                 diag("net_send allowed only in INITIAL and NET_RECEIVE blocks", (char*) 0);
             }
@@ -964,7 +964,7 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
         watch_alloc = newlist();
         lappendstr(watch_alloc,
                    "\nstatic void _watch_alloc(Datum* _ppvar) {\n"
-                   "  auto* _pnt = _ppvar[1].get<Point_process*>();\n");
+                   "  auto* _pnt = std::get<Point_process*>(_ppvar[1]);\n");
     }
     Sprintf(buf,
             "  _nrn_watch_allocate(_watch_array, _watch%d_cond, %d, _pnt, %s);\n",

@@ -92,7 +92,7 @@ Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
     // if (type > 1) printf("nrn_prop_datum_alloc %d %s %d %p\n", type, memb_func[type].sym->name,
     // count, ppd);
     for (i = 0; i < count; ++i) {
-        ppd[i]._pvoid = 0;
+        ppd[i] = static_cast<void*>(nullptr);
     }
     return ppd;
 }
@@ -383,11 +383,12 @@ void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip) {
     assert(ip < op->d2());
     assert(1);  //  should point into pool() for one of the op pool chains
     // and the index should be a pointer to the double in np
-    auto& generic_handle = *dp[id].generic_handle;
-    long i = *static_cast<neuron::container::data_handle<double>>(generic_handle);
+    auto& gh_ptr = std::get<std::unique_ptr<neuron::container::generic_data_handle>>(dp[id]);
+    assert(gh_ptr);
+    long i = *static_cast<neuron::container::data_handle<double>>(*gh_ptr);
     assert(i >= 0 && i < np->size());
     double* pvar = np->items()[i];
-    generic_handle = pvar + ip;
+    *gh_ptr = pvar + ip;
 }
 
 

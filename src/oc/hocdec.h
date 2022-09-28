@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <variant>
+
 #define gargstr hoc_gargstr
 #define getarg  hoc_getarg
 
@@ -22,7 +24,6 @@ struct Symbol;
 struct Arrayinfo;
 struct Proc;
 struct Symlist;
-union Datum;
 struct cTemplate;
 union Objectdata;
 struct Object;
@@ -142,47 +143,49 @@ struct Symbol { /* symbol table entry */
 using hoc_List = hoc_Item;
 
 /**
- * @brief Interpreter stack type.
- * @todo Consider replacing with std::variant.
+ * @brief Type of pdata in mechanisms.
  */
-union Datum { /* interpreter stack type */
-    double val;
-    Symbol* sym;
-    int i;
-    // double* pval; /* first used with Eion in NEURON */
-    Object** pobj;
-    Object* obj; /* sections keep this to construct a name */
-    char** pstr;
-    hoc_Item* itm;
-    hoc_List* lst;
-    void* _pvoid; /* not used on stack, see nrnoc/point.cpp */
-    // Used to store data_handle<T> on the stack and POINTER variables in
-    // mechanisms. TODO: fix things so that this can be stored by value, or at
-    // least so that memory management is automatic
-    neuron::container::generic_data_handle* generic_handle;
-};
+struct Point_process;
+using Datum =
+    std::variant<double /* val */,
+                 Symbol* /* sym */,
+                 int /* i */,
+                 Object** /* pobj */,
+                 Object* /* obj */,
+                 char** /* pstr */,
+                 hoc_Item* /* itm */ /*, hoc_List */ /* lst */,
+                 void* /* _pvoid */,
+                 std::unique_ptr<neuron::container::generic_data_handle> /* generic_handle */,
+                 Point_process*>;
+
 // Temporary, deprecate these
 inline neuron::container::permissive_generic_data_handle& nrn_get_any(Datum& datum) {
-    // DANGER DANGER this family of methods blindly assumes that generic_handle
-    // is always the active member of the Datum union.
-    if (!datum.generic_handle) {
-        // DANGER DANGER leak
-        datum.generic_handle = new neuron::container::generic_data_handle{};
+    // Throws if this is not the active member of the union
+    auto& generic_handle_ptr = std::get<std::unique_ptr<neuron::container::generic_data_handle>>(
+        datum);
+    // Does this ever happen?
+    if (!generic_handle_ptr) {
+        generic_handle_ptr = std::make_unique<neuron::container::generic_data_handle>();
     }
     // Rely on permissive/non-permissive modes having the same layout...not very nice
     return *reinterpret_cast<neuron::container::permissive_generic_data_handle*>(
-        datum.generic_handle);
+        generic_handle_ptr.get());
 }
 inline double* nrn_get_pval(Datum& datum) {
     return static_cast<double*>(nrn_get_any(datum));
 }
 template <typename T>
 void nrn_set_handle(Datum& datum, neuron::container::data_handle<T> dh) {
-    if (!datum.generic_handle) {
-        // DANGER DANGER leak
-        datum.generic_handle = new neuron::container::generic_data_handle{};
+    // Make sure the active member is unique_ptr-to-generic_data_handle
+    if (!std::holds_alternative<std::unique_ptr<neuron::container::generic_data_handle>>(datum)) {
+        datum = std::unique_ptr<neuron::container::generic_data_handle>{};
     }
-    *datum.generic_handle = std::move(dh);
+    // Make sure the unique_ptr is not null
+    auto& gh_ptr = std::get<std::unique_ptr<neuron::container::generic_data_handle>>(datum);
+    if (!gh_ptr) {
+        gh_ptr = std::make_unique<neuron::container::generic_data_handle>();
+    }
+    *gh_ptr = std::move(dh);
 }
 template <typename T>
 void nrn_set_pval(Datum& datum, T* pval) {
