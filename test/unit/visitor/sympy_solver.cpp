@@ -12,6 +12,7 @@
 #include "test/unit/utils/test_utils.hpp"
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
+#include "visitors/kinetic_block_visitor.hpp"
 #include "visitors/loop_unroll_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
@@ -35,7 +36,8 @@ std::vector<std::string> run_sympy_solver_visitor(
     const std::string& text,
     bool pade = false,
     bool cse = false,
-    AstNodeType ret_nodetype = AstNodeType::DIFF_EQ_EXPRESSION) {
+    AstNodeType ret_nodetype = AstNodeType::DIFF_EQ_EXPRESSION,
+    bool kinetic = false) {
     std::vector<std::string> results;
 
     // construct AST from text
@@ -50,6 +52,10 @@ std::vector<std::string> run_sympy_solver_visitor(
     LoopUnrollVisitor().visit_program(*ast);
     ConstantFolderVisitor().visit_program(*ast);
     SymtabVisitor().visit_program(*ast);
+
+    if (kinetic) {
+        KineticBlockVisitor().visit_program(*ast);
+    }
 
     // run SympySolver on AST
     SympySolverVisitor(pade, cse).visit_program(*ast);
@@ -2119,6 +2125,101 @@ SCENARIO("Solve NONLINEAR block using SympySolver Visitor", "[visitor][solver][s
         THEN("return F & J for newton solver") {
             auto result =
                 run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::NON_LINEAR_BLOCK);
+            compare_blocks(reindent_text(result[0]), reindent_text(expected_text));
+        }
+    }
+}
+SCENARIO("Solve KINETIC block using SympySolver Visitor", "[visitor][solver][sympy][kinetic]") {
+    GIVEN("KINETIC block with not inlined function should work") {
+        std::string nmodl_text = R"(
+            BREAKPOINT {
+                SOLVE kstates METHOD sparse
+            }
+            STATE {
+                C1
+                C2
+            }
+            FUNCTION alfa(v(mV)) {
+                alfa = v
+            }
+            KINETIC kstates {
+                ~ C1 <-> C2 (alfa(v), alfa(v))
+            })";
+        std::string expected_text = R"(
+            DERIVATIVE kstates {
+                EIGEN_NEWTON_SOLVE[2]{
+                    LOCAL old_C1, old_C2
+                }{
+                    old_C1 = C1
+                    old_C2 = C2
+                }{
+                    nmodl_eigen_x[0] = C1
+                    nmodl_eigen_x[1] = C2
+                }{
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*dt*alfa(v)-nmodl_eigen_x[0]+nmodl_eigen_x[1]*dt*alfa(v)+old_C1
+                    nmodl_eigen_j[0] = -dt*alfa(v)-1.0
+                    nmodl_eigen_j[2] = dt*alfa(v)
+                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*dt*alfa(v)-nmodl_eigen_x[1]*dt*alfa(v)-nmodl_eigen_x[1]+old_C2
+                    nmodl_eigen_j[1] = dt*alfa(v)
+                    nmodl_eigen_j[3] = -dt*alfa(v)-1.0
+                }{
+                    C1 = nmodl_eigen_x[0]
+                    C2 = nmodl_eigen_x[1]
+                }{
+                }
+            })";
+        THEN("Run Kinetic and Sympy Visitor") {
+            std::vector<std::string> result;
+            REQUIRE_NOTHROW(result = run_sympy_solver_visitor(
+                                nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK, true));
+            compare_blocks(reindent_text(result[0]), reindent_text(expected_text));
+        }
+    }
+    GIVEN("Protected names in Sympy are respected") {
+        std::string nmodl_text = R"(
+            BREAKPOINT {
+                SOLVE kstates METHOD sparse
+            }
+            STATE {
+                C1
+                C2
+            }
+            FUNCTION beta(v(mV)) {
+                beta = v
+            }
+            FUNCTION lowergamma(v(mV)) {
+                lowergamma = v
+            }
+            KINETIC kstates {
+                ~ C1 <-> C2 (beta(v), lowergamma(v))
+            })";
+        std::string expected_text = R"(
+            DERIVATIVE kstates {
+                EIGEN_NEWTON_SOLVE[2]{
+                    LOCAL old_C1, old_C2
+                }{
+                    old_C1 = C1
+                    old_C2 = C2
+                }{
+                    nmodl_eigen_x[0] = C1
+                    nmodl_eigen_x[1] = C2
+                }{
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*dt*beta(v)-nmodl_eigen_x[0]+nmodl_eigen_x[1]*dt*lowergamma(v)+old_C1
+                    nmodl_eigen_j[0] = -dt*beta(v)-1.0
+                    nmodl_eigen_j[2] = dt*lowergamma(v)
+                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*dt*beta(v)-nmodl_eigen_x[1]*dt*lowergamma(v)-nmodl_eigen_x[1]+old_C2
+                    nmodl_eigen_j[1] = dt*beta(v)
+                    nmodl_eigen_j[3] = -dt*lowergamma(v)-1.0
+                }{
+                    C1 = nmodl_eigen_x[0]
+                    C2 = nmodl_eigen_x[1]
+                }{
+                }
+            })";
+        THEN("Run Kinetic and Sympy Visitor") {
+            std::vector<std::string> result;
+            REQUIRE_NOTHROW(result = run_sympy_solver_visitor(
+                                nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK, true));
             compare_blocks(reindent_text(result[0]), reindent_text(expected_text));
         }
     }

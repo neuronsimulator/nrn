@@ -8,6 +8,7 @@
 from importlib import import_module
 
 import sympy as sp
+import re
 
 # import known_functions through low-level mechanism because the ccode
 # module is overwritten in sympy and contents of that submodule cannot be
@@ -24,10 +25,31 @@ known_functions['abs'] = 'fabs'
 if not ((major >= 1) and (minor >= 2)):
     raise ImportError(f"Requires SympPy version >= 1.2, found {major}.{minor}")
 
+# Some functions are protected inside sympy, if user has declared such a function, it will fail
+# because sympy will try to use its own internal one.
+# Rename it before and after to a single name
+forbidden_var = ["beta", "gamma", "uppergamma", "lowergamma", "polygamma", "loggamma", "digamma", "trigamma"]
+def search_and_replace_protected_functions_to_sympy(eqs, function_calls):
+    for c in function_calls:
+        if c in forbidden_var:
+            r = re.compile(r"\b{}\b\s*\(".format(c))
+            f = f"_sympy_{c}_fun("
+            eqs = [re.sub(r, f, x) for x in eqs]
+    return eqs
+
+def search_and_replace_protected_functions_from_sympy(eqs, function_calls):
+    for c in function_calls:
+        if c in forbidden_var:
+            r = f"_sympy_{c}_fun"
+            eqs = [re.sub(r, f"{c}", x) for x in eqs]
+    return eqs
+
 def _get_custom_functions(fcts):
     custom_functions = {}
     for f in fcts:
-        if not f in known_functions.keys():
+        if f in forbidden_var:
+            custom_functions[f"_sympy_{f}_fun"] = f"_sympy_{f}_fun"
+        elif not f in known_functions.keys():
             custom_functions[f] = f
     return custom_functions
 
@@ -116,6 +138,7 @@ def _sympify_eqs(eq_strings, state_vars, vars):
 
     # parse state vars & eqs using above sympy objects
     sympy_state_vars = []
+
     for state_var in state_vars:
         sympy_state_vars.append(sp.sympify(state_var, locals=sympy_vars))
     eqs = [
@@ -123,6 +146,7 @@ def _sympify_eqs(eq_strings, state_vars, vars):
         - sp.sympify(eq.split("=", 1)[0], locals=sympy_vars)).expand()
         for eq in eq_strings
     ]
+
     return eqs, sympy_state_vars, sympy_vars
 
 def _interweave_eqs(F, J):
@@ -208,6 +232,8 @@ def solve_lin_system(eq_strings, vars, constants, function_calls, tmp_unique_pre
         vars: list of strings containing new local variables
     """
 
+    eq_strings = search_and_replace_protected_functions_to_sympy(eq_strings, function_calls)
+
     eqs, state_vars, sympy_vars = _sympify_eqs(eq_strings, vars, constants)
     custom_fcts = _get_custom_functions(function_calls)
 
@@ -228,7 +254,7 @@ def solve_lin_system(eq_strings, vars, constants, function_calls, tmp_unique_pre
             )
             for var, expr in sub_exprs:
                 new_local_vars.append(sp.ccode(var))
-                code.append(f"{var} = {sp.ccode(expr.evalf())}")
+                code.append(f"{var} = {sp.ccode(expr.evalf(), user_functions=custom_fcts)}")
             solution_vector = simplified_solution_vector[0]
         for var, expr in zip(state_vars, solution_vector):
             code.append(f"{sp.ccode(var)} = {sp.ccode(expr.evalf(), contract=False, user_functions=custom_fcts)}")
@@ -240,7 +266,7 @@ def solve_lin_system(eq_strings, vars, constants, function_calls, tmp_unique_pre
         # construct vector F
         vecFcode = []
         for i, expr in enumerate(vecF):
-            vecFcode.append(f"F[{i}] = {sp.ccode(expr.simplify().evalf())}")
+            vecFcode.append(f"F[{i}] = {sp.ccode(expr.simplify().evalf(), user_functions=custom_fcts)}")
         # construct matrix J
         vecJcode = []
         for i, expr in enumerate(matJ):
@@ -249,6 +275,8 @@ def solve_lin_system(eq_strings, vars, constants, function_calls, tmp_unique_pre
             vecJcode.append(f"J[{flat_index}] = {sp.ccode(expr.simplify().evalf(), user_functions=custom_fcts)}")
         # interweave
         code = _interweave_eqs(vecFcode, vecJcode)
+
+    code = search_and_replace_protected_functions_from_sympy(code, function_calls)
 
     return code, new_local_vars
 
@@ -270,8 +298,9 @@ def solve_non_lin_system(eq_strings, vars, constants, function_calls):
         List of strings containing assignment statements
     """
 
-    eqs, state_vars, sympy_vars = _sympify_eqs(eq_strings, vars, constants)
+    eq_strings = search_and_replace_protected_functions_to_sympy(eq_strings, function_calls)
 
+    eqs, state_vars, sympy_vars = _sympify_eqs(eq_strings, vars, constants)
     custom_fcts = _get_custom_functions(function_calls)
 
     jacobian = sp.Matrix(eqs).jacobian(state_vars)
@@ -280,7 +309,7 @@ def solve_non_lin_system(eq_strings, vars, constants, function_calls):
 
     vecFcode = []
     for i, eq in enumerate(eqs):
-        vecFcode.append(f"F[{i}] = {sp.ccode(eq.simplify().subs(X_vec_map).evalf())}")
+        vecFcode.append(f"F[{i}] = {sp.ccode(eq.simplify().subs(X_vec_map).evalf(), user_functions=custom_fcts)}")
     vecJcode = []
     for i, jac in enumerate(jacobian):
         # todo: fix indexing to be ascending order
@@ -290,6 +319,8 @@ def solve_non_lin_system(eq_strings, vars, constants, function_calls):
         )
     # interweave
     code = _interweave_eqs(vecFcode, vecJcode)
+
+    code = search_and_replace_protected_functions_from_sympy(code, function_calls)
 
     return code
 
