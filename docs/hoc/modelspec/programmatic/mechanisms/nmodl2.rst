@@ -273,8 +273,10 @@ VALENCE
 
 REPRESENTS
 ==========
+    Optionally provide CURIE (Compact URI) to annotate what the species represents
+    e.g. ``CHEBI:29101`` for sodium(1+).
 
-    ``TODO``: Add description and existing example mod file
+    ``TODO``: Add existing example mod file (src/nrnoc/hh.mod)
 
 .. point_process:
 
