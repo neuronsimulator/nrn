@@ -377,7 +377,10 @@ Description:
 THREADSAFE
 ~~~~~~~~~~
 
-    ``TODO``: Add description and existing example mod file (Link with other existing documentation as well)
+Description:
+    See: :ref:`Multithreaded paralellization` and :ref:`Thread Safe MOD Files`
+
+    ``TODO``: Add description and existing example mod file
 
 
 BEFORE
