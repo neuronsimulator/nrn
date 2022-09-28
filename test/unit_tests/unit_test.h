@@ -1,6 +1,8 @@
 #pragma once
 #include <iostream>
 
+extern int PROCESSORS;
+
 // pass_cell_template is a string containing a template for a Cell with inserted pas mechanism
 constexpr auto pass_cell_template = R"(
 begintemplate PasCell

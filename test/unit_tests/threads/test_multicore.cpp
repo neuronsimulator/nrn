@@ -27,8 +27,11 @@ extern int nrn_how_many_processors();
 
 // generate a range starting from 1 and doubling until we reach the nof concurrent threads
 auto make_available_threads_range() {
-    auto nof_threads_range =
-        std::vector<int>(1 + static_cast<int>(std::log2(nrn_how_many_processors())), 1);
+    static const auto max_processors = PROCESSORS > 0
+                                           ? std::min(PROCESSORS, nrn_how_many_processors())
+                                           : nrn_how_many_processors();
+    std::cout << "max_processors: " << max_processors << std::endl;
+    auto nof_threads_range = std::vector<int>(1 + static_cast<int>(std::log2(max_processors)), 1);
     std::generate(nof_threads_range.begin() + 1, nof_threads_range.end(), [n = 1]() mutable {
         return n *= 2;
     });

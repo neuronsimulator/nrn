@@ -20,6 +20,8 @@ extern NrnThread* nrn_threads;
 extern int nrn_use_fast_imem;
 extern int use_cachevec;
 
+int PROCESSORS{0};
+
 int main(int argc, char* argv[]) {
     // global setup...
     nrn_main_launch = 2;
@@ -27,9 +29,24 @@ int main(int argc, char* argv[]) {
     const char* argv_nompi[] = {"NEURON", "-nogui", nullptr};
     nrn_nobanner_ = 1;
 
+    Catch::Session session;
+
+    using namespace Catch::clara;
+    auto cli = session.cli() | Opt(PROCESSORS, "number of PROCESSORS to consider")["--processors"](
+                                   "How many processors are available for perf tests");
+
+    session.cli(cli);
+
+    int returnCode = session.applyCommandLine(argc, argv);
+    if (returnCode != 0)  // Indicates a command line error
+        return returnCode;
+
+    if (PROCESSORS > 0)
+        std::cout << "--processors: " << PROCESSORS << std::endl;
+
     ivocmain_session(argc_nompi, argv_nompi, NULL, 0);
 #undef run
-    int result = Catch::Session().run(argc, argv);
+    int result = session.run();
 #define run hoc_run
     // global clean-up...
 

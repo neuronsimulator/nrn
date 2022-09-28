@@ -7,6 +7,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 add_compile_options(${NRN_COMPILE_FLAGS})
 add_compile_definitions(${NRN_COMPILE_DEFS})
 add_link_options(${NRN_LINK_FLAGS})
+include(NeuronTestHelper)
 
 # =============================================================================
 # Test executables
@@ -35,13 +36,14 @@ if(NOT TARGET hoc_module)
 endif()
 
 # =============================================================================
-# Use add_test method and set environment for testneuron (NEURONHOME env variable needs to be set to
-# run testneuron and other tests based on nrniv)
+# Unit tests  (testneuron, ...)
 # =============================================================================
-foreach(test_name testneuron)
-  add_test(NAME ${test_name} COMMAND ${test_name})
-  list(APPEND TESTS ${test_name})
-endforeach()
+nrn_add_test_group(NAME unit_tests MODFILE_PATTERNS NONE)
+nrn_add_test(
+  GROUP unit_tests
+  NAME testneuron
+  PROCESSORS 16
+  COMMAND $<TARGET_FILE:testneuron> --processors=16)
 
 # =============================================================================
 # Add ringtest
@@ -131,7 +133,6 @@ if(NRN_ENABLE_MPI)
   endif()
 endif()
 
-include(NeuronTestHelper)
 nrn_add_test_group(NAME mpi_init MODFILE_PATTERNS NONE)
 set(mpi_init_requires_mpiexec mpi)
 set(mpi_init_prefix_mpiexec ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS})
