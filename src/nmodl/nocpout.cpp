@@ -754,7 +754,8 @@ extern Memb_func* memb_func;\n\
         }
         if (for_netcons_) {
             sprintf(buf,
-                    "  if (_prop) { _nrn_free_fornetcon(&std::get<void*>(_prop->dparam[_fnc_index]));}\n");
+                    "  if (_prop) { "
+                    "_nrn_free_fornetcon(&std::get<void*>(_prop->dparam[_fnc_index]));}\n");
             Lappendstr(defs_list, buf);
         }
         Lappendstr(defs_list, "  destroy_point_process(_vptr);\n}\n");
@@ -962,11 +963,11 @@ static void nrn_alloc(Prop* _prop) {\n\
             }
         }
         if (need_style) {
-            Sprintf(
-                buf,
-                "\t_ppvar[%d] = static_cast<void*>(&std::get<int>(prop_ion->dparam[0])); /* iontype for %s */\n",
-                ioncount++,
-                sion->name);
+            Sprintf(buf,
+                    "\t_ppvar[%d] = static_cast<void*>(&std::get<int>(prop_ion->dparam[0])); /* "
+                    "iontype for %s */\n",
+                    ioncount++,
+                    sion->name);
             Lappendstr(defs_list, buf);
         }
         q = q->next;
@@ -2202,7 +2203,10 @@ int iondef(int* p_pointercount) {
             }
         }
         if (need_style) {
-            Sprintf(buf, "#define _style_%s\t*static_cast<int*>(std::get<void*>(_ppvar[%d]))\n", sion->name, ioncount);
+            Sprintf(buf,
+                    "#define _style_%s\t*static_cast<int*>(std::get<void*>(_ppvar[%d]))\n",
+                    sion->name,
+                    ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
             sprintf(buf, "#%s", ionname);
@@ -2621,13 +2625,14 @@ static void _ode_synonym(int _cnt, double** _pp, Datum** _ppd) {");
                     i,
                     i);
                 Lappendstr(procfunc, buf);
-                sprintf(buf,
-                        "_cvode_sparse_thread(&std::get<void*>(_thread[_cvspth%d]), %d, _dlist%d, _p, "
-                        "_ode_matsol%d, _ppvar, _thread, _nt);\n",
-                        i,
-                        cvode_neq_,
-                        i,
-                        i);
+                sprintf(
+                    buf,
+                    "_cvode_sparse_thread(&std::get<void*>(_thread[_cvspth%d]), %d, _dlist%d, _p, "
+                    "_ode_matsol%d, _ppvar, _thread, _nt);\n",
+                    i,
+                    cvode_neq_,
+                    i,
+                    i);
                 vectorize_substitute(procfunc->prev, buf);
             } else {
                 sprintf(buf, "_ode_matsol%d", cvode_num_);
