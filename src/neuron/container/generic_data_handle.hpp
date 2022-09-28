@@ -211,6 +211,20 @@ struct generic_data_handle {
         return cxx_demangle(m_type.name());
     }
 
+    template <typename T>
+    [[nodiscard]] T*& raw_ptr() {
+        if (m_offset || m_offset.m_ptr) {
+            throw std::runtime_error(
+                "generic_data_handle::raw_ptr() should never be called on a handle that was/is in "
+                "'modern' mode");
+        } else {
+            // This is a data handle in backwards-compatibility mode, wrapping a
+            // raw pointer, or a null data handle.
+            static_assert(std::is_same_v<T, void>);
+            return m_container;
+        }
+    }
+
   private:
     friend struct generic_data_handle<!permissive>;
     friend struct generic_data_handle_proxy;
