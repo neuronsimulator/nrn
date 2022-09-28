@@ -34,6 +34,8 @@ auto make_available_threads_range() {
     });
     return nof_threads_range;
 }
+static auto nof_threads_range{make_available_threads_range()};
+
 TEST_CASE("Multicore unit and performance testing", "[NEURON][multicore]") {
     SECTION("Simulation set-up", "[NEURON][multicore][setup]") {
         GIVEN("We create a parallel context") {
@@ -55,12 +57,11 @@ TEST_CASE("Multicore unit and performance testing", "[NEURON][multicore]") {
     }
 
     SECTION("Test parallel mode", "[NEURON][multicore][parallel]") {
-        const auto nof_threads_range = make_available_threads_range();
         static std::vector<double> cache_sim_times;
         static std::vector<double> no_cache_sim_times;
         GIVEN("we do prun() over each nof_threads{nof_threads_range} with cachevec{0,1}") {
             auto cache_efficient = GENERATE(0, 1);
-            auto nof_threads = GENERATE_REF(from_range(nof_threads_range));
+            auto nof_threads = GENERATE_COPY(from_range(nof_threads_range));
             THEN("we run the simulation with " + std::to_string(nof_threads) + " threads") {
                 nrn_cachevec(cache_efficient);
                 REQUIRE(use_cachevec == cache_efficient);
@@ -141,7 +142,6 @@ TEST_CASE("Multicore unit and performance testing", "[NEURON][multicore]") {
             nrn_cachevec(1);
             REQUIRE(use_cachevec == 1);
             static std::vector<double> sim_times;
-            const auto nof_threads_range = make_available_threads_range();
             GIVEN("we do prun() over each nof_threads{nof_threads_range} with serial mode on") {
                 auto nof_threads = GENERATE_REF(from_range(nof_threads_range));
                 THEN("we run the serial simulation with " << nof_threads << " threads") {
@@ -197,7 +197,6 @@ TEST_CASE("Multicore unit and performance testing", "[NEURON][multicore]") {
             nrn_cachevec(1);
             REQUIRE(use_cachevec == 1);
             static std::vector<double> sim_times;
-            const auto nof_threads_range = make_available_threads_range();
             GIVEN("we do prun() over each nof_threads{nof_threads_range} with serial mode on") {
                 auto nof_threads = GENERATE_REF(from_range(nof_threads_range));
                 THEN("we run the parallel busywait simulation with " << nof_threads << " threads") {

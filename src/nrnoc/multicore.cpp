@@ -327,7 +327,7 @@ void nrn_threads_create(int n, bool parallel) {
         }
 #endif
         if (parallel && nrn_nthread > 1) {
-            worker_threads.reset(new worker_threads_t());
+            worker_threads = std::make_unique<worker_threads_t>();
         }
     }
 #endif
