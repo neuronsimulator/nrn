@@ -1012,11 +1012,12 @@ Description:
     ``TODO``: Add description and new example mod file
 
 
-IF /ELSE IF / ELSE
+IF / ELSE IF / ELSE
 ~~~~~~~~~~~~~~~~~~
 
 Description:
-    ``TODO``: Add description and new example mod file
+    If-statement for mod files.
+    ``TODO``: Add new example mod file (iclamp1.mod)
 
 
 RESET
