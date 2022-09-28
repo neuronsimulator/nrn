@@ -3,8 +3,8 @@ import numpy as np
 
 from utils.cell import Cell
 
-class TableCell(Cell):
 
+class TableCell(Cell):
     def _create_cell(self):
         self.section = h.Section()
         self.section.insert("table")
@@ -15,6 +15,7 @@ class TableCell(Cell):
         avec = h.Vector()
         avec.record(self.section(0.5)._ref_ainf_table, sec=self.section)
         self.record_vectors["ainf"] = avec
+
 
 if __name__ == '__main__':
     table_cell = TableCell()

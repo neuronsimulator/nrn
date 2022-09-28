@@ -2,6 +2,7 @@ from neuron.expect_hocerr import set_quiet
 
 from table import TableCell
 
+
 def test_table():
     table_cell = TableCell()
     table_cell.record()
@@ -9,6 +10,7 @@ def test_table():
 
     print(table_cell.record_vectors)
     assert len(table_cell.record_vectors) != 0
+
 
 if __name__ == "__main__":
     set_quiet(False)

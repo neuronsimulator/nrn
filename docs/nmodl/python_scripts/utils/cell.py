@@ -1,5 +1,6 @@
 from neuron import h
 
+
 class Cell:
 
     section = None
@@ -27,7 +28,7 @@ class Cell:
         for variable in self.record_vectors:
             print("Values of variable {}:".format(variable))
             values = self.record_vectors[variable]
-            for i in range(0,len(values)):
+            for i in range(0, len(values)):
                 print("{} {}".format(i, values[i]))
 
     def __del__(self):

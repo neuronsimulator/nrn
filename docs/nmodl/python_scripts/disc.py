@@ -3,8 +3,8 @@ import numpy as np
 
 from utils.cell import Cell
 
-class DiscCell(Cell):
 
+class DiscCell(Cell):
     def _create_cell(self):
         self.section = h.Section()
         self.section.insert("disc")
@@ -17,6 +17,7 @@ class DiscCell(Cell):
         avec = h.Vector()
         avec.record(self.section(0.5)._ref_a_disc, sec=self.section)
         self.record_vectors["a"] = avec
+
 
 if __name__ == '__main__':
     disc_cell = DiscCell()
