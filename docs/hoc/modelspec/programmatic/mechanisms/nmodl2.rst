@@ -401,7 +401,12 @@ FOR_NETCONS
 ~~~~~~~~~~~
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    FOR_NETCONS (args) means to loop over all NetCon connecting to this
+    target instance and args are the names of the items of each NetCon's
+    weight vector (same as the enclosing NET_RECEIVE but possible different
+    local names).
+
+    ``TODO``: Add existing example mod file (test/coreneuron/mod/fornetcon.mod)
 
 
 PROTECT
