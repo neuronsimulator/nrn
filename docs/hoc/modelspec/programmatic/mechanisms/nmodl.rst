@@ -307,7 +307,60 @@ UNITS
 """""
 
 Description:
-    TODO: Add description and existing example mod file
+    The statements in the UNITS block define new names for units in terms of existing names in
+    the UNIX units database. This can increase legibility and convenience, and is helpful both as a
+    reminder to the user and as a means for automating the process of checking for consistency of
+    units.
+    The UNIX units database taken into account is defined in the `nrnunits.lib file <https://github.com/neuronsimulator/nrn/blob/master/share/lib/nrnunits.lib.in>`_.
+    This file includes two versions of the units due to the updates in the values of their base
+    units. Currently there are legacy and modern units that contain the changes after the updates
+    introduced on 2019 to the nist constants. The selection between those two versions can be done
+    using the ``NRN_DYNAMIC_UNITS_USE_LEGACY`` CMake variable or a call to
+    ``h.nrnunit_use_legacy(bool)`` during runtime.
+
+    New units can be defined in terms of default units and previously defined units by placing
+    definitions in the UNITS block. e.g.
+
+    .. code-block::
+        none
+
+        UNITS {
+            (uF)    =  (microfarad)
+            (Mohms) =  (megohms)
+            (V)     =  (volt)
+            (molar) =  (/liter)
+            (mM)    =  (millimolar)
+        }
+
+    and it is more convenient to define ``CONSTANT`` constants in the UNITS block rather than in the
+    ``CONSTANTS`` block --- there is less chance of a typo, and they do not appear in SCoP where
+    they can be inadvertently changed.
+    For example:
+
+    .. code-block::
+        none
+
+        UNITS {
+            F      = (faraday) (coulomb)
+            PI     = (pi) (1)
+            e      = (e) (coulomb)
+            R      = (k-mole) (joule/degC)
+            C      = (c) (cm/sec)
+        }
+
+    Here, ``C`` is the speed of light in cm/sec and ``R`` is the Gas constant.
+    Constant factors are defined in the UNITS block in the following manner.
+
+    .. code-block::
+        none
+
+        UNITS {
+            F   = 96520    (coul)
+            PI  = 3.14159  ()
+            foot2inch = 12 (inch/foot)
+        }
+
+    ``TODO``: Add existing example mod file
 
 
 .. _hoc_nmodl_parameter:
