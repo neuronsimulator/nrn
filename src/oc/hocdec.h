@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <variant>
+
 #define gargstr hoc_gargstr
 #define getarg  hoc_getarg
 
@@ -22,7 +24,6 @@ struct Symbol;
 struct Arrayinfo;
 struct Proc;
 struct Symlist;
-union Datum;
 struct cTemplate;
 union Objectdata;
 struct Object;
@@ -142,47 +143,84 @@ struct Symbol { /* symbol table entry */
 using hoc_List = hoc_Item;
 
 /**
- * @brief Interpreter stack type.
- * @todo Consider replacing with std::variant.
+ * @brief Type of pdata in mechanisms.
  */
-union Datum { /* interpreter stack type */
-    double val;
-    Symbol* sym;
-    int i;
-    // double* pval; /* first used with Eion in NEURON */
-    Object** pobj;
-    Object* obj; /* sections keep this to construct a name */
-    char** pstr;
-    hoc_Item* itm;
-    hoc_List* lst;
-    void* _pvoid; /* not used on stack, see nrnoc/point.cpp */
-    // Used to store data_handle<T> on the stack and POINTER variables in
-    // mechanisms. TODO: fix things so that this can be stored by value, or at
-    // least so that memory management is automatic
-    neuron::container::generic_data_handle* generic_handle;
-};
-// Temporary, deprecate these
-inline neuron::container::permissive_generic_data_handle& nrn_get_any(Datum& datum) {
-    // DANGER DANGER this family of methods blindly assumes that generic_handle
-    // is always the active member of the Datum union.
-    if (!datum.generic_handle) {
-        // DANGER DANGER leak
-        datum.generic_handle = new neuron::container::generic_data_handle{};
+struct Point_process;
+
+struct Datum {
+  private:
+    // Dropped: char** pstr, hoc_List* lst, Object** pobj
+    // With enough fiddling we could have a 3*sizeof(void*) "generic data handle
+    // that can also store small trivial-type values" and drop the std::variant layer
+    using storage_type = std::variant<std::monostate,
+                                      double,
+                                      hoc_Item*,
+                                      int,
+                                      neuron::container::generic_data_handle,
+                                      Object*,
+                                      Point_process*,
+                                      Symbol*>;
+
+  public:
+    Datum(std::nullptr_t)
+        : m_storage{} {}
+    Datum(void* ptr)
+        : Datum{neuron::container::data_handle<void>{ptr}} {}
+    template <typename... Args,
+              std::enable_if_t<std::is_constructible_v<storage_type, Args&&...>, int> = 0>
+    Datum(Args&&... args)
+        : m_storage{std::forward<Args>(args)...} {}
+    template <typename T>
+    Datum(neuron::container::data_handle<T> const& handle)
+        : m_storage{neuron::container::generic_data_handle{handle}} {}
+    template <typename T>
+    bool holds() {
+        return std::holds_alternative<T>(m_storage);
     }
-    // Rely on permissive/non-permissive modes having the same layout...not very nice
-    return *reinterpret_cast<neuron::container::permissive_generic_data_handle*>(
-        datum.generic_handle);
+    template <typename T>
+    T& get() {
+        if (holds<std::monostate>()) {
+            m_storage = T{};
+        }
+        return std::get<T>(m_storage);
+    }
+    /** @brief Create a data_handle<T> from the contained generic_data_handle.
+     */
+    template <typename T>
+    neuron::container::data_handle<T> get_handle() {
+        return {get<neuron::container::generic_data_handle>()};
+    }
+
+  private:
+    storage_type m_storage{};
+};
+
+/** @brief Get the given typed value from a Datum.
+ *
+ *  A default-constructed Datum holds type std::monostate; this custom version
+ *  means that get<int>(default_constructed_datum) = 42 is not an error.
+ */
+template <typename T>
+T& get(Datum& d) {
+    if constexpr (std::is_same_v<T, void*>) {
+        return d.get<neuron::container::generic_data_handle>().raw_ptr<void>();
+    } else {
+        return d.get<T>();
+    }
 }
+
+// Temporary, deprecate these
+// inline neuron::container::permissive_generic_data_handle& nrn_get_any(Datum& datum) {
+//     // Rely on permissive/non-permissive modes having the same layout...not very nice
+//     return
+//     *reinterpret_cast<neuron::container::permissive_generic_data_handle*>(&datum.get<neuron::container::generic_data_handle>());
+// }
 inline double* nrn_get_pval(Datum& datum) {
-    return static_cast<double*>(nrn_get_any(datum));
+    return static_cast<double*>(get<neuron::container::generic_data_handle>(datum));
 }
 template <typename T>
 void nrn_set_handle(Datum& datum, neuron::container::data_handle<T> dh) {
-    if (!datum.generic_handle) {
-        // DANGER DANGER leak
-        datum.generic_handle = new neuron::container::generic_data_handle{};
-    }
-    *datum.generic_handle = std::move(dh);
+    datum.get<neuron::container::generic_data_handle>() = std::move(dh);
 }
 template <typename T>
 void nrn_set_pval(Datum& datum, T* pval) {
