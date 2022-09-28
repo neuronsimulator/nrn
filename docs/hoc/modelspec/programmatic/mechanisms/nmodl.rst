@@ -290,19 +290,6 @@ Description:
     ``TODO``: Add existing example mod file
 
 
-INCLUDE
-"""""""
-
-Description:
-    Include mod file. Typically this included mod file has a suffix ``.inc``. The file is parsed
-    as its code was existing in the mod file of which is included so users can define there all thet
-    types of NEURON blocks. If one is redefined in the included file or the file that includes
-    another one, then the generated code has the corresponding code to both blocks with the order of
-    their inclusion.
-
-    ``TODO``: Add existing example mod file
-
-
 UNITS
 """""
 
@@ -429,7 +416,8 @@ CONSTANT
 
 
 Description:
-    These are variables that cannot be changed during the simulation.
+    These are variables that cannot be changed during the simulation. Better to use ``UNITS`` to
+    define those variables.
 
 
 LOCAL
@@ -563,7 +551,12 @@ Description:
     in the directories specified by the colon separated list in the 
     environment variable MODL_INCLUDES. Notice that the INCLUDE filename 
     explicitly requires a complete file name --- don't leave off the 
-    suffix, if any. 
+    suffix, if any.
+    Note that if one is redefined in the included file or the file that includes
+    another one, then the generated code has the corresponding code to both blocks with the order of
+    their inclusion.
+
+    ``TODO``: Add existing example mod file
 
     Other blocks which play similar roles in NMODL and MODL are 
 
@@ -626,7 +619,23 @@ NET_RECEIVE
 """""""""""
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    The NET_RECEIVE block is called by the NetCon event delivery system when an event arrives at
+    this postsynaptic point process.
+    For example:
+
+    .. code-block::
+        none
+
+        STATE { g (microsiemens) }
+
+        NET_RECEIVE(weight (microsiemens)) {
+            g = g + weight
+        }
+
+    In this case the value of the weight is specified by the particular NetCon object delivering the
+    event, and this value increments the conductance state.
+
+    ``TODO``: Add existing example mod file
 
 
 WATCH
