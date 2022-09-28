@@ -125,7 +125,7 @@ ELECTRODE_CURRENT
 
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 USEION
@@ -270,7 +270,7 @@ VALENCE
 REPRESENTS
 ==========
 
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 .. point_process:
 
@@ -341,7 +341,7 @@ BBCOREPOINTER
 
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 EXTERNAL
@@ -369,42 +369,42 @@ Description:
 THREADSAFE
 ~~~~~~~~~~
 
-    TODO: Add description and existing example mod file (Link with other existing documentation as well)
+    ``TODO``: Add description and existing example mod file (Link with other existing documentation as well)
 
 
 BEFORE
 ~~~~~~
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 AFTER
 ~~~~~
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 FOR_NETCONS
 ~~~~~~~~~~~
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 PROTECT
 ~~~~~~~
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 MUTEXLOCK / MUTEXUNLOCK
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 

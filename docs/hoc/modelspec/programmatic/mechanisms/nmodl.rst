@@ -234,35 +234,73 @@ TITLE
 """""
 
 Description:
-    TODO: Add description and existing example mod file
+    Title of the mechanism. Doesn't play any role to the code generation.
+
+    ``TODO``: Add existing example mod file
 
 
 COMMENT
 """""""
 
 Description:
-    TODO: Add description and existing example mod file
+    Comments of the code. ``COMMENT`` blocks start with ``COMMENT`` and end with ``ENDCOMMENT``.
+    For example:
+
+    .. code-block::
+        none
+
+        COMMENT
+            Some text here.
+        ENDCOMMENT
+
+    Single line comments can be added to the mod file also with ``:`` or ``?``.
+    For example:
+
+    .. code-block::
+        none
+
+        NEURON {
+            : This is a single line comment
+            ? This is a single line comment as well
+            GLOBAL a
+        }
+
+    ``TODO``: Add existing example mod file
 
 
 INDEPENDENT
 """""""""""
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 DEFINE
 """"""
 
 Description:
-    TODO: Add description and existing example mod file
+    Defines an integer macro variable. The name of the variable can be used in the rest of the mod
+    file and its name will be replaced by its value during parsing of the mod file. Syntax is:
+
+    .. code-block::
+        none
+
+        DEFINE <variable_name> <integer_value>
+
+    ``TODO``: Add existing example mod file
 
 
 INCLUDE
 """""""
 
 Description:
-    TODO: Add description and existing example mod file
+    Include mod file. Typically this included mod file has a suffix ``.inc``. The file is parsed
+    as its code was existing in the mod file of which is included so users can define there all thet
+    types of NEURON blocks. If one is redefined in the included file or the file that includes
+    another one, then the generated code has the corresponding code to both blocks with the order of
+    their inclusion.
+
+    ``TODO``: Add existing example mod file
 
 
 UNITS
@@ -535,35 +573,35 @@ NET_RECEIVE
 """""""""""
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 WATCH
 ~~~~~
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 CONSTRUCTOR
 """""""""""
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 DESTRUCTOR
 """"""""""
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 LINEAR
 """"""
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 NONLINEAR
@@ -601,21 +639,21 @@ CONSERVE
 """"""""
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 COMPARTMENT
 """""""""""
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 LONGITUDINAL_DIFFUSION
 """"""""""""""""""""""
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 PROCEDURE
@@ -779,102 +817,102 @@ DISCRETE
 """"""""
 
 Description:
-    TODO: Add description and existing example mod file
+    ``TODO``: Add description and existing example mod file
 
 
 STEPPED
 ~~~~~~~
 
 Description:
-    TODO: Add description and new example mod file
+    ``TODO``: Add description and new example mod file
 
 
 PARTIAL
 ~~~~~~~
 
 Description:
-    TODO: Add description and new example mod file
+    ``TODO``: Add description and new example mod file
 
 
 FUNCTION_TABLE
 ~~~~~~~~~~~~~~
 
 Description:
-    TODO: Add description and new example mod file
+    ``TODO``: Add description and new example mod file
 
 
 TERMINAL
 ~~~~~~~~
 
 Description:
-    TODO: Add description and new example mod file
+    ``TODO``: Add description and new example mod file
 
 
 MATCH
 ~~~~~
 
 Description:
-    TODO: Add description and new example mod file
+    ``TODO``: Add description and new example mod file
 
 
 SWEEP
 ~~~~~
 
 Description:
-    TODO: Add description and new example mod file
+    ``TODO``: Add description and new example mod file
 
 
 PLOT
 ~~~~
 
 Description:
-    TODO: Add description and new example mod file
+    ``TODO``: Add description and new example mod file
 
 
 CONDUCTANCE
 ~~~~~~~~~~~
 
 Description:
-    TODO: Add description and new example mod file
+    ``TODO``: Add description and new example mod file
 
 
 FORALL
 ~~~~~~
 
 Description:
-    TODO: Add description and new example mod file
+    ``TODO``: Add description and new example mod file
 
 
 WHILE
 ~~~~~
 
 Description:
-    TODO: Add description and new example mod file
+    ``TODO``: Add description and new example mod file
 
 
 IF /ELSE IF / ELSE
 ~~~~~~~~~~~~~~~~~~
 
 Description:
-    TODO: Add description and new example mod file
+    ``TODO``: Add description and new example mod file
 
 
 RESET
 ~~~~~
 
 Description:
-    TODO: Add description and new example mod file
+    ``TODO``: Add description and new example mod file
 
 
 SENS
 ~~~~
 
 Description:
-    TODO: Add description and new example mod file
+    ``TODO``: Add description and new example mod file
 
 
 LAG
 ~~~
 
 Description:
-    TODO: Add description and new example mod file
+    ``TODO``: Add description and new example mod file
