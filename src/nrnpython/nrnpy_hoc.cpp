@@ -1084,8 +1084,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             Section* sec = (Section*) hoc_sec_internal_name2ptr(n, 0);
             if (sec == NULL) {
                 PyErr_SetString(PyExc_NameError, n);
-            } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-                result = (PyObject*) sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+            } else if (sec && sec->prop && std::get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
+                result = static_cast<PyObject*>(std::get<void*>(sec->prop->dparam[PROP_PY_INDEX]));
                 Py_INCREF(result);
             } else {
                 nrn_pushsec(sec);
@@ -1097,8 +1097,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             Section* sec = (Section*) hoc_pysec_name2ptr(n, 0);
             if (sec == NULL) {
                 PyErr_SetString(PyExc_NameError, n);
-            } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-                result = (PyObject*) sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+            } else if (sec && sec->prop && std::get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
+                result = static_cast<PyObject*>(std::get<void*>(sec->prop->dparam[PROP_PY_INDEX]));
                 Py_INCREF(result);
             } else {
                 nrn_pushsec(sec);
@@ -2088,7 +2088,10 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
                 PyErr_SetString(PyExc_TypeError, "Point_process not located in a section");
                 return NULL;
             }
-            gh = prop->dparam[sym->u.rng.index].generic_handle;
+            auto& gh_ptr = std::get<std::unique_ptr<neuron::container::generic_data_handle>>(
+                prop->dparam[sym->u.rng.index]);
+            assert(gh_ptr);
+            gh = gh_ptr.get();
         } else {
             gh = nrnpy_setpointer_helper(name, pp);
             if (!gh) {

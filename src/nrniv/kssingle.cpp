@@ -242,7 +242,7 @@ void KSSingle::state(Node* nd, double* p, Datum* pd, NrnThread* nt) {
     // integrate from t-dt to t
     int i;
     double v = NODEV(nd);
-    auto* snd = pd[sndindex_].get<KSSingleNodeData*>();
+    auto* snd = static_cast<KSSingleNodeData*>(std::get<void*>(pd[sndindex_]));
     // if truly single channel, as opposed to N single channels
     // then follow the one populated state. Otherwise do the
     // general case
@@ -258,7 +258,7 @@ void KSSingle::cv_update(Node* nd, double* p, Datum* pd, NrnThread* nt) {
     // single channel event time to a recalculated time
     int i;
     double v = NODEV(nd);
-    auto* snd = pd[sndindex_].get<KSSingleNodeData*>();
+    auto* snd = static_cast<KSSingleNodeData*>(std::get<void*>(pd[sndindex_]));
     if (uses_ligands_ || !vsame(v, snd->vlast_)) {
         assert(nt->_t < snd->t1_);
         snd->vlast_ = v;
@@ -368,14 +368,14 @@ void KSSingle::nextNtrans(KSSingleNodeData* snd) {
 }
 
 void KSSingle::alloc(Prop* p, int sindex) {  // and discard old if not NULL
-    auto* snd = p->dparam[2].get<KSSingleNodeData*>();
+    auto* snd = static_cast<KSSingleNodeData*>(std::get<void*>(p->dparam[2]));
     if (snd) {
         delete snd;
     }
     snd = new KSSingleNodeData();
     snd->kss_ = this;
-    snd->ppnt_ = &(p->dparam[1].literal_value<Point_process*>());
-    p->dparam[2] = snd;
+    snd->ppnt_ = &std::get<Point_process*>(p->dparam[1]);
+    p->dparam[2] = static_cast<void*>(snd);
     snd->statepop_ = p->param + sindex;
 }
 
@@ -415,12 +415,14 @@ void KSSingle::init(double v, double* s, KSSingleNodeData* snd, NrnThread* nt) {
 }
 
 void KSChan::nsingle(Point_process* pp, int n) {
-    if (auto* snd = pp->prop->dparam[2].get<KSSingleNodeData*>(); snd) {
+    auto* snd = static_cast<KSSingleNodeData*>(std::get<void*>(pp->prop->dparam[2]));
+    if (snd) {
         snd->nsingle_ = n;
     }
 }
 int KSChan::nsingle(Point_process* pp) {
-    if (auto* snd = pp->prop->dparam[2].get<KSSingleNodeData*>(); snd) {
+    auto* snd = static_cast<KSSingleNodeData*>(std::get<void*>(pp->prop->dparam[2]));
+    if (snd) {
         return snd->nsingle_;
     } else {
         return 1000000000;

@@ -148,11 +148,11 @@ static void hoc_destroy_pnt(void* v) {
 }
 
 void KSChan::destroy_pnt(Point_process* pp) {
-    if (single_ && pp->prop->dparam[2]._pvoid) {
+    if (single_ && std::get<void*>(pp->prop->dparam[2])) {
         // printf("deleteing KSSingleNodeData\n");
-        KSSingleNodeData* snd = (KSSingleNodeData*) pp->prop->dparam[2]._pvoid;
+        auto* snd = static_cast<KSSingleNodeData*>(std::get<void*>(pp->prop->dparam[2]));
         delete snd;
-        pp->prop->dparam[2]._pvoid = NULL;
+        pp->prop->dparam[2] = static_cast<void*>(nullptr);
     }
     destroy_point_process(pp);
 }
@@ -2256,7 +2256,7 @@ void KSChan::alloc(Prop* prop) {
         if (ppsize > 0) {
             prop->dparam = nrn_prop_datum_alloc(prop->_type, ppsize, prop);
             if (is_point()) {
-                prop->dparam[2]._pvoid = NULL;
+                prop->dparam[2] = static_cast<void*>(nullptr);
             }
         } else {
             prop->dparam = 0;
@@ -2286,7 +2286,7 @@ void KSChan::alloc(Prop* prop) {
         nrn_set_pval(pp[poff + 2 * j], pion->param + 2);      // nao
         nrn_set_pval(pp[poff + 2 * j + 1], pion->param + 1);  // nai
     }
-    if (single_ && prop->dparam[2]._pvoid == NULL) {
+    if (single_ && !std::get<void*>(prop->dparam[2])) {
         single_->alloc(prop, soffset_);
     }
 }
@@ -2429,10 +2429,10 @@ void KSChan::delete_schan_node_data() {
     hoc_Item* q;
     ITERATE(q, list) {
         Point_process* pnt = (Point_process*) (OBJ(q)->u.this_pointer);
-        if (pnt && pnt->prop && pnt->prop->dparam[2]._pvoid) {
-            KSSingleNodeData* snd = (KSSingleNodeData*) pnt->prop->dparam[2]._pvoid;
+        if (pnt && pnt->prop && std::get<void*>(pnt->prop->dparam[2])) {
+            auto* snd = static_cast<KSSingleNodeData*>(std::get<void*>(pnt->prop->dparam[2]));
             delete snd;
-            pnt->prop->dparam[2]._pvoid = NULL;
+            pnt->prop->dparam[2] = static_cast<void*>(nullptr);
         }
     }
 }
@@ -2470,7 +2470,7 @@ void KSChan::init(int n, Node** nd, double** pp, Datum** ppd, NrnThread* nt) {
                 solvemat(s);
             }
             if (is_single()) {
-                KSSingleNodeData* snd = (KSSingleNodeData*) ppd[i][2]._pvoid;
+                auto* snd = static_cast<KSSingleNodeData*>(std::get<void*>(ppd[i][2]));
                 snd->nsingle_ = int(pp[i][NSingleIndex] + .5);
                 pp[i][NSingleIndex] = double(snd->nsingle_);
                 if (snd->nsingle_ > 0) {
