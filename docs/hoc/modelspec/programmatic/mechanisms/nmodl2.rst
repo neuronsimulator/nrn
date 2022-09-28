@@ -125,7 +125,11 @@ ELECTRODE_CURRENT
 
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    The ELECTRODE_CURRENT statement has two important consequences: positive values of the current
+    will depolarize the cell (in contrast to the hyperpolarizing effect of positive transmembrane
+    currents), and when the extracellular mechanism is present there will be a change in the
+    extracellular potential ``vext``.
+    ``TODO``: Add existing example mod file (iclamp1.mod)
 
 
 USEION
