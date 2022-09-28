@@ -159,7 +159,8 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
             Memb_list* ml = mla[j].second;
             if (nrn_has_net_event(type)) {
                 for (int j = 0; j < ml->nodecount; ++j) {
-                    auto* pnt = std::get<Point_process*>(ml->pdata[j][1]);
+                    using std::get;
+                    auto* pnt = get<Point_process*>(ml->pdata[j][1]);
                     PreSyn* ps = (PreSyn*) pnt->presyn_;
                     cgs[i].output_ps[npre] = ps;
                     long agid = -1;
@@ -274,6 +275,7 @@ void CellGroup::datumtransform(CellGroup* cgs) {
 
 
 void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_list* ml) {
+    using std::get;
     NrnThread& nt = nrn_threads[ith];
     double* a = nt._actual_area;
     int nnode = nt.end;
@@ -336,7 +338,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 }
             } else if (dmap[j] == -2) {  // this is an ion and dparam[j][0].i is the iontype
                 etype = -2;
-                eindex = std::get<int>(dparam[j]);
+                eindex = get<int>(dparam[j]);
             } else if (dmap[j] == -3) {  // cvodeieq is always last and never seen
                 assert(dmap[j] != -3);
             } else if (dmap[j] == -4) {  // netsend (_tqitem pointer)
@@ -419,7 +421,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] > 1000) {  // int* into ion dparam[xxx][0]
                 // store the actual ionstyle
                 etype = dmap[j];
-                eindex = *static_cast<int*>(std::get<void*>(dparam[j]));
+                eindex = *static_cast<int*>(get<void*>(dparam[j]));
             } else {
                 char errmes[100];
                 sprintf(errmes, "Unknown semantics type %d for dparam item %d of", dmap[j], j);
@@ -574,7 +576,7 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
         }
     }
     int* acnt = new int[nrn_nthread];
-
+    using std::get;
     for (int i = 0; i < n_memb_func; ++i) {
         if (nrn_is_artificial_[i] && memb_list[i].nodecount) {
             // skip PatternStim if file mode transfer.
@@ -590,7 +592,7 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                 acnt[id] = 0;
             }
             for (int j = 0; j < memb_list[i].nodecount; ++j) {
-                auto* pnt = std::get<Point_process*>(memb_list[i].pdata[j][1]);
+                auto* pnt = get<Point_process*>(memb_list[i].pdata[j][1]);
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 ++acnt[id];
             }
@@ -616,7 +618,7 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                 acnt[id] = 0;
             }
             for (int j = 0; j < memb_list[i].nodecount; ++j) {
-                auto* pnt = std::get<Point_process*>(memb_list[i].pdata[j][1]);
+                auto* pnt = get<Point_process*>(memb_list[i].pdata[j][1]);
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 Memb_list* ml = cgs[id].mlwithart.back().second;
                 ml->_data[acnt[id]] = memb_list[i]._data[j];
