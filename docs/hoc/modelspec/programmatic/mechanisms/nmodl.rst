@@ -701,21 +701,81 @@ CONSERVE
 """"""""
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    This statement's fundamental idea is to systematically account for conservation of material.
+    When there is neither a source nor a sink reaction for a STATE , the
+    differential equations are not linearly independent when calculating steady states (dt
+    approaches infinity). Steady states can be approximated by integrating for several steps from
+    any initial condition with large dt, but roundoff error can be a problem if the Jacobian matrix
+    is nearly singular. To solve the equations while maintaining strict numerical conservation
+    throughout the simulation (no accumulation of roundoff error), the user is allowed to explicitly
+    specify conservation equations with the CONSERVE statement. The CONSERVE statement does not add
+    to the information content of a kinetic scheme and should be considered only as a hint to the
+    translator. The NMODL translator uses this algebraic equation to replace the ODE for the last
+    STATE on the left side of the equal sign. If one of the STATE names is an array, the
+    conservation equation will contain an implicit sum over the array. If the last STATE is an
+    array, then the ODE for the last STATE array element will be replaced by the algebraic equation.
+    The choice of which STATE ODE is replaced by the algebraic equation is implementation-dependent
+    and does not affect the solution (to within roundoff error). If a CONSERVEd STATE is relative
+    to a compartment size, then compartment size is implicitly taken into account for the STATEs on
+    the left hand side of the CONSERVE equation. The right hand side is merely an expression, in
+    which any necessary compartment sizes must be included explicitly.
+
+    ``TODO``: Add existing example mod file
 
 
 COMPARTMENT
 """""""""""
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    The compartment volumes needed by the KINETIC scheme are given using the ``COMPARTMENT``
+    keyword. The syntax of this construct is:
+
+    .. code-block::
+        none
+
+        COMPARTMENT volume {state1 state2 . . . }
+
+    where the STATE s named in the braces have the same compartment volume given by the volume
+    expression after the COMPARTMENT keyword. 
+    In case a mechanism involves many compartments whose relative volumes are specified by the
+    elements of an array the syntax is:
+
+    .. code-block::
+        none
+
+        COMPARTMENT index, volume [ index ] { state1 state2 . . . }
+
+    where the STATEs that are diffusing are listed inside the braces.
+
+    ``TODO``: Add existing example mod file (cadif.mod)
 
 
 LONGITUDINAL_DIFFUSION
 """"""""""""""""""""""
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    This statement specifies that this mechanism includes nonlocal diffusion, i.e. longitudinal
+    diffusion along a section and into connecting sections. The syntax for scalar STATEs is:
+
+    .. code-block::
+        none
+
+        LONGITUDINAL_DIFFUSION flux_expr { state1 state2 . . . }
+
+    where ``flux_expr`` is the product of the diffusion constant and the cross-sectional area
+    between adjacent compartments. Units of the ``flux_expr`` must be (:math:`micron^4 /ms`), i.e.
+    the diffusion constant has units of (:math:`micron^2 /ms`) and the cross-sectional area has
+    units of (:math:`micron^2`). For cylindrical shell compartments, the cross-sectional area is
+    just the volume per unit length. If the states are arrays then all elements are assumed to
+    diffuse between corresponding volumes in adjacent segments and the iteration variable must be
+    specified as in:
+
+    .. code-block::
+        none
+
+        LONGITUDINAL_DIFFUSION index , flux_expr ( index ) { state1 state2 . . . }
+
+    ``TODO``: Add existing example mod file (cadif.mod)
 
 
 PROCEDURE
