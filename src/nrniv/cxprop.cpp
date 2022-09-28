@@ -81,18 +81,25 @@ double* nrn_prop_data_alloc(int type, int count, Prop* p) {
 }
 
 Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
-    int i;
-    Datum* ppd;
     if (!datumpools_[type]) {
         datumpools_[type] = new DatumArrayPool(APSIZE, count);
     }
     assert(datumpools_[type]->d2() == count);
     p->_alloc_seq = datumpools_[type]->ntget();
-    ppd = datumpools_[type]->alloc();
+    auto* ppd = datumpools_[type]->alloc();  // allocates storage for the datums
     // if (type > 1) printf("nrn_prop_datum_alloc %d %s %d %p\n", type, memb_func[type].sym->name,
     // count, ppd);
-    for (i = 0; i < count; ++i) {
-        ppd[i]._pvoid = 0;
+    for (int i = 0; i < count; ++i) {
+        auto* const semantics = memb_func[type].dparam_semantics;
+        // Call the Datum constructor, either setting it to be a
+        // generic_data_handle or a std::monostate value.
+        new (ppd + i) Datum();
+        if (semantics &&
+            (semantics[i] == -5 /* POINTER */ || semantics[i] == -7 /* BBCOREPOINTER */)) {
+            new (ppd + i) Datum(neuron::container::generic_data_handle{});
+        } else {
+            new (ppd + i) Datum();
+        }
     }
     return ppd;
 }
@@ -105,9 +112,17 @@ void nrn_prop_data_free(int type, double* pd) {
 }
 
 void nrn_prop_datum_free(int type, Datum* ppd) {
-    // if (type > 1) printf("nrn_prop_datum_free %d %s %p\n", type, memb_func[type].sym->name, ppd);
+    // if (type > 1) printf("nrn_prop_datum_free %d %s %p\n", type,
+    // memb_func[type].sym->name, ppd);
     if (ppd) {
-        datumpools_[type]->hpfree(ppd);
+        auto* const datumpool = datumpools_[type];
+        // Destruct the Datums
+        auto const count = datumpool->d2();
+        for (auto i = 0; i < count; ++i) {
+            ppd[i].~Datum();
+        }
+        // Deallocate them
+        datumpool->hpfree(ppd);
     }
 }
 
@@ -383,11 +398,10 @@ void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip) {
     assert(ip < op->d2());
     assert(1);  //  should point into pool() for one of the op pool chains
     // and the index should be a pointer to the double in np
-    auto& generic_handle = *dp[id].generic_handle;
-    long i = *static_cast<neuron::container::data_handle<double>>(generic_handle);
+    long i = *dp[id].get_handle<double>();
     assert(i >= 0 && i < np->size());
     double* pvar = np->items()[i];
-    generic_handle = pvar + ip;
+    dp[id] = neuron::container::data_handle<double>(pvar + ip);
 }
 
 

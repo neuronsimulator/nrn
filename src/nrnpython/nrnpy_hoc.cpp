@@ -960,6 +960,7 @@ PyObject* toplevel_get(PyObject* subself, const char* n) {
 
 // TODO: This function needs refactoring; there are too many exit points
 static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
+    using std::get;
     PyHocObject* self = (PyHocObject*) subself;
     if (self->type_ == PyHoc::HocObject && !self->ho_) {
         PyErr_SetString(PyExc_TypeError, "not a compound type");
@@ -1096,8 +1097,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             Section* sec = (Section*) hoc_sec_internal_name2ptr(n, 0);
             if (sec == NULL) {
                 PyErr_SetString(PyExc_NameError, n);
-            } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-                result = (PyObject*) sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+            } else if (sec && sec->prop && get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
+                result = static_cast<PyObject*>(get<void*>(sec->prop->dparam[PROP_PY_INDEX]));
                 Py_INCREF(result);
             } else {
                 nrn_pushsec(sec);
@@ -1109,8 +1110,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             Section* sec = (Section*) hoc_pysec_name2ptr(n, 0);
             if (sec == NULL) {
                 PyErr_SetString(PyExc_NameError, n);
-            } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-                result = (PyObject*) sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+            } else if (sec && sec->prop && get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
+                result = static_cast<PyObject*>(get<void*>(sec->prop->dparam[PROP_PY_INDEX]));
                 Py_INCREF(result);
             } else {
                 nrn_pushsec(sec);
@@ -2100,7 +2101,8 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
                 PyErr_SetString(PyExc_TypeError, "Point_process not located in a section");
                 return NULL;
             }
-            gh = prop->dparam[sym->u.rng.index].generic_handle;
+            using std::get;
+            gh = &get<neuron::container::generic_data_handle>(prop->dparam[sym->u.rng.index]);
         } else {
             gh = nrnpy_setpointer_helper(name, pp);
             if (!gh) {
