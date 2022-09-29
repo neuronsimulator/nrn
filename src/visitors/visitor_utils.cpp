@@ -175,9 +175,8 @@ std::set<std::string> get_global_vars(const Program& node) {
                              NmodlType::prime_name | NmodlType::assigned_definition |
                              NmodlType::read_ion_var | NmodlType::write_ion_var |
                              NmodlType::nonspecific_cur_var | NmodlType::electrode_cur_var |
-                             NmodlType::section_var | NmodlType::constant_var |
-                             NmodlType::extern_neuron_variable | NmodlType::state_var |
-                             NmodlType::factor_def;
+                             NmodlType::constant_var | NmodlType::extern_neuron_variable |
+                             NmodlType::state_var | NmodlType::factor_def;
         for (const auto& globalvar: symtab->get_variables_with_properties(property)) {
             std::string var_name = globalvar->get_name();
             if (globalvar->is_array()) {

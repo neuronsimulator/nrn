@@ -159,9 +159,6 @@ enum class NmodlType : enum_type {
     /// Electrode Current
     electrode_cur_var = 1L << 13,
 
-    /// Section Type
-    section_var = 1L << 14,
-
     /// Argument Type
     argument = 1L << 15,
 

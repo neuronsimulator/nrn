@@ -32,7 +32,6 @@ bool Symbol::is_variable() const noexcept {
                                     | NmodlType::write_ion_var
                                     | NmodlType::nonspecific_cur_var
                                     | NmodlType::electrode_cur_var
-                                    | NmodlType::section_var
                                     | NmodlType::argument
                                     | NmodlType::extern_neuron_variable;
     // clang-format on

@@ -177,7 +177,6 @@ void init_symtab_module(py::module& m) {
         .value("procedure_block", syminfo::NmodlType::procedure_block)
         .value("range_var", syminfo::NmodlType::range_var)
         .value("read_ion_var", syminfo::NmodlType::read_ion_var)
-        .value("section_var", syminfo::NmodlType::section_var)
         .value("state_var", syminfo::NmodlType::state_var)
         .value("table_assigned_var", syminfo::NmodlType::table_assigned_var)
         .value("table_statement_var", syminfo::NmodlType::table_statement_var)

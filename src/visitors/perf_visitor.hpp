@@ -198,8 +198,6 @@ class PerfVisitor: public ConstAstVisitor {
 
     void visit_program(const ast::Program& node) override;
 
-    void visit_plot_block(const ast::PlotBlock& node) override;
-
     /// skip initial block under net_receive block
     void visit_initial_block(const ast::InitialBlock& node) override;
 
@@ -226,8 +224,6 @@ class PerfVisitor: public ConstAstVisitor {
     void visit_net_receive_block(const ast::NetReceiveBlock& node) override;
 
     void visit_breakpoint_block(const ast::BreakpointBlock& node) override;
-
-    void visit_terminal_block(const ast::TerminalBlock& node) override;
 
     void visit_before_block(const ast::BeforeBlock& node) override;
 

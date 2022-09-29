@@ -24,7 +24,6 @@ The following symbols are used in the document to descrive the status :
 |SOLVE | ✅ |
 |USING | ✅ |
 |WITH | ✅ |
-|STEPPED | ✅ |
 |DISCRETE | ✅ |
 |FROM | ✅ |
 |FORALL | ✅ |
@@ -35,7 +34,6 @@ The following symbols are used in the document to descrive the status :
 |ELSE | ✅ |
 |START | ✅ |
 |STEP | ✅ |
-|SENS | ✅ |
 |SOLVEFOR | ✅ |
 |PROCEDURE | ✅ |
 |PARTIAL | ✅ |
@@ -43,7 +41,6 @@ The following symbols are used in the document to descrive the status :
 |IFERROR | ✅ |
 |PARAMETER | ✅ |
 |EQUATION | ✅ |
-|TERMINAL | ✅ |
 |LINEAR | ✅ |
 |NONLINEAR | ✅ |
 |FUNCTION | ✅ |
@@ -67,7 +64,6 @@ The following symbols are used in the document to descrive the status :
 | != | ✅ |
 | ! | ✅ |
 | \>= | ✅ |
-|PLOT | ✅ |
 |VS | ✅ |
 |LAG | ✅ |
 |RESET | ✅ |
@@ -92,7 +88,6 @@ The following symbols are used in the document to descrive the status :
 |USEION | ✅ |
 |THREADSAFE | ✅ |
 |GLOBAL | ✅ |
-|SECTION | ✅ |
 |RANGE | ✅ |
 |POINTER | ✅ |
 |BBCOREPOINTER | ✅ |

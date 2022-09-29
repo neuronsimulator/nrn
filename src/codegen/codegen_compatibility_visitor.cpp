@@ -20,8 +20,6 @@ const std::map<ast::AstNodeType, CodegenCompatibilityVisitor::FunctionPointer>
     CodegenCompatibilityVisitor::unhandled_ast_types_func(
         {{AstNodeType::MATCH_BLOCK,
           &CodegenCompatibilityVisitor::return_error_without_name<MatchBlock>},
-         {AstNodeType::TERMINAL_BLOCK,
-          &CodegenCompatibilityVisitor::return_error_without_name<TerminalBlock>},
          {AstNodeType::DISCRETE_BLOCK,
           &CodegenCompatibilityVisitor::return_error_with_name<DiscreteBlock>},
          {AstNodeType::PARTIAL_BLOCK,
