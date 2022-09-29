@@ -33,7 +33,6 @@ static struct { /* Keywords */
                 {"FUNCTION", FUNCTION1},
                 {"FUNCTION_TABLE", FUNCTION_TABLE},
                 {"PROCEDURE", PROCEDURE},
-                {"PARTIAL", PARTIAL},
                 {"INT", INT},
                 {"DEL2", DEL2},
                 {"DEL", DEL},
@@ -59,8 +58,6 @@ static struct { /* Keywords */
                 {"MATCH", MATCH},
                 {"MODEL_LEVEL", MODEL_LEVEL}, /* inserted by merge */
                 {"SWEEP", SWEEP},
-                {"FIRST", FIRST},
-                {"LAST", LAST},
                 {"COMPARTMENT", COMPARTMENT},
                 {"LONGITUDINAL_DIFFUSION", LONGDIFUS},
                 {"IFERROR", IFERROR},
