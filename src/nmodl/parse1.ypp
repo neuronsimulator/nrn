@@ -82,7 +82,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	VERBATIM COMMENT MODEL CONSTANT INDEPENDENT DEPENDENT STATE
 %token	<qp>	INITIAL1 DERIVATIVE SOLVE USING WITH DISCRETE
 %token	<qp>	FROM FORALL1 TO BY WHILE IF ELSE START1 STEP SOLVEFOR
-%token	<qp>	PROCEDURE PARTIAL DEL DEL2 DEFINE1 IFERROR PARAMETER INT
+%token	<qp>	PROCEDURE DEL DEL2 DEFINE1 IFERROR PARAMETER INT
 %token	<qp>	DERFUNC EQUATION LINEAR NONLINEAR FUNCTION1 LOCAL
 %token	<qp>	METHOD LIN1 NONLIN1 TABLE DEPEND BREAKPOINT
 %token	<qp>	INCLUDE1 FUNCTION_TABLE PROTECT NRNMUTEXLOCK NRNMUTEXUNLOCK
@@ -91,7 +91,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	OR AND GT LT LE EQ NE NOT
 %token	<qp>	NAME PRIME REAL INTEGER DEFINEDVAR ONTOLOGY_ID
 %type	<qp>	Name NUMBER real intexpr integer
-%token	<qp>	STRING VS LAG RESET MATCH MODEL_LEVEL SWEEP FIRST LAST
+%token	<qp>	STRING VS LAG RESET MATCH MODEL_LEVEL SWEEP
 %type	<str>	line model units unit limits abstol
 %type	<qp>	name number nonlineqn primary term linexpr
 %type	<qp>	expr aexpr ostmt astmt stmtlist locallist locallist1
@@ -102,7 +102,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %type	<qp>	declare parmblk indepblk depblk stateblk
 %type	<qp>	watchstmt watchdir watch1 fornetcon
 %type	<qp>	constblk
-%type	<qp>	matchblk matchlist match matchname pareqn firstlast
+%type	<qp>	matchblk matchlist match matchname
 
 %token	<qp>	KINETIC CONSERVE REACTION REACT1 COMPARTMENT UNITS
 %token	<qp>	UNITSON UNITSOFF LONGDIFUS
@@ -330,7 +330,6 @@ proc:	 {blocktype = INITIAL1;} initblk
 	| {blocktype = PROCEDURE;} procedblk
 	| {blocktype = NETRECEIVE;} netrecblk
 	| {blocktype = DISCRETE;} discretblk
-	| {lexcontext = blocktype = PARTIAL;} partialblk
 	| {lexcontext = blocktype = KINETIC;ostmt_start();} kineticblk {see_ostmt();}
 	| {blocktype = CONSTRUCTOR;} constructblk
 	| {blocktype = DESTRUCTOR;} destructblk
@@ -433,7 +432,6 @@ ostmt:	fromstmt
 	| RESET
 		{ replacstr($1, " _reset = 1;\n"); }
 	| matchblk
-	| pareqn	/* 2nd order partial equation and boundary conditions*/
 	| tablestmt
 		{if (blocktype !=FUNCTION1 && blocktype != PROCEDURE) {
 			diag("TABLE valid only for FUNCTION or PROCEDURE", (char *)0);
@@ -754,24 +752,6 @@ nonlinblk: NONLINEAR NAME solvefor stmtlist '}'
 discretblk: DISCRETE NAME stmtlist '}'
 		 /*massagediscblk()*/
 		{massagediscblk($1, $2, $3, $4);}
-	;
-partialblk: PARTIAL NAME stmtlist '}'
-		/*massagepartial()*/
-		{massagepartial($1, $2, $3, $4);
-		lexcontext = 0;
-		}
-	| PARTIAL error {
-diag("within the PARTIAL block must occur an equation with the syntax ---\n",
-"~ V' = F*DEL2(V) + G\n"); }
-	;
-pareqn: '~' PRIME '=' NAME '*' DEL2 '(' NAME ')' '+' NAME
-		{partial_eqn($2, $4, $8, $11);}
-	| '~' DEL NAME '[' firstlast ']' '=' expr
-		{partial_bndry(0, $3, $5, $8, lastok);}
-	| '~' NAME '[' firstlast ']' '=' expr
-		{partial_bndry(2, $2, $4, $7, lastok);}
-	;
-firstlast: FIRST | LAST
 	;
 functableblk: FUNCTION_TABLE NAME '(' arglist ')' units
 		{Item *b1, *b2;

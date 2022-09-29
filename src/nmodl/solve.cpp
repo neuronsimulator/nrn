@@ -298,15 +298,6 @@ void solvhandler() {
 #endif
             break;
 #endif
-        case PARF:
-#if VECTORIZE
-            fprintf(stderr, "Notice: PARTIAL is not thread safe.\n");
-            vectorize = 0;
-#endif
-            if (btype == BREAKPOINT)
-                whileloop(qsol, (long) DERF, 0);
-            solv_partial(qsol, fun);
-            break;
         default:
             diag("Illegal or unimplemented SOLVE type: ", fun->name);
             break;
