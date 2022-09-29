@@ -13,7 +13,7 @@ static char Derivimplicit[] = "derivimplicit";
 
 extern Symbol* indepsym;
 extern List* indeplist;
-extern int sens_parm, numlist;
+extern int numlist;
 int dtsav_for_nrn_state;
 void copylist(List*, Item*);
 List* massage_list_;
@@ -468,7 +468,7 @@ void deriv_used(Symbol* s, Item* q1, Item* q2) /* q1, q2 are begin and end token
 
 static int matchused = 0; /* set when MATCH seen */
 /* args are --- derivblk: DERIVATIVE NAME stmtlist '}' */
-void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) {
+void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4) {
     int count = 0, deriv_implicit, solve_seen;
     char units[SB];
     Item *qs, *q, *mixed_eqns(Item * q2, Item * q3, Item * q4);
@@ -529,10 +529,6 @@ is not allowed on the left hand side.");
                 }
             }
             Lappendsym(deriv_state_list, state);
-            if (sensused) {
-                add_sens_statelist(state);
-                state->varnum = count;
-            }
 #if CVODE
             slist_data(state, count, numlist);
 #endif
@@ -569,12 +565,7 @@ is not allowed on the left hand side.");
         diag("DERIVATIVE contains no derivatives", (char*) 0);
     }
     derfun->used = count;
-    Sprintf(buf,
-            "static int _slist%d[%d], _dlist%d[%d];\n",
-            numlist,
-            count * (1 + 2 * sens_parm),
-            numlist,
-            count * (1 + 2 * sens_parm));
+    Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n", numlist, count, numlist, count);
     Linsertstr(procfunc, buf);
 
 #if CVODE
@@ -654,7 +645,7 @@ is not allowed on the left hand side.");
         Sprintf(buf,
                 "static double _savstate%d[%d], *_temp%d = _savstate%d;\n",
                 numlist,
-                count * (1 + 2 * sens_parm),
+                count,
                 numlist,
                 numlist);
         q = linsertstr(procfunc, buf);
@@ -665,9 +656,6 @@ is not allowed on the left hand side.");
     }
     movelist(q1, q4, procfunc);
     Lappendstr(procfunc, "return _reset;}\n");
-    if (sensused)
-        sensmassage(DERIVATIVE, q2, numlist); /*among other things
-            the name of q2 is changed. ie a new item */
     if (matchused) {
         matchmassage(count);
     }
@@ -688,7 +676,7 @@ if (_deriv%d_advance) {\n",
                 numlist);
         Insertstr(q4, buf);
         sp = install("D", STRING);
-        sp->araydim = count; /*this breaks SENS*/
+        sp->araydim = count;
         q = insertsym(q4, sp);
         eqnqueue(q);
         Sprintf(buf,

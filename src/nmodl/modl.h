@@ -41,7 +41,6 @@
         of the form state = state0 are constructed here.
   constructorfunc	statements added to tail of allocation function
   destructorfunc	statements executed when POINT_PROCESS destroyed
-  termfunc	main body of terminal() from TERMINAL
   modelfunc	main body of model() from EQUATION. SOLVE statements in the
         equation block get expanded in this list
   procfunc	all remaining blocks get concatenated to this list. It
@@ -202,7 +201,6 @@ typedef struct Symbol {
 #define KINF          02000
 #define NLINF         04000
 #define DISCF         010000
-#define STEP1         020000
 #define PARF          040000
 #define EXTDEF        0100000
 #define LINF          0200000
@@ -228,7 +226,6 @@ typedef struct Symbol {
 #define NRNIONFLAG                                  \
     01000 /* temporary flag to allow READ and WRITE \
              without declaring twice */
-#define NRNSECTION       02000
 #define NRNPOINTER       04000
 #define IONCONC          010000
 #define NRNBBCOREPOINTER 020000

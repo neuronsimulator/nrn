@@ -24,8 +24,7 @@ All other variables have values in that single array but not all those values
 are available from HOC.
 
 Variables accessible to NEURON are variables that appear within
-GLOBAL, SECTION, and RANGE statements.
-SECTION variables are not currently implemented.
+GLOBAL, and RANGE statements.
 
 Variables that do not appear in the p-array are:
  1)externally declared variables such as celsius, t.
@@ -1745,9 +1744,6 @@ void nrn_list(Item* q1, Item* q2) {
         for (q = q1->next; q != q2->next; q = q->next) {
             SYM(q)->nrntype |= NRNRANGE;
         }
-        break;
-    case SECTION:
-        diag("NEURON SECTION variables not implemented", (char*) 0);
         break;
     case GLOBAL:
         for (q = q1->next; q != q2->next; q = q->next) {

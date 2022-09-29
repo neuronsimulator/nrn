@@ -58,7 +58,6 @@ static int leftside;	/* inside left hand side of equation? */
 static int pstate;	/* number of state in a primary expression */
 static int tstate;	/* number of states in a term */
 static Item *lastok;	/* last token accepted by expr */
-static int sensused;	/* a SENS statement occurred in this block */
 static Symbol *matchindex; /* local symbol for implied MATCH loop */
 static int model_level = 0; /* the model level prepended to declaration
 				blocks by merge */
@@ -81,10 +80,10 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 }
 
 %token	<qp>	VERBATIM COMMENT MODEL CONSTANT INDEPENDENT DEPENDENT STATE
-%token	<qp>	INITIAL1 DERIVATIVE SOLVE USING WITH STEPPED DISCRETE
-%token	<qp>	FROM FORALL1 TO BY WHILE IF ELSE START1 STEP SENS SOLVEFOR
+%token	<qp>	INITIAL1 DERIVATIVE SOLVE USING WITH DISCRETE
+%token	<qp>	FROM FORALL1 TO BY WHILE IF ELSE START1 STEP SOLVEFOR
 %token	<qp>	PROCEDURE PARTIAL DEL DEL2 DEFINE1 IFERROR PARAMETER INT
-%token	<qp>	DERFUNC EQUATION TERMINAL LINEAR NONLINEAR FUNCTION1 LOCAL
+%token	<qp>	DERFUNC EQUATION LINEAR NONLINEAR FUNCTION1 LOCAL
 %token	<qp>	METHOD LIN1 NONLIN1 TABLE DEPEND BREAKPOINT
 %token	<qp>	INCLUDE1 FUNCTION_TABLE PROTECT NRNMUTEXLOCK NRNMUTEXUNLOCK
 %token	<qp>	'{' '}' '(' ')' '[' ']' '@' '+' '*' '-' '/' '=' '^' ':' ','
@@ -92,17 +91,17 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	OR AND GT LT LE EQ NE NOT
 %token	<qp>	NAME PRIME REAL INTEGER DEFINEDVAR ONTOLOGY_ID
 %type	<qp>	Name NUMBER real intexpr integer
-%token	<qp>	STRING PLOT VS LAG RESET MATCH MODEL_LEVEL SWEEP FIRST LAST
-%type	<str>	line model units optindex unit limits abstol
-%type	<qp>	name number nonlineqn primary term linexpr numlist
+%token	<qp>	STRING VS LAG RESET MATCH MODEL_LEVEL SWEEP FIRST LAST
+%type	<str>	line model units unit limits abstol
+%type	<qp>	name number nonlineqn primary term linexpr
 %type	<qp>	expr aexpr ostmt astmt stmtlist locallist locallist1
 %type	<qp>	varname exprlist define1
 %type	<qp>	asgn fromstmt whilestmt ifstmt solveblk funccall ifsolerr
-%type	<qp>	opinc opstart senslist sens lagstmt forallstmt
-%type	<qp>	parmasgn stepped indepdef depdef withby
-%type	<qp>	declare parmblk indepblk depblk stateblk stepblk
+%type	<qp>	opinc opstart lagstmt forallstmt
+%type	<qp>	parmasgn indepdef depdef withby
+%type	<qp>	declare parmblk indepblk depblk stateblk
 %type	<qp>	watchstmt watchdir watch1 fornetcon
-%type	<qp>	plotdecl constblk
+%type	<qp>	constblk
 %type	<qp>	matchblk matchlist match matchname pareqn firstlast
 
 %token	<qp>	KINETIC CONSERVE REACTION REACT1 COMPARTMENT UNITS
@@ -114,7 +113,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %type	<i>	locoptarray
 /* interface to NEURON */
 %token	<qp>	NEURON SUFFIX NONSPECIFIC READ WRITE USEION VALENCE THREADSAFE REPRESENTS
-%token	<qp>	GLOBAL SECTION RANGE POINTER BBCOREPOINTER EXTERNAL BEFORE AFTER WATCH
+%token	<qp>	GLOBAL RANGE POINTER BBCOREPOINTER EXTERNAL BEFORE AFTER WATCH
 %token	<qp>	ELECTRODE_CURRENT CONSTRUCTOR DESTRUCTOR NETRECEIVE FOR_NETCONS
 %type	<qp>	neuronblk nrnuse nrnlist optnrnlist valence initstmt bablk optontology
 %token	<qp>	CONDUCTANCE
@@ -153,10 +152,6 @@ all:	/*nothing*/
 	| all MODEL_LEVEL INTEGER {model_level = atoi(STR($3));}
 		declare {model_level = 0;}
 	| all 
-		{if (sensused)
-			diag("sensitivity analysis not implemented for",
-				" this block type");
-		}
 	    proc
 	| all VERBATIM 
 		/* read everything and move as is to end of procfunc */
@@ -201,15 +196,14 @@ Name:	NAME
 			when this was done to the lookahead token in lex */
 		}
 	;
-declare: parmblk | indepblk | depblk | stateblk | stepblk
-	| plotdecl | neuronblk | unitblk | constblk
+declare: parmblk | indepblk | depblk | stateblk
+	| neuronblk | unitblk | constblk
 	;
 parmblk: PARAMETER '{' parmbody '}' {deltokens($1, $4);}
 	;
 parmbody: /*nothing*/
 	| parmbody parmasgn
 		{ explicit_decl(model_level, $2);}
-/*	| parmbody stepped */ /*now has its own block*/
 	;
 parmasgn: NAME '=' number units limits
 		/* install in syminorder and put info in Symbol->u.str
@@ -241,19 +235,6 @@ limits: /*nothing*/
 		 Sprintf(buf, "%s %s", STR($2), STR($4));
 		 $$ = stralloc(buf, (char*)0);
 		}
-	;
-stepblk: STEPPED '{' stepbdy '}' {deltokens($1, $4);}
-	;
-stepbdy: /*nothing*/
-	| stepbdy stepped
-		{ explicit_decl(model_level, $2); }
-	;
-stepped: NAME '=' numlist units
-		/* install */
-		{steppedinstall(SYM($1), $3, lastok, $4);}
-	;
-numlist: number ',' number
-	| numlist ',' number
 	;
 name:	Name
 	| PRIME
@@ -339,29 +320,6 @@ abstol: /*nothing*/
 	;
 stateblk: STATE  {stateblock = 1;} '{' depbody '}' {deltokens($1, $5);}
 	;
-plotdecl: PLOT pvlist VS name optindex
-		/* construct plotlist. Used in parout.c */
-		{ Item *q;
-		 q = linsertsym(plotlist, SYM($4)); Insertstr(q->next, $5); }
-		
-	| PLOT error { diag("PLOT namelist VS name", (char *)0);}
-	;
-pvlist:	name optindex
-		{ if (plotlist->next == plotlist) {
-			Lappendsym(plotlist, SYM($1));
-			Lappendstr(plotlist, $2);
-		  }else{
-			diag("Only one PLOT declaration allowed", (char *)0);
-		  }
-		}
-	| pvlist ',' name optindex
-		{ Lappendsym(plotlist, SYM($3)); Lappendstr(plotlist, $4);}
-	;
-optindex: /*nothing*/
-		{ $$ = "-1";}
-	| '[' INTEGER ']'
-		{ $$ = STR($2);}
-	;
 proc:	 {blocktype = INITIAL1;} initblk
 		/*blocktype set prior to parsing*/
 	| {lexcontext = NONLINEAR; blocktype = DERIVATIVE;} derivblk
@@ -371,7 +329,6 @@ proc:	 {blocktype = INITIAL1;} initblk
 	| {blocktype = FUNCTION1;} funcblk
 	| {blocktype = PROCEDURE;} procedblk
 	| {blocktype = NETRECEIVE;} netrecblk
-	| {blocktype = TERMINAL;} terminalblk
 	| {blocktype = DISCRETE;} discretblk
 	| {lexcontext = blocktype = PARTIAL;} partialblk
 	| {lexcontext = blocktype = KINETIC;ostmt_start();} kineticblk {see_ostmt();}
@@ -469,7 +426,6 @@ ostmt:	fromstmt
 		
 	| COMMENT
 		{inblock(SYM($1)->name); deltokens($1, intoken->prev);}
-	| sens
 	| compart	{check_block(KINETIC, blocktype, "COMPARTMENT");}
 	| ldifus	{check_block(KINETIC, blocktype, "LONGDIFUS");}
 	| conserve	{check_block(KINETIC, blocktype, "CONSERVE");}
@@ -781,18 +737,18 @@ optelse: /*nothing*/
 	;
 derivblk: DERIVATIVE NAME stmtlist '}'
 		/* process using massagederiv() */
-		{massagederiv($1, $2, $3, $4, sensused); sensused = 0;}
+		{massagederiv($1, $2, $3, $4);}
 	;
 linblk: LINEAR NAME solvefor {init_linblk($2);} stmtlist '}'
 		/*massage_linblk()*/
-		{massage_linblk($1, $2, $5, $6, sensused);
-		lexcontext = 0; sensused = 0;
+		{massage_linblk($1, $2, $5, $6);
+		lexcontext = 0;
 		}
 	;
 nonlinblk: NONLINEAR NAME solvefor stmtlist '}'
 		/*massagenonlin()*/
-		{massagenonlin($1, $2, $4, $5, sensused);
-		lexcontext = 0; sensused = 0;
+		{massagenonlin($1, $2, $4, $5);
+		lexcontext = 0;
 		}
 	;
 discretblk: DISCRETE NAME stmtlist '}'
@@ -962,9 +918,6 @@ brkptblk: BREAKPOINT stmtlist '}'
 		/* move it all to modelfunc */
 		{brkpnt_exists = 1; movelist($2, $3, modelfunc);}
 	;
-terminalblk: TERMINAL stmtlist '}'
-		{movelist($2, $3, termfunc);}
-	;
 bablk: BREAKPOINT stmtlist '}'
 		{bablk(blocktype, BREAKPOINT, $2, $3);}
 	| SOLVE stmtlist '}'
@@ -1014,20 +967,6 @@ aexpr:	varname
 	| error {myerr("Illegal expression");}
 	;
 
-sens:	SENS senslist
-		/* sensused flag is true */
-		{ sensused = 1;
-		  remove($1);
-		}
-	|SENS error {myerr("syntax is SENS var1, var2, var3, etc");}
-	;
-senslist: varname
-		/* put in list. Used when enclosing block is massaged */
-		{ sensparm($1); remove($1);}
-	| senslist ',' varname
-		{ sensparm($3); deltokens($2, $3);}
-	;
-
 conserve: CONSERVE {extdef2 = 0; } react '=' expr
 		{/* react originally designed for reactions and is unchanged*/
 		extdef2 = 0;
@@ -1054,8 +993,8 @@ namelist: NAME
 kineticblk: KINETIC NAME solvefor stmtlist '}'
 		/* put all reactions in a list for processing when relevant
 		   SOLVE is processed */
-		{massagekinetic($1, $2, $4, $5, sensused);
-		lexcontext = 0; sensused = 0;
+		{massagekinetic($1, $2, $4, $5);
+		lexcontext = 0;
 		}
 	;
 reaction: REACTION react REACT1 {leftreact();} react '(' expr ',' expr ')'
@@ -1190,8 +1129,6 @@ nrnstmt: /*nothing*/
 		{ nrn_list($2,$3);}
 	| nrnstmt ELECTRODE_CURRENT nrnlist
 		{ nrn_list($2,$3);}
-	| nrnstmt SECTION nrnlist
-		{ nrn_list($2, $3);}
 	| nrnstmt RANGE nrnlist
 		{ nrn_list($2, $3);}
 	| nrnstmt GLOBAL nrnlist
