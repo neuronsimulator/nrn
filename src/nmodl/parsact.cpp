@@ -182,46 +182,13 @@ Symbol* ifnew_parminstall(char* name, char* num, char* units, char* limits) {
         /* can happen when PRIME used in MATCH */
         parminstall(s, num, units, limits);
     }
-    if (!(s->subtype & (PARM | STEP1))) {
+    if (!(s->subtype & PARM)) {
         /* special case is scop_indep can be a PARM but not indepsym */
         if (scop_indep == indepsym || s != scop_indep) {
             diag(s->name, "can't be declared a parameter by default");
         }
     }
     return s;
-}
-
-void steppedinstall(Symbol* n, Item* q1, Item* q2, char* units) {
-    int i;
-
-    char buf[NRN_BUFSIZE];
-    static int seestep = 0;
-
-    previous_subtype = n->subtype;
-    previous_str = n->u.str;
-    if (seestep) {
-        diag("Only one STEPPED variable can be defined", (char*) 0);
-    }
-    seestep = 1;
-    stepsym = n;
-    i = 0;
-    Strcpy(buf, "\n");
-    Strcat(buf, STR(q1));
-    while (q1 != q2) {
-        q1 = q1->next;
-        Strcat(buf, SYM(q1)->name); /* , is a symbol */
-        q1 = q1->next;
-        Strcat(buf, STR(q1));
-        i++;
-        if (i > 5) {
-            diag("Maximum of 5 steps in a stepped variable", (char*) 0);
-        }
-    }
-    Strcat(buf, "\n");
-    Strcat(buf, units);
-    Strcat(buf, "\n");
-    n->subtype |= STEP1;
-    n->u.str = stralloc(buf, (char*) 0);
 }
 
 static char* indepunits = "";

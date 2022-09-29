@@ -201,7 +201,6 @@ typedef struct Symbol {
 #define KINF          02000
 #define NLINF         04000
 #define DISCF         010000
-#define STEP1         020000
 #define PARF          040000
 #define EXTDEF        0100000
 #define LINF          0200000

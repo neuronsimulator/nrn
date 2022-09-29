@@ -69,7 +69,6 @@ void consistency() {
         con("NONLINEAR", NLINF, 0);
         con("DISCRETE", DISCF, 0);
         con("PARTIAL", PARF, 0);
-        con("STEPPED", STEP1, 0);
         con("CONSTANT UNITS FACTOR", UNITDEF, 0);
         tu = s->usage;
         if ((tu & DEP) && (tu & FUNCT)) {

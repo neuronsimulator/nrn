@@ -67,7 +67,6 @@ typedef struct Rlist {
     char** capacity;   /* compartment size expessions in varnum order */
     int nsym;          /* number of symbols in above vector */
     int ncons;         /* and the diagonals for conservation are first */
-    int sens_parm;     /* for possible error message later on */
     struct Rlist* rlistnext;
     int slist_decl;
 } Rlist;
@@ -82,20 +81,6 @@ static List* compartlist; /* list of triples with point to info in
 List* ldifuslist; /* analogous to compartment. Specifies diffusion constant
     times the relevant cross sectional area. The volume/length
     must be specified in the COMPARTMENT statement */
-
-/* addition of sens statement handling is restricted to the derivative form
-and follows the way it is done in deriv.c with the following exception--
-until the solve statement is dealt with in solve.c we dont know which
-form we will use for the equations. Therefore we save sensused
-in the main Rlist and give error message if it is non-zero when implicit
-is called. Also the sensmassage call in massagekinetic substitutes an
-intermediate block to be called by the integrator and gives the total
-number of states including the sens states. This means that the
-call to kinetic_intmethod gets the new fun with too many
-states and therefore should rely only on the lists in this routine for
-its info.
-*/
-extern int sens_parm;
 
 int genconservterms(int eqnum, Reaction* r, int fn, Rlist* rlst);
 int number_states(Symbol* fun, Rlist** prlst, Rlist** pclst);
@@ -166,8 +151,8 @@ void reactname(Item* q1, Item* lastok, Item* q2) /* NAME [] INTEGER   q2 may be 
         s1->usage |= DEP;
         s->used++;
         rterm->isstate = 1;
-    } else if (!(s->subtype & (DEP | nmodlCONST | PARM | INDEP | STEP1 | STAT))) {
-        diag(s->name, "must be a STATE, CONSTANT, ASSIGNED, STEPPED, or INDEPENDENT");
+    } else if (!(s->subtype & (DEP | nmodlCONST | PARM | INDEP | STAT))) {
+        diag(s->name, "must be a STATE, CONSTANT, ASSIGNED, or INDEPENDENT");
     }
     if (q2) {
         rterm->num = atoi(STR(q2));
@@ -295,7 +280,7 @@ void flux(Item* qREACTION, Item* qdir, Item* qlast) {
    we therefore loop through all the rterms and mark only those
 */
 
-void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /*KINETIC NAME stmtlist
+void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtlist
                                                                              '}'*/
 {
     int count = 0, i, order, ncons;
@@ -417,9 +402,9 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /*KINE
     Sprintf(buf,
             "static int _slist%d[%d], _dlist%d[%d]; static double *_temp%d;\n",
             numlist,
-            count * (1 + sens_parm),
+            count,
             numlist,
-            count * (1 + sens_parm),
+            count,
             numlist);
     Linsertstr(procfunc, buf);
     insertstr(q4, "  } return _reset;\n");
@@ -428,7 +413,6 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /*KINE
     r = (Rlist*) emalloc(sizeof(Rlist));
     r->reaction = reactlist;
     reactlist = (Reaction*) 0;
-    r->sens_parm = sens_parm;
     r->symorder = (Symbol**) emalloc((unsigned) order * sizeof(Symbol*));
     r->slist_decl = 0;
     /*the reason that we can't just keep this info in s->varnum is that
@@ -436,20 +420,12 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /*KINE
     SYMITER(NAME) {
         if ((s->subtype & STAT) && s->used) {
             r->symorder[s->used - 1] = s;
-            if (sensused) {
-                add_sens_statelist(s);
-            }
         }
     }
     r->nsym = order;
     r->ncons = ncons;
     r->position = afterbrace;
     r->endbrace = q4->prev; /* needed for Dstate with COMPARTMENT */
-    if (sensused) {
-        /* fun now is the interface and fun->used is all the states */
-        sensmassage(DERIVATIVE, q2, numlist);
-        /* this sets sens_parm to 0 */
-    }
     r->sym = fun;
     r->rlistnext = rlist;
     rlist = r;
@@ -739,9 +715,6 @@ void kinetic_implicit(Symbol* fun, char* dt, char* mname) {
             sprintf(buf, "  _nrn_destroy_sparseobj_thread(_thread[_spth%d]._pvoid);\n", fun->u.i);
             lappendstr(thread_cleanup_list, buf);
         }
-    }
-    if (rlst->sens_parm) {
-        diag(" SENS unimplemented for default kinetic integration", "method");
     }
     /*goes near beginning of block. Before first reaction is not
     adequate since the first reaction may be within a while loop */

@@ -203,8 +203,6 @@ void solvhandler() {
                     Sprintf(buf, " %s();\n", fun->name);
                     Insertstr(follow, buf);
                 }
-                /* envelope calls go after the while loop */
-                sens_nonlin_out(follow, fun);
 #if CVODE
                 cvode_interface(fun, listnum, numeqn);
 #endif
@@ -227,8 +225,6 @@ void solvhandler() {
                 /* derivatives recalculated after while loop */
                 Sprintf(buf, " %s();\n", fun->name);
                 Insertstr(follow, buf);
-                /* envelope calls go after the while loop */
-                sens_nonlin_out(follow, fun);
             }
             if (btype == BREAKPOINT) {
                 whileloop(qsol, (long) DERF, steadystate);
