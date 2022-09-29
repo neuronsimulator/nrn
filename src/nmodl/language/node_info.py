@@ -68,7 +68,6 @@ SYMBOL_VAR_TYPES = {"LocalVar",
                     "WriteIonVar",
                     "NonspecificCurVar",
                     "ElectrodeCurVar",
-                    "SectionVar",
                     "GlobalVar",
                     "PointerVar",
                     "BbcorePointerVar",
@@ -114,7 +113,6 @@ STATEMENT_TYPES = {"Statement",
                    "AssignedDefinition",
                    "ParamAssign",
                    "ConstantStatement",
-                   "Stepped",
                    }
 
 # data types which have token as an argument to the constructor

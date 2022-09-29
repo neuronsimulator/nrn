@@ -79,10 +79,6 @@ std::vector<std::string> to_string_vector(const NmodlType& obj) {
         properties.emplace_back("electrode_cur");
     }
 
-    if (has_property(obj, NmodlType::section_var)) {
-        properties.emplace_back("section");
-    }
-
     if (has_property(obj, NmodlType::argument)) {
         properties.emplace_back("argument");
     }

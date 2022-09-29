@@ -41,7 +41,6 @@ bool LocalizeVisitor::node_for_def_use_analysis(const ast::Node& node) const {
             ast::AstNodeType::DISCRETE_BLOCK,
             ast::AstNodeType::PARTIAL_BLOCK,
             ast::AstNodeType::NET_RECEIVE_BLOCK,
-            ast::AstNodeType::TERMINAL_BLOCK,
             ast::AstNodeType::BA_BLOCK,
             ast::AstNodeType::FOR_NETCON,
             ast::AstNodeType::BEFORE_BLOCK,
@@ -79,8 +78,7 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() const {
                                      | NmodlType::nonspecific_cur_var
                                      | NmodlType::pointer_var
                                      | NmodlType::bbcore_pointer_var
-                                     | NmodlType::electrode_cur_var
-                                     | NmodlType::section_var;
+                                     | NmodlType::electrode_cur_var;
 
     const NmodlType global_var_properties = NmodlType::range_var
                                      | NmodlType::assigned_definition
