@@ -62,7 +62,7 @@ extern int lexcontext;
 %token	<qp>	INITIAL1 DERIVATIVE SOLVE USING WITH STEPPED DISCRETE
 %token	<qp>	FROM TO BY WHILE IF ELSE START1 STEP SENS SOLVEFOR
 %token	<qp>	PROCEDURE PARTIAL DEL DEL2 DEFINE1 IFERROR
-%token	<qp>	DERFUNC EQUATION TERMINAL LINEAR NONLINEAR FUNCTION1 LOCAL
+%token	<qp>	DERFUNC EQUATION LINEAR NONLINEAR FUNCTION1 LOCAL
 %token	<qp>	METHOD LIN1 NONLIN1 FUNCTION_TABLE
 %token	<qp>	INCLUDE1 PROTECT
 %token	<qp>	'{' '}' '(' ')' '[' ']' '@' '+' '*' '-' '/' '=' '^' ':' ','
@@ -91,14 +91,14 @@ extern int lexcontext;
 %type	<qp>	funcblk arglist arglist1 procedblk solveblk ifsolerr functbl
 %type	<qp>	solvefor1 solvefor netrecblk fornetcon
 %type	<qp>	watchstmt watch1
-%type	<qp>	eqnblk terminalblk sens compartlist ldifuslist longdifus
+%type	<qp>	eqnblk sens compartlist ldifuslist longdifus
 %type	<qp>	conserve compart namelist optnamelist kineticblk reaction react consreact
 %type	<qp>	lagstmt matchblk matchlist match matchname
 %type	<qp>	unitblk unitflag unitbody unitdef Units factordef include1
 
 /* interface to NEURON */
 %token	<qp>	NEURON SUFFIX NONSPECIFIC READ WRITE USEION VALENCE
-%token	<qp>	GLOBAL SECTION RANGE POINTER EXTERNAL BEFORE AFTER
+%token	<qp>	GLOBAL RANGE POINTER EXTERNAL BEFORE AFTER
 %token	<qp>	ELECTRODE_CURRENT CONSTRUCTOR DESTRUCTOR NETRECEIVE
 %token	<qp>	FOR_NETCONS WATCH THREADSAFE
 %type	<qp>	neuronblk nrnuse nrnlist valence constructblk destructblk
@@ -333,8 +333,6 @@ proc:	 {blocktype = INITIAL1;} initblk
 	| {blocktype = PROCEDURE;} procedblk
 		{$$ = $2;}
 	| {blocktype = PROCEDURE;} netrecblk
-		{$$ = $2;}
-	| {blocktype = TERMINAL;} terminalblk
 		{$$ = $2;}
 	| {blocktype = DISCRETE;} discretblk
 		{$$ = $2;}
@@ -721,8 +719,6 @@ solvefor1: SOLVEFOR NAME
 	;
 eqnblk: BREAKPOINT stmtlist
 	;
-terminalblk: TERMINAL stmtlist
-	;
 sens:	SENS namelist
 	|SENS error {myerr("syntax is SENS var1, var2, var3, etc");}
 	;
@@ -841,8 +837,6 @@ nrnstmt: /*nothing*/
 	| nrnstmt ELECTRODE_CURRENT nrnlist
 		{ P1{nrn_list($2,$3);}}
 	| nrnstmt RANGE nrnlist
-		{ P1{nrn_list($2, $3);}}
-	| nrnstmt SECTION nrnlist
 		{ P1{nrn_list($2, $3);}}
 	| nrnstmt GLOBAL nrnlist
 		{ P1{nrn_list($2, $3);}}
