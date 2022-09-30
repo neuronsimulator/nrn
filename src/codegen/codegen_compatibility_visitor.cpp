@@ -22,8 +22,6 @@ const std::map<ast::AstNodeType, CodegenCompatibilityVisitor::FunctionPointer>
           &CodegenCompatibilityVisitor::return_error_without_name<MatchBlock>},
          {AstNodeType::DISCRETE_BLOCK,
           &CodegenCompatibilityVisitor::return_error_with_name<DiscreteBlock>},
-         {AstNodeType::PARTIAL_BLOCK,
-          &CodegenCompatibilityVisitor::return_error_with_name<PartialBlock>},
          {AstNodeType::FUNCTION_TABLE_BLOCK,
           &CodegenCompatibilityVisitor::return_error_without_name<FunctionTableBlock>},
          {AstNodeType::SOLVE_BLOCK,

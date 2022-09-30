@@ -210,7 +210,6 @@ ELSE                    {
                                     /** We have to store context for the reaction type */
                                     case Token::NONLINEAR:
                                     case Token::LINEAR:
-                                    case Token::PARTIAL:
                                     case Token::KINETIC:
                                         lexical_context = type;
                                         break;
@@ -306,10 +305,6 @@ ELSE                    {
 
                             if (lexical_context == Token::LINEAR) {
                                 return token_symbol(yytext, loc, Token::LIN1);
-                            }
-
-                            if (lexical_context == Token::PARTIAL) {
-                                return token_symbol(yytext, loc, Token::TILDE);
                             }
 
                             if (lexical_context == Token::KINETIC) {

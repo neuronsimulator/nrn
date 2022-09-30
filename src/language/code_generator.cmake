@@ -91,7 +91,6 @@ set(AST_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/ast/extern_var.hpp
     ${PROJECT_BINARY_DIR}/src/ast/external.hpp
     ${PROJECT_BINARY_DIR}/src/ast/factor_def.hpp
-    ${PROJECT_BINARY_DIR}/src/ast/first_last_type_index.hpp
     ${PROJECT_BINARY_DIR}/src/ast/float.hpp
     ${PROJECT_BINARY_DIR}/src/ast/for_all_statement.hpp
     ${PROJECT_BINARY_DIR}/src/ast/for_netcon.hpp
@@ -138,9 +137,6 @@ set(AST_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/ast/param_assign.hpp
     ${PROJECT_BINARY_DIR}/src/ast/param_block.hpp
     ${PROJECT_BINARY_DIR}/src/ast/paren_expression.hpp
-    ${PROJECT_BINARY_DIR}/src/ast/partial_block.hpp
-    ${PROJECT_BINARY_DIR}/src/ast/partial_boundary.hpp
-    ${PROJECT_BINARY_DIR}/src/ast/partial_equation.hpp
     ${PROJECT_BINARY_DIR}/src/ast/pointer.hpp
     ${PROJECT_BINARY_DIR}/src/ast/pointer_var.hpp
     ${PROJECT_BINARY_DIR}/src/ast/prime_name.hpp

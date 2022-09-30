@@ -39,7 +39,6 @@ bool LocalizeVisitor::node_for_def_use_analysis(const ast::Node& node) const {
             ast::AstNodeType::LINEAR_BLOCK,
             ast::AstNodeType::NON_LINEAR_BLOCK,
             ast::AstNodeType::DISCRETE_BLOCK,
-            ast::AstNodeType::PARTIAL_BLOCK,
             ast::AstNodeType::NET_RECEIVE_BLOCK,
             ast::AstNodeType::BA_BLOCK,
             ast::AstNodeType::FOR_NETCON,

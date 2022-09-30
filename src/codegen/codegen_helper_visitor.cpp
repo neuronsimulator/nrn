@@ -731,10 +731,6 @@ void CodegenHelperVisitor::visit_discrete_block(const ast::DiscreteBlock& /* nod
     info.vectorize = false;
 }
 
-void CodegenHelperVisitor::visit_partial_block(const ast::PartialBlock& /* node */) {
-    info.vectorize = false;
-}
-
 void CodegenHelperVisitor::visit_update_dt(const ast::UpdateDt& node) {
     info.changed_dt = node.get_value()->eval();
 }

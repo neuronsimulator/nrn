@@ -76,12 +76,6 @@ typedef enum { UOP_NOT, UOP_NEGATION } UnaryOp;
 /// string representation of ast::UnaryOp
 static const std::string UnaryOpNames[] = {"!", "-"};
 
-/// enum type for partial equation types
-typedef enum { PEQ_FIRST, PEQ_LAST } FirstLastType;
-
-/// string representation of ast::FirstLastType
-static const std::string FirstLastTypeNames[] = {"FIRST", "LAST"};
-
 /// enum type to distinguish BEFORE or AFTER blocks
 typedef enum { BATYPE_BREAKPOINT, BATYPE_SOLVE, BATYPE_INITIAL, BATYPE_STEP } BAType;
 

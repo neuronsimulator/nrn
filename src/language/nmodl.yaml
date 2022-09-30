@@ -721,20 +721,6 @@
                                   type: StatementBlock
                                   getter: {override: true}
 
-                        - PartialBlock:
-                            brief: "TODO"
-                            nmodl: "PARTIAL "
-                            members:
-                              - name:
-                                  brief: "Name of the partial block"
-                                  type: Name
-                                  node_name: true
-                                  suffix: {value: " "}
-                              - statement_block:
-                                  brief: "Block with statements vector"
-                                  type: StatementBlock
-                                  getter: {override: true}
-
                         - FunctionTableBlock:
                             brief: "TODO"
                             nmodl: "FUNCTION_TABLE "
@@ -844,11 +830,6 @@
                                   type: Name
                                   optional: true
                                   prefix: {value: " STEADYSTATE "}
-                              - ifsolerr:
-                                  brief: "Block to be executed on error"
-                                  type: StatementBlock
-                                  optional: true
-                                  prefix: {value: " IFERROR "}
 
                         - BreakpointBlock:
                             nmodl: "BREAKPOINT "
@@ -1209,13 +1190,6 @@
                             separator: ", "
                             prefix: {value: "(", force: true}
                             suffix: {value: ")", force: true}
-
-                  - FirstLastTypeIndex:
-                      brief: "TODO"
-                      members:
-                        - value:
-                            brief: "TODO"
-                            type: FirstLastType
 
                   - Watch:
                       brief: "TODO"
@@ -1587,67 +1561,6 @@
                             brief: "TODO"
                             type: StatementBlock
                             getter: {override: true}
-
-                  - PartialEquation:
-                      brief: "TODO"
-                      members:
-                        - prime:
-                            brief: "TODO"
-                            type: PrimeName
-                        - name1:
-                            brief: "TODO"
-                            type: Name
-                        - name2:
-                            brief: "TODO"
-                            type: Name
-                        - name3:
-                            brief: "TODO"
-                            type: Name
-
-                  - PartialBoundary:
-                      brief: "TODO"
-                      nmodl: "~ "
-                      members:
-                        - del:
-                            brief: "TODO"
-                            type: Name
-                            optional: true
-                            suffix: {value: " "}
-                        - name:
-                            brief: "TODO"
-                            type: Identifier
-                        - index:
-                            brief: "TODO"
-                            type: FirstLastTypeIndex
-                            optional: true
-                            prefix: {value: "["}
-                            suffix: {value: "]"}
-                        - expression:
-                            brief: "TODO"
-                            type: Expression
-                            optional: true
-                            prefix: {value: " = "}
-                        - name1:
-                            brief: "TODO"
-                            type: Name
-                            optional: true
-                            prefix: {value: " = "}
-                            suffix: {value: "*"}
-                        - del2:
-                            brief: "TODO"
-                            type: Name
-                            optional: true
-                            suffix: {value: "("}
-                        - name2:
-                            brief: "TODO"
-                            type: Name
-                            optional: true
-                            suffix: {value: ")"}
-                        - name3:
-                            brief: "TODO"
-                            type: Name
-                            optional: true
-                            prefix: {value: "+"}
 
                   - WatchStatement:
                       nmodl: "WATCH "

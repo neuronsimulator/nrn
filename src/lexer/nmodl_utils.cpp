@@ -183,8 +183,6 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_EQUATION(token, pos);
     case Token::EXTERNAL:
         return Parser::make_EXTERNAL(token, pos);
-    case Token::FIRST:
-        return Parser::make_FIRST(token, pos);
     case Token::FOR_NETCONS:
         return Parser::make_FOR_NETCONS(token, pos);
     case Token::FORALL1:
@@ -199,8 +197,6 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_GLOBAL(token, pos);
     case Token::IF:
         return Parser::make_IF(token, pos);
-    case Token::IFERROR:
-        return Parser::make_IFERROR(token, pos);
     case Token::INCLUDE1:
         return Parser::make_INCLUDE1(token, pos);
     case Token::INDEPENDENT:
@@ -211,8 +207,6 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_KINETIC(token, pos);
     case Token::LAG:
         return Parser::make_LAG(token, pos);
-    case Token::LAST:
-        return Parser::make_LAST(token, pos);
     case Token::LINEAR:
         return Parser::make_LINEAR(token, pos);
     case Token::LOCAL:
@@ -239,8 +233,6 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_NRNMUTEXUNLOCK(token, pos);
     case Token::PARAMETER:
         return Parser::make_PARAMETER(token, pos);
-    case Token::PARTIAL:
-        return Parser::make_PARTIAL(token, pos);
     case Token::POINTER:
         return Parser::make_POINTER(token, pos);
     case Token::PROCEDURE:
@@ -299,8 +291,6 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_NONLIN1(token, pos);
     case Token::LIN1:
         return Parser::make_LIN1(token, pos);
-    case Token::TILDE:
-        return Parser::make_TILDE(token, pos);
     case Token::REACTION:
         return Parser::make_REACTION(token, pos);
     case Token::GT:

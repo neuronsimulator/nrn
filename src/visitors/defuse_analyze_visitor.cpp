@@ -306,10 +306,6 @@ void DefUseAnalyzeVisitor::visit_lin_equation(const ast::LinEquation& node) {
     visit_unsupported_node(node);
 }
 
-void DefUseAnalyzeVisitor::visit_partial_boundary(const ast::PartialBoundary& node) {
-    visit_unsupported_node(node);
-}
-
 void DefUseAnalyzeVisitor::visit_from_statement(const ast::FromStatement& node) {
     visit_unsupported_node(node);
 }

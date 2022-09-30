@@ -160,67 +160,64 @@ enum class NmodlType : enum_type {
     electrode_cur_var = 1L << 13,
 
     /// Argument Type
-    argument = 1L << 15,
+    argument = 1L << 14,
 
     /// Function Type
-    function_block = 1L << 16,
+    function_block = 1L << 15,
 
     /// Procedure Type
-    procedure_block = 1L << 17,
+    procedure_block = 1L << 16,
 
     /// Derivative Block
-    derivative_block = 1L << 18,
+    derivative_block = 1L << 17,
 
     /// Linear Block
-    linear_block = 1L << 19,
+    linear_block = 1L << 18,
 
     /// NonLinear Block
-    non_linear_block = 1L << 20,
+    non_linear_block = 1L << 19,
 
     /// constant variable
-    constant_var = 1L << 21,
-
-    /// Partial Block
-    partial_block = 1L << 22,
+    constant_var = 1L << 20,
 
     /// Kinetic Block
-    kinetic_block = 1L << 23,
+    kinetic_block = 1L << 21,
 
     /// FunctionTable Block
-    function_table_block = 1L << 24,
+    function_table_block = 1L << 22,
 
     /// factor in unit block
-    factor_def = 1L << 25,
+    factor_def = 1L << 23,
 
     /// neuron variable accessible in mod file
-    extern_neuron_variable = 1L << 26,
+    extern_neuron_variable = 1L << 24,
 
     /// neuron solver methods and math functions
-    extern_method = 1L << 27,
+    extern_method = 1L << 25,
 
     /// state variable
-    state_var = 1L << 28,
+    state_var = 1L << 26,
 
     /// need to solve : used in solve statement
-    to_solve = 1L << 29,
+    to_solve = 1L << 27,
 
     /// ion type
-    useion = 1L << 30,
+    useion = 1L << 28,
 
     /// variable is used in table statement
-    table_statement_var = 1L << 31,
+    table_statement_var = 1L << 29,
 
     /// variable is used in table as assigned
-    table_assigned_var = 1L << 32,
+    table_assigned_var = 1L << 30,
 
     /// Discrete Block
-    discrete_block = 1L << 33,
+    discrete_block = 1L << 31,
 
     /// Define variable / macro
-    define = 1L << 34,
+    define = 1L << 32,
 
     /// Codegen specific variable
-    codegen_var = 1L << 35
+    codegen_var = 1L << 33
 };
 
 template <typename T>

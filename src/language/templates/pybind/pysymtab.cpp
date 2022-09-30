@@ -171,7 +171,6 @@ void init_symtab_module(py::module& m) {
         .value("man_linear_block", syminfo::NmodlType::non_linear_block)
         .value("nonspecific_cur_var", syminfo::NmodlType::nonspecific_cur_var)
         .value("param_assign", syminfo::NmodlType::param_assign)
-        .value("partial_block", syminfo::NmodlType::partial_block)
         .value("pointer_var", syminfo::NmodlType::pointer_var)
         .value("prime_name", syminfo::NmodlType::prime_name)
         .value("procedure_block", syminfo::NmodlType::procedure_block)

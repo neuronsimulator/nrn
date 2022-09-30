@@ -25,7 +25,6 @@ INTEGRAL_TYPES = {"short",
                   "BinaryOp",
                   "UnaryOp",
                   "ReactionOp",
-                  "FirstLastType",
                   "BAType",
                   "UnitStateType",
                   }
@@ -36,7 +35,6 @@ BASE_TYPES = {"std::string" } | INTEGRAL_TYPES
 ENUM_BASE_TYPES = {"BinaryOp",
                    "UnaryOp",
                    "ReactionOp",
-                   "FirstLastType",
                    "BAType",
                    "UnitStateType",
                    }
@@ -52,7 +50,6 @@ DATA_TYPES = {"Boolean": "bool",
               "ReactionOperator": "ReactionOp",
               "UnitState": "UnitStateType",
               "BABlockType": "BAType",
-              "FirstLastTypeIndex": "FirstLastType",
               }
 
 # nodes which will go into symbol table
@@ -86,7 +83,6 @@ SYMBOL_BLOCK_TYPES = {"FunctionBlock",
                       "LinearBlock",
                       "NonLinearBlock",
                       "DiscreteBlock",
-                      "PartialBlock",
                       "KineticBlock",
                       "FunctionTableBlock"
                       }
