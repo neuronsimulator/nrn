@@ -115,10 +115,6 @@ std::vector<std::string> to_string_vector(const NmodlType& obj) {
         properties.emplace_back("constant");
     }
 
-    if (has_property(obj, NmodlType::partial_block)) {
-        properties.emplace_back("partial_block");
-    }
-
     if (has_property(obj, NmodlType::kinetic_block)) {
         properties.emplace_back("kinetic_block");
     }

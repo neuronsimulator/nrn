@@ -213,8 +213,6 @@ class PerfVisitor: public ConstAstVisitor {
 
     void visit_discrete_block(const ast::DiscreteBlock& node) override;
 
-    void visit_partial_block(const ast::PartialBlock& node) override;
-
     void visit_function_table_block(const ast::FunctionTableBlock& node) override;
 
     void visit_function_block(const ast::FunctionBlock& node) override;

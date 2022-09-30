@@ -100,7 +100,6 @@
 %token  <ModToken>              ELSE
 %token  <ModToken>              EQUATION
 %token  <ModToken>              EXTERNAL
-%token  <ModToken>              FIRST
 %token  <ModToken>              FORALL1
 %token  <ModToken>              FOR_NETCONS
 %token  <ModToken>              FROM
@@ -108,13 +107,11 @@
 %token  <ModToken>              FUNCTION_TABLE
 %token  <ModToken>              GLOBAL
 %token  <ModToken>              IF
-%token  <ModToken>              IFERROR
 %token  <ModToken>              INCLUDE1
 %token  <ModToken>              INDEPENDENT
 %token  <ModToken>              INITIAL1
 %token  <ModToken>              KINETIC
 %token  <ModToken>              LAG
-%token  <ModToken>              LAST
 %token  <ModToken>              LIN1
 %token  <ModToken>              LINEAR
 %token  <ModToken>              LOCAL
@@ -130,7 +127,6 @@
 %token  <ModToken>              NRNMUTEXLOCK
 %token  <ModToken>              NRNMUTEXUNLOCK
 %token  <ModToken>              PARAMETER
-%token  <ModToken>              PARTIAL
 %token  <ModToken>              POINTER
 %token  <ModToken>              PROCEDURE
 %token  <ModToken>              PROTECT
@@ -257,7 +253,6 @@
 %type   <ast::ElseIfStatementVector>        optional_else_if
 %type   <ast::ElseStatement*>               optional_else
 %type   <ast::WrappedExpression*>           function_call
-%type   <ast::StatementBlock*>              if_solution_error
 %type   <ast::Expression*>                  optional_increment
 %type   <ast::Number*>                      optional_start
 %type   <ast::LagStatement*>                lag_statement
@@ -277,8 +272,6 @@
 %type   <ast::MatchVector>                  match_list
 %type   <ast::Match*>                       match
 %type   <ast::Identifier*>                  match_name
-%type   <ast::PartialBoundary*>             partial_equation
-%type   <ast::FirstLastTypeIndex*>          first_last
 %type   <ast::ReactionStatement*>           reaction_statement
 %type   <ast::Conserve*>                    conserve
 %type   <ast::Expression*>                  react
@@ -337,7 +330,6 @@
 %type   <ast::NeuronBlock*>                 neuron_block
 %type   <ast::NonLinearBlock*>              non_linear_block
 %type   <ast::ParamBlock*>                  parameter_block
-%type   <ast::PartialBlock*>                partial_block
 %type   <ast::ProcedureBlock*>              procedure_block
 %type   <ast::SolveBlock*>                  solve_block
 %type   <ast::StateBlock*>                  state_block
@@ -830,10 +822,6 @@ procedure       :   initial_block
                     {
                         $$ = $1;
                     }
-                |   partial_block
-                    {
-                        $$ = $1;
-                    }
                 |   kinetic_block
                     {
                         $$ = $1;
@@ -1046,10 +1034,6 @@ statement_type1 :   from_statement
                 |   match_block
                     {
                         $$ = new ast::ExpressionStatement($1);
-                    }
-                |   partial_equation
-                    {
-                        $$ = $1;
                     }
                 |   table_statement
                     {
@@ -1508,45 +1492,6 @@ discrete_block  :   DISCRETE NAME_PTR statement_list "}"
                 ;
 
 
-partial_block   :   PARTIAL NAME_PTR statement_list "}"
-                    {
-                        $$ = new ast::PartialBlock($2, $3);
-                        ModToken block_token = $1 + $4;
-                        $$->set_token(block_token);
-                    }
-                |   PARTIAL error
-                    {
-                        error(scanner.loc, "partial_block");
-                    }
-                ;
-
-
-partial_equation :  "~" PRIME "=" NAME_PTR "*" DEL2 "(" NAME_PTR ")" "+" NAME_PTR
-                    {
-                        $$ = new ast::PartialBoundary(NULL, $2.clone(), NULL, NULL, $4, $6.clone(), $8, $11);
-                    }
-                |   "~" DEL NAME_PTR "[" first_last "]" "=" expression
-                    {
-                        $$ = new ast::PartialBoundary($2.clone(), $3, $5, $8, NULL, NULL, NULL, NULL);
-                    }
-                |   "~" NAME_PTR "[" first_last "]" "=" expression
-                    {
-                        $$ = new ast::PartialBoundary(NULL, $2, $4, $7, NULL, NULL, NULL, NULL);
-                    }
-                ;
-
-
-first_last      :   FIRST
-                    {
-                        $$ = new ast::FirstLastTypeIndex(ast::PEQ_FIRST);
-                    }
-                |   LAST
-                    {
-                        $$ = new ast::FirstLastTypeIndex(ast::PEQ_LAST);
-                    }
-                ;
-
-
 function_table_block : FUNCTION_TABLE NAME_PTR "(" optional_argument_list ")" units
                 {
                         $$ = new ast::FunctionTableBlock($2, $4, $6);
@@ -1614,36 +1559,25 @@ initial_statement : INITIAL1 statement_list "}"
                 ;
 
 
-solve_block     :   SOLVE NAME_PTR if_solution_error
+solve_block     :   SOLVE NAME_PTR
                     {
-                        $$ = new ast::SolveBlock($2, NULL, NULL, $3);
+                        $$ = new ast::SolveBlock($2, NULL, NULL);
                         $$->set_token(*($2->get_token()));
                     }
-                |   SOLVE NAME_PTR USING METHOD if_solution_error
+                |   SOLVE NAME_PTR USING METHOD
                     {
-                        $$ = new ast::SolveBlock($2, $4.clone(), NULL, $5);
+                        $$ = new ast::SolveBlock($2, $4.clone(), NULL);
                         $$->set_token(*($2->get_token()));
                     }
                 |
-                    SOLVE NAME_PTR STEADYSTATE METHOD if_solution_error
+                    SOLVE NAME_PTR STEADYSTATE METHOD
                     {
-                        $$ = new ast::SolveBlock($2, NULL, $4.clone(), $5);
+                        $$ = new ast::SolveBlock($2, NULL, $4.clone());
                         $$->set_token(*($2->get_token()));
                     }
                 |   SOLVE error
                     {
                         error(scanner.loc, "solve_block");
-                    }
-                ;
-
-
-if_solution_error :
-                    {
-                        $$ = nullptr;
-                    }
-                |   IFERROR statement_list "}"
-                    {
-                        $$ = $2;
                     }
                 ;
 

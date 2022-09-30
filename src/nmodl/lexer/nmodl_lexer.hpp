@@ -76,7 +76,6 @@ class NmodlLexer: public NmodlFlexLexer {
      * - NONLINEAR
      * - LINEAR
      * - KINETIC
-     * - PARTIAL
      */
     int lexical_context = 0;
 

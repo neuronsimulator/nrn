@@ -374,10 +374,6 @@ void PerfVisitor::visit_discrete_block(const ast::DiscreteBlock& node) {
     measure_performance(node);
 }
 
-void PerfVisitor::visit_partial_block(const ast::PartialBlock& node) {
-    measure_performance(node);
-}
-
 void PerfVisitor::visit_function_table_block(const ast::FunctionTableBlock& node) {
     measure_performance(node);
 }

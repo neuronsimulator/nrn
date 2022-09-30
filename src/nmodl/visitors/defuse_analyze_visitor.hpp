@@ -280,8 +280,6 @@ class DefUseAnalyzeVisitor: protected ConstAstVisitor {
 
     void visit_lin_equation(const ast::LinEquation& node) override;
 
-    void visit_partial_boundary(const ast::PartialBoundary& node) override;
-
     void visit_from_statement(const ast::FromStatement& node) override;
 
     void visit_conserve(const ast::Conserve& node) override;
