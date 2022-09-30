@@ -109,6 +109,7 @@ void nrnbbcore_register_mapping() {
     Vect* sec = vector_arg(3);
     Vect* seg = vector_arg(4);
     Vect* lfp = vector_arg(5);
+    int electrodes_per_segment = *hoc_getarg(6);
 
     double* sections = vector_vec(sec);
     double* segments = vector_vec(seg);
@@ -130,6 +131,7 @@ void nrnbbcore_register_mapping() {
     smap->sections.assign(sections, sections + nseg);
     smap->segments.assign(segments, segments + nseg);
     smap->seglfp_factors.assign(seg_lfp_factors, seg_lfp_factors + nlfp);
+    smap->num_electrodes = electrodes_per_segment;
 
     // store mapping information
     mapinfo.add_sec_mapping(gid, smap);
