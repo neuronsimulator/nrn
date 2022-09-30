@@ -39,16 +39,10 @@ void ivoc_help(const char*);
 
 Symbol* hoc_lookup(const char*);
 
-// olupton 2022-05-30: This has to have C linkage for now because it is used in
-//                     praxis.c
-extern "C" void* hoc_Ecalloc(std::size_t nmemb, std::size_t size);
-// olupton 2022-05-30: These have to have C linkage for now because they are used
-//                     in newton_thread.c
-extern "C" void* hoc_Emalloc(size_t size);
-extern "C" void hoc_malchk();
-// olupton 2022-05-30: This has to have C linkage for now because it is used in
-//                     abort.c and praxis.c
-extern "C" [[noreturn]] void hoc_execerror(const char*, const char*);
+void* hoc_Ecalloc(std::size_t nmemb, std::size_t size);
+void* hoc_Emalloc(size_t size);
+void hoc_malchk();
+void hoc_execerror(const char*, const char*);
 void hoc_execerr_ext(const char* fmt, ...);
 char* hoc_object_name(Object*);
 void hoc_retpushx(double);
@@ -304,9 +298,7 @@ void bbs_done(void);
 int hoc_main1(int, const char**, const char**);
 char* cxx_char_alloc(std::size_t size);
 
-// olupton 2022-01-31: This has to have C linkage for now because it is used in
-//                     praxis.c.
-extern "C" int stoprun;
+extern int stoprun;
 extern int nrn_mpiabort_on_error_;
 
 /** @} */  // end of hoc_functions

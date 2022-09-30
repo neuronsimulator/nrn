@@ -11,10 +11,6 @@
  */
 #include "newton_struct.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Memory allocation routines */
 int zero_vector(double* vector, int n);
 int zero_ptrvector(double** ptrvector, int n);
@@ -41,7 +37,7 @@ int runge(int ninits,
           double* p,
           double* t,
           double h,
-          int (*dy)(),
+          int (*dy)(double*),
           double** work);
 
 /* Implicit backwards eulerian integration.  Can find steady-state solution of
@@ -58,7 +54,7 @@ int _advance(int ninits,
              int linflag);
 
 /* Solution of boundary value problems */
-int boundary(int npts, double* x, double* y, double (*f)(), double (*g)(), double (*q)());
+int boundary(int npts, double* x, double* y, double (*f)(double), double (*g)(double), double (*q)(double));
 
 /* Solution of parabolic partial differential equations */
 int crank(int n,
@@ -79,7 +75,7 @@ double legendre(double a, double b, int (*func)());
 int simeq(int n, double** coef, double* soln, int* index);
 int invert(int n, double** matrix);
 int crout(int n, double** a, int* perm);
-int solve(int n, double** a, double** b, int* perm, double* p, int* y);
+int solve(int n, double** a, double* b, int* perm, double* p, int* y);
 int tridiag(int n, double* a, double* b, double* c, double* d, double* soln);
 int newton(int n, int* index, double* x, int(*pfunc)(), double* value);
 int buildjacobian(int n, int* index, double* x, int (*pfunc)(), double* value, double** jacobian);
@@ -157,20 +153,20 @@ int _cvode_sparse_thread(void**,
                                 int*,
                                 double*,
                                 int (*)(void*, double*, double*, Datum*, Datum*, NrnThread*),
-                                void*,
-                                void*,
-                                void*);
+                                Datum*,
+                                Datum*,
+                                NrnThread*);
 int derivimplicit(int, int, int*, int*, double*, double*, double, int (*)(), double**);
 int derivimplicit_thread(int,
                                 int*,
                                 int*,
                                 double*,
                                 int (*)(double*, Datum*, Datum*, NrnThread*),
-                                void*,
-                                void*,
-                                void*);
+                                Datum*,
+                                Datum*,
+                                NrnThread*);
 double* _getelm(int, int);
-int _nrn_destroy_sparseobj_thread(void*);
+void _nrn_destroy_sparseobj_thread(SparseObj*);
 double* _nrn_thread_getelm(SparseObj*, int, int);
 int sparse(void**, int, int*, int*, double*, double*, double, int (*)(), double**, int);
 int sparse_thread(void**,
@@ -190,10 +186,10 @@ int _ss_derivimplicit_thread(int,
                                     int*,
                                     int*,
                                     double*,
-                                    int (*)(double*, Datum*, Datum*, NrnThread*),
-                                    void*,
-                                    void*,
-                                    void*);
+                                    int (*)(void*, Datum*, Datum*, NrnThread*),
+                                    Datum*,
+                                    Datum*,
+                                    NrnThread*);
 int _ss_sparse(void**, int, int*, int*, double*, double*, double, int (*)(), double**, int);
 int _ss_sparse_thread(void**,
                              int,
@@ -204,9 +200,6 @@ int _ss_sparse_thread(void**,
                              double,
                              int (*)(void*, double*, double*, Datum*, Datum*, NrnThread*),
                              int,
-                             void*,
-                             void*,
-                             void*);
-#ifdef __cplusplus
-} // extern "C"
-#endif
+                             Datum*,
+                             Datum*,
+                             NrnThread*);
