@@ -146,7 +146,7 @@ void hoc_tobj_unref(Object** p) {
 }
 
 /*
-vec.cpp.x[0] used freed memory because the temporary vector was unreffed
+vec.c.x[0] used freed memory because the temporary vector was unreffed
 after the x pointer was put on the stack but before it was evaluated.
 The hoc_pop_defer replaces the nopop in in hoc_object_component handling
 of a cplus steer method (which pushes a double pointer). The corresponding
@@ -154,7 +154,7 @@ hoc_unref_defer takes place in hoc_object_eval after evaluating
 the pointer. This should take care of the most common (itself very rare)
 problem. However it still would not in general
 take care of the purposeless passing
-of &vec.cpp.x[0] as an argument to a function since intervening pop_defer/unref_defer
+of &vec.c.x[0] as an argument to a function since intervening pop_defer/unref_defer
 pairs could take place.
 */
 static Object* unref_defer_;
@@ -1504,18 +1504,22 @@ void hocobjret(void) /* return from a hoc level obfunc */
     if (fp->sp->type != HOCOBJFUNCTION)
         execerror(fp->sp->name, "objfunc returns objref");
     d = hoc_objpop(); /* preserve function return value */
-    if (*d) {
-        (*d)->refcount++;
+    Object* o = *d;   // safe to deref here even if d points to localobj on stack.
+    if (o) {
+        o->refcount++;
     }
+    // d may point to an Object* on the stack, ie. localobj name.
+    // if so, d after ret() would point outside the stack,
+    // so it cannot be dereferenced without a sanitizer error on the mac.
     ret();
     /*make a temp and ref it in case autoobj returned since ret would
     have unreffed it*/
-    hoc_push_object(*d);
+    hoc_push_object(o);
 
-    if (*d) {
-        (*d)->refcount--;
+    if (o) {
+        o->refcount--;
     }
-    hoc_tobj_unref(d);
+    hoc_tobj_unref(d);  // only dereferences d if points into the hoc_temp_obj_pool_
 }
 
 void hoc_Numarg(void) {
