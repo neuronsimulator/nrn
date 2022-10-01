@@ -26,10 +26,6 @@ void solv_diffeq(Item* qsol,
 void add_deriv_imp_list(char*);
 void deriv_used(Symbol* s, Item* q1, Item* q2);
 void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4);
-void matchinitial(Item*);
-void matchbound(Item* q1, Item* q2, Item* q3, Item* q4, Item* q5, Symbol* sindex);
-void checkmatch(int);
-void matchmassage(int);
 void copyitems(Item* q1, Item* q2, Item* qdest);
 void disc_var_seen(Item* q1, Item* q2, Item* q3, int array);
 void massagediscblk(Item* q1, Item* q2, Item* q3, Item* q4);

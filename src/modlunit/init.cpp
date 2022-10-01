@@ -60,8 +60,6 @@ static struct { /* Keywords */
                 {"CONSERVE", CONSERVE},
                 {"VS", VS},
                 {"LAG", LAG},
-                {"RESET", RESET},
-                {"MATCH", MATCH},
                 {"MODEL_LEVEL", MODEL_LEVEL}, /* inserted by merge */
                 {"SWEEP", SWEEP},
                 {"COMPARTMENT", COMPARTMENT},
