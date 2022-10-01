@@ -70,12 +70,12 @@ extern int lexcontext;
 %token	<qp>	OR AND GT GE LT LE EQ NE NOT
 %token	<qp>	NAME PRIME REAL INTEGER DEFINEDVAR
 %token	<qp>	KINETIC CONSERVE REACTION REACT1 COMPARTMENT LONGDIFUS
-%token	<qp>	STRING VS LAG MODEL_LEVEL SWEEP
+%token	<qp>	STRING VS LAG SWEEP
 %token	<qp>	SPACE NEWLINE TO_EOL STUFF
 %token	<qp>	UNITBLK UNITSON UNITSOFF
 %token	<qp>	TABLE DEPEND
 
-%type	<qp>	top all all1 title verbatim comment define1 declare declare1
+%type	<qp>	top all all1 title verbatim comment define1 declare
 %type	<qp>	constblk constbody constasgn units limits tolerance
 %type	<qp>	Name name number NUMBER integer real
 %type	<qp>	indepblk indepbody indepdef withby
@@ -147,12 +147,7 @@ define1: DEFINE1 NAME integer
 Name:	NAME
 		{P1{$1->element = (void *)checklocal(SYM($1));}}
 	;
-declare: declare1
-	| MODEL_LEVEL INTEGER {declare_level = atoi(STR($2));} declare1
-		{declare_level = 0;}
-	;
-declare1: constblk | indepblk | depblk | stateblk
-	| unitblk | neuronblk
+declare: constblk | indepblk | depblk | stateblk | unitblk | neuronblk
 	;
 constblk: CONSTANT '{' constbody '}'
 	| PARAMETER '{' constbody '}'

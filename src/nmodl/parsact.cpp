@@ -31,12 +31,12 @@ extern int artificial_cell;
 extern int vectorize;
 extern int assert_threadsafe;
 
-int type_change(Symbol* sym, int level);
+int type_change(Symbol* sym);
 
 static long previous_subtype; /* subtype at the sym->level */
 static char* previous_str;    /* u.str on last install */
 
-void explicit_decl(int level, Item* q) {
+void explicit_decl(Item* q) {
     /* used to be inside parse1.ypp without the lastvars condition
        Without the condition it served two purposes.
        1) variables explicitly declared were so marked so that they
@@ -76,28 +76,23 @@ void explicit_decl(int level, Item* q) {
     Symbol* sym;
 
     sym = SYM(q);
-    if (!level) { /* No multiple declarations at the root level and
-            the symbol is marked explicitly declared */
-        if (sym->usage & EXPLICIT_DECL) {
-            diag("Multiple declaration of ", sym->name);
-        }
-        sym->usage |= EXPLICIT_DECL;
+    if (sym->usage & EXPLICIT_DECL) {
+        diag("Multiple declaration of ", sym->name);
     }
+    sym->usage |= EXPLICIT_DECL;
     /* this ensures that declared PRIMES will appear in .var file */
     sym->usage |= DEP;
 
-    if (level >= sym->level) {
+    if (sym->level) {
         assert(previous_str);
     }
     /* resolve possible type conflicts */
-    if (type_change(sym, level)) {
+    if (type_change(sym)) {
         return;
     }
     /* resolve which declaration takes precedence */
-    if (level < sym->level) { /* new one takes precedence */
-        sym->level = level;
-    } else if (level > sym->level) { /* old one takes precedence */
-        sym->u.str = previous_str;
+    if (!sym->level) { /* new one takes precedence */
+        sym->level = 1;
     } else if (strcmp(sym->u.str, previous_str) != 0) { /* not identical */
         diag(sym->name, "has different values at same level");
     }
@@ -107,7 +102,7 @@ void explicit_decl(int level, Item* q) {
 one producing a message. Notice that multiple declarations at level 0 are
 caught as errors in the function above. */
 
-int type_change(Symbol* sym, int level) /*return 1 if type change, 0 otherwise*/
+int type_change(Symbol* sym) /*return 1 if type change, 0 otherwise*/
 {
     long s, d, c;
 
@@ -136,9 +131,7 @@ int type_change(Symbol* sym, int level) /*return 1 if type change, 0 otherwise*/
     } else {
         return 0;
     }
-    if (level < sym->level) {
-        sym->level = level;
-    }
+    sym->level = 1;
     return 1;
 }
 

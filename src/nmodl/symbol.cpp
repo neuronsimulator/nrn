@@ -76,7 +76,7 @@ Symbol* install(char* s, int t) /* install s in the list symbol table with type 
     sp->usage = 0;
     sp->araydim = 0;
     sp->discdim = 0;
-    sp->level = 100;    /* larger than any reasonable submodel level */
+    sp->level = 0;    /* 0 means not found yet, 1 means already found */
     Linsertsym(sl, sp); /*insert at head of list*/
     return sp;
 }
