@@ -93,7 +93,6 @@ void fornetcon(Item* keyword, Item* par1, Item* args, Item* par2, Item* stmt, It
 void chk_thread_safe();
 void chk_global_state();
 void check_useion_variables();
-void threadsafe_seen(Item* q1, Item* q2);
 void explicit_decl(int level, Item* q);
 void parm_array_install(Symbol* n, char* num, char* units, char* limits, int index);
 void parminstall(Symbol* n, char* num, char* units, char* limits);

@@ -2977,17 +2977,6 @@ void chk_global_state() {
     }
 }
 
-
-void threadsafe_seen(Item* q1, Item* q2) {
-    Item* q;
-    assert_threadsafe = 1;
-    if (q2) {
-        for (q = q1->next; q != q2->next; q = q->next) {
-            SYM(q)->assigned_to_ = 2;
-        }
-    }
-}
-
 void conductance_hint(int blocktype, Item* q1, Item* q2) {
     Item* q;
     if (blocktype != BREAKPOINT) {

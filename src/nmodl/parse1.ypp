@@ -110,7 +110,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	NEURON SUFFIX NONSPECIFIC READ WRITE USEION VALENCE THREADSAFE REPRESENTS
 %token	<qp>	GLOBAL RANGE POINTER BBCOREPOINTER EXTERNAL BEFORE AFTER WATCH
 %token	<qp>	ELECTRODE_CURRENT CONSTRUCTOR DESTRUCTOR NETRECEIVE FOR_NETCONS
-%type	<qp>	neuronblk nrnuse nrnlist optnrnlist valence initstmt bablk optontology
+%type	<qp>	neuronblk nrnuse nrnlist valence initstmt bablk optontology
 %token	<qp>	CONDUCTANCE
 %type	<qp>	conducthint
 
@@ -1047,8 +1047,8 @@ nrnstmt: /*nothing*/
 		{ nrn_list($2, $3);}
 	| nrnstmt EXTERNAL nrnlist
 		{ nrn_list($2, $3);}
-	| nrnstmt THREADSAFE optnrnlist
-		{ threadsafe_seen($2, $3); }
+	| nrnstmt THREADSAFE
+		{ assert_threadsafe = 1; }
 	;
 nrnuse: USEION NAME READ nrnlist valence optontology
 		{nrn_use($2, $4, ITEM0, $5);}
@@ -1067,10 +1067,6 @@ nrnlist: NAME
 		{ remove($2); $$ = $3;}
 	| error
 		{myerr("syntax is: keyword name , name, ..., name");}
-	;
-optnrnlist: /*nothing*/
-		{$$ = NULL;}
-	| nrnlist
 	;
 valence: /*nothing*/
 		{$$ = ITEM0;}
