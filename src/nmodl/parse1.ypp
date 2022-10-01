@@ -78,7 +78,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	VERBATIM COMMENT MODEL CONSTANT INDEPENDENT DEPENDENT STATE
 %token	<qp>	INITIAL1 DERIVATIVE SOLVE USING WITH DISCRETE
 %token	<qp>	FROM TO BY WHILE IF ELSE START1 STEP SOLVEFOR
-%token	<qp>	PROCEDURE DEL DEL2 DEFINE1 IFERROR PARAMETER INT
+%token	<qp>	PROCEDURE DEL DEL2 DEFINE1 PARAMETER INT
 %token	<qp>	DERFUNC EQUATION LINEAR NONLINEAR FUNCTION1 LOCAL
 %token	<qp>	METHOD LIN1 NONLIN1 TABLE DEPEND BREAKPOINT
 %token	<qp>	INCLUDE1 FUNCTION_TABLE PROTECT NRNMUTEXLOCK NRNMUTEXUNLOCK
@@ -92,7 +92,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %type	<qp>	name number nonlineqn primary term linexpr
 %type	<qp>	expr aexpr ostmt astmt stmtlist locallist locallist1
 %type	<qp>	varname exprlist define1
-%type	<qp>	asgn fromstmt whilestmt ifstmt solveblk funccall ifsolerr
+%type	<qp>	asgn fromstmt whilestmt ifstmt solveblk funccall
 %type	<qp>	opinc opstart lagstmt
 %type	<qp>	parmasgn indepdef depdef withby
 %type	<qp>	declare parmblk indepblk depblk stateblk
@@ -826,17 +826,12 @@ initstmt: INITIAL1 stmtlist '}'
 #endif
 		}
 	;
-solveblk: SOLVE NAME ifsolerr
+solveblk: SOLVE NAME
 		/* no processing, merely save in solve list */
-		{ solvequeue($2, ITEM0, blocktype, $3); }
-	| SOLVE NAME USING METHOD ifsolerr
-		{ solvequeue($2, $4, blocktype, $5); }
+		{ solvequeue($2, ITEM0, blocktype); }
+	| SOLVE NAME USING METHOD
+		{ solvequeue($2, $4, blocktype); }
 	| SOLVE error { myerr("Illegal SOLVE statement");}
-	;
-ifsolerr: /*nothing*/
-		{ $$ = ITEM0; }
-	| IFERROR stmtlist '}'
-		{ $$ = $3; }
 	;
 solvefor: /*nothing*/
 		{ if (solveforlist) {

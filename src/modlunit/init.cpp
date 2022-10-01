@@ -64,7 +64,6 @@ static struct { /* Keywords */
                 {"SWEEP", SWEEP},
                 {"COMPARTMENT", COMPARTMENT},
                 {"LONGITUDINAL_DIFFUSION", LONGDIFUS},
-                {"IFERROR", IFERROR},
                 {"SOLVEFOR", SOLVEFOR},
                 {"UNITS", UNITBLK},
                 {"UNITSON", UNITSON},

@@ -131,7 +131,7 @@ void init_lineq(Item*);
 void lin_state_term(Item* q1, Item* q2);
 void linterm(Item* q1, Item* q2, int pstate, int sign);
 void massage_linblk(Item* q1, Item* q2, Item* q3, Item* q4);
-void solvequeue(Item* q1, Item* q2, int blocktype, Item* qerr);
+void solvequeue(Item* q1, Item* q2, int blocktype);
 void solvhandler();
 void save_dt(Item*);
 void symbol_init();
