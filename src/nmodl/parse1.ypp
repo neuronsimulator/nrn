@@ -87,7 +87,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	OR AND GT LT LE EQ NE NOT
 %token	<qp>	NAME PRIME REAL INTEGER DEFINEDVAR ONTOLOGY_ID
 %type	<qp>	Name NUMBER real intexpr integer
-%token	<qp>	STRING VS LAG RESET MODEL_LEVEL SWEEP
+%token	<qp>	STRING VS LAG MODEL_LEVEL SWEEP
 %type	<str>	line model units unit limits abstol
 %type	<qp>	name number nonlineqn primary term linexpr
 %type	<qp>	expr aexpr ostmt astmt stmtlist locallist locallist1
