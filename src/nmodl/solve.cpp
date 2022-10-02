@@ -65,7 +65,7 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
     }
     /* verify that the block defintion for this SOLVE has not yet been seen */
     if (massage_list_) {
-        Item *lq;
+        Item* lq;
         ITERATE(lq, massage_list_) {
             if (strcmp(SYM(lq)->name, SYM(qName)->name) == 0) {
                 diag("The SOLVE statement must be before the DERIVATIVE block for ", SYM(lq)->name);
@@ -73,7 +73,7 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
         }
     }
 #endif
-    Item *lq = lappendsym(solvq, SYM0);
+    Item* lq = lappendsym(solvq, SYM0);
     ITM(lq) = qName;
     lq->itemtype = blocktype;
     /* handle STEADYSTATE option */
@@ -99,7 +99,7 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
     }
     remove(qName->prev);
 
-    List *errstmt = newlist();
+    List* errstmt = newlist();
     lq = lappendsym(solvq, SYM0);
     LST(lq) = errstmt;
 #if NOCMODL
