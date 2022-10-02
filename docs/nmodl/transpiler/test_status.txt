@@ -63,7 +63,6 @@ The following symbols are used in the document to descrive the status :
 | \>= | ✅ |
 |VS | ✅ |
 |LAG | ✅ |
-|MODEL_LEVEL | ✅ |
 |SWEEP | ✅ |
 |KINETIC | ✅ |
 |CONSERVE | ✅ |

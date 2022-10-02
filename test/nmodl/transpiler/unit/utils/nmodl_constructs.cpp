@@ -103,14 +103,6 @@ std::map<std::string, NmodlTestCase> const nmodl_invalid_constructs{
     },
 
     {
-        "model_level_1",
-        {
-            "Model level without any block",
-            "MODEL_LEVEL 2"
-        }
-    },
-
-    {
         "verbatim_block_1",
         {
             "Nested verbatim blocks",
@@ -278,15 +270,6 @@ std::map<std::string, NmodlTestCase> const nmodl_valid_constructs{
             )"
         }
     },
-/** \todo : MODEL_LEVEL is not handled in parser as it's deprecated
-    {
-        "model_level_1",
-        {
-            "Model level followed by block",
-            "MODEL_LEVEL 2 NEURON {}"
-        }
-    },
-*/
 
     {
         "verbatim_block_1",
@@ -1128,7 +1111,7 @@ std::map<std::string, NmodlTestCase> const nmodl_valid_constructs{
             R"(
                 NEURON {
                     THREADSAFE
-                    THREADSAFE a, b
+                    THREADSAFE
                 }
             )"
         }
