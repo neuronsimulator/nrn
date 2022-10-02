@@ -100,7 +100,6 @@
 %token  <ModToken>              ELSE
 %token  <ModToken>              EQUATION
 %token  <ModToken>              EXTERNAL
-%token  <ModToken>              FORALL1
 %token  <ModToken>              FOR_NETCONS
 %token  <ModToken>              FROM
 %token  <ModToken>              FUNCTION1
@@ -116,7 +115,6 @@
 %token  <ModToken>              LINEAR
 %token  <ModToken>              LOCAL
 %token  <ModToken>              LONGDIFUS
-%token  <ModToken>              MATCH
 %token  <ModToken>              MODEL
 %token  <ModToken>              MODEL_LEVEL
 %token  <ModToken>              NETRECEIVE
@@ -134,7 +132,6 @@
 %token  <ModToken>              REACT1
 %token  <ModToken>              REACTION
 %token  <ModToken>              READ
-%token  <ModToken>              RESET
 %token  <ModToken>              SOLVE
 %token  <ModToken>              SOLVEFOR
 %token  <ModToken>              START1
@@ -256,7 +253,6 @@
 %type   <ast::Expression*>                  optional_increment
 %type   <ast::Number*>                      optional_start
 %type   <ast::LagStatement*>                lag_statement
-%type   <ast::ForAllStatement*>             forall_statement
 %type   <ast::ParamAssign*>                 parameter_assignment
 %type   <ast::IndependentDefinition*>       independent_definition
 %type   <ast::AssignedDefinition*>          dependent_definition
@@ -269,9 +265,6 @@
 %type   <ast::Watch*>                       watch
 %type   <ast::ForNetcon*>                   for_netcon
 %type   <ast::ConstantStatementVector>      constant_statement
-%type   <ast::MatchVector>                  match_list
-%type   <ast::Match*>                       match
-%type   <ast::Identifier*>                  match_name
 %type   <ast::ReactionStatement*>           reaction_statement
 %type   <ast::Conserve*>                    conserve
 %type   <ast::Expression*>                  react
@@ -325,7 +318,6 @@
 %type   <ast::InitialBlock*>                initial_block
 %type   <ast::KineticBlock*>                kinetic_block
 %type   <ast::LinearBlock*>                 linear_block
-%type   <ast::MatchBlock*>                  match_block
 %type   <ast::NetReceiveBlock*>             net_receive_block
 %type   <ast::NeuronBlock*>                 neuron_block
 %type   <ast::NonLinearBlock*>              non_linear_block
@@ -979,10 +971,6 @@ statement_type1 :   from_statement
                     {
                         $$ = $1;
                     }
-                |   forall_statement
-                    {
-                        $$ = $1;
-                    }
                 |   while_statement
                     {
                         $$ = $1;
@@ -1026,14 +1014,6 @@ statement_type1 :   from_statement
                 |   lag_statement
                     {
                         $$ = $1;
-                    }
-                |   RESET
-                    {
-                        $$ = new ast::Reset();
-                    }
-                |   match_block
-                    {
-                        $$ = new ast::ExpressionStatement($1);
                     }
                 |   table_statement
                     {
@@ -1409,17 +1389,6 @@ optional_increment :
                 | BY integer_expression
                     {
                         $$ = $2;
-                    }
-                ;
-
-
-forall_statement :  FORALL1 NAME_PTR statement_list "}"
-                    {
-                        $$ = new ast::ForAllStatement($2, $3);
-                    }
-                |   FORALL1 error
-                    {
-                        error(scanner.loc, "forall_statement");
                     }
                 ;
 
@@ -1846,58 +1815,6 @@ lag_statement   :   LAG name BY NAME_PTR
                 |   LAG error
                     {
                         error(scanner.loc, "lag_statement");
-                    }
-                ;
-
-
-match_block     :   MATCH "{" match_list "}"
-                    {
-                        $$ = new ast::MatchBlock($3);
-                        ModToken block_token = $1 + $4;
-                        $$->set_token(block_token);
-                    }
-                ;
-
-
-match_list      :   match
-                    {
-                        $$ = ast::MatchVector();
-                        $$.emplace_back($1);
-                    }
-                |   match_list match
-                    {
-                        $1.emplace_back($2);
-                        $$ = $1;
-                    }
-                ;
-
-
-match           :   name
-                    {
-                        $$ = new ast::Match($1, NULL);
-                    }
-                |   match_name "(" expression ")" "=" expression
-                    {
-                        auto op = ast::BinaryOperator(ast::BOP_ASSIGN);
-                        auto lhs = new ast::ParenExpression($3);
-                        auto rhs = $6;
-                        auto expression = new ast::BinaryExpression(lhs, op, rhs);
-                        $$ = new ast::Match($1, expression);
-                    }
-                |   error
-                    {
-                        error(scanner.loc, "match ");
-                    }
-                ;
-
-
-match_name      :   name
-                    {
-                        $$ = $1;
-                    }
-                |   name "[" NAME_PTR "]"
-                    {
-                        $$ = new ast::IndexedName($1, $3);
                     }
                 ;
 

@@ -473,7 +473,6 @@ bool CodegenCVisitor::need_semicolon(Statement* node) {
         || node->is_else_statement()
         || node->is_from_statement()
         || node->is_verbatim()
-        || node->is_for_all_statement()
         || node->is_from_statement()
         || node->is_conductance_hint()
         || node->is_while_statement()) {

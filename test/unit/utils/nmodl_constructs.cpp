@@ -627,21 +627,6 @@ std::map<std::string, NmodlTestCase> const nmodl_valid_constructs{
     },
 
     {
-        "forall_statement_1",
-        {
-            "FORALL statement",
-            R"(
-                INITIAL {
-                    FORALL some_name {
-                        a = 1
-                        tau = 2.1
-                    }
-                }
-            )"
-        }
-    },
-
-    {
         "while_statement_1",
         {
             "Empty while statement",
@@ -942,32 +927,6 @@ std::map<std::string, NmodlTestCase> const nmodl_valid_constructs{
                 PROCEDURE lates() {
                     LAG ina BY tau
                     neo = lag_ina_tau
-                }
-            )"
-        }
-    },
-
-    {
-        "reset_statement_1",
-        {
-            "RESET statement",
-            R"(
-                PROCEDURE lates() {
-                    RESET
-                }
-            )"
-        }
-    },
-
-    {
-        "match_block_1",
-        {
-            "MATCH block",
-            R"(
-                PROCEDURE lates() {
-                    MATCH { name1 }
-                    MATCH { name1 name2 }
-                    MATCH { name1[INDEX](expr1+expr2) = (expr3+expr4) }
                 }
             )"
         }

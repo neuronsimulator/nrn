@@ -416,10 +416,6 @@ void PerfVisitor::visit_kinetic_block(const ast::KineticBlock& node) {
     measure_performance(node);
 }
 
-void PerfVisitor::visit_match_block(const ast::MatchBlock& node) {
-    measure_performance(node);
-}
-
 /** Blocks like function can have multiple statement blocks and
  * blocks like net receive has nested initial blocks. Hence need
  * to maintain separate stack.

@@ -233,8 +233,6 @@ class PerfVisitor: public ConstAstVisitor {
 
     void visit_kinetic_block(const ast::KineticBlock& node) override;
 
-    void visit_match_block(const ast::MatchBlock& node) override;
-
     /// certain constructs needs to be excluded from usage counting
     /// and hence need to provide empty implementations
 

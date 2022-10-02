@@ -267,6 +267,6 @@ SCENARIO("Check if a NEURON block is parsed with correct location info in its to
         )";
         parse_neuron_block_string(reindent_text(neuron_block), value);
         ss << value;
-        REQUIRE(ss.str() == "         NEURON at [1.1-5.1] type 299");
+        REQUIRE(ss.str() == "         NEURON at [1.1-5.1] type 297");
     }
 }

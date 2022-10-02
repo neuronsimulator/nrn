@@ -92,7 +92,6 @@ set(AST_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/ast/external.hpp
     ${PROJECT_BINARY_DIR}/src/ast/factor_def.hpp
     ${PROJECT_BINARY_DIR}/src/ast/float.hpp
-    ${PROJECT_BINARY_DIR}/src/ast/for_all_statement.hpp
     ${PROJECT_BINARY_DIR}/src/ast/for_netcon.hpp
     ${PROJECT_BINARY_DIR}/src/ast/from_statement.hpp
     ${PROJECT_BINARY_DIR}/src/ast/function_block.hpp
@@ -117,8 +116,6 @@ set(AST_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/ast/local_list_statement.hpp
     ${PROJECT_BINARY_DIR}/src/ast/local_var.hpp
     ${PROJECT_BINARY_DIR}/src/ast/lon_difuse.hpp
-    ${PROJECT_BINARY_DIR}/src/ast/match.hpp
-    ${PROJECT_BINARY_DIR}/src/ast/match_block.hpp
     ${PROJECT_BINARY_DIR}/src/ast/model.hpp
     ${PROJECT_BINARY_DIR}/src/ast/mutex_lock.hpp
     ${PROJECT_BINARY_DIR}/src/ast/mutex_unlock.hpp
@@ -149,7 +146,6 @@ set(AST_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/ast/reaction_operator.hpp
     ${PROJECT_BINARY_DIR}/src/ast/reaction_statement.hpp
     ${PROJECT_BINARY_DIR}/src/ast/read_ion_var.hpp
-    ${PROJECT_BINARY_DIR}/src/ast/reset.hpp
     ${PROJECT_BINARY_DIR}/src/ast/solution_expression.hpp
     ${PROJECT_BINARY_DIR}/src/ast/solve_block.hpp
     ${PROJECT_BINARY_DIR}/src/ast/state_block.hpp

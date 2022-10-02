@@ -26,7 +26,6 @@ The following symbols are used in the document to descrive the status :
 |WITH | ✅ |
 |DISCRETE | ✅ |
 |FROM | ✅ |
-|FORALL | ✅ |
 |TO | ✅ |
 |BY | ✅ |
 |WHILE | ✅ |
@@ -64,8 +63,6 @@ The following symbols are used in the document to descrive the status :
 | \>= | ✅ |
 |VS | ✅ |
 |LAG | ✅ |
-|RESET | ✅ |
-|MATCH | ✅ |
 |MODEL_LEVEL | ✅ |
 |SWEEP | ✅ |
 |KINETIC | ✅ |
