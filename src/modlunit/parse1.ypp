@@ -70,7 +70,7 @@ extern int lexcontext;
 %token	<qp>	OR AND GT GE LT LE EQ NE NOT
 %token	<qp>	NAME PRIME REAL INTEGER DEFINEDVAR
 %token	<qp>	KINETIC CONSERVE REACTION REACT1 COMPARTMENT LONGDIFUS
-%token	<qp>	STRING VS LAG RESET MATCH MODEL_LEVEL SWEEP
+%token	<qp>	STRING VS LAG MODEL_LEVEL SWEEP
 %token	<qp>	SPACE NEWLINE TO_EOL STUFF
 %token	<qp>	UNITBLK UNITSON UNITSOFF
 %token	<qp>	TABLE DEPEND
@@ -91,7 +91,7 @@ extern int lexcontext;
 %type	<qp>	watchstmt watch1
 %type	<qp>	eqnblk compartlist ldifuslist longdifus
 %type	<qp>	conserve compart namelist optnamelist kineticblk reaction react consreact
-%type	<qp>	lagstmt matchblk matchlist match matchname
+%type	<qp>	lagstmt
 %type	<qp>	unitblk unitflag unitbody unitdef Units factordef include1
 
 /* interface to NEURON */
@@ -378,8 +378,6 @@ stmt:	asgn
 	| longdifus
 	| lagstmt
 	| tablestmt
-	| RESET
-	| matchblk
 	| unitflag
 	| initstmt
 	| watchstmt
@@ -743,20 +741,6 @@ tablst: /*Nothing*/
 dependlst: /*Nothing*/
 		{$$ = ITEM0;}
 	| DEPEND namelist
-	;
-matchblk: MATCH '{' matchlist '}'
-	;
-matchlist: match
-	| matchlist match
-	;
-match:	name
-	| matchname '(' expr ')' '=' expr
-	| error
-		{myerr("MATCH syntax is state0 or state(expr)=expr or\
-state[i](expr(i)) = expr(i)");}
-	;
-matchname: name
-	| name '[' NAME ']'
 	;
 
 neuronblk: NEURON 

@@ -23,7 +23,6 @@ static void conductance_cout();
 
 extern Symbol* indepsym;
 extern List* indeplist;
-extern List* match_bound;
 extern List* defs_list;
 extern char* saveindep;
 char* modelline;
@@ -202,9 +201,6 @@ void c_out() {
     P("{\n");
     initstates();
     printlist(initfunc);
-    if (match_bound) {
-        P("\n_init_match(_save);");
-    }
     P("\n}\n}\n");
     Fflush(fcout);
 
@@ -689,10 +685,6 @@ void c_out_vectorize() {
     P("{\n");
     initstates();
     printlist(initfunc);
-    if (match_bound) {
-        assert(!vectorize);
-        P("\n_init_match(_save);");
-    }
     P("\n}\n}\n");
     Fflush(fcout);
 
