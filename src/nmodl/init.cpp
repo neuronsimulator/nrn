@@ -42,7 +42,6 @@ static struct { /* Keywords */
                 {"STEP", STEP},
                 {"WITH", WITH},
                 {"FROM", FROM},
-                {"FORALL", FORALL1},
                 {"TO", TO},
                 {"BY", BY},
                 {"if", IF},
@@ -54,8 +53,6 @@ static struct { /* Keywords */
                 {"CONSERVE", CONSERVE},
                 {"VS", VS},
                 {"LAG", LAG},
-                {"RESET", RESET},
-                {"MATCH", MATCH},
                 {"MODEL_LEVEL", MODEL_LEVEL}, /* inserted by merge */
                 {"SWEEP", SWEEP},
                 {"COMPARTMENT", COMPARTMENT},
