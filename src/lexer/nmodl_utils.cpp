@@ -213,8 +213,6 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_LONGDIFUS(token, pos);
     case Token::MODEL:
         return Parser::make_MODEL(token, pos);
-    case Token::MODEL_LEVEL:
-        return Parser::make_MODEL_LEVEL(token, pos);
     case Token::NETRECEIVE:
         return Parser::make_NETRECEIVE(token, pos);
     case Token::NEURON:

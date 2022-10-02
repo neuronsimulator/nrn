@@ -116,7 +116,6 @@
 %token  <ModToken>              LOCAL
 %token  <ModToken>              LONGDIFUS
 %token  <ModToken>              MODEL
-%token  <ModToken>              MODEL_LEVEL
 %token  <ModToken>              NETRECEIVE
 %token  <ModToken>              NEURON
 %token  <ModToken>              NONLIN1
@@ -296,8 +295,6 @@
 %type   <ast::PointerVarVector>             pointer_var_list
 %type   <ast::BbcorePointerVarVector>       bbcore_pointer_var_list
 %type   <ast::ExternVarVector>              external_var_list
-%type   <ast::ThreadsafeVarVector>          optional_threadsafe_var_list
-%type   <ast::ThreadsafeVarVector>          threadsafe_var_list
 %type   <ast::Valence*>                     valence
 %type   <ast::ExpressionStatement*>         initial_statement
 %type   <ast::ConductanceHint*>             conductance
@@ -425,13 +422,6 @@ all             :   {
                     {
                         $1->emplace_back_node($2);
                         $$ = $1;
-                    }
-                |   all MODEL_LEVEL INTEGER_PTR declare
-                    {
-                        /** todo This is discussed with Michael Hines. Model level was inserted
-                         * by merge program which is no longer exist. This was to avoid the name
-                         * collision in case of include. Idea was to have some kind of namespace!
-                         */
                     }
                 |   all procedure
                     {
@@ -2004,9 +1994,9 @@ neuron_statement :
                         $1.emplace_back(new ast::External($3));
                         $$ = $1;
                     }
-                |   neuron_statement THREADSAFE optional_threadsafe_var_list
+                |   neuron_statement THREADSAFE
                     {
-                        $1.emplace_back(new ast::ThreadSafe($3));
+                        $1.emplace_back(new ast::ThreadSafe());
                         $$ = $1;
                     }
                 |   neuron_statement REPRESENTS ONTOLOGY_ID
@@ -2223,29 +2213,6 @@ external_var_list : NAME_PTR
                     }
                 ;
 
-
-optional_threadsafe_var_list :
-                    {
-                        $$ = ast::ThreadsafeVarVector();
-                    }
-                |   threadsafe_var_list
-                    {
-                        $$ = $1;
-                    }
-                ;
-
-
-threadsafe_var_list : NAME_PTR
-                    {
-                        $$ = ast::ThreadsafeVarVector();
-                        $$.emplace_back(new ast::ThreadsafeVar($1));
-                    }
-                |   threadsafe_var_list "," NAME_PTR
-                    {
-                        $1.emplace_back(new ast::ThreadsafeVar($3));
-                        $$ = $1;
-                    }
-                ;
 
  INTEGER_PTR    :   INTEGER
                     {

@@ -155,7 +155,6 @@ set(AST_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/ast/suffix.hpp
     ${PROJECT_BINARY_DIR}/src/ast/table_statement.hpp
     ${PROJECT_BINARY_DIR}/src/ast/thread_safe.hpp
-    ${PROJECT_BINARY_DIR}/src/ast/threadsafe_var.hpp
     ${PROJECT_BINARY_DIR}/src/ast/unary_expression.hpp
     ${PROJECT_BINARY_DIR}/src/ast/unary_operator.hpp
     ${PROJECT_BINARY_DIR}/src/ast/unit.hpp

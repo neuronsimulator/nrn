@@ -414,14 +414,6 @@
                                   type: Name
                                   node_name: true
 
-                        - ThreadsafeVar:
-                            brief: "TODO"
-                            members:
-                              - name:
-                                  brief: "TODO"
-                                  type: Name
-                                  node_name: true
-
                   - Block:
                       brief: "Base class for all block scoped nodes"
                       description: |
@@ -1815,13 +1807,6 @@
 
                   - ThreadSafe:
                       nmodl: THREADSAFE
-                      members:
-                        - variables:
-                            brief: "Vector of thread safe variables"
-                            type: ThreadsafeVar
-                            vector: true
-                            separator: ", "
-                            prefix: {value: " "}
                       brief: "Represents THREADSAFE statement in NMODL"
 
                   - Verbatim:
