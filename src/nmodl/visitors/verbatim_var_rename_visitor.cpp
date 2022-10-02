@@ -27,7 +27,7 @@ void VerbatimVarRenameVisitor::visit_statement_block(ast::StatementBlock& node) 
         symtab = current_symtab;
     }
 
-    // some statements like forall, from, while are of type expression statement type.
+    // some statements like from, while are of type expression statement type.
     // These statements contain statement block but do not have symbol table. And hence
     // we push last non-null symbol table on the stack.
     symtab_stack.push(symtab);

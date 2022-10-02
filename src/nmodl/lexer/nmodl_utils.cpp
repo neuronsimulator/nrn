@@ -185,8 +185,6 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_EXTERNAL(token, pos);
     case Token::FOR_NETCONS:
         return Parser::make_FOR_NETCONS(token, pos);
-    case Token::FORALL1:
-        return Parser::make_FORALL1(token, pos);
     case Token::FROM:
         return Parser::make_FROM(token, pos);
     case Token::FUNCTION1:
@@ -213,8 +211,6 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_LOCAL(token, pos);
     case Token::LONGDIFUS:
         return Parser::make_LONGDIFUS(token, pos);
-    case Token::MATCH:
-        return Parser::make_MATCH(token, pos);
     case Token::MODEL:
         return Parser::make_MODEL(token, pos);
     case Token::MODEL_LEVEL:
@@ -243,8 +239,6 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_RANGE(token, pos);
     case Token::READ:
         return Parser::make_READ(token, pos);
-    case Token::RESET:
-        return Parser::make_RESET(token, pos);
     case Token::SOLVE:
         return Parser::make_SOLVE(token, pos);
     case Token::SOLVEFOR:

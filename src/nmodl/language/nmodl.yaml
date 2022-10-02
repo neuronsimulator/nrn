@@ -937,18 +937,6 @@
                                   type: StatementBlock
                                   getter: {override: true}
 
-                        - MatchBlock:
-                            brief: "TODO"
-                            nmodl: MATCH
-                            members:
-                              - matchs:
-                                  brief: "Vector of match statements"
-                                  type: Match
-                                  vector: true
-                                  separator: " "
-                                  prefix: {value: " { "}
-                                  suffix: {value: " }"}
-
                         - UnitBlock:
                             brief: "TODO"
                             nmodl: "UNITS "
@@ -1204,16 +1192,6 @@
                             type: Expression
                             prefix: {value: " "}
 
-                  - Match:
-                      brief: "TODO"
-                      members:
-                        - name:
-                            brief: "TODO"
-                            type: Identifier
-                        - expression:
-                            brief: "TODO"
-                            type: Expression
-                            optional: true
                   - BABlockType:
                       members:
                         - value:
@@ -1490,19 +1468,6 @@
                             type: StatementBlock
                             getter: {override: true}
 
-                  - ForAllStatement:
-                      brief: "TODO"
-                      nmodl: "FORALL "
-                      members:
-                        - name:
-                            brief: "TODO"
-                            type: Name
-                            suffix: {value: " "}
-                        - statement_block:
-                            brief: "TODO"
-                            type: StatementBlock
-                            getter: {override: true}
-
                   - WhileStatement:
                       brief: "TODO"
                       nmodl: "WHILE "
@@ -1580,10 +1545,6 @@
                   - MutexUnlock:
                       nmodl: MUTEXUNLOCK
                       brief: "Represent MUTEXUNLOCK statement in NMODL"
-
-                  - Reset:
-                      nmodl: RESET
-                      brief: "Represent RESET statement in NMODL"
 
                   - Conserve:
                       nmodl: CONSERVE
