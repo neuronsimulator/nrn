@@ -19,8 +19,11 @@ extern NrnThread* nrn_threads;
 
 extern int nrn_use_fast_imem;
 extern int use_cachevec;
-
+extern int nrn_how_many_processors();
+namespace nrn::test {
 int PROCESSORS{0};
+int MAX_PROCESSORS{nrn_how_many_processors()};
+}  // namespace nrn::test
 
 int main(int argc, char* argv[]) {
     // global setup...
@@ -32,8 +35,9 @@ int main(int argc, char* argv[]) {
     Catch::Session session;
 
     using namespace Catch::clara;
-    auto cli = session.cli() | Opt(PROCESSORS, "number of PROCESSORS to consider")["--processors"](
-                                   "How many processors are available for perf tests");
+    auto cli = session.cli() |
+               Opt(nrn::test::PROCESSORS, "number of PROCESSORS to consider")["--processors"](
+                   "How many processors are available for perf tests");
 
     session.cli(cli);
 
@@ -41,8 +45,11 @@ int main(int argc, char* argv[]) {
     if (returnCode != 0)  // Indicates a command line error
         return returnCode;
 
-    if (PROCESSORS > 0)
-        std::cout << "--processors: " << PROCESSORS << std::endl;
+    if (nrn::test::PROCESSORS > 0) {
+        std::cout << "[cli][input] --processors=" << nrn::test::PROCESSORS << std::endl;
+        nrn::test::MAX_PROCESSORS = std::min(nrn::test::PROCESSORS, nrn_how_many_processors());
+    }
+    std::cout << "MAX_PROCESSORS=" << nrn::test::MAX_PROCESSORS << std::endl;
 
     ivocmain_session(argc_nompi, argv_nompi, NULL, 0);
 #undef run

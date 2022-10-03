@@ -13,7 +13,6 @@
 #include <nrn_ansi.h>
 
 extern int use_cachevec;
-extern int nrn_how_many_processors();
 
 /* @brief
  *  Test multicore implementation:
@@ -25,32 +24,23 @@ extern int nrn_how_many_processors();
  */
 
 
-// generate a range starting from 1 and doubling until we reach the nof concurrent threads
-auto make_available_threads_range() {
-    static const auto max_processors = PROCESSORS > 0
-                                           ? std::min(PROCESSORS, nrn_how_many_processors())
-                                           : nrn_how_many_processors();
-    std::cout << "max_processors: " << max_processors << std::endl;
-    auto nof_threads_range = std::vector<int>(1 + static_cast<int>(std::log2(max_processors)), 1);
-    std::generate(nof_threads_range.begin() + 1, nof_threads_range.end(), [n = 1]() mutable {
-        return n *= 2;
-    });
-    return nof_threads_range;
-}
-static auto nof_threads_range{make_available_threads_range()};
-
 TEST_CASE("Multicore unit and performance testing", "[NEURON][multicore]") {
+    static const auto nof_threads_range{nrn::test::make_available_threads_range()};
     SECTION("Simulation set-up", "[NEURON][multicore][setup]") {
-        GIVEN("We create a parallel context") {
-            REQUIRE(hoc_oc("objref pc\n"
-                           "pc = new ParallelContext()") == 0);
+        WHEN("We create a parallel context") {
+            THEN("we make sure we have a parallel context") {
+                REQUIRE(hoc_oc("objref pc\n"
+                               "pc = new ParallelContext()") == 0);
+            }
             THEN("we assert nrn_thread is equal to 1") {
                 REQUIRE(nrn_nthread == 1);
             }
             THEN("we check we have no worker threads") {
                 REQUIRE(nof_worker_threads() == 0);
             }
-            THEN("we setup 1000 passive membrane cells for the simulation") {
+        }
+        WHEN("We setup the cells for the simulation") {
+            THEN("we create 1000 passive membrane cells for the simulation") {
                 REQUIRE(hoc_oc(pass_cell_template) == 0);
                 REQUIRE(hoc_oc(prun) == 0);
                 std::string cells{1000_pas_cells};
@@ -65,7 +55,8 @@ TEST_CASE("Multicore unit and performance testing", "[NEURON][multicore]") {
         GIVEN("we do prun() over each nof_threads{nof_threads_range} with cachevec{0,1}") {
             auto cache_efficient = GENERATE(0, 1);
             auto nof_threads = GENERATE_COPY(from_range(nof_threads_range));
-            THEN("we run the simulation with " + std::to_string(nof_threads) + " threads") {
+            THEN("we run the simulation with " + std::to_string(nof_threads) +
+                 " threads, cachevec is " + std::to_string(cache_efficient)) {
                 nrn_cachevec(cache_efficient);
                 REQUIRE(use_cachevec == cache_efficient);
                 nrn_threads_create(nof_threads, 1);
@@ -126,8 +117,8 @@ TEST_CASE("Multicore unit and performance testing", "[NEURON][multicore]") {
                                             return a + (b - no_cache_mean) * (b - no_cache_mean);
                                         }) /
                         no_cache_sim_times.size());
-                    REQUIRE(cache_std_dev / cache_mean > 0.25);
-                    REQUIRE(no_cache_std_dev / no_cache_mean > 0.25);
+                    REQUIRE(cache_std_dev / cache_mean > 0.2);
+                    REQUIRE(no_cache_std_dev / no_cache_mean > 0.2);
                     // print the standard deviations
                     std::cout << "[parallel][cache][standard deviation] : " << cache_std_dev
                               << std::endl;
@@ -141,12 +132,14 @@ TEST_CASE("Multicore unit and performance testing", "[NEURON][multicore]") {
     }
 
     SECTION("Test serial mode", "[NEURON][multicore][serial]") {
-        GIVEN("cache efficient is set to 1") {
+        WHEN("cache efficient is set to 1") {
             nrn_cachevec(1);
-            REQUIRE(use_cachevec == 1);
+            THEN("we check cachevec is 1") {
+                REQUIRE(use_cachevec == 1);
+            }
             static std::vector<double> sim_times;
             GIVEN("we do prun() over each nof_threads{nof_threads_range} with serial mode on") {
-                auto nof_threads = GENERATE_REF(from_range(nof_threads_range));
+                auto nof_threads = GENERATE_COPY(from_range(nof_threads_range));
                 THEN("we run the serial simulation with " << nof_threads << " threads") {
                     nrn_threads_create(nof_threads, 0);
                     REQUIRE(nrn_nthread == nof_threads);
@@ -172,7 +165,7 @@ TEST_CASE("Multicore unit and performance testing", "[NEURON][multicore]") {
                     std::cout << nof_threads_range[i] << "\t" << sim_times[i] << std::endl;
                 }
             }
-            THEN("we assert sim_times have under 5% standard deviation from the mean") {
+            THEN("we assert sim_times have under 10% standard deviation from the mean") {
                 if (nof_threads_range.size() > 2) {
                     const auto mean = std::accumulate(sim_times.begin(), sim_times.end(), 0.0) /
                                       sim_times.size();
@@ -183,8 +176,7 @@ TEST_CASE("Multicore unit and performance testing", "[NEURON][multicore]") {
                     const auto stdev = std::sqrt(sq_sum / sim_times.size() - mean * mean);
 
                     std::cout << "[serial][standard deviation] : " << stdev << std::endl;
-                    // standard deviation should be less than 5% of the mean
-                    REQUIRE(stdev < 0.05 * mean);
+                    REQUIRE(stdev < 0.1 * mean);
                 } else {
                     WARN("Not enough threads to test serial performance KPI");
                 }
@@ -193,15 +185,17 @@ TEST_CASE("Multicore unit and performance testing", "[NEURON][multicore]") {
     }
 
     SECTION("Test busywait parallel mode", "[NEURON][multicore][parallel][busywait]") {
-        GIVEN("busywait is set to 1") {
+        WHEN("busywait is set to 1 and cache efficient is set to 1") {
             THEN("set thread_busywait to 1") {
                 REQUIRE(hoc_oc("pc.thread_busywait(1)") == 0);
             }
-            nrn_cachevec(1);
-            REQUIRE(use_cachevec == 1);
+            THEN("set cachevec to 1") {
+                nrn_cachevec(1);
+                REQUIRE(use_cachevec == 1);
+            }
             static std::vector<double> sim_times;
             GIVEN("we do prun() over each nof_threads{nof_threads_range} with serial mode on") {
-                auto nof_threads = GENERATE_REF(from_range(nof_threads_range));
+                auto nof_threads = GENERATE_COPY(from_range(nof_threads_range));
                 THEN("we run the parallel busywait simulation with " << nof_threads << " threads") {
                     nrn_threads_create(nof_threads, 1);
                     REQUIRE(nrn_nthread == nof_threads);
@@ -227,7 +221,7 @@ TEST_CASE("Multicore unit and performance testing", "[NEURON][multicore]") {
                     std::cout << nof_threads_range[i] << "\t" << sim_times[i] << std::endl;
                 }
             }
-            THEN("we assert sim_times have over 25% standard deviation from the mean") {
+            THEN("we assert sim_times have over 20% standard deviation from the mean") {
                 if (nof_threads_range.size() > 2) {
                     const auto mean = std::accumulate(sim_times.begin(), sim_times.end(), 0.0) /
                                       sim_times.size();
@@ -239,7 +233,7 @@ TEST_CASE("Multicore unit and performance testing", "[NEURON][multicore]") {
                     std::cout << "[parallel][busywait][standard deviation] : " << stdev
                               << std::endl;
                     // standard deviation should be less than 5% of the mean
-                    REQUIRE(stdev > 0.25 * mean);
+                    REQUIRE(stdev > 0.2 * mean);
                 } else {
                     WARN("Not enough threads to test busywait+parallel performance KPI");
                 }

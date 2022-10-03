@@ -1,7 +1,19 @@
 #pragma once
 #include <iostream>
 
-extern int PROCESSORS;
+
+namespace nrn::test {
+extern int MAX_PROCESSORS;
+// generate a range starting from 1 and doubling until we reach the nof concurrent threads
+inline auto make_available_threads_range() {
+    auto nof_threads_range = std::vector<int>(1 + static_cast<int>(std::log2(MAX_PROCESSORS - 1)),
+                                              1);
+    std::generate(nof_threads_range.begin() + 1, nof_threads_range.end(), [n = 1]() mutable {
+        return n *= 2;
+    });
+    return nof_threads_range;
+}
+}  // namespace nrn::test
 
 // pass_cell_template is a string containing a template for a Cell with inserted pas mechanism
 constexpr auto pass_cell_template = R"(
