@@ -255,7 +255,7 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
         }
     }
     if (sym->subtype == NRNPOINTER) {
-        pd = nrn_get_pval(pnt->prop->dparam[sym->u.rng.index + index]);
+        pd = static_cast<double*>(pnt->prop->dparam[sym->u.rng.index + index].get_handle<double>());
         if (cppp_semaphore) {
             ++cppp_semaphore;
             assert(false);
@@ -343,9 +343,14 @@ static void free_one_point(Point_process* pnt) {
 
 // called from prop_free
 void clear_point_process_struct(Prop* p) {
-    // If the datum holds Point_process* (ppnt) and that value (*ppnt) is non-null
-    if (auto* ppnt = std::get_if<Point_process*>(&p->dparam[1]); ppnt && *ppnt) {
-        auto* pnt = *ppnt;
+    auto* const pnt = [](auto& datum) -> Point_process* {
+        if (datum.template holds<Point_process*>()) {
+            return datum.template get<Point_process*>();
+        } else {
+            return nullptr;
+        }
+    }(p->dparam[1]);
+    if (pnt) {
         free_one_point(pnt);
         if (pnt->ob) {
             if (pnt->ob->observers) {

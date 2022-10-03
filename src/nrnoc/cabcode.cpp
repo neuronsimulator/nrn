@@ -275,7 +275,7 @@ static Section* new_section(Object* ob, Symbol* sym, int i) {
     prop->dparam[5] = i;
     prop->dparam[6] = ob;
 #if USE_PYTHON
-    prop->dparam[PROP_PY_INDEX] = static_cast<void*>(nullptr);
+    prop->dparam[PROP_PY_INDEX] = nullptr;
 #endif
     nrn_pushsec(sec);
     d = (double) DEF_nseg;
@@ -338,7 +338,7 @@ void delete_section(void) {
         /* the Python Section will be a zombie section with a pointer
            to an invalid Section*.
         */
-        sec->prop->dparam[PROP_PY_INDEX] = static_cast<void*>(nullptr);
+        sec->prop->dparam[PROP_PY_INDEX] = nullptr;
         section_ref(sec);
         sec_free(get<hoc_Item*>(sec->prop->dparam[8]));
         hoc_retpushx(0.0);

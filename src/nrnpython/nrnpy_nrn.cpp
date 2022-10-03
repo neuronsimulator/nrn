@@ -219,7 +219,7 @@ static void NPySecObj_dealloc(NPySecObj* self) {
         }
         Py_XDECREF(self->cell_weakref_);
         if (self->sec_->prop) {
-            self->sec_->prop->dparam[PROP_PY_INDEX] = static_cast<void*>(nullptr);
+            self->sec_->prop->dparam[PROP_PY_INDEX] = nullptr;
         }
         if (self->sec_->prop && !get<Symbol*>(self->sec_->prop->dparam[0])) {
             sec_free(get<hoc_Item*>(self->sec_->prop->dparam[8]));
@@ -2172,9 +2172,7 @@ neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject* pyname
         return nullptr;
     }
     using std::get;
-    return get<std::unique_ptr<neuron::container::generic_data_handle>>(
-               m->prop_->dparam[np.prop_index(sym)])
-        .get();
+    return &get<neuron::container::generic_data_handle>(m->prop_->dparam[np.prop_index(sym)]);
 }
 
 static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
