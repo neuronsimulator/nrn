@@ -368,7 +368,7 @@ ion_style("name_ion", [c_style, e_style, einit, eadvance, cinit])
  and models.
 */
 
-#define iontype std::get<int>(ppd[i][0]) /* how _AMBIGUOUS is to be handled */
+#define iontype ppd[i][0].get<int>() /* how _AMBIGUOUS is to be handled */
 /*the bitmap is
 03	concentration unused, nrnocCONST, DEP, STATE
 04	initialize concentrations
