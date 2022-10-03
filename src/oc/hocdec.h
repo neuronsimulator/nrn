@@ -197,8 +197,10 @@ struct Datum {
 
 /** @brief Get the given typed value from a Datum.
  *
- *  A default-constructed Datum holds type std::monostate; this custom version
- *  means that get<int>(default_constructed_datum) = 42 is not an error.
+ *  get<void*>(datum) redirects to the generic_data_handle member of Datum. This
+ *  means that both X (the value, tracked by data_handle) and _p_X (a black box
+ *  void*) patterns for accessing a POINTER variable X can eventually use the
+ *  same underlying ~vector<generic_data_handle> structure.
  */
 template <typename T>
 T& get(Datum& d) {
@@ -213,12 +215,8 @@ inline double* nrn_get_pval(Datum& datum) {
     return static_cast<double*>(get<neuron::container::generic_data_handle>(datum));
 }
 template <typename T>
-void nrn_set_handle(Datum& datum, neuron::container::data_handle<T> dh) {
-    datum.get<neuron::container::generic_data_handle>() = std::move(dh);
-}
-template <typename T>
 void nrn_set_pval(Datum& datum, T* pval) {
-    nrn_set_handle(datum, neuron::container::data_handle<T>{pval});
+    datum = neuron::container::data_handle<T>{pval};
 }
 
 struct cTemplate {

@@ -1927,7 +1927,7 @@ int nrn_pointer_assign(Prop* prop, Symbol* sym, PyObject* value) {
             // permuted, but that handle then gets read as part of the
             // translated mechanism code, inside the translated MOD files, where
             // we might not otherwise like to pay the extra cost of indirection.
-            nrn_set_handle(prop->dparam[sym->u.rng.index], dh);
+            prop->dparam[sym->u.rng.index] = std::move(dh);
         } else {
             PyErr_SetString(PyExc_ValueError, "must be a hoc pointer");
             err = -1;

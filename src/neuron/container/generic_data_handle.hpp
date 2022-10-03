@@ -47,7 +47,7 @@ struct generic_data_handle {
 
     template <typename T>
     explicit operator data_handle<T>() const {
-        bool const is_typeless_null{m_type == std::type_index{typeid(typeless_null)}};
+        bool const is_typeless_null = holds<typeless_null>();
         if (!is_typeless_null && std::type_index{typeid(T)} != m_type) {
             throw std::runtime_error("Cannot convert generic_data_handle(" +
                                      cxx_demangle(m_type.name()) + ") to data_handle<" +
@@ -123,6 +123,10 @@ struct generic_data_handle {
         return os << ", type=" << cxx_demangle(dh.m_type.name()) << '}';
     }
 
+    template <typename T>
+    [[nodiscard]] bool holds() const {
+        return std::type_index{typeid(T)} == m_type;
+    }
 
     [[nodiscard]] std::string type_name() const {
         return cxx_demangle(m_type.name());
@@ -139,7 +143,7 @@ struct generic_data_handle {
             // raw pointer, or a null data handle.
             static_assert(std::is_same_v<T, void>,
                           "generic_data_handle::raw_ptr only supports void for now");
-            bool const is_typeless_null{m_type == std::type_index{typeid(typeless_null)}};
+            bool const is_typeless_null = holds<typeless_null>();
             // Using raw_ptr() on a typeless_null (default-constructed) handle
             // turns it into a legacy handle-to-null (i.e. "void*")
             if (is_typeless_null) {
