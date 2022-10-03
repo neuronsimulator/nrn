@@ -58,8 +58,7 @@ Inst* progbase;           /* start of current subprogram */
 Inst* prog_parse_recover; /* start after parse error */
 int hoc_returning;        /* 1 if return stmt seen, 2 if break, 3 if continue */
 /* 4 if stop */
-namespace nrn {
-namespace oc {
+namespace nrn::oc {
 struct frame {             /* proc/func call stack frame */
     Symbol* sp;            /* symbol table entry */
     Inst* retpc;           /* where to resume after return */
@@ -69,8 +68,7 @@ struct frame {             /* proc/func call stack frame */
     Object* iter_stmt_ob;  /* context of Iterator statement */
     Object* ob;            /* for stack frame debug message */
 };
-}  // namespace oc
-}  // namespace nrn
+}  // namespace nrn::oc
 using Frame = nrn::oc::frame;
 #define NFRAME 512 /* default size */
 #define nframe hoc_nframe
