@@ -92,12 +92,13 @@ Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
     for (int i = 0; i < count; ++i) {
         auto* const semantics = memb_func[type].dparam_semantics;
         // Call the Datum constructor, either setting it to be a
-        // generic_data_handle or a null void* value
+        // generic_data_handle or a std::monostate value.
+        new (ppd + i) Datum();
         if (semantics &&
             (semantics[i] == -5 /* POINTER */ || semantics[i] == -7 /* BBCOREPOINTER */)) {
-            new (ppd + i) Datum(std::unique_ptr<neuron::container::generic_data_handle>{});
+            new (ppd + i) Datum(neuron::container::generic_data_handle{});
         } else {
-            new (ppd + i) Datum(static_cast<void*>(nullptr));
+            new (ppd + i) Datum();
         }
     }
     return ppd;
@@ -397,13 +398,10 @@ void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip) {
     assert(ip < op->d2());
     assert(1);  //  should point into pool() for one of the op pool chains
     // and the index should be a pointer to the double in np
-    using std::get;
-    auto& gh_ptr = get<std::unique_ptr<neuron::container::generic_data_handle>>(dp[id]);
-    assert(gh_ptr);
-    long i = *static_cast<neuron::container::data_handle<double>>(*gh_ptr);
+    long i = *dp[id].get_handle<double>();
     assert(i >= 0 && i < np->size());
     double* pvar = np->items()[i];
-    *gh_ptr = pvar + ip;
+    dp[id] = neuron::container::data_handle<double>(pvar + ip);
 }
 
 

@@ -153,7 +153,7 @@ void KSChan::destroy_pnt(Point_process* pp) {
         // printf("deleteing KSSingleNodeData\n");
         auto* snd = static_cast<KSSingleNodeData*>(get<void*>(pp->prop->dparam[2]));
         delete snd;
-        pp->prop->dparam[2] = static_cast<void*>(nullptr);
+        pp->prop->dparam[2] = nullptr;
     }
     destroy_point_process(pp);
 }
@@ -2257,7 +2257,7 @@ void KSChan::alloc(Prop* prop) {
         if (ppsize > 0) {
             prop->dparam = nrn_prop_datum_alloc(prop->_type, ppsize, prop);
             if (is_point()) {
-                prop->dparam[2] = static_cast<void*>(nullptr);
+                prop->dparam[2] = nullptr;
             }
         } else {
             prop->dparam = 0;
@@ -2435,7 +2435,7 @@ void KSChan::delete_schan_node_data() {
         if (pnt && pnt->prop && get<void*>(pnt->prop->dparam[2])) {
             auto* snd = static_cast<KSSingleNodeData*>(get<void*>(pnt->prop->dparam[2]));
             delete snd;
-            pnt->prop->dparam[2] = static_cast<void*>(nullptr);
+            pnt->prop->dparam[2] = nullptr;
         }
     }
 }
