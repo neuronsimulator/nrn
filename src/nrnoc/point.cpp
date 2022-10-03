@@ -127,7 +127,7 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
     nrn_sec_ref(&pnt->sec, sec);
     pnt->node = node;
     pnt->prop = p;
-    nrn_set_pval(pnt->prop->dparam[0], &NODEAREA(node));
+    pnt->prop->dparam[0] = &NODEAREA(node);
     pnt->prop->dparam[1] = pnt;
     if (pnt->ob) {
         if (pnt->ob->observers) {
@@ -143,7 +143,7 @@ static void create_artcell_prop(Point_process* pnt, short type) {
     Prop* p = (Prop*) 0;
     nrn_point_prop_ = (Prop*) 0;
     pnt->prop = prop_alloc(&p, type, (Node*) 0);
-    nrn_set_pval(pnt->prop->dparam[0], static_cast<double*>(nullptr));
+    pnt->prop->dparam[0] = static_cast<double*>(nullptr);
     pnt->prop->dparam[1] = pnt;
     if (pnt->ob) {
         if (pnt->ob->observers) {
@@ -255,7 +255,16 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
         }
     }
     if (sym->subtype == NRNPOINTER) {
-        pd = static_cast<double*>(pnt->prop->dparam[sym->u.rng.index + index].get_handle<double>());
+        // In case _p_somevar is being used as an opaque void* then the active
+        // member of the datum will be generic_data_handle, but its type will
+        // be void and not double
+        auto& gh = get<neuron::container::generic_data_handle>(
+            pnt->prop->dparam[sym->u.rng.index + index]);
+        if (gh.holds<double>()) {
+            pd = static_cast<double*>(gh);
+        } else {
+            pd = nullptr;
+        }
         if (cppp_semaphore) {
             ++cppp_semaphore;
             assert(false);
