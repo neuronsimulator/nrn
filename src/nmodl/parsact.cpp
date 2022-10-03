@@ -759,14 +759,14 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
                              "\
   _p = ((Point_process*)_vptr)->_prop->param;\n\
   _ppvar = ((Point_process*)_vptr)->_prop->dparam;\n\
-  _thread = _extcall_thread;\n\
+  _thread = _extcall_thread.data();\n\
   _nt = (NrnThread*)((Point_process*)_vptr)->_vnt;\n\
 ");
     } else {
         vectorize_substitute(lappendstr(procfunc, ""),
                              "\
   if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }\n\
-  _thread = _extcall_thread;\n\
+  _thread = _extcall_thread.data();\n\
   _nt = nrn_threads;\n\
 ");
     }
