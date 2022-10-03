@@ -327,7 +327,8 @@ void parout() {
     /*above modified to also count and define pointers*/
 
     if (vectorize) {
-        Lappendstr(defs_list, "static Datum* _extcall_thread;\n static Prop* _extcall_prop;\n");
+        Lappendstr(defs_list, "static std::vector<Datum> _extcall_thread;\n");
+        Lappendstr(defs_list, "static Prop* _extcall_prop;\n");
     }
 #if 0
 	Lappendstr(defs_list, "/* static variables special to NEURON */\n");
@@ -1123,12 +1124,10 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             Lappendstr(defs_list, buf);
         }
         if (vectorize && thread_data_index) {
-            sprintf(buf,
-                    " _extcall_thread = (Datum*)ecalloc(%d, sizeof(Datum));\n",
-                    thread_data_index);
+            sprintf(buf, " _extcall_thread.resize(%d);\n", thread_data_index);
             Lappendstr(defs_list, buf);
             if (thread_mem_init_list->next != thread_mem_init_list) {
-                Lappendstr(defs_list, " _thread_mem_init(_extcall_thread);\n");
+                Lappendstr(defs_list, " _thread_mem_init(_extcall_thread.data());\n");
                 if (gind) {
                     Lappendstr(defs_list, " _thread1data_inuse = 0;\n");
                 }

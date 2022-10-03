@@ -117,6 +117,7 @@ void c_out() {
     P("#include \"section.h\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
+    P("#include <vector>\n");
 
     printlist(defs_list);
     printlist(firstlist);
