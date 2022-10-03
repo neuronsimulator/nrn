@@ -2289,7 +2289,7 @@ void nrn_recalc_node_ptrs() {
         Node* nd = nt->_v_node[i];
         for (Prop* p = nd->prop; p; p = p->next) {
             if (memb_func[p->_type].is_point && !nrn_is_artificial_[p->_type]) {
-                nrn_set_pval(p->dparam[0], nt->_actual_area + i);
+                p->dparam[0] = nt->_actual_area + i;
             }
         }
     }

@@ -313,7 +313,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                     etype = -1;
                     eindex = -1;  // the signal to ignore in bbcore.
                 } else {
-                    double* const pval{nrn_get_pval(dparam[j])};
+                    auto* const pval = get<double*>(dparam[j]);
                     if (pval == &ml->nodelist[i]->_area) {
                         // possibility it points directly into Node._area instead of
                         // _actual_area. For our purposes we need to figure out the
@@ -375,12 +375,12 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                         break;
                     }
                 }
-                assert(nrn_get_pval(dparam[j]) == pdiam);
+                assert(get<double*>(dparam[j]) == pdiam);
                 eindex = ml->nodeindices[i];
             } else if (dmap[j] == -5) {  // POINTER
                 // must be a pointer into nt->_data. Handling is similar to eion so
                 // give proper index into the type.
-                double* pd = nrn_get_pval(dparam[j]);
+                double* pd = get<double*>(dparam[j]);
                 nrn_dblpntr2nrncore(pd, nt, etype, eindex);
                 if (etype == 0) {
                     fprintf(stderr,
@@ -392,7 +392,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] > 0 && dmap[j] < 1000) {  // double* into eion type data
                 Memb_list* eml = cg.type2ml[dmap[j]];
                 assert(eml);
-                double* const pval{nrn_get_pval(dparam[j])};
+                auto* const pval = get<double*>(dparam[j]);
                 if (pval < eml->_data[0]) {
                     printf("%s dparam=%p data=%p j=%d etype=%d %s\n",
                            memb_func[di.type].sym->name,
@@ -421,7 +421,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] > 1000) {  // int* into ion dparam[xxx][0]
                 // store the actual ionstyle
                 etype = dmap[j];
-                eindex = *static_cast<int*>(get<void*>(dparam[j]));
+                eindex = *get<int*>(dparam[j]);
             } else {
                 char errmes[100];
                 Sprintf(errmes, "Unknown semantics type %d for dparam item %d of", dmap[j], j);
