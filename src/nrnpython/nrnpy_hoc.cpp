@@ -2101,10 +2101,7 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
                 return NULL;
             }
             using std::get;
-            auto& gh_ptr = get<std::unique_ptr<neuron::container::generic_data_handle>>(
-                prop->dparam[sym->u.rng.index]);
-            assert(gh_ptr);
-            gh = gh_ptr.get();
+            gh = &get<neuron::container::generic_data_handle>(prop->dparam[sym->u.rng.index]);
         } else {
             gh = nrnpy_setpointer_helper(name, pp);
             if (!gh) {

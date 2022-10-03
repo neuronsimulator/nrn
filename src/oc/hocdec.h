@@ -147,18 +147,53 @@ using hoc_List = hoc_Item;
  */
 struct Point_process;
 
-// Dropped: char** pstr, hoc_List* lst, Object** pobj
-// With enough fiddling we could have a 3*sizeof(void*) "generic data handle
-// that can also store small trivial-type values"
-using Datum = std::variant<std::monostate,
-                           double,
-                           hoc_Item*,
-                           int,
-                           Object*,
-                           Point_process*,
-                           std::unique_ptr<neuron::container::generic_data_handle>,
-                           Symbol*,
-                           void*>;
+struct Datum {
+  private:
+    // Dropped: char** pstr, hoc_List* lst, Object** pobj
+    // With enough fiddling we could have a 3*sizeof(void*) "generic data handle
+    // that can also store small trivial-type values" and drop the std::variant layer
+    using storage_type = std::variant<std::monostate,
+                                      double,
+                                      hoc_Item*,
+                                      int,
+                                      neuron::container::generic_data_handle,
+                                      Object*,
+                                      Point_process*,
+                                      Symbol*>;
+
+  public:
+    Datum(std::nullptr_t)
+        : m_storage{} {}
+    Datum(void* ptr)
+        : Datum{neuron::container::data_handle<void>{ptr}} {}
+    template <typename... Args,
+              std::enable_if_t<std::is_constructible_v<storage_type, Args&&...>, int> = 0>
+    Datum(Args&&... args)
+        : m_storage{std::forward<Args>(args)...} {}
+    template <typename T>
+    Datum(neuron::container::data_handle<T> const& handle)
+        : m_storage{neuron::container::generic_data_handle{handle}} {}
+    template <typename T>
+    bool holds() {
+        return std::holds_alternative<T>(m_storage);
+    }
+    template <typename T>
+    T& get() {
+        if (holds<std::monostate>()) {
+            m_storage = T{};
+        }
+        return std::get<T>(m_storage);
+    }
+    /** @brief Create a data_handle<T> from the contained generic_data_handle.
+     */
+    template <typename T>
+    neuron::container::data_handle<T> get_handle() {
+        return {get<neuron::container::generic_data_handle>()};
+    }
+
+  private:
+    storage_type m_storage{};
+};
 
 /** @brief Get the given typed value from a Datum.
  *
@@ -167,40 +202,25 @@ using Datum = std::variant<std::monostate,
  */
 template <typename T>
 T& get(Datum& d) {
-    if (std::holds_alternative<std::monostate>(d)) {
-        d = T{};
+    if constexpr (std::is_same_v<T, void*>) {
+        return d.get<neuron::container::generic_data_handle>().raw_ptr<void>();
+    } else {
+        return d.get<T>();
     }
-    return std::get<T>(d);
 }
 
 // Temporary, deprecate these
-inline neuron::container::permissive_generic_data_handle& nrn_get_any(Datum& datum) {
-    // Throws if this is not the active member of the union
-    auto& generic_handle_ptr = std::get<std::unique_ptr<neuron::container::generic_data_handle>>(
-        datum);
-    // Does this ever happen?
-    if (!generic_handle_ptr) {
-        generic_handle_ptr = std::make_unique<neuron::container::generic_data_handle>();
-    }
-    // Rely on permissive/non-permissive modes having the same layout...not very nice
-    return *reinterpret_cast<neuron::container::permissive_generic_data_handle*>(
-        generic_handle_ptr.get());
-}
+// inline neuron::container::permissive_generic_data_handle& nrn_get_any(Datum& datum) {
+//     // Rely on permissive/non-permissive modes having the same layout...not very nice
+//     return
+//     *reinterpret_cast<neuron::container::permissive_generic_data_handle*>(&datum.get<neuron::container::generic_data_handle>());
+// }
 inline double* nrn_get_pval(Datum& datum) {
-    return static_cast<double*>(nrn_get_any(datum));
+    return static_cast<double*>(get<neuron::container::generic_data_handle>(datum));
 }
 template <typename T>
 void nrn_set_handle(Datum& datum, neuron::container::data_handle<T> dh) {
-    // Make sure the active member is unique_ptr-to-generic_data_handle
-    if (!std::holds_alternative<std::unique_ptr<neuron::container::generic_data_handle>>(datum)) {
-        datum = std::unique_ptr<neuron::container::generic_data_handle>{};
-    }
-    // Make sure the unique_ptr is not null
-    auto& gh_ptr = std::get<std::unique_ptr<neuron::container::generic_data_handle>>(datum);
-    if (!gh_ptr) {
-        gh_ptr = std::make_unique<neuron::container::generic_data_handle>();
-    }
-    *gh_ptr = std::move(dh);
+    datum.get<neuron::container::generic_data_handle>() = std::move(dh);
 }
 template <typename T>
 void nrn_set_pval(Datum& datum, T* pval) {

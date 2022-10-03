@@ -862,7 +862,7 @@ static void set_info(TQItem* tqi,
         core_te->intdata.push_back(-1);  // If NULL weight this is the indicator
 
         TQItem** movable = (TQItem**) se->movable_;
-        TQItem** pnt_movable = (TQItem**) (&pnt->prop->dparam[movable_index]);
+        TQItem** pnt_movable = (TQItem**) (&get<void*>(pnt->prop->dparam[movable_index]));
         // Only one SelfEvent on the queue for a given point process can be movable
         core_te->intdata.push_back((movable && *movable == tqi) ? 1 : 0);
         if (movable && *movable == tqi) {
