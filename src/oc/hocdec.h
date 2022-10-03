@@ -209,12 +209,6 @@ T& get(Datum& d) {
     }
 }
 
-// Temporary, deprecate these
-// inline neuron::container::permissive_generic_data_handle& nrn_get_any(Datum& datum) {
-//     // Rely on permissive/non-permissive modes having the same layout...not very nice
-//     return
-//     *reinterpret_cast<neuron::container::permissive_generic_data_handle*>(&datum.get<neuron::container::generic_data_handle>());
-// }
 inline double* nrn_get_pval(Datum& datum) {
     return static_cast<double*>(get<neuron::container::generic_data_handle>(datum));
 }
