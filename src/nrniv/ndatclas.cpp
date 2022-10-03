@@ -225,7 +225,7 @@ double* NrnProperty::prop_pval(const Symbol* s, int index) const {
         return npi_->p_->ob->u.dataspace[prop_index(s)].pval + index;
     } else {
         if (s->subtype == NRNPOINTER) {
-            return nrn_get_pval(npi_->p_->dparam[prop_index(s) + index]);
+            return get<double*>(npi_->p_->dparam[prop_index(s) + index]);
         } else {
             return npi_->p_->param + prop_index(s) + index;
         }

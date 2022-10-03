@@ -243,7 +243,7 @@ void KSSingle::state(Node* nd, double* p, Datum* pd, NrnThread* nt) {
     int i;
     double v = NODEV(nd);
     using std::get;
-    auto* snd = static_cast<KSSingleNodeData*>(get<void*>(pd[sndindex_]));
+    auto* snd = get<KSSingleNodeData*>(pd[sndindex_]);
     // if truly single channel, as opposed to N single channels
     // then follow the one populated state. Otherwise do the
     // general case
@@ -260,7 +260,7 @@ void KSSingle::cv_update(Node* nd, double* p, Datum* pd, NrnThread* nt) {
     int i;
     double v = NODEV(nd);
     using std::get;
-    auto* snd = static_cast<KSSingleNodeData*>(get<void*>(pd[sndindex_]));
+    auto* snd = get<KSSingleNodeData*>(pd[sndindex_]);
     if (uses_ligands_ || !vsame(v, snd->vlast_)) {
         assert(nt->_t < snd->t1_);
         snd->vlast_ = v;
@@ -371,14 +371,14 @@ void KSSingle::nextNtrans(KSSingleNodeData* snd) {
 
 void KSSingle::alloc(Prop* p, int sindex) {  // and discard old if not NULL
     using std::get;
-    auto* snd = static_cast<KSSingleNodeData*>(get<void*>(p->dparam[2]));
+    auto* snd = get<KSSingleNodeData*>(p->dparam[2]);
     if (snd) {
         delete snd;
     }
     snd = new KSSingleNodeData();
     snd->kss_ = this;
-    snd->ppnt_ = &get<Point_process*>(p->dparam[1]);
-    p->dparam[2] = static_cast<void*>(snd);
+    snd->ppnt_ = &get_ref<Point_process*>(p->dparam[1]);
+    p->dparam[2] = snd;
     snd->statepop_ = p->param + sindex;
 }
 
@@ -419,13 +419,13 @@ void KSSingle::init(double v, double* s, KSSingleNodeData* snd, NrnThread* nt) {
 
 void KSChan::nsingle(Point_process* pp, int n) {
     using std::get;
-    if (auto* snd = static_cast<KSSingleNodeData*>(get<void*>(pp->prop->dparam[2])); snd) {
+    if (auto* snd = get<KSSingleNodeData*>(pp->prop->dparam[2]); snd) {
         snd->nsingle_ = n;
     }
 }
 int KSChan::nsingle(Point_process* pp) {
     using std::get;
-    if (auto* snd = static_cast<KSSingleNodeData*>(get<void*>(pp->prop->dparam[2])); snd) {
+    if (auto* snd = get<KSSingleNodeData*>(pp->prop->dparam[2]); snd) {
         return snd->nsingle_;
     } else {
         return 1000000000;

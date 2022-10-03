@@ -862,7 +862,7 @@ static void set_info(TQItem* tqi,
         core_te->intdata.push_back(-1);  // If NULL weight this is the indicator
 
         TQItem** movable = (TQItem**) se->movable_;
-        TQItem** pnt_movable = (TQItem**) (&get<void*>(pnt->prop->dparam[movable_index]));
+        TQItem** pnt_movable = (TQItem**) (&get_ref<void*>(pnt->prop->dparam[movable_index]));
         // Only one SelfEvent on the queue for a given point process can be movable
         core_te->intdata.push_back((movable && *movable == tqi) ? 1 : 0);
         if (movable && *movable == tqi) {
@@ -1075,7 +1075,7 @@ static void core2nrn_SelfEvent_helper(int tid,
     //  assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, tar_type));
 
     int movable_index = type2movable[tar_type];
-    void** movable_arg = &get<void*>(pnt->prop->dparam[movable_index]);
+    void** movable_arg = &get_ref<void*>(pnt->prop->dparam[movable_index]);
     TQItem* old_movable_arg = (TQItem*) (*movable_arg);
 
     nrn_net_send(movable_arg, weight, pnt, td, flag);
@@ -1194,11 +1194,11 @@ void core2nrn_watch_activate(int tid, int type, int watch_begin, Core2NrnWatchIn
             int watch_index = watch_item.first;
             bool above_thresh = watch_item.second;
             using std::get;
-            auto* wc = static_cast<WatchCondition*>(get<void*>(pd[watch_index]));
+            auto* wc = get<WatchCondition*>(pd[watch_index]);
             if (!wc) {  // if any do not exist in this instance, create them all
                         // with proper callback and flag.
                 (*(nrn_watch_allocate_[type]))(pd);
-                wc = static_cast<WatchCondition*>(get<void*>(pd[watch_index]));
+                wc = get<WatchCondition*>(pd[watch_index]);
             }
             _nrn_watch_activate(
                 pd + watch_begin, wc->c_, watch_index - watch_begin, wc->pnt_, r++, wc->nrflag_);

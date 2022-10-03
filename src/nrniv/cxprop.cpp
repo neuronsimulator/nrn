@@ -401,6 +401,8 @@ void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip) {
     long i = *dp[id].get_handle<double>();
     assert(i >= 0 && i < np->size());
     double* pvar = np->items()[i];
+    // This will search the data structures and try to promote double* to a
+    // modern/stable data_handle<double>
     dp[id] = neuron::container::data_handle<double>(pvar + ip);
 }
 
