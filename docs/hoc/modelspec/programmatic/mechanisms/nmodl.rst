@@ -268,13 +268,6 @@ Description:
     ``TODO``: Add existing example mod file
 
 
-INDEPENDENT
-"""""""""""
-
-Description:
-    ``TODO``: Add description and existing example mod file
-
-
 DEFINE
 """"""
 
@@ -942,36 +935,8 @@ Description:
     ``TODO``: Add description and existing example mod file
 
 
-STEPPED
-~~~~~~~
-
-Description:
-    ``TODO``: Add description and new example mod file
-
-
-PARTIAL
-~~~~~~~
-
-Description:
-    ``TODO``: Add description and new example mod file
-
-
 FUNCTION_TABLE
 ~~~~~~~~~~~~~~
-
-Description:
-    ``TODO``: Add description and new example mod file
-
-
-TERMINAL
-~~~~~~~~
-
-Description:
-    ``TODO``: Add description and new example mod file
-
-
-MATCH
-~~~~~
 
 Description:
     ``TODO``: Add description and new example mod file
@@ -984,22 +949,8 @@ Description:
     ``TODO``: Add description and new example mod file
 
 
-PLOT
-~~~~
-
-Description:
-    ``TODO``: Add description and new example mod file
-
-
 CONDUCTANCE
 ~~~~~~~~~~~
-
-Description:
-    ``TODO``: Add description and new example mod file
-
-
-FORALL
-~~~~~~
 
 Description:
     ``TODO``: Add description and new example mod file
@@ -1018,20 +969,6 @@ IF / ELSE IF / ELSE
 Description:
     If-statement for mod files.
     ``TODO``: Add new example mod file (iclamp1.mod)
-
-
-RESET
-~~~~~
-
-Description:
-    ``TODO``: Add description and new example mod file
-
-
-SENS
-~~~~
-
-Description:
-    ``TODO``: Add description and new example mod file
 
 
 LAG
