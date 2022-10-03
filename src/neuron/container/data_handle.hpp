@@ -187,8 +187,7 @@ struct data_handle {
             hoc_execerror(oss.str().c_str(), nullptr);
         }
     }
-    template <bool>
-    friend struct detail::generic_data_handle;
+    friend struct generic_data_handle;
     friend struct std::hash<data_handle>;
     identifier_base m_offset{};
     // This "should" be std::reference_wrapper and never null, only use a plain
@@ -234,8 +233,7 @@ struct data_handle<void> {
     }
 
   private:
-    template <bool>
-    friend struct detail::generic_data_handle;
+    friend struct generic_data_handle;
     friend struct std::hash<data_handle<void>>;
     void* m_raw_ptr;
 };
