@@ -150,7 +150,8 @@ struct Point_process;
 // Dropped: char** pstr, hoc_List* lst, Object** pobj
 // With enough fiddling we could have a 3*sizeof(void*) "generic data handle
 // that can also store small trivial-type values"
-using Datum = std::variant<double,
+using Datum = std::variant<std::monostate,
+                           double,
                            hoc_Item*,
                            int,
                            Object*,
@@ -158,6 +159,16 @@ using Datum = std::variant<double,
                            std::unique_ptr<neuron::container::generic_data_handle>,
                            Symbol*,
                            void*>;
+
+/** @brief Get the given typed value from a Datum.
+ */
+template <typename T>
+T& get(Datum& d) {
+    if (std::holds_alternative<std::monostate>(d)) {
+        d = T{};
+    }
+    return std::get<T>(d);
+}
 
 // Temporary, deprecate these
 inline neuron::container::permissive_generic_data_handle& nrn_get_any(Datum& datum) {
