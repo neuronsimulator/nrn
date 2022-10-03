@@ -41,7 +41,6 @@
         of the form state = state0 are constructed here.
   constructorfunc	statements added to tail of allocation function
   destructorfunc	statements executed when POINT_PROCESS destroyed
-  termfunc	main body of terminal() from TERMINAL
   modelfunc	main body of model() from EQUATION. SOLVE statements in the
         equation block get expanded in this list
   procfunc	all remaining blocks get concatenated to this list. It
@@ -202,7 +201,6 @@ typedef struct Symbol {
 #define KINF          02000
 #define NLINF         04000
 #define DISCF         010000
-#define STEP1         020000
 #define PARF          040000
 #define EXTDEF        0100000
 #define LINF          0200000
@@ -214,6 +212,24 @@ typedef struct Symbol {
 #define EXTDEF4       020000000L /* get extra NrnThread* arg at beginning */
 #define EXTDEF5       040000000L /* not threadsafe from the extdef list */
 #define EXPLICIT_DECL 01         /* usage field, variable occurs in input file */
+
+
+#define NRNEXTRN     01 /* t, dt, celsius, etc. */
+#define NRNCURIN     02 /* input value used */
+#define NRNCUROUT    04 /* added to output value */
+#define NRNRANGE     010
+#define NRNPRANGEIN  020
+#define NRNPRANGEOUT 040
+#define NRNGLOBAL    0100 /* same for all sections, defined here */
+#define NRNSTATIC    0200 /* v */
+#define NRNNOTP      0400 /* doesn't belong in p array */
+#define NRNIONFLAG                                  \
+    01000 /* temporary flag to allow READ and WRITE \
+             without declaring twice */
+#define NRNPOINTER       04000
+#define IONCONC          010000
+#define NRNBBCOREPOINTER 020000
+
 
 extern char *emalloc(unsigned), /* malloc with out of space checking */
     *stralloc(char*, char*),    /* copies string to new space */

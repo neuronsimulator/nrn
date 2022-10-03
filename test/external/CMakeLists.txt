@@ -13,7 +13,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   testcorenrn
   GIT_REPOSITORY https://github.com/neuronsimulator/testcorenrn
-  GIT_TAG 41a6d7ea47551559cc89a71544a746a5d3c2a6b8
+  GIT_TAG 014aab9bee60a2bdd44b28a784c88092d2f6b92b
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/testcorenrn)
 
 FetchContent_Declare(
@@ -25,7 +25,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   reduced_dentate
   GIT_REPOSITORY https://github.com/neuronsimulator/reduced_dentate
-  GIT_TAG 6aecc53021dbe1a1c23b20673163051143c168d9
+  GIT_TAG 58ad3890536ba09e05fd3ee7a178a18270ea8faa
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/reduced_dentate)
 
 FetchContent_Declare(
