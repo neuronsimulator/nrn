@@ -161,6 +161,9 @@ using Datum = std::variant<std::monostate,
                            void*>;
 
 /** @brief Get the given typed value from a Datum.
+ *
+ *  A default-constructed Datum holds type std::monostate; this custom version
+ *  means that get<int>(default_constructed_datum) = 42 is not an error.
  */
 template <typename T>
 T& get(Datum& d) {
