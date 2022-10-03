@@ -12,23 +12,25 @@ TEST_CASE("Test hoc interpreter", "[Neuron][hoc_interpreter]") {
     REQUIRE(hoc_xpop() == 9.0);
 }
 
-SCENARIO("Test small HOC functions", "[Neuron][hoc_interpreter]") {
-    GIVEN("A HOC function returning a local object") {
-        REQUIRE(hoc_oc("obfunc foo() {localobj lv1\n"
-                       "  lv1 = new Vector(5)\n"
-                       "  lv1.indgen()\n"
-                       "  return lv1\n"
-                       "}\n") == 0);
+SCENARIO("Test small HOC functions", "[NEURON][hoc_interpreter]") {
+    // This is targeting AddressSanitizer errors that were seen in #1995
+    GIVEN("Test calling a function that returns an Object that lived on the stack") {
+        constexpr auto vector_size = 5;
+        REQUIRE(hoc_oc(("obfunc foo() {localobj lv1\n"
+                        "  lv1 = new Vector(" +
+                        std::to_string(vector_size) +
+                        ")\n"
+                        "  lv1.indgen()\n"
+                        "  return lv1\n"
+                        "}\n")
+                           .c_str()) == 0);
         WHEN("It is called") {
-            auto const code = hoc_oc(
-                "objref v1\n"
-                "v1 = foo()\n");
-            THEN("There should be no error") {
-                REQUIRE(code == 0);
-                AND_THEN("Printing the result should give the expected result") {
-                    REQUIRE(hoc_oc("print v1\n") == 0);
-                    REQUIRE(hoc_oc("v1.printf()\n") == 0);
-                }
+            REQUIRE(hoc_oc("objref v1\n"
+                           "v1 = foo()\n") == 0);
+            THEN("The returned value should be correct") {
+                auto const i = GENERATE_COPY(range(1, vector_size));
+                REQUIRE(hoc_oc(("hoc_ac_ = v1.x[" + std::to_string(i) + "]\n").c_str()) == 0);
+                REQUIRE(hoc_ac_ == i);
             }
         }
     }
