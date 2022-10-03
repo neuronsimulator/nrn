@@ -439,7 +439,7 @@ void nrn_threads_free() {
                 if (memb_func[tml->index].thread_cleanup_) {
                     (*memb_func[tml->index].thread_cleanup_)(ml->_thread);
                 }
-                free((char*) ml->_thread);
+                delete[] ml->_thread;
             }
             free((char*) ml);
             free((char*) tml);
@@ -567,7 +567,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
             }
             tml->ml->_thread = (Datum*) 0;
             if (memb_func[i].thread_size_) {
-                tml->ml->_thread = (Datum*) ecalloc(memb_func[i].thread_size_, sizeof(Datum));
+                tml->ml->_thread = new Datum[memb_func[i].thread_size_]{};
                 if (memb_func[tml->index].thread_mem_init_) {
                     (*memb_func[tml->index].thread_mem_init_)(tml->ml->_thread);
                 }
