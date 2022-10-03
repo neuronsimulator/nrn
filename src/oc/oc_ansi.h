@@ -129,7 +129,7 @@ void hoc_plt(int, double, double);
 void hoc_plprint(const char*);
 void hoc_ret(); /* but need to push before returning */
 
-void hoc_push(neuron::container::generic_data_handle const& handle);
+void hoc_push(neuron::container::generic_data_handle handle);
 template <typename T>
 void hoc_push(neuron::container::data_handle<T> const& handle) {
     hoc_push(neuron::container::generic_data_handle{handle});
