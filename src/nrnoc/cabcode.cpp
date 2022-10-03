@@ -248,7 +248,7 @@ Object* nrn_sec2cell(Section* sec) {
 int nrn_sec2cell_equals(Section* sec, Object* obj) {
     using std::get;
     if (sec && sec->prop) {
-        if (auto& o = get<Object*>(sec->prop->dparam[6]); o) {
+        if (auto o = get<Object*>(sec->prop->dparam[6]); o) {
             return o == obj;
         } else if (nrnpy_pysec_cell_equals_p_) {
             return (*nrnpy_pysec_cell_equals_p_)(sec, obj);
@@ -1102,7 +1102,7 @@ void connectpointer(void) { /* pointer symbol at pc, target variable on stack, m
         i = node_index(sec, d);
         dat = pdprop(s, range_vec_indx(s), sec, i);
     }
-    nrn_set_pval(*dat, pd);
+    *dat = pd;
 }
 
 void range_interpolate_single(void) /*symbol at pc, 2 values on stack*/
@@ -1960,7 +1960,7 @@ double* dprop(Symbol* s, int indx, Section* sec, short inode) {
             return &(m->param[s->u.rng.index]) + indx;
         }
     } else {
-        double* p = nrn_get_pval(m->dparam[s->u.rng.index + indx]);
+        auto* const p = get<double*>(m->dparam[s->u.rng.index + indx]);
         if (!p) {
             hoc_execerror(s->name, "wasn't made to point to anything");
         }
@@ -1995,7 +1995,7 @@ double* nrnpy_dprop(Symbol* s, int indx, Section* sec, short inode, int* err) {
             return &(m->param[s->u.rng.index]) + indx;
         }
     } else {
-        double* p = nrn_get_pval(m->dparam[s->u.rng.index + indx]);
+        auto* const p = get<double*>(m->dparam[s->u.rng.index + indx]);
         if (!p) {
             *err = 2;
         }

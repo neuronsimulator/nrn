@@ -175,8 +175,10 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
     Insertstr(q4, "}");
     q = insertstr(q3, "{ static int _recurse = 0;\n int _counte = -1;\n");
     Sprintf(buf,
-            "{ double* _savstate%d = nrn_get_pval(_thread[_dith%d]);\n\
- double* _dlist%d = nrn_get_pval(_thread[_dith%d]) + %d;\n int _counte = -1;\n",
+            "{\n"
+            "  auto* _savstate%d = get<double*>(_thread[_dith%d]);\n"
+            "  auto* _dlist%d = get<double*>(_thread[_dith%d]) + %d;\n"
+            "  int _counte = -1;\n",
             numlist - 1,
             numlist - 1,
             numlist,
@@ -192,7 +194,7 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
             numlist);
     qret = insertstr(q3, buf);
     Sprintf(buf,
-            "error = nrn_newton_thread(static_cast<NewtonSpace*>(_newtonspace%d), %d,_slist%d, _p, "
+            "error = nrn_newton_thread(_newtonspace%d, %d,_slist%d, _p, "
             "%s, _dlist%d, _p, _ppvar, _thread, _nt);\n",
             numlist - 1,
             counts,
