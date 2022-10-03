@@ -2,11 +2,7 @@ cr_tstextrn()
 clamp_resist=100
 cr_tstextrn()
 
-rates_hh(-65)
-minf_hh
-minf_tstextrn()
-
-rates_hh(-0)
-minf_hh
-minf_tstextrn()
+eps_tstextrn()
+eps_IntFire4 = 1.2
+eps_tstextrn()
 
