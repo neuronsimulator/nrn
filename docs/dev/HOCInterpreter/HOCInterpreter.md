@@ -87,7 +87,7 @@ With respect to the HOC grammar we have:
         
         typedef union YYSTYPE
     
-    Parsing relies on a lexer function that performs input tokenisation,  called **'yylex()'** (implemented in **'src/oc/hoc.c'**)**.** 
+    Parsing relies on a lexer function that performs input tokenisation,  called **'yylex()'** (implemented in **'src/oc/hoc.cpp'**)**.** 
     
     ![](images/58788080.png)
     
@@ -233,7 +233,7 @@ With respect to the HOC grammar we have:
     incorporate them is by pointing to the last one on the stack (_**StackDatum
     \*argn**_) and passing **_int nargs._**
     
-*   **'src/oc/symbol.c' →** defines several symbol tables and utility functions to install and lookup symbols (see _**HOC Initialisation**_)
+*   **'src/oc/symbol.cpp' →** defines several symbol tables and utility functions to install and lookup symbols (see _**HOC Initialisation**_)
 
   ```cpp  
     typedef struct Symlist {
@@ -252,7 +252,7 @@ With respect to the HOC grammar we have:
     									/* appropriate times prevents storage leakage. */
   ```  
 
-*   **'src/oc/hoc\_oop.c' →** holds HOC functions providing support for OOP
+*   **'src/oc/hoc\_oop.cpp' →** holds HOC functions providing support for OOP
 
 ## **HOC Initialization**
 
@@ -273,7 +273,7 @@ HOC-interpreter importance wise, we have:
       ........
     ```
 
- Default values are used if user does not supply them → in **'src/oc/code.c'.** We often need to specify a higher **NFRAME** (i.e. 1000 when we do morphology loading as that tends towards deeper function call nesting when parsing).
+ Default values are used if user does not supply them → in **'src/oc/code.cpp'.** We often need to specify a higher **NFRAME** (i.e. 1000 when we do morphology loading as that tends towards deeper function call nesting when parsing).
 
  These values are checked systematically when we use the stack or frames for
  procedures and functions (everything is in **'src/oc/code.cpp',**); the actual
@@ -293,14 +293,14 @@ HOC-interpreter importance wise, we have:
     **'hoc\_init()'** will perform the following
     
     1.  call **'hoc\_init\_space()'** to allocate space for HOC interpreter stack and frames
-    2.  install symbols with the help of **'hoc\_install'** (alias of **'install()'** function implemented in **'src/oc/symbol.c'**):
+    2.  install symbols with the help of **'hoc\_install'** (alias of **'install()'** function implemented in **'src/oc/symbol.cpp'**):
         1.  keywords like : **if, else, proc, localobj** and so on
         2.  constants like: **PI, GAMMA, FARADAY** and so on
         3.  builtin HOC functions like: **sin(), cos(), sqrt(), xopen(), sscanf(), execute(), load\_file(), nrnversion()** and so forth  
             ![](images/58788144.png)  
             ![](images/58788141.png)
-    3.  install some variable symbols using **'hoc\_install\_var()'** defined in **'src/oc/symbol.c'**
-    4.  call **'hoc\_spinit()'** implemented in **'src/oc/hocusr.c',** which will
+    3.  install some variable symbols using **'hoc\_install\_var()'** defined in **'src/oc/symbol.cpp'**
+    4.  call **'hoc\_spinit()'** implemented in **'src/oc/hocusr.cpp',** which will
         1.  **hoc\_install()** user variables ( like **float/double/integer, scalars, arrays, vectors**) 
         2.  **hoc\_install()** user functions (like **pt3dadd(), finitialize(), psection()** and so on)
         3.  call **'hoc\_last\_init()'** to finalise setup, including:
@@ -346,7 +346,7 @@ When a function (or even a procedure) is called we have:
 
 *   arguments parsed (and eventually computed) pushed to the interpreter data stack
 *   the interpreter machine will have
-    *   _**call**_ opcode → this is linked to the _**call()**_ function implemented in _**'src/oc/code.c'**_
+    *   _**call**_ opcode → this is linked to the _**call()**_ function implemented in _**'src/oc/code.cpp'**_
     *   _**sym**_ holding the symbol table pointer for the function
     *   _**nargs**_ holding the number of arguments passed to the function 
 *   a new Frame is pushed onto the frame stack, containing
