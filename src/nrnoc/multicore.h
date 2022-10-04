@@ -1,5 +1,4 @@
-#ifndef multicore_h
-#define multicore_h
+#pragma once
 
 /*
 Starts from Hubert Eichner's modifications but incorporates a
@@ -28,7 +27,7 @@ actual_v, etc.
 */
 
 #include <membfunc.h>
-
+#include <cstddef>
 
 typedef struct NrnThreadMembList { /* patterned after CvMembList in cvodeobj.h */
     struct NrnThreadMembList* next;
@@ -100,10 +99,14 @@ extern void nrn_multithread_job(void* (*) (NrnThread*) );
 extern void nrn_onethread_job(int, void* (*) (NrnThread*) );
 extern void nrn_wait_for_threads();
 extern void nrn_thread_table_check();
+extern void nrn_threads_free();
+extern int nrn_user_partition();
+extern void reorder_secorder();
+extern void nrn_thread_memblist_setup();
+extern void nrn_imem_defer_free(double*);
+extern std::size_t nof_worker_threads();
 
 #define FOR_THREADS(nt) for (nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt)
 
 // olupton 2022-01-31: could add a _NrnThread typedef here for .mod file
 //                     backwards compatibility if needed.
-
-#endif
