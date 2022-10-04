@@ -1,0 +1,1 @@
+../../../src/nrnoc/stim.mod
