@@ -13,8 +13,17 @@ include(NeuronTestHelper)
 # Test executables
 # =============================================================================
 set(TEST_SOURCES unit_tests/oc/hoc_interpreter.cpp unit_tests/threads/test_multicore.cpp)
-add_executable(testneuron unit_tests/unit_test.cpp ${TEST_SOURCES})
+add_executable(testneuron unit_tests/regex.cpp unit_tests/unit_test.cpp ${TEST_SOURCES})
 cpp_cc_configure_sanitizers(TARGET testneuron)
+if(NRN_ENABLE_INTERVIEWS)
+  set(header_dir_for_regex "${IV_INCLUDE_DIR}")
+else()
+  set(header_dir_for_regex "${NRN_IVOS_SRC_DIR}")
+endif()
+set_property(
+  SOURCE unit_tests/regex.cpp
+  APPEND
+  PROPERTY INCLUDE_DIRECTORIES "${header_dir_for_regex}")
 target_compile_features(testneuron PUBLIC cxx_std_11)
 target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
 if(NRN_ENABLE_THREADS)
