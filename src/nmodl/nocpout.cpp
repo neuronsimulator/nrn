@@ -571,9 +571,12 @@ extern Memb_func* memb_func;\n\
                 thread_data_index);
         Lappendstr(defs_list, buf);
         Sprintf(buf,
-                " if (_thread1data_inuse) {nrn_set_pval(_thread[_gth], (double*)ecalloc(%d, "
-                "sizeof(double)));\n }else{\n nrn_set_pval(_thread[_gth], _thread1data); "
-                "_thread1data_inuse = 1;\n }\n",
+                "if (_thread1data_inuse) {\n"
+                "  _thread[_gth] = new double[%d];\n"
+                "} else {\n"
+                "  _thread[_gth] = _thread1data;\n"
+                "  _thread1data_inuse = 1;\n"
+                "}\n",
                 gind);
         lappendstr(thread_mem_init_list, buf);
         lappendstr(thread_cleanup_list,
@@ -891,15 +894,13 @@ static void nrn_alloc(Prop* _prop) {\n\
     if (diamdec) {
         Sprintf(buf, "prop_ion = need_memb(_morphology_sym);\n");
         Lappendstr(defs_list, buf);
-        Sprintf(buf,
-                "\tnrn_set_pval(_ppvar[%d], &prop_ion->param[0]); /* diam */\n",
-                ioncount + pointercount),
+        Sprintf(buf, "\t_ppvar[%d] = &prop_ion->param[0]; /* diam */\n", ioncount + pointercount),
             Lappendstr(defs_list, buf);
         ppvar_semantics(ioncount + pointercount, "diam");
     }
     if (areadec) {
         Sprintf(buf,
-                "\tnrn_set_pval(_ppvar[%d], &nrn_alloc_node_->_area); /* diam */\n",
+                "\t_ppvar[%d] = &nrn_alloc_node_->_area; /* diam */\n",
                 ioncount + pointercount + diamdec),
             Lappendstr(defs_list, buf);
         ppvar_semantics(ioncount + pointercount + diamdec, "area");
@@ -925,7 +926,7 @@ static void nrn_alloc(Prop* _prop) {\n\
         ITERATE(q1, LST(q)) {
             SYM(q1)->nrntype |= NRNIONFLAG;
             Sprintf(buf,
-                    "\tnrn_set_pval(_ppvar[%d], &prop_ion->param[%d]); /* %s */\n",
+                    "\t_ppvar[%d] = &prop_ion->param[%d]; /* %s */\n",
                     ioncount++,
                     iontype(SYM(q1)->name, sion->name),
                     SYM(q1)->name);
@@ -939,7 +940,7 @@ static void nrn_alloc(Prop* _prop) {\n\
                 SYM(q1)->nrntype &= ~NRNIONFLAG;
             } else {
                 Sprintf(buf,
-                        "\tnrn_set_pval(_ppvar[%d], &prop_ion->param[%d]); /* %s */\n",
+                        "\t_ppvar[%d] = &prop_ion->param[%d]; /* %s */\n",
                         ioncount++,
                         itype,
                         SYM(q1)->name);
@@ -948,7 +949,7 @@ static void nrn_alloc(Prop* _prop) {\n\
             if (itype == IONCUR) {
                 dcurdef = 1;
                 Sprintf(buf,
-                        "\tnrn_set_pval(_ppvar[%d], &prop_ion->param[%d]); /* _ion_di%sdv */\n",
+                        "\t_ppvar[%d] = &prop_ion->param[%d]; /* _ion_di%sdv */\n",
                         ioncount++,
                         IONDCUR,
                         sion->name);
@@ -969,7 +970,7 @@ static void nrn_alloc(Prop* _prop) {\n\
         q = q->next;
         if (!dcurdef && ldifuslist) {
             Sprintf(buf,
-                    "\tnrn_set_pval(_ppvar[%d], &prop_ion->param[%d]); /* _ion_di%sdv */\n",
+                    "\t_ppvar[%d] = &prop_ion->param[%d]; /* _ion_di%sdv */\n",
                     ioncount++,
                     IONDCUR,
                     sion->name);
@@ -2115,7 +2116,7 @@ int iondef(int* p_pointercount) {
     ioncount = 0;
     if (point_process) {
         ioncount = 2;
-        q = lappendstr(defs_list, "#define _nd_area  *nrn_get_pval(_ppvar[0])\n");
+        q = lappendstr(defs_list, "#define _nd_area  *get<double*>(_ppvar[0])\n");
         q->itemtype = VERBATIM;
         ppvar_semantics(0, "area");
         ppvar_semantics(1, "pntproc");
@@ -2133,7 +2134,7 @@ int iondef(int* p_pointercount) {
         q = q->next;
         ITERATE(q1, LST(q)) {
             SYM(q1)->nrntype |= NRNIONFLAG;
-            Sprintf(buf, "#define _ion_%s	*nrn_get_pval(_ppvar[%d])\n", SYM(q1)->name, ioncount);
+            Sprintf(buf, "#define _ion_%s	*get<double*>(_ppvar[%d])\n", SYM(q1)->name, ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
             Sprintf(buf,
@@ -2152,7 +2153,7 @@ int iondef(int* p_pointercount) {
                 SYM(q1)->nrntype &= ~NRNIONFLAG;
             } else {
                 Sprintf(buf,
-                        "#define _ion_%s	*nrn_get_pval(_ppvar[%d])\n",
+                        "#define _ion_%s	*get<double*>(_ppvar[%d])\n",
                         SYM(q1)->name,
                         ioncount);
                 q2 = lappendstr(defs_list, buf);
@@ -2171,7 +2172,7 @@ int iondef(int* p_pointercount) {
             if (it == IONCUR) {
                 dcurdef = 1;
                 Sprintf(buf,
-                        "#define _ion_di%sdv\t*nrn_get_pval(_ppvar[%d])\n",
+                        "#define _ion_di%sdv\t*get<double*>(_ppvar[%d])\n",
                         sion->name,
                         ioncount);
                 q2 = lappendstr(defs_list, buf);
@@ -2198,7 +2199,7 @@ int iondef(int* p_pointercount) {
         }
         q = q->next;
         if (!dcurdef && ldifuslist) {
-            Sprintf(buf, "#define _ion_di%sdv\t*nrn_get_pval(_ppvar[%d])\n", sion->name, ioncount);
+            Sprintf(buf, "#define _ion_di%sdv\t*get<double*>(_ppvar[%d])\n", sion->name, ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
             Sprintf(buf,
@@ -2214,7 +2215,7 @@ int iondef(int* p_pointercount) {
     ITERATE(q, nrnpointers) {
         sion = SYM(q);
         Sprintf(buf,
-                "#define %s	*nrn_get_pval(_ppvar[%d])\n",
+                "#define %s	*get<double*>(_ppvar[%d])\n",
                 sion->name,
                 ioncount + *p_pointercount);
         sion->used = ioncount + *p_pointercount;
@@ -2236,14 +2237,14 @@ int iondef(int* p_pointercount) {
     }
 
     if (diamdec) { /* must be last */
-        Sprintf(buf, "#define diam	*nrn_get_pval(_ppvar[%d])\n", ioncount + *p_pointercount);
+        Sprintf(buf, "#define diam	*get<double*>(_ppvar[%d])\n", ioncount + *p_pointercount);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
     }              /* notice that ioncount is not incremented */
     if (areadec) { /* must be last, if we add any more the administrative
             procedures must be redone */
         Sprintf(buf,
-                "#define area	*nrn_get_pval(_ppvar[%d])\n",
+                "#define area	*get<double*>(_ppvar[%d])\n",
                 ioncount + *p_pointercount + diamdec);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
