@@ -127,7 +127,7 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
     nrn_sec_ref(&pnt->sec, sec);
     pnt->node = node;
     pnt->prop = p;
-    nrn_set_pval(pnt->prop->dparam[0], &NODEAREA(node));
+    pnt->prop->dparam[0] = &NODEAREA(node);
     pnt->prop->dparam[1] = pnt;
     if (pnt->ob) {
         if (pnt->ob->observers) {
@@ -143,7 +143,7 @@ static void create_artcell_prop(Point_process* pnt, short type) {
     Prop* p = (Prop*) 0;
     nrn_point_prop_ = (Prop*) 0;
     pnt->prop = prop_alloc(&p, type, (Node*) 0);
-    nrn_set_pval(pnt->prop->dparam[0], static_cast<double*>(nullptr));
+    pnt->prop->dparam[0] = static_cast<double*>(nullptr);
     pnt->prop->dparam[1] = pnt;
     if (pnt->ob) {
         if (pnt->ob->observers) {
