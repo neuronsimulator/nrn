@@ -860,7 +860,7 @@ static void set_info(TQItem* tqi,
             weight2intdata[wt].push_back(iloc_wt);
         }
         core_te->intdata.push_back(-1);  // If NULL weight this is the indicator
-
+        using neuron::container::get_ref;
         TQItem** movable = (TQItem**) se->movable_;
         TQItem** pnt_movable = (TQItem**) (&get_ref<void*>(pnt->prop->dparam[movable_index]));
         // Only one SelfEvent on the queue for a given point process can be movable
@@ -1075,6 +1075,7 @@ static void core2nrn_SelfEvent_helper(int tid,
     //  assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, tar_type));
 
     int movable_index = type2movable[tar_type];
+    using neuron::container::get_ref;
     void** movable_arg = &get_ref<void*>(pnt->prop->dparam[movable_index]);
     TQItem* old_movable_arg = (TQItem*) (*movable_arg);
 

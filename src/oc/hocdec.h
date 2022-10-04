@@ -142,86 +142,33 @@ struct Symbol { /* symbol table entry */
 
 using hoc_List = hoc_Item;
 
-/**
- * @brief Type of pdata in mechanisms.
+/** @brief Type of pdata in mechanisms.
  */
-struct Datum {
-  private:
-    // With enough fiddling we could have a 3*sizeof(void*) "generic data handle
-    // that can also store small trivial-type values" and drop the std::variant layer
-    using storage_type =
-        std::variant<std::monostate, double, int, neuron::container::generic_data_handle>;
-    // Pointers live in generic_data_handle, everything else lives one level higher
-    template <typename T>
-    using type_in_storage =
-        std::conditional_t<std::is_pointer_v<T>, neuron::container::generic_data_handle, T>;
-
-  public:
-    Datum(std::nullptr_t)
-        : m_storage{} {}
-    template <typename T>
-    Datum(T* ptr)
-        : Datum{neuron::container::data_handle<T>{neuron::container::do_not_search, ptr}} {}
-    template <typename... Args,
-              std::enable_if_t<std::is_constructible_v<storage_type, Args&&...>, int> = 0>
-    Datum(Args&&... args)
-        : m_storage{std::forward<Args>(args)...} {}
-    template <typename T>
-    Datum(neuron::container::data_handle<T> const& handle)
-        : m_storage{neuron::container::generic_data_handle{handle}} {}
-    template <typename T>
-    bool holds() {
-        if (!std::holds_alternative<type_in_storage<T>>(m_storage)) {
-            return false;
-        }
-        if constexpr (std::is_pointer_v<T>) {
-            auto& gh = std::get<type_in_storage<T>>(m_storage);
-            return gh.template holds<std::remove_pointer_t<T>>();
-        } else {
-            return true;
-        }
-    }
-    template <typename T>
-    decltype(auto) get() {
-        // std::monostate indicates a null / default constructed Datum, we allow
-        // this to lazily become T so get<int>(default_constructed_datum) works
-        if (holds<std::monostate>()) {
-            m_storage = type_in_storage<T>{};
-        }
-        auto& variant_member = std::get<type_in_storage<T>>(m_storage);
-        if constexpr (std::is_pointer_v<T>) {
-            return static_cast<T>(variant_member);
-        } else {
-            return variant_member;
-        }
-    }
-    /** @brief Create a data_handle<T> from the contained generic_data_handle.
-     */
-    template <typename T>
-    neuron::container::data_handle<T> get_handle() {
-        return {get<neuron::container::generic_data_handle>()};
-    }
-
-  private:
-    storage_type m_storage{};
-};
+using Datum = neuron::container::generic_data_handle;
 
 /** @brief Get the given typed value from a Datum.
  *
- *  get<void*>(datum) redirects to the generic_data_handle member of Datum. This
- *  means that both X (the value, tracked by data_handle) and _p_X (a black box
- *  void*) patterns for accessing a POINTER variable X can eventually use the
- *  same underlying ~vector<generic_data_handle> structure.
+ *  Something like get<double*>(datum) will work both if the Datum holds a
+ *  literal double* or if it holds a data_handle<double>.
  */
-template <typename T>
-decltype(auto) get(Datum& d) {
-    return d.get<T>();
-}
+// template <typename T>
+// T get(Datum& d) {
+//     return static_cast<T>(d);
+// }
 
-template <typename T>
-T& get_ref(Datum& d) {
-    return d.get<neuron::container::generic_data_handle>().raw_ptr<std::remove_pointer_t<T>>();
-}
+/** @brief Get a reference to the given typed value inside a Datum.
+ *
+ *  Unlike get<double*>(datum), get_ref<double*>(datum) will fail if the Datum
+ *  holds a data_handle<double>, as in that case there is no persistent
+ *  data_handle<double> that can be referred to.
+ *
+ *  @todo Consider if this could be relaxed with a common base class of
+ *  data_handle<T> and generic_data_handle?
+ */
+// template <typename T>
+// T& get_ref(Datum& d) {
+//     return d.literal_value<T>();
+// }
 
 struct cTemplate {
     Symbol* sym;
