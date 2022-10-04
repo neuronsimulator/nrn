@@ -223,14 +223,6 @@ T& get_ref(Datum& d) {
     return d.get<neuron::container::generic_data_handle>().raw_ptr<std::remove_pointer_t<T>>();
 }
 
-inline double* nrn_get_pval(Datum& datum) {
-    return static_cast<double*>(get<neuron::container::generic_data_handle>(datum));
-}
-template <typename T>
-void nrn_set_pval(Datum& datum, T* pval) {
-    datum = neuron::container::data_handle<T>{pval};
-}
-
 #if OOP
 struct cTemplate {
     Symbol* sym;

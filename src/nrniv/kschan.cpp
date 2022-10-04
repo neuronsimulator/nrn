@@ -2275,18 +2275,18 @@ void KSChan::alloc(Prop* prop) {
         } else {  // ghk
             nrn_promote(prop_ion, 1, 0);
         }
-        nrn_set_pval(pp[ppoff_ + 0], prop_ion->param + 0);  // ena
-        nrn_set_pval(pp[ppoff_ + 1], prop_ion->param + 3);  // ina
-        nrn_set_pval(pp[ppoff_ + 2], prop_ion->param + 4);  // dinadv
-        nrn_set_pval(pp[ppoff_ + 3], prop_ion->param + 1);  // nai
-        nrn_set_pval(pp[ppoff_ + 4], prop_ion->param + 2);  // nao
+        pp[ppoff_ + 0] = prop_ion->param + 0;  // ena
+        pp[ppoff_ + 1] = prop_ion->param + 3;  // ina
+        pp[ppoff_ + 2] = prop_ion->param + 4;  // dinadv
+        pp[ppoff_ + 3] = prop_ion->param + 1;  // nai
+        pp[ppoff_ + 4] = prop_ion->param + 2;  // nao
         poff += 5;
     }
     for (j = 0; j < nligand_; ++j) {
         Prop* pion = need_memb(ligands_[j]);
         nrn_promote(pion, 1, 0);
-        nrn_set_pval(pp[poff + 2 * j], pion->param + 2);      // nao
-        nrn_set_pval(pp[poff + 2 * j + 1], pion->param + 1);  // nai
+        pp[poff + 2 * j] = pion->param + 2;      // nao
+        pp[poff + 2 * j + 1] = pion->param + 1;  // nai
     }
     using std::get;
     if (single_ && !get<KSSingleNodeData*>(prop->dparam[2])) {
@@ -2364,11 +2364,11 @@ void KSChan::ion_consist() {
                     nrn_promote(pion, 1, 0);
                 }
                 Datum* pp = p->dparam;
-                nrn_set_pval(pp[ppoff_ + 0], pion->param + 0);  // ena
-                nrn_set_pval(pp[ppoff_ + 1], pion->param + 3);  // ina
-                nrn_set_pval(pp[ppoff_ + 2], pion->param + 4);  // dinadv
-                nrn_set_pval(pp[ppoff_ + 3], pion->param + 1);  // nai
-                nrn_set_pval(pp[ppoff_ + 4], pion->param + 2);  // nao
+                pp[ppoff_ + 0] = pion->param + 0;  // ena
+                pp[ppoff_ + 1] = pion->param + 3;  // ina
+                pp[ppoff_ + 2] = pion->param + 4;  // dinadv
+                pp[ppoff_ + 3] = pion->param + 1;  // nai
+                pp[ppoff_ + 4] = pion->param + 2;  // nao
             }
             for (j = 0; j < nligand_; ++j) {
                 ligand_consist(j, poff, p, nd);
@@ -2381,8 +2381,8 @@ void KSChan::ligand_consist(int j, int poff, Prop* p, Node* nd) {
     Prop* pion;
     pion = needion(ligands_[j], nd, p);
     nrn_promote(pion, 1, 0);
-    nrn_set_pval(p->dparam[poff + 2 * j], pion->param + 2);      // nao
-    nrn_set_pval(p->dparam[poff + 2 * j + 1], pion->param + 1);  // nai
+    p->dparam[poff + 2 * j] = pion->param + 2;      // nao
+    p->dparam[poff + 2 * j + 1] = pion->param + 1;  // nai
 }
 
 void KSChan::state_consist(int shift) {  // shift when Nsingle winks in and out of existence
@@ -2642,37 +2642,37 @@ void KSChan::jacob(int n, int* nodeindices, double** pp, Datum** ppd, NrnThread*
 
 double KSIv::cur(double g, double* p, Datum* pd, double v) {
     double i, ena;
-    ena = *nrn_get_pval(pd[0]);
+    ena = *get<double*>(pd[0]);
     p[1] = g;
     i = g * (v - ena);
     p[2] = i;
-    *nrn_get_pval(pd[1]) += i;  // iion
+    *get<double*>(pd[1]) += i;  // iion
     return i;
 }
 
 double KSIv::jacob(double* p, Datum* pd, double) {
-    *nrn_get_pval(pd[2]) += p[1];  // diion/dv
+    *get<double*>(pd[2]) += p[1];  // diion/dv
     return p[1];
 }
 
 double KSIvghk::cur(double g, double* p, Datum* pd, double v) {
     double i, ci, co;
-    ci = *nrn_get_pval(pd[3]);
-    co = *nrn_get_pval(pd[4]);
+    ci = *get<double*>(pd[3]);
+    co = *get<double*>(pd[4]);
     p[1] = g;
     i = g * nrn_ghk(v, ci, co, z);
     p[2] = i;
-    *nrn_get_pval(pd[1]) += i;
+    *get<double*>(pd[1]) += i;
     return i;
 }
 
 double KSIvghk::jacob(double* p, Datum* pd, double v) {
     double i1, ci, co, didv;
-    ci = *nrn_get_pval(pd[3]);
-    co = *nrn_get_pval(pd[4]);
+    ci = *get<double*>(pd[3]);
+    co = *get<double*>(pd[4]);
     i1 = p[1] * nrn_ghk(v + .001, ci, co, z);  // g is p[1]
     didv = (i1 - p[2]) * 1000.;
-    *nrn_get_pval(pd[2]) += didv;
+    *get<double*>(pd[2]) += didv;
     return didv;
 }
 
@@ -2689,55 +2689,55 @@ double KSIvNonSpec::jacob(double* p, Datum* pd, double) {
 }
 
 double KSPPIv::cur(double g, double* p, Datum* pd, double v) {
-    double afac = 1.e2 / (*nrn_get_pval(pd[0]));
+    double afac = 1.e2 / (*get<double*>(pd[0]));
     pd += ppoff_;
     double i, ena;
-    ena = *nrn_get_pval(pd[0]);
+    ena = *get<double*>(pd[0]);
     p[1] = g;
     i = g * (v - ena);
     p[2] = i;
     i *= afac;
-    *nrn_get_pval(pd[1]) += i;  // iion
+    *get<double*>(pd[1]) += i;  // iion
     return i;
 }
 
 double KSPPIv::jacob(double* p, Datum* pd, double) {
-    double afac = 1.e2 / (*nrn_get_pval(pd[0]));
+    double afac = 1.e2 / (*get<double*>(pd[0]));
     pd += ppoff_;
     double g = p[1] * afac;
-    *nrn_get_pval(pd[2]) += g;  // diion/dv
+    *get<double*>(pd[2]) += g;  // diion/dv
     return g;
 }
 
 double KSPPIvghk::cur(double g, double* p, Datum* pd, double v) {
-    double afac = 1.e2 / (*nrn_get_pval(pd[0]));
+    double afac = 1.e2 / (*get<double*>(pd[0]));
     pd += ppoff_;
     double i, ci, co;
-    ci = *nrn_get_pval(pd[3]);
-    co = *nrn_get_pval(pd[4]);
+    ci = *get<double*>(pd[3]);
+    co = *get<double*>(pd[4]);
     p[1] = g;
     i = g * nrn_ghk(v, ci, co, z) * 1e6;
     p[2] = i;
     i *= afac;
-    *nrn_get_pval(pd[1]) += i;
+    *get<double*>(pd[1]) += i;
     return i;
 }
 
 double KSPPIvghk::jacob(double* p, Datum* pd, double v) {
-    double afac = 1.e2 / (*nrn_get_pval(pd[0]));
+    double afac = 1.e2 / (*get<double*>(pd[0]));
     pd += ppoff_;
     double i1, ci, co, didv;
-    ci = *nrn_get_pval(pd[3]);
-    co = *nrn_get_pval(pd[4]);
+    ci = *get<double*>(pd[3]);
+    co = *get<double*>(pd[4]);
     i1 = p[1] * nrn_ghk(v + .001, ci, co, z) * 1e6;  // g is p[1]
     didv = (i1 - p[2]) * 1000.;
     didv *= afac;
-    *nrn_get_pval(pd[2]) += didv;
+    *get<double*>(pd[2]) += didv;
     return didv;
 }
 
 double KSPPIvNonSpec::cur(double g, double* p, Datum* pd, double v) {
-    double afac = 1.e2 / (*nrn_get_pval(pd[0]));
+    double afac = 1.e2 / (*get<double*>(pd[0]));
     double i;
     p[2] = g;  // gmax, e, g
     i = g * (v - p[1]);
@@ -2746,7 +2746,7 @@ double KSPPIvNonSpec::cur(double g, double* p, Datum* pd, double v) {
 }
 
 double KSPPIvNonSpec::jacob(double* p, Datum* pd, double) {
-    double afac = 1.e2 / (*nrn_get_pval(pd[0]));
+    double afac = 1.e2 / (*get<double*>(pd[0]));
     return p[2] * afac;
 }
 
@@ -2884,7 +2884,7 @@ void KSTransition::inftau(Vect* v, Vect* a, Vect* b) {
 }
 
 double KSTransition::alpha(Datum* pd) {
-    double x = *nrn_get_pval(pd[pd_index_]);
+    double x = *get<double*>(pd[pd_index_]);
     switch (stoichiom_) {
     case 1:
         return x * f0->c(0);
