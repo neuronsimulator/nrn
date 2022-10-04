@@ -421,7 +421,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] > 1000) {  // int* into ion dparam[xxx][0]
                 // store the actual ionstyle
                 etype = dmap[j];
-                eindex = *static_cast<int*>(get<void*>(dparam[j]));
+                eindex = *get<int*>(dparam[j]);
             } else {
                 char errmes[100];
                 sprintf(errmes, "Unknown semantics type %d for dparam item %d of", dmap[j], j);

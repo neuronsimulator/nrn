@@ -250,7 +250,7 @@ Object* nrn_sec2cell(Section* sec) {
 int nrn_sec2cell_equals(Section* sec, Object* obj) {
     using std::get;
     if (sec && sec->prop) {
-        if (auto& o = get<Object*>(sec->prop->dparam[6]); o) {
+        if (auto o = get<Object*>(sec->prop->dparam[6]); o) {
             return o == obj;
         } else if (nrnpy_pysec_cell_equals_p_) {
             return (*nrnpy_pysec_cell_equals_p_)(sec, obj);
