@@ -84,6 +84,7 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
         }
     }
     GIVEN("A handle referring to an entry in an SOA container") {
+        REQUIRE(neuron::model().node_data().size() == 0);
         std::optional<::Node> node{std::in_place};
         node->set_v(magic_voltage_value);
         auto handle = node->v_handle();
@@ -147,7 +148,7 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
         // no default constructor, have to go via a data_handle<T>
         generic_data_handle null_handle{data_handle<double>{}};
         THEN("Check it remembered the double type") {
-            REQUIRE(null_handle.type_name() == "double");
+            REQUIRE(null_handle.type_name() == "double*");
         }
         THEN("Check it can be converted back to data_handle<double>") {
             auto const round_trip = static_cast<data_handle<double>>(null_handle);
@@ -160,7 +161,7 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
         THEN("Check it has the expected string representation") {
             std::ostringstream actual;
             actual << null_handle;
-            REQUIRE(actual.str() == "generic_data_handle{raw=nullptr, type=double}");
+            REQUIRE(actual.str() == "generic_data_handle{raw=nullptr, type=double*}");
         }
     }
     GIVEN("A handle wrapping a raw pointer (compatibility mode)") {
@@ -168,7 +169,7 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
         data_handle<double> typed_handle{&foo};
         generic_data_handle handle{typed_handle};
         THEN("Check it remembered the double type") {
-            REQUIRE(handle.type_name() == "double");
+            REQUIRE(handle.type_name() == "double*");
         }
         THEN("Check it can be converted back to data_handle<double>") {
             REQUIRE_NOTHROW(static_cast<data_handle<double>>(handle));
@@ -179,7 +180,7 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
         THEN("Check it has the expected string representation") {
             std::ostringstream actual, expected;
             actual << handle;
-            expected << "generic_data_handle{raw=" << &foo << ", type=double}";
+            expected << "generic_data_handle{raw=" << &foo << ", type=double*}";
             REQUIRE(actual.str() == expected.str());
         }
     }

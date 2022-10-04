@@ -746,7 +746,7 @@ void single_prop_free(Prop* p) {
     }
     if (p->dparam) {
         if (p->_type == CABLESECTION) {
-            using std::get;
+            using neuron::container::get_ref;
             notify_freed_val_array(&get_ref<double>(p->dparam[2]), 6);
         }
         nrn_prop_datum_free(p->_type, p->dparam);
