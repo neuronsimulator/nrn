@@ -1303,19 +1303,6 @@ _jacob%d[(row)*%d + (col)][_ix]\n",
 }
 
 
-static int astmt_state;
-static Item* astmt_last;
-
-void ostmt_start() {
-    astmt_state = 0;
-}
-
-void see_ostmt() {}
-
-void see_astmt(Item* q1, Item* q2) {}
-
-void vectorize_if_else_stmt(int blocktype) {}
-
 static void cvode_kin_remove() {
     Item *q, *q2;
 #if 0

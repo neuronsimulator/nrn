@@ -321,7 +321,7 @@ proc:	 {blocktype = INITIAL1;} initblk
 	| {blocktype = PROCEDURE;} procedblk
 	| {blocktype = NETRECEIVE;} netrecblk
 	| {blocktype = DISCRETE;} discretblk
-	| {lexcontext = blocktype = KINETIC;ostmt_start();} kineticblk {see_ostmt();}
+	| {lexcontext = blocktype = KINETIC;} kineticblk
 	| {blocktype = CONSTRUCTOR;} constructblk
 	| {blocktype = DESTRUCTOR;} destructblk
 	| {blocktype = FUNCTION_TABLE;} functableblk
@@ -393,9 +393,8 @@ locoptarray: /*nothing*/
 		{$$ = atoi(STR($2)); lastok = $3;}
 	;
 stmtlist1: /*nothing*/
-	| stmtlist1 {if (blocktype == KINETIC) see_ostmt();} ostmt
-		{if (blocktype == KINETIC) see_ostmt();}
-	| stmtlist1 astmt {if (blocktype == KINETIC) { see_astmt($2, astmt_end_); }}
+	| stmtlist1 ostmt
+	| stmtlist1 astmt
 	;
 ostmt:	fromstmt
 	| whilestmt
@@ -670,15 +669,9 @@ ifstmt:	IF '(' expr ')' stmtlist '}' optelseif optelse
 	;
 optelseif: /*nothing*/
 	| optelseif ELSE IF '(' expr ')' stmtlist '}'
-		{
-			vectorize_if_else_stmt(blocktype);
-		}
 	;
 optelse: /*nothing*/
 	| ELSE stmtlist '}'
-		{
-			vectorize_if_else_stmt(blocktype);
-		}
 	;
 derivblk: DERIVATIVE NAME stmtlist '}'
 		/* process using massagederiv() */
