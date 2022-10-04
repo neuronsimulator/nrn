@@ -934,7 +934,7 @@ void nrn_rangeconst(Section* sec, Symbol* s, double* pd, int op) {
     int indx;
     double* dpr;
     double d = *pd;
-        n = sec->nnode - 1;
+    n = sec->nnode - 1;
     if (s->u.rng.type == VINDEX) {
         nd = node_ptr(sec, 0., (double*) 0);
         if (op) {
@@ -1424,7 +1424,7 @@ int node_index(Section* sec, double x) /* returns nearest index to x */
     if (x < 0. || x > 1.) {
         hoc_execerror("range variable domain is 0<=x<=1", (char*) 0);
     }
-        n = (double) (sec->nnode - 1);
+    n = (double) (sec->nnode - 1);
     assert(n >= 0.);
     i = n * x;
     if (i == (int) n) {
@@ -1463,7 +1463,7 @@ double cable_prop_eval(Symbol* sym) {
     sec = nrn_sec_pop();
     switch (sym->u.rng.type) {
     case 0: /* not in property list so must be nnode */
-            return (double) sec->nnode - 1;
+        return (double) sec->nnode - 1;
     case CABLESECTION:
         return sec->prop->dparam[sym->u.rng.index].val;
     default:
@@ -1503,8 +1503,7 @@ void nrn_change_nseg(Section* sec, int n) {
     }
     if (sec->nnode == n + 1) {
         return;
-    } else
-    {
+    } else {
         Node** pnd;
         int i;
         int nold = sec->nnode;
@@ -1834,7 +1833,7 @@ int segment_limits(double* pdx) {
     double l;
 
     sec = chk_access();
-        n = sec->nnode - 1;
+    n = sec->nnode - 1;
     /*	l = sec->prop->dparam[2].val;*/
     l = 1.;
     *pdx = l / ((double) n);

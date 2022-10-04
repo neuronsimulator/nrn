@@ -1310,14 +1310,11 @@ void ostmt_start() {
     astmt_state = 0;
 }
 
-void see_ostmt() {
-}
+void see_ostmt() {}
 
-void see_astmt(Item* q1, Item* q2) {
-}
+void see_astmt(Item* q1, Item* q2) {}
 
-void vectorize_if_else_stmt(int blocktype) {
-}
+void vectorize_if_else_stmt(int blocktype) {}
 
 static void cvode_kin_remove() {
     Item *q, *q2;
@@ -1564,4 +1561,3 @@ void single_channel(Item* qsol, Symbol* fun, int numeqn, int listnum) {
     cvode_kin_remove();
     singlechan_ = listnum;
 }
-

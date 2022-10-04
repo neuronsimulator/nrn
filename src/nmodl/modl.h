@@ -141,8 +141,8 @@ typedef struct Symbol {
     short nrntype;
     short assigned_to_;
     int no_threadargs; /* introduced for FUNCTION_TABLE table_name */
-    int* slist_info_; /* blunt instrument for retrieving ion concentration slist value */
-    int ioncount_; /* ppvar index for ions */
+    int* slist_info_;  /* blunt instrument for retrieving ion concentration slist value */
+    int ioncount_;     /* ppvar index for ions */
     union {
         int i;
         char* str;

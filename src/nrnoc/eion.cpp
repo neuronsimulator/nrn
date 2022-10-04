@@ -653,4 +653,3 @@ void second_order_cur(NrnThread* nt) {
             }
     }
 }
-

@@ -167,8 +167,8 @@ typedef struct Node {
 #if DEBUGSOLVE
     double savd;
     double savrhs;
-#endif /*DEBUGSOLVE*/
-    int v_node_index; /* only used to calculate parent_node_indices*/
+#endif                   /*DEBUGSOLVE*/
+    int v_node_index;    /* only used to calculate parent_node_indices*/
     int sec_node_index_; /* to calculate segment index from *Node */
 } Node;
 

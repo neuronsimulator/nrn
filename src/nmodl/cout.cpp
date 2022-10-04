@@ -475,4 +475,3 @@ char* cray_pragma() {
 \n";
     return buf;
 }
-

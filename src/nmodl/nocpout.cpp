@@ -315,8 +315,7 @@ void parout() {
     Lappendstr(defs_list, "extern double *hoc_getarg(int);\n");
     if (vectorize) {
         Sprintf(buf, "/* Thread safe. No static _p or _ppvar. */\n");
-    } else
-    {
+    } else {
         Sprintf(buf, "static double *_p; static Datum *_ppvar;\n");
     }
     Lappendstr(defs_list, buf);
@@ -427,8 +426,7 @@ extern Memb_func* memb_func;\n\
     Lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
     if (vectorize) {
         Lappendstr(defs_list, "_extcall_prop = _prop;\n");
-    } else
-    {
+    } else {
         Lappendstr(defs_list, "_p = _prop->param; _ppvar = _prop->dparam;\n");
     }
     Lappendstr(defs_list, "}\n");
@@ -1912,8 +1910,7 @@ void nrndeclare() {
     if (vectorize) {
         s = ifnew_install("v");
         s->nrntype = NRNNOTP; /* this is a lie, it goes in at end specially */
-    } else
-    {
+    } else {
         s = ifnew_install("v");
         s->nrntype |= NRNSTATIC | NRNNOTP;
     }
