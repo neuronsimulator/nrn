@@ -723,7 +723,7 @@ static double nc_event(void* v) {
         if (!nrn_is_artificial_[type]) {
             hoc_execerror("Can only send fake self-events to ARTIFICIAL_CELLs", 0);
         }
-        using std::get;
+        using neuron::container::get_ref;
         void** pq = &get_ref<void*>(pnt->prop->dparam[nrn_artcell_qindex_[type]]);
         net_send(pq, d->weight_, pnt, td, flag);
     } else {
@@ -3157,7 +3157,7 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     assert(PP2NT(target_) == nt);
     Cvode* cv = (Cvode*) target_->nvi_;
     if (nrn_use_selfqueue_ && nrn_is_artificial_[type]) {
-        using std::get;
+        using neuron::container::get_ref;
         TQItem** pq =
             (TQItem**) (&get_ref<void*>(target_->prop->dparam[nrn_artcell_qindex_[type]]));
         TQItem* q;
@@ -3400,7 +3400,7 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
     se->flag_ = flag;
     se->movable_ = nil;
     if (moff >= 0) {
-        using std::get;
+        using neuron::container::get_ref;
         se->movable_ = &get_ref<void*>(se->target_->prop->dparam[moff]);
     }
     return se;
@@ -3438,7 +3438,7 @@ void SelfEvent::savestate_write(FILE* f) {
     fprintf(f, "%d\n", SelfEventType);
     int moff = -1;
     if (movable_) {
-        using std::get;
+        using neuron::container::get_ref;
         moff = (Datum*) (movable_) -target_->prop->dparam;
         assert(movable_ == &get_ref<void*>(target_->prop->dparam[moff]));
     }
@@ -4081,6 +4081,7 @@ void NetCvode::re_init(double t) {
 }
 
 void NetCvode::fornetcon_prepare() {
+    using neuron::container::get_ref;
     using std::get;
     NrnThread* nt;
     NrnThreadMembList* tml;

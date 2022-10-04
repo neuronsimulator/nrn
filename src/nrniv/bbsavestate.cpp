@@ -2221,7 +2221,7 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
             SelfEvent* se = (SelfEvent*) tqi->data_;
             se->flag_ = flag;
             if (moff >= 0) {
-                using std::get;
+                using neuron::container::get_ref;
                 movable = &get_ref<void*>(pp->prop->dparam[moff]);
                 if (flag == 1) {
                     *movable = tqi;
