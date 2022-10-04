@@ -63,12 +63,10 @@ List* filetxtlist;
 extern int yyparse();
 extern int mkdir_p(const char*);
 
-#if NMODL
 extern int vectorize;
 extern int numlist;
 extern char* nmodl_version_;
 extern int usederivstatearray;
-#endif
 
 /*SUPPRESS 763*/
 static char pgm_name[] = "nmodl";
@@ -148,12 +146,6 @@ int main(int argc, char** argv) {
     finname = argv[optind];
 
     openfiles(finname, output_dir); /* .mrg else .mod,  .var, .c */
-#if NMODL || HMODL
-#else
-#if !SIMSYS
-    Fprintf(stderr, "Translating %s into %s.cpp and %s.var\n", finname, modprefix, modprefix);
-#endif
-#endif
     IGNORE(yyparse());
     /*
      * At this point all blocks are fully processed except the kinetic
@@ -185,10 +177,6 @@ int main(int argc, char** argv) {
                * are printed into .c file at beginning.
                */
     c_out();  /* print .c file */
-#if HMODL || NMODL
-#else
-    IGNORE(fclose(fparout));
-#endif
 #if SIMSYS
     IGNORE(fclose(fctlout));
     IGNORE(fclose(fnumout));
@@ -197,7 +185,7 @@ int main(int argc, char** argv) {
 #if !defined NMODL_TEXT
 #define NMODL_TEXT 1
 #endif
-#if NMODL && NMODL_TEXT
+#if NMODL_TEXT
 #if 0
 /* test: temp.txt should be identical to text of input file except for INCLUDE */
 {
@@ -250,7 +238,6 @@ int main(int argc, char** argv) {
 
     IGNORE(fclose(fcout));
 
-#if NMODL
     if (vectorize) {
         Fprintf(stderr, "Thread Safe\n");
     }
@@ -260,7 +247,6 @@ int main(int argc, char** argv) {
                 "time errors will be generated.\n");
         fprintf(stderr, "The %s.cpp file may be manually edited to fix these errors.\n", modprefix);
     }
-#endif
 
 #if LINT
     { /* for lex */
@@ -330,13 +316,6 @@ static void openfiles(char* given_filename, char* output_dir) {
     }
     Fprintf(stderr, "Translating %s into %s\n", input_filename, output_filename);
 
-#if HMODL || NMODL
-#else
-    Sprintf(s, "%s.var", modprefix);
-    if ((fparout = fopen(s, "w")) == (FILE*) 0) {
-        diag("Can't create variable file: ", s);
-    }
-#endif
 #if SIMSYS
     Sprintf(s, "%s.ctl", modprefix);
     if ((fctlout = fopen(s, "w")) == (FILE*) 0) {

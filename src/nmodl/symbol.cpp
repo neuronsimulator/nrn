@@ -63,12 +63,10 @@ Symbol* install(char* s, int t) /* install s in the list symbol table with type 
     sp->name = stralloc(s, (char*) 0);
     sp->type = t;
     sp->subtype = 0;
-#if NMODL
     sp->nrntype = 0;
     sp->assigned_to_ = 0;
     sp->no_threadargs = 0;
     sp->slist_info_ = (int*) 0;
-#endif
     sp->u.str = (char*) 0;
     sp->used = 0;
     sp->usage = 0;

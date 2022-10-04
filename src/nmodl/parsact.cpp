@@ -89,9 +89,7 @@ Symbol* ifnew_parminstall(char* name, char* num, char* units, char* limits) {
 }
 
 static char* indepunits = "";
-#if NMODL
 int using_default_indep;
-#endif
 
 void indepinstall(Symbol* n,
                   char* from,
@@ -107,7 +105,6 @@ void indepinstall(Symbol* n,
        If they are the same, then u.str gets the info from SCOP.
     */
     if (!scop) {
-#if NMODL
         if (using_default_indep) {
             using_default_indep = 0;
             if (indepsym != n) {
@@ -116,7 +113,6 @@ void indepinstall(Symbol* n,
             }
             indepsym = (Symbol*) 0;
         }
-#endif
         if (indepsym) {
             diag("Only one independent variable can be defined", (char*) 0);
         }
@@ -761,7 +757,6 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     freelist(&to);
 }
 
-#if HMODL || NMODL
 void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
     extern int point_process;
     Item* q;
@@ -918,7 +913,6 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
 #endif
 }
 
-#endif
 
 void function_table(Symbol* s, Item* qpar1, Item* qpar2, Item* qb1, Item* qb2) /* s ( ... ) { ... }
                                                                                 */

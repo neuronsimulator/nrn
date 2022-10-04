@@ -708,7 +708,7 @@ functableblk: FUNCTION_TABLE NAME '(' arglist ')' units
 		b2 = insertstr(b1->next, "}\n");
 
 #define GLOBFUNCT 1
-#if GLOBFUNCT && NMODL
+#if GLOBFUNCT
 		replacstr($1, "\ndouble");
 #else
 		replacstr($1, "\nstatic double");
@@ -720,9 +720,7 @@ functableblk: FUNCTION_TABLE NAME '(' arglist ')' units
 		}
 		SYM($2)->subtype |= FUNCT;
 		SYM($2)->usage |= FUNCT;
-#if HMODL || NMODL
 		hocfunc(s, $3, $5);
-#endif
 		function_table(s, $3, $5, b1, b2);
 		poplocal();
 		}
@@ -735,7 +733,7 @@ funcblk: FUNCTION1 NAME '(' arglist ')' units
 		{ Symbol *s = SYM($2);
 		s->varnum = argcnt_;
 		table_massage(table_list, $1, $2, $4); freelist(&table_list);
-#if GLOBFUNCT && NMODL
+#if GLOBFUNCT
 		replacstr($1, "\ndouble");
 #else
 		replacstr($1, "\nstatic double");
@@ -751,9 +749,7 @@ funcblk: FUNCTION1 NAME '(' arglist ')' units
 		}
 		SYM($2)->subtype |= FUNCT;
 		SYM($2)->usage |= FUNCT;
-#if HMODL || NMODL
 		hocfunc(s, $3, $5);
-#endif
 		poplocal(); freelist(&$4);}
 	;
 arglist: /*nothing*/ {pushlocal(); $$ = LIST0; argcnt_ = 0;}
@@ -781,9 +777,7 @@ procedblk: PROCEDURE NAME '(' arglist ')' units stmtlist '}'
 		}
 		SYM($2)->subtype |= PROCED;
 		SYM($2)->usage |= FUNCT;
-#if HMODL || NMODL
 		hocfunc(s, $3, $5);
-#endif
 		poplocal(); freelist(&$4);}
 	;
 netrecblk: NETRECEIVE '(' arglist ')'
@@ -799,9 +793,7 @@ diag("NET_RECEIVE block",(char*)" must have at least one argument");
 		{
 		replacstr($1, "\nstatic void _net_receive");
 		movelist($1, $7, procfunc);
-#if NMODL
 		net_receive($3, $2, $4, $6, $7);
-#endif
 		poplocal(); freelist(&$3);
 		}
 	| NETRECEIVE error { myerr("syntax: NET_RECEIVE ( weight ) {stmtlist}");}
@@ -809,9 +801,7 @@ diag("NET_RECEIVE block",(char*)" must have at least one argument");
 initstmt: INITIAL1 stmtlist '}'
 		{
 			check_block(NETRECEIVE, blocktype, "INITIAL");
-#if NMODL
 			net_init($1, $3);
-#endif
 		}
 	;
 solveblk: SOLVE NAME
@@ -1073,16 +1063,3 @@ void yyerror(char* s)	/* called for yacc syntax error */
 	Fprintf(stderr, "%s:\n ", s);
 }
 
-
-#if !NMODL
-void nrn_list(q1, q2)
-	Item *q1, *q2;
-{
-	/*ARGSUSED*/
-}
-void nrn_use(q1, q2, q3, q4)
-	Item *q1, *q2, *q3, *q4;
-{
-	/*ARGSUSED*/
-}
-#endif

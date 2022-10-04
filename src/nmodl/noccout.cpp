@@ -13,13 +13,11 @@ extern char* nmodl_version_;
 List *procfunc, *initfunc, *modelfunc, *termfunc, *initlist, *firstlist;
 /* firstlist gets statements that must go before anything else */
 
-#if NMODL
 List* nrnstate;
 extern List *currents, *set_ion_variables(int), *get_ion_variables(int);
 extern List *begin_dion_stmt(), *end_dion_stmt(char*);
 extern List* conductance_;
 static void conductance_cout();
-#endif
 
 extern Symbol* indepsym;
 extern List* indeplist;
@@ -100,9 +98,7 @@ static void ext_vdef() {
 
 /* when vectorize = 0 */
 void c_out() {
-#if NMODL
     Item* q;
-#endif
 
     Fprintf(fcout, "/* Created by Language version: %s */\n", nmodl_version_);
     Fflush(fcout);
@@ -133,9 +129,7 @@ void c_out() {
     printlist(defs_list);
     printlist(firstlist);
     P("static int _reset;\n");
-#if NMODL
     P("static ");
-#endif
     if (modelline) {
         Fprintf(fcout, "char *modelname = \"%s\";\n\n", modelline);
     } else {
@@ -144,14 +138,10 @@ void c_out() {
     Fflush(fcout); /* on certain internal errors partial output
                     * is helpful */
     P("static int error;\n");
-#if NMODL
     P("static ");
-#endif
     P("int _ninits = 0;\n");
     P("static int _match_recurse=1;\n");
-#if NMODL
     P("static void ");
-#endif
     P("_modl_cleanup(){ _match_recurse=1;}\n");
     /*
      * many machinations are required to make the infinite number of
@@ -161,10 +151,6 @@ void c_out() {
      * This one allows scop variables in functions which do not have the
      * p array as an argument
      */
-#if SIMSYS || HMODL || NMODL
-#else
-    P("static double *_p;\n\n");
-#endif
     funcdec();
     Fflush(fcout);
 
@@ -176,17 +162,9 @@ void c_out() {
     Fflush(fcout);
 
     /* Initialization function must always be present */
-#if NMODL
     P("\nstatic void initmodel() {\n  int _i; double _save;");
-#endif
 #if SIMSYS || HMODL
     P("\ninitmodel() {\n  int _i; double _save;");
-#endif
-#if (!(SIMSYS || HMODL || NMODL))
-    P("\ninitmodel(_pp) double _pp[]; {\n int _i; double _save; _p = _pp;");
-#endif
-#if !NMODL
-    P("_initlists();\n");
 #endif
     P("_ninits++;\n");
     P(saveindep); /*see solve.c; blank if not a time dependent process*/
@@ -196,7 +174,6 @@ void c_out() {
     P("\n}\n}\n");
     Fflush(fcout);
 
-#if NMODL
     /* generation of initmodel interface */
     P("\nstatic void nrn_init(NrnThread* _nt, Memb_list* _ml, int _type){\n");
     P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
@@ -389,47 +366,11 @@ void c_out() {
         }
     }
     P("\n}\n");
-#else
-    /* Model function must always be present */
-#if SIMSYS
-    P("\nmodel() {\n");
-    P("double _break, _save;\n{\n");
-#else
-    P("\nmodel(_pp, _indepindex) double _pp[]; int _indepindex; {\n");
-    P("double _break, _save;");
-#if HMODL
-    P("\n{\n");
-#else
-    P("_p = _pp;\n{\n");
-#endif
-#endif
-    printlist(modelfunc);
-    P("\n}\n}\n");
-    Fflush(fcout);
-#endif
 
-#if NMODL
     P("\nstatic void terminal(){}\n");
-#else
-    /* Terminal function must always be present */
-#if SIMSYS || HMODL
-    P("\nterminal() {");
-    P("\n{\n");
-#else
-    P("\nterminal(_pp) double _pp[];{");
-    P("_p = _pp;\n{\n");
-#endif
-    printlist(termfunc);
-    P("\n}\n}\n");
-    Fflush(fcout);
-#endif
 
     /* initlists() is called once to setup slist and dlist pointers */
-#if NMODL || SIMSYS || HMODL
     P("\nstatic void _initlists() {\n");
-#else
-    P("\n_initlists() {\n");
-#endif
     P(" int _i; static int _first = 1;\n");
     P("  if (!_first) return;\n");
     printlist(initlist);
@@ -448,13 +389,11 @@ static void initstates() {
 
 
     SYMITER_STAT {
-#if NMODL
         /* ioni and iono should not have initialization lines */
 #define IONCONC 010000
         if (s->nrntype & IONCONC) {
             continue;
         }
-#endif
         Sprintf(buf, "%s0", s->name);
         if (lookup(buf)) { /* if no constant associated
                             * with a state such as the
@@ -575,7 +514,7 @@ static void funcdec() {
         /*EMPTY*/ /*maybe*/
         if (s->subtype & FUNCT) {
 #define GLOBFUNCT 1
-#if GLOBFUNCT && NMODL
+#if GLOBFUNCT
 #else
             Fprintf(fcout, "static double %s(", s->name);
             more = 1;

@@ -12,13 +12,11 @@ Symbol* deltaindep = SYM0;
 extern Symbol* indepsym;
 extern char* current_line();
 extern List* massage_list_;
-#if NMODL
 extern List* nrnstate;
 extern int vectorize;
 extern char* cray_pragma();
 extern int netrec_state_count;
 extern int netrec_need_thread;
-#endif
 Item* cvode_cnexp_solve;
 Symbol* cvode_nrn_cur_solve_;
 Symbol* cvode_nrn_current_solve_;
@@ -43,7 +41,6 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
     if (!solvq) {
         solvq = newlist();
     }
-#if NMODL
     /* if the blocktype is equation then move the solve statement to
         the nrnstate function.  Everything else stays in the
         model function to be used as the nrncurrent function */
@@ -68,7 +65,6 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
             }
         }
     }
-#endif
     Item* lq = lappendsym(solvq, SYM0);
     ITM(lq) = qName;
     lq->itemtype = blocktype;
@@ -277,17 +273,6 @@ void solvhandler() {
         away from time
         then _sav_indep will be reset to starting value of original when
         initmodel is called on every call to model */
-#if NMODL
-#else
-        if (btype == BREAKPOINT) {
-#if SIMSYS
-            Sprintf(buf, "_sav_indep = %s;\n", indepsym->name);
-#else
-            Sprintf(buf, "_sav_indep = _p[_indepindex];\n");
-#endif
-            Insertstr(follow, buf);
-        }
-#endif
     }
 }
 
@@ -346,11 +331,6 @@ void whileloop(Item* qsol, long type, int ss) {
             }
             deltaindep = ifnew_parminstall(buf, sval, "", "");
             firstderf = 0;
-#if NMODL
-#else
-            Sprintf(buf, "_modl_set_dt(_dt) double _dt; { %s = _dt;}\n", deltaindep->name);
-            Lappendstr(procfunc, buf);
-#endif
         }
         if (type == DERF) {
             cp = "dt";
@@ -365,21 +345,9 @@ void whileloop(Item* qsol, long type, int ss) {
         /*SUPPRESS 622*/
         assert(0);
     }
-#if NMODL
     if (strcmp(indepsym->name, "t") != 0) {
         diag("The independent variable name must be `t'", (char*) 0);
     }
-#else
-    Sprintf(buf, "_save = _break = %s; %s = _sav_indep;\n", indepsym->name, indepsym->name);
-    Insertstr(qsol, buf);
-#if !SIMSYS
-    Sprintf(buf,
-            "if (_p + _indepindex != &%s) {initmodel(_pp); %s = _sav_indep;}\n",
-            indepsym->name,
-            indepsym->name);
-    Insertstr(qsol, buf);
-#endif
-#endif
 
     if (called) {
         Fprintf(stderr,
@@ -387,56 +355,11 @@ void whileloop(Item* qsol, long type, int ss) {
 BREAKPOINT block.\nThe simulation will be incorrect if more than one is used \
 at a time.\n");
     }
-#if NMODL
-#else
-    Sprintf(buf, "if (%s < _break) {\n", indepsym->name);
-    Insertstr(qsol, buf);
-
-    /* ensure that there are an integer number of steps / break */
-    if (type == DERF) {
-        Sprintf(buf,
-                " { int _nstep; double _dt, _y;\n\
-	_y = _break - %s; _dt = %s;\n",
-                indepsym->name,
-                "dt");
-        Insertstr(qsol, buf);
-        Insertstr(qsol, "_nstep = (int)(_y/_dt + .9);\n if (_nstep==0) _nstep = 1;\n");
-        Sprintf(buf, "%s = _y/((double)_nstep);\n", "dt");
-        Insertstr(qsol, buf);
-        Sprintf(buf, "\n  }\n");
-        Insertstr(qsol, buf);
-    }
-
-    if (type == DERF) {
-        Sprintf(buf, "_break -= .5* %s;\n", "dt");
-        Insertstr(qsol, buf);
-    }
-#endif
-#if NMODL
-    /* no longer a for loop */
-#else
-    Sprintf(buf, "for (; %s < _break; %s += %s) {\n", indepsym->name, indepsym->name, cp);
-    Insertstr(qsol, buf);
-    /* close the while loop; note that integrators have been called */
-    if (type == DERF) {
-        Sprintf(buf, "\n}}\n %s = _save;\n", indepsym->name);
-    } else if (type == DISCRETE) {
-        Sprintf(buf, "\n}}\n");
-    }
-    Insertstr(qsol->next, buf);
-#endif
     if (!called) {
         /* fix up initmodel as per 3) above.
         In cout.c _save is declared */
-#if NMODL
         Sprintf(buf, " _save = %s;\n %s = 0.0;\n", indepsym->name, indepsym->name);
         saveindep = stralloc(buf, (char*) 0);
-#else
-        Sprintf(buf, "%s0", indepsym->name);
-        IGNORE(ifnew_parminstall(buf, STR(indeplist->prev->prev), STR(indeplist->prev), ""));
-        Sprintf(buf, " _save = %s;\n %s = %s0;\n", indepsym->name, indepsym->name, indepsym->name);
-        saveindep = stralloc(buf, (char*) 0);
-#endif
         /* Assert no more additions to initfunc involving
         the value of time */
         Sprintf(buf, " _sav_indep = %s; %s = _save;\n", indepsym->name, indepsym->name);
