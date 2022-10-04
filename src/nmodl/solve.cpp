@@ -19,11 +19,9 @@ extern char* cray_pragma();
 extern int netrec_state_count;
 extern int netrec_need_thread;
 #endif
-#if CVODE
 Item* cvode_cnexp_solve;
 Symbol* cvode_nrn_cur_solve_;
 Symbol* cvode_nrn_current_solve_;
-#endif
 
 void whileloop(Item*, long, int);
 void check_ss_consist(Item*);
@@ -86,9 +84,7 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
         if (strcmp(SYM(qMethod)->name, "cnexp") == 0) {
             SYM(qMethod)->name = stralloc("derivimplicit", SYM(qMethod)->name);
             add_deriv_imp_list(SYM(qName)->name);
-#if CVODE
             cvode_cnexp_solve = lq;
-#endif
         }
         remove(qMethod->prev);
         remove(qMethod);
@@ -128,7 +124,6 @@ void solvhandler() {
         qsol = ITM(lq);
         lq = lq->next;
         method = SYM(lq);
-#if CVODE
         cvodemethod_ = 0;
         if (method && strcmp(method->name, "after_cvode") == 0) {
             method = (Symbol*) 0;
@@ -145,7 +140,6 @@ void solvhandler() {
             lq->element.sym = (Symbol*) 0;
             cvodemethod_ = 3;
         }
-#endif
         lq = lq->next;
         errstmt = LST(lq);
         /* err stmt handling assumes qsol->next is where it goes. */
@@ -180,9 +174,7 @@ void solvhandler() {
                     Sprintf(buf, " %s();\n", fun->name);
                     Insertstr(follow, buf);
                 }
-#if CVODE
                 cvode_interface(fun, listnum, numeqn);
-#endif
             }
             if (btype == BREAKPOINT)
                 whileloop(qsol, (long) DERF, steadystate);
@@ -203,13 +195,11 @@ void solvhandler() {
             }
             if (btype == BREAKPOINT) {
                 whileloop(qsol, (long) DERF, steadystate);
-#if CVODE
                 if (strcmp(method->name, "sparse") == 0) {
                     cvode_interface(fun, listnum, numeqn);
                     cvode_kinetic(qsol, fun, numeqn, listnum);
                     single_channel(qsol, fun, numeqn, listnum);
                 }
-#endif
             }
             solv_diffeq(qsol, fun, method, numeqn, listnum, steadystate, btype);
             break;
@@ -241,7 +231,6 @@ void solvhandler() {
         case PROCED:
             if (btype == BREAKPOINT) {
                 whileloop(qsol, (long) DERF, 0);
-#if CVODE
                 if (cvodemethod_ == 1) { /*after_cvode*/
                     cvode_interface(fun, listnum, 0);
                 }
@@ -257,7 +246,6 @@ void solvhandler() {
                     cvode_nrn_current_solve_ = fun;
                     linsertstr(procfunc, "extern int cvode_active_;\n");
                 }
-#endif
             }
             Sprintf(buf, " %s();\n", fun->name);
             replacstr(qsol, buf);
@@ -269,11 +257,9 @@ void solvhandler() {
             diag("Illegal or unimplemented SOLVE type: ", fun->name);
             break;
         }
-#if CVODE
         if (btype == BREAKPOINT) {
             cvode_valid();
         }
-#endif
         /* add the error check */
         Insertstr(qsol, "error =");
         move(errstmt->next, errstmt->prev, qsol->next);

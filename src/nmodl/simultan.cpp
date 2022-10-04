@@ -86,9 +86,7 @@ int nonlin_common(Item* q4) /* used by massagenonlin() and mixed_eqns() */
     SYMITER_STAT {
         if (s->used) {
             s->varnum = counts;
-#if CVODE
             slist_data(s, counts, numlist);
-#endif
             if (s->subtype & ARRAY) {
                 int dim = s->araydim;
                 using_array = 1;

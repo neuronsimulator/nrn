@@ -30,14 +30,12 @@ typedef struct Memb_func {
     Pvmi initialize;
     Pvmp destructor; /* only for point processes */
     Symbol* sym;
-#if CVODE
     nrn_ode_count_t ode_count;
     nrn_ode_map_t ode_map;
     Pvmi ode_spec;
     Pvmi ode_matsol;
     nrn_ode_synonym_t ode_synonym;
     Pvmi singchan_; /* managed by kschan for variable step methods */
-#endif
     int vectorized;
     int thread_size_;                 /* how many Datum needed in Memb_list if vectorized */
     void (*thread_mem_init_)(Datum*); /* after Memb_list._thread is allocated */

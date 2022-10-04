@@ -24,7 +24,6 @@ extern List* thread_cleanup_list;
 extern int vectorize;
 extern Symbol* indepsym;
 
-#if CVODE
 int singlechan_;
 static int cvode_flag;
 static void cvode_kin_remove();
@@ -32,10 +31,6 @@ static Item *cvode_sbegin, *cvode_send;
 static List* kin_items_;
 #define CVODE_FLAG     if (cvode_flag)
 #define NOT_CVODE_FLAG if (!cvode_flag)
-#else
-#define CVODE_FLAG     if (0)
-#define NOT_CVODE_FLAG if (1)
-#endif
 
 typedef struct Rterm {
     struct Rterm* rnext;
@@ -450,14 +445,12 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtl
             s->used = 0;
         }
     }
-#if CVODE
     cvode_sbegin = q3;
     cvode_send = q4;
     kin_items_ = newlist();
     for (q = cvode_sbegin; q != cvode_send->next; q = q->next) {
         lappenditem(kin_items_, q);
     }
-#endif
 }
 
 #if Glass
@@ -1092,9 +1085,7 @@ void kinlist(Symbol* fun, Rlist* rlst) {
     /* put slist and dlist in initlist */
     for (i = 0; i < rlst->nsym; i++) {
         s = rlst->symorder[i];
-#if CVODE
         slist_data(s, s->varnum, fun->u.i);
-#endif
         if (s->subtype & ARRAY) {
             int dim = s->araydim;
             Sprintf(buf,
@@ -1328,7 +1319,6 @@ void see_astmt(Item* q1, Item* q2) {
 void vectorize_if_else_stmt(int blocktype) {
 }
 
-#if CVODE
 static void cvode_kin_remove() {
     Item *q, *q2;
 #if 0
@@ -1575,4 +1565,3 @@ void single_channel(Item* qsol, Symbol* fun, int numeqn, int listnum) {
     singlechan_ = listnum;
 }
 
-#endif

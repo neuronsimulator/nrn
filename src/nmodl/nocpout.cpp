@@ -153,7 +153,6 @@ static Item* net_init_q2_;
 static int ba_index_; /* BEFORE AFTER blocks. See bablk */
 static List* ba_list_;
 
-#if CVODE
 List* state_discon_list_;
 int cvode_not_allowed;
 static int cvode_emit, cvode_ieq_index;
@@ -171,7 +170,6 @@ int watch_seen_; /* number of WATCH statements + 1*/
 extern List* watch_alloc;
 static Item* net_send_delivered_; /* location for if flag is 1 then clear the
                 tqitem_ to allow  an error message for net_move */
-#endif
 
 #define SYMITER(arg)         \
     ITERATE(q, syminorder) { \
@@ -732,7 +730,6 @@ extern Memb_func* memb_func;\n\
     }
     /* count the number of pointers needed */
     ppvar_cnt = ioncount + diamdec + pointercount + areadec;
-#if CVODE
     if (net_send_seen_) {
         tqitem_index = ppvar_cnt;
         ppvar_semantics(ppvar_cnt, "netsend");
@@ -783,7 +780,6 @@ extern Memb_func* memb_func;\n\
         ppvar_cnt++;
     }
     cvode_emit_interface();
-#endif
     if (destructorfunc->next != destructorfunc) {
         if (!point_process) {
             diag("DESTRUCTOR only permitted for POINT_PROCESS", (char*) 0);
@@ -1024,7 +1020,6 @@ static void _constructor(Prop* _prop) {\n\
     Lappendstr(defs_list, "\n}\n");
 
     Lappendstr(defs_list, "static void _initlists();\n");
-#if CVODE
     if (cvode_emit) {
         Lappendstr(defs_list, " /* some states have an absolute tolerance */\n");
         Lappendstr(defs_list, "static Symbol** _atollist;\n");
@@ -1047,7 +1042,6 @@ static void _constructor(Prop* _prop) {\n\
         sprintf(buf, "static _singlechan_declare%d();\n", singlechan_);
         Lappendstr(defs_list, buf);
     }
-#endif
 
     if (net_send_seen_) {
         if (!net_receive_) {
@@ -1206,7 +1200,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             Lappendstr(defs_list, "\tnrn_writes_conc(_mechtype, 0);\n");
         }
 
-#if CVODE
         if (cvode_emit) {
             Lappendstr(defs_list,
                        "\
@@ -1226,7 +1219,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             sprintf(buf, "hoc_reg_singlechan(_mechtype, _singlechan_declare%d);\n", singlechan_);
             Lappendstr(defs_list, buf);
         }
-#endif
         if (artificial_cell) {
             if (brkpnt_exists || !net_receive_ || nrnpointers->next != nrnpointers ||
                 useion->next != useion) {
@@ -2402,7 +2394,6 @@ void nrn_var_assigned(Symbol* s) {
     }
 }
 
-#if CVODE
 
 static int cvode_valid_, using_cvode;
 static int cvode_num_, cvode_neq_;
@@ -2752,7 +2743,6 @@ void cvode_rw_cur(char* b) {
         q = q->next;
     }
 }
-#endif
 
 void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     Item *q, *q1;

@@ -153,9 +153,7 @@ void (*nrnthread_v_transfer_)(NrnThread* nt);
 void (*nrnthread_vi_compute_)(NrnThread* nt);
 #endif
 
-#if CVODE
 int cvode_active_;
-#endif
 
 int stoprun;
 int nrn_use_fast_imem;
@@ -166,14 +164,12 @@ int nrn_use_fast_imem;
 void fadvance(void) {
     nrn::Instrumentor::phase p_fadvance("fadvance");
     tstopunset;
-#if CVODE
     if (cvode_active_) {
         cvode_fadvance(-1.);
         tstopunset;
         hoc_retpushx(1.);
         return;
     }
-#endif
     if (tree_changed) {
         setup_topology();
     }

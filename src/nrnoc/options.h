@@ -36,8 +36,6 @@ in one section is set but no others. But only the first time through treeset.
 #define KEEP_NSEG_PARM 1 /* Use old segment parameters to define */
 /* the new segment information */
 
-#define CVODE 1 /* Allow the cvode variable time step method*/
-
 #if !defined(CACHEVEC)
 #define CACHEVEC 1 /* define to 0 doubles in nodes instead of vectors*/
 #endif

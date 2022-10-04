@@ -33,11 +33,9 @@ extern int debugging_;
 extern int point_process;
 extern int dtsav_for_nrn_state;
 
-#if CVODE
 extern Symbol* cvode_nrn_cur_solve_;
 extern Symbol* cvode_nrn_current_solve_;
 extern List* state_discon_list_;
-#endif
 
 /* VECTORIZE has not been optional for years. We leave the define there but */
 /* we no longer update the #else clauses. */
@@ -224,11 +222,9 @@ void c_out() {
 
     /* standard modl EQUATION without solve computes current */
     P("\nstatic double _nrn_current(double _v){double _current=0.;v=_v;");
-#if CVODE
     if (cvode_nrn_current_solve_) {
         fprintf(fcout, "if (cvode_active_) { %s(); }\n", cvode_nrn_current_solve_->name);
     }
-#endif
     P("{");
     if (currents->next != currents) {
         printlist(modelfunc);
@@ -254,7 +250,6 @@ void c_out() {
         ext_vdef();
         if (currents->next != currents) {
             printlist(get_ion_variables(0));
-#if CVODE
             cvode_rw_cur(buf);
             P(buf);
         }
@@ -262,7 +257,6 @@ void c_out() {
             fprintf(fcout, "if (cvode_active_) { %s(); }\n", cvode_nrn_cur_solve_->name);
         }
         if (currents->next != currents) {
-#endif
             P(" _g = _nrn_current(_v + .001);\n");
             printlist(begin_dion_stmt());
             if (state_discon_list_) {
@@ -692,13 +686,11 @@ void c_out_vectorize() {
     if (!conductance_) {
         P("\nstatic double _nrn_current(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, "
           "double _v){double _current=0.;v=_v;");
-#if CVODE
         if (cvode_nrn_current_solve_) {
             fprintf(fcout,
                     "if (cvode_active_) { %s(_p, _ppvar, _thread, _nt); }\n",
                     cvode_nrn_current_solve_->name);
         }
-#endif
         P("{");
         if (currents->next != currents) {
             printlist(modelfunc);
@@ -733,7 +725,6 @@ void c_out_vectorize() {
         ext_vdef();
         if (currents->next != currents) {
             printlist(get_ion_variables(0));
-#if CVODE
             cvode_rw_cur(buf);
             P(buf);
         }
@@ -743,7 +734,6 @@ void c_out_vectorize() {
                     cvode_nrn_cur_solve_->name);
         }
         if (currents->next != currents) {
-#endif
             if (conductance_) {
                 P(" {\n");
                 conductance_cout();

@@ -17,12 +17,10 @@ List* watch_alloc;       /* text of the void _watch_alloc(Datum*) function */
 extern List* syminorder; /* Order in which variables are output to
                           * .var file */
 
-#if CVODE
 extern List* state_discon_list_;
 extern int net_send_seen_;
 extern int net_event_seen_;
 extern int watch_seen_;
-#endif
 
 int protect_;
 int protect_include_;
@@ -842,7 +840,6 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
         if (strcmp(SYM(qname)->name, "nrn_pointing") == 0) {
             Insertstr(qpar1->next, "&");
         } else if (strcmp(SYM(qname)->name, "state_discontinuity") == 0) {
-#if CVODE
             if (blocktype == NETRECEIVE) {
                 Item* qeq = NULL;
                 /* convert to state = expr form and process with netrec_discon(...) */
@@ -872,7 +869,6 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
                 lappenditem(state_discon_list_, qpar1->next);
                 Insertstr(qpar1->next, "-1, &");
             }
-#endif
         } else if (strcmp(SYM(qname)->name, "net_send") == 0) {
             net_send_seen_ = 1;
             if (artificial_cell) {

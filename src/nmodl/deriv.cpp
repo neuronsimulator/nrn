@@ -29,13 +29,11 @@ extern int thread_data_index;
 extern List* thread_mem_init_list;
 extern List* thread_cleanup_list;
 
-#if CVODE
 extern char *cvode_deriv(), *cvode_eqnrhs();
 extern Item* cvode_cnexp_solve;
 void cvode_diffeq(Symbol* ds, Item* qbegin, Item* qend);
 static List *cvode_diffeq_list, *cvode_eqn;
 static int cvode_cnexp_possible;
-#endif
 
 void solv_diffeq(Item* qsol,
                  Symbol* fun,
@@ -448,14 +446,12 @@ void deriv_used(Symbol* s, Item* q1, Item* q2) /* q1, q2 are begin and end token
         deriv_state_list = newlist();
     }
     Lappendsym(deriv_used_list, s);
-#if CVODE
     if (!cvode_diffeq_list) {
         cvode_diffeq_list = newlist();
     }
     lappendsym(cvode_diffeq_list, s);
     lappenditem(cvode_diffeq_list, q1);
     lappenditem(cvode_diffeq_list, q2);
-#endif
 }
 
 /* args are --- derivblk: DERIVATIVE NAME stmtlist '}' */
@@ -520,9 +516,7 @@ is not allowed on the left hand side.");
                 }
             }
             Lappendsym(deriv_state_list, state);
-#if CVODE
             slist_data(state, count, numlist);
-#endif
             if (s->subtype & ARRAY) {
                 int dim = s->araydim;
                 Sprintf(buf,
@@ -559,7 +553,6 @@ is not allowed on the left hand side.");
     Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n", numlist, count, numlist, count);
     Linsertstr(procfunc, buf);
 
-#if CVODE
     Lappendstr(procfunc, "\n/*CVODE*/\n");
     Sprintf(buf, "static int _ode_spec%d", numlist);
     Lappendstr(procfunc, buf);
@@ -631,7 +624,6 @@ is not allowed on the left hand side.");
         freelist(&deriv_state_list);
         return;
     }
-#endif
     if (deriv_implicit) {
         Sprintf(buf,
                 "static double _savstate%d[%d], *_temp%d = _savstate%d;\n",
@@ -741,7 +733,6 @@ void copyitems(Item* q1, Item* q2, Item* qdest) /* copy items before item */
     }
 }
 
-#if CVODE
 static int cvode_linear_diffeq(Symbol* ds, Symbol* s, Item* qbegin, Item* qend) {
     char* c;
     List* tlst;
@@ -909,4 +900,3 @@ int cvode_cnexp_success(Item* q1, Item* q2) {
     fprintf(stderr, "Could not translate using cnexp method; using derivimplicit\n");
     return 0;
 }
-#endif

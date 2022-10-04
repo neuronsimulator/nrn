@@ -142,9 +142,7 @@ typedef struct Symbol {
     short nrntype;
     short assigned_to_;
     int no_threadargs; /* introduced for FUNCTION_TABLE table_name */
-#if CVODE
     int* slist_info_; /* blunt instrument for retrieving ion concentration slist value */
-#endif
     int ioncount_; /* ppvar index for ions */
 #endif
     union {
