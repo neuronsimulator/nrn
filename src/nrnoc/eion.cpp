@@ -368,7 +368,7 @@ ion_style("name_ion", [c_style, e_style, einit, eadvance, cinit])
  and models.
 */
 
-#define iontype ppd[i][0].get<int>() /* how _AMBIGUOUS is to be handled */
+#define iontype get<int>(ppd[i][0]) /* how _AMBIGUOUS is to be handled */
 /*the bitmap is
 03	concentration unused, nrnocCONST, DEP, STATE
 04	initialize concentrations
@@ -448,8 +448,9 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
             }
         }
     }
-    auto& ii = get<int>(pion->dparam[0]);
+    auto ii = get<int>(pion->dparam[0]);
     ii |= flag;
+    pion->dparam[0] = ii;
 }
 
 void ion_style(void) {
@@ -494,9 +495,10 @@ void ion_style(void) {
             for (i = 0; i < sec->nnode; ++i) {
                 p = nrn_mechanism(s->subtype, sec->pnode[i]);
                 if (p) {
-                    auto&& ii = get<int>(p->dparam[0]);
+                    auto ii = get<int>(p->dparam[0]);
                     ii &= (0200 + 0400);
                     ii += istyle;
+                    p->dparam[0] = ii;
                 }
             }
         }
@@ -533,9 +535,9 @@ int nrn_vartype(Symbol* sym) {
 void nrn_promote(Prop* p, int conc, int rev) {
     using std::get;
     int oldconc, oldrev;
-    int* it = &get<int>(p->dparam[0]);
-    oldconc = (*it & 03);
-    oldrev = (*it & 030) >> 3;
+    int it = get<int>(p->dparam[0]);
+    oldconc = (it & 03);
+    oldrev = (it & 030) >> 3;
     /* precedence */
     if (oldconc < conc) {
         oldconc = conc;
@@ -547,17 +549,18 @@ void nrn_promote(Prop* p, int conc, int rev) {
     if (oldconc > 0 && oldrev < 2) {
         oldrev = 2;
     }
-    *it &= ~0177; /* clear the bitmap */
-    *it += oldconc + 010 * oldrev;
+    it &= ~0177; /* clear the bitmap */
+    it += oldconc + 010 * oldrev;
     if (oldconc == 3) { /* if state then cinit */
-        *it += 4;
+        it += 4;
         if (oldrev == 2) { /* if not state (WRITE) then eadvance */
-            *it += 0100;
+            it += 0100;
         }
     }
     if (oldconc > 0 && oldrev == 2) { /*einit*/
-        *it += 040;
+        it += 040;
     }
+    p->dparam[0] = it;
 }
 
 /* Must be called prior to any channels which update the currents */

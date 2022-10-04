@@ -2171,8 +2171,7 @@ neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject* pyname
     if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
         return nullptr;
     }
-    using std::get;
-    return &get<neuron::container::generic_data_handle>(m->prop_->dparam[np.prop_index(sym)]);
+    return &get_ref<neuron::container::generic_data_handle>(m->prop_->dparam[np.prop_index(sym)]);
 }
 
 static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
