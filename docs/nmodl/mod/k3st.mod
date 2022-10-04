@@ -5,6 +5,7 @@ NEURON {
     SUFFIX k3st
     USEION k READ ek WRITE ik
     RANGE g, gbar
+    RANGE tau1_rec, tau2_rec
 }
 UNITS { (mV) = (millivolt) }
 PARAMETER {
@@ -24,6 +25,8 @@ ASSIGNED {
     kb1 (/ms)
     kf2 (/ms)
     kb2 (/ms)
+    tau1_rec
+    tau2_rec
 }
 
 STATE { c1 c2 o }
@@ -54,4 +57,6 @@ PROCEDURE rates(v(millivolt)) {
     K2 = exp(-k2*(d2 - v))
     kf2 = K2/(tau2(v)*(1+K2))
     kb2 = 1/(tau2(v)*(1+K2))
+    tau1_rec = tau1(v)
+    tau2_rec = tau2(v)
 }

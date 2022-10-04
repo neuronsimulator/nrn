@@ -957,7 +957,7 @@ Description:
 
     Then whenever tau1(x) is called in the NMODL file, or tau1_k3st(x) is called from hoc, the
     interpolated value of the array is returned.
-    A useful feature of FUNCTION_TABLE s is that prior to developing the Vector database, they can
+    A useful feature of FUNCTION_TABLEs is that prior to developing the Vector database, they can
     be attached to a scalar value as in
 
     .. code-block::
@@ -969,8 +969,6 @@ Description:
     arguments and doubly dimensioned hoc arrays attached to them. The latter is useful, for example,
     with voltage- and calcium-sensitive rates. In this case the table is linearly interpolated in
     both dimensions.
-
-    ``TODO``: Add new example mod file (k3st.mod)
 
 
 SWEEP
