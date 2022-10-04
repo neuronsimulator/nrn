@@ -30,16 +30,24 @@ struct generic_data_handle {
                                                       sizeof(T) <= sizeof(void*);
 
   public:
+    /** @brief Construct a null data handle.
+     */
     generic_data_handle() = default;
+
+    /** @brief Construct a null data handle.
+     */
     generic_data_handle(std::nullptr_t) {}
 
+    /** @brief Construct a generic data handle that holds a small literal value.
+     */
     template <typename T, std::enable_if_t<can_be_stored_literally_v<T>, int> = 0>
     generic_data_handle(T value)
         : m_type{typeid(T)} {
         std::memcpy(&m_container, &value, sizeof(T));
     }
 
-    // Avoid trying to access members of the data_handle<void> specialisation.
+    /** @brief Wrap a data_handle<void> in a generic data handle.
+     */
     template <typename T, std::enable_if_t<std::is_same_v<T, void>, int> = 0>
     generic_data_handle(data_handle<T> const& handle)
         : m_container{handle.m_raw_ptr}
@@ -51,7 +59,8 @@ struct generic_data_handle {
         assert(!m_offset.m_ptr);
     }
 
-    // Avoid trying to access members of the data_handle<void> specialisation.
+    /** @brief Wrap a data_handle<T != void> in a generic data handle.
+     */
     template <typename T, std::enable_if_t<!std::is_same_v<T, void>, int> = 0>
     generic_data_handle(data_handle<T> const& handle)
         : m_offset{handle.m_raw_ptr ? nullptr : handle.m_offset.m_ptr}
@@ -61,16 +70,30 @@ struct generic_data_handle {
         static_assert(!std::is_same_v<T, void>);
     }
 
+    /** @brief Create data_handle<T> from a generic data handle.
+     *
+     *  The conversion will succeed, yielding a null data_handle<T>, if the
+     *  generic data handle is null. If the generic data handle is not null then
+     *  the conversion will succeed if the generic data handle actually holds a
+     *  data_handle<T> or a literal T*.
+     */
     template <typename T>
     explicit operator data_handle<T>() const {
-        bool const is_typeless_null = holds<typeless_null>();
-        if (!is_typeless_null && std::type_index{typeid(T*)} != m_type) {
-            throw_error(" cannot be converted to data_handle<" + cxx_demangle(typeid(T*).name()) +
+        // Either the type has to match or the generic_data_handle needs to have
+        // never been given a type
+        if (holds<typeless_null>()) {
+            // A (typeless / default-constructed) null generic_data_handle can
+            // be converted to any (null) data_handle<T>.
+            return {};
+        }
+        if (std::type_index{typeid(T*)} != m_type) {
+            throw_error(" cannot be converted to data_handle<" + cxx_demangle(typeid(T).name()) +
                         ">");
         }
         if (m_offset) {
-            assert(!is_typeless_null);
             if constexpr (std::is_same_v<T, void>) {
+                // This branch is needed to avoid forming references-to-void if
+                // T=void.
                 throw_error(" should not be in modern mode because it is referring to void");
             } else {
                 // A real and still-valid data handle
@@ -78,22 +101,17 @@ struct generic_data_handle {
                 return {m_offset, *static_cast<std::vector<T>*>(m_container)};
             }
         } else if (m_offset.m_ptr) {
-            assert(!is_typeless_null);
             // This used to be a valid data handle, but it has since been
-            // invalidated. Invalid data handles never become valid again.
+            // invalidated. Invalid data handles never become valid again, so we
+            // can safely produce a "fully null" data_handle<T>.
             return {};
         } else {
             // This is a data handle in backwards-compatibility mode, wrapping a
-            // raw pointer, or a null data handle. Passing do_not_search
-            // prevents the data_handle<T> constructor from trying to find the
-            // raw pointer in the NEURON data structures.
+            // raw pointer of type T*. Passing do_not_search prevents the
+            // data_handle<T> constructor from trying to find the raw pointer in
+            // the NEURON data structures.
             return {do_not_search, static_cast<T*>(m_container)};
         }
-    }
-
-    explicit operator bool() const {
-        // Branches follow the data_handle<T> conversion just above
-        return bool{m_offset} ? true : (m_offset.m_ptr ? false : static_cast<bool>(m_container));
     }
 
     /** @brief Explicit conversion to any T.
@@ -120,26 +138,6 @@ struct generic_data_handle {
             T ret{};
             std::memcpy(&ret, &m_container, sizeof(T));
             return ret;
-        }
-    }
-
-    /** @brief Reset the generic_data_handle to typeless null state.
-     */
-    generic_data_handle& operator=(std::nullptr_t) {
-        return (*this = generic_data_handle{});
-    }
-
-    template <typename T>
-    generic_data_handle& operator=(data_handle<T> const& rhs) {
-        return (*this = static_cast<generic_data_handle>(rhs));
-    }
-
-    template <typename T>
-    generic_data_handle& operator=(T* ptr) {
-        if (ptr) {
-            return (*this = data_handle<T>{ptr});
-        } else {
-            return (*this = nullptr);
         }
     }
 
