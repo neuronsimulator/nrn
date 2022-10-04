@@ -1,8 +1,8 @@
 /* included by treeset.cpp */
 #include <nrnmpi.h>
 
-#include "nrnoc_ml.h"
-
+#include "hoclist.h"
+#include "section.h"
 /*
 Now that threads have taken over the actual_v, v_node, etc, it might
 be a good time to regularize the method of freeing, allocating, and
@@ -38,11 +38,13 @@ the handling of v_structure_change as long as possible.
 
 #include "nmodlmutex.h"
 
+#include <cstdint>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 #define CACHELINE_ALLOC(name, type, size) \
     name = (type*) nrn_cacheline_alloc((void**) &name, size * sizeof(type))
@@ -56,9 +58,16 @@ void (*nrn_mk_transfer_thread_data_)();
 static int busywait_;
 static int busywait_main_;
 extern void nrn_thread_error(const char*);
-extern void nrn_threads_free();
 extern void nrn_old_thread_save();
 extern double nrn_timeus();
+extern void (*nrn_multisplit_setup_)();
+extern int v_structure_change;
+extern int diam_changed;
+extern Section** secorder;
+extern int section_count;
+extern "C" {
+extern void spDestroy(char*);
+}
 
 void nrn_mk_table_check();
 static int table_check_cnt_;
@@ -232,6 +241,9 @@ struct worker_threads_t {
             }
         }
     }
+    std::size_t num_workers() const {
+        return m_worker_threads.size();
+    }
 
   private:
     // Cannot easily use std::vector because std::condition_variable is not moveable.
@@ -254,6 +266,7 @@ void nrn_threads_create(int n, bool parallel) {
     int i, j;
     NrnThread* nt;
     if (nrn_nthread != n) {
+        worker_threads.reset();
         nrn_threads_free();
         for (i = 0; i < nrn_nthread; ++i) {
             nt = nrn_threads + i;
@@ -400,7 +413,6 @@ void nrn_fast_imem_alloc() {
 }
 
 void nrn_threads_free() {
-    worker_threads.reset();
     int it, i;
     for (it = 0; it < nrn_nthread; ++it) {
         NrnThread* nt = nrn_threads + it;
@@ -660,7 +672,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
         }
 }
 
-static void nrn_thread_memblist_setup() {
+void nrn_thread_memblist_setup() {
     int it, *mlcnt;
     void** vmap;
     mlcnt = (int*) emalloc(n_memb_func * sizeof(int));
@@ -682,7 +694,7 @@ static void nrn_thread_memblist_setup() {
 /* this differs from original secorder where all roots are at the beginning */
 /* in passing, also set start and end indices. */
 
-static void reorder_secorder() {
+void reorder_secorder() {
     NrnThread* _nt;
     Section *sec, *ch;
     Node* nd;
@@ -1068,4 +1080,8 @@ int nrn_how_many_processors() {
 #else
     return 1;
 #endif
+}
+
+std::size_t nof_worker_threads() {
+    return worker_threads.get() ? worker_threads->num_workers() : 0;
 }
