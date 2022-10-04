@@ -2643,37 +2643,38 @@ void KSChan::jacob(int n, int* nodeindices, double** pp, Datum** ppd, NrnThread*
 #endif /* CACHEVEC */
 
 double KSIv::cur(double g, double* p, Datum* pd, double v) {
-    double i, ena;
-    ena = *get<double*>(pd[0]);
+    using std::get;
+    auto ena = *get<double*>(pd[0]);
     p[1] = g;
-    i = g * (v - ena);
+    double i = g * (v - ena);
     p[2] = i;
     *get<double*>(pd[1]) += i;  // iion
     return i;
 }
 
 double KSIv::jacob(double* p, Datum* pd, double) {
+    using std::get;
     *get<double*>(pd[2]) += p[1];  // diion/dv
     return p[1];
 }
 
 double KSIvghk::cur(double g, double* p, Datum* pd, double v) {
-    double i, ci, co;
-    ci = *get<double*>(pd[3]);
-    co = *get<double*>(pd[4]);
+    using std::get;
+    double ci = *get<double*>(pd[3]);
+    double co = *get<double*>(pd[4]);
     p[1] = g;
-    i = g * nrn_ghk(v, ci, co, z);
+    double i = g * nrn_ghk(v, ci, co, z);
     p[2] = i;
     *get<double*>(pd[1]) += i;
     return i;
 }
 
 double KSIvghk::jacob(double* p, Datum* pd, double v) {
-    double i1, ci, co, didv;
-    ci = *get<double*>(pd[3]);
-    co = *get<double*>(pd[4]);
-    i1 = p[1] * nrn_ghk(v + .001, ci, co, z);  // g is p[1]
-    didv = (i1 - p[2]) * 1000.;
+    using std::get;
+    auto ci = *get<double*>(pd[3]);
+    auto co = *get<double*>(pd[4]);
+    double i1 = p[1] * nrn_ghk(v + .001, ci, co, z);  // g is p[1]
+    double didv = (i1 - p[2]) * 1000.;
     *get<double*>(pd[2]) += didv;
     return didv;
 }
@@ -2691,12 +2692,12 @@ double KSIvNonSpec::jacob(double* p, Datum* pd, double) {
 }
 
 double KSPPIv::cur(double g, double* p, Datum* pd, double v) {
+    using std::get;
     double afac = 1.e2 / (*get<double*>(pd[0]));
     pd += ppoff_;
-    double i, ena;
-    ena = *get<double*>(pd[0]);
+    double ena = *get<double*>(pd[0]);
     p[1] = g;
-    i = g * (v - ena);
+    double i = g * (v - ena);
     p[2] = i;
     i *= afac;
     *get<double*>(pd[1]) += i;  // iion
@@ -2704,6 +2705,7 @@ double KSPPIv::cur(double g, double* p, Datum* pd, double v) {
 }
 
 double KSPPIv::jacob(double* p, Datum* pd, double) {
+    using std::get;
     double afac = 1.e2 / (*get<double*>(pd[0]));
     pd += ppoff_;
     double g = p[1] * afac;
@@ -2712,13 +2714,13 @@ double KSPPIv::jacob(double* p, Datum* pd, double) {
 }
 
 double KSPPIvghk::cur(double g, double* p, Datum* pd, double v) {
+    using std::get;
     double afac = 1.e2 / (*get<double*>(pd[0]));
     pd += ppoff_;
-    double i, ci, co;
-    ci = *get<double*>(pd[3]);
-    co = *get<double*>(pd[4]);
+    auto ci = *get<double*>(pd[3]);
+    auto co = *get<double*>(pd[4]);
     p[1] = g;
-    i = g * nrn_ghk(v, ci, co, z) * 1e6;
+    double i = g * nrn_ghk(v, ci, co, z) * 1e6;
     p[2] = i;
     i *= afac;
     *get<double*>(pd[1]) += i;
@@ -2726,19 +2728,20 @@ double KSPPIvghk::cur(double g, double* p, Datum* pd, double v) {
 }
 
 double KSPPIvghk::jacob(double* p, Datum* pd, double v) {
+    using std::get;
     double afac = 1.e2 / (*get<double*>(pd[0]));
     pd += ppoff_;
-    double i1, ci, co, didv;
-    ci = *get<double*>(pd[3]);
-    co = *get<double*>(pd[4]);
-    i1 = p[1] * nrn_ghk(v + .001, ci, co, z) * 1e6;  // g is p[1]
-    didv = (i1 - p[2]) * 1000.;
+    auto ci = *get<double*>(pd[3]);
+    auto co = *get<double*>(pd[4]);
+    double i1 = p[1] * nrn_ghk(v + .001, ci, co, z) * 1e6;  // g is p[1]
+    double didv = (i1 - p[2]) * 1000.;
     didv *= afac;
     *get<double*>(pd[2]) += didv;
     return didv;
 }
 
 double KSPPIvNonSpec::cur(double g, double* p, Datum* pd, double v) {
+    using std::get;
     double afac = 1.e2 / (*get<double*>(pd[0]));
     double i;
     p[2] = g;  // gmax, e, g
@@ -2748,6 +2751,7 @@ double KSPPIvNonSpec::cur(double g, double* p, Datum* pd, double v) {
 }
 
 double KSPPIvNonSpec::jacob(double* p, Datum* pd, double) {
+    using std::get;
     double afac = 1.e2 / (*get<double*>(pd[0]));
     return p[2] * afac;
 }
@@ -2886,6 +2890,7 @@ void KSTransition::inftau(Vect* v, Vect* a, Vect* b) {
 }
 
 double KSTransition::alpha(Datum* pd) {
+    using std::get;
     double x = *get<double*>(pd[pd_index_]);
     switch (stoichiom_) {
     case 1:

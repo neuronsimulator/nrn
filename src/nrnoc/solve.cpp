@@ -719,7 +719,7 @@ static Node* node_clone(Node* nd1) {
             }
             using std::get;
             assert(p2 && p1->_type == p2->_type);
-            get<int>(p2->dparam[0]) = get<int>(p1->dparam[0]);
+            p2->dparam[0] = get<int>(p1->dparam[0]);
         }
     }
 
