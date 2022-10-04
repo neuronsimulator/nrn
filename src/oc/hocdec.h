@@ -145,27 +145,23 @@ using hoc_List = hoc_Item;
 /**
  * @brief Type of pdata in mechanisms.
  */
-struct Point_process;
-
 struct Datum {
   private:
-    // Dropped: char** pstr, hoc_List* lst, Object** pobj
     // With enough fiddling we could have a 3*sizeof(void*) "generic data handle
     // that can also store small trivial-type values" and drop the std::variant layer
-    using storage_type = std::variant<std::monostate,
-                                      double,
-                                      hoc_Item*,
-                                      int,
-                                      neuron::container::generic_data_handle,
-                                      Object*,
-                                      Point_process*,
-                                      Symbol*>;
+    using storage_type =
+        std::variant<std::monostate, double, int, neuron::container::generic_data_handle>;
+    // Pointers live in generic_data_handle, everything else lives one level higher
+    template <typename T>
+    using type_in_storage =
+        std::conditional_t<std::is_pointer_v<T>, neuron::container::generic_data_handle, T>;
 
   public:
     Datum(std::nullptr_t)
         : m_storage{} {}
-    Datum(void* ptr)
-        : Datum{neuron::container::data_handle<void>{ptr}} {}
+    template <typename T>
+    Datum(T* ptr)
+        : Datum{neuron::container::data_handle<T>{neuron::container::do_not_search, ptr}} {}
     template <typename... Args,
               std::enable_if_t<std::is_constructible_v<storage_type, Args&&...>, int> = 0>
     Datum(Args&&... args)
@@ -175,14 +171,29 @@ struct Datum {
         : m_storage{neuron::container::generic_data_handle{handle}} {}
     template <typename T>
     bool holds() {
-        return std::holds_alternative<T>(m_storage);
+        if (!std::holds_alternative<type_in_storage<T>>(m_storage)) {
+            return false;
+        }
+        if constexpr (std::is_pointer_v<T>) {
+            auto& gh = std::get<type_in_storage<T>>(m_storage);
+            return gh.template holds<std::remove_pointer_t<T>>();
+        } else {
+            return true;
+        }
     }
     template <typename T>
-    T& get() {
+    decltype(auto) get() {
+        // std::monostate indicates a null / default constructed Datum, we allow
+        // this to lazily become T so get<int>(default_constructed_datum) works
         if (holds<std::monostate>()) {
-            m_storage = T{};
+            m_storage = type_in_storage<T>{};
         }
-        return std::get<T>(m_storage);
+        auto& variant_member = std::get<type_in_storage<T>>(m_storage);
+        if constexpr (std::is_pointer_v<T>) {
+            return static_cast<T>(variant_member);
+        } else {
+            return variant_member;
+        }
     }
     /** @brief Create a data_handle<T> from the contained generic_data_handle.
      */
@@ -203,12 +214,13 @@ struct Datum {
  *  same underlying ~vector<generic_data_handle> structure.
  */
 template <typename T>
-T& get(Datum& d) {
-    if constexpr (std::is_same_v<T, void*>) {
-        return d.get<neuron::container::generic_data_handle>().raw_ptr<void>();
-    } else {
-        return d.get<T>();
-    }
+decltype(auto) get(Datum& d) {
+    return d.get<T>();
+}
+
+template <typename T>
+T& get_ref(Datum& d) {
+    return d.get<neuron::container::generic_data_handle>().raw_ptr<std::remove_pointer_t<T>>();
 }
 
 inline double* nrn_get_pval(Datum& datum) {
