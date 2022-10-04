@@ -172,8 +172,8 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
     q = insertstr(q3, "{ static int _recurse = 0;\n int _counte = -1;\n");
     sprintf(buf,
             "{\n"
-            "  auto* _savstate%d = get<double*>(_thread[_dith%d]);\n"
-            "  auto* _dlist%d = get<double*>(_thread[_dith%d]) + %d;\n"
+            "  auto* _savstate%d = static_cast<double*>(_thread[_dith%d]);\n"
+            "  auto* _dlist%d = static_cast<double*>(_thread[_dith%d]) + %d;\n"
             "  int _counte = -1;\n",
             numlist - 1,
             numlist - 1,

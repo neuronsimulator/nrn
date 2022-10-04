@@ -370,6 +370,7 @@ void KSSingle::nextNtrans(KSSingleNodeData* snd) {
 }
 
 void KSSingle::alloc(Prop* p, int sindex) {  // and discard old if not NULL
+    using neuron::container::get_ref;
     using std::get;
     auto* snd = get<KSSingleNodeData*>(p->dparam[2]);
     if (snd) {
