@@ -408,26 +408,26 @@ static Pfrv initfcns[MAXINITFCNS];
  */
 void hoc_prstack() {
     std::size_t i{};
-    Printf("interpreter stack: %ld\n", stack.size());
-    for (auto stkp = stack.rend(); stkp != stack.rbegin(); ++stkp, ++i) {
+    std::ostringstream oss;
+    oss << "interpreter stack: " << stack.size() << '\n';
+    for (auto stkp = stack.rbegin(); stkp != stack.rend(); ++stkp, ++i) {
         if (i > 10) {
-            Printf("...\n");
+            oss << " ...\n";
             break;
         }
         std::visit(
-            [i](auto& value) {
-                std::ostringstream oss;
-                oss << i << ' ';
+            [i, &oss](auto& value) {
+                oss << ' ' << i << ' ';
                 if constexpr (std::is_same_v<std::decay_t<decltype(value)>, std::nullptr_t>) {
                     oss << "nullptr";
                 } else {
                     oss << value;
                 }
-                oss << ' ' << cxx_demangle(typeid(decltype(value)).name());
-                Printf(oss.str().c_str());
+                oss << ' ' << cxx_demangle(typeid(decltype(value)).name()) << '\n';
             },
             *stkp);
     }
+    Printf(oss.str().c_str());
 }
 
 void hoc_on_init_register(Pfrv pf) {
