@@ -961,7 +961,7 @@ static void nrn_alloc(Prop* _prop) {\n\
         }
         if (need_style) {
             Sprintf(buf,
-                    "\t_ppvar[%d] = &get<int>(prop_ion->dparam[0]); /* "
+                    "\t_ppvar[%d] = &get_ref<int>(prop_ion->dparam[0]); /* "
                     "iontype for %s */\n",
                     ioncount++,
                     sion->name);

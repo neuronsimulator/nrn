@@ -19,15 +19,30 @@ struct typeless_null {};
 
 /** @brief Non-template stable handle to a generic value.
  *
- *  This is a type-erased version of data_handle<T>.
+ *  This is a type-erased version of data_handle<T>, with the additional feature
+ *  that it can store values of POD types no larger than a pointer (typically
+ *  int and float).
  */
 struct generic_data_handle {
+  private:
+    template <typename T>
+    static constexpr bool can_be_stored_literally_v = std::is_trivial_v<T> &&
+                                                      sizeof(T) <= sizeof(void*);
+
+  public:
     generic_data_handle() = default;
+
+    template <typename T, std::enable_if_t<can_be_stored_literally_v<T>, int> = 0>
+    explicit generic_data_handle(T value)
+        : m_type{typeid(T)} {
+        std::memcpy(&m_container, &value, sizeof(T));
+    }
+
     // Avoid trying to access members of the data_handle<void> specialisation.
     template <typename T, std::enable_if_t<std::is_same_v<T, void>, int> = 0>
     explicit generic_data_handle(data_handle<T> const& handle)
         : m_container{handle.m_raw_ptr}
-        , m_type{typeid(T)} {
+        , m_type{typeid(T*)} {
         static_assert(std::is_same_v<T, void>);
         // data_handle<void> cannot refer to a modern data structure, it can
         // only wrap a void*
@@ -41,23 +56,21 @@ struct generic_data_handle {
         : m_offset{handle.m_raw_ptr ? nullptr : handle.m_offset.m_ptr}
         , m_container{handle.m_raw_ptr ? static_cast<void*>(handle.m_raw_ptr)
                                        : static_cast<void*>(handle.m_container)}
-        , m_type{typeid(T)} {
+        , m_type{typeid(T*)} {
         static_assert(!std::is_same_v<T, void>);
     }
 
     template <typename T>
     explicit operator data_handle<T>() const {
         bool const is_typeless_null = holds<typeless_null>();
-        if (!is_typeless_null && std::type_index{typeid(T)} != m_type) {
-            throw std::runtime_error("Cannot convert generic_data_handle(" +
-                                     cxx_demangle(m_type.name()) + ") to data_handle<" +
-                                     cxx_demangle(typeid(T).name()) + ">");
+        if (!is_typeless_null && std::type_index{typeid(T*)} != m_type) {
+            throw_error(" cannot be converted to data_handle<" + cxx_demangle(typeid(T*).name()) +
+                        ">");
         }
         if (m_offset) {
             assert(!is_typeless_null);
             if constexpr (std::is_same_v<T, void>) {
-                throw std::runtime_error(
-                    "generic_data_handle referring to void should never be in 'modern' mode.");
+                throw_error(" should not be in modern mode because it is referring to void");
             } else {
                 // A real and still-valid data handle
                 assert(m_container);
@@ -82,11 +95,31 @@ struct generic_data_handle {
         return bool{m_offset} ? true : (m_offset.m_ptr ? false : static_cast<bool>(m_container));
     }
 
-    /** @brief Explicit conversion to any T*.
+    /** @brief Explicit conversion to any T.
      */
     template <typename T>
-    explicit operator T*() const {
-        return static_cast<T*>(static_cast<data_handle<T>>(*this));
+    explicit operator T() const {
+        if constexpr (std::is_pointer_v<T>) {
+            // If T=U* (i.e. T is a pointer type) then we might be in modern
+            // mode, go via data_handle<U>
+            return static_cast<T>(static_cast<data_handle<std::remove_pointer_t<T>>>(*this));
+        } else {
+            // Getting a literal value saved in m_container
+            static_assert(can_be_stored_literally_v<T>,
+                          "generic_data_handle can only hold non-pointer types that are trivial "
+                          "and smaller than a pointer");
+            if (m_offset || m_offset.m_ptr) {
+                throw_error(" conversion to " + cxx_demangle(typeid(T).name()) +
+                            " not possible for a handle [that was] in modern mode");
+            }
+            if (std::type_index{typeid(T)} != m_type) {
+                throw_error(" does not hold a literal value of type " +
+                            cxx_demangle(typeid(T).name()));
+            }
+            T ret{};
+            std::memcpy(&ret, &m_container, sizeof(T));
+            return ret;
+        }
     }
 
     /** @brief Reset the generic_data_handle to typeless null state.
@@ -117,6 +150,8 @@ struct generic_data_handle {
         } else {
             os << "raw=";
             if (dh.m_container) {
+                // This shouldn't crash, but it might contain some garbage if
+                // we're wrapping a literal value
                 os << dh.m_container;
             } else {
                 os << "nullptr";
@@ -135,11 +170,10 @@ struct generic_data_handle {
     }
 
     template <typename T>
-    [[nodiscard]] T*& raw_ptr() {
+    [[nodiscard]] T& literal_value() {
         if (m_offset || m_offset.m_ptr) {
-            throw std::runtime_error(
-                "generic_data_handle::raw_ptr() should never be called on a handle that was/is in "
-                "'modern' mode");
+            throw_error("::literal_value<" + cxx_demangle(typeid(T).name()) +
+                        "> cannot be called on a handle [that was] in modern mode");
         } else {
             // This is a data handle in backwards-compatibility mode, wrapping a
             // raw pointer, or a null data handle.
@@ -149,15 +183,19 @@ struct generic_data_handle {
             if (is_typeless_null) {
                 m_type = typeid(T);
             } else if (std::type_index{typeid(T)} != m_type) {
-                throw std::runtime_error("generic_data_handle(" + cxx_demangle(m_type.name()) +
-                                         ")::raw_ptr<" + cxx_demangle(typeid(T).name()) +
-                                         ">() type mismatch");
+                throw_error(" does not hold a literal value of type " +
+                            cxx_demangle(typeid(T).name()));
             }
-            return *reinterpret_cast<T**>(&m_container);  // Eww
+            return *reinterpret_cast<T*>(&m_container);  // Eww
         }
     }
 
   private:
+    [[noreturn]] void throw_error(std::string message) {
+        std::ostringstream oss{};
+        oss << *this << std::move(message);
+        throw std::runtime_error(std::move(oss).str());
+    }
     // Offset into the underlying storage container. If this generic_data_handle
     // refers to a data_handle<T*> in backwards-compatibility mode, where it
     // just wraps a plain T*, then m_offset is null.

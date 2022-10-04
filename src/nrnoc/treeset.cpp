@@ -747,7 +747,7 @@ void single_prop_free(Prop* p) {
     if (p->dparam) {
         if (p->_type == CABLESECTION) {
             using std::get;
-            notify_freed_val_array(&get<double>(p->dparam[2]), 6);
+            notify_freed_val_array(&get_ref<double>(p->dparam[2]), 6);
         }
         nrn_prop_datum_free(p->_type, p->dparam);
     }
@@ -779,8 +779,7 @@ void nrn_area_ri(Section* sec) {
     }
 #if DIAMLIST
     if (sec->npt3d) {
-        using std::get;
-        get<double>(sec->prop->dparam[2]) = sec->pt3d[sec->npt3d - 1].arc;
+        sec->prop->dparam[2] = sec->pt3d[sec->npt3d - 1].arc;
     }
 #endif
     ra = nrn_ra(sec);
@@ -1106,8 +1105,7 @@ static void nrn_pt3dmodified(Section* sec, int i0) {
         t3 = sec->pt3d[i].z - p->z;
         sec->pt3d[i].arc = p->arc + sqrt(t1 * t1 + t2 * t2 + t3 * t3);
     }
-    using std::get;
-    get<double>(sec->prop->dparam[2]) = sec->pt3d[n - 1].arc;
+    sec->prop->dparam[2] = sec->pt3d[n - 1].arc;
 }
 
 void nrn_pt3dclear(Section* sec, int req) {
@@ -1492,8 +1490,7 @@ void nrn_define_shape(void) {
         stor_pt3d(sec, x1, y1, z, nrn_diameter(sec->pnode[sec->nnode - 2]));
         /* don't let above change length due to round-off errors*/
         sec->pt3d[sec->npt3d - 1].arc = len;
-        using std::get;
-        get<double>(sec->prop->dparam[2]) = len;
+        sec->prop->dparam[2] = len;
     }
     changed_ = nrn_shape_changed_;
 }
