@@ -258,10 +258,9 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
         // In case _p_somevar is being used as an opaque void* then the active
         // member of the datum will be generic_data_handle, but its type will
         // be void and not double
-        auto& gh = get<neuron::container::generic_data_handle>(
-            pnt->prop->dparam[sym->u.rng.index + index]);
-        if (gh.holds<double>()) {
-            pd = static_cast<double*>(gh);
+        auto& datum = pnt->prop->dparam[sym->u.rng.index + index];
+        if (datum.holds<double*>()) {
+            pd = get<double*>(datum);
         } else {
             pd = nullptr;
         }
