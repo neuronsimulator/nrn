@@ -347,7 +347,6 @@ void ghk(void) {
     hoc_retpushx(val);
 }
 
-#if VECTORIZE
 #define erev   pd[i][0] /* From Eion */
 #define conci  pd[i][1]
 #define conco  pd[i][2]
@@ -655,4 +654,3 @@ void second_order_cur(NrnThread* nt) {
     }
 }
 
-#endif

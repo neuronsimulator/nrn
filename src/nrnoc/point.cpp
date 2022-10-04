@@ -338,9 +338,7 @@ static void free_one_point(Point_process* pnt) /* must unlink from node property
                 }
             }
     }
-#if VECTORIZE
     { v_structure_change = 1; }
-#endif
     if (p->param) {
         if (memb_func[p->_type].destructor) {
             memb_func[p->_type].destructor(p);

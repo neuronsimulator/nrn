@@ -82,12 +82,10 @@ extern int n_memb_func;
 extern int* nrn_prop_param_size_;
 extern int* nrn_prop_dparam_size_;
 
-#if VECTORIZE
 extern Memb_list* memb_list;
 /* for finitialize, order is same up through extracellular, then ions,
 then mechanisms that write concentrations, then all others. */
 extern short* memb_order_;
-#endif
 #define NRNPOINTER                                                            \
     4 /* added on to list of mechanism variables.These are                    \
 pointers which connect variables  from other mechanisms via the _ppval array. \

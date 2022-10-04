@@ -68,7 +68,6 @@ directly by hoc.
 #include <unistd.h>
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)
 
-#if VECTORIZE
 int vectorize = 1;
 /*
 the idea is to put all variables into a vector of vectors so there
@@ -83,7 +82,6 @@ pass around _p, _ppvar, _thread. When vectorize is 0 then we are definitely
 not thread safe and _p and _ppvar are static.
 */
 
-#endif
 
 #define IONEREV 0 /* Parameter */
 #define IONIN   1
@@ -318,11 +316,9 @@ void parout() {
 	/*SUPPRESS 765*/\n\
 	");
     Lappendstr(defs_list, "extern double *hoc_getarg(int);\n");
-#if VECTORIZE
     if (vectorize) {
         Sprintf(buf, "/* Thread safe. No static _p or _ppvar. */\n");
     } else
-#endif
     {
         Sprintf(buf, "static double *_p; static Datum *_ppvar;\n");
     }
@@ -432,11 +428,9 @@ extern Memb_func* memb_func;\n\
     /* function to set up _p and _ppvar */
     Lappendstr(defs_list, "extern void _nrn_setdata_reg(int, void(*)(Prop*));\n");
     Lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
-#if VECTORIZE
     if (vectorize) {
         Lappendstr(defs_list, "_extcall_prop = _prop;\n");
     } else
-#endif
     {
         Lappendstr(defs_list, "_p = _prop->param; _ppvar = _prop->dparam;\n");
     }
@@ -680,11 +674,6 @@ extern Memb_func* memb_func;\n\
     SYMLISTITER {
         s = SYM(q);
         if (s->nrntype & (NRNSTATIC)) {
-#if VECTORIZE && 0
-            if (vectorize) {
-                diag("No statics allowed for thread safe models:", s->name);
-            }
-#endif
             decode_ustr(s, &d1, &d2, buf);
             if (s->subtype & ARRAY) {
                 Sprintf(buf, "static double %s[%d];\n", s->name, s->araydim);
@@ -1060,7 +1049,6 @@ static void _constructor(Prop* _prop) {\n\
     }
 #endif
 
-#if VECTORIZE
     if (net_send_seen_) {
         if (!net_receive_) {
             diag("can't use net_send if there is no NET_RECEIVE block", (char*) 0);
@@ -1117,10 +1105,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
     Lappendstr(defs_list, buf);
     q = lappendstr(defs_list, "");
     Lappendstr(defs_list, "_initlists();\n");
-#else
-    Sprintf(buf, "extern \"C\" void _%s_reg() {\n	_initlists();\n", modbase);
-    Lappendstr(defs_list, buf);
-#endif
 
     if (suffix[0]) { /* not "nothing" */
 
@@ -1137,7 +1121,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             Lappendstr(defs_list, buf);
             q = q->next->next->next;
         }
-#if VECTORIZE
         if (point_process) {
             sprintf(buf,
                     "\
@@ -1171,7 +1154,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
                 }
             }
         }
-#endif
         Lappendstr(defs_list, "_mechtype = nrn_get_mechtype(_mechanism[1]);\n");
         lappendstr(defs_list, "    _nrn_setdata_reg(_mechtype, _setdata);\n");
         if (vectorize && thread_mem_init_list->next != thread_mem_init_list) {
@@ -1750,9 +1732,7 @@ void nrn_list(Item* q1, Item* q2) {
         plist = (List**) 0;
         break;
     case EXTERNAL:
-#if VECTORIZE
         threadsafe("Use of EXTERNAL is not thread safe.");
-#endif
         for (q = q1->next; q != q2->next; q = q->next) {
             SYM(q)->nrntype |= NRNEXTRN | NRNNOTP;
         }
@@ -1938,12 +1918,10 @@ void nrndeclare() {
         s->nrntype |= NRNNOTP | NRNPRANGEIN;
         areadec = 1;
     }
-#if VECTORIZE
     if (vectorize) {
         s = ifnew_install("v");
         s->nrntype = NRNNOTP; /* this is a lie, it goes in at end specially */
     } else
-#endif
     {
         s = ifnew_install("v");
         s->nrntype |= NRNSTATIC | NRNNOTP;
@@ -2033,12 +2011,10 @@ void declare_p() {
             var_count(SYM(q));
         }
     }
-#if VECTORIZE
     if (vectorize) {
         s = ifnew_install("v");
         var_count(s);
     }
-#endif
     if (brkpnt_exists) {
         s = ifnew_install("_g");
         var_count(s);

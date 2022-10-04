@@ -63,7 +63,7 @@ List* filetxtlist;
 extern int yyparse();
 extern int mkdir_p(const char*);
 
-#if NMODL && VECTORIZE
+#if NMODL
 extern int vectorize;
 extern int numlist;
 extern char* nmodl_version_;
@@ -176,13 +176,6 @@ int main(int argc, char** argv) {
      *
      */
     consistency();
-#if 0 && !_CRAY && NMODL && VECTORIZE
-/* allowing Kinetic models to be vectorized on cray. So nonzero numlist is
-no longer adequate for saying we can not */
-	if (numlist) {
-		vectorize = 0;
-	}
-#endif
     chk_thread_safe();
     chk_global_state();
     check_useion_variables();
@@ -257,7 +250,7 @@ no longer adequate for saying we can not */
 
     IGNORE(fclose(fcout));
 
-#if NMODL && VECTORIZE
+#if NMODL
     if (vectorize) {
         Fprintf(stderr, "Thread Safe\n");
     }

@@ -268,11 +268,9 @@ void batch_run(void) /* avoid interpreter overhead */
     if (tree_changed) {
         setup_topology();
     }
-#if VECTORIZE
     if (v_structure_change) {
         v_setup_vectors();
     }
-#endif
     batch_open(filename, tstop, tstep, comment);
     batch_out();
     if (cvode_active_) {
@@ -784,7 +782,6 @@ void fmatrix(void) {
 }
 
 void nonvint(NrnThread* _nt) {
-#if VECTORIZE
     int i = 0;
     double w;
     int measure = 0;
@@ -824,10 +821,8 @@ void nonvint(NrnThread* _nt) {
     long_difus_solve(0, _nt); /* if any longitudinal diffusion */
     nrn_nonvint_block_fixed_step_solve(_nt->id);
     nrn::Instrumentor::phase_end("state-update");
-#endif
 }
 
-#if VECTORIZE
 int nrn_errno_check(int i) {
     int ierr;
     ierr = hoc_errno_check();
@@ -841,23 +836,6 @@ int nrn_errno_check(int i) {
     }
     return ierr;
 }
-#else
-int nrn_errno_check(Prop* p, int inode, Section* sec) {
-    int ierr;
-    char* secname();
-    ierr = hoc_errno_check();
-    if (ierr) {
-        fprintf(stderr,
-                "%d errno set at t=%g during call to mechanism %s at node %d in section %s\n",
-                nrnmpi_myid,
-                t,
-                memb_func[p->_type].sym->name,
-                inode,
-                secname(sec));
-    }
-    return ierr;
-}
-#endif
 
 void frecord_init(void) { /* useful when changing states after an finitialize() */
     int i;
@@ -909,7 +887,6 @@ void nrn_finitialize(int setv, double v) {
     clear_event_queue();
     nrn_spike_exchange_init();
     nrn_random_play();
-#if VECTORIZE
     nrn_play_init(); /* Vector.play */
     for (i = 0; i < nrn_nthread; ++i) {
         nrn_deliver_events(nrn_threads + i); /* The play events at t=0 */
@@ -1001,7 +978,6 @@ void nrn_finitialize(int setv, double v) {
         }
     }
 }
-#endif
 if (use_sparse13) {
     nrndae_init();
 }

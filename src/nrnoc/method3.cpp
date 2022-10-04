@@ -98,7 +98,7 @@ method3.cpp,v
 #include "section.h"
 
 
-#if METHOD3 && VECTORIZE
+#if METHOD3
 #include "membfunc.h"
 #include "neuron.h"
 #include "parse.hpp"

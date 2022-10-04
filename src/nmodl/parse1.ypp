@@ -626,9 +626,7 @@ fprintf(stderr, "Notice: %s is not thread safe\n", SYM($1)->name);
 				vectorize = 0;
 			}
 		 }
-#if VECTORIZE
 		 vectorize_use_func($1,$2,$4,$5,blocktype);
-#endif
 		}
 	;
 exprlist: /*nothing*/{$$ = ITEM0;}
@@ -673,17 +671,13 @@ ifstmt:	IF '(' expr ')' stmtlist '}' optelseif optelse
 optelseif: /*nothing*/
 	| optelseif ELSE IF '(' expr ')' stmtlist '}'
 		{
-#if VECTORIZE
 			vectorize_if_else_stmt(blocktype);
-#endif
 		}
 	;
 optelse: /*nothing*/
 	| ELSE stmtlist '}'
 		{
-#if VECTORIZE
 			vectorize_if_else_stmt(blocktype);
-#endif
 		}
 	;
 derivblk: DERIVATIVE NAME stmtlist '}'

@@ -11,9 +11,6 @@ in one section is set but no others. But only the first time through treeset.
 */
 #define RA_WARNING 0
 
-#define VECTORIZE 1 /* hope this speeds up simulations on a Cray */
-/* this is no longer optional */
-
 #define I_MEMBRANE 1 /* compute i_cap and i_membrane on fadvance */
 
 #define EXTRACELLULAR 2 /* default number of extracellular layers */

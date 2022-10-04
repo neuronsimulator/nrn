@@ -531,7 +531,6 @@ void nrn_register_mech_common(const char** m,
     memb_func[type].state = stat;
     memb_func[type].initialize = initialize;
     memb_func[type].destructor = nullptr;
-#if VECTORIZE
     memb_func[type].vectorized = vectorized ? 1 : 0;
     memb_func[type].thread_size_ = vectorized ? (vectorized - 1) : 0;
     memb_func[type].thread_mem_init_ = nullptr;
@@ -545,7 +544,6 @@ void nrn_register_mech_common(const char** m,
     memb_list[type].nodecount = 0;
     memb_list[type]._thread = (Datum*) 0;
     memb_order_[type] = type;
-#endif
 #if CVODE
     memb_func[type].ode_count = nullptr;
     memb_func[type].ode_map = nullptr;

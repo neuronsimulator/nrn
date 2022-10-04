@@ -23,13 +23,11 @@ List* netrec_cnexp;
 #undef SB
 #define SB 256
 
-#if VECTORIZE
 extern int vectorize;
 extern int assert_threadsafe;
 extern int thread_data_index;
 extern List* thread_mem_init_list;
 extern List* thread_cleanup_list;
-#endif
 
 #if CVODE
 extern char *cvode_deriv(), *cvode_eqnrhs();
@@ -162,7 +160,6 @@ void solv_diffeq(Item* qsol,
                 listnum);
     }
     replacstr(qsol, buf);
-#if VECTORIZE
     if (method->subtype & DERF) { /* derivimplicit */
         Sprintf(buf,
                 "%s %s%s_thread(%d, _slist%d, _dlist%d, _p, %s, _ppvar, _thread, _nt);\n%s",
@@ -192,7 +189,6 @@ void solv_diffeq(Item* qsol,
                     listnum);
             vectorize_substitute(qsol, buf);
         }
-#endif
     }
     dtsav_for_nrn_state = 1;
     sprintf(buf,

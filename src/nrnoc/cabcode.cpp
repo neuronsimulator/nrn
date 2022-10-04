@@ -2007,14 +2007,12 @@ int nrn_get_mechtype(const char* mechname) {
     return s->subtype;
 }
 
-#if VECTORIZE
 int nrn_instance_count(int mechtype) {
     if (v_structure_change) {
         v_setup_vectors();
     }
     return memb_list[mechtype].nodecount;
 }
-#endif
 
 #if EXTRACELLULAR
 /* want to handle vext(0), vext(1) correctly. No associated i_membrane though.*/

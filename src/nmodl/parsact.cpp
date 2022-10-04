@@ -268,9 +268,7 @@ void defarg(Item* q1, Item* q2) /* copy arg list and define as doubles */
     Item *q3, *q;
 
     if (q1->next == q2) {
-#if VECTORIZE
         vectorize_substitute(insertstr(q2, ""), "_threadargsproto_");
-#endif
         return;
     }
     for (q = q1->next; q != q2; q = q->next) {
@@ -278,9 +276,7 @@ void defarg(Item* q1, Item* q2) /* copy arg list and define as doubles */
             insertstr(q, "double");
         }
     }
-#if VECTORIZE
     vectorize_substitute(insertstr(q1->next, ""), "_threadargsprotocomma_");
-#endif
 }
 
 void lag_stmt(Item* q1, int blocktype) /* LAG name1 BY name2 */
@@ -477,18 +473,14 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
         fsym->subtype |= FUNCT;
         Sprintf(buf, "static double _n_%s(double);\n", fname);
         q = linsertstr(procfunc, buf);
-#if VECTORIZE
         Sprintf(buf, "static double _n_%s(_threadargsprotocomma_ double _lv);\n", fname);
         vectorize_substitute(q, buf);
-#endif
     } else {
         fsym->subtype |= PROCED;
         Sprintf(buf, "static void _n_%s(double);\n", fname);
         q = linsertstr(procfunc, buf);
-#if VECTORIZE
         Sprintf(buf, "static void _n_%s(_threadargsprotocomma_ double _lv);\n", fname);
         vectorize_substitute(q, buf);
-#endif
     }
     fsym->usage |= FUNCT;
 
@@ -556,18 +548,14 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
             s = SYM(q);
             Sprintf(buf, "   _t_%s[_i] = _f_%s(_x);\n", s->name, fname);
             Lappendstr(procfunc, buf);
-#if VECTORIZE
             Sprintf(buf, "   _t_%s[_i] = _f_%s(_p, _ppvar, _thread, _nt, _x);\n", s->name, fname);
             vectorize_substitute(procfunc->prev, buf);
-#endif
         }
     } else {
         Sprintf(buf, "   _f_%s(_x);\n", fname);
         Lappendstr(procfunc, buf);
-#if VECTORIZE
         Sprintf(buf, "   _f_%s(_p, _ppvar, _thread, _nt, _x);\n", fname);
         vectorize_substitute(procfunc->prev, buf);
-#endif
         ITERATE(q, table) {
             s = SYM(q);
             if (s->subtype & ARRAY) {
@@ -606,29 +594,23 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "%s(double %s){", fname, arg->name);
     Lappendstr(procfunc, buf);
-#if VECTORIZE
     Sprintf(buf,
             "%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, double %s) {",
             fname,
             arg->name);
     vectorize_substitute(procfunc->prev, buf);
-#endif
     /* check the table */
     Sprintf(buf, "_check_%s();\n", fname);
     q = lappendstr(procfunc, buf);
-#if VECTORIZE
     Sprintf(buf, "\n#if 0\n_check_%s(_p, _ppvar, _thread, _nt);\n#endif\n", fname);
     vectorize_substitute(q, buf);
-#endif
     if (type == FUNCTION1) {
         Lappendstr(procfunc, "return");
     }
     Sprintf(buf, "_n_%s(%s);\n", fname, arg->name);
     Lappendstr(procfunc, buf);
-#if VECTORIZE
     Sprintf(buf, "_n_%s(_p, _ppvar, _thread, _nt, %s);\n", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
-#endif
     if (type != FUNCTION1) {
         Lappendstr(procfunc, "return 0;\n");
     }
@@ -642,13 +624,11 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "_n_%s(double %s){", fname, arg->name);
     Lappendstr(procfunc, buf);
-#if VECTORIZE
     Sprintf(buf,
             "_n_%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, double %s){",
             fname,
             arg->name);
     vectorize_substitute(procfunc->prev, buf);
-#endif
     Lappendstr(procfunc, "int _i, _j;\n");
     Lappendstr(procfunc, "double _xi, _theta;\n");
 
@@ -659,10 +639,8 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "_f_%s(%s);", fname, arg->name);
     Lappendstr(procfunc, buf);
-#if VECTORIZE
     Sprintf(buf, "_f_%s(_p, _ppvar, _thread, _nt, %s);", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
-#endif
     if (type != FUNCTION1) {
         Lappendstr(procfunc, "return;");
     }
@@ -790,9 +768,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
     extern int point_process;
     Item* q;
     int i;
-#if VECTORIZE
     Item* qp = 0;
-#endif
 
     if (point_process) {
         Sprintf(buf, "\nstatic double _hoc_%s(void* _vptr) {\n double _r;\n", n->name);
@@ -820,13 +796,11 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
   _nt = nrn_threads;\n\
 ");
     }
-#if VECTORIZE
     if (n == last_func_using_table) {
         qp = lappendstr(procfunc, "");
         sprintf(buf, "\n#if 1\n _check_%s(_p, _ppvar, _thread, _nt);\n#endif\n", n->name);
         vectorize_substitute(qp, buf);
     }
-#endif
     if (n->subtype & FUNCT) {
         Lappendstr(procfunc, "_r = ");
     } else {
@@ -834,9 +808,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
     }
     Lappendsym(procfunc, n);
     lappendstr(procfunc, "(");
-#if VECTORIZE
     qp = lappendstr(procfunc, "");
-#endif
     for (i = 0; i < n->varnum; ++i) {
         Sprintf(buf, "*getarg(%d)", i + 1);
         Lappendstr(procfunc, buf);
@@ -848,13 +820,11 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
         Lappendstr(procfunc, ");\n return(_r);\n}\n");
     } else
         Lappendstr(procfunc, ");\n hoc_retpushx(_r);\n}\n");
-#if VECTORIZE
     if (i) {
         vectorize_substitute(qp, "_p, _ppvar, _thread, _nt,");
     } else if (!hack) {
         vectorize_substitute(qp, "_p, _ppvar, _thread, _nt");
     }
-#endif
 }
 
 void hocfunc(Symbol* n, Item* qpar1, Item* qpar2) /*interface between modl and hoc for proc and func
@@ -865,7 +835,6 @@ void hocfunc(Symbol* n, Item* qpar1, Item* qpar2) /*interface between modl and h
     hocfunchack(n, qpar1, qpar2, 0);
 }
 
-#if VECTORIZE
 /* ARGSUSED */
 void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int blocktype) {
     Item* q;
@@ -952,7 +921,6 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
     }
 #endif
 }
-#endif
 
 #endif
 
@@ -963,11 +931,9 @@ void function_table(Symbol* s, Item* qpar1, Item* qpar2, Item* qb1, Item* qb2) /
     int i;
     Item *q, *q1, *q2;
     for (i = 0, q = qpar1->next; q != qpar2; q = q->next) {
-#if VECTORIZE
         if (q->itemtype == STRING || SYM(q)->name[0] != '_') {
             continue;
         }
-#endif
         sprintf(buf, "_arg[%d] = %s;\n", i, SYM(q)->name);
         insertstr(qb2, buf);
         ++i;

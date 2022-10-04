@@ -7,5 +7,4 @@
 #define MAC  1
 
 #define NMODL     1
-#define VECTORIZE 1
 #define CVODE     1

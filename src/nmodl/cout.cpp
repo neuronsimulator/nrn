@@ -24,11 +24,9 @@ extern char* RCS_version;
 extern char* RCS_date;
 char* modelline;
 
-#if VECTORIZE
 extern int vectorize;
 static List* vectorize_replacements; /* pairs of item pointer, strings */
 extern char* cray_pragma();
-#endif
 
 #if __TURBOC__ || SYSV || VMS
 #define index strchr
@@ -43,17 +41,13 @@ void c_out() {
     extern int point_process;
 #endif
 
-#if VECTORIZE
     if (vectorize) {
         vectorize_do_substitute();
         c_out_vectorize();
         return;
     }
-#endif
     Fprintf(fcout, "/* Created by Language version: %s  of %s */\n", RCS_version, RCS_date);
-#if VECTORIZE
     P("/* NOT VECTORIZED */\n");
-#endif
     Fflush(fcout);
     /* things which must go first and most declarations */
 #if SIMSYS
@@ -136,13 +130,8 @@ void c_out() {
 
 #if NMODL
     /* generation of initmodel interface */
-#if VECTORIZE
     P("\nstatic nrn_init(_pp, _ppd, _v) double *_pp, _v; Datum* _ppd; {\n");
     P(" _p = _pp; _ppvar = _ppd;\n");
-#else
-    P("\nstatic nrn_init(_prop, _v) Prop *_prop; double _v; {\n");
-    P(" _p = _prop->param; _ppvar = _prop->dparam;\n");
-#endif
     P(" v = _v;\n");
     printlist(get_ion_variables(1));
     P(" initmodel();\n");
@@ -162,18 +151,10 @@ void c_out() {
 
     /* the neuron current also has to compute the dcurrent/dv as well
        as make sure all currents accumulated properly (currents list) */
-#if VECTORIZE
     P("\nstatic double nrn_cur(_pp, _ppd, _pdiag, _v) double *_pp, *_pdiag, _v; Datum* _ppd; {\n");
-#else
-    P("\nstatic double nrn_cur(_prop, _pdiag, _v) Prop *_prop; double *_pdiag, _v;{\n");
-#endif
     if (currents->next != currents) {
         P(" double _g, _rhs;\n");
-#if VECTORIZE
         P(" _p = _pp; _ppvar = _ppd;\n");
-#else
-        P(" _p = _prop->param;  _ppvar = _prop->dparam;\n");
-#endif
         printlist(get_ion_variables(0));
         P(" _g = _nrn_current(_v + .001);\n");
         printlist(begin_dion_stmt());
@@ -193,18 +174,10 @@ void c_out() {
 
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
-#if VECTORIZE
     P("\nstatic nrn_state(_pp, _ppd, _v) double *_pp, _v; Datum* _ppd; {\n");
-#else
-    P("\nstatic nrn_state(_prop, _v) Prop *_prop; double _v; {\n");
-#endif
     if (nrnstate || currents->next == currents) {
         P(" double _break, _save;\n");
-#if VECTORIZE
         P(" _p = _pp; _ppvar = _ppd;\n");
-#else
-        P(" _p = _prop->param;  _ppvar = _prop->dparam;\n");
-#endif
         P(" _break = t + .5*dt; _save = t; delta_t = dt;\n");
         P(" v=_v;\n{\n");
         printlist(get_ion_variables(1));
@@ -365,7 +338,6 @@ static void funcdec() {
     }
 }
 
-#if VECTORIZE
 void c_out_vectorize() {
     Item* q;
     extern int point_process;
@@ -588,4 +560,3 @@ char* cray_pragma() {
     return buf;
 }
 
-#endif /*VECTORIZE*/

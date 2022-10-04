@@ -41,13 +41,11 @@ extern List* state_discon_list_;
 
 /* VECTORIZE has not been optional for years. We leave the define there but */
 /* we no longer update the #else clauses. */
-#if VECTORIZE
 extern int vectorize;
 static List* vectorize_replacements; /* pairs of item pointer, strings */
 extern char* cray_pragma();
 extern int electrode_current; /* 1 means we should watch out for extracellular
                     and handle it correctly */
-#endif
 
 #if __TURBOC__ || SYSV || VMS
 #define index strchr
@@ -111,17 +109,13 @@ void c_out() {
     Fprintf(fcout, "/* Created by Language version: %s */\n", nmodl_version_);
     Fflush(fcout);
 
-#if VECTORIZE
     if (vectorize) {
         vectorize_do_substitute();
         kin_vect2(); /* heh, heh.. bet you can't guess what this is */
         c_out_vectorize();
         return;
     }
-#endif
-#if VECTORIZE
     P("/* NOT VECTORIZED */\n#define NRN_VECTORIZED 0\n");
-#endif
     Fflush(fcout);
     /* things which must go first and most declarations */
 #if SIMSYS
@@ -206,7 +200,6 @@ void c_out() {
 
 #if NMODL
     /* generation of initmodel interface */
-#if VECTORIZE
     P("\nstatic void nrn_init(NrnThread* _nt, Memb_list* _ml, int _type){\n");
     P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
     P("#if CACHEVEC\n");
@@ -215,10 +208,6 @@ void c_out() {
     P("_cntml = _ml->_nodecount;\n");
     P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
     P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
-#else
-    P("\nstatic nrn_init(_prop, _v) Prop *_prop; double _v; {\n");
-    P(" _p = _prop->param; _ppvar = _prop->dparam;\n");
-#endif
     if (debugging_ && net_receive_) {
         P(" _tsav = -1e20;\n");
     }
@@ -231,11 +220,7 @@ void c_out() {
     printlist(get_ion_variables(1));
     P(" initmodel();\n");
     printlist(set_ion_variables(2));
-#if VECTORIZE
     P("}}\n");
-#else
-    P("}\n");
-#endif
 
     /* standard modl EQUATION without solve computes current */
     P("\nstatic double _nrn_current(double _v){double _current=0.;v=_v;");
@@ -380,13 +365,8 @@ void c_out() {
 
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
-#if VECTORIZE
     P("\nstatic void nrn_state(NrnThread* _nt, Memb_list* _ml, int _type){\n");
-#else
-    P("\nstatic nrn_state(_prop, _v) Prop *_prop; double _v; {\n");
-#endif
     if (nrnstate || currents->next == currents) {
-#if VECTORIZE
         P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
         if (dtsav_for_nrn_state && nrnstate) {
             P("double _dtsav = dt;\n"
@@ -400,9 +380,6 @@ void c_out() {
         P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
         P(" _nd = _ml->_nodelist[_iml];\n");
         ext_vdef();
-#else
-        P(" _p = _prop->param;  _ppvar = _prop->dparam;\n");
-#endif
         P(" v=_v;\n{\n");
         printlist(get_ion_variables(1));
         if (nrnstate) {
@@ -412,11 +389,7 @@ void c_out() {
             printlist(modelfunc);
         }
         printlist(set_ion_variables(1));
-#if VECTORIZE
         P("}}\n");
-#else
-        P("}\n");
-#endif
         if (dtsav_for_nrn_state && nrnstate) {
             P(" dt = _dtsav;");
         }
@@ -639,7 +612,6 @@ static void funcdec() {
     }
 }
 
-#if VECTORIZE
 /* when vectorize = 1 */
 void c_out_vectorize() {
     Item* q;
@@ -974,8 +946,6 @@ char* cray_pragma() {
 \n";
     return buf;
 }
-
-#endif /*VECTORIZE*/
 
 static void conductance_cout() {
     int i = 0;

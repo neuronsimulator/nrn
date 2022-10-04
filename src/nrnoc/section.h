@@ -171,9 +171,7 @@ typedef struct Node {
     double savd;
     double savrhs;
 #endif /*DEBUGSOLVE*/
-#if VECTORIZE
     int v_node_index; /* only used to calculate parent_node_indices*/
-#endif
     int sec_node_index_; /* to calculate segment index from *Node */
 #if METHOD3
     Info3Coef toparent;

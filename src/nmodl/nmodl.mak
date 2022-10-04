@@ -8,7 +8,7 @@ BIN = /cygdrive/c/nrn/bin
 BNAME = $(BIN)/nocmodl.exe
 #BNAME = $(BIN)/hmodl.exe
 
-NFLAGS = -DNMODL=1 -DVECTORIZE=1 -DCVODE=1 -I.
+NFLAGS = -DNMODL=1 -DCVODE=1 -I.
 HFLAGS = -DHMODL=1
 
 CFLAGS = -DWIN32=1 $(NFLAGS)

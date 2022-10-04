@@ -14,12 +14,10 @@ extern char* current_line();
 extern List* massage_list_;
 #if NMODL
 extern List* nrnstate;
-#if VECTORIZE
 extern int vectorize;
 extern char* cray_pragma();
 extern int netrec_state_count;
 extern int netrec_need_thread;
-#endif
 #endif
 #if CVODE
 Item* cvode_cnexp_solve;
@@ -195,12 +193,10 @@ void solvhandler() {
                 method = lookup("_advance");
             }
             if (btype == BREAKPOINT && (method->subtype & DERF)) {
-#if VECTORIZE
                 fprintf(
                     stderr,
                     "Notice: KINETIC is thread safe only with METHOD sparse. Complain to Hines\n");
                 vectorize = 0;
-#endif
                 /* derivatives recalculated after while loop */
                 Sprintf(buf, " %s();\n", fun->name);
                 Insertstr(follow, buf);
@@ -218,30 +214,24 @@ void solvhandler() {
             solv_diffeq(qsol, fun, method, numeqn, listnum, steadystate, btype);
             break;
         case NLINF:
-#if VECTORIZE
             fprintf(stderr, "Notice: NONLINEAR is not thread safe.\n");
             vectorize = 0;
-#endif
             if (method == SYM0) {
                 method = lookup("newton");
             }
             solv_nonlin(qsol, fun, method, numeqn, listnum);
             break;
         case LINF:
-#if VECTORIZE
             fprintf(stderr, "Notice: LINEAR is not thread safe.\n");
             vectorize = 0;
-#endif
             if (method == SYM0) {
                 method = lookup("simeq");
             }
             solv_lineq(qsol, fun, method, numeqn, listnum);
             break;
         case DISCF:
-#if VECTORIZE
             fprintf(stderr, "Notice: DISCRETE is not thread safe.\n");
             vectorize = 0;
-#endif
             if (btype == BREAKPOINT)
                 whileloop(qsol, (long) DISCRETE, 0);
             Sprintf(buf, "0; %s += d%s; %s();\n", indepsym->name, indepsym->name, fun->name);
@@ -271,10 +261,8 @@ void solvhandler() {
             }
             Sprintf(buf, " %s();\n", fun->name);
             replacstr(qsol, buf);
-#if VECTORIZE
             Sprintf(buf, "{ %s(_p, _ppvar, _thread, _nt); }\n", fun->name);
             vectorize_substitute(qsol, buf);
-#endif
             break;
 #endif
         default:
@@ -289,7 +277,6 @@ void solvhandler() {
         /* add the error check */
         Insertstr(qsol, "error =");
         move(errstmt->next, errstmt->prev, qsol->next);
-#if VECTORIZE
         if (errstmt->next == errstmt->prev) {
             vectorize_substitute(qsol->next, "");
             vectorize_substitute(qsol->prev, "");
@@ -297,7 +284,6 @@ void solvhandler() {
             fprintf(stderr, "Notice: SOLVE with ERROR is not thread safe.\n");
             vectorize = 0;
         }
-#endif
         freelist(&errstmt);
         /* under all circumstances, on return from model,
          p[0] = current indepvar */
@@ -469,9 +455,7 @@ at a time.\n");
         the value of time */
         Sprintf(buf, " _sav_indep = %s; %s = _save;\n", indepsym->name, indepsym->name);
         Lappendstr(initfunc, buf);
-#if VECTORIZE
         vectorize_substitute(initfunc->prev, "");
-#endif
     }
     called++;
 }
