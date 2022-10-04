@@ -700,12 +700,7 @@ functableblk: FUNCTION_TABLE NAME '(' arglist ')' units
 		b1 = insertstr($5->next, "{\n");
 		b2 = insertstr(b1->next, "}\n");
 
-#define GLOBFUNCT 1
-#if GLOBFUNCT
 		replacstr($1, "\ndouble");
-#else
-		replacstr($1, "\nstatic double");
-#endif
 		defarg($3, $5);
 		movelist($1, b2, procfunc);
 		if (SYM($2)->subtype & FUNCT) {
@@ -726,11 +721,7 @@ funcblk: FUNCTION1 NAME '(' arglist ')' units
 		{ Symbol *s = SYM($2);
 		s->varnum = argcnt_;
 		table_massage(table_list, $1, $2, $4); freelist(&table_list);
-#if GLOBFUNCT
 		replacstr($1, "\ndouble");
-#else
-		replacstr($1, "\nstatic double");
-#endif
 		defarg($3, $5);
 		Sprintf(buf, "double _l%s;\n", s->name);
 		Insertstr($8->next, buf);

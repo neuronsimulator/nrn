@@ -265,14 +265,6 @@ static void funcdec() {
     List* qs;
 
     SYMITER(NAME) {
-        /*EMPTY*/ /*maybe*/
-        if (s->subtype & FUNCT) {
-#define GLOBFUNCT 1
-#if GLOBFUNCT
-#else
-            Fprintf(fcout, "static double %s();\n", s->name);
-#endif
-        }
         if (s->subtype & PROCED) {
             Fprintf(fcout, "static %s();\n", s->name);
         }

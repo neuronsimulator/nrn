@@ -511,15 +511,6 @@ static void funcdec() {
 
     SYMITER(NAME) {
         more = 0;
-        /*EMPTY*/ /*maybe*/
-        if (s->subtype & FUNCT) {
-#define GLOBFUNCT 1
-#if GLOBFUNCT
-#else
-            Fprintf(fcout, "static double %s(", s->name);
-            more = 1;
-#endif
-        }
         if (s->subtype & PROCED) {
             Fprintf(fcout, "static int %s(", s->name);
             more = 1;

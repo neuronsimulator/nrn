@@ -59,9 +59,6 @@ which sets up _p and _ppvar for use by functions in the model called
 directly by hoc.
 */
 
-/* FUNCTIONS are made external so they are callable from other models */
-#define GLOBFUNCT 1
-
 #include "modl.h"
 #include "parse1.hpp"
 #include <stdlib.h>
@@ -279,7 +276,7 @@ void parout() {
     Lappendstr(defs_list, buf);
     SYMLISTITER {
         Symbol* s = SYM(q);
-        /* note that with GLOBFUNCT, FUNCT will be redefined anyway */
+        /* note that FUNCT will be redefined anyway */
         if (s->type == NAME && s->subtype & (PROCED | DERF | KINF)) {
             sprintf(buf, "\n#define %s %s_%s", s->name, s->name, suffix);
             Lappendstr(defs_list, buf);
@@ -472,7 +469,6 @@ extern Memb_func* memb_func;\n\
     }
     Lappendstr(defs_list, "{0, 0}\n};\n");
 
-#if GLOBFUNCT
     /* FUNCTION's are now global so callable from other models */
     /* change name to namesuffix. This propagates everywhere except
         to hoc_name*/
@@ -508,7 +504,6 @@ extern Memb_func* memb_func;\n\
             Lappendstr(defs_list, ");\n");
         }
     }
-#endif
 
     emit_check_table_thread = 0;
     if (vectorize && check_tables_threads(defs_list)) {
