@@ -148,12 +148,13 @@ static void hoc_destroy_pnt(void* v) {
 }
 
 void KSChan::destroy_pnt(Point_process* pp) {
-    using std::get;
-    if (single_ && get<void*>(pp->prop->dparam[2])) {
-        // printf("deleteing KSSingleNodeData\n");
-        auto* snd = static_cast<KSSingleNodeData*>(get<void*>(pp->prop->dparam[2]));
-        delete snd;
-        pp->prop->dparam[2] = nullptr;
+    if (single_) {
+        using std::get;
+        if (auto* snd = get<KSSingleNodeData*>(pp->prop->dparam[2]); snd) {
+            // printf("deleteing KSSingleNodeData\n");
+            delete snd;
+            pp->prop->dparam[2] = nullptr;
+        }
     }
     destroy_point_process(pp);
 }
@@ -2288,7 +2289,7 @@ void KSChan::alloc(Prop* prop) {
         nrn_set_pval(pp[poff + 2 * j + 1], pion->param + 1);  // nai
     }
     using std::get;
-    if (single_ && !get<void*>(prop->dparam[2])) {
+    if (single_ && !get<KSSingleNodeData*>(prop->dparam[2])) {
         single_->alloc(prop, soffset_);
     }
 }
@@ -2427,15 +2428,16 @@ void KSChan::state_consist(int shift) {  // shift when Nsingle winks in and out 
 }
 
 void KSChan::delete_schan_node_data() {
-    using std::get;
     hoc_List* list = mechsym_->u.ctemplate->olist;
     hoc_Item* q;
     ITERATE(q, list) {
         Point_process* pnt = (Point_process*) (OBJ(q)->u.this_pointer);
-        if (pnt && pnt->prop && get<void*>(pnt->prop->dparam[2])) {
-            auto* snd = static_cast<KSSingleNodeData*>(get<void*>(pnt->prop->dparam[2]));
-            delete snd;
-            pnt->prop->dparam[2] = nullptr;
+        if (pnt && pnt->prop) {
+            using std::get;
+            if (auto* snd = get<KSSingleNodeData*>(pnt->prop->dparam[2]); snd) {
+                delete snd;
+                pnt->prop->dparam[2] = nullptr;
+            }
         }
     }
 }
@@ -2474,7 +2476,7 @@ void KSChan::init(int n, Node** nd, double** pp, Datum** ppd, NrnThread* nt) {
             }
             if (is_single()) {
                 using std::get;
-                auto* snd = static_cast<KSSingleNodeData*>(get<void*>(ppd[i][2]));
+                auto* snd = get<KSSingleNodeData*>(ppd[i][2]);
                 snd->nsingle_ = int(pp[i][NSingleIndex] + .5);
                 pp[i][NSingleIndex] = double(snd->nsingle_);
                 if (snd->nsingle_ > 0) {
