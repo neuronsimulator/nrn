@@ -236,8 +236,6 @@ TITLE
 Description:
     Title of the mechanism. Doesn't play any role to the code generation.
 
-    ``TODO``: Add existing example mod file
-
 
 COMMENT
 """""""
@@ -265,8 +263,6 @@ Description:
             GLOBAL a
         }
 
-    ``TODO``: Add existing example mod file
-
 
 DEFINE
 """"""
@@ -279,8 +275,6 @@ Description:
         none
 
         DEFINE <variable_name> <integer_value>
-
-    ``TODO``: Add existing example mod file
 
 
 UNITS
@@ -740,8 +734,6 @@ Description:
 
     where the STATEs that are diffusing are listed inside the braces.
 
-    ``TODO``: Add existing example mod file (cadif.mod)
-
 
 LONGITUDINAL_DIFFUSION
 """"""""""""""""""""""
@@ -767,8 +759,6 @@ Description:
         none
 
         LONGITUDINAL_DIFFUSION index , flux_expr ( index ) { state1 state2 . . . }
-
-    ``TODO``: Add existing example mod file (cadif.mod)
 
 
 PROCEDURE
@@ -932,7 +922,7 @@ DISCRETE
 """"""""
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    ``TODO``: Add description
 
 
 FUNCTION_TABLE

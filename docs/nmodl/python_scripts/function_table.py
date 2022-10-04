@@ -30,8 +30,8 @@ class k3stCell(Cell):
 
 
 if __name__ == "__main__":
-    table_cell = k3stCell()
-    table_cell.record()
-    table_cell.simulate(1, 0.1)
-    table_cell.output()
-    del table_cell
+    k3st_cell = k3stCell()
+    k3st_cell.record()
+    k3st_cell.simulate(1, 0.1)
+    k3st_cell.output()
+    del k3st_cell

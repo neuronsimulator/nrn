@@ -19,8 +19,8 @@ class cadifusCell(Cell):
 
 
 if __name__ == "__main__":
-    table_cell = cadifusCell()
-    table_cell.record()
-    table_cell.simulate(1, 0.1)
-    table_cell.output()
-    del table_cell
+    cadifus_cell = cadifusCell()
+    cadifus_cell.record()
+    cadifus_cell.simulate(1, 0.1)
+    cadifus_cell.output()
+    del cadifus_cell
