@@ -102,14 +102,10 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
     List* errstmt = newlist();
     lq = lappendsym(solvq, SYM0);
     LST(lq) = errstmt;
-#if NOCMODL
     sprintf(buf,
             "if(error){fprintf(stderr,\"%s\\n\"); nrn_complain(_p); abort_run(error);}\n",
             current_line());
     insertstr(errstmt, buf);
-#else
-    insertstr(errstmt, "if(error){abort_run(error);}\n");
-#endif
 }
 
 /* go through the solvq list and construct the proper while loop and calls*/

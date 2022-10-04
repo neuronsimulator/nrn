@@ -224,7 +224,6 @@ void flux(Item* qREACTION, Item* qdir, Item* qlast) {
         }
         reactlist->krate[0] = (char*) 0;
         reactlist->krate[1] = qconcat(qdir->next->next, qlast);
-#if NOCMODL
         if (ldifuslist) { /* function of current ? */
             Item* q;
             int isfunc;
@@ -264,7 +263,6 @@ void flux(Item* qREACTION, Item* qdir, Item* qlast) {
                 }
             }
         }
-#endif
         /*SUPPRESS 440*/
         replacstr(qlast, "/*FLUX*/\n");
     }

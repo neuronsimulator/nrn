@@ -466,9 +466,7 @@ asgn:	varname '=' expr
 			/* STATE discontinuity adjustment */
 			netrec_asgn($1, $2, $3, lastok);
 		  }
-#if NOCMODL
 		  nrn_var_assigned(SYM($1));
-#endif
 		}
 	| nonlineqn expr '=' expr
 		/* put info in equation list */

@@ -787,9 +787,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
 
 #if HMODL || NMODL
 void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
-#if NOCMODL
     extern int point_process;
-#endif
     Item* q;
     int i;
 #if VECTORIZE
@@ -846,11 +844,9 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
             Lappendstr(procfunc, ",");
         }
     }
-#if NOCMODL
     if (point_process) {
         Lappendstr(procfunc, ");\n return(_r);\n}\n");
     } else
-#endif
         Lappendstr(procfunc, ");\n hoc_retpushx(_r);\n}\n");
 #if VECTORIZE
     if (i) {
