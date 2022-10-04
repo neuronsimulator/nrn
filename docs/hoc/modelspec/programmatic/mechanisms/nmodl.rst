@@ -939,7 +939,38 @@ FUNCTION_TABLE
 ~~~~~~~~~~~~~~
 
 Description:
-    ``TODO``: Add description and new example mod file
+    This keyword defines function tables whose values are given by vectors prior to the simulation.
+    For example let's say we have the following declaration in a ΝMODΛ file:
+
+    .. code-block::
+        none
+
+        FUNCTION_TABLE tau1(v(mV)) (ms)
+
+    This means that there is a function `tau1` that takes as argument a variable `v` (voltage). Its
+    values can be then passed from HOC/Python using the following call:
+
+    .. code-block::
+        none
+
+        table_tau1_<MOD_SUFFIX>(tau1_vec, v_vec)
+
+    Then whenever tau1(x) is called in the NMODL file, or tau1_k3st(x) is called from hoc, the
+    interpolated value of the array is returned.
+    A useful feature of FUNCTION_TABLE s is that prior to developing the Vector database, they can
+    be attached to a scalar value as in
+
+    .. code-block::
+        none
+
+        table_tau1_<MOD_SUFFIX>(100)
+
+    effectively becoming constant functions. Also FUNCTION_TABLEs can be declared with two
+    arguments and doubly dimensioned hoc arrays attached to them. The latter is useful, for example,
+    with voltage- and calcium-sensitive rates. In this case the table is linearly interpolated in
+    both dimensions.
+
+    ``TODO``: Add new example mod file (k3st.mod)
 
 
 SWEEP
@@ -968,6 +999,7 @@ IF / ELSE IF / ELSE
 
 Description:
     If-statement for mod files.
+
     ``TODO``: Add new example mod file (iclamp1.mod)
 
 
