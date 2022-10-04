@@ -19,7 +19,6 @@ their usage for later error checking.
 extern Symbol *checklocal(Symbol*);
 extern int next_intoken(Item**);
 extern Item *title;
-extern int declare_level;
 extern int parse_pass, restart_pass;
 extern List *solvelist;
 

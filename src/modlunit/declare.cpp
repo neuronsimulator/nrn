@@ -21,7 +21,7 @@ void declare(long subtype, Item* q, Item* qa) {
     if (!sym->subtype) { /* not previously declared */
         sym->subtype = subtype;
         sym->info = qa;
-    } else
+    } else {
         diag("Multiple declaration of ", sym->name);
     }
     declare_array(sym);

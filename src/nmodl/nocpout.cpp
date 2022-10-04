@@ -184,8 +184,6 @@ static Item* net_send_delivered_; /* location for if flag is 1 then clear the
     for (i = 'A'; i <= 'z'; i++) \
     ITERATE(q, symlist[i])
 
-#define IFTYPE(arg) if ((s->subtype & arg) && ((s->usage & EXPLICIT_DECL) != automatic))
-
 /* varcount holds the index into the .var file and is saved in s->used
    parraycount holds the index into the p array and is saved in s->varnum
    pvarcount indexes pointers to variables such as ena
@@ -1835,7 +1833,7 @@ void nrn_use(Item* q1, Item* q2, Item* q3, Item* q4) {
     /* is it already used */
     used = ion_declared(SYM(q1));
     if (used) { /* READ gets promoted to WRITE */
-        diag("mergeing of neuron models not supported yet", (char*) 0);
+        diag("merging of neuron models not supported", (char*) 0);
     } else { /* create all the ionic variables */
         Lappendsym(useion, ion);
         readlist = newlist();

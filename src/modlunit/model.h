@@ -49,9 +49,6 @@ The following is a list of the current element usage:
  varnum		state variable - during processing of a block containing
          equations in which simultaneous equations result; column
          number of state variable in the matrix.
- level		lowest submodel level number for declarations of this
-         symbol. Used for constants ( in explicit_decl()).
-         The default value is 100.
  name		token name
 */
 typedef struct Symbol {
@@ -68,7 +65,6 @@ typedef struct Symbol {
     int discdim;
     int varnum; /* column number of state variable in
                  * equations */
-    short level;
     char* name;
 } Symbol;
 #define SYM0 (Symbol*) 0

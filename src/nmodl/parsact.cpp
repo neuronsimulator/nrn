@@ -31,57 +31,18 @@ extern int artificial_cell;
 extern int vectorize;
 extern int assert_threadsafe;
 
-int type_change(Symbol* sym);
-
 void explicit_decl(Item* q) {
+    // give an error message if a variable is explicitly declared
+    // more than once.
+
     Symbol* sym = SYM(q);
+
     if (sym->usage & EXPLICIT_DECL) {
         diag("Multiple declaration of ", sym->name);
     }
     sym->usage |= EXPLICIT_DECL;
     /* this ensures that declared PRIMES will appear in .var file */
     sym->usage |= DEP;
-    /* resolve possible type conflicts */
-    if (type_change(sym)) {
-        return;
-    }
-}
-
-/* restricted type changes are allowed in hierarchical models with each
-one producing a message. Notice that multiple declarations at level 0 are
-caught as errors in the function above. */
-
-int type_change(Symbol* sym) /*return 1 if type change, 0 otherwise*/
-{
-    long s, d, c;
-
-    s = sym->subtype & STAT;
-    d = sym->subtype & DEP;
-    c = sym->subtype & PARM;
-
-    if (s && c) {
-        sym->subtype &= ~c;
-        Fprintf(stderr, "Notice: %s is promoted from a PARAMETER to a STATE\n", sym->name);
-        if (previous_subtype & STAT) {
-            sym->u.str = previous_str;
-        }
-    } else if (s && d) {
-        sym->subtype &= ~d;
-        Fprintf(stderr, "WARNING: %s is promoted from an ASSIGNED to a STATE\n", sym->name);
-        if (previous_subtype & STAT) {
-            sym->u.str = previous_str;
-        }
-    } else if (d && c) {
-        sym->subtype &= ~c;
-        Fprintf(stderr, "Notice: %s is promoted from a PARAMETER to an ASSIGNED\n", sym->name);
-        if (previous_subtype & DEP) {
-            sym->u.str = previous_str;
-        }
-    } else {
-        return 0;
-    }
-    sym->level = 1;
-    return 1;
 }
 
 void parm_array_install(Symbol* n, char* num, char* units, char* limits, int index) {
