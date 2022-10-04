@@ -19,7 +19,6 @@ their usage for later error checking.
 extern Symbol *checklocal(Symbol*);
 extern int next_intoken(Item**);
 extern Item *title;
-extern int declare_level;
 extern int parse_pass, restart_pass;
 extern List *solvelist;
 
@@ -61,7 +60,7 @@ extern int lexcontext;
 %token	<qp>	END_VERBATIM END_COMMENT UNITS BREAKPOINT PARAMETER INT
 %token	<qp>	INITIAL1 DERIVATIVE SOLVE USING WITH DISCRETE
 %token	<qp>	FROM TO BY WHILE IF ELSE START1 STEP SOLVEFOR
-%token	<qp>	PROCEDURE DEL DEL2 DEFINE1 IFERROR
+%token	<qp>	PROCEDURE DEL DEL2 DEFINE1
 %token	<qp>	DERFUNC EQUATION LINEAR NONLINEAR FUNCTION1 LOCAL
 %token	<qp>	METHOD LIN1 NONLIN1 FUNCTION_TABLE
 %token	<qp>	INCLUDE1 PROTECT
@@ -70,12 +69,12 @@ extern int lexcontext;
 %token	<qp>	OR AND GT GE LT LE EQ NE NOT
 %token	<qp>	NAME PRIME REAL INTEGER DEFINEDVAR
 %token	<qp>	KINETIC CONSERVE REACTION REACT1 COMPARTMENT LONGDIFUS
-%token	<qp>	STRING VS LAG MODEL_LEVEL SWEEP
+%token	<qp>	STRING VS LAG SWEEP
 %token	<qp>	SPACE NEWLINE TO_EOL STUFF
 %token	<qp>	UNITBLK UNITSON UNITSOFF
 %token	<qp>	TABLE DEPEND
 
-%type	<qp>	top all all1 title verbatim comment define1 declare declare1
+%type	<qp>	top all all1 title verbatim comment define1 declare
 %type	<qp>	constblk constbody constasgn units limits tolerance
 %type	<qp>	Name name number NUMBER integer real
 %type	<qp>	indepblk indepbody indepdef withby
@@ -86,11 +85,11 @@ extern int lexcontext;
 %type	<qp>	fromstmt opinc whilestmt ifstmt optelseif optelse
 %type	<qp>	tablestmt tablst dependlst
 %type	<qp>	derivblk linblk nonlinblk
-%type	<qp>	funcblk arglist arglist1 procedblk solveblk ifsolerr functbl
+%type	<qp>	funcblk arglist arglist1 procedblk solveblk functbl
 %type	<qp>	solvefor1 solvefor netrecblk fornetcon
 %type	<qp>	watchstmt watch1
 %type	<qp>	eqnblk compartlist ldifuslist longdifus
-%type	<qp>	conserve compart namelist optnamelist kineticblk reaction react consreact
+%type	<qp>	conserve compart namelist kineticblk reaction react consreact
 %type	<qp>	lagstmt
 %type	<qp>	unitblk unitflag unitbody unitdef Units factordef include1
 
@@ -147,12 +146,7 @@ define1: DEFINE1 NAME integer
 Name:	NAME
 		{P1{$1->element = (void *)checklocal(SYM($1));}}
 	;
-declare: declare1
-	| MODEL_LEVEL INTEGER {declare_level = atoi(STR($2));} declare1
-		{declare_level = 0;}
-	;
-declare1: constblk | indepblk | depblk | stateblk
-	| unitblk | neuronblk
+declare: constblk | indepblk | depblk | stateblk | unitblk | neuronblk
 	;
 constblk: CONSTANT '{' constbody '}'
 	| PARAMETER '{' constbody '}'
@@ -633,16 +627,11 @@ fornetcon: FOR_NETCONS '(' arglist ')'
 	| FOR_NETCONS error { myerr("Illegal FOR_NETCONS statement");}
 	;
 
-solveblk: SOLVE NAME ifsolerr
-		{P1{$$ = itemarray(4, $1, $2, ITEM0, $3); lappenditem(solvelist, $$);}}
-	| SOLVE NAME USING METHOD ifsolerr
-		{P1{$$ = itemarray(4, $1, $2, $3, $4); lappenditem(solvelist, $$);}}
+solveblk: SOLVE NAME
+		{P1{$$ = itemarray(4, $1, $2, ITEM0); lappenditem(solvelist, $$);}}
+	| SOLVE NAME USING METHOD
+		{P1{$$ = itemarray(4, $1, $2, $3); lappenditem(solvelist, $$);}}
 	| SOLVE error { myerr("Illegal SOLVE statement");}
-	;
-ifsolerr: /*nothing*/
-		{ $$ = ITEM0; }
-	| IFERROR stmtlist
-		{ $$ = $2; }
 	;
 solvefor: /*nothing*/
 		{$$ = ITEM0;}
@@ -769,11 +758,7 @@ nrnstmt: /*nothing*/
                 { P1{nrn_list($2, $3);}}
         | nrnstmt EXTERNAL nrnlist
                 { P1{nrn_list($2, $3);}}
-	| nrnstmt THREADSAFE optnamelist
-	;
-optnamelist: /* nothing */
-		{$$ = NULL;}
-	| namelist
+	| nrnstmt THREADSAFE
 	;
 nrnuse: USEION NAME READ nrnlist valence
 		{P1{nrn_use($2, $4, ITEM0);}}

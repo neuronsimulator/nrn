@@ -37,21 +37,13 @@ item which is the first item in the statement sequence in another list.
 static List* solvq; /* list of the solve statement locations */
 int numlist = 0;    /* number of slist's */
 
-void solvequeue(Item* q1, Item* q2, int blocktype, Item* qerr) /*solve NAME=q1 [using METHOD=q2]*/
-/* q2 = 0 means method wasn't there */
-/* qerr in ITEM0 or else the closing
-   brace of an IFERROR stmt */
+void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using METHOD]*/
+/* qMethod = nullptr means method wasn't there */
 {
     /* the solvq list is organized in groups of an item element
-    followed by the method symbol( null if default to be used) */
+    followed by the method symbol (null if default to be used) */
     /* The itemtype field of the first is used to carry the blocktype*/
     /* SOLVE and METHOD method are deleted */
-    /* The list now consists of triples in which the third element
-       is a list containing the complete IFERROR statement.
-    */
-    Item *lq, *qtemp;
-    List* errstmt;
-
     if (!solvq) {
         solvq = newlist();
     }
@@ -64,69 +56,60 @@ void solvequeue(Item* q1, Item* q2, int blocktype, Item* qerr) /*solve NAME=q1 [
             nrnstate = newlist();
         }
         Lappendstr(nrnstate, "{");
-        if (qerr) {
-            movelist(q1->prev, qerr, nrnstate);
-        } else if (q2) {
-            movelist(q1->prev, q2, nrnstate);
+        if (qMethod) {
+            movelist(qName->prev, qMethod, nrnstate);
         } else {
-            movelist(q1->prev, q1, nrnstate);
+            movelist(qName->prev, qName, nrnstate);
         }
         Lappendstr(nrnstate, "}");
     }
     /* verify that the block defintion for this SOLVE has not yet been seen */
-    if (massage_list_)
+    if (massage_list_) {
+        Item* lq;
         ITERATE(lq, massage_list_) {
-            if (strcmp(SYM(lq)->name, SYM(q1)->name) == 0) {
+            if (strcmp(SYM(lq)->name, SYM(qName)->name) == 0) {
                 diag("The SOLVE statement must be before the DERIVATIVE block for ", SYM(lq)->name);
             }
         }
+    }
 #endif
-    lq = lappendsym(solvq, SYM0);
-    ITM(lq) = q1;
+    Item* lq = lappendsym(solvq, SYM0);
+    ITM(lq) = qName;
     lq->itemtype = blocktype;
     /* handle STEADYSTATE option */
-    if (q1->next->itemtype == SYMBOL && strcmp("STEADYSTATE", SYM(q1->next)->name) == 0) {
+    if (qName->next->itemtype == SYMBOL && strcmp("STEADYSTATE", SYM(qName->next)->name) == 0) {
         lq->itemtype = -blocktype; /* gets put back below */
     }
-    if (q2) {
-        qtemp = q2->next; /* The IFERROR location */
-        Lappendsym(solvq, SYM(q2));
-        if (strcmp(SYM(q2)->name, "derivimplicit") == 0) {
-            add_deriv_imp_list(SYM(q1)->name);
+    if (qMethod) {
+        Lappendsym(solvq, SYM(qMethod));
+        if (strcmp(SYM(qMethod)->name, "derivimplicit") == 0) {
+            add_deriv_imp_list(SYM(qName)->name);
         }
-        if (strcmp(SYM(q2)->name, "cnexp") == 0) {
-            SYM(q2)->name = stralloc("derivimplicit", SYM(q2)->name);
-            add_deriv_imp_list(SYM(q1)->name);
+        if (strcmp(SYM(qMethod)->name, "cnexp") == 0) {
+            SYM(qMethod)->name = stralloc("derivimplicit", SYM(qMethod)->name);
+            add_deriv_imp_list(SYM(qName)->name);
 #if CVODE
             cvode_cnexp_solve = lq;
 #endif
         }
-        remove(q2->prev);
-        remove(q2);
+        remove(qMethod->prev);
+        remove(qMethod);
     } else {
-        qtemp = q1->next;
         Lappendsym(solvq, SYM0);
     }
-    remove(q1->prev);
+    remove(qName->prev);
 
-    /* handle the error statement */
-    /* put one in if it isn't already there */
-    if (qerr == ITEM0) {
-#if NOCMODL
-        sprintf(buf,
-                "if(error){fprintf(stderr,\"%s\\n\"); nrn_complain(_p); abort_run(error);}\n",
-                current_line());
-        qtemp = qerr = insertstr(qtemp, buf);
-#else
-        qtemp = qerr = insertstr(qtemp, "if(error){abort_run(error);}\n");
-#endif
-    } else {
-        replacstr(qtemp, "if (error)");
-    }
-    errstmt = newlist();
+    List* errstmt = newlist();
     lq = lappendsym(solvq, SYM0);
     LST(lq) = errstmt;
-    movelist(qtemp, qerr, errstmt);
+#if NOCMODL
+    sprintf(buf,
+            "if(error){fprintf(stderr,\"%s\\n\"); nrn_complain(_p); abort_run(error);}\n",
+            current_line());
+    insertstr(errstmt, buf);
+#else
+    insertstr(errstmt, "if(error){abort_run(error);}\n");
+#endif
 }
 
 /* go through the solvq list and construct the proper while loop and calls*/

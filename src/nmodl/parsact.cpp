@@ -31,122 +31,23 @@ extern int artificial_cell;
 extern int vectorize;
 extern int assert_threadsafe;
 
-int type_change(Symbol* sym, int level);
+void explicit_decl(Item* q) {
+    // give an error message if a variable is explicitly declared
+    // more than once.
 
-static long previous_subtype; /* subtype at the sym->level */
-static char* previous_str;    /* u.str on last install */
+    Symbol* sym = SYM(q);
 
-void explicit_decl(int level, Item* q) {
-    /* used to be inside parse1.ypp without the lastvars condition
-       Without the condition it served two purposes.
-       1) variables explicitly declared were so marked so that they
-          would appear first in the .var file.  Unmarked variables
-          appear last.
-       2) Give error message if a variable was explicitly declared
-          more than once.
-       Now, the merge program produces declaration blocks from
-       submodels with a prepended LAST_VARS keyword.  This implies
-       1) that variables in such blocks should appear last (if they
-          don't appear at the top level) and
-       2) multiple declarations are not errors.
-       Hence we merely enclose the old code in an if statement
-       The question arises, on multiple declarations, which value
-       does the .var file get.  In the current implementation it
-       is the last one seen. If this is not right (and a better
-       method would be keep the value declared closest to the root)
-       then it will be the responsibility of merge to delete
-       multiple declarations.
-    */
-    /* Solving the multiple declaration problem.
-       merge now gives the level number of the declaration with
-       the root file having level number 0, all its submodels having
-       level number 1, submodels of level 1 submodels having level 2,
-       etc.  The rule is that the lowest level declaration is used.
-       If two declarations exist at the same level then it is an
-       error unless their u.str are identical.  Since, by the time
-       this routine is called the latest declaration has already been
-       installed, each installation routine saves the previous u.str
-       in a static variable. Also a new field is added to the
-       symbol structure to keep track of its level. At this time
-       we retain the EXPLICIT_DECL field for explicit declarations
-       at the root level. The default level when the symbol is
-       allocated is 100.
-     */
-
-    Symbol* sym;
-
-    sym = SYM(q);
-    if (!level) { /* No multiple declarations at the root level and
-            the symbol is marked explicitly declared */
-        if (sym->usage & EXPLICIT_DECL) {
-            diag("Multiple declaration of ", sym->name);
-        }
-        sym->usage |= EXPLICIT_DECL;
+    if (sym->usage & EXPLICIT_DECL) {
+        diag("Multiple declaration of ", sym->name);
     }
+    sym->usage |= EXPLICIT_DECL;
     /* this ensures that declared PRIMES will appear in .var file */
     sym->usage |= DEP;
-
-    if (level >= sym->level) {
-        assert(previous_str);
-    }
-    /* resolve possible type conflicts */
-    if (type_change(sym, level)) {
-        return;
-    }
-    /* resolve which declaration takes precedence */
-    if (level < sym->level) { /* new one takes precedence */
-        sym->level = level;
-    } else if (level > sym->level) { /* old one takes precedence */
-        sym->u.str = previous_str;
-    } else if (strcmp(sym->u.str, previous_str) != 0) { /* not identical */
-        diag(sym->name, "has different values at same level");
-    }
-}
-
-/* restricted type changes are allowed in hierarchical models with each
-one producing a message. Notice that multiple declarations at level 0 are
-caught as errors in the function above. */
-
-int type_change(Symbol* sym, int level) /*return 1 if type change, 0 otherwise*/
-{
-    long s, d, c;
-
-    s = sym->subtype & STAT;
-    d = sym->subtype & DEP;
-    c = sym->subtype & PARM;
-
-    if (s && c) {
-        sym->subtype &= ~c;
-        Fprintf(stderr, "Notice: %s is promoted from a PARAMETER to a STATE\n", sym->name);
-        if (previous_subtype & STAT) {
-            sym->u.str = previous_str;
-        }
-    } else if (s && d) {
-        sym->subtype &= ~d;
-        Fprintf(stderr, "WARNING: %s is promoted from an ASSIGNED to a STATE\n", sym->name);
-        if (previous_subtype & STAT) {
-            sym->u.str = previous_str;
-        }
-    } else if (d && c) {
-        sym->subtype &= ~c;
-        Fprintf(stderr, "Notice: %s is promoted from a PARAMETER to an ASSIGNED\n", sym->name);
-        if (previous_subtype & DEP) {
-            sym->u.str = previous_str;
-        }
-    } else {
-        return 0;
-    }
-    if (level < sym->level) {
-        sym->level = level;
-    }
-    return 1;
 }
 
 void parm_array_install(Symbol* n, char* num, char* units, char* limits, int index) {
     char buf[NRN_BUFSIZE];
 
-    previous_subtype = n->subtype;
-    previous_str = n->u.str;
     if (n->u.str == (char*) 0)
         Lappendsym(syminorder, n);
     n->subtype |= PARM;
@@ -159,8 +60,6 @@ void parm_array_install(Symbol* n, char* num, char* units, char* limits, int ind
 void parminstall(Symbol* n, char* num, char* units, char* limits) {
     char buf[NRN_BUFSIZE];
 
-    previous_subtype = n->subtype;
-    previous_str = n->u.str;
     if (n->u.str == (char*) 0)
         Lappendsym(syminorder, n);
     n->subtype |= PARM;
@@ -297,8 +196,6 @@ void depinstall(int type,
         Sprintf(buf, "\n%s%c%s\n%s\n%s\n", from, c, to, units, abstol);
     }
     n->u.str = stralloc(buf, (char*) 0);
-    previous_subtype = n->subtype;
-    previous_str = pstr;
 }
 
 void statdefault(Symbol* n, int index, char* units, Item* qs, int makeconst) {

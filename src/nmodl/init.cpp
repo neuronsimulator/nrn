@@ -53,11 +53,9 @@ static struct { /* Keywords */
                 {"CONSERVE", CONSERVE},
                 {"VS", VS},
                 {"LAG", LAG},
-                {"MODEL_LEVEL", MODEL_LEVEL}, /* inserted by merge */
                 {"SWEEP", SWEEP},
                 {"COMPARTMENT", COMPARTMENT},
                 {"LONGITUDINAL_DIFFUSION", LONGDIFUS},
-                {"IFERROR", IFERROR},
                 {"SOLVEFOR", SOLVEFOR},
                 {"UNITS", UNITS},
                 {"UNITSON", UNITSON},

@@ -26,12 +26,6 @@
  *
  */
 
-/*
- * In order to interface this process with merge, a second argument is
- * allowed which gives the complete input filename.  The first argument
- * still gives the prefix of the .c and .var files.
- */
-
 /* the first arg may also be a file.mod (containing the .mod suffix)*/
 
 #include <getopt.h>
