@@ -402,6 +402,7 @@ void HocDataPathImpl::search_pysec() {
 }
 
 void HocDataPathImpl::search(Section* sec) {
+    using neuron::container::get_ref;
     using std::get;
     if (get<double>(sec->prop->dparam[2]) == sentinal) {
         found(&get_ref<double>(sec->prop->dparam[2]), "L", sym_L);

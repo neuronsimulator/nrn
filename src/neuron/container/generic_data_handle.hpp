@@ -31,16 +31,17 @@ struct generic_data_handle {
 
   public:
     generic_data_handle() = default;
+    generic_data_handle(std::nullptr_t) {}
 
     template <typename T, std::enable_if_t<can_be_stored_literally_v<T>, int> = 0>
-    explicit generic_data_handle(T value)
+    generic_data_handle(T value)
         : m_type{typeid(T)} {
         std::memcpy(&m_container, &value, sizeof(T));
     }
 
     // Avoid trying to access members of the data_handle<void> specialisation.
     template <typename T, std::enable_if_t<std::is_same_v<T, void>, int> = 0>
-    explicit generic_data_handle(data_handle<T> const& handle)
+    generic_data_handle(data_handle<T> const& handle)
         : m_container{handle.m_raw_ptr}
         , m_type{typeid(T*)} {
         static_assert(std::is_same_v<T, void>);
@@ -52,7 +53,7 @@ struct generic_data_handle {
 
     // Avoid trying to access members of the data_handle<void> specialisation.
     template <typename T, std::enable_if_t<!std::is_same_v<T, void>, int> = 0>
-    explicit generic_data_handle(data_handle<T> const& handle)
+    generic_data_handle(data_handle<T> const& handle)
         : m_offset{handle.m_raw_ptr ? nullptr : handle.m_offset.m_ptr}
         , m_container{handle.m_raw_ptr ? static_cast<void*>(handle.m_raw_ptr)
                                        : static_cast<void*>(handle.m_container)}
@@ -191,7 +192,7 @@ struct generic_data_handle {
     }
 
   private:
-    [[noreturn]] void throw_error(std::string message) {
+    [[noreturn]] void throw_error(std::string message) const {
         std::ostringstream oss{};
         oss << *this << std::move(message);
         throw std::runtime_error(std::move(oss).str());
@@ -206,4 +207,15 @@ struct generic_data_handle {
     // Reference to typeid(T) for the wrapped type
     std::type_index m_type{typeid(typeless_null)};
 };
+
+template <typename T>
+T get(generic_data_handle const& gh) {
+    return static_cast<T>(gh);
+}
+
+template <typename T>
+T& get_ref(generic_data_handle& gh) {
+    return gh.literal_value<T>();
+}
+
 }  // namespace neuron::container

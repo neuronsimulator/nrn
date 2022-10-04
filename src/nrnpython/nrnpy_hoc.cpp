@@ -2100,7 +2100,7 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
                 PyErr_SetString(PyExc_TypeError, "Point_process not located in a section");
                 return NULL;
             }
-            gh = &get_ref<neuron::container::generic_data_handle>(prop->dparam[sym->u.rng.index]);
+            gh = &(prop->dparam[sym->u.rng.index]);
         } else {
             gh = nrnpy_setpointer_helper(name, pp);
             if (!gh) {

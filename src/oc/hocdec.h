@@ -142,57 +142,33 @@ struct Symbol { /* symbol table entry */
 
 using hoc_List = hoc_Item;
 
-/**
- * @brief Type of pdata in mechanisms.
+/** @brief Type of pdata in mechanisms.
  */
-struct Datum {
-    Datum(std::nullptr_t) {}
-    template <typename... Args>
-    Datum(Args&&... args)
-        : m_storage{std::forward<Args>(args)...} {}
-    template <typename T>
-    bool holds() {
-        return m_storage.holds<T>();
-    }
-    template <typename T>
-    T get() {
-        return static_cast<T>(m_storage);
-    }
-    template <typename T>
-    T& get_ref() {
-        if constexpr (std::is_same_v<T, neuron::container::generic_data_handle>) {
-            return m_storage;
-        } else {
-            return m_storage.literal_value<T>();
-        }
-    }
-    /** @brief Create a data_handle<T> from the contained generic_data_handle.
-     */
-    template <typename T>
-    neuron::container::data_handle<T> get_handle() {
-        return get<neuron::container::data_handle<T>>();
-    }
-
-  private:
-    neuron::container::generic_data_handle m_storage{};
-};
+using Datum = neuron::container::generic_data_handle;
 
 /** @brief Get the given typed value from a Datum.
  *
- *  get<void*>(datum) redirects to the generic_data_handle member of Datum. This
- *  means that both X (the value, tracked by data_handle) and _p_X (a black box
- *  void*) patterns for accessing a POINTER variable X can eventually use the
- *  same underlying ~vector<generic_data_handle> structure.
+ *  Something like get<double*>(datum) will work both if the Datum holds a
+ *  literal double* or if it holds a data_handle<double>.
  */
-template <typename T>
-decltype(auto) get(Datum& d) {
-    return d.get<T>();
-}
+// template <typename T>
+// T get(Datum& d) {
+//     return static_cast<T>(d);
+// }
 
-template <typename T>
-T& get_ref(Datum& d) {
-    return d.get_ref<T>();
-}
+/** @brief Get a reference to the given typed value inside a Datum.
+ *
+ *  Unlike get<double*>(datum), get_ref<double*>(datum) will fail if the Datum
+ *  holds a data_handle<double>, as in that case there is no persistent
+ *  data_handle<double> that can be referred to.
+ *
+ *  @todo Consider if this could be relaxed with a common base class of
+ *  data_handle<T> and generic_data_handle?
+ */
+// template <typename T>
+// T& get_ref(Datum& d) {
+//     return d.literal_value<T>();
+// }
 
 struct cTemplate {
     Symbol* sym;

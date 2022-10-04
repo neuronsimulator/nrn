@@ -1473,7 +1473,7 @@ double* cable_prop_eval_pointer(Symbol* sym) {
     sec = nrn_sec_pop();
     switch (sym->u.rng.type) {
     case CABLESECTION:
-        // can this be a voltage?
+        using neuron::container::get_ref;
         return &get_ref<double>(sec->prop->dparam[sym->u.rng.index]);
     default:
         hoc_execerror(sym->name, " not a USERPROPERTY that can be pointed to");
@@ -1962,6 +1962,7 @@ double* dprop(Symbol* s, int indx, Section* sec, short inode) {
             return &(m->param[s->u.rng.index]) + indx;
         }
     } else {
+        using std::get;
         auto* const p = get<double*>(m->dparam[s->u.rng.index + indx]);
         if (!p) {
             hoc_execerror(s->name, "wasn't made to point to anything");
@@ -1997,6 +1998,7 @@ double* nrnpy_dprop(Symbol* s, int indx, Section* sec, short inode, int* err) {
             return &(m->param[s->u.rng.index]) + indx;
         }
     } else {
+        using std::get;
         auto* const p = get<double*>(m->dparam[s->u.rng.index + indx]);
         if (!p) {
             *err = 2;
