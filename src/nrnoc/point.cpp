@@ -260,6 +260,7 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
         // be void and not double
         auto& datum = pnt->prop->dparam[sym->u.rng.index + index];
         if (datum.holds<double*>()) {
+            using std::get;
             pd = get<double*>(datum);
         } else {
             pd = nullptr;
@@ -353,7 +354,8 @@ static void free_one_point(Point_process* pnt) {
 void clear_point_process_struct(Prop* p) {
     auto* const pnt = [](auto& datum) -> Point_process* {
         if (datum.template holds<Point_process*>()) {
-            return datum.template get<Point_process*>();
+            using std::get;
+            return get<Point_process*>(datum);
         } else {
             return nullptr;
         }
