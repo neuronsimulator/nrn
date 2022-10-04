@@ -97,6 +97,9 @@ double hoc_func_table(void* vpft, int n, double* args) {
     if (!ft) {
         hoc_execerror("table not specified in hoc_func_table", (char*) 0);
     }
+    if (ft->value && ft->targs[0].nsize == 1) {
+        return ft->value;
+    }
     tab = ft->table;
     j = 0;
     for (i = 0; i < n; ++i) {
