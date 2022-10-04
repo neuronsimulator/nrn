@@ -230,9 +230,6 @@ double loc_point_process(int pointtype, void* v) {
 }
 
 double get_loc_point_process(void* v) {
-#if METHOD3
-    extern int _method3;
-#endif
     double x;
     Point_process* pnt = (Point_process*) v;
     Section* sec;

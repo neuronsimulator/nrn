@@ -29,10 +29,6 @@ in one section is set but no others. But only the first time through treeset.
        * area/spine to add to the segment. */
 #endif
 
-#define METHOD3 0 /* third order spatially correct method */
-/* testing only, not completely implemented */
-/* cannot be used with extracellular */
-
 #define KEEP_NSEG_PARM 1 /* Use old segment parameters to define */
 /* the new segment information */
 

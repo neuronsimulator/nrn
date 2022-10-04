@@ -111,7 +111,6 @@ set(NRNOC_FILE_LIST
     hocprax.cpp
     init.cpp
     ldifus.cpp
-    method3.cpp
     nrnnemo.cpp
     nrntimeout.cpp
     nrnversion.cpp

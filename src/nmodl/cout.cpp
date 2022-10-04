@@ -370,31 +370,6 @@ void c_out_vectorize() {
         P(" _p = _data; _ppvar = _pdata;\n");
         check_tables();
 
-        P("\n#if METHOD3\n   if (_method3) {\n");
-        /*--- reprduction of normal with minor changes ---*/
-        P(cray_pragma());
-        P("	for (_ix = 0; _ix < _count; ++_ix) {\n");
-        P("		double _g, _rhs, _v;\n");
-        P("		_v = _nodes[_ix]->_v;\n");
-        printlist(get_ion_variables(0));
-        P("		_g = _nrn_current(_ix, _v + .001);\n");
-        printlist(begin_dion_stmt());
-        P("\n		_rhs = _nrn_current(_ix, _v);\n");
-        printlist(end_dion_stmt(".001"));
-        P("		_g = (_g - _rhs)/.001;\n");
-        /* set the ion variable values */
-        printlist(set_ion_variables(0));
-        if (point_process) {
-            P("		_nodes[_ix]->_d += _g * 1.e2/(_nd_area);\n");
-            P("		_nodes[_ix]->_rhs += (_g*_v - _rhs) * 1.e2/(_nd_area);\n");
-        } else {
-            P("		_nodes[_ix]->_thisnode._GC += _g;\n");
-            P("		_nodes[_ix]->_thisnode._EC += (_g*_v - _rhs);\n");
-        }
-        P("	}\n");
-        /*-------------*/
-        P("\n   }else\n#endif\n   {\n");
-
         /*--- normal ---*/
         P(cray_pragma());
         P("	for (_ix = 0; _ix < _count; ++_ix) {\n");

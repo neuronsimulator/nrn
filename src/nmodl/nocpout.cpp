@@ -248,7 +248,6 @@ void parout() {
 
     Lappendstr(defs_list,
                "\
-\n#if METHOD3\nextern int _method3;\n#endif\n\
 \n#if !NRNGPU\
 \n#undef exp\
 \n#define exp hoc_Exp\
