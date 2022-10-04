@@ -41,10 +41,6 @@ FILE *fin,    /* input file descriptor for filename.mod */
               /* or file2 from the second argument */
     *fparout, /* output file descriptor for filename.var */
     *fcout;   /* output file descriptor for filename.c */
-#if SIMSYS
-FILE *fctlout, /* filename.ctl */
-    *fnumout;  /* filename.num */
-#endif
 
 
 char* modprefix;
@@ -135,9 +131,7 @@ int main(int argc, char** argv) {
 
 #if MAC
     SIOUXSettings.asktosaveonclose = false;
-#if !SIMSYS
     Fprintf(stderr, "%s   %s   %s\n", pgm_name, RCS_version, RCS_date);
-#endif
 #endif
 
     init(); /* keywords into symbol table, initialize
@@ -177,10 +171,6 @@ int main(int argc, char** argv) {
                * are printed into .c file at beginning.
                */
     c_out();  /* print .c file */
-#if SIMSYS
-    IGNORE(fclose(fctlout));
-    IGNORE(fclose(fnumout));
-#endif
 
 #if !defined NMODL_TEXT
 #define NMODL_TEXT 1
@@ -315,17 +305,6 @@ static void openfiles(char* given_filename, char* output_dir) {
         diag("Can't create C file: ", output_filename);
     }
     Fprintf(stderr, "Translating %s into %s\n", input_filename, output_filename);
-
-#if SIMSYS
-    Sprintf(s, "%s.ctl", modprefix);
-    if ((fctlout = fopen(s, "w")) == (FILE*) 0) {
-        diag("Can't create variable file: ", s);
-    }
-    Sprintf(s, "%s.num", modprefix);
-    if ((fnumout = fopen(s, "w")) == (FILE*) 0) {
-        diag("Can't create C file: ", s);
-    }
-#endif
 }
 
 // Post-adjustments for VERBATIM blocks  (i.e  make them compatible with CPP).

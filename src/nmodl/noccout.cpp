@@ -112,11 +112,6 @@ void c_out() {
     P("/* NOT VECTORIZED */\n#define NRN_VECTORIZED 0\n");
     Fflush(fcout);
     /* things which must go first and most declarations */
-#if SIMSYS
-    P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mathlib.h\"\n");
-    P("#include \"common.h\"\n#include \"softbus.h\"\n");
-    P("#include \"sbtypes.h\"\n#include \"Solver.h\"\n");
-#else
     P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
     P("#undef PI\n");
     P("#define nil 0\n");
@@ -125,7 +120,6 @@ void c_out() {
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
 
-#endif
     printlist(defs_list);
     printlist(firstlist);
     P("static int _reset;\n");
@@ -163,9 +157,6 @@ void c_out() {
 
     /* Initialization function must always be present */
     P("\nstatic void initmodel() {\n  int _i; double _save;");
-#if SIMSYS || HMODL
-    P("\ninitmodel() {\n  int _i; double _save;");
-#endif
     P("_ninits++;\n");
     P(saveindep); /*see solve.c; blank if not a time dependent process*/
     P("{\n");

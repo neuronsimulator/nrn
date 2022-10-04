@@ -46,14 +46,8 @@ void c_out() {
     P("/* NOT VECTORIZED */\n");
     Fflush(fcout);
     /* things which must go first and most declarations */
-#if SIMSYS
-    P("#include <stdio.h>\n#include <math.h>\n#include \"mathlib.h\"\n");
-    P("#include \"common.h\"\n#include \"softbus.h\"\n");
-    P("#include \"sbtypes.h\"\n#include \"Solver.h\"\n");
-#else
     P("#include <stdio.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
     P("#undef PI\n");
-#endif
     printlist(defs_list);
     printlist(firstlist);
     RCS_version[strlen(RCS_version) - 2] = '\0';
@@ -95,9 +89,6 @@ void c_out() {
 
     /* Initialization function must always be present */
     P("\nstatic initmodel() {\n  int _i; double _save;");
-#if SIMSYS || HMODL
-    P("\ninitmodel() {\n  int _i; double _save;");
-#endif
     P("_ninits++;\n");
     P(saveindep); /*see solve.c; blank if not a time dependent process*/
     P("{\n");
