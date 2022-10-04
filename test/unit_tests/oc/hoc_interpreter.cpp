@@ -13,6 +13,15 @@ TEST_CASE("Test hoc interpreter", "[Neuron][hoc_interpreter]") {
 }
 
 SCENARIO("Test small HOC functions", "[NEURON][hoc_interpreter]") {
+    // This is targeting errors in ModelDB 136095 with #1995
+    GIVEN("An objref that gets redeclared with fewer indices") {
+        REQUIRE(hoc_oc("objref ncl[1][1][1]\n"
+                       "obfunc foo() { localobj x\n"
+                       "  return ncl\n"
+                       "}\n"
+                       "objref ncl\n"
+                       "foo()\n") == 0);
+    }
     // This is targeting AddressSanitizer errors that were seen in #1995
     GIVEN("Test calling a function that returns an Object that lived on the stack") {
         constexpr auto vector_size = 5;
