@@ -1377,7 +1377,7 @@ void push_frame(Symbol* sp, int narg) { /* helpful for explicit function calls *
     fp->ob = hoc_thisobject;
 }
 
-void pop_frame(void) {
+void hoc_pop_frame() {
     int i;
     frameobj_clean(fp);
     for (i = 0; i < fp->nargs; i++)
@@ -1400,6 +1400,8 @@ void call(void) /* call a function */
     fp->ob = hoc_thisobject;
     /*SUPPRESS 26*/
     fp->argn = stackp - 2; /* last argument */
+    auto const nargs_before_call = fp->nargs;
+    auto const stack_size_before_call = stack.size();
     BBSPOLL
 #if CABLE
     isec = nrn_isecstack();
@@ -1441,6 +1443,18 @@ void call(void) /* call a function */
         execerror(sp->name, "undefined function");
     }
 #if CABLE
+    // Check the stack size is what we expect, this is an attempt to catch
+    // unbalanced push/pop bugs early-ish. By now the arguments have been popped
+    // (in hoc_ret) and a return value might have been pushed (hoc_returning == 1)
+    auto const expected_stack_size = stack_size_before_call - nargs_before_call +
+                                     (hoc_returning == 1);
+    if (stack.size() != expected_stack_size) {
+        throw std::runtime_error("Stack mismatch: name=" + std::string{sp->name} +
+                                 " before=" + std::to_string(stack_size_before_call) +
+                                 " expected=" + std::to_string(expected_stack_size) +
+                                 " after=" + std::to_string(stack.size()) +
+                                 " nargs=" + std::to_string(nargs_before_call));
+    }
     if (hoc_returning) {
         nrn_secstack(isec);
     }
