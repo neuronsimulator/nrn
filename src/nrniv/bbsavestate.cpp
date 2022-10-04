@@ -2222,7 +2222,7 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
             se->flag_ = flag;
             if (moff >= 0) {
                 using std::get;
-                movable = &get<void*>(pp->prop->dparam[moff]);
+                movable = &get_ref<void*>(pp->prop->dparam[moff]);
                 if (flag == 1) {
                     *movable = tqi;
                 }
