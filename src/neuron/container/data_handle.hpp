@@ -7,15 +7,9 @@
 #include <sstream>
 #include <vector>
 
-// TODO: support throwing exceptions instead of using hoc_execerror
-extern "C" [[noreturn]] void hoc_execerror(const char*, const char*);
-
 namespace neuron::container {
-namespace detail {
-template <bool>
-struct generic_data_handle;
-}
-
+struct do_not_search_t {};
+inline constexpr do_not_search_t do_not_search{};
 /** @brief Stable handle to a generic value.
  *
  *  Without this type one can already hold a Node::handle `foo` and call
@@ -71,6 +65,9 @@ struct data_handle {
             m_raw_ptr = raw_ptr;
         }
     }
+
+    data_handle(do_not_search_t, T* raw_ptr)
+        : m_raw_ptr{raw_ptr} {}
 
     [[nodiscard]] bool refers_to_a_modern_data_structure() const {
         return !m_raw_ptr;
@@ -181,10 +178,9 @@ struct data_handle {
     void check_modern_mode_validity(const char* method) const {
         assert(m_container);
         if (!m_offset) {
-            // TODO: support throwing exceptions instead of using hoc_execerror
             std::ostringstream oss;
             oss << *this << " invalid " << method;
-            hoc_execerror(oss.str().c_str(), nullptr);
+            throw std::runtime_error(oss.str());
         }
     }
     friend struct generic_data_handle;
@@ -212,6 +208,8 @@ template <>
 struct data_handle<void> {
     data_handle() = default;
     data_handle(void* raw_ptr)
+        : m_raw_ptr{raw_ptr} {}
+    data_handle(do_not_search_t, void* raw_ptr)
         : m_raw_ptr{raw_ptr} {}
     [[nodiscard]] bool refers_to_a_modern_data_structure() const {
         return false;

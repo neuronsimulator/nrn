@@ -70,8 +70,10 @@ struct generic_data_handle {
             return {};
         } else {
             // This is a data handle in backwards-compatibility mode, wrapping a
-            // raw pointer, or a null data handle.
-            return {static_cast<T*>(m_container)};
+            // raw pointer, or a null data handle. Passing do_not_search
+            // prevents the data_handle<T> constructor from trying to find the
+            // raw pointer in the NEURON data structures.
+            return {do_not_search, static_cast<T*>(m_container)};
         }
     }
 
@@ -141,11 +143,9 @@ struct generic_data_handle {
         } else {
             // This is a data handle in backwards-compatibility mode, wrapping a
             // raw pointer, or a null data handle.
-            static_assert(std::is_same_v<T, void>,
-                          "generic_data_handle::raw_ptr only supports void for now");
             bool const is_typeless_null = holds<typeless_null>();
             // Using raw_ptr() on a typeless_null (default-constructed) handle
-            // turns it into a legacy handle-to-null (i.e. "void*")
+            // turns it into a legacy handle-to-T
             if (is_typeless_null) {
                 m_type = typeid(T);
             } else if (std::type_index{typeid(T)} != m_type) {
@@ -153,7 +153,7 @@ struct generic_data_handle {
                                          ")::raw_ptr<" + cxx_demangle(typeid(T).name()) +
                                          ">() type mismatch");
             }
-            return m_container;
+            return *reinterpret_cast<T**>(&m_container);  // Eww
         }
     }
 
