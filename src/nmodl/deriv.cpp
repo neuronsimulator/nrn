@@ -101,7 +101,7 @@ void solv_diffeq(Item* qsol,
                     "\n#define _deriv%d_advance get<int>(_thread[%d])\n"
                     "#define _dith%d %d\n"
                     "#define _recurse get<int>(_thread[%d])\n"
-                    "#define _newtonspace%d get<void*>(_thread[%d])\n",
+                    "#define _newtonspace%d get_ref<NewtonSpace*>(_thread[%d])\n",
                     listnum,
                     thread_data_index,
                     listnum,
@@ -110,18 +110,13 @@ void solv_diffeq(Item* qsol,
                     listnum,
                     thread_data_index + 3);
             vectorize_substitute(q, buf);
-            Sprintf(buf,
-                    "  nrn_set_pval(_thread[_dith%d], (double*)ecalloc(%d, sizeof(double)));\n",
-                    listnum,
-                    2 * numeqn);
+            Sprintf(buf, "  _thread[_dith%d] = new double[%d]{};\n", listnum, 2 * numeqn);
             lappendstr(thread_mem_init_list, buf);
             Sprintf(buf, "  _newtonspace%d = nrn_cons_newtonspace(%d);\n", listnum, numeqn);
             lappendstr(thread_mem_init_list, buf);
-            Sprintf(buf, "  free(nrn_get_pval(_thread[_dith%d]));\n", listnum);
+            Sprintf(buf, "  delete[] get<double*>(_thread[_dith%d]);\n", listnum);
             lappendstr(thread_cleanup_list, buf);
-            Sprintf(buf,
-                    "  nrn_destroy_newtonspace(static_cast<NewtonSpace*>(_newtonspace%d));\n",
-                    listnum);
+            Sprintf(buf, "  nrn_destroy_newtonspace(_newtonspace%d);\n", listnum);
             lappendstr(thread_cleanup_list, buf);
             thread_data_index += 4;
         } else {
@@ -175,7 +170,7 @@ void solv_diffeq(Item* qsol,
         if (vectorize) {
             Sprintf(
                 buf,
-                "%s%s_thread(&get<void*>(_thread[_spth%d]), %d, _slist%d, _dlist%d, _p, &%s, %s, %s\
+                "%s%s_thread(&get_ref<void*>(_thread[_spth%d]), %d, _slist%d, _dlist%d, _p, &%s, %s, %s\
 , _linmat%d, _ppvar, _thread, _nt);\n",
                 ssprefix,
                 method->name,

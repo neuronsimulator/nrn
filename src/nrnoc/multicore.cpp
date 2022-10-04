@@ -740,7 +740,7 @@ void reorder_secorder() {
         for (isec = order - _nt->ncell; isec < order; ++isec) {
             sec = secorder[isec];
             /* to make it easy to fill in PreSyn.nt_*/
-            sec->prop->dparam[9] = static_cast<void*>(_nt);
+            sec->prop->dparam[9] = _nt;
             for (j = 0; j < sec->nnode; ++j) {
                 nd = sec->pnode[j];
                 nd->_nt = _nt;
@@ -791,7 +791,7 @@ void reorder_secorder() {
         for (isec = order - _nt->ncell; isec < order; ++isec) {
             sec = secorder[isec];
             /* to make it easy to fill in PreSyn.nt_*/
-            sec->prop->dparam[9] = static_cast<void*>(_nt);
+            sec->prop->dparam[9] = _nt;
             for (j = 0; j < sec->nnode; ++j) {
                 nd = sec->pnode[j];
                 nd->_nt = _nt;
