@@ -378,6 +378,12 @@ void hoc_init_space(void) /* create space for stack and code */
     hoc_temp_obj_pool_ = (Object**) emalloc(sizeof(Object*) * TOBJ_POOL_SIZE);
 }
 
+[[nodiscard]] std::size_t hoc_stack_size() {
+    auto const dist = std::distance(stack, stackp);
+    assert(dist % 2 == 0);
+    return dist / 2;
+}
+
 #define MAXINITFCNS 10
 static int maxinitfcns;
 static Pfrv initfcns[MAXINITFCNS];
@@ -1401,7 +1407,7 @@ void call(void) /* call a function */
     /*SUPPRESS 26*/
     fp->argn = stackp - 2; /* last argument */
     auto const nargs_before_call = fp->nargs;
-    auto const stack_size_before_call = stack.size();
+    auto const stack_size_before_call = hoc_stack_size();
     BBSPOLL
 #if CABLE
     isec = nrn_isecstack();
@@ -1448,11 +1454,11 @@ void call(void) /* call a function */
     // (in hoc_ret) and a return value might have been pushed (hoc_returning == 1)
     auto const expected_stack_size = stack_size_before_call - nargs_before_call +
                                      (hoc_returning == 1);
-    if (stack.size() != expected_stack_size) {
+    if (hoc_stack_size() != expected_stack_size) {
         throw std::runtime_error("Stack mismatch: name=" + std::string{sp->name} +
                                  " before=" + std::to_string(stack_size_before_call) +
                                  " expected=" + std::to_string(expected_stack_size) +
-                                 " after=" + std::to_string(stack.size()) +
+                                 " after=" + std::to_string(hoc_stack_size()) +
                                  " nargs=" + std::to_string(nargs_before_call));
     }
     if (hoc_returning) {

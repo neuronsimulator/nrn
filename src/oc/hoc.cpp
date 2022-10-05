@@ -1383,7 +1383,8 @@ int hoc_oc(const char* buf) {
         try {
             signal_handler_guard _{};
             kernel();
-        } catch (...) {
+        } catch (std::exception const& e) {
+            std::cerr << "hoc_oc caught exception: " << e.what() << std::endl;
             hoc_initcode();
             hoc_intset = 0;
             return 1;
