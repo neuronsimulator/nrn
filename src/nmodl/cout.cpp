@@ -375,8 +375,6 @@ void c_out_vectorize() {
         }
         P("	}\n");
         /*------------*/
-
-        P("   }\n");
     }
     P("	return 0.;\n}\n");
 
