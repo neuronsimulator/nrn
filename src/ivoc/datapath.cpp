@@ -402,16 +402,15 @@ void HocDataPathImpl::search_pysec() {
 }
 
 void HocDataPathImpl::search(Section* sec) {
-    using neuron::container::get_ref;
     using std::get;
     if (get<double>(sec->prop->dparam[2]) == sentinal) {
-        found(&get_ref<double>(sec->prop->dparam[2]), "L", sym_L);
+        found(&(sec->prop->dparam[2].literal_value<double>()), "L", sym_L);
     }
     if (get<double>(sec->prop->dparam[4]) == sentinal) {
-        found(&get_ref<double>(sec->prop->dparam[4]), "rallbranch", sym_rallbranch);
+        found(&(sec->prop->dparam[4].literal_value<double>()), "rallbranch", sym_rallbranch);
     }
     if (get<double>(sec->prop->dparam[7]) == sentinal) {
-        found(&get_ref<double>(sec->prop->dparam[7]), "Ra", sym_Ra);
+        found(&(sec->prop->dparam[7].literal_value<double>()), "Ra", sym_Ra);
     }
     if (!sec->parentsec && sec->parentnode) {
         search(sec->parentnode, get<double>(sec->prop->dparam[1]));

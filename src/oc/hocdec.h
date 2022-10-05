@@ -156,20 +156,6 @@ using Datum = neuron::container::generic_data_handle;
 //     return static_cast<T>(d);
 // }
 
-/** @brief Get a reference to the given typed value inside a Datum.
- *
- *  Unlike get<double*>(datum), get_ref<double*>(datum) will fail if the Datum
- *  holds a data_handle<double>, as in that case there is no persistent
- *  data_handle<double> that can be referred to.
- *
- *  @todo Consider if this could be relaxed with a common base class of
- *  data_handle<T> and generic_data_handle?
- */
-// template <typename T>
-// T& get_ref(Datum& d) {
-//     return d.literal_value<T>();
-// }
-
 struct cTemplate {
     Symbol* sym;
     Symlist* symtable;
