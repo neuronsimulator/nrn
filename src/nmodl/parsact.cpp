@@ -814,6 +814,13 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
     Item* q;
     if (SYM(qname)->subtype & EXTDEF) {
         if (strcmp(SYM(qname)->name, "nrn_pointing") == 0) {
+            // TODO: this relies on undefined behaviour in C++. &*foo is not
+            // guaranteed to be equivalent to foo if foo is null. See
+            // https://stackoverflow.com/questions/51691273/is-null-well-defined-in-c,
+            // https://en.cppreference.com/w/cpp/language/operator_member_access#Built-in_address-of_operator
+            // also confirms that the special case here in C does not apply to
+            // C++. All of that said, neither GCC nor Clang even produces a
+            // warning and it seems to work.
             Insertstr(qpar1->next, "&");
         } else if (strcmp(SYM(qname)->name, "state_discontinuity") == 0) {
             if (blocktype == NETRECEIVE) {

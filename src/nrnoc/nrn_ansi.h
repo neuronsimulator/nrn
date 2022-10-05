@@ -47,7 +47,9 @@ extern void _nrn_watch_allocate(Datum*,
                                 Point_process*,
                                 double nrflag);
 extern void hoc_reg_ba(int, nrn_bamech_t, int);
-extern int nrn_pointing(double*);
+[[nodiscard]] inline int nrn_pointing(double* p) {
+    return static_cast<bool>(p);
+}
 
 extern void nrn_pushsec(Section*);
 extern void nrn_popsec(void);

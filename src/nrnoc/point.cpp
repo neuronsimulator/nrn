@@ -20,8 +20,9 @@ extern Symbol** pointsym; /*list of variable symbols in s->u.ppsym[k]
 extern short* nrn_is_artificial_;
 extern Prop* prop_alloc(Prop**, int, Node*);
 
+static double ppp_dummy = 42.0;
 static int cppp_semaphore = 0; /* connect point process pointer semaphore */
-static double** cppp_pointer;
+static Datum* cppp_datum = nullptr;
 static void free_one_point(Point_process* pnt);
 static void create_artcell_prop(Point_process* pnt, short type);
 
@@ -243,8 +244,6 @@ double has_loc_point(void* v) {
 }
 
 double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
-    static double dummy;
-    double* pd;
     if (!pnt->prop) {
         if (nrn_inpython_ == 1) { /* python will handle the error */
             hoc_warning("point process not located in a section", nullptr);
@@ -255,29 +254,28 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
         }
     }
     if (sym->subtype == NRNPOINTER) {
-        // In case _p_somevar is being used as an opaque void* then the Datum
-        // will hold a literal void*, if instead somevar was used in the MOD
-        // file and it was set from the interpreter (mech._ref_pv = seg._ref_v),
-        // then the Datum will hold a data handle.
+        // In case _p_somevar is being used as an opaque void* in a VERBATIM
+        // block then then the Datum will hold a literal void* and will not be
+        // convertible to double*. If instead somevar is used in the MOD file
+        // and it was set from the interpreter (mech._ref_pv = seg._ref_v), then
+        // the Datum will hold either data_handle<double> or a literal double*.
+        // For now, don't do anything special -- if the datum holds a literal
+        // void* then this code will throw.
         auto& datum = pnt->prop->dparam[sym->u.rng.index + index];
-        pd = datum.refers_to_a_modern_data_structure() ? static_cast<double*>(datum) : nullptr;
         if (cppp_semaphore) {
             ++cppp_semaphore;
-            assert(false);
-            // old code: cppp_pointer = &((pnt->prop->dparam)[sym->u.rng.index + index].pval);
-            pd = &dummy;
-        } else if (!pd) {
-            return nullptr;
+            cppp_datum = &datum;  // we will store a value in `datum` later
+            return &ppp_dummy;
+        } else {
+            return static_cast<double*>(datum);
         }
     } else {
         if (pnt->prop->ob) {
-            pd = pnt->prop->ob->u.dataspace[sym->u.rng.index].pval + index;
+            return pnt->prop->ob->u.dataspace[sym->u.rng.index].pval + index;
         } else {
-            pd = &(pnt->prop->param[sym->u.rng.index + index]);
+            return &(pnt->prop->param[sym->u.rng.index + index]);
         }
     }
-    /*printf("point_process_pointer %s pd=%lx *pd=%g\n", sym->name, pd, *pd);*/
-    return pd;
 }
 
 /* put the right double pointer on the stack */
@@ -304,7 +302,7 @@ void connect_point_process_pointer(void) {
         hoc_execerror("not a point process pointer", (char*) 0);
     }
     cppp_semaphore = 0;
-    *cppp_pointer = hoc_pxpop();
+    *cppp_datum = hoc_pop_handle<double>();
     hoc_nopop();
 }
 
