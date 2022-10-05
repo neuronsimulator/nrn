@@ -1473,8 +1473,7 @@ double* cable_prop_eval_pointer(Symbol* sym) {
     sec = nrn_sec_pop();
     switch (sym->u.rng.type) {
     case CABLESECTION:
-        using neuron::container::get_ref;
-        return &get_ref<double>(sec->prop->dparam[sym->u.rng.index]);
+        return &(sec->prop->dparam[sym->u.rng.index].literal_value<double>());
     default:
         hoc_execerror(sym->name, " not a USERPROPERTY that can be pointed to");
     }

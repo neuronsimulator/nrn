@@ -724,8 +724,7 @@ static double nc_event(void* v) {
         if (!nrn_is_artificial_[type]) {
             hoc_execerror("Can only send fake self-events to ARTIFICIAL_CELLs", 0);
         }
-        using neuron::container::get_ref;
-        void** pq = &get_ref<void*>(pnt->prop->dparam[nrn_artcell_qindex_[type]]);
+        void** pq = &(pnt->prop->dparam[nrn_artcell_qindex_[type]].literal_value<void*>());
         net_send(pq, d->weight_, pnt, td, flag);
     } else {
         net_cvode_instance->event(td, d, PP2NT(d->target_));
@@ -3173,9 +3172,8 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     assert(PP2NT(target_) == nt);
     Cvode* cv = (Cvode*) target_->nvi_;
     if (nrn_use_selfqueue_ && nrn_is_artificial_[type]) {
-        using neuron::container::get_ref;
         TQItem** pq =
-            (TQItem**) (&get_ref<void*>(target_->prop->dparam[nrn_artcell_qindex_[type]]));
+            (TQItem**) (&(target_->prop->dparam[nrn_artcell_qindex_[type]].literal_value<void*>()));
         TQItem* q;
         while ((q = *(pq)) != nil && q->t_ < tt) {
             double t1 = q->t_;
@@ -3419,8 +3417,7 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
     se->flag_ = flag;
     se->movable_ = nil;
     if (moff >= 0) {
-        using neuron::container::get_ref;
-        se->movable_ = &get_ref<void*>(se->target_->prop->dparam[moff]);
+        se->movable_ = &(se->target_->prop->dparam[moff].literal_value<void*>());
     }
     return se;
 }
@@ -3457,9 +3454,8 @@ void SelfEvent::savestate_write(FILE* f) {
     fprintf(f, "%d\n", SelfEventType);
     int moff = -1;
     if (movable_) {
-        using neuron::container::get_ref;
         moff = (Datum*) (movable_) -target_->prop->dparam;
-        assert(movable_ == &get_ref<void*>(target_->prop->dparam[moff]));
+        assert(movable_ == &(target_->prop->dparam[moff].literal_value<void*>()));
     }
 
     int ncindex = -1;
@@ -4100,7 +4096,6 @@ void NetCvode::re_init(double t) {
 }
 
 void NetCvode::fornetcon_prepare() {
-    using neuron::container::get_ref;
     using std::get;
     NrnThread* nt;
     NrnThreadMembList* tml;
@@ -4128,7 +4123,7 @@ void NetCvode::fornetcon_prepare() {
             for (j = 0; j < m->nodecount; ++j) {
                 // Save ForNetConsInfo* as void* to avoid needing to expose the
                 // definition of ForNetConsInfo to translated MOD file code
-                void** v = &get_ref<void*>(m->pdata[j][index]);
+                void** v = &(m->pdata[j][index].literal_value<void*>());
                 _nrn_free_fornetcon(v);
                 ForNetConsInfo* fnc = new ForNetConsInfo;
                 *v = fnc;
@@ -4139,7 +4134,7 @@ void NetCvode::fornetcon_prepare() {
             FOR_THREADS(nt) for (tml = nt->tml; tml; tml = tml->next) if (tml->index == type) {
                 Memb_list* m = tml->ml;
                 for (j = 0; j < m->nodecount; ++j) {
-                    void** v = &get_ref<void*>(m->pdata[j][index]);
+                    void** v = &(m->pdata[j][index].literal_value<void*>());
                     _nrn_free_fornetcon(v);
                     ForNetConsInfo* fnc = new ForNetConsInfo;
                     *v = fnc;
