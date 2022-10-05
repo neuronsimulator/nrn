@@ -857,10 +857,6 @@ double _modl_get_dt_thread(NrnThread* nt) {
 }
 #endif  // 1
 
-int nrn_pointing(double* pd) {
-    return pd ? 1 : 0;
-}
-
 int state_discon_flag_ = 0;
 void state_discontinuity(int i, double* pd, double d) {
     if (state_discon_allowed_ && state_discon_flag_ == 0) {
