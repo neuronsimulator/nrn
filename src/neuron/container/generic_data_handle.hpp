@@ -21,7 +21,10 @@ struct typeless_null {};
  *
  *  This is a type-erased version of data_handle<T>, with the additional feature
  *  that it can store values of POD types no larger than a pointer (typically
- *  int and float).
+ *  int and float). It stores (at runtime) the type of the value it contains,
+ *  and is therefore type-safe, but this increases sizeof(generic_data_handle)
+ *  by 50% so it may be prudent to view this as useful for validation/debugging
+ *  but not something to become too dependent on.
  */
 struct generic_data_handle {
   private:
@@ -76,6 +79,10 @@ struct generic_data_handle {
      *  generic data handle is null. If the generic data handle is not null then
      *  the conversion will succeed if the generic data handle actually holds a
      *  data_handle<T> or a literal T*.
+     *
+     *  It might be interesting in future to explore dropping m_type in
+     *  optimised builds, in which case we should aim to avoid predicating
+     *  important logic on exceptions thrown by this function.
      */
     template <typename T>
     explicit operator data_handle<T>() const {
@@ -115,6 +122,10 @@ struct generic_data_handle {
     }
 
     /** @brief Explicit conversion to any T.
+     *
+     *  It might be interesting in future to explore dropping m_type in
+     *  optimised builds, in which case we should aim to avoid predicating
+     *  important logic on exceptions thrown by this function.
      */
     template <typename T>
     explicit operator T() const {
@@ -159,15 +170,58 @@ struct generic_data_handle {
         return os << ", type=" << cxx_demangle(dh.m_type.name()) << '}';
     }
 
+    /** @brief Check if this handle refers to the specific type.
+     *
+     *  This could be a small, trivial type (e.g. T=int) or a pointer type (e.g.
+     *  T=double*). holds<double*>() == true could either indicate that a
+     *  data_handle<double> is held or that a literal double* is held.
+     *
+     *  It might be interesting in future to explore dropping m_type in
+     *  optimised builds, in which case we should aim to avoid predicating
+     *  important logic on this function.
+     */
     template <typename T>
     [[nodiscard]] bool holds() const {
         return std::type_index{typeid(T)} == m_type;
     }
 
+    /** @brief Check if this handle contains a data_handle<T> or just a literal.
+     *
+     *  This should match
+     *  static_cast<data_handle<T>>(generic_handle).refers_to_a_modern_data_structure()
+     *  if T is correct. This will return true if we hold a data_handle that
+     *  refers to a since-deleted row.
+     */
+    [[nodiscard]] bool refers_to_a_modern_data_structure() const {
+        return m_offset || m_offset.m_ptr;
+    }
+
+    /** @brief Return the demangled name of the type this handle refers to.
+     *
+     *  If the handle contains data_handle<T>, this will be T*. If a literal
+     *  value or raw pointer is being wrapped, that possibly-pointer type will
+     *  be returned.
+     *
+     *  It might be interesting in future to explore dropping m_type in
+     *  optimised builds, in which case we should aim to avoid predicating
+     *  important logic on this function.
+     */
     [[nodiscard]] std::string type_name() const {
         return cxx_demangle(m_type.name());
     }
 
+    /** @brief Obtain a reference to the literal value held by this handle.
+     *
+     *  Storing literal values is incompatible with storing data_handle<T>. If
+     *  the handle stores data_handle<T> then calling this method throws an
+     *  exception. If the handle is null, this sets the stored type to be T and
+     *  returns a reference to it. If the handle already holds a literal value
+     *  of type T then a reference to it is returned.
+     *
+     *  It might be interesting in future to explore dropping m_type in
+     *  optimised builds, in which case we should aim to avoid predicating
+     *  important logic on exceptions thrown by this function.
+     */
     template <typename T>
     [[nodiscard]] T& literal_value() {
         if (m_offset || m_offset.m_ptr) {
@@ -195,12 +249,11 @@ struct generic_data_handle {
         oss << *this << std::move(message);
         throw std::runtime_error(std::move(oss).str());
     }
-    // Offset into the underlying storage container. If this generic_data_handle
-    // refers to a data_handle<T*> in backwards-compatibility mode, where it
-    // just wraps a plain T*, then m_offset is null.
+    // Offset into the underlying storage container. If this handle is holding a
+    // literal value, such as a raw pointer, then this will be null.
     identifier_base m_offset{};
     // std::vector<T>* for the T encoded in m_type if m_offset is non-null,
-    // otherwise T*
+    // otherwise a literal value is stored in this space.
     void* m_container{};
     // Reference to typeid(T) for the wrapped type
     std::type_index m_type{typeid(typeless_null)};

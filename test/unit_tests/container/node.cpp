@@ -32,6 +32,8 @@ data_handle<T> transform(data_handle<T> handle, Transform type) {
     }
 }
 
+constexpr static double magic_voltage_value = 42.;
+
 TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
     GIVEN("A null handle") {
         data_handle<double> handle{};
@@ -47,7 +49,6 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
             REQUIRE(handle == other_handle);
         }
     }
-    constexpr double magic_voltage_value = 42.;
     GIVEN("A handle wrapping a raw pointer (compatibility mode)") {
         double foo{magic_voltage_value};
         data_handle<double> handle{&foo};
@@ -163,6 +164,9 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
             actual << null_handle;
             REQUIRE(actual.str() == "generic_data_handle{raw=nullptr, type=double*}");
         }
+        THEN("Check it does not claim to refer to a modern container") {
+            REQUIRE_FALSE(null_handle.refers_to_a_modern_data_structure());
+        }
     }
     GIVEN("A handle wrapping a raw pointer (compatibility mode)") {
         double foo{};
@@ -182,6 +186,40 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
             actual << handle;
             expected << "generic_data_handle{raw=" << &foo << ", type=double*}";
             REQUIRE(actual.str() == expected.str());
+        }
+        THEN("Check it does not claim to refer to a modern container") {
+            REQUIRE_FALSE(handle.refers_to_a_modern_data_structure());
+        }
+    }
+    GIVEN("A generic_handle referring to an entry in an SOA container") {
+        REQUIRE(neuron::model().node_data().size() == 0);
+        std::optional<::Node> node{std::in_place};
+        node->set_v(magic_voltage_value);
+        auto typed_handle = node->v_handle();
+        generic_data_handle handle{typed_handle};
+        THEN("Check it remembered the double type") {
+            REQUIRE(handle.type_name() == "double*");
+        }
+        THEN("Check it can be converted back to data_handle<double>") {
+            REQUIRE_NOTHROW(static_cast<data_handle<double>>(handle));
+        }
+        THEN("Check it cannot be converted to data_handle<int>") {
+            REQUIRE_THROWS(static_cast<data_handle<int>>(handle));
+        }
+        THEN("Check it has the expected string representation") {
+            std::ostringstream actual;
+            actual << handle;
+            REQUIRE(actual.str() ==
+                    "generic_data_handle{cont=Node::field::Voltage row=0/1, type=double*}");
+        }
+        THEN("Check that it knows it refers to a modern data structure") {
+            REQUIRE(handle.refers_to_a_modern_data_structure());
+        }
+        WHEN("The row of the modern data structure is deleted") {
+            node.reset();
+            THEN("Check it still reports referring to a modern data structure") {
+                REQUIRE(handle.refers_to_a_modern_data_structure());
+            }
         }
     }
 }
