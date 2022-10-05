@@ -255,16 +255,12 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
         }
     }
     if (sym->subtype == NRNPOINTER) {
-        // In case _p_somevar is being used as an opaque void* then the active
-        // member of the datum will be generic_data_handle, but its type will
-        // be void and not double
+        // In case _p_somevar is being used as an opaque void* then the Datum
+        // will hold a literal void*, if instead somevar was used in the MOD
+        // file and it was set from the interpreter (mech._ref_pv = seg._ref_v),
+        // then the Datum will hold a data handle.
         auto& datum = pnt->prop->dparam[sym->u.rng.index + index];
-        if (datum.holds<double*>()) {
-            using std::get;
-            pd = get<double*>(datum);
-        } else {
-            pd = nullptr;
-        }
+        pd = datum.refers_to_a_modern_data_structure() ? static_cast<double*>(datum) : nullptr;
         if (cppp_semaphore) {
             ++cppp_semaphore;
             assert(false);
