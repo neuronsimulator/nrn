@@ -515,7 +515,10 @@ extern Memb_func* memb_func;\n\
                 }
             }
         }
-        Sprintf(buf, "  _thread[%d] = ecalloc(%d, sizeof(double));\n", thread_data_index, cnt);
+        Sprintf(buf,
+                "  _thread[%d] = static_cast<double*>(ecalloc(%d, sizeof(double)));\n",
+                thread_data_index,
+                cnt);
         lappendstr(thread_mem_init_list, buf);
         Sprintf(buf, "  free(static_cast<void*>(_thread[%d]));\n", thread_data_index);
         lappendstr(thread_cleanup_list, buf);
