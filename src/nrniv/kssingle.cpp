@@ -370,7 +370,6 @@ void KSSingle::nextNtrans(KSSingleNodeData* snd) {
 }
 
 void KSSingle::alloc(Prop* p, int sindex) {  // and discard old if not NULL
-    using neuron::container::get_ref;
     using std::get;
     auto* snd = get<KSSingleNodeData*>(p->dparam[2]);
     if (snd) {
@@ -378,7 +377,7 @@ void KSSingle::alloc(Prop* p, int sindex) {  // and discard old if not NULL
     }
     snd = new KSSingleNodeData();
     snd->kss_ = this;
-    snd->ppnt_ = &get_ref<Point_process*>(p->dparam[1]);
+    snd->ppnt_ = &(p->dparam[1].literal_value<Point_process*>());
     p->dparam[2] = snd;
     snd->statepop_ = p->param + sindex;
 }
