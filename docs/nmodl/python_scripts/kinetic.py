@@ -8,7 +8,7 @@ class cadifusCell(Cell):
     def _create_cell(self):
         self.section = h.Section()
         self.section.insert("cadifus")
-        self.section(.001).ca_cadifus[0] = 1e-2
+        self.section(0.001).ca_cadifus[0] = 1e-2
 
     def record(self):
         tvec = h.Vector()

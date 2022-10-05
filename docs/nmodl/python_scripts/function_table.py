@@ -11,8 +11,8 @@ class k3stCell(Cell):
         tau1_values = []
         voltage_values = []
         for i in range(10):
-            tau1_values.append(i*0.25)
-            voltage_values.append(-70+10*i)
+            tau1_values.append(i * 0.25)
+            voltage_values.append(-70 + 10 * i)
         tau1_vector = h.Vector(tau1_values)
         voltage_vector = h.Vector(voltage_values)
         h.table_tau1_k3st(tau1_vector, voltage_vector)
