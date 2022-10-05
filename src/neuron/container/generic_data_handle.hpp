@@ -28,6 +28,8 @@ struct typeless_null {};
  */
 struct generic_data_handle {
   private:
+    // The exact criteria could be refined, it is definitely not possible to
+    // store types with non-trivial destructors.
     template <typename T>
     static constexpr bool can_be_stored_literally_v = std::is_trivial_v<T> &&
                                                       sizeof(T) <= sizeof(void*);
@@ -218,6 +220,10 @@ struct generic_data_handle {
      *  returns a reference to it. If the handle already holds a literal value
      *  of type T then a reference to it is returned.
      *
+     *  Note that, unlike converting to double*, literal_value<double*>() will
+     *  fail if the handle contains data_handle<double>, as in that case there
+     *  is no persistent double* that could be referred to.
+     *
      *  It might be interesting in future to explore dropping m_type in
      *  optimised builds, in which case we should aim to avoid predicating
      *  important logic on exceptions thrown by this function.
@@ -262,11 +268,6 @@ struct generic_data_handle {
 template <typename T>
 T get(generic_data_handle const& gh) {
     return static_cast<T>(gh);
-}
-
-template <typename T>
-T& get_ref(generic_data_handle& gh) {
-    return gh.literal_value<T>();
 }
 
 }  // namespace neuron::container
