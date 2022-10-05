@@ -348,14 +348,7 @@ static void free_one_point(Point_process* pnt) {
 
 // called from prop_free
 void clear_point_process_struct(Prop* p) {
-    auto* const pnt = [](auto& datum) -> Point_process* {
-        if (datum.template holds<Point_process*>()) {
-            using std::get;
-            return get<Point_process*>(datum);
-        } else {
-            return nullptr;
-        }
-    }(p->dparam[1]);
+    auto* const pnt = static_cast<Point_process*>(p->dparam[1]);
     if (pnt) {
         free_one_point(pnt);
         if (pnt->ob) {
