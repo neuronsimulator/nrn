@@ -4,6 +4,7 @@
 #include "neuron/container/soa_identifier.hpp"
 #include "neuron/model_data_fwd.hpp"
 
+#include <cstring>
 #include <typeindex>
 #include <type_traits>
 #include <vector>
