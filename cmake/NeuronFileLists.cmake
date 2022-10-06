@@ -15,7 +15,6 @@ set(HEADER_FILES_TO_INSTALL
     hoclist.h
     hocparse.h
     isoc99.h
-    ivocvect.h
     ivstream.h
     mcran4.h
     md1redef.h
@@ -37,7 +36,6 @@ set(HEADER_FILES_TO_INSTALL
     nrnoc_ml.h
     nrnmpi.h
     nrnmpidec.h
-    nrnmutdec.h
     nrnrandom.h
     nrnran123.h
     nrnredef.h
