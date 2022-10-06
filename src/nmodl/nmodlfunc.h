@@ -91,7 +91,7 @@ void check_useion_variables();
 void explicit_decl(Item* q);
 void parm_array_install(Symbol* n, char* num, char* units, char* limits, int index);
 void parminstall(Symbol* n, char* num, char* units, char* limits);
-void indepinstall(Symbol* n, char* from, char* to, char* with, Item* qstart, char* units, int scop);
+void indepinstall(Symbol* n, char* from, char* to, char* with, char* units);
 void depinstall(int type,
                 Symbol* n,
                 int index,

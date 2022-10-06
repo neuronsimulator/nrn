@@ -19,8 +19,6 @@ extern List *begin_dion_stmt(), *end_dion_stmt(char*);
 extern List* conductance_;
 static void conductance_cout();
 
-extern Symbol* indepsym;
-extern List* indeplist;
 extern List* defs_list;
 extern char* saveindep;
 char* modelline;

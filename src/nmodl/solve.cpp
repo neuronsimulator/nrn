@@ -345,9 +345,6 @@ void whileloop(Item* qsol, long type, int ss) {
         /*SUPPRESS 622*/
         assert(0);
     }
-    if (strcmp(indepsym->name, "t") != 0) {
-        diag("The independent variable name must be `t'", (char*) 0);
-    }
 
     if (called) {
         Fprintf(stderr,
