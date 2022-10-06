@@ -37,7 +37,6 @@ extern List* state_discon_list_;
 /* we no longer update the #else clauses. */
 extern int vectorize;
 static List* vectorize_replacements; /* pairs of item pointer, strings */
-extern char* cray_pragma();
 extern int electrode_current; /* 1 means we should watch out for extracellular
                     and handle it correctly */
 
@@ -844,16 +843,6 @@ void vectorize_do_substitute() {
             replacstr(q1, STR(q));
         }
     }
-}
-
-char* cray_pragma() {
-    static char buf[] =
-        "\
-\n#if _CRAY\
-\n#pragma _CRI ivdep\
-\n#endif\
-\n";
-    return buf;
 }
 
 static void conductance_cout() {

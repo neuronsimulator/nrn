@@ -86,13 +86,9 @@ not thread safe and _p and _ppvar are static.
 #define IONCUR  3 /* assigned */
 #define IONDCUR 4
 
-extern int assert_threadsafe;
 extern int brkpnt_exists;
 static char* brkpnt_str_;
 extern Symbol* indepsym;
-extern Symbol* scop_indep;
-extern Symbol* stepsym;
-extern char* reprime();
 extern List* symlist[];
 extern List* ldifuslist;
 extern char* finname;

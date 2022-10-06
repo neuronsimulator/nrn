@@ -14,7 +14,6 @@ extern char* current_line();
 extern List* massage_list_;
 extern List* nrnstate;
 extern int vectorize;
-extern char* cray_pragma();
 extern int netrec_state_count;
 extern int netrec_need_thread;
 Item* cvode_cnexp_solve;
