@@ -37,8 +37,8 @@ extern List* state_discon_list_;
 /* we no longer update the #else clauses. */
 extern int vectorize;
 static List* vectorize_replacements; /* pairs of item pointer, strings */
-extern int electrode_current; /* 1 means we should watch out for extracellular
-                    and handle it correctly */
+extern int electrode_current;        /* 1 means we should watch out for extracellular
+                           and handle it correctly */
 
 #if __TURBOC__ || SYSV || VMS
 #define index strchr
