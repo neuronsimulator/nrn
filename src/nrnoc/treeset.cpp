@@ -896,8 +896,8 @@ void connection_coef(void) /* setup a and b */
         nd = sec->pnode[0];
         area = NODEAREA(sec->parentnode);
         /* dparam[4] is rall_branch */
-        using std::get;
-        ClassicalNODEA(nd) = -1.e2 * get<double>(sec->prop->dparam[4]) * NODERINV(nd) / area;
+        ClassicalNODEA(nd) = -1.e2 * static_cast<double>(sec->prop->dparam[4]) * NODERINV(nd) /
+                             area;
         for (j = 1; j < sec->nnode; j++) {
             nd = sec->pnode[j];
             area = NODEAREA(sec->pnode[j - 1]);
