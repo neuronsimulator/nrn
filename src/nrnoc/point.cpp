@@ -161,8 +161,7 @@ void nrn_relocate_old_points(Section* oldsec, Node* oldnode, Section* sec, Node*
         for (Prop *p = oldnode->prop, *pn; p; p = pn) {
             pn = p->next;
             if (memb_func[p->_type].is_point) {
-                using std::get;
-                auto* pnt = get<Point_process*>(p->dparam[1]);
+                auto* pnt = static_cast<Point_process*>(p->dparam[1]);
                 if (oldsec == pnt->sec) {
                     if (oldnode == node) {
                         nrn_sec_ref(&pnt->sec, sec);
