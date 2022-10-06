@@ -3,7 +3,6 @@
 #define hocdec_h
 #define INCLUDEHOCH 1
 
-#include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 #include "nrnapi.h"
 #include "hocassrt.h" /* hoc_execerror instead of abort */
@@ -12,8 +11,6 @@
 
 #include <stdio.h>
 #include <string.h>
-
-#include <variant>
 
 #define gargstr hoc_gargstr
 #define getarg  hoc_getarg
@@ -145,16 +142,6 @@ using hoc_List = hoc_Item;
 /** @brief Type of pdata in mechanisms.
  */
 using Datum = neuron::container::generic_data_handle;
-
-/** @brief Get the given typed value from a Datum.
- *
- *  Something like get<double*>(datum) will work both if the Datum holds a
- *  literal double* or if it holds a data_handle<double>.
- */
-// template <typename T>
-// T get(Datum& d) {
-//     return static_cast<T>(d);
-// }
 
 struct cTemplate {
     Symbol* sym;

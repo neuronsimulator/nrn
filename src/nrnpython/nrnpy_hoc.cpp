@@ -1070,7 +1070,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             if (sec == NULL) {
                 PyErr_SetString(PyExc_NameError, n);
             } else if (sec && sec->prop && static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
-                result = static_cast<PyObject*>(static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX]));
+                result = static_cast<PyObject*>(
+                    static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX]));
                 Py_INCREF(result);
             } else {
                 nrn_pushsec(sec);
@@ -1083,7 +1084,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             if (sec == NULL) {
                 PyErr_SetString(PyExc_NameError, n);
             } else if (sec && sec->prop && static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
-                result = static_cast<PyObject*>(static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX]));
+                result = static_cast<PyObject*>(
+                    static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX]));
                 Py_INCREF(result);
             } else {
                 nrn_pushsec(sec);
