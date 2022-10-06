@@ -208,7 +208,5 @@ void init() {
     plotlist = newlist();
     constructorfunc = newlist();
     destructorfunc = newlist();
-#if NMODL
     nrninit();
-#endif
 }

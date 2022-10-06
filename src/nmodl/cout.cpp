@@ -10,11 +10,9 @@
 List *procfunc, *initfunc, *modelfunc, *termfunc, *initlist, *firstlist;
 /* firstlist gets statements that must go before anything else */
 
-#if NMODL
 List* nrnstate;
 extern List *currents, *set_ion_variables(int), *get_ion_variables(int);
 extern List *begin_dion_stmt(), *end_dion_stmt(char*);
-#endif
 
 extern Symbol* indepsym;
 extern List* indeplist;
@@ -24,11 +22,9 @@ extern char* RCS_version;
 extern char* RCS_date;
 char* modelline;
 
-#if VECTORIZE
 extern int vectorize;
 static List* vectorize_replacements; /* pairs of item pointer, strings */
 extern char* cray_pragma();
-#endif
 
 #if __TURBOC__ || SYSV || VMS
 #define index strchr
@@ -38,32 +34,20 @@ static void initstates();
 static void funcdec();
 
 void c_out() {
-#if NMODL
     Item* q;
     extern int point_process;
-#endif
 
-#if VECTORIZE
     if (vectorize) {
         vectorize_do_substitute();
         c_out_vectorize();
         return;
     }
-#endif
     Fprintf(fcout, "/* Created by Language version: %s  of %s */\n", RCS_version, RCS_date);
-#if VECTORIZE
     P("/* NOT VECTORIZED */\n");
-#endif
     Fflush(fcout);
     /* things which must go first and most declarations */
-#if SIMSYS
-    P("#include <stdio.h>\n#include <math.h>\n#include \"mathlib.h\"\n");
-    P("#include \"common.h\"\n#include \"softbus.h\"\n");
-    P("#include \"sbtypes.h\"\n#include \"Solver.h\"\n");
-#else
     P("#include <stdio.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
     P("#undef PI\n");
-#endif
     printlist(defs_list);
     printlist(firstlist);
     RCS_version[strlen(RCS_version) - 2] = '\0';
@@ -71,9 +55,7 @@ void c_out() {
     RCS_version = index(RCS_version, ':') + 2;
     RCS_date = index(RCS_date, ':') + 2;
     P("static int _reset;\n");
-#if NMODL
     P("static ");
-#endif
     if (modelline) {
         Fprintf(fcout, "char *modelname = \"%s\";\n\n", modelline);
     } else {
@@ -82,14 +64,10 @@ void c_out() {
     Fflush(fcout); /* on certain internal errors partial output
                     * is helpful */
     P("static int error;\n");
-#if NMODL
     P("static ");
-#endif
     P("int _ninits = 0;\n");
     P("static int _match_recurse=1;\n");
-#if NMODL
     P("static ");
-#endif
     P("_modl_cleanup(){ _match_recurse=1;}\n");
     /*
      * many machinations are required to make the infinite number of
@@ -99,10 +77,6 @@ void c_out() {
      * This one allows scop variables in functions which do not have the
      * p array as an argument
      */
-#if SIMSYS || HMODL || NMODL
-#else
-    P("static double *_p;\n\n");
-#endif
     funcdec();
     Fflush(fcout);
 
@@ -114,18 +88,7 @@ void c_out() {
     Fflush(fcout);
 
     /* Initialization function must always be present */
-#if NMODL
     P("\nstatic initmodel() {\n  int _i; double _save;");
-#endif
-#if SIMSYS || HMODL
-    P("\ninitmodel() {\n  int _i; double _save;");
-#endif
-#if (!(SIMSYS || HMODL || NMODL))
-    P("\ninitmodel(_pp) double _pp[]; {\n int _i; double _save; _p = _pp;");
-#endif
-#if !NMODL
-    P("_initlists();\n");
-#endif
     P("_ninits++;\n");
     P(saveindep); /*see solve.c; blank if not a time dependent process*/
     P("{\n");
@@ -134,15 +97,9 @@ void c_out() {
     P("\n}\n}\n");
     Fflush(fcout);
 
-#if NMODL
     /* generation of initmodel interface */
-#if VECTORIZE
     P("\nstatic nrn_init(_pp, _ppd, _v) double *_pp, _v; Datum* _ppd; {\n");
     P(" _p = _pp; _ppvar = _ppd;\n");
-#else
-    P("\nstatic nrn_init(_prop, _v) Prop *_prop; double _v; {\n");
-    P(" _p = _prop->param; _ppvar = _prop->dparam;\n");
-#endif
     P(" v = _v;\n");
     printlist(get_ion_variables(1));
     P(" initmodel();\n");
@@ -162,18 +119,10 @@ void c_out() {
 
     /* the neuron current also has to compute the dcurrent/dv as well
        as make sure all currents accumulated properly (currents list) */
-#if VECTORIZE
     P("\nstatic double nrn_cur(_pp, _ppd, _pdiag, _v) double *_pp, *_pdiag, _v; Datum* _ppd; {\n");
-#else
-    P("\nstatic double nrn_cur(_prop, _pdiag, _v) Prop *_prop; double *_pdiag, _v;{\n");
-#endif
     if (currents->next != currents) {
         P(" double _g, _rhs;\n");
-#if VECTORIZE
         P(" _p = _pp; _ppvar = _ppd;\n");
-#else
-        P(" _p = _prop->param;  _ppvar = _prop->dparam;\n");
-#endif
         printlist(get_ion_variables(0));
         P(" _g = _nrn_current(_v + .001);\n");
         printlist(begin_dion_stmt());
@@ -193,18 +142,10 @@ void c_out() {
 
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
-#if VECTORIZE
     P("\nstatic nrn_state(_pp, _ppd, _v) double *_pp, _v; Datum* _ppd; {\n");
-#else
-    P("\nstatic nrn_state(_prop, _v) Prop *_prop; double _v; {\n");
-#endif
     if (nrnstate || currents->next == currents) {
         P(" double _break, _save;\n");
-#if VECTORIZE
         P(" _p = _pp; _ppvar = _ppd;\n");
-#else
-        P(" _p = _prop->param;  _ppvar = _prop->dparam;\n");
-#endif
         P(" _break = t + .5*dt; _save = t; delta_t = dt;\n");
         P(" v=_v;\n{\n");
         printlist(get_ion_variables(1));
@@ -218,47 +159,11 @@ void c_out() {
         P("\n}");
     }
     P("\n}\n");
-#else
-    /* Model function must always be present */
-#if SIMSYS
-    P("\nmodel() {\n");
-    P("double _break, _save;\n{\n");
-#else
-    P("\nmodel(_pp, _indepindex) double _pp[]; int _indepindex; {\n");
-    P("double _break, _save;");
-#if HMODL
-    P("\n{\n");
-#else
-    P("_p = _pp;\n{\n");
-#endif
-#endif
-    printlist(modelfunc);
-    P("\n}\n}\n");
-    Fflush(fcout);
-#endif
 
-#if NMODL
     P("\nstatic terminal(){}\n");
-#else
-    /* Terminal function must always be present */
-#if SIMSYS || HMODL
-    P("\nterminal() {");
-    P("\n{\n");
-#else
-    P("\nterminal(_pp) double _pp[];{");
-    P("_p = _pp;\n{\n");
-#endif
-    printlist(termfunc);
-    P("\n}\n}\n");
-    Fflush(fcout);
-#endif
 
     /* initlists() is called once to setup slist and dlist pointers */
-#if NMODL || SIMSYS || HMODL
     P("\nstatic _initlists() {\n");
-#else
-    P("\n_initlists() {\n");
-#endif
     P(" int _i; static int _first = 1;\n");
     P("  if (!_first) return;\n");
     printlist(initlist);
@@ -351,21 +256,12 @@ static void funcdec() {
     List* qs;
 
     SYMITER(NAME) {
-        /*EMPTY*/ /*maybe*/
-        if (s->subtype & FUNCT) {
-#define GLOBFUNCT 1
-#if GLOBFUNCT && NMODL
-#else
-            Fprintf(fcout, "static double %s();\n", s->name);
-#endif
-        }
         if (s->subtype & PROCED) {
             Fprintf(fcout, "static %s();\n", s->name);
         }
     }
 }
 
-#if VECTORIZE
 void c_out_vectorize() {
     Item* q;
     extern int point_process;
@@ -457,31 +353,6 @@ void c_out_vectorize() {
         P(" _p = _data; _ppvar = _pdata;\n");
         check_tables();
 
-        P("\n#if METHOD3\n   if (_method3) {\n");
-        /*--- reprduction of normal with minor changes ---*/
-        P(cray_pragma());
-        P("	for (_ix = 0; _ix < _count; ++_ix) {\n");
-        P("		double _g, _rhs, _v;\n");
-        P("		_v = _nodes[_ix]->_v;\n");
-        printlist(get_ion_variables(0));
-        P("		_g = _nrn_current(_ix, _v + .001);\n");
-        printlist(begin_dion_stmt());
-        P("\n		_rhs = _nrn_current(_ix, _v);\n");
-        printlist(end_dion_stmt(".001"));
-        P("		_g = (_g - _rhs)/.001;\n");
-        /* set the ion variable values */
-        printlist(set_ion_variables(0));
-        if (point_process) {
-            P("		_nodes[_ix]->_d += _g * 1.e2/(_nd_area);\n");
-            P("		_nodes[_ix]->_rhs += (_g*_v - _rhs) * 1.e2/(_nd_area);\n");
-        } else {
-            P("		_nodes[_ix]->_thisnode._GC += _g;\n");
-            P("		_nodes[_ix]->_thisnode._EC += (_g*_v - _rhs);\n");
-        }
-        P("	}\n");
-        /*-------------*/
-        P("\n   }else\n#endif\n   {\n");
-
         /*--- normal ---*/
         P(cray_pragma());
         P("	for (_ix = 0; _ix < _count; ++_ix) {\n");
@@ -504,8 +375,6 @@ void c_out_vectorize() {
         }
         P("	}\n");
         /*------------*/
-
-        P("   }\n");
     }
     P("	return 0.;\n}\n");
 
@@ -587,5 +456,3 @@ char* cray_pragma() {
 \n";
     return buf;
 }
-
-#endif /*VECTORIZE*/

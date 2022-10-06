@@ -74,6 +74,7 @@ jobs:
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
                 -DNRN_ENABLE_RX3D=OFF -DCORENRN_SANITIZERS=address
               sanitizer: address
+              ccache_fudge: 1 # manually invalidate the cache for this build
       fail-fast: false
 
     steps:

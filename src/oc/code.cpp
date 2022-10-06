@@ -1151,9 +1151,6 @@ static void for_segment2(Symbol* sym, int mode) {
     Inst* savepc = pc;
     double *pval = 0, dx;
     int isec;
-#if METHOD3
-    extern int _method3;
-#endif
 
     switch (sym->type) {
     case UNDEF:
@@ -1187,29 +1184,6 @@ static void for_segment2(Symbol* sym, int mode) {
         execerror("for loop non-variable", sym->name);
     }
     imax = segment_limits(&dx);
-#if METHOD3
-    if (_method3) {
-        for (i = 0, *pval = 0; i <= imax; i++) {
-            if (mode == 0 && (i == imax || i == 0)) {
-                continue;
-            }
-            if (i == imax) {
-                *pval = 1.;
-            } else {
-                *pval = i * dx;
-            }
-            execute(relative(savepc));
-            if (hoc_returning == 1 || hoc_returning == 4) {
-                break;
-            } else if (hoc_returning == 2) {
-                hoc_returning = 0;
-                break;
-            } else {
-                hoc_returning = 0;
-            }
-        }
-    } else
-#endif
     {
         if (mode == 0) {
             i = 1;
