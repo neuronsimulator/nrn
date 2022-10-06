@@ -593,8 +593,8 @@ void ext_con_coef(void) /* setup a and b */
             area = NODEAREA(sec->parentnode);
             /* param[4] is rall_branch */
             for (k = 0; k < nlayer; ++k) {
-                using std::get;
-                nde->_a[k] = -1.e2 * get<double>(sec->prop->dparam[4]) / (nde->_b[k] * area);
+                nde->_a[k] = -1.e2 * static_cast<double>(sec->prop->dparam[4]) /
+                             (nde->_b[k] * area);
             }
             for (j = 1; j < sec->nnode; j++) {
                 nde = pnd[j]->extnode;

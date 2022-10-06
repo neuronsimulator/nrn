@@ -157,13 +157,12 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
     /*printf("longdifus_diamchange %d %d\n", pld->dchange, diam_change_cnt);*/
     vnodecount = _nt->end;
     n = ml->nodecount;
-    using std::get;
     for (i = 0; i < n; ++i) {
         /* For every child with a parent having this mechanism */
         /* Also child may butte end to end with parent or attach to middle */
         mi = pld->mindex[i];
         if (sindex < 0) {
-            pld->state[i] = get<double*>(ml->pdata[mi][-sindex - 1]);
+            pld->state[i] = static_cast<double*>(ml->pdata[mi][-sindex - 1]);
         } else {
             pld->state[i] = ml->_data[mi] + sindex;
         }
@@ -173,7 +172,7 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
             mpi = pld->mindex[pindex];
             pnd = ml->nodelist[mpi];
             if (nd->sec_node_index_ == 0) {
-                rall = get<double>(nd->sec->prop->dparam[4]);
+                rall = static_cast<double>(nd->sec->prop->dparam[4]);
             } else {
                 rall = 1.;
             }
