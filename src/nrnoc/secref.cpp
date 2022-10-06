@@ -29,13 +29,12 @@ Symbol* nrn_trueparent_sym;
 
 static hoc_Item** sec2pitm(Section* sec) {
     extern Objectdata* hoc_top_level_data;
-    using std::get;
-    if (!sec || !sec->prop || !get<Symbol*>(sec->prop->dparam[0])) {
+    if (!sec || !sec->prop || !static_cast<Symbol*>(sec->prop->dparam[0])) {
         hoc_execerror("section is unnamed", (char*) 0);
     }
-    auto* sym = get<Symbol*>(sec->prop->dparam[0]);
-    auto* ob = get<Object*>(sec->prop->dparam[6]);
-    auto i = get<int>(sec->prop->dparam[5]);
+    auto* sym = static_cast<Symbol*>(sec->prop->dparam[0]);
+    auto* ob = static_cast<Object*>(sec->prop->dparam[6]);
+    auto i = static_cast<int>(sec->prop->dparam[5]);
     if (ob) {
         return ob->u.dataspace[sym->u.oboff].psecitm + i;
     } else {
@@ -69,8 +68,7 @@ static double s_unname(void* v) {
     sec = (Section*) v;
 #if USE_PYTHON
     /* Python Sections cannot be unnamed, return 0.0 */
-    using std::get;
-    if (sec->prop && get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
+    if (sec->prop && static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
         return 0.0;
     }
 #endif
@@ -99,9 +97,8 @@ static double s_rename(void* v) {
         return 0.;
     }
 #if USE_PYTHON
-    using std::get;
     /* Python Sections cannot be renamed, return 0.0 */
-    if (get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
+    if (static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
         return 0.;
     }
 #endif

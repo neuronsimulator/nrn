@@ -734,8 +734,7 @@ static double ppignore(void* v) {
 
 static int ignored(Prop* p) {
     if (pp_ignore_map) {
-        using std::get;
-        auto* pp = get<Point_process*>(p->dparam[1]);
+        auto* pp = static_cast<Point_process*>(p->dparam[1]);
         if (pp_ignore_map->count(pp) > 0) {
             return 1;
         }
@@ -1708,8 +1707,7 @@ static void pycell_name2sec_maps_fill() {
     // ForAllSections(sec)
     ITERATE(qsec, section_list) {
         Section* sec = hocSEC(qsec);
-        using std::get;
-        if (sec->prop && get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {  // PythonSection
+        if (sec->prop && static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX])) {  // PythonSection
             // Assume we can associate with a Python Cell
             // Sadly, cannot use nrn_sec2cell Object* as the key because it
             // is not unique and the map needs definite PyObject* keys.
@@ -1759,7 +1757,6 @@ static SecName2Sec& pycell_name2sec_map(Object* c) {
 // to be able to determine if it exists before reading with section(sec);
 
 void BBSaveState::cell(Object* c) {
-    using std::get;
     if (debug) {
         sprintf(dbuf, "Enter cell(%s)", hoc_object_name(c));
         PDEBUG;
@@ -1777,7 +1774,7 @@ void BBSaveState::cell(Object* c) {
             qsec = c->secelm_;
             if (qsec) {  // Write HOC Cell
                 for (first = qsec;
-                     first->itemtype && get<Object*>(hocSEC(first)->prop->dparam[6]) == c;
+                     first->itemtype && static_cast<Object*>(hocSEC(first)->prop->dparam[6]) == c;
                      first = first->prev) {
                     sec = hocSEC(first);
                     if (sec->prop) {
@@ -1814,7 +1811,7 @@ void BBSaveState::cell(Object* c) {
                     f->s(buf);
                     strcpy(buf, name.c_str());
                     f->s(buf);
-                    int indx = get<int>(sec->prop->dparam[5]);
+                    int indx = static_cast<int>(sec->prop->dparam[5]);
                     f->i(indx);
                     int size = sectionsize(sec);
                     f->i(size, 1);
@@ -1877,38 +1874,35 @@ void BBSaveState::cell(Object* c) {
 }
 
 void BBSaveState::section_exist_info(Section* sec) {
-    using std::get;
     char buf[256];
     // not used for python sections
-    assert(!get<void*>(sec->prop->dparam[PROP_PY_INDEX]));
-    auto sym = get<Symbol*>(sec->prop->dparam[0]);
+    assert(!static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX]));
+    auto sym = static_cast<Symbol*>(sec->prop->dparam[0]);
     if (sym) {
         sprintf(buf, "%s", sym->name);
         f->s(buf);
     }
-    int indx = get<int>(sec->prop->dparam[5]);
+    int indx = static_cast<int>(sec->prop->dparam[5]);
     f->i(indx);
     int size = sectionsize(sec);
     f->i(size, 1);
 }
 
 void BBSaveState::section(Section* sec) {
-    using std::get;
     if (debug) {
-        sprintf(dbuf, "Enter section(%s)", get<Symbol*>(sec->prop->dparam[0])->name);
+        sprintf(dbuf, "Enter section(%s)", static_cast<Symbol*>(sec->prop->dparam[0])->name);
         PDEBUG;
     }
     seccontents(sec);
     if (debug) {
-        sprintf(dbuf, "Leave section(%s)", get<Symbol*>(sec->prop->dparam[0])->name);
+        sprintf(dbuf, "Leave section(%s)", static_cast<Symbol*>(sec->prop->dparam[0])->name);
         PDEBUG;
     }
 }
 
 int BBSaveState::sectionsize(Section* sec) {
-    using std::get;
     if (debug == 1) {
-        sprintf(dbuf, "Enter sectionsize(%s)", get<Symbol*>(sec->prop->dparam[0])->name);
+        sprintf(dbuf, "Enter sectionsize(%s)", static_cast<Symbol*>(sec->prop->dparam[0])->name);
         PDEBUG;
     }
     // should be same for both IN and OUT
@@ -1922,16 +1916,15 @@ int BBSaveState::sectionsize(Section* sec) {
         f = sav;
     }
     if (debug == 1) {
-        sprintf(dbuf, "Leave sectionsize(%s)", get<Symbol*>(sec->prop->dparam[0])->name);
+        sprintf(dbuf, "Leave sectionsize(%s)", static_cast<Symbol*>(sec->prop->dparam[0])->name);
         PDEBUG;
     }
     return cnt;
 }
 
 void BBSaveState::seccontents(Section* sec) {
-    using std::get;
     if (debug) {
-        sprintf(dbuf, "Enter seccontents(%s)", get<Symbol*>(sec->prop->dparam[0])->name);
+        sprintf(dbuf, "Enter seccontents(%s)", static_cast<Symbol*>(sec->prop->dparam[0])->name);
         PDEBUG;
     }
     int i, nseg;
@@ -1946,7 +1939,7 @@ void BBSaveState::seccontents(Section* sec) {
     node01(sec, sec->parentnode);
     node01(sec, sec->pnode[nseg]);
     if (debug) {
-        sprintf(dbuf, "Leave seccontents(%s)", get<Symbol*>(sec->prop->dparam[0])->name);
+        sprintf(dbuf, "Leave seccontents(%s)", static_cast<Symbol*>(sec->prop->dparam[0])->name);
         PDEBUG;
     }
 }
@@ -1989,7 +1982,6 @@ void BBSaveState::node(Node* nd) {
 
 // only Point_process that belong to Section
 void BBSaveState::node01(Section* sec, Node* nd) {
-    using std::get;
     if (debug) {
         sprintf(dbuf, "Enter node01(sec, nd)");
         PDEBUG;
@@ -2003,7 +1995,7 @@ void BBSaveState::node01(Section* sec, Node* nd) {
     // count
     for (i = 0, p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
-            auto* pp = get<Point_process*>(p->dparam[1]);
+            auto* pp = static_cast<Point_process*>(p->dparam[1]);
             if (pp->sec == sec) {
                 if (!ignored(p)) {
                     ++i;
@@ -2014,7 +2006,7 @@ void BBSaveState::node01(Section* sec, Node* nd) {
     f->i(i, 1);
     for (p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
-            auto* pp = get<Point_process*>(p->dparam[1]);
+            auto* pp = static_cast<Point_process*>(p->dparam[1]);
             if (pp->sec == sec) {
                 mech(p);
             }
@@ -2042,8 +2034,7 @@ void BBSaveState::mech(Prop* p) {
     f->d(ssi[p->_type].size, p->param + ssi[p->_type].offset);
     Point_process* pp{};
     if (memb_func[p->_type].is_point) {
-        using std::get;
-        pp = get<Point_process*>(p->dparam[1]);
+        pp = static_cast<Point_process*>(p->dparam[1]);
         if (pnt_receive[p->_type]) {
             // associated NetCon and queue SelfEvent
             // if the NetCon has a unique non-gid source (art cell)
