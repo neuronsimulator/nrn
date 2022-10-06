@@ -63,13 +63,13 @@ struct saved_state {
     saved_state() {
         // not complete but it is good for expressions and it can be improved
         oc_save_hoc_oop(&o1, &o2, &o4, &o5);
-        oc_save_code(&c1, &c2, &c3, &c4, &c5, &c6, &c7, &c8, &c9, &c10, &c11, &c12);
+        oc_save_code(&c1, &c2, c3, &c4, &c5, &c6, &c7, &c8, c9, &c10, &c11, &c12);
         oc_save_input_info(&i1, &i2, &i3, &i4);
         oc_save_cabcode(&cc1, &cc2);
     }
     void restore() {
         oc_restore_hoc_oop(&o1, &o2, &o4, &o5);
-        oc_restore_code(&c1, &c2, &c3, &c4, &c5, &c6, &c7, &c8, &c9, &c10, &c11, &c12);
+        oc_restore_code(&c1, &c2, c3, &c4, &c5, &c6, &c7, &c8, c9, &c10, &c11, &c12);
         oc_restore_input_info(i1, i2, i3, i4);
         oc_restore_cabcode(&cc1, &cc2);
     }
@@ -84,13 +84,13 @@ struct saved_state {
     // code
     Inst* c1{};
     Inst* c2{};
-    Datum* c3{};
+    std::size_t c3{};
     nrn::oc::frame* c4{};
     int c5{};
     int c6{};
     Inst* c7{};
     nrn::oc::frame* c8{};
-    Datum* c9{};
+    std::size_t c9{};
     Symlist* c10{};
     Inst* c11{};
     int c12{};
@@ -138,7 +138,7 @@ void* OcJump::fpycall(void* (*f)(void*, void*), void* a, void* b) {
         return (*f)(a, b);
     } catch (...) {
         before.restore();
-        return nullptr;
+        throw;
     }
 }
 

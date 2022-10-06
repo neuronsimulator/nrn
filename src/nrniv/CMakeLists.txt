@@ -316,7 +316,17 @@ if(NRN_HAVE_NVHPC_COMPILER)
   set_source_files_properties(
     ${PROJECT_SOURCE_DIR}/src/oc/math.cpp PROPERTIES COMPILE_DEFINITIONS NVHPC_CHECK_FE_EXCEPTIONS=1
                                                      COMPILE_OPTIONS -O1)
-
+elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
+  # When optimisation is enabled then icpc apparently does not set errno
+  set_property(
+    SOURCE ${PROJECT_SOURCE_DIR}/src/oc/math.cpp
+    APPEND
+    PROPERTY COMPILE_OPTIONS -fmath-errno -fno-builtin)
+  # At -O0 then the Intel compiler generates extremely slow code for this file
+  set_property(
+    SOURCE ${PROJECT_SOURCE_DIR}/src/oc/code.cpp
+    APPEND
+    PROPERTY COMPILE_OPTIONS -O1)
 endif()
 
 if(NRN_ENABLE_MPI_DYNAMIC)

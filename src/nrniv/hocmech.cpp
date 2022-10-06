@@ -11,7 +11,6 @@ extern Object* hoc_newobj1(Symbol*, int);
 extern Symlist* hoc_symlist;
 extern void hoc_unlink_symbol(Symbol*, Symlist*);
 extern void hoc_link_symbol(Symbol*, Symlist*);
-extern Datum* hoc_look_inside_stack(int, int);
 extern void nrn_loc_point_process(int, Point_process*, Section*, Node*);
 extern char* pnt_map;
 extern Symbol** pointsym;
@@ -61,7 +60,7 @@ void hoc_construct_point(Object* ob, int narg) {
     assert(last_created_pp_ob_ == NULL);
     last_created_pp_ob_ = ob;
     if (narg > 0) {
-        double x = hoc_look_inside_stack(narg - 1, NUMBER)->val;
+        auto const x = hoc_look_inside_stack<double>(narg - 1);
         // printf("x=%g\n", x);
         Section* sec = chk_access();
         Node* nd = node_exact(sec, x);
@@ -100,7 +99,7 @@ int special_pnt_call(Object* ob, Symbol* sym, int narg) {
         if (narg != 1) {
             hoc_execerror("no argument", 0);
         }
-        double x = hoc_look_inside_stack(narg - 1, NUMBER)->val;
+        auto const x = hoc_look_inside_stack<double>(narg - 1);
         Section* sec = chk_access();
         Node* node = node_exact(sec, x);
         nrn_loc_point_process(ptype, ob2pntproc(ob), sec, node);

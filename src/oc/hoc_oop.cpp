@@ -7,6 +7,7 @@
 #include "code.h"
 #include "hocassrt.h"
 #include "hoclist.h"
+#include "nrn_ansi.h"
 #include "nrnmpi.h"
 #include "nrnfilewrap.h"
 #include <nrnpython_config.h>
@@ -27,7 +28,6 @@ void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
 #include "nrniv_mf.h"
 int section_object_seen;
 struct Section* nrn_sec_pop();
-double* nrn_rangepointer(Section*, Symbol*, double x);
 static int connect_obsec_;
 #endif
 
@@ -607,7 +607,7 @@ void hoc_newobj(void) { /* template at pc+1 */
     /* whatever. we will keep the strategy */
     if (hoc_inside_stacktype(narg) == OBJECTVAR) {
 #endif
-        obp = hoc_look_inside_stack(narg, OBJECTVAR)->pobj;
+        obp = hoc_look_inside_stack<Object**>(narg);
         ob = hoc_newobj1(sym, narg);
         hoc_nopop(); /* the object pointer */
         hoc_dec_refcount(obp);
@@ -735,7 +735,7 @@ static void call_ob_iter(Object* ob, Symbol* sym, int narg) {
     hoc_thisobject = ob;
     hoc_symlist = ob->ctemplate->symtable;
 
-    stmtobj = hoc_look_inside_stack(narg + 1, OBJECTTMP)->obj;
+    stmtobj = hoc_look_inside_stack<Object*>(narg + 1);
     stmtbegin = pc + pc->i;
     pc++;
     stmtend = pc + pc->i;
@@ -937,12 +937,11 @@ void connect_obsec_syntax(void) {
 
 #endif
 
-void hoc_object_component(void) { /* number of indices at pc+2, number of args at pc+3,
-                 symbol at pc+1 */
-                                  /* object pointer on stack after indices */
-    /* if component turns out to be an object then make sure pointer
-    to correct object, symbol, etc is left on stack for evaluation,
-    assignment, etc. */
+// number of indices at pc+2, number of args at pc+3, symbol at pc+1
+// object pointer on stack after indices
+// if component turns out to be an object then make sure pointer to correct
+// object, symbol, etc is left on stack for evaluation, assignment, etc.
+void hoc_object_component() {
     Symbol *sym0, *sym = 0;
     int nindex, narg, cplus, isfunc;
     Object *obp, *obsav;
@@ -1047,7 +1046,6 @@ void hoc_object_component(void) { /* number of indices at pc+2, number of args a
         break;
     case VAR:
         if (cplus) {
-            double* pd;
             if (nindex) {
                 if (!ISARRAY(sym) || sym->arayinfo->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
@@ -1055,7 +1053,7 @@ void hoc_object_component(void) { /* number of indices at pc+2, number of args a
             }
             hoc_pushs(sym);
             (*obp->ctemplate->steer)(obp->u.this_pointer);
-            pd = hoc_pxpop();
+            double* pd = hoc_pxpop();
             /* cannot pop a temporary object til after the pd is used in
             case (e.g. Vector.x) the pointer is a field in the object
             (often the pd has nothing to do with the object)*/
@@ -1243,9 +1241,8 @@ void hoc_object_eval(void) {
     if (type == VAR) {
         hoc_pushx(*(hoc_pxpop()));
     } else if (type == SYMBOL) {
-#if CABLE
-        Datum* d = hoc_look_inside_stack(0, SYMBOL);
-        if (d->sym->type == RANGEVAR) {
+        auto* d_sym = hoc_look_inside_stack<Symbol*>(0);
+        if (d_sym->type == RANGEVAR) {
             Symbol* sym = hoc_spop();
             int narg = hoc_ipop();
             struct Section* sec = nrn_sec_pop();
@@ -1256,11 +1253,10 @@ void hoc_object_eval(void) {
                 x = .5;
             }
             hoc_pushx(*(nrn_rangepointer(sec, sym, x)));
-        } else if (d->sym->type == VAR && d->sym->subtype == USERPROPERTY) {
+        } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
             extern double cable_prop_eval(Symbol*);
             hoc_pushx(cable_prop_eval(hoc_spop()));
         }
-#endif
     }
 }
 
@@ -1273,12 +1269,11 @@ void hoc_ob_pointer(void) {
     type = hoc_stacktype();
     if (type == VAR) {
     } else if (type == SYMBOL) {
-#if CABLE
-        Datum* d = hoc_look_inside_stack(0, SYMBOL);
-        if (d->sym->type == RANGEVAR) {
+        auto* d_sym = hoc_look_inside_stack<Symbol*>(0);
+        if (d_sym->type == RANGEVAR) {
             Symbol* sym = hoc_spop();
             int nindex = hoc_ipop();
-            struct Section* sec = nrn_sec_pop();
+            Section* sec = nrn_sec_pop();
             double x;
             if (nindex) {
                 x = hoc_xpop();
@@ -1286,15 +1281,11 @@ void hoc_ob_pointer(void) {
                 x = .5;
             }
             hoc_pushpx(nrn_rangepointer(sec, sym, x));
-        } else if (d->sym->type == VAR && d->sym->subtype == USERPROPERTY) {
+        } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
             hoc_pushpx(cable_prop_eval_pointer(hoc_spop()));
         } else {
             hoc_execerror("Not a double pointer", 0);
         }
-
-#else
-        hoc_execerror("Not a double pointer", 0);
-#endif
     } else {
         hoc_execerror("Not a double pointer", 0);
     }
@@ -1307,29 +1298,25 @@ void hoc_asgn_obj_to_str(void) { /* string on stack */
     hoc_assign_str(pstr, d);
 }
 
-void hoc_object_asgn(void) {
-    int type1, type2, op;
-    op = (pc++)->i;
-    type1 = hoc_stacktype();
-    type2 = hoc_inside_stacktype(1);
-#if CABLE
+void hoc_object_asgn() {
+    int op = (pc++)->i;
+    int type1 = hoc_stacktype();          // type of top entry
+    int type2 = hoc_inside_stacktype(1);  // type of second-top entry
     if (type2 == SYMBOL) {
-        Datum* d = hoc_look_inside_stack(1, SYMBOL);
-        if (d->sym->type == RANGEVAR) {
+        auto* sym = hoc_look_inside_stack<Symbol*>(1);
+        if (sym->type == RANGEVAR) {
             type2 = RANGEVAR;
-        } else if (d->sym->type == VAR && d->sym->subtype == USERPROPERTY) {
+        } else if (sym->type == VAR && sym->subtype == USERPROPERTY) {
             type2 = USERPROPERTY;
         }
     }
     if (type2 == RANGEVAR && type1 == NUMBER) {
         double d = hoc_xpop();
-        struct Section* sec;
         Symbol* sym = hoc_spop();
         int nindex = hoc_ipop();
-        sec = nrn_sec_pop();
+        Section* sec = nrn_sec_pop();
         if (nindex) {
-            double* pd;
-            pd = nrn_rangepointer(sec, sym, hoc_xpop());
+            auto pd = nrn_rangepointer(sec, sym, hoc_xpop());
             if (op) {
                 d = hoc_opasgn(op, *pd, d);
             }
@@ -1345,7 +1332,6 @@ void hoc_object_asgn(void) {
         hoc_pushx(d);
         return;
     }
-#endif
     switch (type2) {
     case VAR: {
         double d, *pd;
@@ -1358,12 +1344,11 @@ void hoc_object_asgn(void) {
         hoc_pushx(d);
     } break;
     case OBJECTVAR: {
-        Object **d, **pd;
         if (op) {
-            hoc_execerror("Invalid assignment operator for object", (char*) 0);
+            hoc_execerror("Invalid assignment operator for object", nullptr);
         }
-        d = hoc_objpop();
-        pd = hoc_objpop();
+        Object** d = hoc_objpop();
+        Object** pd = hoc_objpop();
         if (d != pd) {
             Object* tobj = *d;
             if (tobj) {
@@ -1376,30 +1361,26 @@ void hoc_object_asgn(void) {
         hoc_pushobj(pd);
     } break;
     case STRING: {
-        char *d, **pd;
         if (op) {
-            hoc_execerror("Invalid assignment operator for string", (char*) 0);
+            hoc_execerror("Invalid assignment operator for string", nullptr);
         }
-        d = *(hoc_strpop());
-        pd = hoc_strpop();
+        char* d = *(hoc_strpop());
+        char** pd = hoc_strpop();
         hoc_assign_str(pd, d);
         hoc_pushstr(pd);
     } break;
 #if USE_PYTHON
     case OBJECTTMP: { /* should be PythonObject */
-        Object* o;
-        int stkindex = hoc_obj_look_inside_stack_index(1);
-        o = hoc_obj_look_inside_stack(1);
+        Object* o = hoc_obj_look_inside_stack(1);
         assert(o->ctemplate->sym == nrnpy_pyobj_sym_);
         if (op) {
-            hoc_execerror("Invalid assignment operator for PythonObject", (char*) 0);
+            hoc_execerror("Invalid assignment operator for PythonObject", nullptr);
         }
         (*nrnpy_hpoasgn)(o, type1);
-        hoc_stkobj_unref(o, stkindex);
     } break;
 #endif
     default:
-        hoc_execerror("Cannot assign to left hand side", (char*) 0);
+        hoc_execerror("Cannot assign to left hand side", nullptr);
     }
 }
 
