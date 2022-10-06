@@ -7,8 +7,6 @@ if(NRN_ENABLE_CORENEURON AND NOT CORENRN_ENABLE_SHARED)
 else()
   set(preload_sanitizer PRELOAD_SANITIZER)
   set(launch_executable ${PYTHON_EXECUTABLE})
-  # SIM_DIRECTORY means that the working directory is one level below the one where nrnivmodl was
-  # run... NRN_NMODL_PATH=..
   set(extra_env NEURON_INIT_MPI=1)
 endif()
 list(APPEND olfactory_bulb_3d_neuron_args bulb3dtest.py)
@@ -30,6 +28,7 @@ nrn_add_test_group(
   MODFILE_PATTERNS "*.mod"
   SCRIPT_PATTERNS "*.py" "*.txt" "*.hoc" "*.dic"
   SIM_DIRECTORY sim)
+# Note that the bulb3dtest.py gives an error if run without MPI
 nrn_add_test(
   GROUP olfactory-bulb-3d
   NAME neuron ${preload_sanitizer}
@@ -54,7 +53,7 @@ foreach(processor gpu cpu)
     nrn_add_test(
       GROUP olfactory-bulb-3d
       NAME coreneuron_${processor}_${mode} ${preload_sanitizer}
-      REQUIRES coreneuron python ${processor}
+      REQUIRES coreneuron mpi python ${processor}
       PROCESSORS ${olfactory_bulb_3d_mpi_ranks}
       PRECOMMAND sed -i.bak "s/runsim.build_part_model(.*/runsim.build_part_model([5], [])/g"
                  bulb3dtest.py
