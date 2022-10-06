@@ -31,8 +31,7 @@ static void activate() {
         // ForAllSections(sec)
         ITERATE(qsec, section_list) {
             Section* sec = hocSEC(qsec);
-            using std::get;
-            if (sec->prop && get<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
+            if (sec->prop && static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
                 nrnpy_pysecname2sec_add(sec);
             }
         }
