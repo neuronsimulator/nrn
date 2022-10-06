@@ -12,7 +12,6 @@ void install_units(char* s1, char* s2);
 void modl_units();
 void consistency();
 void printlist(List*);
-void c_out_vectorize(const char*);
 void vectorize_substitute(Item* q, char* str);
 void vectorize_do_substitute();
 void solv_diffeq(Item* qsol,
