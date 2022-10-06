@@ -860,13 +860,15 @@ static void set_info(TQItem* tqi,
             weight2intdata[wt].push_back(iloc_wt);
         }
         core_te->intdata.push_back(-1);  // If NULL weight this is the indicator
-        TQItem** movable = (TQItem**) se->movable_;
-        TQItem** pnt_movable =
-            (TQItem**) (&(pnt->prop->dparam[movable_index].literal_value<void*>()));
-        // Only one SelfEvent on the queue for a given point process can be movable
-        core_te->intdata.push_back((movable && *movable == tqi) ? 1 : 0);
-        if (movable && *movable == tqi) {
-            assert(pnt_movable && *pnt_movable == tqi);
+        // Each of these holds a TQItem*
+        Datum* const movable = se->movable_;
+        Datum* const pnt_movable = pnt->prop->dparam + movable_index;
+        // Only one SelfEvent on the queue for a given point process can be
+        // movable
+        bool const condition = movable && static_cast<TQItem*>(*movable) == tqi;
+        core_te->intdata.push_back(condition);
+        if (condition) {
+            assert(pnt_movable && static_cast<TQItem*>(*pnt_movable) == tqi);
         }
 
     } break;
@@ -1073,13 +1075,12 @@ static void core2nrn_SelfEvent_helper(int tid,
     assert(tar_type == pnt->prop->_type);
     //  assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, tar_type));
 
-    int movable_index = type2movable[tar_type];
-    void** movable_arg = &(pnt->prop->dparam[movable_index].literal_value<void*>());
-    TQItem* old_movable_arg = (TQItem*) (*movable_arg);
-
+    int const movable_index = type2movable[tar_type];
+    auto* const movable_arg = pnt->prop->dparam + movable_index;
+    auto* const old_movable_arg = static_cast<TQItem*>(*movable_arg);
     nrn_net_send(movable_arg, weight, pnt, td, flag);
     if (!is_movable) {
-        *movable_arg = (void*) old_movable_arg;
+        *movable_arg = old_movable_arg;
     }
 }
 

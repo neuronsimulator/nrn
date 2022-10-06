@@ -724,8 +724,8 @@ static double nc_event(void* v) {
         if (!nrn_is_artificial_[type]) {
             hoc_execerror("Can only send fake self-events to ARTIFICIAL_CELLs", 0);
         }
-        void** pq = &(pnt->prop->dparam[nrn_artcell_qindex_[type]].literal_value<void*>());
-        net_send(pq, d->weight_, pnt, td, flag);
+        auto* pq = pnt->prop->dparam + nrn_artcell_qindex_[type];
+        nrn_net_send(pq, d->weight_, pnt, td, flag);
     } else {
         net_cvode_instance->event(td, d, PP2NT(d->target_));
     }
@@ -2294,11 +2294,11 @@ int Cvode::handle_step(NetCvode* ns, double te) {
     return err;
 }
 
-void net_move(void** v, Point_process* pnt, double tt) {
-    if (!(*v)) {
+void nrn_net_move(Datum* v, Point_process* pnt, double tt) {
+    auto* const q = static_cast<TQItem*>(*v);
+    if (!q) {
         hoc_execerror("No event with flag=1 for net_move in ", hoc_object_name(pnt->ob));
     }
-    TQItem* q = (TQItem*) (*v);
     // printf("net_move tt=%g %s *v=%p\n", tt, hoc_object_name(pnt->ob), *v);
     if (tt < PP2t(pnt)) {
         SelfEvent* se = (SelfEvent*) q->data_;
@@ -2311,14 +2311,14 @@ void net_move(void** v, Point_process* pnt, double tt) {
     net_cvode_instance->move_event(q, tt, PP2NT(pnt));
 }
 
-void artcell_net_move(void** v, Point_process* pnt, double tt) {
+void artcell_net_move(Datum* v, Point_process* pnt, double tt) {
     if (nrn_use_selfqueue_) {
-        if (!(*v)) {
+        auto* const q = static_cast<TQItem*>(*v);
+        if (!q) {
             hoc_execerror("No event with flag=1 for net_move in ", hoc_object_name(pnt->ob));
         }
         NrnThread* nt = PP2NT(pnt);
         NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
-        TQItem* q = (TQItem*) (*v);
         // printf("artcell_net_move t=%g qt_=%g tt=%g %s *v=%p\n", nt->_t, q->t_, tt,
         // hoc_object_name(pnt->ob), *v);
         if (tt < nt->_t) {
@@ -2336,7 +2336,7 @@ void artcell_net_move(void** v, Point_process* pnt, double tt) {
             se->deliver(tt, net_cvode_instance, nt);
         }
     } else {
-        net_move(v, pnt, tt);
+        nrn_net_move(v, pnt, tt);
     }
 }
 
@@ -2372,7 +2372,7 @@ void NetCvode::remove_event(TQItem* q, int tid) {
 
 // for threads, revised net_send to use absolute time (in the
 // mod file we add the thread time when we call it).
-void nrn_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
+void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, double flag) {
     STATISTICS(SelfEvent::selfevent_send_);
     NrnThread* nt = PP2NT(pnt);
     NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
@@ -2402,12 +2402,12 @@ void nrn_net_send(void** v, double* weight, Point_process* pnt, double td, doubl
     q = net_cvode_instance->event(td, se, nt);
 #endif
     if (flag == 1.0) {
-        *v = (void*) q;
+        *v = q;
     }
     // printf("net_send %g %s %g %p\n", td, hoc_object_name(pnt->ob), flag, *v);
 }
 
-void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
+void artcell_net_send(Datum* v, double* weight, Point_process* pnt, double td, double flag) {
     if (nrn_use_selfqueue_ && flag == 1.0) {
         STATISTICS(SelfEvent::selfevent_send_);
         NrnThread* nt = PP2NT(pnt);
@@ -2425,10 +2425,9 @@ void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, d
             se->pr(buf, td, net_cvode_instance);
             hoc_execerror("net_send delay < 0", 0);
         }
-        TQItem* q;
-        q = p.selfqueue_->insert(se);
+        TQItem* q = p.selfqueue_->insert(se);
         q->t_ = td;
-        *v = (void*) q;
+        *v = q;
         // printf("artcell_net_send %g %s %g %p\n", td, hoc_object_name(pnt->ob), flag, v);
         if (q->t_ < p.immediate_deliver_) {
             // printf("artcell_net_send_  %s immediate %g %g %g\n", hoc_object_name(pnt->ob),
@@ -2438,16 +2437,16 @@ void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, d
             se->deliver(td, net_cvode_instance, nt);
         }
     } else {
-        net_send(v, weight, pnt, td, flag);
+        nrn_net_send(v, weight, pnt, td, flag);
     }
 }
 
 // Deprecated overloads for backwards compatibility
-void artcell_net_send(void** v, double* weight, void* pnt, double td, double flag) {
+void artcell_net_send(Datum* v, double* weight, void* pnt, double td, double flag) {
     artcell_net_send(v, weight, static_cast<Point_process*>(pnt), td, flag);
 }
 
-void nrn_net_send(void** v, double* weight, void* pnt, double td, double flag) {
+void nrn_net_send(Datum* v, double* weight, void* pnt, double td, double flag) {
     nrn_net_send(v, weight, static_cast<Point_process*>(pnt), td, flag);
 }
 
@@ -3168,12 +3167,11 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     assert(PP2NT(target_) == nt);
     Cvode* cv = (Cvode*) target_->nvi_;
     if (nrn_use_selfqueue_ && nrn_is_artificial_[type]) {
-        TQItem** pq =
-            (TQItem**) (&(target_->prop->dparam[nrn_artcell_qindex_[type]].literal_value<void*>()));
+        auto& datum = target_->prop->dparam[nrn_artcell_qindex_[type]];
         TQItem* q;
-        while ((q = *(pq)) != nil && q->t_ < tt) {
+        while ((q = static_cast<TQItem*>(datum)) && q->t_ < tt) {
             double t1 = q->t_;
-            SelfEvent* se = (SelfEvent*) ns->p[nt->id].selfqueue_->remove(q);
+            auto* const se = static_cast<SelfEvent*>(ns->p[nt->id].selfqueue_->remove(q));
             // printf("%d NetCon::deliver %g , earlier selfevent at %g\n", nrnmpi_myid, tt, q->t_);
             se->deliver(t1, ns, nt);
         }
@@ -3391,7 +3389,7 @@ DiscreteEvent* SelfEvent::savestate_save() {
 
 void SelfEvent::savestate_restore(double tt, NetCvode* nc) {
     //	pr("savestate_restore", tt, nc);
-    net_send(movable_, weight_, target_, tt, flag_);
+    nrn_net_send(movable_, weight_, target_, tt, flag_);
 }
 
 DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
@@ -3411,10 +3409,7 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
         se->weight_ = nc->weight_;
     }
     se->flag_ = flag;
-    se->movable_ = nil;
-    if (moff >= 0) {
-        se->movable_ = &(se->target_->prop->dparam[moff].literal_value<void*>());
-    }
+    se->movable_ = (moff >= 0) ? (se->target_->prop->dparam + moff) : nullptr;
     return se;
 }
 
@@ -3448,12 +3443,7 @@ void SelfEvent::savestate_free() {
 
 void SelfEvent::savestate_write(FILE* f) {
     fprintf(f, "%d\n", SelfEventType);
-    int moff = -1;
-    if (movable_) {
-        moff = (Datum*) (movable_) -target_->prop->dparam;
-        assert(movable_ == &(target_->prop->dparam[moff].literal_value<void*>()));
-    }
-
+    int const moff = movable_ ? (movable_ - target_->prop->dparam) : -1;
     int ncindex = -1;
     // find the NetCon index for weight_
     if (weight_) {
@@ -3479,7 +3469,7 @@ void SelfEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     if (nrn_use_selfqueue_ && nrn_is_artificial_[type]) {  // handle possible earlier flag=1 self
                                                            // event
         if (flag_ == 1.0) {
-            *movable_ = 0;
+            *movable_ = nullptr;
         }
         TQItem* q;
         while ((q = (TQItem*) (*movable_)) != 0 && q->t_ <= tt) {
