@@ -132,6 +132,9 @@ struct generic_data_handle {
      *
      *  Something like static_cast<double*>(generic_handle) will work both if
      *  the Datum holds a literal double* and if it holds a data_handle<double>.
+     *
+     *  @todo Consider conversion to bool and whether this means not-null or to
+     *  obtain a literal, wrapped bool value
      */
     template <typename T>
     explicit operator T() const {
