@@ -1,4 +1,6 @@
 #pragma once
+#include "neuron/container/data_handle.hpp"
+
 #include <vector>
 // StateTransitionEvent is a finite state machine in which a transtion occurs
 // when the transition condition is true. For speed the transition condition
@@ -20,8 +22,7 @@ struct STETransition {
     void activate();    // add ste_ to watch list
     void deactivate();  // remove ste_ from watch list
 
-    double* var1_;
-    double* var2_;
+    neuron::container::data_handle<double> var1_{}, var2_{};
     std::unique_ptr<HocCommand> hc_{};
     StateTransitionEvent* ste_{};
     std::unique_ptr<STECondition> stec_;
@@ -37,7 +38,11 @@ struct STEState {
 struct StateTransitionEvent {
     StateTransitionEvent(int nstate, Point_process*);
     ~StateTransitionEvent();
-    void transition(int src, int dest, double* var1, double* var, std::unique_ptr<HocCommand>);
+    void transition(int src,
+                    int dest,
+                    neuron::container::data_handle<double> var1,
+                    neuron::container::data_handle<double> var2,
+                    std::unique_ptr<HocCommand>);
     void state(int i);  // set current state  -- update watch list.
     int state() {
         return istate_;
