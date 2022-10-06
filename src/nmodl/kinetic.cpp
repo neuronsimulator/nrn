@@ -83,13 +83,6 @@ void genmatterms(Reaction* r, int fn);
 #define MAXKINBLK 20
 static int nstate_[MAXKINBLK];
 
-static char* instance_loop() {
-    extern char* cray_pragma();
-    static char buf1[NRN_BUFSIZE];
-    Sprintf(buf1, "\n#ifdef WANT_PRAGMA%s#endif\n   _INSTANCE_LOOP {\n", cray_pragma());
-    return buf1;
-}
-
 static int sparse_declared_[10];
 static int sparsedeclared(int i) {
     assert(i < 10);

@@ -161,9 +161,6 @@ SparseObj * create_sparseobj(ninst,neqn,linflag)
   k = (neqn)*(neqn);
   so->jacob = t = (double **) malloc(k*sizeof(double*));
   t[0] = (double *) calloc(ninst*k, sizeof(double));
-#if CRAY
-#pragma _CRI ivdep
-#endif
   for (i = 0; i < k; i++)
     /*  t[i] = (double *) calloc(ninst, sizeof(double));*/
     t[i] = t[0] + ninst*i;
@@ -173,9 +170,6 @@ SparseObj * create_sparseobj(ninst,neqn,linflag)
   k = neqn;
   so->rhs = t = (double **) malloc((neqn)*sizeof(double*));
   t[0] = (double *) calloc( k*ninst, sizeof(double));
-#if CRAY
-#pragma _CRI ivdep
-#endif
   for (i = 0; i < k; i++)
     /* t[i] = (double *) calloc(ninst, sizeof(double)); */
     t[i] = t[0] + ninst * i ;
@@ -184,9 +178,6 @@ SparseObj * create_sparseobj(ninst,neqn,linflag)
   /* allocate the workspace */
   k = neqn;
   so->space = t = (double **) malloc( (neqn)*sizeof(double*));
-#if CRAY
-#pragma _CRI ivdep
-#endif
  for (i = 0; i < k; i++)
     t[i] = (double *) calloc(ninst, sizeof(double));
 
@@ -343,9 +334,6 @@ int _vector_sparse(base, bound, count, jacobp, spacep, sparseobj, neqns, state,
   for (i=0; i<neqns; i++)
     { /*save old state in deriv space for now */
       FLOWMARK("loop1");
-#if CRAY
-#pragma _CRI ivdep
-#endif
       for (k = base; k < bound; k++)
 	data1(k,deriv[i]) = data1(k,state[i]);
       FLOWMARK(&zero);
@@ -354,9 +342,6 @@ int _vector_sparse(base, bound, count, jacobp, spacep, sparseobj, neqns, state,
   if (!linflag)
     {
       FLOWMARK("loop2");
-#if CRAY
-#pragma _CRI ivdep
-#endif
       for (k = base; k < bound; k++)
 	converged[k] = 0;
       FLOWMARK(&zero);
@@ -374,9 +359,6 @@ int _vector_sparse(base, bound, count, jacobp, spacep, sparseobj, neqns, state,
       if (!linflag)
 	{
 	  FLOWMARK("loop3");
-#if CRAY
-#pragma _CRI ivdep
-#endif
 	  for (k = base; k < bound; k++)
 	    err[k] = 0;
 	  FLOWMARK(&zero);
@@ -387,17 +369,11 @@ int _vector_sparse(base, bound, count, jacobp, spacep, sparseobj, neqns, state,
 	  FLOWMARK("loop4a");
 	  if (linflag)
 	    {
-#if CRAY
-#pragma _CRI ivdep
-#endif
 	      for (k = base; k < bound; k++)
 		data1(k,state[i]) += rhs[i][k];
 	    }
 	  else			/* !linflag */
 	    {
-#if CRAY
-#pragma _CRI ivdep
-#endif
 	      for (k = base; k < bound; k++)
 		{
 		  if (!(converged[k]))
@@ -419,9 +395,6 @@ int _vector_sparse(base, bound, count, jacobp, spacep, sparseobj, neqns, state,
 	break;
       
       FLOWMARK("loop5");
-#if CRAY
-#pragma _CRI ivdep
-#endif
       for (k = base; k < bound; k++)
 	if (!(converged[k]))
 	  if (err[k] < CONVERGE)
@@ -441,9 +414,6 @@ int _vector_sparse(base, bound, count, jacobp, spacep, sparseobj, neqns, state,
   for (i=0; i<neqns; i++)
     { /*restore Dstate at t+dt*/
       FLOWMARK("loop6");
-#if CRAY
-#pragma _CRI ivdep
-#endif
       for (k = base; k < bound; k++)
 	data1(k,deriv[i]) = (data1(k,state[i]) - data1(k,deriv[i]))/delta_t;
       FLOWMARK(&zero);
