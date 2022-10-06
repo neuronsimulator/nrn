@@ -4176,7 +4176,8 @@ void NetCvode::fornetcon_prepare() {
                 if (tml->index == nrn_fornetcon_type_[i]) {
                     Memb_list* m = tml->ml;
                     for (j = 0; j < m->nodecount; ++j) {
-                        auto* fnc = static_cast<ForNetConsInfo*>(static_cast<void*>(m->pdata[j][index]));
+                        auto* fnc = static_cast<ForNetConsInfo*>(
+                            static_cast<void*>(m->pdata[j][index]));
                         if (fnc->size > 0) {
                             fnc->argslist = new double*[fnc->size];
                             fnc->size = 0;
