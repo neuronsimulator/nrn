@@ -102,8 +102,8 @@ static double s_rename(void* v) {
         return 0.;
     }
 #endif
-    qsec = get<hoc_Item*>(sec->prop->dparam[8]);
-    if (get<Symbol*>(sec->prop->dparam[0])) {
+    qsec = static_cast<hoc_Item*>(sec->prop->dparam[8]);
+    if (static_cast<Symbol*>(sec->prop->dparam[0])) {
         Printf("%s must first be unnamed\n", secname(sec));
         return 0.;
     }
@@ -170,7 +170,7 @@ static double s_rename(void* v) {
                 hoc_objectdata = obdsav;
                 return 0;
             }
-            qsec = get<hoc_Item*>(sec->prop->dparam[8]);
+            qsec = static_cast<hoc_Item*>(sec->prop->dparam[8]);
             sec->prop->dparam[0] = sym;
             sec->prop->dparam[5] = i;
             sec->prop->dparam[6] = static_cast<Object*>(nullptr);

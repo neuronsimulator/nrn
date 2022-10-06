@@ -515,12 +515,9 @@ extern Memb_func* memb_func;\n\
                 }
             }
         }
-        Sprintf(buf,
-                "  _thread[%d] = static_cast<double*>(ecalloc(%d, sizeof(double)));\n",
-                thread_data_index,
-                cnt);
+        Sprintf(buf, "  _thread[%d] = new double[%d];\n", thread_data_index, cnt);
         lappendstr(thread_mem_init_list, buf);
-        Sprintf(buf, "  free(static_cast<void*>(_thread[%d]));\n", thread_data_index);
+        Sprintf(buf, "  delete[] static_cast<double*>(_thread[%d]);\n", thread_data_index);
         lappendstr(thread_cleanup_list, buf);
         cnt = 0;
         ITERATE(q, toplocal_) {
@@ -585,7 +582,7 @@ extern Memb_func* memb_func;\n\
         lappendstr(thread_cleanup_list,
                    " if (static_cast<double*>(_thread[_gth]) == _thread1data) {\n   "
                    "_thread1data_inuse = 0;\n  "
-                   "}else{\n   free(static_cast<void*>(_thread[_gth]));\n  }\n");
+                   "}else{\n   delete[] static_cast<double*>(_thread[_gth]);\n  }\n");
         ++thread_data_index;
     }
     gind = 0;
