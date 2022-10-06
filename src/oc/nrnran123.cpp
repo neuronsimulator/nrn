@@ -10,6 +10,12 @@ static const double SHIFT32 = 1.0 / 4294967297.0; /* 1/(2^32 + 1) */
 
 static philox4x32_key_t k = {{0}};
 
+struct nrnran123_State {
+    philox4x32_ctr_t c;
+    philox4x32_ctr_t r;
+    char which_;
+};
+
 void nrnran123_set_globalindex(uint32_t gix) {
     k.v[0] = gix;
 }
