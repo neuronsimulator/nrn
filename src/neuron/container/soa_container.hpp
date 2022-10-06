@@ -3,6 +3,7 @@
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/soa_identifier.hpp"
 
+#include <atomic>
 #include <functional>
 #include <string_view>
 #include <utility>
