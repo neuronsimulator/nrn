@@ -114,6 +114,7 @@ struct soa {
      *  This is called from the destructor of state_token.
      */
     void decrease_frozen_count() {
+        assert(m_frozen_count);
         --m_frozen_count;
     }
 
@@ -400,8 +401,12 @@ struct soa {
     bool m_sorted{false};
 
     /** @brief Reference count for tokens guaranteeing the container is in frozen mode.
+     *
+     *  In principle this would be called before multiple worker threads spin
+     *  up, but in practice as a transition measure then handles are acquired
+     *  inside worker threads.
      */
-    std::size_t m_frozen_count{false};
+    std::atomic<std::size_t> m_frozen_count{};
 
     /** @brief Pointers to identifiers that record the current physical row.
      */
