@@ -146,16 +146,6 @@ using hoc_List = hoc_Item;
  */
 using Datum = neuron::container::generic_data_handle;
 
-/** @brief Get the given typed value from a Datum.
- *
- *  Something like get<double*>(datum) will work both if the Datum holds a
- *  literal double* or if it holds a data_handle<double>.
- */
-// template <typename T>
-// T get(Datum& d) {
-//     return static_cast<T>(d);
-// }
-
 #if OOP
 struct cTemplate {
     Symbol* sym;

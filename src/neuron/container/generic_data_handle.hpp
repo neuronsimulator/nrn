@@ -129,6 +129,9 @@ struct generic_data_handle {
      *  It might be interesting in future to explore dropping m_type in
      *  optimised builds, in which case we should aim to avoid predicating
      *  important logic on exceptions thrown by this function.
+     *
+     *  Something like static_cast<double*>(generic_handle) will work both if
+     *  the Datum holds a literal double* and if it holds a data_handle<double>.
      */
     template <typename T>
     explicit operator T() const {
@@ -265,10 +268,4 @@ struct generic_data_handle {
     // Reference to typeid(T) for the wrapped type
     std::type_index m_type{typeid(typeless_null)};
 };
-
-template <typename T>
-T get(generic_data_handle const& gh) {
-    return static_cast<T>(gh);
-}
-
 }  // namespace neuron::container
