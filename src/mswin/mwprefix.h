@@ -42,5 +42,4 @@ struct Symbol;
 #define OOP        1
 #define OC_CLASSES "nrnclass.h"
 #define USECVODE   1
-#define CVODE      1
 #define USEMATRIX  1

@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#define VECTORIZE 1
 #include <errno.h>
 #include <InterViews/resource.h>
 #include <OS/string.h>

@@ -59,16 +59,12 @@ which sets up _p and _ppvar for use by functions in the model called
 directly by hoc.
 */
 
-/* FUNCTIONS are made external so they are callable from other models */
-#define GLOBFUNCT 1
-
 #include "modl.h"
 #include "parse1.hpp"
 #include <stdlib.h>
 #include <unistd.h>
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)
 
-#if VECTORIZE
 int vectorize = 1;
 /*
 the idea is to put all variables into a vector of vectors so there
@@ -83,7 +79,6 @@ pass around _p, _ppvar, _thread. When vectorize is 0 then we are definitely
 not thread safe and _p and _ppvar are static.
 */
 
-#endif
 
 #define IONEREV 0 /* Parameter */
 #define IONIN   1
@@ -155,7 +150,6 @@ static Item* net_init_q2_;
 static int ba_index_; /* BEFORE AFTER blocks. See bablk */
 static List* ba_list_;
 
-#if CVODE
 List* state_discon_list_;
 int cvode_not_allowed;
 static int cvode_emit, cvode_ieq_index;
@@ -173,7 +167,6 @@ int watch_seen_; /* number of WATCH statements + 1*/
 extern List* watch_alloc;
 static Item* net_send_delivered_; /* location for if flag is 1 then clear the
                 tqitem_ to allow  an error message for net_move */
-#endif
 
 #define SYMITER(arg)         \
     ITERATE(q, syminorder) { \
@@ -252,7 +245,6 @@ void parout() {
 
     Lappendstr(defs_list,
                "\
-\n#if METHOD3\nextern int _method3;\n#endif\n\
 \n#if !NRNGPU\
 \n#undef exp\
 \n#define exp hoc_Exp\
@@ -284,7 +276,7 @@ void parout() {
     Lappendstr(defs_list, buf);
     SYMLISTITER {
         Symbol* s = SYM(q);
-        /* note that with GLOBFUNCT, FUNCT will be redefined anyway */
+        /* note that FUNCT will be redefined anyway */
         if (s->type == NAME && s->subtype & (PROCED | DERF | KINF)) {
             sprintf(buf, "\n#define %s %s_%s", s->name, s->name, suffix);
             Lappendstr(defs_list, buf);
@@ -318,12 +310,9 @@ void parout() {
 	/*SUPPRESS 765*/\n\
 	");
     Lappendstr(defs_list, "extern double *hoc_getarg(int);\n");
-#if VECTORIZE
     if (vectorize) {
         Sprintf(buf, "/* Thread safe. No static _p or _ppvar. */\n");
-    } else
-#endif
-    {
+    } else {
         Sprintf(buf, "static double *_p; static Datum *_ppvar;\n");
     }
     Lappendstr(defs_list, buf);
@@ -432,12 +421,9 @@ extern Memb_func* memb_func;\n\
     /* function to set up _p and _ppvar */
     Lappendstr(defs_list, "extern void _nrn_setdata_reg(int, void(*)(Prop*));\n");
     Lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
-#if VECTORIZE
     if (vectorize) {
         Lappendstr(defs_list, "_extcall_prop = _prop;\n");
-    } else
-#endif
-    {
+    } else {
         Lappendstr(defs_list, "_p = _prop->param; _ppvar = _prop->dparam;\n");
     }
     Lappendstr(defs_list, "}\n");
@@ -483,7 +469,6 @@ extern Memb_func* memb_func;\n\
     }
     Lappendstr(defs_list, "{0, 0}\n};\n");
 
-#if GLOBFUNCT
     /* FUNCTION's are now global so callable from other models */
     /* change name to namesuffix. This propagates everywhere except
         to hoc_name*/
@@ -519,7 +504,6 @@ extern Memb_func* memb_func;\n\
             Lappendstr(defs_list, ");\n");
         }
     }
-#endif
 
     emit_check_table_thread = 0;
     if (vectorize && check_tables_threads(defs_list)) {
@@ -680,11 +664,6 @@ extern Memb_func* memb_func;\n\
     SYMLISTITER {
         s = SYM(q);
         if (s->nrntype & (NRNSTATIC)) {
-#if VECTORIZE && 0
-            if (vectorize) {
-                diag("No statics allowed for thread safe models:", s->name);
-            }
-#endif
             decode_ustr(s, &d1, &d2, buf);
             if (s->subtype & ARRAY) {
                 Sprintf(buf, "static double %s[%d];\n", s->name, s->araydim);
@@ -743,7 +722,6 @@ extern Memb_func* memb_func;\n\
     }
     /* count the number of pointers needed */
     ppvar_cnt = ioncount + diamdec + pointercount + areadec;
-#if CVODE
     if (net_send_seen_) {
         tqitem_index = ppvar_cnt;
         ppvar_semantics(ppvar_cnt, "netsend");
@@ -794,7 +772,6 @@ extern Memb_func* memb_func;\n\
         ppvar_cnt++;
     }
     cvode_emit_interface();
-#endif
     if (destructorfunc->next != destructorfunc) {
         if (!point_process) {
             diag("DESTRUCTOR only permitted for POINT_PROCESS", (char*) 0);
@@ -1035,7 +1012,6 @@ static void _constructor(Prop* _prop) {\n\
     Lappendstr(defs_list, "\n}\n");
 
     Lappendstr(defs_list, "static void _initlists();\n");
-#if CVODE
     if (cvode_emit) {
         Lappendstr(defs_list, " /* some states have an absolute tolerance */\n");
         Lappendstr(defs_list, "static Symbol** _atollist;\n");
@@ -1058,9 +1034,7 @@ static void _constructor(Prop* _prop) {\n\
         sprintf(buf, "static _singlechan_declare%d();\n", singlechan_);
         Lappendstr(defs_list, buf);
     }
-#endif
 
-#if VECTORIZE
     if (net_send_seen_) {
         if (!net_receive_) {
             diag("can't use net_send if there is no NET_RECEIVE block", (char*) 0);
@@ -1117,10 +1091,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
     Lappendstr(defs_list, buf);
     q = lappendstr(defs_list, "");
     Lappendstr(defs_list, "_initlists();\n");
-#else
-    Sprintf(buf, "extern \"C\" void _%s_reg() {\n	_initlists();\n", modbase);
-    Lappendstr(defs_list, buf);
-#endif
 
     if (suffix[0]) { /* not "nothing" */
 
@@ -1137,7 +1107,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             Lappendstr(defs_list, buf);
             q = q->next->next->next;
         }
-#if VECTORIZE
         if (point_process) {
             sprintf(buf,
                     "\
@@ -1171,7 +1140,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
                 }
             }
         }
-#endif
         Lappendstr(defs_list, "_mechtype = nrn_get_mechtype(_mechanism[1]);\n");
         lappendstr(defs_list, "    _nrn_setdata_reg(_mechtype, _setdata);\n");
         if (vectorize && thread_mem_init_list->next != thread_mem_init_list) {
@@ -1224,7 +1192,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             Lappendstr(defs_list, "\tnrn_writes_conc(_mechtype, 0);\n");
         }
 
-#if CVODE
         if (cvode_emit) {
             Lappendstr(defs_list,
                        "\
@@ -1244,7 +1211,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             sprintf(buf, "hoc_reg_singlechan(_mechtype, _singlechan_declare%d);\n", singlechan_);
             Lappendstr(defs_list, buf);
         }
-#endif
         if (artificial_cell) {
             if (brkpnt_exists || !net_receive_ || nrnpointers->next != nrnpointers ||
                 useion->next != useion) {
@@ -1750,9 +1716,7 @@ void nrn_list(Item* q1, Item* q2) {
         plist = (List**) 0;
         break;
     case EXTERNAL:
-#if VECTORIZE
         threadsafe("Use of EXTERNAL is not thread safe.");
-#endif
         for (q = q1->next; q != q2->next; q = q->next) {
             SYM(q)->nrntype |= NRNEXTRN | NRNNOTP;
         }
@@ -1938,13 +1902,10 @@ void nrndeclare() {
         s->nrntype |= NRNNOTP | NRNPRANGEIN;
         areadec = 1;
     }
-#if VECTORIZE
     if (vectorize) {
         s = ifnew_install("v");
         s->nrntype = NRNNOTP; /* this is a lie, it goes in at end specially */
-    } else
-#endif
-    {
+    } else {
         s = ifnew_install("v");
         s->nrntype |= NRNSTATIC | NRNNOTP;
     }
@@ -2033,12 +1994,10 @@ void declare_p() {
             var_count(SYM(q));
         }
     }
-#if VECTORIZE
     if (vectorize) {
         s = ifnew_install("v");
         var_count(s);
     }
-#endif
     if (brkpnt_exists) {
         s = ifnew_install("_g");
         var_count(s);
@@ -2426,7 +2385,6 @@ void nrn_var_assigned(Symbol* s) {
     }
 }
 
-#if CVODE
 
 static int cvode_valid_, using_cvode;
 static int cvode_num_, cvode_neq_;
@@ -2776,7 +2734,6 @@ void cvode_rw_cur(char* b) {
         q = q->next;
     }
 }
-#endif
 
 void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     Item *q, *q1;

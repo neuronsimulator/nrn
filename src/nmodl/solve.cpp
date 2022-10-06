@@ -12,20 +12,14 @@ Symbol* deltaindep = SYM0;
 extern Symbol* indepsym;
 extern char* current_line();
 extern List* massage_list_;
-#if NMODL
 extern List* nrnstate;
-#if VECTORIZE
 extern int vectorize;
 extern char* cray_pragma();
 extern int netrec_state_count;
 extern int netrec_need_thread;
-#endif
-#endif
-#if CVODE
 Item* cvode_cnexp_solve;
 Symbol* cvode_nrn_cur_solve_;
 Symbol* cvode_nrn_current_solve_;
-#endif
 
 void whileloop(Item*, long, int);
 void check_ss_consist(Item*);
@@ -47,7 +41,6 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
     if (!solvq) {
         solvq = newlist();
     }
-#if NMODL
     /* if the blocktype is equation then move the solve statement to
         the nrnstate function.  Everything else stays in the
         model function to be used as the nrncurrent function */
@@ -72,7 +65,6 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
             }
         }
     }
-#endif
     Item* lq = lappendsym(solvq, SYM0);
     ITM(lq) = qName;
     lq->itemtype = blocktype;
@@ -88,9 +80,7 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
         if (strcmp(SYM(qMethod)->name, "cnexp") == 0) {
             SYM(qMethod)->name = stralloc("derivimplicit", SYM(qMethod)->name);
             add_deriv_imp_list(SYM(qName)->name);
-#if CVODE
             cvode_cnexp_solve = lq;
-#endif
         }
         remove(qMethod->prev);
         remove(qMethod);
@@ -102,14 +92,10 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
     List* errstmt = newlist();
     lq = lappendsym(solvq, SYM0);
     LST(lq) = errstmt;
-#if NOCMODL
     sprintf(buf,
             "if(error){fprintf(stderr,\"%s\\n\"); nrn_complain(_p); abort_run(error);}\n",
             current_line());
     insertstr(errstmt, buf);
-#else
-    insertstr(errstmt, "if(error){abort_run(error);}\n");
-#endif
 }
 
 /* go through the solvq list and construct the proper while loop and calls*/
@@ -134,7 +120,6 @@ void solvhandler() {
         qsol = ITM(lq);
         lq = lq->next;
         method = SYM(lq);
-#if CVODE
         cvodemethod_ = 0;
         if (method && strcmp(method->name, "after_cvode") == 0) {
             method = (Symbol*) 0;
@@ -151,7 +136,6 @@ void solvhandler() {
             lq->element.sym = (Symbol*) 0;
             cvodemethod_ = 3;
         }
-#endif
         lq = lq->next;
         errstmt = LST(lq);
         /* err stmt handling assumes qsol->next is where it goes. */
@@ -186,9 +170,7 @@ void solvhandler() {
                     Sprintf(buf, " %s();\n", fun->name);
                     Insertstr(follow, buf);
                 }
-#if CVODE
                 cvode_interface(fun, listnum, numeqn);
-#endif
             }
             if (btype == BREAKPOINT)
                 whileloop(qsol, (long) DERF, steadystate);
@@ -199,53 +181,43 @@ void solvhandler() {
                 method = lookup("_advance");
             }
             if (btype == BREAKPOINT && (method->subtype & DERF)) {
-#if VECTORIZE
                 fprintf(
                     stderr,
                     "Notice: KINETIC is thread safe only with METHOD sparse. Complain to Hines\n");
                 vectorize = 0;
-#endif
                 /* derivatives recalculated after while loop */
                 Sprintf(buf, " %s();\n", fun->name);
                 Insertstr(follow, buf);
             }
             if (btype == BREAKPOINT) {
                 whileloop(qsol, (long) DERF, steadystate);
-#if CVODE
                 if (strcmp(method->name, "sparse") == 0) {
                     cvode_interface(fun, listnum, numeqn);
                     cvode_kinetic(qsol, fun, numeqn, listnum);
                     single_channel(qsol, fun, numeqn, listnum);
                 }
-#endif
             }
             solv_diffeq(qsol, fun, method, numeqn, listnum, steadystate, btype);
             break;
         case NLINF:
-#if VECTORIZE
             fprintf(stderr, "Notice: NONLINEAR is not thread safe.\n");
             vectorize = 0;
-#endif
             if (method == SYM0) {
                 method = lookup("newton");
             }
             solv_nonlin(qsol, fun, method, numeqn, listnum);
             break;
         case LINF:
-#if VECTORIZE
             fprintf(stderr, "Notice: LINEAR is not thread safe.\n");
             vectorize = 0;
-#endif
             if (method == SYM0) {
                 method = lookup("simeq");
             }
             solv_lineq(qsol, fun, method, numeqn, listnum);
             break;
         case DISCF:
-#if VECTORIZE
             fprintf(stderr, "Notice: DISCRETE is not thread safe.\n");
             vectorize = 0;
-#endif
             if (btype == BREAKPOINT)
                 whileloop(qsol, (long) DISCRETE, 0);
             Sprintf(buf, "0; %s += d%s; %s();\n", indepsym->name, indepsym->name, fun->name);
@@ -255,7 +227,6 @@ void solvhandler() {
         case PROCED:
             if (btype == BREAKPOINT) {
                 whileloop(qsol, (long) DERF, 0);
-#if CVODE
                 if (cvodemethod_ == 1) { /*after_cvode*/
                     cvode_interface(fun, listnum, 0);
                 }
@@ -271,29 +242,23 @@ void solvhandler() {
                     cvode_nrn_current_solve_ = fun;
                     linsertstr(procfunc, "extern int cvode_active_;\n");
                 }
-#endif
             }
             Sprintf(buf, " %s();\n", fun->name);
             replacstr(qsol, buf);
-#if VECTORIZE
             Sprintf(buf, "{ %s(_p, _ppvar, _thread, _nt); }\n", fun->name);
             vectorize_substitute(qsol, buf);
-#endif
             break;
 #endif
         default:
             diag("Illegal or unimplemented SOLVE type: ", fun->name);
             break;
         }
-#if CVODE
         if (btype == BREAKPOINT) {
             cvode_valid();
         }
-#endif
         /* add the error check */
         Insertstr(qsol, "error =");
         move(errstmt->next, errstmt->prev, qsol->next);
-#if VECTORIZE
         if (errstmt->next == errstmt->prev) {
             vectorize_substitute(qsol->next, "");
             vectorize_substitute(qsol->prev, "");
@@ -301,7 +266,6 @@ void solvhandler() {
             fprintf(stderr, "Notice: SOLVE with ERROR is not thread safe.\n");
             vectorize = 0;
         }
-#endif
         freelist(&errstmt);
         /* under all circumstances, on return from model,
          p[0] = current indepvar */
@@ -309,17 +273,6 @@ void solvhandler() {
         away from time
         then _sav_indep will be reset to starting value of original when
         initmodel is called on every call to model */
-#if NMODL
-#else
-        if (btype == BREAKPOINT) {
-#if SIMSYS
-            Sprintf(buf, "_sav_indep = %s;\n", indepsym->name);
-#else
-            Sprintf(buf, "_sav_indep = _p[_indepindex];\n");
-#endif
-            Insertstr(follow, buf);
-        }
-#endif
     }
 }
 
@@ -378,11 +331,6 @@ void whileloop(Item* qsol, long type, int ss) {
             }
             deltaindep = ifnew_parminstall(buf, sval, "", "");
             firstderf = 0;
-#if NMODL
-#else
-            Sprintf(buf, "_modl_set_dt(_dt) double _dt; { %s = _dt;}\n", deltaindep->name);
-            Lappendstr(procfunc, buf);
-#endif
         }
         if (type == DERF) {
             cp = "dt";
@@ -397,21 +345,9 @@ void whileloop(Item* qsol, long type, int ss) {
         /*SUPPRESS 622*/
         assert(0);
     }
-#if NMODL
     if (strcmp(indepsym->name, "t") != 0) {
         diag("The independent variable name must be `t'", (char*) 0);
     }
-#else
-    Sprintf(buf, "_save = _break = %s; %s = _sav_indep;\n", indepsym->name, indepsym->name);
-    Insertstr(qsol, buf);
-#if !SIMSYS
-    Sprintf(buf,
-            "if (_p + _indepindex != &%s) {initmodel(_pp); %s = _sav_indep;}\n",
-            indepsym->name,
-            indepsym->name);
-    Insertstr(qsol, buf);
-#endif
-#endif
 
     if (called) {
         Fprintf(stderr,
@@ -419,63 +355,16 @@ void whileloop(Item* qsol, long type, int ss) {
 BREAKPOINT block.\nThe simulation will be incorrect if more than one is used \
 at a time.\n");
     }
-#if NMODL
-#else
-    Sprintf(buf, "if (%s < _break) {\n", indepsym->name);
-    Insertstr(qsol, buf);
-
-    /* ensure that there are an integer number of steps / break */
-    if (type == DERF) {
-        Sprintf(buf,
-                " { int _nstep; double _dt, _y;\n\
-	_y = _break - %s; _dt = %s;\n",
-                indepsym->name,
-                "dt");
-        Insertstr(qsol, buf);
-        Insertstr(qsol, "_nstep = (int)(_y/_dt + .9);\n if (_nstep==0) _nstep = 1;\n");
-        Sprintf(buf, "%s = _y/((double)_nstep);\n", "dt");
-        Insertstr(qsol, buf);
-        Sprintf(buf, "\n  }\n");
-        Insertstr(qsol, buf);
-    }
-
-    if (type == DERF) {
-        Sprintf(buf, "_break -= .5* %s;\n", "dt");
-        Insertstr(qsol, buf);
-    }
-#endif
-#if NMODL
-    /* no longer a for loop */
-#else
-    Sprintf(buf, "for (; %s < _break; %s += %s) {\n", indepsym->name, indepsym->name, cp);
-    Insertstr(qsol, buf);
-    /* close the while loop; note that integrators have been called */
-    if (type == DERF) {
-        Sprintf(buf, "\n}}\n %s = _save;\n", indepsym->name);
-    } else if (type == DISCRETE) {
-        Sprintf(buf, "\n}}\n");
-    }
-    Insertstr(qsol->next, buf);
-#endif
     if (!called) {
         /* fix up initmodel as per 3) above.
         In cout.c _save is declared */
-#if NMODL
         Sprintf(buf, " _save = %s;\n %s = 0.0;\n", indepsym->name, indepsym->name);
         saveindep = stralloc(buf, (char*) 0);
-#else
-        Sprintf(buf, "%s0", indepsym->name);
-        IGNORE(ifnew_parminstall(buf, STR(indeplist->prev->prev), STR(indeplist->prev), ""));
-        Sprintf(buf, " _save = %s;\n %s = %s0;\n", indepsym->name, indepsym->name, indepsym->name);
-        saveindep = stralloc(buf, (char*) 0);
-#endif
         /* Assert no more additions to initfunc involving
         the value of time */
         Sprintf(buf, " _sav_indep = %s; %s = _save;\n", indepsym->name, indepsym->name);
         Lappendstr(initfunc, buf);
-#if VECTORIZE
         vectorize_substitute(initfunc->prev, "");
-#endif
     }
     called++;
 }

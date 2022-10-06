@@ -230,9 +230,6 @@ double loc_point_process(int pointtype, void* v) {
 }
 
 double get_loc_point_process(void* v) {
-#if METHOD3
-    extern int _method3;
-#endif
     double x;
     Point_process* pnt = (Point_process*) v;
     Section* sec;
@@ -338,9 +335,7 @@ static void free_one_point(Point_process* pnt) /* must unlink from node property
                 }
             }
     }
-#if VECTORIZE
     { v_structure_change = 1; }
-#endif
     if (p->param) {
         if (memb_func[p->_type].destructor) {
             memb_func[p->_type].destructor(p);

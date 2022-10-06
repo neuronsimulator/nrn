@@ -133,7 +133,7 @@ stages:
 
     # Jobs to build OSX wheels natively
     - job: 'MacOSWheels'
-      timeoutInMinutes: 30
+      timeoutInMinutes: 40
       pool:
         vmImage: 'macOS-11'
       strategy:

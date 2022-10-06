@@ -138,15 +138,11 @@ The following is a list of the current element usage:
 typedef struct Symbol {
     short type;
     long subtype;
-#if NMODL
     short nrntype;
     short assigned_to_;
     int no_threadargs; /* introduced for FUNCTION_TABLE table_name */
-#if CVODE
-    int* slist_info_; /* blunt instrument for retrieving ion concentration slist value */
-#endif
-    int ioncount_; /* ppvar index for ions */
-#endif
+    int* slist_info_;  /* blunt instrument for retrieving ion concentration slist value */
+    int ioncount_;     /* ppvar index for ions */
     union {
         int i;
         char* str;

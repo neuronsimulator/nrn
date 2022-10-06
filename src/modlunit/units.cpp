@@ -609,7 +609,6 @@ static void units_alloc() {
     }
 }
 
-#if MODL || NMODL || HMODL || SIMSYS
 extern void unit_init();
 
 void modl_units() {
@@ -629,8 +628,6 @@ void modl_units() {
         first = 0;
     }
 }
-
-#endif
 
 void unit_init() {
     char* s;
