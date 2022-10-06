@@ -5509,16 +5509,16 @@ void WatchCondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 
 void StateTransitionEvent::transition(int src,
                                       int dest,
-                                      double* var1,
-                                      double* var2,
+                                      neuron::container::data_handle<double> var1,
+                                      neuron::container::data_handle<double> var2,
                                       std::unique_ptr<HocCommand> hc) {
     STETransition& st = states_[src].add_transition(pnt_);
     st.dest_ = dest;
-    st.var1_ = var1;
-    st.var2_ = var2;
+    st.var1_ = std::move(var1);
+    st.var2_ = std::move(var2);
     st.hc_ = std::move(hc);
     st.ste_ = this;
-    st.var1_is_time_ = (st.var1_ == &t);
+    st.var1_is_time_ = (static_cast<double*>(st.var1_) == &t);
 }
 
 void STETransition::activate() {
@@ -5535,7 +5535,7 @@ void STETransition::activate() {
 void STETransition::deactivate() {
     if (stec_->qthresh_) {  // is it on the queue
         net_cvode_instance->remove_event(stec_->qthresh_, stec_->thread()->id);
-        stec_->qthresh_ = NULL;
+        stec_->qthresh_ = nullptr;
     }
     stec_->Remove();
 }
