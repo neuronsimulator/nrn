@@ -3,7 +3,6 @@
 #define hocdec_h
 #define INCLUDEHOCH 1
 
-#include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 #include "nrnapi.h"
 #include "hocassrt.h" /* hoc_execerror instead of abort */
@@ -11,8 +10,6 @@
 
 #include <stdio.h>
 #include <string.h>
-
-#include <variant>
 
 #define gargstr hoc_gargstr
 #define getarg  hoc_getarg
