@@ -2202,17 +2202,19 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
             f->d(1, tt);
             f->i(ncindex);
             f->i(moff);
-            void** movable = NULL;
-            TQItem* tqi;
+            Datum tqi_datum;
             // new SelfEvent item mostly filled in.
             // But starting out with NULL weight vector and
             // flag=1 so that tqi->data is the new SelfEvent
-            net_send((void**) &tqi, NULL, pp, tt, 1.0);
-            assert(tqi && tqi->data_ && ((DiscreteEvent*) tqi->data_)->type() == SelfEventType);
-            SelfEvent* se = (SelfEvent*) tqi->data_;
+            nrn_net_send(&tqi_datum, nullptr, pp, tt, 1.0);
+            auto* tqi = static_cast<TQItem*>(tqi_datum);
+            assert(tqi && tqi->data_ &&
+                   static_cast<DiscreteEvent*>(tqi->data_)->type() == SelfEventType);
+            auto* se = static_cast<SelfEvent*>(tqi->data_);
             se->flag_ = flag;
+            Datum* movable{};
             if (moff >= 0) {
-                movable = &(pp->prop->dparam[moff].literal_value<void*>());
+                movable = pp->prop->dparam + moff;
                 if (flag == 1) {
                     *movable = tqi;
                 }
