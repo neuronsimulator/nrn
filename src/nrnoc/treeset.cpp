@@ -2133,10 +2133,7 @@ All PreSyn threshold detectors that watch v.
 static int n_recalc_ptr_callback;
 static void (*recalc_ptr_callback[20])();
 static int recalc_cnt_;
-// static double **recalc_ptr_new_vp_, **recalc_ptr_old_vp_;
 static int n_old_thread_;
-// static int* old_actual_v_size_;
-// static double** old_actual_v_;
 static double** old_actual_area_;
 
 /* defer freeing a few things which may have pointers to them
@@ -2148,13 +2145,9 @@ void nrn_old_thread_save(void) {
         return;
     } /* one is already outstanding */
     n_old_thread_ = n;
-    // old_actual_v_size_ = (int*) ecalloc(n, sizeof(int));
-    // old_actual_v_ = (double**) ecalloc(n, sizeof(double*));
     old_actual_area_ = (double**) ecalloc(n, sizeof(double*));
     for (i = 0; i < n; ++i) {
         NrnThread* nt = nrn_threads + i;
-        // old_actual_v_size_[i] = nt->end;
-        // old_actual_v_[i] = nt->_actual_v;
         old_actual_area_[i] = nt->_actual_area;
     }
 }
@@ -2261,8 +2254,6 @@ void nrn_recalc_node_ptrs() {
     FOR_THREADS(nt) {
         recalc_cnt_ += nt->end;
     }
-    // recalc_ptr_new_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
-    // recalc_ptr_old_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
 
     /* first update the pointers without messing with the old NODEV,NODEAREA */
     /* to prepare for the update, copy all the v and area values into the */
@@ -2271,7 +2262,6 @@ void nrn_recalc_node_ptrs() {
     /* if the pointer points to what v_node[i]->_v points to. */
     ii = 0;
     FOR_THREADS(nt) {
-        // nt->_actual_v = (double*) ecalloc(nt->end, sizeof(double));
         nt->_actual_area = (double*) ecalloc(nt->end, sizeof(double));
     }
     FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
