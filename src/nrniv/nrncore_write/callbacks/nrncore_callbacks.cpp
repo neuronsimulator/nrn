@@ -1058,16 +1058,15 @@ static void core2nrn_SelfEvent_helper(int tid,
     }
     Memb_list* ml = nrn_threads[tid]._ml_list[tar_type];
     Point_process* pnt;
-    using std::get;
     if (ml) {
-        pnt = get<Point_process*>(ml->pdata[tar_index][1]);
+        pnt = static_cast<Point_process*>(ml->pdata[tar_index][1]);
     } else {
         // In NEURON world, ARTIFICIAL_CELLs do not live in NrnThread.
         // And the old deferred_type2artdata_ only gave us data, not pdata.
         // So this is where I decided to replace the more
         // expensive deferred_type2artml_.
         ml = CellGroup::deferred_type2artml_[tid][tar_type];
-        pnt = get<Point_process*>(ml->pdata[tar_index][1]);
+        pnt = static_cast<Point_process*>(ml->pdata[tar_index][1]);
     }
 
     // Needs to be tested when permuted on CoreNEURON side.
@@ -1097,8 +1096,7 @@ void core2nrn_SelfEvent_event(int tid,
 #if 1
     // verify nc->target_ consistent with tar_type, tar_index.
     Memb_list* ml = nrn_threads[tid]._ml_list[tar_type];
-    using std::get;
-    auto* pnt = get<Point_process*>(ml->pdata[tar_index][1]);
+    auto* pnt = static_cast<Point_process*>(ml->pdata[tar_index][1]);
     assert(nc->target_ == pnt);
 #endif
 
@@ -1193,12 +1191,11 @@ void core2nrn_watch_activate(int tid, int type, int watch_begin, Core2NrnWatchIn
         for (auto watch_item: active_watch_items) {
             int watch_index = watch_item.first;
             bool above_thresh = watch_item.second;
-            using std::get;
-            auto* wc = get<WatchCondition*>(pd[watch_index]);
+            auto* wc = static_cast<WatchCondition*>(pd[watch_index]);
             if (!wc) {  // if any do not exist in this instance, create them all
                         // with proper callback and flag.
                 (*(nrn_watch_allocate_[type]))(pd);
-                wc = get<WatchCondition*>(pd[watch_index]);
+                wc = static_cast<WatchCondition*>(pd[watch_index]);
             }
             _nrn_watch_activate(
                 pd + watch_begin, wc->c_, watch_index - watch_begin, wc->pnt_, r++, wc->nrflag_);
