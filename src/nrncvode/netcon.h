@@ -170,7 +170,7 @@ class SelfEvent: public DiscreteEvent {
     double flag_;
     Point_process* target_;
     double* weight_;
-    void** movable_;  // actually a TQItem**
+    Datum* movable_;  // pointed-to Datum holds TQItem*
 
     static unsigned long selfevent_send_;
     static unsigned long selfevent_move_;

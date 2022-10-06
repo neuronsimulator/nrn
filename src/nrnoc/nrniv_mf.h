@@ -17,14 +17,14 @@ typedef void (*pnt_receive_init_t)(Point_process*, double*, double);
 extern Prop* need_memb_cl(Symbol*, int*, int*);
 extern Prop* prop_alloc(Prop**, int, Node*);
 
-void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, double flag);
-[[deprecated("non-void* overloads are preferred")]] void artcell_net_send(void** v,
+void artcell_net_send(Datum* v, double* weight, Point_process* pnt, double td, double flag);
+[[deprecated("non-void* overloads are preferred")]] void artcell_net_send(Datum* v,
                                                                           double* weight,
                                                                           void* pnt,
                                                                           double td,
                                                                           double flag);
-void nrn_net_send(void** v, double* weight, Point_process* pnt, double td, double flag);
-[[deprecated("non-void* overloads are preferred")]] void nrn_net_send(void** v,
+void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, double flag);
+[[deprecated("non-void* overloads are preferred")]] void nrn_net_send(Datum* v,
                                                                       double* weight,
                                                                       void* pnt,
                                                                       double td,
@@ -82,7 +82,7 @@ void steer_point_process(void* v);
 
 bool at_time(NrnThread*, double);
 
-extern void artcell_net_move(void**, Point_process*, double);
+void artcell_net_move(Datum*, Point_process*, double);
 
 extern int ifarg(int);
 
@@ -101,7 +101,7 @@ extern pnt_receive_t* pnt_receive;
 extern pnt_receive_init_t* pnt_receive_init;
 extern short* pnt_receive_size;
 extern void nrn_net_event(Point_process*, double);
-extern void nrn_net_move(void**, Point_process*, double);
+void nrn_net_move(Datum*, Point_process*, double);
 
 typedef void (*NrnWatchAllocateFunc_t)(Datum*);
 extern NrnWatchAllocateFunc_t* nrn_watch_allocate_;

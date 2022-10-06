@@ -1032,10 +1032,10 @@ static void _constructor(Prop* _prop) {\n\
         if (!net_receive_) {
             diag("can't use net_send if there is no NET_RECEIVE block", (char*) 0);
         }
-        sprintf(buf, "\n#define _tqitem &(_ppvar[%d].literal_value<void*>())\n", tqitem_index);
+        sprintf(buf, "\n#define _tqitem &(_ppvar[%d])\n", tqitem_index);
         Lappendstr(defs_list, buf);
         if (net_send_delivered_) {
-            insertstr(net_send_delivered_, "  if (_lflag == 1. ) {*(_tqitem) = 0;}\n");
+            insertstr(net_send_delivered_, "  if (_lflag == 1. ) {*(_tqitem) = nullptr;}\n");
         }
     }
     if (net_receive_) {
