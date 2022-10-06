@@ -216,11 +216,16 @@ void section_menu(double x1, int type, MechSelector* ms) {
                 hoc_ivvalue("L", buf, 1);
             }
             Sprintf(buf, "%s.Ra += 0", sname.string());
-            hoc_ivpvaluerun("Ra", &sec->prop->dparam[7].val, buf, 1, 0, hoc_var_extra("Ra"));
+            hoc_ivpvaluerun("Ra",
+                            &(sec->prop->dparam[7].literal_value<double>()),
+                            buf,
+                            1,
+                            0,
+                            hoc_var_extra("Ra"));
             p = sec->prop;
-            if (p->dparam[4].val != 1) {
+            if (p->dparam[4].literal_value<double>() != 1) {
                 hoc_ivpvaluerun("Rall",
-                                &sec->prop->dparam[4].val,
+                                &(sec->prop->dparam[4].literal_value<double>()),
                                 "diam_changed = 1",
                                 1,
                                 0,
