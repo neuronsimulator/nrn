@@ -254,20 +254,25 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
         }
     }
     if (sym->subtype == NRNPOINTER) {
-        // In case _p_somevar is being used as an opaque void* in a VERBATIM
-        // block then then the Datum will hold a literal void* and will not be
-        // convertible to double*. If instead somevar is used in the MOD file
-        // and it was set from the interpreter (mech._ref_pv = seg._ref_v), then
-        // the Datum will hold either data_handle<double> or a literal double*.
-        // For now, don't do anything special -- if the datum holds a literal
-        // void* then this code will throw.
         auto& datum = pnt->prop->dparam[sym->u.rng.index + index];
         if (cppp_semaphore) {
             ++cppp_semaphore;
             cppp_datum = &datum;  // we will store a value in `datum` later
             return &ppp_dummy;
         } else {
-            return static_cast<double*>(datum);
+            // In case _p_somevar is being used as an opaque void* in a VERBATIM
+            // block then then the Datum will hold a literal void* and will not
+            // be convertible to double*. If instead somevar is used in the MOD
+            // file and it was set from the interpreter (mech._ref_pv =
+            // seg._ref_v), then the Datum will hold either data_handle<double>
+            // or a literal double*. If we attempt to access a POINTER or
+            // BBCOREPOINTER variable that is being used as an opaque void* from
+            // the interpreter -- as is done in test_datareturn.py, for example
+            // -- then we will reach this code when the datum holds a literal
+            // void*. We don't know what type that pointer really refers to, so
+            // in the first instance let's return nullptr in that case, not
+            // void*-cast-to-double*.
+            return datum.holds<double*>() ? static_cast<double*>(datum) : nullptr;
         }
     } else {
         if (pnt->prop->ob) {
