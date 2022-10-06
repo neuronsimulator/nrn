@@ -22,15 +22,11 @@ interface. See Random123-1.02/docs/html/index.html
 of the full distribution available from
 http://www.deshawresearch.com/resources_random123.html
 */
-#include <Random123/philox.h>
 
 #include <inttypes.h>
 
-struct nrnran123_State {
-    philox4x32_ctr_t c;
-    philox4x32_ctr_t r;
-    char which_;
-};
+
+typedef struct nrnran123_State nrnran123_State;
 
 typedef struct nrnran123_array4x32 {
     uint32_t v[4];
