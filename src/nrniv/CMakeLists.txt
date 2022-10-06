@@ -322,6 +322,11 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
     SOURCE ${PROJECT_SOURCE_DIR}/src/oc/math.cpp
     APPEND
     PROPERTY COMPILE_OPTIONS -fmath-errno -fno-builtin)
+  # At -O0 then the Intel compiler generates extremely slow code for this file
+  set_property(
+    SOURCE ${PROJECT_SOURCE_DIR}/src/oc/code.cpp
+    APPEND
+    PROPERTY COMPILE_OPTIONS -O1)
 endif()
 
 if(NRN_ENABLE_MPI_DYNAMIC)
