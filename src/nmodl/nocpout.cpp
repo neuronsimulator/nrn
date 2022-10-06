@@ -91,7 +91,6 @@ extern int brkpnt_exists;
 static const char* brkpnt_str_;
 extern Symbol* indepsym;
 extern Symbol* scop_indep;
-extern List* indeplist;
 extern Symbol* stepsym;
 extern char* reprime();
 extern List* symlist[];
@@ -184,16 +183,13 @@ static Item* net_send_delivered_; /* location for if flag is 1 then clear the
 static int varcount, parraycount;
 
 void nrninit() {
-    extern int using_default_indep;
     currents = newlist();
     rangeparm = newlist();
     rangedep = newlist();
     rangestate = newlist();
     useion = newlist();
     nrnpointers = newlist();
-    using_default_indep = 0;
-    indepinstall(install("t", NAME), "0", "1", "100", (Item*) 0, "ms", 0);
-    using_default_indep = 1;
+    indepinstall(install("t", NAME), "0", "1", "100", "ms");
     debugging_ = 1;
     thread_cleanup_list = newlist();
     thread_mem_init_list = newlist();

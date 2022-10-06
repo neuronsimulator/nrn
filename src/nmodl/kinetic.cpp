@@ -22,7 +22,6 @@ extern int numlist;
 extern int thread_data_index;
 extern List* thread_cleanup_list;
 extern int vectorize;
-extern Symbol* indepsym;
 
 int singlechan_;
 static int cvode_flag;
