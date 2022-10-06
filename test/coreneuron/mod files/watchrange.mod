@@ -39,7 +39,7 @@ ENDVERBATIM
 INITIAL {
   VERBATIM
     if (_p_ran) {
-      nrnran123_setseq(static_cast<nrnran123_State*>(_p_ran), 0, 0);
+      nrnran123_setseq((nrnran123_State*)_p_ran, 0, 0);
     }
   ENDVERBATIM
   n_high = 0
@@ -84,7 +84,7 @@ FUNCTION uniform() {
   uniform = 0.5
 VERBATIM
   if (_p_ran) {
-    _luniform = nrnran123_dblpick(static_cast<nrnran123_State*>(_p_ran));
+    _luniform = nrnran123_dblpick((nrnran123_State*)_p_ran);
   }
 ENDVERBATIM
 }
@@ -93,15 +93,14 @@ PROCEDURE noiseFromRandom123() {
 VERBATIM
 #if !NRNBBCORE
  {
-  auto* r123state = static_cast<nrnran123_State*>(_p_ran);
-  if (r123state) {
-    nrnran123_deletestream(r123state);
-    r123state = nullptr;
+  nrnran123_State** pv = (nrnran123_State**)(&_p_ran);
+  if (*pv) {
+    nrnran123_deletestream(*pv);
+    *pv = (nrnran123_State*)0;
   }
   if (ifarg(1)) {
-    r123state = nrnran123_newstream3((uint32_t)*getarg(1), (uint32_t)*getarg(2), (uint32_t)*getarg(3));
+    *pv = nrnran123_newstream3((uint32_t)*getarg(1), (uint32_t)*getarg(2), (uint32_t)*getarg(3));
   }
-  _p_ran = r123state;
  }
 #endif
 ENDVERBATIM
@@ -112,9 +111,9 @@ static void bbcore_write(double* z, int* d, int* zz, int* offset, _threadargspro
   if (d) {
     char which;  
     uint32_t* di = ((uint32_t*)d) + *offset;
-    auto* r123state = static_cast<nrnran123_State*>(_p_ran);
-    nrnran123_getids3(r123state, di, di+1, di+2);
-    nrnran123_getseq(r123state, di+3, &which);
+    nrnran123_State** pv = (nrnran123_State**)(&_p_ran);
+    nrnran123_getids3(*pv, di, di+1, di+2);
+    nrnran123_getseq(*pv, di+3, &which);
     di[4] = (int)which;
   }                     
   *offset += 5;
@@ -122,15 +121,14 @@ static void bbcore_write(double* z, int* d, int* zz, int* offset, _threadargspro
 
 static void bbcore_read(double* z, int* d, int* zz, int* offset, _threadargsproto_) {
   uint32_t* di = ((uint32_t*)d) + *offset;
-  auto* r123state = static_cast<nrnran123_State*>(_p_ran);
+  nrnran123_State** pv = (nrnran123_State**)(&_p_ran);
 #if !NRNBBCORE
-  if (r123state) {
-    nrnran123_deletestream(r123state);
+  if (*pv) {
+    nrnran123_deletestream(*pv);
   }
 #endif
-  r123state = nrnran123_newstream3(di[0], di[1], di[2]);
-  nrnran123_setseq(r123state, di[3], (char)di[4]);
+  *pv = nrnran123_newstream3(di[0], di[1], di[2]);
+  nrnran123_setseq(*pv, di[3], (char)di[4]);
   *offset += 5;
-  _p_ran = r123state;
 }
 ENDVERBATIM
