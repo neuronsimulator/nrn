@@ -6,7 +6,7 @@
 #define MS_WIN32
 #define MS_WINDOWS
 #endif
-
+#include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 #include <../../nrnconf.h>
 #include <nrnpython_config.h>
