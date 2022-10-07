@@ -75,13 +75,17 @@ struct NrnThread {
     std::size_t _node_data_offset{};
 
     double* node_area_storage() {
-        return neuron::model().node_data().get<neuron::container::Node::field::Area>().data() +
-               _node_data_offset;
+        // Need to be able to use this method while the model is frozen, so
+        // avoid calling the zero-parameter get()
+        return &neuron::model().node_data().get<neuron::container::Node::field::Area>(
+            _node_data_offset);
     }
 
     double* node_voltage_storage() {
-        return neuron::model().node_data().get<neuron::container::Node::field::Voltage>().data() +
-               _node_data_offset;
+        // Need to be able to use this method while the model is frozen, so
+        // avoid calling the zero-parameter get()
+        return &neuron::model().node_data().get<neuron::container::Node::field::Voltage>(
+            _node_data_offset);
     }
 
     double& actual_area(std::size_t row) {
