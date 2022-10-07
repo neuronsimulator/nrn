@@ -182,7 +182,6 @@ static double abstol(void* v) {
     if (hoc_is_str_arg(1)) {
         sym = d->name2sym(gargstr(1));
     } else {
-        hoc_pgetarg(1);
         sym = hoc_get_last_pointer_symbol();
         if (!sym) {
             hoc_execerror(

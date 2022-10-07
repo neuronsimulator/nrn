@@ -60,7 +60,6 @@ char* hoc_object_name(Object*);
 void hoc_retpushx(double);
 
 double* hoc_getarg(int);
-double* hoc_pgetarg(int);
 int ifarg(int);
 
 int vector_instance_px(void*, double**);
@@ -211,6 +210,10 @@ struct hoc_pop_helper<neuron::container::data_handle<T>> {
     }
 };
 }  // namespace neuron::oc::detail
+
+[[nodiscard]] inline double* hoc_pgetarg(int narg) {
+    return static_cast<double*>(hoc_get_arg<neuron::container::data_handle<double>>(narg));
+}
 
 double hoc_xpop();
 Symbol* hoc_spop();

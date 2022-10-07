@@ -146,7 +146,6 @@ char* hoc_symbol_units(Symbol* sym, const char* units) {
 void hoc_Symbol_units(void) {
     Symbol* sym;
     extern Symbol* hoc_get_last_pointer_symbol();
-    extern double* hoc_pgetarg(int);
     char** units = hoc_temp_charptr();
 
     if (hoc_is_double_arg(1)) {
@@ -251,7 +250,6 @@ static int hoc_vsscanf(const char* buf) {
     char *pf, *format, errbuf[100];
     void* arglist[20];
     int n = 0, iarg, i, islong, convert, sawnum;
-    extern double* hoc_pgetarg(int);
     struct {
         union {
             double d;
@@ -710,7 +708,6 @@ Symbol* hoc_parse_stmt(const char* str, Symlist** psymlist) {
 extern double* hoc_varpointer;
 
 void hoc_pointer(void) {
-    extern double* hoc_pgetarg(int);
     hoc_varpointer = hoc_pgetarg(1);
     ret();
     pushx(1.);
