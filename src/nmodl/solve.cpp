@@ -293,7 +293,7 @@ void save_dt(Item* q) /* save and restore the value of indepvar */
 #endif
 }
 
-char* saveindep = "";
+const char* saveindep = "";
 
 void whileloop(Item* qsol, long type, int ss) {
     /* no solve statement except this is allowed to
@@ -310,7 +310,7 @@ void whileloop(Item* qsol, long type, int ss) {
     /* executing more that one for loop in a single call to model() is an error
     which is trapped in scop */
     static int called = 0, firstderf = 1;
-    char* cp = 0;
+    const char* cp = 0;
 
     switch (type) {
     case DERF:

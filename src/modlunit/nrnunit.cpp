@@ -10,7 +10,7 @@
 
 static int point_process = 0;
 static List *current, *concen, *potential;
-static void unit_chk(char*, char*);
+static void unit_chk(const char*, const char*);
 static int iontype(char*, char*);
 
 int breakpoint_local_seen_;
@@ -50,7 +50,7 @@ void nrn_unit_chk() {
     }
 }
 
-static void unit_chk(char* name, char* unit) {
+static void unit_chk(const char* name, const char* unit) {
     Symbol* s;
 
     s = lookup(name);

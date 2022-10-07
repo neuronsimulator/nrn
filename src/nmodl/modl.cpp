@@ -65,9 +65,9 @@ extern char* nmodl_version_;
 extern int usederivstatearray;
 
 /*SUPPRESS 763*/
-static char pgm_name[] = "nmodl";
-extern char* RCS_version;
-extern char* RCS_date;
+static const char* pgm_name = "nmodl";
+extern const char* RCS_version;
+extern const char* RCS_date;
 
 static struct option long_options[] = {{"version", no_argument, 0, 'v'},
                                        {"help", no_argument, 0, 'h'},

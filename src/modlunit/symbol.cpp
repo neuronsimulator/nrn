@@ -18,7 +18,7 @@ void symbol_init() {
     }
 }
 
-Symbol* lookup(char* s) /* find s in symbol table */
+Symbol* lookup(const char* s) /* find s in symbol table */
 {
     Item* sp;
 
@@ -46,7 +46,7 @@ Symbol* checklocal(Symbol* sym) {
     return sym;
 }
 
-Symbol* install(char* s, int t) /* install s in the list symbol table with type t*/
+Symbol* install(const char* s, int t) /* install s in the list symbol table with type t*/
 {
     Symbol* sp;
     List* sl;

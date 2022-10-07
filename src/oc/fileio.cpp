@@ -69,7 +69,7 @@ void hoc_stdout(void) {
 void ropen(void) /* open file for reading */
 {
     double d;
-    char* fname;
+    const char* fname;
 
     if (ifarg(1))
         fname = gargstr(1);
@@ -96,7 +96,7 @@ void ropen(void) /* open file for reading */
 
 void wopen(void) /* open file for writing */
 {
-    char* fname;
+    const char* fname;
     double d;
 
     if (ifarg(1))

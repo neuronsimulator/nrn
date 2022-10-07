@@ -42,7 +42,8 @@ void solv_diffeq(Item* qsol,
                  int listnum,
                  int steadystate,
                  int btype) {
-    char *maxerr_str, dindepname[256];
+    const char* maxerr_str;
+    char dindepname[256];
     char deriv1_advance[256], deriv2_advance[256];
     char ssprefix[8];
 

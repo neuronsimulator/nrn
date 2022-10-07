@@ -25,7 +25,7 @@
 #define ldebug(arg1, arg2) qdebug(arg1, arg2->next)
 
 extern int yylex(), yyparse();
-void yyerror(char*);
+void yyerror(const char*);
 
 #if YYBISON
 #define myerr(arg) static int ierr=0;\
@@ -1042,7 +1042,7 @@ valence: /*nothing*/
 		}
 	;
 %%
-void yyerror(char* s)	/* called for yacc syntax error */
+void yyerror(const char* s)	/* called for yacc syntax error */
 {
 	Fprintf(stderr, "%s:\n ", s);
 }

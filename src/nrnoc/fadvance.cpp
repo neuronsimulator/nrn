@@ -199,7 +199,7 @@ static int batch_size;
 static int batch_n;
 static double** batch_var;
 
-static void batch_open(char* name, double tstop, double tstep, char* comment) {
+static void batch_open(char* name, double tstop, double tstep, const char* comment) {
     if (batch_file) {
         batch_close();
     }
@@ -245,7 +245,6 @@ void batch_run(void) /* avoid interpreter overhead */
 {
     double tstop, tstep, tnext;
     char* filename;
-    char* comment;
 
     tstopunset;
     tstop = chkarg(1, 0., 1e20);
@@ -255,11 +254,7 @@ void batch_run(void) /* avoid interpreter overhead */
     } else {
         filename = 0;
     }
-    if (ifarg(4)) {
-        comment = gargstr(4);
-    } else {
-        comment = "";
-    }
+    auto* comment = ifarg(4) ? hoc_gargstr(4) : "";
 
     if (tree_changed) {
         setup_topology();

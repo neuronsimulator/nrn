@@ -34,7 +34,7 @@ extern int breakpoint_local_seen_;
 #define R1	IFR(1)
 
 static int yylex();
-static void yyerror(char *);
+static void yyerror(const char *);
 
 #if YYBISON 
 #define myerr(arg) static int ierr=0;\
@@ -786,7 +786,7 @@ valence: /*nothing*/
 %%
 	/* end of grammar */
 
-static void yyerror(char* s)	/* called for yacc syntax error */
+static void yyerror(const char* s)	/* called for yacc syntax error */
 {
 	Fprintf(stderr, "%s:\n ", s);
 }

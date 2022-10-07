@@ -25,7 +25,7 @@ static char banner[] =
 See http://neuron.yale.edu/neuron/credits\n";
 
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
-extern char* nrn_mech_dll;            /* declared in hoc_init.cpp so ivocmain.cpp can see it */
+extern const char* nrn_mech_dll;      /* declared in hoc_init.cpp so ivocmain.cpp can see it */
 extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.cpp */
 #endif                                // WIN32 or NRNMEHC_DLL_STYLE
 
@@ -397,7 +397,6 @@ void hoc_last_init(void) {
         }
     }
     if (nrn_mech_dll) {
-        char *cp1, *cp2;
         hoc_default_dll_loaded_ = 1.;
 #if defined(WIN32)
         /* Sometimes (windows 10 and launch recent enthought canopy) it seems that
@@ -413,7 +412,9 @@ void hoc_last_init(void) {
             }
         } else {
 #endif /*WIN32*/
-            for (cp1 = nrn_mech_dll; *cp1; cp1 = cp2) {
+            char *cp1{}, *cp2{};
+            std::string tmp{nrn_mech_dll};
+            for (cp1 = tmp.data(); *cp1; cp1 = cp2) {
                 for (cp2 = cp1; *cp2; ++cp2) {
                     if (*cp2 == ';') {
                         *cp2 = '\0';
