@@ -74,9 +74,20 @@ struct NrnThread {
      */
     std::size_t _node_data_offset{};
 
+    double* node_area_storage() {
+        return neuron::model().node_data().get<neuron::container::Node::field::Area>().data() +
+               _node_data_offset;
+    }
+
     double* node_voltage_storage() {
         return neuron::model().node_data().get<neuron::container::Node::field::Voltage>().data() +
                _node_data_offset;
+    }
+
+    double& actual_area(std::size_t row) {
+        assert(neuron::model().node_data().is_sorted());
+        return neuron::model().node_data().get<neuron::container::Node::field::Area>(
+            _node_data_offset + row);
     }
 
     double& actual_v(std::size_t row) {
@@ -89,8 +100,6 @@ struct NrnThread {
     double* _actual_d;
     double* _actual_a;
     double* _actual_b;
-    // double* _actual_v;
-    double* _actual_area;
     int* _v_parent_index;
     Node** _v_node;
     Node** _v_parent;
