@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
 #include <nrnpython_config.h>
 #include "section.h"
 #include "nrn_ansi.h"

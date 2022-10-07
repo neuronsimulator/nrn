@@ -205,21 +205,6 @@ void IvocVect::label(const char* label) {
     }
 }
 
-void IvocVect::resize(size_t n) {
-    if (n > vec_.size()) {
-        notify_freed_val_array(vec_.data(), vec_.size());
-    }
-    vec_.resize(n);
-}
-
-void IvocVect::resize(size_t n, double fill_value) {
-    if (n > vec_.size()) {
-        notify_freed_val_array(vec_.data(), vec_.size());
-    }
-    vec_.resize(n, fill_value);
-}
-
-
 static const char* nullstr = "";
 
 static const char** v_label(void* v) {

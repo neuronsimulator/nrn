@@ -595,12 +595,6 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
                     ml->_data[ml->nodecount] = p->param;
                     ml->pdata[ml->nodecount] = p->dparam;
                 }
-                // This is where we know both the index (ml->nodecount)
-                // and...maybe...the Point_process pointer?
-                // if (memb_func[p->_type].is_point) {
-                //     auto* const pp = static_cast<Point_process*>(p->dparam[1]._pvoid);
-                //     pp->_i_instance = ml->nodecount;
-                // }
                 ++ml->nodecount;
             }
         }
