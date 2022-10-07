@@ -5,18 +5,49 @@
 
 #include <atomic>
 #include <functional>
+#include <limits>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 namespace neuron::container {
 namespace detail {
+template <typename T, typename... Ts>
+inline constexpr bool type_in_pack_v = std::disjunction_v<std::is_same<T, Ts>...>;
 // https://stackoverflow.com/a/67106430
 template <typename T, typename... Types>
 inline constexpr bool are_types_unique_v =
     (!std::is_same_v<T, Types> && ...) && are_types_unique_v<Types...>;
 template <typename T>
 inline constexpr bool are_types_unique_v<T> = true;
+// https://stackoverflow.com/a/18063608
+template <typename T, typename Tuple>
+struct index_of_type_helper;
+template <typename T, typename... Ts>
+struct index_of_type_helper<T, std::tuple<T, Ts...>> {
+    static constexpr std::size_t value = 0;
+};
+template <typename T, typename U, typename... Ts>
+struct index_of_type_helper<T, std::tuple<U, Ts...>> {
+    static constexpr std::size_t value = 1 + index_of_type_helper<T, std::tuple<Ts...>>::value;
+};
+template <typename T, typename... Ts>
+inline constexpr std::size_t index_of_type_v = []() {
+    constexpr bool Ts_are_unique = are_types_unique_v<Ts...>;
+    constexpr bool T_is_in_Ts = type_in_pack_v<T, Ts...>;
+    static_assert(Ts_are_unique,
+                  "index_of_type_v<T, Ts...> assumes there are no duplicates in Ts...");
+    static_assert(T_is_in_Ts, "index_of_type_v<T, Ts...> assumes that T occurs in Ts...");
+    // make the error message better by avoiding instantiating index_of_type_helper if the
+    // assertions fail
+    if constexpr (Ts_are_unique && T_is_in_Ts) {
+        return index_of_type_helper<T, std::tuple<Ts...>>::value;
+    } else {
+        return std::numeric_limits<std::size_t>::max();  // unreachable without hitting
+                                                         // static_assert
+    }
+}();
 }  // namespace detail
 
 template <typename RowIdentifier, typename... Tags>
@@ -259,7 +290,7 @@ struct soa {
     template <typename Tag>
     [[nodiscard]] typename Tag::type& get(std::size_t offset) {
         static_assert(has_tag_v<Tag>);
-        return std::get<storage_t<Tag>>(m_data).at(offset);
+        return std::get<tag_index_v<Tag>>(m_data).at(offset);
     }
 
     /** @brief Get the offset-th element of the column named by Tag.
@@ -272,13 +303,12 @@ struct soa {
   private:
     static_assert(detail::are_types_unique_v<RowIdentifier, Tags...>,
                   "All tag types should be unique");
-
     template <typename Tag>
-    using storage_t = std::vector<typename Tag::type>;
+    static constexpr std::size_t tag_index_v = detail::index_of_type_v<Tag, Tags...>;
 
   public:
     template <typename Tag>
-    static constexpr bool has_tag_v = std::disjunction_v<std::is_same<Tag, Tags>...>;
+    static constexpr bool has_tag_v = detail::type_in_pack_v<Tag, Tags...>;
 
     /** @brief Get the column container named by Tag.
      */
@@ -288,7 +318,7 @@ struct soa {
         if (m_frozen_count) {
             throw_error("non-const get() called on frozen structure");
         }
-        return std::get<storage_t<Tag>>(m_data);
+        return std::get<tag_index_v<Tag>>(m_data);
     }
 
     /** @brief Get the column container named by Tag.
@@ -296,7 +326,7 @@ struct soa {
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type> const& get() const {
         static_assert(has_tag_v<Tag>);
-        return std::get<storage_t<Tag>>(m_data);
+        return std::get<tag_index_v<Tag>>(m_data);
     }
 
     /** @brief Return a permutation-stable handle if ptr is inside us.
@@ -308,7 +338,7 @@ struct soa {
         neuron::container::data_handle<T> handle{};
         // Don't go via non-const get<T>() because of the m_frozen_count check
         find_data_handle(handle, m_indices, ptr) ||
-            (find_data_handle(handle, std::get<storage_t<Tags>>(m_data), ptr) || ...);
+            (find_data_handle(handle, std::get<tag_index_v<Tags>>(m_data), ptr) || ...);
         return handle;
     }
 
@@ -415,7 +445,7 @@ struct soa {
 
     /** @brief Collection of data columns.
      */
-    std::tuple<storage_t<Tags>...> m_data{};
+    std::tuple<std::vector<typename Tags::type>...> m_data{};
 
     /** @brief Callback that is invoked when the container becomes unsorted.
      */
