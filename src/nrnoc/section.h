@@ -104,14 +104,8 @@ the notify_free_val parameter in node_free in solve.cpp
 
 #undef NODEV /* sparc-sun-solaris2.9 */
 
-#if CACHEVEC == 0
-#define NODEA(n)    ((n)->_a)
-#define NODEB(n)    ((n)->_b)
-#define NODEV(n)    ((n)->_v)
-#define NODEAREA(n) ((n)->_area)
-#else /* CACHEVEC */
 #define NODEV(n)    ((n)->voltage())
-#define NODEAREA(n) ((n)->_area)
+#define NODEAREA(n) ((n)->area())
 #define NODERINV(n) ((n)->_rinv)
 // The VEC_* vectors access the underlying array storage, i.e. the vectors that
 // live inside structures like neuron::model().node_data().
@@ -122,10 +116,9 @@ the notify_free_val parameter in node_free in solve.cpp
 #define VEC_D(i)    (_nt->_actual_d[(i)])
 #define VEC_RHS(i)  (_nt->_actual_rhs[(i)])
 #define VEC_V(i)    (_nt->actual_v(i))
-#define VEC_AREA(i) (_nt->_actual_area[(i)])
+#define VEC_AREA(i) (_nt->actual_area(i))
 #define NODEA(n)    (VEC_A((n)->v_node_index))
 #define NODEB(n)    (VEC_B((n)->v_node_index))
-#endif /* CACHEVEC */
 
 extern int use_sparse13;
 extern int use_cachevec;
@@ -137,30 +130,31 @@ struct Node {
     // neuron::container::handle::Node, but as an intermediate measure we can
     // add one of those as a member and forward some access/modifications to it.
     neuron::container::Node::owning_handle _node_handle;
+    [[nodiscard]] auto area() const {
+        return _node_handle.area();
+    }
     [[nodiscard]] auto v() const {
         return _node_handle.v();
     }
     [[nodiscard]] auto voltage() const {
         return v();
     }
+    void set_area(neuron::container::Node::field::Area::type area) {
+        _node_handle.set_area(area);
+    }
     void set_v(neuron::container::Node::field::Voltage::type v) {
         _node_handle.set_v(v);
+    }
+    auto area_handle() {
+        return _node_handle.area_handle();
     }
     auto v_handle() {
         return _node_handle.v_handle();
     }
-#if CACHEVEC == 0
-    double _v;    /* membrane potential */
-    double _area; /* area in um^2 but see treesetup.cpp */
-    double _a;    /* effect of node in parent equation */
-    double _b;    /* effect of parent in node equation */
-#else             /* CACHEVEC */
-    double _area;   /* area in um^2 but see treesetup.cpp */
     double _rinv;   /* conductance uS from node to parent */
     double _v_temp; /* vile necessity til actual_v allocated */
-#endif            /* CACHEVEC */
-    double* _d;   /* diagonal element in node equation */
-    double* _rhs; /* right hand side in node equation */
+    double* _d;     /* diagonal element in node equation */
+    double* _rhs;   /* right hand side in node equation */
     double* _a_matelm;
     double* _b_matelm;
     int eqn_index_;                 /* sparse13 matrix row/col index */
