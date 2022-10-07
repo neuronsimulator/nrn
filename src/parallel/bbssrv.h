@@ -17,5 +17,8 @@
 #define LOOK_TAKE_RESULT 14
 #define TAKE_TODO        15
 #define CONTEXT          16
-#define FIRSTID          17
+#define CRAY_POST        17
+#define CRAY_POST_TODO   18
+#define CRAY_POST_RESULT 19
+#define FIRSTID          20
 #endif
