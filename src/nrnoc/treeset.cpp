@@ -57,10 +57,6 @@ void (*nrn_multisplit_setup_)();
  * of L2 misses.  2006-07-05/Hubert Eichner */
 /* these are now thread instance arrays */
 static void nrn_recalc_node_ptrs();
-#define UPDATE_VEC_AREA(nd)                                       \
-    if (nd->_nt && nd->_nt->_actual_area) {                       \
-        nd->_nt->_actual_area[(nd)->v_node_index] = NODEAREA(nd); \
-    }
 #endif /* CACHEVEC */
 int use_cachevec;
 
@@ -811,8 +807,7 @@ void nrn_area_ri(Section* sec) {
                 p->param[0] = 1e-6;
                 hoc_execerror(secname(sec), "diameter diam = 0. Setting to 1e-6");
             }
-            NODEAREA(nd) = PI * diam * dx; /* um^2 */
-            UPDATE_VEC_AREA(nd);
+            nd->set_area(PI * diam * dx);                           // um^2
             rleft = 1e-2 * ra * (dx / 2) / (PI * diam * diam / 4.); /*left half segment Megohms*/
             NODERINV(nd) = 1. / (rleft + rright);                   /*uS*/
             rright = rleft;
@@ -820,8 +815,7 @@ void nrn_area_ri(Section* sec) {
     }
     /* last segment has 0 length. area is 1e2
     in dimensionless units */
-    NODEAREA(sec->pnode[j]) = 1.e2;
-    UPDATE_VEC_AREA(sec->pnode[j]);
+    sec->pnode[j]->set_area(1.e2);
     NODERINV(sec->pnode[j]) = 1. / rright;
     sec->recalc_area_ = 0;
     diam_changed = 1;
@@ -1603,15 +1597,13 @@ static double diam_from_list(Section* sec, int inode, Prop* p, double rparent)
     if (fabs(diam - p->param[0]) > 1e-9 || diam < 1e-5) {
         p->param[0] = diam; /* microns */
     }
-    NODEAREA(sec->pnode[inode]) = area * .5 * PI; /* microns^2 */
-    UPDATE_VEC_AREA(sec->pnode[inode]);
+    sec->pnode[inode]->set_area(area * .5 * PI); /* microns^2 */
 #if NTS_SPINE
     /* if last point has a spine then increment spine count for last node */
     if (inode == sec->nnode - 2 && sec->pt3d[npt - 1].d < 0.) {
         nspine += 1;
     }
-    NODEAREA(sec->pnode[inode]) += nspine * spinearea;
-    UPDATE_VEC_AREA(sec->pnode[inode]);
+    sec->pnode[inode]->set_area(sec->pnode[inode]->area() + nspine * spinearea);
 #endif
     return ri;
 }
@@ -1918,9 +1910,6 @@ void nrn_matrix_node_free() {
             free(nt->_actual_b);
             nt->_actual_b = (double*) 0;
         }
-        /* because actual_v and actual_area have pointers to them from many
-           places, defer the freeing until nrn_recalc_node_ptrs is called
-        */
 #endif /* CACHEVEC */
         if (nt->_sp13mat) {
             spDestroy(nt->_sp13mat);
@@ -2132,26 +2121,6 @@ All PreSyn threshold detectors that watch v.
 
 static int n_recalc_ptr_callback;
 static void (*recalc_ptr_callback[20])();
-static int recalc_cnt_;
-static int n_old_thread_;
-static double** old_actual_area_;
-
-/* defer freeing a few things which may have pointers to them
-until ready to update those pointers */
-void nrn_old_thread_save(void) {
-    int i;
-    int n = nrn_nthread;
-    if (old_actual_area_) {
-        return;
-    } /* one is already outstanding */
-    n_old_thread_ = n;
-    old_actual_area_ = (double**) ecalloc(n, sizeof(double*));
-    for (i = 0; i < n; ++i) {
-        NrnThread* nt = nrn_threads + i;
-        old_actual_area_[i] = nt->_actual_area;
-    }
-}
-
 static double* (*recalc_ptr_)(double*);
 
 double* nrn_recalc_ptr(double* old) {
@@ -2244,53 +2213,10 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
 }
 
 void nrn_recalc_node_ptrs() {
-    int i, ii, j, k;
-    NrnThread* nt;
     if (use_cachevec == 0) {
         return;
     }
-    /*printf("nrn_recalc_node_ptrs\n");*/
-    recalc_cnt_ = 0;
-    FOR_THREADS(nt) {
-        recalc_cnt_ += nt->end;
-    }
-
-    /* first update the pointers without messing with the old NODEV,NODEAREA */
-    /* to prepare for the update, copy all the v and area values into the */
-    /* new arrays are replace the old values by index value. */
-    /* a pointer dereference value of i allows us to easily check */
-    /* if the pointer points to what v_node[i]->_v points to. */
-    ii = 0;
-    FOR_THREADS(nt) {
-        nt->_actual_area = (double*) ecalloc(nt->end, sizeof(double));
-    }
-    FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
-        Node* nd = nt->_v_node[i];
-        nt->_actual_area[i] = nd->_area;
-        ++ii;
-    }
-    /* update POINT_PROCESS pointers to NODEAREA */
-    /* and relevant POINTER pointers to NODEV */
-    FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
-        Node* nd = nt->_v_node[i];
-        for (Prop* p = nd->prop; p; p = p->next) {
-            if (memb_func[p->_type].is_point && !nrn_is_artificial_[p->_type]) {
-                p->dparam[0] = nt->_actual_area + i;
-            }
-        }
-    }
-
     nrn_recalc_ptrs(nullptr);
-
-    /* and free the old thread arrays if new ones were allocated */
-    for (i = 0; i < n_old_thread_; ++i) {
-        if (old_actual_area_[i])
-            free(old_actual_area_[i]);
-    }
-    free(old_actual_area_);
-    old_actual_area_ = 0;
-    n_old_thread_ = 0;
-
     nrn_node_ptr_change_cnt_++;
     nrn_cache_prop_realloc();
     nrn_recalc_ptrvector();
