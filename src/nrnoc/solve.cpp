@@ -602,7 +602,7 @@ Node** node_construct(int n) {
         // TODO with the new data structures, how do we specify default values
         // for fields? I guess in the field struct declarations.
 #if CACHEVEC
-        nd->_area = 100.;
+        nd->set_area(100.);
         nd->_rinv = 0.;
 #endif
         nd->sec_node_index_ = i;
@@ -632,13 +632,6 @@ void nrn_node_destruct1(Node* nd) {
         return;
     }
     prop_free(&(nd->prop));
-#if CACHEVEC
-    // TODO probably broken
-    // notify_freed_val_array(&NODEV(nd), 1);
-    notify_freed_val_array(&NODEAREA(nd), 2);
-#else
-    // notify_freed_val_array(&NODEV(nd), 2);
-#endif
 #if EXTRACELLULAR
     if (nd->extnode) {
         notify_freed_val_array(nd->extnode->v, nlayer);

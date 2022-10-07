@@ -300,17 +300,17 @@ int nrnthread_dat2_2(int tid,
             v_parent_index[i] = nt._v_parent_index[i];
             a[i] = nt._actual_a[i];
             b[i] = nt._actual_b[i];
-            area[i] = nt._actual_area[i];
+            area[i] = nt.actual_area(i);
             v[i] = nt.actual_v(i);
         }
     } else {
         v_parent_index = nt._v_parent_index;
         a = nt._actual_a;
         b = nt._actual_b;
-        area = nt._actual_area;
         // This is still dangerous, practically any operation on the NEURON side
         // can affect `v`
         assert(neuron::model().node_data().is_sorted());
+        area = nt.node_area_storage();
         v = nt.node_voltage_storage();
     }
     if (cg.ndiam) {

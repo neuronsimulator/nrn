@@ -133,7 +133,7 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
     fprintf(f, "inode parent area a b\n");
     for (int i = 0; i < nt.end; ++i)
         if (cellnodes[i] >= 0) {
-            Node* nd = nt._v_node[i];  // if not cach_efficient then _actual_area=NULL
+            Node* nd = nt._v_node[i];
             fprintf(f,
                     "%d %d %.*g %.*g %.*g\n",
                     cellnodes[i],
