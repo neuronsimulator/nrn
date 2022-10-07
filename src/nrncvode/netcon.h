@@ -31,7 +31,7 @@ class NetCvode;
 class HocEvent;
 using HocEventPool = MutexPool<HocEvent>;
 class HocCommand;
-struct STETransition;
+class STETransition;
 class IvocVect;
 class Multisend_Send;
 class Multisend_Send_Phase2;
