@@ -31,7 +31,6 @@ class LinearMechanism: public Observer {
     bool valid() {
         return model_ != NULL;
     }
-    void update_ptrs();
 
     LinearModelAddition* model_;
     Matrix* c_;
@@ -44,12 +43,6 @@ class LinearMechanism: public Observer {
     Node** nodes_;
     Vect* elayer_;
 };
-
-extern void nrn_linmod_update_ptrs(void*);
-void nrn_linmod_update_ptrs(void* p) {
-    LinearMechanism* lm = (LinearMechanism*) p;
-    lm->update_ptrs();
-}
 
 static double valid(void* v) {
     return double(((LinearMechanism*) v)->valid());
@@ -108,18 +101,6 @@ void LinearMechanism::lmfree() {
     }
 }
 
-void LinearMechanism::update_ptrs() {
-    // if (nodes_) {
-    //     nrn_notify_pointer_disconnect(this);
-    //     for (int i = 0; i < nnode_; ++i) {
-    //         double* pd = nrn_recalc_ptr(&(NODEV(nodes_[i])));
-    //         if (pd != &(NODEV(nodes_[i]))) {
-    //             nrn_notify_when_double_freed(pd, this);
-    //         }
-    //     }
-    // }
-}
-
 void LinearMechanism::disconnect(Observable*) {}
 void LinearMechanism::update(Observable*) {
     lmfree();
@@ -156,7 +137,6 @@ void LinearMechanism::create() {
             double x = chkarg(i, 0., 1.);
             Section* sec = chk_access();
             nodes_[0] = node_exact(sec, x);
-            // nrn_notify_when_double_freed(&NODEV(nodes_[0]), this);
         } else {
             Object* o = *hoc_objgetarg(i);
             check_obj_type(o, "SectionList");
@@ -168,7 +148,6 @@ void LinearMechanism::create() {
             nodes_ = new Node*[x->size()];
             for (sec = sl->begin(); sec; sec = sl->next()) {
                 nodes_[nnode_] = node_exact(sec, x->elem(nnode_));
-                // nrn_notify_when_double_freed(&NODEV(nodes_[nnode_]), this);
                 ++nnode_;
             }
             if (ifarg(i + 2)) {

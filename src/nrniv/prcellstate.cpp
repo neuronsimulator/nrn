@@ -98,7 +98,6 @@ static void pr_netcon(NrnThread& nt, FILE* f, const std::map<void*, int>& pnt2in
 }
 
 static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
-    std::cout << "thvar=" << ps.thvar_ << std::endl;
     assert(ps.thvar_);
     // threshold variable is a voltage
 

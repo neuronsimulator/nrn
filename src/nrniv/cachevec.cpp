@@ -23,9 +23,6 @@
 
 void nrniv_recalc_ptrs();
 extern NetCvode* net_cvode_instance;
-
-extern void nrn_linmod_update_ptrs(void*);
-
 static Symbol* grsym_;
 static Symbol* ptrsym_;
 static Symbol* lmsym_;
@@ -90,14 +87,6 @@ void nrniv_recalc_ptrs() {
     if (!lmsym_) {
         lmsym_ = hoc_lookup("LinearMechanism");
         assert(lmsym_->type == TEMPLATE);
-    }
-    hl = lmsym_->u.ctemplate->olist;
-    ITERATE(q, hl) {
-        Object* obj = OBJ(q);
-        void* pt = (void*) obj->u.this_pointer;
-        if (pt) {
-            nrn_linmod_update_ptrs(pt);
-        }
     }
 }
 
