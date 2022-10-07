@@ -12,8 +12,8 @@ include(NeuronTestHelper)
 # =============================================================================
 # Test executables
 # =============================================================================
-set(TEST_SOURCES unit_tests/oc/hoc_interpreter.cpp unit_tests/threads/test_multicore.cpp)
-add_executable(testneuron unit_tests/unit_test.cpp ${TEST_SOURCES})
+add_executable(testneuron unit_tests/unit_test.cpp unit_tests/oc/hoc_interpreter.cpp
+                          unit_tests/threads/test_multicore.cpp)
 cpp_cc_configure_sanitizers(TARGET testneuron)
 target_compile_features(testneuron PUBLIC cxx_std_11)
 target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
@@ -206,15 +206,27 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests
     COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/cover
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
-  nrn_add_test_group(NAME example_nmodl MODFILE_PATTERNS share/examples/nrniv/nmodl/*.mod
-                                                         share/examples/nrniv/nmodl/*.inc)
-  nrn_add_test(
-    GROUP example_nmodl
+  nrn_add_test_group(
     NAME example_nmodl
-    COMMAND
-      bash -ceo pipefail
-      [=[ pushd share/examples/nrniv/nmodl && find . -type f -name "*.hoc" | xargs -I{} special {} ]=]
-    SCRIPT_PATTERNS share/examples/nrniv/nmodl/*.ses share/examples/nrniv/nmodl/*.hoc)
+    MODFILE_PATTERNS *.mod *.inc
+    SIM_DIRECTORY share/examples/nrniv/nmodl)
+  set(py_exe ${PYTHON_EXECUTABLE})
+  set(py_preload PRELOAD_SANITIZER)
+  set(hoc_exe special)
+  foreach(ext hoc py)
+    file(
+      GLOB example_nmodl_scripts
+      RELATIVE "${PROJECT_SOURCE_DIR}/share/examples/nrniv/nmodl"
+      "${PROJECT_SOURCE_DIR}/share/examples/nrniv/nmodl/*.${ext}")
+    foreach(example_script ${example_nmodl_scripts})
+      get_filename_component(name "${example_script}" NAME_WLE)
+      nrn_add_test(
+        GROUP example_nmodl
+        NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
+        COMMAND ${${ext}_exe} "${example_script}"
+        SCRIPT_PATTERNS "${example_script}" "${name}.ses")
+    endforeach()
+  endforeach()
 
   if(NRN_ENABLE_RX3D)
     nrn_add_test_group(

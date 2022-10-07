@@ -1283,8 +1283,9 @@ static int hoc_run1() {
                 if (!loop_body()) {
                     break;
                 }
-            } catch (...) {
+            } catch (std::exception const& e) {
                 hoc_fin = sav_fin;
+                std::cerr << "hoc_run1: caught exception: " << e.what() << std::endl;
                 // Exit if we're not in interactive mode
                 if (!nrn_fw_eq(hoc_fin, stdin)) {
                     return EXIT_FAILURE;
@@ -1383,7 +1384,8 @@ int hoc_oc(const char* buf) {
         try {
             signal_handler_guard _{};
             kernel();
-        } catch (...) {
+        } catch (std::exception const& e) {
+            std::cerr << "hoc_oc caught exception: " << e.what() << std::endl;
             hoc_initcode();
             hoc_intset = 0;
             return 1;
