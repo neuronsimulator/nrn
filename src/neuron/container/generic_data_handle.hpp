@@ -26,6 +26,14 @@ struct typeless_null {};
  *  and is therefore type-safe, but this increases sizeof(generic_data_handle)
  *  by 50% so it may be prudent to view this as useful for validation/debugging
  *  but not something to become too dependent on.
+ *
+ *  @todo Consider whether this should be made more like std::any (with a
+ *  maximum 2*sizeof(void*) and a promise never to allocate memory dynamically)
+ *  so it actually has a data_handle<T> subobject. Presumably that would mean
+ *  data_handle<T> would need to have a trivial destructor. This might make it
+ *  harder in future to have some vector_of_generic_data_handle type that hoists
+ *  out the pointer-to-container and typeid parts that should be the same for
+ *  all rows.
  */
 struct generic_data_handle {
   private:
