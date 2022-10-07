@@ -66,7 +66,6 @@ static struct { /* Keywords */
                 {"help", HELP},
                 {"iterator", ITERKEYWORD},
                 {"iterator_statement", ITERSTMT},
-#if CABLE
                 {"create", SECTIONKEYWORD},
                 {"connect", CONNECTKEYWORD},
                 {"setpointer", SETPOINTERKEYWORD},
@@ -76,7 +75,6 @@ static struct { /* Keywords */
                 {"forall", FORALL},
                 {"ifsec", IFSEC},
                 {"forsec", FORSEC},
-#endif /*CABLE*/
 #if OOP
                 {"begintemplate", BEGINTEMPLATE},
                 {"endtemplate", ENDTEMPLATE},

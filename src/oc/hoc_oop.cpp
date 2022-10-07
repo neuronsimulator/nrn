@@ -23,13 +23,11 @@ void (*nrnpy_hpoasgn)(Object* o, int type);
 void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
 #endif
 
-#if CABLE
 #include "section.h"
 #include "nrniv_mf.h"
 int section_object_seen;
 struct Section* nrn_sec_pop();
 static int connect_obsec_;
-#endif
 
 #define PUBLIC_TYPE   1
 #define EXTERNAL_TYPE 2
@@ -102,11 +100,9 @@ size_t hoc_total_array_data(Symbol* s,
         a = s->arayinfo;
     } else
         switch (s->type) {
-#if CABLE
         case RANGEVAR:
             a = s->arayinfo;
             break;
-#endif
         default:
             a = obd[s->u.oboff + 1].arayinfo;
             break;
@@ -179,11 +175,9 @@ void hoc_obvar_declare(Symbol* sym, int type, int pmes) {
         break;
     case OBJECTVAR:
         break;
-#if CABLE
     case SECTION:
         OPSECITM(sym) = nullptr;  // TODO: whaa? (struct Item**)0;
         break;
-#endif
     default:
         hoc_execerror(sym->name, "can't declare this in obvar_declare");
         break;
@@ -423,9 +417,7 @@ void hoc_oop_initaftererror(void) {
     hoc_thisobject = nullptr;
     obj_stack_loc = 0;
     hoc_in_template = 0;
-#if CABLE
     connect_obsec_ = 0;
-#endif
 }
 
 void oc_save_hoc_oop(Object** a1,
@@ -549,7 +541,6 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
                         obd[s->u.oboff].pobj[0] = ob;
                     }
                     break;
-#if CABLE
                 case SECTION:
                     if ((obd[s->u.oboff + 1].arayinfo = s->arayinfo) != (Arrayinfo*) 0) {
                         ++s->arayinfo->refcount;
@@ -558,7 +549,6 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
                     obd[s->u.oboff].psecitm = (hoc_Item**) emalloc(total * sizeof(hoc_Item*));
                     new_sections(ob, s, obd[s->u.oboff].psecitm, total);
                     break;
-#endif
                 }
             }
         }
@@ -691,10 +681,8 @@ void call_ob_proc(Object* ob, Symbol* sym, int narg) {
             pop_frame();
             hoc_pushx(x);
         }
-#if CABLE
     } else if (ob->ctemplate->is_point_ && special_pnt_call(ob, sym, narg)) {
         ; /*empty since special_pnt_call did the work for get_loc, has_loc, and loc*/
-#endif
     } else {
         callcode[0].pf = call;
         callcode[1].sym = sym;
@@ -902,7 +890,6 @@ void hoc_object_id(void) {
     }
 }
 
-#if CABLE
 static void range_suffix(Symbol* sym, int nindex, int narg) {
     int bdim = 0;
     if (ISARRAY(sym)) {
@@ -935,8 +922,6 @@ void connect_obsec_syntax(void) {
     connect_obsec_ = 1;
 }
 
-#endif
-
 // number of indices at pc+2, number of args at pc+3, symbol at pc+1
 // object pointer on stack after indices
 // if component turns out to be an object then make sure pointer to correct
@@ -959,7 +944,6 @@ void hoc_object_component() {
     psym = &(pc++)->sym;
     isfunc = (pc++)->i;
 
-#if CABLE
     if (section_object_seen) {
         section_object_seen = 0;
         range_suffix(sym0, nindex, narg);
@@ -969,7 +953,6 @@ void hoc_object_component() {
         narg += nindex;
         nindex = 0;
     }
-#endif
     if (nindex) {
         if (narg) {
             hoc_execerror("[...](...) syntax only allowed for array range variables:", sym0->name);
@@ -1121,7 +1104,6 @@ void hoc_object_component() {
         hoc_pushstr(d);
         break;
     }
-#if CABLE
     case SECTIONREF: {
         extern Symbol* nrn_sec_sym;
         Section* sec;
@@ -1183,7 +1165,6 @@ void hoc_object_component() {
         ob_sec_access_push(*(OPSECITM(sym) + nindex));
         break;
     }
-#endif /*CABLE*/
     case ITERATOR: {
         if ((pc++)->i != ITERATOR) {
             hoc_execerror(sym->name, ":ITERATOR can only be used in a for statement");
@@ -1830,7 +1811,6 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
                     free_arrayinfo(OPARINFO(s));
                     free(objp);
                     break;
-#if CABLE
                 case SECTION:
                     total = hoc_total_array(s);
                     for (i = 0; i < total; ++i) {
@@ -1839,11 +1819,9 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
                     free(OPSECITM(s));
                     free_arrayinfo(OPARINFO(s));
                     break;
-#endif
                 }
             }
         }
-#if CABLE
     if (ctemplate->is_point_) {
         void* v = od[ctemplate->dataspace_size - 1]._pvoid;
         if (v) {
@@ -1851,7 +1829,6 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
             destroy_point_process(v);
         }
     }
-#endif
     hoc_objectdata = psav;
     if (od) {
         free((char*) od);
