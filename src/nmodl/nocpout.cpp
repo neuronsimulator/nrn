@@ -902,7 +902,7 @@ static void nrn_alloc(Prop* _prop) {\n\
     }
     if (areadec) {
         Sprintf(buf,
-                "\t_ppvar[%d] = &nrn_alloc_node_->_area; /* diam */\n",
+                "\t_ppvar[%d] = nrn_alloc_node_->area_handle();\n",
                 ioncount + pointercount + diamdec),
             Lappendstr(defs_list, buf);
         ppvar_semantics(ioncount + pointercount + diamdec, "area");
