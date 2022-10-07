@@ -1621,12 +1621,6 @@ char** hoc_pgargstr(int narg) {
 }
 
 // return pointer to nth argument
-double* hoc_pgetarg(int narg) {
-    auto const& arg_entry = get_argument(narg);
-    return static_cast<double*>(cast<neuron::container::generic_data_handle>(arg_entry));
-}
-
-// return pointer to nth argument
 double* hoc_getarg(int narg) {
     auto& arg_entry = get_argument(narg);
     auto& value = cast<double>(arg_entry);
