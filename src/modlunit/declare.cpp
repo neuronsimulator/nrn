@@ -9,7 +9,7 @@
 
 Symbol* indepsym;  /* mathematical independent variable */
 Item** scop_indep; /* the scop swept information */
-char* indepunits = "";
+const char* indepunits = "";
 
 /* subtype of variables using explicit declarations */
 

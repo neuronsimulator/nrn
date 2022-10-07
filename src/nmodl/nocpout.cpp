@@ -8,7 +8,7 @@ that version is compatible with this version.
 For now try to use something of the form d.d
 If this is changed then also change nrnoc/init.c
 */
-char* nmodl_version_ = "7.7.0";
+const char* nmodl_version_ = "7.7.0";
 
 /* Point processes are now interfaced to nrnoc via objectvars.
 Thus, p-array variables and functions accessible to hoc do not have
@@ -88,7 +88,7 @@ not thread safe and _p and _ppvar are static.
 
 extern int assert_threadsafe;
 extern int brkpnt_exists;
-static char* brkpnt_str_;
+static const char* brkpnt_str_;
 extern Symbol* indepsym;
 extern Symbol* scop_indep;
 extern List* indeplist;
@@ -126,7 +126,7 @@ static List* rangestate;
 static List* nrnpointers;
 static List* uip; /* void _update_ion_pointer(Datum* _ppvar){...} text */
 static char suffix[256];
-static char* rsuffix; /* point process range and functions don't have suffix*/
+static const char* rsuffix; /* point process range and functions don't have suffix*/
 static char* mechname;
 int point_process;      /* 1 if a point process model */
 int artificial_cell;    /* 1 if also explicitly declared an ARTIFICIAL_CELL */
@@ -1872,7 +1872,7 @@ int iontype(char* s1, char* s2) /* returns index of variable in ion mechanism */
     return -1;
 }
 
-static Symbol* ifnew_install(char* name) {
+static Symbol* ifnew_install(const char* name) {
     Symbol* s;
 
     if ((s = lookup(name)) == SYM0) {
@@ -2293,7 +2293,7 @@ List* begin_dion_stmt() {
     return l;
 }
 
-List* end_dion_stmt(char* strdel) {
+List* end_dion_stmt(const char* strdel) {
     Item *q, *q1;
     static List* l;
     char* strion;

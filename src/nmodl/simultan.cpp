@@ -269,7 +269,7 @@ void lin_state_term(Item* q1, Item* q2) /* term last*/
 
 void linterm(Item* q1, Item* q2, int pstate, int sign) /*primary, last ,, */
 {
-    char* signstr;
+    const char* signstr;
 
     if (pstate == 0) {
         sign *= -1;

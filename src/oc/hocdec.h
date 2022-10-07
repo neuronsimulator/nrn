@@ -228,7 +228,7 @@ struct HocStateTolerance { /* recommended tolerance for CVODE */
 
 struct HocParmUnits { /* units for symbol values */
     const char* name;
-    char* units;
+    const char* units;
 };
 
 #include "oc_ansi.h"

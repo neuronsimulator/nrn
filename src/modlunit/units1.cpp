@@ -8,7 +8,7 @@ void unit_push(Item* q) {
     Unit_push(decode_units(SYM(q)));
 }
 
-char* decode_units(Symbol* sym) {
+const char* decode_units(Symbol* sym) {
     if (sym->u.str) {
         return sym->u.str;
     }
@@ -160,14 +160,11 @@ void func_unit(Item* q1, Item* q2) {
 
 void unit_del(int i) /* push 1/delta_x ^ i units */
 {
-    Symbol* s;
-    char* cp;
-
-    s = lookup("delta_x");
+    Symbol* s = lookup("delta_x");
     if (!s) {
         diag("delta_x not declared", (char*) 0);
     }
-    cp = decode_units(s);
+    const char* cp = decode_units(s);
     Unit_push("");
     while (i--) {
         Unit_push(cp);

@@ -173,8 +173,8 @@ static CHAR* cbuf;
 CHAR* ctp;
 int hoc_ictp;
 
-extern char* RCS_hoc_version;
-extern char* RCS_hoc_date;
+extern const char* RCS_hoc_version;
+extern const char* RCS_hoc_date;
 extern char* neuron_home;
 extern int hoc_print_first_instance;
 

@@ -13,7 +13,7 @@ List* intoken;
 char buf[512]; /* volatile temporary buffer */
 
 static struct { /* Keywords */
-    char* name;
+    const char* name;
     short kval;
 } keywords[] = {{"VERBATIM", VERBATIM},
                 {"ENDVERBATIM", END_VERBATIM}, /* explicit in lex.lpp */
@@ -102,7 +102,7 @@ static struct { /* Keywords */
  * readable
  */
 static struct { /* special output tokens */
-    char* name;
+    const char* name;
     long subtype;
     Symbol** p;
 } special[] = {{";", SEMI, &semi},
@@ -111,7 +111,7 @@ static struct { /* special output tokens */
                {nullptr, 0, nullptr}};
 
 static struct { /* numerical methods */
-    char* name;
+    const char* name;
     long subtype; /* All the types that will work with this */
     short varstep;
 } methods[] = {{"adams", DERF | KINF, 0},
@@ -134,15 +134,15 @@ static struct { /* numerical methods */
                {"cvode_t_v", 0, 0},
                {0, 0, 0}};
 
-static char* extdef[] = {/* external names that can be used as doubles
-                          * without giving an error message */
+static const char* extdef[] = {/* external names that can be used as doubles
+                                * without giving an error message */
 #include "extdef.h"
-                         0};
+                               0};
 
-static char* extargs[] = {/* units of args to external functions */
+static const char* extargs[] = {/* units of args to external functions */
 /* format: name, returnunits, arg1unit, arg2unit, ..., 0, */
 #include "extargs.h"
-                          0};
+                                0};
 
 void init() {
     int i;

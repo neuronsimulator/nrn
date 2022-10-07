@@ -14,7 +14,7 @@
 /* every yy gets changed to diffeq_yy before compiling */
 
 static int yylex(), yyparse();
-void yyerror(char*);
+void yyerror(const char*);
 static int d_invalid, eq_invalid;
 static char lbuf[4][1000];
 static Item* qexpr; /* yylex finds tokens here;*/
@@ -29,7 +29,7 @@ static List* result;
 void replace(List*), initbuf(), free4(List*);
 int zero(char*);
 char *expr(List*), *de(List*), *a(List*), *b(List*);
-List* list4(char *s1, char *s2, char *s3, char *s4);
+List* list4(const char *s1, const char *s2, const char *s3, const char *s4);
 %}
 
 %union {
@@ -197,7 +197,7 @@ void initbuf() {
 	}
 }
 
-List* list4(char *s1, char *s2, char *s3, char *s4) {
+List* list4(const char *s1, const char *s2, const char *s3, const char *s4) {
 	List* lst = newlist();
 	lappendstr(lst, s1);
 	lappendstr(lst, s2);
@@ -215,7 +215,7 @@ void free4(List* lst) {
 	freelist(&ls);
 }
 
-void yyerror(char* s) { assert(0); }
+void yyerror(const char* s) { assert(0); }
 
 static void fullname(char* buf) {
 	/* handle case of name [...] with qexpr pointing to final item */
