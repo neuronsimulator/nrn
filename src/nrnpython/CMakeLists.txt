@@ -99,7 +99,6 @@ set(nrnpython_lib_list)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   set(INCLUDE_DIRS
       .
-      ..
       ../oc
       ../nrnoc
       ../ivoc
@@ -138,10 +137,6 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       install(TARGETS nrnpython3 DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
     endif()
   endif()
-  # TODO we should not need to do this explicitly here...
-  foreach(nrnpython_lib ${nrnpython_lib_list})
-    target_link_libraries(${nrnpython_lib} Boost::headers range-v3)
-  endforeach()
 endif()
 
 # Install package files that were created in build (e.g. .py.in)
