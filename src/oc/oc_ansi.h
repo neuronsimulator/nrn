@@ -143,9 +143,11 @@ void hoc_pushs(Symbol*);
 void hoc_pushi(int);
 
 namespace neuron::oc::detail {
-template <typename T>
+template <typename>
+struct hoc_get_arg_helper;
+template <typename>
 struct hoc_pop_helper;
-}
+}  // namespace neuron::oc::detail
 
 /** @brief Pop an object of type T from the HOC stack.
  *
@@ -157,7 +159,33 @@ T hoc_pop() {
     return neuron::oc::detail::hoc_pop_helper<T>::impl();
 }
 
+/** @brief Get the nth (1..N) argument on the stack.
+ *
+ *  This is a templated version of hoc_getarg, hoc_pgetarg and friends.
+ *
+ *  @todo Should the stack be modified such that this can return const
+ *  references, even for things like data_handle<T> that at the moment are not
+ *  exactly stored (we store generic_data_handle, which can produce a
+ *  data_handle<T> on demand but which does not, at present, actually *contain*
+ *  a data_handle<T>)?
+ */
+template <typename T>
+[[nodiscard]] T hoc_get_arg(std::size_t narg) {
+    return neuron::oc::detail::hoc_get_arg_helper<T>::impl(narg);
+}
+
 namespace neuron::oc::detail {
+template <>
+struct hoc_get_arg_helper<neuron::container::generic_data_handle> {
+    static neuron::container::generic_data_handle impl(std::size_t);
+};
+template <typename T>
+struct hoc_get_arg_helper<neuron::container::data_handle<T>> {
+    static neuron::container::data_handle<T> impl(std::size_t narg) {
+        return neuron::container::data_handle<T>{
+            hoc_get_arg<neuron::container::generic_data_handle>(narg)};
+    }
+};
 template <>
 struct hoc_pop_helper<neuron::container::generic_data_handle> {
     /** @brief Pop a generic data handle from the HOC stack.
