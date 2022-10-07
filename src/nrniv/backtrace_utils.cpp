@@ -4,10 +4,8 @@
 #include "backward.hpp"
 #endif
 
-#include <cassert>
 #include <cstring>
 #include <iostream>
-#include <memory>
 #include <regex>
 #include <string>
 
