@@ -28,6 +28,12 @@ namespace neuron::container::Node {
  */
 template <typename View>
 struct interface: view_base<View> {
+    /** @brief Return the area.
+     */
+    [[nodiscard]] field::Area::type area() const {
+        return this->template get<field::Area>();
+    }
+
     /** @brief Return the membrane potential.
      *
      *  Note that in translated MOD files this gets included with v redefined to
@@ -37,11 +43,23 @@ struct interface: view_base<View> {
         return this->template get<field::Voltage>();
     }
 
+    /** @brief Return a data_handle to the area.
+     */
+    [[nodiscard]] data_handle<field::Area::type> area_handle() {
+        return this->template get_handle<field::Area>();
+    }
+
     /** Return a generic handle to a value (double in this case) that is stable
      *  over permutations but doesn't know that it is a Node voltage.
      */
     [[nodiscard]] data_handle<field::Voltage::type> v_handle() {
         return this->template get_handle<field::Voltage>();
+    }
+
+    /** @brief Set the area.
+     */
+    void set_area(field::Area::type area) {
+        this->template get<field::Area>() = area;
     }
 
     /** @brief Set the membrane potentials.

@@ -192,10 +192,10 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     writeint(nt._v_parent_index, nt.end);
     writedbl(nt._actual_a, nt.end);
     writedbl(nt._actual_b, nt.end);
-    writedbl(nt._actual_area, nt.end);
     // Warning: this is only correct if no modifications have been made to any
     // Node since reorder_secorder() was last called.
     assert(neuron::model().node_data().is_sorted());
+    writedbl(nt.node_area_storage(), nt.end);
     writedbl(nt.node_voltage_storage(), nt.end);
     if (cg.ndiam) {
         writedbl(diamvec, nt.end);

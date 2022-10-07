@@ -4,6 +4,12 @@
 
 namespace neuron::container::Node {
 namespace field {
+/** @brief Area in um^2 but see treesetup.cpp.
+ */
+struct Area {
+    using type = double;
+};
+
 /** @brief Membrane potential.
  */
 struct Voltage {
@@ -13,7 +19,7 @@ struct Voltage {
 
 /** @brief Underlying storage for all Nodes.
  */
-using storage = soa<identifier, field::Voltage>;
+using storage = soa<identifier, field::Area, field::Voltage>;
 
 /** @brief Owning identifier for a row in the Node storage;
  */
