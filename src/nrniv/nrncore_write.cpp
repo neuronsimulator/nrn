@@ -141,7 +141,12 @@ bool corenrn_direct;
 // name of coreneuron mpi library to load
 std::string corenrn_mpi_library;
 
-static size_t part1();
+struct part1_ret {
+    std::size_t rankbytes{};
+    neuron::model_sorted_token sorted_token;
+};
+
+static part1_ret part1();
 static void part2(const char*);
 
 /// dump neuron model to given directory path
@@ -156,7 +161,7 @@ size_t write_corenrn_model(const std::string& path) {
     create_dir_path(path);
 
     // calculate size of the model
-    auto const rankbytes = part1();
+    auto const rankbytes = part1().rankbytes;
 
     // mechanism and global variables
     write_memb_mech_types(get_filename(path, "bbcore_mech.dat").c_str());
@@ -174,7 +179,11 @@ size_t nrncore_write() {
     return write_corenrn_model(path);
 }
 
-static size_t part1() {
+static part1_ret part1() {
+    // Need the NEURON model to be frozen and sorted in order to transfer it to
+    // CoreNEURON
+    auto sorted_token = nrn_ensure_model_data_are_sorted();
+
     size_t rankbytes = 0;
     static int bbcore_dparam_size_size = -1;
 
@@ -207,7 +216,7 @@ static size_t part1() {
     CellGroup* cgs = CellGroup::mk_cellgroups(cellgroups_);
 
     CellGroup::datumtransform(cgs);
-    return rankbytes;
+    return {rankbytes, std::move(sorted_token)};
 }
 
 static void part2(const char* path) {
@@ -293,8 +302,9 @@ int nrncore_run(const char* arg) {
         hoc_execerror("Could not get symbol corenrn_embedded_run from", NULL);
     }
 
-    // prepare the model
-    part1();
+    // prepare the model, the returned token will keep the NEURON-side copy of
+    // the model frozen until the end of nrncore_run.
+    auto sorted_token = part1().sorted_token;
 
     int have_gap = nrnthread_v_transfer_ ? 1 : 0;
 #if !NRNMPI
