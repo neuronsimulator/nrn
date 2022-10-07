@@ -59,7 +59,6 @@ void (*nrn_mk_transfer_thread_data_)();
 static int busywait_;
 static int busywait_main_;
 extern void nrn_thread_error(const char*);
-extern void nrn_old_thread_save();
 extern double nrn_timeus();
 extern void (*nrn_multisplit_setup_)();
 extern int v_structure_change;
@@ -302,8 +301,6 @@ void nrn_threads_create(int n, bool parallel) {
                 nt->_actual_d = 0;
                 nt->_actual_a = 0;
                 nt->_actual_b = 0;
-                // nt->_actual_v = 0;
-                nt->_actual_area = 0;
                 nt->_v_parent_index = 0;
                 nt->_v_node = 0;
                 nt->_v_parent = 0;
@@ -315,7 +312,6 @@ void nrn_threads_create(int n, bool parallel) {
                 nt->_vcv = 0;
                 nt->_nrn_fast_imem = 0;
                 nt->_node_data_offset = 0;
-                // nt->cache = nullptr;
             }
         }
         v_structure_change = 1;
@@ -500,10 +496,6 @@ void nrn_threads_free() {
             nt->_sp13mat = 0;
         }
         nt->_nrn_fast_imem = NULL;
-        /* following freed by nrn_recalc_node_ptrs */
-        nrn_old_thread_save();
-        // nt->_actual_v = 0;
-        nt->_actual_area = 0;
         nt->end = 0;
         nt->ncell = 0;
         nt->_vcv = 0;

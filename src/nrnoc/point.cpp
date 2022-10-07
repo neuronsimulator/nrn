@@ -128,7 +128,7 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
     nrn_sec_ref(&pnt->sec, sec);
     pnt->node = node;
     pnt->prop = p;
-    pnt->prop->dparam[0] = &NODEAREA(node);
+    pnt->prop->dparam[0] = node->area_handle();
     pnt->prop->dparam[1] = pnt;
     if (pnt->ob) {
         if (pnt->ob->observers) {

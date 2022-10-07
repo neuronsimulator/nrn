@@ -275,7 +275,6 @@ void CellGroup::datumtransform(CellGroup* cgs) {
 
 void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_list* ml) {
     NrnThread& nt = nrn_threads[ith];
-    double* a = nt._actual_area;
     int nnode = nt.end;
     int mcnt = ml->nodecount;
     int dsize = bbcore_dparam_size[di.type];
@@ -298,41 +297,22 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
         // Prop* datum instance arrays are not in cache efficient order
         // ie. ml->pdata[i] are not laid out end to end in memory.
         // Also, ml->_data for artificial cells is not in cache efficient order
-        // but in the artcell case there are no pointers to doubles and
-        // the _actual_area pointer should be left unfilled.
+        // but in the artcell case there are no pointers to doubles
         Datum* dparam = ml->pdata[i];
         int offset = i * dsize;
         int vdata_offset = i * vdata_size;
         for (int j = 0; j < dsize; ++j) {
             int etype = -100;  // uninterpreted
             int eindex = -1;
-            if (dmap[j] == -1) {  // double* into _actual_area
+            if (dmap[j] == -1) {  // used to be a double* into _actual_area, now handled by soa<...>
                 if (isart) {
                     etype = -1;
                     eindex = -1;  // the signal to ignore in bbcore.
                 } else {
-                    auto* const pval = static_cast<double*>(dparam[j]);
-                    if (pval == &ml->nodelist[i]->_area) {
-                        // possibility it points directly into Node._area instead of
-                        // _actual_area. For our purposes we need to figure out the
-                        // _actual_area index.
-                        etype = -1;
-                        eindex = ml->nodeindices[i];
-                        assert(a[ml->nodeindices[i]] == *pval);
-                    } else {
-                        if (pval < a || pval >= (a + nnode)) {
-                            printf("%s dparam=%p a=%p a+nnode=%p j=%d\n",
-                                   memb_func[di.type].sym->name,
-                                   pval,
-                                   a,
-                                   a + nnode,
-                                   j);
-                            abort();
-                        }
-                        assert(pval >= a && pval < (a + nnode));
-                        etype = -1;
-                        eindex = pval - a;
-                    }
+                    auto area = static_cast<neuron::container::data_handle<double>>(dparam[j]);
+                    assert(area.refers_to_a_modern_data_structure());
+                    etype = -1;
+                    eindex = area.current_row();  // which row of nt.actual_area() this lives in
                 }
             } else if (dmap[j] == -2) {  // this is an ion and dparam[j][0].i is the iontype
                 etype = -2;
@@ -638,9 +618,6 @@ size_t CellGroup::get_mla_rankbytes(CellGroup* cellgroups_) {
         size_t npnt = 0;
         size_t nart = 0;
         int ith = nt->id;
-        // printf("rank %d thread %d\n", nrnmpi_myid, ith);
-        // printf("  ncell=%d nnode=%d\n", nt->ncell, nt->end);
-        // v_parent_index, _actual_a, _actual_b, _actual_area
         nbytes = nt->end * (1 * sizeof(int) + 3 * sizeof(double));
         threadbytes += nbytes;
 
