@@ -878,6 +878,12 @@ double hoc_xpop() {
 }
 
 namespace neuron {
+/** @brief hoc_get_arg<generic_data_handle>()
+ */
+container::generic_data_handle oc::detail::hoc_get_arg_helper<container::generic_data_handle>::impl(
+    std::size_t narg) {
+    return cast<container::generic_data_handle>(get_argument(narg));
+}
 /** @brief hoc_pop<generic_data_handle>()
  */
 container::generic_data_handle oc::detail::hoc_pop_helper<container::generic_data_handle>::impl() {
