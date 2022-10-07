@@ -1,5 +1,8 @@
-#pragma once
+#ifndef ivoc_vector_h
+#define ivoc_vector_h
+
 #include "nrnmutdec.h"
+#include "ocnotify.h"
 
 #include <vector>
 #include <numeric>
@@ -10,10 +13,10 @@ struct Object;
 
 class IvocVect {
   public:
-    IvocVect(Object* obj = nullptr);
-    IvocVect(int, Object* obj = nullptr);
-    IvocVect(int, double, Object* obj = nullptr);
-    IvocVect(IvocVect&, Object* obj = nullptr);
+    IvocVect(Object* obj = NULL);
+    IvocVect(int, Object* obj = NULL);
+    IvocVect(int, double, Object* obj = NULL);
+    IvocVect(IvocVect&, Object* obj = NULL);
     ~IvocVect();
 
     Object** temp_objvar();
@@ -21,48 +24,60 @@ class IvocVect {
     void buffer_size(int);
     void label(const char*);
 
-    double& elem(int n) {
+    inline double& elem(int n) {
         return vec_.at(n);
     }
 
-    std::vector<double>& vec() {
+    inline std::vector<double>& vec() {
         return vec_;
     }
 
-    double* data() {
+    inline double* data() {
         return vec_.data();
     }
 
-    size_t size() const {
+    inline size_t size() const {
         return vec_.size();
     }
 
-    void resize(size_t n);
-    void resize(size_t n, double fill_value);
+    inline void resize(size_t n) {
+        if (n > vec_.size()) {
+            notify_freed_val_array(vec_.data(), vec_.size());
+        }
+        vec_.resize(n);
+    }
 
-    double& operator[](size_t index) {
+    inline void resize(size_t n, double fill_value) {
+        if (n > vec_.size()) {
+            notify_freed_val_array(vec_.data(), vec_.size());
+        }
+        vec_.resize(n, fill_value);
+    }
+
+    inline double& operator[](size_t index) {
         return vec_.at(index);
     }
 
-    auto begin() -> std::vector<double>::iterator {
+    inline auto begin() -> std::vector<double>::iterator {
         return vec_.begin();
     }
 
-    auto end() -> std::vector<double>::iterator {
+    inline auto end() -> std::vector<double>::iterator {
         return vec_.end();
     }
 
-    void push_back(double v) {
+    inline void push_back(double v) {
         vec_.push_back(v);
     }
 
-
-    void mutconstruct([[maybe_unused]] int mkmut) {
 #if NRN_ENABLE_THREADS
+    void mutconstruct(int mkmut) {
         if (!mut_)
             MUTCONSTRUCT(mkmut)
-#endif
     }
+#else
+    void mutconstruct(int) {}
+#endif
     void lock() {
         MUTLOCK
     }
@@ -95,12 +110,14 @@ double stdDev(InputIterator begin, InputIterator end) {
     return sqrt(var(begin, end));
 }
 
-void vector_delete(IvocVect*);
-Object** vector_temp_objvar(IvocVect*);
+extern void vector_delete(IvocVect*);
+extern Object** vector_temp_objvar(IvocVect*);
 
-int is_vector_arg(int);
-char* vector_get_label(IvocVect*);
-void vector_set_label(IvocVect*, char*);
+extern int is_vector_arg(int);
+extern char* vector_get_label(IvocVect*);
+extern void vector_set_label(IvocVect*, char*);
 
 // olupton 2022-01-21: backwards compatibility
 using Vect = IvocVect;
+
+#endif
