@@ -39,6 +39,7 @@ set(nrnpython_lib_list)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   set(INCLUDE_DIRS
       .
+      ..
       ../oc
       ../nrnoc
       ../ivoc
