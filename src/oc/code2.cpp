@@ -83,7 +83,6 @@ void hoc_Symbol_limits(void) {
             hoc_execerror("Cannot find the symbol for ", name);
         }
     } else {
-        hoc_pgetarg(1);
         sym = hoc_get_last_pointer_symbol();
         if (!sym) {
             hoc_execerror(
@@ -163,7 +162,6 @@ void hoc_Symbol_units(void) {
                 hoc_execerror("Cannot find the symbol for ", name);
             }
         } else {
-            hoc_pgetarg(1);
             sym = hoc_get_last_pointer_symbol();
             if (!sym) {
                 hoc_execerror(
