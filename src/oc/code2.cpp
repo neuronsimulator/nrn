@@ -706,7 +706,6 @@ Symbol* hoc_parse_stmt(const char* str, Symlist** psymlist) {
 extern double* hoc_varpointer;
 
 void hoc_pointer(void) {
-    extern double* hoc_pgetarg(int);
     hoc_varpointer = hoc_pgetarg(1);
     ret();
     pushx(1.);
