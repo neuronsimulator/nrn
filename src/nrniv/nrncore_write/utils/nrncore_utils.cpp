@@ -150,7 +150,7 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
         type = voltage;
         // In the CoreNEURON world this is an offset into the voltage array part
         // of _data
-        index = dh.current_row();
+        index = dh.current_row();  // is this correct in case of multiple NrnThreads?
         return 0;
     }
     auto* pd = static_cast<double*>(dh);
