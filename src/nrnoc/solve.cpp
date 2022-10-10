@@ -599,15 +599,11 @@ Node** node_construct(int n) {
         auto* nd = new Node{};
         pnode[i] = nd;
         // TODO move the following to the Node struct definition
-        // TODO with the new data structures, how do we specify default values
-        // for fields? I guess in the field struct declarations.
 #if CACHEVEC
-        nd->set_area(100.);
         nd->_rinv = 0.;
 #endif
         nd->sec_node_index_ = i;
         nd->prop = (Prop*) 0;
-        nd->set_v(DEF_vrest);  // TODO move to the Voltage struct?
 #if EXTRACELLULAR
         nd->extnode = (Extnode*) 0;
 #endif
