@@ -1,4 +1,3 @@
-#include "isoc99.h"
 #include "nrnconf.h"
 #include "nrnmpi.h"
 #include "../nrncvode/nrnneosm.h"
@@ -19,7 +18,6 @@ extern "C" void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** par
 #endif
 
 int main(int argc, char** argv, char** env) {
-    nrn_isdouble(0, 0, 0);
     nrn_main_launch = 1;
 
 #if defined(AUTO_DLOPEN_NRNMECH) && AUTO_DLOPEN_NRNMECH == 0

@@ -2,7 +2,6 @@
 /* /local/src/master/nrn/src/nrnoc/treeset.cpp,v 1.39 1999/07/08 14:25:07 hines Exp */
 
 #include "cvodeobj.h"
-#include "isoc99.h"
 #include "membfunc.h"
 #include "multisplit.h"
 #include "nrn_ansi.h"

@@ -1,6 +1,4 @@
 #include <../../nrnconf.h>
-/* /local/src/master/nrn/src/oc/ocmain.cpp,v 1.7 1997/07/29 20:23:33 hines Exp */
-#include "isoc99.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,7 +54,6 @@ static void setnrnhome(const char* arg) {
 
 int main(int argc, const char** argv, const char** envp) {
     int err;
-    nrn_isdouble(nullptr, 0., 0.);
 #if MAC
     int our_argc = 1;
     char* our_argv[1];
