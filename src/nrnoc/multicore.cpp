@@ -70,8 +70,7 @@ extern void spDestroy(char*);
 }
 
 void nrn_mk_table_check();
-static int table_check_cnt_;
-static Datum* table_check_;
+static std::vector<std::pair<int, NrnThreadMembList*>> table_check_;
 static int allow_busywait_;
 
 static void* nulljob(NrnThread* nt) {
@@ -837,54 +836,36 @@ void reorder_secorder() {
 
 
 void nrn_mk_table_check() {
-    int i, id, index;
-    int* ix;
-    if (table_check_) {
-        free((void*) table_check_);
-        table_check_ = (Datum*) 0;
-    }
-    ix = (int*) emalloc(n_memb_func * sizeof(int));
-    for (i = 0; i < n_memb_func; ++i) {
-        ix[i] = -1;
-    }
-    table_check_cnt_ = 0;
-    for (id = 0; id < nrn_nthread; ++id) {
+    std::size_t table_check_cnt_{};
+    std::vector<int> ix(n_memb_func, -1);
+    for (int id = 0; id < nrn_nthread; ++id) {
         NrnThread* nt = nrn_threads + id;
-        NrnThreadMembList* tml;
-        for (tml = nt->tml; tml; tml = tml->next) {
-            index = tml->index;
+        for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
+            int index = tml->index;
             if (memb_func[index].thread_table_check_ && ix[index] == -1) {
                 ix[index] = id;
-                table_check_cnt_ += 2;
+                ++table_check_cnt_;
             }
         }
     }
-    if (table_check_cnt_) {
-        table_check_ = (Datum*) emalloc(table_check_cnt_ * sizeof(Datum));
-    }
-    i = 0;
-    for (id = 0; id < nrn_nthread; ++id) {
+    table_check_.clear();
+    table_check_.reserve(table_check_cnt_);
+    for (int id = 0; id < nrn_nthread; ++id) {
         NrnThread* nt = nrn_threads + id;
-        NrnThreadMembList* tml;
-        for (tml = nt->tml; tml; tml = tml->next) {
-            index = tml->index;
+        for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
+            int index = tml->index;
             if (memb_func[index].thread_table_check_ && ix[index] == id) {
-                table_check_[i++].i = id;
-                table_check_[i++]._pvoid = (void*) tml;
+                table_check_.emplace_back(id, tml);
             }
         }
     }
-    free((void*) ix);
 }
 
 void nrn_thread_table_check() {
-    int i;
-    for (i = 0; i < table_check_cnt_; i += 2) {
-        NrnThread* nt = nrn_threads + table_check_[i].i;
-        NrnThreadMembList* tml = (NrnThreadMembList*) table_check_[i + 1]._pvoid;
+    for (auto [id, tml]: table_check_) {
         Memb_list* ml = tml->ml;
         (*memb_func[tml->index].thread_table_check_)(
-            ml->_data[0], ml->pdata[0], ml->_thread, nt, tml->index);
+            ml->_data[0], ml->pdata[0], ml->_thread, nrn_threads + id, tml->index);
     }
 }
 

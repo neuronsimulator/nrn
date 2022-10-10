@@ -63,8 +63,7 @@ int main(int argc, char* argv[]) {
 
 SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
     GIVEN("A section") {
-        hoc_oc("create s\n");
-
+        REQUIRE(hoc_oc("create s\n") == 0);
         WHEN("fast_imem and cachevec is allocated") {
             nrn_use_fast_imem = true;
             use_cachevec = 1;
@@ -78,10 +77,9 @@ SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
         }
 
         WHEN("fast_imem is created") {
-            hoc_oc(
-                "objref cvode\n"
-                "cvode = new CVode()\n"
-                "cvode.use_fast_imem(1)\n");
+            REQUIRE(hoc_oc("objref cvode\n"
+                           "cvode = new CVode()\n"
+                           "cvode.use_fast_imem(1)\n") == 0);
             WHEN("iinitialize and run nrn_calc_fast_imem") {
                 hoc_oc("finitialize(-65)\n");
                 for (NrnThread* nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
@@ -97,7 +95,7 @@ SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
             }
         }
 
-        hoc_oc("delete_section()");
+        REQUIRE(hoc_oc("delete_section()") == 0);
     }
 }
 

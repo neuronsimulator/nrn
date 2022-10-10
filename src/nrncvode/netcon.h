@@ -29,7 +29,7 @@ struct NrnThread;
 class NetCvode;
 class HocEventPool;
 class HocCommand;
-class STETransition;
+struct STETransition;
 class IvocVect;
 class BGP_DMASend;
 class BGP_DMASend_Phase2;
