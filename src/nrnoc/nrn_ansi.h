@@ -67,7 +67,6 @@ extern void cable_prop_assign(Symbol* sym, double* pd, int op);
 extern void nrn_parent_info(Section* s);
 extern void nrn_relocate_old_points(Section* oldsec, Node* oldnode, Section* sec, Node* node);
 extern int nrn_at_beginning(Section* sec);
-extern void nrn_node_destruct1(Node*);
 extern void mech_insert1(Section*, int);
 extern void extcell_2d_alloc(Section* sec);
 extern int nrn_is_ion(int);
