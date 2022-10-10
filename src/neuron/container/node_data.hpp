@@ -1,4 +1,5 @@
 #pragma once
+#include "membdef.h"
 #include "neuron/container/node_identifier.hpp"
 #include "neuron/container/soa_container.hpp"
 
@@ -8,12 +9,14 @@ namespace field {
  */
 struct Area {
     using type = double;
+    static constexpr type default_value = 100.;
 };
 
 /** @brief Membrane potential.
  */
 struct Voltage {
     using type = double;
+    static constexpr type default_value = DEF_vrest;
 };
 }  // namespace field
 
