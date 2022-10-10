@@ -597,16 +597,10 @@ static void update(NrnThread* _nt) {
 #endif
     { /* use original non-vectorized update */
         if (secondorder) {
-#if _CRAY
-#pragma _CRI ivdep
-#endif
             for (i = i1; i < i2; ++i) {
                 NODEV(_nt->_v_node[i]) += 2. * NODERHS(_nt->_v_node[i]);
             }
         } else {
-#if _CRAY
-#pragma _CRI ivdep
-#endif
             for (i = i1; i < i2; ++i) {
                 NODEV(_nt->_v_node[i]) += NODERHS(_nt->_v_node[i]);
             }
@@ -883,9 +877,6 @@ void nrn_finitialize(int setv, double v) {
         nrn_deliver_events(nrn_threads + i); /* The play events at t=0 */
     }
     if (setv) {
-#if _CRAY
-#pragma _CRI ivdep
-#endif
         FOR_THREADS(_nt)
         for (i = 0; i < _nt->end; ++i) {
             NODEV(_nt->_v_node[i]) = v;
@@ -911,9 +902,6 @@ void nrn_finitialize(int setv, double v) {
     for (i = 0; i < nrn_nthread; ++i) {
         nrn_ba(nrn_threads + i, BEFORE_INITIAL);
     }
-#if _CRAY
-    cray_node_init();
-#endif
     /* the INITIAL blocks are ordered so that mechanisms that write
        concentrations are after ions and before mechanisms that read
        concentrations.

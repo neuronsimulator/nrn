@@ -1977,40 +1977,6 @@ void mul(void) /* multiply top two elems on stack */
     hoc_pushx(d1);
 }
 
-#if _CRAY
-/*
-  try to do integer division, so that if x is an exact multiple of y
-  then we really get an integer as the result.
-  Algorithm: find n such that tx = x * 10^n and ty = y * 10^n are both
-  integral.  If tx/ty leaves no remainder, then tx/ty is the correct
-  answer and is stored in iptr, intdiv returns true.  Otherwise a
-  floating point division can be done, intdiv returns false.
-*/
-
-static int intdiv(double x, double y, int* iptr) {
-    long ix, iy, iz;
-    int done = 0;
-    while (!done) {
-        if (fabs(x) > (1 << 62) || fabs(y) > (1 << 62))
-            return 0; /* out of range of integers */
-        if (x == (long) x && y == (long) y)
-            done = 1;
-        else {
-            x *= (long double) 10;
-            y *= (long double) 10;
-        }
-    }
-    ix = (long) x;
-    iy = (long) y;
-    iz = ix / iy;
-    if (ix == iz * iy) { /* no remainder */
-        *iptr = (int) iz;
-        return 1;
-    }
-    return 0;
-}
-#endif
-
 void hoc_div(void) /* divide top two elems on stack */
 {
     double d1, d2;
@@ -2018,17 +1984,7 @@ void hoc_div(void) /* divide top two elems on stack */
     if (d2 == 0.0)
         execerror("division by zero", (char*) 0);
     d1 = hoc_xpop();
-#if _CRAY
-    {
-        int i;
-        if (intdiv(d1, d2, &i))
-            d1 = (int) i; /* result is an integer */
-        else
-            d1 = d1 / d2; /* result is not an integer */
-    }
-#else
     d1 /= d2;
-#endif
     hoc_pushx(d1);
 }
 

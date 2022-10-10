@@ -254,17 +254,10 @@ indepblk: INDEPENDENT '{' indepbody '}' {deltokens($1, $4);}
 	;
 indepbody: /*nothing*/
 	| indepbody indepdef
-		{ explicit_decl($2); }
-	| indepbody SWEEP {scopindep = 1;} indepdef
-		{ explicit_decl($4);
-		  scopindep = 0;
-		}
+	| indepbody SWEEP indepdef
 	;
 indepdef: NAME FROM number TO number withby integer opstart units
-		/*indepinstall()*/
-		{indepinstall(SYM($1), STR($3),
-		 STR($5), STR($7), $8, $9, scopindep);
-		}
+		{ if (strcmp(SYM($1)->name, "t") != 0) { fprintf(stderr, "WARNING: '%s' cannot be used as an independent variable, only 't' is allowed.", SYM($1)->name); } }
 	| error {diag("name FROM number TO number WITH integer\n", (char *)0);}
 	;
 withby:	WITH
