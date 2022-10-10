@@ -2,7 +2,7 @@
 #include "backtrace_utils.h"
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/soa_identifier.hpp"
-#include "neuron/model_data_fwd.hpp"
+#include "neuron/model_data.hpp"
 
 #include <cstring>
 #include <typeindex>
