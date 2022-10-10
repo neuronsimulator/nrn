@@ -649,7 +649,7 @@ static void connectsec_impl(Section* parent, Section* sec) {
     if (oldpsec) {
         section_unref(oldpsec);
     } else if (oldpnode) {
-        nrn_node_destruct1(oldpnode);
+        delete oldpnode;
     }
     tree_changed = 1;
     diam_changed = 1;
@@ -1565,8 +1565,8 @@ int nrn_at_beginning(Section* sec) {
 
 static void nrn_rootnode_alloc(Section* sec) {
     Extnode* nde;
-    extern Node* nrn_node_construct1();
-    sec->parentnode = nrn_node_construct1();
+    sec->parentnode = new Node{};
+    sec->parentnode->sec_node_index_ = 0;
     sec->parentnode->sec = sec;
 #if EXTRACELLULAR
     if (sec->pnode[0]->extnode) {

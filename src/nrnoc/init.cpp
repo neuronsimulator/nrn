@@ -949,8 +949,6 @@ void _cvode_abstol(Symbol** s, double* tol, int i) {
     }
 }
 
-extern Node** node_construct(int);
-
 void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
     int i;
     Symbol* sym;
@@ -969,7 +967,6 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
     if (memb_func[type].ode_count) {
         Symbol **psym, *msym, *vsym;
         double** pv;
-        Node** pnode;
         Prop* p;
         int i, j, k, n, na, index = 0;
 
@@ -977,12 +974,13 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
         if (n > 0) {
             psym = (Symbol**) ecalloc(n, sizeof(Symbol*));
             pv = (double**) ecalloc(2 * n, sizeof(double*));
-            pnode = node_construct(1);
-            prop_alloc(&(pnode[0]->prop), MORPHOLOGY, pnode[0]); /* in case we need diam */
-            p = prop_alloc(&(pnode[0]->prop), type, pnode[0]);   /* this and any ions */
+            Node node{};
+            node.sec_node_index_ = 0;
+            prop_alloc(&(node.prop), MORPHOLOGY, &node); /* in case we need diam */
+            p = prop_alloc(&(node.prop), type, &node);   /* this and any ions */
             (*memb_func[type].ode_map)(0, pv, pv + n, p->param, p->dparam, (double*) 0, type);
             for (i = 0; i < n; ++i) {
-                for (p = pnode[0]->prop; p; p = p->next) {
+                for (p = node.prop; p; p = p->next) {
                     if (pv[i] >= p->param && pv[i] < (p->param + p->param_size)) {
                         index = pv[i] - p->param;
                         break;
@@ -1011,8 +1009,6 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
                 }
                 assert(j < msym->s_varn);
             }
-
-            node_destruct(pnode, 1);
             *stol = psym;
             free(pv);
         }
