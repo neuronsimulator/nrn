@@ -19,8 +19,6 @@ extern List *begin_dion_stmt(), *end_dion_stmt(const char*);
 extern List* conductance_;
 static void conductance_cout();
 
-extern Symbol* indepsym;
-extern List* indeplist;
 extern List* defs_list;
 extern const char* saveindep;
 char* modelline;
@@ -39,9 +37,8 @@ extern List* state_discon_list_;
 /* we no longer update the #else clauses. */
 extern int vectorize;
 static List* vectorize_replacements; /* pairs of item pointer, strings */
-extern char* cray_pragma();
-extern int electrode_current; /* 1 means we should watch out for extracellular
-                    and handle it correctly */
+extern int electrode_current;        /* 1 means we should watch out for extracellular
+                           and handle it correctly */
 
 #if __TURBOC__ || SYSV || VMS
 #define index strchr
@@ -846,16 +843,6 @@ void vectorize_do_substitute() {
             replacstr(q1, STR(q));
         }
     }
-}
-
-char* cray_pragma() {
-    static char buf[] =
-        "\
-\n#if _CRAY\
-\n#pragma _CRI ivdep\
-\n#endif\
-\n";
-    return buf;
 }
 
 static void conductance_cout() {

@@ -28,9 +28,6 @@ static void pas_cur(NrnThread* nt, Memb_list* ml, int type) {
     double** vdata = ml->_data;
     Datum** vpdata = ml->pdata;
     int i;
-#if _CRAY
-#pragma _CRI ivdep
-#endif
     for (i = 0; i < count; ++i) {
         NODERHS(vnode[i]) -= g * (v - e);
     }
@@ -42,9 +39,6 @@ static void pas_jacob(NrnThread* nt, Memb_list* ml, int type) {
     double** vdata = ml->_data;
     Datum** vpdata = ml->pdata;
     int i;
-#if _CRAY
-#pragma _CRI ivdep
-#endif
     for (i = 0; i < count; ++i) {
         NODED(vnode[i]) += g;
     }

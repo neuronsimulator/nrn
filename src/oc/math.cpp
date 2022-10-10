@@ -16,14 +16,6 @@
 
 int hoc_errno_count;
 
-#if _CRAY
-#define log   logl
-#define log10 log10l
-#define exp   expl
-#define sqrt  sqrtl
-#define pow   powl
-#endif
-
 #ifdef MINGW
 static const auto errno_enabled = true;
 static const auto check_fe_except = false;

@@ -92,58 +92,36 @@ Symbol* ifnew_parminstall(const char* name,
 }
 
 static const char* indepunits = "";
-int using_default_indep;
 
 void indepinstall(Symbol* n,
                   const char* from,
                   const char* to,
                   const char* with,
-                  Item* qstart,
-                  const char* units,
-                  int scop) {
+                  const char* units) {
     char buf[NRN_BUFSIZE];
 
     /* scop_indep may turn out to be different from indepsym. If this is the case
        then indepsym will be a constant in the .var file (see parout.c).
        If they are the same, then u.str gets the info from SCOP.
     */
-    if (!scop) {
-        if (using_default_indep) {
-            using_default_indep = 0;
-            if (indepsym != n) {
-                indepsym->subtype &= ~INDEP;
-                parminstall(indepsym, "0", "ms", "");
-            }
-            indepsym = (Symbol*) 0;
-        }
-        if (indepsym) {
-            diag("Only one independent variable can be defined", (char*) 0);
-        }
-        indeplist = newlist();
-        Lappendstr(indeplist, from);
-        Lappendstr(indeplist, to);
-        Lappendstr(indeplist, with);
-        if (qstart) {
-            Lappendstr(indeplist, STR(qstart));
-        } else {
-            Lappendstr(indeplist, from);
-        }
-        Lappendstr(indeplist, units);
-        n->subtype |= INDEP;
-        indepunits = stralloc(units, (char*) 0);
-        if (n != scop_indep) {
-            Sprintf(buf, "\n%s*%s(%s)\n%s\n", from, to, with, units);
-            n->u.str = stralloc(buf, (char*) 0);
-        }
-        indepsym = n;
-        if (!scop_indep) {
-            scop_indep = indepsym;
-        }
-    } else {
-        n->subtype |= INDEP;
+    if (indepsym) {
+        diag("Only one independent variable can be defined", (char*) 0);
+    }
+    indeplist = newlist();
+    Lappendstr(indeplist, from);
+    Lappendstr(indeplist, to);
+    Lappendstr(indeplist, with);
+    Lappendstr(indeplist, from);
+    Lappendstr(indeplist, units);
+    n->subtype |= INDEP;
+    indepunits = stralloc(units, (char*) 0);
+    if (n != scop_indep) {
         Sprintf(buf, "\n%s*%s(%s)\n%s\n", from, to, with, units);
         n->u.str = stralloc(buf, (char*) 0);
-        scop_indep = n;
+    }
+    indepsym = n;
+    if (!scop_indep) {
+        scop_indep = indepsym;
     }
 }
 
