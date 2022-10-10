@@ -6,7 +6,6 @@
 #include "multisplit.h"
 #include "nrn_ansi.h"
 #include "neuron.h"
-#include "neuron/cache/model_data.hpp"
 #include "neuron/container/soa_container_impl.hpp"
 #include "nonvintblock.h"
 #include "nrndae_c.h"
@@ -1753,8 +1752,7 @@ void v_setup_vectors(void) {
         }
     }
     nrn_recalc_node_ptrs();
-    // The cache might contain pointers to data that were just reallocated.
-    neuron::cache::invalidate();
+    neuron::model().node_data().mark_as_unsorted();
     v_structure_change = 0;
     nrn_update_ps2nt();
     ++structure_change_cnt;
