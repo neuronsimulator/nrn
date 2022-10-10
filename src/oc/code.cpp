@@ -2539,7 +2539,7 @@ void execute(Inst* p) /* run the machine */
             hoc_check_intupt(1);
         }
 #endif
-        if (intset)
+        if (hoc_intset)
             execerror("interrupted", (char*) 0);
         /* (*((pc++)->pf))(); DEC 5000 increments pc after the return!*/
         pcsav = pc++;
