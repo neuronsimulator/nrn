@@ -63,6 +63,8 @@ node.v + extnode.v[0]
 #include <stdlib.h>
 #include <math.h>
 
+#include <utility>
+
 static void node_free();
 static void triang(NrnThread*), bksub(NrnThread*);
 
@@ -536,7 +538,7 @@ void sec_free(hoc_Item* secitem) {
     prop_free(&(sec->prop));
     node_free(sec);
     if (!sec->parentsec && sec->parentnode) {
-        nrn_node_destruct1(sec->parentnode);
+        delete sec->parentnode;
     }
 #if DIAMLIST
     if (sec->pt3d) {
@@ -593,70 +595,30 @@ static void section_unlink(Section* sec) /* other sections no longer reference t
     nrn_disconnect(sec);
 }
 
-Node** node_construct(int n) {
-    auto* pnode = new Node* [n] {};
-    for (auto i = n - 1; i >= 0; --i) {
-        auto* nd = new Node{};
-        pnode[i] = nd;
-        // TODO move the following to the Node struct definition
-#if CACHEVEC
-        nd->_rinv = 0.;
-#endif
-        nd->sec_node_index_ = i;
-        nd->prop = (Prop*) 0;
+Node::~Node() {
+    prop_free(&prop);
 #if EXTRACELLULAR
-        nd->extnode = (Extnode*) 0;
-#endif
-#if EXTRAEQN
-        nd->eqnblock = (Eqnblock*) 0;
-#endif
-    }
-    return pnode;
-}
-
-Node* nrn_node_construct1(void) {
-    // TODO this is just `return new Node{}`
-    Node** ndp = node_construct(1);
-    Node* nd = ndp[0];
-    delete[] ndp;
-    return nd;
-}
-
-// TODO this should all be in the node destructor
-void nrn_node_destruct1(Node* nd) {
-    if (!nd) {
-        return;
-    }
-    prop_free(&(nd->prop));
-#if EXTRACELLULAR
-    if (nd->extnode) {
-        notify_freed_val_array(nd->extnode->v, nlayer);
+    if (extnode) {
+        notify_freed_val_array(extnode->v, nlayer);
     }
 #endif
 #if EXTRAEQN
-    {
-        Eqnblock *e, *e1;
-        for (e = nd->eqnblock; e; e = e1) {
-            e1 = e->eqnblock_next;
-            free((char*) e);
-        }
+    for (Eqnblock* e = eqnblock; e;) {
+        free(std::exchange(e, e->eqnblock_next));
     }
 #endif
 #if EXTRACELLULAR
-    if (nd->extnode) {
-        extnode_free_elements(nd->extnode);
-        free((char*) nd->extnode);
+    if (extnode) {
+        extnode_free_elements(extnode);
+        free(extnode);
     }
 #endif
-    delete nd;
 }
 
 // this is delete[]...apart from the order?
 void node_destruct(Node** pnode, int n) {
     for (int i = n - 1; i >= 0; --i) {
-        if (pnode[i]) {
-            nrn_node_destruct1(pnode[i]);
-        }
+        delete pnode[i];
     }
     delete[] pnode;
 }
@@ -810,8 +772,12 @@ void node_alloc(Section* sec, short nseg) {
         if (nseg == 0) {
             return;
         }
-        sec->pnode = node_construct(nseg);
+        sec->pnode = new Node* [nseg] {};
         sec->nnode = nseg;
+        for (i = 0; i < nseg; ++i) {
+            sec->pnode[i] = new Node{};
+            sec->pnode[i]->sec_node_index_ = i;
+        }
     }
     for (i = 0; i < nseg; ++i) {
         sec->pnode[i]->sec = sec;
