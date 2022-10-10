@@ -12,6 +12,13 @@
 #include <sstream>
 #include <vector>
 
+static_assert(std::is_default_constructible_v<Node>);
+static_assert(!std::is_copy_constructible_v<Node>);
+static_assert(std::is_move_constructible_v<Node>);
+static_assert(!std::is_copy_assignable_v<Node>);
+static_assert(std::is_move_assignable_v<Node>);
+static_assert(std::is_destructible_v<Node>);
+
 using namespace neuron::container;
 using namespace neuron::container::Node;
 
