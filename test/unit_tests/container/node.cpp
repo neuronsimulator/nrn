@@ -254,6 +254,13 @@ std::tuple<std::vector<::Node>, std::vector<double>> get_nodes_and_reference_vol
 }  // namespace neuron::test
 
 TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
+    GIVEN("A default-constructed node") {
+        ::Node node{};
+        THEN("Check its SOA-backed members have their default values") {
+            REQUIRE(node.area() == field::Area::default_value);
+            REQUIRE(node.voltage() == field::Voltage::default_value);
+        }
+    }
     GIVEN("A series of nodes with increasing integer voltages") {
         using neuron::test::get_node_voltages;
         auto nodes_and_voltages = neuron::test::get_nodes_and_reference_voltages();
