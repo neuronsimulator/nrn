@@ -48,6 +48,12 @@ inline constexpr std::size_t index_of_type_v = []() {
                                                          // static_assert
     }
 }();
+
+// Detect if a type T has a static member called default_value
+template <typename T, typename = void>
+inline constexpr bool has_default_value_v = false;
+template <typename T>
+inline constexpr bool has_default_value_v<T, std::void_t<decltype(T::default_value)>> = true;
 }  // namespace detail
 
 template <typename RowIdentifier, typename... Tags>
@@ -247,15 +253,9 @@ struct soa {
         }
     }
 
-    // Returns true if T::default_value is defined, false otherwise
-    template <typename T, typename = void>
-    static constexpr bool has_default_value_v = false;
-    template <typename T>
-    static constexpr bool has_default_value_v<T, std::void_t<decltype(T::default_value)>> = true;
-
     template <typename Tag>
     void emplace_back_impl() {
-        if constexpr (has_default_value_v<Tag>) {
+        if constexpr (detail::has_default_value_v<Tag>) {
             get<Tag>().emplace_back(Tag::default_value);
         } else {
             get<Tag>().emplace_back();
