@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdio>
-
+#include <memory>
 /**
  * \dir
  * \brief HOC Interpreter
@@ -140,7 +140,11 @@ double hoc_xpop();
 Symbol* hoc_spop();
 double* hoc_pxpop();
 Object** hoc_objpop();
-Object* hoc_pop_object();
+struct TmpObjectDeleter {
+    void operator()(Object*) const;
+};
+using TmpObject = std::unique_ptr<Object, TmpObjectDeleter>;
+TmpObject hoc_pop_object();
 char** hoc_strpop();
 int hoc_ipop();
 void hoc_nopop();
@@ -151,9 +155,14 @@ double* hoc_val_pointer(const char*);
 Symbol* hoc_table_lookup(const char*, Symlist*);
 Symbol* hoc_install(const char*, int, double, Symlist**);
 extern Objectdata* hoc_objectdata;
-Datum* hoc_look_inside_stack(int, int);
+/** @brief Get the stack entry at depth i.
+ *
+ *  i=0 is the most recently pushed entry. This will raise an error if the stack
+ *  is empty, or if the given entry does not have type T.
+ */
+template <typename T>
+T const& hoc_look_inside_stack(int i);
 Object* hoc_obj_look_inside_stack(int);
-int hoc_obj_look_inside_stack_index(int);
 void hoc_stkobj_unref(Object*, int stkindex);
 size_t hoc_total_array_data(Symbol*, Objectdata*);
 char* hoc_araystr(Symbol*, int, Objectdata*);

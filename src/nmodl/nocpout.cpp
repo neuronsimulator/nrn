@@ -8,7 +8,7 @@ that version is compatible with this version.
 For now try to use something of the form d.d
 If this is changed then also change nrnoc/init.c
 */
-char* nmodl_version_ = "7.7.0";
+const char* nmodl_version_ = "7.7.0";
 
 /* Point processes are now interfaced to nrnoc via objectvars.
 Thus, p-array variables and functions accessible to hoc do not have
@@ -86,14 +86,9 @@ not thread safe and _p and _ppvar are static.
 #define IONCUR  3 /* assigned */
 #define IONDCUR 4
 
-extern int assert_threadsafe;
 extern int brkpnt_exists;
-static char* brkpnt_str_;
+static const char* brkpnt_str_;
 extern Symbol* indepsym;
-extern Symbol* scop_indep;
-extern List* indeplist;
-extern Symbol* stepsym;
-extern char* reprime();
 extern List* symlist[];
 extern List* ldifuslist;
 extern char* finname;
@@ -126,7 +121,7 @@ static List* rangestate;
 static List* nrnpointers;
 static List* uip; /* void _update_ion_pointer(Datum* _ppvar){...} text */
 static char suffix[256];
-static char* rsuffix; /* point process range and functions don't have suffix*/
+static const char* rsuffix; /* point process range and functions don't have suffix*/
 static char* mechname;
 int point_process;      /* 1 if a point process model */
 int artificial_cell;    /* 1 if also explicitly declared an ARTIFICIAL_CELL */
@@ -184,16 +179,13 @@ static Item* net_send_delivered_; /* location for if flag is 1 then clear the
 static int varcount, parraycount;
 
 void nrninit() {
-    extern int using_default_indep;
     currents = newlist();
     rangeparm = newlist();
     rangedep = newlist();
     rangestate = newlist();
     useion = newlist();
     nrnpointers = newlist();
-    using_default_indep = 0;
-    indepinstall(install("t", NAME), "0", "1", "100", (Item*) 0, "ms", 0);
-    using_default_indep = 1;
+    indepinstall(install("t", NAME), "0", "1", "100", "ms");
     debugging_ = 1;
     thread_cleanup_list = newlist();
     thread_mem_init_list = newlist();
@@ -1872,7 +1864,7 @@ int iontype(char* s1, char* s2) /* returns index of variable in ion mechanism */
     return -1;
 }
 
-static Symbol* ifnew_install(char* name) {
+static Symbol* ifnew_install(const char* name) {
     Symbol* s;
 
     if ((s = lookup(name)) == SYM0) {
@@ -2293,7 +2285,7 @@ List* begin_dion_stmt() {
     return l;
 }
 
-List* end_dion_stmt(char* strdel) {
+List* end_dion_stmt(const char* strdel) {
     Item *q, *q1;
     static List* l;
     char* strion;

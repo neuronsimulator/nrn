@@ -43,7 +43,7 @@ void explicit_decl(Item* q) {
     sym->usage |= DEP;
 }
 
-void parm_array_install(Symbol* n, char* num, char* units, char* limits, int index) {
+void parm_array_install(Symbol* n, const char* num, char* units, char* limits, int index) {
     char buf[NRN_BUFSIZE];
 
     if (n->u.str == (char*) 0)
@@ -55,7 +55,7 @@ void parm_array_install(Symbol* n, char* num, char* units, char* limits, int ind
     n->u.str = stralloc(buf, (char*) 0);
 }
 
-void parminstall(Symbol* n, char* num, char* units, char* limits) {
+void parminstall(Symbol* n, const char* num, const char* units, const char* limits) {
     char buf[NRN_BUFSIZE];
 
     if (n->u.str == (char*) 0)
@@ -68,7 +68,10 @@ void parminstall(Symbol* n, char* num, char* units, char* limits) {
 /* often we want to install a parameter by default but only
 if the user hasn't declared it herself.
 */
-Symbol* ifnew_parminstall(char* name, char* num, char* units, char* limits) {
+Symbol* ifnew_parminstall(const char* name,
+                          const char* num,
+                          const char* units,
+                          const char* limits) {
     Symbol* s;
 
     if ((s = lookup(name)) == SYM0) {
@@ -88,59 +91,37 @@ Symbol* ifnew_parminstall(char* name, char* num, char* units, char* limits) {
     return s;
 }
 
-static char* indepunits = "";
-int using_default_indep;
+static const char* indepunits = "";
 
 void indepinstall(Symbol* n,
-                  char* from,
-                  char* to,
-                  char* with,
-                  Item* qstart,
-                  char* units,
-                  int scop) {
+                  const char* from,
+                  const char* to,
+                  const char* with,
+                  const char* units) {
     char buf[NRN_BUFSIZE];
 
     /* scop_indep may turn out to be different from indepsym. If this is the case
        then indepsym will be a constant in the .var file (see parout.c).
        If they are the same, then u.str gets the info from SCOP.
     */
-    if (!scop) {
-        if (using_default_indep) {
-            using_default_indep = 0;
-            if (indepsym != n) {
-                indepsym->subtype &= ~INDEP;
-                parminstall(indepsym, "0", "ms", "");
-            }
-            indepsym = (Symbol*) 0;
-        }
-        if (indepsym) {
-            diag("Only one independent variable can be defined", (char*) 0);
-        }
-        indeplist = newlist();
-        Lappendstr(indeplist, from);
-        Lappendstr(indeplist, to);
-        Lappendstr(indeplist, with);
-        if (qstart) {
-            Lappendstr(indeplist, STR(qstart));
-        } else {
-            Lappendstr(indeplist, from);
-        }
-        Lappendstr(indeplist, units);
-        n->subtype |= INDEP;
-        indepunits = stralloc(units, (char*) 0);
-        if (n != scop_indep) {
-            Sprintf(buf, "\n%s*%s(%s)\n%s\n", from, to, with, units);
-            n->u.str = stralloc(buf, (char*) 0);
-        }
-        indepsym = n;
-        if (!scop_indep) {
-            scop_indep = indepsym;
-        }
-    } else {
-        n->subtype |= INDEP;
+    if (indepsym) {
+        diag("Only one independent variable can be defined", (char*) 0);
+    }
+    indeplist = newlist();
+    Lappendstr(indeplist, from);
+    Lappendstr(indeplist, to);
+    Lappendstr(indeplist, with);
+    Lappendstr(indeplist, from);
+    Lappendstr(indeplist, units);
+    n->subtype |= INDEP;
+    indepunits = stralloc(units, (char*) 0);
+    if (n != scop_indep) {
         Sprintf(buf, "\n%s*%s(%s)\n%s\n", from, to, with, units);
         n->u.str = stralloc(buf, (char*) 0);
-        scop_indep = n;
+    }
+    indepsym = n;
+    if (!scop_indep) {
+        scop_indep = indepsym;
     }
 }
 
@@ -155,12 +136,12 @@ void indepinstall(Symbol* n,
 void depinstall(int type,
                 Symbol* n,
                 int index,
-                char* from,
-                char* to,
-                char* units,
+                const char* from,
+                const char* to,
+                const char* units,
                 Item* qs,
                 int makeconst,
-                char* abstol) {
+                const char* abstol) {
     char buf[NRN_BUFSIZE], *pstr;
     int c;
 
@@ -192,7 +173,7 @@ void depinstall(int type,
     n->u.str = stralloc(buf, (char*) 0);
 }
 
-void statdefault(Symbol* n, int index, char* units, Item* qs, int makeconst) {
+void statdefault(Symbol* n, int index, const char* units, Item* qs, int makeconst) {
     char nam[256], *un;
     Symbol* s;
 
@@ -1003,7 +984,7 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
     ++watch_seen_;
 }
 
-void threadsafe(char* s) {
+void threadsafe(const char* s) {
     if (!assert_threadsafe) {
         fprintf(stderr, "Notice: %s\n", s);
         vectorize = 0;

@@ -223,11 +223,11 @@ typedef struct Symbol {
 #define NRNBBCOREPOINTER 020000
 
 
-extern char *emalloc(unsigned), /* malloc with out of space checking */
-    *stralloc(char*, char*),    /* copies string to new space */
-    *inputline(),               /* used only by parser to get title line */
-    *inputtopar(),              /* used only by parser to get units */
-    *Gets(char*);               /* used only in io.c to get string from fin. */
+extern char *emalloc(unsigned),    /* malloc with out of space checking */
+    *stralloc(const char*, char*), /* copies string to new space */
+    *inputline(),                  /* used only by parser to get title line */
+    *inputtopar(),                 /* used only by parser to get units */
+    *Gets(char*);                  /* used only in io.c to get string from fin. */
 
 #if 0
 #if __TURBOC__ || SYSV || NeXT || LINUX
@@ -239,23 +239,26 @@ extern char    *sprintf();
 extern int nmodl_text; /* if 1, the text of the mod file is a string in the mod file */
 extern List* filetxtlist;
 
-extern List *newlist(),                      /* begins new empty list */
-    *inputtext();                            /* used by parser to get block text from
-                                              * VERBATIM and COMMENT */
-extern Item *putintoken(char*s, short type), /* construct symbol and store input tokens */
-    *insertstr(Item*item, char*str),         /* before a known Item */
-    *insertsym(List*list, Symbol*sym), *linsertstr(List*list, char*str), /* prepend to list */
-    *lappendstr(List*list, char*str),                                    /* append to list */
+extern List *newlist(),                            /* begins new empty list */
+    *inputtext();                                  /* used by parser to get block text from
+                                                    * VERBATIM and COMMENT */
+extern Item *putintoken(const char*s, short type), /* construct symbol and store input tokens */
+    *insertstr(Item*item, const char*str),         /* before a known Item */
+    *insertsym(List*list, Symbol*sym), *linsertstr(List*list, const char*str), /* prepend to list */
+    *lappendstr(List*list, const char*str),                                    /* append to list */
     *linsertsym(List*list, Symbol*sym), *lappendsym(List*list, Symbol*sym),
     *lappenditem(List*list, Item*item), *lappendlst(List*list, List*lst),
     *next(), /* not used but should be instead of q->next */
     *prev();
 
-extern Symbol *install(char*, int), /* Install token in symbol table */
-    *lookup(char*),                 /* lookup name in symbol table */
-    *copylocal(Symbol*),            /* install LOCAL variable symbol */
-    *ifnew_parminstall(char*name, char*num, char*units, char*limits); /* new .var info only if
-                                                                       * not already done. */
+extern Symbol *install(const char*, int), /* Install token in symbol table */
+    *lookup(const char*),                 /* lookup name in symbol table */
+    *copylocal(Symbol*),                  /* install LOCAL variable symbol */
+    *ifnew_parminstall(const char*name,
+                       const char*num,
+                       const char*units,
+                       const char*limits); /* new .var info only if
+                                            * not already done. */
 #include "nmodlfunc.h"
 
 extern char* finname; /* the input file prefix */

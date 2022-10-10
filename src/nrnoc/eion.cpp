@@ -561,10 +561,7 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
     double** pd = ml->_data;
     Datum** ppd = ml->pdata;
     int i;
-/*printf("ion_cur %s\n", memb_func[type].sym->name);*/
-#if _CRAY
-#pragma _CRI ivdep
-#endif
+    /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
     for (i = 0; i < count; ++i) {
         dcurdv = 0.;
         cur = 0.;
@@ -583,19 +580,13 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
     double** pd = ml->_data;
     Datum** ppd = ml->pdata;
     int i;
-/*printf("ion_init %s\n", memb_func[type].sym->name);*/
-#if _CRAY
-#pragma _CRI ivdep
-#endif
+    /*printf("ion_init %s\n", memb_func[type].sym->name);*/
     for (i = 0; i < count; ++i) {
         if (iontype & 04) {
             conci = conci0;
             conco = conco0;
         }
     }
-#if _CRAY
-#pragma _CRI ivdep
-#endif
     for (i = 0; i < count; ++i) {
         if (iontype & 040) {
             erev = nrn_nernst(conci, conco, charge);

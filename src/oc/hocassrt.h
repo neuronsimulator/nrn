@@ -11,6 +11,7 @@
 
 #include "oc_ansi.h"
 #if defined(__STDC__)
+#undef assert
 #define assert(ex)                                                                       \
     {                                                                                    \
         if (!(ex)) {                                                                     \
@@ -19,6 +20,7 @@
         }                                                                                \
     }
 #else
+#undef assert
 #define assert(ex)                                                                       \
     {                                                                                    \
         if (!(ex)) {                                                                     \

@@ -12,43 +12,8 @@
 #include "datapath.h"
 #include "ivocvect.h"
 
-#if !defined(CABLE)
-// really belongs in vector.cpp but this is convenient since it will be
-// present in ivoc but not in nrniv
-void nrn_vecsim_add(void*, bool) {
-    printf("nrn_vecsym_add implemented in nrniv\n");
-}
-void nrn_vecsim_remove(void*) {
-    printf("nrn_vecsym_remove implemented in nrniv\n");
-}
-#if HAVE_IV
-void graphLineRecDeleted(GraphLine*) {}
-void Graph::simgraph() {}
-void GraphVector::record_install() {}
-void GraphVector::record_uninstall() {}
-#endif
-// another hack so ivoc will have these names which nrniv gets elsewhere
-int bbs_poll_;
-void bbs_done() {}
-void bbs_handle() {}
-void nrnbbs_context_wait() {}
-
-#ifdef WIN32
-void* dll_lookup(struct DLL*, const char*) {
-    return NULL;
-}
-struct DLL* dll_load(const char*) {
-    return NULL;
-}
-#endif
-#endif
-
-#if CABLE
 #include "nrnoc2iv.h"
 #include "membfunc.h"
-#else
-#include "oc2iv.h"
-#endif
 
 #include "parse.hpp"
 extern Symlist* hoc_built_in_symlist;
@@ -90,13 +55,12 @@ class HocDataPathImpl {
 
     void search(Objectdata*, Symlist*);
     void search_vectors();
-#if CABLE
     void search_pysec();
     void search(Section*);
     void search(Node*, double x);
     void search(Point_process*, Symbol*);
     void search(Prop*, double x);
-#endif
+
   private:
     std::map<void*, PathValue*> table_;
     StringList strlist_;
@@ -111,13 +75,11 @@ static Symbol *sym_vec, *sym_v, *sym_vext, *sym_rallbranch, *sym_L, *sym_Ra;
 HocDataPaths::HocDataPaths(int size, int pathstyle) {
     if (!sym_vec) {
         sym_vec = hoc_table_lookup("Vector", hoc_built_in_symlist);
-#if CABLE
         sym_v = hoc_table_lookup("v", hoc_built_in_symlist);
         sym_vext = hoc_table_lookup("vext", hoc_built_in_symlist);
         sym_rallbranch = hoc_table_lookup("rallbranch", hoc_built_in_symlist);
         sym_L = hoc_table_lookup("L", hoc_built_in_symlist);
         sym_Ra = hoc_table_lookup("Ra", hoc_built_in_symlist);
-#endif
     }
     impl_ = new HocDataPathImpl(size, pathstyle);
 }
@@ -222,11 +184,9 @@ void HocDataPathImpl::search() {
         search(hoc_top_level_data, hoc_top_level_symlist);
         search(hoc_top_level_data, hoc_built_in_symlist);
     }
-#if CABLE
     if (found_so_far_ < count_) {
         search_pysec();
     }
-#endif
     if (found_so_far_ < count_) {
         search_vectors();
     }
@@ -353,7 +313,6 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                                 }
                             } else {
                                 /* point processes */
-#if CABLE
                                 if (t->is_point_) {
                                     sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                                     cs = buf;
@@ -361,12 +320,10 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                                     search((Point_process*) obp[i]->u.this_pointer, sym);
                                     strlist_.pop_back();
                                 }
-#endif
                                 /* seclists, object lists */
                             }
                         }
                 } break;
-#if CABLE
                 case SECTION: {
                     total = hoc_total_array_data(sym, od);
                     for (i = 0; i < total; ++i) {
@@ -380,7 +337,6 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                         }
                     }
                 } break;
-#endif
                 case TEMPLATE: {
                     cTemplate* t = sym->u.ctemplate;
                     hoc_Item* q;
@@ -392,11 +348,9 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                         if (!t->constructor) {
                             search(obj->u.dataspace, t->symtable);
                         } else {
-#if CABLE
                             if (t->is_point_) {
                                 search((Point_process*) obj->u.this_pointer, sym);
                             }
-#endif
                         }
                         strlist_.pop_back();
                     }
@@ -428,8 +382,6 @@ void HocDataPathImpl::search_vectors() {
         strlist_.pop_back();
     }
 }
-
-#if CABLE
 
 void HocDataPathImpl::search_pysec() {
 #if USE_PYTHON
@@ -535,5 +487,3 @@ void HocDataPathImpl::search(Prop* prop, double x) {
         }
     }
 }
-
-#endif

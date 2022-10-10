@@ -15,14 +15,12 @@ List *procfunc, *initfunc, *modelfunc, *termfunc, *initlist, *firstlist;
 
 List* nrnstate;
 extern List *currents, *set_ion_variables(int), *get_ion_variables(int);
-extern List *begin_dion_stmt(), *end_dion_stmt(char*);
+extern List *begin_dion_stmt(), *end_dion_stmt(const char*);
 extern List* conductance_;
 static void conductance_cout();
 
-extern Symbol* indepsym;
-extern List* indeplist;
 extern List* defs_list;
-extern char* saveindep;
+extern const char* saveindep;
 char* modelline;
 extern int brkpnt_exists;
 extern int artificial_cell;
@@ -39,9 +37,8 @@ extern List* state_discon_list_;
 /* we no longer update the #else clauses. */
 extern int vectorize;
 static List* vectorize_replacements; /* pairs of item pointer, strings */
-extern char* cray_pragma();
-extern int electrode_current; /* 1 means we should watch out for extracellular
-                    and handle it correctly */
+extern int electrode_current;        /* 1 means we should watch out for extracellular
+                           and handle it correctly */
 
 #if __TURBOC__ || SYSV || VMS
 #define index strchr
@@ -125,9 +122,9 @@ void c_out() {
     P("static int _reset;\n");
     P("static ");
     if (modelline) {
-        Fprintf(fcout, "char *modelname = \"%s\";\n\n", modelline);
+        Fprintf(fcout, "const char *modelname = \"%s\";\n\n", modelline);
     } else {
-        Fprintf(fcout, "char *modelname = \"\";\n\n");
+        Fprintf(fcout, "const char *modelname = \"\";\n\n");
     }
     Fflush(fcout); /* on certain internal errors partial output
                     * is helpful */
@@ -544,9 +541,9 @@ void c_out_vectorize() {
     printlist(firstlist);
     P("static int _reset;\n");
     if (modelline) {
-        Fprintf(fcout, "static char *modelname = \"%s\";\n\n", modelline);
+        Fprintf(fcout, "static const char *modelname = \"%s\";\n\n", modelline);
     } else {
-        Fprintf(fcout, "static char *modelname = \"\";\n\n");
+        Fprintf(fcout, "static const char *modelname = \"\";\n\n");
     }
     Fflush(fcout); /* on certain internal errors partial output
                     * is helpful */
@@ -817,7 +814,7 @@ void c_out_vectorize() {
     P("_first = 0;\n}\n");
 }
 
-void vectorize_substitute(Item* q, char* str) {
+void vectorize_substitute(Item* q, const char* str) {
     if (!vectorize_replacements) {
         vectorize_replacements = newlist();
     }
@@ -846,16 +843,6 @@ void vectorize_do_substitute() {
             replacstr(q1, STR(q));
         }
     }
-}
-
-char* cray_pragma() {
-    static char buf[] =
-        "\
-\n#if _CRAY\
-\n#pragma _CRI ivdep\
-\n#endif\
-\n";
-    return buf;
 }
 
 static void conductance_cout() {

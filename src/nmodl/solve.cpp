@@ -14,7 +14,6 @@ extern char* current_line();
 extern List* massage_list_;
 extern List* nrnstate;
 extern int vectorize;
-extern char* cray_pragma();
 extern int netrec_state_count;
 extern int netrec_need_thread;
 Item* cvode_cnexp_solve;
@@ -293,7 +292,7 @@ void save_dt(Item* q) /* save and restore the value of indepvar */
 #endif
 }
 
-char* saveindep = "";
+const char* saveindep = "";
 
 void whileloop(Item* qsol, long type, int ss) {
     /* no solve statement except this is allowed to
@@ -310,7 +309,7 @@ void whileloop(Item* qsol, long type, int ss) {
     /* executing more that one for loop in a single call to model() is an error
     which is trapped in scop */
     static int called = 0, firstderf = 1;
-    char* cp = 0;
+    const char* cp = 0;
 
     switch (type) {
     case DERF:
@@ -344,9 +343,6 @@ void whileloop(Item* qsol, long type, int ss) {
     default:
         /*SUPPRESS 622*/
         assert(0);
-    }
-    if (strcmp(indepsym->name, "t") != 0) {
-        diag("The independent variable name must be `t'", (char*) 0);
     }
 
     if (called) {

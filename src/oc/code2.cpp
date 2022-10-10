@@ -152,9 +152,9 @@ void hoc_Symbol_units(void) {
     if (hoc_is_double_arg(1)) {
         units_on_flag_ = (int) chkarg(1, 0., 1.);
         if (units_on_flag_) {
-            *units = "on";
+            *units = const_cast<char*>("on");
         } else {
-            *units = "off";
+            *units = const_cast<char*>("off");
         }
     } else {
         if (hoc_is_str_arg(1)) {
@@ -179,7 +179,7 @@ void hoc_Symbol_units(void) {
         }
         *units = hoc_symbol_units(sym, *units);
         if (*units == (char*) 0) {
-            *units = "";
+            *units = const_cast<char*>("");
         }
     }
     hoc_ret();
@@ -525,7 +525,7 @@ void Xred(void) /* read with prompt string and default and limits */
 }
 
 static struct { /* symbol types */
-    char* name;
+    const char* name;
     short t_type;
 } type_sym[] = {{"Builtins", BLTIN},
                 {"Other Builtins", FUN_BLTIN},

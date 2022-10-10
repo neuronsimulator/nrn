@@ -22,7 +22,6 @@ extern int numlist;
 extern int thread_data_index;
 extern List* thread_cleanup_list;
 extern int vectorize;
-extern Symbol* indepsym;
 
 int singlechan_;
 static int cvode_flag;
@@ -53,13 +52,13 @@ static List* done_list;  /* list of already translated blocks */
 static List* done_list1; /* do not emit definitions more than once */
 typedef struct Rlist {
     Reaction* reaction;
-    Symbol* sym;       /* the kinetic block symbol */
-    Item* position;    /*  where we can initialize lists */
-    Item* endbrace;    /*  can insert after all statements */
-    Symbol** symorder; /* state symbols in varnum order */
-    char** capacity;   /* compartment size expessions in varnum order */
-    int nsym;          /* number of symbols in above vector */
-    int ncons;         /* and the diagonals for conservation are first */
+    Symbol* sym;           /* the kinetic block symbol */
+    Item* position;        /*  where we can initialize lists */
+    Item* endbrace;        /*  can insert after all statements */
+    Symbol** symorder;     /* state symbols in varnum order */
+    const char** capacity; /* compartment size expessions in varnum order */
+    int nsym;              /* number of symbols in above vector */
+    int ncons;             /* and the diagonals for conservation are first */
     struct Rlist* rlistnext;
     int slist_decl;
 } Rlist;
@@ -83,13 +82,6 @@ void genmatterms(Reaction* r, int fn);
 
 #define MAXKINBLK 20
 static int nstate_[MAXKINBLK];
-
-static char* instance_loop() {
-    extern char* cray_pragma();
-    static char buf1[NRN_BUFSIZE];
-    Sprintf(buf1, "\n#ifdef WANT_PRAGMA%s#endif\n   _INSTANCE_LOOP {\n", cray_pragma());
-    return buf1;
-}
 
 static int sparse_declared_[10];
 static int sparsedeclared(int i) {
@@ -419,7 +411,7 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtl
     clist = r;
 
     /* handle compartlist if any */
-    rlist->capacity = (char**) emalloc((unsigned) order * sizeof(char*));
+    rlist->capacity = (const char**) emalloc((unsigned) order * sizeof(char*));
     for (i = 0; i < order; i++) {
         rlist->capacity[i] = "";
     }
@@ -464,7 +456,7 @@ void fixrlst(Rlist* rlst) {
 
 static int ncons; /* the number of conservation equations */
 
-void kinetic_intmethod(Symbol* fun, char* meth) {
+void kinetic_intmethod(Symbol* fun, const char* meth) {
     /*derivative form*/
     Reaction* r1;
     Rlist *rlst, *clst;
@@ -645,7 +637,7 @@ void genfluxterm(Reaction* r, int type, int n) {
 }
 
 static int linmat; /* 1 if linear */
-void kinetic_implicit(Symbol* fun, char* dt, char* mname) {
+void kinetic_implicit(Symbol* fun, const char* dt, const char* mname) {
     /*implicit equations _slist are state(t+dt) _dlist are Dstate(t)*/
     Item* q;
     Item* qv;
@@ -1109,7 +1101,7 @@ void kinlist(Symbol* fun, Rlist* rlst) {
 }
 
 /* for now we only check CONSERVE and COMPARTMENT */
-void check_block(int standard, int actual, char* mes) {
+void check_block(int standard, int actual, const char* mes) {
     if (standard != actual) {
         diag(mes, "not allowed in this kind of block");
     }
