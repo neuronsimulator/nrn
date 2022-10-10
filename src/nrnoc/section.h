@@ -124,6 +124,7 @@ extern int use_cachevec;
 extern int secondorder;
 extern int cvode_active_;
 
+struct Extnode;
 struct Node {
     // Eventually the old Node class should become an alias for
     // neuron::container::handle::Node, but as an intermediate measure we can
@@ -150,7 +151,7 @@ struct Node {
     auto v_handle() {
         return _node_handle.v_handle();
     }
-    double _rinv;   /* conductance uS from node to parent */
+    double _rinv{}; /* conductance uS from node to parent */
     double _v_temp; /* vile necessity til actual_v allocated */
     double* _d;     /* diagonal element in node equation */
     double* _rhs;   /* right hand side in node equation */
@@ -159,7 +160,7 @@ struct Node {
     int eqn_index_;                 /* sparse13 matrix row/col index */
                                     /* if no extnodes then = v_node_index +1*/
                                     /* each extnode adds nlayer more equations after this */
-    struct Prop* prop;              /* Points to beginning of property list */
+    Prop* prop{};                   /* Points to beginning of property list */
     Section* child;                 /* section connected to this node */
                                     /* 0 means no other section connected */
     Section* sec;                   /* section this node is in */
@@ -168,14 +169,14 @@ struct Node {
     struct NrnThread* _nt;
 /* #endif */
 #if EXTRACELLULAR
-    struct Extnode* extnode;
+    Extnode* extnode{};
 #endif
 
 #if EXTRAEQN
-    struct Eqnblock* eqnblock; /* hook to other equations which
+    Eqnblock* eqnblock{}; /* hook to other equations which
            need to be solved at the same time as the membrane
            potential. eg. fast changeing ionic concentrations */
-#endif                         /*MOREEQN*/
+#endif
 
 #if DEBUGSOLVE
     double savd;
@@ -183,6 +184,12 @@ struct Node {
 #endif                   /*DEBUGSOLVE*/
     int v_node_index;    /* only used to calculate parent_node_indices*/
     int sec_node_index_; /* to calculate segment index from *Node */
+    Node() = default;
+    Node(Node const&) = delete;
+    Node(Node&&) = default;
+    Node& operator=(Node const&) = delete;
+    Node& operator=(Node&&) = default;
+    ~Node();
 };
 
 #if EXTRACELLULAR
