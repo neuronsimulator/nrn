@@ -13,10 +13,6 @@ namespace neuron {
  * construction/destruction/... of different parts of the model data.
  */
 struct Model {
-    // Defined in container.cpp to keep details of configured callbacks out of
-    // this header.
-    Model();
-
     /** @brief Access the structure containing the data of all Nodes.
      */
     container::Node::storage& node_data() {
