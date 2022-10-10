@@ -25,7 +25,7 @@ struct storage_info {
  *  information about the container can be found the returned std::optional will
  *  not contain a value.
  */
-[[nodiscard]] std::optional<storage_info> find_container_info(void const*);
+[[nodiscard]] inline std::optional<storage_info> find_container_info(void const*);
 }  // namespace utils
 }  // namespace container
 }  // namespace neuron
