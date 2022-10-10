@@ -12,9 +12,8 @@ include(NeuronTestHelper)
 # =============================================================================
 # Test executables
 # =============================================================================
-add_executable(
-  testneuron unit_tests/unit_test.cpp unit_tests/cache/model.cpp unit_tests/container/node.cpp
-             unit_tests/oc/hoc_interpreter.cpp unit_tests/threads/test_multicore.cpp)
+add_executable(testneuron unit_tests/unit_test.cpp unit_tests/container/node.cpp
+                          unit_tests/oc/hoc_interpreter.cpp unit_tests/threads/test_multicore.cpp)
 cpp_cc_configure_sanitizers(TARGET testneuron)
 target_compile_features(testneuron PUBLIC cxx_std_11)
 target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)

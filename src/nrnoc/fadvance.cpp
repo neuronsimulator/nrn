@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <errno.h>
 #include "neuron.h"
-#include "neuron/cache/model_data.hpp"
 #include "section.h"
 #include "nrn_ansi.h"
 #include "nrniv_mf.h"
@@ -853,7 +852,7 @@ void nrn_finitialize(int setv, double v) {
     nrn_fihexec(3); /* model structure changes can be made */
     verify_structure();
     // Is this the right place to call this?
-    auto const model_cache_token = neuron::cache::acquire_valid();
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
 #if ELIMINATE_T_ROUNDOFF
     nrn_ndt_ = 0.;
     nrn_dt_ = dt;
