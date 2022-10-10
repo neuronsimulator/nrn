@@ -247,6 +247,20 @@ struct soa {
         }
     }
 
+    // Returns true if T::default_value is defined, false otherwise
+    template <typename T, typename = void>
+    static constexpr bool has_default_value_v = false;
+    template <typename T>
+    static constexpr bool has_default_value_v<T, std::void_t<decltype(T::default_value)>> = true;
+
+    template <typename Tag>
+    void emplace_back_impl() {
+        if constexpr (has_default_value_v<Tag>) {
+            get<Tag>().emplace_back(Tag::default_value);
+        } else {
+            get<Tag>().emplace_back();
+        }
+    }
 
   public:
     /** @brief Append a new entry to all elements of the container.
@@ -270,7 +284,7 @@ struct soa {
         index.set_current_row(size());
         m_indices.push_back(std::move(index));
         // Append a new element to all the data columns too.
-        (get<Tags>().emplace_back(), ...);
+        (emplace_back_impl<Tags>(), ...);
         return index;
     }
 
