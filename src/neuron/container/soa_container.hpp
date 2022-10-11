@@ -49,15 +49,20 @@ inline constexpr std::size_t index_of_type_v = []() {
     }
 }();
 
-// Detect if a type T has a static member called default_value
+// Detect if a type T has a non-static member function called default_value
 template <typename T, typename = void>
 inline constexpr bool has_default_value_v = false;
 template <typename T>
-inline constexpr bool has_default_value_v<T, std::void_t<decltype(T::default_value)>> = true;
-}  // namespace detail
+inline constexpr bool
+    has_default_value_v<T, std::void_t<decltype(std::declval<T>().default_value())>> = true;
 
-template <typename RowIdentifier, typename... Tags>
-struct soa;
+// Detect if a type T has a non-static member function called num_instances().
+template <typename T, typename = void>
+inline constexpr bool has_num_instances_v = false;
+template <typename T>
+inline constexpr bool
+    has_num_instances_v<T, std::void_t<decltype(std::declval<T>().num_instances())>> = true;
+}  // namespace detail
 
 /** @brief Token whose lifetime manages frozen/sorted state of a container.
  */
@@ -78,7 +83,7 @@ struct state_token {
     }
 
   private:
-    template <typename RowIdentifier, typename... Tags>
+    template <typename, typename, typename...>
     friend struct soa;
     constexpr state_token(Container& container)
         : m_container{&container} {}
@@ -86,12 +91,29 @@ struct state_token {
 };
 
 /** @brief Utility for generating SOA data structures.
- *  @tparam Tags Parameter pack of tag types that define the columns included in
- *               the container. Types may not be repeated.
+ *  @tparam Storage       Name of the actual storage type derived from soa<...>.
+ *  @tparam RowIdentifier Tag type for the identifier column.
+ *  @tparam Tags          Parameter pack of tag types that define the columns
+ *                        included in the container. Types may not be repeated.
  */
-template <typename RowIdentifier, typename... Tags>
+template <typename Storage, typename RowIdentifier, typename... Tags>
 struct soa {
-    soa() = default;
+    /** @brief Construct with default-constructed tag type instances.
+     */
+    soa() {
+        initialise_data();
+    }
+
+    /** @brief Construct with specific tag instances.
+     *
+     *  This is useful if the tag types are not empty, for example if the number
+     *  of times a column is duplicated is a runtime value.
+     */
+    soa(Tags... tag_instances)
+        : m_tags{std::move(tag_instances)...} {
+        initialise_data();
+    }
+
     // Make it harder to invalidate the pointers/references to instances of
     // this struct that are stored in Node objects.
     soa(soa&&) = delete;
@@ -114,14 +136,16 @@ struct soa {
         assert(i < old_size);
         if (i != old_size - 1) {
             // Swap positions `i` and `old_size - 1` in each vector
-            using std::swap;
-            swap(m_indices[i], m_indices.back());
-            (swap(get<Tags>()[i], get<Tags>().back()), ...);
+            for_all_vectors(*this, [i](auto const& tag, auto& vec) {
+                using std::swap;
+                swap(vec[i], vec.back());
+            });
             // Tell the new entry at `i` that its index is `i` now.
             m_indices[i].set_current_row(i);
         }
-        m_indices.resize(old_size - 1);
-        (get<Tags>().resize(old_size - 1), ...);
+        for_all_vectors(*this, [new_size = old_size - 1](auto const& tag, auto& vec) {
+            vec.resize(new_size);
+        });
     }
 
     /** @brief Get the size of the container.
@@ -129,7 +153,9 @@ struct soa {
     [[nodiscard]] std::size_t size() const {
         // Check our various std::vector members are still the same size as each
         // other.
-        assert(((m_indices.size() == get<Tags>().size()) && ...));
+        for_all_vectors(*this, [check_size = m_indices.size()](auto const& tag, auto const& vec) {
+            assert(vec.size() == check_size);
+        });
         return m_indices.size();
     }
 
@@ -145,7 +171,53 @@ struct soa {
     }
 
   private:
-    friend struct state_token<soa>;
+    friend struct state_token<Storage>;
+
+    // for tags with a runtime-specified number of copies, set that number
+    void initialise_data() {
+        // For all tags that have a runtime-specified number of copies, get the
+        // vector<vector<T>> and resize it to hold num_instances() vector<T>
+        (
+            [this](auto const& tag) {
+                using Tag = std::decay_t<decltype(tag)>;
+                if constexpr (detail::has_num_instances_v<Tag>) {
+                    auto& vector_of_vectors = std::get<tag_index_v<Tag>>(m_data);
+                    assert(vector_of_vectors.empty());
+                    vector_of_vectors.resize(tag.num_instances());
+                }
+            }(get_tag<Tags>()),
+            ...);
+    }
+
+    template <typename Tag, typename This, typename Callable>
+    static void for_all_tag_vectors(This& this_ref, Callable const& callable) {
+        auto const& tag = this_ref.template get_tag<Tag>();
+        if constexpr (detail::has_num_instances_v<Tag>) {
+            auto const num_instances = tag.num_instances();
+            for (auto i = 0; i < num_instances; ++i) {
+                callable(tag, this_ref.template get_field_instance<Tag>(i));
+            }
+        } else {
+            callable(tag, this_ref.template get<Tag>());
+        }
+    }
+
+    /** @brief Dummy tag type for the row identifier column.
+     */
+    struct row_identifier_tag {
+        using type = RowIdentifier;
+    };
+
+    /** @brief Apply the given function to all data vectors in this container.
+     *
+     *  This centralises handling of tag types that are duplicated a
+     *  runtime-specified number of times.
+     */
+    template <typename This, typename Callable>
+    static void for_all_vectors(This& this_ref, Callable const& callable) {
+        callable(row_identifier_tag{}, this_ref.m_indices);
+        (for_all_tag_vectors<Tags>(this_ref, callable), ...);
+    }
 
     /** @brief Flag that the storage is no longer frozen.
      *
@@ -159,7 +231,7 @@ struct soa {
   public:
     /** @brief Return type of get_sorted_token()
      */
-    using sorted_token_type = state_token<soa>;
+    using sorted_token_type = state_token<Storage>;
 
     /** @brief Mark the container as sorted and return a token guaranteeing that.
      *
@@ -188,7 +260,7 @@ struct soa {
         // Mark the container as sorted
         m_sorted = true;
         // Return a token that calls decrease_frozen_count() at the end of its lifetime
-        return sorted_token_type{*this};
+        return sorted_token_type{static_cast<Storage&>(*this)};
     }
 
     /** @brief Tell the container it is no longer sorted.
@@ -253,15 +325,6 @@ struct soa {
         }
     }
 
-    template <typename Tag>
-    void emplace_back_impl() {
-        if constexpr (detail::has_default_value_v<Tag>) {
-            get<Tag>().emplace_back(Tag::default_value);
-        } else {
-            get<Tag>().emplace_back();
-        }
-    }
-
   public:
     /** @brief Append a new entry to all elements of the container.
      *  @todo  Perhaps the return type should be an owning view, not just an
@@ -273,18 +336,24 @@ struct soa {
      *  row that has been added, so if you discard the return value then the
      *  added row will immediately be deleted.
      */
-    [[nodiscard]] owning_identifier_base<soa, RowIdentifier> emplace_back() {
+    [[nodiscard]] owning_identifier_base<Storage, RowIdentifier> emplace_back() {
         if (m_frozen_count) {
             throw_error("emplace_back() called on a frozen structure");
         }
         // Important that this comes after the m_frozen_count check
-        owning_identifier_base<soa, RowIdentifier> index{*this};
-        // this can trigger reallocation
-        mark_as_unsorted_impl<true>();
+        owning_identifier_base<Storage, RowIdentifier> index{static_cast<Storage&>(*this)};
+        mark_as_unsorted_impl<true>();  // because emplace_back() can trigger reallocation, but is
+                                        // "sorted" defined to mean double* are not invalidated..?
         index.set_current_row(size());
-        m_indices.push_back(std::move(index));
-        // Append a new element to all the data columns too.
-        (emplace_back_impl<Tags>(), ...);
+        for_all_vectors(*this, [](auto const& tag, auto& vec) {
+            using Tag = std::decay_t<decltype(tag)>;
+            if constexpr (detail::has_default_value_v<Tag>) {
+                vec.emplace_back(tag.default_value());
+            } else {
+                vec.emplace_back();
+            }
+        });
+        m_indices.back() = std::move(index);
         return index;
     }
 
@@ -292,6 +361,13 @@ struct soa {
      */
     [[nodiscard]] RowIdentifier identifier(std::size_t offset) const {
         return m_indices.at(offset);
+    }
+
+    /** @brief Get the instance of the tag type Tag.
+     */
+    template <typename Tag>
+    [[nodiscard]] Tag const& get_tag() const {
+        return std::get<Tag>(m_tags);
     }
 
     /** @brief Get the offset-th element of the column named by Tag.
@@ -304,6 +380,7 @@ struct soa {
     template <typename Tag>
     [[nodiscard]] typename Tag::type& get(std::size_t offset) {
         static_assert(has_tag_v<Tag>);
+        static_assert(!detail::has_num_instances_v<Tag>);
         return std::get<tag_index_v<Tag>>(m_data).at(offset);
     }
 
@@ -311,7 +388,58 @@ struct soa {
      */
     template <typename Tag>
     [[nodiscard]] typename Tag::type const& get(std::size_t offset) const {
-        return get<Tag>().at(offset);
+        static_assert(has_tag_v<Tag>);
+        static_assert(!detail::has_num_instances_v<Tag>);
+        return std::get<tag_index_v<Tag>>(m_data).at(offset);
+    }
+
+  private:
+    // Helper that unifies different [non-]const 1/2-parameter versions of get_field_instance
+    template <typename Tag, typename This>
+    static decltype(auto) get_field_instance_helper(This& this_ref, std::size_t field_index) {
+        static_assert(has_tag_v<Tag>);
+        static_assert(detail::has_num_instances_v<Tag>);
+        auto const num_instances = this_ref.template get_tag<Tag>().num_instances();
+        if (field_index >= num_instances) {
+            this_ref.throw_error("get_field_instance_helper<" + cxx_demangle(typeid(Tag).name()) +
+                                 ">(" + std::to_string(field_index) +
+                                 ") field_index out of range [0, " +
+                                 std::to_string(num_instances - 1) + "]");
+        }
+        decltype(auto) vector_of_vectors = std::get<tag_index_v<Tag>>(this_ref.m_data);
+        assert(vector_of_vectors.size() == num_instances);
+        return vector_of_vectors[field_index];
+    }
+
+  public:
+    /** @brief Get the field_index-th instance of the column named by Tag.
+     */
+    template <typename Tag>
+    std::vector<typename Tag::type>& get_field_instance(std::size_t field_index) {
+        if (m_frozen_count) {
+            throw_error("non-const get_field_instance(index) called on frozen structure");
+        }
+        return get_field_instance_helper<Tag>(*this, field_index);
+    }
+
+    template <typename Tag>
+    std::vector<typename Tag::type> const& get_field_instance(std::size_t field_index) const {
+        return get_field_instance_helper<Tag>(*this, field_index);
+    }
+
+    /** @brief Get the offset-th element of the field_index-th instance of the column named by Tag.
+     */
+    template <typename Tag>
+    typename Tag::type& get_field_instance(std::size_t field_index, std::size_t offset) {
+        return get_field_instance_helper<Tag>(*this, field_index).at(offset);
+    }
+
+    /** @brief Get the offset-th element of the field_index-th instance of the column named by Tag.
+     */
+    template <typename Tag>
+    typename Tag::type const& get_field_instance(std::size_t field_index,
+                                                 std::size_t offset) const {
+        return get_field_instance_helper<Tag>(*this, field_index).at(offset);
     }
 
   private:
@@ -329,6 +457,7 @@ struct soa {
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type>& get() {
         static_assert(has_tag_v<Tag>);
+        static_assert(!detail::has_num_instances_v<Tag>);
         if (m_frozen_count) {
             throw_error("non-const get() called on frozen structure");
         }
@@ -340,6 +469,7 @@ struct soa {
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type> const& get() const {
         static_assert(has_tag_v<Tag>);
+        static_assert(!detail::has_num_instances_v<Tag>);
         return std::get<tag_index_v<Tag>>(m_data);
     }
 
@@ -434,9 +564,9 @@ struct soa {
         }
     }
 
-    [[noreturn]] void throw_error(std::string_view message) {
+    [[noreturn]] void throw_error(std::string_view message) const {
         std::ostringstream oss;
-        oss << cxx_demangle(typeid(soa).name()) << "[frozen_count=" << m_frozen_count
+        oss << cxx_demangle(typeid(Storage).name()) << "[frozen_count=" << m_frozen_count
             << ",sorted=" << std::boolalpha << m_sorted << "]: " << message;
         throw std::runtime_error(std::move(oss).str());
     }
@@ -457,12 +587,29 @@ struct soa {
      */
     std::vector<RowIdentifier> m_indices{};
 
+    /** @brief Storage type for this Tag.
+     *
+     *  If the tag implements a num_instances() method then it is duplicated a
+     *  runtime-determined number of times and get_field_instance<Tag>(i)
+     *  returns the i-th element of the outer vector (of length num_instances())
+     *  of vectors. If is no num_instances() method then the outer vector can be
+     *  omitted and get<Tag>() returns a vector of values.
+     */
+    template <typename Tag>
+    using storage_t = std::conditional_t<detail::has_num_instances_v<Tag>,
+                                         std::vector<std::vector<typename Tag::type>>,
+                                         std::vector<typename Tag::type>>;
+
     /** @brief Collection of data columns.
      */
-    std::tuple<std::vector<typename Tags::type>...> m_data{};
+    std::tuple<storage_t<Tags>...> m_data{};
 
     /** @brief Callback that is invoked when the container becomes unsorted.
      */
     std::function<void()> m_unsorted_callback{};
+
+    /** @brief Instances of the tag types.
+     */
+    std::tuple<Tags...> m_tags{};
 };
 }  // namespace neuron::container

@@ -68,6 +68,20 @@ struct view_base {
     auto const& get() const {
         return derived().underlying_storage().template get<Tag>(derived().offset());
     }
+    template <typename Tag>
+    Tag const& get_tag() const {
+        return derived().underlying_storage().template get_tag<Tag>();
+    }
+    template <typename Tag>
+    auto& get(std::size_t field_index) {
+        return derived().underlying_storage().template get_field_instance<Tag>(field_index,
+                                                                               derived().offset());
+    }
+    template <typename Tag>
+    auto const& get(std::size_t field_index) const {
+        return derived().underlying_storage().template get_field_instance<Tag>(field_index,
+                                                                               derived().offset());
+    }
 };
 
 }  // namespace neuron::container
