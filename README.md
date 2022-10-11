@@ -183,10 +183,10 @@ The NMODL Framework provides rich model introspection and analysis capabilities 
 
 To understand how you can write your own introspection and analysis tool, see [this tutorial](docs/notebooks/nmodl-python-tutorial.ipynb).
 
-Once analysis and optimization passes are performed, the NMODL Framework can generate optimised code for modern compute architectures including CPUs (Intel, AMD, ARM) and GPUs (NVIDIA, AMD) platforms. For example, C++, OpenACC, OpenMP, CUDA and ISPC  backends are implemented and one can choose these backends on command line as:
+Once analysis and optimization passes are performed, the NMODL Framework can generate optimised code for modern compute architectures including CPUs (Intel, AMD, ARM) and GPUs (NVIDIA, AMD) platforms. For example, C++, OpenACC, OpenMP and ISPC  backends are implemented and one can choose these backends on command line as:
 
 ```
-$ nmodl expsyn.mod host --ispc acc --cuda sympy --analytic
+$ nmodl expsyn.mod host --ispc acc sympy --analytic
 ```
 
 Here is an example of generated [ISPC](https://ispc.github.io/) kernel for DERIVATIVE block :
@@ -238,7 +238,6 @@ acc
   Accelerator code backends
   Options:
     --oacc                                C/C++ backend with OpenACC (false)
-    --cuda                                C/C++ backend with CUDA (false)
 
 sympy
   SymPy based analysis and optimizations

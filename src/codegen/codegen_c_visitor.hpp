@@ -271,7 +271,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
     codegen::CodegenInfo info;
 
     /**
-     * Code printer object for target (C, CUDA, ispc, ...)
+     * Code printer object for target (C, ispc, ...)
      */
     std::shared_ptr<CodePrinter> target_printer;
 

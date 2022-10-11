@@ -14,7 +14,6 @@
 #include "codegen/codegen_acc_visitor.hpp"
 #include "codegen/codegen_c_visitor.hpp"
 #include "codegen/codegen_compatibility_visitor.hpp"
-#include "codegen/codegen_cuda_visitor.hpp"
 #include "codegen/codegen_ispc_visitor.hpp"
 #include "codegen/codegen_transform_visitor.hpp"
 #include "config/config.h"
@@ -78,9 +77,6 @@ int main(int argc, const char* argv[]) {
 
     /// true if c code with openacc to be generated
     bool oacc_backend(false);
-
-    /// true if cuda code to be generated
-    bool cuda_backend(false);
 
     /// true if sympy should be used for solving ODEs analytically
     bool sympy_analytic(false);
@@ -196,11 +192,6 @@ int main(int argc, const char* argv[]) {
         ->add_flag("--oacc",
                    oacc_backend,
                    fmt::format("C/C++ backend with OpenACC ({})", oacc_backend))
-        ->ignore_case();
-    acc_opt
-        ->add_flag("--cuda",
-                   cuda_backend,
-                   fmt::format("C/C++ backend with CUDA ({})", cuda_backend))
         ->ignore_case();
 
     // clang-format off
@@ -573,15 +564,6 @@ int main(int argc, const char* argv[]) {
                                         output_dir,
                                         data_type,
                                         optimize_ionvar_copies_codegen);
-                visitor.visit_program(*ast);
-            }
-
-            if (cuda_backend) {
-                logger->info("Running CUDA backend code generator");
-                CodegenCudaVisitor visitor(modfile,
-                                           output_dir,
-                                           data_type,
-                                           optimize_ionvar_copies_codegen);
                 visitor.visit_program(*ast);
             }
         }
