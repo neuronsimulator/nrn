@@ -44,16 +44,16 @@ void swap(ranges::common_pair<T, U>&& lhs, ranges::common_pair<T, U>&& rhs) noex
 
 /** @brief Create a zip view of all the data columns in the container.
  */
-template <typename RowIdentifier, typename... Tags>
-[[nodiscard]] inline auto soa<RowIdentifier, Tags...>::get_zip() {
+template <typename Storage, typename RowIdentifier, typename... Tags>
+[[nodiscard]] inline auto soa<Storage, RowIdentifier, Tags...>::get_zip() {
     return ranges::views::zip(m_indices, get<Tags>()...);
 }
 
 /** @brief Permute the SOA-format data using an arbitrary vector.
  */
-template <typename RowIdentifier, typename... Tags>
+template <typename Storage, typename RowIdentifier, typename... Tags>
 template <typename Range>
-inline void soa<RowIdentifier, Tags...>::apply_permutation(Range& permutation) {
+inline void soa<Storage, RowIdentifier, Tags...>::apply_permutation(Range& permutation) {
     check_permutation_vector(permutation);
     permute_zip(
         [&permutation](auto zip) { boost::algorithm::apply_permutation(zip, permutation); });
@@ -61,9 +61,9 @@ inline void soa<RowIdentifier, Tags...>::apply_permutation(Range& permutation) {
 
 /** @brief Permute the SOA-format data using an arbitrary vector.
  */
-template <typename RowIdentifier, typename... Tags>
+template <typename Storage, typename RowIdentifier, typename... Tags>
 template <typename Range>
-inline void soa<RowIdentifier, Tags...>::apply_reverse_permutation(Range& permutation) {
+inline void soa<Storage, RowIdentifier, Tags...>::apply_reverse_permutation(Range& permutation) {
     check_permutation_vector(permutation);
     permute_zip([&permutation](auto zip) {
         boost::algorithm::apply_reverse_permutation(zip, permutation);
@@ -74,9 +74,9 @@ inline void soa<RowIdentifier, Tags...>::apply_reverse_permutation(Range& permut
  *  @todo Assert that the given range has an integral value type and that
  *  there is no overflow?
  */
-template <typename RowIdentifier, typename... Tags>
+template <typename Storage, typename RowIdentifier, typename... Tags>
 template <typename Rng>
-inline void soa<RowIdentifier, Tags...>::check_permutation_vector(Rng const& range) {
+inline void soa<Storage, RowIdentifier, Tags...>::check_permutation_vector(Rng const& range) {
     if (ranges::size(range) != size()) {
         throw std::runtime_error("invalid permutation vector: wrong size");
     }
@@ -94,21 +94,19 @@ inline void soa<RowIdentifier, Tags...>::check_permutation_vector(Rng const& ran
 
 /** @brief Reverse the order of the SOA-format data.
  */
-template <typename RowIdentifier, typename... Tags>
-inline void soa<RowIdentifier, Tags...>::reverse() {
+template <typename Storage, typename RowIdentifier, typename... Tags>
+inline void soa<Storage, RowIdentifier, Tags...>::reverse() {
     permute_zip([](auto zip) { std::reverse(ranges::begin(zip), ranges::end(zip)); });
 }
 
 /** @brief Rotate the SOA-format data by `i` positions.
  *  @todo  See if std::rotate can be fixed here.
  */
-template <typename RowIdentifier, typename... Tags>
-inline void soa<RowIdentifier, Tags...>::rotate(std::size_t i) {
+template <typename Storage, typename RowIdentifier, typename... Tags>
+inline void soa<Storage, RowIdentifier, Tags...>::rotate(std::size_t i) {
     assert(i < size());
     permute_zip([i](auto& zip) {
         ranges::rotate(ranges::begin(zip), ranges::next(ranges::begin(zip), i), ranges::end(zip));
     });
 }
-
-
 }  // namespace neuron::container
