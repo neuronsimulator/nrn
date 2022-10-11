@@ -31,18 +31,24 @@ template <typename View>
 struct interface: view_base<View> {
     /** @brief Return the area.
      */
-    [[nodiscard]] field::PerInstanceFloatingPointField::type fpfield(std::size_t field_index) const {
-        if (field_index >= this->template get_tag<field::PerInstanceFloatingPointField>().num_instances()) {
-            throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) + ") field index out of range");
+    [[nodiscard]] field::PerInstanceFloatingPointField::type fpfield(
+        std::size_t field_index) const {
+        if (field_index >=
+            this->template get_tag<field::PerInstanceFloatingPointField>().num_instances()) {
+            throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
+                                     ") field index out of range");
         }
         return this->template get<field::PerInstanceFloatingPointField>(field_index);
     }
 
     /** @brief Return a data_handle to the area.
      */
-    [[nodiscard]] data_handle<field::PerInstanceFloatingPointField::type> fpfield_handle(std::size_t field_index) {
-        if (field_index >= this->template get_tag<field::PerInstanceFloatingPointField>().num_instances()) {
-            throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) + ") field index out of range");
+    [[nodiscard]] data_handle<field::PerInstanceFloatingPointField::type> fpfield_handle(
+        std::size_t field_index) {
+        if (field_index >=
+            this->template get_tag<field::PerInstanceFloatingPointField>().num_instances()) {
+            throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
+                                     ") field index out of range");
         }
         return this->template get_handle<field::PerInstanceFloatingPointField>(field_index);
     }
@@ -50,8 +56,10 @@ struct interface: view_base<View> {
     /** @brief Set the area.
      */
     void set_fpfield(std::size_t field_index, field::PerInstanceFloatingPointField::type area) {
-      if (field_index >= this->template get_tag<field::PerInstanceFloatingPointField>().num_instances()) {
-            throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) + ") field index out of range");
+        if (field_index >=
+            this->template get_tag<field::PerInstanceFloatingPointField>().num_instances()) {
+            throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
+                                     ") field index out of range");
         }
         this->template get<field::PerInstanceFloatingPointField>(field_index) = area;
     }
@@ -120,7 +128,8 @@ struct owning_handle: interface<owning_handle> {
      *  neuron::model().node_data() global structure and don't bother holding a
      *  reference to it. This will probably be different for other types of data.
      */
-    owning_handle(storage& mech_data) : m_mech_data_offset{mech_data.emplace_back()} {}
+    owning_handle(storage& mech_data)
+        : m_mech_data_offset{mech_data.emplace_back()} {}
     owning_handle(owning_handle&&) = default;
     owning_handle(owning_handle const&) = delete;  // should be done(?)
     owning_handle& operator=(owning_handle&&) = default;
