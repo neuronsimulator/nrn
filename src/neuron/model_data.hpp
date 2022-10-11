@@ -31,7 +31,7 @@ struct Model {
         }
         assert(type == m_mech_data.size());
         return *m_mech_data.emplace_back(
-            std::make_unique<container::Mechanism::storage>(std::forward<Args>(args)...));
+            std::make_unique<container::Mechanism::storage>(type, std::forward<Args>(args)...));
     }
 
     /** @brief T* -> data_handle<T> if ptr is in model data.
