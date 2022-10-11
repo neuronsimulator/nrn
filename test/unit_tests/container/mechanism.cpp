@@ -50,7 +50,7 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                                mech.set_fpfield(1, field1);
                                return mech;
                            });
-            const auto check_field_values = [&]() {
+            const auto check_field_values = [&](bool storage_should_match) {
                 THEN("The correct values can be read back") {
                     std::vector<double> current_field0, current_field1;
                     std::transform(mech_instances.begin(),
@@ -63,22 +63,31 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                                    [](auto const& mech) { return mech.fpfield(1); });
                     REQUIRE(current_field0 == reference_field0);
                     REQUIRE(current_field1 == reference_field1);
+                    auto const& storage0 =
+                        mech_data.get_field_instance<field::PerInstanceFloatingPointField>(0);
+                    auto const& storage1 =
+                        mech_data.get_field_instance<field::PerInstanceFloatingPointField>(1);
+                    if (storage_should_match) {
+                        AND_THEN("The underlying storage matches the reference values") {
+                            REQUIRE(reference_field0 == storage0);
+                            REQUIRE(reference_field1 == storage1);
+                        }
+                    } else {
+                        AND_THEN("The underlying storage no longer matches the reference values") {
+                            REQUIRE(reference_field0 != storage0);
+                            REQUIRE(reference_field1 != storage1);
+                        }
+                    }
                 }
             };
-            check_field_values();
-            THEN("The underlying storage matches the reference values") {
-                REQUIRE(reference_field0 ==
-                        mech_data.get_field_instance<field::PerInstanceFloatingPointField>(0));
-                REQUIRE(reference_field1 ==
-                        mech_data.get_field_instance<field::PerInstanceFloatingPointField>(1));
-            }
+            check_field_values(true);
             AND_WHEN("The underlying storage is reversed") {
                 mech_data.reverse();
-                check_field_values();
+                check_field_values(false);
             }
             AND_WHEN("The underlying storage is rotated") {
                 mech_data.rotate(num_instances / 2);
-                check_field_values();
+                check_field_values(false);
             }
         }
     }
