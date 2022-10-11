@@ -28,7 +28,7 @@ inline std::vector<std::unique_ptr<std::size_t>>& garbage() {
 inline constexpr std::size_t invalid_row = std::numeric_limits<std::size_t>::max();
 }  // namespace detail
 
-template <typename, typename...>
+template <typename, typename, typename...>
 struct soa;
 
 template <typename, typename>
@@ -84,7 +84,7 @@ struct identifier_base {
 
   private:
     friend struct generic_data_handle;
-    template <typename, typename...>
+    template <typename, typename, typename...>
     friend struct soa;
     template <typename, typename>
     friend struct owning_identifier_base;
@@ -179,7 +179,7 @@ struct owning_identifier_base {
         std::reference_wrapper<DataContainer> m_data_ref;
     };
     std::unique_ptr<std::size_t, deleter> m_ptr;
-    template <typename, typename...>
+    template <typename, typename, typename...>
     friend struct soa;
     void set_current_row(std::size_t new_row) {
         assert(m_ptr);
