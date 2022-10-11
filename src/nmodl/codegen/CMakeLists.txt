@@ -7,7 +7,6 @@ add_library(
   codegen_transform_visitor.cpp
   codegen_c_visitor.cpp
   codegen_compatibility_visitor.cpp
-  codegen_cuda_visitor.cpp
   codegen_helper_visitor.cpp
   codegen_info.cpp
   codegen_ispc_visitor.cpp

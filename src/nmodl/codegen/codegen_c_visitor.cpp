@@ -733,7 +733,7 @@ bool CodegenCVisitor::ion_variable_struct_required() const {
 /**
  * \details This can be override in the backend. For example, parameters can be constant
  * except in INITIAL block where they are set to 0. As initial block is/can be
- * executed on c/cpu backend, gpu/cuda backend can mark the parameter as constant.
+ * executed on c/cpu backend, gpu backend can mark the parameter as constant.
  */
 bool CodegenCVisitor::is_constant_variable(const std::string& name) const {
     auto symbol = program_symtab->lookup_in_scope(name);
@@ -1132,8 +1132,7 @@ bool CodegenCVisitor::nrn_cur_reduction_loop_required() {
 
 
 /**
- * \details For CPU backend we iterate over all node counts. For cuda we use thread
- * index to check if block needs to be executed or not.
+ * \details For CPU backend we iterate over all node counts.
  */
 void CodegenCVisitor::print_channel_iteration_block_begin(BlockType type) {
     print_channel_iteration_block_parallel_hint(type);

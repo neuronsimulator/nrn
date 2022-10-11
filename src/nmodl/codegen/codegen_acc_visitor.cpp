@@ -117,7 +117,7 @@ void CodegenAccVisitor::print_memory_allocation_routine() const {
  * @todo : we need to implement proper error handling mechanism to propogate errors
  *         from GPU to CPU. For example, error code can be returned like original
  *         neuron implementation. For now we use `assert(0==1)` pattern which is
- *         used for OpenACC/CUDA.
+ *         used for OpenACC.
  */
 void CodegenAccVisitor::print_abort_routine() const {
     printer->add_newline(2);
