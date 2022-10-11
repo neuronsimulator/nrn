@@ -58,10 +58,12 @@ inline constexpr bool
 
 // Detect if a type T has a non-static member function called num_instances().
 template <typename T, typename = void>
-inline constexpr bool has_num_instances_v = false;
+struct has_num_instances: std::false_type {};
 template <typename T>
-inline constexpr bool
-    has_num_instances_v<T, std::void_t<decltype(std::declval<T>().num_instances())>> = true;
+struct has_num_instances<T, std::void_t<decltype(std::declval<T>().num_instances())>>
+    : std::true_type {};
+template <typename T>
+inline constexpr bool has_num_instances_v = has_num_instances<T>::value;
 }  // namespace detail
 
 /** @brief Token whose lifetime manages frozen/sorted state of a container.
@@ -301,6 +303,8 @@ struct soa {
     inline void apply_reverse_permutation(Range& permutation);
     template <typename Rng>
     inline void check_permutation_vector(Rng const& range);
+    template <typename Permutation>
+    inline void permute_zip(Permutation permutation);
     inline void reverse();
     inline void rotate(std::size_t i);
 
@@ -541,26 +545,6 @@ struct soa {
             }
         } else {
             return false;
-        }
-    }
-
-    /** @brief Apply some transformation to all of the data columns at once.
-     */
-    template <typename Permutation>
-    void permute_zip(Permutation permutation) {
-        if (m_frozen_count) {
-            throw_error("permute_zip() called on a frozen structure");
-        }
-        // uncontroversial that applying a permutation changes the underlying
-        // storage organisation and potentially invalidates pointers. slightly
-        // more controversial: should explicitly permuting the data implicitly
-        // mark the container as "sorted"?
-        mark_as_unsorted_impl<true>();
-        auto zip = get_zip();
-        permutation(zip);
-        std::size_t const my_size{size()};
-        for (auto i = 0ul; i < my_size; ++i) {
-            m_indices[i].set_current_row(i);
         }
     }
 

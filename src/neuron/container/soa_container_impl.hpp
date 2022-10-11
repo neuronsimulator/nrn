@@ -2,6 +2,7 @@
 #include "neuron/container/soa_container.hpp"
 
 #include <boost/algorithm/apply_permutation.hpp>
+#include <boost/mp11.hpp>
 
 #include <range/v3/algorithm/rotate.hpp>
 #include <range/v3/utility/common_tuple.hpp>
@@ -42,11 +43,60 @@ void swap(ranges::common_pair<T, U>&& lhs, ranges::common_pair<T, U>&& rhs) noex
     std::swap(lhs_std, rhs_std);
 }
 
-/** @brief Create a zip view of all the data columns in the container.
+namespace detail {
+template <typename Storage, typename Indices, typename... Tags>
+auto get_zip_helper(Storage& storage, Indices& indices, boost::mp11::mp_list<Tags...>) {
+    return ranges::views::zip(indices, storage.template get<Tags>()...);
+}
+template <typename Storage, typename Permutation, typename... Tags>
+void permute_zip_helper(Storage& storage,
+                        Permutation const& permutation,
+                        boost::mp11::mp_list<Tags...>) {
+    (
+        [&](auto const& tag) {
+            using Tag = std::decay_t<decltype(tag)>;
+            auto const num_instances = tag.num_instances();
+            for (auto i = 0ul; i < num_instances; ++i) {
+                permutation(storage.template get_field_instance<Tag>(i));
+            }
+        }(storage.template get_tag<Tags>()),
+        ...);
+}
+}  // namespace detail
+
+/** @brief Create a zip view of all the data columns in the container that are
+ *         not duplicated a number of times set at runtime.
  */
 template <typename Storage, typename RowIdentifier, typename... Tags>
 [[nodiscard]] inline auto soa<Storage, RowIdentifier, Tags...>::get_zip() {
-    return ranges::views::zip(m_indices, get<Tags>()...);
+    using Tags_without_num_instances =
+        boost::mp11::mp_remove_if<boost::mp11::mp_list<Tags...>, detail::has_num_instances>;
+    return detail::get_zip_helper(*this, m_indices, Tags_without_num_instances{});
+}
+
+/** @brief Apply some transformation to all of the data columns at once.
+ */
+template <typename Storage, typename RowIdentifier, typename... Tags>
+template <typename Permutation>
+inline void soa<Storage, RowIdentifier, Tags...>::permute_zip(Permutation permutation) {
+    if (m_frozen_count) {
+        throw_error("permute_zip() called on a frozen structure");
+    }
+    // uncontroversial that applying a permutation changes the underlying
+    // storage organisation and potentially invalidates pointers. slightly
+    // more controversial: should explicitly permuting the data implicitly
+    // mark the container as "sorted"?
+    mark_as_unsorted_impl<true>();
+    auto zip = get_zip();  // without tags that define num_instances()
+    permutation(zip);
+    // Now apply `permutation` to the columns from tags that do define num_instances()
+    using Tags_with_num_instances =
+        boost::mp11::mp_copy_if<boost::mp11::mp_list<Tags...>, detail::has_num_instances>;
+    detail::permute_zip_helper(*this, permutation, Tags_with_num_instances{});
+    std::size_t const my_size{size()};
+    for (auto i = 0ul; i < my_size; ++i) {
+        m_indices[i].set_current_row(i);
+    }
 }
 
 /** @brief Permute the SOA-format data using an arbitrary vector.
@@ -56,7 +106,7 @@ template <typename Range>
 inline void soa<Storage, RowIdentifier, Tags...>::apply_permutation(Range& permutation) {
     check_permutation_vector(permutation);
     permute_zip(
-        [&permutation](auto zip) { boost::algorithm::apply_permutation(zip, permutation); });
+        [&permutation](auto& zip) { boost::algorithm::apply_permutation(zip, permutation); });
 }
 
 /** @brief Permute the SOA-format data using an arbitrary vector.
@@ -65,7 +115,7 @@ template <typename Storage, typename RowIdentifier, typename... Tags>
 template <typename Range>
 inline void soa<Storage, RowIdentifier, Tags...>::apply_reverse_permutation(Range& permutation) {
     check_permutation_vector(permutation);
-    permute_zip([&permutation](auto zip) {
+    permute_zip([&permutation](auto& zip) {
         boost::algorithm::apply_reverse_permutation(zip, permutation);
     });
 }
@@ -96,7 +146,7 @@ inline void soa<Storage, RowIdentifier, Tags...>::check_permutation_vector(Rng c
  */
 template <typename Storage, typename RowIdentifier, typename... Tags>
 inline void soa<Storage, RowIdentifier, Tags...>::reverse() {
-    permute_zip([](auto zip) { std::reverse(ranges::begin(zip), ranges::end(zip)); });
+    permute_zip([](auto& zip) { std::reverse(ranges::begin(zip), ranges::end(zip)); });
 }
 
 /** @brief Rotate the SOA-format data by `i` positions.
