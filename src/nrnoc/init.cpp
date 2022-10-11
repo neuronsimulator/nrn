@@ -673,6 +673,11 @@ It's version %s \"c\" code is incompatible with this neuron version.\n",
             s->u.ppsym[k] = s2;
         }
     }
+    // Create a per-mechanism data structure as part of the top-level
+    // neuron::model() structure.
+    auto& model = neuron::model();
+    auto& mech_data = model.add_mechanism(
+        type, nrn_prop_param_size_[type] /* how many `double` per-instance variables there are */);
     ++type;
     n_memb_func = type;
 }

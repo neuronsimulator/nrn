@@ -1,5 +1,6 @@
 #pragma once
 #include "neuron/model_data_fwd.hpp"
+#include "neuron/container/mechanism_data.hpp"
 #include "neuron/container/node_data.hpp"
 
 #include <optional>
@@ -17,6 +18,20 @@ struct Model {
      */
     container::Node::storage& node_data() {
         return m_node_data;
+    }
+
+    /** @brief Create a structure to hold the data of a new Mechanism.
+     */
+    template <typename... Args>
+    container::Mechanism::storage& add_mechanism(int type, Args&&... args) {
+        // type starts from 2 for #reasons
+        if (type > m_mech_data.size()) {
+            m_mech_data.reserve(type + 1);
+            m_mech_data.resize(type);
+        }
+        assert(type == m_mech_data.size());
+        return *m_mech_data.emplace_back(
+            std::make_unique<container::Mechanism::storage>(std::forward<Args>(args)...));
     }
 
     /** @brief T* -> data_handle<T> if ptr is in model data.
@@ -41,6 +56,13 @@ struct Model {
     /** @brief One structure for all Nodes.
      */
     container::Node::storage m_node_data{};
+
+    /** @brief Storage for mechanism-specific data.
+     *
+     *  Each element is allocated on the heap so that reallocating this vector
+     *  does not invalidate pointers to container::Mechanism::storage.
+     */
+    std::vector<std::unique_ptr<container::Mechanism::storage>> m_mech_data{};
 };
 
 using model_sorted_token = container::Node::storage::sorted_token_type;

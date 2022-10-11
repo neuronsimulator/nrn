@@ -264,8 +264,8 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
     GIVEN("A default-constructed node") {
         ::Node node{};
         THEN("Check its SOA-backed members have their default values") {
-            REQUIRE(node.area() == field::Area::default_value);
-            REQUIRE(node.voltage() == field::Voltage::default_value);
+            REQUIRE(node.area() == field::Area{}.default_value());
+            REQUIRE(node.voltage() == field::Voltage{}.default_value());
         }
     }
     GIVEN("A series of nodes with increasing integer voltages") {
