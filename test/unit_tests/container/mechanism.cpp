@@ -13,7 +13,7 @@ using namespace neuron::container::Mechanism;
 TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mechanism]") {
     GIVEN("A mechanism with two copies of the same tagged variable") {
         constexpr std::size_t num_fields = 2;
-        storage mech_data{num_fields};
+        storage mech_data{0 /* type */, "test_mechanism", num_fields};
         REQUIRE(mech_data.num_floating_point_fields() == num_fields);
         WHEN("A row is added") {
             owning_handle mech_instance{mech_data};

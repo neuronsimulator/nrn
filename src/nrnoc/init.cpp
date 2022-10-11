@@ -673,11 +673,6 @@ It's version %s \"c\" code is incompatible with this neuron version.\n",
             s->u.ppsym[k] = s2;
         }
     }
-    // Create a per-mechanism data structure as part of the top-level
-    // neuron::model() structure.
-    auto& model = neuron::model();
-    auto& mech_data = model.add_mechanism(
-        type, nrn_prop_param_size_[type] /* how many `double` per-instance variables there are */);
     ++type;
     n_memb_func = type;
 }
@@ -722,6 +717,14 @@ void hoc_register_prop_size(int type, int psize, int dpsize) {
     if (dpsize) {
         memb_func[type].dparam_semantics = (int*) ecalloc(dpsize, sizeof(int));
     }
+    // Create a per-mechanism data structure as part of the top-level
+    // neuron::model() structure.
+    auto& model = neuron::model();
+    auto& mech_data = model.add_mechanism(type,
+                                          memb_func[type].sym->name,    // the mechanism name
+                                          nrn_prop_param_size_[type]);  // how many `double`
+                                                                        // per-instance variables
+                                                                        // there are
 }
 void hoc_register_dparam_semantics(int type, int ix, const char* name) {
     /* only interested in area, iontype, cvode_ieq,
