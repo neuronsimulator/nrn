@@ -28,11 +28,20 @@ struct PerInstanceFloatingPointField {
  */
 struct storage: soa<storage, identifier, field::PerInstanceFloatingPointField> {
     using base_type = soa<storage, struct identifier, field::PerInstanceFloatingPointField>;
-    storage(std::size_t num_floating_point_fields)
-        : base_type{field::PerInstanceFloatingPointField{num_floating_point_fields}} {}
+    storage(int mech_type, std::string name, std::size_t num_floating_point_fields)
+        : base_type{field::PerInstanceFloatingPointField{num_floating_point_fields}}
+        , m_mech_name{std::move(name)}
+        , m_mech_type{mech_type} {
+        std::cout << "mechanism " << m_mech_name << " has " << num_floating_point_fields
+                  << " floating point fields and type " << m_mech_type << '\n';
+    }
     [[nodiscard]] constexpr std::size_t num_floating_point_fields() const {
         return get_tag<field::PerInstanceFloatingPointField>().num_instances();
     }
+
+  private:
+    std::string m_mech_name{};
+    int m_mech_type{};
 };
 
 /** @brief Owning identifier for a row in the Mechanism storage;
