@@ -308,13 +308,14 @@ void NonLinImpRep::delta(double deltafac) {  // also defines pv_,pvdot_ map for 
         if (s && (cnt = (*s)(i)) > 0) {
             nrn_ode_map_t m = memb_func[i].ode_map;
             for (j = 0; j < nc; ++j) {
-                (*m)(ieq,
-                     pv_raw_ptrs.data() + ieq,
-                     pvdot_ + ieq,
-                     ml->_data[j],
-                     ml->pdata[j],
-                     deltavec_ + ieq,
-                     i);
+                assert(false);
+                // (*m)(ieq,
+                //      pv_raw_ptrs.data() + ieq,
+                //      pvdot_ + ieq,
+                //      ml->_data[j],
+                //      ml->pdata[j],
+                //      deltavec_ + ieq,
+                //      i);
                 ieq += cnt;
             }
         }
@@ -348,9 +349,8 @@ void NonLinImpRep::didv() {
     Memb_list* mlc = _nt->tml->ml;
     int n = mlc->nodecount;
     for (i = 0; i < n; ++i) {
-        double* cd = mlc->_data[i];
         j = mlc->nodelist[i]->v_node_index;
-        diag_[v_index_[j] - 1][1] += .001 * cd[0] * omega_;
+        diag_[v_index_[j] - 1][1] += .001 * mlc->data(i, 0) * omega_;
     }
     // di/dv terms
     // because there may be several point processes of the same type
@@ -585,7 +585,6 @@ void NonLinImpRep::current(int im, Memb_list* ml, int in) {  // assume there is 
     mfake.nodeindices = ml->nodeindices + in;
 #endif
     mfake.nodelist = ml->nodelist + in;
-    mfake._data = ml->_data + in;
     mfake.pdata = ml->pdata + in;
     mfake.prop = ml->prop ? ml->prop + in : nullptr;
     mfake.nodecount = 1;

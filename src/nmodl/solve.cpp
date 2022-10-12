@@ -92,7 +92,7 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
     lq = lappendsym(solvq, SYM0);
     LST(lq) = errstmt;
     Sprintf(buf,
-            "if(error){fprintf(stderr,\"%s\\n\"); nrn_complain(_p); abort_run(error);}\n",
+            "if(error){fprintf(stderr,\"%s\\n\"); /*nrn_complain(_p); */ abort_run(error);}\n",
             current_line());
     insertstr(errstmt, buf);
 }
@@ -243,7 +243,7 @@ void solvhandler() {
             }
             Sprintf(buf, " %s();\n", fun->name);
             replacstr(qsol, buf);
-            Sprintf(buf, "{ %s(_p, _ppvar, _thread, _nt); }\n", fun->name);
+            Sprintf(buf, "{ %s(_threadargs_); }\n", fun->name);
             vectorize_substitute(qsol, buf);
             break;
 #endif

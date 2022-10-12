@@ -24,9 +24,26 @@ void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnu
 
 void solv_lineq(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum) {
     Sprintf(buf,
-            " 0; %s();\n error = %s(%d, _coef%d, _p, _slist%d);\n",
+            " 0;\n"
+            "  %s();\n"
+            "  {\n"
+            "    std::vector<double> _p;\n"
+            "   _p.resize(*std::max_element(_slist%d, _slist%d + %d));\n"
+            "   for (auto _i_hack = 0; _i_hack < %d; ++_i_hack) { _p[_slist%d[_i_hack]] = _ml->data(_iml, _slist%d[_i_hack]); }\n"
+            "   error = %s(%d, _coef%d, _p.data(), _slist%d);\n"
+            "   for (auto _i_hack = 0; _i_hack < %d; ++_i_hack) { _ml->data(_iml, _slist%d[_i_hack]) = _p[_slist%d[_i_hack]]; }\n"
+            "  }\n",
             fun->name,
+            listnum,
+            listnum,
+            numeqn,
+            numeqn,
+            listnum,
+            listnum,
             method->name,
+            numeqn,
+            listnum,
+            listnum,
             numeqn,
             listnum,
             listnum);

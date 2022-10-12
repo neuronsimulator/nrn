@@ -61,6 +61,15 @@ struct view_base {
         return rval;
     }
     template <typename Tag>
+    auto get_handle(std::size_t field_index) {
+        auto const* const_this = this;
+        data_handle<typename Tag::type> const rval{this->id(), const_this->derived().underlying_storage().template get_field_instance<Tag>(field_index)};
+        assert(bool{rval});
+        assert(rval.refers_to_a_modern_data_structure());
+        // assert(rval.template refers_to<Tag>(derived().underlying_storage()));
+        return rval;
+    }
+    template <typename Tag>
     auto& get() {
         return derived().underlying_storage().template get<Tag>(derived().offset());
     }

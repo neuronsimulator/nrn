@@ -1365,8 +1365,9 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum) {
     Sprintf(buf, "static int _ode_spec%d() {_reset=0;{\n", fun->u.i);
     Lappendstr(procfunc, buf);
     Sprintf(buf,
-            "static int _ode_spec%d(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) "
-            "{int _reset=0;{\n",
+            "static int _ode_spec%d(_threadargsproto_) {\n"
+            "  int _reset=0;\n"
+            "  {\n",
             fun->u.i);
     vectorize_substitute(procfunc->prev, buf);
     copyitems(cvode_sbegin, cvode_send, procfunc->prev);

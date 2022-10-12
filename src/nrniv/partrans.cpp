@@ -229,11 +229,13 @@ static void delete_imped_info() {
 // If *pv exists, store mechtype and parray_index.
 static bool non_vsrc_setinfo(sgid_t ssid, Node* nd, double const* pv) {
     for (Prop* p = nd->prop; p; p = p->next) {
-        if (pv >= p->param && pv < (p->param + p->param_size)) {
-            non_vsrc_update_info_[ssid] = std::pair<int, int>(p->_type, pv - p->param);
-            // printf("non_vsrc_setinfo %p %d %ld %s\n", pv, p->_type, pv-p->param,
-            // memb_func[p->_type].sym->name);
-            return true;
+        for (auto i = 0ul; i < p->param_size(); ++i) {
+            if (pv == static_cast<double const*>(p->param_handle(i))) {
+                non_vsrc_update_info_[ssid] = std::pair<int, int>(p->_type, i);
+                // printf("non_vsrc_setinfo %p %d %ld %s\n", pv, p->_type, pv-p->param,
+                // memb_func[p->_type].sym->name);
+                return true;
+            }
         }
     }
     return false;
@@ -242,7 +244,7 @@ static bool non_vsrc_setinfo(sgid_t ssid, Node* nd, double const* pv) {
 static double* non_vsrc_update(Node* nd, int type, int ix) {
     for (Prop* p = nd->prop; p; p = p->next) {
         if (type == p->_type) {
-            return p->param + ix;
+            return static_cast<double*>(p->param_handle(ix));
         }
     }
     hoc_execerr_ext("partrans update: could not find parameter index %d of %s",
@@ -311,12 +313,15 @@ static int compute_parray_index(Point_process* pp, double* ptv) {
     if (!pp) {
         return -1;
     }
-    size_t i = ptv - pp->prop->param;
-    assert(i >= 0 && i < size_t(pp->prop->param_size));
-    return int(i);
+    for (int i = 0; i < pp->prop->param_size(); ++i) {
+        if (ptv == static_cast<double const*>(pp->prop->param_handle(i))) {
+            return i;
+        }
+    }
+    throw std::runtime_error("compute_parray_index");
 }
 static double* tar_ptr(Point_process* pp, int index) {
-    return pp->prop->param + index;
+    return static_cast<double*>(pp->prop->param_handle(index));
 }
 
 static void target_ptr_update() {
@@ -354,7 +359,7 @@ void nrnmpi_target_var() {
     if (x < 0) {
         hoc_execerr_ext("target_var sgid must be >= 0: arg %d is %g\n", iarg - 1, x);
     }
-    if (pp && (ptv < pp->prop->param || ptv >= (pp->prop->param + pp->prop->param_size))) {
+    if (pp && !pp->prop->owns(ptv)) {
         hoc_execerr_ext("Target ref not in %s", hoc_object_name(ob));
     }
     auto const sgid = static_cast<sgid_t>(x);
@@ -1187,7 +1192,8 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
             int tid = nt ? nt->id : 0;
             int type = pp->prop->_type;
             Memb_list& ml = *(nrn_threads[tid]._ml_list[type]);
-            int ix = targets_[i] - ml._data[0];
+            int ix = ml.legacy_index(targets_[i]);
+            assert(ix >= 0);
 
             auto& g = gi[tid];
             g.tar_sid.push_back(sid);
@@ -1213,7 +1219,8 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
                 double* d = non_vsrc_update(nd, type, ix);
                 NrnThread* nt = nd->_nt ? nd->_nt : nrn_threads;
                 Memb_list& ml = *nt->_ml_list[type];
-                ix = d - ml._data[0];
+                ix = ml.legacy_index(d);
+                assert(ix >= 0);
             } else {  // is a voltage source
                 // Calculate the offset of the Node voltage in the section of
                 // the underlying storage vector that is dedicated to NrnThread

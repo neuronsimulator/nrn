@@ -342,10 +342,15 @@ void ghk(void) {
 }
 
 #define erev   pd[i][0] /* From Eion */
+#define erev_index 0
 #define conci  pd[i][1]
+#define conci_index 1
 #define conco  pd[i][2]
+#define conco_index 2
 #define cur    pd[i][3]
+#define cur_index 3
 #define dcurdv pd[i][4]
+#define dcurdv_index 4
 
 /*
  handle erev, conci, conc0 "in the right way" according to ion_style
@@ -557,15 +562,14 @@ void nrn_promote(Prop* p, int conc, int rev) {
 static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** pd = ml->_data;
     Datum** ppd = ml->pdata;
     int i;
     /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
     for (i = 0; i < count; ++i) {
-        dcurdv = 0.;
-        cur = 0.;
+        ml->data(i, dcurdv_index) = 0.0;
+        ml->data(i, cur_index) = 0.0;
         if (iontype & 0100) {
-            erev = nrn_nernst(conci, conco, charge);
+            ml->data(i, erev_index) = nrn_nernst(ml->data(i, conci_index), ml->data(i, conco_index), charge);
         }
     };
 }
@@ -576,51 +580,46 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** pd = ml->_data;
     Datum** ppd = ml->pdata;
     int i;
     /*printf("ion_init %s\n", memb_func[type].sym->name);*/
     for (i = 0; i < count; ++i) {
         if (iontype & 04) {
-            conci = conci0;
-            conco = conco0;
+            ml->data(i, conci_index) = conci0;
+            ml->data(i, conco_index) = conco0;
         }
     }
     for (i = 0; i < count; ++i) {
         if (iontype & 040) {
-            erev = nrn_nernst(conci, conco, charge);
+            ml->data(i, erev_index) = nrn_nernst(ml->data(i, conci_index), ml->data(i, conco_index), charge);
         }
     }
 }
 
 static void ion_alloc(Prop* p) {
-    double* pd[1];
-    int i = 0;
-
-    pd[0] = nrn_prop_data_alloc(p->_type, nparm, p);
-    p->param_size = nparm;
-
-    cur = 0.;
-    dcurdv = 0.;
+    //double* pd[1];
+    //int i = 0;
+    //pd[0] = nrn_prop_data_alloc(p->_type, nparm, p);
+    assert(p->param_size() == nparm);
+    p->set_param(cur_index, 0.);
+    p->set_param(dcurdv_index, 0.);
     if (p->_type == na_ion) {
-        erev = DEF_ena;
-        conci = DEF_nai;
-        conco = DEF_nao;
+        p->set_param(erev_index, DEF_ena);
+        p->set_param(conci_index, DEF_nai);
+        p->set_param(conco_index, DEF_nao);
     } else if (p->_type == k_ion) {
-        erev = DEF_ek;
-        conci = DEF_ki;
-        conco = DEF_ko;
+        p->set_param(erev_index, DEF_ek);
+        p->set_param(conci_index, DEF_ki);
+        p->set_param(conco_index, DEF_ko);
     } else if (p->_type == ca_ion) {
-        erev = DEF_eca;
-        conci = DEF_cai;
-        conco = DEF_cao;
+        p->set_param(erev_index, DEF_eca);
+        p->set_param(conci_index, DEF_cai);
+        p->set_param(conco_index, DEF_cao);
     } else {
-        erev = DEF_eion;
-        conci = DEF_ioni;
-        conco = DEF_iono;
+        p->set_param(erev_index, DEF_eion);
+        p->set_param(conci_index, DEF_ioni);
+        p->set_param(conco_index, DEF_iono);
     }
-    p->param = pd[0];
-
     p->dparam = nrn_prop_datum_alloc(p->_type, 1, p);
     p->dparam[0] = 0;
 }
@@ -630,15 +629,15 @@ void second_order_cur(NrnThread* nt) {
     NrnThreadMembList* tml;
     Memb_list* ml;
     int j, i, i2;
-#define c  3
-#define dc 4
+    constexpr auto c = 3;
+    constexpr auto dc = 4;
     if (secondorder == 2) {
         for (tml = nt->tml; tml; tml = tml->next)
             if (memb_func[tml->index].alloc == ion_alloc) {
                 ml = tml->ml;
                 i2 = ml->nodecount;
                 for (i = 0; i < i2; ++i) {
-                    ml->_data[i][c] += ml->_data[i][dc] * (NODERHS(ml->nodelist[i]));
+                    ml->data(i, c) += ml->data(i, dc) * (NODERHS(ml->nodelist[i]));
                 }
             }
     }

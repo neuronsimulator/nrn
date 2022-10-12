@@ -50,7 +50,7 @@ void solv_diffeq(Item* qsol,
     if (method && strcmp(method->name, "cnexp") == 0) {
         Sprintf(buf, " %s();\n", fun->name);
         replacstr(qsol, buf);
-        Sprintf(buf, " %s(_p, _ppvar, _thread, _nt);\n", fun->name);
+        Sprintf(buf, " %s(_threadargs_);\n", fun->name);
         vectorize_substitute(qsol, buf);
         return;
     }
@@ -556,9 +556,7 @@ is not allowed on the left hand side.");
     {
         Item* qq = procfunc->prev;
         copyitems(q1->next, q4, procfunc->prev);
-        vectorize_substitute(
-            qq->next,
-            "(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {int _reset = 0;");
+        vectorize_substitute(qq->next, "(_threadargsproto_) {int _reset = 0;");
         vectorize_scan_for_func(qq->next, procfunc);
     }
     lappendstr(procfunc, "return _reset;\n}\n");
@@ -569,8 +567,7 @@ is not allowed on the left hand side.");
         Item* qextra = q1->next->next->next->next;
         Sprintf(buf, "static int _ode_matsol%d", numlist);
         Lappendstr(procfunc, buf);
-        vectorize_substitute(lappendstr(procfunc, "() {\n"),
-                             "(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {\n");
+        vectorize_substitute(lappendstr(procfunc, "() {\n"), "(_threadargsproto_) {\n");
         qq = procfunc->next;
         cvode_cnexp_possible = 1;
         ITERATE(q, cvode_diffeq_list) {
@@ -887,8 +884,7 @@ int cvode_cnexp_success(Item* q1, Item* q2) {
             Item* qq = procfunc->prev;
             copyitems(q1, q2, procfunc->prev);
             /* more or less redundant with massagederiv */
-            vectorize_substitute(qq->next->next,
-                                 "(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {");
+            vectorize_substitute(qq->next->next, "(_threadargsproto_) {");
             vectorize_scan_for_func(qq->next->next, procfunc);
         }
         lappendstr(procfunc, " return 0;\n}\n");

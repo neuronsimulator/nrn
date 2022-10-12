@@ -146,43 +146,44 @@ int nrn_is_valid_section_ptr(void* v) {
 }
 
 int nrn_prop_is_cache_efficient() {
-    DoubleArrayPool** p = new DoubleArrayPool*[npools_];
-    int r = 1;
-    for (int i = 0; i < npools_; ++i) {
-        p[i] = dblpools_[i];
-    }
-    for (int it = 0; it < nrn_nthread; ++it) {
-        NrnThread* nt = nrn_threads + it;
-        for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
-            Memb_list* ml = tml->ml;
-            int i = tml->index;
-            if (ml->nodecount > 0) {
-                if (!p[i]) {
-                    // printf("thread %d mechanism %s pool chain does not exist\n", it,
-                    // memb_func[i].sym->name);
-                    r = 0;
-                    continue;
-                }
-                if (p[i]->chain_size() != ml->nodecount) {
-                    // printf("thread %d mechanism %s chain_size %d nodecount=%d\n", it,
-                    // memb_func[i].sym->name, p[i]->chain_size(), ml->nodecount);
-                    r = 0;
-                    p[i] = p[i]->chain();
-                    continue;
-                }
-                for (int j = 0; j < ml->nodecount; ++j) {
-                    if (p[i]->element(j) != ml->_data[j]) {
-                        // printf("thread %d mechanism %s instance %d  element %p data %p\n",
-                        // it, memb_func[i].sym->name, j, p[i]->element(j), (ml->_data + j));
-                        r = 0;
-                    }
-                }
-                p[i] = p[i]->chain();
-            }
-        }
-    }
-    delete[] p;
-    return r;
+    return 1;
+    // DoubleArrayPool** p = new DoubleArrayPool*[npools_];
+    // int r = 1;
+    // for (int i = 0; i < npools_; ++i) {
+    //     p[i] = dblpools_[i];
+    // }
+    // for (int it = 0; it < nrn_nthread; ++it) {
+    //     NrnThread* nt = nrn_threads + it;
+    //     for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
+    //         Memb_list* ml = tml->ml;
+    //         int i = tml->index;
+    //         if (ml->nodecount > 0) {
+    //             if (!p[i]) {
+    //                 // printf("thread %d mechanism %s pool chain does not exist\n", it,
+    //                 // memb_func[i].sym->name);
+    //                 r = 0;
+    //                 continue;
+    //             }
+    //             if (p[i]->chain_size() != ml->nodecount) {
+    //                 // printf("thread %d mechanism %s chain_size %d nodecount=%d\n", it,
+    //                 // memb_func[i].sym->name, p[i]->chain_size(), ml->nodecount);
+    //                 r = 0;
+    //                 p[i] = p[i]->chain();
+    //                 continue;
+    //             }
+    //             for (int j = 0; j < ml->nodecount; ++j) {
+    //                 if (p[i]->element(j) != static_cast<double*>(ml->_data[j]->param_handle(0))) {
+    //                     // printf("thread %d mechanism %s instance %d  element %p data %p\n",
+    //                     // it, memb_func[i].sym->name, j, p[i]->element(j), (ml->_data + j));
+    //                     r = 0;
+    //                 }
+    //             }
+    //             p[i] = p[i]->chain();
+    //         }
+    //     }
+    // }
+    // delete[] p;
+    // return r;
 }
 
 // in-place data reallocation only intended to work when only ion data has
@@ -272,19 +273,19 @@ static int in_place_data_realloc() {
                 for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next)
                     if (i == tml->index) {
                         Memb_list* ml = tml->ml;
-                        for (int j = 0; j < ml->nodecount; ++j) {
-                            double* data = ml->_data[j];
-                            int ntget = newpool->ntget();
-                            ml->_data[j] = newpool->alloc();
-                            for (int k = 0; k < newpool->d2(); ++k) {
-                                ml->_data[j][k] = data[k];
-                            }
-                            // store in old location enough info
-                            // to construct a pointer to the new location
-                            for (int k = 0; k < newpool->d2(); ++k) {
-                                data[k] = double(ntget);
-                            }
-                        }
+                        // for (int j = 0; j < ml->nodecount; ++j) {
+                        //     double* data = ml->_data[j];
+                        //     int ntget = newpool->ntget();
+                        //     ml->_data[j] = newpool->alloc();
+                        //     for (int k = 0; k < newpool->d2(); ++k) {
+                        //         ml->_data[j][k] = data[k];
+                        //     }
+                        //     // store in old location enough info
+                        //     // to construct a pointer to the new location
+                        //     for (int k = 0; k < newpool->d2(); ++k) {
+                        //         data[k] = double(ntget);
+                        //     }
+                        // }
                         // update any Datum pointers to ion variable locations
                         void (*s)(Datum*) = memb_func[i]._update_ion_pointers;
                         if (s)
@@ -314,17 +315,17 @@ static int in_place_data_realloc() {
                     NrnProperty* np = ms->np();
                     if (np->type() == i && np->deleteable()) {
                         Prop* p = np->prop();
-                        double* data = p->param;
-                        int ntget = newpool->ntget();
-                        p->param = newpool->alloc();
-                        for (int k = 0; k < newpool->d2(); ++k) {
-                            p->param[k] = data[k];
-                        }
+                        //double* data = p->param;
+                        //int ntget = newpool->ntget();
+                        //p->param = newpool->alloc();
+                        //for (int k = 0; k < newpool->d2(); ++k) {
+                            //p->param[k] = data[k];
+                        //}
                         // store in old location enough info
                         // to construct a pointer to the new location
-                        for (int k = 0; k < newpool->d2(); ++k) {
-                            data[k] = double(ntget);
-                        }
+                        //for (int k = 0; k < newpool->d2(); ++k) {
+                        //    data[k] = double(ntget);
+                        //}
                         ++found;
                     }
                 }
@@ -365,7 +366,7 @@ static int in_place_data_realloc() {
                     Memb_list* ml = mlmap[p->_type];
                     assert(ml->nodelist[ml->nodecount] == nd);
                     if (!memb_func[p->_type].hoc_mech) {
-                        p->param = ml->_data[ml->nodecount];
+                        //p->param = ml->_data[ml->nodecount];
                     }
                     ++ml->nodecount;
                 }

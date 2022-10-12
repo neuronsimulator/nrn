@@ -67,7 +67,7 @@ static void nrn_alloc(Prop* prop) {
 static void nrn_init(NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_init\n");
     KSChan* c = (*channels)[type];
-    c->init(ml->nodecount, ml->nodelist, ml->_data, ml->pdata, nt);
+    c->init(nt, ml);
 }
 
 static void nrn_cur(NrnThread* nt, Memb_list* ml, int type) {
@@ -75,11 +75,11 @@ static void nrn_cur(NrnThread* nt, Memb_list* ml, int type) {
     KSChan* c = (*channels)[type];
 #if CACHEVEC
     if (use_cachevec) {
-        c->cur(ml->nodecount, ml->nodeindices, ml->_data, ml->pdata, nt);
+        c->cur(nt, ml);
     } else
 #endif /* CACHEVEC */
     {
-        c->cur(ml->nodecount, ml->nodelist, ml->_data, ml->pdata);
+        c->cur(ml);
     }
 }
 
@@ -88,11 +88,11 @@ static void nrn_jacob(NrnThread* nt, Memb_list* ml, int type) {
     KSChan* c = (*channels)[type];
 #if CACHEVEC
     if (use_cachevec) {
-        c->jacob(ml->nodecount, ml->nodeindices, ml->_data, ml->pdata, nt);
+        c->jacob(nt, ml);
     } else
 #endif /* CACHEVEC */
     {
-        c->jacob(ml->nodecount, ml->nodelist, ml->_data, ml->pdata);
+        c->jacob(ml);
     }
 }
 
@@ -101,11 +101,11 @@ static void nrn_state(NrnThread* nt, Memb_list* ml, int type) {
     KSChan* c = (*channels)[type];
 #if CACHEVEC
     if (use_cachevec) {
-        c->state(ml->nodecount, ml->nodeindices, ml->nodelist, ml->_data, ml->pdata, nt);
+        c->state_cachevec(nt, ml);
     } else
 #endif /* CACHEVEC */
     {
-        c->state(ml->nodecount, ml->nodelist, ml->_data, ml->pdata, nt);
+        c->state(nt, ml);
     }
 }
 
@@ -123,17 +123,17 @@ ode_map(int ieq, double** pv, double** pvdot, double* p, Datum* pd, double* atol
 static void ode_spec(NrnThread*, Memb_list* ml, int type) {
     // printf("ode_spec\n");
     KSChan* c = (*channels)[type];
-    c->spec(ml->nodecount, ml->nodelist, ml->_data, ml->pdata);
+    c->spec(ml);
 }
 static void ode_matsol(NrnThread* nt, Memb_list* ml, int type) {
     // printf("ode_matsol\n");
     KSChan* c = (*channels)[type];
-    c->matsol(ml->nodecount, ml->nodelist, ml->_data, ml->pdata, nt);
+    c->matsol(nt, ml);
 }
 static void singchan(NrnThread* nt, Memb_list* ml, int type) {
     // printf("singchan_\n");
     KSChan* c = (*channels)[type];
-    c->cv_sc_update(ml->nodecount, ml->nodelist, ml->_data, ml->pdata, nt);
+    c->cv_sc_update(nt, ml);
 }
 static void* hoc_create_pnt(Object* ho) {
     return create_point_process(ho->ctemplate->is_point_, ho);
@@ -2197,18 +2197,25 @@ void KSChan::fillmat(double v, Datum* pd) {
     // spPrint(mat_, 0, 1, 0);
 }
 
-void KSChan::mat_dt(double dt, double* p) {
+void KSChan::mat_dt(double dt, Memb_list* ml, std::size_t instance, std::size_t offset) {
     // y' = m*y  this part add the dt for the form ynew/dt - yold/dt =m*ynew
     // the matrix ends up as (m-1/dt)ynew = -1/dt*yold
     int i;
     double dt1 = -1. / dt;
-    for (i = 0; i < nksstate_; ++i) {
+    for (int i = 0; i < nksstate_; ++i) {
         *(diag_[i]) += dt1;
-        p[i] *= dt1;
+        ml->data(instance, offset + i) *= dt1;
     }
 }
 
-void KSChan::solvemat(double* s) {
+void KSChan::solvemat(Memb_list* ml, std::size_t instance, std::size_t offset) {
+    // spSolve seems to require that the parameters are contiguous, which
+    // they're not anymore in the real NEURON data structure
+    std::vector<double> s;
+    s.resize(nksstate_ + 1); // +1 so the pointer arithmetic to account for 1-based indexing is valid
+    for (auto j = 0; j < nksstate_; ++j) {
+        s[j + 1] = ml->data(instance, offset + j);
+    }
     int e;
     e = spFactor(mat_);
     if (e != spOKAY) {
@@ -2221,30 +2228,37 @@ void KSChan::solvemat(double* s) {
             hoc_execerror("spFactor error:", "Singular");
         }
     }
-    spSolve(mat_, s - 1, s - 1);
+    spSolve(mat_, s.data(), s.data());
 }
 
-void KSChan::mulmat(double* s, double* ds) {
-    spMultiply(mat_, ds - 1, s - 1);
+void KSChan::mulmat(Memb_list* ml, std::size_t instance, std::size_t offset_s, std::size_t offset_ds) {
+    std::vector<double> s, ds;
+    s.resize(nksstate_ + 1); // +1 so the pointer arithmetic to account for 1-based indexing is valid
+    ds.resize(nksstate_ + 1);
+    for (auto j = 0; j < nksstate_; ++j) {
+        s[j + 1] = ml->data(instance, offset_s + j);
+       ds[j + 1] = ml->data(instance, offset_ds + j);
+    }
+    spMultiply(mat_, ds.data(), s.data());
 }
 
 void KSChan::alloc(Prop* prop) {
     // printf("KSChan::alloc nstate_=%d nligand_=%d\n", nstate_, nligand_);
     // printf("KSChan::alloc %s param=%p\n", name_.string(), prop->param);
     int j;
-    prop->param_size = soffset_ + 2 * nstate_;
+    assert(prop->param_size() == soffset_ + 2 * nstate_);
     if (is_point() && nrn_point_prop_) {
-        assert(nrn_point_prop_->param_size == prop->param_size);
-        prop->param = nrn_point_prop_->param;
+        assert(nrn_point_prop_->param_size() == prop->param_size());
+        //prop->param = nrn_point_prop_->param;
         prop->dparam = nrn_point_prop_->dparam;
     } else {
-        prop->param = nrn_prop_data_alloc(prop->_type, prop->param_size, prop);
-        prop->param[gmaxoffset_] = gmax_deflt_;
+        //prop->param = nrn_prop_data_alloc(prop->_type, prop->param_size(), prop);
+        prop->set_param(gmaxoffset_, gmax_deflt_);
         if (is_point()) {
-            prop->param[NSingleIndex] = 1.;
+            prop->set_param(NSingleIndex, 1.);
         }
         if (!ion_sym_) {
-            prop->param[1 + gmaxoffset_] = erev_deflt_;
+            prop->set_param(1 + gmaxoffset_, erev_deflt_);
         }
     }
     int ppsize = ppoff_;
@@ -2274,18 +2288,18 @@ void KSChan::alloc(Prop* prop) {
         } else {  // ghk
             nrn_promote(prop_ion, 1, 0);
         }
-        pp[ppoff_ + 0] = prop_ion->param + 0;  // ena
-        pp[ppoff_ + 1] = prop_ion->param + 3;  // ina
-        pp[ppoff_ + 2] = prop_ion->param + 4;  // dinadv
-        pp[ppoff_ + 3] = prop_ion->param + 1;  // nai
-        pp[ppoff_ + 4] = prop_ion->param + 2;  // nao
+        pp[ppoff_ + 0] = prop_ion->param_handle(0);  // ena
+        pp[ppoff_ + 1] = prop_ion->param_handle(3);  // ina
+        pp[ppoff_ + 2] = prop_ion->param_handle(4);  // dinadv
+        pp[ppoff_ + 3] = prop_ion->param_handle(1);  // nai
+        pp[ppoff_ + 4] = prop_ion->param_handle(2);  // nao
         poff += 5;
     }
     for (j = 0; j < nligand_; ++j) {
         Prop* pion = need_memb(ligands_[j]);
         nrn_promote(pion, 1, 0);
-        pp[poff + 2 * j] = pion->param + 2;      // nao
-        pp[poff + 2 * j + 1] = pion->param + 1;  // nai
+        pp[poff + 2 * j] = pion->param_handle(2);      // nao
+        pp[poff + 2 * j + 1] = pion->param_handle(1);  // nai
     }
     if (single_ && !static_cast<KSSingleNodeData*>(prop->dparam[2])) {
         single_->alloc(prop, soffset_);
@@ -2364,11 +2378,11 @@ void KSChan::ion_consist() {
                     nrn_promote(pion, 1, 0);
                 }
                 Datum* pp = p->dparam;
-                pp[ppoff_ + 0] = pion->param + 0;  // ena
-                pp[ppoff_ + 1] = pion->param + 3;  // ina
-                pp[ppoff_ + 2] = pion->param + 4;  // dinadv
-                pp[ppoff_ + 3] = pion->param + 1;  // nai
-                pp[ppoff_ + 4] = pion->param + 2;  // nao
+                pp[ppoff_ + 0] = pion->param_handle(0);  // ena
+                pp[ppoff_ + 1] = pion->param_handle(3);  // ina
+                pp[ppoff_ + 2] = pion->param_handle(4);  // dinadv
+                pp[ppoff_ + 3] = pion->param_handle(1);  // nai
+                pp[ppoff_ + 4] = pion->param_handle(2);  // nao
             }
             for (j = 0; j < nligand_; ++j) {
                 ligand_consist(j, poff, p, nd);
@@ -2381,8 +2395,8 @@ void KSChan::ligand_consist(int j, int poff, Prop* p, Node* nd) {
     Prop* pion;
     pion = needion(ligands_[j], nd, p);
     nrn_promote(pion, 1, 0);
-    p->dparam[poff + 2 * j] = pion->param + 2;      // nao
-    p->dparam[poff + 2 * j + 1] = pion->param + 1;  // nai
+    p->dparam[poff + 2 * j] = pion->param_handle(2);      // nao
+    p->dparam[poff + 2 * j + 1] = pion->param_handle(1);  // nai
 }
 
 void KSChan::state_consist(int shift) {  // shift when Nsingle winks in and out of existence
@@ -2400,25 +2414,26 @@ void KSChan::state_consist(int shift) {  // shift when Nsingle winks in and out 
             Prop* p;
             for (p = nd->prop; p; p = p->next) {
                 if (p->_type == mtype) {
-                    if (p->param_size != ns) {
+                    if (p->param_size() != ns) {
                         v_structure_change = 1;
-                        double* oldp = p->param;
-                        p->param = (double*) erealloc(oldp, ns * sizeof(double));
-                        if (oldp != p->param || shift != 0) {
-                            // printf("KSChan::state_consist realloc changed location\n");
-                            notify_freed_val_array(oldp, p->param_size);
-                        }
-                        p->param_size = ns;
-                        if (shift == 1) {
-                            for (j = ns - 1; j > 0; --j) {
-                                p->param[j] = p->param[j - 1];
-                            }
-                            p->param[0] = 1;
-                        } else if (shift == -1) {
-                            for (j = 1; j < ns; ++j) {
-                                p->param[j - 1] = p->param[j];
-                            }
-                        }
+                        assert(false);
+                        // double* oldp = p->param;
+                        // p->param = (double*) erealloc(oldp, ns * sizeof(double));
+                        // if (oldp != p->param || shift != 0) {
+                        //     // printf("KSChan::state_consist realloc changed location\n");
+                        //     notify_freed_val_array(oldp, p->param_size);
+                        // }
+                        // p->param_size = ns;
+                        // if (shift == 1) {
+                        //     for (j = ns - 1; j > 0; --j) {
+                        //         p->param[j] = p->param[j - 1];
+                        //     }
+                        //     p->param[0] = 1;
+                        // } else if (shift == -1) {
+                        //     for (j = 1; j < ns; ++j) {
+                        //         p->param[j - 1] = p->param[j];
+                        //     }
+                        // }
                     }
                     break;
                 }
@@ -2452,55 +2467,56 @@ void KSChan::alloc_schan_node_data() {
     }
 }
 
-void KSChan::init(int n, Node** nd, double** pp, Datum** ppd, NrnThread* nt) {
-    int i, j;
-    if (nstate_)
-        for (i = 0; i < n; ++i) {
+void KSChan::init(NrnThread* nt, Memb_list* ml) {
+    int n = ml->nodecount;
+    Node** nd = ml->nodelist;
+    Datum** ppd = ml->pdata;
+    if (nstate_) {
+        for (int i = 0; i < n; ++i) {
             double v = NODEV(nd[i]);
-            double* s = pp[i] + soffset_;
-            for (j = 0; j < nstate_; ++j) {
-                s[j] = 0;
+            auto offset = soffset_;
+            for (int j = 0; j < nstate_; ++j) {
+                ml->data(i, offset + j) = 0;
             }
-            for (j = 0; j < ngate_; ++j) {
-                s[gc_[j].sindex_] = 1;
+            for (int j = 0; j < ngate_; ++j) {
+                ml->data(i, offset + gc_[j].sindex_) = 1;
             }
-            for (j = 0; j < nhhstate_; ++j) {
-                s[j] = trans_[j].inf(v);
+            for (int j = 0; j < nhhstate_; ++j) {
+                ml->data(i, offset + j) = trans_[j].inf(v);
             }
             if (nksstate_) {
-                s += nhhstate_;
+                offset += nhhstate_;
                 fillmat(v, ppd[i]);
-                mat_dt(1e9, s);
-                solvemat(s);
+                mat_dt(1e9, ml, i, offset);
+                solvemat(ml, i, offset);
             }
             if (is_single()) {
                 auto* snd = static_cast<KSSingleNodeData*>(ppd[i][2]);
-                snd->nsingle_ = int(pp[i][NSingleIndex] + .5);
-                pp[i][NSingleIndex] = double(snd->nsingle_);
+                snd->nsingle_ = int(ml->data(i, NSingleIndex) + .5);
+                ml->data(i, NSingleIndex) = double(snd->nsingle_);
                 if (snd->nsingle_ > 0) {
                     // replace population fraction with integers.
-                    single_->init(v, s, snd, nt);
+                    single_->init(v, snd, nt, ml, i, offset);
                 }
             }
-            // printf("KSChan::init\n");
-            // s = pp[i] + soffset_;
-            // for (j=0; j < nstate_; ++j) {
-            //	printf("%d %g\n", j, s[j]);
-            //}
         }
+    }
 }
 
-void KSChan::state(int n, Node** nd, double** pp, Datum** ppd, NrnThread* nt) {
+void KSChan::state(NrnThread* nt, Memb_list* ml) {
+    int n = ml->nodecount;
+    Node** nd = ml->nodelist;
+    Datum** ppd = ml->pdata;
     int i, j;
     double* s;
     if (nstate_) {
         for (i = 0; i < n; ++i) {
-            if (is_single() && pp[i][NSingleIndex] > .999) {
-                single_->state(nd[i], pp[i], ppd[i], nt);
+            if (is_single() && ml->data(i, NSingleIndex) > .999) {
+                single_->state(nd[i], ppd[i], nt);
                 continue;
             }
             double v = NODEV(nd[i]);
-            s = pp[i] + soffset_;
+            auto offset = soffset_;
             if (usetable_) {
                 double inf, tau;
                 int k;
@@ -2512,17 +2528,17 @@ void KSChan::state(int n, Node** nd, double** pp, Datum** ppd, NrnThread* nt) {
                 if (k < 0) {
                     for (j = 0; j < nhhstate_; ++j) {
                         trans_[j].inftau_hh_table(0, inf, tau);
-                        s[j] += (inf - s[j]) * tau;
+                        ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
                     }
                 } else if (k >= hh_tab_size_) {
                     for (j = 0; j < nhhstate_; ++j) {
                         trans_[j].inftau_hh_table(hh_tab_size_ - 1, inf, tau);
-                        s[j] += (inf - s[j]) * tau;
+                        ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
                     }
                 } else {
                     for (j = 0; j < nhhstate_; ++j) {
                         trans_[j].inftau_hh_table(k, x, inf, tau);
-                        s[j] += (inf - s[j]) * tau;
+                        ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
                     }
                 }
             } else {
@@ -2530,31 +2546,35 @@ void KSChan::state(int n, Node** nd, double** pp, Datum** ppd, NrnThread* nt) {
                     double inf, tau;
                     trans_[j].inftau(v, inf, tau);
                     tau = 1. - KSChanFunction::Exp(-nt->_dt / tau);
-                    s[j] += (inf - s[j]) * tau;
+                    ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
                 }
             }
             if (nksstate_) {
-                s += nhhstate_;
+                offset += nhhstate_;
                 fillmat(v, ppd[i]);
-                mat_dt(nt->_dt, s);
-                solvemat(s);
+                mat_dt(nt->_dt, ml, i, offset);
+                solvemat(ml, i, offset);
             }
         }
     }
 }
 
 #if CACHEVEC
-void KSChan::state(int n, int* ni, Node** nd, double** pp, Datum** ppd, NrnThread* _nt) {
+void KSChan::state_cachevec(NrnThread* _nt, Memb_list* ml) {
+    int n = ml->nodecount;
+    int* ni = ml->nodeindices;
+    Node** nd = ml->nodelist;
+    Datum** ppd = ml->pdata;
     int i, j;
     double* s;
     if (nstate_) {
         for (i = 0; i < n; ++i) {
-            if (is_single() && pp[i][NSingleIndex] > .999) {
-                single_->state(nd[i], pp[i], ppd[i], _nt);
+            if (is_single() && ml->data(i, NSingleIndex) > .999) {
+                single_->state(nd[i], ppd[i], _nt);
                 continue;
             }
             double v = VEC_V(ni[i]);
-            s = pp[i] + soffset_;
+            auto offset = soffset_;
             if (usetable_) {
                 double inf, tau;
                 int k;
@@ -2566,17 +2586,17 @@ void KSChan::state(int n, int* ni, Node** nd, double** pp, Datum** ppd, NrnThrea
                 if (k < 0) {
                     for (j = 0; j < nhhstate_; ++j) {
                         trans_[j].inftau_hh_table(0, inf, tau);
-                        s[j] += (inf - s[j]) * tau;
+                        ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
                     }
                 } else if (k >= hh_tab_size_) {
                     for (j = 0; j < nhhstate_; ++j) {
                         trans_[j].inftau_hh_table(hh_tab_size_ - 1, inf, tau);
-                        s[j] += (inf - s[j]) * tau;
+                        ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
                     }
                 } else {
                     for (j = 0; j < nhhstate_; ++j) {
                         trans_[j].inftau_hh_table(k, x, inf, tau);
-                        s[j] += (inf - s[j]) * tau;
+                        ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
                     }
                 }
             } else {
@@ -2584,72 +2604,82 @@ void KSChan::state(int n, int* ni, Node** nd, double** pp, Datum** ppd, NrnThrea
                     double inf, tau;
                     trans_[j].inftau(v, inf, tau);
                     tau = 1. - KSChanFunction::Exp(-_nt->_dt / tau);
-                    s[j] += (inf - s[j]) * tau;
+                    ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
                 }
             }
             if (nksstate_) {
-                s += nhhstate_;
+                offset += nhhstate_;
                 fillmat(v, ppd[i]);
-                mat_dt(_nt->_dt, s);
-                solvemat(s);
+                mat_dt(_nt->_dt, ml, i, offset);
+                solvemat(ml, i, offset);
             }
         }
     }
 }
 #endif /* CACHEVEC */
 
-void KSChan::cur(int n, Node** nd, double** pp, Datum** ppd) {
+void KSChan::cur(Memb_list* ml) {
+    int n = ml->nodecount;
+    Node** nd = ml->nodelist;
+    Datum** ppd = ml->pdata;
     int i;
     for (i = 0; i < n; ++i) {
         double g, ic;
-        g = conductance(pp[i][gmaxoffset_], pp[i] + soffset_);
-        ic = iv_relation_->cur(g, pp[i] + gmaxoffset_, ppd[i], NODEV(nd[i]));
+        g = conductance(ml->data(i, gmaxoffset_), ml, i, soffset_);
+        ic = iv_relation_->cur(g, ppd[i], NODEV(nd[i]), ml, i, gmaxoffset_);
         NODERHS(nd[i]) -= ic;
     }
 }
 
 #if CACHEVEC
-void KSChan::cur(int n, int* nodeindices, double** pp, Datum** ppd, NrnThread* _nt) {
+void KSChan::cur(NrnThread* _nt, Memb_list* ml) {
+    int n = ml->nodecount;
+    int* nodeindices = ml->nodeindices;
+    Datum** ppd = ml->pdata;
     int i;
     for (i = 0; i < n; ++i) {
         double g, ic;
         int ni = nodeindices[i];
-        g = conductance(pp[i][gmaxoffset_], pp[i] + soffset_);
-        ic = iv_relation_->cur(g, pp[i] + gmaxoffset_, ppd[i], VEC_V(ni));
+        g = conductance(ml->data(i, gmaxoffset_), ml, i, soffset_);
+        ic = iv_relation_->cur(g, ppd[i], VEC_V(ni), ml, i, gmaxoffset_);
         VEC_RHS(ni) -= ic;
     }
 }
 #endif /* CACHEVEC */
 
-void KSChan::jacob(int n, Node** nd, double** pp, Datum** ppd) {
-    int i;
-    for (i = 0; i < n; ++i) {
-        NODED(nd[i]) += iv_relation_->jacob(pp[i] + gmaxoffset_, ppd[i], NODEV(nd[i]));
+void KSChan::jacob(Memb_list* ml) {
+    int n = ml->nodecount;
+    Node** nd = ml->nodelist;
+    Datum** ppd = ml->pdata;
+    for (int i = 0; i < n; ++i) {
+        NODED(nd[i]) += iv_relation_->jacob(ppd[i], NODEV(nd[i]), ml, i, gmaxoffset_);
     }
 }
 
 #if CACHEVEC
-void KSChan::jacob(int n, int* nodeindices, double** pp, Datum** ppd, NrnThread* _nt) {
-    int i;
-    for (i = 0; i < n; ++i) {
-        int ni = nodeindices[i];
-        VEC_D(ni) += iv_relation_->jacob(pp[i] + gmaxoffset_, ppd[i], VEC_V(ni));
+void KSChan::jacob(NrnThread* _nt, Memb_list* ml) {
+    int n = ml->nodecount;
+    Datum** ppd = ml->pdata;
+    for (int i = 0; i < n; ++i) {
+        int ni = ml->nodeindices[i];
+        VEC_D(ni) += iv_relation_->jacob(ppd[i], VEC_V(ni), ml, i, gmaxoffset_);
     }
 }
 #endif /* CACHEVEC */
 
-double KSIv::cur(double g, double* p, Datum* pd, double v) {
+double KSIv::cur(double g, Datum* pd, double v, Memb_list* ml, std::size_t instance, std::size_t offset) {
     auto ena = *static_cast<double*>(pd[0]);
-    p[1] = g;
+    ml->data(instance, offset + 1) = g;
     double i = g * (v - ena);
-    p[2] = i;
+    ml->data(instance, offset + 2) = i;
     *static_cast<double*>(pd[1]) += i;  // iion
     return i;
 }
 
-double KSIv::jacob(double* p, Datum* pd, double) {
-    *static_cast<double*>(pd[2]) += p[1];  // diion/dv
-    return p[1];
+double KSIv::jacob(Datum* pd, double, Memb_list* ml, std::size_t instance, std::size_t offset) {
+    auto v = ml->data(instance, offset + 1); // diion/dv
+    *static_cast<double*>(pd[2]) += v;
+    return v;
 }
 
 double KSIvghk::cur(double g, double* p, Datum* pd, double v) {
@@ -2742,11 +2772,11 @@ double KSPPIvNonSpec::jacob(double* p, Datum* pd, double) {
     return p[2] * afac;
 }
 
-double KSChan::conductance(double gmax, double* s) {
+double KSChan::conductance(double gmax, Memb_list* ml, std::size_t instance, std::size_t offset) {
     double g = 1.;
     int i;
     for (i = 0; i < ngate_; ++i) {
-        g *= gc_[i].conductance(s, state_);
+        g *= gc_[i].conductance(ml, instance, offset, state_);
     }
     return gmax * g;
 }
@@ -2903,13 +2933,13 @@ KSGateComplex::KSGateComplex() {
 }
 
 KSGateComplex::~KSGateComplex() {}
-double KSGateComplex::conductance(double* s, KSState* st) {
+double KSGateComplex::conductance(Memb_list* ml, std::size_t instance, std::size_t offset, KSState* st) {
     double g = 0.;
     int i;
-    s += sindex_;
+    offset += sindex_;
     st += sindex_;
     for (i = 0; i < nstate_; ++i) {
-        g += s[i] * st[i].f_;
+        g += ml->data(instance, offset + i) * st[i].f_;
     }
 #if 1
     switch (power_) {  // 14.42
@@ -2948,70 +2978,69 @@ void KSChan::map(int ieq, double** pv, double** pvdot, double* p, Datum* pd, dou
     }
 }
 
-void KSChan::spec(int n, Node** nd, double** p, Datum** ppd) {
+void KSChan::spec(Memb_list* ml) {
+    int n = ml->nodecount;
+    Node** nd = ml->nodelist;
+    Datum** ppd = ml->pdata;
     int i, j;
     if (nstate_)
         for (i = 0; i < n; ++i) {
-            // for (j=0; j < nstate_; ++j) {
-            // printf("KSChan spec before j=%d s=%g ds=%g\n", j, p[i][soffset_+j],
-            // p[i][soffset_+nstate_+j]);
-            //}
             double v = NODEV(nd[i]);
-            double* p1 = p[i] + soffset_;
-            double* p2 = p1 + nstate_;
-            if (is_single() && p[i][NSingleIndex] > .999) {
+            auto offset1 = soffset_;
+            auto offset2 = offset1 + nstate_;
+            if (is_single() && ml->data(i, NSingleIndex) > .999) {
                 for (j = 0; j < nstate_; ++j) {
-                    p2[j] = 0.;
+                    ml->data(i, offset2 + j) = 0.;
                 }
                 continue;
             }
             for (j = 0; j < nhhstate_; ++j) {
                 double inf, tau;
                 trans_[j].inftau(v, inf, tau);
-                p2[j] = (inf - p1[j]) / tau;
+                ml->data(i, offset2 + j) = (inf - ml->data(i, offset1 + j)) / tau;
             }
             if (nksstate_) {
                 fillmat(v, ppd[i]);
-                mulmat(p1 + nhhstate_, p2 + nhhstate_);
+                mulmat(ml, i, offset1 + nhhstate_, offset2 + nhhstate_);
             }
-            // for (j=0; j < nstate_; ++j) {
-            // printf("KSChan spec after j=%d s=%g ds=%g\n", j, p[i][soffset_+j],
-            // p[i][soffset_+nstate_+j]);
-            //}
         }
 }
 
-void KSChan::matsol(int n, Node** nd, double** p, Datum** ppd, NrnThread* nt) {
+void KSChan::matsol(NrnThread* nt, Memb_list* ml) {
+    int n = ml->nodecount;
+    Node** nd = ml->nodelist;
+    Datum** ppd = ml->pdata;
     int i, j;
-    double* p2;
     if (nstate_)
         for (i = 0; i < n; ++i) {
-            if (is_single() && p[i][NSingleIndex] > .999) {
+            if (is_single() && ml->data(i, NSingleIndex) > .999) {
                 continue;
             }
             double v = NODEV(nd[i]);
-            p2 = p[i] + soffset_ + nstate_;
+            auto offset = soffset_ + nstate_;
             for (j = 0; j < nhhstate_; ++j) {
                 double tau;
                 tau = trans_[j].tau(v);
-                p2[j] /= (1 + nt->_dt / tau);
+                ml->data(i, offset + j) /= (1 + nt->_dt / tau);
             }
             if (nksstate_) {
-                p2 += nhhstate_;
+                offset += nhhstate_;
                 fillmat(v, ppd[i]);
-                mat_dt(nt->_dt, p2);
-                solvemat(p2);
+                mat_dt(nt->_dt, ml, i, offset);
+                solvemat(ml, i, offset);
             }
         }
 }
 
 // from Cvode::do_nonode
-void KSChan::cv_sc_update(int n, Node** nd, double** pp, Datum** ppd, NrnThread* nt) {
-    int i;
+void KSChan::cv_sc_update(NrnThread* nt, Memb_list* ml) {
+    int n = ml->nodecount;
+    Node** nd = ml->nodelist;
+    Datum** ppd = ml->pdata;
     if (nstate_) {
-        for (i = 0; i < n; ++i) {
-            if (pp[i][NSingleIndex] > .999) {
-                single_->cv_update(nd[i], pp[i], ppd[i], nt);
+        for (int i = 0; i < n; ++i) {
+            if (ml->data(i, NSingleIndex) > .999) {
+                single_->cv_update(nd[i], ppd[i], nt);
             }
         }
     }

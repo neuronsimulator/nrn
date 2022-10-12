@@ -1028,7 +1028,8 @@ void nrn_ba(NrnThread* nt, int bat) {
         nrn_bamech_t const f{tbl->bam->f};
         Memb_list* const ml{tbl->ml};
         for (int i = 0; i < ml->nodecount; ++i) {
-            (*f)(ml->nodelist[i], ml->_data[i], ml->pdata[i], ml->_thread, nt);
+            assert(false);
+            //(*f)(ml->nodelist[i], ml->_data[i], ml->pdata[i], ml->_thread, nt);
         }
     }
 }

@@ -316,7 +316,7 @@ void Imp::setmat1() {
         NODERHS(_nt->_v_node[i]) = 0;
     }
     for (int i = 0; i < mlc->nodecount; ++i) {
-        NODERHS(mlc->nodelist[i]) = mlc->_data[i][0];
+        NODERHS(mlc->nodelist[i]) = mlc->data(i, 0);
     }
 }
 

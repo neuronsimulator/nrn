@@ -249,7 +249,7 @@ void SaveState::ssi_def() {
         // param array including PARAMETERs.
         if (pnt_receive[im]) {
             ssi[im].offset = 0;
-            ssi[im].size = np->prop()->param_size;
+            ssi[im].size = np->prop()->param_size();
         } else {
             int type = STATE;
             for (Symbol* sym = np->first_var(); np->more_var(); sym = np->next_var()) {
@@ -658,7 +658,7 @@ void SaveState::savenode(NodeState& ns, Node* nd) {
 #endif
         {
             for (int ip = ssi[type].offset; ip < max; ++ip) {
-                ns.state[istate++] = p->param[ip];
+                ns.state[istate++] = p->param(ip);
             }
         }
     }
@@ -669,9 +669,8 @@ void SaveState::saveacell(ACellState& ac, int type) {
     int sz = ssi[type].size;
     double* p = ac.state;
     for (int i = 0; i < ml.nodecount; ++i) {
-        double* d = ml._data[i];
         for (int j = 0; j < sz; ++j) {
-            (*p++) = d[j];
+            (*p++) = ml.data(i, j);
         }
     }
 }
@@ -744,7 +743,7 @@ void SaveState::restorenode(NodeState& ns, Node* nd) {
 #endif
         {
             for (int ip = ssi[type].offset; ip < max; ++ip) {
-                p->param[ip] = ns.state[istate++];
+                p->set_param(ip, ns.state[istate++]);
             }
         }
     }
@@ -755,9 +754,8 @@ void SaveState::restoreacell(ACellState& ac, int type) {
     int sz = ssi[type].size;
     double* p = ac.state;
     for (int i = 0; i < ml.nodecount; ++i) {
-        double* d = ml._data[i];
         for (int j = 0; j < sz; ++j) {
-            d[j] = (*p++);
+            ml.data(i, j) = (*p++);
         }
     }
 }

@@ -18,7 +18,7 @@ extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;
 extern short* nrn_is_artificial_;
 
-PVoid2Int CellGroup::artdata2index_;
+std::map<double*, int> CellGroup::artdata2index_;
 Deferred_Type2ArtMl CellGroup::deferred_type2artml_;
 int* CellGroup::has_net_event_;
 
@@ -162,21 +162,22 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                     auto* pnt = static_cast<Point_process*>(ml->pdata[j][1]);
                     PreSyn* ps = (PreSyn*) pnt->presyn_;
                     cgs[i].output_ps[npre] = ps;
-                    long agid = -1;
-                    if (nrn_is_artificial_[type]) {
-                        // static_cast<long> ensures the RHS is calculated with
-                        // `long` precision, not `int` precision. This lets us
-                        // check for overflow below.
-                        agid = -(type +
-                                 1000 * static_cast<long>(nrncore_art2index(pnt->prop->param)));
-                    } else {  // POINT_PROCESS with net_event
-                        int sz = nrn_prop_param_size_[type];
-                        double* d1 = ml->_data[0];
-                        double* d2 = pnt->prop->param;
-                        assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
-                        long ix{(d2 - d1) / sz};
-                        agid = -(type + 1000 * ix);
-                    }
+                    // TODO TODO check check check
+                    long const agid = -(type + 1000 * pnt->prop->id().current_row());
+                    // if (nrn_is_artificial_[type]) {
+                    //     // static_cast<long> ensures the RHS is calculated with
+                    //     // `long` precision, not `int` precision. This lets us
+                    //     // check for overflow below.
+                    //     agid = -(type +
+                    //              1000 * pnt->prop->id().current_row()); // TODO dubious at best! static_cast<long>(nrncore_art2index(pnt->prop->id().current_row())));
+                    // } else {  // POINT_PROCESS with net_event
+                    //     int sz = nrn_prop_param_size_[type];
+                    //     double* d1 = ml->_data[0];
+                    //     double* d2 = pnt->prop->param;
+                    //     assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
+                    //     long ix{(d2 - d1) / sz};
+                    //     agid = -(type + 1000 * ix);
+                    // }
                     if (ps) {
                         if (ps->output_index_ >= 0) {  // has gid
                             cgs[i].output_gid[npre] = ps->output_index_;
@@ -350,14 +351,14 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 // Need to determine this node and then simple to search its
                 // mechanism list for MORPHOLOGY and then know the diam.
                 Node* nd = ml->nodelist[i];
-                double* pdiam = NULL;
+                neuron::container::data_handle<double> pdiam{};
                 for (Prop* p = nd->prop; p; p = p->next) {
                     if (p->_type == MORPHOLOGY) {
-                        pdiam = p->param;
+                        pdiam = p->param_handle(0);
                         break;
                     }
                 }
-                assert(static_cast<double*>(dparam[j]) == pdiam);
+                assert(static_cast<neuron::container::data_handle<double>>(dparam[j]) == pdiam);
                 eindex = ml->nodeindices[i];
             } else if (dmap[j] == -5) {  // POINTER
                 // must be a pointer into nt->_data. Handling is similar to eion so
@@ -372,34 +373,13 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 assert(etype != 0);
                 // pointer into one of the tml types?
             } else if (dmap[j] > 0 && dmap[j] < 1000) {  // double* into eion type data
-                Memb_list* eml = cg.type2ml[dmap[j]];
+                etype = dmap[j];
+                Memb_list* eml = cg.type2ml[etype];
                 assert(eml);
                 auto* const pval = static_cast<double*>(dparam[j]);
-                if (pval < eml->_data[0]) {
-                    printf("%s dparam=%p data=%p j=%d etype=%d %s\n",
-                           memb_func[di.type].sym->name,
-                           pval,
-                           eml->_data[0],
-                           j,
-                           dmap[j],
-                           memb_func[dmap[j]].sym->name);
-                    abort();
-                }
-                assert(pval >= eml->_data[0]);
-                etype = dmap[j];
-                if (pval >= (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount))) {
-                    printf("%s dparam=%p data=%p j=%d psize=%d nodecount=%d etype=%d %s\n",
-                           memb_func[di.type].sym->name,
-                           pval,
-                           eml->_data[0],
-                           j,
-                           nrn_prop_param_size_[etype],
-                           eml->nodecount,
-                           etype,
-                           memb_func[etype].sym->name);
-                }
-                assert(pval < (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount)));
-                eindex = pval - eml->_data[0];
+                auto const legacy_index = eml->legacy_index(pval);
+                assert(legacy_index >= 0);
+                eindex = legacy_index;
             } else if (dmap[j] > 1000) {  // int* into ion dparam[xxx][0]
                 // store the actual ionstyle
                 etype = dmap[j];
@@ -464,18 +444,19 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
         if (nc->target_) {
             int type = nc->target_->prop->_type;
             cgs[ith].netcon_pnttype[i] = type;
-            if (nrn_is_artificial_[type]) {
-                cgs[ith].netcon_pntindex[i] = nrncore_art2index(nc->target_->prop->param);
-            } else {
-                // cache efficient so can calculate index from pointer
-                Memb_list* ml = cgs[ith].type2ml[type];
-                int sz = nrn_prop_param_size_[type];
-                double* d1 = ml->_data[0];
-                double* d2 = nc->target_->prop->param;
-                assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
-                int ix = (d2 - d1) / sz;
-                cgs[ith].netcon_pntindex[i] = ix;
-            }
+            cgs[ith].netcon_pntindex[i] = nc->target_->prop->id().current_row();
+            // if (nrn_is_artificial_[type]) {
+            //     cgs[ith].netcon_pntindex[i] = nc->target_->prop->id().current_row(); // TODO nrncore_art2index(nc->target_->prop->param);
+            // } else {
+            //     // cache efficient so can calculate index from pointer
+            //     Memb_list* ml = cgs[ith].type2ml[type];
+            //     int sz = nrn_prop_param_size_[type];
+            //     double* d1 = ml->_data[0];
+            //     double* d2 = nc->target_->prop->param;
+            //     assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
+            //     int ix = (d2 - d1) / sz;
+            //     cgs[ith].netcon_pntindex[i] = ix;
+            // }
         } else {
             cgs[ith].netcon_pnttype[i] = 0;
             cgs[ith].netcon_pntindex[i] = -1;
@@ -501,19 +482,20 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
                     }
                     Point_process* pnt = (Point_process*) ps->osrc_->u.this_pointer;
                     int type = pnt->prop->_type;
-                    if (nrn_is_artificial_[type]) {
-                        int ix = nrncore_art2index(pnt->prop->param);
-                        cgs[ith].netcon_srcgid[i] = -(type + 1000 * ix);
-                    } else {
-                        assert(nrn_has_net_event(type));
-                        Memb_list* ml = cgs[ith].type2ml[type];
-                        int sz = nrn_prop_param_size_[type];
-                        double* d1 = ml->_data[0];
-                        double* d2 = pnt->prop->param;
-                        assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
-                        int ix = (d2 - d1) / sz;
-                        cgs[ith].netcon_srcgid[i] = -(type + 1000 * ix);
-                    }
+                    cgs[ith].netcon_srcgid[i] = -(type + 1000 * pnt->prop->id().current_row());
+                    // if (nrn_is_artificial_[type]) {
+                    //     int ix = nrncore_art2index(pnt->prop->param);
+                    //     cgs[ith].netcon_srcgid[i] = -(type + 1000 * ix);
+                    // } else {
+                    //     assert(nrn_has_net_event(type));
+                    //     Memb_list* ml = cgs[ith].type2ml[type];
+                    //     int sz = nrn_prop_param_size_[type];
+                    //     double* d1 = ml->_data[0];
+                    //     double* d2 = pnt->prop->param;
+                    //     assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
+                    //     int ix = (d2 - d1) / sz;
+                    //     cgs[ith].netcon_srcgid[i] = -(type + 1000 * ix);
+                    // }
                 } else {
                     cgs[ith].netcon_srcgid[i] = -1;
                 }
@@ -589,7 +571,7 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                     ml->nodeindices = NULL;
                     ml->prop = NULL;
                     ml->_thread = NULL;
-                    ml->_data = new double*[acnt[id]];
+                    //ml->_data = new double*[acnt[id]];
                     ml->pdata = new Datum*[acnt[id]];
                 }
             }
@@ -602,9 +584,9 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                 auto* pnt = static_cast<Point_process*>(memb_list[i].pdata[j][1]);
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 Memb_list* ml = cgs[id].mlwithart.back().second;
-                ml->_data[acnt[id]] = memb_list[i]._data[j];
+                //ml->_data[acnt[id]] = memb_list[i]._data[j];
                 ml->pdata[acnt[id]] = memb_list[i].pdata[j];
-                artdata2index_.insert(std::pair<double*, int>(ml->_data[acnt[id]], acnt[id]));
+                artdata2index_.insert(std::pair<double*, int>(&ml->data(acnt[id], 0), acnt[id]));
                 ++acnt[id];
             }
         }
@@ -674,7 +656,7 @@ void CellGroup::clean_art(CellGroup* cgs) {
                 if (!deferred_type2artml_.empty()) {
                     deferred_type2artml_[ith][type] = ml;
                 } else {
-                    delete[] ml->_data;
+                    //delete[] ml->_data;
                     delete[] ml->pdata;
                     delete ml;
                 }
