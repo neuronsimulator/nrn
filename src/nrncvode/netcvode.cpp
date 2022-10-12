@@ -1487,7 +1487,6 @@ void CvodeThreadData::delete_memb_list(CvMembList* cmlist) {
         if (memb_func[cml->index].hoc_mech) {
             delete[] ml->prop;
         } else {
-            delete[] ml->_data;
             delete[] ml->pdata;
         }
         delete cml;
@@ -1649,7 +1648,7 @@ bool NetCvode::init_global() {
                     if (mf->hoc_mech) {
                         cml->ml->prop = ml->prop;
                     } else {
-                        cml->ml->_data = ml->_data;
+                        //cml->ml->_data = ml->_data;
                         cml->ml->pdata = ml->pdata;
                     }
                     cml->ml->_thread = ml->_thread;
@@ -1794,7 +1793,7 @@ bool NetCvode::init_global() {
                     if (memb_func[cml->index].hoc_mech) {
                         ml->prop = new Prop*[ml->nodecount];
                     } else {
-                        ml->_data = new double*[ml->nodecount];
+                        //ml->_data = new Prop*[ml->nodecount];
                         ml->pdata = new Datum*[ml->nodecount];
                     }
                     ml->nodecount = 0;
@@ -1824,7 +1823,7 @@ bool NetCvode::init_global() {
                         if (mf->hoc_mech) {
                             cml->ml->prop[cml->ml->nodecount] = ml->prop[j];
                         } else {
-                            cml->ml->_data[cml->ml->nodecount] = ml->_data[j];
+                            //cml->ml->_data[cml->ml->nodecount] = ml->_data[j];
                             cml->ml->pdata[cml->ml->nodecount] = ml->pdata[j];
                         }
                         cml->ml->_thread = ml->_thread;
@@ -6593,7 +6592,7 @@ bool Cvode::is_owner(neuron::container::data_handle<double> const& handle) {
             auto* pd = static_cast<double const*>(handle);
             Prop* p;
             for (p = nd->prop; p; p = p->next) {
-                if (pd >= p->param && pd < (p->param + p->param_size)) {
+                if (p->owns(handle)) {
                     return true;
                 }
             }
@@ -6629,7 +6628,7 @@ int NetCvode::owned_by_thread(neuron::container::data_handle<double> const& hand
             auto* pd = static_cast<double const*>(handle);
             Prop* p;
             for (p = nd->prop; p; p = p->next) {
-                if (pd >= p->param && pd < (p->param + p->param_size)) {
+                if (p->owns(handle)) {
                     return it;
                 }
             }
@@ -6665,7 +6664,7 @@ void NetCvode::consist_sec_pd(const char* msg,
         Prop* p;
         auto* const pd = static_cast<double const*>(handle);
         for (p = nd->prop; p; p = p->next) {
-            if (pd >= p->param && pd < (p->param + p->param_size)) {
+            if (p->owns(handle)) {
                 return;
             }
         }

@@ -14,7 +14,6 @@ struct NrnThread;
 
 typedef std::pair<int, Memb_list*> MlWithArtItem;
 typedef std::vector<MlWithArtItem> MlWithArt;
-typedef std::map<double*, int> PVoid2Int;
 typedef std::vector<std::map<int, Memb_list*>> Deferred_Type2ArtMl;
 
 class CellGroup {
@@ -67,9 +66,6 @@ class CellGroup {
         for (auto& th: deferred_type2artml_) {
             for (auto& p: th) {
                 Memb_list* ml = p.second;
-                if (ml->_data) {
-                    delete[] ml->_data;
-                }
                 if (ml->pdata) {
                     delete[] ml->pdata;
                 }
@@ -85,7 +81,7 @@ class CellGroup {
     static void clean_deferred_netcons();
 
   private:
-    static PVoid2Int artdata2index_;
+    static std::map<double*, int> artdata2index_;
 
     static int* has_net_event_;
 
@@ -99,14 +95,18 @@ class CellGroup {
     }
 
   public:
-    static inline int nrncore_pntindex_for_queue(double* d, int tid, int type) {
-        Memb_list* ml = nrn_threads[tid]._ml_list[type];
-        if (ml) {
-            assert(d >= ml->_data[0] &&
-                   d < (ml->_data[0] + (ml->nodecount * nrn_prop_param_size_[type])));
-            return (d - ml->_data[0]) / nrn_prop_param_size_[type];
-        }
-        return nrncore_art2index(d);
+    static inline int nrncore_pntindex_for_queue(Prop* p, int tid, int type) {
+        assert(p->_type == type);
+        return p->id().current_row(); // ??? this is *not* well-tested and probably needs a `tid`-related offset
+        // double* d = p->param;
+        // Memb_list* ml = nrn_threads[tid]._ml_list[type];
+        // if (ml) {
+        //     assert(d >= ml->_data[0] &&
+        //            d < (ml->_data[0] + (ml->nodecount * nrn_prop_param_size_[type])));
+        //     // find the index of `p` in `ml->
+        //     return (d - ml->_data[0]) / nrn_prop_param_size_[type];
+        // }
+        // return nrncore_art2index(d);
     }
 };
 

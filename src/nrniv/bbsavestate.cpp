@@ -1022,7 +1022,7 @@ static void ssi_def() {
         // param array including PARAMETERs.
         if (pnt_receive[im]) {
             ssi[im].offset = 0;
-            ssi[im].size = np->prop()->param_size;
+            ssi[im].size = np->prop()->param_size();
         } else {
             int type = STATE;
             for (Symbol* sym = np->first_var(); np->more_var(); sym = np->next_var()) {
@@ -2031,7 +2031,7 @@ void BBSaveState::mech(Prop* p) {
     char buf[100];
     sprintf(buf, "//%s", memb_func[type].sym->name);
     f->s(buf, 1);
-    f->d(ssi[p->_type].size, p->param + ssi[p->_type].offset);
+    f->d(ssi[p->_type].size, p->param_handle(ssi[p->_type].offset));
     Point_process* pp{};
     if (memb_func[p->_type].is_point) {
         pp = static_cast<Point_process*>(p->dparam[1]);

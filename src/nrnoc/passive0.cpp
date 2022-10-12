@@ -18,43 +18,37 @@ extern "C" void passive0_reg_(void) {
     hoc_register_prop_size(mechtype, nparm, 0);
 }
 
-#define g vdata[i][0]
-#define e vdata[i][1]
-#define v NODEV(vnode[i])
+static constexpr auto g_index = 0;
+static constexpr auto e_index = 1;
 
 static void pas_cur(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** vdata = ml->_data;
-    Datum** vpdata = ml->pdata;
-    int i;
-    for (i = 0; i < count; ++i) {
-        NODERHS(vnode[i]) -= g * (v - e);
+    for (int i = 0; i < count; ++i) {
+        NODERHS(vnode[i]) -= ml->data(i, g_index) * (NODEV(vnode[i]) - ml->data(i, e_index));
     }
 }
 
 static void pas_jacob(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** vdata = ml->_data;
-    Datum** vpdata = ml->pdata;
-    int i;
-    for (i = 0; i < count; ++i) {
-        NODED(vnode[i]) += g;
+    for (int i = 0; i < count; ++i) {
+        NODED(vnode[i]) += ml->data(i, g_index);
     }
 }
 
 /* the rest can be constructed automatically from the above info*/
 
 static void pas_alloc(Prop* p) {
-    double* pd;
-    pd = nrn_prop_data_alloc(p->_type, nparm, p);
-    p->param_size = nparm;
+    //double* pd;
+    //pd = nrn_prop_data_alloc(p->_type, nparm, p);
+    assert(p->param_size() == nparm);
+    //p->param_size = nparm;
 #if defined(__MWERKS__)
-    pd[0] = 5.e-4; /*DEF_g;*/
+    p->set_param(0, 5.e-4); /*DEF_g;*/
 #else
-    pd[0] = DEF_g;
+    p->set_param(0, DEF_g);
 #endif
-    pd[1] = DEF_e;
-    p->param = pd;
+    p->set_param(1, DEF_e);
+    //p->param = pd;
 }

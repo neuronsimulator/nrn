@@ -163,7 +163,8 @@ void SingleChan::set_rates(double v) {
             state_[i].n_ = 0;
         }
         current_chan = (SingleChan*) this;
-        (*info_->f_)(v, nprop_->prop()->param, nprop_->prop()->dparam);
+        assert(false);
+        //(*info_->f_)(v, nprop_->prop()->param, nprop_->prop()->dparam);
     }
 }
 void SingleChan::set_rates(OcMatrix* m) {

@@ -77,15 +77,13 @@ extern "C" void extracell_reg_(void) {
 /* solving is done with sparse13 */
 
 /* interface between hoc and extcell */
-#define xraxial         pd /* From Eion */
-#define xg              (pd + (nlayer))
-#define xc              (pd + 2 * (nlayer))
-#define e_extracellular pd[3 * (nlayer)]
-#if I_MEMBRANE
-#define i_membrane pd[1 + 3 * (nlayer)]
-#define sav_g      pd[2 + 3 * (nlayer)]
-#define sav_rhs    pd[3 + 3 * (nlayer)]
-#endif
+inline std::size_t xraxial_index(std::size_t ilayer) { return ilayer; }
+inline std::size_t xg_index(std::size_t ilayer) { return nrn_nlayer_extracellular + ilayer; }
+inline std::size_t xc_index(std::size_t ilayer) { return 2*nrn_nlayer_extracellular + ilayer; }
+inline std::size_t e_extracellular_index() { return 3 * nrn_nlayer_extracellular; }
+inline std::size_t i_membrane_index() { return 3 * nrn_nlayer_extracellular + 1; }
+inline std::size_t sav_g_index() { return 3 * nrn_nlayer_extracellular + 2; }
+inline std::size_t sav_rhs_index() { return 3 * nrn_nlayer_extracellular + 3; }
 
 /* based on update() in fadvance.cpp */
 /* update has already been called so modify nd->v based on dvi
@@ -97,7 +95,6 @@ void nrn_update_2d(NrnThread* nt) {
     extern int secondorder;
     Node *nd, **ndlist;
     Extnode* nde;
-    double* pd;
     double cfac;
     Memb_list* ml = nt->_ecell_memb_list;
     if (!ml) {
@@ -118,10 +115,9 @@ void nrn_update_2d(NrnThread* nt) {
 
 #if I_MEMBRANE
     for (i = 0; i < cnt; ++i) {
-        pd = ml->_data[i];
         nd = ndlist[i];
         NODERHS(nd) -= *nd->extnode->_rhs[0];
-        i_membrane = sav_g * (NODERHS(nd)) + sav_rhs;
+        ml->data(i, i_membrane_index()) = ml->data(i, sav_g_index()) * (NODERHS(nd)) + ml->data(i, sav_rhs_index());
 #if 1
         /* i_membrane is a current density (mA/cm2). However
             it contains contributions from Non-ELECTRODE_CURRENT
@@ -141,7 +137,7 @@ void nrn_update_2d(NrnThread* nt) {
             insert them at the points x=0 or x=1
         */
 #else
-        i_membrane *= NODEAREA(nd);
+        ml->data(i, i_membrane_index()) *= NODEAREA(nd);
         /* i_membrane is nA for every segment. This is different
             from all other continuous mechanism currents and
             same as PointProcess currents since it contains
@@ -165,43 +161,28 @@ static int nparm() { /* number of doubles for property data */
 }
 
 static void extcell_alloc(Prop* p) {
-    double* pd;
-    int i;
-
-    pd = nrn_prop_data_alloc(EXTRACELL, nparm(), p);
-    p->param_size = nparm();
-
-    for (i = 0; i < nlayer; ++i) {
-        xraxial[i] = 1.e9;
-        xg[i] = 1.e9;
-        xc[i] = 0.;
+    assert(p->param_size() == nparm());
+    for (auto i = 0; i < nrn_nlayer_extracellular; ++i) {
+        p->set_param(xraxial_index(i), 1e9);
+        p->set_param(xg_index(i), 1e9);
+        p->set_param(xc_index(i), 0.0);
     }
-    e_extracellular = 0.;
-#if 0
-	i_membrane = 0.;
-	sav_g = 0.;
-	sav_rhs = 0.;
-#endif
-    p->param = pd;
+    p->set_param(e_extracellular_index(), 0.0);
 }
 
 /*ARGSUSED*/
 static void extcell_init(NrnThread* nt, Memb_list* ml, int type) {
     int ndcount = ml->nodecount;
     Node** ndlist = ml->nodelist;
-    double** data = ml->_data;
-    int i, j;
-    double* pd;
     if ((cvode_active_ > 0) && (nrn_use_daspk_ == 0)) {
         hoc_execerror("Extracellular mechanism only works with fixed step methods and daspk", 0);
     }
-    for (i = 0; i < ndcount; ++i) {
-        for (j = 0; j < nlayer; ++j) {
+    for (int i = 0; i < ndcount; ++i) {
+        for (int j = 0; j < nrn_nlayer_extracellular; ++j) {
             ndlist[i]->extnode->v[j] = 0.;
         }
 #if I_MEMBRANE
-        pd = data[i];
-        i_membrane = 0.;
+        ml->data(i, i_membrane_index()) = 0.0;
 #endif
     }
 }
@@ -306,16 +287,17 @@ void extcell_node_create(Node* nd) {
     Prop* p;
     /* may be a nnode increase so some may already be allocated */
     if (!nd->extnode) {
-        nde = (Extnode*) ecalloc(1, sizeof(Extnode));
+        nde = new Extnode{};
         extnode_alloc_elements(nde);
         nd->extnode = nde;
         for (j = 0; j < nlayer; ++j) {
             nde->v[j] = 0.;
         }
-        nde->param = (double*) 0;
         for (p = nd->prop; p; p = p->next) {
             if (p->_type == EXTRACELL) {
-                nde->param = p->param;
+                for (auto i = 0; i < p->param_size(); ++i) {
+                    nde->param.push_back(p->param_handle(i));
+                }
                 break;
             }
         }
@@ -334,7 +316,8 @@ void nrn_extcell_update_param(void) {
             for (i = 0; i < cnt; ++i) {
                 Node* nd = ndlist[i];
                 assert(nd->extnode);
-                nd->extnode->param = ml->_data[i];
+                assert(false);
+                //nd->extnode->param = ml->_data[i];
             }
         }
     }
@@ -359,7 +342,6 @@ void extcell_2d_alloc(Section* sec) {
 void nrn_rhs_ext(NrnThread* _nt) {
     int i, j, cnt;
     Node *nd, *pnd, **ndlist;
-    double* pd;
     Extnode *nde, *pnde;
     Memb_list* ml = _nt->_ecell_memb_list;
     if (!ml) {
@@ -375,8 +357,7 @@ void nrn_rhs_ext(NrnThread* _nt) {
         nde = nd->extnode;
         *nde->_rhs[0] -= NODERHS(nd);
 #if I_MEMBRANE
-        pd = ml->_data[i];
-        sav_rhs = *nde->_rhs[0];
+        ml->data(i, sav_rhs_index()) = *nde->_rhs[0];
         /* and for daspk this is the ionic current which can be
            combined later with i_cap before return from solve. */
 #endif
@@ -387,10 +368,9 @@ void nrn_rhs_ext(NrnThread* _nt) {
         pnd = _nt->_v_parent[nd->v_node_index];
         if (pnd) {
             pnde = pnd->extnode;
-            pd = nde->param;
             /* axial contributions */
             if (pnde) { /* parent sec may not be extracellular */
-                for (j = 0; j < nlayer; ++j) {
+                for (j = 0; j < nrn_nlayer_extracellular; ++j) {
                     double dv = pnde->v[j] - nde->v[j];
                     *nde->_rhs[j] -= nde->_b[j] * dv;
                     *pnde->_rhs[j] += nde->_a[j] * dv;
@@ -415,10 +395,10 @@ void nrn_rhs_ext(NrnThread* _nt) {
 
             /* series resistance and battery to ground */
             /* between nlayer-1 and ground */
-            j = nlayer - 1;
-            *nde->_rhs[j] -= xg[j] * (nde->v[j] - e_extracellular);
+            j = nrn_nlayer_extracellular - 1;
+            *nde->_rhs[j] -= *nde->param[xg_index(j)] * (nde->v[j] - *nde->param[e_extracellular_index()]);
             for (--j; j >= 0; --j) { /* between j and j+1 layer */
-                double x = xg[j] * (nde->v[j] - nde->v[j + 1]);
+                double x = *nde->param[xg_index(j)] * (nde->v[j] - nde->v[j + 1]);
                 *nde->_rhs[j] -= x;
                 *nde->_rhs[j + 1] += x;
             }
@@ -464,8 +444,7 @@ void nrn_setup_ext(NrnThread* _nt) {
         *nde->_x12[0] -= d;
         *nde->_x21[0] -= d;
 #if I_MEMBRANE
-        pd = ml->_data[i];
-        sav_g = d;
+        ml->data(i, sav_g_index()) = d;
 #endif
     }
     /* series resistance, capacitance, and axial terms. */
@@ -474,14 +453,13 @@ void nrn_setup_ext(NrnThread* _nt) {
         nde = nd->extnode;
         pnd = _nt->_v_parent[nd->v_node_index];
         if (pnd) {
-            pd = nde->param;
             /* series resistance and capacitance to ground */
             j = 0;
             for (;;) { /* between j and j+1 layer */
-                mfac = (xg[j] + xc[j] * cfac);
+                mfac = (*nde->param[xg_index(j)] + *nde->param[xc_index(j)] * cfac);
                 *nde->_d[j] += mfac;
                 ++j;
-                if (j == nlayer) {
+                if (j == nrn_nlayer_extracellular) {
                     break;
                 }
                 *nde->_d[j] += mfac;
@@ -491,7 +469,7 @@ void nrn_setup_ext(NrnThread* _nt) {
             pnde = pnd->extnode;
             /* axial connections */
             if (pnde) { /* parent sec may not be extracellular */
-                for (j = 0; j < nlayer; ++j) {
+                for (j = 0; j < nrn_nlayer_extracellular; ++j) {
                     *nde->_d[j] -= nde->_b[j];
                     *pnde->_d[j] -= nde->_a[j];
                     ;
@@ -523,27 +501,24 @@ void ext_con_coef(void) /* setup a and b */
             dx = section_length(sec) / ((double) (sec->nnode - 1));
             for (j = 0; j < sec->nnode - 1; j++) {
                 nde = sec->pnode[j]->extnode;
-                pd = nde->param;
-                for (k = 0; k < nlayer; ++k) {
-                    *nde->_rhs[k] = 1e-4 * xraxial[k] * (dx / 2.); /*Megohms*/
+                for (k = 0; k < nrn_nlayer_extracellular; ++k) {
+                    *nde->_rhs[k] = 1e-4 * *nde->param[xraxial_index(k)] * (dx / 2.); /*Megohms*/
                 }
             }
             /* last segment has 0 length. */
             nde = sec->pnode[j]->extnode;
-            pd = nde->param;
-            for (k = 0; k < nlayer; ++k) {
+            for (k = 0; k < nrn_nlayer_extracellular; ++k) {
                 *nde->_rhs[k] = 0.;
-                xc[k] = 0.;
-                xg[k] = 0.;
+                *nde->param[xc_index(k)] = 0.;
+                *nde->param[xg_index(k)] = 0.;
             }
             /* if owns a rootnode */
             if (!sec->parentsec) {
                 nde = sec->parentnode->extnode;
-                pd = nde->param;
-                for (k = 0; k < nlayer; ++k) {
+                for (k = 0; k < nrn_nlayer_extracellular; ++k) {
                     *nde->_rhs[k] = 0.;
-                    xc[k] = 0.;
-                    xg[k] = 0.;
+                    *nde->param[xc_index(k)] = 0.;
+                    *nde->param[xg_index(k)] = 0.;
                 }
             }
         }
