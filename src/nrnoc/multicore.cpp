@@ -426,7 +426,7 @@ void nrn_threads_free() {
             if (memb_func[tml->index].hoc_mech) {
                 free((char*) ml->prop);
             } else {
-                free((char*) ml->_data);
+                // free((char*) ml->_data);
                 free((char*) ml->pdata);
             }
             if (ml->_thread) {
@@ -542,7 +542,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
             tml->next = (NrnThreadMembList*) 0;
             *ptml = tml;
             ptml = &tml->next;
-            CACHELINE_ALLOC(tml->ml, Memb_list, 1);
+            tml->ml = new Memb_list{i};
             if (i == EXTRACELL) {
                 _nt->_ecell_memb_list = tml->ml;
             }
@@ -552,7 +552,6 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
             if (memb_func[i].hoc_mech) {
                 tml->ml->prop = (Prop**) emalloc(mlcnt[i] * sizeof(Prop*));
             } else {
-                CACHELINE_ALLOC(tml->ml->_data, double*, mlcnt[i]);
                 CACHELINE_ALLOC(tml->ml->pdata, Datum*, mlcnt[i]);
             }
             tml->ml->_thread = (Datum*) 0;
@@ -582,7 +581,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
                 if (memb_func[p->_type].hoc_mech) {
                     ml->prop[ml->nodecount] = p;
                 } else {
-                    ml->_data[ml->nodecount] = p->param;
+                    // ml->_data[ml->nodecount] = p->param;
                     ml->pdata[ml->nodecount] = p->dparam;
                 }
                 ++ml->nodecount;
@@ -862,8 +861,9 @@ void nrn_mk_table_check() {
 void nrn_thread_table_check() {
     for (auto [id, tml]: table_check_) {
         Memb_list* ml = tml->ml;
-        (*memb_func[tml->index].thread_table_check_)(
-            ml->_data[0], ml->pdata[0], ml->_thread, nrn_threads + id, tml->index);
+        assert(false);
+        // (*memb_func[tml->index].thread_table_check_)(
+        //     ml->_data[0], ml->pdata[0], ml->_thread, nrn_threads + id, tml->index);
     }
 }
 

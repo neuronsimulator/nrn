@@ -288,8 +288,8 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtl
     if (vectorize) {
         kin_vect1(q1, q2, q4);
         vectorize_substitute(qv,
-                             "(void* _so, double* _rhs, double* _p, Datum* _ppvar, Datum* _thread, "
-                             "NrnThread* _nt)\n");
+                             "(void* _so, double* _rhs, Datum* _ppvar, Datum* _thread, "
+                             "NrnThread* _nt, Memb_list* _ml, std::size_t _iml)\n");
     }
     qv = insertstr(q3, "{_reset=0;\n");
     Sprintf(buf, "{int _reset=0;\n");
@@ -474,7 +474,10 @@ void kinetic_intmethod(Symbol* fun, const char* meth) {
         Fprintf(stderr, "%s method ignores conservation\n", meth);
     }
     ncons = 0;
-    Sprintf(buf, "{int _i; for(_i=0;_i<%d;_i++) _p[_dlist%d[_i]] = 0.0;}\n", nstate, fun->u.i);
+    Sprintf(buf,
+            "{int _i; for(_i=0;_i<%d;_i++) _ml->data(_iml, _dlist%d[_i]) = 0.0;}\n",
+            nstate,
+            fun->u.i);
     /*goes near beginning of block*/
 #if Glass
     fixrlst(rlst);
@@ -487,7 +490,7 @@ void kinetic_intmethod(Symbol* fun, const char* meth) {
         if (rlst->capacity[i][0]) {
             if (rlst->symorder[i]->subtype & ARRAY) {
                 Sprintf(buf,
-                        "for (_i=0; _i < %d; _i++) { _p[_dlist%d[_i + %d]] /= %s;}\n",
+                        "for (_i=0; _i < %d; _i++) { _ml->data(_iml, _dlist%d[_i + %d]) /= %s;}\n",
                         rlst->symorder[i]->araydim,
                         fun->u.i,
                         rlst->symorder[i]->varnum,
@@ -495,7 +498,7 @@ void kinetic_intmethod(Symbol* fun, const char* meth) {
                 Insertstr(rlst->endbrace, buf);
             } else {
                 Sprintf(buf,
-                        "_p[_dlist%d[%d]] /= %s;\n",
+                        "_ml->data(_iml, _dlist%d[%d]) /= %s;\n",
                         fun->u.i,
                         rlst->symorder[i]->varnum,
                         rlst->capacity[i]);
@@ -723,7 +726,7 @@ for(_i=%d;_i<%d;_i++){\n",
     NOT_CVODE_FLAG {
         Sprintf(buf,
                 "\
-	_RHS%d(_i) = -_dt1*(_p[_slist%d[_i]] - _p[_dlist%d[_i]]);\n\
+	_RHS%d(_i) = -_dt1*(_ml->data(_iml, _slist%d[_i]) - _ml->data(_iml, _dlist%d[_i]));\n\
 	_MATELM%d(_i, _i) = _dt1;\n",
                 fun->u.i,
                 fun->u.i,
@@ -734,7 +737,7 @@ for(_i=%d;_i<%d;_i++){\n",
     CVODE_FLAG {
         Sprintf(buf,
                 "\
-	_RHS%d(_i) = _dt1*(_p[_dlist%d[_i]]);\n\
+	_RHS%d(_i) = _dt1*(_ml->data(_iml, _dlist%d[_i]));\n\
 	_MATELM%d(_i, _i) = _dt1;\n",
                 fun->u.i,
                 fun->u.i,
@@ -1362,8 +1365,9 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum) {
     Sprintf(buf, "static int _ode_spec%d() {_reset=0;{\n", fun->u.i);
     Lappendstr(procfunc, buf);
     Sprintf(buf,
-            "static int _ode_spec%d(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) "
-            "{int _reset=0;{\n",
+            "static int _ode_spec%d(_threadargsproto_) {\n"
+            "  int _reset=0;\n"
+            "  {\n",
             fun->u.i);
     vectorize_substitute(procfunc->prev, buf);
     copyitems(cvode_sbegin, cvode_send, procfunc->prev);
@@ -1372,8 +1376,8 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum) {
     Sprintf(buf, "static int _ode_matsol%d() {_reset=0;{\n", fun->u.i);
     Lappendstr(procfunc, buf);
     Sprintf(buf,
-            "static int _ode_matsol%d(void* _so, double* _rhs, double* _p, Datum* _ppvar, Datum* "
-            "_thread, NrnThread* _nt) {int _reset=0;{\n",
+            "static int _ode_matsol%d(void* _so, double* _rhs, Datum* _ppvar, Datum* "
+            "_thread, NrnThread* _nt, Memb_list* _ml, std::size_t _iml) {int _reset=0;{\n",
             fun->u.i);
     vectorize_substitute(procfunc->prev, buf);
     cvode_flag = 1;

@@ -405,7 +405,7 @@ void Cvode::daspk_scatter_y(double* y, int tid) {
     // transform the vm+vext to vm
     CvodeThreadData& z = ctd_[tid];
     if (z.cmlext_) {
-        Memb_list* ml = z.cmlext_->ml;
+        Memb_list* ml = z.cmlext_->ml.get();
         int i, n = ml->nodecount;
         for (i = 0; i < n; ++i) {
             Node* nd = ml->nodelist[i];
@@ -427,7 +427,7 @@ void Cvode::daspk_gather_y(double* y, int tid) {
     // transform vm to vm+vext
     CvodeThreadData& z = ctd_[tid];
     if (z.cmlext_) {
-        Memb_list* ml = z.cmlext_->ml;
+        Memb_list* ml = z.cmlext_->ml.get();
         int i, n = ml->nodecount;
         for (i = 0; i < n; ++i) {
             Node* nd = ml->nodelist[i];
@@ -493,33 +493,32 @@ for (i=0; i < z.nvsize_; ++i) {
     //	assert(use_sparse13 == true && nlayer <= 1);
     assert(use_sparse13 == true);
     if (z.cmlcap_) {
-        Memb_list* ml = z.cmlcap_->ml;
+        Memb_list* ml = z.cmlcap_->ml.get();
         int n = ml->nodecount;
         double* p = NULL;
         if (nt->_nrn_fast_imem) {
             p = nt->_nrn_fast_imem->_nrn_sav_rhs;
         }
         for (i = 0; i < n; ++i) {
-            double* cd = ml->_data[i];
             Node* nd = ml->nodelist[i];
             int j = nd->eqn_index_ - 1;
             Extnode* nde = nd->extnode;
             double cdvm;
             if (nde) {
-                cdvm = 1e-3 * cd[0] * (yprime[j] - yprime[j + 1]);
+                cdvm = 1e-3 * ml->data(1, 0) * (yprime[j] - yprime[j + 1]);
                 delta[j] -= cdvm;
                 delta[j + 1] += cdvm;
                 // i_cap
-                cd[1] = cdvm;
+                ml->data(i, 1) = cdvm;
 #if I_MEMBRANE
                 // add i_cap to i_ion which is in sav_g
                 // this will be copied to i_membrane below
-                nde->param[3 + 3 * nlayer] += cdvm;
+                *nde->param[3 + 3 * nlayer] += cdvm;
 #endif
             } else {
-                cdvm = 1e-3 * cd[0] * yprime[j];
+                cdvm = 1e-3 * ml->data(i, 0) * yprime[j];
                 delta[j] -= cdvm;
-                cd[1] = cdvm;
+                ml->data(i, 1) = cdvm;
             }
             if (p) {
                 int i = nd->v_node_index;
@@ -530,34 +529,35 @@ for (i=0; i < z.nvsize_; ++i) {
     }
     // See nrnoc/excelln.cpp for location of cx.
     if (z.cmlext_) {
-        Memb_list* ml = z.cmlext_->ml;
+        Memb_list* ml = z.cmlext_->ml.get();
         int n = ml->nodecount;
         for (i = 0; i < n; ++i) {
-            double* cd = ml->_data[i];
             Node* nd = ml->nodelist[i];
             int j = nd->eqn_index_;
 #if EXTRACELLULAR
 #if I_MEMBRANE
             // i_membrane = sav_rhs --- even for zero area nodes
-            cd[1 + 3 * nlayer] = cd[3 + 3 * nlayer];
+            ml->data(i, 1 + 3 * nrn_nlayer_extracellular) =
+                ml->data(i, 3 + 3 * nrn_nlayer_extracellular);
 #endif /*I_MEMBRANE*/
-            if (nlayer == 1) {
+            if (nrn_nlayer_extracellular == 1) {
                 // only works for one layer
                 // otherwise loop over layer,
                 // xc is (pd + 2*(nlayer))[layer]
                 // and deal with yprime[i+layer]-yprime[i+layer+1]
-                delta[j] -= 1e-3 * cd[2] * yprime[j];
+                delta[j] -= 1e-3 * ml->data(i, 2) * yprime[j];
             } else {
                 int k, jj;
                 double x;
-                k = nlayer - 1;
+                k = nrn_nlayer_extracellular - 1;
                 jj = j + k;
-                delta[jj] -= 1e-3 * cd[2 * nlayer + k] * (yprime[jj]);
-                for (k = nlayer - 2; k >= 0; --k) {
+                delta[jj] -= 1e-3 * ml->data(i, 2 * nrn_nlayer_extracellular + k) * (yprime[jj]);
+                for (k = nrn_nlayer_extracellular - 2; k >= 0; --k) {
                     // k=0 refers to stuff between layer 0 and 1
                     // j is for vext[0]
                     jj = j + k;
-                    x = 1e-3 * cd[2 * nlayer + k] * (yprime[jj] - yprime[jj + 1]);
+                    x = 1e-3 * ml->data(i, 2 * nrn_nlayer_extracellular + k) *
+                        (yprime[jj] - yprime[jj + 1]);
                     delta[jj] -= x;
                     delta[jj + 1] += x;  // last one in iteration is nlayer-1
                 }

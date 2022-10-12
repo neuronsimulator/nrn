@@ -474,7 +474,7 @@ void HocDataPathImpl::search(Prop* prop, double x) {
         if (memb_func[type].hoc_mech) {
             pd = prop->ob->u.dataspace[ir].pval;
         } else {
-            pd = prop->param + ir;
+            pd = static_cast<double*>(prop->param_handle(ir));
         }
         imax = hoc_total_array_data(psym, 0);
         for (i = 0; i < imax; ++i) {
