@@ -228,9 +228,9 @@ void vectorize_scan_for_func(Item* q1, Item* q2) {
                 if (q->next->itemtype == SYMBOL && strcmp(SYM(q->next)->name, "(") == 0) {
                     int b = func_arg_examine(q->next, q2);
                     if (b == 0) { /* no args */
-                        vectorize_substitute(q->next, "(_p, _ppvar, _thread, _nt");
+                        vectorize_substitute(q->next, "(_threadargs_");
                     } else if (b == 1) { /* real args */
-                        vectorize_substitute(q->next, "(_p, _ppvar, _thread, _nt,");
+                        vectorize_substitute(q->next, "(_threadargscomma_");
                     } /* else no _p.._nt already there */
                 }
             }
@@ -373,14 +373,12 @@ int check_tables_threads(List* p) {
     Item* q;
     if (check_table_thread_list) {
         ITERATE(q, check_table_thread_list) {
-            Sprintf(buf, "\nstatic void %s(double*, Datum*, Datum*, NrnThread*);", STR(q));
+            Sprintf(buf, "\nstatic void %s(_threadargsproto_);", STR(q));
             lappendstr(p, buf);
         }
-        lappendstr(p,
-                   "\nstatic void _check_table_thread(double* _p, Datum* _ppvar, Datum* _thread, "
-                   "NrnThread* _nt, int _type) {\n");
+        lappendstr(p, "\nstatic void _check_table_thread(_threadargsprotocomma_ int _type) {\n");
         ITERATE(q, check_table_thread_list) {
-            Sprintf(buf, "  %s(_p, _ppvar, _thread, _nt);\n", STR(q));
+            Sprintf(buf, "  %s(_threadargs_);\n", STR(q));
             lappendstr(p, buf);
         }
         lappendstr(p, "}\n");
@@ -415,7 +413,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "_check_%s();\n", fname);
     q = lappendstr(check_table_statements, buf);
-    Sprintf(buf, "_check_%s(_p, _ppvar, _thread, _nt);\n", fname);
+    Sprintf(buf, "_check_%s(_threadargs_);\n", fname);
     vectorize_substitute(q, buf);
     /*checking*/
     if (type == FUNCTION1) {
@@ -474,9 +472,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     vectorize_substitute(q, "");
     Sprintf(buf, "static void _check_%s() {\n", fname);
     q = lappendstr(procfunc, buf);
-    Sprintf(buf,
-            "static void _check_%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {\n",
-            fname);
+    Sprintf(buf, "static void _check_%s(_threadargsproto_) {\n", fname);
     vectorize_substitute(q, buf);
     Lappendstr(procfunc, " static int _maktable=1; int _i, _j, _ix = 0;\n");
     Lappendstr(procfunc, " double _xi, _tmax;\n");
@@ -523,13 +519,13 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
             s = SYM(q);
             Sprintf(buf, "   _t_%s[_i] = _f_%s(_x);\n", s->name, fname);
             Lappendstr(procfunc, buf);
-            Sprintf(buf, "   _t_%s[_i] = _f_%s(_p, _ppvar, _thread, _nt, _x);\n", s->name, fname);
+            Sprintf(buf, "   _t_%s[_i] = _f_%s(_threadargscomma_ _x);\n", s->name, fname);
             vectorize_substitute(procfunc->prev, buf);
         }
     } else {
         Sprintf(buf, "   _f_%s(_x);\n", fname);
         Lappendstr(procfunc, buf);
-        Sprintf(buf, "   _f_%s(_p, _ppvar, _thread, _nt, _x);\n", fname);
+        Sprintf(buf, "   _f_%s(_threadargscomma_ _x);\n", fname);
         vectorize_substitute(procfunc->prev, buf);
         ITERATE(q, table) {
             s = SYM(q);
@@ -560,31 +556,25 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     /*declaration*/
     if (type == FUNCTION1) {
 #define GLOBFUNC 1
-#if !GLOBFUNC
-        Lappendstr(procfunc, "static int");
-#endif
         Lappendstr(procfunc, "double");
     } else {
         Lappendstr(procfunc, "static int");
     }
     Sprintf(buf, "%s(double %s){", fname, arg->name);
     Lappendstr(procfunc, buf);
-    Sprintf(buf,
-            "%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, double %s) {",
-            fname,
-            arg->name);
+    Sprintf(buf, "%s(_threadargsprotocomma_ double %s) {", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     /* check the table */
     Sprintf(buf, "_check_%s();\n", fname);
     q = lappendstr(procfunc, buf);
-    Sprintf(buf, "\n#if 0\n_check_%s(_p, _ppvar, _thread, _nt);\n#endif\n", fname);
+    Sprintf(buf, "\n#if 0\n_check_%s(_threadargs_);\n#endif\n", fname);
     vectorize_substitute(q, buf);
     if (type == FUNCTION1) {
         Lappendstr(procfunc, "return");
     }
     Sprintf(buf, "_n_%s(%s);\n", fname, arg->name);
     Lappendstr(procfunc, buf);
-    Sprintf(buf, "_n_%s(_p, _ppvar, _thread, _nt, %s);\n", fname, arg->name);
+    Sprintf(buf, "_n_%s(_threadargscomma_ %s);\n", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     if (type != FUNCTION1) {
         Lappendstr(procfunc, "return 0;\n");
@@ -599,10 +589,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "_n_%s(double %s){", fname, arg->name);
     Lappendstr(procfunc, buf);
-    Sprintf(buf,
-            "_n_%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, double %s){",
-            fname,
-            arg->name);
+    Sprintf(buf, "_n_%s(_threadargsprotocomma_ double %s){", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     Lappendstr(procfunc, "int _i, _j;\n");
     Lappendstr(procfunc, "double _xi, _theta;\n");
@@ -614,7 +601,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "_f_%s(%s);", fname, arg->name);
     Lappendstr(procfunc, buf);
-    Sprintf(buf, "_f_%s(_p, _ppvar, _thread, _nt, %s);", fname, arg->name);
+    Sprintf(buf, "_f_%s(_threadargscomma_ %s);", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     if (type != FUNCTION1) {
         Lappendstr(procfunc, "return;");
@@ -751,28 +738,30 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
     }
     Lappendstr(procfunc, buf);
     vectorize_substitute(lappendstr(procfunc, ""),
-                         "\
-  double* _p; Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n\
-");
+                         "Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n");
     if (point_process) {
         vectorize_substitute(lappendstr(procfunc, "  _hoc_setdata(_vptr);\n"),
                              "\
-  _p = ((Point_process*)_vptr)->_prop->param;\n\
+  Prop *_p{static_cast<Point_process*>(_vptr)->_prop};\n\
+  Memb_list _ml_real{_p->_type}, *_ml{&_ml_real};\n\
+  std::size_t _iml{_p->_id().current_row()};\n\
   _ppvar = ((Point_process*)_vptr)->_prop->dparam;\n\
   _thread = _extcall_thread.data();\n\
   _nt = (NrnThread*)((Point_process*)_vptr)->_vnt;\n\
 ");
     } else {
-        vectorize_substitute(lappendstr(procfunc, ""),
-                             "\
-  if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }\n\
-  _thread = _extcall_thread.data();\n\
-  _nt = nrn_threads;\n\
-");
+        vectorize_substitute(
+            lappendstr(procfunc, ""),
+            "Memb_list _ml_real = _extcall_prop ? Memb_list{_extcall_prop->_type} : Memb_list{};\n"
+            "Memb_list *_ml{_extcall_prop ? &_ml_real : nullptr};\n"
+            "std::size_t _iml{_extcall_prop ? _extcall_prop->_id().current_row() : 0};\n"
+            "_ppvar = _extcall_prop ? _extcall_prop->dparam : nullptr;\n"
+            "_thread = _extcall_thread.data();\n"
+            "_nt = nrn_threads;\n");
     }
     if (n == last_func_using_table) {
         qp = lappendstr(procfunc, "");
-        Sprintf(buf, "\n#if 1\n _check_%s(_p, _ppvar, _thread, _nt);\n#endif\n", n->name);
+        Sprintf(buf, "\n#if 1\n _check_%s(_threadargs_);\n#endif\n", n->name);
         vectorize_substitute(qp, buf);
     }
     if (n->subtype & FUNCT) {
@@ -795,9 +784,9 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
     } else
         Lappendstr(procfunc, ");\n hoc_retpushx(_r);\n}\n");
     if (i) {
-        vectorize_substitute(qp, "_p, _ppvar, _thread, _nt,");
+        vectorize_substitute(qp, "_threadargscomma_");
     } else if (!hack) {
-        vectorize_substitute(qp, "_p, _ppvar, _thread, _nt");
+        vectorize_substitute(qp, "_threadargs_");
     }
 }
 
@@ -884,20 +873,11 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
         }
         return;
     }
-#if 1
     if (qexpr) {
         q = insertstr(qpar1->next, "_threadargscomma_");
     } else {
         q = insertstr(qpar1->next, "_threadargs_");
     }
-#else
-    q = insertstr(qpar1->next, "");
-    if (qexpr) {
-        vectorize_substitute(q, "_p, _ppvar, _thread, _nt,");
-    } else {
-        vectorize_substitute(q, "_p, _ppvar, _thread, _nt");
-    }
-#endif
 }
 
 
@@ -952,10 +932,15 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
     }
     Sprintf(buf, "\nstatic double _watch%d_cond(Point_process* _pnt) {\n", watch_seen_);
     lappendstr(procfunc, buf);
-    vectorize_substitute(lappendstr(procfunc, ""),(char*)"\tdouble* _p; Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n\t_thread= (Datum*)0; _nt = (NrnThread*)_pnt->_vnt;\n");
+    vectorize_substitute(lappendstr(procfunc, ""),
+                         "  Datum* _ppvar; Datum* _thread{};\n"
+                         "  NrnThread* _nt{static_cast<NrnThread*>(_pnt->_vnt)};\n");
     Sprintf(buf,
-            "\t_p = _pnt->_prop->param; _ppvar = _pnt->_prop->dparam;\n\tv = "
-            "NODEV(_pnt->node);\n	return ");
+            "  _ppvar = _pnt->_prop->dparam;\n"
+            "  Memb_list _ml_real{_pnt->_prop->_type}, *_ml{&_ml_real};\n"
+            "  std::size_t _iml{_pnt->_prop->_id().current_row()};\n"
+            "  v = NODEV(_pnt->node);\n"
+            "	return ");
     lappendstr(procfunc, buf);
     movelist(par1, par2, procfunc);
     movelist(dir->next, par2, procfunc);

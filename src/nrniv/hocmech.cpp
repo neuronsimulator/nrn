@@ -203,7 +203,7 @@ static HocMech* common_register(const char** m,
         stat = (Pvmi) after_step;
     register_mech(m, hm_alloc, cur, jacob, stat, initialize, -1, 0);
     type = nrn_get_mechtype(m[1]);
-    hoc_register_cvode(type, NULL, NULL, NULL, NULL);
+    hoc_register_cvode(type, nullptr, nullptr, nullptr, nullptr);
     memb_func[type].hoc_mech = hm;
     return hm;
 }

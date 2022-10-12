@@ -317,12 +317,12 @@ void write_contiguous_art_data(double** data, int nitem, int szitem, FILE* f) {
     }
 }
 
-double* contiguous_art_data(double** data, int nitem, int szitem) {
+double* contiguous_art_data(Memb_list* ml, int nitem, int szitem) {
     double* d1 = new double[nitem * szitem];
     int k = 0;
     for (int i = 0; i < nitem; ++i) {
         for (int j = 0; j < szitem; ++j) {
-            d1[k++] = data[i][j];
+            d1[k++] = ml->data(i, j);
         }
     }
     return d1;

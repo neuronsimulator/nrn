@@ -10,6 +10,10 @@ struct NewtonSpace {
     double* rowmax;
 };
 
+// Forward-declare for use in function pointer type declaration.
+typedef struct NrnThread NrnThread;
+typedef struct Memb_list Memb_list;
+
 /* Memory allocation routines */
 double* makevector(int length);
 int freevector(double* vector);
