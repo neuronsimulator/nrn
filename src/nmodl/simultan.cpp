@@ -14,7 +14,7 @@ void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnu
     // added so that method->name != "newton" then those methods may need to be modified as newton
     // was
     Sprintf(buf,
-            "%s<%d>(_slist%d, _p, %s_wrapper_returning_int, _dlist%d);\n",
+            "%s<%d>(_slist%d, _ml->contiguous_row(_iml).data(), %s_wrapper_returning_int, _dlist%d);\n",
             method->name,
             numeqn,
             listnum,
@@ -28,9 +28,30 @@ void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnu
 
 void solv_lineq(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum) {
     Sprintf(buf,
-            " 0; %s();\n error = %s(%d, _coef%d, _p, _slist%d);\n",
+            " 0;\n"
+            "  %s();\n"
+            "  {\n"
+            "    std::vector<double> _p;\n"
+            "    _p.resize(*std::max_element(_slist%d, _slist%d + %d));\n"
+            "    for (auto _i_hack = 0; _i_hack < %d; ++_i_hack) {\n"
+            "      _ml->data(_iml, _slist%d[_i_hack]) = _ml->data(_iml, _slist%d[_i_hack]);\n"
+            "    }\n"
+            "    error = %s(%d, _coef%d, _p.data(), _slist%d);\n"
+            "    for (auto _i_hack = 0; _i_hack < %d; ++_i_hack) {\n"
+            "      _ml->data(_iml, _slist%d[_i_hack]) = _ml->data(_iml, _slist%d[_i_hack]);\n"
+            "    }\n"
+            "  }\n",
             fun->name,
+            listnum,
+            listnum,
+            numeqn,
+            numeqn,
+            listnum,
+            listnum,
             method->name,
+            numeqn,
+            listnum,
+            listnum,
             numeqn,
             listnum,
             listnum);
@@ -187,20 +208,21 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
     vectorize_substitute(q, buf);
     Insertstr(q3, "if (!_recurse) {\n _recurse = 1;\n");
     Sprintf(buf,
-            "error = newton<%d>(_slist%d, _p, %s, _dlist%d);\n",
+            "error = newton<%d>(_slist%d, _ml->contiguous_row(_iml).data(), %s, _dlist%d);\n",
             counts,
             numlist,
             SYM(q2)->name,
             numlist);
     qret = insertstr(q3, buf);
-    Sprintf(buf,
-            "error = nrn_newton_thread(_newtonspace%d, %d,_slist%d, _p, "
-            "%s, _dlist%d, _p, _ppvar, _thread, _nt);\n",
-            numlist - 1,
-            counts,
-            numlist,
-            SYM(q2)->name,
-            numlist);
+    Sprintf(
+        buf,
+        "error = nrn_newton_thread(_newtonspace%d, %d, _slist%d, _ml->contiguous_row(_iml).data(), "
+        "%s, _dlist%d, _ppvar, _thread, _nt, _ml, _iml);\n",
+        numlist - 1,
+        counts,
+        numlist,
+        SYM(q2)->name,
+        numlist);
     vectorize_substitute(qret, buf);
     Insertstr(q3, "_recurse = 0; if(error) {abort_run(error);}}\n");
     return qret;

@@ -176,9 +176,9 @@ bool NrnProperty::assign(Prop* src, Prop* dest, int vartype) {
             }
         } else {
             if (vartype == 0) {
-                n = src->param_size;
+                n = src->param_size();
                 for (int i = 0; i < n; ++i) {
-                    dest->param[i] = src->param[i];
+                    dest->set_param(i, src->param(i));
                 }
             } else {
                 Symbol* msym = memb_func[src->_type].sym;
@@ -189,7 +189,7 @@ bool NrnProperty::assign(Prop* src, Prop* dest, int vartype) {
                         jmax = hoc_total_array_data(sym, 0);
                         n = sym->u.rng.index;
                         for (j = 0; j < jmax; ++j) {
-                            dest->param[n + j] = src->param[n + j];
+                            dest->set_param(n + j, src->param(n + j));
                         }
                     }
                 }
@@ -227,7 +227,7 @@ double* NrnProperty::prop_pval(const Symbol* s, int index) const {
         if (s->subtype == NRNPOINTER) {
             return static_cast<double*>(npi_->p_->dparam[prop_index(s) + index]);
         } else {
-            return npi_->p_->param + prop_index(s) + index;
+            return static_cast<double*>(npi_->p_->param_handle(prop_index(s) + index));
         }
     }
 }

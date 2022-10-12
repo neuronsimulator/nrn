@@ -201,15 +201,15 @@ static void general_discon_adjust(Item* varname, Item* equal, Item* expr, Item* 
             "    double __primary_delta = (%s) - __state;\n"
             "    double __dtsav = dt;\n"
             "    for (__i = 0; __i < __neq; ++__i) {\n"
-            "      _p[_dlist%d[__i]] = 0.0;\n"
+            "      _ml->data(_iml, _dlist%d[__i]) = 0.0;\n"
             "    }\n"
-            "    _p[_dlist%d[%d]] = __primary_delta;\n"
+            "    _ml->data(_iml, _dlist%d[%d]) = __primary_delta;\n"
             "    dt *= 0.5;\n"
             "%s%s"
             "    _ode_matsol_instance%d(_threadargs_);\n"
             "    dt = __dtsav;\n"
             "    for (__i = 0; __i < __neq; ++__i) {\n"
-            "      _p[_slist%d[__i]] += _p[_dlist%d[__i]];\n"
+            "      _ml->data(_iml, _slist%d[__i]) += _ml->data(_iml, _dlist%d[__i]);\n"
             "    }\n"
             "  } else {\n",
             neq,

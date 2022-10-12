@@ -22,13 +22,13 @@ class PlayRecord;
 class STEList;
 class HTList;
 
-class CvMembList {
-  public:
-    CvMembList();
-    virtual ~CvMembList();
+struct CvMembList {
+    CvMembList(int type)
+        : ml{std::make_unique<Memb_list>(type)}
+        , index{type} {}
     CvMembList* next;
-    Memb_list* ml;
-    int index;
+    std::unique_ptr<Memb_list> ml{};
+    int index{};
 };
 
 class BAMechList {

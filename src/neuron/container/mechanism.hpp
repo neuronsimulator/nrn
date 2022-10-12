@@ -29,12 +29,33 @@ namespace neuron::container::Mechanism {
  */
 template <typename View>
 struct interface: view_base<View> {
+    /** @brief Return the number of floating point fields accessible via fpfield.
+     */
+    [[nodiscard]] std::size_t num_fpfields() const {
+        return this->template get_tag<field::PerInstanceFloatingPointField>().num_instances();
+    }
     /** @brief Return the area.
      */
     [[nodiscard]] field::PerInstanceFloatingPointField::type fpfield(
         std::size_t field_index) const {
-        if (field_index >=
-            this->template get_tag<field::PerInstanceFloatingPointField>().num_instances()) {
+        if (field_index >= num_fpfields()) {
+            throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
+                                     ") field index out of range");
+        }
+        return this->template get<field::PerInstanceFloatingPointField>(field_index);
+    }
+
+    [[nodiscard]] field::PerInstanceFloatingPointField::type& fpfield_ref(std::size_t field_index) {
+        if (field_index >= num_fpfields()) {
+            throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
+                                     ") field index out of range");
+        }
+        return this->template get<field::PerInstanceFloatingPointField>(field_index);
+    }
+
+    [[nodiscard]] field::PerInstanceFloatingPointField::type const& fpfield_ref(
+        std::size_t field_index) const {
+        if (field_index >= num_fpfields()) {
             throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
                                      ") field index out of range");
         }
@@ -45,8 +66,7 @@ struct interface: view_base<View> {
      */
     [[nodiscard]] data_handle<field::PerInstanceFloatingPointField::type> fpfield_handle(
         std::size_t field_index) {
-        if (field_index >=
-            this->template get_tag<field::PerInstanceFloatingPointField>().num_instances()) {
+        if (field_index >= num_fpfields()) {
             throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
                                      ") field index out of range");
         }
@@ -56,8 +76,7 @@ struct interface: view_base<View> {
     /** @brief Set the area.
      */
     void set_fpfield(std::size_t field_index, field::PerInstanceFloatingPointField::type area) {
-        if (field_index >=
-            this->template get_tag<field::PerInstanceFloatingPointField>().num_instances()) {
+        if (field_index >= num_fpfields()) {
             throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
                                      ") field index out of range");
         }
