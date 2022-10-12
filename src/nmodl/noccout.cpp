@@ -172,7 +172,7 @@ void c_out() {
     P("#endif\n");
     P("_cntml = _ml->_nodecount;\n");
     P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-    P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
+    P(" _ppvar = _ml->_pdata[_iml];\n");
     if (debugging_ && net_receive_) {
         P(" _tsav = -1e20;\n");
     }
@@ -213,7 +213,7 @@ void c_out() {
         P("#endif\n");
         P("_cntml = _ml->_nodecount;\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-        P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
+        P(" _ppvar = _ml->_pdata[_iml];\n");
         ext_vdef();
         if (currents->next != currents) {
             printlist(get_ion_variables(0));
@@ -285,7 +285,6 @@ void c_out() {
         P("#endif\n");
         P("_cntml = _ml->_nodecount;\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-        P(" _p = _ml->_data[_iml];\n");
         if (electrode_current) {
             P(" _nd = _ml->_nodelist[_iml];\n");
 #if CACHEVEC == 0
@@ -338,7 +337,7 @@ void c_out() {
         P("#endif\n");
         P("_cntml = _ml->_nodecount;\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-        P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
+        P(" _ppvar = _ml->_pdata[_iml];\n");
         P(" _nd = _ml->_nodelist[_iml];\n");
         ext_vdef();
         P(" v=_v;\n{\n");
@@ -567,7 +566,7 @@ void c_out_vectorize() {
 
     /* Initialization function must always be present */
 
-    P("\nstatic void initmodel(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {\n  int "
+    P("\nstatic void initmodel(_threadargsproto_) {\n  int "
       "_i; double _save;");
     P("{\n");
     initstates();
@@ -577,7 +576,7 @@ void c_out_vectorize() {
 
     /* generation of initmodel interface */
     P("\nstatic void nrn_init(NrnThread* _nt, Memb_list* _ml, int _type){\n");
-    P("double* _p; Datum* _ppvar; Datum* _thread;\n");
+    P("Datum* _ppvar; Datum* _thread;\n");
     P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
     P("#if CACHEVEC\n");
     P("    _ni = _ml->_nodeindices;\n");
@@ -586,7 +585,7 @@ void c_out_vectorize() {
     P("_thread = _ml->_thread;\n");
     /*check_tables();*/
     P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-    P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
+    P(" _ppvar = _ml->_pdata[_iml];\n");
     check_tables();
     if (debugging_ && net_receive_) {
         P(" _tsav = -1e20;\n");
@@ -598,18 +597,17 @@ void c_out_vectorize() {
         P(" v = _v;\n");
     }
     printlist(get_ion_variables(1));
-    P(" initmodel(_p, _ppvar, _thread, _nt);\n");
+    P(" initmodel(_threadargs_);\n");
     printlist(set_ion_variables(2));
     P("}\n");
     P("}\n");
 
     /* standard modl EQUATION without solve computes current */
     if (!conductance_) {
-        P("\nstatic double _nrn_current(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, "
-          "double _v){double _current=0.;v=_v;");
+        P("\nstatic double _nrn_current(_threadargsprotocomma_ double _v){double _current=0.;v=_v;");
         if (cvode_nrn_current_solve_) {
             fprintf(fcout,
-                    "if (cvode_active_) { %s(_p, _ppvar, _thread, _nt); }\n",
+                    "if (cvode_active_) { %s(_threadargs_); }\n",
                     cvode_nrn_current_solve_->name);
         }
         P("{");
@@ -634,7 +632,7 @@ void c_out_vectorize() {
 
     if (brkpnt_exists) {
         P("\nstatic void nrn_cur(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
-        P("double* _p; Datum* _ppvar; Datum* _thread;\n");
+        P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
         P("#if CACHEVEC\n");
         P("    _ni = _ml->_nodeindices;\n");
@@ -642,7 +640,7 @@ void c_out_vectorize() {
         P("_cntml = _ml->_nodecount;\n");
         P("_thread = _ml->_thread;\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-        P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
+        P(" _ppvar = _ml->_pdata[_iml];\n");
         ext_vdef();
         if (currents->next != currents) {
             printlist(get_ion_variables(0));
@@ -651,7 +649,7 @@ void c_out_vectorize() {
         }
         if (cvode_nrn_cur_solve_) {
             fprintf(fcout,
-                    "if (cvode_active_) { %s(_p, _ppvar, _thread, _nt); }\n",
+                    "if (cvode_active_) { %s(_threadargs_); }\n",
                     cvode_nrn_cur_solve_->name);
         }
         if (currents->next != currents) {
@@ -661,13 +659,13 @@ void c_out_vectorize() {
                 printlist(set_ion_variables(0));
                 P(" }\n");
             } else {
-                P(" _g = _nrn_current(_p, _ppvar, _thread, _nt, _v + .001);\n");
+                P(" _g = _nrn_current(_threadargscomma_ _v + .001);\n");
                 printlist(begin_dion_stmt());
                 if (state_discon_list_) {
                     P(" state_discon_flag_ = 1; _rhs = _nrn_current(_v); state_discon_flag_ = "
                       "0;\n");
                 } else {
-                    P(" _rhs = _nrn_current(_p, _ppvar, _thread, _nt, _v);\n");
+                    P(" _rhs = _nrn_current(_threadargscomma_ _v);\n");
                 }
                 printlist(end_dion_stmt(".001"));
                 P(" _g = (_g - _rhs)/.001;\n");
@@ -718,7 +716,7 @@ void c_out_vectorize() {
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
         P("\nstatic void nrn_jacob(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
-        P("double* _p; Datum* _ppvar; Datum* _thread;\n");
+        P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
         P("#if CACHEVEC\n");
         P("    _ni = _ml->_nodeindices;\n");
@@ -726,7 +724,6 @@ void c_out_vectorize() {
         P("_cntml = _ml->_nodecount;\n");
         P("_thread = _ml->_thread;\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-        P(" _p = _ml->_data[_iml];\n");
         if (electrode_current) {
             P(" _nd = _ml->_nodelist[_iml];\n");
 #if CACHEVEC == 0
@@ -770,7 +767,7 @@ void c_out_vectorize() {
        advances states by dt */
     P("\nstatic void nrn_state(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
     if (nrnstate || currents->next == currents) {
-        P("double* _p; Datum* _ppvar; Datum* _thread;\n");
+        P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
         if (dtsav_for_nrn_state && nrnstate) {
             P("double _dtsav = dt;\n"
@@ -782,7 +779,7 @@ void c_out_vectorize() {
         P("_cntml = _ml->_nodecount;\n");
         P("_thread = _ml->_thread;\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-        P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
+        P(" _ppvar = _ml->_pdata[_iml];\n");
         P(" _nd = _ml->_nodelist[_iml];\n");
         ext_vdef();
         P(" v=_v;\n{\n");

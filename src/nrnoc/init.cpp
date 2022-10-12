@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 #include <nrnmpiuse.h>
 #include "nrn_ansi.h"
+#include "nrncore_write/io/nrncore_io.h"
 #include "oc_ansi.h"
 #include <stdio.h>
 #include <errno.h>
@@ -159,8 +160,6 @@ void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
     nrn_watch_allocate_[type] = waf;
 }
 
-// also for read
-using bbcore_write_t = void (*)(double*, int*, int*, int*, double*, Datum*, Datum*, NrnThread*);
 bbcore_write_t* nrn_bbcore_write_;
 bbcore_write_t* nrn_bbcore_read_;
 
@@ -986,14 +985,15 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
             node.sec_node_index_ = 0;
             prop_alloc(&(node.prop), MORPHOLOGY, &node); /* in case we need diam */
             p = prop_alloc(&(node.prop), type, &node);   /* this and any ions */
-            (*memb_func[type].ode_map)(0, pv, pv + n, p->param, p->dparam, (double*) 0, type);
+            assert(false);
+            // (*memb_func[type].ode_map)(0, pv, pv + n, p->param, p->dparam, (double*) 0, type);
             for (i = 0; i < n; ++i) {
-                for (p = node.prop; p; p = p->next) {
-                    if (pv[i] >= p->param && pv[i] < (p->param + p->param_size)) {
-                        index = pv[i] - p->param;
-                        break;
-                    }
-                }
+                // for (p = node.prop; p; p = p->next) {
+                //     if (pv[i] >= p->param && pv[i] < (p->param + p->param_size)) {
+                //         index = pv[i] - p->param;
+                //         break;
+                //     }
+                // }
 
                 /* p is the prop and index is the index
                     into the p->param array */

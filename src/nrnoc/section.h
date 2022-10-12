@@ -23,6 +23,8 @@
    d and rhs is calculated from the property list.
 */
 
+#include "membfunc.h"
+#include "neuron/container/mechanism.hpp"
 #include "neuron/container/node.hpp"
 
 #include "nrnredef.h"
@@ -35,6 +37,8 @@
 #define spop      hoc_spop
 #define execerror hoc_execerror
 #include "hocdec.h"
+
+#include <optional>
 
 typedef struct Section {
     int refcount;              /* may be in more than one list */
@@ -196,8 +200,9 @@ struct Node {
 /* pruned to only work with sparse13 */
 extern int nrn_nlayer_extracellular;
 #define nlayer (nrn_nlayer_extracellular) /* first (0) layer is extracellular next to membrane */
-typedef struct Extnode {
-    double* param; /* points to extracellular parameter vector */
+struct Extnode {
+    std::vector<neuron::container::data_handle<double>> param{};
+    //double* param; /* points to extracellular parameter vector */
     /* v is membrane potential. so v internal = Node.v + Node.vext[0] */
     /* However, the Node equation is for v internal. */
     /* This is reconciled during update. */
@@ -212,7 +217,7 @@ typedef struct Extnode {
     double** _b_matelm;
     double** _x12; /* effect of v[layer] on eqn layer-1 (or internal)*/
     double** _x21; /* effect of v[layer-1 or internal] on eqn layer*/
-} Extnode;
+};
 #endif
 
 #if !INCLUDEHOCH
@@ -221,19 +226,109 @@ typedef struct Extnode {
 
 #define PROP_PY_INDEX 10
 
-typedef struct Prop {
-    struct Prop* next; /* linked list of properties */
+struct Prop {
+    // Working assumption is that we can safely equate "Prop" with "instance
+    // of a mechanism" apart from a few special cases like CABLESECTION
+    Prop(short type) : _type{type} {
+        if (type != CABLESECTION) {
+            m_mech_handle = neuron::model().mechanism_data(type);
+        }
+    }
+    Prop* next;        /* linked list of properties */
     short _type;       /* type of membrane, e.g. passive, HH, etc. */
     short unused1;     /* gcc and borland need pairs of shorts to align the same.*/
-    int param_size;    /* for notifying hoc_free_val_array */
-    double* param;     /* vector of doubles for this property */
+    int dparam_size;    /* for notifying hoc_free_val_array */
+    //double* param;     /* vector of doubles for this property */
     Datum* dparam;     /* usually vector of pointers to doubles
                   of other properties but maybe other things as well
                   for example one cable section property is a
                   symbol */
     long _alloc_seq;   /* for cache efficiency */
     Object* ob;        /* nil if normal property, otherwise the object containing the data*/
-} Prop;
+
+    /** @brief Get the identifier of this instance.
+     */
+    [[nodiscard]] auto id() const {
+        assert(m_mech_handle);
+        return m_mech_handle->id();
+    }
+
+    /** @brief Check if the given handle refers to data owned by this Prop.
+     */
+    [[nodiscard]] bool owns(neuron::container::data_handle<double> const& handle) const {
+        auto const num_fpfields = param_size();
+        auto* const raw_ptr = static_cast<double const*>(handle);
+        for (auto i = 0; i < num_fpfields; ++i) {
+            if (raw_ptr == &m_mech_handle->fpfield_ref(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** @brief Return the i-th double value associated with this Prop.
+     */
+    [[nodiscard]] double param(std::size_t i) const {
+        assert(m_mech_handle);
+        return m_mech_handle->fpfield(i);
+    }
+
+    /** @brief Return a reference to the i-th double value associated with this Prop.
+     */
+    [[nodiscard]] double& param_ref(std::size_t i) {
+        assert(m_mech_handle);
+        return m_mech_handle->fpfield_ref(i);
+    }
+
+    /** @brief Return a reference to the i-th double value associated with this Prop.
+     */
+    [[nodiscard]] double const& param_ref(std::size_t i) const {
+        assert(m_mech_handle);
+        return m_mech_handle->fpfield_ref(i);
+    }
+
+    /** @brief Return a handle to the i-th double value associated with this Prop.
+     */
+    [[nodiscard]] auto param_handle(std::size_t i) {
+        assert(m_mech_handle);
+        return m_mech_handle->fpfield_handle(i);
+    }
+
+    /** @brief Return how many double values are assocated with this Prop.
+     */
+    [[nodiscard]] std::size_t param_size() const {
+        assert(m_mech_handle);
+        return m_mech_handle->num_fpfields();
+    }
+
+    /** @brief Update the i-th double value associated with this Prop.
+     */
+    void set_param(std::size_t i, double value) {
+        assert(m_mech_handle);
+        m_mech_handle->set_fpfield(i, value);
+    }
+private:
+    // This is a handle that owns a row of the ~global mechanism data for
+    // `_type`. Usage of `param` and `param_size` should be replaced with
+    // indirection through this.
+    std::optional<neuron::container::Mechanism::owning_handle> m_mech_handle;
+};
+
+struct Dummy_Memb_list {
+    constexpr Dummy_Memb_list(Prop* prop) : m_prop{prop} {}
+    [[nodiscard]] double& data(std::size_t instance, std::size_t variable) {
+        assert(instance == 0);
+        return m_prop->param_ref(variable);
+    }
+
+    [[nodiscard]] double const& data(std::size_t instance, std::size_t variable) const {
+        assert(instance == 0);
+        return m_prop->param_ref(variable);
+    }
+private:
+    Prop* m_prop{};
+};
+
 
 extern double* nrn_prop_data_alloc(int type, int count, Prop* p);
 extern Datum* nrn_prop_datum_alloc(int type, int count, Prop* p);

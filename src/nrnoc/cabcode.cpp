@@ -411,22 +411,22 @@ void cab_alloc(Prop* p) {
     pd[4] = DEF_rallbranch;
     pd[7] = DEF_Ra;
     p->dparam = pd;
-    p->param_size = CAB_SIZE; /* this one is special since it refers to dparam */
+    p->dparam_size = CAB_SIZE; /* this one is special since it refers to dparam */
 }
 
 void morph_alloc(Prop* p) {
-    double* pd;
-    pd = nrn_prop_data_alloc(MORPHOLOGY, 1, p);
-    pd[0] = DEF_diam; /* microns */
+    //double* pd;
+    //pd = nrn_prop_data_alloc(MORPHOLOGY, 1, p);
+    assert(p->param_size() == 1);
+    p->set_param(0, DEF_diam); /* microns */
     diam_changed = 1;
-    p->param = pd;
-    p->param_size = 1;
+    //p->param = pd;
+    //p->param_size = 1;
 }
 
 double nrn_diameter(Node* nd) {
-    Prop* p;
-    p = nrn_mechanism(MORPHOLOGY, nd);
-    return p->param[0];
+    Prop* p = nrn_mechanism(MORPHOLOGY, nd);
+    return p->param(0);
 }
 
 void nrn_chk_section(Symbol* s) {
@@ -1922,7 +1922,7 @@ double* dprop(Symbol* s, int indx, Section* sec, short inode) {
         if (m->ob) {
             return m->ob->u.dataspace[s->u.rng.index].pval + indx;
         } else {
-            return &(m->param[s->u.rng.index]) + indx;
+            return static_cast<double*>(m->param_handle(s->u.rng.index + indx));
         }
     } else {
         auto* const p = static_cast<double*>(m->dparam[s->u.rng.index + indx]);
@@ -1957,7 +1957,7 @@ double* nrnpy_dprop(Symbol* s, int indx, Section* sec, short inode, int* err) {
         if (m->ob) {
             return m->ob->u.dataspace[s->u.rng.index].pval + indx;
         } else {
-            return &(m->param[s->u.rng.index]) + indx;
+            return static_cast<double*>(m->param_handle(s->u.rng.index + indx));
         }
     } else {
         auto* const p = static_cast<double*>(m->dparam[s->u.rng.index + indx]);

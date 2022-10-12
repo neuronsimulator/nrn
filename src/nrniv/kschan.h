@@ -223,7 +223,7 @@ class KSGateComplex {
   public:
     KSGateComplex();
     virtual ~KSGateComplex();
-    double conductance(double* state, KSState* st);
+    double conductance(Memb_list* ml, std::size_t instance, std::size_t offset, KSState* st);
 
   public:
     Object* obj_;
@@ -238,8 +238,8 @@ class KSIv {
   public:
     virtual ~KSIv() = default;
     // this one for ionic ohmic and nernst.
-    virtual double cur(double g, double* p, Datum* pd, double v);
-    virtual double jacob(double* p, Datum* pd, double v);
+    virtual double cur(double g, Datum* pd, double v, Memb_list* ml, std::size_t instance, std::size_t offset);
+    virtual double jacob(Datum* pd, double v, Memb_list* ml, std::size_t instance, std::size_t offset);
 };
 class KSIvghk: public KSIv {
   public:
@@ -293,23 +293,23 @@ class KSChan {
     KSChan(Object*, bool is_point = false);
     virtual ~KSChan();
     virtual void alloc(Prop*);
-    virtual void init(int, Node**, double**, Datum**, NrnThread*);
-    virtual void cur(int, Node**, double**, Datum**);
-    virtual void jacob(int, Node**, double**, Datum**);
-    virtual void state(int, Node**, double**, Datum**, NrnThread*);
+    virtual void init(NrnThread*, Memb_list*);
+    virtual void cur(Memb_list*);
+    virtual void jacob(Memb_list*);
+    virtual void state(NrnThread*, Memb_list*);
 #if CACHEVEC != 0
-    virtual void cur(int, int*, double**, Datum**, NrnThread*);
-    virtual void jacob(int, int*, double**, Datum**, NrnThread*);
-    virtual void state(int, int*, Node**, double**, Datum**, NrnThread*);
+    virtual void cur(NrnThread*, Memb_list*);
+    virtual void jacob(NrnThread*, Memb_list*);
+    virtual void state_cachevec(NrnThread*, Memb_list*);
 #endif /* CACHEVEC */
     void add_channel(const char**);
     // for cvode
     virtual int count();
     virtual void map(int, double**, double**, double*, Datum*, double*);
-    virtual void spec(int, Node**, double**, Datum**);
-    virtual void matsol(int, Node**, double**, Datum**, NrnThread*);
-    virtual void cv_sc_update(int, Node**, double**, Datum**, NrnThread*);
-    double conductance(double gmax, double* state);
+    virtual void spec(Memb_list*);
+    virtual void matsol(NrnThread*, Memb_list*);
+    virtual void cv_sc_update(NrnThread*, Memb_list*);
+    double conductance(double gmax, Memb_list* ml, std::size_t instance, std::size_t offset);
 
   public:
     // hoc accessibilty
@@ -364,9 +364,9 @@ class KSChan {
     void build();
     void setupmat();
     void fillmat(double v, Datum* pd);
-    void mat_dt(double dt, double* p);
-    void solvemat(double*);
-    void mulmat(double*, double*);
+    void mat_dt(double dt, Memb_list* ml, std::size_t instance, std::size_t offset);
+    void solvemat(Memb_list*, std::size_t instance, std::size_t offset);
+    void mulmat(Memb_list* ml, std::size_t instance, std::size_t offset_s, std::size_t offset_ds);
     void ion_consist();
     void ligand_consist(int, int, Prop*, Node*);
     Prop* needion(Symbol*, Node*, Prop*);

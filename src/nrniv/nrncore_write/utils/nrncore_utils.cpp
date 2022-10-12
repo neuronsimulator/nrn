@@ -163,11 +163,9 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
             if (nrn_is_artificial_[tml->index]) {
                 continue;
             }
-            Memb_list* ml1 = tml->ml;
-            int nn = nrn_prop_param_size_[tml->index] * ml1->nodecount;
-            if (pd >= ml1->_data[0] && pd < (ml1->_data[0] + nn)) {
+            if (auto const maybe_index = tml->ml->legacy_index(pd); maybe_index >= 0) {
                 type = tml->index;
-                index = pd - ml1->_data[0];
+                index = maybe_index;
                 break;
             }
         }

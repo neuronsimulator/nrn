@@ -121,7 +121,7 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
 
     nrn_point_prop_ = (Prop*) 0;
     if (pnt->prop) {
-        pnt->prop->param = nullptr;
+        //pnt->prop->param = nullptr;
         pnt->prop->dparam = nullptr;
         free_one_point(pnt);
     }
@@ -277,7 +277,7 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
         if (pnt->prop->ob) {
             return pnt->prop->ob->u.dataspace[sym->u.rng.index].pval + index;
         } else {
-            return &(pnt->prop->param[sym->u.rng.index + index]);
+            return static_cast<double*>(pnt->prop->param_handle(sym->u.rng.index + index));
         }
     }
 }
@@ -329,12 +329,13 @@ static void free_one_point(Point_process* pnt) {
             }
     }
     { v_structure_change = 1; }
-    if (p->param) {
+    // if (p->param)
+    {
         if (memb_func[p->_type].destructor) {
             memb_func[p->_type].destructor(p);
         }
-        notify_freed_val_array(p->param, p->param_size);
-        nrn_prop_data_free(p->_type, p->param);
+        // notify_freed_val_array(p->param, p->param_size);
+        // nrn_prop_data_free(p->_type, p->param);
     }
     if (p->dparam) {
         nrn_prop_datum_free(p->_type, p->dparam);
@@ -365,10 +366,10 @@ void clear_point_process_struct(Prop* p) {
         if (p->ob) {
             hoc_obj_unref(p->ob);
         }
-        if (p->param) {
-            notify_freed_val_array(p->param, p->param_size);
-            nrn_prop_data_free(p->_type, p->param);
-        }
+        // if (p->param) {
+        //     notify_freed_val_array(p->param, p->param_size);
+        //     nrn_prop_data_free(p->_type, p->param);
+        // }
         if (p->dparam) {
             nrn_prop_datum_free(p->_type, p->dparam);
         }

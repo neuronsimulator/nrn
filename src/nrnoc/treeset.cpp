@@ -695,16 +695,13 @@ Prop* prop_alloc(Prop** pp, int type, Node* nd) {
     }
     v_structure_change = 1;
     current_prop_list = pp;
-    auto* p = (Prop*) emalloc(sizeof(Prop));
-    p->_type = type;
+    auto* p = new Prop{static_cast<short>(type)};
     p->next = *pp;
     p->ob = nullptr;
     p->_alloc_seq = -1;
     *pp = p;
     assert(memb_func[type].alloc);
     p->dparam = nullptr;
-    p->param = nullptr;
-    p->param_size = 0;
     (memb_func[type].alloc)(p);
     return p;
 }
@@ -716,15 +713,12 @@ Prop* prop_alloc_disallow(Prop** pp, short type, Node* nd) {
     return p;
 }
 
-void prop_free(Prop** pp) /* free an entire property list */
-{
-    Prop *p, *pn;
-    p = *pp;
-    *pp = (Prop*) 0;
+// free an entire property list
+void prop_free(Prop** pp) {
+    Prop* p = *pp;
+    *pp = nullptr;
     while (p) {
-        pn = p->next;
-        single_prop_free(p);
-        p = pn;
+        single_prop_free(std::exchange(p, p->next));
     }
 }
 
@@ -735,10 +729,10 @@ void single_prop_free(Prop* p) {
         clear_point_process_struct(p);
         return;
     }
-    if (p->param) {
-        notify_freed_val_array(p->param, p->param_size);
-        nrn_prop_data_free(p->_type, p->param);
-    }
+    // if (p->param) {
+    //     notify_freed_val_array(p->param, p->param_size);
+    //     nrn_prop_data_free(p->_type, p->param);
+    // }
     if (p->dparam) {
         if (p->_type == CABLESECTION) {
             notify_freed_val_array(&(p->dparam[2].literal_value<double>()), 6);
@@ -748,7 +742,7 @@ void single_prop_free(Prop* p) {
     if (p->ob) {
         hoc_obj_unref(p->ob);
     }
-    free((char*) p);
+    delete p;
 }
 
 
@@ -801,9 +795,9 @@ void nrn_area_ri(Section* sec) {
             /* area for right circular cylinders. Ri as right half of parent + left half
                of this
             */
-            diam = p->param[0];
+            diam = p->param(0);
             if (diam <= 0.) {
-                p->param[0] = 1e-6;
+                p->set_param(0, 1e-6);
                 hoc_execerror(secname(sec), "diameter diam = 0. Setting to 1e-6");
             }
             nd->set_area(PI * diam * dx);                           // um^2
@@ -1593,8 +1587,8 @@ static double diam_from_list(Section* sec, int inode, Prop* p, double rparent)
     /* answer for inode is here */
     NODERINV(sec->pnode[inode]) = 1. / (rparent + rleft);
     diam *= .5 / ds;
-    if (fabs(diam - p->param[0]) > 1e-9 || diam < 1e-5) {
-        p->param[0] = diam; /* microns */
+    if (fabs(diam - p->param(0)) > 1e-9 || diam < 1e-5) {
+        p->set_param(0, diam); /* microns */
     }
     sec->pnode[inode]->set_area(area * .5 * PI); /* microns^2 */
 #if NTS_SPINE
@@ -1640,7 +1634,7 @@ void v_setup_vectors(void) {
                 if (memb_func[i].hoc_mech) {
                     free(memb_list[i].prop);
                 } else {
-                    free(memb_list[i]._data);
+                    //free(memb_list[i]._data);
                     free(memb_list[i].pdata);
                 }
             }
@@ -1667,8 +1661,8 @@ void v_setup_vectors(void) {
                 if (memb_func[i].hoc_mech) {
                     memb_list[i].prop = (Prop**) emalloc(memb_list[i].nodecount * sizeof(Prop*));
                 } else {
-                    memb_list[i]._data = (double**) emalloc(memb_list[i].nodecount *
-                                                            sizeof(double*));
+                    // memb_list[i]._data = (double**) emalloc(memb_list[i].nodecount *
+                    //                                         sizeof(double*));
                     memb_list[i].pdata = (Datum**) emalloc(memb_list[i].nodecount * sizeof(Datum*));
                 }
                 memb_list[i].nodecount = 0; /* counted again below */
@@ -1730,7 +1724,7 @@ void v_setup_vectors(void) {
                 auto* pnt = static_cast<Point_process*>(obj->u.this_pointer);
                 p = pnt->prop;
                 memb_list[i].nodelist[j] = nullptr;
-                memb_list[i]._data[j] = p->param;
+                //memb_list[i]._data[j] = p->param;
                 memb_list[i].pdata[j] = p->dparam;
                 /* for now, round robin all the artificial cells */
                 /* but put the non-threadsafe ones in thread 0 */
@@ -1864,28 +1858,29 @@ void node_data(void) {
 #endif
 
 void nrn_complain(double* pp) {
+    assert(false);
     /* print location for this param on the standard error */
-    Node* nd;
-    hoc_Item* qsec;
-    int j;
-    Prop* p;
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
-        for (j = 0; j < sec->nnode; ++j) {
-            nd = sec->pnode[j];
-            for (p = nd->prop; p; p = p->next) {
-                if (p->param == pp) {
-                    fprintf(stderr,
-                            "Error at section location %s(%g)\n",
-                            secname(sec),
-                            nrn_arc_position(sec, nd));
-                    return;
-                }
-            }
-        }
-    }
-    fprintf(stderr, "Don't know the location of params at %p\n", pp);
+    // Node* nd;
+    // hoc_Item* qsec;
+    // int j;
+    // Prop* p;
+    // // ForAllSections(sec)
+    // ITERATE(qsec, section_list) {
+    //     Section* sec = hocSEC(qsec);
+    //     for (j = 0; j < sec->nnode; ++j) {
+    //         nd = sec->pnode[j];
+    //         for (p = nd->prop; p; p = p->next) {
+    //             if (p->param == pp) {
+    //                 fprintf(stderr,
+    //                         "Error at section location %s(%g)\n",
+    //                         secname(sec),
+    //                         nrn_arc_position(sec, nd));
+    //                 return;
+    //             }
+    //         }
+    //     }
+    // }
+    // fprintf(stderr, "Don't know the location of params at %p\n", pp);
 }
 
 void nrn_matrix_node_free() {

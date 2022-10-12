@@ -238,7 +238,7 @@ void KSSingleNodeData::pr(const char* s, double tt, NetCvode* nc) {
     Printf("%s %s %.15g\n", s, hoc_object_name((*ppnt_)->ob), tt);
 }
 
-void KSSingle::state(Node* nd, double* p, Datum* pd, NrnThread* nt) {
+void KSSingle::state(Node* nd, Datum* pd, NrnThread* nt) {
     // integrate from t-dt to t
     int i;
     double v = NODEV(nd);
@@ -253,7 +253,7 @@ void KSSingle::state(Node* nd, double* p, Datum* pd, NrnThread* nt) {
     }
 }
 
-void KSSingle::cv_update(Node* nd, double* p, Datum* pd, NrnThread* nt) {
+void KSSingle::cv_update(Node* nd, Datum* pd, NrnThread* nt) {
     // if v changed then need to move the outstanding
     // single channel event time to a recalculated time
     int i;
@@ -376,10 +376,10 @@ void KSSingle::alloc(Prop* p, int sindex) {  // and discard old if not NULL
     snd->kss_ = this;
     snd->ppnt_ = &(p->dparam[1].literal_value<Point_process*>());
     p->dparam[2] = snd;
-    snd->statepop_ = p->param + sindex;
+    snd->statepop_ = static_cast<double*>(p->param_handle(sindex));
 }
 
-void KSSingle::init(double v, double* s, KSSingleNodeData* snd, NrnThread* nt) {
+void KSSingle::init(double v, KSSingleNodeData* snd, NrnThread* nt, Memb_list* ml, std::size_t instance, std::size_t offset) {
     // assuming 1-1 correspondence between KSChan and KSSingle states
     // place steady state population intervals end to end
     int i;
@@ -388,7 +388,7 @@ void KSSingle::init(double v, double* s, KSSingleNodeData* snd, NrnThread* nt) {
     snd->t0_ = nt->_t;
     snd->vlast_ = v;
     for (i = 0; i < nstate_; ++i) {
-        x += s[i];
+        x += ml->data(instance, offset + i);
         rval_[i] = x;
     }
     // initialization of complex kinetic schemes often not accurate to 9 decimal places

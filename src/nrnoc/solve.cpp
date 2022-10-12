@@ -651,8 +651,8 @@ static Node* node_clone(Node* nd1) {
                     }
                 }
             } else {
-                for (int i = 0; i < p1->param_size; ++i) {
-                    p2->param[i] = p1->param[i];
+                for (int i = 0; i < p1->param_size(); ++i) {
+                    p2->set_param(i, p1->param(i));
                 }
             }
         }

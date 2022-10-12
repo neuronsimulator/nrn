@@ -41,10 +41,10 @@ class KSSingle {
     virtual ~KSSingle();
 
     void alloc(Prop*, int sindex);
-    void init(double v, double* s, KSSingleNodeData* snd, NrnThread*);
+    void init(double v, KSSingleNodeData* snd, NrnThread*, Memb_list*, std::size_t instance, std::size_t offset);
 
-    void state(Node*, double*, Datum*, NrnThread*);
-    void cv_update(Node*, double*, Datum*, NrnThread*);
+    void state(Node*, Datum*, NrnThread*);
+    void cv_update(Node*, Datum*, NrnThread*);
     void one(double, KSSingleNodeData*, NrnThread*);
     void do1trans(KSSingleNodeData*);
     void next1trans(KSSingleNodeData*);
