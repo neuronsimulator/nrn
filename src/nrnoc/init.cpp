@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 #include <nrnmpiuse.h>
 #include "nrn_ansi.h"
+#include "nrncore_write/io/nrncore_io.h"
 #include "oc_ansi.h"
 #include <stdio.h>
 #include <errno.h>
@@ -159,8 +160,6 @@ void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
     nrn_watch_allocate_[type] = waf;
 }
 
-// also for read
-using bbcore_write_t = void (*)(double*, int*, int*, int*, double*, Datum*, Datum*, NrnThread*);
 bbcore_write_t* nrn_bbcore_write_;
 bbcore_write_t* nrn_bbcore_read_;
 
@@ -720,11 +719,14 @@ void hoc_register_prop_size(int type, int psize, int dpsize) {
     // Create a per-mechanism data structure as part of the top-level
     // neuron::model() structure.
     auto& model = neuron::model();
+    model.delete_mechanism(type);  // e.g. extracellular can call hoc_register_prop_size multiple
+                                   // times
     auto& mech_data = model.add_mechanism(type,
                                           memb_func[type].sym->name,    // the mechanism name
                                           nrn_prop_param_size_[type]);  // how many `double`
                                                                         // per-instance variables
                                                                         // there are
+    memb_list[type].set_storage_pointer(&mech_data);
 }
 void hoc_register_dparam_semantics(int type, int ix, const char* name) {
     /* only interested in area, iontype, cvode_ieq,
@@ -783,7 +785,7 @@ void hoc_register_cvode(int i, nrn_ode_count_t cnt, nrn_ode_map_t map, Pvmi spec
     memb_func[i].ode_spec = spec;
     memb_func[i].ode_matsol = matsol;
 }
-void hoc_register_synonym(int i, void (*syn)(int, double**, Datum**)) {
+void hoc_register_synonym(int i, nrn_ode_synonym_t syn) {
     memb_func[i].ode_synonym = syn;
 }
 
@@ -972,52 +974,53 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
     }
 
     if (memb_func[type].ode_count) {
-        Symbol **psym, *msym, *vsym;
-        double** pv;
-        Prop* p;
-        int i, j, k, n, na, index = 0;
-
-        n = (*memb_func[type].ode_count)(type);
-        if (n > 0) {
-            psym = (Symbol**) ecalloc(n, sizeof(Symbol*));
-            pv = (double**) ecalloc(2 * n, sizeof(double*));
-            Node node{};
+        if (auto const n = memb_func[type].ode_count(type); n > 0) {
+            auto* const psym = new Symbol* [n] {};
+            Node node{};  // dummy node
             node.sec_node_index_ = 0;
-            prop_alloc(&(node.prop), MORPHOLOGY, &node); /* in case we need diam */
-            p = prop_alloc(&(node.prop), type, &node);   /* this and any ions */
-            (*memb_func[type].ode_map)(0, pv, pv + n, p->param, p->dparam, (double*) 0, type);
-            for (i = 0; i < n; ++i) {
+            prop_alloc(&(node.prop), MORPHOLOGY, &node);     /* in case we need diam */
+            auto* p = prop_alloc(&(node.prop), type, &node); /* this and any ions */
+            // Fill `pv` with pointers to `2*n` parameters inside `p`
+            std::vector<double*> pv(2 * n);
+            Memb_list ml{type};
+            memb_func[type].ode_map(
+                0, pv.data(), pv.data() + n, &ml, p->id().current_row(), p->dparam, nullptr, type);
+            for (int i = 0; i < n; ++i) {  // only check the first `n` for some reason
+                int index = -1;
                 for (p = node.prop; p; p = p->next) {
-                    if (pv[i] >= p->param && pv[i] < (p->param + p->param_size)) {
-                        index = pv[i] - p->param;
+                    auto const num_params = p->param_size();
+                    for (auto i_param = 0; i_param < num_params; ++i_param) {
+                        if (pv[i] == static_cast<double*>(p->param_handle(i_param))) {
+                            index = i_param;  // ambiguous between the two Prop attached to Node?
+                            break;
+                        }
+                    }
+                    if (index >= 0) {
                         break;
                     }
                 }
-
                 /* p is the prop and index is the index
                     into the p->param array */
-                assert(p);
+                assert(p);  // assert that we reached the break statement
                 /* need to find symbol for this */
-                msym = memb_func[p->_type].sym;
-                for (j = 0; j < msym->s_varn; ++j) {
-                    vsym = msym->u.ppsym[j];
+                auto* msym = memb_func[p->_type].sym;
+                for (int j = 0; j < msym->s_varn; ++j) {
+                    auto* vsym = msym->u.ppsym[j];
                     if (vsym->type == RANGEVAR && vsym->u.rng.index == index) {
                         psym[i] = vsym;
                         /*printf("identified %s at index %d of %s\n", vsym->name, index,
                          * msym->name);*/
                         if (ISARRAY(vsym)) {
-                            na = vsym->arayinfo->sub[0];
-                            for (k = 1; k < na; ++k) {
+                            int const na = vsym->arayinfo->sub[0];
+                            for (int k = 1; k < na; ++k) {
                                 psym[++i] = vsym;
                             }
                         }
                         break;
                     }
                 }
-                assert(j < msym->s_varn);
             }
             *stol = psym;
-            free(pv);
         }
     }
 }
@@ -1032,7 +1035,8 @@ void _nrn_thread_reg(int i, int cons, void (*f)(Datum*)) {
     }
 }
 
-void _nrn_thread_table_reg(int i, void (*f)(double*, Datum*, Datum*, NrnThread*, int)) {
+void _nrn_thread_table_reg(int i,
+                           void (*f)(Memb_list*, std::size_t, Datum*, Datum*, NrnThread*, int)) {
     memb_func[i].thread_table_check_ = f;
 }
 
