@@ -7,6 +7,8 @@
 #include <section.h>
 #include <neuron.h>
 
+#include <nrnmpi.h>
+
 extern int ivocmain_session(int, const char**, const char**, int);
 
 extern int nrn_main_launch;
@@ -16,6 +18,9 @@ extern int nrn_nobanner_;
 extern "C" void modl_reg() {}
 extern int nrn_nthread;
 extern NrnThread* nrn_threads;
+#if NRNMPI_DYNAMICLOAD
+extern void nrnmpi_stubs();
+#endif
 
 extern int nrn_use_fast_imem;
 extern int use_cachevec;
@@ -31,6 +36,14 @@ int main(int argc, char* argv[]) {
     int argc_nompi = 2;
     const char* argv_nompi[] = {"NEURON", "-nogui", nullptr};
     nrn_nobanner_ = 1;
+
+#if NRNMPI
+    if (!nrnmpi_use) {
+#if NRNMPI_DYNAMICLOAD
+        nrnmpi_stubs();
+#endif
+    }
+#endif
 
     Catch::Session session;
 
