@@ -760,13 +760,14 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
   _nt = (NrnThread*)((Point_process*)_vptr)->_vnt;\n\
 ");
     } else {
-        vectorize_substitute(lappendstr(procfunc, ""),
-                             "Memb_list _ml_real = _extcall_prop ? Memb_list{_extcall_prop->_type} : Memb_list{};\n"
-                             "Memb_list *_ml{_extcall_prop ? &_ml_real : nullptr};\n"
-                             "std::size_t _iml{_extcall_prop ? _extcall_prop->_id().current_row() : 0};\n"
-                             "_ppvar = _extcall_prop ? _extcall_prop->dparam : nullptr;\n"
-                             "_thread = _extcall_thread.data();\n"
-                             "_nt = nrn_threads;\n");
+        vectorize_substitute(
+            lappendstr(procfunc, ""),
+            "Memb_list _ml_real = _extcall_prop ? Memb_list{_extcall_prop->_type} : Memb_list{};\n"
+            "Memb_list *_ml{_extcall_prop ? &_ml_real : nullptr};\n"
+            "std::size_t _iml{_extcall_prop ? _extcall_prop->_id().current_row() : 0};\n"
+            "_ppvar = _extcall_prop ? _extcall_prop->dparam : nullptr;\n"
+            "_thread = _extcall_thread.data();\n"
+            "_nt = nrn_threads;\n");
     }
     if (n == last_func_using_table) {
         qp = lappendstr(procfunc, "");

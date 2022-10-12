@@ -379,7 +379,12 @@ void KSSingle::alloc(Prop* p, int sindex) {  // and discard old if not NULL
     snd->statepop_ = static_cast<double*>(p->param_handle(sindex));
 }
 
-void KSSingle::init(double v, KSSingleNodeData* snd, NrnThread* nt, Memb_list* ml, std::size_t instance, std::size_t offset) {
+void KSSingle::init(double v,
+                    KSSingleNodeData* snd,
+                    NrnThread* nt,
+                    Memb_list* ml,
+                    std::size_t instance,
+                    std::size_t offset) {
     // assuming 1-1 correspondence between KSChan and KSSingle states
     // place steady state population intervals end to end
     int i;

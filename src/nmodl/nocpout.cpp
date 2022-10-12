@@ -305,9 +305,10 @@ void parout() {
     if (vectorize) {
         Sprintf(buf, "/* Thread safe. No static _ml, _iml or _ppvar. */\n");
     } else {
-        Sprintf(buf, "static Memb_list _ml_real{}, *_ml{&_ml_real};\n"
-                     "static std::size_t _iml{0};\n"
-                     "static Datum *_ppvar;\n");
+        Sprintf(buf,
+                "static Memb_list _ml_real{}, *_ml{&_ml_real};\n"
+                "static std::size_t _iml{0};\n"
+                "static Datum *_ppvar;\n");
     }
     Lappendstr(defs_list, buf);
 
@@ -419,9 +420,10 @@ extern Memb_func* memb_func;\n\
     if (vectorize) {
         Lappendstr(defs_list, "_extcall_prop = _prop;\n");
     } else {
-        Lappendstr(defs_list, "_ml_real = Memb_list{_prop->_type};\n"
-                              "_iml = _prop->_id().current_row();\n"
-                              "_ppvar = _prop->dparam;\n");
+        Lappendstr(defs_list,
+                   "_ml_real = Memb_list{_prop->_type};\n"
+                   "_iml = _prop->_id().current_row();\n"
+                   "_ppvar = _prop->dparam;\n");
     }
     Lappendstr(defs_list, "}\n");
 
@@ -867,9 +869,11 @@ static void nrn_alloc(Prop* _prop) {\n\
 	// _p = nrn_point_prop_;\n\
 	_ppvar = nrn_point_prop_->dparam;\n }else{\n");
     }
-    Sprintf(buf, "	Memb_list _ml_real{_prop->_type}, *_ml{&_ml_real};\n"
-                 "  std::size_t _iml{_p->_id().current_row()};\n"
-                 "	assert(_prop->param_size() == %d);\n", parraycount);
+    Sprintf(buf,
+            "  Memb_list _ml_real{_prop->_type}, *_ml{&_ml_real};\n"
+            "  std::size_t _iml{_p->_id().current_row()};\n"
+            "  assert(_prop->param_size() == %d);\n",
+            parraycount);
     Lappendstr(defs_list, buf);
     Lappendstr(defs_list, "	/*initialize range parameters*/\n");
     ITERATE(q, rangeparm) {
@@ -884,8 +888,7 @@ static void nrn_alloc(Prop* _prop) {\n\
     if (point_process) {
         Lappendstr(defs_list, " }\n");
     }
-    Lappendstr(defs_list, "\t_prop->param = _p;\n");
-    Sprintf(buf, "\t_prop->param_size = %d;\n", parraycount);
+    Sprintf(buf, "\t assert(_prop->param_size() == %d);\n", parraycount);
     Lappendstr(defs_list, buf);
     if (ppvar_cnt) {
         if (point_process) {
@@ -1315,8 +1318,6 @@ if (_nd->_extnode) {\n\
                        "  std::size_t _iml{_prop->_id().current_row()};\n"
                        "  Datum *_ppvar{_prop->dparam}, *_thread{nullptr};\n"
                        "  {\n");
-
-
 
 
         } else {
@@ -2655,8 +2656,7 @@ static void _ode_synonym(int _cnt, double** _pp, Datum** _ppd) {");
             } else {
                 sprintf(buf, "_ode_matsol%d", cvode_num_);
                 Lappendstr(procfunc, buf);
-                vectorize_substitute(lappendstr(procfunc, "();\n"),
-                                     "(_threadargs_);\n");
+                vectorize_substitute(lappendstr(procfunc, "();\n"), "(_threadargs_);\n");
             }
             Lappendstr(procfunc, "}\n");
             Lappendstr(procfunc,
@@ -2750,9 +2750,7 @@ void cvode_rw_cur(char* b) {
             if ((type & NRNCURIN) && (type & NRNCUROUT)) {
                 if (!cvode_not_allowed && cvode_emit) {
                     if (vectorize) {
-                        sprintf(b,
-                                "if (_nt->_vcv) { _ode_spec%d(_threadargs_); }\n",
-                                cvode_num_);
+                        sprintf(b, "if (_nt->_vcv) { _ode_spec%d(_threadargs_); }\n", cvode_num_);
                     } else {
                         sprintf(b, "if (_nt->_vcv) { _ode_spec%d(); }\n", cvode_num_);
                     }
@@ -2796,9 +2794,10 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     if (watch_seen_) {
         insertstr(qstmt, "  int _watch_rm = 0;\n");
     }
-    q = insertstr(qstmt, "  Memb_list _ml_real{_pnt->_prop->_type}, *_ml{&_ml_real};\n"
-                         "  std::size_t _iml{_pnt->_prop->_id().current_row()};\n"
-                         "  _ppvar = _pnt->_prop->dparam;\n");
+    q = insertstr(qstmt,
+                  "  Memb_list _ml_real{_pnt->_prop->_type}, *_ml{&_ml_real};\n"
+                  "  std::size_t _iml{_pnt->_prop->_id().current_row()};\n"
+                  "  _ppvar = _pnt->_prop->dparam;\n");
     vectorize_substitute(insertstr(q, ""), "  _thread = (Datum*)0; _nt = (NrnThread*)_pnt->_vnt;");
     if (debugging_) {
         if (0) {
