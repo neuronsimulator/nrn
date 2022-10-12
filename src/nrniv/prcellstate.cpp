@@ -37,7 +37,7 @@ static void pr_memb(int type,
                 pnt2index.emplace(pp, pnt2index.size());
             }
             for (int j = 0; j < size; ++j) {
-                fprintf(f, " %d %d %.*g\n", cellnodes[inode], j, precision, ml->data( i, j));
+                fprintf(f, " %d %d %.*g\n", cellnodes[inode], j, precision, ml->data(i, j));
             }
         }
     }

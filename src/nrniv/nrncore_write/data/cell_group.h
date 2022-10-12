@@ -97,7 +97,8 @@ class CellGroup {
   public:
     static inline int nrncore_pntindex_for_queue(Prop* p, int tid, int type) {
         assert(p->_type == type);
-        return p->id().current_row(); // ??? this is *not* well-tested and probably needs a `tid`-related offset
+        return p->id().current_row();  // ??? this is *not* well-tested and probably needs a
+                                       // `tid`-related offset
         // double* d = p->param;
         // Memb_list* ml = nrn_threads[tid]._ml_list[type];
         // if (ml) {

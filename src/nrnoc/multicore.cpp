@@ -554,7 +554,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
             if (memb_func[i].hoc_mech) {
                 tml->ml->prop = (Prop**) emalloc(mlcnt[i] * sizeof(Prop*));
             } else {
-                //CACHELINE_ALLOC(tml->ml->_data, double*, mlcnt[i]);
+                // CACHELINE_ALLOC(tml->ml->_data, double*, mlcnt[i]);
                 CACHELINE_ALLOC(tml->ml->pdata, Datum*, mlcnt[i]);
             }
             tml->ml->_thread = (Datum*) 0;

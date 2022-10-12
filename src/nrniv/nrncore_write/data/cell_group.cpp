@@ -169,7 +169,8 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                     //     // `long` precision, not `int` precision. This lets us
                     //     // check for overflow below.
                     //     agid = -(type +
-                    //              1000 * pnt->prop->id().current_row()); // TODO dubious at best! static_cast<long>(nrncore_art2index(pnt->prop->id().current_row())));
+                    //              1000 * pnt->prop->id().current_row()); // TODO dubious at best!
+                    //              static_cast<long>(nrncore_art2index(pnt->prop->id().current_row())));
                     // } else {  // POINT_PROCESS with net_event
                     //     int sz = nrn_prop_param_size_[type];
                     //     double* d1 = ml->_data[0];
@@ -446,7 +447,8 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
             cgs[ith].netcon_pnttype[i] = type;
             cgs[ith].netcon_pntindex[i] = nc->target_->prop->id().current_row();
             // if (nrn_is_artificial_[type]) {
-            //     cgs[ith].netcon_pntindex[i] = nc->target_->prop->id().current_row(); // TODO nrncore_art2index(nc->target_->prop->param);
+            //     cgs[ith].netcon_pntindex[i] = nc->target_->prop->id().current_row(); // TODO
+            //     nrncore_art2index(nc->target_->prop->param);
             // } else {
             //     // cache efficient so can calculate index from pointer
             //     Memb_list* ml = cgs[ith].type2ml[type];
@@ -571,7 +573,7 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                     ml->nodeindices = NULL;
                     ml->prop = NULL;
                     ml->_thread = NULL;
-                    //ml->_data = new double*[acnt[id]];
+                    // ml->_data = new double*[acnt[id]];
                     ml->pdata = new Datum*[acnt[id]];
                 }
             }
@@ -584,7 +586,7 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                 auto* pnt = static_cast<Point_process*>(memb_list[i].pdata[j][1]);
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 Memb_list* ml = cgs[id].mlwithart.back().second;
-                //ml->_data[acnt[id]] = memb_list[i]._data[j];
+                // ml->_data[acnt[id]] = memb_list[i]._data[j];
                 ml->pdata[acnt[id]] = memb_list[i].pdata[j];
                 artdata2index_.insert(std::pair<double*, int>(&ml->data(acnt[id], 0), acnt[id]));
                 ++acnt[id];
@@ -656,7 +658,7 @@ void CellGroup::clean_art(CellGroup* cgs) {
                 if (!deferred_type2artml_.empty()) {
                     deferred_type2artml_[ith][type] = ml;
                 } else {
-                    //delete[] ml->_data;
+                    // delete[] ml->_data;
                     delete[] ml->pdata;
                     delete ml;
                 }

@@ -415,13 +415,13 @@ void cab_alloc(Prop* p) {
 }
 
 void morph_alloc(Prop* p) {
-    //double* pd;
-    //pd = nrn_prop_data_alloc(MORPHOLOGY, 1, p);
+    // double* pd;
+    // pd = nrn_prop_data_alloc(MORPHOLOGY, 1, p);
     assert(p->param_size() == 1);
     p->set_param(0, DEF_diam); /* microns */
     diam_changed = 1;
-    //p->param = pd;
-    //p->param_size = 1;
+    // p->param = pd;
+    // p->param_size = 1;
 }
 
 double nrn_diameter(Node* nd) {

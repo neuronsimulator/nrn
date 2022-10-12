@@ -77,13 +77,27 @@ extern "C" void extracell_reg_(void) {
 /* solving is done with sparse13 */
 
 /* interface between hoc and extcell */
-inline std::size_t xraxial_index(std::size_t ilayer) { return ilayer; }
-inline std::size_t xg_index(std::size_t ilayer) { return nrn_nlayer_extracellular + ilayer; }
-inline std::size_t xc_index(std::size_t ilayer) { return 2*nrn_nlayer_extracellular + ilayer; }
-inline std::size_t e_extracellular_index() { return 3 * nrn_nlayer_extracellular; }
-inline std::size_t i_membrane_index() { return 3 * nrn_nlayer_extracellular + 1; }
-inline std::size_t sav_g_index() { return 3 * nrn_nlayer_extracellular + 2; }
-inline std::size_t sav_rhs_index() { return 3 * nrn_nlayer_extracellular + 3; }
+inline std::size_t xraxial_index(std::size_t ilayer) {
+    return ilayer;
+}
+inline std::size_t xg_index(std::size_t ilayer) {
+    return nrn_nlayer_extracellular + ilayer;
+}
+inline std::size_t xc_index(std::size_t ilayer) {
+    return 2 * nrn_nlayer_extracellular + ilayer;
+}
+inline std::size_t e_extracellular_index() {
+    return 3 * nrn_nlayer_extracellular;
+}
+inline std::size_t i_membrane_index() {
+    return 3 * nrn_nlayer_extracellular + 1;
+}
+inline std::size_t sav_g_index() {
+    return 3 * nrn_nlayer_extracellular + 2;
+}
+inline std::size_t sav_rhs_index() {
+    return 3 * nrn_nlayer_extracellular + 3;
+}
 
 /* based on update() in fadvance.cpp */
 /* update has already been called so modify nd->v based on dvi
@@ -117,7 +131,8 @@ void nrn_update_2d(NrnThread* nt) {
     for (i = 0; i < cnt; ++i) {
         nd = ndlist[i];
         NODERHS(nd) -= *nd->extnode->_rhs[0];
-        ml->data(i, i_membrane_index()) = ml->data(i, sav_g_index()) * (NODERHS(nd)) + ml->data(i, sav_rhs_index());
+        ml->data(i, i_membrane_index()) = ml->data(i, sav_g_index()) * (NODERHS(nd)) +
+                                          ml->data(i, sav_rhs_index());
 #if 1
         /* i_membrane is a current density (mA/cm2). However
             it contains contributions from Non-ELECTRODE_CURRENT
@@ -317,7 +332,7 @@ void nrn_extcell_update_param(void) {
                 Node* nd = ndlist[i];
                 assert(nd->extnode);
                 assert(false);
-                //nd->extnode->param = ml->_data[i];
+                // nd->extnode->param = ml->_data[i];
             }
         }
     }
@@ -396,7 +411,8 @@ void nrn_rhs_ext(NrnThread* _nt) {
             /* series resistance and battery to ground */
             /* between nlayer-1 and ground */
             j = nrn_nlayer_extracellular - 1;
-            *nde->_rhs[j] -= *nde->param[xg_index(j)] * (nde->v[j] - *nde->param[e_extracellular_index()]);
+            *nde->_rhs[j] -= *nde->param[xg_index(j)] *
+                             (nde->v[j] - *nde->param[e_extracellular_index()]);
             for (--j; j >= 0; --j) { /* between j and j+1 layer */
                 double x = *nde->param[xg_index(j)] * (nde->v[j] - nde->v[j + 1]);
                 *nde->_rhs[j] -= x;

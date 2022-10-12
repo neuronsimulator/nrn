@@ -238,8 +238,17 @@ class KSIv {
   public:
     virtual ~KSIv() = default;
     // this one for ionic ohmic and nernst.
-    virtual double cur(double g, Datum* pd, double v, Memb_list* ml, std::size_t instance, std::size_t offset);
-    virtual double jacob(Datum* pd, double v, Memb_list* ml, std::size_t instance, std::size_t offset);
+    virtual double cur(double g,
+                       Datum* pd,
+                       double v,
+                       Memb_list* ml,
+                       std::size_t instance,
+                       std::size_t offset);
+    virtual double jacob(Datum* pd,
+                         double v,
+                         Memb_list* ml,
+                         std::size_t instance,
+                         std::size_t offset);
 };
 class KSIvghk: public KSIv {
   public:

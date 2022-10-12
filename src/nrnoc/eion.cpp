@@ -347,16 +347,11 @@ void ghk(void) {
     hoc_retpushx(val);
 }
 
-#define erev   pd[i][0] /* From Eion */
-#define erev_index 0
-#define conci  pd[i][1]
-#define conci_index 1
-#define conco  pd[i][2]
-#define conco_index 2
-#define cur    pd[i][3]
-#define cur_index 3
-#define dcurdv pd[i][4]
-#define dcurdv_index 4
+static constexpr auto erev_index = 0; /* From Eion */
+static constexpr auto conci_index = 1;
+static constexpr auto conco_index = 2;
+static constexpr auto cur_index = 3;
+static constexpr auto dcurdv_index = 4;
 
 /*
  handle erev, conci, conc0 "in the right way" according to ion_style
@@ -575,7 +570,8 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
         ml->data(i, dcurdv_index) = 0.0;
         ml->data(i, cur_index) = 0.0;
         if (iontype & 0100) {
-            ml->data(i, erev_index) = nrn_nernst(ml->data(i, conci_index), ml->data(i, conco_index), charge);
+            ml->data(i, erev_index) =
+                nrn_nernst(ml->data(i, conci_index), ml->data(i, conco_index), charge);
         }
     };
 }
@@ -597,15 +593,16 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
     }
     for (i = 0; i < count; ++i) {
         if (iontype & 040) {
-            ml->data(i, erev_index) = nrn_nernst(ml->data(i, conci_index), ml->data(i, conco_index), charge);
+            ml->data(i, erev_index) =
+                nrn_nernst(ml->data(i, conci_index), ml->data(i, conco_index), charge);
         }
     }
 }
 
 static void ion_alloc(Prop* p) {
-    //double* pd[1];
-    //int i = 0;
-    //pd[0] = nrn_prop_data_alloc(p->_type, nparm, p);
+    // double* pd[1];
+    // int i = 0;
+    // pd[0] = nrn_prop_data_alloc(p->_type, nparm, p);
     assert(p->param_size() == nparm);
     p->set_param(cur_index, 0.);
     p->set_param(dcurdv_index, 0.);

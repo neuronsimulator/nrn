@@ -538,7 +538,8 @@ for (i=0; i < z.nvsize_; ++i) {
 #if EXTRACELLULAR
 #if I_MEMBRANE
             // i_membrane = sav_rhs --- even for zero area nodes
-            ml->data(i, 1 + 3 * nrn_nlayer_extracellular) = ml->data(i, 3 + 3 * nrn_nlayer_extracellular);
+            ml->data(i, 1 + 3 * nrn_nlayer_extracellular) =
+                ml->data(i, 3 + 3 * nrn_nlayer_extracellular);
 #endif /*I_MEMBRANE*/
             if (nrn_nlayer_extracellular == 1) {
                 // only works for one layer
@@ -556,7 +557,8 @@ for (i=0; i < z.nvsize_; ++i) {
                     // k=0 refers to stuff between layer 0 and 1
                     // j is for vext[0]
                     jj = j + k;
-                    x = 1e-3 * ml->data(i, 2 * nrn_nlayer_extracellular + k) * (yprime[jj] - yprime[jj + 1]);
+                    x = 1e-3 * ml->data(i, 2 * nrn_nlayer_extracellular + k) *
+                        (yprime[jj] - yprime[jj + 1]);
                     delta[jj] -= x;
                     delta[jj + 1] += x;  // last one in iteration is nlayer-1
                 }

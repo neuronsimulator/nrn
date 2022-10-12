@@ -38,11 +38,13 @@ struct Model {
      */
     container::Mechanism::storage& mechanism_data(std::size_t type) {
         if (type >= m_mech_data.size()) {
-            throw std::runtime_error("mechanism_data(" + std::to_string(type) + "): type out of range");
+            throw std::runtime_error("mechanism_data(" + std::to_string(type) +
+                                     "): type out of range");
         }
         auto& data_ptr = m_mech_data[type];
         if (!data_ptr) {
-            throw std::runtime_error("mechanism_data(" + std::to_string(type) + "): data for type was null");
+            throw std::runtime_error("mechanism_data(" + std::to_string(type) +
+                                     "): data for type was null");
         }
         return *data_ptr;
     }
