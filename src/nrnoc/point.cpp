@@ -121,7 +121,7 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
 
     nrn_point_prop_ = (Prop*) 0;
     if (pnt->prop) {
-        //pnt->prop->param = nullptr;
+        // pnt->prop->param = nullptr;
         pnt->prop->dparam = nullptr;
         free_one_point(pnt);
     }

@@ -1634,7 +1634,7 @@ void v_setup_vectors(void) {
                 if (memb_func[i].hoc_mech) {
                     free(memb_list[i].prop);
                 } else {
-                    //free(memb_list[i]._data);
+                    // free(memb_list[i]._data);
                     free(memb_list[i].pdata);
                 }
             }
@@ -1724,7 +1724,7 @@ void v_setup_vectors(void) {
                 auto* pnt = static_cast<Point_process*>(obj->u.this_pointer);
                 p = pnt->prop;
                 memb_list[i].nodelist[j] = nullptr;
-                //memb_list[i]._data[j] = p->param;
+                // memb_list[i]._data[j] = p->param;
                 memb_list[i].pdata[j] = p->dparam;
                 /* for now, round robin all the artificial cells */
                 /* but put the non-threadsafe ones in thread 0 */

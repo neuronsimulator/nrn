@@ -28,10 +28,14 @@ void solv_lineq(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum
             "  %s();\n"
             "  {\n"
             "    std::vector<double> _p;\n"
-            "   _p.resize(*std::max_element(_slist%d, _slist%d + %d));\n"
-            "   for (auto _i_hack = 0; _i_hack < %d; ++_i_hack) { _p[_slist%d[_i_hack]] = _ml->data(_iml, _slist%d[_i_hack]); }\n"
-            "   error = %s(%d, _coef%d, _p.data(), _slist%d);\n"
-            "   for (auto _i_hack = 0; _i_hack < %d; ++_i_hack) { _ml->data(_iml, _slist%d[_i_hack]) = _p[_slist%d[_i_hack]]; }\n"
+            "    _p.resize(*std::max_element(_slist%d, _slist%d + %d));\n"
+            "    for (auto _i_hack = 0; _i_hack < %d; ++_i_hack) {\n"
+            "      _p[_slist%d[_i_hack]] = _ml->data(_iml, _slist%d[_i_hack]);\n"
+            "    }\n"
+            "    error = %s(%d, _coef%d, _p.data(), _slist%d);\n"
+            "    for (auto _i_hack = 0; _i_hack < %d; ++_i_hack) {\n"
+            "      _ml->data(_iml, _slist%d[_i_hack]) = _p[_slist%d[_i_hack]];\n"
+            "    }\n"
             "  }\n",
             fun->name,
             listnum,

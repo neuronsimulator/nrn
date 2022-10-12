@@ -172,7 +172,8 @@ int nrn_prop_is_cache_efficient() {
     //                 continue;
     //             }
     //             for (int j = 0; j < ml->nodecount; ++j) {
-    //                 if (p[i]->element(j) != static_cast<double*>(ml->_data[j]->param_handle(0))) {
+    //                 if (p[i]->element(j) != static_cast<double*>(ml->_data[j]->param_handle(0)))
+    //                 {
     //                     // printf("thread %d mechanism %s instance %d  element %p data %p\n",
     //                     // it, memb_func[i].sym->name, j, p[i]->element(j), (ml->_data + j));
     //                     r = 0;
@@ -315,15 +316,15 @@ static int in_place_data_realloc() {
                     NrnProperty* np = ms->np();
                     if (np->type() == i && np->deleteable()) {
                         Prop* p = np->prop();
-                        //double* data = p->param;
-                        //int ntget = newpool->ntget();
-                        //p->param = newpool->alloc();
-                        //for (int k = 0; k < newpool->d2(); ++k) {
-                            //p->param[k] = data[k];
+                        // double* data = p->param;
+                        // int ntget = newpool->ntget();
+                        // p->param = newpool->alloc();
+                        // for (int k = 0; k < newpool->d2(); ++k) {
+                        // p->param[k] = data[k];
                         //}
                         // store in old location enough info
                         // to construct a pointer to the new location
-                        //for (int k = 0; k < newpool->d2(); ++k) {
+                        // for (int k = 0; k < newpool->d2(); ++k) {
                         //    data[k] = double(ntget);
                         //}
                         ++found;
@@ -366,7 +367,7 @@ static int in_place_data_realloc() {
                     Memb_list* ml = mlmap[p->_type];
                     assert(ml->nodelist[ml->nodecount] == nd);
                     if (!memb_func[p->_type].hoc_mech) {
-                        //p->param = ml->_data[ml->nodecount];
+                        // p->param = ml->_data[ml->nodecount];
                     }
                     ++ml->nodecount;
                 }

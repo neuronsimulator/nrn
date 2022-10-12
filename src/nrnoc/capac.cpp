@@ -128,5 +128,5 @@ void nrn_div_capacity(NrnThread* _nt, Memb_list* ml) {
 
 static void cap_alloc(Prop* p) {
     assert(p->param_size() == nparm);
-    p->set_param(0, DEF_cm); // default capacitance/cm^2
-} 
+    p->set_param(0, DEF_cm);  // default capacitance/cm^2
+}

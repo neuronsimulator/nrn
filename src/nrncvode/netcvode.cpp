@@ -1648,7 +1648,7 @@ bool NetCvode::init_global() {
                     if (mf->hoc_mech) {
                         cml->ml->prop = ml->prop;
                     } else {
-                        //cml->ml->_data = ml->_data;
+                        // cml->ml->_data = ml->_data;
                         cml->ml->pdata = ml->pdata;
                     }
                     cml->ml->_thread = ml->_thread;
@@ -1793,7 +1793,7 @@ bool NetCvode::init_global() {
                     if (memb_func[cml->index].hoc_mech) {
                         ml->prop = new Prop*[ml->nodecount];
                     } else {
-                        //ml->_data = new Prop*[ml->nodecount];
+                        // ml->_data = new Prop*[ml->nodecount];
                         ml->pdata = new Datum*[ml->nodecount];
                     }
                     ml->nodecount = 0;
@@ -1823,7 +1823,7 @@ bool NetCvode::init_global() {
                         if (mf->hoc_mech) {
                             cml->ml->prop[cml->ml->nodecount] = ml->prop[j];
                         } else {
-                            //cml->ml->_data[cml->ml->nodecount] = ml->_data[j];
+                            // cml->ml->_data[cml->ml->nodecount] = ml->_data[j];
                             cml->ml->pdata[cml->ml->nodecount] = ml->pdata[j];
                         }
                         cml->ml->_thread = ml->_thread;

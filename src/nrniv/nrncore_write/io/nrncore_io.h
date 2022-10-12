@@ -35,7 +35,8 @@ void writedbl_(double* p, size_t size, FILE* f);
 #define writedbl(p, size) writedbl_(p, size, f)
 // also for read
 struct Memb_list;
-using bbcore_write_t = void (*)(double*, int*, int*, int*, Memb_list*, std::size_t, Datum*, Datum*, NrnThread*);
+using bbcore_write_t =
+    void (*)(double*, int*, int*, int*, Memb_list*, std::size_t, Datum*, Datum*, NrnThread*);
 
 void write_contiguous_art_data(double** data, int nitem, int szitem, FILE* f);
 double* contiguous_art_data(Memb_list* ml, int nitem, int szitem);

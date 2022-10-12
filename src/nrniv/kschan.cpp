@@ -2212,7 +2212,8 @@ void KSChan::solvemat(Memb_list* ml, std::size_t instance, std::size_t offset) {
     // spSolve seems to require that the parameters are contiguous, which
     // they're not anymore in the real NEURON data structure
     std::vector<double> s;
-    s.resize(nksstate_ + 1); // +1 so the pointer arithmetic to account for 1-based indexing is valid
+    s.resize(nksstate_ + 1);  // +1 so the pointer arithmetic to account for 1-based indexing is
+                              // valid
     for (auto j = 0; j < nksstate_; ++j) {
         s[j + 1] = ml->data(instance, offset + j);
     }
@@ -2231,13 +2232,17 @@ void KSChan::solvemat(Memb_list* ml, std::size_t instance, std::size_t offset) {
     spSolve(mat_, s.data(), s.data());
 }
 
-void KSChan::mulmat(Memb_list* ml, std::size_t instance, std::size_t offset_s, std::size_t offset_ds) {
+void KSChan::mulmat(Memb_list* ml,
+                    std::size_t instance,
+                    std::size_t offset_s,
+                    std::size_t offset_ds) {
     std::vector<double> s, ds;
-    s.resize(nksstate_ + 1); // +1 so the pointer arithmetic to account for 1-based indexing is valid
+    s.resize(nksstate_ + 1);  // +1 so the pointer arithmetic to account for 1-based indexing is
+                              // valid
     ds.resize(nksstate_ + 1);
     for (auto j = 0; j < nksstate_; ++j) {
         s[j + 1] = ml->data(instance, offset_s + j);
-       ds[j + 1] = ml->data(instance, offset_ds + j);
+        ds[j + 1] = ml->data(instance, offset_ds + j);
     }
     spMultiply(mat_, ds.data(), s.data());
 }
@@ -2249,10 +2254,10 @@ void KSChan::alloc(Prop* prop) {
     assert(prop->param_size() == soffset_ + 2 * nstate_);
     if (is_point() && nrn_point_prop_) {
         assert(nrn_point_prop_->param_size() == prop->param_size());
-        //prop->param = nrn_point_prop_->param;
+        // prop->param = nrn_point_prop_->param;
         prop->dparam = nrn_point_prop_->dparam;
     } else {
-        //prop->param = nrn_prop_data_alloc(prop->_type, prop->param_size(), prop);
+        // prop->param = nrn_prop_data_alloc(prop->_type, prop->param_size(), prop);
         prop->set_param(gmaxoffset_, gmax_deflt_);
         if (is_point()) {
             prop->set_param(NSingleIndex, 1.);
@@ -2667,7 +2672,12 @@ void KSChan::jacob(NrnThread* _nt, Memb_list* ml) {
 }
 #endif /* CACHEVEC */
 
-double KSIv::cur(double g, Datum* pd, double v, Memb_list* ml, std::size_t instance, std::size_t offset) {
+double KSIv::cur(double g,
+                 Datum* pd,
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) {
     auto ena = *static_cast<double*>(pd[0]);
     ml->data(instance, offset + 1) = g;
     double i = g * (v - ena);
@@ -2677,7 +2687,7 @@ double KSIv::cur(double g, Datum* pd, double v, Memb_list* ml, std::size_t insta
 }
 
 double KSIv::jacob(Datum* pd, double, Memb_list* ml, std::size_t instance, std::size_t offset) {
-    auto v = ml->data(instance, offset + 1); // diion/dv
+    auto v = ml->data(instance, offset + 1);  // diion/dv
     *static_cast<double*>(pd[2]) += v;
     return v;
 }
@@ -2933,7 +2943,10 @@ KSGateComplex::KSGateComplex() {
 }
 
 KSGateComplex::~KSGateComplex() {}
-double KSGateComplex::conductance(Memb_list* ml, std::size_t instance, std::size_t offset, KSState* st) {
+double KSGateComplex::conductance(Memb_list* ml,
+                                  std::size_t instance,
+                                  std::size_t offset,
+                                  KSState* st) {
     double g = 0.;
     int i;
     offset += sindex_;

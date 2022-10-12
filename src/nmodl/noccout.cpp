@@ -604,7 +604,8 @@ void c_out_vectorize() {
 
     /* standard modl EQUATION without solve computes current */
     if (!conductance_) {
-        P("\nstatic double _nrn_current(_threadargsprotocomma_ double _v){double _current=0.;v=_v;");
+        P("\nstatic double _nrn_current(_threadargsprotocomma_ double _v) {\n"
+          "double _current=0.; v=_v;\n");
         if (cvode_nrn_current_solve_) {
             fprintf(fcout,
                     "if (cvode_active_) { %s(_threadargs_); }\n",

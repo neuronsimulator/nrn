@@ -365,13 +365,13 @@ int nrnthread_dat2_mech(int tid,
         }
     }
 
-    //double* data1;
-    if (isart) {                                 // data may not be contiguous
-        //data1 = contiguous_art_data(ml, n, sz);  // delete after use
+    // double* data1;
+    if (isart) {  // data may not be contiguous
+        // data1 = contiguous_art_data(ml, n, sz);  // delete after use
         nodeindices = NULL;
     } else {
         nodeindices = ml->nodeindices;  // allocated below if copy
-        //data1 = ml->_data[0];           // do not delete after use
+        // data1 = ml->_data[0];           // do not delete after use
     }
     if (copy) {
         if (!isart) {
@@ -387,8 +387,8 @@ int nrnthread_dat2_mech(int tid,
         // if (isart) {
         //     delete[] data1;
         // }
-    // } else {
-    //     data = data1;
+        // } else {
+        //     data = data1;
     }
 
     sz = bbcore_dparam_size[type];  // nrn_prop_dparam_size off by 1 if cvode_ieq.
@@ -492,8 +492,7 @@ int nrnthread_dat2_corepointer_mech(int tid,
     icnt = 0;
     // data size and allocate
     for (int i = 0; i < ml->nodecount; ++i) {
-        (*nrn_bbcore_write_[type])(
-            NULL, NULL, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, &nt);
+        (*nrn_bbcore_write_[type])(NULL, NULL, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, &nt);
     }
     dArray = NULL;
     iArray = NULL;
@@ -533,8 +532,7 @@ int core2nrn_corepointer_mech(int tid, int type, int icnt, int dcnt, int* iArray
     int dk = 0;
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
-        (*nrn_bbcore_read_[type])(
-            dArray, iArray, &dk, &ik, ml, i, ml->pdata[i], ml->_thread, &nt);
+        (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, ml, i, ml->pdata[i], ml->_thread, &nt);
     }
     assert(dk == dcnt);
     assert(ik == icnt);
