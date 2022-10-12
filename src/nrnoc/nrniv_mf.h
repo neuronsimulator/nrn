@@ -49,7 +49,7 @@ extern int nrn_get_mechtype(const char*);
 extern void nrn_writes_conc(int, int);
 extern void add_nrn_has_net_event(int);
 extern void hoc_register_cvode(int, nrn_ode_count_t, nrn_ode_map_t, Pvmi, Pvmi);
-extern void hoc_register_synonym(int, void (*)(int, double**, Datum**));
+void hoc_register_synonym(int, nrn_ode_synonym_t);
 extern void register_destructor(Pvmp);
 extern void ion_reg(const char*, double);
 extern void nrn_promote(Prop*, int, int);

@@ -1022,8 +1022,9 @@ void nrn_ba(NrnThread* nt, int bat) {
     for (NrnThreadBAList* tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
         nrn_bamech_t const f{tbl->bam->f};
         Memb_list* const ml{tbl->ml};
+        // TODO move this loop into the translated MOD file code
         for (int i = 0; i < ml->nodecount; ++i) {
-            (*f)(ml->nodelist[i], ml->_data[i], ml->pdata[i], ml->_thread, nt);
+            (*f)(ml->nodelist[i], ml->pdata[i], ml->_thread, nt, ml, i);
         }
     }
 }

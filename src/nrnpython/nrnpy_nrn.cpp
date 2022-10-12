@@ -1473,7 +1473,7 @@ static PyObject* seg_volume(NPySegObj* self) {
             Node* nd = node_exact(sec, x);
             for (Prop* p = nd->prop; p; p = p->next) {
                 if (p->_type == MORPHOLOGY) {
-                    double diam = p->param[0];
+                    double diam = p->param(0);
                     a = M_PI * diam * diam / 4 * length;
                     break;
                 }
