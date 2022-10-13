@@ -564,5 +564,6 @@ def test_swc():
         assert secinfo() == tst_result[i]
         cleanup()
 
+
 if __name__ == "__main__":
     test_swc()

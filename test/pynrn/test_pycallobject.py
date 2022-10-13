@@ -97,7 +97,7 @@ def test_func_call():
     invoke = False
 
     def f(x):
-        y = x**2
+        y = x ** 2
         if invoke:
             if h.cas() == dend and x == 1.0:
                 1 / 0
