@@ -698,10 +698,10 @@ extern Memb_func* memb_func;\n\
     if (ba_index_ > 0) {
         Lappendstr(
             defs_list,
-            "static void _ba1(Node*_nd, double* _pp, Datum* _ppd, Datum* _thread, NrnThread* _nt)");
+            "static void _ba1(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* _ml, std::size_t _iml)");
         for (i = 2; i <= ba_index_; ++i) {
             sprintf(buf,
-                    ", _ba%d(Node*_nd, double* _pp, Datum* _ppd, Datum* _thread, NrnThread* _nt)",
+                    ", _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* _ml, std::size_t _iml)",
                     i);
             Lappendstr(defs_list, buf);
         }
@@ -860,7 +860,7 @@ static const char *_mechanism[] = {\n\
 extern Prop* need_memb(Symbol*);\n\n\
 static void nrn_alloc(Prop* _prop) {\n\
 	Prop *prop_ion;\n\
-	Prop *_p; Datum *_ppvar;\n\
+	Datum *_ppvar;\n\
 ");
     if (point_process) {
         Lappendstr(defs_list,
@@ -871,7 +871,7 @@ static void nrn_alloc(Prop* _prop) {\n\
     }
     Sprintf(buf,
             "  Memb_list _ml_real{_prop->_type}, *_ml{&_ml_real};\n"
-            "  std::size_t _iml{_p->_id().current_row()};\n"
+            "  std::size_t _iml{_prop->_id().current_row()};\n"
             "  assert(_prop->param_size() == %d);\n",
             parraycount);
     Lappendstr(defs_list, buf);
@@ -905,7 +905,7 @@ static void nrn_alloc(Prop* _prop) {\n\
     if (diamdec) {
         Sprintf(buf, "prop_ion = need_memb(_morphology_sym);\n");
         Lappendstr(defs_list, buf);
-        Sprintf(buf, "\t_ppvar[%d] = &prop_ion->param[0]; /* diam */\n", ioncount + pointercount),
+        Sprintf(buf, "\t_ppvar[%d] = prop_ion->param_handle(0); /* diam */\n", ioncount + pointercount),
             Lappendstr(defs_list, buf);
         ppvar_semantics(ioncount + pointercount, "diam");
     }
@@ -1082,7 +1082,7 @@ static void _constructor(Prop* _prop) {\n\
                "\
 extern Symbol* hoc_lookup(const char*);\n\
 extern void _nrn_thread_reg(int, int, void(*)(Datum*));\n\
-extern void _nrn_thread_table_reg(int, void(*)(double*, Datum*, Datum*, NrnThread*, int));\n\
+extern void _nrn_thread_table_reg(int, void(*)(Memb_list*, std::size_t, Datum*, Datum*, NrnThread*, int));\n\
 extern void hoc_register_tolerance(int, HocStateTolerance*, Symbol***);\n\
 extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 ");
@@ -1422,7 +1422,7 @@ void ldifusreg() {
         ++n;
         sprintf(buf,
                 "static void* _difspace%d;\nextern double nrn_nernst_coef(int);\n\
-static double _difcoef%d(int _i, double* _p, Datum* _ppvar, double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt) {\n  \
+static double _difcoef%d(int _i, double* _p, Datum* _ppvar, double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt) {\n#if 0\n  \
  *_pdvol = ",
                 n,
                 n);
@@ -1444,7 +1444,7 @@ static double _difcoef%d(int _i, double* _p, Datum* _ppvar, double* _pdvol, doub
         for (q1 = qdexp; q1 != qb1; q1 = q1->next) {
             lappenditem(procfunc, q1);
         }
-        lappendstr(procfunc, ";\n}\n");
+        lappendstr(procfunc, ";\n#endif\nreturn 0;\n}\n");
     }
     lappendstr(procfunc, "static void _difusfunc(ldifusfunc2_t _f, NrnThread* _nt) {int _i;\n");
     n = 0;
@@ -1761,12 +1761,12 @@ void bablk(int ba, int type, Item* q1, Item* q2) {
     }
     sprintf(
         buf,
-        "static void _ba%d(Node*_nd, double* _pp, Datum* _ppd, Datum* _thread, NrnThread* _nt) ",
+        "static void _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* _ml, std::size_t _iml) ",
         ++ba_index_);
     insertstr(q1, buf);
     q = q1->next;
-    vectorize_substitute(insertstr(q, ""), "double* _p; Datum* _ppvar;");
-    qv = insertstr(q, "_p = _pp; _ppvar = _ppd;\n");
+    vectorize_substitute(insertstr(q, ""), "Datum* _ppvar;");
+    qv = insertstr(q, "_ppvar = _ppd;\n");
     movelist(qb, q2, procfunc);
 
     ba = (ba == BEFORE) ? 10 : 20; /* BEFORE or AFTER */
@@ -2562,7 +2562,7 @@ static int _ode_count(int _type){ hoc_execerror(\"%s\", \"cannot be used with CV
         Lappendstr(defs_list,
                    "\n\
 static int _ode_count(int);\n\
-static void _ode_map(int, double**, double**, double*, Datum*, double*, int);\n\
+static void _ode_map(int, double**, double**, Prop*, Datum*, double*, int);\n\
 static void _ode_spec(NrnThread*, Memb_list*, int);\n\
 static void _ode_matsol(NrnThread*, Memb_list*, int);\n\
 ");
@@ -2593,16 +2593,15 @@ static int _ode_count(int _type){ return %d;}\n",
 
             Lappendstr(procfunc,
                        "\n\
-static void _ode_map(int _ieq, double** _pv, double** _pvdot, double* _pp, Datum* _ppd, double* _atol, int _type) {");
+static void _ode_map(int _ieq, double** _pv, double** _pvdot, Prop* _prop, Datum* _ppd, double* _atol, int _type) {");
             vectorize_substitute(lappendstr(procfunc, "\n"),
-                                 "\n\
-	double* _p; Datum* _ppvar;\n");
+                                 "\n  Datum* _ppvar;\n");
             sprintf(buf,
                     "\
-	int _i; _p = _pp; _ppvar = _ppd;\n\
+	int _i; _ppvar = _ppd;\n\
 	_cvode_ieq = _ieq;\n\
 	for (_i=0; _i < %d; ++_i) {\n\
-		_pv[_i] = _pp + _slist%d[_i];  _pvdot[_i] = _pp + _dlist%d[_i];\n\
+		_pv[_i] = static_cast<double*>(_prop->param_handle(_slist%d[_i]));  _pvdot[_i] = static_cast<double*>(_prop->param_handle(_dlist%d[_i]));\n\
 		_cvode_abstol(_atollist, _atol, _i);\n\
 	}\n",
                     cvode_neq_,
@@ -2614,19 +2613,14 @@ static void _ode_map(int _ieq, double** _pv, double** _pvdot, double* _pp, Datum
             cvode_conc_map();
             Lappendstr(procfunc, "}\n");
             if (ion_synonym) {
-                Lappendstr(defs_list, "static void _ode_synonym(int, double**, Datum**);\n");
+                Lappendstr(defs_list, "static void _ode_synonym(Memb_list*);\n");
+                Lappendstr(procfunc, "static void _ode_synonym(Memb_list* _ml) {\n");
                 Lappendstr(procfunc,
-                           "\
-static void _ode_synonym(int _cnt, double** _pp, Datum** _ppd) {");
-                vectorize_substitute(lappendstr(procfunc, "\n"),
-                                     "\n\
-	double* _p; Datum* _ppvar;\n");
-                Lappendstr(procfunc,
-                           "\
-	int _i; \n\
-	for (_i=0; _i < _cnt; ++_i) {_p = _pp[_i]; _ppvar = _ppd[_i];\n");
+                           "auto const _cnt = _ml->_nodecount;\n"
+                           "for (int _iml = 0; _iml < _cnt; ++_iml) {\n"
+                           "  Datum* _ppvar = _ml->_pdata[_iml];\n");
                 movelist(ion_synonym->next, ion_synonym->prev, procfunc);
-                Lappendstr(procfunc, "}}\n");
+                Lappendstr(procfunc, "  }\n}\n");
             }
 
             sprintf(buf, "static void _ode_matsol_instance%d(_threadargsproto_);\n", cvode_num_);
@@ -2637,7 +2631,7 @@ static void _ode_synonym(int _cnt, double** _pp, Datum** _ppd) {");
                 int i = cvode_num_;
                 sprintf(
                     buf,
-                    "_cvode_sparse(&_cvsparseobj%d, %d, _dlist%d, _p, _ode_matsol%d, &_coef%d);\n",
+                    "_cvode_sparse(&_cvsparseobj%d, %d, _dlist%d, _ml->contiguous_row(_iml).data(), _ode_matsol%d, &_coef%d);\n",
                     i,
                     cvode_neq_,
                     i,
@@ -2646,7 +2640,7 @@ static void _ode_synonym(int _cnt, double** _pp, Datum** _ppd) {");
                 Lappendstr(procfunc, buf);
                 sprintf(buf,
                         "_cvode_sparse_thread(&(_thread[_cvspth%d].literal_value<void*>()), %d, "
-                        "_dlist%d, _p, "
+                        "_dlist%d, _ml->contiguous_row(_iml).data(), "
                         "_ode_matsol%d, _ppvar, _thread, _nt);\n",
                         i,
                         cvode_neq_,
