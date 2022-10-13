@@ -812,7 +812,7 @@ static void steer_val(void* v) {
         d->src_->use_min_delay_ = 0;
     } else if (strcmp(s->name, "weight") == 0) {
         int index = 0;
-        if (hoc_stacktype() == NUMBER) {
+        if (hoc_stack_type_is_ndim(0)) {
             s->arayinfo->sub[0] = d->cnt_;
             index = hoc_araypt(s, SYMBOL);
         }

@@ -563,3 +563,6 @@ def test_swc():
         ig = mkswc(dat)
         assert secinfo() == tst_result[i]
         cleanup()
+
+if __name__ == "__main__":
+    test_swc()

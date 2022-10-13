@@ -730,6 +730,7 @@ static void steer_x(void* v) {
     Matrix* m = (Matrix*) v;
     int i1, i2;
     Symbol* s = hoc_spop();
+    hoc_pop_ndim();
     i2 = (int) (hoc_xpop() + EPS);
     i1 = (int) (hoc_xpop() + EPS);
     check_domain(i1, m->nrow() - 1);

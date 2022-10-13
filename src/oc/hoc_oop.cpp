@@ -953,15 +953,19 @@ void hoc_object_component() {
         narg += nindex;
         nindex = 0;
     }
+    int expect_stack_nsub{0};
     if (nindex) {
         if (narg) {
             hoc_execerror("[...](...) syntax only allowed for array range variables:", sym0->name);
         }
+        if (!hoc_stack_type_is_ndim(0)) {
+            hoc_push_ndim(nindex);
+        }
+        expect_stack_nsub = 1;
     } else {
         nindex = narg;
     }
-
-    obp = hoc_obj_look_inside_stack(nindex);
+    obp = hoc_obj_look_inside_stack(nindex + expect_stack_nsub);
     if (obp) {
 #if USE_PYTHON
         if (obp->ctemplate->sym == nrnpy_pyobj_sym_) {
@@ -1077,6 +1081,9 @@ void hoc_object_component() {
     case HOCOBJFUNCTION:
     case OBFUNCTION: {
         Object** d;
+        if (expect_stack_nsub) {
+            hoc_pop_ndim();
+        }
         call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
             break;

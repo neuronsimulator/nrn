@@ -314,6 +314,10 @@ int hoc_stack_type() {
     return get_legacy_int_type(get_stack_entry_variant(0));
 }
 
+bool hoc_stack_type_is_ndim(int i) {
+    return std::holds_alternative<stack_ndim_datum>(get_stack_entry_variant(i));
+}
+
 void hoc_pop_defer() {
     if (unref_defer_) {
         hoc_unref_defer();
@@ -2364,7 +2368,10 @@ void hoc_chk_sym_has_ndim() {
     Symbol* sp = (pc++)->sym;
     int ndim_now = sp->arayinfo ? sp->arayinfo->nsub : 0;
     if (ndim_now != ndim) {
-        hoc_execerr_ext("array dimension of %s now %d (at compile time it was %d)", sp->name, ndim_now, ndim);
+        hoc_execerr_ext("array dimension of %s now %d (at compile time it was %d)",
+                        sp->name,
+                        ndim_now,
+                        ndim);
     }
     // if this is missing when hoc_araypt is called, it means the symbol
     // was compiled as a scalar.
@@ -2375,14 +2382,18 @@ void hoc_chk_sym_has_ndim() {
 int hoc_araypt(Symbol* sp, int type) {
     Arrayinfo* const aray{type == OBJECTVAR ? OPARINFO(sp) : sp->arayinfo};
     int total{};
-    int ndim = hoc_pop_ndim(); // if compiled as scalar, this will raise error
+    int ndim = hoc_pop_ndim();  // if compiled as scalar, this will raise error
     if (ndim != aray->nsub) {
-        hoc_execerr_ext("array dimension of %s now %d (at compile time it was %d)", sp->name, aray->nsub, ndim);
+        hoc_execerr_ext("array dimension of %s now %d (at compile time it was %d)",
+                        sp->name,
+                        aray->nsub,
+                        ndim);
     }
     for (int i = 0; i < aray->nsub; ++i) {
         int const d = hoc_look_inside_stack<double>(aray->nsub - 1 - i) + hoc_epsilon;
         if (d < 0 || d >= aray->sub[i]) {
-            hoc_execerr_ext("subscript %d index %d of %s out of range %d", i, sp->name, d, aray->sub[i]);
+            hoc_execerr_ext(
+                "subscript %d index %d of %s out of range %d", i, sp->name, d, aray->sub[i]);
         }
         total = total * (aray->sub[i]) + d;
     }

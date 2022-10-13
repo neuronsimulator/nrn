@@ -436,13 +436,16 @@ static int component(PyHocObject* po) {
     fc[1].i = 0;
     fc[2].i = 0;
     fc[5].i = 0;
+    int stk_offset = 0;  // scalar
     if (po->type_ == PyHoc::HocFunction) {
         fc[2].i = po->nindex_;
         fc[5].i = 1;
+        stk_offset = po->nindex_;
     } else if (po->type_ == PyHoc::HocArray || po->type_ == PyHoc::HocArrayIncomplete) {
         fc[1].i = po->nindex_;
+        stk_offset = po->nindex_ + 1;  // + 1 because of stack_ndim_datum
     }
-    Object* stack_value = hoc_obj_look_inside_stack(po->nindex_);
+    Object* stack_value = hoc_obj_look_inside_stack(stk_offset);
     assert(stack_value == po->ho_);
     fc[3].i = po->ho_->ctemplate->id;
     fc[4].sym = po->sym_;
@@ -816,6 +819,7 @@ static void hocobj_pushtop(PyHocObject* po, Symbol* sym, int ix) {
     }
     hoc_pushx((double) ix);
     // printf(" %d\n", ix);
+    hoc_push_ndim(n + 1);
     if (sym) {
         hoc_pushs(sym);
     }
