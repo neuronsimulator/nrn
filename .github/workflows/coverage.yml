@@ -47,16 +47,16 @@ jobs:
           make && sudo make install
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MAX_VERSION }}
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
