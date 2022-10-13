@@ -124,7 +124,7 @@ void solv_diffeq(Item* qsol,
             Strcpy(deriv2_advance, "");
         }
         Sprintf(buf,
-                "%s %s%s(_ninits, %d, _slist%d, _dlist%d, _p, &%s, %s, %s, &_temp%d%s);\n%s",
+                "%s %s%s(_ninits, %d, _slist%d, _dlist%d, _ml->contiguous_row(_iml).data(), &%s, %s, %s, &_temp%d%s);\n%s",
                 deriv1_advance,
                 ssprefix,
                 method->name,
@@ -139,7 +139,7 @@ void solv_diffeq(Item* qsol,
                 deriv2_advance);
     } else {
         Sprintf(buf,
-                "%s%s(&_sparseobj%d, %d, _slist%d, _dlist%d, _p, &%s, %s, %s\
+                "%s%s(&_sparseobj%d, %d, _slist%d, _dlist%d, _ml->contiguous_row(_iml).data(), &%s, %s, %s\
 ,&_coef%d, _linmat%d);\n",
                 ssprefix,
                 method->name,
@@ -156,7 +156,7 @@ void solv_diffeq(Item* qsol,
     replacstr(qsol, buf);
     if (method->subtype & DERF) { /* derivimplicit */
         Sprintf(buf,
-                "%s %s%s_thread(%d, _slist%d, _dlist%d, _p, %s, _ppvar, _thread, _nt);\n%s",
+                "%s %s%s_thread(%d, _slist%d, _dlist%d, _ml->contiguous_row(_iml).data(), %s, _ppvar, _thread, _nt);\n%s",
                 deriv1_advance,
                 ssprefix,
                 method->name,
@@ -170,7 +170,7 @@ void solv_diffeq(Item* qsol,
         if (vectorize) {
             Sprintf(
                 buf,
-                "%s%s_thread(&(_thread[_spth%d].literal_value<void*>()), %d, _slist%d, _dlist%d, _p, &%s, %s, %s\
+                "%s%s_thread(&(_thread[_spth%d].literal_value<void*>()), %d, _slist%d, _dlist%d, _ml->contiguous_row(_iml).data(), &%s, %s, %s\
 , _linmat%d, _ppvar, _thread, _nt);\n",
                 ssprefix,
                 method->name,
@@ -190,7 +190,7 @@ void solv_diffeq(Item* qsol,
             "   if (secondorder) {\n"
             "    int _i;\n"
             "    for (_i = 0; _i < %d; ++_i) {\n"
-            "      _p[_slist%d[_i]] += dt*_p[_dlist%d[_i]];\n"
+            "      _ml->data(_iml, _slist%d[_i]) += dt*_ml->data(_iml, _dlist%d[_i]);\n"
             "    }}\n",
             numeqn,
             listnum,
@@ -470,9 +470,9 @@ void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4) {
     replacstr(q1, "\nstatic int");
     q = insertstr(q3, "() {_reset=0;\n");
     derfun = SYM(q2);
-    vectorize_substitute(q,
-                         "(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {int "
-                         "_reset=0; int error = 0;\n");
+    vectorize_substitute(q, "(_threadargsproto_) {\n"
+                            "  int _reset=0;\n"
+                            "  int error = 0;\n");
 
     if (derfun->subtype & DERF && derfun->u.i) {
         diag("DERIVATIVE merging not implemented", (char*) 0);
@@ -654,14 +654,14 @@ if (_deriv%d_advance) {\n",
         q = insertsym(q4, sp);
         eqnqueue(q);
         Sprintf(buf,
-                "_p[_dlist%d[_id]] - (_p[_slist%d[_id]] - _savstate%d[_id])/d%s;\n",
+                "_ml->data(_iml, _dlist%d[_id]) - (_ml->data(_iml, _slist%d[_id]) - _savstate%d[_id])/d%s;\n",
                 numlist,
                 numlist,
                 numlist,
                 indepsym->name);
         Insertstr(q4, buf);
         Sprintf(buf,
-                "}else{\n_dlist%d[++_counte] = _p[_slist%d[_id]] - _savstate%d[_id];}}}\n",
+                "}else{\n_dlist%d[++_counte] = _ml->data(_iml, _slist%d[_id]) - _savstate%d[_id];}}}\n",
                 numlist + 1,
                 numlist,
                 numlist);
@@ -677,7 +677,9 @@ if (_deriv%d_advance) {\n",
     q = mixed_eqns(q2, q3, q4); /* numlist now incremented */
     if (deriv_implicit) {
         Sprintf(buf,
-                "{int _id; for(_id=0; _id < %d; _id++) { _savstate%d[_id] = _p[_slist%d[_id]];}}\n",
+                "for(int _id=0; _id < %d; _id++) {\n"
+                "  _savstate%d[_id] = _ml->data(_iml, _slist%d[_id]);\n"
+                "}\n",
                 count,
                 derfun->u.i,
                 derfun->u.i);

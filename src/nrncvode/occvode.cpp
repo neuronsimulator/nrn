@@ -494,10 +494,7 @@ void Cvode::scatter_y(double* y, int tid) {
     for (CvMembList* cml = z.cv_memb_list_; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
         if (mf->ode_synonym) {
-            nrn_ode_synonym_t s = mf->ode_synonym;
-            Memb_list* ml = cml->ml;
-            assert(false);
-            //(*s)(ml->nodecount, ml->_data, ml->pdata);
+            mf->ode_synonym(cml->ml);
         }
     }
     nrn_extra_scatter_gather(0, tid);

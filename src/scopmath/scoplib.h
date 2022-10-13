@@ -145,6 +145,7 @@ double poisson(double x, double mean);
 double gauss(double x, double mean, double std_dev);
 double scop_erf(double z);
 
+typedef struct Memb_list Memb_list;
 typedef struct NrnThread NrnThread;
 typedef struct SparseObj SparseObj;
 int _cvode_sparse(void**, int, int*, double*, int (*)(), double**);
@@ -152,7 +153,7 @@ int _cvode_sparse_thread(void**,
                                 int,
                                 int*,
                                 double*,
-                                int (*)(void*, double*, double*, Datum*, Datum*, NrnThread*),
+                                int (*)(void*, double*, double*, Datum*, Datum*, NrnThread*, Memb_list*, unsigned long),
                                 Datum*,
                                 Datum*,
                                 NrnThread*);
@@ -161,7 +162,7 @@ int derivimplicit_thread(int,
                                 int*,
                                 int*,
                                 double*,
-                                int (*)(double*, Datum*, Datum*, NrnThread*),
+                                int (*)(Memb_list*, unsigned long, Datum*, Datum*, NrnThread*),
                                 Datum*,
                                 Datum*,
                                 NrnThread*);
@@ -176,7 +177,7 @@ int sparse_thread(void**,
                          double*,
                          double*,
                          double,
-                         int (*)(void*, double*, double*, Datum*, Datum*, NrnThread*),
+                         int (*)(void*, double*, Datum*, Datum*, NrnThread*, Memb_list*, unsigned long),
                          int,
                          Datum*,
                          Datum*,
@@ -198,7 +199,7 @@ int _ss_sparse_thread(void**,
                              double*,
                              double*,
                              double,
-                             int (*)(void*, double*, double*, Datum*, Datum*, NrnThread*),
+                             int (*)(void*, double*, Datum*, Datum*, NrnThread*, Memb_list*, unsigned long),
                              int,
                              Datum*,
                              Datum*,

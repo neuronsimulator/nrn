@@ -373,12 +373,10 @@ int check_tables_threads(List* p) {
     Item* q;
     if (check_table_thread_list) {
         ITERATE(q, check_table_thread_list) {
-            Sprintf(buf, "\nstatic void %s(double*, Datum*, Datum*, NrnThread*);", STR(q));
+            Sprintf(buf, "\nstatic void %s(_threadargsproto_);", STR(q));
             lappendstr(p, buf);
         }
-        lappendstr(p,
-                   "\nstatic void _check_table_thread(double* _p, Datum* _ppvar, Datum* _thread, "
-                   "NrnThread* _nt, int _type) {\n");
+        lappendstr(p, "\nstatic void _check_table_thread(_threadargsprotocomma_ int _type) {\n");
         ITERATE(q, check_table_thread_list) {
             Sprintf(buf, "  %s(_threadargs_);\n", STR(q));
             lappendstr(p, buf);
@@ -474,9 +472,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     vectorize_substitute(q, "");
     Sprintf(buf, "static void _check_%s() {\n", fname);
     q = lappendstr(procfunc, buf);
-    Sprintf(buf,
-            "static void _check_%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {\n",
-            fname);
+    Sprintf(buf, "static void _check_%s(_threadargsproto_) {\n", fname);
     vectorize_substitute(q, buf);
     Lappendstr(procfunc, " static int _maktable=1; int _i, _j, _ix = 0;\n");
     Lappendstr(procfunc, " double _xi, _tmax;\n");
@@ -567,7 +563,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     Sprintf(buf, "%s(double %s){", fname, arg->name);
     Lappendstr(procfunc, buf);
     Sprintf(buf,
-            "%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, double %s) {",
+            "%s(_threadargsprotocomma_ double %s) {",
             fname,
             arg->name);
     vectorize_substitute(procfunc->prev, buf);
@@ -597,7 +593,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     Sprintf(buf, "_n_%s(double %s){", fname, arg->name);
     Lappendstr(procfunc, buf);
     Sprintf(buf,
-            "_n_%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, double %s){",
+            "_n_%s(_threadargsprotocomma_ double %s){",
             fname,
             arg->name);
     vectorize_substitute(procfunc->prev, buf);
@@ -942,10 +938,13 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
     }
     Sprintf(buf, "\nstatic double _watch%d_cond(Point_process* _pnt) {\n", watch_seen_);
     lappendstr(procfunc, buf);
-    vectorize_substitute(lappendstr(procfunc, ""),(char*)"\tDatum* _ppvar; Datum* _thread; NrnThread* _nt;\n\t_thread= (Datum*)0; _nt = (NrnThread*)_pnt->_vnt;\n");
-    Sprintf(buf,
-            "\t_ppvar = _pnt->_prop->dparam;\n\tv = "
-            "NODEV(_pnt->node);\n	return ");
+    vectorize_substitute(lappendstr(procfunc, ""), "  Datum* _ppvar; Datum* _thread{};\n"
+                                                   "  NrnThread* _nt{static_cast<NrnThread*>(_pnt->_vnt)};\n");
+    Sprintf(buf, "  _ppvar = _pnt->_prop->dparam;\n"
+                 "  Memb_list _ml_real{_pnt->_prop->_type}, *_ml{&_ml_real};\n"
+                 "  std::size_t _iml{_pnt->_prop->_id().current_row()};\n"
+                 "  v = NODEV(_pnt->node);\n"
+                 "	return ");
     lappendstr(procfunc, buf);
     movelist(par1, par2, procfunc);
     movelist(dir->next, par2, procfunc);

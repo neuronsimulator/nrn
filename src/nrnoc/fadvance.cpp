@@ -1027,9 +1027,9 @@ void nrn_ba(NrnThread* nt, int bat) {
     for (NrnThreadBAList* tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
         nrn_bamech_t const f{tbl->bam->f};
         Memb_list* const ml{tbl->ml};
+        // TODO move this loop into the translated MOD file code
         for (int i = 0; i < ml->nodecount; ++i) {
-            assert(false);
-            //(*f)(ml->nodelist[i], ml->_data[i], ml->pdata[i], ml->_thread, nt);
+            (*f)(ml->nodelist[i], ml->pdata[i], ml->_thread, nt, ml, i);
         }
     }
 }
@@ -1100,31 +1100,23 @@ int nrn_nonvint_block_helper(int method, int size, double* pd1, double* pd2, int
 */
 #include "nrniv_mf.h"
 
-#undef SUCCESS
-#define SUCCESS   0
-#define der_(arg) p[der[arg]]
-#define var_(arg) p[var[arg]]
-
-/* ARGSUSED */
 int euler_thread(int neqn,
                  int* var,
                  int* der,
-                 double* p,
-                 int (*func)(double*, Datum*, Datum*, NrnThread*),
+                 int (*func)(Memb_list*, std::size_t, Datum*, Datum*, NrnThread*),
                  Datum* ppvar,
                  Datum* thread,
-                 NrnThread* nt) {
-    int i;
+                 NrnThread* nt,
+                 Memb_list* ml,
+                 std::size_t iml) {
     double dt = nt->_dt;
 
     /* Calculate the derivatives */
-
-    (*func)(p, ppvar, thread, nt);
+    (*func)(ml, iml, ppvar, thread, nt);
 
     /* Update dependent variables --- note defines in euler above*/
+    for (int i = 0; i < neqn; i++)
+        ml->data(iml, var[i]) += dt * ml->data(iml, der[i]);
 
-    for (i = 0; i < neqn; i++)
-        var_(i) += dt * (der_(i));
-
-    return (SUCCESS);
+    return 0;
 }

@@ -34,7 +34,6 @@ struct Memb_list {
      */
     [[nodiscard]] std::vector<double*> data() {
         assert(m_storage);
-        assert(m_storage->is_sorted());
         std::vector<double*> ret{};
         auto const num_fields = m_storage->num_floating_point_fields();
         ret.resize(num_fields);
@@ -48,13 +47,11 @@ struct Memb_list {
     }
     [[nodiscard]] double& data(std::size_t instance, std::size_t variable) {
         assert(m_storage);
-        assert(m_storage->is_sorted());
         return m_storage->get_field_instance<
             neuron::container::Mechanism::field::PerInstanceFloatingPointField>(variable, instance);
     }
     [[nodiscard]] double const& data(std::size_t instance, std::size_t variable) const {
         assert(m_storage);
-        assert(m_storage->is_sorted());
         return m_storage->get_field_instance<
             neuron::container::Mechanism::field::PerInstanceFloatingPointField>(variable, instance);
     }
@@ -101,6 +98,28 @@ struct Memb_list {
     };
     [[nodiscard]] array_view data_array(std::size_t instance, std::size_t zeroth_variable) {
         return {m_storage, instance, zeroth_variable};
+    }
+    /** @brief Helper for compatibility with legacy code.
+     * 
+     *  Some methods assume that we can get a double* that points to the
+     *  properties of a particular mechanism. As the underlying storage has now
+     *  been transposed, this is not possible without creating a copy.
+     * 
+     *  @todo (optionally) return a type whose destructor propagates
+     *  modifications back into the NEURON data structures.
+     */
+    [[nodiscard]] std::vector<double> contiguous_row(std::size_t instance) {
+        assert(m_storage);
+        auto const num_fields = m_storage->num_floating_point_fields();
+        std::vector<double> data;
+        data.reserve(num_fields);
+        for (auto i_field = 0; i_field < num_fields; ++i_field) {
+            data.push_back(m_storage->get_field_instance<neuron::container::Mechanism::field::PerInstanceFloatingPointField>(instance, i_field));
+        }
+        return data;
+    }
+    void set_storage_pointer(neuron::container::Mechanism::storage* storage) {
+        m_storage = storage;
     }
 
   private:
