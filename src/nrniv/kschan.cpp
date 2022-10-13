@@ -54,9 +54,9 @@ static void chkobj(void* v) {
     }
 }
 
-static void check_table_thread_(double* p, Datum* ppvar, Datum* thread, NrnThread* vnt, int type) {
+static void check_table_thread_(Memb_list*, std::size_t, Datum*, Datum*, NrnThread* vnt, int type) {
     KSChan* c = (*channels)[type];
-    c->check_table_thread((NrnThread*) vnt);
+    c->check_table_thread(vnt);
 }
 
 static void nrn_alloc(Prop* prop) {
@@ -114,8 +114,7 @@ static int ode_count(int type) {
     KSChan* c = (*channels)[type];
     return c->count();
 }
-static void
-ode_map(int ieq, double** pv, double** pvdot, double* p, Datum* pd, double* atol, int type) {
+static void ode_map(int ieq, double** pv, double** pvdot, Prop* p, Datum* pd, double* atol, int type) {
     // printf("ode_map\n");
     KSChan* c = (*channels)[type];
     c->map(ieq, pv, pvdot, p, pd, atol);
@@ -2979,13 +2978,10 @@ int KSChan::count() {
     return nstate_;
 }
 
-void KSChan::map(int ieq, double** pv, double** pvdot, double* p, Datum* pd, double* atol) {
-    int i;
-    double* p1 = p + soffset_;
-    double* p2 = p1 + nstate_;
-    for (i = 0; i < nstate_; ++i) {
-        pv[i] = p1 + i;
-        pvdot[i] = p2 + i;
+void KSChan::map(int ieq, double** pv, double** pvdot, Prop* p, Datum* pd, double* atol) {
+    for (int i = 0; i < nstate_; ++i) {
+        pv[i] = static_cast<double*>(p->param_handle(soffset_ + i));
+        pvdot[i] = static_cast<double*>(p->param_handle(soffset_ + nstate_ + i));
     }
 }
 

@@ -10,10 +10,9 @@ typedef Datum* (*Pfrpdat)();
 typedef void (*Pvmi)(struct NrnThread*, Memb_list*, int);
 typedef void (*Pvmp)(Prop*);
 typedef int (*nrn_ode_count_t)(int);
-typedef void (*nrn_ode_map_t)(int, double**, double**, double*, Datum*, double*, int);
-typedef void (*nrn_ode_synonym_t)(int, double**, Datum**);
-/* eventually replace following with Pvmp */
-typedef void (*nrn_bamech_t)(Node*, double*, Datum*, Datum*, struct NrnThread*);
+using nrn_ode_map_t = void (*)(int, double**, double**, Prop*, Datum*, double*, int);
+using nrn_bamech_t = void (*)(Node*, Datum*, Datum*, NrnThread*, Memb_list*, std::size_t);
+using nrn_ode_synonym_t = void (*)(Memb_list*);
 
 #define NULL_CUR        (Pfri) 0
 #define NULL_ALLOC      (Pfri) 0
@@ -44,7 +43,7 @@ struct Memb_func {
     int thread_size_;                 /* how many Datum needed in Memb_list if vectorized */
     void (*thread_mem_init_)(Datum*); /* after Memb_list._thread is allocated */
     void (*thread_cleanup_)(Datum*);  /* before Memb_list._thread is freed */
-    void (*thread_table_check_)(double*, Datum*, Datum*, NrnThread*, int);
+    void (*thread_table_check_)(Memb_list*, std::size_t, Datum*, Datum*, NrnThread*, int);
     void (*_update_ion_pointers)(Datum*);
     int is_point;
     void* hoc_mech;
