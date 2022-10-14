@@ -694,12 +694,13 @@ extern Memb_func* memb_func;\n\
     Lappendstr(defs_list, "{0, 0, 0}\n};\n");
     Lappendstr(defs_list, "static double _sav_indep;\n");
     if (ba_index_ > 0) {
-        Lappendstr(
-            defs_list,
-            "static void _ba1(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* _ml, std::size_t _iml)");
+        Lappendstr(defs_list,
+                   "static void _ba1(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, "
+                   "Memb_list* _ml, std::size_t _iml)");
         for (i = 2; i <= ba_index_; ++i) {
             Sprintf(buf,
-                    ", _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* _ml, std::size_t _iml)",
+                    ", _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* "
+                    "_ml, std::size_t _iml)",
                     i);
             Lappendstr(defs_list, buf);
         }
@@ -903,7 +904,9 @@ static void nrn_alloc(Prop* _prop) {\n\
     if (diamdec) {
         Sprintf(buf, "prop_ion = need_memb(_morphology_sym);\n");
         Lappendstr(defs_list, buf);
-        Sprintf(buf, "\t_ppvar[%d] = prop_ion->param_handle(0); /* diam */\n", ioncount + pointercount),
+        Sprintf(buf,
+                "\t_ppvar[%d] = prop_ion->param_handle(0); /* diam */\n",
+                ioncount + pointercount),
             Lappendstr(defs_list, buf);
         ppvar_semantics(ioncount + pointercount, "diam");
     }
@@ -1749,10 +1752,10 @@ void bablk(int ba, int type, Item* q1, Item* q2) {
     if (!ba_list_) {
         ba_list_ = newlist();
     }
-    Sprintf(
-        buf,
-        "static void _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* _ml, std::size_t _iml) ",
-        ++ba_index_);
+    Sprintf(buf,
+            "static void _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* "
+            "_ml, std::size_t _iml) ",
+            ++ba_index_);
     insertstr(q1, buf);
     q = q1->next;
     vectorize_substitute(insertstr(q, ""), "Datum* _ppvar;");
@@ -2552,7 +2555,7 @@ static int _ode_count(int _type){ hoc_execerror(\"%s\", \"cannot be used with CV
         Lappendstr(defs_list,
                    "\n\
 static int _ode_count(int);\n\
-static void _ode_map(int, double**, double**, Prop*, Datum*, double*, int);\n\
+static void _ode_map(int, double**, double**, Memb_list*, std::size_t, Datum*, double*, int);\n\
 static void _ode_spec(NrnThread*, Memb_list*, int);\n\
 static void _ode_matsol(NrnThread*, Memb_list*, int);\n\
 ");
@@ -2583,17 +2586,16 @@ static int _ode_count(int _type){ return %d;}\n",
 
             Lappendstr(procfunc,
                        "\n\
-static void _ode_map(int _ieq, double** _pv, double** _pvdot, Prop* _prop, Datum* _ppd, double* _atol, int _type) {");
-            vectorize_substitute(lappendstr(procfunc, "\n"),
-                                 "\n  Datum* _ppvar;\n");
+static void _ode_map(int _ieq, double** _pv, double** _pvdot, Memb_list* _ml, std::size_t _iml, Datum* _ppd, double* _atol, int _type) {");
+            vectorize_substitute(lappendstr(procfunc, "\n"), "\n  Datum* _ppvar;\n");
             Sprintf(buf,
-                    "\
-	int _i; _ppvar = _ppd;\n\
-	_cvode_ieq = _ieq;\n\
-	for (_i=0; _i < %d; ++_i) {\n\
-		_pv[_i] = static_cast<double*>(_prop->param_handle(_slist%d[_i]));  _pvdot[_i] = static_cast<double*>(_prop->param_handle(_dlist%d[_i]));\n\
-		_cvode_abstol(_atollist, _atol, _i);\n\
-	}\n",
+                    " _ppvar = _ppd;\n"
+                    "  _cvode_ieq = _ieq;\n"
+                    "  for (int _i=0; _i < %d; ++_i) {\n"
+                    "    _pv[_i] = &_ml->data(_iml, _slist%d[_i]);\n"
+                    "    _pvdot[_i] = &_ml->data(_iml, _dlist%d[_i]);\n"
+                    "    _cvode_abstol(_atollist, _atol, _i);\n"
+                    "  }\n",
                     cvode_neq_,
                     cvode_num_,
                     cvode_num_);
@@ -2619,14 +2621,14 @@ static void _ode_map(int _ieq, double** _pv, double** _pvdot, Prop* _prop, Datum
             Lappendstr(procfunc, buf);
             if (cvode_fun_->subtype == KINF) {
                 int i = cvode_num_;
-                Sprintf(
-                    buf,
-                    "_cvode_sparse(&_cvsparseobj%d, %d, _dlist%d, _ml->contiguous_row(_iml).data(), _ode_matsol%d, &_coef%d);\n",
-                    i,
-                    cvode_neq_,
-                    i,
-                    i,
-                    i);
+                Sprintf(buf,
+                        "_cvode_sparse(&_cvsparseobj%d, %d, _dlist%d, "
+                        "_ml->contiguous_row(_iml).data(), _ode_matsol%d, &_coef%d);\n",
+                        i,
+                        cvode_neq_,
+                        i,
+                        i,
+                        i);
                 Lappendstr(procfunc, buf);
                 Sprintf(buf,
                         "_cvode_sparse_thread(&(_thread[_cvspth%d].literal_value<void*>()), %d, "

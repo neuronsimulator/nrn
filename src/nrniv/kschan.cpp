@@ -114,10 +114,17 @@ static int ode_count(int type) {
     KSChan* c = (*channels)[type];
     return c->count();
 }
-static void ode_map(int ieq, double** pv, double** pvdot, Prop* p, Datum* pd, double* atol, int type) {
+static void ode_map(int ieq,
+                    double** pv,
+                    double** pvdot,
+                    Memb_list* ml,
+                    std::size_t iml,
+                    Datum* pd,
+                    double* atol,
+                    int type) {
     // printf("ode_map\n");
     KSChan* c = (*channels)[type];
-    c->map(ieq, pv, pvdot, p, pd, atol);
+    c->map(ieq, pv, pvdot, ml, iml, pd, atol);
 }
 static void ode_spec(NrnThread*, Memb_list* ml, int type) {
     // printf("ode_spec\n");
@@ -2980,10 +2987,16 @@ int KSChan::count() {
     return nstate_;
 }
 
-void KSChan::map(int ieq, double** pv, double** pvdot, Prop* p, Datum* pd, double* atol) {
+void KSChan::map(int ieq,
+                 double** pv,
+                 double** pvdot,
+                 Memb_list* ml,
+                 std::size_t iml,
+                 Datum* pd,
+                 double* atol) {
     for (int i = 0; i < nstate_; ++i) {
-        pv[i] = static_cast<double*>(p->param_handle(soffset_ + i));
-        pvdot[i] = static_cast<double*>(p->param_handle(soffset_ + nstate_ + i));
+        pv[i] = &ml->data(iml, soffset_ + i);
+        pvdot[i] = &ml->data(iml, soffset_ + nstate_ + i);
     }
 }
 

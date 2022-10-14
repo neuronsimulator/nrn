@@ -308,14 +308,14 @@ void NonLinImpRep::delta(double deltafac) {  // also defines pv_,pvdot_ map for 
         if (s && (cnt = (*s)(i)) > 0) {
             nrn_ode_map_t m = memb_func[i].ode_map;
             for (j = 0; j < nc; ++j) {
-                assert(false);
-                // (*m)(ieq,
-                //      pv_raw_ptrs.data() + ieq,
-                //      pvdot_ + ieq,
-                //      ml->_data[j],
-                //      ml->pdata[j],
-                //      deltavec_ + ieq,
-                //      i);
+                (*m)(ieq,
+                     pv_raw_ptrs.data() + ieq,
+                     pvdot_ + ieq,
+                     ml,
+                     j,
+                     ml->pdata[j],
+                     deltavec_ + ieq,
+                     i);
                 ieq += cnt;
             }
         }

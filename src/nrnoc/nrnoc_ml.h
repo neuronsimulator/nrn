@@ -100,11 +100,11 @@ struct Memb_list {
         return {m_storage, instance, zeroth_variable};
     }
     /** @brief Helper for compatibility with legacy code.
-     * 
+     *
      *  Some methods assume that we can get a double* that points to the
      *  properties of a particular mechanism. As the underlying storage has now
      *  been transposed, this is not possible without creating a copy.
-     * 
+     *
      *  @todo (optionally) return a type whose destructor propagates
      *  modifications back into the NEURON data structures.
      */
@@ -114,7 +114,10 @@ struct Memb_list {
         std::vector<double> data;
         data.reserve(num_fields);
         for (auto i_field = 0; i_field < num_fields; ++i_field) {
-            data.push_back(m_storage->get_field_instance<neuron::container::Mechanism::field::PerInstanceFloatingPointField>(instance, i_field));
+            data.push_back(
+                m_storage->get_field_instance<
+                    neuron::container::Mechanism::field::PerInstanceFloatingPointField>(instance,
+                                                                                        i_field));
         }
         return data;
     }

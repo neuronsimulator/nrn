@@ -1465,18 +1465,10 @@ void NetCvode::del_cv_memb_list(Cvode* cvode) {
     }
 }
 
-CvMembList::CvMembList() {
-    index = -1;
-    ml = new Memb_list;
-}
-CvMembList::~CvMembList() {
-    delete ml;
-}
-
 void CvodeThreadData::delete_memb_list(CvMembList* cmlist) {
     CvMembList *cml, *cmlnext;
     for (cml = cmlist; cml; cml = cmlnext) {
-        Memb_list* ml = cml->ml;
+        auto const& ml = cml->ml;
         cmlnext = cml->next;
         delete[] ml->nodelist;
 #if CACHEVEC
@@ -1630,7 +1622,7 @@ bool NetCvode::init_global() {
                                       mf->ode_spec || mf->state)) {
                     // maintain same order (not reversed) for
                     // singly linked list built below
-                    cml = new CvMembList;
+                    cml = new CvMembList{i};
                     if (!z.cv_memb_list_) {
                         z.cv_memb_list_ = cml;
                     } else {
@@ -1638,7 +1630,6 @@ bool NetCvode::init_global() {
                     }
                     last = cml;
                     cml->next = nil;
-                    cml->index = i;
                     cml->ml->nodecount = ml->nodecount;
                     // assumes cell info grouped contiguously
                     cml->ml->nodelist = ml->nodelist;
@@ -1759,9 +1750,8 @@ bool NetCvode::init_global() {
                         Cvode& cv = d.lcv_[cellnum[inode]];
                         CvodeThreadData& z = cv.ctd_[0];
                         if (!z.cv_memb_list_) {
-                            cml = new CvMembList;
+                            cml = new CvMembList{i};
                             cml->next = nil;
-                            cml->index = i;
                             cml->ml->nodecount = 0;
                             z.cv_memb_list_ = cml;
                             last[cellnum[inode]] = cml;
@@ -1769,11 +1759,10 @@ bool NetCvode::init_global() {
                         if (last[cellnum[inode]]->index == i) {
                             ++last[cellnum[inode]]->ml->nodecount;
                         } else {
-                            cml = new CvMembList;
+                            cml = new CvMembList{i};
                             last[cellnum[inode]]->next = cml;
                             cml->next = nil;
                             last[cellnum[inode]] = cml;
-                            cml->index = i;
                             cml->ml->nodecount = 1;
                         }
                     }
@@ -1785,7 +1774,7 @@ bool NetCvode::init_global() {
             for (i = 0; i < d.nlcv_; ++i) {
                 cvml[i] = d.lcv_[i].ctd_[0].cv_memb_list_;
                 for (cml = cvml[i]; cml; cml = cml->next) {
-                    Memb_list* ml = cml->ml;
+                    auto const& ml = cml->ml;
                     ml->nodelist = new Node*[ml->nodecount];
 #if CACHEVEC
                     ml->nodeindices = new int[ml->nodecount];
@@ -1885,10 +1874,9 @@ void NetCvode::fill_local_ba_cnt(int bat, int* celnum, NetCvodeThreadData& d) {
             assert(cv->nctd_ == 1);
             for (CvMembList* cml = cv->ctd_[0].cv_memb_list_; cml; cml = cml->next) {
                 if (cml->index == bam->type) {
-                    Memb_list* ml = cml->ml;
                     BAMechList* bl = cvbml(bat, bam, cv);
                     bl->bam = bam;
-                    bl->ml = ml;
+                    bl->ml = cml->ml.get();
                 }
             }
         }
