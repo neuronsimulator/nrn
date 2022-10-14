@@ -70,6 +70,7 @@ inline constexpr bool has_num_instances_v = has_num_instances<T>::value;
  */
 template <typename Container>
 struct state_token {
+    constexpr state_token() = default;
     constexpr state_token(state_token&& other)
         : m_container{std::exchange(other.m_container, nullptr)} {}
     constexpr state_token(state_token const&) = delete;

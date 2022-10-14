@@ -20,6 +20,18 @@ struct Model {
         return m_node_data;
     }
 
+    /** @brief Apply a function to each non-null Mechanism.
+     */
+    template <typename Callable>
+    void apply_to_mechanisms(Callable const& callable) {
+        for (auto type = 0; type < m_mech_data.size(); ++type) {
+            if (!m_mech_data[type]) {
+                continue;
+            }
+            callable(*m_mech_data[type]);
+        }
+    }
+
     /** @brief Create a structure to hold the data of a new Mechanism.
      */
     template <typename... Args>
@@ -99,7 +111,10 @@ struct Model {
     std::vector<std::unique_ptr<container::Mechanism::storage>> m_mech_data{};
 };
 
-using model_sorted_token = container::Node::storage::sorted_token_type;
+struct model_sorted_token {
+    container::Node::storage::sorted_token_type node_data_token{};
+    std::vector<container::Mechanism::storage::sorted_token_type> mech_data_tokens{};
+};
 
 namespace detail {
 // Defining this inline seems to lead to duplicate copies when we dlopen
