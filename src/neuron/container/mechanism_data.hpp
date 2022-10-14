@@ -35,6 +35,9 @@ struct storage: soa<storage, identifier, field::PerInstanceFloatingPointField> {
         std::cout << "mechanism " << m_mech_name << " has " << num_floating_point_fields
                   << " floating point fields and type " << m_mech_type << '\n';
     }
+    [[nodiscard]] constexpr short type() const {
+        return m_mech_type;
+    }
     [[nodiscard]] constexpr std::size_t num_floating_point_fields() const {
         return get_tag<field::PerInstanceFloatingPointField>().num_instances();
     }
