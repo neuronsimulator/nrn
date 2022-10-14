@@ -50,7 +50,8 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                                mech.set_fpfield(1, field1);
                                return mech;
                            });
-            const auto check_field_values = [&](bool storage_should_match) {
+            enum struct StorageCheck { Skip, Match, NotMatch };
+            const auto check_field_values = [&](StorageCheck storage_should_match) {
                 THEN("The correct values can be read back") {
                     std::vector<double> current_field0, current_field1;
                     std::transform(mech_instances.begin(),
@@ -67,12 +68,12 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                         mech_data.get_field_instance<field::PerInstanceFloatingPointField>(0);
                     auto const& storage1 =
                         mech_data.get_field_instance<field::PerInstanceFloatingPointField>(1);
-                    if (storage_should_match) {
+                    if (storage_should_match == StorageCheck::Match) {
                         AND_THEN("The underlying storage matches the reference values") {
                             REQUIRE(reference_field0 == storage0);
                             REQUIRE(reference_field1 == storage1);
                         }
-                    } else {
+                    } else if (storage_should_match == StorageCheck::NotMatch) {
                         AND_THEN("The underlying storage no longer matches the reference values") {
                             REQUIRE(reference_field0 != storage0);
                             REQUIRE(reference_field1 != storage1);
@@ -80,14 +81,22 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                     }
                 }
             };
-            check_field_values(true);
+            check_field_values(StorageCheck::Match);
             AND_WHEN("The underlying storage is reversed") {
                 mech_data.reverse();
-                check_field_values(false);
+                check_field_values(StorageCheck::NotMatch);
             }
             AND_WHEN("The underlying storage is rotated") {
                 mech_data.rotate(num_instances / 2);
-                check_field_values(false);
+                check_field_values(StorageCheck::NotMatch);
+            }
+            AND_WHEN("The underlying storage is permuted") {
+                std::vector<std::size_t> perm_vector(mech_instances.size());
+                std::iota(perm_vector.begin(), perm_vector.end(), 0);
+                std::mt19937 g{42};
+                std::shuffle(perm_vector.begin(), perm_vector.end(), g);
+                mech_data.apply_permutation(std::move(perm_vector));
+                check_field_values(StorageCheck::Skip);
             }
         }
     }
