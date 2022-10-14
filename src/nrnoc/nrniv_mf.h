@@ -37,7 +37,7 @@ extern Point_process* ob2pntproc_0(Object*);
 int euler_thread(int,
                  int*,
                  int*,
-                 double*, // not used
+                 double*,  // not used
                  int (*)(Memb_list*, std::size_t, Datum*, Datum*, NrnThread*),
                  Datum*,
                  Datum*,

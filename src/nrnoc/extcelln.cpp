@@ -63,14 +63,30 @@ static int _ode_count(int type) {
     return 0;
 }
 
+// number of doubles for property data. 3 are the nlayer size arrays xg, xc,
+// xraxial
+static int nparm() {
+#if I_MEMBRANE
+    /* 4 is for e_extracellular, i_membrane, sav_g, and sav_rhs */
+    return 3 * nrn_nlayer_extracellular + 4;
+#else
+    /* 1 is for e_extracellular */
+    return 3 * nrn_nlayer_extracellular + 1;
+#endif
+}
+
+static void update_parmsize() {
+    hoc_register_prop_size(EXTRACELL, nparm(), 0);
+}
 
 extern "C" void extracell_reg_(void) {
-    int i;
     register_mech(mechanism, extcell_alloc, (Pvmi) 0, (Pvmi) 0, (Pvmi) 0, extcell_init, -1, 1);
-    i = nrn_get_mechtype(mechanism[1]);
-    hoc_register_cvode(i, _ode_count, 0, 0, 0);
+    int const i = nrn_get_mechtype(mechanism[1]);
+    assert(i == EXTRACELL);
+    hoc_register_cvode(i, _ode_count, nullptr, nullptr, nullptr);
     hoc_register_limits(i, limits);
     hoc_register_units(i, units);
+    update_parmsize();
 }
 
 
@@ -161,17 +177,6 @@ void nrn_update_2d(NrnThread* nt) {
         */
 #endif
     }
-#endif
-}
-
-static int nparm() { /* number of doubles for property data */
-                     /* 3 are the nlayer size arrays xg, xc, xraxial */
-#if I_MEMBRANE
-    /* 4 is for e_extracellular, i_membrane, sav_g, and sav_rhs */
-    return 3 * (nlayer) + 4;
-#else
-    /* 1 is for e_extracellular */
-    return 3 * (nlayer) + 1;
 #endif
 }
 
@@ -270,8 +275,8 @@ void nlayer_extracellular() {
         if (nrn_nlayer_extracellular == old) {
             return;
         }
-
         check_if_extracellular_in_use();
+        update_parmsize();
         nrn_delete_prop_pool(EXTRACELL);
         /*global nlayer is the new value. Following needs to know the previous */
         update_extracellular_reg(old);

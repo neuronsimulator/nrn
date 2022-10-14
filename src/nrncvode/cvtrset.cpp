@@ -65,7 +65,7 @@ void Cvode::rhs_memb(CvMembList* cmlist, NrnThread* _nt) {
         Memb_func* mf = memb_func + cml->index;
         Pvmi s = mf->current;
         if (s) {
-            Memb_list* ml = cml->ml;
+            Memb_list* ml = cml->ml.get();
             (*s)(_nt, ml, cml->index);
             if (errno) {
                 if (nrn_errno_check(cml->index)) {
@@ -92,7 +92,7 @@ void Cvode::lhs(NrnThread* _nt) {
 
     lhs_memb(z.cv_memb_list_, _nt);
     nrn_nonvint_block_conductance(_nt->end, _nt->_actual_rhs, _nt->id);
-    nrn_cap_jacob(_nt, z.cmlcap_->ml);
+    nrn_cap_jacob(_nt, z.cmlcap_->ml.get());
 
     // _nrn_fast_imem not needed since exact icap added in nrn_div_capacity
 
@@ -109,7 +109,7 @@ void Cvode::lhs_memb(CvMembList* cmlist, NrnThread* _nt) {
     CvMembList* cml;
     for (cml = cmlist; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
-        Memb_list* ml = cml->ml;
+        Memb_list* ml = cml->ml.get();
         Pvmi s = mf->jacob;
         if (s) {
             Pvmi s = mf->jacob;
