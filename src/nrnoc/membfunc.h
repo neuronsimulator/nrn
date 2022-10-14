@@ -10,7 +10,8 @@ typedef Datum* (*Pfrpdat)();
 typedef void (*Pvmi)(struct NrnThread*, Memb_list*, int);
 typedef void (*Pvmp)(Prop*);
 typedef int (*nrn_ode_count_t)(int);
-using nrn_ode_map_t = void (*)(int, double**, double**, Prop*, Datum*, double*, int);
+using nrn_ode_map_t =
+    void (*)(int, double**, double**, Memb_list*, std::size_t, Datum*, double*, int);
 using nrn_bamech_t = void (*)(Node*, Datum*, Datum*, NrnThread*, Memb_list*, std::size_t);
 using nrn_ode_synonym_t = void (*)(Memb_list*);
 

@@ -406,7 +406,7 @@ void Cvode::daspk_scatter_y(double* y, int tid) {
     // transform the vm+vext to vm
     CvodeThreadData& z = ctd_[tid];
     if (z.cmlext_) {
-        Memb_list* ml = z.cmlext_->ml;
+        Memb_list* ml = z.cmlext_->ml.get();
         int i, n = ml->nodecount;
         for (i = 0; i < n; ++i) {
             Node* nd = ml->nodelist[i];
@@ -428,7 +428,7 @@ void Cvode::daspk_gather_y(double* y, int tid) {
     // transform vm to vm+vext
     CvodeThreadData& z = ctd_[tid];
     if (z.cmlext_) {
-        Memb_list* ml = z.cmlext_->ml;
+        Memb_list* ml = z.cmlext_->ml.get();
         int i, n = ml->nodecount;
         for (i = 0; i < n; ++i) {
             Node* nd = ml->nodelist[i];
@@ -494,7 +494,7 @@ for (i=0; i < z.nvsize_; ++i) {
     //	assert(use_sparse13 == true && nlayer <= 1);
     assert(use_sparse13 == true);
     if (z.cmlcap_) {
-        Memb_list* ml = z.cmlcap_->ml;
+        Memb_list* ml = z.cmlcap_->ml.get();
         int n = ml->nodecount;
         double* p = NULL;
         if (nt->_nrn_fast_imem) {
@@ -530,7 +530,7 @@ for (i=0; i < z.nvsize_; ++i) {
     }
     // See nrnoc/excelln.cpp for location of cx.
     if (z.cmlext_) {
-        Memb_list* ml = z.cmlext_->ml;
+        Memb_list* ml = z.cmlext_->ml.get();
         int n = ml->nodecount;
         for (i = 0; i < n; ++i) {
             Node* nd = ml->nodelist[i];

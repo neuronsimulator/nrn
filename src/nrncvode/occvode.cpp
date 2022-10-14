@@ -213,7 +213,7 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             NODERHS(z.v_node_[i]) = 1.;
         }
         for (i = 0; i < zneq_cap_v; ++i) {
-            ml = z.cmlcap_->ml;
+            ml = z.cmlcap_->ml.get();
             z.pv_[i] = ml->nodelist[i]->v_handle();
             z.pvdot_[i] = &(NODERHS(ml->nodelist[i]));
             *z.pvdot_[i] = 0.;  // only ones = 1 are no_cap
@@ -249,7 +249,7 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
         assert(pv_raw_ptrs.size() == z.pv_.size());
         for (cml = z.cv_memb_list_; cml; cml = cml->next) {
             int n;
-            ml = cml->ml;
+            ml = cml->ml.get();
             mf = memb_func + cml->index;
             nrn_ode_count_t sc = mf->ode_count;
             if (sc && ((n = (*sc)(cml->index)) > 0)) {
@@ -261,14 +261,14 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
                 // with Apple M1.
                 nrn_ode_map_t s = mf->ode_map;
                 for (j = 0; j < ml->nodecount; ++j) {
-                    assert(false);
-                    // (*s)(ieq,
-                    //      pv_raw_ptrs.data() + ieq,
-                    //      z.pvdot_ + ieq,
-                    //      ml->_data[j],
-                    //      ml->pdata[j],
-                    //      atv + ieq,
-                    //      cml->index);
+                    (*s)(ieq,
+                         pv_raw_ptrs.data() + ieq,
+                         z.pvdot_ + ieq,
+                         ml,
+                         j,
+                         ml->pdata[j],
+                         atv + ieq,
+                         cml->index);
                     ieq += n;
                 }
             }
@@ -291,7 +291,7 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
     z.delete_memb_list(z.no_cap_memb_);
     z.no_cap_memb_ = nil;
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {
-        Memb_list* ml = cml->ml;
+        Memb_list* ml = cml->ml.get();
         Memb_func* mf = memb_func + cml->index;
         // only point processes with currents are possibilities
         if (!mf->is_point || !mf->current) {
@@ -308,10 +308,10 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
             continue;
         // keep same order
         if (z.no_cap_memb_ == nil) {
-            z.no_cap_memb_ = new CvMembList();
+            z.no_cap_memb_ = new CvMembList{cml->index};
             ncm = z.no_cap_memb_;
         } else {
-            ncm->next = new CvMembList();
+            ncm->next = new CvMembList{cml->index};
             ncm = ncm->next;
         }
         ncm->next = nil;
@@ -444,17 +444,17 @@ void Cvode::daspk_init_eqn() {
         mf = memb_func + cml->index;
         nrn_ode_count_t sc = mf->ode_count;
         if (sc && ((n = (*sc)(cml->index)) > 0)) {
-            Memb_list* ml = cml->ml;
+            Memb_list* ml = cml->ml.get();
             nrn_ode_map_t s = mf->ode_map;
             for (j = 0; j < ml->nodecount; ++j) {
-                assert(false);
-                // (*s)(ieq,
-                //      pv_raw_ptrs.data() + ieq,
-                //      z.pvdot_ + ieq,
-                //      ml->_data[j],
-                //      ml->pdata[j],
-                //      atv + ieq,
-                //      cml->index);
+                (*s)(ieq,
+                     pv_raw_ptrs.data() + ieq,
+                     z.pvdot_ + ieq,
+                     ml,
+                     j,
+                     ml->pdata[j],
+                     atv + ieq,
+                     cml->index);
                 ieq += n;
             }
         }
@@ -494,7 +494,7 @@ void Cvode::scatter_y(double* y, int tid) {
     for (CvMembList* cml = z.cv_memb_list_; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
         if (mf->ode_synonym) {
-            mf->ode_synonym(cml->ml);
+            mf->ode_synonym(cml->ml.get());
         }
     }
     nrn_extra_scatter_gather(0, tid);
@@ -590,7 +590,7 @@ int Cvode::solvex_thread(double* b, double* y, NrnThread* nt) {
     lhs(nt);  // special version for cvode.
     scatter_ydot(b, nt->id);
     if (z.cmlcap_)
-        nrn_mul_capacity(nt, z.cmlcap_->ml);
+        nrn_mul_capacity(nt, z.cmlcap_->ml.get());
     for (i = 0; i < z.no_cap_count_; ++i) {
         NODERHS(z.no_cap_node_[i]) = 0.;
     }
@@ -634,7 +634,7 @@ int Cvode::solvex_thread_part1(double* b, NrnThread* nt) {
     lhs(nt);  // special version for cvode.
     scatter_ydot(b, nt->id);
     if (z.cmlcap_)
-        nrn_mul_capacity(nt, z.cmlcap_->ml);
+        nrn_mul_capacity(nt, z.cmlcap_->ml.get());
     for (i = 0; i < z.no_cap_count_; ++i) {
         NODERHS(z.no_cap_node_[i]) = 0.;
     }
@@ -669,7 +669,7 @@ void Cvode::solvemem(NrnThread* nt) {
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {  // probably can start at 6 or hh
         Memb_func* mf = memb_func + cml->index;
         if (mf->ode_matsol) {
-            Memb_list* ml = cml->ml;
+            Memb_list* ml = cml->ml.get();
             Pvmi s = mf->ode_matsol;
             (*s)(nt, ml, cml->index);
             if (errno) {
@@ -733,7 +733,7 @@ void Cvode::fun_thread_transfer_part2(double* ydot, NrnThread* nt) {
     do_ode(nt);
     // divide by cm and compute capacity current
     if (z.cmlcap_)
-        nrn_div_capacity(nt, z.cmlcap_->ml);
+        nrn_div_capacity(nt, z.cmlcap_->ml.get());
     if (nt->_nrn_fast_imem) {
         double* p = nt->_nrn_fast_imem->_nrn_sav_rhs;
         for (int i = 0; i < z.v_node_count_; ++i) {
@@ -792,7 +792,7 @@ void Cvode::fun_thread_ms_part4(double* ydot, NrnThread* nt) {
     nrn_multisplit_adjust_rhs(nt);
     do_ode(nt);
     // divide by cm and compute capacity current
-    nrn_div_capacity(nt, z.cmlcap_->ml);
+    nrn_div_capacity(nt, z.cmlcap_->ml.get());
     gather_ydot(ydot, nt->id);
     before_after(z.after_solve_, nt);
     // for (int i=0; i < z.neq_; ++i) { printf("\t%d %g %g\n", i, y[i], ydot?ydot[i]:-1e99);}
@@ -931,7 +931,7 @@ void Cvode::do_ode(NrnThread* _nt) {
         mf = memb_func + cml->index;
         if (mf->ode_spec) {
             Pvmi s = mf->ode_spec;
-            Memb_list* ml = cml->ml;
+            Memb_list* ml = cml->ml.get();
             (*s)(_nt, ml, cml->index);
             if (errno) {
                 if (nrn_errno_check(cml->index)) {
@@ -963,7 +963,7 @@ void Cvode::do_nonode(NrnThread* _nt) {  // all the hacked integrators, etc, in 
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
         if (mf->state) {
-            Memb_list* ml = cml->ml;
+            Memb_list* ml = cml->ml.get();
             if (!mf->ode_spec) {
                 Pvmi s = mf->state;
                 (*s)(_nt, ml, cml->index);

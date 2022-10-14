@@ -24,19 +24,38 @@ struct Model {
      */
     template <typename... Args>
     container::Mechanism::storage& add_mechanism(int type, Args&&... args) {
-        // type starts from 2 for #reasons
-        if (type > m_mech_data.size()) {
-            m_mech_data.reserve(type + 1);
-            m_mech_data.resize(type);
+        if (type >= m_mech_data.capacity()) {
+            m_mech_data.reserve(2 * m_mech_data.capacity());
         }
-        assert(type == m_mech_data.size());
-        return *m_mech_data.emplace_back(
-            std::make_unique<container::Mechanism::storage>(type, std::forward<Args>(args)...));
+        if (type >= m_mech_data.size()) {
+            m_mech_data.resize(type + 1);
+        }
+        if (m_mech_data[type]) {
+            throw std::runtime_error("add_mechanism(" + std::to_string(type) +
+                                     "): storage already exists");
+        }
+        m_mech_data[type] =
+            std::make_unique<container::Mechanism::storage>(type, std::forward<Args>(args)...);
+        return *m_mech_data[type];
+    }
+
+    /** @brief Destroy the structure holding the data of a particular mechanism.
+     */
+    void delete_mechanism(int type) {
+        if (type >= m_mech_data.size() || !m_mech_data[type]) {
+            return;
+        }
+        if (auto const size = m_mech_data[type]->size(); size > 0) {
+            throw std::runtime_error("delete_mechanism(" + std::to_string(type) +
+                                     "): refusing to delete storage that still hosts " +
+                                     std::to_string(size) + " instances");
+        }
+        m_mech_data[type].reset();
     }
 
     /** @brief Get the structure holding the data of a particular Mechanism.
      */
-    container::Mechanism::storage& mechanism_data(std::size_t type) {
+    container::Mechanism::storage& mechanism_data(int type) {
         if (type >= m_mech_data.size()) {
             throw std::runtime_error("mechanism_data(" + std::to_string(type) +
                                      "): type out of range");

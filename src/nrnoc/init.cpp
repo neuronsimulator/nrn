@@ -719,6 +719,8 @@ void hoc_register_prop_size(int type, int psize, int dpsize) {
     // Create a per-mechanism data structure as part of the top-level
     // neuron::model() structure.
     auto& model = neuron::model();
+    model.delete_mechanism(type);  // e.g. extracellular can call hoc_register_prop_size multiple
+                                   // times
     auto& mech_data = model.add_mechanism(type,
                                           memb_func[type].sym->name,    // the mechanism name
                                           nrn_prop_param_size_[type]);  // how many `double`
@@ -973,27 +975,24 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
     }
 
     if (memb_func[type].ode_count) {
-        if (int const n = (*memb_func[type].ode_count)(type); n > 0) {
-            auto* const psym = (Symbol**) ecalloc(n, sizeof(Symbol*));
-            Node node{}; // dummy node
+        if (auto const n = memb_func[type].ode_count(type); n > 0) {
+            auto* const psym = new Symbol* [n] {};
+            Node node{};  // dummy node
             node.sec_node_index_ = 0;
-            prop_alloc(&(node.prop), MORPHOLOGY, &node); /* in case we need diam */
-            auto* p = prop_alloc(&(node.prop), type, &node);   /* this and any ions */
+            prop_alloc(&(node.prop), MORPHOLOGY, &node);     /* in case we need diam */
+            auto* p = prop_alloc(&(node.prop), type, &node); /* this and any ions */
             // Fill `pv` with pointers to `2*n` parameters inside `p`
-            std::vector<double*> pv(2*n);
-            (*memb_func[type].ode_map)(0, pv.data(), pv.data() + n, p, p->dparam, nullptr, type);
-            std::cout << "pv:";
-            for(auto v: pv) {
-                std::cout << ' ' << v;
-            }
-            std::cout << '\n';
-            for (int i = 0; i < n; ++i) { // only check the first `n` for some reason
+            std::vector<double*> pv(2 * n);
+            Memb_list ml{type};
+            memb_func[type].ode_map(
+                0, pv.data(), pv.data() + n, &ml, p->id().current_row(), p->dparam, nullptr, type);
+            for (int i = 0; i < n; ++i) {  // only check the first `n` for some reason
                 int index = -1;
                 for (p = node.prop; p; p = p->next) {
                     auto const num_params = p->param_size();
                     for (auto i_param = 0; i_param < num_params; ++i_param) {
                         if (pv[i] == static_cast<double*>(p->param_handle(i_param))) {
-                            index = i_param; // ambiguous between the two Prop attached to Node?
+                            index = i_param;  // ambiguous between the two Prop attached to Node?
                             break;
                         }
                     }
@@ -1003,7 +1002,7 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
                 }
                 /* p is the prop and index is the index
                     into the p->param array */
-                assert(p); // assert that we reached the break statement
+                assert(p);  // assert that we reached the break statement
                 /* need to find symbol for this */
                 auto* msym = memb_func[p->_type].sym;
                 for (int j = 0; j < msym->s_varn; ++j) {
@@ -1037,7 +1036,8 @@ void _nrn_thread_reg(int i, int cons, void (*f)(Datum*)) {
     }
 }
 
-void _nrn_thread_table_reg(int i, void (*f)(Memb_list*, std::size_t, Datum*, Datum*, NrnThread*, int)) {
+void _nrn_thread_table_reg(int i,
+                           void (*f)(Memb_list*, std::size_t, Datum*, Datum*, NrnThread*, int)) {
     memb_func[i].thread_table_check_ = f;
 }
 

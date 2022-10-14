@@ -468,7 +468,10 @@ void kinetic_intmethod(Symbol* fun, const char* meth) {
         Fprintf(stderr, "%s method ignores conservation\n", meth);
     }
     ncons = 0;
-    Sprintf(buf, "{int _i; for(_i=0;_i<%d;_i++) _ml->data(_iml, _dlist%d[_i]) = 0.0;}\n", nstate, fun->u.i);
+    Sprintf(buf,
+            "{int _i; for(_i=0;_i<%d;_i++) _ml->data(_iml, _dlist%d[_i]) = 0.0;}\n",
+            nstate,
+            fun->u.i);
     /*goes near beginning of block*/
 #if Glass
     fixrlst(rlst);

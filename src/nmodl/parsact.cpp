@@ -562,10 +562,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "%s(double %s){", fname, arg->name);
     Lappendstr(procfunc, buf);
-    Sprintf(buf,
-            "%s(_threadargsprotocomma_ double %s) {",
-            fname,
-            arg->name);
+    Sprintf(buf, "%s(_threadargsprotocomma_ double %s) {", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     /* check the table */
     Sprintf(buf, "_check_%s();\n", fname);
@@ -592,10 +589,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "_n_%s(double %s){", fname, arg->name);
     Lappendstr(procfunc, buf);
-    Sprintf(buf,
-            "_n_%s(_threadargsprotocomma_ double %s){",
-            fname,
-            arg->name);
+    Sprintf(buf, "_n_%s(_threadargsprotocomma_ double %s){", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     Lappendstr(procfunc, "int _i, _j;\n");
     Lappendstr(procfunc, "double _xi, _theta;\n");
@@ -938,13 +932,15 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
     }
     sprintf(buf, "\nstatic double _watch%d_cond(Point_process* _pnt) {\n", watch_seen_);
     lappendstr(procfunc, buf);
-    vectorize_substitute(lappendstr(procfunc, ""), "  Datum* _ppvar; Datum* _thread{};\n"
-                                                   "  NrnThread* _nt{static_cast<NrnThread*>(_pnt->_vnt)};\n");
-    sprintf(buf, "  _ppvar = _pnt->_prop->dparam;\n"
-                 "  Memb_list _ml_real{_pnt->_prop->_type}, *_ml{&_ml_real};\n"
-                 "  std::size_t _iml{_pnt->_prop->_id().current_row()};\n"
-                 "  v = NODEV(_pnt->node);\n"
-                 "	return ");
+    vectorize_substitute(lappendstr(procfunc, ""),
+                         "  Datum* _ppvar; Datum* _thread{};\n"
+                         "  NrnThread* _nt{static_cast<NrnThread*>(_pnt->_vnt)};\n");
+    sprintf(buf,
+            "  _ppvar = _pnt->_prop->dparam;\n"
+            "  Memb_list _ml_real{_pnt->_prop->_type}, *_ml{&_ml_real};\n"
+            "  std::size_t _iml{_pnt->_prop->_id().current_row()};\n"
+            "  v = NODEV(_pnt->node);\n"
+            "	return ");
     lappendstr(procfunc, buf);
     movelist(par1, par2, procfunc);
     movelist(dir->next, par2, procfunc);
