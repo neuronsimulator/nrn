@@ -29,7 +29,7 @@ test_wheel () {
     cd $TEST_DIR
     for mod in *.mod
     do
-        nmodl $mod host --ispc sympy --analytic
+        nmodl $mod sympy --analytic
     done
     $python_exe -c "import nmodl; driver = nmodl.NmodlDriver(); driver.parse_file('hh.mod')"
     cd ..

@@ -3,9 +3,6 @@
  *
  * This file is part of NMODL distributed under the terms of the GNU
  * Lesser General Public License. See top-level LICENSE file for details.
- *
- * Note: fast_math.ispc translated into .hpp syntax. More information in
- * fast_math.ispc
  *************************************************************************/
 
 #pragma once
