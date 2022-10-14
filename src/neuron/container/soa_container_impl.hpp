@@ -57,7 +57,16 @@ void permute_zip_helper(Storage& storage,
             using Tag = std::decay_t<decltype(tag)>;
             auto const num_instances = tag.num_instances();
             for (auto i = 0ul; i < num_instances; ++i) {
-                permutation(storage.template get_field_instance<Tag>(i));
+                // The apply-a-permutation-vector algorithms that we use modify
+                // both the values being permuted (obviously) and the
+                // permutation vector itself (not-so-obviously), so it's
+                // important that we don't execute the algorithms using the same
+                // vector multiple times. In the absense of fields with
+                // `num_instances()` copies, this is fine because we create one
+                // zip and then apply the permutation one time. But with
+                // `num_instances()` we have to copy the permutation vector.
+                auto perm_copy = permutation;
+                perm_copy(storage.template get_field_instance<Tag>(i));
             }
         }(storage.template get_tag<Tags>()),
         ...);
@@ -78,7 +87,7 @@ template <typename Storage, typename RowIdentifier, typename... Tags>
  */
 template <typename Storage, typename RowIdentifier, typename... Tags>
 template <typename Permutation>
-inline void soa<Storage, RowIdentifier, Tags...>::permute_zip(Permutation permutation) {
+inline void soa<Storage, RowIdentifier, Tags...>::permute_zip(Permutation&& permutation) {
     if (m_frozen_count) {
         throw_error("permute_zip() called on a frozen structure");
     }
@@ -87,12 +96,14 @@ inline void soa<Storage, RowIdentifier, Tags...>::permute_zip(Permutation permut
     // more controversial: should explicitly permuting the data implicitly
     // mark the container as "sorted"?
     mark_as_unsorted_impl<true>();
-    auto zip = get_zip();  // without tags that define num_instances()
-    permutation(zip);
-    // Now apply `permutation` to the columns from tags that do define num_instances()
+    // Apply `permutation` to the columns from tags that do define num_instances()
     using Tags_with_num_instances =
         boost::mp11::mp_copy_if<boost::mp11::mp_list<Tags...>, detail::has_num_instances>;
+    // this will copy `permutation` before invoking it, so it is safe to invoke
+    // it multiple times
     detail::permute_zip_helper(*this, permutation, Tags_with_num_instances{});
+    auto zip = get_zip();  // without tags that define num_instances()
+    permutation(zip);      // cannot safely call `permutation` after this
     std::size_t const my_size{size()};
     for (auto i = 0ul; i < my_size; ++i) {
         m_indices[i].set_current_row(i);
@@ -103,19 +114,20 @@ inline void soa<Storage, RowIdentifier, Tags...>::permute_zip(Permutation permut
  */
 template <typename Storage, typename RowIdentifier, typename... Tags>
 template <typename Range>
-inline void soa<Storage, RowIdentifier, Tags...>::apply_permutation(Range& permutation) {
+inline void soa<Storage, RowIdentifier, Tags...>::apply_permutation(Range permutation) {
     check_permutation_vector(permutation);
-    permute_zip(
-        [&permutation](auto& zip) { boost::algorithm::apply_permutation(zip, permutation); });
+    permute_zip([permutation = std::move(permutation)](auto& zip) mutable {
+        boost::algorithm::apply_permutation(zip, permutation);
+    });
 }
 
 /** @brief Permute the SOA-format data using an arbitrary vector.
  */
 template <typename Storage, typename RowIdentifier, typename... Tags>
 template <typename Range>
-inline void soa<Storage, RowIdentifier, Tags...>::apply_reverse_permutation(Range& permutation) {
+inline void soa<Storage, RowIdentifier, Tags...>::apply_reverse_permutation(Range permutation) {
     check_permutation_vector(permutation);
-    permute_zip([&permutation](auto& zip) {
+    permute_zip([permutation = std::move(permutation)](auto& zip) mutable {
         boost::algorithm::apply_reverse_permutation(zip, permutation);
     });
 }
