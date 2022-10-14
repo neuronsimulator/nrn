@@ -2,6 +2,8 @@
 #include "hocdec.h"
 #include "options.h"  // for CACHEVEC
 
+#include <limits>
+
 struct Node;
 struct Prop;
 
@@ -121,10 +123,14 @@ struct Memb_list {
         }
         return data;
     }
+    void set_storage_offset(std::size_t offset) {
+        m_storage_offset = offset;
+    }
     void set_storage_pointer(neuron::container::Mechanism::storage* storage) {
         m_storage = storage;
     }
 
   private:
     neuron::container::Mechanism::storage* m_storage{};
+    std::size_t m_storage_offset{std::numeric_limits<std::size_t>::max()};
 };
