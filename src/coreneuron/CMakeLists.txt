@@ -351,7 +351,7 @@ configure_file(engine.h.in ${CMAKE_BINARY_DIR}/include/coreneuron/engine.h @ONLY
 file(
   GLOB_RECURSE main_headers
   RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
-  *.h *.hpp *.ispc)
+  *.h *.hpp)
 
 configure_file("${CORENEURON_PROJECT_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp"
                "${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp" COPYONLY)
@@ -384,8 +384,7 @@ install(
   DESTINATION include/
   FILES_MATCHING
   PATTERN "*.h*"
-  PATTERN "*.ipp"
-  PATTERN "*.ispc")
+  PATTERN "*.ipp")
 install(FILES ${MODFUNC_PERL_SCRIPT} ${ENGINEMECH_CODE_FILE} DESTINATION share/coreneuron)
 
 # copy mod2c/nmodl for nrnivmodl-core

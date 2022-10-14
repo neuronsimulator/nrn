@@ -5,13 +5,6 @@
 # =============================================================================
 
 # =============================================================================
-# Common CXX and ISPC flags
-# =============================================================================
-
-# ISPC should compile with --pic by default
-set(CMAKE_ISPC_FLAGS "${CMAKE_ISPC_FLAGS} --pic")
-
-# =============================================================================
 # NMODL CLI options : common and backend specific
 # =============================================================================
 # ~~~
@@ -25,7 +18,6 @@ if(NOT "${CORENRN_NMODL_FLAGS}" STREQUAL "")
 endif()
 
 set(NMODL_CPU_BACKEND_ARGS "host --c")
-set(NMODL_ISPC_BACKEND_ARGS "host --ispc")
 set(NMODL_ACC_BACKEND_ARGS "host --c acc --oacc")
 
 # =============================================================================

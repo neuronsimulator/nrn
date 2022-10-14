@@ -81,10 +81,6 @@ CXX_COMPILE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ $(INCLUDES)
 CXX_LINK_EXE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@
 CXX_SHARED_LIB_CMD = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
 
-# ISPC compilation and link commands
-ISPC = @CMAKE_ISPC_COMPILER@
-ISPC_COMPILE_CMD = $(ISPC) @CMAKE_ISPC_FLAGS@ -I$(CORENRN_INC_DIR)
-
 # env variables required for mod2c or nmodl
 MOD2CPP_ENV_VAR = @CORENRN_SANITIZER_ENABLE_ENVIRONMENT_STRING@ PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@:${CORENRN_LIB_DIR}/python MODLUNIT=$(CORENRN_SHARE_MOD2CPP_DIR)/nrnunits.lib
 
@@ -95,7 +91,6 @@ ifeq (@CORENRN_ENABLE_NMODL@, ON)
     else
         nmodl_arguments_c=@NMODL_CPU_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
     endif
-    nmodl_arguments_ispc=@NMODL_ISPC_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
 endif
 
 # name of the mechanism library with suffix if provided
@@ -120,7 +115,6 @@ endif
 ifeq (@nmodl_FOUND@, TRUE)
     MOD2CPP_BINARY_PATH = $(if $(MOD2CPP_BINARY),$(MOD2CPP_BINARY), @CORENRN_MOD2CPP_BINARY@)
     INCLUDES += -I@CORENRN_MOD2CPP_INCLUDE@
-    ISPC_COMPILE_CMD += -I@CORENRN_MOD2CPP_INCLUDE@
 else
     MOD2CPP_BINARY_PATH = $(if $(MOD2CPP_BINARY),$(MOD2CPP_BINARY), $(CORENRN_BIN_DIR)/@nmodl_binary_name@)
 endif
@@ -129,41 +123,11 @@ endif
 mod_files_paths = $(sort $(wildcard $(MODS_PATH)/*.mod))
 mod_files_names = $(sort $(notdir $(wildcard $(MODS_PATH)/*.mod)))
 mod_files_no_ext = $(mod_files_names:.mod=)
-
-# Find out artificial and non-artificial cells for ISPC backend
-define check_file
-	# if ISPC is active then only separate mod files
-	ifeq (@CORENRN_ENABLE_ISPC@, ON)
-		ifeq ($(shell grep -q $(2) $(1); echo $$?), 0)
-			mod_art_files += $(MOD_TO_CPP_DIR)/$(notdir $(1))
-		else
-			mod_non_art_files += $(MOD_TO_CPP_DIR)/$(notdir $(1))
-		endif
-	else
-		mod_all_files += $(MOD_TO_CPP_DIR)/$(notdir $(1))
-	endif
-endef
-
-# Iterate over all available mod files and make group
-$(foreach mod_file, $(mod_files_paths), $(eval $(call check_file, $(mod_file), ARTIFICIAL_CELL)))
-
-# With ispc, artificial cells get translated as regular CPP backend
-# Otherwise, all mod files are compiled as CPP backend
-ifeq (@CORENRN_ENABLE_ISPC@, ON)
-	mod_files_for_cpp_backend = $(mod_art_files)
-else
-	mod_files_for_cpp_backend = $(mod_all_files)
-endif
+mod_files_for_cpp_backend = $(foreach mod_file, $(mod_files_paths), $(addprefix $(MOD_TO_CPP_DIR)/, $(notdir $(mod_file))))
 
 # CPP files and their obkects
 mod_cpp_files = $(patsubst %.mod,%.cpp,$(mod_files_for_cpp_backend))
 mod_cpp_objs = $(addprefix $(MOD_OBJS_DIR)/,$(addsuffix .o,$(basename $(mod_files_no_ext))))
-
-# For ISPC backend, we use all non-artificial cells
-mod_ispc_srcs_names = $(notdir $(mod_non_art_files))
-mod_ispc_files = $(patsubst %.mod,%.ispc,$(mod_non_art_files))
-mod_ispc_cpp_files = $(patsubst %.mod,%.cpp,$(mod_non_art_files))
-mod_ispc_objs = $(addprefix $(MOD_OBJS_DIR)/,$(addsuffix .obj,$(basename $(mod_ispc_srcs_names))))
 
 # We use $ORIGIN (@loader_path in OSX)
 ORIGIN_RPATH := $(if $(filter Darwin,$(OS_NAME)),@loader_path,$$ORIGIN)
@@ -176,7 +140,7 @@ LIB_RPATH = $(if $(DESTDIR),$(DESTDIR)/lib,$(ORIGIN_RPATH))
 INSTALL_LIB_RPATH = $(ORIGIN_RPATH)/../lib
 
 # All objects used during build
-ALL_OBJS = $(MOD_FUNC_OBJ) $(mod_cpp_objs) $(mod_ispc_objs)
+ALL_OBJS = $(MOD_FUNC_OBJ) $(mod_cpp_objs)
 
 # Colors for pretty printing
 C_RESET := \033[0m
@@ -184,15 +148,10 @@ C_GREEN := \033[32m
 
 # Default nmodl flags. Override if MOD2CPP_RUNTIME_FLAGS is not empty
 ifeq (@CORENRN_ENABLE_NMODL@, ON)
-    MOD2CPP_FLAGS_ISPC = $(if $(MOD2CPP_RUNTIME_FLAGS),$(MOD2CPP_RUNTIME_FLAGS),$(nmodl_arguments_ispc))
     MOD2CPP_FLAGS_C = $(if $(MOD2CPP_RUNTIME_FLAGS),$(MOD2CPP_RUNTIME_FLAGS),$(nmodl_arguments_c))
 endif
 
-ifeq (@CORENRN_ENABLE_ISPC@, ON)
-    $(info Default NMODL flags: @nmodl_arguments_ispc@)
-else
-    $(info Default NMODL flags: @nmodl_arguments_c@)
-endif
+$(info Default NMODL flags: @nmodl_arguments_c@)
 
 ifneq ($(MOD2CPP_RUNTIME_FLAGS),)
     $(warning Runtime nmodl flags (they replace the default ones): $(MOD2CPP_RUNTIME_FLAGS))
@@ -240,20 +199,9 @@ coremech_lib_static: $(ALL_OBJS) $(ENGINEMECH_OBJ) build_always
 $(MOD_OBJS_DIR)/%.o: $(MOD_TO_CPP_DIR)/%.cpp | $(MOD_OBJS_DIR)
 	$(CXX_COMPILE_CMD) -c $< -o $@ -DNRN_PRCELLSTATE=$(NRN_PRCELLSTATE) @CORENEURON_TRANSLATED_CODE_COMPILE_FLAGS@
 
-# compile ispc files to .obj
-$(MOD_OBJS_DIR)/%.obj: $(MOD_TO_CPP_DIR)/%.ispc | $(MOD_OBJS_DIR)
-	$(ISPC_COMPILE_CMD) $< -o $@
-
-# translate MOD files to ISPC using NMODL
-$(mod_ispc_files): $(MOD_TO_CPP_DIR)/%.ispc: $(MODS_PATH)/%.mod | $(MOD_TO_CPP_DIR)
-	$(MOD2CPP_ENV_VAR) $(MOD2CPP_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ $(MOD2CPP_FLAGS_ISPC)
-
 # translate MOD files to CPP using mod2c/NMODL
 $(mod_cpp_files): $(MOD_TO_CPP_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MOD_TO_CPP_DIR)
 	$(MOD2CPP_ENV_VAR) $(MOD2CPP_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ $(MOD2CPP_FLAGS_C)
-
-# static pattern to set up the dependencies for the previous recipe
-$(mod_ispc_cpp_files): $(MOD_TO_CPP_DIR)/%.cpp: $(MOD_TO_CPP_DIR)/%.ispc
 
 # generate mod registration function. Dont overwrite if it's not changed
 $(MOD_FUNC_CPP): build_always | $(MOD_TO_CPP_DIR)

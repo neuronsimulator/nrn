@@ -194,8 +194,7 @@ extern void direct_mode_initialize();
 extern void nrn_mk_table_check(void);
 extern void nonvint(NrnThread* _nt);
 extern void update(NrnThread*);
-// NOTE : this implementation is duplicated in "coreneuron/mechanism/nrnoc_ml.ispc"
-// for the ISPC backend. If changes are required, make sure to change ISPC as well.
+
 constexpr int at_time(NrnThread* nt, double te) {
     double x = te - 1e-11;
     if (x <= nt->_t && x > (nt->_t - nt->_dt)) {
