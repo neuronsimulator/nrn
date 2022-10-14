@@ -2183,7 +2183,7 @@ static neuron::model_sorted_token nrn_sort_node_data() {
     }
     assert(global_i == global_node_data_size);
     // Should this and other permuting operations return a "sorted token"?
-    node_data.apply_permutation(global_node_data_permutation);
+    node_data.apply_permutation(std::move(global_node_data_permutation));
     return node_data.get_sorted_token();
 }
 
