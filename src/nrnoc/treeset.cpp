@@ -2147,7 +2147,76 @@ void nrn_recalc_ptrs(double* (*r)(double*) ) {
     recalc_ptr_ = nullptr;
 }
 
-/** @brief Sort the underlying storage for Nodes is sorted.
+/** @brief Sort the underlying storage for a particular mechanism.
+ */
+static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_data(
+    neuron::container::Mechanism::storage& mech_data) {
+    // Do the actual sorting here. For now the algorithm is just to ensure that
+    // the mechanism instances are partitioned by NrnThread.
+    auto const type = mech_data.type();
+
+    std::size_t const mech_data_size{mech_data.size()};
+    std::size_t mech_data_offset{}, global_i{};
+    std::vector<std::size_t> mech_data_permutation(mech_data_size);
+    NrnThread* nt{};
+    FOR_THREADS(nt) {
+        // the Memb_list for this mechanism in this thread
+        auto* const ml = nt->_ml_list[type];
+        // Tell the Memb_list what global offset its values start at
+        ml->set_storage_offset(global_i);
+        // Count how many times we see this mechanism in this NrnThread
+        auto nt_mech_count = 0;
+        // Loop through the Nodes in this NrnThread
+        for (auto i = 0; i < nt->end; ++i) {
+            auto* const nd = nt->_v_node[i];
+            // See if this Node has a mechanism of this type
+            for (Prop* p = nd->prop; p; p = p->next) {
+                if (p->_type != type) {
+                    continue;
+                }
+                // this condition comes from thread_memblist_setup(...)
+                if (!memb_func[type].current && !memb_func[type].state &&
+                    !memb_func[type].has_initialize()) {
+                    continue;
+                }
+                // OK, p is an instance of the mechanism we're currently
+                // considering.
+                auto const current_global_row = p->id().current_row();
+                mech_data_permutation.at(global_i++) = current_global_row;
+                // Checks
+                assert(ml->nodelist[nt_mech_count] == nd);
+                assert(ml->nodeindices[nt_mech_count] == nd->v_node_index);
+                ++nt_mech_count;
+            }
+        }
+        assert(ml->nodecount == nt_mech_count);
+    }
+    assert(global_i == mech_data_size);
+    // Should this and other permuting operations return a "sorted token"?
+    mech_data.apply_permutation(std::move(mech_data_permutation));
+    return mech_data.get_sorted_token();
+}
+
+/** @brief Sort the underlying storage for Mechanisms.
+ *
+ *  After model building is complete the storage vectors backing all Mechanism
+ *  instances can be permuted to ensure that preconditions are met for the
+ *  computations performed while time-stepping.
+ *
+ *  This method ensures that the Mechanism data is ready for this compute phase.
+ *  It is guaranteed to remain "ready" until the returned tokens are destroyed.
+ */
+static std::vector<neuron::container::state_token<neuron::container::Mechanism::storage>>
+nrn_ensure_mech_data_are_sorted() {
+    std::vector<neuron::container::state_token<neuron::container::Mechanism::storage>> tokens{};
+    neuron::model().apply_to_mechanisms([&tokens](auto& mech_data) {
+        tokens.emplace_back(mech_data.is_sorted() ? mech_data.get_sorted_token()
+                                                  : nrn_sort_mech_data(mech_data));
+    });
+    return tokens;
+}
+
+/** @brief Sort the underlying storage for Nodes.
  *
  *  After model building is complete the storage vectors backing all Node
  *  objects can be permuted to ensure that preconditions are met for the
@@ -2155,9 +2224,11 @@ void nrn_recalc_ptrs(double* (*r)(double*) ) {
  *
  *  This method ensures that the Node data is ready for this compute phase.
  *
- *  @todo Is it worth "freezing" the data before any of the current_row() calls?
+ *  @todo Is it worth "freezing" the data before any of the current_row() calls,
+ *  and making it possible to "atomically" do (freeze, calculate permutation,
+ *  apply-permutation-iff-the-frozen-count-was-1, return token)?
  */
-static neuron::model_sorted_token nrn_sort_node_data() {
+static neuron::container::state_token<neuron::container::Node::storage> nrn_sort_node_data() {
     // Make sure the voltage storage follows the order encoded in _v_node.
     // Generate the permutation vector to update the underlying storage for
     // Nodes. This must come after nrn_multisplit_setup_, which can change the
@@ -2196,13 +2267,14 @@ static neuron::model_sorted_token nrn_sort_node_data() {
  *  neuron::model().node_data().
  */
 neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
+    neuron::model_sorted_token ret{};
     auto& node_data = neuron::model().node_data();
-    if (node_data.is_sorted()) {
-        // Short-circuit
-        return node_data.get_sorted_token();
-    } else {
-        return nrn_sort_node_data();
-    }
+    ret.node_data_token = node_data.is_sorted() ? node_data.get_sorted_token()
+                                                : nrn_sort_node_data();
+    // TODO should we pass a token saying the node data are sorted to
+    // nrn_ensure_mech_data_are_sorted?
+    ret.mech_data_tokens = nrn_ensure_mech_data_are_sorted();
+    return ret;
 }
 
 void nrn_recalc_node_ptrs() {
