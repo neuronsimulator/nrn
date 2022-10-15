@@ -2154,46 +2154,69 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
     // Do the actual sorting here. For now the algorithm is just to ensure that
     // the mechanism instances are partitioned by NrnThread.
     auto const type = mech_data.type();
-
-    std::size_t const mech_data_size{mech_data.size()};
-    std::size_t mech_data_offset{}, global_i{};
-    std::vector<std::size_t> mech_data_permutation(mech_data_size);
-    NrnThread* nt{};
-    FOR_THREADS(nt) {
-        // the Memb_list for this mechanism in this thread
-        auto* const ml = nt->_ml_list[type];
-        // Tell the Memb_list what global offset its values start at
-        ml->set_storage_offset(global_i);
-        // Count how many times we see this mechanism in this NrnThread
-        auto nt_mech_count = 0;
-        // Loop through the Nodes in this NrnThread
-        for (auto i = 0; i < nt->end; ++i) {
-            auto* const nd = nt->_v_node[i];
-            // See if this Node has a mechanism of this type
-            for (Prop* p = nd->prop; p; p = p->next) {
-                if (p->_type != type) {
-                    continue;
-                }
-                // this condition comes from thread_memblist_setup(...)
-                if (!memb_func[type].current && !memb_func[type].state &&
-                    !memb_func[type].has_initialize()) {
-                    continue;
-                }
-                // OK, p is an instance of the mechanism we're currently
-                // considering.
-                auto const current_global_row = p->id().current_row();
-                mech_data_permutation.at(global_i++) = current_global_row;
-                // Checks
-                assert(ml->nodelist[nt_mech_count] == nd);
-                assert(ml->nodeindices[nt_mech_count] == nd->v_node_index);
-                ++nt_mech_count;
+    // Some special types are not "really" mechanisms and don't need to be
+    // sorted
+    if (type != MORPHOLOGY) {
+        std::size_t const mech_data_size{mech_data.size()};
+        std::size_t global_i{};
+        std::vector<std::size_t> mech_data_permutation(mech_data_size);
+        NrnThread* nt{};
+        FOR_THREADS(nt) {
+            // the Memb_list for this mechanism in this thread, this might be
+            // null if there are no entries, or if it's an artificial cell type(?)
+            auto* const ml = nt->_ml_list[type];
+            if (ml) {
+                // Tell the Memb_list what global offset its values start at
+                ml->set_storage_offset(global_i);
             }
+            // Count how many times we see this mechanism in this NrnThread
+            auto nt_mech_count = 0;
+            // Loop through the Nodes in this NrnThread
+            for (auto i = 0; i < nt->end; ++i) {
+                auto* const nd = nt->_v_node[i];
+                // See if this Node has a mechanism of this type
+                for (Prop* p = nd->prop; p; p = p->next) {
+                    if (p->_type != type) {
+                        continue;
+                    }
+                    // this condition comes from thread_memblist_setup(...)
+                    if (!memb_func[type].current && !memb_func[type].state &&
+                        !memb_func[type].has_initialize()) {
+                        continue;
+                    }
+                    // OK, p is an instance of the mechanism we're currently
+                    // considering.
+                    auto const current_global_row = p->id().current_row();
+                    mech_data_permutation.at(global_i++) = current_global_row;
+                    // Checks
+                    assert(ml->nodelist[nt_mech_count] == nd);
+                    assert(ml->nodeindices[nt_mech_count] == nd->v_node_index);
+                    ++nt_mech_count;
+                }
+            }
+            // Look for any artificial cells attached to this NrnThread
+            if (nrn_is_artificial_[type]) {
+                cTemplate* tmp = nrn_pnt_template_[type];
+                hoc_Item* q;
+                ITERATE(q, tmp->olist) {
+                    Object* obj = OBJ(q);
+                    auto* pnt = static_cast<Point_process*>(obj->u.this_pointer);
+                    if (nt == pnt->_vnt) {
+                        auto const current_global_row = pnt->prop->id().current_row();
+                        mech_data_permutation.at(global_i++) = current_global_row;
+                    }
+                }
+            }
+            assert(!ml || ml->nodecount == nt_mech_count);
         }
-        assert(ml->nodecount == nt_mech_count);
+        if (global_i != mech_data_size) {
+            throw std::runtime_error("(global_i = " + std::to_string(global_i) +
+                                     ") != (mech_data_size = " + std::to_string(mech_data_size) +
+                                     ") for " + mech_data.name());
+        }
+        // Should this and other permuting operations return a "sorted token"?
+        mech_data.apply_permutation(std::move(mech_data_permutation));
     }
-    assert(global_i == mech_data_size);
-    // Should this and other permuting operations return a "sorted token"?
-    mech_data.apply_permutation(std::move(mech_data_permutation));
     return mech_data.get_sorted_token();
 }
 
@@ -2235,7 +2258,7 @@ static neuron::container::state_token<neuron::container::Node::storage> nrn_sort
     // Node order.
     auto& node_data = neuron::model().node_data();
     std::size_t const global_node_data_size{node_data.size()};
-    std::size_t global_node_data_offset{}, global_i{};
+    std::size_t global_i{};
     std::vector<std::size_t> global_node_data_permutation(global_node_data_size);
     // Process threads one at a time -- this means that the data for each
     // NrnThread will be contiguous.

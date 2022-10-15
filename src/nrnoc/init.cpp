@@ -982,9 +982,8 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
             auto* p = prop_alloc(&(node.prop), type, &node); /* this and any ions */
             // Fill `pv` with pointers to `2*n` parameters inside `p`
             std::vector<double*> pv(2 * n);
-            Memb_list ml{type};
-            memb_func[type].ode_map(
-                0, pv.data(), pv.data() + n, &ml, p->id().current_row(), p->dparam, nullptr, type);
+            auto [_, ml, iml] = create_ml(p);
+            memb_func[type].ode_map(0, pv.data(), pv.data() + n, ml, iml, p->dparam, nullptr, type);
             for (int i = 0; i < n; ++i) {  // only check the first `n` for some reason
                 int index = -1;
                 for (p = node.prop; p; p = p->next) {

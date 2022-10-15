@@ -214,15 +214,14 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
             SYM(q2)->name,
             numlist);
     qret = insertstr(q3, buf);
-    Sprintf(
-        buf,
-        "error = nrn_newton_thread(_newtonspace%d, %d, _slist%d, _ml->contiguous_row(_iml).data(), "
-        "%s, _dlist%d, _ppvar, _thread, _nt, _ml, _iml);\n",
-        numlist - 1,
-        counts,
-        numlist,
-        SYM(q2)->name,
-        numlist);
+    Sprintf(buf,
+            "error = nrn_newton_thread(_newtonspace%d, %d, _slist%d, "
+            "_ml->contiguous_row(_iml).data(), %s, _dlist%d, _ppvar, _thread, _nt, _ml, _iml);\n",
+            numlist - 1,
+            counts,
+            numlist,
+            SYM(q2)->name,
+            numlist);
     vectorize_substitute(qret, buf);
     Insertstr(q3, "_recurse = 0; if(error) {abort_run(error);}}\n");
     return qret;
