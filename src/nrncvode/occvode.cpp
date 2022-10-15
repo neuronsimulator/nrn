@@ -324,7 +324,7 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
         if (mf->hoc_mech) {
             ncm->ml->prop = new Prop*[n];
         } else {
-            // ncm->ml->_data = new double*[n];
+            ncm->ml->instances.reserve(n);
             ncm->ml->pdata = new Datum*[n];
         }
         ncm->ml->_thread = ml->_thread;  // can share this
@@ -339,7 +339,7 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
                 if (mf->hoc_mech) {
                     ncm->ml->prop[n] = ml->prop[i];
                 } else {
-                    // ncm->ml->_data[n] = ml->_data[i];
+                    ncm->ml->instances.push_back(ml->instance_handle(i));
                     ncm->ml->pdata[n] = ml->pdata[i];
                 }
                 ++n;
