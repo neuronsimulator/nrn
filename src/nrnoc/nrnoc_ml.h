@@ -99,7 +99,9 @@ struct Memb_list {
         std::size_t m_instance{}, m_zeroth_column{};
     };
     [[nodiscard]] array_view data_array(std::size_t instance, std::size_t zeroth_variable) {
-        return {m_storage, instance, zeroth_variable};
+        assert(m_storage);
+        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
+        return {m_storage, m_storage_offset + instance, zeroth_variable};
     }
     /** @brief Helper for compatibility with legacy code.
      *
@@ -112,14 +114,14 @@ struct Memb_list {
      */
     [[nodiscard]] std::vector<double> contiguous_row(std::size_t instance) {
         assert(m_storage);
+        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
         auto const num_fields = m_storage->num_floating_point_fields();
         std::vector<double> data;
         data.reserve(num_fields);
         for (auto i_field = 0; i_field < num_fields; ++i_field) {
-            data.push_back(
-                m_storage->get_field_instance<
-                    neuron::container::Mechanism::field::PerInstanceFloatingPointField>(instance,
-                                                                                        i_field));
+            data.push_back(m_storage->get_field_instance<
+                           neuron::container::Mechanism::field::PerInstanceFloatingPointField>(
+                m_storage_offset + instance, i_field));
         }
         return data;
     }
