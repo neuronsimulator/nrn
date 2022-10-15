@@ -2362,9 +2362,8 @@ int hoc_array_index(Symbol* sp, Objectdata* od) { /* subs must be in reverse ord
 }
 
 // Raise error if compile time number of dimensions differs from
-// execution time number of dimensions. Program has ndim, Symbol following.
-void hoc_chk_sym_has_ndim() {
-    int ndim = (pc++)->i;
+// execution time number of dimensions. Program next item is Symbol*.
+static void ndim_chk_helper(int ndim) {
     Symbol* sp = (pc++)->sym;
     int ndim_now = sp->arayinfo ? sp->arayinfo->nsub : 0;
     if (ndim_now != ndim) {
@@ -2376,6 +2375,17 @@ void hoc_chk_sym_has_ndim() {
     // if this is missing when hoc_araypt is called, it means the symbol
     // was compiled as a scalar.
     hoc_push_ndim(ndim);
+}
+
+void hoc_chk_sym_has_ndim1() {
+    ndim_chk_helper(1);
+}
+void hoc_chk_sym_has_ndim2() {
+    ndim_chk_helper(2);
+}
+void hoc_chk_sym_has_ndim() {
+    int ndim = (pc++)->i;
+    ndim_chk_helper(ndim);
 }
 
 // return subscript - subs in reverse order on stack

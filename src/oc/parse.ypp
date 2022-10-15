@@ -777,8 +777,8 @@ wholearray:begin array	/* using execution stack to get Symbol from array */
 		}
 	}else{
 		if ( ndim == 0 ) { /*fake index list with all 0's*/
-			int i;
-			for (i=0; i<sym->arayinfo->nsub; i++) {
+                        ndim = sym->arayinfo->nsub;
+			for (int i=0; i<ndim; i++) {
 				code(pushzero);
 			}
 		} else if ( ndim != sym->arayinfo->nsub) {
@@ -797,8 +797,14 @@ wholearray:begin array	/* using execution stack to get Symbol from array */
 		// the symbol becomes an array after this compilation,  when
 		// the symbol is processed at runtime and hoc_araypt is called
 		// then its hoc_pop_ndim() will raise an error.
-		code(hoc_chk_sym_has_ndim);
-		codei(sym->arayinfo->nsub);
+		if (ndim == 1) { // save some program space
+			code(hoc_chk_sym_has_ndim1);
+		}else if (ndim == 2) {
+			code(hoc_chk_sym_has_ndim2);
+		} else { // general case
+			code(hoc_chk_sym_has_ndim);
+			codei(ndim);
+		}
 		codesym(sym);
 	}
    }else {

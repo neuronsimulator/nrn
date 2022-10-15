@@ -11,7 +11,7 @@ extern void add(void), hoc_sub(void), mul(void), hoc_div(void), hoc_cyclic(void)
     power(void);
 extern void assign(void), bltin(void), varpush(void), constpush(void), print(void), varread(void);
 extern void prexpr(void), prstr(void), assstr(void), pushzero(void);
-extern void hoc_chk_sym_has_ndim();
+extern void hoc_chk_sym_has_ndim(), hoc_chk_sym_has_ndim1(), hoc_chk_sym_has_ndim2();
 extern void gt(void), lt(void), eq(void), ge(void), le(void), ne(void), hoc_and(void), hoc_or(void),
     hoc_not(void);
 extern void ifcode(void), forcode(void), shortfor(void), call(void), arg(void), argassign(void);
