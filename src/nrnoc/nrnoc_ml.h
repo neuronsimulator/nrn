@@ -1,5 +1,6 @@
 #pragma once
 #include "hocdec.h"
+#include "neuron/container/mechanism.hpp"
 #include "options.h"  // for CACHEVEC
 
 #include <limits>
@@ -7,6 +8,25 @@
 struct Node;
 struct Prop;
 
+/** @brief A view into a set of mechanism instances.
+ *
+ * This type gets used in a few different ways, and the interface with generated
+ * code from MOD files makes it convenient to wrap these different use cases in
+ * the same type:
+ *  - The view can be to a set of mechanism instances that are contiguous in the
+ *    underlying storage. This is inherently something that only makes sense if
+ *    the underlying data are sorted. In this case, Memb_list essentially
+ *    contains a pointer to the underlying storage struct and a single offset
+ *    into it. This covers use-cases like Memb_list inside NrnThread -- the data
+ *    are partitioned by NrnThread in nrn_sort_mech_data so all the instances of
+ *    a particular mechanism in a particular thread are next to each other in
+ *    the storage.
+ *  - The view can be a list of stable handles to mechanism instances. This is
+ *    useful in CVode code which needs to handle sets of mechanism instances in
+ *    more flexible ways, where it might be excessively difficult or convoluted
+ *    to guarantee in nrn_sort_mech_data that all sets that are ever needed are
+ *    contiguous in the underlying storage.
+ */
 struct Memb_list {
     Memb_list() = default;
     // Bit of a hack for codegen
@@ -32,30 +52,50 @@ struct Memb_list {
      *  Calling .data() on the return value yields a double** that is similar to
      *  the old _data member, with the key difference that its indices are
      *  transposed. Now, the first index corresponds to the variable and the
-     *  second index corresponds to the instance of the mechanism.
+     *  second index corresponds to the instance of the mechanism. This method
+     *  is useful for CoreNEURON interface
      */
     [[nodiscard]] std::vector<double*> data() {
         assert(m_storage);
+        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
         std::vector<double*> ret{};
         auto const num_fields = m_storage->num_floating_point_fields();
         ret.resize(num_fields);
         for (auto i = 0ul; i < num_fields; ++i) {
-            ret[i] = m_storage
-                         ->get_field_instance<
-                             neuron::container::Mechanism::field::PerInstanceFloatingPointField>(i)
-                         .data();
+            ret[i] = std::next(
+                m_storage
+                    ->get_field_instance<
+                        neuron::container::Mechanism::field::PerInstanceFloatingPointField>(i)
+                    .data(),
+                m_storage_offset);
         }
         return ret;
     }
     [[nodiscard]] double& data(std::size_t instance, std::size_t variable) {
-        assert(m_storage);
-        return m_storage->get_field_instance<
-            neuron::container::Mechanism::field::PerInstanceFloatingPointField>(variable, instance);
+        if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
+            // non-contiguous mode
+            return instances.at(instance).fpfield_ref(variable);
+        } else {
+            // contiguous mode
+            assert(m_storage);
+            assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
+            return m_storage->get_field_instance<
+                neuron::container::Mechanism::field::PerInstanceFloatingPointField>(
+                variable, m_storage_offset + instance);
+        }
     }
     [[nodiscard]] double const& data(std::size_t instance, std::size_t variable) const {
-        assert(m_storage);
-        return m_storage->get_field_instance<
-            neuron::container::Mechanism::field::PerInstanceFloatingPointField>(variable, instance);
+        if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
+            // non-contiguous mode
+            return instances.at(instance).fpfield_ref(variable);
+        } else {
+            // contiguous mode
+            assert(m_storage);
+            assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
+            return m_storage->get_field_instance<
+                neuron::container::Mechanism::field::PerInstanceFloatingPointField>(
+                variable, m_storage_offset + instance);
+        }
     }
     /** @brief Calculate a legacy index of the given pointer in this mechanism data.
      *
@@ -66,7 +106,8 @@ struct Memb_list {
     [[nodiscard]] std::ptrdiff_t legacy_index(double const* ptr) const {
         auto const num_fields = m_storage->num_floating_point_fields();
         for (auto field = 0ul; field < num_fields; ++field) {
-            auto const& vec = m_storage->get_field_instance<
+            auto const* const const_storage = m_storage;
+            auto const& vec = const_storage->get_field_instance<
                 neuron::container::Mechanism::field::PerInstanceFloatingPointField>(field);
             auto const index = std::distance(vec.data(), ptr);
             if (index >= 0 && index < vec.size()) {
@@ -99,7 +140,15 @@ struct Memb_list {
         std::size_t m_instance{}, m_zeroth_column{};
     };
     [[nodiscard]] array_view data_array(std::size_t instance, std::size_t zeroth_variable) {
-        return {m_storage, instance, zeroth_variable};
+        if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
+            // not in contiguous mode
+            auto& handle = instances.at(instance);
+            return {&handle.underlying_storage(), handle.id().current_row(), zeroth_variable};
+        } else {
+            // contiguous mode
+            assert(m_storage);
+            return {m_storage, m_storage_offset + instance, zeroth_variable};
+        }
     }
     /** @brief Helper for compatibility with legacy code.
      *
@@ -111,24 +160,57 @@ struct Memb_list {
      *  modifications back into the NEURON data structures.
      */
     [[nodiscard]] std::vector<double> contiguous_row(std::size_t instance) {
-        assert(m_storage);
-        auto const num_fields = m_storage->num_floating_point_fields();
         std::vector<double> data;
-        data.reserve(num_fields);
-        for (auto i_field = 0; i_field < num_fields; ++i_field) {
-            data.push_back(
-                m_storage->get_field_instance<
-                    neuron::container::Mechanism::field::PerInstanceFloatingPointField>(instance,
-                                                                                        i_field));
+        if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
+            // not in contiguous mode
+            auto const& handle = instances.at(instance);
+            auto const num_fields = handle.num_fpfields();
+            data.reserve(num_fields);
+            for (auto i_field = 0; i_field < num_fields; ++i_field) {
+                data.push_back(handle.fpfield(i_field));
+            }
+        } else {
+            // contiguous mode
+            assert(m_storage);
+            assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
+            auto const num_fields = m_storage->num_floating_point_fields();
+            data.reserve(num_fields);
+            for (auto i_field = 0; i_field < num_fields; ++i_field) {
+                data.push_back(m_storage->get_field_instance<
+                               neuron::container::Mechanism::field::PerInstanceFloatingPointField>(
+                    i_field, m_storage_offset + instance));
+            }
         }
         return data;
     }
+    [[nodiscard]] std::size_t get_storage_offset() const {
+        return m_storage_offset;
+    }
+    /** @todo how to invalidate this?
+     */
     void set_storage_offset(std::size_t offset) {
         m_storage_offset = offset;
     }
     void set_storage_pointer(neuron::container::Mechanism::storage* storage) {
         m_storage = storage;
     }
+
+    /** @brief Get a stable handle to the current instance-th handle.
+     *
+     *  The returned value refers to the same instance of this mechanism
+     *  regardless of how the underlying storage are permuted.
+     */
+    [[nodiscard]] neuron::container::Mechanism::handle instance_handle(std::size_t instance) const {
+        if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
+            // not in contiguous mode
+            return instances.at(instance);
+        } else {
+            assert(m_storage);
+            return {m_storage->identifier(instance), *m_storage};
+        }
+    }
+
+    std::vector<neuron::container::Mechanism::handle> instances{};
 
   private:
     neuron::container::Mechanism::storage* m_storage{};

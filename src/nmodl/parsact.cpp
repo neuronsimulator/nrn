@@ -743,21 +743,17 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
         vectorize_substitute(lappendstr(procfunc, "  _hoc_setdata(_vptr);\n"),
                              "\
   Prop *_p{static_cast<Point_process*>(_vptr)->_prop};\n\
-  Memb_list _ml_real{_p->_type}, *_ml{&_ml_real};\n\
-  std::size_t _iml{_p->_id().current_row()};\n\
+  auto [_, _ml, _iml] = create_ml(_p);\n\
   _ppvar = ((Point_process*)_vptr)->_prop->dparam;\n\
   _thread = _extcall_thread.data();\n\
   _nt = (NrnThread*)((Point_process*)_vptr)->_vnt;\n\
 ");
     } else {
-        vectorize_substitute(
-            lappendstr(procfunc, ""),
-            "Memb_list _ml_real = _extcall_prop ? Memb_list{_extcall_prop->_type} : Memb_list{};\n"
-            "Memb_list *_ml{_extcall_prop ? &_ml_real : nullptr};\n"
-            "std::size_t _iml{_extcall_prop ? _extcall_prop->_id().current_row() : 0};\n"
-            "_ppvar = _extcall_prop ? _extcall_prop->dparam : nullptr;\n"
-            "_thread = _extcall_thread.data();\n"
-            "_nt = nrn_threads;\n");
+        vectorize_substitute(lappendstr(procfunc, ""),
+                             "auto [_, _ml, _iml] = create_ml(_extcall_prop);\n"
+                             "_ppvar = _extcall_prop ? _extcall_prop->dparam : nullptr;\n"
+                             "_thread = _extcall_thread.data();\n"
+                             "_nt = nrn_threads;\n");
     }
     if (n == last_func_using_table) {
         qp = lappendstr(procfunc, "");
@@ -937,8 +933,7 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
                          "  NrnThread* _nt{static_cast<NrnThread*>(_pnt->_vnt)};\n");
     Sprintf(buf,
             "  _ppvar = _pnt->_prop->dparam;\n"
-            "  Memb_list _ml_real{_pnt->_prop->_type}, *_ml{&_ml_real};\n"
-            "  std::size_t _iml{_pnt->_prop->_id().current_row()};\n"
+            "  auto [_, _ml, _iml] = create_ml(_pnt->_prop);\n"
             "  v = NODEV(_pnt->node);\n"
             "	return ");
     lappendstr(procfunc, buf);

@@ -82,6 +82,10 @@ struct interface: view_base<View> {
         }
         this->template get<field::PerInstanceFloatingPointField>(field_index) = area;
     }
+    friend std::ostream& operator<<(std::ostream& os, interface const& handle) {
+        return os << handle.underlying_storage().name() << '{' << handle.id() << '/'
+                  << handle.underlying_storage().size() << '}';
+    }
 };
 
 // Reconsider the name. At the moment an [owning_]handle is an (owning) thing that can have
@@ -108,10 +112,10 @@ struct view: interface<view> {
     std::size_t offset() const {
         return m_row;
     }
-    storage& underlying_storage() {
+    storage& underlying_storage_impl() {
         return m_mech_data;
     }
-    storage const& underlying_storage() const {
+    storage const& underlying_storage_impl() const {
         return m_mech_data;
     }
 };
@@ -127,10 +131,10 @@ struct handle: interface<handle> {
 
   private:
     // Interface for neuron::container::view_base
-    storage& underlying_storage() {
+    storage& underlying_storage_impl() {
         return m_storage;
     }
-    storage const& underlying_storage() const {
+    storage const& underlying_storage_impl() const {
         return m_storage;
     }
     std::size_t offset() const {
@@ -166,10 +170,10 @@ struct owning_handle: interface<owning_handle> {
     friend struct view_base<owning_handle>;
     owning_identifier m_mech_data_offset;
     // Interface for neuron::container::view_base
-    storage& underlying_storage() {
+    storage& underlying_storage_impl() {
         return m_mech_data_offset.data_container();
     }
-    storage const& underlying_storage() const {
+    storage const& underlying_storage_impl() const {
         return m_mech_data_offset.data_container();
     }
     std::size_t offset() const {
