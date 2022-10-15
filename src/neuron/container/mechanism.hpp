@@ -82,6 +82,10 @@ struct interface: view_base<View> {
         }
         this->template get<field::PerInstanceFloatingPointField>(field_index) = area;
     }
+    friend std::ostream& operator<<(std::ostream& os, interface const& handle) {
+        return os << handle.underlying_storage().name() << '{' << handle.id() << '/'
+                  << handle.underlying_storage().size() << '}';
+    }
 };
 
 // Reconsider the name. At the moment an [owning_]handle is an (owning) thing that can have

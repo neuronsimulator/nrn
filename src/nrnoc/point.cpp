@@ -373,7 +373,7 @@ void clear_point_process_struct(Prop* p) {
         if (p->dparam) {
             nrn_prop_datum_free(p->_type, p->dparam);
         }
-        free(p);
+        delete p;
     }
 }
 
