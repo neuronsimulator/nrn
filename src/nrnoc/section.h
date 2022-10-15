@@ -316,6 +316,15 @@ struct Prop {
     std::optional<neuron::container::Mechanism::owning_handle> m_mech_handle;
 };
 
+/** @brief Helper to generate an _ml, _iml pair from Prop*.
+ */
+std::tuple<Memb_list, Memb_list*, std::size_t> create_ml(Prop* p) {
+    std::tuple<Memb_list, Memb_list*, std::size_t> ret{p->_type, nullptr, 0ul};
+    std::get<0>(ret).set_storage_offset(p->id().current_row());
+    std::get<1>(ret) = &std::get<0>(ret);
+    return ret;
+}
+
 extern double* nrn_prop_data_alloc(int type, int count, Prop* p);
 extern Datum* nrn_prop_datum_alloc(int type, int count, Prop* p);
 extern void nrn_prop_data_free(int type, double* pd);

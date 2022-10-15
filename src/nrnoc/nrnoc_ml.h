@@ -32,30 +32,40 @@ struct Memb_list {
      *  Calling .data() on the return value yields a double** that is similar to
      *  the old _data member, with the key difference that its indices are
      *  transposed. Now, the first index corresponds to the variable and the
-     *  second index corresponds to the instance of the mechanism.
+     *  second index corresponds to the instance of the mechanism. This method
+     *  is useful for CoreNEURON interface
      */
     [[nodiscard]] std::vector<double*> data() {
         assert(m_storage);
+        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
         std::vector<double*> ret{};
         auto const num_fields = m_storage->num_floating_point_fields();
         ret.resize(num_fields);
         for (auto i = 0ul; i < num_fields; ++i) {
-            ret[i] = m_storage
-                         ->get_field_instance<
-                             neuron::container::Mechanism::field::PerInstanceFloatingPointField>(i)
-                         .data();
+            ret[i] = std::next(
+                m_storage
+                    ->get_field_instance<
+                        neuron::container::Mechanism::field::PerInstanceFloatingPointField>(i)
+                    .data(),
+                m_storage_offset);
         }
         return ret;
     }
     [[nodiscard]] double& data(std::size_t instance, std::size_t variable) {
         assert(m_storage);
+        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
         return m_storage->get_field_instance<
-            neuron::container::Mechanism::field::PerInstanceFloatingPointField>(variable, instance);
+            neuron::container::Mechanism::field::PerInstanceFloatingPointField>(variable,
+                                                                                m_storage_offset +
+                                                                                    instance);
     }
     [[nodiscard]] double const& data(std::size_t instance, std::size_t variable) const {
         assert(m_storage);
+        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
         return m_storage->get_field_instance<
-            neuron::container::Mechanism::field::PerInstanceFloatingPointField>(variable, instance);
+            neuron::container::Mechanism::field::PerInstanceFloatingPointField>(variable,
+                                                                                m_storage_offset +
+                                                                                    instance);
     }
     /** @brief Calculate a legacy index of the given pointer in this mechanism data.
      *
