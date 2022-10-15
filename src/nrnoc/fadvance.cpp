@@ -167,6 +167,7 @@ void fadvance(void) {
     if (diam_changed) {
         recalc_diam();
     }
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
     nrn_fixed_step();
     tstopunset;
     hoc_retpushx(1.);

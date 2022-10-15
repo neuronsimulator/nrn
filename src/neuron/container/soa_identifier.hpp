@@ -133,6 +133,10 @@ struct owning_identifier_base {
         return *m_ptr;
     }
 
+    friend std::ostream& operator<<(std::ostream& os, owning_identifier_base const& oi) {
+        return os << "owning " << NonOwningElementHandle{oi};
+    }
+
   private:
     struct deleter {
         deleter(DataContainer& data_container)
