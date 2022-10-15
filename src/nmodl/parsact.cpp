@@ -937,8 +937,7 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
                          "  NrnThread* _nt{static_cast<NrnThread*>(_pnt->_vnt)};\n");
     Sprintf(buf,
             "  _ppvar = _pnt->_prop->dparam;\n"
-            "  Memb_list _ml_real{_pnt->_prop->_type}, *_ml{&_ml_real};\n"
-            "  std::size_t _iml{_pnt->_prop->_id().current_row()};\n"
+            "  auto [_, _ml, _iml] = create_ml(_pnt->_prop);\n"
             "  v = NODEV(_pnt->node);\n"
             "	return ");
     lappendstr(procfunc, buf);

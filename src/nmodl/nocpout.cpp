@@ -419,8 +419,7 @@ extern Memb_func* memb_func;\n\
         Lappendstr(defs_list, "_extcall_prop = _prop;\n");
     } else {
         Lappendstr(defs_list,
-                   "_ml_real = Memb_list{_prop->_type};\n"
-                   "_iml = _prop->_id().current_row();\n"
+                   "auto [_, _ml, _iml] = create_ml(_prop);\n"
                    "_ppvar = _prop->dparam;\n");
     }
     Lappendstr(defs_list, "}\n");
@@ -870,6 +869,7 @@ static void nrn_alloc(Prop* _prop) {\n\
     }
     Sprintf(buf,
             "  Memb_list _ml_real{_prop->_type}, *_ml{&_ml_real};\n"
+            "  _ml->set_storage_offset(0);\n"
             "  std::size_t _iml{_prop->_id().current_row()};\n"
             "  assert(_prop->param_size() == %d);\n",
             parraycount);
@@ -1006,6 +1006,7 @@ static void _constructor(Prop* _prop) {\n\
                        "\n"
                        "static void _constructor(Prop* _prop) {\n"
                        "  Memb_list _ml_real{_prop->_type}, *_ml{&_ml_real};\n"
+                       "  _ml->set_storage_offset(0);\n"
                        "  std::size_t _iml{_prop->_id().current_row();\n"
                        "  _ppvar = _prop->dparam;\n"
                        "  {\n");
@@ -1308,6 +1309,7 @@ if (_nd->_extnode) {\n\
                        "\n"
                        "static void _destructor(Prop* _prop) {\n"
                        "  Memb_list _ml_real{_prop->_type}, *_ml{&_ml_real};\n"
+                       "  _ml->set_storage_offset(0);\n"
                        "  std::size_t _iml{_prop->_id().current_row()};\n"
                        "  Datum *_ppvar{_prop->dparam}, *_thread{nullptr};\n"
                        "  {\n");
@@ -2781,8 +2783,7 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
         insertstr(qstmt, "  int _watch_rm = 0;\n");
     }
     q = insertstr(qstmt,
-                  "  Memb_list _ml_real{_pnt->_prop->_type}, *_ml{&_ml_real};\n"
-                  "  std::size_t _iml{_pnt->_prop->_id().current_row()};\n"
+                  "  auto [_, _ml, _iml] = create_ml(_pnt->_prop);\n"
                   "  _ppvar = _pnt->_prop->dparam;\n");
     vectorize_substitute(insertstr(q, ""), "  _thread = (Datum*)0; _nt = (NrnThread*)_pnt->_vnt;");
     if (debugging_) {
