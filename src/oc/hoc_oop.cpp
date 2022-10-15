@@ -1066,6 +1066,10 @@ void hoc_object_component() {
         break;
     case PROCEDURE:
     case FUNCTION: {
+        if (expect_stack_nsub) {
+            hoc_pop_ndim();
+            hoc_execerr_ext("%s is a function not a %ddim array", sym->name, nindex);
+        }
         double d = 0.;
         call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
@@ -1083,6 +1087,11 @@ void hoc_object_component() {
         Object** d;
         if (expect_stack_nsub) {
             hoc_pop_ndim();
+            // for legacy reasons allow single arg [] format.
+            // E.g. occasionally seen for List.object[index]
+            if (nindex > 1) {
+                hoc_execerr_ext("%s is a function not a %ddim array", sym->name, nindex);
+            }
         }
         call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
