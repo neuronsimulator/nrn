@@ -1,9 +1,11 @@
 from neuron import h
 from neuron.expect_hocerr import expect_err
 import neuron.expect_hocerr
+
 neuron.expect_hocerr.quiet = False
 
-h('''
+h(
+    """
 begintemplate Foo
 public o
 objref o[3]
@@ -15,11 +17,14 @@ proc init() {local i
   }
 }
 endtemplate Foo
-''')
+"""
+)
 
-h('''
+h(
+    """
 objref foo
 foo = new Foo(3)
 
 Foo[0]
-''')
+"""
+)
