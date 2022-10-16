@@ -317,7 +317,7 @@ struct Prop {
 };
 
 /** @brief Helper to generate an _ml, _iml pair from Prop*.
- * 
+ *
  *  In generated code then things like range variables are preprocessor macros
  *  that expand to things like _ml->data(_iml, 42). If one wants to call
  *  something using these variables for a single mechanism instance (single

@@ -1606,6 +1606,8 @@ bool NetCvode::init_global() {
         del_cv_memb_list();
         Cvode& cv = *gcv_;
         distribute_dinfo(nil, 0);
+        // We copy Memb_list* into cml->ml below
+        auto const sorted_token = nrn_ensure_model_data_are_sorted();
         FOR_THREADS(_nt) {
             CvodeThreadData& z = cv.ctd_[_nt->id];
             z.rootnodecount_ = _nt->ncell;
@@ -1630,6 +1632,8 @@ bool NetCvode::init_global() {
                     }
                     last = cml;
                     cml->next = nil;
+                    assert(ml->get_storage_offset() != std::numeric_limits<std::size_t>::max());
+                    cml->ml->set_storage_offset(ml->get_storage_offset());
                     cml->ml->nodecount = ml->nodecount;
                     // assumes cell info grouped contiguously
                     cml->ml->nodelist = ml->nodelist;
@@ -1782,6 +1786,7 @@ bool NetCvode::init_global() {
                     if (memb_func[cml->index].hoc_mech) {
                         ml->prop = new Prop*[ml->nodecount];
                     } else {
+                        cml->ml->instances.reserve(ml->nodecount);
                         // ml->_data = new Prop*[ml->nodecount];
                         ml->pdata = new Datum*[ml->nodecount];
                     }
@@ -1812,6 +1817,7 @@ bool NetCvode::init_global() {
                         if (mf->hoc_mech) {
                             cml->ml->prop[cml->ml->nodecount] = ml->prop[j];
                         } else {
+                            cml->ml->instances.push_back(ml->instance_handle(j));
                             // cml->ml->_data[cml->ml->nodecount] = ml->_data[j];
                             cml->ml->pdata[cml->ml->nodecount] = ml->pdata[j];
                         }
