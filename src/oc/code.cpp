@@ -2392,7 +2392,10 @@ void hoc_chk_sym_has_ndim() {
 int hoc_araypt(Symbol* sp, int type) {
     Arrayinfo* const aray{type == OBJECTVAR ? OPARINFO(sp) : sp->arayinfo};
     int total{};
-    int ndim = hoc_pop_ndim();  // if compiled as scalar, this will raise error
+    int ndim{0};
+    if (hoc_stack_type_is_ndim(0)) {  // if sp compiled as scalar
+        ndim = hoc_pop_ndim();        // do not raise error here but below.
+    }
     if (ndim != aray->nsub) {
         hoc_execerr_ext("array dimension of %s now %d (at compile time it was %d)",
                         sp->name,
