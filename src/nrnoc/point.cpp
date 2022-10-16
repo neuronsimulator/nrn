@@ -106,11 +106,7 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
        do the work for dparam (fill pointers for ions),
        3) execute the constructor normally.
     */
-    if (pnt->prop) {
-        nrn_point_prop_ = pnt->prop;
-    } else {
-        nrn_point_prop_ = (Prop*) 0;
-    }
+    nrn_point_prop_ = pnt->prop;
     nrn_pnt_sec_for_need_ = sec;
     if (x == 0. || x == 1.) {
         p = prop_alloc_disallow(&(node->prop), pointsym[pointtype]->subtype, node);
@@ -340,7 +336,7 @@ static void free_one_point(Point_process* pnt) {
     if (p->dparam) {
         nrn_prop_datum_free(p->_type, p->dparam);
     }
-    free(p);
+    delete p;
     pnt->prop = (Prop*) 0;
     pnt->node = (Node*) 0;
     if (pnt->sec) {
