@@ -1,0 +1,12 @@
+double a[1][1]
+func foo() {local i
+  double a[1][1]
+  a = 3
+  return a == 3
+}
+print foo()
+
+double a[1]
+print foo()
+double a[1][1][1]
+print foo()
