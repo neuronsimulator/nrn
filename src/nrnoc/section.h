@@ -317,11 +317,21 @@ struct Prop {
 };
 
 /** @brief Helper to generate an _ml, _iml pair from Prop*.
+ * 
+ *  In generated code then things like range variables are preprocessor macros
+ *  that expand to things like _ml->data(_iml, 42). If one wants to call
+ *  something using these variables for a single mechanism instance (single
+ *  Prop) then one needs to create an appropriate _ml and _iml pair so the
+ *  macros expand to something that compiles. Guaranteed copy elision in C++17
+ *  should guarantee that the Memb_list* is valid in the calling scope.
  */
-std::tuple<Memb_list, Memb_list*, std::size_t> create_ml(Prop* p) {
-    std::tuple<Memb_list, Memb_list*, std::size_t> ret{p->_type, nullptr, 0ul};
-    std::get<0>(ret).set_storage_offset(p->id().current_row());
-    std::get<1>(ret) = &std::get<0>(ret);
+inline std::tuple<Memb_list, Memb_list*, std::size_t> create_ml(Prop* p) {
+    std::tuple<Memb_list, Memb_list*, std::size_t> ret{};
+    if (p) {
+        std::get<0>(ret) = {p->_type};
+        std::get<0>(ret).set_storage_offset(p->id().current_row());
+        std::get<1>(ret) = &std::get<0>(ret);
+    }
     return ret;
 }
 
