@@ -186,7 +186,7 @@ void solv_diffeq(Item* qsol,
                     "%s%s_thread(&(_thread[_spth%d].literal_value<void*>()), %d, _slist%d, "
                     "_dlist%d, _ml->vector_of_pointers_for_scopmath(_iml, %d, _slist%d, "
                     "_dlist%d).data(), &%s, %s, %s, _linmat%d, _ppvar, "
-                    "_thread, _nt);\n",
+                    "_thread, _nt, _ml, _iml);\n",
                     ssprefix,
                     method->name,
                     listnum,
