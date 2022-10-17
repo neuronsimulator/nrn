@@ -2664,7 +2664,7 @@ static void _ode_map(int _ieq, double** _pv, double** _pvdot, Memb_list* _ml, st
                         "_cvode_sparse_thread(&(_thread[_cvspth%d].literal_value<void*>()), %d, "
                         "_dlist%d, _ml->vector_of_pointers_for_scopmath(_iml, %d, "
                         "_dlist%d).data(), _ode_matsol%d, _ppvar, "
-                        "_thread, _nt);\n",
+                        "_thread, _nt, _ml, _iml);\n",
                         i,
                         cvode_neq_,
                         i,
