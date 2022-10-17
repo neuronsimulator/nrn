@@ -141,11 +141,11 @@ create_coef_list makes a list for fast setup, does minimum ordering and
 ensures all elements needed are present */
 /* this could easily be made recursive but it isn't right now */
 
-int sparse_thread(void** v, int n, int* s, int* d, double* p, double* t, double dt,
+int sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double dt,
 				  int (*fun)(void*, double*, double*, Datum*, Datum*, NrnThread*),
 				  int linflag, Datum* ppvar, Datum* thread, NrnThread* nt) {
-#define s_(arg) p[s[arg]]
-#define d_(arg) p[d[arg]]
+#define s_(arg) *p[s[arg]]
+#define d_(arg) *p[d[arg]]
 	int i, j, ierr;
 	double err;
 	SparseObj* so;
@@ -189,9 +189,8 @@ if (!linflag && s_(i-1) < 0.) { s_(i-1) = 0.; }
 }
 
 /* for solving ax=b */
-int _cvode_sparse_thread(void** v, int n, int* x, double* p, int (*fun)(void*, double*, double*, Datum*, Datum*, NrnThread*), Datum* ppvar, Datum* thread, NrnThread* nt)
-#define x_(arg) p[x[arg]]
-{
+int _cvode_sparse_thread(void** v, int n, int* x, double** p, int (*fun)(void*, double*, double*, Datum*, Datum*, NrnThread*), Datum* ppvar, Datum* thread, NrnThread* nt) {
+#define x_(arg) *p[x[arg]]
 	int i, j, ierr;
 	SparseObj* so;
 

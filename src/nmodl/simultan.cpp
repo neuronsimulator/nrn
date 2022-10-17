@@ -9,14 +9,16 @@ static List* eqnq;
 int nonlin_common(Item*);
 
 void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum) {
-    Sprintf(
-        buf,
-        "%s(%d, _slist%d, _ml->contiguous_row(_iml).data(), %s_wrapper_returning_int, _dlist%d);\n",
-        method->name,
-        numeqn,
-        listnum,
-        fun->name,
-        listnum);
+    Sprintf(buf,
+            "%s(%d, _slist%d, _ml->vector_of_pointers_for_scopmath(_iml, %d, _slist%d).data(), "
+            "%s_wrapper_returning_int, _dlist%d);\n",
+            method->name,
+            numeqn,
+            listnum,
+            numeqn,
+            listnum,
+            fun->name,
+            listnum);
     replacstr(qsol, buf);
     /* if sens statement appeared in fun then the steadysens call list,
     built during the massagenonlin phase
@@ -205,7 +207,10 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
     vectorize_substitute(q, buf);
     Insertstr(q3, "if (!_recurse) {\n _recurse = 1;\n");
     Sprintf(buf,
-            "error = newton(%d, _slist%d, _ml->contiguous_row(_iml).data(), %s, _dlist%d);\n",
+            "error = newton(%d, _slist%d, _ml->vector_of_pointers_for_scopmath(_iml, %d, "
+            "_slist%d).data(), %s, _dlist%d);\n",
+            counts,
+            numlist,
             counts,
             numlist,
             SYM(q2)->name,
@@ -213,8 +218,11 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
     qret = insertstr(q3, buf);
     Sprintf(buf,
             "error = nrn_newton_thread(_newtonspace%d, %d, _slist%d, "
-            "_ml->contiguous_row(_iml).data(), %s, _dlist%d, _ppvar, _thread, _nt, _ml, _iml);\n",
+            "_ml->vector_of_pointers_for_scopmath(_iml, %d, _slist%d).data(), %s, _dlist%d, "
+            "_ppvar, _thread, _nt, _ml, _iml);\n",
             numlist - 1,
+            counts,
+            numlist,
             counts,
             numlist,
             SYM(q2)->name,

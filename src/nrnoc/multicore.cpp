@@ -681,7 +681,10 @@ void nrn_thread_memblist_setup() {
     // Right now the sorting method updates the storage offsets inside the
     // Memb_list* structures owned by NrnThreads. This is a bit of a design
     // failure, as those offsets should have a lifetime linked to the sorted
-    // status of the underlying storage, i.e. they should be part of a cache structure.
+    // status of the underlying storage, i.e. they should be part of a cache
+    // structure. In any case, because we have just created new Memb_list then
+    // their offsets are empty, so we need to trigger a re-sort before they are
+    // used.
     neuron::model().apply_to_mechanisms([](auto& mech_data) { mech_data.mark_as_unsorted(); });
     nrn_fast_imem_alloc();
     free((char*) vmap);

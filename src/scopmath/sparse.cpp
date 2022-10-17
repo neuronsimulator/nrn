@@ -219,9 +219,8 @@ if (!linflag && s_(i-1) < 0.) { s_(i-1) = 0.; }
 }
 
 /* for solving ax=b */
-int _cvode_sparse(void** v, int n, int* x, double* p, int(*fun)(), double** prhs)
-#define x_(arg) p[x[arg]]
-{
+int _cvode_sparse(void** v, int n, int* x, double** p, int(*fun)(), double** prhs) {
+#define x_(arg) *p[x[arg]]
 	int i, j, ierr;
 	SparseObj* so;
 

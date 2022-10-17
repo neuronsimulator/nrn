@@ -148,12 +148,12 @@ double scop_erf(double z);
 typedef struct Memb_list Memb_list;
 typedef struct NrnThread NrnThread;
 typedef struct SparseObj SparseObj;
-int _cvode_sparse(void**, int, int*, double*, int (*)(), double**);
+int _cvode_sparse(void**, int, int*, double**, int (*)(), double**);
 int _cvode_sparse_thread(void**,
                                 int,
                                 int*,
-                                double*,
-                                int (*)(void*, double*, double*, Datum*, Datum*, NrnThread*, Memb_list*, unsigned long),
+                                double**,
+                                int (*)(void*, double*, Datum*, Datum*, NrnThread*, Memb_list*, unsigned long),
                                 Datum*,
                                 Datum*,
                                 NrnThread*);
@@ -161,7 +161,7 @@ int derivimplicit(int, int, int*, int*, double*, double*, double, int (*)(), dou
 int derivimplicit_thread(int,
                                 int*,
                                 int*,
-                                double*,
+                                double**, // not used
                                 int (*)(Memb_list*, unsigned long, Datum*, Datum*, NrnThread*),
                                 Datum*,
                                 Datum*,
@@ -176,7 +176,7 @@ int sparse_thread(void**,
                          int,
                          int*,
                          int*,
-                         double*,
+                         double**,
                          double*,
                          double,
                          int (*)(void*, double*, Datum*, Datum*, NrnThread*, Memb_list*, unsigned long),
@@ -198,7 +198,7 @@ int _ss_sparse_thread(void**,
                              int,
                              int*,
                              int*,
-                             double*,
+                             double**,
                              double*,
                              double,
                              int (*)(void*, double*, Datum*, Datum*, NrnThread*, Memb_list*, unsigned long),
