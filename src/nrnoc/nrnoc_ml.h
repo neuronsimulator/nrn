@@ -3,7 +3,10 @@
 #include "neuron/container/mechanism.hpp"
 #include "options.h"  // for CACHEVEC
 
+#include <algorithm>
+#include <array>
 #include <limits>
+#include <vector>
 
 struct Node;
 struct Prop;
@@ -159,30 +162,56 @@ struct Memb_list {
      *  @todo (optionally) return a type whose destructor propagates
      *  modifications back into the NEURON data structures.
      */
-    [[nodiscard]] std::vector<double> contiguous_row(std::size_t instance) {
-        std::vector<double> data;
-        if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
-            // not in contiguous mode
-            auto const& handle = instances.at(instance);
-            auto const num_fields = handle.num_fpfields();
-            data.reserve(num_fields);
-            for (auto i_field = 0; i_field < num_fields; ++i_field) {
-                data.push_back(handle.fpfield(i_field));
-            }
-        } else {
-            // contiguous mode
-            assert(m_storage);
-            assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
-            auto const num_fields = m_storage->num_floating_point_fields();
-            data.reserve(num_fields);
-            for (auto i_field = 0; i_field < num_fields; ++i_field) {
-                data.push_back(m_storage->get_field_instance<
-                               neuron::container::Mechanism::field::PerInstanceFloatingPointField>(
-                    i_field, m_storage_offset + instance));
-            }
+    // [[nodiscard]] std::vector<double> contiguous_row(std::size_t instance) {
+    //     std::vector<double> data;
+    //     if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
+    //         // not in contiguous mode
+    //         auto const& handle = instances.at(instance);
+    //         auto const num_fields = handle.num_fpfields();
+    //         data.reserve(num_fields);
+    //         for (auto i_field = 0; i_field < num_fields; ++i_field) {
+    //             data.push_back(handle.fpfield(i_field));
+    //         }
+    //     } else {
+    //         // contiguous mode
+    //         assert(m_storage);
+    //         assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
+    //         auto const num_fields = m_storage->num_floating_point_fields();
+    //         data.reserve(num_fields);
+    //         for (auto i_field = 0; i_field < num_fields; ++i_field) {
+    //             data.push_back(m_storage->get_field_instance<
+    //                            neuron::container::Mechanism::field::PerInstanceFloatingPointField>(
+    //                 i_field, m_storage_offset + instance));
+    //         }
+    //     }
+    //     return data;
+    // }
+
+    /** @brief Helper for compatibility with legacy code.
+     *
+     * The scopmath solvers have a complicated relationship with NEURON data
+     * structures. The simplest solution for now seems to be to modify the
+     * scopmath code to follow an extra layer of indirection, and then when
+     * calling into it to generate a temporary vector of pointers to the right
+     * elements in SOA format. In the old AOS data then ml->data[i] could be
+     * used directly, but no more...
+     */
+    template <typename... ListTypes>
+    [[nodiscard]] std::vector<double*> vector_of_pointers_for_scopmath(std::size_t instance,
+                                                                       std::size_t num_eqns,
+                                                                       ListTypes... lists) {
+        static_assert(sizeof...(ListTypes) > 0);
+        static_assert(std::conjunction_v<std::is_pointer<ListTypes>...>);
+        assert(num_eqns);
+        assert((lists && ...));  // all lists should be non-null
+        std::array const max_elements{*std::max_element(lists, lists + num_eqns)...};
+        std::vector<double*> p(1 + *std::max_element(max_elements.begin(), max_elements.end()));
+        for (auto i = 0; i < num_eqns; ++i) {
+            ((p[lists[i]] = &data(instance, lists[i])), ...);
         }
-        return data;
+        return p;
     }
+
     [[nodiscard]] std::size_t get_storage_offset() const {
         return m_storage_offset;
     }
