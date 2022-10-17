@@ -975,6 +975,12 @@ static void nrn_alloc(Prop* _prop) {\n\
         }
         if (need_style) {
             Sprintf(buf,
+                    "\t_ppvar[%d] = prop_ion->param_handle(%d); // erev %s\n",
+                    ioncount++,
+                    IONEREV,
+                    sion->name);
+            Lappendstr(defs_list, buf);
+            Sprintf(buf,
                     "\t_ppvar[%d] = &(prop_ion->dparam[0].literal_value<int>()); /* "
                     "iontype for %s */\n",
                     ioncount++,
@@ -2073,12 +2079,23 @@ List* set_ion_variables(int block)
             } else {
                 assert(0);
             }
-            /* first arg is just for the charge, second is pointer to erev, third ard is the style*/
+            // first arg is just for the charge, last arg is the style. the old
+            // code with a single double* as a 2nd parameter was problematic as
+            // it implicitly assumed AOS format.
+            // TODO remove the #ifdef kludge for cacum.mod somehow
             Sprintf(buf,
-                    " nrn_wrote_conc(_%s_sym, (&(_ion_%s)) - %d, _style_%s);\n",
+                    " nrn_wrote_conc(_%s_sym, _ion_%s_erev, _ion_%s,\n"
+                    "#ifdef _ion_%so\n"
+                    "  _ion_%so,\n"
+                    "#else\n"
+                    "  -1e-12,\n"
+                    "#endif\n"
+                    "  _style_%s);\n",
+                    in,
                     in,
                     SYM(qconc)->name,
-                    ic,
+                    in,
+                    in,
                     in);
             Lappendstr(l, buf);
         }
@@ -2217,6 +2234,19 @@ int iondef(int* p_pointercount) {
             }
         }
         if (need_style) {
+            // Need to be able to explicitly reference this when calling
+            // nrn_wrote_conc, the old code naviated to this value via pointer
+            // arithmetic that is not valid now the mechanism data are stored in
+            // SOA format
+            Sprintf(buf,
+                    "#define _ion_%s_erev *static_cast<double*>(_ppvar[%d])\n",
+                    sion->name,
+                    ioncount);
+            q2 = lappendstr(defs_list, buf);
+            q2->itemtype = VERBATIM;
+            sprintf(buf, "#%s", ionname);
+            ppvar_semantics(ioncount, buf);  // TODO, this is just copied from _style_%s below
+            ioncount++;
             Sprintf(buf,
                     "#define _style_%s\t*static_cast<int*>(_ppvar[%d])\n",
                     sion->name,

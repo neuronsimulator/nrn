@@ -278,9 +278,9 @@ double nrn_nernst(double ci, double co, double z) {
     }
 }
 
-void nrn_wrote_conc(Symbol* sym, double* pe, int it) {
+void nrn_wrote_conc(Symbol* sym, double& erev, double ci, double co, int it) {
     if (it & 040) {
-        pe[0] = nrn_nernst(pe[1], pe[2], nrn_ion_charge(sym));
+        erev = nrn_nernst(ci, co, nrn_ion_charge(sym));
     }
 }
 
