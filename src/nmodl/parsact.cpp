@@ -749,12 +749,11 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
   _nt = (NrnThread*)((Point_process*)_vptr)->_vnt;\n\
 ");
     } else {
-        vectorize_substitute(
-            lappendstr(procfunc, ""),
-            "auto [_, _ml, _iml] = create_ml(_extcall_prop);\n"
-            "_ppvar = _extcall_prop ? _extcall_prop->dparam : nullptr;\n"
-            "_thread = _extcall_thread.data();\n"
-            "_nt = nrn_threads;\n");
+        vectorize_substitute(lappendstr(procfunc, ""),
+                             "auto [_, _ml, _iml] = create_ml(_extcall_prop);\n"
+                             "_ppvar = _extcall_prop ? _extcall_prop->dparam : nullptr;\n"
+                             "_thread = _extcall_thread.data();\n"
+                             "_nt = nrn_threads;\n");
     }
     if (n == last_func_using_table) {
         qp = lappendstr(procfunc, "");

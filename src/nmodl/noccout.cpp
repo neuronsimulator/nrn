@@ -165,13 +165,14 @@ void c_out() {
     Fflush(fcout);
 
     /* generation of initmodel interface */
-    P("\nstatic void nrn_init(NrnThread* _nt, Memb_list* _ml, int _type){\n");
-    P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
+    P("\nstatic void nrn_init(NrnThread* _nt, Memb_list* _ml_arg, int _type){\n");
+    P("Node *_nd; double _v; int* _ni; int _cntml;\n");
+    P("_ml = _ml_arg;\n");  // update global _ml
     P("#if CACHEVEC\n");
     P("    _ni = _ml->_nodeindices;\n");
     P("#endif\n");
     P("_cntml = _ml->_nodecount;\n");
-    P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
+    P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");  // use global _iml
     P(" _ppvar = _ml->_pdata[_iml];\n");
     if (debugging_ && net_receive_) {
         P(" _tsav = -1e20;\n");
@@ -206,13 +207,14 @@ void c_out() {
        well as make sure all currents accumulated properly (currents list) */
 
     if (brkpnt_exists) {
-        P("\nstatic void nrn_cur(NrnThread* _nt, Memb_list* _ml, int _type){\n");
-        P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
+        P("\nstatic void nrn_cur(NrnThread* _nt, Memb_list* _ml_arg, int _type){\n");
+        P("Node *_nd; int* _ni; double _rhs, _v; int _cntml;\n");
+        P("_ml = _ml_arg;\n");  // global _ml
         P("#if CACHEVEC\n");
         P("    _ni = _ml->_nodeindices;\n");
         P("#endif\n");
         P("_cntml = _ml->_nodecount;\n");
-        P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
+        P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");  // global _iml
         P(" _ppvar = _ml->_pdata[_iml];\n");
         ext_vdef();
         if (currents->next != currents) {
@@ -325,18 +327,19 @@ void c_out() {
 
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
-    P("\nstatic void nrn_state(NrnThread* _nt, Memb_list* _ml, int _type){\n");
+    P("\nstatic void nrn_state(NrnThread* _nt, Memb_list* _ml_arg, int _type){\n");
     if (nrnstate || currents->next == currents) {
-        P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
+        P("Node *_nd; double _v = 0.0; int* _ni; int _cntml;\n");
         if (dtsav_for_nrn_state && nrnstate) {
             P("double _dtsav = dt;\n"
               "if (secondorder) { dt *= 0.5; }\n");
         }
+        P("_ml = _ml_arg;\n");  // update the global _ml
         P("#if CACHEVEC\n");
         P("    _ni = _ml->_nodeindices;\n");
         P("#endif\n");
         P("_cntml = _ml->_nodecount;\n");
-        P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
+        P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");  // use the global _iml
         P(" _ppvar = _ml->_pdata[_iml];\n");
         P(" _nd = _ml->_nodelist[_iml];\n");
         ext_vdef();
