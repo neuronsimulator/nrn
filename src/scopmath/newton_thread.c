@@ -65,10 +65,10 @@ static char RCSid[] =
 typedef int (*FUN)(Memb_list*, unsigned long, Datum *, Datum *, NrnThread *);
 
 static void nrn_buildjacobian_thread(NewtonSpace* ns,
-  int n, int* index, double* x, FUN pfunc,
+  int n, int* index, double** x, FUN pfunc,
   double* value, double** jacobian, void* ppvar, void* thread, void* nt, Memb_list* ml, unsigned long iml);
 
-int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double* x,
+int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double** x,
  FUN pfunc, double* value, void* ppvar, void* thread, void* nt, Memb_list* ml, unsigned long iml) {
     int i, count = 0, error, *perm;
     double **jacobian, *delta_x, change = 1.0, max_dev, temp;
@@ -107,16 +107,16 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double* x,
  if (index) {
 	for (i = 0; i < n; i++)
 	{
-	    if (fabs(x[index[i]]) > ZERO && (temp = fabs(delta_x[i] / (x[index[i]]))) > change)
+	    if (fabs(*x[index[i]]) > ZERO && (temp = fabs(delta_x[i] / (*x[index[i]]))) > change)
 		change = temp;
-	    x[index[i]] += delta_x[i];
+	    *x[index[i]] += delta_x[i];
 	}
  }else{
 	for (i = 0; i < n; i++)
 	{
-	    if (fabs(x[i]) > ZERO && (temp = fabs(delta_x[i] / (x[i]))) > change)
+	    if (fabs(*x[i]) > ZERO && (temp = fabs(delta_x[i] / (*x[i]))) > change)
 		change = temp;
-	    x[i] += delta_x[i];
+	    *x[i] += delta_x[i];
 	}
  }
 	(*pfunc) (ml, iml, ppvar, thread, nt); /* Evaluate function values with new solution */
@@ -186,7 +186,7 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double* x,
 #define max(x, y) (fabs(x) > y ? x : y)
 
 static void nrn_buildjacobian_thread(NewtonSpace* ns,
-  int n, int* index, double* x, FUN pfunc,
+  int n, int* index, double** x, FUN pfunc,
   double* value, double** jacobian, void* ppvar, void* thread, void* nt, Memb_list* ml, unsigned long iml) {
     int i, j;
     double increment, *high_value, *low_value;
@@ -199,12 +199,12 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns,
  if (index) {
     for (j = 0; j < n; j++)
     {
-	increment = max(fabs(0.02 * (x[index[j]])), STEP);
-	x[index[j]] += increment;
+	increment = max(fabs(0.02 * (*x[index[j]])), STEP);
+	*x[index[j]] += increment;
 	(*pfunc) (ml, iml, ppvar, thread, nt);
 	for (i = 0; i < n; i++)
 	    high_value[i] = value[i];
-	x[index[j]] -= 2.0 * increment;
+	*x[index[j]] -= 2.0 * increment;
 	(*pfunc) (ml, iml, ppvar, thread, nt);
 	for (i = 0; i < n; i++)
 	{
@@ -217,18 +217,18 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns,
 
 	/* Restore original variable and function values. */
 
-	x[index[j]] += increment;
+	*x[index[j]] += increment;
 	(*pfunc) (ml, iml, ppvar, thread, nt);
     }
  }else{
     for (j = 0; j < n; j++)
     {
-	increment = max(fabs(0.02 * (x[j])), STEP);
-	x[j] += increment;
+	increment = max(fabs(0.02 * (*x[j])), STEP);
+	*x[j] += increment;
 	(*pfunc) (ml, iml, ppvar, thread, nt);
 	for (i = 0; i < n; i++)
 	    high_value[i] = value[i];
-	x[j] -= 2.0 * increment;
+	*x[j] -= 2.0 * increment;
 	(*pfunc) (ml, iml, ppvar, thread, nt);
 	for (i = 0; i < n; i++)
 	{
@@ -241,7 +241,7 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns,
 
 	/* Restore original variable and function values. */
 
-	x[j] += increment;
+	*x[j] += increment;
 	(*pfunc) (ml, iml, ppvar, thread, nt);
     }
  }

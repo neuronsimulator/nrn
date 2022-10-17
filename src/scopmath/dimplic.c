@@ -25,7 +25,7 @@ int (*fun)();
     return 0;
 }
 
-int derivimplicit_thread(int n, int* slist, int* dlist, double* p,
+int derivimplicit_thread(int n, int* slist, int* dlist, double** p,
   int(*fun)(void*, unsigned long, void*, void*, void*),
   void* ppvar, void* thread, void* nt, void* ml, unsigned long iml) {
     (*fun)(ml, iml, ppvar, thread, nt);

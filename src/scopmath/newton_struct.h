@@ -33,7 +33,7 @@ int freematrix(double** matrix);
 int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm);
 void nrn_scopmath_solve_thread(int n, double** a,
  double* b, int* perm, double* p, int* y);
-int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double* x,
+int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double** x,
  int (*pfunc)(Memb_list*, unsigned long, Datum *, Datum *, NrnThread *), double* value, void* ppvar, void* thread, void* nt, Memb_list* ml, unsigned long iml);
 NewtonSpace* nrn_cons_newtonspace(int n);
 void nrn_destroy_newtonspace(NewtonSpace* ns);

@@ -1,19 +1,18 @@
 #include <../../nrnconf.h>
 #include "errcodes.h"
-#define s_(arg)	p[s[arg]]
 
 extern double _modl_get_dt_thread(void*);
 extern void _modl_set_dt_thread(double, void*);
 extern int sparse_thread();
 extern int derivimplicit_thread();
 
-static int check_state();
+static int check_state(int n, int* s, double** p);
 
 int _ss_sparse_thread(v, n, s, d, p, t, dt, fun, linflag, ppvar, thread, nt)
 	void** v;
         int n, linflag;
         int (*fun)();
-        double *t, dt, *p;
+        double *t, dt, **p;
         int *s, *d;   
 	void* ppvar; void* thread; void* nt;
 {
@@ -62,11 +61,8 @@ _ss_derivimplicit_thread(int n, int* slist, int* dlist, double* p,
 	return err;
 }
 
-static int
-check_state(n, s, p)
-	int n, *s;
-	double *p;
-{
+#define s_(arg)	*p[s[arg]]
+static int check_state(int n, int* s, double** p) {
 	int i, flag;
 	
 	flag = 1;
