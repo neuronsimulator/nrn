@@ -1418,7 +1418,7 @@ void ldifusreg() {
         ++n;
         Sprintf(buf,
                 "static void* _difspace%d;\nextern double nrn_nernst_coef(int);\n\
-static double _difcoef%d(int _i, double* _p, Datum* _ppvar, double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt) {\n#if 0\n  \
+static double _difcoef%d(int _i, Memb_list* _ml, std::size_t _iml, Datum* _ppvar, double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt) {\n#if 0\n  \
  *_pdvol = ",
                 n,
                 n);
