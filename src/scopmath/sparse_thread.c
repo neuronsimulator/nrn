@@ -15,6 +15,7 @@ static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
 
 #include <stdlib.h>
 #include "errcodes.h"
+#include "scoplib.h"
 
 /* Jan 2008 thread safe */
 /* 4/23/93 converted to object so many models can use it */
@@ -70,8 +71,6 @@ extern void* nrn_pool_alloc(void* pool);
 #include <assert.h>
 #include <stdlib.h>
 
-typedef	int (*FUN)(void*, double*, double*, void*, void*, void*);
-
 typedef struct Elm {
 	unsigned row;		/* Row location */
 	unsigned col;		/* Column location */
@@ -100,7 +99,7 @@ typedef struct SparseObj { 	/* all the state information */
 	unsigned neqn; 		/* number of equations */
 	unsigned* varord; 	/* row and column order for pivots */
 	double* rhs; 		/* initially- right hand side	finally - answer */
-	FUN oldfun;
+	sparse_fptr oldfun;
 	unsigned ngetcall; 	/* counter for number of calls to _getelm */
 	int phase; 		/* 0-solution phase; 1-count phase; 2-build list phase */
 	int numop;
@@ -128,7 +127,7 @@ static void prmat(SparseObj* so);
 static void initeqn(SparseObj* so, unsigned maxeqn);
 static void free_elm(SparseObj* so);
 static Elm* getelm(SparseObj* so,unsigned row, unsigned col, Elm* new);
-static void create_coef_list(SparseObj* so, int n, FUN fun, double* p, void* ppvar, void* thread, void* nt);
+static void create_coef_list(SparseObj* so, int n, sparse_fptr fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, unsigned long iml);
 static void init_coef_list(SparseObj* so);
 static void init_minorder(SparseObj* so);
 static void increase_order(SparseObj* so, unsigned row);
@@ -146,7 +145,6 @@ static void myfree(void*);
 static void check_assert();
 static void re_link(SparseObj* so, unsigned i);
 static SparseObj* create_sparseobj();
-void _nrn_destroy_sparseobj_thread(SparseObj* so);
 
 /* sparse matrix dynamic allocation:
 create_coef_list makes a list for fast setup, does minimum ordering and
@@ -155,7 +153,7 @@ ensures all elements needed are present */
 
 #define s_(arg) *p[s[arg]]
 #define d_(arg) *p[d[arg]]
-int sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double dt, FUN fun, int linflag, void* ppvar, void* thread, void *nt) {
+int sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double dt, sparse_fptr fun, int linflag, Datum* ppvar, Datum* thread, NrnThread *nt, Memb_list* ml, unsigned long iml) {
 	int i, j, ierr;
 	double err;
 	SparseObj* so;
@@ -167,14 +165,14 @@ int sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double
 	}
 	if (so->oldfun != fun) {
 		so->oldfun = fun;
-		create_coef_list(so, n, fun, p, ppvar, thread, nt); /* calls fun twice */
+		create_coef_list(so, n, fun, ppvar, thread, nt, ml, iml); /* calls fun twice */
 	}
 	for (i=0; i<n; i++) { /*save old state*/
 		d_(i) = s_(i);
 	}
 	for (err=1, j=0; err > CONVERGE; j++) {
 		init_coef_list(so);
-		(*fun)(so, so->rhs, p, ppvar, thread, nt);
+		fun(so, so->rhs, ppvar, thread, nt, ml, iml);
 		if((ierr = matsol(so))) {
 			return ierr;
 		}
@@ -191,7 +189,7 @@ if (!linflag && s_(i-1) < 0.) { s_(i-1) = 0.; }
 		if (linflag) break;
 	}
 	init_coef_list(so);
-	(*fun)(so, so->rhs, p, ppvar, thread, nt);
+	fun(so, so->rhs, ppvar, thread, nt, ml, iml);
 	for (i=0; i<n; i++) { /*restore Dstate at t+dt*/
 		d_(i) = (s_(i) - d_(i))/dt;
 	}
@@ -199,15 +197,8 @@ if (!linflag && s_(i-1) < 0.) { s_(i-1) = 0.; }
 }
 
 /* for solving ax=b */
-int _cvode_sparse_thread(v, n, x, p, fun, ppvar, thread, nt)
-	void** v;
-	int n;
-	FUN fun;
-	double **p;
-	int *x;
-	void* ppvar; void* thread; void* nt;
+int _cvode_sparse_thread(void** v, int n, int* x, double** p, sparse_fptr fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, unsigned long iml) {
 #define x_(arg) *p[x[arg]]
-{
 	int i, j, ierr;
 	SparseObj* so;
 	
@@ -218,10 +209,10 @@ int _cvode_sparse_thread(v, n, x, p, fun, ppvar, thread, nt)
 	}
 	if (so->oldfun != fun) {
 		so->oldfun = fun;
-		create_coef_list(so, n, fun, p, ppvar, thread, nt); /* calls fun twice */
+		create_coef_list(so, n, fun, ppvar, thread, nt, ml, iml); /* calls fun twice */
 	}
 		init_coef_list(so);
-		(*fun)(so, so->rhs, p, ppvar, thread, nt);
+		fun(so, so->rhs, ppvar, thread, nt, ml, iml);
 		if((ierr = matsol(so))) {
 			return ierr;
 		}
@@ -484,12 +475,11 @@ double* _nrn_thread_getelm(SparseObj* so, int row, int col) {
 	return &el->value;
 }
 
-static void create_coef_list(SparseObj* so, int n, FUN fun, double* p, void* ppvar, void* thread, void* nt)
-{
+static void create_coef_list(SparseObj* so, int n, sparse_fptr fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, unsigned long iml) {
 	initeqn(so, (unsigned)n);
 	so->phase = 1;
 	so->ngetcall = 0;
-	(*fun)(so, so->rhs, p, ppvar, thread, nt);
+	fun(so, so->rhs, ppvar, thread, nt, ml, iml);
 	if (so->coef_list) {
 		free(so->coef_list);
 	}
@@ -497,7 +487,7 @@ static void create_coef_list(SparseObj* so, int n, FUN fun, double* p, void* ppv
 	spar_minorder(so);
 	so->phase = 2;
 	so->ngetcall = 0;
-	(*fun)(so, so->rhs, p, ppvar, thread, nt);
+	fun(so, so->rhs, ppvar, thread, nt, ml, iml);
 	so->phase = 0;
 }
 

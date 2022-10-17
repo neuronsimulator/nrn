@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include "errcodes.h"
+#include "scoplib.h"
 #define s_(arg)	p[s[arg]]
 
 extern void _modl_set_dt(double);

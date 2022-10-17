@@ -15,6 +15,7 @@ static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
 
 #include <stdlib.h>
 #include "errcodes.h"
+#include "scoplib.h"
 extern void* emalloc(size_t n);
 
 /* 4/23/93 converted to object so many models can use it */
