@@ -48,7 +48,7 @@ _ss_sparse(v, n, s, d, p, t, dt, fun, pcoef, linflag)
 	void** v;
         int n, linflag;
         int (*fun)();
-        double *t, dt, **pcoef, *p;
+        double *t, dt, **pcoef, **p;
         int *s, *d;   
 {
 	int err, i;

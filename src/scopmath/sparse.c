@@ -172,10 +172,10 @@ int sparse(v, n, s, d, p, t, dt, fun, prhs, linflag)
 	void** v;
 	int n, linflag;  /* linflag was not explicitly declared */
 	int (*fun)();
-	double *t, dt, **prhs, *p;
+	double *t, dt, **prhs, **p;
 	int *s, *d;
-#define s_(arg) p[s[arg]]
-#define d_(arg) p[d[arg]]
+#define s_(arg) *p[s[arg]]
+#define d_(arg) *p[d[arg]]
 {
 	int i, j, ierr;
 	double err;

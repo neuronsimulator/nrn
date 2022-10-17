@@ -169,11 +169,13 @@ int derivimplicit_thread(int,
                                 int (*)(Memb_list*, unsigned long, Datum*, Datum*, NrnThread*),
                                 void*,
                                 void*,
-                                void*);
+                                void*,
+                                Memb_list*,
+                                unsigned long);
 double* _getelm(int, int);
 int _nrn_destroy_sparseobj_thread(void*);
 double* _nrn_thread_getelm(SparseObj*, int, int);
-int sparse(void**, int, int*, int*, double*, double*, double, int (*)(), double**, int);
+int sparse(void**, int, int*, int*, double**, double*, double, int (*)(), double**, int);
 int sparse_thread(void**,
                          int,
                          int*,
@@ -195,7 +197,7 @@ int _ss_derivimplicit_thread(int,
                                     void*,
                                     void*,
                                     void*);
-int _ss_sparse(void**, int, int*, int*, double*, double*, double, int (*)(), double**, int);
+int _ss_sparse(void**, int, int*, int*, double**, double*, double, int (*)(), double**, int);
 int _ss_sparse_thread(void**,
                              int,
                              int*,
