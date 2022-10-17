@@ -4,12 +4,14 @@
 #include "hocdec.h"
 #include "membfunc.h"
 
+struct Memb_list;
 struct NrnThread;
 struct Point_process;
 
-typedef double (*ldifusfunc3_t)(int, double*, Datum*, double*, double*, Datum*, NrnThread*);
-typedef void ldifusfunc2_t(int, ldifusfunc3_t, void**, int, int, int, NrnThread*);
-typedef void (*ldifusfunc_t)(ldifusfunc2_t, NrnThread*);
+using ldifusfunc3_t =
+    double (*)(int, Memb_list*, std::size_t, Datum*, double*, double*, Datum*, NrnThread*);
+using ldifusfunc2_t = void(int, ldifusfunc3_t, void**, int, int, int, NrnThread*);
+using ldifusfunc_t = void (*)(ldifusfunc2_t, NrnThread*);
 typedef void (*pnt_receive_t)(Point_process*, double*, double);
 typedef void (*pnt_receive_init_t)(Point_process*, double*, double);
 
