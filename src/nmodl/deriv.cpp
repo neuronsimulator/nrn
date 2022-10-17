@@ -124,11 +124,15 @@ void solv_diffeq(Item* qsol,
             Strcpy(deriv2_advance, "");
         }
         Sprintf(buf,
-                "%s %s%s(_ninits, %d, _slist%d, _dlist%d, _ml->contiguous_row(_iml).data(), &%s, "
+                "%s %s%s(_ninits, %d, _slist%d, _dlist%d, "
+                "_ml->vector_of_pointers_for_scopmath(_iml, %d, _slist%d, _dlist%d).data(), &%s, "
                 "%s, %s, &_temp%d%s);\n%s",
                 deriv1_advance,
                 ssprefix,
                 method->name,
+                numeqn,
+                listnum,
+                listnum,
                 numeqn,
                 listnum,
                 listnum,
@@ -139,30 +143,37 @@ void solv_diffeq(Item* qsol,
                 maxerr_str,
                 deriv2_advance);
     } else {
-        Sprintf(
-            buf,
-            "%s%s(&_sparseobj%d, %d, _slist%d, _dlist%d, _ml->contiguous_row(_iml).data(), &%s, %s, %s\
-,&_coef%d, _linmat%d);\n",
-            ssprefix,
-            method->name,
-            listnum,
-            numeqn,
-            listnum,
-            listnum,
-            indepsym->name,
-            dindepname,
-            fun->name,
-            listnum,
-            listnum);
+        Sprintf(buf,
+                "%s%s(&_sparseobj%d, %d, _slist%d, _dlist%d, "
+                "_ml->vector_of_pointers_for_scopmath(_iml, %d, _slist%d, _dlist%d).data(), &%s, "
+                "%s, %s, &_coef%d, _linmat%d);\n",
+                ssprefix,
+                method->name,
+                listnum,
+                numeqn,
+                listnum,
+                listnum,
+                numeqn,
+                listnum,
+                listnum,
+                indepsym->name,
+                dindepname,
+                fun->name,
+                listnum,
+                listnum);
     }
     replacstr(qsol, buf);
     if (method->subtype & DERF) { /* derivimplicit */
         Sprintf(buf,
-                "%s %s%s_thread(%d, _slist%d, _dlist%d, _ml->contiguous_row(_iml).data(), %s, "
+                "%s %s%s_thread(%d, _slist%d, _dlist%d, _ml->vector_of_pointers_for_scopmath(_iml, "
+                "%d, _slist%d, _dlist%d).data(), %s, "
                 "_ppvar, _thread, _nt, _ml, _iml);\n%s",
                 deriv1_advance,
                 ssprefix,
                 method->name,
+                numeqn,
+                listnum,
+                listnum,
                 numeqn,
                 listnum,
                 listnum,
@@ -173,10 +184,14 @@ void solv_diffeq(Item* qsol,
         if (vectorize) {
             Sprintf(buf,
                     "%s%s_thread(&(_thread[_spth%d].literal_value<void*>()), %d, _slist%d, "
-                    "_dlist%d, _ml->contiguous_row(_iml).data(), &%s, %s, %s, _linmat%d, _ppvar, "
+                    "_dlist%d, _ml->vector_of_pointers_for_scopmath(_iml, %d, _slist%d, "
+                    "_dlist%d).data(), &%s, %s, %s, _linmat%d, _ppvar, "
                     "_thread, _nt);\n",
                     ssprefix,
                     method->name,
+                    listnum,
+                    numeqn,
+                    listnum,
                     listnum,
                     numeqn,
                     listnum,
