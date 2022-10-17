@@ -29,9 +29,16 @@ struct view_base {
      *  directly (or add an extra assertion).
      */
     auto id() const {
-        auto const tmp = derived().underlying_storage().identifier(derived().offset());
+        auto const tmp = underlying_storage().identifier(derived().offset());
         static_assert(std::is_base_of_v<identifier_base, decltype(tmp)>);
         return tmp;
+    }
+
+    auto& underlying_storage() {
+        return derived().underlying_storage_impl();
+    }
+    auto const& underlying_storage() const {
+        return derived().underlying_storage_impl();
     }
 
   protected:
@@ -40,12 +47,6 @@ struct view_base {
     }
     View const& derived() const {
         return static_cast<View const&>(*this);
-    }
-    auto& underlying_storage() {
-        return derived().underlying_storage();
-    }
-    auto const& underlying_storage() const {
-        return derived().underlying_storage();
     }
     template <typename Tag>
     auto& get_container() {
