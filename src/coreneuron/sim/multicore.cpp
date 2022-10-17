@@ -67,11 +67,11 @@ NrnThreadMembList* create_tml(NrnThread& nt,
                               int& shadow_rhs_cnt,
                               const std::vector<int>& mech_types,
                               const std::vector<int>& nodecounts) {
-    auto tml = (NrnThreadMembList*) emalloc_align(sizeof(NrnThreadMembList));
+    auto tml = (NrnThreadMembList*) emalloc_align(sizeof(NrnThreadMembList), 0);
     tml->next = nullptr;
     tml->index = mech_types[mech_id];
 
-    tml->ml = (Memb_list*) ecalloc_align(1, sizeof(Memb_list));
+    tml->ml = (Memb_list*) ecalloc_align(1, sizeof(Memb_list), 0);
     tml->ml->_net_receive_buffer = nullptr;
     tml->ml->_net_send_buffer = nullptr;
     tml->ml->_permute = nullptr;

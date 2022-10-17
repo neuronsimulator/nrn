@@ -177,11 +177,15 @@ class MemoryManaged {
 
 inline void alloc_memory(void*& pointer, size_t num_bytes, size_t alignment) {
     size_t fill = 0;
-    if (num_bytes % alignment != 0) {
-        size_t multiple = num_bytes / alignment;
-        fill = alignment * (multiple + 1) - num_bytes;
+    if (alignment > 0) {
+        if (num_bytes % alignment != 0) {
+            size_t multiple = num_bytes / alignment;
+            fill = alignment * (multiple + 1) - num_bytes;
+        }
+        nrn_assert((pointer = std::aligned_alloc(alignment, num_bytes + fill)) != nullptr);
+    } else {
+        nrn_assert((pointer = std::malloc(num_bytes)) != nullptr);
     }
-    nrn_assert((pointer = std::aligned_alloc(alignment, num_bytes + fill)) != nullptr);
 }
 
 inline void calloc_memory(void*& pointer, size_t num_bytes, size_t alignment) {
@@ -221,11 +225,16 @@ inline bool is_aligned(void* pointer, std::size_t alignment) {
 /**
  * Allocate aligned memory. This will be unified memory if the corresponding
  * CMake option is set. This must be freed with the free_memory method.
+ *
+ * \param size      Size of buffer to allocate in bytes.
+ * \param alignment Memory alignment, defaults to NRN_SOA_BYTE_ALIGN. Pass 0 for no alignment.
  */
 inline void* emalloc_align(size_t size, size_t alignment = NRN_SOA_BYTE_ALIGN) {
     void* memptr;
     alloc_memory(memptr, size, alignment);
-    nrn_assert(is_aligned(memptr, alignment));
+    if (alignment != 0) {
+        nrn_assert(is_aligned(memptr, alignment));
+    }
     return memptr;
 }
 
@@ -233,6 +242,12 @@ inline void* emalloc_align(size_t size, size_t alignment = NRN_SOA_BYTE_ALIGN) {
  * Allocate the aligned memory and set it to 0. This will be unified memory if
  * the corresponding CMake option is set. This must be freed with the
  * free_memory method.
+ *
+ * \param n         Number of objects to allocate
+ * \param size      Size of buffer for each object to allocate in bytes.
+ * \param alignment Memory alignment, defaults to NRN_SOA_BYTE_ALIGN. Pass 0 for no alignment.
+ *
+ * \note the allocated size will be \code n*size
  */
 inline void* ecalloc_align(size_t n, size_t size, size_t alignment = NRN_SOA_BYTE_ALIGN) {
     void* p;
@@ -240,7 +255,9 @@ inline void* ecalloc_align(size_t n, size_t size, size_t alignment = NRN_SOA_BYT
         return nullptr;
     }
     calloc_memory(p, n * size, alignment);
-    nrn_assert(is_aligned(p, alignment));
+    if (alignment != 0) {
+        nrn_assert(is_aligned(p, alignment));
+    }
     return p;
 }
 }  // namespace coreneuron
