@@ -1104,7 +1104,7 @@ int nrn_nonvint_block_helper(int method, int size, double* pd1, double* pd2, int
 int euler_thread(int neqn,
                  int* var,
                  int* der,
-                 double*,  // not used
+                 double**,  // not used
                  int (*func)(Memb_list*, std::size_t, Datum*, Datum*, NrnThread*),
                  Datum* ppvar,
                  Datum* thread,

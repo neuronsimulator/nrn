@@ -236,9 +236,9 @@ int _cvode_sparse(v, n, x, p, fun, prhs)
 	void** v;
 	int n;
 	int (*fun)();
-	double **prhs, *p;
+	double **prhs, **p;
 	int *x;
-#define x_(arg) p[x[arg]]
+#define x_(arg) *p[x[arg]]
 {
 	int i, j, ierr;
 	SparseObj* so;

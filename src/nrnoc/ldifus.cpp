@@ -164,8 +164,11 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
         if (sindex < 0) {
             pld->state[i] = static_cast<double*>(ml->pdata[mi][-sindex - 1]);
         } else {
-            assert(false);  // other usage of state makes assumptions about data layout
-            // pld->state[i] = ml->_data[mi] + sindex;
+            // With the new SOA format it's not possible to easily navigate from
+            // the nth array element for a particular index to the mth array
+            // element. That was trivial in AOS and led to usage like
+            // pld->state[i][ai], but that should now be avoided.
+            pld->state[i] = &ml->data(mi, sindex);
         }
         nd = ml->nodelist[mi];
         pindex = pld->pindex[i];
@@ -268,7 +271,7 @@ for (i=0; i < vnodecount; ++i) {
 printf("i=%d pin=%d mi=%d :%s node %d state[(%i)]=%g\n", i, pld->pindex[i],
 	pld->mindex[i], secname(ml->nodelist[pld->mindex[i]]->sec),
 	ml->nodelist[pld->mindex[i]]->sec_node_index_
-	, sindex, pld->state[i][0]);
+	, sindex, *pld->state[i]);
 	}
 #endif
     free(map);
@@ -347,60 +350,62 @@ stagger(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, 
     ml = v2ml(v, _nt->id);
 
     n = ml->nodecount;
-    assert(false);
-    //     data = ml->_data;
-    //     pdata = ml->pdata;
-    //     thread = ml->_thread;
+    pdata = ml->pdata;
+    thread = ml->_thread;
 
-    //     longdifus_diamchange(pld, m, sindex, ml, _nt);
-    //     /*flux and volume coefficients (if dc is constant this is too often)*/
-    //     for (i = 0; i < n; ++i) {
-    //         int pin = pld->pindex[i];
-    //         int mi = pld->mindex[i];
-    //         pld->dc[i] = (*diffunc)(ai, data[mi], pdata[mi], pld->vol + i, &dfdi, thread, _nt);
-    //         pld->d[i] = 0.;
-    // #if 0
-    // 		if (dfdi) {
-    // 			pld->d[i] += fabs(dfdi)/pld->vol[i]/pld->state[i][ai];
-    // 		}
-    // #endif
-    //         if (pin > -1) {
-    //             /* D * area between compartments */
-    //             dc = (pld->dc[i] + pld->dc[pin]) / 2.;
+    // with SOA data we can't get from the 0th element of an array variable
+    // starting at sindex to the nth element, which used to be easy in AOS
+    // format. try to mitigate that by baking in ai here and not applying it
+    // again later
+    longdifus_diamchange(pld, m, sindex > 0 ? sindex + ai : sindex, ml, _nt);
+    /*flux and volume coefficients (if dc is constant this is too often)*/
+    for (i = 0; i < n; ++i) {
+        int pin = pld->pindex[i];
+        int mi = pld->mindex[i];
+        pld->dc[i] = (*diffunc)(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt);
+        pld->d[i] = 0.;
+#if 0
+        if (dfdi) {
+            pld->d[i] += fabs(dfdi)/pld->vol[i]/ *pld->state[i];
+        }
+#endif
+        if (pin > -1) {
+            /* D * area between compartments */
+            dc = (pld->dc[i] + pld->dc[pin]) / 2.;
 
-    //             pld->a[i] = -pld->af[i] * dc / pld->vol[pin];
-    //             pld->b[i] = -pld->bf[i] * dc / pld->vol[i];
-    //         }
-    //     }
-    //     /* setup matrix */
-    //     for (i = 0; i < n; ++i) {
-    //         int pin = pld->pindex[i];
-    //         int mi = pld->mindex[i];
-    //         pld->d[i] += 1. / nt_dt;
-    //         pld->rhs[i] = pld->state[i][ai] / nt_dt;
-    //         if (pin > -1) {
-    //             pld->d[i] -= pld->b[i];
-    //             pld->d[pin] -= pld->a[i];
-    //         }
-    //     }
-    // #if 0
-    // for (i=0; i < n; ++i) { double a,b;
-    // 	if (pld->pindex[i] > -1) {
-    // 		a = pld->a[i];
-    // 		b = pld->b[i];
-    // 	}else{ a=b=0.;}
-    // 	printf("i=%d a=%g b=%g d=%g rhs=%g state=%g\n",
-    // 	 i, a, b, pld->d[i], pld->rhs[i], pld->state[i][ai]);
-    // }
-    // #endif
+            pld->a[i] = -pld->af[i] * dc / pld->vol[pin];
+            pld->b[i] = -pld->bf[i] * dc / pld->vol[i];
+        }
+    }
+    /* setup matrix */
+    for (i = 0; i < n; ++i) {
+        int pin = pld->pindex[i];
+        int mi = pld->mindex[i];
+        pld->d[i] += 1. / nt_dt;
+        pld->rhs[i] = *pld->state[i] / nt_dt;
+        if (pin > -1) {
+            pld->d[i] -= pld->b[i];
+            pld->d[pin] -= pld->a[i];
+        }
+    }
+#if 0
+for (i=0; i < n; ++i) { double a,b;
+    if (pld->pindex[i] > -1) {
+        a = pld->a[i];
+        b = pld->b[i];
+    }else{ a=b=0.;}
+    printf("i=%d a=%g b=%g d=%g rhs=%g state=%g\n",
+        i, a, b, pld->d[i], pld->rhs[i], *pld->state[i]);
+}
+#endif
 
-    //     /* we've set up the matrix; now solve it */
-    //     nrn_tree_solve(pld->a, pld->d, pld->b, pld->rhs, pld->pindex, n);
+    /* we've set up the matrix; now solve it */
+    nrn_tree_solve(pld->a, pld->d, pld->b, pld->rhs, pld->pindex, n);
 
-    //     /* update answer */
-    //     for (i = 0; i < n; ++i) {
-    //         pld->state[i][ai] = pld->rhs[i];
-    //     }
+    /* update answer */
+    for (i = 0; i < n; ++i) {
+        *pld->state[i] = pld->rhs[i];
+    }
 }
 
 static void
