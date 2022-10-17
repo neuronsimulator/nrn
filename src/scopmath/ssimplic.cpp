@@ -7,13 +7,13 @@ extern void _modl_set_dt(double);
 
 static int check_state(int n, int* s, double* p);
 
-int _ss_sparse(void** v, int n, int* s, int* d, double* p, double* t, double dt, int (*fun)(), double** pcoef, int linflag) {
+int _ss_sparse(void** v, int n, int* s, int* d, double** p, double* t, double dt, int (*fun)(), double** pcoef, int linflag) {
 	int err, i;
 	double ss_dt;
-	
+
 	ss_dt=1e9;
 	_modl_set_dt(ss_dt);
-	
+
 if (linflag) { /*iterate linear solution*/
 		err = sparse(v, n, s, d, p, t, ss_dt, fun, pcoef, 0);
 } else {
@@ -27,7 +27,7 @@ if (linflag) { /*iterate linear solution*/
 		   err = sparse(v, n, s, d, p, t, ss_dt, fun, pcoef, 0);
 		   break;
 		}
-	}		
+	}
 	if (i >= NIT) {
 		err = 1;
 	}
@@ -42,10 +42,10 @@ int _ss_derivimplicit(int _ninits, int n, int* slist, int* dlist, double* p, dou
 {
 	int err, i;
 	double ss_dt;
-	
+
 	ss_dt=1e9;
 	_modl_set_dt(ss_dt);
-	
+
    err = derivimplicit(_ninits, n, slist, dlist, p, pt, ss_dt, fun, ptemp);
 
 	_modl_set_dt(dt);
@@ -55,7 +55,7 @@ int _ss_derivimplicit(int _ninits, int n, int* slist, int* dlist, double* p, dou
 static int check_state(int n, int* s, double* p)
 {
 	int i, flag;
-	
+
 	flag = 1;
 	for (i=0; i<n; i++) {
 		if ( s_(i) < -1e-6) {

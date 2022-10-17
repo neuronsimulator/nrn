@@ -159,7 +159,7 @@ void solv_diffeq(Item* qsol,
     if (method->subtype & DERF) { /* derivimplicit */
         Sprintf(buf,
                 "%s %s%s_thread(%d, _slist%d, _dlist%d, _ml->contiguous_row(_iml).data(), %s, "
-                "_ppvar, _thread, _nt);\n%s",
+                "_ppvar, _thread, _nt, _ml, _iml);\n%s",
                 deriv1_advance,
                 ssprefix,
                 method->name,
@@ -171,20 +171,20 @@ void solv_diffeq(Item* qsol,
         vectorize_substitute(qsol, buf);
     } else { /* kinetic */
         if (vectorize) {
-            Sprintf(
-                buf,
-                "%s%s_thread(&(_thread[_spth%d].literal_value<void*>()), %d, _slist%d, _dlist%d, _ml->contiguous_row(_iml).data(), &%s, %s, %s\
-, _linmat%d, _ppvar, _thread, _nt);\n",
-                ssprefix,
-                method->name,
-                listnum,
-                numeqn,
-                listnum,
-                listnum,
-                indepsym->name,
-                dindepname,
-                fun->name,
-                listnum);
+            Sprintf(buf,
+                    "%s%s_thread(&(_thread[_spth%d].literal_value<void*>()), %d, _slist%d, "
+                    "_dlist%d, _ml->contiguous_row(_iml).data(), &%s, %s, %s, _linmat%d, _ppvar, "
+                    "_thread, _nt);\n",
+                    ssprefix,
+                    method->name,
+                    listnum,
+                    numeqn,
+                    listnum,
+                    listnum,
+                    indepsym->name,
+                    dindepname,
+                    fun->name,
+                    listnum);
             vectorize_substitute(qsol, buf);
         }
     }

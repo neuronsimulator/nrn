@@ -172,6 +172,7 @@ void fadvance(void) {
     if (diam_changed) {
         recalc_diam();
     }
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
     nrn_fixed_step();
     tstopunset;
     hoc_retpushx(1.);
@@ -1103,6 +1104,7 @@ int nrn_nonvint_block_helper(int method, int size, double* pd1, double* pd2, int
 int euler_thread(int neqn,
                  int* var,
                  int* der,
+                 double*,  // not used
                  int (*func)(Memb_list*, std::size_t, Datum*, Datum*, NrnThread*),
                  Datum* ppvar,
                  Datum* thread,

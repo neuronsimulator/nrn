@@ -41,7 +41,9 @@ int euler_thread(int,
                  int (*)(Memb_list*, std::size_t, Datum*, Datum*, NrnThread*),
                  Datum*,
                  Datum*,
-                 NrnThread*);
+                 NrnThread*,
+                 Memb_list*,
+                 std::size_t);
 
 
 extern void register_mech(const char**, Pvmp, Pvmi, Pvmi, Pvmi, Pvmi, int, int);
