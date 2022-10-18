@@ -587,6 +587,7 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 Memb_list* ml = cgs[id].mlwithart.back().second;
                 // ml->_data[acnt[id]] = memb_list[i]._data[j];
+                ml->instances.push_back(memb_list[i].instance_handle(j));
                 ml->pdata[acnt[id]] = memb_list[i].pdata[j];
                 artdata2index_.insert(std::pair<double*, int>(&ml->data(acnt[id], 0), acnt[id]));
                 ++acnt[id];
