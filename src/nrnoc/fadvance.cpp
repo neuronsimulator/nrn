@@ -680,9 +680,12 @@ void fcurrent(void) {
 
     dt2thread(-1.);
     nrn_thread_table_check();
-    state_discon_allowed_ = 0;
-    nrn_multithread_job(setup_tree_matrix);
-    state_discon_allowed_ = 1;
+    {
+        auto const sorted_token = nrn_ensure_model_data_are_sorted();
+        state_discon_allowed_ = 0;
+        nrn_multithread_job(setup_tree_matrix);
+        state_discon_allowed_ = 1;
+    }
     hoc_retpushx(1.);
 }
 

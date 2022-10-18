@@ -832,10 +832,8 @@ static const char* m_kschan[9];
 // gmax=0 g=1 i=1 state names will be modltype 2, there are no pointer variables
 
 void KSChan::add_channel(const char** m) {
-    KSChan* c = (KSChan*) this;
     Symlist* sav = hoc_symlist;
-    hoc_symlist = hoc_built_in_symlist;
-    hoc_built_in_symlist = 0;
+    hoc_symlist = std::exchange(hoc_built_in_symlist, nullptr);
     if (is_point()) {
         pointtype_ = point_register_mech(m,
                                          nrn_alloc,
@@ -862,7 +860,8 @@ void KSChan::add_channel(const char** m) {
     while (channels->size() < mechtype_) {
         channels->push_back(nullptr);
     }
-    channels->push_back(c);
+    channels->push_back(this);
+    neuron::model().add_mechanism(mechtype_, m[1], 0 /* number of floating point variables */);
 }
 
 KSChan::KSChan(Object* obj, bool is_p) {
@@ -948,6 +947,7 @@ void KSChan::build() {
     m_kschan[7 + aoff] = 0;
     soffset_ = 3 + aoff;  // first state points here in p array
     add_channel(m_kschan);
+    update_param_size();
     for (i = 0; i < 9; ++i)
         if (m_kschan[i]) {
             free((void*) m_kschan[i]);
@@ -1135,6 +1135,8 @@ void KSChan::update_prop() {
     dsize_ += 4 * nligand_;
     psize_ += nstate_;
 
+    update_param_size();
+
     // range variable names associated with prop->param
     rlsym_->s_varn = psize_;  // problem here
     Symbol** ppsym = newppsym(rlsym_->s_varn);
@@ -1261,6 +1263,7 @@ void KSChan::setion(const char* s) {
             ion_consist();
         }
     }
+    update_param_size();
     for (i = iligtrans_; i < ntrans_; ++i) {
         trans_[i].lig2pd(pdoff);
     }
@@ -1789,6 +1792,7 @@ KSState* KSChan::state_insert(int i, const char* n, double d) {
         ++nksstate_;
     }
     ++nstate_;
+    update_param_size();
     for (j = 0; j < nstate_; ++j) {
         state_[j].index_ = j;
         if (state_[j].obj_) {
@@ -1814,6 +1818,7 @@ void KSChan::state_remove(int i) {
         --nksstate_;
     }
     --nstate_;
+    update_param_size();
     state_[nstate_].obj_ = NULL;
     for (j = 0; j < nstate_; ++j) {
         state_[j].index_ = j;
@@ -1955,6 +1960,7 @@ for (i=0; i < vec->size(); ++i) {
     setcond();
     ngate_ = (int) vec->elem(j++);
     nstate_ = (int) vec->elem(j++);
+    update_param_size();
     nhhstate_ = (int) vec->elem(j++);
     nksstate_ = nstate_ - nhhstate_;
     ivkstrans_ = nhhstate_;
@@ -2251,6 +2257,29 @@ void KSChan::mulmat(Memb_list* ml,
         ds[j + 1] = ml->data(instance, offset_ds + j);
     }
     spMultiply(mat_, ds.data(), s.data());
+}
+
+/** @brief Propagate changes to the number of floating point parameters.
+ */
+void KSChan::update_param_size() {
+    auto& mech_data = neuron::model().mechanism_data(mechtype_);
+    std::size_t const new_param_size = soffset_ + 2 * nstate_;
+    auto const old_param_size =
+        mech_data.get_tag<neuron::container::Mechanism::field::PerInstanceFloatingPointField>()
+            .num_instances();
+    if (new_param_size == old_param_size) {
+        // no change
+        return;
+    }
+    if (mech_data.size() > 0) {
+        throw std::runtime_error(
+            "KSChan::update_param_size(): cannot change the number of floating point fields from " +
+            std::to_string(old_param_size) + " to " + std::to_string(new_param_size) + " while " +
+            std::to_string(mech_data.size()) + " instances are active");
+    }
+    auto mech_name = mech_data.name();
+    neuron::model().delete_mechanism(mechtype_);
+    neuron::model().add_mechanism(mechtype_, std::move(mech_name), new_param_size);
 }
 
 void KSChan::alloc(Prop* prop) {
