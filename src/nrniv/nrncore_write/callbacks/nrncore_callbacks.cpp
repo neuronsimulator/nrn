@@ -603,8 +603,6 @@ int* datum2int(int type,
 }
 
 void part2_clean() {
-    CellGroup::clear_artdata2index();
-
     CellGroup::clean_art(cellgroups_);
 
     if (corenrn_direct) {
