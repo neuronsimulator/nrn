@@ -805,8 +805,7 @@ void Cvode::before_after(BAMechList* baml, NrnThread* nt) {
         nrn_bamech_t f = ba->bam->f;
         Memb_list* ml = ba->ml;
         for (i = 0; i < ml->nodecount; ++i) {
-            assert(false);
-            // (*f)(ml->nodelist[i], ml->_data[i], ml->pdata[i], ml->_thread, nt);
+            f(ml->nodelist[i], ml->pdata[i], ml->_thread, nt, ml, i);
         }
     }
 }
