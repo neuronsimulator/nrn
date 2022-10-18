@@ -64,12 +64,16 @@ struct Memb_list {
         std::vector<double*> ret{};
         auto const num_fields = m_storage->num_floating_point_fields();
         ret.resize(num_fields);
+        // use const-qualified get_field_instance so that it's OK to call this
+        // method when the structure is frozen
+        auto const* const const_storage = m_storage;
         for (auto i = 0ul; i < num_fields; ++i) {
             ret[i] = std::next(
-                m_storage
-                    ->get_field_instance<
-                        neuron::container::Mechanism::field::PerInstanceFloatingPointField>(i)
-                    .data(),
+                const_cast<double*>(
+                    const_storage
+                        ->get_field_instance<
+                            neuron::container::Mechanism::field::PerInstanceFloatingPointField>(i)
+                        .data()),
                 m_storage_offset);
         }
         return ret;
