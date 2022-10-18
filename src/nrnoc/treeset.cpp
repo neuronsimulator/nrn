@@ -2194,6 +2194,7 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
                     ++nt_mech_count;
                 }
             }
+            assert(!ml || ml->nodecount == nt_mech_count);
             // Look for any artificial cells attached to this NrnThread
             if (nrn_is_artificial_[type]) {
                 cTemplate* tmp = nrn_pnt_template_[type];
@@ -2201,13 +2202,13 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
                 ITERATE(q, tmp->olist) {
                     Object* obj = OBJ(q);
                     auto* pnt = static_cast<Point_process*>(obj->u.this_pointer);
+                    assert(pnt->prop->_type == type);
                     if (nt == pnt->_vnt) {
                         auto const current_global_row = pnt->prop->id().current_row();
                         mech_data_permutation.at(global_i++) = current_global_row;
                     }
                 }
             }
-            assert(!ml || ml->nodecount == nt_mech_count);
         }
         if (global_i != mech_data_size) {
             throw std::runtime_error("(global_i = " + std::to_string(global_i) +

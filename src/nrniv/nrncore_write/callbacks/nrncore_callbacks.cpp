@@ -1082,7 +1082,7 @@ static void core2nrn_SelfEvent_helper(int tid,
 
     // Needs to be tested when permuted on CoreNEURON side.
     assert(tar_type == pnt->prop->_type);
-    //  assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop, tid, tar_type));
+    assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop, tid, tar_type));
 
     int const movable_index = type2movable[tar_type];
     auto* const movable_arg = pnt->prop->dparam + movable_index;
