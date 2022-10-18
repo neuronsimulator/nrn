@@ -18,7 +18,6 @@ extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;
 extern short* nrn_is_artificial_;
 
-std::map<double*, int> CellGroup::artdata2index_;
 Deferred_Type2ArtMl CellGroup::deferred_type2artml_;
 int* CellGroup::has_net_event_;
 
@@ -589,7 +588,6 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                 // ml->_data[acnt[id]] = memb_list[i]._data[j];
                 ml->instances.push_back(memb_list[i].instance_handle(j));
                 ml->pdata[acnt[id]] = memb_list[i].pdata[j];
-                artdata2index_.insert(std::pair<double*, int>(&ml->data(acnt[id], 0), acnt[id]));
                 ++acnt[id];
             }
         }
