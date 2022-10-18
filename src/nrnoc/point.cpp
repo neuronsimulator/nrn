@@ -31,16 +31,8 @@ void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
 
 void* create_point_process(int pointtype, Object* ho) {
-    Point_process* pp;
-    pp = (Point_process*) emalloc(sizeof(Point_process));
-    pp->node = 0;
-    pp->sec = 0;
-    pp->prop = 0;
+    auto* const pp = new Point_process{};
     pp->ob = ho;
-    pp->presyn_ = 0;
-    pp->nvi_ = 0;
-    pp->_vnt = 0;
-
     if (nrn_is_artificial_[pointsym[pointtype]->subtype]) {
         create_artcell_prop(pp, pointsym[pointtype]->subtype);
         return pp;
@@ -48,7 +40,7 @@ void* create_point_process(int pointtype, Object* ho) {
     if (ho && ho->ctemplate->steer && ifarg(1)) {
         loc_point_process(pointtype, (void*) pp);
     }
-    return (void*) pp;
+    return pp;
 }
 
 Object* nrn_new_pointprocess(Symbol* sym) {
@@ -76,9 +68,9 @@ Object* nrn_new_pointprocess(Symbol* sym) {
 void destroy_point_process(void* v) {
     // might be NULL if error handling because of error in construction
     if (v) {
-        Point_process* pp = (Point_process*) v;
+        auto* const pp = static_cast<Point_process*>(v);
         free_one_point(pp);
-        free(pp);
+        delete pp;
     }
 }
 

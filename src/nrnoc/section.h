@@ -360,14 +360,14 @@ allocation function may have to connect to some ionic parameters and the
 process exists primarily as a property of a node.
 */
 typedef struct Point_process {
-    Section* sec; /* section and node location for the point mechanism*/
-    Node* node;
-    Prop* prop;    /* pointer to the actual property linked to the
+    Section* sec{}; /* section and node location for the point mechanism*/
+    Node* node{};
+    Prop* prop{};    /* pointer to the actual property linked to the
                   node property list */
-    Object* ob;    /* object that owns this process */
-    void* presyn_; /* non-threshold presynapse for NetCon */
-    void* nvi_;    /* NrnVarIntegrator (for local step method) */
-    void* _vnt;    /* NrnThread* (for NET_RECEIVE and multicore) */
+    Object* ob{};    /* object that owns this process */
+    void* presyn_{}; /* non-threshold presynapse for NetCon */
+    void* nvi_{};    /* NrnVarIntegrator (for local step method) */
+    void* _vnt{};    /* NrnThread* (for NET_RECEIVE and multicore) */
 } Point_process;
 
 #if EXTRAEQN
