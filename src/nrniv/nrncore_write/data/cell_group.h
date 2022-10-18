@@ -58,10 +58,6 @@ class CellGroup {
     static void clean_art(CellGroup*);
 
     static void setup_nrn_has_net_event();
-    static inline void clear_artdata2index() {
-        artdata2index_.clear();
-    }
-
     static inline void clean_deferred_type2artml() {
         for (auto& th: deferred_type2artml_) {
             for (auto& p: th) {
@@ -81,15 +77,7 @@ class CellGroup {
     static void clean_deferred_netcons();
 
   private:
-    static std::map<double*, int> artdata2index_;
-
     static int* has_net_event_;
-
-    static inline int nrncore_art2index(double* d) {
-        assert(artdata2index_.find(d) != artdata2index_.end());
-        return artdata2index_[d];
-    }
-
     static inline int nrn_has_net_event(int type) {
         return has_net_event_[type];
     }
