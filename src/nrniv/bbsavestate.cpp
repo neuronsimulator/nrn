@@ -1015,28 +1015,26 @@ void BBSaveState_reg() {
 
 // from savstate.cpp
 struct StateStructInfo {
-    int offset;
-    int size;
-    Symbol* callback;
+    int offset{-1};
+    int size{};
+    Symbol* callback{nullptr};
 };
 static StateStructInfo* ssi;
 static cTemplate* nct;
 static void ssi_def() {
+    assert(!ssi);
     if (nct) {
         return;
     }
     Symbol* s = hoc_lookup("NetCon");
     nct = s->u.ctemplate;
-    ssi = new StateStructInfo[n_memb_func];
+    ssi = new StateStructInfo[n_memb_func]{};
     int sav = v_structure_change;
     for (int im = 0; im < n_memb_func; ++im) {
-        ssi[im].offset = -1;
-        ssi[im].size = 0;
-        ssi[im].callback = 0;
         if (!memb_func[im].sym) {
             continue;
         }
-        NrnProperty* np = new NrnProperty(memb_func[im].sym->name);
+        NrnProperty np{memb_func[im].sym->name};
         // generally we only save STATE variables. However for
         // models containing a NET_RECEIVE block, we also need to
         // save everything except the parameters
@@ -1047,14 +1045,14 @@ static void ssi_def() {
         // param array including PARAMETERs.
         if (pnt_receive[im]) {
             ssi[im].offset = 0;
-            ssi[im].size = np->prop()->param_size();
+            ssi[im].size = np.prop()->param_size();
         } else {
             int type = STATE;
-            for (Symbol* sym = np->first_var(); np->more_var(); sym = np->next_var()) {
-                if (np->var_type(sym) == type || np->var_type(sym) == STATE ||
+            for (Symbol* sym = np.first_var(); np.more_var(); sym = np.next_var()) {
+                if (np.var_type(sym) == type || np.var_type(sym) == STATE ||
                     sym->subtype == _AMBIGUOUS) {
                     if (ssi[im].offset < 0) {
-                        ssi[im].offset = np->prop_index(sym);
+                        ssi[im].offset = np.prop_index(sym);
                     }
                     ssi[im].size += hoc_total_array_data(sym, 0);
                 }
@@ -1077,7 +1075,6 @@ static void ssi_def() {
             //	printf("callback %s\n", ssi[im].callback->name);
             //}
         }
-        delete np;
     }
     // Following set to 1 when NrnProperty constructor calls prop_alloc.
     // so set back to original value.
