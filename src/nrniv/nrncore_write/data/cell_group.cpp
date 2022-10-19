@@ -60,8 +60,7 @@ CellGroup::~CellGroup() {
 }
 
 
-CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
-    auto const cache_token = nrn_ensure_model_data_are_sorted();
+CellGroup* CellGroup::mk_cellgroups(neuron::model_sorted_token const& cache_token, CellGroup* cgs) {
     for (int i = 0; i < nrn_nthread; ++i) {
         auto& nt = nrn_threads[i];
         cgs[i].n_real_cell = nt.ncell;  // real cell count
@@ -229,7 +228,7 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
     // use the Hoc NetCon object list to segregate according to threads
     // and fill the CellGroup netcons, netcon_srcgid, netcon_pnttype, and
     // netcon_pntindex (and, if nrn_nthread > 1, netcon_negsrcgid_tid).
-    CellGroup::mk_cgs_netcon_info(cgs);
+    CellGroup::mk_cgs_netcon_info(cache_token, cgs);
 
     return cgs;
 }
@@ -401,8 +400,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
 // use the Hoc NetCon object list to segregate according to threads
 // and fill the CellGroup netcons, netcon_srcgid, netcon_pnttype, and
 // netcon_pntindex (called at end of mk_cellgroups);
-void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
-    auto const cache_token = nrn_ensure_model_data_are_sorted();
+void CellGroup::mk_cgs_netcon_info(neuron::model_sorted_token const& cache_token, CellGroup* cgs) {
     // count the netcons for each thread
     int* nccnt = new int[nrn_nthread];
     for (int i = 0; i < nrn_nthread; ++i) {
@@ -447,7 +445,8 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
         if (nc->target_) {
             int type = nc->target_->prop->_type;
             cgs[ith].netcon_pnttype[i] = type;
-            cgs[ith].netcon_pntindex[i] = nc->target_->prop->id().current_row();
+            cgs[ith].netcon_pntindex[i] = nc->target_->prop->id().current_row() -
+                                          cache_token.thread_cache(ith).mechanism_offset.at(type);
             // if (nrn_is_artificial_[type]) {
             //     cgs[ith].netcon_pntindex[i] = nc->target_->prop->id().current_row(); // TODO
             //     nrncore_art2index(nc->target_->prop->param);
@@ -526,7 +525,7 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
 // so we assume there will be no POINTER usage into that data.
 // Also, note that ml.nodecount for artificial cell does not refer to
 // a list of voltage nodes but just to the count of instances.
-void CellGroup::mk_tml_with_art(CellGroup* cgs) {
+void CellGroup::mk_tml_with_art(neuron::model_sorted_token const& cache_token, CellGroup* cgs) {
     // copy NrnThread tml list and append ARTIFICIAL cell types
     // but do not include PatternStim if file mode.
     //    For direct mode PatternStim is not treated specially except that
@@ -538,7 +537,6 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
     // Now using cgs[tid].mlwithart instead of
     // tml_with_art = new NrnThreadMembList*[nrn_nthread];
     // to allow fast retrieval of type and Memb_list* given index into the vector.
-    auto const cache_token = nrn_ensure_model_data_are_sorted();
     // copy from NrnThread
     for (int id = 0; id < nrn_nthread; ++id) {
         MlWithArt& mla = cgs[id].mlwithart;

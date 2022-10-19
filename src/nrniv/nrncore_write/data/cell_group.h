@@ -49,11 +49,12 @@ class CellGroup {
     DatumIndices* datumindices;
     MlWithArt mlwithart;
 
-    static CellGroup* mk_cellgroups(CellGroup*);  // gid, PreSyn, NetCon, Point_process relation.
+    static CellGroup* mk_cellgroups(neuron::model_sorted_token const& cache_token,
+                                    CellGroup*);  // gid, PreSyn, NetCon, Point_process relation.
     static void datumtransform(CellGroup*);       // Datum.pval to int
     static void datumindex_fill(int, CellGroup&, DatumIndices&, Memb_list*);  // helper
-    static void mk_cgs_netcon_info(CellGroup* cgs);
-    static void mk_tml_with_art(CellGroup*);
+    static void mk_cgs_netcon_info(neuron::model_sorted_token const& cache_token, CellGroup* cgs);
+    static void mk_tml_with_art(neuron::model_sorted_token const& cache_token, CellGroup*);
     static size_t get_mla_rankbytes(CellGroup*);
     static void clean_art(CellGroup*);
 
@@ -85,8 +86,8 @@ class CellGroup {
   public:
     static inline int nrncore_pntindex_for_queue(Prop* p, int tid, int type) {
         assert(p->_type == type);
-        return p->id().current_row();  // ??? this is *not* well-tested and probably needs a
-                                       // `tid`-related offset
+        auto const sorted_token = nrn_ensure_model_data_are_sorted();
+        return p->id().current_row() - sorted_token.thread_cache(tid).mechanism_offset.at(type);
         // double* d = p->param;
         // Memb_list* ml = nrn_threads[tid]._ml_list[type];
         // if (ml) {
