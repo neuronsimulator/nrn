@@ -61,6 +61,7 @@ CellGroup::~CellGroup() {
 
 
 CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
     for (int i = 0; i < nrn_nthread; ++i) {
         auto& nt = nrn_threads[i];
         cgs[i].n_real_cell = nt.ncell;  // real cell count
@@ -162,7 +163,8 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                     PreSyn* ps = (PreSyn*) pnt->presyn_;
                     cgs[i].output_ps[npre] = ps;
                     // TODO TODO check check check
-                    long const agid = -(type + 1000 * pnt->prop->id().current_row());
+                    auto const offset = cache_token.thread_cache(i).mechanism_offset.at(type);
+                    long const agid = -(type + 1000 * (pnt->prop->id().current_row() - offset));
                     // if (nrn_is_artificial_[type]) {
                     //     // static_cast<long> ensures the RHS is calculated with
                     //     // `long` precision, not `int` precision. This lets us
@@ -400,6 +402,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
 // and fill the CellGroup netcons, netcon_srcgid, netcon_pnttype, and
 // netcon_pntindex (called at end of mk_cellgroups);
 void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
     // count the netcons for each thread
     int* nccnt = new int[nrn_nthread];
     for (int i = 0; i < nrn_nthread; ++i) {
@@ -483,7 +486,10 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
                     }
                     Point_process* pnt = (Point_process*) ps->osrc_->u.this_pointer;
                     int type = pnt->prop->_type;
-                    cgs[ith].netcon_srcgid[i] = -(type + 1000 * pnt->prop->id().current_row());
+                    Memb_list* ml = cgs[ith].type2ml[type];
+                    auto const offset = cache_token.thread_cache(ith).mechanism_offset.at(type);
+                    cgs[ith].netcon_srcgid[i] = -(type +
+                                                  1000 * (pnt->prop->id().current_row() - offset));
                     // if (nrn_is_artificial_[type]) {
                     //     int ix = nrncore_art2index(pnt->prop->param);
                     //     cgs[ith].netcon_srcgid[i] = -(type + 1000 * ix);
@@ -532,7 +538,7 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
     // Now using cgs[tid].mlwithart instead of
     // tml_with_art = new NrnThreadMembList*[nrn_nthread];
     // to allow fast retrieval of type and Memb_list* given index into the vector.
-
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
     // copy from NrnThread
     for (int id = 0; id < nrn_nthread; ++id) {
         MlWithArt& mla = cgs[id].mlwithart;
@@ -565,7 +571,7 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
             for (int id = 0; id < nrn_nthread; ++id) {
                 if (acnt[id]) {
                     MlWithArt& mla = cgs[id].mlwithart;
-                    ml = new Memb_list;
+                    ml = new Memb_list{i};
                     mla.push_back(MlWithArtItem(i, ml));  // need to delete ml when mla destroyed.
                     ml->nodecount = acnt[id];
                     ml->nodelist = NULL;
@@ -577,7 +583,6 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                 }
             }
             // fill data and pdata pointers
-            // and fill the artdata2index hash table
             for (int id = 0; id < nrn_nthread; ++id) {
                 acnt[id] = 0;
             }
@@ -586,7 +591,9 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 Memb_list* ml = cgs[id].mlwithart.back().second;
                 // ml->_data[acnt[id]] = memb_list[i]._data[j];
-                ml->instances.push_back(memb_list[i].instance_handle(j));
+                assert(ml->instances.size() == acnt[id]);
+                ml->set_storage_offset(cache_token.thread_cache(id).mechanism_offset.at(i));
+                // ml->instances.push_back(memb_list[i].instance_handle(j));
                 ml->pdata[acnt[id]] = memb_list[i].pdata[j];
                 ++acnt[id];
             }

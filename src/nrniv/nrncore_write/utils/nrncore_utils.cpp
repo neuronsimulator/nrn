@@ -150,10 +150,10 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
         type = voltage;
         // In the CoreNEURON world this is an offset into the voltage array part
         // of _data
-        index = dh.current_row();  // is this correct in case of multiple NrnThreads?
+        index = dh.current_row() - nt._node_data_offset;
         return 0;
     }
-    auto* pd = static_cast<double*>(dh);
+    auto* const pd = static_cast<double*>(dh);
     if (nt._nrn_fast_imem && pd >= nt._nrn_fast_imem->_nrn_sav_rhs &&
         pd < (nt._nrn_fast_imem->_nrn_sav_rhs + nnode)) {
         type = i_membrane_;  // signifies an index into i_membrane_ array portion of _data
