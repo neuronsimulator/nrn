@@ -119,7 +119,8 @@ struct Memb_list {
             auto const index = std::distance(vec.data(), ptr);
             if (index >= 0 && index < vec.size()) {
                 // ptr lives in the field-th data column
-                return index * num_fields + field;
+                auto const li = (index - m_storage_offset) * num_fields + field;
+                return li;
             }
         }
         // ptr doesn't live in this mechanism data, cannot compute a legacy index
@@ -217,6 +218,7 @@ struct Memb_list {
     }
 
     [[nodiscard]] std::size_t get_storage_offset() const {
+        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
         return m_storage_offset;
     }
     /** @todo how to invalidate this?

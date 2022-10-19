@@ -309,6 +309,14 @@ struct Prop {
         m_mech_handle->set_fpfield(i, value);
     }
 
+    friend std::ostream& operator<<(std::ostream& os, Prop const& p) {
+        if (p.m_mech_handle) {
+            return os << *p.m_mech_handle;
+        } else {
+            return os << "Node{nullopt}";
+        }
+    }
+
   private:
     // This is a handle that owns a row of the ~global mechanism data for
     // `_type`. Usage of `param` and `param_size` should be replaced with
