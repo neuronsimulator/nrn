@@ -1,7 +1,8 @@
 #pragma once
-#include "neuron/model_data_fwd.hpp"
+#include "neuron/cache/model_data.hpp"
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/container/node_data.hpp"
+#include "neuron/model_data_fwd.hpp"
 
 #include <optional>
 #include <sstream>
@@ -14,6 +15,7 @@ namespace neuron {
  * construction/destruction/... of different parts of the model data.
  */
 struct Model {
+    Model();
     /** @brief Access the structure containing the data of all Nodes.
      */
     container::Node::storage& node_data() {
@@ -48,6 +50,7 @@ struct Model {
         }
         m_mech_data[type] =
             std::make_unique<container::Mechanism::storage>(type, std::forward<Args>(args)...);
+        set_unsorted_callback(*m_mech_data[type]);
         return *m_mech_data[type];
     }
 
@@ -80,6 +83,10 @@ struct Model {
         return *data_ptr;
     }
 
+    [[nodiscard]] std::size_t mechanism_storage_size() const {
+        return m_mech_data.size();
+    }
+
     /** @brief T* -> data_handle<T> if ptr is in model data.
      */
     template <typename T>
@@ -99,6 +106,8 @@ struct Model {
     }
 
   private:
+    void set_unsorted_callback(container::Mechanism::storage& mech_data);
+
     /** @brief One structure for all Nodes.
      */
     container::Node::storage m_node_data{};
@@ -112,8 +121,25 @@ struct Model {
 };
 
 struct model_sorted_token {
+    model_sorted_token(cache::Model& cache)
+        : m_cache{cache} {}
+    [[nodiscard]] cache::Model& cache() {
+        return m_cache;
+    }
+    [[nodiscard]] cache::Model const& cache() const {
+        return m_cache;
+    }
+    [[nodiscard]] cache::Thread& thread_cache(std::size_t i) {
+        return cache().thread.at(i);
+    }
+    [[nodiscard]] cache::Thread const& thread_cache(std::size_t i) const {
+        return cache().thread.at(i);
+    }
     container::Node::storage::sorted_token_type node_data_token{};
     std::vector<container::Mechanism::storage::sorted_token_type> mech_data_tokens{};
+
+  private:
+    std::reference_wrapper<cache::Model> m_cache;
 };
 
 namespace detail {
