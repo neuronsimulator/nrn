@@ -106,7 +106,7 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
     assert(neuron::model().node_data().is_sorted());
     assert(
         ps.thvar_.refers_to<neuron::container::Node::field::Voltage>(neuron::model().node_data()));
-    int const inode = ps.thvar_.current_row();
+    int const inode = ps.thvar_.current_row() - nt._node_data_offset;
     // hoc_execerror("gid not associated with a voltage", 0);
 
     // and the root node is ...
