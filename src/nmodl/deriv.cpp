@@ -13,7 +13,7 @@ static char Derivimplicit[] = "derivimplicit";
 
 extern Symbol* indepsym;
 extern List* indeplist;
-extern int sens_parm, numlist;
+extern int numlist;
 int dtsav_for_nrn_state;
 void copylist(List*, Item*);
 List* massage_list_;
@@ -23,21 +23,17 @@ List* netrec_cnexp;
 #undef SB
 #define SB 256
 
-#if VECTORIZE
 extern int vectorize;
 extern int assert_threadsafe;
 extern int thread_data_index;
 extern List* thread_mem_init_list;
 extern List* thread_cleanup_list;
-#endif
 
-#if CVODE
 extern char *cvode_deriv(), *cvode_eqnrhs();
 extern Item* cvode_cnexp_solve;
 void cvode_diffeq(Symbol* ds, Item* qbegin, Item* qend);
 static List *cvode_diffeq_list, *cvode_eqn;
 static int cvode_cnexp_possible;
-#endif
 
 void solv_diffeq(Item* qsol,
                  Symbol* fun,
@@ -46,7 +42,8 @@ void solv_diffeq(Item* qsol,
                  int listnum,
                  int steadystate,
                  int btype) {
-    char *maxerr_str, dindepname[256];
+    const char* maxerr_str;
+    char dindepname[256];
     char deriv1_advance[256], deriv2_advance[256];
     char ssprefix[8];
 
@@ -162,7 +159,6 @@ void solv_diffeq(Item* qsol,
                 listnum);
     }
     replacstr(qsol, buf);
-#if VECTORIZE
     if (method->subtype & DERF) { /* derivimplicit */
         Sprintf(buf,
                 "%s %s%s_thread(%d, _slist%d, _dlist%d, _p, %s, _ppvar, _thread, _nt);\n%s",
@@ -192,7 +188,6 @@ void solv_diffeq(Item* qsol,
                     listnum);
             vectorize_substitute(qsol, buf);
         }
-#endif
     }
     dtsav_for_nrn_state = 1;
     sprintf(buf,
@@ -225,10 +220,9 @@ y'   Dy
 y''  D2y
 y''' D3y
 etc.  Note that all derivatives except the highest derivative are themselves
-states on an equal footing with y. E.G. they can be used within
-a MATCH block, they can be explicitly declared within a STATE block (and
-given START values), and they have associated initial value constants.
-Initial values default to 0. Here is a complicated example which
+states on an equal footing with y. E.G.  they can be explicitly declared within
+a STATE block (and given START values), and they have associated initial value
+constants.  Initial values default to 0. Here is a complicated example which
 shows off the syntax (I have no idea if the solution exists).
     INDEPENDENT {t FROM 0 TO 1 WITH 1}
     STATE	{x y
@@ -238,9 +232,6 @@ shows off the syntax (I have no idea if the solution exists).
     DERIVATIVE d {
         x''' = y + 3*x''*y' + sin(x') + exp(x)
         y'' =  cos(x'' + y) - y'
-        MATCH { y0  y(1)=1
-            x(1)=1  Dx0 x''(1)=0
-        }
     EQUATION {SOLVE d}
 Note that we had to use Dx0 since x'0 is illegal. Also Dx0 has a
 value of -10.
@@ -269,7 +260,7 @@ Implementation :
         slist[0] = &y		dlist[0] = &Dy
         slist[1] = &Dy		dlist[1] = &D2y
 
-    With respect to the MATCH process
+    Process
     the code which unmarks the PRIMES and marks the corresponding state
     is inadequate since several states must be marked some of which
     are PRIME. For this reason we distinguish using a -1 to mark states
@@ -456,19 +447,16 @@ void deriv_used(Symbol* s, Item* q1, Item* q2) /* q1, q2 are begin and end token
         deriv_state_list = newlist();
     }
     Lappendsym(deriv_used_list, s);
-#if CVODE
     if (!cvode_diffeq_list) {
         cvode_diffeq_list = newlist();
     }
     lappendsym(cvode_diffeq_list, s);
     lappenditem(cvode_diffeq_list, q1);
     lappenditem(cvode_diffeq_list, q2);
-#endif
 }
 
-static int matchused = 0; /* set when MATCH seen */
 /* args are --- derivblk: DERIVATIVE NAME stmtlist '}' */
-void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) {
+void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4) {
     int count = 0, deriv_implicit, solve_seen;
     char units[SB];
     Item *qs, *q, *mixed_eqns(Item * q2, Item * q3, Item * q4);
@@ -529,13 +517,7 @@ is not allowed on the left hand side.");
                 }
             }
             Lappendsym(deriv_state_list, state);
-            if (sensused) {
-                add_sens_statelist(state);
-                state->varnum = count;
-            }
-#if CVODE
             slist_data(state, count, numlist);
-#endif
             if (s->subtype & ARRAY) {
                 int dim = s->araydim;
                 Sprintf(buf,
@@ -569,15 +551,9 @@ is not allowed on the left hand side.");
         diag("DERIVATIVE contains no derivatives", (char*) 0);
     }
     derfun->used = count;
-    Sprintf(buf,
-            "static int _slist%d[%d], _dlist%d[%d];\n",
-            numlist,
-            count * (1 + 2 * sens_parm),
-            numlist,
-            count * (1 + 2 * sens_parm));
+    Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n", numlist, count, numlist, count);
     Linsertstr(procfunc, buf);
 
-#if CVODE
     Lappendstr(procfunc, "\n/*CVODE*/\n");
     Sprintf(buf, "static int _ode_spec%d", numlist);
     Lappendstr(procfunc, buf);
@@ -649,12 +625,11 @@ is not allowed on the left hand side.");
         freelist(&deriv_state_list);
         return;
     }
-#endif
     if (deriv_implicit) {
         Sprintf(buf,
                 "static double _savstate%d[%d], *_temp%d = _savstate%d;\n",
                 numlist,
-                count * (1 + 2 * sens_parm),
+                count,
                 numlist,
                 numlist);
         q = linsertstr(procfunc, buf);
@@ -665,12 +640,6 @@ is not allowed on the left hand side.");
     }
     movelist(q1, q4, procfunc);
     Lappendstr(procfunc, "return _reset;}\n");
-    if (sensused)
-        sensmassage(DERIVATIVE, q2, numlist); /*among other things
-            the name of q2 is changed. ie a new item */
-    if (matchused) {
-        matchmassage(count);
-    }
     /* reset used field for any states that may appear in
     nonlinear equations which should not be solved for. */
     ITERATE(q, deriv_used_list) {
@@ -688,7 +657,7 @@ if (_deriv%d_advance) {\n",
                 numlist);
         Insertstr(q4, buf);
         sp = install("D", STRING);
-        sp->araydim = count; /*this breaks SENS*/
+        sp->araydim = count;
         q = insertsym(q4, sp);
         eqnqueue(q);
         Sprintf(buf,
@@ -724,282 +693,6 @@ if (_deriv%d_advance) {\n",
 
     freelist(&deriv_used_list);
     freelist(&deriv_state_list);
-}
-
-static List* match_init; /* list of states for which initial values
-                 are known. */
-List* match_bound;       /* list of triples or quadruples.
-             First is the state symbol.
-             Second is a string giving the matchtime
-             expression. Third is a string giving the
-             matchtarget expression
-             Fourth is the loop index string if the state
-             is an array*/
-/* if non null then cout.c will put proper
-call at end of initmodel() */
-
-/* note that the number of states in match_init plus the number of states
-in match_bound must be equal to the number of differential equations */
-/* we limit ourselves to one matched boundary problem per model */
-
-void matchinitial(Item* q1) /* name */
-{
-    /* must be of form state0. Later we can check if state' is in fact
-    used. Save the state symbol in the initialvalue matchlist */
-    Symbol *s, *state;
-
-    s = SYM(q1);
-    if ((s->subtype & (PARM | INDEP)) || !(s->subtype)) {
-        /* possibly used before declared */
-        if (s->name[strlen(s->name) - 1] == '0') {
-            Strcpy(buf, s->name);
-            buf[strlen(buf) - 1] = '\0';
-            state = lookup(buf);
-            if ((state && (state->subtype & STAT)) || (state->type == PRIME)) {
-                Lappendsym(match_init, state);
-                return;
-            }
-        }
-    }
-    diag(s->name, "must be an initial state parameter");
-    return;
-}
-
-void matchbound(Item* q1, Item* q2, Item* q3, Item* q4, Item* q5, Symbol* sindex) /* q1name q2'('
-                                                                                     q3')' '='
-                                                                                     q4exprq5 */
-{
-    /* q1 must be a state */
-    Symbol* state;
-    Item* q;
-    List* l;
-
-    state = SYM(q1);
-    if (!(state->subtype & STAT) && state->type != PRIME) {
-        diag(state->name, "is not a state");
-    }
-    if ((state->subtype & ARRAY) && !sindex) {
-        diag(state->name, "must have an index for the implicit loop");
-    }
-    if (!(state->subtype & ARRAY) && sindex) {
-        diag(state->name, "is not an array");
-    }
-
-    Lappendsym(match_bound, state);
-
-    q = lappendsym(match_bound, SYM0);
-    l = newlist();
-    movelist(q2, q3, l);
-    LST(q) = l;
-
-    q = lappendsym(match_bound, SYM0);
-    l = newlist();
-    movelist(q4, q5, l);
-    LST(q) = l;
-
-    if (sindex) {
-        Lappendstr(match_bound, sindex->name);
-    }
-}
-
-void checkmatch(int blocktype) {
-    if (blocktype != DERIVATIVE) {
-        diag("MATCH block can only be in DERIVATIVE block", (char*) 0);
-    }
-    matchused = 1; /*communicate with massagederiv*/
-    if (match_bound || match_init) {
-        diag("Only one MATCH block allowed", (char*) 0);
-    }
-    if (!indepsym) {
-        diag("INDEPENDENT variable must be declared before MATCH", "statement");
-    }
-    match_bound = newlist();
-    match_init = newlist();
-}
-
-void matchmassage(int nderiv) {
-    int count, nunknown, j;
-    Item *q, *q1, *setup;
-    Symbol* s;
-    List *tmatch, *vmatch;
-    char* imatch;
-
-    matchused = 0;
-    /* we have a list of states at which the initial values are known
-    and a list of information about state(time) = match with implicit loop
-    index if array.
-
-    check that the total number of conditions = nderiv.
-    the number of unknown initial conditions is the complement of the
-    states which have known initial conditions ( the number of states
-    in the match_bound list. Note that the complement of match_init
-    states is NOT the list of states in match_bound.
-
-    We create
-      1) array of doubles which will receive the values of
-      the found initial conditions. (_found_init)
-      2) array of doubles which receives the match times
-      3) array of doubles which receives the match values
-      4) array of state pointers(state_match). we solve
-         *statematch(matchtime) = matchvalue
-      5) array of state pointers(state_get). We initialize with
-         *state_get = _found_init
-      6) since 2, 3, 4 must be sorted according to match times we
-         create pointer arrays to 2 and 3 and pass those.
-      7) Spec of shoot requires the passing of pointer array to
-         found_init.
-
-
-    At this time I don't know how this can be restarted.
-
-    Initmodel() calls _initmatch() which
-    1) if first=1 then sets first=0
-    sets up match times, match values, initializes
-    _found_init, calls shoot(), calls initmodel(),
-    sets first = 1 and exits.
-    2) if first=0 then put _found_init into states and exit.
-
-    Call to _initmatch must be the last thing done in initmodel() in
-    case the user desires to give good starting initial values to
-    help shoot().
-    */
-
-    count = 0;
-
-    ITERATE(q, match_init) { /* these initializations are done
-        automatically by initmodel(), so just remove the state
-        from the deriv_state_list */
-        s = SYM(q);
-        ITERATE(q1, deriv_state_list) {
-            if (SYM(q1) == s) {
-                remove(q1);
-                break;
-            }
-        }
-        if (!(s->subtype & STAT)) {
-            diag(s->name, "is not a state");
-        }
-        if (s->subtype & ARRAY) {
-            count += s->araydim;
-        } else {
-            count++;
-        }
-    }
-    nunknown = nderiv - count;
-    if (nunknown <= 0) {
-        diag("Nothing to match", (char*) 0);
-    }
-    /* the ones that are still marked are the ones to solve for */
-
-    /* add the boilerplate for _initmatch and save the location
-    where model specific info goes.
-    */
-    Lappendstr(
-        procfunc,
-        "\n_init_match(_save) double _save;{ int _i;\nif (_match_recurse) {_match_recurse = 0;\n");
-    Sprintf(buf, "for (_i=0; _i<%d; _i++) _found_init[_i] = _p[_state_get[_i]];\n", nunknown);
-    setup = lappendstr(procfunc, buf);
-    Sprintf(buf,
-            "error=shoot(%d, &(%s) - _p, _pmatch_time, _pmatch_value, _state_match,\
- _found_init, _p, &(d%s));\n if(error){abort_run(error);}; %s = _save;",
-            nunknown,
-            indepsym->name,
-            indepsym->name,
-            indepsym->name);
-    /*deltaindep may not be declared yet */
-    Lappendstr(procfunc, buf);
-    Lappendstr(procfunc, "\n initmodel(_p); _match_recurse = 1;\n}\n");
-    Sprintf(buf, "for (_i=0; _i<%d; _i++) _p[_state_get[_i]] = _found_init[_i];", nunknown);
-    Lappendstr(procfunc, buf);
-    Lappendstr(procfunc, "\n}\n\n");
-
-    /* construct _state_get from the marked states */
-    j = 0;
-
-    ITERATE(q, deriv_state_list) {
-        s = SYM(q);
-        if (s->subtype & ARRAY) {
-            Sprintf(buf,
-                    "for (_i=0; _i<%d; _i++) {_state_get[%d+_i] = %s_columnindex + _i;}\n",
-                    s->araydim,
-                    j,
-                    s->name);
-            j += s->araydim;
-        } else {
-            Sprintf(buf, "_state_get[%d] = %s_columnindex;\n", j, s->name);
-            j++;
-        }
-        Lappendstr(initlist, buf);
-    }
-    /* declare the arrays */
-    Sprintf(buf,
-            "static int _state_get[%d], _state_match[%d];\n\
-static double _match_time[%d], _match_value[%d], _found_init[%d];\n",
-            nunknown,
-            nunknown,
-            nunknown,
-            nunknown,
-            nunknown);
-    Linsertstr(procfunc, buf);
-    Sprintf(buf, "static double *_pmatch_time[%d], *_pmatch_value[%d];\n", nunknown, nunknown);
-    Linsertstr(procfunc, buf);
-
-    /* create the _state_match stuff */
-    j = 0;
-    ITERATE(q, match_bound) {
-        s = SYM(q);
-        if (!(s->subtype & STAT)) {
-            diag(s->name, "is not a state");
-        }
-        tmatch = LST(q = q->next);
-        vmatch = LST(q = q->next);
-        if (s->subtype & ARRAY) {
-            imatch = STR(q = q->next);
-            Sprintf(buf,
-                    "for (_i=0; _i<%d; _i++) {_state_match[%d+_i] = %s_columnindex + _i;}\n",
-                    s->araydim,
-                    j,
-                    s->name);
-            Lappendstr(initlist, buf);
-            Sprintf(buf,
-                    "{int %s; for (%s=0; %s<%d; %s++) {\n",
-                    imatch,
-                    imatch,
-                    imatch,
-                    s->araydim,
-                    imatch);
-            Insertstr(setup, buf);
-            Sprintf(buf, "_match_time[%s + %d] = ", imatch, j);
-            Insertstr(setup, buf);
-            copylist(tmatch, setup);
-            Sprintf(buf, ";\n _match_value[%s + %d] = ", imatch, j);
-            Insertstr(setup, buf);
-            copylist(vmatch, setup);
-            Insertstr(setup, ";\n}}\n");
-            j += s->araydim;
-            count += s->araydim;
-        } else {
-            Sprintf(buf, "_state_match[%d] = %s_columnindex;\n", j, s->name);
-            Lappendstr(initlist, buf);
-            Sprintf(buf, "_match_time[%d] = ", j);
-            Insertstr(setup, buf);
-            copylist(tmatch, setup);
-            Sprintf(buf, ";\n _match_value[%d] = ", j);
-            Insertstr(setup, buf);
-            copylist(vmatch, setup);
-            Insertstr(setup, ";\n");
-            j++;
-            count++;
-        }
-    }
-    /* set up the trivial pointer arrays */
-    Sprintf(buf, "for(_i=0; _i<%d; _i++) { _pmatch_time[_i] = _match_time + _i;\n", nunknown);
-    Lappendstr(initlist, buf);
-    Lappendstr(initlist, "_pmatch_value[_i] = _match_value + _i;\n }\n");
-    if (count != nderiv) {
-        Sprintf(buf, "%d equations != %d MATCH specs", nderiv, count);
-        diag(buf, (char*) 0);
-    }
 }
 
 
@@ -1041,7 +734,6 @@ void copyitems(Item* q1, Item* q2, Item* qdest) /* copy items before item */
     }
 }
 
-#if CVODE
 static int cvode_linear_diffeq(Symbol* ds, Symbol* s, Item* qbegin, Item* qend) {
     char* c;
     List* tlst;
@@ -1209,4 +901,3 @@ int cvode_cnexp_success(Item* q1, Item* q2) {
     fprintf(stderr, "Could not translate using cnexp method; using derivimplicit\n");
     return 0;
 }
-#endif

@@ -165,7 +165,7 @@ the arrow keys. erase_item(Menuitem *pnow) - Erases second line contents in menu
 
 
 static int cexecute(const char*);
-static char* navigate(int);
+static const char* navigate(int);
 static Menuitem* append(); /*common code for appendsym,appendaction*/
 static void appendvar(int, const char*, const char*);
 static void appendaction(int, const char*, const char*);
@@ -197,7 +197,7 @@ static int first = 1;           /* emacs_term has not been opened */
     }
 static void menu_manager(int nmenu) {
     int previous;
-    char* command;
+    const char* command;
     previous = current_menu;
     current_menu = nmenu;
     if (previous >= 0) {
@@ -441,7 +441,7 @@ static void destroy(int imenu) {
     }
 }
 
-static char* navigate(int imenu) {
+static const char* navigate(int imenu) {
     Menuitem* menu;
     Menuitem *pcur, *pnow;
     int row, col, key, current_col;

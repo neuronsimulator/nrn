@@ -26,12 +26,6 @@
  *
  */
 
-/*
- * In order to interface this process with merge, a second argument is
- * allowed which gives the complete input filename.  The first argument
- * still gives the prefix of the .c and .var files.
- */
-
 /* the first arg may also be a file.mod (containing the .mod suffix)*/
 
 #include <getopt.h>
@@ -47,10 +41,6 @@ FILE *fin,    /* input file descriptor for filename.mod */
               /* or file2 from the second argument */
     *fparout, /* output file descriptor for filename.var */
     *fcout;   /* output file descriptor for filename.c */
-#if SIMSYS
-FILE *fctlout, /* filename.ctl */
-    *fnumout;  /* filename.num */
-#endif
 
 
 char* modprefix;
@@ -69,17 +59,15 @@ List* filetxtlist;
 extern int yyparse();
 extern int mkdir_p(const char*);
 
-#if NMODL && VECTORIZE
 extern int vectorize;
 extern int numlist;
 extern char* nmodl_version_;
 extern int usederivstatearray;
-#endif
 
 /*SUPPRESS 763*/
-static char pgm_name[] = "nmodl";
-extern char* RCS_version;
-extern char* RCS_date;
+static const char* pgm_name = "nmodl";
+extern const char* RCS_version;
+extern const char* RCS_date;
 
 static struct option long_options[] = {{"version", no_argument, 0, 'v'},
                                        {"help", no_argument, 0, 'h'},
@@ -143,9 +131,7 @@ int main(int argc, char** argv) {
 
 #if MAC
     SIOUXSettings.asktosaveonclose = false;
-#if !SIMSYS
     Fprintf(stderr, "%s   %s   %s\n", pgm_name, RCS_version, RCS_date);
-#endif
 #endif
 
     init(); /* keywords into symbol table, initialize
@@ -154,12 +140,6 @@ int main(int argc, char** argv) {
     finname = argv[optind];
 
     openfiles(finname, output_dir); /* .mrg else .mod,  .var, .c */
-#if NMODL || HMODL
-#else
-#if !SIMSYS
-    Fprintf(stderr, "Translating %s into %s.cpp and %s.var\n", finname, modprefix, modprefix);
-#endif
-#endif
     IGNORE(yyparse());
     /*
      * At this point all blocks are fully processed except the kinetic
@@ -182,13 +162,6 @@ int main(int argc, char** argv) {
      *
      */
     consistency();
-#if 0 && !_CRAY && NMODL && VECTORIZE
-/* allowing Kinetic models to be vectorized on cray. So nonzero numlist is
-no longer adequate for saying we can not */
-	if (numlist) {
-		vectorize = 0;
-	}
-#endif
     chk_thread_safe();
     chk_global_state();
     check_useion_variables();
@@ -198,19 +171,11 @@ no longer adequate for saying we can not */
                * are printed into .c file at beginning.
                */
     c_out();  /* print .c file */
-#if HMODL || NMODL
-#else
-    IGNORE(fclose(fparout));
-#endif
-#if SIMSYS
-    IGNORE(fclose(fctlout));
-    IGNORE(fclose(fnumout));
-#endif
 
 #if !defined NMODL_TEXT
 #define NMODL_TEXT 1
 #endif
-#if NMODL && NMODL_TEXT
+#if NMODL_TEXT
 #if 0
 /* test: temp.txt should be identical to text of input file except for INCLUDE */
 {
@@ -263,7 +228,6 @@ no longer adequate for saying we can not */
 
     IGNORE(fclose(fcout));
 
-#if NMODL && VECTORIZE
     if (vectorize) {
         Fprintf(stderr, "Thread Safe\n");
     }
@@ -273,7 +237,6 @@ no longer adequate for saying we can not */
                 "time errors will be generated.\n");
         fprintf(stderr, "The %s.cpp file may be manually edited to fix these errors.\n", modprefix);
     }
-#endif
 
 #if LINT
     { /* for lex */
@@ -342,24 +305,6 @@ static void openfiles(char* given_filename, char* output_dir) {
         diag("Can't create C file: ", output_filename);
     }
     Fprintf(stderr, "Translating %s into %s\n", input_filename, output_filename);
-
-#if HMODL || NMODL
-#else
-    Sprintf(s, "%s.var", modprefix);
-    if ((fparout = fopen(s, "w")) == (FILE*) 0) {
-        diag("Can't create variable file: ", s);
-    }
-#endif
-#if SIMSYS
-    Sprintf(s, "%s.ctl", modprefix);
-    if ((fctlout = fopen(s, "w")) == (FILE*) 0) {
-        diag("Can't create variable file: ", s);
-    }
-    Sprintf(s, "%s.num", modprefix);
-    if ((fnumout = fopen(s, "w")) == (FILE*) 0) {
-        diag("Can't create C file: ", s);
-    }
-#endif
 }
 
 // Post-adjustments for VERBATIM blocks  (i.e  make them compatible with CPP).

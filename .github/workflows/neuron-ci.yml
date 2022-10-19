@@ -74,6 +74,7 @@ jobs:
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
                 -DNRN_ENABLE_RX3D=OFF -DCORENRN_SANITIZERS=address
               sanitizer: address
+              ccache_fudge: 1 # manually invalidate the cache for this build
       fail-fast: false
 
     steps:
@@ -216,8 +217,8 @@ jobs:
                   cmake_args+=(-DLLVM_SYMBOLIZER_PATH="${symbolizer_path}")
                 fi
                 cmake_args+=(-DCMAKE_BUILD_TYPE=Custom \
-                             -DCMAKE_C_FLAGS="-O1 -g -Wno-writable-strings" \
-                             -DCMAKE_CXX_FLAGS="-O1 -g -Wno-writable-strings" \
+                             -DCMAKE_C_FLAGS="-O1 -g" \
+                             -DCMAKE_CXX_FLAGS="-O1 -g" \
                              -DNRN_SANITIZERS=$(echo ${{matrix.config.sanitizer}} | sed -e 's/-/,/g'))
               fi
               cmake_args+=(-DCMAKE_C_COMPILER="${CC}" \

@@ -25,7 +25,7 @@ static char banner[] =
 See http://neuron.yale.edu/neuron/credits\n";
 
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
-extern char* nrn_mech_dll;            /* declared in hoc_init.cpp so ivocmain.cpp can see it */
+extern const char* nrn_mech_dll;      /* declared in hoc_init.cpp so ivocmain.cpp can see it */
 extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.cpp */
 #endif                                // WIN32 or NRNMEHC_DLL_STYLE
 
@@ -397,7 +397,6 @@ void hoc_last_init(void) {
         }
     }
     if (nrn_mech_dll) {
-        char *cp1, *cp2;
         hoc_default_dll_loaded_ = 1.;
 #if defined(WIN32)
         /* Sometimes (windows 10 and launch recent enthought canopy) it seems that
@@ -413,7 +412,9 @@ void hoc_last_init(void) {
             }
         } else {
 #endif /*WIN32*/
-            for (cp1 = nrn_mech_dll; *cp1; cp1 = cp2) {
+            char *cp1{}, *cp2{};
+            std::string tmp{nrn_mech_dll};
+            for (cp1 = tmp.data(); *cp1; cp1 = cp2) {
                 for (cp2 = cp1; *cp2; ++cp2) {
                     if (*cp2 == ';') {
                         *cp2 = '\0';
@@ -531,7 +532,6 @@ void nrn_register_mech_common(const char** m,
     memb_func[type].state = stat;
     memb_func[type].initialize = initialize;
     memb_func[type].destructor = nullptr;
-#if VECTORIZE
     memb_func[type].vectorized = vectorized ? 1 : 0;
     memb_func[type].thread_size_ = vectorized ? (vectorized - 1) : 0;
     memb_func[type].thread_mem_init_ = nullptr;
@@ -545,15 +545,12 @@ void nrn_register_mech_common(const char** m,
     memb_list[type].nodecount = 0;
     memb_list[type]._thread = (Datum*) 0;
     memb_order_[type] = type;
-#endif
-#if CVODE
     memb_func[type].ode_count = nullptr;
     memb_func[type].ode_map = nullptr;
     memb_func[type].ode_spec = nullptr;
     memb_func[type].ode_matsol = nullptr;
     memb_func[type].ode_synonym = nullptr;
     memb_func[type].singchan_ = nullptr;
-#endif
     /* as of 5.2 nmodl translates so that the version string
        is the first string in m. This allows the neuron application
        to determine if nmodl c files are compatible with this version
@@ -772,7 +769,6 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
 #endif  // 0
 }
 
-#if CVODE
 void hoc_register_cvode(int i, nrn_ode_count_t cnt, nrn_ode_map_t map, Pvmi spec, Pvmi matsol) {
     memb_func[i].ode_count = cnt;
     memb_func[i].ode_map = map;
@@ -782,7 +778,6 @@ void hoc_register_cvode(int i, nrn_ode_count_t cnt, nrn_ode_map_t map, Pvmi spec
 void hoc_register_synonym(int i, void (*syn)(int, double**, Datum**)) {
     memb_func[i].ode_synonym = syn;
 }
-#endif  // CVODE
 
 void register_destructor(Pvmp d) {
     memb_func[n_memb_func - 1].destructor = d;
@@ -949,7 +944,6 @@ void hoc_reg_ba(int mt, nrn_bamech_t f, int type) {
 }
 
 void _cvode_abstol(Symbol** s, double* tol, int i) {
-#if CVODE
     if (s && s[i]->extra) {
         double x;
         x = s[i]->extra->tolerance;
@@ -957,13 +951,11 @@ void _cvode_abstol(Symbol** s, double* tol, int i) {
             tol[i] *= x;
         }
     }
-#endif  // CVODE
 }
 
 extern Node** node_construct(int);
 
 void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
-#if CVODE
     int i;
     Symbol* sym;
     /*printf("register tolerance for %s\n", memb_func[type].sym->name);*/
@@ -1029,7 +1021,6 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
             free(pv);
         }
     }
-#endif  // CVODE
 }
 
 void _nrn_thread_reg(int i, int cons, void (*f)(Datum*)) {

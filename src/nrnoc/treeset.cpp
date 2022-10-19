@@ -15,6 +15,7 @@
 #include "spmatrix.h"
 #include "treeset.h"
 #include "utils/profile/profiler_interface.h"
+#include "multicore.h"
 
 #include <stdio.h>
 #if HAVE_STDLIB_H
@@ -70,7 +71,6 @@ int nrn_matrix_cnt_ = 0;
 int use_sparse13 = 0;
 int nrn_use_daspk_ = 0;
 
-#if VECTORIZE
 /*
 When properties are allocated to nodes or freed, v_structure_change is
 set to 1. This means that the mechanism vectors need to be re-determined.
@@ -80,7 +80,6 @@ int structure_change_cnt;
 int diam_change_cnt;
 int nrn_node_ptr_change_cnt_;
 
-#endif
 extern int section_count;
 extern Section** secorder;
 #if 1 /* if 0 then handled directly to save space : see finitialize*/
@@ -699,9 +698,7 @@ Prop* prop_alloc(Prop** pp, int type, Node* nd) {
     if (nd) {
         nrn_alloc_node_ = nd;
     }
-#if VECTORIZE
     v_structure_change = 1;
-#endif
     current_prop_list = pp;
     p = (Prop*) emalloc(sizeof(Prop));
     p->_type = type;
@@ -739,9 +736,7 @@ void prop_free(Prop** pp) /* free an entire property list */
 
 void single_prop_free(Prop* p) {
     extern char* pnt_map;
-#if VECTORIZE
     v_structure_change = 1;
-#endif
     if (pnt_map[p->_type]) {
         clear_point_process_struct(p);
         return;
@@ -1623,9 +1618,6 @@ static double diam_from_list(Section* sec, int inode, Prop* p, double rparent)
 
 #endif /*DIAMLIST*/
 
-#include "multicore.cpp"
-
-#if VECTORIZE
 void v_setup_vectors(void) {
     int inode, i;
     int isec;
@@ -1783,7 +1775,6 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
     diam_changed = 1;
 }
 
-#endif /*VECTORIZE*/
 
 #define NODE_DATA 0
 #if NODE_DATA

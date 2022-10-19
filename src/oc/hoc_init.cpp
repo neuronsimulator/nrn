@@ -39,7 +39,7 @@ static double Erfc(double x) {
 #endif
 
 static struct { /* Keywords */
-    char* name;
+    const char* name;
     int kval;
 } keywords[] = {{"proc", parsePROC},
                 {"func", FUNC},
@@ -66,7 +66,6 @@ static struct { /* Keywords */
                 {"help", HELP},
                 {"iterator", ITERKEYWORD},
                 {"iterator_statement", ITERSTMT},
-#if CABLE
                 {"create", SECTIONKEYWORD},
                 {"connect", CONNECTKEYWORD},
                 {"setpointer", SETPOINTERKEYWORD},
@@ -76,7 +75,6 @@ static struct { /* Keywords */
                 {"forall", FORALL},
                 {"ifsec", IFSEC},
                 {"forsec", FORSEC},
-#endif /*CABLE*/
 #if OOP
                 {"begintemplate", BEGINTEMPLATE},
                 {"endtemplate", ENDTEMPLATE},
@@ -88,7 +86,7 @@ static struct { /* Keywords */
 #endif
                 {0, 0}};
 static struct { /* Constants */
-    char* name;
+    const char* name;
     double cval;
 } consts[] = {{"PI", 3.14159265358979323846},
               {"E", 2.71828182845904523536},
@@ -100,7 +98,7 @@ static struct { /* Constants */
 /* Nov, 2017, from https://physics.nist.gov/cuu/Constants/index.html */
 /* also see FARADAY and gasconstant in ../nrnoc/eion.c */
 static struct { /* Modern, Legacy units constants */
-    char* name;
+    const char* name;
     double cval[2];
 } uconsts[] = {{"FARADAY", {_faraday_codata2018, 96485.309}}, /*coulombs/mole*/
                {"R", {_gasconstant_codata2018, 8.31441}}, /*molar gas constant, joules/mole/deg-K*/
@@ -110,7 +108,7 @@ static struct { /* Modern, Legacy units constants */
                {0, {0., 0.}}};
 
 static struct { /* Built-ins */
-    char* name;
+    const char* name;
     double (*func)(double);
 } builtins[] = {{"sin", sin},
                 {"cos", cos},
@@ -132,7 +130,7 @@ static struct { /* Built-ins */
 #endif
                 {0, 0}};
 static struct { /* Builtin functions with multiple or variable args */
-    char* name;
+    const char* name;
     void (*fun_blt)(void);
 } fun_bltin[] = {{"atan2", hoc_atan2},
                  {"system", hoc_System},
@@ -238,7 +236,7 @@ static struct { /* Builtin functions with multiple or variable args */
                  {0, 0}};
 
 static struct { /* functions that return a string */
-    char* name;
+    const char* name;
     void (*strfun_blt)(void);
 } strfun_bltin[] = {{"secname", hoc_secname},
                     {"units", hoc_Symbol_units},
@@ -250,7 +248,7 @@ static struct { /* functions that return a string */
                     {0, 0}};
 
 static struct { /* functions that return an object */
-    char* name;
+    const char* name;
     void (*objfun_blt)(void);
 } objfun_bltin[] = {{"object_pushed", hoc_object_pushed}, {nullptr, nullptr}};
 
@@ -263,7 +261,7 @@ double hoc_cross_x_, hoc_cross_y_; /* For Graph class in ivoc */
 double hoc_default_dll_loaded_;
 
 char* neuron_home;
-char* nrn_mech_dll;            /* but actually only for NEURON mswin and linux */
+const char* nrn_mech_dll;      /* but actually only for NEURON mswin and linux */
 int nrn_noauto_dlopen_nrnmech; /* 0 except when binary special. */
 int use_mcell_ran4_;
 int nrn_xopen_broadcast_;

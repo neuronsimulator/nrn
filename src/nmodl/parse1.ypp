@@ -25,7 +25,7 @@
 #define ldebug(arg1, arg2) qdebug(arg1, arg2->next)
 
 extern int yylex(), yyparse();
-void yyerror(char*);
+void yyerror(const char*);
 
 #if YYBISON
 #define myerr(arg) static int ierr=0;\
@@ -58,16 +58,9 @@ static int leftside;	/* inside left hand side of equation? */
 static int pstate;	/* number of state in a primary expression */
 static int tstate;	/* number of states in a term */
 static Item *lastok;	/* last token accepted by expr */
-static int sensused;	/* a SENS statement occurred in this block */
-static Symbol *matchindex; /* local symbol for implied MATCH loop */
-static int model_level = 0; /* the model level prepended to declaration
-				blocks by merge */
 static int scopindep = 0;/* SCoP independent explicitly declared if 1 */
 static int extdef2 = 0; /* flag that says we are in an EXTDEF2 function */
 static List *table_list = LIST0; /* table information for TABLE statement */
-static int forallindex = 0;	/* 0 not in FORALL, -1 just starting, 
-					>0 index of arrays used (must all
-					be the same */
 static Item* astmt_end_;	/* see kinetic.c vectorizing */
 static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 				 and FOR_NETCONS */
@@ -81,10 +74,10 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 }
 
 %token	<qp>	VERBATIM COMMENT MODEL CONSTANT INDEPENDENT DEPENDENT STATE
-%token	<qp>	INITIAL1 DERIVATIVE SOLVE USING WITH STEPPED DISCRETE
-%token	<qp>	FROM FORALL1 TO BY WHILE IF ELSE START1 STEP SENS SOLVEFOR
-%token	<qp>	PROCEDURE PARTIAL DEL DEL2 DEFINE1 IFERROR PARAMETER INT
-%token	<qp>	DERFUNC EQUATION TERMINAL LINEAR NONLINEAR FUNCTION1 LOCAL
+%token	<qp>	INITIAL1 DERIVATIVE SOLVE USING WITH DISCRETE
+%token	<qp>	FROM TO BY WHILE IF ELSE START1 STEP SOLVEFOR
+%token	<qp>	PROCEDURE DEL DEL2 DEFINE1 PARAMETER INT
+%token	<qp>	DERFUNC EQUATION LINEAR NONLINEAR FUNCTION1 LOCAL
 %token	<qp>	METHOD LIN1 NONLIN1 TABLE DEPEND BREAKPOINT
 %token	<qp>	INCLUDE1 FUNCTION_TABLE PROTECT NRNMUTEXLOCK NRNMUTEXUNLOCK
 %token	<qp>	'{' '}' '(' ')' '[' ']' '@' '+' '*' '-' '/' '=' '^' ':' ','
@@ -92,18 +85,17 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	OR AND GT LT LE EQ NE NOT
 %token	<qp>	NAME PRIME REAL INTEGER DEFINEDVAR ONTOLOGY_ID
 %type	<qp>	Name NUMBER real intexpr integer
-%token	<qp>	STRING PLOT VS LAG RESET MATCH MODEL_LEVEL SWEEP FIRST LAST
-%type	<str>	line model units optindex unit limits abstol
-%type	<qp>	name number nonlineqn primary term linexpr numlist
+%token	<qp>	STRING VS LAG SWEEP
+%type	<str>	line model units unit limits abstol
+%type	<qp>	name number nonlineqn primary term linexpr
 %type	<qp>	expr aexpr ostmt astmt stmtlist locallist locallist1
 %type	<qp>	varname exprlist define1
-%type	<qp>	asgn fromstmt whilestmt ifstmt solveblk funccall ifsolerr
-%type	<qp>	opinc opstart senslist sens lagstmt forallstmt
-%type	<qp>	parmasgn stepped indepdef depdef withby
-%type	<qp>	declare parmblk indepblk depblk stateblk stepblk
+%type	<qp>	asgn fromstmt whilestmt ifstmt solveblk funccall
+%type	<qp>	opinc opstart lagstmt
+%type	<qp>	parmasgn indepdef depdef withby
+%type	<qp>	declare parmblk indepblk depblk stateblk
 %type	<qp>	watchstmt watchdir watch1 fornetcon
-%type	<qp>	plotdecl constblk
-%type	<qp>	matchblk matchlist match matchname pareqn firstlast
+%type	<qp>	constblk
 
 %token	<qp>	KINETIC CONSERVE REACTION REACT1 COMPARTMENT UNITS
 %token	<qp>	UNITSON UNITSOFF LONGDIFUS
@@ -114,9 +106,9 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %type	<i>	locoptarray
 /* interface to NEURON */
 %token	<qp>	NEURON SUFFIX NONSPECIFIC READ WRITE USEION VALENCE THREADSAFE REPRESENTS
-%token	<qp>	GLOBAL SECTION RANGE POINTER BBCOREPOINTER EXTERNAL BEFORE AFTER WATCH
+%token	<qp>	GLOBAL RANGE POINTER BBCOREPOINTER EXTERNAL BEFORE AFTER WATCH
 %token	<qp>	ELECTRODE_CURRENT CONSTRUCTOR DESTRUCTOR NETRECEIVE FOR_NETCONS
-%type	<qp>	neuronblk nrnuse nrnlist optnrnlist valence initstmt bablk optontology
+%type	<qp>	neuronblk nrnuse nrnlist valence initstmt bablk optontology
 %token	<qp>	CONDUCTANCE
 %type	<qp>	conducthint
 
@@ -150,13 +142,7 @@ all:	/*nothing*/
 		}
 	| all define1
 	| all declare
-	| all MODEL_LEVEL INTEGER {model_level = atoi(STR($3));}
-		declare {model_level = 0;}
 	| all 
-		{if (sensused)
-			diag("sensitivity analysis not implemented for",
-				" this block type");
-		}
 	    proc
 	| all VERBATIM 
 		/* read everything and move as is to end of procfunc */
@@ -201,15 +187,14 @@ Name:	NAME
 			when this was done to the lookahead token in lex */
 		}
 	;
-declare: parmblk | indepblk | depblk | stateblk | stepblk
-	| plotdecl | neuronblk | unitblk | constblk
+declare: parmblk | indepblk | depblk | stateblk
+	| neuronblk | unitblk | constblk
 	;
 parmblk: PARAMETER '{' parmbody '}' {deltokens($1, $4);}
 	;
 parmbody: /*nothing*/
 	| parmbody parmasgn
-		{ explicit_decl(model_level, $2);}
-/*	| parmbody stepped */ /*now has its own block*/
+		{ explicit_decl($2);}
 	;
 parmasgn: NAME '=' number units limits
 		/* install in syminorder and put info in Symbol->u.str
@@ -242,19 +227,6 @@ limits: /*nothing*/
 		 $$ = stralloc(buf, (char*)0);
 		}
 	;
-stepblk: STEPPED '{' stepbdy '}' {deltokens($1, $4);}
-	;
-stepbdy: /*nothing*/
-	| stepbdy stepped
-		{ explicit_decl(model_level, $2); }
-	;
-stepped: NAME '=' numlist units
-		/* install */
-		{steppedinstall(SYM($1), $3, lastok, $4);}
-	;
-numlist: number ',' number
-	| numlist ',' number
-	;
 name:	Name
 	| PRIME
 	;
@@ -282,17 +254,10 @@ indepblk: INDEPENDENT '{' indepbody '}' {deltokens($1, $4);}
 	;
 indepbody: /*nothing*/
 	| indepbody indepdef
-		{ explicit_decl(model_level, $2); }
-	| indepbody SWEEP {scopindep = 1;} indepdef
-		{ explicit_decl(model_level, $4);
-		  scopindep = 0;
-		}
+	| indepbody SWEEP indepdef
 	;
 indepdef: NAME FROM number TO number withby integer opstart units
-		/*indepinstall()*/
-		{indepinstall(SYM($1), STR($3),
-		 STR($5), STR($7), $8, $9, scopindep);
-		}
+		{ if (strcmp(SYM($1)->name, "t") != 0) { fprintf(stderr, "WARNING: '%s' cannot be used as an independent variable, only 't' is allowed.", SYM($1)->name); } }
 	| error {diag("name FROM number TO number WITH integer\n", (char *)0);}
 	;
 withby:	WITH
@@ -301,7 +266,7 @@ depblk:	DEPENDENT {stateblock = 0;} '{' depbody '}' {deltokens($1, $5);}
 	;
 depbody: /*nothing*/
 	| depbody depdef
-		{ explicit_decl(model_level, $2);}
+		{ explicit_decl($2);}
 	;
 depdef: name opstart units abstol
 		/*depinstall()*/
@@ -339,29 +304,6 @@ abstol: /*nothing*/
 	;
 stateblk: STATE  {stateblock = 1;} '{' depbody '}' {deltokens($1, $5);}
 	;
-plotdecl: PLOT pvlist VS name optindex
-		/* construct plotlist. Used in parout.c */
-		{ Item *q;
-		 q = linsertsym(plotlist, SYM($4)); Insertstr(q->next, $5); }
-		
-	| PLOT error { diag("PLOT namelist VS name", (char *)0);}
-	;
-pvlist:	name optindex
-		{ if (plotlist->next == plotlist) {
-			Lappendsym(plotlist, SYM($1));
-			Lappendstr(plotlist, $2);
-		  }else{
-			diag("Only one PLOT declaration allowed", (char *)0);
-		  }
-		}
-	| pvlist ',' name optindex
-		{ Lappendsym(plotlist, SYM($3)); Lappendstr(plotlist, $4);}
-	;
-optindex: /*nothing*/
-		{ $$ = "-1";}
-	| '[' INTEGER ']'
-		{ $$ = STR($2);}
-	;
 proc:	 {blocktype = INITIAL1;} initblk
 		/*blocktype set prior to parsing*/
 	| {lexcontext = NONLINEAR; blocktype = DERIVATIVE;} derivblk
@@ -371,10 +313,8 @@ proc:	 {blocktype = INITIAL1;} initblk
 	| {blocktype = FUNCTION1;} funcblk
 	| {blocktype = PROCEDURE;} procedblk
 	| {blocktype = NETRECEIVE;} netrecblk
-	| {blocktype = TERMINAL;} terminalblk
 	| {blocktype = DISCRETE;} discretblk
-	| {lexcontext = blocktype = PARTIAL;} partialblk
-	| {lexcontext = blocktype = KINETIC;ostmt_start();} kineticblk {see_ostmt();}
+	| {lexcontext = blocktype = KINETIC;} kineticblk
 	| {blocktype = CONSTRUCTOR;} constructblk
 	| {blocktype = DESTRUCTOR;} destructblk
 	| {blocktype = FUNCTION_TABLE;} functableblk
@@ -446,12 +386,10 @@ locoptarray: /*nothing*/
 		{$$ = atoi(STR($2)); lastok = $3;}
 	;
 stmtlist1: /*nothing*/
-	| stmtlist1 {if (blocktype == KINETIC) see_ostmt();} ostmt
-		{if (blocktype == KINETIC) see_ostmt();}
-	| stmtlist1 astmt {if (blocktype == KINETIC) { see_astmt($2, astmt_end_); }}
+	| stmtlist1 ostmt
+	| stmtlist1 astmt
 	;
 ostmt:	fromstmt
-	| forallstmt
 	| whilestmt
 	| ifstmt
 	| stmtlist '}'
@@ -469,15 +407,10 @@ ostmt:	fromstmt
 		
 	| COMMENT
 		{inblock(SYM($1)->name); deltokens($1, intoken->prev);}
-	| sens
 	| compart	{check_block(KINETIC, blocktype, "COMPARTMENT");}
 	| ldifus	{check_block(KINETIC, blocktype, "LONGDIFUS");}
 	| conserve	{check_block(KINETIC, blocktype, "CONSERVE");}
 	| lagstmt
-	| RESET
-		{ replacstr($1, " _reset = 1;\n"); }
-	| matchblk
-	| pareqn	/* 2nd order partial equation and boundary conditions*/
 	| tablestmt
 		{if (blocktype !=FUNCTION1 && blocktype != PROCEDURE) {
 			diag("TABLE valid only for FUNCTION or PROCEDURE", (char *)0);
@@ -525,9 +458,7 @@ asgn:	varname '=' expr
 			/* STATE discontinuity adjustment */
 			netrec_asgn($1, $2, $3, lastok);
 		  }
-#if NOCMODL
 		  nrn_var_assigned(SYM($1));
-#endif
 		}
 	| nonlineqn expr '=' expr
 		/* put info in equation list */
@@ -572,16 +503,6 @@ varname: name
 			SYM($1)->used++;
 			nstate++; pstate++; tstate++;
 		}
-		  if (forallindex) {
-			if (forallindex == -1) {
-				forallindex = SYM($1)->araydim;
-			}
-			if (forallindex != SYM($1)->araydim) {
-Sprintf(buf, "%s dimension not same as other dimensions used in FORALL statement",
-SYM($1)->name);
-				diag(buf, (char *)0);
-			}
-		  }
 		}
 	| NAME '@' integer
 		{lastok = $3;
@@ -697,9 +618,7 @@ fprintf(stderr, "Notice: %s is not thread safe\n", SYM($1)->name);
 				vectorize = 0;
 			}
 		 }
-#if VECTORIZE
 		 vectorize_use_func($1,$2,$4,$5,blocktype);
-#endif
 		}
 	;
 exprlist: /*nothing*/{$$ = ITEM0;}
@@ -737,85 +656,35 @@ myerr("FROM intvar = intexpr TO intexpr BY intexpr { statements }");}
 opinc: /*nothing*/ {$$ = ITEM0;}
 	| BY intexpr
 	;
-forallstmt: FORALL1 NAME {pushlocal(); SYM($2) = copylocal(SYM($2));
-			  SYM($2)->subtype |= INTGER;
-			  if (forallindex) {
-diag("Nested FORALL statements not allowed", (char *)0);
-			  }
-			  forallindex = -1;
-			}
-	stmtlist '}'
-		/* translate the whole thing using _lNAME as an integer */
-		{ replacstr($1, "{int ");
-		poplocal();
-		if (forallindex == -1) {
-diag("FORALL range is undefined since no arrays used", " within the statement");
-		}
-		Sprintf(buf, "; for (%s=0; %s<%d; %s++)", SYM($2)->name,
-			SYM($2)->name, forallindex, SYM($2)->name);
-		Insertstr($4, buf);
-		Insertstr($5, "}");
-		}
-	|FORALL1 error {
-myerr("FORALL intvar { statements }");}
-	;
 whilestmt: WHILE '(' expr ')' stmtlist '}'
 	;
 ifstmt:	IF '(' expr ')' stmtlist '}' optelseif optelse
 	;
 optelseif: /*nothing*/
 	| optelseif ELSE IF '(' expr ')' stmtlist '}'
-		{
-#if VECTORIZE
-			vectorize_if_else_stmt(blocktype);
-#endif
-		}
 	;
 optelse: /*nothing*/
 	| ELSE stmtlist '}'
-		{
-#if VECTORIZE
-			vectorize_if_else_stmt(blocktype);
-#endif
-		}
 	;
 derivblk: DERIVATIVE NAME stmtlist '}'
 		/* process using massagederiv() */
-		{massagederiv($1, $2, $3, $4, sensused); sensused = 0;}
+		{massagederiv($1, $2, $3, $4);}
 	;
 linblk: LINEAR NAME solvefor {init_linblk($2);} stmtlist '}'
 		/*massage_linblk()*/
-		{massage_linblk($1, $2, $5, $6, sensused);
-		lexcontext = 0; sensused = 0;
+		{massage_linblk($1, $2, $5, $6);
+		lexcontext = 0;
 		}
 	;
 nonlinblk: NONLINEAR NAME solvefor stmtlist '}'
 		/*massagenonlin()*/
-		{massagenonlin($1, $2, $4, $5, sensused);
-		lexcontext = 0; sensused = 0;
+		{massagenonlin($1, $2, $4, $5);
+		lexcontext = 0;
 		}
 	;
 discretblk: DISCRETE NAME stmtlist '}'
 		 /*massagediscblk()*/
 		{massagediscblk($1, $2, $3, $4);}
-	;
-partialblk: PARTIAL NAME stmtlist '}'
-		/*massagepartial()*/
-		{massagepartial($1, $2, $3, $4);
-		lexcontext = 0;
-		}
-	| PARTIAL error {
-diag("within the PARTIAL block must occur an equation with the syntax ---\n",
-"~ V' = F*DEL2(V) + G\n"); }
-	;
-pareqn: '~' PRIME '=' NAME '*' DEL2 '(' NAME ')' '+' NAME
-		{partial_eqn($2, $4, $8, $11);}
-	| '~' DEL NAME '[' firstlast ']' '=' expr
-		{partial_bndry(0, $3, $5, $8, lastok);}
-	| '~' NAME '[' firstlast ']' '=' expr
-		{partial_bndry(2, $2, $4, $7, lastok);}
-	;
-firstlast: FIRST | LAST
 	;
 functableblk: FUNCTION_TABLE NAME '(' arglist ')' units
 		{Item *b1, *b2;
@@ -824,12 +693,7 @@ functableblk: FUNCTION_TABLE NAME '(' arglist ')' units
 		b1 = insertstr($5->next, "{\n");
 		b2 = insertstr(b1->next, "}\n");
 
-#define GLOBFUNCT 1
-#if GLOBFUNCT && NMODL
 		replacstr($1, "\ndouble");
-#else
-		replacstr($1, "\nstatic double");
-#endif
 		defarg($3, $5);
 		movelist($1, b2, procfunc);
 		if (SYM($2)->subtype & FUNCT) {
@@ -837,9 +701,7 @@ functableblk: FUNCTION_TABLE NAME '(' arglist ')' units
 		}
 		SYM($2)->subtype |= FUNCT;
 		SYM($2)->usage |= FUNCT;
-#if HMODL || NMODL
 		hocfunc(s, $3, $5);
-#endif
 		function_table(s, $3, $5, b1, b2);
 		poplocal();
 		}
@@ -852,11 +714,7 @@ funcblk: FUNCTION1 NAME '(' arglist ')' units
 		{ Symbol *s = SYM($2);
 		s->varnum = argcnt_;
 		table_massage(table_list, $1, $2, $4); freelist(&table_list);
-#if GLOBFUNCT && NMODL
 		replacstr($1, "\ndouble");
-#else
-		replacstr($1, "\nstatic double");
-#endif
 		defarg($3, $5);
 		Sprintf(buf, "double _l%s;\n", s->name);
 		Insertstr($8->next, buf);
@@ -868,9 +726,7 @@ funcblk: FUNCTION1 NAME '(' arglist ')' units
 		}
 		SYM($2)->subtype |= FUNCT;
 		SYM($2)->usage |= FUNCT;
-#if HMODL || NMODL
 		hocfunc(s, $3, $5);
-#endif
 		poplocal(); freelist(&$4);}
 	;
 arglist: /*nothing*/ {pushlocal(); $$ = LIST0; argcnt_ = 0;}
@@ -898,9 +754,7 @@ procedblk: PROCEDURE NAME '(' arglist ')' units stmtlist '}'
 		}
 		SYM($2)->subtype |= PROCED;
 		SYM($2)->usage |= FUNCT;
-#if HMODL || NMODL
 		hocfunc(s, $3, $5);
-#endif
 		poplocal(); freelist(&$4);}
 	;
 netrecblk: NETRECEIVE '(' arglist ')'
@@ -916,9 +770,7 @@ diag("NET_RECEIVE block",(char*)" must have at least one argument");
 		{
 		replacstr($1, "\nstatic void _net_receive");
 		movelist($1, $7, procfunc);
-#if NMODL
 		net_receive($3, $2, $4, $6, $7);
-#endif
 		poplocal(); freelist(&$3);
 		}
 	| NETRECEIVE error { myerr("syntax: NET_RECEIVE ( weight ) {stmtlist}");}
@@ -926,22 +778,15 @@ diag("NET_RECEIVE block",(char*)" must have at least one argument");
 initstmt: INITIAL1 stmtlist '}'
 		{
 			check_block(NETRECEIVE, blocktype, "INITIAL");
-#if NMODL
 			net_init($1, $3);
-#endif
 		}
 	;
-solveblk: SOLVE NAME ifsolerr
+solveblk: SOLVE NAME
 		/* no processing, merely save in solve list */
-		{ solvequeue($2, ITEM0, blocktype, $3); }
-	| SOLVE NAME USING METHOD ifsolerr
-		{ solvequeue($2, $4, blocktype, $5); }
+		{ solvequeue($2, ITEM0, blocktype); }
+	| SOLVE NAME USING METHOD
+		{ solvequeue($2, $4, blocktype); }
 	| SOLVE error { myerr("Illegal SOLVE statement");}
-	;
-ifsolerr: /*nothing*/
-		{ $$ = ITEM0; }
-	| IFERROR stmtlist '}'
-		{ $$ = $3; }
 	;
 solvefor: /*nothing*/
 		{ if (solveforlist) {
@@ -961,9 +806,6 @@ solvefor1: SOLVEFOR NAME
 brkptblk: BREAKPOINT stmtlist '}'
 		/* move it all to modelfunc */
 		{brkpnt_exists = 1; movelist($2, $3, modelfunc);}
-	;
-terminalblk: TERMINAL stmtlist '}'
-		{movelist($2, $3, termfunc);}
 	;
 bablk: BREAKPOINT stmtlist '}'
 		{bablk(blocktype, BREAKPOINT, $2, $3);}
@@ -1014,20 +856,6 @@ aexpr:	varname
 	| error {myerr("Illegal expression");}
 	;
 
-sens:	SENS senslist
-		/* sensused flag is true */
-		{ sensused = 1;
-		  remove($1);
-		}
-	|SENS error {myerr("syntax is SENS var1, var2, var3, etc");}
-	;
-senslist: varname
-		/* put in list. Used when enclosing block is massaged */
-		{ sensparm($1); remove($1);}
-	| senslist ',' varname
-		{ sensparm($3); deltokens($2, $3);}
-	;
-
 conserve: CONSERVE {extdef2 = 0; } react '=' expr
 		{/* react originally designed for reactions and is unchanged*/
 		extdef2 = 0;
@@ -1054,8 +882,8 @@ namelist: NAME
 kineticblk: KINETIC NAME solvefor stmtlist '}'
 		/* put all reactions in a list for processing when relevant
 		   SOLVE is processed */
-		{massagekinetic($1, $2, $4, $5, sensused);
-		lexcontext = 0; sensused = 0;
+		{massagekinetic($1, $2, $4, $5);
+		lexcontext = 0;
 		}
 	;
 reaction: REACTION react REACT1 {leftreact();} react '(' expr ',' expr ')'
@@ -1074,32 +902,6 @@ react:	varname {reactname($1, lastok, ITEM0);}
 lagstmt: LAG name BY NAME
 		{lag_stmt($1, blocktype);}
 	| LAG error {myerr("Lag syntax is: LAG name BY const");}
-	;
-matchblk: MATCH {checkmatch(blocktype);} '{' matchlist '}'
-		{deltokens($1, $5);}
-	;
-matchlist: match
-	| matchlist match
-	;
-match:	name
-		{matchinitial($1);}
-	| matchname '(' expr ')' '=' expr
-		{ matchbound($1, $2, $4, $6, lastok, matchindex);
-		  if (matchindex) {
-			poplocal();
-			matchindex = SYM0;
-		  }
-		}
-	| error
-		{myerr("MATCH syntax is state0 or state(expr)=expr or\
-state[i](expr(i)) = expr(i)");}
-	;
-matchname: name
-		{matchindex = SYM0;}
-	| name '[' NAME ']'
-		{ pushlocal();
-		  matchindex = copylocal(SYM($3));
-		}
 	;
 unitblk: UNITS '{' unitbody '}'
 		{ deltokens($1,$4);}
@@ -1190,8 +992,6 @@ nrnstmt: /*nothing*/
 		{ nrn_list($2,$3);}
 	| nrnstmt ELECTRODE_CURRENT nrnlist
 		{ nrn_list($2,$3);}
-	| nrnstmt SECTION nrnlist
-		{ nrn_list($2, $3);}
 	| nrnstmt RANGE nrnlist
 		{ nrn_list($2, $3);}
 	| nrnstmt GLOBAL nrnlist
@@ -1202,8 +1002,8 @@ nrnstmt: /*nothing*/
 		{ nrn_list($2, $3);}
 	| nrnstmt EXTERNAL nrnlist
 		{ nrn_list($2, $3);}
-	| nrnstmt THREADSAFE optnrnlist
-		{ threadsafe_seen($2, $3); }
+	| nrnstmt THREADSAFE
+		{ assert_threadsafe = 1; }
 	;
 nrnuse: USEION NAME READ nrnlist valence optontology
 		{nrn_use($2, $4, ITEM0, $5);}
@@ -1223,10 +1023,6 @@ nrnlist: NAME
 	| error
 		{myerr("syntax is: keyword name , name, ..., name");}
 	;
-optnrnlist: /*nothing*/
-		{$$ = NULL;}
-	| nrnlist
-	;
 valence: /*nothing*/
 		{$$ = ITEM0;}
 	| VALENCE real
@@ -1239,21 +1035,8 @@ valence: /*nothing*/
 		}
 	;
 %%
-void yyerror(char* s)	/* called for yacc syntax error */
+void yyerror(const char* s)	/* called for yacc syntax error */
 {
 	Fprintf(stderr, "%s:\n ", s);
 }
 
-
-#if !NMODL
-void nrn_list(q1, q2)
-	Item *q1, *q2;
-{
-	/*ARGSUSED*/
-}
-void nrn_use(q1, q2, q3, q4)
-	Item *q1, *q2, *q3, *q4;
-{
-	/*ARGSUSED*/
-}
-#endif

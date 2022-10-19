@@ -111,7 +111,6 @@ set(NRNOC_FILE_LIST
     hocprax.cpp
     init.cpp
     ldifus.cpp
-    method3.cpp
     nrnnemo.cpp
     nrntimeout.cpp
     nrnversion.cpp
@@ -123,7 +122,8 @@ set(NRNOC_FILE_LIST
     secref.cpp
     solve.cpp
     synapse.cpp
-    treeset.cpp)
+    treeset.cpp
+    multicore.cpp)
 
 # =============================================================================
 # Files in ivoc directory
@@ -527,8 +527,6 @@ set(NMODL_FILES_LIST
     noccout.cpp
     parsact.cpp
     netrec_discon.cpp
-    partial.cpp
-    sens.cpp
     simultan.cpp
     solve.cpp
     symbol.cpp

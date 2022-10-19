@@ -13,19 +13,14 @@ extern char* nmodl_version_;
 List *procfunc, *initfunc, *modelfunc, *termfunc, *initlist, *firstlist;
 /* firstlist gets statements that must go before anything else */
 
-#if NMODL
 List* nrnstate;
 extern List *currents, *set_ion_variables(int), *get_ion_variables(int);
-extern List *begin_dion_stmt(), *end_dion_stmt(char*);
+extern List *begin_dion_stmt(), *end_dion_stmt(const char*);
 extern List* conductance_;
 static void conductance_cout();
-#endif
 
-extern Symbol* indepsym;
-extern List* indeplist;
-extern List* match_bound;
 extern List* defs_list;
-extern char* saveindep;
+extern const char* saveindep;
 char* modelline;
 extern int brkpnt_exists;
 extern int artificial_cell;
@@ -34,21 +29,16 @@ extern int debugging_;
 extern int point_process;
 extern int dtsav_for_nrn_state;
 
-#if CVODE
 extern Symbol* cvode_nrn_cur_solve_;
 extern Symbol* cvode_nrn_current_solve_;
 extern List* state_discon_list_;
-#endif
 
 /* VECTORIZE has not been optional for years. We leave the define there but */
 /* we no longer update the #else clauses. */
-#if VECTORIZE
 extern int vectorize;
 static List* vectorize_replacements; /* pairs of item pointer, strings */
-extern char* cray_pragma();
-extern int electrode_current; /* 1 means we should watch out for extracellular
-                    and handle it correctly */
-#endif
+extern int electrode_current;        /* 1 means we should watch out for extracellular
+                           and handle it correctly */
 
 #if __TURBOC__ || SYSV || VMS
 #define index strchr
@@ -105,31 +95,20 @@ static void ext_vdef() {
 
 /* when vectorize = 0 */
 void c_out() {
-#if NMODL
     Item* q;
-#endif
 
     Fprintf(fcout, "/* Created by Language version: %s */\n", nmodl_version_);
     Fflush(fcout);
 
-#if VECTORIZE
     if (vectorize) {
         vectorize_do_substitute();
         kin_vect2(); /* heh, heh.. bet you can't guess what this is */
         c_out_vectorize();
         return;
     }
-#endif
-#if VECTORIZE
     P("/* NOT VECTORIZED */\n#define NRN_VECTORIZED 0\n");
-#endif
     Fflush(fcout);
     /* things which must go first and most declarations */
-#if SIMSYS
-    P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mathlib.h\"\n");
-    P("#include \"common.h\"\n#include \"softbus.h\"\n");
-    P("#include \"sbtypes.h\"\n#include \"Solver.h\"\n");
-#else
     P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
     P("#undef PI\n");
     P("#define nil 0\n");
@@ -138,29 +117,22 @@ void c_out() {
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
 
-#endif
     printlist(defs_list);
     printlist(firstlist);
     P("static int _reset;\n");
-#if NMODL
     P("static ");
-#endif
     if (modelline) {
-        Fprintf(fcout, "char *modelname = \"%s\";\n\n", modelline);
+        Fprintf(fcout, "const char *modelname = \"%s\";\n\n", modelline);
     } else {
-        Fprintf(fcout, "char *modelname = \"\";\n\n");
+        Fprintf(fcout, "const char *modelname = \"\";\n\n");
     }
     Fflush(fcout); /* on certain internal errors partial output
                     * is helpful */
     P("static int error;\n");
-#if NMODL
     P("static ");
-#endif
     P("int _ninits = 0;\n");
     P("static int _match_recurse=1;\n");
-#if NMODL
     P("static void ");
-#endif
     P("_modl_cleanup(){ _match_recurse=1;}\n");
     /*
      * many machinations are required to make the infinite number of
@@ -170,10 +142,6 @@ void c_out() {
      * This one allows scop variables in functions which do not have the
      * p array as an argument
      */
-#if SIMSYS || HMODL || NMODL
-#else
-    P("static double *_p;\n\n");
-#endif
     funcdec();
     Fflush(fcout);
 
@@ -185,32 +153,16 @@ void c_out() {
     Fflush(fcout);
 
     /* Initialization function must always be present */
-#if NMODL
     P("\nstatic void initmodel() {\n  int _i; double _save;");
-#endif
-#if SIMSYS || HMODL
-    P("\ninitmodel() {\n  int _i; double _save;");
-#endif
-#if (!(SIMSYS || HMODL || NMODL))
-    P("\ninitmodel(_pp) double _pp[]; {\n int _i; double _save; _p = _pp;");
-#endif
-#if !NMODL
-    P("_initlists();\n");
-#endif
     P("_ninits++;\n");
     P(saveindep); /*see solve.c; blank if not a time dependent process*/
     P("{\n");
     initstates();
     printlist(initfunc);
-    if (match_bound) {
-        P("\n_init_match(_save);");
-    }
     P("\n}\n}\n");
     Fflush(fcout);
 
-#if NMODL
     /* generation of initmodel interface */
-#if VECTORIZE
     P("\nstatic void nrn_init(NrnThread* _nt, Memb_list* _ml, int _type){\n");
     P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
     P("#if CACHEVEC\n");
@@ -219,10 +171,6 @@ void c_out() {
     P("_cntml = _ml->_nodecount;\n");
     P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
     P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
-#else
-    P("\nstatic nrn_init(_prop, _v) Prop *_prop; double _v; {\n");
-    P(" _p = _prop->param; _ppvar = _prop->dparam;\n");
-#endif
     if (debugging_ && net_receive_) {
         P(" _tsav = -1e20;\n");
     }
@@ -235,19 +183,13 @@ void c_out() {
     printlist(get_ion_variables(1));
     P(" initmodel();\n");
     printlist(set_ion_variables(2));
-#if VECTORIZE
     P("}}\n");
-#else
-    P("}\n");
-#endif
 
     /* standard modl EQUATION without solve computes current */
     P("\nstatic double _nrn_current(double _v){double _current=0.;v=_v;");
-#if CVODE
     if (cvode_nrn_current_solve_) {
         fprintf(fcout, "if (cvode_active_) { %s(); }\n", cvode_nrn_current_solve_->name);
     }
-#endif
     P("{");
     if (currents->next != currents) {
         printlist(modelfunc);
@@ -273,7 +215,6 @@ void c_out() {
         ext_vdef();
         if (currents->next != currents) {
             printlist(get_ion_variables(0));
-#if CVODE
             cvode_rw_cur(buf);
             P(buf);
         }
@@ -281,7 +222,6 @@ void c_out() {
             fprintf(fcout, "if (cvode_active_) { %s(); }\n", cvode_nrn_cur_solve_->name);
         }
         if (currents->next != currents) {
-#endif
             P(" _g = _nrn_current(_v + .001);\n");
             printlist(begin_dion_stmt());
             if (state_discon_list_) {
@@ -384,13 +324,8 @@ void c_out() {
 
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
-#if VECTORIZE
     P("\nstatic void nrn_state(NrnThread* _nt, Memb_list* _ml, int _type){\n");
-#else
-    P("\nstatic nrn_state(_prop, _v) Prop *_prop; double _v; {\n");
-#endif
     if (nrnstate || currents->next == currents) {
-#if VECTORIZE
         P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
         if (dtsav_for_nrn_state && nrnstate) {
             P("double _dtsav = dt;\n"
@@ -404,9 +339,6 @@ void c_out() {
         P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
         P(" _nd = _ml->_nodelist[_iml];\n");
         ext_vdef();
-#else
-        P(" _p = _prop->param;  _ppvar = _prop->dparam;\n");
-#endif
         P(" v=_v;\n{\n");
         printlist(get_ion_variables(1));
         if (nrnstate) {
@@ -416,57 +348,17 @@ void c_out() {
             printlist(modelfunc);
         }
         printlist(set_ion_variables(1));
-#if VECTORIZE
         P("}}\n");
-#else
-        P("}\n");
-#endif
         if (dtsav_for_nrn_state && nrnstate) {
             P(" dt = _dtsav;");
         }
     }
     P("\n}\n");
-#else
-    /* Model function must always be present */
-#if SIMSYS
-    P("\nmodel() {\n");
-    P("double _break, _save;\n{\n");
-#else
-    P("\nmodel(_pp, _indepindex) double _pp[]; int _indepindex; {\n");
-    P("double _break, _save;");
-#if HMODL
-    P("\n{\n");
-#else
-    P("_p = _pp;\n{\n");
-#endif
-#endif
-    printlist(modelfunc);
-    P("\n}\n}\n");
-    Fflush(fcout);
-#endif
 
-#if NMODL
     P("\nstatic void terminal(){}\n");
-#else
-    /* Terminal function must always be present */
-#if SIMSYS || HMODL
-    P("\nterminal() {");
-    P("\n{\n");
-#else
-    P("\nterminal(_pp) double _pp[];{");
-    P("_p = _pp;\n{\n");
-#endif
-    printlist(termfunc);
-    P("\n}\n}\n");
-    Fflush(fcout);
-#endif
 
     /* initlists() is called once to setup slist and dlist pointers */
-#if NMODL || SIMSYS || HMODL
     P("\nstatic void _initlists() {\n");
-#else
-    P("\n_initlists() {\n");
-#endif
     P(" int _i; static int _first = 1;\n");
     P("  if (!_first) return;\n");
     printlist(initlist);
@@ -485,13 +377,11 @@ static void initstates() {
 
 
     SYMITER_STAT {
-#if NMODL
         /* ioni and iono should not have initialization lines */
 #define IONCONC 010000
         if (s->nrntype & IONCONC) {
             continue;
         }
-#endif
         Sprintf(buf, "%s0", s->name);
         if (lookup(buf)) { /* if no constant associated
                             * with a state such as the
@@ -609,15 +499,6 @@ static void funcdec() {
 
     SYMITER(NAME) {
         more = 0;
-        /*EMPTY*/ /*maybe*/
-        if (s->subtype & FUNCT) {
-#define GLOBFUNCT 1
-#if GLOBFUNCT && NMODL
-#else
-            Fprintf(fcout, "static double %s(", s->name);
-            more = 1;
-#endif
-        }
         if (s->subtype & PROCED) {
             Fprintf(fcout, "static int %s(", s->name);
             more = 1;
@@ -643,7 +524,6 @@ static void funcdec() {
     }
 }
 
-#if VECTORIZE
 /* when vectorize = 1 */
 void c_out_vectorize() {
     Item* q;
@@ -661,9 +541,9 @@ void c_out_vectorize() {
     printlist(firstlist);
     P("static int _reset;\n");
     if (modelline) {
-        Fprintf(fcout, "static char *modelname = \"%s\";\n\n", modelline);
+        Fprintf(fcout, "static const char *modelname = \"%s\";\n\n", modelline);
     } else {
-        Fprintf(fcout, "static char *modelname = \"\";\n\n");
+        Fprintf(fcout, "static const char *modelname = \"\";\n\n");
     }
     Fflush(fcout); /* on certain internal errors partial output
                     * is helpful */
@@ -689,10 +569,6 @@ void c_out_vectorize() {
     P("{\n");
     initstates();
     printlist(initfunc);
-    if (match_bound) {
-        assert(!vectorize);
-        P("\n_init_match(_save);");
-    }
     P("\n}\n}\n");
     Fflush(fcout);
 
@@ -728,13 +604,11 @@ void c_out_vectorize() {
     if (!conductance_) {
         P("\nstatic double _nrn_current(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, "
           "double _v){double _current=0.;v=_v;");
-#if CVODE
         if (cvode_nrn_current_solve_) {
             fprintf(fcout,
                     "if (cvode_active_) { %s(_p, _ppvar, _thread, _nt); }\n",
                     cvode_nrn_current_solve_->name);
         }
-#endif
         P("{");
         if (currents->next != currents) {
             printlist(modelfunc);
@@ -769,7 +643,6 @@ void c_out_vectorize() {
         ext_vdef();
         if (currents->next != currents) {
             printlist(get_ion_variables(0));
-#if CVODE
             cvode_rw_cur(buf);
             P(buf);
         }
@@ -779,7 +652,6 @@ void c_out_vectorize() {
                     cvode_nrn_cur_solve_->name);
         }
         if (currents->next != currents) {
-#endif
             if (conductance_) {
                 P(" {\n");
                 conductance_cout();
@@ -942,7 +814,7 @@ void c_out_vectorize() {
     P("_first = 0;\n}\n");
 }
 
-void vectorize_substitute(Item* q, char* str) {
+void vectorize_substitute(Item* q, const char* str) {
     if (!vectorize_replacements) {
         vectorize_replacements = newlist();
     }
@@ -972,18 +844,6 @@ void vectorize_do_substitute() {
         }
     }
 }
-
-char* cray_pragma() {
-    static char buf[] =
-        "\
-\n#if _CRAY\
-\n#pragma _CRI ivdep\
-\n#endif\
-\n";
-    return buf;
-}
-
-#endif /*VECTORIZE*/
 
 static void conductance_cout() {
     int i = 0;

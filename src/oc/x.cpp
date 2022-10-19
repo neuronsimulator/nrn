@@ -211,7 +211,7 @@ void x11_setcolor(int c) {
 }
 
 void x11_open_window(void) {
-    char* window_name = "Xhocplot";
+    const char* window_name = "Xhocplot";
     char* display_name = NULL;
     XSizeHints size_hints;
     XWindowAttributes attr;
@@ -276,17 +276,17 @@ void x11_close_window(void) {
 /*-----------------------------------------------------------------------------
  *   set_colors - set colors from user resources or defaults
  *---------------------------------------------------------------------------*/
-char* color_names[Ncolors] = {"black",
-                              "white",
-                              "yellow",
-                              "red",
-                              "green",
-                              "blue",
-                              "magenta",
-                              "cyan",
-                              "sienna",
-                              "orange",
-                              "coral"};
+const char* color_names[Ncolors] = {"black",
+                                    "white",
+                                    "yellow",
+                                    "red",
+                                    "green",
+                                    "blue",
+                                    "magenta",
+                                    "cyan",
+                                    "sienna",
+                                    "orange",
+                                    "coral"};
 
 static void set_colors(void) {
     int n;

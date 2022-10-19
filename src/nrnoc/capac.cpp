@@ -83,7 +83,6 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
     }
 }
 
-#if CVODE
 
 void nrn_mul_capacity(NrnThread* _nt, Memb_list* ml) {
     int count = ml->nodecount;
@@ -134,7 +133,6 @@ void nrn_div_capacity(NrnThread* _nt, Memb_list* ml) {
     }
 }
 
-#endif /*CVODE*/
 
 /* the rest can be constructed automatically from the above info*/
 

@@ -3416,13 +3416,8 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
     nrn_assert(
         sscanf(buf, "%s %d %d %d %d %lf\n", ppname, &ppindex, &pptype, &ncindex, &moff, &flag) ==
         6);
-#if 0
-	// use of hoc_name2obj is way too inefficient
-	se->target_ = ob2pntproc(hoc_name2obj(ppname, ppindex));
-#else
     se->target_ = SelfEvent::index2pp(pptype, ppindex);
-#endif
-    se->weight_ = nil;
+    se->weight_ = nullptr;
     if (ncindex >= 0) {
         NetCon* nc = NetConSave::index2netcon(ncindex);
         se->weight_ = nc->weight_;
@@ -5526,18 +5521,14 @@ void StateTransitionEvent::transition(int src,
                                       int dest,
                                       double* var1,
                                       double* var2,
-                                      HocCommand* hc) {
-    STETransition* st = states_[src].add_transition();
-    st->dest_ = dest;
-    st->var1_ = var1;
-    st->var2_ = var2;
-    st->hc_ = hc;
-    st->ste_ = (StateTransitionEvent*) this;
-    st->stec_ = new STECondition(pnt_, NULL);
-    st->stec_->stet_ = st;
-    if (st->var1_ == &t) {
-        st->var1_is_time_ = true;
-    }
+                                      std::unique_ptr<HocCommand> hc) {
+    STETransition& st = states_[src].add_transition(pnt_);
+    st.dest_ = dest;
+    st.var1_ = var1;
+    st.var2_ = var2;
+    st.hc_ = std::move(hc);
+    st.ste_ = this;
+    st.var1_is_time_ = (st.var1_ == &t);
 }
 
 void STETransition::activate() {

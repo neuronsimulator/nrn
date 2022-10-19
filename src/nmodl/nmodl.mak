@@ -8,11 +8,9 @@ BIN = /cygdrive/c/nrn/bin
 BNAME = $(BIN)/nocmodl.exe
 #BNAME = $(BIN)/hmodl.exe
 
-NFLAGS = -DNMODL=1 -DNOCMODL=1 -DVECTORIZE=1 -DCVODE=1 -I.
-HFLAGS = -DHMODL=1
+NFLAGS = -I.
 
 CFLAGS = -DWIN32=1 $(NFLAGS)
-#CFLAGS = $(HFLAGS)
 
 HOBJ = \
  cout.o \

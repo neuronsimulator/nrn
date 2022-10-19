@@ -393,13 +393,6 @@ void nrn_solve(NrnThread* _nt) {
 #endif
 }
 
-#if VECTORIZE && _CRAY
-extern Node*** v_node_depth_lists;
-extern Node*** v_parent_depth_lists; /* parents must be unique in each list */
-extern int* v_node_depth_count;
-extern int v_node_depth; /* so depth may be more than twice what you'd expect */
-#endif
-
 /* triangularization of the matrix equations */
 void triang(NrnThread* _nt) {
     Node *nd, *pnd;

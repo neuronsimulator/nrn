@@ -11,6 +11,7 @@
 
 extern Symbol* scop_indep;
 extern Symbol* indepsym;
+extern int vectorize;
 
 #define con(arg1, arg2, arg3)                               \
     if (t & (arg2))                                         \
@@ -69,7 +70,6 @@ void consistency() {
         con("NONLINEAR", NLINF, 0);
         con("DISCRETE", DISCF, 0);
         con("PARTIAL", PARF, 0);
-        con("STEPPED", STEP1, 0);
         con("CONSTANT UNITS FACTOR", UNITDEF, 0);
         tu = s->usage;
         if ((tu & DEP) && (tu & FUNCT)) {
@@ -85,7 +85,10 @@ void consistency() {
             exit(1);
         }
         if ((t == 0) && tu) {
-            Fprintf(stderr, "Warning: %s undefined. (declared within VERBATIM?)\n", s->name);
+            // variable `v` is always defined in data array for vectorized mod files
+            if (!(vectorize && strcmp(s->name, "v") == 0)) {
+                Fprintf(stderr, "Warning: %s undefined. (declared within VERBATIM?)\n", s->name);
+            }
         }
     }
     if (err) {

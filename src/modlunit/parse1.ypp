@@ -19,7 +19,6 @@ their usage for later error checking.
 extern Symbol *checklocal(Symbol*);
 extern int next_intoken(Item**);
 extern Item *title;
-extern int declare_level;
 extern int parse_pass, restart_pass;
 extern List *solvelist;
 
@@ -35,7 +34,7 @@ extern int breakpoint_local_seen_;
 #define R1	IFR(1)
 
 static int yylex();
-static void yyerror(char *);
+static void yyerror(const char *);
 
 #if YYBISON 
 #define myerr(arg) static int ierr=0;\
@@ -59,46 +58,44 @@ extern int lexcontext;
 
 %token	<qp>	VERBATIM COMMENT TITLE CONSTANT INDEPENDENT ASSIGNED STATE
 %token	<qp>	END_VERBATIM END_COMMENT UNITS BREAKPOINT PARAMETER INT
-%token	<qp>	INITIAL1 DERIVATIVE SOLVE USING WITH STEPPED DISCRETE
-%token	<qp>	FROM TO BY WHILE IF ELSE START1 STEP SENS SOLVEFOR
-%token	<qp>	PROCEDURE PARTIAL DEL DEL2 DEFINE1 IFERROR
-%token	<qp>	DERFUNC EQUATION TERMINAL LINEAR NONLINEAR FUNCTION1 LOCAL
+%token	<qp>	INITIAL1 DERIVATIVE SOLVE USING WITH DISCRETE
+%token	<qp>	FROM TO BY WHILE IF ELSE START1 STEP SOLVEFOR
+%token	<qp>	PROCEDURE DEL DEL2 DEFINE1
+%token	<qp>	DERFUNC EQUATION LINEAR NONLINEAR FUNCTION1 LOCAL
 %token	<qp>	METHOD LIN1 NONLIN1 FUNCTION_TABLE
 %token	<qp>	INCLUDE1 PROTECT
 %token	<qp>	'{' '}' '(' ')' '[' ']' '@' '+' '*' '-' '/' '=' '^' ':' ','
 %token	<qp>	'~'
 %token	<qp>	OR AND GT GE LT LE EQ NE NOT
 %token	<qp>	NAME PRIME REAL INTEGER DEFINEDVAR
-%token	<qp>	KINETIC CONSERVE REACTION REACT1 COMPARTMENT LONGDIFUS PARTEQN
-%token	<qp>	STRING PLOT VS LAG RESET MATCH MODEL_LEVEL SWEEP FIRST LAST
+%token	<qp>	KINETIC CONSERVE REACTION REACT1 COMPARTMENT LONGDIFUS
+%token	<qp>	STRING VS LAG SWEEP
 %token	<qp>	SPACE NEWLINE TO_EOL STUFF
 %token	<qp>	UNITBLK UNITSON UNITSOFF
 %token	<qp>	TABLE DEPEND
 
-%type	<qp>	top all all1 title verbatim comment define1 declare declare1
+%type	<qp>	top all all1 title verbatim comment define1 declare
 %type	<qp>	constblk constbody constasgn units limits tolerance
-%type	<qp>	stepblk stepbdy stepped
-%type	<qp>	Name numlist name number NUMBER integer real
+%type	<qp>	Name name number NUMBER integer real
 %type	<qp>	indepblk indepbody indepdef withby
 %type	<qp>	depblk depbody depdef opstart stateblk statbody discretblk
-%type	<qp>	plotdecl pvlist optindex proc initblk
+%type	<qp>	proc initblk
 %type	<qp>	stmtlist stmtlist1 locallist locallist1 locoptarray stmt
 %type	<qp>	asgn varname intexpr expr funccall exprlist exprlist1
 %type	<qp>	fromstmt opinc whilestmt ifstmt optelseif optelse
 %type	<qp>	tablestmt tablst dependlst
 %type	<qp>	derivblk linblk nonlinblk
-%type	<qp>	partialblk pareqn firstlast
-%type	<qp>	funcblk arglist arglist1 procedblk solveblk ifsolerr functbl
+%type	<qp>	funcblk arglist arglist1 procedblk solveblk functbl
 %type	<qp>	solvefor1 solvefor netrecblk fornetcon
 %type	<qp>	watchstmt watch1
-%type	<qp>	eqnblk terminalblk sens compartlist ldifuslist longdifus
-%type	<qp>	conserve compart namelist optnamelist kineticblk reaction react consreact
-%type	<qp>	lagstmt matchblk matchlist match matchname
+%type	<qp>	eqnblk compartlist ldifuslist longdifus
+%type	<qp>	conserve compart namelist kineticblk reaction react consreact
+%type	<qp>	lagstmt
 %type	<qp>	unitblk unitflag unitbody unitdef Units factordef include1
 
 /* interface to NEURON */
 %token	<qp>	NEURON SUFFIX NONSPECIFIC READ WRITE USEION VALENCE
-%token	<qp>	GLOBAL SECTION RANGE POINTER EXTERNAL BEFORE AFTER
+%token	<qp>	GLOBAL RANGE POINTER EXTERNAL BEFORE AFTER
 %token	<qp>	ELECTRODE_CURRENT CONSTRUCTOR DESTRUCTOR NETRECEIVE
 %token	<qp>	FOR_NETCONS WATCH THREADSAFE
 %type	<qp>	neuronblk nrnuse nrnlist valence constructblk destructblk
@@ -149,12 +146,7 @@ define1: DEFINE1 NAME integer
 Name:	NAME
 		{P1{$1->element = (void *)checklocal(SYM($1));}}
 	;
-declare: declare1
-	| MODEL_LEVEL INTEGER {declare_level = atoi(STR($2));} declare1
-		{declare_level = 0;}
-	;
-declare1: constblk | indepblk | depblk | stateblk | stepblk
-	| plotdecl | unitblk | neuronblk
+declare: constblk | indepblk | depblk | stateblk | unitblk | neuronblk
 	;
 constblk: CONSTANT '{' constbody '}'
 	| PARAMETER '{' constbody '}'
@@ -188,18 +180,6 @@ limits: /*nothing*/
 tolerance: /*nothing*/
 		{$$ = ITEM0;}
 	| LT number GT
-	;
-stepblk: STEPPED '{' stepbdy '}'
-	;
-stepbdy: /*nothing*/
-		{$$ = ITEM0;}
-	| stepbdy stepped
-	;
-stepped: NAME '=' numlist units
-		{P1{$$ = itemarray(3,$1, $4, $3); declare(STEP1, $1, $$);}}
-	;
-numlist: number ',' number
-	| numlist ',' number
 	;
 name:	Name	{lastok = $1;}
 	| PRIME {lastok = $1;}
@@ -264,17 +244,6 @@ statbody: /*nothing*/
 	| statbody depdef
 		{P1{declare(STAT, ITMA($2)[0], $2);}}
 	;
-plotdecl: PLOT pvlist VS name optindex
-	| PLOT error { myerr("PLOT namelist VS name");}
-	;
-pvlist:	name optindex
-	| pvlist ',' name optindex
-	;
-optindex: /*nothing*/
-		{ $$ = ITEM0;}
-	| '[' integer ']'
-		{ $$ = $2;}
-	;
 unitblk: UNITBLK '{' unitbody '}'
 	;
 unitbody: /*nothing*/
@@ -334,15 +303,11 @@ proc:	 {blocktype = INITIAL1;} initblk
 		{$$ = $2;}
 	| {blocktype = PROCEDURE;} netrecblk
 		{$$ = $2;}
-	| {blocktype = TERMINAL;} terminalblk
-		{$$ = $2;}
 	| {blocktype = DISCRETE;} discretblk
 		{$$ = $2;}
 	| {blocktype = CONSTRUCTOR;} constructblk
 		{$$ = $2;}
 	| {blocktype = DESTRUCTOR;} destructblk
-		{$$ = $2;}
-	| {lexcontext = blocktype = PARTIAL;} partialblk
 		{$$ = $2;}
 	| {lexcontext = blocktype = KINETIC;
 		P3 R0{unitflagsave=unitonflag; unitonflag=0;}}
@@ -401,16 +366,12 @@ stmt:	asgn
 	| solveblk
 	| verbatim 
 	| comment
-	| sens
 	| reaction
 	| conserve
 	| compart
 	| longdifus
 	| lagstmt
 	| tablestmt
-	| pareqn
-	| RESET
-	| matchblk
 	| unitflag
 	| initstmt
 	| watchstmt
@@ -554,32 +515,6 @@ nonlinblk: NONLINEAR NAME solvefor stmtlist
 discretblk: DISCRETE NAME stmtlist
 		{P1{$$ = itemarray(3, $1, $2, $3); declare(DISCF, $2, $$);}}
 	;
-partialblk: PARTIAL NAME stmtlist
-		{P1{$$ = itemarray(3, $1, $2, $3); declare(PARF, $2, $$);}}
-	;
-pareqn: PARTEQN PRIME '=' NAME '*' DEL2 '(' NAME ')' '+' NAME
-		{lastok = $11;
-		 P3{
-			unit_push($4); unit_del(2); unit_mul();
-			unit_push($8); unit_mul();
-			unit_push($11); unit_cmp($4, $10, $11);
-			unit_push($2); unit_swap(); unit_cmp($2, $3, $11);
-			unit_pop();
-		}}
-	| PARTEQN DEL NAME '[' firstlast ']' '=' expr
-		{P3{
-			unit_del(1);
-			unit_push($3); unit_mul(); unit_swap();
-			unit_cmp($2,$7,lastok); unit_pop();
-		}}
-	| PARTEQN NAME '[' firstlast ']' '=' expr
-		{P3{unit_push($2); unit_swap();
-		    unit_cmp($2,$6,lastok); unit_pop();
-		}}
-	| PARTEQN error {myerr("Illeqal partial diffeq");}
-	;
-firstlast: FIRST | LAST
-	;
 funcblk: FUNCTION1 NAME '(' arglist ')'	units
 	  	{P1{pushlocal($2, ITEM0); func_unit($2, $6);}}
 	  stmtlist
@@ -692,16 +627,11 @@ fornetcon: FOR_NETCONS '(' arglist ')'
 	| FOR_NETCONS error { myerr("Illegal FOR_NETCONS statement");}
 	;
 
-solveblk: SOLVE NAME ifsolerr
-		{P1{$$ = itemarray(4, $1, $2, ITEM0, $3); lappenditem(solvelist, $$);}}
-	| SOLVE NAME USING METHOD ifsolerr
-		{P1{$$ = itemarray(4, $1, $2, $3, $4); lappenditem(solvelist, $$);}}
+solveblk: SOLVE NAME
+		{P1{$$ = itemarray(4, $1, $2, ITEM0); lappenditem(solvelist, $$);}}
+	| SOLVE NAME USING METHOD
+		{P1{$$ = itemarray(4, $1, $2, $3); lappenditem(solvelist, $$);}}
 	| SOLVE error { myerr("Illegal SOLVE statement");}
-	;
-ifsolerr: /*nothing*/
-		{ $$ = ITEM0; }
-	| IFERROR stmtlist
-		{ $$ = $2; }
 	;
 solvefor: /*nothing*/
 		{$$ = ITEM0;}
@@ -721,12 +651,6 @@ solvefor1: SOLVEFOR NAME
 	;
 eqnblk: BREAKPOINT stmtlist
 	;
-terminalblk: TERMINAL stmtlist
-	;
-sens:	SENS namelist
-	|SENS error {myerr("syntax is SENS var1, var2, var3, etc");}
-	;
-
 conserve: CONSERVE consreact '=' expr
 		{P3{unit_cmp($2, $3, lastok);}}
 	| CONSERVE error {myerr("Illegal CONSERVE syntax");}
@@ -807,20 +731,6 @@ dependlst: /*Nothing*/
 		{$$ = ITEM0;}
 	| DEPEND namelist
 	;
-matchblk: MATCH '{' matchlist '}'
-	;
-matchlist: match
-	| matchlist match
-	;
-match:	name
-	| matchname '(' expr ')' '=' expr
-	| error
-		{myerr("MATCH syntax is state0 or state(expr)=expr or\
-state[i](expr(i)) = expr(i)");}
-	;
-matchname: name
-	| name '[' NAME ']'
-	;
 
 neuronblk: NEURON 
 			{
@@ -842,19 +752,13 @@ nrnstmt: /*nothing*/
 		{ P1{nrn_list($2,$3);}}
 	| nrnstmt RANGE nrnlist
 		{ P1{nrn_list($2, $3);}}
-	| nrnstmt SECTION nrnlist
-		{ P1{nrn_list($2, $3);}}
 	| nrnstmt GLOBAL nrnlist
 		{ P1{nrn_list($2, $3);}}
         | nrnstmt POINTER nrnlist
                 { P1{nrn_list($2, $3);}}
         | nrnstmt EXTERNAL nrnlist
                 { P1{nrn_list($2, $3);}}
-	| nrnstmt THREADSAFE optnamelist
-	;
-optnamelist: /* nothing */
-		{$$ = NULL;}
-	| namelist
+	| nrnstmt THREADSAFE
 	;
 nrnuse: USEION NAME READ nrnlist valence
 		{P1{nrn_use($2, $4, ITEM0);}}
@@ -882,7 +786,7 @@ valence: /*nothing*/
 %%
 	/* end of grammar */
 
-static void yyerror(char* s)	/* called for yacc syntax error */
+static void yyerror(const char* s)	/* called for yacc syntax error */
 {
 	Fprintf(stderr, "%s:\n ", s);
 }

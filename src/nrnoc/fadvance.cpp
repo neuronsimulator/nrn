@@ -73,15 +73,6 @@ extern double hoc_epsilon;
 
 static void update(NrnThread*);
 
-#if 0
-/*
-  1 to save space, but must worry about other uses of the memb_list
-  such as in netcvode.cpp in fornetcon_prepare
-*/
-extern short* nrn_is_artificial_;
-extern cTemplate** nrn_pnt_template_;
-#endif
-
 #define NRNCTIME          1
 #define NONVINT_ODE_COUNT 5
 
@@ -153,9 +144,7 @@ void (*nrnthread_v_transfer_)(NrnThread* nt);
 void (*nrnthread_vi_compute_)(NrnThread* nt);
 #endif
 
-#if CVODE
 int cvode_active_;
-#endif
 
 int stoprun;
 int nrn_use_fast_imem;
@@ -166,14 +155,12 @@ int nrn_use_fast_imem;
 void fadvance(void) {
     nrn::Instrumentor::phase p_fadvance("fadvance");
     tstopunset;
-#if CVODE
     if (cvode_active_) {
         cvode_fadvance(-1.);
         tstopunset;
         hoc_retpushx(1.);
         return;
     }
-#endif
     if (tree_changed) {
         setup_topology();
     }
@@ -203,7 +190,7 @@ static int batch_size;
 static int batch_n;
 static double** batch_var;
 
-static void batch_open(char* name, double tstop, double tstep, char* comment) {
+static void batch_open(char* name, double tstop, double tstep, const char* comment) {
     if (batch_file) {
         batch_close();
     }
@@ -249,7 +236,6 @@ void batch_run(void) /* avoid interpreter overhead */
 {
     double tstop, tstep, tnext;
     char* filename;
-    char* comment;
 
     tstopunset;
     tstop = chkarg(1, 0., 1e20);
@@ -259,20 +245,14 @@ void batch_run(void) /* avoid interpreter overhead */
     } else {
         filename = 0;
     }
-    if (ifarg(4)) {
-        comment = gargstr(4);
-    } else {
-        comment = "";
-    }
+    auto* comment = ifarg(4) ? hoc_gargstr(4) : "";
 
     if (tree_changed) {
         setup_topology();
     }
-#if VECTORIZE
     if (v_structure_change) {
         v_setup_vectors();
     }
-#endif
     batch_open(filename, tstop, tstep, comment);
     batch_out();
     if (cvode_active_) {
@@ -608,16 +588,10 @@ static void update(NrnThread* _nt) {
 #endif
     { /* use original non-vectorized update */
         if (secondorder) {
-#if _CRAY
-#pragma _CRI ivdep
-#endif
             for (i = i1; i < i2; ++i) {
                 NODEV(_nt->_v_node[i]) += 2. * NODERHS(_nt->_v_node[i]);
             }
         } else {
-#if _CRAY
-#pragma _CRI ivdep
-#endif
             for (i = i1; i < i2; ++i) {
                 NODEV(_nt->_v_node[i]) += NODERHS(_nt->_v_node[i]);
             }
@@ -784,7 +758,6 @@ void fmatrix(void) {
 }
 
 void nonvint(NrnThread* _nt) {
-#if VECTORIZE
     int i = 0;
     double w;
     int measure = 0;
@@ -824,10 +797,8 @@ void nonvint(NrnThread* _nt) {
     long_difus_solve(0, _nt); /* if any longitudinal diffusion */
     nrn_nonvint_block_fixed_step_solve(_nt->id);
     nrn::Instrumentor::phase_end("state-update");
-#endif
 }
 
-#if VECTORIZE
 int nrn_errno_check(int i) {
     int ierr;
     ierr = hoc_errno_check();
@@ -841,23 +812,6 @@ int nrn_errno_check(int i) {
     }
     return ierr;
 }
-#else
-int nrn_errno_check(Prop* p, int inode, Section* sec) {
-    int ierr;
-    char* secname();
-    ierr = hoc_errno_check();
-    if (ierr) {
-        fprintf(stderr,
-                "%d errno set at t=%g during call to mechanism %s at node %d in section %s\n",
-                nrnmpi_myid,
-                t,
-                memb_func[p->_type].sym->name,
-                inode,
-                secname(sec));
-    }
-    return ierr;
-}
-#endif
 
 void frecord_init(void) { /* useful when changing states after an finitialize() */
     int i;
@@ -909,15 +863,11 @@ void nrn_finitialize(int setv, double v) {
     clear_event_queue();
     nrn_spike_exchange_init();
     nrn_random_play();
-#if VECTORIZE
     nrn_play_init(); /* Vector.play */
     for (i = 0; i < nrn_nthread; ++i) {
         nrn_deliver_events(nrn_threads + i); /* The play events at t=0 */
     }
     if (setv) {
-#if _CRAY
-#pragma _CRI ivdep
-#endif
         FOR_THREADS(_nt)
         for (i = 0; i < _nt->end; ++i) {
             NODEV(_nt->_v_node[i]) = v;
@@ -943,9 +893,6 @@ void nrn_finitialize(int setv, double v) {
     for (i = 0; i < nrn_nthread; ++i) {
         nrn_ba(nrn_threads + i, BEFORE_INITIAL);
     }
-#if _CRAY
-    cray_node_init();
-#endif
     /* the INITIAL blocks are ordered so that mechanisms that write
        concentrations are after ions and before mechanisms that read
        concentrations.
@@ -970,80 +917,58 @@ void nrn_finitialize(int setv, double v) {
         if (nrn_is_artificial_[i])
             if (memb_func[i].initialize) {
                 Pvmi s = memb_func[i].initialize;
-#if 0
-                if (nrn_is_artificial_[i]) {
-                /*
-                     I hope the space saving of the memb_list arrays is worth
-                     doing this specifically. And if art cells are needed
-                     in the memb_list anywhere else we will have do do something
-                     similar to this. This gives up vectorization but this is only
-                     initialization and all the other use of artcell should be
-                     event driven.
-                */
-                Prop* p;
-                hoc_Item* q;
-                hoc_List* list = nrn_pnt_template_[i]->olist;
-                ITERATE(q, list) {
-                    Object* obj = OBJ(q);
-                    Prop* p = ((Point_process*)obj->u.this_pointer)->prop;
-                    (*s)((Node*)0, p->param, p->dparam);
-                }
-                }else if (memb_list[i].nodecount){
-#else
                 if (memb_list[i].nodecount) {
-#endif
-                (*s)(nrn_threads, memb_list + i, i);
+                    (*s)(nrn_threads, memb_list + i, i);
+                }
+                if (errno) {
+                    if (nrn_errno_check(i)) {
+                        hoc_warning("errno set during call to INITIAL block", (char*) 0);
+                    }
+                }
             }
-        if (errno) {
-            if (nrn_errno_check(i)) {
-                hoc_warning("errno set during call to INITIAL block", (char*) 0);
+    }
+    if (use_sparse13) {
+        nrndae_init();
+    }
+
+    init_net_events();
+    for (i = 0; i < nrn_nthread; ++i) {
+        nrn_ba(nrn_threads + i, AFTER_INITIAL);
+    }
+    nrn_fihexec(1); /* after INITIAL blocks, before fcurrent*/
+
+    for (i = 0; i < nrn_nthread; ++i) {
+        nrn_deliver_events(nrn_threads + i); /* The INITIAL sent events at t=0 */
+    }
+    if (cvode_active_) {
+        cvode_finitialize(t);
+        nrn_record_init();
+    } else {
+        state_discon_allowed_ = 0;
+        for (i = 0; i < nrn_nthread; ++i) {
+            setup_tree_matrix(nrn_threads + i);
+            if (nrn_use_fast_imem) {
+                nrn_calc_fast_imem_fixedstep_init(nrn_threads + i);
             }
         }
-    }
-}
-#endif
-if (use_sparse13) {
-    nrndae_init();
-}
-
-init_net_events();
-for (i = 0; i < nrn_nthread; ++i) {
-    nrn_ba(nrn_threads + i, AFTER_INITIAL);
-}
-nrn_fihexec(1); /* after INITIAL blocks, before fcurrent*/
-
-for (i = 0; i < nrn_nthread; ++i) {
-    nrn_deliver_events(nrn_threads + i); /* The INITIAL sent events at t=0 */
-}
-if (cvode_active_) {
-    cvode_finitialize(t);
-    nrn_record_init();
-} else {
-    state_discon_allowed_ = 0;
-    for (i = 0; i < nrn_nthread; ++i) {
-        setup_tree_matrix(nrn_threads + i);
-        if (nrn_use_fast_imem) {
-            nrn_calc_fast_imem_fixedstep_init(nrn_threads + i);
+        state_discon_allowed_ = 1;
+        nrn_record_init();
+        for (i = 0; i < nrn_nthread; ++i) {
+            fixed_record_continuous(nrn_threads + i);
         }
     }
-    state_discon_allowed_ = 1;
-    nrn_record_init();
     for (i = 0; i < nrn_nthread; ++i) {
-        fixed_record_continuous(nrn_threads + i);
+        nrn_deliver_events(nrn_threads + i); /* The record events at t=0 */
     }
-}
-for (i = 0; i < nrn_nthread; ++i) {
-    nrn_deliver_events(nrn_threads + i); /* The record events at t=0 */
-}
 #if NRNMPI
-nrn_spike_exchange(nrn_threads);
+    nrn_spike_exchange(nrn_threads);
 #endif
-if (nrn_allthread_handle) {
-    (*nrn_allthread_handle)();
-}
+    if (nrn_allthread_handle) {
+        (*nrn_allthread_handle)();
+    }
 
-nrn_fihexec(2); /* just before return */
-nrn::Instrumentor::phase_end("finitialize");
+    nrn_fihexec(2); /* just before return */
+    nrn::Instrumentor::phase_end("finitialize");
 }
 
 void finitialize(void) {

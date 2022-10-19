@@ -863,27 +863,6 @@ void mech_insert1(Section* sec, int type) {
     n = sec->nnode - 1;
     pnd = sec->pnode;
     nd = pnd[0];
-#if METHOD3
-    /* For method3 the parent must also have the property. Also
-       the last node may have it because one of the connecting sections
-       have it. */
-    if (_method3) {
-        Section* psec = sec->parentsec;
-
-        /* must be in parent */
-        Node* pnd = sec->parentnode;
-        if (!nrn_mechanism(s->subtype, pnd)) {
-            prop_alloc(&pnd->prop, type, pnd);
-        }
-        /* method3 has mechanisms in the "zero area" node. */
-        n = sec->nnode;
-
-        /* may already be in last node */
-        if (nrn_mechanism(type, sec->pnode[n - 1])) {
-            --n;
-        }
-    }
-#endif
     m = nrn_mechanism(type, nd);
     if (!m) { /* all nodes get the property */
         for (i = n - 1; i >= 0; i--) {
@@ -930,11 +909,6 @@ void mech_uninsert1(Section* sec, Symbol* s) {
         hoc_warning("Not allowed to uninsert ions at this time", s->name);
         return;
     }
-#if METHOD3
-    if (_method3) {
-        hoc_execerror("Can't uninsert mechanisms when spatial method is non_zero", s->name);
-    }
-#endif
     n = sec->nnode;
     for (i = 0; i < n; ++i) {
         mnext = sec->pnode[i]->prop;
@@ -960,17 +934,7 @@ void nrn_rangeconst(Section* sec, Symbol* s, double* pd, int op) {
     int indx;
     double* dpr;
     double d = *pd;
-#if METHOD3
-    /* this is highly restrictive at this time. All parameters except
-    morphology must be uniform across section connections because
-    the density of channels is assumed to be uniform during matrix
-    construction. ie the node does not know which side gets which value
-    */
-    if (_method3) {
-        n = sec->nnode;
-    } else
-#endif
-        n = sec->nnode - 1;
+    n = sec->nnode - 1;
     if (s->u.rng.type == VINDEX) {
         nd = node_ptr(sec, 0., (double*) 0);
         if (op) {
@@ -1035,15 +999,6 @@ void nrn_rangeconst(Section* sec, Symbol* s, double* pd, int op) {
                     *dpr = d;
                 }
             }
-        }
-#endif
-#if METHOD3
-        /* this is a hack and way too restrictive */
-        if (_method3) { /*the parent node also gets the value */
-            if (tree_changed) {
-                setup_topology();
-            }
-            *(dprop(s, indx, sec->parentsec, sec->parentnode)) = *pd;
         }
 #endif
     }
@@ -1202,12 +1157,6 @@ void range_interpolate(void) /*symbol at pc, 4 values on stack*/
     Node* nd;
 
     op = (pc++)->i;
-#if METHOD3
-    if (_method3) {
-        hoc_execerror("Range variable interpolation not implemented",
-                      "for new spatial discretization methods");
-    }
-#endif
     y2 = xpop();
     y1 = xpop();
     x2 = xpop();
@@ -1475,12 +1424,7 @@ int node_index(Section* sec, double x) /* returns nearest index to x */
     if (x < 0. || x > 1.) {
         hoc_execerror("range variable domain is 0<=x<=1", (char*) 0);
     }
-#if METHOD3
-    if (_method3) {
-        n = sec->nnode;
-    } else
-#endif
-        n = (double) (sec->nnode - 1);
+    n = (double) (sec->nnode - 1);
     assert(n >= 0.);
     i = n * x;
     if (i == (int) n) {
@@ -1519,12 +1463,7 @@ double cable_prop_eval(Symbol* sym) {
     sec = nrn_sec_pop();
     switch (sym->u.rng.type) {
     case 0: /* not in property list so must be nnode */
-#if METHOD3
-        if (_method3) {
-            return (double) sec->nnode;
-        } else
-#endif
-            return (double) sec->nnode - 1;
+        return (double) sec->nnode - 1;
     case CABLESECTION:
         return sec->prop->dparam[sym->u.rng.index].val;
     default:
@@ -1562,16 +1501,9 @@ void nrn_change_nseg(Section* sec, int n) {
     if (n < 1) {
         hoc_execerror("nseg", " must be positive");
     }
-#if METHOD3
-    if (_method3) {
-        --n;
-    }
-#else
     if (sec->nnode == n + 1) {
         return;
-    } else
-#endif
-    {
+    } else {
         Node** pnd;
         int i;
         int nold = sec->nnode;
@@ -1580,11 +1512,6 @@ void nrn_change_nseg(Section* sec, int n) {
         diam_changed = 1;
         sec->recalc_area_ = 1;
         pnd = sec->pnode;
-#if METHOD3
-        if (_method3) {
-            ++n;
-        }
-#endif
 #if KEEP_NSEG_PARM
         if (!keep_nseg_parm_ || nold == 0)
 #endif
@@ -1755,16 +1682,6 @@ void setup_topology(void) {
         }
     }
 
-#if METHOD3
-    if (_method3) {
-        int i;
-        Node* nd = root /*obsolete*/ section->pnode;
-        for (i = 0; i < unconnected; i++) {
-            IGNORE(prop_alloc(&nd[i].prop, MORPHOLOGY, nd + i));
-            IGNORE(prop_alloc(&nd[i].prop, CAP, nd + i));
-        }
-    }
-#endif
     section_order();
     tree_changed = 0;
     diam_changed = 1;
@@ -1890,11 +1807,6 @@ double nrn_arc_position(Section* sec, int i)
 	if (i == n) {
 		x = 1.;
 	}else{
-#if METHOD3
-		if (_method3) {
-			x = (i+1)/((double)n);
-		}else
-#endif
 		x = (i+.5)/((double)n);
 	}
 	if (sec->prop->dparam[3].val) {
@@ -1921,12 +1833,7 @@ int segment_limits(double* pdx) {
     double l;
 
     sec = chk_access();
-#if METHOD3
-    if (_method3) {
-        n = sec->nnode;
-    } else
-#endif
-        n = sec->nnode - 1;
+    n = sec->nnode - 1;
     /*	l = sec->prop->dparam[2].val;*/
     l = 1.;
     *pdx = l / ((double) n);
@@ -1943,23 +1850,6 @@ Node* node_exact(Section* sec, double x) {
     Node* node;
 
     assert(sec);
-#if METHOD3
-    if (_method3) {
-        inode = (int) (x * sec->nnode + .5); /* ranges from 0 to nnode */
-        if (tree_changed) {
-            setup_topology();
-        }
-        if (sec->prop->dparam[3].val) {
-            inode = sec->nnode - inode;
-        }
-        --inode;
-        if (inode < 0) {
-            inode = sec->parentnode;
-            sec = sec->parentsec;
-            *psec = sec;
-        }
-    } else
-#endif
     {
         if (x <= 0. || x >= 1.) {
             x = (x < 0.) ? 0. : x;
@@ -2007,14 +1897,12 @@ int nrn_get_mechtype(const char* mechname) {
     return s->subtype;
 }
 
-#if VECTORIZE
 int nrn_instance_count(int mechtype) {
     if (v_structure_change) {
         v_setup_vectors();
     }
     return memb_list[mechtype].nodecount;
 }
-#endif
 
 #if EXTRACELLULAR
 /* want to handle vext(0), vext(1) correctly. No associated i_membrane though.*/

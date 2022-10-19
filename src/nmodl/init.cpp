@@ -11,7 +11,7 @@ List* intoken;
 char buf[NRN_BUFSIZE]; /* volatile temporary buffer */
 
 static struct { /* Keywords */
-    char* name;
+    const char* name;
     short kval;
 } keywords[] = {{"VERBATIM", VERBATIM},
                 {"COMMENT", COMMENT},
@@ -21,32 +21,27 @@ static struct { /* Keywords */
                 {"INDEPENDENT", INDEPENDENT},
                 {"ASSIGNED", DEPENDENT},
                 {"INITIAL", INITIAL1},
-                {"TERMINAL", TERMINAL},
                 {"DERIVATIVE", DERIVATIVE},
                 {"EQUATION", EQUATION},
                 {"BREAKPOINT", BREAKPOINT},
                 {"CONDUCTANCE", CONDUCTANCE},
                 {"SOLVE", SOLVE},
                 {"STATE", STATE},
-                {"STEPPED", STEPPED},
                 {"LINEAR", LINEAR},
                 {"NONLINEAR", NONLINEAR},
                 {"DISCRETE", DISCRETE},
                 {"FUNCTION", FUNCTION1},
                 {"FUNCTION_TABLE", FUNCTION_TABLE},
                 {"PROCEDURE", PROCEDURE},
-                {"PARTIAL", PARTIAL},
                 {"INT", INT},
                 {"DEL2", DEL2},
                 {"DEL", DEL},
                 {"LOCAL", LOCAL},
                 {"METHOD", USING},
                 {"STEADYSTATE", USING},
-                {"SENS", SENS},
                 {"STEP", STEP},
                 {"WITH", WITH},
                 {"FROM", FROM},
-                {"FORALL", FORALL1},
                 {"TO", TO},
                 {"BY", BY},
                 {"if", IF},
@@ -56,18 +51,11 @@ static struct { /* Keywords */
                 {"DEFINE", DEFINE1},
                 {"KINETIC", KINETIC},
                 {"CONSERVE", CONSERVE},
-                {"PLOT", PLOT},
                 {"VS", VS},
                 {"LAG", LAG},
-                {"RESET", RESET},
-                {"MATCH", MATCH},
-                {"MODEL_LEVEL", MODEL_LEVEL}, /* inserted by merge */
                 {"SWEEP", SWEEP},
-                {"FIRST", FIRST},
-                {"LAST", LAST},
                 {"COMPARTMENT", COMPARTMENT},
                 {"LONGITUDINAL_DIFFUSION", LONGDIFUS},
-                {"IFERROR", IFERROR},
                 {"SOLVEFOR", SOLVEFOR},
                 {"UNITS", UNITS},
                 {"UNITSON", UNITSON},
@@ -80,7 +68,6 @@ static struct { /* Keywords */
                 {"ARTIFICIAL_CELL", SUFFIX},
                 {"NONSPECIFIC_CURRENT", NONSPECIFIC},
                 {"ELECTRODE_CURRENT", ELECTRODE_CURRENT},
-                {"SECTION", SECTION},
                 {"RANGE", RANGE},
                 {"USEION", USEION},
                 {"READ", READ},
@@ -111,13 +98,13 @@ static struct { /* Keywords */
  * readable
  */
 static struct { /* special output tokens */
-    char* name;
+    const char* name;
     short subtype;
     Symbol** p;
 } special[] = {{";", SEMI, &semi}, {"{", BEGINBLK, &beginblk}, {"}", ENDBLK, &endblk}, {0, 0, 0}};
 
 static struct { /* numerical methods */
-    char* name;
+    const char* name;
     long subtype; /* All the types that will work with this */
     short varstep;
 } methods[] = {
@@ -133,38 +120,38 @@ static struct { /* numerical methods */
     {"after_cvode", 0, 0},      {"cvode_t", 0, 0},
     {"cvode_t_v", 0, 0},        {0, 0, 0}};
 
-static char* extdef[] = {/* external names that can be used as doubles
-                          * without giving an error message */
+static const char* extdef[] = {/* external names that can be used as doubles
+                                * without giving an error message */
 #include "extdef.h"
-                         0};
+                               0};
 
-static char* extdef2[] = {/* external function names that can be used
-                           * with array and function name arguments  */
+static const char* extdef2[] = {/* external function names that can be used
+                                 * with array and function name arguments  */
 #include "extdef2.h"
-                          0};
+                                0};
 
-static char* extdef3[] = {/* function names that get two reset arguments
-                           * added */
-                          "threshold",
-                          "squarewave",
-                          "sawtooth",
-                          "revsawtooth",
-                          "ramp",
-                          "pulse",
-                          "perpulse",
-                          "step",
-                          "perstep",
-                          "stepforce",
-                          "schedule",
-                          0};
+static const char* extdef3[] = {/* function names that get two reset arguments
+                                 * added */
+                                "threshold",
+                                "squarewave",
+                                "sawtooth",
+                                "revsawtooth",
+                                "ramp",
+                                "pulse",
+                                "perpulse",
+                                "step",
+                                "perstep",
+                                "stepforce",
+                                "schedule",
+                                0};
 
-static char* extdef4[] = {/* functions that need a first arg of NrnThread* */
-                          "at_time",
-                          0};
+static const char* extdef4[] = {/* functions that need a first arg of NrnThread* */
+                                "at_time",
+                                0};
 
-static char* extdef5[] = {/* the extdef names that are not threadsafe */
+static const char* extdef5[] = {/* the extdef names that are not threadsafe */
 #include "extdef5.h"
-                          0};
+                                0};
 
 List *constructorfunc, *destructorfunc;
 
@@ -221,7 +208,5 @@ void init() {
     plotlist = newlist();
     constructorfunc = newlist();
     destructorfunc = newlist();
-#if NMODL
     nrninit();
-#endif
 }

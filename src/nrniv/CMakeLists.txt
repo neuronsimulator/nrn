@@ -84,8 +84,7 @@ add_dependencies(generated_source_files nocmodl_generated_files)
 add_executable(nocmodl ${NRN_NMODL_SRC_FILES} "${NRN_NMODL_GEN}/lex.cpp"
                        "${NRN_NMODL_GEN}/parse1.cpp" "${NRN_NMODL_GEN}/diffeq.cpp")
 cpp_cc_configure_sanitizers(TARGET nocmodl)
-target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 NOCMODL=1 CVODE=1
-                                           VECTORIZE=1 NRN_DYNAMIC_UNITS=1)
+target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1 NRN_DYNAMIC_UNITS=1)
 # Otherwise the generated code in the binary directory does not find headers in the modlunit source
 # directory and the source files in the source directory do not find generated headers in the binary
 # directory.
@@ -257,11 +256,6 @@ set_property(
   PROPERTY COMPILE_DEFINITIONS OOP=1 HOC=1 INTERVIEWS=1)
 
 set_property(
-  SOURCE ${NRN_OC_SRC_DIR}/code.cpp ${NRN_OC_SRC_DIR}/hoc_init.cpp ${NRN_OC_SRC_DIR}/hoc_oop.cpp
-  APPEND
-  PROPERTY COMPILE_DEFINITIONS CABLE=1)
-
-set_property(
   SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
   APPEND
   PROPERTY COMPILE_DEFINITIONS USE_LIBNRNPYTHON_MAJORMINOR=${USE_LIBNRNPYTHON_MAJORMINOR})
@@ -274,7 +268,7 @@ set_property(
 set_property(
   SOURCE ${NRN_NRNIV_SRC_FILES} ${NRN_NRNCVODE_SRC_FILES}
   APPEND
-  PROPERTY COMPILE_DEFINITIONS USEMATRIX=1 USECVODE=1 CABLE=1 USEBBS=1 OOP=1)
+  PROPERTY COMPILE_DEFINITIONS USEMATRIX=1 USECVODE=1 USEBBS=1 OOP=1)
 
 set_property(
   SOURCE ${NRN_SCOPMATH_SRC_FILES}
@@ -317,7 +311,17 @@ if(NRN_HAVE_NVHPC_COMPILER)
   set_source_files_properties(
     ${PROJECT_SOURCE_DIR}/src/oc/math.cpp PROPERTIES COMPILE_DEFINITIONS NVHPC_CHECK_FE_EXCEPTIONS=1
                                                      COMPILE_OPTIONS -O1)
-
+elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
+  # When optimisation is enabled then icpc apparently does not set errno
+  set_property(
+    SOURCE ${PROJECT_SOURCE_DIR}/src/oc/math.cpp
+    APPEND
+    PROPERTY COMPILE_OPTIONS -fmath-errno -fno-builtin)
+  # At -O0 then the Intel compiler generates extremely slow code for this file
+  set_property(
+    SOURCE ${PROJECT_SOURCE_DIR}/src/oc/code.cpp
+    APPEND
+    PROPERTY COMPILE_OPTIONS -O1)
 endif()
 
 if(NRN_ENABLE_MPI_DYNAMIC)

@@ -47,7 +47,7 @@ static int UnitsOn = 0;
 extern "C" {
 extern double fabs(double);
 }  // extern "C"
-extern void diag(char*, char*);
+extern void diag(const char*, const char*);
 #define IFUNITS       \
     {                 \
         if (!UnitsOn) \
@@ -65,28 +65,28 @@ extern void diag(char*, char*);
 
 /* if MODLUNIT environment variable not set then look in the following places*/
 #if MAC
-static char* dfile = ":lib:nrnunits.lib" SUFFIX;
+static const char* dfile = ":lib:nrnunits.lib" SUFFIX;
 #else
 #if defined(NEURON_DATA_DIR)
-static char* dfile = NEURON_DATA_DIR "/lib/nrnunits.lib" SUFFIX;
+static const char* dfile = NEURON_DATA_DIR "/lib/nrnunits.lib" SUFFIX;
 #else
-static char* dfile = "/usr/lib/units";
+static const char* dfile = "/usr/lib/units";
 #endif
 #endif
 #if defined(__TURBOC__) || defined(__GO32__)
-static char* dfilealt = "/nrn/lib/nrnunits.lib" SUFFIX;
+static const char* dfilealt = "/nrn/lib/nrnunits.lib" SUFFIX;
 #else
 #if MAC
-static char* dfilealt = "::lib:nrnunits.lib" SUFFIX;
+static const char* dfilealt = "::lib:nrnunits.lib" SUFFIX;
 #else
-static char* dfilealt = "../../share/lib/nrnunits.lib" SUFFIX;
+static const char* dfilealt = "../../share/lib/nrnunits.lib" SUFFIX;
 #endif
 #endif
 static char* unames[NDIM];
 double getflt();
 void fperr(int);
 int lookup(char* name, unit* up, int den, int c);
-struct table* hash_table(char*);
+struct table* hash_table(const char*);
 
 void chkfperror();
 void units(unit*);
@@ -95,7 +95,7 @@ int convr(unit*);
 void units_cpp_init();
 int get();
 
-extern void Unit_push(char*);
+extern void Unit_push(const char*);
 
 static struct table {
     double factor;
@@ -118,7 +118,7 @@ static struct dynam {
 
 static struct prefix {
     double factor;
-    char* pname;
+    const char* pname;
 } prefix[] = {{1e-18, "atto"},
               {1e-15, "femto"},
               {1e-12, "pico"},
@@ -141,7 +141,7 @@ static int fperrc;
 static int peekc;
 static int dumpflg;
 
-static char* pc;
+static const char* pc;
 
 static int Getc(FILE* inp) {
     if (inp != stdin) {
@@ -191,7 +191,7 @@ static char* neuronhome() {
 
 
 static char* ucp;
-char* Unit_str(unit* up) {
+const char* Unit_str(unit* up) {
     struct unit* p;
     int f, i;
     static char buf[256];
@@ -287,7 +287,7 @@ void ucopypush(unit* up) {
     usp->isnum = up->isnum;
 }
 
-void Unit_push(char* str) {
+void Unit_push(const char* str) {
     IFUNITS
     assert(usp < unit_stack + (UNIT_STK_SIZE - 1));
     if (usp) {
@@ -316,13 +316,11 @@ void unitcheck(char* s) {
     unit_pop();
 }
 
-char* unit_str() {
+const char* unit_str() {
     /* return top of stack as units string */
-    char* s;
     if (!UnitsOn)
         return "";
-    s = Unit_str(usp);
-    return s;
+    return Unit_str(usp);
 }
 
 static void install_units_help(char* s1, char* s2) /* define s1 as s2 */
@@ -609,7 +607,6 @@ static void units_alloc() {
     }
 }
 
-#if MODL || NMODL || HMODL || SIMSYS
 extern void unit_init();
 
 void modl_units() {
@@ -629,8 +626,6 @@ void modl_units() {
         first = 0;
     }
 }
-
-#endif
 
 void unit_init() {
     char* s;
@@ -820,7 +815,7 @@ int lookup(char* name, unit* up, int den, int c) {
     struct unit* p;
     struct table* q;
     int i;
-    char *cp1, *cp2;
+    char* cp2;
     double e;
 
     p = up;
@@ -844,20 +839,24 @@ loop:
         }
         return (0);
     }
-    for (i = 0; (cp1 = prefix[i].pname) != 0; i++) {
-        cp2 = name;
-        while (*cp1 == *cp2++)
-            if (*cp1++ == 0) {
-                cp1--;
-                break;
+    {
+        const char* cp1{};
+        for (i = 0; (cp1 = prefix[i].pname) != 0; i++) {
+            cp2 = name;
+            while (*cp1 == *cp2++)
+                if (*cp1++ == 0) {
+                    cp1--;
+                    break;
+                }
+            if (*cp1 == 0) {
+                e *= prefix[i].factor;
+                name = cp2 - 1;
+                goto loop;
             }
-        if (*cp1 == 0) {
-            e *= prefix[i].factor;
-            name = cp2 - 1;
-            goto loop;
         }
     }
     /*EMPTY*/
+    char* cp1;
     for (cp1 = name; *cp1; cp1++)
         ;
     if (cp1 > name + 1 && *--cp1 == 's') {
@@ -873,11 +872,7 @@ loop:
     return (1);
 }
 
-static int equal(char* s1, char* s2) {
-    char *c1, *c2;
-
-    c1 = s1;
-    c2 = s2;
+static int equal(const char* c1, const char* c2) {
     while (*c1++ == *c2)
         if (*c2++ == 0)
             return (1);
@@ -1142,9 +1137,9 @@ int get() {
     return (c);
 }
 
-struct table* hash_table(char* name) {
+struct table* hash_table(const char* name) {
     struct table* tp;
-    char* np;
+    const char* np;
     unsigned h;
 
     h = 0;
