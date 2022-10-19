@@ -1,5 +1,4 @@
 from neuron import h
-import numpy as np
 
 from utils.cell import Cell
 
