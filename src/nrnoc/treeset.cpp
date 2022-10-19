@@ -6,6 +6,7 @@
 #include "multisplit.h"
 #include "nrn_ansi.h"
 #include "neuron.h"
+#include "neuron/cache/model_data.hpp"
 #include "neuron/container/soa_container_impl.hpp"
 #include "nonvintblock.h"
 #include "nrndae_c.h"
@@ -2150,6 +2151,7 @@ void nrn_recalc_ptrs(double* (*r)(double*) ) {
 /** @brief Sort the underlying storage for a particular mechanism.
  */
 static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_data(
+    neuron::cache::Model& cache,
     neuron::container::Mechanism::storage& mech_data) {
     // Do the actual sorting here. For now the algorithm is just to ensure that
     // the mechanism instances are partitioned by NrnThread.
@@ -2169,6 +2171,9 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
                 // Tell the Memb_list what global offset its values start at
                 ml->set_storage_offset(global_i);
             }
+            // Record where in the global storage this NrnThread's instances of
+            // the mechanism start
+            cache.thread.at(nt->id).mechanism_offset.at(type) = global_i;
             // Count how many times we see this mechanism in this NrnThread
             auto nt_mech_count = 0;
             // Loop through the Nodes in this NrnThread
@@ -2230,15 +2235,15 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
  *  This method ensures that the Mechanism data is ready for this compute phase.
  *  It is guaranteed to remain "ready" until the returned tokens are destroyed.
  */
-static std::vector<neuron::container::state_token<neuron::container::Mechanism::storage>>
-nrn_ensure_mech_data_are_sorted() {
-    std::vector<neuron::container::state_token<neuron::container::Mechanism::storage>> tokens{};
-    neuron::model().apply_to_mechanisms([&tokens](auto& mech_data) {
-        tokens.emplace_back(mech_data.is_sorted() ? mech_data.get_sorted_token()
-                                                  : nrn_sort_mech_data(mech_data));
-    });
-    return tokens;
-}
+// static std::vector<neuron::container::state_token<neuron::container::Mechanism::storage>>
+// nrn_ensure_mech_data_are_sorted(neuron::cache::Model& cache) {
+//     std::vector<neuron::container::state_token<neuron::container::Mechanism::storage>> tokens{};
+//     neuron::model().apply_to_mechanisms([&cache,&tokens](auto& mech_data) {
+//         tokens.emplace_back(mech_data.is_sorted() ? mech_data.get_sorted_token()
+//                                                   : nrn_sort_mech_data(cache, mech_data));
+//     });
+//     return tokens;
+// }
 
 /** @brief Sort the underlying storage for Nodes.
  *
@@ -2252,7 +2257,8 @@ nrn_ensure_mech_data_are_sorted() {
  *  and making it possible to "atomically" do (freeze, calculate permutation,
  *  apply-permutation-iff-the-frozen-count-was-1, return token)?
  */
-static neuron::container::state_token<neuron::container::Node::storage> nrn_sort_node_data() {
+static neuron::container::state_token<neuron::container::Node::storage> nrn_sort_node_data(
+    neuron::cache::Model& cache) {
     // Make sure the voltage storage follows the order encoded in _v_node.
     // Generate the permutation vector to update the underlying storage for
     // Nodes. This must come after nrn_multisplit_setup_, which can change the
@@ -2286,18 +2292,41 @@ static neuron::container::state_token<neuron::container::Node::storage> nrn_sort
  *
  *  Set the containers to be in read-only mode, until the returned token is
  *  destroyed.
- *
- *  So far this only affects Node voltages, which are use backing storage in
- *  neuron::model().node_data().
  */
 neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
-    neuron::model_sorted_token ret{};
+    bool cache_was_valid = bool{neuron::cache::model};
+    if (!cache_was_valid) {
+        neuron::cache::model.emplace();
+    }
+    neuron::model_sorted_token ret{*neuron::cache::model};
     auto& node_data = neuron::model().node_data();
-    ret.node_data_token = node_data.is_sorted() ? node_data.get_sorted_token()
-                                                : nrn_sort_node_data();
-    // TODO should we pass a token saying the node data are sorted to
-    // nrn_ensure_mech_data_are_sorted?
-    ret.mech_data_tokens = nrn_ensure_mech_data_are_sorted();
+    auto& tokens = ret.mech_data_tokens;
+    auto& cache = ret.cache();
+    if (cache_was_valid) {
+        // cache is valid
+        assert(node_data.is_sorted());
+        ret.node_data_token = node_data.get_sorted_token();
+        neuron::model().apply_to_mechanisms([&tokens](auto& mech_data) {
+            assert(mech_data.is_sorted());
+            tokens.emplace_back(mech_data.get_sorted_token());
+        });
+    } else {
+        // cache not valid, presumably because something is not sorted
+        bool all_sorted = node_data.is_sorted();
+        neuron::model().apply_to_mechanisms(
+            [&all_sorted](auto& mech_data) { all_sorted = all_sorted && mech_data.is_sorted(); });
+        assert(!all_sorted);
+        cache.thread.resize(nrn_nthread);
+        for (auto& thread_cache: cache.thread) {
+            thread_cache.mechanism_offset.resize(neuron::model().mechanism_storage_size());
+        }
+        ret.node_data_token = nrn_sort_node_data(*neuron::cache::model);
+        // TODO should we pass a token saying the node data are sorted to
+        // nrn_sort_mech_data?
+        neuron::model().apply_to_mechanisms([&cache, &tokens](auto& mech_data) {
+            tokens.emplace_back(nrn_sort_mech_data(cache, mech_data));
+        });
+    }
     return ret;
 }
 
