@@ -879,15 +879,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * The used pointer qualifier.
-     *
-     * For C code generation this is \c \_\_restrict\_\_ to ensure that the compiler is aware of
-     * the fact that we are working only with non-overlapping memory regions
-     * \return \c \_\_restrict\_\_
-     */
-    virtual std::string ptr_type_qualifier();
-
-    /**
      * The used global type qualifier
      *
      * For C code generation this is empty
