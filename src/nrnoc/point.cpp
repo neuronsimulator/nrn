@@ -78,26 +78,35 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
     extern Prop* prop_alloc_disallow(Prop * *pp, short type, Node* nd);
     extern Section* nrn_pnt_sec_for_need_;
     assert(!nrn_is_artificial_[pointsym[pointtype]->subtype]);
-    /* the problem the next fragment overcomes is that POINTER's become
-       invalid when a point process is moved (dparam and param were
-       allocated but then param was freed and replaced by old param) The
-       error that I saw, then, was when a dparam pointed to a param --
-       useful to give default value to a POINTER and then the param was
-       immediately freed. This was the tip of the iceberg since in general
-       when one moves a point process, some pointers are valid and
-       some invalid and this can only be known by the model in its
-       CONSTRUCTOR. Therefore, instead of copying the old param to
-       the new param (and therefore invalidating other pointers as in
-       menus) we flag the allocation routine for the model to
-       1) not allocate param and dparam, 2) don't fill param but
-       do the work for dparam (fill pointers for ions),
-       3) execute the constructor normally.
-    */
-    if (!pnt->prop) {
+    if (pnt->prop) {
+        // Make the old Node forget about pnt->prop
+        if (auto* const old_node = pnt->node; old_node) {
+            auto* const p = pnt->prop;
+            if (!nrn_is_artificial_[p->_type]) {
+                auto* p1 = old_node->prop;
+                if (p1 == p) {
+                    old_node->prop = p1->next;
+                } else {
+                    for (; p1; p1 = p1->next) {
+                        if (p1->next == p) {
+                            p1->next = p->next;
+                            break;
+                        }
+                    }
+                }
+            }
+            v_structure_change = 1;  // needed?
+        }
+        // Tell the new Node about pnt->prop
+        pnt->prop->next = node->prop;
+        node->prop = pnt->prop;
+    } else {
+        // Allocate a new Prop for this Point_process
         Prop* p;
         auto const x = nrn_arc_position(sec, node);
         nrn_point_prop_ = pnt->prop;
         nrn_pnt_sec_for_need_ = sec;
+        // Both branches of this tell `node` about the new Prop `p`
         if (x == 0. || x == 1.) {
             p = prop_alloc_disallow(&(node->prop), pointsym[pointtype]->subtype, node);
         } else {
@@ -108,18 +117,10 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
         pnt->prop = p;
         pnt->prop->dparam[1] = pnt;
     }
-    // if (pnt->prop) {
-    // pnt->prop->param = nullptr;
-    //     pnt->prop->dparam = nullptr;
-    //     free_one_point(pnt); // doesn't delete pnt but does delete its prop
-    // }
-
-    // Update the links to Section and Node
+    // Update pnt->sec with sec, unreffing the old value and reffing the new one
     nrn_sec_ref(&pnt->sec, sec);
-    pnt->node = node;
-    // pnt->prop = p;
+    pnt->node = node;  // tell pnt which node it belongs to now
     pnt->prop->dparam[0] = node->area_handle();
-
     if (pnt->ob) {
         if (pnt->ob->observers) {
             hoc_obj_notify(pnt->ob);
