@@ -1254,11 +1254,6 @@ std::string CodegenCVisitor::compute_method_name(BlockType type) const {
 }
 
 
-// note extra empty space for pretty-printing if we skip the symbol
-std::string CodegenCVisitor::ptr_type_qualifier() {
-    return "__restrict__ ";
-}
-
 std::string CodegenCVisitor::global_var_struct_type_qualifier() {
     return "";
 }
@@ -3063,9 +3058,8 @@ void CodegenCVisitor::print_mechanism_range_var_structure(bool print_initialiser
 
     for (auto const& [var, type]: info.neuron_global_variables) {
         auto const name = var->get_name();
-        printer->fmt_line("{}* {}{}{};",
+        printer->fmt_line("{}* {}{};",
                           type,
-                          ptr_type_qualifier(),
                           name,
                           print_initialisers ? fmt::format("{{&coreneuron::{}}}", name)
                                              : std::string{});
@@ -3074,20 +3068,17 @@ void CodegenCVisitor::print_mechanism_range_var_structure(bool print_initialiser
         auto name = var->get_name();
         auto type = get_range_var_float_type(var);
         auto qualifier = is_constant_variable(name) ? "const " : "";
-        printer->fmt_line(
-            "{}{}* {}{}{};", qualifier, type, ptr_type_qualifier(), name, value_initialise);
+        printer->fmt_line("{}{}* {}{};", qualifier, type, name, value_initialise);
     }
     for (auto& var: codegen_int_variables) {
         auto name = var.symbol->get_name();
         if (var.is_index || var.is_integer) {
             auto qualifier = var.is_constant ? "const " : "";
-            printer->fmt_line(
-                "{}{}* {}{}{};", qualifier, int_type, ptr_type_qualifier(), name, value_initialise);
+            printer->fmt_line("{}{}* {}{};", qualifier, int_type, name, value_initialise);
         } else {
             auto qualifier = var.is_constant ? "const " : "";
             auto type = var.is_vdata ? "void*" : default_float_data_type();
-            printer->fmt_line(
-                "{}{}* {}{}{};", qualifier, type, ptr_type_qualifier(), name, value_initialise);
+            printer->fmt_line("{}{}* {}{};", qualifier, type, name, value_initialise);
         }
     }
 
@@ -3369,25 +3360,23 @@ void CodegenCVisitor::print_global_function_common_code(BlockType type,
     }
     printer->add_line("int nodecount = ml->nodecount;");
     printer->add_line("int pnodecount = ml->_nodecount_padded;");
-    printer->fmt_line("const int* {}node_index = ml->nodeindices;", ptr_type_qualifier());
-    printer->fmt_line("double* {}data = ml->data;", ptr_type_qualifier());
-    printer->fmt_line("const double* {}voltage = nt->_actual_v;", ptr_type_qualifier());
+    printer->add_line("const int* node_index = ml->nodeindices;");
+    printer->add_line("double* data = ml->data;");
+    printer->add_line("const double* voltage = nt->_actual_v;");
 
     if (type == BlockType::Equation) {
-        printer->fmt_line("double* {} vec_rhs = nt->_actual_rhs;", ptr_type_qualifier());
-        printer->fmt_line("double* {} vec_d = nt->_actual_d;", ptr_type_qualifier());
+        printer->add_line("double* vec_rhs = nt->_actual_rhs;");
+        printer->add_line("double* vec_d = nt->_actual_d;");
         print_rhs_d_shadow_variables();
     }
-    printer->fmt_line("Datum* {}indexes = ml->pdata;", ptr_type_qualifier());
-    printer->fmt_line("ThreadDatum* {}thread = ml->_thread;", ptr_type_qualifier());
+    printer->add_line("Datum* indexes = ml->pdata;");
+    printer->add_line("ThreadDatum* thread = ml->_thread;");
 
     if (type == BlockType::Initial) {
         printer->add_newline();
         printer->add_line("setup_instance(nt, ml);");
     }
-    printer->fmt_line("auto* const {1}inst = static_cast<{0}*>(ml->instance);",
-                      instance_struct(),
-                      ptr_type_qualifier());
+    printer->fmt_line("auto* const inst = static_cast<{}*>(ml->instance);", instance_struct());
     printer->add_newline(1);
 }
 
@@ -3933,7 +3922,7 @@ void CodegenCVisitor::print_net_receive_buffering(bool need_mech_inst) {
 
     print_kernel_data_present_annotation_block_begin();
 
-    printer->fmt_line("NetReceiveBuffer_t* {}nrb = ml->_net_receive_buffer;", ptr_type_qualifier());
+    printer->add_line("NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;");
     if (need_mech_inst) {
         printer->fmt_line("auto* const inst = static_cast<{0}*>(ml->instance);", instance_struct());
     }

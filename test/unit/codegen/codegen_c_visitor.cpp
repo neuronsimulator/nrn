@@ -309,9 +309,9 @@ SCENARIO("Check parameter constness with VERBATIM block",
             std::string expected_code = R"(
                 /** all mechanism instance variables and global variables */
                 struct IntervalFire_Instance  {
-                    double* __restrict__ invl{};
-                    const double* __restrict__ burst_start{};
-                    double* __restrict__ v_unused{};
+                    double* invl{};
+                    const double* burst_start{};
+                    double* v_unused{};
                     IntervalFire_Store* global{&IntervalFire_global};
                 };
             )";
@@ -334,10 +334,9 @@ SCENARIO("Check NEURON globals are added to the instance struct on demand",
         )";
         THEN("The instance struct should contain these variables") {
             auto const generated = get_instance_structure(nmodl_text);
-            REQUIRE_THAT(generated, Contains("double* __restrict__ celsius{&coreneuron::celsius}"));
-            REQUIRE_THAT(generated, Contains("double* __restrict__ pi{&coreneuron::pi}"));
-            REQUIRE_THAT(generated,
-                         Contains("int* __restrict__ secondorder{&coreneuron::secondorder}"));
+            REQUIRE_THAT(generated, Contains("double* celsius{&coreneuron::celsius}"));
+            REQUIRE_THAT(generated, Contains("double* pi{&coreneuron::pi}"));
+            REQUIRE_THAT(generated, Contains("int* secondorder{&coreneuron::secondorder}"));
         }
     }
     GIVEN("A MOD file that implicitly uses global variables") {
