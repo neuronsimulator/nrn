@@ -26,7 +26,6 @@ extern int hoc_return_type_code;
 #include "parse.hpp"
 extern Symlist* hoc_built_in_symlist;
 extern Symbol** pointsym;
-extern double* point_process_pointer(Point_process*, Symbol*, int);
 extern ReceiveFunc* pnt_receive;
 extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;
@@ -498,13 +497,16 @@ static void point_menu(Object* ob, int make_label) {
                     if (m > 5)
                         break;
                     sprintf(buf, "%s[%d]", vsym->name, m);
-                    pd = point_process_pointer(pp, vsym, m);
+                    pd = static_cast<double*>(point_process_pointer(pp, vsym, m));
                     if (pd) {
                         hoc_ivpvalue(buf, pd, deflt, vsym->extra);
                     }
                 }
             } else {
-                hoc_ivpvalue(vsym->name, point_process_pointer(pp, vsym, 0), deflt, vsym->extra);
+                hoc_ivpvalue(vsym->name,
+                             static_cast<double*>(point_process_pointer(pp, vsym, 0),
+                                                  deflt,
+                                                  vsym->extra));
             }
         }
     }

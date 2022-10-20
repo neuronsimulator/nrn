@@ -234,8 +234,7 @@ class KSGateComplex {
     int power_;   // eg. n^4, or m^3
 };
 
-class KSIv {
-  public:
+struct KSIv {
     virtual ~KSIv() = default;
     // this one for ionic ohmic and nernst.
     virtual double cur(double g,
@@ -250,38 +249,77 @@ class KSIv {
                          std::size_t instance,
                          std::size_t offset);
 };
-class KSIvghk: public KSIv {
-  public:
+struct KSIvghk: KSIv {
     // this one for ionic Goldman-Hodgkin-Katz
-    virtual double cur(double g, double* p, Datum* pd, double v);
-    virtual double jacob(double* p, Datum* pd, double v);
+    double cur(double g,
+                       Datum* pd,
+                       double v,
+                       Memb_list* ml,
+                       std::size_t instance,
+                       std::size_t offset) override;
+    double jacob(Datum* pd,
+                         double v,
+                         Memb_list* ml,
+                         std::size_t instance,
+                         std::size_t offset) override;
     double z;
 };
-class KSIvNonSpec: public KSIv {
+struct KSIvNonSpec: KSIv {
     // this one for non-specific ohmic. There will be a PARAMETER e_suffix at p[1]
-    virtual double cur(double g, double* p, Datum* pd, double v);
-    virtual double jacob(double* p, Datum* pd, double v);
+    double cur(double g,
+                       Datum* pd,
+                       double v,
+                       Memb_list* ml,
+                       std::size_t instance,
+                       std::size_t offset) override;
+    double jacob(Datum* pd,
+                         double v,
+                         Memb_list* ml,
+                         std::size_t instance,
+                         std::size_t offset) override;
 };
 
-class KSPPIv: public KSIv {
-  public:
+struct KSPPIv: KSIv {
     // this one for POINT_PROCESS ionic ohmic and nernst.
-    virtual double cur(double g, double* p, Datum* pd, double v);
-    virtual double jacob(double* p, Datum* pd, double v);
-    int ppoff_;
+    double cur(double g,
+                       Datum* pd,
+                       double v,
+                       Memb_list* ml,
+                       std::size_t instance,
+                       std::size_t offset) override;
+    double jacob(Datum* pd,
+                         double v,
+                         Memb_list* ml,
+                         std::size_t instance,
+                         std::size_t offset) override;    int ppoff_;
 };
-class KSPPIvghk: public KSPPIv {
-  public:
+struct KSPPIvghk: KSPPIv {
     // this one for POINT_PROCESS ionic Goldman-Hodgkin-Katz
-    virtual double cur(double g, double* p, Datum* pd, double v);
-    virtual double jacob(double* p, Datum* pd, double v);
-    double z;
+    double cur(double g,
+                       Datum* pd,
+                       double v,
+                       Memb_list* ml,
+                       std::size_t instance,
+                       std::size_t offset) override;
+    double jacob(Datum* pd,
+                         double v,
+                         Memb_list* ml,
+                         std::size_t instance,
+                         std::size_t offset) override;    double z;
 };
-class KSPPIvNonSpec: public KSPPIv {
+struct KSPPIvNonSpec: KSPPIv {
     // this one for POINT_PROCESS non-specific ohmic. There will be a PARAMETER e_suffix at p[1]
-    virtual double cur(double g, double* p, Datum* pd, double v);
-    virtual double jacob(double* p, Datum* pd, double v);
-};
+    double cur(double g,
+                       Datum* pd,
+                       double v,
+                       Memb_list* ml,
+                       std::size_t instance,
+                       std::size_t offset) override;
+    double jacob(Datum* pd,
+                         double v,
+                         Memb_list* ml,
+                         std::size_t instance,
+                         std::size_t offset) override;};
 
 class KSState {
   public:

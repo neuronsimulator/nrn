@@ -170,11 +170,21 @@ struct generic_data_handle {
     }
 
     friend std::ostream& operator<<(std::ostream& os, generic_data_handle const& dh) {
-        auto const maybe_info = utils::find_container_info(dh.m_container);
         os << "generic_data_handle{";
-        if (maybe_info) {
-            os << "cont=" << maybe_info->name << ' ' << dh.m_offset << '/' << maybe_info->size;
+        if (dh.m_offset || dh.m_offset.m_ptr) {
+            // modern and valid or once-valid data handle
+            auto const maybe_info = utils::find_container_info(dh.m_container);
+            if (maybe_info) {
+                if (!maybe_info->container.empty()) {
+                    os << "cont=" << maybe_info->container << ' ';
+                }
+                os << maybe_info->field << ' ' << dh.m_offset << '/' << maybe_info->size;
+            } else {
+                // couldn't find which container it points into
+                os << "cont=unknown " << dh.m_offset << "/unknown";
+            }
         } else {
+            // legacy data handle
             os << "raw=";
             if (dh.m_container) {
                 // This shouldn't crash, but it might contain some garbage if

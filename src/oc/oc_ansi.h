@@ -55,7 +55,7 @@ extern "C" void hoc_malchk();
 // olupton 2022-05-30: This has to have C linkage for now because it is used in
 //                     abort.c and praxis.c
 extern "C" [[noreturn]] void hoc_execerror(const char*, const char*);
-void hoc_execerr_ext(const char* fmt, ...);
+[[noreturn]] void hoc_execerr_ext(const char* fmt, ...);
 char* hoc_object_name(Object*);
 void hoc_retpushx(double);
 
@@ -103,6 +103,7 @@ extern int nrnignore;
  */
 int hoc_obj_run(const char*, Object*);
 
+void hoc_prstack();
 int hoc_argtype(int);
 int hoc_is_double_arg(int);
 int hoc_is_pdouble_arg(int);

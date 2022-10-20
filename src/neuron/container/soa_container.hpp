@@ -64,6 +64,14 @@ struct has_num_instances<T, std::void_t<decltype(std::declval<T>().num_instances
     : std::true_type {};
 template <typename T>
 inline constexpr bool has_num_instances_v = has_num_instances<T>::value;
+
+// Detect if a type T has a non-static member function called num_instances().
+template <typename T, typename = void>
+struct has_name: std::false_type {};
+template <typename T>
+struct has_name<T, std::void_t<decltype(std::declval<T>().name())>>: std::true_type {};
+template <typename T>
+inline constexpr bool has_name_v = has_name<T>::value;
 }  // namespace detail
 
 /** @brief Token whose lifetime manages frozen/sorted state of a container.
@@ -495,17 +503,36 @@ struct soa {
     template <typename Tag, typename T>
     constexpr bool find_container_info(utils::storage_info& info,
                                        std::vector<T> const& cont1,
-                                       void const* cont2) const {
+                                       void const* cont2,
+                                       int field = -1) const {
         if (&cont1 != cont2) {
             return false;
         }
-        info.name = cxx_demangle(typeid(Tag).name());
+        if constexpr (detail::has_name_v<Storage>) {
+            info.container = static_cast<Storage const&>(*this).name();
+        }
+        info.field = cxx_demangle(typeid(Tag).name());
         info.size = cont1.size();
         constexpr std::string_view prefix{"neuron::container::"};
-        if (std::string_view{info.name}.substr(0, prefix.size()) == prefix) {
-            info.name.erase(0, prefix.size());
+        if (std::string_view{info.field}.substr(0, prefix.size()) == prefix) {
+            info.field.erase(0, prefix.size());
+            if (field >= 0) {
+                info.field.append(1, '#');
+                info.field.append(std::to_string(field));
+            }
         }
         return true;
+    }
+    template <typename Tag, typename T>
+    constexpr bool find_container_info(utils::storage_info& info,
+                                       std::vector<std::vector<T>> const& conts,
+                                       void const* cont2) const {
+        for (auto field = 0; field < conts.size(); ++field) {
+            if (find_container_info<Tag>(info, conts[field], cont2, field)) {
+                return true;
+            }
+        }
+        return false;
     }
 
   public:
@@ -513,7 +540,7 @@ struct soa {
         utils::storage_info info{};
         // FIXME: generate a proper tag type for the index column?
         if (find_container_info<RowIdentifier>(info, m_indices, cont) ||
-            (find_container_info<Tags>(info, get<Tags>(), cont) || ...)) {
+            (find_container_info<Tags>(info, std::get<tag_index_v<Tags>>(m_data), cont) || ...)) {
             return info;
         } else {
             return {std::nullopt};
