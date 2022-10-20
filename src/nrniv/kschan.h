@@ -252,74 +252,77 @@ struct KSIv {
 struct KSIvghk: KSIv {
     // this one for ionic Goldman-Hodgkin-Katz
     double cur(double g,
-                       Datum* pd,
-                       double v,
-                       Memb_list* ml,
-                       std::size_t instance,
-                       std::size_t offset) override;
+               Datum* pd,
+               double v,
+               Memb_list* ml,
+               std::size_t instance,
+               std::size_t offset) override;
     double jacob(Datum* pd,
-                         double v,
-                         Memb_list* ml,
-                         std::size_t instance,
-                         std::size_t offset) override;
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) override;
     double z;
 };
 struct KSIvNonSpec: KSIv {
     // this one for non-specific ohmic. There will be a PARAMETER e_suffix at p[1]
     double cur(double g,
-                       Datum* pd,
-                       double v,
-                       Memb_list* ml,
-                       std::size_t instance,
-                       std::size_t offset) override;
+               Datum* pd,
+               double v,
+               Memb_list* ml,
+               std::size_t instance,
+               std::size_t offset) override;
     double jacob(Datum* pd,
-                         double v,
-                         Memb_list* ml,
-                         std::size_t instance,
-                         std::size_t offset) override;
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) override;
 };
 
 struct KSPPIv: KSIv {
     // this one for POINT_PROCESS ionic ohmic and nernst.
     double cur(double g,
-                       Datum* pd,
-                       double v,
-                       Memb_list* ml,
-                       std::size_t instance,
-                       std::size_t offset) override;
+               Datum* pd,
+               double v,
+               Memb_list* ml,
+               std::size_t instance,
+               std::size_t offset) override;
     double jacob(Datum* pd,
-                         double v,
-                         Memb_list* ml,
-                         std::size_t instance,
-                         std::size_t offset) override;    int ppoff_;
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) override;
+    int ppoff_;
 };
 struct KSPPIvghk: KSPPIv {
     // this one for POINT_PROCESS ionic Goldman-Hodgkin-Katz
     double cur(double g,
-                       Datum* pd,
-                       double v,
-                       Memb_list* ml,
-                       std::size_t instance,
-                       std::size_t offset) override;
+               Datum* pd,
+               double v,
+               Memb_list* ml,
+               std::size_t instance,
+               std::size_t offset) override;
     double jacob(Datum* pd,
-                         double v,
-                         Memb_list* ml,
-                         std::size_t instance,
-                         std::size_t offset) override;    double z;
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) override;
+    double z;
 };
 struct KSPPIvNonSpec: KSPPIv {
     // this one for POINT_PROCESS non-specific ohmic. There will be a PARAMETER e_suffix at p[1]
     double cur(double g,
-                       Datum* pd,
-                       double v,
-                       Memb_list* ml,
-                       std::size_t instance,
-                       std::size_t offset) override;
+               Datum* pd,
+               double v,
+               Memb_list* ml,
+               std::size_t instance,
+               std::size_t offset) override;
     double jacob(Datum* pd,
-                         double v,
-                         Memb_list* ml,
-                         std::size_t instance,
-                         std::size_t offset) override;};
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) override;
+};
 
 class KSState {
   public:

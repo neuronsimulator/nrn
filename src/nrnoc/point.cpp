@@ -76,13 +76,8 @@ void destroy_point_process(void* v) {
 
 void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node* node) {
     extern Prop* prop_alloc_disallow(Prop * *pp, short type, Node* nd);
-    extern Prop* prop_alloc(Prop**, int, Node*);
     extern Section* nrn_pnt_sec_for_need_;
-    Prop* p;
-    double x;
-
     assert(!nrn_is_artificial_[pointsym[pointtype]->subtype]);
-    x = nrn_arc_position(sec, node);
     /* the problem the next fragment overcomes is that POINTER's become
        invalid when a point process is moved (dparam and param were
        allocated but then param was freed and replaced by old param) The
@@ -98,26 +93,33 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
        do the work for dparam (fill pointers for ions),
        3) execute the constructor normally.
     */
-    nrn_point_prop_ = pnt->prop;
-    nrn_pnt_sec_for_need_ = sec;
-    if (x == 0. || x == 1.) {
-        p = prop_alloc_disallow(&(node->prop), pointsym[pointtype]->subtype, node);
-    } else {
-        p = prop_alloc(&(node->prop), pointsym[pointtype]->subtype, node);
+    if (!pnt->prop) {
+        Prop* p;
+        auto const x = nrn_arc_position(sec, node);
+        nrn_point_prop_ = pnt->prop;
+        nrn_pnt_sec_for_need_ = sec;
+        if (x == 0. || x == 1.) {
+            p = prop_alloc_disallow(&(node->prop), pointsym[pointtype]->subtype, node);
+        } else {
+            p = prop_alloc(&(node->prop), pointsym[pointtype]->subtype, node);
+        }
+        nrn_pnt_sec_for_need_ = nullptr;
+        nrn_point_prop_ = nullptr;
+        pnt->prop = p;
+        pnt->prop->dparam[1] = pnt;
     }
-    nrn_pnt_sec_for_need_ = (Section*) 0;
+    // if (pnt->prop) {
+    // pnt->prop->param = nullptr;
+    //     pnt->prop->dparam = nullptr;
+    //     free_one_point(pnt); // doesn't delete pnt but does delete its prop
+    // }
 
-    nrn_point_prop_ = (Prop*) 0;
-    if (pnt->prop) {
-        // pnt->prop->param = nullptr;
-        pnt->prop->dparam = nullptr;
-        free_one_point(pnt);
-    }
+    // Update the links to Section and Node
     nrn_sec_ref(&pnt->sec, sec);
     pnt->node = node;
-    pnt->prop = p;
+    // pnt->prop = p;
     pnt->prop->dparam[0] = node->area_handle();
-    pnt->prop->dparam[1] = pnt;
+
     if (pnt->ob) {
         if (pnt->ob->observers) {
             hoc_obj_notify(pnt->ob);

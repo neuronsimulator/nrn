@@ -2725,11 +2725,11 @@ double KSIv::jacob(Datum* pd, double, Memb_list* ml, std::size_t instance, std::
 }
 
 double KSIvghk::cur(double g,
-                 Datum* pd,
-                 double v,
-                 Memb_list* ml,
-                 std::size_t instance,
-                 std::size_t offset) {
+                    Datum* pd,
+                    double v,
+                    Memb_list* ml,
+                    std::size_t instance,
+                    std::size_t offset) {
     double ci = *static_cast<double*>(pd[3]);
     double co = *static_cast<double*>(pd[4]);
     ml->data(instance, offset + 1) = g;
@@ -2739,7 +2739,11 @@ double KSIvghk::cur(double g,
     return i;
 }
 
-double KSIvghk::jacob(Datum* pd, double v, Memb_list* ml, std::size_t instance, std::size_t offset) {
+double KSIvghk::jacob(Datum* pd,
+                      double v,
+                      Memb_list* ml,
+                      std::size_t instance,
+                      std::size_t offset) {
     auto ci = *static_cast<double*>(pd[3]);
     auto co = *static_cast<double*>(pd[4]);
     double i1 = ml->data(instance, offset + 1) * nrn_ghk(v + .001, ci, co, z);  // g is p[1]
@@ -2749,11 +2753,11 @@ double KSIvghk::jacob(Datum* pd, double v, Memb_list* ml, std::size_t instance, 
 }
 
 double KSIvNonSpec::cur(double g,
-                 Datum* pd,
-                 double v,
-                 Memb_list* ml,
-                 std::size_t instance,
-                 std::size_t offset) {
+                        Datum* pd,
+                        double v,
+                        Memb_list* ml,
+                        std::size_t instance,
+                        std::size_t offset) {
     double i;
     ml->data(instance, offset + 2) = g;  // gmax, e, g
     i = g * (v - ml->data(instance, offset + 1));
@@ -2761,16 +2765,20 @@ double KSIvNonSpec::cur(double g,
     return i;
 }
 
-double KSIvNonSpec::jacob(Datum* pd, double, Memb_list* ml, std::size_t instance, std::size_t offset) {
+double KSIvNonSpec::jacob(Datum* pd,
+                          double,
+                          Memb_list* ml,
+                          std::size_t instance,
+                          std::size_t offset) {
     return ml->data(instance, offset + 2);
 }
 
 double KSPPIv::cur(double g,
-                 Datum* pd,
-                 double v,
-                 Memb_list* ml,
-                 std::size_t instance,
-                 std::size_t offset) {
+                   Datum* pd,
+                   double v,
+                   Memb_list* ml,
+                   std::size_t instance,
+                   std::size_t offset) {
     double afac = 1.e2 / (*static_cast<double*>(pd[0]));
     pd += ppoff_;
     double ena = *static_cast<double*>(pd[0]);
@@ -2791,11 +2799,11 @@ double KSPPIv::jacob(Datum* pd, double, Memb_list* ml, std::size_t instance, std
 }
 
 double KSPPIvghk::cur(double g,
-                 Datum* pd,
-                 double v,
-                 Memb_list* ml,
-                 std::size_t instance,
-                 std::size_t offset) {
+                      Datum* pd,
+                      double v,
+                      Memb_list* ml,
+                      std::size_t instance,
+                      std::size_t offset) {
     double afac = 1.e2 / (*static_cast<double*>(pd[0]));
     pd += ppoff_;
     auto ci = *static_cast<double*>(pd[3]);
@@ -2808,7 +2816,11 @@ double KSPPIvghk::cur(double g,
     return i;
 }
 
-double KSPPIvghk::jacob(Datum* pd, double v, Memb_list* ml, std::size_t instance, std::size_t offset) {
+double KSPPIvghk::jacob(Datum* pd,
+                        double v,
+                        Memb_list* ml,
+                        std::size_t instance,
+                        std::size_t offset) {
     double afac = 1.e2 / (*static_cast<double*>(pd[0]));
     pd += ppoff_;
     auto ci = *static_cast<double*>(pd[3]);
@@ -2821,11 +2833,11 @@ double KSPPIvghk::jacob(Datum* pd, double v, Memb_list* ml, std::size_t instance
 }
 
 double KSPPIvNonSpec::cur(double g,
-                 Datum* pd,
-                 double v,
-                 Memb_list* ml,
-                 std::size_t instance,
-                 std::size_t offset) {
+                          Datum* pd,
+                          double v,
+                          Memb_list* ml,
+                          std::size_t instance,
+                          std::size_t offset) {
     double afac = 1.e2 / (*static_cast<double*>(pd[0]));
     double i;
     ml->data(instance, offset + 2) = g;  // gmax, e, g
@@ -2834,7 +2846,11 @@ double KSPPIvNonSpec::cur(double g,
     return i * afac;
 }
 
-double KSPPIvNonSpec::jacob(Datum* pd, double, Memb_list* ml, std::size_t instance, std::size_t offset) {
+double KSPPIvNonSpec::jacob(Datum* pd,
+                            double,
+                            Memb_list* ml,
+                            std::size_t instance,
+                            std::size_t offset) {
     double afac = 1.e2 / (*static_cast<double*>(pd[0]));
     return ml->data(instance, offset + 2) * afac;
 }
