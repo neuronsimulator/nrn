@@ -38,7 +38,7 @@ void nrnthread_group_ids(int* groupids);
 int nrnthread_dat1(int tid,
                    int& n_presyn,
                    int& n_netcon,
-                   int*& output_gid,
+                   std::vector<int>& output_gid,
                    int*& netcon_srcgid,
                    std::vector<int>& netcon_negsrcgid_tid);
 int nrnthread_dat2_1(int tid,

@@ -91,16 +91,32 @@ struct Model {
      */
     template <typename T>
     [[nodiscard]] container::data_handle<T> find_data_handle(T* ptr) {
-        // For now it could only be in m_node_data.
-        return m_node_data.find_data_handle(ptr);
+        if (auto h = m_node_data.find_data_handle(ptr); h) {
+            return h;
+        }
+        for (auto& mech_data: m_mech_data) {
+            if (!mech_data) {
+                continue;
+            }
+            if (auto h = mech_data->find_data_handle(ptr); h) {
+                return h;
+            }
+        }
+        return {};
     }
 
     [[nodiscard]] std::optional<container::utils::storage_info> find_container_info(
         void const* cont) const {
-        // For now it could only be m_node_data
-        auto maybe_info = m_node_data.find_container_info(cont);
-        if (maybe_info) {
-            return maybe_info;
+        if (auto maybe_info = m_node_data.find_container_info(cont); maybe_info) {
+            return {std::move(maybe_info)};
+        }
+        for (auto& mech_data: m_mech_data) {
+            if (!mech_data) {
+                continue;
+            }
+            if (auto maybe_info = mech_data->find_container_info(cont); maybe_info) {
+                return {std::move(maybe_info)};
+            }
         }
         return {std::nullopt};
     }
@@ -128,6 +144,9 @@ struct model_sorted_token {
     }
     [[nodiscard]] cache::Model const& cache() const {
         return m_cache;
+    }
+    void set_cache(cache::Model&& cache) {
+        m_cache = cache;
     }
     [[nodiscard]] cache::Thread& thread_cache(std::size_t i) {
         return cache().thread.at(i);

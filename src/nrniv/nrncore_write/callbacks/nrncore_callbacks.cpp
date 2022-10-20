@@ -204,7 +204,7 @@ void nrnthread_group_ids(int* grp) {
 int nrnthread_dat1(int tid,
                    int& n_presyn,
                    int& n_netcon,
-                   int*& output_gid,
+                   std::vector<int>& output_gid,
                    int*& netcon_srcgid,
                    std::vector<int>& netcon_negsrcgid_tid) {
     if (tid >= nrn_nthread) {
@@ -213,8 +213,7 @@ int nrnthread_dat1(int tid,
     CellGroup& cg = cellgroups_[tid];
     n_presyn = cg.n_presyn;
     n_netcon = cg.n_netcon;
-    output_gid = cg.output_gid;
-    cg.output_gid = NULL;
+    output_gid = std::move(cg.output_gid);
     netcon_srcgid = cg.netcon_srcgid;
     cg.netcon_srcgid = NULL;
     netcon_negsrcgid_tid = cg.netcon_negsrcgid_tid;
@@ -358,7 +357,9 @@ int nrnthread_dat2_mech(int tid,
     // As the NEURON data is now transposed then for now always create a new
     // copy in the format expected by CoreNEURON -- TODO make sure this is
     // freed, then later TODO remove the need for this entirely
-    data = new double[n * sz];
+    if (!copy) {
+        data = new double[n * sz];
+    }
     for (auto instance = 0, k = 0; instance < n; ++instance) {
         for (auto variable = 0; variable < sz; ++variable) {
             data[k++] = ml->data(instance, variable);
@@ -613,23 +614,16 @@ void part2_clean() {
     cellgroups_ = NULL;
 }
 
-std::vector<NetCon**> CellGroup::deferred_netcons;
+std::vector<std::vector<NetCon*>> CellGroup::deferred_netcons;
 
 void CellGroup::defer_clean_netcons(CellGroup* cgs) {
     clean_deferred_netcons();
     for (int tid = 0; tid < nrn_nthread; ++tid) {
-        CellGroup& cg = cgs[tid];
-        deferred_netcons.push_back(cg.netcons);
-        cg.netcons = nullptr;
+        deferred_netcons.push_back(std::move(cgs[tid].netcons));
     }
 }
 
 void CellGroup::clean_deferred_netcons() {
-    for (auto ncs: deferred_netcons) {
-        if (ncs) {
-            delete[] ncs;
-        }
-    }
     deferred_netcons.clear();
 }
 
