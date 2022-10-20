@@ -121,7 +121,7 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
         THEN("Check it prints the right value") {
             std::ostringstream actual;
             actual << handle;
-            REQUIRE(actual.str() == "data_handle<double>{cont=Node::field::Voltage row=0/1}");
+            REQUIRE(actual.str() == "data_handle<double>{Node::field::Voltage row=0/1}");
         }
         THEN("Check that deleting the (Node) object it refers to invalidates the handle") {
             node.reset();  // delete the underlying Node object
@@ -130,7 +130,7 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
             REQUIRE(handle.refers_to_a_modern_data_structure());
             std::ostringstream actual;
             actual << handle;
-            REQUIRE(actual.str() == "data_handle<double>{cont=Node::field::Voltage died/0}");
+            REQUIRE(actual.str() == "data_handle<double>{Node::field::Voltage died/0}");
         }
         THEN(
             "Check that mutating the underlying container while holding a raw pointer has the "
@@ -217,7 +217,7 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
             std::ostringstream actual;
             actual << handle;
             REQUIRE(actual.str() ==
-                    "generic_data_handle{cont=Node::field::Voltage row=0/1, type=double*}");
+                    "generic_data_handle{Node::field::Voltage row=0/1, type=double*}");
         }
         THEN("Check that it knows it refers to a modern data structure") {
             REQUIRE(handle.refers_to_a_modern_data_structure());
