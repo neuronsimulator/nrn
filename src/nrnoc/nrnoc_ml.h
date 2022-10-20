@@ -71,8 +71,7 @@ struct Memb_list {
             ret[i] = std::next(
                 const_cast<double*>(
                     const_storage
-                        ->get_field_instance<
-                            neuron::container::Mechanism::field::PerInstanceFloatingPointField>(i)
+                        ->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(i)
                         .data()),
                 m_storage_offset);
         }
@@ -86,9 +85,9 @@ struct Memb_list {
             // contiguous mode
             assert(m_storage);
             assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
-            return m_storage->get_field_instance<
-                neuron::container::Mechanism::field::PerInstanceFloatingPointField>(
-                variable, m_storage_offset + instance);
+            return m_storage
+                ->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
+                    variable, m_storage_offset + instance);
         }
     }
     [[nodiscard]] double const& data(std::size_t instance, std::size_t variable) const {
@@ -98,10 +97,9 @@ struct Memb_list {
         } else {
             // contiguous mode
             assert(m_storage);
-            assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
-            return m_storage->get_field_instance<
-                neuron::container::Mechanism::field::PerInstanceFloatingPointField>(
-                variable, m_storage_offset + instance);
+            return m_storage
+                ->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
+                    variable, m_storage_offset + instance);
         }
     }
     /** @brief Calculate a legacy index of the given pointer in this mechanism data.
@@ -111,11 +109,13 @@ struct Memb_list {
      *  mechanism.
      */
     [[nodiscard]] std::ptrdiff_t legacy_index(double const* ptr) const {
+        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
         auto const num_fields = m_storage->num_floating_point_fields();
         for (auto field = 0ul; field < num_fields; ++field) {
             auto const* const const_storage = m_storage;
-            auto const& vec = const_storage->get_field_instance<
-                neuron::container::Mechanism::field::PerInstanceFloatingPointField>(field);
+            auto const& vec =
+                const_storage
+                    ->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(field);
             auto const index = std::distance(vec.data(), ptr);
             if (index >= 0 && index < vec.size()) {
                 // ptr lives in the field-th data column
@@ -126,6 +126,12 @@ struct Memb_list {
         // ptr doesn't live in this mechanism data, cannot compute a legacy index
         return -1;
     }
+
+    [[nodiscard]] std::ptrdiff_t legacy_index(
+        neuron::container::data_handle<double> const& dh) const {
+        return legacy_index(static_cast<double const*>(dh));
+    }
+
     [[nodiscard]] std::size_t num_data_fields() const {
         assert(m_storage);
         return m_storage->num_floating_point_fields();
@@ -138,9 +144,9 @@ struct Memb_list {
             , m_instance{instance}
             , m_zeroth_column{zeroth_column} {}
         [[nodiscard]] double& operator[](std::size_t array_entry) {
-            return m_storage->get_field_instance<
-                neuron::container::Mechanism::field::PerInstanceFloatingPointField>(
-                m_zeroth_column + array_entry, m_instance);
+            return m_storage
+                ->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
+                    m_zeroth_column + array_entry, m_instance);
         }
 
       private:
@@ -185,7 +191,7 @@ struct Memb_list {
     //         data.reserve(num_fields);
     //         for (auto i_field = 0; i_field < num_fields; ++i_field) {
     //             data.push_back(m_storage->get_field_instance<
-    //                            neuron::container::Mechanism::field::PerInstanceFloatingPointField>(
+    //                            neuron::container::Mechanism::field::FloatingPoint>(
     //                 i_field, m_storage_offset + instance));
     //         }
     //     }
@@ -220,6 +226,9 @@ struct Memb_list {
     [[nodiscard]] std::size_t get_storage_offset() const {
         assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
         return m_storage_offset;
+    }
+    [[nodiscard]] neuron::container::Mechanism::storage* get_storage_pointer() const {
+        return m_storage;
     }
     /** @todo how to invalidate this?
      */

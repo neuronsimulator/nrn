@@ -2265,8 +2265,7 @@ void KSChan::update_param_size() {
     auto& mech_data = neuron::model().mechanism_data(mechtype_);
     std::size_t const new_param_size = soffset_ + 2 * nstate_;
     auto const old_param_size =
-        mech_data.get_tag<neuron::container::Mechanism::field::PerInstanceFloatingPointField>()
-            .num_instances();
+        mech_data.get_tag<neuron::container::Mechanism::field::FloatingPoint>().num_instances();
     if (new_param_size == old_param_size) {
         // no change
         return;
@@ -2725,94 +2724,119 @@ double KSIv::jacob(Datum* pd, double, Memb_list* ml, std::size_t instance, std::
     return v;
 }
 
-double KSIvghk::cur(double g, double* p, Datum* pd, double v) {
+double KSIvghk::cur(double g,
+                 Datum* pd,
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) {
     double ci = *static_cast<double*>(pd[3]);
     double co = *static_cast<double*>(pd[4]);
-    p[1] = g;
+    ml->data(instance, offset + 1) = g;
     double i = g * nrn_ghk(v, ci, co, z);
-    p[2] = i;
+    ml->data(instance, offset + 2) = i;
     *static_cast<double*>(pd[1]) += i;
     return i;
 }
 
-double KSIvghk::jacob(double* p, Datum* pd, double v) {
+double KSIvghk::jacob(Datum* pd, double v, Memb_list* ml, std::size_t instance, std::size_t offset) {
     auto ci = *static_cast<double*>(pd[3]);
     auto co = *static_cast<double*>(pd[4]);
-    double i1 = p[1] * nrn_ghk(v + .001, ci, co, z);  // g is p[1]
-    double didv = (i1 - p[2]) * 1000.;
+    double i1 = ml->data(instance, offset + 1) * nrn_ghk(v + .001, ci, co, z);  // g is p[1]
+    double didv = (i1 - ml->data(instance, offset + 2)) * 1000.;
     *static_cast<double*>(pd[2]) += didv;
     return didv;
 }
 
-double KSIvNonSpec::cur(double g, double* p, Datum* pd, double v) {
+double KSIvNonSpec::cur(double g,
+                 Datum* pd,
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) {
     double i;
-    p[2] = g;  // gmax, e, g
-    i = g * (v - p[1]);
-    p[3] = i;
+    ml->data(instance, offset + 2) = g;  // gmax, e, g
+    i = g * (v - ml->data(instance, offset + 1));
+    ml->data(instance, offset + 3) = i;
     return i;
 }
 
-double KSIvNonSpec::jacob(double* p, Datum* pd, double) {
-    return p[2];
+double KSIvNonSpec::jacob(Datum* pd, double, Memb_list* ml, std::size_t instance, std::size_t offset) {
+    return ml->data(instance, offset + 2);
 }
 
-double KSPPIv::cur(double g, double* p, Datum* pd, double v) {
+double KSPPIv::cur(double g,
+                 Datum* pd,
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) {
     double afac = 1.e2 / (*static_cast<double*>(pd[0]));
     pd += ppoff_;
     double ena = *static_cast<double*>(pd[0]);
-    p[1] = g;
+    ml->data(instance, offset + 1) = g;
     double i = g * (v - ena);
-    p[2] = i;
+    ml->data(instance, offset + 2) = i;
     i *= afac;
     *static_cast<double*>(pd[1]) += i;  // iion
     return i;
 }
 
-double KSPPIv::jacob(double* p, Datum* pd, double) {
+double KSPPIv::jacob(Datum* pd, double, Memb_list* ml, std::size_t instance, std::size_t offset) {
     double afac = 1.e2 / (*static_cast<double*>(pd[0]));
     pd += ppoff_;
-    double g = p[1] * afac;
+    double g = ml->data(instance, offset + 1) * afac;
     *static_cast<double*>(pd[2]) += g;  // diion/dv
     return g;
 }
 
-double KSPPIvghk::cur(double g, double* p, Datum* pd, double v) {
+double KSPPIvghk::cur(double g,
+                 Datum* pd,
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) {
     double afac = 1.e2 / (*static_cast<double*>(pd[0]));
     pd += ppoff_;
     auto ci = *static_cast<double*>(pd[3]);
     auto co = *static_cast<double*>(pd[4]);
-    p[1] = g;
+    ml->data(instance, offset + 1) = g;
     double i = g * nrn_ghk(v, ci, co, z) * 1e6;
-    p[2] = i;
+    ml->data(instance, offset + 2) = i;
     i *= afac;
     *static_cast<double*>(pd[1]) += i;
     return i;
 }
 
-double KSPPIvghk::jacob(double* p, Datum* pd, double v) {
+double KSPPIvghk::jacob(Datum* pd, double v, Memb_list* ml, std::size_t instance, std::size_t offset) {
     double afac = 1.e2 / (*static_cast<double*>(pd[0]));
     pd += ppoff_;
     auto ci = *static_cast<double*>(pd[3]);
     auto co = *static_cast<double*>(pd[4]);
-    double i1 = p[1] * nrn_ghk(v + .001, ci, co, z) * 1e6;  // g is p[1]
-    double didv = (i1 - p[2]) * 1000.;
+    double i1 = ml->data(instance, offset + 1) * nrn_ghk(v + .001, ci, co, z) * 1e6;  // g is p[1]
+    double didv = (i1 - ml->data(instance, offset + 2)) * 1000.;
     didv *= afac;
     *static_cast<double*>(pd[2]) += didv;
     return didv;
 }
 
-double KSPPIvNonSpec::cur(double g, double* p, Datum* pd, double v) {
+double KSPPIvNonSpec::cur(double g,
+                 Datum* pd,
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) {
     double afac = 1.e2 / (*static_cast<double*>(pd[0]));
     double i;
-    p[2] = g;  // gmax, e, g
-    i = g * (v - p[1]);
-    p[3] = i;
+    ml->data(instance, offset + 2) = g;  // gmax, e, g
+    i = g * (v - ml->data(instance, offset + 1));
+    ml->data(instance, offset + 3) = i;
     return i * afac;
 }
 
-double KSPPIvNonSpec::jacob(double* p, Datum* pd, double) {
+double KSPPIvNonSpec::jacob(Datum* pd, double, Memb_list* ml, std::size_t instance, std::size_t offset) {
     double afac = 1.e2 / (*static_cast<double*>(pd[0]));
-    return p[2] * afac;
+    return ml->data(instance, offset + 2) * afac;
 }
 
 double KSChan::conductance(double gmax, Memb_list* ml, std::size_t instance, std::size_t offset) {

@@ -6,10 +6,10 @@
 #include <stdio.h>
 #include "ocobserv.h"
 
+#include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 
 #include "membfunc.h"
-extern double* point_process_pointer(Point_process*, Symbol*, int);
 #include "parse.hpp"
 #include "hoclist.h"
 extern Symlist* hoc_symlist;
@@ -268,9 +268,8 @@ double* SymDirectory::variable(int index) {
             }
         case RANGEVAR:
             if (ob && ob->ctemplate->is_point_) {
-                return point_process_pointer((Point_process*) ob->u.this_pointer,
-                                             sym,
-                                             array_index(index));
+                return static_cast<double*>(point_process_pointer(
+                    (Point_process*) ob->u.this_pointer, sym, array_index(index)));
             }
             break;
         }

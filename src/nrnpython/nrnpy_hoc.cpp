@@ -2461,7 +2461,7 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
         } else if (hoc_is_pdouble_arg(iiarg)) {
             PyHocObject* ptr_nrn = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
             ptr_nrn->type_ = PyHoc::HocScalarPtr;
-            ptr_nrn->u.px_ = hoc_pgetarg(iiarg);
+            ptr_nrn->u.px_ = hoc_get_arg<neuron::container::data_handle<double>>(iiarg);
             PyObject* py_ptr = (PyObject*) ptr_nrn;
             Py_INCREF(py_ptr);
             PyTuple_SetItem(args, iarg + 3, py_ptr);
