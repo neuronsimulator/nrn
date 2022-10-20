@@ -230,7 +230,9 @@ double has_loc_point(void* v) {
     return (pnt->sec != 0);
 }
 
-double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
+neuron::container::data_handle<double> point_process_pointer(Point_process* pnt,
+                                                             Symbol* sym,
+                                                             int index) {
     if (!pnt->prop) {
         if (nrn_inpython_ == 1) { /* python will handle the error */
             hoc_warning("point process not located in a section", nullptr);
@@ -259,29 +261,27 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
             // void*. We don't know what type that pointer really refers to, so
             // in the first instance let's return nullptr in that case, not
             // void*-cast-to-double*.
-            return datum.holds<double*>() ? static_cast<double*>(datum) : nullptr;
+            if (datum.holds<double*>()) {
+                return static_cast<neuron::container::data_handle<double>>(datum);
+            } else {
+                return {};
+            }
         }
     } else {
         if (pnt->prop->ob) {
             return pnt->prop->ob->u.dataspace[sym->u.rng.index].pval + index;
         } else {
-            return static_cast<double*>(pnt->prop->param_handle(sym->u.rng.index + index));
+            return pnt->prop->param_handle(sym->u.rng.index + index);
         }
     }
 }
 
-/* put the right double pointer on the stack */
+// put the right data handle on the stack
 void steer_point_process(void* v) {
-    Symbol* sym;
-    int index;
-    Point_process* pnt = (Point_process*) v;
-    sym = hoc_spop();
-    if (ISARRAY(sym)) {
-        index = hoc_araypt(sym, SYMBOL);
-    } else {
-        index = 0;
-    }
-    hoc_pushpx(point_process_pointer(pnt, sym, index));
+    auto* const pnt = static_cast<Point_process*>(v);
+    auto* const sym = hoc_spop();
+    auto const index = ISARRAY(sym) ? hoc_araypt(sym, SYMBOL) : 0;
+    hoc_push(point_process_pointer(pnt, sym, index));
 }
 
 void nrn_cppp(void) {

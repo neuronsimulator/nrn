@@ -82,6 +82,7 @@ extern double has_loc_point(void*);
 extern double get_loc_point_process(void*);
 extern double loc_point_process(int, void*);
 extern Prop* nrn_point_prop_;
+neuron::container::data_handle<double> point_process_pointer(Point_process*, Symbol*, int);
 void steer_point_process(void* v);
 
 bool at_time(NrnThread*, double);

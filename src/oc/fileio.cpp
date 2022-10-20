@@ -917,7 +917,7 @@ int Fprintf(FILE* stream, const char* fmt, ...) {
 }
 
 /** printf style specification of hoc_execerror message. (512 char limit) **/
-void hoc_execerr_ext(const char* fmt, ...) {
+[[noreturn]] void hoc_execerr_ext(const char* fmt, ...) {
     int size;  // vsnprintf returns -1 on error.
     va_list ap;
 

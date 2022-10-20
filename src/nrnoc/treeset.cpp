@@ -2149,6 +2149,13 @@ void nrn_recalc_ptrs(double* (*r)(double*) ) {
 }
 
 /** @brief Sort the underlying storage for a particular mechanism.
+ *
+ *  After model building is complete the storage vectors backing all Mechanism
+ *  instances can be permuted to ensure that preconditions are met for the
+ *  computations performed while time-stepping.
+ *
+ *  This method ensures that the Mechanism data is ready for this compute phase.
+ *  It is guaranteed to remain "ready" until the returned tokens are destroyed.
  */
 static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_data(
     neuron::cache::Model& cache,
@@ -2226,25 +2233,6 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
     return mech_data.get_sorted_token();
 }
 
-/** @brief Sort the underlying storage for Mechanisms.
- *
- *  After model building is complete the storage vectors backing all Mechanism
- *  instances can be permuted to ensure that preconditions are met for the
- *  computations performed while time-stepping.
- *
- *  This method ensures that the Mechanism data is ready for this compute phase.
- *  It is guaranteed to remain "ready" until the returned tokens are destroyed.
- */
-// static std::vector<neuron::container::state_token<neuron::container::Mechanism::storage>>
-// nrn_ensure_mech_data_are_sorted(neuron::cache::Model& cache) {
-//     std::vector<neuron::container::state_token<neuron::container::Mechanism::storage>> tokens{};
-//     neuron::model().apply_to_mechanisms([&cache,&tokens](auto& mech_data) {
-//         tokens.emplace_back(mech_data.is_sorted() ? mech_data.get_sorted_token()
-//                                                   : nrn_sort_mech_data(cache, mech_data));
-//     });
-//     return tokens;
-// }
-
 /** @brief Sort the underlying storage for Nodes.
  *
  *  After model building is complete the storage vectors backing all Node
@@ -2274,6 +2262,7 @@ static neuron::container::state_token<neuron::container::Node::storage> nrn_sort
         // What offset in the global node data structure do the values for this thread
         // start at
         nt->_node_data_offset = global_i;
+        cache.thread.at(nt - nrn_threads).node_data_offset = global_i;
         for (int i = 0; i < nt->end; ++i, ++global_i) {
             Node* nd = nt->_v_node[i];
             auto const current_node_row = nd->_node_handle.id().current_row();
@@ -2301,7 +2290,6 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
     neuron::model_sorted_token ret{*neuron::cache::model};
     auto& node_data = neuron::model().node_data();
     auto& tokens = ret.mech_data_tokens;
-    auto& cache = ret.cache();
     if (cache_was_valid) {
         // cache is valid
         assert(node_data.is_sorted());
@@ -2312,6 +2300,9 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         });
     } else {
         // cache not valid, presumably because something is not sorted
+        // populate a different cache, because neuron::cache::model gets
+        // invalidated by permutations via the callback
+        auto cache = std::move(*neuron::cache::model);
         bool all_sorted = node_data.is_sorted();
         neuron::model().apply_to_mechanisms(
             [&all_sorted](auto& mech_data) { all_sorted = all_sorted && mech_data.is_sorted(); });
@@ -2320,12 +2311,13 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         for (auto& thread_cache: cache.thread) {
             thread_cache.mechanism_offset.resize(neuron::model().mechanism_storage_size());
         }
-        ret.node_data_token = nrn_sort_node_data(*neuron::cache::model);
+        ret.node_data_token = nrn_sort_node_data(cache);
         // TODO should we pass a token saying the node data are sorted to
         // nrn_sort_mech_data?
         neuron::model().apply_to_mechanisms([&cache, &tokens](auto& mech_data) {
             tokens.emplace_back(nrn_sort_mech_data(cache, mech_data));
         });
+        neuron::cache::model = std::move(cache);
     }
     return ret;
 }

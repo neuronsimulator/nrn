@@ -32,55 +32,52 @@ struct interface: view_base<View> {
     /** @brief Return the number of floating point fields accessible via fpfield.
      */
     [[nodiscard]] std::size_t num_fpfields() const {
-        return this->template get_tag<field::PerInstanceFloatingPointField>().num_instances();
+        return this->template get_tag<field::FloatingPoint>().num_instances();
     }
     /** @brief Return the area.
      */
-    [[nodiscard]] field::PerInstanceFloatingPointField::type fpfield(
-        std::size_t field_index) const {
+    [[nodiscard]] field::FloatingPoint::type fpfield(std::size_t field_index) const {
         if (field_index >= num_fpfields()) {
             throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
                                      ") field index out of range");
         }
-        return this->template get<field::PerInstanceFloatingPointField>(field_index);
+        return this->template get<field::FloatingPoint>(field_index);
     }
 
-    [[nodiscard]] field::PerInstanceFloatingPointField::type& fpfield_ref(std::size_t field_index) {
+    [[nodiscard]] field::FloatingPoint::type& fpfield_ref(std::size_t field_index) {
         if (field_index >= num_fpfields()) {
             throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
                                      ") field index out of range");
         }
-        return this->template get<field::PerInstanceFloatingPointField>(field_index);
+        return this->template get<field::FloatingPoint>(field_index);
     }
 
-    [[nodiscard]] field::PerInstanceFloatingPointField::type const& fpfield_ref(
-        std::size_t field_index) const {
+    [[nodiscard]] field::FloatingPoint::type const& fpfield_ref(std::size_t field_index) const {
         if (field_index >= num_fpfields()) {
             throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
                                      ") field index out of range");
         }
-        return this->template get<field::PerInstanceFloatingPointField>(field_index);
+        return this->template get<field::FloatingPoint>(field_index);
     }
 
     /** @brief Return a data_handle to the area.
      */
-    [[nodiscard]] data_handle<field::PerInstanceFloatingPointField::type> fpfield_handle(
-        std::size_t field_index) {
+    [[nodiscard]] data_handle<field::FloatingPoint::type> fpfield_handle(std::size_t field_index) {
         if (field_index >= num_fpfields()) {
             throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
                                      ") field index out of range");
         }
-        return this->template get_handle<field::PerInstanceFloatingPointField>(field_index);
+        return this->template get_handle<field::FloatingPoint>(field_index);
     }
 
     /** @brief Set the area.
      */
-    void set_fpfield(std::size_t field_index, field::PerInstanceFloatingPointField::type area) {
+    void set_fpfield(std::size_t field_index, field::FloatingPoint::type area) {
         if (field_index >= num_fpfields()) {
             throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
                                      ") field index out of range");
         }
-        this->template get<field::PerInstanceFloatingPointField>(field_index) = area;
+        this->template get<field::FloatingPoint>(field_index) = area;
     }
     friend std::ostream& operator<<(std::ostream& os, interface const& handle) {
         return os << handle.underlying_storage().name() << '{' << handle.id() << '/'

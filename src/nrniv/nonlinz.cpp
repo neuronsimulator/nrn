@@ -580,11 +580,12 @@ void NonLinImpRep::current(int im, Memb_list* ml, int in) {  // assume there is 
                                                              // method
     Pvmi s = memb_func[im].current;
     // fake a 1 element memb_list
-    Memb_list mfake;
+    Memb_list mfake{im};
 #if CACHEVEC != 0
     mfake.nodeindices = ml->nodeindices + in;
 #endif
     mfake.nodelist = ml->nodelist + in;
+    mfake.set_storage_pointer(ml->get_storage_pointer());
     mfake.pdata = ml->pdata + in;
     mfake.prop = ml->prop ? ml->prop + in : nullptr;
     mfake.nodecount = 1;

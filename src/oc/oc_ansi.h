@@ -98,6 +98,7 @@ extern int nrnignore;
  */
 int hoc_obj_run(const char*, Object*);
 
+void hoc_prstack();
 int hoc_argtype(int);
 int hoc_is_double_arg(int);
 int hoc_is_pdouble_arg(int);
