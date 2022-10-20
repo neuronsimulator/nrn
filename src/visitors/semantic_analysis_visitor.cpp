@@ -1,7 +1,9 @@
 #include "visitors/semantic_analysis_visitor.hpp"
 #include "ast/function_block.hpp"
+#include "ast/independent_block.hpp"
 #include "ast/procedure_block.hpp"
 #include "ast/program.hpp"
+#include "ast/string.hpp"
 #include "ast/suffix.hpp"
 #include "ast/table_statement.hpp"
 #include "symtab/symbol_properties.hpp"
@@ -97,6 +99,19 @@ void SemanticAnalysisVisitor::visit_destructor_block(const ast::DestructorBlock&
             "SemanticAnalysisVisitor :: This mod file is not point process but contains a "
             "destructor.");
         check_fail = true;
+    }
+    /// -->
+}
+
+void SemanticAnalysisVisitor::visit_independent_block(const ast::IndependentBlock& node) {
+    /// <-- This code is for check 5
+    for (const auto& n: node.get_variables()) {
+        if (n->get_value()->get_value() != "t") {
+            logger->warn(
+                "SemanticAnalysisVisitor :: '{}' cannot be used as an independent variable, only "
+                "'t' is allowed.",
+                n->get_value()->get_value());
+        }
     }
     /// -->
 }

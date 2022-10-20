@@ -431,6 +431,10 @@ std::map<std::string, NmodlTestCase> const nmodl_valid_constructs{
                     t FROM 0 TO 1 WITH 1 (ms)
                     SWEEP u FROM 0 TO 1 WITH 1 (ms)
                 }
+            )",
+            R"(
+                INDEPENDENT {
+                t u}
             )"
         }
     },

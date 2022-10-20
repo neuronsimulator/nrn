@@ -105,7 +105,6 @@ GLOBAL_BLOCKS = {"NeuronBlock",
 # when translating back to nmodl, we need print each statement
 # to new line. Those nodes are are used from this list.
 STATEMENT_TYPES = {"Statement",
-                   "IndependentDefinition",
                    "AssignedDefinition",
                    "ParamAssign",
                    "ConstantStatement",

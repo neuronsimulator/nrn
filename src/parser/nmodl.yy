@@ -253,11 +253,11 @@
 %type   <ast::Number*>                      optional_start
 %type   <ast::LagStatement*>                lag_statement
 %type   <ast::ParamAssign*>                 parameter_assignment
-%type   <ast::IndependentDefinition*>       independent_definition
+%type   <ast::Name*>                        independent_definition
 %type   <ast::AssignedDefinition*>          dependent_definition
 %type   <ast::Block*>                       declare
 %type   <ast::ParamAssignVector>            parameter_block_body
-%type   <ast::IndependentDefinitionVector>  independent_block_body
+%type   <ast::NameVector>                   independent_block_body
 %type   <ast::AssignedDefinitionVector>     dependent_block_body
 %type   <ast::WatchStatement*>              watch_statement
 %type   <ast::BinaryOperator>               watch_direction
@@ -655,18 +655,18 @@ double          :   REAL
                 ;
 
 
+/** We still parse INDEPENDENT block but we do nothing with it, except checking that the
+    variable is `t` later. */
 independent_block : INDEPENDENT "{" independent_block_body "}"
                     {
                         $$ = new ast::IndependentBlock($3);
-                        ModToken block_token = $1 + $4;
-                        $$->set_token(block_token);
                     }
                 ;
 
 
 independent_block_body :
                     {
-                        $$ = ast::IndependentDefinitionVector();
+                        $$ = ast::NameVector();
                     }
                 |   independent_block_body independent_definition
                     {
@@ -676,7 +676,6 @@ independent_block_body :
                 |   independent_block_body SWEEP independent_definition
                     {
                         $1.emplace_back($3);
-                        $3->set_sweep(std::make_shared<ast::Boolean>(1));
                         $$ = $1;
                     }
                 ;
@@ -684,7 +683,7 @@ independent_block_body :
 
 independent_definition :  NAME_PTR FROM number TO number withby integer optional_start units
                     {
-                        $$ = new ast::IndependentDefinition(NULL, $1, $3, $5, $7, $8, $9);
+                        $$ = $1;
                     }
                 |   error
                     {
