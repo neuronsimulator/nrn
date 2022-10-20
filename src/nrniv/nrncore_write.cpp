@@ -214,9 +214,8 @@ static part1_ret part1() {
     rankbytes += CellGroup::get_mla_rankbytes(cellgroups_);
     rankbytes += nrncore_netpar_bytes();
     // printf("%d bytes %ld\n", nrnmpi_myid, rankbytes);
-    CellGroup* cgs = CellGroup::mk_cellgroups(cache_token, cellgroups_);
-
-    CellGroup::datumtransform(cgs);
+    CellGroup::mk_cellgroups(cache_token, cellgroups_);
+    CellGroup::datumtransform(cellgroups_);
     return {rankbytes, std::move(sorted_token)};
 }
 

@@ -130,13 +130,10 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     // nrnthread_dat1(int tid, int& n_presyn, int& n_netcon, int*& output_gid, int*& netcon_srcgid);
     fprintf(f, "%d npresyn\n", cg.n_presyn);
     fprintf(f, "%d nnetcon\n", cg.n_netcon);
-    writeint(cg.output_gid, cg.n_presyn);
+    writeint(cg.output_gid.data(), cg.n_presyn);
     writeint(cg.netcon_srcgid, cg.n_netcon);
 
-    if (cg.output_gid) {
-        delete[] cg.output_gid;
-        cg.output_gid = NULL;
-    }
+    cg.output_gid.clear();
     if (cg.netcon_srcgid) {
         delete[] cg.netcon_srcgid;
         cg.netcon_srcgid = NULL;

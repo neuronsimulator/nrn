@@ -31,12 +31,12 @@ class CellGroup {
     int n_mech;
     int* ml_vdata_offset;
     // following three are parallel arrays
-    PreSyn** output_ps;  // n_presyn of these, real are first, tml order for acell.
-    int* output_gid;     // n_presyn of these, -(type + 1000*index) if no gid
-    int* output_vindex;  // n_presyn of these. >=0 if associated with voltage, -(type + 1000*index)
-                         // for acell.
-    int n_netcon;        // all that have targets associated with this threads Point_process.
-    NetCon** netcons;
+    std::vector<PreSyn*> output_ps;  // n_presyn of these, real are first, tml order for acell.
+    std::vector<int> output_gid;     // n_presyn of these, -(type + 1000*index) if no gid
+    std::vector<int> output_vindex;  // n_presyn of these. >=0 if associated with voltage, -(type +
+                                     // 1000*index) for acell.
+    int n_netcon;  // all that have targets associated with this threads Point_process.
+    std::vector<NetCon*> netcons;
     int* netcon_srcgid;  // -(type + 1000*index) refers to acell with no gid
     // -1 means the netcon has no source
     std::vector<int> netcon_negsrcgid_tid;  // if some srcgid above are negative,
@@ -49,9 +49,9 @@ class CellGroup {
     DatumIndices* datumindices;
     MlWithArt mlwithart;
 
-    static CellGroup* mk_cellgroups(neuron::model_sorted_token const& cache_token,
-                                    CellGroup*);  // gid, PreSyn, NetCon, Point_process relation.
-    static void datumtransform(CellGroup*);       // Datum.pval to int
+    static void mk_cellgroups(neuron::model_sorted_token const& cache_token,
+                              CellGroup*);   // gid, PreSyn, NetCon, Point_process relation.
+    static void datumtransform(CellGroup*);  // Datum.pval to int
     static void datumindex_fill(int, CellGroup&, DatumIndices&, Memb_list*);  // helper
     static void mk_cgs_netcon_info(neuron::model_sorted_token const& cache_token, CellGroup* cgs);
     static void mk_tml_with_art(neuron::model_sorted_token const& cache_token, CellGroup*);
@@ -73,7 +73,7 @@ class CellGroup {
     }
 
     static Deferred_Type2ArtMl deferred_type2artml_;
-    static std::vector<NetCon**> deferred_netcons;
+    static std::vector<std::vector<NetCon*>> deferred_netcons;
     static void defer_clean_netcons(CellGroup*);
     static void clean_deferred_netcons();
 

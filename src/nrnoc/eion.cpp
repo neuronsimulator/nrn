@@ -558,9 +558,8 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
     Datum** ppd = ml->pdata;
-    int i;
     /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
-    for (i = 0; i < count; ++i) {
+    for (int i = 0; i < count; ++i) {
         ml->data(i, dcurdv_index) = 0.0;
         ml->data(i, cur_index) = 0.0;
         if (iontype & 0100) {

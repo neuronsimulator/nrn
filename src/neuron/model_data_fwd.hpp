@@ -14,7 +14,8 @@ template <typename T>
 [[nodiscard]] data_handle<T> find_data_handle(T*);
 
 struct storage_info {
-    std::string name{};
+    std::string container{};
+    std::string field{};
     std::size_t size{};
 };
 
