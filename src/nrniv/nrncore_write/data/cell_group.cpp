@@ -24,9 +24,6 @@ int* CellGroup::has_net_event_;
 CellGroup::CellGroup() {
     n_output = n_real_output = n_presyn = n_netcon = n_mech = ntype = 0;
     group_id = -1;
-    output_gid = output_vindex = 0;
-    netcons = 0;
-    output_ps = 0;
     ndiam = 0;
     netcon_srcgid = netcon_pnttype = netcon_pntindex = 0;
     datumindices = 0;
@@ -38,10 +35,6 @@ CellGroup::CellGroup() {
 }
 
 CellGroup::~CellGroup() {
-    if (output_gid)
-        delete[] output_gid;
-    if (output_vindex)
-        delete[] output_vindex;
     if (netcon_srcgid)
         delete[] netcon_srcgid;
     if (netcon_pnttype)
@@ -50,17 +43,13 @@ CellGroup::~CellGroup() {
         delete[] netcon_pntindex;
     if (datumindices)
         delete[] datumindices;
-    if (netcons)
-        delete[] netcons;
-    if (output_ps)
-        delete[] output_ps;
     if (ml_vdata_offset)
         delete[] ml_vdata_offset;
     delete[] type2ml;
 }
 
 
-CellGroup* CellGroup::mk_cellgroups(neuron::model_sorted_token const& cache_token, CellGroup* cgs) {
+void CellGroup::mk_cellgroups(neuron::model_sorted_token const& cache_token, CellGroup* cgs) {
     for (int i = 0; i < nrn_nthread; ++i) {
         auto& nt = nrn_threads[i];
         cgs[i].n_real_cell = nt.ncell;  // real cell count
@@ -116,17 +105,12 @@ CellGroup* CellGroup::mk_cellgroups(neuron::model_sorted_token const& cache_toke
         }
         cgs[i].n_presyn = npre;
 
-        cgs[i].output_ps = new PreSyn*[npre];
-        cgs[i].output_gid = new int[npre];
-        cgs[i].output_vindex = new int[npre];
         // in case some cells do not have voltage presyns (eg threshold detection
         // computed from a POINT_PROCESS NET_RECEIVE with WATCH and net_event)
         // initialize as unused.
-        for (int j = 0; j < npre; ++j) {
-            cgs[i].output_ps[j] = NULL;
-            cgs[i].output_gid[j] = -1;
-            cgs[i].output_vindex[j] = -1;
-        }
+        cgs[i].output_ps.resize(npre);
+        cgs[i].output_gid.resize(npre, -1);
+        cgs[i].output_vindex.resize(npre, -1);
 
         // fill in the output_ps, output_gid, and output_vindex for the real cells.
         npre = 0;
@@ -135,16 +119,15 @@ CellGroup* CellGroup::mk_cellgroups(neuron::model_sorted_token const& cache_toke
             ITERATE(q, pth) {
                 auto* ps = static_cast<PreSyn*>(VOIDITM(q));
                 assert(ps->thvar_);
-                cgs[i].output_ps[npre] = ps;
-                cgs[i].output_gid[npre] = ps->output_index_;
                 assert(ps->thvar_.refers_to_a_modern_data_structure());
                 assert(ps->thvar_.refers_to<neuron::container::Node::field::Voltage>(
                     neuron::model().node_data()));
-                assert(neuron::model().node_data().is_sorted());
+                cgs[i].output_ps.at(npre) = ps;
+                cgs[i].output_gid.at(npre) = ps->output_index_;
                 // Convert back to an old-style index, i.e. the index of the
                 // voltage within this NrnThread after sorting
-                cgs[i].output_vindex[npre] = static_cast<double*>(ps->thvar_) -
-                                             nt.node_voltage_storage();
+                cgs[i].output_vindex.at(npre) = ps->thvar_.current_row() -
+                                                cache_token.thread_cache(i).node_data_offset;
                 ++npre;
             }
         }
@@ -158,27 +141,13 @@ CellGroup* CellGroup::mk_cellgroups(neuron::model_sorted_token const& cache_toke
             Memb_list* ml = mla[j].second;
             if (nrn_has_net_event(type)) {
                 for (int j = 0; j < ml->nodecount; ++j) {
-                    auto* pnt = static_cast<Point_process*>(ml->pdata[j][1]);
-                    PreSyn* ps = (PreSyn*) pnt->presyn_;
-                    cgs[i].output_ps[npre] = ps;
-                    // TODO TODO check check check
+                    auto* const pnt = static_cast<Point_process*>(ml->pdata[j][1]);
+                    auto* const ps = static_cast<PreSyn*>(pnt->presyn_);
+                    cgs[i].output_ps.at(npre) = ps;
                     auto const offset = cache_token.thread_cache(i).mechanism_offset.at(type);
-                    long const agid = -(type + 1000 * (pnt->prop->id().current_row() - offset));
-                    // if (nrn_is_artificial_[type]) {
-                    //     // static_cast<long> ensures the RHS is calculated with
-                    //     // `long` precision, not `int` precision. This lets us
-                    //     // check for overflow below.
-                    //     agid = -(type +
-                    //              1000 * pnt->prop->id().current_row()); // TODO dubious at best!
-                    //              static_cast<long>(nrncore_art2index(pnt->prop->id().current_row())));
-                    // } else {  // POINT_PROCESS with net_event
-                    //     int sz = nrn_prop_param_size_[type];
-                    //     double* d1 = ml->_data[0];
-                    //     double* d2 = pnt->prop->param;
-                    //     assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
-                    //     long ix{(d2 - d1) / sz};
-                    //     agid = -(type + 1000 * ix);
-                    // }
+                    auto const global_row = pnt->prop->id().current_row();
+                    assert(global_row >= offset);
+                    long const agid = -(type + 1000 * (global_row - offset));
                     if (ps) {
                         if (ps->output_index_ >= 0) {  // has gid
                             cgs[i].output_gid[npre] = ps->output_index_;
@@ -229,8 +198,6 @@ CellGroup* CellGroup::mk_cellgroups(neuron::model_sorted_token const& cache_toke
     // and fill the CellGroup netcons, netcon_srcgid, netcon_pnttype, and
     // netcon_pntindex (and, if nrn_nthread > 1, netcon_negsrcgid_tid).
     CellGroup::mk_cgs_netcon_info(cache_token, cgs);
-
-    return cgs;
 }
 
 void CellGroup::datumtransform(CellGroup* cgs) {
@@ -422,7 +389,7 @@ void CellGroup::mk_cgs_netcon_info(neuron::model_sorted_token const& cache_token
     // allocate
     for (int i = 0; i < nrn_nthread; ++i) {
         cgs[i].n_netcon = nccnt[i];
-        cgs[i].netcons = new NetCon*[nccnt[i] + 1];
+        cgs[i].netcons.resize(nccnt[i] + 1);
         cgs[i].netcon_srcgid = new int[nccnt[i] + 1];
         cgs[i].netcon_pnttype = new int[nccnt[i] + 1];
         cgs[i].netcon_pntindex = new int[nccnt[i] + 1];
@@ -589,7 +556,7 @@ void CellGroup::mk_tml_with_art(neuron::model_sorted_token const& cache_token, C
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 Memb_list* ml = cgs[id].mlwithart.back().second;
                 // ml->_data[acnt[id]] = memb_list[i]._data[j];
-                assert(ml->instances.size() == acnt[id]);
+                // assert(ml->instances.size() == acnt[id]);
                 ml->set_storage_offset(cache_token.thread_cache(id).mechanism_offset.at(i));
                 // ml->instances.push_back(memb_list[i].instance_handle(j));
                 ml->pdata[acnt[id]] = memb_list[i].pdata[j];

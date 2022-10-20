@@ -9,8 +9,8 @@ namespace field {
  *  @todo Update the code generation so we get some hh_data = soa<hh_identifier,
  *  hh_a, hh_b, ...> type instead of fudging things this way.
  */
-struct PerInstanceFloatingPointField {
-    constexpr PerInstanceFloatingPointField(std::size_t num_copies)
+struct FloatingPoint {
+    constexpr FloatingPoint(std::size_t num_copies)
         : m_num_copies{num_copies} {}
     /** @brief How many copes of this column should be created?
      */
@@ -26,10 +26,10 @@ struct PerInstanceFloatingPointField {
 
 /** @brief Underlying storage for all instances of a particular Mechanism.
  */
-struct storage: soa<storage, identifier, field::PerInstanceFloatingPointField> {
-    using base_type = soa<storage, struct identifier, field::PerInstanceFloatingPointField>;
+struct storage: soa<storage, identifier, field::FloatingPoint> {
+    using base_type = soa<storage, struct identifier, field::FloatingPoint>;
     storage(short mech_type, std::string name, std::size_t num_floating_point_fields)
-        : base_type{field::PerInstanceFloatingPointField{num_floating_point_fields}}
+        : base_type{field::FloatingPoint{num_floating_point_fields}}
         , m_mech_name{std::move(name)}
         , m_mech_type{mech_type} {
         std::cout << "mechanism " << m_mech_name << " has " << num_floating_point_fields
@@ -42,7 +42,7 @@ struct storage: soa<storage, identifier, field::PerInstanceFloatingPointField> {
         return m_mech_type;
     }
     [[nodiscard]] constexpr std::size_t num_floating_point_fields() const {
-        return get_tag<field::PerInstanceFloatingPointField>().num_instances();
+        return get_tag<field::FloatingPoint>().num_instances();
     }
 
   private:

@@ -152,12 +152,21 @@ struct data_handle {
     }
 
     friend std::ostream& operator<<(std::ostream& os, data_handle const& dh) {
-        auto const maybe_info = utils::find_container_info(dh.m_container);
         os << "data_handle<" << cxx_demangle(typeid(T).name()) << ">{";
-        if (maybe_info) {
-            os << "cont=" << maybe_info->name << ' ' << dh.m_offset << '/' << maybe_info->size;
-        } else {
+        if (dh.m_raw_ptr) {
             os << "raw=" << dh.m_raw_ptr;
+        } else if (dh.m_offset || dh.m_offset.m_ptr) {
+            auto const maybe_info = utils::find_container_info(dh.m_container);
+            if (maybe_info) {
+                if (!maybe_info->container.empty()) {
+                    os << "cont=" << maybe_info->container << ' ';
+                }
+                os << maybe_info->field << ' ' << dh.m_offset << '/' << maybe_info->size;
+            } else {
+                os << "cont=unknown " << dh.m_offset << "/unknown";
+            }
+        } else {
+            os << "nullptr";
         }
         return os << '}';
     }

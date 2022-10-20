@@ -64,10 +64,8 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                                    [](auto const& mech) { return mech.fpfield(1); });
                     REQUIRE(current_field0 == reference_field0);
                     REQUIRE(current_field1 == reference_field1);
-                    auto const& storage0 =
-                        mech_data.get_field_instance<field::PerInstanceFloatingPointField>(0);
-                    auto const& storage1 =
-                        mech_data.get_field_instance<field::PerInstanceFloatingPointField>(1);
+                    auto const& storage0 = mech_data.get_field_instance<field::FloatingPoint>(0);
+                    auto const& storage1 = mech_data.get_field_instance<field::FloatingPoint>(1);
                     if (storage_should_match == StorageCheck::Match) {
                         AND_THEN("The underlying storage matches the reference values") {
                             REQUIRE(reference_field0 == storage0);
