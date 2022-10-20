@@ -76,48 +76,51 @@ void destroy_point_process(void* v) {
 
 void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node* node) {
     extern Prop* prop_alloc_disallow(Prop * *pp, short type, Node* nd);
-    extern Prop* prop_alloc(Prop**, int, Node*);
     extern Section* nrn_pnt_sec_for_need_;
-    Prop* p;
-    double x;
-
     assert(!nrn_is_artificial_[pointsym[pointtype]->subtype]);
-    x = nrn_arc_position(sec, node);
-    /* the problem the next fragment overcomes is that POINTER's become
-       invalid when a point process is moved (dparam and param were
-       allocated but then param was freed and replaced by old param) The
-       error that I saw, then, was when a dparam pointed to a param --
-       useful to give default value to a POINTER and then the param was
-       immediately freed. This was the tip of the iceberg since in general
-       when one moves a point process, some pointers are valid and
-       some invalid and this can only be known by the model in its
-       CONSTRUCTOR. Therefore, instead of copying the old param to
-       the new param (and therefore invalidating other pointers as in
-       menus) we flag the allocation routine for the model to
-       1) not allocate param and dparam, 2) don't fill param but
-       do the work for dparam (fill pointers for ions),
-       3) execute the constructor normally.
-    */
-    nrn_point_prop_ = pnt->prop;
-    nrn_pnt_sec_for_need_ = sec;
-    if (x == 0. || x == 1.) {
-        p = prop_alloc_disallow(&(node->prop), pointsym[pointtype]->subtype, node);
-    } else {
-        p = prop_alloc(&(node->prop), pointsym[pointtype]->subtype, node);
-    }
-    nrn_pnt_sec_for_need_ = (Section*) 0;
-
-    nrn_point_prop_ = (Prop*) 0;
     if (pnt->prop) {
-        // pnt->prop->param = nullptr;
-        pnt->prop->dparam = nullptr;
-        free_one_point(pnt);
+        // Make the old Node forget about pnt->prop
+        if (auto* const old_node = pnt->node; old_node) {
+            auto* const p = pnt->prop;
+            if (!nrn_is_artificial_[p->_type]) {
+                auto* p1 = old_node->prop;
+                if (p1 == p) {
+                    old_node->prop = p1->next;
+                } else {
+                    for (; p1; p1 = p1->next) {
+                        if (p1->next == p) {
+                            p1->next = p->next;
+                            break;
+                        }
+                    }
+                }
+            }
+            v_structure_change = 1;  // needed?
+        }
+        // Tell the new Node about pnt->prop
+        pnt->prop->next = node->prop;
+        node->prop = pnt->prop;
+    } else {
+        // Allocate a new Prop for this Point_process
+        Prop* p;
+        auto const x = nrn_arc_position(sec, node);
+        nrn_point_prop_ = pnt->prop;
+        nrn_pnt_sec_for_need_ = sec;
+        // Both branches of this tell `node` about the new Prop `p`
+        if (x == 0. || x == 1.) {
+            p = prop_alloc_disallow(&(node->prop), pointsym[pointtype]->subtype, node);
+        } else {
+            p = prop_alloc(&(node->prop), pointsym[pointtype]->subtype, node);
+        }
+        nrn_pnt_sec_for_need_ = nullptr;
+        nrn_point_prop_ = nullptr;
+        pnt->prop = p;
+        pnt->prop->dparam[1] = pnt;
     }
+    // Update pnt->sec with sec, unreffing the old value and reffing the new one
     nrn_sec_ref(&pnt->sec, sec);
-    pnt->node = node;
-    pnt->prop = p;
+    pnt->node = node;  // tell pnt which node it belongs to now
     pnt->prop->dparam[0] = node->area_handle();
-    pnt->prop->dparam[1] = pnt;
     if (pnt->ob) {
         if (pnt->ob->observers) {
             hoc_obj_notify(pnt->ob);
@@ -230,7 +233,9 @@ double has_loc_point(void* v) {
     return (pnt->sec != 0);
 }
 
-double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
+neuron::container::data_handle<double> point_process_pointer(Point_process* pnt,
+                                                             Symbol* sym,
+                                                             int index) {
     if (!pnt->prop) {
         if (nrn_inpython_ == 1) { /* python will handle the error */
             hoc_warning("point process not located in a section", nullptr);
@@ -259,29 +264,27 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
             // void*. We don't know what type that pointer really refers to, so
             // in the first instance let's return nullptr in that case, not
             // void*-cast-to-double*.
-            return datum.holds<double*>() ? static_cast<double*>(datum) : nullptr;
+            if (datum.holds<double*>()) {
+                return static_cast<neuron::container::data_handle<double>>(datum);
+            } else {
+                return {};
+            }
         }
     } else {
         if (pnt->prop->ob) {
             return pnt->prop->ob->u.dataspace[sym->u.rng.index].pval + index;
         } else {
-            return static_cast<double*>(pnt->prop->param_handle(sym->u.rng.index + index));
+            return pnt->prop->param_handle(sym->u.rng.index + index);
         }
     }
 }
 
-/* put the right double pointer on the stack */
+// put the right data handle on the stack
 void steer_point_process(void* v) {
-    Symbol* sym;
-    int index;
-    Point_process* pnt = (Point_process*) v;
-    sym = hoc_spop();
-    if (ISARRAY(sym)) {
-        index = hoc_araypt(sym, SYMBOL);
-    } else {
-        index = 0;
-    }
-    hoc_pushpx(point_process_pointer(pnt, sym, index));
+    auto* const pnt = static_cast<Point_process*>(v);
+    auto* const sym = hoc_spop();
+    auto const index = ISARRAY(sym) ? hoc_araypt(sym, SYMBOL) : 0;
+    hoc_push(point_process_pointer(pnt, sym, index));
 }
 
 void nrn_cppp(void) {
