@@ -349,6 +349,7 @@ This is a common operation for fixed step, cvode, and daspk methods
 */
 
 void nrn_rhs(NrnThread* _nt) {
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
     int i, i1, i2, i3;
     double w;
     int measure = 0;
