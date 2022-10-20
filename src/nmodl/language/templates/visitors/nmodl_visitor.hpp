@@ -32,6 +32,10 @@ namespace visitor {
 /**
  * \class NmodlPrintVisitor
  * \brief %Visitor for printing AST back to NMODL
+ * \todo Note that AstNodeType::INDEPENDENT_BLOCK is now trimmed-down
+ *       in the AST. So if we need to make provide something like
+ *       `nmodl-format` then we should exclude this node type i.e.
+ *       add that in the exclude_types.
  */
 class NmodlPrintVisitor: public ConstVisitor {
   private:

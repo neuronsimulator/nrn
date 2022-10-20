@@ -122,3 +122,27 @@ SCENARIO("Ion variable in CONSTANT block", "[visitor][semantic_analysis]") {
         }
     }
 }
+
+SCENARIO("INDEPENDENT block", "[visitor][semantic_analysis]") {
+    GIVEN("A mod file with Independent block with only t") {
+        std::string nmodl_text = R"(
+            INDEPENDENT {
+                t FROM 0 TO 1 WITH 100
+            }
+        )";
+        THEN("Semantic analysis succeed") {
+            REQUIRE_FALSE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+    GIVEN("A mod file with Independent block with something else than t") {
+        std::string nmodl_text = R"(
+            INDEPENDENT {
+                t FROM 0 TO 1 WITH 100
+                u FROM 0 TO 1 WITH 100
+            }
+        )";
+        THEN("Semantic analysis fails") {
+            REQUIRE_FALSE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+}

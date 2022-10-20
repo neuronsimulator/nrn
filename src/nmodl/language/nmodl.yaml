@@ -450,10 +450,11 @@
                         - IndependentBlock:
                             nmodl: "INDEPENDENT "
                             members:
-                              - definitions:
-                                  brief: "TODO"
-                                  type: IndependentDefinition
+                              - variables:
+                                  brief: "List of variable that should be independent"
+                                  type: Name
                                   vector: true
+                                  separator: " "
                             brief: "Represents a `INDEPENDENT` block in the NMODL"
                             description: |
                                     `INDEPENDENT` has following form in the NMODL specification :
@@ -1319,40 +1320,6 @@
                         - limit:
                             brief: "TODO"
                             type: Limits
-                            optional: true
-                            prefix: {value: " "}
-
-                  - IndependentDefinition:
-                      brief: "TODO"
-                      members:
-                        - sweep:
-                            brief: "TODO"
-                            type: Boolean
-                            optional: true
-                            nmodl: "SWEEP "
-                        - name:
-                            brief: "TODO"
-                            type: Name
-                        - from:
-                            brief: "TODO"
-                            type: Number
-                            prefix: {value: " FROM "}
-                        - to:
-                            brief: "TODO"
-                            type: Number
-                            prefix: {value: " TO "}
-                        - with:
-                            brief: "TODO"
-                            type: Integer
-                            prefix: {value: " WITH "}
-                        - start:
-                            brief: "TODO"
-                            type: Number
-                            prefix: {value: " START "}
-                            optional: true
-                        - unit:
-                            brief: "TODO"
-                            type: Unit
                             optional: true
                             prefix: {value: " "}
 

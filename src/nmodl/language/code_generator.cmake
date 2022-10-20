@@ -103,7 +103,6 @@ set(AST_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/ast/if_statement.hpp
     ${PROJECT_BINARY_DIR}/src/ast/include.hpp
     ${PROJECT_BINARY_DIR}/src/ast/independent_block.hpp
-    ${PROJECT_BINARY_DIR}/src/ast/independent_definition.hpp
     ${PROJECT_BINARY_DIR}/src/ast/indexed_name.hpp
     ${PROJECT_BINARY_DIR}/src/ast/initial_block.hpp
     ${PROJECT_BINARY_DIR}/src/ast/integer.hpp
