@@ -133,7 +133,7 @@ class TvecRecord: public PlayRecord {
 
 class YvecRecord: public PlayRecord {
   public:
-    YvecRecord(double*, IvocVect* y, Object* ppobj = nil);
+    YvecRecord(neuron::container::data_handle<double>, IvocVect* y, Object* ppobj = nil);
     virtual ~YvecRecord();
     virtual void install(Cvode*);
     virtual void record_init();
@@ -152,7 +152,10 @@ class YvecRecord: public PlayRecord {
 
 class VecRecordDiscrete: public PlayRecord {
   public:
-    VecRecordDiscrete(double*, IvocVect* y, IvocVect* t, Object* ppobj = nil);
+    VecRecordDiscrete(neuron::container::data_handle<double>,
+                      IvocVect* y,
+                      IvocVect* t,
+                      Object* ppobj = nil);
     virtual ~VecRecordDiscrete();
     virtual void install(Cvode*);
     virtual void record_init();
@@ -190,7 +193,10 @@ class VecRecordDiscreteSave: public PlayRecordSave {
 
 class VecRecordDt: public PlayRecord {
   public:
-    VecRecordDt(double*, IvocVect* y, double dt, Object* ppobj = nil);
+    VecRecordDt(neuron::container::data_handle<double>,
+                IvocVect* y,
+                double dt,
+                Object* ppobj = nil);
     virtual ~VecRecordDt();
     virtual void install(Cvode*);
     virtual void record_init();
@@ -224,7 +230,11 @@ class VecRecordDtSave: public PlayRecordSave {
 
 class VecPlayStep: public PlayRecord {
   public:
-    VecPlayStep(double*, IvocVect* y, IvocVect* t, double dt, Object* ppobj = nil);
+    VecPlayStep(neuron::container::data_handle<double>,
+                IvocVect* y,
+                IvocVect* t,
+                double dt,
+                Object* ppobj = nil);
     VecPlayStep(const char* s, IvocVect* y, IvocVect* t, double dt, Object* ppobj = nil);
     void init(IvocVect* y, IvocVect* t, double dt);
     virtual ~VecPlayStep();
