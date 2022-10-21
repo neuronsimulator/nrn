@@ -107,14 +107,18 @@ static struct { /* numerical methods */
     const char* name;
     long subtype; /* All the types that will work with this */
     short varstep;
-} methods[] = {
-    {"runge", DERF | KINF, 0},  {"euler", DERF | KINF, 0},
-    {"newton", NLINF, 0},       {"simeq", LINF, 0},
-    {"_advance", KINF, 0},      {"sparse", KINF, 0},
-    {"derivimplicit", DERF, 0}, /* name hard wired in deriv.c */
-    {"cnexp", DERF, 0},         /* see solve.c */
-    {"after_cvode", 0, 0},      {"cvode_t", 0, 0},
-    {"cvode_t_v", 0, 0},        {0, 0, 0}};
+} methods[] = {{"runge", DERF | KINF, 0},
+               {"euler", DERF | KINF, 0},
+               {"newton", NLINF, 0},
+               {"simeq", LINF, 0},
+               {"_advance", KINF, 0},
+               {"sparse", KINF, 0},
+               {"derivimplicit", DERF, 0}, /* name hard wired in deriv.c */
+               {"cnexp", DERF, 0},         /* see solve.c */
+               {"after_cvode", 0, 0},
+               {"cvode_t", 0, 0},
+               {"cvode_t_v", 0, 0},
+               {0, 0, 0}};
 
 static const char* extdef[] = {/* external names that can be used as doubles
                                 * without giving an error message */
