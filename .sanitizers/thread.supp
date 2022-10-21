@@ -1,1 +1,2 @@
-called_from_lib:mca_btl_tcp.so
+deadlock:mca_btl_tcp_add_procs
+deadlock:mca_btl_tcp_proc_remove
