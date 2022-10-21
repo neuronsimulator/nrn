@@ -30,7 +30,6 @@ void nrn_vecsim_remove(void* v) {
 void nrn_vecsim_add(void* v, bool record) {
     IvocVect *yvec, *tvec, *dvec;
     extern short* nrn_is_artificial_;
-    double* pvar = NULL;
     char* s = NULL;
     double ddt;
     Object* ppobj = NULL;
@@ -46,6 +45,7 @@ void nrn_vecsim_add(void* v, bool record) {
             hoc_execerror("Optional first arg is not a POINT_PROCESS", 0);
         }
     }
+    neuron::container::data_handle<double> dh{};
     if (record == false && hoc_is_str_arg(iarg + 1)) {  // statement involving $1
         // Vector.play("proced($1)", ...)
         s = gargstr(iarg + 1);
@@ -63,7 +63,7 @@ void nrn_vecsim_add(void* v, bool record) {
     } else {
         // Vector.play(&SEClamp[0].amp1, ...)
         // Vector.record(&SEClamp[0].i, ...)
-        pvar = hoc_pgetarg(iarg + 1);
+        dh = hoc_get_arg<neuron::container::data_handle<double>>(iarg + 1);
     }
     tvec = NULL;
     dvec = NULL;
@@ -95,13 +95,13 @@ void nrn_vecsim_add(void* v, bool record) {
             nrn_vecsim_remove(yvec);
         }
         if (tvec) {
-            new VecRecordDiscrete(pvar, yvec, tvec, ppobj);
+            new VecRecordDiscrete(std::move(dh), yvec, tvec, ppobj);
         } else if (ddt > 0.) {
-            new VecRecordDt(pvar, yvec, ddt, ppobj);
-        } else if (pvar == &t) {
+            new VecRecordDt(std::move(dh), yvec, ddt, ppobj);
+        } else if (static_cast<double const*>(dh) == &t) {
             new TvecRecord(chk_access(), yvec, ppobj);
         } else {
-            new YvecRecord(pvar, yvec, ppobj);
+            new YvecRecord(std::move(dh), yvec, ppobj);
         }
     } else {
         if (con) {
@@ -112,7 +112,7 @@ void nrn_vecsim_add(void* v, bool record) {
             if (s) {
                 new VecPlayContinuous(s, yvec, tvec, dvec, ppobj);
             } else {
-                new VecPlayContinuous(pvar, yvec, tvec, dvec, ppobj);
+                new VecPlayContinuous(std::move(dh), yvec, tvec, dvec, ppobj);
             }
         } else {
             if (!tvec && ddt == -1.) {
@@ -121,14 +121,18 @@ void nrn_vecsim_add(void* v, bool record) {
             if (s) {
                 new VecPlayStep(s, yvec, tvec, ddt, ppobj);
             } else {
-                new VecPlayStep(pvar, yvec, tvec, ddt, ppobj);
+                new VecPlayStep(std::move(dh), yvec, tvec, ddt, ppobj);
             }
         }
     }
 }
 
-VecPlayStep::VecPlayStep(double* pd, IvocVect* y, IvocVect* t, double dt, Object* ppobj)
-    : PlayRecord(pd, ppobj) {
+VecPlayStep::VecPlayStep(neuron::container::data_handle<double> dh,
+                         IvocVect* y,
+                         IvocVect* t,
+                         double dt,
+                         Object* ppobj)
+    : PlayRecord(std::move(dh), ppobj) {
     // printf("VecPlayStep\n");
     init(y, t, dt);
 }
@@ -204,7 +208,14 @@ void VecPlayStep::deliver(double tt, NetCvode* ns) {
         si_->play_one(y_->elem(current_index_++));
         nrn_hoc_unlock();
     } else {
-        *pd_ = y_->elem(current_index_++);
+        auto const val = y_->elem(current_index_++);
+        if (pd_) {
+            *pd_ = val;
+        } else {
+            std::ostringstream oss;
+            oss << "VecPlayStep::deliver: invalid " << pd_;
+            throw std::runtime_error(std::move(oss).str());
+        }
     }
     if (current_index_ < y_->size()) {
         if (t_) {
