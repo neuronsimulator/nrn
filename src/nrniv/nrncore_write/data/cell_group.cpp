@@ -74,7 +74,7 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
         if (pth) {
             hoc_Item* q;
             ITERATE(q, pth) {
-                PreSyn* ps = (PreSyn*) VOIDITM(q);
+                auto* ps = static_cast<PreSyn*>(VOIDITM(q));
                 auto& pv = ps->thvar_;
                 assert(pv);
                 if (pv < nt._actual_v || pv >= (nt._actual_v + nt.end)) {
@@ -130,7 +130,7 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
         if (pth) {
             hoc_Item* q;
             ITERATE(q, pth) {
-                PreSyn* ps = (PreSyn*) VOIDITM(q);
+                auto* ps = static_cast<PreSyn*>(VOIDITM(q));
                 auto& pv = ps->thvar_;
                 cgs[i].output_ps[npre] = ps;
                 cgs[i].output_gid[npre] = ps->output_index_;
@@ -148,7 +148,7 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
             Memb_list* ml = mla[j].second;
             if (nrn_has_net_event(type)) {
                 for (int j = 0; j < ml->nodecount; ++j) {
-                    Point_process* pnt = (Point_process*) ml->pdata[j][1]._pvoid;
+                    auto* pnt = static_cast<Point_process*>(ml->pdata[j][1]);
                     PreSyn* ps = (PreSyn*) pnt->presyn_;
                     cgs[i].output_ps[npre] = ps;
                     long agid = -1;
@@ -300,31 +300,32 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                     etype = -1;
                     eindex = -1;  // the signal to ignore in bbcore.
                 } else {
-                    if (dparam[j].pval == &ml->nodelist[i]->_area) {
+                    const auto* dpj = static_cast<double*>(dparam[j]);
+                    if (dpj == &ml->nodelist[i]->_area) {
                         // possibility it points directly into Node._area instead of
                         // _actual_area. For our purposes we need to figure out the
                         // _actual_area index.
                         etype = -1;
                         eindex = ml->nodeindices[i];
-                        assert(a[ml->nodeindices[i]] == *dparam[j].pval);
+                        assert(a[ml->nodeindices[i]] == *dpj);
                     } else {
-                        if (dparam[j].pval < a || dparam[j].pval >= (a + nnode)) {
+                        if (dpj < a || dpj >= (a + nnode)) {
                             printf("%s dparam=%p a=%p a+nnode=%p j=%d\n",
                                    memb_func[di.type].sym->name,
-                                   dparam[j].pval,
+                                   dpj,
                                    a,
                                    a + nnode,
                                    j);
                             abort();
                         }
-                        assert(dparam[j].pval >= a && dparam[j].pval < (a + nnode));
+                        assert(dpj >= a && dpj < (a + nnode));
                         etype = -1;
-                        eindex = dparam[j].pval - a;
+                        eindex = dpj - a;
                     }
                 }
             } else if (dmap[j] == -2) {  // this is an ion and dparam[j][0].i is the iontype
                 etype = -2;
-                eindex = dparam[j].i;
+                eindex = static_cast<int>(dparam[j]);
             } else if (dmap[j] == -3) {  // cvodeieq is always last and never seen
                 assert(dmap[j] != -3);
             } else if (dmap[j] == -4) {  // netsend (_tqitem pointer)
@@ -361,12 +362,12 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                         break;
                     }
                 }
-                assert(dparam[j].pval == pdiam);
+                assert(static_cast<double*>(dparam[j]) == pdiam);
                 eindex = ml->nodeindices[i];
             } else if (dmap[j] == -5) {  // POINTER
                 // must be a pointer into nt->_data. Handling is similar to eion so
                 // give proper index into the type.
-                double* pd = dparam[j].pval;
+                double* pd = static_cast<double*>(dparam[j]);
                 nrn_dblpntr2nrncore(pd, nt, etype, eindex);
                 if (etype == 0) {
                     fprintf(stderr,
@@ -378,23 +379,23 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] > 0 && dmap[j] < 1000) {  // double* into eion type data
                 Memb_list* eml = cg.type2ml[dmap[j]];
                 assert(eml);
-                if (dparam[j].pval < eml->_data[0]) {
+                auto* const pval = static_cast<double*>(dparam[j]);
+                if (pval < eml->_data[0]) {
                     printf("%s dparam=%p data=%p j=%d etype=%d %s\n",
                            memb_func[di.type].sym->name,
-                           dparam[j].pval,
+                           pval,
                            eml->_data[0],
                            j,
                            dmap[j],
                            memb_func[dmap[j]].sym->name);
                     abort();
                 }
-                assert(dparam[j].pval >= eml->_data[0]);
+                assert(pval >= eml->_data[0]);
                 etype = dmap[j];
-                if (dparam[j].pval >=
-                    (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount))) {
+                if (pval >= (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount))) {
                     printf("%s dparam=%p data=%p j=%d psize=%d nodecount=%d etype=%d %s\n",
                            memb_func[di.type].sym->name,
-                           dparam[j].pval,
+                           pval,
                            eml->_data[0],
                            j,
                            nrn_prop_param_size_[etype],
@@ -402,13 +403,12 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                            etype,
                            memb_func[etype].sym->name);
                 }
-                assert(dparam[j].pval <
-                       (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount)));
-                eindex = dparam[j].pval - eml->_data[0];
+                assert(pval < (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount)));
+                eindex = pval - eml->_data[0];
             } else if (dmap[j] > 1000) {  // int* into ion dparam[xxx][0]
                 // store the actual ionstyle
                 etype = dmap[j];
-                eindex = *((int*) dparam[j]._pvoid);
+                eindex = *static_cast<int*>(dparam[j]);
             } else {
                 char errmes[100];
                 sprintf(errmes, "Unknown semantics type %d for dparam item %d of", dmap[j], j);
@@ -492,7 +492,7 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
                 cgs[ith].netcon_srcgid[i] = ps->gid_;
             } else {
                 if (ps->osrc_) {
-                    assert(ps->thvar_ == NULL);
+                    assert(!ps->thvar_);
                     if (nrn_nthread > 1) {  // negative gid and multiple threads.
                         cgs[ith].netcon_negsrcgid_tid.push_back(ps->nt_->id);
                         // Raise error if file mode transfer and nc and ps not
@@ -579,7 +579,7 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                 acnt[id] = 0;
             }
             for (int j = 0; j < memb_list[i].nodecount; ++j) {
-                Point_process* pnt = (Point_process*) memb_list[i].pdata[j][1]._pvoid;
+                auto* pnt = static_cast<Point_process*>(memb_list[i].pdata[j][1]);
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 ++acnt[id];
             }
@@ -605,7 +605,7 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                 acnt[id] = 0;
             }
             for (int j = 0; j < memb_list[i].nodecount; ++j) {
-                Point_process* pnt = (Point_process*) memb_list[i].pdata[j][1]._pvoid;
+                auto* pnt = static_cast<Point_process*>(memb_list[i].pdata[j][1]);
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 Memb_list* ml = cgs[id].mlwithart.back().second;
                 ml->_data[acnt[id]] = memb_list[i]._data[j];

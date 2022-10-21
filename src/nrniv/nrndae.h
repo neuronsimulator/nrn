@@ -16,7 +16,9 @@
 
 #include "ivocvect.h"
 #include "matrixmap.h"
+
 #include <list>
+#include <vector>
 
 /**
  * NEURON Differential Algebraic Equations.

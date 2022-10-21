@@ -301,7 +301,11 @@ static PyObject* hocobj_name(PyObject* pself, PyObject* args) {
     } else if (self->type_ == PyHoc::HocSectionListIterator) {
         sprintf(cp, "<SectionList iterator>");
     } else if (self->type_ == PyHoc::HocScalarPtr) {
-        sprintf(cp, "<pointer to hoc scalar %g>", self->u.px_ ? *self->u.px_ : -1e100);
+        if (self->u.px_) {
+            sprintf(cp, "<pointer to hoc scalar %g>", *self->u.px_);
+        } else {
+            sprintf(cp, "<pointer to hoc scalar (Invalid)>");
+        }
     } else if (self->type_ == PyHoc::HocArrayIncomplete) {
         sprintf(cp, "<incomplete pointer to hoc array %s>", self->sym_->name);
     } else {
@@ -1074,8 +1078,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             Section* sec = (Section*) hoc_sec_internal_name2ptr(n, 0);
             if (sec == NULL) {
                 PyErr_SetString(PyExc_NameError, n);
-            } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-                result = (PyObject*) sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+            } else if (sec && sec->prop && static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
+                result = static_cast<PyObject*>(
+                    static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX]));
                 Py_INCREF(result);
             } else {
                 nrn_pushsec(sec);
@@ -1087,8 +1092,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             Section* sec = (Section*) hoc_pysec_name2ptr(n, 0);
             if (sec == NULL) {
                 PyErr_SetString(PyExc_NameError, n);
-            } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-                result = (PyObject*) sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+            } else if (sec && sec->prop && static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
+                result = static_cast<PyObject*>(
+                    static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX]));
                 Py_INCREF(result);
             } else {
                 nrn_pushsec(sec);
@@ -1916,7 +1922,11 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
             return -1;
         }
         if (po->type_ == PyHoc::HocScalarPtr) {
-            PyArg_Parse(arg, "d", po->u.px_ + i);
+            if (i != 0) {
+                PyErr_SetString(PyExc_IndexError, "index of pointer to hoc scalar must be 0");
+                return -1;
+            }
+            PyArg_Parse(arg, "d", static_cast<double*>(po->u.px_));
         } else if (po->type_ == PyHoc::HocRefNum) {
             PyArg_Parse(arg, "d", &po->u.x_);
         } else if (po->type_ == PyHoc::HocRefStr) {
@@ -2090,7 +2100,7 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
                 PyErr_SetString(PyExc_TypeError, "Point_process not located in a section");
                 return NULL;
             }
-            ppd = &prop->dparam[sym->u.rng.index].pval;
+            ppd = &(prop->dparam[sym->u.rng.index].literal_value<double*>());
         } else {
             ppd = nrnpy_setpointer_helper(name, pp);
             if (!ppd) {
@@ -2156,11 +2166,12 @@ PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op) {
 
 // TODO: unfortunately, this duplicates code from hocobj_same; consolidate?
 static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
-    void* self_ptr = (void*) (self->ho_);
-    void* other_ptr = (void*) other;
+    auto* pyhoc_other = reinterpret_cast<PyHocObject*>(other);
+    void* self_ptr = self->ho_;
+    void* other_ptr = other;
     bool are_equal = true;
     if (PyObject_TypeCheck(other, hocobject_type)) {
-        if (((PyHocObject*) other)->type_ == self->type_) {
+        if (pyhoc_other->type_ == self->type_) {
             switch (self->type_) {
             case PyHoc::HocRefNum:
             case PyHoc::HocRefStr:
@@ -2170,7 +2181,7 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
                 self_ptr = (void*) self;
                 break;
             case PyHoc::HocFunction:
-                if (self->ho_ != (void*) (((PyHocObject*) other)->ho_)) {
+                if (self->ho_ != pyhoc_other->ho_) {
                     if (op == Py_NE) {
                         Py_RETURN_TRUE;
                     } else if (op == Py_EQ) {
@@ -2180,12 +2191,13 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
                     PyErr_SetString(PyExc_TypeError, "this comparison is undefined");
                     return NULL;
                 }
-                self_ptr = (void*) self->sym_;
-                other_ptr = (void*) (((PyHocObject*) other)->sym_);
+                self_ptr = self->sym_;
+                other_ptr = pyhoc_other->sym_;
                 break;
             case PyHoc::HocScalarPtr:
-                self_ptr = self->u.px_;
-                other_ptr = (void*) (((PyHocObject*) other)->u.px_);
+                // this seems rather dubious
+                self_ptr = static_cast<double*>(self->u.px_);
+                other_ptr = static_cast<double*>(pyhoc_other->u.px_);
                 break;
             case PyHoc::HocArrayIncomplete:
             case PyHoc::HocArray:
@@ -2194,20 +2206,19 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
                     PyErr_SetString(PyExc_TypeError, "this comparison is undefined");
                     return NULL;
                 }
-                if (self->ho_ != (void*) (((PyHocObject*) other)->ho_)) {
+                if (self->ho_ != pyhoc_other->ho_) {
                     /* different objects */
-                    other_ptr = (void*) (((PyHocObject*) other)->ho_);
+                    other_ptr = pyhoc_other->ho_;
                     break;
                 }
-                if (self->nindex_ != (((PyHocObject*) other)->nindex_) ||
-                    self->sym_ != (((PyHocObject*) other)->sym_)) {
+                if (self->nindex_ != pyhoc_other->nindex_ || self->sym_ != pyhoc_other->sym_) {
                     if (op == Py_NE) {
                         Py_RETURN_TRUE;
                     }
                     Py_RETURN_FALSE;
                 }
                 for (int i = 0; i < self->nindex_; i++) {
-                    if (self->indices_[i] != ((PyHocObject*) other)->indices_[i]) {
+                    if (self->indices_[i] != pyhoc_other->indices_[i]) {
                         are_equal = false;
                     }
                 }
@@ -2216,7 +2227,7 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
                 }
                 Py_RETURN_FALSE;
             default:
-                other_ptr = (void*) (((PyHocObject*) other)->ho_);
+                other_ptr = pyhoc_other->ho_;
             }
         } else {
             if (op == Py_EQ) {

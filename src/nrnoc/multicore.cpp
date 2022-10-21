@@ -53,6 +53,7 @@ the handling of v_structure_change as long as possible.
 
 int nrn_nthread;
 NrnThread* nrn_threads;
+
 void (*nrn_mk_transfer_thread_data_)();
 
 static int busywait_;
@@ -525,7 +526,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
         nd = _nt->_v_node[i];
         for (p = nd->prop; p; p = p->next) {
             if (memb_func[p->_type].current || memb_func[p->_type].state ||
-                memb_func[p->_type].initialize) {
+                memb_func[p->_type].has_initialize()) {
                 ++mlcnt[p->_type];
             }
         }
@@ -577,7 +578,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
         nd = _nt->_v_node[i];
         for (p = nd->prop; p; p = p->next) {
             if (memb_func[p->_type].current || memb_func[p->_type].state ||
-                memb_func[p->_type].initialize) {
+                memb_func[p->_type].has_initialize()) {
                 Memb_list* ml = mlmap[p->_type];
                 ml->nodelist[ml->nodecount] = nd;
                 ml->nodeindices[ml->nodecount] = nd->v_node_index;
@@ -665,8 +666,8 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
     for (tml = _nt->tml; tml; tml = tml->next)
         if (memb_func[tml->index].is_point) {
             for (i = 0; i < tml->ml->nodecount; ++i) {
-                Point_process* pnt = (Point_process*) tml->ml->pdata[i][1]._pvoid;
-                pnt->_vnt = (void*) _nt;
+                auto* pnt = static_cast<Point_process*>(tml->ml->pdata[i][1]);
+                pnt->_vnt = _nt;
             }
         }
 }
@@ -725,7 +726,7 @@ void reorder_secorder() {
         for (isec = order - _nt->ncell; isec < order; ++isec) {
             sec = secorder[isec];
             /* to make it easy to fill in PreSyn.nt_*/
-            sec->prop->dparam[9]._pvoid = (void*) _nt;
+            sec->prop->dparam[9] = _nt;
             for (j = 0; j < sec->nnode; ++j) {
                 nd = sec->pnode[j];
                 nd->_nt = _nt;
@@ -768,15 +769,15 @@ void reorder_secorder() {
             nd = sec->parentnode;
             nd->_nt = _nt;
             _nt->_v_node[inode] = nd;
-            _nt->_v_parent[inode] = (Node*) 0;
+            _nt->_v_parent[inode] = nullptr;  // because this is a root node
             _nt->_v_node[inode]->v_node_index = inode;
-            inode += 1;
+            ++inode;
         }
         /* all children of what is already in secorder */
         for (isec = order - _nt->ncell; isec < order; ++isec) {
             sec = secorder[isec];
             /* to make it easy to fill in PreSyn.nt_*/
-            sec->prop->dparam[9]._pvoid = (void*) _nt;
+            sec->prop->dparam[9] = _nt;
             for (j = 0; j < sec->nnode; ++j) {
                 nd = sec->pnode[j];
                 nd->_nt = _nt;

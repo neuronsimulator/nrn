@@ -47,39 +47,40 @@ struct Info { /* same as in CoreNEURON */
     int* gidvec;
     int index;
 };
-Info*& as_info(double*& vptr) { return reinterpret_cast<Info*&>(vptr); }
 ENDVERBATIM
 
 
 CONSTRUCTOR {
 VERBATIM {
-    auto& info = as_info(_p_ptr);
+    auto* info = static_cast<Info*>(_p_ptr);
     assert(!info);
     info = new Info{};
     info->size = 0;
     info->tvec = nullptr;
     info->gidvec = nullptr;
     info->index = 0;
+    _p_ptr = info;
 }
 ENDVERBATIM
 }
 
 DESTRUCTOR {
 VERBATIM {
-    auto& info = as_info(_p_ptr);
+    auto* info = static_cast<Info*>(_p_ptr);
     if (info->size > 0) {
         delete[] info->tvec;
         delete[] info->gidvec;
     }
     delete info;
     info = nullptr;
+    _p_ptr = info;
 }
 ENDVERBATIM
 }
 
 FUNCTION initps() {
 VERBATIM {
-    auto& info = as_info(_p_ptr);
+    auto* info = static_cast<Info*>(_p_ptr);
     info->index = 0;
     if (info->tvec) {
         _linitps = 1.;
@@ -92,7 +93,7 @@ ENDVERBATIM
 
 FUNCTION sendgroup() {
 VERBATIM {
-    auto& info = as_info(_p_ptr);
+    auto* info = static_cast<Info*>(_p_ptr);
     int size = info->size;
     double* tvec = info->tvec;
     int* gidvec = info->gidvec;
@@ -114,7 +115,7 @@ ENDVERBATIM
 
 PROCEDURE play() {
 VERBATIM {
-    auto& info = as_info(_p_ptr);
+    auto* info = static_cast<Info*>(_p_ptr);
     if (info->size > 0) {
         delete[] info->tvec;
         delete[] info->gidvec;
@@ -150,6 +151,6 @@ static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsprot
 
 Info* nrn_patternstim_info_ref(Datum* _ppvar) {
     // CoreNEURON PatternStim will use this Info*
-    return as_info(_p_ptr);
+    return static_cast<Info*>(_p_ptr);
 }
 ENDVERBATIM
