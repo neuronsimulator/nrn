@@ -506,7 +506,7 @@ for (i=0; i < z.nvsize_; ++i) {
             Extnode* nde = nd->extnode;
             double cdvm;
             if (nde) {
-                cdvm = 1e-3 * ml->data(1, 0) * (yprime[j] - yprime[j + 1]);
+                cdvm = 1e-3 * ml->data(i, 0) * (yprime[j] - yprime[j + 1]);
                 delta[j] -= cdvm;
                 delta[j + 1] += cdvm;
                 // i_cap
