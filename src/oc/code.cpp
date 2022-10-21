@@ -362,17 +362,25 @@ static void frameobj_clean(Frame* f) {
 
 /* unref items on the stack frame associated with localobj in case of error */
 static void frame_objauto_recover_on_err(Frame* ff) { /* only on error */
+    // for all frames deeper than the one we are restoring to
     for (Frame* f = fp; f > ff; --f) {
-        int i;
         Symbol* sp = f->sp;
-        if (sp->u.u_proc == NULL) { /* skip if the procedure is not defined */
+        if (sp->type == MECHANISM) {
+            // Possible to reach this code path via the frame push in
+            // NrnProperty::NrnProperty(const char* name) with the
+            // extracellular mechanism Symbol
             continue;
         }
-        /* argn is the nargs argument on the stack.
-           Here, stkp is the last+1 localobj slot pair on the stack.
-        */
-        StackDatum* stkp = f->argn + 1 + sp->u.u_proc->nauto;
-        for (i = sp->u.u_proc->nobjauto; i > 0; --i) {
+        if (!sp->u.u_proc) {  // Skip if the procedure is not defined
+            continue;
+        }
+        // argn is the nargs argument on the stack.
+        // stkp is the last localobj slot pair on the stack.
+        StackDatum* stkp = f->argn + sp->u.u_proc->nauto;
+        assert(!stack.empty());
+        assert(stkp >= &stack.front());
+        assert(stkp <= &stack.back());
+        for (int i = sp->u.u_proc->nobjauto - 1; i >= 0; --i) {
             auto* ob = cast<Object*>(stkp[-i]);
             hoc_obj_unref(ob);
             /* Note that these AUTOOBJECT stack locations have an itemtype that
@@ -1970,9 +1978,7 @@ void hoc_evalpointer() {
         }
         break;
     case AUTO: {
-        auto& entry = fp->argn[sym->u.u_auto];
-        // entry = 0.0;  // make double the active member
-        d = &(cast<double>(entry));
+        d = &(cast<double>(fp->argn[sym->u.u_auto]));
     } break;
     default:
         execerror("attempt to evaluate pointer to a non-variable", sym->name);
