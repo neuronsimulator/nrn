@@ -1598,6 +1598,8 @@ bool NetCvode::init_global() {
     matrix_change_cnt_ = -1;
     playrec_change_cnt_ = 0;
     NrnThread* _nt;
+    // We copy Memb_list* into cml->ml below
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
     if (single_) {
         if (!gcv_ || gcv_->nctd_ != nrn_nthread) {
             delete_list();
@@ -1606,8 +1608,6 @@ bool NetCvode::init_global() {
         del_cv_memb_list();
         Cvode& cv = *gcv_;
         distribute_dinfo(nil, 0);
-        // We copy Memb_list* into cml->ml below
-        auto const sorted_token = nrn_ensure_model_data_are_sorted();
         FOR_THREADS(_nt) {
             CvodeThreadData& z = cv.ctd_[_nt->id];
             z.rootnodecount_ = _nt->ncell;
@@ -6337,8 +6337,8 @@ void TvecRecord::continuous(double tt) {
     t_->push_back(tt);
 }
 
-YvecRecord::YvecRecord(double* pd, IvocVect* y, Object* ppobj)
-    : PlayRecord(pd, ppobj) {
+YvecRecord::YvecRecord(neuron::container::data_handle<double> dh, IvocVect* y, Object* ppobj)
+    : PlayRecord(std::move(dh), ppobj) {
     // printf("YvecRecord\n");
     y_ = y;
     ObjObservable::Attach(y_->obj_, this);
@@ -6369,8 +6369,11 @@ void YvecRecord::continuous(double tt) {
     y_->push_back(*pd_);
 }
 
-VecRecordDiscrete::VecRecordDiscrete(double* pd, IvocVect* y, IvocVect* t, Object* ppobj)
-    : PlayRecord(pd, ppobj) {
+VecRecordDiscrete::VecRecordDiscrete(neuron::container::data_handle<double> dh,
+                                     IvocVect* y,
+                                     IvocVect* t,
+                                     Object* ppobj)
+    : PlayRecord(std::move(dh), ppobj) {
     // printf("VecRecordDiscrete\n");
     y_ = y;
     t_ = t;
@@ -6439,8 +6442,11 @@ void VecRecordDiscrete::deliver(double tt, NetCvode* nc) {
     }
 }
 
-VecRecordDt::VecRecordDt(double* pd, IvocVect* y, double dt, Object* ppobj)
-    : PlayRecord(pd, ppobj) {
+VecRecordDt::VecRecordDt(neuron::container::data_handle<double> pd,
+                         IvocVect* y,
+                         double dt,
+                         Object* ppobj)
+    : PlayRecord(std::move(pd), ppobj) {
     // printf("VecRecordDt\n");
     y_ = y;
     dt_ = dt;

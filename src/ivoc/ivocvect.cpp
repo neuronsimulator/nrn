@@ -943,7 +943,7 @@ static Object** v_record(void* v) {
 }
 
 static Object** v_play(void* v) {
-    Vect* vp = (Vect*) v;
+    auto* const vp = static_cast<Vect*>(v);
     nrn_vecsim_add(v, false);
     return vp->temp_objvar();
 }
