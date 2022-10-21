@@ -1037,6 +1037,12 @@ void hoc_object_component() {
                 if (!ISARRAY(sym) || sym->arayinfo->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
                 }
+                if (narg) {
+                    hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
+                                    hoc_object_name(obp),
+                                    sym->name,
+                                    sym->name);
+                }
             }
             hoc_pushs(sym);
             (*obp->ctemplate->steer)(obp->u.this_pointer);

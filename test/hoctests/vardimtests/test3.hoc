@@ -25,3 +25,10 @@ proc foo() {
 double a[1][1]
 expect_err("foo()") // bad stack access error
 // the "a = 1" statement pops two index values, the second is not a number.
+
+// special message for ...
+objref vec
+vec = new Vector(5)
+expect_err("x = vec.x(3)")
+expect_err("vec.x(3) = 25")
+
