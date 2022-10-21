@@ -1,4 +1,5 @@
-.. _pwman:
+
+.. _hoc_pwman:
 
          
 PWManager
@@ -6,7 +7,7 @@ PWManager
 
 
 
-.. class:: PWManager
+.. hoc:class:: PWManager
 
 
     Syntax:
@@ -14,7 +15,7 @@ PWManager
 
 
     Description:
-        A variety of hooks into the :ref:`pwm` to allow program control 
+        A variety of hooks into the :ref:`hoc_pwm` to allow program control
         of that tool. The implementation of the 
         Window item of the NeuronMainMenu makes 
         heavy use of this class. Note that the first window created is called 
@@ -26,7 +27,7 @@ PWManager
 
 
 
-.. method:: PWManager.count
+.. hoc:method:: PWManager.count
 
 
     Syntax:
@@ -41,7 +42,7 @@ PWManager
 
 
 
-.. method:: PWManager.is_mapped
+.. hoc:method:: PWManager.is_mapped
 
 
     Syntax:
@@ -56,7 +57,7 @@ PWManager
 
 
 
-.. method:: PWManager.map
+.. hoc:method:: PWManager.map
 
 
     Syntax:
@@ -71,7 +72,7 @@ PWManager
 
 
 
-.. method:: PWManager.hide
+.. hoc:method:: PWManager.hide
 
 
     Syntax:
@@ -86,7 +87,7 @@ PWManager
 
 
 
-.. method:: PWManager.close
+.. hoc:method:: PWManager.close
 
 
     Syntax:
@@ -102,7 +103,7 @@ PWManager
 
 
 
-.. method:: PWManager.iconify
+.. hoc:method:: PWManager.iconify
 
 
     Syntax:
@@ -117,7 +118,7 @@ PWManager
 
 
 
-.. method:: PWManager.deiconify
+.. hoc:method:: PWManager.deiconify
 
 
     Syntax:
@@ -133,7 +134,7 @@ PWManager
 
 
 
-.. method:: PWManager.leader
+.. hoc:method:: PWManager.leader
 
 
     Syntax:
@@ -148,7 +149,7 @@ PWManager
 
 
 
-.. method:: PWManager.manager
+.. hoc:method:: PWManager.manager
 
 
     Syntax:
@@ -156,14 +157,14 @@ PWManager
 
 
     Description:
-        Window index of the :ref:`PWM` window. 
+        Window index of the :ref:`hoc_PWM` window.
 
 
 ----
 
 
 
-.. method:: PWManager.save
+.. hoc:method:: PWManager.save
 
 
     Syntax:
@@ -183,14 +184,14 @@ PWManager
         If the header argument exists, it is copied to the beginning of the file. 
 
     .. seealso::
-        :func:`save_session`
+        :hoc:func:`save_session`
 
 
 ----
 
 
 
-.. method:: PWManager.group
+.. hoc:method:: PWManager.group
 
 
     Syntax:
@@ -208,7 +209,7 @@ PWManager
 
 
 
-.. method:: PWManager.snap
+.. hoc:method:: PWManager.snap
 
 
     Syntax:
@@ -226,29 +227,12 @@ PWManager
         printed to a postscript file with the "filename" or filebrowser selection. 
 
 
-----
-
-
-
-.. method:: PWManager.jwindow
-
-
-    Syntax:
-        ``index = p.jwindow(hoc_owner, mapORhide, x, y, w, h)``
-
-
-    Description:
-        Manipulate the position and size of a java window frame associated with the 
-        java object referenced by the hoc object. The mapORhide value may be 0 
-        or 1. The index of the window is returned. This is used by session file 
-        statements created by the java object in order to specify window attributes. 
-
 
 ----
 
 
 
-.. method:: PWManager.scale
+.. hoc:method:: PWManager.scale
 
 
     Syntax:
@@ -267,7 +251,7 @@ PWManager
 
 
 
-.. method:: PWManager.name
+.. hoc:method:: PWManager.name
 
 
     Syntax:
@@ -283,7 +267,7 @@ PWManager
 
 
 
-.. method:: PWManager.window_place
+.. hoc:method:: PWManager.window_place
 
 
     Syntax:
@@ -300,7 +284,7 @@ PWManager
 
 
 
-.. method:: PWManager.paper_place
+.. hoc:method:: PWManager.paper_place
 
 
     Syntax:
@@ -324,7 +308,7 @@ PWManager
 
 
 
-.. method:: PWManager.landscape
+.. hoc:method:: PWManager.landscape
 
 
     Syntax:
@@ -341,7 +325,7 @@ PWManager
 
 
 
-.. method:: PWManager.deco
+.. hoc:method:: PWManager.deco
 
 
     Syntax:
@@ -362,7 +346,7 @@ PWManager
 
 
 
-.. method:: PWManager.printfile
+.. hoc:method:: PWManager.printfile
 
 
     Syntax:

@@ -7,18 +7,20 @@ steps:
 
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.6'
+      versionSpec: '3.7'
     displayName: "Use System Python"
 
-# Note: silently installing neuron doesn't work, when we print out the contents of the installation folder not all files
-# are there. We suspect an Azure issue since we've tried a lot of things (to name a few: trying NSIS 3.04 commit that
-# was working back then, changing NSIS installers, trying latest NSIS, different process waiting strategies including
-# powershell and start /wait and so on) and locally testing the installer works.
   - task: BatchScript@1
     inputs:
-      filename: ci/win_test_installer.cmd
-    env:  
-      SKIP_ASSOCIATION_TEST: true # This test sometimes fails, moreover on Azure. It's run in GHA WindowsInstaller CI
+      filename: ci/win_install_neuron.cmd
+    displayName: "Run Installer and launch .hoc association test"
+    condition: succeeded()
+
+  - task: BatchScript@1
+    inputs:
+      # temporarily disable rxd testing ( ci/win_test_installer.cmd <-> ci/win_test_installer_wo_rxd.cmd)
+      # see https://github.com/neuronsimulator/nrn/issues/1522
+      filename: ci/win_test_installer_wo_rxd.cmd
     displayName: "Test Installer"
     condition: succeeded()
 

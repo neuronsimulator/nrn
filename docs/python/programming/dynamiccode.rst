@@ -61,6 +61,11 @@ code-executing
         of the object. If second arg not present then execute it at the 
         top level of the interpreter. 
          
+        When running under MPI, an error in the statement does NOT call
+        MPI_Abort but returns 0. Note that it is not necessary to use
+        this function to avoid calling MPI_Abort on error. That effect
+        can also be obtained with :meth:`ParallelContext.mpiabort_on_error`.
+
     Example:
         Execute1 is heavily used in the construction of the fitter widgets. 
         It is also useful to objects in gaining information about the outside with 

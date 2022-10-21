@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 # App specific password used to request notarization
 password_path="$HOME/.ssh/notarization-password"

@@ -183,7 +183,6 @@ Edit NEURONMainMenu GUI Reference 413 neuron/stdrun/0stdrun.html#Edit
 Electrode Managers PointProcesses Tools NEURONMainMenu GUI Reference 441 neuron/stdrun/pointman.html#Electrode
 Electrode StandardRunTools GUI Reference 426 neuron/stdrun/electrod.html#Electrode
 else keywords general neuron.exe Reference 226 neuron/general/keywords/ockeywor.html#else
-em keywords general neuron.exe Reference 231 neuron/general/keywords/ockeywor.html#em
 end RangeVarPlot classes neuron neuron.exe Reference 309 neuron/neuron/classes/rvarplt.html#end
 endtemplate ObjectOrientedProgramming general neuron.exe Reference 242 neuron/general/oop.html#endtemplate
 eof File classes general neuron.exe Reference 31 neuron/general/classes/file.html#eof

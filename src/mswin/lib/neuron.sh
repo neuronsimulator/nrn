@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 N="`$1/bin/cygpath -u $1`"
 export N
 export PYTHONHOME=$N

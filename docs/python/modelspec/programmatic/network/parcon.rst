@@ -3,6 +3,9 @@
 ParallelContext
 ---------------
 
+A video tutorial of parallelization in NEURON from the 2021 NEURON
+summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
+
 .. toctree::
     :hidden:
 
@@ -312,6 +315,20 @@ ParallelContext
 
 ----
 
+.. method:: ParallelContext.mpiabort_on_error
+
+
+    Syntax:
+        ``oldflag = pc.mpiabort_on_error(newflag)``
+
+    Description:
+        Normally, when running with MPI, a hoc error causes a call to MPI_Abort
+        so that all processes can be notified to exit cleanly without
+        any processes hanging. (e.g. waiting for a communicator
+        collective to complete). The call to MPI_Abort can be avoided by
+        calling this method with newflag = 0. This occurs automatically
+        when :func:`execute1` is used.  The method returns the previous
+        value of the flag.
 
 
 .. method:: ParallelContext.submit
@@ -1371,6 +1388,9 @@ Description:
         environment varialble has not been exported.
 
         launched nrniv without -mpi argument.
+
+        Since ``nrnmpi_init`` turns off gui for all ranks > 0, do not ``from neuron import gui``
+        beforehand.
 
         The mpi_init method name was removed from ParallelContext and replaced
         with the HocTopLevelInterpreter method nrnmpi_init() because MPI
@@ -2535,6 +2555,13 @@ Description:
         is exactly what will end up happening except the solve will be broken into 
         steps determined by the result of :meth:`ParallelContext.set_maxstep`. 
 
+    Note:
+        If CoreNEURON is active, psolve will be executed in CoreNEURON.
+        Calls to psolve with CoreNEURON active and inactive can be
+        interleaved and calls to finitialize can be interspersed. The result
+        should be exactly the same as if all execution was done in NEURON
+        (except for round-off error differences due to high performance
+        optimizations).
          
 
 ----
@@ -2753,22 +2780,6 @@ Description:
         spikes per cpu to be sent to all other machines. The default value of this 
         is 0. If some cpu needs to send more than this number of spikes, then 
         a second MPI_Allgatherv is used to send the overflow. 
-
-         
-
-----
-
-
-
-.. method:: ParallelContext.checkpoint
-
-
-    Syntax:
-        ``i = pc.checkpoint()``
-
-
-    Description:
-        Available only for the BlueGene. 
 
          
 
@@ -3185,10 +3196,13 @@ Parallel Transfer
 
 
     Description:
-        Returns the number of cores/processors available for parallel simulation. 
-        The number is determined experimentally by repeatedly doubling the number 
-        of test threads each doing a count to 1e8 until the test time significantly 
-        increases. 
+        Returns the number of concurrent threads supported by the hardware. This
+        is the value returned by `std::thread::hardware_concurrency()
+        <https://en.cppreference.com/w/cpp/thread/thread/hardware_concurrency>`_.
+        On a system that supports hyperthreading this will typically be double
+        the number of physical cores available, and it may not take into account
+        constraints such as MPI processes being bound to specific cores in a
+        cluster environment.
 
 
 ----
@@ -3352,3 +3366,44 @@ Parallel Transfer
         Real cells must have gids, Artificial cells without gids connect
         only to cells in the same thread. No POINTER to data outside of the
         thread that holds the pointer. 
+
+----
+
+..  method:: ParallelContext.nrncore_run
+
+    Syntax:
+        ``pc.nrncore_run(argstr, [bool])``
+
+    Description:
+        Run the model using CoreNEURON in online (direct transfer) mode
+        using the arguments specified in
+        argstr. If the optional second arg, bool, default 0, is 1, then
+        trajectory values are sent back to NEURON on every time step to allow
+        incremental plotting of Graph lines. Otherwise, trajectories are
+        buffered and sent back at the end of the run. In any case, all
+        variables and event queue state are copied back to NEURON at the end
+        of the run as well as spike raster data.
+
+        This method is not generally used since running a model using CoreNEURON
+        in online mode is easier with the idiom:
+
+        .. code-block:: python
+
+            from neuron import h, gui
+            pc = h. ParallelContext()
+            # construct model ...
+
+            # run model
+            from neuron import coreneuron
+            coreneuron.enable = True
+            h.CVode().cache_efficient(1)
+            h.stdinit()
+            pc.psolve(h.tstop)
+
+        In this case, :func:`psolve`, uses ``nrncore_run`` behind the scenes
+        with the argstr it gets from ``coreneuron.nrncore_arg(h.tstop)``
+        which is ``" --tstop 5 --cell-permute 1 --verbose 2 --voltage 1000."``
+
+        CoreNEURON in online mode does not do the
+        equivalent :func:`finitialize`
+        but relies on NEURON's initialization of states and event queue.

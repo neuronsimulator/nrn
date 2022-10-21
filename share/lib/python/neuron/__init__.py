@@ -142,6 +142,63 @@ import _neuron_section
 h = hoc.HocObject()
 version = h.nrnversion(5)
 __version__ = version
+
+# Initialise neuron.config.arguments
+from neuron import config
+
+config._parse_arguments(h)
+
+
+def _check_for_intel_openmp():
+    """Check if Intel's OpenMP runtime has already been loaded.
+
+    This does not interact well with the NVIDIA OpenMP runtime in CoreNEURON GPU
+    builds. See
+    https://forums.developer.nvidia.com/t/nvc-openacc-runtime-segfaults-if-intel-mkl-numpy-is-already-loaded/212739
+    for more information.
+    """
+    import ctypes
+    from neuron.config import arguments
+
+    # These checks are only relevant for shared library builds with CoreNEURON GPU support enabled.
+    if (
+        not arguments["NRN_ENABLE_CORENEURON"]
+        or not arguments["CORENRN_ENABLE_GPU"]
+        or not arguments["CORENRN_ENABLE_SHARED"]
+    ):
+        return
+
+    current_exe = ctypes.CDLL(None)
+    try:
+        # Picked quasi-randomly from `nm libiomp5.so`
+        current_exe["_You_must_link_with_Intel_OpenMP_library"]
+    except:
+        # No Intel symbol found, all good
+        pass
+    else:
+        # Intel symbol was found: danger! danger!
+        raise Exception(
+            "Intel OpenMP runtime detected. Try importing NEURON before Intel MKL and/or Numpy"
+        )
+
+    # Try to load the CoreNEURON shared library so that the various NVIDIA
+    # runtime libraries also get loaded, before we import numpy lower down this
+    # file.
+    loaded_coreneuron = bool(h.coreneuron_handle())
+    if not loaded_coreneuron:
+        warnings.warn(
+            "Failed to pre-load CoreNEURON when importing NEURON. "
+            "Try running from the same directory where you ran "
+            "nrnivmodl, or setting CORENEURONLIB. If you import "
+            "something (e.g. Numpy with Intel MKL) that brings in "
+            "an incompatible OpenMP runtime before launching a "
+            "CoreNEURON GPU simulation then you may encounter "
+            "errors."
+        )
+
+
+_check_for_intel_openmp()
+
 _original_hoc_file = None
 if not hasattr(hoc, "__file__"):
     # first try is to derive from neuron.__file__
@@ -154,7 +211,11 @@ if not hasattr(hoc, "__file__"):
     if origin is not None:
         import sysconfig
 
-        hoc_path = origin.rstrip("__init__.py") + "hoc" + sysconfig.get_config_var("SO")
+        hoc_path = (
+            origin.rstrip("__init__.py")
+            + "hoc"
+            + sysconfig.get_config_var("EXT_SUFFIX")
+        )
         setattr(hoc, "__file__", hoc_path)
 else:
     _original_hoc_file = hoc.__file__
@@ -598,7 +659,8 @@ def nrn_dll_sym_nt(name, type):
         if h.nrnversion(8).find("i686") == 0:
             b = "bin"
         path = os.path.join(h.neuronhome().replace("/", "\\"), b)
-        p = sys.version_info[0] * 10 + sys.version_info[1]
+        fac = 10 if sys.version_info[1] < 10 else 100  # 3.9 is 39 ; 3.10 is 310
+        p = sys.version_info[0] * fac + sys.version_info[1]
         for dllname in ["libnrniv.dll", "libnrnpython%d.dll" % p]:
             p = os.path.join(path, dllname)
             try:
@@ -627,15 +689,15 @@ def nrn_dll(printpath=False):
         be used with care.
     """
     import ctypes
-    import os
-    import platform
     import glob
+    import os
+    import sys
 
     try:
         # extended? if there is a __file__, then use that
         if printpath:
             print("hoc.__file__ %s" % _original_hoc_file)
-        the_dll = ctypes.cdll[_original_hoc_file]
+        the_dll = ctypes.pydll[_original_hoc_file]
         return the_dll
     except:
         pass
@@ -652,7 +714,7 @@ def nrn_dll(printpath=False):
         dlls = glob.glob(base_path + "*.*")
         for dll in dlls:
             try:
-                the_dll = ctypes.cdll[dll]
+                the_dll = ctypes.pydll[dll]
                 if printpath:
                     print(dll)
                 return the_dll
@@ -667,7 +729,7 @@ def nrn_dll(printpath=False):
         dlls = glob.glob(base_path + "*" + extension)
         for dll in dlls:
             try:
-                the_dll = ctypes.cdll[dll]
+                the_dll = ctypes.pydll[dll]
                 if printpath:
                     print(dll)
                 success = True
@@ -772,7 +834,7 @@ def numpy_from_pointer(cpointer, size):
     buf_from_mem.restype = ctypes.py_object
     buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
     cbuffer = buf_from_mem(cpointer, size * numpy.dtype(float).itemsize, 0x200)
-    return numpy.ndarray((size,), numpy.float, cbuffer, order="C")
+    return numpy.ndarray((size,), float, cbuffer, order="C")
 
 
 try:
@@ -889,7 +951,7 @@ class _RangeVarPlot(_WrapperPlot):
                 *args,
                 data=pd.DataFrame({"x": xvec, "y": yvec}),
                 mapping=p9.aes(x="x", y="y"),
-                **kwargs
+                **kwargs,
             )
         str_graph = str(graph)
         if str_graph.startswith("<module 'plotly' from "):
@@ -908,7 +970,7 @@ class _RangeVarPlot(_WrapperPlot):
                 *args,
                 data=pd.DataFrame({"x": xvec, "y": yvec}),
                 mapping=p9.aes(x="x", y="y"),
-                **kwargs
+                **kwargs,
             )
         if hasattr(graph, "plot"):
             # works with e.g. pyplot or a matplotlib axis
@@ -1149,7 +1211,7 @@ class _PlotShapePlot(_WrapperPlot):
                             z=[z],
                             name="",
                             hovertemplate=str(segment),
-                            **kwargs
+                            **kwargs,
                         )
                     )
                     return self
@@ -1367,6 +1429,78 @@ class DensityMechanism:
         return [nmodl.to_nmodl(ont.ontology_id) for ont in onts]
 
 
+_store_savestates = []
+_restore_savestates = []
+_id_savestates = []
+
+
+def register_savestate(id_, store, restore):
+    """register routines to be called during SaveState
+
+    id_ -- unique id (consider using a UUID)
+    store -- called when saving the state to the object; returns a bytestring
+    restore -- called when loading the state from the object; receives a bytestring
+    """
+    _id_savestates.append(id_)
+    _store_savestates.append(store)
+    _restore_savestates.append(restore)
+
+
+def _store_savestate():
+    import array
+    import itertools
+
+    version = 0
+    result = [array.array("Q", [version]).tobytes()]
+    for id_, store in zip(_id_savestates, _store_savestates):
+        data = store()
+        if len(data):
+            result.append(
+                array.array("Q", [len(id_)]).tobytes()
+                + bytes(id_.encode("utf8"))
+                + array.array("Q", [len(data)]).tobytes()
+                + data
+            )
+    if len(result) == 1:
+        # if no data to save, then don't even bother with a version
+        result = []
+    return bytearray(itertools.chain.from_iterable(result))
+
+
+def _restore_savestate(data):
+    import array
+
+    # convert from bytearray
+    data = bytes(data)
+    metadata = array.array("Q")
+    metadata.frombytes(data[:8])
+    version = metadata[0]
+    if version != 0:
+        raise Exception("Unsupported SaveState version")
+    position = 8
+    while position < len(data):
+        metadata = array.array("Q")
+        metadata.frombytes(data[position : position + 8])
+        name_length = metadata[0]
+        position += 8
+        name = data[position : position + name_length].decode("utf8")
+        position += name_length
+        metadata = array.array("Q")
+        metadata.frombytes(data[position : position + 8])
+        data_length = metadata[0]
+        position += 8
+        my_data = data[position : position + data_length]
+        position += data_length
+        # lookup the index because not everything that is registered is used
+        try:
+            index = _id_savestates.index(name)
+        except ValueError:
+            raise Exception("Undefined SaveState type " + name)
+        _restore_savestates[index](my_data)
+    if position != len(data):
+        raise Exception("SaveState length error")
+
+
 try:
     import ctypes
 
@@ -1416,8 +1550,14 @@ try:
     _rvp_plot_callback = ctypes.py_object(_rvp_plot)
     _plotshape_plot_callback = ctypes.py_object(_plotshape_plot)
     _get_mech_object_callback = ctypes.py_object(_get_mech_object)
+    _restore_savestate_callback = ctypes.py_object(_restore_savestate)
+    _store_savestate_callback = ctypes.py_object(_store_savestate)
     set_toplevel_callbacks(
-        _rvp_plot_callback, _plotshape_plot_callback, _get_mech_object_callback
+        _rvp_plot_callback,
+        _plotshape_plot_callback,
+        _get_mech_object_callback,
+        _store_savestate_callback,
+        _restore_savestate_callback,
     )
 except:
     pass
@@ -1444,6 +1584,21 @@ def _has_scipy():
 def _pkl(arg):
     # print 'neuron._pkl arg is ', arg
     return h.Vector(0)
+
+
+def format_exception(type, value, tb):
+    """Single string return wrapper for traceback.format_exception
+    used by nrnpyerr_str
+    """
+    import traceback
+
+    slist = (
+        traceback.format_exception_only(type, value)
+        if tb is None
+        else traceback.format_exception(type, value, tb)
+    )
+    s = "".join(slist)
+    return s
 
 
 def nrnpy_pass():
@@ -1579,3 +1734,59 @@ def clear_gui_callback():
         nrnpy_set_gui_callback(None)
     except:
         pass
+
+
+try:
+    from IPython import get_ipython as _get_ipython
+except:
+    _get_ipython = lambda *args: None
+
+
+def _hocobj_html(item):
+    try:
+        if item.hname().split("[")[0] == "ModelView":
+            return _mview_html_tree(item.display.top)
+        return None
+    except:
+        return None
+
+
+def _mview_html_tree(hlist, inside_mechanisms_in_use=0):
+    items = []
+    if inside_mechanisms_in_use:
+        miu_level = inside_mechanisms_in_use + 1
+    else:
+        miu_level = 0
+    my_miu_level = miu_level
+    for ho in hlist:
+        html = ho.s.lstrip(" *")
+        if ho.children:
+            if html == "Mechanisms in use":
+                my_miu_level = 1
+        if html or miu_level == 3:
+            if ho.children:
+                children_data = _mview_html_tree(
+                    ho.children, inside_mechanisms_in_use=my_miu_level
+                )
+                if miu_level == 3:
+                    items.append(html + children_data)
+                else:
+                    items.append(
+                        f"<div><details><summary style='cursor:pointer'>{html}</summary><div style='margin-left:1.06em'>{children_data}</div></div>"
+                    )
+            else:
+                if miu_level == 3:
+                    items.append(html)
+                else:
+                    items.append(f"<div style='margin-left:1.06em'>{html}</div>")
+
+    if miu_level == 3:
+        return f"{'<br>'.join(items)}"
+    else:
+        return f"{''.join(items)}"
+
+
+# register our ModelView display formatter with Jupyter if available
+if _get_ipython() is not None:
+    html_formatter = _get_ipython().display_formatter.formatters["text/html"]
+    html_formatter.for_type(hoc.HocObject, _hocobj_html)

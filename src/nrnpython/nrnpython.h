@@ -17,32 +17,28 @@
 #if defined(USE_PYTHON)
 #undef _POSIX_C_SOURCE
 #undef _XOPEN_SOURCE
-#if defined(__MINGW32__)
-//at least a problem with g++6.3.0
-#define _hypot hypot
-#endif
 #include <nrnwrap_Python.h>
 
 #endif /*USE_PYTHON*/
 
 #define PyString_FromString PyUnicode_FromString
-#define PyInt_Check PyLong_Check
-#define PyInt_CheckExact PyLong_CheckExact
-#define PyInt_AS_LONG PyLong_AsLong
-#define PyInt_AsLong PyLong_AsLong
-#define PyInt_FromLong PyLong_FromLong
+#define PyInt_Check         PyLong_Check
+#define PyInt_CheckExact    PyLong_CheckExact
+#define PyInt_AS_LONG       PyLong_AsLong
+#define PyInt_AsLong        PyLong_AsLong
+#define PyInt_FromLong      PyLong_FromLong
 
-static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 6), "Python >= 3.6 required");
+static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 7),
+              "Python >= 3.7 required");
 
 extern PyObject* nrnpy_hoc_pop();
 extern int nrnpy_numbercheck(PyObject*);
 
 #if defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ > __SIZEOF_LONG__
-#define castptr2long (long)(long long)
+#define castptr2long (long) (long long)
 #else
 #define castptr2long (long)
 #endif
-
 
 
 /*
@@ -60,26 +56,20 @@ intermediate.
 */
 namespace PyHoc {
 enum ObjectType {
-  HocTopLevelInterpreter = 0,
-  HocObject = 1,
-  HocFunction = 2,  // function or TEMPLATE
-  HocArray = 3,
-  HocRefNum = 4,
-  HocRefStr = 5,
-  HocRefObj = 6,
-  HocForallSectionIterator = 7,
-  HocSectionListIterator = 8,
-  HocScalarPtr = 9,
-  HocArrayIncomplete =
-      10,  // incomplete pointer to a hoc array (similar to HocArray)
-  HocRefPStr = 11,
+    HocTopLevelInterpreter = 0,
+    HocObject = 1,
+    HocFunction = 2,  // function or TEMPLATE
+    HocArray = 3,
+    HocRefNum = 4,
+    HocRefStr = 5,
+    HocRefObj = 6,
+    HocForallSectionIterator = 7,
+    HocSectionListIterator = 8,
+    HocScalarPtr = 9,
+    HocArrayIncomplete = 10,  // incomplete pointer to a hoc array (similar to HocArray)
+    HocRefPStr = 11,
 };
-enum IteratorState {
-  Begin,
-  NextNotLast,
-  Last
-};
+enum IteratorState { Begin, NextNotLast, Last };
 }  // namespace PyHoc
 
 #endif
-

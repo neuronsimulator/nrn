@@ -4,7 +4,7 @@ System Calls
 Path Manipulation
 ~~~~~~~~~~~~~~~~~
 
-.. function:: chdir
+.. hoc:function:: chdir
 
     Syntax:
         ``chdir("path")``
@@ -16,7 +16,7 @@ Path Manipulation
 
 ----
 
-.. function:: getcwd
+.. hoc:function:: getcwd
 
     Syntax:
         ``string = getcwd()``
@@ -29,7 +29,7 @@ Path Manipulation
 
 ----
 
-.. function:: neuronhome
+.. hoc:function:: neuronhome
 
     Name:
         neuronhome -- installation path 
@@ -57,7 +57,7 @@ Path Manipulation
 Machine Identification
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. function:: machine_name
+.. hoc:function:: machine_name
 
     Syntax:
         ``strdef name``
@@ -70,7 +70,7 @@ Machine Identification
 
 ----
 
-.. function:: unix_mac_pc
+.. hoc:function:: unix_mac_pc
 
     Syntax:
         ``type = unix_mac_pc()``
@@ -87,7 +87,7 @@ Machine Identification
 
 ----
 
-.. function:: nrnversion
+.. hoc:function:: nrnversion
 
     Syntax:
         ``versionstring = nrnversion()``
@@ -163,7 +163,7 @@ Execute a Command
 ~~~~~~~~~~~~~~~~~
 
 
-.. function:: WinExec
+.. hoc:function:: WinExec
 
     Syntax:
         ``WinExec("mswin command")``
@@ -173,7 +173,7 @@ Execute a Command
          
 ----
 
-.. function:: system
+.. hoc:function:: system
 
     Name:
         system --- issue a shell command 
@@ -218,17 +218,17 @@ Execute a Command
 Timing
 ~~~~~~
 
-.. function:: startsw
+.. hoc:function:: startsw
 
         Initializes a stopwatch with a resolution of 1 second or 0.01 second if 
-        gettimeofday system call is available. See :func:`stopsw` . 
+        gettimeofday system call is available. See :hoc:func:`stopsw` .
 
 
 ----
 
-.. function:: stopsw
+.. hoc:function:: stopsw
 
-        Returns the time in seconds since the stopwatch was last initialized with a :func:`startsw` . 
+        Returns the time in seconds since the stopwatch was last initialized with a :hoc:func:`startsw` .
 
         .. code-block::
             none
@@ -251,7 +251,7 @@ Timing
 
 .. seealso::
 
-    :class:`Timer`
+    :hoc:class:`Timer`
 
 
 ----
@@ -259,7 +259,7 @@ Timing
 Miscellaneous
 ~~~~~~~~~~~~~
 
-.. function:: nrn_load_dll
+.. hoc:function:: nrn_load_dll
 
     Syntax:
         ``nrn_load_dll(dll_file_name)``
@@ -270,7 +270,7 @@ Miscellaneous
 
 
 
-.. function:: show_winio
+.. hoc:function:: show_winio
 
     Syntax:
         ``show_winio(0or1)``

@@ -17,7 +17,7 @@ fclamp(i, duration, vc)
 
 fclampv()
  the value of the clamp potential at the global time t
- 
+
 fclampi()
  the clamp current at the global time t
 
@@ -30,10 +30,10 @@ fclampi()
 
 
 static double loc;
-static Node *pnd;
-static Section *sec;
+static Node* pnd;
+static Section* sec;
 static double gtemp;
-static int maxlevel = 0;        /* size of clamp array */
+static int maxlevel = 0;                /* size of clamp array */
 static double *duration, *vc, *tswitch; /* maxlevel of them */
 static int oldsw = 0;
 
@@ -46,13 +46,24 @@ extern void clamp_prepare();
 void print_clamp() {
     int i;
 
-    if (maxlevel == 0) return;
+    if (maxlevel == 0)
+        return;
 #ifndef _OMPSS_
-    Printf("%s fclamp(%d, %g) /* Second arg is location */\n\
-/* fclamp( #, duration(ms), magnitude(mV)) ; clamp_resist = %g */\n", secname(sec),
-           maxlevel, loc, clamp_resist);
+    Printf(
+        "%s fclamp(%d, %g) /* Second arg is location */\n\
+/* fclamp( #, duration(ms), magnitude(mV)) ; clamp_resist = %g */\n",
+        secname(sec),
+        maxlevel,
+        loc,
+        clamp_resist);
 #else
-    Printf("%s fclamp(%d, %g) /* Second arg is location */\nfclamp( #, duration(ms), magnitude(mV)) ; clamp_resist = %g */\n", secname(sec),maxlevel, loc, clamp_resist);
+    Printf(
+        "%s fclamp(%d, %g) /* Second arg is location */\nfclamp( #, duration(ms), magnitude(mV)) ; "
+        "clamp_resist = %g */\n",
+        secname(sec),
+        maxlevel,
+        loc,
+        clamp_resist);
 #endif
     for (i = 0; i < maxlevel; i++) {
         Printf("   fclamp(%2d,%13g,%14g)\n", i, duration[i], vc[i]);
@@ -60,7 +71,6 @@ void print_clamp() {
 }
 
 void fclampv(void) {
-
     if (maxlevel) {
         hoc_retpushx(clampval());
     } else {
@@ -97,7 +107,7 @@ void fclamp(void) {
     if (ifarg(3)) {
         int num;
         if (i >= maxlevel) {
-            hoc_execerror("level index out of range", (char *) 0);
+            hoc_execerror("level index out of range", (char*) 0);
         }
         duration[i] = chkarg(2, 0., 1e21);
         vc[i] = *getarg(3);
@@ -112,9 +122,9 @@ void fclamp(void) {
         free_clamp();
         maxlevel = i;
         if (maxlevel) {
-            duration = (double *) emalloc((unsigned) (maxlevel * sizeof(double)));
-            vc = (double *) emalloc((unsigned) (maxlevel * sizeof(double)));
-            tswitch = (double *) emalloc((unsigned) ((maxlevel + 1) * sizeof(double)));
+            duration = (double*) emalloc((unsigned) (maxlevel * sizeof(double)));
+            vc = (double*) emalloc((unsigned) (maxlevel * sizeof(double)));
+            tswitch = (double*) emalloc((unsigned) ((maxlevel + 1) * sizeof(double)));
             for (i = 0; i < maxlevel; i++) {
                 duration[i] = 0.;
                 vc[i] = 0.;
@@ -132,16 +142,16 @@ void fclamp(void) {
 
 static void free_clamp(void) {
     if (maxlevel) {
-        free((char *) duration);
-        free((char *) vc);
-        free((char *) tswitch);
+        free((char*) duration);
+        free((char*) vc);
+        free((char*) tswitch);
         maxlevel = 0;
         section_unref(sec);
         sec = 0;
     }
 }
 
-void clamp_prepare(void)    /*fill in the section info*/
+void clamp_prepare(void) /*fill in the section info*/
 {
     double area;
 
@@ -155,7 +165,7 @@ void clamp_prepare(void)    /*fill in the section info*/
         return;
     }
     if (clamp_resist <= 0) {
-        hoc_execerror("clamp_resist must be > 0 in megohms", (char *) 0);
+        hoc_execerror("clamp_resist must be > 0 in megohms", (char*) 0);
     }
 }
 
@@ -173,7 +183,7 @@ void activclamp_rhs(void) {
     }
 
 #else
-    NODERHS(pnd) += gtemp*(v - NODEV(pnd));
+    NODERHS(pnd) += gtemp * (v - NODEV(pnd));
 #endif
 }
 
@@ -188,19 +198,13 @@ void activclamp_lhs(void) {
 static double clampval(void) {
     gtemp = 1.e2 / clamp_resist / NODEAREA(pnd);
     for (;;) {
-#if CVODE
         at_time(nrn_threads, tswitch[oldsw]);
-#endif
         if (nt_t < tswitch[oldsw]) {
             if (oldsw == 0) {
                 break;
             }
-#if CVODE
-/* for cvode the other was inefficient since t is non-monotonic */
+            /* for cvode the other was inefficient since t is non-monotonic */
             --oldsw;
-#else
-            oldsw = 0;
-#endif
         } else {
             if (nt_t < tswitch[oldsw + 1]) {
                 break;
@@ -215,4 +219,3 @@ static double clampval(void) {
     }
     return vc[oldsw];
 }
-

@@ -22,7 +22,7 @@ Deletion, replacement and moving blocks of items is also supported.
   always at the tail of the list and is denoted as the List pointer itself.
   list->next point to the first item in the list and
   list->prev points to the last item in the list.
-	i.e. the list is circular
+    i.e. the list is circular
   Note that in an empty list next and prev points to itself.
 
 It is intended that this implementation be hidden from the user via the
@@ -30,269 +30,232 @@ following function calls.
 */
 
 #include <stdlib.h>
-#include	"model.h"
-#include	"parse1.hpp"
+#include "model.h"
+#include "parse1.hpp"
 
 #define DEBUG 0
 #if DEBUG
-static int debugtoken=1;
+static int debugtoken = 1;
 #else
-static int debugtoken=0;
+static int debugtoken = 0;
 #endif
 
-static Item *
-newitem()
-{
-	return (Item *)emalloc(sizeof(Item));
+static Item* newitem() {
+    return (Item*) emalloc(sizeof(Item));
 }
 
-List *
-newlist()
-{
-	Item *i;
-	i = newitem();
-	i->prev = i;
-	i->next = i;
-	i->element = (void *)0;
-	i->itemtype = 0;
-	return (List *)i;
+List* newlist() {
+    Item* i;
+    i = newitem();
+    i->prev = i;
+    i->next = i;
+    i->element = (void*) 0;
+    i->itemtype = 0;
+    return (List*) i;
 }
 
-void freelist(List** plist)	/*free the list but not the elements*/
+void freelist(List** plist) /*free the list but not the elements*/
 {
-	Item *i1, *i2;
-	if (!(*plist)) {
-		return;
-	}
-	for (i1 = (*plist)->next; i1 != *plist; i1 = i2) {
-		i2 = i1->next;
-		Free(i1);
-	}
-	Free(*plist);
-	*plist = (List *)0;
+    Item *i1, *i2;
+    if (!(*plist)) {
+        return;
+    }
+    for (i1 = (*plist)->next; i1 != *plist; i1 = i2) {
+        i2 = i1->next;
+        Free(i1);
+    }
+    Free(*plist);
+    *plist = (List*) 0;
 }
 
-static Item *
-linkitem(Item* item)
-{
-	Item *i;
+static Item* linkitem(Item* item) {
+    Item* i;
 
-	i = newitem();
-	i->prev = item->prev;
-	i->next = item;
-	item->prev = i;
-	i->prev->next = i;
-	return i;
+    i = newitem();
+    i->prev = item->prev;
+    i->next = item;
+    item->prev = i;
+    i->prev->next = i;
+    return i;
 }
 
-Item *car(List* list)
-{
-	Item *q = (Item *)list;
-	assert(q && q->itemtype == 0);
-	return next(q);
+Item* car(List* list) {
+    Item* q = (Item*) list;
+    assert(q && q->itemtype == 0);
+    return next(q);
 }
 
-Item *next(Item* item)
-{
-	assert(item->next->itemtype); /* never return the list item */
-	return item->next;
+Item* next(Item* item) {
+    assert(item->next->itemtype); /* never return the list item */
+    return item->next;
 }
 
-Item *prev(Item* item)
-{
-	assert(item->prev->itemtype); /* never return the list item */
-	return item->prev;
+Item* prev(Item* item) {
+    assert(item->prev->itemtype); /* never return the list item */
+    return item->prev;
 }
 
-Item *
-insertstr(Item* item, char* str) /* insert a copy of the string before item */
+Item* insertstr(Item* item, const char* str) /* insert a copy of the string before item */
 /* a copy is made because strings are often assembled into a reusable buffer*/
 {
-	Item *i;
+    Item* i;
 
-	i = linkitem(item);
-	i->element = (void *)stralloc(str, (char *)0);
-	i->itemtype = STRING;
-	return i;
+    i = linkitem(item);
+    i->element = (void*) stralloc(str, (char*) 0);
+    i->itemtype = STRING;
+    return i;
 }
 
-Item *
-insertitem(Item* item, Item* itm) /* insert a item pointer before item */
+Item* insertitem(Item* item, Item* itm) /* insert a item pointer before item */
 {
-	Item *i;
+    Item* i;
 
-	i = linkitem(item);
-	i->element = (void *)itm;
-	i->itemtype = ITEM;
-	return i;
+    i = linkitem(item);
+    i->element = (void*) itm;
+    i->itemtype = ITEM;
+    return i;
 }
-	
-Item *
-insertsym(Item* item, Symbol* sym) /* insert a symbol before item */
+
+Item* insertsym(Item* item, Symbol* sym) /* insert a symbol before item */
 /* a copy is not made because we need the same symbol in different lists */
 {
-	Item *i;
+    Item* i;
 
-	i = linkitem(item);
-	i->element = (void *)sym;
-	i->itemtype = SYMBOL;
-	return i;
-}
-	
-Item *
-linsertstr(List* list, char* str)
-{
-	return insertstr(list->next, str);
+    i = linkitem(item);
+    i->element = (void*) sym;
+    i->itemtype = SYMBOL;
+    return i;
 }
 
-Item *
-lappendstr(List* list, char* str)
-{
-	return insertstr(list, str);
+Item* linsertstr(List* list, const char* str) {
+    return insertstr(list->next, str);
 }
 
-Item *
-linsertsym(List* list, Symbol* sym)
-{
-	return insertsym(list->next, sym);
+Item* lappendstr(List* list, const char* str) {
+    return insertstr(list, str);
 }
 
-Item *
-lappendsym(List* list, Symbol* sym)
-{
-	return insertsym(list, sym);
+Item* linsertsym(List* list, Symbol* sym) {
+    return insertsym(list->next, sym);
 }
 
-Item *
-lappenditem(List* list, Item* item)
-{
-	return insertitem(list, item);
+Item* lappendsym(List* list, Symbol* sym) {
+    return insertsym(list, sym);
 }
 
-void remove(Item* item)
-{
-	assert(item->itemtype); /* can't delete list */
-	item->next->prev = item->prev;
-	item->prev->next = item->next;
-	Free(item);
+Item* lappenditem(List* list, Item* item) {
+    return insertitem(list, item);
 }
 
-static long mallocsize=0;
-static long mallocpieces=0;
-
-#if LINT
-double *emalloc(unsigned n) { /* check return from malloc */
-	assert(0);
-	return (double *)0;
+void remove(Item* item) {
+    assert(item->itemtype); /* can't delete list */
+    item->next->prev = item->prev;
+    item->prev->next = item->next;
+    Free(item);
 }
-#else
-char *emalloc(unsigned n) { /* check return from malloc */
-	char *p;
 
-	p = static_cast<char*>(malloc(n));
-	if (p == (char *)0) {
-		memory_usage();
-		diag("out of memory", (char *)0);
-	}
-	mallocsize += n;
-	mallocpieces++;
-	return p;
+static long mallocsize = 0;
+static long mallocpieces = 0;
+
+char* emalloc(unsigned n) { /* check return from malloc */
+    char* p;
+
+    p = static_cast<char*>(malloc(n));
+    if (p == (char*) 0) {
+        memory_usage();
+        diag("out of memory", (char*) 0);
+    }
+    mallocsize += n;
+    mallocpieces++;
+    return p;
 }
-#endif /*LINT*/
 
 void memory_usage() {
-	Fprintf(stderr, "malloc'ed a total of %ld bytes in %ld pieces\n",
-		mallocsize, mallocpieces);
+    Fprintf(stderr, "malloc'ed a total of %ld bytes in %ld pieces\n", mallocsize, mallocpieces);
 }
 
-char *stralloc(char* buf, char* rel) {
-	/* allocate space, copy buf, and free rel */
-	char *s;
-	s = (char *)emalloc((unsigned)(strlen(buf) + 1));
-	Strcpy(s, buf);
-	if (rel) {
-		Free(rel);
-	}
-	return s;
+char* stralloc(const char* buf, char* rel) {
+    /* allocate space, copy buf, and free rel */
+    char* s;
+    s = (char*) emalloc((unsigned) (strlen(buf) + 1));
+    Strcpy(s, buf);
+    if (rel) {
+        Free(rel);
+    }
+    return s;
 }
 
 void deltokens(Item* q1, Item* q2) /* delete tokens from q1 to q2 */
 {
-	/* It is a serious error if q2 precedes q1 */
-	Item *q;
-	for (q = q1; q != q2;) {
-		q = q->next;
-		remove(q->prev);
-	}
-	remove(q2);
-		
+    /* It is a serious error if q2 precedes q1 */
+    Item* q;
+    for (q = q1; q != q2;) {
+        q = q->next;
+        remove(q->prev);
+    }
+    remove(q2);
 }
 
-void move(Item* q1, Item* q2, Item* q3)	/* move q1 to q2 and insert before q3*/
+void move(Item* q1, Item* q2, Item* q3) /* move q1 to q2 and insert before q3*/
 {
-	/* it is a serious error if q2 precedes q1 */
-	assert(q1 && q2);
-	assert(q1->itemtype && q2->itemtype);
-	q1->prev->next = q2->next; /* remove from first list */
-	q2->next->prev = q1->prev;
+    /* it is a serious error if q2 precedes q1 */
+    assert(q1 && q2);
+    assert(q1->itemtype && q2->itemtype);
+    q1->prev->next = q2->next; /* remove from first list */
+    q2->next->prev = q1->prev;
 
-	q1->prev = q3->prev;
-	q3->prev->next = q1;
-	q3->prev = q2;
-	q2->next = q3;
+    q1->prev = q3->prev;
+    q3->prev->next = q1;
+    q3->prev = q2;
+    q2->next = q3;
 }
 
-void movelist(Item* q1, Item* q2, List* s)	/* move q1 to q2 from old list to end of list s*/
+void movelist(Item* q1, Item* q2, List* s) /* move q1 to q2 from old list to end of list s*/
 {
-	move(q1, q2, s);
+    move(q1, q2, s);
 }
 
-void replacstr(Item* q, char* s)
-{
-	q->itemtype = STRING;
-	q->element = (void *)stralloc(s, (char *)0);
-
+void replacstr(Item* q, const char* s) {
+    q->itemtype = STRING;
+    q->element = (void*) stralloc(s, (char*) 0);
 }
 
-Item *
-putintoken(char* s, short type, short toktype)
-{	/* make sure a symbol exists for s and
-	append to intoken list */
-	Symbol *sym;
-	Item *q;
-	static int linenum=0;
+Item* putintoken(const char* s, short type, short toktype) { /* make sure a symbol exists for s and
+                                                       append to intoken list */
+    Symbol* sym;
+    Item* q;
+    static int linenum = 0;
 
-	if (debugtoken) {
-		Fprintf(stderr, "%s|", s);
-	}
-	if (s == (char *)0)
-		diag("internal error", " in putintoken");
-	switch (type) {
-		
-	case STRING:
-	case REAL:
-	case INTEGER:
-		q = insertstr(intoken, s);
-		q->itemsubtype = toktype;
-		return q;
-	case NEWLINE:
-		q = insertsym(intoken, SYM0);
-		q->itemtype = NEWLINE;
-		q->itemsubtype = ++linenum;
-		return q;
-	default:
-		if ((sym = lookup(s)) == SYM0) {
-			sym = install(s, type);
-		}
-		break;
-	}
-	q = insertsym(intoken, sym);
-	if (toktype) {
-		q->itemsubtype = toktype;
-	}else{
-		q->itemsubtype = sym->type;
-	}
-	return q;
+    if (debugtoken) {
+        Fprintf(stderr, "%s|", s);
+    }
+    if (s == (char*) 0)
+        diag("internal error", " in putintoken");
+    switch (type) {
+    case STRING:
+    case REAL:
+    case INTEGER:
+        q = insertstr(intoken, s);
+        q->itemsubtype = toktype;
+        return q;
+    case NEWLINE:
+        q = insertsym(intoken, SYM0);
+        q->itemtype = NEWLINE;
+        q->itemsubtype = ++linenum;
+        return q;
+    default:
+        if ((sym = lookup(s)) == SYM0) {
+            sym = install(s, type);
+        }
+        break;
+    }
+    q = insertsym(intoken, sym);
+    if (toktype) {
+        q->itemsubtype = toktype;
+    } else {
+        q->itemsubtype = sym->type;
+    }
+    return q;
 }
 
 #if MAC || defined(__TURBOC__)
@@ -316,52 +279,47 @@ Item *
 makelist(int narg, ...)
 {
 #else
-makelist(va_alist)
-	va_dcl
-{
-	int narg;
+makelist(va_dcl va_alist) {
+    int narg;
 #endif
-	va_list ap;
-	int i;
-	List *l;
-	Item *ql,*q;
-	
-	l = newlist();
-	ql = newitem();
-	ql->itemtype = LIST;
-	ql->element = (void *)l;
+    va_list ap;
+    int i;
+    List* l;
+    Item *ql, *q;
+
+    l = newlist();
+    ql = newitem();
+    ql->itemtype = LIST;
+    ql->element = (void*) l;
 #if HAVE_STDARG_H
-	va_start (ap, narg);
+    va_start(ap, narg);
 #else
-	va_start (ap);
-	narg = va_arg(ap, int);
+    va_start(ap);
+    narg = va_arg(ap, int);
 #endif
-	for (i=0; i<narg; i++) {
-		q = va_arg(ap, Item *);
-		append(ql, q);
-	}
-	va_end (ap);
+    for (i = 0; i < narg; i++) {
+        q = va_arg(ap, Item*);
+        append(ql, q);
+    }
+    va_end(ap);
 
-	return ql;
+    return ql;
 }
 
-void append(Item* ql, Item* q)
-{
-	assert(ql->itemtype == LIST);
-	IGNORE(insertitem((Item *)(LST(ql)), q));
+void append(Item* ql, Item* q) {
+    assert(ql->itemtype == LIST);
+    IGNORE(insertitem((Item*) (LST(ql)), q));
 }
 
-Item *
-prepend(Item* ql, Item* q)
-{
-	List *l;
-	
-	assert(ql->itemtype == LIST);
-	l = LST(ql);
-	IGNORE(insertitem((Item *)l->next, q));
-	return ql;
+Item* prepend(Item* ql, Item* q) {
+    List* l;
+
+    assert(ql->itemtype == LIST);
+    l = LST(ql);
+    IGNORE(insertitem((Item*) l->next, q));
+    return ql;
 }
-	
+
 /* An item which is an array of item pointers. Note where the size of
 the array is held. */
 
@@ -369,31 +327,29 @@ Item *
 #if HAVE_STDARG_H
 itemarray(int narg, ...) {
 #else
-itemarray(va_alist)
-	va_dcl
-{
-	int narg;
+itemarray(va_dcl va_alist) {
+    int narg;
 #endif
-	va_list ap;
-	int i;
-	Item *ql,*q, **qa;
-	
-	ql = newitem();
+    va_list ap;
+    int i;
+    Item *ql, *q, **qa;
+
+    ql = newitem();
 #if HAVE_STDARG_H
-	va_start (ap, narg);
+    va_start(ap, narg);
 #else
-	va_start (ap);
-	narg = va_arg(ap, int);
+    va_start(ap);
+    narg = va_arg(ap, int);
 #endif
-	ql->itemtype = ITEMARRAY;
-	qa = (Item **)emalloc((unsigned)(narg + 1)*sizeof(Item *));
-	qa++;
-	ql->element = (void *)qa;
-	for (i=0; i<narg; i++) {
-		q = va_arg(ap, Item *);
-		qa[i] = q;
-	}
-	va_end (ap);
-	ITMA(ql)[-1] = (Item *)((size_t)narg);
-	return ql;
+    ql->itemtype = ITEMARRAY;
+    qa = (Item**) emalloc((unsigned) (narg + 1) * sizeof(Item*));
+    qa++;
+    ql->element = (void*) qa;
+    for (i = 0; i < narg; i++) {
+        q = va_arg(ap, Item*);
+        qa[i] = q;
+    }
+    va_end(ap);
+    ITMA(ql)[-1] = (Item*) ((size_t) narg);
+    return ql;
 }

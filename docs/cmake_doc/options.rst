@@ -29,7 +29,7 @@ strings which are not marked as INTERNAL or ADVANCED. Alternatively,
   ccmake ..
 
 allows one to interactively inspect cached variables.
-In the build folder, ``cmake -LH`` (missing <path-to-source) will not
+In the build folder, ``cmake -LH`` (missing <path-to-source>) will not
 run cmake, but if there is a ``CMakeCache.txt`` file, the cache variables
 will be listed.
 
@@ -71,7 +71,7 @@ in that. e.g.
 
 CMAKE_INSTALL_PREFIX:PATH=\<path-where-nrn-should-be-installed\>
 ----------------------------------------------------------------
-  Install path prefix, prepended onto install directories.  
+  Install path prefix, prepended onto install directories.
   This can be a full path or relative. Default is /usr/local .
   A common install folder is 'install' in the build folder. e.g.
 
@@ -91,19 +91,50 @@ CMAKE_INSTALL_PREFIX:PATH=\<path-where-nrn-should-be-installed\>
 
 CMAKE_BUILD_TYPE:STRING=RelWithDebInfo
 --------------------------------------
-  Empty or one of Custom;Debug;Release;RelWithDebInfo;Fast.  
+  Empty or one of Custom;Debug;Release;RelWithDebInfo;Fast.
 
-  * RelWithDebInfo means to compile using -O2 -g options.  
-  * Debug means to compile with just -g (and optimization level -O0)  
+  * RelWithDebInfo means to compile using -O2 -g options.
+  * Debug means to compile with just -g (and optimization level -O0)
     This is very useful for debugging with gdb as, otherwise, local
     variables may be optimized away that are useful to inspect.
-  * Release means to compile with -O2 -DNDEBUG.  
+  * Release means to compile with -O2 -DNDEBUG.
     The latter eliminates assert statements.
   * Custom requires that you specify flags with CMAKE_C_FLAGS and CMAKE_CXX_FLAGS
   * Fast requires that you specify flags as indicated in nrn/cmake/ReleaseDebugAutoFlags.cmake
 
   Custom and Fast depend on specific compilers and (super)computers and are tailored to those
   machines. See ``nrn/cmake/ReleaseDebugAutoFlags.cmake``
+
+Ninja
+-----
+  Use the Ninja build system (``make`` is the default CMake build system).
+
+  .. code-block:: shell
+
+    cmake .. -G Ninja ...
+    ninja install
+
+  Ninja can be faster than make during development when compiling
+  just a few files. Some rough timings on a mac powerbook arm64 with and
+  without -G Ninja for ``cmake .. -G Ninja -DCMAKE_INSTALL_PREFIX=install``
+  are:
+
+  .. code-block:: shell
+
+    # Note: make executed in build-make folder, ninja executed in build-ninja folder.
+    time make -j install) # 39s
+    time ninja install    # 35s
+    touch ../src/nrnoc/section.h
+    time make -j          # 8.3s
+    time ninja            # 7.4s
+
+  On mac, install ninja with ``brew install ninja``
+
+  ``ninja help`` prints the target names that can be built individually
+
+  ``ninja -j 1`` does a non-parallel build.
+
+  ``ninja -v`` shows each command.
 
 InterViews options
 ==================
@@ -117,7 +148,7 @@ NRN_ENABLE_INTERVIEWS:BOOL=ON
 
 IV_DIR:PATH=<path-to-external-installation-of-interviews>
 ---------------------------------------------------------
-  The directory containing a CMake configuration file for iv.  
+  The directory containing a CMake configuration file for iv.
 
   IV_DIR is the install location of iv and the directory actually containing
   the cmake configuration files is ``IV_DIR/lib/cmake``.
@@ -131,23 +162,23 @@ IV_DIR:PATH=<path-to-external-installation-of-interviews>
 
 IV_ENABLE_SHARED:BOOL=OFF
 -------------------------
-  Build libraries shared or static  
+  Build libraries shared or static
 
   I generally build InterViews static. The nrn build will then incorporate
   all of InterViews into libnrniv.so
 
 IV_ENABLE_X11_DYNAMIC:BOOL=OFF
 ------------------------------
-  dlopen X11 after launch  
+  dlopen X11 after launch
 
-  This is most useful for building Mac distributions where XQuartz (X11) may 
+  This is most useful for building Mac distributions where XQuartz (X11) may
   not be installed on the user's machine and the user does not require
   InterViews graphics. If XQuartz is subsequently installed, InterViews graphics
   will suddenly be available.
 
 IV_ENABLE_X11_DYNAMIC_MAKE_HEADERS:BOOL=OFF
 -------------------------------------------
-  Remake the X11 dynamic .h files.  
+  Remake the X11 dynamic .h files.
 
   Don't use this. The scripts are very brittle and X11 is very stable.
   If it is ever necessary to remake the X11 dynamic .h files, I will
@@ -158,21 +189,21 @@ MPI options:
 
 NRN_ENABLE_MPI:BOOL=ON
 ----------------------
-  Enable MPI support  
+  Enable MPI support
 
   Requires an MPI installation, e.g. openmpi or mpich. Note that the Python mpi4py module generally uses
   openmpi which cannot be mixed with mpich.
 
 NRN_ENABLE_MPI_DYNAMIC:BOOL=OFF
 -------------------------------
-  Enable dynamic MPI library support  
+  Enable dynamic MPI library support
 
   This is mostly useful for binary distibutions where MPI may or may not
   exist on the target machine.
 
 NRN_MPI_DYNAMIC:STRING=
 -----------------------
-  semicolon (;) separated list of MPI include directories to build against. Default to first found mpi)  
+  semicolon (;) separated list of MPI include directories to build against. Default to first found mpi)
 
   Cmake knows about openmpi, mpich, mpt, and msmpi. The dynamic loader for linux tries to load libmpi.so and if that fails, libmpich.so (the latter is good for cray mpi). The system then checks to see if a specific symbol exists in the libmpi... and determines whether to  load the libnrnmp_xxx.so for openmpi, mpich, or mpt. To make binary installers good for openmpi and mpich, I use
 
@@ -188,18 +219,18 @@ Python options:
 NRN_ENABLE_PYTHON:BOOL=ON
 -------------------------
   Enable Python interpreter support
-  (default python, fallback to python3, but see PYTHON_EXECUTABLE below)  
+  (default python, fallback to python3, but see PYTHON_EXECUTABLE below)
 
 NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
 ----------------------------------
-  Enable dynamic Python version support  
+  Enable dynamic Python version support
 
   This is mostly useful for binary distributions where it is unknown which
   version, if any, of python exists on the target machine.
 
 NRN_PYTHON_DYNAMIC:STRING=
 --------------------------
-  semicolon (;) separated list of python executables to create interfaces. (default python3)  
+  semicolon (;) separated list of python executables to create interfaces. (default python3)
 
   If the string is empty use the python specified by PYTHON_EXECUTABLE
   or else the default python. Binary distributions often specify a list
@@ -209,7 +240,7 @@ NRN_PYTHON_DYNAMIC:STRING=
 
   .. code-block:: shell
 
-    -DNRN_PYTHON_DYNAMIC="python3.6;python3.7;python3.8;python3.9"
+    -DNRN_PYTHON_DYNAMIC="python3.7;python3.8;python3.9;python3.10"
 
   This option is ignored unless NRN_ENABLE_PYTHON_DYNAMIC=ON
 
@@ -230,7 +261,7 @@ NRN_ENABLE_MODULE_INSTALL:BOOL=ON
 
 NRN_MODULE_INSTALL_OPTIONS:STRING=--home=/usr/local
 ---------------------------------------------------
-  setup.py options, everything after setup.py install  
+  setup.py options, everything after setup.py install
 
   To install in site-packages use an empty string
 
@@ -242,14 +273,14 @@ NRN_MODULE_INSTALL_OPTIONS:STRING=--home=/usr/local
 
 NRN_ENABLE_RX3D:BOOL=ON
 -----------------------
-  Enable rx3d support  
+  Enable rx3d support
 
   No longer any reason to turn this off as build time is not significantly
   increased due to compiling cython generated files with -O0 by default.
 
 NRN_RX3D_OPT_LEVEL:STRING=0
 ---------------------------
-  Optimization level for Cython generated files (non-zero may compile slowly)  
+  Optimization level for Cython generated files (non-zero may compile slowly)
 
   It is not clear to me if -O0 has significantly less performance than -O2.
   Binary distributions are (or should be) built with
@@ -263,22 +294,41 @@ CoreNEURON options:
 
 NRN_ENABLE_CORENEURON:BOOL=OFF
 ------------------------------
-  Enable CoreNEURON support  
+  Enable CoreNEURON support
 
   If ON and no argument pointing to an external installation, CoreNEURON
   will be cloned as a submodule along with all its NMODL submodule dependencies.
 
 NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
 -------------------------------------
-  Enable CoreNEURON compatibility for MOD files  
+  Enable CoreNEURON compatibility for MOD files
 
   CoreNEURON does not allow the common NEURON THREADSAFE promotion of
   GLOBAL variables that appear on the right hand side of assignment statements
   to become thread specific variables. This option is
   automatically turned on if NRN_ENABLE_CORENEURON=ON.
 
-  There are a large number of cmake arguments specific to a CoreNEURON
-  build that are explained in ???.
+Other CoreNEURON options:
+-------------------------
+  There are 20 or so cmake arguments specific to a CoreNEURON
+  build that are listed in https://github.com/BlueBrain/CoreNeuron/blob/master/CMakeLists.txt.
+  The ones of particular interest that can be used on the NEURON
+  CMake configure line are `CORENRN_ENABLE_NMODL` and `CORENRN_ENABLE_GPU`.
+  For developers preparing a pull request that involves associated changes
+  to CoreNEURON sources, a CoreNEURON pull request will fail if the
+  changes are not formatted properly. In this case, note that
+  `CORENRN_CLANG_FORMAT` can only be used in a CoreNEURON specific CMake
+  configure line in external/coreneuron/build.
+
+  .. code-block::
+
+    cd external/coreneuron
+    mkdir build
+    cd build
+    cmake .. -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python` -DCORENRN_CLANG_FORMAT=ON
+    make clang-format
+
+
 
 Occasionally useful advanced options:
 =====================================
@@ -288,7 +338,7 @@ Occasionally useful advanced options:
 
 CMAKE_C_COMPILER:FILEPATH=/usr/bin/cc
 -------------------------------------
-  C compiler  
+  C compiler
 
   On the mac, prior to knowing about
   ``export SDK_ROOT=$(xcrun -sdk macosx --show-sdk-path)``
@@ -303,7 +353,53 @@ CMAKE_C_COMPILER:FILEPATH=/usr/bin/cc
 
 CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++
 ----------------------------------------
-  C plus plus compiler  
+  C plus plus compiler
+
+NRN_ENABLE_DOCS:BOOL=OFF
+------------------------
+  Enable documentation targets in the build.
+  This also makes all documentation dependencies into hard requirements, so
+  CMake will report an error if anything is missing.
+  There are five documentation targets:
+    * ``doxygen`` generates Doxygen documentation from the NEURON source code.
+    * ``notebooks`` executes the various Jupyter notebooks that are included in
+      the documentation, so they contain both code and results, instead of just
+      code. These are run in situ in the source tree, so if you run this target
+      manually then make sure not to accidentally commit the results to git.
+    * ``sphinx`` generates Sphinx documentation. This logically depends on
+      ``notebooks``, as it generates HTML from the executed notebooks, but this
+      dependency is not declared in the build system.
+    * ``notebooks-clean`` removes the execution results from the Jupyter
+      notebooks, leaving them in a clean state. This logically depends on
+      ``sphinx``, as the execution results need to be converted to HTML before
+      they are discarded, but this dependency is not declared in the build
+      system.
+    * ``docs`` is shorthand for building ``doxygen``, ``notebooks``, ``sphinx``
+      and ``notebooks-clean`` in that order.
+
+  .. warning::
+    Executing the notebooks requires a functional NEURON installation.
+    There are two possibilities here:
+      * The default, which is sensible for local development, is that the
+        ``notebooks`` target uses NEURON from the current CMake build directory.
+        This implies that building the documentation builds NEURON too.
+      * The alternative, which is enabled by setting
+        ``-DNRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION=ON``, is that ``notebooks``
+        does not depend on any other NEURON build targets. In this case you must
+        provide an installation of NEURON by some other means. It will be assumed
+        that commands like ``nrnivmodl`` work and that ``import neuron`` works
+        in Python.
+
+NRN_EXTRA_CXX_FLAGS:STRING=""
+-----------------------------
+  Compiler flags that are used to build NEURON code but not (unlike
+  ``CMAKE_CXX_FLAGS``) code of dependencies built as submodules.
+  This can be useful for tuning things like compiler warning flags.
+
+NRN_EXTRA_MECH_CXX_FLAGS:STRING=""
+----------------------------------
+  Compiler flags that are used to build the C code generated by ``nocmodl`` but
+  not source code files that are committed to the repository.
 
 NRN_NMODL_CXX_FLAGS:STRING=""
 -----------------------------
@@ -322,23 +418,34 @@ NRN_NMODL_CXX_FLAGS:STRING=""
 
 Readline_ROOT_DIR:PATH=/usr
 ---------------------------
-  Path to a file.  
+  Install directory prefix where readline is installed.
 
-  If cmake can't find readline and you don't want the nrn internal version, you
-can give this hint as to where it is.
+  If cmake can't find readline, you can give this hint with the directory
+  path under which readline is installed. Note that on some platforms
+  with multi-arch support (e.g. Debian/Ubuntu), CMake versions < 3.20 are not
+  able to find readline library when NVHPC/PGI compiler is used (for GPU
+  support). In this case you can install newer CMake (>= 3.20) or explicitly
+  specify readline library using `-DReadline_LIBRARY=` option:
+  .. code-block::
+
+    -DReadline_LIBRARY=/usr/lib/x86_64-linux-gnu/libreadline.so
+
+.. _cmake-nrn-enable-tests-option:
 
 NRN_ENABLE_TESTS:BOOL=OFF
 -------------------------
-  Enable unit tests  
+  Enable unit tests
 
-  Clones the submodule catch2 from https://github.com/catchorg/Catch2.git and after a build using 
+  Clones the submodule catch2 from https://github.com/catchorg/Catch2.git and after a build using
   ``make`` can run the tests with ``make test``.
   May also need to ``pip install pytest``.
   ``make test`` is quite terse. To get the same verbose output that is
   seen with the CI tests, use ``ctest -VV`` (executed in the
-  build folder). One can also run individual test files
-  with ``python3 -m pytest <testfile.py>`` or all the test files in that
-  folder with ``python3 -m pytest``. Note: It is helpful to ``make test``
+  build folder) or an individual test with ``ctest -VV -R name_of_the_test``.
+  One can also run individual test files
+  with ``python3 -m pytest -s <testfile.py>`` or all the test files in that
+  folder with ``python3 -m pytest -s``. (The ``-s`` shows all output on
+  the terminal.) Note: It is helpful to ``make test``
   first to ensure any mod files needed are available to the tests. If
   running a test outside the folder where the test is located, it may be
   necessary to add the folder to PYTHONPATH. Note: The last python
@@ -355,7 +462,7 @@ NRN_ENABLE_TESTS:BOOL=OFF
     cmake .. -DNRN_ENABLE_TESTS=ON ...
     make -j
     make test
-    ctest -VV
+    ctest -VV -R parallel_tests
     cd ../test/pynrn
     python3 -m pytest
     python3 -m pytest test_currents.py
@@ -388,13 +495,11 @@ NRN_COVERAGE_FILES:STRING=
   Coverage limited to semicolon (;) separated list of file paths
   relative to ``PROJECT_SOURCE_DIR``.
 
-  ```
-  -DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"
-  ```
+  ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
 
-NEURON_CMAKE_FORMAT:BOOL=OFF
+NRN_CMAKE_FORMAT:BOOL=OFF
 ----------------------------
-  Enable CMake code formatting  
+  Enable CMake code formatting
 
   Clones the submodule coding-conventions from https://github.com/BlueBrain/hpc-coding-conventions.git.
   Also need to ``pip install cmake-format=0.6.0 --user``.
@@ -402,12 +507,33 @@ NEURON_CMAKE_FORMAT:BOOL=OFF
   See nrn/CONTRIBUTING.md for further details.
   How does one reformat a specific cmake file?
 
+NRN_CLANG_FORMAT:BOOL=OFF
+-------------------------
+  Enable code formatting
+
+  Clones the submodule coding-conventions from https://github.com/BlueBrain/hpc-coding-conventions.git.
+  For mac, need: ``brew install clang-format``
+  After a build using ``make``, can reformat all sources with ``make clang_format``
+  Incremental code formatting (of the current patch) can be done by setting additional build flags
+  ``NRN_FORMATTING_ON="since-ref:master"`` and ``NRN_FORMATTING_CPP_CHANGES_ONLY=ON``.
+  ```
+
+  To manually format a single file, run in the top folder, e.g.:
+  ``clang-format --style=file -i src/nrniv/bbsavestate.cpp``
+
+NRN_SANITIZERS:STRING=
+----------------------
+  Enable some combination of AddressSanitizer, LeakSanitizer and
+  UndefinedBehaviorSanitizer. Accepts a comma-separated list of ``address``,
+  ``leak`` and ``undefined``. See the "Diagnosis and Debugging" section for more
+  information.
+
 Miscellaneous Rarely used options specific to NEURON:
 =====================================================
 
 NRN_ENABLE_DISCRETE_EVENT_OBSERVER:BOOL=ON
 ------------------------------------------
-  Enable Observer to be a subclass of DiscreteEvent  
+  Enable Observer to be a subclass of DiscreteEvent
   Can save space but a lot of component destruction may not notify other components that are watching it to no longer use that component. Useful only if one builds a model without needing to eliminate pieces of the model.
 
 NRN_DYNAMIC_UNITS_USE_LEGACY:BOOL=OFF
@@ -426,17 +552,11 @@ NRN_DYNAMIC_UNITS_USE_LEGACY:BOOL=OFF
 
 NRN_ENABLE_MECH_DLL_STYLE:BOOL=ON
 ---------------------------------
-  Dynamically load nrnmech shared library  
-
-NRN_ENABLE_MEMACS:BOOL=OFF
---------------------------
-  Enable use of memacs  
-
-  Microemacs is a tiny emacs like editor I have been using since the mid-eighties. I might be the only one in the world who uses it now.
+  Dynamically load nrnmech shared library
 
 NRN_ENABLE_SHARED:BOOL=ON
 -------------------------
-  Build shared libraries (otherwise static library)  
+  Build shared libraries (otherwise static library)
 
   This must be ON if python is launched and imports neuron. If OFF and one wants to use python it will be
   necessary to launch
@@ -450,11 +570,11 @@ NRN_ENABLE_SHARED:BOOL=ON
 
 NRN_ENABLE_THREADS:BOOL=ON
 --------------------------
-  Allow use of Pthreads  
+  Allow use of Pthreads
 
 NRN_USE_REL_RPATH=OFF
 ---------------------
-  Turned on when creating python wheels.  
+  Turned on when creating python wheels.
 
 NRN_ENABLE_BACKTRACE:BOOL=OFF
 -------------------------------------

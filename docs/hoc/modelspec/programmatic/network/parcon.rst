@@ -1,4 +1,5 @@
-.. _parcon:
+
+.. _hoc_parcon:
 
 ParallelContext
 ---------------
@@ -9,7 +10,7 @@ ParallelContext
     lyttonmpi.rst
 
 
-.. class:: ParallelContext
+.. hoc:class:: ParallelContext
 
 
     Syntax:
@@ -22,15 +23,15 @@ ParallelContext
 
     Description:
         "Embarrassingly" parallel computations using a Bulletin board style 
-        analogous to LINDA. (But see the :ref:`ParallelNetwork`, 
-        :class:`ParallelNetManager` and :ref:`ParallelTransfer` discussions. 
-        Also see :ref:`SubWorld` for a way to simultaneously use 
+        analogous to LINDA. (But see the :ref:`hoc_ParallelNetwork`,
+        :hoc:class:`ParallelNetManager` and :ref:`hoc_ParallelTransfer` discussions.
+        Also see :ref:`hoc_SubWorld` for a way to simultaneously use
         the bulletin board and network simulations involving global identifiers.) 
         Useful when doing weeks or months worth of 
         simulation runs each taking more than a second and where not much 
         communication is required.  Eg.  parameter sensitivity, and some forms 
         of optimization.  The underlying strategy is to keep all machines in a 
-        PVM or :ref:`ParallelContext_MPI` 
+        PVM or :ref:`hoc_ParallelContext_MPI`
         virtual machine (eg.  workstation cluster) as busy as possible by 
         distinguishing between hosts (cpu's) and tasks.  A task started by a 
         host stays on that host til it finishes.  The code that a host is 
@@ -45,8 +46,8 @@ ParallelContext
         Communication overhead is not bad if each task takes a second or more. 
          
         When using the Bulletin board with Python, the methods 
-        :meth:`submit`, :meth:`context`, :meth:`pack`, and :meth:`post` 
-        have been augmented and :meth:`pyret` and :meth:`upkpyobj` have been introduced 
+        :hoc:meth:`submit`, :hoc:meth:`context`, :hoc:meth:`pack`, and :hoc:meth:`post`
+        have been augmented and :hoc:meth:`pyret` and :hoc:meth:`upkpyobj` have been introduced
         to allow a more Pythonic style. I.e. The executable 
         string for submit and context may be replaced by a Python callable that 
         returns a Python Object (retrieved with pyret), the args to submit, context, pack, and post 
@@ -94,7 +95,7 @@ ParallelContext
         If a given task submits other tasks, only those child tasks 
         will be gathered by the working loop for that given task. 
         At this time the system groups tasks according to the parent task 
-        and the pc instance is not used. See :meth:`ParallelContext.submit` for 
+        and the pc instance is not used. See :hoc:meth:`ParallelContext.submit` for
         further discussion of this limitation. The safe strategy is always to 
         use the idiom: 
 
@@ -127,7 +128,7 @@ ParallelContext
         pending, working executes tasks from ANY ParallelContext until a 
         result is ready. This last feature keeps cpus busy but places stringent 
         requirements on how the user changes global context without 
-        introducing bugs. See the discussion in :meth:`ParallelContext.working` . 
+        introducing bugs. See the discussion in :hoc:meth:`ParallelContext.working` .
          
         ParallelContext.working may not return results in the order of 
         submission. 
@@ -232,7 +233,7 @@ ParallelContext
         The PVM (parallel virtual machine) 
         should be setup so that it allows 
         execution on all hosts of the csh script :file:`$NEURONHOME/bin/bbsworker.sh`. 
-        (Simulations may also be run under :ref:`ParallelContext_MPI` but the launch 
+        (Simulations may also be run under :ref:`hoc_ParallelContext_MPI` but the launch
         mechanisms are quite different) 
         The simulation hoc files should be available on each machine with 
         the same relative path with respect to the user's $HOME directory. 
@@ -275,7 +276,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.nhost
+.. hoc:method:: ParallelContext.nhost
 
 
     Syntax:
@@ -311,7 +312,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.id
+.. hoc:method:: ParallelContext.id
 
 
     Syntax:
@@ -333,7 +334,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.submit
+.. hoc:method:: ParallelContext.submit
 
 
     Syntax:
@@ -351,21 +352,21 @@ ParallelContext
     Description:
         Submits statement for execution by any host. Submit returns the userid not the 
         system generated global id of the task. 
-        However when the task is executed, the :data:`hoc_ac_` variable 
+        However when the task is executed, the :hoc:data:`hoc_ac_` variable
         is set to this unique id (positive integer) of the task. 
-        This unique id is returned by :meth:`ParallelContext.working` . 
+        This unique id is returned by :hoc:meth:`ParallelContext.working` .
          
         If the first argument to submit is a non-negative integer 
         then args are not saved and when the id for this 
-        task is returned by :meth:`ParallelContext.working`, 
+        task is returned by :hoc:meth:`ParallelContext.working`,
         that non-negative integer can be retrieved with 
-        :meth:`ParallelContext.userid` 
+        :hoc:meth:`ParallelContext.userid`
          
         If there is no explicit userid, then the args (after the function name) 
         are saved locally and can be unpacked when the corresponding working 
         call returns. A local userid (unique only for this ParallelContext) 
         is generated and returned by the submit call and is also retrieved with 
-        :meth:`ParallelContext.userid` when the corresponding working call returns. 
+        :hoc:meth:`ParallelContext.userid` when the corresponding working call returns.
         This is very useful in associating a particular parameter vector with 
         its return value and avoids the necessity of explicitly saving them 
         or posting them. If they are not needed and you do not wish to 
@@ -383,7 +384,7 @@ ParallelContext
         efficiency was chosen at the expense of pedantic consistency 
         since it is expected 
         that in most cases the user does not need the return copy. In the event 
-        more than a single scalar return value is required use :meth:`ParallelContext.post` 
+        more than a single scalar return value is required use :hoc:meth:`ParallelContext.post`
         within the function_name body with a key equal to the id of the task. 
         For example: 
 
@@ -419,14 +420,14 @@ ParallelContext
          
         The python_callable form allows args to be any Python objects as well 
         as numbers, strings, or hoc Vectors. The return is a Python object 
-        and can only be retrieved with :func:`pyret` . The Python objects must be 
+        and can only be retrieved with :hoc:func:`pyret` . The Python objects must be
         pickleable (hoc objects are not presently pickleable). Python object arguments 
-        may be retrieved with :func:`upkpyobj`. 
+        may be retrieved with :hoc:func:`upkpyobj`.
 
     .. seealso::
-        :meth:`ParallelContext.working`,
-        :meth:`ParallelContext.retval`, :meth:`ParallelContext.userid`,
-        :meth:`ParallelContext.pyret`
+        :hoc:meth:`ParallelContext.working`,
+        :hoc:meth:`ParallelContext.retval`, :hoc:meth:`ParallelContext.userid`,
+        :hoc:meth:`ParallelContext.pyret`
 
     .. warning::
         submit does not return the system generated unique id of the task but 
@@ -463,7 +464,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.working
+.. hoc:method:: ParallelContext.working
 
 
     Syntax:
@@ -492,7 +493,7 @@ ParallelContext
             } 
 
         Note that if the submitted task was specified as a Python callable, then 
-        :func:`pyret` would have to be used in place of :func:`retval` . 
+        :hoc:func:`pyret` would have to be used in place of :hoc:func:`retval` .
          
         Note that if the submission did not have an explicit userid then 
         all the arguments of the executed function may be unpacked. 
@@ -539,9 +540,9 @@ ParallelContext
 
 
     .. seealso::
-        :meth:`ParallelContext.submit`,
-        :meth:`ParallelContext.retval`, :meth:`ParallelContext.userid`,
-        :meth:`ParallelContext.pyret`
+        :hoc:meth:`ParallelContext.submit`,
+        :hoc:meth:`ParallelContext.retval`, :hoc:meth:`ParallelContext.userid`,
+        :hoc:meth:`ParallelContext.pyret`
 
     .. warning::
         Submissions are grouped according to parent task id and not by 
@@ -550,7 +551,7 @@ ParallelContext
         context instance). Confusion arises only in the case where a task 
         submits jobs  with one pc and fails to gather them before 
         submitting another group of jobs with another pc. See the bugs section 
-        of :meth:`ParallelContext.submit` 
+        of :hoc:meth:`ParallelContext.submit`
 
          
 
@@ -558,7 +559,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.retval
+.. hoc:method:: ParallelContext.retval
 
 
     Syntax:
@@ -567,9 +568,9 @@ ParallelContext
 
     Description:
         The return value of the function executed by the task gathered by the 
-        last :meth:`ParallelContext.working` call. 
+        last :hoc:meth:`ParallelContext.working` call.
         If the statement form of the submit is used then the return value 
-        is the value of :data:`hoc_ac_` when the statement completes on the executing host. 
+        is the value of :hoc:data:`hoc_ac_` when the statement completes on the executing host.
 
          
 
@@ -577,7 +578,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.pyret
+.. hoc:method:: ParallelContext.pyret
 
 
     Syntax:
@@ -588,7 +589,7 @@ ParallelContext
         If a task is submitted defined as a Python callable then the return 
         value can be any Python object and can only be retrieved with pyret(). 
         This function can only be called once for the task result gathered 
-        by the last :meth:`ParallelContext.working` call. 
+        by the last :hoc:meth:`ParallelContext.working` call.
 
          
 
@@ -596,7 +597,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.userid
+.. hoc:method:: ParallelContext.userid
 
 
     Syntax:
@@ -610,7 +611,7 @@ ParallelContext
         of the submit call or else it is a positive integer unique only to 
         this ParallelContext. 
          
-        See :meth:`ParallelContext.submit` with regard to retrieving the original 
+        See :hoc:meth:`ParallelContext.submit` with regard to retrieving the original
         arguments of the submit call corresponding to the working return. 
          
         Can be useful in organizing results according to an index defined during 
@@ -623,7 +624,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.runworker
+.. hoc:method:: ParallelContext.runworker
 
 
     Syntax:
@@ -639,7 +640,7 @@ ParallelContext
         all the context that is required to be identical on all hosts so 
         that any host can run any task whenever the host requests something 
         todo. The latter takes place in the runworker loop and when a task 
-        is waiting for a result in a :meth:`ParallelContext.working` call. 
+        is waiting for a result in a :hoc:meth:`ParallelContext.working` call.
         Many parallel processing bugs 
         are due to inconsistent context among hosts and those bugs 
         can be VERY subtle. Tasks should not change the context required 
@@ -647,7 +648,7 @@ ParallelContext
         to do this safely 
         is to store and retrieve a copy of 
         the authoritative context on the bulletin board. See 
-        :meth:`ParallelContext.working` for further discussion in this regard. 
+        :hoc:meth:`ParallelContext.working` for further discussion in this regard.
          
         The runworker method is called automatically for each worker after 
         all files have been read in and executed --- i.e. if the user never 
@@ -663,7 +664,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.done
+.. hoc:method:: ParallelContext.done
 
 
     Syntax:
@@ -681,7 +682,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.context
+.. hoc:method:: ParallelContext.context
 
 
     Syntax:
@@ -697,7 +698,7 @@ ParallelContext
 
 
     Description:
-        The arguments have the same semantics as those of the :meth:`ParallelContext.submit` method. 
+        The arguments have the same semantics as those of the :hoc:meth:`ParallelContext.submit` method.
         The function or statement is executed on every worker host 
         but is not executed on the master. pc.context can only be 
         called by the master. The workers will execute the context statement 
@@ -705,7 +706,7 @@ ParallelContext
         It probably only makes sense for the python_callable to return None. 
          
         There is no return in the 
-        sense that :meth:`ParallelContext.working` does not return when one 
+        sense that :hoc:meth:`ParallelContext.working` does not return when one
         of these tasks completes. 
          
         This method was introduced with the following protocol in mind 
@@ -762,7 +763,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.post
+.. hoc:method:: ParallelContext.post
 
 
     Syntax:
@@ -773,7 +774,7 @@ ParallelContext
 
     Description:
         Post the message with the address key, (key may be a string or scalar), 
-        and a body consisting of any number of :meth:`ParallelContext.pack` calls since 
+        and a body consisting of any number of :hoc:meth:`ParallelContext.pack` calls since
         the last post, and any number of arguments of type scalar, Vector, strdef 
         or Python object. 
          
@@ -781,7 +782,7 @@ ParallelContext
         this posting sequence. 
 
     .. seealso::
-        :meth:`ParallelContext.pack`
+        :hoc:meth:`ParallelContext.pack`
 
          
 
@@ -789,7 +790,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.take
+.. hoc:method:: ParallelContext.take
 
 
     Syntax:
@@ -811,11 +812,11 @@ ParallelContext
         unpacked. Scalar arguments must be pointers to 
         a variable. eg \ ``&x``. Unpacked Vectors will be resized to the 
         correct size of the vector item of the message. 
-        To unpack Python objects, :func:`upkpyobj` must be used. 
+        To unpack Python objects, :hoc:func:`upkpyobj` must be used.
 
     .. seealso::
-        :meth:`ParallelContext.upkstr`, :meth:`ParallelContext.upkscalar`,
-        :meth:`ParallelContext.upkvec`, :meth:`ParallelContext.upkpyobj`
+        :hoc:meth:`ParallelContext.upkstr`, :hoc:meth:`ParallelContext.upkscalar`,
+        :hoc:meth:`ParallelContext.upkvec`, :hoc:meth:`ParallelContext.upkpyobj`
 
          
 
@@ -823,7 +824,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.look
+.. hoc:method:: ParallelContext.look
 
 
     Syntax:
@@ -833,14 +834,14 @@ ParallelContext
 
 
     Description:
-        Like :meth:`ParallelContext.take` but does not block or remove message 
+        Like :hoc:meth:`ParallelContext.take` but does not block or remove message
         from bulletin board. Returns 1 if the key exists, 0 if the key does 
         not exist on the bulletin board. The message associated with the 
         key (if the key exists) is available for unpacking each time 
         pc.look returns 1. 
 
     .. seealso::
-        :meth:`ParallelContext.look_take`, :meth:`ParallelContext.take`
+        :hoc:meth:`ParallelContext.look_take`, :hoc:meth:`ParallelContext.take`
 
          
 
@@ -848,7 +849,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.look_take
+.. hoc:method:: ParallelContext.look_take
 
 
     Syntax:
@@ -856,7 +857,7 @@ ParallelContext
 
 
     Description:
-        Like :meth:`ParallelContext.take` but does not block. The message is 
+        Like :hoc:meth:`ParallelContext.take` but does not block. The message is
         removed from the bulletin board and two processes will never receive 
         this message. Returns 1 if the key exists, 0 if the key does not 
         exist on the bulletin board. If the key exists, the message can 
@@ -868,7 +869,7 @@ ParallelContext
         process posts a message with the same key. 
 
     .. seealso::
-        :meth:`ParallelContext.take`, :meth:`ParallelContext.look`
+        :hoc:meth:`ParallelContext.take`, :hoc:meth:`ParallelContext.look`
 
          
 
@@ -876,7 +877,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.pack
+.. hoc:method:: ParallelContext.pack
 
 
     Syntax:
@@ -889,7 +890,7 @@ ParallelContext
         for a subsequent post. 
 
     .. seealso::
-        :meth:`ParallelContext.post`
+        :hoc:meth:`ParallelContext.post`
 
          
 
@@ -897,7 +898,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.unpack
+.. hoc:method:: ParallelContext.unpack
 
 
     Syntax:
@@ -911,12 +912,12 @@ ParallelContext
         and pack. 
         Note that scalar items must be retrieved with pointer syntax as in 
         \ ``&soma.gnabar_hh(.3)`` 
-        To unpack Python objects, :func:`upkpyobj` must be used. 
+        To unpack Python objects, :hoc:func:`upkpyobj` must be used.
 
     .. seealso::
-        :meth:`ParallelContext.upkscalar`
-        :meth:`ParallelContext.upkvec`, :meth:`ParallelContext.upkstr`
-        :meth:`ParallelContext.upkpyobj`
+        :hoc:meth:`ParallelContext.upkscalar`
+        :hoc:meth:`ParallelContext.upkvec`, :hoc:meth:`ParallelContext.upkstr`
+        :hoc:meth:`ParallelContext.upkpyobj`
 
          
 
@@ -924,7 +925,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.upkscalar
+.. hoc:method:: ParallelContext.upkscalar
 
 
     Syntax:
@@ -941,7 +942,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.upkstr
+.. hoc:method:: ParallelContext.upkstr
 
 
     Syntax:
@@ -958,7 +959,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.upkvec
+.. hoc:method:: ParallelContext.upkvec
 
 
     Syntax:
@@ -978,7 +979,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.upkpyobj
+.. hoc:method:: ParallelContext.upkpyobj
 
 
     Syntax:
@@ -996,7 +997,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.time
+.. hoc:method:: ParallelContext.time
 
 
     Syntax:
@@ -1026,7 +1027,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.wait_time
+.. hoc:method:: ParallelContext.wait_time
 
 
     Syntax:
@@ -1055,7 +1056,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.step_time
+.. hoc:method:: ParallelContext.step_time
 
 
     Syntax:
@@ -1073,7 +1074,7 @@ ParallelContext
 ----
 
 
-.. method:: ParallelContext.step_wait
+.. hoc:method:: ParallelContext.step_wait
 
 
     Syntax:
@@ -1113,7 +1114,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.send_time
+.. hoc:method:: ParallelContext.send_time
 
 
     Syntax:
@@ -1131,7 +1132,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.event_time
+.. hoc:method:: ParallelContext.event_time
 
 
     Syntax:
@@ -1151,7 +1152,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.integ_time
+.. hoc:method:: ParallelContext.integ_time
 
 
     Syntax:
@@ -1168,7 +1169,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.vtransfer_time
+.. hoc:method:: ParallelContext.vtransfer_time
 
 
     Syntax:
@@ -1182,12 +1183,12 @@ ParallelContext
     Description:
         The amount of time (seconds) 
         spent transferring and waiting for voltages or matrix elements. 
-        The :func:`integ_time` is reduced by transfer and splitcell exchange times. 
+        The :hoc:func:`integ_time` is reduced by transfer and splitcell exchange times.
          
         splitcell_exchange_time includes the reducedtree_computation_time. 
          
         reducedtree_computation_time refers to the extra time used by the 
-        :meth:`ParallelContext.multisplit` backbone_style 1 and 2 methods between 
+        :hoc:meth:`ParallelContext.multisplit` backbone_style 1 and 2 methods between
         send and receive of matrix information. This amount is also included 
         in the splitcell_exchange_time. 
 
@@ -1197,7 +1198,7 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.mech_time
+.. hoc:method:: ParallelContext.mech_time
 
 
     Syntax:
@@ -1215,7 +1216,7 @@ ParallelContext
         mechanism type index, not the index of the MechanismType. 
 
     .. seealso::
-        :meth:`MechanismType.internal_type`
+        :hoc:meth:`MechanismType.internal_type`
 
 
 ----
@@ -1295,7 +1296,8 @@ Description:
 
 
 
-.. _ParallelContext_MPI:
+
+.. _hoc_ParallelContext_MPI:
 
 MPI
 ~~~
@@ -1474,7 +1476,7 @@ Description:
 
 
 
-.. method:: ParallelContext.barrier
+.. hoc:method:: ParallelContext.barrier
 
 
     Syntax:
@@ -1491,7 +1493,7 @@ Description:
 
 
 
-.. method:: ParallelContext.allreduce
+.. hoc:method:: ParallelContext.allreduce
 
 
     Syntax:
@@ -1515,7 +1517,7 @@ Description:
 
 
 
-.. method:: ParallelContext.allgather
+.. hoc:method:: ParallelContext.allgather
 
 
     Syntax:
@@ -1533,7 +1535,7 @@ Description:
 
 
 
-.. method:: ParallelContext.alltoall
+.. hoc:method:: ParallelContext.alltoall
 
 
     Syntax:
@@ -1583,7 +1585,7 @@ Description:
 
 
 
-.. method:: ParallelContext.py_alltoall
+.. hoc:method:: ParallelContext.py_alltoall
 
 
     Syntax:
@@ -1668,7 +1670,7 @@ Description:
 
 
 
-.. method:: ParallelContext.broadcast
+.. hoc:method:: ParallelContext.broadcast
 
 
     Syntax:
@@ -1689,7 +1691,8 @@ Description:
 ----
 
 
-.. _subworld:
+
+.. _hoc_subworld:
 
 SubWorld
 ~~~~~~~~
@@ -1704,49 +1707,49 @@ Description:
     posting and taking messages on the bulletin board. 
     Without the subworld method, at most the network style can be used and then 
     switched to bulletin board style. The only way to simulate a parallel 
-    network after executing :meth:`ParallelContext.runworker` would be to utilize 
-    the :meth:`ParallelContext.context` method. In particular, without subworlds, 
+    network after executing :hoc:meth:`ParallelContext.runworker` would be to utilize
+    the :hoc:meth:`ParallelContext.context` method. In particular, without subworlds,
     it is impossible to correctly submit bulletin board tasks, each of which 
-    simulates a network specfied with the :ref:`ParallelNetwork` 
+    simulates a network specfied with the :ref:`hoc_ParallelNetwork`
     methods --- even if the network is complete on a single process. 
      
-    The :meth:`ParallelContext.subworlds` method divides the world of processors into subworlds, 
+    The :hoc:meth:`ParallelContext.subworlds` method divides the world of processors into subworlds,
     each of which can execute a task that independently and assynchronously 
     creates and simulates (and destroys if the task networks are different) 
     a separate 
-    network described using the :ref:`ParallelNetwork` and 
-    :ref:`ParallelTransfer` methods. The task, executing 
-    in the subworld can also make use of the :ref:`ParallelContext_MPI` collectives. 
+    network described using the :ref:`hoc_ParallelNetwork` and
+    :ref:`hoc_ParallelTransfer` methods. The task, executing
+    in the subworld can also make use of the :ref:`hoc_ParallelContext_MPI` collectives.
     Different subworlds can use the same global identifiers without 
     interference and the spike communication, transfers, and MPI collectives 
     are localized to within a subworld. I.e. in MPI terms, 
     each subworld utilizes a distinct MPI communicator. In a subworld, the 
-    :meth:`ParallelContext.id` and :meth:`ParallelContext.nhost` refer to the rank and 
+    :hoc:meth:`ParallelContext.id` and :hoc:meth:`ParallelContext.nhost` refer to the rank and
     number of processors in the subworld. (Note that every subworld has 
-    a :meth:`ParallelContext.id` == 0 rank processor.) 
+    a :hoc:meth:`ParallelContext.id` == 0 rank processor.)
      
-    Only the rank :meth:`ParallelContext.id` == 0 subworld processors communicate 
-    with the bulletin board. Of these processors, one (:meth:`~ParallelContext.id_world` == 0) is 
+    Only the rank :hoc:meth:`ParallelContext.id` == 0 subworld processors communicate
+    with the bulletin board. Of these processors, one (:hoc:meth:`~ParallelContext.id_world` == 0) is
     the master processor and the others are the workers. The master 
     submits tasks to the bulletin board (and executes a task if no results 
     are available) and the workers execute tasks and post the results 
-    to the bulletin board. Remember, all the workers also have :meth:`ParallelContext.id` 
-    == 0 but different :meth:`~ParallelContext.id_world` and :meth:`~ParallelContext.id_bbs` ranks. The subworld 
-    :meth:`ParallelContext.id` ranks greater than 0 are not called workers --- their 
-    global rank is :meth:`~ParallelContext.id_world` but their bulletin board rank, :meth:`~ParallelContext.id_bbs` is -1. 
+    to the bulletin board. Remember, all the workers also have :hoc:meth:`ParallelContext.id`
+    == 0 but different :hoc:meth:`~ParallelContext.id_world` and :hoc:meth:`~ParallelContext.id_bbs` ranks. The subworld
+    :hoc:meth:`ParallelContext.id` ranks greater than 0 are not called workers --- their
+    global rank is :hoc:meth:`~ParallelContext.id_world` but their bulletin board rank, :hoc:meth:`~ParallelContext.id_bbs` is -1.
     When a worker (or the master) receives a task to execute, the exact same 
     function with arguments that define the task will be executed on all the 
     processes of the subworld. A subworld is exactly analogous to the old 
     world of a network simulation in which processes distinguish themselves 
-    by means of :meth:`ParallelContext.id` which is unique among 
-    the :meth:`ParallelContext.nhost` processes in the subworld. 
+    by means of :hoc:meth:`ParallelContext.id` which is unique among
+    the :hoc:meth:`ParallelContext.nhost` processes in the subworld.
      
-    A runtime error will result if an :meth:`~ParallelContext.id_bbs` == -1 rank processor tries 
+    A runtime error will result if an :hoc:meth:`~ParallelContext.id_bbs` == -1 rank processor tries
     to communicate with the bulletin board, thus the general idiom for 
     a task posting or taking information from the bulletin board should be either 
     ``if (pc.id == 0) { ... }`` or ``if (pc.id_bbs != -1) { ... }``. 
     The latter is more general since the former would not be correct if 
-    :meth:`~ParallelContext.subworlds` has NOT been called since in that case 
+    :hoc:meth:`~ParallelContext.subworlds` has NOT been called since in that case
     ``pc.id == pc.id_world == pc.id_bbs`` and 
     ``pc.nhost == pc.nhost_world == pc.nhost_bbs`` 
      
@@ -1757,7 +1760,7 @@ Description:
 
 
 
-.. method:: ParallelContext.subworlds
+.. hoc:method:: ParallelContext.subworlds
 
 
     Syntax:
@@ -1766,30 +1769,30 @@ Description:
 
     Description:
         Divides the world of all processors 
-        into :func:`nhost_world` / subworld_size subworlds. 
+        into :hoc:func:`nhost_world` / subworld_size subworlds.
         Note that the total number of processes, nhost_world, should be 
         an integer multiple of subworld_size. 
-        The most useful subworld sizes are 1 and :func:`nhost_world` . 
+        The most useful subworld sizes are 1 and :hoc:func:`nhost_world` .
         After return, for the processes 
-        in each subworld, :meth:`ParallelContext.nhost` is equal to subworld_size 
-        and the :meth:`ParallelContext.id` is the rank of the process with respect 
+        in each subworld, :hoc:meth:`ParallelContext.nhost` is equal to subworld_size
+        and the :hoc:meth:`ParallelContext.id` is the rank of the process with respect
         to the subworld of which it is a part. 
          
         Each subworld has its own 
-        unique MPI communicator for the :ref:`ParallelContext_MPI` functions such 
-        as :meth:`ParallelContext.barrier` and so those collectives do not affect other subworlds. 
-        All the :ref:`ParallelNetwork` notions are local to a subworld. I.e. independent 
+        unique MPI communicator for the :ref:`hoc_ParallelContext_MPI` functions such
+        as :hoc:meth:`ParallelContext.barrier` and so those collectives do not affect other subworlds.
+        All the :ref:`hoc_ParallelNetwork` notions are local to a subworld. I.e. independent
         networks using the same gids can be simulated simultaneously in 
-        different subworlds. Only rank 0 of a subworld ( :meth:`ParallelContext.id` 
-        == 0) can use the bulletin board and has a non-negative :meth:`nhost_bbs` 
-        and :meth:`id_bbs` . 
+        different subworlds. Only rank 0 of a subworld ( :hoc:meth:`ParallelContext.id`
+        == 0) can use the bulletin board and has a non-negative :hoc:meth:`nhost_bbs`
+        and :hoc:meth:`id_bbs` .
          
-        Thus the bulletin board interacts with :func:`nhost_bbs` processes 
-        each with :meth:`ParallelContext.id` == 0. And each of those rank 0 processes 
-        interacts with :meth:`ParallelContext.nhost` processes using MPI commands 
+        Thus the bulletin board interacts with :hoc:func:`nhost_bbs` processes
+        each with :hoc:meth:`ParallelContext.id` == 0. And each of those rank 0 processes
+        interacts with :hoc:meth:`ParallelContext.nhost` processes using MPI commands
         isolated within each subworld. 
          
-        Probably the most useful values of subworld_size are 1 and :func:`nhost_world`. 
+        Probably the most useful values of subworld_size are 1 and :hoc:func:`nhost_world`.
         The former uses the bulletin board to communicate between all processes 
         but allows the use of gid specified networks within each process. ie. 
         one master and nhost_world - 1 workers. 
@@ -1911,7 +1914,7 @@ Description:
 
 
 
-.. method:: ParallelContext.nhost_world
+.. hoc:method:: ParallelContext.nhost_world
 
 
     Syntax:
@@ -1920,7 +1923,7 @@ Description:
 
     Description:
         Total number of processes in all subworlds. Equivalent to 
-        :meth:`ParallelContext.nhost` when :func:`subworlds` has not been executed. 
+        :hoc:meth:`ParallelContext.nhost` when :hoc:func:`subworlds` has not been executed.
 
          
 
@@ -1928,7 +1931,7 @@ Description:
 
 
 
-.. method:: ParallelContext.id_world
+.. hoc:method:: ParallelContext.id_world
 
 
     Syntax:
@@ -1937,7 +1940,7 @@ Description:
 
     Description:
         Global world rank of the process. This is unique among all processes 
-        of all subworlds and ranges from 0 to :func:`nhost_world` - 1 
+        of all subworlds and ranges from 0 to :hoc:func:`nhost_world` - 1
 
          
 
@@ -1945,7 +1948,7 @@ Description:
 
 
 
-.. method:: ParallelContext.nhost_bbs
+.. hoc:method:: ParallelContext.nhost_bbs
 
 
     Syntax:
@@ -1953,8 +1956,8 @@ Description:
 
 
     Description:
-        If :func:`subworlds` has been called, nhost_bbs() returns the number of 
-        subworlds if :meth:`ParallelContext.id` == 0 and -1 for all other ranks in 
+        If :hoc:func:`subworlds` has been called, nhost_bbs() returns the number of
+        subworlds if :hoc:meth:`ParallelContext.id` == 0 and -1 for all other ranks in
         the subworld. 
         If subworlds has NOT been called then nhost_bbs, nhost_world, and nhost 
         are the same. 
@@ -1965,7 +1968,7 @@ Description:
 
 
 
-.. method:: ParallelContext.id_bbs
+.. hoc:method:: ParallelContext.id_bbs
 
 
     Syntax:
@@ -1973,8 +1976,8 @@ Description:
 
 
     Description:
-        If :func:`subworlds` has been called id_bbs() returns the subworld rank 
-        if :meth:`ParallelContext.id` == 0 and -1 for all other ranks in the 
+        If :hoc:func:`subworlds` has been called id_bbs() returns the subworld rank
+        if :hoc:meth:`ParallelContext.id` == 0 and -1 for all other ranks in the
         subworld. 
         If subworlds has not been called then id_bbs, id_world, and id are the 
         same. 
@@ -1984,7 +1987,8 @@ Description:
 ----
 
 
-.. _parallelnetwork:
+
+.. _hoc_parallelnetwork:
 
 Parallel Network
 ~~~~~~~~~~~~~~~~
@@ -1998,11 +2002,11 @@ Description:
     be executed on any serial machine). However machine spanning 
     connections can only be made if NEURON has been configured with 
     the --with-mpi option (or other options that automatically set it such as 
-    --with-paranrn). (See :ref:`ParallelContext_MPI` for installation hints). 
+    --with-paranrn). (See :ref:`hoc_ParallelContext_MPI` for installation hints).
      
     The fundamental requirement is that each 
     cell be associated with a unique integer global id (gid). The 
-    :func:`ParallelNetManager` in nrn/share/lib/hoc/netparmpi.hoc is a sample 
+    :hoc:func:`ParallelNetManager` in nrn/share/lib/hoc/netparmpi.hoc is a sample
     implementation that makes use of these facilities. That implementation 
     assumes that all conductance based cells contain a public 
     \ ``connect2target(targetsynapse, netcon)`` which connects the target synapse 
@@ -2020,8 +2024,8 @@ Description:
     The typical network simulation sets up 
     a one to one correspondence between gid and cell. 
     This most common usage is suggested by 
-    the method name, :meth:`ParallelContext.cell`, that makes the correspondence 
-    as well as the accessor method, :meth:`ParallelContext.gid2cell`. 
+    the method name, :hoc:meth:`ParallelContext.cell`, that makes the correspondence
+    as well as the accessor method, :hoc:meth:`ParallelContext.gid2cell`.
     That's because, 
     almost always, a cell has one spike detection site and the entire cell is 
     on a single cpu. But either or both of those assertions can break down 
@@ -2032,7 +2036,7 @@ Description:
     Each side of each reciprocal synapse will require its own distinct gid. 
     When load balance is a problem, or when you have more cpus than cells, 
     it is useful to split cells into pieces and put the pieces on different 
-    cpus (:meth:`ParallelContext.splitcell` and :meth:`ParallelContext.multisplit`). 
+    cpus (:hoc:meth:`ParallelContext.splitcell` and :hoc:meth:`ParallelContext.multisplit`).
     But now, some pieces will not have a spike detection site and therefore 
     don't have to have a gid. In either case, it can be administratively 
     useful to invent an administrative policy for gid values that encodes 
@@ -2040,8 +2044,8 @@ Description:
     one can still give it a gid associated with an arbitrary spike detection 
     site that is effectively turned off because it is not the source for 
     any existing NetCon and it was never specified as an 
-    :meth:`ParallelContext.outputcell`. In the same way, it is also 
-    useful to encode a :meth:`ParallelContext.multisplit` 
+    :hoc:meth:`ParallelContext.outputcell`. In the same way, it is also
+    useful to encode a :hoc:meth:`ParallelContext.multisplit`
     sid (split id) with whole cell identification. 
      
 
@@ -2057,7 +2061,7 @@ Description:
 
 
 
-.. method:: ParallelContext.set_gid2node
+.. hoc:method:: ParallelContext.set_gid2node
 
 
     Syntax:
@@ -2079,7 +2083,7 @@ Description:
         associated with a distinct gid. (e.g. dendro-dendritic synapses). 
 
     .. seealso::
-        :meth:`ParallelContext.id`, :meth:`ParallelContext.nhost`
+        :hoc:meth:`ParallelContext.id`, :hoc:meth:`ParallelContext.nhost`
 
          
 
@@ -2087,7 +2091,7 @@ Description:
 
 
 
-.. method:: ParallelContext.gid_exists
+.. hoc:method:: ParallelContext.gid_exists
 
 
     Syntax:
@@ -2097,12 +2101,12 @@ Description:
     Description:
         Return 3 if the gid is owned by this machine and the gid is already 
         associated with an output cell in the sense that its spikes will be 
-        sent to all other machines. (i.e. :meth:`ParallelContext.outputcell` has 
-        also been called with that gid or :meth:`ParallelContext.cell` has been 
+        sent to all other machines. (i.e. :hoc:meth:`ParallelContext.outputcell` has
+        also been called with that gid or :hoc:meth:`ParallelContext.cell` has been
         called with a third arg of 1.) 
          
         Return 2 if the gid is owned by this machine and has been associated with 
-        a NetCon source location via the :func:`cell` method. 
+        a NetCon source location via the :hoc:func:`cell` method.
          
         Return 1 if the gid is owned by this machine but has not been associated with 
         a NetCon source location. 
@@ -2115,7 +2119,7 @@ Description:
 
 
 
-.. method:: ParallelContext.threshold
+.. hoc:method:: ParallelContext.threshold
 
 
     Syntax:
@@ -2126,17 +2130,17 @@ Description:
 
     Description:
         Return the threshold of the source variable determined by the first arg 
-        of the :func:`NetCon` constructor which is used to associate the gid with a 
-        source variable via :func:`cell` . If the second arg is present the threshold 
+        of the :hoc:func:`NetCon` constructor which is used to associate the gid with a
+        source variable via :hoc:func:`cell` . If the second arg is present the threshold
         detector is given that threshold. This method can only be called if the 
-        gid is owned by this machine and :func:`cell` has been previously called. 
+        gid is owned by this machine and :hoc:func:`cell` has been previously called.
 
 
 ----
 
 
 
-.. method:: ParallelContext.cell
+.. hoc:method:: ParallelContext.cell
 
 
     Syntax:
@@ -2146,10 +2150,10 @@ Description:
 
 
     Description:
-        The cell which is the source of the :func:`NetCon` is associated with the global 
+        The cell which is the source of the :hoc:func:`NetCon` is associated with the global
         id. By default,(no third arg or third arg = 1) 
         the spikes generated by that cell will be sent to every other machine 
-        (see :meth:`ParallelContext.outputcell`). A cell commonly has only one spike 
+        (see :hoc:meth:`ParallelContext.outputcell`). A cell commonly has only one spike
         generation location, but, for example in the case of reciprocal 
         dendro-dendritic synapses, there is no reason why it cannot have several. 
         The NetCon source defines the spike generation location. 
@@ -2160,7 +2164,7 @@ Description:
         get a temporary netcon which can be destroyed after its use in the 
         pc.cell call. The weight and delay of this temporary netcon are 
         not relevant; they come into the picture with 
-        :meth:`ParallelContext.gid_connect` . 
+        :hoc:meth:`ParallelContext.gid_connect` .
          
         Note that cells which do not send spikes to other machines are not required 
         to call this and in fact do not need a gid. However the administrative 
@@ -2174,7 +2178,7 @@ Description:
 
 
 
-.. method:: ParallelContext.outputcell
+.. hoc:method:: ParallelContext.outputcell
 
 
     Syntax:
@@ -2183,7 +2187,7 @@ Description:
 
     Description:
         Spikes this cell generates are to be distributed to all the other machines. 
-        Note that :meth:`ParallelContext.cell` needs to be called prior to this and this 
+        Note that :hoc:meth:`ParallelContext.cell` needs to be called prior to this and this
         does not need to be called if the third arg of that was non-zero. 
         In principle there is no reason for a cell to even have a gid if it is not 
         an outputcell. However the separation between pc.cell and pc.outputcell 
@@ -2197,7 +2201,7 @@ Description:
 
 
 
-.. method:: ParallelContext.spike_record
+.. hoc:method:: ParallelContext.spike_record
 
 
     Syntax:
@@ -2205,11 +2209,11 @@ Description:
 
 
     Description:
-        This is a synonym for :meth:`NetCon.record` but obviates the requirement of 
+        This is a synonym for :hoc:meth:`NetCon.record` but obviates the requirement of
         creating a NetCon using information about the source cell that is 
         relatively more tedious to obtain. This can only be called on the source 
         cell's machine. Note that a prerequisite is a call 
-        to :meth:`ParallelContext.cell` . A call to :meth:`ParallelContext.outputcell` is NOT 
+        to :hoc:meth:`ParallelContext.cell` . A call to :hoc:meth:`ParallelContext.outputcell` is NOT
         a prerequisite. 
 
         If the gid arg is -1, then spikes from ALL output gids on this
@@ -2220,7 +2224,7 @@ Description:
 
 
 
-.. method:: ParallelContext.gid_connect
+.. hoc:method:: ParallelContext.gid_connect
 
 
     Syntax:
@@ -2233,22 +2237,22 @@ Description:
         A virtual connection is made between the source cell global id (which 
         may or may not 
         be owned by this machine) and the target (a synapse or artificial cell object) 
-        which EXISTS on this machine. A :class:`NetCon` object is returned and the 
+        which EXISTS on this machine. A :hoc:class:`NetCon` object is returned and the
         full delay for the connection should be given to it (as well as the weight). 
          
-        Note that if the srcgid is owned by this machine then :func:`cell` must be called 
+        Note that if the srcgid is owned by this machine then :hoc:func:`cell` must be called
         earlier to make sure that the srcgid is associated with a NetCon source 
         location. 
          
         Note that if the srcgid is not owned by this machine, then this machines 
         target will only get spikes from the srcgid if the source gid's machine 
-        had called :meth:`ParallelContext.outputcell` or the third arg of 
-        :meth:`ParallelContext.cell` was 1. 
+        had called :hoc:meth:`ParallelContext.outputcell` or the third arg of
+        :hoc:meth:`ParallelContext.cell` was 1.
          
         If the third arg exists, it must be a NetCon object with target the same 
         as the second arg. The src of that NetCon will be replaced by srcgid and 
         that NetCon returned. The purpose is to re-establish a connection to 
-        the original srcgid after a :meth:`ParallelContext.gid_clear` . 
+        the original srcgid after a :hoc:meth:`ParallelContext.gid_clear` .
 
          
 
@@ -2256,7 +2260,7 @@ Description:
 
 
 
-.. method:: ParallelContext.psolve
+.. hoc:method:: ParallelContext.psolve
 
 
     Syntax:
@@ -2267,7 +2271,7 @@ Description:
         This should be called on every machine to start something analogous to 
         cvode.solve(tstop). In fact, if the variable step method is invoked this 
         is exactly what will end up happening except the solve will be broken into 
-        steps determined by the result of :meth:`ParallelContext.set_maxstep`. 
+        steps determined by the result of :hoc:meth:`ParallelContext.set_maxstep`.
 
          
 
@@ -2275,7 +2279,7 @@ Description:
 
 
 
-.. method:: ParallelContext.timeout
+.. hoc:method:: ParallelContext.timeout
 
 
     Syntax:
@@ -2283,7 +2287,7 @@ Description:
 
 
     Description:
-        During execution of :meth:`ParallelContext.psolve` , 
+        During execution of :hoc:meth:`ParallelContext.psolve` ,
         sets the timeout for when to abort when seconds pass and t does not 
         increase.  Returns the old timeout.  The standard timeout is 20 seconds. 
         If the arg is 0, then there is no timeout. 
@@ -2300,7 +2304,7 @@ Description:
 
 
 
-.. method:: ParallelContext.set_maxstep
+.. hoc:method:: ParallelContext.set_maxstep
 
 
     Syntax:
@@ -2311,7 +2315,7 @@ Description:
         This should be called on every machine after all the NetCon delays have 
         been specified. It looks at all the delays on all the machines 
         associated with the netcons 
-        created by the :meth:`ParallelContext.gid_connect` calls, ie the netcons 
+        created by the :hoc:meth:`ParallelContext.gid_connect` calls, ie the netcons
         that conceptually span machines, and sets every machine's maximum step 
         size to the minimum delay of those netcons 
         (but not greater than default_max_step). The method returns this machines 
@@ -2332,7 +2336,7 @@ Description:
 
 
 
-.. method:: ParallelContext.spike_compress
+.. hoc:method:: ParallelContext.spike_compress
 
     Syntax:
         :samp:`nspike = pc.spike_compress({nspike}, {gid_compress})`
@@ -2344,7 +2348,7 @@ Description:
         fixed step methods. The optional second argument is 1 by default and 
         works only if the number of cells on each cpu is less than 256. 
         Nspike refers to the number of (spiketime, gid) pairs that fit into the 
-        fixed buffer that is exchanged every :func:`set_maxstep` integration interval. 
+        fixed buffer that is exchanged every :hoc:func:`set_maxstep` integration interval.
         (overflow in the case where more spikes are generated in the interval 
         than can fit into the first buffer are exchanged when necessary by 
         a subsequent MPI_Allgatherv collective.) If necessary, the integration 
@@ -2367,7 +2371,7 @@ Description:
         instead of 2 bytes the pair consists of 5 bytes. 
 
     .. seealso::
-        :meth:`CVode.queue_mode`
+        :hoc:meth:`CVode.queue_mode`
 
          
 
@@ -2375,7 +2379,7 @@ Description:
 
 
 
-.. method:: ParallelContext.gid2obj
+.. hoc:method:: ParallelContext.gid2obj
 
 
     Syntax:
@@ -2389,7 +2393,7 @@ Description:
         is inside an object, this method returns the POINT_PROCESS object. 
 
     .. seealso::
-        :meth:`ParallelContext.gid_exists`, :meth:`ParallelContext.gid2cell`
+        :hoc:meth:`ParallelContext.gid_exists`, :hoc:meth:`ParallelContext.gid2cell`
 
     .. warning::
         Note that if a cell has several spike detection sources with different 
@@ -2401,7 +2405,7 @@ Description:
 
 
 
-.. method:: ParallelContext.gid2cell
+.. hoc:method:: ParallelContext.gid2cell
 
 
     Syntax:
@@ -2417,7 +2421,7 @@ Description:
         object. 
 
     .. seealso::
-        :meth:`ParallelContext.gid_exists`, :meth:`ParallelContext.gid2obj`
+        :hoc:meth:`ParallelContext.gid_exists`, :hoc:meth:`ParallelContext.gid2obj`
 
     .. warning::
         Note that if a cell has several spike detection sources with different 
@@ -2431,7 +2435,7 @@ Description:
 
 
 
-.. method:: ParallelContext.spike_statistics
+.. hoc:method:: ParallelContext.spike_statistics
 
 
     Syntax:
@@ -2439,7 +2443,7 @@ Description:
 
 
     Description:
-        Returns the spanning spike statistics since the last :func:`finitialize` . All arguments 
+        Returns the spanning spike statistics since the last :hoc:func:`finitialize` . All arguments
         are optional. 
          
         nsendmax is the maximum number of spikes sent from this machine to all 
@@ -2455,7 +2459,7 @@ Description:
         nsend spikes from this machine) 
 
     .. seealso::
-        :meth:`ParallelContext.wait_time`, :meth:`ParallelContext.set_maxstep`
+        :hoc:meth:`ParallelContext.wait_time`, :hoc:meth:`ParallelContext.set_maxstep`
 
          
 
@@ -2463,7 +2467,7 @@ Description:
 
 
 
-.. method:: ParallelContext.max_histogram
+.. hoc:method:: ParallelContext.max_histogram
 
 
     Syntax:
@@ -2490,30 +2494,15 @@ Description:
 
 
 
-.. method:: ParallelContext.checkpoint
 
-
-    Syntax:
-        ``i = pc.checkpoint()``
-
-
-    Description:
-        Available only for the BlueGene. 
-
-         
-
-----
-
-
-
-.. _paralleltransfer:
+.. _hoc_paralleltransfer:
 
 Parallel Transfer
 ~~~~~~~~~~~~~~~~~
 
 
     Description:
-        Extends the :ref:`ParallelContext_MPI` :ref:`ParallelNetwork` methods to allow parallel simulation 
+        Extends the :ref:`hoc_ParallelContext_MPI` :ref:`hoc_ParallelNetwork` methods to allow parallel simulation
         of models involving gap junctions and/or 
         synapses where the postsynaptic conductance continuously 
         depends on presynaptic voltage. 
@@ -2526,9 +2515,9 @@ Parallel Transfer
         the modified euler method is acceptable for accuracy and stability. 
         For purposes of load balance, and regardless of coupling strength, 
         a cell may be split into two subtrees 
-        with each on a different processor. See :meth:`ParallelContext.splitcell`. 
+        with each on a different processor. See :hoc:meth:`ParallelContext.splitcell`.
         Splitting a cell into more than two pieces can be done with 
-        :meth:`ParallelContext.multisplit` . 
+        :hoc:meth:`ParallelContext.multisplit` .
          
         Except for "splitcell" and "multisplit, the methods described in this section work for intra-machine connections 
         regardless of how NEURON is configured. However 
@@ -2549,7 +2538,7 @@ Parallel Transfer
 
 
 
-.. method:: ParallelContext.source_var
+.. hoc:method:: ParallelContext.source_var
 
 
     Syntax:
@@ -2559,7 +2548,7 @@ Parallel Transfer
     Description:
         Associates the source voltage variable with an integer. This integer has nothing 
         to do with and does not conflict with the discrete event gid used by the 
-        :ref:`ParallelNetwork` methods. 
+        :ref:`hoc_ParallelNetwork` methods.
         Must and can only be executed on the machine where the source voltage 
         exists. If extracellular is inserted at this location the voltage
         transferred is section.v(x) + section.vext[0](x) . I.e. the internal
@@ -2575,7 +2564,7 @@ Parallel Transfer
 
 
 
-.. method:: ParallelContext.target_var
+.. hoc:method:: ParallelContext.target_var
 
 
     Syntax:
@@ -2589,8 +2578,8 @@ Parallel Transfer
         be copied to the target_variable every time step (more often for the 
         variable step methods). 
          
-        Transfer occurs during :func:`finitialize` just prior to BEFORE BREAKPOINT blocks 
-        of mod files and calls to type 0 :func:`FInitializeHandler` statements. For the 
+        Transfer occurs during :hoc:func:`finitialize` just prior to BEFORE BREAKPOINT blocks
+        of mod files and calls to type 0 :hoc:func:`FInitializeHandler` statements. For the
         fixed step method, transfer occurs just before calling the SOLVE blocks. 
         For the variable step methods transfer occurs just after states are scattered. 
         Though any source variable can be transferred to any number of any target 
@@ -2609,7 +2598,7 @@ Parallel Transfer
 
 
 
-.. method:: ParallelContext.setup_transfer
+.. hoc:method:: ParallelContext.setup_transfer
 
 
     Syntax:
@@ -2617,8 +2606,8 @@ Parallel Transfer
 
 
     Description:
-        This method must be called after all the calls to :func:`source_var` and 
-        :func:`target_var` and before initializing the simulation. It sets up the 
+        This method must be called after all the calls to :hoc:func:`source_var` and
+        :hoc:func:`target_var` and before initializing the simulation. It sets up the
         internal maps needed for both intra- and inter-processor 
         transfer of source variable values to target variables. 
 
@@ -2628,7 +2617,7 @@ Parallel Transfer
 
 
 
-.. method:: ParallelContext.splitcell
+.. hoc:method:: ParallelContext.splitcell
 
 
     Syntax:
@@ -2644,20 +2633,20 @@ Parallel Transfer
         The host_with_other_subtree must be either pc.id + 1 or pc.id - 1 
         and there can be only one split cell between hosts i and i+1. 
         A rootsection is defined as a section in which 
-        :meth:`SectionRef.has_parent` returns 0. 
+        :hoc:meth:`SectionRef.has_parent` returns 0.
          
         This method is not normally called by the user but 
-        is wrapped by the :func:`ParallelNetManager` method, 
-        :meth:`ParallelNetManager.splitcell` which provides a simple interface to 
+        is wrapped by the :hoc:func:`ParallelNetManager` method,
+        :hoc:meth:`ParallelNetManager.splitcell` which provides a simple interface to
         support load balanced network simulations. 
          
-        See :meth:`ParallelContext.multisplit` for less restrictive 
+        See :hoc:meth:`ParallelContext.multisplit` for less restrictive
         parallel simulation of individual cells. 
 
     .. warning::
         Implemented only for fixed step methods. Cannot presently 
         be used with variable step 
-        methods, or models with :func:`LinearMechanism`, or :func:`extracellular` . 
+        methods, or models with :hoc:func:`LinearMechanism`, or :hoc:func:`extracellular` .
 
          
 
@@ -2665,7 +2654,7 @@ Parallel Transfer
 
 
 
-.. method:: ParallelContext.multisplit
+.. hoc:method:: ParallelContext.multisplit
 
 
     Syntax:
@@ -2678,7 +2667,7 @@ Parallel Transfer
 
     Description:
         For parallel simulation of single cells. Generalizes 
-        :meth:`ParallelContext.splitcell` in a number of ways. 
+        :hoc:meth:`ParallelContext.splitcell` in a number of ways.
         section(x) identifies a split node and can be any node, including 
         soma(0.5). The number of split nodes allowed on a (sub)tree is two or 
         fewer. Nodes with the same sid are connected by wires (0 resistance). 
@@ -2710,10 +2699,10 @@ Parallel Transfer
         if nodes have the same split id, sid, they must be on different hosts 
         but that is not a serious restriction since in that case 
         the subtrees would normally be connected together using 
-        the standard :func:`connect` statement. 
+        the standard :hoc:func:`connect` statement.
          
         If all the trees connected into a single cell have only one 
-        sid, the simulation is numerically identical to :meth:`ParallelContext.splitcell` 
+        sid, the simulation is numerically identical to :hoc:meth:`ParallelContext.splitcell`
         which is numerically identical to all the trees 
         connected together on a single cpu to form one cell. 
         If one or more of the trees has two sids, then numerical accuracy, 
@@ -2750,7 +2739,7 @@ Parallel Transfer
     .. warning::
         Implemented only for fixed step methods. Cannot presently 
         be used with variable step 
-        methods, or models with :func:`LinearMechanism`, or :func:`extracellular` . 
+        methods, or models with :hoc:func:`LinearMechanism`, or :hoc:func:`extracellular` .
 
          
 
@@ -2758,7 +2747,7 @@ Parallel Transfer
 
 
 
-.. method:: ParallelContext.gid_clear
+.. hoc:method:: ParallelContext.gid_clear
 
 
     Syntax:
@@ -2771,13 +2760,13 @@ Parallel Transfer
         With type = 1 
         erases the internal lists pertaining to gid information and cleans 
         up all the internal references to those gids. This allows one 
-        to start over with new :func:`set_gid2node` calls. Note that NetCon and cell 
+        to start over with new :hoc:func:`set_gid2node` calls. Note that NetCon and cell
         objects would have to be dereferenced separately under user control. 
          
-        With type = 2 clears any information setup by :meth:`ParallelContext.splitcell` or 
-        :meth:`ParallelContext.multisplit`. 
+        With type = 2 clears any information setup by :hoc:meth:`ParallelContext.splitcell` or
+        :hoc:meth:`ParallelContext.multisplit`.
          
-        With type = 3 clears any information setup by :meth:`ParallelContext.setup_transfer`. 
+        With type = 3 clears any information setup by :hoc:meth:`ParallelContext.setup_transfer`.
          
         With a type arg of 0 or no arg, clears all the above information. 
 
@@ -2787,7 +2776,7 @@ Parallel Transfer
 
 
 
-.. method:: ParallelContext.Threads
+.. hoc:method:: ParallelContext.Threads
 
 
     Description:
@@ -2796,7 +2785,7 @@ Parallel Transfer
         The methods in this section are only available in the multicore version of NEURON. 
          
         Multiple threads can only be used with fixed step or global variable time step integration methods.
-	Also, they cannot be used with :func:`extracellular`, :func:`LinearMechanism`, 
+	Also, they cannot be used with :hoc:func:`extracellular`, :hoc:func:`LinearMechanism`,
 	or reaction-diffusion models using rxd.
          
         Mechanisms that are not thread safe can only be used by thread 0. 
@@ -2822,7 +2811,7 @@ Parallel Transfer
 
 
 
-.. method:: ParallelContext.nthread
+.. hoc:method:: ParallelContext.nthread
 
 
     Syntax:
@@ -2846,7 +2835,7 @@ Parallel Transfer
 
 
 
-.. method:: ParallelContext.partition
+.. hoc:method:: ParallelContext.partition
 
 
     Syntax:
@@ -2856,8 +2845,8 @@ Parallel Transfer
 
 
     Description:
-        The seclist is a :func:`SectionList` which contains the root sections of cells 
-        (or cell pieces, see :func:`multisplit`) which should be simulated by the thread 
+        The seclist is a :hoc:func:`SectionList` which contains the root sections of cells
+        (or cell pieces, see :hoc:func:`multisplit`) which should be simulated by the thread
         indicated by the first arg index. Either all or no thread can have 
         an associated seclist. The no arg form of pc.partition() unrefs the seclist 
         for all the threads. 
@@ -2867,7 +2856,7 @@ Parallel Transfer
 
 
 
-.. method:: ParallelContext.thread_stat
+.. hoc:method:: ParallelContext.thread_stat
 
 
     Syntax:
@@ -2882,7 +2871,7 @@ Parallel Transfer
 
 
 
-.. method:: ParallelContext.thread_busywait
+.. hoc:method:: ParallelContext.thread_busywait
 
 
     Syntax:
@@ -2890,7 +2879,7 @@ Parallel Transfer
 
 
     Description:
-        When next is 1, during a :func:`psolve` run, overhead for pthread condition waiting 
+        When next is 1, during a :hoc:func:`psolve` run, overhead for pthread condition waiting
         is avoided by having threads watch continuously for a procedure to execute. 
         This works only if the number of threads is less than the number of cores 
         and uses 100% cpu time even when waiting. 
@@ -2900,7 +2889,7 @@ Parallel Transfer
 
 
 
-.. method:: ParallelContext.thread_how_many_proc
+.. hoc:method:: ParallelContext.thread_how_many_proc
 
 
     Syntax:
@@ -2908,17 +2897,20 @@ Parallel Transfer
 
 
     Description:
-        Returns the number of cores/processors available for parallel simulation. 
-        The number is determined experimentally by repeatedly doubling the number 
-        of test threads each doing a count to 1e8 until the test time significantly 
-        increases. 
+        Returns the number of concurrent threads supported by the hardware. This
+        is the value returned by `std::thread::hardware_concurrency()
+        <https://en.cppreference.com/w/cpp/thread/thread/hardware_concurrency>`_.
+        On a system that supports hyperthreading this will typically be double
+        the number of physical cores available, and it may not take into account
+        constraints such as MPI processes being bound to specific cores in a
+        cluster environment.
 
 
 ----
 
 
 
-.. method:: ParallelContext.sec_in_thread
+.. hoc:method:: ParallelContext.sec_in_thread
 
 
     Syntax:
@@ -2934,7 +2926,7 @@ Parallel Transfer
 
 
 
-.. method:: ParallelContext.thread_ctime
+.. hoc:method:: ParallelContext.thread_ctime
 
 
     Syntax:
@@ -2946,13 +2938,13 @@ Parallel Transfer
     Description:
         The high resolution walltime time in seconds the indicated thread 
         used during time step integration. Note that this does not include 
-        reduced tree computation time used by thread 0 when :func:`multisplit` is 
+        reduced tree computation time used by thread 0 when :hoc:func:`multisplit` is
         active. 
 
          
 ----
 
-.. method:: ParallelContext.t
+.. hoc:method:: ParallelContext.t
 
     Syntax:
         ``t = pc.t(tid)``
@@ -2962,7 +2954,7 @@ Parallel Transfer
 
 ----
 
-.. method:: ParallelContext.dt
+.. hoc:method:: ParallelContext.dt
 
     Syntax:
         ``dt = pc.dt(tid)``
@@ -2973,7 +2965,7 @@ Parallel Transfer
 
 ----
 
-.. method:: ParallelContext.prcellstate
+.. hoc:method:: ParallelContext.prcellstate
 
     Syntax:
         ``pc.precellstate(gid, "suffix")``
@@ -3013,7 +3005,7 @@ Parallel Transfer
 
 ----
 
-..  method:: ParallelContext.nrnbbcore_write
+..  :hoc:method:: ParallelContext.nrnbbcore_write
 
     Syntax:
         ``pc.nrnbbcore_write([path[, gidgroup_vec]])``

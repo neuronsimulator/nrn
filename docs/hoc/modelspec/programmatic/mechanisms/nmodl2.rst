@@ -1,6 +1,8 @@
-.. _nmodl2:
 
-.. _nmodltoneuron:
+.. _hoc_nmodl2:
+
+
+.. _hoc_nmodltoneuron:
 
 NEURON Extension to NMODL
 -------------------------
@@ -27,7 +29,7 @@ user level. It declares:
 
 The syntax is (each statement can occur none or more times) : 
 
-Neuron
+NEURON
 ~~~~~~
 
 
@@ -49,7 +51,7 @@ Description:
 
 
 
-Suffix
+SUFFIX
 ~~~~~~
 
 
@@ -57,7 +59,7 @@ Description:
     The suffix, "``_name``" is appended to all variables, functions, and 
     procedures that are accessible from the user level of NEURON. If the ``SUFFIX``
     statement is absent, the file name is used as the suffix (with the addition 
-    of an underscore character).  If there is a :ref:`mech` statement, 
+    of an underscore character).  If there is a :ref:`hoc_mech` statement,
     that name 
     is used as the suffix.  Suffixes prevent overloading of names at the user 
     level of NEURON.  At some point in the future I may add something similar 
@@ -73,7 +75,7 @@ Description:
     from NEURON by the user and you want to specify those function names exactly. 
 
 
-Range
+RANGE
 ~~~~~
 
 
@@ -91,7 +93,7 @@ Description:
     ``NEURON`` block. 
 
 
-Global
+GLOBAL
 ~~~~~~
 
 
@@ -105,7 +107,7 @@ Description:
 
 .. nonspecific_current:
 
-Nonspecific Current
+NONSPECIFIC_CURRENT
 ~~~~~~~~~~~~~~~~~~~
 
 
@@ -118,7 +120,19 @@ Description:
     ``NEURON RANGE`` statement. 
 
 
-Useion
+ELECTRODE_CURRENT
+~~~~~~~~~~~~~~~~~
+
+
+Description:
+    The ELECTRODE_CURRENT statement has two important consequences: positive values of the current
+    will depolarize the cell (in contrast to the hyperpolarizing effect of positive transmembrane
+    currents), and when the extracellular mechanism is present there will be a change in the
+    extracellular potential ``vext``.
+    ``TODO``: Add existing example mod file (iclamp1.mod)
+
+
+USEION
 ~~~~~~
 
 
@@ -155,7 +169,7 @@ Description:
     section. The rules are defined in the reference to the function 
     ion_style(). Three cases are noteworthy. 
 
-Read
+READ
 ====
 
     Assume only one model is inserted in a section. 
@@ -179,7 +193,7 @@ Read
     will be treated as constant PARAMETER's, and 3) eca will be computed 
     from the Nernst equation when finitialize() is called. 
 
-Write
+WRITE
 =====
 
     Lastly, insert a final model at the same location in addition to the 
@@ -218,7 +232,7 @@ Write
     your purposes.  Concentrations and reversal potentials should be considered 
     parameters unless explicitly calculated by some mechanism. 
 
-Valence
+VALENCE
 =======
 
     The ``READ`` list of a ``USEION`` specifies those ionic variables which 
@@ -257,10 +271,16 @@ Valence
     for use in the mechanism. Ion variables get updated on exit from these 
     functions such that WRITE currents are added to ion currents. 
 
-     
+REPRESENTS
+==========
+    Optionally provide CURIE (Compact URI) to annotate what the species represents
+    e.g. ``CHEBI:29101`` for sodium(1+).
+
+    ``TODO``: Add existing example mod file (src/nrnoc/hh.mod)
+
 .. point_process:
 
-Point_Process
+POINT_PROCESS
 ~~~~~~~~~~~~~
 
 
@@ -301,7 +321,7 @@ Description:
     functions such that WRITE currents are added to ion currents. 
 
 
-Pointer
+POINTER
 ~~~~~~~
 
 
@@ -322,7 +342,17 @@ Description:
     is up to the user to reconnect the POINTER to a valid actual variable. 
 
 
-External
+BBCOREPOINTER
+~~~~~~~~~~~~~~
+
+
+Description:
+    See: :ref:`Memory Management for POINTER Variables`
+
+    ``TODO``: Add description (?) and existing example mod file (provided by link)
+
+
+EXTERNAL
 ~~~~~~~~
 
 
@@ -343,7 +373,71 @@ Description:
 
     in a ``VERBATIM`` block and use them with the proper suffix. 
 
-.. _connectingmechanismstogether:
+
+THREADSAFE
+~~~~~~~~~~
+
+Description:
+    See: :ref:`Multithreaded paralellization` and :ref:`Thread Safe MOD Files`
+
+    ``TODO``: Add description and existing example mod file
+
+
+BEFORE
+~~~~~~
+
+Description:
+    ``TODO``: Add description and existing example mod file
+
+
+AFTER
+~~~~~
+
+Description:
+    ``TODO``: Add description and existing example mod file
+
+
+FOR_NETCONS
+~~~~~~~~~~~
+
+Description:
+    FOR_NETCONS (args) means to loop over all NetCon connecting to this
+    target instance and args are the names of the items of each NetCon's
+    weight vector (same as the enclosing NET_RECEIVE but possible different
+    local names).
+
+    ``TODO``: Add existing example mod file (test/coreneuron/mod/fornetcon.mod)
+
+
+PROTECT
+~~~~~~~
+
+Description:
+    Mod files that assign values to GLOBAL variables are not considered 
+    thread safe. If the mod file is using the GLOBAL as a counter, prefix 
+    the offending assignment statements with the PROTECT keyword so that 
+    multiple threads do not attempt to update the value at the same time 
+    (race condition). If the mod file is using the GLOBAL essentially as 
+    a file scope LOCAL along with the possibility of passing values back 
+    to hoc in response to calling a PROCEDURE, use the THREADSAFE keyword 
+    in the NEURON block to automatically treat those GLOBAL variables 
+    as thread specific variables. NEURON assigns and evaluates only 
+    the thread 0 version and if FUNCTIONs and PROCEDUREs are called from 
+    Python, the thread 0 version of these globals are used.
+
+    ``TODO``: Add existing example mod file (share/demo/release/mcna.mod)
+
+
+MUTEXLOCK / MUTEXUNLOCK
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Description:
+    ``TODO``: Add description and existing example mod file (share/examples/nrniv/nmodl/cadif.mod)
+
+
+
+
+.. _hoc_connectingmechanismstogether:
 
 Connecting Mechanisms Together
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -452,4 +546,4 @@ Description:
     merging models into one larger 
     model may eliminate the instability. 
 
-
+.. include:: ../../../../nmodl/verbatim.rst

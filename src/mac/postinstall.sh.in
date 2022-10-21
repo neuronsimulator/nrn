@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #executed by package installer
 echo "" > /tmp/temp.tmp
 
@@ -23,22 +23,25 @@ fi
 #}
 
 #Use .bashrc if it exists, otherwise .bash_profile
-#also add to .cshrc, .tcshrc, .kshrc, and  .zshrc if they exist
+#Use .zshrc if it exists, otherwise .zprofile
+#also add to .cshrc, .tcshrc, .kshrc
 b=.bashrc
 if test ! -f "$HOME/$b" ; then
   b=.bash_profile
 fi
 bp=$HOME/$b
-blike="$bp"
+z=.zshrc
+if test ! -f "$HOME/$z" ; then
+  z=.zprofile
+fi
+zp=$HOME/$z
+blike="$bp $zp"
 clike=''
 if test -f "$HOME/.cshrc" ; then
   clike="$HOME/.cshrc"
 fi
 if test -f "$HOME/.tcshrc" ; then
   clike="$clike $HOME/.tcshrc"
-fi
-if test -f "$HOME/.zshrc" ; then
-  blike="$blike $HOME/.zshrc"
 fi
 if test -f "$HOME/.kshrc" ; then
   blike="$blike $HOME/.kshrc"
@@ -118,19 +121,6 @@ Modify PYTHONPATH in $HOME/'$b' to allow a launch of Python to import neuron.
       echo "setenv PYTHONPATH \"$idir/lib/python\":\$PYTHONPATH #added by NEURON installer" >> "$i"
       chown $USER "$i"
     done
-   if false ; then # no longer add NRN_PYLIB and PYTHONHOME
-    tmpfile=/tmp/$$.tmp
-    (source $bp ; echo "srcpath $PATH" >> /tmp/temp.tmp ; $ibin/nrnpyenv.sh |sed -n 's/\(^export.*\)/\1 #added by NEURON installer/p' | sed '/PYTHONPATH/d' > $tmpfile)
-    for i in $blike ; do
-      cat $tmpfile >> "$i"
-      chown $USER "$i"
-    done
-    for i in $clike ; do
-      sed 's/export \(.*\)=\(".*"\)\(.*\)/setenv \1 \2 \3/' < $tmpfile >> "$i"
-      chown $USER "$i"
-    done
-    rm -f $tmpfile
-   fi
   fi
 fi
 

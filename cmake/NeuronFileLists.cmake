@@ -2,6 +2,7 @@
 # Lists of header files to install
 # =============================================================================
 set(HEADER_FILES_TO_INSTALL
+    bbsavestate.h
     cabvars.h
     cspmatrix.h
     cspredef.h
@@ -14,13 +15,16 @@ set(HEADER_FILES_TO_INSTALL
     hocparse.h
     isoc99.h
     ivstream.h
+    mcran4.h
     md1redef.h
     md2redef.h
+    mech_api.h
     membdef.h
     membfunc.h
     multicore.h
     multisplit.h
     neuron.h
+    newton_struct.h
     nmodlmutex.h
     nrn_ansi.h
     nrnapi.h
@@ -28,21 +32,23 @@ set(HEADER_FILES_TO_INSTALL
     nrncvode.h
     nrnisaac.h
     nrniv_mf.h
-    nrnjava.h
     nrnoc_ml.h
     nrnmpi.h
     nrnmpidec.h
+    nrnrandom.h
     nrnran123.h
     nrnredef.h
+    nrnversionmacros.h
     oc_ansi.h
     ocfunc.h
     ocmisc.h
     options.h
+    parse_with_deps.hpp
     scoplib.h
-    scoplib_ansi.h
     section.h
     spconfig.h
-    spmatrix.h)
+    spmatrix.h
+    treeset.h)
 
 # =============================================================================
 # Lists of headers populated using check_include_files
@@ -63,7 +69,6 @@ set(OC_FILE_LIST
     axis.cpp
     code.cpp
     code2.cpp
-    cygwinprt.cpp
     debug.cpp
     fileio.cpp
     fmenu.cpp
@@ -71,18 +76,17 @@ set(OC_FILE_LIST
     functabl.cpp
     getsym.cpp
     hoc.cpp
-    hocedit.cpp
     hocusr.cpp
     hoc_init.cpp
     hoc_oop.cpp
     isoc99.cpp
     list.cpp
     math.cpp
+    mswinprt.cpp
     nonlin.cpp
     nrnfilewrap.cpp
     ocerf.cpp
     parallel.cpp
-    parse.cpp
     plot.cpp
     plt.cpp
     regexp.cpp
@@ -107,7 +111,6 @@ set(NRNOC_FILE_LIST
     hocprax.cpp
     init.cpp
     ldifus.cpp
-    method3.cpp
     nrnnemo.cpp
     nrntimeout.cpp
     nrnversion.cpp
@@ -119,7 +122,8 @@ set(NRNOC_FILE_LIST
     secref.cpp
     solve.cpp
     synapse.cpp
-    treeset.cpp)
+    treeset.cpp
+    multicore.cpp)
 
 # =============================================================================
 # Files in ivoc directory
@@ -218,7 +222,6 @@ set(NRNIV_FILE_LIST
     nrndae.cpp
     nrnmenu.cpp
     nrnpy.cpp
-    nrnrtime.cpp
     nrnste.cpp
     nvector_nrnserial_ld.cpp
     nvector_nrnthread.cpp
@@ -361,13 +364,7 @@ set(MESCH_FILES_LIST
     zsolve.c
     zvecop.c)
 
-
-set(SPARSE_FILES_LIST
-    bksub.cpp
-    getelm.cpp
-    lineq.cpp
-    prmat.cpp
-    subrows.cpp)
+set(SPARSE_FILES_LIST bksub.cpp getelm.cpp lineq.cpp prmat.cpp subrows.cpp)
 
 # sparse13 matrix sources
 set(SPARSE13_FILES_LIST
@@ -448,32 +445,11 @@ set(SCOPMATH_FILES_LIST
     crout_thread.c
     ssimplic_thread.c)
 
-set(MEMACS_FILES_LIST
-    ansi.c
-    basic.c
-    bind.c
-    buffer.c
-    display.c
-    file.c
-    fileio.c
-    line.c
-    lock.c
-    main1.c
-    random.c
-    region.c
-    search.c
-    spawn.c
-    tcap.c
-    termio.c
-    window.c
-    word.c)
-
-set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp nrnrt.cpp)
+set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
 
 set(NRNGNU_FILES_LIST
     ACG.cpp
     Binomial.cpp
-    Complex.cpp
     DiscUnif.cpp
     Erlang.cpp
     Geom.cpp
@@ -486,11 +462,8 @@ set(NRNGNU_FILES_LIST
     RNG.cpp
     Random.cpp
     RndInt.cpp
-    SmplHist.cpp
-    SmplStat.cpp
     Uniform.cpp
-    Weibull.cpp
-    builtin.cpp)
+    Weibull.cpp)
 
 # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST
@@ -527,8 +500,6 @@ set(MODFILE_BASE_NAMES
     svclmp)
 
 set(MODLUNIT_FILES_LIST
-    parse1.cpp
-    lex.cpp
     consist.cpp
     declare.cpp
     init.cpp
@@ -544,9 +515,6 @@ set(MODLUNIT_FILES_LIST
     version.cpp)
 
 set(NMODL_FILES_LIST
-    parse1.cpp
-    diffeq.cpp
-    lex.cpp
     consist.cpp
     deriv.cpp
     discrete.cpp
@@ -559,24 +527,13 @@ set(NMODL_FILES_LIST
     noccout.cpp
     parsact.cpp
     netrec_discon.cpp
-    partial.cpp
-    sens.cpp
     simultan.cpp
     solve.cpp
     symbol.cpp
     units.cpp
     version.cpp)
 
-set(IVOS_FILES_LIST
-    file.cpp
-    listimpl.cpp
-    math.cpp
-    memory.cpp
-    string.cpp
-    ustring.cpp
-    observe.cpp
-    regexp.cpp
-    resource.cpp)
+set(IVOS_FILES_LIST listimpl.cpp string.cpp observe.cpp regexp.cpp resource.cpp)
 
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
 
@@ -605,16 +562,12 @@ nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
                      nvector_parallel.c)
 nrn_create_file_list(NRN_MESCH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mesch ${MESCH_FILES_LIST})
-nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse
-                     ${SPARSE_FILES_LIST})
+nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPARSE_FILES_LIST})
 nrn_create_file_list(NRN_SPARSE13_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse13
                      ${SPARSE13_FILES_LIST})
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
-if(NRN_ENABLE_MEMACS)
-  nrn_create_file_list(NRN_MEMACS_SRC_FILES ${PROJECT_SOURCE_DIR}/src/memacs ${MEMACS_FILES_LIST})
-endif()
 nrn_create_file_list(NRN_NRNGNU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/gnu ${NRNGNU_FILES_LIST})
 nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
                      ${NRNPYTHON_FILES_LIST})

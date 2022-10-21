@@ -1,2 +1,3 @@
 SortIncludes: false
-Standard: Cpp03
+Standard: c++17
+StatementMacros: [MKDLL, MKDLLdec, MKDLLif, MKDLLvp, MKDLLvpf]

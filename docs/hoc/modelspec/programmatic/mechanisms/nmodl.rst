@@ -1,4 +1,5 @@
-.. _nmodl:
+
+.. _hoc_nmodl:
 
 
 NMODL
@@ -14,7 +15,8 @@ NEURON's extensions to the NBSR language are described in:
     nmodl2.rst
 
 
-.. _modeldescriptionlanguage:
+
+.. _hoc_modeldescriptionlanguage:
 
 Model Description Language
 ==========================
@@ -160,34 +162,34 @@ potentials, and state variables
 and it is helpful to know how NEURON treats these variables in order to 
 correctly write a new membrane mechanism. 
  
-NEURON integrates its equations using the function :func:`fadvance`. 
-During a call to this function the value of the global time variable, :data:`t`, 
-is increased by the value of :data:`dt`  ``(t = t + dt)``, 
+NEURON integrates its equations using the function :hoc:func:`fadvance`.
+During a call to this function the value of the global time variable, :hoc:data:`t`,
+is increased by the value of :hoc:data:`dt`  ``(t = t + dt)``,
 and all the voltages, currents, 
 concentrations, etc. are changed to new values appropriate to the new 
 value of time.  The default numerical method used by NEURON produces 
-values which have an error proportional to :data:`dt`.  That is, it makes 
+values which have an error proportional to :hoc:data:`dt`.  That is, it makes
 no sense to ask at what time in the interval are the values most accurate. 
 However, by setting the global variable 
-:data:`secondorder` equal to 2, the values produced by ``fadvance`` have 
+:hoc:data:`secondorder` equal to 2, the values produced by ``fadvance`` have
 errors proportional to ``dt^2`` and it is important to realize that 
 
--   membrane potential is second order correct at time, :data:`t`. 
+-   membrane potential is second order correct at time, :hoc:data:`t`.
 -   currents are second order correct at time, ``t - dt/2``. 
 -   channel states are second order correct at time, ``t + dt/2``;. 
--   concentrations are second order correct at time, :data:`t`. 
+-   concentrations are second order correct at time, :hoc:data:`t`.
 
  
-:func:`fadvance` goes about its business by first setting up the current 
+:hoc:func:`fadvance` goes about its business by first setting up the current
 conservation matrix equation to be used in the calculation of membrane 
 potential.  To do this it calls the current functions for each mechanism 
 in each segment which compute conductance using the old values of states 
 and current using the old values of states and membrane potential. 
 The value of time when the BREAKPOINT block is called is t+dt/2 so models 
 which depend explicitly on time will be second order correct if they use 
-the value of :data:`t`. 
-:func:`fadvance` then solves the matrix equation for the new value of the membrane 
-potential.  Depending on the value of :data:`secondorder` it then 
+the value of :hoc:data:`t`.
+:hoc:func:`fadvance` then solves the matrix equation for the new value of the membrane
+potential.  Depending on the value of :hoc:data:`secondorder` it then
 may re-call these current functions with the average of the new and old 
 membrane potentials to get an accurate final value of the current. 
 It then calls the state integrator functions using the new 
@@ -228,9 +230,116 @@ Only a small part of the full model description language is relevant to
 neuron mechanisms.  The important concepts held in common are 
 the declaration of all variables as 
 
-.. _nmodl_parameter:
+TITLE
+"""""
 
-Parameter
+Description:
+    Title of the mechanism. Doesn't play any role to the code generation.
+
+
+COMMENT
+"""""""
+
+Description:
+    Comments of the code. ``COMMENT`` blocks start with ``COMMENT`` and end with ``ENDCOMMENT``.
+    For example:
+
+    .. code-block::
+        none
+
+        COMMENT
+            Some text here.
+        ENDCOMMENT
+
+    Single line comments can be added to the mod file also with ``:`` or ``?``.
+    For example:
+
+    .. code-block::
+        none
+
+        NEURON {
+            : This is a single line comment
+            ? This is a single line comment as well
+            GLOBAL a
+        }
+
+
+DEFINE
+""""""
+
+Description:
+    Defines an integer macro variable. The name of the variable can be used in the rest of the mod
+    file and its name will be replaced by its value during parsing of the mod file. Syntax is:
+
+    .. code-block::
+        none
+
+        DEFINE <variable_name> <integer_value>
+
+
+UNITS
+"""""
+
+Description:
+    The statements in the UNITS block define new names for units in terms of existing names in
+    the UNIX units database. This can increase legibility and convenience, and is helpful both as a
+    reminder to the user and as a means for automating the process of checking for consistency of
+    units.
+    The UNIX units database taken into account is defined in the `nrnunits.lib file <https://github.com/neuronsimulator/nrn/blob/master/share/lib/nrnunits.lib.in>`_.
+    This file includes two versions of the units due to the updates in the values of their base
+    units. Currently there are legacy and modern units that contain the changes after the updates
+    introduced on 2019 to the nist constants. The selection between those two versions can be done
+    using the ``NRN_DYNAMIC_UNITS_USE_LEGACY`` CMake variable or a call to
+    ``h.nrnunit_use_legacy(bool)`` during runtime.
+
+    New units can be defined in terms of default units and previously defined units by placing
+    definitions in the UNITS block. e.g.
+
+    .. code-block::
+        none
+
+        UNITS {
+            (uF)    =  (microfarad)
+            (Mohms) =  (megohms)
+            (V)     =  (volt)
+            (molar) =  (/liter)
+            (mM)    =  (millimolar)
+        }
+
+    and it is more convenient to define ``CONSTANT`` constants in the UNITS block rather than in the
+    ``CONSTANTS`` block --- there is less chance of a typo, and they do not appear in SCoP where
+    they can be inadvertently changed.
+    For example:
+
+    .. code-block::
+        none
+
+        UNITS {
+            F      = (faraday) (coulomb)
+            PI     = (pi) (1)
+            e      = (e) (coulomb)
+            R      = (k-mole) (joule/degC)
+            C      = (c) (cm/sec)
+        }
+
+    Here, ``C`` is the speed of light in cm/sec and ``R`` is the Gas constant.
+    Constant factors are defined in the UNITS block in the following manner.
+
+    .. code-block::
+        none
+
+        UNITS {
+            F   = 96520    (coul)
+            PI  = 3.14159  ()
+            foot2inch = 12 (inch/foot)
+        }
+
+    ``TODO``: Add existing example mod file
+
+
+.. _hoc_nmodl_parameter:
+
+PARAMETER
 """""""""
 
 
@@ -240,7 +349,7 @@ Description:
     and not changed by the model itself.  In a NEURON context some of these 
     parameters need to be range variables which can vary with position and some 
     are more useful as global variables.  Special variables to NEURON such as 
-    :data:`celsius`, :data:`area`, :data:`v`, etc. if used in a model 
+    :hoc:data:`celsius`, :hoc:data:`area`, :hoc:data:`v`, etc. if used in a model
     should be declared as 
     parameters. (and you should not assign values to them in the model). 
     Ionic concentrations, currents, and potentials 
@@ -256,10 +365,10 @@ Description:
     panel of variables is automatically created, PARAMETERS are displayed in 
     augmented field editors which make it easier to change values whereas ASSIGNED 
     variables are displayed in field editors in which the only way to change the 
-    value is to type it from the keyboard. (see :func:`xvalue`). 
+    value is to type it from the keyboard. (see :hoc:func:`xvalue`).
 
 
-State
+STATE
 """""
 
 
@@ -278,7 +387,7 @@ Description:
     only NEURON itself is allowed to calculate that value. 
 
 
-Assigned
+ASSIGNED
 """"""""
 
 
@@ -289,15 +398,16 @@ Description:
     to divide them between range variables and global variables. 
 
 
-Constant
+CONSTANT
 """"""""
 
 
 Description:
-    These are variables that cannot be changed during the simulation.
+    These are variables that cannot be changed during the simulation. Better to use ``UNITS`` to
+    define those variables.
 
 
-Local
+LOCAL
 """""
 
 
@@ -306,16 +416,16 @@ Description:
     between all instances of a given mechanism. 
 
 
-Independent
+INDEPENDENT
 """""""""""
 
 
 Description:
     This specifies the mathematical independent variable. 
     For NMODL this statement is unnecessary since the independent variable 
-    is always time, :data:`t`. 
+    is always time, :hoc:data:`t`.
 
-Pointer
+POINTER
 """""""
 
 Basically what is needed is a way to implement the hoc statement 
@@ -408,7 +518,7 @@ one may declare it as LOCAL, but in that case the model cannot be vectorized
 and different instances cannot be called in parallel. 
 
 
-Include
+INCLUDE
 """""""
 
 
@@ -428,11 +538,16 @@ Description:
     in the directories specified by the colon separated list in the 
     environment variable MODL_INCLUDES. Notice that the INCLUDE filename 
     explicitly requires a complete file name --- don't leave off the 
-    suffix, if any. 
+    suffix, if any.
+    Note that if one is redefined in the included file or the file that includes
+    another one, then the generated code has the corresponding code to both blocks with the order of
+    their inclusion.
+
+    ``TODO``: Add existing example mod file
 
     Other blocks which play similar roles in NMODL and MODL are 
 
-Breakpoint
+BREAKPOINT
 """"""""""
 
 
@@ -440,7 +555,7 @@ Description:
     This is the main computation block of the model.  Any 
     states are integrated by a SOLVE statement.  Currents are set with 
     assignment statements at the end of this block.  Think of this block 
-    as making sure that on exit, all variables are consistent at time, :data:`t`. 
+    as making sure that on exit, all variables are consistent at time, :hoc:data:`t`.
     The reason this block is named BREAKPOINT is because in SCoP it was 
     called for each value of the INDEPENDENT variable at which the user desired 
     to plot something. It was responsible for making all variables consistent 
@@ -454,7 +569,7 @@ Description:
     only be changed in a block called by a SOLVE statement. 
 
 
-Derivative
+DERIVATIVE
 """"""""""
 
 
@@ -463,7 +578,7 @@ Description:
     this block is used to assign values to the derivatives of the states. 
     Such statements are of the form :samp:`y' = {expr}`.  These equations 
     are normally integrated from the old values of the states to 
-    their new values at time, :data:`t`, via a SOLVE statement in the BREAKPOINT block. 
+    their new values at time, :hoc:data:`t`, via a SOLVE statement in the BREAKPOINT block.
     The expression may explicitly involve time. The SOLVE statement for a DERIVATIVE 
     block should explicitly invoke either 
 
@@ -480,14 +595,65 @@ Description:
     is a variable time step runge-kutta method which cannot work in a NEURON context. 
     The first two methods above are computationally cheap but are 
     numerically unstable when equations are stiff (states vary a lot within 
-    a :data:`dt` step). 
+    a :hoc:data:`dt` step).
      
     HH type mechanisms have state equations which are particularly 
     simple and  extra efficiency and accuracy is easily obtained by integrating 
     the states analytically.  The :file:`hh2.mod` example shows how to do this. 
 
 
-Nonlinear
+NET_RECEIVE
+"""""""""""
+
+Description:
+    The NET_RECEIVE block is called by the NetCon event delivery system when an event arrives at
+    this postsynaptic point process.
+    For example:
+
+    .. code-block::
+        none
+
+        STATE { g (microsiemens) }
+
+        NET_RECEIVE(weight (microsiemens)) {
+            g = g + weight
+        }
+
+    In this case the value of the weight is specified by the particular NetCon object delivering the
+    event, and this value increments the conductance state.
+
+    ``TODO``: Add existing example mod file
+
+
+WATCH
+~~~~~
+
+Description:
+    ``TODO``: Add description and existing example mod file
+
+
+CONSTRUCTOR
+"""""""""""
+
+Description:
+    ``TODO``: Add description and existing example mod file
+
+
+DESTRUCTOR
+""""""""""
+
+Description:
+    ``TODO``: Add description and existing example mod file
+
+
+LINEAR
+""""""
+
+Description:
+    ``TODO``: Add description and existing example mod file
+
+
+NONLINEAR
 """""""""
 
 
@@ -506,7 +672,7 @@ Description:
     can also appear within a DERIVATIVE block. 
 
 
-Kinetic
+KINETIC
 """""""
 
 
@@ -518,7 +684,84 @@ Description:
     the computation may be much faster. 
 
 
-Procedure
+CONSERVE
+""""""""
+
+Description:
+    This statement's fundamental idea is to systematically account for conservation of material.
+    When there is neither a source nor a sink reaction for a STATE , the
+    differential equations are not linearly independent when calculating steady states (dt
+    approaches infinity). Steady states can be approximated by integrating for several steps from
+    any initial condition with large dt, but roundoff error can be a problem if the Jacobian matrix
+    is nearly singular. To solve the equations while maintaining strict numerical conservation
+    throughout the simulation (no accumulation of roundoff error), the user is allowed to explicitly
+    specify conservation equations with the CONSERVE statement. The CONSERVE statement does not add
+    to the information content of a kinetic scheme and should be considered only as a hint to the
+    translator. The NMODL translator uses this algebraic equation to replace the ODE for the last
+    STATE on the left side of the equal sign. If one of the STATE names is an array, the
+    conservation equation will contain an implicit sum over the array. If the last STATE is an
+    array, then the ODE for the last STATE array element will be replaced by the algebraic equation.
+    The choice of which STATE ODE is replaced by the algebraic equation is implementation-dependent
+    and does not affect the solution (to within roundoff error). If a CONSERVEd STATE is relative
+    to a compartment size, then compartment size is implicitly taken into account for the STATEs on
+    the left hand side of the CONSERVE equation. The right hand side is merely an expression, in
+    which any necessary compartment sizes must be included explicitly.
+
+    ``TODO``: Add existing example mod file
+
+
+COMPARTMENT
+"""""""""""
+
+Description:
+    The compartment volumes needed by the KINETIC scheme are given using the ``COMPARTMENT``
+    keyword. The syntax of this construct is:
+
+    .. code-block::
+        none
+
+        COMPARTMENT volume {state1 state2 . . . }
+
+    where the STATE s named in the braces have the same compartment volume given by the volume
+    expression after the COMPARTMENT keyword. 
+    In case a mechanism involves many compartments whose relative volumes are specified by the
+    elements of an array the syntax is:
+
+    .. code-block::
+        none
+
+        COMPARTMENT index, volume [ index ] { state1 state2 . . . }
+
+    where the STATEs that are diffusing are listed inside the braces.
+
+
+LONGITUDINAL_DIFFUSION
+""""""""""""""""""""""
+
+Description:
+    This statement specifies that this mechanism includes nonlocal diffusion, i.e. longitudinal
+    diffusion along a section and into connecting sections. The syntax for scalar STATEs is:
+
+    .. code-block::
+        none
+
+        LONGITUDINAL_DIFFUSION flux_expr { state1 state2 . . . }
+
+    where ``flux_expr`` is the product of the diffusion constant and the cross-sectional area
+    between adjacent compartments. Units of the ``flux_expr`` must be (:math:`micron^4 /ms`), i.e.
+    the diffusion constant has units of (:math:`micron^2 /ms`) and the cross-sectional area has
+    units of (:math:`micron^2`). For cylindrical shell compartments, the cross-sectional area is
+    just the volume per unit length. If the states are arrays then all elements are assumed to
+    diffuse between corresponding volumes in adjacent segments and the iteration variable must be
+    specified as in:
+
+    .. code-block::
+        none
+
+        LONGITUDINAL_DIFFUSION index , flux_expr ( index ) { state1 state2 . . . }
+
+
+PROCEDURE
 """""""""
 
 
@@ -530,7 +773,7 @@ Description:
     However if a procedure is called 
     by the user, and it makes use of any range variables, then the user is 
     responsible for telling the mechanism from what location it should get 
-    its range variable data. This is done with the hoc function: 
+    its range variable data. This is done with the hoc :hoc:function:
 
     .. code-block::
         none
@@ -567,7 +810,7 @@ Description:
 
 
 
-Function
+FUNCTION
 """"""""
 
 
@@ -580,7 +823,7 @@ Description:
     The user level caveats stated for procedures apply. 
 
 
-Table
+TABLE
 """""
 
 
@@ -633,7 +876,7 @@ Description:
     time than an interpolated table lookup. 
 
 
-Initial
+INITIAL
 """""""
 
 
@@ -675,3 +918,81 @@ Description:
     can be used to place c code within the model description file. 
 
 
+DISCRETE
+""""""""
+
+Description:
+    ``TODO``: Add description
+
+
+FUNCTION_TABLE
+~~~~~~~~~~~~~~
+
+Description:
+    This keyword defines function tables whose values are given by vectors prior to the simulation.
+    For example let's say we have the following declaration in a ΝMODΛ file:
+
+    .. code-block::
+        none
+
+        FUNCTION_TABLE tau1(v(mV)) (ms)
+
+    This means that there is a function `tau1` that takes as argument a variable `v` (voltage). Its
+    values can be then passed from HOC/Python using the following call:
+
+    .. code-block::
+        none
+
+        table_tau1_<MOD_SUFFIX>(tau1_vec, v_vec)
+
+    Then whenever tau1(x) is called in the NMODL file, or tau1_k3st(x) is called from hoc, the
+    interpolated value of the array is returned.
+    A useful feature of FUNCTION_TABLEs is that prior to developing the Vector database, they can
+    be attached to a scalar value as in
+
+    .. code-block::
+        none
+
+        table_tau1_<MOD_SUFFIX>(100)
+
+    effectively becoming constant functions. Also FUNCTION_TABLEs can be declared with two
+    arguments and doubly dimensioned hoc arrays attached to them. The latter is useful, for example,
+    with voltage- and calcium-sensitive rates. In this case the table is linearly interpolated in
+    both dimensions.
+
+
+SWEEP
+~~~~~
+
+Description:
+    ``TODO``: Add description and new example mod file
+
+
+CONDUCTANCE
+~~~~~~~~~~~
+
+Description:
+    ``TODO``: Add description and new example mod file
+
+
+WHILE
+~~~~~
+
+Description:
+    ``TODO``: Add description and new example mod file
+
+
+IF / ELSE IF / ELSE
+~~~~~~~~~~~~~~~~~~
+
+Description:
+    If-statement for mod files.
+
+    ``TODO``: Add new example mod file (iclamp1.mod)
+
+
+LAG
+~~~
+
+Description:
+    ``TODO``: Add description and new example mod file

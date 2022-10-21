@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 names=`sed -n '
 /extern /s/extern [a-z*]* \(nrnmpi_[a-zA-Z0-9_]*\)(.*);/\1/p
@@ -56,9 +56,9 @@ $p
 ' nrnmpidec.h
 echo '
 static struct {
-	char* name;
+	const char* name;
 	void** ppf;
-}ftable[] = {'
+} ftable[] = {'
 for i in $names ; do
 	if test "$i" = "BGPDMA" ; then
 		echo "#if BGPDMA"

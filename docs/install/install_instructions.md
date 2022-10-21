@@ -6,21 +6,6 @@ environment you can choose one of the installation method described below.
 If you want to quickly get started with NEURON, we provide binary installers for Linux, Mac and
 Windows platforms.
 
-#### Windows
-
-On Windows only recommended way to install NEURON is using binary installer. You can download alpha
-or recent releases from below URLs:
-
-* [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
-* [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
-
-Windows installers have name in the format of `nrn-<version-id>-mingw-py-36-37-38-39-setup.exe`.
-The `py-36-37-38-39` string in the installer name indicates that the given installer is compatible
-with Python versions 3.6, 3.7, 3.8 and 3.9. Once the installer is downloaded, you can install it
-by double clicking like any other Windows application. Note that you have to install python separately
-if python support is required. You can find detailed step-by-step instructions in [this presentation]
-(https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
-
 #### Mac OS
 
 Since version 7.8.1 we are providing Python wheels and NEURON can be installed using `pip` as:
@@ -32,23 +17,93 @@ pip3 install neuron
 Python wheels are provided via [pypi.org](https://pypi.org/project/NEURON/). Note that Python2
 wheels are provided for the 8.0.x release series exclusively.
 
-Like Windows, you can also use a binary installer to install NEURON. You can download alpha or recent
-releases from below URLs:
+Like Windows, you can also use a binary installer to install NEURON.
+Recent releases are at
 
-* [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
-* [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
+* [Recent Releases](https://github.com/neuronsimulator/nrn/releases)
 
-Mac OS installers have name in the format of `nrn-<version-id>-osx-36-37-38-39.pkg`. Like windows
-installer, `py-36-37-38-39` string in the installer name indicates that the given installer is
-compatible with Python versions 3.6, 3.7, 3.8 and 3.9. Note that if you double-click the installer
+You can download legacy versions from:
+
+* [Legacy Versions](https://neuron.yale.edu/ftp/neuron/versions/)
+
+Earlier Mac OS pkg installers have name in the format of
+`nrn-<version-id>-osx-37-38-39-310.pkg`.
+Like windows installers,
+the, `py-37-38-39-310` string in the installer name indicates that the given installer is
+compatible with Python versions  3.7, 3.8, 3.9 and 3.10. Note that if you double-click the installer
 then you might see warning like below. In this case you have to right-click on the installer and then
 click `Open`. You can then see an option to `Open` installer: 
 
+The latest Mac OS pkg installers (as of 2022-01-01) are universal2 installers
+(for arm64 and x86_64) and extend the name convention to specify which
+architectures they run on and the minimum macosx version using the same
+style as the python `sysconfig.get_platform()`
+`nrn-<version-id>-macosx-<target>-<archs>-py-<pythonversions>.pkg`
+e.g.
+`nrn-8.0a-726-gb9a811a32-macosx-11-universal2-py-38-39-310.pkg`
+
 ![Installer Warning](../_static/osx_installer_warning_solution.png "Mac OS Warning")
 
-This will install NEURON under directory `/Applications/NEURON-<version>/` directory. For GUI support you
+The latest pkg installers will install NEURON under the directory `/Applications/NEURON/` directory.
+Uninstallng consists of dragging that folder to the trash. For GUI support you
 have to install [XQuartz](https://www.xquartz.org/) separately. Once you start Terminal application, NEURON
 binaries (`nrniv`, `neurondemo` etc.) should be available to start.
+
+* Universal2 installers generally "just work" on either an x86_64 or arm64
+architecture.
+
+  ```
+  python
+  from neuron import h
+  ```
+  and ```nrnivmodl``` will by default create an nmodl mechanism library
+  specifically for the architecture you run on.
+
+  But it may be the case on Apple M1 that you install a python that can
+  only run as an x86_64 program under Rosetta2.
+  E.g. The latest Anaconda Python3.9 (though it seems likely that the next
+  distribution will be universal2).
+  In this case, if you wish to launch nrniv, force nrniv to launch as an x86_64
+  program. E.g.
+  ```
+  arch -arch x86_64 nrniv -python
+  from neuron import h
+  ```
+  Furthermore, be sure to run nrnivmodl in such a way that it compiles as an
+  x86_64 library. e.g.
+  ```
+  arch -arch x86_64 nrnivmodl
+  ```
+  although this constructs an arm64 folder, it will compile and link as x86_64.
+  ```
+  % lipo -archs arm64/libnrnmech.dylib
+  x86_64
+  ```
+  Alternatively, one can get a universal2 result with
+  ```
+  nrnivmodl -incflags '-arch x86_64 -arch arm64' -loadflags '-arch x86_64 -arch arm64'
+  ```
+
+  If, at runtime there is architecture mismatch between python, MPI,
+  libnrnmech.so, or libnrniv.dylib, you will see an error message similar
+  to
+  ```
+  Could not dlopen NRN_PYLIB: /Users/hines/opt/anaconda3/lib/libpython3.9.dylib
+  libnrniv.dylib running as arm64
+  but /Users/hines/opt/anaconda3/lib/libpython3.9.dylib can only run as x86_64
+  ```
+
+  Note: there is an environment variable called `ARCHPREFERENCE`. See 
+  `man arch`.
+
+  It may be the case on an x86_64 that if you have an older x86_64
+  version of python3.8 or 3.9 installed that those versions of python
+  are for macos earlier than 11. In that case, you may get a warning of
+  the form `warning: ... built for newer macOS version (11.0) than being linked (10.9)`
+  One work around is to install a more recent python or a python with a
+  more recent build. For example, the package installers at [python.org](http://python.org)
+  contain the "macos11" string within the package name for the universal2
+  installers for python 3.8, 3.9, and 3.10.
 
 #### Linux
 
@@ -60,6 +115,76 @@ pip3 install neuron
 
 Note that Python2 wheels are provided for the 8.0.x release series exclusively. Also, we are not providing .rpm or .deb
 installers for recent releases.
+
+#### Windows
+
+On Windows, the only recommended way to install NEURON is using the binary installer. You can download alpha
+or recent releases from:
+
+* [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
+* [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
+
+The naming convention for Windows installers is `nrn-<version-id>-mingw-py-37-38-39-310-setup.exe`.
+The `py-37-38-39-310` string in the installer name indicates that the given installer is compatible
+with Python versions 3.7, 3.8, 3.9 and 3.10. Once the installer is downloaded, you can install it
+by double clicking like any other Windows application. Note that you have to install python separately
+if python support is required. You can find detailed step-by-step instructions in
+[this presentation](https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
+
+#### Windows Subsystem for Linux (WSL) Python Wheel
+
+Alternatively, if you are using Windows Subsystem for Linux, you can install the available Linux Python wheel.
+Note that the default Linux distro installed by WSL is Ubuntu, and the following instructions are tailored accordingly.
+
+Steps:
+
+1. Follow official Microsoft WSL installation guide: https://docs.microsoft.com/en-us/windows/wsl/install
+
+```
+Notes:
+      * WSL requires virtualization capabilities, please ensure they are enabled on your system (i.e. BIOS).
+      * If you are using VirtualBox, WSL2 is not supported (https://forums.virtualbox.org/viewtopic.php?t=95302)
+        To enable WSL1 from command prompt or powershell: 
+          wsl --set-default-version 1
+          wsl --install -d Ubuntu
+```
+
+2. Install `pip3`
+
+Open `Ubuntu` from programs and run the following:
+
+```bash
+sudo apt-get update
+sudo apt install python3-pip python3-numpy
+```
+
+3. Install NEURON
+   
+In the same terminal run:
+
+```bash
+pip3 install neuron
+```
+Close and open another terminal. You can do some sanity testing:
+```
+python3 -c "import neuron; neuron.test(); quit()"
+```
+
+4.  (Optional: NEURON GUI) Install `VcXsrv`, a Windows X-server
+* Download and install `VcXsrv` from  [SourceForge](https://sourceforge.net/projects/vcxsrv/).
+* Open `XLaunch` from the Start Menu. In the setup wizard accept the default options until `Extra settings` where you have to tick `Disable access control`. Additionally on the last page, click on the `Save configuration` button and save the configuration file in `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` in order to automatically launch `VcXsrv`at startup without re-doing the wizard. If prompted via Windows Defender Firewall, click on `Allow access`.
+* In an Ubuntu terminal run:
+```bash
+export DISPLAY=:0
+```
+and then you can just launch `nrngui`. In order to have this setting automatically when you open an Ubuntu terminal:
+```bash
+echo "export DISPLAY=:0" >> ~/.bashrc
+```
+In order to perform sanity checks of the NEURON GUI, from the Ubuntu terminal you can call: 
+```bash
+neurondemo
+```
 
 ## Installing Source Distributions
 
@@ -73,13 +198,13 @@ from source.
 In order to build NEURON from source, the following packages must be available:
 
 - Bison
-- Flex
-- C/C++ compiler suite
-- CMake 3.8.2
+- Flex >= 2.6
+- C/C++ compiler suite supporting C++17
+- CMake 3.15.0
 
 The following packages are optional (see build options):
 
-- Python >=3.6 (for Python interface)
+- Python >=3.7 (for Python interface)
 - Cython (for RXD)
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)
@@ -87,9 +212,7 @@ The following packages are optional (see build options):
 Depending on platform you can install these dependencies as follows:
 
 <a name="Mac-OS-Depend"></a>
-#### Mac OS
-
-This is for x86_64. For Apple M1 (arm64), see [here](#Apple-M1-Build-Dependencies)
+#### Mac OS - x86_64
 
 The easiest way to install dependencies on Mac OS is to use [brew](https://brew.sh/) or
 [conda](https://docs.conda.io/projects/conda/en/latest/index.html) package manager. For example,
@@ -100,19 +223,19 @@ brew install coreutils openmpi cmake
 brew install --cask xquartz
 ```
 
-Once these packages are installed, you can setup PATH as:
+Once these packages are installed, setup PATH as:
 
 ```bash
 export PATH=/usr/local/bin/:$PATH
 ```
 
 If the desired python version is not installed, you can install it using
-[official distribution](https://www.python.org/downloads/mac-osx/). Also, note that
+[official distribution](https://www.python.org/downloads/macos/). Also, note that
 [Xcode Command Line Tools](https://stackoverflow.com/questions/9329243/how-to-install-xcode-command-line-tools)
 needs to be installed for development.
 
 <a name="Apple-M1-Build-Dependencies"></a>
-##### Apple M1
+#### Mac OS - Apple M1
 
 - Install command line tools as
 
@@ -120,7 +243,7 @@ needs to be installed for development.
     xcode-select --install
     ```
 
-- If desire classical NEURON GUI : from [xquartz.org](https://www.xquartz.org/), click "Releases", click XQuartz-2.8.0_beta3 , and follow instructions. After installing, logout and log back in.
+- If desire classical NEURON GUI : from [xquartz.org](https://www.xquartz.org/), click "Releases", click XQuartz-2.8.0 (or newer version), and follow instructions. After installing, logout and log back in.
 
     If you desire single click button action for X11 when entering a window then execute below command:
 
@@ -144,6 +267,13 @@ needs to be installed for development.
   export PATH="$HOME/Library/Python/3.8/bin":$PATH
   pip3 install --user cython
   ```
+
+Once these packages are installed, setup PATH as:
+
+```bash
+export PATH=/opt/homebrew/opt/bison/bin/:/opt/homebrew/opt/flex/bin/:/opt/homebrew/bin/:$PATH
+```
+
 
 #### Linux
 
@@ -174,9 +304,15 @@ build system, and they can be installed together as shown below:
 
   ```
   git clone https://github.com/neuronsimulator/nrn           # latest development branch
-  git clone https://github.com/neuronsimulator/nrn -b 7.8.2  # specific release version 7.8.2
+  git clone https://github.com/neuronsimulator/nrn -b 8.0.0  # specific release version 8.0.0
   cd nrn
   ```
+
+  > :warning: To build NEURON from source you either need to clone the NEURON Git repository or download a
+  > source code archive that includes Git submodules, such as the `full-src-package-X.Y.Z.tar.gz` file in
+  > the [NEURON releases](https://github.com/neuronsimulator/nrn/releases) on GitHub. The tarballs like
+  > `Source code (tar.gz)` or `Source code (zip)` created by GitHub are incomplete.
+
 
 2. Create a build directory:
 
@@ -194,6 +330,7 @@ can be found in `nrn/CMakeLists.txt` and defaults are shown in `nrn/cmake/BuildO
    -DNRN_ENABLE_INTERVIEWS=OFF \
    -DNRN_ENABLE_MPI=OFF \
    -DNRN_ENABLE_RX3D=OFF \
+   -DPYTHON_EXECUTABLE=$(which python3) \
    -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
   ```
 
@@ -202,7 +339,7 @@ can be found in `nrn/CMakeLists.txt` and defaults are shown in `nrn/cmake/BuildO
   ```
   cmake --build . --parallel 8 --target install
   ```
-  Feel free to set the number of parallel jobs according to your system using the `--parallel` option.
+  Feel free to set the number of parallel jobs (i.e. 8) according to your system using the `--parallel` option.
 
 5. Set PATH and PYTHONPATH environmental variables to use the installation:
 
@@ -231,7 +368,7 @@ the CMake options.
 NEURON now integrates [CoreNEURON library](https://github.com/BlueBrain/CoreNeuron/) for improved simulation
 performance on modern CPU and GPU architectures. CoreNEURON is designed as a library within the NEURON simulator
 and can transparently handle all spiking network simulations including gap junction coupling with the fixed time
-step method. You can find detailed instructions [here](docs/coreneuron/how-to/coreneuron.md) and
+step method. You can find detailed instructions [here](../coreneuron/index.html) and
 [here](https://github.com/BlueBrain/CoreNeuron/#installation).
 
 #### Run integrated tests
@@ -293,7 +430,7 @@ Better yet, simply recompile neuron specifying the new installation directory.
 * **How can I compile my mod files?**
 
 	* cd to the directory that contains your .mod files.
-	* type "/install/dir/bin/nrnivmodl" (or, if you put that directory in your path, just type "nrnivmodl")
+	* type "/install/dir/bin/nrnivmodl" (or, if you have set install directory in your PATH env variable, just type "nrnivmodl")
 
 This will create a subdirectory of the current directory which is your CPU name (e.g. `x86_64`). Inside this
 directory is created the program "special", which is the neuron binary that you want to run instead of nrniv.
@@ -387,3 +524,5 @@ error: command '/usr/local/bin/gcc-10' failed with exit status 1
 ```
 export CFLAGS="-fno-strict-aliasing -fno-common -dynamic -g -Os -pipe -DMACOSX -DNDEBUG -Wall -Wstrict-prototypes"
 ```
+
+If you see any other issues, please open [an issue here](https://github.com/neuronsimulator/nrn/issues/new/choose).

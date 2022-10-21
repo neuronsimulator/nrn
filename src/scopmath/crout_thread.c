@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <newton_struct.h>
+#include <stdlib.h>
 /******************************************************************************
  *
  * File: crout.c

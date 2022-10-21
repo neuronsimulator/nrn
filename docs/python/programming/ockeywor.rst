@@ -627,52 +627,6 @@ HOC Keywords
 
 
 
-.. index::  em (keyword)
-
-.. _keyword_em:
-
-**em**
-
-
-    Syntax:
-        ``em``
-
-
-
-    Description:
-        microemacs editor 
-         
-        This is a reasonably complete editor with many commands.  These commands 
-        are listed in 
-        `emacs <http://www.neuron.yale.edu/neuron/static/docs/help/emacs.txt>`_.
-        A tutorial is also available at 
-        `emacstut <http://www.neuron.yale.edu/neuron/static/docs/help/emacstut.txt>`_.
-         
-        When 
-        called from the interpreter, the command :kbd:`^C` immediately returns to the 
-        interpreter and the current buffer is interpreted. 
-        Other commands follow: 
-
-
-        :kbd:`^X^F` 
-            reads a file into a new buffer. 
-
-        :kbd:`^X^B` 
-            changes buffers. 
-
-        :kbd:`^X^W` *filename* 
-            saves (writes) a file under a specific name. 
-
-        :kbd:`^X^S`
-            saves a file under the last specified name. 
-
-         
-         
-
-----
-
-
-
 .. index::  depvar (keyword)
 
 .. _keyword_depvar:

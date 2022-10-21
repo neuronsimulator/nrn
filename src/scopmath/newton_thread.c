@@ -1,5 +1,9 @@
 #include <../../nrnconf.h>
 #include <newton_struct.h>
+#include <stdlib.h>
+extern void* hoc_Emalloc(size_t);
+extern void hoc_malchk();
+#define emalloc(arg) hoc_Emalloc(arg); hoc_malchk()
 /******************************************************************************
  *
  * File: newton.c
@@ -57,6 +61,12 @@ static char RCSid[] =
 #include <stdlib.h>
 #include <math.h>
 #include "errcodes.h"
+
+typedef int (*FUN)(double *, Datum *, Datum *, NrnThread *);
+
+static void nrn_buildjacobian_thread(NewtonSpace* ns,
+  int n, int* index, double* x, FUN pfunc,
+  double* value, double** jacobian, void* ppvar, void* thread, void* nt);
 
 int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double* x,
  FUN pfunc, double* value, void* ppvar, void* thread, void* nt) {

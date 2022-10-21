@@ -4,29 +4,33 @@
 #include <assert.h>
 #undef assert
 #undef _assert
-# ifndef NDEBUG
-# ifndef stderr
-# include <stdio.h>
-# endif
-
-#if defined(__cplusplus)
-extern "C" {
+#ifndef NDEBUG
+#ifndef stderr
+#include <stdio.h>
 #endif
 
-extern void hoc_execerror(const char*, const char*);
-
-#if defined(__cplusplus)
-}
-#endif
-
-
+#include "oc_ansi.h"
 #if defined(__STDC__)
-# define assert(ex) {if (!(ex)){fprintf(stderr,"Assertion failed: file %s, line %d\n", __FILE__,__LINE__);hoc_execerror(#ex, (char *)0);}}
+#undef assert
+#define assert(ex)                                                                       \
+    {                                                                                    \
+        if (!(ex)) {                                                                     \
+            fprintf(stderr, "Assertion failed: file %s, line %d\n", __FILE__, __LINE__); \
+            hoc_execerror(#ex, (char*) 0);                                               \
+        }                                                                                \
+    }
 #else
-# define assert(ex) {if (!(ex)){fprintf(stderr,"Assertion failed: file %s, line %d\n", __FILE__,__LINE__);hoc_execerror("ex", (char *)0);}}
+#undef assert
+#define assert(ex)                                                                       \
+    {                                                                                    \
+        if (!(ex)) {                                                                     \
+            fprintf(stderr, "Assertion failed: file %s, line %d\n", __FILE__, __LINE__); \
+            hoc_execerror("ex", (char*) 0);                                              \
+        }                                                                                \
+    }
 #endif
-# else
-# define _assert(ex) ;
-# define assert(ex) ;
-# endif
+#else
+#define _assert(ex) ;
+#define assert(ex)  ;
+#endif
 #endif

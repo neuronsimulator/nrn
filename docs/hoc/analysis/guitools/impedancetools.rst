@@ -1,13 +1,14 @@
-.. _attshape:
 
-.. seealso: :ref:`impratio`, :ref:`impedance_impx`, :ref:`impedance_logavsx`, 
+.. _hoc_attshape:
+
+.. seealso: :ref:`hoc_impratio`, :ref:`hoc_impedance_impx`, :ref:`hoc_impedance_logavsx`,
 
 
 Impedance Tools
 ---------------
 
-These tools plot various functions of :class:`Impedance` vs 
-location and frequency. :ref:`impshape` is described below, but see also:
+These tools plot various functions of :hoc:class:`Impedance` vs
+location and frequency. :ref:`hoc_impshape` is described below, but see also:
 
 .. toctree:: :maxdepth: 1
 
@@ -24,7 +25,7 @@ impedance measurements.
 The redraw button in the top panel forces a re-calculation of the results. 
 This is useful if a parameter or state changes in the underlying model 
 of the cell. The :menuselection:`Extras --> MovieMode` menu item recalculated the results 
-for each step during a :ref:`runcontrol_initrun`. When selected, 
+for each step during a :ref:`hoc_runcontrol_initrun`. When selected,
 the :menuselection:`Extras --> AutoScale` rescales 
 the results panel after each calculation. 
  
@@ -35,7 +36,8 @@ Input impedance is plotted with
 respect to the measurement site and the injection site is unused. 
      
 
-.. _impshape:
+
+.. _hoc_impshape:
 
 ImpShape
 ~~~~~~~~

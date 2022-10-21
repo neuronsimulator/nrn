@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/ocmain.cpp,v 1.7 1997/07/29 20:23:33 hines Exp */
+#include "isoc99.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,86 +22,73 @@ extern void setneuronhome(const char*);
 #endif
 
 static void setnrnhome(const char* arg) {
+#if !defined(WIN32) && !defined(MAC)
+    /*
+     Gary Holt's first pass at this was:
 
-#if !defined(WIN32)&&!defined(MAC)
-/*
- Gary Holt's first pass at this was:
+     Set the NEURONHOME environment variable.  This should override any setting
+     in the environment, so someone doesn't accidently use data files from an
+     old version of neuron.
 
- Set the NEURONHOME environment variable.  This should override any setting
- in the environment, so someone doesn't accidently use data files from an
- old version of neuron.
-
- But I have decided to use the environment variable if it exists
-*/
-	neuron_home = getenv("NEURONHOME");
-	if (!neuron_home) {
+     But I have decided to use the environment variable if it exists
+    */
+    neuron_home = getenv("NEURONHOME");
+    if (!neuron_home) {
 #if defined(HAVE_PUTENV)
-	 static char* buffer;
-	 buffer = static_cast<char *>(malloc(strlen(NEURON_DATA_DIR) + 12));
-	 sprintf(buffer, "NEURONHOME=%s", NEURON_DATA_DIR);
-	 putenv(buffer);
-	 neuron_home = NEURON_DATA_DIR;
+        static char* buffer;
+        buffer = static_cast<char*>(malloc(strlen(NEURON_DATA_DIR) + 12));
+        sprintf(buffer, "NEURONHOME=%s", NEURON_DATA_DIR);
+        putenv(buffer);
+        neuron_home = NEURON_DATA_DIR;
 #elif defined(HAVE_SETENV)
-	 setenv("NEURONHOME", NEURON_DATA_DIR, 1);
-	 neuron_home = NEURON_DATA_DIR;
+        setenv("NEURONHOME", NEURON_DATA_DIR, 1);
+        neuron_home = NEURON_DATA_DIR;
 #else
 #error "I don't know how to set environment variables."
 // Maybe in this case the user will have to set it by hand.
 #endif
-	}
+    }
 
-#else // Not unix:
-	 setneuronhome(arg);	 
+#else  // Not unix:
+    setneuronhome(arg);
 #endif
 }
 
-#if LINDA /* LINDA (SAF) */
-real_main(int argc, const char** argv, const char**envp) {
-#else
 int main(int argc, const char** argv, const char** envp) {
-#endif
-	int err;
-	nrn_isdouble(nullptr, 0., 0.);
+    int err;
+    nrn_isdouble(nullptr, 0., 0.);
 #if MAC
-int our_argc = 1;
-char *our_argv[1];
-our_argv[0] = "Neuron";
-	err = hoc_main1(our_argc, our_argv, envp);
+    int our_argc = 1;
+    char* our_argv[1];
+    our_argv[0] = "Neuron";
+    err = hoc_main1(our_argc, our_argv, envp);
 #else
-	setnrnhome(argv[0]);
-	err = hoc_main1(argc, argv, envp);
+    setnrnhome(argv[0]);
+    err = hoc_main1(argc, argv, envp);
 #endif
-	if (!err) {
-		hoc_final_exit();
-	}
+    if (!err) {
+        hoc_final_exit();
+    }
 #if EXPRESS
-	exit(0);
+    exit(0);
 #else
-#if LINDA
-	lexit(0);
-#else
-	return err;
-#endif
+    return err;
 #endif
 }
 
 
 void hoc_single_event_run() { /* for interviews, ivoc make use of own main */
-#if LINDA
-	extern int hoc_retreat_flag;
-	if (hoc_retreat_flag) {
-		hoc_retreat();		
-	}
-#endif
 #if INTERVIEWS && 0
-	single_event_run();
+    single_event_run();
 #endif
-	hoc_ret();
-	hoc_pushx(0.);
+    hoc_ret();
+    hoc_pushx(0.);
 }
 
-int run_til_stdin() {return 1;}
-void hoc_notify_value(){}
+int run_til_stdin() {
+    return 1;
+}
+void hoc_notify_value() {}
 
 #ifdef WIN32
 void ivcleanup() {}

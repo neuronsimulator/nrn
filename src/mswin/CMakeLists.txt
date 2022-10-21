@@ -14,7 +14,7 @@
 #    -DIV_DIR=/home/hines/neuron/ivcmake/build/install \
 #    -DPYTHON_EXECUTABLE=/e/python37/python \
 #    -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
-#    -DNRN_PYTHON_DYNAMIC="e:/python36/python;e:/python37/python;e:/python38/python" \
+#    -DNRN_PYTHON_DYNAMIC="e:/python37/python;e:/python38/python;e:/python39/python" \
 #    -DNRN_ENABLE_MPI_DYNAMIC=ON \
 #    -DCMAKE_PREFIX_PATH="/c/ms-mpi" \
 #    -DNRN_ENABLE_CORENEURON=Off
@@ -55,6 +55,7 @@ if(MINGW)
   add_custom_target(
     setup_exe
     COMMAND bash ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh ${CMAKE_INSTALL_PREFIX}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMAND bash ${PROJECT_BINARY_DIR}/src/mswin/pre_setup_exe.sh
     COMMAND ${MAKENSIS_EXE} ${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi
     DEPENDS ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh

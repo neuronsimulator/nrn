@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Mac os x intermediate between applescript and mos2nrn
 echo -e "\033]0;NEURON launched from browser\007"
 

@@ -48,7 +48,7 @@ In many projects Tags are used to mark certain revisions as special, maybe becau
 
 GitHub is a development platform and, in some sense, a software collaboration portal based on Git, with a number of features very useful for software development [3] [4], among them :
 
-- **Issues** - An Issue Trackerwhere users and developers can report and discuss enhancements, bugs and tasks of the project.
+- **Issues** - An Issue Tracker where users and developers can report and discuss enhancements, bugs and tasks of the project.
 - **Milestones** - A Release Planner in which project managers can define which Issues (features + bug fixes) are to be included in each release/milestone.
 - **Pull Requests** - A patch integration model adapted to large teams or open-source projects, where any developer may propose a change to be reviewed and eventually merged by a project lead.
 - **Forks** - Clones of other GitHub projects so that developers without any permission in the original repository can still create Pull Requests. One of the issues with forks is the risk of branches to become out of sync with the original repo. Therefore for small/core teams it may be preferable to grant main developers the possibility of creating branches.
@@ -286,6 +286,15 @@ Notice the fact that development builds have a dot &quot;.&quot; between MINOR a
 
 Given it is desirable to track, in the SCM, which revision is the exact source of a release, we advocate the use of Git tags for every release (excluding _development builds_ which are not true releases and create an automatic version number via git describe). Guidelines on how to use the SCM effectively to maintain several versions are discussed in the next sections.
 
+Since around version 8.2
+([#1762](https://github.com/neuronsimulator/nrn/pull/1762)), the CMake
+configuration of NEURON has included checks that the parent Git tag found by
+`git describe` is consistent with the MAJOR.MINOR.PATCH version that is
+hardcoded in the top-level CMakeLists.txt file.
+This hardcoded version should be updated in between releases according to the
+semantic rules given above, as it is the basis for the `NRN_VERSION*`
+preprocessor macros that are used to introduce NEURON-version-specific changes
+in MOD files.
 
 ## RELEASE MANAGEMENT WITH GIT
 

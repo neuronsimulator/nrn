@@ -2,7 +2,7 @@ Plotter Control (obsolete)
 --------------------------
 
 
-.. function:: lw
+.. hoc:function:: lw
 
          
          
@@ -86,7 +86,7 @@ Plotter Control (obsolete)
          
 
     .. seealso::
-        :func:`plot`, :func:`graph`, :func:`plt`
+        :hoc:func:`plot`, :hoc:func:`graph`, :hoc:func:`plt`
         
         
 

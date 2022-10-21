@@ -71,6 +71,7 @@ def sub_surface_area(v0, v1, v2, v3, v4, v5, v6, v7, x0, x1, y0, y1, z0, z1):
         c_double,
         c_double,
         c_double,
+        c_double,
         c_double,  # value0 - value7
         c_double,
         c_double,
@@ -88,7 +89,22 @@ def sub_surface_area(v0, v1, v2, v3, v4, v5, v6, v7, x0, x1, y0, y1, z0, z1):
     results_ptr = results.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
 
     count = find_triangles(
-        v0, v1, v2, v3, v4, v5, v6, v7, x0, x1, y0, y1, z0, z1, results_ptr
+        abs(options.ics_distance_threshold),
+        v0,
+        v1,
+        v2,
+        v3,
+        v4,
+        v5,
+        v6,
+        v7,
+        x0,
+        x1,
+        y0,
+        y1,
+        z0,
+        z1,
+        results_ptr,
     )
 
     pt0 = numpy.array([0.0] * 3)

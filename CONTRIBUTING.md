@@ -96,19 +96,20 @@ The [Neuron Development Topics](https://neuronsimulator.github.io/nrn/dev/index.
 
 ### Code Formatting
 
-Currently we have enabled CMake code formatting using [cmake-format](https://github.com/cheshirekow/cmake_format). Before submitting PR, if you have changed any CMake build related code, make sure to run cmake-format as below:
+Currently we have enabled CMake and Clang code formatting using [cmake-format](https://github.com/cheshirekow/cmake_format) and [clang-format](https://clang.llvm.org/docs/ClangFormat.html). Before submitting a PR, make sure to run cmake-format and clang-format as below:
 
-* Make sure to install cmake-format utility with Python version you are using:
+* Make sure to install clang-format and cmake-format with Python version you are using:
 
 ```
 pip3.7 install cmake-format==0.6.0 pyyaml --user
+brew install clang-format # or your favorite package manager
 ```
-Now you should have `cmake-format` command available.
+Now you should have the `clang-format` and `cmake-format` commands available.
 
-* Use `-DNEURON_CMAKE_FORMAT=ON` option of CMake to enable CMake code formatting targets:
+* Use `-DNRN_CMAKE_FORMAT=ON` option of CMake to enable CMake code formatting targets:
 
 ```
-cmake .. -DPYTHON_EXECUTABLE=`which python3.7` -DNEURON_CMAKE_FORMAT=ON
+cmake .. -DPYTHON_EXECUTABLE=`which python3.7` -DNRN_CMAKE_FORMAT=ON
 ```
 
 With this, new target called **cmake-format** can be used to automatically format all CMake files:
@@ -141,6 +142,26 @@ Or,
 
 See [cmake-format](https://github.com/cheshirekow/cmake_format) documentation for details.
 
+* For `clang-format` you should restrict formatting to only the code parts relevant to your change.
+  This can be eachieved by setting following build options:
+
+```
+cmake .. -DNRN_CLANG_FORMAT=ON \
+    -DNRN_CMAKE_FORMAT=ON \
+    -DNRN_FORMATTING_ON="since-ref:master" \
+    -DNRN_FORMATTING_CPP_CHANGES_ONLY=ON
+```
+
+Note: Sometimes it might be necessary to point your build-system to the clang-format-diff utility,
+this can be done by supplying an additional flag:
+`-DClangFormatDiff_EXECUTABLE=/path/to/share/clang/clang-format-diff.py`
+
+* You can then run the `clang-format` target after a full build:
+
+```
+make && make clang-format
+```
+
 ## Python Contributions
 
 The Python source code is located under `share/lib/python/neuron`. Python unit tests are
@@ -152,12 +173,23 @@ Please follow [PEP8](https://www.python.org/dev/peps/pep-0008/) conventions in a
 submitted code and apply [black](https://black.readthedocs.io/en/stable/) formatting, a
 stricter superset of PEP8.
 
-You can install and apply black formatting as follows:
+Using [`pre-commit` hooks](https://pre-commit.com/), the `black` tool can be executed every time you commit, and automatically reformat your code according to the repository's preferences.
+To set up automatic formatting run the following commands from the root of the repository:
+
+    pip install pre-commit
+    pre-commit install
+
+**Note**: The first time you commit after installing the hooks, it can take a while to set up the environment.
+If your commit contains any formatting errors, an error will be displayed: Black will have reformatted your staged
+changes and your workspace will contain them as new unstaged changes; stage these changes and re-commit the now
+formatted code!
+
+You can also install and manually apply black formatting as follows:
 
     pip install black
     black /path/to/file.py
 
-Please limit formatting to the code you contribute and not the entire `file.py`.
+This will reformat the entire file, not just your changes, and might pollute your PR.
 
 ## Reporting a bug<a name="bug"></a>
 

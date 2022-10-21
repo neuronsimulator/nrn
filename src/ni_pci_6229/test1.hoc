@@ -1,3 +1,0 @@
-objref nda
-nda = new NrnDAQ()
-nda.dio_write(7)

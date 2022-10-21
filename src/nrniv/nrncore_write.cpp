@@ -69,7 +69,8 @@
 // instances.
 /*
 Assumptions regarding the scope of possible models.(Incomplete list)
-All real cells have gids.
+All real cells have gids (possibly multiple, but no more than one gid
+for a PreSyn instance.)
 Artificial cells without gids connect only to cells in the same thread.
 No POINTER to data outside of NrnThread.
 No POINTER to data in ARTIFICIAL_CELL (that data is not cache_efficient)
@@ -95,8 +96,9 @@ correctness has not been validated for cells without gids.
 #include "parse.hpp"
 #include "nrnmpi.h"
 #include "netcon.h"
+#include "nrncvode.h"
 
-#include "vrecitem.h" // for nrnbbcore_vecplay_write
+#include "vrecitem.h"  // for nrnbbcore_vecplay_write
 #include "nrnsection_mapping.h"
 
 #include "nrncore_write.h"
@@ -105,31 +107,15 @@ correctness has not been validated for cells without gids.
 #include "nrncore_write/callbacks/nrncore_callbacks.h"
 #include <map>
 
-
-#ifdef MINGW
-#define RTLD_NOW 0
-#define RTLD_GLOBAL 0
-#define RTLD_NOLOAD 0
-extern "C" {
-extern void* dlopen_noerr(const char* name, int mode);
-#define dlopen dlopen_noerr
-extern void* dlsym(void* handle, const char* name);
-extern int dlclose(void* handle);
-extern char* dlerror();
-}
-#else
-#if defined(HAVE_DLFCN_H)
-#include <dlfcn.h>
-#endif
-#endif
+#include "nrnwrap_dlfcn.h"
 
 
 extern NetCvode* net_cvode_instance;
 
 
 extern int* nrn_prop_dparam_size_;
-int* bbcore_dparam_size; // cvodeieq not present
-extern double t; // see nrncore_psolve
+int* bbcore_dparam_size;  // cvodeieq not present
+extern double t;          // see nrncore_psolve
 
 /* not NULL, need to write gap information */
 extern void (*nrnthread_v_transfer_)(NrnThread*);
@@ -152,115 +138,126 @@ NrnMappingInfo mapinfo;
 // filename construction.
 bool corenrn_direct;
 
+// name of coreneuron mpi library to load
+std::string corenrn_mpi_library;
+
 static size_t part1();
 static void part2(const char*);
 
 /// dump neuron model to given directory path
 size_t write_corenrn_model(const std::string& path) {
+    // if writing to disk then in-memory mode is false
+    corenrn_direct = false;
 
-  // if writing to disk then in-memory mode is false
-  corenrn_direct = false;
+    // make sure model is ready to transfer
+    model_ready();
 
-  // make sure model is ready to transfer
-  model_ready();
+    // directory to write model
+    create_dir_path(path);
 
-  // directory to write model
-  create_dir_path(path);
+    // calculate size of the model
+    size_t rankbytes = part1();
 
-  // calculate size of the model
-  size_t rankbytes = part1();
+    // mechanism and global variables
+    write_memb_mech_types(get_filename(path, "bbcore_mech.dat").c_str());
+    write_globals(get_filename(path, "globals.dat").c_str());
 
-  // mechanism and global variables
-  write_memb_mech_types(get_filename(path, "bbcore_mech.dat").c_str());
-  write_globals(get_filename(path, "globals.dat").c_str());
+    // write main model data
+    part2(path.c_str());
 
-  // write main model data
-  part2(path.c_str());
-
-  return rankbytes;
+    return rankbytes;
 }
 
 // accessible from ParallelContext.total_bytes()
 size_t nrncore_write() {
-  const std::string& path = get_write_path();
-  return write_corenrn_model(path);
+    const std::string& path = get_write_path();
+    return write_corenrn_model(path);
 }
 
 static size_t part1() {
-  size_t rankbytes = 0;
-  if (!bbcore_dparam_size) {
-    bbcore_dparam_size = new int[n_memb_func];
-  }
-  for (int i=0; i < n_memb_func; ++i) {
-    int sz = nrn_prop_dparam_size_[i];
-    bbcore_dparam_size[i] = sz;
-    Memb_func* mf = memb_func + i;
-    if (mf && mf->dparam_semantics && sz && mf->dparam_semantics[sz-1] == -3) {
-        // cvode_ieq in NEURON but not CoreNEURON
-        bbcore_dparam_size[i] = sz - 1;
+    size_t rankbytes = 0;
+    static int bbcore_dparam_size_size = -1;
+
+    // In nrn/test/pynrn, "python -m pytest ." calls this with
+    // n_memb_func of 27 and then with 29. I don't see any explicit
+    // intervening h.nrn_load_dll in that folder but ...
+    if (bbcore_dparam_size_size != n_memb_func) {
+        if (bbcore_dparam_size) {
+            delete[] bbcore_dparam_size;
+        }
+        bbcore_dparam_size = new int[n_memb_func];
     }
-  }
-  CellGroup::setup_nrn_has_net_event();
-  cellgroups_ = new CellGroup[nrn_nthread]; // here because following needs mlwithart
-  CellGroup::mk_tml_with_art(cellgroups_);
 
-  rankbytes += CellGroup::get_mla_rankbytes(cellgroups_);
-  rankbytes += nrncore_netpar_bytes();
-  //printf("%d bytes %ld\n", nrnmpi_myid, rankbytes);
-  CellGroup* cgs = CellGroup::mk_cellgroups(cellgroups_);
+    for (int i = 0; i < n_memb_func; ++i) {
+        int sz = nrn_prop_dparam_size_[i];
+        bbcore_dparam_size[i] = sz;
+        Memb_func* mf = memb_func + i;
+        if (mf && mf->dparam_semantics && sz && mf->dparam_semantics[sz - 1] == -3) {
+            // cvode_ieq in NEURON but not CoreNEURON
+            bbcore_dparam_size[i] = sz - 1;
+        }
+    }
+    CellGroup::setup_nrn_has_net_event();
+    cellgroups_ = new CellGroup[nrn_nthread];  // here because following needs mlwithart
+    CellGroup::mk_tml_with_art(cellgroups_);
 
-  CellGroup::datumtransform(cgs);
-  return rankbytes;
+    rankbytes += CellGroup::get_mla_rankbytes(cellgroups_);
+    rankbytes += nrncore_netpar_bytes();
+    // printf("%d bytes %ld\n", nrnmpi_myid, rankbytes);
+    CellGroup* cgs = CellGroup::mk_cellgroups(cellgroups_);
+
+    CellGroup::datumtransform(cgs);
+    return rankbytes;
 }
 
 static void part2(const char* path) {
-  CellGroup* cgs = cellgroups_;
-  for (int i=0; i < nrn_nthread; ++i) {
-    chkpnt = 0;
-    write_nrnthread(path, nrn_threads[i], cgs[i]);
-  }
-
-  /** write mapping information */
-  if(mapinfo.size()) {
-    int gid = cgs[0].group_id;
-    nrn_write_mapping_info(path, gid, mapinfo);
-    mapinfo.clear();
-  }
-
-  if (nrnthread_v_transfer_) {
-    // see partrans.cpp. nrn_nthread files of path/icg_gap.dat
-    int* group_ids = new int[nrn_nthread];
-    for (int i=0; i < nrn_nthread; ++i) {
-      group_ids[i] = cgs[i].group_id;
+    CellGroup* cgs = cellgroups_;
+    for (int i = 0; i < nrn_nthread; ++i) {
+        chkpnt = 0;
+        write_nrnthread(path, nrn_threads[i], cgs[i]);
     }
-    nrnbbcore_gap_write(path, group_ids);
-    delete [] group_ids;
-  }
 
-  // filename data might have to be collected at hoc level since
-  // pc.nrncore_write might be called
-  // many times per rank since model may be built as series of submodels.
-  if (ifarg(2) && hoc_is_object_arg(2) && is_vector_arg(2)) {
-    // Legacy style. Interpreter collects groupgids and writes files.dat
-    Vect* cgidvec = vector_arg(2);
-    vector_resize(cgidvec, nrn_nthread);
-    double* px = vector_vec(cgidvec);
-    for (int i=0; i < nrn_nthread; ++i) {
-      px[i] = double(cgs[i].group_id);
+    /** write mapping information */
+    if (mapinfo.size()) {
+        int gid = cgs[0].group_id;
+        nrn_write_mapping_info(path, gid, mapinfo);
+        mapinfo.clear();
     }
-  }else{
-    bool append = false;
-    if (ifarg(2)) {
-      if (hoc_is_double_arg(2)) {
-        append = (*getarg(2) != 0);
-      }else{
-        hoc_execerror("Second arg must be Vector or double.", NULL);
-      }
-    }
-    write_nrnthread_task(path, cgs, append);
-  }
 
-  part2_clean();
+    if (nrnthread_v_transfer_) {
+        // see partrans.cpp. nrn_nthread files of path/icg_gap.dat
+        int* group_ids = new int[nrn_nthread];
+        for (int i = 0; i < nrn_nthread; ++i) {
+            group_ids[i] = cgs[i].group_id;
+        }
+        nrnbbcore_gap_write(path, group_ids);
+        delete[] group_ids;
+    }
+
+    // filename data might have to be collected at hoc level since
+    // pc.nrncore_write might be called
+    // many times per rank since model may be built as series of submodels.
+    if (ifarg(2) && hoc_is_object_arg(2) && is_vector_arg(2)) {
+        // Legacy style. Interpreter collects groupgids and writes files.dat
+        Vect* cgidvec = vector_arg(2);
+        vector_resize(cgidvec, nrn_nthread);
+        double* px = vector_vec(cgidvec);
+        for (int i = 0; i < nrn_nthread; ++i) {
+            px[i] = double(cgs[i].group_id);
+        }
+    } else {
+        bool append = false;
+        if (ifarg(2)) {
+            if (hoc_is_double_arg(2)) {
+                append = (*getarg(2) != 0);
+            } else {
+                hoc_execerror("Second arg must be Vector or double.", NULL);
+            }
+        }
+        write_nrnthread_task(path, cgs, append);
+    }
+
+    part2_clean();
 }
 
 
@@ -274,7 +271,13 @@ int nrncore_run(const char* arg) {
     model_ready();
 
     // get coreneuron library handle
-    void* handle = get_coreneuron_handle();
+    void* handle = [] {
+        try {
+            return get_coreneuron_handle();
+        } catch (std::runtime_error const& e) {
+            hoc_execerror(e.what(), nullptr);
+        }
+    }();
 
     // make sure coreneuron & neuron are compatible
     check_coreneuron_compatibility(handle);
@@ -283,8 +286,10 @@ int nrncore_run(const char* arg) {
     map_coreneuron_callbacks(handle);
 
     // lookup symbol from coreneuron for launching
-    void* launcher_sym = dlsym(handle, "corenrn_embedded_run");
-    if (!launcher_sym) {
+    using launcher_t = int (*)(int, int, int, int, const char*, const char*);
+    auto* const coreneuron_launcher = reinterpret_cast<launcher_t>(
+        dlsym(handle, "corenrn_embedded_run"));
+    if (!coreneuron_launcher) {
         hoc_execerror("Could not get symbol corenrn_embedded_run from", NULL);
     }
 
@@ -296,17 +301,18 @@ int nrncore_run(const char* arg) {
 #define nrnmpi_use 0
 #endif
 
-    // typecast function pointer pointer
-    int (*coreneuron_launcher)(int, int, int, int, const char*) = (int (*)(int, int, int, int, const char*))launcher_sym;
-
     // launch coreneuron
-    int result = coreneuron_launcher(nrn_nthread, have_gap, nrnmpi_use, nrn_use_fast_imem, arg);
+    int result = coreneuron_launcher(
+        nrn_nthread, have_gap, nrnmpi_use, nrn_use_fast_imem, corenrn_mpi_library.c_str(), arg);
 
     // close handle and return result
     dlclose(handle);
 
     // Note: possibly non-empty only if nrn_nthread > 1
-    CellGroup::clean_deferred_type2artdata();
+    CellGroup::clean_deferred_type2artml();
+
+    // Huge memory waste
+    CellGroup::clean_deferred_netcons();
 
     return result;
 }
@@ -333,29 +339,31 @@ int nrncore_is_file_mode() {
  *  Return 0 on success
  */
 int nrncore_psolve(double tstop, int file_mode) {
-  if (nrnpy_nrncore_arg_p_) {
-    char* arg = (*nrnpy_nrncore_arg_p_)(tstop);
-    if (arg) {
-      // if file mode is requested then write model to a directory
-      // note that CORENRN_DATA_DIR name is also used in module
-      // file coreneuron.py
-      if (file_mode) {
-        const char* CORENRN_DATA_DIR = "corenrn_data";
-        write_corenrn_model(CORENRN_DATA_DIR);
-      }
-      nrncore_run(arg);
-      // data return nt._t so copy to t
-      t = nrn_threads[0]._t;
-      free(arg);
-      return 0;
+    if (nrnpy_nrncore_arg_p_) {
+        char* arg = (*nrnpy_nrncore_arg_p_)(tstop);
+        if (arg) {
+            // if file mode is requested then write model to a directory
+            // note that CORENRN_DATA_DIR name is also used in module
+            // file coreneuron.py
+            if (file_mode) {
+                const char* CORENRN_DATA_DIR = "corenrn_data";
+                write_corenrn_model(CORENRN_DATA_DIR);
+            }
+            nrncore_run(arg);
+            // data return nt._t so copy to t
+            t = nrn_threads[0]._t;
+            free(arg);
+            // Really just want to get NetParEvent back onto queue.
+            nrn_spike_exchange_init();
+            return 0;
+        }
     }
-  }
-  return -1;
+    return -1;
 }
 
-#else // !HAVE_DLFCN_H
+#else  // !HAVE_DLFCN_H
 
-int nrncore_run(const char *) {
+int nrncore_run(const char*) {
     return -1;
 }
 
@@ -371,4 +379,4 @@ int nrncore_psolve(double tstop, int file_mode) {
     return 0;
 }
 
-#endif //!HAVE_DLFCN_H
+#endif  //! HAVE_DLFCN_H

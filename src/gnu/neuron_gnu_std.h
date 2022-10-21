@@ -19,20 +19,13 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #ifndef _std_h
 #define _std_h 1
-
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
 #ifndef WIN32
 #include <unistd.h>
 #endif
-#include <stdio.h> 
-#include <errno.h>
+#include <cstdio>
+#include <cerrno>
 #include <fcntl.h>
-
-/*
-extern "C" {
-int strcasecmp(const char*, const char*);
-}
-*/
 #endif 
