@@ -581,7 +581,8 @@ extern Memb_func* memb_func;\n\
                 gind);
         lappendstr(thread_mem_init_list, buf);
         lappendstr(thread_cleanup_list,
-                   " if (static_cast<double*>(_thread[_gth]) == &_thread1data[0]) {\n   _thread1data_inuse = 0;\n  "
+                   " if (static_cast<double*>(_thread[_gth]) == &_thread1data[0]) {\n   "
+                   "_thread1data_inuse = 0;\n  "
                    "}else{\n   free(static_cast<void*>(_thread[_gth]));\n  }\n");
         ++thread_data_index;
     }
