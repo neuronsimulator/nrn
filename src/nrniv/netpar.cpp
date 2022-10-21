@@ -709,7 +709,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
         if (max_histogram_) {
             vector_vec(max_histogram_)[0] += 1.;
         }
-        t_exchange_ = nrn_threads->_t;
+        t_exchange_ = nt->_t;
         TBUF
         return;
     }
@@ -806,7 +806,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
             }
         }
     }
-    t_exchange_ = nrn_threads->_t;
+    t_exchange_ = nt->_t;
     wt1_ = nrnmpi_wtime() - wt;
     TBUF
 }
