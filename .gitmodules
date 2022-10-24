@@ -15,7 +15,7 @@
 	url = https://github.com/fmtlib/fmt.git
 [submodule "ext/eigen"]
 	path = ext/eigen
-	url = https://github.com/BlueBrain/eigen.git
+	url = https://gitlab.com/libeigen/eigen.git
 [submodule "ext/json"]
 	path = ext/json
 	url = https://github.com/nlohmann/json.git

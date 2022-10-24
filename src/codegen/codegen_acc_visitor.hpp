@@ -38,7 +38,8 @@ class CodegenAccVisitor: public CodegenCVisitor {
 
 
     /// ivdep like annotation for channel iterations
-    void print_channel_iteration_block_parallel_hint(BlockType type) override;
+    void print_channel_iteration_block_parallel_hint(BlockType type,
+                                                     bool error_checking = false) override;
 
 
     /// atomic update pragma for reduction statements
@@ -126,9 +127,6 @@ class CodegenAccVisitor: public CodegenCVisitor {
     void print_device_atomic_capture_annotation() const override;
 
     void print_net_send_buffering_grow() override;
-
-
-    void print_eigen_linear_solver(const std::string& float_type, int N) override;
 
 
   public:

@@ -4,6 +4,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "PGI" OR CMAKE_CXX_COMPILER_ID MATCHES "NVHPC")
   # CMake adds standard complaint PGI flag "-A" which breaks compilation of of spdlog and fmt
   set(CMAKE_CXX14_STANDARD_COMPILE_OPTION --c++14)
 
+  # Avoid errors related to "excessive recursion at instantiation of function ...", Eigen-related
+  # (in accelerated regions), e.g., transposeInPlace()
+  list(APPEND NMODL_EXTRA_CXX_FLAGS "-Wc,--pending_instantiations=0")
+
   # ~~~
   # PGI enables number of diagnostic messages by default classes which results into thousands of
   # messages specifically for AST. Disable these verbose warnings for now.
