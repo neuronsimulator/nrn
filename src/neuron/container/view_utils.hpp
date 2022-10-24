@@ -42,23 +42,23 @@ struct view_base {
     }
 
   protected:
-    View& derived() {
+    [[nodiscard]] View& derived() {
         return static_cast<View&>(*this);
     }
-    View const& derived() const {
+    [[nodiscard]] View const& derived() const {
         return static_cast<View const&>(*this);
     }
     template <typename Tag>
-    auto& get_container() {
+    [[nodiscard]] auto& get_container() {
         return underlying_storage().template get<Tag>();
     }
     template <typename Tag>
-    auto const& get_container() const {
+    [[nodiscard]] auto const& get_container() const {
         return underlying_storage().template get<Tag>();
     }
     // TODO const-ness -- should a const view yield data_handle<T const>?
     template <typename Tag>
-    auto get_handle() {
+    [[nodiscard]] auto get_handle() {
         auto const* const_this = this;
         auto const& container = const_this->template get_container<Tag>();
         data_handle<typename Tag::type> const rval{this->id(), container};
@@ -68,7 +68,7 @@ struct view_base {
         return rval;
     }
     template <typename Tag>
-    auto get_handle(std::size_t field_index) {
+    [[nodiscard]] auto get_handle(std::size_t field_index) {
         auto const* const_this = this;
         data_handle<typename Tag::type> const rval{
             this->id(),
@@ -79,24 +79,24 @@ struct view_base {
         return rval;
     }
     template <typename Tag>
-    auto& get() {
+    [[nodiscard]] auto& get() {
         return underlying_storage().template get<Tag>(derived().offset());
     }
     template <typename Tag>
-    auto const& get() const {
+    [[nodiscard]] auto const& get() const {
         return underlying_storage().template get<Tag>(derived().offset());
     }
     template <typename Tag>
-    Tag const& get_tag() const {
+    [[nodiscard]] constexpr Tag const& get_tag() const {
         return underlying_storage().template get_tag<Tag>();
     }
     template <typename Tag>
-    auto& get(std::size_t field_index) {
+    [[nodiscard]] auto& get(std::size_t field_index) {
         return underlying_storage().template get_field_instance<Tag>(field_index,
                                                                      derived().offset());
     }
     template <typename Tag>
-    auto const& get(std::size_t field_index) const {
+    [[nodiscard]] auto const& get(std::size_t field_index) const {
         return underlying_storage().template get_field_instance<Tag>(field_index,
                                                                      derived().offset());
     }
