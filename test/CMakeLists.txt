@@ -231,7 +231,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   # independent run of each hoc and python file in test/hoc/* folders
   nrn_add_test_group(
     NAME hoctests
-    MODFILE_PATTERNS NONE
+    MODFILE_PATTERNS *.mod
     SIM_DIRECTORY test/hoctests)
   set(py_exe ${PYTHON_EXECUTABLE})
   set(py_preload PRELOAD_SANITIZER)
