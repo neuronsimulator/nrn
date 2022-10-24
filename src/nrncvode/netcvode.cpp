@@ -6529,7 +6529,7 @@ void NetCvode::vec_remove() {
 }
 
 void NetCvode::playrec_setup() {
-    long i, j, iprl, prlc;
+    long i, j, prlc;
     prlc = prl_->count();
     fixed_record_->remove_all();
     fixed_play_->remove_all();
@@ -6540,8 +6540,16 @@ void NetCvode::playrec_setup() {
             p[i].lcv_[j].delete_prl();
         }
     }
-    for (iprl = 0; iprl < prlc; ++iprl) {
+    std::vector<PlayRecord*> to_delete{};
+    for (long iprl = 0; iprl < prlc; ++iprl) {
         PlayRecord* pr = prl_->item(iprl);
+        if (!pr->pd_) {
+            // Presumably the recorded value was invalidated elsewhere, e.g. it
+            // was a voltage of a deleted node, or a range variable of a deleted
+            // mechanism instance
+            to_delete.push_back(pr);
+            continue;
+        }
         bool b = false;
         if (single_) {
             pr->install(gcv_);
@@ -6575,6 +6583,10 @@ void NetCvode::playrec_setup() {
             hoc_execerror("We were unable to associate a PlayRecord item with a thread", nil);
         }
         pr->ith_ = i;
+    }
+    for (auto* pr: to_delete) {
+        // Destructor should de-register things
+        delete pr;
     }
     playrec_change_cnt_ = structure_change_cnt_;
 }
@@ -6625,14 +6637,13 @@ int NetCvode::owned_by_thread(neuron::container::data_handle<double> const& hand
             if (handle == nd->v_handle()) {
                 return it;
             }
-            auto* pd = static_cast<double const*>(handle);
-            Prop* p;
-            for (p = nd->prop; p; p = p->next) {
+            for (Prop* p = nd->prop; p; p = p->next) {
                 if (p->owns(handle)) {
                     return it;
                 }
             }
             if (nd->extnode) {
+                auto* pd = static_cast<double const*>(handle);
                 if (pd >= nd->extnode->v && pd < (nd->extnode->v + nlayer)) {
                     return it;
                 }
