@@ -16,4 +16,5 @@
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
 #endif
 
+#include "crout/crout.hpp"
 #include "newton/newton.hpp"

@@ -30,7 +30,8 @@ namespace codegen {
  *      for(int id=0; id<nodecount; id++) {
  *
  */
-void CodegenAccVisitor::print_channel_iteration_block_parallel_hint(BlockType type) {
+void CodegenAccVisitor::print_channel_iteration_block_parallel_hint(BlockType type,
+                                                                    bool error_checking) {
     if (info.artificial_cell) {
         return;
     }
@@ -47,9 +48,21 @@ void CodegenAccVisitor::print_channel_iteration_block_parallel_hint(BlockType ty
         }
     }
     present_clause << ')';
-    printer->fmt_line("nrn_pragma_acc(parallel loop {} async(nt->stream_id) if(nt->compute_gpu))",
-                      present_clause.str());
-    printer->add_line("nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))");
+    if (error_checking) {
+        printer->fmt_line(
+            "nrn_pragma_acc(parallel loop {} reduction(+:solver_error) async(nt->stream_id) "
+            "if(nt->compute_gpu))",
+            present_clause.str());
+        printer->add_line(
+            "nrn_pragma_omp(target teams distribute parallel for reduction(+:solver_error) "
+            "if(nt->compute_gpu))");
+    } else {
+        printer->fmt_line(
+            "nrn_pragma_acc(parallel loop {} async(nt->stream_id) if(nt->compute_gpu))",
+            present_clause.str());
+        printer->add_line(
+            "nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))");
+    }
 }
 
 
@@ -70,15 +83,6 @@ void CodegenAccVisitor::print_backend_includes() {
     } else {
         printer->add_line("#include <coreneuron/utils/offload.hpp>");
         printer->add_line("#include <cuda_runtime_api.h>");
-    }
-
-    if (info.eigen_linear_solver_exist && std::accumulate(info.state_vars.begin(),
-                                                          info.state_vars.end(),
-                                                          0,
-                                                          [](int l, const SymbolType& variable) {
-                                                              return l += variable->get_length();
-                                                          }) > 4) {
-        printer->add_line("#include <partial_piv_lu/partial_piv_lu.h>");
     }
 }
 
@@ -129,14 +133,6 @@ void CodegenAccVisitor::print_abort_routine() const {
 
 void CodegenAccVisitor::print_net_send_buffering_grow() {
     // can not grow buffer during gpu execution
-}
-
-void CodegenAccVisitor::print_eigen_linear_solver(const std::string& /* float_type */, int N) {
-    if (N <= 4) {
-        printer->add_line("nmodl_eigen_xm = nmodl_eigen_jm.inverse()*nmodl_eigen_fm;");
-    } else {
-        printer->fmt_line("nmodl_eigen_xm = partialPivLu<{}>nmodl_eigen_jm, nmodl_eigen_fm);", N);
-    }
 }
 
 /**
