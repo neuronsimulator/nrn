@@ -2,13 +2,13 @@ from neuron import h, gui
 
 somas = [h.Section(name="soma" + str(i)) for i in range(2)]
 for sec in somas:
-  sec.L = 10
-  sec.diam = 10
-  sec.insert("pas")
-  sec.e_pas = -65
-  sec.g_pas = .0001
+    sec.L = 10
+    sec.diam = 10
+    sec.insert("pas")
+    sec.e_pas = -65
+    sec.g_pas = 0.0001
 
-syns = [h.ExpSynSpine(somas[0](.5)), h.ExpSyn(somas[1](.5))]
+syns = [h.ExpSynSpine(somas[0](0.5)), h.ExpSyn(somas[1](0.5))]
 syns[0].rsp = 0
 
 stim = h.NetStim()
