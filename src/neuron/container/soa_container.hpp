@@ -379,7 +379,7 @@ struct soa {
     /** @brief Get the instance of the tag type Tag.
      */
     template <typename Tag>
-    [[nodiscard]] Tag const& get_tag() const {
+    [[nodiscard]] constexpr Tag const& get_tag() const {
         return std::get<Tag>(m_tags);
     }
 
