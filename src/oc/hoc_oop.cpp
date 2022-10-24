@@ -896,6 +896,14 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
         if (nindex != sym->arayinfo->nsub) {
             bdim = 1;
         }
+        /*
+         It is a bit more difficult to push ndim here since the arc length, if
+         specified, is top of stack before the index. However, waiting to fix up
+         the stack til just before range_vec_indx calls hoc_araypt seems ill
+         advised since range_vec_indx is called 6 places. And who knows what
+         kinds of user errors are possible that we want to catch.
+         So fix up below.
+        */
     } else {
         if (nindex != 0) {
             bdim = 1;
@@ -906,6 +914,22 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
     }
 
     if (sym->type == RANGEVAR) {
+        if (ISARRAY(sym)) {  // fixup ndim here
+            double x = -1.0;
+            if (narg) {  // need to pop the arc length to push ndim
+                if (narg > 1) {
+                    hoc_execerr_ext("%s range variable can have only one arc length parameter",
+                                    sym->name);
+                }
+                x = xpop();
+            }
+            if (!hoc_stack_type_is_ndim(0)) {
+                hoc_push_ndim(nindex);
+            }
+            if (narg) {  // push back the arc length
+                pushx(x);
+            }
+        }
         hoc_pushi(narg);
         hoc_pushs(sym);
     } else if (sym->subtype == USERPROPERTY) {
