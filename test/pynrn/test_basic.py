@@ -418,8 +418,10 @@ def test_recording_deleted_node():
     del soma
     # Now soma_v is still alive, but the node whose voltage it is recording is
     # dead. This should give an error, but we could also considering recording
-    # None values in that case.
-    expect_hocerr(h.finitialize, (-65,))
+    # None values in that case. Update 2022-10-24: it seems that to preserve
+    # legacy behaviour we need to silently delete the record instance in this
+    # case.
+    h.finitialize()
 
 
 if __name__ == "__main__":
