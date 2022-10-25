@@ -4343,12 +4343,12 @@ void CodegenCVisitor::print_nrn_state() {
         printer->end_block(1);
     }
 
-    print_kernel_data_present_annotation_block_end();
-
     if (info.eigen_newton_solver_exist)
         printer->add_line("if (solver_error > 0) throw std::runtime_error(\"Newton solver did not converge!\");");
     if (info.eigen_linear_solver_exist)
         printer->add_line("if (solver_error > 0) throw std::runtime_error(\"Singular matrices (Crout/Inverse)!\");");
+
+    print_kernel_data_present_annotation_block_end();
 
     printer->end_block(1);
     codegen = false;
