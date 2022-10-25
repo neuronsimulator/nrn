@@ -142,22 +142,14 @@ struct MethodInfo {
  *
  * \todo MethodInfo::subtype should be changed from integer flag to proper type
  */
-const static std::map<std::string, MethodInfo> methods = {{"adams", MethodInfo(DERF | KINF, 0)},
-                                                          {"runge", MethodInfo(DERF | KINF, 0)},
+const static std::map<std::string, MethodInfo> methods = {{"runge", MethodInfo(DERF | KINF, 0)},
                                                           {"euler", MethodInfo(DERF | KINF, 0)},
-                                                          {"adeuler", MethodInfo(DERF | KINF, 1)},
-                                                          {"heun", MethodInfo(DERF | KINF, 0)},
-                                                          {"adrunge", MethodInfo(DERF | KINF, 1)},
-                                                          {"gear", MethodInfo(DERF | KINF, 1)},
                                                           {"newton", MethodInfo(NLINF, 0)},
-                                                          {"simplex", MethodInfo(NLINF, 0)},
                                                           {"simeq", MethodInfo(LINF, 0)},
-                                                          {"seidel", MethodInfo(LINF, 0)},
                                                           {"_advance", MethodInfo(KINF, 0)},
                                                           {"sparse", MethodInfo(KINF, 0)},
                                                           {"derivimplicit", MethodInfo(DERF, 0)},
                                                           {"cnexp", MethodInfo(DERF, 0)},
-                                                          {"clsoda", MethodInfo(DERF | KINF, 1)},
                                                           {"after_cvode", MethodInfo(0, 0)},
                                                           {"cvode_t", MethodInfo(0, 0)},
                                                           {"cvode_t_v", MethodInfo(0, 0)}};
