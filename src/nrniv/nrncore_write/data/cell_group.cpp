@@ -140,8 +140,8 @@ void CellGroup::mk_cellgroups(neuron::model_sorted_token const& cache_token, Cel
             int type = mla[j].first;
             Memb_list* ml = mla[j].second;
             if (nrn_has_net_event(type)) {
-                for (int j = 0; j < ml->nodecount; ++j) {
-                    auto* const pnt = static_cast<Point_process*>(ml->pdata[j][1]);
+                for (int instance = 0; instance < ml->nodecount; ++instance) {
+                    auto* const pnt = static_cast<Point_process*>(ml->pdata[instance][1]);
                     auto* const ps = static_cast<PreSyn*>(pnt->presyn_);
                     cgs[i].output_ps.at(npre) = ps;
                     auto const offset = cache_token.thread_cache(i).mechanism_offset.at(type);
@@ -453,9 +453,11 @@ void CellGroup::mk_cgs_netcon_info(neuron::model_sorted_token const& cache_token
                     Point_process* pnt = (Point_process*) ps->osrc_->u.this_pointer;
                     int type = pnt->prop->_type;
                     Memb_list* ml = cgs[ith].type2ml[type];
-                    auto const offset = cache_token.thread_cache(ith).mechanism_offset.at(type);
-                    cgs[ith].netcon_srcgid[i] = -(type +
-                                                  1000 * (pnt->prop->id().current_row() - offset));
+                    auto const src_thread = static_cast<NrnThread*>(pnt->_vnt)->id;
+                    auto const current = pnt->prop->id().current_row();
+                    auto const offset =
+                        cache_token.thread_cache(src_thread).mechanism_offset.at(type);
+                    cgs[ith].netcon_srcgid[i] = -(type + 1000 * (current - offset));
                     // if (nrn_is_artificial_[type]) {
                     //     int ix = nrncore_art2index(pnt->prop->param);
                     //     cgs[ith].netcon_srcgid[i] = -(type + 1000 * ix);
