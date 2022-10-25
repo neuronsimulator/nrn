@@ -155,7 +155,7 @@ void solvhandler() {
         switch (fun->subtype) {
         case DERF:
             if (method == SYM0) {
-                method = lookup("adrunge");
+                method = lookup("derivimplicit");
             }
             if (btype == BREAKPOINT && !steadystate) {
                 /* derivatives recalculated after while loop */
