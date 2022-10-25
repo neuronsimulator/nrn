@@ -1062,10 +1062,18 @@ void hoc_object_component() {
                     hoc_execerror(sym->name, ":not right number of subscripts");
                 }
                 if (narg) {
-                    hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
-                                    hoc_object_name(obp),
-                                    sym->name,
-                                    sym->name);
+                    // there are 25 modeldb examples that use (index) instead
+                    // of [index] syntax for an array in this context. So we
+                    // have decided to keep allowing this legacy syntax for one
+                    // dimensional arrays.
+                    if (narg == 1) {
+                        hoc_push_ndim(1);
+                    } else {
+                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
+                                        hoc_object_name(obp),
+                                        sym->name,
+                                        sym->name);
+                    }
                 }
             }
             hoc_pushs(sym);

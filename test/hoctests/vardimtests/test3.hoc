@@ -26,9 +26,16 @@ double a[1][1]
 expect_err("foo()") // bad stack access error
 // the "a = 1" statement pops two index values, the second is not a number.
 
-// special message for ...
+// allow legacy use of () in place of single index []
 objref vec
 vec = new Vector(5)
-expect_err("x = vec.x(3)")
-expect_err("vec.x(3) = 25")
+x = vec.x(3)
+vec.x(3) = 25
+// but not for multiple indices
+objref m
+m = new Matrix(3, 4)
+m.x[1][2] = 5
+m.x[1][2] == 5
+expect_err("m.x(1,2) = 8")
+expect_err("m.x(1,2) == 5")
 
