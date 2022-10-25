@@ -2412,7 +2412,7 @@ int hoc_araypt(Symbol* sp, int type) {
         int const d = hoc_look_inside_stack<double>(aray->nsub - 1 - i) + hoc_epsilon;
         if (d < 0 || d >= aray->sub[i]) {
             hoc_execerr_ext(
-                "subscript %d index %d of %s out of range %d", i, sp->name, d, aray->sub[i]);
+                "subscript %d index %d of %s out of range %d", i, d, sp->name, aray->sub[i]);
         }
         total = total * (aray->sub[i]) + d;
     }
