@@ -6,7 +6,8 @@
 
 include(TestHelpers)
 
-include_directories(${CORENEURON_PROJECT_SOURCE_DIR} ${CORENEURON_PROJECT_BINARY_DIR}/generated
+include_directories(
+        ${PROJECT_SOURCE_DIR}/src
                     ${Boost_INCLUDE_DIRS})
 
 # Add compiler flags that should apply to all CoreNEURON targets, but which should not leak into
@@ -47,5 +48,3 @@ if(Boost_FOUND)
 else()
   message(STATUS "Boost not found, unit tests disabled")
 endif()
-
-add_subdirectory(integration)
