@@ -2814,8 +2814,11 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
         insertstr(qstmt, "  int _watch_rm = 0;\n");
     }
     q = insertstr(qstmt,
-                  "  auto [_, _ml, _iml] = create_ml(_pnt->_prop);\n"
+                  "  auto [_, local_ml, local_iml] = create_ml(_pnt->_prop);\n"
                   "  _ppvar = _pnt->_prop->dparam;\n");
+    // when not vectorised we need to update the global _ml and _iml variables
+    vectorize_substitute(insertstr(qstmt, "  _ml = local_ml; _iml = local_iml;\n"),
+                         "  auto _ml = local_ml; auto _iml = local_iml;\n");
     vectorize_substitute(insertstr(q, ""), "  _thread = (Datum*)0; _nt = (NrnThread*)_pnt->_vnt;");
     if (debugging_) {
         if (0) {
