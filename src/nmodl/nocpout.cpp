@@ -2901,7 +2901,7 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
 void net_init(Item* qinit, Item* qp2) {
     /* qinit=INITIAL { stmtlist qp2=} */
     replacstr(qinit, "\nstatic void _net_init(Point_process* _pnt, double* _args, double _lflag)");
-    Sprintf(buf, "    _p = _pnt->_prop; _ppvar = _pnt->_prop->dparam;\n");
+    Sprintf(buf, "    _ppvar = _pnt->_prop->dparam;\n");
     vectorize_substitute(insertstr(qinit->next->next, buf),
                          "  Datum* _ppvar = _pnt->_prop->dparam;\n"
                          "  Datum* _thread = (Datum*)0;\n"
