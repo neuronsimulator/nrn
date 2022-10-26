@@ -811,7 +811,6 @@ void c_out_vectorize() {
     */
     /* initlists() is called once to setup slist and dlist pointers */
     P("\nstatic void _initlists(){\n");
-    P(" double _x; double* _p = &_x;\n");
     P(" int _i; static int _first = 1;\n");
     P("  if (!_first) return;\n");
     printlist(initlist);
