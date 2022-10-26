@@ -143,6 +143,8 @@ void CellGroup::mk_cellgroups(neuron::model_sorted_token const& cache_token, Cel
                 for (int instance = 0; instance < ml->nodecount; ++instance) {
                     auto* const pnt = static_cast<Point_process*>(ml->pdata[instance][1]);
                     auto* const ps = static_cast<PreSyn*>(pnt->presyn_);
+                    auto const other_thread = static_cast<NrnThread*>(pnt->_vnt)->id;
+                    assert(other_thread == i);
                     cgs[i].output_ps.at(npre) = ps;
                     auto const offset = cache_token.thread_cache(i).mechanism_offset.at(type);
                     auto const global_row = pnt->prop->id().current_row();
@@ -411,6 +413,8 @@ void CellGroup::mk_cgs_netcon_info(neuron::model_sorted_token const& cache_token
 
         if (nc->target_) {
             int type = nc->target_->prop->_type;
+            auto const target_thread = static_cast<NrnThread*>(nc->target_->_vnt)->id;
+            assert(target_thread == ith);
             cgs[ith].netcon_pnttype[i] = type;
             cgs[ith].netcon_pntindex[i] = nc->target_->prop->id().current_row() -
                                           cache_token.thread_cache(ith).mechanism_offset.at(type);
@@ -450,13 +454,16 @@ void CellGroup::mk_cgs_netcon_info(neuron::model_sorted_token const& cache_token
                                 NULL);
                         }
                     }
-                    Point_process* pnt = (Point_process*) ps->osrc_->u.this_pointer;
+                    auto* const pnt = static_cast<Point_process*>(ps->osrc_->u.this_pointer);
                     int type = pnt->prop->_type;
-                    Memb_list* ml = cgs[ith].type2ml[type];
                     auto const src_thread = static_cast<NrnThread*>(pnt->_vnt)->id;
                     auto const current = pnt->prop->id().current_row();
                     auto const offset =
                         cache_token.thread_cache(src_thread).mechanism_offset.at(type);
+                    // the resulting GID is different for "the same" pnt/source
+                    // if the number of threads changes, because it encodes the
+                    // offset of the source process into the thread that it
+                    // lives in
                     cgs[ith].netcon_srcgid[i] = -(type + 1000 * (current - offset));
                     // if (nrn_is_artificial_[type]) {
                     //     int ix = nrncore_art2index(pnt->prop->param);
