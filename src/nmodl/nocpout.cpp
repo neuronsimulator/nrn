@@ -1428,7 +1428,7 @@ void ldifusreg() {
         ++n;
         sprintf(buf,
                 "static void* _difspace%d;\nextern double nrn_nernst_coef(int);\n\
-static double _difcoef%d(int _i, Memb_list* _ml, std::size_t _iml, Datum* _ppvar, double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt) {\n#if 0\n  \
+static double _difcoef%d(int _i, Memb_list* _ml, std::size_t _iml, Datum* _ppvar, double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt) {\n  \
  *_pdvol = ",
                 n,
                 n);
@@ -1450,7 +1450,7 @@ static double _difcoef%d(int _i, Memb_list* _ml, std::size_t _iml, Datum* _ppvar
         for (q1 = qdexp; q1 != qb1; q1 = q1->next) {
             lappenditem(procfunc, q1);
         }
-        lappendstr(procfunc, ";\n#endif\nreturn 0;\n}\n");
+        lappendstr(procfunc, ";\nreturn 0;\n}\n");
     }
     lappendstr(procfunc, "static void _difusfunc(ldifusfunc2_t _f, NrnThread* _nt) {int _i;\n");
     n = 0;
