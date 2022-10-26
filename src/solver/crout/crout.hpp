@@ -66,6 +66,10 @@ nrn_pragma_omp(declare target)
 #endif
 template <typename T>
 EIGEN_DEVICE_FUNC inline int Crout(int n, T* A, int* pivot) {
+    // roundoff is the minimal value for a pivot element without its being considered too close to
+    // zero
+    double roundoff = 1.e-20;
+    int status = 0;
     int i, j, k;
     T *p_k{}, *p_row{}, *p_col{};
     T max;
@@ -93,20 +97,21 @@ EIGEN_DEVICE_FUNC inline int Crout(int n, T* A, int* pivot) {
             }
 
         // and if the matrix is singular, return error
-        if (*(p_k + k) == 0.0)
-            return -1;
+        if (std::fabs(*(p_k + k)) < roundoff) {
+            status = -1;
+        } else {
+            // otherwise find the upper triangular matrix elements for row k.
+            for (j = k + 1; j < n; j++) {
+                *(p_k + j) /= *(p_k + k);
+            }
 
-        // otherwise find the upper triangular matrix elements for row k.
-        for (j = k + 1; j < n; j++) {
-            *(p_k + j) /= *(p_k + k);
+            // update remaining matrix
+            for (i = k + 1, p_row = p_k + n; i < n; p_row += n, i++)
+                for (j = k + 1; j < n; j++)
+                    *(p_row + j) -= *(p_row + k) * *(p_k + j);
         }
-
-        // update remaining matrix
-        for (i = k + 1, p_row = p_k + n; i < n; p_row += n, i++)
-            for (j = k + 1; j < n; j++)
-                *(p_row + j) -= *(p_row + k) * *(p_k + j);
     }
-    return 0;
+    return status;
 }
 #if defined(CORENEURON_ENABLE_GPU) && !defined(DISABLE_OPENACC)
 nrn_pragma_omp(end declare target)
@@ -132,6 +137,10 @@ nrn_pragma_omp(declare target)
 #endif
 template <typename T>
 EIGEN_DEVICE_FUNC inline int solveCrout(int n, T* LU, T* B, T* x, int* pivot) {
+    // roundoff is the minimal value for a pivot element without its being considered too close to
+    // zero
+    double roundoff = 1.e-20;
+    int status = 0;
     int i, k;
     T* p_k;
     T dum;
@@ -162,11 +171,11 @@ EIGEN_DEVICE_FUNC inline int solveCrout(int n, T* LU, T* B, T* x, int* pivot) {
         }
         for (i = k + 1; i < n; i++)
             x[k] -= x[i] * *(p_k + i);
-        if (*(p_k + k) == 0.0)
-            return -1;
+        if (std::fabs(*(p_k + k)) < roundoff)
+            status = -1;
     }
 
-    return 0;
+    return status;
 }
 #if defined(CORENEURON_ENABLE_GPU) && !defined(DISABLE_OPENACC)
 nrn_pragma_omp(end declare target)
