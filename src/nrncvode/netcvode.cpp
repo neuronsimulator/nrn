@@ -6212,8 +6212,8 @@ tryagain:
 
 implementPtrList(PlayRecList, PlayRecord)
 
-    void NetCvode::playrec_add(PlayRecord* pr) {  // called by PlayRecord constructor
-                                                  // printf("NetCvode::playrec_add %p\n", pr);
+void NetCvode::playrec_add(PlayRecord* pr) {  // called by PlayRecord constructor
+                                              // printf("NetCvode::playrec_add %p\n", pr);
     playrec_change_cnt_ = 0;
     prl_->append(pr);
 }

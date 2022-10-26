@@ -68,9 +68,9 @@ static void history(const char* s1, int i) {
 }
 
 declarePtrList(NrnBBSCallbackList, NrnBBSCallbackItem)
-    implementPtrList(NrnBBSCallbackList, NrnBBSCallbackItem)
+implementPtrList(NrnBBSCallbackList, NrnBBSCallbackItem)
 
-        static NrnBBSCallbackList* cblist_;
+static NrnBBSCallbackList* cblist_;
 static FILE* lockfile_;
 
 static void get_lock() {
