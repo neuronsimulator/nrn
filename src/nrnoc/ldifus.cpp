@@ -13,7 +13,7 @@
 #define nt_t  nrn_threads->_t
 #define nt_dt nrn_threads->_dt
 
-typedef struct LongDifus {
+struct LongDifus {
     int dchange;
     int* mindex; /* index into memb_list[m] */
     int* pindex; /* parent in this struct */
@@ -27,13 +27,13 @@ typedef struct LongDifus {
     double* vol; /* volatile volume from COMPARTMENT */
     double* dc;  /* volatile diffusion constant * cross sectional
                 area from LONGITUDINAL_DIFFUSION */
-} LongDifus;
+};
 
-typedef struct LongDifusThreadData {
+struct LongDifusThreadData {
     int nthread;
     LongDifus** ldifus;
     Memb_list** ml;
-} LongDifusThreadData;
+};
 
 static int ldifusfunccnt;
 static ldifusfunc_t* ldifusfunc;
@@ -99,8 +99,7 @@ extern "C" void nrn_tree_solve(double* a, double* d, double* b, double* rhs, int
 
 
 void long_difus_solve(int method, NrnThread* nt) {
-    ldifusfunc2_t* f = NULL;
-    int i;
+    ldifusfunc2_t* f{};
     if (ldifusfunc) {
         switch (method) {
         case 0: /* normal staggered time step */
@@ -117,9 +116,8 @@ void long_difus_solve(int method, NrnThread* nt) {
             break;
         }
         assert(f);
-
-        for (i = 0; i < ldifusfunccnt; ++i) {
-            (*ldifusfunc[i])(f, nt);
+        for (int i = 0; i < ldifusfunccnt; ++i) {
+            ldifusfunc[i](f, nt);
         }
     }
 }
@@ -334,24 +332,16 @@ static Memb_list* v2ml(void** v, int tid) {
 
 static void
 stagger(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* _nt) {
-    LongDifus* pld;
-    int i, n, di;
-    double dc, vol, dfdi, dx;
-    double** data;
-    Datum** pdata;
-    Datum* thread;
-    Memb_list* ml;
-
-    di = dindex + ai;
-
-    pld = v2ld(v, _nt->id);
-    if (!pld)
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    LongDifus* const pld = v2ld(v, _nt->id);
+    if (!pld) {
         return;
-    ml = v2ml(v, _nt->id);
-
-    n = ml->nodecount;
-    pdata = ml->pdata;
-    thread = ml->_thread;
+    }
+    int const di = dindex + ai;
+    auto* const ml = v2ml(v, _nt->id);
+    int const n = ml->nodecount;
+    Datum** const pdata = ml->pdata;
+    Datum* const thread = ml->_thread;
 
     // with SOA data we can't get from the 0th element of an array variable
     // starting at sindex to the nth element, which used to be easy in AOS
@@ -359,26 +349,21 @@ stagger(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, 
     // again later
     longdifus_diamchange(pld, m, sindex > 0 ? sindex + ai : sindex, ml, _nt);
     /*flux and volume coefficients (if dc is constant this is too often)*/
-    for (i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
         int pin = pld->pindex[i];
         int mi = pld->mindex[i];
-        pld->dc[i] = (*diffunc)(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt);
+        double dfdi;
+        pld->dc[i] = diffunc(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt);
         pld->d[i] = 0.;
-#if 0
-        if (dfdi) {
-            pld->d[i] += fabs(dfdi)/pld->vol[i]/ *pld->state[i];
-        }
-#endif
         if (pin > -1) {
             /* D * area between compartments */
-            dc = (pld->dc[i] + pld->dc[pin]) / 2.;
-
+            double const dc = (pld->dc[i] + pld->dc[pin]) / 2.;
             pld->a[i] = -pld->af[i] * dc / pld->vol[pin];
             pld->b[i] = -pld->bf[i] * dc / pld->vol[i];
         }
     }
     /* setup matrix */
-    for (i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
         int pin = pld->pindex[i];
         int mi = pld->mindex[i];
         pld->d[i] += 1. / nt_dt;
@@ -388,172 +373,117 @@ stagger(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, 
             pld->d[pin] -= pld->a[i];
         }
     }
-#if 0
-for (i=0; i < n; ++i) { double a,b;
-    if (pld->pindex[i] > -1) {
-        a = pld->a[i];
-        b = pld->b[i];
-    }else{ a=b=0.;}
-    printf("i=%d a=%g b=%g d=%g rhs=%g state=%g\n",
-        i, a, b, pld->d[i], pld->rhs[i], *pld->state[i]);
-}
-#endif
 
     /* we've set up the matrix; now solve it */
     nrn_tree_solve(pld->a, pld->d, pld->b, pld->rhs, pld->pindex, n);
 
     /* update answer */
-    for (i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
         *pld->state[i] = pld->rhs[i];
     }
 }
 
 static void
 ode(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* _nt) {
-    LongDifus* pld;
-    int i, n, di;
-    double dc, vol, dfdi;
-    double** data;
-    Datum** pdata;
-    Datum* thread;
-    Memb_list* ml;
-
-    di = dindex + ai;
-
-    pld = v2ld(v, _nt->id);
-    if (!pld)
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    LongDifus* const pld = v2ld(v, _nt->id);
+    if (!pld) {
         return;
-    ml = v2ml(v, _nt->id);
-
-    n = ml->nodecount;
-    assert(false);
-    //     data = ml->_data;
-    //     pdata = ml->pdata;
-    //     thread = ml->_thread;
-
-    //     longdifus_diamchange(pld, m, sindex, ml, _nt);
-    //     /*flux and volume coefficients (if dc is constant this is too often)*/
-    //     for (i = 0; i < n; ++i) {
-    //         int pin = pld->pindex[i];
-    //         int mi = pld->mindex[i];
-    //         pld->dc[i] = (*diffunc)(ai, data[mi], pdata[mi], pld->vol + i, &dfdi, thread, _nt);
-    //         if (pin > -1) {
-    //             /* D * area between compartments */
-    //             dc = (pld->dc[i] + pld->dc[pin]) / 2.;
-
-    //             pld->a[i] = pld->af[i] * dc / pld->vol[pin];
-    //             pld->b[i] = pld->bf[i] * dc / pld->vol[i];
-    //         }
-    //     }
-    //     /* add terms to diffeq */
-    //     for (i = 0; i < n; ++i) {
-    //         double dif;
-    //         int pin = pld->pindex[i];
-    //         int mi = pld->mindex[i];
-    // #if 0
-    // 		pld->d[i] = data[mi][di];
-    // #endif
-    //         if (pin > -1) {
-    //             dif = (pld->state[pin][ai] - pld->state[i][ai]);
-    //             data[mi][di] += dif * pld->b[i];
-    //             data[pld->mindex[pin]][di] -= dif * pld->a[i];
-    //         }
-    //     }
-    // #if 0
-    // 	for (i=0; i < n; ++i) {
-    // 		int mi = pld->mindex[i];
-    // 		printf("%d olddstate=%g new=%g\n", i, pld->d[i], data[mi][di]);
-    // 	}
-    // #endif
+    }
+    auto* const ml = v2ml(v, _nt->id);
+    int const di = dindex + ai;
+    int const n = ml->nodecount;
+    Datum** const pdata = ml->pdata;
+    Datum* const thread = ml->_thread;
+    longdifus_diamchange(pld, m, sindex, ml, _nt);
+    /*flux and volume coefficients (if dc is constant this is too often)*/
+    for (int i = 0; i < n; ++i) {
+        int pin = pld->pindex[i];
+        int mi = pld->mindex[i];
+        double dfdi;
+        pld->dc[i] = diffunc(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt);
+        if (pin > -1) {
+            /* D * area between compartments */
+            double const dc = (pld->dc[i] + pld->dc[pin]) / 2.;
+            pld->a[i] = pld->af[i] * dc / pld->vol[pin];
+            pld->b[i] = pld->bf[i] * dc / pld->vol[i];
+        }
+    }
+    /* add terms to diffeq */
+    for (int i = 0; i < n; ++i) {
+        double dif;
+        int pin = pld->pindex[i];
+        int mi = pld->mindex[i];
+        if (pin > -1) {
+            dif = (pld->state[pin][ai] - pld->state[i][ai]);
+            ml->data(mi, di) += dif * pld->b[i];
+            ml->data(pld->mindex[pin], di) -= dif * pld->a[i];
+        }
+    }
 }
-
 
 static void
 matsol(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* _nt) {
-    LongDifus* pld;
-    int i, n, di;
-    double dc, vol, dfdi;
-    double** data;
-    Datum** pdata;
-    Datum* thread;
-    Memb_list* ml;
-
-    di = dindex + ai;
-
-    pld = v2ld(v, _nt->id);
-    if (!pld)
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    LongDifus* const pld = v2ld(v, _nt->id);
+    if (!pld) {
         return;
-    ml = v2ml(v, _nt->id);
+    }
+    auto* const ml = v2ml(v, _nt->id);
+    auto const di = dindex + ai;
+    int const n = ml->nodecount;
+    Datum** const pdata = ml->pdata;
+    Datum* const thread = ml->_thread;
 
-    n = ml->nodecount;
-    assert(false);
-    //     data = ml->_data;
-    //     pdata = ml->pdata;
-    //     thread = ml->_thread;
-
-    //     /*flux and volume coefficients (if dc is constant this is too often)*/
-    //     for (i = 0; i < n; ++i) {
-    //         int pin = pld->pindex[i];
-    //         int mi = pld->mindex[i];
-    //         pld->dc[i] = (*diffunc)(ai, data[mi], pdata[mi], pld->vol + i, &dfdi, thread, _nt);
-    //         pld->d[i] = 0.;
-    //         if (dfdi) {
-    //             pld->d[i] += fabs(dfdi) / pld->vol[i] / pld->state[i][ai];
-    // #if 0
-    // printf("i=%d state=%g vol=%g dfdc=%g\n", i, pld->state[i][ai],pld->vol[i], pld->d[i]);
-    // #endif
-    //         }
-    //         if (pin > -1) {
-    //             /* D * area between compartments */
-    //             dc = (pld->dc[i] + pld->dc[pin]) / 2.;
-
-    //             pld->a[i] = -pld->af[i] * dc / pld->vol[pin];
-    //             pld->b[i] = -pld->bf[i] * dc / pld->vol[i];
-    //         }
-    //     }
-    //     /* setup matrix */
-    //     for (i = 0; i < n; ++i) {
-    //         int pin = pld->pindex[i];
-    //         int mi = pld->mindex[i];
-    //         pld->d[i] += 1. / nt_dt;
-    //         pld->rhs[i] = data[mi][di] / nt_dt;
-    //         if (pin > -1) {
-    //             pld->d[i] -= pld->b[i];
-    //             pld->d[pin] -= pld->a[i];
-    //         }
-    //     }
-    // #if 0
-    // for (i=0; i < n; ++i) { double a,b;
-    // 	int mi = pld->mindex[i];
-    // 	if (pld->pindex[i] > -1) {
-    // 		a = pld->a[i];
-    // 		b = pld->b[i];
-    // 	}else{ a=b=0.;}
-    // 	printf("i=%d a=%g b=%g d=%g rhs=%g dstate=%g\n",
-    // 	 i, a, b, pld->d[i], pld->rhs[i], data[mi][di]);
-    // }
-    // #endif
-    //     /* triang */
-    //     for (i = n - 1; i > 0; --i) {
-    //         int pin = pld->pindex[i];
-    //         if (pin > -1) {
-    //             double p;
-    //             p = pld->a[i] / pld->d[i];
-    //             pld->d[pin] -= p * pld->b[i];
-    //             pld->rhs[pin] -= p * pld->rhs[i];
-    //         }
-    //     }
-    //     /* bksub */
-    //     for (i = 0; i < n; ++i) {
-    //         int pin = pld->pindex[i];
-    //         if (pin > -1) {
-    //             pld->rhs[i] -= pld->b[i] * pld->rhs[pin];
-    //         }
-    //         pld->rhs[i] /= pld->d[i];
-    //     }
-    //     /* update answer */
-    //     for (i = 0; i < n; ++i) {
-    //         int mi = pld->mindex[i];
-    //         data[mi][di] = pld->rhs[i];
-    //     }
+    /*flux and volume coefficients (if dc is constant this is too often)*/
+    for (int i = 0; i < n; ++i) {
+        int pin = pld->pindex[i];
+        int mi = pld->mindex[i];
+        double dfdi;
+        pld->dc[i] = diffunc(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt);
+        pld->d[i] = 0.;
+        if (dfdi) {
+            pld->d[i] += fabs(dfdi) / pld->vol[i] / pld->state[i][ai];
+        }
+        if (pin > -1) {
+            /* D * area between compartments */
+            auto const dc = (pld->dc[i] + pld->dc[pin]) / 2.;
+            pld->a[i] = -pld->af[i] * dc / pld->vol[pin];
+            pld->b[i] = -pld->bf[i] * dc / pld->vol[i];
+        }
+    }
+    /* setup matrix */
+    for (int i = 0; i < n; ++i) {
+        int pin = pld->pindex[i];
+        int mi = pld->mindex[i];
+        pld->d[i] += 1. / nt_dt;
+        pld->rhs[i] = ml->data(mi, di) / nt_dt;
+        if (pin > -1) {
+            pld->d[i] -= pld->b[i];
+            pld->d[pin] -= pld->a[i];
+        }
+    }
+    /* triang */
+    for (int i = n - 1; i > 0; --i) {
+        int pin = pld->pindex[i];
+        if (pin > -1) {
+            double p;
+            p = pld->a[i] / pld->d[i];
+            pld->d[pin] -= p * pld->b[i];
+            pld->rhs[pin] -= p * pld->rhs[i];
+        }
+    }
+    /* bksub */
+    for (int i = 0; i < n; ++i) {
+        int pin = pld->pindex[i];
+        if (pin > -1) {
+            pld->rhs[i] -= pld->b[i] * pld->rhs[pin];
+        }
+        pld->rhs[i] /= pld->d[i];
+    }
+    /* update answer */
+    for (int i = 0; i < n; ++i) {
+        int mi = pld->mindex[i];
+        ml->data(mi, di) = pld->rhs[i];
+    }
 }

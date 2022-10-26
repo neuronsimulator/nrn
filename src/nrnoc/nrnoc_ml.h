@@ -250,7 +250,7 @@ struct Memb_list {
             return instances.at(instance);
         } else {
             assert(m_storage);
-            return {m_storage->identifier(instance), *m_storage};
+            return {m_storage->identifier(m_storage_offset + instance), *m_storage};
         }
     }
 
