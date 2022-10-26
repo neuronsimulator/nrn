@@ -148,7 +148,8 @@ inline void soa<Storage, RowIdentifier, Tags...>::check_permutation_vector(Rng c
             throw std::runtime_error("invalid permutation vector: value out of range");
         }
         if (seen[val]) {
-            throw std::runtime_error("invalid permutation vector: repeated value");
+            throw std::runtime_error("invalid permutation vector: repeated value " +
+                                     std::to_string(val));
         }
         seen[val] = true;
     }
