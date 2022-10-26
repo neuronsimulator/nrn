@@ -1714,20 +1714,16 @@ void v_setup_vectors(void) {
     for (i = 0; i < n_memb_func; ++i) {
         if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
             hoc_Item* q;
-            hoc_List* list;
-            int j, nti;
             cTemplate* tmp = nrn_pnt_template_[i];
             memb_list[i].nodecount = tmp->count;
-            nti = 0;
-            j = 0;
-            list = tmp->olist;
+            int nti{}, j{};
+            hoc_List* list = tmp->olist;
+            std::vector<std::size_t> thread_counts(nrn_nthread);
             ITERATE(q, list) {
                 Object* obj = OBJ(q);
                 auto* pnt = static_cast<Point_process*>(obj->u.this_pointer);
                 p = pnt->prop;
                 memb_list[i].nodelist[j] = nullptr;
-                // memb_list[i]._data[j] = p->param;
-                memb_list[i].pdata[j] = p->dparam;
                 /* for now, round robin all the artificial cells */
                 /* but put the non-threadsafe ones in thread 0 */
                 /*
@@ -1742,8 +1738,36 @@ void v_setup_vectors(void) {
                     pnt->_vnt = nrn_threads + nti;
                     nti = (nti + 1) % nrn_nthread;
                 }
+                auto const tid = static_cast<NrnThread*>(pnt->_vnt)->id;
+                ++thread_counts[tid];
                 // pnt->_i_instance = j;
                 ++j;
+            }
+            assert(j == memb_list[i].nodecount);
+            // The following is a transition measure while data are SOA-backed
+            // using the new neuron::container::soa scheme but pdata are not.
+            // data get permuted so that artificial cells are blocked according
+            // to the NrnThread they are assigned to, but without this change
+            // then the pdata order encoded in the global non-thread-specific
+            // memb_list[i] structure was different, with threads interleaved.
+            // This was a problem when we wanted  to e.g. run the initialisation
+            // kernels in finitialize using that global structure, as the i-th
+            // rows of data and pdata did not refer to the same mechanism
+            // instance. The temporary solution here is to manually organise
+            // pdata to match the data order, with all the instances associated
+            // with thread 0 followed by all the instances associated with
+            // thread 1, and so on. See CellGroup::mk_tml_with_art for another
+            // side of this story and why it is useful to have artificial cell
+            // data blocked by thread.
+            std::vector<std::size_t> thread_offsets(nrn_nthread);
+            for (auto i = 1; i < nrn_nthread; ++i) {
+                thread_offsets[i] = std::exchange(thread_counts[i - 1], 0) + thread_offsets[i - 1];
+            }
+            thread_counts[nrn_nthread - 1] = 0;
+            ITERATE(q, list) {
+                auto* const pnt = static_cast<Point_process*>(OBJ(q)->u.this_pointer);
+                auto const tid = static_cast<NrnThread*>(pnt->_vnt)->id;
+                memb_list[i].pdata[thread_offsets[tid] + thread_counts[tid]++] = pnt->prop->dparam;
             }
         }
     }

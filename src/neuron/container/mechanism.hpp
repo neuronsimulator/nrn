@@ -80,8 +80,13 @@ struct interface: view_base<View> {
         this->template get<field::FloatingPoint>(field_index) = area;
     }
     friend std::ostream& operator<<(std::ostream& os, interface const& handle) {
-        return os << handle.underlying_storage().name() << '{' << handle.id() << '/'
-                  << handle.underlying_storage().size() << '}';
+        os << handle.underlying_storage().name() << '{' << handle.id() << '/'
+           << handle.underlying_storage().size();
+        auto const num = handle.num_fpfields();
+        for (auto i = 0ul; i < num; ++i) {
+            os << ' ' << handle.fpfield(i);
+        }
+        return os << '}';
     }
 };
 
