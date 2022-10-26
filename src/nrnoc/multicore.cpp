@@ -268,9 +268,14 @@ void nrn_threads_create(int n, bool parallel) {
         worker_threads.reset();
         // If the number of threads changes then the node storage data is
         // implicitly no longer sorted, as "sorted" includes being partitioned
-        // by NrnThread. TODO: consider if we can be smarter about how/when we
-        // call mark_as_unsorted() for different containers.
+        // by NrnThread. Similarly for the mechanism data then "sorted" includes
+        // being partitioned by thread.
+        // TODO: consider if we can be smarter about how/when we call
+        // mark_as_unsorted() for different containers.
         neuron::model().node_data().mark_as_unsorted();
+        neuron::model().apply_to_mechanisms([](auto& mech_data) {
+            mech_data.mark_as_unsorted();
+        });
         nrn_threads_free();
         for (i = 0; i < nrn_nthread; ++i) {
             nt = nrn_threads + i;

@@ -32,8 +32,8 @@ struct storage: soa<storage, identifier, field::FloatingPoint> {
         : base_type{field::FloatingPoint{num_floating_point_fields}}
         , m_mech_name{std::move(name)}
         , m_mech_type{mech_type} {
-        std::cout << "mechanism " << m_mech_name << " has " << num_floating_point_fields
-                  << " floating point fields and type " << m_mech_type << '\n';
+        // std::cout << "mechanism " << m_mech_name << " has " << num_floating_point_fields
+        //           << " floating point fields and type " << m_mech_type << '\n';
     }
     [[nodiscard]] auto name() const {
         return m_mech_name;
