@@ -2193,7 +2193,8 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
     if (type != MORPHOLOGY) {
         std::size_t const mech_data_size{mech_data.size()};
         std::size_t global_i{};
-        std::vector<std::size_t> mech_data_permutation(mech_data_size);
+        std::vector<std::size_t> mech_data_permutation(mech_data_size,
+                                                       std::numeric_limits<std::size_t>::max());
         NrnThread* nt{};
         FOR_THREADS(nt) {
             // the Memb_list for this mechanism in this thread, this might be
@@ -2224,7 +2225,7 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
                     // OK, p is an instance of the mechanism we're currently
                     // considering.
                     auto const current_global_row = p->id().current_row();
-                    mech_data_permutation.at(global_i++) = current_global_row;
+                    mech_data_permutation.at(current_global_row) = global_i++;
                     // Checks
                     assert(ml->nodelist[nt_mech_count] == nd);
                     assert(ml->nodeindices[nt_mech_count] == nd->v_node_index);
@@ -2242,18 +2243,40 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
                     assert(pnt->prop->_type == type);
                     if (nt == pnt->_vnt) {
                         auto const current_global_row = pnt->prop->id().current_row();
-                        mech_data_permutation.at(global_i++) = current_global_row;
+                        mech_data_permutation.at(current_global_row) = global_i++;
                     }
                 }
             }
         }
         if (global_i != mech_data_size) {
-            throw std::runtime_error("(global_i = " + std::to_string(global_i) +
-                                     ") != (mech_data_size = " + std::to_string(mech_data_size) +
-                                     ") for " + mech_data.name());
+            // This means that we did not "positively" find all the instances of
+            // this mechanism by traversing the model structure. This can happen
+            // if HOC (or probably Python) scripts create instances and then do
+            // not attach them anywhere, or do not explicitly destroy
+            // interpreter variables that are preventing reference counts from
+            // reaching zero. In this case we can figure out which the missing
+            // entries are and permute them to the end of the vector.
+            auto missing_elements = mech_data_size - global_i;
+            // There are `missing_elements` integers from the range [0 ..
+            // mech_data_size-1] whose values in `mech_data_permutation` are
+            // still std::numeric_limits<std::size_t>::max().
+            for (auto global_row = 0ul; global_row < mech_data_size; ++global_row) {
+                if (mech_data_permutation[global_row] == std::numeric_limits<std::size_t>::max()) {
+                    mech_data_permutation[global_row] = global_i++;
+                    --missing_elements;
+                    if (missing_elements == 0) {
+                        break;
+                    }
+                }
+            }
+            if (global_i != mech_data_size) {
+                throw std::runtime_error(
+                    "(global_i = " + std::to_string(global_i) + ") != (mech_data_size = " +
+                    std::to_string(mech_data_size) + ") for " + mech_data.name());
+            }
         }
         // Should this and other permuting operations return a "sorted token"?
-        mech_data.apply_permutation(std::move(mech_data_permutation));
+        mech_data.apply_reverse_permutation(std::move(mech_data_permutation));
     }
     return mech_data.get_sorted_token();
 }
