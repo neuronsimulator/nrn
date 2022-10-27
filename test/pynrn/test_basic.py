@@ -317,7 +317,7 @@ def test_deleted_sec():
 
     imp = h.Impedance()
     expect_err("imp.loc(seg)")
-    print("Line 1",flush=True)
+    print("Line 1", flush=True)
     expect_err("h.distance(0, seg)")
     print("Line 2", flush=True)
     expect_hocerr(imp.loc, (seg,))
@@ -334,10 +334,12 @@ def test_deleted_sec():
 
 
 def test_disconnect():
-    print("test_disconnect")
+    print("test_disconnect", flush=True)
     for sec in h.allsec():
         h.delete_section(sec=sec)
+    print("test_disconnect2", flush=True)
     h.topology()
+    print("test_disconnect4", flush=True)
     n = 5
 
     def setup(n):
