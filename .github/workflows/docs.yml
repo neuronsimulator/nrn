@@ -35,11 +35,11 @@ jobs:
         shell: bash
 
       - name: Set up Python@${{ env.DEFAULT_PY_VERSION }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.DEFAULT_PY_VERSION }}
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install Python dependencies
         working-directory: ${{runner.workspace}}/nrn
