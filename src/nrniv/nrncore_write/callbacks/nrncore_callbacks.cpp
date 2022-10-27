@@ -686,7 +686,6 @@ int nrnthread_dat2_vecplay_inst(int tid,
         auto* const vp = static_cast<VecPlayContinuous*>(fp->item(i));
         if (!vp->discon_indices_) {
             if (vp->ith_ == nt.id) {
-                assert(!vp->pd_.refers_to_a_modern_data_structure());
                 auto* pd = static_cast<double*>(vp->pd_);
                 int found = 0;
                 vptype = vp->type();
