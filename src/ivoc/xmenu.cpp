@@ -588,8 +588,9 @@ static void checkOpenPanel() {
     }
 }
 
-declarePtrList(HocMenuList, HocMenu) implementPtrList(HocMenuList, HocMenu)
-    /*static*/ class MenuStack {
+declarePtrList(HocMenuList, HocMenu)
+implementPtrList(HocMenuList, HocMenu)
+/*static*/ class MenuStack {
   public:
     bool isEmpty() {
         return l_.count() == 0;
