@@ -381,7 +381,7 @@ void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip) {
     assert(ip < op->d2());
     assert(1);  //  should point into pool() for one of the op pool chains
     // and the index should be a pointer to the double in np
-    long i = *static_cast<double*>(dp[id]);
+    long i = *dp[id].get<double*>();
     assert(i >= 0 && i < np->size());
     double* pvar = np->items()[i];
     dp[id] = pvar + ip;

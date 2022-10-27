@@ -150,9 +150,12 @@ struct Datum { /* interpreter stack type */
                       sizeof(T) <= sizeof(this));
         return *reinterpret_cast<T*>(&*this);  // Eww
     }
+    
+    template <typename T>
+    explicit operator T() = delete;
 
     template <typename T>
-    explicit operator T() {
+    T get() {
         return literal_value<T>();
     }
 

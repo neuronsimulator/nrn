@@ -895,7 +895,7 @@ void connection_coef(void) /* setup a and b */
         nd = sec->pnode[0];
         area = NODEAREA(sec->parentnode);
         /* dparam[4] is rall_branch */
-        ClassicalNODEA(nd) = -1.e2 * static_cast<double>(sec->prop->dparam[4]) * NODERINV(nd) /
+        ClassicalNODEA(nd) = -1.e2 * sec->prop->dparam[4].get<double>() * NODERINV(nd) /
                              area;
         for (j = 1; j < sec->nnode; j++) {
             nd = sec->pnode[j];
@@ -2241,7 +2241,7 @@ void nrn_recalc_node_ptrs(void) {
             }
             dpend = nrn_dparam_ptr_end_[p->_type];
             for (j = nrn_dparam_ptr_start_[p->_type]; j < dpend; ++j) {
-                if (double* pval = static_cast<double*>(p->dparam[j]);
+                if (double* pval = p->dparam[j].get<double*>();
                     pval && *pval >= 0.0 && *pval <= recalc_cnt_) {
                     /* possible pointer to v */
                     k = (int) (*pval);

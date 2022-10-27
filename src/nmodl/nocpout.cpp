@@ -521,21 +521,21 @@ extern Memb_func* memb_func;\n\
                 thread_data_index,
                 cnt);
         lappendstr(thread_mem_init_list, buf);
-        sprintf(buf, "  free(static_cast<void*>(_thread[%d]));\n", thread_data_index);
+        sprintf(buf, "  free(_thread[%d].get<void*>());\n", thread_data_index);
         lappendstr(thread_cleanup_list, buf);
         cnt = 0;
         ITERATE(q, toplocal_) {
             if (SYM(q)->assigned_to_ != 2) {
                 if (SYM(q)->subtype & ARRAY) {
                     sprintf(buf,
-                            "#define %s (static_cast<double*>(_thread[%d]) + %d)\n",
+                            "#define %s (_thread[%d].get<double*>() + %d)\n",
                             SYM(q)->name,
                             thread_data_index,
                             cnt);
                     cnt += SYM(q)->araydim;
                 } else {
                     sprintf(buf,
-                            "#define %s static_cast<double*>(_thread[%d])[%d]\n",
+                            "#define %s _thread[%d].get<double*>()[%d]\n",
                             SYM(q)->name,
                             thread_data_index,
                             cnt);
@@ -581,9 +581,9 @@ extern Memb_func* memb_func;\n\
                 gind);
         lappendstr(thread_mem_init_list, buf);
         lappendstr(thread_cleanup_list,
-                   " if (static_cast<double*>(_thread[_gth]) == &_thread1data[0]) {\n   "
+                   " if (_thread[_gth].get<double*>() == &_thread1data[0]) {\n   "
                    "_thread1data_inuse = 0;\n  "
-                   "}else{\n   free(static_cast<void*>(_thread[_gth]));\n  }\n");
+                   "}else{\n   free(_thread[_gth].get<void*>());\n  }\n");
         ++thread_data_index;
     }
     gind = 0;
@@ -594,7 +594,7 @@ extern Memb_func* memb_func;\n\
                 if (s->subtype & ARRAY) {
                     sprintf(buf,
                             "#define %s%s (_thread1data + %d)\n\
-#define %s (static_cast<double*>(_thread[_gth]) + %d)\n",
+#define %s (_thread[_gth].get<double*>() + %d)\n",
                             s->name,
                             suffix,
                             gind,
@@ -603,7 +603,7 @@ extern Memb_func* memb_func;\n\
                 } else {
                     sprintf(buf,
                             "#define %s%s _thread1data[%d]\n\
-#define %s static_cast<double*>(_thread[_gth])[%d]\n",
+#define %s _thread[_gth].get<double*>()[%d]\n",
                             s->name,
                             suffix,
                             gind,
@@ -2127,7 +2127,7 @@ int iondef(int* p_pointercount) {
     ioncount = 0;
     if (point_process) {
         ioncount = 2;
-        q = lappendstr(defs_list, "#define _nd_area  *static_cast<double*>(_ppvar[0])\n");
+        q = lappendstr(defs_list, "#define _nd_area  *_ppvar[0].get<double*>()\n");
         q->itemtype = VERBATIM;
         ppvar_semantics(0, "area");
         ppvar_semantics(1, "pntproc");
@@ -2146,7 +2146,7 @@ int iondef(int* p_pointercount) {
         ITERATE(q1, LST(q)) {
             SYM(q1)->nrntype |= NRNIONFLAG;
             Sprintf(buf,
-                    "#define _ion_%s	*static_cast<double*>(_ppvar[%d])\n",
+                    "#define _ion_%s	*(_ppvar[%d].get<double*>())\n",
                     SYM(q1)->name,
                     ioncount);
             q2 = lappendstr(defs_list, buf);
@@ -2167,7 +2167,7 @@ int iondef(int* p_pointercount) {
                 SYM(q1)->nrntype &= ~NRNIONFLAG;
             } else {
                 Sprintf(buf,
-                        "#define _ion_%s	*static_cast<double*>(_ppvar[%d])\n",
+                        "#define _ion_%s	*_ppvar[%d].get<double*>()\n",
                         SYM(q1)->name,
                         ioncount);
                 q2 = lappendstr(defs_list, buf);
@@ -2186,7 +2186,7 @@ int iondef(int* p_pointercount) {
             if (it == IONCUR) {
                 dcurdef = 1;
                 Sprintf(buf,
-                        "#define _ion_di%sdv\t*static_cast<double*>(_ppvar[%d])\n",
+                        "#define _ion_di%sdv\t*_ppvar[%d].get<double*>()\n",
                         sion->name,
                         ioncount);
                 q2 = lappendstr(defs_list, buf);
@@ -2205,7 +2205,7 @@ int iondef(int* p_pointercount) {
         }
         if (need_style) {
             Sprintf(buf,
-                    "#define _style_%s\t*static_cast<int*>(_ppvar[%d])\n",
+                    "#define _style_%s\t*_ppvar[%d].get<int*>()\n",
                     sion->name,
                     ioncount);
             q2 = lappendstr(defs_list, buf);
@@ -2217,7 +2217,7 @@ int iondef(int* p_pointercount) {
         q = q->next;
         if (!dcurdef && ldifuslist) {
             Sprintf(buf,
-                    "#define _ion_di%sdv\t*static_cast<double*>(_ppvar[%d])\n",
+                    "#define _ion_di%sdv\t*_ppvar[%d].get<double*>()\n",
                     sion->name,
                     ioncount);
             q2 = lappendstr(defs_list, buf);
@@ -2235,7 +2235,7 @@ int iondef(int* p_pointercount) {
     ITERATE(q, nrnpointers) {
         sion = SYM(q);
         Sprintf(buf,
-                "#define %s	*static_cast<double*>(_ppvar[%d])\n",
+                "#define %s	*_ppvar[%d].get<double*>()\n",
                 sion->name,
                 ioncount + *p_pointercount);
         sion->used = ioncount + *p_pointercount;
@@ -2258,7 +2258,7 @@ int iondef(int* p_pointercount) {
 
     if (diamdec) { /* must be last */
         Sprintf(buf,
-                "#define diam	*static_cast<double*>(_ppvar[%d])\n",
+                "#define diam	*_ppvar[%d].get<double*>()\n",
                 ioncount + *p_pointercount);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
@@ -2266,7 +2266,7 @@ int iondef(int* p_pointercount) {
     if (areadec) { /* must be last, if we add any more the administrative
             procedures must be redone */
         Sprintf(buf,
-                "#define area	*static_cast<double*>(_ppvar[%d])\n",
+                "#define area	*_ppvar[%d].get<double*>()\n",
                 ioncount + *p_pointercount + diamdec);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;

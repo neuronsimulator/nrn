@@ -161,7 +161,7 @@ void nrn_relocate_old_points(Section* oldsec, Node* oldnode, Section* sec, Node*
         for (Prop *p = oldnode->prop, *pn; p; p = pn) {
             pn = p->next;
             if (memb_func[p->_type].is_point) {
-                auto* pnt = static_cast<Point_process*>(p->dparam[1]);
+                auto* pnt = p->dparam[1].get<Point_process*>();
                 if (oldsec == pnt->sec) {
                     if (oldnode == node) {
                         nrn_sec_ref(&pnt->sec, sec);
@@ -259,7 +259,7 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
             cppp_datum = &datum;  // we will store a value in `datum` later
             return &ppp_dummy;
         } else {
-            return static_cast<double*>(datum);
+            return datum.get<double*>();
         }
     } else {
         if (pnt->prop->ob) {
@@ -338,7 +338,7 @@ static void free_one_point(Point_process* pnt) {
 
 // called from prop_free
 void clear_point_process_struct(Prop* p) {
-    auto* const pnt = static_cast<Point_process*>(p->dparam[1]);
+    auto* const pnt = p->dparam[1].get<Point_process*>();
     if (pnt) {
         free_one_point(pnt);
         if (pnt->ob) {

@@ -1078,9 +1078,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             Section* sec = (Section*) hoc_sec_internal_name2ptr(n, 0);
             if (sec == NULL) {
                 PyErr_SetString(PyExc_NameError, n);
-            } else if (sec && sec->prop && static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
+            } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
                 result = static_cast<PyObject*>(
-                    static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX]));
+                    sec->prop->dparam[PROP_PY_INDEX].get<void*>());
                 Py_INCREF(result);
             } else {
                 nrn_pushsec(sec);
@@ -1092,9 +1092,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             Section* sec = (Section*) hoc_pysec_name2ptr(n, 0);
             if (sec == NULL) {
                 PyErr_SetString(PyExc_NameError, n);
-            } else if (sec && sec->prop && static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
+            } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
                 result = static_cast<PyObject*>(
-                    static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX]));
+                    sec->prop->dparam[PROP_PY_INDEX].get<void*>());
                 Py_INCREF(result);
             } else {
                 nrn_pushsec(sec);
