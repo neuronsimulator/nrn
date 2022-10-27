@@ -330,7 +330,7 @@ def test_deleted_sec():
     locals()
     print("Line 6", flush=True)
 
-    return s, seg, mech, rvlist, vref, gnabarref
+    #return s, seg, mech, rvlist, vref, gnabarref
 
 
 def test_disconnect():
