@@ -322,9 +322,9 @@ def test_deleted_sec():
     expect_hocerr(h.distance, (0, seg))
 
     del ic, imp, dend
+    del vref, gnabarref, rvlist, mech, seg, s
     locals()
-
-    return s, seg, mech, rvlist, vref, gnabarref
+    print("leaving test_deleted_sec")
 
 
 def test_disconnect():
@@ -417,7 +417,7 @@ if __name__ == "__main__":
     set_quiet(False)
     test_soma()
     test_simple_sim()
-    result = test_deleted_sec()
+    test_deleted_sec()
     test_disconnect()
     h.topology()
     h.allobjects()
