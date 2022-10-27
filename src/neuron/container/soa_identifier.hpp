@@ -31,6 +31,8 @@ inline constexpr std::size_t invalid_row = std::numeric_limits<std::size_t>::max
 template <typename, typename, typename...>
 struct soa;
 
+struct generic_data_handle;
+
 template <typename, typename>
 struct owning_identifier_base;
 
