@@ -1028,6 +1028,7 @@ void batch_save(void) {
 }
 
 void nrn_ba(NrnThread* nt, int bat) {
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
     for (NrnThreadBAList* tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
         nrn_bamech_t const f{tbl->bam->f};
         Memb_list* const ml{tbl->ml};

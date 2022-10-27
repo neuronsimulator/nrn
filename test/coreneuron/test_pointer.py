@@ -9,6 +9,8 @@ cvode = h.CVode()
 def sortspikes(spiketime, gidvec):
     return sorted(zip(spiketime, gidvec))
 
+# Set globally so we can ensure the IClamp duration is shorter
+tstop = 1
 
 # Passive cell random tree so there is some inhomogeneity of ia and im
 class Cell:
@@ -42,7 +44,7 @@ class Cell:
         # im_axial should be done after ic completes.
         ic = h.IClamp(self.secs[2](0))
         ic.delay = 0.0
-        ic.dur = 0.2
+        ic.dur = min(0.2, tstop / 2)
         ic.amp = 5.0
         self.ic = ic
 
@@ -196,18 +198,19 @@ def test_axial():
         pc.psolve(tstop)
         return result(m)
 
-    std = run(1)
+    std = run(tstop)
 
     cvode.cache_efficient(1)
-    chk(std, run(1))
+    chk(std, run(tstop))
 
     from neuron import coreneuron
 
     coreneuron.verbose = 0
     coreneuron.enable = True
     coreneuron.cell_permute = 0
-    for coreneuron.cell_permute in [0, 1]:
-        chk(std, run(1))
+    chk(std, run(tstop))
+    coreneuron.cell_permute = 1
+    chk(std, run(tstop))
     coreneuron.enable = False
 
     m._callback_setup = None  # get rid of the callback first.
