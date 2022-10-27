@@ -771,7 +771,7 @@ void MechanismStandard::panel(const char* label) {
             }
             hoc_ivvaluerun_ex(sym->name,
                               NULL,
-                              np_->prop_pval(sym),
+                              static_cast<double*>(np_->prop_pval(sym)),
                               NULL,
                               pyact_ ? NULL : buf,
                               pyactval,
@@ -798,7 +798,7 @@ void MechanismStandard::panel(const char* label) {
                 Sprintf(buf2, "%s[%d]", sym->name, j);
                 hoc_ivvaluerun_ex(buf2,
                                   NULL,
-                                  np_->prop_pval(sym, j),
+                                  static_cast<double*>(np_->prop_pval(sym, j)),
                                   NULL,
                                   pyact_ ? NULL : buf,
                                   pyact_,
@@ -838,7 +838,7 @@ double MechanismStandard::get(const char* name, int index) {
     if (!s) {
         hoc_execerror(name, "not in this property");
     }
-    double* pval = np_->prop_pval(s, index);
+    auto const pval = np_->prop_pval(s, index);
     if (!pval) {
         return -1e300;
     }
