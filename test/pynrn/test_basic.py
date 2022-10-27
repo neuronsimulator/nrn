@@ -317,12 +317,18 @@ def test_deleted_sec():
 
     imp = h.Impedance()
     expect_err("imp.loc(seg)")
+    print("Line 1")
     expect_err("h.distance(0, seg)")
+    print("Line 2")
     expect_hocerr(imp.loc, (seg,))
+    print("Line 3")
     expect_hocerr(h.distance, (0, seg))
+    print("Line 4")
 
     del ic, imp, dend
+    print("Line 5")
     locals()
+    print("Line 6")
 
     return s, seg, mech, rvlist, vref, gnabarref
 
