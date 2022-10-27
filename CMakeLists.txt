@@ -253,6 +253,25 @@ if(NOT PYTHON_EXECUTABLE)
 endif()
 
 # =============================================================================
+# Enable Python support
+# =============================================================================
+find_package(PythonInterp 3.7 REQUIRED)
+if(NRN_ENABLE_PYTHON)
+  # start afresh with PythonLibsNew's find_library without this, -DPYTHON_EXECUTABLE=`which python3`
+  # -DNRN_PYTHON_DYNAMIC="python3.7;python3.9" would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
+  # /usr/lib/x86_64-linux-gnu/libpython3.7.so
+  unset(PYTHON_LIBRARY CACHE)
+
+  find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
+  set(NRN_DEFAULT_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
+  set(NRN_DEFAULT_PYTHON_LIBRARIES ${PYTHON_LIBRARIES})
+  set(NRN_DEFAULT_PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS})
+  set(USE_PYTHON 1)
+else()
+  set(USE_PYTHON 0)
+endif()
+
+# =============================================================================
 # Enable sanitizer support if the NRN_SANITIZERS variable is set
 # =============================================================================
 include(cmake/SanitizerHelper.cmake)
@@ -387,26 +406,6 @@ if(NRN_ENABLE_INTERVIEWS)
   set(HAVE_IV 1)
 else()
   set(HAVE_IV 0)
-endif()
-
-# =============================================================================
-# Enable Python support
-# =============================================================================
-
-find_package(PythonInterp 3.7 REQUIRED)
-if(NRN_ENABLE_PYTHON)
-  # start afresh with PythonLibsNew's find_library without this, -DPYTHON_EXECUTABLE=`which python3`
-  # -DNRN_PYTHON_DYNAMIC="python3.7;python3.9" would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
-  # /usr/lib/x86_64-linux-gnu/libpython3.7.so
-  unset(PYTHON_LIBRARY CACHE)
-
-  find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
-  set(NRN_DEFAULT_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
-  set(NRN_DEFAULT_PYTHON_LIBRARIES ${PYTHON_LIBRARIES})
-  set(NRN_DEFAULT_PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS})
-  set(USE_PYTHON 1)
-else()
-  set(USE_PYTHON 0)
 endif()
 
 # =============================================================================
