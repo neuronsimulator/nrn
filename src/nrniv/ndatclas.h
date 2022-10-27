@@ -23,7 +23,7 @@ class NrnProperty {
     Symbol* find(const char* rangevar);
     Symbol* var(int);
     int prop_index(const Symbol*) const;
-    double* prop_pval(const Symbol*, int arrayindex = 0) const;
+    neuron::container::data_handle<double> prop_pval(const Symbol*, int arrayindex = 0) const;
 
     Prop* prop() const;
     int var_type(Symbol*) const;

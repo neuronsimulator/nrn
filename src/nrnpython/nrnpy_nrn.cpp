@@ -2063,11 +2063,11 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
             r->attr_from_sec_ = 0;
             result = (PyObject*) r;
         } else {
-            double* px = np.prop_pval(sym, 0);
+            auto const px = np.prop_pval(sym, 0);
             if (!px) {
                 rv_noexist(sec, sym->name, self->pyseg_->x_, 2);
             } else if (isptr) {
-                result = nrn_hocobj_ptr(px);
+                result = nrn_hocobj_handle(px);
             } else {
                 result = Py_BuildValue("d", *px);
             }
@@ -2124,7 +2124,7 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
             err = nrn_pointer_assign(self->prop_, sym, value);
         } else {
             double x;
-            double* pd = np.prop_pval(sym, 0);
+            auto pd = np.prop_pval(sym, 0);
             if (pd) {
                 if (PyArg_Parse(value, "d", &x) == 1) {
                     *pd = x;
