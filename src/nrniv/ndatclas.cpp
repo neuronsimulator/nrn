@@ -220,14 +220,15 @@ int NrnProperty::prop_index(const Symbol* s) const {
     return s->u.rng.index;
 }
 
-double* NrnProperty::prop_pval(const Symbol* s, int index) const {
+neuron::container::data_handle<double> NrnProperty::prop_pval(const Symbol* s, int index) const {
     if (npi_->p_->ob) {
         return npi_->p_->ob->u.dataspace[prop_index(s)].pval + index;
     } else {
         if (s->subtype == NRNPOINTER) {
-            return static_cast<double*>(npi_->p_->dparam[prop_index(s) + index]);
+            return static_cast<neuron::container::data_handle<double>>(
+                npi_->p_->dparam[prop_index(s) + index]);
         } else {
-            return static_cast<double*>(npi_->p_->param_handle(prop_index(s) + index));
+            return npi_->p_->param_handle(prop_index(s) + index);
         }
     }
 }
