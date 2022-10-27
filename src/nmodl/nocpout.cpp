@@ -2234,8 +2234,9 @@ int iondef(int* p_pointercount) {
                     ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
-            sprintf(buf, "#%s", ionname);
-            ppvar_semantics(ioncount, buf);  // TODO, this is just copied from _style_%s below
+            // olupton 2022-10-27: The ppvar semantics here are a bit of a guess
+            sprintf(buf, "%s", ionname);
+            ppvar_semantics(ioncount, buf);
             ioncount++;
             Sprintf(buf,
                     "#define _style_%s\t*static_cast<int*>(_ppvar[%d])\n",
