@@ -571,6 +571,12 @@ struct soa {
             } else {
                 return false;
             }
+        } else if constexpr (std::is_same_v<std::vector<T>, U>) {
+            // Handle the case where U=std::vector<T> because we have a
+            // runtime-variable number of copies of a column
+            return std::any_of(container.begin(), container.end(), [&](auto& vec) {
+                return find_data_handle(handle, vec, ptr);
+            });
         } else {
             return false;
         }
