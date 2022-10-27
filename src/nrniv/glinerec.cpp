@@ -29,7 +29,8 @@ extern NetCvode* net_cvode_instance;
 class GLineRecordList;
 
 declarePtrList(GLineRecordList, GLineRecord)
-    implementPtrList(GLineRecordList, GLineRecord) static GLineRecordList* grl;
+implementPtrList(GLineRecordList, GLineRecord)
+static GLineRecordList* grl;
 
 // Since GraphLine is not an observable, its destructor calls this.
 // So ivoc will work, a stub is placed in ivoc/datapath.cpp
