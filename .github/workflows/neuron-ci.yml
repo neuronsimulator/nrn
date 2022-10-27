@@ -51,6 +51,7 @@ jobs:
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
               sanitizer: address
+              ccache_fudge: 1
       fail-fast: false
 
     steps:
