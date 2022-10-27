@@ -812,7 +812,9 @@ void hoc_push_string() {
 
 // push double pointer onto stack
 void hoc_pushpx(double* d) {
-    hoc_push(neuron::container::data_handle<double>{d});
+    // Trying to promote a raw pointer to a data handle is expensive, so don't
+    // do that every time we push a double* onto the stack.
+    hoc_push(neuron::container::data_handle<double>{neuron::container::do_not_search, d});
 }
 
 // push symbol pointer onto stack
