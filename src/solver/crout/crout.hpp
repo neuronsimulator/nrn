@@ -12,7 +12,7 @@
  *
  * \file
  * \brief Implementation of Crout matrix decomposition (LU decomposition) followed by
- * Forward/Backward substitution
+ * Forward/Backward substitution: Implementation details : (Legacy code) nrn / scopmath / crout.c
  */
 
 #include <Eigen/Core>
@@ -26,92 +26,97 @@ namespace nmodl {
 namespace crout {
 
 /**
- * \brief Crout matrix decomposition : in-place LU Decomposition of matrix A.
+ * \brief Crout matrix decomposition : in-place LU Decomposition of matrix a.
  *
- * LU decomposition function.
- * Implementation details : (Legacy code) coreneuron/sim/scopmath/crout*
+ * Implementation details : (Legacy code) nrn / scopmath / crout.c
  *
- * Description:
- * This routine uses Crout's method to decompose a row interchanged
- * version of the n x n matrix A into a lower triangular matrix L and a
- * unit upper triangular matrix U such that A = LU.
- * The matrices L and U replace the matrix A so that the original matrix
- * A is destroyed.
- * Note!  In Crout's method the diagonal elements of U are 1 and are not stored.
- * Note!  The determinant of A is the product of the diagonal elements of L.  (det A = det L * det U
- * = det L). The LU decomposition is convenient when one needs to solve the linear equation Ax = B
- * for the vector x while the matrix A is fixed and the vector B is varied.  The routine for solving
- * the linear system Ax = B after performing the LU decomposition for A is solveCrout (see below).
- *
- * The Crout method with partial pivoting is: Determine the pivot row and
- * interchange the current row with the pivot row, then assuming that
- * row k is the current row, k = 0, ..., n - 1 evaluate in order the
- * the following pair of expressions
- * L[i][k] = (A[i][k] - (L[i][0]*U[0][k] + . + L[i][k-1]*U[k-1][k]))
- *          for i = k, ... , n-1,
- * U[k][j] = A[k][j] - (L[k][0]*U[0][j] + ... + L[k][k-1]*U[k-1][j]) / L[k][k]
- *          for j = k+1, ... , n-1.
- * The matrix U forms the upper triangular matrix, and the matrix L
- * forms the lower triangular matrix.
- *
- * \param n The number of rows or columns of the matrix A
- * \param A matrix of size nxn : in-place LU decomposition (C-style arrays : row-major order)
- * \param pivot matrix of size n : The i-th element is the pivot row interchanged with row i
- *
- * @return 0 for SUCCESS || -1 for FAILURE (The matrix A is singular)
+ * Returns: 0 if no error; -1 if matrix is singular or ill-conditioned
  */
 #if defined(CORENEURON_ENABLE_GPU) && !defined(DISABLE_OPENACC)
 nrn_pragma_acc(routine seq)
 nrn_pragma_omp(declare target)
 #endif
 template <typename T>
-EIGEN_DEVICE_FUNC inline int Crout(int n, T* A, int* pivot) {
+EIGEN_DEVICE_FUNC inline int Crout(int n, T* a, int* perm, double* rowmax) {
     // roundoff is the minimal value for a pivot element without its being considered too close to
     // zero
     double roundoff = 1.e-20;
-    int status = 0;
-    int i, j, k;
-    T *p_k{}, *p_row{}, *p_col{};
-    T max;
+    int i, j, k, r, pivot, irow, save_i = 0, krow;
+    T sum, equil_1, equil_2;
 
-    // For each row and column, k = 0, ..., n-1,
-    for (k = 0, p_k = A; k < n; p_k += n, k++) {
-        // find the pivot row
-        pivot[k] = k;
-        max = std::fabs(*(p_k + k));
-        for (j = k + 1, p_row = p_k + n; j < n; j++, p_row += n) {
-            if (max < std::fabs(*(p_row + k))) {
-                max = std::fabs(*(p_row + k));
-                pivot[k] = j;
-                p_col = p_row;
+    /* Initialize permutation and rowmax vectors */
+
+    for (i = 0; i < n; i++) {
+        perm[i] = i;
+        k = 0;
+        for (j = 1; j < n; j++)
+            if (std::fabs(a[i * n + j]) > std::fabs(a[i * n + k]))
+                k = j;
+        rowmax[i] = a[i * n + k];
+    }
+
+    /* Loop over rows and columns r */
+
+    for (r = 0; r < n; r++) {
+        /*
+         * Operate on rth column.  This produces the lower triangular matrix
+         * of terms needed to transform the constant vector.
+         */
+
+        for (i = r; i < n; i++) {
+            sum = 0.0;
+            irow = perm[i];
+            for (k = 0; k < r; k++) {
+                krow = perm[k];
+                sum += a[irow * n + k] * a[krow * n + r];
+            }
+            a[irow * n + r] -= sum;
+        }
+
+        /* Find row containing the pivot in the rth column */
+
+        pivot = perm[r];
+        equil_1 = std::fabs(a[pivot * n + r] / rowmax[pivot]);
+        for (i = r + 1; i < n; i++) {
+            irow = perm[i];
+            equil_2 = std::fabs(a[irow * n + r] / rowmax[irow]);
+            if (equil_2 > equil_1) {
+                /* make irow the new pivot row */
+
+                pivot = irow;
+                save_i = i;
+                equil_1 = equil_2;
             }
         }
 
-        // and if the pivot row differs from the current row, then
-        // interchange the two rows.
-        if (pivot[k] != k)
-            for (j = 0; j < n; j++) {
-                max = *(p_k + j);
-                *(p_k + j) = *(p_col + j);
-                *(p_col + j) = max;
-            }
+        /* Interchange entries in permutation vector if necessary */
 
-        // and if the matrix is singular, return error
-        if (std::fabs(*(p_k + k)) < roundoff) {
-            status = -1;
-        } else {
-            // otherwise find the upper triangular matrix elements for row k.
-            for (j = k + 1; j < n; j++) {
-                *(p_k + j) /= *(p_k + k);
-            }
+        if (pivot != perm[r]) {
+            perm[save_i] = perm[r];
+            perm[r] = pivot;
+        }
 
-            // update remaining matrix
-            for (i = k + 1, p_row = p_k + n; i < n; p_row += n, i++)
-                for (j = k + 1; j < n; j++)
-                    *(p_row + j) -= *(p_row + k) * *(p_k + j);
+        /* Check that pivot element is not too small */
+
+        if (std::fabs(a[pivot * n + r]) < roundoff)
+            return -1;
+
+        /*
+         * Operate on row in rth position.  This produces the upper
+         * triangular matrix whose diagonal elements are assumed to be unity.
+         * This matrix is used in the back substitution algorithm.
+         */
+
+        for (j = r + 1; j < n; j++) {
+            sum = 0.0;
+            for (k = 0; k < r; k++) {
+                krow = perm[k];
+                sum += a[pivot * n + k] * a[krow * n + j];
+            }
+            a[pivot * n + j] = (a[pivot * n + j] - sum) / a[pivot * n + r];
         }
     }
-    return status;
+    return 0;
 }
 #if defined(CORENEURON_ENABLE_GPU) && !defined(DISABLE_OPENACC)
 nrn_pragma_omp(end declare target)
@@ -120,66 +125,77 @@ nrn_pragma_omp(end declare target)
 /**
  * \brief Crout matrix decomposition : Forward/Backward substitution.
  *
- * Forward/Backward substitution function.
- * Implementation details : (Legacy code) coreneuron/sim/scopmath/crout*
+ * Implementation details : (Legacy code) nrn / scopmath / crout.c
  *
- * \param n The number of rows or columns of the matrix LU
- * \param LU LU-factorized matrix (C-style arrays : row-major order)
- * \param B rhs vector
- * \param x solution of (LU)x=B linear system
- * \param pivot matrix of size n : The i-th element is the pivot row interchanged with row i
- *
- * @return 0 for SUCCESS || -1 for FAILURE (The matrix A is singular)
+ * Returns: no return variable
  */
+#define y_(arg) p[y[arg]]
+#define b_(arg) b[arg]
 #if defined(CORENEURON_ENABLE_GPU) && !defined(DISABLE_OPENACC)
 nrn_pragma_acc(routine seq)
 nrn_pragma_omp(declare target)
 #endif
 template <typename T>
-EIGEN_DEVICE_FUNC inline int solveCrout(int n, T* LU, T* B, T* x, int* pivot) {
-    // roundoff is the minimal value for a pivot element without its being considered too close to
-    // zero
-    double roundoff = 1.e-20;
-    int status = 0;
-    int i, k;
-    T* p_k;
-    T dum;
+EIGEN_DEVICE_FUNC inline int solveCrout(int n, T* a, T* b, T* p, int* perm, int* y = (int*) 0) {
+    int i, j, pivot;
+    T sum;
 
-    // Solve the linear equation Lx = B for x, where L is a lower
-    // triangular matrix.
-    for (k = 0, p_k = LU; k < n; p_k += n, k++) {
-        if (pivot[k] != k) {
-            dum = B[k];
-            B[k] = B[pivot[k]];
-            B[pivot[k]] = dum;
+    /* Perform forward substitution with pivoting */
+    if (y) {
+        for (i = 0; i < n; i++) {
+            pivot = perm[i];
+            sum = 0.0;
+            for (j = 0; j < i; j++)
+                sum += a[pivot * n + j] * (y_(j));
+            y_(i) = (b_(pivot) - sum) / a[pivot * n + i];
         }
-        x[k] = B[k];
-        for (i = 0; i < k; i++)
-            x[k] -= x[i] * *(p_k + i);
-        x[k] /= *(p_k + k);
-    }
 
-    // Solve the linear equation Ux = y, where y is the solution
-    // obtained above of Lx = B and U is an upper triangular matrix.
-    // The diagonal part of the upper triangular part of the matrix is
-    // assumed to be 1.0.
-    for (k = n - 1, p_k = LU + n * (n - 1); k >= 0; k--, p_k -= n) {
-        if (pivot[k] != k) {
-            dum = B[k];
-            B[k] = B[pivot[k]];
-            B[pivot[k]] = dum;
+        /*
+         * Note that the y vector is already in the correct order for back
+         * substitution.  Perform back substitution, pivoting the matrix but not
+         * the y vector.  There is no need to divide by the diagonal element as
+         * this is assumed to be unity.
+         */
+
+        for (i = n - 1; i >= 0; i--) {
+            pivot = perm[i];
+            sum = 0.0;
+            for (j = i + 1; j < n; j++)
+                sum += a[pivot * n + j] * (y_(j));
+            y_(i) -= sum;
         }
-        for (i = k + 1; i < n; i++)
-            x[k] -= x[i] * *(p_k + i);
-        if (std::fabs(*(p_k + k)) < roundoff)
-            status = -1;
-    }
+    } else {
+        for (i = 0; i < n; i++) {
+            pivot = perm[i];
+            sum = 0.0;
+            for (j = 0; j < i; j++)
+                sum += a[pivot * n + j] * (p[j]);
+            p[i] = (b_(pivot) - sum) / a[pivot * n + i];
+        }
 
-    return status;
+        /*
+         * Note that the y vector is already in the correct order for back
+         * substitution.  Perform back substitution, pivoting the matrix but not
+         * the y vector.  There is no need to divide by the diagonal element as
+         * this is assumed to be unity.
+         */
+
+        for (i = n - 1; i >= 0; i--) {
+            pivot = perm[i];
+            sum = 0.0;
+            for (j = i + 1; j < n; j++)
+                sum += a[pivot * n + j] * (p[j]);
+            p[i] -= sum;
+        }
+    }
+    return 0;
 }
 #if defined(CORENEURON_ENABLE_GPU) && !defined(DISABLE_OPENACC)
 nrn_pragma_omp(end declare target)
 #endif
+
+#undef y_
+#undef b_
 
 }  // namespace crout
 }  // namespace nmodl

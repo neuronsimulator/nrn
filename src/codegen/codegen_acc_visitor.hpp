@@ -38,8 +38,7 @@ class CodegenAccVisitor: public CodegenCVisitor {
 
 
     /// ivdep like annotation for channel iterations
-    void print_channel_iteration_block_parallel_hint(BlockType type,
-                                                     bool error_checking = false) override;
+    void print_channel_iteration_block_parallel_hint(BlockType type) override;
 
 
     /// atomic update pragma for reduction statements
