@@ -157,7 +157,7 @@ struct Memb_list {
         if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
             // not in contiguous mode
             auto& handle = instances.at(instance);
-            return {&handle.underlying_storage(), handle.id().current_row(), zeroth_variable};
+            return {&handle.underlying_storage(), handle.current_row(), zeroth_variable};
         } else {
             // contiguous mode
             assert(m_storage);
@@ -244,13 +244,13 @@ struct Memb_list {
      *  The returned value refers to the same instance of this mechanism
      *  regardless of how the underlying storage are permuted.
      */
-    [[nodiscard]] neuron::container::Mechanism::handle instance_handle(std::size_t instance) const {
+    [[nodiscard]] neuron::container::Mechanism::handle instance_handle(std::size_t instance) {
         if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
             // not in contiguous mode
             return instances.at(instance);
         } else {
             assert(m_storage);
-            return {m_storage->identifier(m_storage_offset + instance), *m_storage};
+            return m_storage->at(m_storage_offset + instance);
         }
     }
 
