@@ -1984,7 +1984,7 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
             hocobj_pushtop(po, 0, i);
             err = hocobj_objectvar(po->sym_);
             if (err) {
-                break;
+                break;  // can't reach because of earlier array_chk
             }
             --po->nindex_;
             Object** op;

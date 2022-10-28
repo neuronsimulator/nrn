@@ -28,3 +28,9 @@ foo = new Foo(3)
 Foo[0]
 """
 )
+
+h("""double array[4]""")
+expect_err("h.array = 5")
+h("""objref oarray[4][4]""")
+# cannot reach line we want because of earlier array check
+expect_err("h.oarray[2] = []")

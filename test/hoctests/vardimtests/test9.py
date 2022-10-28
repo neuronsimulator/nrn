@@ -67,3 +67,9 @@ def generate():
 
 
 generate()
+
+# error if more than one arclen param for array
+tryhoc("foo.soma.scalarrng_atst(.7, .1)")
+assert tryhoc("foo.soma.arrayrng_atst[2](.7, .1)") == 0
+# subscript out of range
+assert tryhoc("foo.soma.arrayrng_atst[50]") == 0
