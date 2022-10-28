@@ -34,7 +34,6 @@ inline constexpr do_not_search_t do_not_search{};
  *  always the same type in neuron::container::*). Note that storing T* or
  *  span<T> would not work if the underlying storage is reallocated.
  *
- *  @todo Save some space by using the same storage for m_offset and m_raw_ptr.
  *  @todo Const correctness -- data_handle should be like span:
  *  data_handle<double> can read + write the value, data_handle<double const>
  *  can only read the value. const applied to the data_handle itself should just
@@ -62,29 +61,38 @@ struct data_handle {
             // If that didn't work, just save the plain pointer value. This is unsafe
             // and should be removed. It is purely meant as an intermediate step, if
             // you use it then the guarantees above will be broken.
-            m_raw_ptr = raw_ptr;
+            m_container_or_raw_ptr = raw_ptr;
         }
     }
 
     data_handle(do_not_search_t, T* raw_ptr)
-        : m_raw_ptr{raw_ptr} {}
+        : m_container_or_raw_ptr{raw_ptr} {}
 
     [[nodiscard]] bool refers_to_a_modern_data_structure() const {
-        return !m_raw_ptr;
+        return bool{m_offset} || m_offset.was_once_valid();
     }
 
     // TODO a const-ness cleanup. It should be possible to get
     // data_handle<T> from a view into a frozen container, even though it
     // isn't possible to get std::vector<T>& from a frozen container. And
     // data_handle<T const> should forbid writing to the data value.
-    data_handle(identifier_base offset, std::vector<T> const& container)
+    data_handle(non_owning_identifier_without_container offset, std::vector<T> const& container)
         : m_offset{std::move(offset)}
-        , m_container{&const_cast<std::vector<T>&>(container)} {
+        , m_container_or_raw_ptr{&const_cast<std::vector<T>&>(container)} {
         check_modern_mode_validity("data_handle(row, container)");
     }
 
     explicit operator bool() const {
-        return m_raw_ptr ? true : bool{m_offset};
+        if (bool{m_offset}) {
+            // valid, modern
+            return true;
+        } else if (m_offset.was_once_valid()) {
+            // once-valid, modern. no longer valid
+            return false;
+        } else {
+            // null or raw pointer
+            return m_container_or_raw_ptr;
+        }
     }
 
     /** Query whether this generic handle points to a value from the `Tag` field
@@ -93,11 +101,15 @@ struct data_handle {
     template <typename Tag, typename Container>
     bool refers_to(Container const& container) const {
         static_assert(Container::template has_tag_v<Tag>);
-        if (m_raw_ptr) {
-            return false;
-        } else {
+        if (bool{m_offset} || m_offset.was_once_valid()) {
+            // basically in modern mode (possibly the entry we refer to has
+            // died)
+            auto* const m_container = container_ptr();
             return m_container == &(container.template get<Tag>()) &&
                    m_offset.current_row() < m_container->size();
+        } else {
+            // raw-ptr mode or null
+            return false;
         }
     }
 
@@ -107,56 +119,70 @@ struct data_handle {
         return m_offset.current_row();
     }
 
-    T& operator*() {
-        if (m_raw_ptr) {
-            return *m_raw_ptr;
+  private:
+    // Try and cover the different operator* and operator T* cases with/without
+    // const in a more composable way
+    T* raw_ptr() {
+        return static_cast<T*>(m_container_or_raw_ptr);
+    }
+    T const* raw_ptr() const {
+        return static_cast<T const*>(m_container_or_raw_ptr);
+    }
+    std::vector<T>* container_ptr() {
+        return static_cast<std::vector<T>*>(m_container_or_raw_ptr);
+    }
+    std::vector<T> const* container_ptr() const {
+        return static_cast<std::vector<T> const*>(m_container_or_raw_ptr);
+    }
+    template <typename This>
+    static auto get_ptr_helper(This& this_ref) {
+        if (this_ref.m_offset) {
+            // valid, modern mode
+            return std::next(this_ref.container_ptr()->data(), this_ref.m_offset.current_row());
+        } else if (this_ref.m_offset.was_once_valid()) {
+            // no longer valid, modern mode
+            return decltype(this_ref.raw_ptr()){nullptr};
         } else {
-            check_modern_mode_validity("T& operator*()");
-            return m_container->at(m_offset.current_row());
+            // null or raw pointer
+            return this_ref.raw_ptr();
+        }
+    }
+
+  public:
+    T& operator*() {
+        auto* const ptr = get_ptr_helper(*this);
+        if (ptr) {
+            return *ptr;
+        } else {
+            std::ostringstream oss;
+            oss << *this << " attempt to dereference [T& operator*]";
+            throw std::runtime_error(oss.str());
         }
     }
 
     T const& operator*() const {
-        if (m_raw_ptr) {
-            return *m_raw_ptr;
+        auto* const ptr = get_ptr_helper(*this);
+        if (ptr) {
+            return *ptr;
         } else {
-            check_modern_mode_validity("T const& operator*() const");
-            return m_container->at(m_offset.current_row());
+            std::ostringstream oss;
+            oss << *this << " attempt to dereference [T const& operator*]";
+            throw std::runtime_error(oss.str());
         }
     }
 
     explicit operator T*() {
-        if (m_raw_ptr) {
-            return m_raw_ptr;
-        } else if (!m_offset) {
-            // Constructed with a null raw pointer, default constructed, or
-            // refers to a row that was deleted
-            return nullptr;
-        } else {
-            assert(m_container);
-            return std::next(m_container->data(), m_offset.current_row());
-        }
+        return get_ptr_helper(*this);
     }
 
     explicit operator T const *() const {
-        if (m_raw_ptr) {
-            return m_raw_ptr;
-        } else if (!m_offset) {
-            // Constructed with a null raw pointer, default constructed, or
-            // refers to a row that was deleted
-            return nullptr;
-        } else {
-            assert(m_container);
-            return std::next(m_container->data(), m_offset.current_row());
-        }
+        return get_ptr_helper(*this);
     }
 
     friend std::ostream& operator<<(std::ostream& os, data_handle const& dh) {
         os << "data_handle<" << cxx_demangle(typeid(T).name()) << ">{";
-        if (dh.m_raw_ptr) {
-            os << "raw=" << dh.m_raw_ptr;
-        } else if (dh.m_offset || dh.m_offset.m_ptr) {
-            auto const maybe_info = utils::find_container_info(dh.m_container);
+        if (dh.m_offset || dh.m_offset.was_once_valid()) {
+            auto const maybe_info = utils::find_container_info(dh.container_ptr());
             if (maybe_info) {
                 if (!maybe_info->container.empty()) {
                     os << "cont=" << maybe_info->container << ' ';
@@ -165,6 +191,8 @@ struct data_handle {
             } else {
                 os << "cont=unknown " << dh.m_offset << "/unknown";
             }
+        } else if (dh.m_container_or_raw_ptr) {
+            os << "raw=" << dh.m_container_or_raw_ptr;
         } else {
             os << "nullptr";
         }
@@ -175,8 +203,8 @@ struct data_handle {
     // null handle that was never valid? Perhaps yes, as both evaluate to
     // boolean false, but their string representations are different.
     friend bool operator==(data_handle const& lhs, data_handle const& rhs) {
-        return lhs.m_offset == rhs.m_offset && lhs.m_container == rhs.m_container &&
-               lhs.m_raw_ptr == rhs.m_raw_ptr;
+        return lhs.m_offset == rhs.m_offset &&
+               lhs.m_container_or_raw_ptr == rhs.m_container_or_raw_ptr;
     }
 
     friend bool operator!=(data_handle const& lhs, data_handle const& rhs) {
@@ -185,7 +213,6 @@ struct data_handle {
 
   private:
     void check_modern_mode_validity(const char* method) const {
-        assert(m_container);
         if (!m_offset) {
             std::ostringstream oss;
             oss << *this << " invalid " << method;
@@ -194,12 +221,10 @@ struct data_handle {
     }
     friend struct generic_data_handle;
     friend struct std::hash<data_handle>;
-    identifier_base m_offset{};
-    // This "should" be std::reference_wrapper and never null, only use a plain
-    // pointer because of the compatibility mode that wraps a raw pointer.
-    std::vector<T>* m_container{};
-    // std::reference_wrapper<std::vector<T>> m_container;
-    T* m_raw_ptr{};
+    non_owning_identifier_without_container m_offset{};  // basically std::size_t*
+    // If m_offset is/was valid for a modern container, this is std::vector<T>*,
+    // otherwise it is possibly-null T*
+    void* m_container_or_raw_ptr{};
 };
 
 /**
@@ -252,14 +277,15 @@ template <typename T>
 struct std::hash<neuron::container::data_handle<T>> {
     std::size_t operator()(neuron::container::data_handle<T> const& s) const noexcept {
         static_assert(sizeof(std::size_t) == sizeof(T const*));
-        if (s.m_raw_ptr) {
-            return reinterpret_cast<std::size_t>(s.m_raw_ptr);
-        } else {
+        if (s.m_offset || s.m_offset.was_once_valid()) {
             // The hash should not include the current row number, but rather the
             // std::size_t* that is dereferenced to *get* the current row number,
             // and which container this generic value lives in.
-            return std::hash<neuron::container::identifier_base>{}(s.m_offset) ^
-                   reinterpret_cast<std::size_t>(s.m_container);
+            return std::hash<neuron::container::non_owning_identifier_without_container>{}(
+                       s.m_offset) ^
+                   reinterpret_cast<std::size_t>(s.m_container_or_raw_ptr);
+        } else {
+            return reinterpret_cast<std::size_t>(s.m_container_or_raw_ptr);
         }
     }
 };

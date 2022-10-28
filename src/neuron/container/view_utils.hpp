@@ -1,78 +1,113 @@
 #pragma once
 namespace neuron::container {
-/** @brief Base class for neuron::container::soa<...> views/handles.
+/**
+ * @brief Base class for neuron::container::soa<...> handles.
+ * @tparam Identifier Identifier type used for this handle. This encodes both
+ *                    the referred-to type (Node, Mechanism, ...) and the
+ *                    ownership semantics (owning, non-owning). The instance of
+ *                    this type manages both the pointer-to-row and
+ *                    pointer-to-storage members of the handle.
  *
- *  This provides some common methods that are not specific to a particular data
- *  structure (Node, ...). The typical hierarchy would be:
+ * This provides some common methods that are neither specific to a particular data
+ * structure (Node, Mechanism, ...) nor specific to whether or not the handle
+ * has owning semantics or not. Methods that are specific to the data type (e.g.
+ * Node) belong in the interface template for that type (e.g. Node::interface).
+ * Methods that are specific to the owning/non-owning semantics belong in the
+ * generic templates non_owning_identifier<T> and owning_identifier<T>.
  *
- *  view_base <--- Node::interface <--- Node::owning_handle
- *             \                    \-- Node::handle
- *              \                    \- Node::view
- *               \- Foo::interface <--- Foo::owning_handle
- *                                  \-- Foo::handle
- *                                   \- Foo::view
+ * The typical way these components fit together is:
  *
- *  Where the grandchild types (Node::handle, etc.) are expected to implement
- *  the interface:
- *   - underlying_storage(): return a (const) reference to the underlying
- *     storage container (Node::storage, etc.)
- *   - std::size_t offset(): return the current offset into the underlying
- *     storage container
+ * Node::identifier = non_owning_identifier<Node::storage>
+ * Node::owning_identifier = owning_identifier<Node::storage>
+ * Node::handle = Node::interface<Node::identifier>
+ *                inherits from: handle_base<Node::identifier>
+ * Node::owning_handle = Node::interface<Node::owning_identifier>
+ *                       inherits from handle_base<Node::owning_identifier>
+ *
+ * Where the "identifier" types should be viewed as an implementation detail and
+ * the handle types as user-facing.
  */
-template <typename View>
-struct view_base {
-    /** @brief Return the (identifier_base-derived) identifier of the pointed-to
-     *  object.
-     *
-     *  @todo In some cases (handle, owning_handle) we already know the
-     *  std::size_t* value that is needed, so we should be able to get this more
-     *  directly (or add an extra assertion).
+template <typename Identifier>
+struct handle_base {
+    /**
+     * @brief Construct a handle from an identifier.
      */
-    auto id() const {
-        auto const tmp = underlying_storage().identifier(derived().offset());
-        static_assert(std::is_base_of_v<identifier_base, decltype(tmp)>);
-        return tmp;
+    handle_base(Identifier identifier)
+        : m_identifier{std::move(identifier)} {}
+
+    /**
+     * @brief Return current offset in the underlying storage where this object lives.
+     */
+    [[nodiscard]] std::size_t current_row() const {
+        return m_identifier.current_row();
     }
 
-    auto& underlying_storage() {
-        return derived().underlying_storage_impl();
+    /**
+     * @brief Obtain a lightweight identifier of the current entry.
+     *
+     * The return type is essentially std::size_t* -- it does not contain a
+     * pointer/reference to the actual storage container.
+     */
+    [[nodiscard]] non_owning_identifier_without_container id() const {
+        return m_identifier;
     }
+
+    /**
+     * @brief This is a workaround for id sometimes being a macro.
+     * @todo Remove those macros once and for all.
+     */
+    [[nodiscard]] auto id_hack() const {
+        return id();
+    }
+
+    /**
+     * @brief Obtain a reference to the storage this handle refers to.
+     */
+    auto& underlying_storage() {
+        return m_identifier.underlying_storage();
+    }
+
+    /**
+     * @brief Obtain a const reference to the storage this handle refers to.
+     */
     auto const& underlying_storage() const {
-        return derived().underlying_storage_impl();
+        return m_identifier.underlying_storage();
     }
 
   protected:
-    [[nodiscard]] View& derived() {
-        return static_cast<View&>(*this);
-    }
-    [[nodiscard]] View const& derived() const {
-        return static_cast<View const&>(*this);
-    }
-    template <typename Tag>
-    [[nodiscard]] auto& get_container() {
-        return underlying_storage().template get<Tag>();
-    }
-    template <typename Tag>
-    [[nodiscard]] auto const& get_container() const {
-        return underlying_storage().template get<Tag>();
-    }
-    // TODO const-ness -- should a const view yield data_handle<T const>?
+    /**
+     * @brief Get a data_handle<T> referring to the given field inside this handle.
+     * @tparam Tag Tag type of the field we want a data_handle to.
+     *
+     * This is used to implement methods like area_handle() and v_handle() in
+     * the interface templates.
+     *
+     * @todo const cleanup -- should there be a const version returning
+     *       data_handle<T const>?
+     */
     template <typename Tag>
     [[nodiscard]] auto get_handle() {
-        auto const* const_this = this;
-        auto const& container = const_this->template get_container<Tag>();
+        auto const& container = std::as_const(underlying_storage()).template get<Tag>();
         data_handle<typename Tag::type> const rval{this->id(), container};
         assert(bool{rval});
         assert(rval.refers_to_a_modern_data_structure());
         assert(rval.template refers_to<Tag>(underlying_storage()));
         return rval;
     }
+
+    /**
+     * @brief Get a data_handle<T> referring to the (runtime) field_index-th
+     *        copy of a given (static) field.
+     * @tparam Tag Tag type of the set of fields the from which the
+     *             field_index-th one is being requested.
+     *
+     * @todo Const cleanup as above for the zero-argument version.
+     */
     template <typename Tag>
     [[nodiscard]] auto get_handle(std::size_t field_index) {
-        auto const* const_this = this;
         data_handle<typename Tag::type> const rval{
             this->id(),
-            const_this->underlying_storage().template get_field_instance<Tag>(field_index)};
+            std::as_const(underlying_storage()).template get_field_instance<Tag>(field_index)};
         assert(bool{rval});
         assert(rval.refers_to_a_modern_data_structure());
         // assert(rval.template refers_to<Tag>(derived().underlying_storage()));
@@ -80,11 +115,11 @@ struct view_base {
     }
     template <typename Tag>
     [[nodiscard]] auto& get() {
-        return underlying_storage().template get<Tag>(derived().offset());
+        return underlying_storage().template get<Tag>(current_row());
     }
     template <typename Tag>
     [[nodiscard]] auto const& get() const {
-        return underlying_storage().template get<Tag>(derived().offset());
+        return underlying_storage().template get<Tag>(current_row());
     }
     template <typename Tag>
     [[nodiscard]] constexpr Tag const& get_tag() const {
@@ -92,14 +127,14 @@ struct view_base {
     }
     template <typename Tag>
     [[nodiscard]] auto& get(std::size_t field_index) {
-        return underlying_storage().template get_field_instance<Tag>(field_index,
-                                                                     derived().offset());
+        return underlying_storage().template get_field_instance<Tag>(field_index, current_row());
     }
     template <typename Tag>
     [[nodiscard]] auto const& get(std::size_t field_index) const {
-        return underlying_storage().template get_field_instance<Tag>(field_index,
-                                                                     derived().offset());
+        return underlying_storage().template get_field_instance<Tag>(field_index, current_row());
     }
-};
 
+  private:
+    Identifier m_identifier;
+};
 }  // namespace neuron::container
