@@ -114,7 +114,7 @@ void hoc_spec_table(void** vppt, int n) {
         ft->table = &ft->value;
         for (size_t i = 0; i < n; ++i) {
             ta[i].nsize = 1;
-            ta[i].argvec = (double*) 0;
+            ta[i].argvec = nullptr;
             ta[i].min = 1e20;
             ta[i].max = 1e20;
         }
@@ -127,21 +127,21 @@ void hoc_spec_table(void** vppt, int n) {
         int ns = vector_arg_px(1, &ft->table);
         ta[0].nsize = vector_arg_px(2, &ta[0].argvec);
         if (ns != ta[0].nsize) {
-            hoc_execerror("Vector arguments not same size", (char*) 0);
+            hoc_execerror("Vector arguments not same size", nullptr);
         }
     } else {
         for (size_t i = 0; i < n; ++i) {
             ta[i].nsize = *getarg(argcnt++);
             if (ta[i].nsize < 1) {
-                hoc_execerror("size arg < 1 in hoc_spec_table", (char*) 0);
+                hoc_execerror("size arg < 1 in hoc_spec_table", nullptr);
             }
             if (hoc_is_double_arg(argcnt)) {
                 ta[i].min = *getarg(argcnt++);
                 ta[i].max = *getarg(argcnt++);
                 if (ta[i].max < ta[i].min) {
-                    hoc_execerror("min > max in hoc_spec_table", (char*) 0);
+                    hoc_execerror("min > max in hoc_spec_table", nullptr);
                 }
-                ta[i].argvec = (double*) 0;
+                ta[i].argvec = nullptr;
             } else {
                 ta[i].argvec = hoc_pgetarg(argcnt++);
             }
