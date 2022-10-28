@@ -324,8 +324,6 @@ def test_deleted_sec():
     del ic, imp, dend
     locals()
 
-    return s, seg, mech, rvlist, vref, gnabarref
-
 
 def test_disconnect():
     print("test_disconnect")
@@ -417,7 +415,7 @@ if __name__ == "__main__":
     set_quiet(False)
     test_soma()
     test_simple_sim()
-    result = test_deleted_sec()
+    test_deleted_sec()
     test_disconnect()
     h.topology()
     h.allobjects()
