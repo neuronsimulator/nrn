@@ -324,7 +324,6 @@ def test_deleted_sec():
     del ic, imp, dend
     del vref, gnabarref, rvlist, mech, seg, s
     locals()
-    print("leaving test_deleted_sec")
 
 
 def test_disconnect():
