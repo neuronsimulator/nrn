@@ -1263,8 +1263,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      *
      * \param type The block type
      */
-    virtual void print_channel_iteration_block_parallel_hint(BlockType type,
-                                                             bool error_checking = false);
+    virtual void print_channel_iteration_block_parallel_hint(BlockType type);
 
 
     /**

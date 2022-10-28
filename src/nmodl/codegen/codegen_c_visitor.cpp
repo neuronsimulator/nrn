@@ -1108,8 +1108,7 @@ void CodegenCVisitor::print_net_init_acc_serial_annotation_block_end() {
  *      for(int id = 0; id < nodecount; id++) {
  * \endcode
  */
-void CodegenCVisitor::print_channel_iteration_block_parallel_hint(BlockType /* type */,
-                                                                  bool /* error_checking */) {
+void CodegenCVisitor::print_channel_iteration_block_parallel_hint(BlockType /* type */) {
     printer->add_line("#pragma ivdep");
     printer->add_line("#pragma omp simd");
 }
@@ -1854,7 +1853,8 @@ void CodegenCVisitor::visit_eigen_newton_solver_block(const ast::EigenNewtonSolv
     printer->add_line("newton_functor.initialize();");
     printer->add_line(
         "int newton_iterations = nmodl::newton::newton_solver(nmodl_eigen_xm, newton_functor);");
-    printer->add_line("if (newton_iterations < 0) solver_error += 1;");
+    printer->add_line(
+        "if (newton_iterations < 0) assert(false && \"Newton solver did not converge!\");");
 
     // assign newton solver results in matrix X to state vars
     print_statement_block(*node.get_update_states_block(), false, false);
@@ -1868,10 +1868,8 @@ void CodegenCVisitor::visit_eigen_linear_solver_block(const ast::EigenLinearSolv
     int N = node.get_n_state_vars()->get_value();
     printer->fmt_line("Eigen::Matrix<{0}, {1}, 1> nmodl_eigen_xm, nmodl_eigen_fm;", float_type, N);
     printer->fmt_line("Eigen::Matrix<{0}, {1}, {1}> nmodl_eigen_jm;", float_type, N);
-    if (N <= 4) {
-        printer->add_line("bool invertible;");
+    if (N <= 4)
         printer->fmt_line("Eigen::Matrix<{0}, {1}, {1}> nmodl_eigen_jm_inv;", float_type, N);
-    }
     printer->fmt_line("{}* nmodl_eigen_x = nmodl_eigen_xm.data();", float_type);
     printer->fmt_line("{}* nmodl_eigen_j = nmodl_eigen_jm.data();", float_type);
     printer->fmt_line("{}* nmodl_eigen_f = nmodl_eigen_fm.data();", float_type);
@@ -1890,9 +1888,12 @@ void CodegenCVisitor::visit_eigen_linear_solver_block(const ast::EigenLinearSolv
 void CodegenCVisitor::print_eigen_linear_solver(const std::string& float_type, int N) {
     if (N <= 4) {
         // Faster compared to LU, given the template specialization in Eigen.
+        printer->add_line("bool invertible;");
         printer->add_line("nmodl_eigen_jm.computeInverseWithCheck(nmodl_eigen_jm_inv,invertible);");
         printer->add_line("nmodl_eigen_xm = nmodl_eigen_jm_inv*nmodl_eigen_fm;");
-        printer->add_line("if(!invertible) solver_error += 1;");
+        printer->add_line(
+            "if (!invertible) assert(false && \"Singular or ill-conditioned matrix "
+            "(Eigen::inverse)!\");");
     } else {
         // In Eigen the default storage order is ColMajor.
         // Crout's implementation requires matrices stored in RowMajor order (C-style arrays).
@@ -1902,11 +1903,12 @@ void CodegenCVisitor::print_eigen_linear_solver(const std::string& float_type, i
 
         // pivot vector
         printer->fmt_line("Eigen::Matrix<int, {}, 1> pivot;", N);
+        printer->fmt_line("Eigen::Matrix<{0}, {1}, 1> rowmax;", float_type, N);
 
         // In-place LU-Decomposition (Crout Algo) : Jm is replaced by its LU-decomposition
         printer->fmt_line(
-            "if (nmodl::crout::Crout<{0}>({1}, nmodl_eigen_jm.data(), pivot.data()) < 0) "
-            "solver_error += 1;",
+            "if (nmodl::crout::Crout<{0}>({1}, nmodl_eigen_jm.data(), pivot.data(), rowmax.data()) "
+            "< 0) assert(false && \"Singular or ill-conditioned matrix (nmodl::crout)!\");",
             float_type,
             N);
 
@@ -3459,12 +3461,7 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
         print_dt_update_to_device();
     }
 
-    if (info.eigen_newton_solver_exist) {
-        printer->add_line("int solver_error = 0;");
-        print_channel_iteration_block_parallel_hint(BlockType::Initial, true);
-    } else {
-        print_channel_iteration_block_parallel_hint(BlockType::Initial);
-    }
+    print_channel_iteration_block_parallel_hint(BlockType::Initial);
     printer->start_block("for (int id = 0; id < nodecount; id++)");
 
     if (info.net_receive_node != nullptr) {
@@ -3474,10 +3471,6 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
     print_initial_block(info.initial_node);
     printer->end_block(1);
     print_shadow_reduction_statements();
-
-    if (info.eigen_newton_solver_exist)
-        printer->add_line(
-            "if (solver_error > 0) throw std::runtime_error(\"Newton solver did not converge!\");");
 
     if (!info.changed_dt.empty()) {
         printer->fmt_line("{} = _save_prev_dt;", get_variable_name(naming::NTHREAD_DT_VARIABLE));
@@ -4297,12 +4290,7 @@ void CodegenCVisitor::print_nrn_state() {
     printer->add_newline(2);
     printer->add_line("/** update state */");
     print_global_function_common_code(BlockType::State);
-    if (info.eigen_newton_solver_exist || info.eigen_linear_solver_exist) {
-        printer->add_line("int solver_error = 0;");
-        print_channel_iteration_block_parallel_hint(BlockType::State, true);
-    } else {
-        print_channel_iteration_block_parallel_hint(BlockType::State);
-    }
+    print_channel_iteration_block_parallel_hint(BlockType::State);
     printer->start_block("for (int id = 0; id < nodecount; id++)");
     
     printer->add_line("int node_id = node_index[id];");
@@ -4342,11 +4330,6 @@ void CodegenCVisitor::print_nrn_state() {
         print_shadow_reduction_statements();
         printer->end_block(1);
     }
-
-    if (info.eigen_newton_solver_exist)
-        printer->add_line("if (solver_error > 0) throw std::runtime_error(\"Newton solver did not converge!\");");
-    if (info.eigen_linear_solver_exist)
-        printer->add_line("if (solver_error > 0) throw std::runtime_error(\"Singular matrices (Crout/Inverse)!\");");
 
     print_kernel_data_present_annotation_block_end();
 

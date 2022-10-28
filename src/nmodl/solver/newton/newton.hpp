@@ -79,8 +79,9 @@ EIGEN_DEVICE_FUNC int newton_solver(Eigen::Matrix<double, N, 1>& X,
         if (!J.IsRowMajor)
             J.transposeInPlace();
         Eigen::Matrix<int, N, 1> pivot;
+        Eigen::Matrix<double, N, 1> rowmax;
         // Check if J is singular
-        if (nmodl::crout::Crout<double>(N, J.data(), pivot.data()) < 0)
+        if (nmodl::crout::Crout<double>(N, J.data(), pivot.data(), rowmax.data()) < 0)
             return -1;
         Eigen::Matrix<double, N, 1> X_solve;
         nmodl::crout::solveCrout<double>(N, J.data(), F.data(), X_solve.data(), pivot.data());
@@ -158,8 +159,9 @@ EIGEN_DEVICE_FUNC int newton_numerical_diff_solver(Eigen::Matrix<double, N, 1>& 
         if (!J.IsRowMajor)
             J.transposeInPlace();
         Eigen::Matrix<int, N, 1> pivot;
+        Eigen::Matrix<double, N, 1> rowmax;
         // Check if J is singular
-        if (nmodl::crout::Crout<double>(N, J.data(), pivot.data()) < 0)
+        if (nmodl::crout::Crout<double>(N, J.data(), pivot.data(), rowmax.data()) < 0)
             return -1;
         Eigen::Matrix<double, N, 1> X_solve;
         nmodl::crout::solveCrout<double>(N, J.data(), F.data(), X_solve.data(), pivot.data());
