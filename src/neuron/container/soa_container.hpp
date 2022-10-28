@@ -72,6 +72,12 @@ template <typename T>
 struct has_name<T, std::void_t<decltype(std::declval<T>().name())>>: std::true_type {};
 template <typename T>
 inline constexpr bool has_name_v = has_name<T>::value;
+
+// std::type_identity in C++20
+template <typename T>
+struct type_identity {
+    using type = T;
+};
 }  // namespace detail
 
 /** @brief Token whose lifetime manages frozen/sorted state of a container.
@@ -101,13 +107,26 @@ struct state_token {
     Container* m_container{};
 };
 
-/** @brief Utility for generating SOA data structures.
- *  @tparam Storage       Name of the actual storage type derived from soa<...>.
- *  @tparam RowIdentifier Tag type for the identifier column.
- *  @tparam Tags          Parameter pack of tag types that define the columns
- *                        included in the container. Types may not be repeated.
+/**
+ * @brief Utility for generating SOA data structures.
+ * @headerfile neuron/container/soa_container.hpp
+ * @tparam Storage    Name of the actual storage type derived from soa<...>.
+ * @tparam Identifier Type for the identifier column.
+ * @tparam Tags       Parameter pack of tag types that define the columns
+ *                    included in the container. Types may not be repeated.
+ *
+ * This CRTP base class is used to implement the ~global SOA storage structs
+ * that hold (so far) Node and Mechanism data. Ownership of rows in these
+ * structs is managed via instances of owning handle types, such as @ref
+ * neuron::container::Node::owning_handle and @ref
+ * neuron::container::Mechanism::owning_handle. Values in these structs can also
+ * be referred to using the non-owning handle types such as @ref
+ * neuron::container::Node::handle and @ref
+ * neuron::container::Mechanism::handle, and more generic handle types such as
+ * @ref neuron::container::data_handle<T> and @ref
+ * neuron::container::generic_data_handle.
  */
-template <typename Storage, typename RowIdentifier, typename... Tags>
+template <typename Storage, typename Identifier, typename... Tags>
 struct soa {
     /** @brief Construct with default-constructed tag type instances.
      */
@@ -125,22 +144,42 @@ struct soa {
         initialise_data();
     }
 
-    // Make it harder to invalidate the pointers/references to instances of
-    // this struct that are stored in Node objects.
+    /** @brief @ref soa is not movable
+     *
+     *  This is to make it harder to accidentally invalidate pointers-to-storage
+     *  in handles.
+     */
     soa(soa&&) = delete;
+
+    /** @brief @ref soa is not copiable
+     *
+     *  This is partly to make it harder to accidentally invalidate
+     *  pointers-to-storage in handles, and partly because it could be very
+     *  expensive so it might be better to be more explicit.
+     */
     soa(soa const&) = delete;
+
+    /** @brief @ref soa is not move assignable
+     *
+     *  For the same reason it isn't movable.
+     */
     soa& operator=(soa&&) = delete;
+
+    /** @brief @ref soa is not copy assignable
+     *
+     *  For the same reasons it isn't copy constructible
+     */
     soa& operator=(soa const&) = delete;
 
-    /** @brief Remove the i-th row from the container.
+    /** @brief Remove the @f$i^{\text{th}}@f$ row from the container.
      *
      *  This is currently implemented by swapping the last element into position
-     *  i (if those are not the same element) and reducing the size by one.
+     *  @f$i@f$ (if those are not the same element) and reducing the size by one.
      *  Iterators to the last element and the deleted element will be invalidated.
      */
     void erase(std::size_t i) {
         if (m_frozen_count) {
-            throw std::runtime_error("soa<...>::erase called in read-only mode");
+            throw_error("erase() called on a frozen structure");
         }
         mark_as_unsorted_impl<true>();
         auto const old_size = size();
@@ -213,12 +252,6 @@ struct soa {
         }
     }
 
-    /** @brief Dummy tag type for the row identifier column.
-     */
-    struct row_identifier_tag {
-        using type = RowIdentifier;
-    };
-
     /** @brief Apply the given function to all data vectors in this container.
      *
      *  This centralises handling of tag types that are duplicated a
@@ -226,7 +259,7 @@ struct soa {
      */
     template <typename This, typename Callable>
     static void for_all_vectors(This& this_ref, Callable const& callable) {
-        callable(row_identifier_tag{}, this_ref.m_indices);
+        callable(detail::type_identity<Identifier>{}, this_ref.m_indices);
         (for_all_tag_vectors<Tags>(this_ref, callable), ...);
     }
 
@@ -339,22 +372,25 @@ struct soa {
     }
 
   public:
-    /** @brief Append a new entry to all elements of the container.
-     *  @todo  Perhaps the return type should be an owning view, not just an
-     *         owning row identifier.
-     *  @todo  Perhaps a different name would be better, given the comment below
-     *         about the semantics.
+    /**
+     * @brief Create a new entry in the container and return a handle that owns it.
      *
-     *  Note that this has slightly strange semantics: the returned object owns
-     *  row that has been added, so if you discard the return value then the
-     *  added row will immediately be deleted.
+     * Calling this method increases size() by one. Destroying (modulo move
+     * operations) the returned handle, which has the semantics of a unique_ptr,
+     * decreases size() by one.
+     *
+     * Note that this has different semantics to standard library container
+     * methods such as emplace_back(), push_back(), insert() and so on. Because
+     * the returned handle manages the lifetime of the newly-created entry,
+     * discarding the return value will cause the new entry to immediately be
+     * deleted.
      */
-    [[nodiscard]] owning_identifier_base<Storage, RowIdentifier> emplace_back() {
+    [[nodiscard]] owning_identifier_base<Storage, Identifier> acquire_owning_handle() {
         if (m_frozen_count) {
-            throw_error("emplace_back() called on a frozen structure");
+            throw_error("acquire_owning_handle() called on a frozen structure");
         }
         // Important that this comes after the m_frozen_count check
-        owning_identifier_base<Storage, RowIdentifier> index{static_cast<Storage&>(*this)};
+        owning_identifier_base<Storage, Identifier> index{static_cast<Storage&>(*this)};
         mark_as_unsorted_impl<true>();  // because emplace_back() can trigger reallocation, but is
                                         // "sorted" defined to mean double* are not invalidated..?
         index.set_current_row(size());
@@ -366,13 +402,13 @@ struct soa {
                 vec.emplace_back();
             }
         });
-        m_indices.back() = std::move(index);
+        m_indices.back() = std::move(index);  // eww, we move and then returned a moved-from value
         return index;
     }
 
     /** @brief Get the offset-th identifier.
      */
-    [[nodiscard]] RowIdentifier identifier(std::size_t offset) const {
+    [[nodiscard]] Identifier identifier(std::size_t offset) const {
         return m_indices.at(offset);
     }
 
@@ -456,7 +492,7 @@ struct soa {
     }
 
   private:
-    static_assert(detail::are_types_unique_v<RowIdentifier, Tags...>,
+    static_assert(detail::are_types_unique_v<Identifier, Tags...>,
                   "All tag types should be unique");
     template <typename Tag>
     static constexpr std::size_t tag_index_v = detail::index_of_type_v<Tag, Tags...>;
@@ -539,7 +575,7 @@ struct soa {
     [[nodiscard]] std::optional<utils::storage_info> find_container_info(void const* cont) const {
         utils::storage_info info{};
         // FIXME: generate a proper tag type for the index column?
-        if (find_container_info<RowIdentifier>(info, m_indices, cont) ||
+        if (find_container_info<Identifier>(info, m_indices, cont) ||
             (find_container_info<Tags>(info, std::get<tag_index_v<Tags>>(m_data), cont) || ...)) {
             return info;
         } else {
@@ -603,7 +639,7 @@ struct soa {
 
     /** @brief Pointers to identifiers that record the current physical row.
      */
-    std::vector<RowIdentifier> m_indices{};
+    std::vector<Identifier> m_indices{};
 
     /** @brief Storage type for this Tag.
      *
