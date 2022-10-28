@@ -823,10 +823,8 @@ foreach(
   neuron/container/generic_data_handle.hpp
   neuron/container/mechanism.hpp
   neuron/container/mechanism_data.hpp
-  neuron/container/mechanism_identifier.hpp
   neuron/container/node.hpp
   neuron/container/node_data.hpp
-  neuron/container/node_identifier.hpp
   neuron/container/soa_container.hpp
   neuron/container/soa_container_impl.hpp
   neuron/container/soa_identifier.hpp
