@@ -74,7 +74,7 @@ static double interp(double frac, double x1, double x2) {
 }
 
 double hoc_func_table(void* vpft, int n, double* args) {
-    auto ft = reinterpret_cast<FuncTable*>(vpft);
+    auto* const ft = static_cast<FuncTable*>(vpft);
     if (!ft) {
         hoc_execerror("table not specified in hoc_func_table", nullptr);
     }
