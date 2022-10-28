@@ -2313,7 +2313,7 @@ static neuron::container::state_token<neuron::container::Node::storage> nrn_sort
         cache.thread.at(nt - nrn_threads).node_data_offset = global_i;
         for (int i = 0; i < nt->end; ++i, ++global_i) {
             Node* nd = nt->_v_node[i];
-            auto const current_node_row = nd->_node_handle.id().current_row();
+            auto const current_node_row = nd->_node_handle.current_row();
             assert(current_node_row < global_node_data_size);
             assert(global_i < global_node_data_size);
             global_node_data_permutation.at(global_i) = current_node_row;

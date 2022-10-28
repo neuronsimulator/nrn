@@ -12,13 +12,14 @@
 namespace neuron::container {
 
 namespace detail {
-/** @brief Get the vector in which dying owning_identifier_bases should live.
+/**
+ * @brief Get the vector in which dying owning_identifier_bases should live.
  *
  * @todo Should this be templated on the container type? Or should the garbage
  *       vector live inside the relevant soa<...> instance? If it did, how
  *       would that work for the use-case of cloning/swapping those instances?
  * @todo Do we end up with duplicate definitions of this vector because of
- *       dlopen() etc. ?
+ *       dlopen() etc. ? Probably yes, define it like the global Model struct.
  */
 inline std::vector<std::unique_ptr<std::size_t>>& garbage() {
     static std::vector<std::unique_ptr<std::size_t>> x{};
@@ -28,34 +29,40 @@ inline std::vector<std::unique_ptr<std::size_t>>& garbage() {
 inline constexpr std::size_t invalid_row = std::numeric_limits<std::size_t>::max();
 }  // namespace detail
 
-template <typename, typename, typename...>
-struct soa;
+// template <typename, template <typename> typename, typename...>
+// struct soa;
+// struct generic_data_handle;
+// template <typename, typename>
+// struct owning_identifier_base;
 
-struct generic_data_handle;
-
-template <typename, typename>
-struct owning_identifier_base;
-
-/** @brief A non-owning permutation-stable identifier for a row in another container.
+/**
+ * @brief A non-owning permutation-stable identifier for an entry in a container.
  *
- *  A (non-owning) handle to that row probably consists of an instance of a
- *  subclass of this struct and some kind of reference to the actual container.
+ * The container type is not specified. This is essentially a wrapper for
+ * std::size_t* that avoids using that naked type in too many places.
  */
-struct identifier_base {
-    /** @brief Construct a null handle.
+struct non_owning_identifier_without_container {
+    /**
+     * @brief Create a null identifier.
      */
-    identifier_base() = default;
+    non_owning_identifier_without_container() = default;
 
-    /** @brief Does the handle refer to a valid row?
+    /**
+     * @brief Does the identifier refer to a valid entry?
+     *
+     * The row can be invalid because the identifier was always null, or it can
+     * have become invalid if the relevant entry was deleted after the
+     * identifier was created.
      */
     [[nodiscard]] explicit operator bool() const {
         return m_ptr && (*m_ptr != detail::invalid_row);
     }
 
-    /** @brief What is the current row?
+    /**
+     * @brief What is the current row?
      *
-     *  The returned value is invalidated by any deletions from the underlying
-     *  container, and by any permutations of the underlying container.
+     * The returned value is invalidated by any deletions from the underlying
+     * container, and by any permutations of the underlying container.
      */
     [[nodiscard]] std::size_t current_row() const {
         assert(m_ptr);
@@ -64,7 +71,16 @@ struct identifier_base {
         return value;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, identifier_base const& id) {
+    /**
+     * @brief Did the identifier use to refer to a valid entry?
+     *
+     */
+    [[nodiscard]] bool was_once_valid() const {
+        return m_ptr && *m_ptr == detail::invalid_row;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os,
+                                    non_owning_identifier_without_container const& id) {
         if (!id.m_ptr) {
             return os << "null";
         } else if (*id.m_ptr == detail::invalid_row) {
@@ -76,82 +92,175 @@ struct identifier_base {
 
     /** @brief Test if two handles are both null or refer to the same valid row.
      */
-    friend bool operator==(identifier_base lhs, identifier_base rhs) {
+    friend bool operator==(non_owning_identifier_without_container lhs,
+                           non_owning_identifier_without_container rhs) {
         return lhs.m_ptr == rhs.m_ptr || (!lhs && !rhs);
     }
 
-    friend bool operator!=(identifier_base lhs, identifier_base rhs) {
+    friend bool operator!=(non_owning_identifier_without_container lhs,
+                           non_owning_identifier_without_container rhs) {
         return !(lhs == rhs);
     }
 
-  private:
+  protected:
+    // Needed to convert owning_identifier<T> to non_owning_identifier<T>
     template <typename>
-    friend struct data_handle;
-    friend struct generic_data_handle;
-    template <typename, typename, typename...>
+    friend struct owning_identifier;
+
+    template <typename, template <typename> typename, typename...>
     friend struct soa;
-    template <typename, typename>
-    friend struct owning_identifier_base;
-    friend struct std::hash<identifier_base>;
-    /** This is needed for converting owning to non-owning handles, and is also
-     *  useful for assertions.
-     */
-    identifier_base(std::size_t* ptr)
+    friend struct std::hash<non_owning_identifier_without_container>;
+    non_owning_identifier_without_container(std::size_t* ptr)
         : m_ptr{ptr} {}
-    void set_current_row(std::size_t new_row) {
+    void set_current_row(std::size_t row) {
         assert(m_ptr);
-        *m_ptr = new_row;
+        *m_ptr = row;
     }
+
+  private:
     std::size_t* m_ptr{};
 };
 
-/** @brief Base class for a owning_handle to a row in a soa<...> container.
- *  @tparam DataContainer neuron::container::soa<...> type that holds the SOA-format data.
- *  @tparam NonOwningElementHandle Non-owning equivalent identifier/handle.
+/**
+ * @brief A non-owning permutation-stable identifier for a entry in a container.
+ * @tparam Storage The type of the referred-to container. This might be a type
+ *                 derived from @ref neuron::container::soa<...>, or a plain
+ *                 container like std::vector<T> in the case of @ref
+ *                 neuron::container::data_handle<T>.
  *
- *  When this is destroyed the corresponding row in the container is deleted.
- *  @todo Figure out what the NonOwningElementHandle type is from DataContainer?
+ * A (non-owning) handle to that row combines an instance of that class with an
+ * interface that is specific to Storage. non_owning_identifier<Storage> wraps
+ * non_owning_identifier_without_container so as to provide the same interface
+ * as owning_identifier<Storage>.
  */
-template <typename DataContainer, typename NonOwningElementHandle>
-struct owning_identifier_base {
-    owning_identifier_base(DataContainer& data_container)
-        : m_ptr{new std::size_t, data_container} {}
-    /** @brief Does the handle refer to a valid row?
+template <typename Storage>
+struct non_owning_identifier: non_owning_identifier_without_container {
+    non_owning_identifier(Storage* storage, non_owning_identifier_without_container id)
+        : non_owning_identifier_without_container{std::move(id)}
+        , m_storage{storage} {}
+
+    /**
+     * @brief Return a reference to the container in which this entry lives.
      */
-    [[nodiscard]] explicit operator bool() const {
-        return m_ptr && (*m_ptr != detail::invalid_row);
+    Storage& underlying_storage() {
+        assert(m_storage);
+        return *m_storage;
     }
-    [[nodiscard]] operator NonOwningElementHandle() const {
-        return {m_ptr.get()};
+
+    /**
+     * @brief Return a const reference to the container in which this entry lives.
+     */
+    Storage const& underlying_storage() const {
+        assert(m_storage);
+        return *m_storage;
     }
-    void swap(owning_identifier_base& other) noexcept {
-        m_ptr.swap(other.m_ptr);
+
+  private:
+    // TODO clean up this friend stuff...
+    // template <typename>
+    // friend struct data_handle;
+    // friend struct generic_data_handle;
+    // template <typename, template <typename> typename, typename...>
+    // friend struct soa;
+    // This is so
+    // template <typename>
+    // friend struct owning_identifier;
+    // friend struct std::hash<identifier_base>;
+    /** This is needed for converting owning to non-owning handles, and is also
+     *  useful for assertions.
+     */
+    // non_owning_identifier(Storage& storage, std::size_t* ptr) : m_storage{storage}, m_ptr{ptr} {}
+    // void set_current_row(std::size_t new_row) {
+    //     assert(m_ptr);
+    //     *m_ptr = new_row;
+    // }
+    Storage* m_storage;
+};
+
+/**
+ * @brief An owning permutation-stable identifier for a entry in a container.
+ * @tparam Storage The type of the referred-to container, which is expected to
+ *                 be a type derived from @ref neuron::container::soa<...>
+ *
+ * This identifier has owning semantics, meaning that when it is destroyed the
+ * corresponding entry in the container is deleted.
+ */
+template <typename Storage>
+struct owning_identifier {
+    /**
+     * @brief Create a non-null owning identifier by creating a new entry.
+     */
+    owning_identifier(Storage& storage)
+        : owning_identifier() {
+        auto tmp = storage.acquire_owning_identifier();
+        using std::swap;
+        swap(*this, tmp);
     }
-    DataContainer& data_container() const {
-        return m_ptr.get_deleter().m_data_ref;
+
+    /**
+     * @brief Create a non-null owning identifier that owns the given row.
+     */
+    owning_identifier(Storage& storage, std::size_t row)
+        : m_ptr{new std::size_t, storage} {
+        *m_ptr = row;
     }
-    /** @brief What is the current row?
+
+    /**
+     * @brief Return a reference to the container in which this entry lives.
+     */
+    Storage& underlying_storage() {
+        return *m_ptr.get_deleter().m_data_ptr;
+    }
+
+    /**
+     * @brief Return a const reference to the container in which this entry lives.
+     */
+    Storage const& underlying_storage() const {
+        return *m_ptr.get_deleter().m_data_ptr;
+    }
+
+    [[nodiscard]] operator non_owning_identifier<Storage>() const {
+        return {const_cast<Storage*>(&underlying_storage()), m_ptr.get()};
+    }
+
+    [[nodiscard]] operator non_owning_identifier_without_container() const {
+        return static_cast<non_owning_identifier<Storage>>(*this);
+    }
+
+    /**
+     * @brief What is the current row?
+     *
+     * The returned value is invalidated by any deletions from the underlying
+     * container, and by any permutations of the underlying container.
      */
     [[nodiscard]] std::size_t current_row() const {
         assert(m_ptr);
         return *m_ptr;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, owning_identifier_base const& oi) {
-        return os << "owning " << NonOwningElementHandle{oi};
+    friend void swap(owning_identifier& first, owning_identifier& second) {
+        using std::swap;
+        swap(first.m_ptr, second.m_ptr);
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, owning_identifier const& oi) {
+        return os << "owning " << non_owning_identifier<Storage>{oi};
     }
 
   private:
+    owning_identifier() = default;
     struct deleter {
-        deleter(DataContainer& data_container)
-            : m_data_ref{data_container} {}
+        deleter() = default;
+        deleter(Storage& data_container)
+            : m_data_ptr{&data_container} {}
         void operator()(std::size_t* p) const {
-            DataContainer& data_container = m_data_ref;
+            assert(m_data_ptr);
+            auto& data_container = *m_data_ptr;
             assert(p);
             // We should still be a valid reference at this point.
             assert(*p < data_container.size());
             // Prove that the bookkeeping works.
-            assert(data_container.identifier(*p) == p);
+            assert(data_container.at(*p).id() == p);
             bool terminate{false};
             // Delete the corresponding row from `data_container`
             try {
@@ -163,9 +272,8 @@ struct owning_identifier_base {
                 //   auto const read_only_token = node_data.get_sorted_token();
                 //   list_of_nodes.pop_back();
                 // which tries to delete a row from a container in read-only mode.
-                std::cerr << "neuron::container::owning_identifier_base<"
-                          << cxx_demangle(typeid(DataContainer).name()) << ", "
-                          << cxx_demangle(typeid(NonOwningElementHandle).name())
+                std::cerr << "neuron::container::owning_identifier<"
+                          << cxx_demangle(typeid(Storage).name())
                           << "> destructor could not delete from the underlying storage: "
                           << e.what() << " [" << cxx_demangle(typeid(e).name())
                           << "]. This is not recoverable, aborting." << std::endl;
@@ -184,10 +292,10 @@ struct owning_identifier_base {
             // would be worth it.
             detail::garbage().emplace_back(p);
         }
-        std::reference_wrapper<DataContainer> m_data_ref;
+        Storage* m_data_ptr{};
     };
     std::unique_ptr<std::size_t, deleter> m_ptr;
-    template <typename, typename, typename...>
+    template <typename, template <typename> typename, typename...>
     friend struct soa;
     void set_current_row(std::size_t new_row) {
         assert(m_ptr);
@@ -197,8 +305,9 @@ struct owning_identifier_base {
 
 }  // namespace neuron::container
 template <>
-struct std::hash<neuron::container::identifier_base> {
-    std::size_t operator()(neuron::container::identifier_base const& h) noexcept {
+struct std::hash<neuron::container::non_owning_identifier_without_container> {
+    std::size_t operator()(
+        neuron::container::non_owning_identifier_without_container const& h) noexcept {
         return reinterpret_cast<std::size_t>(h.m_ptr);
     }
 };
