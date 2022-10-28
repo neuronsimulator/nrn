@@ -607,7 +607,7 @@ void nrn_poolshrink(int shrink) {
             if ((pdbl && pdbl->nget() == 0)) {
                 nrn_delete_prop_pool(i);
             }
-            if ((pdatum && pdatum->nget() == 0) && pdatum->size() > 10) {
+            if (pdatum && pdatum->nget() == 0) {
                 delete datumpools_[i];
                 datumpools_[i] = NULL;
             }
