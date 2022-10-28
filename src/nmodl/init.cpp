@@ -107,18 +107,18 @@ static struct { /* numerical methods */
     const char* name;
     long subtype; /* All the types that will work with this */
     short varstep;
-} methods[] = {
-    {"adams", DERF | KINF, 0},  {"runge", DERF | KINF, 0},
-    {"euler", DERF | KINF, 0},  {"adeuler", DERF | KINF, 1},
-    {"heun", DERF | KINF, 0},   {"adrunge", DERF | KINF, 1},
-    {"gear", DERF | KINF, 1},   {"newton", NLINF, 0},
-    {"simplex", NLINF, 0},      {"simeq", LINF, 0},
-    {"seidel", LINF, 0},        {"_advance", KINF, 0},
-    {"sparse", KINF, 0},        {"derivimplicit", DERF, 0}, /* name hard wired in deriv.c */
-    {"cnexp", DERF, 0},                                     /* see solve.c */
-    {"clsoda", DERF | KINF, 1},                             /* Tolerance built in to scopgear.c */
-    {"after_cvode", 0, 0},      {"cvode_t", 0, 0},
-    {"cvode_t_v", 0, 0},        {0, 0, 0}};
+} methods[] = {{"runge", DERF | KINF, 0},
+               {"euler", DERF | KINF, 0},
+               {"newton", NLINF, 0},
+               {"simeq", LINF, 0},
+               {"_advance", KINF, 0},
+               {"sparse", KINF, 0},
+               {"derivimplicit", DERF, 0}, /* name hard wired in deriv.c */
+               {"cnexp", DERF, 0},         /* see solve.c */
+               {"after_cvode", 0, 0},
+               {"cvode_t", 0, 0},
+               {"cvode_t_v", 0, 0},
+               {0, 0, 0}};
 
 static const char* extdef[] = {/* external names that can be used as doubles
                                 * without giving an error message */

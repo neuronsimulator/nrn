@@ -96,7 +96,7 @@ class PlayRecord: public Observer {
 
 declarePtrList(PlayRecList, PlayRecord)
 
-    class PlayRecordSave {
+class PlayRecordSave {
   public:
     PlayRecordSave(PlayRecord*);
     virtual ~PlayRecordSave();
