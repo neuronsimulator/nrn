@@ -1,6 +1,5 @@
 #pragma once
 #include "neuron/container/mechanism.hpp"
-#include "neuron/container/mechanism_identifier.hpp"
 #include "neuron/container/soa_container.hpp"
 
 namespace neuron::container::Mechanism {
