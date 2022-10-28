@@ -133,15 +133,15 @@ struct Node {
     // Eventually the old Node class should become an alias for
     // neuron::container::handle::Node, but as an intermediate measure we can
     // add one of those as a member and forward some access/modifications to it.
-    neuron::container::Node::owning_handle _node_handle;
+    neuron::container::Node::owning_handle _node_handle{neuron::model().node_data()};
     [[nodiscard]] auto area() const {
-        return _node_handle.area();
+        return _node_handle.area_hack();
     }
     [[nodiscard]] auto v() const {
-        return _node_handle.v();
+        return _node_handle.v_hack();
     }
     [[nodiscard]] auto voltage() const {
-        return v();
+        return _node_handle.v_hack();
     }
     void set_area(neuron::container::Node::field::Area::type area) {
         _node_handle.set_area(area);
@@ -232,7 +232,8 @@ struct Prop {
     Prop(short type)
         : _type{type} {
         if (type != CABLESECTION) {
-            m_mech_handle = neuron::model().mechanism_data(type);
+            m_mech_handle = neuron::container::Mechanism::owning_handle{
+                neuron::model().mechanism_data(type)};
         }
     }
     Prop* next;      /* linked list of properties */
@@ -251,7 +252,7 @@ struct Prop {
      */
     [[nodiscard]] auto id() const {
         assert(m_mech_handle);
-        return m_mech_handle->id();
+        return m_mech_handle->id_hack();
     }
 
     /** @brief Check if the given handle refers to data owned by this Prop.
