@@ -31,9 +31,10 @@ static FILE* help_pipe;
 
 extern const char* hoc_current_xopen();
 
-declareList(CopyStringList, CopyString) implementList(CopyStringList, CopyString)
+declareList(CopyStringList, CopyString)
+implementList(CopyStringList, CopyString)
 
-    static CopyStringList* filequeue;
+static CopyStringList* filequeue;
 
 void ivoc_help(const char* s) {
 #if 1
