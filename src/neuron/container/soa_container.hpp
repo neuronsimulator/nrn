@@ -100,7 +100,7 @@ struct state_token {
     }
 
   private:
-    template <typename, typename, typename...>
+    template <typename, template <typename> typename, typename...>
     friend struct soa;
     constexpr state_token(Container& container)
         : m_container{&container} {}
@@ -111,7 +111,11 @@ struct state_token {
  * @brief Utility for generating SOA data structures.
  * @headerfile neuron/container/soa_container.hpp
  * @tparam Storage    Name of the actual storage type derived from soa<...>.
- * @tparam Identifier Type for the identifier column.
+ * @tparam Interface  Name of the CRTP type defining the interface for entries
+ *                    in this container. This is instantiated with different
+ *                    template arguments to generate the owning handle and
+ *                    non-owning handle types that refer to entries in this
+ *                    container.
  * @tparam Tags       Parameter pack of tag types that define the columns
  *                    included in the container. Types may not be repeated.
  *
@@ -126,56 +130,74 @@ struct state_token {
  * @ref neuron::container::data_handle<T> and @ref
  * neuron::container::generic_data_handle.
  */
-template <typename Storage, typename Identifier, typename... Tags>
+template <typename Storage, template <typename> typename Interface, typename... Tags>
 struct soa {
-    /** @brief Construct with default-constructed tag type instances.
+    /**
+     * @brief A handle that owns a row in this container.
+     */
+    using owning_handle = Interface<owning_identifier<Storage>>;
+
+    /**
+     * @brief A handle that refers to a row in this container.
+     */
+    using handle = Interface<non_owning_identifier<Storage>>;
+
+    /**
+     * @brief Construct with default-constructed tag type instances.
      */
     soa() {
         initialise_data();
     }
 
-    /** @brief Construct with specific tag instances.
+    /**
+     * @brief Construct with specific tag instances.
      *
-     *  This is useful if the tag types are not empty, for example if the number
-     *  of times a column is duplicated is a runtime value.
+     * This is useful if the tag types are not empty, for example if the number
+     * of times a column is duplicated is a runtime value.
      */
-    soa(Tags... tag_instances)
-        : m_tags{std::move(tag_instances)...} {
+    soa(Tags&&... tag_instances)
+        : m_tags{std::forward<Tags>(tag_instances)...} {
         initialise_data();
     }
 
-    /** @brief @ref soa is not movable
+    /**
+     * @brief @ref soa is not movable
      *
-     *  This is to make it harder to accidentally invalidate pointers-to-storage
-     *  in handles.
+     * This is to make it harder to accidentally invalidate pointers-to-storage
+     * in handles.
      */
     soa(soa&&) = delete;
 
-    /** @brief @ref soa is not copiable
+    /**
+     * @brief @ref soa is not copiable
      *
-     *  This is partly to make it harder to accidentally invalidate
-     *  pointers-to-storage in handles, and partly because it could be very
-     *  expensive so it might be better to be more explicit.
+     * This is partly to make it harder to accidentally invalidate
+     * pointers-to-storage in handles, and partly because it could be very
+     * expensive so it might be better to be more explicit.
      */
     soa(soa const&) = delete;
 
-    /** @brief @ref soa is not move assignable
+    /**
+     * @brief @ref soa is not move assignable
      *
-     *  For the same reason it isn't movable.
+     * For the same reason it isn't movable.
      */
     soa& operator=(soa&&) = delete;
 
-    /** @brief @ref soa is not copy assignable
+    /**
+     * @brief @ref soa is not copy assignable
      *
-     *  For the same reasons it isn't copy constructible
+     * For the same reasons it isn't copy constructible
      */
     soa& operator=(soa const&) = delete;
 
-    /** @brief Remove the @f$i^{\text{th}}@f$ row from the container.
+    /**
+     * @brief Remove the @f$i^{\text{th}}@f$ row from the container.
      *
-     *  This is currently implemented by swapping the last element into position
-     *  @f$i@f$ (if those are not the same element) and reducing the size by one.
-     *  Iterators to the last element and the deleted element will be invalidated.
+     * This is currently implemented by swapping the last element into position
+     * @f$i@f$ (if those are not the same element) and reducing the size by one.
+     * Iterators to the last element and the deleted element will be
+     * invalidated.
      */
     void erase(std::size_t i) {
         if (m_frozen_count) {
@@ -198,7 +220,8 @@ struct soa {
         });
     }
 
-    /** @brief Get the size of the container.
+    /**
+     * @brief Get the size of the container.
      */
     [[nodiscard]] std::size_t size() const {
         // Check our various std::vector members are still the same size as each
@@ -209,12 +232,13 @@ struct soa {
         return m_indices.size();
     }
 
-    /** @brief Query if the storage is currently frozen.
+    /**
+     * @brief Query if the storage is currently frozen.
      *
-     *  When the container is frozen then no operations are allowed that would
-     *  change the address of any data, however the values themselves may still
-     *  be read from and written to. A container that is sorted and frozen is
-     *  guaranteed to remain sorted until it is thawed (unfrozen).
+     * When the container is frozen then no operations are allowed that would
+     * change the address of any data, however the values themselves may still
+     * be read from and written to. A container that is sorted and frozen is
+     * guaranteed to remain sorted until it is thawed (unfrozen).
      */
     [[nodiscard]] bool is_frozen() const {
         return m_frozen_count;
@@ -252,20 +276,22 @@ struct soa {
         }
     }
 
-    /** @brief Apply the given function to all data vectors in this container.
+    /**
+     * @brief Apply the given function to all data vectors in this container.
      *
-     *  This centralises handling of tag types that are duplicated a
-     *  runtime-specified number of times.
+     * This centralises handling of tag types that are duplicated a
+     * runtime-specified number of times.
      */
     template <typename This, typename Callable>
     static void for_all_vectors(This& this_ref, Callable const& callable) {
-        callable(detail::type_identity<Identifier>{}, this_ref.m_indices);
+        callable(detail::type_identity<non_owning_identifier<Storage>>{}, this_ref.m_indices);
         (for_all_tag_vectors<Tags>(this_ref, callable), ...);
     }
 
-    /** @brief Flag that the storage is no longer frozen.
+    /**
+     * @brief Flag that the storage is no longer frozen.
      *
-     *  This is called from the destructor of state_token.
+     * This is called from the destructor of state_token.
      */
     void decrease_frozen_count() {
         assert(m_frozen_count);
@@ -273,30 +299,32 @@ struct soa {
     }
 
   public:
-    /** @brief Return type of get_sorted_token()
+    /**
+     * @brief Return type of get_sorted_token()
      */
     using sorted_token_type = state_token<Storage>;
 
-    /** @brief Mark the container as sorted and return a token guaranteeing that.
+    /**
+     * @brief Mark the container as sorted and return a token guaranteeing that.
      *
-     *  Is is user-defined precisely what "sorted" means, but the soa<...> class
-     *  makes some guarantees:
-     *  - if the container is frozen, no pointers to elements in the underlying
-     *    storage will be invalidated -- attempts to do so will throw or abort.
-     *  - if the container is not frozen, it will remain flagged as sorted until
-     *    a potentially-pointer-invalidating operation (insertion, deletion,
-     *    permutation) occurs, or mark_as_unsorted() is called.
+     * Is is user-defined precisely what "sorted" means, but the soa<...> class
+     * makes some guarantees:
+     * - if the container is frozen, no pointers to elements in the underlying
+     *   storage will be invalidated -- attempts to do so will throw or abort.
+     * - if the container is not frozen, it will remain flagged as sorted until
+     *   a potentially-pointer-invalidating operation (insertion, deletion,
+     *   permutation) occurs, or mark_as_unsorted() is called.
      *
-     *  The container will be frozen for the lifetime of the token returned from
-     *  this function, and therefore also sorted for at least that time. This
-     *  token has the semantics of a unique_ptr, i.e. it cannot be copied but
-     *  can be moved, and destroying a moved-from token has no effect.
+     * The container will be frozen for the lifetime of the token returned from
+     * this function, and therefore also sorted for at least that time. This
+     * token has the semantics of a unique_ptr, i.e. it cannot be copied but
+     * can be moved, and destroying a moved-from token has no effect.
      *
-     *  The tokens returned by this function are reference counted; the
-     *  container will be frozen for as long as any token is alive.
+     * The tokens returned by this function are reference counted; the
+     * container will be frozen for as long as any token is alive.
      *
-     *  @todo A future extension could be to preserve the sorted flag until
-     *        pointers are actually, not potentially, invalidated.
+     * @todo A future extension could be to preserve the sorted flag until
+     *       pointers are actually, not potentially, invalidated.
      */
     [[nodiscard]] sorted_token_type get_sorted_token() {
         // Increment the reference count, marking the container as frozen.
@@ -307,31 +335,34 @@ struct soa {
         return sorted_token_type{static_cast<Storage&>(*this)};
     }
 
-    /** @brief Tell the container it is no longer sorted.
+    /**
+     * @brief Tell the container it is no longer sorted.
      *
-     *  The meaning of being sorted is externally defined, and it is possible
-     *  that some external change to an input of the (external) algorithm
-     *  defining the sort order can mean that the data are no longer considered
-     *  sorted, even if nothing has actually changed inside this container.
+     * The meaning of being sorted is externally defined, and it is possible
+     * that some external change to an input of the (external) algorithm
+     * defining the sort order can mean that the data are no longer considered
+     * sorted, even if nothing has actually changed inside this container.
      */
     void mark_as_unsorted() {
         mark_as_unsorted_impl<false>();
     }
 
-    /** @brief Set the callback that is invoked when the container becomes unsorted.
+    /**
+     * @brief Set the callback that is invoked when the container becomes unsorted.
      *
-     *  This is invoked by mark_as_unsorted() and when a container operation
-     *  (insertion, permutation, deletion) causes the container to transition
-     *  from being sorted to being unsorted.
+     * This is invoked by mark_as_unsorted() and when a container operation
+     * (insertion, permutation, deletion) causes the container to transition
+     * from being sorted to being unsorted.
      */
     void set_unsorted_callback(std::function<void()> unsorted_callback) {
         m_unsorted_callback = std::move(unsorted_callback);
     }
 
-    /** @brief Query if the underlying vectors are still "sorted".
+    /**
+     * @brief Query if the underlying vectors are still "sorted".
      *
-     *  See the documentation of get_sorted_token() for an explanation of what
-     *  this means.
+     * See the documentation of get_sorted_token() for an explanation of what
+     * this means.
      */
     [[nodiscard]] bool is_sorted() const {
         return m_sorted;
@@ -373,7 +404,7 @@ struct soa {
 
   public:
     /**
-     * @brief Create a new entry in the container and return a handle that owns it.
+     * @brief Create a new entry in the container and return an identifier that owns it.
      *
      * Calling this method increases size() by one. Destroying (modulo move
      * operations) the returned handle, which has the semantics of a unique_ptr,
@@ -384,16 +415,25 @@ struct soa {
      * the returned handle manages the lifetime of the newly-created entry,
      * discarding the return value will cause the new entry to immediately be
      * deleted.
+     *
+     * @todo Make this method private and reorganise documentation comments.
+     * Identifiers are an implementation detail.
      */
-    [[nodiscard]] owning_identifier_base<Storage, Identifier> acquire_owning_handle() {
+    [[nodiscard]] owning_identifier<Storage> acquire_owning_identifier() {
         if (m_frozen_count) {
-            throw_error("acquire_owning_handle() called on a frozen structure");
+            throw_error("acquire_owning_identifier() called on a frozen structure");
         }
-        // Important that this comes after the m_frozen_count check
-        owning_identifier_base<Storage, Identifier> index{static_cast<Storage&>(*this)};
-        mark_as_unsorted_impl<true>();  // because emplace_back() can trigger reallocation, but is
-                                        // "sorted" defined to mean double* are not invalidated..?
-        index.set_current_row(size());
+        // The .emplace_back() methods we are about to call can trigger
+        // reallocation and, therefore, invalidation of pointers. At present,
+        // "sorted" is defined to mean that pointers have not been invalidated.
+        // There are two reasonable changes that could be made here:
+        //  - possibly for release builds, we could only mark unsorted if a
+        //    reallocation *actually* happens
+        //  - "sorted" could be defined to mean that indices have not been
+        //    invalidated -- adding a new entry to the end of the container
+        //    never invalidates indices
+        mark_as_unsorted_impl<true>();
+        // Append to all of the vectors
         for_all_vectors(*this, [](auto const& tag, auto& vec) {
             using Tag = std::decay_t<decltype(tag)>;
             if constexpr (detail::has_default_value_v<Tag>) {
@@ -402,29 +442,43 @@ struct soa {
                 vec.emplace_back();
             }
         });
-        m_indices.back() = std::move(index);  // eww, we move and then returned a moved-from value
+        // Important that this comes after the m_frozen_count check
+        owning_identifier<Storage> index{static_cast<Storage&>(*this), size() - 1};
+        // Update the pointer-to-row-number in m_indices so it refers to the
+        // same thing as index
+        m_indices.back() = static_cast<non_owning_identifier<Storage>>(index);
         return index;
     }
 
-    /** @brief Get the offset-th identifier.
+    /**
+     * @brief Create a new entry in the container and return an identifier that owns it.
      */
-    [[nodiscard]] Identifier identifier(std::size_t offset) const {
-        return m_indices.at(offset);
+    [[nodiscard]] owning_handle acquire_owning_handle() {
+        return acquire_owning_identifier();
     }
 
-    /** @brief Get the instance of the tag type Tag.
+    /**
+     * @brief Get a non-owning handle to the offset-th entry.
+     */
+    [[nodiscard]] handle at(std::size_t offset) {
+        return non_owning_identifier<Storage>{static_cast<Storage*>(this), m_indices.at(offset)};
+    }
+
+    /**
+     * @brief Get the instance of the tag type Tag.
      */
     template <typename Tag>
     [[nodiscard]] constexpr Tag const& get_tag() const {
         return std::get<Tag>(m_tags);
     }
 
-    /** @brief Get the offset-th element of the column named by Tag.
+    /**
+     * @brief Get the offset-th element of the column named by Tag.
      *
-     *  Because this is returning a single value, it is permitted even in
-     *  read-only mode. The container being in read only mode means that
-     *  operations that would invalidate iterators/pointers are forbidden, not
-     *  that actual data values cannot change.
+     * Because this is returning a single value, it is permitted even in
+     * read-only mode. The container being in read only mode means that
+     * operations that would invalidate iterators/pointers are forbidden, not
+     * that actual data values cannot change.
      */
     template <typename Tag>
     [[nodiscard]] typename Tag::type& get(std::size_t offset) {
@@ -433,7 +487,8 @@ struct soa {
         return std::get<tag_index_v<Tag>>(m_data).at(offset);
     }
 
-    /** @brief Get the offset-th element of the column named by Tag.
+    /**
+     * @brief Get the offset-th element of the column named by Tag.
      */
     template <typename Tag>
     [[nodiscard]] typename Tag::type const& get(std::size_t offset) const {
@@ -461,7 +516,8 @@ struct soa {
     }
 
   public:
-    /** @brief Get the field_index-th instance of the column named by Tag.
+    /**
+     * @brief Get the field_index-th instance of the column named by Tag.
      */
     template <typename Tag>
     std::vector<typename Tag::type>& get_field_instance(std::size_t field_index) {
@@ -476,14 +532,16 @@ struct soa {
         return get_field_instance_helper<Tag>(*this, field_index);
     }
 
-    /** @brief Get the offset-th element of the field_index-th instance of the column named by Tag.
+    /**
+     * @brief Get the offset-th element of the field_index-th instance of the column named by Tag.
      */
     template <typename Tag>
     typename Tag::type& get_field_instance(std::size_t field_index, std::size_t offset) {
         return get_field_instance_helper<Tag>(*this, field_index).at(offset);
     }
 
-    /** @brief Get the offset-th element of the field_index-th instance of the column named by Tag.
+    /**
+     * @brief Get the offset-th element of the field_index-th instance of the column named by Tag.
      */
     template <typename Tag>
     typename Tag::type const& get_field_instance(std::size_t field_index,
@@ -492,7 +550,7 @@ struct soa {
     }
 
   private:
-    static_assert(detail::are_types_unique_v<Identifier, Tags...>,
+    static_assert(detail::are_types_unique_v<non_owning_identifier<Storage>, Tags...>,
                   "All tag types should be unique");
     template <typename Tag>
     static constexpr std::size_t tag_index_v = detail::index_of_type_v<Tag, Tags...>;
@@ -501,7 +559,8 @@ struct soa {
     template <typename Tag>
     static constexpr bool has_tag_v = detail::type_in_pack_v<Tag, Tags...>;
 
-    /** @brief Get the column container named by Tag.
+    /**
+     * @brief Get the column container named by Tag.
      */
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type>& get() {
@@ -513,7 +572,8 @@ struct soa {
         return std::get<tag_index_v<Tag>>(m_data);
     }
 
-    /** @brief Get the column container named by Tag.
+    /**
+     * @brief Get the column container named by Tag.
      */
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type> const& get() const {
@@ -522,9 +582,11 @@ struct soa {
         return std::get<tag_index_v<Tag>>(m_data);
     }
 
-    /** @brief Return a permutation-stable handle if ptr is inside us.
-     *  @todo Check const-correctness. Presumably a const version would return
-     *  data_handle<T const>, which would hold a pointer-to-const for the container?
+    /**
+     * @brief Return a permutation-stable handle if ptr is inside us.
+     * @todo Check const-correctness. Presumably a const version would return
+     *       data_handle<T const>, which would hold a pointer-to-const for the
+     *       container?
      */
     template <typename T>
     [[nodiscard]] neuron::container::data_handle<T> find_data_handle(T* ptr) {
@@ -575,7 +637,7 @@ struct soa {
     [[nodiscard]] std::optional<utils::storage_info> find_container_info(void const* cont) const {
         utils::storage_info info{};
         // FIXME: generate a proper tag type for the index column?
-        if (find_container_info<Identifier>(info, m_indices, cont) ||
+        if (find_container_info<non_owning_identifier<Storage>>(info, m_indices, cont) ||
             (find_container_info<Tags>(info, std::get<tag_index_v<Tags>>(m_data), cont) || ...)) {
             return info;
         } else {
@@ -601,7 +663,7 @@ struct soa {
                 // "sorted". FIXME: re-enable this
                 // assert(is_sorted());
                 // Probably OK to call this in read-only mode?
-                handle = neuron::container::data_handle<T>{identifier(row), container};
+                handle = neuron::container::data_handle<T>{at(row).id(), container};
                 assert(handle.refers_to_a_modern_data_structure());
                 return true;
             } else {
@@ -625,44 +687,51 @@ struct soa {
         throw std::runtime_error(std::move(oss).str());
     }
 
-    /** @brief Flag for get_sorted_token(), mark_as_unsorted() and is_sorted().
+    /**
+     * @brief Flag for get_sorted_token(), mark_as_unsorted() and is_sorted().
      */
     bool m_sorted{false};
 
-    /** @brief Reference count for tokens guaranteeing the container is in frozen mode.
+    /**
+     * @brief Reference count for tokens guaranteeing the container is in frozen mode.
      *
-     *  In principle this would be called before multiple worker threads spin
-     *  up, but in practice as a transition measure then handles are acquired
-     *  inside worker threads.
+     * In principle this would be called before multiple worker threads spin up,
+     * but in practice as a transition measure then handles are acquired inside
+     * worker threads.
      */
     std::atomic<std::size_t> m_frozen_count{};
 
-    /** @brief Pointers to identifiers that record the current physical row.
+    /**
+     * @brief Pointers to identifiers that record the current physical row.
      */
-    std::vector<Identifier> m_indices{};
+    std::vector<non_owning_identifier_without_container> m_indices{};
 
-    /** @brief Storage type for this Tag.
+    /**
+     * @brief Storage type for this Tag.
      *
-     *  If the tag implements a num_instances() method then it is duplicated a
-     *  runtime-determined number of times and get_field_instance<Tag>(i)
-     *  returns the i-th element of the outer vector (of length num_instances())
-     *  of vectors. If is no num_instances() method then the outer vector can be
-     *  omitted and get<Tag>() returns a vector of values.
+     * If the tag implements a num_instances() method then it is duplicated a
+     * runtime-determined number of times and get_field_instance<Tag>(i) returns
+     * the i-th element of the outer vector (of length num_instances()) of
+     * vectors. If is no num_instances() method then the outer vector can be
+     * omitted and get<Tag>() returns a vector of values.
      */
     template <typename Tag>
     using storage_t = std::conditional_t<detail::has_num_instances_v<Tag>,
                                          std::vector<std::vector<typename Tag::type>>,
                                          std::vector<typename Tag::type>>;
 
-    /** @brief Collection of data columns.
+    /**
+     * @brief Collection of data columns.
      */
     std::tuple<storage_t<Tags>...> m_data{};
 
-    /** @brief Callback that is invoked when the container becomes unsorted.
+    /**
+     * @brief Callback that is invoked when the container becomes unsorted.
      */
     std::function<void()> m_unsorted_callback{};
 
-    /** @brief Instances of the tag types.
+    /**
+     * @brief Instances of the tag types.
      */
     std::tuple<Tags...> m_tags{};
 };

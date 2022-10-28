@@ -18,22 +18,31 @@ struct data_handle;
  */
 struct typeless_null {};
 
-/** @brief Non-template stable handle to a generic value.
+/**
+ * @brief Non-template stable handle to a generic value.
  *
- *  This is a type-erased version of data_handle<T>, with the additional feature
- *  that it can store values of POD types no larger than a pointer (typically
- *  int and float). It stores (at runtime) the type of the value it contains,
- *  and is therefore type-safe, but this increases sizeof(generic_data_handle)
- *  by 50% so it may be prudent to view this as useful for validation/debugging
- *  but not something to become too dependent on.
+ * This is a type-erased version of data_handle<T>, with the additional feature
+ * that it can store values of POD types no larger than a pointer (typically int
+ * and float). It stores (at runtime) the type of the value it contains, and is
+ * therefore type-safe, but this increases sizeof(generic_data_handle) by 50% so
+ * it may be prudent to view this as useful for validation/debugging but not
+ * something to become too dependent on.
  *
- *  @todo Consider whether this should be made more like std::any (with a
- *  maximum 2*sizeof(void*) and a promise never to allocate memory dynamically)
- *  so it actually has a data_handle<T> subobject. Presumably that would mean
- *  data_handle<T> would need to have a trivial destructor. This might make it
- *  harder in future to have some vector_of_generic_data_handle type that hoists
- *  out the pointer-to-container and typeid parts that should be the same for
- *  all rows.
+ * There are several states that instances of this class can be in:
+ * - null, no value is contained, any type can be assigned without any type
+ *   mismatch error (m_type=typeless_null, m_container=null, m_offset=null)
+ * - wrapping an instance of a small, trivial type T (m_type=typeid(T),
+ *   m_container=the_value, m_offset=null)
+ * - wrapping a data handle<T> (m_type=typeid(T*), m_container=the_container,
+ *   m_offset=ptr_to_row)
+ *
+ * @todo Consider whether this should be made more like std::any (with a maximum
+ *       2*sizeof(void*) and a promise never to allocate memory dynamically) so
+ *       it actually has a data_handle<T> subobject. Presumably that would mean
+ *       data_handle<T> would need to have a trivial destructor. This might make
+ *       it harder in future to have some vector_of_generic_data_handle type
+ *       that hoists out the pointer-to-container and typeid parts that should
+ *       be the same for all rows.
  */
 struct generic_data_handle {
   private:
@@ -60,40 +69,41 @@ struct generic_data_handle {
         std::memcpy(&m_container, &value, sizeof(T));
     }
 
-    /** @brief Wrap a data_handle<void> in a generic data handle.
+    /**
+     * @brief Wrap a data_handle<void> in a generic data handle.
+     *
+     * Note that data_handle<void> is always wrapping a raw void* and is never
+     * in "modern" mode
      */
     template <typename T, std::enable_if_t<std::is_same_v<T, void>, int> = 0>
     generic_data_handle(data_handle<T> const& handle)
         : m_container{handle.m_raw_ptr}
         , m_type{typeid(T*)} {
         static_assert(std::is_same_v<T, void>);
-        // data_handle<void> cannot refer to a modern data structure, it can
-        // only wrap a void*
-        assert(!m_offset);
-        assert(!m_offset.m_ptr);
     }
 
-    /** @brief Wrap a data_handle<T != void> in a generic data handle.
+    /**
+     * @brief Wrap a data_handle<T != void> in a generic data handle.
      */
     template <typename T, std::enable_if_t<!std::is_same_v<T, void>, int> = 0>
     generic_data_handle(data_handle<T> const& handle)
-        : m_offset{handle.m_raw_ptr ? nullptr : handle.m_offset.m_ptr}
-        , m_container{handle.m_raw_ptr ? static_cast<void*>(handle.m_raw_ptr)
-                                       : static_cast<void*>(handle.m_container)}
+        : m_offset{handle.m_offset}
+        , m_container{handle.m_container_or_raw_ptr}
         , m_type{typeid(T*)} {
         static_assert(!std::is_same_v<T, void>);
     }
 
-    /** @brief Create data_handle<T> from a generic data handle.
+    /**
+     * @brief Create data_handle<T> from a generic data handle.
      *
-     *  The conversion will succeed, yielding a null data_handle<T>, if the
-     *  generic data handle is null. If the generic data handle is not null then
-     *  the conversion will succeed if the generic data handle actually holds a
-     *  data_handle<T> or a literal T*.
+     * The conversion will succeed, yielding a null data_handle<T>, if the
+     * generic data handle is null. If the generic data handle is not null then
+     * the conversion will succeed if the generic data handle actually holds a
+     * data_handle<T> or a literal T*.
      *
-     *  It might be interesting in future to explore dropping m_type in
-     *  optimised builds, in which case we should aim to avoid predicating
-     *  important logic on exceptions thrown by this function.
+     * It might be interesting in future to explore dropping m_type in optimised
+     * builds, in which case we should aim to avoid predicating important logic
+     * on exceptions thrown by this function.
      */
     template <typename T>
     explicit operator data_handle<T>() const {
@@ -108,7 +118,7 @@ struct generic_data_handle {
             throw_error(" cannot be converted to data_handle<" + cxx_demangle(typeid(T).name()) +
                         ">");
         }
-        if (m_offset) {
+        if (bool{m_offset}) {
             if constexpr (std::is_same_v<T, void>) {
                 // This branch is needed to avoid forming references-to-void if
                 // T=void.
@@ -118,7 +128,7 @@ struct generic_data_handle {
                 assert(m_container);
                 return {m_offset, *static_cast<std::vector<T>*>(m_container)};
             }
-        } else if (m_offset.m_ptr) {
+        } else if (m_offset.was_once_valid()) {
             // This used to be a valid data handle, but it has since been
             // invalidated. Invalid data handles never become valid again, so we
             // can safely produce a "fully null" data_handle<T>.
@@ -155,7 +165,7 @@ struct generic_data_handle {
             static_assert(can_be_stored_literally_v<T>,
                           "generic_data_handle can only hold non-pointer types that are trivial "
                           "and smaller than a pointer");
-            if (m_offset || m_offset.m_ptr) {
+            if (bool{m_offset} || m_offset.was_once_valid()) {
                 throw_error(" conversion to " + cxx_demangle(typeid(T).name()) +
                             " not possible for a handle [that was] in modern mode");
             }
@@ -171,7 +181,7 @@ struct generic_data_handle {
 
     friend std::ostream& operator<<(std::ostream& os, generic_data_handle const& dh) {
         os << "generic_data_handle{";
-        if (dh.m_offset || dh.m_offset.m_ptr) {
+        if (dh.m_offset || dh.m_offset.was_once_valid()) {
             // modern and valid or once-valid data handle
             auto const maybe_info = utils::find_container_info(dh.m_container);
             if (maybe_info) {
@@ -220,7 +230,7 @@ struct generic_data_handle {
      *  refers to a since-deleted row.
      */
     [[nodiscard]] bool refers_to_a_modern_data_structure() const {
-        return m_offset || m_offset.m_ptr;
+        return m_offset || m_offset.was_once_valid();
     }
 
     /** @brief Return the demangled name of the type this handle refers to.
@@ -255,7 +265,7 @@ struct generic_data_handle {
      */
     template <typename T>
     [[nodiscard]] T& literal_value() {
-        if (m_offset || m_offset.m_ptr) {
+        if (m_offset || m_offset.was_once_valid()) {
             throw_error("::literal_value<" + cxx_demangle(typeid(T).name()) +
                         "> cannot be called on a handle [that was] in modern mode");
         } else {
@@ -282,7 +292,7 @@ struct generic_data_handle {
     }
     // Offset into the underlying storage container. If this handle is holding a
     // literal value, such as a raw pointer, then this will be null.
-    identifier_base m_offset{};
+    non_owning_identifier_without_container m_offset{};
     // std::vector<T>* for the T encoded in m_type if m_offset is non-null,
     // otherwise a literal value is stored in this space.
     void* m_container{};
