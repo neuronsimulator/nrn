@@ -5736,7 +5736,7 @@ static int trajec_buffered(NrnThread& nt,
         if (err) {
             Fprintf(stderr,
                     "Pointer %p of PlayRecord type %d ignored because not a Range Variable",
-                    pd,
+                    static_cast<double*>(pd),
                     pr->type());
         }
     }

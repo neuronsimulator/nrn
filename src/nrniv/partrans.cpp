@@ -1203,7 +1203,7 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
                 // modifications have been made to any Node since
                 // reorder_secorder() was last called.
                 assert(neuron::model().node_data().is_sorted());
-                ix = nd->_node_handle.id().current_row() - nrn_threads[tid]._node_data_offset;
+                ix = nd->_node_handle.current_row() - nrn_threads[tid]._node_data_offset;
                 assert(ix == nd->_d - nrn_threads[tid]._actual_d);  // analogue of the old
                                                                     // calculation with d instead of
                                                                     // v

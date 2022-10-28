@@ -1,33 +1,13 @@
 #pragma once
+#include "neuron/container/mechanism.hpp"
 #include "neuron/container/mechanism_identifier.hpp"
 #include "neuron/container/soa_container.hpp"
 
 namespace neuron::container::Mechanism {
-namespace field {
-/** @brief Catch-all for floating point per-instance variables in the MOD file.
- *
- *  @todo Update the code generation so we get some hh_data = soa<hh_identifier,
- *  hh_a, hh_b, ...> type instead of fudging things this way.
- */
-struct FloatingPoint {
-    constexpr FloatingPoint(std::size_t num_copies)
-        : m_num_copies{num_copies} {}
-    /** @brief How many copes of this column should be created?
-     */
-    constexpr std::size_t num_instances() const {
-        return m_num_copies;
-    }
-    using type = double;
-
-  private:
-    std::size_t m_num_copies{};
-};
-}  // namespace field
-
 /** @brief Underlying storage for all instances of a particular Mechanism.
  */
-struct storage: soa<storage, identifier, field::FloatingPoint> {
-    using base_type = soa<storage, struct identifier, field::FloatingPoint>;
+struct storage: soa<storage, interface, field::FloatingPoint> {
+    using base_type = soa<storage, interface, field::FloatingPoint>;
     storage(short mech_type, std::string name, std::size_t num_floating_point_fields)
         : base_type{field::FloatingPoint{num_floating_point_fields}}
         , m_mech_name{std::move(name)}
@@ -50,7 +30,13 @@ struct storage: soa<storage, identifier, field::FloatingPoint> {
     short m_mech_type{};
 };
 
-/** @brief Owning identifier for a row in the Mechanism storage;
+/**
+ * @brief Non-owning handle to a Mechanism instance.
  */
-using owning_identifier = owning_identifier_base<storage, identifier>;
+using handle = storage::handle;
+
+/**
+ * @brief Owning handle to a Mechanism instance.
+ */
+using owning_handle = storage::owning_handle;
 }  // namespace neuron::container::Mechanism
