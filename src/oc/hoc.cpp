@@ -676,6 +676,16 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     if (hoc_fin && hoc_pipeflag == 0 && (!nrn_fw_eq(hoc_fin, stdin) || !nrn_istty_)) {
         IGNORE(nrn_fw_fseek(hoc_fin, 0L, 2)); /* flush rest of file */
     }
+
+    // If the exception is due to a multiple ^C interrupt, then onintr
+    // will not exit normally (because of the throw below) and the signal
+    // would remain in a SIG_BLOCK state.
+    // It is not clear to me if this would be better done in every catch.
+    if (hoc_intset > 1) {
+        sigset_t set = SIGINT;
+        sigprocmask(SIG_UNBLOCK, &set, NULL);
+    }
+
     hoc_intset = 0;
     hoc_oop_initaftererror();
     throw std::runtime_error("hoc_execerror");
