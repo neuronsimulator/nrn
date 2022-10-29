@@ -682,7 +682,9 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     // would remain in a SIG_BLOCK state.
     // It is not clear to me if this would be better done in every catch.
     if (hoc_intset > 1) {
-        sigset_t set = SIGINT;
+        sigset_t set;
+        sigemptyset(&set);
+        sigaddset(&set, SIGINT);
         sigprocmask(SIG_UNBLOCK, &set, NULL);
     }
 
