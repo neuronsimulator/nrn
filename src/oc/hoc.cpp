@@ -681,12 +681,14 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     // will not exit normally (because of the throw below) and the signal
     // would remain in a SIG_BLOCK state.
     // It is not clear to me if this would be better done in every catch.
+#if HAVE_SIGPROCMASK
     if (hoc_intset > 1) {
         sigset_t set;
         sigemptyset(&set);
         sigaddset(&set, SIGINT);
         sigprocmask(SIG_UNBLOCK, &set, NULL);
     }
+#endif  // HAVE_SIGPROCMASK
 
     hoc_intset = 0;
     hoc_oop_initaftererror();
