@@ -3,7 +3,8 @@ sphinx_rtd_theme
 jupyter
 nbconvert
 recommonmark
-matplotlib
+# 3.6.0 clashes with plotnine 0.9.0
+matplotlib == 3.5.3
 bokeh
 # do not check import of next line
 ipython

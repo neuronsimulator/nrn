@@ -95,7 +95,7 @@ Item* prev(Item* item) {
     return item->prev;
 }
 
-Item* insertstr(Item* item, char* str) /* insert a copy of the string before item */
+Item* insertstr(Item* item, const char* str) /* insert a copy of the string before item */
 /* a copy is made because strings are often assembled into a reusable buffer*/
 {
     Item* i;
@@ -127,11 +127,11 @@ Item* insertsym(Item* item, Symbol* sym) /* insert a symbol before item */
     return i;
 }
 
-Item* linsertstr(List* list, char* str) {
+Item* linsertstr(List* list, const char* str) {
     return insertstr(list->next, str);
 }
 
-Item* lappendstr(List* list, char* str) {
+Item* lappendstr(List* list, const char* str) {
     return insertstr(list, str);
 }
 
@@ -174,7 +174,7 @@ void memory_usage() {
     Fprintf(stderr, "malloc'ed a total of %ld bytes in %ld pieces\n", mallocsize, mallocpieces);
 }
 
-char* stralloc(char* buf, char* rel) {
+char* stralloc(const char* buf, char* rel) {
     /* allocate space, copy buf, and free rel */
     char* s;
     s = (char*) emalloc((unsigned) (strlen(buf) + 1));
@@ -215,12 +215,12 @@ void movelist(Item* q1, Item* q2, List* s) /* move q1 to q2 from old list to end
     move(q1, q2, s);
 }
 
-void replacstr(Item* q, char* s) {
+void replacstr(Item* q, const char* s) {
     q->itemtype = STRING;
     q->element = (void*) stralloc(s, (char*) 0);
 }
 
-Item* putintoken(char* s, short type, short toktype) { /* make sure a symbol exists for s and
+Item* putintoken(const char* s, short type, short toktype) { /* make sure a symbol exists for s and
                                                        append to intoken list */
     Symbol* sym;
     Item* q;
@@ -279,9 +279,7 @@ Item *
 makelist(int narg, ...)
 {
 #else
-makelist(va_alist)
-	va_dcl
-{
+makelist(va_dcl va_alist) {
     int narg;
 #endif
     va_list ap;
@@ -329,9 +327,7 @@ Item *
 #if HAVE_STDARG_H
 itemarray(int narg, ...) {
 #else
-itemarray(va_alist)
-	va_dcl
-{
+itemarray(va_dcl va_alist) {
     int narg;
 #endif
     va_list ap;

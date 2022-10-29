@@ -1,17 +1,20 @@
-#include <nrnpython.h>
-#include <structmember.h>
-#include <InterViews/resource.h>
-#include <nrnoc2iv.h>
-#include <ocjump.h>
 #include "ivocvect.h"
-#include "oclist.h"
-#include "ocfile.h"
-#include <cstdint>
 #include "nrniv_mf.h"
+#include "nrn_pyhocobject.h"
+#include "nrnoc2iv.h"
 #include "nrnpy_utils.h"
-#include "../nrniv/shapeplt.h"
-#include <vector>
+#include "nrnpython.h"
 #include "nrnwrap_dlfcn.h"
+#include "ocfile.h"
+#include "ocjump.h"
+#include "oclist.h"
+#include "shapeplt.h"
+
+#include <InterViews/resource.h>
+#include <structmember.h>  // for PyMemberDef
+
+#include <cstdint>
+#include <vector>
 
 #if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
 // when compiled with different Python.h, force correct value
@@ -132,23 +135,6 @@ extern Object* hoc_thisobject;
     assert(hoc_thisobject == 0);
 #define HocContextRestore /**/
 #endif
-
-typedef struct {
-    PyObject_HEAD Object* ho_;
-    union {
-        double x_;
-        char* s_;
-        char** pstr_;
-        Object* ho_;
-        double* px_;
-        PyHoc::IteratorState its_;
-    } u;
-    Symbol* sym_;     // for functions and arrays
-    void* iteritem_;  // enough info to carry out Iterator protocol
-    int nindex_;      // number indices seen so far (or narg)
-    int* indices_;    // one fewer than nindex_
-    PyHoc::ObjectType type_;
-} PyHocObject;
 
 static PyObject* rvp_plot = NULL;
 static PyObject* plotshape_plot = NULL;
@@ -709,7 +695,7 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
     curargs_ = args;
 
     PyObject* section = 0;
-    PyObject* result;
+    PyObject* result{};
     if (kwrds && PyDict_Check(kwrds)) {
 #if 0
 		PyObject* keys = PyDict_Keys(kwrds);
@@ -753,16 +739,12 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
     if (self->type_ == PyHoc::HocTopLevelInterpreter) {
         result = nrnexec((PyObject*) self, args);
     } else if (self->type_ == PyHoc::HocFunction) {
-        OcJump* oj;
-        oj = new OcJump();
-        if (oj) {
-            result = (PyObject*) oj->fpycall(fcall, (void*) self, (void*) args);
-            delete oj;
-            if (result == NULL) {
-                PyErr_SetString(PyExc_RuntimeError, "hocobj_call error");
-            }
-        } else {
-            result = (PyObject*) fcall((void*) self, (void*) args);
+        try {
+            result = static_cast<PyObject*>(OcJump::fpycall(fcall, self, args));
+        } catch (std::exception const& e) {
+            std::ostringstream oss;
+            oss << "hocobj_call error: " << e.what();
+            PyErr_SetString(PyExc_RuntimeError, oss.str().c_str());
         }
         hoc_unref_defer();
     } else {

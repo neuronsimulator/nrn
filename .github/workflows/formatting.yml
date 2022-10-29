@@ -15,102 +15,15 @@ on:
       - release/**
 
 jobs:
-  black:
-    name: Python
-    runs-on: ubuntu-20.04
+  all:
+    name: C/C++, CMake and Python
+    runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
-      - name: Set up Python@3.7
-        uses: actions/setup-python@v3
-        with:
-          python-version: 3.7
-      
-      - name: Install Black
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade black[jupyter]
-
       - uses: actions/checkout@v3
-
-      - name: Check Python formatting
+      - name: Update submodule
         working-directory: ${{runner.workspace}}/nrn
-        run: |
-          git ls-tree -z -r HEAD --name-only \
-          | grep -z '\.\(py\|ipynb\)$' \
-          | xargs -0 black --check --color --diff --target-version py37
-
-  cmake:
-    name: CMake
-    runs-on: ubuntu-20.04
-    timeout-minutes: 5
-    steps:
-      - name: Set up Python@3.7
-        uses: actions/setup-python@v3
-        with:
-          python-version: 3.7
-
-      - name: Install cmake-format
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade cmake-format pyyaml
-
-      - name: Install Ninja
-        run: |
-          sudo apt-get update
-          sudo apt-get install ninja-build
-
-      - uses: actions/checkout@v3
-
-      - name: Configure
+        run: git submodule update --init external/coding-conventions
+      - name: Check formatting
         working-directory: ${{runner.workspace}}/nrn
-        run: |
-          mkdir build
-          cd build/
-          # Need to configure the build to trigger the hpc-coding-conventions
-          # YAML magic
-          cmake -G Ninja .. \
-            -DNRN_CMAKE_FORMAT=ON \
-            -DNRN_ENABLE_RX3D=OFF \
-            -DNRN_ENABLE_PYTHON=OFF \
-            -DNRN_ENABLE_INTERVIEWS=OFF \
-            -DNRN_ENABLE_MPI=OFF
-
-      - name: Check CMake formatting
-        working-directory: ${{runner.workspace}}/nrn/build
-        run: ninja check-cmake-format
-
-  cpp:
-    name: C/C++
-    runs-on: ubuntu-20.04
-    timeout-minutes: 5
-    steps:
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install ninja-build
-          # The last .1 refers to ssciwr/clang-format-wheel#23.
-          sudo pip install clang-format==12.0.1.1
-          command -v clang-format
-          clang-format --version
-
-      - uses: actions/checkout@v3
-
-      - name: Configure
-        working-directory: ${{runner.workspace}}/nrn
-        run: |
-          mkdir build
-          cd build/
-          # Need to configure the build to trigger the hpc-coding-conventions
-          # YAML magic. Disable as much as possible now that the list of files
-          # to format is based on git ls-tree.
-          cmake -G Ninja .. \
-            -DClangFormat_EXECUTABLE=$(command -v clang-format) \
-            -DNRN_CLANG_FORMAT=ON \
-            -DNRN_ENABLE_INTERVIEWS=OFF \
-            -DNRN_ENABLE_MPI=OFF \
-            -DNRN_ENABLE_PYTHON=OFF \
-            -DNRN_ENABLE_RX3D=OFF
-
-      - name: Check C/C++ formatting
-        working-directory: ${{runner.workspace}}/nrn/build
-        run: ninja check-clang-format
+        run: external/coding-conventions/bin/format -v --dry-run

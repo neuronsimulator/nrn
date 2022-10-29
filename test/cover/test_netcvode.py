@@ -547,8 +547,8 @@ def integrator_properties():
     def run1(key):
         h.finitialize(0.001)
         cv.solve(2)
-        chk(key + " tvec", tvec, tol=5e-13)
-        chk(key + " vvec", vvec, tol=1e-12)
+        chk(key + " tvec", tvec, tol=5e-10)
+        chk(key + " vvec", vvec, tol=1e-9)
 
     cv.rtol(1e-3)
     cv.atol(0)

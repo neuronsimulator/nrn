@@ -14,19 +14,15 @@
 
 #undef nodelist
 #undef nodeindices
-#undef data
 #undef pdata
 #undef prop
 #undef nodecount
-#undef type
 
 #define nodelist    _nodelist
 #define nodeindices _nodeindices
-#define data        _data
 #define pdata       _pdata
 #define prop        _prop
 #define nodecount   _nodecount
-#define type        _type
 #define pval        _pval
 #define id          _id
 

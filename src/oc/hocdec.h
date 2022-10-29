@@ -216,20 +216,20 @@ struct DoubVec { /* User Vectors */
     int index1;
 };
 
-typedef struct { /* recommended limits for symbol values */
+struct HocParmLimits { /* recommended limits for symbol values */
     const char* name;
     float bnd[2];
-} HocParmLimits;
+};
 
-typedef struct { /* recommended tolerance for CVODE */
+struct HocStateTolerance { /* recommended tolerance for CVODE */
     const char* name;
     float tolerance;
-} HocStateTolerance;
+};
 
-typedef struct { /* units for symbol values */
+struct HocParmUnits { /* units for symbol values */
     const char* name;
-    char* units;
-} HocParmUnits;
+    const char* units;
+};
 
 #include "oc_ansi.h"
 

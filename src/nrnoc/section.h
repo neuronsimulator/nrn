@@ -70,7 +70,6 @@ typedef struct Pt3d {
 } Pt3d;
 #endif
 
-#if METHOD3
 typedef float NodeCoef;
 typedef double NodeVal;
 
@@ -94,8 +93,6 @@ typedef struct Info3Val { /* storage to help build matrix efficiently */
     NodeCoef Cdt;
 } Info3Val;
 
-/*METHOD3*/
-#endif
 
 /* if any double is added after area then think about changing
 the notify_free_val parameter in node_free in solve.cpp
@@ -170,16 +167,9 @@ typedef struct Node {
 #if DEBUGSOLVE
     double savd;
     double savrhs;
-#endif /*DEBUGSOLVE*/
-#if VECTORIZE
-    int v_node_index; /* only used to calculate parent_node_indices*/
-#endif
+#endif                   /*DEBUGSOLVE*/
+    int v_node_index;    /* only used to calculate parent_node_indices*/
     int sec_node_index_; /* to calculate segment index from *Node */
-#if METHOD3
-    Info3Coef toparent;
-    Info3Coef fromparent;
-    Info3Val thisnode;
-#endif
 } Node;
 
 #if EXTRACELLULAR
@@ -213,7 +203,7 @@ typedef struct Extnode {
 
 typedef struct Prop {
     struct Prop* next; /* linked list of properties */
-    short type;        /* type of membrane, e.g. passive, HH, etc. */
+    short _type;       /* type of membrane, e.g. passive, HH, etc. */
     short unused1;     /* gcc and borland need pairs of shorts to align the same.*/
     int param_size;    /* for notifying hoc_free_val_array */
     double* param;     /* vector of doubles for this property */
@@ -305,9 +295,6 @@ extern Section* nrn_section_alloc();
 extern void nrn_section_free(Section*);
 extern int nrn_is_valid_section_ptr(void*);
 
-#if METHOD3
-extern int _method3;
-#endif
 
 #include <multicore.h>
 

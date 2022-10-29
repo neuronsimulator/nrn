@@ -11,12 +11,10 @@
 #include "hoclist.h"
 #include "parse.hpp"
 #include "hocparse.h"
-#include <setjmp.h>
 #include <errno.h>
 #include "nrnfilewrap.h"
 
 
-extern jmp_buf begin;
 extern char* neuron_home;
 
 NrnFILEWrap* frin;
@@ -71,7 +69,7 @@ void hoc_stdout(void) {
 void ropen(void) /* open file for reading */
 {
     double d;
-    char* fname;
+    const char* fname;
 
     if (ifarg(1))
         fname = gargstr(1);
@@ -98,7 +96,7 @@ void ropen(void) /* open file for reading */
 
 void wopen(void) /* open file for writing */
 {
-    char* fname;
+    const char* fname;
     double d;
 
     if (ifarg(1))

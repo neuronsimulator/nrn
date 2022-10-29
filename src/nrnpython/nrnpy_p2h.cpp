@@ -15,7 +15,6 @@ extern Object* hoc_new_object(Symbol*, void*);
 extern int hoc_stack_type();
 extern char** hoc_strpop();
 extern Object** hoc_objpop();
-extern Object* hoc_pop_object();
 extern void hoc_tobj_unref(Object**);
 extern int hoc_ipop();
 PyObject* nrnpy_hoc2pyobject(Object*);
@@ -118,7 +117,6 @@ static void call_python_with_section(Object* pyact, Section* sec) {
         if (mes) {
             Fprintf(stderr, "%s\n", mes);
             free(mes);
-            lock.release();
             hoc_execerror("Call of Python Callable failed", NULL);
         }
         if (PyErr_Occurred()) {
@@ -284,7 +282,6 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     }
     if (!tail) {
         PyErr_Print();
-        lock.release();
         hoc_execerror("No attribute:", sym->name);
     }
     PyObject* args = 0;
@@ -312,7 +309,6 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             if (mes) {
                 Fprintf(stderr, "%s\n", mes);
                 free(mes);
-                lock.release();
                 hoc_execerror("PyObject method call failed:", sym->name);
             }
             if (PyErr_Occurred()) {
@@ -330,7 +326,6 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         result = PyObject_GetItem(tail, arg);
         if (!result) {
             PyErr_Print();
-            lock.release();
             hoc_execerror("Python get item failed:", hoc_object_name(ob));
         }
     } else {
@@ -385,8 +380,8 @@ static void hpoasgn(Object* o, int type) {
     } else {
         hoc_execerror("Cannot assign that type to PythonObject", (char*) 0);
     }
-    Object* stack_value = hoc_pop_object();
-    assert(o == stack_value);
+    auto stack_value = hoc_pop_object();
+    assert(o == stack_value.get());
     poleft = nrnpy_hoc2pyobject(o);
     sym = hoc_spop();
     nindex = hoc_ipop();
@@ -473,7 +468,6 @@ static double praxis_efun(Object* ho, Object* v) {
         if (mes) {
             Fprintf(stderr, "%s\n", mes);
             free(mes);
-            lock.release();
             hoc_execerror("Call of Python Callable failed in praxis_efun", NULL);
         }
         if (PyErr_Occurred()) {
@@ -497,7 +491,6 @@ static int hoccommand_exec(Object* ho) {
         if (mes) {
             Fprintf(stderr, "%s\n", mes);
             free(mes);
-            lock.release();
             hoc_execerror("Python Callback failed", 0);
         }
         if (PyErr_Occurred()) {
@@ -524,7 +517,6 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
         if (mes) {
             Fprintf(stderr, "%s\n", mes);
             free(mes);
-            lock.release();
             hoc_execerror("Python Callback failed", 0);
         }
         if (PyErr_Occurred()) {
@@ -549,7 +541,6 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
         if (mes) {
             Fprintf(stderr, "%s\n", mes);
             free(mes);
-            lock.release();
             hoc_execerror("Python Callback failed", 0);
         }
         if (PyErr_Occurred()) {
@@ -564,19 +555,16 @@ static Object* callable_with_args(Object* ho, int narg) {
 
     PyObject* args = PyTuple_New((Py_ssize_t) narg);
     if (args == NULL) {
-        lock.release();
         hoc_execerror("PyTuple_New failed", 0);
     }
     for (int i = 0; i < narg; ++i) {
         PyObject* item = nrnpy_hoc_pop();
         if (item == NULL) {
             Py_XDECREF(args);
-            lock.release();
             hoc_execerror("nrnpy_hoc_pop failed", 0);
         }
         if (PyTuple_SetItem(args, (Py_ssize_t) (narg - i - 1), item) != 0) {
             Py_XDECREF(args);
-            lock.release();
             hoc_execerror("PyTuple_SetItem failed", 0);
         }
     }
@@ -599,19 +587,16 @@ static double func_call(Object* ho, int narg, int* err) {
 
     PyObject* args = PyTuple_New((Py_ssize_t) narg);
     if (args == NULL) {
-        lock.release();
         hoc_execerror("PyTuple_New failed", 0);
     }
     for (int i = 0; i < narg; ++i) {
         PyObject* item = nrnpy_hoc_pop();
         if (item == NULL) {
             Py_XDECREF(args);
-            lock.release();
             hoc_execerror("nrnpy_hoc_pop failed", 0);
         }
         if (PyTuple_SetItem(args, (Py_ssize_t) (narg - i - 1), item) != 0) {
             Py_XDECREF(args);
-            lock.release();
             hoc_execerror("PyTuple_SetItem failed", 0);
         }
     }
@@ -633,7 +618,6 @@ static double func_call(Object* ho, int narg, int* err) {
             PyErr_Clear();
         }
         if (!err || *err) {
-            lock.release();
             hoc_execerror("func_call failed", NULL);
         }
         if (err) {

@@ -37,6 +37,10 @@ extern void hoc_Setcolor(void);
 extern void hoc_init_space(void);
 extern void hoc_install_hoc_obj(void);
 extern void nrn_feenableexcept(void);
+void hoc_coreneuron_handle();
+void hoc_get_config_key();
+void hoc_get_config_val();
+void hoc_num_config_keys();
 extern int nrn_feenableexcept_;
 #if DOS
 extern void hoc_settext(void);
@@ -45,26 +49,23 @@ extern void hoc_settext(void);
 extern void hoc_win_exec();
 #endif
 
-union Datum;
-namespace nrn {
-namespace oc {
+namespace nrn::oc {
 // Avoid `Frame` because InterViews likes #define-ing that as something else
 struct frame;
-}  // namespace oc
-}  // namespace nrn
+}  // namespace nrn::oc
 union Inst;
 struct Object;
 union Objectdata;
 struct Symlist;
 void oc_restore_code(Inst** a1,
                      Inst** a2,
-                     Datum** a3,
+                     std::size_t& a3,
                      nrn::oc::frame** a4,
                      int* a5,
                      int* a6,
                      Inst** a7,
                      nrn::oc::frame** a8,
-                     Datum** a9,
+                     std::size_t& a9,
                      Symlist** a10,
                      Inst** a11,
                      int* a12);
@@ -72,13 +73,13 @@ void oc_restore_hoc_oop(Object** a1, Objectdata** a2, int* a4, Symlist** a5);
 void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4);
 void oc_save_code(Inst** a1,
                   Inst** a2,
-                  Datum** a3,
+                  std::size_t& a3,
                   nrn::oc::frame** a4,
                   int* a5,
                   int* a6,
                   Inst** a7,
                   nrn::oc::frame** a8,
-                  Datum** a9,
+                  std::size_t& a9,
                   Symlist** a10,
                   Inst** a11,
                   int* a12);

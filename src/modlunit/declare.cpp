@@ -7,10 +7,9 @@
 #include <strings.h>
 #endif
 
-int declare_level = 0;
 Symbol* indepsym;  /* mathematical independent variable */
 Item** scop_indep; /* the scop swept information */
-char* indepunits = "";
+const char* indepunits = "";
 
 /* subtype of variables using explicit declarations */
 
@@ -18,33 +17,15 @@ static int promote(Symbol*, long);
 static int nprime(char*);
 
 void declare(long subtype, Item* q, Item* qa) {
-    Symbol* sym;
-
-    sym = SYM(q);
+    Symbol* sym = SYM(q);
     if (!sym->subtype) { /* not previously declared */
         sym->subtype = subtype;
         sym->info = qa;
-        sym->level = declare_level;
-    } else if (declare_level == 0 && sym->level == 0) {
+    } else {
         diag("Multiple declaration of ", sym->name);
-    } else if (sym->subtype == subtype) { /* lowest level precedence */
-        if (declare_level < sym->level) {
-            sym->info = qa;
-            sym->level = declare_level;
-        }    /*else leave as is. First declaration gets precedence */
-    } else { /* A few cases can be promoted */
-        if (subtype & (modlunitCONST | DEP | STAT) && sym->subtype & (modlunitCONST | DEP | STAT)) {
-            if (promote(sym, subtype)) {
-                sym->subtype = subtype;
-                sym->info = qa;
-                sym->level = declare_level;
-            }
-        } else {
-            diag("Multiple inconsistent declarations of ", sym->name);
-        }
     }
     declare_array(sym);
-    if (sym->subtype == INDEP && declare_level == 0) {
+    if (sym->subtype == INDEP) {
         declare_indep(sym);
     }
     /*fprintf(stderr, "declared %s with subtype %ld\n", sym->name, sym->subtype);*/

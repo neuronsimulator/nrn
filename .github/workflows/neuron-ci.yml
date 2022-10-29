@@ -40,10 +40,8 @@ jobs:
 
     strategy:
       matrix:
-        os: [ macOS-11, ubuntu-18.04]
+        os: [ macOS-11, ubuntu-20.04]
         config:
-        # GitHub Actions's ubuntu-18.04 image should provide g++ versions 9 and
-        # 10 even though those are not available in vanilla Ubuntu 18.04
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
           - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake"}
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake", python_dynamic: ON}
@@ -69,6 +67,14 @@ jobs:
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
               sanitizer: address
+          - os: macOS-12
+            config:
+              build_mode: cmake
+              # TODO: investigate rxd test timeouts in this build and re-enable them
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
+                -DNRN_ENABLE_RX3D=OFF -DCORENRN_SANITIZERS=address
+              sanitizer: address
+              ccache_fudge: 1 # manually invalidate the cache for this build
       fail-fast: false
 
     steps:
@@ -98,7 +104,7 @@ jobs:
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
             openmpi-bin patchelf
           # The sanitizer builds use ubuntu 22.04
-          if [[ "${{matrix.os}}" == "ubuntu-18.04" ]]; then
+          if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
             sudo apt-get install g++-7 g++-8
           fi
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
@@ -204,14 +210,15 @@ jobs:
               cmake_args=(-G Ninja)
               # Sanitizer-specific setup
               if [[ -n "${{matrix.config.sanitizer}}" ]]; then
-                CC=$(command -v clang-14)
-                CXX=$(command -v clang++-14)
-                symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
-                echo symbolizer_path=${symbolizer_path}
+                if [ "$RUNNER_OS" == "Linux" ]; then
+                  CC=$(command -v clang-14)
+                  CXX=$(command -v clang++-14)
+                  symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
+                  cmake_args+=(-DLLVM_SYMBOLIZER_PATH="${symbolizer_path}")
+                fi
                 cmake_args+=(-DCMAKE_BUILD_TYPE=Custom \
-                             -DCMAKE_C_FLAGS="-O1 -g -Wno-writable-strings" \
-                             -DCMAKE_CXX_FLAGS="-O1 -g -Wno-writable-strings" \
-                             -DLLVM_SYMBOLIZER_PATH="${symbolizer_path}" \
+                             -DCMAKE_C_FLAGS="-O1 -g" \
+                             -DCMAKE_CXX_FLAGS="-O1 -g" \
                              -DNRN_SANITIZERS=$(echo ${{matrix.config.sanitizer}} | sed -e 's/-/,/g'))
               fi
               cmake_args+=(-DCMAKE_C_COMPILER="${CC}" \

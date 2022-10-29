@@ -169,7 +169,8 @@ function(nrn_add_test_group)
     # Collect the list of modfiles that need to be compiled.
     set(modfiles)
     foreach(modfile_pattern ${NRN_ADD_TEST_GROUP_MODFILE_PATTERNS})
-      file(GLOB pattern_modfiles "${test_source_directory}/${modfile_pattern}")
+      file(GLOB pattern_modfiles
+           "${test_source_directory}/${NRN_ADD_TEST_GROUP_SIM_DIRECTORY}/${modfile_pattern}")
       list(APPEND modfiles ${pattern_modfiles})
     endforeach()
     if("${modfiles}" STREQUAL "")
@@ -210,12 +211,12 @@ function(nrn_add_test_group)
       # Add the custom command to generate the binaries. Get nrnivmodl from the build directory. At
       # the moment it seems that `nrnivmodl` is generated at configure time, so there is no target
       # to depend on and it should always be available, but it will try and link against libnrniv.so
-      # and libcoreneuron.so so we must depend on those. TODO: could the logic of `nrnivmodl` be
+      # and libcorenrnmech.so so we must depend on those. TODO: could the logic of `nrnivmodl` be
       # translated to CMake, so it can be called natively here and the `nrnivmodl` executable would
       # be a wrapper that invokes CMake?
       set(output_binaries "${special}")
       list(APPEND nrnivmodl_dependencies nrniv_lib)
-      if(NRN_ADD_TEST_GROUP_CORENEURON)
+      if(NRN_ENABLE_CORENEURON AND NRN_ADD_TEST_GROUP_CORENEURON)
         list(APPEND output_binaries "${special}-core")
         if((NOT coreneuron_FOUND) AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES))
           message(WARNING "nrn_add_test_group couldn't find the names of the builtin "
@@ -269,7 +270,12 @@ function(nrn_add_test)
   set(feature_mpi_dynamic_enabled ${NRN_ENABLE_MPI_DYNAMIC})
   set(feature_python_enabled ${NRN_ENABLE_PYTHON})
   set(feature_coreneuron_enabled ${NRN_ENABLE_CORENEURON})
-  if(${NRN_ENABLE_CORENEURON} OR ${NRN_ENABLE_MOD_COMPATIBILITY})
+  if(NRN_ENABLE_CORENEURON AND CORENRN_ENABLE_SHARED)
+    set(feature_coreneuron_shared_enabled ON)
+  else()
+    set(feature_coreneuron_shared_enabled OFF)
+  endif()
+  if(NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY)
     set(feature_mod_compatibility_enabled ON)
   else()
     set(feature_mod_compatibility_enabled OFF)
@@ -282,7 +288,7 @@ function(nrn_add_test)
     if(NOT DEFINED feature_${required_feature}_enabled)
       message(FATAL_ERROR "Unknown feature ${required_feature} used in REQUIRES expression")
     endif()
-    if(NOT ${feature_${required_feature}_enabled})
+    if(NOT feature_${required_feature}_enabled)
       message(
         STATUS
           "Disabling ${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}: ${required_feature} not enabled")
@@ -295,9 +301,9 @@ function(nrn_add_test)
   # Check CONFLICTS
   foreach(conflicting_feature ${NRN_ADD_TEST_CONFLICTS})
     if(NOT DEFINED feature_${conflicting_feature}_enabled)
-      message(FATAL_ERROR "Unknown feature ${conflicting_feature} used in REQUIRES expression")
+      message(FATAL_ERROR "Unknown feature ${conflicting_feature} used in CONFLICTS expression")
     endif()
-    if(${feature_${conflicting_feature}_enabled})
+    if(feature_${conflicting_feature}_enabled)
       message(
         STATUS
           "Disabling ${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}: ${conflicting_feature} enabled")
@@ -336,11 +342,6 @@ function(nrn_add_test)
   # Finally a working directory for this specific test within the group
   set(working_directory "${PROJECT_BINARY_DIR}/test/${NRN_ADD_TEST_GROUP}/${NRN_ADD_TEST_NAME}")
   file(MAKE_DIRECTORY "${working_directory}")
-  if(NOT ${sim_directory} STREQUAL "")
-    set(simulation_directory ${working_directory}/${sim_directory})
-  else()
-    set(simulation_directory ${working_directory})
-  endif()
   if(DEFINED nrnivmodl_directory)
     execute_process(
       COMMAND
@@ -354,14 +355,14 @@ function(nrn_add_test)
     # end up with {build_directory}/path/to/test_working_directory/path/to/script.py
     file(
       GLOB_RECURSE script_files
-      RELATIVE "${test_source_directory}"
-      "${test_source_directory}/${script_pattern}")
+      RELATIVE "${test_source_directory}/${sim_directory}"
+      "${test_source_directory}/${sim_directory}/${script_pattern}")
     foreach(script_file ${script_files})
       # We use NO_TARGET because otherwise we would in some cases generate a lot of
       # build-time-copy-{hash} top-level targets, which the Makefile build system struggles with.
       # Instead we make a single top-level target that depends on all scripts copied for this test.
       cpp_cc_build_time_copy(
-        INPUT "${test_source_directory}/${script_file}"
+        INPUT "${test_source_directory}/${sim_directory}/${script_file}"
         OUTPUT "${working_directory}/${script_file}"
         NO_TARGET)
       list(APPEND all_copied_script_files "${working_directory}/${script_file}")
@@ -382,20 +383,18 @@ function(nrn_add_test)
       "${group_members}"
       PARENT_SCOPE)
   set(test_env "${NRN_RUN_FROM_BUILD_DIR_ENV}")
-  if(requires_coreneuron)
+  if(requires_coreneuron AND CORENRN_ENABLE_SHARED)
+    # Did we run nrnivmodl specifically for this test, or does it just use default mechanisms?
     if(DEFINED nrnivmodl_directory)
-      list(
-        APPEND
-        test_env
-        "CORENEURONLIB=${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/libcorenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
-      )
+      set(build_prefix "${nrnivmodl_directory}")
     else()
-      list(
-        APPEND
-        test_env
-        "CORENEURONLIB=${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/libcorenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
-      )
+      set(build_prefix "${CMAKE_BINARY_DIR}/bin")
     endif()
+    list(
+      APPEND
+      test_env
+      "CORENEURONLIB=${build_prefix}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}corenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
+    )
   endif()
   # Get [VAR1, VAR2, ...] from [VAR1=VAL1, VAR2=VAL2, ...]
   set(test_env_var_names ${test_env})
@@ -421,7 +420,14 @@ function(nrn_add_test)
   endif()
   list(APPEND test_env ${extra_environment})
   if(NRN_ADD_TEST_PRELOAD_SANITIZER AND NRN_SANITIZER_LIBRARY_PATH)
-    list(APPEND test_env LD_PRELOAD=${NRN_SANITIZER_LIBRARY_PATH})
+    list(APPEND test_env ${NRN_SANITIZER_PRELOAD_VAR}=${NRN_SANITIZER_LIBRARY_PATH})
+    # On macOS with SIP then dynamic loader preload variables are not propagated to child processes.
+    # By passing the key/value in our own private variables we make it easy to manually re-set the
+    # preload variables in tests that spawn subprocesses. See also:
+    # https://jonasdevlieghere.com/sanitizing-python-modules/ and
+    # https://tobywf.com/2021/02/python-ext-asan/
+    list(APPEND test_env NRN_SANITIZER_PRELOAD_VAR=${NRN_SANITIZER_PRELOAD_VAR})
+    list(APPEND test_env NRN_SANITIZER_PRELOAD_VAL=${NRN_SANITIZER_LIBRARY_PATH})
   endif()
   list(APPEND test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
   # Add the actual test job, including the `special` and `special-core` binaries in the path. TODOs:
@@ -435,13 +441,13 @@ function(nrn_add_test)
   add_test(
     NAME "${test_name}"
     COMMAND ${CMAKE_COMMAND} -E env ${test_env} ${NRN_ADD_TEST_COMMAND}
-    WORKING_DIRECTORY "${simulation_directory}")
+    WORKING_DIRECTORY "${working_directory}")
   set(test_names ${test_name})
   if(NRN_ADD_TEST_PRECOMMAND)
     add_test(
       NAME ${test_name}::preparation
       COMMAND ${CMAKE_COMMAND} -E env ${test_env} ${NRN_ADD_TEST_PRECOMMAND}
-      WORKING_DIRECTORY "${simulation_directory}")
+      WORKING_DIRECTORY "${working_directory}")
     list(APPEND test_names ${test_name}::preparation)
     set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
   endif()
@@ -454,7 +460,7 @@ function(nrn_add_test)
   set(output_file_string "${NRN_ADD_TEST_NAME}")
   foreach(output_file ${output_files})
     # output_file is `type1::fname1` output_full_path is `type1::${working_directory}/fname1`
-    string(REGEX REPLACE "^([^:]+)::(.*)$" "\\1::${simulation_directory}/\\2" output_full_path
+    string(REGEX REPLACE "^([^:]+)::(.*)$" "\\1::${working_directory}/\\2" output_full_path
                          "${output_file}")
     set(output_file_string "${output_file_string}::${output_full_path}")
   endforeach()

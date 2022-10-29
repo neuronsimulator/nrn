@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdio>
-
+#include <memory>
 /**
  * \dir
  * \brief HOC Interpreter
@@ -48,7 +48,7 @@ extern "C" void* hoc_Emalloc(size_t size);
 extern "C" void hoc_malchk();
 // olupton 2022-05-30: This has to have C linkage for now because it is used in
 //                     abort.c and praxis.c
-extern "C" void hoc_execerror(const char*, const char*);
+extern "C" [[noreturn]] void hoc_execerror(const char*, const char*);
 void hoc_execerr_ext(const char* fmt, ...);
 char* hoc_object_name(Object*);
 void hoc_retpushx(double);
@@ -140,20 +140,29 @@ double hoc_xpop();
 Symbol* hoc_spop();
 double* hoc_pxpop();
 Object** hoc_objpop();
-Object* hoc_pop_object();
+struct TmpObjectDeleter {
+    void operator()(Object*) const;
+};
+using TmpObject = std::unique_ptr<Object, TmpObjectDeleter>;
+TmpObject hoc_pop_object();
 char** hoc_strpop();
 int hoc_ipop();
 void hoc_nopop();
 
-void hoc_execerror_mes(const char*, const char*, int);
+[[noreturn]] void hoc_execerror_mes(const char*, const char*, int);
 void hoc_warning(const char*, const char*);
 double* hoc_val_pointer(const char*);
 Symbol* hoc_table_lookup(const char*, Symlist*);
 Symbol* hoc_install(const char*, int, double, Symlist**);
 extern Objectdata* hoc_objectdata;
-Datum* hoc_look_inside_stack(int, int);
+/** @brief Get the stack entry at depth i.
+ *
+ *  i=0 is the most recently pushed entry. This will raise an error if the stack
+ *  is empty, or if the given entry does not have type T.
+ */
+template <typename T>
+T const& hoc_look_inside_stack(int i);
 Object* hoc_obj_look_inside_stack(int);
-int hoc_obj_look_inside_stack_index(int);
 void hoc_stkobj_unref(Object*, int stkindex);
 size_t hoc_total_array_data(Symbol*, Objectdata*);
 char* hoc_araystr(Symbol*, int, Objectdata*);
@@ -179,7 +188,7 @@ void* hoc_Erealloc(void* ptr, std::size_t size);
 
 void* nrn_cacheline_alloc(void** memptr, std::size_t size);
 void* nrn_cacheline_calloc(void** memptr, std::size_t nmemb, std::size_t size);
-void nrn_exit(int);
+[[noreturn]] void nrn_exit(int);
 void hoc_free_list(Symlist**);
 int hoc_errno_check();
 Symbol* hoc_parse_stmt(const char*, Symlist**);

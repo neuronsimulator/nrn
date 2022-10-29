@@ -219,9 +219,14 @@ run_parallel_test() {
 
     # CI Linux or Azure Linux
     elif [[ "$CI_OS_NAME" == "linux" || "$AGENT_OS" == "Linux" ]]; then
-      sudo update-alternatives --set mpi /usr/include/mpich
+      # make debugging easier
+      sudo update-alternatives --get-selections | grep mpi
+      sudo update-alternatives --list mpi-x86_64-linux-gnu
+      # choose mpich
+      sudo update-alternatives --set mpi-x86_64-linux-gnu /usr/include/x86_64-linux-gnu/mpich
       run_mpi_test "mpirun.mpich" "MPICH" ""
-      sudo update-alternatives --set mpi /usr/lib/x86_64-linux-gnu/openmpi/include
+      # choose openmpi
+      sudo update-alternatives --set mpi-x86_64-linux-gnu /usr/lib/x86_64-linux-gnu/openmpi/include
       run_mpi_test "mpirun.openmpi" "OpenMPI" ""
 
     # BB5 with multiple MPI libraries
@@ -254,6 +259,9 @@ test_wheel () {
     # sample mod file for nrnivmodl check
     mkdir -p tmp_mod
     cp share/examples/nrniv/nmodl/cacum.mod tmp_mod/
+
+    # check gcc and python versions
+    gcc --version && python --version
 
     echo "Using `which $python_exe` : `$python_exe --version`"
     echo "=========== SERIAL TESTS ==========="

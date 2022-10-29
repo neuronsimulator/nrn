@@ -3,11 +3,10 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
-extern int sens_parm;
 extern int numlist;
 static List* eqnq;
 
-int nonlin_common(Item*, int);
+int nonlin_common(Item*);
 
 void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum) {
     Sprintf(buf,
@@ -21,7 +20,6 @@ void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnu
     /* if sens statement appeared in fun then the steadysens call list,
     built during the massagenonlin phase
     gets added after the call to newton */
-    sens_nonlin_out(qsol->next, fun);
 }
 
 void solv_lineq(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum) {
@@ -33,7 +31,6 @@ void solv_lineq(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum
             listnum,
             listnum);
     replacstr(qsol, buf);
-    sens_nonlin_out(qsol->next, fun);
 }
 
 void eqnqueue(Item* q1) {
@@ -52,7 +49,7 @@ static void freeqnqueue() {
 }
 
 /* args are --- nonlinblk: NONLINEAR NAME stmtlist '}' */
-void massagenonlin(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) {
+void massagenonlin(Item* q1, Item* q2, Item* q3, Item* q4) {
     /* declare a special _counte variable to number the equations.
     before each equation we increment it by 1 during run time.  This
     gives us a current equation number */
@@ -75,14 +72,11 @@ void massagenonlin(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) {
     numlist++;
     nonfun->subtype |= NLINF;
     nonfun->u.i = numlist;
-    nonfun->used = nonlin_common(q4, sensused);
+    nonfun->used = nonlin_common(q4);
     movelist(q1, q4, procfunc);
-    if (sensused) {
-        sensmassage(NONLINEAR, q2, numlist);
-    }
 }
 
-int nonlin_common(Item* q4, int sensused) /* used by massagenonlin() and mixed_eqns() */
+int nonlin_common(Item* q4) /* used by massagenonlin() and mixed_eqns() */
 {
     Item *lq, *qs, *q;
     int i, counts = 0, counte = 0, using_array;
@@ -92,9 +86,7 @@ int nonlin_common(Item* q4, int sensused) /* used by massagenonlin() and mixed_e
     SYMITER_STAT {
         if (s->used) {
             s->varnum = counts;
-#if CVODE
             slist_data(s, counts, numlist);
-#endif
             if (s->subtype & ARRAY) {
                 int dim = s->araydim;
                 using_array = 1;
@@ -111,9 +103,6 @@ int nonlin_common(Item* q4, int sensused) /* used by massagenonlin() and mixed_e
             }
             Lappendstr(initlist, buf);
             s->used = 0;
-            if (sensused) {
-                add_sens_statelist(s);
-            }
         }
     }
 
@@ -157,11 +146,11 @@ int nonlin_common(Item* q4, int sensused) /* used by massagenonlin() and mixed_e
     Sprintf(buf,
             "static int _slist%d[%d]; static double _dlist%d[%d];\n",
             numlist,
-            counts * (1 + sens_parm),
+            counts,
             numlist,
             counts);
     q = linsertstr(procfunc, buf);
-    Sprintf(buf, "static int _slist%d[%d];\n", numlist, counts * (1 + sens_parm));
+    Sprintf(buf, "static int _slist%d[%d];\n", numlist, counts);
     vectorize_substitute(q, buf);
     return counts;
 }
@@ -178,7 +167,7 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
     /* makes use of old massagenonlin split into the guts and
     the header stuff */
     numlist++;
-    counts = nonlin_common(q4, 0);
+    counts = nonlin_common(q4);
     Insertstr(q4, "}");
     q = insertstr(q3, "{ static int _recurse = 0;\n int _counte = -1;\n");
     sprintf(buf,
@@ -280,7 +269,7 @@ void lin_state_term(Item* q1, Item* q2) /* term last*/
 
 void linterm(Item* q1, Item* q2, int pstate, int sign) /*primary, last ,, */
 {
-    char* signstr;
+    const char* signstr;
 
     if (pstate == 0) {
         sign *= -1;
@@ -308,7 +297,7 @@ void linterm(Item* q1, Item* q2, int pstate, int sign) /*primary, last ,, */
     Insertstr(q2->next, ";\n");
 }
 
-void massage_linblk(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /* LINEAR NAME stmtlist
+void massage_linblk(Item* q1, Item* q2, Item* q3, Item* q4) /* LINEAR NAME stmtlist
                                                                              '}' */
 {
     Item* qs;
@@ -330,9 +319,6 @@ void massage_linblk(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /* LIN
     linblk->u.i = numlist;
     SYMITER(NAME) {
         if ((s->subtype & STAT) && s->used) {
-            if (sensused) {
-                add_sens_statelist(s);
-            }
             s->used = 0;
         }
     }
@@ -352,11 +338,7 @@ void massage_linblk(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /* LIN
 #endif
     }
     linblk->used = nstate;
-    Sprintf(buf,
-            "static int _slist%d[%d];static double **_coef%d;\n",
-            numlist,
-            nstate * (1 + sens_parm),
-            numlist);
+    Sprintf(buf, "static int _slist%d[%d];static double **_coef%d;\n", numlist, nstate, numlist);
     Linsertstr(procfunc, buf);
     Sprintf(buf, "\n#define _RHS%d(arg) _coef%d[arg][%d]\n", numlist, numlist, nstate);
     Linsertstr(procfunc, buf);
@@ -366,9 +348,6 @@ void massage_linblk(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /* LIN
     Insertstr(q3->next, buf);
     Insertstr(q4, "\n}\n");
     movelist(q1, q4, procfunc);
-    if (sensused) {
-        sensmassage(LINEAR, q2, numlist);
-    }
     nstate = 0;
     nlineq = 0;
 }

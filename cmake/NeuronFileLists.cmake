@@ -111,7 +111,6 @@ set(NRNOC_FILE_LIST
     hocprax.cpp
     init.cpp
     ldifus.cpp
-    method3.cpp
     nrnnemo.cpp
     nrntimeout.cpp
     nrnversion.cpp
@@ -123,7 +122,8 @@ set(NRNOC_FILE_LIST
     secref.cpp
     solve.cpp
     synapse.cpp
-    treeset.cpp)
+    treeset.cpp
+    multicore.cpp)
 
 # =============================================================================
 # Files in ivoc directory
@@ -384,15 +384,10 @@ set(SPARSE13_FILES_LIST
 # scopmath sources
 set(SCOPMATH_FILES_LIST
     abort.c
-    adams.c
-    adeuler.c
-    adrunge.c
     advance.c
     boundary.c
     crank.c
     crout.c
-    csoda.c
-    csodabnc.c
     deflate.c
     dimplic.c
     scoperf.c
@@ -403,10 +398,8 @@ set(SCOPMATH_FILES_LIST
     factoria.c
     force.c
     gauss.c
-    gear.c
     getmem.c
     harmonic.c
-    heun.c
     hyperbol.c
     invert.c
     lag.c
@@ -428,10 +421,8 @@ set(SCOPMATH_FILES_LIST
     runge.c
     sawtooth.c
     schedule.c
-    seidel.c
     sigmoid.c
     simeq.c
-    simplex.c
     sparse.c
     vsparse.c
     spline.c
@@ -527,8 +518,6 @@ set(NMODL_FILES_LIST
     noccout.cpp
     parsact.cpp
     netrec_discon.cpp
-    partial.cpp
-    sens.cpp
     simultan.cpp
     solve.cpp
     symbol.cpp

@@ -347,7 +347,6 @@ void ghk(void) {
     hoc_retpushx(val);
 }
 
-#if VECTORIZE
 #define erev   pd[i][0] /* From Eion */
 #define conci  pd[i][1]
 #define conco  pd[i][2]
@@ -428,22 +427,22 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
         }
     }
 
-    chk_conc_[2 * p_ok->type + i] |= ion_bit_[pion->type];
+    chk_conc_[2 * p_ok->_type + i] |= ion_bit_[pion->_type];
     if (pion->dparam[0].i & flag) {
         /* now comes the hard part. Is the possibility in fact actual.*/
         for (p = pion->next; p; p = p->next) {
             if (p == p_ok) {
                 continue;
             }
-            if (chk_conc_[2 * p->type + i] & ion_bit_[pion->type]) {
+            if (chk_conc_[2 * p->_type + i] & ion_bit_[pion->_type]) {
                 char buf[300];
                 sprintf(buf,
                         "%.*s%c is being written at the same location by %s and %s",
-                        (int) strlen(memb_func[pion->type].sym->name) - 4,
-                        memb_func[pion->type].sym->name,
+                        (int) strlen(memb_func[pion->_type].sym->name) - 4,
+                        memb_func[pion->_type].sym->name,
                         ((i == 1) ? 'i' : 'o'),
-                        memb_func[p_ok->type].sym->name,
-                        memb_func[p->type].sym->name);
+                        memb_func[p_ok->_type].sym->name,
+                        memb_func[p->_type].sym->name);
                 hoc_warning(buf, (char*) 0);
             }
         }
@@ -559,13 +558,10 @@ void nrn_promote(Prop* p, int conc, int rev) {
 static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** pd = ml->data;
+    double** pd = ml->_data;
     Datum** ppd = ml->pdata;
     int i;
-/*printf("ion_cur %s\n", memb_func[type].sym->name);*/
-#if _CRAY
-#pragma _CRI ivdep
-#endif
+    /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
     for (i = 0; i < count; ++i) {
         dcurdv = 0.;
         cur = 0.;
@@ -581,22 +577,16 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** pd = ml->data;
+    double** pd = ml->_data;
     Datum** ppd = ml->pdata;
     int i;
-/*printf("ion_init %s\n", memb_func[type].sym->name);*/
-#if _CRAY
-#pragma _CRI ivdep
-#endif
+    /*printf("ion_init %s\n", memb_func[type].sym->name);*/
     for (i = 0; i < count; ++i) {
         if (iontype & 04) {
             conci = conci0;
             conco = conco0;
         }
     }
-#if _CRAY
-#pragma _CRI ivdep
-#endif
     for (i = 0; i < count; ++i) {
         if (iontype & 040) {
             erev = nrn_nernst(conci, conco, charge);
@@ -608,20 +598,20 @@ static void ion_alloc(Prop* p) {
     double* pd[1];
     int i = 0;
 
-    pd[0] = nrn_prop_data_alloc(p->type, nparm, p);
+    pd[0] = nrn_prop_data_alloc(p->_type, nparm, p);
     p->param_size = nparm;
 
     cur = 0.;
     dcurdv = 0.;
-    if (p->type == na_ion) {
+    if (p->_type == na_ion) {
         erev = DEF_ena;
         conci = DEF_nai;
         conco = DEF_nao;
-    } else if (p->type == k_ion) {
+    } else if (p->_type == k_ion) {
         erev = DEF_ek;
         conci = DEF_ki;
         conco = DEF_ko;
-    } else if (p->type == ca_ion) {
+    } else if (p->_type == ca_ion) {
         erev = DEF_eca;
         conci = DEF_cai;
         conco = DEF_cao;
@@ -632,7 +622,7 @@ static void ion_alloc(Prop* p) {
     }
     p->param = pd[0];
 
-    p->dparam = nrn_prop_datum_alloc(p->type, 1, p);
+    p->dparam = nrn_prop_datum_alloc(p->_type, 1, p);
     p->dparam->i = 0;
 }
 
@@ -649,10 +639,8 @@ void second_order_cur(NrnThread* nt) {
                 ml = tml->ml;
                 i2 = ml->nodecount;
                 for (i = 0; i < i2; ++i) {
-                    ml->data[i][c] += ml->data[i][dc] * (NODERHS(ml->nodelist[i]));
+                    ml->_data[i][c] += ml->_data[i][dc] * (NODERHS(ml->nodelist[i]));
                 }
             }
     }
 }
-
-#endif

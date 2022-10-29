@@ -32,9 +32,6 @@
 /* Define to 1 if you have the `bzero' function. */
 #undef HAVE_BZERO
 
-/* Define to 1 if you have the <cxxabi.h> header file. */
-#undef HAVE_CXXABI_H
-
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #undef HAVE_DIRENT_H
@@ -368,6 +365,12 @@
  */
 #if defined(__cplusplus)
 #include <ivstream.h>
+#include <string_view>
+namespace neuron::config {
+   constexpr std::string_view shared_library_prefix{"@CMAKE_SHARED_LIBRARY_PREFIX@"};
+   constexpr std::string_view shared_library_suffix{"@CMAKE_SHARED_LIBRARY_SUFFIX@"};
+   constexpr std::string_view system_processor{"@CMAKE_SYSTEM_PROCESSOR@"};
+}
 #endif
 
 #ifdef MINGW

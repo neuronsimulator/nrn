@@ -50,7 +50,7 @@ static void pnode(Prop* p1) {
         return;
     }
     pnode(p1->next); /*print in insert order*/
-    sym = memb_func[p1->type].sym;
+    sym = memb_func[p1->_type].sym;
     Printf("	insert %s {", sym->name);
     if (sym->s_varn) {
         for (j = 0; j < sym->s_varn; j++) {

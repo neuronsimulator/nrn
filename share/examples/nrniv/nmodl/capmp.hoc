@@ -8,6 +8,10 @@ cao=2
 // run parameters
 tstop=40
 
+objref cvode
+cvode = new CVode()
+
+
 // simulation control
 proc init() { local tausav, done
   done = 0
@@ -68,6 +72,11 @@ icavec.plot(g, caivec.c.log10())
 
 objref g1
 g1 = new Graph()
+
+proc step() {
+  g1.plot(t)
+  fadvance()
+}
 
 proc run1() {
 	cai0 = $1

@@ -21,12 +21,8 @@ order.  Here is the C code from a kinetic block:
 extern int numlist;
 extern int thread_data_index;
 extern List* thread_cleanup_list;
-#if VECTORIZE
 extern int vectorize;
-#endif
-extern Symbol* indepsym;
 
-#if CVODE
 int singlechan_;
 static int cvode_flag;
 static void cvode_kin_remove();
@@ -34,10 +30,6 @@ static Item *cvode_sbegin, *cvode_send;
 static List* kin_items_;
 #define CVODE_FLAG     if (cvode_flag)
 #define NOT_CVODE_FLAG if (!cvode_flag)
-#else
-#define CVODE_FLAG     if (0)
-#define NOT_CVODE_FLAG if (1)
-#endif
 
 typedef struct Rterm {
     struct Rterm* rnext;
@@ -60,14 +52,13 @@ static List* done_list;  /* list of already translated blocks */
 static List* done_list1; /* do not emit definitions more than once */
 typedef struct Rlist {
     Reaction* reaction;
-    Symbol* sym;       /* the kinetic block symbol */
-    Item* position;    /*  where we can initialize lists */
-    Item* endbrace;    /*  can insert after all statements */
-    Symbol** symorder; /* state symbols in varnum order */
-    char** capacity;   /* compartment size expessions in varnum order */
-    int nsym;          /* number of symbols in above vector */
-    int ncons;         /* and the diagonals for conservation are first */
-    int sens_parm;     /* for possible error message later on */
+    Symbol* sym;           /* the kinetic block symbol */
+    Item* position;        /*  where we can initialize lists */
+    Item* endbrace;        /*  can insert after all statements */
+    Symbol** symorder;     /* state symbols in varnum order */
+    const char** capacity; /* compartment size expessions in varnum order */
+    int nsym;              /* number of symbols in above vector */
+    int ncons;             /* and the diagonals for conservation are first */
     struct Rlist* rlistnext;
     int slist_decl;
 } Rlist;
@@ -83,20 +74,6 @@ List* ldifuslist; /* analogous to compartment. Specifies diffusion constant
     times the relevant cross sectional area. The volume/length
     must be specified in the COMPARTMENT statement */
 
-/* addition of sens statement handling is restricted to the derivative form
-and follows the way it is done in deriv.c with the following exception--
-until the solve statement is dealt with in solve.c we dont know which
-form we will use for the equations. Therefore we save sensused
-in the main Rlist and give error message if it is non-zero when implicit
-is called. Also the sensmassage call in massagekinetic substitutes an
-intermediate block to be called by the integrator and gives the total
-number of states including the sens states. This means that the
-call to kinetic_intmethod gets the new fun with too many
-states and therefore should rely only on the lists in this routine for
-its info.
-*/
-extern int sens_parm;
-
 int genconservterms(int eqnum, Reaction* r, int fn, Rlist* rlst);
 int number_states(Symbol* fun, Rlist** prlst, Rlist** pclst);
 void kinlist(Symbol* fun, Rlist* rlst);
@@ -105,15 +82,6 @@ void genmatterms(Reaction* r, int fn);
 
 #define MAXKINBLK 20
 static int nstate_[MAXKINBLK];
-
-#if VECTORIZE
-static char* instance_loop() {
-    extern char* cray_pragma();
-    static char buf1[NRN_BUFSIZE];
-    Sprintf(buf1, "\n#ifdef WANT_PRAGMA%s#endif\n   _INSTANCE_LOOP {\n", cray_pragma());
-    return buf1;
-}
-#endif
 
 static int sparse_declared_[10];
 static int sparsedeclared(int i) {
@@ -166,8 +134,8 @@ void reactname(Item* q1, Item* lastok, Item* q2) /* NAME [] INTEGER   q2 may be 
         s1->usage |= DEP;
         s->used++;
         rterm->isstate = 1;
-    } else if (!(s->subtype & (DEP | nmodlCONST | PARM | INDEP | STEP1 | STAT))) {
-        diag(s->name, "must be a STATE, CONSTANT, ASSIGNED, STEPPED, or INDEPENDENT");
+    } else if (!(s->subtype & (DEP | nmodlCONST | PARM | INDEP | STAT))) {
+        diag(s->name, "must be a STATE, CONSTANT, ASSIGNED, or INDEPENDENT");
     }
     if (q2) {
         rterm->num = atoi(STR(q2));
@@ -239,7 +207,6 @@ void flux(Item* qREACTION, Item* qdir, Item* qlast) {
         }
         reactlist->krate[0] = (char*) 0;
         reactlist->krate[1] = qconcat(qdir->next->next, qlast);
-#if NOCMODL
         if (ldifuslist) { /* function of current ? */
             Item* q;
             int isfunc;
@@ -279,7 +246,6 @@ void flux(Item* qREACTION, Item* qdir, Item* qlast) {
                 }
             }
         }
-#endif
         /*SUPPRESS 440*/
         replacstr(qlast, "/*FLUX*/\n");
     }
@@ -295,7 +261,7 @@ void flux(Item* qREACTION, Item* qdir, Item* qlast) {
    we therefore loop through all the rterms and mark only those
 */
 
-void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /*KINETIC NAME stmtlist
+void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtlist
                                                                              '}'*/
 {
     int count = 0, i, order, ncons;
@@ -318,19 +284,15 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /*KINE
     Linsertstr(procfunc, buf);
     replacstr(q1, "\nstatic int");
     qv = insertstr(q3, "()\n");
-#if VECTORIZE
     if (vectorize) {
         kin_vect1(q1, q2, q4);
         vectorize_substitute(qv,
                              "(void* _so, double* _rhs, double* _p, Datum* _ppvar, Datum* _thread, "
                              "NrnThread* _nt)\n");
     }
-#endif
     qv = insertstr(q3, "{_reset=0;\n");
-#if VECTORIZE
     Sprintf(buf, "{int _reset=0;\n");
     vectorize_substitute(qv, buf);
-#endif
     afterbrace = q3->next;
 #if Glass
     /* Make sure that if the next statement was LOCAL xxx, we skip
@@ -346,9 +308,6 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /*KINE
 
 #endif
     qv = insertstr(afterbrace, "double b_flux, f_flux, _term; int _i;\n");
-#if 0 && VECTORIZE
-	vectorize_substitute(qv, "int _i;\n");
-#endif
     /* also after these declarations will go initilization statements */
 
     order = 0;
@@ -417,9 +376,9 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /*KINE
     Sprintf(buf,
             "static int _slist%d[%d], _dlist%d[%d]; static double *_temp%d;\n",
             numlist,
-            count * (1 + sens_parm),
+            count,
             numlist,
-            count * (1 + sens_parm),
+            count,
             numlist);
     Linsertstr(procfunc, buf);
     insertstr(q4, "  } return _reset;\n");
@@ -428,7 +387,6 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /*KINE
     r = (Rlist*) emalloc(sizeof(Rlist));
     r->reaction = reactlist;
     reactlist = (Reaction*) 0;
-    r->sens_parm = sens_parm;
     r->symorder = (Symbol**) emalloc((unsigned) order * sizeof(Symbol*));
     r->slist_decl = 0;
     /*the reason that we can't just keep this info in s->varnum is that
@@ -436,20 +394,12 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /*KINE
     SYMITER(NAME) {
         if ((s->subtype & STAT) && s->used) {
             r->symorder[s->used - 1] = s;
-            if (sensused) {
-                add_sens_statelist(s);
-            }
         }
     }
     r->nsym = order;
     r->ncons = ncons;
     r->position = afterbrace;
     r->endbrace = q4->prev; /* needed for Dstate with COMPARTMENT */
-    if (sensused) {
-        /* fun now is the interface and fun->used is all the states */
-        sensmassage(DERIVATIVE, q2, numlist);
-        /* this sets sens_parm to 0 */
-    }
     r->sym = fun;
     r->rlistnext = rlist;
     rlist = r;
@@ -461,7 +411,7 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /*KINE
     clist = r;
 
     /* handle compartlist if any */
-    rlist->capacity = (char**) emalloc((unsigned) order * sizeof(char*));
+    rlist->capacity = (const char**) emalloc((unsigned) order * sizeof(char*));
     for (i = 0; i < order; i++) {
         rlist->capacity[i] = "";
     }
@@ -487,14 +437,12 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /*KINE
             s->used = 0;
         }
     }
-#if CVODE
     cvode_sbegin = q3;
     cvode_send = q4;
     kin_items_ = newlist();
     for (q = cvode_sbegin; q != cvode_send->next; q = q->next) {
         lappenditem(kin_items_, q);
     }
-#endif
 }
 
 #if Glass
@@ -508,7 +456,7 @@ void fixrlst(Rlist* rlst) {
 
 static int ncons; /* the number of conservation equations */
 
-void kinetic_intmethod(Symbol* fun, char* meth) {
+void kinetic_intmethod(Symbol* fun, const char* meth) {
     /*derivative form*/
     Reaction* r1;
     Rlist *rlst, *clst;
@@ -689,7 +637,7 @@ void genfluxterm(Reaction* r, int type, int n) {
 }
 
 static int linmat; /* 1 if linear */
-void kinetic_implicit(Symbol* fun, char* dt, char* mname) {
+void kinetic_implicit(Symbol* fun, const char* dt, const char* mname) {
     /*implicit equations _slist are state(t+dt) _dlist are Dstate(t)*/
     Item* q;
     Item* qv;
@@ -740,9 +688,6 @@ void kinetic_implicit(Symbol* fun, char* dt, char* mname) {
             lappendstr(thread_cleanup_list, buf);
         }
     }
-    if (rlst->sens_parm) {
-        diag(" SENS unimplemented for default kinetic integration", "method");
-    }
     /*goes near beginning of block. Before first reaction is not
     adequate since the first reaction may be within a while loop */
 #if Glass
@@ -761,9 +706,6 @@ for(_i=%d;_i<%d;_i++){\n",
 
     qv = insertstr(rlst->position, "");
 
-#if 0 && VECTORIZE
-	vectorize_substitute(qv, instance_loop());
-#endif
     NOT_CVODE_FLAG {
         Sprintf(buf,
                 "\
@@ -774,13 +716,6 @@ for(_i=%d;_i<%d;_i++){\n",
                 fun->u.i,
                 fun->u.i);
         qv = insertstr(rlst->position, buf);
-#if 0 && VECTORIZE
-	Sprintf(buf, "\
-	_RHS%d(_i) = -_dt1*(_p[_ix][_slist%d[_i]] - _p[_ix][_dlist%d[_i]]);\n\
-	_MATELM%d(_i, _i) = _dt1;\n",
-		fun->u.i, fun->u.i, fun->u.i, fun->u.i);
-	vectorize_substitute(qv, buf);
-#endif
     }
     CVODE_FLAG {
         Sprintf(buf,
@@ -791,18 +726,8 @@ for(_i=%d;_i<%d;_i++){\n",
                 fun->u.i,
                 fun->u.i);
         qv = insertstr(rlst->position, buf);
-#if 0 && VECTORIZE
-	Sprintf(buf, "\
-	_RHS%d(_i) = _dt1*(_p[_ix][_dlist%d[_i]]);\n\
-	_MATELM%d(_i, _i) = _dt1;\n",
-		fun->u.i, fun->u.i, fun->u.i);
-	vectorize_substitute(qv, buf);
-#endif
     }
     qv = insertstr(rlst->position, "");
-#if 0 && VECTORIZE
-	vectorize_substitute(qv, "    } /* ILOOPEND */\n");
-#endif
     Sprintf(buf, "    \n}");
     Insertstr(rlst->position, buf);
     /* Modify to take into account compartment sizes */
@@ -815,9 +740,6 @@ for(_i=%d;_i<%d;_i++){\n",
                 if (!flag) {
                     flag = 1;
                     qv = insertstr(rlst->position, "");
-#if 0 && VECTORIZE
-					vectorize_substitute(qv, instance_loop());
-#endif
                 }
                 Sprintf(buf,
                         "\n_RHS%d(%d) *= %s",
@@ -837,9 +759,6 @@ for(_i=%d;_i<%d;_i++){\n",
     }
     if (flag) {
         qv = insertstr(rlst->position, "");
-#if 0 && VECTORIZE
-		vectorize_substitute(qv, "    } /* ILOOPEND */\n");
-#endif
     }
 
     for (i = ncons; i < rlst->nsym; i++) {
@@ -848,9 +767,6 @@ for(_i=%d;_i<%d;_i++){\n",
                 Sprintf(buf, "\nfor (_i=0; _i < %d; _i++) {\n", rlst->symorder[i]->araydim);
                 Insertstr(rlst->position, buf);
                 qv = insertstr(rlst->position, "");
-#if 0 && VECTORIZE
-					vectorize_substitute(qv, instance_loop());
-#endif
 
                 Sprintf(buf,
                         "	_RHS%d(_i + %d) *= %s",
@@ -866,9 +782,6 @@ for(_i=%d;_i<%d;_i++){\n",
                         rlst->capacity[i]);
                 Insertstr(rlst->position, buf);
                 qv = insertstr(rlst->position, "");
-#if 0 && VECTORIZE
-		vectorize_substitute(qv, "    } /* ILOOPEND */\n");
-#endif
 
                 Insertstr(rlst->position, "}");
             }
@@ -895,13 +808,6 @@ for(_i=%d;_i<%d;_i++){\n",
         if (firsttrans) {
             kinlist(fun, rlst);
 
-#if 0 && VECTORIZE
-	if (vectorize) {
-		Sprintf(buf, "static _vector_%s();\n", fun->name);
-		qv = linsertstr(procfunc, "");
-		vectorize_substitute(qv, buf);
-	}
-#endif
 
             if (strcmp(mname, "_advance") == 0) { /* use for simeq */
                 Sprintf(
@@ -923,39 +829,31 @@ for(_i=%d;_i<%d;_i++){\n",
                         first = 0;
                         Sprintf(buf, "static double *_coef%d;\n", fun->u.i);
                         qv = linsertstr(procfunc, buf);
-#if VECTORIZE
                         vectorize_substitute(qv, "");
-#endif
                     }
                 }
                 Sprintf(buf, "\n#define _RHS%d(_arg) _coef%d[_arg + 1]\n", fun->u.i, fun->u.i);
                 qv = linsertstr(procfunc, buf);
-#if VECTORIZE
                 Sprintf(buf, "\n#define _RHS%d(_arg) _rhs[_arg+1]\n", fun->u.i);
                 vectorize_substitute(qv, buf);
-#endif
                 Sprintf(buf,
                         "\n#define _MATELM%d(_row,_col)\
 	*(_getelm(_row + 1, _col + 1))\n",
                         fun->u.i);
                 qv = linsertstr(procfunc, buf);
-#if VECTORIZE
                 Sprintf(buf,
                         "\n#define _MATELM%d(_row,_col) "
                         "*(_nrn_thread_getelm(static_cast<SparseObj*>(_so), _row + 1, _col + 1))\n",
                         fun->u.i);
                 vectorize_substitute(qv, buf);
-#endif
                 {
                     static int first = 1;
                     if (first) {
                         first = 0;
                         Sprintf(buf, "extern double *_getelm(int, int);\n");
                         qv = linsertstr(procfunc, buf);
-#if VECTORIZE
                         Sprintf(buf, "extern double *_nrn_thread_getelm(SparseObj*, int, int);\n");
                         vectorize_substitute(qv, buf);
-#endif
                     }
                 }
             }
@@ -1059,17 +957,10 @@ void massageconserve(Item* q1, Item* q3, Item* q5) /* CONSERVE react '=' expr */
     /*SUPPRESS 440*/
     replacstr(q1, "/*");
     qv = insertstr(q1, "");
-#if 0 && VECTORIZE
-	vectorize_substitute(qv, instance_loop());
-#endif
     /*SUPPRESS 440*/
     Insertstr(q5->next, "*/\n");
     /*SUPPRESS 440*/
     conslist->position = insertstr(q5->next->next, "/*CONSERVATION*/\n");
-#if 0 && VECTORIZE
-	vectorize_substitute(conslist->position, "/*CONSERVATION*/\n\
-} /*ILOOPEND*/\n");
-#endif
     rterm = (Rterm*) 0;
 }
 
@@ -1186,9 +1077,7 @@ void kinlist(Symbol* fun, Rlist* rlst) {
     /* put slist and dlist in initlist */
     for (i = 0; i < rlst->nsym; i++) {
         s = rlst->symorder[i];
-#if CVODE
         slist_data(s, s->varnum, fun->u.i);
-#endif
         if (s->subtype & ARRAY) {
             int dim = s->araydim;
             Sprintf(buf,
@@ -1212,7 +1101,7 @@ void kinlist(Symbol* fun, Rlist* rlst) {
 }
 
 /* for now we only check CONSERVE and COMPARTMENT */
-void check_block(int standard, int actual, char* mes) {
+void check_block(int standard, int actual, const char* mes) {
     if (standard != actual) {
         diag(mes, "not allowed in this kind of block");
     }
@@ -1406,49 +1295,6 @@ _jacob%d[(row)*%d + (col)][_ix]\n",
 }
 
 
-static int astmt_state;
-static Item* astmt_last;
-
-void ostmt_start() {
-    astmt_state = 0;
-}
-
-void see_ostmt() {
-#if 0 && VECTORIZE
-	if (vectorize) {
-		if (astmt_state) {
-			astmt_state = 0;
-			vectorize_substitute(astmt_last, "\n } /*ILOOPEND*/\n");
-		}
-	}
-#endif
-}
-
-void see_astmt(Item* q1, Item* q2) {
-#if 0 && VECTORIZE
-	Item* q;
-	if (vectorize) {
-		if (!astmt_state) {
-			astmt_state = 1;
-			q = insertstr(q1, "");
-			vectorize_substitute(q, instance_loop());
-		}
-		astmt_last = insertstr(q2->next, "");
-	}
-#endif
-}
-
-void vectorize_if_else_stmt(int blocktype) {
-#if 0 && VECTORIZE
-	if (blocktype == KINETIC && vectorize) {
-		vectorize = 0;
-fprintf(stderr, "Notice: Can't vectorize a kinetic block if it contains\n\
- an if...else... statement.\n");
-	}
-#endif
-}
-
-#if CVODE
 static void cvode_kin_remove() {
     Item *q, *q2;
 #if 0
@@ -1694,5 +1540,3 @@ void single_channel(Item* qsol, Symbol* fun, int numeqn, int listnum) {
     cvode_kin_remove();
     singlechan_ = listnum;
 }
-
-#endif

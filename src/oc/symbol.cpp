@@ -16,6 +16,7 @@
 #include "hoc.h"
 #include "hocdec.h"
 #include "hoclist.h"
+#include "nrncore_write/utils/nrncore_utils.h"
 #include "oc_ansi.h"
 #include "ocnotify.h"
 #include "parse.hpp"
@@ -456,4 +457,15 @@ void hoc_mallinfo() {
     auto const x = nrn_mallinfo(i);
     hoc_ret();
     hoc_pushx(x);
+}
+
+// TODO: would it be useful to return the handle itself to Python, for use with
+// ctypes CDLL and so on?
+void hoc_coreneuron_handle() {
+    bool success{false};
+    try {
+        success = get_coreneuron_handle();
+    } catch (std::runtime_error const& e) {
+    }
+    hoc_retpushx(success);
 }

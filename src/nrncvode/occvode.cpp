@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#define VECTORIZE 1
 #include <errno.h>
 #include <InterViews/resource.h>
 #include <OS/string.h>
@@ -261,7 +260,7 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
                     (*s)(ieq,
                          z.pv_ + ieq,
                          z.pvdot_ + ieq,
-                         ml->data[j],
+                         ml->_data[j],
                          ml->pdata[j],
                          atv + ieq,
                          cml->index);
@@ -315,7 +314,7 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
         if (mf->hoc_mech) {
             ncm->ml->prop = new Prop*[n];
         } else {
-            ncm->ml->data = new double*[n];
+            ncm->ml->_data = new double*[n];
             ncm->ml->pdata = new Datum*[n];
         }
         ncm->ml->_thread = ml->_thread;  // can share this
@@ -330,7 +329,7 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
                 if (mf->hoc_mech) {
                     ncm->ml->prop[n] = ml->prop[i];
                 } else {
-                    ncm->ml->data[n] = ml->data[i];
+                    ncm->ml->_data[n] = ml->_data[i];
                     ncm->ml->pdata[n] = ml->pdata[i];
                 }
                 ++n;
@@ -437,7 +436,7 @@ void Cvode::daspk_init_eqn() {
                 (*s)(ieq,
                      z.pv_ + ieq,
                      z.pvdot_ + ieq,
-                     ml->data[j],
+                     ml->_data[j],
                      ml->pdata[j],
                      atv + ieq,
                      cml->index);
@@ -474,7 +473,7 @@ void Cvode::scatter_y(double* y, int tid) {
         if (mf->ode_synonym) {
             nrn_ode_synonym_t s = mf->ode_synonym;
             Memb_list* ml = cml->ml;
-            (*s)(ml->nodecount, ml->data, ml->pdata);
+            (*s)(ml->nodecount, ml->_data, ml->pdata);
         }
     }
     nrn_extra_scatter_gather(0, tid);
@@ -782,7 +781,7 @@ void Cvode::before_after(BAMechList* baml, NrnThread* nt) {
         nrn_bamech_t f = ba->bam->f;
         Memb_list* ml = ba->ml;
         for (i = 0; i < ml->nodecount; ++i) {
-            (*f)(ml->nodelist[i], ml->data[i], ml->pdata[i], ml->_thread, nt);
+            (*f)(ml->nodelist[i], ml->_data[i], ml->pdata[i], ml->_thread, nt);
         }
     }
 }

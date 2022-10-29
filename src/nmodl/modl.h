@@ -41,7 +41,6 @@
         of the form state = state0 are constructed here.
   constructorfunc	statements added to tail of allocation function
   destructorfunc	statements executed when POINT_PROCESS destroyed
-  termfunc	main body of terminal() from TERMINAL
   modelfunc	main body of model() from EQUATION. SOLVE statements in the
         equation block get expanded in this list
   procfunc	all remaining blocks get concatenated to this list. It
@@ -134,23 +133,16 @@ The following is a list of the current element usage:
  varnum		state variable - during processing of a block containing
          equations in which simultaneous equations result; column
          number of state variable in the matrix.
- level		lowest submodel level number for declarations of this
-         symbol. Used for parameters ( in explicit_decl()).
-         The default value is 100.
  name		token name
 */
 typedef struct Symbol {
     short type;
     long subtype;
-#if NMODL
     short nrntype;
     short assigned_to_;
     int no_threadargs; /* introduced for FUNCTION_TABLE table_name */
-#if CVODE
-    int* slist_info_; /* blunt instrument for retrieving ion concentration slist value */
-#endif
-    int ioncount_; /* ppvar index for ions */
-#endif
+    int* slist_info_;  /* blunt instrument for retrieving ion concentration slist value */
+    int ioncount_;     /* ppvar index for ions */
     union {
         int i;
         char* str;
@@ -161,7 +153,6 @@ typedef struct Symbol {
     int discdim;
     int varnum; /* column number of state variable in
                  * equations */
-    short level;
     char* name;
 } Symbol;
 #define SYM0 (Symbol*) 0
@@ -202,7 +193,6 @@ typedef struct Symbol {
 #define KINF          02000
 #define NLINF         04000
 #define DISCF         010000
-#define STEP1         020000
 #define PARF          040000
 #define EXTDEF        0100000
 #define LINF          0200000
@@ -215,11 +205,29 @@ typedef struct Symbol {
 #define EXTDEF5       040000000L /* not threadsafe from the extdef list */
 #define EXPLICIT_DECL 01         /* usage field, variable occurs in input file */
 
-extern char *emalloc(unsigned), /* malloc with out of space checking */
-    *stralloc(char*, char*),    /* copies string to new space */
-    *inputline(),               /* used only by parser to get title line */
-    *inputtopar(),              /* used only by parser to get units */
-    *Gets(char*);               /* used only in io.c to get string from fin. */
+
+#define NRNEXTRN     01 /* t, dt, celsius, etc. */
+#define NRNCURIN     02 /* input value used */
+#define NRNCUROUT    04 /* added to output value */
+#define NRNRANGE     010
+#define NRNPRANGEIN  020
+#define NRNPRANGEOUT 040
+#define NRNGLOBAL    0100 /* same for all sections, defined here */
+#define NRNSTATIC    0200 /* v */
+#define NRNNOTP      0400 /* doesn't belong in p array */
+#define NRNIONFLAG                                  \
+    01000 /* temporary flag to allow READ and WRITE \
+             without declaring twice */
+#define NRNPOINTER       04000
+#define IONCONC          010000
+#define NRNBBCOREPOINTER 020000
+
+
+extern char *emalloc(unsigned),    /* malloc with out of space checking */
+    *stralloc(const char*, char*), /* copies string to new space */
+    *inputline(),                  /* used only by parser to get title line */
+    *inputtopar(),                 /* used only by parser to get units */
+    *Gets(char*);                  /* used only in io.c to get string from fin. */
 
 #if 0
 #if __TURBOC__ || SYSV || NeXT || LINUX
@@ -231,23 +239,26 @@ extern char    *sprintf();
 extern int nmodl_text; /* if 1, the text of the mod file is a string in the mod file */
 extern List* filetxtlist;
 
-extern List *newlist(),                      /* begins new empty list */
-    *inputtext();                            /* used by parser to get block text from
-                                              * VERBATIM and COMMENT */
-extern Item *putintoken(char*s, short type), /* construct symbol and store input tokens */
-    *insertstr(Item*item, char*str),         /* before a known Item */
-    *insertsym(List*list, Symbol*sym), *linsertstr(List*list, char*str), /* prepend to list */
-    *lappendstr(List*list, char*str),                                    /* append to list */
+extern List *newlist(),                            /* begins new empty list */
+    *inputtext();                                  /* used by parser to get block text from
+                                                    * VERBATIM and COMMENT */
+extern Item *putintoken(const char*s, short type), /* construct symbol and store input tokens */
+    *insertstr(Item*item, const char*str),         /* before a known Item */
+    *insertsym(List*list, Symbol*sym), *linsertstr(List*list, const char*str), /* prepend to list */
+    *lappendstr(List*list, const char*str),                                    /* append to list */
     *linsertsym(List*list, Symbol*sym), *lappendsym(List*list, Symbol*sym),
     *lappenditem(List*list, Item*item), *lappendlst(List*list, List*lst),
     *next(), /* not used but should be instead of q->next */
     *prev();
 
-extern Symbol *install(char*, int), /* Install token in symbol table */
-    *lookup(char*),                 /* lookup name in symbol table */
-    *copylocal(Symbol*),            /* install LOCAL variable symbol */
-    *ifnew_parminstall(char*name, char*num, char*units, char*limits); /* new .var info only if
-                                                                       * not already done. */
+extern Symbol *install(const char*, int), /* Install token in symbol table */
+    *lookup(const char*),                 /* lookup name in symbol table */
+    *copylocal(Symbol*),                  /* install LOCAL variable symbol */
+    *ifnew_parminstall(const char*name,
+                       const char*num,
+                       const char*units,
+                       const char*limits); /* new .var info only if
+                                            * not already done. */
 #include "nmodlfunc.h"
 
 extern char* finname; /* the input file prefix */

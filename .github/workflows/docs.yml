@@ -35,7 +35,7 @@ jobs:
         shell: bash
 
       - name: Set up Python@${{ env.DEFAULT_PY_VERSION }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ env.DEFAULT_PY_VERSION }}
 

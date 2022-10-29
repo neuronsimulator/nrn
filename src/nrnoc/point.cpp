@@ -161,7 +161,7 @@ void nrn_relocate_old_points(Section* oldsec, Node* oldnode, Section* sec, Node*
     if (oldnode)
         for (p = oldnode->prop; p; p = pn) {
             pn = p->next;
-            if (memb_func[p->type].is_point) {
+            if (memb_func[p->_type].is_point) {
                 pnt = (Point_process*) p->dparam[1]._pvoid;
                 if (oldsec == pnt->sec) {
                     if (oldnode == node) {
@@ -171,11 +171,11 @@ void nrn_relocate_old_points(Section* oldsec, Node* oldnode, Section* sec, Node*
 double nrn_arc_position();
 char* secname();
 printf("relocating a %s to %s(%d)\n",
-memb_func[p->type].sym->name,
+memb_func[p->_type].sym->name,
 secname(sec), nrn_arc_position(sec, node)
 );
 #endif
-                        nrn_loc_point_process(pnt_map[p->type], pnt, sec, node);
+                        nrn_loc_point_process(pnt_map[p->_type], pnt, sec, node);
                     }
                 }
             }
@@ -230,9 +230,6 @@ double loc_point_process(int pointtype, void* v) {
 }
 
 double get_loc_point_process(void* v) {
-#if METHOD3
-    extern int _method3;
-#endif
     double x;
     Point_process* pnt = (Point_process*) v;
     Section* sec;
@@ -240,7 +237,7 @@ double get_loc_point_process(void* v) {
     if (pnt->prop == (Prop*) 0) {
         hoc_execerror("point process not located in a section", (char*) 0);
     }
-    if (nrn_is_artificial_[pnt->prop->type]) {
+    if (nrn_is_artificial_[pnt->prop->_type]) {
         hoc_execerror("ARTIFICIAL_CELLs are not located in a section", (char*) 0);
     }
     sec = pnt->sec;
@@ -326,7 +323,7 @@ static void free_one_point(Point_process* pnt) /* must unlink from node property
     if (!p) {
         return;
     }
-    if (!nrn_is_artificial_[p->type]) {
+    if (!nrn_is_artificial_[p->_type]) {
         p1 = pnt->node->prop;
         if (p1 == p) {
             pnt->node->prop = p1->next;
@@ -338,18 +335,16 @@ static void free_one_point(Point_process* pnt) /* must unlink from node property
                 }
             }
     }
-#if VECTORIZE
     { v_structure_change = 1; }
-#endif
     if (p->param) {
-        if (memb_func[p->type].destructor) {
-            memb_func[p->type].destructor(p);
+        if (memb_func[p->_type].destructor) {
+            memb_func[p->_type].destructor(p);
         }
         notify_freed_val_array(p->param, p->param_size);
-        nrn_prop_data_free(p->type, p->param);
+        nrn_prop_data_free(p->_type, p->param);
     }
     if (p->dparam) {
-        nrn_prop_datum_free(p->type, p->dparam);
+        nrn_prop_datum_free(p->_type, p->dparam);
     }
     free(p);
     pnt->prop = (Prop*) 0;
@@ -380,10 +375,10 @@ void clear_point_process_struct(Prop* p) /* called from prop_free */
         }
         if (p->param) {
             notify_freed_val_array(p->param, p->param_size);
-            nrn_prop_data_free(p->type, p->param);
+            nrn_prop_data_free(p->_type, p->param);
         }
         if (p->dparam) {
-            nrn_prop_datum_free(p->type, p->dparam);
+            nrn_prop_datum_free(p->_type, p->dparam);
         }
         free(p);
     }

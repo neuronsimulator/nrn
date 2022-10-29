@@ -431,7 +431,7 @@ static double tstop_event(void* v) {
         if (ifarg(3)) {
             ppobj = *hoc_objgetarg(3);
             if (!ppobj || ppobj->ctemplate->is_point_ <= 0 ||
-                nrn_is_artificial_[ob2pntproc(ppobj)->prop->type]) {
+                nrn_is_artificial_[ob2pntproc(ppobj)->prop->_type]) {
                 hoc_execerror(hoc_object_name(ppobj), "is not a POINT_PROCESS");
             }
             reinit = int(chkarg(4, 0, 1));
@@ -580,6 +580,16 @@ static double use_fast_imem(void* v) {
     return double(i);
 }
 
+static double poolshrink(void*) {
+    extern void nrn_poolshrink(int);
+    int i = 0;
+    if (ifarg(1)) {
+        i = int(chkarg(1, 0., 1.));
+    }
+    nrn_poolshrink(i);
+    return double(i);
+}
+
 static Member_func members[] = {{"solve", solve},
                                 {"atol", nrn_atol},
                                 {"rtol", rtol},
@@ -628,6 +638,7 @@ static Member_func members[] = {{"solve", solve},
                                 {"extra_scatter_gather", extra_scatter_gather},
                                 {"extra_scatter_gather_remove", extra_scatter_gather_remove},
                                 {"use_fast_imem", use_fast_imem},
+                                {"poolshrink", poolshrink},
                                 {nullptr, nullptr}};
 
 static Member_ret_obj_func omembers[] = {{"netconlist", netconlist}, {nullptr, nullptr}};

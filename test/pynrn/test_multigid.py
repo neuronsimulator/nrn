@@ -2,7 +2,7 @@
 # pc.cell(gid, h.NetCon(cell.sec(x)._ref_v, None, sec=cell.sec))
 # It is an error to have multiple gids with the same reference.
 
-from neuron import h, coreneuron
+from neuron import config, h, coreneuron
 from neuron.expect_hocerr import expect_err
 from math import log10
 
@@ -11,9 +11,7 @@ pc = h.ParallelContext()
 
 
 def coreneuron_available():
-    if "NRN_ENABLE_CORENEURON=ON" not in h.nrnversion(6):
-        # Not ideal. Maybe someday it will be default ON and then
-        # will not appear in h.nrnversion(6)
+    if not config.arguments["NRN_ENABLE_CORENEURON"]:
         return False
     # But can it be loaded?
     cvode = h.CVode()
