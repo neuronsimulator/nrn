@@ -1,5 +1,6 @@
 NEURON {
   SUFFIX tstmath
+  THREADSAFE
 }
 
 FUNCTION div(x, y) {
