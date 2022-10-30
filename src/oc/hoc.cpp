@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
 #include <math.h>
 #include <errno.h>
 #include "parse.hpp"
@@ -60,7 +61,7 @@ extern int stdin_event_ready();
 #if NRN_FLOAT_EXCEPTION
 #if !defined(__USE_GNU)
 #define __USE_GNU
-#endif  // __USE_GNU
+#endif
 #include <fenv.h>
 #if DARWIN && !defined(__arm64__)
 #pragma STDC FENV_ACCESS ON
@@ -97,18 +98,10 @@ int nrn_feenableexcept_ = 0;  // 1 if feenableexcept(FEEXCEPT) is successful
 static RETSIGTYPE fpecatch(int sig); /* catch floating point exceptions */
 
 void nrn_feenableexcept() {
-    if (chkarg(1, 0., 10.) == 2.0) {
-        auto foo = signal(SIGFPE, SIG_IGN);
-        signal(SIGFPE, fpecatch);
-        hoc_ret();
-        int result = foo == fpecatch;
-        hoc_pushx((double) result);
-        return;
-    }
     int result = -2;  // feenableexcept does not exist.
     nrn_feenableexcept_ = 0;
     bool enable = (ifarg(1) && chkarg(1, 0., 1.) == 0.) ? false : true;
-#if HAVE_FEENABLE_EXCEPT
+#if HAVE_FEENABLEEXCEPT
     if (!enable) {
         result = fedisableexcept(FEEXCEPT);
     } else {
@@ -265,7 +258,6 @@ int lineno;
 #if HAVE_EXECINFO_H
 #include <execinfo.h>
 #endif
-#include <signal.h>
 int intset; /* safer interrupt handling */
 int indef;
 const char* infile; /* input file name */
