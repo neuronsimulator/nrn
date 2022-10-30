@@ -17,6 +17,7 @@ FUNCTION natlog(x) {
 FUNCTION expon(x) {
   expon = 0.0
 VERBATIM
+  // use the system version of exp.
   #ifdef exp
   #undef exp
   #define UNDEFEXP

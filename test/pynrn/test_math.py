@@ -41,9 +41,28 @@ def test_math2():  # with h.nrn_feenableexcept(1)
     expect_err("print(h.div_tstmath(0, 0))")
 
     expect_err("print(h.root2_tstmath(-1))")
+    # Mac arm44 following natlog and expon generate trace trap (SIGTRAP)
+    #  Termination Reason:    Namespace SIGNAL, Code 5 Trace/BPT trap: 5
+    #  2   libunwind.dylib     0x1b13c7314 _Unwind_RaiseException + 468
+    #  3   libc++abi.dylib     0x1a6850bc0 __cxa_throw + 132
+    #  4   libnrniv.dylib      0x104ee90ec hoc_execerror_mes(char const*, char const*, int) + 356 (hoc.cpp:753)
+    """
     expect_err("print(h.natlog_tstmath(0))")
     expect_err("print(h.natlog_tstmath(-1))")
     expect_err("print(h.expon_tstmath(1000))")
+    """
+    # do in separate process, expect error
+    import subprocess
+
+    def run(cmd):
+        s = "nrniv -c '{nrn_feenableexcept(1) " + cmd + "}'"
+        print(s)
+        x = subprocess.run(s, shell=True).returncode
+        return x != 0
+
+    assert run("natlog_tstmath(0)")
+    assert run("natlog_tstmath(-1)")
+    assert run("expon_tstmath(1000)")
 
     h.nrn_feenableexcept(0)
     print(h.div_tstmath(1, 0))

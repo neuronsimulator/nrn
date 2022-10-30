@@ -60,11 +60,11 @@ extern int stdin_event_ready();
 #if NRN_FLOAT_EXCEPTION
 #if !defined(__USE_GNU)
 #define __USE_GNU
-#endif // __USE_GNU
+#endif  // __USE_GNU
 #include <fenv.h>
 #if DARWIN && !defined(__arm64__)
 #pragma STDC FENV_ACCESS ON
-#endif // DARWIN
+#endif  // DARWIN
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)
 static void matherr1(void) {
     /* above gives the signal but for some reason fegetexcept returns 0 */
@@ -73,22 +73,22 @@ static void matherr1(void) {
 #elif HAVE_FEGETENV
     int i = fetestexcept(FEEXCEPT);
 #endif
-fprintf(stderr,"matherr FEEXCEPT=%x i=%x\n", FEEXCEPT, i);
-fprintf(stderr,"matherr errno=%d\n", errno);
-fenv_t env;
-fegetenv(&env);
+    // fprintf(stderr,"matherr FEEXCEPT=%x i=%x\n", FEEXCEPT, i);
+    // fprintf(stderr,"matherr errno=%d\n", errno);
+    fenv_t env;
+    fegetenv(&env);
 #if __arm64__
-fprintf(stderr,"matherr fpsr=%llx fpcr=%llx\n", env.__fpsr, env.__fpcr);
+// fprintf(stderr,"matherr fpsr=%llx fpcr=%llx\n", env.__fpsr, env.__fpcr);
 #endif
     if (i & FE_DIVBYZERO) {
         fprintf(stderr, "Floating exception: Divide by zero\n");
-    }else if (i & FE_INVALID) {
+    } else if (i & FE_INVALID) {
         fprintf(stderr, "Floating exception: Invalid (no well defined result\n");
-    }else if (i & FE_OVERFLOW) {
+    } else if (i & FE_OVERFLOW) {
         fprintf(stderr, "Floating exception: Overflow\n");
     }
 }
-#endif //NRN_FLOAT_EXCEPTION
+#endif  // NRN_FLOAT_EXCEPTION
 
 int nrn_mpiabort_on_error_{1};
 
@@ -100,10 +100,10 @@ void nrn_feenableexcept() {
     if (chkarg(1, 0., 10.) == 2.0) {
         auto foo = signal(SIGFPE, SIG_IGN);
         signal(SIGFPE, fpecatch);
-    hoc_ret();
-        int result =  foo == fpecatch;
-    hoc_pushx((double) result);
-    return;
+        hoc_ret();
+        int result = foo == fpecatch;
+        hoc_pushx((double) result);
+        return;
     }
     int result = -2;  // feenableexcept does not exist.
     nrn_feenableexcept_ = 0;
@@ -119,53 +119,54 @@ void nrn_feenableexcept() {
     fenv_t env;
     if (fegetenv(&env) != 0) {
         result = -1;
-    }else {
+    } else {
 #if defined __arm64__
-        const unsigned long long x =  __fpcr_trap_divbyzero | __fpcr_trap_invalid | __fpcr_trap_overflow;
+        const unsigned long long x = __fpcr_trap_divbyzero | __fpcr_trap_invalid |
+                                     __fpcr_trap_overflow;
         if (!enable) {
             env.__fpcr = env.__fpcr & (~x);
             if (fesetenv(&env) != 0) {
                 result = -1;
-            }else{
+            } else {
                 result = env.__fpcr;
-fprintf(stderr, "arg=0 env.__fpcr=%llx\n", env.__fpcr);
-            }                
-        }else{
+                // fprintf(stderr, "arg=0 env.__fpcr=%llx\n", env.__fpcr);
+            }
+        } else {
             env.__fpcr = env.__fpcr | x;
             if (fesetenv(&env) != 0) {
                 result = -1;
-            }else{
+            } else {
                 result = env.__fpcr;
-fprintf(stderr, "arg=1 env.__fpcr=%llx\n", env.__fpcr);
+                // fprintf(stderr, "arg=1 env.__fpcr=%llx\n", env.__fpcr);
             }
             nrn_feenableexcept_ = 1;
         }
     }
-#else // not __arm64__
-        const unsigned int x =  FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW;
+#else   // not __arm64__
+        const unsigned int x = FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW;
         if (!enable) {
             env.__control |= x;
             env.__mxcsr |= (x << 7);
             if (fesetenv(&env) != 0) {
                 result = -1;
-            }else{
+            } else {
                 result = env.__control;
-fprintf(stderr, "arg=0 env.__control=%hx\n", env.__control);
-            }                
-        }else{
+                // fprintf(stderr, "arg=0 env.__control=%hx\n", env.__control);
+            }
+        } else {
             env.__control &= ~x;
             env.__mxcsr &= ~(x << 7);
             if (fesetenv(&env) != 0) {
                 result = -1;
-            }else{
+            } else {
                 result = env.__control;
-fprintf(stderr, "arg=1 env.__control=%hx\n", env.__control);
+                // fprintf(stderr, "arg=1 env.__control=%hx\n", env.__control);
             }
             nrn_feenableexcept_ = 1;
         }
     }
-#endif // not __arm64
-#endif // HAVE...
+#endif  // not __arm64
+#endif  // HAVE...
     hoc_ret();
     hoc_pushx((double) result);
 }
@@ -832,9 +833,20 @@ void print_bt() {
 #endif
 }
 
+/*
+For debugging signal handlers with gdb or lldb in some circumstances,
+it is helpful to avoid the debugger from stopping on the signal. This
+can be done for the fpecatch handler on mac arm64 by,
+lldb nrniv
+b main
+run ...
+process handle -p true -s false -n false SIGILL
+c
+*/
+
 RETSIGTYPE fpecatch(int sig) /* catch floating point exceptions */
 {
-fprintf(stderr, "fpecatch %d\n", sig);
+    // fprintf(stderr, "fpecatch %d\n", sig);
     /*ARGSUSED*/
 #if DOS
     _fpreset();
@@ -847,6 +859,21 @@ fprintf(stderr, "fpecatch %d\n", sig);
     if (coredump) {
         abort();
     }
+
+    // clear the exception and unblock the signal.
+    extern void nrn_clear_fe_except();
+    nrn_clear_fe_except();
+#if HAVE_SIGPROCMASK
+    sigset_t set;
+    sigemptyset(&set);
+#if DARWIN && defined(__arm64__)
+    sigaddset(&set, SIGILL);
+#else  // linux?
+    sigaddset(&set, SIGFPE);
+#endif
+    sigprocmask(SIG_UNBLOCK, &set, NULL);
+#endif  // HAVE_SIGPROCMASK
+
 #if DARWIN && defined(__arm64__)
     signal(sig, fpecatch);
 #else
