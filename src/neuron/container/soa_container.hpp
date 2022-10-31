@@ -100,7 +100,7 @@ struct state_token {
     }
 
   private:
-    template <typename, template <typename> typename, typename...>
+    template <typename, typename...>
     friend struct soa;
     constexpr state_token(Container& container)
         : m_container{&container} {}
@@ -111,37 +111,24 @@ struct state_token {
  * @brief Utility for generating SOA data structures.
  * @headerfile neuron/container/soa_container.hpp
  * @tparam Storage    Name of the actual storage type derived from soa<...>.
- * @tparam Interface  Name of the CRTP type defining the interface for entries
- *                    in this container. This is instantiated with different
- *                    template arguments to generate the owning handle and
- *                    non-owning handle types that refer to entries in this
- *                    container.
  * @tparam Tags       Parameter pack of tag types that define the columns
  *                    included in the container. Types may not be repeated.
  *
  * This CRTP base class is used to implement the ~global SOA storage structs
  * that hold (so far) Node and Mechanism data. Ownership of rows in these
- * structs is managed via instances of owning handle types, such as @ref
- * neuron::container::Node::owning_handle and @ref
- * neuron::container::Mechanism::owning_handle. Values in these structs can also
- * be referred to using the non-owning handle types such as @ref
- * neuron::container::Node::handle and @ref
- * neuron::container::Mechanism::handle, and more generic handle types such as
- * @ref neuron::container::data_handle<T> and @ref
+ * structs is managed via instances of the owning identifier type @ref
+ * neuron::container::owning_identifier instantiated with Storage, and
+ * non-owning reference to rows in the data structures are managed via instances
+ * of the @ref neuron::container::non_owning_identifier template instantiated
+ * with Storage. These identifiers are typically wrapped in a
+ * data-structure-specific (i.e. Node- or Mechanism-specific) interface type
+ * that provides data-structure-specific accessors and methods to obtain actual
+ * data values and more generic handle types such as @ref
+ * neuron::container::data_handle<T> and @ref
  * neuron::container::generic_data_handle.
  */
-template <typename Storage, template <typename> typename Interface, typename... Tags>
+template <typename Storage, typename... Tags>
 struct soa {
-    /**
-     * @brief A handle that owns a row in this container.
-     */
-    using owning_handle = Interface<owning_identifier<Storage>>;
-
-    /**
-     * @brief A handle that refers to a row in this container.
-     */
-    using handle = Interface<non_owning_identifier<Storage>>;
-
     /**
      * @brief Construct with default-constructed tag type instances.
      */
@@ -404,11 +391,22 @@ struct soa {
     }
 
     /**
-     * @brief Create a new entry in the container and return an identifier that owns it.
+     * @brief Create a new entry and return an identifier that owns it.
      *
-     * See the documentation for acquire_owning_handle() for higher level
-     * motivation. This is a lower-level call that is useful for the
-     * implementation of the owning_identifier template.
+     * Calling this method increases size() by one. Destroying (modulo move
+     * operations) the returned identifier, which has the semantics of a
+     * unique_ptr, decreases size() by one.
+     *
+     * Note that this has different semantics to standard library container
+     * methods such as emplace_back(), push_back(), insert() and so on. Because
+     * the returned identifier manages the lifetime of the newly-created entry,
+     * discarding the return value will cause the new entry to immediately be
+     * deleted.
+     *
+     * This is a low-level call that is useful for the implementation of the
+     * owning_identifier template. The returned owning identifier is typically
+     * wrapped inside an owning handle type that adds data-structure-specific
+     * methods (e.g. v(), v_handle(), set_v() for a Node).
      */
     [[nodiscard]] owning_identifier<Storage> acquire_owning_identifier() {
         if (m_frozen_count) {
@@ -443,30 +441,10 @@ struct soa {
 
   public:
     /**
-     * @brief Create a new entry in the container and return a handle that owns it.
-     *
-     * Calling this method increases size() by one. Destroying (modulo move
-     * operations) the returned handle, which has the semantics of a unique_ptr,
-     * decreases size() by one.
-     *
-     * Note that this has different semantics to standard library container
-     * methods such as emplace_back(), push_back(), insert() and so on. Because
-     * the returned handle manages the lifetime of the newly-created entry,
-     * discarding the return value will cause the new entry to immediately be
-     * deleted.
-
-     * @todo This is conceptually a useful method but is not actually used
-     *       anywhere.
+     * @brief Get a non-owning identifier to the offset-th entry.
      */
-    [[nodiscard]] owning_handle acquire_owning_handle() {
-        return acquire_owning_identifier();
-    }
-
-    /**
-     * @brief Get a non-owning handle to the offset-th entry.
-     */
-    [[nodiscard]] handle at(std::size_t offset) {
-        return non_owning_identifier<Storage>{static_cast<Storage*>(this), m_indices.at(offset)};
+    [[nodiscard]] non_owning_identifier<Storage> at(std::size_t offset) {
+        return {static_cast<Storage*>(this), m_indices.at(offset)};
     }
 
     /**
@@ -668,7 +646,7 @@ struct soa {
                 // "sorted". FIXME: re-enable this
                 // assert(is_sorted());
                 // Probably OK to call this in read-only mode?
-                handle = neuron::container::data_handle<T>{at(row).id(), container};
+                handle = neuron::container::data_handle<T>{at(row), container};
                 assert(handle.refers_to_a_modern_data_structure());
                 return true;
             } else {
