@@ -504,9 +504,9 @@ static void point_menu(Object* ob, int make_label) {
                 }
             } else {
                 hoc_ivpvalue(vsym->name,
-                             static_cast<double*>(point_process_pointer(pp, vsym, 0),
-                                                  deflt,
-                                                  vsym->extra));
+                             static_cast<double*>(point_process_pointer(pp, vsym, 0)),
+                             deflt,
+                             vsym->extra);
             }
         }
     }

@@ -6861,7 +6861,7 @@ void NetCvode::recalc_ptrs() {
     for (int i = 0; i < cnt; ++i) {
         PlayRecord* pr = prl_->item(i);
         if (pr->pd_ && !pr->pd_.refers_to_a_modern_data_structure()) {
-            pr->update_ptr(nrn_recalc_ptr(static_cast<double*>(pr->pd_)));
+            pr->update_ptr(static_cast<double*>(pr->pd_));
         }
     }
 #endif

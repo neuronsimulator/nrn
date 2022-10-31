@@ -3242,27 +3242,12 @@ void ValueFieldEditor_reg() {
 }
 
 #if HAVE_IV
-void HocValEditor::update_ptrs() {
-    update_ptrs_helper(&pval_);
-}
+void HocValEditor::update_ptrs() {}
 
-void OcSlider::update_ptrs() {
-    update_ptrs_helper(&pval_);
-}
+void OcSlider::update_ptrs() {}
 
-void HocStateButton::update_ptrs() {
-    update_ptrs_helper(&pval_);
-}
+void HocStateButton::update_ptrs() {}
 
-void HocStateMenuItem::update_ptrs() {
-    update_ptrs_helper(&pval_);
-}
-
-void HocUpdateItem::update_ptrs_helper(double** p) {
-    if (*p) {
-        double* pd = nrn_recalc_ptr(*p);
-        *p = pd;
-    }
-}
+void HocStateMenuItem::update_ptrs() {}
 
 #endif
