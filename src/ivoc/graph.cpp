@@ -3492,9 +3492,6 @@ void Graph::change_prop() {
 }
 
 void Graph::update_ptrs() {
-    if (x_pval_) {
-        x_pval_ = nrn_recalc_ptr(x_pval_);
-    }
     if (rvp_) {
         rvp_->update_ptrs();
     }
@@ -3514,18 +3511,9 @@ void Graph::update_ptrs() {
     }
 }
 
-void DataPointers::update_ptrs() {
-    int i;
-    for (i = 0; i < count_; ++i) {
-        px_[i] = nrn_recalc_ptr(px_[i]);
-    }
-}
+void DataPointers::update_ptrs() {}
 
-void GraphLine::update_ptrs() {
-    if (pval_) {
-        pval_ = nrn_recalc_ptr(pval_);
-    }
-}
+void GraphLine::update_ptrs() {}
 
 void GraphVector::update_ptrs() {
     if (dp_) {
