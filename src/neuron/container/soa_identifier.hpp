@@ -142,24 +142,6 @@ struct non_owning_identifier: non_owning_identifier_without_container {
     }
 
   private:
-    // TODO clean up this friend stuff...
-    // template <typename>
-    // friend struct data_handle;
-    // friend struct generic_data_handle;
-    // template <typename, template <typename> typename, typename...>
-    // friend struct soa;
-    // This is so
-    // template <typename>
-    // friend struct owning_identifier;
-    // friend struct std::hash<identifier_base>;
-    /** This is needed for converting owning to non-owning handles, and is also
-     *  useful for assertions.
-     */
-    // non_owning_identifier(Storage& storage, std::size_t* ptr) : m_storage{storage}, m_ptr{ptr} {}
-    // void set_current_row(std::size_t new_row) {
-    //     assert(m_ptr);
-    //     *m_ptr = new_row;
-    // }
     Storage* m_storage;
 };
 
@@ -178,17 +160,10 @@ struct owning_identifier {
      */
     owning_identifier(Storage& storage)
         : owning_identifier() {
+        // The default constructor has finished, so *this is a valid object.
         auto tmp = storage.acquire_owning_identifier();
         using std::swap;
         swap(*this, tmp);
-    }
-
-    /**
-     * @brief Create a non-null owning identifier that owns the given row.
-     */
-    owning_identifier(Storage& storage, std::size_t row)
-        : m_ptr{new std::size_t, storage} {
-        *m_ptr = row;
     }
 
     /**
@@ -286,6 +261,17 @@ struct owning_identifier {
     void set_current_row(std::size_t new_row) {
         assert(m_ptr);
         *m_ptr = new_row;
+    }
+    /**
+     * @brief Create a non-null owning identifier that owns the given row.
+     *
+     * This is used inside
+     * neuron::container::soa<...>::acquire_owning_identifier() and should not
+     * be used without great care.
+     */
+    owning_identifier(Storage& storage, std::size_t row)
+        : m_ptr{new std::size_t, storage} {
+        *m_ptr = row;
     }
 };
 
