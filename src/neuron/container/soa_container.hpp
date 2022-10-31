@@ -179,6 +179,31 @@ struct soa {
     soa& operator=(soa const&) = delete;
 
     /**
+     * @brief Get the size of the container.
+     */
+    [[nodiscard]] std::size_t size() const {
+        // Check our various std::vector members are still the same size as each
+        // other. This check could be omitted in release builds...
+        for_all_vectors(*this, [check_size = m_indices.size()](auto const& tag, auto const& vec) {
+            assert(vec.size() == check_size);
+        });
+        return m_indices.size();
+    }
+
+    /**
+     * @brief Query if the storage is currently frozen.
+     *
+     * When the container is frozen then no operations are allowed that would
+     * change the address of any data, however the values themselves may still
+     * be read from and written to. A container that is sorted and frozen is
+     * guaranteed to remain sorted until it is thawed (unfrozen).
+     */
+    [[nodiscard]] bool is_frozen() const {
+        return m_frozen_count;
+    }
+
+  private:
+    /**
      * @brief Remove the @f$i^{\text{th}}@f$ row from the container.
      *
      * This is currently implemented by swapping the last element into position
@@ -207,31 +232,6 @@ struct soa {
         });
     }
 
-    /**
-     * @brief Get the size of the container.
-     */
-    [[nodiscard]] std::size_t size() const {
-        // Check our various std::vector members are still the same size as each
-        // other.
-        for_all_vectors(*this, [check_size = m_indices.size()](auto const& tag, auto const& vec) {
-            assert(vec.size() == check_size);
-        });
-        return m_indices.size();
-    }
-
-    /**
-     * @brief Query if the storage is currently frozen.
-     *
-     * When the container is frozen then no operations are allowed that would
-     * change the address of any data, however the values themselves may still
-     * be read from and written to. A container that is sorted and frozen is
-     * guaranteed to remain sorted until it is thawed (unfrozen).
-     */
-    [[nodiscard]] bool is_frozen() const {
-        return m_frozen_count;
-    }
-
-  private:
     friend struct state_token<Storage>;
     friend struct owning_identifier<Storage>;
 
