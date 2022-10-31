@@ -215,16 +215,18 @@ void SymChooser_reg() {
 }
 #if HAVE_IV
 
-declareActionCallback(SymChooserImpl) implementActionCallback(SymChooserImpl)
+declareActionCallback(SymChooserImpl)
+implementActionCallback(SymChooserImpl)
 
-    declareFieldEditorCallback(SymChooserImpl) implementFieldEditorCallback(SymChooserImpl)
+declareFieldEditorCallback(SymChooserImpl)
+implementFieldEditorCallback(SymChooserImpl)
 #define SHOW_SECTION 1
 
-        SymChooser::SymChooser(SymDirectory* dir,
-                               WidgetKit* kit,
-                               Style* s,
-                               SymChooserAction* a,
-                               int nbrowser)
+SymChooser::SymChooser(SymDirectory* dir,
+                       WidgetKit* kit,
+                       Style* s,
+                       SymChooserAction* a,
+                       int nbrowser)
     : Dialog(NULL, s) {
     impl_ = new SymChooserImpl(nbrowser);
     SymChooserImpl& fc = *impl_;
