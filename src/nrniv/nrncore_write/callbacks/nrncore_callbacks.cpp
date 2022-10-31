@@ -157,7 +157,7 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<doub
     }
     NrnThread& nt = nrn_threads[tid];
     if (type == voltage) {
-        assert(neuron::model().node_data().is_sorted());
+        auto const cache_token = nrn_ensure_model_data_are_sorted();
         data = nt.node_voltage_storage();
         n = size_t(nt.end);
     } else if (type == i_membrane_) {  // i_membrane_
@@ -308,7 +308,7 @@ int nrnthread_dat2_2(int tid,
         b = nt._actual_b;
         // This is still dangerous, practically any operation on the NEURON side
         // can affect `v`
-        assert(neuron::model().node_data().is_sorted());
+        auto const cache_token = nrn_ensure_model_data_are_sorted();
         area = nt.node_area_storage();
         v = nt.node_voltage_storage();
     }
@@ -1168,8 +1168,9 @@ void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true) {
             if (ps->flag_ && ps->thvar_) {
                 int type = 0;
                 int index_v = -1;
-                // WARNING: must avoid modifying Nodes while these indices are stored
-                assert(neuron::model().node_data().is_sorted());
+                // WARNING: must avoid modifying Nodes while these indices are
+                // stored
+                auto const cache_token = nrn_ensure_model_data_are_sorted();
                 nrn_dblpntr2nrncore(static_cast<double*>(ps->thvar_), *ps->nt_, type, index_v);
                 assert(type == voltage);
                 presyns_flag_true.insert(index_v);
