@@ -14,8 +14,13 @@ void Model::set_unsorted_callback(container::Mechanism::storage& mech_data) {
 }
 }  // namespace neuron
 namespace neuron::detail {
-Model model_data;  // neuron/model_data.hpp
+// See neuron/model_data.hpp
+Model model_data;
 }  // namespace neuron::detail
 namespace neuron::cache {
 std::optional<Model> model{};
 }
+namespace neuron::container::detail {
+// See neuron/container/soa_identifier.hpp
+std::vector<std::unique_ptr<std::size_t>> garbage;
+}  // namespace neuron::container::detail
