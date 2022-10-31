@@ -319,14 +319,9 @@ static void free_one_point(Point_process* pnt) {
                 }
             }
     }
-    { v_structure_change = 1; }
-    // if (p->param)
-    {
-        if (memb_func[p->_type].destructor) {
-            memb_func[p->_type].destructor(p);
-        }
-        // notify_freed_val_array(p->param, p->param_size);
-        // nrn_prop_data_free(p->_type, p->param);
+    v_structure_change = 1;
+    if (memb_func[p->_type].destructor) {
+        memb_func[p->_type].destructor(p);
     }
     if (p->dparam) {
         nrn_prop_datum_free(p->_type, p->dparam);
@@ -357,10 +352,6 @@ void clear_point_process_struct(Prop* p) {
         if (p->ob) {
             hoc_obj_unref(p->ob);
         }
-        // if (p->param) {
-        //     notify_freed_val_array(p->param, p->param_size);
-        //     nrn_prop_data_free(p->_type, p->param);
-        // }
         if (p->dparam) {
             nrn_prop_datum_free(p->_type, p->dparam);
         }
