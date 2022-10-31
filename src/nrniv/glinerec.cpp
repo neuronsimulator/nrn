@@ -190,7 +190,9 @@ GLineRecord::~GLineRecord() {
     }
 }
 
-GVectorRecord::~GVectorRecord() {}
+GVectorRecord::~GVectorRecord() {
+    printf("~GVectorRecord %p\n", this);
+}
 
 void GLineRecord::record_init() {
     gl_->simgraph_init();

@@ -69,6 +69,13 @@ void nrniv_recalc_ptrs() {
         ptrsym_ = hoc_lookup("Pointer");
         assert(ptrsym_->type == TEMPLATE);
     }
+    hl = ptrsym_->u.ctemplate->olist;
+    ITERATE(q, hl) {
+        Object* obj = OBJ(q);
+        if (auto* op = static_cast<OcPointer*>(obj->u.this_pointer); op) {
+            nrn_forget_history(op->p_);
+        }
+    }
     // update what LinearMechanisms are observing
     if (!lmsym_) {
         lmsym_ = hoc_lookup("LinearMechanism");

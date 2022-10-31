@@ -6229,9 +6229,9 @@ PlayRecord::~PlayRecord() {
     net_cvode_instance->playrec_remove(this);
 }
 
-void PlayRecord::update_ptr(double* pd) {
+void PlayRecord::update_ptr(neuron::container::data_handle<double> pd) {
     nrn_notify_pointer_disconnect(this);
-    nrn_notify_when_double_freed(pd, this);
+    nrn_notify_when_double_freed(static_cast<double*>(pd), this);
     pd_ = pd;
 }
 
@@ -6789,8 +6789,9 @@ void NetCvode::recalc_ptrs() {
     for (int i = 0; i < cnt; ++i) {
         PlayRecord* pr = prl_->item(i);
         if (pr->pd_ && !pr->pd_.refers_to_a_modern_data_structure()) {
-            pr->update_ptr(static_cast<double*>(pr->pd_));
+            pr->update_ptr(pr->pd_);
         }
+        nrn_forget_history(pr->pd_);
     }
 #endif
 }
