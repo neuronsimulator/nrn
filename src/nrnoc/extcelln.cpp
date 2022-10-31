@@ -10,7 +10,6 @@
 
 
 extern int nrn_use_daspk_;
-extern void nrn_delete_prop_pool(int type);
 
 #if EXTRACELLULAR
 
@@ -277,7 +276,6 @@ void nlayer_extracellular() {
         }
         check_if_extracellular_in_use();
         update_parmsize();
-        nrn_delete_prop_pool(EXTRACELL);
         /*global nlayer is the new value. Following needs to know the previous */
         update_extracellular_reg(old);
         update_existing_extnode(old);
