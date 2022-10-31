@@ -344,9 +344,7 @@ inline std::tuple<Memb_list, Memb_list*, std::size_t> create_ml(Prop* p) {
     return ret;
 }
 
-extern double* nrn_prop_data_alloc(int type, int count, Prop* p);
 extern Datum* nrn_prop_datum_alloc(int type, int count, Prop* p);
-extern void nrn_prop_data_free(int type, double* pd);
 extern void nrn_prop_datum_free(int type, Datum* ppd);
 extern double nrn_ghk(double, double, double, double);
 

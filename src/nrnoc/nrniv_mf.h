@@ -59,7 +59,6 @@ extern void add_nrn_artcell(int, int);
 extern void hoc_register_ldifus1(ldifusfunc_t);
 extern void nrn_check_conc_write(Prop*, Prop*, int);
 void nrn_wrote_conc(Symbol*, double& erev, double ci, double co, int);
-extern void nrn_update_ion_pointer(Symbol*, Datum*, int, int);
 
 extern Prop* need_memb(Symbol*);
 
