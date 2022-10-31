@@ -73,7 +73,7 @@ class PlayRecord: public Observer {
     void record_add(Cvode*);
 
     // administration
-    virtual void update_ptr(double*);
+    virtual void update_ptr(neuron::container::data_handle<double> pd);
     virtual void disconnect(Observable*);
     virtual void update(Observable* o) {
         disconnect(o);
