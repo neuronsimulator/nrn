@@ -1505,6 +1505,10 @@ void ShapeSection::update_ptrs() {
     if (!pvar_) {
         return;
     }
+    auto const n = section()->nnode - 1;
+    for (int i = 0; i < n; ++i) {
+        nrn_forget_history(pvar_[i]);
+    }
 }
 
 void ShapeSection::set_range_variable(Symbol* sym) {
