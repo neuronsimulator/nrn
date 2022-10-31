@@ -323,24 +323,6 @@ void extcell_node_create(Node* nd) {
     }
 }
 
-void nrn_extcell_update_param(void) {
-    int i;
-    NrnThread* nt;
-    FOR_THREADS(nt) {
-        Memb_list* ml = nt->_ecell_memb_list;
-        if (ml) {
-            int cnt = ml->nodecount;
-            Node** ndlist = ml->nodelist;
-            for (i = 0; i < cnt; ++i) {
-                Node* nd = ndlist[i];
-                assert(nd->extnode);
-                assert(false);
-                // nd->extnode->param = ml->_data[i];
-            }
-        }
-    }
-}
-
 void extcell_2d_alloc(Section* sec) {
     int i, j;
     Node* nd;
