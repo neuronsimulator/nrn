@@ -132,5 +132,5 @@ def simplevolume(flist, distances, voxel, g):
                     vz = startz + k * sz
                     if any(f.distance(vx, vy, vz) <= distance_threshold for f in flist):
                         count += 1
-    volume = count * g["dx"] * g["dy"] * g["dz"] / (res1 ** 3)
+    volume = count * g["dx"] * g["dy"] * g["dz"] / (res1**3)
     return volume

@@ -855,7 +855,7 @@ class _IntracellularSpecies(_SpeciesMathable):
 
     def create_alphas(self):
         self._isalive()
-        alphas = [vol / self._dx ** 3 for vol in self._region._vol]
+        alphas = [vol / self._dx**3 for vol in self._region._vol]
         return numpy.asarray(alphas, dtype=float)
 
     def _import_concentration(self):
