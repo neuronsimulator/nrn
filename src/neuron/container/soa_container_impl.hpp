@@ -76,8 +76,8 @@ void permute_zip_helper(Storage& storage,
 /** @brief Create a zip view of all the data columns in the container that are
  *         not duplicated a number of times set at runtime.
  */
-template <typename Storage, template <typename> typename Interface, typename... Tags>
-[[nodiscard]] inline auto soa<Storage, Interface, Tags...>::get_zip() {
+template <typename Storage, typename... Tags>
+[[nodiscard]] inline auto soa<Storage, Tags...>::get_zip() {
     using Tags_without_num_instances =
         boost::mp11::mp_remove_if<boost::mp11::mp_list<Tags...>, detail::has_num_instances>;
     return detail::get_zip_helper(*this, m_indices, Tags_without_num_instances{});
@@ -85,9 +85,9 @@ template <typename Storage, template <typename> typename Interface, typename... 
 
 /** @brief Apply some transformation to all of the data columns at once.
  */
-template <typename Storage, template <typename> typename Interface, typename... Tags>
+template <typename Storage, typename... Tags>
 template <typename Permutation>
-inline void soa<Storage, Interface, Tags...>::permute_zip(Permutation&& permutation) {
+inline void soa<Storage, Tags...>::permute_zip(Permutation&& permutation) {
     if (m_frozen_count) {
         throw_error("permute_zip() called on a frozen structure");
     }
@@ -112,9 +112,9 @@ inline void soa<Storage, Interface, Tags...>::permute_zip(Permutation&& permutat
 
 /** @brief Permute the SOA-format data using an arbitrary vector.
  */
-template <typename Storage, template <typename> typename Interface, typename... Tags>
+template <typename Storage, typename... Tags>
 template <typename Range>
-inline void soa<Storage, Interface, Tags...>::apply_permutation(Range permutation) {
+inline void soa<Storage, Tags...>::apply_permutation(Range permutation) {
     check_permutation_vector(permutation);
     permute_zip([permutation = std::move(permutation)](auto& zip) mutable {
         boost::algorithm::apply_permutation(zip, permutation);
@@ -123,9 +123,9 @@ inline void soa<Storage, Interface, Tags...>::apply_permutation(Range permutatio
 
 /** @brief Permute the SOA-format data using an arbitrary vector.
  */
-template <typename Storage, template <typename> typename Interface, typename... Tags>
+template <typename Storage, typename... Tags>
 template <typename Range>
-inline void soa<Storage, Interface, Tags...>::apply_reverse_permutation(Range permutation) {
+inline void soa<Storage, Tags...>::apply_reverse_permutation(Range permutation) {
     check_permutation_vector(permutation);
     permute_zip([permutation = std::move(permutation)](auto& zip) mutable {
         boost::algorithm::apply_reverse_permutation(zip, permutation);
@@ -136,9 +136,9 @@ inline void soa<Storage, Interface, Tags...>::apply_reverse_permutation(Range pe
  *  @todo Assert that the given range has an integral value type and that
  *  there is no overflow?
  */
-template <typename Storage, template <typename> typename Interface, typename... Tags>
+template <typename Storage, typename... Tags>
 template <typename Rng>
-inline void soa<Storage, Interface, Tags...>::check_permutation_vector(Rng const& range) {
+inline void soa<Storage, Tags...>::check_permutation_vector(Rng const& range) {
     if (ranges::size(range) != size()) {
         throw std::runtime_error("invalid permutation vector: wrong size");
     }
@@ -157,16 +157,16 @@ inline void soa<Storage, Interface, Tags...>::check_permutation_vector(Rng const
 
 /** @brief Reverse the order of the SOA-format data.
  */
-template <typename Storage, template <typename> typename Interface, typename... Tags>
-inline void soa<Storage, Interface, Tags...>::reverse() {
+template <typename Storage, typename... Tags>
+inline void soa<Storage, Tags...>::reverse() {
     permute_zip([](auto& zip) { std::reverse(ranges::begin(zip), ranges::end(zip)); });
 }
 
 /** @brief Rotate the SOA-format data by `i` positions.
  *  @todo  See if std::rotate can be fixed here.
  */
-template <typename Storage, template <typename> typename Interface, typename... Tags>
-inline void soa<Storage, Interface, Tags...>::rotate(std::size_t i) {
+template <typename Storage, typename... Tags>
+inline void soa<Storage, Tags...>::rotate(std::size_t i) {
     assert(i < size());
     permute_zip([i](auto& zip) {
         ranges::rotate(ranges::begin(zip), ranges::next(ranges::begin(zip), i), ranges::end(zip));

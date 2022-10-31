@@ -6,15 +6,15 @@
 namespace neuron::container::Node {
 /** @brief Underlying storage for all Nodes.
  */
-struct storage: soa<storage, interface, field::Area, field::Voltage> {};
+struct storage: soa<storage, field::Area, field::Voltage> {};
 
 /**
  * @brief Non-owning handle to a Node.
  */
-using owning_handle = storage::owning_handle;
+using handle = interface<non_owning_identifier<storage>>;
 
 /**
  * @brief Owning handle to a Node.
  */
-using owning_handle = storage::owning_handle;
+using owning_handle = interface<owning_identifier<storage>>;
 }  // namespace neuron::container::Node
