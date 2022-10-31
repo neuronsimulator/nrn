@@ -246,6 +246,7 @@ struct soa {
 
   private:
     friend struct state_token<Storage>;
+    friend struct owning_identifier<Storage>;
 
     // for tags with a runtime-specified number of copies, set that number
     void initialise_data() {
@@ -402,22 +403,12 @@ struct soa {
         }
     }
 
-  public:
     /**
      * @brief Create a new entry in the container and return an identifier that owns it.
      *
-     * Calling this method increases size() by one. Destroying (modulo move
-     * operations) the returned handle, which has the semantics of a unique_ptr,
-     * decreases size() by one.
-     *
-     * Note that this has different semantics to standard library container
-     * methods such as emplace_back(), push_back(), insert() and so on. Because
-     * the returned handle manages the lifetime of the newly-created entry,
-     * discarding the return value will cause the new entry to immediately be
-     * deleted.
-     *
-     * @todo Make this method private and reorganise documentation comments.
-     * Identifiers are an implementation detail.
+     * See the documentation for acquire_owning_handle() for higher level
+     * motivation. This is a lower-level call that is useful for the
+     * implementation of the owning_identifier template.
      */
     [[nodiscard]] owning_identifier<Storage> acquire_owning_identifier() {
         if (m_frozen_count) {
@@ -450,8 +441,22 @@ struct soa {
         return index;
     }
 
+  public:
     /**
-     * @brief Create a new entry in the container and return an identifier that owns it.
+     * @brief Create a new entry in the container and return a handle that owns it.
+     *
+     * Calling this method increases size() by one. Destroying (modulo move
+     * operations) the returned handle, which has the semantics of a unique_ptr,
+     * decreases size() by one.
+     *
+     * Note that this has different semantics to standard library container
+     * methods such as emplace_back(), push_back(), insert() and so on. Because
+     * the returned handle manages the lifetime of the newly-created entry,
+     * discarding the return value will cause the new entry to immediately be
+     * deleted.
+
+     * @todo This is conceptually a useful method but is not actually used
+     *       anywhere.
      */
     [[nodiscard]] owning_handle acquire_owning_handle() {
         return acquire_owning_identifier();
