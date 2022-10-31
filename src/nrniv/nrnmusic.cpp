@@ -67,12 +67,14 @@ static NetParMusicEvent* npme;
 
 #include <OS/table.h>
 declareTable(PortTable, void*, int)  // used as set
-    implementTable(PortTable, void*, int) static PortTable* music_input_ports;
+implementTable(PortTable, void*, int)
+static PortTable* music_input_ports;
 static PortTable* music_output_ports;
 
-declareTable(Gi2PreSynTable, int, PreSyn*) implementTable(Gi2PreSynTable, int, PreSyn*)
+declareTable(Gi2PreSynTable, int, PreSyn*)
+implementTable(Gi2PreSynTable, int, PreSyn*)
 
-    NetParMusicEvent::NetParMusicEvent() {}
+NetParMusicEvent::NetParMusicEvent() {}
 NetParMusicEvent::~NetParMusicEvent() {}
 void NetParMusicEvent::send(double t, NetCvode* nc, NrnThread* nt) {
     nc->event(t + usable_mindelay_, this, nt);

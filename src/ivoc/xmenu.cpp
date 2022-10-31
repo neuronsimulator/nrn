@@ -1680,13 +1680,14 @@ const char* HocAction::name() const {
 }
 
 #if UseFieldEditor
-declareFieldEditorCallback(HocValAction) implementFieldEditorCallback(HocValAction)
+declareFieldEditorCallback(HocValAction)
+implementFieldEditorCallback(HocValAction)
 #else
 declareFieldSEditorCallback(HocValAction);
 implementFieldSEditorCallback(HocValAction);
 #endif
-    // HocValAction
-    HocValAction::HocValAction(const char* action, Object* pyact)
+// HocValAction
+HocValAction::HocValAction(const char* action, Object* pyact)
     : HocAction(action, pyact) {
     fe_ = NULL;
 #if UseFieldEditor
