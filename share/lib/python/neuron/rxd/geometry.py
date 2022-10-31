@@ -57,7 +57,7 @@ def _volumes1d(sec):
                 numpy.pi
                 * (pt1 - pt0)
                 / 12.0
-                * (diam0**2 + diam0 * diam1 + diam1**2)
+                * (diam0 ** 2 + diam0 * diam1 + diam1 ** 2)
             )
         vols[iseg] = volume
 
@@ -121,7 +121,7 @@ def _neighbor_areas1d(sec):
     diam3d = [sec.diam3d(i) for i in range(sec.n3d())]
     area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
     diams = numpy.interp(area_pos, arc3d, diam3d)
-    return numpy.pi * 0.25 * diams**2
+    return numpy.pi * 0.25 * diams ** 2
 
 
 def constant_function_per_length(value):
@@ -302,13 +302,10 @@ class FractionalVolume(RxDGeometry):
         return internal_voxels, surface_voxels, mesh_grid
 
     def __repr__(self):
-        return (
-            "FractionalVolume(volume_fraction=%r, surface_fraction=%r, neighbor_areas_fraction=%r)"
-            % (
-                self._volume_fraction,
-                self._surface_fraction,
-                self._neighbor_areas_fraction,
-            )
+        return "FractionalVolume(volume_fraction=%r, surface_fraction=%r, neighbor_areas_fraction=%r)" % (
+            self._volume_fraction,
+            self._surface_fraction,
+            self._neighbor_areas_fraction,
         )
 
 
@@ -501,8 +498,8 @@ class Shell(RxDGeometry):
                     * (pt1 - pt0)
                     / 12.0
                     * (
-                        (diam0h**2 + diam0h * diam1h + diam1h**2)
-                        - (diam0l**2 + diam0l * diam1l + diam1l**2)
+                        (diam0h ** 2 + diam0h * diam1h + diam1h ** 2)
+                        - (diam0l ** 2 + diam0l * diam1l + diam1l ** 2)
                     )
                 )
             vols[iseg] = volume

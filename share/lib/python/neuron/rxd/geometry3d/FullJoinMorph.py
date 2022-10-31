@@ -219,7 +219,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
                         ) and not isinstance(item, Sphere):
                             final_intern_voxels[i][1] = seg
                     else:
-                        final_intern_voxels[i] = [dx**3, seg]
+                        final_intern_voxels[i] = [dx ** 3, seg]
 
                 for i in surface.keys():
                     if i in total_surface_voxels.keys():
@@ -248,7 +248,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
         [itemlist, distances, seg] = total_surface_voxels[vox]
         # check if the surface voxel is actually internal after updating all vertex distances:
         if all_in(distances):
-            final_intern_voxels[vox] = [dx**3, seg]
+            final_intern_voxels[vox] = [dx ** 3, seg]
             # no need to delete from surface voxels, it is never added to final surface voxels
         else:
             V = simplevolume(itemlist, distances, vox, grid)
@@ -256,7 +256,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
             # if the voxel form a corner of itemlist it may have no surface
             # area
             if A == 0:
-                final_intern_voxels[vox] = [dx**3, seg]
+                final_intern_voxels[vox] = [dx ** 3, seg]
             else:
                 final_surface_voxels[vox] = [V, A, seg]
 
@@ -272,17 +272,17 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
         i, j, k = vox
         area = 0
         if not has_vox(i + 1, j, k):
-            area += dx**2
+            area += dx ** 2
         if not has_vox(i - 1, j, k):
-            area += dx**2
+            area += dx ** 2
         if not has_vox(i, j + 1, k):
-            area += dx**2
+            area += dx ** 2
         if not has_vox(i, j - 1, k):
-            area += dx**2
+            area += dx ** 2
         if not has_vox(i, j, k + 1):
-            area += dx**2
+            area += dx ** 2
         if not has_vox(i, j, k - 1):
-            area += dx**2
+            area += dx ** 2
         if area:
             final_surface_voxels[vox] = [vol, area, seg]
             actually_surface_voxels.append(vox)

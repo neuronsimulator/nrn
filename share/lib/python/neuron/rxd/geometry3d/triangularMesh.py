@@ -65,7 +65,7 @@ class TriangularMesh:
             Number of digits after the decimal point to round to when comparing points.
         """
 
-        scale_factor = 10**precision
+        scale_factor = 10 ** precision
 
         data = self.data
         pt_neighbor_map = {}
