@@ -69,20 +69,6 @@ void nrniv_recalc_ptrs() {
         ptrsym_ = hoc_lookup("Pointer");
         assert(ptrsym_->type == TEMPLATE);
     }
-    hl = ptrsym_->u.ctemplate->olist;
-    ITERATE(q, hl) {
-        Object* obj = OBJ(q);
-        OcPointer* op = (OcPointer*) obj->u.this_pointer;
-        if (op && op->p_) {
-            double* pd = nrn_recalc_ptr(op->p_);
-            if (op->p_ != pd) {
-                nrn_notify_pointer_disconnect(op);
-                op->p_ = pd;
-                op->valid_ = true;
-                nrn_notify_when_double_freed(op->p_, op);
-            }
-        }
-    }
     // update what LinearMechanisms are observing
     if (!lmsym_) {
         lmsym_ = hoc_lookup("LinearMechanism");

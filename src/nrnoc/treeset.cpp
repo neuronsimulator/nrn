@@ -2136,15 +2136,6 @@ All PreSyn threshold detectors that watch v.
 
 static int n_recalc_ptr_callback;
 static void (*recalc_ptr_callback[20])();
-static double* (*recalc_ptr_)(double*);
-
-double* nrn_recalc_ptr(double* old) {
-    if (recalc_ptr_) {
-        return (*recalc_ptr_)(old);
-    } else {
-        return old;
-    }
-}
 
 void nrn_register_recalc_ptr_callback(Pfrv f) {
     if (n_recalc_ptr_callback >= 20) {
@@ -2154,19 +2145,14 @@ void nrn_register_recalc_ptr_callback(Pfrv f) {
     recalc_ptr_callback[n_recalc_ptr_callback++] = f;
 }
 
-void nrn_recalc_ptrs(double* (*r)(double*) ) {
-    int i;
-
-    recalc_ptr_ = r;
-
+void nrn_recalc_ptrs() {
     /* update pointers managed by c++ */
     nrniv_recalc_ptrs();
 
     /* user callbacks to update pointers */
-    for (i = 0; i < n_recalc_ptr_callback; ++i) {
+    for (int i = 0; i < n_recalc_ptr_callback; ++i) {
         (*recalc_ptr_callback[i])();
     }
-    recalc_ptr_ = nullptr;
 }
 
 /** @brief Sort the underlying storage for a particular mechanism.
@@ -2370,7 +2356,7 @@ void nrn_recalc_node_ptrs() {
     if (use_cachevec == 0) {
         return;
     }
-    nrn_recalc_ptrs(nullptr);
+    nrn_recalc_ptrs();
     nrn_node_ptr_change_cnt_++;
     nrn_recalc_ptrvector();
     nrn_partrans_update_ptrs();
