@@ -190,18 +190,6 @@ struct soa {
         return m_indices.size();
     }
 
-    /**
-     * @brief Query if the storage is currently frozen.
-     *
-     * When the container is frozen then no operations are allowed that would
-     * change the address of any data, however the values themselves may still
-     * be read from and written to. A container that is sorted and frozen is
-     * guaranteed to remain sorted until it is thawed (unfrozen).
-     */
-    [[nodiscard]] bool is_frozen() const {
-        return m_frozen_count;
-    }
-
   private:
     /**
      * @brief Remove the @f$i^{\text{th}}@f$ row from the container.
@@ -310,6 +298,10 @@ struct soa {
      *
      * The tokens returned by this function are reference counted; the
      * container will be frozen for as long as any token is alive.
+     *
+     * Note that "frozen" refers to the storage layout, not to the stored value,
+     * meaning that values inside a frozen container can still be modified --
+     * "frozen" is not "runtime const".
      *
      * @todo A future extension could be to preserve the sorted flag until
      *       pointers are actually, not potentially, invalidated.
