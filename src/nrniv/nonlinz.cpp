@@ -586,7 +586,6 @@ void NonLinImpRep::current(int im, Memb_list* ml, int in) {  // assume there is 
 #endif
     mfake.nodelist = ml->nodelist + in;
     mfake.set_storage_offset(ml->get_storage_offset());
-    mfake.set_storage_pointer(ml->get_storage_pointer());
     mfake.pdata = ml->pdata + in;
     mfake.prop = ml->prop ? ml->prop + in : nullptr;
     mfake.nodecount = 1;

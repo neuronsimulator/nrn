@@ -1,17 +1,21 @@
 #pragma once
-#include "hocdec.h"
-#include "neuron/container/mechanism.hpp"
-#include "options.h"  // for CACHEVEC
+#include "hocdec.h"  // Datum
+#include "neuron/container/mechanism_data.hpp"
+#include "options.h"  // CACHEVEC
 
-#include <algorithm>
-#include <array>
-#include <limits>
-#include <vector>
+#include <algorithm>    // std::max_element
+#include <array>        // std::array
+#include <cstddef>      // std::ptrdiff_t, std::size_t
+#include <iterator>     // std::distance, std::next
+#include <limits>       // std::numeric_limits
+#include <type_traits>  // std::conjunction_v
+#include <vector>       // std::vector
 
 struct Node;
 struct Prop;
 
-/** @brief A view into a set of mechanism instances.
+/**
+ * @brief A view into a set of mechanism instances.
  *
  * This type gets used in a few different ways, and the interface with generated
  * code from MOD files makes it convenient to wrap these different use cases in
@@ -31,10 +35,17 @@ struct Prop;
  *    contiguous in the underlying storage.
  */
 struct Memb_list {
+    /**
+     * @brief Construct a null Memb_list that does not refer to any thread/type.
+     */
     Memb_list() = default;
-    // Bit of a hack for codegen
+
+    /**
+     * @brief Construct a Memb_list that knows its type + underlying storage.
+     */
     Memb_list(int type)
         : m_storage{&neuron::model().mechanism_data(type)} {}
+
     Node** nodelist;
 #if CACHEVEC != 0
     /* nodeindices contains all nodes this extension is responsible for,
@@ -44,8 +55,6 @@ struct Memb_list {
      * cache-efficient */
     int* nodeindices;
 #endif /* CACHEVEC */
-    // double** _data; // historically this was _data[i_instance][j_variable] but now it is
-    // transposed
     Datum** pdata;
     Prop** prop;
     Datum* _thread; /* thread specific data (when static is no good) */
@@ -56,7 +65,8 @@ struct Memb_list {
      *  the old _data member, with the key difference that its indices are
      *  transposed. Now, the first index corresponds to the variable and the
      *  second index corresponds to the instance of the mechanism. This method
-     *  is useful for CoreNEURON interface
+     *  is useful for interfacing with CoreNEURON but should be deprecated and
+     *  removed along with the translation layer between NEURON and CoreNEURON.
      */
     [[nodiscard]] std::vector<double*> data() {
         assert(m_storage);
@@ -77,6 +87,10 @@ struct Memb_list {
         }
         return ret;
     }
+
+    /**
+     * @brief Get the `variable`-th floating point value in `instance` of the mechanism.
+     */
     [[nodiscard]] double& data(std::size_t instance, std::size_t variable) {
         if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
             // non-contiguous mode
@@ -90,6 +104,10 @@ struct Memb_list {
                     variable, m_storage_offset + instance);
         }
     }
+
+    /**
+     * @brief Get the `variable`-th floating point value in `instance` of the mechanism.
+     */
     [[nodiscard]] double const& data(std::size_t instance, std::size_t variable) const {
         if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
             // non-contiguous mode
@@ -102,11 +120,13 @@ struct Memb_list {
                     variable, m_storage_offset + instance);
         }
     }
+
     /** @brief Calculate a legacy index of the given pointer in this mechanism data.
      *
      *  This used to be defined as ptr - ml->_data[0] if ptr belonged to the
      *  given mechanism, i.e. an offset from the zeroth element of the zeroth
-     *  mechanism.
+     *  mechanism. This is useful when interfacing with CoreNEURON and for
+     *  parameter exchange with other MPI ranks.
      */
     [[nodiscard]] std::ptrdiff_t legacy_index(double const* ptr) const {
         assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
@@ -119,23 +139,24 @@ struct Memb_list {
             auto const index = std::distance(vec.data(), ptr);
             if (index >= 0 && index < vec.size()) {
                 // ptr lives in the field-th data column
-                auto const li = (index - m_storage_offset) * num_fields + field;
-                return li;
+                return (index - m_storage_offset) * num_fields + field;
             }
         }
         // ptr doesn't live in this mechanism data, cannot compute a legacy index
         return -1;
     }
 
+    /**
+     * @brief Calculate a legacy index from a data handle.
+     */
     [[nodiscard]] std::ptrdiff_t legacy_index(
         neuron::container::data_handle<double> const& dh) const {
         return legacy_index(static_cast<double const*>(dh));
     }
 
-    [[nodiscard]] std::size_t num_data_fields() const {
-        assert(m_storage);
-        return m_storage->num_floating_point_fields();
-    }
+    /**
+     * @brief Proxy type used in data_array.
+     */
     struct array_view {
         array_view(neuron::container::Mechanism::storage* storage,
                    std::size_t instance,
@@ -148,11 +169,28 @@ struct Memb_list {
                 ->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
                     m_zeroth_column + array_entry, m_instance);
         }
+        [[nodiscard]] double const& operator[](std::size_t array_entry) const {
+            return m_storage
+                ->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
+                    m_zeroth_column + array_entry, m_instance);
+        }
 
       private:
         neuron::container::Mechanism::storage* m_storage{};
         std::size_t m_instance{}, m_zeroth_column{};
     };
+
+    /**
+     * @brief Get a proxy to a range of variables in a mechanism instance.
+     *
+     * Concretely
+     *   auto proxy = ml.data_array(instance, zeroth_variable)
+     *   proxy[variable_index]
+     * is equivalent to
+     *   ml.data(instance, zeroth_variable + variable_index)
+     * this is used in translated MOD file code for array variables. Ideally
+     * it would be deprecated and removed, with data(i, j) used instead.
+     */
     [[nodiscard]] array_view data_array(std::size_t instance, std::size_t zeroth_variable) {
         if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
             // not in contiguous mode
@@ -164,39 +202,6 @@ struct Memb_list {
             return {m_storage, m_storage_offset + instance, zeroth_variable};
         }
     }
-    /** @brief Helper for compatibility with legacy code.
-     *
-     *  Some methods assume that we can get a double* that points to the
-     *  properties of a particular mechanism. As the underlying storage has now
-     *  been transposed, this is not possible without creating a copy.
-     *
-     *  @todo (optionally) return a type whose destructor propagates
-     *  modifications back into the NEURON data structures.
-     */
-    // [[nodiscard]] std::vector<double> contiguous_row(std::size_t instance) {
-    //     std::vector<double> data;
-    //     if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
-    //         // not in contiguous mode
-    //         auto const& handle = instances.at(instance);
-    //         auto const num_fields = handle.num_fpfields();
-    //         data.reserve(num_fields);
-    //         for (auto i_field = 0; i_field < num_fields; ++i_field) {
-    //             data.push_back(handle.fpfield(i_field));
-    //         }
-    //     } else {
-    //         // contiguous mode
-    //         assert(m_storage);
-    //         assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
-    //         auto const num_fields = m_storage->num_floating_point_fields();
-    //         data.reserve(num_fields);
-    //         for (auto i_field = 0; i_field < num_fields; ++i_field) {
-    //             data.push_back(m_storage->get_field_instance<
-    //                            neuron::container::Mechanism::field::FloatingPoint>(
-    //                 i_field, m_storage_offset + instance));
-    //         }
-    //     }
-    //     return data;
-    // }
 
     /** @brief Helper for compatibility with legacy code.
      *
@@ -205,7 +210,8 @@ struct Memb_list {
      * scopmath code to follow an extra layer of indirection, and then when
      * calling into it to generate a temporary vector of pointers to the right
      * elements in SOA format. In the old AOS data then ml->data[i] could be
-     * used directly, but no more...
+     * used directly, but no more... If the scopmath code is removed or updated
+     * to be compiled as C++ then this layer could go away again.
      */
     template <typename... ListTypes>
     [[nodiscard]] std::vector<double*> vector_of_pointers_for_scopmath(std::size_t instance,
@@ -223,18 +229,44 @@ struct Memb_list {
         return p;
     }
 
+    /**
+     * @brief Get the offset of this Memb_list into global storage for this type.
+     *
+     * In the simplest case then this Memb_list represents all instances of a
+     * particular type in a particular thread, which are contiguous because the
+     * data have been sorted by a call like
+     *   auto const cache_token = nrn_ensure_model_data_are_sorted()
+     * and this offset has been set to be
+     *   cache_token.thread_cache(thread_id).mechanism_offset.at(mechanism_type)
+     * so that the first argument to data(i, j) is an offset inside this thread,
+     * not the global structure.
+     */
     [[nodiscard]] std::size_t get_storage_offset() const {
         assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
         return m_storage_offset;
     }
-    [[nodiscard]] neuron::container::Mechanism::storage* get_storage_pointer() const {
-        return m_storage;
-    }
-    /** @todo how to invalidate this?
+
+    /**
+     * @brief Set the offset of this Memb_list into global storage for this type.
+     *
+     * See the documentation for @ref get_storage_offset.
+     *
+     * @todo At the moment this is set as part of sorting/permuting data, but it
+     *       is not automatically invalidated when the cache / sorted status is
+     *       reset. Consider if these offsets can be more explicitly tied to the
+     *       lifetime of the cache data.
      */
     void set_storage_offset(std::size_t offset) {
         m_storage_offset = offset;
     }
+
+    /**
+     * @brief Set the pointer to the underlying data container.
+     *
+     * This is a quasi-private method that you should think twice before
+     * calling. Normally m_storage would automatically be set by the constructor
+     * taking an integer mechanism type.
+     */
     void set_storage_pointer(neuron::container::Mechanism::storage* storage) {
         m_storage = storage;
     }
@@ -254,9 +286,27 @@ struct Memb_list {
         }
     }
 
+    /**
+     * @brief List of stable handles to mechanism instances.
+     *
+     * See the struct-level documentation. This is the list of handles that is
+     * used from CVode code.
+     */
     std::vector<neuron::container::Mechanism::handle> instances{};
 
   private:
+    /**
+     * @brief Pointer to the global mechanism data structure for this mech type.
+     */
     neuron::container::Mechanism::storage* m_storage{};
+
+    /**
+     * @brief Offset of this thread+mechanism into the global mechanism data.
+     *
+     * This is locally a piece of "cache" information like node_data_offset --
+     * the question is whether Memb_list itself is also considered a
+     * transient/cache type, in which case this is fine, or if it's considered
+     * permanent...in which case this value should probably not live here.
+     */
     std::size_t m_storage_offset{std::numeric_limits<std::size_t>::max()};
 };
