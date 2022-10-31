@@ -282,12 +282,11 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 } else {
                     auto area = static_cast<neuron::container::data_handle<double>>(dparam[j]);
                     assert(area.refers_to_a_modern_data_structure());
-                    assert(neuron::model().node_data().is_sorted());  // nt._node_data_offset should
-                                                                      // be valid
+                    auto const cache_token = nrn_ensure_model_data_are_sorted();
                     etype = -1;
                     // current_row() refers to the global Node data, but we need
                     // to set eindex to something local to the NrnThread
-                    eindex = area.current_row() - nt._node_data_offset;
+                    eindex = area.current_row() - cache_token.thread_cache(ith).node_data_offset;
                 }
             } else if (dmap[j] == -2) {  // this is an ion and dparam[j][0].i is the iontype
                 etype = -2;
