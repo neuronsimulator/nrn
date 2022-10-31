@@ -93,7 +93,7 @@ struct non_owning_identifier_without_container {
     template <typename>
     friend struct owning_identifier;
 
-    template <typename, template <typename> typename, typename...>
+    template <typename, typename...>
     friend struct soa;
     friend struct std::hash<non_owning_identifier_without_container>;
     non_owning_identifier_without_container(std::size_t* ptr)
@@ -221,7 +221,7 @@ struct owning_identifier {
             // We should still be a valid reference at this point.
             assert(*p < data_container.size());
             // Prove that the bookkeeping works.
-            assert(data_container.at(*p).id() == p);
+            assert(data_container.at(*p) == p);
             bool terminate{false};
             // Delete the corresponding row from `data_container`
             try {
@@ -256,7 +256,7 @@ struct owning_identifier {
         Storage* m_data_ptr{};
     };
     std::unique_ptr<std::size_t, deleter> m_ptr;
-    template <typename, template <typename> typename, typename...>
+    template <typename, typename...>
     friend struct soa;
     void set_current_row(std::size_t new_row) {
         assert(m_ptr);
