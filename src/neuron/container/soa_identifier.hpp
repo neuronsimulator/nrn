@@ -13,27 +13,13 @@ namespace neuron::container {
 
 namespace detail {
 /**
- * @brief Get the vector in which dying owning_identifier_bases should live.
+ * @brief The vector in which dying owning_identifier std::size_t's live.
  *
- * @todo Should this be templated on the container type? Or should the garbage
- *       vector live inside the relevant soa<...> instance? If it did, how
- *       would that work for the use-case of cloning/swapping those instances?
- * @todo Do we end up with duplicate definitions of this vector because of
- *       dlopen() etc. ? Probably yes, define it like the global Model struct.
+ * This is defined in container.cpp to avoid multiple-definition issues.
  */
-inline std::vector<std::unique_ptr<std::size_t>>& garbage() {
-    static std::vector<std::unique_ptr<std::size_t>> x{};
-    return x;
-}
-
+extern std::vector<std::unique_ptr<std::size_t>> garbage;
 inline constexpr std::size_t invalid_row = std::numeric_limits<std::size_t>::max();
 }  // namespace detail
-
-// template <typename, template <typename> typename, typename...>
-// struct soa;
-// struct generic_data_handle;
-// template <typename, typename>
-// struct owning_identifier_base;
 
 /**
  * @brief A non-owning permutation-stable identifier for an entry in a container.
@@ -286,11 +272,11 @@ struct owning_identifier {
             // value to it and transfer ownership "elsewhere".
             *p = detail::invalid_row;
             // This is sort-of formalising a memory leak. In principle we could
-            // cleanup garbage() by scanning all our data structures and finding
+            // cleanup garbage by scanning all our data structures and finding
             // references to the pointers that it contains. In practice it seems
             // unlikely that either this, or using std::shared_ptr just to avoid it,
             // would be worth it.
-            detail::garbage().emplace_back(p);
+            detail::garbage.emplace_back(p);
         }
         Storage* m_data_ptr{};
     };
