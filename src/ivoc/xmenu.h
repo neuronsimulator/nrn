@@ -202,7 +202,6 @@ class HocUpdateItem: public HocItem {
     virtual void check_pointer(void*, int vector_size);
     virtual void data_path(HocDataPaths*, bool);
     virtual void update_ptrs() {}
-    void update_ptrs_helper(double**);
 };
 
 class HocLabel: public HocItem {
