@@ -1,51 +1,30 @@
-#include <../../nrnconf.h>
+#include "arraypool.h"   // ArrayPool
+#include "hocdec.h"      // Datum
+#include "section.h"     // Section
+#include "structpool.h"  // Pool
 
-/*
-allocate and free property data and Datum arrays for nrniv
-this allows for the possibility of
-greater cache efficiency
-*/
+#include <memory>
+#include <vector>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <InterViews/resource.h>
-#include "nrniv_mf.h"
-#include <nrnmpi.h>
-#include <nrnoc2iv.h>
-#include <membfunc.h>
-#include <nrnmenu.h>
-#include <arraypool.h>
-#include <structpool.h>
+// allocate and free Datum arrays for nrniv this allows for the possibility of
+// greater cache efficiency
 
 using CharArrayPool = ArrayPool<char>;
 using DatumArrayPool = ArrayPool<Datum>;
 using SectionPool = Pool<Section>;
 
-static int npools_;
-static DatumArrayPool** datumpools_;
 static SectionPool* secpool_;
+static std::vector<std::unique_ptr<DatumArrayPool>> datumpools_;
 
 void nrn_mk_prop_pools(int n) {
-    if (n <= npools_) {
-        return;
+    if (n > datumpools_.size()) {
+        datumpools_.resize(n);
     }
-    DatumArrayPool** p2 = new DatumArrayPool*[n];
-    for (int i = 0; i < n; ++i) {
-        p2[i] = 0;
-    }
-    if (datumpools_) {
-        for (int i = 0; i < npools_; ++i) {
-            p2[i] = datumpools_[i];
-        }
-        delete[] datumpools_;
-    }
-    datumpools_ = p2;
-    npools_ = n;
 }
 
 Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
     if (!datumpools_[type]) {
-        datumpools_[type] = new DatumArrayPool(1000, count);
+        datumpools_[type] = std::make_unique<DatumArrayPool>(1000, count);
     }
     assert(datumpools_[type]->d2() == count);
     p->_alloc_seq = datumpools_[type]->ntget();
@@ -71,7 +50,8 @@ void nrn_prop_datum_free(int type, Datum* ppd) {
     // if (type > 1) printf("nrn_prop_datum_free %d %s %p\n", type,
     // memb_func[type].sym->name, ppd);
     if (ppd) {
-        auto* const datumpool = datumpools_[type];
+        auto* const datumpool = datumpools_[type].get();
+        assert(datumpool);
         // Destruct the Datums
         auto const count = datumpool->d2();
         for (auto i = 0; i < count; ++i) {
@@ -86,8 +66,7 @@ Section* nrn_section_alloc() {
     if (!secpool_) {
         secpool_ = new SectionPool(1000);
     }
-    Section* s = secpool_->alloc();
-    return s;
+    return secpool_->alloc();
 }
 
 void nrn_section_free(Section* s) {
