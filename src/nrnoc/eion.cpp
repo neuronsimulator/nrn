@@ -599,9 +599,6 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 }
 
 static void ion_alloc(Prop* p) {
-    // double* pd[1];
-    // int i = 0;
-    // pd[0] = nrn_prop_data_alloc(p->_type, nparm, p);
     assert(p->param_size() == nparm);
     p->set_param(cur_index, 0.);
     p->set_param(dcurdv_index, 0.);

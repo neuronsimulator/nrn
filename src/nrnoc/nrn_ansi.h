@@ -121,7 +121,6 @@ extern void nrn_cap_jacob(NrnThread*, Memb_list*);
 extern void clear_point_process_struct(Prop* p);
 extern void ext_con_coef(void);
 extern void nrn_multisplit_ptr_update(void);
-extern void nrn_cache_prop_realloc();
 extern void nrn_use_daspk(int);
 extern void nrn_update_ps2nt(void);
 neuron::model_sorted_token nrn_ensure_model_data_are_sorted();
