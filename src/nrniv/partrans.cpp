@@ -1202,8 +1202,9 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
                 // number `tid`. Warning: this is only correct if no
                 // modifications have been made to any Node since
                 // reorder_secorder() was last called.
-                assert(neuron::model().node_data().is_sorted());
-                ix = nd->_node_handle.current_row() - nrn_threads[tid]._node_data_offset;
+                auto const cache_token = nrn_ensure_model_data_are_sorted();
+                ix = nd->_node_handle.current_row() -
+                     cache_token.thread_cache(tid).node_data_offset;
                 assert(ix == nd->_d - nrn_threads[tid]._actual_d);  // analogue of the old
                                                                     // calculation with d instead of
                                                                     // v
