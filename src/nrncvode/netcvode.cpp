@@ -1598,8 +1598,23 @@ bool NetCvode::init_global() {
     matrix_change_cnt_ = -1;
     playrec_change_cnt_ = 0;
     NrnThread* _nt;
-    // We copy Memb_list* into cml->ml below
-    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    // We copy Memb_list* into cml->ml below. At the moment this CVode code
+    // generates its own complicated set of Memb_list* that operate in
+    // list-of-handles mode instead of referring to contiguous sets of values.
+    // This is a shame, as it forces that list-of-handles mode to exist.
+    // Possible alternatives could include:
+    // - making the sorting algorithm more sophisticated so that the values that
+    //   are going to be processed together are contiguous -- this might be a
+    //   bit intricate, but it shouldn't be *too* had to assert that we get the
+    //   right answer -- and it's the only way of making sure the actual compute
+    //   kernels are cache efficient / vectorisable.
+    // - changing the type used by this code to not be Memb_list but rather some
+    //   Memb_list_with_list_of_handles type and adding extra glue to the code
+    //   generation so that we can call into translated MOD file code using that
+    //   type
+    // - Using a list of Memb_list with size 1 instead of a single Memb_list
+    //   that holds a list of handles?
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
     if (single_) {
         if (!gcv_ || gcv_->nctd_ != nrn_nthread) {
             delete_list();
@@ -1632,8 +1647,10 @@ bool NetCvode::init_global() {
                     }
                     last = cml;
                     cml->next = nil;
-                    assert(ml->get_storage_offset() != std::numeric_limits<std::size_t>::max());
-                    cml->ml->set_storage_offset(ml->get_storage_offset());
+                    auto const mech_offset = cache_token.thread_cache(_nt->id).mechanism_offset.at(
+                        i);
+                    assert(mech_offset != std::numeric_limits<std::size_t>::max());
+                    cml->ml->set_storage_offset(mech_offset);
                     cml->ml->nodecount = ml->nodecount;
                     // assumes cell info grouped contiguously
                     cml->ml->nodelist = ml->nodelist;

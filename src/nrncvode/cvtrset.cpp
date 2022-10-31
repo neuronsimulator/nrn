@@ -63,13 +63,11 @@ void Cvode::rhs_memb(CvMembList* cmlist, NrnThread* _nt) {
     errno = 0;
     for (CvMembList* cml = cmlist; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
-        Pvmi s = mf->current;
-        if (s) {
-            Memb_list* ml = cml->ml.get();
-            (*s)(_nt, ml, cml->index);
+        if (Pvmi current = mf->current; current) {
+            current(_nt, cml->ml.get(), cml->index);
             if (errno) {
                 if (nrn_errno_check(cml->index)) {
-                    hoc_warning("errno set during calculation of currents", (char*) 0);
+                    hoc_warning("errno set during calculation of currents", nullptr);
                 }
             }
         }
