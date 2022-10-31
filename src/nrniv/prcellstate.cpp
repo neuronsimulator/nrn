@@ -103,10 +103,10 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
 
     // If the "modern" data is "sorted" then the order should match the "legacy"
     // data structures that still live alongside it
-    assert(neuron::model().node_data().is_sorted());
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
     assert(
         ps.thvar_.refers_to<neuron::container::Node::field::Voltage>(neuron::model().node_data()));
-    int const inode = ps.thvar_.current_row() - nt._node_data_offset;
+    int const inode = ps.thvar_.current_row() - cache_token.thread_cache(nt.id).node_data_offset;
     // hoc_execerror("gid not associated with a voltage", 0);
 
     // and the root node is ...

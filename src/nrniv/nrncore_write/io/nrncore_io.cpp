@@ -191,7 +191,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     writedbl(nt._actual_b, nt.end);
     // Warning: this is only correct if no modifications have been made to any
     // Node since reorder_secorder() was last called.
-    assert(neuron::model().node_data().is_sorted());
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
     writedbl(nt.node_area_storage(), nt.end);
     writedbl(nt.node_voltage_storage(), nt.end);
     if (cg.ndiam) {
