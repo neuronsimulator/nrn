@@ -3242,12 +3242,20 @@ void ValueFieldEditor_reg() {
 }
 
 #if HAVE_IV
-void HocValEditor::update_ptrs() {}
+void HocValEditor::update_ptrs() {
+    nrn_forget_history(pval_);
+}
 
-void OcSlider::update_ptrs() {}
+void OcSlider::update_ptrs() {
+    nrn_forget_history(pval_);
+}
 
-void HocStateButton::update_ptrs() {}
+void HocStateButton::update_ptrs() {
+    nrn_forget_history(pval_);
+}
 
-void HocStateMenuItem::update_ptrs() {}
+void HocStateMenuItem::update_ptrs() {
+    nrn_forget_history(pval_);
+}
 
 #endif
