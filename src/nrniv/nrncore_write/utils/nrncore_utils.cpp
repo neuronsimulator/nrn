@@ -146,11 +146,11 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
     int nnode = nt.end;
     type = 0;
     if (dh.refers_to<neuron::container::Node::field::Voltage>(neuron::model().node_data())) {
-        assert(neuron::model().node_data().is_sorted());
+        auto const cache_token = nrn_ensure_model_data_are_sorted();
         type = voltage;
         // In the CoreNEURON world this is an offset into the voltage array part
         // of _data
-        index = dh.current_row() - nt._node_data_offset;
+        index = dh.current_row() - cache_token.thread_cache(nt.id).node_data_offset;
         return 0;
     }
     auto* const pd = static_cast<double*>(dh);
