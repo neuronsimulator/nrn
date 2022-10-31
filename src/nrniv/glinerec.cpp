@@ -190,16 +190,7 @@ GLineRecord::~GLineRecord() {
     }
 }
 
-GVectorRecord::~GVectorRecord() {
-    printf("~GVectorRecord %p\n", this);
-#if 0  // for now not allowing vector buffering
-  for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
-    if ((*it).second) {
-      delete (*it).second;
-    }
-  }
-#endif
-}
+GVectorRecord::~GVectorRecord() {}
 
 void GLineRecord::record_init() {
     gl_->simgraph_init();
