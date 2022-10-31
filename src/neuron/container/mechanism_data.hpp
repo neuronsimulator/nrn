@@ -5,8 +5,8 @@
 namespace neuron::container::Mechanism {
 /** @brief Underlying storage for all instances of a particular Mechanism.
  */
-struct storage: soa<storage, interface, field::FloatingPoint> {
-    using base_type = soa<storage, interface, field::FloatingPoint>;
+struct storage: soa<storage, field::FloatingPoint> {
+    using base_type = soa<storage, field::FloatingPoint>;
     storage(short mech_type, std::string name, std::size_t num_floating_point_fields)
         : base_type{field::FloatingPoint{num_floating_point_fields}}
         , m_mech_name{std::move(name)}
@@ -32,10 +32,10 @@ struct storage: soa<storage, interface, field::FloatingPoint> {
 /**
  * @brief Non-owning handle to a Mechanism instance.
  */
-using handle = storage::handle;
+using handle = interface<non_owning_identifier<storage>>;
 
 /**
  * @brief Owning handle to a Mechanism instance.
  */
-using owning_handle = storage::owning_handle;
+using owning_handle = interface<owning_identifier<storage>>;
 }  // namespace neuron::container::Mechanism
