@@ -536,6 +536,8 @@ struct soa {
 
     /**
      * @brief Get the column container named by Tag.
+     * @todo Consider deprecating and removing this as it exposes details of the
+     *       underlying storage (e.g. which allocator is used for the vector).
      */
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type>& get() {
@@ -549,6 +551,8 @@ struct soa {
 
     /**
      * @brief Get the column container named by Tag.
+     * @todo Consider deprecating and removing this as it exposes details of the
+     *       underlying storage (e.g. which allocator is used for the vector).
      */
     template <typename Tag>
     [[nodiscard]] std::vector<typename Tag::type> const& get() const {
