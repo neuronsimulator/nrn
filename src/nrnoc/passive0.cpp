@@ -40,10 +40,7 @@ static void pas_jacob(NrnThread* nt, Memb_list* ml, int type) {
 /* the rest can be constructed automatically from the above info*/
 
 static void pas_alloc(Prop* p) {
-    // double* pd;
-    // pd = nrn_prop_data_alloc(p->_type, nparm, p);
     assert(p->param_size() == nparm);
-    // p->param_size = nparm;
 #if defined(__MWERKS__)
     p->set_param(0, 5.e-4); /*DEF_g;*/
 #else

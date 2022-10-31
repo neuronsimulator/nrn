@@ -45,7 +45,6 @@ struct Memb_func {
     void (*thread_mem_init_)(Datum*); /* after Memb_list._thread is allocated */
     void (*thread_cleanup_)(Datum*);  /* before Memb_list._thread is freed */
     void (*thread_table_check_)(Memb_list*, std::size_t, Datum*, Datum*, NrnThread*, int);
-    void (*_update_ion_pointers)(Datum*);
     int is_point;
     void* hoc_mech;
     void (*setdata_)(struct Prop*);

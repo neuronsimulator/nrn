@@ -536,7 +536,6 @@ void nrn_register_mech_common(const char** m,
     memb_func[type].thread_mem_init_ = nullptr;
     memb_func[type].thread_cleanup_ = nullptr;
     memb_func[type].thread_table_check_ = nullptr;
-    memb_func[type]._update_ion_pointers = nullptr;
     memb_func[type].is_point = 0;
     memb_func[type].hoc_mech = nullptr;
     memb_func[type].setdata_ = nullptr;
@@ -1029,8 +1028,6 @@ void _nrn_thread_reg(int i, int cons, void (*f)(Datum*)) {
         memb_func[i].thread_mem_init_ = f;
     } else if (cons == 0) {
         memb_func[i].thread_cleanup_ = f;
-    } else if (cons == 2) {
-        memb_func[i]._update_ion_pointers = f;
     }
 }
 
