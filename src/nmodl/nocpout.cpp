@@ -118,7 +118,6 @@ static List* rangeparm;
 static List* rangedep;
 static List* rangestate;
 static List* nrnpointers;
-static List* uip; /* void _update_ion_pointer(Datum* _ppvar){...} text */
 static char suffix[256];
 static const char* rsuffix; /* point process range and functions don't have suffix*/
 static char* mechname;
@@ -1065,9 +1064,6 @@ static void _constructor(Prop* _prop) {\n\
     if (vectorize && thread_cleanup_list->next != thread_cleanup_list) {
         Lappendstr(defs_list, "static void _thread_cleanup(Datum*);\n");
     }
-    if (uip) {
-        lappendstr(defs_list, "static void _update_ion_pointer(Datum*);\n");
-    }
     if (use_bbcorepointer) {
         lappendstr(defs_list,
                    "static void bbcore_write(double*, int*, int*, int*, _threadargsproto_);\n");
@@ -1150,9 +1146,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
         }
         if (vectorize && thread_cleanup_list->next != thread_cleanup_list) {
             lappendstr(defs_list, "    _nrn_thread_reg(_mechtype, 0, _thread_cleanup);\n");
-        }
-        if (uip) {
-            lappendstr(defs_list, "    _nrn_thread_reg(_mechtype, 2, _update_ion_pointer);\n");
         }
         if (emit_check_table_thread) {
             lappendstr(defs_list, "    _nrn_thread_table_reg(_mechtype, _check_table_thread);\n");
@@ -1303,9 +1296,6 @@ if (_nd->_extnode) {\n\
         Lappendstr(procfunc, "\nstatic void _thread_cleanup(Datum* _thread) {\n");
         move(thread_cleanup_list->next, thread_cleanup_list->prev, procfunc);
         Lappendstr(procfunc, "}\n");
-    }
-    if (uip) {
-        move(uip->next, uip->prev, procfunc);
     }
     if (destructorfunc->next != destructorfunc) {
         if (vectorize) {
@@ -2154,11 +2144,6 @@ int iondef(int* p_pointercount) {
     }
     ITERATE(q, useion) {
         int dcurdef = 0;
-        if (!uip) {
-            uip = newlist();
-            lappendstr(uip, "extern void nrn_update_ion_pointer(Symbol*, Datum*, int, int);\n");
-            lappendstr(uip, "static void _update_ion_pointer(Datum* _ppvar) {\n");
-        }
         need_style = 0;
         sion = SYM(q);
         Sprintf(ionname, "%s_ion", sion->name);
@@ -2171,12 +2156,6 @@ int iondef(int* p_pointercount) {
                     ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
-            Sprintf(buf,
-                    "  nrn_update_ion_pointer(_%s_sym, _ppvar, %d, %d);\n",
-                    sion->name,
-                    ioncount,
-                    iontype(SYM(q1)->name, sion->name));
-            lappendstr(uip, buf);
             SYM(q1)->ioncount_ = ioncount;
             ppvar_semantics(ioncount, ionname);
             ioncount++;
@@ -2192,12 +2171,6 @@ int iondef(int* p_pointercount) {
                         ioncount);
                 q2 = lappendstr(defs_list, buf);
                 q2->itemtype = VERBATIM;
-                Sprintf(buf,
-                        "  nrn_update_ion_pointer(_%s_sym, _ppvar, %d, %d);\n",
-                        sion->name,
-                        ioncount,
-                        iontype(SYM(q1)->name, sion->name));
-                lappendstr(uip, buf);
                 SYM(q1)->ioncount_ = ioncount;
                 ppvar_semantics(ioncount, ionname);
                 ioncount++;
@@ -2211,11 +2184,6 @@ int iondef(int* p_pointercount) {
                         ioncount);
                 q2 = lappendstr(defs_list, buf);
                 q2->itemtype = VERBATIM;
-                Sprintf(buf,
-                        "  nrn_update_ion_pointer(_%s_sym, _ppvar, %d, 4);\n",
-                        sion->name,
-                        ioncount);
-                lappendstr(uip, buf);
                 ppvar_semantics(ioncount, ionname);
                 ioncount++;
             }
@@ -2256,11 +2224,6 @@ int iondef(int* p_pointercount) {
                     ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
-            Sprintf(buf,
-                    "  nrn_update_ion_pointer(_%s_sym, _ppvar, %d, 4);\n",
-                    sion->name,
-                    ioncount);
-            lappendstr(uip, buf);
             ppvar_semantics(ioncount, ionname);
             ioncount++;
         }
@@ -2305,9 +2268,6 @@ int iondef(int* p_pointercount) {
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
     } /* notice that ioncount is not incremented */
-    if (uip) {
-        lappendstr(uip, "}\n");
-    }
     return ioncount;
 }
 

@@ -2291,7 +2291,6 @@ void KSChan::alloc(Prop* prop) {
         // prop->param = nrn_point_prop_->param;
         prop->dparam = nrn_point_prop_->dparam;
     } else {
-        // prop->param = nrn_prop_data_alloc(prop->_type, prop->param_size(), prop);
         prop->set_param(gmaxoffset_, gmax_deflt_);
         if (is_point()) {
             prop->set_param(NSingleIndex, 1.);

@@ -731,10 +731,6 @@ void single_prop_free(Prop* p) {
         clear_point_process_struct(p);
         return;
     }
-    // if (p->param) {
-    //     notify_freed_val_array(p->param, p->param_size);
-    //     nrn_prop_data_free(p->_type, p->param);
-    // }
     if (p->dparam) {
         if (p->_type == CABLESECTION) {
             notify_freed_val_array(&(p->dparam[2].literal_value<double>()), 6);
@@ -2376,7 +2372,6 @@ void nrn_recalc_node_ptrs() {
     }
     nrn_recalc_ptrs(nullptr);
     nrn_node_ptr_change_cnt_++;
-    nrn_cache_prop_realloc();
     nrn_recalc_ptrvector();
     nrn_partrans_update_ptrs();
     nrn_imem_defer_free(nullptr);
