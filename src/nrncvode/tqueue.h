@@ -58,8 +58,8 @@ declarePool(TQItemPool, TQItem)
 #include <sptbinq.h>
 #endif
 
-    class SelfQueue {  // not really a queue but a doubly linked list for fast
-  public:              // insertion, deletion, iteration
+class SelfQueue {  // not really a queue but a doubly linked list for fast
+  public:          // insertion, deletion, iteration
     SelfQueue(TQItemPool*, int mkmut = 0);
     virtual ~SelfQueue();
     TQItem* insert(void*);
