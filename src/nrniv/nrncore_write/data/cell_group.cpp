@@ -563,10 +563,7 @@ void CellGroup::mk_tml_with_art(neuron::model_sorted_token const& cache_token, C
                 auto* pnt = static_cast<Point_process*>(memb_list[i].pdata[j][1]);
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 Memb_list* ml = cgs[id].mlwithart.back().second;
-                // ml->_data[acnt[id]] = memb_list[i]._data[j];
-                // assert(ml->instances.size() == acnt[id]);
                 ml->set_storage_offset(cache_token.thread_cache(id).mechanism_offset.at(i));
-                // ml->instances.push_back(memb_list[i].instance_handle(j));
                 ml->pdata[acnt[id]] = memb_list[i].pdata[j];
                 ++acnt[id];
             }
