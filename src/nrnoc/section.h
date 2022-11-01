@@ -107,7 +107,7 @@ the notify_free_val parameter in node_free in solve.cpp
 
 #undef NODEV /* sparc-sun-solaris2.9 */
 
-#define NODEV(n)    ((n)->voltage())
+#define NODEV(n)    ((n)->v_hack())
 #define NODEAREA(n) ((n)->area())
 #define NODERINV(n) ((n)->_rinv)
 // The VEC_* vectors access the underlying array storage, i.e. the vectors that
@@ -134,26 +134,35 @@ struct Node {
     // neuron::container::handle::Node, but as an intermediate measure we can
     // add one of those as a member and forward some access/modifications to it.
     neuron::container::Node::owning_handle _node_handle{neuron::model().node_data()};
-    [[nodiscard]] auto area() const {
+    [[nodiscard]] auto& area() {
         return _node_handle.area_hack();
     }
-    [[nodiscard]] auto v() const {
-        return _node_handle.v_hack();
+    [[nodiscard]] auto const& area() const {
+        return _node_handle.area_hack();
     }
-    [[nodiscard]] auto voltage() const {
-        return _node_handle.v_hack();
+    [[nodiscard]] auto area_handle() {
+        return _node_handle.area_handle();
     }
     void set_area(neuron::container::Node::field::Area::type area) {
         _node_handle.set_area(area);
     }
+    [[nodiscard]] auto& v() {
+        return _node_handle.v_hack();
+    }
+    [[nodiscard]] auto const& v() const {
+        return _node_handle.v_hack();
+    }
+    [[nodiscard]] auto& v_hack() {
+        return _node_handle.v_hack();
+    }
+    [[nodiscard]] auto const& v_hack() const {
+        return _node_handle.v_hack();
+    }
+    [[nodiscard]] auto v_handle() {
+        return _node_handle.v_handle();
+    }
     void set_v(neuron::container::Node::field::Voltage::type v) {
         _node_handle.set_v(v);
-    }
-    auto area_handle() {
-        return _node_handle.area_handle();
-    }
-    auto v_handle() {
-        return _node_handle.v_handle();
     }
     double _rinv{}; /* conductance uS from node to parent */
     double _v_temp; /* vile necessity til actual_v allocated */
@@ -261,32 +270,25 @@ struct Prop {
         auto const num_fpfields = param_size();
         auto* const raw_ptr = static_cast<double const*>(handle);
         for (auto i = 0; i < num_fpfields; ++i) {
-            if (raw_ptr == &m_mech_handle->fpfield_ref(i)) {
+            if (raw_ptr == &m_mech_handle->fpfield(i)) {
                 return true;
             }
         }
         return false;
     }
 
-    /** @brief Return the i-th double value associated with this Prop.
+    /** @brief Return a reference to the i-th double value associated with this Prop.
      */
-    [[nodiscard]] double param(std::size_t i) const {
+    [[nodiscard]] double& param(std::size_t i) {
         assert(m_mech_handle);
         return m_mech_handle->fpfield(i);
     }
 
     /** @brief Return a reference to the i-th double value associated with this Prop.
      */
-    [[nodiscard]] double& param_ref(std::size_t i) {
+    [[nodiscard]] double const& param(std::size_t i) const {
         assert(m_mech_handle);
-        return m_mech_handle->fpfield_ref(i);
-    }
-
-    /** @brief Return a reference to the i-th double value associated with this Prop.
-     */
-    [[nodiscard]] double const& param_ref(std::size_t i) const {
-        assert(m_mech_handle);
-        return m_mech_handle->fpfield_ref(i);
+        return m_mech_handle->fpfield(i);
     }
 
     /** @brief Return a handle to the i-th double value associated with this Prop.

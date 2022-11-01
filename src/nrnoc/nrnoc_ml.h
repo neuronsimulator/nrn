@@ -94,7 +94,7 @@ struct Memb_list {
     [[nodiscard]] double& data(std::size_t instance, std::size_t variable) {
         if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
             // non-contiguous mode
-            return instances.at(instance).fpfield_ref(variable);
+            return instances.at(instance).fpfield(variable);
         } else {
             // contiguous mode
             assert(m_storage);
@@ -111,7 +111,7 @@ struct Memb_list {
     [[nodiscard]] double const& data(std::size_t instance, std::size_t variable) const {
         if (m_storage_offset == std::numeric_limits<std::size_t>::max()) {
             // non-contiguous mode
-            return instances.at(instance).fpfield_ref(variable);
+            return instances.at(instance).fpfield(variable);
         } else {
             // contiguous mode
             assert(m_storage);
