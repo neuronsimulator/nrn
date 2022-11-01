@@ -1879,32 +1879,6 @@ void node_data(void) {
 
 #endif
 
-void nrn_complain(double* pp) {
-    assert(false);
-    /* print location for this param on the standard error */
-    // Node* nd;
-    // hoc_Item* qsec;
-    // int j;
-    // Prop* p;
-    // // ForAllSections(sec)
-    // ITERATE(qsec, section_list) {
-    //     Section* sec = hocSEC(qsec);
-    //     for (j = 0; j < sec->nnode; ++j) {
-    //         nd = sec->pnode[j];
-    //         for (p = nd->prop; p; p = p->next) {
-    //             if (p->param == pp) {
-    //                 fprintf(stderr,
-    //                         "Error at section location %s(%g)\n",
-    //                         secname(sec),
-    //                         nrn_arc_position(sec, nd));
-    //                 return;
-    //             }
-    //         }
-    //     }
-    // }
-    // fprintf(stderr, "Don't know the location of params at %p\n", pp);
-}
-
 void nrn_matrix_node_free() {
     NrnThread* nt;
     FOR_THREADS(nt) {
