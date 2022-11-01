@@ -149,7 +149,7 @@ void CellGroup::mk_cellgroups(neuron::model_sorted_token const& cache_token, Cel
                     auto const offset = cache_token.thread_cache(i).mechanism_offset.at(type);
                     auto const global_row = pnt->prop->id().current_row();
                     assert(global_row >= offset);
-                    long const agid = -(type + 1000 * (global_row - offset));
+                    long const agid = -(type + 1000 * static_cast<long>(global_row - offset));
                     if (ps) {
                         if (ps->output_index_ >= 0) {  // has gid
                             cgs[i].output_gid[npre] = ps->output_index_;
