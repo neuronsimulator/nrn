@@ -36,10 +36,10 @@ struct storage: soa<storage, field::FloatingPoint> {
 /**
  * @brief Non-owning handle to a Mechanism instance.
  */
-using handle = interface<non_owning_identifier<storage>>;
+using handle = handle_interface<non_owning_identifier<storage>>;
 
 /**
  * @brief Owning handle to a Mechanism instance.
  */
-using owning_handle = interface<owning_identifier<storage>>;
+using owning_handle = handle_interface<owning_identifier<storage>>;
 }  // namespace neuron::container::Mechanism
