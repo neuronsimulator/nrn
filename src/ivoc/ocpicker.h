@@ -68,49 +68,4 @@ class StandardPicker {
     EventButton mb_;
     HandlerList* handlers_[unknown];
 };
-
-/*
- * Handler denoted by an object and member function to call on the object.
- * Used the FieldEditorAction as a template
- */
-
-#if defined(__STDC__) || defined(__ANSI_CPP__)
-#define __HandlerCallback(T)       T##_HandlerCallback
-#define HandlerCallback(T)         __HandlerCallback(T)
-#define __HandlerMemberFunction(T) T##_HandlerMemberFunction
-#define HandlerMemberFunction(T)   __HandlerMemberFunction(T)
-#else
-#define __HandlerCallback(T)       T /**/ _HandlerCallback
-#define HandlerCallback(T)         __HandlerCallback(T)
-#define __HandlerMemberFunction(T) T /**/ _HandlerMemberFunction
-#define HandlerMemberFunction(T)   __HandlerMemberFunction(T)
-#endif
-
-#define declareHandlerCallback(T)                         \
-    typedef bool (T::*HandlerMemberFunction(T))(Event&);  \
-    class HandlerCallback(T)                              \
-        : public Handler {                                \
-      public:                                             \
-        HandlerCallback(T)(T*, HandlerMemberFunction(T)); \
-        virtual ~HandlerCallback(T)();                    \
-                                                          \
-        virtual bool event(Event&);                       \
-                                                          \
-      private:                                            \
-        T* obj_;                                          \
-        HandlerMemberFunction(T) func_;                   \
-    };
-
-#define implementHandlerCallback(T)                                                  \
-    HandlerCallback(T)::HandlerCallback(T)(T * obj, HandlerMemberFunction(T) func) { \
-        obj_ = obj;                                                                  \
-        func_ = func;                                                                \
-    }                                                                                \
-                                                                                     \
-    HandlerCallback(T)::~HandlerCallback(T)() {}                                     \
-                                                                                     \
-    bool HandlerCallback(T)::event(Event& e) {                                       \
-        return (obj_->*func_)(e);                                                    \
-    }
-
 #endif

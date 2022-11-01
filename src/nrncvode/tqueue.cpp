@@ -130,7 +130,7 @@ implementPool(TQItemPool, TQItem)
 #include <sptbinq.cpp>
 #endif
 
-    SelfQueue::SelfQueue(TQItemPool* tp, int mkmut) {
+SelfQueue::SelfQueue(TQItemPool* tp, int mkmut) {
     MUTCONSTRUCT(mkmut)
     tpool_ = tp;
     head_ = nil;
