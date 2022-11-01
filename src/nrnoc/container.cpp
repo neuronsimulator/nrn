@@ -11,6 +11,12 @@ Model::Model() {
 }
 void Model::set_unsorted_callback(container::Mechanism::storage& mech_data) {
     mech_data.set_unsorted_callback(invalidate_cache);
+    // This is called when a new Mechanism storage struct is created, i.e. when
+    // a new Mechanism type is registered. When that happens the cache
+    // implicitly becomes invalid, because it does not contain entries for the
+    // newly-added Mechanism. If this proves to be a bottleneck then we could
+    // handle this more efficiently.
+    invalidate_cache();
 }
 }  // namespace neuron
 namespace neuron::detail {
