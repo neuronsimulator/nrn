@@ -348,8 +348,8 @@ cx*dvx/dt - cm*dvm/dt = -gx*(vx - ex) + i(vm) + ax_j*(vx_j - vx)
 This is a common operation for fixed step, cvode, and daspk methods
 */
 
-void nrn_rhs(NrnThread* _nt) {
-    auto const cache_token = nrn_ensure_model_data_are_sorted();
+void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
+    auto* const _nt = &nt;
     int i, i1, i2, i3;
     double w;
     int measure = 0;
@@ -393,7 +393,7 @@ void nrn_rhs(NrnThread* _nt) {
         }
     }
 
-    nrn_ba(_nt, BEFORE_BREAKPOINT);
+    nrn_ba(cache_token, nt, BEFORE_BREAKPOINT);
     /* note that CAP has no current */
     for (tml = _nt->tml; tml; tml = tml->next)
         if (memb_func[tml->index].current) {
@@ -614,13 +614,12 @@ void nrn_lhs(NrnThread* _nt) {
 }
 
 /* for the fixed step method */
-void* setup_tree_matrix(NrnThread* _nt) {
-    nrn::Instrumentor::phase p_setup_tree_matrix("setup-tree-matrix");
-    nrn_rhs(_nt);
-    nrn_lhs(_nt);
-    nrn_nonvint_block_current(_nt->end, _nt->_actual_rhs, _nt->id);
-    nrn_nonvint_block_conductance(_nt->end, _nt->_actual_d, _nt->id);
-    return nullptr;
+void setup_tree_matrix(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
+    nrn::Instrumentor::phase _{"setup-tree-matrix"};
+    nrn_rhs(cache_token, nt);
+    nrn_lhs(&nt);
+    nrn_nonvint_block_current(nt.end, nt._actual_rhs, nt.id);
+    nrn_nonvint_block_conductance(nt.end, nt._actual_d, nt.id);
 }
 
 /* membrane mechanisms needed by other mechanisms (such as Eion by HH)
