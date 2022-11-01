@@ -52,9 +52,8 @@ struct interface: handle_base<Identifier> {
     [[nodiscard]] std::size_t num_fpfields() const {
         return this->template get_tag<field::FloatingPoint>().num_instances();
     }
-    /** @brief Return the area.
-     */
-    [[nodiscard]] field::FloatingPoint::type fpfield(std::size_t field_index) const {
+
+    [[nodiscard]] field::FloatingPoint::type& fpfield(std::size_t field_index) {
         if (field_index >= num_fpfields()) {
             throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
                                      ") field index out of range");
@@ -62,15 +61,7 @@ struct interface: handle_base<Identifier> {
         return this->template get<field::FloatingPoint>(field_index);
     }
 
-    [[nodiscard]] field::FloatingPoint::type& fpfield_ref(std::size_t field_index) {
-        if (field_index >= num_fpfields()) {
-            throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
-                                     ") field index out of range");
-        }
-        return this->template get<field::FloatingPoint>(field_index);
-    }
-
-    [[nodiscard]] field::FloatingPoint::type const& fpfield_ref(std::size_t field_index) const {
+    [[nodiscard]] field::FloatingPoint::type const& fpfield(std::size_t field_index) const {
         if (field_index >= num_fpfields()) {
             throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
                                      ") field index out of range");
