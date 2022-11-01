@@ -450,7 +450,8 @@ void CellGroup::mk_cgs_netcon_info(neuron::model_sorted_token const& cache_token
                     // if the number of threads changes, because it encodes the
                     // offset of the source process into the thread that it
                     // lives in
-                    cgs[ith].netcon_srcgid[i] = -(type + 1000 * (current - offset));
+                    cgs[ith].netcon_srcgid[i] = -(type +
+                                                  1000 * static_cast<long>(current - offset));
                 } else {
                     cgs[ith].netcon_srcgid[i] = -1;
                 }
