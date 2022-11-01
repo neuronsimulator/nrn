@@ -417,19 +417,6 @@ void CellGroup::mk_cgs_netcon_info(neuron::model_sorted_token const& cache_token
             cgs[ith].netcon_pnttype[i] = type;
             cgs[ith].netcon_pntindex[i] = nc->target_->prop->id().current_row() -
                                           cache_token.thread_cache(ith).mechanism_offset.at(type);
-            // if (nrn_is_artificial_[type]) {
-            //     cgs[ith].netcon_pntindex[i] = nc->target_->prop->id().current_row(); // TODO
-            //     nrncore_art2index(nc->target_->prop->param);
-            // } else {
-            //     // cache efficient so can calculate index from pointer
-            //     Memb_list* ml = cgs[ith].type2ml[type];
-            //     int sz = nrn_prop_param_size_[type];
-            //     double* d1 = ml->_data[0];
-            //     double* d2 = nc->target_->prop->param;
-            //     assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
-            //     int ix = (d2 - d1) / sz;
-            //     cgs[ith].netcon_pntindex[i] = ix;
-            // }
         } else {
             cgs[ith].netcon_pnttype[i] = 0;
             cgs[ith].netcon_pntindex[i] = -1;
@@ -464,19 +451,6 @@ void CellGroup::mk_cgs_netcon_info(neuron::model_sorted_token const& cache_token
                     // offset of the source process into the thread that it
                     // lives in
                     cgs[ith].netcon_srcgid[i] = -(type + 1000 * (current - offset));
-                    // if (nrn_is_artificial_[type]) {
-                    //     int ix = nrncore_art2index(pnt->prop->param);
-                    //     cgs[ith].netcon_srcgid[i] = -(type + 1000 * ix);
-                    // } else {
-                    //     assert(nrn_has_net_event(type));
-                    //     Memb_list* ml = cgs[ith].type2ml[type];
-                    //     int sz = nrn_prop_param_size_[type];
-                    //     double* d1 = ml->_data[0];
-                    //     double* d2 = pnt->prop->param;
-                    //     assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
-                    //     int ix = (d2 - d1) / sz;
-                    //     cgs[ith].netcon_srcgid[i] = -(type + 1000 * ix);
-                    // }
                 } else {
                     cgs[ith].netcon_srcgid[i] = -1;
                 }

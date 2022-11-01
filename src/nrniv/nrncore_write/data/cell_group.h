@@ -88,15 +88,6 @@ class CellGroup {
         assert(p->_type == type);
         auto const sorted_token = nrn_ensure_model_data_are_sorted();
         return p->id().current_row() - sorted_token.thread_cache(tid).mechanism_offset.at(type);
-        // double* d = p->param;
-        // Memb_list* ml = nrn_threads[tid]._ml_list[type];
-        // if (ml) {
-        //     assert(d >= ml->_data[0] &&
-        //            d < (ml->_data[0] + (ml->nodecount * nrn_prop_param_size_[type])));
-        //     // find the index of `p` in `ml->
-        //     return (d - ml->_data[0]) / nrn_prop_param_size_[type];
-        // }
-        // return nrncore_art2index(d);
     }
 };
 
