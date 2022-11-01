@@ -265,7 +265,7 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         ::Node node{};
         THEN("Check its SOA-backed members have their default values") {
             REQUIRE(node.area() == field::Area{}.default_value());
-            REQUIRE(node.voltage() == field::Voltage{}.default_value());
+            REQUIRE(node.v() == field::Voltage{}.default_value());
         }
     }
     GIVEN("A series of nodes with increasing integer voltages") {
@@ -409,6 +409,7 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                 THEN("Values in existing nodes can be modified") {
                     auto& node = nodes.front();
                     REQUIRE_NOTHROW(node.v());
+                    REQUIRE_NOTHROW(node.v() += 42.0);
                     REQUIRE_NOTHROW(node.set_v(node.v() + 42.0));
                 }
                 THEN("A non-const reference to the underlying storage cannot be obtained") {
