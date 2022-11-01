@@ -527,8 +527,7 @@ void sec_free(hoc_Item* secitem) {
     if (auto* ob = sec->prop->dparam[6].get<Object*>();
         ob && ob->secelm_ == secitem) { /* it is the last */
         hoc_Item* q = secitem->prev;
-        if (q->itemtype && hocSEC(q)->prop &&
-            hocSEC(q)->prop->dparam[6].get<Object*>() == ob) {
+        if (q->itemtype && hocSEC(q)->prop && hocSEC(q)->prop->dparam[6].get<Object*>() == ob) {
             ob->secelm_ = q;
         } else {
             ob->secelm_ = (hoc_Item*) 0;

@@ -3473,7 +3473,7 @@ void SelfEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
             *movable_ = nullptr;
         }
         TQItem* q;
-        while ( (q = movable_->get<TQItem*>()) != 0 && q->t_ <= tt) {
+        while ((q = movable_->get<TQItem*>()) != 0 && q->t_ <= tt) {
             // printf("handle earlier %g selfqueue event from within %g SelfEvent::deliver\n",
             // q->t_, tt);
             double t1 = q->t_;

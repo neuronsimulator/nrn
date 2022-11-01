@@ -2204,10 +2204,7 @@ int iondef(int* p_pointercount) {
             }
         }
         if (need_style) {
-            Sprintf(buf,
-                    "#define _style_%s\t*_ppvar[%d].get<int*>()\n",
-                    sion->name,
-                    ioncount);
+            Sprintf(buf, "#define _style_%s\t*_ppvar[%d].get<int*>()\n", sion->name, ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
             sprintf(buf, "#%s", ionname);
@@ -2216,10 +2213,7 @@ int iondef(int* p_pointercount) {
         }
         q = q->next;
         if (!dcurdef && ldifuslist) {
-            Sprintf(buf,
-                    "#define _ion_di%sdv\t*_ppvar[%d].get<double*>()\n",
-                    sion->name,
-                    ioncount);
+            Sprintf(buf, "#define _ion_di%sdv\t*_ppvar[%d].get<double*>()\n", sion->name, ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
             sprintf(buf,
@@ -2257,9 +2251,7 @@ int iondef(int* p_pointercount) {
     }
 
     if (diamdec) { /* must be last */
-        Sprintf(buf,
-                "#define diam	*_ppvar[%d].get<double*>()\n",
-                ioncount + *p_pointercount);
+        Sprintf(buf, "#define diam	*_ppvar[%d].get<double*>()\n", ioncount + *p_pointercount);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
     }              /* notice that ioncount is not incremented */
