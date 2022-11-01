@@ -673,6 +673,9 @@ It's version %s \"c\" code is incompatible with this neuron version.\n",
     }
     ++type;
     n_memb_func = type;
+    // n_memb_func has changed, so any existing NrnThread do not know about the
+    // new mechanism
+    v_structure_change = 1;
 }
 
 void register_mech(const char** m,
