@@ -89,9 +89,6 @@ bool at_time(NrnThread*, double);
 void artcell_net_move(Datum*, Point_process*, double);
 
 extern int ifarg(int);
-
-extern void nrn_complain(double*);
-
 extern void set_seed(double);
 extern int nrn_matrix_cnt_;       // defined in treeset.cpp
 extern int diam_changed;          // defined in cabcode.cpp
