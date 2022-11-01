@@ -2299,11 +2299,18 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         assert(node_data.is_sorted());
         ret.node_data_token = node_data.get_sorted_token();
         neuron::model().apply_to_mechanisms([&tokens](auto& mech_data) {
-            assert(mech_data.is_sorted());
+            if (!mech_data.is_sorted()) {
+                std::ostringstream oss;
+                oss << "nrn_ensure_model_data_are_sorted: " << mech_data
+                    << " was not sorted despite the cache being valid";
+                throw std::runtime_error(std::move(oss).str());
+            }
             tokens.emplace_back(mech_data.get_sorted_token());
         });
     } else {
         // cache not valid, presumably because something is not sorted
+        // first make sure that the NrnThread _ml_list etc. are up to date
+        nrn_thread_memblist_setup();
         // populate a different cache, because neuron::cache::model gets
         // invalidated by permutations via the callback
         auto cache = std::move(*neuron::cache::model);
