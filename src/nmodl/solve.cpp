@@ -92,7 +92,11 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
     lq = lappendsym(solvq, SYM0);
     LST(lq) = errstmt;
     sprintf(buf,
-            "if(error){fprintf(stderr,\"%s\\n\"); /*nrn_complain(_p); */ abort_run(error);}\n",
+            "if(error){\n"
+            "  std::cerr << \"%s\\n\";\n"
+            "  std::cerr << _ml->instance_handle(_iml) << '\\n';\n"
+            "  abort_run(error);\n"
+            "}\n",
             current_line());
     insertstr(errstmt, buf);
 }
