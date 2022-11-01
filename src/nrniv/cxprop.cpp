@@ -82,16 +82,14 @@ int nrn_is_valid_section_ptr(void* v) {
 
 void nrn_poolshrink(int shrink) {
     if (shrink) {
-        for (int i = 0; i < npools_; ++i) {
-            auto& pdatum = datumpools_[i];
+        for (auto& pdatum: datumpools_) {
             if (pdatum && pdatum->nget() == 0) {
-                delete datumpools_[i];
-                datumpools_[i] = NULL;
+                pdatum.reset();
             }
         }
     } else {
         Printf("poolshrink --- type name (dbluse, size) (datumuse, size)\n");
-        for (int i = 0; i < npools_; ++i) {
+        for (auto i = 0; i < datumpools_.size(); ++i) {
             auto& pdatum = datumpools_[i];
             if (pdatum) {
                 Printf("%d %s (%ld, %d)\n",
