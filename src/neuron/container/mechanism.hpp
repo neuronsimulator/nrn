@@ -43,7 +43,7 @@ struct FloatingPoint {
  *   scope. Can be null.
  */
 template <typename Identifier>
-struct interface: handle_base<Identifier> {
+struct handle_interface: handle_base<Identifier> {
     using base_type = handle_base<Identifier>;
     using base_type::base_type;
 
@@ -88,7 +88,7 @@ struct interface: handle_base<Identifier> {
         }
         this->template get<field::FloatingPoint>(field_index) = area;
     }
-    friend std::ostream& operator<<(std::ostream& os, interface const& handle) {
+    friend std::ostream& operator<<(std::ostream& os, handle_interface const& handle) {
         os << handle.underlying_storage().name() << '{' << handle.id() << '/'
            << handle.underlying_storage().size();
         auto const num = handle.num_fpfields();

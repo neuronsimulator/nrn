@@ -43,7 +43,7 @@ struct Voltage {
  *   scope. Can be null.
  */
 template <typename Identifier>
-struct interface: handle_base<Identifier> {
+struct handle_interface: handle_base<Identifier> {
     using base_type = handle_base<Identifier>;
     using base_type::base_type;
 
