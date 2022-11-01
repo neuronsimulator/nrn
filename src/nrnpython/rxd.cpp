@@ -73,10 +73,9 @@ int _num_reactions = 0;
 int _curr_count;
 int* _curr_indices = NULL;
 double* _curr_scales = NULL;
-double** _curr_ptrs = NULL;
+std::vector<neuron::container::data_handle<double>> _conc_ptrs, _curr_ptrs;
 int _conc_count;
 int* _conc_indices = NULL;
-double** _conc_ptrs = NULL;
 
 /*membrane fluxes*/
 int _memb_curr_total = 0;            /*number of membrane currents (sum of
@@ -94,7 +93,7 @@ int* _memb_species_count; /*array of length _memb_count
                            current*/
 
 /*arrays of size _memb_count by _memb_species_count*/
-double*** _memb_cur_ptrs; /*hoc pointers TODO: replace with index for _curr_ptrs*/
+std::vector<std::vector<neuron::container::data_handle<double>>> _memb_cur_ptrs;
 int** _memb_cur_charges;
 int*** _memb_cur_mapped;     /*array of pairs of indices*/
 int*** _memb_cur_mapped_ecs; /*array of pointer into ECS grids*/
@@ -128,7 +127,7 @@ static void transfer_to_legacy() {
     /*TODO: support 3D*/
     int i;
     for (i = 0; i < _conc_count; i++) {
-        *(double*) _conc_ptrs[i] = states[_conc_indices[i]];
+        *_conc_ptrs[i] = states[_conc_indices[i]];
     }
 }
 
@@ -162,9 +161,7 @@ extern "C" void free_curr_ptrs() {
     if (_curr_scales != NULL)
         free(_curr_scales);
     _curr_scales = NULL;
-    if (_curr_ptrs != NULL)
-        free(_curr_ptrs);
-    _curr_ptrs = NULL;
+    _curr_ptrs.clear();
 }
 
 extern "C" void free_conc_ptrs() {
@@ -172,9 +169,7 @@ extern "C" void free_conc_ptrs() {
     if (_conc_indices != NULL)
         free(_conc_indices);
     _conc_indices = NULL;
-    if (_conc_ptrs != NULL)
-        free(_conc_ptrs);
-    _conc_ptrs = NULL;
+    _conc_ptrs.clear();
 }
 
 
@@ -182,7 +177,6 @@ extern "C" void rxd_setup_curr_ptrs(int num_currents,
                                     int* curr_index,
                                     double* curr_scale,
                                     PyHocObject** curr_ptrs) {
-    int i;
     free_curr_ptrs();
     /* info for NEURON currents - to update states */
     _curr_count = num_currents;
@@ -192,9 +186,9 @@ extern "C" void rxd_setup_curr_ptrs(int num_currents,
     _curr_scales = (double*) malloc(sizeof(double) * num_currents);
     memcpy(_curr_scales, curr_scale, sizeof(double) * num_currents);
 
-    _curr_ptrs = (double**) malloc(sizeof(double*) * num_currents);
-    for (i = 0; i < num_currents; i++)
-        _curr_ptrs[i] = (double*) curr_ptrs[i]->u.px_;
+    _curr_ptrs.resize(num_currents);
+    for (int i = 0; i < num_currents; i++)
+        _curr_ptrs[i] = curr_ptrs[i]->u.px_;
 }
 
 extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index, PyHocObject** conc_ptrs) {
@@ -204,10 +198,9 @@ extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index, PyHocObject
     _conc_count = conc_count;
     _conc_indices = (int*) malloc(sizeof(int) * conc_count);
     memcpy(_conc_indices, conc_index, sizeof(int) * conc_count);
-
-    _conc_ptrs = (double**) malloc(sizeof(double*) * conc_count);
+    _conc_ptrs.resize(conc_count);
     for (i = 0; i < conc_count; i++)
-        _conc_ptrs[i] = (double*) conc_ptrs[i]->u.px_;
+        _conc_ptrs[i] = conc_ptrs[i]->u.px_;
 }
 
 extern "C" void rxd_include_node_flux3D(int grid_count,
@@ -617,9 +610,8 @@ static void free_currents() {
             free(_memb_cur_mapped[i][j]);
         }
         free(_memb_cur_mapped[i]);
-        free(_memb_cur_ptrs[i]);
     }
-    free(_memb_cur_ptrs);
+    _memb_cur_ptrs.clear();
     free(_memb_cur_mapped);
     free(_memb_species_count);
     free(_cur_node_indices);
@@ -666,7 +658,7 @@ extern "C" void setup_currents(int num_currents,
     _membrane_lookup = (int*) malloc(sizeof(int) * num_states);
     memset(_membrane_lookup, SPECIES_ABSENT, sizeof(int) * num_states);
 
-    _memb_cur_ptrs = (double***) malloc(sizeof(double**) * num_currents);
+    _memb_cur_ptrs.resize(num_currents);
     _memb_cur_mapped_ecs = (int***) malloc(sizeof(int*) * num_currents);
     _memb_cur_mapped = (int***) malloc(sizeof(int**) * num_currents);
     induced_currents_ecs_idx = (int*) malloc(sizeof(int) * _memb_curr_total);
@@ -676,14 +668,13 @@ extern "C" void setup_currents(int num_currents,
     memset(induced_currents_ecs_idx, SPECIES_ABSENT, sizeof(int) * _memb_curr_total);
 
     for (i = 0, k = 0; i < num_currents; i++) {
-        _memb_cur_ptrs[i] = (double**) malloc(sizeof(double*) * num_species[i]);
-        // memcpy(_memb_cur_ptrs[i], &ptrs[k], sizeof(PyHocObject*)*num_species[i]);
+        _memb_cur_ptrs[i].resize(num_species[i]);
         _memb_cur_mapped_ecs[i] = (int**) malloc(sizeof(int*) * num_species[i]);
         _memb_cur_mapped[i] = (int**) malloc(sizeof(int*) * num_species[i]);
 
 
         for (j = 0; j < num_species[i]; j++, k++) {
-            _memb_cur_ptrs[i][j] = (double*) ptrs[k]->u.px_;
+            _memb_cur_ptrs[i][j] = ptrs[k]->u.px_;
             _memb_cur_mapped[i][j] = (int*) malloc(2 * sizeof(int));
             _memb_cur_mapped_ecs[i][j] = (int*) malloc(2 * sizeof(int));
 
