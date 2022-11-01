@@ -9,6 +9,7 @@ cvode = h.CVode()
 def sortspikes(spiketime, gidvec):
     return sorted(zip(spiketime, gidvec))
 
+
 # Set globally so we can ensure the IClamp duration is shorter
 tstop = 1
 
