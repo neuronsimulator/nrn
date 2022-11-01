@@ -10,7 +10,6 @@
 #include <ivstream.h>
 #include <stdio.h>
 #include "membfunc.h"
-extern void nrn_rhs(NrnThread*);
 extern void nrn_lhs(NrnThread*);
 extern void setup_topology();
 extern void recalc_diam();
@@ -307,8 +306,8 @@ void Imp::setmat1() {
     for (int i = 0; i < nrn_nthread; ++i) {
         double cj = nrn_threads[i].cj;
         nrn_threads[i].cj = 0;
-        nrn_rhs(nrn_threads + i);  // not useful except that many model description set g while
-        // computing i
+        // not useful except that many model description set g while computing i
+        nrn_rhs(nrn_ensure_model_data_are_sorted(), nrn_threads[i]);
         nrn_lhs(nrn_threads + i);
         nrn_threads[i].cj = cj;
     }

@@ -137,7 +137,7 @@ class NetCvode {
     void vec_remove();
     void record_init();
     void play_init();
-    void fixed_record_continuous(NrnThread*);
+    void fixed_record_continuous(neuron::model_sorted_token const&, NrnThread& nt);
     void fixed_play_continuous(NrnThread*);
     static double eps(double x) {
         return eps_ * std::abs(x);
