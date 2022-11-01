@@ -86,7 +86,7 @@ proc mkstates() {
 	scales()
 }
 
-proc mkstates2() {local i, it localobj nil
+proc mkstates2() {local i, it
 	mt = new MechanismType($1)
 	for it=1, mt.count-1 {
 		mt.select(it)
@@ -105,7 +105,6 @@ proc mkstates2() {local i, it localobj nil
 				}
 				tobj = new AtolToolItem(tstr, 1) states.append(tobj)
 			}
-			ms = nil
 		}
 	}
 }

@@ -592,12 +592,12 @@ static void update(NrnThread* _nt) {
         if (secondorder) {
             for (i = i1; i < i2; ++i) {
                 auto* node = _nt->_v_node[i];
-                node->set_v(node->v() + 2. * NODERHS(node));
+                node->v() += 2. * NODERHS(node);
             }
         } else {
             for (i = i1; i < i2; ++i) {
                 auto* node = _nt->_v_node[i];
-                node->set_v(node->v() + NODERHS(_nt->_v_node[i]));
+                node->v() += NODERHS(_nt->_v_node[i]);
             }
             if (use_sparse13) {
                 nrndae_update();

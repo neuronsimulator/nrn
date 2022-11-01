@@ -49,7 +49,13 @@ struct interface: handle_base<Identifier> {
 
     /** @brief Return the area.
      */
-    [[nodiscard]] field::Area::type area() const {
+    [[nodiscard]] field::Area::type& area() {
+        return this->template get<field::Area>();
+    }
+
+    /** @brief Return the area.
+     */
+    [[nodiscard]] field::Area::type const& area() const {
         return this->template get<field::Area>();
     }
 
@@ -57,23 +63,16 @@ struct interface: handle_base<Identifier> {
      * @brief This is a workaround for area sometimes being a macro.
      * @todo Remove those macros once and for all.
      */
-    [[nodiscard]] field::Voltage::type area_hack() const {
+    [[nodiscard]] field::Voltage::type& area_hack() {
         return area();
     }
 
     /**
-     * @brief Return the membrane potential.
-     */
-    [[nodiscard]] field::Voltage::type v() const {
-        return this->template get<field::Voltage>();
-    }
-
-    /**
-     * @brief This is a workaround for v sometimes being a macro.
+     * @brief This is a workaround for area sometimes being a macro.
      * @todo Remove those macros once and for all.
      */
-    [[nodiscard]] field::Voltage::type v_hack() const {
-        return v();
+    [[nodiscard]] field::Voltage::type const& area_hack() const {
+        return area();
     }
 
     /** @brief Return a data_handle to the area.
@@ -82,20 +81,50 @@ struct interface: handle_base<Identifier> {
         return this->template get_handle<field::Area>();
     }
 
-    /** Return a generic handle to a value (double in this case) that is stable
-     *  over permutations but doesn't know that it is a Node voltage.
-     */
-    [[nodiscard]] data_handle<field::Voltage::type> v_handle() {
-        return this->template get_handle<field::Voltage>();
-    }
-
     /** @brief Set the area.
      */
     void set_area(field::Area::type area) {
         this->template get<field::Area>() = area;
     }
 
-    /** @brief Set the membrane potentials.
+    /**
+     * @brief Return the membrane potential.
+     */
+    [[nodiscard]] field::Voltage::type& v() {
+        return this->template get<field::Voltage>();
+    }
+
+    /**
+     * @brief Return the membrane potential.
+     */
+    [[nodiscard]] field::Voltage::type const& v() const {
+        return this->template get<field::Voltage>();
+    }
+
+    /**
+     * @brief Return a handle to the membrane potential.
+     */
+    [[nodiscard]] data_handle<field::Voltage::type> v_handle() {
+        return this->template get_handle<field::Voltage>();
+    }
+
+    /**
+     * @brief This is a workaround for v sometimes being a macro.
+     * @todo Remove those macros once and for all.
+     */
+    [[nodiscard]] field::Voltage::type& v_hack() {
+        return v();
+    }
+
+    /**
+     * @brief This is a workaround for v sometimes being a macro.
+     * @todo Remove those macros once and for all.
+     */
+    [[nodiscard]] field::Voltage::type const& v_hack() const {
+        return v();
+    }
+
+    /** @brief Set the membrane potential.
      */
     void set_v(field::Voltage::type v) {
         this->template get<field::Voltage>() = v;
