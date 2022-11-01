@@ -410,7 +410,7 @@ void Cvode::daspk_scatter_y(double* y, int tid) {
         int i, n = ml->nodecount;
         for (i = 0; i < n; ++i) {
             Node* nd = ml->nodelist[i];
-            nd->set_v(nd->v() - nd->extnode->v[0]);
+            nd->v() -= nd->extnode->v[0];
         }
     }
 }
