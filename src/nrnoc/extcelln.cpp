@@ -139,7 +139,7 @@ void nrn_update_2d(NrnThread* nt) {
         for (il = 0; il < nlayer; ++il) {
             nde->v[il] += *nde->_rhs[il];
         }
-        nd->set_v(nd->v() - *nde->_rhs[0]);
+        nd->v() -= *nde->_rhs[0];
     }
 
 #if I_MEMBRANE
