@@ -231,7 +231,8 @@ struct soa {
             [this](auto const& tag) {
                 using Tag = std::decay_t<decltype(tag)>;
                 if constexpr (detail::has_num_instances_v<Tag>) {
-                    auto& vector_of_vectors = std::get<tag_index_v<Tag>>(m_data);
+                    constexpr std::size_t tag_index = tag_index_v<Tag>;
+                    auto& vector_of_vectors = std::get<tag_index>(m_data);
                     assert(vector_of_vectors.empty());
                     vector_of_vectors.resize(tag.num_instances());
                 }
