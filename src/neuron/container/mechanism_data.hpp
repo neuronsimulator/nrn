@@ -23,6 +23,10 @@ struct storage: soa<storage, field::FloatingPoint> {
     [[nodiscard]] constexpr std::size_t num_floating_point_fields() const {
         return get_tag<field::FloatingPoint>().num_instances();
     }
+    friend std::ostream& operator<<(std::ostream& os, storage const& data) {
+        return os << data.name() << "::storage{type=" << data.type() << ", "
+                  << data.num_floating_point_fields() << " fields}";
+    }
 
   private:
     std::string m_mech_name{};
