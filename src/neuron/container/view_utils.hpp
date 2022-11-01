@@ -1,4 +1,7 @@
 #pragma once
+#include <cstddef>  // std::size_t
+#include <utility>  // std::as_const, std::move
+
 namespace neuron::container {
 /**
  * @brief Base class for neuron::container::soa<...> handles.
