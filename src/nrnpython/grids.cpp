@@ -674,8 +674,8 @@ extern "C" void set_grid_concentrations(int grid_list_index,
     for (i = 0; i < n; i++) {
         /* printf("set_grid_concentrations %ld\n", i); */
         g->concentration_list[i].source = PyInt_AS_LONG(PyList_GET_ITEM(grid_indices, i));
-        g->concentration_list[i].destination = static_cast<double*>(
-            ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i))->u.px_);
+        g->concentration_list[i].destination =
+            reinterpret_cast<PyHocObject*>(PyList_GET_ITEM(neuron_pointers, i))->u.px_;
     }
 }
 
@@ -718,8 +718,8 @@ extern "C" void set_grid_currents(int grid_list_index,
     for (i = 0; i < n; i++) {
         g->current_list[i].destination = PyInt_AS_LONG(PyList_GET_ITEM(grid_indices, i));
         g->current_list[i].scale_factor = PyFloat_AS_DOUBLE(PyList_GET_ITEM(scale_factors, i));
-        g->current_list[i].source = static_cast<double*>(
-            ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i))->u.px_);
+        g->current_list[i].source =
+            reinterpret_cast<PyHocObject*>(PyList_GET_ITEM(neuron_pointers, i))->u.px_;
         /* printf("set_grid_currents %ld out of %ld, %ld, %ld\n", i, n,
          * PyList_Size(neuron_pointers), PyList_Size(scale_factors)); */
     } /*
