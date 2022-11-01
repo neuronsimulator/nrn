@@ -43,6 +43,7 @@ the handling of v_structure_change as long as possible.
 #include <mutex>
 #include <thread>
 #include <utility>
+#include <variant>
 #include <vector>
 #include <iostream>
 
@@ -88,7 +89,6 @@ bool interpreter_locked{false};
 std::unique_ptr<std::mutex> interpreter_lock;
 
 enum struct worker_flag { execute_job, exit, wait };
-using worker_job_t = void* (*) (NrnThread*);
 
 // With C++17 and alignment-aware allocators we could do something like
 // alignas(std::hardware_destructive_interference_size) here and then use a
@@ -96,9 +96,34 @@ using worker_job_t = void* (*) (NrnThread*);
 // that std::hardware_destructive_interference_size is not very well supported.
 struct worker_conf_t {
     /* for nrn_solve etc.*/
-    worker_job_t job{};
+    std::variant<std::monostate,
+                 worker_job_t,
+                 std::pair<worker_job_with_token_t, neuron::model_sorted_token const*>>
+        job{};
     std::size_t thread_id{};
     worker_flag flag{worker_flag::wait};
+    friend bool operator==(worker_conf_t const& lhs, worker_conf_t const& rhs) {
+        return lhs.flag == rhs.flag && lhs.thread_id == rhs.thread_id && lhs.job == rhs.job;
+    }
+};
+
+struct worker_kernel {
+    worker_kernel(std::size_t thread_id)
+        : m_thread_id{thread_id} {}
+    void operator()(std::monostate const&) const {
+        throw std::runtime_error("worker_kernel");
+    }
+    void operator()(worker_job_t job) const {
+        job(nrn_threads + m_thread_id);
+    }
+    void operator()(
+        std::pair<worker_job_with_token_t, neuron::model_sorted_token const*> const& pair) const {
+        auto const& [job, token_ptr] = pair;
+        job(*token_ptr, nrn_threads[m_thread_id]);
+    }
+
+  private:
+    std::size_t m_thread_id{};
 };
 
 void worker_main(worker_conf_t* my_wc_ptr,
@@ -121,13 +146,12 @@ void worker_main(worker_conf_t* my_wc_ptr,
                 return;
             }
             assert(wc.flag == worker_flag::execute_job);
-            (*wc.job)(nrn_threads + wc.thread_id);
+            std::visit(worker_kernel{wc.thread_id}, wc.job);
             wc.flag = worker_flag::wait;
-            wc.job = nullptr;
+            wc.job = std::monostate{};
             cond.notify_one();
         } else {
-            worker_job_t job{};
-            NrnThread* job_arg{};
+            worker_conf_t conf{};
             {
                 // Wait until we have a job to execute or we have been told to
                 // shut down.
@@ -141,11 +165,10 @@ void worker_main(worker_conf_t* my_wc_ptr,
                 assert(wc.flag == worker_flag::execute_job);
                 // Save the workload + argument to local variables before
                 // releasing the mutex.
-                job = wc.job;
-                job_arg = nrn_threads + wc.thread_id;
+                conf = wc;
             }
             // Execute the workload without keeping the mutex
-            (*job)(job_arg);
+            std::visit(worker_kernel{conf.thread_id}, conf.job);
             // Signal that the work is completed and this thread is becoming
             // idle
             {
@@ -153,9 +176,9 @@ void worker_main(worker_conf_t* my_wc_ptr,
                 // Make sure we don't accidentally overwrite an exit signal from
                 // the coordinating thread.
                 if (wc.flag == worker_flag::execute_job) {
-                    assert(wc.job == job);
+                    assert(wc == conf);
                     wc.flag = worker_flag::wait;
-                    wc.job = nullptr;
+                    wc.job = std::monostate{};
                 }
             }
             // Notify the coordinating thread.
@@ -176,8 +199,7 @@ struct worker_threads_t {
         // worker_threads[0] does not appear to be used
         m_worker_threads.emplace_back();
         for (std::size_t i = 1; i < nrn_nthread; ++i) {
-            m_wc[i].flag = worker_flag::wait;
-            m_wc[i].job = nullptr;
+            new (m_wc + i) worker_conf_t{};
             m_wc[i].thread_id = i;
             m_worker_threads.emplace_back(worker_main, &(m_wc[i]), &(m_cond[i]), &(m_mut[i]));
         }
@@ -209,7 +231,7 @@ struct worker_threads_t {
         free(std::exchange(m_wc, nullptr));
     }
 
-    void assign_job(std::size_t worker, void* (*job)(NrnThread*) ) {
+    void assign_job(std::size_t worker, worker_job_t job) {
         assert(worker > 0);
         auto& cond = m_cond[worker];
         auto& wc = m_wc[worker];
@@ -217,9 +239,28 @@ struct worker_threads_t {
             std::unique_lock<std::mutex> lock{m_mut[worker]};
             // Wait until the worker is idle.
             cond.wait(lock, [&wc] { return wc.flag == worker_flag::wait; });
-            assert(!wc.job);
+            assert(std::holds_alternative<std::monostate>(wc.job));
             assert(wc.thread_id == worker);
             wc.job = job;
+            wc.flag = worker_flag::execute_job;
+        }
+        // Notify the worker that it has new work to do.
+        cond.notify_one();
+    }
+
+    void assign_job(std::size_t worker,
+                    neuron::model_sorted_token const& cache_token,
+                    worker_job_with_token_t job) {
+        assert(worker > 0);
+        auto& cond = m_cond[worker];
+        auto& wc = m_wc[worker];
+        {
+            std::unique_lock<std::mutex> lock{m_mut[worker]};
+            // Wait until the worker is idle.
+            cond.wait(lock, [&wc] { return wc.flag == worker_flag::wait; });
+            assert(std::holds_alternative<std::monostate>(wc.job));
+            assert(wc.thread_id == worker);
+            wc.job = std::make_pair(job, &cache_token);
             wc.flag = worker_flag::execute_job;
         }
         // Notify the worker that it has new work to do.
@@ -898,7 +939,7 @@ void nrn_hoc_unlock() {
 #endif
 }
 
-void nrn_multithread_job(void* (*job)(NrnThread*) ) {
+void nrn_multithread_job(worker_job_t job) {
 #if NRN_ENABLE_THREADS
     if (worker_threads) {
         nrn_inthread_ = 1;
@@ -917,6 +958,25 @@ void nrn_multithread_job(void* (*job)(NrnThread*) ) {
     (*job)(nrn_threads);
 }
 
+void nrn_multithread_job(neuron::model_sorted_token const& cache_token,
+                         worker_job_with_token_t job) {
+#if NRN_ENABLE_THREADS
+    if (worker_threads) {
+        nrn_inthread_ = 1;
+        for (std::size_t i = 1; i < nrn_nthread; ++i) {
+            worker_threads->assign_job(i, cache_token, job);
+        }
+        job(cache_token, nrn_threads[0]);
+        worker_threads->wait();
+        nrn_inthread_ = 0;
+        return;
+    }
+#endif
+    for (std::size_t i = 1; i < nrn_nthread; ++i) {
+        job(cache_token, nrn_threads[i]);
+    }
+    job(cache_token, nrn_threads[0]);
+}
 
 void nrn_onethread_job(int i, void* (*job)(NrnThread*) ) {
     assert(i >= 0 && i < nrn_nthread);
