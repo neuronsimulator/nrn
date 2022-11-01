@@ -153,23 +153,16 @@ GLineRecord::GLineRecord(GraphLine* gl)
 }
 
 GVectorRecord::GVectorRecord(GraphVector* gv)
-    : PlayRecord(NULL) {
-    // printf("GVectorRecord %p\n", this);
-    gv_ = gv;
-}
+    : PlayRecord(nullptr)
+    , gv_{gv} {}
 
 void GraphVector::record_install() {
-    // printf("GraphVector::record_install()\n");
-    GVectorRecord* gvr = new GVectorRecord(this);
+    new GVectorRecord(this);
 }
 
-void GraphVector::record_uninstall() {
-    // printf("GraphVector::record_uninstall()\n");
-}
+void GraphVector::record_uninstall() {}
 
 GLineRecord::~GLineRecord() {
-    //	printf("~GLineRecord %p\n", this);
-    int i;
     if (v_) {
         delete v_;
         v_ = NULL;
@@ -181,7 +174,7 @@ GLineRecord::~GLineRecord() {
         }
     }
 
-    for (i = grl->count() - 1; i >= 0; --i) {
+    for (int i = grl->count() - 1; i >= 0; --i) {
         if (grl->item(i) == this) {
             gl_->simgraph_activate(false);
             grl->remove(i);
@@ -190,9 +183,7 @@ GLineRecord::~GLineRecord() {
     }
 }
 
-GVectorRecord::~GVectorRecord() {
-    printf("~GVectorRecord %p\n", this);
-}
+GVectorRecord::~GVectorRecord() {}
 
 void GLineRecord::record_init() {
     gl_->simgraph_init();
