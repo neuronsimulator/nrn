@@ -440,7 +440,7 @@ void nrn_threads_free() {
                 }
                 delete[] ml->_thread;
             }
-            free((char*) ml);
+            delete ml;
             free((char*) tml);
         }
         if (nt->_ml_list) {
