@@ -51,16 +51,17 @@ typedef struct Flux_pair {
     int grid_index;  // Location in grid
 } Flux;
 
-typedef struct {
-    double* destination; /* memory loc to transfer concentration to */
-    long source;         /* index in grid for source */
-} Concentration_Pair;
+struct Concentration_Pair {
+    neuron::container::data_handle<double> destination; /* memory loc to transfer concentration to
+                                                         */
+    long source;                                        /* index in grid for source */
+};
 
-typedef struct {
-    long destination; /* index in grid */
-    double* source;   /* memory loc of e.g. ica */
+struct Current_Triple {
+    long destination;                              /* index in grid */
+    neuron::container::data_handle<double> source; /* memory loc of e.g. ica */
     double scale_factor;
-} Current_Triple;
+};
 
 typedef void (*ReactionRate)(double**,
                              double**,
