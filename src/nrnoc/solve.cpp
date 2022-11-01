@@ -610,7 +610,7 @@ Node::~Node() {
 #if EXTRACELLULAR
     if (extnode) {
         extnode_free_elements(extnode);
-        free(extnode);
+        delete extnode;
     }
 #endif
 }
