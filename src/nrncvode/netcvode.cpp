@@ -193,8 +193,6 @@ static void* neosim_entity_;
 #endif
 
 void ncs2nrn_integrate(double tstop);
-void nrn_fixed_step();
-void nrn_fixed_step_group(int);
 extern void (*nrn_allthread_handle)();
 static void allthread_handle_callback() {
     net_cvode_instance->allthread_handle();
@@ -3800,6 +3798,7 @@ bool NetCvode::use_partrans() {
 void ncs2nrn_integrate(double tstop) {
     double ts;
     nrn_use_busywait(1);  // just a possibility
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
     if (cvode_active_) {
 #if PARANEURON
         if (net_cvode_instance->use_partrans()) {
@@ -3817,7 +3816,7 @@ void ncs2nrn_integrate(double tstop) {
 #if 1
         int n = (int) ((tstop - nt_t) / dt + 1e-9);
         if (n > 3 && !nrnthread_v_transfer_) {
-            nrn_fixed_step_group(n);
+            nrn_fixed_step_group(cache_token, n);
         } else
 #endif
         {
@@ -3830,7 +3829,7 @@ void ncs2nrn_integrate(double tstop) {
             ts = tstop - .5 * dt;
             while (nt_t < ts) {
 #endif
-                nrn_fixed_step();
+                nrn_fixed_step(cache_token);
                 if (stoprun) {
                     break;
                 }
@@ -4332,7 +4331,7 @@ void nrn_cvfun(double t, double* y, double* ydot) {
 }
 
 double nrn_hoc2fixed_step(void*) {
-    nrn_fixed_step();
+    nrn_fixed_step(nrn_ensure_model_data_are_sorted());
     return 0.;
 }
 
@@ -5687,14 +5686,14 @@ void Cvode::check_deliver(NrnThread* nt) {
     }
 }
 
-void NetCvode::fixed_record_continuous(NrnThread* nt) {
-    int i, cnt;
-    nrn_ba(nt, BEFORE_STEP);
-    cnt = fixed_record_->count();
-    for (i = 0; i < cnt; ++i) {  // should be made more efficient
+void NetCvode::fixed_record_continuous(neuron::model_sorted_token const& cache_token,
+                                       NrnThread& nt) {
+    nrn_ba(cache_token, nt, BEFORE_STEP);
+    auto const cnt = fixed_record_->count();
+    for (int i = 0; i < cnt; ++i) {  // should be made more efficient
         PlayRecord* pr = fixed_record_->item(i);
-        if (pr->ith_ == nt->id) {
-            pr->continuous(nt->_t);
+        if (pr->ith_ == nt.id) {
+            pr->continuous(nt._t);
         }
     }
 }

@@ -30,7 +30,6 @@ double Daspk::dteps_;
 
 extern void nrndae_dkres(double*, double*, double*);
 extern void nrndae_dkpsol(double);
-extern void nrn_rhs(NrnThread*);
 extern void nrn_lhs(NrnThread*);
 extern void nrn_solve(NrnThread*);
 void nrn_daspk_init_step(double, double, int);
@@ -465,7 +464,7 @@ for (i=0; i < z.nvsize_; ++i) {
     daspk_scatter_y(y, nt->id);  // vi, vext, channel states, linmod non-node y.
     // rhs of cy' = f(y)
     play_continuous_thread(tt, nt);
-    nrn_rhs(nt);
+    nrn_rhs(nrn_ensure_model_data_are_sorted(), *nt);
     do_ode(nt);
     // accumulate into delta
     gather_ydot(delta, nt->id);
