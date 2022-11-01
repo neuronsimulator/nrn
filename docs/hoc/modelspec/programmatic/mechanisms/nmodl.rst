@@ -961,13 +961,6 @@ Description:
     both dimensions.
 
 
-SWEEP
-~~~~~
-
-Description:
-    ``TODO``: Add description and new example mod file
-
-
 CONDUCTANCE
 ~~~~~~~~~~~
 
