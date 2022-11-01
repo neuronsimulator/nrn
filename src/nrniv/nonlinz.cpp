@@ -10,7 +10,6 @@
 #include "membfunc.h"
 
 extern void v_setup_vectors();
-extern void nrn_rhs(NrnThread*);
 extern int nrndae_extra_eqn_count();
 extern Symlist* hoc_built_in_symlist;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
@@ -132,7 +131,7 @@ double NonLinImp::ratio_amp(int clmploc, int vloc) {
 }
 void NonLinImp::compute(double omega, double deltafac, int maxiter) {
     v_setup_vectors();
-    nrn_rhs(nrn_threads);
+    nrn_rhs(nrn_ensure_model_data_are_sorted(), nrn_threads[0]);
     if (rep_ && rep_->scnt_ != structure_change_cnt) {
         delete rep_;
         rep_ = NULL;
