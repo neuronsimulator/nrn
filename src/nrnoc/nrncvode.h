@@ -1,4 +1,5 @@
 #pragma once
+#include "neuron/model_data.hpp" // neuron::model_sorted_token
 struct Memb_list;
 struct NrnThread;
 void cvode_fadvance(double);
@@ -11,7 +12,7 @@ void free_event_queues();
 extern void init_net_events();
 extern void nrn_record_init();
 extern void nrn_play_init();
-extern void fixed_record_continuous(NrnThread* nt);
+void fixed_record_continuous(neuron::model_sorted_token const&, NrnThread& nt);
 extern void fixed_play_continuous(NrnThread* nt);
 extern void nrn_solver_prepare();
 extern "C" void nrn_random_play();
