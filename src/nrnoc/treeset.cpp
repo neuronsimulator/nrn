@@ -2309,8 +2309,6 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         });
     } else {
         // cache not valid, presumably because something is not sorted
-        // first make sure that the NrnThread _ml_list etc. are up to date
-        nrn_thread_memblist_setup();
         // populate a different cache, because neuron::cache::model gets
         // invalidated by permutations via the callback
         auto cache = std::move(*neuron::cache::model);
