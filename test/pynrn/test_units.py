@@ -73,6 +73,7 @@ def test_env_legacy():
     import os, subprocess, sys
 
     for i in [0, 1]:
+        exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
         env = os.environ.copy()
         env["NRNUNIT_USE_LEGACY"] = str(i)
         try:
@@ -83,7 +84,7 @@ def test_env_legacy():
             pass
         a = subprocess.check_output(
             [
-                sys.executable,
+                exe,
                 "-c",
                 "from neuron import h; print(h.nrnunit_use_legacy())",
             ],

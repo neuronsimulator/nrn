@@ -392,6 +392,7 @@ def test_errorcode():
     process = subprocess.run('nrniv -c "1/0"', shell=True)
     assert process.returncode > 0
 
+    exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
     env = os.environ.copy()
     try:
         env[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
@@ -400,7 +401,7 @@ def test_errorcode():
     except:
         pass
     process = subprocess.run(
-        [sys.executable, "-c", "from neuron import h; h.sqrt(-1)"], env=env, shell=False
+        [exe, "-c", "from neuron import h; h.sqrt(-1)"], env=env, shell=False
     )
     assert process.returncode > 0
 
