@@ -13,7 +13,6 @@ set(HEADER_FILES_TO_INSTALL
     hocgetsym.h
     hoclist.h
     hocparse.h
-    isoc99.h
     ivstream.h
     mcran4.h
     md1redef.h
@@ -79,7 +78,6 @@ set(OC_FILE_LIST
     hocusr.cpp
     hoc_init.cpp
     hoc_oop.cpp
-    isoc99.cpp
     list.cpp
     math.cpp
     mswinprt.cpp

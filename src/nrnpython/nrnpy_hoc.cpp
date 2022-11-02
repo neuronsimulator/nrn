@@ -26,7 +26,8 @@ extern PyTypeObject* psection_type;
 
 // copied from nrnpy_nrn
 typedef struct {
-    PyObject_HEAD Section* sec_;
+    PyObject_HEAD
+    Section* sec_;
     char* name_;
     PyObject* cell_;
 } NPySecObj;
