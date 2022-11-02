@@ -487,15 +487,9 @@ struct soa {
     static decltype(auto) get_field_instance_helper(This& this_ref, std::size_t field_index) {
         static_assert(has_tag_v<Tag>);
         static_assert(detail::has_num_instances_v<Tag>);
-        auto const num_instances = this_ref.template get_tag<Tag>().num_instances();
-        if (field_index >= num_instances) {
-            this_ref.throw_error("get_field_instance_helper<" + cxx_demangle(typeid(Tag).name()) +
-                                 ">(" + std::to_string(field_index) +
-                                 ") field_index out of range [0, " +
-                                 std::to_string(num_instances - 1) + "]");
-        }
+        assert(field_index < this_ref.template get_tag<Tag>().num_instances());
         decltype(auto) vector_of_vectors = std::get<tag_index_v<Tag>>(this_ref.m_data);
-        assert(vector_of_vectors.size() == num_instances);
+        assert(vector_of_vectors.size() == this_ref.template get_tag<Tag>().num_instances());
         return vector_of_vectors[field_index];
     }
 
@@ -521,7 +515,7 @@ struct soa {
      */
     template <typename Tag>
     typename Tag::type& get_field_instance(std::size_t field_index, std::size_t offset) {
-        return get_field_instance_helper<Tag>(*this, field_index).at(offset);
+        return get_field_instance_helper<Tag>(*this, field_index)[offset];
     }
 
     /**
@@ -530,7 +524,7 @@ struct soa {
     template <typename Tag>
     typename Tag::type const& get_field_instance(std::size_t field_index,
                                                  std::size_t offset) const {
-        return get_field_instance_helper<Tag>(*this, field_index).at(offset);
+        return get_field_instance_helper<Tag>(*this, field_index)[offset];
     }
 
     /**
