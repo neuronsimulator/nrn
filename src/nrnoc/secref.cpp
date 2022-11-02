@@ -332,6 +332,9 @@ Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex) {
                 hoc_execerror("SectionRef.child[index]", (char*) 0);
             }
         }
+        if (hoc_pop_ndim() != 1) {
+            hoc_execerror("SectionRef.child[index] has only one dimension", NULL);
+        }
         index = (int) hoc_xpop();
         --*pnindex;
         for (i = 0, s = sec->child; i < index && s; s = s->sibling) {

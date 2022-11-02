@@ -1,3 +1,4 @@
+load_file("expect_err.hoc")
 double a[1][1]
 func foo() {local i
   double a[1][1]
@@ -10,3 +11,29 @@ double a[1]
 print foo()
 double a[1][1][1]
 print foo()
+
+create soma, dend[3]
+for i=0,2 {
+  connect dend[i](0), soma(1)
+}
+objref sref
+soma { sref = new SectionRef() }
+expect_err("sref.child { print secname() }")
+sref.child[1] { print secname() }
+
+begintemplate Cell
+public soma, dend
+create soma, dend[3]
+proc init() { local i
+  for i=0, 2 {
+    connect dend[i](0), soma(1)
+  }
+}
+endtemplate Cell
+objref cell
+cell = new Cell()
+cell.dend[1] { print secname() }
+cell.dend { print secname() }
+expect_err("cell.dend[5] { print secname() }")
+expect_err("cell.dend[1][2] {print secname() }")
+expect_err("cell.soma[1] { print secname() }")
