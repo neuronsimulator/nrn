@@ -35,6 +35,7 @@ def do_test(test_to_run, results_location, num_record=10):
         data["record_count"] += 1
         if data["record_count"] > num_record:
             save_and_cleanup()
+            return
 
         all_potentials = [seg.v for seg in itertools.chain.from_iterable(h.allsec())]
         rxd_1d = list(rxd.node._states)
@@ -81,10 +82,6 @@ def do_test(test_to_run, results_location, num_record=10):
         # save the data
         with open(results_location, "wb") as f:
             array.array("d", data["data"]).tofile(f)
-
-        import sys
-
-        sys.exit(0)
 
     h.CVode().extra_scatter_gather(0, collect_data)
 
