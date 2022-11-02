@@ -63,12 +63,13 @@ run_mpi_test () {
   # TODO: run coreneuron binary shipped inside wheel. This can not be executed in platform
   #       independent manner because we need to pre-load libmpi library beforehand e.g. using
   #       LD_PRELOAD mechanism. For now, execute without --mpi argument
-  if [[ "$has_coreneuron" == "true" ]] && [[ $mpi_name == *"MPICH"* || $mpi_name == *"Intel MPI"* ]]; then
-      site_package_dir=`$python_exe -c 'import os, neuron; print(os.path.dirname(neuron.__file__))'`
-      corenrn_mpi_lib=`ls $site_package_dir/.data/lib/libcorenrnmpi_mpich*`
-      $mpi_launcher -n 1 nrniv-core --datpath external/coreneuron/tests/integration/ring --mpi-lib=$corenrn_mpi_lib
-      diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
-  fi
+  # TODO: As coreneuron is now merged into neuron, we don't have binary dataset. Also
+  #if [[ "$has_coreneuron" == "true" ]] && [[ $mpi_name == *"MPICH"* || $mpi_name == *"Intel MPI"* ]]; then
+  #    site_package_dir=`$python_exe -c 'import os, neuron; print(os.path.dirname(neuron.__file__))'`
+  #    corenrn_mpi_lib=`ls $site_package_dir/.data/lib/libcorenrnmpi_mpich*`
+  #    $mpi_launcher -n 1 nrniv-core --datpath external/coreneuron/tests/integration/ring --mpi-lib=$corenrn_mpi_lib
+  #    diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
+  #fi
 
   # rest of the tests we need development environment. For GPU wheel
   # make sure we have necessary compiler.
@@ -123,10 +124,11 @@ run_serial_test () {
     nrniv -c "print \"hello\""
 
     # Test 3: run coreneuron binary shipped inside wheel
-    if [[ "$has_coreneuron" == "true" ]]; then
-        nrniv-core --datpath external/coreneuron/tests/integration/ring
-        diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
-    fi
+    # TODO: remove this testing of nrniv-core binary
+    #if [[ "$has_coreneuron" == "true" ]]; then
+    #    nrniv-core --datpath external/coreneuron/tests/integration/ring
+    #    diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
+    #fi
 
     # rest of the tests we need development environment
     if [[ "$has_dev_env" == "false" ]]; then
