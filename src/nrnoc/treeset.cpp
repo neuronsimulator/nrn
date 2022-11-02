@@ -6,7 +6,6 @@
 #include "multisplit.h"
 #include "nrn_ansi.h"
 #include "neuron.h"
-#include "isoc99.h"
 #include "nonvintblock.h"
 #include "nrndae_c.h"
 #include "nrniv_mf.h"
