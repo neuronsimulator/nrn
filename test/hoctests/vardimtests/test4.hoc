@@ -20,6 +20,9 @@ objref sref
 soma { sref = new SectionRef() }
 expect_err("sref.child { print secname() }")
 sref.child[1] { print secname() }
+sref.child(1) { print secname() }
+expect_err("sref.child(1,2) { print secname() }")
+expect_err("sref.child[1][2] { print secname() }")
 
 begintemplate Cell
 public soma, dend
