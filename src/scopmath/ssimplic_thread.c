@@ -7,9 +7,7 @@ extern void _modl_set_dt_thread(double, void*);
 
 static int check_state(int n, int* s, double** p);
 
-int sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double dt, sparse_fptr fun, int linflag, Datum* ppvar, Datum* thread, NrnThread *nt, Memb_list* ml, unsigned long iml);
-
-int _ss_sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double dt, sparse_fptr fun, int linflag, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, unsigned long iml) {
+int _ss_sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double dt, sparse_fptr fun, int linflag, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml) {
 	int err, i;
 	double ss_dt;
 	
@@ -39,7 +37,7 @@ if (linflag) { /*iterate linear solution*/
 	return err;
 }
 
-int _ss_derivimplicit_thread(int n, int* slist, int* dlist, double** p, derivimplicit_fptr fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, unsigned long iml) {
+int _ss_derivimplicit_thread(int n, int* slist, int* dlist, double** p, newton_fptr_t fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml) {
 	int err, i;
 	double dtsav;
 	

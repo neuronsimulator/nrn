@@ -25,12 +25,7 @@ int (*fun)();
     return 0;
 }
 
-int derivimplicit_thread(int n, int* slist, int* dlist, double** p_fudge, derivimplicit_fptr fun, 
-                                Datum* ppvar,
-                                Datum* thread,
-                                NrnThread* nt,
-                                Memb_list* ml,
-                                unsigned long iml) {
+int derivimplicit_thread(int n, int* slist, int* dlist, double** p_fudge, newton_fptr_t fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml) {
     fun(ml, iml, ppvar, thread, nt);
     return 0;
 }
