@@ -1066,8 +1066,12 @@ void hoc_object_component() {
                     // of [index] syntax for an array in this context. So we
                     // have decided to keep allowing this legacy syntax for one
                     // dimensional arrays.
+                    extern Symbol* nrn_matrix_sym;
                     if (narg == 1) {
                         hoc_push_ndim(1);
+                    } else if (narg == 2 && obp->ctemplate->sym == nrn_matrix_sym) {
+                        // Allow legacy syntax Matrix.x(i, j)
+                        hoc_push_ndim(2);
                     } else {
                         hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
                                         hoc_object_name(obp),
