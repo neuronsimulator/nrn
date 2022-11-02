@@ -223,6 +223,11 @@ struct soa {
     friend struct state_token<Storage>;
     friend struct owning_identifier<Storage>;
 
+    static_assert(detail::are_types_unique_v<non_owning_identifier<Storage>, Tags...>,
+                  "All tag types should be unique");
+    template <typename Tag>
+    static constexpr std::size_t tag_index_v = detail::index_of_type_v<Tag, Tags...>;
+
     // for tags with a runtime-specified number of copies, set that number
     void initialise_data() {
         // For all tags that have a runtime-specified number of copies, get the
@@ -448,6 +453,9 @@ struct soa {
         return std::get<Tag>(m_tags);
     }
 
+    template <typename Tag>
+    static constexpr bool has_tag_v = detail::type_in_pack_v<Tag, Tags...>;
+
     /**
      * @brief Get the offset-th element of the column named by Tag.
      *
@@ -524,16 +532,6 @@ struct soa {
                                                  std::size_t offset) const {
         return get_field_instance_helper<Tag>(*this, field_index).at(offset);
     }
-
-  private:
-    static_assert(detail::are_types_unique_v<non_owning_identifier<Storage>, Tags...>,
-                  "All tag types should be unique");
-    template <typename Tag>
-    static constexpr std::size_t tag_index_v = detail::index_of_type_v<Tag, Tags...>;
-
-  public:
-    template <typename Tag>
-    static constexpr bool has_tag_v = detail::type_in_pack_v<Tag, Tags...>;
 
     /**
      * @brief Get the column container named by Tag.
