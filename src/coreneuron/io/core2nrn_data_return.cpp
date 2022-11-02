@@ -446,75 +446,74 @@ static bool core2nrn_tqueue_item(TQItem* q, SelfEventWeightMap& sewm, NrnThread&
     bool in_sewm = false;
 
     switch (d->type()) {
-        case NetConType: {
-            NetCon* nc = (NetCon*) d;
-            assert(nc >= nt.netcons && (nc < (nt.netcons + nt.n_netcon)));
-            size_t nc_index = nc - nt.netcons;
-            (*core2nrn_NetCon_event_)(nt.id, td, nc_index);
-            break;
-        }
-        case SelfEventType: {
-            SelfEvent* se = (SelfEvent*) d;
-            Point_process* pnt = se->target_;
-            assert(pnt->_tid == nt.id);
-            int tar_type = (int) pnt->_type;
-            Memb_list* ml = nt._ml_list[tar_type];
-            if (ml->_permute) {  // if permutation, then make inverse available
-                // Doing this here because we don't know, in general, which
-                // mechanisms use SelfEvent
-                if (type2invperm.count(tar_type) == 0) {
-                    type2invperm[tar_type] = inverse_permute(ml->_permute, ml->nodecount);
-                }
+    case NetConType: {
+        NetCon* nc = (NetCon*) d;
+        assert(nc >= nt.netcons && (nc < (nt.netcons + nt.n_netcon)));
+        size_t nc_index = nc - nt.netcons;
+        (*core2nrn_NetCon_event_)(nt.id, td, nc_index);
+        break;
+    }
+    case SelfEventType: {
+        SelfEvent* se = (SelfEvent*) d;
+        Point_process* pnt = se->target_;
+        assert(pnt->_tid == nt.id);
+        int tar_type = (int) pnt->_type;
+        Memb_list* ml = nt._ml_list[tar_type];
+        if (ml->_permute) {  // if permutation, then make inverse available
+            // Doing this here because we don't know, in general, which
+            // mechanisms use SelfEvent
+            if (type2invperm.count(tar_type) == 0) {
+                type2invperm[tar_type] = inverse_permute(ml->_permute, ml->nodecount);
             }
-            double flag = se->flag_;
-            TQItem** movable = (TQItem**) (se->movable_);
-            int is_movable = (movable && *movable == q) ? 1 : 0;
-            int weight_index = se->weight_index_;
-            // the weight_index is useless on the NEURON side so we need
-            // to convert that to NetCon index  and let the NEURON side
-            // figure out the weight_index. To figure out the netcon_index
-            // construct a {weight_index : [TQItem]} here for any
-            // weight_index >= 0, otherwise send it NEURON now.
-            if (weight_index >= 0) {
-                // Potentially several SelfEvent TQItem* associated with
-                // same weight index. More importantly, collect them all
-                // so that we only need to iterate over the nt.netcons once
-                sewm[weight_index].push_back(q);
-                in_sewm = true;
+        }
+        double flag = se->flag_;
+        TQItem** movable = (TQItem**) (se->movable_);
+        int is_movable = (movable && *movable == q) ? 1 : 0;
+        int weight_index = se->weight_index_;
+        // the weight_index is useless on the NEURON side so we need
+        // to convert that to NetCon index  and let the NEURON side
+        // figure out the weight_index. To figure out the netcon_index
+        // construct a {weight_index : [TQItem]} here for any
+        // weight_index >= 0, otherwise send it NEURON now.
+        if (weight_index >= 0) {
+            // Potentially several SelfEvent TQItem* associated with
+            // same weight index. More importantly, collect them all
+            // so that we only need to iterate over the nt.netcons once
+            sewm[weight_index].push_back(q);
+            in_sewm = true;
 
-            } else {
-                int tar_index = pnt->_i_instance;  // correct for no permutation
-                if (ml->_permute) {
-                    tar_index = type2invperm[tar_type][tar_index];
-                }
-                (*core2nrn_SelfEvent_event_noweight_)(
-                    nt.id, td, tar_type, tar_index, flag, is_movable);
-                delete se;
+        } else {
+            int tar_index = pnt->_i_instance;  // correct for no permutation
+            if (ml->_permute) {
+                tar_index = type2invperm[tar_type][tar_index];
             }
-            break;
+            (*core2nrn_SelfEvent_event_noweight_)(nt.id, td, tar_type, tar_index, flag, is_movable);
+            delete se;
         }
-        case PreSynType: {
-            // nothing to transfer
-            // `d` can be cast to PreSyn*
-            break;
-        }
-        case NetParEventType: {
-            // nothing to transfer
-            break;
-        }
-        case PlayRecordEventType: {
-            // nothing to transfer
-            break;
-        }
-        default: {
-            // In particular, InputPreSyn does not appear in tqueue as it
-            // immediately fans out to NetCon.
-            std::stringstream qetype;
-            qetype << d->type();
-            hoc_execerror("core2nrn_tqueue_item -> unimplemented queue event type:",
-                          qetype.str().c_str());
-            break;
-        }
+        break;
+    }
+    case PreSynType: {
+        // nothing to transfer
+        // `d` can be cast to PreSyn*
+        break;
+    }
+    case NetParEventType: {
+        // nothing to transfer
+        break;
+    }
+    case PlayRecordEventType: {
+        // nothing to transfer
+        break;
+    }
+    default: {
+        // In particular, InputPreSyn does not appear in tqueue as it
+        // immediately fans out to NetCon.
+        std::stringstream qetype;
+        qetype << d->type();
+        hoc_execerror("core2nrn_tqueue_item -> unimplemented queue event type:",
+                      qetype.str().c_str());
+        break;
+    }
     }
     return in_sewm;
 }

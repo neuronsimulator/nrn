@@ -161,134 +161,132 @@ static void nrn2core_tqueue() {
             NrnThread& nt = nrn_threads[tid];
             for (size_t i = 0; i < ncte->type.size(); ++i) {
                 switch (ncte->type[i]) {
-                    case 0: {  // DiscreteEvent
-                               // Ignore
-                    } break;
+                case 0: {  // DiscreteEvent
+                           // Ignore
+                } break;
 
-                    case 2: {  // NetCon
-                        int ncindex = ncte->intdata[idat++];
-                        NetCon* nc = nt.netcons + ncindex;
+                case 2: {  // NetCon
+                    int ncindex = ncte->intdata[idat++];
+                    NetCon* nc = nt.netcons + ncindex;
 #ifndef CORENRN_DEBUG_QUEUE
 #define CORENRN_DEBUG_QUEUE 0
 #endif
 #if CORENRN_DEBUG_QUEUE
-                        printf("nrn2core_tqueue tid=%d i=%zd type=%d tdeliver=%g NetCon %d\n",
+                    printf("nrn2core_tqueue tid=%d i=%zd type=%d tdeliver=%g NetCon %d\n",
+                           tid,
+                           i,
+                           ncte->type[i],
+                           ncte->td[i],
+                           ncindex);
+#endif
+                    nc->send(ncte->td[i], net_cvode_instance, &nt);
+                } break;
+
+                case 3: {  // SelfEvent
+                    // target_type, target_instance, weight_index, flag movable
+
+                    // This is a nightmare and needs to be profoundly re-imagined.
+
+                    // Determine Point_process*
+                    int target_type = ncte->intdata[idat++];
+                    int target_instance = ncte->intdata[idat++];
+                    // From target_type and target_instance (mechanism data index)
+                    // compute the nt.pntprocs index.
+                    int offset = nt._pnt_offset[target_type];
+                    Point_process* pnt = nt.pntprocs + offset + target_instance;
+                    assert(pnt->_type == target_type);
+                    Memb_list* ml = nt._ml_list[target_type];
+                    if (ml->_permute) {
+                        target_instance = ml->_permute[target_instance];
+                    }
+                    assert(pnt->_i_instance == target_instance);
+                    assert(pnt->_tid == tid);
+
+                    // Determine weight_index
+                    int netcon_index = ncte->intdata[idat++];  // via the NetCon
+                    int weight_index = -1;                     // no associated netcon
+                    if (netcon_index >= 0) {
+                        weight_index = nt.netcons[netcon_index].u.weight_index_;
+                    }
+
+                    double flag = ncte->dbldata[idbldat++];
+                    int is_movable = ncte->intdata[idat++];
+                    // If the queue item is movable, then the pointer needs to be
+                    // stored in the mechanism instance movable slot by net_send.
+                    // And don't overwrite if not movable. Only one SelfEvent
+                    // for a given target instance is movable.
+                    int movable_index = nrn_i_layout(target_instance,
+                                                     ml->nodecount,
+                                                     type2movable[target_type],
+                                                     corenrn.get_prop_dparam_size()[target_type],
+                                                     corenrn.get_mech_data_layout()[target_type]);
+                    void** movable_arg = nt._vdata + ml->pdata[movable_index];
+                    TQItem* old_movable_arg = (TQItem*) (*movable_arg);
+#if CORENRN_DEBUG_QUEUE
+                    printf("nrn2core_tqueue tid=%d i=%zd type=%d tdeliver=%g SelfEvent\n",
+                           tid,
+                           i,
+                           ncte->type[i],
+                           ncte->td[i]);
+                    printf(
+                        "  target_type=%d pnt data index=%d flag=%g is_movable=%d netcon index "
+                        "for weight=%d\n",
+                        target_type,
+                        target_instance,
+                        flag,
+                        is_movable,
+                        netcon_index);
+#endif
+                    net_send(movable_arg, weight_index, pnt, ncte->td[i], flag);
+                    if (!is_movable) {
+                        *movable_arg = (void*) old_movable_arg;
+                    }
+                } break;
+
+                case 4: {  // PreSyn
+                    int type = ncte->intdata[idat++];
+                    if (type == 0) {  // CoreNEURON PreSyn
+                        int ps_index = ncte->intdata[idat++];
+#if CORENRN_DEBUG_QUEUE
+                        printf("nrn2core_tqueue tid=%d i=%zd type=%d tdeliver=%g PreSyn %d\n",
                                tid,
                                i,
                                ncte->type[i],
                                ncte->td[i],
-                               ncindex);
+                               ps_index);
 #endif
-                        nc->send(ncte->td[i], net_cvode_instance, &nt);
-                    } break;
+                        PreSyn* ps = nt.presyns + ps_index;
+                        int gid = ps->output_index_;
+                        // Following assumes already sent to other machines.
+                        ps->output_index_ = -1;
+                        ps->send(ncte->td[i], net_cvode_instance, &nt);
+                        ps->output_index_ = gid;
+                    } else {  // CoreNEURON InputPreSyn
+                        int gid = ncte->intdata[idat++];
+                        InputPreSyn* ps = gid2in[gid];
+                        ps->send(ncte->td[i], net_cvode_instance, &nt);
+                    }
+                } break;
 
-                    case 3: {  // SelfEvent
-                        // target_type, target_instance, weight_index, flag movable
+                case 6: {  // PlayRecordEvent
+                           // Ignore as phase2 handles analogous to checkpoint restore.
+                } break;
 
-                        // This is a nightmare and needs to be profoundly re-imagined.
-
-                        // Determine Point_process*
-                        int target_type = ncte->intdata[idat++];
-                        int target_instance = ncte->intdata[idat++];
-                        // From target_type and target_instance (mechanism data index)
-                        // compute the nt.pntprocs index.
-                        int offset = nt._pnt_offset[target_type];
-                        Point_process* pnt = nt.pntprocs + offset + target_instance;
-                        assert(pnt->_type == target_type);
-                        Memb_list* ml = nt._ml_list[target_type];
-                        if (ml->_permute) {
-                            target_instance = ml->_permute[target_instance];
-                        }
-                        assert(pnt->_i_instance == target_instance);
-                        assert(pnt->_tid == tid);
-
-                        // Determine weight_index
-                        int netcon_index = ncte->intdata[idat++];  // via the NetCon
-                        int weight_index = -1;                     // no associated netcon
-                        if (netcon_index >= 0) {
-                            weight_index = nt.netcons[netcon_index].u.weight_index_;
-                        }
-
-                        double flag = ncte->dbldata[idbldat++];
-                        int is_movable = ncte->intdata[idat++];
-                        // If the queue item is movable, then the pointer needs to be
-                        // stored in the mechanism instance movable slot by net_send.
-                        // And don't overwrite if not movable. Only one SelfEvent
-                        // for a given target instance is movable.
-                        int movable_index =
-                            nrn_i_layout(target_instance,
-                                         ml->nodecount,
-                                         type2movable[target_type],
-                                         corenrn.get_prop_dparam_size()[target_type],
-                                         corenrn.get_mech_data_layout()[target_type]);
-                        void** movable_arg = nt._vdata + ml->pdata[movable_index];
-                        TQItem* old_movable_arg = (TQItem*) (*movable_arg);
+                case 7: {  // NetParEvent
 #if CORENRN_DEBUG_QUEUE
-                        printf("nrn2core_tqueue tid=%d i=%zd type=%d tdeliver=%g SelfEvent\n",
-                               tid,
-                               i,
-                               ncte->type[i],
-                               ncte->td[i]);
-                        printf(
-                            "  target_type=%d pnt data index=%d flag=%g is_movable=%d netcon index "
-                            "for weight=%d\n",
-                            target_type,
-                            target_instance,
-                            flag,
-                            is_movable,
-                            netcon_index);
+                    printf("nrn2core_tqueue tid=%d i=%zd type=%d tdeliver=%g NetParEvent\n",
+                           tid,
+                           i,
+                           ncte->type[i],
+                           ncte->td[i]);
 #endif
-                        net_send(movable_arg, weight_index, pnt, ncte->td[i], flag);
-                        if (!is_movable) {
-                            *movable_arg = (void*) old_movable_arg;
-                        }
-                    } break;
+                } break;
 
-                    case 4: {  // PreSyn
-                        int type = ncte->intdata[idat++];
-                        if (type == 0) {  // CoreNEURON PreSyn
-                            int ps_index = ncte->intdata[idat++];
-#if CORENRN_DEBUG_QUEUE
-                            printf("nrn2core_tqueue tid=%d i=%zd type=%d tdeliver=%g PreSyn %d\n",
-                                   tid,
-                                   i,
-                                   ncte->type[i],
-                                   ncte->td[i],
-                                   ps_index);
-#endif
-                            PreSyn* ps = nt.presyns + ps_index;
-                            int gid = ps->output_index_;
-                            // Following assumes already sent to other machines.
-                            ps->output_index_ = -1;
-                            ps->send(ncte->td[i], net_cvode_instance, &nt);
-                            ps->output_index_ = gid;
-                        } else {  // CoreNEURON InputPreSyn
-                            int gid = ncte->intdata[idat++];
-                            InputPreSyn* ps = gid2in[gid];
-                            ps->send(ncte->td[i], net_cvode_instance, &nt);
-                        }
-                    } break;
-
-                    case 6: {  // PlayRecordEvent
-                               // Ignore as phase2 handles analogous to checkpoint restore.
-                    } break;
-
-                    case 7: {  // NetParEvent
-#if CORENRN_DEBUG_QUEUE
-                        printf("nrn2core_tqueue tid=%d i=%zd type=%d tdeliver=%g NetParEvent\n",
-                               tid,
-                               i,
-                               ncte->type[i],
-                               ncte->td[i]);
-#endif
-                    } break;
-
-                    default: {
-                        std::stringstream qetype;
-                        qetype << ncte->type[i];
-                        hoc_execerror("Unimplemented transfer queue event type:",
-                                      qetype.str().c_str());
-                    } break;
+                default: {
+                    std::stringstream qetype;
+                    qetype << ncte->type[i];
+                    hoc_execerror("Unimplemented transfer queue event type:", qetype.str().c_str());
+                } break;
                 }
             }
             delete ncte;

@@ -666,60 +666,60 @@ void CheckPoints::write_tqueue(TQItem* q, NrnThread& nt, FileHandler& fh) const 
     fh.write_array(&q->t_, 1);
 
     switch (d->type()) {
-        case NetConType: {
-            NetCon* nc = (NetCon*) d;
-            assert(nc >= nt.netcons && (nc < (nt.netcons + nt.n_netcon)));
-            fh << (nc - nt.netcons) << "\n";
-            break;
-        }
-        case SelfEventType: {
-            SelfEvent* se = (SelfEvent*) d;
-            fh << int(se->target_->_type) << "\n";
-            fh << se->target_ - nt.pntprocs << "\n";  // index of nrnthread.pntprocs
-            fh << se->target_->_i_instance << "\n";   // not needed except for assert check
-            fh.write_array(&se->flag_, 1);
-            fh << (se->movable_ - nt._vdata) << "\n";  // DANGEROUS?
-            fh << se->weight_index_ << "\n";
-            // printf("    %d %ld %d %g %ld %d\n", se->target_->_type, se->target_ - nt.pntprocs,
-            // se->target_->_i_instance, se->flag_, se->movable_ - nt._vdata, se->weight_index_);
-            break;
-        }
-        case PreSynType: {
-            PreSyn* ps = (PreSyn*) d;
-            assert(ps >= nt.presyns && (ps < (nt.presyns + nt.n_presyn)));
-            fh << (ps - nt.presyns) << "\n";
-            break;
-        }
-        case NetParEventType: {
-            // nothing extra to write
-            break;
-        }
-        case PlayRecordEventType: {
-            PlayRecord* pr = ((PlayRecordEvent*) d)->plr_;
-            fh << pr->type() << "\n";
-            if (pr->type() == VecPlayContinuousType) {
-                VecPlayContinuous* vpc = (VecPlayContinuous*) pr;
-                int ix = -1;
-                for (int i = 0; i < nt.n_vecplay; ++i) {
-                    // if too many for fast search, put ix in the instance
-                    if (nt._vecplay[i] == (void*) vpc) {
-                        ix = i;
-                        break;
-                    }
+    case NetConType: {
+        NetCon* nc = (NetCon*) d;
+        assert(nc >= nt.netcons && (nc < (nt.netcons + nt.n_netcon)));
+        fh << (nc - nt.netcons) << "\n";
+        break;
+    }
+    case SelfEventType: {
+        SelfEvent* se = (SelfEvent*) d;
+        fh << int(se->target_->_type) << "\n";
+        fh << se->target_ - nt.pntprocs << "\n";  // index of nrnthread.pntprocs
+        fh << se->target_->_i_instance << "\n";   // not needed except for assert check
+        fh.write_array(&se->flag_, 1);
+        fh << (se->movable_ - nt._vdata) << "\n";  // DANGEROUS?
+        fh << se->weight_index_ << "\n";
+        // printf("    %d %ld %d %g %ld %d\n", se->target_->_type, se->target_ - nt.pntprocs,
+        // se->target_->_i_instance, se->flag_, se->movable_ - nt._vdata, se->weight_index_);
+        break;
+    }
+    case PreSynType: {
+        PreSyn* ps = (PreSyn*) d;
+        assert(ps >= nt.presyns && (ps < (nt.presyns + nt.n_presyn)));
+        fh << (ps - nt.presyns) << "\n";
+        break;
+    }
+    case NetParEventType: {
+        // nothing extra to write
+        break;
+    }
+    case PlayRecordEventType: {
+        PlayRecord* pr = ((PlayRecordEvent*) d)->plr_;
+        fh << pr->type() << "\n";
+        if (pr->type() == VecPlayContinuousType) {
+            VecPlayContinuous* vpc = (VecPlayContinuous*) pr;
+            int ix = -1;
+            for (int i = 0; i < nt.n_vecplay; ++i) {
+                // if too many for fast search, put ix in the instance
+                if (nt._vecplay[i] == (void*) vpc) {
+                    ix = i;
+                    break;
                 }
-                assert(ix >= 0);
-                fh << ix << "\n";
-            } else {
-                assert(0);
             }
-            break;
-        }
-        default: {
-            // In particular, InputPreSyn does not appear in tqueue as it
-            // immediately fans out to NetCon.
+            assert(ix >= 0);
+            fh << ix << "\n";
+        } else {
             assert(0);
-            break;
         }
+        break;
+    }
+    default: {
+        // In particular, InputPreSyn does not appear in tqueue as it
+        // immediately fans out to NetCon.
+        assert(0);
+        break;
+    }
     }
 }
 
@@ -729,54 +729,54 @@ void CheckPoints::restore_tqitem(int type,
     // printf("restore tqitem type=%d time=%.20g\n", type, time);
 
     switch (type) {
-        case NetConType: {
-            auto e = static_cast<Phase2::NetConType_*>(event.get());
-            // printf("  NetCon %d\n", netcon_index);
-            NetCon* nc = nt.netcons + e->netcon_index;
-            nc->send(e->time, net_cvode_instance, &nt);
-            break;
-        }
-        case SelfEventType: {
-            auto e = static_cast<Phase2::SelfEventType_*>(event.get());
-            if (e->target_type == patstimtype) {
-                if (nt.id == 0) {
-                    patstim_te = e->time;
-                }
-                break;
+    case NetConType: {
+        auto e = static_cast<Phase2::NetConType_*>(event.get());
+        // printf("  NetCon %d\n", netcon_index);
+        NetCon* nc = nt.netcons + e->netcon_index;
+        nc->send(e->time, net_cvode_instance, &nt);
+        break;
+    }
+    case SelfEventType: {
+        auto e = static_cast<Phase2::SelfEventType_*>(event.get());
+        if (e->target_type == patstimtype) {
+            if (nt.id == 0) {
+                patstim_te = e->time;
             }
-            Point_process* pnt = nt.pntprocs + e->point_proc_instance;
-            // printf("  SelfEvent %d %d %d %g %d %d\n", target_type, point_proc_instance,
-            // target_instance, flag, movable, weight_index);
-            nrn_assert(e->target_instance == pnt->_i_instance);
-            nrn_assert(e->target_type == pnt->_type);
-            net_send(nt._vdata + e->movable, e->weight_index, pnt, e->time, e->flag);
             break;
         }
-        case PreSynType: {
-            auto e = static_cast<Phase2::PreSynType_*>(event.get());
-            // printf("  PreSyn %d\n", presyn_index);
-            PreSyn* ps = nt.presyns + e->presyn_index;
-            int gid = ps->output_index_;
-            ps->output_index_ = -1;
-            ps->send(e->time, net_cvode_instance, &nt);
-            ps->output_index_ = gid;
-            break;
-        }
-        case NetParEventType: {
-            // nothing extra to read
-            // printf("  NetParEvent\n");
-            break;
-        }
-        case PlayRecordEventType: {
-            auto e = static_cast<Phase2::PlayRecordEventType_*>(event.get());
-            VecPlayContinuous* vpc = (VecPlayContinuous*) (nt._vecplay[e->vecplay_index]);
-            vpc->e_->send(e->time, net_cvode_instance, &nt);
-            break;
-        }
-        default: {
-            assert(0);
-            break;
-        }
+        Point_process* pnt = nt.pntprocs + e->point_proc_instance;
+        // printf("  SelfEvent %d %d %d %g %d %d\n", target_type, point_proc_instance,
+        // target_instance, flag, movable, weight_index);
+        nrn_assert(e->target_instance == pnt->_i_instance);
+        nrn_assert(e->target_type == pnt->_type);
+        net_send(nt._vdata + e->movable, e->weight_index, pnt, e->time, e->flag);
+        break;
+    }
+    case PreSynType: {
+        auto e = static_cast<Phase2::PreSynType_*>(event.get());
+        // printf("  PreSyn %d\n", presyn_index);
+        PreSyn* ps = nt.presyns + e->presyn_index;
+        int gid = ps->output_index_;
+        ps->output_index_ = -1;
+        ps->send(e->time, net_cvode_instance, &nt);
+        ps->output_index_ = gid;
+        break;
+    }
+    case NetParEventType: {
+        // nothing extra to read
+        // printf("  NetParEvent\n");
+        break;
+    }
+    case PlayRecordEventType: {
+        auto e = static_cast<Phase2::PlayRecordEventType_*>(event.get());
+        VecPlayContinuous* vpc = (VecPlayContinuous*) (nt._vecplay[e->vecplay_index]);
+        vpc->e_->send(e->time, net_cvode_instance, &nt);
+        break;
+    }
+    default: {
+        assert(0);
+        break;
+    }
     }
 }
 

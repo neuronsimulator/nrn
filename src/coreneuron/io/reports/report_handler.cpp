@@ -38,29 +38,28 @@ void ReportHandler::create_report(double dt, double tstop, double delay) {
         VarsToReport vars_to_report;
         bool is_soma_target;
         switch (m_report_config.type) {
-            case IMembraneReport:
-                report_variable = nt.nrn_fast_imem->nrn_sav_rhs;
-            case SectionReport:
-                vars_to_report =
-                    get_section_vars_to_report(nt,
-                                               m_report_config.target,
-                                               report_variable,
-                                               m_report_config.section_type,
-                                               m_report_config.section_all_compartments);
-                is_soma_target = m_report_config.section_type == SectionType::Soma ||
-                                 m_report_config.section_type == SectionType::Cell;
-                register_section_report(nt, m_report_config, vars_to_report, is_soma_target);
-                break;
-            case SummationReport:
-                vars_to_report = get_summation_vars_to_report(nt,
-                                                              m_report_config.target,
-                                                              m_report_config,
-                                                              nodes_to_gid);
-                register_custom_report(nt, m_report_config, vars_to_report);
-                break;
-            default:
-                vars_to_report = get_synapse_vars_to_report(nt, m_report_config, nodes_to_gid);
-                register_custom_report(nt, m_report_config, vars_to_report);
+        case IMembraneReport:
+            report_variable = nt.nrn_fast_imem->nrn_sav_rhs;
+        case SectionReport:
+            vars_to_report = get_section_vars_to_report(nt,
+                                                        m_report_config.target,
+                                                        report_variable,
+                                                        m_report_config.section_type,
+                                                        m_report_config.section_all_compartments);
+            is_soma_target = m_report_config.section_type == SectionType::Soma ||
+                             m_report_config.section_type == SectionType::Cell;
+            register_section_report(nt, m_report_config, vars_to_report, is_soma_target);
+            break;
+        case SummationReport:
+            vars_to_report = get_summation_vars_to_report(nt,
+                                                          m_report_config.target,
+                                                          m_report_config,
+                                                          nodes_to_gid);
+            register_custom_report(nt, m_report_config, vars_to_report);
+            break;
+        default:
+            vars_to_report = get_synapse_vars_to_report(nt, m_report_config, nodes_to_gid);
+            register_custom_report(nt, m_report_config, vars_to_report);
         }
         if (!vars_to_report.empty()) {
             auto report_event = std::make_unique<ReportEvent>(dt,
@@ -101,20 +100,20 @@ void ReportHandler::register_custom_report(const NrnThread& nt,
 
 std::string getSectionTypeStr(SectionType type) {
     switch (type) {
-        case All:
-            return "All";
-        case Cell:
-        case Soma:
-            return "soma";
-        case Axon:
-            return "axon";
-        case Dendrite:
-            return "dend";
-        case Apical:
-            return "apic";
-        default:
-            std::cerr << "SectionType not handled in getSectionTypeStr" << std::endl;
-            nrn_abort(1);
+    case All:
+        return "All";
+    case Cell:
+    case Soma:
+        return "soma";
+    case Axon:
+        return "axon";
+    case Dendrite:
+        return "dend";
+    case Apical:
+        return "apic";
+    default:
+        std::cerr << "SectionType not handled in getSectionTypeStr" << std::endl;
+        nrn_abort(1);
     }
 }
 

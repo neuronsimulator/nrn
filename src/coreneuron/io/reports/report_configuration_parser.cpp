@@ -57,49 +57,49 @@ void parse_filter_string(const std::string& filter, ReportConfiguration& config)
 void register_target_type(ReportConfiguration& report, ReportType report_type) {
     report.type = report_type;
     switch (report.target_type) {
-        case TargetType::Compartment:
-            report.section_type = All;
-            report.section_all_compartments = true;
-            break;
-        case TargetType::Cell:
-            report.section_type = Cell;
-            report.section_all_compartments = false;
-            break;
-        case TargetType::SectionSoma:
-            report.section_type = Soma;
-            report.section_all_compartments = false;
-            break;
-        case TargetType::SectionSomaAll:
-            report.section_type = Soma;
-            report.section_all_compartments = true;
-            break;
-        case TargetType::SectionAxon:
-            report.section_type = Axon;
-            report.section_all_compartments = false;
-            break;
-        case TargetType::SectionAxonAll:
-            report.section_type = Axon;
-            report.section_all_compartments = true;
-            break;
-        case TargetType::SectionDendrite:
-            report.section_type = Dendrite;
-            report.section_all_compartments = false;
-            break;
-        case TargetType::SectionDendriteAll:
-            report.section_type = Dendrite;
-            report.section_all_compartments = true;
-            break;
-        case TargetType::SectionApical:
-            report.section_type = Apical;
-            report.section_all_compartments = false;
-            break;
-        case TargetType::SectionApicalAll:
-            report.section_type = Apical;
-            report.section_all_compartments = true;
-            break;
-        default:
-            std::cerr << "Report error: unsupported target type" << std::endl;
-            nrn_abort(1);
+    case TargetType::Compartment:
+        report.section_type = All;
+        report.section_all_compartments = true;
+        break;
+    case TargetType::Cell:
+        report.section_type = Cell;
+        report.section_all_compartments = false;
+        break;
+    case TargetType::SectionSoma:
+        report.section_type = Soma;
+        report.section_all_compartments = false;
+        break;
+    case TargetType::SectionSomaAll:
+        report.section_type = Soma;
+        report.section_all_compartments = true;
+        break;
+    case TargetType::SectionAxon:
+        report.section_type = Axon;
+        report.section_all_compartments = false;
+        break;
+    case TargetType::SectionAxonAll:
+        report.section_type = Axon;
+        report.section_all_compartments = true;
+        break;
+    case TargetType::SectionDendrite:
+        report.section_type = Dendrite;
+        report.section_all_compartments = false;
+        break;
+    case TargetType::SectionDendriteAll:
+        report.section_type = Dendrite;
+        report.section_all_compartments = true;
+        break;
+    case TargetType::SectionApical:
+        report.section_type = Apical;
+        report.section_all_compartments = false;
+        break;
+    case TargetType::SectionApicalAll:
+        report.section_type = Apical;
+        report.section_all_compartments = true;
+        break;
+    default:
+        std::cerr << "Report error: unsupported target type" << std::endl;
+        nrn_abort(1);
     }
 }
 

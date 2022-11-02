@@ -79,27 +79,27 @@ struct SetupThreads {
         corenrn_param.cuda_interface = false;
         corenrn_param.gpu = false;
         switch (impl) {
-            case SolverImplementation::CellPermute0_GPU:
-                corenrn_param.gpu = true;
-                [[fallthrough]];
-            case SolverImplementation::CellPermute0_CPU:
-                interleave_permute_type = 0;
-                break;
-            case SolverImplementation::CellPermute1_GPU:
-                corenrn_param.gpu = true;
-                [[fallthrough]];
-            case SolverImplementation::CellPermute1_CPU:
-                interleave_permute_type = 1;
-                break;
-            case SolverImplementation::CellPermute2_CUDA:
-                corenrn_param.cuda_interface = true;
-                [[fallthrough]];
-            case SolverImplementation::CellPermute2_GPU:
-                corenrn_param.gpu = true;
-                [[fallthrough]];
-            case SolverImplementation::CellPermute2_CPU:
-                interleave_permute_type = 2;
-                break;
+        case SolverImplementation::CellPermute0_GPU:
+            corenrn_param.gpu = true;
+            [[fallthrough]];
+        case SolverImplementation::CellPermute0_CPU:
+            interleave_permute_type = 0;
+            break;
+        case SolverImplementation::CellPermute1_GPU:
+            corenrn_param.gpu = true;
+            [[fallthrough]];
+        case SolverImplementation::CellPermute1_CPU:
+            interleave_permute_type = 1;
+            break;
+        case SolverImplementation::CellPermute2_CUDA:
+            corenrn_param.cuda_interface = true;
+            [[fallthrough]];
+        case SolverImplementation::CellPermute2_GPU:
+            corenrn_param.gpu = true;
+            [[fallthrough]];
+        case SolverImplementation::CellPermute2_CPU:
+            interleave_permute_type = 2;
+            break;
         }
         use_solve_interleave = interleave_permute_type > 0;
         nrn_threads_create(config.num_threads);
