@@ -115,7 +115,7 @@ static void prmat(SparseObj* so);
 static void initeqn(SparseObj* so, unsigned maxeqn);
 static void free_elm(SparseObj* so);
 static Elm* getelm(SparseObj* so,unsigned row, unsigned col, Elm* newElm);
-static void create_coef_list(SparseObj* so, int n, sparse_fptr fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, unsigned long iml);
+static void create_coef_list(SparseObj* so, int n, sparse_fptr fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml);
 static void init_coef_list(SparseObj* so);
 static void init_minorder(SparseObj* so);
 static void increase_order(SparseObj* so, unsigned row);
@@ -139,7 +139,7 @@ create_coef_list makes a list for fast setup, does minimum ordering and
 ensures all elements needed are present */
 /* this could easily be made recursive but it isn't right now */
 
-int sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double dt, sparse_fptr fun, int linflag, Datum* ppvar, Datum* thread, NrnThread *nt, Memb_list* ml, unsigned long iml) {
+int sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double dt, sparse_fptr fun, int linflag, Datum* ppvar, Datum* thread, NrnThread *nt, Memb_list* ml, size_t iml) {
 #define s_(arg) *p[s[arg]]
 #define d_(arg) *p[d[arg]]
 	int i, j, ierr;
@@ -185,7 +185,7 @@ if (!linflag && s_(i-1) < 0.) { s_(i-1) = 0.; }
 }
 
 /* for solving ax=b */
-int _cvode_sparse_thread(void** v, int n, int* x, double** p, sparse_fptr fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, unsigned long iml) {
+int _cvode_sparse_thread(void** v, int n, int* x, double** p, sparse_fptr fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml) {
 #define x_(arg) *p[x[arg]]
 	int i, j, ierr;
 	SparseObj* so;
@@ -463,7 +463,7 @@ double* _nrn_thread_getelm(SparseObj* so, int row, int col) {
 	return &el->value;
 }
 
-static void create_coef_list(SparseObj* so, int n, sparse_fptr fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, unsigned long iml) {
+static void create_coef_list(SparseObj* so, int n, sparse_fptr fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml) {
 	initeqn(so, (unsigned)n);
 	so->phase = 1;
 	so->ngetcall = 0;

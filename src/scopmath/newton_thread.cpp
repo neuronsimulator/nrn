@@ -52,14 +52,12 @@
 /*		      buildjacobian, crout, solve	      */
 /*                                                            */
 /*------------------------------------------------------------*/
-typedef int (*FUN)(Memb_list*, unsigned long, Datum *, Datum *, NrnThread *);
-
 static void nrn_buildjacobian_thread(NewtonSpace* ns,
-  int n, int* index, double** x, FUN pfunc,
-  double* value, double** jacobian, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, unsigned long iml);
+  int n, int* index, double** x, newton_fptr_t pfunc,
+  double* value, double** jacobian, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml);
 
 int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double** x,
- FUN pfunc, double* value, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, unsigned long iml) {
+ newton_fptr_t pfunc, double* value, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml) {
     int i, count = 0, error, *perm;
     double **jacobian, *delta_x, change = 1.0, max_dev, temp;
 
@@ -176,7 +174,7 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double** x,
 #define max(x, y) (fabs(x) > y ? x : y)
 
 static void nrn_buildjacobian_thread(NewtonSpace* ns,
-  int n, int* index, double** x, FUN pfunc,
+  int n, int* index, double** x, newton_fptr_t pfunc,
   double* value, double** jacobian, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, unsigned long iml) {
     int i, j;
     double increment, *high_value, *low_value;
