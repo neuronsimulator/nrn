@@ -3,8 +3,11 @@
 // compiled as C.
 #ifdef __cplusplus
 #include "hocdec.h" // the real Datum
+#include <cstddef>
+using std::size_t;
 extern "C" {
 #else
+#include "stddef.h"
 // All we need is for Datum* to pass untouched through C
 typedef struct Datum Datum;
 #endif
@@ -33,8 +36,8 @@ int freematrix(double** matrix);
 int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm);
 void nrn_scopmath_solve_thread(int n, double** a,
  double* b, int* perm, double* p, int* y);
-int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double** x,
- int (*pfunc)(Memb_list*, unsigned long, Datum *, Datum *, NrnThread *), double* value, void* ppvar, void* thread, void* nt, Memb_list* ml, unsigned long iml);
+typedef int (*newton_fptr_t)(Memb_list*, size_t, Datum*, Datum*, NrnThread*);
+int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double** x,  newton_fptr_t pfunc, double* value, void* ppvar, void* thread, void* nt, Memb_list* ml, size_t iml);
 NewtonSpace* nrn_cons_newtonspace(int n);
 void nrn_destroy_newtonspace(NewtonSpace* ns);
 

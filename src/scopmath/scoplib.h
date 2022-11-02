@@ -154,28 +154,18 @@ typedef struct NrnThread NrnThread;
 typedef struct SparseObj SparseObj;
 int _cvode_sparse(void**, int, int*, double**, int (*)(), double**);
 int derivimplicit(int, int, int*, int*, double*, double*, double, int (*)(), double**);
-typedef int (*derivimplicit_fptr)(Memb_list*, unsigned long, Datum*, Datum*, NrnThread*);
-int derivimplicit_thread(int,
-                                int*,
-                                int*,
-                                double**, // not used
-                                derivimplicit_fptr,
-                                Datum*,
-                                Datum*,
-                                NrnThread*,
-                                Memb_list*,
-                                unsigned long);
+int derivimplicit_thread(int, int*, int*, double** /* not used */, newton_fptr_t, Datum*, Datum*, NrnThread*, Memb_list*, size_t);
 double* _getelm(int, int);
 void _nrn_destroy_sparseobj_thread(SparseObj*);
 double* _nrn_thread_getelm(SparseObj*, int, int);
 int sparse(void**, int, int*, int*, double**, double*, double, int (*)(), double**, int);
-typedef int (*sparse_fptr)(void*, double*, Datum*, Datum*, NrnThread*, Memb_list*, unsigned long);
-int _cvode_sparse_thread(void** v, int n, int* x, double** p, sparse_fptr fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, unsigned long iml);
-int sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double dt, sparse_fptr fun, int linflag, Datum* ppvar, Datum* thread, NrnThread *nt, Memb_list* ml, unsigned long iml);
+typedef int (*sparse_fptr)(void*, double*, Datum*, Datum*, NrnThread*, Memb_list*, size_t);
+int _cvode_sparse_thread(void** v, int n, int* x, double** p, sparse_fptr fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml);
+int sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double dt, sparse_fptr fun, int linflag, Datum* ppvar, Datum* thread, NrnThread *nt, Memb_list* ml, size_t iml);
 int _ss_derivimplicit(int, int, int*, int*, double*, double*, double, int (*)(), double**);
-int _ss_derivimplicit_thread(int n, int* slist, int* dlist, double** p, derivimplicit_fptr fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, unsigned long iml);
+int _ss_derivimplicit_thread(int n, int* slist, int* dlist, double** p, newton_fptr_t fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml);
 int _ss_sparse(void**, int, int*, int*, double**, double*, double, int (*)(), double**, int);
-int _ss_sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double dt, sparse_fptr fun, int linflag, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, unsigned long iml);
+int _ss_sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double dt, sparse_fptr fun, int linflag, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml);
 #ifdef __cplusplus
 } // extern "C"
 #endif
