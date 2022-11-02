@@ -228,21 +228,20 @@ struct soa {
     template <typename Tag>
     static constexpr std::size_t tag_index_v = detail::index_of_type_v<Tag, Tags...>;
 
+    template <typename Tag>
+    void initialise_data_helper(Tag const& tag) {
+        if constexpr (detail::has_num_instances_v<Tag>) {
+            auto& vector_of_vectors = std::get<tag_index_v<Tag>>(m_data);
+            assert(vector_of_vectors.empty());
+            vector_of_vectors.resize(tag.num_instances());
+        }
+    }
+
     // for tags with a runtime-specified number of copies, set that number
     void initialise_data() {
         // For all tags that have a runtime-specified number of copies, get the
         // vector<vector<T>> and resize it to hold num_instances() vector<T>
-        (
-            [this](auto const& tag) {
-                using Tag = std::decay_t<decltype(tag)>;
-                if constexpr (detail::has_num_instances_v<Tag>) {
-                    constexpr std::size_t tag_index = tag_index_v<Tag>;
-                    auto& vector_of_vectors = std::get<tag_index>(m_data);
-                    assert(vector_of_vectors.empty());
-                    vector_of_vectors.resize(tag.num_instances());
-                }
-            }(get_tag<Tags>()),
-            ...);
+        (initialise_data_helper(get_tag<Tags>()), ...);
     }
 
     template <typename Tag, typename This, typename Callable>
