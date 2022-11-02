@@ -30,9 +30,15 @@ def test(files, correct_data):
 
         #        os.system('python do_test.py %s %s' % (os.path.join('tests', f), output_file))
 
+        env = os.environ.copy()
+        try:
+            env[env['NRN_SANITIZER_PRELOAD_VAR']] = env['NRN_SANITIZER_PRELOAD_VAL']
+        except:
+            pass
+
         try:
             outp = subprocess.check_output(
-                [sys.executable, "do_test.py", os.path.join("tests", f), output_file]
+                [sys.executable, "do_test.py", os.path.join("tests", f), output_file], env=env, shell=False,
             )
             sobj = re.search(r"<BAS_RL (\d*) BAS_RL>", outp.decode("utf-8"), re.M)
             rlen = int(sobj.group(1))
