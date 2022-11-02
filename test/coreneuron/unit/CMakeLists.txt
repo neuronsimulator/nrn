@@ -6,9 +6,7 @@
 
 include(TestHelpers)
 
-include_directories(
-        ${PROJECT_SOURCE_DIR}/src
-                    ${Boost_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
 
 # Add compiler flags that should apply to all CoreNEURON targets, but which should not leak into
 # other included projects.

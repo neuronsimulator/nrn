@@ -2,10 +2,10 @@
 # are now set to the version that we should claim compatibility with when compiling translated MOD
 # files. Generate a header under a special `generated` prefix in the build directory, so that
 # -I/path/to/src -I/path/to/build/generated is safe (headers from the source prefix are copied
-# elsewhere under the build prefix, so there is scope for confusion)
-# This is currently used when MOD files are translated on coreneuron side
+# elsewhere under the build prefix, so there is scope for confusion) This is currently used when MOD
+# files are translated on coreneuron side
 configure_file(${PROJECT_SOURCE_DIR}/src/coreneuron/config/neuron_version.hpp.in
-        ${PROJECT_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp)
+               ${PROJECT_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp)
 
 # =============================================================================
 # Include common cmake modules
@@ -40,11 +40,11 @@ option(CORENRN_ENABLE_LEGACY_UNITS "Enable legacy FARADAY, R, etc" OFF)
 option(CORENRN_ENABLE_PRCELLSTATE "Enable NRN_PRCELLSTATE debug feature" OFF)
 
 set(CORENRN_NMODL_DIR
-        ""
-        CACHE PATH "Path to nmodl source-to-source compiler installation")
+    ""
+    CACHE PATH "Path to nmodl source-to-source compiler installation")
 set(LIKWID_DIR
-        ""
-        CACHE PATH "Path to likwid performance analysis suite")
+    ""
+    CACHE PATH "Path to likwid performance analysis suite")
 
 # Older CMake versions label NVHPC as PGI, newer ones label it as NVHPC.
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "PGI" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "NVHPC")
@@ -61,9 +61,9 @@ if(CORENRN_ENABLE_GPU)
   # Fail hard and early if we don't have the PGI/NVHPC compiler.
   if(NOT CORENRN_HAVE_NVHPC_COMPILER)
     message(
-            FATAL_ERROR
-            "GPU support is available via OpenACC using PGI/NVIDIA compilers."
-            " Use NVIDIA HPC SDK with -DCMAKE_C_COMPILER=nvc -DCMAKE_CUDA_COMPILER=nvcc -DCMAKE_CXX_COMPILER=nvc++"
+      FATAL_ERROR
+        "GPU support is available via OpenACC using PGI/NVIDIA compilers."
+        " Use NVIDIA HPC SDK with -DCMAKE_C_COMPILER=nvc -DCMAKE_CUDA_COMPILER=nvcc -DCMAKE_CXX_COMPILER=nvc++"
     )
   endif()
 
@@ -106,8 +106,8 @@ if(CORENRN_ENABLE_GPU)
   if(${CMAKE_VERSION} VERSION_LESS 3.18)
     foreach(cuda_arch ${CMAKE_CUDA_ARCHITECTURES})
       string(
-              APPEND CMAKE_CUDA_FLAGS
-              " --generate-code=arch=compute_${cuda_arch},code=[compute_${cuda_arch},sm_${cuda_arch}]")
+        APPEND CMAKE_CUDA_FLAGS
+        " --generate-code=arch=compute_${cuda_arch},code=[compute_${cuda_arch},sm_${cuda_arch}]")
     endforeach()
   endif()
 
@@ -117,8 +117,8 @@ if(CORENRN_ENABLE_GPU)
   # 3085 : Warning on redeclaring a __host__ function as __host__ __device__
   # ~~~
   set(CMAKE_CUDA_FLAGS
-          "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr -Xcudafe --diag_suppress=3057,--diag_suppress=3085"
-          )
+      "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr -Xcudafe --diag_suppress=3057,--diag_suppress=3085"
+  )
 
   if(CORENRN_ENABLE_NMODL)
     # NMODL supports both OpenACC and OpenMP target offload
@@ -140,7 +140,7 @@ set(CN_PROJECT_VERSION ${PROJECT_VERSION})
 
 # generate file with version number from git and nrnunits.lib file path
 configure_file(${PROJECT_SOURCE_DIR}/src/coreneuron/config/config.cpp.in
-        ${PROJECT_BINARY_DIR}/coreneuron/config/config.cpp @ONLY)
+               ${PROJECT_BINARY_DIR}/coreneuron/config/config.cpp @ONLY)
 
 # =============================================================================
 # Include cmake modules after cmake options
@@ -271,11 +271,11 @@ endif()
 list(APPEND CORENRN_COMPILE_DEFS CORENEURON_USE_LEGACY_UNITS=${CORENRN_USE_LEGACY_UNITS})
 # Propagate Legacy Units flag to backends.
 set(MOD2C_ENABLE_LEGACY_UNITS
-        ${CORENRN_ENABLE_LEGACY_UNITS}
-        CACHE BOOL "" FORCE)
+    ${CORENRN_ENABLE_LEGACY_UNITS}
+    CACHE BOOL "" FORCE)
 set(NMODL_ENABLE_LEGACY_UNITS
-        ${CORENRN_ENABLE_LEGACY_UNITS}
-        CACHE BOOL "" FORCE)
+    ${CORENRN_ENABLE_LEGACY_UNITS}
+    CACHE BOOL "" FORCE)
 
 if(CORENRN_ENABLE_MPI_DYNAMIC)
   if(NOT CORENRN_ENABLE_MPI)
@@ -308,8 +308,8 @@ if(CORENRN_ENABLE_NMODL)
     set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
   else()
     set(NMODL_ENABLE_PYTHON_BINDINGS
-            OFF
-            CACHE BOOL "Disable NMODL python bindings")
+        OFF
+        CACHE BOOL "Disable NMODL python bindings")
     set(CORENRN_MOD2CPP_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
     set(CORENRN_MOD2CPP_INCLUDE ${CMAKE_BINARY_DIR}/include)
     set(ENV{PYTHONPATH} "$ENV{PYTHONPATH}")
@@ -320,8 +320,8 @@ if(CORENRN_ENABLE_NMODL)
 
   # set correct arguments for nmodl for cpu/gpu target
   set(CORENRN_NMODL_FLAGS
-          ""
-          CACHE STRING "Extra NMODL options such as passes")
+      ""
+      CACHE STRING "Extra NMODL options such as passes")
 else()
   set(NMODL_TARGET_TO_DEPEND mod2c_core)
   set(CORENRN_MOD2CPP_BINARY ${CMAKE_BINARY_DIR}/bin/mod2c_core${CMAKE_EXECUTABLE_SUFFIX})
@@ -417,10 +417,9 @@ cpp_cc_build_time_copy(
   NO_TARGET)
 set(nrnivmodl_core_dependencies "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
                                 "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp")
-# Set up build rules that copy builtin mod files from
-# src/coreneuron/mechanism/mech/modfile/*.mod to {build_dir}/share/modfile/
-file(GLOB builtin_modfiles
-     "${PROJECT_SOURCE_DIR}/src/coreneuron/mechanism/mech/modfile/*.mod")
+# Set up build rules that copy builtin mod files from src/coreneuron/mechanism/mech/modfile/*.mod to
+# {build_dir}/share/modfile/
+file(GLOB builtin_modfiles "${PROJECT_SOURCE_DIR}/src/coreneuron/mechanism/mech/modfile/*.mod")
 foreach(builtin_modfile ${builtin_modfiles})
   # Construct the path in the build directory.
   get_filename_component(builtin_modfile_name "${builtin_modfile}" NAME)
@@ -718,15 +717,16 @@ include(MakefileBuildOptions)
 # Copy first into build directory as it will be used for special-core
 # =============================================================================
 configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl_core_makefile.in
-        ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile @ONLY)
-configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl-core.in ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core @ONLY)
+               ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl-core.in ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
+               @ONLY)
 # nrnivmodl-core depends on the building of NMODL_TARGET_TO_DEPEND and the configuration of the
 # nrnivmodl-core and nrnivmodl_core_makefile this doesn't imply that whenever there is a change in
 # one of those files then the prebuilt mod files are going to be rebuilt
 add_custom_target(
-        nrnivmodl-core ALL
-        DEPENDS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
-        ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile ${NMODL_TARGET_TO_DEPEND})
+  nrnivmodl-core ALL
+  DEPENDS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
+          ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile ${NMODL_TARGET_TO_DEPEND})
 
 # =============================================================================
 # Install main targets
@@ -734,20 +734,20 @@ add_custom_target(
 
 # coreneuron main libraries
 install(
-        TARGETS coreneuron-core ${coreneuron_cuda_target}
-        EXPORT coreneuron
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        INCLUDES
-        DESTINATION $<INSTALL_INTERFACE:include>)
+  TARGETS coreneuron-core ${coreneuron_cuda_target}
+  EXPORT coreneuron
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  INCLUDES
+  DESTINATION $<INSTALL_INTERFACE:include>)
 
 # headers and some standalone code files for nrnivmodl-core
 install(
-        DIRECTORY ${CMAKE_BINARY_DIR}/include/coreneuron
-        DESTINATION include/
-        FILES_MATCHING
-        PATTERN "*.h*"
-        PATTERN "*.ipp")
+  DIRECTORY ${CMAKE_BINARY_DIR}/include/coreneuron
+  DESTINATION include/
+  FILES_MATCHING
+  PATTERN "*.h*"
+  PATTERN "*.ipp")
 install(FILES ${MODFUNC_PERL_SCRIPT} ${ENGINEMECH_CODE_FILE} DESTINATION share/coreneuron)
 
 # copy mod2c/nmodl for nrnivmodl-core
@@ -759,9 +759,9 @@ endif()
 
 # install nrniv-core app
 install(
-        PROGRAMS ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/special-core
-        DESTINATION bin
-        RENAME nrniv-core)
+  PROGRAMS ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/special-core
+  DESTINATION bin
+  RENAME nrniv-core)
 install(FILES apps/coreneuron.cpp DESTINATION share/coreneuron)
 
 # install mechanism library in shared library builds, if we're linking statically then there is no

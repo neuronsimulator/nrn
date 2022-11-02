@@ -30,8 +30,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(NOT "cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
   message(
-          FATAL_ERROR
-          "This compiler does not fully support C++17, choose a higher version or another compiler.")
+    FATAL_ERROR
+      "This compiler does not fully support C++17, choose a higher version or another compiler.")
 endif()
 
 # =============================================================================
@@ -476,7 +476,7 @@ if(NRN_ENABLE_CORENEURON)
   # Include cmake modules path
   # =============================================================================
   list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/coreneuron
-          ${PROJECT_SOURCE_DIR}/cmake/coreneuron/packages)
+       ${PROJECT_SOURCE_DIR}/cmake/coreneuron/packages)
 
   set(nrn_using_ext_corenrn FALSE)
   # If NEURON tests are enabled then enable CoreNEURON tests too
@@ -507,8 +507,6 @@ if(NRN_ENABLE_CORENEURON)
   set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron)
   include(PythonDynamicHelper)
 
-  # include(coreneuron/Coreneuron)
-  # Add the main source directory
   # initialize CLI11 submodule
   cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 
