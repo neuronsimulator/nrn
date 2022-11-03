@@ -228,14 +228,20 @@ class CMakeAugmentedBuilder(build_ext):
                 # RTD will call sphinx for us. We just need notebooks and doxygen
                 if os.environ.get("READTHEDOCS"):
                     subprocess.check_call(
-                        ["cmake", "--build", ".", "--target", "notebooks"], cwd=self.build_temp, env=env
+                        ["cmake", "--build", ".", "--target", "notebooks"],
+                        cwd=self.build_temp,
+                        env=env
                     )
                     subprocess.check_call(
-                        ["cmake", "--build", ".", "--target", "doxygen"], cwd=self.build_temp, env=env
+                        ["cmake", "--build", ".", "--target", "doxygen"],
+                        cwd=self.build_temp,
+                        env=env
                     )
                 else:
                     subprocess.check_call(
-                        ["cmake", "--build", ".", "--target", "docs"], cwd=self.build_temp, env=env
+                        ["cmake", "--build", ".", "--target", "docs"],
+                        cwd=self.build_temp,
+                        env=env
                     )
             else:
                 subprocess.check_call(
