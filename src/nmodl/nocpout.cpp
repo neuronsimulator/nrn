@@ -2505,8 +2505,9 @@ printf("|%s||%s||%s|\n",STR(q3), s, buf);
 void out_nt_ml_frag(List* p) {
     vectorize_substitute(lappendstr(p, "  Datum* _thread;\n"),
                          "  Datum* _ppvar; Datum* _thread;\n");
+    vectorize_substitute(lappendstr(p, ""), "std::size_t _iml;");
     Lappendstr(p,
-               "  Node* _nd; double _v; int _iml, _cntml;\n\
+               "  Node* _nd; double _v; int _cntml;\n\
   _cntml = _ml->_nodecount;\n\
   _thread = _ml->_thread;\n\
   for (_iml = 0; _iml < _cntml; ++_iml) {\n\
