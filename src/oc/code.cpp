@@ -314,8 +314,8 @@ int hoc_stack_type() {
     return get_legacy_int_type(get_stack_entry_variant(0));
 }
 
-bool hoc_stack_type_is_ndim(int i) {
-    return std::holds_alternative<stack_ndim_datum>(get_stack_entry_variant(i));
+bool hoc_stack_type_is_ndim() {
+    return std::holds_alternative<stack_ndim_datum>(get_stack_entry_variant(0));
 }
 
 void hoc_pop_defer() {
@@ -2399,7 +2399,7 @@ int hoc_araypt(Symbol* sp, int type) {
     Arrayinfo* const aray{type == OBJECTVAR ? OPARINFO(sp) : sp->arayinfo};
     int total{};
     int ndim{0};
-    if (hoc_stack_type_is_ndim(0)) {  // if sp compiled as scalar
+    if (hoc_stack_type_is_ndim()) {  // if sp compiled as scalar
         ndim = hoc_pop_ndim();        // do not raise error here but below.
     }
     if (ndim != aray->nsub) {

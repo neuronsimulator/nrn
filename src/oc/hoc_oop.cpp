@@ -923,7 +923,7 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
                 }
                 x = xpop();
             }
-            if (!hoc_stack_type_is_ndim(0)) {
+            if (!hoc_stack_type_is_ndim()) {
                 hoc_push_ndim(nindex);
             }
             if (narg) {  // push back the arc length
@@ -982,7 +982,7 @@ void hoc_object_component() {
         if (narg) {
             hoc_execerror("[...](...) syntax only allowed for array range variables:", sym0->name);
         }
-        if (!hoc_stack_type_is_ndim(0)) {
+        if (!hoc_stack_type_is_ndim()) {
             hoc_push_ndim(nindex);
         }
         expect_stack_nsub = 1;

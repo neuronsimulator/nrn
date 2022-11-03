@@ -138,7 +138,7 @@ void hoc_pushs(Symbol*);
 void hoc_pushi(int);
 void hoc_push_ndim(int);
 int hoc_pop_ndim();
-bool hoc_stack_type_is_ndim(int stackdepth);
+bool hoc_stack_type_is_ndim();
 double hoc_xpop();
 Symbol* hoc_spop();
 double* hoc_pxpop();
