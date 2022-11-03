@@ -560,7 +560,8 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
         CellMapping* c = minfo.mapping[i];
 
         /** gid, #section, #compartments,  #sectionlists */
-        fprintf(f, "%d %d %d %zd\n", c->gid, c->num_sections(), c->num_segments(), c->size());
+        fprintf(f, "%d %d %d %zd\n", c->gid, c->num_sections(), c->num_segments(),
+                c->size());
 
         for (size_t j = 0; j < c->size(); j++) {
             SecMapping* s = c->secmapping[j];
