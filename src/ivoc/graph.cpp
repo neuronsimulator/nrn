@@ -3330,27 +3330,6 @@ void DataVec::write() {
 #endif
 }
 
-DataPointers::DataPointers(int size) {
-    count_ = 0;
-    size_ = size;
-    px_ = new double*[size];
-}
-DataPointers::~DataPointers() {
-    delete[] px_;
-}
-void DataPointers::add(double* pd) {
-    if (count_ == size_) {
-        size_ *= 2;
-        double** px = new double*[size_];
-        for (int i = 0; i < count_; i++) {
-            px[i] = px_[i];
-        }
-        delete[] px_;
-        px_ = px;
-    }
-    px_[count_++] = pd;
-}
-
 GraphVector::GraphVector(const char* name, const Color* color, const Brush* brush)
     : GPolyLine(new DataVec(50), color, brush) {
     dp_ = new DataPointers();
@@ -3387,23 +3366,24 @@ void GraphVector::update(Observable*) {
     begin();
 }
 
-void GraphVector::add(float x, double* py) {
+void GraphVector::add(float x, neuron::container::data_handle<double> py) {
     if (disconnect_defer_) {
         Oc oc;
         oc.notify_pointer_disconnect(this);
         disconnect_defer_ = false;
     }
-    if (dp_->count() == 0 || py != dp_->p(dp_->count() - 1) + 1) {
+    // Dubious
+    if (dp_->count() == 0 ||
+        static_cast<double*>(py) != static_cast<double*>(dp_->p(dp_->count() - 1)) + 1) {
         Oc oc;
-        oc.notify_when_freed(py, this);
+        oc.notify_when_freed(static_cast<double*>(py), this);
     }
     x_->add(x);
-    double* p = &zero;
-    if (py) {
-        p = py;
+    if (!py) {
+        py = {neuron::container::do_not_search, &zero};
     }
-    dp_->add(p);
-    y_->add(float(*p));
+    y_->add(*py);
+    dp_->add(std::move(py));
 }
 
 bool GraphVector::trivial() const {
@@ -3513,8 +3493,8 @@ void Graph::update_ptrs() {
 }
 
 void DataPointers::update_ptrs() {
-    for (int i = 0; i < count_; ++i) {
-        nrn_forget_history(px_[i]);
+    for (auto& dh: px_) {
+        nrn_forget_history(dh);
     }
 }
 
