@@ -200,7 +200,7 @@ void GVectorRecord::continuous(double t) {}
 int GVectorRecord::count() {
     return gv_->py_data()->count();
 }
-double* GVectorRecord::pdata(int i) {
+neuron::container::data_handle<double> GVectorRecord::pdata(int i) {
     return gv_->py_data()->p(i);
 }
 
