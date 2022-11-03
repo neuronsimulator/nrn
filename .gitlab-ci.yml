@@ -1,0 +1,139 @@
+default:
+  tags:
+    - macos-arm64
+
+include:
+  - project: hpc/gitlab-upload-logs
+    file: enable-upload.yml
+
+variables:
+  GIT_STRATEGY: none
+  DESIRED_CMAKE_VERSION: 3.25.0-rc2
+
+stages:
+  - clean workspace
+  - prerequisites
+  - build
+  - test
+
+# see https://gitlab.com/gitlab-org/gitlab/-/issues/263401 for why we specify the flags like this now
+# 130 characters seems to be the point at which jobs refuse to run
+.matrix:
+  parallel:
+    matrix:
+      - build_mode: cmake
+        cmake_coreneuron: "ON"
+        cmake_interviews: "OFF"
+        cmake_rx3d: "OFF"
+        sanitizer: address
+
+clean_workspace:
+  stage: clean workspace
+  variables:
+    GIT_STRATEGY: clone
+  script:
+    - echo "Workspace clean"
+
+set_homebrew_variables:
+  stage: prerequisites
+  extends: .matrix
+  script:
+    - echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> build.env
+    - echo CTEST_PARALLEL_LEVEL=3 >> build.env
+    - echo CI_OS_NAME=osx >> build.env
+  artifacts:
+    reports:
+      dotenv: build.env
+
+install_python_dependencies:
+  stage: prerequisites
+  extends: .matrix
+  script:
+    - pwd
+    - python3 -m virtualenv venv
+    - venv/bin/pip install --upgrade pip -r nrn_requirements.txt
+
+patches:
+  stage: prerequisites
+  needs: ['install_python_dependencies']
+  script:
+    - venv/bin/python --version
+    - 'venv/bin/python -c "import os,matplotlib; f = open(os.path.join(os.path.dirname(matplotlib.__file__), \"mpl-data/matplotlibrc\"),\"a\"); f.write(\"backend: TkAgg\");f.close();"'
+
+
+cmake_build:
+  stage: build
+  extends: .matrix
+  cache:
+    # either CI_MERGE_REQUEST_SOURCE_BRANCH_NAME or CI_COMMIT_BRANCH will be available,
+    # depending on whether this pipeline runs for a merge request or on a branch
+    # either way, we get the active branch in the cache key
+    key: ${CI_JOB_NAME}-${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}${CI_COMMIT_BRANCH}
+    paths:
+      - ./ccache
+  rules:
+    - if: $build_mode == "cmake"
+  variables:
+    CCACHE_BASEDIR: ${CI_PROJECT_DIR}/nrn
+    CCACHE_DIR: ${CI_PROJECT_DIR}/ccache
+  script:
+    - 'export CXX=${CXX:-g++}'
+    - 'export CC=${CC:-gcc}'
+    - export PYTHON=$(pwd)/venv/bin/python3
+    - export INSTALL_DIR=$(pwd)/install
+    - echo $LANG
+    - echo $LC_ALL
+    - source venv/bin/activate
+    - 'export PYTHONPATH=$(${PYTHON} -c "import site; print(\":\".join(site.getsitepackages()))")'
+    - 'export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/'
+    - ${PYTHON} -c 'import os,sys; os.set_blocking(sys.stdout.fileno(), True)'
+    - cmake_args=(-G Ninja)
+    - if [[ -n "${sanitizer}" ]]; then
+    -   cmake_args+=(-DCMAKE_BUILD_TYPE=Custom
+                     -DCMAKE_C_FLAGS="-O1 -g"
+                     -DCMAKE_CXX_FLAGS="-O1 -g"
+                     -DNRN_SANITIZERS=$(echo ${sanitizer} | sed -e 's/-/,/g'))
+    - fi
+    - cmake_args+=(-DCMAKE_C_COMPILER="${CC}"
+                   -DCMAKE_C_COMPILER_LAUNCHER=ccache
+                   -DCMAKE_CXX_COMPILER="${CXX}"
+                   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+                   -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}"
+                   -DNRN_ENABLE_TESTS=ON
+                   -DNRN_ENABLE_CORENEURON=${cmake_coreneuron}
+                   -DNRN_ENABLE_INTERVIEWS=${cmake_interviews}
+                   -DNRN_ENABLE_RX3D=${cmake_rx3d}
+                   -DCORENRN_SANITIZERS=${sanitizer})
+    - cmake_args+=(-DPYTHON_EXECUTABLE="${PYTHON}")
+    - mkdir build && cd build
+    - echo "Building with ${cmake_args[@]}"
+    - cmake .. "${cmake_args[@]}"
+    - ccache -z
+    - ccache -vs 2>/dev/null
+    - cmake --build . --parallel
+    - ccache -vs 2>/dev/null
+    - echo $'[install]\nprefix='>src/nrnpython/setup.cfg
+    - cat src/nrnpython/setup.cfg
+    - ctest --output-on-failure
+    - cmake --build . --target install
+    - 'export PATH=${INSTALL_DIR}/bin:${PATH}'
+    - if [[ -f "${INSTALL_DIR}/bin/nrn-enable-sanitizer" ]]; then
+    -   echo --- bin/nrn-enable-sanitizer ---
+    -   cat bin/nrn-enable-sanitizer
+    -   echo ---
+    -   nrn_enable_sanitizer=${INSTALL_DIR}/bin/nrn-enable-sanitizer
+    -   nrn_enable_sanitizer_preload="${nrn_enable_sanitizer} --preload"
+    - else
+    -   echo nrn-enable-sanitizer not found, not using it
+    - fi
+    - if [[ "$build_mode" == "cmake" && ! "${cmake_args[*]}" =~ "NRN_ENABLE_PYTHON=OFF" ]]; then
+    -   $PYTHON --version && ${nrn_enable_sanitizer_preload} python -c 'import neuron; neuron.test()'
+    - fi;
+    - if [[ "$build_mode" != "setuptools" ]]; then
+    -   ${nrn_enable_sanitizer} neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
+    - fi;
+    - if [[ "$BUILD_MODE" == "cmake"
+            && ! "${cmake_args[*]}" =~ "NRN_ENABLE_RX3D=OFF"
+            && ! "${cmake_args[*]}" =~ "NRN_ENABLE_CORENEURON=ON" ]]; then
+    -   ${nrn_enable_sanitizer_preload} python ../share/lib/python/neuron/rxdtests/run_all.py
+    - fi;
