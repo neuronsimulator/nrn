@@ -24,7 +24,7 @@ extern void nrn_area_ri(Section* sec);
 extern void sec_free(hoc_Item*);
 extern Symlist* hoc_built_in_symlist;
 extern Section* nrn_noerr_access();
-double* nrnpy_rangepointer(Section*, Symbol*, double, int*);
+double* nrnpy_rangepointer(Section*, Symbol*, double, int*, int);
 extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
 extern int has_membrane(char*, Section*);
 typedef struct {
@@ -1624,7 +1624,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
             result = (PyObject*) r;
         } else {
             int err;
-            auto const d = nrnpy_rangepointer(sec, sym, 0.5, &err);
+            auto const d = nrnpy_rangepointer(sec, sym, 0.5, &err, 0 /* idx */);
             if (!d) {
                 rv_noexist(sec, n, 0.5, err);
                 result = nullptr;
@@ -1711,7 +1711,7 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
             err = -1;
         } else {
             int errp;
-            auto const d = nrnpy_rangepointer(sec, sym, 0.5, &errp);
+            auto const d = nrnpy_rangepointer(sec, sym, 0.5, &errp, 0 /* idx */);
             if (!d) {
                 rv_noexist(sec, n, 0.5, errp);
                 err = -1;
@@ -1846,7 +1846,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             result = (PyObject*) r;
         } else {
             int err;
-            auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err);
+            auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
             if (!d) {
                 rv_noexist(sec, n, self->x_, err);
                 result = NULL;
@@ -1874,7 +1874,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                 result = (PyObject*) r;
             } else {
                 int err;
-                auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err);
+                auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
                 if (!d) {
                     rv_noexist(sec, n + 5, self->x_, err);
                     result = NULL;
@@ -1971,7 +1971,7 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
             err = -1;
         } else {
             int errp;
-            auto const d = nrnpy_rangepointer(sec, sym, self->x_, &errp);
+            auto const d = nrnpy_rangepointer(sec, sym, self->x_, &errp, 0 /* idx */);
             if (!d) {
                 rv_noexist(sec, n, self->x_, errp);
                 Py_DECREF(pyname);
@@ -2197,13 +2197,23 @@ static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
         PyErr_SetString(PyExc_IndexError, r->sym_->name);
         return NULL;
     }
+    if (ISARRAY(r->sym_)) {
+        assert(r->sym_->arayinfo->nsub == 1);
+        auto const array_dim = r->sym_->arayinfo->sub[0];
+        assert(ix < array_dim);
+        // r represents a range variable that is an array of size array_dim, and
+        // we need to apply the offset `ix` to get the correct element of that
+        // array.
+    } else {
+        // Not an array variable, so the index should always be zero
+        assert(ix == 0);
+    }
     int err;
-    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err);
+    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, ix);
     if (!d) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
         return NULL;
     }
-    assert(ix == 0);  // d += ix;
     if (r->isptr_) {
         result = nrn_hocobj_ptr(d);
     } else {
@@ -2224,7 +2234,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
         return -1;
     }
     int err;
-    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err);
+    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, 0 /* idx */);
     if (!d) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
         return -1;

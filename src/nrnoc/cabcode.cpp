@@ -1314,7 +1314,7 @@ double* nrn_rangepointer(Section* sec, Symbol* s, double d) {
 /* return nil if failure instead of hoc_execerror
    and return pointer to the 0 element if an array
 */
-double* nrnpy_rangepointer(Section* sec, Symbol* s, double d, int* err) {
+double* nrnpy_rangepointer(Section* sec, Symbol* s, double d, int* err, int idx) {
     /* if you change this change nrn_rangepointer as well */
     *err = 0;
     if (s->u.rng.type == VINDEX) {
@@ -1342,7 +1342,7 @@ double* nrnpy_rangepointer(Section* sec, Symbol* s, double d, int* err) {
     }
 #endif
     auto const i = node_index(sec, d);
-    return nrnpy_dprop(s, 0, sec, i, err);
+    return nrnpy_dprop(s, idx, sec, i, err);
 }
 
 // symbol at pc, location on stack, return pointer on stack
