@@ -2400,7 +2400,7 @@ int hoc_araypt(Symbol* sp, int type) {
     int total{};
     int ndim{0};
     if (hoc_stack_type_is_ndim()) {  // if sp compiled as scalar
-        ndim = hoc_pop_ndim();        // do not raise error here but below.
+        ndim = hoc_pop_ndim();       // do not raise error here but below.
     }
     if (ndim != aray->nsub) {
         hoc_execerr_ext("array dimension of %s now %d (at compile time it was %d)",
