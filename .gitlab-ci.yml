@@ -5,6 +5,8 @@ default:
 include:
   - project: hpc/gitlab-upload-logs
     file: enable-upload.yml
+  - project: hpc/gitlab-pipelines
+    file: github-project-pipelines.gitlab-ci.yml
 
 variables:
   GIT_STRATEGY: none
