@@ -16,6 +16,10 @@ stages:
   - build
   - test
 
+upload_logs_to_github:
+  variables:
+    GIT_STRATEGY: clone
+
 # see https://gitlab.com/gitlab-org/gitlab/-/issues/263401 for why we specify the flags like this now
 # 130 characters seems to be the point at which jobs refuse to run
 .matrix:
