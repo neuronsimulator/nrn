@@ -27,42 +27,22 @@ static double dummy;
 
 static Symbol* pv_class_sym_;
 
-OcPtrVector::OcPtrVector(int sz) {
-    label_ = NULL;
-    pd_ = new double*[sz];
-    size_ = sz;
-    update_cmd_ = NULL;
-    for (int i = 0; i < sz; ++i) {
-        pd_[i] = &dummy;
-    }
-}
+OcPtrVector::OcPtrVector(std::size_t sz)
+    : pd_{sz, neuron::container::data_handle<double>{neuron::container::do_not_search, &dummy}} {}
 
 OcPtrVector::~OcPtrVector() {
-    delete[] pd_;
-    ptr_update_cmd(NULL);
     if (label_) {
         free(label_);
     }  // allocated by strdup
 }
 
-void OcPtrVector::resize(int sz) {
-    if (size_ == sz) {
-        return;
-    }
-    delete[] pd_;
-    pd_ = new double*[sz];
-    size_ = sz;
-    for (int i = 0; i < sz; ++i) {
-        pd_[i] = &dummy;
-    }
+void OcPtrVector::ptr_update_cmd(std::unique_ptr<HocCommand> cmd) {
+    update_cmd_ = std::move(cmd);
 }
 
-void OcPtrVector::ptr_update_cmd(HocCommand* hc) {
-    if (update_cmd_) {
-        delete update_cmd_;
-        update_cmd_ = NULL;
-    }
-    update_cmd_ = hc;
+void OcPtrVector::resize(int sz) {
+    pd_.resize(sz,
+               neuron::container::data_handle<double>{neuron::container::do_not_search, &dummy});
 }
 
 void OcPtrVector::ptr_update() {
@@ -73,32 +53,32 @@ void OcPtrVector::ptr_update() {
     }
 }
 
-void OcPtrVector::pset(int i, double* px) {
-    assert(i < size_);
-    pd_[i] = px;
+void OcPtrVector::pset(int i, neuron::container::data_handle<double> dh) {
+    assert(i < pd_.size());
+    pd_[i] = std::move(dh);
 }
 
 void OcPtrVector::scatter(double* src, int sz) {
-    assert(size_ == sz);
+    assert(pd_.size() == sz);
     for (int i = 0; i < sz; ++i) {
         *pd_[i] = src[i];
     }
 }
 
 void OcPtrVector::gather(double* dest, int sz) {
-    assert(size_ == sz);
+    assert(pd_.size() == sz);
     for (int i = 0; i < sz; ++i) {
         dest[i] = *pd_[i];
     }
 }
 
 void OcPtrVector::setval(int i, double x) {
-    assert(i < size_);
+    assert(i < pd_.size());
     *pd_[i] = x;
 }
 
 double OcPtrVector::getval(int i) {
-    assert(i < size_);
+    assert(i < pd_.size());
     return *pd_[i];
 }
 
@@ -165,17 +145,17 @@ static double gather(void* v) {
 
 static double ptr_update_callback(void* v) {
     OcPtrVector* opv = (OcPtrVector*) v;
-    HocCommand* hc = NULL;
+    std::unique_ptr<HocCommand> hc{};
     if (ifarg(1) && hoc_is_object_arg(1)) {
-        hc = new HocCommand(*hoc_objgetarg(1));
+        hc = std::make_unique<HocCommand>(*hoc_objgetarg(1));
     } else if (ifarg(1)) {
         Object* o = NULL;
         if (ifarg(2)) {
             o = *hoc_objgetarg(2);
         }
-        hc = new HocCommand(hoc_gargstr(1), o);
+        hc = std::make_unique<HocCommand>(hoc_gargstr(1), o);
     }
-    opv->ptr_update_cmd(hc);
+    opv->ptr_update_cmd(std::move(hc));
     return 0.;
 }
 
@@ -193,8 +173,8 @@ static double ptr_plot(void* v) {
 #if HAVE_IV
     IFGUI
     int i;
-    double** y = opv->pd_;
-    auto n = opv->size_;
+    auto const& y = opv->pd_;
+    auto n = opv->size();
     char* label = opv->label_;
 
     Object* ob1 = *hoc_objgetarg(1);
