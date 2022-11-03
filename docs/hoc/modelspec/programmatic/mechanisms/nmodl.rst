@@ -930,7 +930,7 @@ FUNCTION_TABLE
 
 Description:
     This keyword defines function tables whose values are given by vectors prior to the simulation.
-    For example let's say we have the following declaration in a ΝMODΛ file:
+    For example let's say we have the following declaration in a ΝMODL file:
 
     .. code-block::
         none
