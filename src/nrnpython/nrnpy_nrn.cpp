@@ -2240,6 +2240,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
             return -1;
         }
         hoc_pushx(double(ix));
+        hoc_push_ndim(1);
         nrn_rangeconst(r->pymech_->pyseg_->pysec_->sec_, r->sym_, &x, 0);
     } else {
         d += ix;
