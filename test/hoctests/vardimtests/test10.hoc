@@ -1,0 +1,8 @@
+begintemplate Cell
+public axon
+create axon[2]
+endtemplate Cell
+objref CellRef
+CellRef = new Cell()
+CellRef.axon[1](0)
+CellRef.axon[0] connect CellRef.axon[1](0), 1

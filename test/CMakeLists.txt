@@ -217,7 +217,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     file(
       GLOB example_nmodl_scripts
       RELATIVE "${PROJECT_SOURCE_DIR}/share/examples/nrniv/nmodl"
-      "${PROJECT_SOURCE_DIR}/share/examples/nrniv/nmodl/*.${ext}")
+      CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/share/examples/nrniv/nmodl/*.${ext}")
     foreach(example_script ${example_nmodl_scripts})
       get_filename_component(name "${example_script}" NAME_WLE)
       nrn_add_test(
@@ -242,7 +242,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     file(
       GLOB hoc_scripts
       RELATIVE "${PROJECT_SOURCE_DIR}/test/hoctests"
-      "${PROJECT_SOURCE_DIR}/test/hoctests/*/*.${ext}")
+      CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/test/hoctests/*/*.${ext}")
     foreach(hoc_script ${hoc_scripts})
       get_filename_component(name "${hoc_script}" NAME_WLE)
       nrn_add_test(
