@@ -59,8 +59,6 @@ patches:
   needs: ['install_python_dependencies']
   script:
     - venv/bin/python --version
-    - 'venv/bin/python -c "import os,matplotlib; f = open(os.path.join(os.path.dirname(matplotlib.__file__), \"mpl-data/matplotlibrc\"),\"a\"); f.write(\"backend: TkAgg\");f.close();"'
-
 
 cmake_build:
   stage: build
