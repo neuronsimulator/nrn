@@ -154,7 +154,7 @@ for i in "${files[@]}" ; do
   f=${f//:/\\:}
   echo "\
 ./${base_name// /\\ }.cpp: ${f}.mod
-	@printf \" -> \$()NMODL\$(C_RESET) \$<\\\n\"
+	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
 	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\")
 
 ./${base_name// /\\ }.o: ./${base_name// /\\ }.cpp
