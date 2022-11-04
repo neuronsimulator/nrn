@@ -40,3 +40,8 @@ cell.dend { print secname() }
 expect_err("cell.dend[5] { print secname() }")
 expect_err("cell.dend[1][2] {print secname() }")
 expect_err("cell.soma[1] { print secname() }")
+
+forall disconnect()
+expect_err("connect cell.dend[1](0), cell.dend[0](1)") // limitation of parser
+cell.dend[1] connect cell.dend[2](0), 1
+
