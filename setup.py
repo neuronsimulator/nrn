@@ -230,18 +230,18 @@ class CMakeAugmentedBuilder(build_ext):
                     subprocess.check_call(
                         ["cmake", "--build", ".", "--target", "notebooks"],
                         cwd=self.build_temp,
-                        env=env
+                        env=env,
                     )
                     subprocess.check_call(
                         ["cmake", "--build", ".", "--target", "doxygen"],
                         cwd=self.build_temp,
-                        env=env
+                        env=env,
                     )
                 else:
                     subprocess.check_call(
                         ["cmake", "--build", ".", "--target", "docs"],
                         cwd=self.build_temp,
-                        env=env
+                        env=env,
                     )
             else:
                 subprocess.check_call(
