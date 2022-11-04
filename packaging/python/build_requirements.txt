@@ -1,2 +1,2 @@
 cython
-
+wheel<0.38.0 # pinning to < 0.38.0 while waiting for https://github.com/matthew-brett/delocate/issues/166
