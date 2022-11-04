@@ -4154,7 +4154,7 @@ void NetCvode::fornetcon_prepare() {
         if (nrn_is_artificial_[type]) {
             Memb_list* m = memb_list + type;
             for (j = 0; j < m->nodecount; ++j) {
-                auto* fnc = m->pdata[j][index].get<ForNetConsInfo*>();
+                auto* fnc = static_cast<ForNetConsInfo*>(m->pdata[j][index].get<void*>());
                 if (fnc->size > 0) {
                     fnc->argslist = new double*[fnc->size];
                     fnc->size = 0;
@@ -4166,7 +4166,7 @@ void NetCvode::fornetcon_prepare() {
                 if (tml->index == nrn_fornetcon_type_[i]) {
                     Memb_list* m = tml->ml;
                     for (j = 0; j < m->nodecount; ++j) {
-                        auto* fnc = m->pdata[j][index].get<ForNetConsInfo*>();
+                        auto* fnc = static_cast<ForNetConsInfo*>(m->pdata[j][index].get<void*>());
                         if (fnc->size > 0) {
                             fnc->argslist = new double*[fnc->size];
                             fnc->size = 0;
@@ -4183,7 +4183,7 @@ void NetCvode::fornetcon_prepare() {
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
                 if (pnt && t2i[pnt->prop->_type] > -1) {
-                    auto* fnc = pnt->prop->dparam[t2i[pnt->prop->_type]].get<ForNetConsInfo*>();
+                    auto* fnc = static_cast<ForNetConsInfo*>(pnt->prop->dparam[t2i[pnt->prop->_type]].get<void*>());
                     fnc->argslist[fnc->size] = d1->weight_;
                     fnc->size += 1;
                 }
