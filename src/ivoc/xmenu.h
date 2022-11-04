@@ -42,10 +42,11 @@ class ValEdLabel;
 class ScenePicker;
 struct HocSymExtension;
 
-declarePtrList(HocUpdateItemList, HocUpdateItem) declarePtrList(HocItemList, HocItem)
-    declarePtrList(HocPanelList, HocPanel)
+declarePtrList(HocUpdateItemList, HocUpdateItem)
+declarePtrList(HocItemList, HocItem)
+declarePtrList(HocPanelList, HocPanel)
 
-        class HocPanel: public OcGlyph {
+class HocPanel: public OcGlyph {
   public:
     HocPanel(const char* name, bool horizontal = false);
     virtual ~HocPanel();

@@ -896,6 +896,14 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
         if (nindex != sym->arayinfo->nsub) {
             bdim = 1;
         }
+        /*
+         It is a bit more difficult to push ndim here since the arc length, if
+         specified, is top of stack before the index. However, waiting to fix up
+         the stack til just before range_vec_indx calls hoc_araypt seems ill
+         advised since range_vec_indx is called 6 places. And who knows what
+         kinds of user errors are possible that we want to catch.
+         So fix up below.
+        */
     } else {
         if (nindex != 0) {
             bdim = 1;
@@ -906,6 +914,22 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
     }
 
     if (sym->type == RANGEVAR) {
+        if (ISARRAY(sym)) {  // fixup ndim here
+            double x = -1.0;
+            if (narg) {  // need to pop the arc length to push ndim
+                if (narg > 1) {
+                    hoc_execerr_ext("%s range variable can have only one arc length parameter",
+                                    sym->name);
+                }
+                x = xpop();
+            }
+            if (!hoc_stack_type_is_ndim()) {
+                hoc_push_ndim(nindex);
+            }
+            if (narg) {  // push back the arc length
+                pushx(x);
+            }
+        }
         hoc_pushi(narg);
         hoc_pushs(sym);
     } else if (sym->subtype == USERPROPERTY) {
@@ -953,15 +977,19 @@ void hoc_object_component() {
         narg += nindex;
         nindex = 0;
     }
+    int expect_stack_nsub{0};
     if (nindex) {
         if (narg) {
             hoc_execerror("[...](...) syntax only allowed for array range variables:", sym0->name);
         }
+        if (!hoc_stack_type_is_ndim()) {
+            hoc_push_ndim(nindex);
+        }
+        expect_stack_nsub = 1;
     } else {
         nindex = narg;
     }
-
-    obp = hoc_obj_look_inside_stack(nindex);
+    obp = hoc_obj_look_inside_stack(nindex + expect_stack_nsub);
     if (obp) {
 #if USE_PYTHON
         if (obp->ctemplate->sym == nrnpy_pyobj_sym_) {
@@ -1033,6 +1061,24 @@ void hoc_object_component() {
                 if (!ISARRAY(sym) || sym->arayinfo->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
                 }
+                if (narg) {
+                    // there are 25 modeldb examples that use (index) instead
+                    // of [index] syntax for an array in this context. So we
+                    // have decided to keep allowing this legacy syntax for one
+                    // dimensional arrays.
+                    extern Symbol* nrn_matrix_sym;
+                    if (narg == 1) {
+                        hoc_push_ndim(1);
+                    } else if (narg == 2 && obp->ctemplate->sym == nrn_matrix_sym) {
+                        // Allow legacy syntax Matrix.x(i, j)
+                        hoc_push_ndim(2);
+                    } else {
+                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
+                                        hoc_object_name(obp),
+                                        sym->name,
+                                        sym->name);
+                    }
+                }
             }
             hoc_pushs(sym);
             (*obp->ctemplate->steer)(obp->u.this_pointer);
@@ -1062,6 +1108,10 @@ void hoc_object_component() {
         break;
     case PROCEDURE:
     case FUNCTION: {
+        if (expect_stack_nsub) {
+            hoc_pop_ndim();
+            hoc_execerr_ext("%s is a function not a %ddim array", sym->name, nindex);
+        }
         double d = 0.;
         call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
@@ -1077,6 +1127,14 @@ void hoc_object_component() {
     case HOCOBJFUNCTION:
     case OBFUNCTION: {
         Object** d;
+        if (expect_stack_nsub) {
+            hoc_pop_ndim();
+            // for legacy reasons allow single arg [] format.
+            // E.g. occasionally seen for List.object[index]
+            if (nindex > 1) {
+                hoc_execerr_ext("%s is a function not a %ddim array", sym->name, nindex);
+            }
+        }
         call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
             break;

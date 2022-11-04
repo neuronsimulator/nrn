@@ -253,11 +253,6 @@ if(NOT PYTHON_EXECUTABLE)
 endif()
 
 # =============================================================================
-# Enable sanitizer support if the NRN_SANITIZERS variable is set
-# =============================================================================
-include(cmake/SanitizerHelper.cmake)
-
-# =============================================================================
 # Find required packages
 # =============================================================================
 find_package(BISON REQUIRED)
@@ -408,6 +403,11 @@ if(NRN_ENABLE_PYTHON)
 else()
   set(USE_PYTHON 0)
 endif()
+
+# =============================================================================
+# Enable sanitizer support if the NRN_SANITIZERS variable is set
+# =============================================================================
+include(cmake/SanitizerHelper.cmake)
 
 # =============================================================================
 # Enable Threads support

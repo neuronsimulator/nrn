@@ -4,7 +4,8 @@
 struct Object;
 struct Symbol;
 struct PyHocObject {
-    PyObject_HEAD Object* ho_;
+    PyObject_HEAD
+    Object* ho_;
     union {
         double x_;
         char* s_;

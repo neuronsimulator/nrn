@@ -431,7 +431,8 @@ struct InterThreadEvent {
 
 typedef std::vector<WatchCondition*> WatchList;
 declarePool(SelfEventPool, SelfEvent)
-    implementPool(SelfEventPool, SelfEvent) typedef std::vector<TQItem*> TQList;
+implementPool(SelfEventPool, SelfEvent)
+typedef std::vector<TQItem*> TQList;
 
 // allows marshalling of all items in the event queue that need to be
 // removed to avoid duplicates due to frecord_init after finitialize
@@ -812,7 +813,7 @@ static void steer_val(void* v) {
         d->src_->use_min_delay_ = 0;
     } else if (strcmp(s->name, "weight") == 0) {
         int index = 0;
-        if (hoc_stacktype() == NUMBER) {
+        if (hoc_stack_type_is_ndim()) {
             s->arayinfo->sub[0] = d->cnt_;
             index = hoc_araypt(s, SYMBOL);
         }
@@ -6212,8 +6213,8 @@ tryagain:
 
 implementPtrList(PlayRecList, PlayRecord)
 
-    void NetCvode::playrec_add(PlayRecord* pr) {  // called by PlayRecord constructor
-                                                  // printf("NetCvode::playrec_add %p\n", pr);
+void NetCvode::playrec_add(PlayRecord* pr) {  // called by PlayRecord constructor
+                                              // printf("NetCvode::playrec_add %p\n", pr);
     playrec_change_cnt_ = 0;
     prl_->append(pr);
 }

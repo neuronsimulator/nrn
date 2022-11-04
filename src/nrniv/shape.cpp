@@ -824,12 +824,12 @@ void ShapeType::execute() {
 }
 
 
-// declareHandlerCallback(ShapeScene)
-// implementHandlerCallback(ShapeScene)
-declareRubberCallback(ShapeScene) implementRubberCallback(ShapeScene)
-    declareActionCallback(ShapeScene) implementActionCallback(ShapeScene)
+declareRubberCallback(ShapeScene)
+implementRubberCallback(ShapeScene)
+declareActionCallback(ShapeScene)
+implementActionCallback(ShapeScene)
 
-        void ShapeScene::observe(SectionList* sl) {
+void ShapeScene::observe(SectionList* sl) {
     GlyphIndex i, cnt;
     hoc_Item* qsec;
     Section* sec;

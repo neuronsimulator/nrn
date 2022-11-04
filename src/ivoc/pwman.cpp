@@ -1080,9 +1080,10 @@ bool ScreenSceneHandler::event(Event&) {
 
 // PrintableWindowManager
 
-declareActionCallback(PWMImpl) implementActionCallback(PWMImpl)
+declareActionCallback(PWMImpl)
+implementActionCallback(PWMImpl)
 
-    PrintableWindowManager* PrintableWindowManager::current() {
+PrintableWindowManager* PrintableWindowManager::current() {
     if (!current_) {
         current_ = new PrintableWindowManager();
     }
@@ -3362,7 +3363,7 @@ bool ivoc_snapshot(const Event* e) {
 declareTable(WindowTable, XWindow, Window*)
 
 
-    Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
+Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
     WindowTable* wt = Session::instance()->default_display()->rep()->wtable_;
     for (TableIterator(WindowTable) i(*wt); i.more(); i.next()) {
         Window* w = i.cur_value();

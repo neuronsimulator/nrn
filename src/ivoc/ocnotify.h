@@ -1,6 +1,8 @@
 #pragma once
 #include <InterViews/observe.h>
 
+#include <cstddef>  // std::size_t
+
 void nrn_notify_freed(void (*pf)(void*, int));
 void nrn_notify_when_void_freed(void* p, Observer* ob);
 void nrn_notify_when_double_freed(double* p, Observer* ob);

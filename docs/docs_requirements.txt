@@ -3,9 +3,9 @@ sphinx_rtd_theme
 jupyter
 nbconvert
 recommonmark
-# 3.6.0 clashes with plotnine 0.9.0
-matplotlib == 3.5.3
-bokeh
+matplotlib
+# bokeh 3 seems to break docs notebooks
+bokeh<3
 # do not check import of next line
 ipython
 plotnine

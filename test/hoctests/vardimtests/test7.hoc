@@ -1,0 +1,37 @@
+load_file("expect_err.hoc")
+
+begintemplate Foo
+public x, foo, bar, bas
+double x[2][2]
+proc init() {
+}
+func foo() {
+    x = $1
+    return x
+}
+obfunc bar() {local i  localobj lst
+    lst = new List()
+    for i = 0, $1 {
+        lst.append(new Vector())
+    }
+    return lst
+}
+proc bas() {
+    print $1, $2
+}
+endtemplate Foo
+
+objref f
+f = new Foo()
+print f.foo(2)
+expect_err("print f.foo[2]")
+
+print f.bar(4).o(2) // note that bar and o are both functions returning Object
+print f.bar[4].o[2] // allowed if just one dimension and return Object
+
+f.bas(1, 2)
+expect_err("f.bas[1][2]")
+
+print f.bar[2]
+expect_err("print f.bar[2][100000]")
+
