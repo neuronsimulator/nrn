@@ -332,6 +332,12 @@ Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex) {
                 hoc_execerror("SectionRef.child[index]", (char*) 0);
             }
         }
+        // modeldb 114355 uses legacy syntax SectionRef.child(i). Allow
+        // though there is no ndim on stack.
+        bool ok = hoc_stack_type_is_ndim() ? (hoc_pop_ndim() == 1) : (*pnindex == 1);
+        if (!ok) {
+            hoc_execerror("SectionRef.child[index] must have only one dimension", NULL);
+        }
         index = (int) hoc_xpop();
         --*pnindex;
         for (i = 0, s = sec->child; i < index && s; s = s->sibling) {
