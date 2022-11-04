@@ -1213,6 +1213,9 @@ void hoc_object_component() {
             if (!ISARRAY(sym) || OPARINFO(sym)->nsub != nindex) {
                 hoc_execerror(sym->name, ":not right number of subscripts");
             }
+            if (!hoc_stack_type_is_ndim()) {
+                hoc_push_ndim(nindex);
+            }
             nindex = araypt(sym, OBJECTVAR);
         }
         hoc_pop_defer();
