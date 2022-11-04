@@ -4183,7 +4183,8 @@ void NetCvode::fornetcon_prepare() {
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
                 if (pnt && t2i[pnt->prop->_type] > -1) {
-                    auto* fnc = static_cast<ForNetConsInfo*>(pnt->prop->dparam[t2i[pnt->prop->_type]].get<void*>());
+                    auto* fnc = static_cast<ForNetConsInfo*>(
+                        pnt->prop->dparam[t2i[pnt->prop->_type]].get<void*>());
                     fnc->argslist[fnc->size] = d1->weight_;
                     fnc->size += 1;
                 }
