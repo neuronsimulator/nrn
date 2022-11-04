@@ -4,7 +4,7 @@ tools:
     include:
       match:
       - '.*\.(py|ipynb)$'
-    option: [--color, --diff, --target-version, py37]
+    option: [--color, --target-version, py37]
     version: '[jupyter] ~=22.3'
   ClangFormat:
     enable: True
