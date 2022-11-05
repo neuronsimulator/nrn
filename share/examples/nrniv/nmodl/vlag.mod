@@ -20,7 +20,7 @@ ASSIGNED {
 
 BEFORE STEP {
     LAG v BY dur    : not threadsafe, not good with cvode
-    vl = lag_v_dur
+    vl = lag_v_dur * 1(mV) : modlunit bug -- not given dimension
 }
 
 

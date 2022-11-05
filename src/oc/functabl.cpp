@@ -80,6 +80,8 @@ double hoc_func_table(void* vpft, int n, double* args) {
     }
     double* tab = ft->table;
     int j = 0;
+    // matrix order is row order.
+    // I.e. [irow][jcol] is at location irow*ncol + jcol
     for (size_t i = 0; i < n; ++i) {
         j = (j * ft->targs[i].nsize) + arg_index(ft->targs + i, args[i]);
     }
