@@ -121,7 +121,7 @@ for (i=0; i < *pargc; ++i) {
             asrt(MPI_Init(pargc, pargv));
 #endif
             nrnmpi_under_nrncontrol_ = 1;
-        } else {
+        } else if (!nrnmusic) {
             nrnmpi_under_nrncontrol_ = 0;
         }
 
