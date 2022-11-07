@@ -83,6 +83,20 @@ def vecrange(min, max, step):
     return h.Vector().indgen(min, max, step)
 
 
+def test_errs():
+    x = vecrange(-80, 50, 0.1)
+    expect_err("h.table_alp_cagkftab(x, x, x)")
+    f = h.Vector([tst(v) for v in x])
+    x = vecrange(-80, 50, 1)
+    expect_err("h.table_tst_cagkftab(f, x)")
+    f = h.Vector([tst(v) for v in x])
+    expect_err("h.table_tst_cagkftab(f._ref_x[0], 0, x._ref_x[0])")
+    expect_err("h.table_tst_cagkftab(f._ref_x[0], len(x), x.x[len(x)-1], x.x[0])")
+
+
+test_errs()
+
+
 def test_1d_tst(f, domain):  # test_1d helper when different arg styles
     assert h.tst_cagkftab(-1000.0) == f.x[0]
     assert h.tst_cagkftab(1000.0) == f.x[domain.size() - 1]
@@ -98,6 +112,8 @@ def test_1d():
     h.table_tst_cagkftab(f._ref_x[0], len(x), x.x[0], x.x[len(x) - 1])
     test_1d_tst(f, x)
     h.table_tst_cagkftab(f._ref_x[0], len(x), x._ref_x[0])
+    test_1d_tst(f, x)
+    h.table_tst_cagkftab(f, x)
     test_1d_tst(f, x)
     return f, x
 
