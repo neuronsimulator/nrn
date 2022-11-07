@@ -130,6 +130,10 @@ void hoc_spec_table(void** vppt, int n) {
             hoc_execerror("Vector arguments not same size", nullptr);
         }
     } else {
+        if (hoc_is_object_arg(1)) {
+            Object* ob1 = *hoc_objgetarg(1);
+            hoc_obj_ref(ob1);
+        }
         ft->table = hoc_pgetarg(1);
         int argcnt = 2;
         for (size_t i = 0; i < n; ++i) {
@@ -145,6 +149,10 @@ void hoc_spec_table(void** vppt, int n) {
                 }
                 ta[i].argvec = nullptr;
             } else {
+                if (hoc_is_object_arg(argcnt)) {
+                    Object* ob1 = *hoc_objgetarg(argcnt);
+                    hoc_obj_ref(ob1);
+                }
                 ta[i].argvec = hoc_pgetarg(argcnt++);
             }
         }
