@@ -5,6 +5,8 @@
 #include <errno.h>
 #include <InterViews/resource.h>
 #include <vector>
+#include "nrn_ansi.h"
+#include "nrndae_c.h"
 #include "nrniv_mf.h"
 #include <nrnoc2iv.h>
 #include <nrnmpi.h>
@@ -16,8 +18,6 @@ void nrnmpi_multisplit(Section*, double x, int sid, int backbone_style);
 int nrn_multisplit_active_;
 
 extern void setup_topology();
-extern void nrn_cachevec(int);
-extern void nrn_matrix_node_free();
 extern void (*nrn_multisplit_setup_)();
 extern void* nrn_multisplit_triang(NrnThread*);
 extern void* nrn_multisplit_reduce_solve(NrnThread*);

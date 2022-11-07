@@ -119,7 +119,7 @@ jobs:
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         if: ${{matrix.config.python_dynamic == 'ON'}}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
 
@@ -130,7 +130,7 @@ jobs:
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MAX_VERSION }}
 
@@ -156,8 +156,20 @@ jobs:
           cat matrix.json
           echo -----
 
+      # Workaround for https://github.com/actions/cache/issues/92
+      - name: Checkout cache action
+        uses: actions/checkout@v3
+        with:
+          repository: actions/cache
+          ref: v3
+          path: tmp/actions/cache
+          
+      - name: Make actions/cache@v3 run even on failure
+        run: |
+          sed -i'.bak' -e '/ post-if: /d' tmp/actions/cache/action.yml
+
       - name: Restore compiler cache
-        uses: pat-s/always-upload-cache@v3
+        uses: ./tmp/actions/cache
         with:
           path: |
             ${{runner.workspace}}/ccache

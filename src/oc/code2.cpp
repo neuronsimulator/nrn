@@ -83,7 +83,6 @@ void hoc_Symbol_limits(void) {
             hoc_execerror("Cannot find the symbol for ", name);
         }
     } else {
-        hoc_pgetarg(1);
         sym = hoc_get_last_pointer_symbol();
         if (!sym) {
             hoc_execerror(
@@ -146,7 +145,6 @@ char* hoc_symbol_units(Symbol* sym, const char* units) {
 void hoc_Symbol_units(void) {
     Symbol* sym;
     extern Symbol* hoc_get_last_pointer_symbol();
-    extern double* hoc_pgetarg(int);
     char** units = hoc_temp_charptr();
 
     if (hoc_is_double_arg(1)) {
@@ -164,7 +162,6 @@ void hoc_Symbol_units(void) {
                 hoc_execerror("Cannot find the symbol for ", name);
             }
         } else {
-            hoc_pgetarg(1);
             sym = hoc_get_last_pointer_symbol();
             if (!sym) {
                 hoc_execerror(
@@ -251,7 +248,6 @@ static int hoc_vsscanf(const char* buf) {
     char *pf, *format, errbuf[100];
     void* arglist[20];
     int n = 0, iarg, i, islong, convert, sawnum;
-    extern double* hoc_pgetarg(int);
     struct {
         union {
             double d;
