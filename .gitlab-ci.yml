@@ -9,11 +9,10 @@ include:
     file: github-project-pipelines.gitlab-ci.yml
 
 variables:
-  GIT_STRATEGY: none
+  CMAKE_BUILD_PARALLEL_LEVEL: 3
+  CTEST_PARALLEL_LEVEL: 3
 
 stages:
-  - clean workspace
-  - prerequisites
   - build
 
 upload_logs_to_github:
@@ -31,37 +30,6 @@ upload_logs_to_github:
         cmake_rx3d: "OFF"
         sanitizer: address
 
-clean_workspace:
-  stage: clean workspace
-  variables:
-    GIT_STRATEGY: clone
-  script:
-    - echo "Workspace clean"
-
-set_homebrew_variables:
-  stage: prerequisites
-  script:
-    - echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> build.env
-    - echo CTEST_PARALLEL_LEVEL=3 >> build.env
-  artifacts:
-    reports:
-      dotenv: build.env
-
-install_python_dependencies:
-  stage: prerequisites
-  script:
-    - pwd
-    - python3 -m virtualenv venv
-    - venv/bin/pip install --upgrade pip -r nrn_requirements.txt
-
-patches:
-  stage: prerequisites
-  needs: ['install_python_dependencies']
-  script:
-    - venv/bin/python --version
-    - 'venv/bin/python -c "import os,matplotlib; f = open(os.path.join(os.path.dirname(matplotlib.__file__), \"mpl-data/matplotlibrc\"),\"a\"); f.write(\"backend: TkAgg\");f.close();"'
-
-
 cmake_build:
   stage: build
   extends: .matrix
@@ -76,6 +44,12 @@ cmake_build:
     CCACHE_BASEDIR: ${CI_PROJECT_DIR}/nrn
     CCACHE_DIR: ${CI_PROJECT_DIR}/ccache
   script:
+    - python3 -m virtualenv venv
+    - venv/bin/pip install --upgrade pip -r nrn_requirements.txt
+    - venv/bin/python --version
+    - 'venv/bin/python -c "import os,matplotlib; f = open(os.path.join(os.path.dirname(matplotlib.__file__), \"mpl-data/matplotlibrc\"),\"a\"); f.write(\"backend: TkAgg\");f.close();"'
+    - export CMAKE_BUILD_PARALLEL_LEVEL=${CMAKE_BUILD_PARALLEL_LEVEL}
+    - export CTEST_PARALLEL_LEVEL=${CTEST_PARALLEL_LEVEL}
     - 'export CXX=${CXX:-g++}'
     - 'export CC=${CC:-gcc}'
     - export PYTHON=$(pwd)/venv/bin/python3
