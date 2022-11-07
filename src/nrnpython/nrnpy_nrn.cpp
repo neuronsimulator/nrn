@@ -28,50 +28,59 @@ double* nrnpy_rangepointer(Section*, Symbol*, double, int*);
 extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
 extern int has_membrane(char*, Section*);
 typedef struct {
-    PyObject_HEAD Section* sec_;
+    PyObject_HEAD
+    Section* sec_;
     char* name_;
     PyObject* cell_weakref_;
 } NPySecObj;
 NPySecObj* newpysechelp(Section* sec);
 
 typedef struct {
-    PyObject_HEAD NPySecObj* pysec_;
+    PyObject_HEAD
+    NPySecObj* pysec_;
     int allseg_iter_;
 } NPyAllSegOfSecIter;
 
 typedef struct {
-    PyObject_HEAD NPySecObj* pysec_;
+    PyObject_HEAD
+    NPySecObj* pysec_;
     int seg_iter_;
 } NPySegOfSecIter;
 
 typedef struct {
-    PyObject_HEAD NPySecObj* pysec_;
+    PyObject_HEAD
+    NPySecObj* pysec_;
     double x_;
 } NPySegObj;
 
 typedef struct {
-    PyObject_HEAD NPySegObj* pyseg_;
+    PyObject_HEAD
+    NPySegObj* pyseg_;
     Prop* prop_;
 } NPyMechOfSegIter;
 
 typedef struct {
-    PyObject_HEAD NPySegObj* pyseg_;
+    PyObject_HEAD
+    NPySegObj* pyseg_;
     Prop* prop_;
 } NPyMechObj;
 
 typedef struct {
-    PyObject_HEAD NPyMechObj* pymech_;
+    PyObject_HEAD
+    NPyMechObj* pymech_;
     Symbol* msym_;
     int i_;
 } NPyVarOfMechIter;
 
 typedef struct {
-    PyObject_HEAD NPyMechObj* pymech_;
+    PyObject_HEAD
+    NPyMechObj* pymech_;
     int index_;
 } NPyRVItr;
 
 typedef struct {
-    PyObject_HEAD NPyMechObj* pymech_;
+    PyObject_HEAD
+    NPyMechObj* pymech_;
     Symbol* sym_;
     int isptr_;
     int attr_from_sec_;  // so section.xraxial[0] = e assigns to all segments.
@@ -2231,6 +2240,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
             return -1;
         }
         hoc_pushx(double(ix));
+        hoc_push_ndim(1);
         nrn_rangeconst(r->pymech_->pyseg_->pysec_->sec_, r->sym_, &x, 0);
     } else {
         d += ix;

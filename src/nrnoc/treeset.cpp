@@ -2,7 +2,6 @@
 /* /local/src/master/nrn/src/nrnoc/treeset.cpp,v 1.39 1999/07/08 14:25:07 hines Exp */
 
 #include "cvodeobj.h"
-#include "isoc99.h"
 #include "membfunc.h"
 #include "multisplit.h"
 #include "neuron.h"
@@ -2172,7 +2171,7 @@ double* nrn_recalc_ptr(double* old) {
     if (!recalc_ptr_old_vp_) {
         return old;
     }
-    if (nrn_isdouble(old, 0.0, (double) recalc_cnt_)) {
+    if (old && *old >= 0 && *old <= recalc_cnt_) {
         int k = (int) (*old);
         if (old == recalc_ptr_old_vp_[k]) {
             return recalc_ptr_new_vp_[k];
@@ -2249,8 +2248,8 @@ void nrn_recalc_node_ptrs(void) {
             }
             dpend = nrn_dparam_ptr_end_[p->_type];
             for (j = nrn_dparam_ptr_start_[p->_type]; j < dpend; ++j) {
-                double* pval = p->dparam[j].pval;
-                if (nrn_isdouble(pval, 0., (double) recalc_cnt_)) {
+                if (double* pval = p->dparam[j].pval;
+                    pval && *pval >= 0.0 && *pval <= recalc_cnt_) {
                     /* possible pointer to v */
                     k = (int) (*pval);
                     if (pval == recalc_ptr_old_vp_[k]) {

@@ -24,11 +24,11 @@ jobs:
     outputs:
       release_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         name: Checkout branch ${{ env.REL_BRANCH }}
         with:
             ref: ${{ env.REL_BRANCH }}
-      
+
       - name: Create and upload tag ${{ env.REL_TAG }}
         run: |
           git config user.name github-actions
@@ -38,21 +38,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: ${{runner.workspace}}/nrn
-                
+
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: ncipollo/release-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.REL_TAG }}
-          release_name: Release ${{ env.REL_TAG }}
+          tag: ${{ env.REL_TAG }}
+          name: Release ${{ env.REL_TAG }}
           prerelease: true
-                 
+
   full-src-package:
     runs-on: ubuntu-latest
     needs: tag-n-release
-    steps:    
+    steps:
     - name: Checkout feature-rich code
       run: |
         git clone --depth=1 --shallow-submodules --recurse-submodules $GH_REPO -b $REL_TAG --single-branch
@@ -64,19 +64,19 @@ jobs:
         else
           git log --oneline
         fi
-        
+
     - name: Make nrnversion.h
-      run: |   
+      run: |
         mkdir build && cd build
         cmake -DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF ../nrn
-        make nrnversion_h VERBOSE=1 
-    
+        make nrnversion_h VERBOSE=1
+
     - name: Create full-src-package
       id: tar
-      run: |   
+      run: |
         tar -czvf ${REL_TAG}.tar.gz nrn
-        echo ::set-output name=asset_file::${REL_TAG}.tar.gz
-        
+        echo "asset_file=${REL_TAG}.tar.gz" >> $GITHUB_OUTPUT
+
     - name: Upload full-src-package to release
       uses: actions/upload-release-asset@v1
       with:
@@ -84,5 +84,5 @@ jobs:
         asset_name: ${{ github.job }}-${{ steps.tar.outputs.asset_file }}
         asset_content_type: application/gzip
         asset_path: ${{ steps.tar.outputs.asset_file }}
-      env: 
+      env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

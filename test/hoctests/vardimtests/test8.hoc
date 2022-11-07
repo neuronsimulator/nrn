@@ -1,0 +1,12 @@
+print getcwd()
+load_file("expect_err.hoc")
+
+double x[1][1][1]
+proc foo() { local i
+    for i = 1, 10 {
+        x = i
+    }
+}
+double x[1]
+expect_err("foo()")
+

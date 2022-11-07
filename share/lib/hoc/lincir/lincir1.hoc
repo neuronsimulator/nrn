@@ -634,7 +634,7 @@ proc statemap() {local i, j, in
 		k = -1
 		for j=0, tobj.elements.count-1 {
 			sel = tobj.elements.object(j)
-			k = tobj.ends.x(j) + 1
+			k = tobj.ends.x[j] + 1
 			if (sel.names[k] == nil) {
 				k = -1
 			}else{
@@ -1151,7 +1151,7 @@ proc init_out() {local n, nc, i, j, k  localobj o, sel, s
     k = -1
     for j=0, o.elements.count-1 {
       sel = o.elements.o(j)
-      k = o.ends.x(j) + 1
+      k = o.ends.x[j] + 1
       if (sel.names[k] == nil) {
         k = -1
       }else{
