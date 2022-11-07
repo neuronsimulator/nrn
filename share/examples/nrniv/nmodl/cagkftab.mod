@@ -3,6 +3,7 @@
 : Made THREADSAFE 9/16/08
 
 : Use 2-D FUNCTION_TABLE. See cagkftab.py for parameters of the tables
+: Also test 1-D FUNCTION_TABLE
 
 UNITS {
 	(molar) = (1/liter)
@@ -63,3 +64,10 @@ PROCEDURE rate(v (mV), ca (mM)) { :callable from hoc
 	tau = 1/(a + bet(v, lnCa))
 	oinf = a*tau
 }
+
+FUNCTION_TABLE tst(v (mV)) (1)
+
+FUNCTION tst1(v (mV)) (1) {
+    tst1 = tst(v)
+}
+

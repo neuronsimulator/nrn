@@ -1,8 +1,14 @@
 # Test FUNCTION_TABLE with two dimensions (cagkftab.mod)
 # Dimensions are voltage (mv) and ln(cai)
 # Compare to cagk.mod
+# Also test FUNCTION_TABLE with one dimension
 
 from neuron import h, gui
+from neuron import expect_hocerr
+from neuron.expect_hocerr import expect_err
+
+expect_hocerr.quiet = False
+
 from math import log, exp, isclose
 
 # from the cagk.mod file
@@ -32,6 +38,27 @@ def exp1(k, d, v, x):
     return k * exp(arg)
 
 
+def tst(v):
+    return v * v
+
+
+def test_empty():
+    expect_err("print(h.tst1_cagkftab(5))")
+    expect_err("print(h.alp_cagkftab(-50., 1e-2))")
+
+
+test_empty()
+
+
+def test_const():
+    h.table_alp_cagkftab(5.1)
+    h.table_tst_cagkftab(6.2)
+    assert h.alp_cagkftab(-50.0, 1e-2) == 5.1
+    assert h.tst1_cagkftab(3) == 6.2
+
+
+test_const()
+
 # HOC matrix and 2-d double memory order is irow*ncol + jcol
 def memorder():
     nrow = 3
@@ -54,6 +81,28 @@ memorder()
 
 def vecrange(min, max, step):
     return h.Vector().indgen(min, max, step)
+
+
+def test_1d_tst(f, domain):  # test_1d helper when different arg styles
+    assert h.tst_cagkftab(-1000.0) == f.x[0]
+    assert h.tst_cagkftab(1000.0) == f.x[domain.size() - 1]
+    for x in domain:  # exactly at the domain points
+        assert isclose(h.tst_cagkftab(x), tst(x), abs_tol=1e-9)
+    for x in vecrange(2, 3, 0.01):  # linear interpolation less accurate
+        assert isclose(h.tst_cagkftab(x), tst(x), abs_tol=1e-2)
+
+
+def test_1d():
+    x = vecrange(-80, 50, 0.1)
+    f = h.Vector([tst(v) for v in x])
+    h.table_tst_cagkftab(f._ref_x[0], len(x), x.x[0], x.x[len(x) - 1])
+    test_1d_tst(f, x)
+    h.table_tst_cagkftab(f._ref_x[0], len(x), x._ref_x[0])
+    test_1d_tst(f, x)
+    return f, x
+
+
+test_1d_vecs = test_1d()  # keep in existence in case of later use
 
 
 def setup_tables():
