@@ -1,6 +1,5 @@
 /* /local/src/master/nrn/src/nrnoc/section.h,v 1.4 1996/05/21 17:09:24 hines Exp */
-#ifndef section_h
-#define section_h
+#pragma once
 
 /* In order to support oc objects containing sections, instead of vector
     of ordered sections, we now have a list (in the nmodl sense)
@@ -306,5 +305,3 @@ extern int nrn_is_valid_section_ptr(void*);
 
 
 #include "nrn_ansi.h"
-
-#endif

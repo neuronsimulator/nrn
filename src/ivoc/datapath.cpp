@@ -111,19 +111,19 @@ void HocDataPaths::search() {
     }
 }
 
-String* HocDataPaths::retrieve(double* pd) {
+String* HocDataPaths::retrieve(double* pd) const {
     assert(impl_->pathstyle_ != 2);
     //	printf("HocDataPaths::retrieve\n");
-    const auto& it = impl_->table_.find((void*) pd);
+    auto const it = impl_->table_.find(pd);
     if (it != impl_->table_.end()) {
         return it->second->path;
     }
     return nullptr;
 }
 
-Symbol* HocDataPaths::retrieve_sym(double* pd) {
+Symbol* HocDataPaths::retrieve_sym(double* pd) const {
     //	printf("HocDataPaths::retrieve\n");
-    const auto& it = impl_->table_.find((void*) pd);
+    auto const it = impl_->table_.find(pd);
     if (it != impl_->table_.end()) {
         return it->second->sym;
     }
@@ -140,9 +140,9 @@ void HocDataPaths::append(char** pd) {
     }
 }
 
-String* HocDataPaths::retrieve(char** pd) {
+String* HocDataPaths::retrieve(char** pd) const {
     //	printf("HocDataPaths::retrieve\n");
-    const auto& it = impl_->table_.find((void*) pd);
+    auto const it = impl_->table_.find(pd);
     if (it != impl_->table_.end()) {
         return it->second->path;
     }
@@ -390,7 +390,7 @@ void HocDataPathImpl::search_pysec() {
     // ForAllSections(sec)
     ITERATE(qsec, section_list) {
         Section* sec = hocSEC(qsec);
-        if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+        if (sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
             cs = secname(sec);
             strlist_.push_back((char*) cs.string());
             search(sec);
@@ -401,17 +401,17 @@ void HocDataPathImpl::search_pysec() {
 }
 
 void HocDataPathImpl::search(Section* sec) {
-    if (sec->prop->dparam[2].val == sentinal) {
-        found(&sec->prop->dparam[2].val, "L", sym_L);
+    if (sec->prop->dparam[2].get<double>() == sentinal) {
+        found(&(sec->prop->dparam[2].literal_value<double>()), "L", sym_L);
     }
-    if (sec->prop->dparam[4].val == sentinal) {
-        found(&sec->prop->dparam[4].val, "rallbranch", sym_rallbranch);
+    if (sec->prop->dparam[4].get<double>() == sentinal) {
+        found(&(sec->prop->dparam[4].literal_value<double>()), "rallbranch", sym_rallbranch);
     }
-    if (sec->prop->dparam[7].val == sentinal) {
-        found(&sec->prop->dparam[7].val, "Ra", sym_Ra);
+    if (sec->prop->dparam[7].get<double>() == sentinal) {
+        found(&(sec->prop->dparam[7].literal_value<double>()), "Ra", sym_Ra);
     }
     if (!sec->parentsec && sec->parentnode) {
-        search(sec->parentnode, sec->prop->dparam[1].val);
+        search(sec->parentnode, sec->prop->dparam[1].get<double>());
     }
     for (int i = 0; i < sec->nnode; ++i) {
         search(sec->pnode[i], nrn_arc_position(sec, sec->pnode[i]));
@@ -422,7 +422,7 @@ void HocDataPathImpl::search(Node* nd, double x) {
     CopyString cs("");
     if (NODEV(nd) == sentinal) {
         sprintf(buf, "v(%g)", x);
-        found(&NODEV(nd), buf, sym_v);
+        found(static_cast<double*>(&NODEV(nd)), buf, sym_v);
     }
 
 #if EXTRACELLULAR

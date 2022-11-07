@@ -6,12 +6,14 @@
 #define NetCon nrniv_Dinfo
 #endif
 
-#include <InterViews/observe.h>
 #include "htlist.h"
-#include "nrnneosm.h"
 #include "nrnmpi.h"
-#include <unordered_map>
+#include "nrnneosm.h"
+
+#include <InterViews/observe.h>
+
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #if 0
@@ -167,7 +169,7 @@ class SelfEvent: public DiscreteEvent {
     double flag_;
     Point_process* target_;
     double* weight_;
-    void** movable_;  // actually a TQItem**
+    Datum* movable_;  // pointed-to Datum holds TQItem*
 
     static unsigned long selfevent_send_;
     static unsigned long selfevent_move_;

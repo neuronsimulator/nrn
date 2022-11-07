@@ -149,7 +149,6 @@ double poisson(double x, double mean);
 double gauss(double x, double mean, double std_dev);
 double scop_erf(double z);
 
-typedef union Datum Datum;
 typedef struct NrnThread NrnThread;
 typedef struct SparseObj SparseObj;
 int _cvode_sparse(void**, int, int*, double*, int (*)(), double**);

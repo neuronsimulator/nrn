@@ -1,5 +1,4 @@
-#ifndef NRN_NRNCORE_UTILS_H
-#define NRN_NRNCORE_UTILS_H
+#pragma once
 
 #include <string>
 
@@ -18,6 +17,3 @@ void* get_coreneuron_handle();
 void check_coreneuron_compatibility(void* handle);
 
 #endif
-
-
-#endif  // NRN_NRNCORE_UTILS_H

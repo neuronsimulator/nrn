@@ -57,9 +57,8 @@ void Cvode::rhs(NrnThread* _nt) {
 }
 
 void Cvode::rhs_memb(CvMembList* cmlist, NrnThread* _nt) {
-    CvMembList* cml;
     errno = 0;
-    for (cml = cmlist; cml; cml = cml->next) {
+    for (CvMembList* cml = cmlist; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
         Pvmi s = mf->current;
         if (s) {
