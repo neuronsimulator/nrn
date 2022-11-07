@@ -94,6 +94,7 @@ register_rate.argtypes = [
         ctypes.c_double, flags="contiguous"
     ),  # multicompartment multipliers
     ctypes.POINTER(ctypes.py_object),  # voltage pointers
+    ctypes._CFuncPtr,
 ]  # Reaction rate function
 
 setup_currents = nrn_dll_sym("setup_currents")
@@ -118,6 +119,7 @@ ics_register_reaction.argtypes = [
     numpy.ctypeslib.ndpointer(dtype=numpy.uint64),
     ctypes.c_int,
     numpy.ctypeslib.ndpointer(dtype=float),
+    ctypes._CFuncPtr,
 ]
 
 ecs_register_reaction = nrn_dll_sym("ecs_register_reaction")
@@ -126,6 +128,7 @@ ecs_register_reaction.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
     _int_ptr,
+    ctypes._CFuncPtr,
 ]
 
 
@@ -1358,6 +1361,12 @@ def _compile_reactions():
                 r = rptr()
                 if isinstance(r, rate.Rate):
                     s = r._species()
+                    if s._id in creg._params_ids:
+                        warn(
+                            "Parameters values are fixed, %r will not change the value of %r"
+                            % (r, s)
+                        )
+                        continue
                     species_id = creg._species_ids[s._id]
                     for reg in creg._react_regions[rptr]:
                         if reg() in r._rate:
@@ -1459,7 +1468,7 @@ def _compile_reactions():
                         summed_mults = collections.defaultdict(lambda: 0)
                         for (mult, sp) in zip(r._mult, r._sources + r._dests):
                             summed_mults[creg._species_ids.get(sp()._id)] += mult
-                        for idx in sorted(summed_mults.keys()):
+                        for idx in sorted([k for k in summed_mults if k is not None]):
                             operator = "+=" if species_ids_used[idx][region_id] else "="
                             species_ids_used[idx][region_id] = True
                             fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (

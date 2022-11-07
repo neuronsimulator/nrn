@@ -77,9 +77,9 @@ for i in voidfun:
     if i:
         prefix = "nrnhoc_"
         j = i[len(prefix) :] if i.startswith(prefix) else i
-        print('"%s", %s,' % (j, i))
+        print('{"%s", %s},' % (j, i))
 print(
-    """0, 0
+    """{nullptr, nullptr}
 };
 
 static struct {  /* Integer Scalars */
@@ -90,9 +90,9 @@ static struct {  /* Integer Scalars */
 )
 
 for i in intvar[0]:
-    print('"%s", &%s,' % (i[0], i[0]))
+    print('{"%s", &%s},' % (i[0], i[0]))
 print(
-    """0, 0
+    """{nullptr, nullptr}
 };
 
 static struct {  /* Vector integers */
@@ -104,9 +104,9 @@ static struct {  /* Vector integers */
 )
 
 for i in intvar[1]:
-    print('"%s", %s, %s,' % (i[0], i[0], i[1]))
+    print('{"%s", %s, %s},' % (i[0], i[0], i[1]))
 print(
-    """0,0
+    """{nullptr, nullptr, 0}
 };
 
 static struct {  /* Float Scalars */
@@ -117,9 +117,9 @@ static struct {  /* Float Scalars */
 )
 
 for i in fltvar[0]:
-    print('"%s", &%s,' % (i[0], i[0]))
+    print('{"%s", &%s},' % (i[0], i[0]))
 print(
-    """0, 0
+    """{nullptr, nullptr}
 };
 
 static struct {  /* Vector float */
@@ -131,9 +131,9 @@ static struct {  /* Vector float */
 )
 
 for i in fltvar[1]:
-    print('"%s", %s, %s,' % (i[0], i[0], i[1]))
+    print('{"%s", %s, %s},' % (i[0], i[0], i[1]))
 print(
-    """0,0,0
+    """{nullptr, nullptr, 0}
 };
 
 /* Double Scalars */
@@ -142,9 +142,9 @@ DoubScal scdoub[] = {
 )
 
 for i in dblvar[0]:
-    print('"%s", &%s,' % (i[0], i[0]))
+    print('{"%s", &%s},' % (i[0], i[0]))
 print(
-    """0,0
+    """{nullptr, nullptr}
 };
 
 /* Vectors */
@@ -153,9 +153,9 @@ DoubVec vdoub[] = {
 )
 
 for i in dblvar[1]:
-    print('"%s", %s, %s,' % (i[0], i[0], i[1]))
+    print('{"%s", %s, %s},' % (i[0], i[0], i[1]))
 print(
-    """0, 0, 0
+    """{nullptr, nullptr, 0}
 };
 
 static struct {  /* Arrays */
@@ -168,9 +168,9 @@ static struct {  /* Arrays */
 )
 
 for i in dblvar[2]:
-    print('"%s", %s, %s, %s,' % (i[0], i[0], i[1], i[2]))
+    print('{"%s", %s, %s, %s},' % (i[0], i[0], i[1], i[2]))
 print(
-    """0, 0, 0, 0
+    """{nullptr, nullptr, 0, 0}
 };
 
 static struct {  /* triple dimensioned arrays */
@@ -184,9 +184,9 @@ static struct {  /* triple dimensioned arrays */
 )
 
 for i in dblvar[3]:
-    print('"%s", %s, %s, %s, %s,' % (i[0], i[0], i[1], i[2], i[3]))
+    print('{"%s", %s, %s, %s, %s},' % (i[0], i[0], i[1], i[2], i[3]))
 print(
-    """0, 0, 0, 0, 0
+    """{nullptr, nullptr, 0, 0, 0}
 };
 """
 )

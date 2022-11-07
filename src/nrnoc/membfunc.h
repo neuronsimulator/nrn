@@ -1,19 +1,11 @@
-#ifndef nrn_memb_func_h
-#define nrn_memb_func_h
-
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
+#pragma once
 extern void hoc_register_prop_size(int type, int psize, int dpsize);
-
-#if defined(__cplusplus)
-}
-#endif
 
 #include "nrnoc_ml.h"
 
 typedef struct NrnThread NrnThread;
+struct Symbol;
+
 typedef Datum* (*Pfrpdat)();
 typedef void (*Pvmi)(struct NrnThread*, Memb_list*, int);
 typedef void (*Pvmp)(Prop*);
@@ -28,22 +20,26 @@ typedef void (*nrn_bamech_t)(Node*, double*, Datum*, Datum*, struct NrnThread*);
 #define NULL_STATE      (Pfri) 0
 #define NULL_INITIALIZE (Pfri) 0
 
-typedef struct Memb_func {
+struct Memb_func {
     Pvmp alloc;
     Pvmi current;
     Pvmi jacob;
     Pvmi state;
-    Pvmi initialize;
+    bool has_initialize() const {
+        return m_initialize;
+    }
+    void invoke_initialize(NrnThread* nt, Memb_list* ml, int type) const;
+    void set_initialize(Pvmi init) {
+        m_initialize = init;
+    }
     Pvmp destructor; /* only for point processes */
     Symbol* sym;
-#if CVODE
     nrn_ode_count_t ode_count;
     nrn_ode_map_t ode_map;
     Pvmi ode_spec;
     Pvmi ode_matsol;
     nrn_ode_synonym_t ode_synonym;
     Pvmi singchan_; /* managed by kschan for variable step methods */
-#endif
     int vectorized;
     int thread_size_;                 /* how many Datum needed in Memb_list if vectorized */
     void (*thread_mem_init_)(Datum*); /* after Memb_list._thread is allocated */
@@ -54,7 +50,9 @@ typedef struct Memb_func {
     void* hoc_mech;
     void (*setdata_)(struct Prop*);
     int* dparam_semantics;  // for nrncore writing.
-} Memb_func;
+  private:
+    Pvmi m_initialize{};
+};
 
 
 #define IMEMFAST     -2
@@ -88,17 +86,13 @@ extern int n_memb_func;
 extern int* nrn_prop_param_size_;
 extern int* nrn_prop_dparam_size_;
 
-#if VECTORIZE
 extern Memb_list* memb_list;
 /* for finitialize, order is same up through extracellular, then ions,
 then mechanisms that write concentrations, then all others. */
 extern short* memb_order_;
-#endif
 #define NRNPOINTER                                                            \
     4 /* added on to list of mechanism variables.These are                    \
 pointers which connect variables  from other mechanisms via the _ppval array. \
 */
 
 #define _AMBIGUOUS 5
-
-#endif /* nrn_memb_func_h */

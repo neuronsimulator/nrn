@@ -25,7 +25,7 @@ env:
 
 jobs:
   coverage:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
 
     name: Code Coverage
 
@@ -47,16 +47,16 @@ jobs:
           make && sudo make install
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MAX_VERSION }}
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
@@ -84,7 +84,7 @@ jobs:
 
           # CMake options & flags
           export COVERAGE_FLAGS="--coverage -O0 -fno-inline -g";
-          export CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_PROFILING=ON";
+          export CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_PROFILING=ON -DNRN_ENABLE_BACKTRACE=ON";
           cmake $CMAKE_OPTION -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" ..;
 
           # Coverage

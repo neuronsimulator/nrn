@@ -30,7 +30,6 @@ void neuron2nemo(void) {
     hoc_execerror("neuron2nemo:", "implementation is obsolete");
 #else
     short i, isec, imark;
-    extern int tree_changed;
     char name[50];
 
     if (tree_changed) {
@@ -120,7 +119,7 @@ static double diamval(Node* nd) {
     Prop* p;
 
     for (p = nd->prop; p; p = p->next) {
-        if (p->type == MORPHOLOGY) {
+        if (p->_type == MORPHOLOGY) {
             break;
         }
     }
@@ -187,7 +186,7 @@ static void file_func(Section* sec) {
 
     active = 0;
     for (p = nd->prop; p; p = p->next) {
-        if (p->type == hhtype) {
+        if (p->_type == hhtype) {
             active = 1;
         }
     }

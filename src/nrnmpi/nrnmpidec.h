@@ -6,15 +6,10 @@ the prototypes be of the form "type foo(type arg, ...)"
 #ifndef nrnmpidec_h
 #define nrnmpidec_h
 #include <nrnmpiuse.h>
-#if defined(HAVE_STDINT_H)
-#include <stdint.h>
-#endif
+#include <cstdint>
 typedef long double longdbl;
 #if NRNMPI
 #include <stdlib.h>
-#if defined(__cplusplus)
-extern "C" {
-#endif
 
 /* from bbsmpipack.cpp */
 typedef struct bbsmpibuf {
@@ -26,6 +21,9 @@ typedef struct bbsmpibuf {
     int refcount;
 } bbsmpibuf;
 
+// olupton 2022-07-06: dynamic MPI needs to dlopen some of these (slightly
+// redefined) symbol names, so keep C linkage for simplicity
+extern "C" {
 // clang-format off
 extern bbsmpibuf* nrnmpi_newbuf(int size);
 extern void nrnmpi_copy(bbsmpibuf* dest, bbsmpibuf* src);
@@ -119,10 +117,7 @@ extern int nrnmpi_bgp_single_advance(NRNMPI_Spike* spk);
 extern int nrnmpi_bgp_conserve(int nsend, int nrecv);
 #endif
 // clang-format on
-
-#if defined(__cplusplus)
 }
-#endif
 
 #endif
 #endif

@@ -547,8 +547,8 @@ def integrator_properties():
     def run1(key):
         h.finitialize(0.001)
         cv.solve(2)
-        chk(key + " tvec", tvec, tol=5e-13)
-        chk(key + " vvec", vvec, tol=1e-12)
+        chk(key + " tvec", tvec, tol=5e-10)
+        chk(key + " vvec", vvec, tol=1e-9)
 
     cv.rtol(1e-3)
     cv.atol(0)
@@ -751,6 +751,17 @@ def interthread():
     cv.debug_event(0)
 
 
+def nc_event_before_init():
+    soma = h.Section()
+    soma.insert("pas")
+
+    syn = h.ExpSyn(soma(0.5))
+    nc = h.NetCon(None, syn)
+    nc.weight[0] = 1.0
+    # h.finitialize()
+    expect_err("nc.event(0)")  # nrn_assert triggered if outside of finitialize
+
+
 def test_netcvode_cover():
     nrn_use_daspk()
     node()
@@ -763,6 +774,7 @@ def test_netcvode_cover():
     scatter_gather()
     playrecord()
     interthread()
+    nc_event_before_init()
 
 
 if __name__ == "__main__":

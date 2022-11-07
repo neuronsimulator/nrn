@@ -4,7 +4,7 @@ from neuron.expect_hocerr import expect_hocerr, expect_err, set_quiet
 
 import numpy as np
 
-from neuron import h, hoc
+from neuron import config, h, hoc
 
 
 def test_soma():
@@ -324,8 +324,6 @@ def test_deleted_sec():
     del ic, imp, dend
     locals()
 
-    return s, seg, mech, rvlist, vref, gnabarref
-
 
 def test_disconnect():
     print("test_disconnect")
@@ -382,34 +380,43 @@ def test_nosection():
 
 def test_nrn_mallinfo():
     # figure out if ASan was enabled, see comment in unit_test.cpp
-    cmake_args = h.nrnversion(6)
-    if re.search("'NRN_SANITIZERS=[a-z,]*address[a-z,]*'", cmake_args):
-        print(
-            "Skipping nrn_mallinfo checks because ASan was enabled ({})".format(
-                cmake_args
-            )
-        )
+    if "address" in config.arguments["NRN_SANITIZERS"]:
+        print("Skipping nrn_mallinfo checks because ASan was enabled")
         return
     assert h.nrn_mallinfo(0) > 0
 
 
 def test_errorcode():
-    import sys, subprocess
+    import os, sys, subprocess
 
     process = subprocess.run('nrniv -c "1/0"', shell=True)
     assert process.returncode > 0
 
+    exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
+    env = os.environ.copy()
+    try:
+        env[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
+            "NRN_SANITIZER_PRELOAD_VAL"
+        ]
+    except:
+        pass
     process = subprocess.run(
-        '{} -c "from neuron import h; h.sqrt(-1)"'.format(sys.executable), shell=True
+        [exe, "-c", "from neuron import h; h.sqrt(-1)"], env=env, shell=False
     )
     assert process.returncode > 0
+
+
+def test_hocObj_error_in_construction():
+    # test unref hoc obj when error during construction
+    expect_hocerr(h.List, "A")
+    expect_hocerr(h.List, h.NetStim())
 
 
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()
     test_simple_sim()
-    result = test_deleted_sec()
+    test_deleted_sec()
     test_disconnect()
     h.topology()
     h.allobjects()

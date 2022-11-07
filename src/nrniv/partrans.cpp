@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 
+#include "partrans.h"  // sgid_t and SetupTransferInfo for CoreNEURON
 #include "treeset.h"
 
 #include <stdio.h>
@@ -14,10 +15,10 @@
 #include <stdint.h>
 #endif
 
-#include <vector>
 #include <map>            // Introduced for NonVSrcUpdateInfo
 #include <unordered_map>  // Replaces NrnHash for MapSgid2Int and MapNode2PDbl
-#include "partrans.h"     // sgid_t and SetupTransferInfo for CoreNEURON
+#include <utility>
+#include <vector>
 
 
 #if NRNLONGSGID
@@ -51,8 +52,6 @@ static void thread_transfer(NrnThread*);
 static void thread_vi_compute(NrnThread*);
 static void mk_ttd();
 extern double t;
-extern "C" int v_structure_change;
-extern "C" int structure_change_cnt;
 extern int nrn_node_ptr_change_cnt_;
 extern const char* bbcore_write_version;
 // see lengthy comment in ../nrnoc/fadvance.cpp
@@ -224,12 +223,12 @@ static void delete_imped_info() {
 // pv2node extended to any range variable in the section
 // This helper searches over all the mechanisms in the node.
 // If *pv exists, store mechtype and parray_index.
-static bool non_vsrc_setinfo(sgid_t ssid, Node* nd, double* pv) {
+static bool non_vsrc_setinfo(sgid_t ssid, Node* nd, double const* pv) {
     for (Prop* p = nd->prop; p; p = p->next) {
         if (pv >= p->param && pv < (p->param + p->param_size)) {
-            non_vsrc_update_info_[ssid] = std::pair<int, int>(p->type, pv - p->param);
-            // printf("non_vsrc_setinfo %p %d %ld %s\n", pv, p->type, pv-p->param,
-            // memb_func[p->type].sym->name);
+            non_vsrc_update_info_[ssid] = std::pair<int, int>(p->_type, pv - p->param);
+            // printf("non_vsrc_setinfo %p %d %ld %s\n", pv, p->_type, pv-p->param,
+            // memb_func[p->_type].sym->name);
             return true;
         }
     }
@@ -238,7 +237,7 @@ static bool non_vsrc_setinfo(sgid_t ssid, Node* nd, double* pv) {
 
 static double* non_vsrc_update(Node* nd, int type, int ix) {
     for (Prop* p = nd->prop; p; p = p->next) {
-        if (type == p->type) {
+        if (type == p->_type) {
             return p->param + ix;
         }
     }
@@ -269,7 +268,7 @@ static Node* pv2node(sgid_t ssid, double* pv) {
     }
 
     hoc_execerr_ext("Pointer to src is not in the currently accessed section %s", secname(sec));
-    return NULL;  // avoid coverage false negative.
+    return nullptr;  // avoid coverage false negative.
 }
 
 void nrnmpi_source_var() {
@@ -323,9 +322,9 @@ static void target_ptr_update() {
 }
 
 void nrnmpi_target_var() {
-    Point_process* pp = NULL;
-    Object* ob = NULL;
-    int iarg = 1;
+    Point_process* pp{};
+    Object* ob{};
+    int iarg{1};
     nrnthread_v_transfer_ = thread_transfer;  // otherwise can't check is_setup_
     is_setup_ = false;
     if (hoc_is_object_arg(iarg)) {
@@ -333,14 +332,14 @@ void nrnmpi_target_var() {
         pp = ob2pntproc(ob);
     }
     double* ptv = hoc_pgetarg(iarg++);
-    double x = *getarg(iarg++);
+    double x = *hoc_getarg(iarg++);
     if (x < 0) {
         hoc_execerr_ext("target_var sgid must be >= 0: arg %d is %g\n", iarg - 1, x);
     }
     if (pp && (ptv < pp->prop->param || ptv >= (pp->prop->param + pp->prop->param_size))) {
         hoc_execerr_ext("Target ref not in %s", hoc_object_name(ob));
     }
-    sgid_t sgid = (sgid_t) x;
+    auto const sgid = static_cast<sgid_t>(x);
     targets_.push_back(ptv);
     target_pntlist_.push_back(pp);
     target_parray_index_.push_back(compute_parray_index(pp, ptv));
@@ -843,9 +842,9 @@ void nrnmpi_setup_transfer() {
         }
 
         // clean up a little
-        delete[] ownsrc;
-        delete[] needsrc;
-        delete[] recv_from_have;
+        delete[] std::exchange(ownsrc, nullptr);
+        delete[] std::exchange(needsrc, nullptr);
+        delete[] std::exchange(recv_from_have, nullptr);
 
         // 3) First return triple creates the proper outsrc_buf_.
         // Now that we know what machines are interested in our sids...
@@ -955,7 +954,7 @@ void pargap_jacobi_setup(int mode) {
                         "to the POINT_PROCESS",
                         0);
                 }
-                int type = pp->prop->type;
+                int type = pp->prop->_type;
                 if (imped_current_type_count_ == 0) {
                     imped_current_type_count_ = 1;
                     imped_current_type_ = new int[5];
@@ -1183,9 +1182,9 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
             Point_process* pp = target_pntlist_[i];
             NrnThread* nt = (NrnThread*) pp->_vnt;
             int tid = nt ? nt->id : 0;
-            int type = pp->prop->type;
+            int type = pp->prop->_type;
             Memb_list& ml = *(nrn_threads[tid]._ml_list[type]);
-            int ix = targets_[i] - ml.data[0];
+            int ix = targets_[i] - ml._data[0];
 
             auto& g = gi[tid];
             g.tar_sid.push_back(sid);
@@ -1211,7 +1210,7 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
                 double* d = non_vsrc_update(nd, type, ix);
                 NrnThread* nt = nd->_nt ? nd->_nt : nrn_threads;
                 Memb_list& ml = *nt->_ml_list[type];
-                ix = d - ml.data[0];
+                ix = d - ml._data[0];
             } else {  // is a voltage source
                 ix = nd->_v - nrn_threads[tid]._actual_v;
                 assert(nd->extnode == NULL);  // only if v

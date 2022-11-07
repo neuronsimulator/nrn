@@ -43,10 +43,7 @@ fi
 
 echo '#include <stdio.h>
 #include "hocdec.h"
-#if defined(__cplusplus)
-extern "C"
-#endif
-modl_reg(){
+extern "C" void modl_reg() {
 	NOT_PARALLEL_SUB(fprintf(stderr, "Additional mechanisms from files'$newline'");)
 ' > mod_func.cpp
 
@@ -62,11 +59,6 @@ do
 	MODOBJS="$MODOBJS $i.o"
 done
 echo "}" >> mod_func.cpp
-
-echo '
-#if defined(__cplusplus)
-}
-#endif' >> mod_func.cpp
 
 make -f $MAKEFILEDIR/nrnoc_makefile "MODOBJFILES=$MODOBJS" special &&
   echo "Successfully created $MODSUBDIR/special"

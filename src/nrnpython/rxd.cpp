@@ -302,7 +302,7 @@ extern "C" void rxd_include_node_flux1D(int n, long* index, double* scales, PyOb
     }
     _node_flux_count = n;
     if (n > 0) {
-        _node_flux_idx = (long*) allocopy(index, n * sizeof(long) * n);
+        _node_flux_idx = (long*) allocopy(index, n * sizeof(long));
         _node_flux_scale = (double*) allocopy(scales, n * sizeof(double));
         _node_flux_src = (PyObject**) allocopy(sources, n * sizeof(PyObject*));
     }
@@ -891,7 +891,7 @@ extern "C" void register_rate(int nspecies,
     if (vptrs != NULL) {
         react->vptrs = (double**) malloc(nseg * sizeof(double*));
         for (i = 0; i < nseg; i++)
-            react->vptrs[i] = vptrs[i]->u.px_;
+            react->vptrs[i] = static_cast<double*>(vptrs[i]->u.px_);
     } else {
         react->vptrs = NULL;
     }

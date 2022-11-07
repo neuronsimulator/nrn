@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <nrnmpiuse.h>
+#include "nrn_ansi.h"
 #include "oc_ansi.h"
 #include <stdio.h>
 #include <errno.h>
@@ -12,6 +13,7 @@
 #include "cabvars.h"
 #include "neuron.h"
 #include "membdef.h"
+#include "multicore.h"
 #include "nrnmpi.h"
 
 
@@ -19,11 +21,11 @@
 static char nmodl_version_[] = "7.7.0";
 
 static char banner[] =
-    "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2021\n\
+    "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2022\n\
 See http://neuron.yale.edu/neuron/credits\n";
 
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
-extern char* nrn_mech_dll;            /* declared in hoc_init.cpp so ivocmain.cpp can see it */
+extern const char* nrn_mech_dll;      /* declared in hoc_init.cpp so ivocmain.cpp can see it */
 extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.cpp */
 #endif                                // WIN32 or NRNMEHC_DLL_STYLE
 
@@ -105,16 +107,26 @@ extern double hoc_default_dll_loaded_;
 extern int nrn_istty_;
 extern int nrn_nobanner_;
 
-static HocParmLimits _hoc_parm_limits[] = {"Ra",   1e-6,   1e9,          "L",       1e-4,
-                                           1e20,   "diam", 1e-9,         1e9,       "cm",
-                                           0.,     1e9,    "rallbranch", 1.,        1e9,
-                                           "nseg", 1.,     1e9,          "celsius", -273.,
-                                           1e6,    "dt",   1e-9,         1e15,      0,
-                                           0.,     0.};
+static HocParmLimits _hoc_parm_limits[] = {{"Ra", {1e-6, 1e9}},
+                                           {"L", {1e-4, 1e20}},
+                                           {"diam", {1e-9, 1e9}},
+                                           {"cm", {0., 1e9}},
+                                           {"rallbranch", {1., 1e9}},
+                                           {"nseg", {1., 1e9}},
+                                           {"celsius", {-273., 1e6}},
+                                           {"dt", {1e-9, 1e15}},
+                                           {nullptr, {0., 0.}}};
 
-static HocParmUnits _hoc_parm_units[] = {"Ra",     "ohm-cm",  "L",     "um",     "diam", "um", "cm",
-                                         "uF/cm2", "celsius", "degC",  "dt",     "ms",   "t",  "ms",
-                                         "v",      "mV",      "i_cap", "mA/cm2", 0,      0};
+static HocParmUnits _hoc_parm_units[] = {{"Ra", "ohm-cm"},
+                                         {"L", "um"},
+                                         {"diam", "um"},
+                                         {"cm", "uF/cm2"},
+                                         {"celsius", "degC"},
+                                         {"dt", "ms"},
+                                         {"t", "ms"},
+                                         {"v", "mV"},
+                                         {"i_cap", "mA/cm2"},
+                                         {nullptr, nullptr}};
 
 extern Symlist* nrn_load_dll_called_;
 extern int nrn_load_dll_recover_error();
@@ -170,7 +182,7 @@ void hoc_reg_nmodl_filename(int type, const char* filename) {
     nrn_nmodl_filename_[type] = filename;
 }
 
-extern "C" void add_nrn_has_net_event(int type) {
+void add_nrn_has_net_event(int type) {
     ++nrn_has_net_event_cnt_;
     nrn_has_net_event_ = (int*) erealloc(nrn_has_net_event_, nrn_has_net_event_cnt_ * sizeof(int));
     nrn_has_net_event_[nrn_has_net_event_cnt_ - 1] = type;
@@ -181,7 +193,7 @@ int nrn_fornetcon_cnt_;    /* how many models have a FOR_NETCONS statement */
 int* nrn_fornetcon_type_;  /* what are the type numbers */
 int* nrn_fornetcon_index_; /* what is the index into the ppvar array */
 
-extern "C" void add_nrn_fornetcons(int type, int indx) {
+void add_nrn_fornetcons(int type, int indx) {
     int i = nrn_fornetcon_cnt_++;
     nrn_fornetcon_type_ = (int*) erealloc(nrn_fornetcon_type_, (i + 1) * sizeof(int));
     nrn_fornetcon_index_ = (int*) erealloc(nrn_fornetcon_index_, (i + 1) * sizeof(int));
@@ -193,7 +205,7 @@ extern "C" void add_nrn_fornetcons(int type, int indx) {
 short* nrn_is_artificial_;
 short* nrn_artcell_qindex_;
 
-extern "C" void add_nrn_artcell(int type, int qi) {
+void add_nrn_artcell(int type, int qi) {
     nrn_is_artificial_[type] = 1;
     nrn_artcell_qindex_[type] = qi;
 }
@@ -295,9 +307,7 @@ void hoc_nrn_load_dll(void) {
     }
 }
 
-extern void nrn_threads_create(int, int);
-
-static DoubScal scdoub[] = {"t", &t, "dt", &dt, 0, 0};
+static DoubScal scdoub[] = {{"t", &t}, {"dt", &dt}, {nullptr, nullptr}};
 
 void hoc_last_init(void) {
     int i;
@@ -305,11 +315,10 @@ void hoc_last_init(void) {
     Symbol* s;
 
     hoc_register_var(scdoub, (DoubVec*) 0, (VoidFunc*) 0);
-    nrn_threads_create(1, 0);  // single thread
+    nrn_threads_create(1, false);  // single thread
 
     if (nrnmpi_myid < 1)
         if (nrn_nobanner_ == 0) {
-            extern char* nrn_version(int i);
             Fprintf(stderr, "%s\n", nrn_version(1));
             Fprintf(stderr, "%s\n", banner);
             IGNORE(fflush(stderr));
@@ -388,7 +397,6 @@ void hoc_last_init(void) {
         }
     }
     if (nrn_mech_dll) {
-        char *cp1, *cp2;
         hoc_default_dll_loaded_ = 1.;
 #if defined(WIN32)
         /* Sometimes (windows 10 and launch recent enthought canopy) it seems that
@@ -404,7 +412,9 @@ void hoc_last_init(void) {
             }
         } else {
 #endif /*WIN32*/
-            for (cp1 = nrn_mech_dll; *cp1; cp1 = cp2) {
+            char *cp1{}, *cp2{};
+            std::string tmp{nrn_mech_dll};
+            for (cp1 = tmp.data(); *cp1; cp1 = cp2) {
                 for (cp2 = cp1; *cp2; ++cp2) {
                     if (*cp2 == ';') {
                         *cp2 = '\0';
@@ -520,9 +530,8 @@ void nrn_register_mech_common(const char** m,
     memb_func[type].jacob = jacob;
     memb_func[type].alloc = alloc;
     memb_func[type].state = stat;
-    memb_func[type].initialize = initialize;
+    memb_func[type].set_initialize(initialize);
     memb_func[type].destructor = nullptr;
-#if VECTORIZE
     memb_func[type].vectorized = vectorized ? 1 : 0;
     memb_func[type].thread_size_ = vectorized ? (vectorized - 1) : 0;
     memb_func[type].thread_mem_init_ = nullptr;
@@ -536,15 +545,12 @@ void nrn_register_mech_common(const char** m,
     memb_list[type].nodecount = 0;
     memb_list[type]._thread = (Datum*) 0;
     memb_order_[type] = type;
-#endif
-#if CVODE
     memb_func[type].ode_count = nullptr;
     memb_func[type].ode_map = nullptr;
     memb_func[type].ode_spec = nullptr;
     memb_func[type].ode_matsol = nullptr;
     memb_func[type].ode_synonym = nullptr;
     memb_func[type].singchan_ = nullptr;
-#endif
     /* as of 5.2 nmodl translates so that the version string
        is the first string in m. This allows the neuron application
        to determine if nmodl c files are compatible with this version
@@ -671,14 +677,14 @@ It's version %s \"c\" code is incompatible with this neuron version.\n",
     n_memb_func = type;
 }
 
-extern "C" void register_mech(const char** m,
-                              Pvmp alloc,
-                              Pvmi cur,
-                              Pvmi jacob,
-                              Pvmi stat,
-                              Pvmi initialize,
-                              int nrnpointerindex, /* if -1 then there are none */
-                              int vectorized) {
+void register_mech(const char** m,
+                   Pvmp alloc,
+                   Pvmi cur,
+                   Pvmi jacob,
+                   Pvmi stat,
+                   Pvmi initialize,
+                   int nrnpointerindex, /* if -1 then there are none */
+                   int vectorized) {
     int type = n_memb_func;
     nrn_register_mech_common(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
     if (nrnpy_reg_mech_p_) {
@@ -686,7 +692,7 @@ extern "C" void register_mech(const char** m,
     }
 }
 
-extern "C" void nrn_writes_conc(int type, int unused) {
+void nrn_writes_conc(int type, int unused) {
     static int lastion = EXTRACELL + 1;
     int i;
     for (i = n_memb_func - 2; i >= lastion; --i) {
@@ -701,7 +707,7 @@ extern "C" void nrn_writes_conc(int type, int unused) {
     }
 }
 
-extern "C" void hoc_register_prop_size(int type, int psize, int dpsize) {
+void hoc_register_prop_size(int type, int psize, int dpsize) {
     nrn_prop_param_size_[type] = psize;
     nrn_prop_dparam_size_[type] = dpsize;
     if (memb_func[type].dparam_semantics) {
@@ -712,7 +718,7 @@ extern "C" void hoc_register_prop_size(int type, int psize, int dpsize) {
         memb_func[type].dparam_semantics = (int*) ecalloc(dpsize, sizeof(int));
     }
 }
-extern "C" void hoc_register_dparam_semantics(int type, int ix, const char* name) {
+void hoc_register_dparam_semantics(int type, int ix, const char* name) {
     /* only interested in area, iontype, cvode_ieq,
        netsend, pointer, pntproc, bbcorepointer, watch, diam,
        fornetcon,
@@ -763,23 +769,17 @@ extern "C" void hoc_register_dparam_semantics(int type, int ix, const char* name
 #endif  // 0
 }
 
-#if CVODE
-extern "C" void hoc_register_cvode(int i,
-                                   nrn_ode_count_t cnt,
-                                   nrn_ode_map_t map,
-                                   Pvmi spec,
-                                   Pvmi matsol) {
+void hoc_register_cvode(int i, nrn_ode_count_t cnt, nrn_ode_map_t map, Pvmi spec, Pvmi matsol) {
     memb_func[i].ode_count = cnt;
     memb_func[i].ode_map = map;
     memb_func[i].ode_spec = spec;
     memb_func[i].ode_matsol = matsol;
 }
-extern "C" void hoc_register_synonym(int i, void (*syn)(int, double**, Datum**)) {
+void hoc_register_synonym(int i, void (*syn)(int, double**, Datum**)) {
     memb_func[i].ode_synonym = syn;
 }
-#endif  // CVODE
 
-extern "C" void register_destructor(Pvmp d) {
+void register_destructor(Pvmp d) {
     memb_func[n_memb_func - 1].destructor = d;
 }
 
@@ -803,19 +803,18 @@ extern void class2oc(const char*,
                      Member_ret_str_func*);
 
 
-extern "C" int point_register_mech(const char** m,
-                                   Pvmp alloc,
-                                   Pvmi cur,
-                                   Pvmi jacob,
-                                   Pvmi stat,
-                                   Pvmi initialize,
-                                   int nrnpointerindex,
-                                   int vectorized,
+int point_register_mech(const char** m,
+                        Pvmp alloc,
+                        Pvmi cur,
+                        Pvmi jacob,
+                        Pvmi stat,
+                        Pvmi initialize,
+                        int nrnpointerindex,
+                        int vectorized,
 
-                                   void* (*constructor)(Object*),
-                                   void (*destructor)(void*),
-                                   Member_func* fmember) {
-    extern void steer_point_process(void* v);
+                        void* (*constructor)(Object*),
+                        void (*destructor)(void*),
+                        Member_func* fmember) {
     Symlist* sl;
     Symbol *s, *s2;
     nrn_load_name_check(m[1]);
@@ -859,7 +858,7 @@ extern "C" double _modl_get_dt_thread(NrnThread* nt) {
 }
 #endif  // 1
 
-extern "C" int nrn_pointing(double* pd) {
+int nrn_pointing(double* pd) {
     return pd ? 1 : 0;
 }
 
@@ -871,7 +870,7 @@ void state_discontinuity(int i, double* pd, double d) {
     }
 }
 
-extern "C" void hoc_register_limits(int type, HocParmLimits* limits) {
+void hoc_register_limits(int type, HocParmLimits* limits) {
     int i;
     Symbol* sym;
     for (i = 0; limits[i].name; ++i) {
@@ -888,7 +887,7 @@ extern "C" void hoc_register_limits(int type, HocParmLimits* limits) {
     }
 }
 
-extern "C" void hoc_register_units(int type, HocParmUnits* units) {
+void hoc_register_units(int type, HocParmUnits* units) {
     int i;
     Symbol* sym;
     for (i = 0; units[i].name; ++i) {
@@ -945,7 +944,6 @@ void hoc_reg_ba(int mt, nrn_bamech_t f, int type) {
 }
 
 void _cvode_abstol(Symbol** s, double* tol, int i) {
-#if CVODE
     if (s && s[i]->extra) {
         double x;
         x = s[i]->extra->tolerance;
@@ -953,13 +951,11 @@ void _cvode_abstol(Symbol** s, double* tol, int i) {
             tol[i] *= x;
         }
     }
-#endif  // CVODE
 }
 
 extern Node** node_construct(int);
 
-extern "C" void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
-#if CVODE
+void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
     int i;
     Symbol* sym;
     /*printf("register tolerance for %s\n", memb_func[type].sym->name);*/
@@ -1001,7 +997,7 @@ extern "C" void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*
                     into the p->param array */
                 assert(p);
                 /* need to find symbol for this */
-                msym = memb_func[p->type].sym;
+                msym = memb_func[p->_type].sym;
                 for (j = 0; j < msym->s_varn; ++j) {
                     vsym = msym->u.ppsym[j];
                     if (vsym->type == RANGEVAR && vsym->u.rng.index == index) {
@@ -1025,7 +1021,6 @@ extern "C" void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*
             free(pv);
         }
     }
-#endif  // CVODE
 }
 
 void _nrn_thread_reg(int i, int cons, void (*f)(Datum*)) {
@@ -1046,8 +1041,7 @@ void _nrn_setdata_reg(int i, void (*call)(Prop*)) {
     memb_func[i].setdata_ = call;
 }
 /* there is some question about the _extcall_thread variables, if any. */
-extern "C" double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int type) {
-    extern double hoc_call_func(Symbol*, int);
+double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int type) {
     void (*call)(Prop*) = memb_func[type].setdata_;
     if (call) {
         (*call)(p);

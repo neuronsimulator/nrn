@@ -1,6 +1,5 @@
-#ifndef ocfunc_h
-#define ocfunc_h
-
+#pragma once
+#include "nrnfilewrap.h"
 
 extern double hoc_Log(double), hoc_Log10(double), hoc1_Exp(double), hoc_Sqrt(double),
     hoc_integer(double);
@@ -33,11 +32,15 @@ extern void hoc_Chdir(void), hoc_getcwd(void), hoc_Symbol_units(void), hoc_stdou
 extern void hoc_name_declared(void), hoc_unix_mac_pc(void), hoc_show_winio(void);
 extern void hoc_usemcran4(void), hoc_mcran4(void), hoc_mcran4init(void);
 extern void hoc_nrn_load_dll(void), hoc_nrnversion(void), hoc_object_pushed(void);
-extern void hoc_mallinfo(void), hoc_load_java(void);
+extern void hoc_mallinfo(void);
 extern void hoc_Setcolor(void);
 extern void hoc_init_space(void);
 extern void hoc_install_hoc_obj(void);
 extern void nrn_feenableexcept(void);
+void hoc_coreneuron_handle();
+void hoc_get_config_key();
+void hoc_get_config_val();
+void hoc_num_config_keys();
 extern int nrn_feenableexcept_;
 #if DOS
 extern void hoc_settext(void);
@@ -46,5 +49,39 @@ extern void hoc_settext(void);
 extern void hoc_win_exec();
 #endif
 
-
-#endif
+namespace nrn::oc {
+// Avoid `Frame` because InterViews likes #define-ing that as something else
+struct frame;
+}  // namespace nrn::oc
+union Inst;
+struct Object;
+union Objectdata;
+struct Symlist;
+void oc_restore_code(Inst** a1,
+                     Inst** a2,
+                     std::size_t& a3,
+                     nrn::oc::frame** a4,
+                     int* a5,
+                     int* a6,
+                     Inst** a7,
+                     nrn::oc::frame** a8,
+                     std::size_t& a9,
+                     Symlist** a10,
+                     Inst** a11,
+                     int* a12);
+void oc_restore_hoc_oop(Object** a1, Objectdata** a2, int* a4, Symlist** a5);
+void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4);
+void oc_save_code(Inst** a1,
+                  Inst** a2,
+                  std::size_t& a3,
+                  nrn::oc::frame** a4,
+                  int* a5,
+                  int* a6,
+                  Inst** a7,
+                  nrn::oc::frame** a8,
+                  std::size_t& a9,
+                  Symlist** a10,
+                  Inst** a11,
+                  int* a12);
+void oc_save_hoc_oop(Object** a1, Objectdata** a2, int* a4, Symlist** a5);
+void oc_save_input_info(const char**, int*, int*, NrnFILEWrap**);

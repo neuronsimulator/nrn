@@ -5,7 +5,8 @@
 #include <mymath.h>
 
 declarePool(HocEventPool, HocEvent)
-    implementPool(HocEventPool, HocEvent) HocEventPool* HocEvent::hepool_;
+implementPool(HocEventPool, HocEvent)
+HocEventPool* HocEvent::hepool_;
 
 HocEvent::HocEvent() {
     stmt_ = nil;

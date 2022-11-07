@@ -45,11 +45,10 @@ cd nrn/packaging/python
 docker build -t neuronsimulator/neuron_wheel[_gpu]:<tag> .
 ```
 where `<tag>` is:
-* `latest-x86_64` or `latest-aarch64` for official publishing on respective platforms (after merging related PR)
+* `latest-x86_64` or `latest-aarch64` for official publishing on respective platforms. For `master`, we are using `latest-gcc9-x86_64` and `latest-gcc9-aarch64` (see [Use GCC9 for building wheels #1971](https://github.com/neuronsimulator/nrn/pull/1971)). 
+* `nvhpc-X.Y-cuda-A.B` for the GPU wheels where `X.Y` is the NVHPC version and `A.B` is the CUDA one. I.e `nvhpc-22.1-cuda-11.5`. For `master` we are using `nvhpc-22.1-cuda-11.5-gcc9`(see [Use GCC9 for building wheels #1971](https://github.com/neuronsimulator/nrn/pull/1971)).
 * `feature-name` for updates (for local testing or for PR testing purposes where you can temporarily publish the tag on DockerHub and tweak Azure CI pipelines to use it - refer to
   `Job: 'ManyLinuxWheels'` or `Job: 'ManyLinuxGPUWheels'` in [azure-pipelines.yml](../../azure-pipelines.yml) )
-
-and `_gpu` is needed for the GPU wheel. 
 
 If you are building an image for AArch64 i.e. with `latest-aarch64` tag then you additionally pass `--build-arg` argument to docker build command in order to use compatible manylinux image for ARM64 platform (e.g. while building on Apple M1 or QEMU emulation):
 
@@ -209,8 +208,6 @@ Similar to BB5, the wheel can be tested on any desktop system provided that NVHP
 
 ## Publishing the wheels on Pypi via Azure
 
-### Official Release wheels
-
 Head over to the [neuronsimulator.nrn](https://dev.azure.com/neuronsimulator/nrn/_build?definitionId=1) pipeline on Azure.
 
 After creating the tag on the `release/x.y` or on the `master` branch, perform the following steps:
@@ -229,8 +226,8 @@ After creating the tag on the `release/x.y` or on the `master` branch, perform t
 ![](images/azure-release-no-upload.png)
 
 With above, wheel will be created like release from the provided tag but they won't be uploaded to the pypi.org ( as we have set  `NRN_RELEASE_UPLOAD=false`). These wheels now you can download from artifacts section and perform thorough testing. Once you are happy with the testing result, set `NRN_RELEASE_UPLOAD` to `true` and trigger the pipeline same way:
-   * `NRN_NIGHTLY_UPLOAD` : `true`
-   * `NRN_RELEASE_UPLOAD` : `false`
+   * `NRN_NIGHTLY_UPLOAD` : `false`
+   * `NRN_RELEASE_UPLOAD` : `true`
    * `NEURON_NIGHTLY_TAG` : undefined (leave empty)
 
 ![](images/azure-release.png)
@@ -272,7 +269,7 @@ $ git diff
 The reason we are setting `NEURON_WHEEL_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
 
 
-### Nightly wheels
+## Nightly wheels
 
 Nightly wheels get automatically published from `master` in CRON mode.
 

@@ -11,13 +11,10 @@
 #include "hoclist.h"
 #include "parse.hpp"
 #include "hocparse.h"
-#include <setjmp.h>
 #include <errno.h>
 #include "nrnfilewrap.h"
-#include "nrnjava.h"
 
 
-extern jmp_buf begin;
 extern char* neuron_home;
 
 NrnFILEWrap* frin;
@@ -72,7 +69,7 @@ void hoc_stdout(void) {
 void ropen(void) /* open file for reading */
 {
     double d;
-    char* fname;
+    const char* fname;
 
     if (ifarg(1))
         fname = gargstr(1);
@@ -99,7 +96,7 @@ void ropen(void) /* open file for reading */
 
 void wopen(void) /* open file for writing */
 {
-    char* fname;
+    const char* fname;
     double d;
 
     if (ifarg(1))
@@ -120,7 +117,7 @@ void wopen(void) /* open file for writing */
     pushx(d);
 }
 
-extern "C" const char* expand_env_var(const char* s) {
+const char* expand_env_var(const char* s) {
     static HocStr* hs;
     const char* cp1;
     char* cp2;
@@ -596,16 +593,6 @@ static void hoc_load(const char* stype) {
     }
 }
 
-Pfri p_hoc_load_java;
-void hoc_load_java(void) {
-    int r = 0;
-    if (p_hoc_load_java) {
-        r = (*p_hoc_load_java)();
-    }
-    ret();
-    pushx((double) r);
-}
-
 void hoc_load_proc(void) {
     hoc_load("proc");
     ret();
@@ -798,7 +785,7 @@ static int hoc_Load_file(int always, const char* name) {
 
     return b;
 }
-extern "C" char* hoc_back2forward(char*);
+char* hoc_back2forward(char*);
 void hoc_getcwd(void) {
     int len;
     static char* buf;

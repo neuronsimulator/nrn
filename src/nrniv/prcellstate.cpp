@@ -33,11 +33,11 @@ static void pr_memb(int type,
             }
             if (receives_events) {
                 fprintf(f, "%d nri %lu\n", cellnodes[inode], pnt2index.size());
-                Point_process* pp = (Point_process*) ml->pdata[i][1]._pvoid;
+                auto* pp = ml->pdata[i][1].get<Point_process*>();
                 pnt2index.emplace(pp, pnt2index.size());
             }
             for (int j = 0; j < size; ++j) {
-                fprintf(f, " %d %d %.*g\n", cellnodes[inode], j, precision, ml->data[i][j]);
+                fprintf(f, " %d %d %.*g\n", cellnodes[inode], j, precision, ml->_data[i][j]);
             }
         }
     }
@@ -83,7 +83,7 @@ static void pr_netcon(NrnThread& nt, FILE* f, const std::map<void*, int>& pnt2in
             } else {
                 fprintf(f, "%zd %d %d %.*g", i, srcgid, nc->active_ ? 1 : 0, precision, nc->delay_);
             }
-            int wcnt = pnt_receive_size[nc->target_->prop->type];
+            int wcnt = pnt_receive_size[nc->target_->prop->_type];
             for (int k = 0; k < wcnt; ++k) {
                 fprintf(f, " %.*g", precision, nc->weight_[k]);
             }

@@ -1,3 +1,72 @@
+# NEURON 8.2
+
+## 8.2.1
+_Release Date_ : 12-08-2022
+
+### What's New
+
+- Change mcomplex.dat normalization to hh/5. (#1895)
+- Jupyter support for ModelView #1907
+
+### Bug Fixes
+
+- nrnivmodl_core_makefile: fix SDKROOT (#1942)
+- First time declaration of section in template must be at command level. (#1914)
+- setup.exe installer must distribute env.exe (https://github.com/neuronsimulator/nrn/pull/1941)
+
+### Improvements /  Other Changes
+
+- Documentation
+  - added new INCF/CNS 2022 online material (#1932)
+  - updates (dealing with sims, generating movie, modelview, more #1925 )
+  - transfer from Yale website (#1867) 
+- nrnmpi_load: drop printf for already loaded lib (#1938)
+
+For the complete list of commits, see the list in [GitHub Issue #1944](https://github.com/neuronsimulator/nrn/issues/1944)
+
+## 8.2.0
+_Release Date_ : 01-07-2022
+
+### What's New
+* Allow multiple BEFORE/AFTER blocks of same type in a MOD file. #1722
+* Several documentation updates, including randomness in NEURON models #1727,
+  NEURON course exercise sets from 2018 #1735 and publications using NEURON #1819.
+* CMake: improved documentation targets. (#1725)  
+
+### Breaking Changes
+* Support for Python 3.6 was dropped, as it has reached end-of-life (#1733).
+* In this release, more declarations of NEURON methods (typically `nrn_` and
+  `hoc_` functions) are implicitly included in translated MOD files. This can
+  cause compilation errors with MOD files that include incorrect declarations
+  of these methods in `VERBATIM` blocks. (#1755, #1811, #1825).
+* Declaring STATE variables as GLOBAL is now disallowed. (#1723)
+
+### Deprecations & future changes
+* NEURON is in the process of being fully migrated to a `C++` codebase.  
+  Starting with next major release `9.0.0`, `MOD` files will be converted to `C++` instead of `C`.
+  This will break compatibility with some legacy MOD files containing VERBATIM blocks and code may have to be updated
+  given that some valid C code is not valid C++.
+  A migration [guide](https://github.com/neuronsimulator/nrn/blob/80778700048f3aeefd35477308151bf7dd118941/docs/guide/porting_mechanisms_to_cpp.rst)
+  is being compiled in the latest online documentation (note that it may change post release).
+* `Random123` will be the default random number generator in NEURON and most of the random number distributions implementations will be
+  replaced by those in the C++ standard library, while a few will be discontinued. See  [#1330](https://github.com/neuronsimulator/nrn/issues/1330) for follow-up and questions.
+
+### Bug Fixes
+* Fix for #335: Return proper exit code in hoc execution #1633
+* Build on Ubuntu21.10 WSL: escape special characters (#1862)
+
+### Improvements /  Other Changes
+* Support for using `mallinfo2()` (#1805)
+* HOC domain for Sphinx `5.0.1` 
+
+### Upgrade Steps
+* If your MOD files contain VERBATIM blocks you may need to refer to the aforementioned
+  [C++ migration guide](https://github.com/neuronsimulator/nrn/blob/80778700048f3aeefd35477308151bf7dd118941/docs/guide/porting_mechanisms_to_cpp.rst)
+  and make minor changes to prepare for the upcoming `9.0.0` release.
+  Remaining compatible with `8.2.0` and older versions is typically straightforward.
+
+For the complete list of features and bug fixes, see the list in [GitHub Issue #1879](https://github.com/neuronsimulator/nrn/issues/1879)
+
 # NEURON 8.1
 
 ## 8.1.0

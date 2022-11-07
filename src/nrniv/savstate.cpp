@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include "ocfile.h"
+#include "nrncvode.h"
 #include "nrnoc2iv.h"
 #include "classreg.h"
 #include "ndatclas.h"
@@ -22,7 +23,6 @@ extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-extern "C" void clear_event_queue();
 extern hoc_Item* net_cvode_instance_psl();
 extern PlayRecList* net_cvode_instance_prl();
 extern double t;
@@ -330,7 +330,7 @@ bool SaveState::check(bool warn) {
             int i = 0;
             Prop* p;
             for (p = nd->prop; p; p = p->next) {
-                if (ssi[p->type].size == 0) {
+                if (ssi[p->_type].size == 0) {
                     continue;
                 }
                 if (i >= ns.nmemb) {
@@ -343,7 +343,7 @@ fewer mechanisms saved than exist at node %d of %s\n",
                     }
                     return false;
                 }
-                if (p->type != ns.type[i]) {
+                if (p->_type != ns.type[i]) {
                     if (warn) {
                         fprintf(stderr,
                                 "SaveState warning: mechanisms out of order at node %d of %s\n\
@@ -351,7 +351,7 @@ saved %s but need %s\n",
                                 inode,
                                 secname(sec),
                                 memb_func[i].sym->name,
-                                memb_func[p->type].sym->name);
+                                memb_func[p->_type].sym->name);
                     }
                     return false;
                 }
@@ -391,7 +391,7 @@ bool SaveState::checknode(NodeState& ns, Node* nd, bool warn) {
     int i = 0;
     Prop* p;
     for (p = nd->prop; p; p = p->next) {
-        if (ssi[p->type].size == 0) {
+        if (ssi[p->_type].size == 0) {
             continue;
         }
         if (i >= ns.nmemb) {
@@ -402,13 +402,13 @@ fewer mechanisms saved than exist at a root node\n");
             }
             return false;
         }
-        if (p->type != ns.type[i]) {
+        if (p->_type != ns.type[i]) {
             if (warn) {
                 fprintf(stderr,
                         "SaveState warning: mechanisms out of order at a rootnode\n\
 saved %s but need %s\n",
                         memb_func[i].sym->name,
-                        memb_func[p->type].sym->name);
+                        memb_func[p->_type].sym->name);
             }
             return false;
         }
@@ -490,11 +490,11 @@ void SaveState::allocnode(NodeState& ns, Node* nd) {
     ns.nstate = 0;
     Prop* p;
     for (p = nd->prop; p; p = p->next) {
-        if (ssi[p->type].size == 0) {
+        if (ssi[p->_type].size == 0) {
             continue;
         }
         ++ns.nmemb;
-        ns.nstate += ssi[p->type].size;
+        ns.nstate += ssi[p->_type].size;
     }
     if (ns.nmemb) {
         ns.type = new int[ns.nmemb];
@@ -504,10 +504,10 @@ void SaveState::allocnode(NodeState& ns, Node* nd) {
     }
     int i = 0;
     for (p = nd->prop; p; p = p->next) {
-        if (ssi[p->type].size == 0) {
+        if (ssi[p->_type].size == 0) {
             continue;
         }
-        ns.type[i] = p->type;
+        ns.type[i] = p->_type;
         ++i;
     }
 }
@@ -644,10 +644,10 @@ void SaveState::savenode(NodeState& ns, Node* nd) {
     int istate = 0;
     Prop* p;
     for (p = nd->prop; p; p = p->next) {
-        if (ssi[p->type].size == 0) {
+        if (ssi[p->_type].size == 0) {
             continue;
         }
-        int type = p->type;
+        int type = p->_type;
         int max = ssi[type].offset + ssi[type].size;
 #if EXTRACELLULAR
         if (type == EXTRACELL) {
@@ -669,7 +669,7 @@ void SaveState::saveacell(ACellState& ac, int type) {
     int sz = ssi[type].size;
     double* p = ac.state;
     for (int i = 0; i < ml.nodecount; ++i) {
-        double* d = ml.data[i];
+        double* d = ml._data[i];
         for (int j = 0; j < sz; ++j) {
             (*p++) = d[j];
         }
@@ -731,10 +731,10 @@ void SaveState::restorenode(NodeState& ns, Node* nd) {
     int istate = 0;
     Prop* p;
     for (p = nd->prop; p; p = p->next) {
-        if (ssi[p->type].size == 0) {
+        if (ssi[p->_type].size == 0) {
             continue;
         }
-        int type = p->type;
+        int type = p->_type;
         int max = ssi[type].offset + ssi[type].size;
 #if EXTRACELLULAR
         if (type == EXTRACELL) {
@@ -756,7 +756,7 @@ void SaveState::restoreacell(ACellState& ac, int type) {
     int sz = ssi[type].size;
     double* p = ac.state;
     for (int i = 0; i < ml.nodecount; ++i) {
-        double* d = ml.data[i];
+        double* d = ml._data[i];
         for (int j = 0; j < sz; ++j) {
             d[j] = (*p++);
         }

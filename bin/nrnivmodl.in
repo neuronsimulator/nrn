@@ -150,8 +150,10 @@ for i in "${files[@]}" ; do
   base_name="$(basename "$f")"
   dir_name="$(dirname "$f")"
   # Note: indentation for shell lines in make rules must be a tab
+  f=${f// /\\ }
+  f=${f//:/\\:}
   echo "\
-./${base_name// /\\ }.cpp: ${f// /\\ }.mod
+./${base_name// /\\ }.cpp: ${f}.mod
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
 	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\")
 
@@ -168,17 +170,14 @@ MODOBJS=
 #include "hocdec.h"
 extern int nrnmpi_myid;
 extern int nrn_nobanner_;
-#if defined(__cplusplus)
-extern "C" {
-#endif
 '
 
   for i in "${base_names[@]}" ; do
-    echo "extern void _${i// }_reg(void);"
+    echo "extern \"C\" void _${i// }_reg(void);"
   done
 
   echo ""
-  echo "void modl_reg() {"
+  echo "extern \"C\" void modl_reg() {"
   echo "  if (!nrn_nobanner_) if (nrnmpi_myid < 1) {"
   printf '    fprintf(stderr, "Additional mechanisms from files\\n");\n'
 
@@ -197,11 +196,6 @@ extern "C" {
   done
 
   echo "}"
-
-  echo '
-#if defined(__cplusplus)
-}
-#endif'
 } > mod_func.cpp
 
 # call nrnivmodl-core if CoreNEURON is enabled and requested via CLI

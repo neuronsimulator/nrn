@@ -1,6 +1,5 @@
 /* /local/src/master/nrn/src/nrnoc/section.h,v 1.4 1996/05/21 17:09:24 hines Exp */
-#ifndef section_h
-#define section_h
+#pragma once
 
 /* In order to support oc objects containing sections, instead of vector
     of ordered sections, we now have a list (in the nmodl sense)
@@ -70,7 +69,6 @@ typedef struct Pt3d {
 } Pt3d;
 #endif
 
-#if METHOD3
 typedef float NodeCoef;
 typedef double NodeVal;
 
@@ -94,8 +92,6 @@ typedef struct Info3Val { /* storage to help build matrix efficiently */
     NodeCoef Cdt;
 } Info3Val;
 
-/*METHOD3*/
-#endif
 
 /* if any double is added after area then think about changing
 the notify_free_val parameter in node_free in solve.cpp
@@ -170,16 +166,9 @@ typedef struct Node {
 #if DEBUGSOLVE
     double savd;
     double savrhs;
-#endif /*DEBUGSOLVE*/
-#if VECTORIZE
-    int v_node_index; /* only used to calculate parent_node_indices*/
-#endif
+#endif                   /*DEBUGSOLVE*/
+    int v_node_index;    /* only used to calculate parent_node_indices*/
     int sec_node_index_; /* to calculate segment index from *Node */
-#if METHOD3
-    Info3Coef toparent;
-    Info3Coef fromparent;
-    Info3Val thisnode;
-#endif
 } Node;
 
 #if EXTRACELLULAR
@@ -213,7 +202,7 @@ typedef struct Extnode {
 
 typedef struct Prop {
     struct Prop* next; /* linked list of properties */
-    short type;        /* type of membrane, e.g. passive, HH, etc. */
+    short _type;       /* type of membrane, e.g. passive, HH, etc. */
     short unused1;     /* gcc and borland need pairs of shorts to align the same.*/
     int param_size;    /* for notifying hoc_free_val_array */
     double* param;     /* vector of doubles for this property */
@@ -225,21 +214,11 @@ typedef struct Prop {
     Object* ob;        /* nil if normal property, otherwise the object containing the data*/
 } Prop;
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 extern double* nrn_prop_data_alloc(int type, int count, Prop* p);
 extern Datum* nrn_prop_datum_alloc(int type, int count, Prop* p);
 extern void nrn_prop_data_free(int type, double* pd);
 extern void nrn_prop_datum_free(int type, Datum* ppd);
-extern Section* chk_access();
 extern double nrn_ghk(double, double, double, double);
-
-
-#if defined(__cplusplus)
-}
-#endif
 
 /* a point process is computed just like regular mechanisms. Ie it appears
 in the property list whose type specifies which allocation, current, and
@@ -315,9 +294,6 @@ extern Section* nrn_section_alloc();
 extern void nrn_section_free(Section*);
 extern int nrn_is_valid_section_ptr(void*);
 
-#if METHOD3
-extern int _method3;
-#endif
 
 #include <multicore.h>
 
@@ -329,5 +305,3 @@ extern int _method3;
 
 
 #include "nrn_ansi.h"
-
-#endif

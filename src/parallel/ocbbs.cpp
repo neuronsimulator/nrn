@@ -11,6 +11,7 @@
 #include "parse.hpp"
 #include "section.h"
 #include "membfunc.h"
+#include "multicore.h"
 #include "utils/profile/profiler_interface.h"
 #include <nrnmpi.h>
 #include <errno.h>
@@ -43,19 +44,7 @@ double nrnmpi_transfer_wait_;
 double nrnmpi_splitcell_wait_;
 #endif
 #if NRNMPI
-extern "C" {
-void nrnmpi_barrier();
-double nrnmpi_dbl_allreduce(double, int);
-void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
-void nrnmpi_dbl_allgather(double*, double*, int);
-void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
-void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
-double nrmpi_wtime();
-void nrnmpi_int_broadcast(int*, int, int);
-void nrnmpi_char_broadcast(char*, int, int);
-void nrnmpi_dbl_broadcast(double*, int, int);
-extern void nrnmpi_subworld_size(int n);
-}  // extern "C"
+#include "nrnmpidec.h"
 #else
 static void nrnmpi_int_broadcast(int*, int, int) {}
 static void nrnmpi_char_broadcast(char*, int, int) {}
@@ -63,9 +52,7 @@ static void nrnmpi_dbl_broadcast(double*, int, int) {}
 #endif
 extern double* nrn_mech_wtime_;
 extern int nrn_nthread;
-extern void nrn_threads_create(int, int);
 extern void nrn_thread_partition(int, Object*);
-extern void nrn_thread_stat();
 extern int nrn_allow_busywait(int);
 extern int nrn_how_many_processors();
 extern size_t nrncore_write();
@@ -915,11 +902,11 @@ static double broadcast(void*) {
 }
 
 static double nthrd(void*) {
-    int ip = 1;
+    bool ip{true};
     hoc_return_type_code = 1;  // integer
     if (ifarg(1)) {
         if (ifarg(2)) {
-            ip = int(chkarg(2, 0, 1));
+            ip = bool(chkarg(2, 0, 1));
         }
         nrn_threads_create(int(chkarg(1, 1, 1e5)), ip);
     }
@@ -947,7 +934,7 @@ static double partition(void*) {
 }
 
 static double thread_stat(void*) {
-    nrn_thread_stat();
+    // nrn_thread_stat was called here but didn't do anything
     return 0.0;
 }
 

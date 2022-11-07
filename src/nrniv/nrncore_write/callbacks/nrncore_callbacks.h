@@ -20,8 +20,8 @@ typedef struct core2nrn_callback_t {
 // mechanism types of Memb_list(>0) or time(0) passed to CoreNeuron
 enum mech_type { voltage = -1, i_membrane_ = -2 };
 
-class Memb_list;
-class NrnThread;
+struct Memb_list;
+struct NrnThread;
 class CellGroup;
 class DatumIndices;
 
@@ -42,6 +42,7 @@ int nrnthread_dat1(int tid,
                    int*& netcon_srcgid,
                    std::vector<int>& netcon_negsrcgid_tid);
 int nrnthread_dat2_1(int tid,
+                     int& n_real_cell,
                      int& ngid,
                      int& n_real_gid,
                      int& nnode,
@@ -162,13 +163,14 @@ struct NrnCoreTransferEvents {
 typedef std::vector<std::pair<int, bool>> Core2NrnWatchInfoItem;
 typedef std::vector<Core2NrnWatchInfoItem> Core2NrnWatchInfo;
 
+void nrn_watch_clear();
+
 extern "C" {
 extern NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid);
 
 // per item direct transfer of WatchCondition
 void nrn2core_transfer_WATCH(void (*cb)(int, int, int, int, int));
 
-void nrn_watch_clear();
 void core2nrn_watch_activate(int tid, int type, int wbegin, Core2NrnWatchInfo&);
 
 // per VecPlayContinous direct transfer of instance indices.

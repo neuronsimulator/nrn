@@ -27,6 +27,7 @@ explore the `source code for over 750 NEURON models on ModelDB <https://senselab
    videos/index
    guide/index
    courses/exercises2018
+   The NEURON forum <https://neuron.yale.edu/phpBB>
    publications
    publications-using-neuron
    
@@ -87,7 +88,7 @@ Installation
 
          pip3 install neuron
       
-      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/8.1.0/nrn-8.1.0-macosx-10.9-universal2-py-38-39-310.pkg>`_.
+      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.1/nrn-8.2.1-macosx-10.9-universal2-py-38-39-310.pkg>`_.
 
       For troubleshooting, see the `detailed installation instructions <install/install_instructions.html>`_.
 
@@ -105,7 +106,9 @@ Installation
 
    .. tab-item:: Windows
 
-      `Download the Windows Installer <https://github.com/neuronsimulator/nrn/releases/download/8.1.0/nrn-8.1.0.w64-mingw-py-36-37-38-39-310-setup.exe>`_.
+      `Download the Windows Installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.1/nrn-8.2.1.w64-mingw-py-37-38-39-310-setup.exe>`_.
+
+      You can also install the Linux wheel via the Windows Subsystem for Linux (WSL). See `instructions <install/install_instructions.html#windows-subsystem-for-linux-wsl-python-wheel>`_.
 
       For troubleshooting, see the `detailed installation instructions <install/install_instructions.html>`_.
 
@@ -168,4 +171,4 @@ Installation
 
 |
 
-See also the NEURON documentation `index <genindex.html>`_.
+See also the NEURON documentation `index <genindex.html>`_ and the `NEURON forum <https://www.neuron.yale.edu/phpbb/>`_.

@@ -69,7 +69,8 @@
 // instances.
 /*
 Assumptions regarding the scope of possible models.(Incomplete list)
-All real cells have gids.
+All real cells have gids (possibly multiple, but no more than one gid
+for a PreSyn instance.)
 Artificial cells without gids connect only to cells in the same thread.
 No POINTER to data outside of NrnThread.
 No POINTER to data in ARTIFICIAL_CELL (that data is not cache_efficient)
@@ -155,7 +156,7 @@ size_t write_corenrn_model(const std::string& path) {
     create_dir_path(path);
 
     // calculate size of the model
-    size_t rankbytes = part1();
+    auto const rankbytes = part1();
 
     // mechanism and global variables
     write_memb_mech_types(get_filename(path, "bbcore_mech.dat").c_str());
@@ -175,9 +176,18 @@ size_t nrncore_write() {
 
 static size_t part1() {
     size_t rankbytes = 0;
-    if (!bbcore_dparam_size) {
+    static int bbcore_dparam_size_size = -1;
+
+    // In nrn/test/pynrn, "python -m pytest ." calls this with
+    // n_memb_func of 27 and then with 29. I don't see any explicit
+    // intervening h.nrn_load_dll in that folder but ...
+    if (bbcore_dparam_size_size != n_memb_func) {
+        if (bbcore_dparam_size) {
+            delete[] bbcore_dparam_size;
+        }
         bbcore_dparam_size = new int[n_memb_func];
     }
+
     for (int i = 0; i < n_memb_func; ++i) {
         int sz = nrn_prop_dparam_size_[i];
         bbcore_dparam_size[i] = sz;
@@ -261,7 +271,13 @@ int nrncore_run(const char* arg) {
     model_ready();
 
     // get coreneuron library handle
-    void* handle = get_coreneuron_handle();
+    void* handle = [] {
+        try {
+            return get_coreneuron_handle();
+        } catch (std::runtime_error const& e) {
+            hoc_execerror(e.what(), nullptr);
+        }
+    }();
 
     // make sure coreneuron & neuron are compatible
     check_coreneuron_compatibility(handle);
@@ -270,8 +286,10 @@ int nrncore_run(const char* arg) {
     map_coreneuron_callbacks(handle);
 
     // lookup symbol from coreneuron for launching
-    void* launcher_sym = dlsym(handle, "corenrn_embedded_run");
-    if (!launcher_sym) {
+    using launcher_t = int (*)(int, int, int, int, const char*, const char*);
+    auto* const coreneuron_launcher = reinterpret_cast<launcher_t>(
+        dlsym(handle, "corenrn_embedded_run"));
+    if (!coreneuron_launcher) {
         hoc_execerror("Could not get symbol corenrn_embedded_run from", NULL);
     }
 
@@ -282,10 +300,6 @@ int nrncore_run(const char* arg) {
 #if !NRNMPI
 #define nrnmpi_use 0
 #endif
-
-    // typecast function pointer pointer
-    int (*coreneuron_launcher)(int, int, int, int, const char*, const char*) =
-        (int (*)(int, int, int, int, const char*, const char*)) launcher_sym;
 
     // launch coreneuron
     int result = coreneuron_launcher(

@@ -5,6 +5,8 @@
 #include "parse.hpp"
 #include "nrnmpi.h"
 #include "netcon.h"
+#include "netcvode.h"
+extern NetCvode* net_cvode_instance;
 
 #include <limits>
 #include <sstream>
@@ -12,7 +14,6 @@
 extern short* nrn_is_artificial_;
 extern bool corenrn_direct;
 extern int* bbcore_dparam_size;
-extern void nrncore_netpar_cellgroups_helper(CellGroup*);
 extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;
 extern short* nrn_is_artificial_;
@@ -62,8 +63,45 @@ CellGroup::~CellGroup() {
 
 CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
     for (int i = 0; i < nrn_nthread; ++i) {
-        int ncell = nrn_threads[i].ncell;  // real cell count
-        int npre = ncell;
+        auto& nt = nrn_threads[i];
+        cgs[i].n_real_cell = nt.ncell;  // real cell count
+
+        // Count PreSyn watching voltage (raise error if watching something else)
+        // Allows possibility of multiple outputs for a cell.
+        int npre = 0;
+        NetCvodeThreadData& nctd = net_cvode_instance->p[i];
+        hoc_Item* pth = nctd.psl_thr_;
+        if (pth) {
+            hoc_Item* q;
+            ITERATE(q, pth) {
+                auto* ps = static_cast<PreSyn*>(VOIDITM(q));
+                auto& pv = ps->thvar_;
+                assert(pv);
+                if (pv < nt._actual_v || pv >= (nt._actual_v + nt.end)) {
+                    hoc_execerr_ext("NetCon range variable reference source not a voltage");
+                }
+                if (ps->gid_ < 0) {
+                    bool b1 = !ps->dil_.empty();
+                    bool b2 = b1 && bool(ps->dil_[0]->target_);
+                    std::string ncob(b1 ? hoc_object_name(ps->dil_[0]->obj_) : "");
+                    hoc_execerr_ext(
+                        "%s with voltage source has no gid."
+                        " (The source is %s(x)._ref_v"
+                        " and is the source for %zd NetCons. %s%s)",
+                        (b1 ? ncob.c_str() : "NetCon"),
+                        secname(ps->ssrc_),
+                        ps->dil_.size(),
+                        (b1 ? (ncob + " has target ").c_str() : ""),
+                        (b1 ? (b2 ? std::string(hoc_object_name(ps->dil_[0]->target_->ob)).c_str()
+                                  : "None")
+                            : ""));
+                }
+                ++npre;
+            }
+        }
+        cgs[i].n_real_output = npre;
+
+        // Final count of n_presyn of thread
         MlWithArt& mla = cgs[i].mlwithart;
         for (size_t j = 0; j < mla.size(); ++j) {
             int type = mla[j].first;
@@ -74,7 +112,7 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
             }
         }
         cgs[i].n_presyn = npre;
-        cgs[i].n_real_output = ncell;
+
         cgs[i].output_ps = new PreSyn*[npre];
         cgs[i].output_gid = new int[npre];
         cgs[i].output_vindex = new int[npre];
@@ -87,15 +125,30 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
             cgs[i].output_vindex[j] = -1;
         }
 
+        // fill in the output_ps, output_gid, and output_vindex for the real cells.
+        npre = 0;
+        if (pth) {
+            hoc_Item* q;
+            ITERATE(q, pth) {
+                auto* ps = static_cast<PreSyn*>(VOIDITM(q));
+                auto& pv = ps->thvar_;
+                cgs[i].output_ps[npre] = ps;
+                cgs[i].output_gid[npre] = ps->output_index_;
+                cgs[i].output_vindex[npre] = pv - nt._actual_v;
+                ++npre;
+            }
+        }
+        assert(npre == cgs[i].n_real_output);
+
         // fill in the artcell info
-        npre = ncell;
-        cgs[i].n_output = ncell;  // add artcell (and PP with net_event) with gid in following loop
+        npre = cgs[i].n_real_output;
+        cgs[i].n_output = npre;  // add artcell (and PP with net_event) with gid in following loop
         for (size_t j = 0; j < mla.size(); ++j) {
             int type = mla[j].first;
             Memb_list* ml = mla[j].second;
             if (nrn_has_net_event(type)) {
                 for (int j = 0; j < ml->nodecount; ++j) {
-                    Point_process* pnt = (Point_process*) ml->pdata[j][1]._pvoid;
+                    auto* pnt = ml->pdata[j][1].get<Point_process*>();
                     PreSyn* ps = (PreSyn*) pnt->presyn_;
                     cgs[i].output_ps[npre] = ps;
                     long agid = -1;
@@ -107,7 +160,7 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                                  1000 * static_cast<long>(nrncore_art2index(pnt->prop->param)));
                     } else {  // POINT_PROCESS with net_event
                         int sz = nrn_prop_param_size_[type];
-                        double* d1 = ml->data[0];
+                        double* d1 = ml->_data[0];
                         double* d2 = pnt->prop->param;
                         assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
                         long ix{(d2 - d1) / sz};
@@ -144,9 +197,6 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
             }
         }
     }
-    // work at netpar.cpp because we don't have the output gid hash tables here.
-    // fill in the output_ps, output_gid, and output_vindex for the real cells.
-    nrncore_netpar_cellgroups_helper(cgs);
 
     // use first real cell gid, if it exists, as the group_id
     if (corenrn_direct == false)
@@ -236,7 +286,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
     for (int i = 0; i < mcnt; ++i) {
         // Prop* datum instance arrays are not in cache efficient order
         // ie. ml->pdata[i] are not laid out end to end in memory.
-        // Also, ml->data for artificial cells is not in cache efficient order
+        // Also, ml->_data for artificial cells is not in cache efficient order
         // but in the artcell case there are no pointers to doubles and
         // the _actual_area pointer should be left unfilled.
         Datum* dparam = ml->pdata[i];
@@ -250,31 +300,32 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                     etype = -1;
                     eindex = -1;  // the signal to ignore in bbcore.
                 } else {
-                    if (dparam[j].pval == &ml->nodelist[i]->_area) {
+                    const auto* dpj = dparam[j].get<double*>();
+                    if (dpj == &ml->nodelist[i]->_area) {
                         // possibility it points directly into Node._area instead of
                         // _actual_area. For our purposes we need to figure out the
                         // _actual_area index.
                         etype = -1;
                         eindex = ml->nodeindices[i];
-                        assert(a[ml->nodeindices[i]] == *dparam[j].pval);
+                        assert(a[ml->nodeindices[i]] == *dpj);
                     } else {
-                        if (dparam[j].pval < a || dparam[j].pval >= (a + nnode)) {
+                        if (dpj < a || dpj >= (a + nnode)) {
                             printf("%s dparam=%p a=%p a+nnode=%p j=%d\n",
                                    memb_func[di.type].sym->name,
-                                   dparam[j].pval,
+                                   dpj,
                                    a,
                                    a + nnode,
                                    j);
                             abort();
                         }
-                        assert(dparam[j].pval >= a && dparam[j].pval < (a + nnode));
+                        assert(dpj >= a && dpj < (a + nnode));
                         etype = -1;
-                        eindex = dparam[j].pval - a;
+                        eindex = dpj - a;
                     }
                 }
             } else if (dmap[j] == -2) {  // this is an ion and dparam[j][0].i is the iontype
                 etype = -2;
-                eindex = dparam[j].i;
+                eindex = dparam[j].get<int>();
             } else if (dmap[j] == -3) {  // cvodeieq is always last and never seen
                 assert(dmap[j] != -3);
             } else if (dmap[j] == -4) {  // netsend (_tqitem pointer)
@@ -306,17 +357,17 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 Node* nd = ml->nodelist[i];
                 double* pdiam = NULL;
                 for (Prop* p = nd->prop; p; p = p->next) {
-                    if (p->type == MORPHOLOGY) {
+                    if (p->_type == MORPHOLOGY) {
                         pdiam = p->param;
                         break;
                     }
                 }
-                assert(dparam[j].pval == pdiam);
+                assert(dparam[j].get<double*>() == pdiam);
                 eindex = ml->nodeindices[i];
             } else if (dmap[j] == -5) {  // POINTER
                 // must be a pointer into nt->_data. Handling is similar to eion so
                 // give proper index into the type.
-                double* pd = dparam[j].pval;
+                double* pd = dparam[j].get<double*>();
                 nrn_dblpntr2nrncore(pd, nt, etype, eindex);
                 if (etype == 0) {
                     fprintf(stderr,
@@ -328,37 +379,36 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] > 0 && dmap[j] < 1000) {  // double* into eion type data
                 Memb_list* eml = cg.type2ml[dmap[j]];
                 assert(eml);
-                if (dparam[j].pval < eml->data[0]) {
+                auto* const pval = dparam[j].get<double*>();
+                if (pval < eml->_data[0]) {
                     printf("%s dparam=%p data=%p j=%d etype=%d %s\n",
                            memb_func[di.type].sym->name,
-                           dparam[j].pval,
-                           eml->data[0],
+                           pval,
+                           eml->_data[0],
                            j,
                            dmap[j],
                            memb_func[dmap[j]].sym->name);
                     abort();
                 }
-                assert(dparam[j].pval >= eml->data[0]);
+                assert(pval >= eml->_data[0]);
                 etype = dmap[j];
-                if (dparam[j].pval >=
-                    (eml->data[0] + (nrn_prop_param_size_[etype] * eml->nodecount))) {
+                if (pval >= (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount))) {
                     printf("%s dparam=%p data=%p j=%d psize=%d nodecount=%d etype=%d %s\n",
                            memb_func[di.type].sym->name,
-                           dparam[j].pval,
-                           eml->data[0],
+                           pval,
+                           eml->_data[0],
                            j,
                            nrn_prop_param_size_[etype],
                            eml->nodecount,
                            etype,
                            memb_func[etype].sym->name);
                 }
-                assert(dparam[j].pval <
-                       (eml->data[0] + (nrn_prop_param_size_[etype] * eml->nodecount)));
-                eindex = dparam[j].pval - eml->data[0];
+                assert(pval < (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount)));
+                eindex = pval - eml->_data[0];
             } else if (dmap[j] > 1000) {  // int* into ion dparam[xxx][0]
                 // store the actual ionstyle
                 etype = dmap[j];
-                eindex = *((int*) dparam[j]._pvoid);
+                eindex = *dparam[j].get<int*>();
             } else {
                 char errmes[100];
                 sprintf(errmes, "Unknown semantics type %d for dparam item %d of", dmap[j], j);
@@ -417,7 +467,7 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
         cgs[ith].netcons[i] = nc;
 
         if (nc->target_) {
-            int type = nc->target_->prop->type;
+            int type = nc->target_->prop->_type;
             cgs[ith].netcon_pnttype[i] = type;
             if (nrn_is_artificial_[type]) {
                 cgs[ith].netcon_pntindex[i] = nrncore_art2index(nc->target_->prop->param);
@@ -425,7 +475,7 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
                 // cache efficient so can calculate index from pointer
                 Memb_list* ml = cgs[ith].type2ml[type];
                 int sz = nrn_prop_param_size_[type];
-                double* d1 = ml->data[0];
+                double* d1 = ml->_data[0];
                 double* d2 = nc->target_->prop->param;
                 assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
                 int ix = (d2 - d1) / sz;
@@ -442,7 +492,7 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
                 cgs[ith].netcon_srcgid[i] = ps->gid_;
             } else {
                 if (ps->osrc_) {
-                    assert(ps->thvar_ == NULL);
+                    assert(!ps->thvar_);
                     if (nrn_nthread > 1) {  // negative gid and multiple threads.
                         cgs[ith].netcon_negsrcgid_tid.push_back(ps->nt_->id);
                         // Raise error if file mode transfer and nc and ps not
@@ -455,7 +505,7 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
                         }
                     }
                     Point_process* pnt = (Point_process*) ps->osrc_->u.this_pointer;
-                    int type = pnt->prop->type;
+                    int type = pnt->prop->_type;
                     if (nrn_is_artificial_[type]) {
                         int ix = nrncore_art2index(pnt->prop->param);
                         cgs[ith].netcon_srcgid[i] = -(type + 1000 * ix);
@@ -463,7 +513,7 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
                         assert(nrn_has_net_event(type));
                         Memb_list* ml = cgs[ith].type2ml[type];
                         int sz = nrn_prop_param_size_[type];
-                        double* d1 = ml->data[0];
+                        double* d1 = ml->_data[0];
                         double* d2 = pnt->prop->param;
                         assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
                         int ix = (d2 - d1) / sz;
@@ -529,7 +579,7 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                 acnt[id] = 0;
             }
             for (int j = 0; j < memb_list[i].nodecount; ++j) {
-                Point_process* pnt = (Point_process*) memb_list[i].pdata[j][1]._pvoid;
+                auto* pnt = memb_list[i].pdata[j][1].get<Point_process*>();
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 ++acnt[id];
             }
@@ -545,7 +595,7 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                     ml->nodeindices = NULL;
                     ml->prop = NULL;
                     ml->_thread = NULL;
-                    ml->data = new double*[acnt[id]];
+                    ml->_data = new double*[acnt[id]];
                     ml->pdata = new Datum*[acnt[id]];
                 }
             }
@@ -555,12 +605,12 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                 acnt[id] = 0;
             }
             for (int j = 0; j < memb_list[i].nodecount; ++j) {
-                Point_process* pnt = (Point_process*) memb_list[i].pdata[j][1]._pvoid;
+                auto* pnt = memb_list[i].pdata[j][1].get<Point_process*>();
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 Memb_list* ml = cgs[id].mlwithart.back().second;
-                ml->data[acnt[id]] = memb_list[i].data[j];
+                ml->_data[acnt[id]] = memb_list[i]._data[j];
                 ml->pdata[acnt[id]] = memb_list[i].pdata[j];
-                artdata2index_.insert(std::pair<double*, int>(ml->data[acnt[id]], acnt[id]));
+                artdata2index_.insert(std::pair<double*, int>(ml->_data[acnt[id]], acnt[id]));
                 ++acnt[id];
             }
         }
@@ -619,7 +669,7 @@ size_t CellGroup::get_mla_rankbytes(CellGroup* cellgroups_) {
 void CellGroup::clean_art(CellGroup* cgs) {
     // clean up the art Memb_list of CellGroup[].mlwithart
     // But if multithread and direct transfer mode, defer deletion of
-    // data for artificial cells, so that the artificial cell ml->data
+    // data for artificial cells, so that the artificial cell ml->_data
     // can be used when nrnthreads_type_return is called.
     if (corenrn_direct && nrn_nthread > 0) {
         deferred_type2artml_.resize(nrn_nthread);
@@ -633,7 +683,7 @@ void CellGroup::clean_art(CellGroup* cgs) {
                 if (!deferred_type2artml_.empty()) {
                     deferred_type2artml_[ith][type] = ml;
                 } else {
-                    delete[] ml->data;
+                    delete[] ml->_data;
                     delete[] ml->pdata;
                     delete ml;
                 }

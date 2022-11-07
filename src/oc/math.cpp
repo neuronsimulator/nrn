@@ -16,13 +16,23 @@
 
 int hoc_errno_count;
 
-#if _CRAY
-#define log   logl
-#define log10 log10l
-#define exp   expl
-#define sqrt  sqrtl
-#define pow   powl
+#ifdef MINGW
+static const auto errno_enabled = true;
+static const auto check_fe_except = false;
+#elif defined(NVHPC_CHECK_FE_EXCEPTIONS)
+static constexpr auto errno_enabled = false;
+static constexpr auto check_fe_except = true;
+static_assert(math_errhandling & MATH_ERREXCEPT);
+#else
+static const auto errno_enabled = math_errhandling & MATH_ERRNO;
+static const auto check_fe_except = !errno_enabled && math_errhandling & MATH_ERREXCEPT;
 #endif
+
+static inline void clear_fe_except() {
+    if (check_fe_except) {
+        std::feclearexcept(FE_ALL_EXCEPT);
+    }
+}
 
 static double errcheck(double, const char*);
 
@@ -34,10 +44,12 @@ void hoc_atan2(void) {
 }
 
 double Log(double x) {
+    clear_fe_except();
     return errcheck(log(x), "log");
 }
 
 double Log10(double x) {
+    clear_fe_except();
     return errcheck(log10(x), "log10");
 }
 
@@ -47,6 +59,9 @@ double hoc_Exp(double x) {
         return 0.;
     } else if (x > 700 && nrn_feenableexcept_ == 0) {
         errno = ERANGE;
+        if (check_fe_except) {
+            std::feraiseexcept(FE_OVERFLOW);
+        }
         if (++hoc_errno_count < MAXERRCOUNT) {
             fprintf(stderr, "exp(%g) out of range, returning exp(700)\n", x);
         }
@@ -64,16 +79,22 @@ double hoc1_Exp(double x) {
         return 0.;
     } else if (x > 700) {
         errno = ERANGE;
+        if (check_fe_except) {
+            std::feraiseexcept(FE_OVERFLOW);
+        }
         return errcheck(exp(700.), "exp");
     }
+    clear_fe_except();
     return errcheck(exp(x), "exp");
 }
 
 double Sqrt(double x) {
+    clear_fe_except();
     return errcheck(sqrt(x), "sqrt");
 }
 
 double Pow(double x, double y) {
+    clear_fe_except();
     return errcheck(pow(x, y), "exponentiation");
 }
 
@@ -87,17 +108,18 @@ double integer(double x) {
 
 double errcheck(double d, const char* s) /* check result of library call */
 {
-    // errno is not set for macOs, check FE exceptions as well. See:
+    // errno may not be enabled, rely on FE exceptions in that case. See:
     // https://en.cppreference.com/w/cpp/numeric/math/math_errhandling
-    if (errno == EDOM || std::fetestexcept(FE_INVALID)) {
+    if ((errno_enabled && errno == EDOM) || (check_fe_except && std::fetestexcept(FE_INVALID))) {
+        clear_fe_except();
         errno = 0;
         hoc_execerror(s, "argument out of domain");
-    } else if (errno == ERANGE || std::fetestexcept(FE_DIVBYZERO) ||
-               std::fetestexcept(FE_OVERFLOW) || std::fetestexcept(FE_UNDERFLOW)) {
+    } else if ((errno_enabled && errno == ERANGE) ||
+               (check_fe_except &&
+                (std::fetestexcept(FE_DIVBYZERO) || std::fetestexcept(FE_OVERFLOW) ||
+                 std::fetestexcept(FE_UNDERFLOW)))) {
+        clear_fe_except();
         errno = 0;
-#if 0
-        hoc_execerror(s, "result out of range");
-#else
         if (++hoc_errno_count > MAXERRCOUNT) {
         } else {
             hoc_warning(s, "result out of range");
@@ -105,71 +127,11 @@ double errcheck(double d, const char* s) /* check result of library call */
                 fprintf(stderr, "No more errno warnings during this execution\n");
             }
         }
-#endif
     }
     return d;
 }
 
 int hoc_errno_check(void) {
-    int ierr;
-#if LINDA
-    static parallel_eagain = 0;
-#endif
-
-#if 1
     errno = 0;
     return 0;
-#else
-    if (errno) {
-        if (errno == EAGAIN) {
-            /* Ubiquitous on many systems and it seems not to matter */
-            errno = 0;
-            return 0;
-        }
-#if !defined(MAC) || defined(DARWIN)
-        if (errno == ENOENT) {
-            errno = 0;
-            return 0;
-        }
-#endif
-        if (++hoc_errno_count > MAXERRCOUNT) {
-            errno = 0;
-            return 0;
-        }
-#ifdef MINGW
-        if (errno == EBUSY) {
-            errno = 0;
-            return 0;
-        }
-#endif
-        switch (errno) {
-        case EDOM:
-            fprintf(stderr, "A math function was called with argument out of domain\n");
-            break;
-        case ERANGE:
-            fprintf(stderr, "A math function was called that returned an out of range value\n");
-            break;
-#if LINDA
-            /* regularly set by eval() and perhaps other linda commands */
-        case EAGAIN:
-            if (parallel_eagain++ == 0) {
-                perror("oc");
-                fprintf(stderr,
-                        "oc: This error occurs often from LINDA and thus will not be further "
-                        "reported.\n");
-            }
-            break;
-#endif
-        default:
-            perror("oc");
-            break;
-        }
-        if (hoc_errno_count == MAXERRCOUNT) {
-            fprintf(stderr, "No more errno warnings during this execution\n");
-        }
-    }
-    ierr = errno;
-    errno = 0;
-    return ierr;
-#endif
 }

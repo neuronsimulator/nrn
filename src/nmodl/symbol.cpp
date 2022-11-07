@@ -17,7 +17,7 @@ void symbol_init() {
     }
 }
 
-Symbol* lookup(char* s) /* find s in symbol table */
+Symbol* lookup(const char* s) /* find s in symbol table */
 {
     Item* sp;
 
@@ -45,7 +45,7 @@ Symbol* checklocal(Symbol* sym) {
     return sym;
 }
 
-Symbol* install(char* s, int t) /* install s in the list symbol table with type t*/
+Symbol* install(const char* s, int t) /* install s in the list symbol table with type t*/
 {
     Symbol* sp;
     List* sl;
@@ -63,20 +63,15 @@ Symbol* install(char* s, int t) /* install s in the list symbol table with type 
     sp->name = stralloc(s, (char*) 0);
     sp->type = t;
     sp->subtype = 0;
-#if NMODL
     sp->nrntype = 0;
     sp->assigned_to_ = 0;
     sp->no_threadargs = 0;
-#if CVODE
     sp->slist_info_ = (int*) 0;
-#endif
-#endif
     sp->u.str = (char*) 0;
     sp->used = 0;
     sp->usage = 0;
     sp->araydim = 0;
     sp->discdim = 0;
-    sp->level = 100;    /* larger than any reasonable submodel level */
     Linsertsym(sl, sp); /*insert at head of list*/
     return sp;
 }

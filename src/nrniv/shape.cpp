@@ -31,6 +31,7 @@
 #include "rubband.h"
 #include "scenepic.h"
 #include "rot3band.h"
+#include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "objcmd.h"
 #include "idraw.h"
@@ -46,11 +47,8 @@
 
 void nrn_define_shape();
 extern int nrn_shape_changed_;
-extern "C" int structure_change_cnt;
 extern int section_count;
 extern Section** secorder;
-extern "C" Point_process* ob2pntproc(Object*);
-extern "C" Point_process* ob2pntproc_0(Object*);
 extern Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 
 #if BEVELJOIN
@@ -146,7 +144,7 @@ class OcShapeHandler;
     }
     virtual void set_select_action(const char*);
     virtual void set_select_action(Object*);
-    virtual void save_phase1(ostream&);
+    virtual void save_phase1(std::ostream&);
     virtual PointMark* point_mark(Object*,
                                   const Color*,
                                   const char style = 'O',
@@ -777,8 +775,8 @@ void OcShape::handle_picked() {
     }
 }
 
-void OcShape::save_phase1(ostream& o) {
-    o << "{" << endl;
+void OcShape::save_phase1(std::ostream& o) {
+    o << "{" << std::endl;
     save_class(o, "Shape");
 }
 
@@ -826,12 +824,12 @@ void ShapeType::execute() {
 }
 
 
-// declareHandlerCallback(ShapeScene)
-// implementHandlerCallback(ShapeScene)
-declareRubberCallback(ShapeScene) implementRubberCallback(ShapeScene)
-    declareActionCallback(ShapeScene) implementActionCallback(ShapeScene)
+declareRubberCallback(ShapeScene)
+implementRubberCallback(ShapeScene)
+declareActionCallback(ShapeScene)
+implementActionCallback(ShapeScene)
 
-        void ShapeScene::observe(SectionList* sl) {
+void ShapeScene::observe(SectionList* sl) {
     GlyphIndex i, cnt;
     hoc_Item* qsec;
     Section* sec;
@@ -1054,7 +1052,7 @@ void ShapeScene::name(const char* s) {
     }
 }
 
-void ShapeScene::save_phase2(ostream& o) {
+void ShapeScene::save_phase2(std::ostream& o) {
     char buf[256];
     if (var_name_) {
         if ((var_name_->string())[var_name_->length() - 1] == '.') {
@@ -1062,9 +1060,9 @@ void ShapeScene::save_phase2(ostream& o) {
         } else {
             sprintf(buf, "%s = save_window_", var_name_->string());
         }
-        o << buf << endl;
+        o << buf << std::endl;
         sprintf(buf, "save_window_.save_name(\"%s\")", var_name_->string());
-        o << buf << endl;
+        o << buf << std::endl;
     }
     Graph::save_phase2(o);
 }
@@ -1524,8 +1522,8 @@ void ShapeSection::set_range_variable(Symbol* sym) {
     bool any = false;
     if (nrn_exists(sym, section()->pnode[0])) {
         for (i = 0; i < n; ++i) {
-            pvar_[i] =
-                nrn_rangepointer(section(), sym, nrn_arc_position(section(), section()->pnode[i]));
+            pvar_[i] = static_cast<double*>(
+                nrn_rangepointer(section(), sym, nrn_arc_position(section(), section()->pnode[i])));
             old_[i] = NULL;
             if (pvar_[i]) {
                 any = true;

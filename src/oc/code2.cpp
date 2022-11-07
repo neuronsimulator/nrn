@@ -83,7 +83,6 @@ void hoc_Symbol_limits(void) {
             hoc_execerror("Cannot find the symbol for ", name);
         }
     } else {
-        hoc_pgetarg(1);
         sym = hoc_get_last_pointer_symbol();
         if (!sym) {
             hoc_execerror(
@@ -146,15 +145,14 @@ char* hoc_symbol_units(Symbol* sym, const char* units) {
 void hoc_Symbol_units(void) {
     Symbol* sym;
     extern Symbol* hoc_get_last_pointer_symbol();
-    extern double* hoc_pgetarg(int);
     char** units = hoc_temp_charptr();
 
     if (hoc_is_double_arg(1)) {
         units_on_flag_ = (int) chkarg(1, 0., 1.);
         if (units_on_flag_) {
-            *units = "on";
+            *units = const_cast<char*>("on");
         } else {
-            *units = "off";
+            *units = const_cast<char*>("off");
         }
     } else {
         if (hoc_is_str_arg(1)) {
@@ -164,7 +162,6 @@ void hoc_Symbol_units(void) {
                 hoc_execerror("Cannot find the symbol for ", name);
             }
         } else {
-            hoc_pgetarg(1);
             sym = hoc_get_last_pointer_symbol();
             if (!sym) {
                 hoc_execerror(
@@ -179,14 +176,14 @@ void hoc_Symbol_units(void) {
         }
         *units = hoc_symbol_units(sym, *units);
         if (*units == (char*) 0) {
-            *units = "";
+            *units = const_cast<char*>("");
         }
     }
     hoc_ret();
     hoc_pushstr(units);
 }
 
-extern "C" char* hoc_back2forward(char*);
+char* hoc_back2forward(char*);
 char* neuronhome_forward(void) {
     extern char* neuron_home;
 #ifdef WIN32
@@ -251,7 +248,6 @@ static int hoc_vsscanf(const char* buf) {
     char *pf, *format, errbuf[100];
     void* arglist[20];
     int n = 0, iarg, i, islong, convert, sawnum;
-    extern double* hoc_pgetarg(int);
     struct {
         union {
             double d;
@@ -525,7 +521,7 @@ void Xred(void) /* read with prompt string and default and limits */
 }
 
 static struct { /* symbol types */
-    char* name;
+    const char* name;
     short t_type;
 } type_sym[] = {{"Builtins", BLTIN},
                 {"Other Builtins", FUN_BLTIN},
@@ -681,7 +677,7 @@ void hoc_run_stmt(Symbol* sym) {
 }
 extern Symlist* hoc_top_level_symlist;
 
-extern "C" Symbol* hoc_parse_stmt(const char* str, Symlist** psymlist) {
+Symbol* hoc_parse_stmt(const char* str, Symlist** psymlist) {
     Symbol* sp;
     char s[BUFSIZ];
 

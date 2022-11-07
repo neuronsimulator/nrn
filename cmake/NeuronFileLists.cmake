@@ -13,7 +13,6 @@ set(HEADER_FILES_TO_INSTALL
     hocgetsym.h
     hoclist.h
     hocparse.h
-    isoc99.h
     ivstream.h
     mcran4.h
     md1redef.h
@@ -32,7 +31,6 @@ set(HEADER_FILES_TO_INSTALL
     nrncvode.h
     nrnisaac.h
     nrniv_mf.h
-    nrnjava.h
     nrnoc_ml.h
     nrnmpi.h
     nrnmpidec.h
@@ -44,6 +42,7 @@ set(HEADER_FILES_TO_INSTALL
     ocfunc.h
     ocmisc.h
     options.h
+    parse_with_deps.hpp
     scoplib.h
     section.h
     spconfig.h
@@ -79,7 +78,6 @@ set(OC_FILE_LIST
     hocusr.cpp
     hoc_init.cpp
     hoc_oop.cpp
-    isoc99.cpp
     list.cpp
     math.cpp
     mswinprt.cpp
@@ -111,7 +109,7 @@ set(NRNOC_FILE_LIST
     hocprax.cpp
     init.cpp
     ldifus.cpp
-    method3.cpp
+    membfunc.cpp
     nrnnemo.cpp
     nrntimeout.cpp
     nrnversion.cpp
@@ -123,7 +121,8 @@ set(NRNOC_FILE_LIST
     secref.cpp
     solve.cpp
     synapse.cpp
-    treeset.cpp)
+    treeset.cpp
+    multicore.cpp)
 
 # =============================================================================
 # Files in ivoc directory
@@ -384,15 +383,10 @@ set(SPARSE13_FILES_LIST
 # scopmath sources
 set(SCOPMATH_FILES_LIST
     abort.c
-    adams.c
-    adeuler.c
-    adrunge.c
     advance.c
     boundary.c
     crank.c
     crout.c
-    csoda.c
-    csodabnc.c
     deflate.c
     dimplic.c
     scoperf.c
@@ -403,10 +397,8 @@ set(SCOPMATH_FILES_LIST
     factoria.c
     force.c
     gauss.c
-    gear.c
     getmem.c
     harmonic.c
-    heun.c
     hyperbol.c
     invert.c
     lag.c
@@ -428,10 +420,8 @@ set(SCOPMATH_FILES_LIST
     runge.c
     sawtooth.c
     schedule.c
-    seidel.c
     sigmoid.c
     simeq.c
-    simplex.c
     sparse.c
     vsparse.c
     spline.c
@@ -527,8 +517,6 @@ set(NMODL_FILES_LIST
     noccout.cpp
     parsact.cpp
     netrec_discon.cpp
-    partial.cpp
-    sens.cpp
     simultan.cpp
     solve.cpp
     symbol.cpp

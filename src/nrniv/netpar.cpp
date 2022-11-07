@@ -3,6 +3,7 @@
 #include <InterViews/resource.h>
 #include <math.h>
 #include "nrncvode.h"
+#include "nrniv_mf.h"
 #include <nrnmpi.h>
 #include <nrnoc2iv.h>
 #include <stdio.h>
@@ -41,7 +42,6 @@ static void alloc_space();
 
 extern NetCvode* net_cvode_instance;
 extern double t, dt;
-extern "C" Point_process* ob2pntproc(Object*);
 extern int nrn_use_selfqueue_;
 extern void nrn_pending_selfqueue(double, NrnThread*);
 extern Object* nrn_sec2cell(Section*);
@@ -953,15 +953,14 @@ void BBS::set_gid2node(int gid, int nid) {
     {
 #endif
         // printf("gid %d defined on %d\n", gid, nrnmpi_myid);
-        char m[200];
         if (gid2in_.find(gid) != gid2in_.end()) {
-            sprintf(m, "gid=%d already exists as an input port", gid);
-            hoc_execerror(
-                m, "Setup all the output ports on this process before using them as input ports.");
+            hoc_execerr_ext(
+                "gid=%d already exists as an input port. Setup all the output ports on this "
+                "process before using them as input ports.",
+                gid);
         }
         if (gid2out_.find(gid) != gid2out_.end()) {
-            sprintf(m, "gid=%d already exists on this process as an output port", gid);
-            hoc_execerror(m, 0);
+            hoc_execerr_ext("gid=%d already exists on this process as an output port", gid);
         }
         gid2out_[gid] = nullptr;
     }
@@ -1073,14 +1072,12 @@ void BBS::cell() {
     int gid = int(chkarg(1, 0., MD));
     alloc_space();
     if (gid2in_.find(gid) != gid2in_.end()) {
-        char buf[100];
-        sprintf(buf, "gid=%d is in the input list. Must register prior to connecting", gid);
-        hoc_execerror(buf, 0);
+        hoc_execerr_ext(
+            "gid=%d is in the input list. Must register with pc.set_gid2node prior to connecting",
+            gid);
     }
     if (gid2out_.find(gid) == gid2out_.end()) {
-        char buf[100];
-        sprintf(buf, "gid=%d has not been set on rank %d", gid, nrnmpi_myid);
-        hoc_execerror(buf, 0);
+        hoc_execerr_ext("gid=%d has not been set on rank %d", gid, nrnmpi_myid);
     }
     Object* ob = *hoc_objgetarg(2);
     if (!ob || ob->ctemplate != netcon_sym_->u.ctemplate) {
@@ -1088,8 +1085,14 @@ void BBS::cell() {
     }
     NetCon* nc = (NetCon*) ob->u.this_pointer;
     PreSyn* ps = nc->src_;
-    // printf("%d cell %d %s\n", nrnmpi_myid, gid, hoc_object_name(ps->ssrc_ ?
-    // nrn_sec2cell(ps->ssrc_) : ps->osrc_));
+    if (!ps) {
+        hoc_execerr_ext("pc.cell second arg, %s, has no source", hoc_object_name(ob));
+    }
+    if (ps->gid_ >= 0 && ps->gid_ != gid) {
+        hoc_execerr_ext("Can't associate gid %d. PreSyn already associated with gid %d.",
+                        gid,
+                        ps->gid_);
+    }
     gid2out_[gid] = ps;
     ps->gid_ = gid;
     if (ifarg(3) && !chkarg(3, 0., 1.)) {
@@ -1200,9 +1203,7 @@ Object** BBS::gid_connect(int gid) {
         // the gid is owned by this machine so connect directly
         ps = iter_out->second;
         if (!ps) {
-            char buf[100];
-            sprintf(buf, "gid %d owned by %d but no associated cell", gid, nrnmpi_myid);
-            hoc_execerror(buf, 0);
+            hoc_execerr_ext("gid %d owned by %d but no associated cell", gid, nrnmpi_myid);
         }
     } else {
         auto iter_in = gid2in_.find(gid);
@@ -1214,7 +1215,7 @@ Object** BBS::gid_connect(int gid) {
         } else {
             // printf("%d connect %s from new PreSyn for %d\n", nrnmpi_myid,
             // hoc_object_name(target), gid);
-            ps = new PreSyn(NULL, NULL, NULL);
+            ps = new PreSyn({}, nullptr, nullptr);
             net_cvode_instance->psl_append(ps);
             gid2in_[gid] = ps;
             ps->gid_ = gid;
@@ -1250,7 +1251,6 @@ int nrn_set_timeout(int timeout) {
 
 void BBS::netpar_solve(double tstop) {
     // temporary check to be eventually replaced by verify_structure()
-    extern int tree_changed, v_structure_change, diam_changed;
     if (tree_changed) {
         setup_topology();
     }
@@ -1597,11 +1597,10 @@ void nrn_gidout_iter(PFIO callback) {
 
 #include "nrncore_write.h"
 extern int* nrn_prop_param_size_;
-extern int* pnt_receive_size;
 extern short* nrn_is_artificial_;
 static int weightcnt(NetCon* nc) {
     return nc->cnt_;
-    //  return nc->target_ ? pnt_receive_size[nc->target_->prop->type]: 1;
+    //  return nc->target_ ? pnt_receive_size[nc->target_->prop->_type]: 1;
 }
 
 size_t nrncore_netpar_bytes() {
@@ -1649,38 +1648,4 @@ size_t nrncore_netpar_bytes() {
     //  printf("%d rank output Presyn %ld  input Presyn %ld  NetCon %ld  bytes %ld\n",
     //    nrnmpi_myid, nout, nin, nnet, ntot);
     return ntot;
-}
-
-void nrncore_netpar_cellgroups_helper(CellGroup* cgs) {
-    // printf("nrncore_netpar_cellgroups_helper\n");
-
-    // for the real cells in each thread (all have output gid and voltage spike
-    // detector) fill the cgs output_ps, output_gid, and output_vindex
-    // All the other (acell) gids have already been processed.
-    int* gidcnt = new int[nrn_nthread];  // real only
-    for (int i = 0; i < nrn_nthread; ++i) {
-        gidcnt[i] = 0;
-    }
-
-    for (const auto& iter: gid2out_) {
-        PreSyn* ps = iter.second;
-        if (ps && ps->thvar_) {
-            int ith = ps->nt_->id;
-            assert(ith >= 0 && ith < nrn_nthread);
-            int i = gidcnt[ith];
-            cgs[ith].output_ps[i] = ps;
-            cgs[ith].output_gid[i] = ps->output_index_;
-            assert(ps->thvar_ >= ps->nt_->_actual_v);
-            int inode = ps->thvar_ - ps->nt_->_actual_v;
-            assert(inode <= ps->nt_->end);
-            cgs[ith].output_vindex[i] = inode;
-            ++gidcnt[ith];
-        }
-    }
-#if 0  // allow real cells to NOT have a direct voltage threshold.
-  for (int i=0; i < nrn_nthread; ++ i) {
-    assert(nrn_threads[i].ncell == gidcnt[i]);
-  }
-#endif
-    delete[] gidcnt;
 }

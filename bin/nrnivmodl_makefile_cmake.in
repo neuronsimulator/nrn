@@ -65,7 +65,7 @@ endif
 ifeq ($(origin CXX), default)
     CXX = @CMAKE_CXX_COMPILER@
 endif
-CXXFLAGS = @BUILD_TYPE_CXX_FLAGS@ @CMAKE_CXX_FLAGS@ @CMAKE_CXX14_STANDARD_COMPILE_OPTION@
+CXXFLAGS = @BUILD_TYPE_CXX_FLAGS@ @CMAKE_CXX_FLAGS@ @CMAKE_CXX17_STANDARD_COMPILE_OPTION@
 CXXCOMPILE = $(CXX) $(CXXFLAGS) @NRN_COMPILE_DEFS_STRING@ @NRN_COMPILE_FLAGS_STRING@
 CXX_LINK_EXE = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@ @NRN_LINK_FLAGS_STRING@
 CXX_LINK_SHARED = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
@@ -100,7 +100,8 @@ endif
 
 # add coreneuron flags
 ifeq ($(LinkCoreNEURON), true)
-    EXTRA_LDFLAGS = @CORENEURON_LIB_LINK_FLAGS@
+    # -L$(libdir) is needed to find libcoreneuron-cuda.so in GPU builds
+    EXTRA_LDFLAGS = -L$(libdir) @CORENRN_LIB_LINK_FLAGS@
 endif
 
 # If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)
@@ -119,7 +120,7 @@ C_GREEN := \033[32m
 special: $(mech_lib)
 	@printf " => $(C_GREEN)LINKING$(C_RESET) executable $(special) LDFLAGS are: $(LDFLAGS)\n"
 	$(CXX_LINK_EXE) -I $(incdir) -I $(incdir)/nrncvode -DAUTO_DLOPEN_NRNMECH=0 $(datadir)/nrnmain.cpp -o $(special) \
-	  -L $(OBJS_DIR) -l$(mech_libname) $(NRNLIB_FLAGS) -l$(mech_libname) $(extra_lib_link) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS) $(EXTRA_LDFLAGS)
+	  -L$(OBJS_DIR) -l$(mech_libname) $(NRNLIB_FLAGS) -l$(mech_libname) $(extra_lib_link) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS) $(EXTRA_LDFLAGS)
 
 $(mech_lib): $(mech_lib_type)
 

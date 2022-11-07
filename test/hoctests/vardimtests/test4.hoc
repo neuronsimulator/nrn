@@ -1,0 +1,47 @@
+load_file("expect_err.hoc")
+double a[1][1]
+func foo() {local i
+  double a[1][1]
+  a = 3
+  return a == 3
+}
+print foo()
+
+double a[1]
+print foo()
+double a[1][1][1]
+print foo()
+
+create soma, dend[3]
+for i=0,2 {
+  connect dend[i](0), soma(1)
+}
+objref sref
+soma { sref = new SectionRef() }
+expect_err("sref.child { print secname() }")
+sref.child[1] { print secname() }
+sref.child(1) { print secname() }
+expect_err("sref.child(1,2) { print secname() }")
+expect_err("sref.child[1][2] { print secname() }")
+
+begintemplate Cell
+public soma, dend
+create soma, dend[3]
+proc init() { local i
+  for i=0, 2 {
+    connect dend[i](0), soma(1)
+  }
+}
+endtemplate Cell
+objref cell
+cell = new Cell()
+cell.dend[1] { print secname() }
+cell.dend { print secname() }
+expect_err("cell.dend[5] { print secname() }")
+expect_err("cell.dend[1][2] {print secname() }")
+expect_err("cell.soma[1] { print secname() }")
+
+forall disconnect()
+expect_err("connect cell.dend[1](0), cell.dend[0](1)") // limitation of parser
+cell.dend[1] connect cell.dend[2](0), 1
+

@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <../nrnpython/nrnpython_config.h>
+#include "nrn_ansi.h"
 
 long hoc_nframe, hoc_nstack;
 
@@ -39,12 +40,6 @@ void iv_display_scale(float);
 
 #if defined(IVX11_DYNAM)
 #include <IV-X11/ivx11_dynam.h>
-#endif
-
-#if MAC || defined(WIN32)
-#include "njconf.h"
-#else
-#include "../nrnjava/njconf.h"
 #endif
 
 #if 1
@@ -144,7 +139,6 @@ static OptionDesc options[] = {{"-dismissbutton", "*dismiss_button", OptionValue
 
 extern int hoc_obj_run(const char*, Object*);
 extern int nrn_istty_;
-extern char* nrn_version(int);
 extern int nrn_nobanner_;
 extern void hoc_final_exit();
 void ivoc_final_exit();
@@ -164,7 +158,7 @@ char* nrnpy_pyexe;
 int Oc::refcnt_ = 0;
 Session* Oc::session_ = 0;
 HandleStdin* Oc::handleStdin_ = 0;
-ostream* OcIdraw::idraw_stream = 0;
+std::ostream* OcIdraw::idraw_stream = 0;
 #endif
 /*****************************************************************************/
 extern void ivoc_cleanup();
@@ -277,7 +271,7 @@ extern int nrn_is_python_extension;
 extern void hoc_nrnmpi_init();
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
-extern char* nrnmpi_load(int is_python);
+extern std::string nrnmpi_load(int is_python);
 #endif
 
 // some things are defined in libraries earlier than they are used so...
@@ -372,9 +366,9 @@ void hoc_nrnmpi_init() {
     if (!nrnmpi_use) {
 #if NRNMPI_DYNAMICLOAD
         nrnmpi_stubs();
-        const char* pmes = nrnmpi_load(1);
-        if (pmes) {
-            printf("%s\n", pmes);
+        auto const pmes = nrnmpi_load(1);
+        if (!pmes.empty()) {
+            std::cout << pmes << std::endl;
         }
 #endif
 
@@ -867,10 +861,6 @@ void ivoc_final_exit() {
     nrnmpi_terminate();
 #endif
 }
-
-extern "C" {
-extern int ifarg(int);
-}  // extern "C"
 
 extern void hoc_ret(), hoc_pushx(double);
 

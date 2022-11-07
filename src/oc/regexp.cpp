@@ -79,7 +79,7 @@ regexp.cpp,v
 #define ESIZE 256
 #define eof   '\0'
 static char expbuf[ESIZE + 4];
-static char* pattern = "";
+static const char* pattern = "";
 static char* loc1;
 static char* loc2;
 static char* locs;

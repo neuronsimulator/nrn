@@ -108,7 +108,7 @@ void hoc_forward2back(char* s) {
     }
 }
 
-extern "C" char* hoc_back2forward(char* s) {
+char* hoc_back2forward(char* s) {
     char* cp = s;
     while (*cp) {
         if (*cp == '\\') {

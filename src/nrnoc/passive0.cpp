@@ -25,12 +25,9 @@ extern "C" void passive0_reg_(void) {
 static void pas_cur(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** vdata = ml->data;
+    double** vdata = ml->_data;
     Datum** vpdata = ml->pdata;
     int i;
-#if _CRAY
-#pragma _CRI ivdep
-#endif
     for (i = 0; i < count; ++i) {
         NODERHS(vnode[i]) -= g * (v - e);
     }
@@ -39,12 +36,9 @@ static void pas_cur(NrnThread* nt, Memb_list* ml, int type) {
 static void pas_jacob(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** vdata = ml->data;
+    double** vdata = ml->_data;
     Datum** vpdata = ml->pdata;
     int i;
-#if _CRAY
-#pragma _CRI ivdep
-#endif
     for (i = 0; i < count; ++i) {
         NODED(vnode[i]) += g;
     }
@@ -54,7 +48,7 @@ static void pas_jacob(NrnThread* nt, Memb_list* ml, int type) {
 
 static void pas_alloc(Prop* p) {
     double* pd;
-    pd = nrn_prop_data_alloc(p->type, nparm, p);
+    pd = nrn_prop_data_alloc(p->_type, nparm, p);
     p->param_size = nparm;
 #if defined(__MWERKS__)
     pd[0] = 5.e-4; /*DEF_g;*/

@@ -16,11 +16,9 @@
 #ifndef _Windows
 #define _Windows 1
 #endif
-#if __cplusplus
 struct Section;
 struct Object;
 struct Symbol;
-#endif
 #define motif_kit
 #define sgi_motif_kit
 #define printf  myprintf
@@ -39,10 +37,8 @@ struct Symbol;
 //#define system mysystem
 #undef DELETE
 #undef IGNORE
-#define CABLE      1
 #define HOC        1
 #define OOP        1
 #define OC_CLASSES "nrnclass.h"
 #define USECVODE   1
-#define CVODE      1
 #define USEMATRIX  1

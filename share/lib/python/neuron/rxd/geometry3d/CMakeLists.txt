@@ -70,6 +70,7 @@ mingw=${MINGW}\n\
 shift\n\
 export LDCSHARED=\"${CMAKE_C_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS}\"\n\
 export LDCXXSHARED=\"${CMAKE_CXX_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS}\"\n\
+export SETUPTOOLS_USE_DISTUTILS=stdlib
 if test x$mingw = x1 ; then #only MINGW, linux/mac does nothing \n\
   $pyexe setup.py build_ext --compiler mingw32 --build-lib=${NRN_PYTHON_BUILD_LIB}\n\
 else\n

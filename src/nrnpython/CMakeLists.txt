@@ -99,6 +99,7 @@ set(nrnpython_lib_list)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   set(INCLUDE_DIRS
       .
+      ..
       ../oc
       ../nrnoc
       ../ivoc
@@ -219,15 +220,20 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # Build python module
   # =============================================================================
   # for each python detected / provided by user, install module at install time
+
+  # Workaround for: https://github.com/neuronsimulator/nrn/issues/1605 See:
+  # https://setuptools.pypa.io/en/latest/deprecated/distutils-legacy.html
+  # https://setuptools.pypa.io/en/latest/history.html#id228
+  set(extra_env ${CMAKE_COMMAND} -E env "SETUPTOOLS_USE_DISTUTILS=stdlib")
+
   if(NRN_SANITIZERS)
     # Make sure the same compiler (currently always clang in the sanitizer builds) is used to link
     # as was used to build. By default, Python will try to use the compiler that was used to build
     # Python, which is often gcc.
-    set(extra_env
-        ${CMAKE_COMMAND} -E env
-        "LDCSHARED=${CMAKE_C_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS}"
-        "LDCXXSHARED=${CMAKE_CXX_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS}")
+    list(APPEND extra_env "LDCSHARED=${CMAKE_C_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS}"
+         "LDCXXSHARED=${CMAKE_CXX_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS}")
   endif()
+
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     add_custom_command(
       TARGET hoc_module
@@ -261,6 +267,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
 echo 'Installing python module using:'\n\
 set -ex\n\
 cd ${CMAKE_CURRENT_BINARY_DIR}\n\
+export SETUPTOOLS_USE_DISTUTILS=stdlib
 $1 setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB} install ${NRN_MODULE_INSTALL_OPTIONS}\n\
 ")
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})

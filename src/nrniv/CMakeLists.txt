@@ -84,8 +84,7 @@ add_dependencies(generated_source_files nocmodl_generated_files)
 add_executable(nocmodl ${NRN_NMODL_SRC_FILES} "${NRN_NMODL_GEN}/lex.cpp"
                        "${NRN_NMODL_GEN}/parse1.cpp" "${NRN_NMODL_GEN}/diffeq.cpp")
 cpp_cc_configure_sanitizers(TARGET nocmodl)
-target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 NOCMODL=1 CVODE=1
-                                           VECTORIZE=1 NRN_DYNAMIC_UNITS=1)
+target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1 NRN_DYNAMIC_UNITS=1)
 # Otherwise the generated code in the binary directory does not find headers in the modlunit source
 # directory and the source files in the source directory do not find generated headers in the binary
 # directory.
@@ -179,7 +178,6 @@ set(NRN_INCLUDE_DIRS
     ${NRN_OC_SRC_DIR}
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/src/nrncvode
-    ${PROJECT_BINARY_DIR}/src/nrnjava
     ${PROJECT_BINARY_DIR}/src/nrnoc
     ${PROJECT_BINARY_DIR}/src/nrnpython
     ${PROJECT_BINARY_DIR}/src/oc
@@ -201,6 +199,9 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}/src/sundials/cvodes
     ${PROJECT_SOURCE_DIR}/src/sundials/ida
     ${PROJECT_SOURCE_DIR}/src/sundials/shared)
+set(NRN_INCLUDE_DIRS
+    ${NRN_INCLUDE_DIRS}
+    PARENT_SCOPE)
 
 # =============================================================================
 # Helper commands : generate various headers
@@ -255,11 +256,6 @@ set_property(
   PROPERTY COMPILE_DEFINITIONS OOP=1 HOC=1 INTERVIEWS=1)
 
 set_property(
-  SOURCE ${NRN_OC_SRC_DIR}/code.cpp ${NRN_OC_SRC_DIR}/hoc_init.cpp ${NRN_OC_SRC_DIR}/hoc_oop.cpp
-  APPEND
-  PROPERTY COMPILE_DEFINITIONS CABLE=1)
-
-set_property(
   SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
   APPEND
   PROPERTY COMPILE_DEFINITIONS USE_LIBNRNPYTHON_MAJORMINOR=${USE_LIBNRNPYTHON_MAJORMINOR})
@@ -272,7 +268,7 @@ set_property(
 set_property(
   SOURCE ${NRN_NRNIV_SRC_FILES} ${NRN_NRNCVODE_SRC_FILES}
   APPEND
-  PROPERTY COMPILE_DEFINITIONS USEMATRIX=1 USECVODE=1 CABLE=1 USEBBS=1 OOP=1)
+  PROPERTY COMPILE_DEFINITIONS USEMATRIX=1 USECVODE=1 USEBBS=1 OOP=1)
 
 set_property(
   SOURCE ${NRN_SCOPMATH_SRC_FILES}
@@ -302,11 +298,30 @@ if(NRN_USE_BACKWARD)
     PROPERTY COMPILE_DEFINITIONS USE_BACKWARD=1)
 endif()
 
-# NVHPC/21.7 cannot compile znorm.c with -O2 or above. See also:
-# https://forums.developer.nvidia.com/t/nvc-21-7-regression-internal-compiler-error-can-only-coerce-indirect-args/184847
-if(NRN_HAVE_NVHPC_COMPILER AND ${CMAKE_C_COMPILER_VERSION} VERSION_EQUAL 21.7)
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/mesch/znorm.c PROPERTIES COMPILE_OPTIONS
-                                                                                 -Mnovect)
+if(NRN_HAVE_NVHPC_COMPILER)
+  # NVHPC/21.7 cannot compile znorm.c with -O2 or above. See also:
+  # https://forums.developer.nvidia.com/t/nvc-21-7-regression-internal-compiler-error-can-only-coerce-indirect-args/184847
+  if(${CMAKE_C_COMPILER_VERSION} VERSION_EQUAL 21.7)
+    set_source_files_properties(${PROJECT_SOURCE_DIR}/src/mesch/znorm.c PROPERTIES COMPILE_OPTIONS
+                                                                                   -Mnovect)
+  endif()
+  # For NVHPC we will rely on FE exceptions as opposed to errno in order to make use of faster
+  # builtins. One caveat is that if we use an optimization level greater than -O1, the FE exception
+  # is not raised. See https://github.com/neuronsimulator/nrn/pull/1930
+  set_source_files_properties(
+    ${PROJECT_SOURCE_DIR}/src/oc/math.cpp PROPERTIES COMPILE_DEFINITIONS NVHPC_CHECK_FE_EXCEPTIONS=1
+                                                     COMPILE_OPTIONS -O1)
+elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
+  # When optimisation is enabled then icpc apparently does not set errno
+  set_property(
+    SOURCE ${PROJECT_SOURCE_DIR}/src/oc/math.cpp
+    APPEND
+    PROPERTY COMPILE_OPTIONS -fmath-errno -fno-builtin)
+  # At -O0 then the Intel compiler generates extremely slow code for this file
+  set_property(
+    SOURCE ${PROJECT_SOURCE_DIR}/src/oc/code.cpp
+    APPEND
+    PROPERTY COMPILE_OPTIONS -O1)
 endif()
 
 if(NRN_ENABLE_MPI_DYNAMIC)
@@ -342,6 +357,10 @@ add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")
+# See: https://en.cppreference.com/w/cpp/filesystem#Notes
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1)
+  target_link_libraries(nrniv_lib stdc++fs)
+endif()
 if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv_lib Threads::Threads)
 endif()
@@ -455,6 +474,9 @@ endif()
 # =============================================================================
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
 cpp_cc_configure_sanitizers(TARGET nrniv)
+if(NOT "${NRN_LINK_FLAGS_FOR_ENTRY_POINTS}" STREQUAL "")
+  target_link_options(nrniv PUBLIC ${NRN_LINK_FLAGS_FOR_ENTRY_POINTS})
+endif()
 target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_DL_LIBS})
 if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv Threads::Threads)

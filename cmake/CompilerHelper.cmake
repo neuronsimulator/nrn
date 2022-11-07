@@ -24,7 +24,6 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
     # August 2021. It would clearly be nicer to apply these suppressions only to relevant files.
     # Examples of the suppressed warnings are given below.
     # ~~~
-    # "src/oc/isoc99.h", warning #1-D: last line of file ends without a newline
     # "src/nrniv/nvector_nrnserial_ld.cpp", warning #47-D: incompatible redefinition of macro "..."
     # "src/nmodl/kinetic.cpp", warning #111-D: statement is unreachable
     # "src/nmodl/parsact.cpp", warning #128-D: loop is not reachable
@@ -53,10 +52,4 @@ else()
   set(NRN_HAVE_NVHPC_COMPILER OFF)
   set(USING_PGI_COMPILER_TRUE "#")
   set(USING_PGI_COMPILER_FALSE "")
-endif()
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "PGI")
-  # CMake adds strict standard complaint PGI flag "-A" which breaks compilation of old codes (e.g.
-  # spdlog, fmt)
-  set(CMAKE_CXX14_STANDARD_COMPILE_OPTION --c++14)
 endif()

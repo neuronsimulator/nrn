@@ -10,7 +10,7 @@
 
 class PreSyn;
 class NetCon;
-class NrnThread;
+struct NrnThread;
 
 typedef std::pair<int, Memb_list*> MlWithArtItem;
 typedef std::vector<MlWithArtItem> MlWithArt;
@@ -23,11 +23,12 @@ class CellGroup {
     virtual ~CellGroup();
     Memb_list** type2ml;
     int group_id;
+    int n_real_cell;
     // PreSyn, NetCon, target info
-    int n_presyn;  // real first
-    int n_output;  // real + art with gid
-    int n_real_output;
-    int ndiam;  // > 0 only if diam semantics in use.
+    int n_presyn;       // real first
+    int n_output;       // real + art with gid
+    int n_real_output;  // up to nt.end outputs for the n_real_cells.
+    int ndiam;          // > 0 only if diam semantics in use.
     int n_mech;
     int* ml_vdata_offset;
     // following three are parallel arrays
@@ -66,8 +67,8 @@ class CellGroup {
         for (auto& th: deferred_type2artml_) {
             for (auto& p: th) {
                 Memb_list* ml = p.second;
-                if (ml->data) {
-                    delete[] ml->data;
+                if (ml->_data) {
+                    delete[] ml->_data;
                 }
                 if (ml->pdata) {
                     delete[] ml->pdata;
@@ -101,9 +102,9 @@ class CellGroup {
     static inline int nrncore_pntindex_for_queue(double* d, int tid, int type) {
         Memb_list* ml = nrn_threads[tid]._ml_list[type];
         if (ml) {
-            assert(d >= ml->data[0] &&
-                   d < (ml->data[0] + (ml->nodecount * nrn_prop_param_size_[type])));
-            return (d - ml->data[0]) / nrn_prop_param_size_[type];
+            assert(d >= ml->_data[0] &&
+                   d < (ml->_data[0] + (ml->nodecount * nrn_prop_param_size_[type])));
+            return (d - ml->_data[0]) / nrn_prop_param_size_[type];
         }
         return nrncore_art2index(d);
     }

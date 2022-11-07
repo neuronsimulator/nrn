@@ -845,16 +845,16 @@ long Scene::scene_list_index(Scene* s) {
     return -1;
 }
 
-void Scene::save_all(ostream& o) {
+void Scene::save_all(std::ostream& o) {
     char buf[200];
-    o << "objectvar save_window_, rvp_" << endl;
+    o << "objectvar save_window_, rvp_" << std::endl;
     if (!scene_list) {
         return;
     }
     long count = scene_list->count();
     if (count) {
         sprintf(buf, "objectvar scene_vector_[%ld]", count);
-        o << buf << endl;
+        o << buf << std::endl;
     }
     for (long i = 0; i < count; ++i) {
         Scene* s = scene_list->item(i);
@@ -862,10 +862,10 @@ void Scene::save_all(ostream& o) {
     }
 }
 
-void Scene::save_class(ostream& o, const char* s) {
+void Scene::save_class(std::ostream& o, const char* s) {
     long count = views_->count();
     //	PrintableWindow* w = (PrintableWindow*)canvas()->window();
-    o << "save_window_ = new " << s << "(0)" << endl;
+    o << "save_window_ = new " << s << "(0)" << std::endl;
     char buf[256];
     Coord left, top, right, bottom;
     if (view_count()) {
@@ -878,11 +878,11 @@ void Scene::save_class(ostream& o, const char* s) {
     }
 
     sprintf(buf, "save_window_.size(%g,%g,%g,%g)", left, right, bottom, top);
-    o << buf << endl;
+    o << buf << std::endl;
 }
 
-void Scene::save_phase1(ostream&) {}
-void Scene::save_phase2(ostream&) {}
+void Scene::save_phase1(std::ostream&) {}
+void Scene::save_phase2(std::ostream&) {}
 
 void Scene::printfile(const char* fname) {
     if (view_count()) {
@@ -891,11 +891,11 @@ void Scene::printfile(const char* fname) {
 }
 
 void XYView::printfile(const char* fname) {
-    filebuf obuf;
+    std::filebuf obuf;
     if (!obuf.open(fname, IOS_OUT)) {
         return;
     }
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     EPSPrinter* pr = new EPSPrinter(&o);
     Allocation a;
     Allotment ax(0, xsize_, 0);

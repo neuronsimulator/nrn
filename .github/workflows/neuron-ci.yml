@@ -21,7 +21,6 @@ on:
 
 env:
   BUILD_TYPE: Release
-  DEVELOPER_DIR: /Applications/Xcode_11.3.1.app/Contents/Developer
   DESIRED_CMAKE_VERSION: 3.15.0
   PY_MIN_VERSION: '3.7'
   PY_MAX_VERSION: '3.10'
@@ -41,14 +40,14 @@ jobs:
 
     strategy:
       matrix:
-        os: [ macOS-10.15, ubuntu-18.04]
+        os: [ macOS-11, ubuntu-20.04]
         config:
-          - { matrix_eval : "CC=gcc CXX=g++" ,      build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON" }
-          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "setuptools"  }
-          - { matrix_eval : "CC=gcc-5 CXX=g++-5",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON" }
-          - { matrix_eval : "CC=gcc-6 CXX=g++-6",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF" }
-          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON" }
-          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake",      python_dynamic : ON }
+          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
+          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake"}
+          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake", python_dynamic: ON}
+          - { matrix_eval : "CC=gcc-7 CXX=g++-7" ,  build_mode: "cmake", cmake_option: "-DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-7 CXX=g++-7",   build_mode: "cmake", cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"}
         include:
           - os: ubuntu-22.04
             config:
@@ -68,6 +67,14 @@ jobs:
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
               sanitizer: address
+          - os: macOS-12
+            config:
+              build_mode: cmake
+              # TODO: investigate rxd test timeouts in this build and re-enable them
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
+                -DNRN_ENABLE_RX3D=OFF -DCORENRN_SANITIZERS=address
+              sanitizer: address
+              ccache_fudge: 1 # manually invalidate the cache for this build
       fail-fast: false
 
     steps:
@@ -79,10 +86,11 @@ jobs:
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install ccache coreutils doxygen mpich ninja xz
+          brew install ccache coreutils doxygen flex mpich ninja xz
           brew unlink mpich
           brew install openmpi
           brew install --cask xquartz
+          echo /usr/local/opt/flex/bin >> $GITHUB_PATH
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
           echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> $GITHUB_ENV
           echo CTEST_PARALLEL_LEVEL=3 >> $GITHUB_ENV
@@ -96,8 +104,8 @@ jobs:
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
             openmpi-bin patchelf
           # The sanitizer builds use ubuntu 22.04
-          if [[ "${{matrix.os}}" == "ubuntu-18.04" ]]; then
-            sudo apt-get install g++-5 g++-6 g++-8 g++-9
+          if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
+            sudo apt-get install g++-7 g++-8
           fi
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
           echo CMAKE_BUILD_PARALLEL_LEVEL=2 >> $GITHUB_ENV
@@ -111,7 +119,7 @@ jobs:
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         if: ${{matrix.config.python_dynamic == 'ON'}}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
 
@@ -122,7 +130,7 @@ jobs:
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MAX_VERSION }}
 
@@ -148,8 +156,20 @@ jobs:
           cat matrix.json
           echo -----
 
+      # Workaround for https://github.com/actions/cache/issues/92
+      - name: Checkout cache action
+        uses: actions/checkout@v3
+        with:
+          repository: actions/cache
+          ref: v3
+          path: tmp/actions/cache
+          
+      - name: Make actions/cache@v3 run even on failure
+        run: |
+          sed -i'.bak' -e '/ post-if: /d' tmp/actions/cache/action.yml
+
       - name: Restore compiler cache
-        uses: pat-s/always-upload-cache@v3
+        uses: ./tmp/actions/cache
         with:
           path: |
             ${{runner.workspace}}/ccache
@@ -165,7 +185,7 @@ jobs:
         run:  |
           # OS related
           if [ "$RUNNER_OS" == "Linux" ]; then
-            eval $MATRIX_EVAL;
+            export ${MATRIX_EVAL};
             export SHELL="/bin/bash"
           else
             export CXX=${CXX:-g++};
@@ -202,14 +222,15 @@ jobs:
               cmake_args=(-G Ninja)
               # Sanitizer-specific setup
               if [[ -n "${{matrix.config.sanitizer}}" ]]; then
-                CC=$(command -v clang-14)
-                CXX=$(command -v clang++-14)
-                symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
-                echo symbolizer_path=${symbolizer_path}
+                if [ "$RUNNER_OS" == "Linux" ]; then
+                  CC=$(command -v clang-14)
+                  CXX=$(command -v clang++-14)
+                  symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
+                  cmake_args+=(-DLLVM_SYMBOLIZER_PATH="${symbolizer_path}")
+                fi
                 cmake_args+=(-DCMAKE_BUILD_TYPE=Custom \
-                             -DCMAKE_C_FLAGS="-O1 -g -Wno-writable-strings" \
-                             -DCMAKE_CXX_FLAGS="-O1 -g -Wno-writable-strings" \
-                             -DLLVM_SYMBOLIZER_PATH="${symbolizer_path}" \
+                             -DCMAKE_C_FLAGS="-O1 -g" \
+                             -DCMAKE_CXX_FLAGS="-O1 -g" \
                              -DNRN_SANITIZERS=$(echo ${{matrix.config.sanitizer}} | sed -e 's/-/,/g'))
               fi
               cmake_args+=(-DCMAKE_C_COMPILER="${CC}" \
@@ -237,11 +258,9 @@ jobs:
                                 -Wno-unused-function \
                                 -Wno-unused-but-set-variable \
                                 -Wno-reorder \
-                                -Wno-sign-compare \
-                                -Wno-strict-aliasing \
-                                -Wno-missing-braces \
-                                -Wno-mismatched-tags" \
-                             -DNRN_EXTRA_MECH_CXX_FLAGS="")
+                                -Wno-sign-compare" \
+                             -DNRN_EXTRA_MECH_CXX_FLAGS="-Wno-sometimes-uninitialized \
+                                -Wno-missing-braces")
               fi
               mkdir build && cd build
               echo "Building with: ${cmake_args[@]}"

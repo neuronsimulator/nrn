@@ -43,3 +43,12 @@ To that end, the following table's columns constitute:
      - This legacy macOS toolkit was deprecated in 2012 and removed from macOS 10.15
      - `#1869 <https://github.com/neuronsimulator/nrn/pull/1869>`_
      - 8fecd77
+   * - LINDA
+     - Linda is a coordination model that aids communication in parallel computing environments.
+       Side note: the bulletin board implemented within the ParallelContext is NEURON's analogy to LINDA's conceptual functionality of tuple space.
+     - `#1919 <https://github.com/neuronsimulator/nrn/pull/1919>`_
+     - a5c36e9
+   * - Java
+     - NEURON Java support.
+     - `#1937 <https://github.com/neuronsimulator/nrn/pull/1937>`_
+     - 5a67957
