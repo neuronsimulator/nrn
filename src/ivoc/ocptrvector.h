@@ -1,11 +1,10 @@
-#ifndef ocptrvector_h
-#define ocptrvector_h
+#pragma once
+#include "neuron/container/data_handle.hpp"
+#include "objcmd.h"
 
-#include "oc2iv.h"
-class HocCommand;
+#include <cstddef>
 
-class OcPtrVector {
-  public:
+struct OcPtrVector {
     OcPtrVector(std::size_t sz);
     virtual ~OcPtrVector();
     [[nodiscard]] std::size_t size() const {
@@ -13,7 +12,7 @@ class OcPtrVector {
     }
     void resize(int);
     void pset(int i, neuron::container::data_handle<double> dh);
-    double getval(int);
+    [[nodiscard]] double getval(int);
     void setval(int, double);
     void scatter(double*, int sz);
     void gather(double*, int sz);
@@ -25,5 +24,3 @@ class OcPtrVector {
     std::unique_ptr<HocCommand> update_cmd_{};
     char* label_{};
 };
-
-#endif
