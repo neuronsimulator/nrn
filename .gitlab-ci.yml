@@ -37,6 +37,7 @@ mac_m1_cmake_build:
   tags:
     - macos-arm64
   script:
+    - brew install boost
     - python3 -m virtualenv venv
     - venv/bin/pip install --upgrade pip -r nrn_requirements.txt
     - venv/bin/python --version
