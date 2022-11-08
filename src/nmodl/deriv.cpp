@@ -114,7 +114,7 @@ void solv_diffeq(Item* qsol,
             lappendstr(thread_mem_init_list, buf);
             Sprintf(buf, "  _newtonspace%d = nrn_cons_newtonspace(%d);\n", listnum, numeqn);
             lappendstr(thread_mem_init_list, buf);
-            Sprintf(buf, "  delete[] static_cast<double*>(_thread[_dith%d]);\n", listnum);
+            Sprintf(buf, "  delete[] _thread[_dith%d].get<double*>();\n", listnum);
             lappendstr(thread_cleanup_list, buf);
             Sprintf(buf, "  nrn_destroy_newtonspace(_newtonspace%d);\n", listnum);
             lappendstr(thread_cleanup_list, buf);

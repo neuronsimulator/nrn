@@ -17,21 +17,21 @@ void psection(void) {
     p = sec->prop;
     Printf("%s {", secname(sec));
     Printf(" nseg=%d  L=%g  Ra=%g", sec->nnode - 1, section_length(sec), nrn_ra(sec));
-    if (static_cast<double>(p->dparam[4]) != 1) {
-        Printf(" rallbranch=%g", static_cast<double>(p->dparam[4]));
+    if (p->dparam[4].get<double>() != 1) {
+        Printf(" rallbranch=%g", p->dparam[4].get<double>());
     }
     Printf("\n");
     if (sec->parentsec) {
         Printf("	%s ", secname(sec->parentsec));
         Printf("connect %s (%g), %g\n",
                secname(sec),
-               static_cast<double>(p->dparam[3]),
-               static_cast<double>(p->dparam[1]));
+               p->dparam[3].get<double>(),
+               p->dparam[1].get<double>());
     } else {
         v_setup_vectors();
         /*SUPPRESS 440*/
         Printf("	/*location %g attached to cell %d*/\n",
-               static_cast<double>(p->dparam[3]),
+               p->dparam[3].get<double>(),
                sec->parentnode->v_node_index);
     }
     if (sec->nnode) {
