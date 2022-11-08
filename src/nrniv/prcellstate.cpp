@@ -33,7 +33,7 @@ static void pr_memb(int type,
             }
             if (receives_events) {
                 fprintf(f, "%d nri %lu\n", cellnodes[inode], pnt2index.size());
-                auto* pp = static_cast<Point_process*>(ml->pdata[i][1]);
+                auto* pp = ml->pdata[i][1].get<Point_process*>();
                 pnt2index.emplace(pp, pnt2index.size());
             }
             for (int j = 0; j < size; ++j) {

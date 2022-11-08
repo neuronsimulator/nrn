@@ -242,7 +242,7 @@ void KSSingle::state(Node* nd, Datum* pd, NrnThread* nt) {
     // integrate from t-dt to t
     int i;
     double v = NODEV(nd);
-    auto* snd = static_cast<KSSingleNodeData*>(pd[sndindex_]);
+    auto* snd = pd[sndindex_].get<KSSingleNodeData*>();
     // if truly single channel, as opposed to N single channels
     // then follow the one populated state. Otherwise do the
     // general case
@@ -258,7 +258,7 @@ void KSSingle::cv_update(Node* nd, Datum* pd, NrnThread* nt) {
     // single channel event time to a recalculated time
     int i;
     double v = NODEV(nd);
-    auto* snd = static_cast<KSSingleNodeData*>(pd[sndindex_]);
+    auto* snd = pd[sndindex_].get<KSSingleNodeData*>();
     if (uses_ligands_ || !vsame(v, snd->vlast_)) {
         assert(nt->_t < snd->t1_);
         snd->vlast_ = v;
@@ -368,7 +368,7 @@ void KSSingle::nextNtrans(KSSingleNodeData* snd) {
 }
 
 void KSSingle::alloc(Prop* p, int sindex) {  // and discard old if not NULL
-    auto* snd = static_cast<KSSingleNodeData*>(p->dparam[2]);
+    auto* snd = p->dparam[2].get<KSSingleNodeData*>();
     if (snd) {
         delete snd;
     }
@@ -420,12 +420,12 @@ void KSSingle::init(double v,
 }
 
 void KSChan::nsingle(Point_process* pp, int n) {
-    if (auto* snd = static_cast<KSSingleNodeData*>(pp->prop->dparam[2]); snd) {
+    if (auto* snd = pp->prop->dparam[2].get<KSSingleNodeData*>(); snd) {
         snd->nsingle_ = n;
     }
 }
 int KSChan::nsingle(Point_process* pp) {
-    if (auto* snd = static_cast<KSSingleNodeData*>(pp->prop->dparam[2]); snd) {
+    if (auto* snd = pp->prop->dparam[2].get<KSSingleNodeData*>(); snd) {
         return snd->nsingle_;
     } else {
         return 1000000000;

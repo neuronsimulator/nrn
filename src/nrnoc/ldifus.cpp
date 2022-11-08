@@ -160,7 +160,7 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
         /* Also child may butte end to end with parent or attach to middle */
         mi = pld->mindex[i];
         if (sindex < 0) {
-            pld->state[i] = static_cast<double*>(ml->pdata[mi][-sindex - 1]);
+            pld->state[i] = ml->pdata[mi][-sindex - 1].get<double*>();
         } else {
             // With the new SOA format it's not possible to easily navigate from
             // the nth array element for a particular index to the mth array
@@ -174,7 +174,7 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
             mpi = pld->mindex[pindex];
             pnd = ml->nodelist[mpi];
             if (nd->sec_node_index_ == 0) {
-                rall = static_cast<double>(nd->sec->prop->dparam[4]);
+                rall = nd->sec->prop->dparam[4].get<double>();
             } else {
                 rall = 1.;
             }
