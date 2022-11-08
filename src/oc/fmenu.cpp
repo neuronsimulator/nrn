@@ -101,13 +101,6 @@ fmenu.c,v
 
 #include <stdlib.h>
 
-#if defined(__GO32__)
-#define G32 1
-#include <dos.h>
-#include <gppconio.h>
-extern int egagrph; /* detect if in graphics mode */
-#endif
-
 #if DOS
 #include <dos.h>
 #include <io.h>
@@ -651,14 +644,10 @@ static void clrscr(void) {}
 static void undisplay(int imenu) {
     int i;
     if (egagrph != 0) {
-#if GRX
-        grx_txt_clear();
-#else
         xcursor(menusfirst[imenu]->row, 0);
         for (i = menuslast[imenu]->row - menusfirst[imenu]->row + 2; i; i--) {
             Printf("%80c\n", SPACE);
         }
-#endif
     } else {
         clrscr();
     }

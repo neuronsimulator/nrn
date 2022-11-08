@@ -533,7 +533,7 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
     *ppbuf = hs->buf;
 }
 
-#if defined(__GO32__) || defined(WIN32) || defined(MAC)
+#if defined(WIN32) || defined(MAC)
 static FILE* oc_popen(char* cmd, char* type) {
     FILE* fp;
     char buf[1024];
@@ -815,7 +815,7 @@ void hoc_getcwd(void) {
 }
 
 void hoc_machine_name(void) {
-#if !defined(__GO32__) && !defined(WIN32) && !defined(MAC)
+#if !defined(WIN32) && !defined(MAC)
     /*----- functions called -----*/
     /*----- local  variables -----*/
     char buf[20];

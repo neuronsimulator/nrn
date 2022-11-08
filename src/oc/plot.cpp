@@ -14,11 +14,6 @@
 #define IGNORE(arg) arg
 #endif
 
-#if GRX
-#include <libbcc.h>
-#include "hoc.h"
-#endif
-
 #if defined(useNeXTstep) || defined(__linux__)
 #ifndef NRNOC_X11
 #define NRNOC_X11 0
@@ -57,9 +52,6 @@ extern char** environ;
 #if DOS
 #include <graphics.h>
 #include <dos.h>
-#endif
-#if defined(GRX)
-#define DOS 1
 #endif
 
 static int console = 1; /* 1 plotting to console graphics */
@@ -154,14 +146,7 @@ void plprint(const char* s) {
 #endif
 
     } else if (!text) {
-#if GRX
-        if (egagrph) {
-            hoc_outtext(s);
-        } else
-#endif
-        {
-            nrnpy_pr("%s", s);
-        }
+        nrnpy_pr("%s", s);
     }
     if (hardplot && hpdev && text && strlen(s)) {
         hard_text_preamble();
@@ -173,131 +158,6 @@ void plprint(const char* s) {
         plt(-2, 0., 0.);
     }
 }
-
-#if GRX
-static int trcur;
-static GrTextRegion* gtr;
-#define GRXCOL 80
-#define GRXROW 5
-void grx_move(int r, int c) {
-    r = r % GRXROW;
-    c = c % GRXCOL;
-    trcur = c + r * GRXCOL;
-}
-void grx_rel_move(int new) {
-    trcur = ((int) (trcur / GRXCOL)) * GRXCOL + new;
-}
-void grx_output_some_chars(const char* string, int count) {
-    if (string[count] == '\0') {
-        hoc_outtext(string);
-    } else {
-        hoc_outtext("non-terminated string\n");
-    }
-}
-void grx_delete_chars(int count) {
-    int i;
-    int j = trcur;
-    for (i = 0; i < count; ++i) {
-        gtr->txr_buffer[j++] = ' ';
-    }
-    GrDumpTextRegion(gtr);
-}
-grx_insert_some_chars(string, count) char* string;
-int count;
-{
-    int i, j;
-    i = trcur + count;
-    j = trcur + count;
-    while (i >= trcur) {
-        gtr->txr_buffer[j--] = gtr->txr_buffer[i--];
-    }
-    i = trcur;
-    grx_output_some_chars(string, count);
-    trcur = i;
-}
-grx_backspace(count) int count;
-{
-    while (count--) {
-        trcur--;
-    }
-}
-grx_clear_to_eol() {
-    int j = trcur;
-    do {
-        gtr->txr_buffer[j] = ' ';
-    } while ((++j) % GRXCOL);
-    GrDumpTextRegion(gtr);
-}
-
-grx_force_text() {
-    int i;
-    for (i = 0; i < GRXCOL * GRXROW; ++i) {
-        gtr->txr_backup[i] = '\0';
-    }
-    GrDumpTextRegion(gtr);
-}
-
-grx_txt_clear() {
-    int i;
-    if (!gtr) {
-        gtr = (GrTextRegion*) emalloc(sizeof(GrTextRegion));
-        gtr->txr_font = (GrFont*) 0;
-        gtr->txr_buffer = ecalloc(GRXCOL * GRXROW, sizeof(char));
-        gtr->txr_backup = ecalloc(GRXCOL * GRXROW, sizeof(char));
-        gtr->txr_xpos = 0;
-        gtr->txr_ypos = 0;
-        gtr->txr_width = GRXCOL;
-        gtr->txr_height = GRXROW;
-        gtr->txr_lineoffset = GRXCOL;
-        gtr->txr_fgcolor.v = 7;
-        gtr->txr_bgcolor.v = 0;
-        gtr->txr_chrtype = GR_BYTE_TEXT;
-    }
-    for (i = 0; i < GRXCOL * GRXROW; ++i) {
-        gtr->txr_buffer[i] = ' ';
-    }
-    trcur = 0;
-    GrDumpTextRegion(gtr);
-}
-
-hoc_outtext(s) char* s;
-{
-    int i;
-    char* cp;
-    int ch;
-    if (!egagrph) {
-        return;
-    }
-    if (!gtr) {
-        grx_txt_clear();
-    }
-
-    for (cp = s; *cp; ++cp) {
-        ch = *cp;
-        if (*cp == '\n' || trcur >= GRXROW * GRXCOL) {
-            char *c1, *c2;
-            int j;
-            for (i = 1; i < GRXROW; ++i) {
-                c1 = gtr->txr_buffer + (i - 1) * GRXCOL;
-                c2 = gtr->txr_buffer + (i) *GRXCOL;
-                for (j = 0; j < GRXCOL; ++j) {
-                    c1[j] = c2[j];
-                }
-            }
-            for (i = 0; i < GRXCOL; ++i) {
-                c2[i] = ' ';
-            }
-            trcur = (GRXROW - 1) * GRXCOL;
-            continue;
-        }
-        if (ch == '\t') {
-            ch = ' ';
-        }
-        gtr->txr_buffer[trcur++] = ch;
-    }
-    GrDumpTextRegion(gtr);
-}
-#endif
 
 void initplot(void) {
 #if !defined(__MINGW32__) /* to end of function */

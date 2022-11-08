@@ -73,14 +73,10 @@ static const char* dfile = NEURON_DATA_DIR "/lib/nrnunits.lib" SUFFIX;
 static const char* dfile = "/usr/lib/units";
 #endif
 #endif
-#if defined(__GO32__)
-static const char* dfilealt = "/nrn/lib/nrnunits.lib" SUFFIX;
-#else
 #if MAC
 static const char* dfilealt = "::lib:nrnunits.lib" SUFFIX;
 #else
 static const char* dfilealt = "../../share/lib/nrnunits.lib" SUFFIX;
-#endif
 #endif
 static char* unames[NDIM];
 double getflt();
