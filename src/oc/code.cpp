@@ -208,7 +208,7 @@ template <typename T>
 [[noreturn]] void report_type_mismatch(StackDatum const& entry) {
     std::visit(
         [](auto const& val) {
-            assert(!(std::is_same_v<std::decay_t<decltype(val)>, T>));
+            assert(!(std::is_same_v<std::decay_t<decltype(val)>, T>) );
             std::ostringstream oss;
             oss << "bad stack access: expecting " << cxx_demangle(typeid(T).name()) << "; really "
                 << cxx_demangle(typeid(decltype(val)).name());
