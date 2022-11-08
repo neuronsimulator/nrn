@@ -141,7 +141,7 @@ void CellGroup::mk_cellgroups(neuron::model_sorted_token const& cache_token, Cel
             Memb_list* ml = mla[j].second;
             if (nrn_has_net_event(type)) {
                 for (int instance = 0; instance < ml->nodecount; ++instance) {
-                    auto* const pnt = static_cast<Point_process*>(ml->pdata[instance][1]);
+                    auto* const pnt = ml->pdata[instance][1].get<Point_process*>();
                     auto* const ps = static_cast<PreSyn*>(pnt->presyn_);
                     auto const other_thread = static_cast<NrnThread*>(pnt->_vnt)->id;
                     assert(other_thread == i);
@@ -290,7 +290,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 }
             } else if (dmap[j] == -2) {  // this is an ion and dparam[j][0].i is the iontype
                 etype = -2;
-                eindex = static_cast<int>(dparam[j]);
+                eindex = dparam[j].get<int>();
             } else if (dmap[j] == -3) {  // cvodeieq is always last and never seen
                 assert(dmap[j] != -3);
             } else if (dmap[j] == -4) {  // netsend (_tqitem pointer)
@@ -332,7 +332,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] == -5) {  // POINTER
                 // must be a pointer into nt->_data. Handling is similar to eion so
                 // give proper index into the type.
-                double* pd = static_cast<double*>(dparam[j]);
+                double* pd = dparam[j].get<double*>();
                 nrn_dblpntr2nrncore(pd, nt, etype, eindex);
                 if (etype == 0) {
                     fprintf(stderr,
@@ -345,14 +345,14 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 etype = dmap[j];
                 Memb_list* eml = cg.type2ml[etype];
                 assert(eml);
-                auto* const pval = static_cast<double*>(dparam[j]);
+                auto* const pval = dparam[j].get<double*>();
                 auto const legacy_index = eml->legacy_index(pval);
                 assert(legacy_index >= 0);
                 eindex = legacy_index;
             } else if (dmap[j] > 1000) {  // int* into ion dparam[xxx][0]
                 // store the actual ionstyle
                 etype = dmap[j];
-                eindex = *static_cast<int*>(dparam[j]);
+                eindex = *dparam[j].get<int*>();
             } else {
                 char errmes[100];
                 Sprintf(errmes, "Unknown semantics type %d for dparam item %d of", dmap[j], j);
@@ -510,7 +510,7 @@ void CellGroup::mk_tml_with_art(neuron::model_sorted_token const& cache_token, C
                 acnt[id] = 0;
             }
             for (int j = 0; j < memb_list[i].nodecount; ++j) {
-                auto* pnt = static_cast<Point_process*>(memb_list[i].pdata[j][1]);
+                auto* pnt = memb_list[i].pdata[j][1].get<Point_process*>();
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 ++acnt[id];
             }
@@ -535,7 +535,7 @@ void CellGroup::mk_tml_with_art(neuron::model_sorted_token const& cache_token, C
                 acnt[id] = 0;
             }
             for (int j = 0; j < memb_list[i].nodecount; ++j) {
-                auto* pnt = static_cast<Point_process*>(memb_list[i].pdata[j][1]);
+                auto* pnt = memb_list[i].pdata[j][1].get<Point_process*>();
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 Memb_list* ml = cgs[id].mlwithart.back().second;
                 ml->set_storage_offset(cache_token.thread_cache(id).mechanism_offset.at(i));
