@@ -1815,4 +1815,3 @@ void hoc_help(void) {
     }
     ctp = cbuf + strlen(cbuf) - 1;
 }
-

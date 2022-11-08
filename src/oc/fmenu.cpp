@@ -548,7 +548,7 @@ static double enter(int row, int col, double defalt, int frstch, Menuitem* pnow)
             return (defalt);
         } else if (key == '\b') {
             if (istrptr > istr) {
-                    Printf("\b \b");
+                Printf("\b \b");
                 *(--istrptr) = '\0';
             }
         } else if (key == 13) { /*return*/

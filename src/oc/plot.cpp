@@ -398,8 +398,8 @@ static void Fig_preamble(void) {
 }
 
 void Fig_plt(int mode, double x, double y) {
-#define SCX(x) ((int) (x * .8))
-#define SCY(y) (600 - (int) (y * .8))
+#define SCX(x)  ((int) (x * .8))
+#define SCY(y)  (600 - (int) (y * .8))
 #define SCXD(x) ((x * .8))
 #define SCYD(y) (7.5 * 80. - (y * .8))
 #undef TEXT
@@ -409,8 +409,7 @@ void Fig_plt(int mode, double x, double y) {
     static short state = 0;
     static double oldx, oldy;
     static char text_preamble[] = "4 0 0 16 0 0 0 0.000 1 16 40 ", text_postamble[] = "\1\n",
-                line_preamble[] = "7 1 0 1 0 0 0 0 0.000 0 0\n",
-                line_postamble[] = " 9999 9999\n";
+                line_preamble[] = "7 1 0 1 0 0 0 0 0.000 0 0\n", line_postamble[] = " 9999 9999\n";
 
 
     if (!hpdev)
@@ -745,4 +744,3 @@ static void hoc_x11plot(int mode, double x, double y) {
     }
 }
 #endif /*NRNOC_X11*/
-
