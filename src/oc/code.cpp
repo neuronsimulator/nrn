@@ -208,7 +208,7 @@ template <typename T>
 [[noreturn]] void report_type_mismatch(StackDatum const& entry) {
     std::visit(
         [](auto const& val) {
-            assert((!std::is_same_v<std::decay_t<decltype(val)>, T>) );
+            static_assert((!std::is_same_v<std::decay_t<decltype(val)>, T>) );
             std::ostringstream oss;
             oss << "bad stack access: expecting " << cxx_demangle(typeid(T).name()) << "; really "
                 << cxx_demangle(typeid(decltype(val)).name());
@@ -436,32 +436,6 @@ void hoc_init_space() {
 #define MAXINITFCNS 10
 static int maxinitfcns;
 static Pfrv initfcns[MAXINITFCNS];
-
-/** @brief Print up to the 10 most-recently-pushed elements on the stack.
- */
-void hoc_prstack() {
-    std::size_t i{};
-    std::ostringstream oss;
-    oss << "interpreter stack: " << stack.size() << '\n';
-    for (auto stkp = stack.rbegin(); stkp != stack.rend(); ++stkp, ++i) {
-        if (i > 10) {
-            oss << " ...\n";
-            break;
-        }
-        std::visit(
-            [i, &oss](auto& value) {
-                oss << ' ' << i << ' ';
-                if constexpr (std::is_same_v<std::decay_t<decltype(value)>, std::nullptr_t>) {
-                    oss << "nullptr";
-                } else {
-                    oss << value;
-                }
-                oss << ' ' << cxx_demangle(typeid(decltype(value)).name()) << '\n';
-            },
-            *stkp);
-    }
-    Printf(oss.str().c_str());
-}
 
 void hoc_on_init_register(Pfrv pf) {
     /* modules that may have to be cleaned up after an execerror */
@@ -874,10 +848,6 @@ int hoc_is_str_arg(int narg) {
 int hoc_is_object_arg(int narg) {
     auto const type = hoc_argtype(narg);
     return (type == OBJECTVAR || type == OBJECTTMP);
-}
-
-int hoc_is_tempobj_arg(int narg) {
-    return (hoc_argtype(narg) == OBJECTTMP);
 }
 
 Object* hoc_obj_look_inside_stack(int i) { /* stack pointer at depth i; i=0 is top */
@@ -2348,23 +2318,6 @@ char* hoc_araystr(Symbol* sym, int index, Objectdata* obd) {
         }
     }
     return cp;
-}
-
-int hoc_array_index(Symbol* sp, Objectdata* od) { /* subs must be in reverse order on stack */
-    int i;
-    if (ISARRAY(sp)) {
-        if (sp->subtype == 0) {
-            Objectdata* sav = hoc_objectdata;
-            hoc_objectdata = od;
-            i = araypt(sp, OBJECTVAR);
-            hoc_objectdata = sav;
-        } else {
-            i = araypt(sp, 0);
-        }
-    } else {
-        i = 0;
-    }
-    return i;
 }
 
 // Raise error if compile time number of dimensions differs from
