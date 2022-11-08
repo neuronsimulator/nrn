@@ -391,7 +391,6 @@ void hoc_axis(void) {
                 x = 0.;
             }
             Sprintf(s, "%g", x);
-#endif
             offset = width * (int) strlen(s) / 2;
             if (i == x0 && y0 != YORG)
                 offset = -width / 2;
