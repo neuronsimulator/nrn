@@ -518,9 +518,10 @@ static int hoccommand_exec(Object* ho) {
     if (r == NULL) {
         char* mes = nrnpyerr_str();
         if (mes) {
-            Fprintf(stderr, "%s\n", mes);
+            std::string tmp{"Python Callback failed [hoccommand_exec]:\n"};
+            tmp.append(mes);
             free(mes);
-            hoc_execerror("Python Callback failed", 0);
+            hoc_execerror(tmp.c_str(), nullptr);
         }
         if (PyErr_Occurred()) {
             PyErr_Print();

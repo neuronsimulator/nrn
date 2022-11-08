@@ -679,7 +679,13 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
 
     hoc_intset = 0;
     hoc_oop_initaftererror();
-    throw std::runtime_error("hoc_execerror");
+    std::string message{"hoc_execerror: "};
+    message.append(s);
+    if (t) {
+        message.append(1, ' ');
+        message.append(t);
+    }
+    throw std::runtime_error(std::move(message));
 }
 
 void hoc_execerror(const char* s, const char* t) /* recover from run-time error */
