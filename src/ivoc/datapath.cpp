@@ -390,7 +390,7 @@ void HocDataPathImpl::search_pysec() {
     // ForAllSections(sec)
     ITERATE(qsec, section_list) {
         Section* sec = hocSEC(qsec);
-        if (sec->prop && static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX])) {
+        if (sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
             cs = secname(sec);
             strlist_.push_back((char*) cs.string());
             search(sec);
@@ -401,17 +401,17 @@ void HocDataPathImpl::search_pysec() {
 }
 
 void HocDataPathImpl::search(Section* sec) {
-    if (static_cast<double>(sec->prop->dparam[2]) == sentinal) {
+    if (sec->prop->dparam[2].get<double>() == sentinal) {
         found(&(sec->prop->dparam[2].literal_value<double>()), "L", sym_L);
     }
-    if (static_cast<double>(sec->prop->dparam[4]) == sentinal) {
+    if (sec->prop->dparam[4].get<double>() == sentinal) {
         found(&(sec->prop->dparam[4].literal_value<double>()), "rallbranch", sym_rallbranch);
     }
-    if (static_cast<double>(sec->prop->dparam[7]) == sentinal) {
+    if (sec->prop->dparam[7].get<double>() == sentinal) {
         found(&(sec->prop->dparam[7].literal_value<double>()), "Ra", sym_Ra);
     }
     if (!sec->parentsec && sec->parentnode) {
-        search(sec->parentnode, static_cast<double>(sec->prop->dparam[1]));
+        search(sec->parentnode, sec->prop->dparam[1].get<double>());
     }
     for (int i = 0; i < sec->nnode; ++i) {
         search(sec->pnode[i], nrn_arc_position(sec, sec->pnode[i]));
