@@ -144,7 +144,7 @@ extern const char* nrn_sec2pysecname(Section*);
 void nrn_rangeconst(Section*, Symbol*, neuron::container::data_handle<double> value, int op);
 extern int nrn_exists(Symbol*, Node*);
 neuron::container::data_handle<double> nrn_rangepointer(Section*, Symbol*, double x);
-neuron::container::data_handle<double> nrnpy_rangepointer(Section*, Symbol*, double, int*);
+neuron::container::data_handle<double> nrnpy_rangepointer(Section*, Symbol*, double, int*, int);
 extern double* cable_prop_eval_pointer(Symbol*);  // section on stack will be popped
 extern char* hoc_section_pathname(Section*);
 extern double nrn_arc_position(Section*, Node*);
