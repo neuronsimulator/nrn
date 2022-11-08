@@ -111,12 +111,9 @@ static int egagrph = 0;
 #endif
 #include "hoc.h"
 #include <ctype.h>
-#if HOC | OOP
 #define Ret(a) \
     hoc_ret(); \
     hoc_pushx(a)
-#endif
-#define NUL   0
 #define SPACE '\040'
 #define BEEP  Printf("\007")
 /* structure and functions from getsym.c */
@@ -450,7 +447,7 @@ static const char* navigate(int imenu) {
             switch (key) {
             case 77: /* Right arrow key */
                 pcur = pcur->nextitem;
-                if (pcur == NUL)
+                if (pcur == nullptr)
                     pcur = menu;
                 break;
             case 75: /* Left arrow key */

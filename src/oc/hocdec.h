@@ -2,7 +2,6 @@
 #ifndef hocdec_h
 #define hocdec_h
 #define INCLUDEHOCH 1
-#define OOP         1
 
 
 #include "nrnapi.h"
@@ -180,7 +179,6 @@ struct Datum { /* interpreter stack type */
     };
 };
 
-#if OOP
 struct cTemplate {
     Symbol* sym;
     Symlist* symtable;
@@ -225,7 +223,6 @@ struct Object {
     short recurse;           /* to stop infinite recursions */
     short unref_recurse_cnt; /* free only after last return from unref callback */
 };
-#endif
 
 struct VoidFunc { /* User Functions */
     const char* name;
