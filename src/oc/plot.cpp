@@ -17,10 +17,9 @@
 #if GRX
 #include <libbcc.h>
 #include "hoc.h"
-#define __TURBOC__
 #endif
 
-#if defined(useNeXTstep) || defined(__TURBOC__) || defined(__linux__)
+#if defined(useNeXTstep) || defined(__linux__)
 #ifndef NRNOC_X11
 #define NRNOC_X11 0
 #endif
@@ -110,51 +109,6 @@ extern void NeXT_clear(), NeXT_cleararea(), NeXT_open_window(), NeXT_fast();
 #endif
 
 static void hard_text_preamble();
-
-#if defined(__TURBOC__)
-int egagrph = 0; /* global because need to erase on quit if in graphics
-             mode */
-static int graphmode = 0;
-static double xres = 640., yres = 350.;
-static tplt();
-
-void* _graphgetmem(unsigned size) {
-    char* p;
-    p = hoc_Emalloc(size), hoc_malchk();
-    return p;
-}
-
-static void Initplot(void) {
-#if !defined(__GO32__)
-    registerfarbgidriver(EGAVGA_driver_far);
-    registerfarbgidriver(CGA_driver_far);
-    registerfarbgidriver(Herc_driver_far);
-    registerfarbgifont(triplex_font_far);
-#endif
-
-    graphdev = DETECT;
-    initgraph(&graphdev, &graphmode, "c:\\bc\\bgi");
-    {
-        int err;
-        graphdev = 1;
-        err = graphresult();
-        if (err != grOk) {
-            hoc_execerror("Error in initializing graphics adaptor\n", (char*) 0);
-        }
-        xres = (double) (getmaxx() + 1);
-        yres = (double) (getmaxy() + 1);
-        grx_txt_clear();
-        return;
-    }
-    if (graphdev > 0) {
-        xres = (double) (getmaxx() + 1);
-        yres = (double) (getmaxy() + 1);
-        restorecrtmode();
-    } else {
-        hoc_execerror("Error in initializing graphics adaptor\n", (char*) 0);
-    }
-}
-#endif
 
 void plprint(const char* s) {
 #if DOS
@@ -351,9 +305,6 @@ void initplot(void) {
 #if defined(__APPLE__)
     char** environ = (*_NSGetEnviron());
 #endif
-#if defined(__TURBOC__)
-    graphdev = 0;
-#else
 #if NeXTstep
     graphdev = NX;
 #else
@@ -371,7 +322,6 @@ void initplot(void) {
             graphdev = TEK4014;
     }
 #endif /*!NeXTstep*/
-#endif /*!__TURBOC__*/
     hpdev = (FILE*) 0;
     cdev = gdev = stdout;
 #if SUNCORE
@@ -436,14 +386,6 @@ void plt(int mode, double x, double y) {
         ylast = y;
     }
     if (console) {
-#if defined(__TURBOC__)
-        if (graphdev > 0) {
-            tplt(mode, x, y);
-        } else if (graphdev == 0) {
-            Initplot();
-            tplt(mode, x, y);
-        }
-#else
         switch (graphdev) {
         case SSUN:
 #if SUNCORE
@@ -473,7 +415,6 @@ void plt(int mode, double x, double y) {
             break;
 #endif
         }
-#endif
     }
     if (hardplot == 1) {
         hplot(mode, x, y);
@@ -801,11 +742,6 @@ void vtplot(int mode, double x, double y) {
 
 int set_color(int c) {
     hoc_color = c;
-#if defined(__TURBOC__)
-    if (egagrph) {
-        setcolor(hoc_color);
-    }
-#else
 #if SUNCORE
     set_line_index(c);
     set_text_index(c);
@@ -818,89 +754,8 @@ int set_color(int c) {
 #endif
 #endif
 #endif
-#endif
     return (int) hoc_color;
 }
-
-#if defined(__TURBOC__)
-#define UN unsigned int
-
-static void tplt(int mode, double x, double y) {
-#if DOS
-    extern int newstyle;
-#endif
-    int ix, iy;
-
-    if (egagrph == 0) {
-        setgraphmode(graphmode);
-        setcolor(hoc_color);
-        egagrph = 1;
-#if DOS
-        newstyle = 1;
-#endif
-    }
-
-    if (mode < 0) {
-        text = 0;
-        switch (mode) {
-        default:
-        case -1:
-            if (egagrph) {
-                egagrph = 1;
-            }
-            cursor(0, 0);
-            break;
-
-        case -2: /* graphics text mode */
-            egagrph = 2;
-            text = 1;
-            return;
-
-        case -3: /* erase graphics */
-            restorecrtmode();
-            egagrph = 0;
-            break;
-#if GRX
-        case -4:
-            grx_txt_clear();
-            break;
-        case -5:
-            GrClearScreen(0);
-            grx_force_text();
-            break;
-        }
-#endif
-        return;
-    }
-
-    ix = ((xres - 1.) / 1023.) * x;
-    iy = (yres - 1.) - ((yres - 1.) / 779.) * y;
-
-    if (mode >= 2) {
-        lineto(ix, iy);
-    }
-    if (mode == 1) {
-        moveto(ix, iy);
-    }
-    if (mode == 0) {
-        moveto(ix, iy);
-        lineto(ix, iy);
-    }
-    return;
-}
-
-void cursor(int r, int c) {
-#if !defined(__GO32__)
-    int ax, dx;
-    ax = 2 * 256;
-    dx = (r & 255) * 256 + c & 255;
-    _AX = ax;
-    _BX = 0;
-    _DX = dx;
-    geninterrupt(0x10);
-#endif
-}
-#endif
 
 #define CODRAW_MAXPOINT 200
 static int codraw_npoint = 0;

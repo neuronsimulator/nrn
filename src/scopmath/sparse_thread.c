@@ -59,7 +59,7 @@ static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
 #define IGNORE(arg)	arg
 #endif
 
-#if __TURBOC__ || VMS
+#if VMS
 #define Free(arg)	myfree((void *)arg)
 #else
 #define Free(arg)	myfree((char *)arg)

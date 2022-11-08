@@ -545,14 +545,8 @@ void arayinstal(void) /* allocate storage for arrays */
 {
     int i, nsub;
     Symbol* sp;
-#if defined(__TURBOC__)
-    Inst* pcc; /* sometimes pop messes up pc */
-#endif
 
     nsub = (pc++)->i;
-#if defined(__TURBOC__)
-    pcc = pc;
-#endif
     sp = spop();
 
     hoc_freearay(sp);
@@ -565,9 +559,6 @@ void arayinstal(void) /* allocate storage for arrays */
         hoc_malchk();
         hoc_execerror("", (char*) 0);
     }
-#if defined(__TURBOC__)
-    pc = pcc;
-#endif
 }
 
 int hoc_arayinfo_install(Symbol* sp, int nsub) {

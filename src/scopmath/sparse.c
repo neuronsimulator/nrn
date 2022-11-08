@@ -60,7 +60,7 @@ extern void* emalloc(size_t n);
 #define IGNORE(arg)	arg
 #endif
 
-#if __TURBOC__ || VMS
+#if VMS
 #define Free(arg)	free((void *)arg)
 #else
 #define Free(arg)	free((char *)arg)

@@ -73,7 +73,7 @@ static const char* dfile = NEURON_DATA_DIR "/lib/nrnunits.lib" SUFFIX;
 static const char* dfile = "/usr/lib/units";
 #endif
 #endif
-#if defined(__TURBOC__) || defined(__GO32__)
+#if defined(__GO32__)
 static const char* dfilealt = "/nrn/lib/nrnunits.lib" SUFFIX;
 #else
 #if MAC

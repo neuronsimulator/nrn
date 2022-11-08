@@ -310,13 +310,8 @@ int ilint;
 #define Sprintf cplint = sprintf
 #define Printf  ilint = printf
 #else
-#if defined(__TURBOC__)
-#undef IGNORE
-#define IGNORE
-#else
 #undef IGNORE
 #define IGNORE(arg) arg
-#endif
 #define LINTUSE(arg)
 #define Strcat  strcat
 #define Strncat strncat

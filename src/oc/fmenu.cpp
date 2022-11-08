@@ -31,10 +31,6 @@ fmenu.c,v
  * Revision 4.20  91/04/03  16:01:33  hines
  * mistyped ||
  *
- * Revision 4.9  91/01/04  09:51:08  hines
- * turboc++ sometimes fails with __TURBOC__ but succeeds with
- * #if defined(__TURBOC__)
- *
  * Revision 3.77  90/07/20  09:45:49  hines
  * case 3 allows actions to be executed when variable is changed
  *

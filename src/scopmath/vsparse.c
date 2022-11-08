@@ -428,7 +428,7 @@ int _vector_sparse(base, bound, count, jacobp, spacep, sparseobj, neqns, state,
 #define IGNORE(arg)	arg
 #endif
 
-#if __TURBOC__ || VMS
+#if VMS
 #define Free(arg)	free((void *)arg)
 #else
 #define Free(arg)	free((char *)arg)
