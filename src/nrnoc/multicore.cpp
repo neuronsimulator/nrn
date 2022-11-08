@@ -708,7 +708,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
     for (tml = _nt->tml; tml; tml = tml->next)
         if (memb_func[tml->index].is_point) {
             for (i = 0; i < tml->ml->nodecount; ++i) {
-                auto* pnt = static_cast<Point_process*>(tml->ml->pdata[i][1]);
+                auto* pnt = tml->ml->pdata[i][1].get<Point_process*>();
                 pnt->_vnt = _nt;
             }
         }

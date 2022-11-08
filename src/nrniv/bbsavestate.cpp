@@ -759,7 +759,7 @@ static double ppignore(void* v) {
 
 static int ignored(Prop* p) {
     if (pp_ignore_map) {
-        auto* pp = static_cast<Point_process*>(p->dparam[1]);
+        auto* pp = p->dparam[1].get<Point_process*>();
         if (pp_ignore_map->count(pp) > 0) {
             return 1;
         }
@@ -1729,7 +1729,7 @@ static void pycell_name2sec_maps_fill() {
     // ForAllSections(sec)
     ITERATE(qsec, section_list) {
         Section* sec = hocSEC(qsec);
-        if (sec->prop && static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX])) {  // PythonSection
+        if (sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {  // PythonSection
             // Assume we can associate with a Python Cell
             // Sadly, cannot use nrn_sec2cell Object* as the key because it
             // is not unique and the map needs definite PyObject* keys.
@@ -1796,7 +1796,7 @@ void BBSaveState::cell(Object* c) {
             qsec = c->secelm_;
             if (qsec) {  // Write HOC Cell
                 for (first = qsec;
-                     first->itemtype && static_cast<Object*>(hocSEC(first)->prop->dparam[6]) == c;
+                     first->itemtype && hocSEC(first)->prop->dparam[6].get<Object*>() == c;
                      first = first->prev) {
                     sec = hocSEC(first);
                     if (sec->prop) {
@@ -1833,7 +1833,7 @@ void BBSaveState::cell(Object* c) {
                     f->s(buf);
                     strcpy(buf, name.c_str());
                     f->s(buf);
-                    int indx = static_cast<int>(sec->prop->dparam[5]);
+                    int indx = sec->prop->dparam[5].get<int>();
                     f->i(indx);
                     int size = sectionsize(sec);
                     f->i(size, 1);
@@ -1898,13 +1898,13 @@ void BBSaveState::cell(Object* c) {
 void BBSaveState::section_exist_info(Section* sec) {
     char buf[256];
     // not used for python sections
-    assert(!static_cast<void*>(sec->prop->dparam[PROP_PY_INDEX]));
-    auto sym = static_cast<Symbol*>(sec->prop->dparam[0]);
+    assert(!(sec->prop->dparam[PROP_PY_INDEX]).get<void*>());
+    auto sym = sec->prop->dparam[0].get<Symbol*>();
     if (sym) {
         Sprintf(buf, "%s", sym->name);
         f->s(buf);
     }
-    int indx = static_cast<int>(sec->prop->dparam[5]);
+    int indx = sec->prop->dparam[5].get<int>();
     f->i(indx);
     int size = sectionsize(sec);
     f->i(size, 1);
@@ -1912,19 +1912,19 @@ void BBSaveState::section_exist_info(Section* sec) {
 
 void BBSaveState::section(Section* sec) {
     if (debug) {
-        Sprintf(dbuf, "Enter section(%s)", static_cast<Symbol*>(sec->prop->dparam[0])->name);
+        Sprintf(dbuf, "Enter section(%s)", sec->prop->dparam[0].get<Symbol*>()->name);
         PDEBUG;
     }
     seccontents(sec);
     if (debug) {
-        Sprintf(dbuf, "Leave section(%s)", static_cast<Symbol*>(sec->prop->dparam[0])->name);
+        Sprintf(dbuf, "Leave section(%s)", sec->prop->dparam[0].get<Symbol*>()->name);
         PDEBUG;
     }
 }
 
 int BBSaveState::sectionsize(Section* sec) {
     if (debug == 1) {
-        Sprintf(dbuf, "Enter sectionsize(%s)", static_cast<Symbol*>(sec->prop->dparam[0])->name);
+        Sprintf(dbuf, "Enter sectionsize(%s)", sec->prop->dparam[0].get<Symbol*>()->name);
         PDEBUG;
     }
     // should be same for both IN and OUT
@@ -1938,7 +1938,7 @@ int BBSaveState::sectionsize(Section* sec) {
         f = sav;
     }
     if (debug == 1) {
-        Sprintf(dbuf, "Leave sectionsize(%s)", static_cast<Symbol*>(sec->prop->dparam[0])->name);
+        Sprintf(dbuf, "Leave sectionsize(%s)", sec->prop->dparam[0].get<Symbol*>()->name);
         PDEBUG;
     }
     return cnt;
@@ -1946,7 +1946,7 @@ int BBSaveState::sectionsize(Section* sec) {
 
 void BBSaveState::seccontents(Section* sec) {
     if (debug) {
-        Sprintf(dbuf, "Enter seccontents(%s)", static_cast<Symbol*>(sec->prop->dparam[0])->name);
+        Sprintf(dbuf, "Enter seccontents(%s)", sec->prop->dparam[0].get<Symbol*>()->name);
         PDEBUG;
     }
     int i, nseg;
@@ -1961,7 +1961,7 @@ void BBSaveState::seccontents(Section* sec) {
     node01(sec, sec->parentnode);
     node01(sec, sec->pnode[nseg]);
     if (debug) {
-        Sprintf(dbuf, "Leave seccontents(%s)", static_cast<Symbol*>(sec->prop->dparam[0])->name);
+        Sprintf(dbuf, "Leave seccontents(%s)", sec->prop->dparam[0].get<Symbol*>()->name);
         PDEBUG;
     }
 }
@@ -2017,7 +2017,7 @@ void BBSaveState::node01(Section* sec, Node* nd) {
     // count
     for (i = 0, p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
-            auto* pp = static_cast<Point_process*>(p->dparam[1]);
+            auto* pp = p->dparam[1].get<Point_process*>();
             if (pp->sec == sec) {
                 if (!ignored(p)) {
                     ++i;
@@ -2028,7 +2028,7 @@ void BBSaveState::node01(Section* sec, Node* nd) {
     f->i(i, 1);
     for (p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
-            auto* pp = static_cast<Point_process*>(p->dparam[1]);
+            auto* pp = p->dparam[1].get<Point_process*>();
             if (pp->sec == sec) {
                 mech(p);
             }
@@ -2064,7 +2064,7 @@ void BBSaveState::mech(Prop* p) {
     }
     Point_process* pp{};
     if (memb_func[p->_type].is_point) {
-        pp = static_cast<Point_process*>(p->dparam[1]);
+        pp = p->dparam[1].get<Point_process*>();
         if (pnt_receive[p->_type]) {
             // associated NetCon and queue SelfEvent
             // if the NetCon has a unique non-gid source (art cell)
@@ -2237,7 +2237,7 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
             // But starting out with NULL weight vector and
             // flag=1 so that tqi->data is the new SelfEvent
             nrn_net_send(&tqi_datum, nullptr, pp, tt, 1.0);
-            auto* tqi = static_cast<TQItem*>(tqi_datum);
+            auto* tqi = tqi_datum.get<TQItem*>();
             assert(tqi && tqi->data_ &&
                    static_cast<DiscreteEvent*>(tqi->data_)->type() == SelfEventType);
             auto* se = static_cast<SelfEvent*>(tqi->data_);
