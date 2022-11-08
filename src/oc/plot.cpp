@@ -26,30 +26,16 @@
 #endif
 #endif
 
-#define FIG 1 /* 12/8/88 add fig style output , replaces hpflag*/
-#define TEK 1
-#define HP  1
-/* but not VT125 */
-#define CODRAW 1
-
-#if CODRAW
 static void Codraw_plt(int, double, double);
 static void Codraw_preamble(void);
-#endif
 
-#if HP
 static void hplot(int, double, double);
-#endif
 
-#if FIG
 static void Fig_preamble(void);
 static void Fig_plt(int, double, double);
 void Fig_file(const char*, int);
-#endif
 
-#if TEK
 static void tplot(int, double, double);
-#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -220,11 +206,7 @@ void plprint(const char* s) {
         } else
 #endif
         {
-#if 0
-			IGNORE(fprintf(stdout, "%s", s));
-#else
             nrnpy_pr("%s", s);
-#endif
         }
     }
     if (hardplot && hpdev && text && strlen(s)) {
@@ -480,13 +462,11 @@ void plt(int mode, double x, double y) {
 #endif
 #endif
 #endif
-#if TEK
         case ADM:
         case SEL:
         case TEK4014:
             tplot(mode, x, y);
             break;
-#endif
 #if VT125
         case VT:
             vtplot(mode, x, y);
@@ -495,21 +475,15 @@ void plt(int mode, double x, double y) {
         }
 #endif
     }
-#if HP
     if (hardplot == 1) {
         hplot(mode, x, y);
     }
-#endif
-#if FIG
     if (hardplot == 2) {
         Fig_plt(mode, x, y);
     }
-#endif
-#if CODRAW
     if (hardplot == 3) {
         Codraw_plt(mode, x, y);
     }
-#endif
     if (hardplot && hpdev) {
         IGNORE(fflush(hpdev));
     }
@@ -518,7 +492,6 @@ void plt(int mode, double x, double y) {
     }
 }
 
-#if TEK
 #define XHOME 0
 #define YHOME 770
 
@@ -598,13 +571,9 @@ static void tplot(int mode, double x, double y) {
     return;
 }
 
-#endif /*TEK*/
-
-#if FIG || HP || CODRAW
-
 static char hardplot_filename[100];
 
-void hardplot_file(const char* s) {
+static void hardplot_file(const char* s) {
     if (hpdev) {
         IGNORE(fclose(hpdev));
     }
@@ -632,19 +601,13 @@ void Fig_file(const char* s, int dev) {
     if (!hpdev)
         return;
     hardplot = dev;
-#if FIG
     if (hardplot == 2) {
         Fig_preamble();
     }
-#endif
-#if CODRAW
     if (hardplot == 3) {
         Codraw_preamble();
     }
-#endif
 }
-
-#endif
 
 static char fig_text_preamble[100];
 
@@ -655,8 +618,6 @@ static void hard_text_preamble(void) {
     }
 }
 
-#if FIG
-
 static void Fig_preamble(void) {
     static char fig_preamble[] = "#FIG 1.4\n80 2\n";
 
@@ -665,15 +626,11 @@ static void Fig_preamble(void) {
     IGNORE(fprintf(hpdev, "%s", fig_preamble));
 }
 
-#define HIRES 1
-
 void Fig_plt(int mode, double x, double y) {
 #define SCX(x) ((int) (x * .8))
 #define SCY(y) (600 - (int) (y * .8))
-#if HIRES
 #define SCXD(x) ((x * .8))
 #define SCYD(y) (7.5 * 80. - (y * .8))
-#endif
 #undef TEXT
 #define TEXT  1
 #define LINE1 2
@@ -681,11 +638,7 @@ void Fig_plt(int mode, double x, double y) {
     static short state = 0;
     static double oldx, oldy;
     static char text_preamble[] = "4 0 0 16 0 0 0 0.000 1 16 40 ", text_postamble[] = "\1\n",
-#if HIRES
                 line_preamble[] = "7 1 0 1 0 0 0 0 0.000 0 0\n",
-#else
-                line_preamble[] = "2 1 0 1 0 0 0 0 0.000 0 0\n",
-#endif
                 line_postamble[] = " 9999 9999\n";
 
 
@@ -713,12 +666,7 @@ void Fig_plt(int mode, double x, double y) {
             return;
         }
         if (mode == -3) {
-#if 0
-            IGNORE(fseek(hpdev, 0L, 0));
-            Fig_preamble();
-#else
             Fig_file(hardplot_filename, 2);
-#endif
         }
     } else {
         switch (mode) {
@@ -732,28 +680,16 @@ void Fig_plt(int mode, double x, double y) {
             break;
         default:
             if (state == LINE1) {
-#if HIRES
                 IGNORE(fprintf(hpdev, "%s %.1f %.1f\n", line_preamble, SCXD(oldx), SCYD(oldy)));
-#else
-                IGNORE(fprintf(hpdev, "%s %d %d\n", line_preamble, SCX(oldx), SCY(oldy)));
-#endif
                 state = LINE2;
             }
-#if HIRES
             IGNORE(fprintf(hpdev, " %.1f %.1f\n", SCXD(x), SCYD(y)));
-#else
-            IGNORE(fprintf(hpdev, " %d %d\n", SCX(x), SCY(y)));
-#endif
             break;
         }
         oldx = x;
         oldy = y;
     }
 }
-
-#endif /*FIG*/
-
-#if HP
 
 void hplot(int mode, double x, double y) {
     static short hpflag = 0;
@@ -804,8 +740,6 @@ void hplot(int mode, double x, double y) {
         return;
     }
 }
-
-#endif /*HP*/
 
 /* not modified for new method */
 #if VT125
@@ -968,8 +902,6 @@ void cursor(int r, int c) {
 }
 #endif
 
-#if CODRAW
-
 #define CODRAW_MAXPOINT 200
 static int codraw_npoint = 0;
 static float *codraw_pointx, *codraw_pointy;
@@ -1085,8 +1017,6 @@ static void codraw_line() {
         codraw_npoint = 0;
     }
 }
-
-#endif
 
 #if NRNOC_X11
 extern char* getenv();
