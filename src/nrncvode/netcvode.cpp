@@ -811,7 +811,7 @@ static void steer_val(void* v) {
         d->src_->use_min_delay_ = 0;
     } else if (strcmp(s->name, "weight") == 0) {
         int index = 0;
-        if (hoc_stacktype() == NUMBER) {
+        if (hoc_stack_type_is_ndim()) {
             s->arayinfo->sub[0] = d->cnt_;
             index = hoc_araypt(s, SYMBOL);
         }
@@ -1649,7 +1649,7 @@ bool NetCvode::init_global() {
                     int j;
                     for (j = 0; j < ml->nodecount; ++j) {
                         auto& datum = mf->hoc_mech ? ml->prop[j]->dparam[1] : ml->pdata[j][1];
-                        auto* pp = static_cast<Point_process*>(datum);
+                        auto* pp = datum.get<Point_process*>();
                         pp->nvi_ = gcv_;
                     }
                 }
@@ -1825,7 +1825,7 @@ bool NetCvode::init_global() {
                     int j;
                     for (j = 0; j < ml->nodecount; ++j) {
                         auto& datum = mf->hoc_mech ? ml->prop[j]->dparam[1] : ml->pdata[j][1];
-                        auto* pp = static_cast<Point_process*>(datum);
+                        auto* pp = datum.get<Point_process*>();
                         if (nrn_is_artificial_[i] == 0) {
                             int inode = ml->nodelist[j]->v_node_index;
                             pp->nvi_ = d.lcv_ + cellnum[inode];
@@ -2271,7 +2271,7 @@ int Cvode::handle_step(NetCvode* ns, double te) {
 }
 
 void nrn_net_move(Datum* v, Point_process* pnt, double tt) {
-    auto* const q = static_cast<TQItem*>(*v);
+    auto* const q = v->get<TQItem*>();
     if (!q) {
         hoc_execerror("No event with flag=1 for net_move in ", hoc_object_name(pnt->ob));
     }
@@ -2289,7 +2289,7 @@ void nrn_net_move(Datum* v, Point_process* pnt, double tt) {
 
 void artcell_net_move(Datum* v, Point_process* pnt, double tt) {
     if (nrn_use_selfqueue_) {
-        auto* const q = static_cast<TQItem*>(*v);
+        auto* const q = v->get<TQItem*>();
         if (!q) {
             hoc_execerror("No event with flag=1 for net_move in ", hoc_object_name(pnt->ob));
         }
@@ -2454,8 +2454,8 @@ void _nrn_watch_activate(Datum* d,
                          Point_process* pnt,
                          int r,
                          double flag) {
-    auto* wl = static_cast<WatchList*>(*d);
-    auto* wc = static_cast<WatchCondition*>(d[i]);
+    auto* wl = d->get<WatchList*>();
+    auto* wc = d[i].get<WatchCondition*>();
     if (!wl || !wc) {
         // When c is NULL, i.e. called from CoreNEURON,
         // we never get here because we made sure
@@ -2463,8 +2463,8 @@ void _nrn_watch_activate(Datum* d,
         // within the translated mod file.
         _nrn_watch_allocate(d, c, i, pnt, flag);
         // d[0] and d[i] have now been updated
-        wl = static_cast<WatchList*>(*d);
-        wc = static_cast<WatchCondition*>(d[i]);
+        wl = d->get<WatchList*>();
+        wc = d[i].get<WatchCondition*>();
     }
     if (r == 0) {
         for (auto wc1: *wl) {
@@ -2543,10 +2543,10 @@ void _nrn_watch_allocate(Datum* d,
                          int i,
                          Point_process* pnt,
                          double flag) {
-    if (!static_cast<WatchList*>(*d)) {
+    if (!d->get<WatchList*>()) {
         *d = new WatchList;
     }
-    if (!static_cast<WatchCondition*>(d[i])) {
+    if (!d[i].get<WatchCondition*>()) {
         WatchCondition* wc = new WatchCondition(pnt, c);
         wc->c_ = c;
         wc->nrflag_ = flag;
@@ -2580,12 +2580,12 @@ void nrn_watch_clear() {
 void _nrn_free_watch(Datum* d, int offset, int n) {
     int i;
     int nn = offset + n;
-    if (auto* d_offset = static_cast<WatchList*>(d[offset]); d_offset) {
+    if (auto* d_offset = d[offset].get<WatchList*>(); d_offset) {
         delete d_offset;
         d[offset] = nullptr;
     }
     for (i = offset + 1; i < nn; ++i) {
-        if (auto* wc = static_cast<WatchCondition*>(d[i]); wc) {
+        if (auto* wc = d[i].get<WatchCondition*>(); wc) {
             wc->Remove();
             delete wc;
             d[i] = nullptr;
@@ -3161,7 +3161,7 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     if (nrn_use_selfqueue_ && nrn_is_artificial_[type]) {
         auto& datum = target_->prop->dparam[nrn_artcell_qindex_[type]];
         TQItem* q;
-        while ((q = static_cast<TQItem*>(datum)) && q->t_ < tt) {
+        while ((q = datum.get<TQItem*>()) && q->t_ < tt) {
             double t1 = q->t_;
             auto* const se = static_cast<SelfEvent*>(ns->p[nt->id].selfqueue_->remove(q));
             // printf("%d NetCon::deliver %g , earlier selfevent at %g\n", nrnmpi_myid, tt, q->t_);
@@ -3461,7 +3461,7 @@ void SelfEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
             *movable_ = nullptr;
         }
         TQItem* q;
-        while ((q = (TQItem*) (*movable_)) != 0 && q->t_ <= tt) {
+        while ((q = movable_->get<TQItem*>()) != 0 && q->t_ <= tt) {
             // printf("handle earlier %g selfqueue event from within %g SelfEvent::deliver\n",
             // q->t_, tt);
             double t1 = q->t_;
@@ -4127,7 +4127,7 @@ void NetCvode::fornetcon_prepare() {
                 Point_process* pnt = d1->target_;
                 if (pnt && t2i[pnt->prop->_type] > -1) {
                     auto* fnc = static_cast<ForNetConsInfo*>(
-                        static_cast<void*>(pnt->prop->dparam[t2i[pnt->prop->_type]]));
+                        pnt->prop->dparam[t2i[pnt->prop->_type]].get<void*>());
                     assert(fnc);
                     fnc->size += 1;
                 }
@@ -4141,7 +4141,7 @@ void NetCvode::fornetcon_prepare() {
         if (nrn_is_artificial_[type]) {
             Memb_list* m = memb_list + type;
             for (j = 0; j < m->nodecount; ++j) {
-                auto* fnc = static_cast<ForNetConsInfo*>(static_cast<void*>(m->pdata[j][index]));
+                auto* fnc = static_cast<ForNetConsInfo*>(m->pdata[j][index].get<void*>());
                 if (fnc->size > 0) {
                     fnc->argslist = new double*[fnc->size];
                     fnc->size = 0;
@@ -4153,8 +4153,7 @@ void NetCvode::fornetcon_prepare() {
                 if (tml->index == nrn_fornetcon_type_[i]) {
                     Memb_list* m = tml->ml;
                     for (j = 0; j < m->nodecount; ++j) {
-                        auto* fnc = static_cast<ForNetConsInfo*>(
-                            static_cast<void*>(m->pdata[j][index]));
+                        auto* fnc = static_cast<ForNetConsInfo*>(m->pdata[j][index].get<void*>());
                         if (fnc->size > 0) {
                             fnc->argslist = new double*[fnc->size];
                             fnc->size = 0;
@@ -4172,7 +4171,7 @@ void NetCvode::fornetcon_prepare() {
                 Point_process* pnt = d1->target_;
                 if (pnt && t2i[pnt->prop->_type] > -1) {
                     auto* fnc = static_cast<ForNetConsInfo*>(
-                        static_cast<void*>(pnt->prop->dparam[t2i[pnt->prop->_type]]));
+                        pnt->prop->dparam[t2i[pnt->prop->_type]].get<void*>());
                     fnc->argslist[fnc->size] = d1->weight_;
                     fnc->size += 1;
                 }
@@ -4958,7 +4957,7 @@ void NetCvode::ps_thread_link(PreSyn* ps) {
         if (ps->osrc_) {
             ps->nt_ = PP2NT(ob2pntproc(ps->osrc_));
         } else if (ps->ssrc_) {
-            ps->nt_ = static_cast<NrnThread*>(ps->ssrc_->prop->dparam[9]);
+            ps->nt_ = ps->ssrc_->prop->dparam[9].get<NrnThread*>();
         }
     }
     if (!ps->nt_) {  // premature, reorder_secorder() not called yet
@@ -5026,7 +5025,7 @@ PreSyn::PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section
         if (osrc) {
             nt_ = PP2NT(ob2pntproc(osrc));
         } else if (ssrc) {
-            nt_ = static_cast<NrnThread*>(ssrc->prop->dparam[9]);
+            nt_ = ssrc->prop->dparam[9].get<NrnThread*>();
         }
     }
     if (osrc_ && !thvar_) {

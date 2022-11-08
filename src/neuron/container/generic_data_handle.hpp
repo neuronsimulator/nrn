@@ -155,7 +155,7 @@ struct generic_data_handle {
      *  obtain a literal, wrapped bool value
      */
     template <typename T>
-    explicit operator T() const {
+    T get() const {
         if constexpr (std::is_pointer_v<T>) {
             // If T=U* (i.e. T is a pointer type) then we might be in modern
             // mode, go via data_handle<U>
