@@ -14,7 +14,7 @@
 #define IGNORE(arg) arg
 #endif
 
-#if defined(useNeXTstep) || defined(__linux__)
+#if defined(__linux__)
 #ifndef NRNOC_X11
 #define NRNOC_X11 0
 #endif
@@ -94,12 +94,6 @@ extern void x11_clear(), x11_cleararea(), x11_open_window(), x11_fast(int);
 static void hoc_x11plot(int, double, double);
 #endif
 
-#if NeXTstep
-extern void NeXT_put_text(), NeXT_close_window(), NeXT_setcolor();
-extern void NeXT_coord(), NeXT_vector(), NeXT_point(), NeXT_move(), NeXTflush();
-extern void NeXT_clear(), NeXT_cleararea(), NeXT_open_window(), NeXT_fast();
-#endif
-
 static void hard_text_preamble();
 
 void plprint(const char* s) {
@@ -133,14 +127,8 @@ void plprint(const char* s) {
 #if NRNOC_X11
         x11_put_text(s);
 #else
-#if NeXTstep
-        if (graphdev == NX)
-            NeXT_put_text(s);
-#else
-
         IGNORE(fprintf(cdev, "%s", s));
         IGNORE(fflush(cdev));
-#endif
 #endif
 #endif
 #endif
@@ -165,9 +153,6 @@ void initplot(void) {
 #if defined(__APPLE__)
     char** environ = (*_NSGetEnviron());
 #endif
-#if NeXTstep
-    graphdev = NX;
-#else
     graphdev = SSUN;
     for (i = 0; environ[i] != NULL; i++) {
         if (strcmp(environ[i], vt100) == 0)
@@ -181,16 +166,11 @@ void initplot(void) {
         if (strcmp(environ[i], ncsa) == 0)
             graphdev = TEK4014;
     }
-#endif /*!NeXTstep*/
     hpdev = (FILE*) 0;
     cdev = gdev = stdout;
 #if SUNCORE
     if (graphdev == SSUN) {
         hoc_open_sunplot(environ);
-#else
-#if NeXTstep
-    /*EMPTY*/
-    if (graphdev == SSUN) {
 #else
 #if NRNOC_X11
     /*EMPTY*/
@@ -203,7 +183,6 @@ void initplot(void) {
         cdev = stdout;
 */
 #endif /*NRNOC_X11*/
-#endif /*NeXTstep*/
 #endif /*SUNCORE*/
     } else {
         if (graphdev == TEK4014) {
@@ -224,9 +203,6 @@ void hoc_close_plot(void) {
 #if NRNOC_X11
     x11_close_window();
 #else
-#if NeXTstep
-    NeXT_close_window();
-#endif
 #endif
 #endif
 #endif
@@ -256,12 +232,6 @@ void plt(int mode, double x, double y) {
             hoc_x11plot(mode, x, y);
             break;
 #else
-#if NeXTstep
-            break;
-        case NX:
-            hoc_NeXTplot(mode, x, y);
-            break;
-#endif
 #endif
 #endif
         case ADM:
@@ -609,9 +579,6 @@ int set_color(int c) {
 #if NRNOC_X11
     x11_setcolor(c);
 #else
-#if NeXTstep
-    NeXT_setcolor(c);
-#endif
 #endif
 #endif
     return (int) hoc_color;
@@ -779,54 +746,3 @@ static void hoc_x11plot(int mode, double x, double y) {
 }
 #endif /*NRNOC_X11*/
 
-#if NeXTstep
-/* extern char *getenv(); */
-static hoc_NeXTplot(mode, x, y) int mode;
-double x, y;
-{
-    extern int NeXT_init_done;
-
-    if (!NeXT_init_done) {
-        NeXT_open_window();
-    }
-
-    if (mode >= 0) {
-        NeXT_coord(x, y);
-    }
-    if (mode > 1) {
-        NeXT_vector();
-    } else {
-        switch (mode) {
-        case 0:
-            NeXT_point();
-            break;
-        case 1:
-            NeXT_move();
-            break;
-        case -1:
-            text = 0;
-            NeXTflush();
-            break;
-        case -2:
-            text = 1;
-            break;
-        case -3:
-            NeXT_clear();
-            break;
-        case -4:
-            NeXT_coord(x, y);
-            NeXT_cleararea();
-            break;
-        case -5:
-            NeXT_fast(1);
-            break;
-        case -6:
-            NeXT_fast(0);
-            break;
-        case -7:
-            NeXT_fast(-1);
-            break;
-        }
-    }
-}
-#endif /*NeXTstep*/
