@@ -165,7 +165,6 @@ struct Node {
         _node_handle.set_v(v);
     }
     double _rinv{}; /* conductance uS from node to parent */
-    double _v_temp; /* vile necessity til actual_v allocated */
     double* _d;     /* diagonal element in node equation */
     double* _rhs;   /* right hand side in node equation */
     double* _a_matelm;

@@ -35,7 +35,6 @@ def do_test(test_to_run, results_location, num_record=10):
         data["record_count"] += 1
         if data["record_count"] > num_record:
             save_and_cleanup()
-            return
 
         all_potentials = [seg.v for seg in itertools.chain.from_iterable(h.allsec())]
         rxd_1d = list(rxd.node._states)
