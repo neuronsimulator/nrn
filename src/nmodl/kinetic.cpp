@@ -662,8 +662,8 @@ void kinetic_implicit(Symbol* fun, const char* dt, const char* mname) {
         vectorize_substitute(q, buf);
         sprintf(buf,
                 "  "
-                "_nrn_destroy_sparseobj_thread(static_cast<SparseObj*>(static_cast<void*>(_thread[_"
-                "cvspth%d])));\n",
+                "_nrn_destroy_sparseobj_thread(static_cast<SparseObj*>(_thread[_cvspth%d].get<void*"
+                ">()));\n",
                 fun->u.i);
         lappendstr(thread_cleanup_list, buf);
     }
@@ -693,8 +693,8 @@ void kinetic_implicit(Symbol* fun, const char* dt, const char* mname) {
             vectorize_substitute(q, buf);
             sprintf(buf,
                     "  "
-                    "_nrn_destroy_sparseobj_thread(static_cast<SparseObj*>(static_cast<void*>(_"
-                    "thread[_spth%d])));\n",
+                    "_nrn_destroy_sparseobj_thread(static_cast<SparseObj*>(_thread[_spth%d].get<"
+                    "void*>()));\n",
                     fun->u.i);
             lappendstr(thread_cleanup_list, buf);
         }

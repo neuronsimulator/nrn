@@ -1203,7 +1203,7 @@ Point_process* MechanismType::pp_next() {
     bool done = mti_->p_iter_ == 0;
     while (!done) {
         if (mti_->p_iter_->_type == mti_->type_[mti_->select_]) {
-            pp = static_cast<Point_process*>(mti_->p_iter_->dparam[1]);
+            pp = mti_->p_iter_->dparam[1].get<Point_process*>();
             done = true;
             // but if it does not belong to this section
             if (pp->sec != mti_->sec_iter_) {
