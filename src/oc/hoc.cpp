@@ -664,7 +664,13 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
         IGNORE(nrn_fw_fseek(hoc_fin, 0L, 2)); /* flush rest of file */
     }
     hoc_oop_initaftererror();
-    throw std::runtime_error("hoc_execerror");
+    std::string message{"hoc_execerror: "};
+    message.append(s);
+    if (t) {
+        message.append(1, ' ');
+        message.append(t);
+    }
+    throw std::runtime_error(std::move(message));
 }
 
 extern "C" void hoc_execerror(const char* s, const char* t) /* recover from run-time error */
