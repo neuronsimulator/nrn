@@ -107,9 +107,7 @@ fmenu.c,v
 union REGS regs;
 extern int egagrph; /* detect if in graphics mode */
 #else
-#if !G32
 static int egagrph = 0;
-#endif
 #endif
 #include "hoc.h"
 #include <ctype.h>
@@ -285,27 +283,11 @@ static void xcursor(int r, int c) {
     _DL = c;
     _AH = 2;
     geninterrupt(0x10);
-#elif G32
-    union REGS regs;
-    regs.h.ah = 0x02;
-    regs.h.bh = 0;
-    regs.h.dh = r;
-    regs.h.dl = c;
-    if (egagrph) {
-        grx_move(r, c);
-    } else {
-        int86(0x10, &regs, &regs);
-    }
 #endif
 }
 
 static int ibmgetc(void) { /* Copied from ibm.c file in memacs */
 #if DOS
-    regs.h.ah = 7;
-    intdos(&regs, &regs);
-    return (int) regs.h.al;
-#elif G32
-    union REGS regs;
     regs.h.ah = 7;
     intdos(&regs, &regs);
     return (int) regs.h.al;
@@ -569,13 +551,6 @@ static double enter(int row, int col, double defalt, int frstch, Menuitem* pnow)
             return (defalt);
         } else if (key == '\b') {
             if (istrptr > istr) {
-#if G32
-                if (egagrph) {
-                    grx_backspace(1);
-                    hoc_outtext(" ");
-                    grx_backspace(1);
-                } else
-#endif
                     Printf("\b \b");
                 *(--istrptr) = '\0';
             }
@@ -636,8 +611,7 @@ static int cexecute(const char* command) {
     return i;
 }
 
-#if DOS || G32
-#else
+#if !DOS
 static void clrscr(void) {}
 #endif
 
