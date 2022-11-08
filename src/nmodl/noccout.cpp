@@ -40,7 +40,7 @@ static List* vectorize_replacements; /* pairs of item pointer, strings */
 extern int electrode_current;        /* 1 means we should watch out for extracellular
                            and handle it correctly */
 
-#if SYSV || VMS
+#if SYSV
 #define index strchr
 #endif
 

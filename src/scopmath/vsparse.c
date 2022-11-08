@@ -428,12 +428,7 @@ int _vector_sparse(base, bound, count, jacobp, spacep, sparseobj, neqns, state,
 #define IGNORE(arg)	arg
 #endif
 
-#if VMS
-#define Free(arg)	free((void *)arg)
-#else
 #define Free(arg)	free((char *)arg)
-#endif
-
 
 static int vector_matsol(so,_ix1,_ix2,converged)
       SparseObj *so; int _ix1,_ix2; int *converged;

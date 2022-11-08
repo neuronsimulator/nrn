@@ -25,7 +25,7 @@ int in_comment_;
 char* inputline() {
     /* and removes comment, newline, beginning and trailing blanks */
     /* used to get the TITLE line */
-#if SYSV || VMS || defined(MINGW)
+#if SYSV || defined(MINGW)
 #define index strchr
 #endif
     char* cp;

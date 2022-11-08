@@ -60,11 +60,7 @@ extern void* emalloc(size_t n);
 #define IGNORE(arg)	arg
 #endif
 
-#if VMS
-#define Free(arg)	free((void *)arg)
-#else
 #define Free(arg)	free((char *)arg)
-#endif
 
 # define	rowst	spar_rowst
 # define	diag	spar_diag
