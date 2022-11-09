@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #if 1
-#if defined(STDC_HEADERS) || defined(__TURBOC__) || defined(SYSV) || defined(VMS)
+#if defined(STDC_HEADERS) || defined(SYSV)
 #include <string.h>
 #else
 #include <strings.h>

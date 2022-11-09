@@ -31,10 +31,6 @@ fmenu.c,v
  * Revision 4.20  91/04/03  16:01:33  hines
  * mistyped ||
  *
- * Revision 4.9  91/01/04  09:51:08  hines
- * turboc++ sometimes fails with __TURBOC__ but succeeds with
- * #if defined(__TURBOC__)
- *
  * Revision 3.77  90/07/20  09:45:49  hines
  * case 3 allows actions to be executed when variable is changed
  *
@@ -105,31 +101,19 @@ fmenu.c,v
 
 #include <stdlib.h>
 
-#if defined(__GO32__)
-#define G32 1
-#include <dos.h>
-#include <gppconio.h>
-extern int egagrph; /* detect if in graphics mode */
-#endif
-
 #if DOS
 #include <dos.h>
 #include <io.h>
 union REGS regs;
 extern int egagrph; /* detect if in graphics mode */
 #else
-#if !G32
 static int egagrph = 0;
-#endif
 #endif
 #include "hoc.h"
 #include <ctype.h>
-#if HOC | OOP
 #define Ret(a) \
     hoc_ret(); \
     hoc_pushx(a)
-#endif
-#define NUL   0
 #define SPACE '\040'
 #define BEEP  Printf("\007")
 /* structure and functions from getsym.c */
@@ -296,27 +280,11 @@ static void xcursor(int r, int c) {
     _DL = c;
     _AH = 2;
     geninterrupt(0x10);
-#elif G32
-    union REGS regs;
-    regs.h.ah = 0x02;
-    regs.h.bh = 0;
-    regs.h.dh = r;
-    regs.h.dl = c;
-    if (egagrph) {
-        grx_move(r, c);
-    } else {
-        int86(0x10, &regs, &regs);
-    }
 #endif
 }
 
 static int ibmgetc(void) { /* Copied from ibm.c file in memacs */
 #if DOS
-    regs.h.ah = 7;
-    intdos(&regs, &regs);
-    return (int) regs.h.al;
-#elif G32
-    union REGS regs;
     regs.h.ah = 7;
     intdos(&regs, &regs);
     return (int) regs.h.al;
@@ -479,7 +447,7 @@ static const char* navigate(int imenu) {
             switch (key) {
             case 77: /* Right arrow key */
                 pcur = pcur->nextitem;
-                if (pcur == NUL)
+                if (pcur == nullptr)
                     pcur = menu;
                 break;
             case 75: /* Left arrow key */
@@ -580,14 +548,7 @@ static double enter(int row, int col, double defalt, int frstch, Menuitem* pnow)
             return (defalt);
         } else if (key == '\b') {
             if (istrptr > istr) {
-#if G32
-                if (egagrph) {
-                    grx_backspace(1);
-                    hoc_outtext(" ");
-                    grx_backspace(1);
-                } else
-#endif
-                    Printf("\b \b");
+                Printf("\b \b");
                 *(--istrptr) = '\0';
             }
         } else if (key == 13) { /*return*/
@@ -647,22 +608,17 @@ static int cexecute(const char* command) {
     return i;
 }
 
-#if DOS || G32
-#else
+#if !DOS
 static void clrscr(void) {}
 #endif
 
 static void undisplay(int imenu) {
     int i;
     if (egagrph != 0) {
-#if GRX
-        grx_txt_clear();
-#else
         xcursor(menusfirst[imenu]->row, 0);
         for (i = menuslast[imenu]->row - menusfirst[imenu]->row + 2; i; i--) {
             Printf("%80c\n", SPACE);
         }
-#endif
     } else {
         clrscr();
     }
