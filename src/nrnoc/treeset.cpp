@@ -2270,12 +2270,12 @@ static neuron::container::state_token<neuron::container::Node::storage> nrn_sort
             auto const current_node_row = nd->_node_handle.current_row();
             assert(current_node_row < global_node_data_size);
             assert(global_i < global_node_data_size);
-            global_node_data_permutation.at(global_i) = current_node_row;
+            global_node_data_permutation.at(current_node_row) = global_i;
         }
     }
     assert(global_i == global_node_data_size);
     // Should this and other permuting operations return a "sorted token"?
-    node_data.apply_permutation(std::move(global_node_data_permutation));
+    node_data.apply_reverse_permutation(std::move(global_node_data_permutation));
     return node_data.get_sorted_token();
 }
 
