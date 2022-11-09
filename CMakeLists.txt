@@ -893,7 +893,6 @@ foreach(
   neuron/container/node.hpp
   neuron/container/node_data.hpp
   neuron/container/soa_container.hpp
-  neuron/container/soa_container_impl.hpp
   neuron/container/soa_identifier.hpp
   neuron/container/view_utils.hpp)
   configure_file("src/${header}" "${PROJECT_BINARY_DIR}/include/${header}" COPYONLY)
