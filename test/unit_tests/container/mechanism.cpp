@@ -81,14 +81,6 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                 }
             };
             check_field_values(StorageCheck::Match);
-            AND_WHEN("The underlying storage is reversed") {
-                mech_data.reverse();
-                check_field_values(StorageCheck::NotMatch);
-            }
-            AND_WHEN("The underlying storage is rotated") {
-                mech_data.rotate(num_instances / 2);
-                check_field_values(StorageCheck::NotMatch);
-            }
             AND_WHEN("The underlying storage is permuted") {
                 std::vector<std::size_t> perm_vector(mech_instances.size());
                 std::iota(perm_vector.begin(), perm_vector.end(), 0);

@@ -306,21 +306,14 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         WHEN("Values are read back immediately") {
             require_logical_and_storage_match();
         }
-// As of nvc++/22.7 the range::v3 code behind rotate gives compilation errors,
-// which are apparently fixed in 22.9+:
-// https://forums.developer.nvidia.com/t/compilation-failures-with-range-v3-and-nvc-22-7/228444
-#if !defined(__NVCOMPILER) || (__NVCOMPILER_MAJOR__ >= 22 && __NVCOMPILER_MINOR__ >= 9)
-        WHEN("The underlying storage is rotated") {
-            node_data.rotate(1);
-            require_logical_match_and_storage_different();
-        }
-#endif
-        WHEN("The underlying storage is reversed") {
-            node_data.reverse();
-            require_logical_match_and_storage_different();
-        }
         std::vector<std::size_t> perm_vector(nodes.size());
         std::iota(perm_vector.begin(), perm_vector.end(), 0);
+        WHEN("The underlying storage is rotated") {
+            auto rotated = perm_vector;
+            std::rotate(rotated.begin(), std::next(rotated.begin()), rotated.end());
+            node_data.apply_reverse_permutation(std::move(rotated));
+            require_logical_match_and_storage_different();
+        }
         WHEN("A unit reverse permutation is applied to the underlying storage") {
             node_data.apply_reverse_permutation(std::move(perm_vector));
             require_logical_and_storage_match();
@@ -421,7 +414,7 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                 }
                 THEN("The storage cannot be permuted") {
                     // Checking one of the permuting operations should be enough
-                    REQUIRE_THROWS(node_data.reverse());
+                    REQUIRE_THROWS(node_data.apply_reverse_permutation(std::move(perm_vector)));
                 }
                 // In read-only mode we cannot delete Nodes either, but because
                 // we cannot throw from destructors it is not easy to test this

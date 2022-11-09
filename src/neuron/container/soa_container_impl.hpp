@@ -143,22 +143,4 @@ inline void soa<Storage, Tags...>::check_permutation_vector(Rng const& range) {
         seen[val] = true;
     }
 }
-
-/** @brief Reverse the order of the SOA-format data.
- */
-template <typename Storage, typename... Tags>
-inline void soa<Storage, Tags...>::reverse() {
-    permute_zip([](auto& zip) { std::reverse(ranges::begin(zip), ranges::end(zip)); });
-}
-
-/** @brief Rotate the SOA-format data by `i` positions.
- *  @todo  See if std::rotate can be fixed here.
- */
-template <typename Storage, typename... Tags>
-inline void soa<Storage, Tags...>::rotate(std::size_t i) {
-    assert(i < size());
-    permute_zip([i](auto& zip) {
-        ranges::rotate(ranges::begin(zip), ranges::next(ranges::begin(zip), i), ranges::end(zip));
-    });
-}
 }  // namespace neuron::container
