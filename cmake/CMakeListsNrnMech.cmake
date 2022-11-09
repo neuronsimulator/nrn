@@ -6,6 +6,14 @@
 get_directory_property(NRN_COMPILE_DEFS_DIR_PROPERTY COMPILE_DEFINITIONS)
 list(APPEND NRN_COMPILE_DEFS ${NRN_COMPILE_DEFS_DIR_PROPERTY})
 
+# Turn the CMake lists NRN_COMPILE_DEFS, NRN_COMPILE_FLAGS, NRN_LINK_FLAGS and
+# NRN_NOCMODL_SANITIZER_ENVIRONMENT into flat strings
+list(TRANSFORM NRN_COMPILE_DEFS PREPEND -D OUTPUT_VARIABLE NRN_COMPILE_DEF_FLAGS)
+string(JOIN " " NRN_COMPILE_DEFS_STRING ${NRN_COMPILE_DEF_FLAGS})
+string(JOIN " " NRN_COMPILE_FLAGS_STRING ${NRN_COMPILE_FLAGS} ${NRN_EXTRA_MECH_CXX_FLAGS})
+string(JOIN " " NRN_LINK_FLAGS_STRING ${NRN_LINK_FLAGS} ${NRN_LINK_FLAGS_FOR_ENTRY_POINTS})
+string(JOIN " " NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING ${NRN_NOCMODL_SANITIZER_ENVIRONMENT})
+
 # extract link defs to the whole project
 get_target_property(NRN_LINK_LIBS nrniv_lib LINK_LIBRARIES)
 if(NOT NRN_LINK_LIBS)
@@ -31,26 +39,9 @@ foreach(link_lib ${NRN_LINK_LIBS})
       PROPERTY INTERFACE_LINK_LIBRARIES)
     set(description
         "Extracting link flags from target '${link_lib}', beware that this can be fragile.")
-    # Not use it yet because it can be generator expressions
-    get_property(
-      compile_flag
-      TARGET ${link_lib}
-      PROPERTY INTERFACE_COMPILE_OPTIONS)
-    string(GENEX_STRIP "${compile_flag}" compile_flag)
-    list(APPEND NRN_COMPILE_FLAGS "${compile_flag}")
-    get_property(
-      include_dirs
-      TARGET ${link_lib}
-      PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-    # TODO support generator expressions. I think this can be done with some combination of
-    # file(GENERATE OUTPUT ...) to get the build-time values of the expressions and install(EXPORT
-    # ...) to get the installed values?
-    foreach(include_dir_genex ${include_dirs})
-      string(GENEX_STRIP "${include_dir_genex}" include_dir)
-      if(include_dir)
-        list(APPEND NRN_COMPILE_FLAGS "-I${include_dir}")
-      endif()
-    endforeach()
+    # Not use it yet because it can be generator expressions get_property(compile_flag TARGET
+    # ${link_lib} PROPERTY INTERFACE_COMPILE_OPTIONS) string(APPEND NRN_COMPILE_DEFS
+    # ${compile_flag})
   elseif(NOT dir_path)
     set(link_flag "-l${link_lib}")
     set(description
@@ -74,17 +65,6 @@ foreach(link_lib ${NRN_LINK_LIBS})
   message(NOTICE "${description} Got: ${link_flag}")
   string(APPEND NRN_LINK_DEFS " ${link_flag}")
 endforeach()
-
-# Turn the CMake lists NRN_COMPILE_DEFS, NRN_COMPILE_FLAGS, NRN_LINK_FLAGS and
-# NRN_NOCMODL_SANITIZER_ENVIRONMENT into flat strings
-list(TRANSFORM NRN_COMPILE_DEFS PREPEND -D OUTPUT_VARIABLE NRN_COMPILE_DEF_FLAGS)
-string(JOIN " " NRN_COMPILE_DEFS_STRING ${NRN_COMPILE_DEF_FLAGS})
-string(JOIN " " NRN_COMPILE_FLAGS_STRING ${NRN_COMPILE_FLAGS} ${NRN_EXTRA_MECH_CXX_FLAGS})
-# Strip ${RANGE_V3_INCLUDE_DIR} system include from NRN_COMPILE_FLAGS_STRING
-string(REGEX REPLACE "-I${RANGE_V3_INCLUDE_DIR}" "" NRN_COMPILE_FLAGS_STRING
-                     ${NRN_COMPILE_FLAGS_STRING})
-string(JOIN " " NRN_LINK_FLAGS_STRING ${NRN_LINK_FLAGS} ${NRN_LINK_FLAGS_FOR_ENTRY_POINTS})
-string(JOIN " " NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING ${NRN_NOCMODL_SANITIZER_ENVIRONMENT})
 
 # Compiler flags depending on cmake build type from BUILD_TYPE_<LANG>_FLAGS
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
