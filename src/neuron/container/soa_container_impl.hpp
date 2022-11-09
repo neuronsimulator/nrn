@@ -114,17 +114,6 @@ inline void soa<Storage, Tags...>::permute_zip(Permutation&& permutation) {
  */
 template <typename Storage, typename... Tags>
 template <typename Range>
-inline void soa<Storage, Tags...>::apply_permutation(Range permutation) {
-    check_permutation_vector(permutation);
-    permute_zip([permutation = std::move(permutation)](auto& zip) mutable {
-        boost::algorithm::apply_permutation(zip, permutation);
-    });
-}
-
-/** @brief Permute the SOA-format data using an arbitrary vector.
- */
-template <typename Storage, typename... Tags>
-template <typename Range>
 inline void soa<Storage, Tags...>::apply_reverse_permutation(Range permutation) {
     check_permutation_vector(permutation);
     permute_zip([permutation = std::move(permutation)](auto& zip) mutable {

@@ -321,22 +321,17 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         }
         std::vector<std::size_t> perm_vector(nodes.size());
         std::iota(perm_vector.begin(), perm_vector.end(), 0);
-        WHEN("A unit permutation is applied to the underlying storage") {
-            node_data.apply_permutation(std::move(perm_vector));
+        WHEN("A unit reverse permutation is applied to the underlying storage") {
+            node_data.apply_reverse_permutation(std::move(perm_vector));
             require_logical_and_storage_match();
             // Should the data still be sorted here or not? Should
             // apply_permutation bother checking if the permutation did
             // anything?
         }
-        WHEN("A unit reverse permutation is applied to the underlying storage") {
-            node_data.apply_reverse_permutation(perm_vector);
-            require_logical_and_storage_match();
-            // See above, should the data be flagged as sorted here or not?
-        }
         WHEN("A random permutation is applied to the underlying storage") {
             std::mt19937 g{42};
             std::shuffle(perm_vector.begin(), perm_vector.end(), g);
-            node_data.apply_permutation(std::move(perm_vector));
+            node_data.apply_reverse_permutation(std::move(perm_vector));
             // the permutation is random, so we don't know if voltage_storage
             // will match reference_voltages or not
             require_logical_match();
@@ -346,7 +341,7 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         }
         auto const require_exception = [&](auto perm) {
             THEN("An exception is thrown") {
-                REQUIRE_THROWS(node_data.apply_permutation(std::move(perm)));
+                REQUIRE_THROWS(node_data.apply_reverse_permutation(std::move(perm)));
                 AND_THEN("The container is still flagged as sorted") {
                     REQUIRE(node_data.is_sorted());
                 }
