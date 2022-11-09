@@ -85,7 +85,7 @@ jobs:
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install boost ccache coreutils doxygen flex mpich ninja xz
+          brew install ccache coreutils doxygen flex mpich ninja xz
           brew unlink mpich
           brew install openmpi
           brew install --cask xquartz
@@ -99,9 +99,9 @@ jobs:
       - name: Install apt packages
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          sudo apt-get install build-essential ccache libboost-all-dev \
-            libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich \
-            ninja-build openmpi-bin patchelf
+          sudo apt-get install build-essential ccache libopenmpi-dev \
+            libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
+            openmpi-bin patchelf
           # The sanitizer builds use ubuntu 22.04
           if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
             sudo apt-get install g++-7 g++-8
@@ -264,9 +264,6 @@ jobs:
                                 -Wno-sign-compare" \
                              -DNRN_EXTRA_MECH_CXX_FLAGS="-Wno-sometimes-uninitialized \
                                 -Wno-missing-braces")
-              fi
-              if [[ "${{ startsWith(matrix.os, 'macOS') }}" = "true" ]]; then
-                cmake_args+=(-DCORENRN_ENABLE_OPENMP=OFF)
               fi
               mkdir build && cd build
               echo "Building with: ${cmake_args[@]}"

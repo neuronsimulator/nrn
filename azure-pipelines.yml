@@ -70,13 +70,13 @@ stages:
             -e NEURON_WHEEL_VERSION \
             -e NRN_BUILD_FOR_UPLOAD=1 \
             -e SETUPTOOLS_USE_DISTUTILS=stdlib \
-            'neuronsimulator/neuron_wheel:boost-x86_64' \
+            'neuronsimulator/neuron_wheel:latest-gcc9-x86_64' \
             packaging/python/build_wheels.bash linux $(python.version) coreneuron
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
           sudo apt update
-          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev libboost-all-dev
+          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
         displayName: 'Install Test System Depdendencies'
 
       - template: ci/azure-wheel-test-upload.yml
@@ -125,13 +125,13 @@ stages:
             -e NRN_RELEASE_UPLOAD \
             -e NEURON_WHEEL_VERSION \
             -e NRN_BUILD_FOR_UPLOAD=1 \
-            'neuronsimulator/neuron_wheel_gpu:nvhpc-22.1-cuda-11.5-boost' \
+            'neuronsimulator/neuron_wheel_gpu:nvhpc-22.1-cuda-11.5-gcc9' \
             packaging/python/build_wheels.bash linux $(python.version) coreneuron-gpu
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
           sudo apt update
-          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev libboost-all-dev
+          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
         displayName: 'Install Test System Depdendencies'
 
       - template: ci/azure-wheel-test-upload.yml
@@ -175,7 +175,7 @@ stages:
 
       - script: |
           brew install --cask xquartz
-          brew install flex bison mpich boost
+          brew install flex bison mpich
           brew unlink mpich && brew install openmpi
           cmake --version
           # see https://github.com/BlueBrain/CoreNeuron/issues/817, uninstall libomp until we fix this
