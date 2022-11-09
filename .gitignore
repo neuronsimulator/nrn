@@ -1,7 +1,6 @@
 .bbp-project-venv/
 .clang-format
 .cmake-format.yaml
-external/range-v3/
 external/tests/
 nmodlconf.h.in
 nrnconf.h.in
