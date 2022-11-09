@@ -45,12 +45,6 @@ void iv_display_scale(float);
 #undef MAC
 #endif
 
-#if MAC || defined(WIN32)
-#include "njconf.h"
-#else
-#include "../nrnjava/njconf.h"
-#endif
-
 #if 1
 void pr_profile();
 #define PR_PROFILE pr_profile();
