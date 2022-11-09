@@ -598,6 +598,38 @@ extern "C" void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip) 
     dp[id].pval = pvar + ip;
 }
 
+
+void nrn_poolshrink(int shrink) {
+    if (shrink) {
+        for (int i = 0; i < npools_; ++i) {
+            auto& pdbl = dblpools_[i];
+            auto& pdatum = datumpools_[i];
+            if ((pdbl && pdbl->nget() == 0)) {
+                nrn_delete_prop_pool(i);
+            }
+            if (pdatum && pdatum->nget() == 0) {
+                delete datumpools_[i];
+                datumpools_[i] = NULL;
+            }
+        }
+    } else {
+        Printf("poolshrink --- type name (dbluse, size) (datumuse, size)\n");
+        for (int i = 0; i < npools_; ++i) {
+            auto& pdbl = dblpools_[i];
+            auto& pdatum = datumpools_[i];
+            if (pdbl || pdatum) {
+                Printf("%d %s (%ld, %d) (%ld, %d)\n",
+                       i,
+                       (memb_func[i].sym ? memb_func[i].sym->name : "noname"),
+                       (pdbl ? pdbl->nget() : 0),
+                       (pdbl ? pdbl->size() : 0),
+                       (pdatum ? pdatum->nget() : 0),
+                       (pdatum ? pdatum->size() : 0));
+            }
+        }
+    }
+}
+
 void nrn_cache_prop_realloc() {
     if (!nrn_prop_is_cache_efficient()) {
         //		printf("begin nrn_prop_is_cache_efficient %d\n", nrn_prop_is_cache_efficient());

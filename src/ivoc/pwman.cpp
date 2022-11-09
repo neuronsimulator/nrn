@@ -161,43 +161,12 @@ void print_alloc(Canvas* c, char* s, const Allocation& a) {
     Coord x_, y_;
 };
 
-extern double (*p_java2nrn_dmeth)(Object* ho, Symbol* method);
-extern char** (*p_java2nrn_smeth)(Object* ho, Symbol* method);
-const char* (*p_java2nrn_classname)(Object* ho);
-bool (*p_java2nrn_identity)(Object* o1, Object* o2);
-
-// just enough info to get a java window represented in the PWM.
-// The distinction is that window() is NULL for these.
-/*static*/ class JavaWindow {
-  public:
-    JavaWindow(const char*, Object*);
-    virtual ~JavaWindow();
-    virtual void map();
-    virtual void hide();
-    virtual void move(Coord l, Coord b);
-    virtual void pmove(int l, int t);
-    virtual void presize(int w, int h);
-    virtual int priority();
-    virtual void save_session(const char* fname, ostream& o);
-    void ref();
-    void unref();
-    Coord l();
-    Coord b();
-    Coord w();
-    Coord h();
-    char* title;
-    int pl, pt, pw, ph;  // pixel coords straight from java
-    bool is_mapped, reffing_, closing_;
-    Object* ho;
-};
-
 class PaperItem;
 
 /*static*/ class ScreenItem: public Glyph {
   public:
     friend class PaperItem;
     ScreenItem(PrintableWindow*);
-    ScreenItem(JavaWindow*);
     ~ScreenItem();
     virtual void request(Requisition&) const;
     virtual void allocate(Canvas*, const Allocation&, Extension&);
@@ -205,9 +174,6 @@ class PaperItem;
     virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
     PrintableWindow* window() {
         return w_;
-    }
-    JavaWindow* jwindow() {
-        return jw_;
     }
     void relabel(GlyphIndex);
     //	void reconfigured(Scene*);
@@ -224,7 +190,6 @@ class PaperItem;
     Glyph* label_;
     GlyphIndex i_;
     PrintableWindow* w_;
-    JavaWindow* jw_;
     PaperItem* pi_;
 };
 
@@ -510,8 +475,6 @@ static double pwman_is_mapped(void* v) {
     ScreenItem* si = (ScreenItem*) p->screen()->component(i);
     if (si->window()) {
         return double(si->window()->is_mapped());
-    } else {
-        return double(si->jwindow()->is_mapped);
     }
     ENDGUI
 #endif
@@ -526,8 +489,6 @@ static double pwman_map(void* v) {
     ScreenItem* si = (ScreenItem*) p->screen()->component(i);
     if (si->window()) {
         si->window()->map();
-    } else {
-        si->jwindow()->map();
     }
     ENDGUI
 #endif
@@ -542,8 +503,6 @@ static double pwman_hide(void* v) {
     ScreenItem* si = (ScreenItem*) p->screen()->component(i);
     if (si->window()) {
         si->window()->hide();
-    } else {
-        si->jwindow()->hide();
     }
     ENDGUI
 #endif
@@ -559,8 +518,6 @@ static const char** pwman_name(void* v) {
     char** ps = hoc_temp_charptr();
     if (si->window()) {
         *ps = (char*) si->window()->name();
-    } else {
-        *ps = si->jwindow()->title;
     }
     return (const char**) ps;
     ENDGUI
@@ -711,36 +668,6 @@ static double pwman_snap(void* v) {
     return 0;
 }
 
-// position size and show/hide a java window on session retrieve
-static double pwman_jwindow(void* v) {
-    hoc_return_type_code = 1;  // integer
-    TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.jwindow", v);
-#if HAVE_IV
-    IFGUI
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    // arg order is objref, map/hide, x, y, w, h
-    // get java window owner object
-    Object* ho = *hoc_objgetarg(1);
-    // which java window is associated with this.
-    int i, cnt = p->screen()->count();
-    for (i = 0; i < cnt; ++i) {
-        ScreenItem* si = (ScreenItem*) p->screen()->component(i);
-        JavaWindow* jw = si->jwindow();
-        if (jw && (*p_java2nrn_identity)(jw->ho, ho)) {
-            jw->pmove((int) *getarg(3), (int) *getarg(4));
-            jw->presize((int) *getarg(5), (int) *getarg(6));
-            if (chkarg(2, 0, 1) == 0.) {
-                jw->hide();
-            }
-            // printf("pwman_jwindow for %d\n", i);
-            return i;
-        }
-    }
-    ENDGUI
-#endif
-    return -1;
-}
-
 #ifdef MINGW
 static double scale_;
 static void pwman_scale1(void*) {
@@ -782,8 +709,6 @@ static double pwman_window_place(void* v) {
     ScreenItem* si = (ScreenItem*) p->screen()->component(i);
     if (si->window()) {
         si->window()->xmove(int(*getarg(2)), int(*getarg(3)));
-    } else {
-        si->jwindow()->pmove(int(*getarg(2)), int(*getarg(3)));
     }
     ENDGUI
 #endif
@@ -888,8 +813,6 @@ static Member_func members[] = {"count",
                                 pwman_save,
                                 "snap",
                                 pwman_snap,
-                                "jwindow",
-                                pwman_jwindow,
                                 "scale",
                                 pwman_scale,
                                 "window_place",
@@ -1134,8 +1057,6 @@ void ScreenItemHandler::move_action(bool doit, Coord x, Coord y) {
     if (doit) {
         if (si_->window()) {
             si_->window()->move(xs * Scl, ys * Scl);
-        } else {
-            si_->jwindow()->move(xs * Scl, ys * Scl);
         }
     } else {
         pwm_impl->screen()->move(si_->index(), xs, ys);
@@ -1568,14 +1489,6 @@ void PrintableWindowManager::append(PrintableWindow* w) {
     }
 }
 
-void PrintableWindowManager::append(JavaWindow* w) {
-    // printf("PrintableWindowManager::append(%p)\n", w);
-    if (w == NULL) {
-        return;
-    }
-    pwmi_->screen_->append(new ScreenItem(w));
-    pwmi_->relabel();
-}
 
 void PrintableWindowManager::remove(PrintableWindow* w) {
     // printf("PrintableWindowManager::remove(%p)\n", w);
@@ -1593,19 +1506,6 @@ void PrintableWindowManager::remove(PrintableWindow* w) {
     }
     impl->relabel();
 }
-void PrintableWindowManager::remove(JavaWindow* w) {
-    // printf("PrintableWindowManager::remove(%p)\n", w);
-    PWMImpl* impl = pwmi_;
-    //	printf("remove %p\n", w);
-    Scene* s = impl->screen_;
-    if (s) {
-        GlyphIndex i = impl->index(w);
-        if (i >= 0)
-            s->remove(i);
-    }
-    impl->relabel();
-}
-
 
 #define PIXROUND(x, y, r) x = int((y + r / 2) / r) * r
 
@@ -1682,40 +1582,6 @@ void PrintableWindowManager::reconfigured(PrintableWindow* w) {
 #endif
 }
 
-void PrintableWindowManager::reconfigured(JavaWindow* w) {
-    PWMImpl* impl = pwmi_;
-
-    // printf("reconfigured %g %g %g %g mapped=%d\n", w->l, w->b, w->w, w->h,w->is_mapped);
-    GlyphIndex i = impl->index(w);
-    if (i < 0)
-        return;  // mswin after a ShowWindow(hwnd, SW_HIDE);
-    Coord l = w->l();
-    Coord r = l + w->w();
-    Coord b = w->b();
-    Coord t = b + w->h();
-    impl->screen_->move(i, l / Scl, b / Scl);
-    impl->screen_->change(i);
-    impl->screen_->show(i, w->is_mapped);
-    ScreenItem* si = (ScreenItem*) impl->screen_->component(i);
-    PaperItem* pi = si->paper_item();
-    if (pi) {
-        impl->paper_->change(impl->paper_index(pi));
-    }
-    Extension e;
-    impl->all_window_bounding_box(e);
-    impl->screen_->new_size(e.left() / Scl - 5,
-                            e.bottom() / Scl - 2,
-                            e.right() / Scl + 5,
-                            e.top() / Scl + 2);
-    VirtualWindow::view();
-#if DBG
-    Coord x, y;
-    impl->screen_->location(i, x, y);
-    printf("reconfigured %d %d %g %g\n", i, impl->screen_->showing(i), x, y);
-#endif
-    single_event_run();
-}
-
 void PrintableWindowManager::doprint() {
     pwmi_->do_print0();
 }
@@ -1774,12 +1640,6 @@ void PWMImpl::view_screen(Coord x, Coord y) {
             if (w != window()) {
                 w->xmove(w->xleft() + xp, w->xtop() + yp);
             }
-        } else {
-            JavaWindow* jw = si->jwindow();
-            Coord l, b;
-            l = jw->l() + d->to_coord(xp);
-            b = jw->b() - d->to_coord(yp);
-            jw->move(l, b);
         }
     }
 }
@@ -2252,16 +2112,6 @@ void PWMImpl::redraw(Window* pw) {
 // ScreenItem
 ScreenItem::ScreenItem(PrintableWindow* w) {
     w_ = w;
-    jw_ = NULL;
-    label_ = NULL;
-    pi_ = NULL;
-    i_ = -1;
-    group_obj_ = NULL;
-    iconify_via_hide_ = false;
-}
-ScreenItem::ScreenItem(JavaWindow* w) {
-    w_ = NULL;
-    jw_ = w;
     label_ = NULL;
     pi_ = NULL;
     i_ = -1;
@@ -2316,9 +2166,6 @@ void ScreenItem::request(Requisition& req) const {
     if (w_) {
         w = w_->width_pw() / Scl;
         h = w_->height_pw() / Scl;
-    } else {
-        w = jw_->w() / Scl;
-        h = jw_->h() / Scl;
     }
     Requirement rx(w + 2);
     Requirement ry(h + 2);
@@ -2351,8 +2198,6 @@ void ScreenItem::draw(Canvas* c, const Allocation& a) const {
                 y + (w_->height_pw()) / Scl,
                 pwm_impl->window_outline_,
                 NULL);
-    } else {
-        c->rect(x, y, x + (jw_->w()) / Scl, y + (jw_->h()) / Scl, pwm_impl->window_outline_, NULL);
     }
     label_->draw(c, a);
 }
@@ -2574,8 +2419,6 @@ void PWMImpl::map_all() {
                 } else {
                     //			w->deiconify();
                 }
-            } else {
-                si->jwindow()->map();
             }
         }
 }
@@ -2598,8 +2441,6 @@ void PWMImpl::unmap_all() {
                 } else {
                     w->iconify();
                 }
-            } else {
-                si->jwindow()->hide();
             }
         }
 }
@@ -2609,7 +2450,7 @@ GlyphIndex PWMImpl::index(void* w) {
     if (screen_)
         for (i = 0; i < screen_->count(); i++) {
             ScreenItem* si = (ScreenItem*) screen_->component(i);
-            if (w == (void*) si->window() || w == (void*) si->jwindow()) {
+            if (w == (void*) si->window()) {
                 return i;
             }
         }
@@ -3218,8 +3059,6 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
                             o << buf;
                         }
                     }
-                } else if (si->jwindow()) {
-                    sivec[nwin++] = si;
                 }
             }
         }
@@ -3238,8 +3077,6 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
                             sprintf(buf, "{pwman_place(%d,%d)}\n", w->xleft(), w->xtop());
                             o << buf;
                         }
-                    } else if (si->jwindow()) {
-                        sivec[nwin++] = si;
                     }
                 }
             }
@@ -3273,15 +3110,11 @@ void PWMImpl::save_list(int nwin, ScreenItem** sivec, ostream& o) {
             if (sivec[i]->window()) {
                 ocg = (OcGlyph*) sivec[i]->window()->glyph();
                 pri = ocg->session_priority();
-            } else {
-                pri = sivec[i]->jwindow()->priority();
             }
             if (pri == working) {
                 // printf("saving item %d with priority %d\n", i, pri);
                 if (sivec[i]->window()) {
                     ocg->save(o);
-                } else {
-                    sivec[i]->jwindow()->save_session(cur_ses_name_.string(), o);
                 }
                 ses_group(sivec[i], o);
             }
@@ -3580,189 +3413,6 @@ declareTable(WindowTable, XWindow, Window*)
 }
 #endif
 #endif  // SNAPSHOT
-
-JavaWindow::JavaWindow(const char* s, Object* o) {
-    // printf("JavaWindow %s %s\n", s, hoc_object_name(o));
-    title = new char[strlen(s) + 1];
-    strcpy(title, s);
-    is_mapped = false;
-    pl = pt = 0;
-    pw = ph = 100;
-    ho = o;
-    closing_ = false;
-    reffing_ = false;
-    ref();
-}
-JavaWindow::~JavaWindow() {
-    // printf("~JavaWindow\n");
-    delete[] title;
-    unref();
-}
-
-void (*nrnjava_pwm_setwin)(void*, int, int, int);
-
-Coord JavaWindow::l() {
-    return Session::instance()->default_display()->to_coord(pl);
-}
-
-Coord JavaWindow::b() {
-    Display* d = Session::instance()->default_display();
-    return d->to_coord(d->pheight() - (pt + ph));
-}
-
-Coord JavaWindow::w() {
-    return Session::instance()->default_display()->to_coord(pw);
-}
-
-Coord JavaWindow::h() {
-    return Session::instance()->default_display()->to_coord(ph);
-}
-
-void JavaWindow::map() {
-    (*nrnjava_pwm_setwin)(this, 1, 0, 0);
-}
-void JavaWindow::hide() {
-    (*nrnjava_pwm_setwin)(this, 2, 0, 0);
-}
-void JavaWindow::move(Coord x, Coord y) {
-    Display* d = Session::instance()->default_display();
-    int left = d->to_pixels(x);
-    int top = d->pheight() - d->to_pixels(y) - ph;
-    (*nrnjava_pwm_setwin)(this, 3, left, top);
-}
-void JavaWindow::pmove(int l, int t) {
-    (*nrnjava_pwm_setwin)(this, 3, l, t);
-}
-void JavaWindow::presize(int w, int h) {
-    (*nrnjava_pwm_setwin)(this, 4, w, h);
-}
-
-void JavaWindow::ref() {
-    if (!reffing_) {
-        // printf("JavaWindow ref %s\n", hoc_object_name(ho));
-        hoc_obj_ref(ho);
-        reffing_ = true;
-    }
-}
-
-void JavaWindow::unref() {
-    if (reffing_) {
-        // printf("JavaWindow unref %s\n", hoc_object_name(ho));
-        hoc_obj_unref(ho);
-        reffing_ = false;
-    }
-}
-
-int JavaWindow::priority() {
-    // check for save_session method
-    Symbol* s = NULL;
-    if (ho) {
-        s = hoc_table_lookup("hocSessionPriority", ho->ctemplate->symtable);
-    }
-    int i = 1;
-    if (s) {
-        i = (int) ((*p_java2nrn_dmeth)(ho, s));
-    }
-    // printf("%s priority %d\n", hoc_object_name(ho), i);
-    return i;
-}
-
-void JavaWindow::save_session(const char* fname, ostream& o) {
-    // minimum save is, if ho is not NULL, to
-    // load_java and create an object ocbox_ with the noarg constructor,
-    // which is then unreffed.
-    // after creation and before move/resize/hide and
-    // unreffing, if the hoc_save_session
-    // method exists, that is called with the session file name.
-    if (!ho) {
-        return;
-    }
-    char buf[256];
-    o << "/*Begin " << title << " */\n";
-    sprintf(buf,
-            "{load_java(\"%s\", \"%s\")}\n",
-            (*p_java2nrn_classname)(ho),
-            ho->ctemplate->sym->name);
-    o << buf;
-    sprintf(buf, "ocbox_ = new %s()\n", ho->ctemplate->sym->name);
-    o << buf;
-
-    // check for save_session method
-    Symbol* s = hoc_table_lookup("hocSessionSave", ho->ctemplate->symtable);
-    if (s) {
-        // arguments are the session file name
-        char* b2 = new char[strlen(fname) + 1];
-        strcpy(b2, fname);
-        hoc_pushstr(&b2);
-        char** cpp = (*p_java2nrn_smeth)(ho, s);
-        hoc_strpop();
-        delete[] b2;
-        // printf("%s.hocSessionSave(\"%s\") returned |%s|\n", hoc_object_name(ho), fname, *cpp);
-        o << *cpp;
-    }
-    sprintf(buf,
-            "{PWManager[0].jwindow(ocbox_, %d, %d, %d, %d, %d)}\n",
-            is_mapped ? 1 : 0,
-            pl,
-            pt,
-            pw,
-            ph);
-    o << buf;
-    o << "objref ocbox_\n";
-    o << "/*End " << title << " */\n";
-}
-
-void* nrnjava_pwm_listen(const char* s, Object* ho) {
-    JavaWindow* jw = new JavaWindow(s, ho);
-    PrintableWindowManager::current()->append(jw);
-    return jw;
-}
-
-// see src/nrnjava/PWMListener.java for the types
-void nrnjava_pwm_event(size_t ic, int type, int l, int t, int w, int h) {
-    JavaWindow* jw = (JavaWindow*) ic;
-    PrintableWindowManager* pwm = PrintableWindowManager::current();
-    if (type >= 3 && type <= 6) {
-        jw->pl = l;
-        jw->pt = t;
-        jw->pw = w;
-        jw->ph = h;
-    }
-    switch (type) {
-    case 1:  // windowClosing
-             // printf("windowClosing\n");
-        jw->closing_ = true;
-        break;
-    case 2:  // windowIconified
-             // printf("windowIconified\n");
-        jw->is_mapped = false;
-        pwm->reconfigured(jw);
-        jw->hide();
-        break;
-    case 3:  // componentHidden
-             // printf("componentHidden\n");
-        if (jw->closing_) {
-            jw->unref();
-            pwm->remove(jw);
-            delete jw;
-        } else {
-            jw->is_mapped = false;
-            pwm->reconfigured(jw);
-        }
-        break;
-    case 4:  // componentMoved
-    case 5:  // componentResized
-        jw->is_mapped = true;
-        pwm->reconfigured(jw);
-        break;
-    case 6:  // componentShown
-             // printf("componentShown\n");
-        jw->is_mapped = true;
-        pwm->reconfigured(jw);
-        jw->ref();
-        break;
-    }
-}
 
 #else
 

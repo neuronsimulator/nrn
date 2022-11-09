@@ -307,8 +307,6 @@ static struct { /* Builtin functions with multiple or variable args */
                  hoc_load_template,
                  "load_file",
                  hoc_load_file,
-                 "load_java",
-                 hoc_load_java,
                  "unix_mac_pc",
                  hoc_unix_mac_pc,
                  "show_winio",

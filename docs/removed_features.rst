@@ -39,3 +39,7 @@ To that end, the following table's columns constitute:
      - Windows versions now use MINGW (more native to WINDOWS).
      - `#1802 <https://github.com/neuronsimulator/nrn/pull/1802>`_
      - 2f90f37
+   * - Java
+     - NEURON Java support.
+     - `#1937 <https://github.com/neuronsimulator/nrn/pull/1937>`_
+     - 5a67957
