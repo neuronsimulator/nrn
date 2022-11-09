@@ -159,6 +159,20 @@ bool nrn_chk_data_handle(const neuron::container::data_handle<double>& pd) {
     return false;
 }
 
+/** @brief if hoc_evalpointer calls hoc_execerror, return 1
+ **/
+static int hoc_evalpointer_err() {
+    try {
+        hoc_evalpointer();
+    } catch (std::exception const& e) {
+        std::ostringstream oss;
+        oss << "subscript out of range (array size or number of dimensions changed?)";
+        PyErr_SetString(PyExc_IndexError, oss.str().c_str());
+        return 1;
+    }
+    return 0;
+}
+
 static PyObject* nrnexec(PyObject* self, PyObject* args) {
     const char* cmd;
     if (!PyArg_ParseTuple(args, "s", &cmd)) {
@@ -697,7 +711,7 @@ static void* fcall(void* vself, void* vargs) {
         Inst* pcsav = save_pc(fc + 1);
         hoc_call();
         hoc_pc = pcsav;
-        HocContextRestore
+        HocContextRestore;
     }
     hocobj_pushargs_free_strings(strings_to_free);
 
@@ -1297,7 +1311,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         }
     }
     }
-    HocContextRestore return result;
+    HocContextRestore;
+    return result;
 }
 
 static PyObject* hocobj_baseattr(PyObject* subself, PyObject* args) {
@@ -1452,7 +1467,10 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
                 }
             } else {
                 hoc_pushs(sym);
-                hoc_evalpointer();
+                if (hoc_evalpointer_err()) {  // not possible to raise error.
+                    HocContextRestore;
+                    return -1;
+                }
                 err = PyArg_Parse(value, "d", hoc_pxpop()) == 0;
                 if (!err && sym->subtype == DYNAMICUNITS) {
                     char mes[100];
@@ -1515,7 +1533,8 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
         err = -1;
         break;
     }
-    HocContextRestore return err;
+    HocContextRestore;
+    return err;
 }
 
 static Symbol* sym_vec_x;
@@ -1902,7 +1921,11 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
             HocTopContextSet switch (po->sym_->type) {
             case VAR:
                 hocobj_pushtop(po, po->sym_, ix);
-                hoc_evalpointer();
+                if (hoc_evalpointer_err()) {
+                    --po->nindex_;
+                    HocContextRestore;
+                    return NULL;
+                }
                 --po->nindex_;
                 if (po->type_ == PyHoc::HocArrayIncomplete) {
                     assert(!po->u.px_);
@@ -1925,7 +1948,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 --po->nindex_;
                 break;
             }
-            HocContextRestore
+            HocContextRestore;
         }
     }
     return result;
@@ -2013,7 +2036,11 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
         HocTopContextSet switch (po->sym_->type) {
         case VAR:
             hocobj_pushtop(po, po->sym_, i);
-            hoc_evalpointer();
+            if (hoc_evalpointer_err()) {
+                HocContextRestore;
+                --po->nindex_;
+                return -1;
+            }
             --po->nindex_;
             err = PyArg_Parse(arg, "d", hoc_pxpop()) != 1;
             break;
@@ -2041,7 +2068,7 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
             PyErr_SetString(PyExc_TypeError, "not assignable");
             break;
         }
-        HocContextRestore
+        HocContextRestore;
     }
     return err;
 }
