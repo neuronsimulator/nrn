@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 set -ex
 
-default_pythons="python3.8 python3.9 python3.10"
+default_pythons="python3.8 python3.9 python3.10 python3.11"
 # distribution built with
 # bash bldnrnmacpkgcmake.sh
 # without args, default are the pythons above.
+
+# python3.8 needs to be universal and macosx-10.9. So we built our own and
+export PATH=$HOME/soft/python3.8/bin:$PATH
+# In the top level source dir?# 
+if test -f nrnversion.sh ; then
+  NRN_SRC=`pwd`
+fi
 
 # If all the pythons are universal, then so is NEURON.
 # Otherwise $CPU
