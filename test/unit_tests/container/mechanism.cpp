@@ -94,7 +94,7 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                 std::iota(perm_vector.begin(), perm_vector.end(), 0);
                 std::mt19937 g{42};
                 std::shuffle(perm_vector.begin(), perm_vector.end(), g);
-                mech_data.apply_permutation(std::move(perm_vector));
+                mech_data.apply_reverse_permutation(std::move(perm_vector));
                 check_field_values(StorageCheck::Skip);
             }
         }
