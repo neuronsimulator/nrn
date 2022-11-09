@@ -1,7 +1,5 @@
 #include <../../nrnconf.h>
 
-#include "ocnotify.h"
-
 //#include <string.h>
 #include <cstdio>
 #include <cstdlib>
