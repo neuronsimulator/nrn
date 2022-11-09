@@ -1,82 +1,13 @@
 #pragma once
 #include "neuron/container/soa_container.hpp"
 
-#include <boost/algorithm/apply_permutation.hpp>
-#include <boost/mp11.hpp>
-
-#include <range/v3/algorithm/rotate.hpp>
-#include <range/v3/utility/common_tuple.hpp>
-#include <range/v3/utility/swap.hpp>
-#include <range/v3/view/zip.hpp>
-/** @file
- *  @brief neuron::container::soa<...> implementation requiring 3rd party headers.
- *
- *  Specifically this includes relatively-rarely-used implementations that
- *  require Boost and range::v3 headers. Source files that use these
- *  implementations will need to explicitly include this header.
- */
 namespace neuron::container {
-/** @brief ADL-visible swap overload for ranges::common_tuple<Ts...>.
- *
- *  It seems that because range-v3 provides ranges::swap, which is a Niebloid
- *  like std::ranges::swap, they do not provide an ADL-visible overload of the
- *  old-fashioned swap. This stops Boost's permute algorithm from finding an
- *  implementation when it is used with the types returned by zip iterators. We
- *  rely on this swap() being in the same namespace as one of the zip members
- *  (initialliy NodeIdentifier).
- */
-template <typename... Ts>
-void swap(ranges::common_tuple<Ts...>&& lhs, ranges::common_tuple<Ts...>&& rhs) noexcept {
-    std::tuple<Ts...> lhs_std{std::move(lhs)}, rhs_std(std::move(rhs));
-    std::swap(lhs_std, rhs_std);
-}
-
-/** @brief ADL-visible swap overload for ranges::common_pair<T, U>.
- *
- *  This is needed instead of the ranges::common_tuple<Ts...> overload for zips
- *  of width two.
- */
-template <typename T, typename U>
-void swap(ranges::common_pair<T, U>&& lhs, ranges::common_pair<T, U>&& rhs) noexcept {
-    using pair_t = std::pair<T, U>;
-    std::tuple<T, U> lhs_std{pair_t{std::move(lhs)}}, rhs_std(pair_t{std::move(rhs)});
-    std::swap(lhs_std, rhs_std);
-}
-
 namespace detail {
-template <typename Storage, typename Indices, typename... Tags>
-auto get_zip_helper(Storage& storage, Indices& indices, boost::mp11::mp_list<Tags...>) {
-    return ranges::views::zip(indices, storage.template get<Tags>()...);
-}
-template <typename Storage, typename Permutation, typename... Tags>
-void permute_zip_helper(Storage& storage,
-                        Permutation const& permutation,
-                        boost::mp11::mp_list<Tags...>) {
-    (
-        [&](auto const& tag) {
-            using Tag = std::decay_t<decltype(tag)>;
-            auto const num_instances = tag.num_instances();
-            for (auto i = 0ul; i < num_instances; ++i) {
-                // The apply-a-permutation-vector algorithms that we use modify
-                // both the values being permuted (obviously) and the
-                // permutation vector itself (not-so-obviously), so it's
-                // important that we don't execute the algorithms using the same
-                // vector multiple times. In the absense of fields with
-                // `num_instances()` copies, this is fine because we create one
-                // zip and then apply the permutation one time. But with
-                // `num_instances()` we have to copy the permutation vector.
-                auto perm_copy = permutation;
-                perm_copy(storage.template get_field_instance<Tag>(i));
-            }
-        }(storage.template get_tag<Tags>()),
-        ...);
-}
-
 /** Check if the given range is a permutation of the first N integers.
  */
 template <typename Rng>
 void check_permutation_vector(Rng const& range, std::size_t size) {
-    if (ranges::size(range) != size) {
+    if (range.size() != size) {
         throw std::runtime_error("invalid permutation vector: wrong size");
     }
     std::vector<bool> seen(size, false);
@@ -92,37 +23,64 @@ void check_permutation_vector(Rng const& range, std::size_t size) {
     }
 }
 
+template <typename Diff>
+void swap_all(Diff i, Diff n) {}
 
+template <typename Diff, typename T, typename... U>
+void swap_all(Diff i, Diff n, T&& t, U&&... u) {
+    using std::swap;
+    using plain_T = typename std::remove_reference_t<std::remove_cv_t<T>>::value_type;
+    if constexpr (std::is_arithmetic_v<plain_T> ||
+                  std::is_same_v<plain_T, non_owning_identifier_without_container>) {
+        auto it = std::begin(t);
+        swap(it[i], it[n]);
+    } else {
+        for (auto& e: t) {
+            auto it = std::begin(e);
+            swap(it[i], it[n]);
+        }
+    }
+    swap_all(i, n, std::forward<U>(u)...);
+}
+
+template <typename IndexType, typename... T>
+void apply_reverse_permutation(IndexType&& ind, T&&... items) {
+    using std::swap;
+    auto size = std::distance(std::begin(ind), std::end(ind));
+    using Diff = decltype(size);
+    for (Diff i = 0; i < size; i++) {
+        auto it = std::begin(ind);
+        while (i != it[i]) {
+            Diff next = it[i];
+            swap_all(i, next, std::forward<T>(items)...);
+            swap(it[i], it[next]);
+        }
+    }
+}
 }  // namespace detail
 
 /** @brief Permute the SOA-format data using an arbitrary vector.
  */
 template <typename Storage, typename... Tags>
 template <typename Range>
-inline void soa<Storage, Tags...>::apply_reverse_permutation(Range permutation_vec) {
-    detail::check_permutation_vector(permutation_vec, size());
+inline void soa<Storage, Tags...>::apply_reverse_permutation(Range permutation) {
+    // Check that the given vector is a valid permutation of length size().
+    std::size_t const my_size{size()};
+    detail::check_permutation_vector(permutation, my_size);
+    // Applying a permutation in general invalidates indices, so it is forbidden if the structure is
+    // frozen, and it leaves the structure unsorted.
     if (m_frozen_count) {
         throw_error("apply_reverse_permutation() called on a frozen structure");
     }
-    // uncontroversial that applying a permutation changes the underlying
-    // storage organisation and potentially invalidates pointers. slightly
-    // more controversial: should explicitly permuting the data implicitly
-    // mark the container as "sorted"?
     mark_as_unsorted_impl<true>();
-    // Apply `permutation` to the columns from tags that do define num_instances()
-    using Tags_with_num_instances =
-        boost::mp11::mp_copy_if<boost::mp11::mp_list<Tags...>, detail::has_num_instances>;
-    using Tags_without_num_instances =
-        boost::mp11::mp_remove_if<boost::mp11::mp_list<Tags...>, detail::has_num_instances>;
-    auto const permutation = [permutation_vec = std::move(permutation_vec)](auto& zip) mutable {
-        boost::algorithm::apply_reverse_permutation(zip, permutation_vec);
-    };
-    // this will copy `permutation` before invoking it, so it is safe to invoke
-    // it multiple times
-    detail::permute_zip_helper(*this, permutation, Tags_with_num_instances{});
-    auto zip = detail::get_zip_helper(*this, m_indices, Tags_without_num_instances{});
-    permutation(zip);  // cannot safely call `permutation` after this
-    std::size_t const my_size{size()};
+    // Now we apply the reverse permutation in `permutation` to all of the columns in the
+    // container. Depending on whether or not the tag types have num_instances() member functions
+    // the relevant elements of m_data will either be std::vector<T> or std::vector<std::vector<U>>,
+    // where in both cases T and U are simple value types that can be swapped.
+    detail::apply_reverse_permutation(std::move(permutation),
+                                      m_indices,
+                                      std::get<tag_index_v<Tags>>(m_data)...);
+    // update the indices in the container
     for (auto i = 0ul; i < my_size; ++i) {
         m_indices[i].set_current_row(i);
     }
