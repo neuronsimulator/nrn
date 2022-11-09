@@ -40,7 +40,6 @@ cmake_build:
     CCACHE_BASEDIR: ${CI_PROJECT_DIR}/nrn
     CCACHE_DIR: ${CI_PROJECT_DIR}/ccache
   script:
-    - brew install boost
     - python3 -m virtualenv venv
     - venv/bin/pip install --upgrade pip -r nrn_requirements.txt
     - venv/bin/python --version
