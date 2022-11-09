@@ -103,16 +103,17 @@ void swap_all(Diff i, Diff n) {}
 
 template <typename Diff, typename T, typename... U>
 void swap_all(Diff i, Diff n, T&& t, U&&... u) {
+    static_assert(
+        std::is_lvalue_reference_v<T>,
+        "Argument of apply_reverse_permutation should be reference as the algorithm is in place.");
     using std::swap;
     using plain_T = typename std::remove_reference_t<std::remove_cv_t<T>>::value_type;
     if constexpr (std::is_arithmetic_v<plain_T> ||
                   std::is_same_v<plain_T, non_owning_identifier_without_container>) {
-        auto it = std::begin(t);
-        swap(it[i], it[n]);
+        swap(t[i], t[n]);
     } else {
         for (auto& e: t) {
-            auto it = std::begin(e);
-            swap(it[i], it[n]);
+            swap(e[i], e[n]);
         }
     }
     swap_all(i, n, std::forward<U>(u)...);
@@ -124,11 +125,10 @@ void apply_reverse_permutation(IndexType&& ind, T&&... items) {
     auto size = std::distance(std::begin(ind), std::end(ind));
     using Diff = decltype(size);
     for (Diff i = 0; i < size; i++) {
-        auto it = std::begin(ind);
-        while (i != it[i]) {
-            Diff next = it[i];
+        while (i != ind[i]) {
+            Diff next = ind[i];
             swap_all(i, next, std::forward<T>(items)...);
-            swap(it[i], it[next]);
+            swap(ind[i], ind[next]);
         }
     }
 }
