@@ -26,7 +26,8 @@ ParallelContext methods.
 actual_v, etc.
 */
 
-#include <membfunc.h>
+#include "membfunc.h"
+
 #include <cstddef>
 
 typedef struct NrnThreadMembList { /* patterned after CvMembList in cvodeobj.h */
@@ -53,6 +54,8 @@ typedef struct _nrn_Fast_Imem {
  *
  * NrnThread represent collection of cells or part of a cell computed
  * by single thread within NEURON process.
+ *
+ * @warning The constructor/destructor of this struct are not called.
  */
 struct NrnThread {
     double _t;

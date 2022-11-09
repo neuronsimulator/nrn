@@ -17,6 +17,7 @@ extern int hoc_return_type_code;
 #include "cvodeobj.h"
 #include "netcvode.h"
 #include "membfunc.h"
+#include "nrn_ansi.h"
 #include "nrndaspk.h"
 #include "nrniv_mf.h"
 #include "tqueue.h"
@@ -64,7 +65,6 @@ extern int linmod_extra_eqn_count();
 extern int nrn_modeltype();
 extern int nrn_use_selfqueue_;
 extern int use_cachevec;
-extern void nrn_cachevec(int);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 extern void (*nrnmpi_v_transfer_)();
 
@@ -182,7 +182,6 @@ static double abstol(void* v) {
     if (hoc_is_str_arg(1)) {
         sym = d->name2sym(gargstr(1));
     } else {
-        hoc_pgetarg(1);
         sym = hoc_get_last_pointer_symbol();
         if (!sym) {
             hoc_execerror(
@@ -208,8 +207,7 @@ static double active(void* v) {
     if (ifarg(1)) {
         cvode_active_ = (int) chkarg(1, 0, 1);
         if (cvode_active_) {
-            NetCvode* d = (NetCvode*) v;
-            d->re_init(nt_t);
+            static_cast<NetCvode*>(v)->re_init(nt_t);
         }
     }
     hoc_return_type_code = 2;  // boolean
@@ -303,7 +301,7 @@ static double statename(void* v) {
     if (ifarg(3)) {
         style = (int) chkarg(3, 0, 2);
     }
-    hoc_assign_str(hoc_pgargstr(2), d->statename(i, style));
+    hoc_assign_str(hoc_pgargstr(2), d->statename(i, style).c_str());
     return 0.;
 }
 

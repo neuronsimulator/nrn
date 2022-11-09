@@ -175,12 +175,9 @@ endforeach()
 # Add pytest
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
-  set(pytest -m pytest)
-  if(NRN_SANITIZERS)
-    # We configure the santiziers to abort on errors, which can lead to unhelpful output from
-    # pytest. Passing -s means the sanitizer output will be visible in the log.
-    list(APPEND pytest -s)
-  endif()
+  # use `--capture=tee-sys`: combines 'sys' and '-s', capturing sys.stdout/stderr and passing it
+  # along to the actual sys.stdout/stderr
+  set(pytest -m pytest --capture=tee-sys)
   if(PYTEST_COV_FOUND)
     list(APPEND pytest --cov-report=xml --cov=neuron)
   endif()

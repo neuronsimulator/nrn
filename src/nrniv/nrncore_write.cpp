@@ -156,7 +156,7 @@ size_t write_corenrn_model(const std::string& path) {
     create_dir_path(path);
 
     // calculate size of the model
-    size_t rankbytes = part1();
+    auto const rankbytes = part1();
 
     // mechanism and global variables
     write_memb_mech_types(get_filename(path, "bbcore_mech.dat").c_str());

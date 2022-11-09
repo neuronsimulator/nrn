@@ -112,6 +112,7 @@ void c_out() {
     P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
     P("#undef PI\n");
     P("#define nil 0\n");
+    P("#define _pval pval\n");  // due to some old models using _pval
     P("#include \"md1redef.h\"\n");
     P("#include \"section.h\"\n");
     P("#include \"nrniv_mf.h\"\n");
@@ -533,6 +534,7 @@ void c_out_vectorize() {
     P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
     P("#undef PI\n");
     P("#define nil 0\n");
+    P("#define _pval pval\n");  // due to some old models using _pval
     P("#include \"md1redef.h\"\n");
     P("#include \"section.h\"\n");
     P("#include \"nrniv_mf.h\"\n");

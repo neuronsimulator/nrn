@@ -121,7 +121,8 @@ int HocCommand::execute(bool notify) {
     return err;
 }
 int HocCommand::exec_strret(char* buf, int size, bool notify) {
-    assert(po_) int err = (*nrnpy_hoccommand_exec_strret)(po_, buf, size);
+    assert(po_);
+    int err = (*nrnpy_hoccommand_exec_strret)(po_, buf, size);
 #if HAVE_IV
     if (notify) {
         Oc oc;

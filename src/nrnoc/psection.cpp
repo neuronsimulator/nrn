@@ -12,24 +12,26 @@ static void pnode(Prop*);
 void psection(void) {
     Section* sec;
     Prop *p, *p1;
-
     verify_structure();
     sec = chk_access();
     p = sec->prop;
     Printf("%s {", secname(sec));
     Printf(" nseg=%d  L=%g  Ra=%g", sec->nnode - 1, section_length(sec), nrn_ra(sec));
-    if (p->dparam[4].val != 1) {
-        Printf(" rallbranch=%g", p->dparam[4].val);
+    if (p->dparam[4].get<double>() != 1) {
+        Printf(" rallbranch=%g", p->dparam[4].get<double>());
     }
     Printf("\n");
     if (sec->parentsec) {
         Printf("	%s ", secname(sec->parentsec));
-        Printf("connect %s (%g), %g\n", secname(sec), p->dparam[3].val, p->dparam[1].val);
+        Printf("connect %s (%g), %g\n",
+               secname(sec),
+               p->dparam[3].get<double>(),
+               p->dparam[1].get<double>());
     } else {
         v_setup_vectors();
         /*SUPPRESS 440*/
         Printf("	/*location %g attached to cell %d*/\n",
-               p->dparam[3].val,
+               p->dparam[3].get<double>(),
                sec->parentnode->v_node_index);
     }
     if (sec->nnode) {
