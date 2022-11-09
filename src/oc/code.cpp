@@ -876,10 +876,6 @@ int hoc_is_object_arg(int narg) {
     return (type == OBJECTVAR || type == OBJECTTMP);
 }
 
-int hoc_is_tempobj_arg(int narg) {
-    return (hoc_argtype(narg) == OBJECTTMP);
-}
-
 Object* hoc_obj_look_inside_stack(int i) { /* stack pointer at depth i; i=0 is top */
     auto const& entry = get_stack_entry_variant(i);
     return std::visit(
@@ -2348,23 +2344,6 @@ char* hoc_araystr(Symbol* sym, int index, Objectdata* obd) {
         }
     }
     return cp;
-}
-
-int hoc_array_index(Symbol* sp, Objectdata* od) { /* subs must be in reverse order on stack */
-    int i;
-    if (ISARRAY(sp)) {
-        if (sp->subtype == 0) {
-            Objectdata* sav = hoc_objectdata;
-            hoc_objectdata = od;
-            i = araypt(sp, OBJECTVAR);
-            hoc_objectdata = sav;
-        } else {
-            i = araypt(sp, 0);
-        }
-    } else {
-        i = 0;
-    }
-    return i;
 }
 
 // Raise error if compile time number of dimensions differs from

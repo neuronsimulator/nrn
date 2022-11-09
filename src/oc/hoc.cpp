@@ -17,10 +17,6 @@
 #include "ocmisc.h"
 #include "nrnmpi.h"
 #include "nrnfilewrap.h"
-#if defined(__GO32__)
-#include <dos.h>
-#include <go32.h>
-#endif
 #include "../nrniv/backtrace_utils.h"
 
 #include <condition_variable>
@@ -545,14 +541,8 @@ void arayinstal(void) /* allocate storage for arrays */
 {
     int i, nsub;
     Symbol* sp;
-#if defined(__TURBOC__)
-    Inst* pcc; /* sometimes pop messes up pc */
-#endif
 
     nsub = (pc++)->i;
-#if defined(__TURBOC__)
-    pcc = pc;
-#endif
     sp = spop();
 
     hoc_freearay(sp);
@@ -565,9 +555,6 @@ void arayinstal(void) /* allocate storage for arrays */
         hoc_malchk();
         hoc_execerror("", (char*) 0);
     }
-#if defined(__TURBOC__)
-    pc = pcc;
-#endif
 }
 
 int hoc_arayinfo_install(Symbol* sp, int nsub) {
@@ -1512,9 +1499,6 @@ int hoc_yyparse(void) {
     return i;
 }
 
-#if defined(__GO32__)
-#define INTERVIEWS 1
-#endif
 #ifdef WIN32
 #define INTERVIEWS 1
 #endif
@@ -1762,9 +1746,6 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
                 extern int hoc_notify_stop;
                 return EOF;
             }
-#if defined(__GO32__)
-            hoc_check_intupt(0);
-#endif
             n = strlen(line);
             for (int i = 0; i < n; ++i) {
                 if (!isascii(line[i])) {
@@ -1834,13 +1815,3 @@ void hoc_help(void) {
     }
     ctp = cbuf + strlen(cbuf) - 1;
 }
-
-#if defined(__GO32__)
-void hoc_check_intupt(int intupt) {
-    if (_go32_was_ctrl_break_hit()) {
-        if (intupt) {
-            execerror("interrupted", (char*) 0);
-        }
-    }
-}
-#endif
