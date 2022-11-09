@@ -307,7 +307,7 @@ struct soa {
                 callable(tag, this_ref.template get_field_instance<Tag>(i));
             }
         } else {
-            callable(tag, this_ref.template get<Tag>());
+            callable(tag, std::get<tag_index_v<Tag>>(this_ref.m_data));
         }
     }
 
@@ -591,21 +591,6 @@ struct soa {
     typename Tag::type const& get_field_instance(std::size_t field_index,
                                                  std::size_t offset) const {
         return get_field_instance_helper<Tag>(*this, field_index)[offset];
-    }
-
-    /**
-     * @brief Get the column container named by Tag.
-     * @todo Consider deprecating and removing this as it exposes details of the
-     *       underlying storage (e.g. which allocator is used for the vector).
-     */
-    template <typename Tag>
-    [[nodiscard]] std::vector<typename Tag::type>& get() {
-        static_assert(has_tag_v<Tag>);
-        static_assert(!detail::has_num_instances_v<Tag>);
-        if (m_frozen_count) {
-            throw_error("non-const get() called on frozen structure");
-        }
-        return std::get<tag_index_v<Tag>>(m_data);
     }
 
     /**
