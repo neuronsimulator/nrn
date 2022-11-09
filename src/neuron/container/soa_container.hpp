@@ -361,8 +361,6 @@ struct soa {
     inline void check_permutation_vector(Rng const& range);
     template <typename Permutation>
     inline void permute_zip(Permutation&& permutation);
-    inline void reverse();
-    inline void rotate(std::size_t i);
 
   private:
     [[nodiscard]] inline auto get_zip();
