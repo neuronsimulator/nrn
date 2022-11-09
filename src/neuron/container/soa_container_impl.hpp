@@ -71,25 +71,38 @@ void permute_zip_helper(Storage& storage,
         }(storage.template get_tag<Tags>()),
         ...);
 }
-}  // namespace detail
 
-/** @brief Create a zip view of all the data columns in the container that are
- *         not duplicated a number of times set at runtime.
+/** Check if the given range is a permutation of the first N integers.
  */
-template <typename Storage, typename... Tags>
-[[nodiscard]] inline auto soa<Storage, Tags...>::get_zip() {
-    using Tags_without_num_instances =
-        boost::mp11::mp_remove_if<boost::mp11::mp_list<Tags...>, detail::has_num_instances>;
-    return detail::get_zip_helper(*this, m_indices, Tags_without_num_instances{});
+template <typename Rng>
+void check_permutation_vector(Rng const& range, std::size_t size) {
+    if (ranges::size(range) != size) {
+        throw std::runtime_error("invalid permutation vector: wrong size");
+    }
+    std::vector<bool> seen(size, false);
+    for (auto val: range) {
+        if (!(val >= 0 && val < size)) {
+            throw std::runtime_error("invalid permutation vector: value out of range");
+        }
+        if (seen[val]) {
+            throw std::runtime_error("invalid permutation vector: repeated value " +
+                                     std::to_string(val));
+        }
+        seen[val] = true;
+    }
 }
 
-/** @brief Apply some transformation to all of the data columns at once.
+
+}  // namespace detail
+
+/** @brief Permute the SOA-format data using an arbitrary vector.
  */
 template <typename Storage, typename... Tags>
-template <typename Permutation>
-inline void soa<Storage, Tags...>::permute_zip(Permutation&& permutation) {
+template <typename Range>
+inline void soa<Storage, Tags...>::apply_reverse_permutation(Range permutation_vec) {
+    detail::check_permutation_vector(permutation_vec, size());
     if (m_frozen_count) {
-        throw_error("permute_zip() called on a frozen structure");
+        throw_error("apply_reverse_permutation() called on a frozen structure");
     }
     // uncontroversial that applying a permutation changes the underlying
     // storage organisation and potentially invalidates pointers. slightly
@@ -99,48 +112,19 @@ inline void soa<Storage, Tags...>::permute_zip(Permutation&& permutation) {
     // Apply `permutation` to the columns from tags that do define num_instances()
     using Tags_with_num_instances =
         boost::mp11::mp_copy_if<boost::mp11::mp_list<Tags...>, detail::has_num_instances>;
+    using Tags_without_num_instances =
+        boost::mp11::mp_remove_if<boost::mp11::mp_list<Tags...>, detail::has_num_instances>;
+    auto const permutation = [permutation_vec = std::move(permutation_vec)](auto& zip) mutable {
+        boost::algorithm::apply_reverse_permutation(zip, permutation_vec);
+    };
     // this will copy `permutation` before invoking it, so it is safe to invoke
     // it multiple times
     detail::permute_zip_helper(*this, permutation, Tags_with_num_instances{});
-    auto zip = get_zip();  // without tags that define num_instances()
-    permutation(zip);      // cannot safely call `permutation` after this
+    auto zip = detail::get_zip_helper(*this, m_indices, Tags_without_num_instances{});
+    permutation(zip);  // cannot safely call `permutation` after this
     std::size_t const my_size{size()};
     for (auto i = 0ul; i < my_size; ++i) {
         m_indices[i].set_current_row(i);
-    }
-}
-
-/** @brief Permute the SOA-format data using an arbitrary vector.
- */
-template <typename Storage, typename... Tags>
-template <typename Range>
-inline void soa<Storage, Tags...>::apply_reverse_permutation(Range permutation) {
-    check_permutation_vector(permutation);
-    permute_zip([permutation = std::move(permutation)](auto& zip) mutable {
-        boost::algorithm::apply_reverse_permutation(zip, permutation);
-    });
-}
-
-/** Check if the given range is a permutation of the first N integers.
- *  @todo Assert that the given range has an integral value type and that
- *  there is no overflow?
- */
-template <typename Storage, typename... Tags>
-template <typename Rng>
-inline void soa<Storage, Tags...>::check_permutation_vector(Rng const& range) {
-    if (ranges::size(range) != size()) {
-        throw std::runtime_error("invalid permutation vector: wrong size");
-    }
-    std::vector<bool> seen(ranges::size(range), false);
-    for (auto val: range) {
-        if (!(val >= 0 && val < seen.size())) {
-            throw std::runtime_error("invalid permutation vector: value out of range");
-        }
-        if (seen[val]) {
-            throw std::runtime_error("invalid permutation vector: repeated value " +
-                                     std::to_string(val));
-        }
-        seen[val] = true;
     }
 }
 }  // namespace neuron::container
