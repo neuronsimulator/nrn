@@ -161,6 +161,31 @@ def test_hocobj_getitem():
     assert h.test_hocobj_getitem_vref is None
 
 
+def test_array_dim_change():
+    # not really a datapointer test, but...
+    print("declare double array_dim_change[5][2]")
+    h("double array_dim_change[5][2]")
+    x2 = h.array_dim_change[3]
+    print("declare double array_dim_change[10]")
+    h("double array_dim_change[10]")
+    expect_err("print(x2[1])")
+
+    print("declare double array_dim_change[5][2]")
+    h("double array_dim_change[5][2]")
+    x2 = h.array_dim_change[4]
+    print("x2 is ", x2)
+    print("declare double array_dim_change[2][2]")
+    h("double array_dim_change[2][2]")
+    print("x2 is ", x2)
+    expect_err("print('x2[1] is ', x2[1])")
+    print("x2 is ", x2)
+    expect_err("x2[1] = 5.0")
+
+    del x2
+    locals()
+    print("leaving test_array_dim_change")
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_1()
@@ -169,4 +194,5 @@ if __name__ == "__main__":
     test_4()
     test_py2n_component()
     test_hocobj_getitem()
+    test_array_dim_change()
     h.topology()
