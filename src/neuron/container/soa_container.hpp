@@ -356,8 +356,6 @@ struct soa {
     // The following methods are defined in soa_container_impl.hpp because they
     // require Boost and range::v3 headers.
     template <typename Range>
-    inline void apply_permutation(Range permutation);
-    template <typename Range>
     inline void apply_reverse_permutation(Range permutation);
     template <typename Rng>
     inline void check_permutation_vector(Rng const& range);
