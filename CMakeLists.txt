@@ -66,6 +66,7 @@ option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
+option(NRN_ENABLE_TCMALLOC "Enable tcmalloc memory allocators" ${NRN_ENABLE_TCMALLOC_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 set(NRN_ENABLE_MODEL_TESTS
     "${NRN_ENABLE_MODEL_TESTS_DEFAULT}"
@@ -353,6 +354,13 @@ if(NRN_ENABLE_BACKTRACE)
   nrn_add_external_project(backward)
 else()
   set(NRN_USE_BACKWARD 0)
+endif()
+# =============================================================================
+# Enable backward
+# =============================================================================
+if(NRN_ENABLE_TCMALLOC)
+    find_library(TCMALLOC_LIBRARY tcmalloc REQUIRED)
+    message(STATUS "Building with tcmalloc support: ${TCMALLOC_LIBRARY}")
 endif()
 # =============================================================================
 # Enable Interviews
