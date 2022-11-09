@@ -339,9 +339,10 @@ void PortablePointer::set(void* address, int type, unsigned long s) {
 }
 PortablePointer::~PortablePointer() {}
 
-declareList(PPList, PortablePointer) implementList(PPList, PortablePointer)
+declareList(PPList, PortablePointer)
+implementList(PPList, PortablePointer)
 
-    class OcCheckpoint {
+class OcCheckpoint {
   public:
     OcCheckpoint();
     virtual ~OcCheckpoint();
