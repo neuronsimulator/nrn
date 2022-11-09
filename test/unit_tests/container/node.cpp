@@ -400,9 +400,6 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                     REQUIRE_NOTHROW(node.v() += 42.0);
                     REQUIRE_NOTHROW(node.set_v(node.v() + 42.0));
                 }
-                THEN("A non-const reference to the underlying storage cannot be obtained") {
-                    REQUIRE_THROWS(node_data.get<field::Voltage>());
-                }
                 THEN("A const reference to the underlying storage can be obtained") {
                     REQUIRE_NOTHROW(std::as_const(node_data).get<field::Voltage>());
                 }
