@@ -1,0 +1,46 @@
+// if a variable dimension is changed after a function is compiled,
+// then the function stack is not properly popped
+
+load_file("expect_err.hoc")
+
+a = 1
+double a[1][1][1]
+proc foo() {local i
+  for i= 1, 10000 {
+    a = i // a is a 3d array when compiled so pushes 3 0's on stack
+          // but if the variable a has fewer dimensions. e.g.1
+          // the every iteration does not pop two of the 0's and the
+          // stack grows til it overruns.
+  }
+}
+foo()
+
+double a[1]
+expect_err("foo()") // array dimension error instead of Stack too deep error 
+
+proc foo() {
+  a = 1 // compiled with a having dimension 1. So only one zero index pushed
+        // to determine pointer into array.
+}
+double a[1][1]
+expect_err("foo()") // bad stack access error
+// the "a = 1" statement pops two index values, the second is not a number.
+
+// allow legacy use of () in place of single index []
+objref vec
+vec = new Vector(5)
+x = vec.x(3)
+vec.x(3) = 25
+expect_err("vec.x = 3")
+expect_err("print vec.x")
+// but not for multiple indices
+objref m
+m = new Matrix(3, 4)
+m.x[1][2] = 5
+m.x[1][2] == 5
+// allowing legacy syntax because one ModelDB model uses it,
+m.x(1,2) = 8
+m.x(1,2) == 5
+expect_err("m.x = 1")
+expect_err("m.x(1,2,3) = 1")
+expect_err("m.x[1][2][3] = 1")

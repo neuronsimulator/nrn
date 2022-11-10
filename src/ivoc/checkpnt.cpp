@@ -203,13 +203,16 @@ static struct HocInst {
 
 #define VPfri void*
 declareTable(InstTable, VPfri, short)
-    implementTable(InstTable, VPfri, short) static InstTable* inst_table_;
+implementTable(InstTable, VPfri, short)
+static InstTable* inst_table_;
 
-declareTable(Symbols, Symbol*, int) implementTable(Symbols, Symbol*, int)
+declareTable(Symbols, Symbol*, int)
+implementTable(Symbols, Symbol*, int)
 
-    declareTable(Objects, Object*, int) implementTable(Objects, Object*, int)
+declareTable(Objects, Object*, int)
+implementTable(Objects, Object*, int)
 
-        class PortablePointer {
+class PortablePointer {
   public:
     PortablePointer();
     PortablePointer(void* address, int type, unsigned long size = 1);

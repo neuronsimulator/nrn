@@ -23,7 +23,6 @@
 #define pdata       _pdata
 #define prop        _prop
 #define nodecount   _nodecount
-#define pval        _pval
 #define id          _id
 
 #endif

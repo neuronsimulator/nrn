@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <InterViews/resource.h>
 #include <OS/string.h>
+#include "nrndae_c.h"
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "nrndaspk.h"
@@ -11,6 +12,8 @@
 #include "vrecitem.h"
 #include "membfunc.h"
 #include "nonvintblock.h"
+#include <utility>
+
 extern void setup_topology(), v_setup_vectors();
 extern void nrn_mul_capacity(NrnThread*, Memb_list*);
 extern void nrn_div_capacity(NrnThread*, Memb_list*);
@@ -24,7 +27,6 @@ extern void long_difus_solve(int, NrnThread*);
 extern Symlist* hoc_built_in_symlist;
 
 #include "spmatrix.h"
-extern void nrndae_dkmap(double**, double**);
 extern double* sp13mat;
 
 #if 1 || PARANEURON

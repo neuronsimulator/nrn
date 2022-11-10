@@ -824,12 +824,12 @@ void ShapeType::execute() {
 }
 
 
-// declareHandlerCallback(ShapeScene)
-// implementHandlerCallback(ShapeScene)
-declareRubberCallback(ShapeScene) implementRubberCallback(ShapeScene)
-    declareActionCallback(ShapeScene) implementActionCallback(ShapeScene)
+declareRubberCallback(ShapeScene)
+implementRubberCallback(ShapeScene)
+declareActionCallback(ShapeScene)
+implementActionCallback(ShapeScene)
 
-        void ShapeScene::observe(SectionList* sl) {
+void ShapeScene::observe(SectionList* sl) {
     GlyphIndex i, cnt;
     hoc_Item* qsec;
     Section* sec;
@@ -1522,8 +1522,8 @@ void ShapeSection::set_range_variable(Symbol* sym) {
     bool any = false;
     if (nrn_exists(sym, section()->pnode[0])) {
         for (i = 0; i < n; ++i) {
-            pvar_[i] =
-                nrn_rangepointer(section(), sym, nrn_arc_position(section(), section()->pnode[i]));
+            pvar_[i] = static_cast<double*>(
+                nrn_rangepointer(section(), sym, nrn_arc_position(section(), section()->pnode[i])));
             old_[i] = NULL;
             if (pvar_[i]) {
                 any = true;

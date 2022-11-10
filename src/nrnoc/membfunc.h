@@ -1,6 +1,4 @@
-#ifndef nrn_memb_func_h
-#define nrn_memb_func_h
-
+#pragma once
 extern void hoc_register_prop_size(int type, int psize, int dpsize);
 
 #include "nrnoc_ml.h"
@@ -22,12 +20,18 @@ typedef void (*nrn_bamech_t)(Node*, double*, Datum*, Datum*, struct NrnThread*);
 #define NULL_STATE      (Pfri) 0
 #define NULL_INITIALIZE (Pfri) 0
 
-typedef struct Memb_func {
+struct Memb_func {
     Pvmp alloc;
     Pvmi current;
     Pvmi jacob;
     Pvmi state;
-    Pvmi initialize;
+    bool has_initialize() const {
+        return m_initialize;
+    }
+    void invoke_initialize(NrnThread* nt, Memb_list* ml, int type) const;
+    void set_initialize(Pvmi init) {
+        m_initialize = init;
+    }
     Pvmp destructor; /* only for point processes */
     Symbol* sym;
     nrn_ode_count_t ode_count;
@@ -46,7 +50,9 @@ typedef struct Memb_func {
     void* hoc_mech;
     void (*setdata_)(struct Prop*);
     int* dparam_semantics;  // for nrncore writing.
-} Memb_func;
+  private:
+    Pvmi m_initialize{};
+};
 
 
 #define IMEMFAST     -2
@@ -90,5 +96,3 @@ pointers which connect variables  from other mechanisms via the _ppval array. \
 */
 
 #define _AMBIGUOUS 5
-
-#endif /* nrn_memb_func_h */

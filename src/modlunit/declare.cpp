@@ -195,7 +195,7 @@ Symbol* basestate(Symbol* s) /* base state symbol for state''' or state0 */
     return base;
 }
 
-#if __TURBOC__ || SYSV || VMS || !defined(HAVE_INDEX) || defined(HAVE_STRINGS_H)
+#if SYSV || !defined(HAVE_INDEX) || defined(HAVE_STRINGS_H)
 #undef index
 #define index strchr
 #endif

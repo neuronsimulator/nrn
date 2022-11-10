@@ -530,7 +530,7 @@ void nrn_register_mech_common(const char** m,
     memb_func[type].jacob = jacob;
     memb_func[type].alloc = alloc;
     memb_func[type].state = stat;
-    memb_func[type].initialize = initialize;
+    memb_func[type].set_initialize(initialize);
     memb_func[type].destructor = nullptr;
     memb_func[type].vectorized = vectorized ? 1 : 0;
     memb_func[type].thread_size_ = vectorized ? (vectorized - 1) : 0;

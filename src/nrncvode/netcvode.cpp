@@ -35,6 +35,7 @@
 #include "ivocvect.h"
 #include "netcon.h"
 #include "netcvode.h"
+#include "nrn_ansi.h"
 #include "nrncore_write/utils/nrncore_utils.h"
 #include "nrniv_mf.h"
 #include "nrnste.h"
@@ -66,7 +67,6 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 extern void single_event_run();
 extern void setup_topology(), v_setup_vectors();
 extern int nrn_errno_check(int);
-extern void nrn_ba(NrnThread*, int);
 extern NetCvode* net_cvode_instance;
 extern cTemplate** nrn_pnt_template_;
 extern double t, dt;
@@ -431,7 +431,8 @@ struct InterThreadEvent {
 
 typedef std::vector<WatchCondition*> WatchList;
 declarePool(SelfEventPool, SelfEvent)
-    implementPool(SelfEventPool, SelfEvent) typedef std::vector<TQItem*> TQList;
+implementPool(SelfEventPool, SelfEvent)
+typedef std::vector<TQItem*> TQList;
 
 // allows marshalling of all items in the event queue that need to be
 // removed to avoid duplicates due to frecord_init after finitialize
@@ -722,8 +723,8 @@ static double nc_event(void* v) {
         if (!nrn_is_artificial_[type]) {
             hoc_execerror("Can only send fake self-events to ARTIFICIAL_CELLs", 0);
         }
-        void** pq = (void**) (&pnt->prop->dparam[nrn_artcell_qindex_[type]]._pvoid);
-        net_send(pq, d->weight_, pnt, td, flag);
+        auto* pq = pnt->prop->dparam + nrn_artcell_qindex_[type];
+        nrn_net_send(pq, d->weight_, pnt, td, flag);
     } else {
         net_cvode_instance->event(td, d, PP2NT(d->target_));
     }
@@ -812,7 +813,7 @@ static void steer_val(void* v) {
         d->src_->use_min_delay_ = 0;
     } else if (strcmp(s->name, "weight") == 0) {
         int index = 0;
-        if (hoc_stacktype() == NUMBER) {
+        if (hoc_stack_type_is_ndim()) {
             s->arayinfo->sub[0] = d->cnt_;
             index = hoc_araypt(s, SYMBOL);
         }
@@ -1204,7 +1205,6 @@ NetCvode::NetCvode(bool single) {
     condition_order_ = 1;
     null_event_ = new DiscreteEvent();
     eps_ = 100. * UNIT_ROUNDOFF;
-    hdp_ = nil;
     print_event_ = 0;
     nrn_use_fifo_queue_ = false;
     single_ = single;
@@ -1242,9 +1242,6 @@ NetCvode::~NetCvode() {
     MUTDESTRUCT
     if (net_cvode_instance == (NetCvode*) this) {
         net_cvode_instance = nil;
-    }
-    if (hdp_) {
-        hdp_ = nil;
     }
     delete_list();
     p_construct(0);
@@ -1610,10 +1607,6 @@ bool NetCvode::init_global() {
     structure_change_cnt_ = structure_change_cnt;
     matrix_change_cnt_ = -1;
     playrec_change_cnt_ = 0;
-    if (hdp_) {
-        delete hdp_;
-        hdp_ = nil;
-    }
     NrnThread* _nt;
     if (single_) {
         if (!gcv_ || gcv_->nctd_ != nrn_nthread) {
@@ -1676,12 +1669,8 @@ bool NetCvode::init_global() {
                     Memb_list* ml = tml->ml;
                     int j;
                     for (j = 0; j < ml->nodecount; ++j) {
-                        Point_process* pp;
-                        if (mf->hoc_mech) {
-                            pp = (Point_process*) ml->prop[j]->dparam[1]._pvoid;
-                        } else {
-                            pp = (Point_process*) ml->pdata[j][1]._pvoid;
-                        }
+                        auto& datum = mf->hoc_mech ? ml->prop[j]->dparam[1] : ml->pdata[j][1];
+                        auto* pp = datum.get<Point_process*>();
                         pp->nvi_ = gcv_;
                     }
                 }
@@ -1857,12 +1846,8 @@ bool NetCvode::init_global() {
                     Memb_list* ml = tml->ml;
                     int j;
                     for (j = 0; j < ml->nodecount; ++j) {
-                        Point_process* pp;
-                        if (mf->hoc_mech) {
-                            pp = (Point_process*) ml->prop[j]->dparam[1]._pvoid;
-                        } else {
-                            pp = (Point_process*) ml->pdata[j][1]._pvoid;
-                        }
+                        auto& datum = mf->hoc_mech ? ml->prop[j]->dparam[1] : ml->pdata[j][1];
+                        auto* pp = datum.get<Point_process*>();
                         if (nrn_is_artificial_[i] == 0) {
                             int inode = ml->nodelist[j]->v_node_index;
                             pp->nvi_ = d.lcv_ + cellnum[inode];
@@ -2310,11 +2295,11 @@ int Cvode::handle_step(NetCvode* ns, double te) {
     return err;
 }
 
-void net_move(void** v, Point_process* pnt, double tt) {
-    if (!(*v)) {
+void nrn_net_move(Datum* v, Point_process* pnt, double tt) {
+    auto* const q = v->get<TQItem*>();
+    if (!q) {
         hoc_execerror("No event with flag=1 for net_move in ", hoc_object_name(pnt->ob));
     }
-    TQItem* q = (TQItem*) (*v);
     // printf("net_move tt=%g %s *v=%p\n", tt, hoc_object_name(pnt->ob), *v);
     if (tt < PP2t(pnt)) {
         SelfEvent* se = (SelfEvent*) q->data_;
@@ -2327,14 +2312,14 @@ void net_move(void** v, Point_process* pnt, double tt) {
     net_cvode_instance->move_event(q, tt, PP2NT(pnt));
 }
 
-void artcell_net_move(void** v, Point_process* pnt, double tt) {
+void artcell_net_move(Datum* v, Point_process* pnt, double tt) {
     if (nrn_use_selfqueue_) {
-        if (!(*v)) {
+        auto* const q = v->get<TQItem*>();
+        if (!q) {
             hoc_execerror("No event with flag=1 for net_move in ", hoc_object_name(pnt->ob));
         }
         NrnThread* nt = PP2NT(pnt);
         NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
-        TQItem* q = (TQItem*) (*v);
         // printf("artcell_net_move t=%g qt_=%g tt=%g %s *v=%p\n", nt->_t, q->t_, tt,
         // hoc_object_name(pnt->ob), *v);
         if (tt < nt->_t) {
@@ -2352,7 +2337,7 @@ void artcell_net_move(void** v, Point_process* pnt, double tt) {
             se->deliver(tt, net_cvode_instance, nt);
         }
     } else {
-        net_move(v, pnt, tt);
+        nrn_net_move(v, pnt, tt);
     }
 }
 
@@ -2388,7 +2373,7 @@ void NetCvode::remove_event(TQItem* q, int tid) {
 
 // for threads, revised net_send to use absolute time (in the
 // mod file we add the thread time when we call it).
-void nrn_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
+void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, double flag) {
     STATISTICS(SelfEvent::selfevent_send_);
     NrnThread* nt = PP2NT(pnt);
     NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
@@ -2418,12 +2403,12 @@ void nrn_net_send(void** v, double* weight, Point_process* pnt, double td, doubl
     q = net_cvode_instance->event(td, se, nt);
 #endif
     if (flag == 1.0) {
-        *v = (void*) q;
+        *v = q;
     }
     // printf("net_send %g %s %g %p\n", td, hoc_object_name(pnt->ob), flag, *v);
 }
 
-void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
+void artcell_net_send(Datum* v, double* weight, Point_process* pnt, double td, double flag) {
     if (nrn_use_selfqueue_ && flag == 1.0) {
         STATISTICS(SelfEvent::selfevent_send_);
         NrnThread* nt = PP2NT(pnt);
@@ -2441,10 +2426,9 @@ void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, d
             se->pr(buf, td, net_cvode_instance);
             hoc_execerror("net_send delay < 0", 0);
         }
-        TQItem* q;
-        q = p.selfqueue_->insert(se);
+        TQItem* q = p.selfqueue_->insert(se);
         q->t_ = td;
-        *v = (void*) q;
+        *v = q;
         // printf("artcell_net_send %g %s %g %p\n", td, hoc_object_name(pnt->ob), flag, v);
         if (q->t_ < p.immediate_deliver_) {
             // printf("artcell_net_send_  %s immediate %g %g %g\n", hoc_object_name(pnt->ob),
@@ -2454,17 +2438,17 @@ void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, d
             se->deliver(td, net_cvode_instance, nt);
         }
     } else {
-        net_send(v, weight, pnt, td, flag);
+        nrn_net_send(v, weight, pnt, td, flag);
     }
 }
 
 // Deprecated overloads for backwards compatibility
-void artcell_net_send(void** v, double* weight, void* pnt, double td, double flag) {
-    artcell_net_send(v, weight, static_cast<Point_process*>(pnt), td, flag);
+void artcell_net_send(void* v, double* weight, Point_process* pnt, double td, double flag) {
+    artcell_net_send(static_cast<Datum*>(v), weight, pnt, td, flag);
 }
 
-void nrn_net_send(void** v, double* weight, void* pnt, double td, double flag) {
-    nrn_net_send(v, weight, static_cast<Point_process*>(pnt), td, flag);
+void nrn_net_send(void* v, double* weight, Point_process* pnt, double td, double flag) {
+    nrn_net_send(static_cast<Datum*>(v), weight, pnt, td, flag);
 }
 
 void net_event(Point_process* pnt, double time) {
@@ -2495,25 +2479,28 @@ void _nrn_watch_activate(Datum* d,
                          Point_process* pnt,
                          int r,
                          double flag) {
-    if (!d[i]._pvoid || !d[0]._pvoid) {
+    auto* wl = d->get<WatchList*>();
+    auto* wc = d[i].get<WatchCondition*>();
+    if (!wl || !wc) {
         // When c is NULL, i.e. called from CoreNEURON,
         // we never get here because we made sure
         // _nrn_watch_allocated for this has been called earlier from
         // within the translated mod file.
-        _nrn_watch_allocate(d, c, i, pnt, flag);  // d[0]._pvoid and d[i]._pvoid exist
+        _nrn_watch_allocate(d, c, i, pnt, flag);
+        // d[0] and d[i] have now been updated
+        wl = d->get<WatchList*>();
+        wc = d[i].get<WatchCondition*>();
     }
-    WatchList* wl = (WatchList*) d->_pvoid;
     if (r == 0) {
         for (auto wc1: *wl) {
             wc1->Remove();
             if (wc1->qthresh_) {  // is it on the queue?
                 net_cvode_instance->remove_event(wc1->qthresh_, PP2NT(pnt)->id);
-                wc1->qthresh_ = nil;
+                wc1->qthresh_ = nullptr;
             }
         }
         wl->clear();
     }
-    WatchCondition* wc = (WatchCondition*) d[i]._pvoid;
     wl->push_back(wc);
     wc->activate(flag);  // nr_flag_ (NetReceive flag) not flag_ for above threshold.
 }
@@ -2581,14 +2568,14 @@ void _nrn_watch_allocate(Datum* d,
                          int i,
                          Point_process* pnt,
                          double flag) {
-    if (!d->_pvoid) {
-        d->_pvoid = (void*) new WatchList();
+    if (!d->get<WatchList*>()) {
+        *d = new WatchList;
     }
-    if (!d[i]._pvoid) {
+    if (!d[i].get<WatchCondition*>()) {
         WatchCondition* wc = new WatchCondition(pnt, c);
         wc->c_ = c;
         wc->nrflag_ = flag;
-        d[i]._pvoid = (void*) wc;
+        d[i] = wc;
         // Simplify transfer to CoreNEURON
         // To avoid searching for the beginning of _watch_array after
         // transfer to CoreNEURON, compute the offset with respect to
@@ -2618,15 +2605,15 @@ void nrn_watch_clear() {
 void _nrn_free_watch(Datum* d, int offset, int n) {
     int i;
     int nn = offset + n;
-    if (d[offset]._pvoid) {
-        WatchList* wl = (WatchList*) d[offset]._pvoid;
-        delete wl;
+    if (auto* d_offset = d[offset].get<WatchList*>(); d_offset) {
+        delete d_offset;
+        d[offset] = nullptr;
     }
     for (i = offset + 1; i < nn; ++i) {
-        if (d[i]._pvoid) {
-            WatchCondition* wc = (WatchCondition*) d[i]._pvoid;
+        if (auto* wc = d[i].get<WatchCondition*>(); wc) {
             wc->Remove();
             delete wc;
+            d[i] = nullptr;
         }
     }
 }
@@ -3002,7 +2989,7 @@ void NetCvode::init_events() {
     }
     ITERATE(q, nclist) {
         Object* obj = OBJ(q);
-        NetCon* d = (NetCon*) obj->u.this_pointer;
+        auto* d = static_cast<NetCon*>(obj->u.this_pointer);
         if (d->target_) {
             int type = d->target_->prop->_type;
             if (pnt_receive_init[type]) {
@@ -3181,11 +3168,11 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     assert(PP2NT(target_) == nt);
     Cvode* cv = (Cvode*) target_->nvi_;
     if (nrn_use_selfqueue_ && nrn_is_artificial_[type]) {
-        TQItem** pq = (TQItem**) (&target_->prop->dparam[nrn_artcell_qindex_[type]]._pvoid);
+        auto& datum = target_->prop->dparam[nrn_artcell_qindex_[type]];
         TQItem* q;
-        while ((q = *(pq)) != nil && q->t_ < tt) {
+        while ((q = datum.get<TQItem*>()) && q->t_ < tt) {
             double t1 = q->t_;
-            SelfEvent* se = (SelfEvent*) ns->p[nt->id].selfqueue_->remove(q);
+            auto* const se = static_cast<SelfEvent*>(ns->p[nt->id].selfqueue_->remove(q));
             // printf("%d NetCon::deliver %g , earlier selfevent at %g\n", nrnmpi_myid, tt, q->t_);
             se->deliver(t1, ns, nt);
         }
@@ -3403,7 +3390,7 @@ DiscreteEvent* SelfEvent::savestate_save() {
 
 void SelfEvent::savestate_restore(double tt, NetCvode* nc) {
     //	pr("savestate_restore", tt, nc);
-    net_send(movable_, weight_, target_, tt, flag_);
+    nrn_net_send(movable_, weight_, target_, tt, flag_);
 }
 
 DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
@@ -3423,10 +3410,7 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
         se->weight_ = nc->weight_;
     }
     se->flag_ = flag;
-    se->movable_ = nil;
-    if (moff >= 0) {
-        se->movable_ = &(se->target_->prop->dparam[moff]._pvoid);
-    }
+    se->movable_ = (moff >= 0) ? (se->target_->prop->dparam + moff) : nullptr;
     return se;
 }
 
@@ -3460,12 +3444,7 @@ void SelfEvent::savestate_free() {
 
 void SelfEvent::savestate_write(FILE* f) {
     fprintf(f, "%d\n", SelfEventType);
-    int moff = -1;
-    if (movable_) {
-        moff = (Datum*) (movable_) -target_->prop->dparam;
-        assert(movable_ == &(target_->prop->dparam[moff]._pvoid));
-    }
-
+    int const moff = movable_ ? (movable_ - target_->prop->dparam) : -1;
     int ncindex = -1;
     // find the NetCon index for weight_
     if (weight_) {
@@ -3491,10 +3470,10 @@ void SelfEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     if (nrn_use_selfqueue_ && nrn_is_artificial_[type]) {  // handle possible earlier flag=1 self
                                                            // event
         if (flag_ == 1.0) {
-            *movable_ = 0;
+            *movable_ = nullptr;
         }
         TQItem* q;
-        while ((q = (TQItem*) (*movable_)) != 0 && q->t_ <= tt) {
+        while ((q = movable_->get<TQItem*>()) != 0 && q->t_ <= tt) {
             // printf("handle earlier %g selfqueue event from within %g SelfEvent::deliver\n",
             // q->t_, tt);
             double t1 = q->t_;
@@ -4128,7 +4107,9 @@ void NetCvode::fornetcon_prepare() {
         if (nrn_is_artificial_[type]) {
             Memb_list* m = memb_list + type;
             for (j = 0; j < m->nodecount; ++j) {
-                void** v = &(m->pdata[j][index]._pvoid);
+                // Save ForNetConsInfo* as void* to avoid needing to expose the
+                // definition of ForNetConsInfo to translated MOD file code
+                void** v = &(m->pdata[j][index].literal_value<void*>());
                 _nrn_free_fornetcon(v);
                 ForNetConsInfo* fnc = new ForNetConsInfo;
                 *v = fnc;
@@ -4139,7 +4120,7 @@ void NetCvode::fornetcon_prepare() {
             FOR_THREADS(nt) for (tml = nt->tml; tml; tml = tml->next) if (tml->index == type) {
                 Memb_list* m = tml->ml;
                 for (j = 0; j < m->nodecount; ++j) {
-                    void** v = &(m->pdata[j][index]._pvoid);
+                    void** v = &(m->pdata[j][index].literal_value<void*>());
                     _nrn_free_fornetcon(v);
                     ForNetConsInfo* fnc = new ForNetConsInfo;
                     *v = fnc;
@@ -4159,8 +4140,7 @@ void NetCvode::fornetcon_prepare() {
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
                 if (pnt && t2i[pnt->prop->_type] > -1) {
-                    ForNetConsInfo* fnc =
-                        (ForNetConsInfo*) pnt->prop->dparam[t2i[pnt->prop->_type]]._pvoid;
+                    auto* fnc = pnt->prop->dparam[t2i[pnt->prop->_type]].get<ForNetConsInfo*>();
                     assert(fnc);
                     fnc->size += 1;
                 }
@@ -4174,7 +4154,7 @@ void NetCvode::fornetcon_prepare() {
         if (nrn_is_artificial_[type]) {
             Memb_list* m = memb_list + type;
             for (j = 0; j < m->nodecount; ++j) {
-                ForNetConsInfo* fnc = (ForNetConsInfo*) m->pdata[j][index]._pvoid;
+                auto* fnc = static_cast<ForNetConsInfo*>(m->pdata[j][index].get<void*>());
                 if (fnc->size > 0) {
                     fnc->argslist = new double*[fnc->size];
                     fnc->size = 0;
@@ -4186,7 +4166,7 @@ void NetCvode::fornetcon_prepare() {
                 if (tml->index == nrn_fornetcon_type_[i]) {
                     Memb_list* m = tml->ml;
                     for (j = 0; j < m->nodecount; ++j) {
-                        ForNetConsInfo* fnc = (ForNetConsInfo*) m->pdata[j][index]._pvoid;
+                        auto* fnc = static_cast<ForNetConsInfo*>(m->pdata[j][index].get<void*>());
                         if (fnc->size > 0) {
                             fnc->argslist = new double*[fnc->size];
                             fnc->size = 0;
@@ -4203,8 +4183,8 @@ void NetCvode::fornetcon_prepare() {
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
                 if (pnt && t2i[pnt->prop->_type] > -1) {
-                    ForNetConsInfo* fnc =
-                        (ForNetConsInfo*) pnt->prop->dparam[t2i[pnt->prop->_type]]._pvoid;
+                    auto* fnc = static_cast<ForNetConsInfo*>(
+                        pnt->prop->dparam[t2i[pnt->prop->_type]].get<void*>());
                     fnc->argslist[fnc->size] = d1->weight_;
                     fnc->size += 1;
                 }
@@ -4214,14 +4194,14 @@ void NetCvode::fornetcon_prepare() {
 }
 
 int _nrn_netcon_args(void* v, double*** argslist) {
-    ForNetConsInfo* fnc = (ForNetConsInfo*) v;
+    auto* fnc = static_cast<ForNetConsInfo*>(v);
     assert(fnc);
     *argslist = fnc->argslist;
     return fnc->size;
 }
 
 void _nrn_free_fornetcon(void** v) {
-    ForNetConsInfo* fnc = (ForNetConsInfo*) (*v);
+    auto* fnc = static_cast<ForNetConsInfo*>(*v);
     if (fnc) {
         if (fnc->argslist) {
             delete[] fnc->argslist;
@@ -4279,27 +4259,26 @@ int NetCvode::cellindex() {
 }
 
 void NetCvode::states() {
-    int i, j, k, n;
     Vect* v = vector_arg(1);
     if (!cvode_active_) {
         v->resize(0);
         return;
     }
-    double* vp;
-    n = 0;
+    int n{};
     if (gcv_) {
         n += gcv_->neq_;
     } else {
+        int i, j;
         lvardtloop(i, j) {
             n += p[i].lcv_[j].neq_;
         }
     }
     v->resize(n);
-    vp = vector_vec(v);
-    k = 0;
+    double* vp{vector_vec(v)};
     if (gcv_) {
         gcv_->states(vp);
     } else {
+        int i{}, j{}, k{};
         lvardtloop(i, j) {
             p[i].lcv_[j].states(vp + k);
             k += p[i].lcv_[j].neq_;
@@ -4453,84 +4432,89 @@ void NetCvode::acor() {
     }
 }
 
-const char* NetCvode::statename(int is, int style) {
-    int i, it, j, n, neq;
-    if (!cvode_active_) {
-        hoc_execerror("Cvode is not active", 0);
-    }
-    double** pv;
-    n = 0;
+/** @brief Create a lookup table for variable names.
+ *
+ *  This is only created on-demand because it involves building a lookup table
+ *  of pointers, which are prone to being invalidated. In nrn#1929 this may be
+ *  superseded by the output operator of data_handle<T>.
+ */
+HocDataPaths NetCvode::create_hdp(int style) {
+    int n{};
     if (gcv_) {
         n += gcv_->neq_;
     } else {
+        int i, j;
         lvardtloop(i, j) {
             n += p[i].lcv_[j].neq_;
         }
     }
-    if (is >= n) {
-        hoc_execerror("Cvode::statename argument out of range", 0);
-    }
-    if (!hdp_ || hdp_->style() != style) {
-        if (hdp_) {
-            delete hdp_;
-        }
-        hdp_ = new HocDataPaths(2 * n, style);
-        if (gcv_) {
-            for (it = 0; it < nrn_nthread; ++it) {
-                CvodeThreadData& z = gcv_->ctd_[it];
-                neq = z.nvsize_;
-                pv = z.pv_;
-                for (j = 0; j < z.nonvint_extra_offset_; ++j) {
-                    hdp_->append(pv[j]);
-                }
-            }
-        } else {
-            lvardtloop(it, i) {
-                neq = p[it].lcv_[i].ctd_[0].nvsize_;
-                pv = p[it].lcv_[i].ctd_[0].pv_;
-                for (j = 0; j < neq; ++j) {
-                    hdp_->append(pv[j]);
-                }
-            }
-        }
-        hdp_->search();
-    }
-    j = 0;
+    HocDataPaths hdp{2 * n, style};
     if (gcv_) {
-        for (it = 0; it < nrn_nthread; ++it) {
+        for (int it = 0; it < nrn_nthread; ++it) {
+            CvodeThreadData& z = gcv_->ctd_[it];
+            for (int j = 0; j < z.nonvint_extra_offset_; ++j) {
+                hdp.append(static_cast<double*>(z.pv_[j]));
+            }
+        }
+    } else {
+        int i, it;
+        lvardtloop(it, i) {
+            auto const neq = p[it].lcv_[i].ctd_[0].nvsize_;
+            auto& pv = p[it].lcv_[i].ctd_[0].pv_;
+            for (int j = 0; j < neq; ++j) {
+                hdp.append(static_cast<double*>(pv[j]));
+            }
+        }
+    }
+    hdp.search();
+    return hdp;
+}
+
+std::string NetCvode::statename(int is, int style) {
+    if (!cvode_active_) {
+        hoc_execerror("Cvode is not active", 0);
+    }
+    auto const n = [&]() {
+        int n{};
+        if (gcv_) {
+            n += gcv_->neq_;
+        } else {
+            int i, j;
+            lvardtloop(i, j) {
+                n += p[i].lcv_[j].neq_;
+            }
+        }
+        return n;
+    }();
+    if (is >= n) {
+        hoc_execerror("Cvode::statename argument out of range", nullptr);
+    }
+    auto const impl = [hdp = create_hdp(style), style, this](auto& handle) -> std::string {
+        auto* const raw_ptr = static_cast<double*>(handle);
+        if (style == 2) {
+            auto* sym = hdp.retrieve_sym(raw_ptr);
+            assert(sym);
+            return sym2name(sym);
+        } else {
+            auto* s = hdp.retrieve(raw_ptr);
+            return s ? s->string() : "unknown";
+        }
+    };
+    int j{};
+    if (gcv_) {
+        for (int it = 0; it < nrn_nthread; ++it) {
             CvodeThreadData& z = gcv_->ctd_[it];
             if (j + z.nvoffset_ + z.nvsize_ > is) {
-                if (style == 2) {
-                    Symbol* sym = hdp_->retrieve_sym(z.pv_[is - j]);
-                    assert(sym);
-                    return sym2name(sym);
-                } else {
-                    String* s = hdp_->retrieve(z.pv_[is - j]);
-                    if (s) {
-                        return s->string();
-                    } else {
-                        return "unknown";
-                    }
-                }
+                return impl(z.pv_[is - j]);
             }
             j += z.nvsize_;
         }
     } else {
+        int it, i;
         lvardtloop(it, i) {
             if (j + p[it].lcv_[i].neq_ > is) {
                 CvodeThreadData& z = p[it].lcv_[i].ctd_[0];
-                if (style == 2) {
-                    Symbol* sym = hdp_->retrieve_sym(z.pv_[is - j]);
-                    assert(sym);
-                    return sym2name(sym);
-                } else {
-                    String* s = hdp_->retrieve(z.pv_[is - j]);
-                    if (s) {
-                        return s->string();
-                    } else {
-                        return "unknown";
-                    }
-                }
+                return impl(z.pv_[is - j]);
             }
             j += p[it].lcv_[i].neq_;
         }
@@ -4755,7 +4739,7 @@ void NetCvode::presyn_disconnect(PreSyn* ps) {
     if (ps->thvar_) {
         --pst_cnt_;
         pst_->erase(ps->thvar_);
-        ps->thvar_ = nil;
+        ps->thvar_ = {};
     }
     if (gcv_) {
         for (int it = 0; it < gcv_->nctd_; ++it) {
@@ -4997,7 +4981,7 @@ void NetCvode::ps_thread_link(PreSyn* ps) {
         if (ps->osrc_) {
             ps->nt_ = PP2NT(ob2pntproc(ps->osrc_));
         } else if (ps->ssrc_) {
-            ps->nt_ = (NrnThread*) ps->ssrc_->prop->dparam[9]._pvoid;
+            ps->nt_ = ps->ssrc_->prop->dparam[9].get<NrnThread*>();
         }
     }
     if (!ps->nt_) {  // premature, reorder_secorder() not called yet
@@ -5066,14 +5050,14 @@ PreSyn::PreSyn(double* src, Object* osrc, Section* ssrc) {
     stmt_ = nil;
     gid_ = -1;
     nt_ = nil;
-    if (src) {
+    if (thvar_) {
         if (osrc) {
             nt_ = PP2NT(ob2pntproc(osrc));
         } else if (ssrc) {
-            nt_ = (NrnThread*) ssrc->prop->dparam[9]._pvoid;
+            nt_ = ssrc->prop->dparam[9].get<NrnThread*>();
         }
     }
-    if (osrc_ && !src) {
+    if (osrc_ && !thvar_) {
         nt_ = PP2NT(ob2pntproc(osrc));
     }
 #if 1 || USENCS || NRNMPI
@@ -5528,7 +5512,7 @@ void StateTransitionEvent::transition(int src,
     st.var2_ = var2;
     st.hc_ = std::move(hc);
     st.ste_ = this;
-    st.var1_is_time_ = (st.var1_ == &t);
+    st.var1_is_time_ = (static_cast<double*>(st.var1_) == &t);
 }
 
 void STETransition::activate() {
@@ -5545,7 +5529,7 @@ void STETransition::activate() {
 void STETransition::deactivate() {
     if (stec_->qthresh_) {  // is it on the queue
         net_cvode_instance->remove_event(stec_->qthresh_, stec_->thread()->id);
-        stec_->qthresh_ = NULL;
+        stec_->qthresh_ = nullptr;
     }
     stec_->Remove();
 }
@@ -5741,7 +5725,7 @@ static int trajec_buffered(NrnThread& nt,
         v->resize(bsize + cur_size);
         varrays[i_trajec] = vector_vec(v) + cur_size;  // begin filling here
     } else {
-        pvars[i_trajec] = pd;
+        pvars[i_trajec] = static_cast<double*>(pd);
     }
     vpr[i_pr] = pr;
     if (pd == &nt._t) {
@@ -6761,8 +6745,9 @@ void NetCvode::maxstate_analyze_1(int it, Cvode& cv, CvodeThreadData& z) {
     n = z.nvsize_;
     ms = cv.n_vector_data(cv.maxstate_, it);
     ma = cv.n_vector_data(cv.maxacor_, it);
+    auto const hdp = create_hdp(2);
     for (j = 0; j < n; ++j) {
-        sym = hdp_->retrieve_sym(z.pv_[j]);
+        sym = hdp.retrieve_sym(static_cast<double*>(z.pv_[j]));
         auto msti = mst_->find((void*) sym);
         MaxStateItem* msi;
         if (msti == mst_->end()) {
@@ -6829,8 +6814,8 @@ double NetCvode::maxstate_analyse(Symbol* sym, double* pamax) {
 void NetCvode::recalc_ptrs() {
 #if CACHEVEC
     // update PlayRecord pointers to v
-    int i, cnt = prl_->count();
-    for (i = 0; i < cnt; ++i) {
+    int cnt = prl_->count();
+    for (int i = 0; i < cnt; ++i) {
         PlayRecord* pr = prl_->item(i);
         if (pr->pd_) {
             pr->update_ptr(nrn_recalc_ptr(pr->pd_));

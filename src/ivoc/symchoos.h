@@ -50,41 +50,6 @@ class SymChooserAction: public Resource {
     virtual void execute(SymChooser*, bool accept);
 };
 
-#if defined(__STDC__) || defined(__ANSI_CPP__)
-#define SymChooserCallback(T)       T##_SymChooserCallback
-#define SymChooserMemberFunction(T) T##_SymChooserMemberFunction
-#else
-#define SymChooserCallback(T)       T /**/ _SymChooserCallback
-#define SymChooserMemberFunction(T) T /**/ _SymChooserMemberFunction
-#endif
-
-#define declareSymChooserCallback(T)                                   \
-    typedef void (T::*SymChooserMemberFunction(T))(SymChooser*, bool); \
-    class SymChooserCallback(T)                                        \
-        : public SymChooserAction {                                    \
-      public:                                                          \
-        SymChooserCallback(T)(T*, SymChooserMemberFunction(T));        \
-        virtual ~SymChooserCallback(T)();                              \
-                                                                       \
-        virtual void execute(SymChooser*, bool accept);                \
-                                                                       \
-      private:                                                         \
-        T* obj_;                                                       \
-        SymChooserMemberFunction(T) func_;                             \
-    };
-
-#define implementSymChooserCallback(T)                                                        \
-    SymChooserCallback(T)::SymChooserCallback(T)(T * obj, SymChooserMemberFunction(T) func) { \
-        obj_ = obj;                                                                           \
-        func_ = func;                                                                         \
-    }                                                                                         \
-                                                                                              \
-    SymChooserCallback(T)::~SymChooserCallback(T)() {}                                        \
-                                                                                              \
-    void SymChooserCallback(T)::execute(SymChooser* f, bool accept) {                         \
-        (obj_->*func_)(f, accept);                                                            \
-    }
-
 class SymChooser: public Dialog {
   public:
     SymChooser(SymDirectory*, WidgetKit*, Style*, SymChooserAction* = NULL, int nbrowser = 3);

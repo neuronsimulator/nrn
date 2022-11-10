@@ -118,15 +118,9 @@ extern "C" {
  *  to a float for single precision arithmetic.  Note that in C, single
  *  precision arithmetic is often slower than double precision.  Sparse
  *  internally refers to spREALs as RealNumbers.
- *
- *  Some C compilers, notably the old VMS compiler, do not handle the keyword
- *  "void" correctly.  If this is true for your compiler, remove the
- *  comment delimiters from the redefinition of void to int below.
  */
 
 #define  spREAL double
-/* #define  void    int   */
-
 
 
 
