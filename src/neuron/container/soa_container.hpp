@@ -547,6 +547,17 @@ struct soa {
         return std::get<tag_index_v<Tag>>(m_data).at(offset);
     }
 
+    /**
+     * @brief Get a handle to the given element of the column named by Tag.
+     */
+    template <typename Tag>
+    [[nodiscard]] data_handle<typename Tag::type> get_handle(
+        non_owning_identifier_without_container id) const {
+        static_assert(has_tag_v<Tag>);
+        static_assert(!detail::has_num_instances_v<Tag>);
+        return {std::move(id), std::get<tag_index_v<Tag>>(m_data)};
+    }
+
   private:
     // Helper that unifies different [non-]const 1/2-parameter versions of get_field_instance
     template <typename Tag, typename This>
@@ -591,18 +602,6 @@ struct soa {
     typename Tag::type const& get_field_instance(std::size_t field_index,
                                                  std::size_t offset) const {
         return get_field_instance_helper<Tag>(*this, field_index)[offset];
-    }
-
-    /**
-     * @brief Get the column container named by Tag.
-     * @todo Consider deprecating and removing this as it exposes details of the
-     *       underlying storage (e.g. which allocator is used for the vector).
-     */
-    template <typename Tag>
-    [[nodiscard]] std::vector<typename Tag::type> const& get() const {
-        static_assert(has_tag_v<Tag>);
-        static_assert(!detail::has_num_instances_v<Tag>);
-        return std::get<tag_index_v<Tag>>(m_data);
     }
 
     /**
@@ -657,6 +656,19 @@ struct soa {
     }
 
   public:
+    /**
+     * @brief Query whether the given pointer-to-vector is the one associated to Tag.
+     *
+     * This is used so that one can ask a data_handle<T> if it refers to a particular field in a
+     * particular container.
+     */
+    template <typename Tag>
+    [[nodiscard]] bool is_storage_pointer(std::vector<typename Tag::type> const* ptr) const {
+        static_assert(has_tag_v<Tag>);
+        static_assert(!detail::has_num_instances_v<Tag>);
+        return ptr == &std::get<tag_index_v<Tag>>(m_data);
+    }
+
     [[nodiscard]] std::optional<utils::storage_info> find_container_info(void const* cont) const {
         utils::storage_info info{};
         // FIXME: generate a proper tag type for the index column?
