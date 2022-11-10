@@ -106,7 +106,7 @@ void swap_all(Diff i, Diff n, T&& t, U&&... u) {
     static_assert(
         std::is_lvalue_reference_v<T>,
         "Argument of apply_reverse_permutation should be reference as the algorithm is in place.");
-    using std::swap;
+    using ::std::swap;
     using plain_T = typename std::remove_reference_t<std::remove_cv_t<T>>::value_type;
     if constexpr (std::is_arithmetic_v<plain_T> ||
                   std::is_same_v<plain_T, non_owning_identifier_without_container>) {
@@ -121,7 +121,7 @@ void swap_all(Diff i, Diff n, T&& t, U&&... u) {
 
 template <typename IndexType, typename... T>
 void apply_reverse_permutation(IndexType&& ind, T&&... items) {
-    using std::swap;
+    using ::std::swap;
     auto size = std::distance(std::begin(ind), std::end(ind));
     using Diff = decltype(size);
     for (Diff i = 0; i < size; i++) {
@@ -263,7 +263,7 @@ struct soa {
         if (i != old_size - 1) {
             // Swap positions `i` and `old_size - 1` in each vector
             for_all_vectors(*this, [i](auto const& tag, auto& vec) {
-                using std::swap;
+                using ::std::swap;
                 swap(vec[i], vec.back());
             });
             // Tell the new entry at `i` that its index is `i` now.
