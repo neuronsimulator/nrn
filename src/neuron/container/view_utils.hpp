@@ -103,13 +103,8 @@ struct handle_base {
      */
     template <typename Tag>
     [[nodiscard]] auto get_handle(std::size_t field_index) {
-        data_handle<typename Tag::type> const rval{
-            this->id(),
-            std::as_const(underlying_storage()).template get_field_instance<Tag>(field_index)};
-        assert(bool{rval});
-        assert(rval.refers_to_a_modern_data_structure());
-        // assert(rval.template refers_to<Tag>(derived().underlying_storage()));
-        return rval;
+        return underlying_storage().template get_field_instance_handle<Tag>(field_index,
+                                                                            this->id());
     }
     template <typename Tag>
     [[nodiscard]] auto& get() {
