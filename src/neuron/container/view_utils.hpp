@@ -90,12 +90,7 @@ struct handle_base {
      */
     template <typename Tag>
     [[nodiscard]] auto get_handle() {
-        auto const& container = std::as_const(underlying_storage()).template get<Tag>();
-        data_handle<typename Tag::type> const rval{this->id(), container};
-        assert(bool{rval});
-        assert(rval.refers_to_a_modern_data_structure());
-        assert(rval.template refers_to<Tag>(underlying_storage()));
-        return rval;
+        return underlying_storage().template get_handle<Tag>(this->id());
     }
 
     /**
@@ -103,7 +98,7 @@ struct handle_base {
      *        copy of a given (static) field.
      * @tparam Tag Tag type of the set of fields the from which the
      *             field_index-th one is being requested.
-     *
+
      * @todo Const cleanup as above for the zero-argument version.
      */
     template <typename Tag>
