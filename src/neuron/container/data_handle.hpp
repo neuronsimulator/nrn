@@ -104,9 +104,7 @@ struct data_handle {
         if (bool{m_offset} || m_offset.was_once_valid()) {
             // basically in modern mode (possibly the entry we refer to has
             // died)
-            auto* const m_container = container_ptr();
-            return m_container == &(container.template get<Tag>()) &&
-                   m_offset.current_row() < m_container->size();
+            return container.template is_storage_pointer<Tag>(container_ptr());
         } else {
             // raw-ptr mode or null
             return false;
