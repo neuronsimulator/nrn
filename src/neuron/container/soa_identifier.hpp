@@ -162,7 +162,6 @@ struct owning_identifier {
         : owning_identifier() {
         // The default constructor has finished, so *this is a valid object.
         auto tmp = storage.acquire_owning_identifier();
-        using std::swap;
         swap(*this, tmp);
     }
 
@@ -200,8 +199,7 @@ struct owning_identifier {
     }
 
     friend void swap(owning_identifier& first, owning_identifier& second) {
-        using std::swap;
-        swap(first.m_ptr, second.m_ptr);
+        std::swap(first.m_ptr, second.m_ptr);
     }
 
     friend std::ostream& operator<<(std::ostream& os, owning_identifier const& oi) {
