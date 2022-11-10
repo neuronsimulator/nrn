@@ -4,17 +4,18 @@ from neuron import h, gui
 
 h.load_file("chanbild.hoc")
 cb = h.ChannelBuild()
-cb.khh() # HH potassium channel
+cb.khh()  # HH potassium channel
 s = h.Section(name="soma")
-s.insert("khh") # exists in soma and has one state
+s.insert("khh")  # exists in soma and has one state
 # Generally one does not modify the name/structure of an inserted channel
 h.psection()
-cb.nahh() # now called nahh and has two states (HH sodium channel)
+cb.nahh()  # now called nahh and has two states (HH sodium channel)
 h.psection()
 
 # to cover the "shift" fragments. Need a POINT_PROCESS KSChan
-#copy from nrn/share/demo/singhhchan.hoc
-h('''
+# copy from nrn/share/demo/singhhchan.hoc
+h(
+    """
 {objref ks, ksvec, ksgate, ksstates, kstransitions, tobj}
 { ion_register("k", 1) }
 objref ks, ksvec, ksgate, ksstates, kstransitions, tobj
@@ -82,9 +83,10 @@ objref ks, ksvec, ksgate, ksstates, kstransitions, tobj
 }
 { ksstates.remove_all  kstransitions.remove_all }
 { ks.single(1) }
-''')
+"""
+)
 
-kchan = h.khh0(s(.5))
+kchan = h.khh0(s(0.5))
 h.psection()
 h.ks.single(0)
 h.psection()
