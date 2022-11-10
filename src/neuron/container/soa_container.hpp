@@ -488,7 +488,7 @@ struct soa {
         mark_as_unsorted_impl<true>();
         // Append to all of the vectors
         for_all_vectors(*this, [](auto const& tag, auto& vec) {
-            using Tag = std::decay_t<decltype(tag)>;
+            using Tag = ::std::decay_t<decltype(tag)>;
             if constexpr (detail::has_default_value_v<Tag>) {
                 vec.emplace_back(tag.default_value());
             } else {
