@@ -274,21 +274,27 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         auto& nodes = std::get<0>(nodes_and_voltages);
         auto& reference_voltages = std::get<1>(nodes_and_voltages);
         auto& node_data = neuron::model().node_data();
-        auto const& voltage_storage = std::as_const(node_data).get<field::Voltage>();
         // Flag this original order as "sorted" so that the tests that it is no
         // longer sorted after permutation are meaningful
         { auto token = node_data.get_sorted_token(); }
-        REQUIRE(nodes.size() == voltage_storage.size());
         auto const require_logical_match = [&]() {
             THEN("Check the logical voltages still match") {
                 REQUIRE(get_node_voltages(nodes) == reference_voltages);
             }
         };
+        auto const storage_match = [&]() {
+            for (auto i = 0; i < nodes.size(); ++i) {
+                if (node_data.get<field::Voltage>(i) != reference_voltages.at(i)) {
+                    return false;
+                }
+            }
+            return true;
+        };
         auto const require_logical_and_storage_match = [&]() {
             THEN("Check the logical voltages still match") {
                 REQUIRE(get_node_voltages(nodes) == reference_voltages);
                 AND_THEN("Check the underlying storage also matches") {
-                    REQUIRE(voltage_storage == reference_voltages);
+                    REQUIRE(storage_match());
                 }
             }
         };
@@ -296,7 +302,7 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             THEN("Check the logical voltages still match") {
                 REQUIRE(get_node_voltages(nodes) == reference_voltages);
                 AND_THEN("Check the underlying storage no longer matches") {
-                    REQUIRE_FALSE(voltage_storage == reference_voltages);
+                    REQUIRE_FALSE(storage_match());
                 }
                 AND_THEN("Check the container is not flagged as sorted") {
                     REQUIRE_FALSE(node_data.is_sorted());
@@ -399,9 +405,6 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                     REQUIRE_NOTHROW(node.v());
                     REQUIRE_NOTHROW(node.v() += 42.0);
                     REQUIRE_NOTHROW(node.set_v(node.v() + 42.0));
-                }
-                THEN("A const reference to the underlying storage can be obtained") {
-                    REQUIRE_NOTHROW(std::as_const(node_data).get<field::Voltage>());
                 }
                 THEN("The sorted-ness flag cannot be modified") {
                     REQUIRE_THROWS(node_data.mark_as_unsorted());
