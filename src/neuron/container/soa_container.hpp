@@ -304,7 +304,7 @@ struct soa {
         if constexpr (detail::has_num_instances_v<Tag>) {
             auto const num_instances = tag.num_instances();
             for (auto i = 0; i < num_instances; ++i) {
-                callable(tag, this_ref.template get_field_instance<Tag>(i));
+                callable(tag, get_field_instance_helper<Tag>(this_ref, i));
             }
         } else {
             callable(tag, std::get<tag_index_v<Tag>>(this_ref.m_data));
@@ -558,6 +558,18 @@ struct soa {
         return {std::move(id), std::get<tag_index_v<Tag>>(m_data)};
     }
 
+    /**
+     * @brief Get a handle to the given element of the field_index-th column named by Tag.
+     */
+    template <typename Tag>
+    [[nodiscard]] data_handle<typename Tag::type> get_field_instance_handle(
+        std::size_t field_index,
+        non_owning_identifier_without_container id) const {
+        static_assert(has_tag_v<Tag>);
+        static_assert(detail::has_num_instances_v<Tag>);
+        return {std::move(id), get_field_instance_helper<Tag>(*this, field_index)};
+    }
+
   private:
     // Helper that unifies different [non-]const 1/2-parameter versions of get_field_instance
     template <typename Tag, typename This>
@@ -571,22 +583,6 @@ struct soa {
     }
 
   public:
-    /**
-     * @brief Get the field_index-th instance of the column named by Tag.
-     */
-    template <typename Tag>
-    std::vector<typename Tag::type>& get_field_instance(std::size_t field_index) {
-        if (m_frozen_count) {
-            throw_error("non-const get_field_instance(index) called on frozen structure");
-        }
-        return get_field_instance_helper<Tag>(*this, field_index);
-    }
-
-    template <typename Tag>
-    std::vector<typename Tag::type> const& get_field_instance(std::size_t field_index) const {
-        return get_field_instance_helper<Tag>(*this, field_index);
-    }
-
     /**
      * @brief Get the offset-th element of the field_index-th instance of the column named by Tag.
      */

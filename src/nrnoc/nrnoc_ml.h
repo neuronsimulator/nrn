@@ -71,19 +71,12 @@ struct Memb_list {
     [[nodiscard]] std::vector<double*> data() {
         assert(m_storage);
         assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
-        std::vector<double*> ret{};
         auto const num_fields = m_storage->num_floating_point_fields();
-        ret.resize(num_fields);
-        // use const-qualified get_field_instance so that it's OK to call this
-        // method when the structure is frozen
-        auto const* const const_storage = m_storage;
+        std::vector<double*> ret(num_fields, nullptr);
         for (auto i = 0ul; i < num_fields; ++i) {
-            ret[i] = std::next(
-                const_cast<double*>(
-                    const_storage
-                        ->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(i)
-                        .data()),
-                m_storage_offset);
+            ret[i] =
+                &m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
+                    i, m_storage_offset);
         }
         return ret;
     }
@@ -130,14 +123,14 @@ struct Memb_list {
      */
     [[nodiscard]] std::ptrdiff_t legacy_index(double const* ptr) const {
         assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
+        auto const size = m_storage->size();
         auto const num_fields = m_storage->num_floating_point_fields();
         for (auto field = 0ul; field < num_fields; ++field) {
-            auto const* const const_storage = m_storage;
-            auto const& vec =
-                const_storage
-                    ->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(field);
-            auto const index = std::distance(vec.data(), ptr);
-            if (index >= 0 && index < vec.size()) {
+            auto const* const vec_data =
+                &m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
+                    field, 0);
+            auto const index = std::distance(vec_data, ptr);
+            if (index >= 0 && index < size) {
                 // ptr lives in the field-th data column
                 return (index - m_storage_offset) * num_fields + field;
             }
