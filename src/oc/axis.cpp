@@ -318,18 +318,6 @@ void hoc_axis(void) {
     double i, j, offset;
     char s[200];
     double x0, y0;
-#define Jaslove 0
-#if Jaslove
-    /* tick mark values are printed with the precision indicated in the call
-       to axis() from hoc.  For example, if x ticks is 10.2 then the number
-       of ticks (xinc) is 10, and the precision (xprec) is 2 decimal places.
-       The first Sprintf() below builds the precision for the second Sprintf(),
-       so in the above example values would essentially be output as
-       printf("%.2f",x), in which x is the real value of the tick mark.
-    */
-    char ss[6];
-    static double xprec = .1, yprec = .1;
-#endif /*Jaslove*/
     if (ifarg(6)) {
         xstart = *getarg(1);
         xstop = *getarg(2);
@@ -337,10 +325,6 @@ void hoc_axis(void) {
         ystart = *getarg(4);
         ystop = *getarg(5);
         yinc = *getarg(6);
-#if Jaslove
-        xprec = xinc - floor(xinc);
-        yprec = yinc - floor(yinc);
-#endif
         xinc = floor(xinc);
         yinc = floor(yinc);
     } else if (ifarg(4)) {
@@ -401,19 +385,12 @@ void hoc_axis(void) {
 #endif
 
 
-#if Jaslove
-        Sprintf(ss, "%%%.1ff", xprec);
-#endif
         for (x = xstart; x <= xstop + 1e-10; x = x + (xstop - xstart) / xinc) {
             i = xorg + xscale * x;
-#if Jaslove
-            Sprintf(s, ss, x);
-#else
             if (fabs(x) < 1e-10) {
                 x = 0.;
             }
             Sprintf(s, "%g", x);
-#endif
             offset = width * (int) strlen(s) / 2;
             if (i == x0 && y0 != YORG)
                 offset = -width / 2;
@@ -427,18 +404,11 @@ void hoc_axis(void) {
             plprint(s);
         }
 
-#if Jaslove
-        Sprintf(ss, "%%%.1ff", yprec);
-#endif
         for (y = ystart; y <= ystop + 1e-10; y = y + (ystop - ystart) / yinc) {
-#if Jaslove
-            Sprintf(s, ss, y);
-#else
             if (fabs(y) < 1e-10) {
                 y = 0.;
             }
             Sprintf(s, "%g", y);
-#endif
             offset = width * (int) strlen(s) + width;
             j = yorg + yscale * y;
             if (j == y0 && x0 != XORG)

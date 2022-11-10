@@ -75,7 +75,6 @@ static struct { /* Keywords */
                 {"forall", FORALL},
                 {"ifsec", IFSEC},
                 {"forsec", FORSEC},
-#if OOP
                 {"begintemplate", BEGINTEMPLATE},
                 {"endtemplate", ENDTEMPLATE},
                 {"objectvar", OBJVARDECL},
@@ -83,8 +82,7 @@ static struct { /* Keywords */
                 {"public", PUBLICDECL},
                 {"external", EXTERNALDECL},
                 {"new", NEW},
-#endif
-                {0, 0}};
+                {nullptr, 0}};
 static struct { /* Constants */
     const char* name;
     double cval;
@@ -93,7 +91,7 @@ static struct { /* Constants */
               {"GAMMA", 0.57721566490153286060}, /* Euler */
               {"DEG", 57.29577951308232087680},  /* deg/radian */
               {"PHI", 1.61803398874989484820},   /* golden ratio */
-              {0, 0}};
+              {nullptr, 0}};
 
 /* Nov, 2017, from https://physics.nist.gov/cuu/Constants/index.html */
 /* also see FARADAY and gasconstant in ../nrnoc/eion.c */
@@ -344,7 +342,6 @@ void hoc_init(void) /* install constants and built-ins table */
     /* initialize pointers ( why doesn't Vax do this?) */
     hoc_access = (int*) 0;
     spinit();
-#if OOP
     hoc_class_registration();
     hoc_built_in_symlist = symlist;
     symlist = (Symlist*) 0;
@@ -352,7 +349,6 @@ void hoc_init(void) /* install constants and built-ins table */
     hoc_top_level_symlist = symlist = (Symlist*) emalloc(sizeof(Symlist));
     symlist->first = symlist->last = (Symbol*) 0;
     hoc_install_hoc_obj();
-#endif
 }
 
 void hoc_unix_mac_pc(void) {

@@ -17,10 +17,6 @@
 #include "ocmisc.h"
 #include "nrnmpi.h"
 #include "nrnfilewrap.h"
-#if defined(__GO32__)
-#include <dos.h>
-#include <go32.h>
-#endif
 #include "../nrniv/backtrace_utils.h"
 
 #include <condition_variable>
@@ -193,7 +189,7 @@ int lineno;
 #include <execinfo.h>
 #endif
 #include <signal.h>
-int intset; /* safer interrupt handling */
+int hoc_intset; /* safer interrupt handling */
 int indef;
 const char* infile; /* input file name */
 extern size_t hoc_xopen_file_size_;
@@ -204,7 +200,7 @@ static int c = '\n'; /* global for use by warning() */
 
 #if defined(WIN32) || MAC
 void set_intset() {
-    intset++;
+    hoc_intset++;
 }
 #endif
 #ifdef WIN32
@@ -545,14 +541,8 @@ void arayinstal(void) /* allocate storage for arrays */
 {
     int i, nsub;
     Symbol* sp;
-#if defined(__TURBOC__)
-    Inst* pcc; /* sometimes pop messes up pc */
-#endif
 
     nsub = (pc++)->i;
-#if defined(__TURBOC__)
-    pcc = pc;
-#endif
     sp = spop();
 
     hoc_freearay(sp);
@@ -565,9 +555,6 @@ void arayinstal(void) /* allocate storage for arrays */
         hoc_malchk();
         hoc_execerror("", (char*) 0);
     }
-#if defined(__TURBOC__)
-    pc = pcc;
-#endif
 }
 
 int hoc_arayinfo_install(Symbol* sp, int nsub) {
@@ -676,6 +663,21 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     if (hoc_fin && hoc_pipeflag == 0 && (!nrn_fw_eq(hoc_fin, stdin) || !nrn_istty_)) {
         IGNORE(nrn_fw_fseek(hoc_fin, 0L, 2)); /* flush rest of file */
     }
+
+    // If the exception is due to a multiple ^C interrupt, then onintr
+    // will not exit normally (because of the throw below) and the signal
+    // would remain in a SIG_BLOCK state.
+    // It is not clear to me if this would be better done in every catch.
+#if HAVE_SIGPROCMASK
+    if (hoc_intset > 1) {
+        sigset_t set;
+        sigemptyset(&set);
+        sigaddset(&set, SIGINT);
+        sigprocmask(SIG_UNBLOCK, &set, NULL);
+    }
+#endif  // HAVE_SIGPROCMASK
+
+    hoc_intset = 0;
     hoc_oop_initaftererror();
     throw std::runtime_error("hoc_execerror");
 }
@@ -689,7 +691,7 @@ RETSIGTYPE onintr(int sig) /* catch interrupt */
 {
     /*ARGSUSED*/
     stoprun = 1;
-    if (intset++)
+    if (hoc_intset++)
         execerror("interrupted", (char*) 0);
     IGNORE(signal(SIGINT, onintr));
 }
@@ -1512,9 +1514,6 @@ int hoc_yyparse(void) {
     return i;
 }
 
-#if defined(__GO32__)
-#define INTERVIEWS 1
-#endif
 #ifdef WIN32
 #define INTERVIEWS 1
 #endif
@@ -1762,9 +1761,6 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
                 extern int hoc_notify_stop;
                 return EOF;
             }
-#if defined(__GO32__)
-            hoc_check_intupt(0);
-#endif
             n = strlen(line);
             for (int i = 0; i < n; ++i) {
                 if (!isascii(line[i])) {
@@ -1834,13 +1830,3 @@ void hoc_help(void) {
     }
     ctp = cbuf + strlen(cbuf) - 1;
 }
-
-#if defined(__GO32__)
-void hoc_check_intupt(int intupt) {
-    if (_go32_was_ctrl_break_hit()) {
-        if (intupt) {
-            execerror("interrupted", (char*) 0);
-        }
-    }
-}
-#endif
