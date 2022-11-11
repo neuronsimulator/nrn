@@ -26,3 +26,10 @@ jobs:
       - name: Check formatting
         working-directory: ${{runner.workspace}}/nrn
         run: external/coding-conventions/bin/format -v --dry-run
+      - name: Test delete releases
+        uses: alkino/delete-pypi-version@v1
+        with:
+          user: alkino
+          package: NEURON-nightly
+          days: 3
+          password: foobar
