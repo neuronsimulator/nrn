@@ -153,7 +153,6 @@ static int tqitem_index;
 static int watch_index;
 static int cvode_index;
 static List* ion_synonym;
-extern int singlechan_;
 int debugging_;
 int net_receive_;
 int net_send_seen_;
@@ -1022,10 +1021,6 @@ static void _constructor(Prop* _prop) {\n\
         }
         Lappendstr(defs_list, "{0, 0}\n};\n");
     }
-    if (singlechan_) {
-        sprintf(buf, "static _singlechan_declare%d();\n", singlechan_);
-        Lappendstr(defs_list, buf);
-    }
 
     if (net_send_seen_) {
         if (!net_receive_) {
@@ -1198,10 +1193,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             Lappendstr(defs_list,
                        "\
 	hoc_register_cvode(_mechtype, _ode_count, 0, 0, 0);\n");
-        }
-        if (singlechan_) {
-            sprintf(buf, "hoc_reg_singlechan(_mechtype, _singlechan_declare%d);\n", singlechan_);
-            Lappendstr(defs_list, buf);
         }
         if (artificial_cell) {
             if (brkpnt_exists || !net_receive_ || nrnpointers->next != nrnpointers ||
