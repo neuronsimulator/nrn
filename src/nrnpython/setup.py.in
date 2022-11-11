@@ -143,7 +143,8 @@ libs = [@BUILD_NRNPYTHON_DYNAMIC_TRUE@nrnpython_pyver10,
 if "@IVHINES@" != "":
     libs.append("@IVHINES@")
 
-extra_compile_args = [@NRN_COMPILE_FLAGS_COMMA_SEPARATED_STRINGS@]
+extra_compile_args = ["@CMAKE_CXX17_STANDARD_COMPILE_OPTION@"]
+extra_compile_args += [@NRN_COMPILE_FLAGS_COMMA_SEPARATED_STRINGS@]
 
 if using_pgi:
   extra_link_args.append(pgi_compiler_flags)

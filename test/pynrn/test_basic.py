@@ -324,8 +324,6 @@ def test_deleted_sec():
     del ic, imp, dend
     locals()
 
-    return s, seg, mech, rvlist, vref, gnabarref
-
 
 def test_disconnect():
     print("test_disconnect")
@@ -389,13 +387,21 @@ def test_nrn_mallinfo():
 
 
 def test_errorcode():
-    import sys, subprocess
+    import os, sys, subprocess
 
     process = subprocess.run('nrniv -c "1/0"', shell=True)
     assert process.returncode > 0
 
+    exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
+    env = os.environ.copy()
+    try:
+        env[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
+            "NRN_SANITIZER_PRELOAD_VAL"
+        ]
+    except:
+        pass
     process = subprocess.run(
-        '{} -c "from neuron import h; h.sqrt(-1)"'.format(sys.executable), shell=True
+        [exe, "-c", "from neuron import h; h.sqrt(-1)"], env=env, shell=False
     )
     assert process.returncode > 0
 
@@ -410,7 +416,7 @@ if __name__ == "__main__":
     set_quiet(False)
     test_soma()
     test_simple_sim()
-    result = test_deleted_sec()
+    test_deleted_sec()
     test_disconnect()
     h.topology()
     h.allobjects()

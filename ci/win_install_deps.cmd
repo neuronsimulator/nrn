@@ -40,12 +40,18 @@ rename C:\msmpi\Include include || goto :error
 copy "c:\Windows\System32\msmpi.dll" "c:\msmpi\lib\x64\msmpi.dll" || goto :error
 copy "c:\Windows\SysWoW64\msmpi.dll" "c:\msmpi\lib\x86\msmpi.dll" || goto :error
 
+:: check if MSYS2_ROOT is set, otherwise set it to C:\msys64 (default)
+if "%MSYS2_ROOT%"=="" set MSYS2_ROOT=C:\msys64
+
 :: install msys2 / mingw packages.
-:: NOTE: msys2 is already installed in the CI VM image. Otherwise it could be installed with the following line:
-:: choco install --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath" || goto :error
+:: NOTE: msys2 is already installed in the CI VM image. We check if if msys2 is not installed, then download and install it with choco
+if not exist "%MSYS2_ROOT%\usr\bin\bash.exe" (
+    choco install -y --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath" || goto :error
+)
 set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%PATH%
 
 %MSYS2_ROOT%\usr\bin\pacman --noconfirm --needed -S --disable-download-timeout ^
+cmake ^
 git ^
 zip ^
 unzip ^

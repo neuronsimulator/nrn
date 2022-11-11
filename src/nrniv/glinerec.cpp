@@ -29,7 +29,8 @@ extern NetCvode* net_cvode_instance;
 class GLineRecordList;
 
 declarePtrList(GLineRecordList, GLineRecord)
-    implementPtrList(GLineRecordList, GLineRecord) static GLineRecordList* grl;
+implementPtrList(GLineRecordList, GLineRecord)
+static GLineRecordList* grl;
 
 // Since GraphLine is not an observable, its destructor calls this.
 // So ivoc will work, a stub is placed in ivoc/datapath.cpp
@@ -139,13 +140,6 @@ void GLineRecord::fill_pd() {
     assert(gl_->expr_);
     ObjectContext objc(gl_->obj_);
     fill_pd1();
-    objc.restore();
-#if 0
-  printf("\n%s\n", gl_->name());
-  for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
-    printf("  pd=%p\n", (*it).first);
-  }
-#endif
 }
 
 GLineRecord::GLineRecord(GraphLine* gl)
@@ -249,7 +243,6 @@ void GLineRecord::plot(int vecsz, double tstop) {
             }
             gl_->plot();
         }
-        obc.restore();
     } else {
         assert(0);
     }

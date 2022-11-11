@@ -11,9 +11,6 @@ in one section is set but no others. But only the first time through treeset.
 */
 #define RA_WARNING 0
 
-#define VECTORIZE 1 /* hope this speeds up simulations on a Cray */
-/* this is no longer optional */
-
 #define I_MEMBRANE 1 /* compute i_cap and i_membrane on fadvance */
 
 #define EXTRACELLULAR 2 /* default number of extracellular layers */
@@ -32,14 +29,8 @@ in one section is set but no others. But only the first time through treeset.
        * area/spine to add to the segment. */
 #endif
 
-#define METHOD3 0 /* third order spatially correct method */
-/* testing only, not completely implemented */
-/* cannot be used with extracellular */
-
 #define KEEP_NSEG_PARM 1 /* Use old segment parameters to define */
 /* the new segment information */
-
-#define CVODE 1 /* Allow the cvode variable time step method*/
 
 #if !defined(CACHEVEC)
 #define CACHEVEC 1 /* define to 0 doubles in nodes instead of vectors*/

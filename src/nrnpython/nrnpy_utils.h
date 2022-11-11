@@ -103,31 +103,19 @@ class Py2NRNString {
 };
 
 
-class PyLockGIL {
-  public:
+struct PyLockGIL {
     PyLockGIL()
-        : state_(PyGILState_Ensure())
-        , locked_(true) {}
-
-    /* This is mainly used to unlock manually prior to a hoc_execerror() call
-     * since this uses longjmp()
-     */
-    void release() {
-        assert(locked_);
-        locked_ = false;
+        : state_{PyGILState_Ensure()} {}
+    PyLockGIL(PyLockGIL&&) = delete;
+    PyLockGIL(PyLockGIL const&) = delete;
+    PyLockGIL& operator=(PyLockGIL&&) = delete;
+    PyLockGIL& operator=(PyLockGIL const&) = delete;
+    ~PyLockGIL() {
         PyGILState_Release(state_);
     }
 
-    ~PyLockGIL() {
-        release();
-    }
-
   private:
-    PyLockGIL(const PyLockGIL&);
-    PyLockGIL& operator=(const PyLockGIL&);
-
     PyGILState_STATE state_;
-    bool locked_; /* check if double unlocking */
 };
 
 extern void nrnpy_sec_referr();

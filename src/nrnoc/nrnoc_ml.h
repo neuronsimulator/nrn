@@ -1,7 +1,7 @@
 #pragma once
+#include "hocdec.h"
 #include "options.h"  // for CACHEVEC
 
-union Datum;
 struct Node;
 struct Prop;
 
@@ -15,7 +15,7 @@ struct Memb_list {
      * cache-efficient */
     int* nodeindices;
 #endif /* CACHEVEC */
-    double** data;
+    double** _data;
     Datum** pdata;
     Prop** prop;
     Datum* _thread; /* thread specific data (when static is no good) */

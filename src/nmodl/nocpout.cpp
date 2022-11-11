@@ -8,7 +8,7 @@ that version is compatible with this version.
 For now try to use something of the form d.d
 If this is changed then also change nrnoc/init.c
 */
-char* nmodl_version_ = "7.7.0";
+const char* nmodl_version_ = "7.7.0";
 
 /* Point processes are now interfaced to nrnoc via objectvars.
 Thus, p-array variables and functions accessible to hoc do not have
@@ -24,8 +24,7 @@ All other variables have values in that single array but not all those values
 are available from HOC.
 
 Variables accessible to NEURON are variables that appear within
-GLOBAL, SECTION, and RANGE statements.
-SECTION variables are not currently implemented.
+GLOBAL, and RANGE statements.
 
 Variables that do not appear in the p-array are:
  1)externally declared variables such as celsius, t.
@@ -60,16 +59,12 @@ which sets up _p and _ppvar for use by functions in the model called
 directly by hoc.
 */
 
-/* FUNCTIONS are made external so they are callable from other models */
-#define GLOBFUNCT 1
-
 #include "modl.h"
 #include "parse1.hpp"
 #include <stdlib.h>
 #include <unistd.h>
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)
 
-#if VECTORIZE
 int vectorize = 1;
 /*
 the idea is to put all variables into a vector of vectors so there
@@ -84,23 +79,6 @@ pass around _p, _ppvar, _thread. When vectorize is 0 then we are definitely
 not thread safe and _p and _ppvar are static.
 */
 
-#endif
-#define NRNEXTRN     01 /* t, dt, celsius, etc. */
-#define NRNCURIN     02 /* input value used */
-#define NRNCUROUT    04 /* added to output value */
-#define NRNRANGE     010
-#define NRNPRANGEIN  020
-#define NRNPRANGEOUT 040
-#define NRNGLOBAL    0100 /* same for all sections, defined here */
-#define NRNSTATIC    0200 /* v */
-#define NRNNOTP      0400 /* doesn't belong in p array */
-#define NRNIONFLAG                                  \
-    01000 /* temporary flag to allow READ and WRITE \
- without declaring twice */
-#define NRNSECTION       02000
-#define NRNPOINTER       04000
-#define IONCONC          010000
-#define NRNBBCOREPOINTER 020000
 
 #define IONEREV 0 /* Parameter */
 #define IONIN   1
@@ -108,14 +86,9 @@ not thread safe and _p and _ppvar are static.
 #define IONCUR  3 /* assigned */
 #define IONDCUR 4
 
-extern int assert_threadsafe;
 extern int brkpnt_exists;
-static char* brkpnt_str_;
+static const char* brkpnt_str_;
 extern Symbol* indepsym;
-extern Symbol* scop_indep;
-extern List* indeplist;
-extern Symbol* stepsym;
-extern char* reprime();
 extern List* symlist[];
 extern List* ldifuslist;
 extern char* finname;
@@ -148,7 +121,7 @@ static List* rangestate;
 static List* nrnpointers;
 static List* uip; /* void _update_ion_pointer(Datum* _ppvar){...} text */
 static char suffix[256];
-static char* rsuffix; /* point process range and functions don't have suffix*/
+static const char* rsuffix; /* point process range and functions don't have suffix*/
 static char* mechname;
 int point_process;      /* 1 if a point process model */
 int artificial_cell;    /* 1 if also explicitly declared an ARTIFICIAL_CELL */
@@ -172,7 +145,6 @@ static Item* net_init_q2_;
 static int ba_index_; /* BEFORE AFTER blocks. See bablk */
 static List* ba_list_;
 
-#if CVODE
 List* state_discon_list_;
 int cvode_not_allowed;
 static int cvode_emit, cvode_ieq_index;
@@ -190,7 +162,6 @@ int watch_seen_; /* number of WATCH statements + 1*/
 extern List* watch_alloc;
 static Item* net_send_delivered_; /* location for if flag is 1 then clear the
                 tqitem_ to allow  an error message for net_move */
-#endif
 
 #define SYMITER(arg)         \
     ITERATE(q, syminorder) { \
@@ -201,8 +172,6 @@ static Item* net_send_delivered_; /* location for if flag is 1 then clear the
     for (i = 'A'; i <= 'z'; i++) \
     ITERATE(q, symlist[i])
 
-#define IFTYPE(arg) if ((s->subtype & arg) && ((s->usage & EXPLICIT_DECL) != automatic))
-
 /* varcount holds the index into the .var file and is saved in s->used
    parraycount holds the index into the p array and is saved in s->varnum
    pvarcount indexes pointers to variables such as ena
@@ -210,16 +179,13 @@ static Item* net_send_delivered_; /* location for if flag is 1 then clear the
 static int varcount, parraycount;
 
 void nrninit() {
-    extern int using_default_indep;
     currents = newlist();
     rangeparm = newlist();
     rangedep = newlist();
     rangestate = newlist();
     useion = newlist();
     nrnpointers = newlist();
-    using_default_indep = 0;
-    indepinstall(install("t", NAME), "0", "1", "100", (Item*) 0, "ms", 0);
-    using_default_indep = 1;
+    indepinstall(install("t", NAME), "0", "1", "100", "ms");
     debugging_ = 1;
     thread_cleanup_list = newlist();
     thread_mem_init_list = newlist();
@@ -271,7 +237,6 @@ void parout() {
 
     Lappendstr(defs_list,
                "\
-\n#if METHOD3\nextern int _method3;\n#endif\n\
 \n#if !NRNGPU\
 \n#undef exp\
 \n#define exp hoc_Exp\
@@ -303,7 +268,7 @@ void parout() {
     Lappendstr(defs_list, buf);
     SYMLISTITER {
         Symbol* s = SYM(q);
-        /* note that with GLOBFUNCT, FUNCT will be redefined anyway */
+        /* note that FUNCT will be redefined anyway */
         if (s->type == NAME && s->subtype & (PROCED | DERF | KINF)) {
             sprintf(buf, "\n#define %s %s_%s", s->name, s->name, suffix);
             Lappendstr(defs_list, buf);
@@ -337,12 +302,9 @@ void parout() {
 	/*SUPPRESS 765*/\n\
 	");
     Lappendstr(defs_list, "extern double *hoc_getarg(int);\n");
-#if VECTORIZE
     if (vectorize) {
         Sprintf(buf, "/* Thread safe. No static _p or _ppvar. */\n");
-    } else
-#endif
-    {
+    } else {
         Sprintf(buf, "static double *_p; static Datum *_ppvar;\n");
     }
     Lappendstr(defs_list, buf);
@@ -451,12 +413,9 @@ extern Memb_func* memb_func;\n\
     /* function to set up _p and _ppvar */
     Lappendstr(defs_list, "extern void _nrn_setdata_reg(int, void(*)(Prop*));\n");
     Lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
-#if VECTORIZE
     if (vectorize) {
         Lappendstr(defs_list, "_extcall_prop = _prop;\n");
-    } else
-#endif
-    {
+    } else {
         Lappendstr(defs_list, "_p = _prop->param; _ppvar = _prop->dparam;\n");
     }
     Lappendstr(defs_list, "}\n");
@@ -502,7 +461,6 @@ extern Memb_func* memb_func;\n\
     }
     Lappendstr(defs_list, "{0, 0}\n};\n");
 
-#if GLOBFUNCT
     /* FUNCTION's are now global so callable from other models */
     /* change name to namesuffix. This propagates everywhere except
         to hoc_name*/
@@ -538,7 +496,6 @@ extern Memb_func* memb_func;\n\
             Lappendstr(defs_list, ");\n");
         }
     }
-#endif
 
     emit_check_table_thread = 0;
     if (vectorize && check_tables_threads(defs_list)) {
@@ -560,25 +517,25 @@ extern Memb_func* memb_func;\n\
             }
         }
         sprintf(buf,
-                "  _thread[%d]._pval = (double*)ecalloc(%d, sizeof(double));\n",
+                "  _thread[%d] = (double*)ecalloc(%d, sizeof(double));\n",
                 thread_data_index,
                 cnt);
         lappendstr(thread_mem_init_list, buf);
-        sprintf(buf, "  free((void*)(_thread[%d]._pval));\n", thread_data_index);
+        sprintf(buf, "  free(_thread[%d].get<void*>());\n", thread_data_index);
         lappendstr(thread_cleanup_list, buf);
         cnt = 0;
         ITERATE(q, toplocal_) {
             if (SYM(q)->assigned_to_ != 2) {
                 if (SYM(q)->subtype & ARRAY) {
                     sprintf(buf,
-                            "#define %s (_thread[%d]._pval + %d)\n",
+                            "#define %s (_thread[%d].get<double*>() + %d)\n",
                             SYM(q)->name,
                             thread_data_index,
                             cnt);
                     cnt += SYM(q)->araydim;
                 } else {
                     sprintf(buf,
-                            "#define %s _thread[%d]._pval[%d]\n",
+                            "#define %s _thread[%d].get<double*>()[%d]\n",
                             SYM(q)->name,
                             thread_data_index,
                             cnt);
@@ -618,14 +575,15 @@ extern Memb_func* memb_func;\n\
                 thread_data_index);
         Lappendstr(defs_list, buf);
         sprintf(buf,
-                " if (_thread1data_inuse) {_thread[_gth]._pval = (double*)ecalloc(%d, "
-                "sizeof(double));\n }else{\n _thread[_gth]._pval = _thread1data; "
+                " if (_thread1data_inuse) {_thread[_gth] = (double*)ecalloc(%d, "
+                "sizeof(double));\n }else{\n _thread[_gth] = &_thread1data[0]; "
                 "_thread1data_inuse = 1;\n }\n",
                 gind);
         lappendstr(thread_mem_init_list, buf);
         lappendstr(thread_cleanup_list,
-                   " if (_thread[_gth]._pval == _thread1data) {\n   _thread1data_inuse = 0;\n  "
-                   "}else{\n   free((void*)_thread[_gth]._pval);\n  }\n");
+                   " if (_thread[_gth].get<double*>() == &_thread1data[0]) {\n   "
+                   "_thread1data_inuse = 0;\n  "
+                   "}else{\n   free(_thread[_gth].get<void*>());\n  }\n");
         ++thread_data_index;
     }
     gind = 0;
@@ -636,7 +594,7 @@ extern Memb_func* memb_func;\n\
                 if (s->subtype & ARRAY) {
                     sprintf(buf,
                             "#define %s%s (_thread1data + %d)\n\
-#define %s (_thread[_gth]._pval + %d)\n",
+#define %s (_thread[_gth].get<double*>() + %d)\n",
                             s->name,
                             suffix,
                             gind,
@@ -645,7 +603,7 @@ extern Memb_func* memb_func;\n\
                 } else {
                     sprintf(buf,
                             "#define %s%s _thread1data[%d]\n\
-#define %s _thread[_gth]._pval[%d]\n",
+#define %s _thread[_gth].get<double*>()[%d]\n",
                             s->name,
                             suffix,
                             gind,
@@ -699,11 +657,6 @@ extern Memb_func* memb_func;\n\
     SYMLISTITER {
         s = SYM(q);
         if (s->nrntype & (NRNSTATIC)) {
-#if VECTORIZE && 0
-            if (vectorize) {
-                diag("No statics allowed for thread safe models:", s->name);
-            }
-#endif
             decode_ustr(s, &d1, &d2, buf);
             if (s->subtype & ARRAY) {
                 Sprintf(buf, "static double %s[%d];\n", s->name, s->araydim);
@@ -762,7 +715,6 @@ extern Memb_func* memb_func;\n\
     }
     /* count the number of pointers needed */
     ppvar_cnt = ioncount + diamdec + pointercount + areadec;
-#if CVODE
     if (net_send_seen_) {
         tqitem_index = ppvar_cnt;
         ppvar_semantics(ppvar_cnt, "netsend");
@@ -802,7 +754,8 @@ extern Memb_func* memb_func;\n\
         }
         if (for_netcons_) {
             sprintf(buf,
-                    "  if (_prop) { _nrn_free_fornetcon(&(_prop->dparam[_fnc_index]._pvoid));}\n");
+                    "  if (_prop) { "
+                    "_nrn_free_fornetcon(&(_prop->dparam[_fnc_index].literal_value<void*>()));}\n");
             Lappendstr(defs_list, buf);
         }
         Lappendstr(defs_list, "  destroy_point_process(_vptr);\n}\n");
@@ -813,7 +766,6 @@ extern Memb_func* memb_func;\n\
         ppvar_cnt++;
     }
     cvode_emit_interface();
-#endif
     if (destructorfunc->next != destructorfunc) {
         if (!point_process) {
             diag("DESTRUCTOR only permitted for POINT_PROCESS", (char*) 0);
@@ -943,15 +895,13 @@ static void nrn_alloc(Prop* _prop) {\n\
     if (diamdec) {
         Sprintf(buf, "prop_ion = need_memb(_morphology_sym);\n");
         Lappendstr(defs_list, buf);
-        Sprintf(buf,
-                "\t_ppvar[%d]._pval = &prop_ion->param[0]; /* diam */\n",
-                ioncount + pointercount),
+        Sprintf(buf, "\t_ppvar[%d] = &prop_ion->param[0]; /* diam */\n", ioncount + pointercount),
             Lappendstr(defs_list, buf);
         ppvar_semantics(ioncount + pointercount, "diam");
     }
     if (areadec) {
         Sprintf(buf,
-                "\t_ppvar[%d]._pval = &nrn_alloc_node_->_area; /* diam */\n",
+                "\t_ppvar[%d] = &nrn_alloc_node_->_area; /* diam */\n",
                 ioncount + pointercount + diamdec),
             Lappendstr(defs_list, buf);
         ppvar_semantics(ioncount + pointercount + diamdec, "area");
@@ -977,7 +927,7 @@ static void nrn_alloc(Prop* _prop) {\n\
         ITERATE(q1, LST(q)) {
             SYM(q1)->nrntype |= NRNIONFLAG;
             Sprintf(buf,
-                    "\t_ppvar[%d]._pval = &prop_ion->param[%d]; /* %s */\n",
+                    "\t_ppvar[%d] = &prop_ion->param[%d]; /* %s */\n",
                     ioncount++,
                     iontype(SYM(q1)->name, sion->name),
                     SYM(q1)->name);
@@ -991,7 +941,7 @@ static void nrn_alloc(Prop* _prop) {\n\
                 SYM(q1)->nrntype &= ~NRNIONFLAG;
             } else {
                 Sprintf(buf,
-                        "\t_ppvar[%d]._pval = &prop_ion->param[%d]; /* %s */\n",
+                        "\t_ppvar[%d] = &prop_ion->param[%d]; /* %s */\n",
                         ioncount++,
                         itype,
                         SYM(q1)->name);
@@ -1000,7 +950,7 @@ static void nrn_alloc(Prop* _prop) {\n\
             if (itype == IONCUR) {
                 dcurdef = 1;
                 Sprintf(buf,
-                        "\t_ppvar[%d]._pval = &prop_ion->param[%d]; /* _ion_di%sdv */\n",
+                        "\t_ppvar[%d] = &prop_ion->param[%d]; /* _ion_di%sdv */\n",
                         ioncount++,
                         IONDCUR,
                         sion->name);
@@ -1011,17 +961,17 @@ static void nrn_alloc(Prop* _prop) {\n\
             }
         }
         if (need_style) {
-            Sprintf(
-                buf,
-                "\t_ppvar[%d]._pvoid = (void*)(&(prop_ion->dparam[0]._i)); /* iontype for %s */\n",
-                ioncount++,
-                sion->name);
+            Sprintf(buf,
+                    "\t_ppvar[%d] = &(prop_ion->dparam[0].literal_value<int>()); /* "
+                    "iontype for %s */\n",
+                    ioncount++,
+                    sion->name);
             Lappendstr(defs_list, buf);
         }
         q = q->next;
         if (!dcurdef && ldifuslist) {
             Sprintf(buf,
-                    "\t_ppvar[%d]._pval = &prop_ion->param[%d]; /* _ion_di%sdv */\n",
+                    "\t_ppvar[%d] = &prop_ion->param[%d]; /* _ion_di%sdv */\n",
                     ioncount++,
                     IONDCUR,
                     sion->name);
@@ -1054,7 +1004,6 @@ static void _constructor(Prop* _prop) {\n\
     Lappendstr(defs_list, "\n}\n");
 
     Lappendstr(defs_list, "static void _initlists();\n");
-#if CVODE
     if (cvode_emit) {
         Lappendstr(defs_list, " /* some states have an absolute tolerance */\n");
         Lappendstr(defs_list, "static Symbol** _atollist;\n");
@@ -1077,17 +1026,15 @@ static void _constructor(Prop* _prop) {\n\
         sprintf(buf, "static _singlechan_declare%d();\n", singlechan_);
         Lappendstr(defs_list, buf);
     }
-#endif
 
-#if VECTORIZE
     if (net_send_seen_) {
         if (!net_receive_) {
             diag("can't use net_send if there is no NET_RECEIVE block", (char*) 0);
         }
-        sprintf(buf, "\n#define _tqitem &(_ppvar[%d]._pvoid)\n", tqitem_index);
+        sprintf(buf, "\n#define _tqitem &(_ppvar[%d])\n", tqitem_index);
         Lappendstr(defs_list, buf);
         if (net_send_delivered_) {
-            insertstr(net_send_delivered_, "  if (_lflag == 1. ) {*(_tqitem) = 0;}\n");
+            insertstr(net_send_delivered_, "  if (_lflag == 1. ) {*(_tqitem) = nullptr;}\n");
         }
     }
     if (net_receive_) {
@@ -1136,10 +1083,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
     Lappendstr(defs_list, buf);
     q = lappendstr(defs_list, "");
     Lappendstr(defs_list, "_initlists();\n");
-#else
-    Sprintf(buf, "extern \"C\" void _%s_reg() {\n	_initlists();\n", modbase);
-    Lappendstr(defs_list, buf);
-#endif
 
     if (suffix[0]) { /* not "nothing" */
 
@@ -1156,7 +1099,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             Lappendstr(defs_list, buf);
             q = q->next->next->next;
         }
-#if VECTORIZE
         if (point_process) {
             sprintf(buf,
                     "\
@@ -1190,7 +1132,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
                 }
             }
         }
-#endif
         Lappendstr(defs_list, "_mechtype = nrn_get_mechtype(_mechanism[1]);\n");
         lappendstr(defs_list, "    _nrn_setdata_reg(_mechtype, _setdata);\n");
         if (vectorize && thread_mem_init_list->next != thread_mem_init_list) {
@@ -1243,7 +1184,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             Lappendstr(defs_list, "\tnrn_writes_conc(_mechtype, 0);\n");
         }
 
-#if CVODE
         if (cvode_emit) {
             Lappendstr(defs_list,
                        "\
@@ -1263,7 +1203,6 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             sprintf(buf, "hoc_reg_singlechan(_mechtype, _singlechan_declare%d);\n", singlechan_);
             Lappendstr(defs_list, buf);
         }
-#endif
         if (artificial_cell) {
             if (brkpnt_exists || !net_receive_ || nrnpointers->next != nrnpointers ||
                 useion->next != useion) {
@@ -1392,6 +1331,40 @@ static void _destructor(Prop* _prop) {\n\
         }
     }
 }
+
+
+// Check if read/write variable from USEION is declared in a
+// CONSTANT block. There are certain MOD files where this pattern
+// is used and it doesn't produce a desired code. Hence, we check
+// all ion variables and error if any variable is declared as CONSTANT.
+void check_ion_vars_as_constant(char* ion_name, const List* ion_var_list) {
+    const Item* var;
+    ITERATE(var, ion_var_list) {
+        const Symbol* var_sym = SYM(var);
+        int type = iontype(var_sym->name, ion_name);
+        if (type == IONIN || type == IONOUT || type == IONCUR || type == IONCONC ||
+            type == IONEREV) {
+            if (var_sym->subtype & nmodlCONST) {
+                diag(var_sym->name,
+                     " used in USEION statement can not be re-declared in a CONSTANT block");
+            }
+        }
+    }
+}
+
+
+// check semantics of read & write variables from USEION statements
+void check_useion_variables() {
+    const Item* ion_var;
+    ITERATE(ion_var, useion) {
+        // read variables
+        check_ion_vars_as_constant(SYM(ion_var)->name, LST(ion_var->next));
+        // write variables
+        check_ion_vars_as_constant(SYM(ion_var)->name, LST(ion_var->next->next));
+        ion_var = ion_var->next->next->next;
+    }
+}
+
 
 void warn_ignore(Symbol* s) {
     int b;
@@ -1728,9 +1701,6 @@ void nrn_list(Item* q1, Item* q2) {
             SYM(q)->nrntype |= NRNRANGE;
         }
         break;
-    case SECTION:
-        diag("NEURON SECTION variables not implemented", (char*) 0);
-        break;
     case GLOBAL:
         for (q = q1->next; q != q2->next; q = q->next) {
             SYM(q)->nrntype |= NRNGLOBAL | NRNNOTP;
@@ -1738,9 +1708,7 @@ void nrn_list(Item* q1, Item* q2) {
         plist = (List**) 0;
         break;
     case EXTERNAL:
-#if VECTORIZE
         threadsafe("Use of EXTERNAL is not thread safe.");
-#endif
         for (q = q1->next; q != q2->next; q = q->next) {
             SYM(q)->nrntype |= NRNEXTRN | NRNNOTP;
         }
@@ -1821,7 +1789,7 @@ void nrn_use(Item* q1, Item* q2, Item* q3, Item* q4) {
     /* is it already used */
     used = ion_declared(SYM(q1));
     if (used) { /* READ gets promoted to WRITE */
-        diag("mergeing of neuron models not supported yet", (char*) 0);
+        diag("merging of neuron models not supported", (char*) 0);
     } else { /* create all the ionic variables */
         Lappendsym(useion, ion);
         readlist = newlist();
@@ -1896,7 +1864,7 @@ int iontype(char* s1, char* s2) /* returns index of variable in ion mechanism */
     return -1;
 }
 
-static Symbol* ifnew_install(char* name) {
+static Symbol* ifnew_install(const char* name) {
     Symbol* s;
 
     if ((s = lookup(name)) == SYM0) {
@@ -1926,13 +1894,10 @@ void nrndeclare() {
         s->nrntype |= NRNNOTP | NRNPRANGEIN;
         areadec = 1;
     }
-#if VECTORIZE
     if (vectorize) {
         s = ifnew_install("v");
         s->nrntype = NRNNOTP; /* this is a lie, it goes in at end specially */
-    } else
-#endif
-    {
+    } else {
         s = ifnew_install("v");
         s->nrntype |= NRNSTATIC | NRNNOTP;
     }
@@ -2021,12 +1986,10 @@ void declare_p() {
             var_count(SYM(q));
         }
     }
-#if VECTORIZE
     if (vectorize) {
         s = ifnew_install("v");
         var_count(s);
     }
-#endif
     if (brkpnt_exists) {
         s = ifnew_install("_g");
         var_count(s);
@@ -2164,7 +2127,7 @@ int iondef(int* p_pointercount) {
     ioncount = 0;
     if (point_process) {
         ioncount = 2;
-        q = lappendstr(defs_list, "#define _nd_area  *_ppvar[0]._pval\n");
+        q = lappendstr(defs_list, "#define _nd_area  *_ppvar[0].get<double*>()\n");
         q->itemtype = VERBATIM;
         ppvar_semantics(0, "area");
         ppvar_semantics(1, "pntproc");
@@ -2182,7 +2145,10 @@ int iondef(int* p_pointercount) {
         q = q->next;
         ITERATE(q1, LST(q)) {
             SYM(q1)->nrntype |= NRNIONFLAG;
-            Sprintf(buf, "#define _ion_%s	*_ppvar[%d]._pval\n", SYM(q1)->name, ioncount);
+            Sprintf(buf,
+                    "#define _ion_%s	*(_ppvar[%d].get<double*>())\n",
+                    SYM(q1)->name,
+                    ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
             sprintf(buf,
@@ -2200,7 +2166,10 @@ int iondef(int* p_pointercount) {
             if (SYM(q1)->nrntype & NRNIONFLAG) {
                 SYM(q1)->nrntype &= ~NRNIONFLAG;
             } else {
-                Sprintf(buf, "#define _ion_%s	*_ppvar[%d]._pval\n", SYM(q1)->name, ioncount);
+                Sprintf(buf,
+                        "#define _ion_%s	*_ppvar[%d].get<double*>()\n",
+                        SYM(q1)->name,
+                        ioncount);
                 q2 = lappendstr(defs_list, buf);
                 q2->itemtype = VERBATIM;
                 sprintf(buf,
@@ -2216,7 +2185,10 @@ int iondef(int* p_pointercount) {
             it = iontype(SYM(q1)->name, sion->name);
             if (it == IONCUR) {
                 dcurdef = 1;
-                Sprintf(buf, "#define _ion_di%sdv\t*_ppvar[%d]._pval\n", sion->name, ioncount);
+                Sprintf(buf,
+                        "#define _ion_di%sdv\t*_ppvar[%d].get<double*>()\n",
+                        sion->name,
+                        ioncount);
                 q2 = lappendstr(defs_list, buf);
                 q2->itemtype = VERBATIM;
                 sprintf(buf,
@@ -2232,7 +2204,7 @@ int iondef(int* p_pointercount) {
             }
         }
         if (need_style) {
-            Sprintf(buf, "#define _style_%s\t*((int*)_ppvar[%d]._pvoid)\n", sion->name, ioncount);
+            Sprintf(buf, "#define _style_%s\t*_ppvar[%d].get<int*>()\n", sion->name, ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
             sprintf(buf, "#%s", ionname);
@@ -2241,7 +2213,7 @@ int iondef(int* p_pointercount) {
         }
         q = q->next;
         if (!dcurdef && ldifuslist) {
-            Sprintf(buf, "#define _ion_di%sdv\t*_ppvar[%d]._pval\n", sion->name, ioncount);
+            Sprintf(buf, "#define _ion_di%sdv\t*_ppvar[%d].get<double*>()\n", sion->name, ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
             sprintf(buf,
@@ -2256,11 +2228,17 @@ int iondef(int* p_pointercount) {
     *p_pointercount = 0;
     ITERATE(q, nrnpointers) {
         sion = SYM(q);
-        Sprintf(buf, "#define %s	*_ppvar[%d]._pval\n", sion->name, ioncount + *p_pointercount);
+        Sprintf(buf,
+                "#define %s	*_ppvar[%d].get<double*>()\n",
+                sion->name,
+                ioncount + *p_pointercount);
         sion->used = ioncount + *p_pointercount;
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
-        Sprintf(buf, "#define _p_%s	_ppvar[%d]._pval\n", sion->name, ioncount + *p_pointercount);
+        Sprintf(buf,
+                "#define _p_%s _ppvar[%d].literal_value<void*>()\n",
+                sion->name,
+                ioncount + *p_pointercount);
         sion->used = ioncount + *p_pointercount;
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
@@ -2273,13 +2251,15 @@ int iondef(int* p_pointercount) {
     }
 
     if (diamdec) { /* must be last */
-        Sprintf(buf, "#define diam	*_ppvar[%d]._pval\n", ioncount + *p_pointercount);
+        Sprintf(buf, "#define diam	*_ppvar[%d].get<double*>()\n", ioncount + *p_pointercount);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
     }              /* notice that ioncount is not incremented */
     if (areadec) { /* must be last, if we add any more the administrative
             procedures must be redone */
-        Sprintf(buf, "#define area	*_ppvar[%d]._pval\n", ioncount + *p_pointercount + diamdec);
+        Sprintf(buf,
+                "#define area	*_ppvar[%d].get<double*>()\n",
+                ioncount + *p_pointercount + diamdec);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
     } /* notice that ioncount is not incremented */
@@ -2322,7 +2302,7 @@ List* begin_dion_stmt() {
     return l;
 }
 
-List* end_dion_stmt(char* strdel) {
+List* end_dion_stmt(const char* strdel) {
     Item *q, *q1;
     static List* l;
     char* strion;
@@ -2414,7 +2394,6 @@ void nrn_var_assigned(Symbol* s) {
     }
 }
 
-#if CVODE
 
 static int cvode_valid_, using_cvode;
 static int cvode_num_, cvode_neq_;
@@ -2571,7 +2550,7 @@ static void _ode_matsol(NrnThread*, Memb_list*, int);\n\
 static int _ode_count(int _type){ return %d;}\n",
                 cvode_neq_);
         Lappendstr(procfunc, buf);
-        sprintf(buf, "\n#define _cvode_ieq _ppvar[%d]._i\n", cvode_ieq_index);
+        sprintf(buf, "\n#define _cvode_ieq _ppvar[%d].literal_value<int>()\n", cvode_ieq_index);
         Lappendstr(defs_list, buf);
 
         if (cvode_fun_->subtype == PROCED) {
@@ -2645,7 +2624,8 @@ static void _ode_synonym(int _cnt, double** _pp, Datum** _ppd) {");
                     i);
                 Lappendstr(procfunc, buf);
                 sprintf(buf,
-                        "_cvode_sparse_thread(&_thread[_cvspth%d]._pvoid, %d, _dlist%d, _p, "
+                        "_cvode_sparse_thread(&(_thread[_cvspth%d].literal_value<void*>()), %d, "
+                        "_dlist%d, _p, "
                         "_ode_matsol%d, _ppvar, _thread, _nt);\n",
                         i,
                         cvode_neq_,
@@ -2764,7 +2744,6 @@ void cvode_rw_cur(char* b) {
         q = q->next;
     }
 }
-#endif
 
 void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     Item *q, *q1;
@@ -2909,7 +2888,7 @@ void fornetcon(Item* keyword, Item* par1, Item* args, Item* par2, Item* stmt, It
     i = for_netcons_;
     sprintf(buf,
             "{int _ifn%d, _nfn%d; double* _fnargs%d, **_fnargslist%d;\n\
-\t_nfn%d = _nrn_netcon_args(_ppvar[_fnc_index]._pvoid, &_fnargslist%d);\n\
+\t_nfn%d = _nrn_netcon_args(_ppvar[_fnc_index].get<void*>(), &_fnargslist%d);\n\
 \tfor (_ifn%d = 0; _ifn%d < _nfn%d; ++_ifn%d) {\n",
             i,
             i,
@@ -2959,17 +2938,6 @@ void chk_global_state() {
         Symbol* s = SYM(q);
         if (s->nrntype & NRNGLOBAL && s->subtype & STAT) {
             diag(s->name, " is a STATE variable and hence cannot be declared as GLOBAL");
-        }
-    }
-}
-
-
-void threadsafe_seen(Item* q1, Item* q2) {
-    Item* q;
-    assert_threadsafe = 1;
-    if (q2) {
-        for (q = q1->next; q != q2->next; q = q->next) {
-            SYM(q)->assigned_to_ = 2;
         }
     }
 }

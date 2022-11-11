@@ -588,8 +588,9 @@ static void checkOpenPanel() {
     }
 }
 
-declarePtrList(HocMenuList, HocMenu) implementPtrList(HocMenuList, HocMenu)
-    /*static*/ class MenuStack {
+declarePtrList(HocMenuList, HocMenu)
+implementPtrList(HocMenuList, HocMenu)
+/*static*/ class MenuStack {
   public:
     bool isEmpty() {
         return l_.count() == 0;
@@ -1679,13 +1680,14 @@ const char* HocAction::name() const {
 }
 
 #if UseFieldEditor
-declareFieldEditorCallback(HocValAction) implementFieldEditorCallback(HocValAction)
+declareFieldEditorCallback(HocValAction)
+implementFieldEditorCallback(HocValAction)
 #else
 declareFieldSEditorCallback(HocValAction);
 implementFieldSEditorCallback(HocValAction);
 #endif
-    // HocValAction
-    HocValAction::HocValAction(const char* action, Object* pyact)
+// HocValAction
+HocValAction::HocValAction(const char* action, Object* pyact)
     : HocAction(action, pyact) {
     fe_ = NULL;
 #if UseFieldEditor

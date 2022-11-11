@@ -198,11 +198,10 @@ std::string nrnmpi_load(int is_python) {
     }();
 
     // Figure out where to find lib[core]nrnmpi{...} libraries. Older versions
-    // of this code used @loader_path on macOS, which will cause problems in
-    // https://github.com/BlueBrain/CoreNeuron/pull/795 where the code that
-    // calls dlopen(libcorenrnmpi_...) will be in libcorenrnmech.so (in some
+    // of this code used @loader_path on macOS, which caused problems in now that the code that
+    // calls dlopen(libcorenrnmpi_...) is in libcorenrnmech.so (in some
     // model-specific directory) rather than the CoreNEURON installation
-    // directory where libcorenrnmpi_*.so live. Now libcorenrnmech_*.so will be
+    // directory where libcorenrnmpi_*.so live. Now libcorenrnmpi_*.so will be
     // looked for in the same directory as libnrniv.so, which will be incorrect
     // if CoreNEURON is built externally with dynamic MPI enabled.
     auto const libnrnmpi_prefix = []() -> std::string {

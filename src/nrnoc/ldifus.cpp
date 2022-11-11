@@ -157,15 +157,14 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
     /*printf("longdifus_diamchange %d %d\n", pld->dchange, diam_change_cnt);*/
     vnodecount = _nt->end;
     n = ml->nodecount;
-
     for (i = 0; i < n; ++i) {
         /* For every child with a parent having this mechanism */
         /* Also child may butte end to end with parent or attach to middle */
         mi = pld->mindex[i];
         if (sindex < 0) {
-            pld->state[i] = ml->pdata[mi][-sindex - 1].pval;
+            pld->state[i] = ml->pdata[mi][-sindex - 1].get<double*>();
         } else {
-            pld->state[i] = ml->data[mi] + sindex;
+            pld->state[i] = ml->_data[mi] + sindex;
         }
         nd = ml->nodelist[mi];
         pindex = pld->pindex[i];
@@ -173,7 +172,7 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
             mpi = pld->mindex[pindex];
             pnd = ml->nodelist[mpi];
             if (nd->sec_node_index_ == 0) {
-                rall = nd->sec->prop->dparam[4].val;
+                rall = nd->sec->prop->dparam[4].get<double>();
             } else {
                 rall = 1.;
             }
@@ -347,7 +346,7 @@ stagger(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, 
     ml = v2ml(v, _nt->id);
 
     n = ml->nodecount;
-    data = ml->data;
+    data = ml->_data;
     pdata = ml->pdata;
     thread = ml->_thread;
 
@@ -420,7 +419,7 @@ ode(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnT
     ml = v2ml(v, _nt->id);
 
     n = ml->nodecount;
-    data = ml->data;
+    data = ml->_data;
     pdata = ml->pdata;
     thread = ml->_thread;
 
@@ -479,7 +478,7 @@ matsol(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, N
     ml = v2ml(v, _nt->id);
 
     n = ml->nodecount;
-    data = ml->data;
+    data = ml->_data;
     pdata = ml->pdata;
     thread = ml->_thread;
 

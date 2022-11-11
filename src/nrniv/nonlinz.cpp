@@ -304,7 +304,7 @@ void NonLinImpRep::delta(double deltafac) {  // also defines pv_,pvdot_ map for 
         if (s && (cnt = (*s)(i)) > 0) {
             nrn_ode_map_t m = memb_func[i].ode_map;
             for (j = 0; j < nc; ++j) {
-                (*m)(ieq, pv_ + ieq, pvdot_ + ieq, ml->data[j], ml->pdata[j], deltavec_ + ieq, i);
+                (*m)(ieq, pv_ + ieq, pvdot_ + ieq, ml->_data[j], ml->pdata[j], deltavec_ + ieq, i);
                 ieq += cnt;
             }
         }
@@ -332,7 +332,7 @@ void NonLinImpRep::didv() {
     Memb_list* mlc = _nt->tml->ml;
     int n = mlc->nodecount;
     for (i = 0; i < n; ++i) {
-        double* cd = mlc->data[i];
+        double* cd = mlc->_data[i];
         j = mlc->nodelist[i]->v_node_index;
         diag_[v_index_[j] - 1][1] += .001 * cd[0] * omega_;
     }
@@ -358,12 +358,11 @@ void NonLinImpRep::didv() {
         Memb_list* ml = tml->ml;
         for (j = 0; j < ml->nodecount; ++j) {
             Node* nd = ml->nodelist[j];
-            double x1;
             double x2;
             // zero rhs
             // save v
             NODERHS(nd) = 0;
-            x1 = NODEV(nd);
+            double x1 = NODEV(nd);
             // v+dv
             NODEV(nd) += delta_;
             current(i, ml, j);
@@ -569,7 +568,7 @@ void NonLinImpRep::current(int im, Memb_list* ml, int in) {  // assume there is 
     mfake.nodeindices = ml->nodeindices + in;
 #endif
     mfake.nodelist = ml->nodelist + in;
-    mfake.data = ml->data + in;
+    mfake._data = ml->_data + in;
     mfake.pdata = ml->pdata + in;
     mfake.prop = ml->prop ? ml->prop + in : nullptr;
     mfake.nodecount = 1;

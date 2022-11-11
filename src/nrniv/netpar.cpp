@@ -1215,7 +1215,7 @@ Object** BBS::gid_connect(int gid) {
         } else {
             // printf("%d connect %s from new PreSyn for %d\n", nrnmpi_myid,
             // hoc_object_name(target), gid);
-            ps = new PreSyn(NULL, NULL, NULL);
+            ps = new PreSyn({}, nullptr, nullptr);
             net_cvode_instance->psl_append(ps);
             gid2in_[gid] = ps;
             ps->gid_ = gid;
@@ -1600,7 +1600,7 @@ extern int* nrn_prop_param_size_;
 extern short* nrn_is_artificial_;
 static int weightcnt(NetCon* nc) {
     return nc->cnt_;
-    //  return nc->target_ ? pnt_receive_size[nc->target_->prop->type]: 1;
+    //  return nc->target_ ? pnt_receive_size[nc->target_->prop->_type]: 1;
 }
 
 size_t nrncore_netpar_bytes() {

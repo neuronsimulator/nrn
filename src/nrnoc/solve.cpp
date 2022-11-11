@@ -63,6 +63,8 @@ node.v + extnode.v[0]
 #include <stdlib.h>
 #include <math.h>
 
+#include <utility>
+
 static void node_free();
 static void triang(NrnThread*), bksub(NrnThread*);
 
@@ -307,7 +309,6 @@ static void dashes(Section* sec, int offset, int first) {
     int i, scnt;
     Section* ch;
     char direc[30];
-
     i = (int) nrn_section_orientation(sec);
     sprintf(direc, "(%d-%d)", i, 1 - i);
     for (i = 0; i < offset; i++)
@@ -315,13 +316,13 @@ static void dashes(Section* sec, int offset, int first) {
     Printf("%c", first);
     for (i = 2; i < sec->nnode; i++)
         Printf("-");
-    if (sec->prop->dparam[4].val == 1) {
+    if (sec->prop->dparam[4].get<double>() == 1) {
         Printf("|       %s%s\n", secname(sec), direc);
     } else {
         Printf("|       %s%s with %g rall branches\n",
                secname(sec),
                direc,
-               sec->prop->dparam[4].val);
+               sec->prop->dparam[4].get<double>());
     }
     /* navigate the sibling list backwards */
     /* note that the sibling list is organized monotonically by
@@ -392,13 +393,6 @@ void nrn_solve(NrnThread* _nt) {
 	nrn_print_matrix(_nt);
 #endif
 }
-
-#if VECTORIZE && _CRAY
-extern Node*** v_node_depth_lists;
-extern Node*** v_parent_depth_lists; /* parents must be unique in each list */
-extern int* v_node_depth_count;
-extern int v_node_depth; /* so depth may be more than twice what you'd expect */
-#endif
 
 /* triangularization of the matrix equations */
 void triang(NrnThread* _nt) {
@@ -517,7 +511,7 @@ static void node_free(Section* sec) {
     sec->pnode = (Node**) 0;
     sec->nnode = 0;
 }
-
+void nrn_node_destruct1(Node*);
 static void section_unlink(Section* sec);
 /* free everything about sections */
 void sec_free(hoc_Item* secitem) {
@@ -530,15 +524,13 @@ void sec_free(hoc_Item* secitem) {
     assert(sec);
     /*printf("sec_free %s\n", secname(sec));*/
     section_unlink(sec);
-    {
-        Object* ob = sec->prop->dparam[6].obj;
-        if (ob && ob->secelm_ == secitem) { /* it is the last */
-            hoc_Item* q = secitem->prev;
-            if (q->itemtype && hocSEC(q)->prop && hocSEC(q)->prop->dparam[6].obj == ob) {
-                ob->secelm_ = q;
-            } else {
-                ob->secelm_ = (hoc_Item*) 0;
-            }
+    if (auto* ob = sec->prop->dparam[6].get<Object*>();
+        ob && ob->secelm_ == secitem) { /* it is the last */
+        hoc_Item* q = secitem->prev;
+        if (q->itemtype && hocSEC(q)->prop && hocSEC(q)->prop->dparam[6].get<Object*>() == ob) {
+            ob->secelm_ = q;
+        } else {
+            ob->secelm_ = (hoc_Item*) 0;
         }
     }
     hoc_l_delete(secitem);
@@ -698,13 +690,13 @@ static Node* node_clone(Node* nd1) {
 #endif
     NODEV(nd2) = NODEV(nd1);
     for (p1 = nd1->prop; p1; p1 = p1->next) {
-        if (!memb_func[p1->type].is_point) {
-            p2 = prop_alloc(&(nd2->prop), p1->type, nd2);
+        if (!memb_func[p1->_type].is_point) {
+            p2 = prop_alloc(&(nd2->prop), p1->_type, nd2);
             if (p2->ob) {
                 Symbol *s, *ps;
                 double *px, *py;
                 int j, jmax;
-                s = memb_func[p1->type].sym;
+                s = memb_func[p1->_type].sym;
                 jmax = s->s_varn;
                 for (j = 0; j < jmax; ++j) {
                     ps = s->u.ppsym[j];
@@ -725,13 +717,13 @@ static Node* node_clone(Node* nd1) {
     /* in case the user defined an explicit ion_style, make sure
        the new node has the same style for all ions. */
     for (p1 = nd1->prop; p1; p1 = p1->next) {
-        if (nrn_is_ion(p1->type)) {
+        if (nrn_is_ion(p1->_type)) {
             p2 = nd2->prop;
-            while (p2 && p2->type != p1->type) {
+            while (p2 && p2->_type != p1->_type) {
                 p2 = p2->next;
             }
-            assert(p2 && p1->type == p2->type);
-            p2->dparam[0].i = p1->dparam[0].i;
+            assert(p2 && p1->_type == p2->_type);
+            p2->dparam[0] = p1->dparam[0].get<int>();
         }
     }
 

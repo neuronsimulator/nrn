@@ -15,9 +15,9 @@ class HocDataPaths {
     void append(double*);
     void append(char**);
     void search();
-    String* retrieve(double*);
-    String* retrieve(char**);
-    Symbol* retrieve_sym(double*);
+    String* retrieve(double*) const;
+    String* retrieve(char**) const;
+    Symbol* retrieve_sym(double*) const;
     int style();
 
   private:

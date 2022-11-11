@@ -1,5 +1,5 @@
-#ifndef partrans_h
-#define partrans_h
+#pragma once
+#include <vector>
 
 // For consistency between partrans.cpp and
 // nrncore_write/callbacks/nrncore_callbacks.h
@@ -30,5 +30,3 @@ struct SetupTransferInfo {
 extern "C" {
 extern SetupTransferInfo* nrn_get_partrans_setup_info(int, int, size_t);
 }
-
-#endif  // partrans_h

@@ -234,7 +234,7 @@ proc remove() {
 		if ($2 < vx.x[0] - hres_ || $2 > vx.x[vx.size-1] + hres_ ) {
 			ipt = -1
 		}else{
-			g.mark(vx.x(ipt), vy.x(ipt), "S", 8, 2, 1)
+			g.mark(vx.x[ipt], vy.x[ipt], "S", 8, 2, 1)
 		}
 		sval(ipt)
 	}
@@ -321,7 +321,7 @@ proc enter() { local i, x, y
 		if ($2 < vx.x[0] - hres_ || $2 > vx.x[vx.size-1] + hres_ ) {
 			ipt = -1
 		}else{
-			g.mark(vx.x(ipt), vy.x(ipt), "S", 8, 2, 1)
+			g.mark(vx.x[ipt], vy.x[ipt], "S", 8, 2, 1)
 		}
 		sval(ipt)
 	}

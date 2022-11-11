@@ -54,6 +54,7 @@ pip_numpy_install() {
       38) numpy_ver="numpy==1.17.5" ;;
       39) numpy_ver="numpy==1.19.3" ;;
       310) numpy_ver="numpy==1.21.3" ;;
+      311) numpy_ver="numpy==1.23.4" ;;
       *) echo "Error: numpy version not specified for this python!" && exit 1;;
     esac
 
@@ -73,9 +74,7 @@ build_wheel_linux() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    #auditwheel needs to be installed with python3
-    # see upstream WIP PR https://github.com/pypa/auditwheel/pull/368
-    pip install git+https://github.com/neuronsimulator/auditwheel.git@exclude_so_files
+    pip install auditwheel
     pip install -r packaging/python/build_requirements.txt
     pip_numpy_install
 
@@ -119,7 +118,7 @@ build_wheel_linux() {
 	# TODO: still need work to make sure this robust and usable
 	# currently this will break when coreneuron is used and when
 	# dev environment is not installed.
-        auditwheel repair dist/*.whl --exlude "libgomp.so.1"
+        auditwheel repair dist/*.whl --exclude "libgomp.so.1"
     fi
 
     deactivate

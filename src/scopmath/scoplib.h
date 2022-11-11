@@ -25,15 +25,6 @@ int abort_run(int error_code);
 int prterr(const char* message_string);
 
 /* Solution of first order ordinary differential equations */
-int adams(int ninits,
-          int n,
-          int* y,
-          int* d,
-          double* p,
-          double* t,
-          double h,
-          int (*dy)(),
-          double** work);
 int euler(int ninits,
           int neqn,
           int* var,
@@ -43,15 +34,6 @@ int euler(int ninits,
           double dt,
           int (*func)(),
           double** work);
-int heun(int ninits,
-         int neqn,
-         int* var,
-         int* der,
-         double* p,
-         double* t,
-         double dt,
-         int (*func)(),
-         double** work);
 int runge(int ninits,
           int n,
           int* y,
@@ -61,27 +43,6 @@ int runge(int ninits,
           double h,
           int (*dy)(),
           double** work);
-
-int adeuler(int ninits,
-            int neqn,
-            int* var,
-            int* der,
-            double* p,
-            double* t,
-            double dt,
-            int (*func)(),
-            double** work,
-            double maxerror);
-int adrunge(int ninits,
-            int n,
-            int* y,
-            int* d,
-            double* p,
-            double* t,
-            double dt,
-            int (*dy)(),
-            double** work,
-            double maxerror);
 
 /* Implicit backwards eulerian integration.  Can find steady-state solution of
  * first-order odes by passing "infinite" time step h */
@@ -116,13 +77,11 @@ double legendre(double a, double b, int (*func)());
 
 /* Solution of simultaneous algebraic equations */
 int simeq(int n, double** coef, double* soln, int* index);
-int seidel(int n, double** coef, double* soln, int* index);
 int invert(int n, double** matrix);
 int crout(int n, double** a, int* perm);
 int solve(int n, double** a, double** b, int* perm, double* p, int* y);
 int tridiag(int n, double* a, double* b, double* c, double* d, double* soln);
 int newton(int n, int* index, double* x, int(*pfunc)(), double* value);
-int simplex(int nparms, int* parms, double* pp, int (*pfunc)(), int* value);
 int buildjacobian(int n, int* index, double* x, int (*pfunc)(), double* value, double** jacobian);
 
 /* Curve-fitting and interpolation functions */
@@ -190,7 +149,6 @@ double poisson(double x, double mean);
 double gauss(double x, double mean, double std_dev);
 double scop_erf(double z);
 
-typedef union Datum Datum;
 typedef struct NrnThread NrnThread;
 typedef struct SparseObj SparseObj;
 int _cvode_sparse(void**, int, int*, double*, int (*)(), double**);

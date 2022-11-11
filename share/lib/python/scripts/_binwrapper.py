@@ -9,6 +9,7 @@ import subprocess
 import sys
 from pkg_resources import working_set
 from distutils.ccompiler import new_compiler
+from distutils.version import LooseVersion
 from sysconfig import get_config_vars, get_config_var
 
 
@@ -38,6 +39,26 @@ def _set_default_compiler():
         ccompiler.compiler_cxx[0] = get_config_var("CXX")
     os.environ.setdefault("CC", ccompiler.compiler[0])
     os.environ.setdefault("CXX", ccompiler.compiler_cxx[0])
+
+
+def _check_cpp_compiler_version():
+    """Check if GCC compiler is >= 9.0 otherwise show warning"""
+    try:
+        cpp_compiler = os.environ.get("CXX", "")
+        version = subprocess.run(
+            [cpp_compiler, "--version"], stdout=subprocess.PIPE
+        ).stdout.decode("utf-8")
+        if "GCC" in version:
+            version = subprocess.run(
+                [cpp_compiler, "-dumpversion"], stdout=subprocess.PIPE
+            ).stdout.decode("utf-8")
+            if LooseVersion(version) <= LooseVersion("9.0"):
+                print(
+                    "Warning: GCC >= 9.0 is required with this version of NEURON but found",
+                    version,
+                )
+    except:
+        pass
 
 
 def _config_exe(exe_name):
@@ -91,6 +112,7 @@ if __name__ == "__main__":
 
     if exe.endswith("nrnivmodl"):
         # To create a wrapper for special (so it also gets ENV vars) we intercept nrnivmodl
+        _check_cpp_compiler_version()
         subprocess.check_call([exe, *sys.argv[1:]])
         _wrap_executable("special")
         sys.exit(0)

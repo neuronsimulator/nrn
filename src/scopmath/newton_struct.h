@@ -2,7 +2,11 @@
 // This header has to be both valid C and C++ because the scoplib sources are
 // compiled as C.
 #ifdef __cplusplus
+#include "hocdec.h" // the real Datum
 extern "C" {
+#else
+// All we need is for Datum* to pass untouched through C
+typedef struct Datum Datum;
 #endif
 
 /* avoid incessant alloc/free memory */
@@ -17,7 +21,6 @@ typedef struct NewtonSpace {
 } NewtonSpace;
 
 // Forward-declare for use in function pointer type declaration.
-typedef union Datum Datum;
 typedef struct NrnThread NrnThread;
 
 /* Memory allocation routines */
