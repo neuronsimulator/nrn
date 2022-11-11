@@ -310,11 +310,11 @@ class BBSS_Cnt: public BBSS_IO {
   public:
     BBSS_Cnt();
     virtual ~BBSS_Cnt();
-    virtual void i(int& j, int chk = 0);
-    virtual void d(int n, double& p);
-    virtual void d(int n, double* p);
-    virtual void s(char* cp, int chk = 0);
-    virtual Type type();
+    virtual void i(int& j, int chk = 0) override;
+    virtual void d(int n, double& p) override;
+    virtual void d(int n, double* p) override;
+    virtual void s(char* cp, int chk = 0) override;
+    virtual Type type() override;
     int bytecnt();
     int ni, nd, ns, nl;
 
@@ -358,11 +358,11 @@ class BBSS_TxtFileOut: public BBSS_IO {
   public:
     BBSS_TxtFileOut(const char*);
     virtual ~BBSS_TxtFileOut();
-    virtual void i(int& j, int chk = 0);
-    virtual void d(int n, double& p);
-    virtual void d(int n, double* p);
-    virtual void s(char* cp, int chk = 0);
-    virtual Type type();
+    virtual void i(int& j, int chk = 0) override;
+    virtual void d(int n, double& p) override;
+    virtual void d(int n, double* p) override;
+    virtual void s(char* cp, int chk = 0) override;
+    virtual Type type() override;
     FILE* f;
 };
 BBSS_TxtFileOut::BBSS_TxtFileOut(const char* fname) {
@@ -395,16 +395,16 @@ class BBSS_TxtFileIn: public BBSS_IO {
   public:
     BBSS_TxtFileIn(const char*);
     virtual ~BBSS_TxtFileIn();
-    virtual void i(int& j, int chk = 0);
-    virtual void d(int n, double& p) {
+    virtual void i(int& j, int chk = 0) override;
+    virtual void d(int n, double& p) override {
         d(n, &p);
     }
-    virtual void d(int n, double* p);
-    virtual void s(char* cp, int chk = 0);
-    virtual Type type() {
+    virtual void d(int n, double* p) override;
+    virtual void s(char* cp, int chk = 0) override;
+    virtual Type type() override {
         return BBSS_IO::IN;
     }
-    virtual void skip(int);
+    virtual void skip(int) override;
     FILE* f;
 };
 BBSS_TxtFileIn::BBSS_TxtFileIn(const char* fname) {
@@ -449,11 +449,11 @@ class BBSS_BufferOut: public BBSS_IO {
   public:
     BBSS_BufferOut(char* buffer, int size);
     virtual ~BBSS_BufferOut();
-    virtual void i(int& j, int chk = 0);
-    virtual void d(int n, double& p);
-    virtual void d(int n, double* p);
-    virtual void s(char* cp, int chk = 0);
-    virtual Type type();
+    virtual void i(int& j, int chk = 0) override;
+    virtual void d(int n, double& p) override;
+    virtual void d(int n, double* p) override;
+    virtual void s(char* cp, int chk = 0) override;
+    virtual Type type() override;
     virtual void a(int);
     virtual void cpy(int size, char* cp);
     int sz;
@@ -709,8 +709,8 @@ static double ppignore(void* v) {
 }
 
 static int ignored(Prop* p) {
-    Point_process* pp = (Point_process*) p->dparam[1]._pvoid;
     if (pp_ignore_map) {
+        auto* pp = p->dparam[1].get<Point_process*>();
         if (pp_ignore_map->count(pp) > 0) {
             return 1;
         }
@@ -1170,7 +1170,7 @@ static void tqcallback(const TQItem* tq, int i) {
             }
             if (sew->ncindex == -2) {  // ignore the self event
                 // printf("%d Ignoring a SelfEvent to %s\n", nrnmpi_myid,
-                // memb_func[pp->prop->type].sym->name);
+                // memb_func[pp->prop->_type].sym->name);
                 delete sew;
                 sew = 0;
             }
@@ -1683,7 +1683,7 @@ static void pycell_name2sec_maps_fill() {
     // ForAllSections(sec)
     ITERATE(qsec, section_list) {
         Section* sec = hocSEC(qsec);
-        if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {  // PythonSection
+        if (sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {  // PythonSection
             // Assume we can associate with a Python Cell
             // Sadly, cannot use nrn_sec2cell Object* as the key because it
             // is not unique and the map needs definite PyObject* keys.
@@ -1749,7 +1749,8 @@ void BBSaveState::cell(Object* c) {
             Section* sec;
             qsec = c->secelm_;
             if (qsec) {  // Write HOC Cell
-                for (first = qsec; first->itemtype && hocSEC(first)->prop->dparam[6].obj == c;
+                for (first = qsec;
+                     first->itemtype && hocSEC(first)->prop->dparam[6].get<Object*>() == c;
                      first = first->prev) {
                     sec = hocSEC(first);
                     if (sec->prop) {
@@ -1786,7 +1787,7 @@ void BBSaveState::cell(Object* c) {
                     f->s(buf);
                     strcpy(buf, name.c_str());
                     f->s(buf);
-                    int indx = sec->prop->dparam[5].i;
+                    int indx = sec->prop->dparam[5].get<int>();
                     f->i(indx);
                     int size = sectionsize(sec);
                     f->i(size, 1);
@@ -1851,13 +1852,13 @@ void BBSaveState::cell(Object* c) {
 void BBSaveState::section_exist_info(Section* sec) {
     char buf[256];
     // not used for python sections
-    assert(!sec->prop->dparam[PROP_PY_INDEX]._pvoid);
-    Symbol* sym = sec->prop->dparam[0].sym;
+    assert(!(sec->prop->dparam[PROP_PY_INDEX]).get<void*>());
+    auto sym = sec->prop->dparam[0].get<Symbol*>();
     if (sym) {
         sprintf(buf, "%s", sym->name);
         f->s(buf);
     }
-    int indx = sec->prop->dparam[5].i;
+    int indx = sec->prop->dparam[5].get<int>();
     f->i(indx);
     int size = sectionsize(sec);
     f->i(size, 1);
@@ -1865,19 +1866,19 @@ void BBSaveState::section_exist_info(Section* sec) {
 
 void BBSaveState::section(Section* sec) {
     if (debug) {
-        sprintf(dbuf, "Enter section(%s)", sec->prop->dparam[0].sym->name);
+        sprintf(dbuf, "Enter section(%s)", sec->prop->dparam[0].get<Symbol*>()->name);
         PDEBUG;
     }
     seccontents(sec);
     if (debug) {
-        sprintf(dbuf, "Leave section(%s)", sec->prop->dparam[0].sym->name);
+        sprintf(dbuf, "Leave section(%s)", sec->prop->dparam[0].get<Symbol*>()->name);
         PDEBUG;
     }
 }
 
 int BBSaveState::sectionsize(Section* sec) {
     if (debug == 1) {
-        sprintf(dbuf, "Enter sectionsize(%s)", sec->prop->dparam[0].sym->name);
+        sprintf(dbuf, "Enter sectionsize(%s)", sec->prop->dparam[0].get<Symbol*>()->name);
         PDEBUG;
     }
     // should be same for both IN and OUT
@@ -1891,7 +1892,7 @@ int BBSaveState::sectionsize(Section* sec) {
         f = sav;
     }
     if (debug == 1) {
-        sprintf(dbuf, "Leave sectionsize(%s)", sec->prop->dparam[0].sym->name);
+        sprintf(dbuf, "Leave sectionsize(%s)", sec->prop->dparam[0].get<Symbol*>()->name);
         PDEBUG;
     }
     return cnt;
@@ -1899,7 +1900,7 @@ int BBSaveState::sectionsize(Section* sec) {
 
 void BBSaveState::seccontents(Section* sec) {
     if (debug) {
-        sprintf(dbuf, "Enter seccontents(%s)", sec->prop->dparam[0].sym->name);
+        sprintf(dbuf, "Enter seccontents(%s)", sec->prop->dparam[0].get<Symbol*>()->name);
         PDEBUG;
     }
     int i, nseg;
@@ -1914,7 +1915,7 @@ void BBSaveState::seccontents(Section* sec) {
     node01(sec, sec->parentnode);
     node01(sec, sec->pnode[nseg]);
     if (debug) {
-        sprintf(dbuf, "Leave seccontents(%s)", sec->prop->dparam[0].sym->name);
+        sprintf(dbuf, "Leave seccontents(%s)", sec->prop->dparam[0].get<Symbol*>()->name);
         PDEBUG;
     }
 }
@@ -1933,8 +1934,8 @@ void BBSaveState::node(Node* nd) {
     // the section and marked IGNORE. So we need to count only the
     // non-ignored.
     for (i = 0, p = nd->prop; p; p = p->next) {
-        if (p->type > 3) {
-            if (memb_func[p->type].is_point) {
+        if (p->_type > 3) {
+            if (memb_func[p->_type].is_point) {
                 if (!ignored(p)) {
                     ++i;
                 }
@@ -1945,7 +1946,7 @@ void BBSaveState::node(Node* nd) {
     }
     f->i(i, 1);
     for (p = nd->prop; p; p = p->next) {
-        if (p->type > 3) {
+        if (p->_type > 3) {
             mech(p);
         }
     }
@@ -1969,8 +1970,8 @@ void BBSaveState::node01(Section* sec, Node* nd) {
     f->d(1, NODEV(nd));
     // count
     for (i = 0, p = nd->prop; p; p = p->next) {
-        if (memb_func[p->type].is_point) {
-            Point_process* pp = (Point_process*) p->dparam[1]._pvoid;
+        if (memb_func[p->_type].is_point) {
+            auto* pp = p->dparam[1].get<Point_process*>();
             if (pp->sec == sec) {
                 if (!ignored(p)) {
                     ++i;
@@ -1980,8 +1981,8 @@ void BBSaveState::node01(Section* sec, Node* nd) {
     }
     f->i(i, 1);
     for (p = nd->prop; p; p = p->next) {
-        if (memb_func[p->type].is_point) {
-            Point_process* pp = (Point_process*) p->dparam[1]._pvoid;
+        if (memb_func[p->_type].is_point) {
+            auto* pp = p->dparam[1].get<Point_process*>();
             if (pp->sec == sec) {
                 mech(p);
             }
@@ -1995,10 +1996,10 @@ void BBSaveState::node01(Section* sec, Node* nd) {
 
 void BBSaveState::mech(Prop* p) {
     if (debug) {
-        sprintf(dbuf, "Enter mech(prop type %d)", p->type);
+        sprintf(dbuf, "Enter mech(prop type %d)", p->_type);
         PDEBUG;
     }
-    int type = p->type;
+    int type = p->_type;
     if (memb_func[type].is_point && ignored(p)) {
         return;
     }
@@ -2006,18 +2007,18 @@ void BBSaveState::mech(Prop* p) {
     char buf[100];
     sprintf(buf, "//%s", memb_func[type].sym->name);
     f->s(buf, 1);
-    f->d(ssi[p->type].size, p->param + ssi[p->type].offset);
-    Point_process* pp = 0;
-    if (memb_func[p->type].is_point) {
-        pp = (Point_process*) p->dparam[1]._pvoid;
-        if (pnt_receive[p->type]) {
+    f->d(ssi[p->_type].size, p->param + ssi[p->_type].offset);
+    Point_process* pp{};
+    if (memb_func[p->_type].is_point) {
+        pp = p->dparam[1].get<Point_process*>();
+        if (pnt_receive[p->_type]) {
             // associated NetCon and queue SelfEvent
             // if the NetCon has a unique non-gid source (art cell)
             // that source is save/restored as well.
             netrecv_pp(pp);
         }
     }
-    if (ssi[p->type].callback) {  // model author dependent info
+    if (ssi[p->_type].callback) {  // model author dependent info
         // the POINT_PROCESS or SUFFIX has a bbsavestate function
         sprintf(buf, "callback");
         f->s(buf, 1);
@@ -2027,11 +2028,11 @@ void BBSaveState::mech(Prop* p) {
 
         hoc_pushpx(&xdir);
         hoc_pushpx(xval);
-        if (memb_func[p->type].is_point) {
-            hoc_call_ob_proc(pp->ob, ssi[p->type].callback, narg);
+        if (memb_func[p->_type].is_point) {
+            hoc_call_ob_proc(pp->ob, ssi[p->_type].callback, narg);
             hoc_xpop();
         } else {
-            nrn_call_mech_func(ssi[p->type].callback, narg, p, p->type);
+            nrn_call_mech_func(ssi[p->_type].callback, narg, p, p->_type);
         }
         int sz = int(xdir);
         if (sz > 0) {
@@ -2042,19 +2043,19 @@ void BBSaveState::mech(Prop* p) {
             if (f->type() == BBSS_IO::IN) {  // restore
                 xdir = 1.;
                 f->d(sz, xval);
-                if (memb_func[p->type].is_point) {
-                    hoc_call_ob_proc(pp->ob, ssi[p->type].callback, narg);
+                if (memb_func[p->_type].is_point) {
+                    hoc_call_ob_proc(pp->ob, ssi[p->_type].callback, narg);
                     hoc_xpop();
                 } else {
-                    nrn_call_mech_func(ssi[p->type].callback, narg, p, p->type);
+                    nrn_call_mech_func(ssi[p->_type].callback, narg, p, p->_type);
                 }
             } else {
                 xdir = 0.;
-                if (memb_func[p->type].is_point) {
-                    hoc_call_ob_proc(pp->ob, ssi[p->type].callback, narg);
+                if (memb_func[p->_type].is_point) {
+                    hoc_call_ob_proc(pp->ob, ssi[p->_type].callback, narg);
                     hoc_xpop();
                 } else {
-                    nrn_call_mech_func(ssi[p->type].callback, narg, p, p->type);
+                    nrn_call_mech_func(ssi[p->_type].callback, narg, p, p->_type);
                 }
                 f->d(sz, xval);
             }
@@ -2062,14 +2063,14 @@ void BBSaveState::mech(Prop* p) {
         }
     }
     if (debug) {
-        sprintf(dbuf, "Leave mech(prop type %d)", p->type);
+        sprintf(dbuf, "Leave mech(prop type %d)", p->_type);
         PDEBUG;
     }
 }
 
 void BBSaveState::netrecv_pp(Point_process* pp) {
     if (debug) {
-        sprintf(dbuf, "Enter netrecv_pp(pp prop type %d)", pp->prop->type);
+        sprintf(dbuf, "Enter netrecv_pp(pp prop type %d)", pp->prop->_type);
         PDEBUG;
     }
     char buf[1000];
@@ -2177,17 +2178,19 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
             f->d(1, tt);
             f->i(ncindex);
             f->i(moff);
-            void** movable = NULL;
-            TQItem* tqi;
+            Datum tqi_datum;
             // new SelfEvent item mostly filled in.
             // But starting out with NULL weight vector and
             // flag=1 so that tqi->data is the new SelfEvent
-            net_send((void**) &tqi, NULL, pp, tt, 1.0);
-            assert(tqi && tqi->data_ && ((DiscreteEvent*) tqi->data_)->type() == SelfEventType);
-            SelfEvent* se = (SelfEvent*) tqi->data_;
+            nrn_net_send(&tqi_datum, nullptr, pp, tt, 1.0);
+            auto* tqi = tqi_datum.get<TQItem*>();
+            assert(tqi && tqi->data_ &&
+                   static_cast<DiscreteEvent*>(tqi->data_)->type() == SelfEventType);
+            auto* se = static_cast<SelfEvent*>(tqi->data_);
             se->flag_ = flag;
+            Datum* movable{};
             if (moff >= 0) {
-                movable = &(pp->prop->dparam[moff]._pvoid);
+                movable = pp->prop->dparam + moff;
                 if (flag == 1) {
                     *movable = tqi;
                 }
@@ -2207,7 +2210,7 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
         }
     }
     if (debug) {
-        sprintf(dbuf, "Leave netrecv_pp(pp prop type %d)", pp->prop->type);
+        sprintf(dbuf, "Leave netrecv_pp(pp prop type %d)", pp->prop->_type);
         PDEBUG;
     }
 }

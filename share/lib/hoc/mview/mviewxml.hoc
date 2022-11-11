@@ -388,7 +388,7 @@ proc xmlwrite() {local proximalid, pointcount, segmentcount, sectioncount, i, j,
                 $o1.printf("      <cablegroup name=\"%s\"> %s\n", groupName, comment)
 
                 for j=0, tobj1.subset.size - 1 {
-                    secref = cellref.secanal.all.object(tobj1.subset.x(j))
+                    secref = cellref.secanal.all.object(tobj1.subset.x[j])
 
                     $o1.printf("        <cable id = \"%d\"/>\n",secref.sec.cm(.00001))
                 }
@@ -499,7 +499,7 @@ proc xmlwrite() {local proximalid, pointcount, segmentcount, sectioncount, i, j,
                 }
                 $o1.printf("      <bio:mechanism name=\"%s\" type=\"Channel Mechanism\"%s>\n", dmech.name, passiveAttr)
                 for j=0, dmech.location.subset.size()-1 {
-                    secref = cellref.secanal.all.object(dmech.location.subset.x(j))
+                    secref = cellref.secanal.all.object(dmech.location.subset.x[j])
         //              printsec($o1, secref)
                 }
                 for dmech.parmiter(dparm) {
@@ -722,7 +722,7 @@ proc printparmval() {
 	    if ($o4.location.type() == 8) {
 
 //	        for m=0, $o4.location.subset.size()-1 {
-//		        secref = $o2.object($o4.location.subset.x(m))
+//		        secref = $o2.object($o4.location.subset.x[m])
 //	            printsec($o1, secref)
 //	        }
 
@@ -792,8 +792,8 @@ proc printparmval() {
         infoVals = ""
 
         for i=0, $o4.vec.size - 1 {
-             sprint(infoVals, "%s %g, ", infoVals, $o4.vec.x(i))
-             avgVal = avgVal + $o4.vec.x(i)
+             sprint(infoVals, "%s %g, ", infoVals, $o4.vec.x[i])
+             avgVal = avgVal + $o4.vec.x[i]
         }
         avgVal = avgVal / $o4.vec.size
 
@@ -825,8 +825,8 @@ proc printvecvals() {local i
         ///$o1.printf("        <section name=\"%s\">\n", secname())
     }
     for i=0, $o2.vec.size - 1 {
-        //$o1.printf("        <value>%g</value>\n", $o2.vec.x(i))
-        $o1.printf("            <!-- Value %g: %g -->\n", i, $o2.vec.x(i))
+        //$o1.printf("        <value>%g</value>\n", $o2.vec.x[i])
+        $o1.printf("            <!-- Value %g: %g -->\n", i, $o2.vec.x[i])
     }
     //$o1.printf("      </section>\n")
 }

@@ -150,8 +150,10 @@ for i in "${files[@]}" ; do
   base_name="$(basename "$f")"
   dir_name="$(dirname "$f")"
   # Note: indentation for shell lines in make rules must be a tab
+  f=${f// /\\ }
+  f=${f//:/\\:}
   echo "\
-./${base_name// /\\ }.cpp: ${f// /\\ }.mod
+./${base_name// /\\ }.cpp: ${f}.mod
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
 	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\")
 

@@ -25,7 +25,7 @@ int in_comment_;
 char* inputline() {
     /* and removes comment, newline, beginning and trailing blanks */
     /* used to get the TITLE line */
-#if __TURBOC__ || SYSV || VMS || defined(MINGW)
+#if SYSV || defined(MINGW)
 #define index strchr
 #endif
     char* cp;
@@ -231,9 +231,9 @@ char* current_line() { /* assumes we actually want the previous line */
 }
 
 /* two arguments so we can pass a name to construct an error message. */
-void diag(char* s1, char* s2) {
+void diag(const char* s1, const char* s2) {
     char* cp;
-    Fprintf(stderr, "%s", s1);
+    Fprintf(stderr, "Error: %s", s1);
     if (s2) {
         Fprintf(stderr, "%s", s2);
     }

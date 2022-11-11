@@ -14,7 +14,7 @@ extern int hoc_yyparse(void);
 extern void hoc_define(Symbol*);
 extern void hoc_iterator_object(Symbol*, int, Inst*, Inst*, Object*);
 extern int hoc_zzdebug;
-extern int hoc_moreinput(void);
+int hoc_moreinput();
 extern Symlist* hoc_p_symlist;
 extern void hoc_defnonly(const char*);
 extern Symbol* hoc_decl(Symbol*);

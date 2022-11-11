@@ -7,6 +7,7 @@ v1.extra(v2)
 v2.extra(v1)
 
 objref v2
+printf("next statement generates error\n")
 execute1("v1.extra(v2)")
-
+printf("continuing\n")
 

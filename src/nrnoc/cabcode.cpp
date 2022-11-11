@@ -7,6 +7,7 @@
 #include <math.h>
 #include <nrnpython_config.h>
 #include "section.h"
+#include "nrn_ansi.h"
 #include "nrniv_mf.h"
 #include "membfunc.h"
 #include "parse.hpp"
@@ -231,8 +232,8 @@ printf(" is a section name\n");
 
 Object* nrn_sec2cell(Section* sec) {
     if (sec->prop) {
-        if (sec->prop->dparam[6].obj) {
-            return sec->prop->dparam[6].obj;
+        if (auto* o = sec->prop->dparam[6].get<Object*>(); o) {
+            return o;
         } else if (nrnpy_pysec_cell_p_) {
             Object* o = (*nrnpy_pysec_cell_p_)(sec);
             if (o) {
@@ -246,8 +247,8 @@ Object* nrn_sec2cell(Section* sec) {
 
 int nrn_sec2cell_equals(Section* sec, Object* obj) {
     if (sec && sec->prop) {
-        if (sec->prop->dparam[6].obj) {
-            return sec->prop->dparam[6].obj == obj;
+        if (auto o = sec->prop->dparam[6].get<Object*>(); o) {
+            return o == obj;
         } else if (nrnpy_pysec_cell_equals_p_) {
             return (*nrnpy_pysec_cell_equals_p_)(sec, obj);
         }
@@ -267,15 +268,11 @@ static Section* new_section(Object* ob, Symbol* sym, int i) {
     sec = sec_alloc();
     section_ref(sec);
     prop = prop_alloc(&(sec->prop), CABLESECTION, (Node*) 0);
-    prop->dparam[0].sym = sym;
-    prop->dparam[5].i = i;
-    if (ob) {
-        prop->dparam[6].obj = ob;
-    } else {
-        prop->dparam[6].obj = nullptr;
-    }
+    prop->dparam[0] = sym;
+    prop->dparam[5] = i;
+    prop->dparam[6] = ob;
 #if USE_PYTHON
-    prop->dparam[PROP_PY_INDEX]._pvoid = nullptr;
+    prop->dparam[PROP_PY_INDEX] = nullptr;
 #endif
     nrn_pushsec(sec);
     d = (double) DEF_nseg;
@@ -299,7 +296,7 @@ void new_sections(Object* ob, Symbol* sym, Item** pitm, int size) {
         } else {
             pitm[i] = lappendsec(section_list, sec);
         }
-        sec->prop->dparam[8].itm = pitm[i];
+        sec->prop->dparam[8] = pitm[i];
     }
 }
 
@@ -310,20 +307,17 @@ Section* nrnpy_newsection(NPySecObj* v) {
     Section* sec;
     sec = new_section((Object*) 0, (Symbol*) 0, 0);
 #if USE_PYTHON
-    sec->prop->dparam[PROP_PY_INDEX]._pvoid = v;
+    sec->prop->dparam[PROP_PY_INDEX] = static_cast<void*>(v);
 #endif
     itm = lappendsec(section_list, sec);
-    sec->prop->dparam[8].itm = itm;
+    sec->prop->dparam[8] = itm;
     return sec;
 }
 #endif
 
 void delete_section(void) {
     Section* sec;
-    Object* ob;
     Item** pitm;
-    Symbol* sym;
-    int i;
     if (ifarg(1)) {
         hoc_execerror(
             "delete_section takes no positional arguments and deletes the HOC currently accessed "
@@ -336,23 +330,23 @@ void delete_section(void) {
         return;
     }
 #if USE_PYTHON
-    if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) { /* Python Section */
+    if (sec->prop->dparam[PROP_PY_INDEX].get<void*>()) { /* Python Section */
         /* the Python Section will be a zombie section with a pointer
            to an invalid Section*.
         */
-        sec->prop->dparam[PROP_PY_INDEX]._pvoid = NULL;
+        sec->prop->dparam[PROP_PY_INDEX] = nullptr;
         section_ref(sec);
-        sec_free(sec->prop->dparam[8].itm);
+        sec_free(sec->prop->dparam[8].get<hoc_Item*>());
         hoc_retpushx(0.0);
         return;
     }
 #endif
-    if (!sec->prop->dparam[0].sym) {
+    auto* sym = sec->prop->dparam[0].get<Symbol*>();
+    if (!sym) {
         hoc_execerror("Cannot delete an unnamed hoc section", (char*) 0);
     }
-    sym = sec->prop->dparam[0].sym;
-    ob = sec->prop->dparam[6].obj;
-    i = sec->prop->dparam[5].i;
+    auto* ob = sec->prop->dparam[6].get<Object*>();
+    auto i = sec->prop->dparam[5].get<int>();
     if (ob) {
         pitm = ob->u.dataspace[sym->u.oboff].psecitm + i;
     } else {
@@ -384,23 +378,23 @@ i - (section[i].sym)->u.u_auto
 */
 
 double section_length(Section* sec) {
-    double x;
     if (sec->recalc_area_ && sec->npt3d) {
-        sec->prop->dparam[2].val = sec->pt3d[sec->npt3d - 1].arc;
+        sec->prop->dparam[2] = sec->pt3d[sec->npt3d - 1].arc;
     }
-    x = sec->prop->dparam[2].val;
+    double x = sec->prop->dparam[2].get<double>();
     if (x <= 1e-9) {
-        x = sec->prop->dparam[2].val = 1e-9;
+        x = 1e-9;
+        sec->prop->dparam[2] = x;
     }
     return x;
 }
 
 int arc0at0(Section* sec) {
-    return ((sec->prop->dparam[3].val) ? 0 : 1);
+    return (sec->prop->dparam[3].get<double>() ? 0 : 1);
 }
 
 double nrn_ra(Section* sec) {
-    return sec->prop->dparam[7].val;
+    return sec->prop->dparam[7].get<double>();
 }
 
 void cab_alloc(Prop* p) {
@@ -411,10 +405,11 @@ void cab_alloc(Prop* p) {
 #define CAB_SIZE 10
 #endif
     pd = nrn_prop_datum_alloc(CABLESECTION, CAB_SIZE, p);
-    pd[1].val = pd[3].val = 0.;
-    pd[2].val = DEF_L;
-    pd[4].val = DEF_rallbranch;
-    pd[7].val = DEF_Ra;
+    pd[1] = 0.0;
+    pd[2] = DEF_L;
+    pd[3] = 0.0;
+    pd[4] = DEF_rallbranch;
+    pd[7] = DEF_Ra;
     p->dparam = pd;
     p->param_size = CAB_SIZE; /* this one is special since it refers to dparam */
 }
@@ -638,8 +633,8 @@ static void connectsec_impl(Section* parent, Section* sec) {
         reverse_nodes(sec);
     }
     pd = sec->prop->dparam;
-    pd[1].val = d2;
-    pd[3].val = d1;
+    pd[1] = d2;
+    pd[3] = d1;
     section_ref(parent);
     sec->parentsec = parent;
     nrn_add_sibling_list(sec);
@@ -788,7 +783,8 @@ void* hoc_sec_internal_name2ptr(const char* s, int eflag) {
     }
     sec = (Section*) vp;
     if (nrn_is_valid_section_ptr(vp) == 0 || !sec->prop || !sec->prop->dparam ||
-        !sec->prop->dparam[8].itm || sec->prop->dparam[8].itm->itemtype != SECTION) {
+        !sec->prop->dparam[8].get<hoc_Item*>() ||
+        sec->prop->dparam[8].get<hoc_Item*>()->itemtype != SECTION) {
         if (eflag) {
             hoc_execerror("Section associated with internal name does not exist:", s);
         } else {
@@ -863,27 +859,6 @@ void mech_insert1(Section* sec, int type) {
     n = sec->nnode - 1;
     pnd = sec->pnode;
     nd = pnd[0];
-#if METHOD3
-    /* For method3 the parent must also have the property. Also
-       the last node may have it because one of the connecting sections
-       have it. */
-    if (_method3) {
-        Section* psec = sec->parentsec;
-
-        /* must be in parent */
-        Node* pnd = sec->parentnode;
-        if (!nrn_mechanism(s->subtype, pnd)) {
-            prop_alloc(&pnd->prop, type, pnd);
-        }
-        /* method3 has mechanisms in the "zero area" node. */
-        n = sec->nnode;
-
-        /* may already be in last node */
-        if (nrn_mechanism(type, sec->pnode[n - 1])) {
-            --n;
-        }
-    }
-#endif
     m = nrn_mechanism(type, nd);
     if (!m) { /* all nodes get the property */
         for (i = n - 1; i >= 0; i--) {
@@ -930,22 +905,17 @@ void mech_uninsert1(Section* sec, Symbol* s) {
         hoc_warning("Not allowed to uninsert ions at this time", s->name);
         return;
     }
-#if METHOD3
-    if (_method3) {
-        hoc_execerror("Can't uninsert mechanisms when spatial method is non_zero", s->name);
-    }
-#endif
     n = sec->nnode;
     for (i = 0; i < n; ++i) {
         mnext = sec->pnode[i]->prop;
-        if (mnext && mnext->type == type) {
+        if (mnext && mnext->_type == type) {
             sec->pnode[i]->prop = mnext->next;
             single_prop_free(mnext);
             continue;
         }
         for (m = mnext; m; m = mnext) {
             mnext = m->next;
-            if (mnext && mnext->type == type) {
+            if (mnext && mnext->_type == type) {
                 m->next = mnext->next;
                 single_prop_free(mnext);
                 break;
@@ -960,17 +930,7 @@ void nrn_rangeconst(Section* sec, Symbol* s, double* pd, int op) {
     int indx;
     double* dpr;
     double d = *pd;
-#if METHOD3
-    /* this is highly restrictive at this time. All parameters except
-    morphology must be uniform across section connections because
-    the density of channels is assumed to be uniform during matrix
-    construction. ie the node does not know which side gets which value
-    */
-    if (_method3) {
-        n = sec->nnode;
-    } else
-#endif
-        n = sec->nnode - 1;
+    n = sec->nnode - 1;
     if (s->u.rng.type == VINDEX) {
         nd = node_ptr(sec, 0., (double*) 0);
         if (op) {
@@ -1037,15 +997,6 @@ void nrn_rangeconst(Section* sec, Symbol* s, double* pd, int op) {
             }
         }
 #endif
-#if METHOD3
-        /* this is a hack and way too restrictive */
-        if (_method3) { /*the parent node also gets the value */
-            if (tree_changed) {
-                setup_topology();
-            }
-            *(dprop(s, indx, sec->parentsec, sec->parentnode)) = *pd;
-        }
-#endif
     }
 }
 
@@ -1059,7 +1010,6 @@ void range_const(void) /* rangevariable symbol at pc, value on stack */
     op = (pc++)->i;
     d = xpop();
     sec = nrn_sec_pop();
-
     nrn_rangeconst(sec, s, &d, op);
     hoc_pushx(d);
 }
@@ -1079,7 +1029,7 @@ static int range_vec_indx(Symbol* s) {
 Prop* nrn_mechanism(int type, Node* nd) {
     Prop* m;
     for (m = nd->prop; m; m = m->next) {
-        if (m->type == type) {
+        if (m->_type == type) {
             break;
         }
     }
@@ -1141,12 +1091,12 @@ void connectpointer(void) { /* pointer symbol at pc, target variable on stack, m
         short i;
         Section* sec;
 
-        d = xpop();
+        d = hoc_xpop();
         sec = nrn_sec_pop();
         i = node_index(sec, d);
         dat = pdprop(s, range_vec_indx(s), sec, i);
     }
-    dat->pval = pd;
+    *dat = pd;
 }
 
 void range_interpolate_single(void) /*symbol at pc, 2 values on stack*/
@@ -1154,7 +1104,6 @@ void range_interpolate_single(void) /*symbol at pc, 2 values on stack*/
     double x, y;
     Symbol* s;
     Section* sec;
-    double* pd;
     int op;
 
     s = (pc++)->sym;
@@ -1173,7 +1122,7 @@ void range_interpolate_single(void) /*symbol at pc, 2 values on stack*/
         }
     }
 
-    pd = nrn_rangepointer(sec, s, x);
+    auto pd = nrn_rangepointer(sec, s, x);
     if (op) {
         y = hoc_opasgn(op, *pd, y);
     }
@@ -1202,12 +1151,6 @@ void range_interpolate(void) /*symbol at pc, 4 values on stack*/
     Node* nd;
 
     op = (pc++)->i;
-#if METHOD3
-    if (_method3) {
-        hoc_execerror("Range variable interpolation not implemented",
-                      "for new spatial discretization methods");
-    }
-#endif
     y2 = xpop();
     y1 = xpop();
     x2 = xpop();
@@ -1338,12 +1281,12 @@ double* nrn_rangepointer(Section* sec, Symbol* s, double d) {
     int indx;
 
     if (s->u.rng.type == VINDEX) {
-        nd = node_ptr(sec, d, (double*) 0);
+        nd = node_ptr(sec, d, nullptr);
         return &NODEV(nd);
     }
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
-            nd = node_ptr(sec, d, (double*) 0);
+            nd = node_ptr(sec, d, nullptr);
             if (!nd->_nt) {
                 v_setup_vectors();
                 assert(nd->_nt);
@@ -1371,60 +1314,50 @@ double* nrn_rangepointer(Section* sec, Symbol* s, double d) {
 /* return nil if failure instead of hoc_execerror
    and return pointer to the 0 element if an array
 */
-double* nrnpy_rangepointer(Section* sec, Symbol* s, double d, int* err) {
-    /* if you change this change nrnpy_rangepointer as well */
-    short i;
-    Node* nd;
-
+double* nrnpy_rangepointer(Section* sec, Symbol* s, double d, int* err, int idx) {
+    /* if you change this change nrn_rangepointer as well */
     *err = 0;
     if (s->u.rng.type == VINDEX) {
-        return &NODEV(node_ptr(sec, d, (double*) 0));
+        return &NODEV(node_ptr(sec, d, nullptr));
     }
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
-            nd = node_ptr(sec, d, (double*) 0);
+            auto* nd = node_ptr(sec, d, nullptr);
             if (!nd->_nt) {
                 v_setup_vectors();
                 assert(nd->_nt);
             }
             return nd->_nt->_nrn_fast_imem->_nrn_sav_rhs + nd->v_node_index;
         } else {
-            return (double*) 0;
+            return nullptr;
         }
     }
 #if EXTRACELLULAR
     if (s->u.rng.type == EXTRACELL) {
-        double* pd;
-        nd = node_ptr(sec, d, (double*) 0);
-        pd = nrn_vext_pd(s, 0, nd);
+        auto* nd = node_ptr(sec, d, nullptr);
+        double* pd{nrn_vext_pd(s, 0, nd)};
         if (pd) {
             return pd;
         }
     }
 #endif
-    i = node_index(sec, d);
-    return nrnpy_dprop(s, 0, sec, i, err);
+    auto const i = node_index(sec, d);
+    return nrnpy_dprop(s, idx, sec, i, err);
 }
 
-void rangevarevalpointer(void) /* symbol at pc, location on stack, return pointer on stack */
-{
-    short i;
-    Section* sec;
-    double d;
-    Symbol* s = (pc++)->sym;
-    Node* nd;
-    int indx;
-
-    d = xpop();
-    sec = nrn_sec_pop();
+// symbol at pc, location on stack, return pointer on stack
+void rangevarevalpointer() {
+    Symbol* s{(pc++)->sym};
+    double d = xpop();
+    Section* sec{nrn_sec_pop()};
     if (s->u.rng.type == VINDEX) {
-        nd = node_ptr(sec, d, (double*) 0);
+        auto* const nd = node_ptr(sec, d, nullptr);
         hoc_pushpx(&NODEV(nd));
         return;
     }
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
-            nd = node_ptr(sec, d, (double*) 0);
+            auto* nd = node_ptr(sec, d, nullptr);
             if (!nd->_nt) {
                 v_setup_vectors();
                 assert(nd->_nt);
@@ -1436,19 +1369,18 @@ void rangevarevalpointer(void) /* symbol at pc, location on stack, return pointe
         }
         return;
     }
-    indx = range_vec_indx(s);
+    auto const indx = range_vec_indx(s);
     if (s->u.rng.type == MORPHOLOGY && sec->recalc_area_) {
         nrn_area_ri(sec);
     }
     if (s->u.rng.type == EXTRACELL) {
-        double* pd;
-        pd = nrn_vext_pd(s, indx, node_ptr(sec, d, (double*) 0));
+        double* pd{nrn_vext_pd(s, indx, node_ptr(sec, d, nullptr))};
         if (pd) {
             hoc_pushpx(pd);
             return;
         }
     }
-    i = node_index(sec, d);
+    auto const i = node_index(sec, d);
     hoc_pushpx(dprop(s, indx, sec, i));
 }
 
@@ -1475,18 +1407,13 @@ int node_index(Section* sec, double x) /* returns nearest index to x */
     if (x < 0. || x > 1.) {
         hoc_execerror("range variable domain is 0<=x<=1", (char*) 0);
     }
-#if METHOD3
-    if (_method3) {
-        n = sec->nnode;
-    } else
-#endif
-        n = (double) (sec->nnode - 1);
+    n = (double) (sec->nnode - 1);
     assert(n >= 0.);
     i = n * x;
     if (i == (int) n) {
         i = n - 1;
     }
-    if (sec->prop->dparam[3].val) {
+    if (sec->prop->dparam[3].get<double>()) {
         i = n - i - 1;
     }
     return i;
@@ -1519,14 +1446,9 @@ double cable_prop_eval(Symbol* sym) {
     sec = nrn_sec_pop();
     switch (sym->u.rng.type) {
     case 0: /* not in property list so must be nnode */
-#if METHOD3
-        if (_method3) {
-            return (double) sec->nnode;
-        } else
-#endif
-            return (double) sec->nnode - 1;
+        return (double) sec->nnode - 1;
     case CABLESECTION:
-        return sec->prop->dparam[sym->u.rng.index].val;
+        return sec->prop->dparam[sym->u.rng.index].get<double>();
     default:
         hoc_execerror(sym->name, " not a USERPROPERTY");
     }
@@ -1537,11 +1459,11 @@ double* cable_prop_eval_pointer(Symbol* sym) {
     sec = nrn_sec_pop();
     switch (sym->u.rng.type) {
     case CABLESECTION:
-        return &sec->prop->dparam[sym->u.rng.index].val;
+        return &(sec->prop->dparam[sym->u.rng.index].literal_value<double>());
     default:
         hoc_execerror(sym->name, " not a USERPROPERTY that can be pointed to");
     }
-    return (double*) 0;
+    return nullptr;
 }
 
 #if KEEP_NSEG_PARM
@@ -1562,16 +1484,9 @@ void nrn_change_nseg(Section* sec, int n) {
     if (n < 1) {
         hoc_execerror("nseg", " must be positive");
     }
-#if METHOD3
-    if (_method3) {
-        --n;
-    }
-#else
     if (sec->nnode == n + 1) {
         return;
-    } else
-#endif
-    {
+    } else {
         Node** pnd;
         int i;
         int nold = sec->nnode;
@@ -1580,11 +1495,6 @@ void nrn_change_nseg(Section* sec, int n) {
         diam_changed = 1;
         sec->recalc_area_ = 1;
         pnd = sec->pnode;
-#if METHOD3
-        if (_method3) {
-            ++n;
-        }
-#endif
 #if KEEP_NSEG_PARM
         if (!keep_nseg_parm_ || nold == 0)
 #endif
@@ -1608,20 +1518,20 @@ void cable_prop_assign(Symbol* sym, double* pd, int op) {
         if (sym->u.rng.index == 2) {
             if (can_change_morph(sec)) {
                 if (op) {
-                    *pd = hoc_opasgn(op, sec->prop->dparam[2].val, *pd);
+                    *pd = hoc_opasgn(op, sec->prop->dparam[2].get<double>(), *pd);
                 }
-                sec->prop->dparam[2].val = *pd;
+                sec->prop->dparam[2] = *pd;
                 nrn_length_change(sec, *pd);
                 diam_changed = 1;
                 sec->recalc_area_ = 1;
             }
         } else {
             if (op) {
-                *pd = hoc_opasgn(op, sec->prop->dparam[sym->u.rng.index].val, *pd);
+                *pd = hoc_opasgn(op, sec->prop->dparam[sym->u.rng.index].get<double>(), *pd);
             }
             diam_changed = 1;
             sec->recalc_area_ = 1;
-            sec->prop->dparam[sym->u.rng.index].val = *pd;
+            sec->prop->dparam[sym->u.rng.index] = *pd;
         }
 #if RA_WARNING
         if (sym->u.rng.index == 7) {
@@ -1636,12 +1546,12 @@ void cable_prop_assign(Symbol* sym, double* pd, int op) {
 
 /* x of parent for this section */
 double nrn_connection_position(Section* sec) {
-    return sec->prop->dparam[1].val;
+    return sec->prop->dparam[1].get<double>();
 }
 
 /* x=0,1 end connected to parent */
 double nrn_section_orientation(Section* sec) {
-    return sec->prop->dparam[3].val;
+    return sec->prop->dparam[3].get<double>();
 }
 
 int nrn_at_beginning(Section* sec) {
@@ -1755,16 +1665,6 @@ void setup_topology(void) {
         }
     }
 
-#if METHOD3
-    if (_method3) {
-        int i;
-        Node* nd = root /*obsolete*/ section->pnode;
-        for (i = 0; i < unconnected; i++) {
-            IGNORE(prop_alloc(&nd[i].prop, MORPHOLOGY, nd + i));
-            IGNORE(prop_alloc(&nd[i].prop, CAP, nd + i));
-        }
-    }
-#endif
     section_order();
     tree_changed = 0;
     diam_changed = 1;
@@ -1772,18 +1672,13 @@ void setup_topology(void) {
     ++nrn_shape_changed_;
 }
 
-const char* secname(Section* sec) /* name of section (for use in error messages) */
-{
+// name of section (for use in error messages)
+const char* secname(Section* sec) {
     static char name[512];
-    Symbol* s;
-    int indx;
-    Object* ob;
-
     if (sec && sec->prop) {
-        if (sec->prop->dparam[0].sym) {
-            s = sec->prop->dparam[0].sym;
-            indx = sec->prop->dparam[5].i;
-            ob = sec->prop->dparam[6].obj;
+        if (auto* s = sec->prop->dparam[0].get<Symbol*>(); s) {
+            auto indx = sec->prop->dparam[5].get<int>();
+            auto* ob = sec->prop->dparam[6].get<Object*>();
             if (ob) {
                 Sprintf(name,
                         "%s.%s%s",
@@ -1794,7 +1689,7 @@ const char* secname(Section* sec) /* name of section (for use in error messages)
                 Sprintf(name, "%s%s", s->name, hoc_araystr(s, indx, hoc_top_level_data));
             }
 #if USE_PYTHON
-        } else if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+        } else if (sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
             assert(nrnpy_pysec_name_p_);
             return (*nrnpy_pysec_name_p_)(sec);
 #endif
@@ -1811,7 +1706,8 @@ const char* nrn_sec2pysecname(Section* sec) {
 #if USE_PYTHON
     static char buf[256];
     const char* name = secname(sec);
-    if (sec && sec->prop->dparam[PROP_PY_INDEX]._pvoid && strncmp(name, "__nrnsec_0x", 11) != 0) {
+    if (sec && sec->prop->dparam[PROP_PY_INDEX].get<void*>() &&
+        strncmp(name, "__nrnsec_0x", 11) != 0) {
         sprintf(buf, "_pysec.%s", name);
     } else {
         strcpy(buf, name);
@@ -1832,15 +1728,10 @@ void section_owner(void) {
 }
 
 char* hoc_section_pathname(Section* sec) {
-    Symbol* s;
-    int indx;
     static char name[200];
-    Object* ob;
-
-    if (sec && sec->prop && sec->prop->dparam[0].sym) {
-        s = sec->prop->dparam[0].sym;
-        indx = sec->prop->dparam[5].i;
-        ob = sec->prop->dparam[6].obj;
+    if (auto* s = sec->prop->dparam[0].get<Symbol*>(); sec && sec->prop && s) {
+        auto indx = sec->prop->dparam[5].get<int>();
+        auto* ob = sec->prop->dparam[6].get<Object*>();
         if (ob) {
             char* p = hoc_object_pathname(ob);
             if (p) {
@@ -1854,7 +1745,7 @@ char* hoc_section_pathname(Section* sec) {
             Sprintf(name, "%s%s", s->name, hoc_araystr(s, indx, hoc_objectdata));
         }
 #if USE_PYTHON
-    } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+    } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
         strcpy(name, nrn_sec2pysecname(sec));
 #endif
     } else {
@@ -1881,29 +1772,6 @@ double nrn_arc_position(Section* sec, Node* node) {
     }
 }
 
-#if 0
-double nrn_arc_position(Section* sec, int i)
-{
-	double x;
-	int n;
-	n = sec->nnode - 1;
-	if (i == n) {
-		x = 1.;
-	}else{
-#if METHOD3
-		if (_method3) {
-			x = (i+1)/((double)n);
-		}else
-#endif
-		x = (i+.5)/((double)n);
-	}
-	if (sec->prop->dparam[3].val) {
-		x = 1. - x;
-	}
-	return x;
-}
-#endif
-
 const char* sec_and_position(Section* sec, Node* nd) {
     const char* buf;
     static char buf1[200];
@@ -1921,12 +1789,7 @@ int segment_limits(double* pdx) {
     double l;
 
     sec = chk_access();
-#if METHOD3
-    if (_method3) {
-        n = sec->nnode;
-    } else
-#endif
-        n = sec->nnode - 1;
+    n = sec->nnode - 1;
     /*	l = sec->prop->dparam[2].val;*/
     l = 1.;
     *pdx = l / ((double) n);
@@ -1941,30 +1804,12 @@ Node* node_exact(Section* sec, double x) {
         x is 0 or 1 as well as in between
     */
     Node* node;
-
     assert(sec);
-#if METHOD3
-    if (_method3) {
-        inode = (int) (x * sec->nnode + .5); /* ranges from 0 to nnode */
-        if (tree_changed) {
-            setup_topology();
-        }
-        if (sec->prop->dparam[3].val) {
-            inode = sec->nnode - inode;
-        }
-        --inode;
-        if (inode < 0) {
-            inode = sec->parentnode;
-            sec = sec->parentsec;
-            *psec = sec;
-        }
-    } else
-#endif
     {
         if (x <= 0. || x >= 1.) {
             x = (x < 0.) ? 0. : x;
             x = (x > 1.) ? 1. : x;
-            if (sec->prop->dparam[3].val) {
+            if (sec->prop->dparam[3].get<double>()) {
                 x = 1. - x;
             }
             if (x == 0.) {
@@ -2007,14 +1852,12 @@ int nrn_get_mechtype(const char* mechname) {
     return s->subtype;
 }
 
-#if VECTORIZE
 int nrn_instance_count(int mechtype) {
     if (v_structure_change) {
         v_setup_vectors();
     }
     return memb_list[mechtype].nodecount;
 }
-#endif
 
 #if EXTRACELLULAR
 /* want to handle vext(0), vext(1) correctly. No associated i_membrane though.*/
@@ -2064,9 +1907,9 @@ double* dprop(Symbol* s, int indx, Section* sec, short inode) {
 #if EXTRACELLULAR
 /* this does not handle vext(0) and vext(1) properly at this time */
 #if I_MEMBRANE
-    if (m->type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 2) {
+    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 2) {
 #else
-    if (m->type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 1) {
+    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 1) {
 #endif
         return sec->pnode[inode]->extnode->v + indx;
     }
@@ -2078,11 +1921,11 @@ double* dprop(Symbol* s, int indx, Section* sec, short inode) {
             return &(m->param[s->u.rng.index]) + indx;
         }
     } else {
-        double** p = &((m->dparam)[s->u.rng.index + indx].pval);
-        if (!(*p)) {
+        auto* const p = m->dparam[s->u.rng.index + indx].get<double*>();
+        if (!p) {
             hoc_execerror(s->name, "wasn't made to point to anything");
         }
-        return *p;
+        return p;
     }
 }
 
@@ -2099,9 +1942,9 @@ double* nrnpy_dprop(Symbol* s, int indx, Section* sec, short inode, int* err) {
 #if EXTRACELLULAR
 /* this does not handle vext(0) and vext(1) properly at this time */
 #if I_MEMBRANE
-    if (m->type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 2) {
+    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 2) {
 #else
-    if (m->type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 1) {
+    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 1) {
 #endif
         return sec->pnode[inode]->extnode->v + indx;
     }
@@ -2113,11 +1956,11 @@ double* nrnpy_dprop(Symbol* s, int indx, Section* sec, short inode, int* err) {
             return &(m->param[s->u.rng.index]) + indx;
         }
     } else {
-        double** p = &((m->dparam)[s->u.rng.index + indx].pval);
-        if (!(*p)) {
+        auto* const p = m->dparam[s->u.rng.index + indx].get<double*>();
+        if (!p) {
             *err = 2;
         }
-        return *p;
+        return p;
     }
 }
 
@@ -2153,10 +1996,10 @@ void forall_section(void) {
     if (hoc_thisobject) {
         qsec = hoc_thisobject->secelm_;
         if (qsec) {
-            for (first = qsec; first->prev->itemtype &&
-                               hocSEC(first->prev)->prop->dparam[6].obj == hoc_thisobject;
+            for (first = qsec;
+                 first->prev->itemtype &&
+                 hocSEC(first->prev)->prop->dparam[6].get<Object*>() == hoc_thisobject;
                  first = first->prev) {
-                ;
             }
             last = qsec->next;
         } else {
@@ -2237,7 +2080,7 @@ int has_membrane(char* mechanism_name, Section* sec) {
         section sec */
     Prop* p;
     for (p = sec->pnode[0]->prop; p; p = p->next) {
-        if (strcmp(memb_func[p->type].sym->name, mechanism_name) == 0) {
+        if (strcmp(memb_func[p->_type].sym->name, mechanism_name) == 0) {
             return (1);
         }
     }
@@ -2391,8 +2234,8 @@ void push_section(void) {
     } else {
         sec = (Section*) (size_t) (*getarg(1));
     }
-    if (!sec || !sec->prop || !sec->prop->dparam || !sec->prop->dparam[8].itm ||
-        sec->prop->dparam[8].itm->itemtype != SECTION) {
+    if (!sec || !sec->prop || !sec->prop->dparam || !sec->prop->dparam[8].get<hoc_Item*>() ||
+        sec->prop->dparam[8].get<hoc_Item*>()->itemtype != SECTION) {
         hoc_execerror("Not a Section pointer", (char*) 0);
     }
     hoc_level_pushsec(sec);

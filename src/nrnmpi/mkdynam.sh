@@ -56,9 +56,9 @@ $p
 ' nrnmpidec.h
 echo '
 static struct {
-	char* name;
+	const char* name;
 	void** ppf;
-}ftable[] = {'
+} ftable[] = {'
 for i in $names ; do
 	if test "$i" = "BGPDMA" ; then
 		echo "#if BGPDMA"

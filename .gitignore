@@ -1,3 +1,4 @@
+.bbp-project-venv/
 .clang-format
 .cmake-format.yaml
 external/tests/
@@ -28,6 +29,7 @@ src/nrnoc/exp2syn.cpp
 src/nrnoc/expsyn.cpp
 src/nrnoc/feature.cpp
 src/nrnoc/hh.cpp
+src/nrnoc/hh.mod
 src/nrnoc/hh.mod.orig
 src/nrnoc/hocusr.h
 src/nrnoc/intfire1.cpp

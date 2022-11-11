@@ -1,21 +1,10 @@
 #include <../../nrnconf.h>
 #include <cstdio>
 #include "nrndae.h"
+#include "nrndae_c.h"
 #include "nrnoc2iv.h"
 
-extern void nrndae_alloc();
-extern int nrndae_extra_eqn_count();
-extern void nrndae_init();
-extern void nrndae_rhs();  // relative to c*dy/dt = -g*y + b
-extern void nrndae_lhs();
-extern void nrndae_dkmap(double**, double**);
-extern void nrndae_dkres(double*, double*, double*);
-extern void nrndae_dkpsol(double);
-extern void nrndae_update();
-extern void nrn_matrix_node_free();
-extern int nrn_use_daspk_;
 extern int secondorder;
-extern int nrndae_list_is_empty();
 
 static NrnDAEPtrList nrndae_list;
 

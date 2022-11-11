@@ -22,7 +22,7 @@ pr:
 # Trigger build for certain branches only
 trigger:
 - master
-- releases/*
+- release/*
 
 stages:
   - stage: BuildTestDeploy
@@ -42,6 +42,8 @@ stages:
             python.version: '3.9'
           Python310:
             python.version: '3.10'
+          Python311:
+            python.version: '3.11'
       steps:
 
       # Secure files documentation:
@@ -67,7 +69,7 @@ stages:
             -e NRN_RELEASE_UPLOAD \
             -e NEURON_WHEEL_VERSION \
             -e NRN_BUILD_FOR_UPLOAD=1 \
-            'neuronsimulator/neuron_wheel:latest-x86_64' \
+            'neuronsimulator/neuron_wheel:latest-gcc9-x86_64' \
             packaging/python/build_wheels.bash linux $(python.version) coreneuron
         displayName: 'Building ManyLinux Wheel'
 
@@ -95,6 +97,8 @@ stages:
             python.version: '3.9'
           Python310:
             python.version: '3.10'
+          Python311:
+            python.version: '3.11'
       steps:
 
       # Secure files documentation:
@@ -120,7 +124,7 @@ stages:
             -e NRN_RELEASE_UPLOAD \
             -e NEURON_WHEEL_VERSION \
             -e NRN_BUILD_FOR_UPLOAD=1 \
-            'neuronsimulator/neuron_wheel_gpu:nvhpc-22.1-cuda-11.5' \
+            'neuronsimulator/neuron_wheel_gpu:nvhpc-22.1-cuda-11.5-gcc9' \
             packaging/python/build_wheels.bash linux $(python.version) coreneuron-gpu
         displayName: 'Building ManyLinux Wheel'
 
@@ -133,7 +137,7 @@ stages:
 
     # Jobs to build OSX wheels natively
     - job: 'MacOSWheels'
-      timeoutInMinutes: 30
+      timeoutInMinutes: 40
       pool:
         vmImage: 'macOS-11'
       strategy:
@@ -153,6 +157,10 @@ stages:
           Python310:
             python.version: '3.10'
             python.org.version: '3.10.5'
+            python.installer.name: 'macos11.pkg'
+          Python311:
+            python.version: '3.11'
+            python.org.version: '3.11.0'
             python.installer.name: 'macos11.pkg'
 
       steps:

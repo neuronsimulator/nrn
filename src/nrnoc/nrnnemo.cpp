@@ -119,7 +119,7 @@ static double diamval(Node* nd) {
     Prop* p;
 
     for (p = nd->prop; p; p = p->next) {
-        if (p->type == MORPHOLOGY) {
+        if (p->_type == MORPHOLOGY) {
             break;
         }
     }
@@ -186,7 +186,7 @@ static void file_func(Section* sec) {
 
     active = 0;
     for (p = nd->prop; p; p = p->next) {
-        if (p->type == hhtype) {
+        if (p->_type == hhtype) {
             active = 1;
         }
     }

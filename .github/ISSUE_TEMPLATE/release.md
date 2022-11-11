@@ -47,6 +47,7 @@ Post-release
   - minor version: `x.(y+1).dev` 
   - major version: `(x+1).0.dev`
 - [ ] Deactivate ReadTheDocs build for `release/x.y`
+- [ ] Go to [ReadTheDocs advanced settings](https://readthedocs.org/dashboard/nrn/advanced/) and set `Default version` to `x.y.z` 
 - [ ] Let people know :rocket:
 - [ ] Cherrypick changelog and installer links to `master`
 

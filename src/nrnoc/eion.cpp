@@ -293,15 +293,15 @@ void nernst(void) {
             Section* sec = chk_access();
             Symbol* ion = memb_func[s->u.rng.type].sym;
             double z = global_charge(s->u.rng.type);
-            double *ci, *co, *e, x;
+            double x;
             if (ifarg(2)) {
                 x = chkarg(2, 0., 1.);
             } else {
                 x = .5;
             }
-            ci = nrn_rangepointer(sec, ion->u.ppsym[1], x);
-            co = nrn_rangepointer(sec, ion->u.ppsym[2], x);
-            e = nrn_rangepointer(sec, ion->u.ppsym[0], x);
+            auto ci = nrn_rangepointer(sec, ion->u.ppsym[1], x);
+            auto co = nrn_rangepointer(sec, ion->u.ppsym[2], x);
+            auto e = nrn_rangepointer(sec, ion->u.ppsym[0], x);
             switch (s->u.rng.index) {
             case 0:
                 val = nrn_nernst(*ci, *co, z);
@@ -347,7 +347,6 @@ void ghk(void) {
     hoc_retpushx(val);
 }
 
-#if VECTORIZE
 #define erev   pd[i][0] /* From Eion */
 #define conci  pd[i][1]
 #define conco  pd[i][2]
@@ -369,7 +368,7 @@ ion_style("name_ion", [c_style, e_style, einit, eadvance, cinit])
  and models.
 */
 
-#define iontype ppd[i][0].i /* how _AMBIGUOUS is to be handled */
+#define iontype ppd[i][0].get<int>() /* how _AMBIGUOUS is to be handled */
 /*the bitmap is
 03	concentration unused, nrnocCONST, DEP, STATE
 04	initialize concentrations
@@ -428,27 +427,29 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
         }
     }
 
-    chk_conc_[2 * p_ok->type + i] |= ion_bit_[pion->type];
-    if (pion->dparam[0].i & flag) {
+    chk_conc_[2 * p_ok->_type + i] |= ion_bit_[pion->_type];
+    if (pion->dparam[0].get<int>() & flag) {
         /* now comes the hard part. Is the possibility in fact actual.*/
         for (p = pion->next; p; p = p->next) {
             if (p == p_ok) {
                 continue;
             }
-            if (chk_conc_[2 * p->type + i] & ion_bit_[pion->type]) {
+            if (chk_conc_[2 * p->_type + i] & ion_bit_[pion->_type]) {
                 char buf[300];
                 sprintf(buf,
                         "%.*s%c is being written at the same location by %s and %s",
-                        (int) strlen(memb_func[pion->type].sym->name) - 4,
-                        memb_func[pion->type].sym->name,
+                        (int) strlen(memb_func[pion->_type].sym->name) - 4,
+                        memb_func[pion->_type].sym->name,
                         ((i == 1) ? 'i' : 'o'),
-                        memb_func[p_ok->type].sym->name,
-                        memb_func[p->type].sym->name);
+                        memb_func[p_ok->_type].sym->name,
+                        memb_func[p->_type].sym->name);
                 hoc_warning(buf, (char*) 0);
             }
         }
     }
-    pion->dparam[0].i |= flag;
+    auto ii = pion->dparam[0].get<int>();
+    ii |= flag;
+    pion->dparam[0] = ii;
 }
 
 void ion_style(void) {
@@ -466,7 +467,7 @@ void ion_style(void) {
     p = nrn_mechanism(s->subtype, sec->pnode[0]);
     oldstyle = -1;
     if (p) {
-        oldstyle = p->dparam[0].i;
+        oldstyle = p->dparam[0].get<int>();
     }
 
     if (ifarg(2)) {
@@ -492,8 +493,10 @@ void ion_style(void) {
             for (i = 0; i < sec->nnode; ++i) {
                 p = nrn_mechanism(s->subtype, sec->pnode[i]);
                 if (p) {
-                    p->dparam[0].i &= (0200 + 0400);
-                    p->dparam[0].i += istyle;
+                    auto ii = p->dparam[0].get<int>();
+                    ii &= (0200 + 0400);
+                    ii += istyle;
+                    p->dparam[0] = ii;
                 }
             }
         }
@@ -514,7 +517,7 @@ int nrn_vartype(Symbol* sym) {
         }
         p = nrn_mechanism(sym->u.rng.type, sec->pnode[0]);
         if (p) {
-            int it = p->dparam[0].i;
+            auto it = p->dparam[0].get<int>();
             if (sym->u.rng.index == 0) { /* erev */
                 i = (it & 030) >> 3;     /* unused, nrnocCONST, DEP, or STATE */
             } else {                     /* concentration */
@@ -528,9 +531,9 @@ int nrn_vartype(Symbol* sym) {
 /* the ion mechanism it flag  defines how _AMBIGUOUS is to be interpreted */
 void nrn_promote(Prop* p, int conc, int rev) {
     int oldconc, oldrev;
-    int* it = &p->dparam[0].i;
-    oldconc = (*it & 03);
-    oldrev = (*it & 030) >> 3;
+    int it = p->dparam[0].get<int>();
+    oldconc = (it & 03);
+    oldrev = (it & 030) >> 3;
     /* precedence */
     if (oldconc < conc) {
         oldconc = conc;
@@ -542,30 +545,28 @@ void nrn_promote(Prop* p, int conc, int rev) {
     if (oldconc > 0 && oldrev < 2) {
         oldrev = 2;
     }
-    *it &= ~0177; /* clear the bitmap */
-    *it += oldconc + 010 * oldrev;
+    it &= ~0177; /* clear the bitmap */
+    it += oldconc + 010 * oldrev;
     if (oldconc == 3) { /* if state then cinit */
-        *it += 4;
+        it += 4;
         if (oldrev == 2) { /* if not state (WRITE) then eadvance */
-            *it += 0100;
+            it += 0100;
         }
     }
     if (oldconc > 0 && oldrev == 2) { /*einit*/
-        *it += 040;
+        it += 040;
     }
+    p->dparam[0] = it;
 }
 
 /* Must be called prior to any channels which update the currents */
 static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** pd = ml->data;
+    double** pd = ml->_data;
     Datum** ppd = ml->pdata;
     int i;
-/*printf("ion_cur %s\n", memb_func[type].sym->name);*/
-#if _CRAY
-#pragma _CRI ivdep
-#endif
+    /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
     for (i = 0; i < count; ++i) {
         dcurdv = 0.;
         cur = 0.;
@@ -581,22 +582,16 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-    double** pd = ml->data;
+    double** pd = ml->_data;
     Datum** ppd = ml->pdata;
     int i;
-/*printf("ion_init %s\n", memb_func[type].sym->name);*/
-#if _CRAY
-#pragma _CRI ivdep
-#endif
+    /*printf("ion_init %s\n", memb_func[type].sym->name);*/
     for (i = 0; i < count; ++i) {
         if (iontype & 04) {
             conci = conci0;
             conco = conco0;
         }
     }
-#if _CRAY
-#pragma _CRI ivdep
-#endif
     for (i = 0; i < count; ++i) {
         if (iontype & 040) {
             erev = nrn_nernst(conci, conco, charge);
@@ -608,20 +603,20 @@ static void ion_alloc(Prop* p) {
     double* pd[1];
     int i = 0;
 
-    pd[0] = nrn_prop_data_alloc(p->type, nparm, p);
+    pd[0] = nrn_prop_data_alloc(p->_type, nparm, p);
     p->param_size = nparm;
 
     cur = 0.;
     dcurdv = 0.;
-    if (p->type == na_ion) {
+    if (p->_type == na_ion) {
         erev = DEF_ena;
         conci = DEF_nai;
         conco = DEF_nao;
-    } else if (p->type == k_ion) {
+    } else if (p->_type == k_ion) {
         erev = DEF_ek;
         conci = DEF_ki;
         conco = DEF_ko;
-    } else if (p->type == ca_ion) {
+    } else if (p->_type == ca_ion) {
         erev = DEF_eca;
         conci = DEF_cai;
         conco = DEF_cao;
@@ -632,8 +627,8 @@ static void ion_alloc(Prop* p) {
     }
     p->param = pd[0];
 
-    p->dparam = nrn_prop_datum_alloc(p->type, 1, p);
-    p->dparam->i = 0;
+    p->dparam = nrn_prop_datum_alloc(p->_type, 1, p);
+    p->dparam[0] = 0;
 }
 
 void second_order_cur(NrnThread* nt) {
@@ -649,10 +644,8 @@ void second_order_cur(NrnThread* nt) {
                 ml = tml->ml;
                 i2 = ml->nodecount;
                 for (i = 0; i < i2; ++i) {
-                    ml->data[i][c] += ml->data[i][dc] * (NODERHS(ml->nodelist[i]));
+                    ml->_data[i][c] += ml->_data[i][dc] * (NODERHS(ml->nodelist[i]));
                 }
             }
     }
 }
-
-#endif

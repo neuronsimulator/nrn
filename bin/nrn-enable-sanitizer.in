@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
 prefix="${NRNHOME:-@CMAKE_INSTALL_PREFIX@}"
+export NRN_SANITIZER_PRELOAD_VAR=@NRN_SANITIZER_PRELOAD_VAR@
+export NRN_SANITIZER_PRELOAD_VAL=@NRN_SANITIZER_LIBRARY_PATH@
 if [[ "$1" == "--preload" ]]; then
   shift
-  @NRN_SANITIZER_LD_PRELOAD@ @NRN_SANITIZER_ENABLE_ENVIRONMENT_STRING@ "$@"
+  if [[ "$1" == "python" ]]; then
+    # nrn-enable-sanitizer --preload python is used in the CI, but for it to
+    # work on macOS we need to substitute the real Python binary in place of any
+    # shims. This is done from CMake, and PYTHON_EXECUTABLE contains the real
+    # binary.
+    shift
+    @NRN_SANITIZER_LD_PRELOAD@ @NRN_SANITIZER_ENABLE_ENVIRONMENT_STRING@ @PYTHON_EXECUTABLE@ "$@"
+  else
+    @NRN_SANITIZER_LD_PRELOAD@ @NRN_SANITIZER_ENABLE_ENVIRONMENT_STRING@ "$@"
+  fi
 else
   @NRN_SANITIZER_ENABLE_ENVIRONMENT_STRING@ "$@"
 fi

@@ -44,9 +44,9 @@ int ilint;
 Item* qlint;
 #endif
 
-static char pgm_name[] = "model";
-extern char* RCS_version;
-extern char* RCS_date;
+static const char* pgm_name = "model";
+extern const char* RCS_version;
+extern const char* RCS_date;
 static void openfiles(int, char**);
 static void debug_item(Item* q, int indent, FILE* file);
 #if MAC

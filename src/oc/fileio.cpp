@@ -11,12 +11,10 @@
 #include "hoclist.h"
 #include "parse.hpp"
 #include "hocparse.h"
-#include <setjmp.h>
 #include <errno.h>
 #include "nrnfilewrap.h"
 
 
-extern jmp_buf begin;
 extern char* neuron_home;
 
 NrnFILEWrap* frin;
@@ -71,7 +69,7 @@ void hoc_stdout(void) {
 void ropen(void) /* open file for reading */
 {
     double d;
-    char* fname;
+    const char* fname;
 
     if (ifarg(1))
         fname = gargstr(1);
@@ -98,7 +96,7 @@ void ropen(void) /* open file for reading */
 
 void wopen(void) /* open file for writing */
 {
-    char* fname;
+    const char* fname;
     double d;
 
     if (ifarg(1))
@@ -535,7 +533,7 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
     *ppbuf = hs->buf;
 }
 
-#if defined(__TURBOC__) || defined(__GO32__) || defined(WIN32) || defined(MAC)
+#if defined(WIN32) || defined(MAC)
 static FILE* oc_popen(char* cmd, char* type) {
     FILE* fp;
     char buf[1024];
@@ -817,7 +815,7 @@ void hoc_getcwd(void) {
 }
 
 void hoc_machine_name(void) {
-#if !defined(__GO32__) && !defined(WIN32) && !defined(MAC)
+#if !defined(WIN32) && !defined(MAC)
     /*----- functions called -----*/
     /*----- local  variables -----*/
     char buf[20];

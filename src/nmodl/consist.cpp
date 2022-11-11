@@ -11,6 +11,7 @@
 
 extern Symbol* scop_indep;
 extern Symbol* indepsym;
+extern int vectorize;
 
 #define con(arg1, arg2, arg3)                               \
     if (t & (arg2))                                         \
@@ -18,6 +19,27 @@ extern Symbol* indepsym;
             Fprintf(stderr, "%s is a %s\n", s->name, arg1); \
             err = 1;                                        \
         }
+
+/**
+ * Check if variable declared in NEURON block is conflicting with a PROCEDURE or FUNCTION
+ *
+ * In order to avoid "declaring" variable in NEURON block and then defining
+ * PROCEDURE or FUNCTION with the same name, we check if the variable is
+ * function and has one of the NRN* type.
+ */
+int is_var_declared_as_function(Symbol* s) {
+    int type = s->nrntype;
+    int usage = s->usage;
+
+    // if not function or procedure name then return already
+    if (!(usage & FUNCT)) {
+        return 0;
+    }
+
+    // conflicting name if presence of NEURON block variable type
+    return (type & NRNRANGE || type & NRNGLOBAL || type & NRNPOINTER || type & NRNBBCOREPOINTER ||
+            type & NRNEXTRN);
+}
 
 void consistency() {
     Symbol* s;
@@ -48,13 +70,26 @@ void consistency() {
         con("NONLINEAR", NLINF, 0);
         con("DISCRETE", DISCF, 0);
         con("PARTIAL", PARF, 0);
-        con("STEPPED", STEP1, 0);
         con("CONSTANT UNITS FACTOR", UNITDEF, 0);
         tu = s->usage;
-        if ((tu & DEP) && (tu & FUNCT))
+        if ((tu & DEP) && (tu & FUNCT)) {
             diag(s->name, " used as both variable and function");
-        if ((t == 0) && tu)
-            Fprintf(stderr, "Warning: %s undefined. (declared within VERBATIM?)\n", s->name);
+        }
+        // check for conflicting variable declaration with function
+        // do not use diag() because line number might be misleading
+        if (is_var_declared_as_function(s)) {
+            Fprintf(stderr,
+                    "Error: %s used as both variable and function in file %s\n",
+                    s->name,
+                    finname);
+            exit(1);
+        }
+        if ((t == 0) && tu) {
+            // variable `v` is always defined in data array for vectorized mod files
+            if (!(vectorize && strcmp(s->name, "v") == 0)) {
+                Fprintf(stderr, "Warning: %s undefined. (declared within VERBATIM?)\n", s->name);
+            }
+        }
     }
     if (err) {
         diag("multiple uses for same variable", (char*) 0);

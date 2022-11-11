@@ -59,11 +59,7 @@ static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
 #define IGNORE(arg)	arg
 #endif
 
-#if __TURBOC__ || VMS
-#define Free(arg)	myfree((void *)arg)
-#else
 #define Free(arg)	myfree((char *)arg)
-#endif
 extern void* nrn_pool_create(long count, int itemsize);
 extern void nrn_pool_delete(void* pool);
 extern void nrn_pool_freeall(void* pool);

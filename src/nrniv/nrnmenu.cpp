@@ -216,11 +216,16 @@ void section_menu(double x1, int type, MechSelector* ms) {
                 hoc_ivvalue("L", buf, 1);
             }
             sprintf(buf, "%s.Ra += 0", sname.string());
-            hoc_ivpvaluerun("Ra", &sec->prop->dparam[7].val, buf, 1, 0, hoc_var_extra("Ra"));
+            hoc_ivpvaluerun("Ra",
+                            &(sec->prop->dparam[7].literal_value<double>()),
+                            buf,
+                            1,
+                            0,
+                            hoc_var_extra("Ra"));
             p = sec->prop;
-            if (p->dparam[4].val != 1) {
+            if (p->dparam[4].literal_value<double>() != 1) {
                 hoc_ivpvaluerun("Rall",
-                                &sec->prop->dparam[4].val,
+                                &(sec->prop->dparam[4].literal_value<double>()),
                                 "diam_changed = 1",
                                 1,
                                 0,
@@ -251,7 +256,7 @@ static void pnodemenu(Prop* p1, double x, int type, const char* path, MechSelect
         return;
     }
     pnodemenu(p1->next, x, type, path, ms); /*print in insert order*/
-    if (memb_func[p1->type].is_point) {
+    if (memb_func[p1->_type].is_point) {
         return;
     } else {
         mech_menu(p1, x, type, path, ms);
@@ -281,7 +286,7 @@ static void mech_menu(Prop* p1, double x, int type, const char* path, MechSelect
     char buf[200];
     bool deflt;
 
-    if (ms && !ms->is_selected(p1->type)) {
+    if (ms && !ms->is_selected(p1->_type)) {
         return;
     }
     if (type == nrnocCONST) {
@@ -289,7 +294,7 @@ static void mech_menu(Prop* p1, double x, int type, const char* path, MechSelect
     } else {
         deflt = false;
     }
-    sym = memb_func[p1->type].sym;
+    sym = memb_func[p1->_type].sym;
     if (sym->s_varn) {
         for (j = 0; j < sym->s_varn; j++) {
             vsym = sym->u.ppsym[j];
@@ -326,7 +331,7 @@ static void mech_menu(Prop* p1, double x, int type, const char* path, MechSelect
                             }
                         } else {
                             sprintf(buf, "%s(%g)", vsym->name, x);
-                            if (p1->type == MORPHOLOGY) {
+                            if (p1->_type == MORPHOLOGY) {
                                 Section* sec = chk_access();
                                 char buf2[200];
                                 sprintf(buf2, "%s.Ra += 0", secname(sec));
@@ -458,7 +463,7 @@ static void point_menu(Object* ob, int make_label) {
     } else if (make_label == -1) {  // i.e. do neither
         k = 0;
     }
-    psym = pointsym[pnt_map[pp->prop->type]];
+    psym = pointsym[pnt_map[pp->prop->_type]];
 
 #if 0
         switch (type) {
@@ -1195,8 +1200,8 @@ Point_process* MechanismType::pp_next() {
     Point_process* pp = NULL;
     bool done = mti_->p_iter_ == 0;
     while (!done) {
-        if (mti_->p_iter_->type == mti_->type_[mti_->select_]) {
-            pp = (Point_process*) mti_->p_iter_->dparam[1]._pvoid;
+        if (mti_->p_iter_->_type == mti_->type_[mti_->select_]) {
+            pp = mti_->p_iter_->dparam[1].get<Point_process*>();
             done = true;
             // but if it does not belong to this section
             if (pp->sec != mti_->sec_iter_) {

@@ -260,6 +260,9 @@ test_wheel () {
     mkdir -p tmp_mod
     cp share/examples/nrniv/nmodl/cacum.mod tmp_mod/
 
+    # check gcc and python versions
+    gcc --version && python --version
+
     echo "Using `which $python_exe` : `$python_exe --version`"
     echo "=========== SERIAL TESTS ==========="
     run_serial_test
