@@ -20,7 +20,7 @@ spacktainerize:
     PACKAGE_NAME: neuron
     SPACK_CUSTOMIZATION: |
       curl https://registrationcenter-download.intel.com/akdlm/irc_nas/19030/l_dpcpp-cpp-compiler_p_2022.2.1.16991.sh --output l_dpcpp-cpp-compiler_p_2022.2.1.16991.sh
-      sh ./l_dpcpp-cpp-compiler_p_2022.2.1.16991.sh -a --silent --eula accept --install-dir /opt/software/intel
+      sh ./l_dpcpp-cpp-compiler_p_2022.2.1.16991.sh -a --silent --eula accept --install-dir /opt/software/intel/oneapi
       source /opt/software/intel/oneapi/setvars.sh
       spack compiler find
       spack add neuron+coreneuron
