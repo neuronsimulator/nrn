@@ -236,7 +236,6 @@ set(NRNIV_FILE_LIST
     secbrows.cpp
     shape.cpp
     shapeplt.cpp
-    singlech.cpp
     spaceplt.cpp
     splitcell.cpp
     symdir.cpp
