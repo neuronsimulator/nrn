@@ -19,6 +19,14 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
+      - name: Test delete releases
+        uses: alkino/delete-pypi-version@v1
+        with:
+          user: alkino
+          package: NEURON-nightly
+          days: 7
+          password: ${{ secrets.PYPI_PASSWORD }}
+          dry_run: 'false'
       - uses: actions/checkout@v3
       - name: Update submodule
         working-directory: ${{runner.workspace}}/nrn
@@ -26,10 +34,3 @@ jobs:
       - name: Check formatting
         working-directory: ${{runner.workspace}}/nrn
         run: external/coding-conventions/bin/format -v --dry-run
-      - name: Test delete releases
-        uses: alkino/delete-pypi-version@v1
-        with:
-          user: alkino
-          package: NEURON-nightly
-          days: 3
-          password: foobar
