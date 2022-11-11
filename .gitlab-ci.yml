@@ -19,9 +19,9 @@ spacktainerize:
   variables:
     PACKAGE_NAME: neuron
     SPACK_CUSTOMIZATION: |
-      spack add intel-oneapi-compilers
-      spack install intel-oneapi-compilers
-      spack load intel-oneapi-compilers
+      wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+      echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+      sudo apt-get install intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
       spack compiler find
       spack add neuron+coreneuron
       spack add libsonata-report@1.1.1
