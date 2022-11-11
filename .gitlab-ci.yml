@@ -19,10 +19,11 @@ spacktainerize:
   variables:
     PACKAGE_NAME: neuron
     SPACK_CUSTOMIZATION: |
+      spack add intel-oneapi-compilers
       spack install intel-oneapi-compilers
       spack load intel-oneapi-compilers
       spack compiler find
       spack add neuron+coreneuron
       spack add libsonata-report@1.1.1
-      spack config add "packages:neuron:require:'%oneapi'"
-      spack config add "packages:coreneuron:require:'%oneapi'"
+      spack config add "packages:neuron:require:'%intel'"
+      spack config add "packages:coreneuron:require:'%intel'"
