@@ -22,7 +22,7 @@ spacktainerize:
       apt-get install wget
       wget https://registrationcenter-download.intel.com/akdlm/irc_nas/19030/l_dpcpp-cpp-compiler_p_2022.2.1.16991.sh
       sh ./l_dpcpp-cpp-compiler_p_2022.2.1.16991.sh -a --silent --eula accept
-      source ~/intel/oneapi/setvars.sh
+      source /opt/intel/oneapi/setvars.sh
       spack compiler find
       spack add neuron+coreneuron
       spack add libsonata-report@1.1.1
