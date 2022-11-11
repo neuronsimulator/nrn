@@ -17,7 +17,7 @@ spacktainerize:
         ref: compiler-mods
     strategy: depend
   variables:
-    PACKAGE_NAME: coreneuron
+    PACKAGE_NAME: neuron
     SPACK_CUSTOMIZATION: |
       spack install intel-oneapi-compilers
       spack load intel-oneapi-compilers
