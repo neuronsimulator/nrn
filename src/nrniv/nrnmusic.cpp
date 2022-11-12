@@ -173,11 +173,11 @@ PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
         ps = new PreSyn(NULL, NULL, NULL);
         net_cvode_instance->psl_append(ps);
         (*gi_table)[gi] = ps;
-	ps->gid_ = -2;
-	ps->output_index_ = -2;
+        ps->gid_ = -2;
+        ps->output_index_ = -2;
+    } else {
+        ps = (*gi_table)[gi];
     }
-    else
-      ps = (*gi_table)[gi];
     NetCon* nc = new NetCon(ps, target);
     Object* o = hoc_new_object(netcon_sym_, nc);
     nc->obj_ = o;
