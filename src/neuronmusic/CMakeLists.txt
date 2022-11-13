@@ -14,7 +14,7 @@ if(NRN_ENABLE_MUSIC
    AND NRN_ENABLE_MODULE_INSTALL
    AND NRN_ENABLE_PYTHON)
 
-  # Prepare a shell script to run python setup.py  
+  # Prepare a shell script to run python setup.py
   file(
     WRITE ${CMAKE_CURRENT_BINARY_DIR}/runpy.sh
     "\
@@ -34,16 +34,16 @@ if test x$mingw = x1 ; then\n\
     . ${PROJECT_SOURCE_DIR}/mingw_files/vcenv.sh\n\
     $pyexe setup.py build_ext --build-lib=${NRN_PYTHON_BUILD_LIB}\n\
   fi\n\
-else #mac/linux does not need anything special\n\  
+else #mac/linux does not need anything special\n\
   $pyexe setup.py build --build-lib=${NRN_PYTHON_BUILD_LIB}\n\
-fi\n\ 
+fi\n\
 ")
-      
+
   # ~~~
   # Cython generates *.cpp from *.pyx. Make a list of the cpp files
   # so the rxd_extensions targets can depend on them.
   # These cpp files are given a false dependency on setup.py so that a change
-  # to setup.py.in in the end causes setup.py to execute and which apparently   
+  # to setup.py.in in the end causes setup.py to execute and which apparently
   # rebuilds only if a cpp file has changed.
   # ~~~
 
@@ -92,7 +92,7 @@ fi\n\
   # ~~~
   file(
     WRITE ${CMAKE_CURRENT_BINARY_DIR}/neuronmusic_module_install.sh
-    "\   
+    "\
 #!bash\n\
 echo 'Installing python module using:'\n\
 set -ex\n\
@@ -116,4 +116,3 @@ $1 setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB} install ${NRN_MODU
   endforeach(pyexe)
 
 endif()
-
