@@ -600,6 +600,10 @@ if(NRN_ENABLE_RX3D)
   add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
 endif()
 
+if(NRN_ENABLE_MUSIC)
+  add_subdirectory(src/neuronmusic)
+endif()
+
 if(NRN_MACOS_BUILD)
   add_subdirectory(src/mac)
 endif()
