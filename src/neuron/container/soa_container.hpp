@@ -112,6 +112,11 @@ void swap_all(Diff i, Diff n, T&& t, U&&... u) {
                   std::is_same_v<plain_T, non_owning_identifier_without_container>) {
         swap(t[i], t[n]);
     } else {
+        using plain_inner_T =
+            typename std::remove_reference_t<std::remove_cv_t<plain_T>>::value_type;
+        static_assert(std::is_arithmetic_v<plain_inner_T> ||
+                          std::is_same_v<plain_inner_T, non_owning_identifier_without_container>,
+                      "Only 1 level of inner container is allowed in apply_reverse_permutation.");
         for (auto& e: t) {
             swap(e[i], e[n]);
         }
@@ -122,9 +127,8 @@ void swap_all(Diff i, Diff n, T&& t, U&&... u) {
 template <typename IndexType, typename... T>
 void apply_reverse_permutation(IndexType&& ind, T&&... items) {
     using ::std::swap;
-    auto size = std::distance(std::begin(ind), std::end(ind));
-    using Diff = decltype(size);
-    for (Diff i = 0; i < size; i++) {
+    using Diff = typename IndexType::difference_type;
+    for (Diff i = 0; i < std::size(ind); i++) {
         while (i != ind[i]) {
             Diff next = ind[i];
             swap_all(i, next, std::forward<T>(items)...);
