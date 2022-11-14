@@ -189,7 +189,7 @@ int lineno;
 #include <execinfo.h>
 #endif
 #include <signal.h>
-int intset; /* safer interrupt handling */
+int hoc_intset; /* safer interrupt handling */
 int indef;
 const char* infile; /* input file name */
 extern size_t hoc_xopen_file_size_;
@@ -200,7 +200,7 @@ static int c = '\n'; /* global for use by warning() */
 
 #if defined(WIN32) || MAC
 void set_intset() {
-    intset++;
+    hoc_intset++;
 }
 #endif
 #ifdef WIN32
@@ -663,6 +663,21 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     if (hoc_fin && hoc_pipeflag == 0 && (!nrn_fw_eq(hoc_fin, stdin) || !nrn_istty_)) {
         IGNORE(nrn_fw_fseek(hoc_fin, 0L, 2)); /* flush rest of file */
     }
+
+    // If the exception is due to a multiple ^C interrupt, then onintr
+    // will not exit normally (because of the throw below) and the signal
+    // would remain in a SIG_BLOCK state.
+    // It is not clear to me if this would be better done in every catch.
+#if HAVE_SIGPROCMASK
+    if (hoc_intset > 1) {
+        sigset_t set;
+        sigemptyset(&set);
+        sigaddset(&set, SIGINT);
+        sigprocmask(SIG_UNBLOCK, &set, NULL);
+    }
+#endif  // HAVE_SIGPROCMASK
+
+    hoc_intset = 0;
     hoc_oop_initaftererror();
     throw std::runtime_error("hoc_execerror");
 }
@@ -676,7 +691,7 @@ RETSIGTYPE onintr(int sig) /* catch interrupt */
 {
     /*ARGSUSED*/
     stoprun = 1;
-    if (intset++)
+    if (hoc_intset++)
         execerror("interrupted", (char*) 0);
     IGNORE(signal(SIGINT, onintr));
 }
