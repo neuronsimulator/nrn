@@ -31,15 +31,12 @@ def test_linmech_pendulum():
     trajec.record(y._ref_x[0])
     tvec.record(h._ref_t)
 
-    graph = h.Graph()
     h.tstop = 50
 
     def prun(theta0, omega0):
-        graph.erase()
         y0.x[0] = theta0
         y0.x[1] = omega0
         h.run()
-        trajec.line(graph, tvec)
 
     h.dt /= 10
     h.cvode.atol(1e-5)
