@@ -164,6 +164,7 @@ struct Datum { /* interpreter stack type */
         return *this;
     }
 
+  private:
     union {
         double val;
         Symbol* sym;
