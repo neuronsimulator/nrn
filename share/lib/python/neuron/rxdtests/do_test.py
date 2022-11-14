@@ -72,7 +72,7 @@ def do_test(test_to_run, results_location, num_record=10):
                 repr(h.t),
                 data["record_count"],
             )
-            print(outstr)
+            print(outstr, flush=True)
 
     def save_and_cleanup():
         import array
