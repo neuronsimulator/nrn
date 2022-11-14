@@ -10,10 +10,10 @@
 #endif
 #if USECVODE
         ,
-    Cvode_reg(), TQueue_reg(), SingleChan_reg()
+    Cvode_reg(), TQueue_reg()
 #endif
 #if USEDSP
-                                   ,
+                     ,
     DSP_reg()
 #endif
 #if USEBBS
@@ -33,7 +33,7 @@
 #endif
 #if USECVODE
     ,
-    Cvode_reg, TQueue_reg, SingleChan_reg
+    Cvode_reg, TQueue_reg
 #endif
 #if USEDSP
     ,

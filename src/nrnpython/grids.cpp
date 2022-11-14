@@ -26,8 +26,8 @@ extern double* _rxd_induced_currents_scale;
 
 // Set dt, t pointers
 extern "C" void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
-    dt_ptr = my_dt_ptr->u.px_;
-    t_ptr = my_t_ptr->u.px_;
+    dt_ptr = static_cast<double*>(my_dt_ptr->u.px_);
+    t_ptr = static_cast<double*>(my_t_ptr->u.px_);
 }
 
 static double get_alpha_scalar(double* alpha, int) {
@@ -63,7 +63,7 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states,
                              double bc_value,
                              double atolscale) {
     int k;
-    states = my_states->u.px_;
+    states = static_cast<double*>(my_states->u.px_);
 
     /*TODO: When there are multiple grids share the largest intermediate arrays to save memory*/
     /*intermediate states for DG-ADI*/
@@ -107,7 +107,7 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states,
         dc_y = my_dc_y * permeability[0];
         dc_z = my_dc_z * permeability[0];
     } else {
-        permeability = my_permeability->u.px_;
+        permeability = static_cast<double*>(my_permeability->u.px_);
         VARIABLE_ECS_VOLUME = TORTUOSITY;
         get_permeability = &get_permeability_array;
     }
@@ -118,7 +118,7 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states,
         get_alpha = &get_alpha_scalar;
 
     } else {
-        alpha = my_alpha->u.px_;
+        alpha = static_cast<double*>(my_alpha->u.px_);
         VARIABLE_ECS_VOLUME = VOLUME_FRACTION;
         get_alpha = &get_alpha_array;
     }
@@ -251,7 +251,7 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states,
     diffusable = is_diffusable;
     this->atolscale = atolscale;
 
-    states = my_states->u.px_;
+    states = static_cast<double*>(my_states->u.px_);
     states_x = (double*) malloc(sizeof(double) * _num_nodes);
     states_y = (double*) malloc(sizeof(double) * _num_nodes);
     states_z = (double*) malloc(sizeof(double) * _num_nodes);
@@ -506,11 +506,11 @@ void ECS_Grid_node::set_tortuosity(PyHocObject* my_permeability) {
             dc_y /= permeability[0];
             dc_z /= permeability[0];
             free(permeability);
-            permeability = my_permeability->u.px_;
+            permeability = static_cast<double*>(my_permeability->u.px_);
             VARIABLE_ECS_VOLUME = (VARIABLE_ECS_VOLUME == FALSE) ? TORTUOSITY : VARIABLE_ECS_VOLUME;
             get_permeability = &get_permeability_array;
         } else {
-            permeability = my_permeability->u.px_;
+            permeability = static_cast<double*>(my_permeability->u.px_);
         }
     }
 }
@@ -542,7 +542,7 @@ void ECS_Grid_node::set_volume_fraction(PyHocObject* my_alpha) {
     } else {
         if (get_alpha == &get_alpha_scalar)
             free(alpha);
-        alpha = my_alpha->u.px_;
+        alpha = static_cast<double*>(my_alpha->u.px_);
         VARIABLE_ECS_VOLUME = VOLUME_FRACTION;
         get_alpha = &get_alpha_array;
     }
@@ -608,8 +608,8 @@ extern "C" void ics_set_grid_concentrations(int grid_list_index,
 
     g->ics_concentration_seg_ptrs = (double**) malloc(n * sizeof(double*));
     for (i = 0; i < n; i++) {
-        g->ics_concentration_seg_ptrs[i] =
-            ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i))->u.px_;
+        g->ics_concentration_seg_ptrs[i] = static_cast<double*>(
+            ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i))->u.px_);
     }
 
     g->ics_num_segs = n;
@@ -632,7 +632,8 @@ extern "C" void ics_set_grid_currents(int grid_list_index,
     g->ics_current_seg_ptrs = (double**) malloc(n * sizeof(double*));
 
     for (i = 0; i < n; i++) {
-        g->ics_current_seg_ptrs[i] = ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i))->u.px_;
+        g->ics_current_seg_ptrs[i] = static_cast<double*>(
+            ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i))->u.px_);
     }
 }
 
@@ -673,8 +674,8 @@ extern "C" void set_grid_concentrations(int grid_list_index,
     for (i = 0; i < n; i++) {
         /* printf("set_grid_concentrations %ld\n", i); */
         g->concentration_list[i].source = PyInt_AS_LONG(PyList_GET_ITEM(grid_indices, i));
-        g->concentration_list[i].destination =
-            ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i))->u.px_;
+        g->concentration_list[i].destination = static_cast<double*>(
+            ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i))->u.px_);
     }
 }
 
@@ -717,7 +718,8 @@ extern "C" void set_grid_currents(int grid_list_index,
     for (i = 0; i < n; i++) {
         g->current_list[i].destination = PyInt_AS_LONG(PyList_GET_ITEM(grid_indices, i));
         g->current_list[i].scale_factor = PyFloat_AS_DOUBLE(PyList_GET_ITEM(scale_factors, i));
-        g->current_list[i].source = ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i))->u.px_;
+        g->current_list[i].source = static_cast<double*>(
+            ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i))->u.px_);
         /* printf("set_grid_currents %ld out of %ld, %ld, %ld\n", i, n,
          * PyList_Size(neuron_pointers), PyList_Size(scale_factors)); */
     } /*
@@ -944,7 +946,7 @@ double* ECS_Grid_node::set_rxd_currents(int current_count,
     induced_currents_index = current_indices;
     for (i = 0; i < current_count; i++) {
         for (j = 0; j < num_all_currents; j++) {
-            if (ptrs[i]->u.px_ == current_list[j].source) {
+            if (static_cast<double*>(ptrs[i]->u.px_) == current_list[j].source) {
                 volume_fraction = (VARIABLE_ECS_VOLUME == VOLUME_FRACTION
                                        ? alpha[current_list[j].destination]
                                        : alpha[0]);

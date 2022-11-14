@@ -5,6 +5,7 @@
 #include <errno.h>
 #include "neuron.h"
 #include "section.h"
+#include "nrn_ansi.h"
 #include "nrniv_mf.h"
 #include "multisplit.h"
 #define nrnoc_fadvance_c
@@ -12,6 +13,7 @@
 #include "nonvintblock.h"
 #include "nrncvode.h"
 #include "spmatrix.h"
+
 #include <vector>
 
 /*
@@ -497,7 +499,6 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 }
 
 extern void nrn_extra_scatter_gather(int direction, int tid);
-extern void nrn_ba(NrnThread*, int);
 
 void* nrn_fixed_step_lastpart(NrnThread* nth) {
     CTBEGIN
@@ -904,9 +905,8 @@ void nrn_finitialize(int setv, double v) {
         nrn_nonvint_block_init(nt->id);
         NrnThreadMembList* tml;
         for (tml = nt->tml; tml; tml = tml->next) {
-            Pvmi s = memb_func[tml->index].initialize;
-            if (s) {
-                (*s)(nt, tml->ml, tml->index);
+            if (memb_func[tml->index].has_initialize()) {
+                memb_func[tml->index].invoke_initialize(nt, tml->ml, tml->index);
             }
         }
     }
@@ -915,10 +915,9 @@ void nrn_finitialize(int setv, double v) {
         i = memb_order_[iord];
         /* first clause due to MULTICORE */
         if (nrn_is_artificial_[i])
-            if (memb_func[i].initialize) {
-                Pvmi s = memb_func[i].initialize;
+            if (memb_func[i].has_initialize()) {
                 if (memb_list[i].nodecount) {
-                    (*s)(nrn_threads, memb_list + i, i);
+                    memb_func[i].invoke_initialize(nrn_threads, memb_list + i, i);
                 }
                 if (errno) {
                     if (nrn_errno_check(i)) {
@@ -1021,13 +1020,10 @@ void batch_save(void) {
 }
 
 void nrn_ba(NrnThread* nt, int bat) {
-    NrnThreadBAList* tbl;
-    int i;
-    for (tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
-        nrn_bamech_t f = tbl->bam->f;
-        int type = tbl->bam->type;
-        Memb_list* ml = tbl->ml;
-        for (i = 0; i < ml->nodecount; ++i) {
+    for (NrnThreadBAList* tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
+        nrn_bamech_t const f{tbl->bam->f};
+        Memb_list* const ml{tbl->ml};
+        for (int i = 0; i < ml->nodecount; ++i) {
             (*f)(ml->nodelist[i], ml->_data[i], ml->pdata[i], ml->_thread, nt);
         }
     }

@@ -229,13 +229,6 @@ extern char *emalloc(unsigned),    /* malloc with out of space checking */
     *inputtopar(),                 /* used only by parser to get units */
     *Gets(char*);                  /* used only in io.c to get string from fin. */
 
-#if 0
-#if __TURBOC__ || SYSV || NeXT || LINUX
-#else
-extern char    *sprintf();
-#endif
-#endif
-
 extern int nmodl_text; /* if 1, the text of the mod file is a string in the mod file */
 extern List* filetxtlist;
 

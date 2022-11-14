@@ -4,7 +4,9 @@
 #define PRINT_EVENT 1
 
 #include "mymath.h"
+
 #include "tqueue.h"
+
 #include <cmath>
 #include <vector>
 #include <unordered_map>
@@ -12,7 +14,7 @@
 struct NrnThread;
 class PreSyn;
 class HocDataPaths;
-typedef std::unordered_map<double*, PreSyn*> PreSynTable;
+using PreSynTable = std::unordered_map<double*, PreSyn*>;
 class NetCon;
 class DiscreteEvent;
 class TQItemPool;
@@ -75,7 +77,7 @@ class NetCvode {
     int fun(double t, double* y, double* ydot);
     void error_weights();
     void acor();
-    const char* statename(int, int style = 1);
+    std::string statename(int, int style = 1);
     void localstep(bool);
     bool localstep();
     bool is_local();
@@ -241,7 +243,7 @@ class NetCvode {
     int playrec_change_cnt_;
     PlayRecList* prl_;
     IvocVect* vec_event_store_;
-    HocDataPaths* hdp_;
+    HocDataPaths create_hdp(int style);
 
   public:
     Cvode* gcv_;
