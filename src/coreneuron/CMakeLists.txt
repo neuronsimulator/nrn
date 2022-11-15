@@ -728,6 +728,10 @@ add_custom_target(
   DEPENDS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
           ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile ${NMODL_TARGET_TO_DEPEND})
 
+if(CORENRN_ENABLE_UNIT_TESTS)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/test/coreneuron/unit ${CMAKE_BINARY_DIR}/test/coreneuron/unit)
+endif()
+
 # =============================================================================
 # Install main targets
 # =============================================================================

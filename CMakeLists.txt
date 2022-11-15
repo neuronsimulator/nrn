@@ -524,10 +524,6 @@ if(NRN_ENABLE_CORENEURON)
 
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/coreneuron)
 
-  if(CORENRN_ENABLE_UNIT_TESTS)
-    add_subdirectory(${PROJECT_SOURCE_DIR}/test/coreneuron/unit)
-  endif()
-
   # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.
   set(cnrn_prefix "${CMAKE_INSTALL_PREFIX}")
   # CoreNEURON exports this list of flags as a property; turn it into a variable in this scope. If
@@ -547,6 +543,7 @@ if(NRN_ENABLE_CORENEURON)
   # module (hoc.XXX.so). It is, therefore, important that we link that with -acc.
   separate_arguments(CORENRN_NEURON_LINK_FLAGS)
   set(NRN_LINK_FLAGS_FOR_ENTRY_POINTS ${CORENRN_NEURON_LINK_FLAGS})
+
 endif()
 
 # This needs to be after all modifications to NRN_LINK_FLAGS
