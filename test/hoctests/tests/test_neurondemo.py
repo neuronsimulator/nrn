@@ -1,4 +1,10 @@
 from neuron import h
+
+# skip test if no InterViews GUI
+if "NRN_ENABLE_INTERVIEWS=OFF" in h.nrnversion(6):
+    print("No GUI for running neurondemo. Skip this test.")
+    quit()
+
 from subprocess import Popen, PIPE, STDOUT
 import hashlib
 
