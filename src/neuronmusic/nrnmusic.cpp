@@ -1,5 +1,7 @@
 #include <../../nrnconf.h>
 #define NO_PYTHON_H 1
+#define IN_NRNMUSIC_CPP
+#include "nrnmusicapi.h"
 #include "hocdec.h"
 #include "nrn_ansi.h"
 #include "netcon.h"

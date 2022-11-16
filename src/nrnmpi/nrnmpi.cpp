@@ -30,12 +30,11 @@ extern double nrn_timeus();
 #include <libhpm.h>
 #endif
 
-int nrnmusic;
 #if NRN_MUSIC
+#include "nrnmusicapi.h"
 MPI_Comm nrnmusic_comm;
-extern void nrnmusic_init(int* parg, char*** pargv);
-extern void nrnmusic_terminate();
 #endif
+int nrnmusic;
 
 MPI_Comm nrnmpi_world_comm;
 MPI_Comm nrnmpi_comm;
