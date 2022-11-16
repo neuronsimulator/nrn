@@ -1,7 +1,8 @@
 from neuron import h
+import os
 
 # skip test if no InterViews GUI
-if "NRN_ENABLE_INTERVIEWS=OFF" in h.nrnversion(6):
+if "NRN_ENABLE_INTERVIEWS=OFF" in h.nrnversion(6) or os.getenv("DISPLAY") is None:
     print("No GUI for running neurondemo. Skip this test.")
     quit()
 
