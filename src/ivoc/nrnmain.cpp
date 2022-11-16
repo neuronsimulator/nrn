@@ -12,7 +12,10 @@ extern int nrn_noauto_dlopen_nrnmech;
 #if NRNMPI_DYNAMICLOAD
 void nrnmpi_stubs();
 void nrnmpi_load_or_exit(bool is_python);
-#endif
+#if NRN_ENABLE_MUSIC
+void nrnmusic_load();
+#endif  // NRN_ENABLE_MUSIC
+#endif  // NRNMPI_DYNAMICLOAD
 #if NRNMPI
 extern "C" void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
 #endif
@@ -39,9 +42,17 @@ printf("argv[%d]=|%s|\n", i, argv[i]);
             break;
         }
     }
-#endif
+#if NRNMUSIC
+    for (int i = 0; i < argc; ++i) {
+        if (strcmp("-music", argv[i]) == 0) {
+            nrnmusic_load();
+            break;
+        }
+    }
+#endif                             // NRNMUSIC
+#endif                             // NRNMPI_DYNAMICLOAD
     nrnmpi_init(1, &argc, &argv);  // may change argc and argv
-#endif
+#endif                             // NRNMPI
     errno = 0;
     return ivocmain(argc, (const char**) argv, (const char**) env);
 }

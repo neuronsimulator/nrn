@@ -34,7 +34,7 @@ extern double nrn_timeus();
 #include "nrnmusicapi.h"
 MPI_Comm nrnmusic_comm;
 #endif
-int nrnmusic;
+extern int nrnmusic;
 
 MPI_Comm nrnmpi_world_comm;
 MPI_Comm nrnmpi_comm;

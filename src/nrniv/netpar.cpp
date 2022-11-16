@@ -34,7 +34,7 @@ static int n_bgp_interval;
 
 #if NRN_MUSIC
 #include "nrnmusicapi.h"
-extern int nrnmusic;
+int nrnmusic;
 #endif
 
 static Symbol* netcon_sym_;

@@ -18,11 +18,11 @@ extern void nrnmusic_terminate();
 //  resolved at runtime dynamic loading
 extern void (*p_nrnmusic_runtime_phase)();
 extern void (*p_nrnmusic_injectlist)(void*, double);
-extern void (*p_nrnmusic_init(int* parg, char*** pargv);
-extern void (*p_nrnmusic_terminate();
+extern void (*p_nrnmusic_init)(int* parg, char*** pargv);
+extern void (*p_nrnmusic_terminate)();
 
 // But everywhere we use the standard api names
-#define nrnmusic_runtime_phase         \
+#define nrnmusic_runtime_phase()       \
     if (p_nrnmusic_runtime_phase) {    \
         (*p_nrnmusic_runtime_phase)(); \
     }
@@ -34,7 +34,7 @@ extern void (*p_nrnmusic_terminate();
     if (p_nrnmusic_init) {        \
         (*p_nrnmusic_init)(a, b); \
     }
-#define nrnmusic_terminate         \
+#define nrnmusic_terminate()       \
     if (p_nrnmusic_terminate) {    \
         (*p_nrnmusic_terminate)(); \
     }

@@ -168,7 +168,15 @@ if(NOT NRN_ENABLE_INTERVIEWS)
 endif()
 
 if(NRN_ENABLE_MUSIC)
-  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_MUSIC_SRC_FILES})
+  if(NRN_ENABLE_MPI_DYNAMIC)
+    list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/neuronmusic/nrnmusic_dynam.cpp)
+    set_property(
+      SOURCE ${NRN_NRNIV_LIB_SRC_FILES}
+      APPEND
+      PROPERTY COMPILE_DEFINITIONS NRNMUSIC_DYNAMIC=1)
+  else()
+    list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_MUSIC_SRC_FILES})
+  endif()
 endif()
 
 # =============================================================================
@@ -394,7 +402,7 @@ else()
   endif()
 endif()
 
-if(NRN_ENABLE_MUSIC)
+if(NRN_ENABLE_MUSIC AND NOT NRN_ENABLE_MPI_DYNAMIC)
   target_link_libraries(nrniv_lib ${MUSIC_LIBRARY})
 endif()
 
