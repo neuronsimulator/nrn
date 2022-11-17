@@ -448,6 +448,9 @@ if(NRN_ENABLE_MPI)
         # build a libnrnmusic for each mpi
         list(GET NRN_MPI_TYPE_LIST ${val} type)
         set(libnrnmusic "nrnmusic_${type}")
+        set(NRNMUSIC_DYNAM_LIB
+            "'${libnrnmusic}'"
+            PARENT_SCOPE)
         add_library(${libnrnmusic}_lib SHARED ${NRN_MUSIC_SRC_FILES})
         target_include_directories(${libnrnmusic}_lib BEFORE PUBLIC ${include})
         add_dependencies(${libnrnmusic}_lib nrniv_lib ${libname}_lib)
