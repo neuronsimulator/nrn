@@ -5,8 +5,7 @@ extern "C" {
 extern int nrnmusic;
 // Note: MPI_Comm nrnmusic_comm; in nrnmpi.cpp and nrnmusic.cpp
 
-#if !defined(NRNMUSIC_DYNAMIC) || defined(IN_nrnmusic_cpp)
-
+#if !defined(NRNMUSIC_DYNAMIC) || defined(IN_NRNMUSIC_CPP)
 // resolved at link time
 extern void nrnmusic_runtime_phase();
 extern void nrnmusic_injectlist(void*, double);

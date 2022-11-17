@@ -171,7 +171,7 @@ if(NRN_ENABLE_MUSIC)
   if(NRN_ENABLE_MPI_DYNAMIC)
     list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/neuronmusic/nrnmusic_dynam.cpp)
     set_property(
-      SOURCE ${NRN_NRNIV_LIB_SRC_FILES}
+      SOURCE ${NRN_NRNIV_LIB_SRC_FILES} ${NRN_NRNMPI_SRC_FILES}
       APPEND
       PROPERTY COMPILE_DEFINITIONS NRNMUSIC_DYNAMIC=1)
   else()
@@ -450,6 +450,9 @@ if(NRN_ENABLE_MPI)
         set(libnrnmusic "nrnmusic_${type}")
         add_library(${libnrnmusic}_lib SHARED ${NRN_MUSIC_SRC_FILES})
         target_include_directories(${libnrnmusic}_lib BEFORE PUBLIC ${include})
+        add_dependencies(${libnrnmusic}_lib nrniv_lib ${libname}_lib)
+        target_link_libraries(${libnrnmusic}_lib ${MUSIC_LIBRARY})
+        target_link_libraries(${libnrnmusic}_lib nrniv_lib ${libname}_lib)
         set_property(TARGET ${libnrnmusic}_lib PROPERTY OUTPUT_NAME ${libnrnmusic})
         install(TARGETS ${libnrnmusic}_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
       endif()
