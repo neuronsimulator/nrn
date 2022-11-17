@@ -20,23 +20,20 @@ namespace coreneuron {
 
 class BinaryReportHandler: public ReportHandler {
   public:
-    BinaryReportHandler(ReportConfiguration& config)
-        : ReportHandler(config) {}
-
-    void create_report(double dt, double tstop, double delay) override;
+    void create_report(ReportConfiguration& config, double dt, double tstop, double delay) override;
 #ifdef ENABLE_BIN_REPORTS
     void register_section_report(const NrnThread& nt,
-                                 ReportConfiguration& config,
+                                 const ReportConfiguration& config,
                                  const VarsToReport& vars_to_report,
                                  bool is_soma_target) override;
     void register_custom_report(const NrnThread& nt,
-                                ReportConfiguration& config,
+                                const ReportConfiguration& config,
                                 const VarsToReport& vars_to_report) override;
 
   private:
     using create_extra_func = std::function<void(const CellMapping&, std::array<int, 5>&)>;
     void register_report(const NrnThread& nt,
-                         ReportConfiguration& config,
+                         const ReportConfiguration& config,
                          const VarsToReport& vars_to_report,
                          create_extra_func& create_extra);
 #endif  // ENABLE_BIN_REPORTS

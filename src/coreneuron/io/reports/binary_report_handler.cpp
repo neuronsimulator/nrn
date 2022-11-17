@@ -13,11 +13,14 @@
 
 namespace coreneuron {
 
-void BinaryReportHandler::create_report(double dt, double tstop, double delay) {
+void BinaryReportHandler::create_report(ReportConfiguration& config,
+                                        double dt,
+                                        double tstop,
+                                        double delay) {
 #ifdef ENABLE_BIN_REPORTS
     records_set_atomic_step(dt);
 #endif  // ENABLE_BIN_REPORTS
-    ReportHandler::create_report(dt, tstop, delay);
+    ReportHandler::create_report(config, dt, tstop, delay);
 }
 
 #ifdef ENABLE_BIN_REPORTS
@@ -44,7 +47,7 @@ static void create_custom_extra(const CellMapping& mapping, std::array<int, 5>& 
 }
 
 void BinaryReportHandler::register_section_report(const NrnThread& nt,
-                                                  ReportConfiguration& config,
+                                                  const ReportConfiguration& config,
                                                   const VarsToReport& vars_to_report,
                                                   bool is_soma_target) {
     create_extra_func create_extra = is_soma_target ? create_soma_extra : create_compartment_extra;
@@ -52,14 +55,14 @@ void BinaryReportHandler::register_section_report(const NrnThread& nt,
 }
 
 void BinaryReportHandler::register_custom_report(const NrnThread& nt,
-                                                 ReportConfiguration& config,
+                                                 const ReportConfiguration& config,
                                                  const VarsToReport& vars_to_report) {
     create_extra_func create_extra = create_custom_extra;
     register_report(nt, config, vars_to_report, create_extra);
 }
 
 void BinaryReportHandler::register_report(const NrnThread& nt,
-                                          ReportConfiguration& config,
+                                          const ReportConfiguration& config,
                                           const VarsToReport& vars_to_report,
                                           create_extra_func& create_extra) {
     int sizemapping = 1;

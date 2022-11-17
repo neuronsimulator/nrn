@@ -20,7 +20,7 @@ namespace coreneuron {
 
 #if defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
 struct VarWithMapping {
-    int id;
+    uint32_t id;
     double* var_value;
     VarWithMapping(int id_, double* v_)
         : id(id_)
@@ -28,7 +28,7 @@ struct VarWithMapping {
 };
 
 // mapping the set of variables pointers to report to its gid
-using VarsToReport = std::unordered_map<int, std::vector<VarWithMapping>>;
+using VarsToReport = std::unordered_map<uint64_t, std::vector<VarWithMapping>>;
 
 class ReportEvent: public DiscreteEvent {
   public:

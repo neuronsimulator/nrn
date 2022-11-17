@@ -101,7 +101,7 @@ struct ReportConfiguration {
     double stop;                          // stop time of report
     int num_gids;                         // total number of gids
     int buffer_size;                      // hint on buffer size used for this report
-    std::set<int> target;                 // list of gids for this report
+    std::vector<int> target;              // list of gids for this report
 };
 
 void setup_report_engine(double dt_report, double mindelay);

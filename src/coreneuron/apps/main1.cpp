@@ -422,13 +422,13 @@ static void trajectory_return() {
     }
 }
 
-std::unique_ptr<ReportHandler> create_report_handler(ReportConfiguration& config,
+std::unique_ptr<ReportHandler> create_report_handler(const ReportConfiguration& config,
                                                      const SpikesInfo& spikes_info) {
     std::unique_ptr<ReportHandler> report_handler;
     if (config.format == "Bin") {
-        report_handler = std::make_unique<BinaryReportHandler>(config);
+        report_handler = std::make_unique<BinaryReportHandler>();
     } else if (config.format == "SONATA") {
-        report_handler = std::make_unique<SonataReportHandler>(config, spikes_info);
+        report_handler = std::make_unique<SonataReportHandler>(spikes_info);
     } else {
         if (nrnmpi_myid == 0) {
             printf(" WARNING : Report name '%s' has unknown format: '%s'.\n",
@@ -593,7 +593,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
             std::unique_ptr<ReportHandler> report_handler = create_report_handler(configs[i],
                                                                                   spikes_info);
             if (report_handler) {
-                report_handler->create_report(dt, tstop, delay);
+                report_handler->create_report(configs[i], dt, tstop, delay);
                 report_handlers.push_back(std::move(report_handler));
             }
             if (configs[i].report_dt < min_report_dt) {

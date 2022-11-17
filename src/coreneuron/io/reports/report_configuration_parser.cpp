@@ -106,15 +106,14 @@ void register_target_type(ReportConfiguration& report, ReportType report_type) {
 std::vector<ReportConfiguration> create_report_configurations(const std::string& conf_file,
                                                               const std::string& output_dir,
                                                               SpikesInfo& spikes_info) {
-    std::vector<ReportConfiguration> reports;
     std::string report_on;
     int target;
     std::ifstream report_conf(conf_file);
 
     int num_reports = 0;
     report_conf >> num_reports;
-    for (int i = 0; i < num_reports; i++) {
-        ReportConfiguration report;
+    std::vector<ReportConfiguration> reports(num_reports);
+    for (auto& report: reports) {
         report.buffer_size = 4;  // default size to 4 Mb
 
         report_conf >> report.name >> report.target_name >> report.type_str >> report_on >>
@@ -147,15 +146,13 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
             parse_filter_string(report_on, report);
         }
         if (report.num_gids) {
-            std::vector<int> new_gids(report.num_gids);
+            report.target.resize(report.num_gids);
             report_conf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            report_conf.read(reinterpret_cast<char*>(new_gids.data()),
+            report_conf.read(reinterpret_cast<char*>(report.target.data()),
                              report.num_gids * sizeof(int));
-            report.target = std::set<int>(new_gids.begin(), new_gids.end());
             // extra new line: skip
             report_conf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
-        reports.push_back(report);
     }
     // read population information for spike report
     int num_populations;
