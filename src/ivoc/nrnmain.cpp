@@ -36,15 +36,20 @@ printf("argv[%d]=|%s|\n", i, argv[i]);
 #if NRNMPI
 #if NRNMPI_DYNAMICLOAD
     nrnmpi_stubs();
+    bool mpi_loaded = false;
     for (int i = 0; i < argc; ++i) {
         if (strcmp("-mpi", argv[i]) == 0) {
             nrnmpi_load_or_exit(false);
+            mpi_loaded = true;
             break;
         }
     }
 #if NRN_MUSIC
     for (int i = 0; i < argc; ++i) {
         if (strcmp("-music", argv[i]) == 0) {
+            if (!mpi_loaded) {
+                nrnmpi_load_or_exit(false);
+            }
             nrnmusic_load();
             break;
         }
