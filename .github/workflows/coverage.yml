@@ -31,6 +31,9 @@ jobs:
 
     timeout-minutes: 45
 
+    env:
+      DISPLAY: ${{ ':0' }}
+
     steps:
 
       - name: Install apt packages
