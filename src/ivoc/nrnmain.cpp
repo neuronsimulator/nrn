@@ -46,7 +46,7 @@ printf("argv[%d]=|%s|\n", i, argv[i]);
     }
 #if NRN_MUSIC
     for (int i = 0; i < argc; ++i) {
-        if (strcmp("-music", argv[i]) == 0) {
+        if (strcmp("-music", argv[i]) == 0 || strcmp("music", argv[i]) == 0) {
             if (!mpi_loaded) {
                 nrnmpi_load_or_exit(false);
             }

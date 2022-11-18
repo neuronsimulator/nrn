@@ -12,7 +12,7 @@ void (*p_nrnmusic_terminate)();
 #define NRN_LIBDIR "/Users/hines/neuron/nrnmusic/builddynam/install/lib/"
 
 void nrnmusic_load() {
-    printf("nrnmusic_load\n");
+    fprintf(stderr, "nrnmusic_load\n");
 
     void* handle = dlopen(NRN_LIBDIR "libnrnmusic_ompi.dylib", RTLD_NOW | RTLD_LOCAL);
     if (!handle) {
