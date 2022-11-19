@@ -91,8 +91,12 @@ static void* load_nrnmpi(const char* name, std::string& mes) {
 }
 
 std::string nrnmpi_load(int is_python) {
+    static bool is_loaded{false};
     std::string pmes;
     void* handle = nullptr;
+    if (is_loaded) {
+        return {};
+    }
     // If libmpi already in memory, find name and dlopen that.
     void* sym = dlsym(RTLD_DEFAULT, "MPI_Initialized");
     if (sym) {
@@ -239,6 +243,7 @@ std::string nrnmpi_load(int is_python) {
     // No error, return an empty string. We have called dlopen(...) on the
     // libnrnmpi_* shared library and potentially on "libmpi" without
     // corresponding calls to dlclose().
+    is_loaded = true;
     return {};
 }
 

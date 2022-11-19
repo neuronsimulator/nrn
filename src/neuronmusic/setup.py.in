@@ -28,7 +28,7 @@ neuronmusic_module = Extension(
     'neuronmusic',
     ['neuronmusic.cpp'],
     library_dirs = libdirs,
-    libraries = ['music', 'nrniv'] + nrnmusic_lib,
+    libraries = ['nrniv'] + nrnmusic_lib,
     runtime_library_dirs = [@NRN_LIBDIR@],
     include_dirs = include_dirs
 )
