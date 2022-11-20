@@ -33,8 +33,8 @@ extern double nrn_timeus();
 #if NRN_MUSIC
 #include "nrnmusicapi.h"
 MPI_Comm nrnmusic_comm;
-#endif
 extern int nrnmusic;
+#endif
 
 MPI_Comm nrnmpi_world_comm;
 MPI_Comm nrnmpi_comm;
@@ -97,9 +97,11 @@ for (i=0; i < *pargc; ++i) {
             b = 1;
             nrnmpi_under_nrncontrol_ = 1;
         }
+#if NRN_MUSIC
         if (nrnmusic) {
             b = 1;
         }
+#endif
         if (!b) {
             nrnmpi_under_nrncontrol_ = 0;
             return;
@@ -120,8 +122,10 @@ for (i=0; i < *pargc; ++i) {
             asrt(MPI_Init(pargc, pargv));
 #endif
             nrnmpi_under_nrncontrol_ = 1;
+#if NRN_MUSIC
         } else if (!nrnmusic) {
             nrnmpi_under_nrncontrol_ = 0;
+#endif
         }
 
 #if NRN_MUSIC
