@@ -15,6 +15,7 @@ class Components:
     RX3D = True
     IV = True
     MPI = True
+    MUSIC = True
     CORENRN = False  # still early support
     GPU = False  # still early support
 
@@ -57,7 +58,12 @@ if "--disable-iv" in sys.argv:
 
 if "--disable-mpi" in sys.argv:
     Components.MPI = False
+    Components.MUSIC = False
     sys.argv.remove("--disable-mpi")
+
+if "--disable-music" in sys.argv:
+    Components.MUSIC = False
+    sys.argv.remove("--disable-music")
 
 if "--enable-coreneuron" in sys.argv:
     Components.CORENRN = True
@@ -79,6 +85,74 @@ if Components.RX3D:
         sys.exit(1)
 else:
     from setuptools.command.build_ext import build_ext
+
+music_home = ""
+if Components.MUSIC:
+    """
+    If music is not installed, try to install it. In principle, a dynamic
+    build requires only music include files. But demand a <full> installation
+    where music is in the PATH and can find include and lib. If not installed,
+    give up with Components.MUSIC = False and go on. Otherwise set some
+    variables for cmake.
+    """
+
+    def run(cmd, env):
+        result = subprocess.run(
+            cmd, shell=True, env=env, capture_output=True, text=True
+        )
+        result.check_returncode()
+        return result
+
+    def is_music_installed(env, pr_err=False):
+        # returns home for music or "" if music not in PATH
+        music_home = ""
+        try:
+            result = run("which music", env)
+            music_home = "/".join(result.stdout.strip().split("/")[:-2])
+            from os.path import exists
+
+            # does the library exist?
+            name = ""
+            for suffix in ["so", "dylib", "dll", None]:
+                name = music_home + "/lib/libmusic." + suffix
+                if exists(name):
+                    break
+            if name == "":
+                raise FileNotFoundError("no libmusic in {}/lib".format(musicHome))
+            # does include exist
+            name = music_home + "/include/music.h"
+            if not exists(name):
+                raise FileNotFoundError(name + " does not exist")
+        except:
+            if pr_err:
+                pass
+            music_home = ""
+        return music_home
+
+    def install_music():
+        myenv = os.environ.copy()
+        if not is_music_installed(myenv) and os.path.exists("/nrnwheel"):
+            cmd = r"""curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/heads/switch-to-MPI-C-interface.zip \
+                     && unzip MUSIC.zip \
+                     && mv MUSIC-switch-to-MPI-C-interface MUSIC \
+                     && cd MUSIC \
+                     && ./autogen.sh \
+                     && ./configure --prefix=/nrnwheel/MUSIC --with-python-sys-prefix --disable-anysource \
+                     && make -j install
+                  """
+            myenv["PATH"].append(":/nrnwheel/MUSIC")
+            try:
+                run(cmd, myenv)
+            except:
+                pass
+        return is_music_installed(myenv, pr_err=True)
+
+    music_home = install_music()
+    if not music_home:
+        Components.MUSIC = False
+
+print("Components.MUSIC = ", Components.MUSIC)
+print("music_home: ", music_home)
 
 
 class CMakeAugmentedExtension(Extension):
@@ -362,6 +436,7 @@ def setup_package():
                 "-DNRN_ENABLE_RX3D=OFF",  # Never build within CMake
                 "-DNRN_ENABLE_MPI=" + ("ON" if Components.MPI else "OFF"),
                 "-DNRN_ENABLE_MPI_DYNAMIC=" + ("ON" if Components.MPI else "OFF"),
+                "-DNRN_ENABLE_MUSIC=" + ("ON" if Components.MUSIC else "OFF"),
                 "-DNRN_ENABLE_PYTHON_DYNAMIC=ON",
                 "-DNRN_ENABLE_MODULE_INSTALL=OFF",
                 "-DNRN_ENABLE_REL_RPATH=ON",
