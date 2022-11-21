@@ -1,3 +1,13 @@
+# ~~~
+# It is a bad idea having floating point versions, since macros cant handle them
+# We therefore, have version as an int, which is pretty much standard
+#
+# CORENEURON_VERSION_COMBINED is used to defined CORENEURON_VERSION in engine.h
+# and this macros is used by some BBP mod file.
+# ~~~
+math(EXPR CORENEURON_VERSION_COMBINED
+     "${NEURON_VERSION_MAJOR} * 100 + ${NEURON_VERSION_MINOR}")
+
 # Regardless of whether we are being built as a submodule of NEURON, NRN_VERSION_{MAJOR,MINOR,PATCH}
 # are now set to the version that we should claim compatibility with when compiling translated MOD
 # files. Generate a header under a special `generated` prefix in the build directory, so that
