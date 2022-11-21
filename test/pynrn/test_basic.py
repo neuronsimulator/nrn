@@ -322,6 +322,7 @@ def test_deleted_sec():
     expect_hocerr(h.distance, (0, seg))
 
     del ic, imp, dend
+    del vref, gnabarref, rvlist, mech, seg, s
     locals()
 
 
