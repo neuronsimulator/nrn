@@ -52,7 +52,7 @@
 /*		      buildjacobian, crout, solve	      */
 /*                                                            */
 /*------------------------------------------------------------*/
-int newton(int n, int* index, double* x, int(*pfunc)(), double* value) {
+int newton(int n, int* index, double** x, int(*pfunc)(), double* value) {
     int i, count = 0, error, *perm;
     double **jacobian, *delta_x, change = 1.0, max_dev, temp;
 
@@ -92,16 +92,16 @@ int newton(int n, int* index, double* x, int(*pfunc)(), double* value) {
  if (index) {
 	for (i = 0; i < n; i++)
 	{
-	    if (fabs(x[index[i]]) > ZERO && (temp = fabs(delta_x[i] / (x[index[i]]))) > change)
+	    if (fabs(*x[index[i]]) > ZERO && (temp = fabs(delta_x[i] / (*x[index[i]]))) > change)
 		change = temp;
-	    x[index[i]] += delta_x[i];
+	    *x[index[i]] += delta_x[i];
 	}
  }else{
 	for (i = 0; i < n; i++)
 	{
-	    if (fabs(x[i]) > ZERO && (temp = fabs(delta_x[i] / (x[i]))) > change)
+	    if (fabs(*x[i]) > ZERO && (temp = fabs(delta_x[i] / (*x[i]))) > change)
 		change = temp;
-	    x[i] += delta_x[i];
+	    *x[i] += delta_x[i];
 	}
  }
 	(*pfunc) ();		/* Evaluate function values with new solution */
@@ -173,8 +173,7 @@ int newton(int n, int* index, double* x, int(*pfunc)(), double* value) {
 
 #define max(x, y) (fabs(x) > y ? x : y)
 
-int buildjacobian(int n, int* index, double* x, int (*pfunc)(), double* value, double** jacobian)
-{
+int buildjacobian(int n, int* index, double** x, int (*pfunc)(), double* value, double** jacobian) {
     int i, j;
     double increment, *high_value, *low_value;
 
@@ -186,12 +185,12 @@ int buildjacobian(int n, int* index, double* x, int (*pfunc)(), double* value, d
  if (index) {
     for (j = 0; j < n; j++)
     {
-	increment = max(fabs(0.02 * (x[index[j]])), STEP);
-	x[index[j]] += increment;
+	increment = max(fabs(0.02 * (*x[index[j]])), STEP);
+	*x[index[j]] += increment;
 	(*pfunc) ();
 	for (i = 0; i < n; i++)
 	    high_value[i] = value[i];
-	x[index[j]] -= 2.0 * increment;
+	*x[index[j]] -= 2.0 * increment;
 	(*pfunc) ();
 	for (i = 0; i < n; i++)
 	{
@@ -204,18 +203,18 @@ int buildjacobian(int n, int* index, double* x, int (*pfunc)(), double* value, d
 
 	/* Restore original variable and function values. */
 
-	x[index[j]] += increment;
+	*x[index[j]] += increment;
 	(*pfunc) ();
     }
  }else{
     for (j = 0; j < n; j++)
     {
-	increment = max(fabs(0.02 * (x[j])), STEP);
-	x[j] += increment;
+	increment = max(fabs(0.02 * (*x[j])), STEP);
+	*x[j] += increment;
 	(*pfunc) ();
 	for (i = 0; i < n; i++)
 	    high_value[i] = value[i];
-	x[j] -= 2.0 * increment;
+	*x[j] -= 2.0 * increment;
 	(*pfunc) ();
 	for (i = 0; i < n; i++)
 	{
@@ -228,7 +227,7 @@ int buildjacobian(int n, int* index, double* x, int (*pfunc)(), double* value, d
 
 	/* Restore original variable and function values. */
 
-	x[j] += increment;
+	*x[j] += increment;
 	(*pfunc) ();
     }
  }

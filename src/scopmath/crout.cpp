@@ -172,10 +172,9 @@ int crout(int n, double** a, int* perm) {
 /*            p[y[i]] contains the solution vector                    */
 /*                                                              */
 /*--------------------------------------------------------------*/
-int solve(int n, double** a, double* b, int* perm, double* p, int* y)
+int solve(int n, double** a, double* b, int* perm, double* p, int* y) {
 #define y_(arg)  p[y[arg]]
 #define b_(arg)  b[arg]
-{
     int i, j, pivot;
     double sum;
 
