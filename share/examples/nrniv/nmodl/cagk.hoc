@@ -72,7 +72,7 @@ proc runvc() { /* cagk current as function of time under voltage clamp*/
 	}
 }
 
-proc pvc() { /*voltage clamp of calcium activated potassium channel*/
+proc pvc() { localobj sc /*voltage clamp of calcium activated potassium channel*/
 	g.erase_all()
 	dt=.2
 	tstop = 15
@@ -82,7 +82,11 @@ proc pvc() { /*voltage clamp of calcium activated potassium channel*/
 	g.label(.2,.95,"ik vs t  (V = 20 mV)")
 	i=0
 	g.label(.8,1,"")
-	fclamp(2,.5) fclamp(0,10,20) fclamp(1,1e9,-65)
+	sc = new SEClamp(.5)
+	sc.dur1 = 10
+	sc.amp1 = 20
+	sc.dur2 = 1e9
+	sc.amp2 = -65
 	for (cai=1e-3; cai<1.1e-1; cai=cai*10){
 		i=i+1 g.color(i) 
 		sprint(s,"cai=%g",cai)

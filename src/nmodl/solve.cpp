@@ -193,7 +193,6 @@ void solvhandler() {
                 if (strcmp(method->name, "sparse") == 0) {
                     cvode_interface(fun, listnum, numeqn);
                     cvode_kinetic(qsol, fun, numeqn, listnum);
-                    single_channel(qsol, fun, numeqn, listnum);
                 }
             }
             solv_diffeq(qsol, fun, method, numeqn, listnum, steadystate, btype);
