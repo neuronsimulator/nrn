@@ -330,9 +330,7 @@ void apply_node_flux(int n,
                     states[j] += dt * (double) PyLong_AsLong(result) / scale[i];
                 } else if (PyInt_Check(result)) {
                     states[j] += dt * (double) PyInt_AsLong(result) / scale[i];
-                }
-
-                else {
+                } else {
                     PyErr_SetString(PyExc_Exception,
                                     "node._include_flux callback did not return a number.\n");
                 }
