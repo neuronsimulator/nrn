@@ -10,6 +10,15 @@
 namespace neuron::container {
 struct do_not_search_t {};
 inline constexpr do_not_search_t do_not_search{};
+
+namespace detail {
+template <typename T, typename = void>
+inline constexpr bool has_output_operator_v = false;
+template <typename T>
+inline constexpr bool
+    has_output_operator_v<T, std::void_t<decltype(std::cout << std::declval<T>())>> = true;
+}  // namespace detail
+
 /** @brief Stable handle to a generic value.
  *
  *  Without this type one can already hold a Node::handle `foo` and call
@@ -179,7 +188,7 @@ struct data_handle {
 
     friend std::ostream& operator<<(std::ostream& os, data_handle const& dh) {
         os << "data_handle<" << cxx_demangle(typeid(T).name()) << ">{";
-        if (dh.m_offset || dh.m_offset.was_once_valid()) {
+        if (auto const valid = dh.m_offset; valid || dh.m_offset.was_once_valid()) {
             auto const maybe_info = utils::find_container_info(dh.container_ptr());
             if (maybe_info) {
                 if (!maybe_info->container.empty()) {
@@ -188,6 +197,12 @@ struct data_handle {
                 os << maybe_info->field << ' ' << dh.m_offset << '/' << maybe_info->size;
             } else {
                 os << "cont=unknown " << dh.m_offset << "/unknown";
+            }
+            // print the value if it has an output operator
+            if constexpr (detail::has_output_operator_v<T>) {
+                if (valid) {
+                    os << " val=" << *dh;
+                }
             }
         } else if (dh.m_container_or_raw_ptr) {
             os << "raw=" << dh.m_container_or_raw_ptr;
