@@ -42,7 +42,7 @@
 /* Files Accessed: none						*/
 /*                                                              */
 /****************************************************************/
-int simeq(int n, double** coef, double* soln, int* index) {
+int simeq(int n, double** coef, double** soln, int* index) {
 	int ipivot, isave=0, jrow, kcol, i, j;
 	static int np; static int* perm;
 
@@ -119,17 +119,17 @@ int simeq(int n, double** coef, double* soln, int* index) {
     for (i = n - 1; i >= 0; i--)
     {
 	jrow = perm[i];
-	soln[index[i]] = coef[jrow][n];
+	*soln[index[i]] = coef[jrow][n];
 	for (j = i + 1; j < n; j++)
-	    soln[index[i]] -= coef[jrow][j] * (soln[index[j]]);
+	    *soln[index[i]] -= coef[jrow][j] * (*soln[index[j]]);
     }
  }else{
     for (i = n - 1; i >= 0; i--)
     {
 	jrow = perm[i];
-	soln[i] = coef[jrow][n];
+	*soln[i] = coef[jrow][n];
 	for (j = i + 1; j < n; j++)
-	    soln[i] -= coef[jrow][j] * (soln[j]);
+	    *soln[i] -= coef[jrow][j] * (*soln[j]);
     }
  }
     return (SUCCESS);

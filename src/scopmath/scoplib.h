@@ -72,7 +72,7 @@ double romberg(double a, double b, int (*func)());
 double legendre(double a, double b, int (*func)());
 
 /* Solution of simultaneous algebraic equations */
-int simeq(int n, double** coef, double* soln, int* index);
+int simeq(int n, double** coef, double** soln, int* index);
 int invert(int n, double** matrix);
 int crout(int n, double** a, int* perm);
 int solve(int n, double** a, double* b, int* perm, double* p, int* y);
