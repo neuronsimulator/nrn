@@ -8,6 +8,5 @@ ipython
 cython
 pytest
 pytest-cov
-pytest-xvfb
 mpi4py
 numpy
