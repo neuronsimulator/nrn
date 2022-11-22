@@ -2862,6 +2862,7 @@ void net_init(Item* qinit, Item* qp2) {
     replacstr(qinit, "\nstatic void _net_init(Point_process* _pnt, double* _args, double _lflag)");
     Sprintf(buf, "    _ppvar = _pnt->_prop->dparam;\n");
     vectorize_substitute(insertstr(qinit->next->next, buf),
+                         "  auto [_, _ml, _iml] = create_ml(_pnt->_prop);\n"
                          "  Datum* _ppvar = _pnt->_prop->dparam;\n"
                          "  Datum* _thread = (Datum*)0;\n"
                          "  NrnThread* _nt = (NrnThread*)_pnt->_vnt;\n");
