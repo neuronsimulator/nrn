@@ -64,9 +64,9 @@ void Cvode::rhs_memb(CvMembList* cmlist, NrnThread* _nt) {
     for (CvMembList* cml = cmlist; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
         if (Pvmi current = mf->current; current) {
-            current(_nt, cml->ml.get(), cml->index);
-            if (errno) {
-                if (nrn_errno_check(cml->index)) {
+            for (auto& ml: cml->ml) {
+                current(_nt, &ml, cml->index);
+                if (errno && nrn_errno_check(cml->index)) {
                     hoc_warning("errno set during calculation of currents", nullptr);
                 }
             }
@@ -90,7 +90,8 @@ void Cvode::lhs(NrnThread* _nt) {
 
     lhs_memb(z.cv_memb_list_, _nt);
     nrn_nonvint_block_conductance(_nt->end, _nt->_actual_rhs, _nt->id);
-    nrn_cap_jacob(_nt, z.cmlcap_->ml.get());
+    assert(z.cmlcap_->ml.size() == 1);
+    nrn_cap_jacob(_nt, &z.cmlcap_->ml[0]);
 
     // _nrn_fast_imem not needed since exact icap added in nrn_div_capacity
 
@@ -107,14 +108,11 @@ void Cvode::lhs_memb(CvMembList* cmlist, NrnThread* _nt) {
     CvMembList* cml;
     for (cml = cmlist; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
-        Memb_list* ml = cml->ml.get();
-        Pvmi s = mf->jacob;
-        if (s) {
-            Pvmi s = mf->jacob;
-            (*s)(_nt, ml, cml->index);
-            if (errno) {
-                if (nrn_errno_check(cml->index)) {
-                    hoc_warning("errno set during calculation of di/dv", (char*) 0);
+        if (auto const jacob = mf->jacob; jacob) {
+            for (auto& ml: cml->ml) {
+                jacob(_nt, &ml, cml->index);
+                if (errno && nrn_errno_check(cml->index)) {
+                    hoc_warning("errno set during calculation of di/dv", nullptr);
                 }
             }
         }

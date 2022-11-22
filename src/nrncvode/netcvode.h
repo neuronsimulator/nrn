@@ -24,7 +24,7 @@ struct hoc_Item;
 class PlayRecord;
 class PlayRecList;
 class IvocVect;
-class BAMechList;
+struct BAMechList;
 class HTList;
 // nrn_nthread vectors of HTList* for fixed step method
 // Thread segregated HTList* of all the CVode.CvodeThreadData.HTList*

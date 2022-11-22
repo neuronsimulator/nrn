@@ -111,7 +111,6 @@ void Cvode::init_eqn() {
 
     NrnThread* _nt;
     CvMembList* cml;
-    Memb_list* ml;
     Memb_func* mf;
     int i, j, zneq, zneq_v, zneq_cap_v;
     // printf("Cvode::init_eqn\n");
@@ -142,14 +141,21 @@ void Cvode::init_eqn() {
         CvodeThreadData& z = ctd_[_nt->id];
         // how many ode's are there? First ones are non-zero capacitance
         // nodes with non-zero capacitance
-        zneq_cap_v = z.cmlcap_ ? z.cmlcap_->ml->nodecount : 0;
+        zneq_cap_v = 0;
+        if (z.cmlcap_) {
+            for (auto& ml: z.cmlcap_->ml) {
+                zneq_cap_v += ml.nodecount;
+            }
+        }
         zneq = zneq_cap_v;
         z.neq_v_ = z.nonvint_offset_ = zneq;
         // now add the membrane mechanism ode's to the count
         for (cml = z.cv_memb_list_; cml; cml = cml->next) {
-            nrn_ode_count_t s = memb_func[cml->index].ode_count;
-            if (s) {
-                zneq += cml->ml->nodecount * (*s)(cml->index);
+            if (auto const ode_count = memb_func[cml->index].ode_count; ode_count) {
+                auto const count = ode_count(cml->index);
+                for (auto& ml: cml->ml) {
+                    zneq += ml.nodecount * count;
+                }
             }
         }
         z.nonvint_extra_offset_ = zneq;
@@ -184,7 +190,14 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
     for (int id = 0; id < nctd_; ++id) {
         CvodeThreadData& z = ctd_[id];
         double* atv = n_vector_data(atolnvec_, id);
-        zneq_cap_v = z.cmlcap_ ? z.cmlcap_->ml->nodecount : 0;
+        zneq_cap_v = 0;
+        if (z.cmlcap_) {
+            for (auto& ml: z.cmlcap_->ml) {
+                // support `1 x n` and `n x 1` but not `n x m`
+                assert(z.cmlcap_->ml.size() == 1 || ml.nodecount == 1);
+                zneq_cap_v += ml.nodecount;
+            }
+        }
         zneq = z.nvsize_;
         zneq_v = zneq_cap_v;
 
@@ -213,9 +226,10 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             NODERHS(z.v_node_[i]) = 1.;
         }
         for (i = 0; i < zneq_cap_v; ++i) {
-            ml = z.cmlcap_->ml.get();
-            z.pv_[i] = ml->nodelist[i]->v_handle();
-            z.pvdot_[i] = &(NODERHS(ml->nodelist[i]));
+            auto* const node = z.cmlcap_->ml.size() == 1 ? z.cmlcap_->ml[0].nodelist[i]
+                                                         : z.cmlcap_->ml[i].nodelist[0];
+            z.pv_[i] = node->v_handle();
+            z.pvdot_[i] = &(NODERHS(node));
             *z.pvdot_[i] = 0.;  // only ones = 1 are no_cap
         }
 
@@ -248,28 +262,29 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
         auto const pv_raw_ptrs_prev = pv_raw_ptrs;
         assert(pv_raw_ptrs.size() == z.pv_.size());
         for (cml = z.cv_memb_list_; cml; cml = cml->next) {
-            int n;
-            ml = cml->ml.get();
             mf = memb_func + cml->index;
-            nrn_ode_count_t sc = mf->ode_count;
-            if (sc && ((n = (*sc)(cml->index)) > 0)) {
-                // Note: if mf->hoc_mech then all cvode related
-                // callbacks are NULL (including ode_count)
-                // See src/nrniv/hocmech.cpp. That won't change but
-                // if it does, hocmech.cpp must follow all the
-                // nrn_ode_..._t prototypes to avoid segfault
-                // with Apple M1.
-                nrn_ode_map_t s = mf->ode_map;
-                for (j = 0; j < ml->nodecount; ++j) {
-                    (*s)(ieq,
-                         pv_raw_ptrs.data() + ieq,
-                         z.pvdot_ + ieq,
-                         ml,
-                         j,
-                         ml->pdata[j],
-                         atv + ieq,
-                         cml->index);
-                    ieq += n;
+            if (!mf->ode_count) {
+                continue;
+            }
+            for (auto& ml: cml->ml) {
+                if (int n; (n = mf->ode_count(cml->index)) > 0) {
+                    // Note: if mf->hoc_mech then all cvode related
+                    // callbacks are NULL (including ode_count)
+                    // See src/nrniv/hocmech.cpp. That won't change but
+                    // if it does, hocmech.cpp must follow all the
+                    // nrn_ode_..._t prototypes to avoid segfault
+                    // with Apple M1.
+                    for (j = 0; j < ml.nodecount; ++j) {
+                        mf->ode_map(ieq,
+                                    pv_raw_ptrs.data() + ieq,
+                                    z.pvdot_ + ieq,
+                                    &ml,
+                                    j,
+                                    ml.pdata[j],
+                                    atv + ieq,
+                                    cml->index);
+                        ieq += n;
+                    }
                 }
             }
         }
@@ -285,29 +300,30 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
 }
 
 void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
-    int i, n;
-    CvMembList *cml, *ncm;
-    Memb_list* ml;
     z.delete_memb_list(z.no_cap_memb_);
-    z.no_cap_memb_ = nil;
-    for (cml = z.cv_memb_list_; cml; cml = cml->next) {
-        Memb_list* ml = cml->ml.get();
+    z.no_cap_memb_ = nullptr;
+    CvMembList* ncm{};
+    for (auto* cml = z.cv_memb_list_; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
         // only point processes with currents are possibilities
         if (!mf->is_point || !mf->current) {
             continue;
         }
         // count how many at no cap nodes
-        n = 0;
-        for (i = 0; i < ml->nodecount; ++i) {
-            if (NODERHS(ml->nodelist[i]) > .5) {
-                ++n;
+        int n{};
+        for (auto& ml: cml->ml) {
+            for (auto i = 0; i < ml.nodecount; ++i) {
+                if (NODERHS(ml.nodelist[i]) > .5) {
+                    ++n;
+                }
             }
         }
-        if (n == 0)
+        if (n == 0) {
             continue;
+        }
+
         // keep same order
-        if (z.no_cap_memb_ == nil) {
+        if (!z.no_cap_memb_) {
             z.no_cap_memb_ = new CvMembList{cml->index};
             ncm = z.no_cap_memb_;
         } else {
@@ -316,36 +332,30 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
         }
         ncm->next = nil;
         ncm->index = cml->index;
-        ncm->ml->nodecount = n;
-        // allocate
-        ncm->ml->nodelist = new Node*[n];
+        // ncm is in non-contiguous mode
+        ncm->ml.reserve(n);
+        ncm->ml.clear();
+        for (auto& ml: cml->ml) {
+            for (auto i = 0; i < ml.nodecount; ++i) {
+                if (NODERHS(ml.nodelist[i]) > .5) {
+                    auto& newml = ncm->ml.emplace_back(cml->index /* mechanism type */);
+                    newml.nodecount = 1;
+                    newml.nodelist = new Node* [1] { ml.nodelist[i] };
+                    assert(newml.nodelist[0] == ml.nodelist[i]);
 #if CACHEVEC
-        ncm->ml->nodeindices = new int[n];
+                    newml.nodeindices = new int[1]{ml.nodeindices[i]};
 #endif
-        if (mf->hoc_mech) {
-            ncm->ml->prop = new Prop*[n];
-        } else {
-            ncm->ml->instances.reserve(n);
-            ncm->ml->pdata = new Datum*[n];
-        }
-        ncm->ml->_thread = ml->_thread;  // can share this
-        // fill
-        n = 0;
-        for (i = 0; i < ml->nodecount; ++i) {
-            if (NODERHS(ml->nodelist[i]) > .5) {
-                ncm->ml->nodelist[n] = ml->nodelist[i];
-#if CACHEVEC
-                ncm->ml->nodeindices[n] = ml->nodeindices[i];
-#endif
-                if (mf->hoc_mech) {
-                    ncm->ml->prop[n] = ml->prop[i];
-                } else {
-                    ncm->ml->instances.push_back(ml->instance_handle(i));
-                    ncm->ml->pdata[n] = ml->pdata[i];
+                    if (mf->hoc_mech) {
+                        newml.prop = new Prop* [1] { ml.prop[i] };
+                    } else {
+                        newml.set_storage_offset(i);
+                        newml.pdata = new Datum* [1] { ml.pdata[i] };
+                    }
+                    newml._thread = ml._thread;
                 }
-                ++n;
             }
         }
+        assert(ncm->ml.size() == n);
     }
 }
 
@@ -377,7 +387,8 @@ void Cvode::daspk_init_eqn() {
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {
         nrn_ode_count_t s = memb_func[cml->index].ode_count;
         if (s) {
-            zneq += cml->ml->nodecount * (*s)(cml->index);
+            assert(cml->ml.size() == 1);
+            zneq += cml->ml[0].nodecount * (*s)(cml->index);
         }
     }
     z.nonvint_extra_offset_ = zneq;
@@ -444,7 +455,8 @@ void Cvode::daspk_init_eqn() {
         mf = memb_func + cml->index;
         nrn_ode_count_t sc = mf->ode_count;
         if (sc && ((n = (*sc)(cml->index)) > 0)) {
-            Memb_list* ml = cml->ml.get();
+            assert(cml->ml.size() == 1);
+            Memb_list* ml = &cml->ml[0];
             nrn_ode_map_t s = mf->ode_map;
             for (j = 0; j < ml->nodecount; ++j) {
                 (*s)(ieq,
@@ -494,7 +506,8 @@ void Cvode::scatter_y(double* y, int tid) {
     for (CvMembList* cml = z.cv_memb_list_; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
         if (mf->ode_synonym) {
-            mf->ode_synonym(cml->ml.get());
+            assert(cml->ml.size() == 1);
+            mf->ode_synonym(&cml->ml[0]);
         }
     }
     nrn_extra_scatter_gather(0, tid);
@@ -589,8 +602,10 @@ int Cvode::solvex_thread(double* b, double* y, NrnThread* nt) {
     }
     lhs(nt);  // special version for cvode.
     scatter_ydot(b, nt->id);
-    if (z.cmlcap_)
-        nrn_mul_capacity(nt, z.cmlcap_->ml.get());
+    if (z.cmlcap_) {
+        assert(z.cmlcap_->ml.size() == 1);
+        nrn_mul_capacity(nt, &z.cmlcap_->ml[0]);
+    }
     for (i = 0; i < z.no_cap_count_; ++i) {
         NODERHS(z.no_cap_node_[i]) = 0.;
     }
@@ -633,8 +648,10 @@ int Cvode::solvex_thread_part1(double* b, NrnThread* nt) {
     }
     lhs(nt);  // special version for cvode.
     scatter_ydot(b, nt->id);
-    if (z.cmlcap_)
-        nrn_mul_capacity(nt, z.cmlcap_->ml.get());
+    if (z.cmlcap_) {
+        assert(z.cmlcap_->ml.size() == 1);
+        nrn_mul_capacity(nt, &z.cmlcap_->ml[0]);
+    }
     for (i = 0; i < z.no_cap_count_; ++i) {
         NODERHS(z.no_cap_node_[i]) = 0.;
     }
@@ -668,13 +685,11 @@ void Cvode::solvemem(NrnThread* nt) {
     CvMembList* cml;
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {  // probably can start at 6 or hh
         Memb_func* mf = memb_func + cml->index;
-        if (mf->ode_matsol) {
-            Memb_list* ml = cml->ml.get();
-            Pvmi s = mf->ode_matsol;
-            (*s)(nt, ml, cml->index);
-            if (errno) {
-                if (nrn_errno_check(cml->index)) {
-                    hoc_warning("errno set during ode jacobian solve", (char*) 0);
+        if (auto const ode_matsol = mf->ode_matsol; ode_matsol) {
+            for (auto& ml: cml->ml) {
+                ode_matsol(nt, &ml, cml->index);
+                if (errno && nrn_errno_check(cml->index)) {
+                    hoc_warning("errno set during ode jacobian solve", nullptr);
                 }
             }
         }
@@ -732,8 +747,10 @@ void Cvode::fun_thread_transfer_part2(double* ydot, NrnThread* nt) {
 #endif
     do_ode(nt);
     // divide by cm and compute capacity current
-    if (z.cmlcap_)
-        nrn_div_capacity(nt, z.cmlcap_->ml.get());
+    if (z.cmlcap_) {
+        assert(z.cmlcap_->ml.size() == 1);
+        nrn_div_capacity(nt, &z.cmlcap_->ml[0]);
+    }
     if (nt->_nrn_fast_imem) {
         double* p = nt->_nrn_fast_imem->_nrn_sav_rhs;
         for (int i = 0; i < z.v_node_count_; ++i) {
@@ -792,20 +809,20 @@ void Cvode::fun_thread_ms_part4(double* ydot, NrnThread* nt) {
     nrn_multisplit_adjust_rhs(nt);
     do_ode(nt);
     // divide by cm and compute capacity current
-    nrn_div_capacity(nt, z.cmlcap_->ml.get());
+    assert(z.cmlcap_->ml.size() == 1);
+    nrn_div_capacity(nt, &z.cmlcap_->ml[0]);
     gather_ydot(ydot, nt->id);
     before_after(z.after_solve_, nt);
     // for (int i=0; i < z.neq_; ++i) { printf("\t%d %g %g\n", i, y[i], ydot?ydot[i]:-1e99);}
 }
 
 void Cvode::before_after(BAMechList* baml, NrnThread* nt) {
-    BAMechList* ba;
-    int i, j;
-    for (ba = baml; ba; ba = ba->next) {
+    for (auto* ba = baml; ba; ba = ba->next) {
         nrn_bamech_t f = ba->bam->f;
-        Memb_list* ml = ba->ml;
-        for (i = 0; i < ml->nodecount; ++i) {
-            f(ml->nodelist[i], ml->pdata[i], ml->_thread, nt, ml, i);
+        for (auto* const ml: ba->ml) {
+            for (int i = 0; i < ml->nodecount; ++i) {
+                f(ml->nodelist[i], ml->pdata[i], ml->_thread, nt, ml, i);
+            }
         }
     }
 }
@@ -928,13 +945,11 @@ void Cvode::do_ode(NrnThread* _nt) {
     Memb_func* mf;
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {  // probably can start at 6 or hh
         mf = memb_func + cml->index;
-        if (mf->ode_spec) {
-            Pvmi s = mf->ode_spec;
-            Memb_list* ml = cml->ml.get();
-            (*s)(_nt, ml, cml->index);
-            if (errno) {
-                if (nrn_errno_check(cml->index)) {
-                    hoc_warning("errno set during ode evaluation", (char*) 0);
+        if (auto ode_spec = mf->ode_spec; ode_spec) {
+            for (auto& ml: cml->ml) {
+                ode_spec(_nt, &ml, cml->index);
+                if (errno && nrn_errno_check(cml->index)) {
+                    hoc_warning("errno set during ode evaluation", nullptr);
                 }
             }
         }
@@ -962,20 +977,12 @@ void Cvode::do_nonode(NrnThread* _nt) {  // all the hacked integrators, etc, in 
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
         if (mf->state) {
-            Memb_list* ml = cml->ml.get();
-            if (!mf->ode_spec) {
-                Pvmi s = mf->state;
-                (*s)(_nt, ml, cml->index);
-#if 0
-		if (errno) {
-			if (nrn_errno_check(cml->index)) {
-hoc_warning("errno set during calculation of states", (char*)0);
-			}
-		}
-#endif
-            } else if (mf->singchan_) {
-                Pvmi s = mf->singchan_;
-                (*s)(_nt, ml, cml->index);
+            for (auto& ml: cml->ml) {
+                if (!mf->ode_spec) {
+                    mf->state(_nt, &ml, cml->index);
+                } else if (mf->singchan_) {
+                    mf->singchan_(_nt, &ml, cml->index);
+                }
             }
         }
     }

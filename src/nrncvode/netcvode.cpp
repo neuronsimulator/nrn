@@ -1468,16 +1468,16 @@ void CvodeThreadData::delete_memb_list(CvMembList* cmlist) {
     for (cml = cmlist; cml; cml = cmlnext) {
         auto const& ml = cml->ml;
         cmlnext = cml->next;
-        delete[] ml->nodelist;
+        for (auto const& ml: cml->ml) {
+            delete[] ml.nodelist;
 #if CACHEVEC
-        if (ml->nodeindices) {
-            delete[] ml->nodeindices;
-        }
+            delete[] ml.nodeindices;
 #endif
-        if (memb_func[cml->index].hoc_mech) {
-            delete[] ml->prop;
-        } else {
-            delete[] ml->pdata;
+            if (memb_func[cml->index].hoc_mech) {
+                delete[] ml.prop;
+            } else {
+                delete[] ml.pdata;
+            }
         }
         delete cml;
     }
@@ -1648,20 +1648,20 @@ bool NetCvode::init_global() {
                     auto const mech_offset = cache_token.thread_cache(_nt->id).mechanism_offset.at(
                         i);
                     assert(mech_offset != std::numeric_limits<std::size_t>::max());
-                    cml->ml->set_storage_offset(mech_offset);
-                    cml->ml->nodecount = ml->nodecount;
+                    assert(cml->ml.size() == 1);
+                    cml->ml[0].set_storage_offset(mech_offset);
+                    cml->ml[0].nodecount = ml->nodecount;
                     // assumes cell info grouped contiguously
-                    cml->ml->nodelist = ml->nodelist;
+                    cml->ml[0].nodelist = ml->nodelist;
 #if CACHEVEC
-                    cml->ml->nodeindices = ml->nodeindices;
+                    cml->ml[0].nodeindices = ml->nodeindices;
 #endif
                     if (mf->hoc_mech) {
-                        cml->ml->prop = ml->prop;
+                        cml->ml[0].prop = ml->prop;
                     } else {
-                        // cml->ml->_data = ml->_data;
-                        cml->ml->pdata = ml->pdata;
+                        cml->ml[0].pdata = ml->pdata;
                     }
-                    cml->ml->_thread = ml->_thread;
+                    cml->ml[0]._thread = ml->_thread;
                 }
             }
             fill_global_ba(_nt, BEFORE_BREAKPOINT, &z.before_breakpoint_);
@@ -1771,18 +1771,21 @@ bool NetCvode::init_global() {
                         if (!z.cv_memb_list_) {
                             cml = new CvMembList{i};
                             cml->next = nil;
-                            cml->ml->nodecount = 0;
+                            assert(cml->ml.size() == 1);
+                            cml->ml[0].nodecount = 0;
                             z.cv_memb_list_ = cml;
                             last[cellnum[inode]] = cml;
                         }
                         if (last[cellnum[inode]]->index == i) {
-                            ++last[cellnum[inode]]->ml->nodecount;
+                            assert(last[cellnum[inode]]->ml.size() == 1);
+                            ++last[cellnum[inode]]->ml[0].nodecount;
                         } else {
                             cml = new CvMembList{i};
                             last[cellnum[inode]]->next = cml;
                             cml->next = nil;
                             last[cellnum[inode]] = cml;
-                            cml->ml->nodecount = 1;
+                            assert(cml->ml.size() == 1);
+                            cml->ml[0].nodecount = 1;
                         }
                     }
                 }
@@ -1793,19 +1796,10 @@ bool NetCvode::init_global() {
             for (i = 0; i < d.nlcv_; ++i) {
                 cvml[i] = d.lcv_[i].ctd_[0].cv_memb_list_;
                 for (cml = cvml[i]; cml; cml = cml->next) {
-                    auto const& ml = cml->ml;
-                    ml->nodelist = new Node*[ml->nodecount];
-#if CACHEVEC
-                    ml->nodeindices = new int[ml->nodecount];
-#endif
-                    if (memb_func[cml->index].hoc_mech) {
-                        ml->prop = new Prop*[ml->nodecount];
-                    } else {
-                        cml->ml->instances.reserve(ml->nodecount);
-                        // ml->_data = new Prop*[ml->nodecount];
-                        ml->pdata = new Datum*[ml->nodecount];
-                    }
-                    ml->nodecount = 0;
+                    // non-contiguous mode, so we're going to create a lot of 1-element Memb_list
+                    // inside cml->ml
+                    cml->ml.reserve(cml->ml[0].nodecount);
+                    cml->ml.resize(0);  // remove the single entry from contiguous mode
                 }
             }
             // fill pointers (and nodecount)
@@ -1817,27 +1811,27 @@ bool NetCvode::init_global() {
                 if (ml->nodecount &&
                     (mf->current || mf->ode_count || mf->ode_matsol || mf->ode_spec || mf->state ||
                      i == CAP || ba_candidate.count(i) == 1)) {
-                    int j;
-                    for (j = 0; j < ml->nodecount; ++j) {
+                    for (int j = 0; j < ml->nodecount; ++j) {
                         int icell = cellnum[ml->nodelist[j]->v_node_index];
                         if (cvml[icell]->index != i) {
                             cvml[icell] = cvml[icell]->next;
                             assert(cvml[icell] && cvml[icell]->index);
                         }
                         cml = cvml[icell];
-                        cml->ml->nodelist[cml->ml->nodecount] = ml->nodelist[j];
+                        auto& newml = cml->ml.emplace_back(cml->index /* mechanism type */);
+                        newml.nodecount = 1;
+                        newml.nodelist = new Node* [1] { ml->nodelist[j] };
+                        assert(newml.nodelist[0] == ml->nodelist[j]);
 #if CACHEVEC
-                        cml->ml->nodeindices[cml->ml->nodecount] = ml->nodeindices[j];
+                        newml.nodeindices = new int[1]{ml->nodeindices[j]};
 #endif
                         if (mf->hoc_mech) {
-                            cml->ml->prop[cml->ml->nodecount] = ml->prop[j];
+                            newml.prop = new Prop* [1] { ml->prop[j] };
                         } else {
-                            cml->ml->instances.push_back(ml->instance_handle(j));
-                            // cml->ml->_data[cml->ml->nodecount] = ml->_data[j];
-                            cml->ml->pdata[cml->ml->nodecount] = ml->pdata[j];
+                            newml.set_storage_offset(j);
+                            newml.pdata = new Datum* [1] { ml->pdata[j] };
                         }
-                        cml->ml->_thread = ml->_thread;
-                        ++cml->ml->nodecount;
+                        newml._thread = ml->_thread;
                     }
                 }
             }
@@ -1877,7 +1871,7 @@ void NetCvode::fill_global_ba(NrnThread* nt, int bat, BAMechList** baml) {
     for (tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
         BAMechList* ba = new BAMechList(baml);
         ba->bam = tbl->bam;
-        ba->ml = tbl->ml;
+        ba->ml.push_back(tbl->ml);
     }
 }
 
@@ -1897,7 +1891,9 @@ void NetCvode::fill_local_ba_cnt(int bat, int* celnum, NetCvodeThreadData& d) {
                 if (cml->index == bam->type) {
                     BAMechList* bl = cvbml(bat, bam, cv);
                     bl->bam = bam;
-                    bl->ml = cml->ml.get();
+                    for (auto& ml: cml->ml) {
+                        bl->ml.push_back(&ml);
+                    }
                 }
             }
         }
