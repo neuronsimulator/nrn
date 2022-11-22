@@ -3,6 +3,8 @@ extern void hoc_register_prop_size(int type, int psize, int dpsize);
 
 #include "nrnoc_ml.h"
 
+#include <vector>
+
 typedef struct NrnThread NrnThread;
 struct Symbol;
 
@@ -85,7 +87,7 @@ extern int n_memb_func;
 extern int* nrn_prop_param_size_;
 extern int* nrn_prop_dparam_size_;
 
-extern Memb_list* memb_list;
+extern std::vector<Memb_list> memb_list;
 /* for finitialize, order is same up through extracellular, then ions,
 then mechanisms that write concentrations, then all others. */
 extern short* memb_order_;

@@ -923,7 +923,10 @@ void nrn_finitialize(int setv, double v) {
         if (nrn_is_artificial_[i])
             if (memb_func[i].has_initialize()) {
                 if (memb_list[i].nodecount) {
-                    memb_func[i].invoke_initialize(nrn_threads, memb_list + i, i);
+                    // initialize all artificial cells in all threads at once
+                    auto& ml = memb_list[i];
+                    ml.set_storage_offset(0);
+                    memb_func[i].invoke_initialize(nrn_threads, &ml, i);
                 }
                 if (errno) {
                     if (nrn_errno_check(i)) {

@@ -134,7 +134,7 @@ extern int nrn_load_dll_recover_error();
 extern void nrn_load_name_check(const char* name);
 static int memb_func_size_;
 Memb_func* memb_func;
-Memb_list* memb_list;
+std::vector<Memb_list> memb_list;
 short* memb_order_;
 Symbol** pointsym;
 Point_process** point_process;
@@ -323,8 +323,8 @@ void hoc_last_init(void) {
             IGNORE(fflush(stderr));
         }
     memb_func_size_ = 30;
+    memb_list.reserve(memb_func_size_);
     memb_func = (Memb_func*) ecalloc(memb_func_size_, sizeof(Memb_func));
-    memb_list = (Memb_list*) ecalloc(memb_func_size_, sizeof(Memb_list));
     pointsym = (Symbol**) ecalloc(memb_func_size_, sizeof(Symbol*));
     point_process = (Point_process**) ecalloc(memb_func_size_, sizeof(Point_process*));
     pnt_map = static_cast<char*>(ecalloc(memb_func_size_, sizeof(char)));
@@ -467,7 +467,6 @@ void nrn_register_mech_common(const char** m,
     if (type >= memb_func_size_) {
         memb_func_size_ += 20;
         memb_func = (Memb_func*) erealloc(memb_func, memb_func_size_ * sizeof(Memb_func));
-        memb_list = (Memb_list*) erealloc(memb_list, memb_func_size_ * sizeof(Memb_list));
         pointsym = (Symbol**) erealloc(pointsym, memb_func_size_ * sizeof(Symbol*));
         point_process = (Point_process**) erealloc(point_process,
                                                    memb_func_size_ * sizeof(Point_process*));
@@ -521,6 +520,8 @@ void nrn_register_mech_common(const char** m,
         nrn_mk_prop_pools(memb_func_size_);
     }
 
+    assert(type >= memb_list.size());
+    memb_list.resize(type + 1);
     nrn_prop_param_size_[type] = 0;  /* fill in later */
     nrn_prop_dparam_size_[type] = 0; /* fill in later */
     nrn_dparam_ptr_start_[type] = 0; /* fill in later */
@@ -540,8 +541,6 @@ void nrn_register_mech_common(const char** m,
     memb_func[type].hoc_mech = nullptr;
     memb_func[type].setdata_ = nullptr;
     memb_func[type].dparam_semantics = (int*) 0;
-    memb_list[type].nodecount = 0;
-    memb_list[type]._thread = (Datum*) 0;
     memb_order_[type] = type;
     memb_func[type].ode_count = nullptr;
     memb_func[type].ode_map = nullptr;
