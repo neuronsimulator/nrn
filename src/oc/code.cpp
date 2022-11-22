@@ -876,6 +876,10 @@ int hoc_is_object_arg(int narg) {
     return (type == OBJECTVAR || type == OBJECTTMP);
 }
 
+int hoc_is_tempobj_arg(int narg) {
+    return (hoc_argtype(narg) == OBJECTTMP);
+}
+
 Object* hoc_obj_look_inside_stack(int i) { /* stack pointer at depth i; i=0 is top */
     auto const& entry = get_stack_entry_variant(i);
     return std::visit(
