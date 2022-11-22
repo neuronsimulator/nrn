@@ -504,7 +504,7 @@ void CellGroup::mk_tml_with_art(neuron::model_sorted_token const& cache_token, C
             if (strcmp(memb_func[i].sym->name, "HDF5Reader") == 0) {
                 continue;
             }
-            Memb_list* ml = memb_list + i;
+            Memb_list* ml = &memb_list[i];
             // how many artificial in each thread
             for (int id = 0; id < nrn_nthread; ++id) {
                 acnt[id] = 0;
