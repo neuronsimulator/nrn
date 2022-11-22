@@ -1770,7 +1770,7 @@ void v_setup_vectors(void) {
     v_structure_change = 0;
     nrn_update_ps2nt();
     ++structure_change_cnt;
-    long_difus_solve(3, nrn_threads);
+    long_difus_solve(nrn_ensure_model_data_are_sorted(), 3, *nrn_threads);  // !!!
     nrn_nonvint_block_setup();
     diam_changed = 1;
 }

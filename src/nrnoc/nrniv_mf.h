@@ -10,8 +10,9 @@ struct Point_process;
 
 using ldifusfunc3_t =
     double (*)(int, Memb_list*, std::size_t, Datum*, double*, double*, Datum*, NrnThread*);
-using ldifusfunc2_t = void(int, ldifusfunc3_t, void**, int, int, int, NrnThread*);
-using ldifusfunc_t = void (*)(ldifusfunc2_t, NrnThread*);
+using ldifusfunc2_t =
+    void(int, ldifusfunc3_t, void**, int, int, int, neuron::model_sorted_token const&, NrnThread&);
+using ldifusfunc_t = void (*)(ldifusfunc2_t, neuron::model_sorted_token const&, NrnThread&);
 typedef void (*pnt_receive_t)(Point_process*, double*, double);
 typedef void (*pnt_receive_init_t)(Point_process*, double*, double);
 

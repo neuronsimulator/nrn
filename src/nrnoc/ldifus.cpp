@@ -98,7 +98,7 @@ extern "C" void nrn_tree_solve(double* a, double* d, double* b, double* rhs, int
 }
 
 
-void long_difus_solve(int method, NrnThread* nt) {
+void long_difus_solve(neuron::model_sorted_token const& sorted_token, int method, NrnThread& nt) {
     ldifusfunc2_t* f{};
     if (ldifusfunc) {
         switch (method) {
@@ -117,7 +117,7 @@ void long_difus_solve(int method, NrnThread* nt) {
         }
         assert(f);
         for (int i = 0; i < ldifusfunccnt; ++i) {
-            ldifusfunc[i](f, nt);
+            ldifusfunc[i](f, sorted_token, nt);
         }
     }
 }
@@ -286,7 +286,9 @@ static void overall_setup(int m,
                           int ai,
                           int sindex,
                           int dindex,
-                          NrnThread* _nt) {
+                          neuron::model_sorted_token const&,
+                          NrnThread& ntr) {
+    auto* const _nt = &ntr;
     int i;
     LongDifusThreadData** ppldtd = (LongDifusThreadData**) v;
     LongDifusThreadData* ldtd = *ppldtd;
@@ -330,9 +332,15 @@ static Memb_list* v2ml(void** v, int tid) {
     return (*ppldtd)->ml[tid];
 }
 
-static void
-stagger(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* _nt) {
-    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+static void stagger(int m,
+                    ldifusfunc3_t diffunc,
+                    void** v,
+                    int ai,
+                    int sindex,
+                    int dindex,
+                    neuron::model_sorted_token const& sorted_token,
+                    NrnThread& ntr) {
+    auto* const _nt = &ntr;
     LongDifus* const pld = v2ld(v, _nt->id);
     if (!pld) {
         return;
@@ -383,9 +391,15 @@ stagger(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, 
     }
 }
 
-static void
-ode(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* _nt) {
-    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+static void ode(int m,
+                ldifusfunc3_t diffunc,
+                void** v,
+                int ai,
+                int sindex,
+                int dindex,
+                neuron::model_sorted_token const& sorted_token,
+                NrnThread& ntr) {
+    auto* const _nt = &ntr;
     LongDifus* const pld = v2ld(v, _nt->id);
     if (!pld) {
         return;
@@ -422,9 +436,15 @@ ode(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnT
     }
 }
 
-static void
-matsol(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* _nt) {
-    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+static void matsol(int m,
+                   ldifusfunc3_t diffunc,
+                   void** v,
+                   int ai,
+                   int sindex,
+                   int dindex,
+                   neuron::model_sorted_token const& sorted_token,
+                   NrnThread& ntr) {
+    auto* const _nt = &ntr;
     LongDifus* const pld = v2ld(v, _nt->id);
     if (!pld) {
         return;

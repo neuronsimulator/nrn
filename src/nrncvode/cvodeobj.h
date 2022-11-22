@@ -99,9 +99,9 @@ class Cvode {
     Cvode();
     virtual ~Cvode();
 
-    virtual int handle_step(NetCvode*, double);
+    virtual int handle_step(neuron::model_sorted_token const&, NetCvode*, double);
     virtual int init(double t);
-    virtual int advance_tn();
+    virtual int advance_tn(neuron::model_sorted_token const&);
     virtual int interpolate(double t);
     virtual double tn() {
         return tn_;
@@ -134,7 +134,7 @@ class Cvode {
     void alloc_cvode();
     void alloc_daspk();
     int cvode_init(double);
-    int cvode_advance_tn();
+    int cvode_advance_tn(neuron::model_sorted_token const&);
     int cvode_interpolate(double);
     int daspk_init(double);
     int daspk_advance_tn();
@@ -147,9 +147,16 @@ class Cvode {
     int solvex_thread_part1(double* b, NrnThread* nt);
     int solvex_thread_part2(NrnThread* nt);
     int solvex_thread_part3(double* b, NrnThread* nt);
-    void fun_thread(double t, double* y, double* ydot, NrnThread* nt);
-    void fun_thread_transfer_part1(double t, double* y, NrnThread* nt);
-    void fun_thread_transfer_part2(double* ydot, NrnThread* nt);
+    void fun_thread(neuron::model_sorted_token const&,
+                    double t,
+                    double* y,
+                    double* ydot,
+                    NrnThread* nt);
+    void fun_thread_transfer_part1(neuron::model_sorted_token const&,
+                                   double t,
+                                   double* y,
+                                   NrnThread* nt);
+    void fun_thread_transfer_part2(neuron::model_sorted_token const&, double* ydot, NrnThread* nt);
     void fun_thread_ms_part1(double t, double* y, NrnThread* nt);
     void fun_thread_ms_part2(NrnThread* nt);
     void fun_thread_ms_part3(NrnThread* nt);
@@ -173,7 +180,7 @@ class Cvode {
     void play_add(PlayRecord*);
     void play_continuous(double t);
     void play_continuous_thread(double t, NrnThread*);
-    void do_ode(NrnThread*);
+    void do_ode(neuron::model_sorted_token const&, NrnThread&);
     void do_nonode(NrnThread* nt = 0);
     double* n_vector_data(N_Vector, int);
 
@@ -183,7 +190,7 @@ class Cvode {
     void init_eqn();
     void daspk_init_eqn();
     void matmeth();
-    void nocap_v(NrnThread*);
+    void nocap_v(neuron::model_sorted_token const&, NrnThread*);
     void nocap_v_part1(NrnThread*);
     void nocap_v_part2(NrnThread*);
     void nocap_v_part3(NrnThread*);
@@ -243,8 +250,8 @@ class Cvode {
     double tstop_begin_, tstop_end_;
 
   private:
-    void rhs(NrnThread*);
-    void rhs_memb(CvMembList*, NrnThread*);
+    void rhs(neuron::model_sorted_token const&, NrnThread*);
+    void rhs_memb(neuron::model_sorted_token const&, CvMembList*, NrnThread*);
     void lhs(NrnThread*);
     void lhs_memb(CvMembList*, NrnThread*);
     void triang(NrnThread*);
