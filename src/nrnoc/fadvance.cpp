@@ -799,7 +799,8 @@ void nonvint(NrnThread* _nt) {
                 }
             }
         }
-    long_difus_solve(0, _nt); /* if any longitudinal diffusion */
+    long_difus_solve(nrn_ensure_model_data_are_sorted(), 0, *_nt); /* if any longitudinal diffusion
+                                                                    */
     nrn_nonvint_block_fixed_step_solve(_nt->id);
     nrn::Instrumentor::phase_end("state-update");
 }

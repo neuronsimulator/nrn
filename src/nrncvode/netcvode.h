@@ -202,7 +202,7 @@ class NetCvode {
     // private:
   public:
     static double eps_;
-    int local_microstep(NrnThread*);
+    int local_microstep(neuron::model_sorted_token const&, NrnThread&);
     int global_microstep();
     void deliver_least_event(NrnThread*);
     void evaluate_conditions();

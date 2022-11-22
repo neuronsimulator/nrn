@@ -192,17 +192,17 @@ int Daspk::init_failure_style_;
 int Daspk::init_try_again_;
 int Daspk::first_try_init_failures_;
 
-static void* do_ode_thread(NrnThread* nt) {
+static void do_ode_thread(neuron::model_sorted_token const& sorted_token, NrnThread& ntr) {
+    auto* const nt = &ntr;
     int i;
     Cvode* cv = thread_cv;
     nt->_t = cv->t_;
-    cv->do_ode(nt);
+    cv->do_ode(sorted_token, ntr);
     CvodeThreadData& z = cv->ctd_[nt->id];
     double* yp = cv->n_vector_data(nvec_yp, nt->id);
     for (i = z.neq_v_; i < z.nvsize_; ++i) {
         yp[i] = *(z.pvdot_[i]);
     }
-    return 0;
 }
 
 static double check(double t, Daspk* ida) {
@@ -271,7 +271,7 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
     }
     thread_cv = cv_;
     nvec_yp = yp_;
-    nrn_multithread_job(do_ode_thread);
+    nrn_multithread_job(nrn_ensure_model_data_are_sorted(), do_ode_thread);
     ida_init();
     t = cv_->t_;
 #if 1
@@ -466,8 +466,9 @@ for (i=0; i < z.nvsize_; ++i) {
     daspk_scatter_y(y, nt->id);  // vi, vext, channel states, linmod non-node y.
     // rhs of cy' = f(y)
     play_continuous_thread(tt, nt);
-    nrn_rhs(nrn_ensure_model_data_are_sorted(), *nt);
-    do_ode(nt);
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    nrn_rhs(sorted_token, *nt);
+    do_ode(sorted_token, *nt);
     // accumulate into delta
     gather_ydot(delta, nt->id);
 

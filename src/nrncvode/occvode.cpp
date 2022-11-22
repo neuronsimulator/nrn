@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <InterViews/resource.h>
 #include <OS/string.h>
+#include "nrn_ansi.h"
 #include "nrndae_c.h"
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
@@ -23,7 +24,6 @@ extern int nrn_errno_check(int);
 #define nt_dt nrn_threads->_dt
 #define nt_t  nrn_threads->_t
 
-extern void long_difus_solve(int, NrnThread*);
 extern Symlist* hoc_built_in_symlist;
 
 #include "spmatrix.h"
@@ -348,7 +348,8 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
                     if (mf->hoc_mech) {
                         newml.prop = new Prop* [1] { ml.prop[i] };
                     } else {
-                        newml.set_storage_offset(i);
+                        // Danger: this is not stable w.r.t. permutation
+                        newml.set_storage_offset(ml.get_storage_offset() + i);
                         newml.pdata = new Datum* [1] { ml.pdata[i] };
                     }
                     newml._thread = ml._thread;
@@ -694,17 +695,24 @@ void Cvode::solvemem(NrnThread* nt) {
             }
         }
     }
-    long_difus_solve(2, nt);
+    long_difus_solve(nrn_ensure_model_data_are_sorted(), 2, *nt);
 }
 
-void Cvode::fun_thread(double tt, double* y, double* ydot, NrnThread* nt) {
+void Cvode::fun_thread(neuron::model_sorted_token const& sorted_token,
+                       double tt,
+                       double* y,
+                       double* ydot,
+                       NrnThread* nt) {
     CvodeThreadData& z = CTD(nt->id);
-    fun_thread_transfer_part1(tt, y, nt);
+    fun_thread_transfer_part1(sorted_token, tt, y, nt);
     nrn_nonvint_block_ode_fun(z.nvsize_, y, ydot, nt->id);
-    fun_thread_transfer_part2(ydot, nt);
+    fun_thread_transfer_part2(sorted_token, ydot, nt);
 }
 
-void Cvode::fun_thread_transfer_part1(double tt, double* y, NrnThread* nt) {
+void Cvode::fun_thread_transfer_part1(neuron::model_sorted_token const& sorted_token,
+                                      double tt,
+                                      double* y,
+                                      NrnThread* nt) {
     CvodeThreadData& z = CTD(nt->id);
     nt->_t = tt;
 
@@ -725,10 +733,12 @@ void Cvode::fun_thread_transfer_part1(double tt, double* y, NrnThread* nt) {
         nrnmpi_assert_opstep(opmode_, nt->_t);
     }
 #endif
-    nocap_v(nt);  // vm at nocap nodes consistent with adjacent vm
+    nocap_v(sorted_token, nt);  // vm at nocap nodes consistent with adjacent vm
 }
 
-void Cvode::fun_thread_transfer_part2(double* ydot, NrnThread* nt) {
+void Cvode::fun_thread_transfer_part2(neuron::model_sorted_token const& sorted_token,
+                                      double* ydot,
+                                      NrnThread* nt) {
     CvodeThreadData& z = CTD(nt->id);
     if (z.nvsize_ == 0) {
         return;
@@ -739,13 +749,13 @@ void Cvode::fun_thread_transfer_part2(double* ydot, NrnThread* nt) {
     }
 #endif
     before_after(z.before_breakpoint_, nt);
-    rhs(nt);  // similar to nrn_rhs in treeset.cpp
+    rhs(sorted_token, nt);  // similar to nrn_rhs in treeset.cpp
 #if PARANEURON
     if (nrn_multisplit_solve_) {  // non-zero area nodes need an adjustment
         nrn_multisplit_adjust_rhs(nt);
     }
 #endif
-    do_ode(nt);
+    do_ode(sorted_token, *nt);
     // divide by cm and compute capacity current
     if (z.cmlcap_) {
         assert(z.cmlcap_->ml.size() == 1);
@@ -805,9 +815,10 @@ void Cvode::fun_thread_ms_part4(double* ydot, NrnThread* nt) {
         return;
     }
     before_after(z.before_breakpoint_, nt);
-    rhs(nt);  // similar to nrn_rhs in treeset.cpp
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    rhs(sorted_token, nt);  // similar to nrn_rhs in treeset.cpp
     nrn_multisplit_adjust_rhs(nt);
-    do_ode(nt);
+    do_ode(sorted_token, *nt);
     // divide by cm and compute capacity current
     assert(z.cmlcap_->ml.size() == 1);
     nrn_div_capacity(nt, &z.cmlcap_->ml[0]);
@@ -844,7 +855,7 @@ This was done by constructing a list of membrane mechanisms that
 contribute to the membrane current at the nocap nodes.
 */
 
-void Cvode::nocap_v(NrnThread* _nt) {
+void Cvode::nocap_v(neuron::model_sorted_token const& sorted_token, NrnThread* _nt) {
     int i;
     CvodeThreadData& z = CTD(_nt->id);
 
@@ -854,7 +865,7 @@ void Cvode::nocap_v(NrnThread* _nt) {
         NODERHS(nd) = 0;
     }
     // compute the i(vmold) and di/dv
-    rhs_memb(z.no_cap_memb_, _nt);
+    rhs_memb(sorted_token, z.no_cap_memb_, _nt);
     lhs_memb(z.no_cap_memb_, _nt);
 
     for (i = 0; i < z.no_cap_count_; ++i) {  // parent axial current
@@ -900,7 +911,7 @@ void Cvode::nocap_v_part1(NrnThread* _nt) {
         NODERHS(nd) = 0;
     }
     // compute the i(vmold) and di/dv
-    rhs_memb(z.no_cap_memb_, _nt);
+    rhs_memb(nrn_ensure_model_data_are_sorted(), z.no_cap_memb_, _nt);
     lhs_memb(z.no_cap_memb_, _nt);
 
     for (i = 0; i < z.no_cap_count_; ++i) {  // parent axial current
@@ -938,7 +949,8 @@ void Cvode::nocap_v_part3(NrnThread* _nt) {
     // no_cap v's are now consistent with adjacent v's
 }
 
-void Cvode::do_ode(NrnThread* _nt) {
+void Cvode::do_ode(neuron::model_sorted_token const& sorted_token, NrnThread& ntr) {
+    auto* const _nt = &ntr;
     // all the membrane mechanism ode's
     CvodeThreadData& z = CTD(_nt->id);
     CvMembList* cml;
@@ -954,7 +966,7 @@ void Cvode::do_ode(NrnThread* _nt) {
             }
         }
     }
-    long_difus_solve(1, _nt);
+    long_difus_solve(sorted_token, 1, ntr);
 }
 
 static Cvode* nonode_cv;

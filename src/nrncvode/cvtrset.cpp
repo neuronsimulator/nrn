@@ -10,7 +10,7 @@
 #include "membfunc.h"
 #include "neuron.h"
 
-void Cvode::rhs(NrnThread* _nt) {
+void Cvode::rhs(neuron::model_sorted_token const& sorted_token, NrnThread* _nt) {
     int i;
 
     CvodeThreadData& z = CTD(_nt->id);
@@ -31,7 +31,7 @@ void Cvode::rhs(NrnThread* _nt) {
         }
     }
 
-    rhs_memb(z.cv_memb_list_, _nt);
+    rhs_memb(sorted_token, z.cv_memb_list_, _nt);
     nrn_nonvint_block_current(_nt->end, _nt->_actual_rhs, _nt->id);
 
     if (_nt->_nrn_fast_imem) {
@@ -56,10 +56,9 @@ void Cvode::rhs(NrnThread* _nt) {
     }
 }
 
-void Cvode::rhs_memb(CvMembList* cmlist, NrnThread* _nt) {
-    // The current kernels operate on the underlying (SOA) storage of modern
-    // data structures, so we must ensure that those data are sorted
-    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+void Cvode::rhs_memb(neuron::model_sorted_token const& sorted_token,
+                     CvMembList* cmlist,
+                     NrnThread* _nt) {
     errno = 0;
     for (CvMembList* cml = cmlist; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;

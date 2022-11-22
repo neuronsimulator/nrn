@@ -96,7 +96,7 @@ extern void second_order_cur(NrnThread*);
 extern void hoc_register_dparam_size(int, int);
 extern void setup_topology(void);
 extern int nrn_errno_check(int);
-extern void long_difus_solve(int method, NrnThread* nt);
+void long_difus_solve(neuron::model_sorted_token const&, int method, NrnThread& nt);
 extern void nrn_fihexec(int);
 extern int special_pnt_call(Object*, Symbol*, int);
 extern void ob_sec_access_push(hoc_Item*);

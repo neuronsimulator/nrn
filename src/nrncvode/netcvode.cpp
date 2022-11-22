@@ -1820,7 +1820,8 @@ bool NetCvode::init_global() {
                         cml = cvml[icell];
                         auto& newml = cml->ml.emplace_back(cml->index /* mechanism type */);
                         newml.nodecount = 1;
-                        newml.nodelist = new Node* [1] { ml->nodelist[j] };
+                        newml.nodelist = new Node*[1];
+                        newml.nodelist[0] = ml->nodelist[j];
                         assert(newml.nodelist[0] == ml->nodelist[j]);
 #if CACHEVEC
                         newml.nodeindices = new int[1]{ml->nodeindices[j]};
@@ -1828,7 +1829,7 @@ bool NetCvode::init_global() {
                         if (mf->hoc_mech) {
                             newml.prop = new Prop* [1] { ml->prop[j] };
                         } else {
-                            newml.set_storage_offset(j);
+                            newml.set_storage_offset(ml->get_storage_offset() + j);
                             newml.pdata = new Datum* [1] { ml->pdata[j] };
                         }
                         newml._thread = ml->_thread;
@@ -2123,7 +2124,7 @@ int NetCvode::solve(double tout) {
             TQueue* tqe = p[0].tqe_;
             NrnThread* nt = nrn_threads;
             while (tq->least_t() < tout || tqe->least_t() <= tout) {
-                err = local_microstep(nt);
+                err = local_microstep(nrn_ensure_model_data_are_sorted(), *nt);
                 if (nrn_allthread_handle) {
                     (*nrn_allthread_handle)();
                 }
@@ -2157,7 +2158,7 @@ int NetCvode::solve(double tout) {
             double tc = tq->least_t();
             double te = p[0].tqe_->least_t();
             while (tq->least_t() <= tc && p[0].tqe_->least_t() <= te) {
-                err = local_microstep(nrn_threads);
+                err = local_microstep(nrn_ensure_model_data_are_sorted(), *nrn_threads);
                 if (nrn_allthread_handle) {
                     (*nrn_allthread_handle)();
                 }
@@ -2211,7 +2212,8 @@ bool NetCvode::deliver_event(double til, NrnThread* nt) {
     }
 }
 
-int NetCvode::local_microstep(NrnThread* nt) {
+int NetCvode::local_microstep(neuron::model_sorted_token const& sorted_token, NrnThread& ntr) {
+    auto* const nt = &ntr;
     int err = NVI_SUCCESS;
     int i = nt->id;
     if (p[i].tqe_->least_t() <= p[i].tq_->least_t()) {
@@ -2219,7 +2221,7 @@ int NetCvode::local_microstep(NrnThread* nt) {
     } else {
         TQItem* q = p[i].tq_->least();
         Cvode* cv = (Cvode*) q->data_;
-        err = cv->handle_step(this, 1e100);
+        err = cv->handle_step(sorted_token, this, 1e100);
         p[i].tq_->move_least(cv->t_);
     }
     return err;
@@ -2237,7 +2239,7 @@ int NetCvode::global_microstep() {
         assert(tdiff == 0.0 || (gcv_->tstop_begin_ <= tt && tt <= gcv_->tstop_end_));
         deliver_events(tt, nt);
     } else {
-        err = gcv_->handle_step(this, tt);
+        err = gcv_->handle_step(nrn_ensure_model_data_are_sorted(), this, tt);
     }
     if (p[0].tqe_->least_t() < gcv_->t_) {
         gcv_->interpolate(p[0].tqe_->least_t());
@@ -2245,7 +2247,7 @@ int NetCvode::global_microstep() {
     return err;
 }
 
-int Cvode::handle_step(NetCvode* ns, double te) {
+int Cvode::handle_step(neuron::model_sorted_token const& sorted_token, NetCvode* ns, double te) {
     int err = NVI_SUCCESS;
     // first order correct condition evaluation goes here
     if (ns->condition_order() == 1) {
@@ -2289,7 +2291,7 @@ int Cvode::handle_step(NetCvode* ns, double te) {
         err = interpolate(tn_);
     } else {
         record_continuous();
-        err = advance_tn();
+        err = advance_tn(sorted_token);
         // second order correct condition evaluation goes here
         if (ns->condition_order() == 2) {
             evaluate_conditions(nth_);
@@ -3306,7 +3308,7 @@ void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
             Cvode* cv = (Cvode*) q->data_;
             if (tt < cv->t_) {
                 int err = NVI_SUCCESS;
-                err = cv->handle_step(ns, tt);
+                err = cv->handle_step(nrn_ensure_model_data_are_sorted(), ns, tt);
                 ns->p[i].tq_->move_least(cv->t_);
             }
         }
@@ -3761,7 +3763,7 @@ int NetCvode::pgvts_cvode(double tt, int op) {
             gcv_->check_deliver();
         }
         gcv_->record_continuous();
-        err = gcv_->advance_tn();
+        err = gcv_->advance_tn(nrn_ensure_model_data_are_sorted());
         if (condition_order() == 2) {
             gcv_->evaluate_conditions();
         }
@@ -4322,7 +4324,7 @@ void NetCvode::dstates() {
 
 void nrn_cvfun(double t, double* y, double* ydot) {
     NetCvode* d = net_cvode_instance;
-    d->gcv_->fun_thread(t, y, ydot, nrn_threads);
+    d->gcv_->fun_thread(nrn_ensure_model_data_are_sorted(), t, y, ydot, nrn_threads);
 }
 
 double nrn_hoc2fixed_step(void*) {
@@ -6864,7 +6866,8 @@ void NetCvode::recalc_ptrs() {
 
 static double lvardt_tout_;
 
-static void* lvardt_integrate(NrnThread* nt) {
+static void lvardt_integrate(neuron::model_sorted_token const& token, NrnThread& ntr) {
+    auto* const nt = &ntr;
     size_t err = NVI_SUCCESS;
     int id = nt->id;
     NetCvode* nc = net_cvode_instance;
@@ -6874,13 +6877,13 @@ static void* lvardt_integrate(NrnThread* nt) {
     double tout = lvardt_tout_;
     nt->_stop_stepping = 0;
     while (tq->least_t() < tout || tqe->least_t() <= tout) {
-        err = nc->local_microstep(nt);
+        err = nc->local_microstep(token, ntr);
         if (nt->_stop_stepping) {
             nt->_stop_stepping = 0;
-            return (void*) err;
+            return;
         }
         if (err != NVI_SUCCESS || stoprun) {
-            return (void*) err;
+            return;
         }
     }
     int n = p.nlcv_;
@@ -6893,7 +6896,6 @@ static void* lvardt_integrate(NrnThread* nt) {
     else {
         nt->_t = tout;
     }
-    return (void*) err;
 }
 
 int NetCvode::solve_when_threads(double tout) {
@@ -6901,6 +6903,7 @@ int NetCvode::solve_when_threads(double tout) {
     int tid;
     double til;
     nrn_use_busywait(1);  // just a possibility
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
     if (empty_) {
         if (tout >= 0.) {
             while (nt_t < tout && !stoprun) {
@@ -6957,7 +6960,7 @@ int NetCvode::solve_when_threads(double tout) {
             // For now just integrate by min delay intervals.
             lvardt_tout_ = tout;
             while (nt_t < tout) {
-                nrn_multithread_job(lvardt_integrate);
+                nrn_multithread_job(cache_token, lvardt_integrate);
                 if (nrn_allthread_handle) {
                     (*nrn_allthread_handle)();
                 }
@@ -7024,7 +7027,7 @@ int NetCvode::global_microstep_when_threads() {
         assert(tdiff == 0.0 || (gcv_->tstop_begin_ <= tt && tt <= gcv_->tstop_end_));
         deliver_events_when_threads(tt);
     } else {
-        err = gcv_->handle_step(this, tt);
+        err = gcv_->handle_step(nrn_ensure_model_data_are_sorted(), this, tt);
     }
     if ((tt = allthread_least_t(tid)) < gcv_->t_) {
         gcv_->interpolate(tt);
