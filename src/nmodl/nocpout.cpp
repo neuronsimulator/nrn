@@ -1265,7 +1265,9 @@ if (_nd->_extnode) {\n\
         }
         if (ldifuslist) {
             Lappendstr(defs_list, "\thoc_register_ldifus1(_difusfunc);\n");
-            Linsertstr(defs_list, "static void _difusfunc(ldifusfunc2_t, NrnThread*);\n");
+            Linsertstr(defs_list,
+                       "static void _difusfunc(ldifusfunc2_t, neuron::model_sorted_token const&, "
+                       "NrnThread&);\n");
         }
     } /* end of not "nothing" */
     Lappendstr(defs_list,
@@ -1433,7 +1435,9 @@ static double _difcoef%d(int _i, Memb_list* _ml, std::size_t _iml, Datum* _ppvar
         }
         lappendstr(procfunc, ";\nreturn 0;\n}\n");
     }
-    lappendstr(procfunc, "static void _difusfunc(ldifusfunc2_t _f, NrnThread* _nt) {int _i;\n");
+    lappendstr(procfunc,
+               "static void _difusfunc(ldifusfunc2_t _f, neuron::model_sorted_token const& "
+               "sorted_token, NrnThread& _nt) {int _i;\n");
     n = 0;
     ITERATE(q, ldifuslist) {
         s = SYM(q);
@@ -1484,7 +1488,7 @@ static double _difcoef%d(int _i, Memb_list* _ml, std::size_t _iml, Datum* _ppvar
             Sprintf(buf, "%d, %d", s->varnum, d->varnum);
         }
         lappendstr(procfunc, buf);
-        lappendstr(procfunc, ", _nt);\n");
+        lappendstr(procfunc, ", sorted_token, _nt);\n");
     }
     lappendstr(procfunc, "}\n");
 }

@@ -701,9 +701,9 @@ static void* msolve_thread(NrnThread*);
 static void* msolve_thread_part1(NrnThread*);
 static void* msolve_thread_part2(NrnThread*);
 static void* msolve_thread_part3(NrnThread*);
-static void* f_thread(NrnThread*);
-static void* f_thread_transfer_part1(NrnThread*);
-static void* f_thread_transfer_part2(NrnThread*);
+static void f_thread(neuron::model_sorted_token const&, NrnThread&);
+static void f_thread_transfer_part1(neuron::model_sorted_token const&, NrnThread&);
+static void f_thread_transfer_part2(neuron::model_sorted_token const&, NrnThread&);
 static void* f_thread_ms_part1(NrnThread*);
 static void* f_thread_ms_part2(NrnThread*);
 static void* f_thread_ms_part3(NrnThread*);
@@ -1088,7 +1088,6 @@ int Cvode::cvode_init(double) {
     nrn_nonvint_block_ode_reinit(neq_, N_VGetArrayPointer(y_), 0);
     if (mem_) {
         err = CVodeReInit(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
-        CVodeSetFdata(mem_, (void*) this);
         // printf("CVodeReInit\n");
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVReInit error %d\n",
@@ -1106,7 +1105,6 @@ int Cvode::cvode_init(double) {
         minstep(ncv_->minstep());
         maxstep(ncv_->maxstep());
         CVodeMalloc(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
-        CVodeSetFdata(mem_, (void*) this);
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVodeMalloc error %d\n",
                    this,
@@ -1121,7 +1119,9 @@ int Cvode::cvode_init(double) {
     ((CVodeMem) mem_)->cv_h = 0.;  // fun called before cvode sets this (though fun does not need it
                                    // really)
     // fun(t_, N_VGetArrayPointer(y_), nil);
-    (*pf_)(t_, y_, nil, (void*) this);
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    std::pair<Cvode*, neuron::model_sorted_token const&> opaque{this, sorted_token};
+    pf_(t_, y_, nullptr, &opaque);
     can_retreat_ = false;
     return err;
 }
@@ -1140,7 +1140,7 @@ void Cvode::alloc_daspk() {
     // nodes may or may not have capacitors to ground.
 }
 
-int Cvode::advance_tn() {
+int Cvode::advance_tn(neuron::model_sorted_token const& sorted_token) {
     int err = SUCCESS;
     if (neq_ == 0) {
         t_ += 1e9;
@@ -1181,7 +1181,7 @@ int Cvode::advance_tn() {
         if (use_daspk_) {
             err = daspk_advance_tn();
         } else {
-            err = cvode_advance_tn();
+            err = cvode_advance_tn(sorted_token);
         }
         can_retreat_ = true;
         maxstate(true);
@@ -1206,7 +1206,7 @@ int Cvode::solve() {
             err = init(t_);
         }
     } else {
-        err = advance_tn();
+        err = advance_tn(nrn_ensure_model_data_are_sorted());
     }
     // printf("Cvode::solve exit %p current_time=%g tn=%g\n", this, t_, tn());
     return err;
@@ -1323,7 +1323,7 @@ int Cvode::interpolate(double tout) {
     }
 }
 
-int Cvode::cvode_advance_tn() {
+int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         Printf("Cvode::cvode_advance_tn %p %d initialize_=%d tstop=%.20g t_=%.20g to ",
@@ -1334,9 +1334,12 @@ int Cvode::cvode_advance_tn() {
                t_);
     }
 #endif
+    std::pair<Cvode*, neuron::model_sorted_token const&> opaque{this, sorted_token};
+    CVodeSetFdata(mem_, &opaque);
     CVodeSetStopTime(mem_, tstop_);
     // printf("cvode_advance_tn begin t0_=%g t_=%g tn_=%g tstop=%g\n", t0_, t_, tn_, tstop_);
     int err = CVode(mem_, tstop_, y_, &t_, CV_ONE_STEP_TSTOP);
+    CVodeSetFdata(mem_, nullptr);
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         Printf("t_=%.20g\n", t_);
@@ -1347,17 +1350,12 @@ int Cvode::cvode_advance_tn() {
                this,
                secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
                err);
-        (*pf_)(t_, y_, nil, (void*) this);
+        pf_(t_, y_, nullptr, &opaque);
         return err;
     }
     // this is very bad, performance-wise. However cvode modifies its states
     // after a call to fun with the proper t.
-#if 1
-    (*pf_)(t_, y_, nil, (void*) this);
-#else
-    NrnThread* _nt;
-    scatter_y(y_);
-#endif
+    pf_(t_, y_, nullptr, &opaque);
     tn_ = ((CVodeMem) mem_)->cv_tn;
     t0_ = tn_ - ((CVodeMem) mem_)->cv_h;
     // printf("t=%.15g t_=%.15g tn()=%.15g tstop_=%.15g t0_=%.15g\n", nrn_threads->t, t_, tn(),
@@ -1379,8 +1377,12 @@ int Cvode::cvode_interpolate(double tout) {
 #endif
     // avoid CVode-- tstop = 0.5 is behind  current t = 0.5
     // is this really necessary anymore. Maybe NORMAL mode ignores tstop
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    std::pair<Cvode*, neuron::model_sorted_token const&> opaque{this, sorted_token};
+    CVodeSetFdata(mem_, &opaque);
     CVodeSetStopTime(mem_, tstop_ + tstop_);
     int err = CVode(mem_, tout, y_, &t_, CV_NORMAL);
+    CVodeSetFdata(mem_, nullptr);
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         Printf("%.20g\n", t_);
@@ -1393,7 +1395,7 @@ int Cvode::cvode_interpolate(double tout) {
                err);
         return err;
     }
-    (*pf_)(t_, y_, nil, (void*) this);
+    pf_(t_, y_, nullptr, &opaque);
     //	printf("t_=%g h=%g q=%d y=%g\n", t_, ((CVodeMem)mem_)->cv_h, ((CVodeMem)mem_)->cv_q,
     // N_VIth(y_,0));
     return SUCCESS;
@@ -1506,7 +1508,8 @@ static int msetup(CVodeMem m,
                   N_Vector) {
     //	printf("msetup\n");
     *jcurPtr = true;
-    Cvode* cv = (Cvode*) m->cv_f_data;
+    auto* const cv =
+        static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(m->cv_f_data)->first;
     return cv->setup(yp, fp);
 }
 
@@ -1518,7 +1521,8 @@ static int msolve(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vect
     //	N_VIth(b, 0) /= (1. + m->cv_gamma);
     //	N_VIth(b, 0) /= (1. + m->cv_gammap);
     //	N_VIth(b,0) *= 2./(1. + m->cv_gamrat);
-    msolve_cv_ = (Cvode*) m->cv_f_data;
+    msolve_cv_ =
+        static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(m->cv_f_data)->first;
     Cvode& cv = *msolve_cv_;
     ++cv.mxb_calls_;
     if (cv.ncv_->stiff() == 0) {
@@ -1539,7 +1543,8 @@ static int msolve(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vect
     return 0;
 }
 static int msolve_lvardt(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vector fcur) {
-    Cvode* cv = (Cvode*) m->cv_f_data;
+    auto* const cv =
+        static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(m->cv_f_data)->first;
     ++cv->mxb_calls_;
     if (cv->ncv_->stiff() == 0) {
         return 0;
@@ -1589,10 +1594,12 @@ static N_Vector f_y_;
 static N_Vector f_ydot_;
 static Cvode* f_cv_;
 static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
+    auto* const f_typed_data = static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(
+        f_data);
+    f_cv_ = f_typed_data->first;
     // ydot[0] = -y[0];
     //	N_VIth(ydot, 0) = -N_VIth(y, 0);
     // printf("f(%g, %p, %p)\n", t, y, ydot);
-    f_cv_ = (Cvode*) f_data;
     ++f_cv_->f_calls_;
     f_t_ = t;
     f_y_ = y;
@@ -1611,47 +1618,53 @@ static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
                 nrn_multithread_job(f_thread_ms_part34);
             }
         } else if (nrnthread_v_transfer_) {
-            nrn_multithread_job(f_thread_transfer_part1);
+            nrn_multithread_job(f_typed_data->second, f_thread_transfer_part1);
             if (nrnmpi_v_transfer_) {
                 (*nrnmpi_v_transfer_)();
             }
-            nrn_multithread_job(f_thread_transfer_part2);
+            nrn_multithread_job(f_typed_data->second, f_thread_transfer_part2);
         } else {
-            nrn_multithread_job(f_thread);
+            nrn_multithread_job(f_typed_data->second, f_thread);
         }
     } else {
-        nrn_multithread_job(f_thread);
+        nrn_multithread_job(f_typed_data->second, f_thread);
     }
 }
 static void f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
-    Cvode* cv = (Cvode*) f_data;
+    auto* const f_typed_data = static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(
+        f_data);
+    auto* const cv = f_typed_data->first;
+    auto const& sorted_token = f_typed_data->second;
     ++cv->f_calls_;
     cv->nth_->_vcv = cv;
-    cv->fun_thread(t, cv->n_vector_data(y, 0), cv->n_vector_data(ydot, 0), cv->nth_);
+    cv->fun_thread(sorted_token, t, cv->n_vector_data(y, 0), cv->n_vector_data(ydot, 0), cv->nth_);
     cv->nth_->_vcv = 0;
 }
 
-static void* f_thread(NrnThread* nt) {
+static void f_thread(neuron::model_sorted_token const& sorted_token, NrnThread& ntr) {
+    auto* const nt = &ntr;
     int i = nt->id;
     Cvode* cv = f_cv_;
     nt->_vcv = cv;
-    cv->fun_thread(f_t_, cv->n_vector_data(f_y_, i), cv->n_vector_data(f_ydot_, i), nt);
+    cv->fun_thread(
+        sorted_token, f_t_, cv->n_vector_data(f_y_, i), cv->n_vector_data(f_ydot_, i), &ntr);
     nt->_vcv = 0;
-    return 0;
 }
-static void* f_thread_transfer_part1(NrnThread* nt) {
+static void f_thread_transfer_part1(neuron::model_sorted_token const& sorted_token,
+                                    NrnThread& ntr) {
+    auto* const nt = &ntr;
     int i = nt->id;
     Cvode* cv = f_cv_;
     nt->_vcv = cv;
-    cv->fun_thread_transfer_part1(f_t_, cv->n_vector_data(f_y_, i), nt);
-    return 0;
+    cv->fun_thread_transfer_part1(sorted_token, f_t_, cv->n_vector_data(f_y_, i), nt);
 }
-static void* f_thread_transfer_part2(NrnThread* nt) {
+static void f_thread_transfer_part2(neuron::model_sorted_token const& sorted_token,
+                                    NrnThread& ntr) {
+    auto* const nt = &ntr;
     int i = nt->id;
     Cvode* cv = f_cv_;
-    cv->fun_thread_transfer_part2(cv->n_vector_data(f_ydot_, i), nt);
+    cv->fun_thread_transfer_part2(sorted_token, cv->n_vector_data(f_ydot_, i), &ntr);
     nt->_vcv = 0;
-    return 0;
 }
 static void* f_thread_ms_part1(NrnThread* nt) {
     int i = nt->id;
