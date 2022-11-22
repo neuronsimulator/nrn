@@ -4091,7 +4091,7 @@ void NetCvode::fornetcon_prepare() {
         int type = nrn_fornetcon_type_[i];
         t2i[type] = index;
         if (nrn_is_artificial_[type]) {
-            Memb_list* m = memb_list + type;
+            auto* const m = &memb_list[type];
             for (j = 0; j < m->nodecount; ++j) {
                 // Save ForNetConsInfo* as void* to avoid needing to expose the
                 // definition of ForNetConsInfo to translated MOD file code
@@ -4139,7 +4139,7 @@ void NetCvode::fornetcon_prepare() {
         int index = nrn_fornetcon_index_[i];
         int type = nrn_fornetcon_type_[i];
         if (nrn_is_artificial_[type]) {
-            Memb_list* m = memb_list + type;
+            auto* const m = &memb_list[type];
             for (j = 0; j < m->nodecount; ++j) {
                 auto* fnc = static_cast<ForNetConsInfo*>(m->pdata[j][index].get<void*>());
                 if (fnc->size > 0) {

@@ -72,11 +72,13 @@ def memorder():
     rmat = mat._ref_x[0][0]
     ra = h._ref_a[0][0]
     for i in range(nrow * ncol):
+        # olupton 2022-11-22: this relies on indexing i elements past a scalar (mat[0][0]); this was allowed by T* but not by data_handle<T>
         assert rmat[i] == float(i)
         assert ra[i] == float(i)
 
 
-memorder()
+# olupton 2022-11-22: see comment above about indexing past scalars
+# memorder()
 
 
 def vecrange(min, max, step):

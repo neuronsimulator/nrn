@@ -1,3 +1,4 @@
+#include "membfunc.h"
 #include "neuron/model_data.hpp"
 
 namespace {

@@ -174,7 +174,7 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<doub
         } else {
             // The single thread case is easy
             if (nrn_nthread == 1) {
-                ml = memb_list + type;
+                ml = &memb_list[type];
                 mdata = ml->data();
                 n = ml->nodecount;
             } else {
