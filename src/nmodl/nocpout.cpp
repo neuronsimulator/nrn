@@ -419,7 +419,8 @@ extern Memb_func* memb_func;\n\
     } else {
         Lappendstr(defs_list,
                    "auto [_, local_ml, local_iml] = create_ml(_prop);\n"
-                   "*_ml = *local_ml;\n"
+                   "_ml_real = *local_ml;\n"
+                   "_ml = &_ml_real;\n"
                    "_iml = local_iml;\n"
                    "_ppvar = _prop->dparam;\n");
     }

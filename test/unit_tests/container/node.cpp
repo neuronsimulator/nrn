@@ -121,7 +121,7 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
         THEN("Check it prints the right value") {
             std::ostringstream actual;
             actual << handle;
-            REQUIRE(actual.str() == "data_handle<double>{Node::field::Voltage row=0/1}");
+            REQUIRE(actual.str() == "data_handle<double>{Node::field::Voltage row=0/1 val=42}");
         }
         THEN("Check that deleting the (Node) object it refers to invalidates the handle") {
             node.reset();  // delete the underlying Node object
