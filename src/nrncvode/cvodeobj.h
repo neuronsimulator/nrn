@@ -22,21 +22,31 @@ class PlayRecord;
 class STEList;
 class HTList;
 
+/**
+ * @brief Wrapper for Memb_list in CVode related code.
+ *
+ * This gets used in two ways:
+ * - with ml.size() == 1 and ml[0].nodecount > 1 when the mechanism instances to be processed are
+ *   contiguous
+ * - with ml.size() >= 1 and ml[i].nodecount == 1 when non-contiguous instances need to be processed
+ *
+ * generic configurations with ml.size() and ml[i].nodecount both larger than one are not supported.
+ */
 struct CvMembList {
     CvMembList(int type)
-        : ml{std::make_unique<Memb_list>(type)}
-        , index{type} {}
-    CvMembList* next;
-    std::unique_ptr<Memb_list> ml{};
+        : index{type} {
+        ml.emplace_back(type);
+    }
+    CvMembList* next{};
+    std::vector<Memb_list> ml{};
     int index{};
 };
 
-class BAMechList {
-  public:
+struct BAMechList {
     BAMechList(BAMechList** first);
     BAMechList* next;
     BAMech* bam;
-    Memb_list* ml;
+    std::vector<Memb_list*> ml;
     static void destruct(BAMechList** first);
 };
 
