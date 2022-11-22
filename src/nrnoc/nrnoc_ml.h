@@ -46,19 +46,19 @@ struct Memb_list {
     Memb_list(int type)
         : m_storage{&neuron::model().mechanism_data(type)} {}
 
-    Node** nodelist;
+    Node** nodelist{};
 #if CACHEVEC != 0
     /* nodeindices contains all nodes this extension is responsible for,
      * ordered according to the matrix. This allows to access the matrix
      * directly via the nrn_actual_* arrays instead of accessing it in the
      * order of insertion and via the node-structure, making it more
      * cache-efficient */
-    int* nodeindices;
+    int* nodeindices{};
 #endif /* CACHEVEC */
-    Datum** pdata;
-    Prop** prop;
-    Datum* _thread; /* thread specific data (when static is no good) */
-    int nodecount;
+    Datum** pdata{};
+    Prop** prop{};
+    Datum* _thread{}; /* thread specific data (when static is no good) */
+    int nodecount{};
     /** @brief Get a vector of double* representing the model data.
      *
      *  Calling .data() on the return value yields a double** that is similar to
