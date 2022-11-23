@@ -54,7 +54,7 @@ static void nrn_fixed_step_thread(neuron::model_sorted_token const&, NrnThread&)
 static void nrn_fixed_step_group_thread(neuron::model_sorted_token const&, NrnThread&);
 static void nrn_fixed_step_lastpart(neuron::model_sorted_token const&, NrnThread&);
 extern void nrn_solve(NrnThread*);
-extern void nonvint(NrnThread* nt);
+static void nonvint(neuron::model_sorted_token const&, NrnThread&);
 extern void nrncvode_set_t(double t);
 
 static void* nrn_ms_treeset_through_triang(NrnThread*);
@@ -510,7 +510,7 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
 #endif
     fixed_play_continuous(nth);
     nrn_extra_scatter_gather(0, nth->id);
-    nonvint(nth);
+    nonvint(cache_token, nt);
     nrn_ba(cache_token, nt, AFTER_SOLVE);
     fixed_record_continuous(cache_token, nt);
     CTADD {
@@ -762,52 +762,39 @@ void fmatrix(void) {
     return;
 }
 
-void nonvint(NrnThread* _nt) {
-    int i = 0;
-    double w;
-    int measure = 0;
-    NrnThreadMembList* tml;
-#if 1 || PARANEURON
+static void nonvint(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     /* nrnmpi_v_transfer if needed was done earlier */
     if (nrnthread_v_transfer_) {
         nrn::Instrumentor::phase p_gap("gap-v-transfer");
-        (*nrnthread_v_transfer_)(_nt);
+        nrnthread_v_transfer_(&nt);
     }
-#endif
     nrn::Instrumentor::phase_begin("state-update");
-    if (_nt->id == 0 && nrn_mech_wtime_) {
-        measure = 1;
-    }
+    bool const measure{nt.id == 0 && nrn_mech_wtime_};
     errno = 0;
-    for (tml = _nt->tml; tml; tml = tml->next)
+    for (auto* tml = nt.tml; tml; tml = tml->next) {
         if (memb_func[tml->index].state) {
             std::string mechname("state-");
             mechname += memb_func[tml->index].sym->name;
-            nrn::Instrumentor::phase_begin(mechname.c_str());
             Pvmi s = memb_func[tml->index].state;
+            auto const w = measure ? nrnmpi_wtime() : -1.0;
+            nrn::Instrumentor::phase_begin(mechname.c_str());
+            s(&nt, tml->ml, tml->index);
             nrn::Instrumentor::phase_end(mechname.c_str());
-            if (measure) {
-                w = nrnmpi_wtime();
-            }
-            (*s)(_nt, tml->ml, tml->index);
             if (measure) {
                 nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w;
             }
-            if (errno) {
-                if (nrn_errno_check(i)) {
-                    hoc_warning("errno set during calculation of states", (char*) 0);
-                }
+            if (errno && nrn_errno_check(0)) {
+                hoc_warning("errno set during calculation of states", nullptr);
             }
         }
-    long_difus_solve(nrn_ensure_model_data_are_sorted(), 0, *_nt); /* if any longitudinal diffusion
-                                                                    */
-    nrn_nonvint_block_fixed_step_solve(_nt->id);
+    }
+    long_difus_solve(sorted_token, 0, nt); /* if any longitudinal diffusion */
+    nrn_nonvint_block_fixed_step_solve(nt.id);
     nrn::Instrumentor::phase_end("state-update");
 }
 
 int nrn_errno_check(int i) {
-    int ierr;
-    ierr = hoc_errno_check();
+    int ierr = hoc_errno_check();
     if (ierr) {
         fprintf(stderr,
                 "%d errno=%d at t=%g during call to mechanism %s\n",
