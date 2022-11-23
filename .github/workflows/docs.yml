@@ -35,11 +35,11 @@ jobs:
         shell: bash
 
       - name: Set up Python@${{ env.DEFAULT_PY_VERSION }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.DEFAULT_PY_VERSION }}
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install Python dependencies
         working-directory: ${{runner.workspace}}/nrn
@@ -67,7 +67,7 @@ jobs:
           pushd docs/_build;
           touch .nojekyll;
           echo "-------- OK to deploy! --------";
-          echo ::set-output name=status::done;
+          echo "OK_TO_DEPLOY_DOCS=true" >> $GITHUB_ENV
 
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To enable it, you have to:
@@ -78,8 +78,8 @@ jobs:
         uses: mxschmitt/action-tmate@v3
 
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@4.1.5
-        if: steps.documentation.outputs.status == 'done' && github.ref == 'refs/heads/master'
+        uses: JamesIves/github-pages-deploy-action@v4
+        if: env.OK_TO_DEPLOY_DOCS == 'true' && github.ref == 'refs/heads/master'
         with:
           branch: gh-pages # The branch the action should deploy to.
           folder: ${{runner.workspace}}/nrn/docs/_build # The folder the action should deploy.

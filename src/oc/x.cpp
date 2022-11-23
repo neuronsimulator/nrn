@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
 #include <string.h>
-#if defined(__TURBOC__) || defined(__linux__)
+#if defined(__linux__)
 #ifndef NRNOC_X11
 #define NRNOC_X11 0
 #endif

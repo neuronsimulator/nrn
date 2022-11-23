@@ -1,7 +1,7 @@
 #pragma once
+#include "hocdec.h"
 #include "options.h"  // for CACHEVEC
 
-union Datum;
 struct Node;
 struct Prop;
 

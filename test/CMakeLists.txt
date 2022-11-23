@@ -176,12 +176,9 @@ endforeach()
 # Add pytest
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
-  set(pytest -m pytest)
-  if(NRN_SANITIZERS)
-    # We configure the santiziers to abort on errors, which can lead to unhelpful output from
-    # pytest. Passing -s means the sanitizer output will be visible in the log.
-    list(APPEND pytest -s)
-  endif()
+  # use `--capture=tee-sys`: combines 'sys' and '-s', capturing sys.stdout/stderr and passing it
+  # along to the actual sys.stdout/stderr
+  set(pytest -m pytest --capture=tee-sys)
   if(PYTEST_COV_FOUND)
     list(APPEND pytest --cov-report=xml --cov=neuron)
   endif()
@@ -229,10 +226,35 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     endforeach()
   endforeach()
 
+  # independent run of each hoc and python file in test/hoc/* folders
+  nrn_add_test_group(
+    NAME hoctests
+    MODFILE_PATTERNS *.mod
+    SIM_DIRECTORY test/hoctests)
+  set(py_exe ${PYTHON_EXECUTABLE})
+  set(py_preload PRELOAD_SANITIZER)
+  set(hoc_exe nrniv)
+  set(hoctest_utils expect_err.hoc)
+
+  foreach(ext hoc py)
+    file(
+      GLOB hoc_scripts
+      RELATIVE "${PROJECT_SOURCE_DIR}/test/hoctests"
+      "${PROJECT_SOURCE_DIR}/test/hoctests/*/*.${ext}")
+    foreach(hoc_script ${hoc_scripts})
+      get_filename_component(name "${hoc_script}" NAME_WLE)
+      nrn_add_test(
+        GROUP hoctests
+        NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
+        COMMAND ${${ext}_exe} "${hoc_script}"
+        SCRIPT_PATTERNS "${hoc_script}" "${name}.ses" ${hoctest_utils})
+    endforeach()
+  endforeach()
+
   if(NRN_ENABLE_RX3D)
     nrn_add_test_group(
       NAME rxdmod_tests
-      MODFILE_PATTERNS test/rxd/ecs/*.mod
+      MODFILE_PATTERNS test/rxd/*.mod
       SCRIPT_PATTERNS test/rxd/*.py test/rxd/3d/*.asc test/rxd/testdata/*.dat)
     # These tests include comparisons against saved data, which appears to have been generated using
     # GCC. Other compilers produce larger differences.

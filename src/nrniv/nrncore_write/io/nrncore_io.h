@@ -1,12 +1,12 @@
 #ifndef NRN_NRNCORE_IO_H
 #define NRN_NRNCORE_IO_H
+#include "hocdec.h"
 
 #include <string>
 #include <vector>
 
 class CellGroup;
 struct NrnThread;
-union Datum;
 struct NrnMappingInfo;
 
 void create_dir_path(const std::string& path);

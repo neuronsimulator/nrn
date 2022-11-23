@@ -1,6 +1,6 @@
 #pragma once
+#include "hocdec.h"
 #include "membfunc.h"  // nrn_bamech_t
-union Datum;
 struct Extnode;
 struct hoc_Item;
 struct HocParmLimits;
@@ -106,8 +106,8 @@ extern void nrn_sec_ref(Section**, Section*);
 extern void hoc_level_pushsec(Section*);
 extern double nrn_ra(Section*);
 extern int node_index_exact(Section*, double);
-extern void nrn_cachevec(int);
-extern void nrn_ba(NrnThread*, int);
+void nrn_cachevec(int);
+void nrn_ba(NrnThread*, int);
 extern void nrniv_recalc_ptrs(void);
 extern void nrn_recalc_ptrvector(void);
 extern void nrn_recalc_ptrs(double* (*r)(double*) );
@@ -120,8 +120,6 @@ extern void nrn_multisplit_ptr_update(void);
 extern void nrn_cache_prop_realloc();
 extern void nrn_use_daspk(int);
 extern void nrn_update_ps2nt(void);
-
-
 extern void activstim_rhs(void);
 extern void activclamp_rhs(void);
 extern void activclamp_lhs(void);
@@ -136,9 +134,9 @@ extern void section_ref(Section*);
 extern void section_unref(Section*);
 extern const char* secname(Section*);
 extern const char* nrn_sec2pysecname(Section*);
-extern void nrn_rangeconst(Section*, Symbol*, double* value, int op);
+void nrn_rangeconst(Section*, Symbol*, double* value, int op);
 extern int nrn_exists(Symbol*, Node*);
-extern double* nrn_rangepointer(Section*, Symbol*, double x);
+double* nrn_rangepointer(Section*, Symbol*, double x);
 extern double* cable_prop_eval_pointer(Symbol*);  // section on stack will be popped
 extern char* hoc_section_pathname(Section*);
 extern double nrn_arc_position(Section*, Node*);

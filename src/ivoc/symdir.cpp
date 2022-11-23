@@ -15,7 +15,6 @@ extern double* point_process_pointer(Point_process*, Symbol*, int);
 extern Symlist* hoc_symlist;
 extern Objectdata* hoc_top_level_data;
 extern Symlist *hoc_built_in_symlist, *hoc_top_level_symlist;
-extern int hoc_array_index(Symbol*, Objectdata*);
 #include "string.h"
 #include "symdir.h"
 

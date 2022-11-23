@@ -891,7 +891,7 @@ extern "C" void register_rate(int nspecies,
     if (vptrs != NULL) {
         react->vptrs = (double**) malloc(nseg * sizeof(double*));
         for (i = 0; i < nseg; i++)
-            react->vptrs[i] = vptrs[i]->u.px_;
+            react->vptrs[i] = static_cast<double*>(vptrs[i]->u.px_);
     } else {
         react->vptrs = NULL;
     }

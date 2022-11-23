@@ -1,6 +1,6 @@
 SortIncludes: false
 Standard: c++17
-StatementMacros: [MKDLL, MKDLLdec, MKDLLif, MKDLLvp, MKDLLvpf,
+StatementMacros: [MKDLL, MKDLLdec, MKDLLif, MKDLLvp, MKDLLvpf, PyObject_HEAD,
 declareActionCallback, declareAdjustStepper, declareArrowGlyph, declareFieldEditorCallback,
 declareFieldSEditorCallback, declareFileChooserCallback, declareIOCallback, declareList, declarePool,
 declarePtrList, declareRubberCallback, declareSelectionCallback, declareTable, declareTable2,

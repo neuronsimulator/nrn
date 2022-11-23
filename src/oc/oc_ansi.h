@@ -21,7 +21,7 @@
 
 struct Arrayinfo;
 struct cTemplate;
-union Datum;
+struct Datum;
 struct DoubScal;
 struct DoubVec;
 struct HocSymExtension;
@@ -136,6 +136,9 @@ void hoc_push_object(Object*);
 void hoc_pushpx(double*);
 void hoc_pushs(Symbol*);
 void hoc_pushi(int);
+void hoc_push_ndim(int);
+int hoc_pop_ndim();
+bool hoc_stack_type_is_ndim();
 double hoc_xpop();
 Symbol* hoc_spop();
 double* hoc_pxpop();

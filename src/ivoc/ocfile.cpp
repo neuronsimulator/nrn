@@ -1,7 +1,4 @@
 #include <../../nrnconf.h>
-#if defined(__GO32__)
-#define HAVE_IV 0
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
