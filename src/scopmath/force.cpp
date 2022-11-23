@@ -73,12 +73,8 @@ extern int DEFLT;
 
 static int init_force(char *);
 
-double force(double t, char* filename)
-{
-    //extern double spline(int, double*, double*, double*, double*, double);
+double force(double t, char* filename) {
     Spline *sp;
-    extern int _modl_cleanup();
-
     /* Check if Spline structure already made */
 
     for (sp = splist; sp; sp = sp->next)
@@ -154,13 +150,11 @@ double force(double t, char* filename)
  *
  **************************************************************************/
 
-double stepforce(int* reset_integ, double* old_value, double t, char* filename)
-{
-	//lookup();
+double stepforce(int* reset_integ, double* old_value, double t, char* filename) {
     double return_val;
     Spline *sp;
     static int initialized = 0;
-    extern int _ninits, _modl_cleanup();
+    extern int _ninits;
 
     /* Check if Spline structure already made */
     /* Note: this function uses the Spline structure for storing */

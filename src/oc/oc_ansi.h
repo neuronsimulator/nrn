@@ -42,8 +42,8 @@ Symbol* hoc_lookup(const char*);
 void* hoc_Ecalloc(std::size_t nmemb, std::size_t size);
 void* hoc_Emalloc(size_t size);
 void hoc_malchk();
-void hoc_execerror(const char*, const char*);
-void hoc_execerr_ext(const char* fmt, ...);
+[[noreturn]] void hoc_execerror(const char*, const char*);
+[[noreturn]] void hoc_execerr_ext(const char* fmt, ...);
 char* hoc_object_name(Object*);
 void hoc_retpushx(double);
 
