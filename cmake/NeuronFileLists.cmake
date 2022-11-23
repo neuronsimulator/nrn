@@ -418,7 +418,6 @@ set(SCOPMATH_FILES_LIST
     romberg.cpp
     runge.cpp
     sawtooth.cpp
-    schedule.cpp
     sigmoid.cpp
     simeq.cpp
     sparse.cpp
