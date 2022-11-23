@@ -7,39 +7,7 @@ extern void _modl_set_dt(double);
 
 static int check_state(int n, int* s, double* p);
 
-int _ss__advance(int _ninits, int n, int s[], int d[], double *p, double *t, double dt, int (*fun)(), double ***pcoef, int linflag)
-{
-	int err, i;
-	double ss_dt;
-	
-	ss_dt=1e9;
-	_modl_set_dt(ss_dt);
-	
-if (linflag) { /*iterate linear solution*/
-		err = _advance(_ninits, n, s, d, p, t, ss_dt, fun, pcoef, 0);
-} else {
-#define NIT 7
-	for (i = 0; i < NIT; i++) {
-		err = _advance(_ninits, n, s, d, p, t, ss_dt, fun, pcoef, 1);
-		if (err) {
-		   break;	/* perhaps we should re-start */
-		}
-		if (check_state(n, s, p)) {
-		   err = _advance(_ninits, n, s, d, p, t, ss_dt, fun, pcoef, 0);
-		   break;
-		}
-	}		
-	if (i >= NIT) {
-		err = 1;
-	}
-}
-
-	_modl_set_dt(dt);
-	return err;
-}
-
-int _ss_sparse(void** v, int n, int* s, int* d, double* p, double* t, double dt, int (*fun)(), double** pcoef, int linflag)
-{
+int _ss_sparse(void** v, int n, int* s, int* d, double* p, double* t, double dt, int (*fun)(), double** pcoef, int linflag) {
 	int err, i;
 	double ss_dt;
 	
