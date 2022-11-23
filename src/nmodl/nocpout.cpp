@@ -278,9 +278,9 @@ void parout() {
         Lappendstr(defs_list,
                    "\n\
 #define _threadargscomma_ _ml, _iml, _ppvar, _thread, _nt,\n\
-#define _threadargsprotocomma_ Memb_list* _ml, std::size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
+#define _threadargsprotocomma_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
 #define _threadargs_ _ml, _iml, _ppvar, _thread, _nt\n\
-#define _threadargsproto_ Memb_list* _ml, std::size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
+#define _threadargsproto_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
 ");
     } else {
         Lappendstr(defs_list,
@@ -304,7 +304,7 @@ void parout() {
     } else {
         Sprintf(buf,
                 "static Memb_list _ml_real{}, *_ml{&_ml_real};\n"
-                "static std::size_t _iml{0};\n"
+                "static size_t _iml{0};\n"
                 "static Datum *_ppvar;\n");
     }
     Lappendstr(defs_list, buf);
@@ -697,11 +697,11 @@ extern Memb_func* memb_func;\n\
     if (ba_index_ > 0) {
         Lappendstr(defs_list,
                    "static void _ba1(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, "
-                   "Memb_list* _ml, std::size_t _iml)");
+                   "Memb_list* _ml, size_t _iml)");
         for (i = 2; i <= ba_index_; ++i) {
             Sprintf(buf,
                     ", _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* "
-                    "_ml, std::size_t _iml)",
+                    "_ml, size_t _iml)",
                     i);
             Lappendstr(defs_list, buf);
         }
@@ -1081,7 +1081,7 @@ static void _constructor(Prop* _prop) {\n\
                "\
 extern Symbol* hoc_lookup(const char*);\n\
 extern void _nrn_thread_reg(int, int, void(*)(Datum*));\n\
-extern void _nrn_thread_table_reg(int, void(*)(Memb_list*, std::size_t, Datum*, Datum*, NrnThread*, int));\n\
+extern void _nrn_thread_table_reg(int, void(*)(Memb_list*, size_t, Datum*, Datum*, NrnThread*, int));\n\
 extern void hoc_register_tolerance(int, HocStateTolerance*, Symbol***);\n\
 extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 ");
@@ -1411,7 +1411,7 @@ void ldifusreg() {
         ++n;
         Sprintf(buf,
                 "static void* _difspace%d;\nextern double nrn_nernst_coef(int);\n\
-static double _difcoef%d(int _i, Memb_list* _ml, std::size_t _iml, Datum* _ppvar, double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt) {\n  \
+static double _difcoef%d(int _i, Memb_list* _ml, size_t _iml, Datum* _ppvar, double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt) {\n  \
  *_pdvol = ",
                 n,
                 n);
@@ -1752,7 +1752,7 @@ void bablk(int ba, int type, Item* q1, Item* q2) {
     }
     Sprintf(buf,
             "static void _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* "
-            "_ml, std::size_t _iml) ",
+            "_ml, size_t _iml) ",
             ++ba_index_);
     insertstr(q1, buf);
     q = q1->next;
@@ -2510,7 +2510,7 @@ printf("|%s||%s||%s|\n",STR(q3), s, buf);
 void out_nt_ml_frag(List* p) {
     vectorize_substitute(lappendstr(p, "  Datum* _thread;\n"),
                          "  Datum* _ppvar; Datum* _thread;\n");
-    vectorize_substitute(lappendstr(p, ""), "std::size_t _iml;");
+    vectorize_substitute(lappendstr(p, ""), "size_t _iml;");
     Lappendstr(p,
                "  Node* _nd; double _v; int _cntml;\n\
   _cntml = _ml->_nodecount;\n\
@@ -2538,7 +2538,7 @@ static int _ode_count(int _type){ hoc_execerror(\"%s\", \"cannot be used with CV
         Lappendstr(defs_list,
                    "\n\
 static int _ode_count(int);\n\
-static void _ode_map(int, double**, double**, Memb_list*, std::size_t, Datum*, double*, int);\n\
+static void _ode_map(int, double**, double**, Memb_list*, size_t, Datum*, double*, int);\n\
 static void _ode_spec(NrnThread*, Memb_list*, int);\n\
 static void _ode_matsol(NrnThread*, Memb_list*, int);\n\
 ");
@@ -2569,7 +2569,7 @@ static int _ode_count(int _type){ return %d;}\n",
 
             Lappendstr(procfunc,
                        "\n\
-static void _ode_map(int _ieq, double** _pv, double** _pvdot, Memb_list* _ml, std::size_t _iml, Datum* _ppd, double* _atol, int _type) {");
+static void _ode_map(int _ieq, double** _pv, double** _pvdot, Memb_list* _ml, size_t _iml, Datum* _ppd, double* _atol, int _type) {");
             vectorize_substitute(lappendstr(procfunc, "\n"), "\n  Datum* _ppvar;\n");
             Sprintf(buf,
                     " _ppvar = _ppd;\n"

@@ -289,7 +289,7 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtl
         kin_vect1(q1, q2, q4);
         vectorize_substitute(qv,
                              "(void* _so, double* _rhs, Datum* _ppvar, Datum* _thread, "
-                             "NrnThread* _nt, Memb_list* _ml, std::size_t _iml)\n");
+                             "NrnThread* _nt, Memb_list* _ml, size_t _iml)\n");
     }
     qv = insertstr(q3, "{_reset=0;\n");
     Sprintf(buf, "{int _reset=0;\n");
@@ -1377,7 +1377,7 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum) {
     Lappendstr(procfunc, buf);
     Sprintf(buf,
             "static int _ode_matsol%d(void* _so, double* _rhs, Datum* _ppvar, Datum* "
-            "_thread, NrnThread* _nt, Memb_list* _ml, std::size_t _iml) {int _reset=0;{\n",
+            "_thread, NrnThread* _nt, Memb_list* _ml, size_t _iml) {int _reset=0;{\n",
             fun->u.i);
     vectorize_substitute(procfunc->prev, buf);
     cvode_flag = 1;
