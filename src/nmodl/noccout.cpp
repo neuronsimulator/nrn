@@ -119,6 +119,10 @@ void c_out() {
     P("#include \"md2redef.h\"\n");
     P("#include <vector>\n");
 
+    /* avoid clashes with mech names */
+    P("using std::size_t;\n");
+    P("static auto& std_cerr_stream = std::cerr;\n");
+
     printlist(defs_list);
     printlist(firstlist);
     P("static int _reset;\n");
