@@ -246,10 +246,10 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
         preSynConditionEventFlags.push_back(F.read_int());
     }
 
-    assert(F.read_int() == -1);
+    nrn_assert(F.read_int() == -1);
     restore_events(F);
 
-    assert(F.read_int() == -1);
+    nrn_assert(F.read_int() == -1);
     restore_events(F);
 }
 

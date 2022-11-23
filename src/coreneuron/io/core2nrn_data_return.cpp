@@ -546,7 +546,8 @@ void core2nrn_tqueue(NrnThread& nt) {
     }
     // TQitems from binq_
     for (q = tqe->binq_->first(); q; q = tqe->binq_->next(q)) {
-        assert(core2nrn_tqueue_item(q, sewm, nt) == false);
+        bool const result = core2nrn_tqueue_item(q, sewm, nt);
+        assert(result == false);
     }
 
     // For self events with weight, find the NetCon index and send that
