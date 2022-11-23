@@ -65,7 +65,11 @@ struct data_handle {
         auto needle = utils::find_data_handle(raw_ptr);
         if (needle) {
             *this = std::move(needle);
-            check_modern_mode_validity("data_handle(T*)");
+            if (!m_offset) {
+                std::ostringstream oss;
+                oss << *this << " invalid data_handle(T*)";
+                throw std::runtime_error(oss.str());
+            }
         } else {
             // If that didn't work, just save the plain pointer value. This is unsafe
             // and should be removed. It is purely meant as an intermediate step, if
@@ -87,9 +91,7 @@ struct data_handle {
     // data_handle<T const> should forbid writing to the data value.
     data_handle(non_owning_identifier_without_container offset, std::vector<T> const& container)
         : m_offset{std::move(offset)}
-        , m_container_or_raw_ptr{&const_cast<std::vector<T>&>(container)} {
-        check_modern_mode_validity("data_handle(row, container)");
-    }
+        , m_container_or_raw_ptr{&const_cast<std::vector<T>&>(container)} {}
 
     explicit operator bool() const {
         if (bool{m_offset}) {
@@ -225,13 +227,6 @@ struct data_handle {
     }
 
   private:
-    void check_modern_mode_validity(const char* method) const {
-        if (!m_offset) {
-            std::ostringstream oss;
-            oss << *this << " invalid " << method;
-            throw std::runtime_error(oss.str());
-        }
-    }
     friend struct generic_data_handle;
     friend struct std::hash<data_handle>;
     non_owning_identifier_without_container m_offset{};  // basically std::size_t*
