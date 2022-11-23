@@ -123,9 +123,9 @@ void solv_diffeq(Item* qsol,
             Strcpy(deriv1_advance, "");
             Strcpy(deriv2_advance, "");
         }
-        Sprintf(buf, /*derivimplicit*/
+        Sprintf(buf,
                 "%s %s%s(_ninits, %d, _slist%d, _dlist%d, "
-                "*_ml->vector_of_pointers_for_scopmath(_iml, %d, _slist%d, _dlist%d).data(), &%s, "
+                "_ml->vector_of_pointers_for_scopmath(_iml, %d, _slist%d, _dlist%d).data(), &%s, "
                 "%s, %s, &_temp%d%s);\n%s",
                 deriv1_advance,
                 ssprefix,
