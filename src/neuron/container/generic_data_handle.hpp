@@ -214,7 +214,7 @@ struct generic_data_handle {
      */
     template <typename T>
     [[nodiscard]] bool holds() const {
-        return typeid(T) == *m_type;
+        return m_type && typeid(T) == *m_type;
     }
 
     /** @brief Check if this handle contains a data_handle<T> or just a literal.
