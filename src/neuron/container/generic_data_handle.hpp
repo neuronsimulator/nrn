@@ -5,7 +5,7 @@
 #include "neuron/model_data.hpp"
 
 #include <cstring>
-#include <typeindex>
+#include <typeinfo>
 #include <type_traits>
 #include <vector>
 
@@ -13,10 +13,6 @@ namespace neuron::container {
 
 template <typename>
 struct data_handle;
-
-/** @brief Helper type used to flag when the generic_data_handle contains a null value.
- */
-struct typeless_null {};
 
 /**
  * @brief Non-template stable handle to a generic value.
@@ -30,10 +26,10 @@ struct typeless_null {};
  *
  * There are several states that instances of this class can be in:
  * - null, no value is contained, any type can be assigned without any type
- *   mismatch error (m_type=typeless_null, m_container=null, m_offset=null)
- * - wrapping an instance of a small, trivial type T (m_type=typeid(T),
+ *   mismatch error (m_type=null, m_container=null, m_offset=null)
+ * - wrapping an instance of a small, trivial type T (m_type=&typeid(T),
  *   m_container=the_value, m_offset=null)
- * - wrapping a data handle<T> (m_type=typeid(T*), m_container=the_container,
+ * - wrapping a data handle<T> (m_type=&typeid(T*), m_container=the_container,
  *   m_offset=ptr_to_row)
  *
  * @todo Consider whether this should be made more like std::any (with a maximum
@@ -65,7 +61,7 @@ struct generic_data_handle {
      */
     template <typename T, std::enable_if_t<can_be_stored_literally_v<T>, int> = 0>
     generic_data_handle(T value)
-        : m_type{typeid(T)} {
+        : m_type{&typeid(T)} {
         std::memcpy(&m_container, &value, sizeof(T));
     }
 
@@ -78,7 +74,7 @@ struct generic_data_handle {
     template <typename T, std::enable_if_t<std::is_same_v<T, void>, int> = 0>
     generic_data_handle(data_handle<T> const& handle)
         : m_container{handle.m_raw_ptr}
-        , m_type{typeid(T*)} {
+        , m_type{&typeid(T*)} {
         static_assert(std::is_same_v<T, void>);
     }
 
@@ -89,7 +85,7 @@ struct generic_data_handle {
     generic_data_handle(data_handle<T> const& handle)
         : m_offset{handle.m_offset}
         , m_container{handle.m_container_or_raw_ptr}
-        , m_type{typeid(T*)} {
+        , m_type{&typeid(T*)} {
         static_assert(!std::is_same_v<T, void>);
     }
 
@@ -109,36 +105,35 @@ struct generic_data_handle {
     explicit operator data_handle<T>() const {
         // Either the type has to match or the generic_data_handle needs to have
         // never been given a type
-        if (holds<typeless_null>()) {
+        if (!m_type) {
             // A (typeless / default-constructed) null generic_data_handle can
             // be converted to any (null) data_handle<T>.
             return {};
         }
-        if (std::type_index{typeid(T*)} != m_type) {
+        if (typeid(T*) != *m_type) {
             throw_error(" cannot be converted to data_handle<" + cxx_demangle(typeid(T).name()) +
                         ">");
         }
-        if (bool{m_offset}) {
-            if constexpr (std::is_same_v<T, void>) {
-                // This branch is needed to avoid forming references-to-void if
-                // T=void.
-                throw_error(" should not be in modern mode because it is referring to void");
-            } else {
-                // A real and still-valid data handle
-                assert(m_container);
-                return {m_offset, *static_cast<std::vector<T>*>(m_container)};
-            }
-        } else if (m_offset.was_once_valid()) {
+        if (m_offset.has_always_been_null()) {
+            // This is a data handle in backwards-compatibility mode, wrapping a
+            // raw pointer of type T*, or a null handle that has always been null (as opposed to a
+            // handle that became null). Passing do_not_search prevents the data_handle<T>
+            // constructor from trying to find the raw pointer in the NEURON data structures.
+            return {do_not_search, static_cast<T*>(m_container)};
+        }
+        if (m_offset.was_once_valid()) {
             // This used to be a valid data handle, but it has since been
             // invalidated. Invalid data handles never become valid again, so we
             // can safely produce a "fully null" data_handle<T>.
             return {};
+        }
+        if constexpr (std::is_same_v<T, void>) {
+            // This branch is needed to avoid forming references-to-void if T=void.
+            throw_error(" should not be in modern mode because it is referring to void");
         } else {
-            // This is a data handle in backwards-compatibility mode, wrapping a
-            // raw pointer of type T*. Passing do_not_search prevents the
-            // data_handle<T> constructor from trying to find the raw pointer in
-            // the NEURON data structures.
-            return {do_not_search, static_cast<T*>(m_container)};
+            // A real and still-valid data handle
+            assert(m_container);
+            return {m_offset, *static_cast<std::vector<T>*>(m_container)};
         }
     }
 
@@ -165,11 +160,11 @@ struct generic_data_handle {
             static_assert(can_be_stored_literally_v<T>,
                           "generic_data_handle can only hold non-pointer types that are trivial "
                           "and smaller than a pointer");
-            if (bool{m_offset} || m_offset.was_once_valid()) {
+            if (!m_offset.has_always_been_null()) {
                 throw_error(" conversion to " + cxx_demangle(typeid(T).name()) +
                             " not possible for a handle [that was] in modern mode");
             }
-            if (std::type_index{typeid(T)} != m_type) {
+            if (typeid(T) != *m_type) {
                 throw_error(" does not hold a literal value of type " +
                             cxx_demangle(typeid(T).name()));
             }
@@ -181,7 +176,7 @@ struct generic_data_handle {
 
     friend std::ostream& operator<<(std::ostream& os, generic_data_handle const& dh) {
         os << "generic_data_handle{";
-        if (dh.m_offset || dh.m_offset.was_once_valid()) {
+        if (!dh.m_offset.has_always_been_null()) {
             // modern and valid or once-valid data handle
             auto const maybe_info = utils::find_container_info(dh.m_container);
             if (maybe_info) {
@@ -204,7 +199,7 @@ struct generic_data_handle {
                 os << "nullptr";
             }
         }
-        return os << ", type=" << cxx_demangle(dh.m_type.name()) << '}';
+        return os << ", type=" << dh.type_name() << '}';
     }
 
     /** @brief Check if this handle refers to the specific type.
@@ -219,7 +214,7 @@ struct generic_data_handle {
      */
     template <typename T>
     [[nodiscard]] bool holds() const {
-        return std::type_index{typeid(T)} == m_type;
+        return typeid(T) == *m_type;
     }
 
     /** @brief Check if this handle contains a data_handle<T> or just a literal.
@@ -230,7 +225,7 @@ struct generic_data_handle {
      *  refers to a since-deleted row.
      */
     [[nodiscard]] bool refers_to_a_modern_data_structure() const {
-        return m_offset || m_offset.was_once_valid();
+        return !m_offset.has_always_been_null();
     }
 
     /** @brief Return the demangled name of the type this handle refers to.
@@ -244,7 +239,7 @@ struct generic_data_handle {
      *  important logic on this function.
      */
     [[nodiscard]] std::string type_name() const {
-        return cxx_demangle(m_type.name());
+        return m_type ? cxx_demangle(m_type->name()) : "typeless_null";
     }
 
     /** @brief Obtain a reference to the literal value held by this handle.
@@ -265,18 +260,16 @@ struct generic_data_handle {
      */
     template <typename T>
     [[nodiscard]] T& literal_value() {
-        if (m_offset || m_offset.was_once_valid()) {
+        if (!m_offset.has_always_been_null()) {
             throw_error("::literal_value<" + cxx_demangle(typeid(T).name()) +
                         "> cannot be called on a handle [that was] in modern mode");
         } else {
             // This is a data handle in backwards-compatibility mode, wrapping a
-            // raw pointer, or a null data handle.
-            bool const is_typeless_null = holds<typeless_null>();
-            // Using raw_ptr() on a typeless_null (default-constructed) handle
-            // turns it into a legacy handle-to-T
-            if (is_typeless_null) {
-                m_type = typeid(T);
-            } else if (std::type_index{typeid(T)} != m_type) {
+            // raw pointer, or a null data handle. Using raw_ptr() on a typeless_null
+            // (default-constructed) handle turns it into a legacy handle-to-T.
+            if (!m_type) {
+                m_type = &typeid(T);
+            } else if (typeid(T) != *m_type) {
                 throw_error(" does not hold a literal value of type " +
                             cxx_demangle(typeid(T).name()));
             }
@@ -296,7 +289,7 @@ struct generic_data_handle {
     // std::vector<T>* for the T encoded in m_type if m_offset is non-null,
     // otherwise a literal value is stored in this space.
     void* m_container{};
-    // Reference to typeid(T) for the wrapped type
-    std::type_index m_type{typeid(typeless_null)};
+    // Pointer to typeid(T) for the wrapped type
+    std::type_info const* m_type{};
 };
 }  // namespace neuron::container
