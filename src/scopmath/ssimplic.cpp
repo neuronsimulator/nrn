@@ -37,7 +37,7 @@ if (linflag) { /*iterate linear solution*/
 	return err;
 }
 
-int _ss_derivimplicit(int _ninits, int n, int* slist, int* dlist, double* p, double* pt, double dt,
+int _ss_derivimplicit(int _ninits, int n, int* slist, int* dlist, double** p, double* pt, double dt,
 					  int(*fun)(), double** ptemp)
 {
 	int err, i;
