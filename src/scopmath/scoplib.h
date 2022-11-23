@@ -37,7 +37,7 @@ int runge(int ninits,
           double* p,
           double* t,
           double h,
-          int (*dy)(double*),
+          int (*dy)(),
           double** work);
 
 /* Implicit backwards eulerian integration.  Can find steady-state solution of

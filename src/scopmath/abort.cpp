@@ -1,10 +1,4 @@
 #include <../../nrnconf.h>
-#include "errcodes.h"
-#include "oc_ansi.h"
-#include "scoplib.h"
-
-#include <cmath>
-#include <cstdio>
 /******************************************************************************
  *
  * File: abort.c
@@ -13,12 +7,12 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "errcodes.h"
+#include "oc_ansi.h"
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "abort.c,v 1.2 1997/08/30 14:32:00 hines Exp" ;
-#endif
-
+#include <cmath>
+#include <cstdio>
 /*-----------------------------------------------------------------------------
  *
  * ABORT_RUN()

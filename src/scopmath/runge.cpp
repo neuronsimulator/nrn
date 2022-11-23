@@ -57,7 +57,7 @@
 /*  Files accesses: none                                        */
 /*                                                              */
 /****************************************************************/
-int runge(int _ninits, int n, int* y, int* d, double* p, double *t, double h, int(*dy)(double* ), double **work) {
+int runge(int _ninits, int n, int* y, int* d, double* p, double *t, double h, int(*dy)(), double **work) {
 #define d_(arg)  p[d[arg]]
 #define y_(arg)  p[y[arg]]
     int i;
@@ -67,8 +67,7 @@ int runge(int _ninits, int n, int* y, int* d, double* p, double *t, double h, in
 	*work = makevector(n << 1);
 
     /* Get derivatives at current time point */
-
-    (*dy) (p);
+    dy();
 
     for (i = 0; i < n; i++)
     {
@@ -89,7 +88,7 @@ int runge(int _ninits, int n, int* y, int* d, double* p, double *t, double h, in
     /* Get derivatives at extrapolated values of variables at t + h/2 */
 
     *t += h / 2.0;
-    (*dy) (p);
+    dy();
 
     for (i = 0; i < n; i++)
     {
@@ -105,7 +104,7 @@ int runge(int _ninits, int n, int* y, int* d, double* p, double *t, double h, in
 
     /* Get derivatives at new extrapolated values of variables at t + h/2 */
 
-    (*dy) (p);
+    dy();
 
     for (i = 0; i < n; i++)
     {
@@ -122,7 +121,7 @@ int runge(int _ninits, int n, int* y, int* d, double* p, double *t, double h, in
     /* Get derivatives at extrapolated values of variables at t + h */
 
     *t += h / 2.0;
-    (*dy) (p);
+    dy();
 
     for (i = 0; i < n; i++)
 
