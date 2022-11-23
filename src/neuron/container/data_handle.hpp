@@ -143,16 +143,16 @@ struct data_handle {
     }
     template <typename This>
     static auto get_ptr_helper(This& this_ref) {
-        if (this_ref.m_offset) {
-            // valid, modern mode
-            return std::next(this_ref.container_ptr()->data(), this_ref.m_offset.current_row());
-        } else if (this_ref.m_offset.was_once_valid()) {
-            // no longer valid, modern mode
-            return decltype(this_ref.raw_ptr()){nullptr};
-        } else {
+        if (this_ref.m_offset.has_always_been_null()) {
             // null or raw pointer
             return this_ref.raw_ptr();
         }
+        if (this_ref.m_offset) {
+            // valid, modern mode
+            return this_ref.container_ptr()->data() + this_ref.m_offset.current_row();
+        }
+        // no longer valid, modern mode
+        return decltype(this_ref.raw_ptr()){nullptr};
     }
 
   public:
