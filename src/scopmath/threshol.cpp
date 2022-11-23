@@ -7,12 +7,7 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "threshol.c,v 1.1.1.1 1994/10/12 17:22:25 hines Exp" ;
-#endif
-
+#include "scoplib.h"
 /****************************************************************/
 /*								*/
 /*  Abstract: threshold()					*/
@@ -48,11 +43,7 @@ static char RCSid[] =
 /*  Files accessed: none					*/
 /*								*/
 /****************************************************************/
-#include <ctype.h>
-#include <string.h>
-
-double threshold(int* reset_integ, double* old_value, double x, double limit, char* mode)
-{
+double threshold(int* reset_integ, double* old_value, double x, double limit, char* mode) {
     int i;
     double ret_val;
 

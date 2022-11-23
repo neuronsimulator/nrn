@@ -7,11 +7,8 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "crank.c,v 1.1.1.1 1994/10/12 17:22:19 hines Exp" ;
-#endif
+#include "newton_struct.h"
+#include "scoplib.h"
 
 /*--------------------------------------------------------------*/
 /*								*/
@@ -61,13 +58,8 @@ static char RCSid[] =
 /*  Functions called: bounds(), tridiag(), makevector(),	*/
 /*								*/
 /*--------------------------------------------------------------*/
-#include "scoplib.h"
-#include "newton_struct.h"
-
-int bounds(int n, double* a, double* b, double* c, double* d, double* y, double* fval, double dt, double dx, double** bound);
-
-int crank(int n, double* y, double* fval, double* gval, double dt, double dx, double t, double** bound, double** pwork)
-{
+static int bounds(int n, double* a, double* b, double* c, double* d, double* y, double* fval, double dt, double dx, double** bound);
+int crank(int n, double* y, double* fval, double* gval, double dt, double dx, double t, double** bound, double** pwork) {
     int i, error;
     double temp, r;
     double *main_diag, *sub_diag, *sup_diag, *const_vec;
@@ -141,8 +133,7 @@ int crank(int n, double* y, double* fval, double* gval, double dt, double dx, do
  *  Files accessed:
  *---------------------------------------------------------------------------*/
 
-int bounds(int n, double* a, double* b, double* c, double* d, double* y, double* fval, double dt, double dx, double** bound)
-{
+static int bounds(int n, double* a, double* b, double* c, double* d, double* y, double* fval, double dt, double dx, double** bound) {
     int i;
     double temp;
 

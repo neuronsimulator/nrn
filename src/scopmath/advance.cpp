@@ -7,17 +7,13 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "advance.c,v 1.3 1999/01/04 12:46:42 hines Exp" ;
-#endif
-
-#include <stdlib.h>
-#include <math.h>
 #include "errcodes.h"
 #include "scoplib.h"
 #include "newton_struct.h"
+
+#include <cstdlib>
+#include <cmath>
+
 static int oldsimeq(int n, double** coef, double* soln);
 /*-----------------------------------------------------------------------------
  *

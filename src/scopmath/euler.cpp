@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-
 /******************************************************************************
  *
  * File: euler.c
@@ -8,11 +7,8 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "euler.c,v 1.1.1.1 1994/10/12 17:22:20 hines Exp" ;
-#endif
+#include "errcodes.h"
+#include "scoplib.h"
 
 /****************************************************************/
 /*                                                              */
@@ -57,24 +53,16 @@ static char RCSid[] =
 /*  Files accessed: none                                        */
 /*                                                              */
 /****************************************************************/
-
-#include "errcodes.h"
-
-/* ARGSUSED */
-int euler(int _ninits, int neqn, int* var, int* der, double* p, double *t, double dt, int(*func)(double*), double** work)
+int euler(int _ninits, int neqn, int* var, int* der, double* p, double *t, double dt, int(*func)(double*), double** work) {
 #define der_(arg)  p[der[arg]]
 #define var_(arg)  p[var[arg]]
-{
-    int i;
-
     /* Calculate the derivatives */
-
-    (*func) (p);
+    func(p);
 
     /* Update dependent variables */
-
-    for (i = 0; i < neqn; i++)
-	var_(i) += dt * (der_(i));
+    for (int i = 0; i < neqn; i++) {
+	    var_(i) += dt * (der_(i));
+    }
 
     return (SUCCESS);
 }

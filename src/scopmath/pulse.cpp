@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-
 /******************************************************************************
  *
  * File: pulse.c
@@ -8,12 +7,7 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "pulse.c,v 1.1.1.1 1994/10/12 17:22:22 hines Exp" ;
-#endif
-
+#include "scoplib.h"
 /*-----------------------------------------------------------------------------
  *
  *  PULSE()
@@ -47,9 +41,7 @@ static char RCSid[] =
  *	none
  *
  */
-
-double pulse(int* reset_integ, double* old_value, double t, double lag, double height, double duration)
-{
+double pulse(int* reset_integ, double* old_value, double t, double lag, double height, double duration) {
     double value = 0.0;
 
     if (t < lag)

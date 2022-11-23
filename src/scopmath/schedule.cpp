@@ -7,12 +7,13 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "errcodes.h"
+#include "newton_struct.h"
+#include "../oc/nrnassrt.h"
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-"schedule.c,v 1.2 1997/08/30 14:32:18 hines Exp";
-#endif
-
+#include <cstdio>
+#include <cstdlib>
 /*------------------------------------------------------------------------
  * Abstract: schedule()
  *
@@ -33,14 +34,6 @@ static char RCSid[] =
  * Files accessed: reference data file containing schedule and amplitudes
  *
  *----------------------------------------------------------------------*/
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include "../oc/nrnassrt.h"
-#include "errcodes.h"
-#include "newton_struct.h"
-
 typedef struct event
 {
     char *file;
@@ -53,56 +46,54 @@ typedef struct event
 
 static void init_event(event_t **, char *);
 
-double
-schedule(int *reset_integ, double *old_value, double t, char *filename)
-{
-    static event_t *event_root = (event_t *) 0; /* Root of linked list of schedules */
-    event_t *curr_event;
-    extern int _ninits;
-    static int initialized = 0;
+// double schedule(int *reset_integ, double *old_value, double t, char *filename) {
+//     static event_t *event_root = (event_t *) 0; /* Root of linked list of schedules */
+//     event_t *curr_event;
+//     extern int _ninits;
+//     static int initialized = 0;
 
-    if (initialized < _ninits)		/* Re-initialize event counters */
-    {
-        curr_event = event_root;
-        while (curr_event != (event_t *) 0)
-	{
-	    curr_event->count = 0;
-	    curr_event = curr_event->next_event;
-        }
-	initialized = _ninits;
-    }
-    /* Search for event schedule in linked list */
+//     if (initialized < _ninits)		/* Re-initialize event counters */
+//     {
+//         curr_event = event_root;
+//         while (curr_event != (event_t *) 0)
+// 	{
+// 	    curr_event->count = 0;
+// 	    curr_event = curr_event->next_event;
+//         }
+// 	initialized = _ninits;
+//     }
+//     /* Search for event schedule in linked list */
 
-    curr_event = event_root;
-    while (curr_event != (event_t *) 0)
-	if (curr_event->file == filename)
-	    break;
-	else
-	    curr_event = curr_event->next_event;
-    if (curr_event == (event_t *) 0)
-    {
-	init_event(&curr_event, filename);	/* Create a new schedule */
-	if (event_root == (event_t *) 0)	/* Make it the root */
-	    event_root = curr_event;
-	else					/* Add new schedule to the list */
-	{
-	    event_t *search_ptr = event_root;
-	    while (search_ptr->next_event != (event_t *) 0)
-		search_ptr = search_ptr->next_event;
-	    search_ptr->next_event = curr_event;
-	}
-    }
+//     curr_event = event_root;
+//     while (curr_event != (event_t *) 0)
+// 	if (curr_event->file == filename)
+// 	    break;
+// 	else
+// 	    curr_event = curr_event->next_event;
+//     if (curr_event == (event_t *) 0)
+//     {
+// 	init_event(&curr_event, filename);	/* Create a new schedule */
+// 	if (event_root == (event_t *) 0)	/* Make it the root */
+// 	    event_root = curr_event;
+// 	else					/* Add new schedule to the list */
+// 	{
+// 	    event_t *search_ptr = event_root;
+// 	    while (search_ptr->next_event != (event_t *) 0)
+// 		search_ptr = search_ptr->next_event;
+// 	    search_ptr->next_event = curr_event;
+// 	}
+//     }
 
-    /* See if next event is scheduled */
+//     /* See if next event is scheduled */
 
-    if (curr_event->count < curr_event->nevent && t >= curr_event->sched_t[curr_event->count])
-    {
-	*reset_integ = 1;
-	return (curr_event->ampl[curr_event->count++]);
-    }
-    else
-	return (0.0);
-}
+//     if (curr_event->count < curr_event->nevent && t >= curr_event->sched_t[curr_event->count])
+//     {
+// 	*reset_integ = 1;
+// 	return (curr_event->ampl[curr_event->count++]);
+//     }
+//     else
+// 	return (0.0);
+// }
 
 static void init_event(event_t **new_event, char *filename)
 {

@@ -1,6 +1,4 @@
 #include <../../nrnconf.h>
-#include <cmath>
-
 /******************************************************************************
  *
  * File: squarewa.c
@@ -9,12 +7,9 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "squarewa.c,v 1.2 1997/08/30 14:32:22 hines Exp" ;
-#endif
-
+#include <cmath>
 /****************************************************************/
 /*								*/
 /*  Abstract: squarewave()					*/
@@ -47,9 +42,7 @@ static char RCSid[] =
 /*  Files accessed: none					*/
 /*								*/
 /****************************************************************/
-
-double squarewave(int* reset_integ, double* old_value, double t, double period, double amplitude)
-{
+double squarewave(int* reset_integ, double* old_value, double t, double period, double amplitude) {
     double temp, value;
 
     temp = std::modf(t / period, &temp);

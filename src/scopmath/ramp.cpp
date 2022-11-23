@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-
 /******************************************************************************
  *
  * File: ramp.c
@@ -8,12 +7,7 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "ramp.c,v 1.1.1.1 1994/10/12 17:22:23 hines Exp" ;
-#endif
-
+#include "scoplib.h"
 /*-----------------------------------------------------------------------------
  *
  *  RAMP()
@@ -49,10 +43,7 @@ static char RCSid[] =
  *	none
  *
  */
-
-
-double ramp(int* reset_integ, double* old_value, double t, double lag, double height, double duration)
-{
+double ramp(int* reset_integ, double* old_value, double t, double lag, double height, double duration) {
     if (t < lag)
     {
 	if (*old_value != 0.) *reset_integ = 1;

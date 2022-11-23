@@ -5,8 +5,6 @@
 
 extern double _modl_get_dt_thread(NrnThread*);
 extern void _modl_set_dt_thread(double, NrnThread*);
-extern int sparse_thread();
-
 static int check_state(int n, int* s, double* p);
 
 int _ss_sparse_thread(void** v, int n, int* s, int* d, double* p, double* t, double dt,

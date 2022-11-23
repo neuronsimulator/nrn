@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include <cmath>
 /******************************************************************************
  *
  * File: normrand.c
@@ -8,13 +7,9 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "normrand.c,v 1.1.1.1 1994/10/12 17:22:22 hines Exp" ;
-#endif
-
-
+#include <cmath>
 /*--------------------------------------------------------------*/
 /*								*/
 /*  NORMRAND							*/
@@ -37,10 +32,7 @@ static char RCSid[] =
 /*  Functions called: random					*/
 /*								*/
 /*--------------------------------------------------------------*/
-#include "scoplib.h"
-
-double normrand(double mean, double std_dev)
-{
+double normrand(double mean, double std_dev) {
     double s, v1, v2;
 
     s = 1.0;

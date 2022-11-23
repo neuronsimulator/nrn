@@ -7,11 +7,7 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "legendre.c,v 1.1.1.1 1994/10/12 17:22:21 hines Exp" ;
-#endif
+#include "scoplib.h"
 
 /***************************************************************
  *
@@ -44,9 +40,7 @@ double zero[10] = {-0.9739065285, -0.8650633677, -0.6794095683, -0.4333953941,
     0.2955242247, 0.2955242247, 0.2692667193, 0.2190863625,
 0.1494513492, 0.0666713443};
 
-double 
-legendre(double a, double b, double (*func)(double))
-{
+double legendre(double a, double b, double (*func)(double)) {
     int i;
     double integral = 0.0;
 

@@ -7,12 +7,12 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "errcodes.h"
+#include "../oc/nrnassrt.h"
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-"expfit.c,v 1.3 1999/01/04 12:46:46 hines Exp";
-#endif
-
+#include <cmath>
+#include <cstdio>
 /****************************************************************
  *
  *  Abstract: expfit()
@@ -57,20 +57,9 @@ static char RCSid[] =
  *  Files accessed: reffile
  *
  ****************************************************************/
-
-#include <stdio.h>
-#include <math.h>
-#include <assert.h>
-#include "../oc/nrnassrt.h"
-#include "errcodes.h"
-#include "scoplib.h"
-
-int expinit(char* filename, double *deltat, double **data);
-int testfit(int ndata, double* data, double* terms, double* amplitude, double* lambda, double h, double* errfit);
-
-
-int expfit(double* terms, char* reffile, double* amplitude, double* lambda, double* error)
-{
+static int expinit(char* filename, double *deltat, double **data);
+static int testfit(int ndata, double* data, double* terms, double* amplitude, double* lambda, double h, double* errfit);
+int expfit(double* terms, char* reffile, double* amplitude, double* lambda, double* error) {
     int i, j, k, npts, dimen, ierr;
     double h, *x, **L, *coeff, *work;
 
@@ -213,9 +202,7 @@ FINISH:
  *
  * Files accessed: filename (input)
  *------------------------------------------------------------------------*/
-
-int expinit(char* filename, double *deltat, double **data)
-{
+static int expinit(char* filename, double *deltat, double **data) {
     FILE *refdata;
     int i, npts = -6;
     double temp;
@@ -279,8 +266,7 @@ int expinit(char* filename, double *deltat, double **data)
  * Files accessed:
  *------------------------------------------------------------------------*/
 
-int testfit(int ndata, double* data, double* terms, double* amplitude, double* lambda, double h, double* errfit)
-{
+static int testfit(int ndata, double* data, double* terms, double* amplitude, double* lambda, double h, double* errfit) {
     int n, i, j;
     double temp;
 

@@ -7,12 +7,7 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "perstep.c,v 1.1.1.1 1994/10/12 17:22:22 hines Exp" ;
-#endif
-
+#include "scoplib.h"
 /*--------------------------------------------------------------*/
 /*								*/
 /*  PERSTEP							*/
@@ -44,9 +39,7 @@ static char RCSid[] =
 /*                              call                            */
 /*								*/
 /*--------------------------------------------------------------*/
-
-double perstep(int* reset_integ, double* old_value, double t, double lag, double period, double jump)
-{
+double perstep(int* reset_integ, double* old_value, double t, double lag, double period, double jump) {
     int njumps;
     double value;
 

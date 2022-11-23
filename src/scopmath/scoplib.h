@@ -203,3 +203,17 @@ int _ss_sparse_thread(void**,
                              Datum*,
                              Datum*,
                              NrnThread*);
+
+void hoc_after_prax_quad(char*);
+double* praxis_paxis(int);
+double praxis_pval(int);
+int praxis_stop(int);
+double praxis(double* t0,
+                     double* machep,
+                     double* h0,
+                     long int nval,
+                     long int* prin,
+                     double* x,
+                     double (*f)(double*, long int),
+                     double* fmin,
+                     char* after_quad);

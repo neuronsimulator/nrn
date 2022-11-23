@@ -7,12 +7,12 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "errcodes.h"
+#include "newton_struct.h"
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "invert.c,v 1.3 1999/01/04 12:46:47 hines Exp" ;
-#endif
-
+#include <cmath>
+#include <cstdlib>
 /****************************************************************/
 /*                                                              */
 /* Abstract: invert();                                          */
@@ -42,14 +42,7 @@ static char RCSid[] =
 /* Files Accessed: none						*/
 /*                                                              */
 /****************************************************************/
-
-#include <math.h>
-#include <stdlib.h>
-#include "errcodes.h"
-#include "newton_struct.h"
-
-int invert(int n, double** matrix)
-{
+int invert(int n, double** matrix) {
     int ipivot, isave=0, jrow, krow, kcol, i, j, *perm;
     double **soln;
 

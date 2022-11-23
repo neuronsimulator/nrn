@@ -7,12 +7,9 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "exprand.c,v 1.2 1998/07/01 20:39:49 hines Exp" ;
-#endif
-
+#include <cmath>
 /****************************************************************/
 /*								*/
 /*  Abstract: exprand()						*/
@@ -34,10 +31,6 @@ static char RCSid[] =
 /*								*/
 /*								*/
 /****************************************************************/
-#include <cmath>
-#include "scoplib.h"
-
-double exprand(double mean)
-{
+double exprand(double mean) {
     return (-mean*std::log(scop_random()));
 }

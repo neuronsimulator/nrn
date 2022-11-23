@@ -7,12 +7,9 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "poisson.c,v 1.2 1997/08/30 14:32:14 hines Exp" ;
-#endif
-
+#include <cmath>
 /*--------------------------------------------------------------*/
 /*								*/
 /*  POISSON()							*/
@@ -34,11 +31,7 @@ static char RCSid[] =
 /*  Functions called: factorial					*/
 /*								*/
 /*--------------------------------------------------------------*/
-#include <cmath>
-#include "scoplib.h"
-
-double poisson(double x, double mean)
-{
+double poisson(double x, double mean) {
     double value;
     value = (std::pow(mean, x) * std::exp(-mean)) / factorial(x);
     return (value);

@@ -7,10 +7,11 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "errcodes.h"
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] = "simeq.c,v 1.3 1999/01/04 12:46:51 hines Exp" ;
-#endif
+#include <cmath>
+#include <cstdlib>
 /****************************************************************/
 /*                                                              */
 /* Abstract: simeq();                                           */
@@ -41,13 +42,7 @@ static char RCSid[] = "simeq.c,v 1.3 1999/01/04 12:46:51 hines Exp" ;
 /* Files Accessed: none						*/
 /*                                                              */
 /****************************************************************/
-
-#include <math.h>
-#include "errcodes.h"
-#include <stdlib.h>
-
-int simeq(int n, double** coef, double* soln, int* index)
-{
+int simeq(int n, double** coef, double* soln, int* index) {
 	int ipivot, isave=0, jrow, kcol, i, j;
 	static int np; static int* perm;
 

@@ -1,6 +1,4 @@
 #include <../../nrnconf.h>
-#include <newton_struct.h>
-#include <stdlib.h>
 /******************************************************************************
  *
  * File: crout.c
@@ -9,11 +7,11 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "errcodes.h"
+#include "newton_struct.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "crout.c,v 1.2 1999/01/04 12:46:43 hines Exp" ;
-#endif
+#include <cmath>
+#include <cstdlib>
 
 /*--------------------------------------------------------------*/
 /*                                                              */
@@ -50,10 +48,6 @@ static char RCSid[] =
 /*  Functions called: makevector(), freevector()		*/
 /*                                                              */
 /*--------------------------------------------------------------*/
-
-#include <math.h>
-#include "errcodes.h"
-
 int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm) {
     int i, j, k, r, pivot, irow, save_i=0, krow;
     double sum, *rowmax, equil_1, equil_2;

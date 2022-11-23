@@ -1,6 +1,4 @@
 #include <../../nrnconf.h>
-#include <cmath>
-
 /******************************************************************************
  *
  * File: sigmoid.c
@@ -9,10 +7,9 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] = "sigmoid.c,v 1.2 1997/08/30 14:32:20 hines Exp" ;
-#endif
+#include <cmath>
 /****************************************************************/
 /*								*/
 /*  Abstract: sigmoid						*/
@@ -46,12 +43,7 @@ static char RCSid[] = "sigmoid.c,v 1.2 1997/08/30 14:32:20 hines Exp" ;
 /*  Files accessed: none					*/
 /*								*/
 /****************************************************************/
-
-double sigmoid(double x, double max, double K, double n)
-{
-    double value, temp;
-
-    temp = std::pow(x, n);
-    value = (max * temp) / (temp + std::pow(K, n));
-    return (value);
+double sigmoid(double x, double max, double K, double n) {
+    double temp = std::pow(x, n);
+    return (max * temp) / (temp + std::pow(K, n));
 }

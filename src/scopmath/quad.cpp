@@ -8,11 +8,6 @@
  *
  ******************************************************************************/
 
-#ifndef LINT
-static char RCSid[] =
-    "quad.c,v 1.1.1.1 1994/10/12 17:22:22 hines Exp" ;
-#endif
-
 /*--------------------------------------------------------------
  *
  * Abstract: quadrature
@@ -32,13 +27,13 @@ static char RCSid[] =
  *
  *--------------------------------------------------------------*/
  
-double quadrature(double npts, double* x, double* y)
-{
-    int n, i;
-    double integral = 0.0;
+// double quadrature(double npts, double* x, double* y)
+// {
+//     int n, i;
+//     double integral = 0.0;
 
-    n = (int) (npts - 0.9);
-    for (i = 0; i < n; i++)
-	integral += 0.5 * (x[i + 1] - x[i]) * (y[i] + y[i + 1]);
-    return (integral);
-}
+//     n = (int) (npts - 0.9);
+//     for (i = 0; i < n; i++)
+// 	integral += 0.5 * (x[i + 1] - x[i]) * (y[i] + y[i + 1]);
+//     return (integral);
+// }

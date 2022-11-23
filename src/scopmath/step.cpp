@@ -7,12 +7,7 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "step.c,v 1.1.1.1 1994/10/12 17:22:25 hines Exp" ;
-#endif
-
+#include "scoplib.h"
 /****************************************************************/
 /*								*/
 /*  Abstract: step()						*/
@@ -44,9 +39,7 @@ static char RCSid[] =
 /*  Files accessed: none					*/
 /*								*/
 /****************************************************************/
-
-double step(int* reset_integ, double* old_value, double t, double jumpt, double jump)
-{
+double step(int* reset_integ, double* old_value, double t, double jumpt, double jump) {
     double value;
 
     if (t >= jumpt)

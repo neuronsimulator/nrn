@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include <cmath>
 /******************************************************************************
  *
  * File: gauss.c
@@ -8,12 +7,7 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "gauss.c,v 1.2 1997/08/30 14:32:06 hines Exp" ;
-#endif
-
+#include <cmath>
 /****************************************************************/
 /*								*/
 /*  Abstract: gauss()	          				*/
@@ -41,9 +35,7 @@ static char RCSid[] =
 /*  Files accessed: none					*/
 /*								*/
 /****************************************************************/
-
-double gauss(double x, double mean, double stddev)
-{
+double gauss(double x, double mean, double stddev) {
 #define two_pi 6.28318530
 
     double temp, value;

@@ -7,12 +7,10 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-"lag.c,v 1.2 1997/08/30 14:32:11 hines Exp";
-#endif
-
+#include <cstdio>
+#include <cstdlib>
 /***************************************************************
  *
  *  Abstract: lag()
@@ -45,9 +43,6 @@ static char RCSid[] =
  *  Files accessed: none
  *
  ***************************************************************/
-
-#include <stdio.h>
-#include <stdlib.h>
 
 #define CURVAL (listptr->curptr)
 #define LAGVAL (listptr->lagptr)
@@ -82,8 +77,7 @@ static void freevars(varlist* list);
 static void freenode(node* nodeptr);
 static int getinterpval(node* start, node* end, double t, double* interpval, int dimension);
 
-double* lag(double* var, double curt, double lagt, int vsize)
-{
+double* lag(double* var, double curt, double lagt, int vsize) {
     static varlist *lagvars = NULL;
     varlist *listptr, *lastvar = NULL;
     node *nodeptr, *nextnode;

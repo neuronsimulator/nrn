@@ -7,11 +7,8 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "boundary.c,v 1.1.1.1 1994/10/12 17:22:19 hines Exp" ;
-#endif
+#include "newton_struct.h"
+#include "scoplib.h"
 
 /*--------------------------------------------------------------*/
 /*								*/
@@ -51,11 +48,8 @@ static char RCSid[] =
 /*			f(xvalue), g(xvalue), q(xvalue)		*/
 /*								*/
 /*--------------------------------------------------------------*/
-#include "scoplib.h"
-#include "newton_struct.h"
 
-int boundary(int npts, double* x, double* y, double (*f)(double), double (*g)(double), double(*q)(double))
-{
+int boundary(int npts, double* x, double* y, double (*f)(double), double (*g)(double), double(*q)(double)) {
     int i, mesh, error;
     double *a, *b, *c, *d, h, temp;
 

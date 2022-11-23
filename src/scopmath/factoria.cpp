@@ -8,12 +8,10 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "errcodes.h"
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "factoria.c,v 1.2 1997/08/30 14:32:05 hines Exp" ;
-#endif
-
+#include <cmath>
 /****************************************************************/
 /*								*/
 /*  Abstract: factorial()					*/
@@ -37,14 +35,8 @@ static char RCSid[] =
 /*  Files accessed: none					*/
 /*								*/
 /****************************************************************/
-
-#include <cmath>
-#include "errcodes.h"
-
-double factorial(double n)
-{
+double factorial(double n) {
 #define two_pi 6.28318530
-
     int i;
     double x, value;
 

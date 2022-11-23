@@ -1,25 +1,15 @@
 #include <../../nrnconf.h>
 #include "mcran4.h"
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <math.h>
+#include "oc_ansi.h"
+#include "scoplib.h"
+
+#include <cmath>
+#include <cstdio>
+#include <cstdint>
+#include <cstdlib>
+
 #undef small
 
-extern int stoprun;
-extern void hoc_execerror(const char*, const char*);
-extern void hoc_after_prax_quad(char*);
-/* modified for re-entrancy by Hines 5/20/98 */
-extern void* hoc_Ecalloc(std::size_t nmemb, std::size_t size);
-
-/*  -- translated by f2c (version of 23 May 1992  14:18:33).
-   You must link the resulting object file with the libraries:
-	-lF77 -lI77 -lm -lc   (in that order)
-*/
-
-#if 0
-#include "f2c.h"
-#else
 typedef long int integer;
 typedef float real;
 typedef double doublereal;
@@ -29,7 +19,6 @@ typedef long int logical;
 
 #define dmax(arg1,arg2) ((arg1 > arg2) ? arg1 : arg2)
 #define dmin(arg1,arg2) ((arg1 < arg2) ? arg1 : arg2)
-#endif
 
 static int minfit_(integer* m, integer* n, doublereal* machep, doublereal* tol, doublereal* ab, doublereal* q, doublereal* e);
 static int min_(integer* n, integer* j, integer* nits, doublereal* d2, doublereal* x1, doublereal* f1, logical* fk, doublereal (*f)(doublereal*, integer), doublereal* x, doublereal* t, doublereal* machep, doublereal* h);

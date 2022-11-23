@@ -7,11 +7,7 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "hyperbol.c,v 1.1.1.1 1994/10/12 17:22:21 hines Exp" ;
-#endif
+#include "scoplib.h"
 
 /****************************************************************/
 /*								*/
@@ -40,11 +36,6 @@ static char RCSid[] =
 /*  Files accessed: none					*/
 /*								*/
 /****************************************************************/
-
-double hyperbol(double x, double max, double K)
-{
-    double value;
-
-    value = (max * x) / (x + K);
-    return (value);
+double hyperbol(double x, double max, double K) {
+    return (max * x) / (x + K);
 }

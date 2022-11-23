@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include <cmath>
 /******************************************************************************
  *
  * File: perpulse.c
@@ -8,12 +7,9 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "perpulse.c,v 1.2 1997/08/30 14:32:13 hines Exp" ;
-#endif
-
+#include <cmath>
 /*--------------------------------------------------------------*/
 /*								*/
 /*  Abstract: perpulse()					*/
@@ -44,9 +40,7 @@ static char RCSid[] =
 /*                              call                            */
 /*								*/
 /*--------------------------------------------------------------*/
-
-double perpulse(int* reset_integ, double* old_value, double t, double lag, double height, double duration, double delay)
-{
+double perpulse(int* reset_integ, double* old_value, double t, double lag, double height, double duration, double delay) {
     double temp, period, value;
 
     if (t < lag)

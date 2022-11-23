@@ -7,12 +7,9 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "poisrand.c,v 1.1.1.1 1994/10/12 17:22:22 hines Exp" ;
-#endif
-
+#include <cmath>
 /*--------------------------------------------------------------*/
 /*								*/
 /*  POISRAND()							*/
@@ -32,11 +29,7 @@ static char RCSid[] =
 /*  Functions called: random					*/
 /*								*/
 /*--------------------------------------------------------------*/
-#include <cmath>
-#include "scoplib.h"
-
-int poisrand(double mean)
-{
+int poisrand(double mean) {
     int n;
     double s, q;
 

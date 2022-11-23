@@ -1,6 +1,4 @@
 #include <../../nrnconf.h>
-#include <cmath>
-
 /******************************************************************************
  *
  * File: sawtooth.c
@@ -9,12 +7,9 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "sawtooth.c,v 1.2 1997/08/30 14:32:17 hines Exp" ;
-#endif
-
+#include <cmath>
 /****************************************************************/
 /*								*/
 /*  Abstract: sawtooth()					*/
@@ -50,13 +45,8 @@ static char RCSid[] =
 /*  Date: 23 June 1987  					*/
 /*								*/
 /****************************************************************/
-
-double sawtooth(int* reset_integ, double* old_value, double t, double period, double amplitude)
-{
-    double value;
-
-    value = amplitude * std::modf(t / period, &value);
-
+double sawtooth(int* reset_integ, double* old_value, double t, double period, double amplitude) {
+    double value = amplitude * std::modf(t / period, &value);
     if (value != *old_value) *reset_integ = 1;
     *old_value = value;
     return (value);

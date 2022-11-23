@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-
 /******************************************************************************
  *
  * File: sparse.c
@@ -8,17 +7,15 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
-#endif
-
-#include <stdlib.h>
 #include "errcodes.h"
-extern void* emalloc(size_t n);
+#include "hocdec.h"
+#include "scoplib.h"
 
+#include <cassert>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 /* 4/23/93 converted to object so many models can use it */
-
 /*-----------------------------------------------------------------------------
  *
  *  sparse()
@@ -72,10 +69,6 @@ extern void* emalloc(size_t n);
 # define	prmat	spar_prmat
 # define	subrow	spar_subrow
 # define	remelm	spar_remelm
-
-#include <stdio.h>
-#include <math.h>
-#include <assert.h>
 
 typedef struct Elm {
 	unsigned row;		/* Row location */

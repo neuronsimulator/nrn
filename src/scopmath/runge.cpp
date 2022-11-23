@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-
 /******************************************************************************
  *
  * File: runge.c
@@ -8,12 +7,9 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "runge.c,v 1.1.1.1 1994/10/12 17:22:23 hines Exp" ;
-#endif
-
+#include "errcodes.h"
+#include "newton_struct.h"
+#include "scoplib.h"
 /****************************************************************/
 /*                                                              */
 /*  Abstract: runge	                                        */
@@ -61,14 +57,9 @@ static char RCSid[] =
 /*  Files accesses: none                                        */
 /*                                                              */
 /****************************************************************/
-
-#include "errcodes.h"
-#include "newton_struct.h"
-
-int runge(int _ninits, int n, int* y, int* d, double* p, double *t, double h, int(*dy)(double* ), double **work)
+int runge(int _ninits, int n, int* y, int* d, double* p, double *t, double h, int(*dy)(double* ), double **work) {
 #define d_(arg)  p[d[arg]]
 #define y_(arg)  p[y[arg]]
-{
     int i;
     double temp;
 

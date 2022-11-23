@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-
 /******************************************************************************
  *
  * File: revhyper.c
@@ -8,12 +7,7 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "revhyper.c,v 1.1.1.1 1994/10/12 17:22:23 hines Exp" ;
-#endif
-
+#include "scoplib.h"
 /****************************************************************/
 /*								*/
 /*  Abstract: revhyperbol()					*/
@@ -42,9 +36,7 @@ static char RCSid[] =
 /*								*/
 /*								*/
 /****************************************************************/
-
-double revhyperbol(double x, double max, double K)
-{
+double revhyperbol(double x, double max, double K) {
     double value;
 
     value = (max * K) / (x + K);

@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-
 /******************************************************************************
  *
  * File: romberg.c
@@ -8,12 +7,11 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "errcodes.h"
+#include "newton_struct.h"
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "romberg.c,v 1.3 1999/01/04 12:46:50 hines Exp" ;
-#endif
-
+#include <cmath>
 /****************************************************************/
 /*								*/
 /*  Abstract: romberg()						*/
@@ -40,12 +38,7 @@ static char RCSid[] =
 /*  Files accessed: none					*/
 /*								*/
 /****************************************************************/
-
-#include <math.h>
-#include "errcodes.h"
-#include "newton_struct.h"
 #define CONTINUE 0
-
 double romberg(double a, double b, double (*func)(double))
 {
 

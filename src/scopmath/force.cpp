@@ -12,21 +12,14 @@
  *			the y value for the next lowest x.
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "force.c,v 1.2 1997/08/30 14:32:06 hines Exp" ;
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include "../oc/nrnassrt.h"
-#include <string.h>
 #include "errcodes.h"
-#include "scoplib.h"
 #include "newton_struct.h"
+#include "../oc/nrnassrt.h"
+#include "scoplib.h"
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 typedef struct Spline
 {
     struct Spline *next;	/* link to next spline in list */
@@ -70,9 +63,7 @@ extern int DEFLT;
  *  Files accessed:
  *
  **************************************************************************/
-
 static int init_force(char *);
-
 double force(double t, char* filename) {
     Spline *sp;
     /* Check if Spline structure already made */
@@ -149,7 +140,6 @@ double force(double t, char* filename) {
  *  Files accessed:
  *
  **************************************************************************/
-
 double stepforce(int* reset_integ, double* old_value, double t, char* filename) {
     double return_val;
     Spline *sp;
@@ -218,17 +208,15 @@ double stepforce(int* reset_integ, double* old_value, double t, char* filename) 
  *
  * Files accessed: filename (input)
  *-------------------------------------------------------------------------*/
-
-static int init_force(char *filename)
-{
+static Spline* getspline(char *filename, int ipt);
+static int init_force(char *filename) {
     FILE *pfile;
 	extern char *fgets(char *, int, FILE *);
     extern char *gets();
     char tmpstr[81];
     int n, i, j = 0, jmove, error;
     float tempx, tempy;
-    //extern int derivs(int, double*, double*, double*, double*), abort_run(int);
-    Spline *newspline, *getspline(char *, int);
+    Spline *newspline;
 
     if ((pfile = fopen(filename, "r")) != NULL)
     {
@@ -321,13 +309,7 @@ static int init_force(char *filename)
  *
  * Files accessed:
  *-------------------------------------------------------------------------*/
-
-Spline *
-getspline(char *filename, int ipt)
-{
-#if 0 && !defined(MAC)
-    extern char *strcpy(), *gets();
-#endif
+static Spline* getspline(char *filename, int ipt) {
     Spline *newspline;
 
     /* Allocate memory for Spline structure */

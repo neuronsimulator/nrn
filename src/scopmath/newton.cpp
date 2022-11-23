@@ -7,12 +7,12 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "errcodes.h"
+#include "newton_struct.h"
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "newton.c,v 1.3 1999/01/04 12:46:48 hines Exp" ;
-#endif
-
+#include <cmath>
+#include <cstdlib>
 /*------------------------------------------------------------*/
 /*                                                            */
 /*  NEWTON                                        	      */
@@ -52,15 +52,6 @@ static char RCSid[] =
 /*		      buildjacobian, crout, solve	      */
 /*                                                            */
 /*------------------------------------------------------------*/
-
-#include <stdlib.h>
-#include <math.h>
-#include "errcodes.h"
-#include "newton_struct.h"
-#include "scoplib.h"
-
-int buildjacobian(int n, int* index, double* x, int (*pfunc)(), double* value, double** jacobian);
-
 int newton(int n, int* index, double* x, int(*pfunc)(), double* value) {
     int i, count = 0, error, *perm;
     double **jacobian, *delta_x, change = 1.0, max_dev, temp;
@@ -246,41 +237,40 @@ int buildjacobian(int n, int* index, double* x, int (*pfunc)(), double* value, d
     return 0;
 }
 
-int build_traj_jacob(int n, int* index, double* x, int (*pfunc) (), int* value, double** jacobian)
-{
-    int i, j;
-    double increment, *high_value, *low_value;
+// int build_traj_jacob(int n, int* index, double* x, int (*pfunc) (), int* value, double** jacobian)
+// {
+//     int i, j;
+//     double increment, *high_value, *low_value;
 
-    high_value = makevector(n);
-    low_value = makevector(n);
+//     high_value = makevector(n);
+//     low_value = makevector(n);
 
-    /* Compute partial derivatives by central finite differences */
+//     /* Compute partial derivatives by central finite differences */
 
-    for (j = 0; j < n; j++)
-    {
-	increment = max(fabs(0.02 * (x[j])), STEP);
-	x[index[j]] += increment;
-	(*pfunc) ();
-	for (i = 0; i < n; i++)
-	    high_value[i] = x[value[i]];
-	x[index[j]] -= 2.0 * increment;
-	(*pfunc) ();
-	for (i = 0; i < n; i++)
-	{
-	    low_value[i] = x[value[i]];
+//     for (j = 0; j < n; j++)
+//     {
+// 	increment = max(fabs(0.02 * (x[j])), STEP);
+// 	x[index[j]] += increment;
+// 	(*pfunc) ();
+// 	for (i = 0; i < n; i++)
+// 	    high_value[i] = x[value[i]];
+// 	x[index[j]] -= 2.0 * increment;
+// 	(*pfunc) ();
+// 	for (i = 0; i < n; i++)
+// 	{
+// 	    low_value[i] = x[value[i]];
 
-	    /* Insert partials into jth column of Jacobian matrix */
+// 	    /* Insert partials into jth column of Jacobian matrix */
 
-	    jacobian[i][j] = (high_value[i] - low_value[i]) / (2.0 * increment);
-	}
+// 	    jacobian[i][j] = (high_value[i] - low_value[i]) / (2.0 * increment);
+// 	}
 
-	/* Restore original variable and function values. */
+// 	/* Restore original variable and function values. */
 
-	x[index[j]] += increment;
-	(*pfunc) ();
-    }
-    freevector(high_value);
-    freevector(low_value);
-    return 0;
-}
-
+// 	x[index[j]] += increment;
+// 	(*pfunc) ();
+//     }
+//     freevector(high_value);
+//     freevector(low_value);
+//     return 0;
+// }

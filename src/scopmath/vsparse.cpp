@@ -10,11 +10,8 @@
  *
  ******************************************************************************/
 
-#ifndef LINT
-static char RCSid[] = "vsparse.c,v 1.5 1999/01/04 12:46:53 hines Exp";
-#endif
-
 #include "errcodes.h"
+
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
@@ -125,18 +122,17 @@ static void sparseobj2local(SparseObj*);
 static void local2sparseobj(SparseObj*);
 static double d;
 
-double * _vector_getelm(int row, int col)
-{
-  row++; col++;			/* note: start at 1, not 0 */
-	if (!phase) {
-	  fprintf(stderr, "vector_getelm called in phase 0.. abort\n");
-	  abort();
-	}
-	return &(getelm( (unsigned)row, (unsigned)col, ELM0)->value[0]);
-}
+// double * _vector_getelm(int row, int col)
+// {
+//   row++; col++;			/* note: start at 1, not 0 */
+// 	if (!phase) {
+// 	  fprintf(stderr, "vector_getelm called in phase 0.. abort\n");
+// 	  abort();
+// 	}
+// 	return &(getelm( (unsigned)row, (unsigned)col, ELM0)->value[0]);
+// }
 
-SparseObj * create_sparseobj(int ninst, int neqn, int linflag)
-{
+static SparseObj * create_sparseobj(int ninst, int neqn, int linflag) {
   int i, j, k;
   SparseObj * so = (SparseObj *) malloc (sizeof(SparseObj));
   double ** t;
@@ -245,72 +241,66 @@ static void deletion(Item*);
  *
 */
 
-int _vector_sparse(int base, int bound, int count, double*** jacobp, double*** spacep, void** sparseobj, int neqns, int* state,
-	       int* deriv, double** data, double* t, double delta_t, int (*vfun)(int, int), int (*fun)(int, int), double*** rhsp, int linflag)
-    //  int base;			/* first instances */
-    //  int bound;			/* last instance + 1 */
-    //  int count;			/* total number of instances */
-    //  double *** jacobp;		/* pointer to list of jacobians */
-	// 			/* accessed as *jacobp[element][instance] */
-    //  double *** spacep;		/* pointer to workpace */
-	// 			/* accessed as *spacep[variable][instance] */
-    //  void ** sparseobj;		/* pointer to sparse obj for this mechanism */
-    //  int neqns;			/* number of state variables */
-    //  int state[];		/* index of state vars in data */
-    //  int deriv[];		/* index of derivs in data */
-    //  double * data[];		/* list of intance data, inst is first idx! */
-	// 			/* accessed as data[instance][parameter] */
-    //  double * t;		/* pointer to time */
-    //  double delta_t;		/* delta t */
-    //  int (*vfun)();		/* function to compute jacobian entries */
-    //  int (*fun)();		/* function which calls _vector_getelm */
-    //  double *** rhsp;		/* pointer to list of right hand sides */
-	// 			/* accessed as *rhsp[variable][instance] */
-    //  int linflag;		/* if != 0 then linear */
-{
-  int i, j, k, ierr;
-  double * err=0;
-  SparseObj* so;
-  int nconverged = 0;
-  int * converged=0;
-  int zero = 0;
-  static SparseObj* old_sparseobj = NULL;
+// int _vector_sparse(int base, // first instances
+// 				   int bound, // last instance + 1
+// 				   int count, // total number of instances
+// 				   double*** jacobp, // pointer to list of jacobians accessed as *jacobp[element][instance]
+// 				   double*** spacep, // pointer to workpace accessed as *spacep[variable][instance]
+// 				   void** sparseobj, // pointer to sparse obj for this mechanism
+// 				   int neqns, // number of state variables
+// 				   int* state, // index of state vars in data
+// 	       		   int* deriv, // index of derivs in data
+// 				   double** data, // list of intance data, inst is first idx! accessed as data[instance][parameter]
+// 				   double* t, // pointer to time
+// 				   double delta_t,
+// 				   int (*vfun)(int, int), // function to compute jacobian entries
+// 				   int (*fun)(int, int), // function which calls _vector_getelm
+// 				   double*** rhsp, // pointer to list of right hand sides accessed as *rhsp[variable][instance]
+// 				   int linflag // if != 0 then linear
+// 				   ) {
+//   int i, j, k, ierr;
+//   double * err=0;
+//   SparseObj* so;
+//   int nconverged = 0;
+//   int * converged=0;
+//   int zero = 0;
+//   static SparseObj* old_sparseobj = NULL;
    
-  so = (SparseObj *) *sparseobj;	/* translater uses void pointer */
-  ninst = count;
-  if (!so)
-    {				/* first time in this mechanism */
-      so = create_sparseobj(ninst,neqns,linflag);
-      *sparseobj = (void *) so;		/* so that it is set on next call */
-      *jacobp = so->jacob;
-      jacob = so->jacob;
-      *rhsp = so->rhs;
-      rhs = so->rhs;
-      *spacep = so->space;
-    }
-  else				/* check that haven't increased size */
-    if (so->ninst < bound)	/* only care about ones being used here */
-      {
-	fprintf(stderr, "**Fatal error: number of instances increased in vector_sparse\n");
-	abort();
-      }
+//   so = (SparseObj *) *sparseobj;	/* translater uses void pointer */
+//   ninst = count;
+//   if (!so)
+//     {				/* first time in this mechanism */
+//       so = create_sparseobj(ninst,neqns,linflag);
+//       *sparseobj = (void *) so;		/* so that it is set on next call */
+//       *jacobp = so->jacob;
+//       jacob = so->jacob;
+//       *rhsp = so->rhs;
+//       rhs = so->rhs;
+//       *spacep = so->space;
+//     }
+//   else				/* check that haven't increased size */
+//     if (so->ninst < bound)	/* only care about ones being used here */
+//       {
+// 	fprintf(stderr, "**Fatal error: number of instances increased in vector_sparse\n");
+// 	abort();
+//       }
 
-  if (so != old_sparseobj)
-    {
-      sparseobj2local(so);
-      old_sparseobj = so;
-    }
-  if (so->oldfun != fun) {
-    so->oldfun = fun;
-    create_coef_list(base,bound, count,neqns, fun); /* calls fun twice */
-    local2sparseobj(so);
-  }
+//   if (so != old_sparseobj)
+//     {
+//       sparseobj2local(so);
+//       old_sparseobj = so;
+//     }
+//   if (so->oldfun != fun) {
+//     so->oldfun = fun;
+//     create_coef_list(base,bound, count,neqns, fun); /* calls fun twice */
+//     local2sparseobj(so);
+//   }
 
-  if (!linflag)
-    {
-      err = so->err;
-      converged = so->converged;
-    }
+//   if (!linflag)
+//     {
+//       err = so->err;
+//       converged = so->converged;
+//     }
   
   
 /*=====================================================*/
@@ -329,95 +319,95 @@ int _vector_sparse(int base, int bound, int count, double*** jacobp, double*** s
 /*==================================================== */
 /*==================================================== */
   
-  for (i=0; i<neqns; i++)
-    { /*save old state in deriv space for now */
-      FLOWMARK("loop1");
-      for (k = base; k < bound; k++)
-	data1(k,deriv[i]) = data1(k,state[i]);
-      FLOWMARK(&zero);
-    }
+//   for (i=0; i<neqns; i++)
+//     { /*save old state in deriv space for now */
+//       FLOWMARK("loop1");
+//       for (k = base; k < bound; k++)
+// 	data1(k,deriv[i]) = data1(k,state[i]);
+//       FLOWMARK(&zero);
+//     }
   
-  if (!linflag)
-    {
-      FLOWMARK("loop2");
-      for (k = base; k < bound; k++)
-	converged[k] = 0;
-      FLOWMARK(&zero);
-    }
+//   if (!linflag)
+//     {
+//       FLOWMARK("loop2");
+//       for (k = base; k < bound; k++)
+// 	converged[k] = 0;
+//       FLOWMARK(&zero);
+//     }
   
-  for (nconverged = j = 0; nconverged < bound-base; j++)
-    {
-      init_coef_list(base,bound);		/* ?? */
-      (*vfun)(base,bound);
-      if((ierr = vector_matsol(so,base,bound,converged)) != 0)
-	{
-	  return ierr;
-	}
+//   for (nconverged = j = 0; nconverged < bound-base; j++)
+//     {
+//       init_coef_list(base,bound);		/* ?? */
+//       (*vfun)(base,bound);
+//       if((ierr = vector_matsol(so,base,bound,converged)) != 0)
+// 	{
+// 	  return ierr;
+// 	}
       
-      if (!linflag)
-	{
-	  FLOWMARK("loop3");
-	  for (k = base; k < bound; k++)
-	    err[k] = 0;
-	  FLOWMARK(&zero);
-	}
+//       if (!linflag)
+// 	{
+// 	  FLOWMARK("loop3");
+// 	  for (k = base; k < bound; k++)
+// 	    err[k] = 0;
+// 	  FLOWMARK(&zero);
+// 	}
       
-      for (i=0; i<neqns; i++)
-	{
-	  FLOWMARK("loop4a");
-	  if (linflag)
-	    {
-	      for (k = base; k < bound; k++)
-		data1(k,state[i]) += rhs[i][k];
-	    }
-	  else			/* !linflag */
-	    {
-	      for (k = base; k < bound; k++)
-		{
-		  if (!(converged[k]))
-		    data1(k,state[i]) += rhs[i][k];
-		  if (rhs[i][k] < 0)
-		    err[k] -= rhs[i][k];
-		  else
-		    err[k] += rhs[i][k];
-    /* stability of nonlinear kinetic schemes sometimes requires this */
-		  if (data1(k,state[i]) < 0.)
-		    data1(k,state[i]) = 0.;
-		}
-	    }
-	  FLOWMARK(&zero);
+//       for (i=0; i<neqns; i++)
+// 	{
+// 	  FLOWMARK("loop4a");
+// 	  if (linflag)
+// 	    {
+// 	      for (k = base; k < bound; k++)
+// 		data1(k,state[i]) += rhs[i][k];
+// 	    }
+// 	  else			/* !linflag */
+// 	    {
+// 	      for (k = base; k < bound; k++)
+// 		{
+// 		  if (!(converged[k]))
+// 		    data1(k,state[i]) += rhs[i][k];
+// 		  if (rhs[i][k] < 0)
+// 		    err[k] -= rhs[i][k];
+// 		  else
+// 		    err[k] += rhs[i][k];
+//     /* stability of nonlinear kinetic schemes sometimes requires this */
+// 		  if (data1(k,state[i]) < 0.)
+// 		    data1(k,state[i]) = 0.;
+// 		}
+// 	    }
+// 	  FLOWMARK(&zero);
 	  
-	}
+// 	}
       
-      if (linflag)
-	break;
+//       if (linflag)
+// 	break;
       
-      FLOWMARK("loop5");
-      for (k = base; k < bound; k++)
-	if (!(converged[k]))
-	  if (err[k] < CONVERGE)
-	    {
-	      converged[k] = 1;
-	      nconverged++;
-	    }
-      FLOWMARK(&zero);
+//       FLOWMARK("loop5");
+//       for (k = base; k < bound; k++)
+// 	if (!(converged[k]))
+// 	  if (err[k] < CONVERGE)
+// 	    {
+// 	      converged[k] = 1;
+// 	      nconverged++;
+// 	    }
+//       FLOWMARK(&zero);
       
-      if (j > MAXSTEPS)
-	{
-	  return EXCEED_ITERS;
-	}
-    }
-  init_coef_list(base,bound);
-  (*vfun)(base,bound);
-  for (i=0; i<neqns; i++)
-    { /*restore Dstate at t+dt*/
-      FLOWMARK("loop6");
-      for (k = base; k < bound; k++)
-	data1(k,deriv[i]) = (data1(k,state[i]) - data1(k,deriv[i]))/delta_t;
-      FLOWMARK(&zero);
-    }
-  return SUCCESS;
-}
+//       if (j > MAXSTEPS)
+// 	{
+// 	  return EXCEED_ITERS;
+// 	}
+//     }
+//   init_coef_list(base,bound);
+//   (*vfun)(base,bound);
+//   for (i=0; i<neqns; i++)
+//     { /*restore Dstate at t+dt*/
+//       FLOWMARK("loop6");
+//       for (k = base; k < bound; k++)
+// 	data1(k,deriv[i]) = (data1(k,state[i]) - data1(k,deriv[i]))/delta_t;
+//       FLOWMARK(&zero);
+//     }
+//   return SUCCESS;
+// }
 
 
 #if LINT
@@ -1034,67 +1024,59 @@ static int check_state(int base, int bound, int n, int* s, double** data)
 
 /* copied from scopmath/ssimplic.c */
 /* parameter list exactly the same as _vector_sparse */
-int _vector__ss_sparse(int base, int bound, int count, double*** jacobp, double*** spacep, void** sparseobj, int neqns,
-					   int* state, int* deriv, double** data, double* t, double delta_t,
-					   int (*vfun)(int, int), int (*fun)(int, int),
-					   double*** rhsp, int linflag) 
-    //  int base;			/* first instances */
-    //  int bound;			/* last instance + 1 */
-    //  int count;			/* total number of instances */
-    //  double *** jacobp;		/* pointer to list of jacobians */
-	// 			/* accessed as *jacobp[element][instance] */
-    //  double *** spacep;		/* pointer to workpace */
-	// 			/* accessed as *spacep[variable][instance] */
-    //  void ** sparseobj;		/* pointer to sparse obj for this mechanism */
-    //  int neqns;			/* number of state variables */
-    //  int state[];		/* index of state vars in data */
-    //  int deriv[];		/* index of derivs in data */
-    //  double * data[];		/* list of intance data, inst is first idx! */
-	// 			/* accessed as data[instance][parameter] */
-    //  double * t;		/* pointer to time */
-    //  double delta_t;		/* delta t */
-    //  int (*vfun)();		/* function to compute jacobian entries */
-    //  int (*fun)();		/* function which calls _vector_getelm */
-    //  double *** rhsp;		/* pointer to list of right hand sides */
-	// 			/* accessed as *rhsp[variable][instance] */
-    //  int linflag;		/* if != 0 then linear */
-{
-  int err, i;
-  double ss_dt;
+// int _vector__ss_sparse(int base, // first instances
+// 					   int bound, // last instance + 1
+// 					   int count, // total number of instances
+// 					   double*** jacobp, // pointer to list of jacobians accessed as *jacobp[element][instance]
+// 					   double*** spacep, // pointer to workpace accessed as *spacep[variable][instance]
+// 					   void** sparseobj, // pointer to sparse obj for this mechanism
+// 					   int neqns, // number of state variables
+// 					   int* state, // index of state vars in data
+// 					   int* deriv, // index of derivs in data
+// 					   double** data, // list of intance data, inst is first idx! accessed as data[instance][parameter]
+// 					   double* t, // pointer to time
+// 					   double delta_t,
+// 					   int (*vfun)(int, int), // function to compute jacobian entries
+// 					   int (*fun)(int, int), // function which calls _vector_getelm
+// 					   double*** rhsp, // pointer to list of right hand sides accessed as *rhsp[variable][instance]
+// 					   int linflag // if != 0 then linear */
+// ) {
+//   int err, i;
+//   double ss_dt;
   
-  ss_dt=1e9;
-  _modl_set_dt(ss_dt);
+//   ss_dt=1e9;
+//   _modl_set_dt(ss_dt);
 	
-  if (linflag)
-    { /*iterate linear solution*/
-      err = _vector_sparse(base, bound, count, jacobp, spacep, sparseobj,
-			   neqns, state, deriv, data, t, ss_dt, vfun,
-			   fun, rhsp, 0);
-    }
-  else
-    {
-#define NIT 7
-      for (i = 0; i < NIT; i++)
-	{
-	  err = _vector_sparse(base, bound, count, jacobp, spacep, sparseobj,
-			       neqns, state, deriv, data, t, ss_dt, vfun,
-			       fun, rhsp, 1);
-	    if (err)
-	      {
-		break;	/* perhaps we should re-start */
-	      }
-	  if (check_state(base, bound, neqns, state, data))
-	    {
-	      err = _vector_sparse(base, bound, count, jacobp, spacep,
-				   sparseobj, neqns, state, deriv, data,
-				   t, ss_dt, vfun, fun, rhsp, 0);
-	      break;
-	    }
-	}		
-      if (i >= NIT)
-	err = 1;
-    }
-  _modl_set_dt(delta_t);
-  return err;
-}
+//   if (linflag)
+//     { /*iterate linear solution*/
+//       err = _vector_sparse(base, bound, count, jacobp, spacep, sparseobj,
+// 			   neqns, state, deriv, data, t, ss_dt, vfun,
+// 			   fun, rhsp, 0);
+//     }
+//   else
+//     {
+// #define NIT 7
+//       for (i = 0; i < NIT; i++)
+// 	{
+// 	  err = _vector_sparse(base, bound, count, jacobp, spacep, sparseobj,
+// 			       neqns, state, deriv, data, t, ss_dt, vfun,
+// 			       fun, rhsp, 1);
+// 	    if (err)
+// 	      {
+// 		break;	/* perhaps we should re-start */
+// 	      }
+// 	  if (check_state(base, bound, neqns, state, data))
+// 	    {
+// 	      err = _vector_sparse(base, bound, count, jacobp, spacep,
+// 				   sparseobj, neqns, state, deriv, data,
+// 				   t, ss_dt, vfun, fun, rhsp, 0);
+// 	      break;
+// 	    }
+// 	}		
+//       if (i >= NIT)
+// 	err = 1;
+//     }
+//   _modl_set_dt(delta_t);
+//   return err;
+// }
 

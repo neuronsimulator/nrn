@@ -1,6 +1,4 @@
 #include <../../nrnconf.h>
-#include <cmath>
-
 /******************************************************************************
  *
  * File: revsawto.c
@@ -9,12 +7,9 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "revsawto.c,v 1.2 1997/08/30 14:32:15 hines Exp" ;
-#endif
-
+#include <cmath>
 /****************************************************************/
 /*								*/
 /*  Abstract: revsawtooth()					*/
@@ -48,9 +43,7 @@ static char RCSid[] =
 /*  Files accessed: none					*/
 /*								*/
 /****************************************************************/
-
-double revsawtooth(int* reset_integ, double* old_value, double t, double period, double amplitude)
-{
+double revsawtooth(int* reset_integ, double* old_value, double t, double period, double amplitude) {
     double value;
 
     value = amplitude * (1.0 - std::modf(t / period, &value));

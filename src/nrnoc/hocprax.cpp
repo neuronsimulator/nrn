@@ -39,18 +39,7 @@ pval = pval_praxis(i, Vector)
 #include <stdlib.h>
 #include "hocdec.h"
 #include "parse.hpp"
-
-extern double praxis(double* t0,
-                     double* machep,
-                     double* h0,
-                     long int nval,
-                     long int* prin,
-                     double* x,
-                     double (*f)(double*, long int),
-                     double* fmin,
-                     char* after_quad);
-extern double praxis_pval(int), *praxis_paxis(int);
-extern int praxis_stop(int);
+#include "scoplib.h"
 
 extern double chkarg(int, double, double);
 extern IvocVect* vector_new2(IvocVect* vec);

@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-
 /******************************************************************************
  *
  * File: sparse.c
@@ -8,15 +7,14 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
-#endif
-
-#include <stdlib.h>
 #include "errcodes.h"
+#include "nrniv_mf.h"
 #include "scoplib.h"
 
+#include <cassert>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 /* Jan 2008 thread safe */
 /* 4/23/93 converted to object so many models can use it */
 /*-----------------------------------------------------------------------------
@@ -53,7 +51,6 @@ static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
  *  Files accessed:  none
  *
 */
-
 #if LINT
 #define IGNORE(arg)	{if (arg);}
 #else
@@ -61,15 +58,6 @@ static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
 #endif
 
 #define Free(arg)	myfree((char *)arg)
-extern void* nrn_pool_create(long count, int itemsize);
-extern void nrn_pool_delete(void* pool);
-extern void nrn_pool_freeall(void* pool);
-extern void* nrn_pool_alloc(void* pool);
-
-#include <stdio.h>
-#include <math.h>
-#include <assert.h>
-#include <stdlib.h>
 
 typedef	int (*FUN)(void*, double*, double*, Datum*, Datum*, NrnThread*);
 

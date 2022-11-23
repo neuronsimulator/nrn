@@ -1,9 +1,4 @@
 #include <../../nrnconf.h>
-#include <newton_struct.h>
-#include <stdlib.h>
-extern void* hoc_Emalloc(size_t);
-extern void hoc_malchk(void);
-#define emalloc(arg) hoc_Emalloc(arg);
 /******************************************************************************
  *
  * File: newton.c
@@ -12,12 +7,12 @@ extern void hoc_malchk(void);
  *   Duke University
  *
  ******************************************************************************/
+#include "errcodes.h"
+#include "newton_struct.h"
+#include "oc_ansi.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "newton.c,v 1.3 1999/01/04 12:46:48 hines Exp" ;
-#endif
-
+#include <cmath>
+#include <cstdlib>
 /*------------------------------------------------------------*/
 /*                                                            */
 /*  NEWTON                                        	      */
@@ -57,11 +52,6 @@ static char RCSid[] =
 /*		      buildjacobian, crout, solve	      */
 /*                                                            */
 /*------------------------------------------------------------*/
-
-#include <stdlib.h>
-#include <math.h>
-#include "errcodes.h"
-
 typedef int (*FUN)(double *, Datum *, Datum *, NrnThread *);
 
 static void nrn_buildjacobian_thread(NewtonSpace* ns,
@@ -248,11 +238,11 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns,
 }
 
 NewtonSpace* nrn_cons_newtonspace(int n) {
-    NewtonSpace* ns = (NewtonSpace*)emalloc(sizeof(NewtonSpace));
+    NewtonSpace* ns = (NewtonSpace*)hoc_Emalloc(sizeof(NewtonSpace));
     ns->n = n;
     ns->delta_x = makevector(n);
     ns->jacobian = makematrix(n, n);
-    ns->perm = (int *) emalloc((unsigned) (n * sizeof(int)));
+    ns->perm = (int *)hoc_Emalloc((unsigned) (n * sizeof(int)));
     ns->high_value = makevector(n);
     ns->low_value = makevector(n);
     ns->rowmax = makevector(n);

@@ -843,7 +843,6 @@ double* makevector(int nrows)
 #endif  // 0
 
 int _ninits;
-void _modl_cleanup(void) {}
 
 #if 1
 void _modl_set_dt(double newdt) {

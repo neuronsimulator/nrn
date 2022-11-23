@@ -1,7 +1,4 @@
 #include <../../nrnconf.h>
-#include "scoplib.h"
-#include "newton_struct.h"
-
 /******************************************************************************
  *
  * File: spline.c
@@ -10,12 +7,8 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "spline.c,v 1.1.1.1 1994/10/12 17:22:24 hines Exp" ;
-#endif
-
+#include "newton_struct.h"
+#include "scoplib.h"
 /****************************************************************/
 /*								*/
 /*  Abstract: derivs()						*/
@@ -47,9 +40,7 @@ static char RCSid[] =
 /*  Files accessed: none					*/
 /*								*/
 /****************************************************************/
-
-int derivs(int nbase, double* x, double* y, double* h, double* der)
-{
+int derivs(int nbase, double* x, double* y, double* h, double* der) {
     int i, error;
     double *a, *b, *c, *d;
 
@@ -122,9 +113,7 @@ int derivs(int nbase, double* x, double* y, double* h, double* der)
 /*								*/
 /*  Files accessed: none					*/
 /****************************************************************/
-
-double spline(int nbase, double* x, double* y, double* h, double* der, double x_inter)
-{
+double spline(int nbase, double* x, double* y, double* h, double* der, double x_inter) {
     int i;
     double factor, factor1, y_inter;
 

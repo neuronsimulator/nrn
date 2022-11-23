@@ -7,17 +7,12 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#ifndef LINT
-static char RCSid[] =
-    "deflate.c,v 1.2 1999/01/04 12:46:44 hines Exp" ;
-#endif
-
-#include <stdio.h>
-#include <math.h>
 #include "errcodes.h"
-#include "scoplib.h"
 #include "newton_struct.h"
+#include "scoplib.h"
+
+#include <cmath>
+#include <cstdio>
 
 #define CONTINUE 0
 
@@ -56,9 +51,7 @@ static char RCSid[] =
  *  Functions called: makevector, freevector
  *
  *--------------------------------------------------------------------------*/
-
-int deflate(double degree, double* pcoeff, double* root)
-{
+int deflate(double degree, double* pcoeff, double* root) {
     int n, ndeg, iter, i, status = CONTINUE;
     double *qcoeff, r = 0.01, slope, remainder, rnew;
 

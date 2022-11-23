@@ -7,12 +7,11 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "errcodes.h"
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "tridiag.c,v 1.2 1999/01/04 12:46:53 hines Exp" ;
-#endif
-
+#include <cmath>
+#include <cstdlib>
 /****************************************************************/
 /*								*/
 /*  Abstract: tridiag()						*/
@@ -44,13 +43,7 @@ static char RCSid[] =
 /*  Files accessed: none					*/
 /*								*/
 /****************************************************************/
-
-#include <stdlib.h>
-#include <math.h>
-#include "errcodes.h"
-
-int tridiag(int n, double* a, double *b, double* c, double* d, double* soln)
-{
+int tridiag(int n, double* a, double *b, double* c, double* d, double* soln) {
     int k, nn;
     double denom;
 

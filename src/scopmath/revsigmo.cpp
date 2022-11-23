@@ -1,6 +1,4 @@
 #include <../../nrnconf.h>
-#include <cmath>
-
 /******************************************************************************
  *
  * File: revsigmo.c
@@ -9,12 +7,9 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "revsigmo.c,v 1.2 1997/08/30 14:32:15 hines Exp" ;
-#endif
-
+#include <cmath>
 /****************************************************************/
 /*								*/
 /*  Abstract: revsigmoid					*/
@@ -48,12 +43,7 @@ static char RCSid[] =
 /*  Files accessed: none					*/
 /*								*/
 /****************************************************************/
-
-double revsigmoid(double x, double max, double K, double n)
-{
-    double value, temp;
-
-    temp = std::pow(K, n);
-    value = (max * temp) / (temp + std::pow(x, n));
-    return (value);
+double revsigmoid(double x, double max, double K, double n) {
+    double const temp = std::pow(K, n);
+    return (max * temp) / (temp + std::pow(x, n));
 }

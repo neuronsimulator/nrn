@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include <cmath>
 /******************************************************************************
  *
  * File: harmonic.c
@@ -8,11 +7,9 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "scoplib.h"
 
-#ifndef LINT
-static char RCSid[] =
-    "harmonic.c,v 1.1.1.1 1994/10/12 17:22:21 hines Exp" ;
-#endif
+#include <cmath>
 
 /****************************************************************/
 /*								*/
@@ -45,13 +42,7 @@ static char RCSid[] =
 /*  Files accessed: none					*/
 /*								*/
 /****************************************************************/
-
 #define TWO_PI 6.2831853
-
-double harmonic(double t, double period, double amplitude, double offset)
-{
-    double value;
-
-    value = amplitude * std::sin(TWO_PI / period * (t + offset));
-    return (value);
+double harmonic(double t, double period, double amplitude, double offset) {
+    return amplitude * std::sin(TWO_PI / period * (t + offset));
 }
