@@ -410,7 +410,6 @@ set(SCOPMATH_FILES_LIST
     poisson.cpp
     praxis.cpp
     pulse.cpp
-    quad.cpp
     ramp.cpp
     revhyper.cpp
     revsawto.cpp
