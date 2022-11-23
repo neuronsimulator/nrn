@@ -57,9 +57,9 @@
 /*  Files accesses: none                                        */
 /*                                                              */
 /****************************************************************/
-int runge(int _ninits, int n, int* y, int* d, double* p, double *t, double h, int(*dy)(), double **work) {
-#define d_(arg)  p[d[arg]]
-#define y_(arg)  p[y[arg]]
+int runge(int _ninits, int n, int* y, int* d, double** p, double* t, double h, int(*dy)(), double** work) {
+#define d_(arg)  *p[d[arg]]
+#define y_(arg)  *p[y[arg]]
     int i;
     double temp;
 
@@ -69,8 +69,7 @@ int runge(int _ninits, int n, int* y, int* d, double* p, double *t, double h, in
     /* Get derivatives at current time point */
     dy();
 
-    for (i = 0; i < n; i++)
-    {
+    for (i = 0; i < n; i++) {
 	/* Store values of state variables at current time */
 
 	(*work)[i] = y_(i);
@@ -86,7 +85,6 @@ int runge(int _ninits, int n, int* y, int* d, double* p, double *t, double h, in
     }
 
     /* Get derivatives at extrapolated values of variables at t + h/2 */
-
     *t += h / 2.0;
     dy();
 
@@ -103,7 +101,6 @@ int runge(int _ninits, int n, int* y, int* d, double* p, double *t, double h, in
     }
 
     /* Get derivatives at new extrapolated values of variables at t + h/2 */
-
     dy();
 
     for (i = 0; i < n; i++)
