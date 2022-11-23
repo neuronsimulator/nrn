@@ -422,7 +422,6 @@ set(SCOPMATH_FILES_LIST
     sigmoid.cpp
     simeq.cpp
     sparse.cpp
-    vsparse.cpp
     spline.cpp
     squarewa.cpp
     ssimplic.cpp
