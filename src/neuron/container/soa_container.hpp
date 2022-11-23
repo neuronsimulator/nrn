@@ -512,7 +512,7 @@ struct soa {
      * @brief Get a non-owning identifier to the offset-th entry.
      */
     [[nodiscard]] non_owning_identifier<Storage> at(std::size_t offset) {
-        return {static_cast<Storage*>(this), m_indices.at(offset)};
+        return {static_cast<Storage*>(this), m_indices[offset]};
     }
 
     /**
@@ -538,7 +538,7 @@ struct soa {
     [[nodiscard]] typename Tag::type& get(std::size_t offset) {
         static_assert(has_tag_v<Tag>);
         static_assert(!detail::has_num_instances_v<Tag>);
-        return std::get<tag_index_v<Tag>>(m_data).at(offset);
+        return std::get<tag_index_v<Tag>>(m_data)[offset];
     }
 
     /**
@@ -548,7 +548,7 @@ struct soa {
     [[nodiscard]] typename Tag::type const& get(std::size_t offset) const {
         static_assert(has_tag_v<Tag>);
         static_assert(!detail::has_num_instances_v<Tag>);
-        return std::get<tag_index_v<Tag>>(m_data).at(offset);
+        return std::get<tag_index_v<Tag>>(m_data)[offset];
     }
 
     /**
