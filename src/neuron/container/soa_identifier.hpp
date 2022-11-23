@@ -59,10 +59,20 @@ struct non_owning_identifier_without_container {
 
     /**
      * @brief Did the identifier use to refer to a valid entry?
-     *
      */
     [[nodiscard]] bool was_once_valid() const {
         return m_ptr && *m_ptr == detail::invalid_row;
+    }
+
+    /**
+     * @brief Has the identifier always been null.
+     *
+     * has_always_been_null() --> "null"
+     * !has_always_been_null && was_once_valid --> "died"
+     * !has_always_been_null && !was_once_valid --> "row=X"
+     */
+    [[nodiscard]] bool has_always_been_null() const {
+        return !m_ptr;
     }
 
     friend std::ostream& operator<<(std::ostream& os,
