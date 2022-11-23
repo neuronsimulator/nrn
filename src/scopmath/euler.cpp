@@ -53,16 +53,13 @@
 /*  Files accessed: none                                        */
 /*                                                              */
 /****************************************************************/
-int euler(int _ninits, int neqn, int* var, int* der, double* p, double *t, double dt, int(*func)(), double** work) {
-#define der_(arg)  p[der[arg]]
-#define var_(arg)  p[var[arg]]
+int euler(int _ninits, int neqn, int* var, int* der, double** p, double* t, double dt, int(*func)(), double** work) {
     /* Calculate the derivatives */
     func();
 
     /* Update dependent variables */
     for (int i = 0; i < neqn; i++) {
-	    var_(i) += dt * (der_(i));
+	    *p[var[i]] += dt * (*p[der[i]]);
     }
-
     return (SUCCESS);
 }
