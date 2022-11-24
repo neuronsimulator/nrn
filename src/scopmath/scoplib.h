@@ -157,17 +157,23 @@ int _cvode_sparse_thread(void**,
                                 NrnThread*,
                                 Memb_list*,
                                 size_t);
-int derivimplicit(int, int, int*, int*, double** /* not used */, double*, double, int (*)(), double**);
-int derivimplicit_thread(int,
+inline int derivimplicit(int, int, int*, int*, double**, double*, double, int (*fun)(), double**) {
+    fun();
+    return 0;
+}
+inline int derivimplicit_thread(int,
                                 int*,
                                 int*,
-                                double** /* not used */,
-                                newton_fptr_t,
-                                Datum*,
-                                Datum*,
-                                NrnThread*,
-                                Memb_list*,
-                                size_t);
+                                double**,
+                                newton_fptr_t fun,
+                                Datum* ppvar,
+                                Datum* thread,
+                                NrnThread* nt,
+                                Memb_list* ml,
+                                std::size_t iml) {
+    fun(ml, iml, ppvar, thread, nt);
+    return 0;
+}
 double* _getelm(int, int);
 struct SparseObj;
 void _nrn_destroy_sparseobj_thread(SparseObj*);
