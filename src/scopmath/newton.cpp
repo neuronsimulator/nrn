@@ -150,75 +150,63 @@ int newton(int n, int *index, int (*pfunc)(), double *value, Memb_list *ml,
   auto const x = [ml, iml](std::size_t var) -> double & {
     return ml->data(iml, var);
   };
-  int i, count = 0, error, *perm;
-  double **jacobian, *delta_x, change = 1.0, max_dev, temp;
-
-  /*
-   * Create arrays for Jacobian, variable increments, function values, and
-   * permutation vector
-   */
-
-  delta_x = makevector(n);
-  jacobian = makematrix(n, n);
-  perm = (int *)malloc((unsigned)(n * sizeof(int)));
-
-  /* Iteration loop */
-
+  // Create arrays for Jacobian, variable increments, function values, and permutation vector.
+  double* const delta_x{makevector(n)};
+  double** const jacobian{makematrix(n, n)};
+  int* const perm{static_cast<int*>(malloc((unsigned)(n * sizeof(int))))};
+  // Iteration loop.
+  int count{}, error{};
+  double change{1.0};
   while (count++ < MAXITERS) {
     if (change > MAXCHANGE) {
-      /*
-       * Recalculate Jacobian matrix if solution has changed by more
-       * than MAXCHANGE
-       */
-
+      // Recalculate Jacobian matrix if solution has changed by more than MAXCHANGE.
       buildjacobian(n, index, pfunc, value, jacobian, ml, iml);
-      for (i = 0; i < n; i++)
-        value[i] = -value[i]; /* Required correction to
-                               * function values */
-
-      if ((error = crout(n, jacobian, perm)) != SUCCESS)
+      for (int i = 0; i < n; ++i) {
+        // Required correction to function values.
+        value[i] = -value[i];
+      }
+      if ((error = crout(n, jacobian, perm)) != SUCCESS) {
         break;
+      }
     }
-    solve(n, jacobian, value, perm, delta_x, (int *)0);
+    solve(n, jacobian, value, perm, delta_x, nullptr);
 
-    /* Update solution vector and compute norms of delta_x and value */
-
+    // Update solution vector and compute norms of delta_x and value.
     change = 0.0;
     if (index) {
-      for (i = 0; i < n; i++) {
-        if (fabs(x(index[i])) > ZERO &&
-            (temp = fabs(delta_x[i] / x(index[i]))) > change)
+      for (int i = 0; i < n; ++i) {
+        if (double temp; std::abs(x(index[i])) > ZERO &&
+            (temp = std::abs(delta_x[i] / x(index[i]))) > change)
           change = temp;
         x(index[i]) += delta_x[i];
       }
     } else {
-      for (i = 0; i < n; i++) {
-        if (fabs(x(i)) > ZERO && (temp = fabs(delta_x[i] / x(i))) > change)
+      for (int i = 0; i < n; ++i) {
+        if (double temp; std::abs(x(i)) > ZERO && (temp = std::abs(delta_x[i] / x(i))) > change)
           change = temp;
         x(i) += delta_x[i];
       }
     }
-    (*pfunc)(); /* Evaluate function values with new solution */
-    max_dev = 0.0;
-    for (i = 0; i < n; i++) {
+    // Evaluate function values with new solution.
+    pfunc();
+    double max_dev{};
+    for (int i = 0; i < n; ++i) {
       value[i] = -value[i]; /* Required correction to function
                              * values */
-      if ((temp = fabs(value[i])) > max_dev)
+      if (double temp; (temp = std::abs(value[i])) > max_dev)
         max_dev = temp;
     }
-
-    /* Check for convergence or maximum iterations */
-
-    if (change <= CONVERGE && max_dev <= ZERO)
+    // Check for convergence or maximum iterations.
+    if (change <= CONVERGE && max_dev <= ZERO) {
       break;
+    }
     if (count == MAXITERS) {
       error = EXCEED_ITERS;
       break;
     }
-  } /* end of while loop */
-
-  free((char *)perm);
+  }
+  free(perm);
   freevector(delta_x);
   freematrix(jacobian);
-  return (error);
+  return error;
 }
