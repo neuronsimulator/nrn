@@ -39,7 +39,8 @@ static std::string vec_of_ptrs(std::string const& name, int numeqn, int listnum,
     if (name == "derivimplicit" || (thread && name == "euler")) {
         return "nullptr /* not needed for " + name + (thread ? "_thread" : "") + " */";
     } else {
-        return "_ml->vector_of_pointers_for_scopmath(_iml, " + std::to_string(numeqn) + ", _slist" + std::to_string(listnum) + ", _dlist" + std::to_string(listnum) + ").data()";
+        return "_ml->vector_of_pointers_for_scopmath(_iml, " + std::to_string(numeqn) + ", _slist" +
+               std::to_string(listnum) + ", _dlist" + std::to_string(listnum) + ").data()";
     }
 }
 
@@ -168,17 +169,18 @@ void solv_diffeq(Item* qsol,
     }
     replacstr(qsol, buf);
     if (method->subtype & DERF) { /* derivimplicit */
-        Sprintf(buf,
-                "%s %s%s_thread(%d, _slist%d, _dlist%d, %s, %s, _ppvar, _thread, _nt, _ml, _iml);\n%s",
-                deriv1_advance,
-                ssprefix,
-                method->name,
-                numeqn,
-                listnum,
-                listnum,
-                vec_of_ptrs(method->name, numeqn, listnum, true).c_str(),
-                fun->name,
-                deriv2_advance);
+        Sprintf(
+            buf,
+            "%s %s%s_thread(%d, _slist%d, _dlist%d, %s, %s, _ppvar, _thread, _nt, _ml, _iml);\n%s",
+            deriv1_advance,
+            ssprefix,
+            method->name,
+            numeqn,
+            listnum,
+            listnum,
+            vec_of_ptrs(method->name, numeqn, listnum, true).c_str(),
+            fun->name,
+            deriv2_advance);
         vectorize_substitute(qsol, buf);
     } else { /* kinetic */
         if (vectorize) {
