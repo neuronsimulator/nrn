@@ -48,7 +48,8 @@
 /*  Functions called: makevector(), freevector()		*/
 /*                                                              */
 /*--------------------------------------------------------------*/
-int crout_impl(int n, double** a, int* perm, double* rowmax) {
+namespace neuron::detail {
+int crout(int n, double** a, int* perm, double* rowmax) {
     int i, j, k, r, pivot, irow, save_i=0, krow;
     double sum, equil_1, equil_2;
 
@@ -136,12 +137,12 @@ int crout_impl(int n, double** a, int* perm, double* rowmax) {
     }
     return (SUCCESS);
 }
-
-int crout(int n, double** a, int* perm) {
-	double* const rowmax{makevector(n)};
-	auto const code = crout_impl(n, a, perm, rowmax);
-	freevector(rowmax);
-	return code;
+} // namespace neuron::detail
+int crout(int n, double **a, int *perm) {
+  double *const rowmax{makevector(n)};
+  auto const code = neuron::detail::crout(n, a, perm, rowmax);
+  freevector(rowmax);
+  return code;
 }
 /*--------------------------------------------------------------*/
 /*                                                              */

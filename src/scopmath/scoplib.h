@@ -71,16 +71,19 @@ int crank(int n,
 double romberg(double a, double b, int (*func)());
 double legendre(double a, double b, int (*func)());
 
+namespace neuron::detail {
+int crout(int n, double **a, int *perm, double *rowmax);
+int newton(int n, int *index, int (*pfunc)(), double *value, Memb_list *ml,
+           std::size_t iml, int *perm, double *delta_x, double **jacobian,
+           double *tmp1, double *tmp2);
+} // namespace neuron::detail
+
 /* Solution of simultaneous algebraic equations */
 int simeq(int n, double** coef, double** soln, int* index);
 int invert(int n, double** matrix);
 int crout(int n, double** a, int* perm);
-int crout_impl(int n, double** a, int* perm, double* rowmax);
 int solve(int n, double** a, double* b, int* perm, double* p, int* y);
 int tridiag(int n, double* a, double* b, double* c, double* d, double* soln);
-int newton_impl(int n, int *index, int (*pfunc)(), double *value, Memb_list *ml,
-                std::size_t iml, int *perm, double *delta_x, double **jacobian,
-                double *tmp1, double *tmp2);
 template <int n>
 int newton(int *index, int (*pfunc)(), double *value, Memb_list *ml,
            std::size_t iml) {
@@ -93,7 +96,7 @@ int newton(int *index, int (*pfunc)(), double *value, Memb_list *ml,
   for (auto i = 0; i < n; ++i) {
     jacobian[i] = jacobian_storage[i].data();
   }
-  return newton_impl(n, index, pfunc, value, ml, iml, perm.data(), delta_x.data(),
+  return neuron::detail::newton(n, index, pfunc, value, ml, iml, perm.data(), delta_x.data(),
                      jacobian.data(), tmp1.data(), tmp2.data());
 }
 int buildjacobian(int n, int *index, int (*pfunc)(), double *value,

@@ -151,9 +151,10 @@ int buildjacobian(int n, int *index, int (*pfunc)(), double *value,
 /*  Functions buildjacobian, crout, solve	                    */
 /*                                                            */
 /*------------------------------------------------------------*/
-int newton_impl(int n, int *index, int (*pfunc)(), double *value, Memb_list *ml,
-                std::size_t iml, int *perm, double *delta_x, double **jacobian,
-                double *tmp1, double *tmp2) {
+namespace neuron::detail {
+int newton(int n, int *index, int (*pfunc)(), double *value, Memb_list *ml,
+           std::size_t iml, int *perm, double *delta_x, double **jacobian,
+           double *tmp1, double *tmp2) {
   auto const x = [ml, iml](std::size_t var) -> double & {
     return ml->data(iml, var);
   };
@@ -169,7 +170,7 @@ int newton_impl(int n, int *index, int (*pfunc)(), double *value, Memb_list *ml,
         // Required correction to function values.
         value[i] = -value[i];
       }
-      if ((error = crout_impl(n, jacobian, perm, tmp1)) != SUCCESS) {
+      if ((error = neuron::detail::crout(n, jacobian, perm, tmp1)) != SUCCESS) {
         break;
       }
     }
@@ -212,3 +213,4 @@ int newton_impl(int n, int *index, int (*pfunc)(), double *value, Memb_list *ml,
   }
   return error;
 }
+} // namespace neuron::detail
