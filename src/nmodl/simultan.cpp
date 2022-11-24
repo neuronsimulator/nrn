@@ -8,17 +8,24 @@ static List* eqnq;
 
 int nonlin_common(Item*);
 
+std::pair<std::string, std::string> fudge(std::string const& name, int numeqn, int listnum) {
+    if (name == "newton") {
+        return {"", ", _ml, _iml"};
+    } else {
+        return {", _ml->vector_of_pointers_for_scopmath(_iml, " + std::to_string(numeqn) +
+                    ", _slist" + std::to_string(listnum) + ").data()",
+                ""};
+    }
+}
+
 void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum) {
     // examples of method->name: newton
     // note that the non-type template parameter used to be the first argument; if more tests are
     // added so that method->name != "newton" then those methods may need to be modified as newton
     // was
     Sprintf(buf,
-            "%s<%d>(_slist%d, _ml->vector_of_pointers_for_scopmath(_iml, %d, _slist%d).data(), "
-            "%s_wrapper_returning_int, _dlist%d);\n",
+            "%s<%d>(_slist%d, %s_wrapper_returning_int, _dlist%d);\n",
             method->name,
-            numeqn,
-            listnum,
             numeqn,
             listnum,
             fun->name,
