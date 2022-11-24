@@ -205,12 +205,9 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
             numlist);
     qret = insertstr(q3, buf);
     Sprintf(buf,
-            "error = nrn_newton_thread(_newtonspace%d, %d, _slist%d, "
-            "_ml->vector_of_pointers_for_scopmath(_iml, %d, _slist%d).data(), %s, _dlist%d, "
-            "_ppvar, _thread, _nt, _ml, _iml);\n",
+            "error = nrn_newton_thread(_newtonspace%d, %d, _slist%d, %s, "
+            "_dlist%d, _ppvar, _thread, _nt, _ml, _iml);\n",
             numlist - 1,
-            counts,
-            numlist,
             counts,
             numlist,
             SYM(q2)->name,
