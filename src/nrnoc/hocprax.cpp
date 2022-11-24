@@ -39,18 +39,7 @@ pval = pval_praxis(i, Vector)
 #include <stdlib.h>
 #include "hocdec.h"
 #include "parse.hpp"
-
-extern "C" double praxis(double* t0,
-                         double* machep,
-                         double* h0,
-                         long int nval,
-                         long int* prin,
-                         double* x,
-                         double (*f)(double*, long int),
-                         double* fmin,
-                         char* after_quad);
-extern "C" double praxis_pval(int), *praxis_paxis(int);
-extern "C" int praxis_stop(int);
+#include "scoplib.h"
 
 extern double chkarg(int, double, double);
 extern IvocVect* vector_new2(IvocVect* vec);
@@ -221,7 +210,7 @@ void fit_praxis(void) {
     hoc_retpushx(err);
 }
 
-extern "C" void hoc_after_prax_quad(char* s) {
+void hoc_after_prax_quad(char* s) {
     efun(minarg, nvar);
     hoc_obj_run(s, hoc_thisobject);
 }

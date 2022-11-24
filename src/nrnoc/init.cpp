@@ -843,17 +843,16 @@ double* makevector(int nrows)
 #endif  // 0
 
 int _ninits;
-extern "C" void _modl_cleanup(void) {}
 
 #if 1
-extern "C" void _modl_set_dt(double newdt) {
+void _modl_set_dt(double newdt) {
     dt = newdt;
     nrn_threads->_dt = newdt;
 }
-extern "C" void _modl_set_dt_thread(double newdt, NrnThread* nt) {
+void _modl_set_dt_thread(double newdt, NrnThread* nt) {
     nt->_dt = newdt;
 }
-extern "C" double _modl_get_dt_thread(NrnThread* nt) {
+double _modl_get_dt_thread(NrnThread* nt) {
     return nt->_dt;
 }
 #endif  // 1

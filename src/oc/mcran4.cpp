@@ -62,11 +62,6 @@ double mcell_ran4(uint32_t* high, double* x, unsigned int n, double range) {
     return x[0];
 }
 
-// Allow mcell_ran4 to be called from C code in praxis.c
-extern "C" double mcell_ran4_legacy(uint32_t* idx1, double* x, unsigned int n, double range) {
-    return mcell_ran4(idx1, x, n, range);
-}
-
 double mcell_ran4a(uint32_t* high) {
     return nrnRan4dbl(high, lowindex);
 }

@@ -682,7 +682,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     throw std::runtime_error("hoc_execerror");
 }
 
-extern "C" void hoc_execerror(const char* s, const char* t) /* recover from run-time error */
+void hoc_execerror(const char* s, const char* t) /* recover from run-time error */
 {
     hoc_execerror_mes(s, t, hoc_execerror_messages);
 }
