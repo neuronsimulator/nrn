@@ -6504,10 +6504,11 @@ void VecRecordDt::frecord_init(TQItem* q) {
 }
 
 void VecRecordDt::deliver(double tt, NetCvode* nc) {
-    if (pd_ == &t) {
+    auto* const ptr = static_cast<double*>(pd_);
+    if (ptr == &t) {
         y_->push_back(tt);
     } else {
-        y_->push_back(*pd_);
+        y_->push_back(*ptr);
     }
     e_->send(tt + dt_, nc, nrn_threads);
 }
