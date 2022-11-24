@@ -147,19 +147,73 @@ double scop_erf(double z);
 
 using sparse_fptr = int (*)(void*, double*, Datum*, Datum*, NrnThread*, Memb_list*, size_t);
 int _cvode_sparse(void**, int, int*, double**, int (*)(), double**);
-int _cvode_sparse_thread(void** v, int n, int* x, double** p, sparse_fptr fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml);
+int _cvode_sparse_thread(void**,
+                                int,
+                                int*,
+                                double**,
+                                sparse_fptr,
+                                Datum*,
+                                Datum*,
+                                NrnThread*,
+                                Memb_list*,
+                                size_t);
 int derivimplicit(int, int, int*, int*, double** /* not used */, double*, double, int (*)(), double**);
-int derivimplicit_thread(int, int*, int*, double** /* not used */, newton_fptr_t, Datum*, Datum*, NrnThread*, Memb_list*, size_t);
+int derivimplicit_thread(int,
+                                int*,
+                                int*,
+                                double** /* not used */,
+                                newton_fptr_t,
+                                Datum*,
+                                Datum*,
+                                NrnThread*,
+                                Memb_list*,
+                                size_t);
 double* _getelm(int, int);
 struct SparseObj;
 void _nrn_destroy_sparseobj_thread(SparseObj*);
 double* _nrn_thread_getelm(SparseObj*, int, int);
 int sparse(void**, int, int*, int*, double**, double*, double, int (*)(), double**, int);
-int sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double dt, sparse_fptr fun, int linflag, Datum* ppvar, Datum* thread, NrnThread *nt, Memb_list* ml, size_t iml);
+int sparse_thread(void**,
+                         int,
+                         int*,
+                         int*,
+                         double**,
+                         double*,
+                         double,
+                         sparse_fptr,
+                         int,
+                         Datum*,
+                         Datum*,
+                         NrnThread*,
+                         Memb_list*,
+                         size_t);
 int _ss_derivimplicit(int, int, int*, int*, double**, double*, double, int (*)(), double**);
-int _ss_derivimplicit_thread(int n, int* slist, int* dlist, double** p, newton_fptr_t fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml);
+int _ss_derivimplicit_thread(int,
+                                    int*,
+                                    int*,
+                                    double**,
+                                    newton_fptr_t,
+                                    Datum*,
+                                    Datum*,
+                                    NrnThread*,
+                                    Memb_list*,
+                                    size_t);
+
 int _ss_sparse(void**, int, int*, int*, double**, double*, double, int (*)(), double**, int);
-int _ss_sparse_thread(void** v, int n, int* s, int* d, double** p, double* t, double dt, sparse_fptr fun, int linflag, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml);
+int _ss_sparse_thread(void**,
+                             int,
+                             int*,
+                             int*,
+                             double**,
+                             double*,
+                             double,
+                             sparse_fptr,
+                             int,
+                             Datum*,
+                             Datum*,
+                             NrnThread*,
+                             Memb_list*,
+                             size_t);
 
 void hoc_after_prax_quad(char*);
 double* praxis_paxis(int);
