@@ -75,10 +75,27 @@ double legendre(double a, double b, int (*func)());
 int simeq(int n, double** coef, double** soln, int* index);
 int invert(int n, double** matrix);
 int crout(int n, double** a, int* perm);
+int crout_impl(int n, double** a, int* perm, double* rowmax);
 int solve(int n, double** a, double* b, int* perm, double* p, int* y);
 int tridiag(int n, double* a, double* b, double* c, double* d, double* soln);
-int newton(int n, int *index, int (*pfunc)(), double *value, Memb_list *ml,
-           std::size_t iml);
+int newton_impl(int n, int *index, int (*pfunc)(), double *value, Memb_list *ml,
+                std::size_t iml, int *perm, double *delta_x, double **jacobian,
+                double *tmp1, double *tmp2);
+template <int n>
+int newton(int *index, int (*pfunc)(), double *value, Memb_list *ml,
+           std::size_t iml) {
+  // Create arrays for Jacobian, variable increments, function values, and
+  // permutation vector.
+  std::array<int, n> perm;
+  std::array<double, n> delta_x, tmp1, tmp2;
+  std::array<std::array<double, n>, n> jacobian_storage;
+  std::array<double *, n> jacobian;
+  for (auto i = 0; i < n; ++i) {
+    jacobian[i] = jacobian_storage[i].data();
+  }
+  return newton_impl(n, index, pfunc, value, ml, iml, perm.data(), delta_x.data(),
+                     jacobian.data(), tmp1.data(), tmp2.data());
+}
 int buildjacobian(int n, int *index, int (*pfunc)(), double *value,
                   double **jacobian, Memb_list *ml, std::size_t iml);
 

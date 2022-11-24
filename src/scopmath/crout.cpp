@@ -48,13 +48,11 @@
 /*  Functions called: makevector(), freevector()		*/
 /*                                                              */
 /*--------------------------------------------------------------*/
-int crout(int n, double** a, int* perm) {
+int crout_impl(int n, double** a, int* perm, double* rowmax) {
     int i, j, k, r, pivot, irow, save_i=0, krow;
-    double sum, *rowmax, equil_1, equil_2;
+    double sum, equil_1, equil_2;
 
     /* Initialize permutation and rowmax vectors */
-
-    rowmax = makevector(n);
     for (i = 0; i < n; i++)
     {
 	perm[i] = i;
@@ -136,10 +134,15 @@ int crout(int n, double** a, int* perm) {
 	    a[pivot][j] = (a[pivot][j] - sum) / a[pivot][r];
 	}
     }
-    freevector(rowmax);
     return (SUCCESS);
 }
 
+int crout(int n, double** a, int* perm) {
+	double* const rowmax{makevector(n)};
+	auto const code = crout_impl(n, a, perm, rowmax);
+	freevector(rowmax);
+	return code;
+}
 /*--------------------------------------------------------------*/
 /*                                                              */
 /*  SOLVE()                                          		*/

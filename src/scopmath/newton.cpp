@@ -14,6 +14,56 @@
 
 #include <cmath>
 #include <cstdlib>
+
+static void buildjacobian_impl(int n, int *index, int (*pfunc)(), double *value,
+                               double **jacobian, Memb_list *ml,
+                               std::size_t iml, double *high_value,
+                               double *low_value) {
+  auto const x = [ml, iml](std::size_t var) -> double & {
+    return ml->data(iml, var);
+  };
+  // Compute partial derivatives by central finite differences
+  if (index) {
+    for (int j = 0; j < n; ++j) {
+      double const increment{std::max(std::abs(0.02 * x(index[j])), STEP)};
+      x(index[j]) += increment;
+      pfunc();
+      for (int i = 0; i < n; ++i) {
+        high_value[i] = value[i];
+      }
+      x(index[j]) -= 2.0 * increment;
+      pfunc();
+      for (int i = 0; i < n; ++i) {
+        low_value[i] = value[i];
+        // Insert partials into jth column of Jacobian matrix.
+        jacobian[i][j] = (high_value[i] - low_value[i]) / (2.0 * increment);
+      }
+      // Restore original variable and function values.
+      x(index[j]) += increment;
+      pfunc();
+    }
+  } else {
+    for (int j = 0; j < n; ++j) {
+      double const increment{std::max(std::abs(0.02 * x(j)), STEP)};
+      x(j) += increment;
+      pfunc();
+      for (int i = 0; i < n; ++i) {
+        high_value[i] = value[i];
+      }
+      x(j) -= 2.0 * increment;
+      pfunc();
+      for (int i = 0; i < n; ++i) {
+        low_value[i] = value[i];
+        // Insert partials into jth column of Jacobian matrix.
+        jacobian[i][j] = (high_value[i] - low_value[i]) / (2.0 * increment);
+      }
+      // Restore original variable and function values.
+      x(j) += increment;
+      pfunc();
+    }
+  }
+}
+
 /*------------------------------------------------------------*/
 /*                                                            */
 /*  BUILDJACOBIAN                                 	      */
@@ -55,52 +105,10 @@
 /*------------------------------------------------------------*/
 int buildjacobian(int n, int *index, int (*pfunc)(), double *value,
                   double **jacobian, Memb_list *ml, std::size_t iml) {
-  auto const x = [ml, iml](std::size_t var) -> double & {
-    return ml->data(iml, var);
-  };
   double *const high_value{makevector(n)};
   double *const low_value{makevector(n)};
-
-  // Compute partial derivatives by central finite differences
-  if (index) {
-    for (int j = 0; j < n; ++j) {
-      double const increment{std::max(std::abs(0.02 * x(index[j])), STEP)};
-      x(index[j]) += increment;
-      pfunc();
-      for (int i = 0; i < n; ++i) {
-        high_value[i] = value[i];
-      }
-      x(index[j]) -= 2.0 * increment;
-      pfunc();
-      for (int i = 0; i < n; ++i) {
-        low_value[i] = value[i];
-        // Insert partials into jth column of Jacobian matrix.
-        jacobian[i][j] = (high_value[i] - low_value[i]) / (2.0 * increment);
-      }
-      // Restore original variable and function values.
-      x(index[j]) += increment;
-      pfunc();
-    }
-  } else {
-    for (int j = 0; j < n; ++j) {
-      double const increment{std::max(std::abs(0.02 * x(j)), STEP)};
-      x(j) += increment;
-      pfunc();
-      for (int i = 0; i < n; ++i) {
-        high_value[i] = value[i];
-      }
-      x(j) -= 2.0 * increment;
-      pfunc();
-      for (int i = 0; i < n; ++i) {
-        low_value[i] = value[i];
-        // Insert partials into jth column of Jacobian matrix.
-        jacobian[i][j] = (high_value[i] - low_value[i]) / (2.0 * increment);
-      }
-      // Restore original variable and function values.
-      x(j) += increment;
-      pfunc();
-    }
-  }
+  buildjacobian_impl(n, index, pfunc, value, jacobian, ml, iml, high_value,
+                     low_value);
   freevector(high_value);
   freevector(low_value);
   return 0;
@@ -140,32 +148,28 @@ int buildjacobian(int n, int *index, int (*pfunc)(), double *value,
 /*               recent iteration's result in the event of    */
 /*               an error.                                    */
 /*                                                            */
-/*  Functions called: makevector, freevector, makematrix,     */
-/*		      freematrix			      */
-/*		      buildjacobian, crout, solve	      */
+/*  Functions buildjacobian, crout, solve	                    */
 /*                                                            */
 /*------------------------------------------------------------*/
-int newton(int n, int *index, int (*pfunc)(), double *value, Memb_list *ml,
-           std::size_t iml) {
+int newton_impl(int n, int *index, int (*pfunc)(), double *value, Memb_list *ml,
+                std::size_t iml, int *perm, double *delta_x, double **jacobian,
+                double *tmp1, double *tmp2) {
   auto const x = [ml, iml](std::size_t var) -> double & {
     return ml->data(iml, var);
   };
-  // Create arrays for Jacobian, variable increments, function values, and permutation vector.
-  double* const delta_x{makevector(n)};
-  double** const jacobian{makematrix(n, n)};
-  int* const perm{static_cast<int*>(malloc((unsigned)(n * sizeof(int))))};
   // Iteration loop.
   int count{}, error{};
   double change{1.0};
   while (count++ < MAXITERS) {
     if (change > MAXCHANGE) {
-      // Recalculate Jacobian matrix if solution has changed by more than MAXCHANGE.
-      buildjacobian(n, index, pfunc, value, jacobian, ml, iml);
+      // Recalculate Jacobian matrix if solution has changed by more than
+      // MAXCHANGE.
+      buildjacobian_impl(n, index, pfunc, value, jacobian, ml, iml, tmp1, tmp2);
       for (int i = 0; i < n; ++i) {
         // Required correction to function values.
         value[i] = -value[i];
       }
-      if ((error = crout(n, jacobian, perm)) != SUCCESS) {
+      if ((error = crout_impl(n, jacobian, perm, tmp1)) != SUCCESS) {
         break;
       }
     }
@@ -176,13 +180,14 @@ int newton(int n, int *index, int (*pfunc)(), double *value, Memb_list *ml,
     if (index) {
       for (int i = 0; i < n; ++i) {
         if (double temp; std::abs(x(index[i])) > ZERO &&
-            (temp = std::abs(delta_x[i] / x(index[i]))) > change)
+                         (temp = std::abs(delta_x[i] / x(index[i]))) > change)
           change = temp;
         x(index[i]) += delta_x[i];
       }
     } else {
       for (int i = 0; i < n; ++i) {
-        if (double temp; std::abs(x(i)) > ZERO && (temp = std::abs(delta_x[i] / x(i))) > change)
+        if (double temp; std::abs(x(i)) > ZERO &&
+                         (temp = std::abs(delta_x[i] / x(i))) > change)
           change = temp;
         x(i) += delta_x[i];
       }
@@ -205,8 +210,5 @@ int newton(int n, int *index, int (*pfunc)(), double *value, Memb_list *ml,
       break;
     }
   }
-  free(perm);
-  freevector(delta_x);
-  freematrix(jacobian);
   return error;
 }

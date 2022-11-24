@@ -3,27 +3,32 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
+#include <tuple>
+
 extern int numlist;
 static List* eqnq;
 
 int nonlin_common(Item*);
 
-std::pair<std::string, std::string> fudge(std::string const& name, int numeqn, int listnum) {
+std::tuple<std::string, std::string, std::string> fudge(std::string const& name,
+                                                        int numeqn,
+                                                        int listnum) {
     if (name == "newton") {
-        return {"", ", _ml, _iml"};
+        return {"<" + std::to_string(numeqn) + ">(", "", ", _ml, _iml"};
     } else {
-        return {", _ml->vector_of_pointers_for_scopmath(_iml, " + std::to_string(numeqn) +
+        return {"(" + std::to_string(numeqn) + ", ",
+                ", _ml->vector_of_pointers_for_scopmath(_iml, " + std::to_string(numeqn) +
                     ", _slist" + std::to_string(listnum) + ").data()",
                 ""};
     }
 }
 
 void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum) {
-    auto const [third, end] = fudge(method->name, numeqn, listnum);
+    auto const [tmpl, third, end] = fudge(method->name, numeqn, listnum);
     Sprintf(buf,
-            "%s(%d, _slist%d%s, %s_wrapper_returning_int, _dlist%d%s);\n",
+            "%s%s_slist%d%s, %s_wrapper_returning_int, _dlist%d%s);\n",
             method->name,
-            numeqn,
+            tmpl.c_str(),
             listnum,
             third.c_str(),
             fun->name,
@@ -201,7 +206,7 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
     vectorize_substitute(q, buf);
     Insertstr(q3, "if (!_recurse) {\n _recurse = 1;\n");
     Sprintf(buf,
-            "error = newton(%d, _slist%d, %s, _dlist%d, _ml, _iml);\n",
+            "error = newton<%d>(_slist%d, %s, _dlist%d, _ml, _iml);\n",
             counts,
             numlist,
             SYM(q2)->name,
