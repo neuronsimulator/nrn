@@ -96,11 +96,12 @@ if Components.MUSIC:
     variables for cmake.
     """
 
-    def run(cmd, env):
+    def run(cmd, env, err=True):
         result = subprocess.run(
             cmd, shell=True, env=env, capture_output=True, text=True
         )
-        result.check_returncode()
+        if err:
+            result.check_returncode()
         return result
 
     def is_music_installed(env, pr_err=False):
@@ -120,12 +121,12 @@ if Components.MUSIC:
             if name == "":
                 raise FileNotFoundError("no libmusic in {}/lib".format(musicHome))
             # does include exist
-            name = music_home + "/include/music.h"
+            name = music_home + "/include/music.hh"
             if not exists(name):
                 raise FileNotFoundError(name + " does not exist")
-        except:
+        except Exception as e:
             if pr_err:
-                pass
+                print(e)
             music_home = ""
         return music_home
 
@@ -142,10 +143,10 @@ if Components.MUSIC:
                      && make -j install
                   """
             myenv["PATH"] = myenv["PATH"] + ":/nrnwheel/MUSIC"
-            try:
-                run(cmd, myenv)
-            except Exception as e:
-                printerr(e)
+            result = run(cmd, myenv, err=False)
+            if result.returncode:
+                print(result)
+                return ""
         return is_music_installed(myenv, pr_err=True)
 
     music_home = install_music()
