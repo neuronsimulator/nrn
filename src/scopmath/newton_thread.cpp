@@ -107,7 +107,7 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double** x,
 	    *x[i] += delta_x[i];
 	}
  }
-	(*pfunc) (ml, iml, ppvar, thread, nt); /* Evaluate function values with new solution */
+	pfunc(ml, iml, ppvar, thread, nt); /* Evaluate function values with new solution */
 	max_dev = 0.0;
 	for (i = 0; i < n; i++)
 	{
@@ -189,11 +189,11 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns,
     {
 	increment = max(fabs(0.02 * (*x[index[j]])), STEP);
 	*x[index[j]] += increment;
-	(*pfunc) (ml, iml, ppvar, thread, nt);
+	pfunc(ml, iml, ppvar, thread, nt);
 	for (i = 0; i < n; i++)
 	    high_value[i] = value[i];
 	*x[index[j]] -= 2.0 * increment;
-	(*pfunc) (ml, iml, ppvar, thread, nt);
+	pfunc(ml, iml, ppvar, thread, nt);
 	for (i = 0; i < n; i++)
 	{
 	    low_value[i] = value[i];
@@ -206,18 +206,18 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns,
 	/* Restore original variable and function values. */
 
 	*x[index[j]] += increment;
-	(*pfunc) (ml, iml, ppvar, thread, nt);
+	pfunc(ml, iml, ppvar, thread, nt);
     }
  }else{
     for (j = 0; j < n; j++)
     {
 	increment = max(fabs(0.02 * (*x[j])), STEP);
 	*x[j] += increment;
-	(*pfunc) (ml, iml, ppvar, thread, nt);
+	pfunc(ml, iml, ppvar, thread, nt);
 	for (i = 0; i < n; i++)
 	    high_value[i] = value[i];
 	*x[j] -= 2.0 * increment;
-	(*pfunc) (ml, iml, ppvar, thread, nt);
+	pfunc(ml, iml, ppvar, thread, nt);
 	for (i = 0; i < n; i++)
 	{
 	    low_value[i] = value[i];
@@ -230,7 +230,7 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns,
 	/* Restore original variable and function values. */
 
 	*x[j] += increment;
-	(*pfunc) (ml, iml, ppvar, thread, nt);
+	pfunc(ml, iml, ppvar, thread, nt);
     }
  }
 }
