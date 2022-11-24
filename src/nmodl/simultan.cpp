@@ -191,10 +191,7 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
     vectorize_substitute(q, buf);
     Insertstr(q3, "if (!_recurse) {\n _recurse = 1;\n");
     Sprintf(buf,
-            "error = newton(%d, _slist%d, _ml->vector_of_pointers_for_scopmath(_iml, %d, "
-            "_slist%d).data(), %s, _dlist%d);\n",
-            counts,
-            numlist,
+            "error = newton(%d, _slist%d, %s, _dlist%d, _ml, _iml);\n",
             counts,
             numlist,
             SYM(q2)->name,
