@@ -132,6 +132,7 @@ if Components.MUSIC:
     def install_music():
         myenv = os.environ.copy()
         if not is_music_installed(myenv) and os.path.exists("/nrnwheel"):
+            print("Attempt to install MUSIC")
             cmd = r"""curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/heads/switch-to-MPI-C-interface.zip \
                      && unzip MUSIC.zip \
                      && mv MUSIC-switch-to-MPI-C-interface MUSIC \
@@ -140,11 +141,11 @@ if Components.MUSIC:
                      && ./configure --prefix=/nrnwheel/MUSIC --with-python-sys-prefix --disable-anysource \
                      && make -j install
                   """
-            myenv["PATH"].append(":/nrnwheel/MUSIC")
+            myenv["PATH"] = myenv["PATH"] + ":/nrnwheel/MUSIC"
             try:
                 run(cmd, myenv)
-            except:
-                pass
+            except Exception as e:
+                printerr(e)
         return is_music_installed(myenv, pr_err=True)
 
     music_home = install_music()
@@ -437,6 +438,7 @@ def setup_package():
                 "-DNRN_ENABLE_MPI=" + ("ON" if Components.MPI else "OFF"),
                 "-DNRN_ENABLE_MPI_DYNAMIC=" + ("ON" if Components.MPI else "OFF"),
                 "-DNRN_ENABLE_MUSIC=" + ("ON" if Components.MUSIC else "OFF"),
+                "" + (("-DMUSIC_ROOT=" + music_home) if Components.MUSIC else ""),
                 "-DNRN_ENABLE_PYTHON_DYNAMIC=ON",
                 "-DNRN_ENABLE_MODULE_INSTALL=OFF",
                 "-DNRN_ENABLE_REL_RPATH=ON",
