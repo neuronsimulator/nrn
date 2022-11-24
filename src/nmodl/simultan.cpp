@@ -3,20 +3,12 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
+#include <tuple>
+
 extern int numlist;
 static List* eqnq;
 
 int nonlin_common(Item*);
-
-std::pair<std::string, std::string> fudge(std::string const& name, int numeqn, int listnum) {
-    if (name == "newton") {
-        return {"", ", _ml, _iml"};
-    } else {
-        return {", _ml->vector_of_pointers_for_scopmath(_iml, " + std::to_string(numeqn) +
-                    ", _slist" + std::to_string(listnum) + ").data()",
-                ""};
-    }
-}
 
 void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum) {
     // examples of method->name: newton
