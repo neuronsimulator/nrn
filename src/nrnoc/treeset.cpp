@@ -2292,6 +2292,7 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
     neuron::model_sorted_token ret{*neuron::cache::model};
     auto& node_data = neuron::model().node_data();
     auto& tokens = ret.mech_data_tokens;
+    tokens.reserve(neuron::model().mechanism_storage_size());
     if (cache_was_valid) {
         // cache is valid
         assert(node_data.is_sorted());
