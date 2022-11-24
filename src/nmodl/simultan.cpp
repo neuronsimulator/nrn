@@ -8,17 +8,27 @@ static List* eqnq;
 
 int nonlin_common(Item*);
 
+std::pair<std::string, std::string> fudge(std::string const& name, int numeqn, int listnum) {
+    if (name == "newton") {
+        return {"", ", _ml, _iml"};
+    } else {
+        return {", _ml->vector_of_pointers_for_scopmath(_iml, " + std::to_string(numeqn) +
+                    ", _slist" + std::to_string(listnum) + ").data()",
+                ""};
+    }
+}
+
 void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum) {
+    auto const [third, end] = fudge(method->name, numeqn, listnum);
     Sprintf(buf,
-            "%s(%d, _slist%d, _ml->vector_of_pointers_for_scopmath(_iml, %d, _slist%d).data(), "
-            "%s_wrapper_returning_int, _dlist%d);\n",
+            "%s(%d, _slist%d%s, %s_wrapper_returning_int, _dlist%d%s);\n",
             method->name,
             numeqn,
             listnum,
-            numeqn,
-            listnum,
+            third.c_str(),
             fun->name,
-            listnum);
+            listnum,
+            end.c_str());
     replacstr(qsol, buf);
     /* if sens statement appeared in fun then the steadysens call list,
     built during the massagenonlin phase
