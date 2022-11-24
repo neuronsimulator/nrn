@@ -2448,12 +2448,12 @@ void artcell_net_send(Datum* v, double* weight, Point_process* pnt, double td, d
 }
 
 // Deprecated overloads for backwards compatibility
-void artcell_net_send(Datum* v, double* weight, void* pnt, double td, double flag) {
-    artcell_net_send(v, weight, static_cast<Point_process*>(pnt), td, flag);
+void artcell_net_send(void* v, double* weight, Point_process* pnt, double td, double flag) {
+    artcell_net_send(static_cast<Datum*>(v), weight, pnt, td, flag);
 }
 
-void nrn_net_send(Datum* v, double* weight, void* pnt, double td, double flag) {
-    nrn_net_send(v, weight, static_cast<Point_process*>(pnt), td, flag);
+void nrn_net_send(void* v, double* weight, Point_process* pnt, double td, double flag) {
+    nrn_net_send(static_cast<Datum*>(v), weight, pnt, td, flag);
 }
 
 void net_event(Point_process* pnt, double time) {
