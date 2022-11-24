@@ -1,11 +1,10 @@
 #include <../../nrnconf.h>
 #include "errcodes.h"
 #include "scoplib.h"
-#define s_(arg)	p[s[arg]]
 
 extern void _modl_set_dt(double);
 
-static int check_state(int n, int* s, double* p);
+static int check_state(int n, int* s, double** p);
 
 int _ss_sparse(void** v, int n, int* s, int* d, double** p, double* t, double dt, int (*fun)(), double** pcoef, int linflag) {
 	int err, i;
@@ -52,14 +51,11 @@ int _ss_derivimplicit(int _ninits, int n, int* slist, int* dlist, double** p, do
 	return err;
 }
 
-static int check_state(int n, int* s, double* p)
-{
-	int i, flag;
-
-	flag = 1;
-	for (i=0; i<n; i++) {
-		if ( s_(i) < -1e-6) {
-			s_(i) = 0.;
+static int check_state(int n, int* s, double** p) {
+	int flag{1};
+	for (int i = 0; i < n; ++i) {
+		if (*p[s[i]] < -1e-6) {
+			*p[s[i]] = 0.;
 			flag = 0;
 		}
 	}

@@ -14,7 +14,7 @@ int derivimplicit(int _ninits, int n, int* slist, int* dlist, double** p, double
     return 0;
 }
 
-int derivimplicit_thread(int n, int* slist, int* dlist, double** p_fudge, newton_fptr_t fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml) {
+int derivimplicit_thread(int n, int* slist, int* dlist, double** p, newton_fptr_t fun, Datum* ppvar, Datum* thread, NrnThread* nt, Memb_list* ml, size_t iml) {
     fun(ml, iml, ppvar, thread, nt);
     return 0;
 }
