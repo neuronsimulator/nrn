@@ -257,8 +257,7 @@ struct HocParmUnits { /* units for symbol values */
 
 #include "oc_ansi.h"
 
-// Used in sparse.c so needs C linkage.
-extern "C" void* emalloc(size_t n);
+void* emalloc(size_t n);
 void* ecalloc(size_t n, size_t size);
 void* erealloc(void* ptr, size_t n);
 
