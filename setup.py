@@ -130,10 +130,23 @@ if Components.MUSIC:
             music_home = ""
         return music_home
 
+    def install_mpi4py(myenv):
+        installed = True
+        try:
+            import mpi4py
+        except:
+            installed = False
+        if not installed:
+            run(sys.executable + " -m pip install mpi4py", myenv)
+
     def install_music():
         myenv = os.environ.copy()
         if not is_music_installed(myenv) and os.path.exists("/nrnwheel"):
             print("Attempt to install MUSIC")
+            try:
+                install_mpi4py(myenv)
+            except:
+                return ""
             cmd = r"""curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/heads/switch-to-MPI-C-interface.zip \
                      && unzip MUSIC.zip \
                      && mv MUSIC-switch-to-MPI-C-interface MUSIC \
