@@ -108,6 +108,9 @@ if Components.MUSIC:
         # returns home for music or "" if music not in PATH
         music_home = ""
         try:
+            print("is_music_installed")
+            result = run("echo $PATH ; which music ; ls -l /nrnwheel", env, err=False)
+            print(result)
             result = run("which music", env)
             music_home = "/".join(result.stdout.strip().split("/")[:-2])
             from os.path import exists
