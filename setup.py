@@ -109,7 +109,7 @@ if Components.MUSIC:
         music_home = ""
         try:
             print("is_music_installed")
-            result = run("echo $PATH ; which music ; ls -l /nrnwheel", env, err=False)
+            result = run("echo $PATH ; which music", env, err=False)
             print(result)
             result = run("which music", env)
             music_home = "/".join(result.stdout.strip().split("/")[:-2])
@@ -144,21 +144,27 @@ if Components.MUSIC:
 
     def install_music():
         myenv = os.environ.copy()
-        if not is_music_installed(myenv) and os.path.exists("/nrnwheel"):
+        if not is_music_installed(myenv):
             print("Attempt to install MUSIC")
             try:
                 install_mpi4py(myenv)
             except:
+                print("mpi4py not installed")
                 return ""
-            cmd = r"""curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/heads/switch-to-MPI-C-interface.zip \
+            musicinst = os.getcwd() + "/MUSIC/instdir"
+            cmd = (
+                r"""curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/heads/switch-to-MPI-C-interface.zip \
                      && unzip MUSIC.zip \
                      && mv MUSIC-switch-to-MPI-C-interface MUSIC \
                      && cd MUSIC \
                      && ./autogen.sh \
-                     && ./configure --prefix=/nrnwheel/MUSIC --with-python-sys-prefix --disable-anysource \
+                     && ./configure --prefix="""
+                + musicinst
+                + r""" --with-python-sys-prefix --disable-anysource \
                      && make -j install
                   """
-            myenv["PATH"] = myenv["PATH"] + ":/nrnwheel/MUSIC/bin"
+            )
+            myenv["PATH"] = myenv["PATH"] + ":" + musicinst + "/bin"
             result = run(cmd, myenv, err=False)
             if result.returncode:
                 print(result)
