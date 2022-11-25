@@ -25,9 +25,9 @@ static void load_music() {
     using const_char_ptr = const char*;
     // would be nice to figure out path from `which music` but not on
     // every rank if nhost is large. So demand ...
-    const_char_ptr music_path = const_char_ptr{std::getenv("MUSIC_LIB_NRN_PATH")};
+    const_char_ptr music_path = const_char_ptr{std::getenv("NRN_LIBMUSIC_PATH")};
     if (!music_path) {
-        Fprintf(stderr, "No MUSIC_LIB_NRN_PATH environment variable for full path to libmusic\n");
+        Fprintf(stderr, "No NRN_LIBMUSIC_PATH environment variable for full path to libmusic\n");
         exit(1);
     }
     handle = dlopen(music_path, RTLD_NOW | RTLD_GLOBAL);

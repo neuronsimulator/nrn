@@ -36,9 +36,9 @@ except:
 
 result = run("which music")
 musicpath = "/".join(result.stdout.strip().split("/")[:-2])
-# need MUSIC_LIB_NRN_PATH if mpi dynamic
+# need NRN_LIBMUSIC_PATH if mpi dynamic
 if "NRN_ENABLE_MPI_DYNAMIC=ON" in h.nrnversion(6):
-    if os.getenv("MUSIC_LIB_NRN_PATH") is None:
+    if os.getenv("NRN_LIBMUSIC_PATH") is None:
         from os.path import exists
 
         prefix = os.getenv("MUSIC_LIBDIR")
@@ -47,8 +47,8 @@ if "NRN_ENABLE_MPI_DYNAMIC=ON" in h.nrnversion(6):
             name = musicpath + "/lib/libmusic." + suffix
             if exists(name):
                 break
-        my_env["MUSIC_LIB_NRN_PATH"] = name
-    print(my_env["MUSIC_LIB_NRN_PATH"])
+        my_env["NRN_LIBMUSIC_PATH"] = name
+    print(my_env["NRN_LIBMUSIC_PATH"])
 
 out2 = "numprocs=1\nRank 0: Event (0, 0.001175) detected at 0\nRank 0: Event (0, 0.013825) detected at 0\n"
 
