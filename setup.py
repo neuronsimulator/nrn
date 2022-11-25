@@ -155,7 +155,7 @@ if Components.MUSIC:
                      && ./configure --prefix=/nrnwheel/MUSIC --with-python-sys-prefix --disable-anysource \
                      && make -j install
                   """
-            myenv["PATH"] = myenv["PATH"] + ":/nrnwheel/MUSIC"
+            myenv["PATH"] = myenv["PATH"] + ":/nrnwheel/MUSIC/bin"
             result = run(cmd, myenv, err=False)
             if result.returncode:
                 print(result)
