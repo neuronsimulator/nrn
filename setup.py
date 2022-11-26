@@ -96,12 +96,19 @@ if Components.MUSIC:
     variables for cmake.
     """
 
-    def run(cmd, env, err=True):
+    def run(cmd, env, on_err=print):
+        # on_err is print --  on failure prints everything and raises error
+        # on_err is not False -- on failure raises error
+        # on_err is False -- on failure does not raise error and returns result
+
         result = subprocess.run(
             cmd, shell=True, env=env, capture_output=True, text=True
         )
-        if err:
-            result.check_returncode()
+        if result.returncode:
+            if on_err is print:
+                print(result)
+            if on_err is not False:
+                result.check_returncode()
         return result
 
     def is_music_installed(env, pr_err=False):
@@ -109,8 +116,6 @@ if Components.MUSIC:
         music_home = ""
         try:
             print("is_music_installed")
-            result = run("echo $PATH ; which music", env, err=False)
-            print(result)
             result = run("which music", env)
             music_home = "/".join(result.stdout.strip().split("/")[:-2])
             from os.path import exists
@@ -165,9 +170,9 @@ if Components.MUSIC:
                   """
             )
             myenv["PATH"] = myenv["PATH"] + ":" + musicinst + "/bin"
-            result = run(cmd, myenv, err=False)
-            if result.returncode:
-                print(result)
+            try:
+                result = run(cmd, myenv)
+            except:
                 return ""
         return is_music_installed(myenv, pr_err=True)
 
