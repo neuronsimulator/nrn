@@ -5315,14 +5315,6 @@ if (d->obj_) {
     delete this;
 }
 
-void PreSyn::update_ptr(double* pd) {
-#if DISCRETE_EVENT_OBSERVER
-    nrn_notify_pointer_disconnect(this);
-    nrn_notify_when_double_freed(pd, this);
-#endif
-    thvar_ = pd;
-}
-
 void ConditionEvent::check(NrnThread* nt, double tt, double teps) {
     if (value() > 0.0) {
         if (flag_ == false) {
