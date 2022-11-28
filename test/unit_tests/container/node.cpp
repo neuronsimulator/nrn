@@ -1,6 +1,4 @@
 #include "neuron/container/node.hpp"
-// Need to include this explicitly because we call methods that need external
-// dependency headers
 #include "neuron/container/soa_container.hpp"
 #include "section.h"
 #include "../model_test_utils.hpp"
