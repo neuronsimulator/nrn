@@ -2250,7 +2250,10 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
         }
         hoc_pushx(double(ix));
         hoc_push_ndim(1);
-        nrn_rangeconst(r->pymech_->pyseg_->pysec_->sec_, r->sym_, &x, 0);
+        nrn_rangeconst(r->pymech_->pyseg_->pysec_->sec_,
+                       r->sym_,
+                       neuron::container::data_handle<double>{neuron::container::do_not_search, &x},
+                       0);
     } else {
         assert(ix == 0);  // d += ix;
         if (!PyArg_Parse(value, "d", d)) {
