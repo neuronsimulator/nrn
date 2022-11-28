@@ -127,7 +127,8 @@ void GLineRecord::fill_pd() {
     }
     pd_and_vec_.resize(0);
     saw_t_ = false;
-    pd_ = gl_->pval_;
+    // TODO avoid the conversion
+    pd_ = neuron::container::data_handle<double>{gl_->pval_};
     if (pd_) {
         return;
     }
@@ -143,7 +144,7 @@ void GLineRecord::fill_pd() {
 }
 
 GLineRecord::GLineRecord(GraphLine* gl)
-    : PlayRecord(NULL) {
+    : PlayRecord({}) {
     // shouldnt be necessary but just in case
     //	printf("GLineRecord %p name=%s\n", this, gl->name());
     gl_ = gl;
@@ -153,7 +154,7 @@ GLineRecord::GLineRecord(GraphLine* gl)
 }
 
 GVectorRecord::GVectorRecord(GraphVector* gv)
-    : PlayRecord(nullptr)
+    : PlayRecord({})
     , gv_{gv} {}
 
 void GraphVector::record_install() {
