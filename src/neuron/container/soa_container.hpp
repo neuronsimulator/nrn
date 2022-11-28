@@ -190,9 +190,8 @@ struct soa {
     /**
      * @brief Construct with default-constructed tag type instances.
      */
-    soa() {
-        initialise_data();
-    }
+    soa()
+        : soa(Tags{}...) {}
 
     /**
      * @brief Construct with specific tag instances.
@@ -202,7 +201,21 @@ struct soa {
      */
     soa(Tags&&... tag_instances)
         : m_tags{std::forward<Tags>(tag_instances)...} {
-        initialise_data();
+        // For all tags that have a runtime-specified number of copies, get the
+        // vector<vector<T>> and resize it to hold num_instances() vector<T>
+        (
+            [](auto const& tag, auto& data) {
+                using Tag = std::decay_t<decltype(tag)>;
+                if constexpr (detail::has_num_instances_v<Tag>) {
+                    // std::vector<std::vector<T>>
+                    using Data = std::decay_t<decltype(data)>;
+                    using Vector = typename Data::value_type;
+                    assert(data.empty());
+                    static_assert(std::is_same_v<typename Vector::value_type, typename Tag::type>);
+                    data.resize(tag.num_instances());
+                }
+            }(get_tag<Tags>(), std::get<tag_index_v<Tags>>(m_data)),
+            ...);
     }
 
     /**
@@ -285,22 +298,6 @@ struct soa {
                   "All tag types should be unique");
     template <typename Tag>
     static constexpr std::size_t tag_index_v = detail::index_of_type_v<Tag, Tags...>;
-
-    template <typename Tag>
-    void initialise_data_helper(Tag const& tag) {
-        if constexpr (detail::has_num_instances_v<Tag>) {
-            auto& vector_of_vectors = std::get<tag_index_v<Tag>>(m_data);
-            assert(vector_of_vectors.empty());
-            vector_of_vectors.resize(tag.num_instances());
-        }
-    }
-
-    // for tags with a runtime-specified number of copies, set that number
-    void initialise_data() {
-        // For all tags that have a runtime-specified number of copies, get the
-        // vector<vector<T>> and resize it to hold num_instances() vector<T>
-        (initialise_data_helper(get_tag<Tags>()), ...);
-    }
 
     template <typename Tag, typename This, typename Callable>
     static void for_all_tag_vectors(This& this_ref, Callable const& callable) {

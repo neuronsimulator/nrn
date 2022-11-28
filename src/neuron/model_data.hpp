@@ -34,7 +34,8 @@ struct Model {
         }
     }
 
-    /** @brief Create a structure to hold the data of a new Mechanism.
+    /**
+     * @brief Create a structure to hold the data of a new Mechanism.
      */
     template <typename... Args>
     container::Mechanism::storage& add_mechanism(int type, Args&&... args) {
@@ -105,28 +106,21 @@ struct Model {
         return {};
     }
 
+    /**
+     * @brief Find some metadata about the given container.
+     *
+     * The argument type will typically be std::vector<T>*, and the return value will only be
+     * non-null if that vector is part of the global model data structure.
+     */
     [[nodiscard]] std::optional<container::utils::storage_info> find_container_info(
-        void const* cont) const {
-        if (auto maybe_info = m_node_data.find_container_info(cont); maybe_info) {
-            return {std::move(maybe_info)};
-        }
-        for (auto& mech_data: m_mech_data) {
-            if (!mech_data) {
-                continue;
-            }
-            if (auto maybe_info = mech_data->find_container_info(cont); maybe_info) {
-                return {std::move(maybe_info)};
-            }
-        }
-        return {std::nullopt};
-    }
+        void const* cont) const;
 
   private:
     void set_unsorted_callback(container::Mechanism::storage& mech_data);
 
     /** @brief One structure for all Nodes.
      */
-    container::Node::storage m_node_data{};
+    container::Node::storage m_node_data;
 
     /** @brief Storage for mechanism-specific data.
      *
