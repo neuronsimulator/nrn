@@ -57,12 +57,27 @@ struct generic_data_handle {
      */
     generic_data_handle(std::nullptr_t) {}
 
-    /** @brief Construct a generic data handle that holds a small literal value.
+    /**
+     * @brief Construct a generic data handle that holds a small literal value.
+     *
+     * This is explicit to avoid things like operator<<(ostream&, generic_data_handle const&) being
+     * considered when printing values like size_t.
      */
     template <typename T, std::enable_if_t<can_be_stored_literally_v<T>, int> = 0>
-    generic_data_handle(T value)
+    explicit generic_data_handle(T value)
         : m_type{&typeid(T)} {
         std::memcpy(&m_container, &value, sizeof(T));
+    }
+
+    /**
+     * @brief Assign a small literal value to a generic data handle.
+     *
+     * This is important when generic_data_handle is used as the Datum type for "pointer" variables
+     * in MOD files.
+     */
+    template <typename T, std::enable_if_t<can_be_stored_literally_v<T>, int> = 0>
+    generic_data_handle& operator=(T value) {
+        return *this = generic_data_handle{value};
     }
 
     /**
