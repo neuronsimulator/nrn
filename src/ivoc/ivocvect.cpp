@@ -979,18 +979,29 @@ static Object** v_plot(void* v) {
             // passed a vector
             Vect* vp2 = vector_arg(2);
             n = std::min(n, vp2->size());
-            for (i = 0; i < n; ++i)
-                gv->add(vp2->elem(i), y + i);
+            for (i = 0; i < n; ++i) {
+                // TODO avoid the conversion?
+                gv->add(vp2->elem(i),
+                        neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                               y + i});
+            }
         } else {
             // passed xinterval
             double interval = *getarg(2);
-            for (i = 0; i < n; ++i)
-                gv->add(i * interval, y + i);
+            for (i = 0; i < n; ++i) {
+                // TODO avoid the conversion?
+                gv->add(i * interval,
+                        neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                               y + i});
+            }
         }
     } else {
         // passed line attributes or nothing
         for (i = 0; i < n; ++i)
-            gv->add(i, y + i);
+            // TODO avoid the conversion?
+            gv->add(i,
+                    neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                           y + i});
     }
 
     if (vp->label_) {

@@ -5800,7 +5800,7 @@ void nrnthread_get_trajectory_requests(int tid,
 #if HAVE_IV
                 } else if (pr->type() == GLineRecordType) {
                     n_pr++;
-                    if (pr->pd_ == NULL) {
+                    if (!pr->pd_) {
                         GLineRecord* glr = (GLineRecord*) pr;
                         assert(glr->gl_->expr_);
                         glr->fill_pd();
@@ -5918,10 +5918,11 @@ void nrnthread_get_trajectory_requests(int tid,
                                 if (bsize && v == NULL) {
                                     v = (*it).second = new IvocVect(bsize);
                                 }
+                                // TODO avoid the conversion?
                                 err = trajec_buffered(nt,
                                                       bsize,
                                                       v,
-                                                      pd,
+                                                      neuron::container::data_handle<double>{pd},
                                                       n_pr,
                                                       pr,
                                                       vpr,

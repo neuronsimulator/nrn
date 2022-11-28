@@ -554,7 +554,7 @@ void RangeVarPlot::fill_pointers() {
         }
         int noexist = 0;  // don't plot single points that don't exist
         bool does_exist;
-        double* pval = NULL;
+        neuron::container::data_handle<double> pval{};
         for (long i = 0; i < xcnt; ++i) {
             Section* sec = (*sec_list_)[i].sec;
             hoc_ac_ = (*sec_list_)[i].x;
@@ -567,12 +567,13 @@ void RangeVarPlot::fill_pointers() {
             }
             if (does_exist) {
                 if (rexp_) {
-                    pval = rexp_->pval(int(i));
+                    // TODO avoid conversion
+                    pval = neuron::container::data_handle<double>{rexp_->pval(int(i))};
                 } else {
-                    pval = hoc_val_pointer(buf);
+                    pval = hoc_val_handle(buf);
                 }
                 if (noexist > 1) {
-                    add((*sec_list_)[i - 1].len + origin_, 0);
+                    add((*sec_list_)[i - 1].len + origin_, {});
                     add((*sec_list_)[i - 1].len + origin_, pval);
                 }
                 if (i == 1 && noexist == 1) {
@@ -583,7 +584,7 @@ void RangeVarPlot::fill_pointers() {
             } else {
                 if (noexist == 1) {
                     add((*sec_list_)[i - 1].len + origin_, pval);
-                    add((*sec_list_)[i - 1].len + origin_, 0);
+                    add((*sec_list_)[i - 1].len + origin_, {});
                 }
                 if (i == xcnt - 1 && noexist == 0) {
                     add((*sec_list_)[i].len + origin_, pval);
