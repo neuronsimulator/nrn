@@ -635,7 +635,8 @@ static double gr_vector(void* v) {
         gv->brush(g->brush());
     }
     for (int i = 0; i < n; ++i) {
-        gv->add(x[i], y + i);
+        // TODO avoid the conversion?
+        gv->add(x[i], neuron::container::data_handle<double>{y + i});
     }
     //	GLabel* glab = g->label(gv->name());
     //	((GraphItem*)g->component(g->glyph_index(glab)))->save(false);
@@ -2492,7 +2493,8 @@ void Graph::choose_sym() {
             gv->brush(brush());
             int n = sc_->selected_vector_count();
             for (int i = 0; i < n; ++i) {
-                gv->add(double(i), pd + i);
+                // avoid the conversion here?
+                gv->add(double(i), neuron::container::data_handle<double>{pd + i});
             }
             GLabel* glab = label(gv->name());
             ((GraphItem*) component(glyph_index(glab)))->save(false);
@@ -3387,7 +3389,7 @@ void GraphVector::add(float x, neuron::container::data_handle<double> py) {
 
 bool GraphVector::trivial() const {
     for (int i = 0; i < dp_->count(); ++i) {
-        if (dp_->p(i) != &zero) {
+        if (static_cast<double const*>(dp_->p(i)) != &zero) {
             return false;
         }
     }
