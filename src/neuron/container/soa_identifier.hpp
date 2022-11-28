@@ -169,7 +169,7 @@ struct owning_identifier {
      * @brief Create a non-null owning identifier by creating a new entry.
      */
     owning_identifier(Storage& storage)
-        : owning_identifier() {
+        : owning_identifier{} {
         // The default constructor has finished, so *this is a valid object.
         auto tmp = storage.acquire_owning_identifier();
         swap(*this, tmp);
