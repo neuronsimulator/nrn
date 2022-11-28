@@ -911,7 +911,7 @@ PyObject* nrn_hocobj_handle(neuron::container::data_handle<double> d) {
 }
 
 extern "C" PyObject* nrn_hocobj_ptr(double* pd) {
-    return nrn_hocobj_handle(pd);
+    return nrn_hocobj_handle(neuron::container::data_handle<double>{pd});
 }
 
 int nrn_is_hocobj_ptr(PyObject* po, neuron::container::data_handle<double>& pd) {

@@ -1365,7 +1365,11 @@ void hoc_object_asgn() {
             }
             *pd = d;
         } else {
-            nrn_rangeconst(sec, sym, &d, op);
+            nrn_rangeconst(sec,
+                           sym,
+                           neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                  &d},
+                           op);
         }
         hoc_pushx(d);
         return;

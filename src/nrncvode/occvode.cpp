@@ -291,7 +291,7 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
         // pv_raw_ptrs may have been modified, propagate the modifications back
         for (auto i = 0ul; i < pv_raw_ptrs.size(); ++i) {
             if (pv_raw_ptrs[i] != pv_raw_ptrs_prev[i]) {
-                z.pv_[i] = pv_raw_ptrs[i];
+                z.pv_[i] = neuron::container::data_handle<double>{pv_raw_ptrs[i]};
             }
         }
         nrn_nonvint_block_ode_abstol(z.nvsize_, atv, id);
@@ -435,7 +435,7 @@ void Cvode::daspk_init_eqn() {
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
                     k = i + ie + 1;
-                    z.pv_[k] = nde->v + ie;
+                    z.pv_[k] = neuron::container::data_handle<double>{nde->v + ie};
                     z.pvdot_[k] = nde->_rhs[ie];
                 }
             }
@@ -475,7 +475,7 @@ void Cvode::daspk_init_eqn() {
     // pv_raw_ptrs may have been modified, propagate the modifications back
     for (auto i = 0ul; i < pv_raw_ptrs.size(); ++i) {
         if (pv_raw_ptrs[i] != pv_raw_ptrs_prev[i]) {
-            z.pv_[i] = pv_raw_ptrs[i];
+            z.pv_[i] = neuron::container::data_handle<double>{pv_raw_ptrs[i]};
         }
     }
     structure_change_ = false;

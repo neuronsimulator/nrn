@@ -100,7 +100,7 @@ class NetCvode {
                    Object* ppobj = nil,
                    int reinit = 0,
                    Object* pyact = nil);
-    NetCon* install_deliver(double* psrc,
+    NetCon* install_deliver(neuron::container::data_handle<double> psrc,
                             Section* ssrc,
                             Object* osrc,
                             Object* target,

@@ -112,7 +112,7 @@ static double get_size(void* v) {
 static double pset(void* v) {
     OcPtrVector* opv = (OcPtrVector*) v;
     int i = int(chkarg(1, 0., opv->size()));
-    opv->pset(i, hoc_pgetarg(2));
+    opv->pset(i, hoc_get_arg<neuron::container::data_handle<double>>(2));
     return opv->getval(i);
 }
 

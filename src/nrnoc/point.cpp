@@ -240,7 +240,7 @@ neuron::container::data_handle<double> point_process_pointer(Point_process* pnt,
         if (nrn_inpython_ == 1) { /* python will handle the error */
             hoc_warning("point process not located in a section", nullptr);
             nrn_inpython_ = 2;
-            return nullptr;
+            return {};
         } else {
             hoc_execerror("point process not located in a section", nullptr);
         }
@@ -250,7 +250,8 @@ neuron::container::data_handle<double> point_process_pointer(Point_process* pnt,
         if (cppp_semaphore) {
             ++cppp_semaphore;
             cppp_datum = &datum;  // we will store a value in `datum` later
-            return &ppp_dummy;
+            return neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                          &ppp_dummy};
         } else {
             // In case _p_somevar is being used as an opaque void* in a VERBATIM
             // block then then the Datum will hold a literal void* and will not
@@ -272,7 +273,8 @@ neuron::container::data_handle<double> point_process_pointer(Point_process* pnt,
         }
     } else {
         if (pnt->prop->ob) {
-            return pnt->prop->ob->u.dataspace[sym->u.rng.index].pval + index;
+            return neuron::container::data_handle<double>{
+                pnt->prop->ob->u.dataspace[sym->u.rng.index].pval + index};
         } else {
             return pnt->prop->param_handle(sym->u.rng.index + index);
         }

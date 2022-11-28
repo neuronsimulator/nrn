@@ -84,12 +84,16 @@ extern void section_order(void);
 extern Section* nrn_sec_pop(void);
 extern Node* node_ptr(Section* sec, double x, double* parea);
 extern double* nrn_vext_pd(Symbol* s, int indx, Node* nd);
-extern double* nrnpy_dprop(Symbol* s, int indx, Section* sec, short inode, int* err);
+neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
+                                                   int indx,
+                                                   Section* sec,
+                                                   short inode,
+                                                   int* err);
 extern void nrn_disconnect(Section*);
 extern void mech_uninsert1(Section* sec, Symbol* s);
 extern Object* nrn_sec2cell(Section*);
 extern int nrn_sec2cell_equals(Section*, Object*);
-extern double* dprop(Symbol* s, int indx, Section* sec, short inode);
+neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, short inode);
 extern void nrn_initcode();
 extern int segment_limits(double*);
 extern void second_order_cur(NrnThread*);

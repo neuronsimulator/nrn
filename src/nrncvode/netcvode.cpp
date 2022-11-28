@@ -840,14 +840,14 @@ static void* cons(Object* o) {
     // source, target, threshold, delay, magnitude
     Object *osrc = nil, *otar;
     Section* srcsec = nil;
-    double* psrc = nil;
+    neuron::container::data_handle<double> psrc{};
     if (hoc_is_object_arg(1)) {
         osrc = *hoc_objgetarg(1);
         if (osrc && !is_point_process(osrc)) {
             hoc_execerror("if arg 1 is an object it must be a point process or NULLObject", 0);
         }
     } else {
-        psrc = hoc_pgetarg(1);
+        psrc = hoc_get_arg<neuron::container::data_handle<double>>(1);
         srcsec = chk_access();
     }
     otar = *hoc_objgetarg(2);
@@ -4652,7 +4652,7 @@ void NetCvode::structure_change() {
     }
 }
 
-NetCon* NetCvode::install_deliver(double* dsrc,
+NetCon* NetCvode::install_deliver(neuron::container::data_handle<double> dsrc,
                                   Section* ssrc,
                                   Object* osrc,
                                   Object* target,
@@ -4660,7 +4660,7 @@ NetCon* NetCvode::install_deliver(double* dsrc,
                                   double delay,
                                   double magnitude) {
     PreSyn* ps = nil;
-    double* psrc = nil;
+    neuron::container::data_handle<double> psrc{};
     if (ssrc) {
         consist_sec_pd("NetCon", ssrc, dsrc);
     }
@@ -4679,7 +4679,7 @@ NetCon* NetCvode::install_deliver(double* dsrc,
             assert(pp && pp->prop);
             if (!pnt_receive[pp->prop->_type]) {  // only if no NET_RECEIVE block
                 Sprintf(buf, "%s.x", hoc_object_name(osrc));
-                psrc = hoc_val_pointer(buf);
+                psrc = hoc_val_handle(buf);
             }
         }
     } else {
@@ -4712,7 +4712,7 @@ NetCon* NetCvode::install_deliver(double* dsrc,
         }
     } else if (target) {  // no source so use the special presyn
         if (!unused_presyn) {
-            unused_presyn = new PreSyn(nil, nil, nil);
+            unused_presyn = new PreSyn({}, nullptr, nullptr);
             unused_presyn->hi_ = hoc_l_insertvoid(psl_, unused_presyn);
         }
         ps = unused_presyn;
@@ -5310,7 +5310,7 @@ if (d->obj_) {
         idvec_ = nil;
     }
     net_cvode_instance->presyn_disconnect(this);
-    thvar_ = nil;
+    thvar_ = {};
     osrc_ = nil;
     delete this;
 }
@@ -5529,7 +5529,8 @@ void StateTransitionEvent::transition(int src,
 
 void STETransition::activate() {
     if (var1_is_time_) {
-        var1_ = &stec_->thread()->_t;
+        var1_ = neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                       &stec_->thread()->_t};
     }
     if (stec_->qthresh_) {  // is it on the queue
         net_cvode_instance->remove_event(stec_->qthresh_, stec_->thread()->id);
@@ -5741,7 +5742,7 @@ static int trajec_buffered(NrnThread& nt,
         pvars[i_trajec] = static_cast<double*>(pd);
     }
     vpr[i_pr] = pr;
-    if (pd == &nt._t) {
+    if (static_cast<double const*>(pd) == &nt._t) {
         types[i_trajec] = 0;
         indices[i_trajec] = 0;
     } else {
@@ -5859,7 +5860,8 @@ void nrnthread_get_trajectory_requests(int tid,
                         err = trajec_buffered(nt,
                                               bsize,
                                               v,
-                                              &nt._t,
+                                              neuron::container::data_handle<double>{
+                                                  neuron::container::do_not_search, &nt._t},
                                               n_pr++,
                                               pr,
                                               vpr,
@@ -6514,7 +6516,7 @@ void VecRecordDt::deliver(double tt, NetCvode* nc) {
 }
 
 void NetCvode::vecrecord_add() {
-    double* pd = hoc_pgetarg(1);
+    auto const pd = hoc_get_arg<neuron::container::data_handle<double>>(1);
     consist_sec_pd("Cvode.record", chk_access(), pd);
     IvocVect* y = vector_arg(2);
     IvocVect* t = vector_arg(3);

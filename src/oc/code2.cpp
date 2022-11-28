@@ -702,29 +702,31 @@ Symbol* hoc_parse_stmt(const char* str, Symlist** psymlist) {
     return sp;
 }
 
+/**
+ * @brief Executing hoc_pointer(&var) will put the address of the variable in this location.
+ */
+neuron::container::data_handle<double> hoc_varhandle;
 
-extern double* hoc_varpointer;
+void hoc_pointer() {
+    hoc_varhandle = hoc_get_arg<neuron::container::data_handle<double>>(1);
+    hoc_ret();
+    hoc_pushx(1.);
+}
 
-void hoc_pointer(void) {
-    hoc_varpointer = hoc_pgetarg(1);
-    ret();
-    pushx(1.);
+neuron::container::data_handle<double> hoc_val_handle(std::string_view s) {
+    constexpr std::string_view prefix{"{hoc_pointer_(&"}, suffix{")}\n"};
+    std::string code;
+    code.reserve(prefix.size() + suffix.size() + s.size());
+    code.append(prefix);
+    code.append(s);
+    code.append(")}\n");
+    hoc_varhandle = {};
+    hoc_oc(code.c_str());
+    return hoc_varhandle;
 }
 
 double* hoc_val_pointer(const char* s) {
-    char buf[BUFSIZ];
-    hoc_varpointer = 0;
-    if (strlen(s) > BUFSIZ - 20) {
-        HocStr* buf;
-        buf = hocstr_create(strlen(s) + 20);
-        std::snprintf(buf->buf, buf->size + 1, "{hoc_pointer_(&%s)}\n", s);
-        hoc_oc(buf->buf);
-        hocstr_delete(buf);
-    } else {
-        Sprintf(buf, "{hoc_pointer_(&%s)}\n", s);
-        hoc_oc(buf);
-    }
-    return hoc_varpointer;
+    return static_cast<double*>(hoc_val_handle(s));
 }
 
 void hoc_name_declared(void) {
