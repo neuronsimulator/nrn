@@ -274,6 +274,7 @@ neuron::container::data_handle<T> hoc_pop_handle() {
 [[noreturn]] void hoc_execerror_mes(const char*, const char*, int);
 void hoc_warning(const char*, const char*);
 double* hoc_val_pointer(const char*);
+neuron::container::data_handle<double> hoc_val_handle(std::string_view);
 Symbol* hoc_table_lookup(const char*, Symlist*);
 Symbol* hoc_install(const char*, int, double, Symlist**);
 extern Objectdata* hoc_objectdata;
