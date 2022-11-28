@@ -941,7 +941,7 @@ double* ECS_Grid_node::set_rxd_currents(int current_count,
     induced_currents_index = current_indices;
     for (i = 0; i < current_count; i++) {
         for (j = 0; j < num_all_currents; j++) {
-            if (static_cast<double*>(ptrs[i]->u.px_) == current_list[j].source) {
+            if (ptrs[i]->u.px_ == current_list[j].source) {
                 volume_fraction = (VARIABLE_ECS_VOLUME == VOLUME_FRACTION
                                        ? alpha[current_list[j].destination]
                                        : alpha[0]);

@@ -483,7 +483,10 @@ static std::unordered_map<Node*, double*> mk_svibuf() {
         if (nd->extnode && it == non_vsrc_update_info_.end()) {
             auto const search = ndvi2pd.find(nd);
             nrn_assert(search != ndvi2pd.end());
-            poutsrc_[i] = search->second;
+            // olupton 2022-11-28: looks like search->second is always a pointer to a private vector
+            // in source_vi_buf_, so do_not_search makes sense.
+            poutsrc_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                 search->second};
         }
     }
     nrnthread_vi_compute_ = thread_vi_compute;
@@ -570,7 +573,10 @@ static void mk_ttd() {
             } else if (nd->extnode) {
                 auto search = ndvi2pd.find(nd);
                 nrn_assert(search != ndvi2pd.end());
-                ttd.sv[j] = search->second;
+                // olupton 2022-11-28: looks like search->second is always a pointer to a private
+                // vector in source_vi_buf_, so do_not_search makes sense.
+                ttd.sv[j] = neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                   search->second};
             } else {
                 ttd.sv[j] = nd->v_handle();
             }
@@ -578,7 +584,10 @@ static void mk_ttd() {
             auto search = sid2insrc_.find(sid);
             if (search != sid2insrc_.end()) {
                 err = false;
-                ttd.sv[j] = insrc_buf_ + search->second;
+                // olupton 2022-11-28: insrc_buf_ is not part of the global model data structure, so
+                // do_not_search is appropriate
+                ttd.sv[j] = neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                   insrc_buf_ + search->second};
             }
         }
         if (err == true) {
