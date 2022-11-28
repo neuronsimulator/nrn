@@ -222,7 +222,8 @@ int NrnProperty::prop_index(const Symbol* s) const {
 
 neuron::container::data_handle<double> NrnProperty::prop_pval(const Symbol* s, int index) const {
     if (npi_->p_->ob) {
-        return npi_->p_->ob->u.dataspace[prop_index(s)].pval + index;
+        return neuron::container::data_handle<double>{
+            npi_->p_->ob->u.dataspace[prop_index(s)].pval + index};
     } else {
         if (s->subtype == NRNPOINTER) {
             return static_cast<neuron::container::data_handle<double>>(
