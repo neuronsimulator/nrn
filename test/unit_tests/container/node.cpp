@@ -30,7 +30,7 @@ data_handle<T> transform(data_handle<T> handle, Transform type) {
     if (type == Transform::None) {
         return handle;
     } else if (type == Transform::ViaRawPointer) {
-        return {static_cast<T*>(handle)};
+        return data_handle<T>{static_cast<T*>(handle)};
     } else {
         assert(type == Transform::ViaGenericDataHandle);
         return static_cast<data_handle<T>>(generic_data_handle{handle});

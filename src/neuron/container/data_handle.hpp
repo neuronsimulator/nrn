@@ -54,7 +54,7 @@ struct data_handle {
 
     /** @brief Construct a data_handle from a plain pointer.
      */
-    data_handle(T* raw_ptr) {
+    explicit data_handle(T* raw_ptr) {
         // Null pointer -> null handle.
         if (!raw_ptr) {
             return;
@@ -78,6 +78,12 @@ struct data_handle {
         }
     }
 
+    /**
+     * @brief Create a data_handle<T> wrapping the raw T*
+     *
+     * Unlike the constructor taking T*, this does *not* attempt to promote raw pointers to modern
+     * data_handles.
+     */
     data_handle(do_not_search_t, T* raw_ptr)
         : m_container_or_raw_ptr{raw_ptr} {}
 
