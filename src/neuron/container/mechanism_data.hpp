@@ -7,13 +7,8 @@ namespace neuron::container::Mechanism {
  */
 struct storage: soa<storage, field::FloatingPoint> {
     using base_type = soa<storage, field::FloatingPoint>;
-    storage(short mech_type, std::string name, std::size_t num_floating_point_fields)
-        : base_type{field::FloatingPoint{num_floating_point_fields}}
-        , m_mech_name{std::move(name)}
-        , m_mech_type{mech_type} {
-        // std::cout << "mechanism " << m_mech_name << " has " << num_floating_point_fields
-        //           << " floating point fields and type " << m_mech_type << '\n';
-    }
+    // Defined in .cpp to avoid instantiating base_type constructors too often.
+    storage(short mech_type, std::string name, std::size_t num_floating_point_fields);
     [[nodiscard]] auto name() const {
         return m_mech_name;
     }
