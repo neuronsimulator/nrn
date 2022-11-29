@@ -7,4 +7,4 @@ declarePtrList, declareRubberCallback, declareSelectionCallback, declareTable, d
 implementActionCallback, implementAdjustStepper, implementArrowGlyph, implementFieldEditorCallback,
 implementFieldSEditorCallback, implementFileChooserCallback, implementIOCallback, implementList,
 implementPool, implementPtrList, implementRubberCallback, implementSelectionCallback, implementTable,
-implementTable2]
+implementTable2, nrn_pragma_acc, nrn_pragma_omp]
