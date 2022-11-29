@@ -66,8 +66,12 @@ run_mpi_test () {
   if [[ "$has_coreneuron" == "true" ]] && [[ $mpi_name == *"MPICH"* || $mpi_name == *"Intel MPI"* ]]; then
       site_package_dir=`$python_exe -c 'import os, neuron; print(os.path.dirname(neuron.__file__))'`
       corenrn_mpi_lib=`ls $site_package_dir/.data/lib/libcorenrnmpi_mpich*`
-      $mpi_launcher -n 1 nrniv-core --datpath external/coreneuron/tests/integration/ring --mpi-lib=$corenrn_mpi_lib
-      diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
+
+      HOC_LIBRARY_PATH=${PWD}/test/ringtest nrniv test/ringtest/ring.hoc
+      mv out.dat out.nrn.dat
+      $mpi_launcher -n 1 nrniv-core --datpath . --mpi-lib=$corenrn_mpi_lib
+      diff -w out.dat out.nrn.dat
+      rm -rf *.dat
   fi
 
   # rest of the tests we need development environment. For GPU wheel
@@ -124,8 +128,11 @@ run_serial_test () {
 
     # Test 3: run coreneuron binary shipped inside wheel
     if [[ "$has_coreneuron" == "true" ]]; then
-        nrniv-core --datpath external/coreneuron/tests/integration/ring
-        diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
+        HOC_LIBRARY_PATH=${PWD}/test/ringtest nrniv test/ringtest/ring.hoc
+        mv out.dat out.nrn.dat
+        nrniv-core --datpath .
+        diff -w out.dat out.nrn.dat
+        rm -rf *.dat
     fi
 
     # rest of the tests we need development environment
