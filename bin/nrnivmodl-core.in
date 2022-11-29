@@ -1,0 +1,165 @@
+#!/bin/bash
+
+# =============================================================================
+# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+
+set -e
+
+# TODO : mod2c_core can be linked with (HPE-)MPI library
+# and running that under slurm allocation result into
+# runtime error. For now, unset PMI_RANK variable
+# which is sufficint to avoid issue with HPE-MPI+SLURM.
+unset PMI_RANK
+
+# name of the script
+APP_NAME="$(basename "$0")"
+
+# directory and parent directory of this script
+PARENT_DIR="$(dirname "$BASH_SOURCE")/.."
+
+# prefer perl exe set by neuron wrappers in case of wheel
+PERL_EXE="${CORENRN_PERLEXE:-@PERL_EXECUTABLE@}"
+# in case of mac installer, wrapper is not used and hence
+# check if binary exist. otherwise, just rely on perl being
+# in default $PATH
+if [ ! -f "${PERL_EXE}" ]; then PERL_EXE="$(which perl)"; fi
+
+ROOT_DIR="$("${PERL_EXE}" -e "use Cwd 'abs_path'; print abs_path('$PARENT_DIR')")"
+
+# default arguments : number of parallel builds and default mod file path
+PARALLEL_BUILDS=4
+params_MODS_PATH="."
+params_BUILD_TYPE="@COMPILE_LIBRARY_TYPE@"
+params_NRN_PRCELLSTATE="@CORENRN_NRN_PRCELLSTATE@"
+
+# prefix for common options : make sure to rename these if options are changed.
+MAKE_OPTIONS="MECHLIB_SUFFIX MOD2CPP_BINARY MOD2CPP_RUNTIME_FLAGS DESTDIR INCFLAGS LINKFLAGS MODS_PATH VERBOSE BUILD_TYPE NRN_PRCELLSTATE"
+
+# parse CLI args
+while getopts "n:m:a:d:i:l:Vp:r:b:h" OPT; do
+    case "$OPT" in
+    n)
+        # suffix for mechanism library
+        params_MECHLIB_SUFFIX="$OPTARG";;
+    m)
+        # nmodl or mod2c binary to use
+        params_MOD2CPP_BINARY="$OPTARG";;
+    a)
+        # additional nmodl flags to be used
+        params_MOD2CPP_RUNTIME_FLAGS="$OPTARG";;
+    d)
+        # destination install directory
+        params_DESTDIR="$OPTARG";;
+    i)
+        # extra include flags
+        params_INCFLAGS="$OPTARG";;
+    l)
+        # extra link flags
+        params_LINKFLAGS="$OPTARG";;
+    V)
+        # make with verbose
+        params_VERBOSE=1;;
+    p)
+        # option for parallel build (with -j)
+        PARALLEL_BUILDS="$OPTARG";;
+    b)
+        # make with verbose
+        params_BUILD_TYPE="$OPTARG";;
+    r)
+        # enable NRN_PRCELLSTATE mechanism
+        params_NRN_PRCELLSTATE="$OPTARG";;
+    h)
+        echo "$APP_NAME [options, ...] [mods_path]"
+        echo "Options:"
+        echo "  -n <name>                 The model name, used as a suffix in the shared library"
+        echo "  -m <nmodl_bin>            NMODL/mod2c code generation compiler path"
+        echo "  -a <nmodl_runtime_flags>  Runtime flags for NMODL/mod2c"
+        echo "  -i <incl_flags>           Definitions passed to the compiler, typically '-I dir..'"
+        echo "  -l <link_flags>           Definitions passed to the linker, typically '-Lx -lylib..'"
+        echo "  -d <dest_dir>             Install to dest_dir. Default: Off."
+        echo "  -r <0|1>                  Enable NRN_PRCELLSTATE mechanism. Default: @CORENRN_NRN_PRCELLSTATE@."
+        echo "  -V                        Verbose: show commands executed by make"
+        echo "  -p <n_procs>              Number of parallel builds (Default: $PARALLEL_BUILDS)"
+        echo "  -b <STATIC|SHARED>        libcorenrnmech library type"
+        exit 0;;
+    ?)
+        exit 1;;
+    esac
+done
+
+# consume an option
+shift $(($OPTIND - 1))
+
+# only one mod files directory is supported in neuron and coreneuron
+if [ $# -gt 1 ]; then
+    echo "[ERROR] $APP_NAME expects at most one mod dir. See syntax: '$APP_NAME -h' "
+    exit 1
+fi
+
+# if defined mods dir be in $1
+if [ $# -eq 1 ]; then
+    params_MODS_PATH="$1"
+fi
+
+shopt -s nullglob
+# warn if no mod files provided
+if [ -d "$params_MODS_PATH" ]; then
+    files=( "$params_MODS_PATH"/*.mod )
+    if [ ${#files} -eq 0 ]; then
+        echo "WARNING: No mod files found in '$(realpath ${params_MODS_PATH})', compiling default ones only!"
+    fi
+else
+    echo "FATAL: Invalid mods directory: '$params_MODS_PATH'"
+    exit 1
+fi
+
+# temporary directory where mod files will be copied
+temp_mod_dir="@CMAKE_HOST_SYSTEM_PROCESSOR@/corenrn/mod2c"
+mkdir -p "$temp_mod_dir"
+
+# copy mod files with include files. note that ${ROOT_DIR}/share
+# has inbuilt mod files and user provided mod files are in $params_MODS_PATH.
+set +e
+for mod_dir in "${ROOT_DIR}/share/modfile" "$params_MODS_PATH" ;
+do
+    # copy mod files and include files
+    files=( "$mod_dir/"*.mod "$mod_dir/"*.inc "$mod_dir/"*.h* )
+    for f in "${files[@]}";
+    do
+        # copy mod files only if it's changed (to avoid rebuild)
+        target_file_path="$temp_mod_dir/$(basename "$f")"
+        if ! diff -q "$f" "$target_file_path" &>/dev/null;  then
+            cp "$f" "$target_file_path"
+        fi
+    done
+done
+set -e
+
+# use new mod files directory for compilation
+params_MODS_PATH="$temp_mod_dir"
+
+# build params to make command
+make_params=("ROOT=${ROOT_DIR}")
+for param in $MAKE_OPTIONS; do
+    var="params_${param}"
+    if [ "${!var+x}" ]; then
+        make_params+=("$param=${!var}")
+    fi
+done
+
+# if -d (deploy) provided, call "make install"
+if [ "$params_DESTDIR" ]; then
+    make_params+=("install")
+fi
+
+if [ "$params_VERBOSE" ]; then
+    make_params+=("VERBOSE=1")
+fi
+
+# run makefile
+echo "[INFO] Running: make -j$PARALLEL_BUILDS -f ${ROOT_DIR}/share/coreneuron/nrnivmodl_core_makefile ${make_params[@]}"
+make -j$PARALLEL_BUILDS -f "${ROOT_DIR}/share/coreneuron/nrnivmodl_core_makefile" "${make_params[@]}"
+echo "[INFO] MOD files built successfully for CoreNEURON"
