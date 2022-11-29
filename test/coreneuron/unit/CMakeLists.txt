@@ -6,9 +6,6 @@
 
 include(TestHelpers)
 
-include_directories(${CORENEURON_PROJECT_SOURCE_DIR} ${CORENEURON_PROJECT_BINARY_DIR}/generated
-                    ${Boost_INCLUDE_DIRS})
-
 # Add compiler flags that should apply to all CoreNEURON targets, but which should not leak into
 # other included projects.
 add_compile_definitions(${CORENRN_COMPILE_DEFS})
@@ -27,25 +24,25 @@ find_package(Boost 1.59 QUIET COMPONENTS filesystem system atomic unit_test_fram
 
 if(Boost_FOUND)
   if(CORENRN_ENABLE_UNIT_TESTS)
+    include_directories(${PROJECT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
     add_library(coreneuron-unit-test INTERFACE)
     target_compile_options(coreneuron-unit-test
                            INTERFACE ${CORENEURON_BOOST_UNIT_TEST_COMPILE_FLAGS})
-    target_include_directories(coreneuron-unit-test SYSTEM INTERFACE ${Boost_INCLUDE_DIRS})
+    target_include_directories(coreneuron-unit-test SYSTEM INTERFACE ${Boost_INCLUDE_DIRS}
+                                                                     ${CMAKE_BINARY_DIR}/include)
     target_link_libraries(coreneuron-unit-test INTERFACE coreneuron-all)
-    add_subdirectory(unit/cmdline_interface)
-    add_subdirectory(unit/interleave_info)
-    add_subdirectory(unit/alignment)
-    add_subdirectory(unit/queueing)
-    add_subdirectory(unit/solver)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cmdline_interface)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/interleave_info)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/alignment)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/queueing)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/solver)
     # lfp test uses nrnmpi_* wrappers but does not load the dynamic MPI library TODO: re-enable
     # after NEURON and CoreNEURON dynamic MPI are merged
     if(NOT CORENRN_ENABLE_MPI_DYNAMIC)
-      add_subdirectory(unit/lfp)
+      add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lfp)
     endif()
   endif()
   message(STATUS "Boost found, unit tests enabled")
 else()
   message(STATUS "Boost not found, unit tests disabled")
 endif()
-
-add_subdirectory(integration)

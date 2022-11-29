@@ -31,12 +31,12 @@ size_t nrn_soa_byte_align(size_t size) {
 
 int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
     switch (layout) {
-        case Layout::AoS:
-            return icnt * sz + isz;
-        case Layout::SoA:
-            int padded_cnt = nrn_soa_padded_size(cnt,
-                                                 layout);  // may want to factor out to save time
-            return icnt + isz * padded_cnt;
+    case Layout::AoS:
+        return icnt * sz + isz;
+    case Layout::SoA:
+        int padded_cnt = nrn_soa_padded_size(cnt,
+                                             layout);  // may want to factor out to save time
+        return icnt + isz * padded_cnt;
     }
 
     nrn_assert(false);
@@ -52,12 +52,12 @@ int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
 int nrn_param_layout(int i, int mtype, Memb_list* ml) {
     int layout = corenrn.get_mech_data_layout()[mtype];
     switch (layout) {
-        case Layout::AoS:
-            return i;
-        case Layout::SoA:
-            nrn_assert(layout == Layout::SoA);
-            int sz = corenrn.get_prop_param_size()[mtype];
-            return nrn_i_layout(i / sz, ml->nodecount, i % sz, sz, layout);
+    case Layout::AoS:
+        return i;
+    case Layout::SoA:
+        nrn_assert(layout == Layout::SoA);
+        int sz = corenrn.get_prop_param_size()[mtype];
+        return nrn_i_layout(i / sz, ml->nodecount, i % sz, sz, layout);
     }
     nrn_assert(false);
     return 0;

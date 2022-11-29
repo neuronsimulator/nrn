@@ -162,12 +162,12 @@ class FileHandler {
 
         read_checkpoint_assert();
         switch (flag) {
-            case seek:
-                F.seekg(count * sizeof(T), std::ios_base::cur);
-                break;
-            case read:
-                F.read((char*) p, count * sizeof(T));
-                break;
+        case seek:
+            F.seekg(count * sizeof(T), std::ios_base::cur);
+            break;
+        case read:
+            F.read((char*) p, count * sizeof(T));
+            break;
         }
 
         nrn_assert(!F.fail());

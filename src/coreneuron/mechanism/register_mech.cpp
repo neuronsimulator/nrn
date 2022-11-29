@@ -380,26 +380,26 @@ void hoc_reg_ba(int mt, mod_f_t f, int type) {
         return;
 
     switch (type) { /* see bablk in src/nmodl/nocpout.c */
-        case 11:
-            type = BEFORE_BREAKPOINT;
-            break;
-        case 22:
-            type = AFTER_SOLVE;
-            break;
-        case 13:
-            type = BEFORE_INITIAL;
-            break;
-        case 23:
-            type = AFTER_INITIAL;
-            break;
-        case 14:
-            type = BEFORE_STEP;
-            break;
-        default:
-            printf("before-after processing type %d for %s not implemented\n",
-                   type,
-                   corenrn.get_memb_func(mt).sym);
-            nrn_exit(1);
+    case 11:
+        type = BEFORE_BREAKPOINT;
+        break;
+    case 22:
+        type = AFTER_SOLVE;
+        break;
+    case 13:
+        type = BEFORE_INITIAL;
+        break;
+    case 23:
+        type = AFTER_INITIAL;
+        break;
+    case 14:
+        type = BEFORE_STEP;
+        break;
+    default:
+        printf("before-after processing type %d for %s not implemented\n",
+               type,
+               corenrn.get_memb_func(mt).sym);
+        nrn_exit(1);
     }
     auto bam = (BAMech*) emalloc(sizeof(BAMech));
     bam->f = f;
