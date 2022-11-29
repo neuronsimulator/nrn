@@ -52,58 +52,29 @@ class RangeExpr {
 };
 
 #if !HAVE_IV
-class NoIVGraphVector {
-  public:
-    NoIVGraphVector(const char*);
-    virtual ~NoIVGraphVector();
+struct NoIVGraphVector {
+    NoIVGraphVector(const char* /* name */) {}
+    virtual ~NoIVGraphVector() {}
     void begin();
-    void add(float, double*);
+    void add(float, neuron::container::data_handle<double>);
     int count();
-    CopyString name_;
-    int count_, size_;
-    double** py_;
-    float* x_;
+    std::vector<float> x_{};
+    std::vector<neuron::container::data_handle<double>> py_{};
 };
-NoIVGraphVector::NoIVGraphVector(const char* name) {
-    name_ = name;
-    size_ = 0;
-    count_ = 0;
-    py_ = NULL;
-    x_ = NULL;
-}
-NoIVGraphVector::~NoIVGraphVector() {
-    if (py_) {
-        delete[] py_;
-        delete[] x_;
-    }
-}
 int NoIVGraphVector::count() {
-    return count_;
+    auto const s = x_.size();
+    assert(s == py_.size());
+    return s;
 }
 void NoIVGraphVector::begin() {
-    count_ = 0;
-    if (!size_) {
-        size_ = 20;
-        py_ = new double*[size_];
-        x_ = new float[size_];
-    }
+    x_.clear();
+    py_.clear();
+    x_.reserve(20);
+    py_.reserve(20);
 }
-void NoIVGraphVector::add(float x, double* y) {
-    if (count_ == size_) {
-        size_ *= 2;
-        double** py = new double*[size_];
-        float* px = new float[size_];
-        for (int i = 0; i < count_; i++) {
-            py[i] = py_[i];
-            px[i] = x_[i];
-        }
-        delete[] py_;
-        delete[] x_;
-        py_ = py;
-        x_ = px;
-    }
-    py_[count_] = y;
-    x_[count_++] = x;
+void NoIVGraphVector::add(float x, neuron::container::data_handle<double> y) {
+    x_.push_back(x);
+    py_.push_back(std::move(y));
 }
 #endif
 
