@@ -103,12 +103,6 @@ jobs:
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
 
-      - uses: codecov/codecov-action@v3
-        with:
-          directory: ./build
-          fail_ci_if_error: true
-          verbose: true
-
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To enable it, you have to:
       #   * add 'live-debug-coverage' to your PR title
@@ -116,3 +110,9 @@ jobs:
       - name: live debug session on failure (manual steps required, check `.github/coverage.yml`)
         if: failure() && contains(github.event.pull_request.title, 'live-debug-coverage')
         uses: mxschmitt/action-tmate@v3
+
+      - uses: codecov/codecov-action@v3
+        with:
+          directory: ./build
+          fail_ci_if_error: true
+          verbose: true
