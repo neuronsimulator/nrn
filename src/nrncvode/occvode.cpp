@@ -589,7 +589,10 @@ int Cvode::setup(N_Vector ypred, N_Vector fpred) {
     return 0;
 }
 
-int Cvode::solvex_thread(double* b, double* y, NrnThread* nt) {
+int Cvode::solvex_thread(neuron::model_sorted_token const& sorted_token,
+                         double* b,
+                         double* y,
+                         NrnThread* nt) {
     // printf("Cvode::solvex_thread %d t=%g t_=%g\n", nt->id, nt->t, t_);
     // printf("Cvode::solvex_thread %d %g\n", nt->id, gam());
     // printf("\tenter b\n");
@@ -625,7 +628,7 @@ int Cvode::solvex_thread(double* b, double* y, NrnThread* nt) {
     //	printf("%d rhs %d %g t=%g\n", nrnmpi_myid, i, VEC_RHS(i), t);
     //}
     if (ncv_->stiff() == 2) {
-        solvemem(nt);
+        solvemem(sorted_token, nt);
     } else {
         // bug here should multiply by gam
     }
@@ -671,7 +674,7 @@ int Cvode::solvex_thread_part3(double* b, NrnThread* nt) {
     //	printf("%d rhs %d %g t=%g\n", nrnmpi_myid, i, VEC_RHS(i), t);
     //}
     if (ncv_->stiff() == 2) {
-        solvemem(nt);
+        solvemem(nrn_ensure_model_data_are_sorted(), nt);
     } else {
         // bug here should multiply by gam
     }
@@ -681,7 +684,7 @@ int Cvode::solvex_thread_part3(double* b, NrnThread* nt) {
     return 0;
 }
 
-void Cvode::solvemem(NrnThread* nt) {
+void Cvode::solvemem(neuron::model_sorted_token const& sorted_token, NrnThread* nt) {
     // all the membrane mechanism matrices
     CvodeThreadData& z = CTD(nt->id);
     CvMembList* cml;
@@ -696,7 +699,7 @@ void Cvode::solvemem(NrnThread* nt) {
             }
         }
     }
-    long_difus_solve(nrn_ensure_model_data_are_sorted(), 2, *nt);
+    long_difus_solve(sorted_token, 2, *nt);
 }
 
 void Cvode::fun_thread(neuron::model_sorted_token const& sorted_token,

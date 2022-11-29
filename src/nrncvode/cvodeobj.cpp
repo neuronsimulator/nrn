@@ -691,7 +691,7 @@ static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data);
 static void f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data);
 static CVRhsFn pf_;
 
-static void* msolve_thread(NrnThread*);
+static void msolve_thread(neuron::model_sorted_token const&, NrnThread&);
 static void* msolve_thread_part1(NrnThread*);
 static void* msolve_thread_part2(NrnThread*);
 static void* msolve_thread_part3(NrnThread*);
@@ -1515,8 +1515,10 @@ static int msolve(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vect
     //	N_VIth(b, 0) /= (1. + m->cv_gamma);
     //	N_VIth(b, 0) /= (1. + m->cv_gammap);
     //	N_VIth(b,0) *= 2./(1. + m->cv_gamrat);
-    msolve_cv_ =
-        static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(m->cv_f_data)->first;
+    auto* const f_typed_data = static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(
+        m->cv_f_data);
+    msolve_cv_ = f_typed_data->first;
+    auto const& sorted_token = f_typed_data->second;
     Cvode& cv = *msolve_cv_;
     ++cv.mxb_calls_;
     if (cv.ncv_->stiff() == 0) {
@@ -1532,13 +1534,15 @@ static int msolve(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vect
         nrn_multithread_job(msolve_thread_part2);
         nrn_multithread_job(msolve_thread_part3);
     } else {
-        nrn_multithread_job(msolve_thread);
+        nrn_multithread_job(sorted_token, msolve_thread);
     }
     return 0;
 }
 static int msolve_lvardt(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vector fcur) {
-    auto* const cv =
-        static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(m->cv_f_data)->first;
+    auto* const f_typed_data = static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(
+        m->cv_f_data);
+    auto* const cv = f_typed_data->first;
+    auto const& sorted_token = f_typed_data->second;
     ++cv->mxb_calls_;
     if (cv->ncv_->stiff() == 0) {
         return 0;
@@ -1547,17 +1551,19 @@ static int msolve_lvardt(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur,
         return 0;
     }
     cv->nth_->_vcv = cv;
-    cv->solvex_thread(cv->n_vector_data(b, 0), cv->n_vector_data(ycur, 0), cv->nth_);
+    cv->solvex_thread(sorted_token, cv->n_vector_data(b, 0), cv->n_vector_data(ycur, 0), cv->nth_);
     cv->nth_->_vcv = 0;
     return 0;
 }
-static void* msolve_thread(NrnThread* nt) {
-    int i = nt->id;
+static void msolve_thread(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
+    int i = nt.id;
     Cvode* cv = msolve_cv_;
-    nt->_vcv = cv;
-    cv->solvex_thread(cv->n_vector_data(msolve_b_, i), cv->n_vector_data(msolve_ycur_, i), nt);
-    nt->_vcv = 0;
-    return 0;
+    nt._vcv = cv;
+    cv->solvex_thread(sorted_token,
+                      cv->n_vector_data(msolve_b_, i),
+                      cv->n_vector_data(msolve_ycur_, i),
+                      &nt);
+    nt._vcv = 0;
 }
 static void* msolve_thread_part1(NrnThread* nt) {
     int i = nt->id;

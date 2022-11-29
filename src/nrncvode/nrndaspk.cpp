@@ -652,7 +652,7 @@ for (i=0; i < neq_v_; ++i) {
 }
 #endif
     solve_state_ = INVALID;  // but not if using sparse13
-    solvemem(_nt);
+    solvemem(nrn_ensure_model_data_are_sorted(), _nt);
     gather_ydot(b, _nt->id);
     // the ode's of the form m' = (minf - m)/mtau in model descriptions compute
     // b = b/(1 + dt*mtau) since cvode required J = 1 - gam*df/dy
