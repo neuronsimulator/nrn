@@ -106,4 +106,9 @@ void nrn_net_move(Datum*, Point_process*, double);
 typedef void (*NrnWatchAllocateFunc_t)(Datum*);
 extern NrnWatchAllocateFunc_t* nrn_watch_allocate_;
 
+void* nrn_pool_alloc(void* pool);
+void* nrn_pool_create(long count, int itemsize);
+void nrn_pool_delete(void* pool);
+void nrn_pool_freeall(void* pool);
+
 #endif /* nrniv_mf_h */

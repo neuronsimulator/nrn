@@ -115,10 +115,15 @@ build_wheel_linux() {
         echo " - Auditwheel show"
         auditwheel show dist/*.whl
         echo " - Repairing..."
-	# TODO: still need work to make sure this robust and usable
-	# currently this will break when coreneuron is used and when
-	# dev environment is not installed.
-        auditwheel repair dist/*.whl --exclude "libgomp.so.1"
+        # NOTE:
+        #   libgomp:  still need work to make sure this robust and usable
+        #             currently this will break when coreneuron is used and when
+        #             dev environment is not installed. Note that on aarch64 we have
+        #             seen issue with libgomp.so and hence we started excluding it.
+        #   libnrniv: we ship precompiled version of neurondemo containing libnrnmech.so
+        #             which is linked to libnrniv.so. auditwheel manipulate rpaths and
+        #             ships an extra copy of libnrniv.so and hence exclude it here.
+        auditwheel -v repair dist/*.whl --exclude "libgomp.so.1" --exclude "libnrniv.so"
     fi
 
     deactivate
