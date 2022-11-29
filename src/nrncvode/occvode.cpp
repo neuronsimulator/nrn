@@ -604,8 +604,9 @@ int Cvode::solvex_thread(double* b, double* y, NrnThread* nt) {
     lhs(nt);  // special version for cvode.
     scatter_ydot(b, nt->id);
     if (z.cmlcap_) {
-        assert(z.cmlcap_->ml.size() == 1);
-        nrn_mul_capacity(nt, &z.cmlcap_->ml[0]);
+        for (auto& ml: z.cmlcap_->ml) {
+            nrn_mul_capacity(nt, &ml);
+        }
     }
     for (i = 0; i < z.no_cap_count_; ++i) {
         NODERHS(z.no_cap_node_[i]) = 0.;
@@ -758,8 +759,9 @@ void Cvode::fun_thread_transfer_part2(neuron::model_sorted_token const& sorted_t
     do_ode(sorted_token, *nt);
     // divide by cm and compute capacity current
     if (z.cmlcap_) {
-        assert(z.cmlcap_->ml.size() == 1);
-        nrn_div_capacity(nt, &z.cmlcap_->ml[0]);
+        for (auto& ml: z.cmlcap_->ml) {
+            nrn_div_capacity(nt, &ml);
+        }
     }
     if (nt->_nrn_fast_imem) {
         double* p = nt->_nrn_fast_imem->_nrn_sav_rhs;

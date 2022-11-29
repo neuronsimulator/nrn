@@ -89,8 +89,9 @@ void Cvode::lhs(NrnThread* _nt) {
 
     lhs_memb(z.cv_memb_list_, _nt);
     nrn_nonvint_block_conductance(_nt->end, _nt->_actual_rhs, _nt->id);
-    assert(z.cmlcap_->ml.size() == 1);
-    nrn_cap_jacob(_nt, &z.cmlcap_->ml[0]);
+    for (auto& ml: z.cmlcap_->ml) {
+        nrn_cap_jacob(_nt, &ml);
+    }
 
     // _nrn_fast_imem not needed since exact icap added in nrn_div_capacity
 
