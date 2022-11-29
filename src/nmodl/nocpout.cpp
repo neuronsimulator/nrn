@@ -2511,8 +2511,10 @@ void out_nt_ml_frag(List* p) {
     vectorize_substitute(lappendstr(p, "  Datum* _thread;\n"),
                          "  Datum* _ppvar; Datum* _thread;\n");
     vectorize_substitute(lappendstr(p, ""), "size_t _iml;");
+    vectorize_substitute(lappendstr(p, ""), "Memb_list* _ml;");
     Lappendstr(p,
                "  Node* _nd; double _v; int _cntml;\n\
+  _ml = _ml_arg;\n\
   _cntml = _ml->_nodecount;\n\
   _thread = _ml->_thread;\n\
   for (_iml = 0; _iml < _cntml; ++_iml) {\n\
@@ -2553,8 +2555,9 @@ static int _ode_count(int _type){ return %d;}\n",
         if (cvode_fun_->subtype == PROCED) {
             cvode_proced_emit();
         } else {
-            Lappendstr(procfunc,
-                       "\nstatic void _ode_spec(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
+            Lappendstr(
+                procfunc,
+                "\nstatic void _ode_spec(NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
             out_nt_ml_frag(procfunc);
             lst = get_ion_variables(1);
             if (lst->next->itemtype)
@@ -2634,8 +2637,9 @@ static void _ode_map(int _ieq, double** _pv, double** _pvdot, Memb_list* _ml, si
                 vectorize_substitute(lappendstr(procfunc, "();\n"), "(_threadargs_);\n");
             }
             Lappendstr(procfunc, "}\n");
-            Lappendstr(procfunc,
-                       "\nstatic void _ode_matsol(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
+            Lappendstr(
+                procfunc,
+                "\nstatic void _ode_matsol(NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
             out_nt_ml_frag(procfunc);
             lst = get_ion_variables(1);
             if (lst->next->itemtype)
