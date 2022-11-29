@@ -12,14 +12,14 @@ Model::Model() {
 }
 std::optional<container::utils::storage_info> Model::find_container_info(void const* cont) const {
     if (auto maybe_info = m_node_data.find_container_info(cont); maybe_info) {
-        return {std::move(maybe_info)};
+        return maybe_info;
     }
     for (auto& mech_data: m_mech_data) {
         if (!mech_data) {
             continue;
         }
         if (auto maybe_info = mech_data->find_container_info(cont); maybe_info) {
-            return {std::move(maybe_info)};
+            return maybe_info;
         }
     }
     return {std::nullopt};
