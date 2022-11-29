@@ -146,11 +146,11 @@ class ShapeSection: public FastShape {  // single section
     void fastidious_draw(Canvas*, const Color*, int, float, float) const;
 #endif
   private:
-    double** pvar_;
+    std::vector<neuron::container::data_handle<double>> pvar_;
     Section* sec_;
     Coord len_scale_;
     const Color* color_;
-    const Color** old_;
+    std::vector<Color const*> old_;
     const Color** colorseg_;
     int colorseg_size_;  // so know when to unref colorseg_ items.
     Coord xmin_, xmax_, ymin_, ymax_;
