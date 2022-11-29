@@ -143,7 +143,7 @@ class Cvode {
   public:
     N_Vector nvnew(long);
     int setup(N_Vector ypred, N_Vector fpred);
-    int solvex_thread(double* b, double* y, NrnThread* nt);
+    int solvex_thread(neuron::model_sorted_token const&, double* b, double* y, NrnThread* nt);
     int solvex_thread_part1(double* b, NrnThread* nt);
     int solvex_thread_part2(NrnThread* nt);
     int solvex_thread_part3(double* b, NrnThread* nt);
@@ -194,7 +194,7 @@ class Cvode {
     void nocap_v_part1(NrnThread*);
     void nocap_v_part2(NrnThread*);
     void nocap_v_part3(NrnThread*);
-    void solvemem(NrnThread*);
+    void solvemem(neuron::model_sorted_token const&, NrnThread*);
     void atolvec_alloc(int);
     double h();
     N_Vector ewtvec();
