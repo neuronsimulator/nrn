@@ -98,21 +98,16 @@ jobs:
           (cd ..; lcov --capture  --directory . --no-external --output-file build/coverage-run.info)
           lcov --add-tracefile coverage-base.info --add-tracefile coverage-run.info --output-file coverage-combined.info
 
-          # Download codecov script and perform integrity checks
-          curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --import # One-time step 
-          curl -Os https://uploader.codecov.io/latest/linux/codecov 
-          curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM 
-          curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig 
-          gpg --verify codecov.SHA256SUM.sig codecov.SHA256SUM 
-          shasum -a 256 -c codecov.SHA256SUM 
-          chmod +x codecov 
-
-          # Prefer auto-discovery for now. Specify reports once all python testing is unified under single report (-f option).
-          ./codecov
         env:
           MATRIX_EVAL: "CC=gcc CXX=g++"
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
+
+      - uses: codecov/codecov-action@v3
+        with:
+          files: ./build/coverage-combined.info
+          fail_ci_if_error: true
+          verbose: true
 
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To enable it, you have to:
