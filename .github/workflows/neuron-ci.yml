@@ -198,6 +198,7 @@ jobs:
             # long TMPDIR path on MacOS can results into runtime failures with OpenMPI
             # Set shorter path as discussed in https://github.com/open-mpi/ompi/issues/8510
             export TMPDIR=/tmp/$GITHUB_JOB
+            mkdir -p $TMPDIR
           fi
 
           # Python setup
