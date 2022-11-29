@@ -125,7 +125,6 @@ simulation_stack:
   needs: [spack_setup]
   trigger:
     project: hpc/sim/blueconfigs
-    branch: pramodk/coreneuron_merge
     # NEURON CI status depends on the BlueConfigs CI status.
     strategy: depend
   variables:
