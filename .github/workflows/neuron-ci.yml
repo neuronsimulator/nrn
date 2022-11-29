@@ -195,6 +195,9 @@ jobs:
             # However it does not get stuck: neuron module not found and script goes to interpreter, seeming stuck.
             # This needs to be addressed and SKIP_EMBEDED_PYTHON_TEST logic removed everywhere.
             export SKIP_EMBEDED_PYTHON_TEST="true"
+            # long TMPDIR path on MacOS can results into runtime failures with OpenMPI
+            # Set shorter path as discussed in https://github.com/open-mpi/ompi/issues/8510
+            export TMPDIR=/tmp/$GITHUB_JOB
           fi
 
           # Python setup
