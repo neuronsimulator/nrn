@@ -44,7 +44,7 @@ objref ks, ksvec, ksgate, ksstates, kstransitions, tobj
   ksstates.object(0).frac(0)
   ksstates.append(ks.add_ksstate(ksgate, "n1"))
   ksstates.object(1).frac(0)
-  ksstates.append(ks.add_ksstate(ksgate, "n2"))   
+  ksstates.append(ks.add_ksstate(ksgate, "n2"))
   ksstates.object(2).frac(0)
   ksstates.append(ks.add_ksstate(ksgate, "n3"))
   ksstates.object(3).frac(0)

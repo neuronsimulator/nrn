@@ -230,11 +230,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     NAME hoctests
     MODFILE_PATTERNS *.mod
     SIM_DIRECTORY test/hoctests)
-  set(py_exe ${PYTHON_EXECUTABLE})
-  set(py_preload PRELOAD_SANITIZER)
-  set(hoc_exe nrniv)
   set(hoctest_utils expect_err.hoc)
-
   foreach(ext hoc py)
     file(
       GLOB hoc_scripts
@@ -246,7 +242,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         GROUP hoctests
         NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
         COMMAND ${${ext}_exe} "${hoc_script}"
-        SCRIPT_PATTERNS "${hoc_script}" "${name}.ses" ${hoctest_utils})
+        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})
     endforeach()
   endforeach()
 

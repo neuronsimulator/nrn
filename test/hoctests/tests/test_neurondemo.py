@@ -1,14 +1,18 @@
-from neuron import h
 import os
+from neuron import config
 
 # skip test if no InterViews GUI
-if "NRN_ENABLE_INTERVIEWS=OFF" in h.nrnversion(6) or os.getenv("DISPLAY") is None:
+if not config.arguments["NRN_ENABLE_INTERVIEWS"] or os.getenv("DISPLAY") is None:
     print("No GUI for running neurondemo. Skip this test.")
     quit()
 
-from subprocess import Popen, PIPE, STDOUT
 import hashlib
+from neuron.tests.utils.checkresult import Chk
+from subprocess import Popen, PIPE
 
+# Create a helper for managing reference results
+dir_path = os.path.dirname(os.path.realpath(__file__))
+chk = Chk(os.path.join(dir_path, "test_neurondemo.json"))
 
 # Run a command with input into stdin
 def run(cmd, input):
@@ -77,31 +81,10 @@ proc prgraphs() {local i, j, k  localobj xvec, yvec, glist
 }
 """
 
-# Obtain raw and md5 results for all demos.
-rawresult = {}
-md5result = {}
+# Run all the demos and compare their results to the reference
 for i in range(1, 8):
     data = neurondemo(prgraphs, input % i)
-    data = "\n".join(data)
     key = "demo%d" % i
-    rawresult[key] = data
-    md5result[key] = hashlib.md5(data.encode("utf-8")).hexdigest()
+    chk(key, data)
 
-
-# MD5 of the standard results of each demo
-std = {
-    "demo1": "52a75e06d60b4c2827c6587ab19a3161",
-    "demo2": "a8cd6f2d40b3a97b2ea5683a59c88a3e",
-    "demo3": "cd8614644f8953453434f106ab545738",
-    "demo4": "c8d7c2dd850d0208658e0290b4b3db64",
-    "demo5": "b8e6a7a8a58087900496ec2ca96f6155",
-    "demo6": "71c2c5c6a44a66ce04633d59942704bf",
-    "demo7": "02d2746c67bb6399fd6c02c7932aaafe",
-}
-
-# check the md5 results and print first different raw result.
-for key, val in md5result.items():
-    if val != std[key]:
-        print(key, " DIFFERS FROM STANDARD")
-        print(rawresult[key])
-        assert val == std[key]
+chk.save()
