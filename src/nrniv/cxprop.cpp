@@ -14,34 +14,32 @@ using DatumArrayPool = ArrayPool<Datum>;
 using SectionPool = Pool<Section>;
 
 static SectionPool* secpool_;
-static std::vector<std::unique_ptr<DatumArrayPool>> datumpools_;
+// the advantage of this w.r.t `static std::vector<...> datumpools_;` is that the vector destructor
+// is not called at application shutdown, see e.g. discussion in
+// https://google.github.io/styleguide/cppguide.html#Static_and_Global_Variables around global
+// variables that are not trivially destructible
+static auto& datumpools() {
+    static auto& x = *new std::vector<std::unique_ptr<DatumArrayPool>>{};
+    return x;
+}
 
 void nrn_mk_prop_pools(int n) {
-    if (n > datumpools_.size()) {
-        datumpools_.resize(n);
+    if (n > datumpools().size()) {
+        datumpools().resize(n);
     }
 }
 
 Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
-    if (!datumpools_[type]) {
-        datumpools_[type] = std::make_unique<DatumArrayPool>(1000, count);
+    if (!datumpools()[type]) {
+        datumpools()[type] = std::make_unique<DatumArrayPool>(1000, count);
     }
-    assert(datumpools_[type]->d2() == count);
-    p->_alloc_seq = datumpools_[type]->ntget();
-    auto* ppd = datumpools_[type]->alloc();  // allocates storage for the datums
-    // if (type > 1) printf("nrn_prop_datum_alloc %d %s %d %p\n", type, memb_func[type].sym->name,
-    // count, ppd);
+    assert(datumpools()[type]->d2() == count);
+    p->_alloc_seq = datumpools()[type]->ntget();
+    auto* const ppd = datumpools()[type]->alloc();  // allocates storage for the datums
     for (int i = 0; i < count; ++i) {
         auto* const semantics = memb_func[type].dparam_semantics;
-        // Call the Datum constructor, either setting it to be a
-        // generic_data_handle or a std::monostate value.
+        // Call the Datum constructor
         new (ppd + i) Datum();
-        if (semantics &&
-            (semantics[i] == -5 /* POINTER */ || semantics[i] == -7 /* BBCOREPOINTER */)) {
-            new (ppd + i) Datum(neuron::container::generic_data_handle{});
-        } else {
-            new (ppd + i) Datum();
-        }
     }
     return ppd;
 }
@@ -50,7 +48,7 @@ void nrn_prop_datum_free(int type, Datum* ppd) {
     // if (type > 1) printf("nrn_prop_datum_free %d %s %p\n", type,
     // memb_func[type].sym->name, ppd);
     if (ppd) {
-        auto* const datumpool = datumpools_[type].get();
+        auto* const datumpool = datumpools()[type].get();
         assert(datumpool);
         // Destruct the Datums
         auto const count = datumpool->d2();
@@ -82,15 +80,15 @@ int nrn_is_valid_section_ptr(void* v) {
 
 void nrn_poolshrink(int shrink) {
     if (shrink) {
-        for (auto& pdatum: datumpools_) {
+        for (auto& pdatum: datumpools()) {
             if (pdatum && pdatum->nget() == 0) {
                 pdatum.reset();
             }
         }
     } else {
         Printf("poolshrink --- type name (dbluse, size) (datumuse, size)\n");
-        for (auto i = 0; i < datumpools_.size(); ++i) {
-            auto& pdatum = datumpools_[i];
+        for (auto i = 0; i < datumpools().size(); ++i) {
+            auto& pdatum = datumpools()[i];
             if (pdatum) {
                 Printf("%d %s (%ld, %d)\n",
                        i,
