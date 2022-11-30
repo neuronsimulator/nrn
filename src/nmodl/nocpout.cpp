@@ -856,22 +856,23 @@ static const char *_mechanism[] = {\n\
     }
 
     Lappendstr(defs_list,
-               "\n\
-extern Prop* need_memb(Symbol*);\n\n\
-static void nrn_alloc(Prop* _prop) {\n\
-	Prop *prop_ion;\n\
-	Datum *_ppvar;\n\
-");
+               "\n"
+               "extern Prop* need_memb(Symbol*);\n"
+               "static void nrn_alloc(Prop* _prop) {\n"
+               "  Prop *prop_ion{};\n"
+               "  Datum *_ppvar{};\n");
     if (point_process) {
         Lappendstr(defs_list,
-                   " if (nrn_point_prop_) {\n\
-	_prop->_alloc_seq = nrn_point_prop_->_alloc_seq;\n\
-	// _p = nrn_point_prop_;\n\
-	_ppvar = nrn_point_prop_->dparam;\n }else{\n");
+                   "  if (nrn_point_prop_) {\n"
+                   "    _prop->_alloc_seq = nrn_point_prop_->_alloc_seq;\n"
+                   "    _ppvar = nrn_point_prop_->dparam;\n"
+                   "  } else {\n");
     }
+    // seems that even in the old code and with vectorize == false that the global _p, _ppvar were
+    // shadowed, so don't worry about shadowing the global _ml and _iml here
     Sprintf(buf,
-            "  auto [_, _ml, _iml] = create_ml(_prop);\n"
-            "  assert(_prop->param_size() == %d);\n",
+            "    auto [_, _ml, _iml] = create_ml(_prop);\n"
+            "    assert(_prop->param_size() == %d);\n",
             parraycount);
     Lappendstr(defs_list, buf);
     Lappendstr(defs_list, "	/*initialize range parameters*/\n");
@@ -1000,18 +1001,18 @@ static void nrn_alloc(Prop* _prop) {\n\
         Lappendstr(defs_list, "if (!nrn_point_prop_) {_constructor(_prop);}\n");
         if (vectorize) {
             Lappendstr(procfunc,
-                       "\n\
-static void _constructor(Prop* _prop) {\n\
-	Datum* _ppvar; Datum* _thread;\n\
-	_thread = (Datum*)0;\n\
-	_ppvar = _prop->dparam;\n\
-{\n\
-");
+                       "\n"
+                       "static void _constructor(Prop* _prop) {\n"
+                       "  auto [_, _ml, _iml] = create_ml(_prop);\n"
+                       "  Datum *_ppvar{_prop->dparam}, *_thread{};\n"
+                       "  {\n");
         } else {
             Lappendstr(procfunc,
                        "\n"
                        "static void _constructor(Prop* _prop) {\n"
-                       "  auto [_, _ml, _iml] = create_ml(_prop);\n"
+                       "  auto [_, local_ml, local_iml] = create_ml(_prop);\n"
+                       "  _ml = local_ml;\n"
+                       "  _iml = local_iml;\n"
                        "  _ppvar = _prop->dparam;\n"
                        "  {\n");
         }
@@ -1306,17 +1307,17 @@ if (_nd->_extnode) {\n\
                        "\n"
                        "static void _destructor(Prop* _prop) {\n"
                        "  auto [_, _ml, _iml] = create_ml(_prop);\n"
-                       "  Datum *_ppvar{_prop->dparam}, *_thread{nullptr};\n"
+                       "  Datum *_ppvar{_prop->dparam}, *_thread{};\n"
                        "  {\n");
-
-
         } else {
             Lappendstr(procfunc,
                        "\n"
                        "static void _destructor(Prop* _prop) {\n"
-                       "  auto [_, _ml, _iml] = create_ml(_prop);\n"
+                       "  auto [_, local_ml, local_iml] = create_ml(_prop);\n"
+                       "  _ml = local_ml;\n"
+                       "  _iml = local_iml;\n"
                        "  _ppvar = _prop->dparam;\n"
-                       "{\n");
+                       "  {\n");
         }
         movelist(destructorfunc->next, destructorfunc->prev, procfunc);
         Lappendstr(procfunc, "\n}\n}\n");
