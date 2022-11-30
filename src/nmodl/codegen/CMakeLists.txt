@@ -5,7 +5,7 @@ add_library(
   codegen STATIC
   codegen_acc_visitor.cpp
   codegen_transform_visitor.cpp
-  codegen_c_visitor.cpp
+  codegen_cpp_visitor.cpp
   codegen_compatibility_visitor.cpp
   codegen_helper_visitor.cpp
   codegen_info.cpp

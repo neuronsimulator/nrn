@@ -12,7 +12,7 @@
  * \brief \copybrief nmodl::codegen::CodegenAccVisitor
  */
 
-#include "codegen/codegen_c_visitor.hpp"
+#include "codegen/codegen_cpp_visitor.hpp"
 
 
 namespace nmodl {

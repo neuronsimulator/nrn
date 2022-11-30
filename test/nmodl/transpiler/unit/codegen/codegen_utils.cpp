@@ -7,7 +7,7 @@
 
 #include <catch2/catch.hpp>
 
-#include "codegen/codegen_c_visitor.hpp"
+#include "codegen/codegen_cpp_visitor.hpp"
 #include "codegen/codegen_utils.hpp"
 
 using namespace nmodl;

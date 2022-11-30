@@ -7,7 +7,7 @@
 
 #include "codegen/codegen_utils.hpp"
 
-#include "codegen/codegen_c_visitor.hpp"
+#include "codegen/codegen_cpp_visitor.hpp"
 
 namespace nmodl {
 namespace codegen {
