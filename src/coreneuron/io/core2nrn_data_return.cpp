@@ -26,7 +26,7 @@
  *  Return is size of either the returned data pointer or the number
  *  of pointers in mdata. tid is the thread index.
  */
-size_t (*nrn2core_type_return_)(int type, int tid, double*& data, double**& mdata);
+size_t (*nrn2core_type_return_)(int type, int tid, double*& data, std::vector<double*>& mdata);
 
 /** @brief, Call NEURON mechanism bbcore_read.
  *  Inverse of bbcore_write for transfer from NEURON to CoreNEURON.
@@ -67,14 +67,13 @@ static void soa2aos_inverse_permute_copy(size_t n,
                                          int sz,
                                          int stride,
                                          double* src,
-                                         double** dest,
+                                         std::vector<double*>& dest,
                                          int* permute) {
     // src is soa and permuted. dest is n pointers to sz doubles (aos).
     for (size_t instance = 0; instance < n; ++instance) {
-        double* d = dest[instance];
         double* s = src + permute[instance];
         for (int i = 0; i < sz; ++i) {
-            d[i] = s[i * stride];
+            dest[i][instance] = s[i * stride];
         }
     }
 }
@@ -86,13 +85,16 @@ static void soa2aos_inverse_permute_copy(size_t n,
  *  Each of the sz segments of src have the same order as the n pointers
  *  of dest.
  */
-static void soa2aos_unpermuted_copy(size_t n, int sz, int stride, double* src, double** dest) {
+static void soa2aos_unpermuted_copy(size_t n,
+                                    int sz,
+                                    int stride,
+                                    double* src,
+                                    std::vector<double*>& dest) {
     // src is soa and permuted. dest is n pointers to sz doubles (aos).
     for (size_t instance = 0; instance < n; ++instance) {
-        double* d = dest[instance];
         double* s = src + instance;
         for (int i = 0; i < sz; ++i) {
-            d[i] = s[i * stride];
+            dest[i][instance] = s[i * stride];
         }
     }
 }
@@ -101,11 +103,12 @@ static void soa2aos_unpermuted_copy(size_t n, int sz, int stride, double* src, d
  *  dest is an array of n pointers to the beginning of each sz length array.
  *  src is a contiguous array of n segments of size sz.
  */
-static void aos2aos_copy(size_t n, int sz, double* src, double** dest) {
+static void aos2aos_copy(size_t n, int sz, double* src, std::vector<double*>& dest) {
     for (size_t instance = 0; instance < n; ++instance) {
-        double* d = dest[instance];
         double* s = src + (instance * sz);
-        std::copy(s, s + sz, d);
+        for (auto i = 0; i < sz; ++i) {
+            dest[i][instance] = s[i];
+        }
     }
 }
 
@@ -224,9 +227,8 @@ void core2nrn_data_return() {
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         size_t n = 0;
         double* data = nullptr;
-        double** mdata = nullptr;
         NrnThread& nt = nrn_threads[tid];
-
+        std::vector<double*> mdata{};
         n = (*nrn2core_type_return_)(0, tid, data, mdata);  // 0 means time
         if (n) {                                            // not the empty thread
             data[0] = nt._t;
@@ -248,7 +250,7 @@ void core2nrn_data_return() {
             int mtype = tml->index;
             Memb_list* ml = tml->ml;
             n = (*nrn2core_type_return_)(mtype, tid, data, mdata);
-            assert(n == size_t(ml->nodecount) && mdata);
+            assert(n == size_t(ml->nodecount) && !mdata.empty());
             if (n == 0) {
                 continue;
             }
