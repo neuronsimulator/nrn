@@ -121,5 +121,8 @@ extern int (*nrn2core_all_spike_vectors_return_)(std::vector<double>& spikevec,
 extern void (*nrn2core_all_weights_return_)(std::vector<double*>& weights);
 
 /* get data array pointer from NEURON to copy into. */
-extern size_t (*nrn2core_type_return_)(int type, int tid, double*& data, double**& mdata);
+extern size_t (*nrn2core_type_return_)(int type,
+                                       int tid,
+                                       double*& data,
+                                       std::vector<double*>& mdata);
 }  // extern "C"
