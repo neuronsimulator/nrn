@@ -186,7 +186,7 @@ coremech_lib_shared: $(ALL_OBJS) $(ENGINEMECH_OBJ) build_always
 		$(LDFLAGS) ${SONAME_OPTION} \
 		-Wl,-rpath,$(CORENRN_LIB_DIR) -L$(CORENRN_LIB_DIR)
 	# cleanup
-	rm $(MOD_OBJS_DIR)/libcoreneuron-core/*.o
+	# rm $(MOD_OBJS_DIR)/libcoreneuron-core/*.o
 
 # build static library of mechanisms
 coremech_lib_static: $(ALL_OBJS) $(ENGINEMECH_OBJ) build_always
