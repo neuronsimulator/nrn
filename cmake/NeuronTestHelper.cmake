@@ -387,13 +387,15 @@ function(nrn_add_test)
     # Did we run nrnivmodl specifically for this test, or does it just use default mechanisms?
     if(DEFINED nrnivmodl_directory)
       set(build_prefix "${nrnivmodl_directory}")
+      set(mech_lib_name "corenrnmech")
     else()
       set(build_prefix "${CMAKE_BINARY_DIR}/bin")
+      set(mech_lib_name "corenrnmech_internal")
     endif()
     list(
       APPEND
       test_env
-      "CORENEURONLIB=${build_prefix}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}corenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
+      "CORENEURONLIB=${build_prefix}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}${mech_lib_name}${CMAKE_SHARED_LIBRARY_SUFFIX}"
     )
   endif()
   # Get [VAR1, VAR2, ...] from [VAR1=VAL1, VAR2=VAL2, ...]

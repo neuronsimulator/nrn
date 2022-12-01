@@ -1,13 +1,5 @@
 #pragma once
-// This header has to be both valid C and C++ because the scoplib sources are
-// compiled as C.
-#ifdef __cplusplus
 #include "hocdec.h" // the real Datum
-extern "C" {
-#else
-// All we need is for Datum* to pass untouched through C
-typedef struct Datum Datum;
-#endif
 
 /* avoid incessant alloc/free memory */
 typedef struct NewtonSpace {
@@ -30,13 +22,8 @@ double** makematrix(int nrows, int ncols);
 int freematrix(double** matrix);
 
 int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm);
-void nrn_scopmath_solve_thread(int n, double** a,
- double* b, int* perm, double* p, int* y);
+void nrn_scopmath_solve_thread(int n, double** a, double* b, int* perm, double* p, int* y);
 int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double* x,
- int (*pfunc)(double *, Datum *, Datum *, NrnThread *), double* value, void* ppvar, void* thread, void* nt);
+ int (*pfunc)(double *, Datum *, Datum *, NrnThread *), double* value, Datum* ppvar, Datum* thread, NrnThread* nt);
 NewtonSpace* nrn_cons_newtonspace(int n);
 void nrn_destroy_newtonspace(NewtonSpace* ns);
-
-#ifdef __cplusplus
-} // extern "C"
-#endif

@@ -427,18 +427,18 @@ void nrn_cache_prop_realloc() {
 
 // for avoiding interthread cache line sharing
 // each thread needs its own pool instance
-extern "C" void* nrn_pool_create(long count, int itemsize) {
+void* nrn_pool_create(long count, int itemsize) {
     return new CharArrayPool(count, itemsize);
 }
-extern "C" void nrn_pool_delete(void* pool) {
+void nrn_pool_delete(void* pool) {
     delete static_cast<CharArrayPool*>(pool);
 }
-extern "C" void* nrn_pool_alloc(void* pool) {
+void* nrn_pool_alloc(void* pool) {
     return static_cast<CharArrayPool*>(pool)->alloc();
 }
-extern "C" void nrn_pool_free(void* pool, void* item) {
+void nrn_pool_free(void* pool, void* item) {
     static_cast<CharArrayPool*>(pool)->hpfree(static_cast<char*>(item));
 }
-extern "C" void nrn_pool_freeall(void* pool) {
+void nrn_pool_freeall(void* pool) {
     static_cast<CharArrayPool*>(pool)->free_all();
 }

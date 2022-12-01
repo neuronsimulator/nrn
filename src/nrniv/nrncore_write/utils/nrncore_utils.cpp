@@ -235,11 +235,15 @@ void* get_coreneuron_handle() {
     }
 
     // last fallback is minimal library with internal mechanisms
+    // named libcorenrnmech_internal
     neuron::std::filesystem::path corenrn_lib_path{neuron_home};
+    auto const corenrn_internal_lib_name = std::string{neuron::config::shared_library_prefix}
+                                               .append("corenrnmech_internal")
+                                               .append(neuron::config::shared_library_suffix);
 #ifndef MINGW
     (corenrn_lib_path /= "..") /= "..";
 #endif
-    (corenrn_lib_path /= "lib") /= corenrn_lib_name;
+    (corenrn_lib_path /= "lib") /= corenrn_internal_lib_name;
     paths_tried.push_back(corenrn_lib_path);
     if (neuron::std::filesystem::exists(corenrn_lib_path)) {
         return get_handle_for_lib(corenrn_lib_path);
