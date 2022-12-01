@@ -6,7 +6,6 @@ if not config.arguments["NRN_ENABLE_INTERVIEWS"] or os.getenv("DISPLAY") is None
     print("No GUI for running neurondemo. Skip this test.")
     quit()
 
-import hashlib
 from neuron.tests.utils.checkresult import Chk
 from subprocess import Popen, PIPE
 
@@ -84,7 +83,33 @@ proc prgraphs() {local i, j, k  localobj xvec, yvec, glist
 # Run all the demos and compare their results to the reference
 for i in range(1, 8):
     data = neurondemo(prgraphs, input % i)
+    data.reverse()
+    # parse the prgraphs output back into a rich structure
+    rich_data = []
+    graphs, num_graphs = data.pop().split(maxsplit=1)
+    assert graphs == "Graphs"
+    num_graphs = int(num_graphs)
+    for i_graph in range(num_graphs):
+        graph_name = data.pop()
+        lines, num_lines = data.pop().split(maxsplit=1)
+        assert lines == "lines"
+        num_lines = int(num_lines)
+        lines = []
+        for i_line in range(num_lines):
+            points, num_points = data.pop().split(maxsplit=1)
+            assert points == "points"
+            num_points = int(num_points)
+            # not clear if the number after xvec is useful
+            assert data.pop().startswith("xvec")
+            xvals = [data.pop() for _ in range(num_points)]
+            # not clear if the number after yvec is useful
+            assert data.pop().startswith("yvec")
+            yvals = [data.pop() for _ in range(num_points)]
+            lines.append({"x": xvals, "y": yvals})
+        rich_data.append([graph_name, lines])
+    # we should have munched everything
+    assert len(data) == 0
     key = "demo%d" % i
-    chk(key, data)
+    chk(key, rich_data)
 
 chk.save()

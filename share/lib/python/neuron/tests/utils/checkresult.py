@@ -57,6 +57,9 @@ class Chk:
                     # List comprehension avoids short-circuit, so the "diff"
                     # message just above is printed for all elements
                     return all([equal(aa, bb) for aa, bb in zip(a, b)])
+                elif type(a) == dict:
+                    assert a.keys() == b.keys()
+                    return all([equal(a[k], b[k]) for k in a.keys()])
                 raise Exception(
                     "Don't know how to compare objects of type " + str(type(a))
                 )
