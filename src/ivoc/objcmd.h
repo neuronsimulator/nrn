@@ -39,7 +39,7 @@ class HocCommand: public Observer {
 
   private:
     Object* obj_;
-    CopyString* s_;
+    std::string s_;
     Object* po_;
 };
 

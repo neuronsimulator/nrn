@@ -4496,8 +4496,8 @@ std::string NetCvode::statename(int is, int style) {
             assert(sym);
             return sym2name(sym);
         } else {
-            auto* s = hdp.retrieve(raw_ptr);
-            return s ? s->string() : "unknown";
+            auto s = hdp.retrieve(raw_ptr);
+            return s.empty() ? s.c_str() : "unknown";
         }
     };
     int j{};

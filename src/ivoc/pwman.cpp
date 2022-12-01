@@ -327,7 +327,6 @@ class PaperItem;
     Rect* prect_;
     bool use_printer;
     bool printer_control_accept_;
-    String printer_;
     FieldDialog* b_printer_;
     FileChooser* fc_print_;
     FileChooser* fc_idraw_;
@@ -2320,7 +2319,6 @@ PWMImpl::PWMImpl(ScreenScene* screen, PaperScene* paper, Rect* prect) {
     w_ = NULL;
     landscape_ = false;
     prect_ = prect;
-    printer_ = "lp";
     use_printer = true;
     printer_control_accept_ = true;
     b_printer_ = NULL;

@@ -86,10 +86,6 @@ void nrnsecmenu() {
     hoc_retpushx(1.);
 }
 
-#ifdef ultrix
-char* strstr(const char*, const char*);
-#endif
-
 static bool has_globals(const char* name) {
     Symbol* sp;
     char suffix[100];

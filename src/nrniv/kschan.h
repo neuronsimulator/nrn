@@ -2,7 +2,6 @@
 #define kschan_h
 
 #include <math.h>
-#include <OS/string.h>
 #include "nrnoc2iv.h"
 #include "ivocvect.h"
 #include "nrnunits_modern.h"
@@ -279,10 +278,10 @@ class KSState {
     KSState();
     virtual ~KSState();
     const char* string() {
-        return name_.string();
+        return name_.c_str();
     }
     double f_;  // normalized conductance
-    CopyString name_;
+    std::string name_;
     int index_;  // into state_ array
     KSChan* ks_;
     Object* obj_;
@@ -397,8 +396,8 @@ class KSChan {
     int mechtype_;
 
   public:
-    CopyString name_;  // name of channel
-    CopyString ion_;   // name of ion , "" means non-specific
+    std::string name_;  // name of channel
+    std::string ion_;   // name of ion , "" means non-specific
     double gmax_deflt_;
     double erev_deflt_;
     int cond_model_;

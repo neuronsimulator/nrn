@@ -34,12 +34,11 @@ HocCommand::HocCommand(Object* pobj) {
     }
     po_ = pobj;
     hoc_obj_ref(po_);
-    s_ = NULL;
     obj_ = NULL;
 }
 
 void HocCommand::init(const char* cmd, Object* obj) {
-    s_ = new CopyString(cmd);
+    s_ = cmd;
     obj_ = obj;
     po_ = NULL;
     if (obj_) {
@@ -49,16 +48,12 @@ void HocCommand::init(const char* cmd, Object* obj) {
 
 void HocCommand::update(Observable*) {  // obj_ has been freed
     obj_ = NULL;
-    delete s_;
-    s_ = new CopyString("");
+    s_.clear();
 }
 
 HocCommand::~HocCommand() {
     if (obj_) {
         nrn_notify_pointer_disconnect(this);
-    }
-    if (s_) {
-        delete s_;
     }
     if (po_) {
         hoc_obj_unref(po_);
@@ -69,9 +64,9 @@ void HocCommand::help() {
 #if HAVE_IV
     char buf[200];
     if (obj_) {
-        sprintf(buf, "%s %s", s_->string(), obj_->ctemplate->sym->name);
+        sprintf(buf, "%s %s", s_.c_str(), obj_->ctemplate->sym->name);
     } else {
-        sprintf(buf, "%s", s_->string());
+        sprintf(buf, "%s", s_.c_str());
     }
     Oc::help(buf);
 #endif
@@ -80,14 +75,14 @@ void HocCommand::help() {
 const char* ccc = "PythonObject";
 const char* HocCommand::name() {
     if (po_ == NULL) {
-        return s_->string();
+        return s_.c_str();
     } else {
         return ccc;
     }
 }
 
 void HocCommand::audit() {
-    if (!s_) {
+    if (s_.empty()) {
         return;
     }
     char buf[256];
@@ -105,11 +100,11 @@ int HocCommand::execute(bool notify) {
         assert(nrnpy_hoccommand_exec);
         err = (*nrnpy_hoccommand_exec)(po_);
     } else {
-        if (!s_) {
+        if (s_.empty()) {
             return 0;
         }
         char buf[256];
-        sprintf(buf, "{%s}\n", s_->string());
+        sprintf(buf, "{%s}\n", s_.c_str());
         err = hoc_obj_run(buf, obj_);
     }
 #if HAVE_IV

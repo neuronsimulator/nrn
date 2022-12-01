@@ -406,7 +406,7 @@ static const char** ks_name(void* v) {
         ks->setname(gargstr(1));
     }
     char** ps = hoc_temp_charptr();
-    *ps = (char*) ks->name_.string();
+    *ps = ks->name_.c_str();
     return (const char**) ps;
 }
 
@@ -416,7 +416,7 @@ static const char** ks_ion(void* v) {
         ks->setion(gargstr(1));
     }
     char** ps = hoc_temp_charptr();
-    *ps = (char*) ks->ion_.string();
+    *ps = ks->ion_.c_str();
     return (const char**) ps;
 }
 
@@ -646,9 +646,9 @@ static double ks_pr(void* v) {
 
     Printf("%s type properties\n", hoc_object_name(ks->obj_));
     Printf("name=%s is_point_=%s ion_=%s cond_model_=%d\n",
-           ks->name_.string(),
+           ks->name_.c_str(),
            (ks->is_point() ? "true" : "false"),
-           ks->ion_.string(),
+           ks->ion_.c_str(),
            ks->cond_model_);
     Printf("  ngate=%d nstate=%d nhhstate=%d nligand=%d ntrans=%d ivkstrans=%d iligtrans=%d\n",
            ks->ngate_,
@@ -905,20 +905,20 @@ void KSChan::build() {
     }
     int i;
     char buf[100];
-    if (strcmp(ion_.string(), "NonSpecific") != 0) {
-        ion_reg(ion_.string(), -10000.);
-        sprintf(buf, "%s_ion", ion_.string());
+    if (strcmp(ion_.c_str(), "NonSpecific") != 0) {
+        ion_reg(ion_.c_str(), -10000.);
+        sprintf(buf, "%s_ion", ion_.c_str());
         ion_sym_ = looksym(buf);
         if (!ion_sym_) {
             hoc_execerror(buf, " is not an ion mechanism");
         }
     }
-    const char* suffix = name_.string();
+    const char* suffix = name_.c_str();
     char unsuffix[100];
     if (is_point()) {
         unsuffix[0] = '\0';
     } else {
-        sprintf(unsuffix, "_%s", name_.string());
+        sprintf(unsuffix, "_%s", name_.c_str());
     }
     if (looksym(suffix)) {
         hoc_execerror(suffix, "already exists");
@@ -954,21 +954,21 @@ void KSChan::build() {
     }
     setcond();
     sname_install();
-    //	printf("%s allowed in insert statement\n", name_.string());
+    //	printf("%s allowed in insert statement\n", name_.c_str());
 }
 
 void KSChan::setname(const char* s) {
     // printf("KSChan::setname\n");
     int i;
-    if (strcmp(s, name_.string()) == 0) {
+    if (strcmp(s, name_.c_str()) == 0) {
         return;
     }
     name_ = s;
     if (mechsym_) {
         char old_suffix[100];
         i = 0;
-        while (strcmp(mechsym_->name, name_.string()) != 0 && looksym(name_.string())) {
-            Printf("KSChan::setname %s already in use\n", name_.string());
+        while (strcmp(mechsym_->name, name_.c_str()) != 0 && looksym(name_.c_str())) {
+            Printf("KSChan::setname %s already in use\n", name_.c_str());
             sprintf(old_suffix, "%s%d", s, i);
             name_ = old_suffix;
             ++i;
@@ -977,7 +977,7 @@ void KSChan::setname(const char* s) {
             //			return;
         }
         sprintf(old_suffix, "_%s", mechsym_->name);
-        const char* suffix = name_.string();
+        const char* suffix = name_.c_str();
         free(mechsym_->name);
         mechsym_->name = strdup(suffix);
         if (is_point()) {
@@ -1002,7 +1002,7 @@ void KSChan::setname(const char* s) {
                     sp->name = s1;
                 }
             }
-        //	printf("%s renamed to %s\n", old_suffix+1, name_.string());
+        //	printf("%s renamed to %s\n", old_suffix+1, name_.c_str());
     }
 }
 
@@ -1171,7 +1171,7 @@ void KSChan::update_prop() {
 void KSChan::setion(const char* s) {
     // printf("KSChan::setion\n");
     int i;
-    if (strcmp(ion_.string(), s) == 0) {
+    if (strcmp(ion_.c_str(), s) == 0) {
         return;
     }
     Symbol* searchsym = (is_point() ? mechsym_ : NULL);
@@ -1183,7 +1183,7 @@ void KSChan::setion(const char* s) {
     char buf[100];
     int pdoff = ppoff_;
     int io = gmaxoffset_;
-    if (strcmp(ion_.string(), "NonSpecific") == 0) {  // non-specific
+    if (strcmp(ion_.c_str(), "NonSpecific") == 0) {  // non-specific
         if (ion_sym_) {                               // switch from useion to non-specific
             printf("switch from useion to non-specific\n");
             rlsym_->s_varn += 1;
@@ -1228,7 +1228,7 @@ void KSChan::setion(const char* s) {
         if (ion_sym_) {                              // there already is an ion
             if (strcmp(ion_sym_->name, buf) != 0) {  // is it different
                 //				printf(" mechanism %s now uses %s instead of %s\n",
-                //					name_.string(), sym->name, ion_sym_->name);
+                //					name_.c_str(), sym->name, ion_sym_->name);
                 ion_sym_ = sym;
                 state_consist();
                 ion_consist();
@@ -1932,7 +1932,7 @@ void KSChan::trans_remove(int i) {
 
 void KSChan::setstructure(Vect* vec) {
     int i, j, ii, idx, ns;
-// printf("setstructure called for KSChan %p %s\n", this, name_.string());
+// printf("setstructure called for KSChan %p %s\n", this, name_.c_str());
 #if 0
 for (i=0; i < vec->size(); ++i) {
 	printf("%d %g\n", i, vec->elem(i));
@@ -2230,7 +2230,7 @@ void KSChan::mulmat(double* s, double* ds) {
 
 void KSChan::alloc(Prop* prop) {
     // printf("KSChan::alloc nstate_=%d nligand_=%d\n", nstate_, nligand_);
-    // printf("KSChan::alloc %s param=%p\n", name_.string(), prop->param);
+    // printf("KSChan::alloc %s param=%p\n", name_.c_str(), prop->param);
     int j;
     prop->param_size = soffset_ + 2 * nstate_;
     if (is_point() && nrn_point_prop_) {
