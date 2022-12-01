@@ -1036,12 +1036,9 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
             num_point_process += n;
         }
     }
-    nt.pntprocs = (Point_process*) ecalloc_align(num_point_process,
-                                                 sizeof(Point_process));  // includes acell with and
-                                                                          // without gid
+    nt.pntprocs = new Point_process[num_point_process]{}; // includes acell with and without gid
     nt.n_pntproc = num_point_process;
     nt._ndata = offset;
-
 
     // matrix info
     nt._v_parent_index = v_parent_index;
