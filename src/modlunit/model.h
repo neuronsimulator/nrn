@@ -172,7 +172,7 @@ extern Symbol *install(const char*, int), /* Install token in symbol table */
 extern int unitonflag;
 
 extern char finname[NRN_BUFSIZE], /* the input file prefix */
-    buf[512];             /* general purpose temporary buffer */
+    buf[512];                     /* general purpose temporary buffer */
 
 extern Item *parseroot, *lex_tok; /* intoken pointer for nonzero parse passes */
 

@@ -539,7 +539,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 
             /* don't mention bad block if file was trunc'd, as it's all bogus */
             if ((dataptr - origptr) < filesize) {
-                sprintf(str,
+                Sprintf(str,
                         "Unknown block type (0x%02x) at offset %ld",
                         block,
                         (dataptr - origptr) - 1);

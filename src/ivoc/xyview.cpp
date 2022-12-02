@@ -21,6 +21,7 @@
 
 #include "mymath.h"
 #include "apwindow.h"
+#include "hocdec.h"
 #include "ocglyph.h"
 #include "scenevie.h"
 #include "scenepic.h"
@@ -782,7 +783,7 @@ ViewWindow::~ViewWindow() {
 void ViewWindow::update(Observable* o) {
     char s[200];
     XYView* v = (XYView*) o;
-    sprintf(s,
+    Sprintf(s,
             "%s %s x %g : %g  y %g : %g",
             type(),
             v->scene()->picker()->select_name(),

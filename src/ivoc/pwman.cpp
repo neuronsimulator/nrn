@@ -1797,19 +1797,21 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
 #if !MAC || DARWIN
     String filt("cat");
     s->find_attribute("pwm_postscript_filter", filt);
-    char* buf = new char[200 + strlen(name) + strlen(filt.string()) + 2 * strlen(tmpfile)];
+    auto const buf_size = 200 + strlen(name) + strlen(filt.string()) + 2 * strlen(tmpfile);
+    char* buf = new char[buf_size];
 
     if (use_printer) {
 #ifdef WIN32
-        Sprintf(buf, "%s %s %s", filt.string(), tmpfile, name);
+        std::snprintf(buf, buf_size, "%s %s %s", filt.string(), tmpfile, name);
 #else
-        Sprintf(buf, "%s < %s |  %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
+        std::snprintf(
+            buf, buf_size, "%s < %s |  %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
 #endif
     } else {
 #ifdef WIN32
-        Sprintf(buf, "%s %s > %s", filt.string(), tmpfile, name);
+        std::snprintf(buf, buf_size, "%s %s > %s", filt.string(), tmpfile, name);
 #else
-        Sprintf(buf, "%s < %s > %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
+        std::snprintf(buf, buf_size, "%s < %s > %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
 #endif
     }
     // printf("%s\n", buf);
@@ -2048,7 +2050,7 @@ void PrintableWindowManager::psfilter(const char* filename) {
     char buf[512];
     String filt("cat");
     if (s->find_attribute("pwm_postscript_filter", filt)) {
-        sprintf(
+        Sprintf(
             buf, "cat %s > %s; %s < %s > %s", filename, tmpfile, filt.string(), tmpfile, filename);
         nrnignore = system(buf);
         unlink(tmpfile);

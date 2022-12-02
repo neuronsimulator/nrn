@@ -88,7 +88,7 @@ void net_send(void** v, int weight_index_, Point_process* pnt, double td, double
     ++p.unreffed_event_cnt_;
     if (td < nt->_t) {
         char buf[100];
-        Sprintf(buf, "net_send td-t = %g", td - nt->_t);
+        std::snprintf(buf, sizeof(buf), "net_send td-t = %g", td - nt->_t);
         se->pr(buf, td, net_cvode_instance);
         abort();
         hoc_execerror("net_send delay < 0", 0);
@@ -111,7 +111,7 @@ void net_event(Point_process* pnt, double time) {
     if (ps) {
         if (time < nt->_t) {
             char buf[100];
-            Sprintf(buf, "net_event time-t = %g", time - nt->_t);
+            std::snprintf(buf, sizeof(buf), "net_event time-t = %g", time - nt->_t);
             ps->pr(buf, time, net_cvode_instance);
             hoc_execerror("net_event time < t", 0);
         }

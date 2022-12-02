@@ -1384,7 +1384,7 @@ void HocPanel::valueEd(const char* name,
     }
     if (extra && extra->units && units_on_flag_) {
         char nu[256];
-        sprintf(nu, "%s (%s)", name, extra->units);
+        Sprintf(nu, "%s (%s)", name, extra->units);
         vel = new ValEdLabel(WidgetKit::instance()->label(nu));
     } else {
         vel = new ValEdLabel(WidgetKit::instance()->label(name));
@@ -1509,7 +1509,7 @@ void HocItem::help(const char* child) {
     }
     *c2 = '\0';
     if (child) {
-        sprintf(path, "%s %s", child, buf);
+        Sprintf(path, "%s %s", child, buf);
     } else {
         strcpy(path, buf);
     }
@@ -1805,7 +1805,7 @@ void HocDefaultValEditor::def_change(float x0, float y0) {
     double x = get_val();
     if (x != deflt_) {
         char form[200], buf[200];
-        sprintf(form,
+        Sprintf(form,
                 "Permanently replace default value %s with %s",
                 xvalue_format->string(),
                 xvalue_format->string());

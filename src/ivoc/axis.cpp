@@ -12,6 +12,7 @@
 #include "scenevie.h"
 #include "mymath.h"
 #include "axis.h"
+#include "hocdec.h"
 #include "rect.h"
 #include "graph.h"
 #include "idraw.h"
@@ -190,9 +191,9 @@ void Axis::install() {
 
     if (d_ == Dimension_X) {
         if (logstep >= 0 && logstep <= 5) {
-            sprintf(pform, "%%0.%.0ff", logstep + addprec);
+            Sprintf(pform, "%%0.%.0ff", logstep + addprec);
         } else {
-            sprintf(pform, "%%g");
+            Sprintf(pform, "%%g");
         }
         y = pos_;
         s_->append(new GAxisItem(new Line(amax_ - amin_, 0)));
@@ -226,7 +227,7 @@ void Axis::install() {
                     y_align = -0.3;
                 else
                     y_align = 1.5;
-                sprintf(str, pform, x);
+                Sprintf(str, pform, x);
                 s_->append_fixed(new GAxisItem(
                     new GLabel(str, Appear::default_color(), true, 1, x_align, y_align)));
                 gi = s_->count() - 1;
@@ -244,9 +245,9 @@ void Axis::install() {
         }
     } else {
         if (logstep >= 0 && logstep <= 5) {
-            sprintf(pform, " %%0.%.0ff ", logstep + 1);
+            Sprintf(pform, " %%0.%.0ff ", logstep + 1);
         } else {
-            sprintf(pform, " %%g ");
+            Sprintf(pform, " %%g ");
         }
         x = pos_;
         s_->append(new GAxisItem(new Line(0, amax_ - amin_)));
@@ -268,7 +269,7 @@ void Axis::install() {
             }
 
             if (number_) {
-                sprintf(str, pform, y);
+                Sprintf(str, pform, y);
                 y_align = 0.5;
                 // if (i==0) y_align = 0.;
                 // else if (i==ntic_) y_align = .66;

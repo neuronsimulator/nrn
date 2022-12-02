@@ -12,6 +12,7 @@
 #include <InterViews/style.h>
 #include <OS/string.h>
 
+#include "hocdec.h"
 #include "oc_ansi.h"
 #include "scenevie.h"
 #include "mymath.h"
@@ -456,7 +457,7 @@ void OcIdraw::ifill(const Color* color, bool f) {
     }
     //	sprintf(buf, "%%I cfg %s\n%d %d %d SetCFg", "Black", 0,0,0);
     // idraw needs hex
-    sprintf(
+    Sprintf(
         buf, "%%I cfg %x%x%x\n%f %f %f SetCFg", int(r * 256), int(g * 256), int(b * 256), r, g, b);
     out << buf << std::endl;
     if (f) {

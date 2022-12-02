@@ -123,7 +123,7 @@ void ion_reg(const char* name, double valence) {
         fprintf(stderr,
                 "%s ion valence defined differently in\n\
 two USEION statements (%g and %g)\n",
-                buf[0],
+                buf[0].c_str(),
                 valence,
                 global_charge(mechtype));
         nrn_exit(1);
@@ -131,7 +131,7 @@ two USEION statements (%g and %g)\n",
         fprintf(stderr,
                 "%s ion valence must be defined in\n\
 the USEION statement of any model using this ion\n",
-                buf[0]);
+                buf[0].c_str());
         nrn_exit(1);
     } else if (valence != VAL_SENTINAL) {
         global_charge(mechtype) = valence;

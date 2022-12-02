@@ -629,10 +629,10 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     ENDGUI
 #endif
 #endif
-    char* nrn_props;
-    nrn_props = new char[strlen(neuron_home) + 20];
+    auto const nrn_props_size = strlen(neuron_home) + 20;
+    char* nrn_props = new char[nrn_props_size];
     if (session) {
-        sprintf(nrn_props, "%s/%s", neuron_home, "lib/nrn.defaults");
+        std::snprintf(nrn_props, nrn_props_size, "%s/%s", neuron_home, "lib/nrn.defaults");
 #ifdef WIN32
         FILE* f;
         if ((f = fopen(nrn_props, "r")) != (FILE*) 0) {
@@ -640,9 +640,9 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
             session->style()->load_file(String(nrn_props), -5);
         } else {
 #ifdef MINGW
-            sprintf(nrn_props, "%s/%s", neuron_home, "lib/nrn.def");
+            std::snprintf(nrn_props, nrn_props_size, "%s/%s", neuron_home, "lib/nrn.def");
 #else
-            sprintf(nrn_props, "%s\\%s", neuron_home, "lib\\nrn.def");
+            std::snprintf(nrn_props, nrn_props_size, "%s\\%s", neuron_home, "lib\\nrn.def");
 #endif
             if ((f = fopen(nrn_props, "r")) != (FILE*) 0) {
                 fclose(f);
@@ -659,7 +659,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #if !MAC
         char* h = getenv("HOME");
         if (h) {
-            sprintf(nrn_props, "%s/%s", h, ".nrn.defaults");
+            std::snprintf(nrn_props, nrn_props_size, "%s/%s", h, ".nrn.defaults");
             session->style()->load_file(String(nrn_props), -5);
         }
 #endif

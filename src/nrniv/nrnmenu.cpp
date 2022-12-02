@@ -123,7 +123,7 @@ void nrnglobalmechmenu() {
         return;
     }
     char* name = gargstr(1);
-    sprintf(suffix, "_%s", name);
+    Sprintf(suffix, "_%s", name);
     if (ifarg(2) && *getarg(2) == 0.) {
         int cnt = 0;
         for (sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
@@ -148,7 +148,7 @@ void nrnglobalmechmenu() {
                     if (i > 5)
                         break;
                     Sprintf(buf, "%s[%d]", sp->name, i);
-                    sprintf(n, "%s[%d]", sp->name, i);
+                    Sprintf(n, "%s[%d]", sp->name, i);
                     hoc_ivpvalue(n, hoc_val_pointer(buf), false, sp->extra);
                 }
             } else {
@@ -306,7 +306,7 @@ static void mech_menu(Prop* p1, double x, int type, const char* path, MechSelect
                         for (i = 0; i < a->sub[0]; i++) {
                             if (i > 5)
                                 break;
-                            sprintf(n, "%s[%d]", vsym->name, i);
+                            Sprintf(n, "%s[%d]", vsym->name, i);
                             if (path) {
                                 if (nrn_is_const(path, n)) {
                                     Sprintf(buf, "%s.%s", path, n);
@@ -334,7 +334,7 @@ static void mech_menu(Prop* p1, double x, int type, const char* path, MechSelect
                             if (p1->_type == MORPHOLOGY) {
                                 Section* sec = chk_access();
                                 char buf2[200];
-                                sprintf(buf2, "%s.Ra += 0", secname(sec));
+                                Sprintf(buf2, "%s.Ra += 0", secname(sec));
                                 hoc_ivpvaluerun(
                                     vsym->name, hoc_val_pointer(buf), buf2, 1, 0, vsym->extra);
                             } else {
@@ -385,7 +385,7 @@ void nrnallpointmenu() {
 
         bool are_globals = false;
         char suffix[100];
-        sprintf(suffix, "_%s", sp->name);
+        Sprintf(suffix, "_%s", sp->name);
         for (Symbol* stmp = hoc_built_in_symlist->first; stmp; stmp = stmp->next) {
             if (stmp->type == VAR && stmp->subtype == USERDOUBLE && strstr(stmp->name, suffix)) {
                 are_globals = true;
@@ -794,7 +794,7 @@ void MechanismStandard::panel(const char* label) {
                     Sprintf(buf, "hoc_ac_ = %d %s", i, action_.string());
                 }
                 char buf2[200];
-                sprintf(buf2, "%s[%d]", sym->name, j);
+                Sprintf(buf2, "%s[%d]", sym->name, j);
                 hoc_ivvaluerun_ex(buf2,
                                   NULL,
                                   np_->prop_pval(sym, j),
