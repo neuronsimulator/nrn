@@ -1,5 +1,4 @@
 #pragma once
-#undef HAVE_PUTENV
 #undef HAVE_FTIME
 #undef HAVE_PROTOTYPES
 #undef HAVE_DIRENT_H
