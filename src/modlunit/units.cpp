@@ -10,6 +10,8 @@
 #include "units.h"
 #include <assert.h>
 
+#include <cstring>
+
 /**
   The strategy for dynamic units selection between Legacy and modern units
   is to maintain two complete tables respectively. Legacy and modern in the

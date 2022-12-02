@@ -5,13 +5,15 @@
 #include "nrniv_mf.h"
 #include <nrnoc2iv.h>
 #include "nrnpy_utils.h"
-#include <cmath>
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
 #endif
 
 #include <membfunc.h>
 #include <parse.hpp>
+
+#include <cmath>
+#include <cstring>
 extern void nrn_pt3dremove(Section* sec, int i0);
 extern void nrn_pt3dinsert(Section* sec, int i0, double x, double y, double z, double d);
 extern void nrn_pt3dclear(Section* sec, int req);
