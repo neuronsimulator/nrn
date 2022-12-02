@@ -2705,7 +2705,7 @@ void cvode_valid() {
     cvode_valid_ = 0;
 }
 
-void cvode_rw_cur(char* b) {
+void cvode_rw_cur(char (&b)[NRN_BUFSIZE]) {
     /* if a current is READ and WRITE then call the correct _ode_spec
        since it may compute some aspect of the current */
     Item *q, *q1;

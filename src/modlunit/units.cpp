@@ -1168,7 +1168,7 @@ static double dynam_unit_mag(int legacy, char* u1, char* u2) {
     return result;
 }
 
-void nrnunit_dynamic_str(char* buf, const char* name, char* u1, char* u2) {
+void nrnunit_dynamic_str(char (&buf)[NRN_BUFSIZE], const char* name, char* u1, char* u2) {
 #if NRN_DYNAMIC_UNITS
 
     double legacy = dynam_unit_mag(1, u1, u2);
