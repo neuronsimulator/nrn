@@ -1,0 +1,13 @@
+name: External CIs
+
+on:
+   workflow_dispatch:
+   
+jobs:   
+  nrn-modeldb-ci:
+      uses: alexsavulescu/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@reuse
+      with:
+        neuron_v1: neuron
+        neuron_v2: neuron-nightly
+        models_to_run: 157157
+   
