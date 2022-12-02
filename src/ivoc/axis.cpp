@@ -93,7 +93,7 @@ void Axis::save(std::ostream& o) {
     } else {
         c = 'y';
     }
-    sprintf(buf,
+    Sprintf(buf,
             "save_window_.%caxis(%g,%g,%g,%d,%d,%d,%d)",
             c,
             amin_,
@@ -424,7 +424,7 @@ void BoxBackground::draw_help(Canvas* c, const Allocation&) const {
 
 void BoxBackground::tic_label(Coord x1, Coord y1, Coord val, float xa, float ya, Canvas* c) const {
     char buf[20];
-    sprintf(buf, "%g", val);
+    Sprintf(buf, "%g", val);
     Glyph* g = new Label(buf, WidgetKit::instance()->font(), Appear::default_color());
     g->ref();
     Requisition req;
@@ -516,7 +516,7 @@ void AxisBackground::draw_help(Canvas* c, const Allocation&) const {
 
 void AxisBackground::tic_label(Coord x1, Coord y1, Coord val, float xa, float ya, Canvas* c) const {
     char buf[20];
-    sprintf(buf, "%g", val);
+    Sprintf(buf, "%g", val);
     Glyph* g = new Label(buf, WidgetKit::instance()->font(), Appear::default_color());
     g->ref();
     Requisition req;

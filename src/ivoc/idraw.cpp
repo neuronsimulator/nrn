@@ -66,7 +66,7 @@ static void transformer(const Transformer& t) {
     float a00, a01, a10, a11, a20, a21;
     t.matrix(a00, a01, a10, a11, a20, a21);
     char buf[200];
-    sprintf(buf, "[ %g %g %g %g %g %g ] concat", a00, a01, a10, a11, a20, a21);
+    Sprintf(buf, "[ %g %g %g %g %g %g ] concat", a00, a01, a10, a11, a20, a21);
     out << buf << std::endl;
 }
 
@@ -135,7 +135,7 @@ void OcIdraw::text(Canvas*,
     }
 
     // idraw needs hex
-    sprintf(buf,
+    Sprintf(buf,
             "%%I cfg %x%x%x\n%f %f %f SetCFg\n",
             int(r * 256),
             int(g * 256),
@@ -290,7 +290,7 @@ void OcIdraw::polygon(Canvas*,
     char buf[100];
     out << "\nBegin %I Poly\n";
     poly(count, x, y, color, b, f);
-    sprintf(buf, "%d Poly\nEnd", count);
+    Sprintf(buf, "%d Poly\nEnd", count);
     out << buf << std::endl;
 }
 
@@ -303,7 +303,7 @@ void OcIdraw::bspl(Canvas*,
     char buf[100];
     out << "\nBegin %I BSpl\n";
     poly(count, x, y, color, b, false);
-    sprintf(buf, "%d BSpl\n%%I 1\nEnd", count);
+    Sprintf(buf, "%d BSpl\n%%I 1\nEnd", count);
     out << buf << std::endl;
 }
 
@@ -317,7 +317,7 @@ void OcIdraw::cbspl(Canvas*,
     char buf[100];
     out << "\nBegin %I CBSpl\n";
     poly(count, x, y, color, b, f);
-    sprintf(buf, "%d CBSpl\nEnd", count);
+    Sprintf(buf, "%d CBSpl\nEnd", count);
     out << buf << std::endl;
 }
 
@@ -357,7 +357,7 @@ void OcIdraw::poly(int count,
     for (int i = 0; i < count; ++i) {
         float a, b;
         t.inverse_transform(x[i], y[i], a, b);
-        sprintf(buf, "%d %d\n", int(a), int(b));
+        Sprintf(buf, "%d %d\n", int(a), int(b));
         out << buf;
     }
 }
@@ -417,7 +417,7 @@ void OcIdraw::ellipse(Canvas*,
     tr.translate(x, y);
     transformer(tr);
     char buf[100];
-    sprintf(buf, "%%I\n0 0 %d %d Elli\nEnd", int(width * 100), int(height * 100));
+    Sprintf(buf, "%%I\n0 0 %d %d Elli\nEnd", int(width * 100), int(height * 100));
     out << buf << std::endl;
 }
 
@@ -436,7 +436,7 @@ void OcIdraw::brush(const Brush* b) {
             }
         }
 #endif
-    sprintf(buf, "%%I b %d\n%d 0 0 [", p, int(w));
+    Sprintf(buf, "%%I b %d\n%d 0 0 [", p, int(w));
     out << buf;
 #if !MAC
     if (b)
@@ -444,7 +444,7 @@ void OcIdraw::brush(const Brush* b) {
             out << b->dash_list(i) << " ";
         }
 #endif
-    sprintf(buf, "] 0 SetB");
+    Sprintf(buf, "] 0 SetB");
     out << buf << std::endl;
 }
 
@@ -462,7 +462,7 @@ void OcIdraw::ifill(const Color* color, bool f) {
     if (f) {
         //		sprintf(buf, "%%I cbg %s\n%d %d %d SetCBg\n%%I p\n1 SetP",
         //		 "Black", 0,0,0);
-        sprintf(buf,
+        Sprintf(buf,
                 "%%I cbg %x%x%x\n%f %f %f SetCBg\n%%I p\n1 SetP",
                 int(r * 256),
                 int(g * 256),
@@ -471,7 +471,7 @@ void OcIdraw::ifill(const Color* color, bool f) {
                 g,
                 b);
     } else {
-        sprintf(buf, "%%I cbg %s\n%d %d %d SetCBg\nnone SetP %%I p n", "White", 1, 1, 1);
+        Sprintf(buf, "%%I cbg %s\n%d %d %d SetCBg\nnone SetP %%I p n", "White", 1, 1, 1);
     }
     out << buf << std::endl;
 }

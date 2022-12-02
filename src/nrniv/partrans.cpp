@@ -1135,7 +1135,7 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
         }
 
         char fname[1000];
-        sprintf(fname, "%s/%d_gap.dat", path, group_ids[tid]);
+        Sprintf(fname, "%s/%d_gap.dat", path, group_ids[tid]);
         FILE* f = fopen(fname, "wb");
         assert(f);
         fprintf(f, "%s\n", bbcore_write_version);

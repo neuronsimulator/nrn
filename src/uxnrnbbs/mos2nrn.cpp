@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
             return i;
         }
     } else {  // its a hoc file
-        sprintf(buf, "xterm -sb -e %s/nrniv %s -", NEURON_BIN_DIR, argv[1]);
+        Sprintf(buf, "xterm -sb -e %s/nrniv %s -", NEURON_BIN_DIR, argv[1]);
         int i = system(buf);
         if (i) {
             return i;

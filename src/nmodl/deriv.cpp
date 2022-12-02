@@ -48,9 +48,9 @@ void solv_diffeq(Item* qsol,
     char ssprefix[8];
 
     if (method && strcmp(method->name, "cnexp") == 0) {
-        sprintf(buf, " %s();\n", fun->name);
+        Sprintf(buf, " %s();\n", fun->name);
         replacstr(qsol, buf);
-        sprintf(buf, " %s(_p, _ppvar, _thread, _nt);\n", fun->name);
+        Sprintf(buf, " %s(_p, _ppvar, _thread, _nt);\n", fun->name);
         vectorize_substitute(qsol, buf);
         return;
     }
@@ -186,7 +186,7 @@ void solv_diffeq(Item* qsol,
         }
     }
     dtsav_for_nrn_state = 1;
-    sprintf(buf,
+    Sprintf(buf,
             "   if (secondorder) {\n"
             "    int _i;\n"
             "    for (_i = 0; _i < %d; ++_i) {\n"
@@ -857,16 +857,16 @@ int cvode_cnexp_success(Item* q1, Item* q2) {
             if (strcmp(a, "0.0") == 0) {
                 assert(b[strlen(b) - 9] == '/');
                 b[strlen(b) - 9] = '\0';
-                sprintf(buf, " __primary -= 0.5*dt*( %s )", b);
+                Sprintf(buf, " __primary -= 0.5*dt*( %s )", b);
                 lappendstr(netrec_cnexp, buf);
-                sprintf(buf, " %s = %s - dt*(%s)", s->name, s->name, b);
+                Sprintf(buf, " %s = %s - dt*(%s)", s->name, s->name, b);
             } else {
-                sprintf(buf,
+                Sprintf(buf,
                         " __primary += ( 1. - exp( 0.5*dt*( %s ) ) )*( %s - __primary )",
                         a,
                         b);
                 lappendstr(netrec_cnexp, buf);
-                sprintf(buf,
+                Sprintf(buf,
                         " %s = %s + (1. - exp(dt*(%s)))*(%s - %s)",
                         s->name,
                         s->name,

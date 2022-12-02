@@ -649,7 +649,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
                 session->style()->load_file(String(nrn_props), -5);
             } else {
                 char buf[256];
-                sprintf(buf, "Can't load NEURON resources from %s[aults]", nrn_props);
+                Sprintf(buf, "Can't load NEURON resources from %s[aults]", nrn_props);
                 printf("%s\n", buf);
             }
         }

@@ -1403,7 +1403,7 @@ void warning(const char* s, const char* t) /* print warning message */
     char id[10];
     int n;
     if (nrnmpi_numprocs_world > 1) {
-        sprintf(id, "%d ", nrnmpi_myid_world);
+        Sprintf(id, "%d ", nrnmpi_myid_world);
     } else {
         id[0] = '\0';
     }

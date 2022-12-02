@@ -1015,7 +1015,7 @@ static void warn_assign_dynam_unit(const char* name) {
     if (first) {
         char mes[100];
         first = 0;
-        sprintf(mes,
+        Sprintf(mes,
                 "Assignment to %s physical constant %s",
                 _nrnunit_use_legacy_ ? "legacy" : "modern",
                 name);
@@ -1335,7 +1335,7 @@ void frame_debug() {
     char id[10];
 
     if (nrnmpi_numprocs_world > 1) {
-        sprintf(id, "%d ", nrnmpi_myid_world);
+        Sprintf(id, "%d ", nrnmpi_myid_world);
     } else {
         id[0] = '\0';
     }

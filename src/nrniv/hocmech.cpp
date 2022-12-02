@@ -235,7 +235,7 @@ void make_mechanism() {
 
     for (sp = slist->first; sp; sp = sp->next) {
         if (sp->type == VAR && sp->cpublic) {
-            sprintf(buf, "%s_%s", sp->name, m[1]);
+            Sprintf(buf, "%s_%s", sp->name, m[1]);
             Symbol* sp1 = hoc_lookup(buf);
             sp1->u.rng.index = sp->u.oboff;
         }
@@ -386,10 +386,10 @@ static const char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, c
                 }
             }
             if (suffix) {
-                sprintf(buf, "%s_%s", cp, m[1]);
+                Sprintf(buf, "%s_%s", cp, m[1]);
                 check(buf);
             } else {
-                sprintf(buf, "%s", cp);
+                Sprintf(buf, "%s", cp);
             }
             if (!(sp = hoc_table_lookup(cp, slist)) || !sp->cpublic || !(sp->type == VAR)) {
                 hoc_execerror(cp, "is not a public variable");
@@ -412,10 +412,10 @@ static const char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, c
     for (sp = slist->first; sp; sp = sp->next) {
         if (sp->type == VAR && sp->cpublic) {
             if (suffix) {
-                sprintf(buf, "%s_%s", sp->name, m[1]);
+                Sprintf(buf, "%s_%s", sp->name, m[1]);
                 check(buf);
             } else {
-                sprintf(buf, "%s", sp->name);
+                Sprintf(buf, "%s", sp->name);
             }
             bool b = false;
             for (j = 1; j < jmax; ++j) {

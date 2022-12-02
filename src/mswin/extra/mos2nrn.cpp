@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
 	}
 #endif
 
-    sprintf(buf,
+    Sprintf(buf,
             "%s\\mingw\\usr\\bin\\bash.exe %s/lib/mos2nrn3.sh %s %s %s",
             nrnhome,
             nh,
@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
             nh,
             args);
 #else
-    sprintf(buf, "%s\\bin\\sh %s/lib/mos2nrn.sh %s %s", nrnhome, nh, nh, args);
+    Sprintf(buf, "%s\\bin\\sh %s/lib/mos2nrn.sh %s %s", nrnhome, nh, nh, args);
 #endif
     msg = new char[strlen(buf) + 100];
     err = WinExec(buf, SW_SHOW);

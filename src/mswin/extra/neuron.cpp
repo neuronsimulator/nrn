@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
 		nh[0] = '/';
 	}
 #endif
-    sprintf(buf,
+    Sprintf(buf,
             "%s\\mingw\\usr\\bin\\bash.exe -i %s/lib/neuron3.sh %s nrngui %s",
             nrnhome,
             nh,
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
             args);
 // MessageBox(0, buf, "NEURON", MB_OK);
 #else
-    sprintf(buf,
+    Sprintf(buf,
             "%s\\bin\\mintty -c %s/lib/minttyrc %s/bin/bash --rcfile %s/lib/nrnstart.bsh "
             "%s/lib/neuron.sh %s %s",
             nrnhome,

@@ -276,7 +276,7 @@ double* SymDirectory::variable(int index) {
         }
     else {
         char buf[256], *cp;
-        sprintf(buf, "%s%s", path().string(), name(index).string());
+        Sprintf(buf, "%s%s", path().string(), name(index).string());
         if (whole_vector(index)) {  // rangevar case for [all]
             // replace [all] with [0]
             cp = strstr(buf, "[all]");
@@ -365,7 +365,7 @@ SymbolItem::SymbolItem(Symbol* sym, Objectdata* od, int index, int whole_array) 
                 name_ = concat(sym->name, hoc_araystr(sym, index, od));
             } else {
                 char buf[50];
-                sprintf(buf, "[%d]", index);
+                Sprintf(buf, "[%d]", index);
                 name_ = concat(sym->name, buf);
             }
         }
@@ -386,7 +386,7 @@ SymbolItem::SymbolItem(Object* ob) {
     index_ = 0;
     ob_ = ob;
     char buf[10];
-    sprintf(buf, "%d", ob->index);
+    Sprintf(buf, "%d", ob->index);
     name_ = buf;
     pysec_type_ = 0;
     pysec_ = NULL;
@@ -424,7 +424,7 @@ void SymDirectoryImpl::make_pathname(const char* parent,
                                      const char* index,
                                      int suffix) {
     char buf[200];
-    sprintf(buf, "%s%s%s%c", parent, name, index, suffix);
+    Sprintf(buf, "%s%s%s%c", parent, name, index, suffix);
     path_ = buf;
 }
 
@@ -517,8 +517,8 @@ void SymDirectoryImpl::load_section() {
 
     int i = 0;
     double x = nrn_arc_position(sec, sec->pnode[0]);
-    sprintf(xarg, "( %g )", x);
-    sprintf(buf, "v%s", xarg);
+    Sprintf(xarg, "( %g )", x);
+    Sprintf(buf, "v%s", xarg);
     symbol_list_.append(new SymbolItem(buf));
     nrn_pushsec(sec);
     Node* nd = sec->pnode[i];
@@ -539,15 +539,15 @@ void SymDirectoryImpl::load_mechanism(Prop* p, int type, const char* xarg) {
             if (ISARRAY(sym)) {
                 int n = hoc_total_array_data(sym, 0);
                 if (n > 5) {
-                    sprintf(buf, "%s[all]%s", sym->name, xarg);
+                    Sprintf(buf, "%s[all]%s", sym->name, xarg);
                     symbol_list_.append(new SymbolItem(buf, n));
                 }
-                sprintf(buf, "%s[%d]%s", sym->name, 0, xarg);
+                Sprintf(buf, "%s[%d]%s", sym->name, 0, xarg);
                 symbol_list_.append(new SymbolItem(buf));
-                sprintf(buf, "%s[%d]%s", sym->name, n - 1, xarg);
+                Sprintf(buf, "%s[%d]%s", sym->name, n - 1, xarg);
                 symbol_list_.append(new SymbolItem(buf));
             } else {
-                sprintf(buf, "%s%s", sym->name, xarg);
+                Sprintf(buf, "%s%s", sym->name, xarg);
                 symbol_list_.append(new SymbolItem(buf));
             }
         }

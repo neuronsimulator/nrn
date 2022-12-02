@@ -357,7 +357,7 @@ static double save(void* v) {
             hoc_assign_str(hoc_pgargstr(1), pwm_session_filename());
             return 1.;
         } else {
-            sprintf(buf, "execute(\"%s\", %s)", gargstr(1), gargstr(2));
+            Sprintf(buf, "execute(\"%s\", %s)", gargstr(1), gargstr(2));
         }
     } else {
         // sprintf(buf, "%s", gargstr(1));
@@ -735,7 +735,7 @@ void OcBox::save(std::ostream& o) {
             return;
         }
         if (has_window()) {
-            sprintf(buf, "\n//Begin %s", window()->name());
+            Sprintf(buf, "\n//Begin %s", window()->name());
             o << buf << std::endl;
         }
         o << "{" << std::endl;
@@ -771,11 +771,11 @@ void OcBox::save(std::ostream& o) {
         } else {
             cp1 = window()->name();
         }
-        sprintf(buf,
+        Sprintf(buf,
                 "ocbox_.map(\"%s\", %g, %g, %g, %g)\n}",
                 cp1,
 #else
-        sprintf(buf,
+        Sprintf(buf,
                 "ocbox_.map(\"%s\", %g, %g, %g, %g)\n}",
                 window()->name(),
 #endif
@@ -793,13 +793,13 @@ void OcBox::save(std::ostream& o) {
         o << "ocbox_.map()\n}" << std::endl;
     }
     if (bi_->oc_ref_) {
-        sprintf(buf, "%s = ocbox_", hoc_object_pathname(bi_->oc_ref_));
+        Sprintf(buf, "%s = ocbox_", hoc_object_pathname(bi_->oc_ref_));
         o << buf << std::endl;
         o << "ocbox_list_.remove(0)" << std::endl;
     }
     o << "objref ocbox_" << std::endl;
     if (bi_->save_action_ && has_window()) {
-        sprintf(buf, "//End %s\n", window()->name());
+        Sprintf(buf, "//End %s\n", window()->name());
         o << buf << std::endl;
     }
 }

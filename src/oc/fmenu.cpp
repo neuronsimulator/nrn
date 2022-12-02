@@ -534,13 +534,13 @@ static double enter(int row, int col, double defalt, int frstch, Menuitem* pnow)
     xcursor(row, ++col);
     if (frstch != 13) {
         *istrptr++ = frstch;
-        sprintf(buf, "%c", istr[0]);
+        Sprintf(buf, "%c", istr[0]);
         plprint(buf);
     }
     for (;;) {
         key = ibmgetc();
         if (isdigit(key) || key == '.' || key == 'e' || key == '-' || key == '+') {
-            sprintf(buf, "%c", key);
+            Sprintf(buf, "%c", key);
             plprint(buf);
             *istrptr++ = key;
             continue;
@@ -588,10 +588,10 @@ static void prs(int oldnew, int row, int col, const char* string) {
     char buf[100];
     xcursor(row, col);
     if (oldnew == 0) {
-        sprintf(buf, "%-13s", string);
+        Sprintf(buf, "%-13s", string);
         plprint(buf);
     } else {
-        sprintf(buf, "%13c", SPACE);
+        Sprintf(buf, "%13c", SPACE);
         plprint(buf);
         xcursor(row, col);
         snprintf(buf, 100, "<%s>", string);

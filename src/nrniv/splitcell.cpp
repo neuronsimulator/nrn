@@ -62,7 +62,7 @@ void nrnmpi_splitcell_connect(int that_host) {
         if (that_host == nrnmpi_myid + i * 2 - 1) {
             if (splitcell_connected_[i]) {
                 char buf[100];
-                sprintf(buf, "%d and %d", nrnmpi_myid, that_host);
+                Sprintf(buf, "%d and %d", nrnmpi_myid, that_host);
                 hoc_execerror("splitcell connection already exists between hosts", buf);
             }
             splitcell_connected_[i] = true;

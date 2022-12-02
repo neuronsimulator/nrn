@@ -538,7 +538,7 @@ static FILE* oc_popen(char* cmd, char* type) {
     FILE* fp;
     char buf[1024];
     assert(strlen(cmd) + 20 < 1024);
-    sprintf(buf, "sh %s > hocload.tmp", cmd);
+    Sprintf(buf, "sh %s > hocload.tmp", cmd);
     if (system(buf) != 0) {
         return (FILE*) 0;
     } else if ((fp = fopen("hocload.tmp", "r")) == (FILE*) 0) {
@@ -572,7 +572,7 @@ static void hoc_load(const char* stype) {
         sym = hoc_lookup(s);
         if (!sym || sym->type == UNDEF) {
             assert(strlen(stype) + strlen(s) + 50 < 1024);
-            sprintf(cmd, "$NEURONHOME/lib/hocload.sh %s %s %d", stype, s, hoc_pid());
+            Sprintf(cmd, "$NEURONHOME/lib/hocload.sh %s %s %d", stype, s, hoc_pid());
             p = oc_popen(cmd, "r");
             if (p) {
                 f = fgets(file, 1024, p);
@@ -727,7 +727,7 @@ static int hoc_Load_file(int always, const char* name) {
         }
 #endif
         if (!f) { /* try NEURONHOME/lib/hoc */
-            sprintf(path, "$(NEURONHOME)/lib/hoc");
+            Sprintf(path, "$(NEURONHOME)/lib/hoc");
             assert(strlen(path) + strlen(base) + 1 < hoc_load_file_size_);
             nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
                        hoc_load_file_size_);

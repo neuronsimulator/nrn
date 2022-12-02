@@ -699,7 +699,7 @@ void call_ob_proc(Object* ob, Symbol* sym, int narg) {
     }
     if (hoc_errno_check()) {
         char str[200];
-        sprintf(str, "%s.%s", hoc_object_name(ob), sym->name);
+        Sprintf(str, "%s.%s", hoc_object_name(ob), sym->name);
         hoc_warning("errno set during call of", str);
     }
     pc = pcsav;
@@ -844,7 +844,7 @@ void hoc_constobject(void) { /* template at pc, index at pc+1, objpointer left o
             break;
         }
     }
-    sprintf(buf, "%s[%d]\n", t->sym->name, index);
+    Sprintf(buf, "%s[%d]\n", t->sym->name, index);
     hoc_execerror("Object ID doesn't exist:", buf);
 }
 
@@ -2010,9 +2010,9 @@ void check_obj_type(Object* obj, const char* type_name) {
     char buf[100];
     if (!obj || strcmp(obj->ctemplate->sym->name, type_name) != 0) {
         if (obj) {
-            sprintf(buf, "object type is %s instead of", obj->ctemplate->sym->name);
+            Sprintf(buf, "object type is %s instead of", obj->ctemplate->sym->name);
         } else {
-            sprintf(buf, "object type is nil instead of");
+            Sprintf(buf, "object type is nil instead of");
         }
         hoc_execerror(buf, type_name);
     }

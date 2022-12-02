@@ -152,10 +152,10 @@ static char* pysec_name(Section* sec) {
         buf[0] = '\0';
         char* cp = buf + strlen(buf);
         if (ps->name_) {
-            sprintf(cp, "%s", ps->name_);
+            Sprintf(buf, "%s", ps->name_);
         } else {
             // sprintf(cp, "PySec_%p", ps);
-            sprintf(buf, "__nrnsec_%p", sec);
+            Sprintf(buf, "__nrnsec_%p", sec);
         }
         return buf;
     }
@@ -825,7 +825,7 @@ static PyObject* pyseg_repr(PyObject* p) {
 static PyObject* hoc_internal_name(NPySecObj* self) {
     PyObject* result;
     char buf[256];
-    sprintf(buf, "__nrnsec_%p", self->sec_);
+    Sprintf(buf, "__nrnsec_%p", self->sec_);
     result = PyString_FromString(buf);
     return result;
 }
@@ -1119,7 +1119,7 @@ static PyObject* NPyRangeVar_name(NPyRangeVar* self) {
     if (self->sym_) {
         if (self->isptr_) {
             char buf[256];
-            sprintf(buf, "_ref_%s", self->sym_->name);
+            Sprintf(buf, "_ref_%s", self->sym_->name);
             result = PyString_FromString(buf);
         } else {
             result = PyString_FromString(self->sym_->name);
@@ -1575,11 +1575,11 @@ static Object** pp_get_segment(void* vptr) {
 static void rv_noexist(Section* sec, const char* n, double x, int err) {
     char buf[200];
     if (err == 2) {
-        sprintf(buf, "%s was not made to point to anything at %s(%g)", n, secname(sec), x);
+        Sprintf(buf, "%s was not made to point to anything at %s(%g)", n, secname(sec), x);
     } else if (err == 1) {
-        sprintf(buf, "%s, the mechanism does not exist at %s(%g)", n, secname(sec), x);
+        Sprintf(buf, "%s, the mechanism does not exist at %s(%g)", n, secname(sec), x);
     } else {
-        sprintf(buf, "%s does not exist at %s(%g)", n, secname(sec), x);
+        Sprintf(buf, "%s does not exist at %s(%g)", n, secname(sec), x);
     }
     PyErr_SetString(PyExc_AttributeError, buf);
 }
@@ -1966,7 +1966,7 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
         sym = ((NPyRangeVar*) rv)->sym_;
         if (ISARRAY(sym)) {
             char s[200];
-            sprintf(s, "%s needs an index for assignment", sym->name);
+            Sprintf(s, "%s needs an index for assignment", sym->name);
             PyErr_SetString(PyExc_IndexError, s);
             err = -1;
         } else {
@@ -2157,7 +2157,7 @@ double** nrnpy_setpointer_helper(PyObject* pyname, PyObject* mech) {
     if (!n) {
         return nullptr;
     }
-    sprintf(buf, "%s_%s", n, memb_func[m->prop_->_type].sym->name);
+    Sprintf(buf, "%s_%s", n, memb_func[m->prop_->_type].sym->name);
     Symbol* sym = np.find(buf);
     if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
         return nullptr;

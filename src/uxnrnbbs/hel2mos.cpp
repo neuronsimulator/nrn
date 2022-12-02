@@ -86,7 +86,7 @@ int main(int argc, const char** argv) {
 
 static bool find(const char* key, char* val) {
     static char buf[256];
-    sprintf(buf, "^%s ", key);
+    Sprintf(buf, "^%s ", key);
     // printf("|%s|\n", buf);
     Regexp r1(buf);
     int i = r1.Search(shelp->string(), shelp->length(), 0, shelp->length());
@@ -117,7 +117,7 @@ static void help(const char* msg) {
             if (find(buf, buf)) {
                 //				printf("%s\n", buf);
             } else {
-                sprintf(buf, "contents.html");
+                Sprintf(buf, "contents.html");
             }
 #ifdef WIN32
             //         DebugMessage("buf=|%s|\n", buf);
@@ -132,7 +132,7 @@ static void help(const char* msg) {
                     *cp = '/';
                 }
             }
-            sprintf(buf, "file:///%s/html/help/%s", buf1, buf2);
+            Sprintf(buf, "file:///%s/html/help/%s", buf1, buf2);
 #endif
             send(buf);
         }

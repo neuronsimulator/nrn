@@ -194,7 +194,7 @@ const char* Unit_str(unit* up) {
     static char buf[256];
 
     p = up;
-    sprintf(buf, "%g ", p->factor);
+    Sprintf(buf, "%g ", p->factor);
     {
         int seee = 0;
         for (ucp = buf; *ucp; ucp++) {
@@ -629,7 +629,7 @@ void unit_init() {
         /* note that on mingw, even if MODLUNIT set to /cygdrive/c/...
          * it ends up here as c:/... and that is good*/
         /* printf("MODLUNIT=|%s|\n", s); */
-        sprintf(buf, "%s%s", s, SUFFIX);
+        Sprintf(buf, "%s%s", s, SUFFIX);
         if ((inpfile = fopen(buf, "r")) == (FILE*) 0) {
             diag("Bad MODLUNIT environment variable. Cant open:", buf);
         }
@@ -640,9 +640,9 @@ void unit_init() {
         if (s) {
             if (strncmp(s, "/cygdrive/", 10) == 0) {
                 /* /cygdrive/x/... to c:/... */
-                sprintf(buf, "%c:%s/lib/nrnunits.lib" SUFFIX, s[10], s + 11);
+                Sprintf(buf, "%c:%s/lib/nrnunits.lib" SUFFIX, s[10], s + 11);
             } else {
-                sprintf(buf, "%s/lib/nrnunits.lib" SUFFIX, s);
+                Sprintf(buf, "%s/lib/nrnunits.lib" SUFFIX, s);
             }
             inpfile = fopen(buf, "r");
             free(s);
@@ -653,7 +653,7 @@ void unit_init() {
         if ((inpfile = fopen(dfilealt, "r")) == (FILE*) 0) {
             s = neuronhome();
             if (s) {
-                sprintf(buf, "%s/lib/nrnunits.lib" SUFFIX, s);
+                Sprintf(buf, "%s/lib/nrnunits.lib" SUFFIX, s);
                 inpfile = fopen(buf, "r");
             }
         }
@@ -1173,7 +1173,7 @@ void nrnunit_dynamic_str(char* buf, const char* name, char* u1, char* u2) {
 
     double legacy = dynam_unit_mag(1, u1, u2);
     double modern = dynam_unit_mag(0, u1, u2);
-    sprintf(buf,
+    Sprintf(buf,
             "\n"
             "#define %s _nrnunit_%s[_nrnunit_use_legacy_]\n"
             "static double _nrnunit_%s[2] = {%a, %g};\n",
@@ -1189,9 +1189,9 @@ void nrnunit_dynamic_str(char* buf, const char* name, char* u1, char* u2) {
     Unit_push(u2);
     unit_div();
 #if (defined(LegacyFR) && LegacyFR == 1)
-    sprintf(buf, "static double %s = %g;\n", name, unit_mag());
+    Sprintf(buf, "static double %s = %g;\n", name, unit_mag());
 #else
-    sprintf(buf, "static double %s = %.12g;\n", name, unit_mag());
+    Sprintf(buf, "static double %s = %.12g;\n", name, unit_mag());
 #endif
     unit_pop();
 
