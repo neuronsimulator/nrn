@@ -9,7 +9,6 @@
 #include <stdlib.h>
 
 #include "d2upath.cpp"
-#include "hocdec.h"
 
 #include <cstdio>
 
@@ -69,9 +68,7 @@ static char* argstr(int argc, char** argv) {
 
 int main(int argc, char** argv) {
     int err;
-    char* buf;
     char* args;
-    char* msg;
 
 #ifndef MINGW
     ShowWindow(GetConsoleWindow(), SW_HIDE);
@@ -79,7 +76,8 @@ int main(int argc, char** argv) {
     setneuronhome();
     nh = hoc_dos2unixpath(nrnhome);
     args = argstr(argc, argv);
-    buf = new char[strlen(args) + 6 * strlen(nh) + 200];
+    auto const buf_size = strlen(args) + 6 * strlen(nh) + 200;
+    char* const buf = new char[buf_size];
 #ifdef MINGW
     // sprintf(buf, "%s\\mingw\\bin\\bash.exe -rcfile %s/lib/nrnstart.bsh -i %s/lib/neuron2.sh
     // nrngui %s", nrnhome, nh, nh, args);
@@ -89,27 +87,29 @@ int main(int argc, char** argv) {
 		nh[0] = '/';
 	}
 #endif
-    Sprintf(buf,
-            "%s\\mingw\\usr\\bin\\bash.exe -i %s/lib/neuron3.sh %s nrngui %s",
-            nrnhome,
-            nh,
-            nh,
-            args);
+    std::snprintf(buf,
+                  buf_size,
+                  "%s\\mingw\\usr\\bin\\bash.exe -i %s/lib/neuron3.sh %s nrngui %s",
+                  nrnhome,
+                  nh,
+                  nh,
+                  args);
 // MessageBox(0, buf, "NEURON", MB_OK);
 #else
-    Sprintf(buf,
-            "%s\\bin\\mintty -c %s/lib/minttyrc %s/bin/bash --rcfile %s/lib/nrnstart.bsh "
-            "%s/lib/neuron.sh %s %s",
-            nrnhome,
-            nh,
-            nh,
-            nh,
-            nh,
-            nh,
-            args);
+    std::snprintf(buf,
+                  buf_size,
+                  "%s\\bin\\mintty -c %s/lib/minttyrc %s/bin/bash --rcfile %s/lib/nrnstart.bsh "
+                  "%s/lib/neuron.sh %s %s",
+                  nrnhome,
+                  nh,
+                  nh,
+                  nh,
+                  nh,
+                  nh,
+                  args);
 #endif
     auto const msg_size = strlen(buf) + 100;
-    msg = new char[msg_size];
+    char* const msg = new char[msg_size];
     err = WinExec(buf, SW_SHOW);
     if (err < 32) {
         std::snprintf(msg, msg_size, "Cannot WinExec %s\n", buf);
