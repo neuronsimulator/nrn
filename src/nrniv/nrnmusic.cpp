@@ -1,5 +1,6 @@
 #define NO_PYTHON_H 1
 #include <../neuronmusic/nrnmusic.h>
+#include <unordered_map>
 
 extern int nrnmusic;
 extern MPI_Comm nrnmusic_comm;
@@ -65,14 +66,11 @@ class NetParMusicEvent: public DiscreteEvent {
 };
 static NetParMusicEvent* npme;
 
-#include <OS/table.h>
-declareTable(PortTable, void*, int)  // used as set
-    implementTable(PortTable, void*, int) static PortTable* music_input_ports;
+using PortTable = std::unordered_map<void*, int>;
+static PortTable* music_input_ports;
 static PortTable* music_output_ports;
 
-declareTable(Gi2PreSynTable, int, PreSyn*) implementTable(Gi2PreSynTable, int, PreSyn*)
-
-    NetParMusicEvent::NetParMusicEvent() {}
+NetParMusicEvent::NetParMusicEvent() {}
 NetParMusicEvent::~NetParMusicEvent() {}
 void NetParMusicEvent::send(double t, NetCvode* nc, NrnThread* nt) {
     nc->event(t + usable_mindelay_, this, nt);
@@ -86,8 +84,8 @@ void alloc_music_space() {
     if (music_input_ports) {
         return;
     }
-    music_input_ports = new PortTable(64);
-    music_output_ports = new PortTable(64);
+    music_input_ports = new PortTable();
+    music_output_ports = new PortTable();
 }
 
 void nrnmusic_injectlist(void* vp, double tt) {
@@ -107,8 +105,8 @@ void nrnmusic_inject(void* vport, int gi, double tt) {
 void NrnMusicEventHandler::filltable(NRNMUSIC::EventInputPort* port, int cnt) {
     table = new PreSyn*[cnt];
     int j = 0;
-    for (TableIterator(Gi2PreSynTable) i(*port->gi_table); i.more(); i.next()) {
-        PreSyn* ps = i.cur_value();
+    for (const auto& iter: *(port->gi_table)) {
+        PreSyn* ps = iter.second;
         table[j] = ps;
         ++j;
     }
@@ -139,14 +137,13 @@ void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
     // to create an IndexList for a later map, need to
     // save the indices used for each port
     int i = 0;
-    if (!music_output_ports->find(i, (void*) this)) {
-        music_output_ports->insert((void*) this, i);
+    if (music_output_ports->count((void*) this) == 0) {
+        (*music_output_ports)[(void*) this] = i;
         gi_table = new Gi2PreSynTable(1024);
     }
-    PreSyn* ps2;
-    nrn_assert(!gi_table->find(ps2, gi));
+    nrn_assert(gi_table->count(gi) == 0);
     // printf("gid2index insert %p %d\n", this, gi);
-    gi_table->insert(gi, ps);
+    (*gi_table)[gi] = ps;
 }
 
 NRNMUSIC::EventInputPort::EventInputPort(MUSIC::Setup* s, std::string id)
@@ -168,18 +165,19 @@ PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
     alloc_music_space();
     PreSyn* ps;
     int i = 0;
-    if (!music_input_ports->find(i, (void*) this)) {
-        music_input_ports->insert((void*) this, i);
+    if (music_input_ports->count((void*) this) == 0) {
+        (*music_input_ports)[(void*) this] = i;
     }
-    // nrn_assert (!gi_table->find(ps, gi));
-    if (!gi_table->find(ps, gi)) {
+    // nrn_assert (gi_table.count(gi) == 0);
+    if (gi_table->count(gi) == 0) {
         ps = new PreSyn(NULL, NULL, NULL);
         net_cvode_instance->psl_append(ps);
-        gi_table->insert(gi, ps);
+        (*gi_table)[gi] = ps;
+        ps->gid_ = -2;
+        ps->output_index_ = -2;
+    } else {
+        ps = (*gi_table)[gi];
     }
-    ps->gid_ = -2;
-    ps->output_index_ = -2;
-
     NetCon* nc = new NetCon(ps, target);
     Object* o = hoc_new_object(netcon_sym_, nc);
     nc->obj_ = o;
@@ -224,15 +222,15 @@ static void nrnmusic_runtime_phase() {
     called = 1;
 
     // call map on all the input ports
-    for (TableIterator(PortTable) i(*music_input_ports); i.more(); i.next()) {
-        NRNMUSIC::EventInputPort* eip = (NRNMUSIC::EventInputPort*) i.cur_key();
+    for (const auto& iter: *music_input_ports) {
+        NRNMUSIC::EventInputPort* eip = (NRNMUSIC::EventInputPort*) iter.first;
         NrnMusicEventHandler* eh = new NrnMusicEventHandler();
         Gi2PreSynTable* pst = eip->gi_table;
         std::vector<MUSIC::GlobalIndex> gindices;
         // iterate over pst and create indices
         int cnt = 0;
-        for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
-            int gi = j.cur_key();
+        for (const auto& j: *pst) {
+            int gi = j.first;
             // printf("input port eip=%p gi=%d\n", eip, gi);
             gindices.push_back(gi);
             ++cnt;
@@ -245,13 +243,13 @@ static void nrnmusic_runtime_phase() {
     delete music_input_ports;
 
     // call map on all the output ports
-    for (TableIterator(PortTable) i(*music_output_ports); i.more(); i.next()) {
-        NRNMUSIC::EventOutputPort* eop = (NRNMUSIC::EventOutputPort*) i.cur_key();
+    for (const auto& i: *music_output_ports) {
+        NRNMUSIC::EventOutputPort* eop = (NRNMUSIC::EventOutputPort*) i.first;
         Gi2PreSynTable* pst = eop->gi_table;
         std::vector<MUSIC::GlobalIndex> gindices;
         // iterate over pst and create indices
-        for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
-            int gi = j.cur_key();
+        for (const auto& j: *pst) {
+            int gi = j.first;
             // printf("output port eop=%p gi = %d\n", eop, gi);
             gindices.push_back(gi);
         }

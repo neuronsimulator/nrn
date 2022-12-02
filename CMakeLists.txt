@@ -63,6 +63,7 @@ option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fal
        ${NRN_ENABLE_PYTHON_DEFAULT})
 option(NRN_ENABLE_THREADS "Allow use of Pthreads" ${NRN_ENABLE_THREADS_DEFAULT})
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
+option(NRN_ENABLE_MUSIC "Enable MUSIC support" ${NRN_ENABLE_MUSIC_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
@@ -304,6 +305,7 @@ if(NRN_ENABLE_MPI)
   nrn_mpi_find_package()
   set(NRNMPI 1)
   set(PARANEURON 1)
+
   # avoid linking to C++ bindings
   add_definitions("-DMPI_NO_CPPBIND=1")
   add_definitions("-DOMPI_SKIP_MPICXX=1")
@@ -333,6 +335,24 @@ if(NRN_ENABLE_MPI)
 else()
   set(NRNMPI 0)
   set(PARANEURON 0)
+endif()
+
+# =============================================================================
+# Enable MUSIC MUlti SImulation Coordinator
+# =============================================================================
+if(NRN_ENABLE_MUSIC)
+  if(NOT NRN_ENABLE_MPI)
+    message(FATAL "MUSIC requires -DNRN_ENABLE_MPI=ON")
+  endif()
+  if(NOT NRN_ENABLE_PYTHON)
+    message(FATAL "MUSIC requires -DNRN_ENABLE_PYTHON=ON")
+  endif()
+  find_package(Cython REQUIRED)
+  if(NOT Cython_FOUND)
+    message(FATAL "MUSIC requires Cython")
+  endif()
+  find_package(MUSIC REQUIRED)
+  set(NRN_MUSIC 1)
 endif()
 
 # =============================================================================
@@ -568,6 +588,10 @@ endif()
 
 if(NRN_ENABLE_RX3D)
   add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
+endif()
+
+if(NRN_ENABLE_MUSIC)
+  add_subdirectory(src/neuronmusic)
 endif()
 
 if(NRN_MACOS_BUILD)
@@ -898,6 +922,9 @@ if(NRN_ENABLE_MPI)
     endif()
     message(STATUS "  LIB         | ${MPI_LIBRARY}")
   endif()
+endif()
+if(NRN_ENABLE_MUSIC)
+  message(STATUS "MUSIC         | ${MUSIC_LIBDIR}")
 endif()
 message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")
 if(NRN_ENABLE_PYTHON)
