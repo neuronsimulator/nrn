@@ -447,9 +447,6 @@ int unit_cmp_exact() { /* returns 1 if top two units on stack are same */
     return 1;
 }
 
-/* ARGSUSED */
-static void print_unit_expr(int i) {}
-
 void Unit_cmp() {
     /*compares top two units on stack. If not conformable then
     gives error. If not same factor then gives error.
@@ -475,10 +472,8 @@ void Unit_cmp() {
         for (i = 0; i < NDIM; i++) {
             if (up->dim[i] != usp->dim[i]) {
                 chkfperror();
-                print_unit_expr(2);
                 fprintf(stderr, "\nunits:");
                 units(usp);
-                print_unit_expr(1);
                 fprintf(stderr, "\nunits:");
                 units(up);
                 diag("The units of the previous two expressions are not conformable", (char*) "\n");
@@ -491,7 +486,6 @@ void Unit_cmp() {
 is missing a conversion factor and should read:\n  (%g)*(",
                     Unit_str(usp),
                     usp->factor / up->factor);
-            print_unit_expr(2);
             diag(")\n", (char*) 0);
         }
     }
