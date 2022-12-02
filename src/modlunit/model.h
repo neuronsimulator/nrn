@@ -1,5 +1,5 @@
 /* /local/src/master/nrn/src/modlunit/model.h,v 1.2 1997/11/24 16:19:13 hines Exp */
-
+#include "wrap_sprintf.h"
 #include <stdio.h>
 #if 1
 #if defined(STDC_HEADERS) || defined(SYSV)
@@ -202,7 +202,6 @@ extern Symbol *indepsym, /* The model independent variable */
 extern char* clint;
 extern int ilint;
 extern Item* qlint;
-#define Sprintf     clint = sprintf
 #define Fprintf     ilint = fprintf
 #define Fclose      ilint = fclose
 #define Fflush      ilint = fflush
@@ -223,7 +222,6 @@ extern Item* qlint;
     }
 #define Free(arg) free((char*) (arg))
 #else
-#define Sprintf     sprintf
 #define Fprintf     fprintf
 #define Fclose      fclose
 #define Fflush      fflush
@@ -240,6 +238,7 @@ extern Item* qlint;
 #define IGNORE(arg) arg
 #define Free(arg)   free((void*) (arg))
 #endif
+using neuron::Sprintf;
 
 /* model.h,v
  * Revision 1.2  1997/11/24  16:19:13  hines
