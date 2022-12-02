@@ -134,9 +134,10 @@ extern List* _LST(Item* q, char* file, int line);
 extern char* emalloc(unsigned);            /* malloc with out of space checking */
 extern char* stralloc(const char*, char*); /* copies string to new space */
 
-extern char *inputline(),      /* used only by parser to get title line */
-    *inputtopar(),             /* used only by parser to get units */
-    *unit_str(), *Gets(char*); /* used only in io.c to get string from fin. */
+extern char *inputline(), /* used only by parser to get title line */
+    *inputtopar(),        /* used only by parser to get units */
+    *Gets(char*);         /* used only in io.c to get string from fin. */
+const char* unit_str();
 extern const char* decode_units(Symbol*);
 
 extern List
