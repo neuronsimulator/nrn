@@ -411,8 +411,8 @@ void hoc_Getstr(void) /* read a line (or word) from input file */
 void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for conversion */
     /* argn is argument number where format is */
     static HocStr* hs;
-    char *pbuf, *pfmt, *pfrag, frag[120];
-    int n, convflag, lflag, didit;  //, hoc_argtype();
+    char *pfmt, *pfrag, frag[120];
+    int convflag, lflag, didit;  //, hoc_argtype();
     char *fmt, *cp;
 
     if (!hs) {
@@ -420,11 +420,19 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
     }
     fmt = gargstr(argn++);
     convflag = lflag = didit = 0;
-    pbuf = hs->buf;
+    auto* pbuf = hs->buf;
+    auto pbuf_size = hs->size + 1;
     pfrag = frag;
     *pfrag = 0;
     *pbuf = 0;
 
+    auto const resize = [&pbuf, &pbuf_size](HocStr* hs, std::size_t extra_size) {
+        auto const n = pbuf - hs->buf;
+        auto const new_size = n + extra_size;
+        hocstr_resize(hs, new_size);
+        pbuf = hs->buf + n;
+        pbuf_size = new_size + 1 - n;
+    };
     for (pfmt = fmt; *pfmt; pfmt++) {
         *pfrag++ = *pfmt;
         *pfrag = 0;
@@ -443,22 +451,22 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
                         pfrag[0] = pfrag[-1];
                         pfrag[-1] = 'l';
                     }
-                    Sprintf(pbuf, frag, (long long) *getarg(argn));
+                    std::snprintf(pbuf, pbuf_size, frag, (long long) *getarg(argn));
                 } else {
-                    Sprintf(pbuf, frag, (int) *getarg(argn));
+                    std::snprintf(pbuf, pbuf_size, frag, (int) *getarg(argn));
                 }
                 didit = 1;
                 break;
 
             case 'c':
-                Sprintf(pbuf, frag, (char) *getarg(argn));
+                std::snprintf(pbuf, pbuf_size, frag, (char) *getarg(argn));
                 didit = 1;
                 break;
 
             case 'f':
             case 'e':
             case 'g':
-                Sprintf(pbuf, frag, *getarg(argn));
+                std::snprintf(pbuf, pbuf_size, frag, *getarg(argn));
                 didit = 1;
                 break;
 
@@ -468,16 +476,15 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
                 } else {
                     cp = gargstr(argn);
                 }
-                n = pbuf - hs->buf;
-                hocstr_resize(hs, n + strlen(cp) + 100);
-                pbuf = hs->buf + n;
-                Sprintf(pbuf, frag, cp);
+                resize(hs, std::strlen(cp) + 100);
+                std::snprintf(pbuf, pbuf_size, frag, cp);
                 didit = 1;
                 break;
 
             case '%':
                 pfrag[-1] = 0;
-                strcpy(pbuf, frag);
+                std::strncpy(pbuf, frag, pbuf_size);
+                assert(pbuf[pbuf_size - 1] == '\0');
                 didit = 1;
                 argn--; /* an arg was not consumed */
                 break;
@@ -488,19 +495,17 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
         } else if (*pfmt == '%') {
             convflag = 1;
         } else if (pfrag - frag > 100) {
-            n = pbuf - hs->buf;
-            hocstr_resize(hs, n + strlen(frag) + 100);
-            pbuf = hs->buf + n;
-            Sprintf(pbuf, "%s", frag);
+            resize(hs, std::strlen(frag) + 100);
+            std::snprintf(pbuf, pbuf_size, "%s", frag);
             pfrag = frag;
             *pfrag = 0;
             while (*pbuf) {
-                pbuf++;
+                ++pbuf;
+                --pbuf_size;
             }
         }
 
         if (didit) {
-            int n;
             argn++;
             lflag = 0;
             convflag = 0;
@@ -508,15 +513,14 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
             pfrag = frag;
             *pfrag = 0;
             while (*pbuf) {
-                pbuf++;
+                ++pbuf;
+                --pbuf_size;
             }
-            n = pbuf - hs->buf;
-            hocstr_resize(hs, n + 100);
-            pbuf = hs->buf + n;
+            resize(hs, 100);
         }
     }
     if (pfrag != frag)
-        Sprintf(pbuf, "%s", frag);
+        std::snprintf(pbuf, pbuf_size, "%s", frag);
     *ppbuf = hs->buf;
 }
 
@@ -525,7 +529,7 @@ static FILE* oc_popen(char* cmd, char* type) {
     FILE* fp;
     char buf[1024];
     assert(strlen(cmd) + 20 < 1024);
-    sprintf(buf, "sh %s > hocload.tmp", cmd);
+    Sprintf(buf, "sh %s > hocload.tmp", cmd);
     if (system(buf) != 0) {
         return (FILE*) 0;
     } else if ((fp = fopen("hocload.tmp", "r")) == (FILE*) 0) {
@@ -559,7 +563,7 @@ static void hoc_load(const char* stype) {
         sym = hoc_lookup(s);
         if (!sym || sym->type == UNDEF) {
             assert(strlen(stype) + strlen(s) + 50 < 1024);
-            sprintf(cmd, "$NEURONHOME/lib/hocload.sh %s %s %d", stype, s, hoc_pid());
+            Sprintf(cmd, "$NEURONHOME/lib/hocload.sh %s %s %d", stype, s, hoc_pid());
             p = oc_popen(cmd, "r");
             if (p) {
                 f = fgets(file, 1024, p);
@@ -610,6 +614,7 @@ void hoc_load_file(void) {
     pushx((double) i);
 }
 
+static constexpr auto hoc_load_file_size_ = 1024;
 static int hoc_Load_file(int always, const char* name) {
     /*
       if always is 0 then
@@ -621,7 +626,6 @@ static int hoc_Load_file(int always, const char* name) {
         Temporarily change to the directory containing the file so
         that it can xopen files relative to its location.
     */
-#define hoc_load_file_size_ 1024
     static hoc_List* loaded;
     hoc_Item* q;
     int b, is_loaded;
@@ -714,7 +718,7 @@ static int hoc_Load_file(int always, const char* name) {
         }
 #endif
         if (!f) { /* try NEURONHOME/lib/hoc */
-            sprintf(path, "$(NEURONHOME)/lib/hoc");
+            Sprintf(path, "$(NEURONHOME)/lib/hoc");
             assert(strlen(path) + strlen(base) + 1 < hoc_load_file_size_);
             nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
                        hoc_load_file_size_);
