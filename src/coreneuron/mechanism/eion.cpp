@@ -13,6 +13,7 @@
 
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
+#include "coreneuron/mechanism/mech_mapping.hpp"
 #include "coreneuron/mechanism/membfunc.hpp"
 #include "coreneuron/permute/data_layout.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
@@ -58,7 +59,9 @@ void ion_reg(const char* name, double valence) {
     buf[3] = name_str + "o";
     buf[5] = "i" + name_str;
     buf[6] = "di" + name_str + "_dv_";
-    std::array<const char*, buf.size() + 1> mech{};
+    std::array<const char*,
+               buf.size() + 1 /* shifted by 1 */ + NB_MECH_VAR_CATEGORIES /* trailing nulls */>
+        mech{};
     for (int i = 0; i < buf.size(); i++) {
         mech[i + 1] = buf[i].empty() ? nullptr : buf[i].c_str();
     }
