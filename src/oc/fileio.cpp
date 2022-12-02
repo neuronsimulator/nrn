@@ -202,87 +202,74 @@ char* hoc_current_xopen(void) {
     return hoc_xopen_file_;
 }
 
-int hoc_xopen1(const char* name, const char* rcs) /* read and execute a hoc program */
-{
-    /*printf("hoc_xopen1 %d %s\n", strlen(name), name);*/
-    NrnFILEWrap* savfin;
-    int savpipflag, save_lineno;
-    char* savname;
-    char* fname = strdup(name);
-    assert(fname);
-#if 1
+// read and execute a hoc program
+int hoc_xopen1(const char* name, const char* rcs) {
+    std::string fname{name};
     if (rcs) {
         if (rcs[0] != '\0') {
-            int sz = 2 * (strlen(rcs) + strlen(name)) + 20;
-            free(fname);
-            fname = static_cast<char*>(emalloc(sz));
-            std::snprintf(fname, sz, "co -p%s %s > %s-%s", rcs, name, name, rcs);
-            ERRCHK(if (system(fname) != 0) {
-                free(fname);
+            // cmd ---> co -p{rcs} {fname} > {fname}-{rcs}
+            // fname -> {fname}-{rcs}
+            std::string cmd{"co -p"};
+            cmd.append(rcs);
+            cmd.append(1, ' ');
+            cmd.append(fname);
+            cmd.append(" > ");
+            fname.append(1, '-');
+            fname.append(rcs);
+            cmd.append(fname);
+            if (system(cmd.c_str()) != 0) {
                 hoc_execerror(name, "\nreturned error in hoc_co system call");
-            })
-            std::snprintf(fname, sz, "%s-%s", name, rcs);
+            }
         }
     } else if (hoc_retrieving_audit()) {
-        hoc_xopen_from_audit(fname);
-        free(fname);
+        hoc_xopen_from_audit(fname.c_str());
         return 0;
     }
-#endif
-    savpipflag = pipeflag;
-    savfin = fin;
-    pipeflag = 0;
+    auto const savpipflag = hoc_pipeflag;
+    auto const savfin = hoc_fin;
+    hoc_pipeflag = 0;
 
     errno = EINTR;
     while (errno == EINTR) {
         errno = 0;
 #if MAC
-        if ((fin = nrn_fw_fopen(fname, "rb")) == NULL) {
+        constexpr auto mode_str = "rb";
 #else
-        if ((fin = nrn_fw_fopen(fname, "r")) == NULL) {
+        constexpr auto mode_str = "r";
 #endif
-            const char* retry;
-            retry = expand_env_var(fname);
-            free(fname);
-            nrn_assert((fname = strdup(retry)));
-#if MAC
-            if ((fin = nrn_fw_fopen(retry, "rb")) == NULL) {
-#else
-            if ((fin = nrn_fw_fopen(retry, "r")) == NULL) {
-#endif
-                fin = savfin;
-                pipeflag = savpipflag;
-                free(fname);
-                execerror("Can't open ", retry);
+        if (!(hoc_fin = nrn_fw_fopen(fname.c_str(), mode_str))) {
+            fname = expand_env_var(fname.c_str());
+            if (!(hoc_fin = nrn_fw_fopen(fname.c_str(), mode_str))) {
+                hoc_fin = savfin;
+                hoc_pipeflag = savpipflag;
+                hoc_execerror("Can't open ", fname.c_str());
             }
         }
     }
 
-    save_lineno = hoc_lineno;
+    auto const save_lineno = hoc_lineno;
     hoc_lineno = 0;
-    nrn_assert((savname = strdup(hoc_xopen_file_)));
-    if (strlen(fname) >= hoc_xopen_file_size_) {
-        hoc_xopen_file_size_ = strlen(fname) + 100;
+    std::string savname{hoc_xopen_file_};
+    if (fname.size() >= hoc_xopen_file_size_) {
+        hoc_xopen_file_size_ = fname.size() + 100;
         hoc_xopen_file_ = static_cast<char*>(erealloc(hoc_xopen_file_, hoc_xopen_file_size_));
     }
-    strcpy(hoc_xopen_file_, fname);
-    if (fin) {
-        hoc_audit_from_xopen1(fname, rcs);
+    strcpy(hoc_xopen_file_, fname.c_str());
+    if (hoc_fin) {
+        hoc_audit_from_xopen1(fname.c_str(), rcs);
         IGNORE(hoc_xopen_run((Symbol*) 0, (char*) 0));
     }
-    if (fin && !nrn_fw_eq(fin, stdin)) {
-        ERRCHK(IGNORE(nrn_fw_fclose(fin));)
+    if (hoc_fin && !nrn_fw_eq(hoc_fin, stdin)) {
+        IGNORE(nrn_fw_fclose(hoc_fin));
     }
-    fin = savfin;
-    pipeflag = savpipflag;
+    hoc_fin = savfin;
+    hoc_pipeflag = savpipflag;
     if (rcs && rcs[0]) {
-        unlink(fname);
+        unlink(fname.c_str());
     }
-    free(fname);
     hoc_xopen_file_[0] = '\0';
     hoc_lineno = save_lineno;
-    strcpy(hoc_xopen_file_, savname);
-    free(savname);
+    strcpy(hoc_xopen_file_, savname.c_str());
     return 0;
 }
 
@@ -434,7 +421,6 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
     fmt = gargstr(argn++);
     convflag = lflag = didit = 0;
     pbuf = hs->buf;
-    auto pbuf_size = hs->size + 1;
     pfrag = frag;
     *pfrag = 0;
     *pbuf = 0;
@@ -457,22 +443,22 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
                         pfrag[0] = pfrag[-1];
                         pfrag[-1] = 'l';
                     }
-                    std::snprintf(pbuf, pbuf_size, frag, (long long) *getarg(argn));
+                    Sprintf(pbuf, frag, (long long) *getarg(argn));
                 } else {
-                    std::snprintf(pbuf, pbuf_size, frag, (int) *getarg(argn));
+                    Sprintf(pbuf, frag, (int) *getarg(argn));
                 }
                 didit = 1;
                 break;
 
             case 'c':
-                std::snprintf(pbuf, pbuf_size, frag, (char) *getarg(argn));
+                Sprintf(pbuf, frag, (char) *getarg(argn));
                 didit = 1;
                 break;
 
             case 'f':
             case 'e':
             case 'g':
-                std::snprintf(pbuf, pbuf_size, frag, *getarg(argn));
+                Sprintf(pbuf, frag, *getarg(argn));
                 didit = 1;
                 break;
 
@@ -485,8 +471,7 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
                 n = pbuf - hs->buf;
                 hocstr_resize(hs, n + strlen(cp) + 100);
                 pbuf = hs->buf + n;
-                pbuf_size = hs->size + 1 - n;
-                std::snprintf(pbuf, pbuf_size, frag, cp);
+                Sprintf(pbuf, frag, cp);
                 didit = 1;
                 break;
 
@@ -506,8 +491,7 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
             n = pbuf - hs->buf;
             hocstr_resize(hs, n + strlen(frag) + 100);
             pbuf = hs->buf + n;
-            pbuf_size = hs->size + 1 - n;
-            std::printf(pbuf, pbuf_size, "%s", frag);
+            Sprintf(pbuf, "%s", frag);
             pfrag = frag;
             *pfrag = 0;
             while (*pbuf) {
@@ -532,7 +516,7 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
         }
     }
     if (pfrag != frag)
-        std::snprintf(pbuf, pbuf_size, "%s", frag);
+        Sprintf(pbuf, "%s", frag);
     *ppbuf = hs->buf;
 }
 
@@ -541,7 +525,7 @@ static FILE* oc_popen(char* cmd, char* type) {
     FILE* fp;
     char buf[1024];
     assert(strlen(cmd) + 20 < 1024);
-    Sprintf(buf, "sh %s > hocload.tmp", cmd);
+    sprintf(buf, "sh %s > hocload.tmp", cmd);
     if (system(buf) != 0) {
         return (FILE*) 0;
     } else if ((fp = fopen("hocload.tmp", "r")) == (FILE*) 0) {
@@ -575,7 +559,7 @@ static void hoc_load(const char* stype) {
         sym = hoc_lookup(s);
         if (!sym || sym->type == UNDEF) {
             assert(strlen(stype) + strlen(s) + 50 < 1024);
-            Sprintf(cmd, "$NEURONHOME/lib/hocload.sh %s %s %d", stype, s, hoc_pid());
+            sprintf(cmd, "$NEURONHOME/lib/hocload.sh %s %s %d", stype, s, hoc_pid());
             p = oc_popen(cmd, "r");
             if (p) {
                 f = fgets(file, 1024, p);
@@ -730,7 +714,7 @@ static int hoc_Load_file(int always, const char* name) {
         }
 #endif
         if (!f) { /* try NEURONHOME/lib/hoc */
-            Sprintf(path, "$(NEURONHOME)/lib/hoc");
+            sprintf(path, "$(NEURONHOME)/lib/hoc");
             assert(strlen(path) + strlen(base) + 1 < hoc_load_file_size_);
             nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
                        hoc_load_file_size_);
