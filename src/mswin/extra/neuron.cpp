@@ -4,12 +4,14 @@
 // can be given extra arguments in the lib/neuron.sh file which
 // finally executes nrniv.exe.  Nrniv.exe can be run by itself if
 // it does not need a console or system("command")
-
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "d2upath.cpp"
+#include "hocdec.h"
+
+#include <cstdio>
 
 char* nrnhome;
 char* nh;
@@ -106,10 +108,11 @@ int main(int argc, char** argv) {
             nh,
             args);
 #endif
-    msg = new char[strlen(buf) + 100];
+    auto const msg_size = strlen(buf) + 100;
+    msg = new char[msg_size];
     err = WinExec(buf, SW_SHOW);
     if (err < 32) {
-        sprintf(msg, "Cannot WinExec %s\n", buf);
+        std::snprintf(msg, msg_size, "Cannot WinExec %s\n", buf);
         MessageBox(0, msg, "NEURON", MB_OK);
     }
     return 0;
