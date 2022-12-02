@@ -91,7 +91,6 @@ static const char* brkpnt_str_;
 extern Symbol* indepsym;
 extern List* symlist[];
 extern List* ldifuslist;
-extern char* finname;
 extern int check_tables_threads(List*);
 List* syminorder;
 List* plotlist;

@@ -171,8 +171,8 @@ extern Symbol *install(const char*, int), /* Install token in symbol table */
 
 extern int unitonflag;
 
-extern char finname[], /* the input file prefix */
-    buf[];             /* general purpose temporary buffer */
+extern char finname[NRN_BUFSIZE], /* the input file prefix */
+    buf[512];             /* general purpose temporary buffer */
 
 extern Item *parseroot, *lex_tok; /* intoken pointer for nonzero parse passes */
 
