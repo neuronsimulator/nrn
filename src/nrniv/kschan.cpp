@@ -1184,7 +1184,7 @@ void KSChan::setion(const char* s) {
     int pdoff = ppoff_;
     int io = gmaxoffset_;
     if (strcmp(ion_.c_str(), "NonSpecific") == 0) {  // non-specific
-        if (ion_sym_) {                               // switch from useion to non-specific
+        if (ion_sym_) {                              // switch from useion to non-specific
             printf("switch from useion to non-specific\n");
             rlsym_->s_varn += 1;
             Symbol** ppsym = newppsym(rlsym_->s_varn);
