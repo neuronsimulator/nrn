@@ -271,45 +271,56 @@ static PyObject* hocobj_name(PyObject* pself, PyObject* args) {
     char buf[512], *cp;
     buf[0] = '\0';
     cp = buf;
+    auto cp_size = sizeof(buf);
     PyObject* po;
     if (self->type_ == PyHoc::HocObject) {
-        sprintf(cp, "%s", hoc_object_name(self->ho_));
+        std::snprintf(cp, cp_size, "%s", hoc_object_name(self->ho_));
     } else if (self->type_ == PyHoc::HocFunction || self->type_ == PyHoc::HocArray) {
-        sprintf(cp,
-                "%s%s%s",
-                self->ho_ ? hoc_object_name(self->ho_) : "",
-                self->ho_ ? "." : "",
-                self->sym_->name);
+        std::snprintf(cp,
+                      cp_size,
+                      "%s%s%s",
+                      self->ho_ ? hoc_object_name(self->ho_) : "",
+                      self->ho_ ? "." : "",
+                      self->sym_->name);
         if (self->type_ == PyHoc::HocArray) {
             for (int i = 0; i < self->nindex_; ++i) {
-                sprintf(cp += strlen(cp), "[%d]", self->indices_[i]);
+                auto tmp = strlen(cp);
+                cp += tmp;
+                cp_size -= tmp;
+                std::snprintf(cp, cp_size, "[%d]", self->indices_[i]);
             }
-            sprintf(cp += strlen(cp), "[?]");
+            auto tmp = strlen(cp);
+            cp += tmp;
+            cp_size -= tmp;
+            std::snprintf(cp, cp_size, "[?]");
         } else {
-            sprintf(cp += strlen(cp), "()");
+            auto tmp = strlen(cp);
+            cp += tmp;
+            cp_size -= tmp;
+            std::snprintf(cp, cp_size, "()");
         }
     } else if (self->type_ == PyHoc::HocRefNum) {
-        sprintf(cp, "<hoc ref value %g>", self->u.x_);
+        std::snprintf(cp, cp_size, "<hoc ref value %g>", self->u.x_);
     } else if (self->type_ == PyHoc::HocRefStr) {
-        sprintf(cp, "<hoc ref str \"%s\">", self->u.s_);
+        std::snprintf(cp, cp_size, "<hoc ref str \"%s\">", self->u.s_);
     } else if (self->type_ == PyHoc::HocRefPStr) {
-        sprintf(cp, "<hoc ref pstr \"%s\">", *self->u.pstr_);
+        std::snprintf(cp, cp_size, "<hoc ref pstr \"%s\">", *self->u.pstr_);
     } else if (self->type_ == PyHoc::HocRefObj) {
-        sprintf(cp, "<hoc ref value \"%s\">", hoc_object_name(self->u.ho_));
+        std::snprintf(cp, cp_size, "<hoc ref value \"%s\">", hoc_object_name(self->u.ho_));
     } else if (self->type_ == PyHoc::HocForallSectionIterator) {
-        sprintf(cp, "<all section iterator next>");
+        std::snprintf(cp, cp_size, "<all section iterator next>");
     } else if (self->type_ == PyHoc::HocSectionListIterator) {
-        sprintf(cp, "<SectionList iterator>");
+        std::snprintf(cp, cp_size, "<SectionList iterator>");
     } else if (self->type_ == PyHoc::HocScalarPtr) {
         if (self->u.px_) {
-            sprintf(cp, "<pointer to hoc scalar %g>", *self->u.px_);
+            std::snprintf(cp, cp_size, "<pointer to hoc scalar %g>", *self->u.px_);
         } else {
-            sprintf(cp, "<pointer to hoc scalar (Invalid)>");
+            std::snprintf(cp, cp_size, "<pointer to hoc scalar (Invalid)>");
         }
     } else if (self->type_ == PyHoc::HocArrayIncomplete) {
-        sprintf(cp, "<incomplete pointer to hoc array %s>", self->sym_->name);
+        std::snprintf(cp, cp_size, "<incomplete pointer to hoc array %s>", self->sym_->name);
     } else {
-        sprintf(cp, "<TopLevelHocInterpreter>");
+        std::snprintf(cp, cp_size, "<TopLevelHocInterpreter>");
     }
     po = Py_BuildValue("s", buf);
     return po;

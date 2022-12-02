@@ -467,7 +467,7 @@ void System(void) {
         HocStr* st;
         n = strlen(gargstr(1)) + strlen(stdoutfile);
         st = hocstr_create(n + 256);
-        Sprintf(st->buf, "%s > %s", gargstr(1), stdoutfile);
+        std::snprintf(st->buf, st->size + 1, "%s > %s", gargstr(1), stdoutfile);
         d = (double) system(st->buf);
 #if 1
         if ((fp = fopen(stdoutfile, "r")) == (FILE*) 0) {
@@ -660,7 +660,7 @@ Symbol* hoc_parse_expr(const char* str, Symlist** psymlist) {
     if (strlen(str) > BUFSIZ - 20) {
         HocStr* s;
         s = hocstr_create(strlen(str) + 20);
-        sprintf(s->buf, "hoc_ac_ = %s\n", str);
+        std::snprintf(s->buf, s->size + 1, "hoc_ac_ = %s\n", str);
         hoc_xopen_run(sp, s->buf);
         hocstr_delete(s);
     } else {
@@ -692,7 +692,7 @@ Symbol* hoc_parse_stmt(const char* str, Symlist** psymlist) {
     if (strlen(str) > BUFSIZ - 10) {
         HocStr* s;
         s = hocstr_create(strlen(str) + 10);
-        sprintf(s->buf, "{%s}\n", str);
+        std::snprintf(s->buf, s->size + 1, "{%s}\n", str);
         hoc_xopen_run(sp, s->buf);
         hocstr_delete(s);
     } else {
@@ -718,7 +718,7 @@ double* hoc_val_pointer(const char* s) {
     if (strlen(s) > BUFSIZ - 20) {
         HocStr* buf;
         buf = hocstr_create(strlen(s) + 20);
-        sprintf(buf->buf, "{hoc_pointer_(&%s)}\n", s);
+        std::snprintf(buf->buf, buf->size + 1, "{hoc_pointer_(&%s)}\n", s);
         hoc_oc(buf->buf);
         hocstr_delete(buf);
     } else {

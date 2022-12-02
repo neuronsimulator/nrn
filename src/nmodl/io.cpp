@@ -346,7 +346,7 @@ static FILE* include_open(char* fname, int err) {
         free(buf);
         return f;
     }
-    sprintf(buf, "../%s", fname); /* Next try next dir up. */
+    std::snprintf(buf, NRN_BUFSIZE, "../%s", fname); /* Next try next dir up. */
     if ((f = fopen(buf, "r")) != NULL) {
         strcpy(fname, buf);
         free(buf);

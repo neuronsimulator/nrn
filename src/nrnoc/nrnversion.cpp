@@ -58,9 +58,12 @@ char* nrn_version(int i) {
             }
             sarg = (char*) calloc(size + 1, sizeof(char));
             c = sarg;
+            auto c_size = size + 1;
             for (j = 0; j < nrn_global_argc; ++j) {
-                sprintf(c, "%s%s", j ? " " : "", nrn_global_argv[j]);
-                c = c + strlen(c);
+                auto const res = std::snprintf(c, c_size, "%s%s", j ? " " : "", nrn_global_argv[j]);
+                assert(res < c_size);
+                c += res;
+                c_size -= res;
             }
         }
         return sarg;

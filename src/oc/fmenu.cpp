@@ -333,7 +333,6 @@ static Menuitem* append(int imenu) {
 static void appendvar(int imenu, const char* variable, const char* command) {
     Menuitem* item;
     int i, len;
-    char buf[256];
     Psym* p;
 
     item = append(imenu);
@@ -345,14 +344,14 @@ static void appendvar(int imenu, const char* variable, const char* command) {
     } else {
         item->command = (char*) 0;
     }
-    Sprintf(buf, "%s", p->sym->name);
-    len = strlen(buf);
+    std::string buf{p->sym->name};
     for (i = 0; i < p->nsub; i++) {
-        Sprintf(buf + len, "[%d]", p->sub[i]);
-        len = strlen(buf);
+        buf.append(1, '[');
+        buf.append(std::to_string(p->sub[i]));
+        buf.append(1, ']');
     }
-    item->prompt = (char*) emalloc((unsigned) (len + 1));
-    Strcpy(item->prompt, buf);
+    item->prompt = static_cast<char*>(emalloc(buf.size() + 1));
+    Strcpy(item->prompt, buf.c_str());
 }
 
 static void appendaction(int imenu, const char* prompt, const char* command) {

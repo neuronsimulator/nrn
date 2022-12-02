@@ -26,18 +26,6 @@ const int ion_global_map_member_size = 3;
 
 
 #define nparm 5
-static const char* mechanism[] = {/*just a template*/
-                                  "0",
-                                  "na_ion",
-                                  "ena",
-                                  "nao",
-                                  "nai",
-                                  0,
-                                  "ina",
-                                  "dina_dv_",
-                                  0,
-                                  0};
-
 void nrn_init_ion(NrnThread*, Memb_list*, int);
 void nrn_alloc_ion(double*, Datum*, int);
 
@@ -61,20 +49,20 @@ double nrn_ion_charge(int type) {
 }
 
 void ion_reg(const char* name, double valence) {
-    char buf[7][50];
+    std::array<std::string, 7> buf{};
 #define VAL_SENTINAL -10000.
-
-    sprintf(buf[0], "%s_ion", name);
-    sprintf(buf[1], "e%s", name);
-    sprintf(buf[2], "%si", name);
-    sprintf(buf[3], "%so", name);
-    sprintf(buf[5], "i%s", name);
-    sprintf(buf[6], "di%s_dv_", name);
-    for (int i = 0; i < 7; i++) {
-        mechanism[i + 1] = buf[i];
+    std::string name_str{name};
+    buf[0] = name_str + "_ion";
+    buf[1] = "e" + name_str;
+    buf[2] = name_str + "i";
+    buf[3] = name_str + "o";
+    buf[5] = "i" + name_str;
+    buf[6] = "di" + name_str + "_dv_";
+    std::array<const char*, buf.size() + 1> mech{};
+    for (int i = 0; i < buf.size(); i++) {
+        mech[i + 1] = buf[i].empty() ? nullptr : buf[i].c_str();
     }
-    mechanism[5] = nullptr; /* buf[4] not used above */
-    int mechtype = nrn_get_mechtype(buf[0]);
+    int mechtype = nrn_get_mechtype(buf[0].c_str());
     if (mechtype >= nrn_ion_global_map_size ||
         nrn_ion_global_map[mechtype] == nullptr) {  // if hasn't yet been allocated
 
@@ -91,7 +79,7 @@ void ion_reg(const char* name, double valence) {
         nrn_ion_global_map[mechtype] = (double*) emalloc(ion_global_map_member_size *
                                                          sizeof(double));
 
-        register_mech((const char**) mechanism,
+        register_mech(mech.data(),
                       nrn_alloc_ion,
                       nrn_cur_ion,
                       nullptr,
@@ -101,20 +89,14 @@ void ion_reg(const char* name, double valence) {
                       nullptr,
                       -1,
                       1);
-        mechtype = nrn_get_mechtype(mechanism[1]);
+        mechtype = nrn_get_mechtype(mech[1]);
         _nrn_layout_reg(mechtype, SOA_LAYOUT);
         hoc_register_prop_size(mechtype, nparm, 1);
         hoc_register_dparam_semantics(mechtype, 0, "iontype");
         nrn_writes_conc(mechtype, 1);
 
-        {
-            // See https://en.cppreference.com/w/cpp/io/c/fprintf: If a call to
-            // sprintf or snprintf causes copying to take place between objects
-            // that overlap, the behavior is undefined.
-            std::string const old_buf_0{buf[0]};
-            sprintf(buf[0], "%si0_%s", name, old_buf_0.c_str());
-        }
-        sprintf(buf[1], "%so0_%s", name, buf[0]);
+        buf[0] = name_str + "i0_" + buf[0];
+        buf[1] = name_str + "o0_" + buf[0];
         if (strcmp("na", name) == 0) {
             na_ion = mechtype;
             global_conci(mechtype) = DEF_nai;

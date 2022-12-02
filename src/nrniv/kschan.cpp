@@ -996,7 +996,7 @@ void KSChan::setname(const char* s) {
                     char* s1 = static_cast<char*>(hoc_Emalloc(n));
                     hoc_malchk();
                     strncpy(s1, sp->name, nbase);
-                    sprintf(s1 + nbase, "_%s", suffix);
+                    std::snprintf(s1 + nbase, n - nbase, "_%s", suffix);
                     // printf("KSChan::setname change %s to %s\n", sp->name, s1);
                     free(sp->name);
                     sp->name = s1;

@@ -216,12 +216,12 @@ int hoc_xopen1(const char* name, const char* rcs) /* read and execute a hoc prog
             int sz = 2 * (strlen(rcs) + strlen(name)) + 20;
             free(fname);
             fname = static_cast<char*>(emalloc(sz));
-            Sprintf(fname, "co -p%s %s > %s-%s", rcs, name, name, rcs);
+            std::snprintf(fname, sz, "co -p%s %s > %s-%s", rcs, name, name, rcs);
             ERRCHK(if (system(fname) != 0) {
                 free(fname);
                 hoc_execerror(name, "\nreturned error in hoc_co system call");
             })
-            Sprintf(fname, "%s-%s", name, rcs);
+            std::snprintf(fname, sz, "%s-%s", name, rcs);
         }
     } else if (hoc_retrieving_audit()) {
         hoc_xopen_from_audit(fname);
@@ -434,6 +434,7 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
     fmt = gargstr(argn++);
     convflag = lflag = didit = 0;
     pbuf = hs->buf;
+    auto pbuf_size = hs->size + 1;
     pfrag = frag;
     *pfrag = 0;
     *pbuf = 0;
@@ -456,22 +457,22 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
                         pfrag[0] = pfrag[-1];
                         pfrag[-1] = 'l';
                     }
-                    Sprintf(pbuf, frag, (long long) *getarg(argn));
+                    std::snprintf(pbuf, pbuf_size, frag, (long long) *getarg(argn));
                 } else {
-                    Sprintf(pbuf, frag, (int) *getarg(argn));
+                    std::snprintf(pbuf, pbuf_size, frag, (int) *getarg(argn));
                 }
                 didit = 1;
                 break;
 
             case 'c':
-                Sprintf(pbuf, frag, (char) *getarg(argn));
+                std::snprintf(pbuf, pbuf_size, frag, (char) *getarg(argn));
                 didit = 1;
                 break;
 
             case 'f':
             case 'e':
             case 'g':
-                Sprintf(pbuf, frag, *getarg(argn));
+                std::snprintf(pbuf, pbuf_size, frag, *getarg(argn));
                 didit = 1;
                 break;
 
@@ -484,7 +485,8 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
                 n = pbuf - hs->buf;
                 hocstr_resize(hs, n + strlen(cp) + 100);
                 pbuf = hs->buf + n;
-                Sprintf(pbuf, frag, cp);
+                pbuf_size = hs->size + 1 - n;
+                std::snprintf(pbuf, pbuf_size, frag, cp);
                 didit = 1;
                 break;
 
@@ -504,7 +506,8 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
             n = pbuf - hs->buf;
             hocstr_resize(hs, n + strlen(frag) + 100);
             pbuf = hs->buf + n;
-            Sprintf(pbuf, "%s", frag);
+            pbuf_size = hs->size + 1 - n;
+            std::printf(pbuf, pbuf_size, "%s", frag);
             pfrag = frag;
             *pfrag = 0;
             while (*pbuf) {
@@ -529,7 +532,7 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
         }
     }
     if (pfrag != frag)
-        Sprintf(pbuf, "%s", frag);
+        std::snprintf(pbuf, pbuf_size, "%s", frag);
     *ppbuf = hs->buf;
 }
 

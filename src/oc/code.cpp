@@ -2428,17 +2428,17 @@ void prexpr() {
         s = hocstr_create(256);
     switch (hoc_stacktype()) {
     case NUMBER:
-        Sprintf(s->buf, "%.8g ", hoc_xpop());
+        std::snprintf(s->buf, s->size + 1, "%.8g ", hoc_xpop());
         break;
     case STRING:
         ss = *(hoc_strpop());
         hocstr_resize(s, strlen(ss) + 1);
-        Sprintf(s->buf, "%s ", ss);
+        std::snprintf(s->buf, s->size + 1, "%s ", ss);
         break;
     case OBJECTTMP:
     case OBJECTVAR:
         pob = hoc_objpop();
-        Sprintf(s->buf, "%s ", hoc_object_name(*pob));
+        std::snprintf(s->buf, s->size + 1, "%s ", hoc_object_name(*pob));
         hoc_tobj_unref(pob);
         break;
     default:
@@ -2455,7 +2455,7 @@ void prstr(void) /* print string value */
         s = hocstr_create(256);
     cpp = hoc_strpop();
     hocstr_resize(s, strlen(*cpp) + 10);
-    Sprintf(s->buf, "%s", *cpp);
+    std::snprintf(s->buf, s->size + 1, "%s", *cpp);
     plprint(s->buf);
 }
 

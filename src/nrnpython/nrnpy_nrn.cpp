@@ -325,10 +325,10 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
                 char* cp = str.c_str();
                 n += strlen(cp) + 1;  // include dot
                 self->name_ = new char[n];
-                sprintf(self->name_, "%s.%s", cp, name);
+                std::snprintf(self->name_, n, "%s.%s", cp, name);
             } else {
                 self->name_ = new char[n];
-                strcpy(self->name_, name);
+                std::strncpy(self->name_, name, n);
             }
         }
         self->sec_ = nrnpy_newsection(self);
@@ -813,8 +813,9 @@ static PyObject* pyseg_repr(PyObject* p) {
     NPySegObj* pyseg = (NPySegObj*) p;
     if (pyseg->pysec_->sec_ && pyseg->pysec_->sec_->prop) {
         const char* sname = secname(pyseg->pysec_->sec_);
-        char* name = new char[strlen(sname) + 100];
-        sprintf(name, "%s(%g)", sname, pyseg->x_);
+        auto const name_size = strlen(sname) + 100;
+        char* name = new char[name_size];
+        std::snprintf(name, name_size, "%s(%g)", sname, pyseg->x_);
         PyObject* result = PyString_FromString(name);
         delete[] name;
         return result;
@@ -2049,7 +2050,7 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     if (nrn_is_ion(self->prop_->_type)) {
         strcpy(buf, isptr ? n + 5 : n);
     } else {
-        sprintf(buf, "%s_%s", isptr ? n + 5 : n, mname);
+        std::snprintf(buf, bufsz, "%s_%s", isptr ? n + 5 : n, mname);
     }
     Symbol* sym = np.find(buf);
     if (sym) {
@@ -2116,7 +2117,7 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
     if (nrn_is_ion(self->prop_->_type)) {
         strcpy(buf, isptr ? n + 5 : n);
     } else {
-        sprintf(buf, "%s_%s", isptr ? n + 5 : n, mname);
+        std::snprintf(buf, bufsz, "%s_%s", isptr ? n + 5 : n, mname);
     }
     Symbol* sym = np.find(buf);
     delete[] buf;

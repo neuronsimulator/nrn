@@ -738,11 +738,12 @@ int pu(int u, int i, int f) {
         if (f & 2)
             *ucp++ = '-';
         if (unames[i]) {
-            sprintf(ucp, "%s", unames[i]);
+            std::strcpy(ucp, unames[i]);
             ucp += strlen(ucp);
         } else {
-            sprintf(ucp, "*%c*", i + 'a');
-            ucp += strlen(ucp);
+            *ucp++ = '*';
+            *ucp++ = 'a' + i;
+            *ucp++ = '*';
         }
         if (u > 1)
             *ucp++ = (u + '0');

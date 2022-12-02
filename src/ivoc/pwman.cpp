@@ -3404,8 +3404,9 @@ char* ivoc_get_temp_file() {
     tmpfile = new char[strlen(tdir) + 1 + strlen(tname) + 1];
     sprintf(tmpfile, "%s/%s", tdir, tname);
 #else
-    tmpfile = new char[strlen(tdir) + 1 + 9 + 1];
-    sprintf(tmpfile, "%s/nrnXXXXXX", tdir);
+    auto const length = strlen(tdir) + 1 + 9 + 1;
+    tmpfile = new char[length];
+    std::snprintf(tmpfile, length, "%s/nrnXXXXXX", tdir);
 #if HAVE_MKSTEMP
     int fd;
     if ((fd = mkstemp(tmpfile)) == -1) {

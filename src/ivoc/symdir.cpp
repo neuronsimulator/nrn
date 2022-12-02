@@ -29,7 +29,7 @@ const char* concat(const char* s1, const char* s2) {
         delete[] tmp;
     }
     tmp = new char[l1 + l2 + 1];
-    sprintf(tmp, "%s%s", s1, s2);
+    std::snprintf(tmp, l1 + l2 + 1, "%s%s", s1, s2);
     return (const char*) tmp;
 }
 
