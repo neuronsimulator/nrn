@@ -41,11 +41,11 @@ cdef wrapEventInputPort (cxx_EventInputPort* port):
 
 
 def publishEventOutput (identifier):
-    return wrapEventOutputPort (cxx_publishEventOutput (identifier))
+    return wrapEventOutputPort (cxx_publishEventOutput (identifier.encode ('utf-8')))
 
 
 def publishEventInput (identifier):
-    return wrapEventInputPort (cxx_publishEventInput (identifier))
+    return wrapEventInputPort (cxx_publishEventInput (identifier.encode ('utf-8')))
 
 
 # Local Variables:
