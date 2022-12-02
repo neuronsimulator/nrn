@@ -220,7 +220,6 @@ extern Item* qlint;
         if (arg)    \
             ;       \
     }
-#define Free(arg) free((char*) (arg))
 #else
 #define Fprintf     fprintf
 #define Fclose      fclose
@@ -236,7 +235,6 @@ extern Item* qlint;
 #define Lappendstr  lappendstr
 #define Lappenditem lappenditem
 #define IGNORE(arg) arg
-#define Free(arg)   free((void*) (arg))
 #endif
 using neuron::Sprintf;
 
