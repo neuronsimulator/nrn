@@ -4,7 +4,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <cstdio>
 #include "d2upath.cpp"
 
 char* nrnhome;
@@ -69,7 +69,8 @@ int main(int argc, char** argv) {
         temp = strdup("c:/tmp");
     }
     temp = hoc_dos2unixpath(temp);
-    buf = new char[strlen(args) + 3 * strlen(nh) + 200 + strlen(temp)];
+    auto const bufsz = strlen(args) + 3 * strlen(nh) + 200 + strlen(temp);
+    buf = new char[bufsz];
 
 #ifdef MINGW
 #if 0
@@ -79,15 +80,16 @@ int main(int argc, char** argv) {
 	}
 #endif
 
-    Sprintf(buf,
-            "%s\\mingw\\usr\\bin\\bash.exe %s/lib/mos2nrn3.sh %s %s %s",
-            nrnhome,
-            nh,
-            temp,
-            nh,
-            args);
+    std::snprintf(buf,
+                  bufsz,
+                  "%s\\mingw\\usr\\bin\\bash.exe %s/lib/mos2nrn3.sh %s %s %s",
+                  nrnhome,
+                  nh,
+                  temp,
+                  nh,
+                  args);
 #else
-    Sprintf(buf, "%s\\bin\\sh %s/lib/mos2nrn.sh %s %s", nrnhome, nh, nh, args);
+    std::snprintf(buf, bufsz, "%s\\bin\\sh %s/lib/mos2nrn.sh %s %s", nrnhome, nh, nh, args);
 #endif
     auto const sz = strlen(buf) + 100;
     msg = new char[sz];
