@@ -1,4 +1,4 @@
-3403#include <../../nrnconf.h>
+#include <../../ nrnconf.h>
 #include "gui-redirect.h"
 
 extern char* ivoc_get_temp_file();
