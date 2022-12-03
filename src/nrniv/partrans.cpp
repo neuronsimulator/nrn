@@ -700,9 +700,6 @@ void nrnmpi_setup_transfer() {
     }
 #endif
     int nhost = nrnmpi_numprocs;
-    //	char ctmp[100];
-    //	sprintf(ctmp, "vartrans%d", nrnmpi_myid);
-    //	xxxfile = fopen(ctmp, "w");
     is_setup_ = true;
     //	printf("nrnmpi_setup_transfer\n");
     delete_imped_info();

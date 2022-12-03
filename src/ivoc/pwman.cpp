@@ -3403,8 +3403,9 @@ char* ivoc_get_temp_file() {
 #if defined(WIN32) && defined(__MWERKS__)
     char tname[L_tmpnam + 1];
     tmpnam(tname);
-    tmpfile = new char[strlen(tdir) + 1 + strlen(tname) + 1];
-    sprintf(tmpfile, "%s/%s", tdir, tname);
+    auto const length = strlen(tdir) + 1 + strlen(tname) + 1; 
+    tmpfile = new char[length]
+    std::snprintf(tmpfile, length, "%s/%s", tdir, tname);
 #else
     auto const length = strlen(tdir) + 1 + 9 + 1;
     tmpfile = new char[length];

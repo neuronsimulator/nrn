@@ -321,9 +321,6 @@ int SymDirectory::index(const String& name) const {
 void SymDirectory::whole_name(int index, CopyString& s) const {
     const String& s1 = impl_->path_;
     const String& s2 = name(index);
-    //	char* tmp = new char[s1.length() + s2.length() + 1];
-    //	sprintf(tmp, "%.*%s%.*%s", s1.length(), s1.string(), s2.length(), s2.string());
-    //	s = tmp;
     s = concat(s1.string(), s2.string());
 }
 bool SymDirectory::is_directory(int index) const {

@@ -2560,7 +2560,7 @@ GraphLine::GraphLine(const char* expr,
     if (usepointer) {
         if (pd) {
             // char buf[256];
-            // sprintf(buf, "%s", expr);
+            // Sprintf(buf, "%s", expr);
             // expr_ = oc.parseExpr(buf, symlist);
             expr_ = NULL;
             pval_ = pd;

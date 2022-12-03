@@ -309,7 +309,7 @@ void PRintf(void) /* printf function */
 }
 
 
-void hoc_Sprint(void) /* sprintf function */
+void hoc_Sprint(void) /* sprintf_function */
 {
     char** cpp;
     char* buf;

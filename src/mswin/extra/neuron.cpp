@@ -79,14 +79,6 @@ int main(int argc, char** argv) {
     auto const buf_size = strlen(args) + 6 * strlen(nh) + 200;
     char* const buf = new char[buf_size];
 #ifdef MINGW
-    // sprintf(buf, "%s\\mingw\\bin\\bash.exe -rcfile %s/lib/nrnstart.bsh -i %s/lib/neuron2.sh
-    // nrngui %s", nrnhome, nh, nh, args);
-#if 0
-	if (nh[1] == ':') {
-		nh[1] = nh[0];
-		nh[0] = '/';
-	}
-#endif
     std::snprintf(buf,
                   buf_size,
                   "%s\\mingw\\usr\\bin\\bash.exe -i %s/lib/neuron3.sh %s nrngui %s",
@@ -94,7 +86,6 @@ int main(int argc, char** argv) {
                   nh,
                   nh,
                   args);
-// MessageBox(0, buf, "NEURON", MB_OK);
 #else
     std::snprintf(buf,
                   buf_size,

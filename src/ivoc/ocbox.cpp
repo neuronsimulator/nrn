@@ -360,7 +360,7 @@ static double save(void* v) {
             Sprintf(buf, "execute(\"%s\", %s)", gargstr(1), gargstr(2));
         }
     } else {
-        // sprintf(buf, "%s", gargstr(1));
+        // Sprintf(buf, "%s", gargstr(1));
         b->save_action(gargstr(1), 0);
         return 1.0;
     }
@@ -484,9 +484,6 @@ OcBox::OcBox(int type, int frame, bool scroll)
             box = lk.hbox(sb, lk.hspace(4), wk.vscroll_bar(sb));
         } else {
             box = bi_->box_ = lk.vbox(3);
-            //((Box*)box)->debug_ = new char[50];
-            // sprintf(((Box*)box)->debug_, "box%p:", this);
-            // printf("%s\n", ((Box*)box)->debug_);
         }
     }
     Resource::ref(bi_->box_);

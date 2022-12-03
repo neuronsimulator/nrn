@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include "mos2nrn.h"
 
-static void getdname(char* dname);
+static void getdname(char* dname, size_t sz);
 
 #include <string.h>
 
@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
     }
     fclose(f);
     if (strncmp(buf, "PK", 2) == 0) {  // its a nrnzip file
-        getdname(dname);
+        getdname(dname, 256);
         nrn_assert(snprintf(buf,
                             256,
                             "xterm -sb -e %s/mos2nrn2.sh %s %s %d",
@@ -74,13 +74,13 @@ const char* basefile(const char* path) {
     return path;
 }
 
-static void getdname(char* dname) {
+static void getdname(char* dname, size_t sz) {
     int fd;
     const char* tdir;
     if ((tdir = getenv("TEMP")) == NULL) {
         tdir = "/tmp";
     }
-    sprintf(dname, "%s/nrnXXXXXX", tdir);
+    std::snprintf(dname, sz, "%s/nrnXXXXXX", tdir);
 #if HAVE_MKSTEMP
     fd = mkstemp(dname);
     close(fd);

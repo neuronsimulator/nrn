@@ -177,17 +177,17 @@ static void setneuronhome(const char* p) {
         // check for nrn.def or nrn.defaults
         // if it exists assume valid installation
         FILE* f;
-        sprintf(buf1, "%s/lib/nrn.def", buf);
+        Sprintf(buf1, "%s/lib/nrn.def", buf);
         if ((f = fopen(buf1, "r")) == (FILE*) 0) {
-            sprintf(buf1, "%s/lib/nrn.defaults", buf);
+            Sprintf(buf1, "%s/lib/nrn.defaults", buf);
             if ((f = fopen(buf1, "r")) == (FILE*) 0) {
-                sprintf(buf1, "%s not valid neuronhome\n", buf);
+                Sprintf(buf1, "%s not valid neuronhome\n", buf);
                 MessageBox(NULL, buf1, "mos2nrn", MB_OK);
                 return;
             }
         }
         fclose(f);
-        sprintf(buf1, "NEURONHOME=%s", buf);
+        Sprintf(buf1, "NEURONHOME=%s", buf);
         putenv(buf1);  // arg must be global
     }
 }
@@ -217,7 +217,7 @@ void send(const char* url) {
     while (url[start] == ' ') {
         ++start;
     }
-    sprintf(buf1, "%s/bin/hel2mos1.sh \"%s\"", neuronhome(), url + start);
+    Sprintf(buf1, "%s/bin/hel2mos1.sh \"%s\"", neuronhome(), url + start);
     // printf("sending |%s|\n", buf1);
     signal(SIGCHLD, SIG_IGN);
     system(buf1);

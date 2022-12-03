@@ -114,7 +114,7 @@ static const char* fname(const char* name) {
     static char buf[2][256];
     static int i = 0;
     i = (i + 1) % 2;
-    sprintf(buf[i], "%s/%s", nrnbbsdir(), name);
+    Sprintf(buf[i], "%s/%s", nrnbbsdir(), name);
     return buf[i];
 }
 

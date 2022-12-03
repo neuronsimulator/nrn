@@ -89,11 +89,13 @@ int main(int argc, char** argv) {
 #else
     Sprintf(buf, "%s\\bin\\sh %s/lib/mos2nrn.sh %s %s", nrnhome, nh, nh, args);
 #endif
-    msg = new char[strlen(buf) + 100];
+    auto const sz = strlen(buf) + 100;
+    msg = new char[sz];
     err = WinExec(buf, SW_SHOW);
     if (err < 32) {
-        sprintf(msg, "Cannot WinExec %s\n", buf);
+        std::snprintf(msg, sz, "Cannot WinExec %s\n", buf);
         MessageBox(0, msg, "NEURON", MB_OK);
     }
+    delete [] msg;
     return 0;
 }

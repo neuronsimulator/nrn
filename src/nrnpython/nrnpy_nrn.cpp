@@ -156,7 +156,6 @@ static char* pysec_name(Section* sec) {
         if (ps->name_) {
             Sprintf(buf, "%s", ps->name_);
         } else {
-            // sprintf(cp, "PySec_%p", ps);
             Sprintf(buf, "__nrnsec_%p", sec);
         }
         return buf;

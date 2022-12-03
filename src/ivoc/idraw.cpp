@@ -455,13 +455,13 @@ void OcIdraw::ifill(const Color* color, bool f) {
     if (color) {
         rgbcolor(color, r, g, b);
     }
-    //	sprintf(buf, "%%I cfg %s\n%d %d %d SetCFg", "Black", 0,0,0);
+    //	Sprintf(buf, "%%I cfg %s\n%d %d %d SetCFg", "Black", 0,0,0);
     // idraw needs hex
     Sprintf(
         buf, "%%I cfg %x%x%x\n%f %f %f SetCFg", int(r * 256), int(g * 256), int(b * 256), r, g, b);
     out << buf << std::endl;
     if (f) {
-        //		sprintf(buf, "%%I cbg %s\n%d %d %d SetCBg\n%%I p\n1 SetP",
+        //		Sprintf(buf, "%%I cbg %s\n%d %d %d SetCBg\n%%I p\n1 SetP",
         //		 "Black", 0,0,0);
         Sprintf(buf,
                 "%%I cbg %x%x%x\n%f %f %f SetCBg\n%%I p\n1 SetP",

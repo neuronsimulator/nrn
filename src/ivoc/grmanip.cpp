@@ -321,7 +321,7 @@ void LineRubberMarker::draw(Coord x, Coord y) {
     char s[50];
 
 #if defined(WIN32) || MAC
-    sprintf(s, "crosshair x=%g y=%g", x_, y_);
+    Sprintf(s, "crosshair x=%g y=%g", x_, y_);
     ((DismissableWindow*) canvas()->window())->name(s);
 #else
     Sprintf(s, "(%g,%g)", x_, y_);

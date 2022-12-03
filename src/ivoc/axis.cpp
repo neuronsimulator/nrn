@@ -321,7 +321,7 @@ void Axis::install() {
             s_->append_fixed(new GAxisItem(tic));
             gi = s_->count() - 1;
             s_->move(gi, x, y);
-            sprintf(str, "%g", x);
+            Sprintf(str, "%g", x);
             s_->append_fixed(
                 new GAxisItem(new GLabel(str, Appear::default_color(), true, 1, .5, 1.1)));
             gi = s_->count() - 1;
@@ -340,7 +340,7 @@ void Axis::install() {
             s_->append_fixed(new GAxisItem(tic));
             gi = s_->count() - 1;
             s_->move(gi, x, y);
-            sprintf(str, "%g", y);
+            Sprintf(str, "%g", y);
             s_->append_fixed(
                 new GAxisItem(new GLabel(str, Appear::default_color(), true, 1, 1, .5)));
             gi = s_->count() - 1;
