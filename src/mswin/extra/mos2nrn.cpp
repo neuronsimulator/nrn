@@ -96,6 +96,6 @@ int main(int argc, char** argv) {
         std::snprintf(msg, sz, "Cannot WinExec %s\n", buf);
         MessageBox(0, msg, "NEURON", MB_OK);
     }
-    delete [] msg;
+    delete[] msg;
     return 0;
 }

@@ -129,20 +129,22 @@ static void set_nrnpylib() {
         char* fnrnhome = strdup(neuron_home);
         hoc_forward2back(bnrnhome);
         hoc_back2forward(fnrnhome);
-        std::snprintf(line, linesz + 1,
-                "%s\\mingw\\usr\\bin\\bash %s/bin/nrnpyenv.sh %s --NEURON_HOME=%s",
-                bnrnhome,
-                fnrnhome,
-                (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "",
-                fnrnhome);
+        std::snprintf(line,
+                      linesz + 1,
+                      "%s\\mingw\\usr\\bin\\bash %s/bin/nrnpyenv.sh %s --NEURON_HOME=%s",
+                      bnrnhome,
+                      fnrnhome,
+                      (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "",
+                      fnrnhome);
         free(fnrnhome);
         free(bnrnhome);
 #else
         char* line = new char[linesz + 1];
-        std::snprintf(line, linesz + 1,
-                "bash %s/../../bin/nrnpyenv.sh %s",
-                neuron_home,
-                (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
+        std::snprintf(line,
+                      linesz + 1,
+                      "bash %s/../../bin/nrnpyenv.sh %s",
+                      neuron_home,
+                      (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
 #endif
         FILE* p = popen(line, "r");
         if (!p) {
@@ -304,7 +306,7 @@ static void* ver_dlo(int flag) {
 #if DARWIN
         Sprintf(name, "libpython%s.dylib", ver[i]);
 #else
-        Sprintf(name,  "libpython%s.so", ver[i]);
+        Sprintf(name, "libpython%s.so", ver[i]);
 #endif
 #endif
         void* handle = dlopen(name, flag);

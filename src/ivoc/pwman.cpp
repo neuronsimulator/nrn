@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+3403#include <../../nrnconf.h>
 #include "gui-redirect.h"
 
 extern char* ivoc_get_temp_file();
@@ -3403,8 +3403,8 @@ char* ivoc_get_temp_file() {
 #if defined(WIN32) && defined(__MWERKS__)
     char tname[L_tmpnam + 1];
     tmpnam(tname);
-    auto const length = strlen(tdir) + 1 + strlen(tname) + 1; 
-    tmpfile = new char[length]
+    auto const length = strlen(tdir) + 1 + strlen(tname) + 1;
+    tmpfile = new char[length];
     std::snprintf(tmpfile, length, "%s/%s", tdir, tname);
 #else
     auto const length = strlen(tdir) + 1 + 9 + 1;
