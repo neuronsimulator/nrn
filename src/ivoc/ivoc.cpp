@@ -135,7 +135,7 @@ void nrn_err_dialog(const char* mes) {
     IFGUI
     if (nrn_err_dialog_active_ && !Session::instance()->done()) {
         char m[1024];
-        sprintf(m, "%s (See terminal window)", mes);
+        Sprintf(m, "%s (See terminal window)", mes);
         continue_dialog(m);
     }
     ENDGUI

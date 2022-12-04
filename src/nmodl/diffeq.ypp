@@ -21,10 +21,10 @@ static Item* qexpr; /* yylex finds tokens here;*/
 static Symbol* state;
 static List* result;
 
-#define b1 sprintf(lbuf[0],
-#define b2 sprintf(lbuf[1],
-#define b3 sprintf(lbuf[2],
-#define b4 sprintf(lbuf[3],
+#define b1 std::snprintf(lbuf[0], 1000,
+#define b2 std::snprintf(lbuf[1], 1000,
+#define b3 std::snprintf(lbuf[2], 1000,
+#define b4 std::snprintf(lbuf[3], 1000,
 
 void replace(List*), initbuf(), free4(List*);
 int zero(char*);

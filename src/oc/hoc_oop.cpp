@@ -357,14 +357,16 @@ void hoc_exec_cmd(void) { /* execute string from top level or within an object c
     HocStr* hs = 0;
     cmd = gargstr(1);
     pbuf = buf;
+    auto pbuf_size = 256;
     if (strlen(cmd) > 256 - 10) {
         hs = hocstr_create(strlen(cmd) + 10);
         pbuf = hs->buf;
+        pbuf_size = hs->size + 1;
     }
     if (cmd[0] == '~') {
-        sprintf(pbuf, "%s\n", cmd + 1);
+        std::snprintf(pbuf, pbuf_size, "%s\n", cmd + 1);
     } else {
-        sprintf(pbuf, "{%s}\n", cmd);
+        std::snprintf(pbuf, pbuf_size, "{%s}\n", cmd);
     }
     if (ifarg(2)) {
         ob = *hoc_objgetarg(2);
@@ -699,7 +701,7 @@ void call_ob_proc(Object* ob, Symbol* sym, int narg) {
     }
     if (hoc_errno_check()) {
         char str[200];
-        sprintf(str, "%s.%s", hoc_object_name(ob), sym->name);
+        Sprintf(str, "%s.%s", hoc_object_name(ob), sym->name);
         hoc_warning("errno set during call of", str);
     }
     pc = pcsav;
@@ -844,7 +846,7 @@ void hoc_constobject(void) { /* template at pc, index at pc+1, objpointer left o
             break;
         }
     }
-    sprintf(buf, "%s[%d]\n", t->sym->name, index);
+    Sprintf(buf, "%s[%d]\n", t->sym->name, index);
     hoc_execerror("Object ID doesn't exist:", buf);
 }
 
@@ -1703,13 +1705,14 @@ void hoc_free_allobjects(cTemplate* ctemplate, Symlist* sl, Objectdata* data) {
 #define objectpath  hoc_objectpath_impl
 #define pathprepend hoc_path_prepend
 
+constexpr std::size_t hoc_object_pathname_bufsize = 512;
 void pathprepend(char* path, const char* name, const char* indx) {
     char buf[200];
     if (path[0]) {
         strcpy(buf, path);
-        sprintf(path, "%s%s.%s", name, indx, buf);
+        std::snprintf(path, hoc_object_pathname_bufsize, "%s%s.%s", name, indx, buf);
     } else {
-        sprintf(path, "%s%s", name, indx);
+        std::snprintf(path, hoc_object_pathname_bufsize, "%s%s", name, indx);
     }
 }
 
@@ -1756,7 +1759,7 @@ int objectpath(Object* ob, Object* oblook, char* path, int depth) {
 }
 
 char* hoc_object_pathname(Object* ob) {
-    static char path[512];
+    static char path[hoc_object_pathname_bufsize];
     path[0] = '\0';
     if (objectpath(ob, nullptr, path, 0)) {
         return path;
@@ -2010,9 +2013,9 @@ void check_obj_type(Object* obj, const char* type_name) {
     char buf[100];
     if (!obj || strcmp(obj->ctemplate->sym->name, type_name) != 0) {
         if (obj) {
-            sprintf(buf, "object type is %s instead of", obj->ctemplate->sym->name);
+            Sprintf(buf, "object type is %s instead of", obj->ctemplate->sym->name);
         } else {
-            sprintf(buf, "object type is nil instead of");
+            Sprintf(buf, "object type is nil instead of");
         }
         hoc_execerror(buf, type_name);
     }

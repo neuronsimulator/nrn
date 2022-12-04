@@ -1708,7 +1708,7 @@ const char* nrn_sec2pysecname(Section* sec) {
     const char* name = secname(sec);
     if (sec && sec->prop->dparam[PROP_PY_INDEX].get<void*>() &&
         strncmp(name, "__nrnsec_0x", 11) != 0) {
-        sprintf(buf, "_pysec.%s", name);
+        Sprintf(buf, "_pysec.%s", name);
     } else {
         strcpy(buf, name);
     }
@@ -1779,7 +1779,7 @@ const char* sec_and_position(Section* sec, Node* nd) {
     assert(sec);
     buf = secname(sec);
     x = nrn_arc_position(sec, nd);
-    sprintf(buf1, "%s(%g)", buf, x);
+    Sprintf(buf1, "%s(%g)", buf, x);
     return buf1;
 }
 
@@ -2013,11 +2013,11 @@ void forall_section(void) {
     s = hoc_strpop();
     buf[0] = '\0';
     if (s) {
-        sprintf(buf, "%s.*%s.*", objectname(), *s);
+        Sprintf(buf, "%s.*%s.*", objectname(), *s);
     } else {
         char* o = objectname();
         if (o[0]) {
-            sprintf(buf, "%s.*", o);
+            Sprintf(buf, "%s.*", o);
         }
     }
     istk = nrn_isecstack();
@@ -2057,7 +2057,7 @@ void hoc_ifsec(void) {
     extern int hoc_returning;
 
     s = hoc_strpop();
-    sprintf(buf, ".*%s.*", *s);
+    Sprintf(buf, ".*%s.*", *s);
     hoc_regexp_compile(buf);
     if (hoc_regexp_search(secname(chk_access()))) {
         hoc_execute(relative(savepc));

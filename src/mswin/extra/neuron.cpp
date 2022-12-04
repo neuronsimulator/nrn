@@ -4,12 +4,13 @@
 // can be given extra arguments in the lib/neuron.sh file which
 // finally executes nrniv.exe.  Nrniv.exe can be run by itself if
 // it does not need a console or system("command")
-
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "d2upath.cpp"
+
+#include <cstdio>
 
 char* nrnhome;
 char* nh;
@@ -67,9 +68,7 @@ static char* argstr(int argc, char** argv) {
 
 int main(int argc, char** argv) {
     int err;
-    char* buf;
     char* args;
-    char* msg;
 
 #ifndef MINGW
     ShowWindow(GetConsoleWindow(), SW_HIDE);
@@ -77,39 +76,34 @@ int main(int argc, char** argv) {
     setneuronhome();
     nh = hoc_dos2unixpath(nrnhome);
     args = argstr(argc, argv);
-    buf = new char[strlen(args) + 6 * strlen(nh) + 200];
+    auto const buf_size = strlen(args) + 6 * strlen(nh) + 200;
+    char* const buf = new char[buf_size];
 #ifdef MINGW
-    // sprintf(buf, "%s\\mingw\\bin\\bash.exe -rcfile %s/lib/nrnstart.bsh -i %s/lib/neuron2.sh
-    // nrngui %s", nrnhome, nh, nh, args);
-#if 0
-	if (nh[1] == ':') {
-		nh[1] = nh[0];
-		nh[0] = '/';
-	}
-#endif
-    sprintf(buf,
-            "%s\\mingw\\usr\\bin\\bash.exe -i %s/lib/neuron3.sh %s nrngui %s",
-            nrnhome,
-            nh,
-            nh,
-            args);
-// MessageBox(0, buf, "NEURON", MB_OK);
+    std::snprintf(buf,
+                  buf_size,
+                  "%s\\mingw\\usr\\bin\\bash.exe -i %s/lib/neuron3.sh %s nrngui %s",
+                  nrnhome,
+                  nh,
+                  nh,
+                  args);
 #else
-    sprintf(buf,
-            "%s\\bin\\mintty -c %s/lib/minttyrc %s/bin/bash --rcfile %s/lib/nrnstart.bsh "
-            "%s/lib/neuron.sh %s %s",
-            nrnhome,
-            nh,
-            nh,
-            nh,
-            nh,
-            nh,
-            args);
+    std::snprintf(buf,
+                  buf_size,
+                  "%s\\bin\\mintty -c %s/lib/minttyrc %s/bin/bash --rcfile %s/lib/nrnstart.bsh "
+                  "%s/lib/neuron.sh %s %s",
+                  nrnhome,
+                  nh,
+                  nh,
+                  nh,
+                  nh,
+                  nh,
+                  args);
 #endif
-    msg = new char[strlen(buf) + 100];
+    auto const msg_size = strlen(buf) + 100;
+    char* const msg = new char[msg_size];
     err = WinExec(buf, SW_SHOW);
     if (err < 32) {
-        sprintf(msg, "Cannot WinExec %s\n", buf);
+        std::snprintf(msg, msg_size, "Cannot WinExec %s\n", buf);
         MessageBox(0, msg, "NEURON", MB_OK);
     }
     return 0;

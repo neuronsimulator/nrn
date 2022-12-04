@@ -52,9 +52,9 @@ void nrn_possible_mismatched_arch(const char* libname) {
 #endif  // !__arm64__
 
         // what arch did we try to dlopen
-        char* cmd;
-        cmd = new char[strlen(libname) + 100];
-        sprintf(cmd, "lipo -archs %s 2> /dev/null", libname);
+        auto const cmd_size = strlen(libname) + 100;
+        auto* cmd = new char[cmd_size];
+        std::snprintf(cmd, cmd_size, "lipo -archs %s 2> /dev/null", libname);
         char libname_arch[20]{0};
         FILE* p = popen(cmd, "r");
         delete[] cmd;
