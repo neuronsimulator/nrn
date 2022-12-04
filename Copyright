@@ -3,7 +3,7 @@ All rights reserved.
 
 This Copyright refers to all files in this distribution that do not have
 an explicit Copyright notice. See:
-grep -r '\<Copyright\>' *
+grep -r '\<Copyright        \>' *
 
 All files are intended to have a license compatible with the following
 "three clause" open source BSD license.  Please notify
