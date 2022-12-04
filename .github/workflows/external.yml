@@ -26,7 +26,7 @@ jobs:
       - id: remove-tags-on-failure
         if: failure()
         run: |
-          gh pr edit $PR_URL --remove-label test
+          gh pr edit $PR_URL --remove-label nrn-modeldb-ci-nightly
           gh pr comment $PR_URL --body "Unable to retrieve AZURE drop url from comments!"
   nrn-modeldb-ci:
     needs: get-last-azure-url
