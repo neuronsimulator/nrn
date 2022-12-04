@@ -1,13 +1,47 @@
 name: External CIs
 
 on:
-   workflow_dispatch:
-   
-jobs:   
+  pull_request:
+    types: [ labeled ]
+env:
+  PR_URL: ${{ github.event.pull_request.html_url }}
+  
+jobs:
+  get-last-azure-url:
+    runs-on: ubuntu-latest
+    outputs:
+      azure_drop_url: ${{ steps.drop.outputs.azure_drop_url }}
+    steps:
+      - id: drop 
+        run: |
+          # use jq to get the last Azure drop URL from the PR
+          export DROP_URL=`gh pr view $PR_URL --json comments -q 'last(.comments[] .body | match("https://dev.azure.com/neuronsimulator/.*=zip").string)'`
+          echo azure_drop_url=$DROP_URL >> $GITHUB_ENV
+          echo "Azure drop url is: $DROP_URL"
+          if [ "$DROP_URL" == "" ]; then
+            echo "Unable to retrieve AZURE drop url from comments!"
+            exit 1
+          fi
+      - id: remove-tags-on-failure
+        if: failure()
+        run: |
+          gh pr edit $PR_URL --remove-label test
+          gh pr comment $PR_URL --body "Unable to retrieve AZURE drop url from comments!"
   nrn-modeldb-ci:
-      uses: alexsavulescu/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@reuse
-      with:
-        neuron_v1: neuron
-        neuron_v2: neuron-nightly
-        models_to_run: 157157
-   
+    needs: get-last-azure-url
+    if: ${{ github.event.label.name == 'nrn-modeldb-ci-nightly' }}
+    uses: alexsavulescu/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@reuse
+    with:
+      neuron_v1: ${{needs.get-last-azure-url.outputs.azure_drop_url}}
+      neuron_v2: neuron-nightly
+  pr-update:
+    needs: nrn-modeldb-ci
+    runs-on: ubuntu-latest
+    steps:
+    - run: |
+        gh pr edit $PR_URL --remove-label nrn-modeldb-ci-nightly
+        gh pr comment $PR_URL --body "Download **nrn-modeldb-ci** reports artifact [from here](${ARTIFACTS_URL})"
+      name: Clear tag & post workflow run
+      if: always()
+      env:
+        ARTIFACTS_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
