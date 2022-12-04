@@ -5,6 +5,7 @@ on:
     types: [ labeled ]
 env:
   PR_URL: ${{ github.event.pull_request.html_url }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   
 jobs:
   get-last-azure-url:
