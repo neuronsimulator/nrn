@@ -50,7 +50,7 @@ jobs:
   nrn-modeldb-ci:
     needs: get-last-azure-url
     if: ${{ github.event.label.name == 'nrn-modeldb-ci-nightly' }}
-    uses: alexsavulescu/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@reuse
+    uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@master
     with:
       neuron_v1: ${{needs.get-last-azure-url.outputs.azure_drop_url}}
       neuron_v2: neuron-nightly
