@@ -337,6 +337,7 @@ def setup_package():
         "neuron",
         "neuron.neuroml",
         "neuron.tests",
+        "neuron.tests.utils",
         "neuron.rxd",
         "neuron.crxd",
         "neuron.gui2",

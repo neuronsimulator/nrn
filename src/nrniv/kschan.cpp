@@ -2350,8 +2350,10 @@ void KSChan::ion_consist() {
                 continue;
             }
             p->dparam = (Datum*) erealloc(p->dparam, ppsize * sizeof(Datum));
-            // printf("KSChan::ion_consist %s node %d mtype=%d ion_type=%d\n",
-            // secname(sec), i, mtype, ion_sym_->subtype);
+            if (is_point() && is_single() && !single_) {
+                // Leave nullptr in KSSingleNodeData slot.
+                p->dparam[2] = nullptr;
+            }
             if (ion_sym_) {
                 pion = needion(ion_sym_, nd, p);
                 if (cond_model_ == 0) {  // ohmic
