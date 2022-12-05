@@ -1036,7 +1036,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
             num_point_process += n;
         }
     }
-    nt.pntprocs = new Point_process[num_point_process]{}; // includes acell with and without gid
+    nt.pntprocs = new Point_process[num_point_process]{};  // includes acell with and without gid
     nt.n_pntproc = num_point_process;
     nt._ndata = offset;
 
