@@ -14,6 +14,7 @@ env:
 jobs:
   get-last-azure-url:
     runs-on: ubuntu-latest
+    if: ${{ github.event.label.name == 'nrn-modeldb-ci-nightly' }}
     outputs:
       azure_drop_url: ${{ steps.drop.outputs.azure_drop_url }}
       pr_azure_sha:  ${{ steps.drop.outputs.pr_azure_sha }}
@@ -49,11 +50,11 @@ jobs:
           
   nrn-modeldb-ci:
     needs: get-last-azure-url
-    if: ${{ github.event.label.name == 'nrn-modeldb-ci-nightly' }}
     uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@master
     with:
       neuron_v1: ${{needs.get-last-azure-url.outputs.azure_drop_url}}
       neuron_v2: neuron-nightly
+
   pr-update:
     needs: 
       - nrn-modeldb-ci
