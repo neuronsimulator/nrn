@@ -1934,34 +1934,21 @@ std::string CodegenCVisitor::internal_method_arguments() {
 }
 
 
-std::string CodegenCVisitor::param_type_qualifier() {
-    return "";
-}
-
-
-std::string CodegenCVisitor::param_ptr_qualifier() {
-    return "";
-}
-
-
 /**
  * @todo: figure out how to correctly handle qualifiers
  */
 CodegenCVisitor::ParamVector CodegenCVisitor::internal_method_parameters() {
     auto params = ParamVector();
     params.emplace_back("", "int", "", "id");
-    params.emplace_back(param_type_qualifier(), "int", "", "pnodecount");
-    params.emplace_back(param_type_qualifier(),
-                        fmt::format("{}*", instance_struct()),
-                        param_ptr_qualifier(),
-                        "inst");
+    params.emplace_back("", "int", "", "pnodecount");
+    params.emplace_back("", fmt::format("{}*", instance_struct()), "", "inst");
     if (ion_variable_struct_required()) {
         params.emplace_back("", "IonCurVar&", "", "ionvar");
     }
     params.emplace_back("", "double*", "", "data");
     params.emplace_back("const ", "Datum*", "", "indexes");
-    params.emplace_back(param_type_qualifier(), "ThreadDatum*", "", "thread");
-    params.emplace_back(param_type_qualifier(), "NrnThread*", param_ptr_qualifier(), "nt");
+    params.emplace_back("", "ThreadDatum*", "", "thread");
+    params.emplace_back("", "NrnThread*", "", "nt");
     params.emplace_back("", "double", "", "v");
     return params;
 }
@@ -3725,8 +3712,8 @@ void CodegenCVisitor::print_net_receive_common_code(const Block& node, bool need
         print_kernel_data_present_annotation_block_begin();
     }
 
-    printer->fmt_line("{}int nodecount = ml->nodecount;", param_type_qualifier());
-    printer->fmt_line("{}int pnodecount = ml->_nodecount_padded;", param_type_qualifier());
+    printer->add_line("int nodecount = ml->nodecount;");
+    printer->add_line("int pnodecount = ml->_nodecount_padded;");
     printer->add_line("double* data = ml->data;");
     printer->add_line("double* weights = nt->weights;");
     printer->add_line("Datum* indexes = ml->pdata;");
@@ -4077,12 +4064,10 @@ void CodegenCVisitor::print_net_receive_kernel() {
         name = method_name("net_receive_kernel");
         params.emplace_back("", "double", "", "t");
         params.emplace_back("", "Point_process*", "", "pnt");
-        params.emplace_back(param_type_qualifier(),
-                            fmt::format("{}*", instance_struct()),
-                            param_ptr_qualifier(),
-                            "inst");
-        params.emplace_back(param_type_qualifier(), "NrnThread*", param_ptr_qualifier(), "nt");
-        params.emplace_back(param_type_qualifier(), "Memb_list*", param_ptr_qualifier(), "ml");
+        params.emplace_back("", fmt::format("{}*", instance_struct()),
+                            "", "inst");
+        params.emplace_back("", "NrnThread*", "", "nt");
+        params.emplace_back("", "Memb_list*", "", "ml");
         params.emplace_back("", "int", "", "weight_index");
         params.emplace_back("", "double", "", "flag");
     } else {

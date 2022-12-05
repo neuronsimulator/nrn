@@ -902,20 +902,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
     virtual void print_global_var_struct_assertions() const;
 
     /**
-     * The used parameter type qualifier
-     * \return an empty string
-     */
-    virtual std::string param_type_qualifier();
-
-
-    /**
-     * The used parameter pointer type qualifier
-     * \return an empty string
-     */
-    virtual std::string param_ptr_qualifier();
-
-
-    /**
      * Prints the start of the \c coreneuron namespace
      */
     void print_namespace_start();
