@@ -593,7 +593,7 @@ void ShapePlot::save_phase1(std::ostream& o) {
     o << "{" << std::endl;
     save_class(o, "PlotShape");
     char buf[256];
-    sprintf(buf, "save_window_.variable(\"%s\")", spi_->sym_->name);
+    Sprintf(buf, "save_window_.variable(\"%s\")", spi_->sym_->name);
     o << buf << std::endl;
 }
 
@@ -879,9 +879,9 @@ bool MakeTimePlot::event(Event&) {
     x = (nrn_section_orientation(sec) == 0.) ? x : 1. - x;
     if (spi_->graphid_ == hoc_ac_) {
         char buf[200];
-        sprintf(buf, "{graphItem.color(%d)}\n", spi_->colorid_);
+        Sprintf(buf, "{graphItem.color(%d)}\n", spi_->colorid_);
         oc.run(buf);
-        sprintf(buf,
+        Sprintf(buf,
                 "{graphItem.addvar(\"%s.%s(%g)\")}\n",
                 hoc_section_pathname(sec),
                 spi_->sp_->varname(),
@@ -935,16 +935,16 @@ void MakeSpacePlot::execute(Rubberband* rb) {
     }
     ++spi_->colorid_;
     ColorValue* cv = sp->color_value();
-    sprintf(buf, "rvp_ = new RangeVarPlot(\"%s\")\n", sp->varname());
+    Sprintf(buf, "rvp_ = new RangeVarPlot(\"%s\")\n", sp->varname());
     oc.run(buf);
-    sprintf(buf, "%s rvp_.begin(%g)\n", hoc_section_pathname(sec1), a1);
+    Sprintf(buf, "%s rvp_.begin(%g)\n", hoc_section_pathname(sec1), a1);
     oc.run(buf);
-    sprintf(buf, "%s rvp_.end(%g)\n", hoc_section_pathname(sec2), a2);
+    Sprintf(buf, "%s rvp_.end(%g)\n", hoc_section_pathname(sec2), a2);
     oc.run(buf);
     oc.run("{rvp_.origin(rvp_.d2root)}\n");
-    sprintf(buf, "{graphItem.size(rvp_.left(), rvp_.right(), %g, %g)}\n", cv->low(), cv->high());
+    Sprintf(buf, "{graphItem.size(rvp_.left(), rvp_.right(), %g, %g)}\n", cv->low(), cv->high());
     oc.run(buf);
-    sprintf(buf, "{graphItem.addobject(rvp_, %d, 1) graphItem.yaxis()}\n", spi_->colorid_);
+    Sprintf(buf, "{graphItem.addobject(rvp_, %d, 1) graphItem.yaxis()}\n", spi_->colorid_);
     oc.run(buf);
     sp->color(sec1, sec2, colors->color(spi_->colorid_));
 }
@@ -1094,7 +1094,7 @@ Glyph* ColorValue::make_glyph() {
     for (int i = c - 1; i >= 0; --i) {
         char buf[50];
         float x = low_ + i * (high_ - low_) / (c - 1);
-        sprintf(buf, "%5g", x);
+        Sprintf(buf, "%5g", x);
         box->append(new ColorValueGlyphItem(buf, get_color(x)));
         //		box->append(new Background(wk.label(buf), get_color(x)));
     }

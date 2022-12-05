@@ -1015,14 +1015,10 @@ void hoc_final_exit(void) {
 #ifdef WIN32
     hoc_win32_cleanup();
 #else
-    buf = static_cast<char*>(malloc(strlen(neuron_home) + 30));
-    if (buf) {
-        sprintf(buf, "%s/lib/cleanup %d", neuron_home, hoc_pid());
-        if (system(buf)) {
-            ;
-        } /* ignore return value */
-        free(buf);
-    }                    /* else did not call cleanup */
+    std::string cmd{neuron_home};
+    cmd += "/lib/cleanup ";
+    cmd += std::to_string(hoc_pid());
+    system(cmd.c_str());
 #endif
 }
 
@@ -1162,7 +1158,7 @@ int hoc_moreinput() {
         infile = double_at2space(infile);
 #endif
         hs = hocstr_create(strlen(infile) + 2);
-        sprintf(hs->buf, "%s\n", infile);
+        std::snprintf(hs->buf, hs->size + 1, "%s\n", infile);
         /* now infile is a hoc statement */
         hpfi = hoc_print_first_instance;
         fin = (NrnFILEWrap*) 0;
@@ -1403,7 +1399,7 @@ void warning(const char* s, const char* t) /* print warning message */
     char id[10];
     int n;
     if (nrnmpi_numprocs_world > 1) {
-        sprintf(id, "%d ", nrnmpi_myid_world);
+        Sprintf(id, "%d ", nrnmpi_myid_world);
     } else {
         id[0] = '\0';
     }

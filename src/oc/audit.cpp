@@ -75,11 +75,11 @@ void hoc_audit_from_hoc_main1(int argc, const char** argv, const char** envp) {
         return;
     }
     /* since file open for entire session will have to make the name unique*/
-    sprintf(buf, "if [ ! -d %s ] ; then mkdir %s ; fi", AUDIT_DIR, AUDIT_DIR);
+    Sprintf(buf, "if [ ! -d %s ] ; then mkdir %s ; fi", AUDIT_DIR, AUDIT_DIR);
     nrn_assert(system(buf) >= 0);
-    sprintf(buf, "mkdir %s/%d", AUDIT_DIR, hoc_pid());
+    Sprintf(buf, "mkdir %s/%d", AUDIT_DIR, hoc_pid());
     nrn_assert(system(buf) >= 0);
-    sprintf(buf, "%s/hocaudit.sh %d %s", AUDIT_SCRIPT_DIR, hoc_pid(), AUDIT_DIR);
+    Sprintf(buf, "%s/hocaudit.sh %d %s", AUDIT_SCRIPT_DIR, hoc_pid(), AUDIT_DIR);
     if ((audit_pipe = popen(buf, "w")) == (FILE*) 0) {
         hoc_warning("Could not connect to hocaudit.sh via pipe:", buf);
         doaudit = 0;
@@ -168,11 +168,11 @@ int hoc_saveaudit(void) {
     if (faudit) {
         fclose(faudit);
         faudit = 0;
-        sprintf(buf, "hocaudit%d", n);
+        Sprintf(buf, "hocaudit%d", n);
         pipesend(3, buf);
         ++n;
     }
-    sprintf(buf, "%s/%d/hocaudit%d", AUDIT_DIR, hoc_pid(), n);
+    Sprintf(buf, "%s/%d/hocaudit%d", AUDIT_DIR, hoc_pid(), n);
     if ((faudit = fopen(buf, "w")) == (FILE*) 0) {
         hoc_warning("NO audit. fopen failed for:", buf);
         doaudit = 0;
@@ -237,7 +237,7 @@ int hoc_retrieve_audit(int id)
     retrieve_audit.mode = 1;
     retrieve_audit.id = id;
 
-    sprintf(buf, "%s/retrieve.sh %d %s", AUDIT_SCRIPT_DIR, id, AUDIT_DIR);
+    Sprintf(buf, "%s/retrieve.sh %d %s", AUDIT_SCRIPT_DIR, id, AUDIT_DIR);
     if ((retrieve_audit.pipe = popen(buf, "r")) == (FILE*) 0) {
         hoc_execerror("Could not connect via pipe:", buf);
     }

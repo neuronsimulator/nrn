@@ -63,7 +63,7 @@ static void history(const char* s1, const char* s2) {
 }
 static void history(const char* s1, int i) {
     char buf[20];
-    sprintf(buf, "%d", i);
+    Sprintf(buf, "%d", i);
     history(s1, buf, "");
 }
 
@@ -102,7 +102,7 @@ static const char* nrnbbsdir() {
         if (!tmpdir) {
             tmpdir = "/tmp";
         }
-        sprintf(buf, "%s/%s_%s", tmpdir, getenv("USER"), NRNBBSTMP);
+        Sprintf(buf, "%s/%s_%s", tmpdir, getenv("USER"), NRNBBSTMP);
         d = new char[strlen(buf) + 1];
         strcpy(d, buf);
         mkdir(d, 0777);
@@ -114,7 +114,7 @@ static const char* fname(const char* name) {
     static char buf[2][256];
     static int i = 0;
     i = (i + 1) % 2;
-    sprintf(buf[i], "%s/%s", nrnbbsdir(), name);
+    Sprintf(buf[i], "%s/%s", nrnbbsdir(), name);
     return buf[i];
 }
 
@@ -193,7 +193,7 @@ void nrnbbs_post(const char* key) {
 
 void nrnbbs_post_int(const char* key, int ival) {
     char buf[30];
-    sprintf(buf, "%d", ival);
+    Sprintf(buf, "%d", ival);
     nrnbbs_post_string(key, buf);
 }
 
@@ -304,7 +304,7 @@ bool nrnbbs_look(const char* key) {
 void nrnbbs_exec(const char* cmd) {
     history("exec", cmd);
     char buf[256];
-    sprintf(buf, "%s&", cmd);
+    Sprintf(buf, "%s&", cmd);
     system(buf);
 }
 
@@ -356,7 +356,7 @@ bool NrnBBSCallbackItem::equal(const char* s) {
 
 void NrnBBSCallbackItem::execute() {
     char buf[256];
-    sprintf(buf, "nrnbbs_notifying %s", s_.string());
+    Sprintf(buf, "nrnbbs_notifying %s", s_.string());
     if (nrnbbs_take(buf)) {
         (*cb_)(s_.string());
     }

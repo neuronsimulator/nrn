@@ -700,9 +700,6 @@ void nrnmpi_setup_transfer() {
     }
 #endif
     int nhost = nrnmpi_numprocs;
-    //	char ctmp[100];
-    //	sprintf(ctmp, "vartrans%d", nrnmpi_myid);
-    //	xxxfile = fopen(ctmp, "w");
     is_setup_ = true;
     //	printf("nrnmpi_setup_transfer\n");
     delete_imped_info();
@@ -1135,7 +1132,7 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
         }
 
         char fname[1000];
-        sprintf(fname, "%s/%d_gap.dat", path, group_ids[tid]);
+        Sprintf(fname, "%s/%d_gap.dat", path, group_ids[tid]);
         FILE* f = fopen(fname, "wb");
         assert(f);
         fprintf(f, "%s\n", bbcore_write_version);

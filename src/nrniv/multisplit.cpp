@@ -409,7 +409,7 @@ void MultiSplitControl::multisplit(Section* sec, double x, int sid, int backbone
         ms->sid[1] = sid;
         if (ms->sid[1] == ms->sid[0]) {
             char s[100];
-            sprintf(s, "two sid = %d at same point on tree rooted at", sid);
+            Sprintf(s, "two sid = %d at same point on tree rooted at", sid);
             hoc_execerror(s, secname(root->sec));
         }
     } else {
@@ -3468,7 +3468,7 @@ void MultiSplitControl::pmatf(bool full) {
     FILE* f;
     char fname[100];
 
-    sprintf(fname, "pmat.%04d", nrnmpi_myid);
+    Sprintf(fname, "pmat.%04d", nrnmpi_myid);
     f = fopen(fname, "w");
     for (it = 0; it < nrn_nthread; ++it) {
         NrnThread* _nt = nrn_threads + it;

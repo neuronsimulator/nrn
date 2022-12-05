@@ -21,6 +21,7 @@
 
 #include "mymath.h"
 #include "apwindow.h"
+#include "hocdec.h"
 #include "ocglyph.h"
 #include "scenevie.h"
 #include "scenepic.h"
@@ -105,7 +106,7 @@ void XYView_helper::print(Printer* c, const Allocation&) const {
     char buf[100];
     float x, b;
     v_->s2o().matrix(x, b, b, b, b, b);
-    sprintf(buf, "\n%g setlinewidth", x);
+    Sprintf(buf, "\n%g setlinewidth", x);
     c->comment(buf);
 
     // when printfile started printing at the level of the xyview
@@ -456,7 +457,7 @@ void XYView::save(std::ostream& o) {
     char buf[256];
     Coord x1, y1, x2, y2;
     zin(x1, y1, x2, y2);
-    sprintf(buf,
+    Sprintf(buf,
             "{save_window_.view(%g, %g, %g, %g, %g, %g, %g, %g)}",
             x1,
             y1,
@@ -753,9 +754,9 @@ void OcViewGlyph::save(std::ostream& o) {
     long i = Scene::scene_list_index(s);
     if (!s->mark()) {
         s->save_phase1(o);
-        sprintf(buf, "scene_vector_[%ld] = save_window_", i);
+        Sprintf(buf, "scene_vector_[%ld] = save_window_", i);
     } else {
-        sprintf(buf, "save_window_ = scene_vector_[%ld]", i);
+        Sprintf(buf, "save_window_ = scene_vector_[%ld]", i);
     }
     o << buf << std::endl;
     v_->save(o);
@@ -782,7 +783,7 @@ ViewWindow::~ViewWindow() {
 void ViewWindow::update(Observable* o) {
     char s[200];
     XYView* v = (XYView*) o;
-    sprintf(s,
+    Sprintf(s,
             "%s %s x %g : %g  y %g : %g",
             type(),
             v->scene()->picker()->select_name(),
