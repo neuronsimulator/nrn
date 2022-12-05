@@ -29,9 +29,8 @@ extern Object** hoc_temp_objptr(Object*);
 
 static void check_domain(int i, int j) {
     if (i > j || i < 0) {
-        char buf[256];
-        sprintf(buf, "index=%d  max_index=%d\n", i, j);
-        hoc_execerror("Matrix index out of range:", buf);
+        auto const tmp = "index=" + std::to_string(i) + "  max_index=" + std::to_string(j) + "\n";
+        hoc_execerror("Matrix index out of range:", tmp.c_str());
     }
 }
 

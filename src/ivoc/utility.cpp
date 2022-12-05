@@ -130,13 +130,13 @@ void continue_dialog(const char* label, Window* w, Coord x, Coord y) {
 
 static bool ok_if_already_exists(const char* s, Window* w) {
     char buf[256];
-    sprintf(buf, "%s already exists: Write?", s);
+    Sprintf(buf, "%s already exists: Write?", s);
     return boolean_dialog(buf, "Go Ahead", "Don't", w);
 }
 
 static void open_fail(const char* s, Window* w, const char* io) {
     char buf[256];
-    sprintf(buf, "Couldn't open %s for %sing", s, io);
+    Sprintf(buf, "Couldn't open %s for %sing", s, io);
     continue_dialog(buf, w);
 }
 
@@ -177,7 +177,7 @@ bool var_pair_chooser(const char* caption, float& x, float& y, Window* w, Coord 
     char buf[200];
     float x1 = x, y1 = y;
     for (;;) {
-        sprintf(buf, "%g %g", x, y);
+        Sprintf(buf, "%g %g", x, y);
         if (str_chooser(caption, buf, w, x2, y2)) {
             if (sscanf(buf, "%f%f", &x1, &y1) == 2) {
                 x = x1;
@@ -321,7 +321,7 @@ void hoc_string_dialog() {
     bool b = false;
     IFGUI
     char buf[256];
-    sprintf(buf, "%s", gargstr(2));
+    Sprintf(buf, "%s", gargstr(2));
     b = str_chooser(gargstr(1), buf);
     if (b) {
         hoc_assign_str(hoc_pgargstr(2), buf);

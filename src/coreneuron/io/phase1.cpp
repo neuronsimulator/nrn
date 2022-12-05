@@ -92,16 +92,17 @@ void Phase1::populate(NrnThread& nt, OMP_Mutex& mut) {
             /// Put gid into the gid2out hash table with correspondent output PreSyn
             /// Or to the negative PreSyn map
             if (gid >= 0) {
-                char m[200];
                 if (gid2in.find(gid) != gid2in.end()) {
-                    sprintf(m, "gid=%d already exists as an input port", gid);
-                    hoc_execerror(m,
+                    auto const m = "gid=" + std::to_string(gid) +
+                                   " already exists as an input port";
+                    hoc_execerror(m.c_str(),
                                   "Setup all the output ports on this process before using them as "
                                   "input ports.");
                 }
                 if (gid2out.find(gid) != gid2out.end()) {
-                    sprintf(m, "gid=%d already exists on this process as an output port", gid);
-                    hoc_execerror(m, 0);
+                    auto const m = "gid=" + std::to_string(gid) +
+                                   " already exists on this process as an output port";
+                    hoc_execerror(m.c_str(), nullptr);
                 }
                 ps->gid_ = gid;
                 ps->output_index_ = gid;

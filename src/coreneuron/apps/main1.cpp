@@ -356,27 +356,16 @@ void nrn_init_and_load_data(int argc,
 }
 
 void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init) {
-    char prcellname[1024];
-#ifdef ENABLE_CUDA
-    const char* prprefix = "cu";
-#else
-    const char* prprefix = "acc";
-#endif
-
     if (prcellgid >= 0) {
-        if (compute_gpu) {
-            if (is_init)
-                sprintf(prcellname, "%s_gpu_init", prprefix);
-            else
-                sprintf(prcellname, "%s_gpu_t%f", prprefix, t);
+        std::string prcellname{compute_gpu ? "acc_gpu" : "cpu"};
+        if (is_init) {
+            prcellname += "_init";
         } else {
-            if (is_init)
-                strcpy(prcellname, "cpu_init");
-            else
-                sprintf(prcellname, "cpu_t%f", t);
+            prcellname += "_t";
+            prcellname += std::to_string(t);
         }
         update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-        prcellstate(prcellgid, prcellname);
+        prcellstate(prcellgid, prcellname.c_str());
     }
 }
 

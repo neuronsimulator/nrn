@@ -311,7 +311,7 @@ static double post(void* v) {
         bbs->post(gargstr(1));
     } else {
         char key[50];
-        sprintf(key, "%g", *getarg(1));
+        Sprintf(key, "%g", *getarg(1));
         bbs->post(key);
     }
     return 1.;
@@ -433,7 +433,7 @@ static char* key_help() {
     if (hoc_is_str_arg(1)) {
         return gargstr(1);
     } else {
-        sprintf(key, "%g", *getarg(1));
+        Sprintf(key, "%g", *getarg(1));
         return key;
     }
 }

@@ -235,7 +235,7 @@ void make_mechanism() {
 
     for (sp = slist->first; sp; sp = sp->next) {
         if (sp->type == VAR && sp->cpublic) {
-            sprintf(buf, "%s_%s", sp->name, m[1]);
+            Sprintf(buf, "%s_%s", sp->name, m[1]);
             Symbol* sp1 = hoc_lookup(buf);
             sp1->u.rng.index = sp->u.oboff;
         }
@@ -386,21 +386,22 @@ static const char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, c
                 }
             }
             if (suffix) {
-                sprintf(buf, "%s_%s", cp, m[1]);
+                Sprintf(buf, "%s_%s", cp, m[1]);
                 check(buf);
             } else {
-                sprintf(buf, "%s", cp);
+                Sprintf(buf, "%s", cp);
             }
             if (!(sp = hoc_table_lookup(cp, slist)) || !sp->cpublic || !(sp->type == VAR)) {
                 hoc_execerror(cp, "is not a public variable");
             }
-            cc = new char[strlen(cp) + strlen(m[1]) + 20];
+            auto cc_size = strlen(cp) + strlen(m[1]) + 20;
+            cc = new char[cc_size];
             // above 20 give enough room for _ and possible array size
             imax = hoc_total_array_data(sp, 0);
             if (imax > 1) {
-                sprintf(cc, "%s[%d]", buf, imax);
+                std::snprintf(cc, cc_size, "%s[%d]", buf, imax);
             } else {
-                sprintf(cc, "%s", buf);
+                std::snprintf(cc, cc_size, "%s", buf);
             }
             m[i] = cc;
             // printf("m[%d]=%s\n", i, m[i]);
@@ -412,10 +413,10 @@ static const char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, c
     for (sp = slist->first; sp; sp = sp->next) {
         if (sp->type == VAR && sp->cpublic) {
             if (suffix) {
-                sprintf(buf, "%s_%s", sp->name, m[1]);
+                Sprintf(buf, "%s_%s", sp->name, m[1]);
                 check(buf);
             } else {
-                sprintf(buf, "%s", sp->name);
+                Sprintf(buf, "%s", sp->name);
             }
             bool b = false;
             for (j = 1; j < jmax; ++j) {
@@ -427,13 +428,14 @@ static const char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, c
             if (b) {
                 continue;
             }
-            cc = new char[strlen(buf) + 20];
+            auto cc_size = strlen(buf) + 20;
+            cc = new char[cc_size];
             // above 20 give enough room for possible array size
             imax = hoc_total_array_data(sp, 0);
             if (imax > 1) {
-                sprintf(cc, "%s[%d]", buf, imax);
+                std::snprintf(cc, cc_size, "%s[%d]", buf, imax);
             } else {
-                sprintf(cc, "%s", buf);
+                std::snprintf(cc, cc_size, "%s", buf);
             }
             m[i] = cc;
             // printf("m[%d]=%s\n", i, m[i]);

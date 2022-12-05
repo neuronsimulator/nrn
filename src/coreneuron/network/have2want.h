@@ -161,7 +161,10 @@ static void have_to_want(HAVEWANT_t* have,
             HAVEWANT_t key = have_r_data[have_r_displ[r] + i];
             if (havekey2rank.find(key) != havekey2rank.end()) {
                 char buf[200];
-                sprintf(buf, "key %lld owned by multiple ranks\n", (long long) key);
+                std::snprintf(buf,
+                              sizeof(buf),
+                              "key %lld owned by multiple ranks\n",
+                              (long long) key);
                 hoc_execerror(buf, 0);
             }
             havekey2rank[key] = r;
@@ -198,7 +201,10 @@ static void have_to_want(HAVEWANT_t* have,
             HAVEWANT_t key = want_r_data[ix];
             if (havekey2rank.find(key) == havekey2rank.end()) {
                 char buf[200];
-                sprintf(buf, "key = %lld is wanted but does not exist\n", (long long) key);
+                std::snprintf(buf,
+                              sizeof(buf),
+                              "key = %lld is wanted but does not exist\n",
+                              (long long) key);
                 hoc_execerror(buf, 0);
             }
             want_r_ownerranks[ix] = havekey2rank[key];

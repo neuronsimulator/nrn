@@ -680,7 +680,7 @@ int NonLinImpRep::gapsolve() {
 
     if (!success) {
         char buf[256];
-        sprintf(buf,
+        Sprintf(buf,
                 "Impedance calculation did not converge in %d iterations. Max state change on last "
                 "iteration was %g (Iterations stop at %g)\n",
                 maxiter_,

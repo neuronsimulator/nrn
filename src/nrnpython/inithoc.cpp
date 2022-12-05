@@ -234,8 +234,6 @@ void nrnpython_finalize() {
 static char* env[] = {0};
 
 extern "C" PyObject* PyInit_hoc() {
-    char buf[200];
-
 #if NRN_ENABLE_THREADS
     main_thread_ = std::this_thread::get_id();
 #endif
@@ -314,13 +312,12 @@ extern "C" PyObject* PyInit_hoc() {
     }
 
 #endif  // NRNMPI
-
-    sprintf(buf, "%s/.libs/libnrnmech.so", NRNHOSTCPU);
+    std::string buf{NRNHOSTCPU "/.libs/libnrnmech.so"};
     // printf("buf = |%s|\n", buf);
     FILE* f;
-    if ((f = fopen(buf, "r")) != 0) {
+    if ((f = fopen(buf.c_str(), "r")) != 0) {
         fclose(f);
-        add_arg("-dll", buf);
+        add_arg("-dll", buf.c_str());
     }
     nrn_is_python_extension = 1;
     nrn_nobanner_ = 1;

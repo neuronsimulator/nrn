@@ -1338,7 +1338,7 @@ HocMenu::~HocMenu() {
 }
 void HocMenu::write(std::ostream& o) {
     char buf[200];
-    sprintf(buf, "xmenu(\"%s\", %d)", getStr(), add2menubar_);
+    Sprintf(buf, "xmenu(\"%s\", %d)", getStr(), add2menubar_);
     o << buf << std::endl;
 }
 
@@ -1384,7 +1384,7 @@ void HocPanel::valueEd(const char* name,
     }
     if (extra && extra->units && units_on_flag_) {
         char nu[256];
-        sprintf(nu, "%s (%s)", name, extra->units);
+        Sprintf(nu, "%s (%s)", name, extra->units);
         vel = new ValEdLabel(WidgetKit::instance()->label(nu));
     } else {
         vel = new ValEdLabel(WidgetKit::instance()->label(name));
@@ -1448,13 +1448,13 @@ void HocPanel::write(std::ostream& o) {
     char buf[200];
     long i;
     //	o << "xpanel(\"" << getName() << "\")" << std::endl;
-    sprintf(buf, "xpanel(\"%s\", %d)", getName(), horizontal_);
+    Sprintf(buf, "xpanel(\"%s\", %d)", getName(), horizontal_);
     o << buf << std::endl;
     for (i = 1; i < ilist_.count(); i++) {
         ilist_.item(i)->write(o);
     }
     if (has_window()) {
-        sprintf(buf, "xpanel(%g,%g)", window()->save_left(), window()->save_bottom());
+        Sprintf(buf, "xpanel(%g,%g)", window()->save_left(), window()->save_bottom());
         o << buf << std::endl;
     } else {
         o << "xpanel()" << std::endl;
@@ -1509,7 +1509,7 @@ void HocItem::help(const char* child) {
     }
     *c2 = '\0';
     if (child) {
-        sprintf(path, "%s %s", child, buf);
+        Sprintf(path, "%s %s", child, buf);
     } else {
         strcpy(path, buf);
     }
@@ -1526,7 +1526,7 @@ HocLabel::HocLabel(const char* s)
 HocLabel::~HocLabel() {}
 void HocLabel::write(std::ostream& o) {
     char buf[210];
-    sprintf(buf, "xlabel(\"%s\")", hideQuote(getStr()));
+    Sprintf(buf, "xlabel(\"%s\")", hideQuote(getStr()));
     o << buf << std::endl;
 }
 
@@ -1569,7 +1569,7 @@ HocVarLabel::~HocVarLabel() {
 void HocVarLabel::write(std::ostream& o) {
     if (variable_ && cpp_) {
         char buf[256];
-        sprintf(buf, "xvarlabel(%s)", variable_->string());
+        Sprintf(buf, "xvarlabel(%s)", variable_->string());
         o << buf << std::endl;
     } else {
         o << "xlabel(\"<can't retrieve>\")" << std::endl;
@@ -1805,11 +1805,11 @@ void HocDefaultValEditor::def_change(float x0, float y0) {
     double x = get_val();
     if (x != deflt_) {
         char form[200], buf[200];
-        sprintf(form,
+        Sprintf(form,
                 "Permanently replace default value %s with %s",
                 xvalue_format->string(),
                 xvalue_format->string());
-        sprintf(buf, form, deflt_, x);
+        Sprintf(buf, form, deflt_, x);
         if (boolean_dialog(buf, "Replace", "Cancel", NULL, x0, y0)) {
             deflt_ = x;
             most_recent_ = x;
@@ -1900,7 +1900,7 @@ static void set_format() {
         xvalue_format = new String("%.5g");
         WidgetKit::instance()->style()->find_attribute("xvalue_format", *xvalue_format);
         char buf[100];
-        sprintf(buf, xvalue_format->string(), -8.888888888888888e-18);
+        Sprintf(buf, xvalue_format->string(), -8.888888888888888e-18);
         Glyph* g = WidgetKit::instance()->label(buf);
         g->ref();
         Requisition r;
@@ -1922,7 +1922,7 @@ double MyMath::resolution(double x) {
         set_format();
     }
     char buf[100];
-    sprintf(buf, xvalue_format->string(), std::abs(x));
+    Sprintf(buf, xvalue_format->string(), std::abs(x));
     char* cp;
     char* least = NULL;
     for (cp = buf; *cp; ++cp) {
@@ -2037,7 +2037,7 @@ void HocValEditor::set_val(double x) {
     if (pval_) {
         *pval_ = hoc_ac_;
     } else if (variable_) {
-        sprintf(buf, "%s = hoc_ac_\n", variable_->string());
+        Sprintf(buf, "%s = hoc_ac_\n", variable_->string());
         oc.run(buf);
     }
 }
@@ -2050,7 +2050,7 @@ double HocValEditor::get_val() {
         return *pval_;
     } else if (variable_) {
         Oc oc;
-        sprintf(buf, "hoc_ac_ = %s\n", variable_->string());
+        Sprintf(buf, "hoc_ac_ = %s\n", variable_->string());
         oc.run(buf);
         return hoc_ac_;
     } else {
@@ -2065,7 +2065,7 @@ double HocValEditor::domain_limits(double val) {
 void HocValEditor::evalField() {
     char buf[200];
     Oc oc;
-    sprintf(buf, "hoc_ac_ = %s\n", fe_->text()->string());
+    Sprintf(buf, "hoc_ac_ = %s\n", fe_->text()->string());
     oc.run(buf);
     hoc_ac_ = domain_limits(hoc_ac_);
     set_val(hoc_ac_);
@@ -2078,9 +2078,9 @@ void HocValEditor::audit() {
     if (pyvar_) {
         return;
     } else if (variable_) {
-        sprintf(buf, "%s = %s\n", variable_->string(), fe_->text()->string());
+        Sprintf(buf, "%s = %s\n", variable_->string(), fe_->text()->string());
     } else if (pval_) {
-        sprintf(buf, "// %p pointer set to %s\n", pval_, fe_->text()->string());
+        Sprintf(buf, "// %p pointer set to %s\n", pval_, fe_->text()->string());
     }
     hoc_audit_command(buf);
 }
@@ -2091,20 +2091,20 @@ void HocValEditor::updateField() {
     char buf[200];
     if (pyvar_) {
         hoc_ac_ = get_val();
-        sprintf(buf, xvalue_format->string(), hoc_ac_);
+        Sprintf(buf, xvalue_format->string(), hoc_ac_);
     } else if (pval_) {
-        sprintf(buf, xvalue_format->string(), *pval_);
+        Sprintf(buf, xvalue_format->string(), *pval_);
         hoc_ac_ = *pval_;
     } else if (variable_) {
         Oc oc;
-        sprintf(buf, "hoc_ac_ = %s\n", variable_->string());
+        Sprintf(buf, "hoc_ac_ = %s\n", variable_->string());
         if (oc.run(buf, 0)) {
             strcpy(buf, "Doesn't exist");
         } else {
-            sprintf(buf, xvalue_format->string(), hoc_ac_);
+            Sprintf(buf, xvalue_format->string(), hoc_ac_);
         }
     } else {
-        sprintf(buf, "Free'd");
+        Sprintf(buf, "Free'd");
     }
     if (strcmp(buf, fe_->text()->string()) != 0) {
         fe_->field(buf);
@@ -2115,14 +2115,14 @@ void HocValEditor::write(std::ostream& o) {
     char buf[200];
     Oc oc;
     if (variable_) {
-        sprintf(buf, "hoc_ac_ = %s\n", variable_->string());
+        Sprintf(buf, "hoc_ac_ = %s\n", variable_->string());
         oc.run(buf);
-        sprintf(buf, "%s = %g", variable_->string(), hoc_ac_);
+        Sprintf(buf, "%s = %g", variable_->string(), hoc_ac_);
     } else if (pval_) {
-        sprintf(buf, "/* don't know the hoc path to %g", *pval_);
+        Sprintf(buf, "/* don't know the hoc path to %g", *pval_);
         return;
     } else {
-        sprintf(buf, "/* variable freed */");
+        Sprintf(buf, "/* variable freed */");
         return;
     }
     o << buf << std::endl;
@@ -2157,11 +2157,11 @@ const char* HocValEditor::variable() const {
 void HocValEditorKeepUpdated::write(std::ostream& o) {
     char buf[200];
     Oc oc;
-    sprintf(buf, "hoc_ac_ = %s\n", variable());
+    Sprintf(buf, "hoc_ac_ = %s\n", variable());
     oc.run(buf);
-    sprintf(buf, "%s = %g", variable(), hoc_ac_);
+    Sprintf(buf, "%s = %g", variable(), hoc_ac_);
     o << buf << std::endl;
-    sprintf(buf, "xvalue(\"%s\",\"%s\", 2 )", getStr(), variable());
+    Sprintf(buf, "xvalue(\"%s\",\"%s\", 2 )", getStr(), variable());
     o << buf << std::endl;
 }
 
@@ -2508,7 +2508,7 @@ StepperMenu::StepperMenu() {
     m->action(new StepperMenuAction(true, pow(2., .1)));
     append_item(m);
     for (double x = 1000; x > .0005; x /= 10.) {
-        sprintf(buf, "+%g", x);
+        Sprintf(buf, "+%g", x);
         m = K::menu_item(buf);
         m->action(new StepperMenuAction(false, x));
         append_item(m);
@@ -2792,9 +2792,9 @@ void OcSlider::update(Observable*) {
 void OcSlider::audit() {
     char buf[200];
     if (variable_) {
-        sprintf(buf, "%s = %g\n", variable_->string(), *pval_);
+        Sprintf(buf, "%s = %g\n", variable_->string(), *pval_);
     } else if (pval_) {
-        sprintf(buf, "// %p pointer set to %g\n", pval_, *pval_);
+        Sprintf(buf, "// %p pointer set to %g\n", pval_, *pval_);
     }
     hoc_audit_command(buf);
     if (send_) {
@@ -2859,7 +2859,7 @@ void OcSlider::write(std::ostream& o) {
     if (variable_) {
         char buf[256];
         if (send_) {
-            sprintf(buf,
+            Sprintf(buf,
                     "xslider(&%s, %g, %g, \"%s\", %d, %d)",
                     variable_->string(),
                     bv_->lower(Dimension_X),
@@ -2868,7 +2868,7 @@ void OcSlider::write(std::ostream& o) {
                     vert_,
                     slow_);
         } else {
-            sprintf(buf,
+            Sprintf(buf,
                     "xslider(&%s, %g, %g, %d, %d)",
                     variable_->string(),
                     bv_->lower(Dimension_X),
@@ -3028,13 +3028,13 @@ void HocStateButton::write(std::ostream& o) {
     if (variable_) {
         char buf[256];
         if (style_ == PALETTE) {
-            sprintf(buf,
+            Sprintf(buf,
                     "xstatebutton(\"%s\",&%s,\"%s\")",
                     name_->string(),
                     variable_->string(),
                     hideQuote(action_->name()));
         } else {
-            sprintf(buf,
+            Sprintf(buf,
                     "xcheckbox(\"%s\",&%s,\"%s\")",
                     name_->string(),
                     variable_->string(),
@@ -3186,7 +3186,7 @@ void HocStateMenuItem::data_path(HocDataPaths* hdp, bool append) {
 void HocStateMenuItem::write(std::ostream& o) {
     if (variable_) {
         char buf[256];
-        sprintf(buf,
+        Sprintf(buf,
                 "xcheckbox(\"%s\",&%s,\"%s\")",
                 name_->string(),
                 variable_->string(),

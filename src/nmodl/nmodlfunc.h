@@ -80,7 +80,7 @@ void cvode_emit_interface();
 void cvode_proced_emit();
 void cvode_interface(Symbol* fun, int num, int neq);
 void cvode_valid();
-void cvode_rw_cur(char*);
+void cvode_rw_cur(char (&b)[NRN_BUFSIZE]);
 void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend);
 void net_init(Item* qinit, Item* qp2);
 void fornetcon(Item* keyword, Item* par1, Item* args, Item* par2, Item* stmt, Item* qend);
@@ -138,4 +138,4 @@ void netrec_asgn(Item* varname, Item* equal, Item* expr, Item* lastok);
 void netrec_discon();
 char* items_as_string(Item* begin, Item* last); /* does not include last */
 int slist_search(int listnum, Symbol* s);
-void nrnunit_dynamic_str(char* buf, const char* name, char* unit1, char* unit2);
+void nrnunit_dynamic_str(char (&buf)[NRN_BUFSIZE], const char* name, char* unit1, char* unit2);

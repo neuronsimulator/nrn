@@ -814,7 +814,7 @@ message(STATUS "--------------------+-------------------------------------------
 message(STATUS " Build option       | Status")
 message(STATUS "--------------------+--------------------------------------------------------")
 message(STATUS "CXX COMPILER        | ${CMAKE_CXX_COMPILER}")
-message(STATUS "COMPILE FLAGS SS      | ${CORENRN_CXX_FLAGS}")
+message(STATUS "COMPILE FLAGS       | ${CORENRN_CXX_FLAGS}")
 message(STATUS "Build Type          | ${COMPILE_LIBRARY_TYPE}")
 message(STATUS "MPI                 | ${CORENRN_ENABLE_MPI}")
 if(CORENRN_ENABLE_MPI)

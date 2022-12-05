@@ -539,7 +539,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 
             /* don't mention bad block if file was trunc'd, as it's all bogus */
             if ((dataptr - origptr) < filesize) {
-                sprintf(str,
+                Sprintf(str,
                         "Unknown block type (0x%02x) at offset %ld",
                         block,
                         (dataptr - origptr) - 1);
@@ -786,28 +786,6 @@ static int readImage(PICINFO* pinfo) {
 
     fclose(fp);
 
-    /* fill in the PICINFO structure */
-
-#if 0
-  pinfo->pic     = pic8;
-  pinfo->w       = Width;           
-  pinfo->h       = Height;
-  pinfo->type    = PIC8;
-  pinfo->frmType = F_GIF;
-  pinfo->colType = F_FULLCOLOR;
-
-  pinfo->normw = pinfo->w;   pinfo->normh = pinfo->h;
-
-  sprintf(pinfo->fullInfo,
-	  "GIF%s, %d bit%s per pixel, %sinterlaced.  (%d bytes)",
- 	  (gif89) ? "89" : "87", BitsPerPixel, 
-	  (BitsPerPixel==1) ? "" : "s", 
- 	  Interlace ? "" : "non-", filesize);
-
-  sprintf(pinfo->shrtInfo, "%dx%d GIF%s.",Width,Height,(gif89) ? "89" : "87");
-
-  /* pinfo.comment gets handled in main LoadGIF() block-reader */
-#endif
     return 1;
 }
 

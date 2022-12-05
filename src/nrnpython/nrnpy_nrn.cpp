@@ -5,13 +5,15 @@
 #include "nrniv_mf.h"
 #include <nrnoc2iv.h>
 #include "nrnpy_utils.h"
-#include <cmath>
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
 #endif
 
 #include <membfunc.h>
 #include <parse.hpp>
+
+#include <cmath>
+#include <cstring>
 extern void nrn_pt3dremove(Section* sec, int i0);
 extern void nrn_pt3dinsert(Section* sec, int i0, double x, double y, double z, double d);
 extern void nrn_pt3dclear(Section* sec, int req);
@@ -152,10 +154,9 @@ static char* pysec_name(Section* sec) {
         buf[0] = '\0';
         char* cp = buf + strlen(buf);
         if (ps->name_) {
-            sprintf(cp, "%s", ps->name_);
+            Sprintf(buf, "%s", ps->name_);
         } else {
-            // sprintf(cp, "PySec_%p", ps);
-            sprintf(buf, "__nrnsec_%p", sec);
+            Sprintf(buf, "__nrnsec_%p", sec);
         }
         return buf;
     }
@@ -325,10 +326,10 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
                 char* cp = str.c_str();
                 n += strlen(cp) + 1;  // include dot
                 self->name_ = new char[n];
-                sprintf(self->name_, "%s.%s", cp, name);
+                std::snprintf(self->name_, n, "%s.%s", cp, name);
             } else {
                 self->name_ = new char[n];
-                strcpy(self->name_, name);
+                std::strncpy(self->name_, name, n);
             }
         }
         self->sec_ = nrnpy_newsection(self);
@@ -813,8 +814,9 @@ static PyObject* pyseg_repr(PyObject* p) {
     NPySegObj* pyseg = (NPySegObj*) p;
     if (pyseg->pysec_->sec_ && pyseg->pysec_->sec_->prop) {
         const char* sname = secname(pyseg->pysec_->sec_);
-        char* name = new char[strlen(sname) + 100];
-        sprintf(name, "%s(%g)", sname, pyseg->x_);
+        auto const name_size = strlen(sname) + 100;
+        char* name = new char[name_size];
+        std::snprintf(name, name_size, "%s(%g)", sname, pyseg->x_);
         PyObject* result = PyString_FromString(name);
         delete[] name;
         return result;
@@ -825,7 +827,7 @@ static PyObject* pyseg_repr(PyObject* p) {
 static PyObject* hoc_internal_name(NPySecObj* self) {
     PyObject* result;
     char buf[256];
-    sprintf(buf, "__nrnsec_%p", self->sec_);
+    Sprintf(buf, "__nrnsec_%p", self->sec_);
     result = PyString_FromString(buf);
     return result;
 }
@@ -1119,7 +1121,7 @@ static PyObject* NPyRangeVar_name(NPyRangeVar* self) {
     if (self->sym_) {
         if (self->isptr_) {
             char buf[256];
-            sprintf(buf, "_ref_%s", self->sym_->name);
+            Sprintf(buf, "_ref_%s", self->sym_->name);
             result = PyString_FromString(buf);
         } else {
             result = PyString_FromString(self->sym_->name);
@@ -1575,11 +1577,11 @@ static Object** pp_get_segment(void* vptr) {
 static void rv_noexist(Section* sec, const char* n, double x, int err) {
     char buf[200];
     if (err == 2) {
-        sprintf(buf, "%s was not made to point to anything at %s(%g)", n, secname(sec), x);
+        Sprintf(buf, "%s was not made to point to anything at %s(%g)", n, secname(sec), x);
     } else if (err == 1) {
-        sprintf(buf, "%s, the mechanism does not exist at %s(%g)", n, secname(sec), x);
+        Sprintf(buf, "%s, the mechanism does not exist at %s(%g)", n, secname(sec), x);
     } else {
-        sprintf(buf, "%s does not exist at %s(%g)", n, secname(sec), x);
+        Sprintf(buf, "%s does not exist at %s(%g)", n, secname(sec), x);
     }
     PyErr_SetString(PyExc_AttributeError, buf);
 }
@@ -1966,7 +1968,7 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
         sym = ((NPyRangeVar*) rv)->sym_;
         if (ISARRAY(sym)) {
             char s[200];
-            sprintf(s, "%s needs an index for assignment", sym->name);
+            Sprintf(s, "%s needs an index for assignment", sym->name);
             PyErr_SetString(PyExc_IndexError, s);
             err = -1;
         } else {
@@ -2049,7 +2051,7 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     if (nrn_is_ion(self->prop_->_type)) {
         strcpy(buf, isptr ? n + 5 : n);
     } else {
-        sprintf(buf, "%s_%s", isptr ? n + 5 : n, mname);
+        std::snprintf(buf, bufsz, "%s_%s", isptr ? n + 5 : n, mname);
     }
     Symbol* sym = np.find(buf);
     if (sym) {
@@ -2116,7 +2118,7 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
     if (nrn_is_ion(self->prop_->_type)) {
         strcpy(buf, isptr ? n + 5 : n);
     } else {
-        sprintf(buf, "%s_%s", isptr ? n + 5 : n, mname);
+        std::snprintf(buf, bufsz, "%s_%s", isptr ? n + 5 : n, mname);
     }
     Symbol* sym = np.find(buf);
     delete[] buf;
@@ -2157,7 +2159,7 @@ double** nrnpy_setpointer_helper(PyObject* pyname, PyObject* mech) {
     if (!n) {
         return nullptr;
     }
-    sprintf(buf, "%s_%s", n, memb_func[m->prop_->_type].sym->name);
+    Sprintf(buf, "%s_%s", n, memb_func[m->prop_->_type].sym->name);
     Symbol* sym = np.find(buf);
     if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
         return nullptr;

@@ -47,7 +47,8 @@ set(HEADER_FILES_TO_INSTALL
     section.h
     spconfig.h
     spmatrix.h
-    treeset.h)
+    treeset.h
+    wrap_sprintf.h)
 
 # =============================================================================
 # Lists of headers populated using check_include_files

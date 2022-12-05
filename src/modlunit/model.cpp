@@ -134,7 +134,7 @@ static void openfiles(int argc, char* argv[]) {
     char *cp, modprefix[NRN_BUFSIZE - 5];
     if (argc > 1) {
         assert(strlen(argv[1]) < NRN_BUFSIZE);
-        sprintf(modprefix, "%s", argv[1]);
+        Sprintf(modprefix, "%s", argv[1]);
         cp = strstr(modprefix, ".mod");
         if (cp) {
             *cp = '\0';

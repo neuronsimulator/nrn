@@ -61,7 +61,7 @@ void ivoc_help(const char* s) {
             filequeue = new CopyStringList();
         }
         if (strncmp(p, "?0", 2) == 0) {
-            sprintf(buf, "?0 %s", hoc_current_xopen());
+            Sprintf(buf, "?0 %s", hoc_current_xopen());
             String str(buf);
             filequeue->append(str);
             return;
@@ -108,7 +108,7 @@ but will be missing this sessions hoc help text\n");
     if (!help_pipe) {
         printf("Starting the help system\n");
         char buf[200];
-        sprintf(buf, "%s/ochelp", "$NEURONHOME/bin/$CPU");
+        Sprintf(buf, "%s/ochelp", "$NEURONHOME/bin/$CPU");
         if ((help_pipe = popen(buf, "w")) == (FILE*) 0) {
             printf("Could not start %s\n", buf);
         }
@@ -125,7 +125,7 @@ but will be missing this sessions hoc help text\n");
         // printf("|%s|\n", s);
         if (strncmp(s, "?0", 2) == 0) {
             char buf[1024];
-            sprintf(buf, "?0 %s", hoc_current_xopen());
+            Sprintf(buf, "?0 %s", hoc_current_xopen());
             fprintf(help_pipe, "%s\n", buf);
         } else {
             fprintf(help_pipe, "%s\n", s);
@@ -160,14 +160,14 @@ void Oc::help(const char* s) {
 	readmore();
 	if (filequeue) {
 		for (long i = 0; i < filequeue->count(); ++i) {
-sprintf(buf, "%s\n", filequeue->item_ref(i).string());
+Sprintf(buf,"%s\n", filequeue->item_ref(i).string());
 			nrnbbs_post_string("ochelp", buf);
 		}
 		filequeue->remove_all();
 	}
 
 	if (strncmp(s, "?0", 2) == 0) {
-		sprintf(buf, "?0 %s", hoc_current_xopen());
+		Sprintf(buf,"?0 %s", hoc_current_xopen());
 		nrnbbs_post_string("ochelp", buf);
 	}else{
 		nrnbbs_post_string("ochelp", s);

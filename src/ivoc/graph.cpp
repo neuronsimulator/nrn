@@ -289,7 +289,7 @@ static double gr_save_name(void* v) {
         *Oc::save_stream << "save_window_.size(" << g->x1() << "," << g->x2() << "," << g->y1()
                          << "," << g->y2() << ")\n";
         long i = Scene::scene_list_index(g);
-        sprintf(buf, "scene_vector_[%ld] = save_window_", i);
+        Sprintf(buf, "scene_vector_[%ld] = save_window_", i);
         *Oc::save_stream << buf << std::endl;
         g->save_phase2(*Oc::save_stream);
         g->Scene::mark(true);
@@ -2108,7 +2108,7 @@ void Graph::cross_action(char c, Coord x, Coord y) {
         char buf[256];
         if (vector_copy_) {
         } else {
-            sprintf(buf, "%s(%g, %g, %d)", cross_action_->name(), x, y, c);
+            Sprintf(buf, "%s(%g, %g, %d)", cross_action_->name(), x, y, c);
             cross_action_->execute(buf);
         }
     } else {
@@ -2143,7 +2143,7 @@ void Graph::erase_all() {
 void Graph::family_value() {
     if (family_label_) {
         char buf[256];
-        sprintf(buf, "hoc_ac_ = %s\n", family_label_->text());
+        Sprintf(buf, "hoc_ac_ = %s\n", family_label_->text());
         Oc oc;
         oc.run(buf);
         family_val_ = hoc_ac_;
@@ -2171,7 +2171,7 @@ void Graph::keep_lines() {
     if (f) {
         fi = glyph_index(f);
         location(fi, x, y);
-        sprintf(buf, "%g", family_val_);
+        Sprintf(buf, "%g", family_val_);
     }
     long lcnt = count();
     for (long i = lcnt - 1; i >= 0; --i) {
@@ -2419,21 +2419,21 @@ static Graph* current_save_graph;
 void Graph::save_phase2(std::ostream& o) {
     char buf[256];
     if (family_label_) {
-        sprintf(buf, "save_window_.family(\"%s\")", family_label_->text());
+        Sprintf(buf, "save_window_.family(\"%s\")", family_label_->text());
         o << buf << std::endl;
     }
     if (var_name_) {
         if ((var_name_->string())[var_name_->length() - 1] == '.') {
-            sprintf(buf, "%sappend(save_window_)", var_name_->string());
+            Sprintf(buf, "%sappend(save_window_)", var_name_->string());
         } else {
-            sprintf(buf, "%s = save_window_", var_name_->string());
+            Sprintf(buf, "%s = save_window_", var_name_->string());
         }
         o << buf << std::endl;
-        sprintf(buf, "save_window_.save_name(\"%s\")", var_name_->string());
+        Sprintf(buf, "save_window_.save_name(\"%s\")", var_name_->string());
         o << buf << std::endl;
     }
     if (x_expr_) {
-        sprintf(buf, "save_window_.xexpr(\"%s\", %d)", x_expr_->name, x_pval_ ? 1 : 0);
+        Sprintf(buf, "save_window_.xexpr(\"%s\", %d)", x_expr_->name, x_pval_ ? 1 : 0);
         o << buf << std::endl;
     }
     long cnt = count();
@@ -2487,7 +2487,7 @@ void Graph::choose_sym() {
         char buf[256];
         double* pd = sc_->selected_var();
         if (sc_->selected_vector_count()) {
-            sprintf(buf, "%s", sc_->selected()->string());
+            Sprintf(buf, "%s", sc_->selected()->string());
             GraphVector* gv = new GraphVector(buf);
             gv->color(color());
             gv->brush(brush());
@@ -2510,7 +2510,7 @@ void Graph::choose_sym() {
             // above required due to bug in mswindows version in which
             // sc_->selected seems volatile under some kinds of hoc
             // executions.
-            sprintf(buf, "hoc_ac_ = %s\n", s.string());
+            Sprintf(buf, "hoc_ac_ = %s\n", s.string());
             if (oc.run(buf) == 0) {
                 add_var(s.string(), color(), brush(), 0, 2);
                 break;
@@ -2534,7 +2534,7 @@ void Graph::family_label_chooser() {
     }
     while (fsc_->post_for_aligned(XYView::current_pick_view()->canvas()->window(), .5, 1.)) {
         char buf[256];
-        sprintf(buf, "hoc_ac_ = %s\n", fsc_->selected()->string());
+        Sprintf(buf, "hoc_ac_ = %s\n", fsc_->selected()->string());
         if (oc.run(buf) == 0) {
             family(fsc_->selected()->string());
             break;
@@ -2560,7 +2560,7 @@ GraphLine::GraphLine(const char* expr,
     if (usepointer) {
         if (pd) {
             // char buf[256];
-            // sprintf(buf, "%s", expr);
+            // Sprintf(buf, "%s", expr);
             // expr_ = oc.parseExpr(buf, symlist);
             expr_ = NULL;
             pval_ = pd;
@@ -2760,7 +2760,7 @@ void GraphLine::save(std::ostream& o) {
     GlyphIndex i = current_save_graph->glyph_index(label());
     current_save_graph->location(i, x, y);
     if (pval_) {
-        sprintf(buf,
+        Sprintf(buf,
                 "save_window_.addvar(\"%s\", %d, %d, %g, %g, %d)",
                 name(),
                 colors->color(color_),
@@ -2773,7 +2773,7 @@ void GraphLine::save(std::ostream& o) {
         // used but it is expected that in that case the graph is
         // encapsulated in an object and this info is incorrect anyway.
         // Can revisit later if this is a problem.
-        sprintf(buf,
+        Sprintf(buf,
                 "save_window_.addexpr(\"%s\", %d, %d, %g, %g, %d)",
                 name(),
                 colors->color(color_),
@@ -3077,7 +3077,7 @@ void GLabel::save(std::ostream& o, Coord x, Coord y) {
         return;
     }
     char buf[256];
-    sprintf(buf,
+    Sprintf(buf,
             "save_window_.label(%g, %g, \"%s\", %d, %g, %g, %g, %d)",
             x,
             y,
