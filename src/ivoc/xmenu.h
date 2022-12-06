@@ -73,7 +73,7 @@ class HocPanel: public OcGlyph {
                  const char* variable,
                  const char* action = 0,
                  bool canrun = false,
-                 double* pd = NULL,
+                 neuron::container::data_handle<double> pd = {},
                  bool deflt = false,
                  bool keep_updated = false,
                  HocSymExtension* extra = NULL,
@@ -310,7 +310,7 @@ class HocValEditor: public HocUpdateItem {
                  const char* variable,
                  ValEdLabel*,
                  HocValAction*,
-                 double* pd = 0,
+                 neuron::container::data_handle<double> pd = {},
                  bool canrun = false,
                  HocItem* parent = NULL,
                  Object* pvar = NULL);
@@ -351,7 +351,7 @@ class HocValEditor: public HocUpdateItem {
     bool canrun_;
     HocAction* action_;
     CopyString* variable_;
-    double* pval_;
+    neuron::container::data_handle<double> pval_;
     ValEdLabel* prompt_;
     float* domain_limits_;
     Object* pyvar_;
@@ -363,7 +363,7 @@ class HocDefaultValEditor: public HocValEditor {
                         const char* variable,
                         ValEdLabel*,
                         HocValAction*,
-                        double* pd = 0,
+                        neuron::container::data_handle<double> pd = {},
                         bool canrun = false,
                         HocItem* parent = NULL,
                         Object* pyvar = NULL);
@@ -395,7 +395,7 @@ class HocValEditorKeepUpdated: public HocValEditor {
                             const char* variable,
                             ValEdLabel*,
                             HocValAction*,
-                            double*,
+                            neuron::container::data_handle<double>,
                             HocItem* parent = NULL,
                             Object* pyvar = NULL);
     virtual ~HocValEditorKeepUpdated();

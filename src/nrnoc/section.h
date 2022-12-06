@@ -202,6 +202,9 @@ struct Node {
     Node& operator=(Node const&) = delete;
     Node& operator=(Node&&) = default;
     ~Node();
+    friend std::ostream& operator<<(std::ostream& os, Node const& n) {
+        return os << n._node_handle;
+    }
 };
 
 #if EXTRACELLULAR
@@ -315,7 +318,7 @@ struct Prop {
         if (p.m_mech_handle) {
             return os << *p.m_mech_handle;
         } else {
-            return os << "Node{nullopt}";
+            return os << "Prop{nullopt}";
         }
     }
 
