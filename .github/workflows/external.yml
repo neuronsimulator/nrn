@@ -22,7 +22,7 @@ jobs:
       - id: drop 
         run: |
           # use jq to get the last Azure drop URL from the PR and the SHA1 from the same body
-          export pr_json=` gh pr view $PR_URL --json comments -q 'last(.comments[] .body | capture(".*(?<pr_azure_sha>[0-9a-f]{40}).*?(?<azure_drop_url>https://dev.azure.com/neuronsimulator/.*=zip)"))'`
+          export pr_json=$(gh pr view $PR_URL --json comments -q 'last(.comments[] .body | capture(".*(?<pr_azure_sha>[0-9a-f]{40}).*?(?<azure_drop_url>https://dev.azure.com/neuronsimulator/.*=zip)"))')
           if [ -z "$pr_json" ]; then
             echo "Unable to retrieve AZURE drop url and SHA from comments!"
             exit 1
