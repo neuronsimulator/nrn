@@ -889,7 +889,7 @@ KSChan::KSChan(Object* obj, bool is_p) {
     ligands_ = NULL;
     mechsym_ = NULL;
     rlsym_ = NULL;
-    char buf[50];
+    char buf[100];
     Sprintf(buf, "Chan%d", obj_->index);
     name_ = buf;
     ion_ = "NonSpecific";
@@ -899,17 +899,6 @@ KSChan::KSChan(Object* obj, bool is_p) {
     gmax_deflt_ = 0.;
     erev_deflt_ = 0.;
     soffset_ = 4;  // gmax, e, g, i before the first state in p array
-    build();
-}
-
-KSChan::~KSChan() {}
-
-void KSChan::build() {
-    if (mechsym_) {
-        return;
-    }
-    int i;
-    char buf[100];
     if (strcmp(ion_.string(), "NonSpecific") != 0) {
         ion_reg(ion_.string(), -10000.);
         Sprintf(buf, "%s_ion", ion_.string());
@@ -947,8 +936,9 @@ void KSChan::build() {
     m_kschan[7 + aoff] = 0;
     soffset_ = 3 + aoff;  // first state points here in p array
     add_channel(m_kschan);
+    assert(param_size_update_allowed(soffset_, nstate_));
     update_param_size();
-    for (i = 0; i < 9; ++i)
+    for (int i = 0; i < 9; ++i)
         if (m_kschan[i]) {
             free((void*) m_kschan[i]);
         }
@@ -1097,6 +1087,40 @@ void KSChan::update_prop() {
     // prop.param is [Nsingle], gmax, [e], g, i, states
     // prop.dparam for density is [4ion], [4ligands]
     // prop.dparam for point is area, pnt, [singledata], [4ion], [4ligands]
+
+    // before doing anything destructive, see if update_param_size will succeed by calculating the
+    // new sizes and offsets
+    auto new_psize = 3;  // prop->param: gmax, g, i
+    auto new_dsize = 0;  // prop->dparam: empty
+    auto new_ppoff = 0;
+    auto new_soffset = 3;
+    auto new_gmaxoffset = 0;
+    if (is_single()) {
+        new_psize += 1;  // Nsingle exists
+        new_dsize += 1;  // KSSingleNodeData* exists
+        new_gmaxoffset = 1;
+        new_ppoff += 1;
+        new_soffset += 1;
+    }
+    if (is_point()) {
+        new_dsize += 2;  // area, Point_process* exists
+        new_ppoff += 2;
+    }
+    if (ion_sym_ == NULL) {
+        new_psize += 1;  // e exists
+        new_soffset += 1;
+    } else {
+        new_dsize += 4;  // ion current
+    }
+    new_dsize += 4 * nligand_;
+    new_psize += nstate_;
+    if (!param_size_update_allowed(new_soffset, nstate_)) {
+        throw std::runtime_error(
+            "KSChan::update_prop(): cannot change the number of parameters while " +
+            std::to_string(neuron::model().mechanism_data(mechtype_).size()) +
+            " instances are active");
+    }
+
     int i;
     Symbol* searchsym = (is_point() ? mechsym_ : NULL);
 
@@ -1109,31 +1133,12 @@ void KSChan::update_prop() {
     int old_soffset = soffset_;
     int old_svarn = rlsym_->s_varn;
 
-    // sizes and offsets
-    psize_ = 3;  // prop->param: gmax, g, i
-    dsize_ = 0;  // prop->dparam: empty
-    ppoff_ = 0;
-    soffset_ = 3;
-    gmaxoffset_ = 0;
-    if (is_single()) {
-        psize_ += 1;  // Nsingle exists
-        dsize_ += 1;  // KSSingleNodeData* exists
-        gmaxoffset_ = 1;
-        ppoff_ += 1;
-        soffset_ += 1;
-    }
-    if (is_point()) {
-        dsize_ += 2;  // area, Point_process* exists
-        ppoff_ += 2;
-    }
-    if (ion_sym_ == NULL) {
-        psize_ += 1;  // e exists
-        soffset_ += 1;
-    } else {
-        dsize_ += 4;  // ion current
-    }
-    dsize_ += 4 * nligand_;
-    psize_ += nstate_;
+    // update sizes and offsets
+    psize_ = new_psize;
+    dsize_ = new_dsize;
+    ppoff_ = new_ppoff;
+    soffset_ = new_soffset;
+    gmaxoffset_ = new_gmaxoffset;
 
     update_param_size();
 
@@ -1182,17 +1187,32 @@ void KSChan::setion(const char* s) {
     if (strcmp(ion_.string(), s) == 0) {
         return;
     }
+    // before doing anything destructive, check if update_param_size is going to succeed below
     Symbol* searchsym = (is_point() ? mechsym_ : NULL);
-    if (strlen(s) == 0) {
-        ion_ = "NonSpecific";
-    } else {
-        ion_ = s;
+    std::string new_ion{strlen(s) == 0 ? "NonSpecific" : s};
+    auto new_soffset = soffset_;
+    // mirroring the logic below
+    if (new_ion == "NonSpecific") {
+        if (ion_sym_) {
+            ++new_soffset;
+        }
+    } else if (!ion_sym_) {
+        --new_soffset;
     }
+    if (!param_size_update_allowed(new_soffset, nstate_)) {
+        throw std::runtime_error("KSChan::setion(" + std::string{s} +
+                                 "): cannot change the number of parameters while " +
+                                 std::to_string(neuron::model().mechanism_data(mechtype_).size()) +
+                                 " instances are active");
+    }
+    // now we know update_param_size will succeed, we can start modifying member data
+    ion_ = new_ion.c_str();
     char buf[100];
     int pdoff = ppoff_;
     int io = gmaxoffset_;
-    if (strcmp(ion_.string(), "NonSpecific") == 0) {  // non-specific
-        if (ion_sym_) {                               // switch from useion to non-specific
+    if (new_ion == "NonSpecific") {
+        if (ion_sym_) {
+            // switch from useion to non-specific
             printf("switch from useion to non-specific\n");
             rlsym_->s_varn += 1;
             Symbol** ppsym = newppsym(rlsym_->s_varn);
@@ -1219,7 +1239,7 @@ void KSChan::setion(const char* s) {
             }
             free(rlsym_->u.ppsym);
             rlsym_->u.ppsym = ppsym;
-            soffset_ += 1;
+            ++soffset_;
             setcond();
             state_consist();
             ion_consist();
@@ -1263,6 +1283,7 @@ void KSChan::setion(const char* s) {
             ion_consist();
         }
     }
+    assert(new_soffset == soffset_);
     update_param_size();
     for (i = iligtrans_; i < ntrans_; ++i) {
         trans_[i].lig2pd(pdoff);
@@ -1767,6 +1788,15 @@ void KSChan::check_struct() {
 }
 
 KSState* KSChan::state_insert(int i, const char* n, double d) {
+    // before mutating any state, check if the call to update_param_size below will succeed
+    auto const new_nstate = nstate_ + 1;
+    if (!param_size_update_allowed(soffset_, new_nstate)) {
+        throw std::runtime_error("KSChan::state_insert(" + std::to_string(i) + ", " +
+                                 std::string{n} + ", " + std::to_string(d) +
+                                 "): cannot change the number of parameters while " +
+                                 std::to_string(neuron::model().mechanism_data(mechtype_).size()) +
+                                 " instances are active");
+    }
     int j;
     usetable(false);
     if (nstate_ >= state_size_) {
@@ -1792,6 +1822,7 @@ KSState* KSChan::state_insert(int i, const char* n, double d) {
         ++nksstate_;
     }
     ++nstate_;
+    assert(new_nstate == nstate_);
     update_param_size();
     for (j = 0; j < nstate_; ++j) {
         state_[j].index_ = j;
@@ -1803,6 +1834,14 @@ KSState* KSChan::state_insert(int i, const char* n, double d) {
 }
 
 void KSChan::state_remove(int i) {
+    // before mutating any state, check if the call to update_param_size below will succeed
+    auto const new_nstate = nstate_ - 1;
+    if (!param_size_update_allowed(soffset_, new_nstate)) {
+        throw std::runtime_error("KSChan::state_remove(" + std::to_string(i) +
+                                 "): cannot change the number of parameters while " +
+                                 std::to_string(neuron::model().mechanism_data(mechtype_).size()) +
+                                 " instances are active");
+    }
     int j;
     usetable(false);
     unref(state_[i].obj_);
@@ -1818,6 +1857,7 @@ void KSChan::state_remove(int i) {
         --nksstate_;
     }
     --nstate_;
+    assert(new_nstate == nstate_);
     update_param_size();
     state_[nstate_].obj_ = NULL;
     for (j = 0; j < nstate_; ++j) {
@@ -1942,13 +1982,15 @@ void KSChan::trans_remove(int i) {
 }
 
 void KSChan::setstructure(Vect* vec) {
+    // before mutating any state, check if the call to update_param_size below will succeed
+    int const new_nstate = vec->elem(2);
+    if (!param_size_update_allowed(soffset_, new_nstate)) {
+        throw std::runtime_error(
+            "KSChan::setstructure(vec): cannot change the number of parameters while " +
+            std::to_string(neuron::model().mechanism_data(mechtype_).size()) +
+            " instances are active");
+    }
     int i, j, ii, idx, ns;
-// printf("setstructure called for KSChan %p %s\n", this, name_.string());
-#if 0
-for (i=0; i < vec->size(); ++i) {
-	printf("%d %g\n", i, vec->elem(i));
-}
-#endif
     usetable(false);
     int nstate_old = nstate_;
     KSState* state_old = state_;
@@ -1960,6 +2002,7 @@ for (i=0; i < vec->size(); ++i) {
     setcond();
     ngate_ = (int) vec->elem(j++);
     nstate_ = (int) vec->elem(j++);
+    assert(new_nstate == nstate_);
     update_param_size();
     nhhstate_ = (int) vec->elem(j++);
     nksstate_ = nstate_ - nhhstate_;
@@ -2266,6 +2309,20 @@ void KSChan::mulmat(Memb_list* ml,
     }
 }
 
+/**
+ * @brief Check if a change to the number of floating point parameters would succeed.
+ *
+ * This is intended to allow methods that call update_param_size() to check if it will succeed
+ * before they make destructive changes.
+ */
+bool KSChan::param_size_update_allowed(std::size_t soffset, std::size_t nstate) const {
+    auto& mech_data = neuron::model().mechanism_data(mechtype_);
+    auto const new_param_size = soffset + 2 * nstate;
+    auto const old_param_size =
+        mech_data.get_tag<neuron::container::Mechanism::field::FloatingPoint>().num_instances();
+    return new_param_size == old_param_size || mech_data.empty();
+}
+
 /** @brief Propagate changes to the number of floating point parameters.
  */
 void KSChan::update_param_size() {
@@ -2278,6 +2335,7 @@ void KSChan::update_param_size() {
         return;
     }
     if (mech_data.size() > 0) {
+        assert(param_size_update_allowed(soffset_, nstate_) == false);
         throw std::runtime_error(
             "KSChan::update_param_size(): cannot change the number of floating point fields from " +
             std::to_string(old_param_size) + " to " + std::to_string(new_param_size) + " while " +
