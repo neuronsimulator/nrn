@@ -129,5 +129,10 @@ struct handle_interface: handle_base<Identifier> {
     void set_v(field::Voltage::type v) {
         this->template get<field::Voltage>() = v;
     }
+
+    friend std::ostream& operator<<(std::ostream& os, handle_interface const& handle) {
+        return os << "Node{" << handle.id() << '/' << handle.underlying_storage().size()
+                  << " v=" << handle.v() << " area=" << handle.area() << '}';
+    }
 };
 }  // namespace neuron::container::Node
