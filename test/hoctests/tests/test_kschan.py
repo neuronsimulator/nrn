@@ -1,4 +1,5 @@
 from neuron import h, gui
+from neuron.expect_hocerr import expect_err
 
 # Cover KSChan::state_consist(int shift) in nrniv/kschan.cpp
 
@@ -9,7 +10,10 @@ s = h.Section(name="soma")
 s.insert("khh")  # exists in soma and has one state
 # Generally one does not modify the name/structure of an inserted channel
 h.psection()
-cb.nahh()  # now called nahh and has two states (HH sodium channel)
+# now called nahh and has two states (HH sodium channel). it's not
+# supported (anymore) to change the number of variables in a mechanism
+# while instances of that mechanism are active
+expect_err("cb.nahh()")
 h.psection()
 
 # to cover the "shift" fragments. Need a POINT_PROCESS KSChan
@@ -88,6 +92,6 @@ objref ks, ksvec, ksgate, ksstates, kstransitions, tobj
 
 kchan = h.khh0(s(0.5))
 h.psection()
-h.ks.single(0)
+expect_err("h.ks.single(0)")
 h.psection()
 h.ks.single(1)

@@ -341,7 +341,7 @@ class KSState {
 class KSChan {
   public:
     KSChan(Object*, bool is_point = false);
-    virtual ~KSChan();
+    virtual ~KSChan() {}
     virtual void alloc(Prop*);
     virtual void init(NrnThread*, Memb_list*);
     virtual void cur(Memb_list*);
@@ -411,7 +411,6 @@ class KSChan {
 
   private:
     void free1();
-    void build();
     void setupmat();
     void fillmat(double v, Datum* pd);
     void mat_dt(double dt, Memb_list* ml, std::size_t instance, std::size_t offset);
@@ -430,6 +429,7 @@ class KSChan {
     void alloc_schan_node_data();
     void update_prop();  // can add and remove Nsingle and SingleNodeData
     void update_param_size();
+    [[nodiscard]] bool param_size_update_allowed(std::size_t soffset, std::size_t nstate) const;
 
     KSState* state_insert(int i, const char* name, double frac);
     void state_remove(int i);

@@ -255,10 +255,22 @@ struct soa {
     [[nodiscard]] std::size_t size() const {
         // Check our various std::vector members are still the same size as each
         // other. This check could be omitted in release builds...
-        for_all_vectors(*this, [check_size = m_indices.size()](auto const& tag, auto const& vec) {
+        auto const check_size = m_indices.size();
+        for_all_vectors(*this, [check_size](auto const& tag, auto const& vec) {
             assert(vec.size() == check_size);
         });
-        return m_indices.size();
+        return check_size;
+    }
+
+    /**
+     * @brief Test if the container is empty.
+     */
+    [[nodiscard]] bool empty() const {
+        auto const result = m_indices.empty();
+        for_all_vectors(*this, [result](auto const& tag, auto const& vec) {
+            assert(vec.empty() == result);
+        });
+        return result;
     }
 
   private:
