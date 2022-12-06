@@ -211,7 +211,6 @@ double KSSingleTrans::rate(Point_process* pnt) {
 }
 
 KSSingleNodeData::KSSingleNodeData() {
-    statepop_ = NULL;
     nsingle_ = 1;
 }
 
@@ -300,9 +299,9 @@ void KSSingle::one(double v, KSSingleNodeData* snd, NrnThread* nt) {
 void KSSingle::do1trans(KSSingleNodeData* snd) {
     snd->t0_ = snd->t1_;
     // printf("KSSingle::do1trans t1=%g old=%d ", snd->t1_, snd->filledstate_);
-    snd->statepop_[snd->filledstate_] = 0.;
+    snd->statepop(snd->filledstate_) = 0.;
     snd->filledstate_ = transitions_[snd->next_trans_].target_;
-    snd->statepop_[snd->filledstate_] = 1.;
+    snd->statepop(snd->filledstate_) = 1.;
     // printf("new=%d \n", snd->filledstate_);
     next1trans(snd);
 }
@@ -342,11 +341,11 @@ void KSSingle::multi(double v, KSSingleNodeData* snd, NrnThread* nt) {
 void KSSingle::doNtrans(KSSingleNodeData* snd) {
     snd->t0_ = snd->t1_;
     KSSingleTrans* st = transitions_ + snd->next_trans_;
-    assert(snd->statepop_[st->src_] >= 1.);
-    --snd->statepop_[st->src_];
-    ++snd->statepop_[st->target_];
+    assert(snd->statepop(st->src_) >= 1.);
+    --snd->statepop(st->src_);
+    ++snd->statepop(st->target_);
     // printf("KSSingle::doNtrans t1=%g %d with %g -> %d with %g\n", snd->t1_,
-    // st->src_, snd->statepop_[st->src_], st->target_, snd->statepop_[st->target_]);
+    // st->src_, snd->statepop(st->src_), st->target_, snd->statepop(st->target_));
     nextNtrans(snd);
 }
 
@@ -355,7 +354,7 @@ void KSSingle::nextNtrans(KSSingleNodeData* snd) {
     double x = 0;
     for (i = 0; i < ntrans_; ++i) {
         KSSingleTrans* st = transitions_ + i;
-        x += snd->statepop_[st->src_] * st->rate(*snd->ppnt_);
+        x += snd->statepop(st->src_) * st->rate(*snd->ppnt_);
         rval_[i] = x;
     }
     if (x > 1e-9) {
@@ -376,7 +375,8 @@ void KSSingle::alloc(Prop* p, int sindex) {  // and discard old if not NULL
     snd->kss_ = this;
     snd->ppnt_ = &(p->dparam[1].literal_value<Point_process*>());
     p->dparam[2] = snd;
-    snd->statepop_ = static_cast<double*>(p->param_handle(sindex));
+    snd->prop_ = p;
+    snd->statepop_offset_ = sindex;
 }
 
 void KSSingle::init(double v,
@@ -399,19 +399,19 @@ void KSSingle::init(double v,
     // initialization of complex kinetic schemes often not accurate to 9 decimal places
     //	assert(Math::equal(rval_[nstate_ - 1], 1., 1e-9));
     for (i = 0; i < nstate_; ++i) {
-        snd->statepop_[i] = 0;
+        snd->statepop(i) = 0;
     }
     if (snd->nsingle_ == 1) {
         snd->filledstate_ = rvalrand(nstate_);
-        ++snd->statepop_[snd->filledstate_];
+        ++snd->statepop(snd->filledstate_);
         next1trans(snd);
     } else {
         for (i = 0; i < snd->nsingle_; ++i) {
-            ++snd->statepop_[rvalrand(nstate_)];
+            ++snd->statepop(rvalrand(nstate_));
         }
         nextNtrans(snd);
         // for (i=0; i < nstate_; ++i) {
-        //	printf("  state %d pop %g\n", i, snd->statepop_[i]);
+        //	printf("  state %d pop %g\n", i, snd->statepop(i));
         //}
     }
     if (cvode_active_) {
