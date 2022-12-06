@@ -24,12 +24,22 @@ class KSSingleNodeData: public DiscreteEvent {
 
     // specific to KSSingleNodeData
     int nsingle_;
-    double* statepop_;  // points to prop->param state array
-    int filledstate_;   // used when nsingle_ == 1, index of populated state
-    double vlast_;      // voltage at which the transition rates were calculated
-    double t0_;         // last transition time. <= t on entry to step calculations.
-    double t1_;         // next. > t + dt on exit from step calculations.
-    int next_trans_;    // if t1_ takes effect, this is the trans.
+    Prop* prop_{};
+    int statepop_offset_{std::numeric_limits<int>::max()};  // what used to be statepop_[i] is now
+                                                            // _prop->param(statepop_offset_ + i)
+    /**
+     * @brief Replacement for old double* statepop_ member.
+     */
+    double& statepop(int i) {
+        assert(prop_);
+        assert(statepop_offset_ != std::numeric_limits<int>::max());
+        return prop_->param(statepop_offset_ + i);
+    }
+    int filledstate_;  // used when nsingle_ == 1, index of populated state
+    double vlast_;     // voltage at which the transition rates were calculated
+    double t0_;        // last transition time. <= t on entry to step calculations.
+    double t1_;        // next. > t + dt on exit from step calculations.
+    int next_trans_;   // if t1_ takes effect, this is the trans.
     Point_process** ppnt_;
     KSSingle* kss_;
     TQItem* qi_;
