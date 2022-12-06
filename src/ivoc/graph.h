@@ -72,7 +72,7 @@ class Graph: public Scene {  // Scene of GraphLines labels and polylines
                        const Brush*,
                        bool usepointer,
                        int fixtype = 1,
-                       double* p = NULL,
+                       neuron::container::data_handle<double> p = {},
                        const char* lab = NULL,
                        Object* obj = NULL);
     void x_expr(const char*, bool usepointer);
@@ -337,7 +337,7 @@ class GraphLine: public GPolyLine, public Observer {  // An oc variable to plot
               const Color* = NULL,
               const Brush* = NULL,
               bool usepointer = 0,
-              double* pd = NULL,
+              neuron::container::data_handle<double> pd = {},
               Object* obj = NULL);
     virtual ~GraphLine();
 
@@ -372,7 +372,7 @@ class GraphLine: public GPolyLine, public Observer {  // An oc variable to plot
     void update_ptrs();
 
     Symbol* expr_;
-    double* pval_;
+    neuron::container::data_handle<double> pval_;
     Object* obj_;
 
   private:
