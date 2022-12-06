@@ -52,7 +52,10 @@ class Chk:
                         print(a, b, "diff", abs(a - b) / max(abs(a), abs(b)), ">", tol)
                     return match
                 elif type(a) == str:
-                    return a == b
+                    match = a == b
+                    if not match:
+                        print("strdiff", a, b)
+                    return match
                 elif type(a) == list:
                     # List comprehension avoids short-circuit, so the "diff"
                     # message just above is printed for all elements
