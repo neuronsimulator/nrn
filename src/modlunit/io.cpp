@@ -264,7 +264,7 @@ static FILE* include_open(char* fname, int err) {
     if (f) {
         return f;
     }
-    sprintf(buf, "../%s", fname); /* Next try next dir up. */
+    Sprintf(buf, "../%s", fname); /* Next try next dir up. */
     if ((f = fopen(buf, "r")) != NULL)
         return f;
 

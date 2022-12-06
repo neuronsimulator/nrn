@@ -170,7 +170,7 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
     counts = nonlin_common(q4);
     Insertstr(q4, "}");
     q = insertstr(q3, "{ static int _recurse = 0;\n int _counte = -1;\n");
-    sprintf(buf,
+    Sprintf(buf,
             "{\n"
             "  auto* _savstate%d =_thread[_dith%d].get<double*>();\n"
             "  auto* _dlist%d = _thread[_dith%d].get<double*>() + %d;\n"

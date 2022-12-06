@@ -433,7 +433,7 @@ int main(int ac, char **av)
 
 	/* Test one of everything */
 
-	sprintf(str, " abc -12 37 101 3.4e-1 12.34 102.23 xyz %p def ghi jkl %% ",
+	Sprintf(str, " abc -12 37 101 3.4e-1 12.34 102.23 xyz %p def ghi jkl %% ",
 		p1 = (void *)0xdeadbeef
 	);
 

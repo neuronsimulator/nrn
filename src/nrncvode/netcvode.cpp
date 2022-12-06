@@ -2304,7 +2304,7 @@ void nrn_net_move(Datum* v, Point_process* pnt, double tt) {
     if (tt < PP2t(pnt)) {
         SelfEvent* se = (SelfEvent*) q->data_;
         char buf[100];
-        sprintf(buf, "net_move tt-nt_t = %g", tt - PP2t(pnt));
+        Sprintf(buf, "net_move tt-nt_t = %g", tt - PP2t(pnt));
         se->pr(buf, tt, net_cvode_instance);
         assert(0);
         hoc_execerror("net_move tt < t", 0);
@@ -2325,7 +2325,7 @@ void artcell_net_move(Datum* v, Point_process* pnt, double tt) {
         if (tt < nt->_t) {
             SelfEvent* se = (SelfEvent*) q->data_;
             char buf[100];
-            sprintf(buf, "artcell_net_move tt-nt_t = %g", tt - nt->_t);
+            Sprintf(buf, "artcell_net_move tt-nt_t = %g", tt - nt->_t);
             se->pr(buf, tt, net_cvode_instance);
             hoc_execerror("net_move tt < t", 0);
         }
@@ -2386,7 +2386,7 @@ void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, doubl
     ++p.unreffed_event_cnt_;
     if (td < nt->_t) {
         char buf[100];
-        sprintf(buf, "net_send td-t = %g", td - nt->_t);
+        Sprintf(buf, "net_send td-t = %g", td - nt->_t);
         se->pr(buf, td, net_cvode_instance);
         abort();
         hoc_execerror("net_send delay < 0", 0);
@@ -2422,7 +2422,7 @@ void artcell_net_send(Datum* v, double* weight, Point_process* pnt, double td, d
         ++p.unreffed_event_cnt_;
         if (td < nt->_t) {
             char buf[100];
-            sprintf(buf, "net_send td-t = %g", td - nt->_t);
+            Sprintf(buf, "net_send td-t = %g", td - nt->_t);
             se->pr(buf, td, net_cvode_instance);
             hoc_execerror("net_send delay < 0", 0);
         }
@@ -2457,7 +2457,7 @@ void net_event(Point_process* pnt, double time) {
     if (ps) {
         if (time < PP2t(pnt)) {
             char buf[100];
-            sprintf(buf, "net_event time-t = %g", time - PP2t(pnt));
+            Sprintf(buf, "net_event time-t = %g", time - PP2t(pnt));
             ps->pr(buf, time, net_cvode_instance);
             hoc_execerror("net_event time < t", 0);
         }
@@ -4525,7 +4525,7 @@ std::string NetCvode::statename(int is, int style) {
 const char* NetCvode::sym2name(Symbol* sym) {
     if (sym->type == RANGEVAR && sym->u.rng.type > 1 && memb_func[sym->u.rng.type].is_point) {
         static char buf[200];
-        sprintf(buf, "%s.%s", memb_func[sym->u.rng.type].sym->name, sym->name);
+        Sprintf(buf, "%s.%s", memb_func[sym->u.rng.type].sym->name, sym->name);
         return buf;
     } else {
         return sym->name;
@@ -4670,7 +4670,7 @@ NetCon* NetCvode::install_deliver(double* dsrc,
             Point_process* pp = ob2pntproc(osrc);
             assert(pp && pp->prop);
             if (!pnt_receive[pp->prop->_type]) {  // only if no NET_RECEIVE block
-                sprintf(buf, "%s.x", hoc_object_name(osrc));
+                Sprintf(buf, "%s.x", hoc_object_name(osrc));
                 psrc = hoc_val_pointer(buf);
             }
         }

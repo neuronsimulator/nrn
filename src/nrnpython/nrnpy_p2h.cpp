@@ -401,7 +401,7 @@ static void hpoasgn(Object* o, int type) {
         Py_DECREF(key);
     } else {
         char buf[512];
-        sprintf(buf, "%s.%s[][]...=...:", hoc_object_name(o), sym->name);
+        Sprintf(buf, "%s.%s[][]...=...:", hoc_object_name(o), sym->name);
         hoc_execerror(buf, "HOC cannot handle PythonObject assignment with more than one index.");
     }
     Py_DECREF(poright);

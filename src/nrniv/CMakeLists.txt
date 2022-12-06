@@ -333,6 +333,11 @@ if(NRN_ENABLE_MPI_DYNAMIC)
                               PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
 endif()
 
+if(NRN_ENABLE_MUSIC)
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrniv/netpar.cpp
+                              PROPERTIES INCLUDE_DIRECTORIES ${MUSIC_INCDIR})
+endif()
+
 if(NRN_COVERAGE_FILES)
   foreach(f ${NRN_COVERAGE_FILES})
     set_property(
@@ -378,6 +383,10 @@ else()
   elseif(TERMCAP_FOUND)
     target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES})
   endif()
+endif()
+
+if(NRN_ENABLE_MUSIC)
+  target_link_libraries(nrniv_lib ${MUSIC_LIBRARY})
 endif()
 
 if(NRN_ENABLE_PROFILING)

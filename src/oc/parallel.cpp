@@ -77,7 +77,7 @@ void hoc_parallel_begin(void) {
                         ;
                 }
                 /* replace "00000" with actual value */
-                sprintf(buf, "%5d", i);
+                Sprintf(buf, "%5d", i);
                 strcpy(pnt, buf);
             }
             /* farm-out all but the first instance of the loop */
