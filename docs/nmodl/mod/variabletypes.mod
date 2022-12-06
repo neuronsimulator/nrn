@@ -45,8 +45,8 @@ VERBATIM
 static void bbcore_write(double* x, int* d, int* x_offset, int* d_offset, _threadargsproto_) {
   if (x) {
     double* x_i = x + *x_offset;
-    x_i[0] = _p_my_data[0];
-    x_i[1] = _p_my_data[1];
+    x_i[0] = ((double*)_p_my_data)[0];
+    x_i[1] = ((double*)_p_my_data)[1];
   }
   *x_offset += 2; // reserve 2 doubles on serialization buffer x
 }
@@ -56,8 +56,8 @@ static void bbcore_read(double* x, int* d, int* x_offset, int* d_offset, _thread
   double* x_i = x + *x_offset;
   // my_data needs to be allocated somehow
   _p_my_data = (double*)malloc(sizeof(double)*2);
-  _p_my_data[0] = x_i[0];
-  _p_my_data[1] = x_i[1];
+  ((double*)_p_my_data)[0] = x_i[0];
+  ((double*)_p_my_data)[1] = x_i[1];
   *x_offset += 2;
 }
 ENDVERBATIM
