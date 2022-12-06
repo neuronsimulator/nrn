@@ -509,38 +509,39 @@ static void gr_add(void* v, bool var) {
     Object* obj = NULL;
     char* lab = NULL;
     char* expr = NULL;
-    int ioff = 0;       // deal with 0, 1, or 2 optional arguments after first
-    double* pd = NULL;  // pointer to varname if second arg is varname string
+    int ioff = 0;  // deal with 0, 1, or 2 optional arguments after first
+    // pointer to varname if second arg is varname string
+    neuron::container::data_handle<double> pd{};
     int fixtype = g->labeltype();
     // organize args for backward compatibility and the new
     // addexpr("label, "expr", obj,.... style
     if (ifarg(2)) {
         if (var) {  // if string or address then variable and 1 was label
-            expr = gargstr(1);
+            expr = hoc_gargstr(1);
             if (hoc_is_str_arg(2)) {
-                pd = hoc_val_pointer(gargstr(2));
+                pd = hoc_val_handle(hoc_gargstr(2));
                 ioff += 1;
             } else if (hoc_is_pdouble_arg(2)) {
-                pd = hoc_pgetarg(2);
+                pd = hoc_get_arg<neuron::container::data_handle<double>>(2);
                 ioff += 1;
             }
         } else if (hoc_is_str_arg(2)) {  // 1 label, 2 expression
-            lab = gargstr(1);
-            expr = gargstr(2);
+            lab = hoc_gargstr(1);
+            expr = hoc_gargstr(2);
             ioff += 1;
             if (ifarg(3) && hoc_is_object_arg(3)) {  // object context
                 obj = *hoc_objgetarg(3);
                 ioff += 1;
             }
         } else if (hoc_is_object_arg(2)) {  // 1 expr, 2 object context
-            expr = gargstr(1);
+            expr = hoc_gargstr(1);
             obj = *hoc_objgetarg(2);
             ioff += 1;
         } else {
-            expr = gargstr(1);
+            expr = hoc_gargstr(1);
         }
     } else {
-        expr = gargstr(1);
+        expr = hoc_gargstr(1);
     }
     if (ifarg(3 + ioff)) {
         if (ifarg(6 + ioff)) {
@@ -1906,7 +1907,7 @@ GraphLine* Graph::add_var(const char* expr,
                           const Brush* brush,
                           bool usepointer,
                           int fixtype,
-                          double* pd,
+                          neuron::container::data_handle<double> pd,
                           const char* lab,
                           Object* obj) {
     GraphLine* gl = new GraphLine(expr, x_, &symlist_, color, brush, usepointer, pd, obj);
@@ -2548,7 +2549,7 @@ GraphLine::GraphLine(const char* expr,
                      const Color* c,
                      const Brush* b,
                      bool usepointer,
-                     double* pd,
+                     neuron::container::data_handle<double> pd,
                      Object* obj)
     : GPolyLine(x, c, b) {
     Oc oc;
@@ -2560,16 +2561,16 @@ GraphLine::GraphLine(const char* expr,
             // char buf[256];
             // Sprintf(buf, "%s", expr);
             // expr_ = oc.parseExpr(buf, symlist);
-            expr_ = NULL;
+            expr_ = nullptr;
             pval_ = pd;
         } else {
             expr_ = oc.parseExpr(expr, symlist);
-            pval_ = hoc_val_pointer(expr);
+            pval_ = hoc_val_handle(expr);
             if (!pval_) {
                 hoc_execerror(expr, "is invalid left hand side of assignment statement");
             }
         }
-        oc.notify_when_freed(pval_, this);
+        // oc.notify_when_freed(pval_, this);
     } else {
         if (obj) {
             obj_ = obj;
@@ -2579,7 +2580,7 @@ GraphLine::GraphLine(const char* expr,
         } else {
             expr_ = oc.parseExpr(expr, symlist);
         }
-        pval_ = 0;
+        pval_ = {};
     }
     if (!pval_ && !expr_) {
         hoc_execerror(expr, "not an expression");
@@ -2673,7 +2674,8 @@ void GraphLine::simgraph_continuous(double tt) {
 
 void GraphLine::update(Observable*) {  // *pval_ has been freed
                                        // printf("GraphLine::update pval_ has been freed\n");
-    pval_ = NULL;
+    pval_ = {};
+    nrn_forget_history(pval_);
     if (obj_) {
         expr_ = NULL;
     }
@@ -2690,9 +2692,8 @@ bool GraphLine::change_expr(const char* expr, Symlist** symlist) {
     if (sym) {
         expr_ = sym;
         if (pval_) {
-            Oc oc;
-            oc.notify_pointer_disconnect(this);
-            pval_ = NULL;
+            pval_ = {};
+            nrn_forget_history(pval_);
         }
         return true;
     } else {

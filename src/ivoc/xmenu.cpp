@@ -346,7 +346,8 @@ static void hoc_xvalue_helper() {
     IFGUI  // prompt, variable, deflt,action,canrun,usepointer
         char *s1,
         *s2, *s3;
-    double* ptr2 = NULL; /*allow variable arg2 to be double* */
+    // allow variable arg2 to be double*
+    neuron::container::data_handle<double> ptr2{};
     Object* pyvar = NULL;
     Object* pyact = NULL;
     s2 = s3 = NULL;
@@ -355,7 +356,7 @@ static void hoc_xvalue_helper() {
         if (hoc_is_object_arg(2)) {
             pyvar = *hoc_objgetarg(2);
         } else if (hoc_is_pdouble_arg(2)) {
-            ptr2 = hoc_pgetarg(2);
+            ptr2 = hoc_get_arg<neuron::container::data_handle<double>>(2);
         } else {
             s2 = gargstr(2);
         }
@@ -424,15 +425,15 @@ static void hoc_xpvalue_helper() {
     IFGUI  // prompt,variable,deflt,action,canrun
         char *s1,
         *s3;
-    double* pd;
+    neuron::container::data_handle<double> pd{};
     HocSymExtension* extra = NULL;
     Symbol* sym;
     s1 = gargstr(1);
     if (ifarg(2)) {
-        pd = hoc_pgetarg(2);
+        pd = hoc_get_arg<neuron::container::data_handle<double>>(2);
         sym = hoc_get_last_pointer_symbol();
     } else {
-        pd = hoc_val_pointer(s1);
+        pd = hoc_val_handle(s1);
         sym = hoc_get_symbol(s1);
     }
     if (sym) {
@@ -829,7 +830,7 @@ void hoc_ivvalue_keep_updated(const char* name, const char* variable, Object* py
                          variable,
                          NULL,
                          false,
-                         hoc_val_pointer(variable),
+                         hoc_val_handle(variable),
                          false,
                          true,
                          (s ? s->extra : NULL),
@@ -844,7 +845,10 @@ void hoc_ivfixedvalue(const char* name, const char* variable, bool deflt, bool u
     hoc_ivvaluerun(name, variable, NULL, deflt, false, usepointer);
 }
 
-void hoc_ivpvalue(const char* name, double* pd, bool deflt, HocSymExtension* extra) {
+void hoc_ivpvalue(const char* name,
+                  neuron::container::data_handle<double> pd,
+                  bool deflt,
+                  HocSymExtension* extra) {
     hoc_ivpvaluerun(name, pd, 0, deflt, false, extra);
 }
 
@@ -856,12 +860,12 @@ void hoc_ivvaluerun(const char* name,
                     bool usepointer,
                     Object* pyvar,
                     Object* pyact) {
-    hoc_ivvaluerun_ex(name, variable, NULL, pyvar, action, pyact, deflt, canRun, usepointer);
+    hoc_ivvaluerun_ex(name, variable, {}, pyvar, action, pyact, deflt, canRun, usepointer);
 }
 
 void hoc_ivvaluerun_ex(CChar* name,
                        CChar* variable,
-                       double* pvar,
+                       neuron::container::data_handle<double> pvar,
                        Object* pyvar,
                        CChar* action,
                        Object* pyact,
@@ -875,7 +879,7 @@ void hoc_ivvaluerun_ex(CChar* name,
     if (!pvar && !pyvar) {
         s = hoc_get_symbol(variable);
         if (usepointer) {
-            pvar = hoc_val_pointer(variable);
+            pvar = hoc_val_handle(variable);
         }
     }
     HocSymExtension* xtra = extra;
@@ -886,7 +890,7 @@ void hoc_ivvaluerun_ex(CChar* name,
 }
 
 void hoc_ivpvaluerun(const char* name,
-                     double* pd,
+                     neuron::container::data_handle<double> pd,
                      const char* action,
                      bool deflt,
                      bool canRun,
@@ -1302,14 +1306,14 @@ void HocPanel::valueEd(const char* prompt,
                        bool canrun,
                        bool deflt,
                        bool keep_updated) {
-    valueEd(prompt, NULL, NULL, canrun, NULL, deflt, keep_updated, NULL, pyvar, pyact);
+    valueEd(prompt, NULL, NULL, canrun, {}, deflt, keep_updated, NULL, pyvar, pyact);
 }
 
 void HocPanel::valueEd(const char* name,
                        const char* variable,
                        const char* action,
                        bool canrun,
-                       double* pd,
+                       neuron::container::data_handle<double> pd,
                        bool deflt,
                        bool keep_updated,
                        HocSymExtension* extra,
@@ -1712,7 +1716,7 @@ HocDefaultValEditor::HocDefaultValEditor(const char* name,
                                          const char* variable,
                                          ValEdLabel* prompt,
                                          HocValAction* a,
-                                         double* pd,
+                                         neuron::container::data_handle<double> pd,
                                          bool canrun,
                                          HocItem* hi,
                                          Object* pyvar)
@@ -1799,7 +1803,7 @@ HocValEditorKeepUpdated::HocValEditorKeepUpdated(const char* name,
                                                  const char* variable,
                                                  ValEdLabel* prompt,
                                                  HocValAction* act,
-                                                 double* pd,
+                                                 neuron::container::data_handle<double> pd,
                                                  HocItem* hi,
                                                  Object* pyvar)
     : HocValEditor(name, variable, prompt, act, pd, false, hi, pyvar) {
@@ -1884,11 +1888,12 @@ HocValEditor::HocValEditor(const char* name,
                            const char* variable,
                            ValEdLabel* prompt,
                            HocValAction* a,
-                           double* pd,
+                           neuron::container::data_handle<double> pd,
                            bool canrun,
                            HocItem* hi,
                            Object* pyvar)
-    : HocUpdateItem(name, hi) {
+    : HocUpdateItem(name, hi)
+    , pval_{pd} {
     if (!xvalue_format) {
         set_format();
     }
@@ -1903,10 +1908,6 @@ HocValEditor::HocValEditor(const char* name,
     domain_limits_ = NULL;
     variable_ = NULL;
     pyvar_ = pyvar;
-    pval_ = NULL;
-    if (pd) {
-        pval_ = pd;
-    }
     if (pyvar) {
         hoc_obj_ref(pyvar);
     } else if (variable) {
@@ -2317,16 +2318,18 @@ void HocPanel::check_valid_pointers(void* v, int size) {
 }
 
 void HocValEditor::check_pointer(void* v, int size) {
-    if (pval_) {
-        double* pd = (double*) v;
+    auto* const pval_raw = static_cast<double const*>(pval_);
+    if (pval_raw) {
+        auto* const pd = static_cast<double*>(v);
         if (size == 1) {
-            if (pd != pval_)
+            if (pd != pval_raw) {
                 return;
+            }
         } else {
-            if (pval_ < pd || pval_ >= pd + size)
+            if (pval_raw < pd || pval_raw >= pd + size)
                 return;
         }
-        pval_ = 0;
+        pval_ = {};
     }
 }
 void HocVarLabel::check_pointer(void* v, int) {
@@ -2344,10 +2347,11 @@ void HocPanel::data_path(HocDataPaths* hdp, bool append) {
 
 void HocValEditor::data_path(HocDataPaths* hdp, bool append) {
     if (!variable_) {
+        auto* const pval_raw = static_cast<double*>(pval_);
         if (append) {
-            hdp->append(pval_);
+            hdp->append(pval_raw);
         } else {
-            String* s = hdp->retrieve(pval_);
+            String* s = hdp->retrieve(pval_raw);
             if (s) {
                 variable_ = new CopyString(s->string());
             }
