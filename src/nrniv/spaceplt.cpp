@@ -471,17 +471,17 @@ void RangeVarPlot::request(Requisition& req) const {
 void RangeVarPlot::save(std::ostream& o) {
     char buf[256];
     o << "objectvar rvp_" << std::endl;
-    sprintf(buf, "rvp_ = new RangeVarPlot(\"%s\")", expr_.string());
+    Sprintf(buf, "rvp_ = new RangeVarPlot(\"%s\")", expr_.string());
     o << buf << std::endl;
-    sprintf(buf, "%s rvp_.begin(%g)", hoc_section_pathname(begin_section_), x_begin_);
+    Sprintf(buf, "%s rvp_.begin(%g)", hoc_section_pathname(begin_section_), x_begin_);
     o << buf << std::endl;
-    sprintf(buf, "%s rvp_.end(%g)", hoc_section_pathname(end_section_), x_end_);
+    Sprintf(buf, "%s rvp_.end(%g)", hoc_section_pathname(end_section_), x_end_);
     o << buf << std::endl;
-    sprintf(buf, "rvp_.origin(%g)", origin_);
+    Sprintf(buf, "rvp_.origin(%g)", origin_);
     o << buf << std::endl;
     Coord x, y;
     label_loc(x, y);
-    sprintf(buf,
+    Sprintf(buf,
             "save_window_.addobject(rvp_, %d, %d, %g, %g)",
             colors->color(color()),
             brushes->brush(brush()),
@@ -550,7 +550,7 @@ void RangeVarPlot::fill_pointers() {
             if (!sym) {
                 return;
             }
-            sprintf(buf, "%s(hoc_ac_)", expr_.string());
+            Sprintf(buf, "%s(hoc_ac_)", expr_.string());
         }
         int noexist = 0;  // don't plot single points that don't exist
         bool does_exist;
@@ -739,7 +739,7 @@ RangeExpr::RangeExpr(const char* expr, Object* pycall, SecPosList* spl) {
     char buf[256];
     const char* p1;
     char* p2;
-    sprintf(buf, "hoc_ac_ = ");
+    Sprintf(buf, "hoc_ac_ = ");
     p2 = buf + strlen(buf);
     for (p1 = expr; *p1;) {
         if (p1[0] == '$' && p1[1] == '1') {

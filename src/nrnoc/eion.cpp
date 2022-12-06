@@ -10,6 +10,9 @@
 #include "nrniv_mf.h"
 #include "nrnunits_modern.h"
 
+#include <array>
+#include <string>
+
 #undef hoc_retpushx
 
 extern double chkarg(int, double low, double high);
@@ -62,7 +65,6 @@ void ion_register(void) {
     in use and not an ion;	and the mechanism subtype otherwise.
     */
     char* name;
-    char* buf;
     Symbol* s;
     Symlist* sav;
     int fail;
@@ -70,8 +72,9 @@ void ion_register(void) {
     sav = hoc_symlist;
     hoc_symlist = hoc_top_level_symlist;
     name = gargstr(1);
-    buf = static_cast<char*>(emalloc(strlen(name) + 10));
-    sprintf(buf, "%s_ion", name);
+    auto const buf_size = strlen(name) + 10;
+    char* const buf = static_cast<char*>(emalloc(buf_size));
+    std::snprintf(buf, buf_size, "%s_ion", name);
     s = hoc_lookup(buf);
     if (s && s->type == MECHANISM && memb_func[s->subtype].alloc == ion_alloc) {
         hoc_symlist = sav;
@@ -88,23 +91,23 @@ void ion_register(void) {
     if (s) {
         fail = 1;
     }
-    sprintf(buf, "e%s", name);
+    std::snprintf(buf, buf_size, "e%s", name);
     if (hoc_lookup(buf)) {
         fail = 1;
     }
-    sprintf(buf, "%si", name);
+    std::snprintf(buf, buf_size, "%si", name);
     if (hoc_lookup(buf)) {
         fail = 1;
     }
-    sprintf(buf, "%so", name);
+    std::snprintf(buf, buf_size, "%so", name);
     if (hoc_lookup(buf)) {
         fail = 1;
     }
-    sprintf(buf, "i%s", name);
+    std::snprintf(buf, buf_size, "i%s", name);
     if (hoc_lookup(buf)) {
         fail = 1;
     }
-    sprintf(buf, "di%s_dv_", name);
+    std::snprintf(buf, buf_size, "di%s_dv_", name);
     if (hoc_lookup(buf)) {
         fail = 1;
     }
@@ -127,7 +130,7 @@ void ion_register(void) {
     }
     ion_reg(name, charge);
     hoc_symlist = sav;
-    sprintf(buf, "%s_ion", name);
+    std::snprintf(buf, buf_size, "%s_ion", name);
     s = hoc_lookup(buf);
     hoc_retpushx((double) s->subtype);
     free(buf);
@@ -145,37 +148,31 @@ void ion_charge(void) {
 void ion_reg(const char* name, double valence) {
     int i, mechtype;
     Symbol* s;
-    char* buf[7];
     double val;
+    std::array<std::string, 7> buf{};
+    std::string name_s{name};
 #define VAL_SENTINAL -10000.
-
-    {
-        int n = 2 * strlen(name) + 10; /*name used twice in initialization name */
-        for (i = 0; i < 7; ++i) {
-            buf[i] = static_cast<char*>(emalloc(n));
-        }
-    }
-    Sprintf(buf[0], "%s_ion", name);
-    Sprintf(buf[1], "e%s", name);
-    Sprintf(buf[2], "%si", name);
-    Sprintf(buf[3], "%so", name);
-    Sprintf(buf[5], "i%s", name);
-    Sprintf(buf[6], "di%s_dv_", name);
+    buf[0] = name_s + "_ion";
+    buf[1] = "e" + name_s;
+    buf[2] = name_s + "i";
+    buf[3] = name_s + "o";
+    buf[5] = "i" + name_s;
+    buf[6] = "di" + name_s + "_dv_";
     for (i = 0; i < 7; i++) {
-        mechanism[i + 1] = buf[i];
+        mechanism[i + 1] = buf[i].c_str();
     }
-    mechanism[5] = (char*) 0; /* buf[4] not used above */
-    s = hoc_lookup(buf[0]);
+    mechanism[5] = nullptr; /* buf[4] not used above */
+    s = hoc_lookup(buf[0].c_str());
     if (!s || s->type != MECHANISM || memb_func[s->subtype].alloc != ion_alloc) {
         register_mech(mechanism, ion_alloc, ion_cur, nullptr, nullptr, ion_init, -1, 1);
-        hoc_symbol_limits(hoc_lookup(buf[2]), 1e-12, 1e9);
-        hoc_symbol_limits(hoc_lookup(buf[3]), 1e-12, 1e9);
-        hoc_symbol_units(hoc_lookup(buf[1]), "mV");
-        hoc_symbol_units(hoc_lookup(buf[2]), "mM");
-        hoc_symbol_units(hoc_lookup(buf[3]), "mM");
-        hoc_symbol_units(hoc_lookup(buf[5]), "mA/cm2");
-        hoc_symbol_units(hoc_lookup(buf[6]), "S/cm2");
-        s = hoc_lookup(buf[0]);
+        hoc_symbol_limits(hoc_lookup(buf[2].c_str()), 1e-12, 1e9);
+        hoc_symbol_limits(hoc_lookup(buf[3].c_str()), 1e-12, 1e9);
+        hoc_symbol_units(hoc_lookup(buf[1].c_str()), "mV");
+        hoc_symbol_units(hoc_lookup(buf[2].c_str()), "mM");
+        hoc_symbol_units(hoc_lookup(buf[3].c_str()), "mM");
+        hoc_symbol_units(hoc_lookup(buf[5].c_str()), "mA/cm2");
+        hoc_symbol_units(hoc_lookup(buf[6].c_str()), "S/cm2");
+        s = hoc_lookup(buf[0].c_str());
         mechtype = nrn_get_mechtype(mechanism[1]);
         hoc_register_prop_size(mechtype, nparm, 1);
         hoc_register_dparam_semantics(mechtype, 0, "iontype");
@@ -186,11 +183,11 @@ void ion_reg(const char* name, double valence) {
                                                  sizeof(double*) * ion_global_map_size);
         }
         ion_global_map[s->subtype] = (double*) emalloc(3 * sizeof(double));
-        Sprintf(buf[0], "%si0_%s", name, s->name);
-        scdoub[0].name = buf[0];
+        buf[0] = name_s + "i0_" + s->name;
+        scdoub[0].name = buf[0].c_str();
         scdoub[0].pdoub = ion_global_map[s->subtype];
-        Sprintf(buf[1], "%so0_%s", name, s->name);
-        scdoub[1].name = buf[1];
+        buf[1] = name_s + "o0_" + s->name;
+        scdoub[1].name = buf[1].c_str();
         scdoub[1].pdoub = ion_global_map[s->subtype] + 1;
         hoc_register_var(scdoub, (DoubVec*) 0, (VoidFunc*) 0);
         hoc_symbol_units(hoc_lookup(scdoub[0].name), "mM");
@@ -237,9 +234,6 @@ two USEION statements (%g and %g)\n",
         */
     } else if (valence != VAL_SENTINAL) {
         global_charge(s->subtype) = valence;
-    }
-    for (i = 0; i < 7; ++i) {
-        free(buf[i]);
     }
 }
 
@@ -436,7 +430,7 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
             }
             if (chk_conc_[2 * p->_type + i] & ion_bit_[pion->_type]) {
                 char buf[300];
-                sprintf(buf,
+                Sprintf(buf,
                         "%.*s%c is being written at the same location by %s and %s",
                         (int) strlen(memb_func[pion->_type].sym->name) - 4,
                         memb_func[pion->_type].sym->name,

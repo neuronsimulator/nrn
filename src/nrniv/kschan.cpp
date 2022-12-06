@@ -33,7 +33,7 @@ static Symbol* kstrans_sym;
 static void check_objtype(Object* o, Symbol* s) {
     if (o->ctemplate->sym != s) {
         char buf[200];
-        sprintf(buf, "%s is not a %s", o->ctemplate->sym->name, s->name);
+        Sprintf(buf, "%s is not a %s", o->ctemplate->sym->name, s->name);
         hoc_execerror(buf, 0);
     }
     if (!o->u.this_pointer) {
@@ -885,7 +885,7 @@ KSChan::KSChan(Object* obj, bool is_p) {
     mechsym_ = NULL;
     rlsym_ = NULL;
     char buf[50];
-    sprintf(buf, "Chan%d", obj_->index);
+    Sprintf(buf, "Chan%d", obj_->index);
     name_ = buf;
     ion_ = "NonSpecific";
     mat_ = NULL;
@@ -907,7 +907,7 @@ void KSChan::build() {
     char buf[100];
     if (strcmp(ion_.string(), "NonSpecific") != 0) {
         ion_reg(ion_.string(), -10000.);
-        sprintf(buf, "%s_ion", ion_.string());
+        Sprintf(buf, "%s_ion", ion_.string());
         ion_sym_ = looksym(buf);
         if (!ion_sym_) {
             hoc_execerror(buf, " is not an ion mechanism");
@@ -918,7 +918,7 @@ void KSChan::build() {
     if (is_point()) {
         unsuffix[0] = '\0';
     } else {
-        sprintf(unsuffix, "_%s", name_.string());
+        Sprintf(unsuffix, "_%s", name_.string());
     }
     if (looksym(suffix)) {
         hoc_execerror(suffix, "already exists");
@@ -969,14 +969,14 @@ void KSChan::setname(const char* s) {
         i = 0;
         while (strcmp(mechsym_->name, name_.string()) != 0 && looksym(name_.string())) {
             Printf("KSChan::setname %s already in use\n", name_.string());
-            sprintf(old_suffix, "%s%d", s, i);
+            Sprintf(old_suffix, "%s%d", s, i);
             name_ = old_suffix;
             ++i;
             // if want original name use if statement and something like this
             //			name_ = mechsym_->name
             //			return;
         }
-        sprintf(old_suffix, "_%s", mechsym_->name);
+        Sprintf(old_suffix, "_%s", mechsym_->name);
         const char* suffix = name_.string();
         free(mechsym_->name);
         mechsym_->name = strdup(suffix);
@@ -996,7 +996,7 @@ void KSChan::setname(const char* s) {
                     char* s1 = static_cast<char*>(hoc_Emalloc(n));
                     hoc_malchk();
                     strncpy(s1, sp->name, nbase);
-                    sprintf(s1 + nbase, "_%s", suffix);
+                    std::snprintf(s1 + nbase, n - nbase, "_%s", suffix);
                     // printf("KSChan::setname change %s to %s\n", sp->name, s1);
                     free(sp->name);
                     sp->name = s1;
@@ -1193,9 +1193,9 @@ void KSChan::setion(const char* s) {
             }
             ion_sym_ = NULL;
             if (is_point()) {
-                sprintf(buf, "e");
+                Sprintf(buf, "e");
             } else {
-                sprintf(buf, "e_%s", rlsym_->name);
+                Sprintf(buf, "e_%s", rlsym_->name);
             }
             if (looksym(buf, searchsym)) {
                 hoc_execerror(buf, "already exists");
@@ -1218,7 +1218,7 @@ void KSChan::setion(const char* s) {
         }
     } else {  // want useion
         pdoff = 5 + ppoff_;
-        sprintf(buf, "%s_ion", s);
+        Sprintf(buf, "%s_ion", s);
         // is it an ion
         Symbol* sym = looksym(buf);
         if (!sym || sym->type != MECHANISM ||
@@ -1362,7 +1362,7 @@ void KSChan::setcond() {
 void KSChan::setligand(int i, const char* lig) {
     char buf[100];
     // printf("KSChan::setligand %d %s\n", i, lig);
-    sprintf(buf, "%s_ion", lig);
+    Sprintf(buf, "%s_ion", lig);
     Symbol* s = looksym(buf);
     if (!s) {
         ion_reg(lig, 0);
@@ -1974,7 +1974,7 @@ for (i=0; i < vec->size(); ++i) {
                 state_[i].name_ = state_old[i].name_;
             } else {
                 char buf[20];
-                sprintf(buf, "s%d", i);
+                Sprintf(buf, "s%d", i);
                 state_[i].name_ = buf;
             }
         }
@@ -2032,7 +2032,7 @@ void KSChan::sname_install() {
     if (is_point()) {
         unsuffix[0] = '\0';
     } else {
-        sprintf(unsuffix, "_%s", mechsym_->name);
+        Sprintf(unsuffix, "_%s", mechsym_->name);
     }
     // there need to be symbols for nstate_ states
     int i;
@@ -2068,11 +2068,11 @@ void KSChan::sname_install() {
     // fill the names checking for conflicts
     char buf[100], buf1[100];
     for (i = 0; i < nstate_; ++i) {
-        sprintf(buf, "%s%s", state_[i].string(), unsuffix);
+        Sprintf(buf, "%s%s", state_[i].string(), unsuffix);
         int j = 0;
         buf1[0] = '\0';
         while (looksym(buf, searchsym)) {
-            sprintf(buf1, "%s%d", state_[i].string(), j++);
+            Sprintf(buf1, "%s%d", state_[i].string(), j++);
             nrn_assert(snprintf(buf, 100, "%s%s", buf1, unsuffix) < 100);
         }
         free(snew[i + soffset_]->name);
@@ -2350,8 +2350,10 @@ void KSChan::ion_consist() {
                 continue;
             }
             p->dparam = (Datum*) erealloc(p->dparam, ppsize * sizeof(Datum));
-            // printf("KSChan::ion_consist %s node %d mtype=%d ion_type=%d\n",
-            // secname(sec), i, mtype, ion_sym_->subtype);
+            if (is_point() && is_single() && !single_) {
+                // Leave nullptr in KSSingleNodeData slot.
+                p->dparam[2] = nullptr;
+            }
             if (ion_sym_) {
                 pion = needion(ion_sym_, nd, p);
                 if (cond_model_ == 0) {  // ohmic

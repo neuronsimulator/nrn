@@ -354,7 +354,7 @@ function(nrn_add_test)
     # We want to preserve directory structures, so if you pass SCRIPT_PATTERNS path/to/*.py then you
     # end up with {build_directory}/path/to/test_working_directory/path/to/script.py
     file(
-      GLOB_RECURSE script_files
+      GLOB script_files
       RELATIVE "${test_source_directory}/${sim_directory}"
       "${test_source_directory}/${sim_directory}/${script_pattern}")
     foreach(script_file ${script_files})

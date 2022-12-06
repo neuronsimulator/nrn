@@ -352,7 +352,7 @@ extern char* neuron_home;
 void load_ocmatrix() {
     struct DLL* dll = NULL;
     char buf[256];
-    sprintf(buf, "%s\\lib\\ocmatrix.dll", neuron_home);
+    Sprintf(buf, "%s\\lib\\ocmatrix.dll", neuron_home);
     dll = dll_load(buf);
     if (dll) {
         Pfri mreg = (Pfri) dll_lookup(dll, "_Matrix_reg");

@@ -231,11 +231,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     NAME hoctests
     MODFILE_PATTERNS *.mod
     SIM_DIRECTORY test/hoctests)
-  set(py_exe ${PYTHON_EXECUTABLE})
-  set(py_preload PRELOAD_SANITIZER)
-  set(hoc_exe nrniv)
   set(hoctest_utils expect_err.hoc)
-
   foreach(ext hoc py)
     file(
       GLOB hoc_scripts
@@ -247,7 +243,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         GROUP hoctests
         NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
         COMMAND ${${ext}_exe} "${hoc_script}"
-        SCRIPT_PATTERNS "${hoc_script}" "${name}.ses" ${hoctest_utils})
+        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})
     endforeach()
   endforeach()
 
@@ -255,7 +251,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     nrn_add_test_group(
       NAME rxdmod_tests
       MODFILE_PATTERNS test/rxd/*.mod
-      SCRIPT_PATTERNS test/rxd/*.py test/rxd/3d/*.asc test/rxd/testdata/*.dat)
+      SCRIPT_PATTERNS test/rxd/*.py test/rxd/3d/*.asc test/rxd/testdata/**/*.dat)
     # These tests include comparisons against saved data, which appears to have been generated using
     # GCC. Other compilers produce larger differences.
     if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
@@ -592,6 +588,19 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
     endif()
   endforeach()
+
+  if(NRN_ENABLE_MUSIC)
+    nrn_add_test_group(
+      NAME nrnmusic
+      ENVIRONMENT MUSIC_LIBDIR=${MUSIC_LIBDIR}
+      MODFILE_PATTERNS NONE)
+    nrn_add_test(
+      GROUP nrnmusic
+      NAME music_tests
+      PROCESSORS 2
+      COMMAND ${PYTHON_EXECUTABLE} test/music_tests/runtests.py
+      SCRIPT_PATTERNS test/music_tests/*.music test/music_tests/*.py)
+  endif()
 endif()
 
 # ============================================

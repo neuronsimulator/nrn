@@ -853,7 +853,7 @@ void Scene::save_all(std::ostream& o) {
     }
     long count = scene_list->count();
     if (count) {
-        sprintf(buf, "objectvar scene_vector_[%ld]", count);
+        Sprintf(buf, "objectvar scene_vector_[%ld]", count);
         o << buf << std::endl;
     }
     for (long i = 0; i < count; ++i) {
@@ -877,7 +877,7 @@ void Scene::save_class(std::ostream& o, const char* s) {
         top = y2();
     }
 
-    sprintf(buf, "save_window_.size(%g,%g,%g,%g)", left, right, bottom, top);
+    Sprintf(buf, "save_window_.size(%g,%g,%g,%g)", left, right, bottom, top);
     o << buf << std::endl;
 }
 

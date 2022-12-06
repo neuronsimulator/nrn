@@ -333,7 +333,6 @@ static Menuitem* append(int imenu) {
 static void appendvar(int imenu, const char* variable, const char* command) {
     Menuitem* item;
     int i, len;
-    char buf[256];
     Psym* p;
 
     item = append(imenu);
@@ -345,14 +344,14 @@ static void appendvar(int imenu, const char* variable, const char* command) {
     } else {
         item->command = (char*) 0;
     }
-    Sprintf(buf, "%s", p->sym->name);
-    len = strlen(buf);
+    std::string buf{p->sym->name};
     for (i = 0; i < p->nsub; i++) {
-        Sprintf(buf + len, "[%d]", p->sub[i]);
-        len = strlen(buf);
+        buf.append(1, '[');
+        buf.append(std::to_string(p->sub[i]));
+        buf.append(1, ']');
     }
-    item->prompt = (char*) emalloc((unsigned) (len + 1));
-    Strcpy(item->prompt, buf);
+    item->prompt = static_cast<char*>(emalloc(buf.size() + 1));
+    Strcpy(item->prompt, buf.c_str());
 }
 
 static void appendaction(int imenu, const char* prompt, const char* command) {
@@ -534,13 +533,13 @@ static double enter(int row, int col, double defalt, int frstch, Menuitem* pnow)
     xcursor(row, ++col);
     if (frstch != 13) {
         *istrptr++ = frstch;
-        sprintf(buf, "%c", istr[0]);
+        Sprintf(buf, "%c", istr[0]);
         plprint(buf);
     }
     for (;;) {
         key = ibmgetc();
         if (isdigit(key) || key == '.' || key == 'e' || key == '-' || key == '+') {
-            sprintf(buf, "%c", key);
+            Sprintf(buf, "%c", key);
             plprint(buf);
             *istrptr++ = key;
             continue;
@@ -588,10 +587,10 @@ static void prs(int oldnew, int row, int col, const char* string) {
     char buf[100];
     xcursor(row, col);
     if (oldnew == 0) {
-        sprintf(buf, "%-13s", string);
+        Sprintf(buf, "%-13s", string);
         plprint(buf);
     } else {
-        sprintf(buf, "%13c", SPACE);
+        Sprintf(buf, "%13c", SPACE);
         plprint(buf);
         xcursor(row, col);
         snprintf(buf, 100, "<%s>", string);

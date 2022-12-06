@@ -129,20 +129,22 @@ static void set_nrnpylib() {
         char* fnrnhome = strdup(neuron_home);
         hoc_forward2back(bnrnhome);
         hoc_back2forward(fnrnhome);
-        sprintf(line,
-                "%s\\mingw\\usr\\bin\\bash %s/bin/nrnpyenv.sh %s --NEURON_HOME=%s",
-                bnrnhome,
-                fnrnhome,
-                (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "",
-                fnrnhome);
+        std::snprintf(line,
+                      linesz + 1,
+                      "%s\\mingw\\usr\\bin\\bash %s/bin/nrnpyenv.sh %s --NEURON_HOME=%s",
+                      bnrnhome,
+                      fnrnhome,
+                      (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "",
+                      fnrnhome);
         free(fnrnhome);
         free(bnrnhome);
 #else
         char* line = new char[linesz + 1];
-        sprintf(line,
-                "bash %s/../../bin/nrnpyenv.sh %s",
-                neuron_home,
-                (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
+        std::snprintf(line,
+                      linesz + 1,
+                      "bash %s/../../bin/nrnpyenv.sh %s",
+                      neuron_home,
+                      (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
 #endif
         FILE* p = popen(line, "r");
         if (!p) {
@@ -299,12 +301,12 @@ static void* ver_dlo(int flag) {
     for (int i = 0; ver[i]; ++i) {
         char name[100];
 #ifdef MINGW
-        sprintf(name, "python%c%c.dll", ver[i][0], ver[i][2]);
+        Sprintf(name, "python%c%c.dll", ver[i][0], ver[i][2]);
 #else
 #if DARWIN
-        sprintf(name, "libpython%s.dylib", ver[i]);
+        Sprintf(name, "libpython%s.dylib", ver[i]);
 #else
-        sprintf(name, "libpython%s.so", ver[i]);
+        Sprintf(name, "libpython%s.so", ver[i]);
 #endif
 #endif
         void* handle = dlopen(name, flag);
@@ -341,12 +343,12 @@ static void* load_sym(void* handle, const char* name) {
 static void* load_nrnpython_helper(const char* npylib) {
     char name[2048];
 #ifdef MINGW
-    sprintf(name, "%s.dll", npylib);
+    Sprintf(name, "%s.dll", npylib);
 #else  // !MINGW
 #if DARWIN
-    sprintf(name, "%s/../../lib/%s.dylib", neuron_home, npylib);
+    Sprintf(name, "%s/../../lib/%s.dylib", neuron_home, npylib);
 #else   // !DARWIN
-    sprintf(name, "%s/../../lib/%s.so", neuron_home, npylib);
+    Sprintf(name, "%s/../../lib/%s.so", neuron_home, npylib);
 #endif  // DARWIN
 #endif  // MINGW
     void* handle = dlopen(name, RTLD_NOW);
@@ -378,7 +380,7 @@ static void load_nrnpython(int pyver10, const char* pylib) {
     if (pyver10 < 1 && pylib) {
         pv10 = pylib2pyver10(pylib);
     }
-    sprintf(name, "libnrnpython%d", pv10);
+    Sprintf(name, "libnrnpython%d", pv10);
     handle = load_nrnpython_helper(name);
     if (!handle) {
         printf("Could not load %s\n", name);

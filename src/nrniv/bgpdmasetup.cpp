@@ -15,7 +15,7 @@ the source host owning the gid.
 void celldebug(const char* p, Gid2PreSyn& map) {
 	FILE* f;
 	char fname[100];
-	sprintf(fname, "debug.%d", nrnmpi_myid);
+	Sprintf(fname, "debug.%d", nrnmpi_myid);
 	f = fopen(fname, "a");
 	fprintf(f, "\n%s\n", p);
 	int rank = nrnmpi_myid;
@@ -31,7 +31,7 @@ void celldebug(const char* p, Gid2PreSyn& map) {
 void alltoalldebug(const char* p, int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl){
 	FILE* f;
 	char fname[100];
-	sprintf(fname, "debug.%d", nrnmpi_myid);
+	Sprintf(fname, "debug.%d", nrnmpi_myid);
 	f = fopen(fname, "a");
 	fprintf(f, "\n%s\n", p);
 	int rank = nrnmpi_myid;
@@ -61,7 +61,7 @@ void alltoalldebug(const char* p, int* s, int* scnt, int* sdispl, int* r, int* r
 void phase1debug() {
 	FILE* f;
 	char fname[100];
-	sprintf(fname, "debug.%d", nrnmpi_myid);
+	Sprintf(fname, "debug.%d", nrnmpi_myid);
 	f = fopen(fname, "a");
 	fprintf(f, "\nphase1debug %d", nrnmpi_myid);
 	for (const auto* iter: gid2out_) {
@@ -79,7 +79,7 @@ void phase1debug() {
 void phase2debug() {
 	FILE* f;
 	char fname[100];
-	sprintf(fname, "debug.%d", nrnmpi_myid);
+	Sprintf(fname, "debug.%d", nrnmpi_myid);
 	f = fopen(fname, "a");
 	fprintf(f, "\nphase2debug %d", nrnmpi_myid);
 	for (const auto& iter: gid2in_) {

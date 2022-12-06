@@ -215,7 +215,7 @@ if build_rx3d:
   except:
     pass
 
-packages=['neuron','neuron.neuroml','neuron.tests', 'neuron.rxd', 'neuron.crxd', 'neuron.gui2']
+packages=['neuron','neuron.neuroml','neuron.tests', 'neuron.tests.utils', 'neuron.rxd', 'neuron.crxd', 'neuron.gui2']
 if build_rx3d:
   packages +=['neuron.rxd.geometry3d']
 

@@ -91,7 +91,7 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
     List* errstmt = newlist();
     lq = lappendsym(solvq, SYM0);
     LST(lq) = errstmt;
-    sprintf(buf,
+    Sprintf(buf,
             "if(error){fprintf(stderr,\"%s\\n\"); nrn_complain(_p); abort_run(error);}\n",
             current_line());
     insertstr(errstmt, buf);
