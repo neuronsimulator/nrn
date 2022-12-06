@@ -2223,14 +2223,12 @@ void KSChan::mat_dt(double dt, Memb_list* ml, std::size_t instance, std::size_t 
 void KSChan::solvemat(Memb_list* ml, std::size_t instance, std::size_t offset) {
     // spSolve seems to require that the parameters are contiguous, which
     // they're not anymore in the real NEURON data structure
-    std::vector<double> s;
-    s.resize(nksstate_ + 1);  // +1 so the pointer arithmetic to account for 1-based indexing is
-                              // valid
+    std::vector<double> s(nksstate_ + 1);  // +1 so the pointer arithmetic to account for 1-based
+                                           // indexing is valid
     for (auto j = 0; j < nksstate_; ++j) {
         s[j + 1] = ml->data(instance, offset + j);
     }
-    int e;
-    e = spFactor(mat_);
+    auto const e = spFactor(mat_);
     if (e != spOKAY) {
         switch (e) {
         case spZERO_DIAG:
@@ -2242,6 +2240,10 @@ void KSChan::solvemat(Memb_list* ml, std::size_t instance, std::size_t offset) {
         }
     }
     spSolve(mat_, s.data(), s.data());
+    // Propgate the solution back to the mechanism data
+    for (auto j = 0; j < nksstate_; ++j) {
+        ml->data(instance, offset + j) = s[j + 1];
+    }
 }
 
 void KSChan::mulmat(Memb_list* ml,
@@ -2257,6 +2259,11 @@ void KSChan::mulmat(Memb_list* ml,
         ds[j + 1] = ml->data(instance, offset_ds + j);
     }
     spMultiply(mat_, ds.data(), s.data());
+    // Propagate the results
+    for (auto j = 0; j < nksstate_; ++j) {
+        ml->data(instance, offset_s + j) = s[j + 1];
+        ml->data(instance, offset_ds + j) = ds[j + 1];
+    }
 }
 
 /** @brief Propagate changes to the number of floating point parameters.
