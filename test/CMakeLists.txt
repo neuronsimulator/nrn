@@ -454,10 +454,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   endforeach()
 
   if(NRN_ENABLE_MUSIC)
-    nrn_add_test_group(
-      NAME nrnmusic
-      ENVIRONMENT MUSIC_LIBDIR=${MUSIC_LIBDIR}
-      MODFILE_PATTERNS NONE)
+    nrn_add_test_group(NAME nrnmusic ENVIRONMENT MUSIC_LIBDIR=${MUSIC_LIBDIR} MODFILE_PATTERNS NONE)
     nrn_add_test(
       GROUP nrnmusic
       NAME music_tests
