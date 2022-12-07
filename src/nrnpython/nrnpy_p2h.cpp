@@ -319,8 +319,13 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         }
     } else if (nindex) {
         PyObject* arg;
-        if (hoc_stack_type_is_ndim()) {
-            hoc_pop_ndim();
+        int n = hoc_pop_ndim();
+        if (n > 1) {
+            hoc_execerr_ext(
+                "%d dimensional python objects "
+                "can't be accessed from hoc with var._[i1][i2]... syntax. "
+                "Must use var._[i1]._[i2]... hoc syntax.",
+                n);
         }
         if (hoc_stack_type() == NUMBER) {
             arg = Py_BuildValue("l", (long) hoc_xpop());
@@ -393,8 +398,16 @@ static void hpoasgn(Object* o, int type) {
     if (nindex == 0) {
         err = PyObject_SetAttrString(poleft, sym->name, poright);
     } else if (nindex == 1) {
+        int ndim = hoc_pop_ndim();
+        assert(ndim == 1);
         PyObject* key = PyLong_FromDouble(hoc_xpop());
-        PyObject* a = PyObject_GetAttrString(poleft, sym->name);
+        PyObject* a;
+        if (strcmp(sym->name, "_") == 0) {
+            a = poleft;
+            Py_INCREF(a);
+        } else {
+            a = PyObject_GetAttrString(poleft, sym->name);
+        }
         if (a) {
             err = PyObject_SetItem(a, key, poright);
             Py_DECREF(a);
@@ -403,9 +416,11 @@ static void hpoasgn(Object* o, int type) {
         }
         Py_DECREF(key);
     } else {
-        char buf[512];
-        Sprintf(buf, "%s.%s[][]...=...:", hoc_object_name(o), sym->name);
-        hoc_execerror(buf, "HOC cannot handle PythonObject assignment with more than one index.");
+        hoc_execerr_ext(
+            "%d dimensional python objects "
+            "can't be accessed from hoc with var._[i1][i2]... syntax. "
+            "Must use var._[i1]._[i2]... hoc syntax.",
+            nindex);
     }
     Py_DECREF(poright);
     if (err) {
