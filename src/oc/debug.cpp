@@ -56,7 +56,7 @@ void debugzz(Inst* p) {
         prcod(forcode, "FORCODE\n");
         prcod(shortfor, "SHORTFOR\n");
         prcod(call, "CALL\n");
-        prcod(arg, "ARG\n");
+        prcod(hoc_arg, "ARG\n");
         prcod(argassign, "ARGASSIGN\n");
         prcod(funcret, "FUNCRET\n");
         prcod(procret, "PROCRET\n");

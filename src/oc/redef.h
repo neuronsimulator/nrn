@@ -25,7 +25,6 @@
 #define arayinstal         hoc_arayinstal
 #define free_arrayinfo     hoc_free_arrayinfo
 #define araypt             hoc_araypt
-#define arg                hoc_arg
 #define argassign          hoc_argassign
 #define assstr             hoc_assstr
 #define bltin              hoc_bltin

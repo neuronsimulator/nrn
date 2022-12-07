@@ -141,7 +141,7 @@ static struct HocInst {
                  {forcode, "iii"},
                  {shortfor, "ii"},
                  {call, "si"},  // 30
-                 {arg, "i"},
+                 {hoc_arg, "i"},
                  {argassign, "i"},
                  {funcret, 0},
                  {procret, 0},

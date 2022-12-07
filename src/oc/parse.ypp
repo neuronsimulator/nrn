@@ -659,7 +659,7 @@ expr:	NUMBER
 	| varname
 		{ code3(varpush, spop(), eval); PN;}
 	| ARG
-		{ defnonly("$"); $$ = argcode(arg, $1); PN;}
+		{ defnonly("$"); $$ = argcode(hoc_arg, $1); PN;}
 	| ARGREF argrefdim
 		{ defnonly("$&"); $$ = argrefcode(hoc_argref, $1, $2); PN;}
 /* NEWCABLE */
