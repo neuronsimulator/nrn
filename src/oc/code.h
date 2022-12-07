@@ -13,7 +13,8 @@ void hoc_assign();
 extern void bltin(void), varpush(void), constpush(void), print(void), varread(void);
 extern void prexpr(void), prstr(void), assstr(void), pushzero(void);
 extern void hoc_chk_sym_has_ndim(), hoc_chk_sym_has_ndim1(), hoc_chk_sym_has_ndim2();
-extern void gt(void), lt(void), eq(void), ge(void), le(void), ne(void), hoc_and(void), hoc_or(void),
+void hoc_eq();
+extern void gt(void), lt(void), ge(void), le(void), ne(void), hoc_and(void), hoc_or(void),
     hoc_not(void);
 extern void ifcode(void), forcode(void), shortfor(void), call(void), arg(void), argassign(void);
 extern void hoc_argrefasgn(void), hoc_argref(void), hoc_iterator(void), hoc_iterator_stmt(void);

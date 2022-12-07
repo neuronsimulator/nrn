@@ -44,7 +44,6 @@
 #define defnonly           hoc_defnonly
 #define dep_make           hoc_dep_make
 #define do_equation        hoc_do_equation
-#define eq                 hoc_eq
 #define eqinit             hoc_eqinit
 #define eqn_init           hoc_eqn_init
 #define eqn_lhs            hoc_eqn_lhs

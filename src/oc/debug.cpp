@@ -45,7 +45,7 @@ void debugzz(Inst* p) {
         prcod(prstr, "PRSTR\n");
         prcod(gt, "GT\n");
         prcod(lt, "LT\n");
-        prcod(eq, "EQ\n");
+        prcod(hoc_eq, "EQ\n");
         prcod(ge, "GE\n");
         prcod(le, "LE\n");
         prcod(ne, "NE\n");

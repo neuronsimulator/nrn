@@ -708,7 +708,7 @@ expr:	NUMBER
 	| expr LE expr
 		{ TPD; TPD; code(le); PN;}
 	| expr EQ expr
-		{ hoc_ob_check(-1); hoc_ob_check(-1); code(eq); PN;}
+		{ hoc_ob_check(-1); hoc_ob_check(-1); code(hoc_eq); PN;}
 	| expr NE expr
 		{ hoc_ob_check(-1); hoc_ob_check(-1); code(ne); PN;}
 	| expr AND expr
