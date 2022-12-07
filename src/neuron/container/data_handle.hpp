@@ -12,11 +12,11 @@ struct do_not_search_t {};
 inline constexpr do_not_search_t do_not_search{};
 
 namespace detail {
-template <typename T, typename = void>
-inline constexpr bool has_output_operator_v = false;
+inline auto print_value(...) {}
 template <typename T>
-inline constexpr bool
-    has_output_operator_v<T, std::void_t<decltype(std::cout << std::declval<T>())>> = true;
+inline auto print_value(std::ostream& os, T const& val) -> decltype(os << val) {
+    return os << " val=" << val;
+}
 }  // namespace detail
 
 /** @brief Stable handle to a generic value.
@@ -207,10 +207,8 @@ struct data_handle {
                 os << "cont=unknown " << dh.m_offset << "/unknown";
             }
             // print the value if it has an output operator
-            if constexpr (detail::has_output_operator_v<T>) {
-                if (valid) {
-                    os << " val=" << *dh;
-                }
+            if (valid) {
+                detail::print_value(os, *dh);
             }
         } else if (dh.m_container_or_raw_ptr) {
             os << "raw=" << dh.m_container_or_raw_ptr;
