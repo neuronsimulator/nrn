@@ -15,8 +15,10 @@ include(NeuronTestHelper)
 add_executable(testneuron unit_tests/unit_test.cpp unit_tests/oc/hoc_interpreter.cpp
                           unit_tests/threads/test_multicore.cpp)
 cpp_cc_configure_sanitizers(TARGET testneuron)
-target_compile_features(testneuron PUBLIC cxx_std_11)
+target_compile_features(testneuron PUBLIC cxx_std_17)
 target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
+target_compile_definitions(testneuron PUBLIC "USE_PYTHON=${USE_PYTHON}")
+
 if(NRN_ENABLE_THREADS)
   target_link_libraries(testneuron Threads::Threads)
 endif()
