@@ -129,7 +129,7 @@ static struct HocInst {
                  {prexpr, 0},
                  {prstr, 0},
                  {gt, 0},
-                 {lt, 0},
+                 {hoc_lt, nullptr},
                  {hoc_eq, nullptr},  // 20
                  {ge, 0},
                  {le, 0},

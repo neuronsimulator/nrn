@@ -704,7 +704,7 @@ expr:	NUMBER
 	| expr GE expr
 		{ TPD; TPD; code(ge); PN;}
 	| expr LT expr
-		{ TPD; TPD; code(lt); PN;}
+		{ TPD; TPD; code(hoc_lt); PN;}
 	| expr LE expr
 		{ TPD; TPD; code(le); PN;}
 	| expr EQ expr

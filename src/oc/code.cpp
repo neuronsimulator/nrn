@@ -2070,7 +2070,7 @@ void gt(void) {
     hoc_pushx(d1);
 }
 
-void lt(void) {
+void hoc_lt() {
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();

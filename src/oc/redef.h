@@ -85,7 +85,6 @@
 #define le                 hoc_le
 #define lineno             hoc_lineno
 #define lookup             hoc_lookup
-#define lt                 hoc_lt
 #define mul                hoc_mul
 #define ne                 hoc_ne
 #define negate             hoc_negate
