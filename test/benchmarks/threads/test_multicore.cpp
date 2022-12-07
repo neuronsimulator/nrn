@@ -1,16 +1,16 @@
+#include "test_multicore.h"
+
+#include "code.h"
+#include "hocdec.h"
+#include "multicore.h"
+#include "nrn_ansi.h"
+#include "ocfunc.h"
+
 #include <catch2/catch.hpp>
 
-#include <hocdec.h>
-#include <ocfunc.h>
-#include <code.h>
-#include <thread>
 #include <algorithm>
+#include <iostream>
 #include <vector>
-#include "../unit_test.h"
-
-#ifdef NRN_ENABLE_THREADS
-#include <multicore.h>
-#include <nrn_ansi.h>
 
 extern int use_cachevec;
 
@@ -241,4 +241,3 @@ TEST_CASE("Multicore unit and performance testing", "[NEURON][multicore]") {
         }
     }
 }
-#endif  // NRN_ENABLE_THREADS
