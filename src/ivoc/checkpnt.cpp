@@ -117,7 +117,7 @@ static struct HocInst {
                  {hoc_sub, 0},
                  {mul, 0},
                  {hoc_div, 0},
-                 {negate, 0},
+                 {hoc_negate, nullptr},
                  {power, 0},
                  {hoc_assign, nullptr},
                  {bltin, "s"},    // requires change

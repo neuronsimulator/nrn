@@ -86,7 +86,6 @@
 #define lookup             hoc_lookup
 #define mul                hoc_mul
 #define ne                 hoc_ne
-#define negate             hoc_negate
 #define onintr             hoc_onintr
 #define p_symlist          hoc_p_symlist
 #define parserror          hoc_parserror

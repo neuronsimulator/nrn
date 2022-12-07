@@ -698,7 +698,7 @@ expr:	NUMBER
 	| expr '^' expr
 		{ TPD; TPD; code(power); PN;}
 	| '-' expr %prec UNARYMINUS
-		{ TPD; $$ = $2; code(negate); PN;}
+		{ TPD; $$ = $2; code(hoc_negate); PN;}
 	| expr GT expr
 		{ TPD; TPD; code(gt); PN;}
 	| expr GE expr

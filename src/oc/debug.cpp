@@ -32,7 +32,7 @@ void debugzz(Inst* p) {
         prcod(hoc_sub, "SUB\n");
         prcod(mul, "MUL\n");
         prcod(hoc_div, "DIV\n");
-        prcod(negate, "NEGATE\n");
+        prcod(hoc_negate, "NEGATE\n");
         prcod(power, "POWER\n");
         prcod(hoc_assign, "ASSIGN\n");
         prcod(bltin, "BLTIN\n");

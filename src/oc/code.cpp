@@ -2054,10 +2054,9 @@ void hoc_cyclic(void) /* the modulus function */
     hoc_pushx(r);
 }
 
-void negate(void) /* negate top element on stack */
-{
-    double d;
-    d = hoc_xpop();
+// negate top element on stack
+void hoc_negate() {
+    double const d = hoc_xpop();
     hoc_pushx(-d);
 }
 
