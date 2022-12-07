@@ -319,6 +319,9 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         }
     } else if (nindex) {
         PyObject* arg;
+        if (hoc_stack_type_is_ndim()) {
+            hoc_pop_ndim();
+        }
         if (hoc_stack_type() == NUMBER) {
             arg = Py_BuildValue("l", (long) hoc_xpop());
         } else {
