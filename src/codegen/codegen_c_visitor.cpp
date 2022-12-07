@@ -781,6 +781,7 @@ void CodegenCVisitor::update_index_semantics() {
             }
         }
         if (ion.need_style) {
+            info.semantics.emplace_back(index++, ion.name, 1);  // to match NEURON
             info.semantics.emplace_back(index++, fmt::format("#{}_ion", ion.name), 1);
         }
     }
