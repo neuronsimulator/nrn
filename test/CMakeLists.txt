@@ -13,8 +13,9 @@ include(NeuronTestHelper)
 # =============================================================================
 # Test executables
 # =============================================================================
-add_executable(testneuron common/catch2_main.cpp unit_tests/basic.cpp unit_tests/container/mechanism.cpp
-                          unit_tests/container/node.cpp unit_tests/oc/hoc_interpreter.cpp)
+add_executable(
+  testneuron common/catch2_main.cpp unit_tests/basic.cpp unit_tests/container/mechanism.cpp
+             unit_tests/container/node.cpp unit_tests/oc/hoc_interpreter.cpp)
 set(catch2_targets testneuron)
 # Benchmarks are known to be slow if you turn off optimisation...
 if(NRN_ENABLE_THREADS AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
