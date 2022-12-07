@@ -119,7 +119,7 @@ static struct HocInst {
                  {hoc_div, 0},
                  {negate, 0},
                  {power, 0},
-                 {assign, 0},
+                 {hoc_assign, nullptr},
                  {bltin, "s"},    // requires change
                  {varpush, "s"},  // 10
                  {constpush, "s"},
