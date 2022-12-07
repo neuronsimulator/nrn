@@ -1,6 +1,7 @@
 #include "neuron/container/mechanism.hpp"
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/container/soa_container.hpp"
+#include "neuron/model_data.hpp"
 
 #include <catch2/catch.hpp>
 

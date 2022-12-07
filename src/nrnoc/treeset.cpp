@@ -1754,8 +1754,8 @@ void v_setup_vectors(void) {
             // side of this story and why it is useful to have artificial cell
             // data blocked by thread.
             std::vector<std::size_t> thread_offsets(nrn_nthread);
-            for (auto i = 1; i < nrn_nthread; ++i) {
-                thread_offsets[i] = std::exchange(thread_counts[i - 1], 0) + thread_offsets[i - 1];
+            for (auto j = 1; j < nrn_nthread; ++j) {
+                thread_offsets[j] = std::exchange(thread_counts[j - 1], 0) + thread_offsets[j - 1];
             }
             thread_counts[nrn_nthread - 1] = 0;
             ITERATE(q, list) {
