@@ -2205,9 +2205,7 @@ int iondef(int* p_pointercount) {
             Sprintf(buf, "#define _ion_%s_erev *_ppvar[%d].get<double*>()\n", sion->name, ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
-            // olupton 2022-10-27: The ppvar semantics here are a bit of a guess
-            sprintf(buf, "%s", ionname);
-            ppvar_semantics(ioncount, buf);
+            ppvar_semantics(ioncount, ionname);  // ppvar semantics by trial-and-error
             ioncount++;
             Sprintf(buf, "#define _style_%s\t*_ppvar[%d].get<int*>()\n", sion->name, ioncount);
             q2 = lappendstr(defs_list, buf);
