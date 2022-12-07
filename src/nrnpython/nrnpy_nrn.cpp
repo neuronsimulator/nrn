@@ -2256,7 +2256,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
                        0);
     } else {
         assert(ix == 0);  // d += ix;
-        if (!PyArg_Parse(value, "d", d)) {
+        if (!PyArg_Parse(value, "d", static_cast<double const*>(d))) {
             PyErr_SetString(PyExc_ValueError, "bad value");
             return -1;
         }
