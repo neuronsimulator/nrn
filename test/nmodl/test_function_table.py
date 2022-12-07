@@ -9,7 +9,7 @@ def test_function_table():
     k3st_cell = k3stCell()
     k3st_cell.record()
     k3st_cell.simulate(1, 0.1)
-    # assert np.isclose([k3st_cell.record_vectors["tau1_rec"][2]], [8.1])  # For the moment this check is failing
+    assert np.isclose([k3st_cell.record_vectors["tau1_rec"][2]], [8.1])
     assert np.isclose([k3st_cell.record_vectors["tau2_rec"][2]], [100])
 
 
