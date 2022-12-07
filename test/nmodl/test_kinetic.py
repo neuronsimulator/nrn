@@ -14,4 +14,4 @@ def test_kinetic():
 
 if __name__ == "__main__":
     set_quiet(False)
-    test_function_table()
+    test_kinetic()
