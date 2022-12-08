@@ -408,39 +408,39 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     ENVIRONMENT COVERAGE_FILE=.coverage.coreneuron_version_macros NRN_CORENEURON_ENABLE=true
                 ${sonata_zero_gid_env} ${nrnpython_mpi_env}
     COMMAND ${modtests_launch_py} test/pynrn/test_version_macros.py)
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME test_table
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/nmodl/test_table.py
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME test_disc
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/nmodl/test_disc.py
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/nmodl/test_disc.py)
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME test_function_table
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/nmodl/test_function_table.py
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/nmodl/test_function_table.py)
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME test_kinetic
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/nmodl/test_kinetic.py
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/nmodl/test_kinetic.py)
   # In GPU builds run all of the tests on both CPU and GPU
   set(coreneuron_modtests_gpu_env CORENRN_ENABLE_GPU=true)
   foreach(processor cpu gpu)
     set(processor_env ${coreneuron_modtests_${processor}_env})
     set(modtests_processor_env ${processor_env} ${sonata_zero_gid_env})
-    nrn_add_test(
-      GROUP nmodl_tests
-      NAME test_table_${processor}
-      REQUIRES ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/nmodl/test_table.py
-      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
-      COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
-    nrn_add_test(
-      GROUP nmodl_tests
-      NAME test_disc_${processor}
-      REQUIRES ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/nmodl/test_disc.py
-      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
-      COMMAND ${modtests_launch_py} test/nmodl/test_disc.py)
-    nrn_add_test(
-      GROUP nmodl_tests
-      NAME test_function_table_${processor}
-      REQUIRES ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/nmodl/test_function_table.py
-      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
-      COMMAND ${modtests_launch_py} test/nmodl/test_function_table.py)
-    nrn_add_test(
-      GROUP nmodl_tests
-      NAME test_kinetic_${processor}
-      REQUIRES ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/nmodl/test_kinetic.py
-      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
-      COMMAND ${modtests_launch_py} test/nmodl/test_kinetic.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME fornetcon_py_${processor}
