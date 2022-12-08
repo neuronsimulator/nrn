@@ -416,28 +416,28 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     nrn_add_test(
       GROUP nmodl_tests
       NAME test_table_${processor}
-      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      REQUIRES ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/nmodl/test_table.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
       COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
     nrn_add_test(
       GROUP nmodl_tests
       NAME test_disc_${processor}
-      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      REQUIRES ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/nmodl/test_disc.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
       COMMAND ${modtests_launch_py} test/nmodl/test_disc.py)
     nrn_add_test(
       GROUP nmodl_tests
       NAME test_function_table_${processor}
-      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      REQUIRES ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/nmodl/test_function_table.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
       COMMAND ${modtests_launch_py} test/nmodl/test_function_table.py)
     nrn_add_test(
       GROUP nmodl_tests
       NAME test_kinetic_${processor}
-      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      REQUIRES ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/nmodl/test_kinetic.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
       COMMAND ${modtests_launch_py} test/nmodl/test_kinetic.py)
