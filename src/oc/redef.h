@@ -27,7 +27,6 @@
 #define araypt             hoc_araypt
 #define arg                hoc_arg
 #define argassign          hoc_argassign
-#define assign             hoc_assign
 #define assstr             hoc_assstr
 #define bltin              hoc_bltin
 #define call               hoc_call
