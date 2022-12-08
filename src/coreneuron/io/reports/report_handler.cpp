@@ -80,13 +80,13 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             register_custom_report(nt, report_config, vars_to_report);
             break;
         case LFPReport:
-                mapinfo->prepare_lfp();
-                vars_to_report =
-                    get_lfp_vars_to_report(nt, m_report_config, mapinfo->_lfp.data(), nodes_to_gid);
-                is_soma_target = m_report_config.section_type == SectionType::Soma ||
-                                 m_report_config.section_type == SectionType::Cell;
-                register_section_report(nt, m_report_config, vars_to_report, is_soma_target);
-                break;
+            mapinfo->prepare_lfp();
+            vars_to_report =
+                get_lfp_vars_to_report(nt, m_report_config, mapinfo->_lfp.data(), nodes_to_gid);
+            is_soma_target = m_report_config.section_type == SectionType::Soma ||
+                             m_report_config.section_type == SectionType::Cell;
+            register_section_report(nt, m_report_config, vars_to_report, is_soma_target);
+            break;
         default:
             vars_to_report =
                 get_synapse_vars_to_report(nt, gids_to_report, report_config, nodes_to_gid);
