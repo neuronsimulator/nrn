@@ -27,6 +27,15 @@ struct Voltage {
         return DEF_vrest;
     }
 };
+
+struct RHS {
+    using type = double;
+    // Not needed for 0
+    // constexpr type default_value() const {
+    //     return 0.0;
+    // }
+};
+
 }  // namespace field
 
 /**
@@ -129,6 +138,33 @@ struct handle_interface: handle_base<Identifier> {
     void set_v(field::Voltage::type v) {
         this->template get<field::Voltage>() = v;
     }
+
+    /**
+     * @brief Return the right hand side of the Hines solver.
+     */
+    [[nodiscard]] field::RHS::type& rhs() {
+        return this->template get<field::RHS>();
+    }
+
+    /**
+     * @brief Return the right hand side of the Hines solver.
+     */
+    [[nodiscard]] field::RHS::type const& rhs() const {
+        return this->template get<field::RHS>();
+    }
+
+    /**
+     * @brief Return a handle to the right hand side of the Hines solver.
+     */
+    [[nodiscard]] data_handle<field::RHS::type> rhs_handle() {
+        return this->template get_handle<field::RHS>();
+    }
+
+    /** @brief Set the right hand side of the Hines solver.
+     */
+    void set_rhs(field::RHS::type rhs) {
+        this->template get<field::RHS>() = rhs;
+    }   
 
     friend std::ostream& operator<<(std::ostream& os, handle_interface const& handle) {
         return os << "Node{" << handle.id() << '/' << handle.underlying_storage().size()

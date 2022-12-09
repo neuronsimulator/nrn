@@ -98,6 +98,7 @@ typedef struct Info3Val { /* storage to help build matrix efficiently */
 the notify_free_val parameter in node_free in solve.cpp
 */
 #define NODEAREA(n) ((n)->area())
+#define NODERHS(n) ((n)->rhs())
 #define NODERINV(n) ((n)->_rinv)
 
 struct Extnode;
@@ -136,9 +137,21 @@ struct Node {
     void set_v(neuron::container::Node::field::Voltage::type v) {
         _node_handle.set_v(v);
     }
+    [[nodiscard]] auto& rhs() {
+        return _node_handle.rhs();
+    }
+    [[nodiscard]] auto const& rhs() const {
+        return _node_handle.rhs();
+    }
+    [[nodiscard]] auto rhs_handle() {
+        return _node_handle.rhs_handle();
+    }
+    void set_rhs(neuron::container::Node::field::RHS::type rhs) {
+        _node_handle.set_rhs(rhs);
+    }
     double _rinv{}; /* conductance uS from node to parent */
     double* _d;     /* diagonal element in node equation */
-    double* _rhs;   /* right hand side in node equation */
+    double* _sp13_rhs;
     double* _a_matelm;
     double* _b_matelm;
     int eqn_index_;                 /* sparse13 matrix row/col index */

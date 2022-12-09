@@ -203,7 +203,7 @@ void NrnDAE::dkmap(std::vector<neuron::container::data_handle<double>>& pv,
                                                                   y_.data() + i};
         pvdot[bmap_[i] - 1] =
             neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                   _nt->_actual_rhs + bmap_[i]};
+                                                   _nt->node_rhs_storage() + bmap_[i]};
     }
 }
 
@@ -213,7 +213,7 @@ void NrnDAE::update() {
     // note that the following is correct also for states that refer
     // to the internal potential of a segment. i.e rhs is v + vext[0]
     for (int i = 0; i < size_; ++i) {
-        y_[i] += _nt->_actual_rhs[bmap_[i]];
+        y_[i] += _nt->actual_rhs(bmap_[i]);
     }
     // for (int i=0; i < size_; ++i) printf(" i=%d bmap_[i]=%d y_[i]=%g\n", i, bmap_[i],
     // y_->elem(i));
@@ -293,7 +293,7 @@ void NrnDAE::rhs() {
     v2y();
     f_(y_, yptmp_, size_);
     for (int i = 0; i < size_; ++i) {
-        _nt->_actual_rhs[bmap_[i]] += yptmp_[i];
+        _nt->actual_rhs(bmap_[i]) += yptmp_[i];
     }
 }
 

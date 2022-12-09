@@ -699,7 +699,7 @@ void nrn_print_matrix(NrnThread* _nt) {
             int i, n = spGetSize(_nt->_sp13mat, 0);
             spPrint(_nt->_sp13mat, 1, 1, 1);
             for (i = 1; i <= n; ++i) {
-                Printf("%d %g\n", i, _nt->_actual_rhs[i]);
+                Printf("%d %g\n", i, _nt->actual_rhs(i));
             }
         }
     } else if (_nt) {
