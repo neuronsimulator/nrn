@@ -57,6 +57,7 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         if (!nt.ncell) {
             continue;
         }
+        auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
         const std::vector<int>& nodes_to_gid = map_gids(nt);
         const std::vector<int> gids_to_report = intersection_gids(nt, report_config.target);
         VarsToReport vars_to_report;
@@ -80,7 +81,6 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             register_custom_report(nt, report_config, vars_to_report);
             break;
         case LFPReport:
-            auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
             mapinfo->prepare_lfp();
             vars_to_report = get_lfp_vars_to_report(
                 nt, gids_to_report, report_config, mapinfo->_lfp.data(), nodes_to_gid);
