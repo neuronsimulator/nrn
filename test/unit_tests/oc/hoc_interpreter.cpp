@@ -54,10 +54,11 @@ SCENARIO("Test for issue #1995", "[NEURON][hoc_interpreter][issue-1995]") {
 }
 #if USE_PYTHON
 TEST_CASE("Test hoc_array_access", "[NEURON][hoc_interpreter][nrnpython][array_access]") {
-    REQUIRE(hoc_oc(R"(nrnpython("avec = [0,1,2]") 
-                    objref po
-                    po = new PythonObject()
-                    po = po.avec)") == 0);
+    const auto hoc_command = "nrnpython(\"avec = [0,1,2]\")\n"
+                    "objref po\n"
+                    "po = new PythonObject()\n"
+                    "po = po.avec)";
+    REQUIRE(hoc_oc(hoc_command) == 0);
     THEN("The avec can value should be correct") {
         auto const i = GENERATE_COPY(range(0, 3));
         REQUIRE(hoc_oc(("hoc_ac_ = po._[" + std::to_string(i) + "]\n").c_str()) == 0);
