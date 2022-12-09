@@ -428,8 +428,8 @@ class KSChan {
     void delete_schan_node_data();
     void alloc_schan_node_data();
     void update_prop();  // can add and remove Nsingle and SingleNodeData
-    void update_param_size();
-    [[nodiscard]] bool param_size_update_allowed(std::size_t soffset, std::size_t nstate) const;
+    void update_size();
+    void must_allow_size_update(bool single, bool ion, int ligand, int nstate) const;
 
     KSState* state_insert(int i, const char* name, double frac);
     void state_remove(int i);

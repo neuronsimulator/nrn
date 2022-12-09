@@ -11,15 +11,22 @@ KSChan
 
     Syntax:
         ``kschan = h.KSChan()``
+        
+        ``kschan = h.KSChan(is_PointProcess)``
 
 
     Description:
-        Declare and manage a new density channel type which can 
-        be instantiated in sections with the :ref:`insert <keyword_insert>` 
-        statement. After the type comes into existence it 
+        Declare and manage a new density channel or PointProcess type.
+        Density channels can be instantiated in sections with the :ref:`insert <keyword_insert>` 
+        statement. PointProcess channels are instantiated like :class:`IClamp`.  After the type comes into existence it 
         is always a valid type and the conductance style, 
         ligands, name, gating functions, etc can be changed 
-        at any time. The type cannot be destroyed. 
+        at any time. However if an instance of the channel is currently in existance
+        no change is allowed to the number of states or parameters of the channel.
+        For example, if an instance of the channel exists, one cannot switch between single
+        channel mode and continuous mode as the former has an extra range variable called Nsingle.
+        (But when Nsingle is a parameter, a value  of 0 causes the channel to compute in continuous mode).
+        The type cannot be destroyed. 
          
         This is an extension of the KSChan managed by the 
         Java catacomb channel builder tool 
