@@ -80,12 +80,13 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             register_custom_report(nt, report_config, vars_to_report);
             break;
         case LFPReport:
+            auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
             mapinfo->prepare_lfp();
-            vars_to_report =
-                get_lfp_vars_to_report(nt, m_report_config, mapinfo->_lfp.data(), nodes_to_gid);
-            is_soma_target = m_report_config.section_type == SectionType::Soma ||
-                             m_report_config.section_type == SectionType::Cell;
-            register_section_report(nt, m_report_config, vars_to_report, is_soma_target);
+            vars_to_report = get_lfp_vars_to_report(
+                nt, gids_to_report, report_config, mapinfo->_lfp.data(), nodes_to_gid);
+            is_soma_target = report_config.section_type == SectionType::Soma ||
+                             report_config.section_type == SectionType::Cell;
+            register_section_report(nt, report_config, vars_to_report, is_soma_target);
             break;
         default:
             vars_to_report =
@@ -93,8 +94,12 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             register_custom_report(nt, report_config, vars_to_report);
         }
         if (!vars_to_report.empty()) {
-            auto report_event = std::make_unique<ReportEvent>(
-                dt, t, vars_to_report, report_config.output_path.data(), report_config.report_dt);
+            auto report_event = std::make_unique<ReportEvent>(dt,
+                                                              t,
+                                                              vars_to_report,
+                                                              m_report_config.output_path.data(),
+                                                              m_report_config.report_dt,
+                                                              m_report_config.type);
             report_event->send(t, net_cvode_instance, &nt);
             m_report_events.push_back(std::move(report_event));
         }
@@ -349,6 +354,7 @@ VarsToReport ReportHandler::get_synapse_vars_to_report(
 }
 
 VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
+                                                   const std::vector<int>& gids_to_report,
                                                    ReportConfiguration& report,
                                                    double* report_variable,
                                                    const std::vector<int>& nodes_to_gids) const {
@@ -361,11 +367,7 @@ VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
     auto& summation_report = nt.summation_report_handler_->summation_reports_[report.output_path];
     VarsToReport vars_to_report;
     off_t offset_lfp = 0;
-    for (int i = 0; i < nt.ncell; i++) {
-        int gid = nt.presyns[i].gid_;
-        if (report.target.find(gid) == report.target.end()) {
-            continue;
-        }
+    for (const auto& gid: gids_to_report) {
         // IClamp is needed for the LFP calculation
         auto mech_id = nrn_get_mechtype("IClamp");
         Memb_list* ml = nt._ml_list[mech_id];
