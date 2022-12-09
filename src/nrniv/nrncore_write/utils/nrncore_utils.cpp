@@ -108,8 +108,8 @@ void nrnbbcore_register_mapping() {
     // hoc vectors: sections and segments
     Vect* sec = vector_arg(3);
     Vect* seg = vector_arg(4);
-    Vect* lfp = vector_arg(5);
-    int electrodes_per_segment = *hoc_getarg(6);
+    Vect* lfp = ifarg(5) ? vector_arg(5) : new Vect();
+    int electrodes_per_segment = ifarg(6) ? *hoc_getarg(6) : 0;
 
     double* sections = vector_vec(sec);
     double* segments = vector_vec(seg);
