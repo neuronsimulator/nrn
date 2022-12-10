@@ -419,7 +419,6 @@ class KSChan {
     void ion_consist();
     void ligand_consist(int, int, Prop*, Node*);
     Prop* needion(Symbol*, Node*, Prop*);
-    void state_consist(int shift = 0);
     void sname_install();
     Symbol* looksym(const char*, Symbol* tmplt = NULL);
     Symbol* installsym(const char*, int, Symbol* tmplt = NULL);

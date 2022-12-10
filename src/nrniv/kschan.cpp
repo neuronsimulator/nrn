@@ -1174,7 +1174,6 @@ void KSChan::update_prop() {
     free(rlsym_->u.ppsym);
     rlsym_->u.ppsym = ppsym;
     setcond();
-    state_consist(gmaxoffset_ - old_gmaxoffset);
     ion_consist();
 }
 
@@ -1225,7 +1224,6 @@ void KSChan::setion(const char* s) {
             rlsym_->u.ppsym = ppsym;
             ++soffset_;
             setcond();
-            state_consist();
             ion_consist();
         }
     } else {  // want useion
@@ -1242,7 +1240,6 @@ void KSChan::setion(const char* s) {
                 //				printf(" mechanism %s now uses %s instead of %s\n",
                 //					name_.string(), sym->name, ion_sym_->name);
                 ion_sym_ = sym;
-                state_consist();
                 ion_consist();
             }
             // if same do nothing
@@ -1263,7 +1260,6 @@ void KSChan::setion(const char* s) {
             rlsym_->u.ppsym = ppsym;
             --soffset_;
             setcond();
-            state_consist();
             ion_consist();
         }
     }
@@ -1387,7 +1383,6 @@ void KSChan::setligand(int i, const char* lig) {
     }
     ligands_[i] = s;
     if (mechsym_) {
-        state_consist();
         ion_consist();
     }
 }
@@ -1455,7 +1450,6 @@ void KSChan::settype(KSTransition* t, int type, const char* lig) {
             tt.f0 = NULL;
             tt.f1 = NULL;
             check_struct();
-            state_consist();
             ion_consist();
             setupmat();
             return;
@@ -1564,7 +1558,6 @@ hoc_object_name(trans_[i].obj_));
 #endif
     }
     check_struct();
-    state_consist();
     ion_consist();
     setupmat();
 }
@@ -1591,7 +1584,6 @@ KSState* KSChan::add_hhstate(const char* name) {
     set_single(false);
     check_struct();
     sname_install();
-    state_consist();
     setupmat();
     return state_ + is;
 }
@@ -1628,7 +1620,6 @@ KSState* KSChan::add_ksstate(int ig, const char* name) {
     check_struct();
     sname_install();
     set_single(false);
-    state_consist();
     setupmat();
     return state_ + is;
 }
@@ -1692,7 +1683,6 @@ void KSChan::remove_state(int is) {
     set_single(false);
     check_struct();
     sname_install();
-    state_consist();
     setupmat();
 }
 
@@ -2044,7 +2034,6 @@ void KSChan::setstructure(Vect* vec) {
     if (mechsym_) {
         set_single(false, false);
         sname_install();
-        state_consist();
         setupmat();
     }
 }
@@ -2498,64 +2487,6 @@ void KSChan::ligand_consist(int j, int poff, Prop* p, Node* nd) {
     nrn_promote(pion, 1, 0);
     p->dparam[poff + 2 * j] = pion->param_handle(2);      // nao
     p->dparam[poff + 2 * j + 1] = pion->param_handle(1);  // nai
-}
-
-/** Obsolete: No longer allow KSChan structure changes when instances exist.
- *  It used to be the case that if single_ or nstate_ changes, this would update
- *  p->param. Now just assert that what is required is already there.
- *  This and all state_consist calls can be removed. But if the data_handle
- *  containers are ever extended to support changing the number of vectors
- *  for a mechanism's soa storage, this indicates how it was done originally
- *  for AoS.
- */
-void KSChan::state_consist(int shift) {  // shift when Nsingle winks in and out of existence
-                                         // printf("KSChan::state_consist\n");
-    auto& mech_data = neuron::model().mechanism_data(mechtype_);
-    if (mech_data.size()) {
-        auto psize =
-            mech_data.get_tag<neuron::container::Mechanism::field::FloatingPoint>().num_instances();
-        assert((soffset_ + 2 * nstate_) == psize);
-    }
-#if 0  // obsolete AoS implementation
-    int i, j, ns;
-    Node* nd;
-    hoc_Item* qsec;
-    int mtype = rlsym_->subtype;
-    ns = soffset_ + 2 * nstate_;
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
-        for (i = 0; i < sec->nnode; ++i) {
-            nd = sec->pnode[i];
-            Prop* p;
-            for (p = nd->prop; p; p = p->next) {
-                if (p->_type == mtype) {
-                    if (p->param_size() != ns) {
-                        v_structure_change = 1;
-                        double* oldp = p->param;
-                        p->param = (double*) erealloc(oldp, ns * sizeof(double));
-                        if (oldp != p->param || shift != 0) {
-                            printf("KSChan::state_consist realloc changed location\n");
-                            notify_freed_val_array(oldp, p->param_size);
-                        }
-                        p->param_size = ns;
-                        if (shift == 1) {
-                            for (j = ns - 1; j > 0; --j) {
-                                p->param[j] = p->param[j - 1];
-                            }
-                            p->param[0] = 1;
-                        } else if (shift == -1) {
-                            for (j = 1; j < ns; ++j) {
-                                p->param[j - 1] = p->param[j];
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-    }
-#endif
 }
 
 void KSChan::delete_schan_node_data() {
