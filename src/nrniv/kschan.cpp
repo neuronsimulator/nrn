@@ -2424,6 +2424,18 @@ Prop* KSChan::needion(Symbol* s, Node* nd, Prop* pm) {
     return pion;
 }
 
+/** Almost obsolete: No longer allow KSChan structure changes when instances
+ *  exist.  However only a change to is_single_, ion_sym != NULL, or
+ *  nligand affects the dparam size and that circumstance raises an error if
+ *  instances exist prior to a call to ion_consist.  So if ion_consist is
+ *  called, either there are no instances, or there were no changes
+ *  to the above three indicators and dparam size has not changed.  However,
+ *  even though ion_sym != NULL is the same, that does not mean that the
+ *  specific ion used has not changed.  And similarly for nligand.
+ *  Thus, unless the must_allow_size_update is exended to include a change
+ *  in ions used, ion_consist must continue to update the ion usage. But it no
+ *  longer needs to realloc p->dparam.
+ */
 void KSChan::ion_consist() {
     // printf("KSChan::ion_consist\n");
     int i, j;
@@ -2452,8 +2464,7 @@ void KSChan::ion_consist() {
             if (!p) {
                 continue;
             }
-            assert(0);
-            p->dparam = (Datum*) erealloc(p->dparam, ppsize * sizeof(Datum));
+
             if (is_point() && is_single() && !single_) {
                 // Leave nullptr in KSSingleNodeData slot.
                 p->dparam[2] = nullptr;
