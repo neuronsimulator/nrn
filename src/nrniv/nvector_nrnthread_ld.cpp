@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
+#include <nvector/nvector_serial.h> /* serial N_Vector types, fcts, macros*/
 #include "nvector_nrnthread_ld.h"
 #include <sundials/sundials_types.h> /* defs. of realtype, sunindextype */
 #include <sundials/sundials_math.h>
@@ -106,8 +106,8 @@ static booleantype bretval;
         retval = arg;   \
     };                  \
     unlock;
-#define lockfalse    \
-    lock;            \
+#define lockfalse       \
+    lock;               \
     bretval = SUNFALSE; \
     unlock;
 
@@ -215,7 +215,7 @@ N_Vector N_VNew_NrnThreadLD(long int length, int nthread, long int* sizes) {
         /* Allocate memory */
         NV_OWN_DATA_NT_LD(v) = SUNTRUE;
         for (i = 0; i < nthread; ++i) {
-            data = N_VNew_Serial(sizes[i]); // TODO - SUNctxt
+            data = N_VNew_Serial(sizes[i]);  // TODO - SUNctxt
             if (data == NULL) {
                 N_VDestroy_NrnThreadLD(v);
                 return (NULL);
@@ -474,7 +474,7 @@ void N_VDestroy_NrnThreadLD(N_Vector v) {
     free(v);
 }
 
-void N_VSpace_NrnThreadLD(N_Vector v, long * lrw, long * liw) {
+void N_VSpace_NrnThreadLD(N_Vector v, long* lrw, long* liw) {
     *lrw = NV_LENGTH_NT_LD(v);
     *liw = 1;
 }

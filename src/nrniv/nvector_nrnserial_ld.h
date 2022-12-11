@@ -258,7 +258,7 @@ void N_VPrint_NrnSerialLD(N_Vector v);
 
 N_Vector N_VClone_NrnSerialLD(N_Vector w);
 void N_VDestroy_NrnSerialLD(N_Vector v);
-void N_VSpace_NrnSerialLD(N_Vector v, long * lrw, long * liw);
+void N_VSpace_NrnSerialLD(N_Vector v, long* lrw, long* liw);
 realtype* N_VGetArrayPointer_NrnSerialLD(N_Vector v);
 void N_VSetArrayPointer_NrnSerialLD(realtype* v_data, N_Vector v);
 void N_VLinearSum_NrnSerialLD(realtype a, N_Vector x, realtype b, N_Vector y, N_Vector z);

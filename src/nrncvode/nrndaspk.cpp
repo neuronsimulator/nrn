@@ -136,7 +136,7 @@ Daspk::~Daspk() {
     N_VDestroy(delta_);
     N_VDestroy(yp_);
     if (mem_) {
-        IDAFree((void**)&mem_);
+        IDAFree((void**) &mem_);
     }
 }
 
@@ -144,7 +144,7 @@ void Daspk::ida_init() {
     int ier;
     if (mem_) {
         ier = IDAReInit(mem_, cv_->t_, cv_->y_, yp_);
-		if (ier != IDA_SUCCESS) {
+        if (ier != IDA_SUCCESS) {
             hoc_execerror("IDAReInit error", 0);
         }
     } else {
@@ -152,7 +152,7 @@ void Daspk::ida_init() {
         if (!mem) {
             hoc_execerror("IDAMalloc error", 0);
         }
-        ier = IDAInit(mem,  res_gvardt,  cv_->t_, cv_->y_, yp_);
+        ier = IDAInit(mem, res_gvardt, cv_->t_, cv_->y_, yp_);
         assert(ier == IDA_SUCCESS);
 
         ier = IDASVtolerances(mem, cv_->ncv_->rtol_, cv_->atolnvec_);
@@ -260,7 +260,7 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
 #if 1
     // test
     // printf("test\n");
-    if (IDAEwtSet(cv_->y_, ((IDAMem)mem_)->ida_ewt, mem_) != IDA_SUCCESS) {
+    if (IDAEwtSet(cv_->y_, ((IDAMem) mem_)->ida_ewt, mem_) != IDA_SUCCESS) {
         hoc_execerror("Bad Ida error weight vector", 0);
     }
     use_parasite_ = false;
@@ -309,7 +309,7 @@ int Daspk::advance_tn(double tstop) {
     IDASetStopTime(mem_, tstop);
     int ier = IDASolve(mem_, tstop, &cv_->t_, cv_->y_, yp_, IDA_ONE_STEP);
     if (ier != IDA_SUCCESS && ier != IDA_TSTOP_RETURN) {
-		//printf("DASPK advance_tn error %d\n", ier);
+        // printf("DASPK advance_tn error %d\n", ier);
         // printf("DASPK advance_tn error\n");
         return ier;
     }

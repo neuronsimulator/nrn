@@ -267,7 +267,7 @@ void N_VPrint_NrnThread(N_Vector v);
 
 N_Vector N_VClone_NrnThread(N_Vector w);
 void N_VDestroy_NrnThread(N_Vector v);
-void N_VSpace_NrnThread(N_Vector v, long * lrw, long * liw);
+void N_VSpace_NrnThread(N_Vector v, long* lrw, long* liw);
 realtype* N_VGetArrayPointer_NrnThread(N_Vector v);
 void N_VSetArrayPointer_NrnThread(realtype* v_data, N_Vector v);
 void N_VLinearSum_NrnThread(realtype a, N_Vector x, realtype b, N_Vector y, N_Vector z);

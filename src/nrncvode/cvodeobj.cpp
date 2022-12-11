@@ -54,7 +54,7 @@ static MUTDEC
 // to these
 //#include "shared/sundialstypes.h"
 //#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
-#include <cvode/cvode.h>           /* prototypes for CVODE fcts, consts*/
+#include <cvode/cvode.h>             /* prototypes for CVODE fcts, consts*/
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
 #include <sundials/sundials_types.h> /* definition of type realtype*/
 
@@ -63,7 +63,7 @@ static MUTDEC
 //#include <sundials/sundials_sparse.h> /* definitions SlsMat */
 
 // For Dense Matrix resolutions
-#include <cvode/cvode_direct.h>    /* access to CVDls interface            */
+#include <cvode/cvode_direct.h>      /* access to CVDls interface            */
 #include <sundials/sundials_types.h> /* defs. of realtype, sunindextype */
 // #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver */
 // #include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix */
@@ -876,10 +876,10 @@ Cvode::~Cvode() {
         N_VDestroy(y_);
     }
     if (atolnvec_) {
-		N_VDestroy(atolnvec_);
+        N_VDestroy(atolnvec_);
     }
     if (mem_) {
-        CVodeFree((void **)(&mem_));
+        CVodeFree((void**) (&mem_));
     }
     if (maxstate_) {
         N_VDestroy(maxstate_);
@@ -905,7 +905,7 @@ void Cvode::init_prepare() {
             y_ = nil;
         }
         if (mem_) {
-            CVodeFree((void **)(&mem_));
+            CVodeFree((void**) (&mem_));
             mem_ = nil;
         }
         if (atolnvec_) {
@@ -1070,7 +1070,7 @@ void Cvode::maxstep(double x) {
 
 void Cvode::free_cvodemem() {
     if (mem_) {
-        CVodeFree((void **)(&mem_));
+        CVodeFree((void**) (&mem_));
         mem_ = nil;
     }
 }
@@ -1097,7 +1097,7 @@ int Cvode::cvode_init(double) {
     nrn_nonvint_block_ode_reinit(neq_, N_VGetArrayPointer(y_), 0);
     if (mem_) {
         err = CVodeReInit(mem_, t0_, y_);
-        err = CVodeSetUserData(mem_, (void*)this);
+        err = CVodeSetUserData(mem_, (void*) this);
         // printf("CVodeReInit\n");
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVReInit error %d\n",
@@ -1107,20 +1107,20 @@ int Cvode::cvode_init(double) {
             return err;
         }
     } else {
-        mem_ = (CVodeMem)CVodeCreate(CV_BDF, ncv_->stiff() ? CV_NEWTON : CV_FUNCTIONAL);
+        mem_ = (CVodeMem) CVodeCreate(CV_BDF, ncv_->stiff() ? CV_NEWTON : CV_FUNCTIONAL);
         if (!mem_) {
             hoc_execerror("CVodeCreate error", 0);
         }
         maxorder(ncv_->maxorder());  // Memory Leak if changed after CVodeMalloc
         minstep(ncv_->minstep());
         maxstep(ncv_->maxstep());
-        //CVodeMalloc was replaced by CVodeCreate/CVodeInit
+        // CVodeMalloc was replaced by CVodeCreate/CVodeInit
         // CVodeInit allocates and initializes memory for a problem
         err = CVodeInit(mem_, pf_, t0_, y_);
-        //atolnvec_ set by Cvode::init_eqn
+        // atolnvec_ set by Cvode::init_eqn
         err = CVodeSVtolerances(mem_, ncv_->rtol_, atolnvec_);
 
-        err = CVodeSetUserData(mem_, (void*)this);
+        err = CVodeSetUserData(mem_, (void*) this);
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVodeMalloc error %d\n",
                    this,
@@ -1352,8 +1352,8 @@ int Cvode::cvode_advance_tn() {
     /* Note: CV_ONE_STEP_TSTOP is removed, now CV_ONE_STEP does the
      * same. From documentation: If tstop is enabled (through a call
      * to CVodeSetStopTime), then CVode returns the solution at tstop.
-    */
-//printf("cvode_advance_tn begin t0_=%g t_=%g tn_=%g tstop=%g\n", t0_, t_, tn_, tstop_);
+     */
+    // printf("cvode_advance_tn begin t0_=%g t_=%g tn_=%g tstop=%g\n", t0_, t_, tn_, tstop_);
     int err = CVode(mem_, tstop_, y_, &t_, CV_ONE_STEP);
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
@@ -1371,7 +1371,7 @@ int Cvode::cvode_advance_tn() {
     // this is very bad, performance-wise. However cvode modifies its states
     // after a call to fun with the proper t.
 #if 1
-	(*pf_)(t_, y_, nil, (void*)this);
+    (*pf_)(t_, y_, nil, (void*) this);
 #else
     NrnThread* _nt;
     scatter_y(y_);
@@ -1483,8 +1483,7 @@ void Cvode::statistics() {
 
 void Cvode::matmeth() {
     switch (ncv_->jacobian()) {
-case 1:
-    {
+    case 1: {
         /* Create dense SUNMatrix for use in linear solver */
         SUNMatrix A = SUNDenseMatrix(neq_, neq_);
         assert(A);
@@ -1502,30 +1501,28 @@ case 1:
          * in neuron? If yes, add it here instead of NULL */
         flag = CVDlsSetJacFn(mem_, NULL);
         if (flag != CVDLS_SUCCESS)
-          throw std::runtime_error(
-              "ERROR: can't allocate memory for dense jacobian");
+            throw std::runtime_error("ERROR: can't allocate memory for dense jacobian");
         break;
     }
     case 2:
         CVDiag(mem_);
         break;
-    default:
-         {
+    default: {
         /* CVODES guide chapter 8: Providing Alternate Linear
          * Solver Modules: only lsolve function is mandatory
          * (non-used functions need to be set to null) */
-        ((CVodeMem)mem_)->cv_linit = NULL;
-        //TODO can the set-up be set to NULL? Comment says it does not do anything!
-		((CVodeMem)mem_)->cv_lsetup = NULL;
+        ((CVodeMem) mem_)->cv_linit = NULL;
+        // TODO can the set-up be set to NULL? Comment says it does not do anything!
+        ((CVodeMem) mem_)->cv_lsetup = NULL;
         //((CVodeMem)mem_)->cv_setupNonNull = TRUE; // but since our's does not do anything...
-	    if (nth_) { // lvardt
-		((CVodeMem)mem_)->cv_lsolve = msolve_lvardt;
-	    }else{
-		((CVodeMem)mem_)->cv_lsolve = msolve;
-	    }
-        ((CVodeMem)mem_)->cv_lfree = NULL;
-		break;
+        if (nth_) {  // lvardt
+            ((CVodeMem) mem_)->cv_lsolve = msolve_lvardt;
+        } else {
+            ((CVodeMem) mem_)->cv_lsolve = msolve;
         }
+        ((CVodeMem) mem_)->cv_lfree = NULL;
+        break;
+    }
     }
 }
 
@@ -1654,8 +1651,8 @@ static int f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
     }
     return CV_SUCCESS;
 }
-static int f_lvardt(realtype t, N_Vector y, N_Vector ydot, void *user_data) {
-    Cvode* cv = (Cvode*)user_data;
+static int f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* user_data) {
+    Cvode* cv = (Cvode*) user_data;
     ++cv->f_calls_;
     cv->nth_->_vcv = cv;
     cv->fun_thread(t, cv->n_vector_data(y, 0), cv->n_vector_data(ydot, 0), cv->nth_);

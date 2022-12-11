@@ -5,7 +5,7 @@
 #include "nrnneosm.h"
 //#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
 #include "membfunc.h"
-#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
+#include <nvector/nvector_serial.h> /* serial N_Vector types, fcts, macros*/
 #include "netcon.h"
 #include <cvode/cvode_impl.h>
 

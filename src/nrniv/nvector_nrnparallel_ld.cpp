@@ -17,8 +17,8 @@
  */
 
 #define USELONGDOUBLE 1
-#define SUNTRUE true
-#define SUNFALSE false
+#define SUNTRUE       true
+#define SUNFALSE      false
 #include <../../nrnconf.h>
 #include <hocassrt.h>
 
@@ -444,7 +444,7 @@ void N_VDestroy_NrnParallelLD(N_Vector v) {
     free(v);
 }
 
-void N_VSpace_NrnParallelLD(N_Vector v, long * lrw, long * liw) {
+void N_VSpace_NrnParallelLD(N_Vector v, long* lrw, long* liw) {
     MPI_Comm comm;
     int npes;
 

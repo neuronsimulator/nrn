@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
+#include <nvector/nvector_serial.h> /* serial N_Vector types, fcts, macros*/
 #include "nvector_nrnthread.h"
 #include <sundials/sundials_types.h> /* defs. of realtype, sunindextype */
 #include <sundials/sundials_math.h>
@@ -106,8 +106,8 @@ static booleantype bretval;
         retval = arg;   \
     };                  \
     unlock;
-#define lockfalse    \
-    lock;            \
+#define lockfalse       \
+    lock;               \
     bretval = SUNFALSE; \
     unlock;
 
@@ -475,7 +475,7 @@ void N_VDestroy_NrnThread(N_Vector v) {
     free(v);
 }
 
-void N_VSpace_NrnThread(N_Vector v, long * lrw, long * liw) {
+void N_VSpace_NrnThread(N_Vector v, long* lrw, long* liw) {
     *lrw = NV_LENGTH_NT(v);
     *liw = 1;
 }
@@ -746,13 +746,13 @@ realtype N_VL1Norm_NrnThread(N_Vector x) {
 // This function was removed from Sundials3
 // I copied it from Sundials2
 // TODO replace by proper call
-void N_VOneMask_Serial(N_Vector x)
-{
-  long int N  = NV_LENGTH_S(x);
-  realtype *xd = NV_DATA_S(x);
-  for (long int i=0; i<N; i++,xd++) {
-    if (*xd != ZERO) *xd = ONE;
-  }
+void N_VOneMask_Serial(N_Vector x) {
+    long int N = NV_LENGTH_S(x);
+    realtype* xd = NV_DATA_S(x);
+    for (long int i = 0; i < N; i++, xd++) {
+        if (*xd != ZERO)
+            *xd = ONE;
+    }
 }
 
 static void* v1mask(NrnThread* nt) {

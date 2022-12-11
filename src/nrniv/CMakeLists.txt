@@ -385,12 +385,9 @@ endif()
 find_package(SUNDIALS)
 add_dependencies(nrniv_lib SUNDIALS)
 
-target_link_libraries(nrniv_lib
-  ${SUNDIALS_LIB_DIR}/libsundials_ida.a
-  ${SUNDIALS_LIB_DIR}/libsundials_cvode.a
-  ${SUNDIALS_LIB_DIR}/libsundials_nvecserial.a
-  ${SUNDIALS_LIB_DIR}/libsundials_nvecpthreads.a
-)
+target_link_libraries(
+  nrniv_lib ${SUNDIALS_LIB_DIR}/libsundials_ida.a ${SUNDIALS_LIB_DIR}/libsundials_cvode.a
+  ${SUNDIALS_LIB_DIR}/libsundials_nvecserial.a ${SUNDIALS_LIB_DIR}/libsundials_nvecpthreads.a)
 if(NRN_ENABLE_MPI)
   target_link_libraries(nrniv_lib ${SUNDIALS_LIB_DIR}/libsundials_nvecparallel.a)
 endif()
