@@ -83,7 +83,6 @@ void hoc_Symbol_limits(void) {
             hoc_execerror("Cannot find the symbol for ", name);
         }
     } else {
-        hoc_pgetarg(1);
         sym = hoc_get_last_pointer_symbol();
         if (!sym) {
             hoc_execerror(
@@ -146,15 +145,14 @@ char* hoc_symbol_units(Symbol* sym, const char* units) {
 void hoc_Symbol_units(void) {
     Symbol* sym;
     extern Symbol* hoc_get_last_pointer_symbol();
-    extern double* hoc_pgetarg(int);
     char** units = hoc_temp_charptr();
 
     if (hoc_is_double_arg(1)) {
         units_on_flag_ = (int) chkarg(1, 0., 1.);
         if (units_on_flag_) {
-            *units = "on";
+            *units = const_cast<char*>("on");
         } else {
-            *units = "off";
+            *units = const_cast<char*>("off");
         }
     } else {
         if (hoc_is_str_arg(1)) {
@@ -164,7 +162,6 @@ void hoc_Symbol_units(void) {
                 hoc_execerror("Cannot find the symbol for ", name);
             }
         } else {
-            hoc_pgetarg(1);
             sym = hoc_get_last_pointer_symbol();
             if (!sym) {
                 hoc_execerror(
@@ -179,7 +176,7 @@ void hoc_Symbol_units(void) {
         }
         *units = hoc_symbol_units(sym, *units);
         if (*units == (char*) 0) {
-            *units = "";
+            *units = const_cast<char*>("");
         }
     }
     hoc_ret();
@@ -251,7 +248,6 @@ static int hoc_vsscanf(const char* buf) {
     char *pf, *format, errbuf[100];
     void* arglist[20];
     int n = 0, iarg, i, islong, convert, sawnum;
-    extern double* hoc_pgetarg(int);
     struct {
         union {
             double d;
@@ -370,13 +366,13 @@ static int hoc_vsscanf(const char* buf) {
                 switch (arg[iarg - 1].type) {
                 case 's':
                     if (!hoc_is_str_arg(iarg + 2)) {
-                        sprintf(errbuf, "arg %d must be a string", iarg + 2);
+                        Sprintf(errbuf, "arg %d must be a string", iarg + 2);
                         goto bad_arg;
                     }
                     break;
                 default:
                     if (!hoc_is_pdouble_arg(iarg + 2)) {
-                        sprintf(errbuf, "arg %d must be a pointer to a number", iarg + 2);
+                        Sprintf(errbuf, "arg %d must be a pointer to a number", iarg + 2);
                         goto bad_arg;
                     }
                     break;
@@ -435,18 +431,18 @@ static int hoc_vsscanf(const char* buf) {
     }
     goto normal;
 incomplete:
-    sprintf(errbuf, "incomplete format specifier for arg %d", iarg + 3);
+    Sprintf(errbuf, "incomplete format specifier for arg %d", iarg + 3);
     goto normal;
 bad_specifier:
-    sprintf(errbuf, "unknown conversion specifier for arg %d", iarg + 3);
+    Sprintf(errbuf, "unknown conversion specifier for arg %d", iarg + 3);
     goto normal;
 missing_arg:
-    sprintf(errbuf, "missing arg %d", iarg + 2);
+    Sprintf(errbuf, "missing arg %d", iarg + 2);
     goto normal;
 bad_arg:
     goto normal;
 too_many:
-    sprintf(errbuf, "too many ( > %d) args", iarg + 2);
+    Sprintf(errbuf, "too many ( > %d) args", iarg + 2);
     goto normal;
 normal:
     for (i = 0; i < iarg; ++i) {
@@ -471,7 +467,7 @@ void System(void) {
         HocStr* st;
         n = strlen(gargstr(1)) + strlen(stdoutfile);
         st = hocstr_create(n + 256);
-        Sprintf(st->buf, "%s > %s", gargstr(1), stdoutfile);
+        std::snprintf(st->buf, st->size + 1, "%s > %s", gargstr(1), stdoutfile);
         d = (double) system(st->buf);
 #if 1
         if ((fp = fopen(stdoutfile, "r")) == (FILE*) 0) {
@@ -525,7 +521,7 @@ void Xred(void) /* read with prompt string and default and limits */
 }
 
 static struct { /* symbol types */
-    char* name;
+    const char* name;
     short t_type;
 } type_sym[] = {{"Builtins", BLTIN},
                 {"Other Builtins", FUN_BLTIN},
@@ -664,11 +660,11 @@ Symbol* hoc_parse_expr(const char* str, Symlist** psymlist) {
     if (strlen(str) > BUFSIZ - 20) {
         HocStr* s;
         s = hocstr_create(strlen(str) + 20);
-        sprintf(s->buf, "hoc_ac_ = %s\n", str);
+        std::snprintf(s->buf, s->size + 1, "hoc_ac_ = %s\n", str);
         hoc_xopen_run(sp, s->buf);
         hocstr_delete(s);
     } else {
-        sprintf(s, "hoc_ac_ = %s\n", str);
+        Sprintf(s, "hoc_ac_ = %s\n", str);
         hoc_xopen_run(sp, s);
     }
     return sp;
@@ -696,11 +692,11 @@ Symbol* hoc_parse_stmt(const char* str, Symlist** psymlist) {
     if (strlen(str) > BUFSIZ - 10) {
         HocStr* s;
         s = hocstr_create(strlen(str) + 10);
-        sprintf(s->buf, "{%s}\n", str);
+        std::snprintf(s->buf, s->size + 1, "{%s}\n", str);
         hoc_xopen_run(sp, s->buf);
         hocstr_delete(s);
     } else {
-        sprintf(s, "{%s}\n", str);
+        Sprintf(s, "{%s}\n", str);
         hoc_xopen_run(sp, s);
     }
     return sp;
@@ -722,11 +718,11 @@ double* hoc_val_pointer(const char* s) {
     if (strlen(s) > BUFSIZ - 20) {
         HocStr* buf;
         buf = hocstr_create(strlen(s) + 20);
-        sprintf(buf->buf, "{hoc_pointer_(&%s)}\n", s);
+        std::snprintf(buf->buf, buf->size + 1, "{hoc_pointer_(&%s)}\n", s);
         hoc_oc(buf->buf);
         hocstr_delete(buf);
     } else {
-        sprintf(buf, "{hoc_pointer_(&%s)}\n", s);
+        Sprintf(buf, "{hoc_pointer_(&%s)}\n", s);
         hoc_oc(buf);
     }
     return hoc_varpointer;

@@ -10,5 +10,6 @@ Each aspect generally has extra dependencies and special instructions.
 
    mac_pkg.md
    python_wheels.md
+   windows.md
    code_coverage.md
    debug.md

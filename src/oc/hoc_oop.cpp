@@ -7,6 +7,7 @@
 #include "code.h"
 #include "hocassrt.h"
 #include "hoclist.h"
+#include "nrn_ansi.h"
 #include "nrnmpi.h"
 #include "nrnfilewrap.h"
 #include <nrnpython_config.h>
@@ -22,14 +23,11 @@ void (*nrnpy_hpoasgn)(Object* o, int type);
 void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
 #endif
 
-#if CABLE
 #include "section.h"
 #include "nrniv_mf.h"
 int section_object_seen;
 struct Section* nrn_sec_pop();
-double* nrn_rangepointer(Section*, Symbol*, double x);
 static int connect_obsec_;
-#endif
 
 #define PUBLIC_TYPE   1
 #define EXTERNAL_TYPE 2
@@ -102,11 +100,9 @@ size_t hoc_total_array_data(Symbol* s,
         a = s->arayinfo;
     } else
         switch (s->type) {
-#if CABLE
         case RANGEVAR:
             a = s->arayinfo;
             break;
-#endif
         default:
             a = obd[s->u.oboff + 1].arayinfo;
             break;
@@ -179,11 +175,9 @@ void hoc_obvar_declare(Symbol* sym, int type, int pmes) {
         break;
     case OBJECTVAR:
         break;
-#if CABLE
     case SECTION:
         OPSECITM(sym) = nullptr;  // TODO: whaa? (struct Item**)0;
         break;
-#endif
     default:
         hoc_execerror(sym->name, "can't declare this in obvar_declare");
         break;
@@ -363,14 +357,16 @@ void hoc_exec_cmd(void) { /* execute string from top level or within an object c
     HocStr* hs = 0;
     cmd = gargstr(1);
     pbuf = buf;
+    auto pbuf_size = 256;
     if (strlen(cmd) > 256 - 10) {
         hs = hocstr_create(strlen(cmd) + 10);
         pbuf = hs->buf;
+        pbuf_size = hs->size + 1;
     }
     if (cmd[0] == '~') {
-        sprintf(pbuf, "%s\n", cmd + 1);
+        std::snprintf(pbuf, pbuf_size, "%s\n", cmd + 1);
     } else {
-        sprintf(pbuf, "{%s}\n", cmd);
+        std::snprintf(pbuf, pbuf_size, "{%s}\n", cmd);
     }
     if (ifarg(2)) {
         ob = *hoc_objgetarg(2);
@@ -423,9 +419,7 @@ void hoc_oop_initaftererror(void) {
     hoc_thisobject = nullptr;
     obj_stack_loc = 0;
     hoc_in_template = 0;
-#if CABLE
     connect_obsec_ = 0;
-#endif
 }
 
 void oc_save_hoc_oop(Object** a1,
@@ -493,75 +487,14 @@ Object** hoc_temp_objvar(Symbol* symtemp, void* v) {
     return hoc_temp_objptr(hoc_new_object(symtemp, v));
 }
 
-/** If hoc_newob1 fails after creating a new object, that object needs to be
-  unreffed. To handle the case of constructors themselves creating new objects
-  before the error or intervening recovery of error by a callee recovering from
-  execerror, the incomplete new object is put on a stack along with the
-  current longjump target, and removed from the stack when the object
-  is complete. There could be a problem if the destructor doesn't work
-  with a partially constructed object. In case of a execerror before newobj1
-  completion, all partially constructed objects with a longjump handle equal
-  to the current longjump handle are unreffed.
-**/
-
-#define NEWOBJ1_ERR_SIZE 32 /* starts with this size, and doubles on overflow */
-typedef struct {
-    Object* ob;
-    void* oji;
-} newobj1_err_t;
-
-extern void* nrn_get_oji();
-extern void* nrn_get_hoc_jmp();
-extern void (*oc_jump_target_)();
-static int newobj1_err_index_; /* stack index */
-static int newobj1_err_size_;
-static newobj1_err_t* newobj1_err_; /* stack of newobj1_err_t */
-
-/** save partially constructed object and controlling longjump handle **/
-static void push_newobj1_err(Object* ob) {
-    if (newobj1_err_index_ >= newobj1_err_size_) {
-        if (newobj1_err_size_ == 0) {
-            newobj1_err_size_ = NEWOBJ1_ERR_SIZE;
-            newobj1_err_ = (newobj1_err_t*) calloc(newobj1_err_size_, sizeof(newobj1_err_t));
-            assert(newobj1_err_);
-        } else {
-            newobj1_err_size_ *= 2;
-            newobj1_err_ = (newobj1_err_t*) realloc(newobj1_err_,
-                                                    newobj1_err_size_ * sizeof(newobj1_err_t));
-            assert(newobj1_err_);
+struct guard_t {
+    ~guard_t() {
+        if (ob) {
+            hoc_obj_unref(ob);
         }
     }
-
-    newobj1_err_t* ne = newobj1_err_ + newobj1_err_index_++;
-    ne->ob = ob;
-    ne->oji = oc_jump_target_ ? nrn_get_oji() : nrn_get_hoc_jmp();
-}
-
-/** pop the now fully constructed object **/
-void pop_newobj1_err() {
-    --newobj1_err_index_;
-    assert(newobj1_err_index_ >= 0);
-}
-
-/** unref partially constructed objects controlled by current longjump handle **/
-void hoc_newobj1_err() { /* called from hoc_execerror */
-    if (newobj1_err_index_ > 0) {
-        int i;
-        /* Note: for the case of pure hoc, there may not be an oc_jump_target_
-           in which case jmp will get set to the hoc.c controlling jmp_buf
-        */
-        void* oji = oc_jump_target_ ? nrn_get_oji() : nrn_get_hoc_jmp();
-        while (newobj1_err_index_ > 0) {
-            newobj1_err_t* ne = newobj1_err_ + (newobj1_err_index_ - 1);
-            if (ne->oji == oji) {
-                hoc_obj_unref(ne->ob);
-                pop_newobj1_err();
-            } else {
-                break;
-            }
-        }
-    }
-}
+    Object* ob{};
+};
 
 Object* hoc_newobj1(Symbol* sym, int narg) {
     Object* ob;
@@ -569,9 +502,10 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
     Symbol* s;
     int i, total;
 
-    ob = hoc_new_object(sym, nullptr);
+    guard_t guard{};  // unref the object we're creating if there is an exception before the end of
+                      // this method
+    guard.ob = ob = hoc_new_object(sym, nullptr);
     ob->refcount = 1;
-    push_newobj1_err(ob); /* allow unref if execerror before return */
     if (sym->subtype & (CPLUSOBJECT | JAVAOBJECT)) {
         call_constructor(ob, sym, narg);
     } else {
@@ -609,7 +543,6 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
                         obd[s->u.oboff].pobj[0] = ob;
                     }
                     break;
-#if CABLE
                 case SECTION:
                     if ((obd[s->u.oboff + 1].arayinfo = s->arayinfo) != (Arrayinfo*) 0) {
                         ++s->arayinfo->refcount;
@@ -618,7 +551,6 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
                     obd[s->u.oboff].psecitm = (hoc_Item**) emalloc(total * sizeof(hoc_Item*));
                     new_sections(ob, s, obd[s->u.oboff].psecitm, total);
                     break;
-#endif
                 }
             }
         }
@@ -634,7 +566,7 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
         }
     }
     hoc_template_notify(ob, 1);
-    pop_newobj1_err();
+    guard.ob = nullptr;  // do not unref, disable the guard
     return ob;
 }
 
@@ -667,7 +599,7 @@ void hoc_newobj(void) { /* template at pc+1 */
     /* whatever. we will keep the strategy */
     if (hoc_inside_stacktype(narg) == OBJECTVAR) {
 #endif
-        obp = hoc_look_inside_stack(narg, OBJECTVAR)->pobj;
+        obp = hoc_look_inside_stack<Object**>(narg);
         ob = hoc_newobj1(sym, narg);
         hoc_nopop(); /* the object pointer */
         hoc_dec_refcount(obp);
@@ -751,10 +683,8 @@ void call_ob_proc(Object* ob, Symbol* sym, int narg) {
             pop_frame();
             hoc_pushx(x);
         }
-#if CABLE
     } else if (ob->ctemplate->is_point_ && special_pnt_call(ob, sym, narg)) {
         ; /*empty since special_pnt_call did the work for get_loc, has_loc, and loc*/
-#endif
     } else {
         callcode[0].pf = call;
         callcode[1].sym = sym;
@@ -771,7 +701,7 @@ void call_ob_proc(Object* ob, Symbol* sym, int narg) {
     }
     if (hoc_errno_check()) {
         char str[200];
-        sprintf(str, "%s.%s", hoc_object_name(ob), sym->name);
+        Sprintf(str, "%s.%s", hoc_object_name(ob), sym->name);
         hoc_warning("errno set during call of", str);
     }
     pc = pcsav;
@@ -795,7 +725,7 @@ static void call_ob_iter(Object* ob, Symbol* sym, int narg) {
     hoc_thisobject = ob;
     hoc_symlist = ob->ctemplate->symtable;
 
-    stmtobj = hoc_look_inside_stack(narg + 1, OBJECTTMP)->obj;
+    stmtobj = hoc_look_inside_stack<Object*>(narg + 1);
     stmtbegin = pc + pc->i;
     pc++;
     stmtend = pc + pc->i;
@@ -916,7 +846,7 @@ void hoc_constobject(void) { /* template at pc, index at pc+1, objpointer left o
             break;
         }
     }
-    sprintf(buf, "%s[%d]\n", t->sym->name, index);
+    Sprintf(buf, "%s[%d]\n", t->sym->name, index);
     hoc_execerror("Object ID doesn't exist:", buf);
 }
 
@@ -962,13 +892,20 @@ void hoc_object_id(void) {
     }
 }
 
-#if CABLE
 static void range_suffix(Symbol* sym, int nindex, int narg) {
     int bdim = 0;
     if (ISARRAY(sym)) {
         if (nindex != sym->arayinfo->nsub) {
             bdim = 1;
         }
+        /*
+         It is a bit more difficult to push ndim here since the arc length, if
+         specified, is top of stack before the index. However, waiting to fix up
+         the stack til just before range_vec_indx calls hoc_araypt seems ill
+         advised since range_vec_indx is called 6 places. And who knows what
+         kinds of user errors are possible that we want to catch.
+         So fix up below.
+        */
     } else {
         if (nindex != 0) {
             bdim = 1;
@@ -979,6 +916,22 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
     }
 
     if (sym->type == RANGEVAR) {
+        if (ISARRAY(sym)) {  // fixup ndim here
+            double x = -1.0;
+            if (narg) {  // need to pop the arc length to push ndim
+                if (narg > 1) {
+                    hoc_execerr_ext("%s range variable can have only one arc length parameter",
+                                    sym->name);
+                }
+                x = xpop();
+            }
+            if (!hoc_stack_type_is_ndim()) {
+                hoc_push_ndim(nindex);
+            }
+            if (narg) {  // push back the arc length
+                pushx(x);
+            }
+        }
         hoc_pushi(narg);
         hoc_pushs(sym);
     } else if (sym->subtype == USERPROPERTY) {
@@ -995,14 +948,11 @@ void connect_obsec_syntax(void) {
     connect_obsec_ = 1;
 }
 
-#endif
-
-void hoc_object_component(void) { /* number of indices at pc+2, number of args at pc+3,
-                 symbol at pc+1 */
-                                  /* object pointer on stack after indices */
-    /* if component turns out to be an object then make sure pointer
-    to correct object, symbol, etc is left on stack for evaluation,
-    assignment, etc. */
+// number of indices at pc+2, number of args at pc+3, symbol at pc+1
+// object pointer on stack after indices
+// if component turns out to be an object then make sure pointer to correct
+// object, symbol, etc is left on stack for evaluation, assignment, etc.
+void hoc_object_component() {
     Symbol *sym0, *sym = 0;
     int nindex, narg, cplus, isfunc;
     Object *obp, *obsav;
@@ -1020,7 +970,6 @@ void hoc_object_component(void) { /* number of indices at pc+2, number of args a
     psym = &(pc++)->sym;
     isfunc = (pc++)->i;
 
-#if CABLE
     if (section_object_seen) {
         section_object_seen = 0;
         range_suffix(sym0, nindex, narg);
@@ -1030,16 +979,19 @@ void hoc_object_component(void) { /* number of indices at pc+2, number of args a
         narg += nindex;
         nindex = 0;
     }
-#endif
+    int expect_stack_nsub{0};
     if (nindex) {
         if (narg) {
             hoc_execerror("[...](...) syntax only allowed for array range variables:", sym0->name);
         }
+        if (!hoc_stack_type_is_ndim()) {
+            hoc_push_ndim(nindex);
+        }
+        expect_stack_nsub = 1;
     } else {
         nindex = narg;
     }
-
-    obp = hoc_obj_look_inside_stack(nindex);
+    obp = hoc_obj_look_inside_stack(nindex + expect_stack_nsub);
     if (obp) {
 #if USE_PYTHON
         if (obp->ctemplate->sym == nrnpy_pyobj_sym_) {
@@ -1107,15 +1059,32 @@ void hoc_object_component(void) { /* number of indices at pc+2, number of args a
         break;
     case VAR:
         if (cplus) {
-            double* pd;
             if (nindex) {
                 if (!ISARRAY(sym) || sym->arayinfo->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
                 }
+                if (narg) {
+                    // there are 25 modeldb examples that use (index) instead
+                    // of [index] syntax for an array in this context. So we
+                    // have decided to keep allowing this legacy syntax for one
+                    // dimensional arrays.
+                    extern Symbol* nrn_matrix_sym;
+                    if (narg == 1) {
+                        hoc_push_ndim(1);
+                    } else if (narg == 2 && obp->ctemplate->sym == nrn_matrix_sym) {
+                        // Allow legacy syntax Matrix.x(i, j)
+                        hoc_push_ndim(2);
+                    } else {
+                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
+                                        hoc_object_name(obp),
+                                        sym->name,
+                                        sym->name);
+                    }
+                }
             }
             hoc_pushs(sym);
             (*obp->ctemplate->steer)(obp->u.this_pointer);
-            pd = hoc_pxpop();
+            double* pd = hoc_pxpop();
             /* cannot pop a temporary object til after the pd is used in
             case (e.g. Vector.x) the pointer is a field in the object
             (often the pd has nothing to do with the object)*/
@@ -1141,6 +1110,10 @@ void hoc_object_component(void) { /* number of indices at pc+2, number of args a
         break;
     case PROCEDURE:
     case FUNCTION: {
+        if (expect_stack_nsub) {
+            hoc_pop_ndim();
+            hoc_execerr_ext("%s is a function not a %ddim array", sym->name, nindex);
+        }
         double d = 0.;
         call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
@@ -1156,6 +1129,14 @@ void hoc_object_component(void) { /* number of indices at pc+2, number of args a
     case HOCOBJFUNCTION:
     case OBFUNCTION: {
         Object** d;
+        if (expect_stack_nsub) {
+            hoc_pop_ndim();
+            // for legacy reasons allow single arg [] format.
+            // E.g. occasionally seen for List.object[index]
+            if (nindex > 1) {
+                hoc_execerr_ext("%s is a function not a %ddim array", sym->name, nindex);
+            }
+        }
         call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
             break;
@@ -1183,7 +1164,6 @@ void hoc_object_component(void) { /* number of indices at pc+2, number of args a
         hoc_pushstr(d);
         break;
     }
-#if CABLE
     case SECTIONREF: {
         extern Symbol* nrn_sec_sym;
         Section* sec;
@@ -1235,6 +1215,9 @@ void hoc_object_component(void) { /* number of indices at pc+2, number of args a
             if (!ISARRAY(sym) || OPARINFO(sym)->nsub != nindex) {
                 hoc_execerror(sym->name, ":not right number of subscripts");
             }
+            if (!hoc_stack_type_is_ndim()) {
+                hoc_push_ndim(nindex);
+            }
             nindex = araypt(sym, OBJECTVAR);
         }
         hoc_pop_defer();
@@ -1245,7 +1228,6 @@ void hoc_object_component(void) { /* number of indices at pc+2, number of args a
         ob_sec_access_push(*(OPSECITM(sym) + nindex));
         break;
     }
-#endif /*CABLE*/
     case ITERATOR: {
         if ((pc++)->i != ITERATOR) {
             hoc_execerror(sym->name, ":ITERATOR can only be used in a for statement");
@@ -1303,9 +1285,8 @@ void hoc_object_eval(void) {
     if (type == VAR) {
         hoc_pushx(*(hoc_pxpop()));
     } else if (type == SYMBOL) {
-#if CABLE
-        Datum* d = hoc_look_inside_stack(0, SYMBOL);
-        if (d->sym->type == RANGEVAR) {
+        auto* d_sym = hoc_look_inside_stack<Symbol*>(0);
+        if (d_sym->type == RANGEVAR) {
             Symbol* sym = hoc_spop();
             int narg = hoc_ipop();
             struct Section* sec = nrn_sec_pop();
@@ -1316,11 +1297,10 @@ void hoc_object_eval(void) {
                 x = .5;
             }
             hoc_pushx(*(nrn_rangepointer(sec, sym, x)));
-        } else if (d->sym->type == VAR && d->sym->subtype == USERPROPERTY) {
+        } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
             extern double cable_prop_eval(Symbol*);
             hoc_pushx(cable_prop_eval(hoc_spop()));
         }
-#endif
     }
 }
 
@@ -1333,12 +1313,11 @@ void hoc_ob_pointer(void) {
     type = hoc_stacktype();
     if (type == VAR) {
     } else if (type == SYMBOL) {
-#if CABLE
-        Datum* d = hoc_look_inside_stack(0, SYMBOL);
-        if (d->sym->type == RANGEVAR) {
+        auto* d_sym = hoc_look_inside_stack<Symbol*>(0);
+        if (d_sym->type == RANGEVAR) {
             Symbol* sym = hoc_spop();
             int nindex = hoc_ipop();
-            struct Section* sec = nrn_sec_pop();
+            Section* sec = nrn_sec_pop();
             double x;
             if (nindex) {
                 x = hoc_xpop();
@@ -1346,15 +1325,11 @@ void hoc_ob_pointer(void) {
                 x = .5;
             }
             hoc_pushpx(nrn_rangepointer(sec, sym, x));
-        } else if (d->sym->type == VAR && d->sym->subtype == USERPROPERTY) {
+        } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
             hoc_pushpx(cable_prop_eval_pointer(hoc_spop()));
         } else {
             hoc_execerror("Not a double pointer", 0);
         }
-
-#else
-        hoc_execerror("Not a double pointer", 0);
-#endif
     } else {
         hoc_execerror("Not a double pointer", 0);
     }
@@ -1367,29 +1342,25 @@ void hoc_asgn_obj_to_str(void) { /* string on stack */
     hoc_assign_str(pstr, d);
 }
 
-void hoc_object_asgn(void) {
-    int type1, type2, op;
-    op = (pc++)->i;
-    type1 = hoc_stacktype();
-    type2 = hoc_inside_stacktype(1);
-#if CABLE
+void hoc_object_asgn() {
+    int op = (pc++)->i;
+    int type1 = hoc_stacktype();          // type of top entry
+    int type2 = hoc_inside_stacktype(1);  // type of second-top entry
     if (type2 == SYMBOL) {
-        Datum* d = hoc_look_inside_stack(1, SYMBOL);
-        if (d->sym->type == RANGEVAR) {
+        auto* sym = hoc_look_inside_stack<Symbol*>(1);
+        if (sym->type == RANGEVAR) {
             type2 = RANGEVAR;
-        } else if (d->sym->type == VAR && d->sym->subtype == USERPROPERTY) {
+        } else if (sym->type == VAR && sym->subtype == USERPROPERTY) {
             type2 = USERPROPERTY;
         }
     }
     if (type2 == RANGEVAR && type1 == NUMBER) {
         double d = hoc_xpop();
-        struct Section* sec;
         Symbol* sym = hoc_spop();
         int nindex = hoc_ipop();
-        sec = nrn_sec_pop();
+        Section* sec = nrn_sec_pop();
         if (nindex) {
-            double* pd;
-            pd = nrn_rangepointer(sec, sym, hoc_xpop());
+            auto pd = nrn_rangepointer(sec, sym, hoc_xpop());
             if (op) {
                 d = hoc_opasgn(op, *pd, d);
             }
@@ -1405,7 +1376,6 @@ void hoc_object_asgn(void) {
         hoc_pushx(d);
         return;
     }
-#endif
     switch (type2) {
     case VAR: {
         double d, *pd;
@@ -1418,12 +1388,11 @@ void hoc_object_asgn(void) {
         hoc_pushx(d);
     } break;
     case OBJECTVAR: {
-        Object **d, **pd;
         if (op) {
-            hoc_execerror("Invalid assignment operator for object", (char*) 0);
+            hoc_execerror("Invalid assignment operator for object", nullptr);
         }
-        d = hoc_objpop();
-        pd = hoc_objpop();
+        Object** d = hoc_objpop();
+        Object** pd = hoc_objpop();
         if (d != pd) {
             Object* tobj = *d;
             if (tobj) {
@@ -1436,30 +1405,26 @@ void hoc_object_asgn(void) {
         hoc_pushobj(pd);
     } break;
     case STRING: {
-        char *d, **pd;
         if (op) {
-            hoc_execerror("Invalid assignment operator for string", (char*) 0);
+            hoc_execerror("Invalid assignment operator for string", nullptr);
         }
-        d = *(hoc_strpop());
-        pd = hoc_strpop();
+        char* d = *(hoc_strpop());
+        char** pd = hoc_strpop();
         hoc_assign_str(pd, d);
         hoc_pushstr(pd);
     } break;
 #if USE_PYTHON
     case OBJECTTMP: { /* should be PythonObject */
-        Object* o;
-        int stkindex = hoc_obj_look_inside_stack_index(1);
-        o = hoc_obj_look_inside_stack(1);
+        Object* o = hoc_obj_look_inside_stack(1);
         assert(o->ctemplate->sym == nrnpy_pyobj_sym_);
         if (op) {
-            hoc_execerror("Invalid assignment operator for PythonObject", (char*) 0);
+            hoc_execerror("Invalid assignment operator for PythonObject", nullptr);
         }
         (*nrnpy_hpoasgn)(o, type1);
-        hoc_stkobj_unref(o, stkindex);
     } break;
 #endif
     default:
-        hoc_execerror("Cannot assign to left hand side", (char*) 0);
+        hoc_execerror("Cannot assign to left hand side", nullptr);
     }
 }
 
@@ -1740,13 +1705,14 @@ void hoc_free_allobjects(cTemplate* ctemplate, Symlist* sl, Objectdata* data) {
 #define objectpath  hoc_objectpath_impl
 #define pathprepend hoc_path_prepend
 
+constexpr std::size_t hoc_object_pathname_bufsize = 512;
 void pathprepend(char* path, const char* name, const char* indx) {
     char buf[200];
     if (path[0]) {
         strcpy(buf, path);
-        sprintf(path, "%s%s.%s", name, indx, buf);
+        std::snprintf(path, hoc_object_pathname_bufsize, "%s%s.%s", name, indx, buf);
     } else {
-        sprintf(path, "%s%s", name, indx);
+        std::snprintf(path, hoc_object_pathname_bufsize, "%s%s", name, indx);
     }
 }
 
@@ -1793,7 +1759,7 @@ int objectpath(Object* ob, Object* oblook, char* path, int depth) {
 }
 
 char* hoc_object_pathname(Object* ob) {
-    static char path[512];
+    static char path[hoc_object_pathname_bufsize];
     path[0] = '\0';
     if (objectpath(ob, nullptr, path, 0)) {
         return path;
@@ -1909,7 +1875,6 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
                     free_arrayinfo(OPARINFO(s));
                     free(objp);
                     break;
-#if CABLE
                 case SECTION:
                     total = hoc_total_array(s);
                     for (i = 0; i < total; ++i) {
@@ -1918,11 +1883,9 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
                     free(OPSECITM(s));
                     free_arrayinfo(OPARINFO(s));
                     break;
-#endif
                 }
             }
         }
-#if CABLE
     if (ctemplate->is_point_) {
         void* v = od[ctemplate->dataspace_size - 1]._pvoid;
         if (v) {
@@ -1930,7 +1893,6 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
             destroy_point_process(v);
         }
     }
-#endif
     hoc_objectdata = psav;
     if (od) {
         free((char*) od);
@@ -2051,9 +2013,9 @@ void check_obj_type(Object* obj, const char* type_name) {
     char buf[100];
     if (!obj || strcmp(obj->ctemplate->sym->name, type_name) != 0) {
         if (obj) {
-            sprintf(buf, "object type is %s instead of", obj->ctemplate->sym->name);
+            Sprintf(buf, "object type is %s instead of", obj->ctemplate->sym->name);
         } else {
-            sprintf(buf, "object type is nil instead of");
+            Sprintf(buf, "object type is nil instead of");
         }
         hoc_execerror(buf, type_name);
     }

@@ -12,19 +12,17 @@
 #include "parse.hpp"
 #include "hocparse.h"
 #include "oc_ansi.h"
+#include "ocjump.h"
 #include "ocfunc.h"
 #include "ocmisc.h"
 #include "nrnmpi.h"
 #include "nrnfilewrap.h"
-#if defined(__GO32__)
-#include <dos.h>
-#include <go32.h>
-#endif
 #include "../nrniv/backtrace_utils.h"
 
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#include <utility>
 
 /* for eliminating "ignoreing return value" warnings. */
 int nrnignore;
@@ -171,8 +169,8 @@ static CHAR* cbuf;
 CHAR* ctp;
 int hoc_ictp;
 
-extern char* RCS_hoc_version;
-extern char* RCS_hoc_date;
+extern const char* RCS_hoc_version;
+extern const char* RCS_hoc_date;
 extern char* neuron_home;
 extern int hoc_print_first_instance;
 
@@ -191,12 +189,7 @@ int lineno;
 #include <execinfo.h>
 #endif
 #include <signal.h>
-#include <setjmp.h>
-static int control_jmpbuf = 0; /* don't change jmp_buf if being controlled */
-jmp_buf begin;
-static int hoc_oc_jmpbuf;
-static jmp_buf hoc_oc_begin;
-int intset; /* safer interrupt handling */
+int hoc_intset; /* safer interrupt handling */
 int indef;
 const char* infile; /* input file name */
 extern size_t hoc_xopen_file_size_;
@@ -207,7 +200,7 @@ static int c = '\n'; /* global for use by warning() */
 
 #if defined(WIN32) || MAC
 void set_intset() {
-    intset++;
+    hoc_intset++;
 }
 #endif
 #ifdef WIN32
@@ -219,7 +212,7 @@ static int Getc(NrnFILEWrap* fp);
 static void unGetc(int c, NrnFILEWrap* fp);
 static int backslash(int c);
 
-void nrn_exit(int i) {
+[[noreturn]] void nrn_exit(int i) {
 #if defined(WIN32)
     printf("NEURON exiting abnormally, press return to quit\n");
     fgetc(stdin);
@@ -548,14 +541,8 @@ void arayinstal(void) /* allocate storage for arrays */
 {
     int i, nsub;
     Symbol* sp;
-#if defined(__TURBOC__)
-    Inst* pcc; /* sometimes pop messes up pc */
-#endif
 
     nsub = (pc++)->i;
-#if defined(__TURBOC__)
-    pcc = pc;
-#endif
     sp = spop();
 
     hoc_freearay(sp);
@@ -568,9 +555,6 @@ void arayinstal(void) /* allocate storage for arrays */
         hoc_malchk();
         hoc_execerror("", (char*) 0);
     }
-#if defined(__TURBOC__)
-    pc = pcc;
-#endif
 }
 
 int hoc_arayinfo_install(Symbol* sp, int nsub) {
@@ -653,80 +637,52 @@ void hoc_show_errmess_always(void) {
 }
 
 int hoc_execerror_messages;
-
-/* this is possibly non-portable since it is based on the declaration in
-    setjmp.h of
-    typedef int jmp_buf[_JBLEN];
-*/
-void (*oc_jump_target_)(); /* see ivoc/SRC/ocjump.cpp */
-
-
+int nrn_try_catch_nest_depth{0};
 int yystart;
-
-/* what to do about partially constructed objects at hoc_execerror */
-extern void hoc_newobj1_err();
-
-/** If one of the two jmp_buf is controlling the longjmp
- *  hoc_newobj1_err needs handle to know how much to unwrap the newobj1 stack.
- **/
-void* nrn_get_hoc_jmp() {
-    void* jmp = hoc_oc_jmpbuf ? (void*) hoc_oc_begin : (void*) begin;
-    return jmp;
-}
 
 void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from run-time error */
     hoc_in_yyparse = 0;
     yystart = 1;
     hoc_menu_cleanup();
     hoc_errno_check();
-#if 0
-	hoc_xmenu_cleanup();
-#endif
     if (debug_message_ || prnt) {
-        warning(s, t);
+        hoc_warning(s, t);
         frame_debug();
         nrn_err_dialog(s);
-#if defined(__GO32__)
-        {
-            extern int egagrph;
-            if (egagrph) {
-                hoc_outtext("Error:");
-                hoc_outtext(s);
-                if (t) {
-                    hoc_outtext(" ");
-                    hoc_outtext(t);
-                }
-                hoc_outtext("\n");
-            }
-        }
-#endif
     }
-    /* in case warning not called */
-    ctp = cbuf;
-    *ctp = '\0';
-
-    if (oc_jump_target_ && (nrnmpi_numprocs_world == 1 || !nrn_mpiabort_on_error_)) {
-        hoc_newobj1_err();
-        (*oc_jump_target_)();
-    }
+    // In case hoc_warning not called
+    hoc_ctp = hoc_cbuf;
+    *hoc_ctp = '\0';
+    // There used to be some logic here to abort here if we are inside an OcJump call.
 #if NRNMPI
     if (nrnmpi_numprocs_world > 1 && nrn_mpiabort_on_error_) {
         nrnmpi_abort(-1);
     }
 #endif
     hoc_execerror_messages = 1;
-    if (fin && pipeflag == 0 && (!nrn_fw_eq(fin, stdin) || !nrn_istty_))
-        IGNORE(nrn_fw_fseek(fin, 0L, 2)); /* flush rest of file */
-    hoc_oop_initaftererror();
-    if (hoc_oc_jmpbuf) {
-        hoc_newobj1_err();
-        longjmp(hoc_oc_begin, 1);
+    if (hoc_fin && hoc_pipeflag == 0 && (!nrn_fw_eq(hoc_fin, stdin) || !nrn_istty_)) {
+        IGNORE(nrn_fw_fseek(hoc_fin, 0L, 2)); /* flush rest of file */
     }
-    hoc_newobj1_err();
-    longjmp(begin, 1);
+
+    // If the exception is due to a multiple ^C interrupt, then onintr
+    // will not exit normally (because of the throw below) and the signal
+    // would remain in a SIG_BLOCK state.
+    // It is not clear to me if this would be better done in every catch.
+#if HAVE_SIGPROCMASK
+    if (hoc_intset > 1) {
+        sigset_t set;
+        sigemptyset(&set);
+        sigaddset(&set, SIGINT);
+        sigprocmask(SIG_UNBLOCK, &set, NULL);
+    }
+#endif  // HAVE_SIGPROCMASK
+
+    hoc_intset = 0;
+    hoc_oop_initaftererror();
+    throw std::runtime_error("hoc_execerror");
 }
 
-extern "C" void hoc_execerror(const char* s, const char* t) /* recover from run-time error */
+void hoc_execerror(const char* s, const char* t) /* recover from run-time error */
 {
     hoc_execerror_mes(s, t, hoc_execerror_messages);
 }
@@ -735,7 +691,7 @@ RETSIGTYPE onintr(int sig) /* catch interrupt */
 {
     /*ARGSUSED*/
     stoprun = 1;
-    if (intset++)
+    if (hoc_intset++)
         execerror("interrupted", (char*) 0);
     IGNORE(signal(SIGINT, onintr));
 }
@@ -903,15 +859,8 @@ void hoc_main1_init(const char* pname, const char** envp) {
         }
     }
     progname = pname;
-    if (setjmp(begin)) {
-        nrn_exit(1);
-    }
-
     hoc_init();
     initplot();
-#if defined(__GO32__)
-    setcbrk(0);
-#endif
     hoc_main1_inited_ = 1;
 }
 
@@ -951,10 +900,10 @@ void hocstr_copy(HocStr* hs, const char* buf) {
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
-static int hoc_run1(void);
+static int hoc_run1();
 
-int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
-{
+// hoc6
+int hoc_main1(int argc, const char** argv, const char** envp) {
     int exit_status = EXIT_SUCCESS;
 #ifdef WIN32
     extern void hoc_set_unhandled_exception_filter();
@@ -970,61 +919,53 @@ int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
 
     hoc_audit_from_hoc_main1(argc, argv, envp);
     hoc_main1_init(argv[0], envp);
+    try {
 #if HAS_SIGPIPE
-    signal(SIGPIPE, sigpipe_handler);
+        signal(SIGPIPE, sigpipe_handler);
 #endif
-#if 0
-	controlled = control_jmpbuf;
-	if (!controlled) {
-		control_jmpbuf = 1;
-		if (setjmp(begin)) {
-			control_jmpbuf = 0;
-			return 1;
-		}
-	}
-	if (!controlled) {
-		control_jmpbuf = 0;
-	}
-#endif
-    gargv = argv;
-    gargc = argc;
-    if (argc > 2 && strcmp(argv[1], "-bbs_nhost") == 0) {
-        /* if IV not running this may still be here */
-        gargv += 2;
-        gargc -= 2;
-    }
-    if (argc > 1 && argv[1][0] != '-') {
-        /* first file may be a checkpoint file */
-        extern int hoc_readcheckpoint(char*);
-        switch (hoc_readcheckpoint(const_cast<char*>(argv[1]))) {
-        case 1:
-            ++gargv;
-            --gargc;
-            break;
-        case 2:
-            nrn_exit(1);
-            break;
-        default:
-            break;
+        gargv = argv;
+        gargc = argc;
+        if (argc > 2 && strcmp(argv[1], "-bbs_nhost") == 0) {
+            /* if IV not running this may still be here */
+            gargv += 2;
+            gargc -= 2;
         }
-    }
+        if (argc > 1 && argv[1][0] != '-') {
+            /* first file may be a checkpoint file */
+            extern int hoc_readcheckpoint(char*);
+            switch (hoc_readcheckpoint(const_cast<char*>(argv[1]))) {
+            case 1:
+                ++gargv;
+                --gargc;
+                break;
+            case 2:
+                nrn_exit(1);
+                break;
+            default:
+                break;
+            }
+        }
 
-    if (gargc == 1) /* fake an argument list */
-    {
-        static const char* stdinonly[] = {"-"};
+        if (gargc == 1) /* fake an argument list */
+        {
+            static const char* stdinonly[] = {"-"};
 
 #ifdef MINGW
-        cygonce = 1;
+            cygonce = 1;
 #endif
-        gargv = stdinonly;
-        gargc = 1;
-    } else {
-        ++gargv;
-        --gargc;
+            gargv = stdinonly;
+            gargc = 1;
+        } else {
+            ++gargv;
+            --gargc;
+        }
+        while (hoc_moreinput()) {
+            exit_status = hoc_run1();
+        }
+        return exit_status;
+    } catch (...) {
+        nrn_exit(1);
     }
-    while (moreinput())
-        exit_status = hoc_run1();
-    return exit_status;
 }
 
 #ifdef MINGW
@@ -1074,14 +1015,10 @@ void hoc_final_exit(void) {
 #ifdef WIN32
     hoc_win32_cleanup();
 #else
-    buf = static_cast<char*>(malloc(strlen(neuron_home) + 30));
-    if (buf) {
-        sprintf(buf, "%s/lib/cleanup %d", neuron_home, hoc_pid());
-        if (system(buf)) {
-            ;
-        } /* ignore return value */
-        free(buf);
-    }                    /* else did not call cleanup */
+    std::string cmd{neuron_home};
+    cmd += "/lib/cleanup ";
+    cmd += std::to_string(hoc_pid());
+    system(cmd.c_str());
 #endif
 }
 
@@ -1131,7 +1068,7 @@ static const char* double_at2space(const char* infile) {
 }
 #endif /*MINGW*/
 
-int moreinput(void) {
+int hoc_moreinput() {
     if (pipeflag) {
         pipeflag = 0;
         return 1;
@@ -1199,7 +1136,7 @@ int moreinput(void) {
         with the hoc interpreter.
         */
         if (strlen(infile) < 4 || strcmp(infile + strlen(infile) - 4, ".hoc") != 0) {
-            return moreinput();
+            return hoc_moreinput();
         }
     }
 #endif
@@ -1211,7 +1148,7 @@ int moreinput(void) {
         /* ignore "val" as next argument */
         infile = *gargv++;
         gargc--;
-        return moreinput();
+        return hoc_moreinput();
     } else if (strcmp(infile, "-c") == 0) {
         int hpfi, err;
         HocStr* hs;
@@ -1221,7 +1158,7 @@ int moreinput(void) {
         infile = double_at2space(infile);
 #endif
         hs = hocstr_create(strlen(infile) + 2);
-        sprintf(hs->buf, "%s\n", infile);
+        std::snprintf(hs->buf, hs->size + 1, "%s\n", infile);
         /* now infile is a hoc statement */
         hpfi = hoc_print_first_instance;
         fin = (NrnFILEWrap*) 0;
@@ -1232,13 +1169,13 @@ int moreinput(void) {
         if (err) {
             hoc_execerror("arg not valid statement:", infile);
         }
-        return moreinput();
+        return hoc_moreinput();
     } else if (strlen(infile) > 3 && strcmp(infile + strlen(infile) - 3, ".py") == 0) {
         if (!p_nrnpy_pyrun) {
             hoc_execerror("Python not available to interpret", infile);
         }
         (*p_nrnpy_pyrun)(infile);
-        return moreinput();
+        return hoc_moreinput();
     } else if ((fin = nrn_fw_fopen(infile, "r")) == (NrnFILEWrap*) 0) {
 #if OCSMALL
         hoc_menu_cleanup();
@@ -1249,7 +1186,7 @@ int moreinput(void) {
             nrnmpi_abort(-1);
         }
 #endif
-        return moreinput();
+        return hoc_moreinput();
     }
     if (infile) {
         if (strlen(infile) >= hoc_xopen_file_size_) {
@@ -1260,16 +1197,6 @@ int moreinput(void) {
     }
     return 1;
 }
-
-#if 1
-void hoc_run(void) {
-    hoc_run1();
-    while (pipeflag == 1) {
-        pipeflag = 0;
-        hoc_run1();
-    }
-}
-#endif
 
 typedef RETSIGTYPE (*SignalType)(int);
 
@@ -1297,31 +1224,72 @@ static void restore_signals(void) {
 #endif
 }
 
-static int hoc_run1(void) /* execute until EOF */
-{
-    int controlled = control_jmpbuf;
-    NrnFILEWrap* sav_fin = fin;
-    if (!controlled) {
+struct signal_handler_guard {
+    signal_handler_guard() {
         set_signals();
-        control_jmpbuf = 1;
-        if (setjmp(begin)) {
-            fin = sav_fin;
-            if (!nrn_fw_eq(fin, stdin)) {
-                return EXIT_FAILURE;
+    }
+    ~signal_handler_guard() {
+        restore_signals();
+    }
+};
+
+// Helper to temporarily set a global to something and then restore the original
+// value when the helper goes out of scope
+template <typename T>
+struct temporarily_change {
+    temporarily_change(T& global, T new_value)
+        : m_global_value{global}
+        , m_saved_value{std::exchange(global, new_value)} {}
+    ~temporarily_change() {
+        m_global_value = m_saved_value;
+    }
+
+  private:
+    T& m_global_value;
+    T m_saved_value;
+};
+
+// execute until EOF
+// called from a try { ... } block in hoc_main1
+static int hoc_run1() {
+    auto* const sav_fin = hoc_fin;
+    hoc_pipeflag = 0;
+    hoc_execerror_messages = 1;
+    auto const loop_body = []() {
+        hoc_initcode();
+        if (!hoc_yyparse()) {
+            if (hoc_intset) {
+                hoc_execerror("interrupted", nullptr);
+            }
+            return false;
+        }
+        hoc_execute(hoc_progbase);
+        return true;
+    };
+    if (nrn_try_catch_nest_depth) {
+        // This is not the most shallowly nested call to hoc_run1(), allow the
+        // most shallowly nested call to handle exceptions.
+        while (loop_body())
+            ;
+    } else {
+        // This is the most shallowly nested call to hoc_run1(), handle exceptions.
+        signal_handler_guard _{};  // install signal handlers
+        try_catch_depth_increment tell_children_we_will_catch{};
+        hoc_intset = 0;
+        for (;;) {
+            try {
+                if (!loop_body()) {
+                    break;
+                }
+            } catch (std::exception const& e) {
+                hoc_fin = sav_fin;
+                std::cerr << "hoc_run1: caught exception: " << e.what() << std::endl;
+                // Exit if we're not in interactive mode
+                if (!nrn_fw_eq(hoc_fin, stdin)) {
+                    return EXIT_FAILURE;
+                }
             }
         }
-        intset = 0;
-    }
-    hoc_execerror_messages = 1;
-    pipeflag = 0;  // reset pipeflag
-    for (initcode(); hoc_yyparse(); initcode()) {
-        execute(progbase);
-    }
-    if (intset)
-        execerror("interrupted", (char*) 0);
-    if (!controlled) {
-        restore_signals();
-        control_jmpbuf = 0;
     }
     return EXIT_SUCCESS;
 }
@@ -1350,8 +1318,9 @@ static int hoc_run1(void) /* execute until EOF */
    of hoc. But just maybe that is here. However hoc_oc may be called
    recursively. Or it may be called from the original hoc_run. Or it may be
    There is therefore a notion of the controlling routine for the jmp_buf begin.
-   We only do a setjmp and set the signals
-   when there is no other controlling routine.
+   We only do a setjmp and set the signals when there is no other controlling
+   routine. Note that setjmp is no longer used, but for now the same notion of a
+   controlling routine is maintained.
 */
 
 /* allow hoc_oc(buf) to handle any number of multiline statements */
@@ -1388,52 +1357,38 @@ void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
 }
 
 int hoc_oc(const char* buf) {
-    char* cp;
-    int controlled;
-#if 0
-	int yret;
-#endif
-
-    int sav_pipeflag = pipeflag;
-    int sav_lineno = lineno;
-    const char* sav_inputbufptr = nrn_inputbufptr;
-    nrn_inputbufptr = buf;
-    pipeflag = 3;
-    lineno = 1;
-    controlled = hoc_oc_jmpbuf || oc_jump_target_;
-    if (!controlled) {
-        hoc_oc_jmpbuf = 1;
-        if (setjmp(hoc_oc_begin)) {
-            hoc_oc_jmpbuf = 0;
-            restore_signals();
-            initcode();
-            intset = 0;
-            pipeflag = sav_pipeflag;
-            nrn_inputbufptr = sav_inputbufptr;
-            lineno = sav_lineno;
+    // the substantive code to execute, everything else is to do with handling
+    // errors here or elsewhere
+    auto const kernel = [buf]() {
+        hoc_intset = 0;
+        hocstr_resize(hoc_cbufstr, strlen(buf) + 10);
+        nrn_inputbuf_getline();
+        while (*hoc_ctp || *nrn_inputbufptr) {
+            hoc_ParseExec(yystart);
+            if (hoc_intset) {
+                hoc_execerror("interrupted", nullptr);
+            }
+        }
+    };
+    auto const lineno_manager = temporarily_change{hoc_lineno, 1};
+    auto const pipeflag_manager = temporarily_change{hoc_pipeflag, 3};
+    auto const inputbufptr_manager = temporarily_change{nrn_inputbufptr, buf};
+    if (nrn_try_catch_nest_depth) {
+        // Someone else is responsible for catching errors
+        kernel();
+    } else {
+        // This is the highest level try/catch
+        try_catch_depth_increment tell_children_we_will_catch{};
+        try {
+            signal_handler_guard _{};
+            kernel();
+        } catch (std::exception const& e) {
+            std::cerr << "hoc_oc caught exception: " << e.what() << std::endl;
+            hoc_initcode();
+            hoc_intset = 0;
             return 1;
         }
-        set_signals();
     }
-    intset = 0;
-
-    hocstr_resize(hoc_cbufstr, strlen(buf) + 10);
-    nrn_inputbuf_getline();
-    while (*ctp || *nrn_inputbufptr) {
-        hoc_ParseExec(yystart);
-
-        if (intset) {
-            execerror("interrupted", (char*) 0);
-        }
-    }
-
-    if (!controlled) {
-        hoc_oc_jmpbuf = 0;
-        restore_signals();
-    }
-    lineno = sav_lineno;
-    pipeflag = sav_pipeflag;
-    nrn_inputbufptr = sav_inputbufptr;
     hoc_execerror_messages = 1;
     return 0;
 }
@@ -1444,7 +1399,7 @@ void warning(const char* s, const char* t) /* print warning message */
     char id[10];
     int n;
     if (nrnmpi_numprocs_world > 1) {
-        sprintf(id, "%d ", nrnmpi_myid_world);
+        Sprintf(id, "%d ", nrnmpi_myid_world);
     } else {
         id[0] = '\0';
     }
@@ -1555,9 +1510,6 @@ int hoc_yyparse(void) {
     return i;
 }
 
-#if defined(__GO32__)
-#define INTERVIEWS 1
-#endif
 #ifdef WIN32
 #define INTERVIEWS 1
 #endif
@@ -1805,9 +1757,6 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
                 extern int hoc_notify_stop;
                 return EOF;
             }
-#if defined(__GO32__)
-            hoc_check_intupt(0);
-#endif
             n = strlen(line);
             for (int i = 0; i < n; ++i) {
                 if (!isascii(line[i])) {
@@ -1877,13 +1826,3 @@ void hoc_help(void) {
     }
     ctp = cbuf + strlen(cbuf) - 1;
 }
-
-#if defined(__GO32__)
-void hoc_check_intupt(int intupt) {
-    if (_go32_was_ctrl_break_hit()) {
-        if (intupt) {
-            execerror("interrupted", (char*) 0);
-        }
-    }
-}
-#endif

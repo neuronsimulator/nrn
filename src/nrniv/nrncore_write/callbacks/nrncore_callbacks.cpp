@@ -97,7 +97,7 @@ void* get_global_dbl_item(void* p, const char*& name, int& size, double*& val) {
                     val = new double[size];
                     for (int i = 0; i < a->sub[0]; ++i) {
                         char n[256];
-                        sprintf(n, "%s[%d]", sp->name, i);
+                        Sprintf(n, "%s[%d]", sp->name, i);
                         val[i] = *hoc_val_pointer(n);
                     }
                 }
@@ -168,13 +168,13 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
     } else if (type > 0 && type < n_memb_func) {
         Memb_list* ml = nt._ml_list[type];
         if (ml) {
-            mdata = ml->data;
+            mdata = ml->_data;
             n = ml->nodecount;
         } else {
             // The single thread case is easy
             if (nrn_nthread == 1) {
                 ml = memb_list + type;
-                mdata = ml->data;
+                mdata = ml->_data;
                 n = ml->nodecount;
             } else {
                 // mk_tml_with_art() created a cgs[id].mlwithart which appended
@@ -185,7 +185,7 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
                 // cellgroups_ portion (deleting it on return from nrncore_run).
                 auto& ml = CellGroup::deferred_type2artml_[tid][type];
                 n = size_t(ml->nodecount);
-                mdata = ml->data;
+                mdata = ml->_data;
             }
         }
     }
@@ -317,7 +317,7 @@ int nrnthread_dat2_2(int tid,
             Node* nd = nt._v_node[i];
             double diam = 0.0;
             for (Prop* p = nd->prop; p; p = p->next) {
-                if (p->type == MORPHOLOGY) {
+                if (p->_type == MORPHOLOGY) {
                     diam = p->param[0];
                     break;
                 }
@@ -351,12 +351,12 @@ int nrnthread_dat2_mech(int tid,
     int n = ml->nodecount;
     int sz = nrn_prop_param_size_[type];
     double* data1;
-    if (isart) {                                       // data may not be contiguous
-        data1 = contiguous_art_data(ml->data, n, sz);  // delete after use
+    if (isart) {                                        // data may not be contiguous
+        data1 = contiguous_art_data(ml->_data, n, sz);  // delete after use
         nodeindices = NULL;
     } else {
         nodeindices = ml->nodeindices;  // allocated below if copy
-        data1 = ml->data[0];            // do not delete after use
+        data1 = ml->_data[0];           // do not delete after use
     }
     if (copy) {
         if (!isart) {
@@ -478,7 +478,7 @@ int nrnthread_dat2_corepointer_mech(int tid,
     // data size and allocate
     for (int i = 0; i < ml->nodecount; ++i) {
         (*nrn_bbcore_write_[type])(
-            NULL, NULL, &dcnt, &icnt, ml->data[i], ml->pdata[i], ml->_thread, &nt);
+            NULL, NULL, &dcnt, &icnt, ml->_data[i], ml->pdata[i], ml->_thread, &nt);
     }
     dArray = NULL;
     iArray = NULL;
@@ -492,7 +492,7 @@ int nrnthread_dat2_corepointer_mech(int tid,
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
         (*nrn_bbcore_write_[type])(
-            dArray, iArray, &dcnt, &icnt, ml->data[i], ml->pdata[i], ml->_thread, &nt);
+            dArray, iArray, &dcnt, &icnt, ml->_data[i], ml->pdata[i], ml->_thread, &nt);
     }
 
     return 1;
@@ -519,7 +519,7 @@ int core2nrn_corepointer_mech(int tid, int type, int icnt, int dcnt, int* iArray
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
         (*nrn_bbcore_read_[type])(
-            dArray, iArray, &dk, &ik, ml->data[i], ml->pdata[i], ml->_thread, &nt);
+            dArray, iArray, &dk, &ik, ml->_data[i], ml->pdata[i], ml->_thread, &nt);
     }
     assert(dk == dcnt);
     assert(ik == icnt);
@@ -678,10 +678,10 @@ int nrnthread_dat2_vecplay_inst(int tid,
 
     PlayRecList* fp = net_cvode_instance->fixed_play_;
     if (fp->item(i)->type() == VecPlayContinuousType) {
-        VecPlayContinuous* vp = (VecPlayContinuous*) fp->item(i);
-        if (vp->discon_indices_ == NULL) {
+        auto* const vp = static_cast<VecPlayContinuous*>(fp->item(i));
+        if (!vp->discon_indices_) {
             if (vp->ith_ == nt.id) {
-                double* pd = vp->pd_;
+                auto* pd = static_cast<double*>(vp->pd_);
                 int found = 0;
                 vptype = vp->type();
                 for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
@@ -690,9 +690,9 @@ int nrnthread_dat2_vecplay_inst(int tid,
                     }
                     Memb_list* ml = tml->ml;
                     int nn = nrn_prop_param_size_[tml->index] * ml->nodecount;
-                    if (pd >= ml->data[0] && pd < (ml->data[0] + nn)) {
+                    if (pd >= ml->_data[0] && pd < (ml->_data[0] + nn)) {
                         mtype = tml->index;
-                        ix = (pd - ml->data[0]);
+                        ix = (pd - ml->_data[0]);
                         sz = vector_capacity(vp->y_);
                         yvec = vector_vec(vp->y_);
                         tvec = vector_vec(vp->t_);
@@ -743,7 +743,7 @@ void nrn2core_transfer_WatchCondition(WatchCondition* wc, void (*cb)(int, int, i
     Point_process* pnt = wc->pnt_;
     assert(pnt);
     int tid = ((NrnThread*) (pnt->_vnt))->id;
-    int pnttype = pnt->prop->type;
+    int pnttype = pnt->prop->_type;
     int watch_index = wc->watch_index_;
     int triggered = wc->flag_ ? 1 : 0;
     int pntindex = CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, pnttype);
@@ -829,7 +829,7 @@ static void set_info(TQItem* tqi,
     case SelfEventType: {  // 3
         SelfEvent* se = (SelfEvent*) de;
         Point_process* pnt = se->target_;
-        int type = pnt->prop->type;
+        int type = pnt->prop->_type;
         int movable_index = type2movable[type];
         double* wt = se->weight_;
 
@@ -855,13 +855,15 @@ static void set_info(TQItem* tqi,
             weight2intdata[wt].push_back(iloc_wt);
         }
         core_te->intdata.push_back(-1);  // If NULL weight this is the indicator
-
-        TQItem** movable = (TQItem**) se->movable_;
-        TQItem** pnt_movable = (TQItem**) (&pnt->prop->dparam[movable_index]);
-        // Only one SelfEvent on the queue for a given point process can be movable
-        core_te->intdata.push_back((movable && *movable == tqi) ? 1 : 0);
-        if (movable && *movable == tqi) {
-            assert(pnt_movable && *pnt_movable == tqi);
+        // Each of these holds a TQItem*
+        Datum* const movable = se->movable_;
+        Datum* const pnt_movable = pnt->prop->dparam + movable_index;
+        // Only one SelfEvent on the queue for a given point process can be
+        // movable
+        bool const condition = movable && (*movable).get<TQItem*>() == tqi;
+        core_te->intdata.push_back(condition);
+        if (condition) {
+            assert(pnt_movable && (*pnt_movable).get<TQItem*>() == tqi);
         }
 
     } break;
@@ -1054,27 +1056,26 @@ static void core2nrn_SelfEvent_helper(int tid,
     Memb_list* ml = nrn_threads[tid]._ml_list[tar_type];
     Point_process* pnt;
     if (ml) {
-        pnt = (Point_process*) ml->pdata[tar_index][1]._pvoid;
+        pnt = ml->pdata[tar_index][1].get<Point_process*>();
     } else {
         // In NEURON world, ARTIFICIAL_CELLs do not live in NrnThread.
         // And the old deferred_type2artdata_ only gave us data, not pdata.
         // So this is where I decided to replace the more
         // expensive deferred_type2artml_.
         ml = CellGroup::deferred_type2artml_[tid][tar_type];
-        pnt = (Point_process*) ml->pdata[tar_index][1]._pvoid;
+        pnt = ml->pdata[tar_index][1].get<Point_process*>();
     }
 
     // Needs to be tested when permuted on CoreNEURON side.
-    assert(tar_type == pnt->prop->type);
+    assert(tar_type == pnt->prop->_type);
     //  assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, tar_type));
 
-    int movable_index = type2movable[tar_type];
-    void** movable_arg = &(pnt->prop->dparam[movable_index]._pvoid);
-    TQItem* old_movable_arg = (TQItem*) (*movable_arg);
-
-    nrn_net_send(&(pnt->prop->dparam[movable_index]._pvoid), weight, pnt, td, flag);
+    int const movable_index = type2movable[tar_type];
+    auto* const movable_arg = pnt->prop->dparam + movable_index;
+    auto* const old_movable_arg = (*movable_arg).get<TQItem*>();
+    nrn_net_send(movable_arg, weight, pnt, td, flag);
     if (!is_movable) {
-        *movable_arg = (void*) old_movable_arg;
+        *movable_arg = old_movable_arg;
     }
 }
 
@@ -1091,7 +1092,7 @@ void core2nrn_SelfEvent_event(int tid,
 #if 1
     // verify nc->target_ consistent with tar_type, tar_index.
     Memb_list* ml = nrn_threads[tid]._ml_list[tar_type];
-    Point_process* pnt = (Point_process*) ml->pdata[tar_index][1]._pvoid;
+    auto* pnt = ml->pdata[tar_index][1].get<Point_process*>();
     assert(nc->target_ == pnt);
 #endif
 
@@ -1157,12 +1158,12 @@ void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true) {
     if (pth) {
         hoc_Item* q;
         ITERATE(q, pth) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+            auto* ps = static_cast<PreSyn*>(VOIDITM(q));
             assert(ps->nt_ == (nrn_threads + tid));
-            if (ps->flag_ == true && ps->thvar_) {
+            if (ps->flag_ && ps->thvar_) {
                 int type = 0;
                 int index_v = -1;
-                nrn_dblpntr2nrncore(ps->thvar_, *ps->nt_, type, index_v);
+                nrn_dblpntr2nrncore(static_cast<double*>(ps->thvar_), *ps->nt_, type, index_v);
                 assert(type == voltage);
                 presyns_flag_true.insert(index_v);
             }
@@ -1184,11 +1185,11 @@ void core2nrn_watch_activate(int tid, int type, int watch_begin, Core2NrnWatchIn
         for (auto watch_item: active_watch_items) {
             int watch_index = watch_item.first;
             bool above_thresh = watch_item.second;
-            WatchCondition* wc = (WatchCondition*) pd[watch_index]._pvoid;
+            auto* wc = pd[watch_index].get<WatchCondition*>();
             if (!wc) {  // if any do not exist in this instance, create them all
                         // with proper callback and flag.
                 (*(nrn_watch_allocate_[type]))(pd);
-                wc = (WatchCondition*) pd[watch_index]._pvoid;
+                wc = pd[watch_index].get<WatchCondition*>();
             }
             _nrn_watch_activate(
                 pd + watch_begin, wc->c_, watch_index - watch_begin, wc->pnt_, r++, wc->nrflag_);

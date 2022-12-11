@@ -34,6 +34,8 @@ if(MINGW)
   add_executable(neuron ${mswinsrc}/extra/neuron.cpp nrnicon.res)
   add_executable(mos2nrn ${mswinsrc}/extra/mos2nrn.cpp)
   add_executable(nrnbinstr ${mswinsrc}/extra/nrnbinstr.cpp)
+  set(INCDIRS ${PROJECT_SOURCE_DIR}/src/oc)
+  target_include_directories(mos2nrn PUBLIC ${INCDIRS})
 
   # ~~~
   # Presumes previous 'make install'
@@ -55,6 +57,7 @@ if(MINGW)
   add_custom_target(
     setup_exe
     COMMAND bash ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh ${CMAKE_INSTALL_PREFIX}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMAND bash ${PROJECT_BINARY_DIR}/src/mswin/pre_setup_exe.sh
     COMMAND ${MAKENSIS_EXE} ${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi
     DEPENDS ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh

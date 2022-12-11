@@ -17,6 +17,7 @@ extern int hoc_return_type_code;
 #include "cvodeobj.h"
 #include "netcvode.h"
 #include "membfunc.h"
+#include "nrn_ansi.h"
 #include "nrndaspk.h"
 #include "nrniv_mf.h"
 #include "tqueue.h"
@@ -81,7 +82,6 @@ extern int linmod_extra_eqn_count();
 extern int nrn_modeltype();
 extern int nrn_use_selfqueue_;
 extern int use_cachevec;
-extern void nrn_cachevec(int);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 extern void (*nrnmpi_v_transfer_)();
 
@@ -199,7 +199,6 @@ static double abstol(void* v) {
     if (hoc_is_str_arg(1)) {
         sym = d->name2sym(gargstr(1));
     } else {
-        hoc_pgetarg(1);
         sym = hoc_get_last_pointer_symbol();
         if (!sym) {
             hoc_execerror(
@@ -225,8 +224,7 @@ static double active(void* v) {
     if (ifarg(1)) {
         cvode_active_ = (int) chkarg(1, 0, 1);
         if (cvode_active_) {
-            NetCvode* d = (NetCvode*) v;
-            d->re_init(nt_t);
+            static_cast<NetCvode*>(v)->re_init(nt_t);
         }
     }
     hoc_return_type_code = 2;  // boolean
@@ -320,7 +318,7 @@ static double statename(void* v) {
     if (ifarg(3)) {
         style = (int) chkarg(3, 0, 2);
     }
-    hoc_assign_str(hoc_pgargstr(2), d->statename(i, style));
+    hoc_assign_str(hoc_pgargstr(2), d->statename(i, style).c_str());
     return 0.;
 }
 
@@ -448,7 +446,7 @@ static double tstop_event(void* v) {
         if (ifarg(3)) {
             ppobj = *hoc_objgetarg(3);
             if (!ppobj || ppobj->ctemplate->is_point_ <= 0 ||
-                nrn_is_artificial_[ob2pntproc(ppobj)->prop->type]) {
+                nrn_is_artificial_[ob2pntproc(ppobj)->prop->_type]) {
                 hoc_execerror(hoc_object_name(ppobj), "is not a POINT_PROCESS");
             }
             reinit = int(chkarg(4, 0, 1));
@@ -597,6 +595,16 @@ static double use_fast_imem(void* v) {
     return double(i);
 }
 
+static double poolshrink(void*) {
+    extern void nrn_poolshrink(int);
+    int i = 0;
+    if (ifarg(1)) {
+        i = int(chkarg(1, 0., 1.));
+    }
+    nrn_poolshrink(i);
+    return double(i);
+}
+
 static Member_func members[] = {{"solve", solve},
                                 {"atol", nrn_atol},
                                 {"rtol", rtol},
@@ -645,6 +653,7 @@ static Member_func members[] = {{"solve", solve},
                                 {"extra_scatter_gather", extra_scatter_gather},
                                 {"extra_scatter_gather_remove", extra_scatter_gather_remove},
                                 {"use_fast_imem", use_fast_imem},
+                                {"poolshrink", poolshrink},
                                 {nullptr, nullptr}};
 
 static Member_ret_obj_func omembers[] = {{"netconlist", netconlist}, {nullptr, nullptr}};

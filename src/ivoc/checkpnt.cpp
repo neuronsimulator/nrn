@@ -119,7 +119,7 @@ static struct HocInst {
                  {hoc_div, 0},
                  {negate, 0},
                  {power, 0},
-                 {assign, 0},
+                 {hoc_assign, nullptr},
                  {bltin, "s"},    // requires change
                  {varpush, "s"},  // 10
                  {constpush, "s"},
@@ -203,13 +203,16 @@ static struct HocInst {
 
 #define VPfri void*
 declareTable(InstTable, VPfri, short)
-    implementTable(InstTable, VPfri, short) static InstTable* inst_table_;
+implementTable(InstTable, VPfri, short)
+static InstTable* inst_table_;
 
-declareTable(Symbols, Symbol*, int) implementTable(Symbols, Symbol*, int)
+declareTable(Symbols, Symbol*, int)
+implementTable(Symbols, Symbol*, int)
 
-    declareTable(Objects, Object*, int) implementTable(Objects, Object*, int)
+declareTable(Objects, Object*, int)
+implementTable(Objects, Object*, int)
 
-        class PortablePointer {
+class PortablePointer {
   public:
     PortablePointer();
     PortablePointer(void* address, int type, unsigned long size = 1);
@@ -249,9 +252,10 @@ void PortablePointer::set(void* address, int type, unsigned long s) {
 }
 PortablePointer::~PortablePointer() {}
 
-declareList(PPList, PortablePointer) implementList(PPList, PortablePointer)
+declareList(PPList, PortablePointer)
+implementList(PPList, PortablePointer)
 
-    class OcCheckpoint {
+class OcCheckpoint {
   public:
     OcCheckpoint();
     virtual ~OcCheckpoint();

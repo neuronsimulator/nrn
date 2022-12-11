@@ -1,0 +1,234 @@
+# This Makefile has the rules necessary for making the custom version of
+# CoreNEURON executable called "special-core" from the provided mod files.
+# Mod files are looked up in the MODS_PATH directory.
+
+# Current system OS
+OS_NAME := $(shell uname)
+
+# ","" is an argument separator, never as a literal for Makefile rule
+COMMA_OP =,
+
+# Default variables for various targets
+MECHLIB_SUFFIX =
+MODS_PATH = .
+OUTPUT_DIR = @CMAKE_HOST_SYSTEM_PROCESSOR@
+DESTDIR =
+TARGET_LIB_TYPE = $(BUILD_TYPE)
+
+# required for OSX to execute nrnivmodl-core
+ifeq ($(origin SDKROOT), undefined)
+  export SDKROOT := $(shell xcrun --sdk macosx --show-sdk-path)
+endif
+
+# CoreNEURON installation directories
+CORENRN_BIN_DIR := $(ROOT)/bin
+CORENRN_LIB_DIR := $(ROOT)/lib
+CORENRN_INC_DIR := $(ROOT)/include
+CORENRN_SHARE_CORENRN_DIR:= $(ROOT)/share/coreneuron
+CORENRN_SHARE_MOD2CPP_DIR := $(ROOT)/share/mod2c
+
+# name of the CoreNEURON binary
+SPECIAL_EXE  = $(OUTPUT_DIR)/special-core
+
+# Directory where cpp files are generated for each mod file
+MOD_TO_CPP_DIR = $(OUTPUT_DIR)/corenrn/mod2c
+
+# Directory where cpp files are compiled
+MOD_OBJS_DIR = $(OUTPUT_DIR)/corenrn/build
+
+# Linked libraries gathered by CMake
+LDFLAGS = $(LINKFLAGS) @CORENRN_COMMON_LDFLAGS@
+
+# Includes paths gathered by CMake
+# coreneuron/utils/randoms goes first because it needs to override the NEURON
+# directory in INCFLAGS
+INCLUDES = -I$(CORENRN_INC_DIR)/coreneuron/utils/randoms $(INCFLAGS) -I$(CORENRN_INC_DIR)
+ifeq (@CORENRN_ENABLE_MPI_DYNAMIC@, OFF)
+  INCLUDES += $(if @MPI_CXX_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_CXX_INCLUDE_PATH@),)
+endif
+INCLUDES += $(if @reportinglib_INCLUDE_DIR@, -I$(subst ;, -I,@reportinglib_INCLUDE_DIR@),)
+
+# CXX is always defined. If the definition comes from default change it
+ifeq ($(origin CXX), default)
+    CXX = @CMAKE_CXX_COMPILER@
+endif
+
+ifeq (@CORENRN_ENABLE_GPU@, ON)
+  ifneq ($(shell $(CXX) --version | grep -o nvc++), nvc++)
+    $(error GPU wheels are only compatible with the NVIDIA C++ compiler nvc++, but CXX=$(CXX) and --version gives $(shell $(CXX) --version))
+  endif
+  # nvc++ -dumpversion is simpler, but only available from 22.2
+  ifeq ($(findstring nvc++ @CORENRN_NVHPC_MAJOR_MINOR_VERSION@, $(shell $(CXX) --version)),)
+    $(error GPU wheels are currently not compatible across NVIDIA HPC SDK versions. You have $(shell $(CXX) -V | grep nvc++) but this wheel was built with @CORENRN_NVHPC_MAJOR_MINOR_VERSION@.)
+  endif
+endif
+
+# In case of wheel, python and perl exe paths are from the build machine.
+# First prefer env variables set by neuron's nrnivmodl wrapper then check
+# binary used during build. If they don't exist then simply use python and
+# perl as the name of binaries.
+CORENRN_PYTHONEXE ?= @PYTHON_EXECUTABLE@
+CORENRN_PERLEXE ?= @PERL_EXECUTABLE@
+ifeq ($(wildcard $(CORENRN_PYTHONEXE)),)
+  CORENRN_PYTHONEXE=python
+endif
+ifeq ($(wildcard $(CORENRN_PERLEXE)),)
+  CORENRN_PERLEXE=perl
+endif
+
+CXXFLAGS = @CORENRN_CXX_FLAGS@
+CXX_COMPILE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ $(INCLUDES)
+CXX_LINK_EXE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@
+CXX_SHARED_LIB_CMD = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
+
+# env variables required for mod2c or nmodl
+MOD2CPP_ENV_VAR = @CORENRN_SANITIZER_ENABLE_ENVIRONMENT_STRING@ PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@:${CORENRN_LIB_DIR}/python MODLUNIT=$(CORENRN_SHARE_MOD2CPP_DIR)/nrnunits.lib
+
+# nmodl options
+ifeq (@CORENRN_ENABLE_NMODL@, ON)
+    ifeq (@CORENRN_ENABLE_GPU@, ON)
+        nmodl_arguments_c=@NMODL_ACC_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
+    else
+        nmodl_arguments_c=@NMODL_CPU_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
+    endif
+endif
+
+# name of the mechanism library with suffix if provided
+COREMECH_LIB_NAME = corenrnmech$(if $(MECHLIB_SUFFIX),_$(MECHLIB_SUFFIX),)
+COREMECH_LIB_PATH = $(OUTPUT_DIR)/lib$(COREMECH_LIB_NAME)$(LIB_SUFFIX)
+
+# Various header and C++/Object file
+MOD_FUNC_CPP = $(MOD_TO_CPP_DIR)/_mod_func.cpp
+MOD_FUNC_OBJ = $(MOD_OBJS_DIR)/_mod_func.o
+ENGINEMECH_OBJ = $(MOD_OBJS_DIR)/enginemech.o
+
+# Depending on static/shared build, determine library name and it's suffix
+ifeq ($(TARGET_LIB_TYPE), STATIC)
+    LIB_SUFFIX = @CMAKE_STATIC_LIBRARY_SUFFIX@
+    corenrnmech_lib_target = coremech_lib_static
+else
+    LIB_SUFFIX = @CMAKE_SHARED_LIBRARY_SUFFIX@
+    corenrnmech_lib_target = coremech_lib_shared
+endif
+
+# Binary of MOD2C/NMODL depending on CMake option activated
+ifeq (@nmodl_FOUND@, TRUE)
+    MOD2CPP_BINARY_PATH = $(if $(MOD2CPP_BINARY),$(MOD2CPP_BINARY), @CORENRN_MOD2CPP_BINARY@)
+    INCLUDES += -I@CORENRN_MOD2CPP_INCLUDE@
+else
+    MOD2CPP_BINARY_PATH = $(if $(MOD2CPP_BINARY),$(MOD2CPP_BINARY), $(CORENRN_BIN_DIR)/@nmodl_binary_name@)
+endif
+
+# MOD files with full path, without path and names without .mod extension
+mod_files_paths = $(sort $(wildcard $(MODS_PATH)/*.mod))
+mod_files_names = $(sort $(notdir $(wildcard $(MODS_PATH)/*.mod)))
+mod_files_no_ext = $(mod_files_names:.mod=)
+mod_files_for_cpp_backend = $(foreach mod_file, $(mod_files_paths), $(addprefix $(MOD_TO_CPP_DIR)/, $(notdir $(mod_file))))
+
+# CPP files and their obkects
+mod_cpp_files = $(patsubst %.mod,%.cpp,$(mod_files_for_cpp_backend))
+mod_cpp_objs = $(addprefix $(MOD_OBJS_DIR)/,$(addsuffix .o,$(basename $(mod_files_no_ext))))
+
+# We use $ORIGIN (@loader_path in OSX)
+ORIGIN_RPATH := $(if $(filter Darwin,$(OS_NAME)),@loader_path,$$ORIGIN)
+SONAME_OPTION := -Wl,$(if $(filter Darwin,$(OS_NAME)),-install_name${COMMA_OP}@rpath/,-soname${COMMA_OP})$(notdir ${COREMECH_LIB_PATH})
+LIB_RPATH = $(if $(DESTDIR),$(DESTDIR)/lib,$(ORIGIN_RPATH))
+
+# When special-core is installed, it needs to find library in the
+# lib folder of install prefix. We use relative path in order it
+# to be portable when files are moved (e.g. python wheel)
+INSTALL_LIB_RPATH = $(ORIGIN_RPATH)/../lib
+
+# All objects used during build
+ALL_OBJS = $(MOD_FUNC_OBJ) $(mod_cpp_objs)
+
+# Colors for pretty printing
+C_RESET := \033[0m
+C_GREEN := \033[32m
+
+# Default nmodl flags. Override if MOD2CPP_RUNTIME_FLAGS is not empty
+ifeq (@CORENRN_ENABLE_NMODL@, ON)
+    MOD2CPP_FLAGS_C = $(if $(MOD2CPP_RUNTIME_FLAGS),$(MOD2CPP_RUNTIME_FLAGS),$(nmodl_arguments_c))
+endif
+
+$(info Default NMODL flags: @nmodl_arguments_c@)
+
+ifneq ($(MOD2CPP_RUNTIME_FLAGS),)
+    $(warning Runtime nmodl flags (they replace the default ones): $(MOD2CPP_RUNTIME_FLAGS))
+endif
+
+# ======== MAIN BUILD RULES ============
+
+
+# main target to build binary
+$(SPECIAL_EXE): $(corenrnmech_lib_target)
+	@printf " => $(C_GREEN)Binary$(C_RESET) creating $(SPECIAL_EXE)\n"
+	$(CXX_LINK_EXE_CMD) -o $(SPECIAL_EXE) $(CORENRN_SHARE_CORENRN_DIR)/coreneuron.cpp \
+	  -I$(CORENRN_INC_DIR) $(INCFLAGS) \
+	  -L$(OUTPUT_DIR) -l$(COREMECH_LIB_NAME) $(LDFLAGS) \
+	  -L$(CORENRN_LIB_DIR) \
+	  -Wl,-rpath,'$(LIB_RPATH)' -Wl,-rpath,$(CORENRN_LIB_DIR) -Wl,-rpath,'$(INSTALL_LIB_RPATH)'
+
+$(ENGINEMECH_OBJ): $(CORENRN_SHARE_CORENRN_DIR)/enginemech.cpp | $(MOD_OBJS_DIR)
+	$(CXX_COMPILE_CMD) -c -DADDITIONAL_MECHS $(CORENRN_SHARE_CORENRN_DIR)/enginemech.cpp -o $(ENGINEMECH_OBJ)
+
+# build shared library of mechanisms
+coremech_lib_shared: $(ALL_OBJS) $(ENGINEMECH_OBJ) build_always
+	# extract the object files from libcoreneuron-core.a
+	mkdir -p $(MOD_OBJS_DIR)/libcoreneuron-core
+	rm -f $(MOD_OBJS_DIR)/libcoreneuron-core/*.o
+	# --output is only supported by modern versions of ar
+	(cd $(MOD_OBJS_DIR)/libcoreneuron-core && ar x $(CORENRN_LIB_DIR)/libcoreneuron-core.a)
+	$(CXX_SHARED_LIB_CMD) $(ENGINEMECH_OBJ) -o ${COREMECH_LIB_PATH} $(ALL_OBJS) \
+	  -I$(CORENRN_INC_DIR) $(INCFLAGS) \
+	  @CORENEURON_LINKER_START_GROUP@ \
+	  $(MOD_OBJS_DIR)/libcoreneuron-core/*.o @CORENEURON_LINKER_END_GROUP@ \
+		$(LDFLAGS) ${SONAME_OPTION} \
+		-Wl,-rpath,$(CORENRN_LIB_DIR) -L$(CORENRN_LIB_DIR)
+	# cleanup
+	rm $(MOD_OBJS_DIR)/libcoreneuron-core/*.o
+
+# build static library of mechanisms
+coremech_lib_static: $(ALL_OBJS) $(ENGINEMECH_OBJ) build_always
+	# make a libcorenrnmech.a by copying libcoreneuron-core.a and then appending
+	# the newly compiled objects
+	cp $(CORENRN_LIB_DIR)/libcoreneuron-core.a ${COREMECH_LIB_PATH}
+	ar r ${COREMECH_LIB_PATH} $(ENGINEMECH_OBJ) $(ALL_OBJS)
+
+# compile cpp files to .o
+$(MOD_OBJS_DIR)/%.o: $(MOD_TO_CPP_DIR)/%.cpp | $(MOD_OBJS_DIR)
+	$(CXX_COMPILE_CMD) -c $< -o $@ -DNRN_PRCELLSTATE=$(NRN_PRCELLSTATE) @CORENEURON_TRANSLATED_CODE_COMPILE_FLAGS@
+
+# translate MOD files to CPP using mod2c/NMODL
+$(mod_cpp_files): $(MOD_TO_CPP_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MOD_TO_CPP_DIR)
+	$(MOD2CPP_ENV_VAR) $(MOD2CPP_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ $(MOD2CPP_FLAGS_C)
+
+# generate mod registration function. Dont overwrite if it's not changed
+$(MOD_FUNC_CPP): build_always | $(MOD_TO_CPP_DIR)
+	$(CORENRN_PERLEXE) $(CORENRN_SHARE_CORENRN_DIR)/mod_func.c.pl $(mod_files_names) > $(MOD_FUNC_CPP).tmp
+	diff -q $(MOD_FUNC_CPP).tmp $(MOD_FUNC_CPP) || \
+	mv $(MOD_FUNC_CPP).tmp $(MOD_FUNC_CPP)
+
+# symlink to cpp files provided by coreneuron
+$(MOD_TO_CPP_DIR)/%.cpp: $(CORENRN_SHARE_MOD2CPP_DIR)/%.cpp | $(MOD_TO_CPP_DIR)
+	ln -s $< $@
+
+# create directories needed
+$(MOD_TO_CPP_DIR):
+	mkdir -p $(MOD_TO_CPP_DIR)
+
+$(MOD_OBJS_DIR):
+	mkdir -p $(MOD_OBJS_DIR)
+
+# install binary and libraries
+install: $(SPECIAL_EXE)
+	install -d $(DESTDIR)/bin $(DESTDIR)/lib
+	install ${COREMECH_LIB_PATH} $(DESTDIR)/lib
+	install $(SPECIAL_EXE) $(DESTDIR)/bin
+
+.PHONY: build_always
+
+$(VERBOSE).SILENT:
+
+# delete cpp files if mod2c error, otherwise they are not generated again
+.DELETE_ON_ERROR:

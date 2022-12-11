@@ -215,16 +215,18 @@ void SymChooser_reg() {
 }
 #if HAVE_IV
 
-declareActionCallback(SymChooserImpl) implementActionCallback(SymChooserImpl)
+declareActionCallback(SymChooserImpl)
+implementActionCallback(SymChooserImpl)
 
-    declareFieldEditorCallback(SymChooserImpl) implementFieldEditorCallback(SymChooserImpl)
+declareFieldEditorCallback(SymChooserImpl)
+implementFieldEditorCallback(SymChooserImpl)
 #define SHOW_SECTION 1
 
-        SymChooser::SymChooser(SymDirectory* dir,
-                               WidgetKit* kit,
-                               Style* s,
-                               SymChooserAction* a,
-                               int nbrowser)
+SymChooser::SymChooser(SymDirectory* dir,
+                       WidgetKit* kit,
+                       Style* s,
+                       SymChooserAction* a,
+                       int nbrowser)
     : Dialog(NULL, s) {
     impl_ = new SymChooserImpl(nbrowser);
     SymChooserImpl& fc = *impl_;
@@ -577,8 +579,10 @@ void SymChooserImpl::accept_browser_index(int bindex) {
     const String& name = dir->name(i);
     Symbol* sym = dir->symbol(i);
     int length = path.length() + name.length();
-    char* tmp = new char[length + 2];
-    sprintf(tmp, "%.*s%.*s", path.length(), path.string(), name.length(), name.string());
+    auto const tmp_len = length + 2;
+    char* tmp = new char[tmp_len];
+    std::snprintf(
+        tmp, tmp_len, "%.*s%.*s", path.length(), path.string(), name.length(), name.string());
     editor_->field(tmp);
     last_selected_ = tmp;
     last_index_ = i;
@@ -627,7 +631,8 @@ void SymChooserImpl::accept_browser() {
     const String& name = dir_[bi]->name(i);
     int length = path.length() + name.length();
     char* tmp = new char[length + 1];
-    sprintf(tmp, "%.*s%.*s", path.length(), path.string(), name.length(), name.string());
+    std::snprintf(
+        tmp, length + 1, "%.*s%.*s", path.length(), path.string(), name.length(), name.string());
     // printf("accept_browser %s\n", tmp);
     editor_->field(tmp);
     selected_ = editor_->text();

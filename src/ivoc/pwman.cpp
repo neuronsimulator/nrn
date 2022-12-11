@@ -1080,9 +1080,10 @@ bool ScreenSceneHandler::event(Event&) {
 
 // PrintableWindowManager
 
-declareActionCallback(PWMImpl) implementActionCallback(PWMImpl)
+declareActionCallback(PWMImpl)
+implementActionCallback(PWMImpl)
 
-    PrintableWindowManager* PrintableWindowManager::current() {
+PrintableWindowManager* PrintableWindowManager::current() {
     if (!current_) {
         current_ = new PrintableWindowManager();
     }
@@ -1796,19 +1797,21 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
 #if !MAC || DARWIN
     String filt("cat");
     s->find_attribute("pwm_postscript_filter", filt);
-    char* buf = new char[200 + strlen(name) + strlen(filt.string()) + 2 * strlen(tmpfile)];
+    auto const buf_size = 200 + strlen(name) + strlen(filt.string()) + 2 * strlen(tmpfile);
+    char* buf = new char[buf_size];
 
     if (use_printer) {
 #ifdef WIN32
-        sprintf(buf, "%s %s %s", filt.string(), tmpfile, name);
+        std::snprintf(buf, buf_size, "%s %s %s", filt.string(), tmpfile, name);
 #else
-        sprintf(buf, "%s < %s |  %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
+        std::snprintf(
+            buf, buf_size, "%s < %s |  %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
 #endif
     } else {
 #ifdef WIN32
-        sprintf(buf, "%s %s > %s", filt.string(), tmpfile, name);
+        std::snprintf(buf, buf_size, "%s %s > %s", filt.string(), tmpfile, name);
 #else
-        sprintf(buf, "%s < %s > %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
+        std::snprintf(buf, buf_size, "%s < %s > %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
 #endif
     }
     // printf("%s\n", buf);
@@ -2047,7 +2050,7 @@ void PrintableWindowManager::psfilter(const char* filename) {
     char buf[512];
     String filt("cat");
     if (s->find_attribute("pwm_postscript_filter", filt)) {
-        sprintf(
+        Sprintf(
             buf, "cat %s > %s; %s < %s > %s", filename, tmpfile, filt.string(), tmpfile, filename);
         nrnignore = system(buf);
         unlink(tmpfile);
@@ -2111,7 +2114,7 @@ ScreenItem::~ScreenItem() {
 
 void ScreenItem::relabel(GlyphIndex i) {
     char buf[10];
-    sprintf(buf, "%ld", i);
+    Sprintf(buf, "%ld", i);
     i_ = i;
     Glyph* g = WidgetKit::instance()->label(buf);
     Resource::ref(g);
@@ -2550,9 +2553,9 @@ static const char* DefaultPrintCmd() {
         const char* printer_name = getenv("PRINTER");
 
         if (printer_name == NULL) {
-            sprintf(buf, "lpr");
+            Sprintf(buf, "lpr");
         } else {
-            sprintf(buf, "lpr -P%s", printer_name);
+            Sprintf(buf, "lpr -P%s", printer_name);
         }
         print_cmd = buf;
     }
@@ -2696,24 +2699,24 @@ void PWMImpl::snap(Printer* pr, Window* w) {
     }
     char buf[256];
     if (pd) {
-        sprintf(buf,
+        Sprintf(buf,
                 "BoundingBox: %g %g %g %g",
                 w->left() - 3,
                 w->bottom() - 3,
                 w->left() + w->width() + 3,
                 w->bottom() + w->height() + 20 + 3);
         pr->comment(buf);
-        sprintf(buf, "\\begin{picture}(%g, %g)", w->width() + 6, w->height() + 23);
+        Sprintf(buf, "\\begin{picture}(%g, %g)", w->width() + 6, w->height() + 23);
         pr->comment(buf);
     } else {
-        sprintf(buf,
+        Sprintf(buf,
                 "BoundingBox: %g %g %g %g",
                 w->left(),
                 w->bottom(),
                 w->left() + w->width(),
                 w->bottom() + w->height());
         pr->comment(buf);
-        sprintf(buf, "\\begin{picture}(%g, %g)", w->width(), w->height());
+        Sprintf(buf, "\\begin{picture}(%g, %g)", w->width(), w->height());
         pr->comment(buf);
     }
     pr->push_transform();
@@ -3012,7 +3015,7 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
                             sivec[nwin++] = si;
                         } else {
                             char buf[100];
-                            sprintf(buf,
+                            Sprintf(buf,
                                     "{pwman_place(%d,%d,%d)}\n",
                                     w->xleft(),
                                     w->xtop(),
@@ -3035,7 +3038,7 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
                             sivec[nwin++] = si;
                         } else {
                             char buf[100];
-                            sprintf(buf, "{pwman_place(%d,%d)}\n", w->xleft(), w->xtop());
+                            Sprintf(buf, "{pwman_place(%d,%d)}\n", w->xleft(), w->xtop());
                             o << buf;
                         }
                     }
@@ -3093,7 +3096,7 @@ void PWMImpl::ses_group(ScreenItem* si, std::ostream& o) {
     char* name;
     if (si->group_obj_) {
         name = Oc2IV::object_str("name", si->group_obj_);
-        sprintf(buf,
+        Sprintf(buf,
                 "{WindowMenu[0].ses_gid(%d, %d, %d, \"%s\")}\n",
                 ses_group_first_,
                 si->group_obj_->index,
@@ -3126,7 +3129,7 @@ void PWMImpl::retrieve_control() {
         if (ok_to_read(*fc_retrieve_->selected(), w_)) {
             Oc oc;
             char buf[256];
-            sprintf(buf, "{load_file(1, \"%s\")}\n", fc_retrieve_->selected()->string());
+            Sprintf(buf, "{load_file(1, \"%s\")}\n", fc_retrieve_->selected()->string());
             if (!oc.run(buf)) {
                 break;
             }
@@ -3161,7 +3164,7 @@ OcLabelGlyph::~OcLabelGlyph() {
 void OcLabelGlyph::save(std::ostream& o) {
     char buf[256];
     o << "{xpanel(\"\")" << std::endl;
-    sprintf(buf, "xlabel(\"%s\")", label_.string());
+    Sprintf(buf, "xlabel(\"%s\")", label_.string());
     o << buf << std::endl;
     o << "xpanel()}" << std::endl;
     og_->save(o);
@@ -3362,7 +3365,7 @@ bool ivoc_snapshot(const Event* e) {
 declareTable(WindowTable, XWindow, Window*)
 
 
-    Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
+Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
     WindowTable* wt = Session::instance()->default_display()->rep()->wtable_;
     for (TableIterator(WindowTable) i(*wt); i.more(); i.next()) {
         Window* w = i.cur_value();
@@ -3400,11 +3403,13 @@ char* ivoc_get_temp_file() {
 #if defined(WIN32) && defined(__MWERKS__)
     char tname[L_tmpnam + 1];
     tmpnam(tname);
-    tmpfile = new char[strlen(tdir) + 1 + strlen(tname) + 1];
-    sprintf(tmpfile, "%s/%s", tdir, tname);
+    auto const length = strlen(tdir) + 1 + strlen(tname) + 1;
+    tmpfile = new char[length];
+    std::snprintf(tmpfile, length, "%s/%s", tdir, tname);
 #else
-    tmpfile = new char[strlen(tdir) + 1 + 9 + 1];
-    sprintf(tmpfile, "%s/nrnXXXXXX", tdir);
+    auto const length = strlen(tdir) + 1 + 9 + 1;
+    tmpfile = new char[length];
+    std::snprintf(tmpfile, length, "%s/nrnXXXXXX", tdir);
 #if HAVE_MKSTEMP
     int fd;
     if ((fd = mkstemp(tmpfile)) == -1) {

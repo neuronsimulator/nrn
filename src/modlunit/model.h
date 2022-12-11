@@ -1,8 +1,8 @@
 /* /local/src/master/nrn/src/modlunit/model.h,v 1.2 1997/11/24 16:19:13 hines Exp */
-
+#include "wrap_sprintf.h"
 #include <stdio.h>
 #if 1
-#if defined(STDC_HEADERS) || defined(__TURBOC__) || defined(SYSV) || defined(VMS)
+#if defined(STDC_HEADERS) || defined(SYSV)
 #include <string.h>
 #else
 #include <strings.h>
@@ -49,9 +49,6 @@ The following is a list of the current element usage:
  varnum		state variable - during processing of a block containing
          equations in which simultaneous equations result; column
          number of state variable in the matrix.
- level		lowest submodel level number for declarations of this
-         symbol. Used for constants ( in explicit_decl()).
-         The default value is 100.
  name		token name
 */
 typedef struct Symbol {
@@ -60,7 +57,7 @@ typedef struct Symbol {
     Item* info;
     union {
         int i;
-        char* str;
+        const char* str;
     } u;
     int used;
     int usage;
@@ -68,7 +65,6 @@ typedef struct Symbol {
     int discdim;
     int varnum; /* column number of state variable in
                  * equations */
-    short level;
     char* name;
 } Symbol;
 #define SYM0 (Symbol*) 0
@@ -126,7 +122,6 @@ extern List* _LST(Item* q, char* file, int line);
 #define LINF          02000L
 #define NLINF         04000L
 #define DISCF         010000L
-#define STEP1         020000L
 #define PARF          040000L
 #define EXTDEF        0100000L
 #define KINF          0200000L
@@ -136,13 +131,14 @@ extern List* _LST(Item* q, char* file, int line);
 
 #define EXPLICIT_DECL 01 /* usage field, variable occurs in input file */
 
-extern char* emalloc(unsigned);      /* malloc with out of space checking */
-extern char* stralloc(char*, char*); /* copies string to new space */
+extern char* emalloc(unsigned);            /* malloc with out of space checking */
+extern char* stralloc(const char*, char*); /* copies string to new space */
 
 extern char *inputline(), /* used only by parser to get title line */
     *inputtopar(),        /* used only by parser to get units */
-    *decode_units(Symbol*), *unit_str(),
-    *Gets(char*); /* used only in io.c to get string from fin. */
+    *Gets(char*);         /* used only in io.c to get string from fin. */
+const char* unit_str();
+extern const char* decode_units(Symbol*);
 
 extern List
 #if HAVE_STDARG_H || MAC
@@ -156,10 +152,11 @@ extern List
 		*newlist(),	/* begins new empty list */
 		*inputtext();	/* used by parser to get block text from
 				 * VERBATIM and COMMENT */
-extern Item *putintoken(char*s, short type, short), /* construct symbol and store input tokens */
-    *insertstr(Item*item, char*str),                /* before a known Item */
+extern Item *putintoken(const char*s, short type, short), /* construct symbol and store input tokens
+                                                           */
+    *insertstr(Item*item, const char*str),                /* before a known Item */
     *insertsym(List*list, Symbol*sym), *linsertstr(List*list, char*str), /* prepend to list */
-    *lappendstr(List*list, char*str),                                    /* append to list */
+    *lappendstr(List*list, const char*str),                              /* append to list */
     *linsertsym(List*list, Symbol*sym), *lappendsym(List*list, Symbol*sym),
     *lappenditem(List*list, Item*item), *listtype(), *next_parstok(Item*), *prev_parstok(Item*),
     *car(List*), *next(Item*), *prev(Item*);
@@ -167,15 +164,15 @@ extern Item *putintoken(char*s, short type, short), /* construct symbol and stor
 
 #include "modlunit.h" /* void functions */
 
-extern Symbol *install(char*, int), /* Install token in symbol table */
-    *lookup(char*),                 /* lookup name in symbol table */
-    *ifnew_constinstall();          /* new .var info only if
-                                     * not already done. */
+extern Symbol *install(const char*, int), /* Install token in symbol table */
+    *lookup(const char*),                 /* lookup name in symbol table */
+    *ifnew_constinstall();                /* new .var info only if
+                                           * not already done. */
 
 extern int unitonflag;
 
-extern char finname[], /* the input file prefix */
-    buf[];             /* general purpose temporary buffer */
+extern char finname[NRN_BUFSIZE], /* the input file prefix */
+    buf[512];                     /* general purpose temporary buffer */
 
 extern Item *parseroot, *lex_tok; /* intoken pointer for nonzero parse passes */
 
@@ -205,7 +202,6 @@ extern Symbol *indepsym, /* The model independent variable */
 extern char* clint;
 extern int ilint;
 extern Item* qlint;
-#define Sprintf     clint = sprintf
 #define Fprintf     ilint = fprintf
 #define Fclose      ilint = fclose
 #define Fflush      ilint = fflush
@@ -224,9 +220,7 @@ extern Item* qlint;
         if (arg)    \
             ;       \
     }
-#define Free(arg) free((char*) (arg))
 #else
-#define Sprintf     sprintf
 #define Fprintf     fprintf
 #define Fclose      fclose
 #define Fflush      fflush
@@ -241,8 +235,8 @@ extern Item* qlint;
 #define Lappendstr  lappendstr
 #define Lappenditem lappenditem
 #define IGNORE(arg) arg
-#define Free(arg)   free((void*) (arg))
 #endif
+using neuron::Sprintf;
 
 /* model.h,v
  * Revision 1.2  1997/11/24  16:19:13  hines

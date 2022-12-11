@@ -28,6 +28,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if(NOT "cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+  message(
+    FATAL_ERROR
+      "This compiler does not fully support C++17, choose a higher version or another compiler.")
+endif()
+
 # =============================================================================
 # CMake common project settings
 # =============================================================================
@@ -63,6 +69,7 @@ option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fal
        ${NRN_ENABLE_PYTHON_DEFAULT})
 option(NRN_ENABLE_THREADS "Allow use of multithreading" ${NRN_ENABLE_THREADS_DEFAULT})
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
+option(NRN_ENABLE_MUSIC "Enable MUSIC support" ${NRN_ENABLE_MUSIC_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
@@ -230,8 +237,6 @@ configure_file(src/nrnoc/nrnsemanticversion.h.in src/nrnoc/nrnsemanticversion.h 
 # =============================================================================
 set(CODING_CONV_PREFIX "NRN")
 set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "external")
-set(${CODING_CONV_PREFIX}_ClangFormat_REQUIRED_VERSION 12.0.1)
-set(${CODING_CONV_PREFIX}_ClangFormat_EXCLUDES_RE CACHE STRING "") # None needed
 set(CODING_CONV_CMAKE "${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/coding-conventions/cpp/cmake")
 if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
   # Abort with a helpful message if the current source tree lacks .git information, as in that case
@@ -242,10 +247,17 @@ endif()
 include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
 
-# =============================================================================
-# Enable sanitizer support if the NRN_SANITIZERS variable is set
-# =============================================================================
-include(cmake/SanitizerHelper.cmake)
+# Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE is not set, look it up
+# in the PATH exclusively. Need to set PYTHON_EXECUTABLE before calling SanitizerHelper.cmake
+if(NOT PYTHON_EXECUTABLE)
+  message(
+    STATUS "-DPYTHON_EXECUTABLE not specified. Looking for `python3` in the PATH exclusively...")
+  find_program(
+    PYTHON_EXECUTABLE python3
+    PATHS ENV PATH
+    NO_DEFAULT_PATH)
+  message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
+endif()
 
 # =============================================================================
 # Find required packages
@@ -304,6 +316,7 @@ if(NRN_ENABLE_MPI)
   nrn_mpi_find_package()
   set(NRNMPI 1)
   set(PARANEURON 1)
+
   # avoid linking to C++ bindings
   add_definitions("-DMPI_NO_CPPBIND=1")
   add_definitions("-DOMPI_SKIP_MPICXX=1")
@@ -333,6 +346,24 @@ if(NRN_ENABLE_MPI)
 else()
   set(NRNMPI 0)
   set(PARANEURON 0)
+endif()
+
+# =============================================================================
+# Enable MUSIC MUlti SImulation Coordinator
+# =============================================================================
+if(NRN_ENABLE_MUSIC)
+  if(NOT NRN_ENABLE_MPI)
+    message(FATAL "MUSIC requires -DNRN_ENABLE_MPI=ON")
+  endif()
+  if(NOT NRN_ENABLE_PYTHON)
+    message(FATAL "MUSIC requires -DNRN_ENABLE_PYTHON=ON")
+  endif()
+  find_package(Cython REQUIRED)
+  if(NOT Cython_FOUND)
+    message(FATAL "MUSIC requires Cython")
+  endif()
+  find_package(MUSIC REQUIRED)
+  set(NRN_MUSIC 1)
 endif()
 
 # =============================================================================
@@ -383,18 +414,6 @@ endif()
 # Enable Python support
 # =============================================================================
 
-# Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE is not set, look it up
-# in the PATH exclusively.
-if(NOT PYTHON_EXECUTABLE)
-  message(
-    STATUS "-DPYTHON_EXECUTABLE not specified. Looking for `python3` in the PATH exclusively...")
-  find_program(
-    PYTHON_EXECUTABLE python3
-    PATHS ENV PATH
-    NO_DEFAULT_PATH)
-  message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
-endif()
-
 find_package(PythonInterp 3.7 REQUIRED)
 if(NRN_ENABLE_PYTHON)
   # start afresh with PythonLibsNew's find_library without this, -DPYTHON_EXECUTABLE=`which python3`
@@ -410,6 +429,11 @@ if(NRN_ENABLE_PYTHON)
 else()
   set(USE_PYTHON 0)
 endif()
+
+# =============================================================================
+# Enable sanitizer support if the NRN_SANITIZERS variable is set
+# =============================================================================
+include(cmake/SanitizerHelper.cmake)
 
 # =============================================================================
 # Enable Threads support
@@ -453,7 +477,6 @@ endif()
 # =============================================================================
 include(NeuronFileLists)
 include(MPIDynamicHelper)
-include(ConfigFileSetting)
 include(PythonDynamicHelper)
 
 # Set variable to include mpi headers
@@ -467,70 +490,72 @@ endif()
 # Enable CoreNEURON support
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)
-  find_package(coreneuron QUIET PATHS ${CORENEURON_DIR}/share/cmake ${CORENEURON_DIR})
-  if(coreneuron_FOUND)
-    message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
-    set(nrn_using_ext_corenrn TRUE)
-    # By default `nrnivmodl` should look for `nrnivmodl-core` under the external prefix.
-    set(cnrn_prefix "${CORENEURON_DIR}")
-  else()
-    message(STATUS "Building CoreNEURON from submodule")
-    set(nrn_using_ext_corenrn FALSE)
-    # If NEURON tests are enabled then enable CoreNEURON tests too
-    set(CORENRN_ENABLE_UNIT_TESTS
-        ${NRN_ENABLE_TESTS}
-        CACHE BOOL "" FORCE)
-    set(CORENRN_ENABLE_LEGACY_UNITS
-        ${NRN_DYNAMIC_UNITS_USE_LEGACY}
-        CACHE BOOL "" FORCE)
-    if(NRN_ENABLE_PROFILING)
-      if(NRN_PROFILER STREQUAL "caliper")
-        set(CORENRN_ENABLE_CALIPER_PROFILING ON)
-      elseif(NRN_PROFILER STREQUAL "likwid")
-        set(CORENRN_ENABLE_LIKWID_PROFILING ON)
-      endif()
+  message(STATUS "Building CoreNEURON")
+
+  # =============================================================================
+  # Include cmake modules path
+  # =============================================================================
+  list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/coreneuron
+       ${PROJECT_SOURCE_DIR}/cmake/coreneuron/packages)
+
+  set(nrn_using_ext_corenrn FALSE)
+  # If NEURON tests are enabled then enable CoreNEURON tests too
+  set(CORENRN_ENABLE_UNIT_TESTS
+      ${NRN_ENABLE_TESTS}
+      CACHE BOOL "" FORCE)
+  set(CORENRN_ENABLE_LEGACY_UNITS
+      ${NRN_DYNAMIC_UNITS_USE_LEGACY}
+      CACHE BOOL "" FORCE)
+  if(NRN_ENABLE_PROFILING)
+    if(NRN_PROFILER STREQUAL "caliper")
+      set(CORENRN_ENABLE_CALIPER_PROFILING ON)
+    elseif(NRN_PROFILER STREQUAL "likwid")
+      set(CORENRN_ENABLE_LIKWID_PROFILING ON)
     endif()
-    # Propagate NEURON MPI option to CoreNEURON if not set explicitly
-    if(NOT DEFINED CORENRN_ENABLE_MPI)
-      set(CORENRN_ENABLE_MPI
-          ${NRN_ENABLE_MPI}
-          CACHE BOOL "" FORCE)
-    endif()
-    if(NOT DEFINED CORENRN_ENABLE_MPI_DYNAMIC)
-      set(CORENRN_ENABLE_MPI_DYNAMIC
-          ${NRN_ENABLE_MPI_DYNAMIC}
-          CACHE BOOL "" FORCE)
-    endif()
-    nrn_add_external_project(coreneuron)
-    set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
-    # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.
-    set(cnrn_prefix "${CMAKE_INSTALL_PREFIX}")
-    # CoreNEURON exports this list of flags as a property; turn it into a variable in this scope. If
-    # CoreNEURON is installed externally then this is exported into coreneuron-config.cmake.
-    get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
-    get_property(CORENRN_VERSION_MAJOR GLOBAL PROPERTY CORENRN_VERSION_MAJOR)
-    get_property(CORENRN_VERSION_MINOR GLOBAL PROPERTY CORENRN_VERSION_MINOR)
-    get_property(CORENRN_VERSION_PATCH GLOBAL PROPERTY CORENRN_VERSION_PATCH)
-    # NEURON tests that link against CoreNEURON need to depend on it.
-    set(CORENEURON_TARGET_TO_DEPEND coreneuron)
   endif()
-  # Check if CoreNEURON is claiming compatibility with the correct NEURON
-  if(NOT DEFINED CORENRN_VERSION_MAJOR
-     OR NOT DEFINED CORENRN_VERSION_MINOR
-     OR NOT DEFINED CORENRN_VERSION_PATCH)
-    message(WARNING "Could not determine the CoreNEURON version to check it matches NEURON")
-  elseif(
-    NOT NRN_VERSION_MAJOR EQUAL CORENRN_VERSION_MAJOR
-    OR NOT NRN_VERSION_MINOR EQUAL CORENRN_VERSION_MINOR
-    OR NOT NRN_VERSION_PATCH EQUAL CORENRN_VERSION_PATCH)
-    message(
-      WARNING "The CoreNEURON version ${CORENRN_VERSION_MAJOR}."
-              "${CORENRN_VERSION_MINOR}.${CORENRN_VERSION_PATCH} "
-              "does not match the current NEURON "
-              "${NRN_VERSION_MAJOR}.${NRN_VERSION_MINOR}.${NRN_VERSION_PATCH} "
-              "you should probably update the CoreNEURON version")
+  # Propagate NEURON MPI option to CoreNEURON if not set explicitly
+  if(NOT DEFINED CORENRN_ENABLE_MPI)
+    set(CORENRN_ENABLE_MPI
+        ${NRN_ENABLE_MPI}
+        CACHE BOOL "" FORCE)
   endif()
+  if(NOT DEFINED CORENRN_ENABLE_MPI_DYNAMIC)
+    set(CORENRN_ENABLE_MPI_DYNAMIC
+        ${NRN_ENABLE_MPI_DYNAMIC}
+        CACHE BOOL "" FORCE)
+  endif()
+  set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron)
+  include(PythonDynamicHelper)
+
+  # initialize CLI11 submodule
+  cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
+
+  add_subdirectory(${PROJECT_SOURCE_DIR}/src/coreneuron)
+
+  # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.
+  set(cnrn_prefix "${CMAKE_INSTALL_PREFIX}")
+  # CoreNEURON exports this list of flags as a property; turn it into a variable in this scope. If
+  # CoreNEURON is installed externally then this is exported into coreneuron-config.cmake.
+  get_property(CORENRN_LIB_LINK_FLAGS GLOBAL PROPERTY CORENRN_LIB_LINK_FLAGS)
+  get_property(CORENRN_NEURON_LINK_FLAGS GLOBAL PROPERTY CORENRN_NEURON_LINK_FLAGS)
+  get_property(CORENRN_ENABLE_SHARED GLOBAL PROPERTY CORENRN_ENABLE_SHARED)
+  # NEURON tests that link against CoreNEURON need to depend on it.
+  set(CORENEURON_TARGET_TO_DEPEND coreneuron-for-tests)
+
+  # When we are using CoreNEURON, OpenACC and shared libraries then it is important that the first
+  # library *compiled by nvc++* to be opened is linked against OpenACC, to avoid the NVIDIA runtime
+  # being initialised without OpenACC. See:
+  # https://forums.developer.nvidia.com/t/dynamically-loading-an-openacc-enabled-shared-library-from-an-executable-compiled-with-nvc-does-not-work/210968/5
+  # When we build CoreNEURON with NVHPC then we often build NEURON with NVHPC too, and if we load
+  # NEURON from Python then the first compiled-by-nvc++ thing to be loaded is the NEURON Python
+  # module (hoc.XXX.so). It is, therefore, important that we link that with -acc.
+  separate_arguments(CORENRN_NEURON_LINK_FLAGS)
+  set(NRN_LINK_FLAGS_FOR_ENTRY_POINTS ${CORENRN_NEURON_LINK_FLAGS})
+
 endif()
+
+# This needs to be after all modifications to NRN_LINK_FLAGS
+include(ConfigFileSetting)
 
 # =============================================================================
 # Set install location for libraries (before src/nrniv)
@@ -569,6 +594,10 @@ if(NRN_ENABLE_RX3D)
   add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
 endif()
 
+if(NRN_ENABLE_MUSIC)
+  add_subdirectory(src/neuronmusic)
+endif()
+
 if(NRN_MACOS_BUILD)
   add_subdirectory(src/mac)
 endif()
@@ -577,22 +606,29 @@ if(MINGW)
   add_subdirectory(src/mswin)
 endif()
 
-# =============================================================================
 # Collect the environment variables that are needed to execute NEURON from the build directory. This
-# is used when configuring tests, and when building documentation targets. TODO: be more careful
-# about trailing colons?
-# =============================================================================
-set(NRN_RUN_FROM_BUILD_DIR_ENV
-    "LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}"
-    "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn" "NRNHOME=${PROJECT_BINARY_DIR}"
-    "PATH=${PROJECT_BINARY_DIR}/bin:$ENV{PATH}")
+# is used when configuring tests, and when building documentation targets.
+function(prepend_to_var var new_path)
+  set(old_list "${NRN_RUN_FROM_BUILD_DIR_ENV}")
+  set(new_val "${var}=${new_path}")
+  if(DEFINED ENV{${var}} AND NOT "$ENV{${var}}" STREQUAL "")
+    string(APPEND new_val ":$ENV{${var}}")
+  endif()
+  list(APPEND old_list "${new_val}")
+  set(NRN_RUN_FROM_BUILD_DIR_ENV
+      "${old_list}"
+      PARENT_SCOPE)
+endfunction()
+set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
+                               "NRNHOME=${PROJECT_BINARY_DIR}")
+prepend_to_var(PATH "${PROJECT_BINARY_DIR}/bin")
+prepend_to_var(LD_LIBRARY_PATH "${PROJECT_BINARY_DIR}/lib")
 if(NRN_ENABLE_CORENEURON AND NOT coreneuron_FOUND)
   # CoreNEURON is enabled *and* is being built internally
   list(APPEND NRN_RUN_FROM_BUILD_DIR_ENV "CORENRNHOME=${PROJECT_BINARY_DIR}")
 endif()
 if(NRN_ENABLE_PYTHON)
-  list(APPEND NRN_RUN_FROM_BUILD_DIR_ENV
-       PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd:$ENV{PYTHONPATH})
+  prepend_to_var(PYTHONPATH "${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd")
 endif()
 
 if(NRN_ENABLE_DOCS)
@@ -756,7 +792,7 @@ if(NRN_ENABLE_TESTS)
     if(NOT PYTEST_FOUND)
       message(SEND_ERROR "pytest Python package is required.")
     elseif(NOT PYTEST_COV_FOUND)
-      message(WARNING "pytest-cov package not installed. Python coverage will not be generated.")
+      message(INFO "pytest-cov package not installed. Python coverage will not be generated.")
     endif()
   else() # share/demo still required for testing
     add_custom_target(
@@ -791,8 +827,9 @@ install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
 install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
 
-# find headers to install
+# find neuron (excluding coreneuron) headers to install
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
+list(FILTER NRN_HEADERS_PATHS EXCLUDE REGEX "src/coreneuron")
 file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/nrnoc/nrnsemanticversion.h
      DESTINATION ${PROJECT_BINARY_DIR}/include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
@@ -898,6 +935,9 @@ if(NRN_ENABLE_MPI)
     message(STATUS "  LIB         | ${MPI_LIBRARY}")
   endif()
 endif()
+if(NRN_ENABLE_MUSIC)
+  message(STATUS "MUSIC         | ${MUSIC_LIBDIR}")
+endif()
 message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")
 if(NRN_ENABLE_PYTHON)
   message(STATUS "  EXE         | ${NRN_DEFAULT_PYTHON_EXECUTABLE}")
@@ -949,7 +989,7 @@ endif()
 message(STATUS "CoreNEURON    | ${NRN_ENABLE_CORENEURON}")
 if(NRN_ENABLE_CORENEURON)
   message(STATUS "  PATH        | ${CORENEURON_DIR}")
-  message(STATUS "  LINK FLAGS  | ${CORENEURON_LIB_LINK_FLAGS}")
+  message(STATUS "  LINK FLAGS  | ${CORENRN_LIB_LINK_FLAGS}")
   if(NOT coreneuron_FOUND)
     message(STATUS "  Legacy Units| ${CORENRN_ENABLE_LEGACY_UNITS}")
   endif()

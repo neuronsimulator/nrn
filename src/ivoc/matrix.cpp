@@ -9,7 +9,7 @@
 #include "ivocvect.h"
 
 #define EPS hoc_epsilon
-static Symbol* smat_;
+Symbol* nrn_matrix_sym;  // also used in oc/hoc_oop.cpp
 
 extern int hoc_return_type_code;
 
@@ -29,9 +29,8 @@ extern Object** hoc_temp_objptr(Object*);
 
 static void check_domain(int i, int j) {
     if (i > j || i < 0) {
-        char buf[256];
-        sprintf(buf, "index=%d  max_index=%d\n", i, j);
-        hoc_execerror("Matrix index out of range:", buf);
+        auto const tmp = "index=" + std::to_string(i) + "  max_index=" + std::to_string(j) + "\n";
+        hoc_execerror("Matrix index out of range:", tmp.c_str());
     }
 }
 
@@ -43,7 +42,7 @@ static void check_capac(int i, int j) {
 
 Matrix* matrix_arg(int i) {
     Object* ob = *hoc_objgetarg(i);
-    if (!ob || ob->ctemplate != smat_->u.ctemplate) {
+    if (!ob || ob->ctemplate != nrn_matrix_sym->u.ctemplate) {
         check_obj_type(ob, "Matrix");
     }
     return (Matrix*) (ob->u.this_pointer);
@@ -55,7 +54,7 @@ Object** Matrix::temp_objvar() {
     if (m->obj_) {
         po = hoc_temp_objptr(m->obj_);
     } else {
-        po = hoc_temp_objvar(smat_, (void*) m);
+        po = hoc_temp_objvar(nrn_matrix_sym, (void*) m);
         obj_ = *po;
     }
     return po;
@@ -730,6 +729,10 @@ static void steer_x(void* v) {
     Matrix* m = (Matrix*) v;
     int i1, i2;
     Symbol* s = hoc_spop();
+    if (!hoc_stack_type_is_ndim()) {
+        hoc_execerr_ext("Array dimension of Matrix.x is 2");
+    }
+    hoc_pop_ndim();
     i2 = (int) (hoc_xpop() + EPS);
     i1 = (int) (hoc_xpop() + EPS);
     check_domain(i1, m->nrow() - 1);
@@ -744,9 +747,9 @@ void Matrix_reg();
 
 void Matrix_reg() {
     class2oc("Matrix", m_cons, m_destruct, m_members, NULL, m_retobj_members, NULL);
-    smat_ = hoc_lookup("Matrix");
+    nrn_matrix_sym = hoc_lookup("Matrix");
     // now make the x variable an actual double
-    Symbol* sx = hoc_table_lookup("x", smat_->u.ctemplate->symtable);
+    Symbol* sx = hoc_table_lookup("x", nrn_matrix_sym->u.ctemplate->symtable);
     sx->type = VAR;
     sx->arayinfo = (Arrayinfo*) hoc_Emalloc(sizeof(Arrayinfo) + 2 * sizeof(int));
     sx->arayinfo->refcount = 1;
@@ -754,5 +757,5 @@ void Matrix_reg() {
     sx->arayinfo->nsub = 2;
     sx->arayinfo->sub[0] = 1;
     sx->arayinfo->sub[1] = 1;
-    smat_->u.ctemplate->steer = steer_x;
+    nrn_matrix_sym->u.ctemplate->steer = steer_x;
 }

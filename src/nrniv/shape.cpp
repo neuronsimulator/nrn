@@ -824,12 +824,12 @@ void ShapeType::execute() {
 }
 
 
-// declareHandlerCallback(ShapeScene)
-// implementHandlerCallback(ShapeScene)
-declareRubberCallback(ShapeScene) implementRubberCallback(ShapeScene)
-    declareActionCallback(ShapeScene) implementActionCallback(ShapeScene)
+declareRubberCallback(ShapeScene)
+implementRubberCallback(ShapeScene)
+declareActionCallback(ShapeScene)
+implementActionCallback(ShapeScene)
 
-        void ShapeScene::observe(SectionList* sl) {
+void ShapeScene::observe(SectionList* sl) {
     GlyphIndex i, cnt;
     hoc_Item* qsec;
     Section* sec;
@@ -1056,12 +1056,12 @@ void ShapeScene::save_phase2(std::ostream& o) {
     char buf[256];
     if (var_name_) {
         if ((var_name_->string())[var_name_->length() - 1] == '.') {
-            sprintf(buf, "%sappend(save_window_)", var_name_->string());
+            Sprintf(buf, "%sappend(save_window_)", var_name_->string());
         } else {
-            sprintf(buf, "%s = save_window_", var_name_->string());
+            Sprintf(buf, "%s = save_window_", var_name_->string());
         }
         o << buf << std::endl;
-        sprintf(buf, "save_window_.save_name(\"%s\")", var_name_->string());
+        Sprintf(buf, "save_window_.save_name(\"%s\")", var_name_->string());
         o << buf << std::endl;
     }
     Graph::save_phase2(o);
@@ -1483,11 +1483,11 @@ void ShapeSection::selectMenu() {  // popup menu item selected
     hoc_ivpanel(name);
     char buf[200];
     hoc_ivmenu(name);
-    sprintf(buf, "%s nrnsecmenu(.5, 1)", name);
+    Sprintf(buf, "%s nrnsecmenu(.5, 1)", name);
     hoc_ivbutton("Parameters", buf);
-    sprintf(buf, "%s nrnsecmenu(.5, 2)", name);
+    Sprintf(buf, "%s nrnsecmenu(.5, 2)", name);
     hoc_ivbutton("Assigned", buf);
-    sprintf(buf, "%s nrnsecmenu(.5, 3)", name);
+    Sprintf(buf, "%s nrnsecmenu(.5, 3)", name);
     hoc_ivbutton("States", buf);
     hoc_ivmenu(0);
     hoc_ivpanel(0);
@@ -1522,8 +1522,8 @@ void ShapeSection::set_range_variable(Symbol* sym) {
     bool any = false;
     if (nrn_exists(sym, section()->pnode[0])) {
         for (i = 0; i < n; ++i) {
-            pvar_[i] =
-                nrn_rangepointer(section(), sym, nrn_arc_position(section(), section()->pnode[i]));
+            pvar_[i] = static_cast<double*>(
+                nrn_rangepointer(section(), sym, nrn_arc_position(section(), section()->pnode[i])));
             old_[i] = NULL;
             if (pvar_[i]) {
                 any = true;

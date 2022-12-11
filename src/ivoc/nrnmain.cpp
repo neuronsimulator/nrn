@@ -1,24 +1,23 @@
-#include <nrnconf.h>
+#include "nrnconf.h"
+#include "nrnmpi.h"
+#include "../nrncvode/nrnneosm.h"
+
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#include "../nrncvode/nrnneosm.h"
-#include <nrnmpi.h>
-#include <errno.h>
-#include "isoc99.h"
 
 extern int ivocmain(int, const char**, const char**);
 extern int nrn_main_launch;
 extern int nrn_noauto_dlopen_nrnmech;
 #if NRNMPI_DYNAMICLOAD
-extern void nrnmpi_stubs();
-extern char* nrnmpi_load(int is_python);
+void nrnmpi_stubs();
+void nrnmpi_load_or_exit(bool is_python);
 #endif
 #if NRNMPI
 extern "C" void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
 #endif
 
 int main(int argc, char** argv, char** env) {
-    nrn_isdouble(0, 0, 0);
     nrn_main_launch = 1;
 
 #if defined(AUTO_DLOPEN_NRNMECH) && AUTO_DLOPEN_NRNMECH == 0
@@ -36,12 +35,7 @@ printf("argv[%d]=|%s|\n", i, argv[i]);
     nrnmpi_stubs();
     for (int i = 0; i < argc; ++i) {
         if (strcmp("-mpi", argv[i]) == 0) {
-            char* pmes;
-            pmes = nrnmpi_load(0);
-            if (pmes) {
-                printf("%s\n", pmes);
-                exit(1);
-            }
+            nrnmpi_load_or_exit(false);
             break;
         }
     }

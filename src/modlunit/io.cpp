@@ -111,7 +111,7 @@ char* Gets(char* buf) {
 }
 
 /* two arguments so we can pass a name to construct an error message. */
-void diag(char* s1, char* s2) {
+void diag(const char* s1, const char* s2) {
     char* cp;
     Item *q1, *q2, *q;
 
@@ -264,7 +264,7 @@ static FILE* include_open(char* fname, int err) {
     if (f) {
         return f;
     }
-    sprintf(buf, "../%s", fname); /* Next try next dir up. */
+    Sprintf(buf, "../%s", fname); /* Next try next dir up. */
     if ((f = fopen(buf, "r")) != NULL)
         return f;
 

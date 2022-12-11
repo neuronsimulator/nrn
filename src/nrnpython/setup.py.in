@@ -143,7 +143,8 @@ libs = [@BUILD_NRNPYTHON_DYNAMIC_TRUE@nrnpython_pyver10,
 if "@IVHINES@" != "":
     libs.append("@IVHINES@")
 
-extra_compile_args = [@NRN_COMPILE_FLAGS_COMMA_SEPARATED_STRINGS@]
+extra_compile_args = ["@CMAKE_CXX17_STANDARD_COMPILE_OPTION@"]
+extra_compile_args += [@NRN_COMPILE_FLAGS_COMMA_SEPARATED_STRINGS@]
 
 if using_pgi:
   extra_link_args.append(pgi_compiler_flags)
@@ -214,7 +215,7 @@ if build_rx3d:
   except:
     pass
 
-packages=['neuron','neuron.neuroml','neuron.tests', 'neuron.rxd', 'neuron.crxd', 'neuron.gui2']
+packages=['neuron','neuron.neuroml','neuron.tests', 'neuron.tests.utils', 'neuron.rxd', 'neuron.crxd', 'neuron.gui2']
 if build_rx3d:
   packages +=['neuron.rxd.geometry3d']
 

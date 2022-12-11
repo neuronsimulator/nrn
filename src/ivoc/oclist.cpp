@@ -1,7 +1,4 @@
 #include <../../nrnconf.h>
-#if defined(__GO32__)
-#define HAVE_IV 0
-#endif
 
 #include <stdio.h>
 #include <OS/string.h>
@@ -513,9 +510,8 @@ int ivoc_list_look(Object* ob, Object* oblook, char* path, int) {
 #else
             if (obj == ob) {
 #endif
-            char buf[200];
-            sprintf(buf, "object(%ld)", i);
-            hoc_path_prepend(path, buf, "");
+            auto const tmp = "object(" + std::to_string(i) + ")";
+            hoc_path_prepend(path, tmp.c_str(), "");
             return 1;
         }
     }

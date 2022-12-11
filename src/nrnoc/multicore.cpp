@@ -1,8 +1,8 @@
 /* included by treeset.cpp */
 #include <nrnmpi.h>
 
-#include "nrnoc_ml.h"
-
+#include "hoclist.h"
+#include "section.h"
 /*
 Now that threads have taken over the actual_v, v_node, etc, it might
 be a good time to regularize the method of freeing, allocating, and
@@ -38,11 +38,13 @@ the handling of v_structure_change as long as possible.
 
 #include "nmodlmutex.h"
 
+#include <cstdint>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 #define CACHELINE_ALLOC(name, type, size) \
     name = (type*) nrn_cacheline_alloc((void**) &name, size * sizeof(type))
@@ -51,18 +53,25 @@ the handling of v_structure_change as long as possible.
 
 int nrn_nthread;
 NrnThread* nrn_threads;
+
 void (*nrn_mk_transfer_thread_data_)();
 
 static int busywait_;
 static int busywait_main_;
 extern void nrn_thread_error(const char*);
-extern void nrn_threads_free();
 extern void nrn_old_thread_save();
 extern double nrn_timeus();
+extern void (*nrn_multisplit_setup_)();
+extern int v_structure_change;
+extern int diam_changed;
+extern Section** secorder;
+extern int section_count;
+extern "C" {
+extern void spDestroy(char*);
+}
 
 void nrn_mk_table_check();
-static int table_check_cnt_;
-static Datum* table_check_;
+static std::vector<std::pair<int, NrnThreadMembList*>> table_check_;
 static int allow_busywait_;
 
 static void* nulljob(NrnThread* nt) {
@@ -232,6 +241,9 @@ struct worker_threads_t {
             }
         }
     }
+    std::size_t num_workers() const {
+        return m_worker_threads.size();
+    }
 
   private:
     // Cannot easily use std::vector because std::condition_variable is not moveable.
@@ -254,6 +266,7 @@ void nrn_threads_create(int n, bool parallel) {
     int i, j;
     NrnThread* nt;
     if (nrn_nthread != n) {
+        worker_threads.reset();
         nrn_threads_free();
         for (i = 0; i < nrn_nthread; ++i) {
             nt = nrn_threads + i;
@@ -400,7 +413,6 @@ void nrn_fast_imem_alloc() {
 }
 
 void nrn_threads_free() {
-    worker_threads.reset();
     int it, i;
     for (it = 0; it < nrn_nthread; ++it) {
         NrnThread* nt = nrn_threads + it;
@@ -413,7 +425,7 @@ void nrn_threads_free() {
             if (memb_func[tml->index].hoc_mech) {
                 free((char*) ml->prop);
             } else {
-                free((char*) ml->data);
+                free((char*) ml->_data);
                 free((char*) ml->pdata);
             }
             if (ml->_thread) {
@@ -513,9 +525,9 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
     for (i = 0; i < _nt->end; ++i) {
         nd = _nt->_v_node[i];
         for (p = nd->prop; p; p = p->next) {
-            if (memb_func[p->type].current || memb_func[p->type].state ||
-                memb_func[p->type].initialize) {
-                ++mlcnt[p->type];
+            if (memb_func[p->_type].current || memb_func[p->_type].state ||
+                memb_func[p->_type].has_initialize()) {
+                ++mlcnt[p->_type];
             }
         }
     }
@@ -543,7 +555,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
             if (memb_func[i].hoc_mech) {
                 tml->ml->prop = (Prop**) emalloc(mlcnt[i] * sizeof(Prop*));
             } else {
-                CACHELINE_ALLOC(tml->ml->data, double*, mlcnt[i]);
+                CACHELINE_ALLOC(tml->ml->_data, double*, mlcnt[i]);
                 CACHELINE_ALLOC(tml->ml->pdata, Datum*, mlcnt[i]);
             }
             tml->ml->_thread = (Datum*) 0;
@@ -565,15 +577,15 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
     for (i = 0; i < _nt->end; ++i) {
         nd = _nt->_v_node[i];
         for (p = nd->prop; p; p = p->next) {
-            if (memb_func[p->type].current || memb_func[p->type].state ||
-                memb_func[p->type].initialize) {
-                Memb_list* ml = mlmap[p->type];
+            if (memb_func[p->_type].current || memb_func[p->_type].state ||
+                memb_func[p->_type].has_initialize()) {
+                Memb_list* ml = mlmap[p->_type];
                 ml->nodelist[ml->nodecount] = nd;
                 ml->nodeindices[ml->nodecount] = nd->v_node_index;
-                if (memb_func[p->type].hoc_mech) {
+                if (memb_func[p->_type].hoc_mech) {
                     ml->prop[ml->nodecount] = p;
                 } else {
-                    ml->data[ml->nodecount] = p->param;
+                    ml->_data[ml->nodecount] = p->param;
                     ml->pdata[ml->nodecount] = p->dparam;
                 }
                 ++ml->nodecount;
@@ -654,13 +666,13 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
     for (tml = _nt->tml; tml; tml = tml->next)
         if (memb_func[tml->index].is_point) {
             for (i = 0; i < tml->ml->nodecount; ++i) {
-                Point_process* pnt = (Point_process*) tml->ml->pdata[i][1]._pvoid;
-                pnt->_vnt = (void*) _nt;
+                auto* pnt = tml->ml->pdata[i][1].get<Point_process*>();
+                pnt->_vnt = _nt;
             }
         }
 }
 
-static void nrn_thread_memblist_setup() {
+void nrn_thread_memblist_setup() {
     int it, *mlcnt;
     void** vmap;
     mlcnt = (int*) emalloc(n_memb_func * sizeof(int));
@@ -682,7 +694,7 @@ static void nrn_thread_memblist_setup() {
 /* this differs from original secorder where all roots are at the beginning */
 /* in passing, also set start and end indices. */
 
-static void reorder_secorder() {
+void reorder_secorder() {
     NrnThread* _nt;
     Section *sec, *ch;
     Node* nd;
@@ -714,7 +726,7 @@ static void reorder_secorder() {
         for (isec = order - _nt->ncell; isec < order; ++isec) {
             sec = secorder[isec];
             /* to make it easy to fill in PreSyn.nt_*/
-            sec->prop->dparam[9]._pvoid = (void*) _nt;
+            sec->prop->dparam[9] = _nt;
             for (j = 0; j < sec->nnode; ++j) {
                 nd = sec->pnode[j];
                 nd->_nt = _nt;
@@ -757,15 +769,15 @@ static void reorder_secorder() {
             nd = sec->parentnode;
             nd->_nt = _nt;
             _nt->_v_node[inode] = nd;
-            _nt->_v_parent[inode] = (Node*) 0;
+            _nt->_v_parent[inode] = nullptr;  // because this is a root node
             _nt->_v_node[inode]->v_node_index = inode;
-            inode += 1;
+            ++inode;
         }
         /* all children of what is already in secorder */
         for (isec = order - _nt->ncell; isec < order; ++isec) {
             sec = secorder[isec];
             /* to make it easy to fill in PreSyn.nt_*/
-            sec->prop->dparam[9]._pvoid = (void*) _nt;
+            sec->prop->dparam[9] = _nt;
             for (j = 0; j < sec->nnode; ++j) {
                 nd = sec->pnode[j];
                 nd->_nt = _nt;
@@ -825,54 +837,36 @@ static void reorder_secorder() {
 
 
 void nrn_mk_table_check() {
-    int i, id, index;
-    int* ix;
-    if (table_check_) {
-        free((void*) table_check_);
-        table_check_ = (Datum*) 0;
-    }
-    ix = (int*) emalloc(n_memb_func * sizeof(int));
-    for (i = 0; i < n_memb_func; ++i) {
-        ix[i] = -1;
-    }
-    table_check_cnt_ = 0;
-    for (id = 0; id < nrn_nthread; ++id) {
+    std::size_t table_check_cnt_{};
+    std::vector<int> ix(n_memb_func, -1);
+    for (int id = 0; id < nrn_nthread; ++id) {
         NrnThread* nt = nrn_threads + id;
-        NrnThreadMembList* tml;
-        for (tml = nt->tml; tml; tml = tml->next) {
-            index = tml->index;
+        for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
+            int index = tml->index;
             if (memb_func[index].thread_table_check_ && ix[index] == -1) {
                 ix[index] = id;
-                table_check_cnt_ += 2;
+                ++table_check_cnt_;
             }
         }
     }
-    if (table_check_cnt_) {
-        table_check_ = (Datum*) emalloc(table_check_cnt_ * sizeof(Datum));
-    }
-    i = 0;
-    for (id = 0; id < nrn_nthread; ++id) {
+    table_check_.clear();
+    table_check_.reserve(table_check_cnt_);
+    for (int id = 0; id < nrn_nthread; ++id) {
         NrnThread* nt = nrn_threads + id;
-        NrnThreadMembList* tml;
-        for (tml = nt->tml; tml; tml = tml->next) {
-            index = tml->index;
+        for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
+            int index = tml->index;
             if (memb_func[index].thread_table_check_ && ix[index] == id) {
-                table_check_[i++].i = id;
-                table_check_[i++]._pvoid = (void*) tml;
+                table_check_.emplace_back(id, tml);
             }
         }
     }
-    free((void*) ix);
 }
 
 void nrn_thread_table_check() {
-    int i;
-    for (i = 0; i < table_check_cnt_; i += 2) {
-        NrnThread* nt = nrn_threads + table_check_[i].i;
-        NrnThreadMembList* tml = (NrnThreadMembList*) table_check_[i + 1]._pvoid;
+    for (auto [id, tml]: table_check_) {
         Memb_list* ml = tml->ml;
         (*memb_func[tml->index].thread_table_check_)(
-            ml->data[0], ml->pdata[0], ml->_thread, nt, tml->index);
+            ml->_data[0], ml->pdata[0], ml->_thread, nrn_threads + id, tml->index);
     }
 }
 
@@ -1010,18 +1004,18 @@ int nrn_user_partition() {
             ++nt->ncell;
             ++n;
             if (sec->parentsec) {
-                sprintf(buf, "in thread partition %d is not a root section", it);
+                Sprintf(buf, "in thread partition %d is not a root section", it);
                 hoc_execerror(secname(sec), buf);
             }
             if (sec->volatile_mark) {
-                sprintf(buf, "appeared again in partition %d", it);
+                Sprintf(buf, "appeared again in partition %d", it);
                 hoc_execerror(secname(sec), buf);
             }
             sec->volatile_mark = 1;
         }
     }
     if (n != nrn_global_ncell) {
-        sprintf(buf,
+        Sprintf(buf,
                 "The total number of cells, %d, is different than the number of user partition "
                 "cells, %d\n",
                 nrn_global_ncell,
@@ -1068,4 +1062,8 @@ int nrn_how_many_processors() {
 #else
     return 1;
 #endif
+}
+
+std::size_t nof_worker_threads() {
+    return worker_threads.get() ? worker_threads->num_workers() : 0;
 }

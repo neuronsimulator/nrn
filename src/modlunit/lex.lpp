@@ -112,10 +112,7 @@ E	[Ee][-+]?{D}+
 
 <O>\~	{ /* syntactic sugar for equations */
 	yylval.qp = putintoken(yytext, 0, 0);
-	if (lexcontext == PARTIAL) {
-		yylval.qp->itemsubtype = PARTEQN;
-		 return PARTEQN;
-	}else if (lexcontext == KINETIC) {
+	if (lexcontext == KINETIC) {
 		yylval.qp->itemsubtype = REACTION;
 		 return REACTION;
 	}else{

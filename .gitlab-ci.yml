@@ -1,0 +1,253 @@
+include:
+  - project: hpc/gitlab-pipelines
+    file:
+      - spack-build-components.gitlab-ci.yml
+      - github-project-pipelines.gitlab-ci.yml
+    ref: '$GITLAB_PIPELINES_BRANCH'
+  - project: hpc/gitlab-upload-logs
+    file: enable-upload.yml
+
+
+# see https://gitlab.com/gitlab-org/gitlab/-/issues/263401 for why we specify the flags like this now
+# 130 characters seems to be the point at which jobs refuse to run
+.matrix:
+  parallel:
+    matrix:
+      - build_mode: cmake
+        cmake_coreneuron: "ON"
+        cmake_interviews: "OFF"
+        cmake_rx3d: "OFF"
+        sanitizer: address
+
+mac_m1_cmake_build:
+  stage: .pre
+  extends: .matrix
+  cache:
+    # either CI_MERGE_REQUEST_SOURCE_BRANCH_NAME or CI_COMMIT_BRANCH will be available,
+    # depending on whether this pipeline runs for a merge request or on a branch
+    # either way, we get the active branch in the cache key
+    key: ${CI_JOB_NAME}-${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}${CI_COMMIT_BRANCH}
+    paths:
+      - ./ccache
+  variables:
+    CCACHE_BASEDIR: ${CI_PROJECT_DIR}/nrn
+    CCACHE_DIR: ${CI_PROJECT_DIR}/ccache
+    CMAKE_BUILD_PARALLEL_LEVEL: 3
+    CTEST_PARALLEL_LEVEL: 3
+  tags:
+    - macos-arm64
+  script:
+    - python3 -m virtualenv venv
+    - venv/bin/pip install --upgrade pip -r nrn_requirements.txt
+    - venv/bin/python --version
+    - 'venv/bin/python -c "import os,matplotlib; f = open(os.path.join(os.path.dirname(matplotlib.__file__), \"mpl-data/matplotlibrc\"),\"a\"); f.write(\"backend: TkAgg\");f.close();"'
+    - 'export CXX=${CXX:-g++}'
+    - 'export CC=${CC:-gcc}'
+    - export PYTHON=$(pwd)/venv/bin/python3
+    - export INSTALL_DIR=$(pwd)/install
+    - echo $LANG
+    - echo $LC_ALL
+    - source venv/bin/activate
+    - 'export PYTHONPATH=$(${PYTHON} -c "import site; print(\":\".join(site.getsitepackages()))")'
+    - 'export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/'
+    - ${PYTHON} -c 'import os,sys; os.set_blocking(sys.stdout.fileno(), True)'
+    - cmake_args=(-G Ninja)
+    - if [[ -n "${sanitizer}" ]]; then
+    -   cmake_args+=(-DCMAKE_BUILD_TYPE=Custom
+                     -DCMAKE_C_FLAGS="-O1 -g"
+                     -DCMAKE_CXX_FLAGS="-O1 -g"
+                     -DNRN_SANITIZERS=$(echo ${sanitizer} | sed -e 's/-/,/g'))
+    - fi
+    - cmake_args+=(-DCMAKE_C_COMPILER="${CC}"
+                   -DCMAKE_C_COMPILER_LAUNCHER=ccache
+                   -DCMAKE_CXX_COMPILER="${CXX}"
+                   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+                   -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}"
+                   -DNRN_ENABLE_TESTS=ON
+                   -DNRN_ENABLE_CORENEURON=${cmake_coreneuron}
+                   -DNRN_ENABLE_INTERVIEWS=${cmake_interviews}
+                   -DNRN_ENABLE_RX3D=${cmake_rx3d}
+                   -DCORENRN_SANITIZERS=${sanitizer})
+    - cmake_args+=(-DPYTHON_EXECUTABLE="${PYTHON}")
+    - mkdir build && cd build
+    - echo "Building with ${cmake_args[@]}"
+    - cmake .. "${cmake_args[@]}"
+    - ccache -z
+    - ccache -vs 2>/dev/null
+    - cmake --build . --parallel
+    - ccache -vs 2>/dev/null
+    - echo $'[install]\nprefix='>src/nrnpython/setup.cfg
+    - cat src/nrnpython/setup.cfg
+    - ctest --output-on-failure
+    - cmake --build . --target install
+    - 'export PATH=${INSTALL_DIR}/bin:${PATH}'
+    - if [[ -f "${INSTALL_DIR}/bin/nrn-enable-sanitizer" ]]; then
+    -   echo --- bin/nrn-enable-sanitizer ---
+    -   cat bin/nrn-enable-sanitizer
+    -   echo ---
+    -   nrn_enable_sanitizer=${INSTALL_DIR}/bin/nrn-enable-sanitizer
+    -   nrn_enable_sanitizer_preload="${nrn_enable_sanitizer} --preload"
+    - else
+    -   echo nrn-enable-sanitizer not found, not using it
+    - fi
+    - if [[ ! "${cmake_args[*]}" =~ "NRN_ENABLE_PYTHON=OFF" ]]; then
+    -   $PYTHON --version && ${nrn_enable_sanitizer_preload} python -c 'import neuron; neuron.test()'
+    - fi;
+    - ${nrn_enable_sanitizer} neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
+    - if [[ ! "${cmake_args[*]}" =~ "NRN_ENABLE_RX3D=OFF"
+            && ! "${cmake_args[*]}" =~ "NRN_ENABLE_CORENEURON=ON" ]]; then
+    -   ${nrn_enable_sanitizer_preload} python ../share/lib/python/neuron/rxdtests/run_all.py
+    - fi;
+
+variables:
+  NMODL_BRANCH:
+    description: Branch of NMODL to build CoreNEURON against (NMODL_COMMIT and NMODL_TAG also possible)
+    value: master
+  SPACK_BRANCH:
+    description: Branch of BlueBrain Spack to use for the CI pipeline
+    value: develop
+  SPACK_DEPLOYMENT_SUFFIX:
+    description: Extra path component used when finding deployed software. Set to something like `pulls/1497` use software built for https://github.com/BlueBrain/spack/pull/1497. You probably want to set SPACK_BRANCH to the branch used in the relevant PR if you set this.
+    value: ''
+
+# Set up Spack
+spack_setup:
+  extends: .spack_setup_ccache
+  variables:
+    NEURON_COMMIT: ${CI_COMMIT_SHA}
+    # Enable fetching GitHub PR descriptions and parsing them to find out what
+    # branches to build of other projects.
+    PARSE_GITHUB_PR_DESCRIPTIONS: "true"
+
+simulation_stack:
+  stage: .pre
+  # Take advantage of GitHub PR description parsing in the spack_setup job.
+  needs: [spack_setup]
+  trigger:
+    project: hpc/sim/blueconfigs
+    # NEURON CI status depends on the BlueConfigs CI status.
+    strategy: depend
+  variables:
+    GITLAB_PIPELINES_BRANCH: $GITLAB_PIPELINES_BRANCH
+    SPACK_ENV_FILE_URL: $SPACK_SETUP_COMMIT_MAPPING_URL
+
+# Performance seems to be terrible when we get too many jobs on a single node.
+.build:
+  extends: [.spack_build]
+  variables:
+    bb5_ntasks: 2   # so we block 16 cores
+    bb5_cpus_per_task: 8 # ninja -j {this}
+    bb5_memory: 76G # ~16*384/80
+
+.spack_intel:
+  variables:
+    SPACK_PACKAGE_COMPILER: intel
+    SPACK_PACKAGE_DEPENDENCIES: ^hpe-mpi%gcc ^python%gcc
+.spack_nvhpc:
+  variables:
+    SPACK_PACKAGE_COMPILER: nvhpc
+    SPACK_PACKAGE_DEPENDENCIES: ^hpe-mpi%gcc ^python%gcc
+.build_neuron:
+  extends: [.build]
+  timeout: two hours
+  variables:
+    bb5_duration: "2:00:00"
+    SPACK_PACKAGE: neuron
+    SPACK_PACKAGE_SPEC: +coreneuron+debug+tests~legacy-unit~rx3d model_tests=channel-benchmark,olfactory,tqperf-heavy
+.gpu_node:
+  variables:
+    bb5_constraint: volta
+    bb5_cpus_per_task: 2
+.test_neuron:
+  extends: [.ctest]
+  variables:
+    bb5_ntasks: 16
+    bb5_memory: 76G # ~16*384/80
+
+# Build NMODL once with GCC
+build:nmodl:
+  extends: [.build]
+  variables:
+    SPACK_PACKAGE: nmodl
+    SPACK_PACKAGE_SPEC: ~legacy-unit
+    SPACK_PACKAGE_COMPILER: gcc
+
+# Build NEURON
+build:neuron:mod2c:intel:shared:debug:
+  extends: [.build_neuron, .spack_intel]
+  variables:
+    SPACK_PACKAGE_SPEC: +debug~rx3d~caliper~gpu+coreneuron~legacy-unit~nmodl~openmp+shared+tests~unified build_type=Debug model_tests=channel-benchmark,olfactory,tqperf-heavy
+
+build:neuron:nmodl:intel:debug:legacy:
+  extends: [.build_neuron, .spack_intel]
+  needs: ["build:nmodl"]
+  variables:
+    SPACK_PACKAGE_SPEC: +debug~rx3d~caliper~gpu+coreneuron~legacy-unit+nmodl~openmp~shared~sympy+tests~unified build_type=Debug model_tests=channel-benchmark,olfactory,tqperf-heavy
+
+build:neuron:nmodl:intel:shared:debug:
+  extends: [.build_neuron, .spack_intel]
+  needs: ["build:nmodl"]
+  variables:
+    SPACK_PACKAGE_SPEC: +debug~rx3d~caliper~gpu+coreneuron~legacy-unit+nmodl~openmp+shared+sympy+tests~unified build_type=Debug model_tests=channel-benchmark,olfactory,tqperf-heavy
+
+build:neuron:mod2c:nvhpc:acc:shared:
+  extends: [.build_neuron, .spack_nvhpc]
+  variables:
+    SPACK_PACKAGE_SPEC: +debug~rx3d~caliper+gpu+coreneuron~legacy-unit~nmodl~openmp+shared+tests~unified build_type=RelWithDebInfo model_tests=channel-benchmark,olfactory,tqperf-heavy
+
+build:neuron:nmodl:nvhpc:acc:debug:legacy:
+  extends: [.build_neuron, .spack_nvhpc]
+  needs: ["build:nmodl"]
+  variables:
+    SPACK_PACKAGE_SPEC: +debug~rx3d~caliper+gpu+coreneuron~legacy-unit+nmodl~openmp~shared~sympy+tests~unified build_type=Debug model_tests=channel-benchmark,olfactory,tqperf-heavy
+
+build:neuron:nmodl:nvhpc:acc:shared:
+  extends: [.build_neuron, .spack_nvhpc]
+  needs: ["build:nmodl"]
+  variables:
+    SPACK_PACKAGE_SPEC: +debug~rx3d~caliper+gpu+coreneuron~legacy-unit+nmodl~openmp+shared+sympy+tests~unified build_type=RelWithDebInfo model_tests=channel-benchmark,olfactory,tqperf-heavy
+
+build:neuron:nmodl:nvhpc:omp:legacy:debug:
+  extends: [.build_neuron, .spack_nvhpc]
+  needs: ["build:nmodl"]
+  variables:
+    SPACK_PACKAGE_SPEC: +debug~rx3d+caliper+gpu+coreneuron~legacy-unit+nmodl+openmp~shared~sympy+tests~unified build_type=Debug model_tests=channel-benchmark,olfactory,tqperf-heavy ^caliper~libdw~libunwind+cuda%gcc cuda_arch=70
+
+build:neuron:nmodl:nvhpc:omp:debug:
+  extends: [.build_neuron, .spack_nvhpc]
+  needs: ["build:nmodl"]
+  variables:
+    SPACK_PACKAGE_SPEC: +debug~rx3d+caliper+gpu+coreneuron~legacy-unit+nmodl+openmp~shared+sympy+tests~unified build_type=Debug model_tests=channel-benchmark,olfactory,tqperf-heavy ^caliper~libdw~libunwind+cuda%gcc cuda_arch=70
+
+# Test NEURON
+test:neuron:mod2c:intel:shared:debug:
+  extends: [.test_neuron]
+  needs: ["build:neuron:mod2c:intel:shared:debug"]
+
+test:neuron:nmodl:intel:debug:legacy:
+  extends: [.test_neuron]
+  needs: ["build:neuron:nmodl:intel:debug:legacy"]
+
+test:neuron:nmodl:intel:shared:debug:
+  extends: [.test_neuron]
+  needs: ["build:neuron:nmodl:intel:shared:debug"]
+
+test:neuron:mod2c:nvhpc:acc:shared:
+  extends: [.test_neuron, .gpu_node]
+  needs: ["build:neuron:mod2c:nvhpc:acc:shared"]
+
+test:neuron:nmodl:nvhpc:acc:debug:legacy:
+  extends: [.test_neuron, .gpu_node]
+  needs: ["build:neuron:nmodl:nvhpc:acc:debug:legacy"]
+
+test:neuron:nmodl:nvhpc:acc:shared:
+  extends: [.test_neuron, .gpu_node]
+  needs: ["build:neuron:nmodl:nvhpc:acc:shared"]
+
+test:neuron:nmodl:nvhpc:omp:legacy:
+  extends: [.test_neuron, .gpu_node]
+  needs: ["build:neuron:nmodl:nvhpc:omp:legacy:debug"]
+
+test:neuron:nmodl:nvhpc:omp:debug:
+  extends: [.test_neuron, .gpu_node]
+  needs: ["build:neuron:nmodl:nvhpc:omp:debug"]

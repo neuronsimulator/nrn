@@ -7,7 +7,6 @@ concurrency:
 on:
   push:
     branches: 
-      - master
       - release/**
   pull_request:
     branches:
@@ -67,6 +66,14 @@ jobs:
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
               sanitizer: address
+          - os: macOS-12
+            config:
+              build_mode: cmake
+              # TODO: investigate rxd test timeouts in this build and re-enable them
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
+                -DNRN_ENABLE_RX3D=OFF -DCORENRN_SANITIZERS=address
+              sanitizer: address
+              ccache_fudge: 1 # manually invalidate the cache for this build
       fail-fast: false
 
     steps:
@@ -111,7 +118,7 @@ jobs:
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         if: ${{matrix.config.python_dynamic == 'ON'}}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
 
@@ -122,7 +129,7 @@ jobs:
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MAX_VERSION }}
 
@@ -148,8 +155,20 @@ jobs:
           cat matrix.json
           echo -----
 
+      # Workaround for https://github.com/actions/cache/issues/92
+      - name: Checkout cache action
+        uses: actions/checkout@v3
+        with:
+          repository: actions/cache
+          ref: v3
+          path: tmp/actions/cache
+          
+      - name: Make actions/cache@v3 run even on failure
+        run: |
+          sed -i'.bak' -e '/ post-if: /d' tmp/actions/cache/action.yml
+
       - name: Restore compiler cache
-        uses: pat-s/always-upload-cache@v3
+        uses: ./tmp/actions/cache
         with:
           path: |
             ${{runner.workspace}}/ccache
@@ -176,6 +195,10 @@ jobs:
             # However it does not get stuck: neuron module not found and script goes to interpreter, seeming stuck.
             # This needs to be addressed and SKIP_EMBEDED_PYTHON_TEST logic removed everywhere.
             export SKIP_EMBEDED_PYTHON_TEST="true"
+            # long TMPDIR path on MacOS can results into runtime failures with OpenMPI
+            # Set shorter path as discussed in https://github.com/open-mpi/ompi/issues/8510
+            export TMPDIR=/tmp/$GITHUB_JOB
+            mkdir -p $TMPDIR
           fi
 
           # Python setup
@@ -202,14 +225,15 @@ jobs:
               cmake_args=(-G Ninja)
               # Sanitizer-specific setup
               if [[ -n "${{matrix.config.sanitizer}}" ]]; then
-                CC=$(command -v clang-14)
-                CXX=$(command -v clang++-14)
-                symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
-                echo symbolizer_path=${symbolizer_path}
+                if [ "$RUNNER_OS" == "Linux" ]; then
+                  CC=$(command -v clang-14)
+                  CXX=$(command -v clang++-14)
+                  symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
+                  cmake_args+=(-DLLVM_SYMBOLIZER_PATH="${symbolizer_path}")
+                fi
                 cmake_args+=(-DCMAKE_BUILD_TYPE=Custom \
-                             -DCMAKE_C_FLAGS="-O1 -g -Wno-writable-strings" \
-                             -DCMAKE_CXX_FLAGS="-O1 -g -Wno-writable-strings" \
-                             -DLLVM_SYMBOLIZER_PATH="${symbolizer_path}" \
+                             -DCMAKE_C_FLAGS="-O1 -g" \
+                             -DCMAKE_CXX_FLAGS="-O1 -g" \
                              -DNRN_SANITIZERS=$(echo ${{matrix.config.sanitizer}} | sed -e 's/-/,/g'))
               fi
               cmake_args+=(-DCMAKE_C_COMPILER="${CC}" \

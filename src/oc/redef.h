@@ -27,9 +27,7 @@
 #define araypt             hoc_araypt
 #define arg                hoc_arg
 #define argassign          hoc_argassign
-#define assign             hoc_assign
 #define assstr             hoc_assstr
-#define begin              hoc_begin
 #define bltin              hoc_bltin
 #define call               hoc_call
 #define call_ob_proc       hoc_call_ob_proc
@@ -89,7 +87,6 @@
 #define lineno             hoc_lineno
 #define lookup             hoc_lookup
 #define lt                 hoc_lt
-#define moreinput          hoc_moreinput
 #define mul                hoc_mul
 #define ne                 hoc_ne
 #define negate             hoc_negate
@@ -122,7 +119,6 @@
 #define pop_frame          hoc_pop_frame
 #define ret                hoc_ret
 #define ropen              hoc_ropen
-#define run                hoc_run
 #define solve              hoc_solve
 #define spinit             hoc_spinit
 #define symbols            hoc_symbols

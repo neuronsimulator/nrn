@@ -213,6 +213,30 @@ NRN_MPI_DYNAMIC:STRING=
 
   This option is ignored unless NRN_ENABLE_MPI_DYNAMIC=ON
 
+NRN_ENABLE_MUSIC:BOOL=OFF
+-------------------------
+  Enable MUSIC. MUlti SImulation Coordinator.
+
+  MUSIC must already be installed. See https://github.com/INCF/MUSIC.
+  Hints for MUSIC installation: use the switch-to-MPI-C-interface branch.
+  Python3 must have mpi4py and cython modules. I needed a PYTHON_PREFIX, so
+  on my Apple M1 used: ``./configure --prefix=`pwd`/musicinstall PYTHON_PREFIX=/Library/Frameworks/Python.framework/Versions/3.11 --disable-anysource``
+
+  MPI and Python must be enabled.
+
+  If MUSIC is installed but CMake cannot find its ``/path``, augment the
+  semicolon separated list of paths ``-DCMAKE_PREFIX_PATH=...;/path;...``
+  or pass the ``/path`` with ``-DMUSIC_ROOT=/path`` to cmake.
+  CMake needs to find
+
+  .. code-block:: shell
+
+    /path/include/music.hh
+    /path/lib/libmusic.so
+
+  With the music installed above, cmake configuration example is
+  ``build % cmake .. -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python3.11` -DNRN_ENABLE_RX3D=OFF -DCMAKE_BUILD_TYPE=Debug -DNRN_CLANG_FORMAT=ON -DNRN_ENABLE_TESTS=ON -DNRN_ENABLE_MUSIC=ON -DCMAKE_PREFIX_PATH=$HOME/neuron/MUSIC/musicinstall``
+
 Python options:
 ===============
 

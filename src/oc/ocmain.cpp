@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/ocmain.cpp,v 1.7 1997/07/29 20:23:33 hines Exp */
-#include "isoc99.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,13 +33,7 @@ static void setnrnhome(const char* arg) {
     */
     neuron_home = getenv("NEURONHOME");
     if (!neuron_home) {
-#if defined(HAVE_PUTENV)
-        static char* buffer;
-        buffer = static_cast<char*>(malloc(strlen(NEURON_DATA_DIR) + 12));
-        sprintf(buffer, "NEURONHOME=%s", NEURON_DATA_DIR);
-        putenv(buffer);
-        neuron_home = NEURON_DATA_DIR;
-#elif defined(HAVE_SETENV)
+#if defined(HAVE_SETENV)
         setenv("NEURONHOME", NEURON_DATA_DIR, 1);
         neuron_home = NEURON_DATA_DIR;
 #else
@@ -56,7 +49,6 @@ static void setnrnhome(const char* arg) {
 
 int main(int argc, const char** argv, const char** envp) {
     int err;
-    nrn_isdouble(nullptr, 0., 0.);
 #if MAC
     int our_argc = 1;
     char* our_argv[1];

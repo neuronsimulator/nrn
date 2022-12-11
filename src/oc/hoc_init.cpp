@@ -7,6 +7,7 @@
 #include "equation.h"
 #include "nrnunits_modern.h"
 
+#include "nrn_ansi.h"
 #include "ocfunc.h"
 
 
@@ -38,7 +39,7 @@ static double Erfc(double x) {
 #endif
 
 static struct { /* Keywords */
-    char* name;
+    const char* name;
     int kval;
 } keywords[] = {{"proc", parsePROC},
                 {"func", FUNC},
@@ -65,7 +66,6 @@ static struct { /* Keywords */
                 {"help", HELP},
                 {"iterator", ITERKEYWORD},
                 {"iterator_statement", ITERSTMT},
-#if CABLE
                 {"create", SECTIONKEYWORD},
                 {"connect", CONNECTKEYWORD},
                 {"setpointer", SETPOINTERKEYWORD},
@@ -75,8 +75,6 @@ static struct { /* Keywords */
                 {"forall", FORALL},
                 {"ifsec", IFSEC},
                 {"forsec", FORSEC},
-#endif /*CABLE*/
-#if OOP
                 {"begintemplate", BEGINTEMPLATE},
                 {"endtemplate", ENDTEMPLATE},
                 {"objectvar", OBJVARDECL},
@@ -84,22 +82,21 @@ static struct { /* Keywords */
                 {"public", PUBLICDECL},
                 {"external", EXTERNALDECL},
                 {"new", NEW},
-#endif
-                {0, 0}};
+                {nullptr, 0}};
 static struct { /* Constants */
-    char* name;
+    const char* name;
     double cval;
 } consts[] = {{"PI", 3.14159265358979323846},
               {"E", 2.71828182845904523536},
               {"GAMMA", 0.57721566490153286060}, /* Euler */
               {"DEG", 57.29577951308232087680},  /* deg/radian */
               {"PHI", 1.61803398874989484820},   /* golden ratio */
-              {0, 0}};
+              {nullptr, 0}};
 
 /* Nov, 2017, from https://physics.nist.gov/cuu/Constants/index.html */
 /* also see FARADAY and gasconstant in ../nrnoc/eion.c */
 static struct { /* Modern, Legacy units constants */
-    char* name;
+    const char* name;
     double cval[2];
 } uconsts[] = {{"FARADAY", {_faraday_codata2018, 96485.309}}, /*coulombs/mole*/
                {"R", {_gasconstant_codata2018, 8.31441}}, /*molar gas constant, joules/mole/deg-K*/
@@ -109,7 +106,7 @@ static struct { /* Modern, Legacy units constants */
                {0, {0., 0.}}};
 
 static struct { /* Built-ins */
-    char* name;
+    const char* name;
     double (*func)(double);
 } builtins[] = {{"sin", sin},
                 {"cos", cos},
@@ -131,7 +128,7 @@ static struct { /* Built-ins */
 #endif
                 {0, 0}};
 static struct { /* Builtin functions with multiple or variable args */
-    char* name;
+    const char* name;
     void (*fun_blt)(void);
 } fun_bltin[] = {{"atan2", hoc_atan2},
                  {"system", hoc_System},
@@ -221,6 +218,8 @@ static struct { /* Builtin functions with multiple or variable args */
                  {"mcell_ran4_init", hoc_mcran4init},
                  {"nrn_feenableexcept", nrn_feenableexcept},
                  {"nrnmpi_init", hoc_nrnmpi_init},
+                 {"coreneuron_handle", hoc_coreneuron_handle},
+                 {"nrn_num_config_keys", hoc_num_config_keys},
 #if PVM
                  {"numprocs", numprocs},
                  {"myproc", myproc},
@@ -235,17 +234,19 @@ static struct { /* Builtin functions with multiple or variable args */
                  {0, 0}};
 
 static struct { /* functions that return a string */
-    char* name;
+    const char* name;
     void (*strfun_blt)(void);
 } strfun_bltin[] = {{"secname", hoc_secname},
                     {"units", hoc_Symbol_units},
                     {"neuronhome", hoc_neuronhome},
                     {"getcwd", hoc_getcwd},
                     {"nrnversion", hoc_nrnversion},
+                    {"nrn_get_config_key", hoc_get_config_key},
+                    {"nrn_get_config_val", hoc_get_config_val},
                     {0, 0}};
 
 static struct { /* functions that return an object */
-    char* name;
+    const char* name;
     void (*objfun_blt)(void);
 } objfun_bltin[] = {{"object_pushed", hoc_object_pushed}, {nullptr, nullptr}};
 
@@ -258,7 +259,7 @@ double hoc_cross_x_, hoc_cross_y_; /* For Graph class in ivoc */
 double hoc_default_dll_loaded_;
 
 char* neuron_home;
-char* nrn_mech_dll;            /* but actually only for NEURON mswin and linux */
+const char* nrn_mech_dll;      /* but actually only for NEURON mswin and linux */
 int nrn_noauto_dlopen_nrnmech; /* 0 except when binary special. */
 int use_mcell_ran4_;
 int nrn_xopen_broadcast_;
@@ -341,7 +342,6 @@ void hoc_init(void) /* install constants and built-ins table */
     /* initialize pointers ( why doesn't Vax do this?) */
     hoc_access = (int*) 0;
     spinit();
-#if OOP
     hoc_class_registration();
     hoc_built_in_symlist = symlist;
     symlist = (Symlist*) 0;
@@ -349,7 +349,6 @@ void hoc_init(void) /* install constants and built-ins table */
     hoc_top_level_symlist = symlist = (Symlist*) emalloc(sizeof(Symlist));
     symlist->first = symlist->last = (Symbol*) 0;
     hoc_install_hoc_obj();
-#endif
 }
 
 void hoc_unix_mac_pc(void) {
@@ -384,7 +383,6 @@ void hoc_show_winio(void) {
 int nrn_main_launch;
 
 void hoc_nrnversion(void) {
-    extern char* nrn_version(int);
     char** p = hoc_temp_charptr();
     int i;
     i = 1;
@@ -394,6 +392,28 @@ void hoc_nrnversion(void) {
     hoc_ret();
     *p = nrn_version(i);
     hoc_pushstr(p);
+}
+
+void hoc_get_config_key() {
+    nrn_assert(nrn_num_config_keys() > 0);
+    auto const i = static_cast<std::size_t>(chkarg(1, 0, nrn_num_config_keys() - 1));
+    char** p = hoc_temp_charptr();
+    hoc_ret();
+    *p = nrn_get_config_key(i);
+    hoc_pushstr(p);
+}
+
+void hoc_get_config_val() {
+    nrn_assert(nrn_num_config_keys() > 0);
+    auto const i = static_cast<std::size_t>(chkarg(1, 0, nrn_num_config_keys() - 1));
+    char** p = hoc_temp_charptr();
+    hoc_ret();
+    *p = nrn_get_config_val(i);
+    hoc_pushstr(p);
+}
+
+void hoc_num_config_keys() {
+    hoc_retpushx(nrn_num_config_keys());
 }
 
 void hoc_Execerror(void) {

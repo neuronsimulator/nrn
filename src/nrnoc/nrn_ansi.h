@@ -1,5 +1,17 @@
-#ifndef nrn_ansi_h
-#define nrn_ansi_h
+#pragma once
+#include "hocdec.h"
+#include "membfunc.h"  // nrn_bamech_t
+struct Extnode;
+struct hoc_Item;
+struct HocParmLimits;
+struct HocParmUnits;
+struct HocStateTolerance;
+struct Node;
+struct Object;
+struct Point_process;
+struct Prop;
+struct Section;
+struct Symbol;
 
 // nocpout.cpp
 extern void hoc_register_limits(int, HocParmLimits*);
@@ -94,8 +106,8 @@ extern void nrn_sec_ref(Section**, Section*);
 extern void hoc_level_pushsec(Section*);
 extern double nrn_ra(Section*);
 extern int node_index_exact(Section*, double);
-extern void nrn_cachevec(int);
-extern void nrn_ba(NrnThread*, int);
+void nrn_cachevec(int);
+void nrn_ba(NrnThread*, int);
 extern void nrniv_recalc_ptrs(void);
 extern void nrn_recalc_ptrvector(void);
 extern void nrn_recalc_ptrs(double* (*r)(double*) );
@@ -108,8 +120,6 @@ extern void nrn_multisplit_ptr_update(void);
 extern void nrn_cache_prop_realloc();
 extern void nrn_use_daspk(int);
 extern void nrn_update_ps2nt(void);
-
-
 extern void activstim_rhs(void);
 extern void activclamp_rhs(void);
 extern void activclamp_lhs(void);
@@ -124,9 +134,9 @@ extern void section_ref(Section*);
 extern void section_unref(Section*);
 extern const char* secname(Section*);
 extern const char* nrn_sec2pysecname(Section*);
-extern void nrn_rangeconst(Section*, Symbol*, double* value, int op);
+void nrn_rangeconst(Section*, Symbol*, double* value, int op);
 extern int nrn_exists(Symbol*, Node*);
-extern double* nrn_rangepointer(Section*, Symbol*, double x);
+double* nrn_rangepointer(Section*, Symbol*, double x);
 extern double* cable_prop_eval_pointer(Symbol*);  // section on stack will be popped
 extern char* hoc_section_pathname(Section*);
 extern double nrn_arc_position(Section*, Node*);
@@ -161,4 +171,20 @@ extern void stor_pt3d(Section*, double x, double y, double z, double d);
 extern int nrn_netrec_state_adjust;
 extern int nrn_sparse_partrans;
 
-#endif
+char* nrn_version(int);
+
+/** @brief Get the number of NEURON configuration items.
+ */
+[[nodiscard]] std::size_t nrn_num_config_keys();
+
+/** @brief Get the ith NEURON configuration key.
+ *
+ * @param i Key index, must be less than nrn_num_config_keys().
+ */
+[[nodiscard]] char* nrn_get_config_key(std::size_t i);
+
+/** @brief Get the ith NEURON configuration value.
+ *
+ * @param i Key index, must be less than nrn_num_config_keys().
+ */
+[[nodiscard]] char* nrn_get_config_val(std::size_t i);

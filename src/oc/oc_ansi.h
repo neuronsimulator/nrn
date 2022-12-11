@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdio>
-
+#include <memory>
 /**
  * \dir
  * \brief HOC Interpreter
@@ -21,7 +21,7 @@
 
 struct Arrayinfo;
 struct cTemplate;
-union Datum;
+struct Datum;
 struct DoubScal;
 struct DoubVec;
 struct HocSymExtension;
@@ -39,17 +39,11 @@ void ivoc_help(const char*);
 
 Symbol* hoc_lookup(const char*);
 
-// olupton 2022-05-30: This has to have C linkage for now because it is used in
-//                     praxis.c
-extern "C" void* hoc_Ecalloc(std::size_t nmemb, std::size_t size);
-// olupton 2022-05-30: These have to have C linkage for now because they are used
-//                     in newton_thread.c
-extern "C" void* hoc_Emalloc(size_t size);
-extern "C" void hoc_malchk();
-// olupton 2022-05-30: This has to have C linkage for now because it is used in
-//                     abort.c and praxis.c
-extern "C" void hoc_execerror(const char*, const char*);
-void hoc_execerr_ext(const char* fmt, ...);
+void* hoc_Ecalloc(std::size_t nmemb, std::size_t size);
+void* hoc_Emalloc(size_t size);
+void hoc_malchk();
+[[noreturn]] void hoc_execerror(const char*, const char*);
+[[noreturn]] void hoc_execerr_ext(const char* fmt, ...);
 char* hoc_object_name(Object*);
 void hoc_retpushx(double);
 
@@ -136,24 +130,36 @@ void hoc_push_object(Object*);
 void hoc_pushpx(double*);
 void hoc_pushs(Symbol*);
 void hoc_pushi(int);
+void hoc_push_ndim(int);
+int hoc_pop_ndim();
+bool hoc_stack_type_is_ndim();
 double hoc_xpop();
 Symbol* hoc_spop();
 double* hoc_pxpop();
 Object** hoc_objpop();
-Object* hoc_pop_object();
+struct TmpObjectDeleter {
+    void operator()(Object*) const;
+};
+using TmpObject = std::unique_ptr<Object, TmpObjectDeleter>;
+TmpObject hoc_pop_object();
 char** hoc_strpop();
 int hoc_ipop();
 void hoc_nopop();
 
-void hoc_execerror_mes(const char*, const char*, int);
+[[noreturn]] void hoc_execerror_mes(const char*, const char*, int);
 void hoc_warning(const char*, const char*);
 double* hoc_val_pointer(const char*);
 Symbol* hoc_table_lookup(const char*, Symlist*);
 Symbol* hoc_install(const char*, int, double, Symlist**);
 extern Objectdata* hoc_objectdata;
-Datum* hoc_look_inside_stack(int, int);
+/** @brief Get the stack entry at depth i.
+ *
+ *  i=0 is the most recently pushed entry. This will raise an error if the stack
+ *  is empty, or if the given entry does not have type T.
+ */
+template <typename T>
+T const& hoc_look_inside_stack(int i);
 Object* hoc_obj_look_inside_stack(int);
-int hoc_obj_look_inside_stack_index(int);
 void hoc_stkobj_unref(Object*, int stkindex);
 size_t hoc_total_array_data(Symbol*, Objectdata*);
 char* hoc_araystr(Symbol*, int, Objectdata*);
@@ -179,7 +185,7 @@ void* hoc_Erealloc(void* ptr, std::size_t size);
 
 void* nrn_cacheline_alloc(void** memptr, std::size_t size);
 void* nrn_cacheline_calloc(void** memptr, std::size_t nmemb, std::size_t size);
-void nrn_exit(int);
+[[noreturn]] void nrn_exit(int);
 void hoc_free_list(Symlist**);
 int hoc_errno_check();
 Symbol* hoc_parse_stmt(const char*, Symlist**);
@@ -292,9 +298,7 @@ void bbs_done(void);
 int hoc_main1(int, const char**, const char**);
 char* cxx_char_alloc(std::size_t size);
 
-// olupton 2022-01-31: This has to have C linkage for now because it is used in
-//                     praxis.c.
-extern "C" int stoprun;
+extern int stoprun;
 extern int nrn_mpiabort_on_error_;
 
 /** @} */  // end of hoc_functions

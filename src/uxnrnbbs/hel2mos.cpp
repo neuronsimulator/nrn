@@ -86,7 +86,7 @@ int main(int argc, const char** argv) {
 
 static bool find(const char* key, char* val) {
     static char buf[256];
-    sprintf(buf, "^%s ", key);
+    Sprintf(buf, "^%s ", key);
     // printf("|%s|\n", buf);
     Regexp r1(buf);
     int i = r1.Search(shelp->string(), shelp->length(), 0, shelp->length());
@@ -117,7 +117,7 @@ static void help(const char* msg) {
             if (find(buf, buf)) {
                 //				printf("%s\n", buf);
             } else {
-                sprintf(buf, "contents.html");
+                Sprintf(buf, "contents.html");
             }
 #ifdef WIN32
             //         DebugMessage("buf=|%s|\n", buf);
@@ -132,7 +132,7 @@ static void help(const char* msg) {
                     *cp = '/';
                 }
             }
-            sprintf(buf, "file:///%s/html/help/%s", buf1, buf2);
+            Sprintf(buf, "file:///%s/html/help/%s", buf1, buf2);
 #endif
             send(buf);
         }
@@ -177,17 +177,17 @@ static void setneuronhome(const char* p) {
         // check for nrn.def or nrn.defaults
         // if it exists assume valid installation
         FILE* f;
-        sprintf(buf1, "%s/lib/nrn.def", buf);
+        Sprintf(buf1, "%s/lib/nrn.def", buf);
         if ((f = fopen(buf1, "r")) == (FILE*) 0) {
-            sprintf(buf1, "%s/lib/nrn.defaults", buf);
+            Sprintf(buf1, "%s/lib/nrn.defaults", buf);
             if ((f = fopen(buf1, "r")) == (FILE*) 0) {
-                sprintf(buf1, "%s not valid neuronhome\n", buf);
+                Sprintf(buf1, "%s not valid neuronhome\n", buf);
                 MessageBox(NULL, buf1, "mos2nrn", MB_OK);
                 return;
             }
         }
         fclose(f);
-        sprintf(buf1, "NEURONHOME=%s", buf);
+        Sprintf(buf1, "NEURONHOME=%s", buf);
         putenv(buf1);  // arg must be global
     }
 }
@@ -217,7 +217,7 @@ void send(const char* url) {
     while (url[start] == ' ') {
         ++start;
     }
-    sprintf(buf1, "%s/bin/hel2mos1.sh \"%s\"", neuronhome(), url + start);
+    Sprintf(buf1, "%s/bin/hel2mos1.sh \"%s\"", neuronhome(), url + start);
     // printf("sending |%s|\n", buf1);
     signal(SIGCHLD, SIG_IGN);
     system(buf1);

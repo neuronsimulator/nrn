@@ -4,7 +4,8 @@ jupyter
 nbconvert
 recommonmark
 matplotlib
-bokeh
+# bokeh 3 seems to break docs notebooks
+bokeh<3
 # do not check import of next line
 ipython
 plotnine

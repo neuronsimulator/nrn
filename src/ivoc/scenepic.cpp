@@ -86,9 +86,9 @@ GlyphIndex ButtonItemInfo::menu_index() {
 }
 
 declarePtrList(ButtonItemInfoList, ButtonItemInfo)
-    implementPtrList(ButtonItemInfoList, ButtonItemInfo)
+implementPtrList(ButtonItemInfoList, ButtonItemInfo)
 
-    /*static*/ class SceneMover: public OcHandler {
+/*static*/ class SceneMover: public OcHandler {
   public:
     SceneMover();
     virtual ~SceneMover();

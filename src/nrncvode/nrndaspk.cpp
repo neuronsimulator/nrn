@@ -484,7 +484,7 @@ for (i=0; i < z.nvsize_; ++i) {
             p = nt->_nrn_fast_imem->_nrn_sav_rhs;
         }
         for (i = 0; i < n; ++i) {
-            double* cd = ml->data[i];
+            double* cd = ml->_data[i];
             Node* nd = ml->nodelist[i];
             int j = nd->eqn_index_ - 1;
             Extnode* nde = nd->extnode;
@@ -517,7 +517,7 @@ for (i=0; i < z.nvsize_; ++i) {
         Memb_list* ml = z.cmlext_->ml;
         int n = ml->nodecount;
         for (i = 0; i < n; ++i) {
-            double* cd = ml->data[i];
+            double* cd = ml->_data[i];
             Node* nd = ml->nodelist[i];
             int j = nd->eqn_index_;
 #if EXTRACELLULAR

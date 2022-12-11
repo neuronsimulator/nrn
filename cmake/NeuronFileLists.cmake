@@ -13,7 +13,6 @@ set(HEADER_FILES_TO_INSTALL
     hocgetsym.h
     hoclist.h
     hocparse.h
-    isoc99.h
     ivstream.h
     mcran4.h
     md1redef.h
@@ -48,7 +47,8 @@ set(HEADER_FILES_TO_INSTALL
     section.h
     spconfig.h
     spmatrix.h
-    treeset.h)
+    treeset.h
+    wrap_sprintf.h)
 
 # =============================================================================
 # Lists of headers populated using check_include_files
@@ -79,7 +79,6 @@ set(OC_FILE_LIST
     hocusr.cpp
     hoc_init.cpp
     hoc_oop.cpp
-    isoc99.cpp
     list.cpp
     math.cpp
     mswinprt.cpp
@@ -111,7 +110,7 @@ set(NRNOC_FILE_LIST
     hocprax.cpp
     init.cpp
     ldifus.cpp
-    method3.cpp
+    membfunc.cpp
     nrnnemo.cpp
     nrntimeout.cpp
     nrnversion.cpp
@@ -123,7 +122,8 @@ set(NRNOC_FILE_LIST
     secref.cpp
     solve.cpp
     synapse.cpp
-    treeset.cpp)
+    treeset.cpp
+    multicore.cpp)
 
 # =============================================================================
 # Files in ivoc directory
@@ -237,7 +237,6 @@ set(NRNIV_FILE_LIST
     secbrows.cpp
     shape.cpp
     shapeplt.cpp
-    singlech.cpp
     spaceplt.cpp
     splitcell.cpp
     symdir.cpp
@@ -344,67 +343,55 @@ set(SPARSE13_FILES_LIST
 
 # scopmath sources
 set(SCOPMATH_FILES_LIST
-    abort.c
-    adams.c
-    adeuler.c
-    adrunge.c
-    advance.c
-    boundary.c
-    crank.c
-    crout.c
-    csoda.c
-    csodabnc.c
-    deflate.c
-    dimplic.c
-    scoperf.c
-    euler.c
-    expfit.c
-    exprand.c
-    f2cmisc.c
-    factoria.c
-    force.c
-    gauss.c
-    gear.c
-    getmem.c
-    harmonic.c
-    heun.c
-    hyperbol.c
-    invert.c
-    lag.c
-    legendre.c
-    newton.c
-    normrand.c
-    perpulse.c
-    perstep.c
-    poisrand.c
-    poisson.c
-    praxis.c
-    pulse.c
-    quad.c
-    ramp.c
-    revhyper.c
-    revsawto.c
-    revsigmo.c
-    romberg.c
-    runge.c
-    sawtooth.c
-    schedule.c
-    seidel.c
-    sigmoid.c
-    simeq.c
-    simplex.c
-    sparse.c
-    vsparse.c
-    spline.c
-    squarewa.c
-    ssimplic.c
-    step.c
-    threshol.c
-    tridiag.c
-    sparse_thread.c
-    newton_thread.c
-    crout_thread.c
-    ssimplic_thread.c)
+    abort.cpp
+    advance.cpp
+    boundary.cpp
+    crank.cpp
+    crout.cpp
+    deflate.cpp
+    dimplic.cpp
+    scoperf.cpp
+    euler.cpp
+    expfit.cpp
+    exprand.cpp
+    f2cmisc.cpp
+    factoria.cpp
+    force.cpp
+    gauss.cpp
+    getmem.cpp
+    harmonic.cpp
+    hyperbol.cpp
+    invert.cpp
+    lag.cpp
+    legendre.cpp
+    newton.cpp
+    normrand.cpp
+    perpulse.cpp
+    perstep.cpp
+    poisrand.cpp
+    poisson.cpp
+    praxis.cpp
+    pulse.cpp
+    ramp.cpp
+    revhyper.cpp
+    revsawto.cpp
+    revsigmo.cpp
+    romberg.cpp
+    runge.cpp
+    sawtooth.cpp
+    sigmoid.cpp
+    simeq.cpp
+    sparse.cpp
+    spline.cpp
+    squarewa.cpp
+    ssimplic.cpp
+    step.cpp
+    threshol.cpp
+    tridiag.cpp
+    sparse_thread.cpp
+    newton_thread.cpp
+    crout_thread.cpp
+    ssimplic_thread.cpp)
 
 set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
 
@@ -488,8 +475,6 @@ set(NMODL_FILES_LIST
     noccout.cpp
     parsact.cpp
     netrec_discon.cpp
-    partial.cpp
-    sens.cpp
     simultan.cpp
     solve.cpp
     symbol.cpp

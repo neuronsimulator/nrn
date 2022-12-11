@@ -60,11 +60,16 @@ endif()
 # separated 'option=value' where value differs from the default value.
 # ~~~
 set(neuron_config_args "cmake option default differences:")
+set(neuron_config_args_all)
 foreach(_name ${NRN_OPTION_NAME_LIST})
   if(NOT ("${${_name}}" STREQUAL "${${_name}_DEFAULT}"))
     string(APPEND neuron_config_args " '${_name}=${${_name}}'")
   endif()
+  string(REPLACE ";" "\\;" escaped_value "${${_name}}")
+  string(REPLACE "\"" "\\\"" escaped_value "${escaped_value}")
+  list(APPEND neuron_config_args_all "{\"${_name}\", \"${escaped_value}\"}")
 endforeach()
+string(JOIN ",\n  " neuron_config_args_all ${neuron_config_args_all})
 
 # =============================================================================
 # Platform specific options (get expanded to comments)
@@ -184,11 +189,6 @@ check_include_files("dlfcn.h;stdint.h;stddef.h;inttypes.h;stdlib.h;strings.h;str
 check_include_file_cxx("_G_config.h" HAVE__G_CONFIG_H)
 
 # =============================================================================
-# Check if this C++ compiler offers cxxabi.h (any that uses glibc should)
-# =============================================================================
-check_include_file_cxx("cxxabi.h" HAVE_CXXABI_H)
-
-# =============================================================================
 # Check symbol using check_cxx_symbol_exists but use ${NRN_HEADERS_INCLUDE_LIST}
 # =============================================================================
 # note that this must be called after all *check_include_files because we use
@@ -211,12 +211,12 @@ nrn_check_symbol_exists("mkdir" "" HAVE_MKDIR)
 nrn_check_symbol_exists("mkstemp" "" HAVE_MKSTEMP)
 nrn_check_symbol_exists("namespaces" "" HAVE_NAMESPACES)
 nrn_check_symbol_exists("posix_memalign" "" HAVE_POSIX_MEMALIGN)
-nrn_check_symbol_exists("putenv" "" HAVE_PUTENV)
 nrn_check_symbol_exists("realpath" "" HAVE_REALPATH)
 nrn_check_symbol_exists("select" "" HAVE_SELECT)
 nrn_check_symbol_exists("setenv" "" HAVE_SETENV)
 nrn_check_symbol_exists("setitimer" "" HAVE_SETITIMER)
-nrn_check_symbol_exists("sigaction" "" HAVE_SIGACTION)
+nrn_check_symbol_exists("sigaction" "signal.h" HAVE_SIGACTION)
+nrn_check_symbol_exists("sigprocmask" "signal.h" HAVE_SIGPROCMASK)
 nrn_check_symbol_exists("SIGBUS" "signal.h" HAVE_SIGBUS)
 nrn_check_symbol_exists("SIGSEGV" "signal.h" HAVE_SIGSEGV)
 nrn_check_symbol_exists("strdup" "" HAVE_STRDUP)
@@ -308,7 +308,7 @@ endif()
 
 # Prepare some variables for @VAR@ expansion in setup.py.in (nrnpython and rx3d)
 set(NRN_COMPILE_FLAGS_QUOTED ${NRN_COMPILE_FLAGS})
-set(NRN_LINK_FLAGS_QUOTED ${NRN_LINK_FLAGS})
+set(NRN_LINK_FLAGS_QUOTED ${NRN_LINK_FLAGS} ${NRN_LINK_FLAGS_FOR_ENTRY_POINTS})
 list(TRANSFORM NRN_COMPILE_FLAGS_QUOTED APPEND "'")
 list(TRANSFORM NRN_COMPILE_FLAGS_QUOTED PREPEND "'")
 list(TRANSFORM NRN_LINK_FLAGS_QUOTED APPEND "'")

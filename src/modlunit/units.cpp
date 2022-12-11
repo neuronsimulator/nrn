@@ -1,6 +1,7 @@
 #include <../../nmodlconf.h>
 /* /local/src/master/nrn/src/modlunit/units.c,v 1.5 1997/11/24 16:19:13 hines Exp */
 /* Mostly from Berkeley */
+#include "model.h"
 #include "nrnassrt.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +9,8 @@
 #include <string.h>
 #include "units.h"
 #include <assert.h>
+
+#include <cstring>
 
 /**
   The strategy for dynamic units selection between Legacy and modern units
@@ -47,7 +50,7 @@ static int UnitsOn = 0;
 extern "C" {
 extern double fabs(double);
 }  // extern "C"
-extern void diag(char*, char*);
+extern void diag(const char*, const char*);
 #define IFUNITS       \
     {                 \
         if (!UnitsOn) \
@@ -65,28 +68,24 @@ extern void diag(char*, char*);
 
 /* if MODLUNIT environment variable not set then look in the following places*/
 #if MAC
-static char* dfile = ":lib:nrnunits.lib" SUFFIX;
+static const char* dfile = ":lib:nrnunits.lib" SUFFIX;
 #else
 #if defined(NEURON_DATA_DIR)
-static char* dfile = NEURON_DATA_DIR "/lib/nrnunits.lib" SUFFIX;
+static const char* dfile = NEURON_DATA_DIR "/lib/nrnunits.lib" SUFFIX;
 #else
-static char* dfile = "/usr/lib/units";
+static const char* dfile = "/usr/lib/units";
 #endif
 #endif
-#if defined(__TURBOC__) || defined(__GO32__)
-static char* dfilealt = "/nrn/lib/nrnunits.lib" SUFFIX;
-#else
 #if MAC
-static char* dfilealt = "::lib:nrnunits.lib" SUFFIX;
+static const char* dfilealt = "::lib:nrnunits.lib" SUFFIX;
 #else
-static char* dfilealt = "../../share/lib/nrnunits.lib" SUFFIX;
-#endif
+static const char* dfilealt = "../../share/lib/nrnunits.lib" SUFFIX;
 #endif
 static char* unames[NDIM];
 double getflt();
 void fperr(int);
 int lookup(char* name, unit* up, int den, int c);
-struct table* hash_table(char*);
+struct table* hash_table(const char*);
 
 void chkfperror();
 void units(unit*);
@@ -95,7 +94,7 @@ int convr(unit*);
 void units_cpp_init();
 int get();
 
-extern void Unit_push(char*);
+extern void Unit_push(const char*);
 
 static struct table {
     double factor;
@@ -118,7 +117,7 @@ static struct dynam {
 
 static struct prefix {
     double factor;
-    char* pname;
+    const char* pname;
 } prefix[] = {{1e-18, "atto"},
               {1e-15, "femto"},
               {1e-12, "pico"},
@@ -141,7 +140,7 @@ static int fperrc;
 static int peekc;
 static int dumpflg;
 
-static char* pc;
+static const char* pc;
 
 static int Getc(FILE* inp) {
     if (inp != stdin) {
@@ -191,13 +190,13 @@ static char* neuronhome() {
 
 
 static char* ucp;
-char* Unit_str(unit* up) {
+const char* Unit_str(unit* up) {
     struct unit* p;
     int f, i;
     static char buf[256];
 
     p = up;
-    sprintf(buf, "%g ", p->factor);
+    Sprintf(buf, "%g ", p->factor);
     {
         int seee = 0;
         for (ucp = buf; *ucp; ucp++) {
@@ -287,7 +286,7 @@ void ucopypush(unit* up) {
     usp->isnum = up->isnum;
 }
 
-void Unit_push(char* str) {
+void Unit_push(const char* str) {
     IFUNITS
     assert(usp < unit_stack + (UNIT_STK_SIZE - 1));
     if (usp) {
@@ -316,13 +315,11 @@ void unitcheck(char* s) {
     unit_pop();
 }
 
-char* unit_str() {
+const char* unit_str() {
     /* return top of stack as units string */
-    char* s;
     if (!UnitsOn)
         return "";
-    s = Unit_str(usp);
-    return s;
+    return Unit_str(usp);
 }
 
 static void install_units_help(char* s1, char* s2) /* define s1 as s2 */
@@ -453,9 +450,6 @@ int unit_cmp_exact() { /* returns 1 if top two units on stack are same */
     return 1;
 }
 
-/* ARGSUSED */
-static void print_unit_expr(int i) {}
-
 void Unit_cmp() {
     /*compares top two units on stack. If not conformable then
     gives error. If not same factor then gives error.
@@ -481,10 +475,8 @@ void Unit_cmp() {
         for (i = 0; i < NDIM; i++) {
             if (up->dim[i] != usp->dim[i]) {
                 chkfperror();
-                print_unit_expr(2);
                 fprintf(stderr, "\nunits:");
                 units(usp);
-                print_unit_expr(1);
                 fprintf(stderr, "\nunits:");
                 units(up);
                 diag("The units of the previous two expressions are not conformable", (char*) "\n");
@@ -497,7 +489,6 @@ void Unit_cmp() {
 is missing a conversion factor and should read:\n  (%g)*(",
                     Unit_str(usp),
                     usp->factor / up->factor);
-            print_unit_expr(2);
             diag(")\n", (char*) 0);
         }
     }
@@ -609,7 +600,6 @@ static void units_alloc() {
     }
 }
 
-#if MODL || NMODL || HMODL || SIMSYS
 extern void unit_init();
 
 void modl_units() {
@@ -630,8 +620,6 @@ void modl_units() {
     }
 }
 
-#endif
-
 void unit_init() {
     char* s;
     char buf[1024];
@@ -643,7 +631,7 @@ void unit_init() {
         /* note that on mingw, even if MODLUNIT set to /cygdrive/c/...
          * it ends up here as c:/... and that is good*/
         /* printf("MODLUNIT=|%s|\n", s); */
-        sprintf(buf, "%s%s", s, SUFFIX);
+        Sprintf(buf, "%s%s", s, SUFFIX);
         if ((inpfile = fopen(buf, "r")) == (FILE*) 0) {
             diag("Bad MODLUNIT environment variable. Cant open:", buf);
         }
@@ -654,9 +642,9 @@ void unit_init() {
         if (s) {
             if (strncmp(s, "/cygdrive/", 10) == 0) {
                 /* /cygdrive/x/... to c:/... */
-                sprintf(buf, "%c:%s/lib/nrnunits.lib" SUFFIX, s[10], s + 11);
+                Sprintf(buf, "%c:%s/lib/nrnunits.lib" SUFFIX, s[10], s + 11);
             } else {
-                sprintf(buf, "%s/lib/nrnunits.lib" SUFFIX, s);
+                Sprintf(buf, "%s/lib/nrnunits.lib" SUFFIX, s);
             }
             inpfile = fopen(buf, "r");
             free(s);
@@ -667,7 +655,7 @@ void unit_init() {
         if ((inpfile = fopen(dfilealt, "r")) == (FILE*) 0) {
             s = neuronhome();
             if (s) {
-                sprintf(buf, "%s/lib/nrnunits.lib" SUFFIX, s);
+                Sprintf(buf, "%s/lib/nrnunits.lib" SUFFIX, s);
                 inpfile = fopen(buf, "r");
             }
         }
@@ -752,11 +740,12 @@ int pu(int u, int i, int f) {
         if (f & 2)
             *ucp++ = '-';
         if (unames[i]) {
-            sprintf(ucp, "%s", unames[i]);
+            std::strcpy(ucp, unames[i]);
             ucp += strlen(ucp);
         } else {
-            sprintf(ucp, "*%c*", i + 'a');
-            ucp += strlen(ucp);
+            *ucp++ = '*';
+            *ucp++ = 'a' + i;
+            *ucp++ = '*';
         }
         if (u > 1)
             *ucp++ = (u + '0');
@@ -820,7 +809,7 @@ int lookup(char* name, unit* up, int den, int c) {
     struct unit* p;
     struct table* q;
     int i;
-    char *cp1, *cp2;
+    char* cp2;
     double e;
 
     p = up;
@@ -844,20 +833,24 @@ loop:
         }
         return (0);
     }
-    for (i = 0; (cp1 = prefix[i].pname) != 0; i++) {
-        cp2 = name;
-        while (*cp1 == *cp2++)
-            if (*cp1++ == 0) {
-                cp1--;
-                break;
+    {
+        const char* cp1{};
+        for (i = 0; (cp1 = prefix[i].pname) != 0; i++) {
+            cp2 = name;
+            while (*cp1 == *cp2++)
+                if (*cp1++ == 0) {
+                    cp1--;
+                    break;
+                }
+            if (*cp1 == 0) {
+                e *= prefix[i].factor;
+                name = cp2 - 1;
+                goto loop;
             }
-        if (*cp1 == 0) {
-            e *= prefix[i].factor;
-            name = cp2 - 1;
-            goto loop;
         }
     }
     /*EMPTY*/
+    char* cp1;
     for (cp1 = name; *cp1; cp1++)
         ;
     if (cp1 > name + 1 && *--cp1 == 's') {
@@ -873,11 +866,7 @@ loop:
     return (1);
 }
 
-static int equal(char* s1, char* s2) {
-    char *c1, *c2;
-
-    c1 = s1;
-    c2 = s2;
+static int equal(const char* c1, const char* c2) {
     while (*c1++ == *c2)
         if (*c2++ == 0)
             return (1);
@@ -1142,9 +1131,9 @@ int get() {
     return (c);
 }
 
-struct table* hash_table(char* name) {
+struct table* hash_table(const char* name) {
     struct table* tp;
-    char* np;
+    const char* np;
     unsigned h;
 
     h = 0;
@@ -1182,12 +1171,12 @@ static double dynam_unit_mag(int legacy, char* u1, char* u2) {
     return result;
 }
 
-void nrnunit_dynamic_str(char* buf, const char* name, char* u1, char* u2) {
+void nrnunit_dynamic_str(char (&buf)[NRN_BUFSIZE], const char* name, char* u1, char* u2) {
 #if NRN_DYNAMIC_UNITS
 
     double legacy = dynam_unit_mag(1, u1, u2);
     double modern = dynam_unit_mag(0, u1, u2);
-    sprintf(buf,
+    Sprintf(buf,
             "\n"
             "#define %s _nrnunit_%s[_nrnunit_use_legacy_]\n"
             "static double _nrnunit_%s[2] = {%a, %g};\n",
@@ -1203,9 +1192,9 @@ void nrnunit_dynamic_str(char* buf, const char* name, char* u1, char* u2) {
     Unit_push(u2);
     unit_div();
 #if (defined(LegacyFR) && LegacyFR == 1)
-    sprintf(buf, "static double %s = %g;\n", name, unit_mag());
+    Sprintf(buf, "static double %s = %g;\n", name, unit_mag());
 #else
-    sprintf(buf, "static double %s = %.12g;\n", name, unit_mag());
+    Sprintf(buf, "static double %s = %.12g;\n", name, unit_mag());
 #endif
     unit_pop();
 

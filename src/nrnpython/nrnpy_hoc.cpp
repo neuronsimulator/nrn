@@ -1,17 +1,20 @@
-#include <nrnpython.h>
-#include <structmember.h>
-#include <InterViews/resource.h>
-#include <nrnoc2iv.h>
-#include <ocjump.h>
 #include "ivocvect.h"
-#include "oclist.h"
-#include "ocfile.h"
-#include <cstdint>
 #include "nrniv_mf.h"
+#include "nrn_pyhocobject.h"
+#include "nrnoc2iv.h"
 #include "nrnpy_utils.h"
-#include "../nrniv/shapeplt.h"
-#include <vector>
+#include "nrnpython.h"
 #include "nrnwrap_dlfcn.h"
+#include "ocfile.h"
+#include "ocjump.h"
+#include "oclist.h"
+#include "shapeplt.h"
+
+#include <InterViews/resource.h>
+#include <structmember.h>  // for PyMemberDef
+
+#include <cstdint>
+#include <vector>
 
 #if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
 // when compiled with different Python.h, force correct value
@@ -23,7 +26,8 @@ extern PyTypeObject* psection_type;
 
 // copied from nrnpy_nrn
 typedef struct {
-    PyObject_HEAD Section* sec_;
+    PyObject_HEAD
+    Section* sec_;
     char* name_;
     PyObject* cell_;
 } NPySecObj;
@@ -132,23 +136,6 @@ extern Object* hoc_thisobject;
     assert(hoc_thisobject == 0);
 #define HocContextRestore /**/
 #endif
-
-typedef struct {
-    PyObject_HEAD Object* ho_;
-    union {
-        double x_;
-        char* s_;
-        char** pstr_;
-        Object* ho_;
-        double* px_;
-        PyHoc::IteratorState its_;
-    } u;
-    Symbol* sym_;     // for functions and arrays
-    void* iteritem_;  // enough info to carry out Iterator protocol
-    int nindex_;      // number indices seen so far (or narg)
-    int* indices_;    // one fewer than nindex_
-    PyHoc::ObjectType type_;
-} PyHocObject;
 
 static PyObject* rvp_plot = NULL;
 static PyObject* plotshape_plot = NULL;
@@ -284,41 +271,56 @@ static PyObject* hocobj_name(PyObject* pself, PyObject* args) {
     char buf[512], *cp;
     buf[0] = '\0';
     cp = buf;
+    auto cp_size = sizeof(buf);
     PyObject* po;
     if (self->type_ == PyHoc::HocObject) {
-        sprintf(cp, "%s", hoc_object_name(self->ho_));
+        std::snprintf(cp, cp_size, "%s", hoc_object_name(self->ho_));
     } else if (self->type_ == PyHoc::HocFunction || self->type_ == PyHoc::HocArray) {
-        sprintf(cp,
-                "%s%s%s",
-                self->ho_ ? hoc_object_name(self->ho_) : "",
-                self->ho_ ? "." : "",
-                self->sym_->name);
+        std::snprintf(cp,
+                      cp_size,
+                      "%s%s%s",
+                      self->ho_ ? hoc_object_name(self->ho_) : "",
+                      self->ho_ ? "." : "",
+                      self->sym_->name);
         if (self->type_ == PyHoc::HocArray) {
             for (int i = 0; i < self->nindex_; ++i) {
-                sprintf(cp += strlen(cp), "[%d]", self->indices_[i]);
+                auto tmp = strlen(cp);
+                cp += tmp;
+                cp_size -= tmp;
+                std::snprintf(cp, cp_size, "[%d]", self->indices_[i]);
             }
-            sprintf(cp += strlen(cp), "[?]");
+            auto tmp = strlen(cp);
+            cp += tmp;
+            cp_size -= tmp;
+            std::snprintf(cp, cp_size, "[?]");
         } else {
-            sprintf(cp += strlen(cp), "()");
+            auto tmp = strlen(cp);
+            cp += tmp;
+            cp_size -= tmp;
+            std::snprintf(cp, cp_size, "()");
         }
     } else if (self->type_ == PyHoc::HocRefNum) {
-        sprintf(cp, "<hoc ref value %g>", self->u.x_);
+        std::snprintf(cp, cp_size, "<hoc ref value %g>", self->u.x_);
     } else if (self->type_ == PyHoc::HocRefStr) {
-        sprintf(cp, "<hoc ref str \"%s\">", self->u.s_);
+        std::snprintf(cp, cp_size, "<hoc ref str \"%s\">", self->u.s_);
     } else if (self->type_ == PyHoc::HocRefPStr) {
-        sprintf(cp, "<hoc ref pstr \"%s\">", *self->u.pstr_);
+        std::snprintf(cp, cp_size, "<hoc ref pstr \"%s\">", *self->u.pstr_);
     } else if (self->type_ == PyHoc::HocRefObj) {
-        sprintf(cp, "<hoc ref value \"%s\">", hoc_object_name(self->u.ho_));
+        std::snprintf(cp, cp_size, "<hoc ref value \"%s\">", hoc_object_name(self->u.ho_));
     } else if (self->type_ == PyHoc::HocForallSectionIterator) {
-        sprintf(cp, "<all section iterator next>");
+        std::snprintf(cp, cp_size, "<all section iterator next>");
     } else if (self->type_ == PyHoc::HocSectionListIterator) {
-        sprintf(cp, "<SectionList iterator>");
+        std::snprintf(cp, cp_size, "<SectionList iterator>");
     } else if (self->type_ == PyHoc::HocScalarPtr) {
-        sprintf(cp, "<pointer to hoc scalar %g>", self->u.px_ ? *self->u.px_ : -1e100);
+        if (self->u.px_) {
+            std::snprintf(cp, cp_size, "<pointer to hoc scalar %g>", *self->u.px_);
+        } else {
+            std::snprintf(cp, cp_size, "<pointer to hoc scalar (Invalid)>");
+        }
     } else if (self->type_ == PyHoc::HocArrayIncomplete) {
-        sprintf(cp, "<incomplete pointer to hoc array %s>", self->sym_->name);
+        std::snprintf(cp, cp_size, "<incomplete pointer to hoc array %s>", self->sym_->name);
     } else {
-        sprintf(cp, "<TopLevelHocInterpreter>");
+        std::snprintf(cp, cp_size, "<TopLevelHocInterpreter>");
     }
     po = Py_BuildValue("s", buf);
     return po;
@@ -433,7 +435,7 @@ static Symbol* getsym(char* name, Object* ho, int fail) {
     }
     if (!sym && fail) {
         char e[200];
-        sprintf(e, "'%s' is not a defined hoc variable name.", name);
+        Sprintf(e, "'%s' is not a defined hoc variable name.", name);
         PyErr_SetString(PyExc_LookupError, e);
     }
     return sym;
@@ -450,13 +452,16 @@ static int component(PyHocObject* po) {
     fc[1].i = 0;
     fc[2].i = 0;
     fc[5].i = 0;
+    int stk_offset = 0;  // scalar
     if (po->type_ == PyHoc::HocFunction) {
         fc[2].i = po->nindex_;
         fc[5].i = 1;
+        stk_offset = po->nindex_;
     } else if (po->type_ == PyHoc::HocArray || po->type_ == PyHoc::HocArrayIncomplete) {
         fc[1].i = po->nindex_;
+        stk_offset = po->nindex_ + 1;  // + 1 because of stack_ndim_datum
     }
-    Object* stack_value = hoc_obj_look_inside_stack(po->nindex_);
+    Object* stack_value = hoc_obj_look_inside_stack(stk_offset);
     assert(stack_value == po->ho_);
     fc[3].i = po->ho_->ctemplate->id;
     fc[4].sym = po->sym_;
@@ -709,7 +714,7 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
     curargs_ = args;
 
     PyObject* section = 0;
-    PyObject* result;
+    PyObject* result{};
     if (kwrds && PyDict_Check(kwrds)) {
 #if 0
 		PyObject* keys = PyDict_Keys(kwrds);
@@ -753,16 +758,12 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
     if (self->type_ == PyHoc::HocTopLevelInterpreter) {
         result = nrnexec((PyObject*) self, args);
     } else if (self->type_ == PyHoc::HocFunction) {
-        OcJump* oj;
-        oj = new OcJump();
-        if (oj) {
-            result = (PyObject*) oj->fpycall(fcall, (void*) self, (void*) args);
-            delete oj;
-            if (result == NULL) {
-                PyErr_SetString(PyExc_RuntimeError, "hocobj_call error");
-            }
-        } else {
-            result = (PyObject*) fcall((void*) self, (void*) args);
+        try {
+            result = static_cast<PyObject*>(OcJump::fpycall(fcall, self, args));
+        } catch (std::exception const& e) {
+            std::ostringstream oss;
+            oss << "hocobj_call error: " << e.what();
+            PyErr_SetString(PyExc_RuntimeError, oss.str().c_str());
         }
         hoc_unref_defer();
     } else {
@@ -779,7 +780,7 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
 
 static Arrayinfo* hocobj_aray(Symbol* sym, Object* ho) {
     if (!sym->arayinfo) {
-        return 0;
+        return nullptr;
     }
     if (ho) {  // objectdata or not?
         int cplus = (ho->ctemplate->sym->subtype & (CPLUSOBJECT | JAVAOBJECT));
@@ -834,17 +835,27 @@ static void hocobj_pushtop(PyHocObject* po, Symbol* sym, int ix) {
     }
     hoc_pushx((double) ix);
     // printf(" %d\n", ix);
+    hoc_push_ndim(n + 1);
     if (sym) {
         hoc_pushs(sym);
     }
 }
 
-static void hocobj_objectvar(Symbol* sym) {
-    Inst fc;
-    fc.sym = sym;
-    Inst* pcsav = save_pc(&fc);
-    hoc_objectvar();
-    hoc_pc = pcsav;
+static int hocobj_objectvar(Symbol* sym) {
+    int err{0};
+    try {
+        Inst fc;
+        fc.sym = sym;
+        Inst* pcsav = save_pc(&fc);
+        hoc_objectvar();
+        hoc_pc = pcsav;
+    } catch (std::exception const& e) {
+        std::ostringstream oss;
+        oss << "number of dimensions error:" << e.what();
+        PyErr_SetString(PyExc_IndexError, oss.str().c_str());
+        err = 1;
+    }
+    return err;
 }
 
 static PyObject* hocobj_getsec(Symbol* sym) {
@@ -1021,7 +1032,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                 return result;
             } else if (sym->type != VAR && sym->type != RANGEVAR && sym->type != VARALIAS) {
                 char buf[200];
-                sprintf(buf,
+                Sprintf(buf,
                         "Hoc pointer error, %s is not a hoc variable or range variable or strdef",
                         sym->name);
                 PyErr_SetString(PyExc_TypeError, buf);
@@ -1078,8 +1089,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             Section* sec = (Section*) hoc_sec_internal_name2ptr(n, 0);
             if (sec == NULL) {
                 PyErr_SetString(PyExc_NameError, n);
-            } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-                result = (PyObject*) sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+            } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
+                result = static_cast<PyObject*>(sec->prop->dparam[PROP_PY_INDEX].get<void*>());
                 Py_INCREF(result);
             } else {
                 nrn_pushsec(sec);
@@ -1091,8 +1102,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             Section* sec = (Section*) hoc_pysec_name2ptr(n, 0);
             if (sec == NULL) {
                 PyErr_SetString(PyExc_NameError, n);
-            } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-                result = (PyObject*) sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+            } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
+                result = static_cast<PyObject*>(sec->prop->dparam[PROP_PY_INDEX].get<void*>());
                 Py_INCREF(result);
             } else {
                 nrn_pushsec(sec);
@@ -1390,7 +1401,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
                 return set_final_from_stk(value);
             } else {
                 char e[200];
-                sprintf(e, "'%s' requires subscript for assignment", n);
+                Sprintf(e, "'%s' requires subscript for assignment", n);
                 PyErr_SetString(PyExc_TypeError, e);
                 Py_DECREF(po);
                 return -1;
@@ -1404,7 +1415,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
     HocTopContextSet switch (sym->type) {
     case VAR:  // double*
         if (ISARRAY(sym)) {
-            PyErr_SetString(PyExc_TypeError, "wrong number of subscripts");
+            PyErr_SetString(PyExc_TypeError, "Wrong number of subscripts");
             err = -1;
         } else {
             if (sym->subtype == USERINT) {
@@ -1437,7 +1448,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
                 err = PyArg_Parse(value, "d", hoc_pxpop()) == 0;
                 if (!err && sym->subtype == DYNAMICUNITS) {
                     char mes[100];
-                    sprintf(mes,
+                    Sprintf(mes,
                             "Assignment to %s value of physical constant %s",
                             _nrnunit_use_legacy_ ? "legacy" : "modern",
                             sym->name);
@@ -1460,7 +1471,10 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
         break;
     case OBJECTVAR:  // Object*
     {
-        hocobj_objectvar(sym);
+        err = hocobj_objectvar(sym);
+        if (err) {
+            break;
+        }
         Object** op;
         op = hoc_objpop();
         PyObject* po;
@@ -1501,7 +1515,14 @@ static Symbol* sym_mat_x;
 static Symbol* sym_netcon_weight;
 
 static int araylen(Arrayinfo* a, PyHocObject* po) {
-    assert(a->nsub > po->nindex_);
+    int nsub = a ? a->nsub : 0;
+    if (nsub <= po->nindex_) {
+        std::ostringstream oss;
+        oss << "Too many subscripts (Redeclared the array?), hoc var " << po->sym_->name
+            << " now has " << nsub << " but trying to access dimension " << (po->nindex_);
+        PyErr_SetString(PyExc_TypeError, oss.str().c_str());
+        return -1;
+    }
     int n = 0;
     // Hoc Vector and Matrix are special cases because the sub[]
     // do not get filled in til just before hoc_araypt is called.
@@ -1523,11 +1544,14 @@ static int araylen(Arrayinfo* a, PyHocObject* po) {
 
 static int araychk(Arrayinfo* a, PyHocObject* po, int ix) {
     int n = araylen(a, po);
+    if (n < 0) {
+        return -1;
+    }
     if (ix < 0 || n <= ix) {
         // printf("ix=%d nsub=%d nindex=%d sub[nindex]=%d\n", ix, a->nsub,
         // po->nindex_, a->sub[po->nindex_]);
         char e[200];
-        sprintf(e,
+        Sprintf(e,
                 "%s%s%s",
                 po->ho_ ? hoc_object_name(po->ho_) : "",
                 (po->ho_ && po->sym_) ? "." : "",
@@ -1577,7 +1601,11 @@ static int hocobj_nonzero(PyObject* self) {
         }
     } else if (po->type_ == PyHoc::HocArray) {
         Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
-        b = araylen(a, po) > 0;
+        int i = araylen(a, po);
+        if (i < 0) {
+            return -1;
+        }
+        b = i > 0;
     } else if (po->sym_ && po->sym_->type == TEMPLATE) {
         b = 1;  // prior behavior: po->sym_->u.ctemplate->count > 0;
     }
@@ -1788,7 +1816,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
             Vect* hv = (Vect*) po->ho_->u.this_pointer;
             if (ix < 0 || ix >= vector_capacity(hv)) {
                 char e[200];
-                sprintf(e, "%s", hoc_object_name(po->ho_));
+                Sprintf(e, "%s", hoc_object_name(po->ho_));
                 PyErr_SetString(PyExc_IndexError, e);
                 return NULL;
             } else {
@@ -1798,7 +1826,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
             OcList* hl = (OcList*) po->ho_->u.this_pointer;
             if (ix < 0 || ix >= hl->count()) {
                 char e[200];
-                sprintf(e, "%s", hoc_object_name(po->ho_));
+                Sprintf(e, "%s", hoc_object_name(po->ho_));
                 PyErr_SetString(PyExc_IndexError, e);
                 return NULL;
             } else {
@@ -1824,13 +1852,13 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
             }
         }
         char e[200];
-        sprintf(e, "%s[%ld] instance does not exist", po->sym_->name, ix);
+        Sprintf(e, "%s[%ld] instance does not exist", po->sym_->name, ix);
         PyErr_SetString(PyExc_IndexError, e);
         return NULL;
     }
     if (po->type_ != PyHoc::HocArray && po->type_ != PyHoc::HocArrayIncomplete) {
         char e[200];
-        sprintf(e, "unsubscriptable object, type %d\n", po->type_);
+        Sprintf(e, "unsubscriptable object, type %d\n", po->type_);
         PyErr_SetString(PyExc_TypeError, e);
         return NULL;
     }
@@ -1871,7 +1899,9 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 break;
             case OBJECTVAR:
                 hocobj_pushtop(po, 0, ix);
-                hocobj_objectvar(po->sym_);
+                if (hocobj_objectvar(po->sym_)) {
+                    break;
+                }
                 --po->nindex_;
                 result = nrnpy_ho2po(*hoc_objpop());
                 break;
@@ -1901,7 +1931,11 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
             return -1;
         }
         if (po->type_ == PyHoc::HocScalarPtr) {
-            PyArg_Parse(arg, "d", po->u.px_ + i);
+            if (i != 0) {
+                PyErr_SetString(PyExc_IndexError, "index of pointer to hoc scalar must be 0");
+                return -1;
+            }
+            PyArg_Parse(arg, "d", static_cast<double*>(po->u.px_));
         } else if (po->type_ == PyHoc::HocRefNum) {
             PyArg_Parse(arg, "d", &po->u.x_);
         } else if (po->type_ == PyHoc::HocRefStr) {
@@ -1940,8 +1974,12 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
         return -1;
     }
     Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
-    if (a->nsub - 1 != po->nindex_) {
-        PyErr_SetString(PyExc_TypeError, "wrong number of subscripts");
+    if (!a || a->nsub - 1 != po->nindex_) {
+        int nsub = a ? a->nsub : 0;
+        std::ostringstream oss;
+        oss << "Wrong number of subscripts, hoc var " << po->sym_->name << " has " << nsub
+            << " but compiled with " << (po->nindex_ + 1);
+        PyErr_SetString(PyExc_TypeError, oss.str().c_str());
         return -1;
     }
     if (araychk(a, po, i)) {
@@ -1964,7 +2002,10 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
             break;
         case OBJECTVAR: {
             hocobj_pushtop(po, 0, i);
-            hocobj_objectvar(po->sym_);
+            err = hocobj_objectvar(po->sym_);
+            if (err) {
+                break;  // can't reach because of earlier array_chk
+            }
             --po->nindex_;
             Object** op;
             op = hoc_objpop();
@@ -2068,7 +2109,7 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
                 PyErr_SetString(PyExc_TypeError, "Point_process not located in a section");
                 return NULL;
             }
-            ppd = &prop->dparam[sym->u.rng.index].pval;
+            ppd = &(prop->dparam[sym->u.rng.index].literal_value<double*>());
         } else {
             ppd = nrnpy_setpointer_helper(name, pp);
             if (!ppd) {
@@ -2134,11 +2175,12 @@ PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op) {
 
 // TODO: unfortunately, this duplicates code from hocobj_same; consolidate?
 static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
-    void* self_ptr = (void*) (self->ho_);
-    void* other_ptr = (void*) other;
+    auto* pyhoc_other = reinterpret_cast<PyHocObject*>(other);
+    void* self_ptr = self->ho_;
+    void* other_ptr = other;
     bool are_equal = true;
     if (PyObject_TypeCheck(other, hocobject_type)) {
-        if (((PyHocObject*) other)->type_ == self->type_) {
+        if (pyhoc_other->type_ == self->type_) {
             switch (self->type_) {
             case PyHoc::HocRefNum:
             case PyHoc::HocRefStr:
@@ -2148,7 +2190,7 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
                 self_ptr = (void*) self;
                 break;
             case PyHoc::HocFunction:
-                if (self->ho_ != (void*) (((PyHocObject*) other)->ho_)) {
+                if (self->ho_ != pyhoc_other->ho_) {
                     if (op == Py_NE) {
                         Py_RETURN_TRUE;
                     } else if (op == Py_EQ) {
@@ -2158,12 +2200,13 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
                     PyErr_SetString(PyExc_TypeError, "this comparison is undefined");
                     return NULL;
                 }
-                self_ptr = (void*) self->sym_;
-                other_ptr = (void*) (((PyHocObject*) other)->sym_);
+                self_ptr = self->sym_;
+                other_ptr = pyhoc_other->sym_;
                 break;
             case PyHoc::HocScalarPtr:
-                self_ptr = self->u.px_;
-                other_ptr = (void*) (((PyHocObject*) other)->u.px_);
+                // this seems rather dubious
+                self_ptr = static_cast<double*>(self->u.px_);
+                other_ptr = static_cast<double*>(pyhoc_other->u.px_);
                 break;
             case PyHoc::HocArrayIncomplete:
             case PyHoc::HocArray:
@@ -2172,20 +2215,19 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
                     PyErr_SetString(PyExc_TypeError, "this comparison is undefined");
                     return NULL;
                 }
-                if (self->ho_ != (void*) (((PyHocObject*) other)->ho_)) {
+                if (self->ho_ != pyhoc_other->ho_) {
                     /* different objects */
-                    other_ptr = (void*) (((PyHocObject*) other)->ho_);
+                    other_ptr = pyhoc_other->ho_;
                     break;
                 }
-                if (self->nindex_ != (((PyHocObject*) other)->nindex_) ||
-                    self->sym_ != (((PyHocObject*) other)->sym_)) {
+                if (self->nindex_ != pyhoc_other->nindex_ || self->sym_ != pyhoc_other->sym_) {
                     if (op == Py_NE) {
                         Py_RETURN_TRUE;
                     }
                     Py_RETURN_FALSE;
                 }
                 for (int i = 0; i < self->nindex_; i++) {
-                    if (self->indices_[i] != ((PyHocObject*) other)->indices_[i]) {
+                    if (self->indices_[i] != pyhoc_other->indices_[i]) {
                         are_equal = false;
                     }
                 }
@@ -2194,7 +2236,7 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
                 }
                 Py_RETURN_FALSE;
             default:
-                other_ptr = (void*) (((PyHocObject*) other)->ho_);
+                other_ptr = pyhoc_other->ho_;
             }
         } else {
             if (op == Py_EQ) {
@@ -2286,7 +2328,7 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
         while ((p = PyIter_Next(iterator)) != NULL) {
             if (!PyNumber_Check(p)) {
                 char buf[50];
-                sprintf(buf, "item %d not a number", i);
+                Sprintf(buf, "item %d not a number", i);
                 hoc_execerror(buf, 0);
             }
             hv->push_back(PyFloat_AsDouble(p));
@@ -2310,7 +2352,7 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
                 PyObject* p = PySequence_GetItem(po, i);
                 if (!PyNumber_Check(p)) {
                     char buf[50];
-                    sprintf(buf, "item %d not a number", i);
+                    Sprintf(buf, "item %d not a number", i);
                     hoc_execerror(buf, 0);
                 }
                 x[i] = PyFloat_AsDouble(p);
@@ -2581,7 +2623,7 @@ static Object** nrnpy_vec_to_python(void* v) {
             PyObject* pn = PyFloat_FromDouble(x[i]);
             if (!pn || PyList_SetItem(po, i, pn) == -1) {
                 char buf[50];
-                sprintf(buf, "%d of %d", i, size);
+                Sprintf(buf, "%d of %d", i, size);
                 hoc_execerror("Could not set a Python Sequence item", buf);
             }
         }
@@ -2590,7 +2632,7 @@ static Object** nrnpy_vec_to_python(void* v) {
             PyObject* pn = PyFloat_FromDouble(x[i]);
             if (!pn || PySequence_SetItem(po, i, pn) == -1) {
                 char buf[50];
-                sprintf(buf, "%d of %d", i, size);
+                Sprintf(buf, "%d of %d", i, size);
                 hoc_execerror("Could not set a Python Sequence item", buf);
             }
             Py_DECREF(pn);

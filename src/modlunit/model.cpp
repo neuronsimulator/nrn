@@ -44,9 +44,9 @@ int ilint;
 Item* qlint;
 #endif
 
-static char pgm_name[] = "model";
-extern char* RCS_version;
-extern char* RCS_date;
+static const char* pgm_name = "model";
+extern const char* RCS_version;
+extern const char* RCS_date;
 static void openfiles(int, char**);
 static void debug_item(Item* q, int indent, FILE* file);
 #if MAC
@@ -134,7 +134,7 @@ static void openfiles(int argc, char* argv[]) {
     char *cp, modprefix[NRN_BUFSIZE - 5];
     if (argc > 1) {
         assert(strlen(argv[1]) < NRN_BUFSIZE);
-        sprintf(modprefix, "%s", argv[1]);
+        Sprintf(modprefix, "%s", argv[1]);
         cp = strstr(modprefix, ".mod");
         if (cp) {
             *cp = '\0';

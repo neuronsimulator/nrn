@@ -12,12 +12,12 @@
 extern int hoc_return_type_code;
 
 static double ste_transition(void* v) {
-    StateTransitionEvent* ste = (StateTransitionEvent*) v;
+    auto* const ste = static_cast<StateTransitionEvent*>(v);
     int src = (int) chkarg(1, 0, ste->nstate() - 1);
     int dest = (int) chkarg(2, 0, ste->nstate() - 1);
     double* var1 = hoc_pgetarg(3);
     double* var2 = hoc_pgetarg(4);
-    HocCommand* hc = NULL;
+    std::unique_ptr<HocCommand> hc{};
     if (ifarg(5)) {
         Object* obj = NULL;
         if (hoc_is_str_arg(5)) {
@@ -26,13 +26,13 @@ static double ste_transition(void* v) {
             if (ifarg(6)) {
                 obj = *hoc_objgetarg(6);
             }
-            hc = new HocCommand(stmt, obj);
+            hc = std::make_unique<HocCommand>(stmt, obj);
         } else {
             obj = *hoc_objgetarg(5);
-            hc = new HocCommand(obj);
+            hc = std::make_unique<HocCommand>(obj);
         }
     }
-    ste->transition(src, dest, var1, var2, hc);
+    ste->transition(src, dest, var1, var2, std::move(hc));
     return 1.;
 }
 
@@ -68,17 +68,13 @@ void StateTransitionEvent_reg() {
     class2oc("StateTransitionEvent", ste_cons, ste_destruct, members, NULL, NULL, NULL);
 }
 
-StateTransitionEvent::StateTransitionEvent(int nstate, Point_process* pnt) {
-    nstate_ = nstate;
-    states_ = new STEState[nstate_];
-    istate_ = 0;
-    pnt_ = pnt;
-    activated_ = -1;
+StateTransitionEvent::StateTransitionEvent(int nstate, Point_process* pnt)
+    : pnt_{pnt} {
+    states_.resize(nstate);
 }
 
 StateTransitionEvent::~StateTransitionEvent() {
     deactivate();
-    delete[] states_;
 }
 
 void StateTransitionEvent::deactivate() {
@@ -86,8 +82,8 @@ void StateTransitionEvent::deactivate() {
         return;
     }
     STEState& s = states_[activated_];
-    for (int i = 0; i < s.ntrans_; ++i) {
-        s.transitions_[i].deactivate();
+    for (auto& st: s.transitions_) {
+        st.deactivate();
     }
     activated_ = -1;
 }
@@ -97,68 +93,29 @@ void StateTransitionEvent::activate() {
         deactivate();
     }
     STEState& s = states_[istate_];
-    for (int i = 0; i < s.ntrans_; ++i) {
-        s.transitions_[i].activate();
+    for (auto& st: s.transitions_) {
+        st.activate();
     }
     activated_ = istate_;
 }
 
 void StateTransitionEvent::state(int ist) {
-    assert(ist >= 0 && ist < nstate_);
+    assert(ist >= 0 && ist < states_.size());
     deactivate();
     istate_ = ist;
     activate();
 }
 
-STEState::STEState() {
-    ntrans_ = 0;
-    transitions_ = NULL;
-}
+STETransition::STETransition(Point_process* pnt)
+    : stec_{std::make_unique<STECondition>(pnt, nullptr)} {}
 
-STEState::~STEState() {
-    if (transitions_) {
-        delete[] transitions_;
+STETransition& STEState::add_transition(Point_process* pnt) {
+    transitions_.emplace_back(pnt);
+    // update in case of reallocation of transitions_
+    for (auto& st: transitions_) {
+        st.stec_->stet_ = &st;
     }
-}
-
-STETransition* STEState::add_transition() {
-    ++ntrans_;
-    STETransition* st = transitions_;
-    transitions_ = new STETransition[ntrans_];
-    if (st) {
-        int i;
-        for (i = 0; i < ntrans_ - 1; ++i) {
-            transitions_[i].hc_ = st[i].hc_;
-            st[i].hc_ = NULL;
-            transitions_[i].ste_ = st[i].ste_;
-            st[i].ste_ = NULL;
-            transitions_[i].stec_ = st[i].stec_;
-            st[i].stec_ = NULL;
-            transitions_[i].stec_->stet_ = transitions_ + i;
-            transitions_[i].var1_ = st[i].var1_;
-            transitions_[i].var2_ = st[i].var2_;
-            transitions_[i].dest_ = st[i].dest_;
-            transitions_[i].var1_is_time_ = st[i].var1_is_time_;
-        }
-        delete[] st;
-    }
-    return transitions_ + ntrans_ - 1;
-}
-
-STETransition::STETransition() {
-    hc_ = NULL;
-    ste_ = NULL;
-    stec_ = NULL;
-    var1_is_time_ = false;
-}
-
-STETransition::~STETransition() {
-    if (hc_) {
-        delete hc_;
-    }
-    if (stec_) {
-        delete stec_;
-    }
+    return transitions_.back();
 }
 
 void STETransition::event() {
