@@ -1655,14 +1655,13 @@ int hoc_argindex(void) {
     return j;
 }
 
-void arg(void) /* push argument onto stack */
-{
-    int i;
-    i = (pc++)->i;
+// push argument onto stack
+void hoc_arg() {
+    int i = (pc++)->i;
     if (i == 0) {
         i = hoc_argindex();
     }
-    hoc_pushx(*getarg(i));
+    hoc_pushx(*hoc_getarg(i));
 }
 
 void hoc_stringarg(void) /* push string arg onto stack */
@@ -2055,10 +2054,9 @@ void hoc_cyclic(void) /* the modulus function */
     hoc_pushx(r);
 }
 
-void negate(void) /* negate top element on stack */
-{
-    double d;
-    d = hoc_xpop();
+// negate top element on stack
+void hoc_negate() {
+    double const d = hoc_xpop();
     hoc_pushx(-d);
 }
 
@@ -2070,7 +2068,7 @@ void gt(void) {
     hoc_pushx(d1);
 }
 
-void lt(void) {
+void hoc_lt() {
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
