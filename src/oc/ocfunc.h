@@ -1,6 +1,8 @@
 #pragma once
 #include "nrnfilewrap.h"
 
+#include <cstddef>
+
 extern double hoc_Log(double), hoc_Log10(double), hoc1_Exp(double), hoc_Sqrt(double),
     hoc_integer(double);
 extern double hoc_Pow(double, double);

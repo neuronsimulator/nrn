@@ -12,17 +12,23 @@ include(NeuronTestHelper)
 # =============================================================================
 # Test executables
 # =============================================================================
-add_executable(testneuron unit_tests/unit_test.cpp unit_tests/oc/hoc_interpreter.cpp
-                          unit_tests/threads/test_multicore.cpp)
-cpp_cc_configure_sanitizers(TARGET testneuron)
-target_compile_features(testneuron PUBLIC cxx_std_11)
-target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
-if(NRN_ENABLE_THREADS)
-  target_link_libraries(testneuron Threads::Threads)
+add_executable(testneuron common/catch2_main.cpp unit_tests/basic.cpp
+                          unit_tests/oc/hoc_interpreter.cpp)
+set(catch2_targets testneuron)
+# Benchmarks are known to be slow if you turn off optimisation...
+if(NRN_ENABLE_THREADS AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+  add_executable(nrn-benchmarks common/catch2_main.cpp benchmarks/threads/test_multicore.cpp)
+  target_link_libraries(nrn-benchmarks Threads::Threads)
+  list(APPEND catch2_targets nrn-benchmarks)
 endif()
-if(NOT MINGW)
-  target_link_libraries(testneuron ${CMAKE_DL_LIBS})
-endif()
+foreach(target ${catch2_targets})
+  cpp_cc_configure_sanitizers(TARGET ${target})
+  target_link_libraries(${target} Catch2::Catch2 nrniv_lib)
+  if(NOT MINGW)
+    target_link_libraries(${target} ${CMAKE_DL_LIBS})
+  endif()
+  target_compile_definitions(testneuron PUBLIC "USE_PYTHON=${USE_PYTHON}")
+endforeach()
 
 # =============================================================================
 # Copy necessary hoc files to build directory if they have not been copied yet
@@ -42,9 +48,14 @@ nrn_add_test_group(NAME unit_tests MODFILE_PATTERNS NONE)
 nrn_add_test(
   GROUP unit_tests
   NAME testneuron
-  PROCESSORS 16
-  COMMAND $<TARGET_FILE:testneuron> --processors=16)
-
+  COMMAND $<TARGET_FILE:testneuron>)
+if(TARGET nrn-benchmarks)
+  nrn_add_test(
+    GROUP unit_tests
+    NAME benchmarks
+    PROCESSORS 16
+    COMMAND $<TARGET_FILE:nrn-benchmarks> --processors=16)
+endif()
 # =============================================================================
 # Add ringtest
 # =============================================================================

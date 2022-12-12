@@ -176,7 +176,7 @@ goto yynewstate;
 asgn:	varname ROP expr
 		{Symbol *s; TPD; s = spop();
 		hoc_obvar_declare(s, VAR, 1);
-		code3(varpush, s, assign); codei($2); PN;}
+		code3(varpush, s, hoc_assign); codei($2); PN;}
 	| ARG ROP expr
 		{  TPD; defnonly("$"); argcode(argassign, $1); codei($2); $$=$3; PN;}
 	| ARGREF argrefdim ROP expr
