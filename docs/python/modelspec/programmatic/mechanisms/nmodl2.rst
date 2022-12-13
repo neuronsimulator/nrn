@@ -385,14 +385,23 @@ BEFORE
 ~~~~~~
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    ``BEFORE`` is used to execute something before an event.
+    Events can be:
+      - ``BREAKPOINT``
+      - ``INITIAL``: will be called before the ``INITIAL`` block. But when ``v`` is already set.
+      - ``STEP``
+    ``TODO``: Add existing example mod file
 
 
 AFTER
 ~~~~~
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    ``AFTER`` is used to execute sometihng after an event.
+    Events can be:
+      - ``SOLVE``
+      - ``INITIAL``: will be called after the ``INITIAL`` block.
+    ``TODO``: Add existing example mod file
 
 
 FOR_NETCONS
