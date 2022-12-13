@@ -348,6 +348,21 @@ inline std::tuple<Memb_list, Memb_list*, std::size_t> create_ml(Prop* p) {
     return ret;
 }
 
+namespace neuron::legacy {
+/**
+ * @brief Helper for legacy MOD files that mess with _p in VERBATIM blocks.
+ */
+inline void set_globals_from_prop(Prop* p, Memb_list& ml, Memb_list*& ml_ptr, std::size_t& iml) {
+    if (!p) {
+        return;
+    }
+    ml = {p->_type};
+    ml.set_storage_offset(p->id().current_row());
+    ml_ptr = &ml;
+    iml = 0;
+}
+}  // namespace neuron::legacy
+
 extern Datum* nrn_prop_datum_alloc(int type, int count, Prop* p);
 extern void nrn_prop_datum_free(int type, Datum* ppd);
 extern double nrn_ghk(double, double, double, double);
