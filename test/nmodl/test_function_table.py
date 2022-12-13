@@ -1,6 +1,6 @@
-import numpy as np
-
 from neuron.expect_hocerr import set_quiet
+
+import numpy as np
 
 from function_table import k3stCell
 

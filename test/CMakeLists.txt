@@ -388,26 +388,9 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   endif()
 
   nrn_add_test_group(
-    CORENEURON
-    NAME coreneuron_modtests
-    # This get used in 4 tests so make it the default and override in other tests.
-    SCRIPT_PATTERNS test/coreneuron/test_spikes.py
-    MODFILE_PATTERNS
-      "test/coreneuron/mod files/*.mod" "test/coreneuron/mod files/axial.inc"
-      test/pynrn/unitstest.mod test/pynrn/version_macros.mod test/gjtests/natrans.mod)
-  nrn_add_test_group(
     NAME nmodl_tests
-    # This get used in 4 tests so make it the default and override in other tests.
     SCRIPT_PATTERNS test/nmodl/*.py
     MODFILE_PATTERNS "docs/nmodl/mod/*.mod")
-  nrn_add_test(
-    GROUP coreneuron_modtests
-    NAME version_macros
-    REQUIRES coreneuron ${modtests_preload_sanitizer}
-    SCRIPT_PATTERNS test/pynrn/test_version_macros.py
-    ENVIRONMENT COVERAGE_FILE=.coverage.coreneuron_version_macros NRN_CORENEURON_ENABLE=true
-                ${sonata_zero_gid_env} ${nrnpython_mpi_env}
-    COMMAND ${modtests_launch_py} test/pynrn/test_version_macros.py)
   nrn_add_test(
     GROUP nmodl_tests
     NAME test_table
@@ -436,6 +419,22 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     SCRIPT_PATTERNS test/nmodl/test_kinetic.py
     ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
     COMMAND ${modtests_launch_py} test/nmodl/test_kinetic.py)
+  nrn_add_test_group(
+    CORENEURON
+    NAME coreneuron_modtests
+    # This get used in 4 tests so make it the default and override in other tests.
+    SCRIPT_PATTERNS test/coreneuron/test_spikes.py
+    MODFILE_PATTERNS
+      "test/coreneuron/mod files/*.mod" "test/coreneuron/mod files/axial.inc"
+      test/pynrn/unitstest.mod test/pynrn/version_macros.mod test/gjtests/natrans.mod)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME version_macros
+    REQUIRES coreneuron ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/pynrn/test_version_macros.py
+    ENVIRONMENT COVERAGE_FILE=.coverage.coreneuron_version_macros NRN_CORENEURON_ENABLE=true
+                ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/pynrn/test_version_macros.py)
   # In GPU builds run all of the tests on both CPU and GPU
   set(coreneuron_modtests_gpu_env CORENRN_ENABLE_GPU=true)
   foreach(processor cpu gpu)
