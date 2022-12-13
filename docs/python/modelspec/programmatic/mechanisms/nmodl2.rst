@@ -381,26 +381,21 @@ Description:
     ``TODO``: Add description and existing example mod file
 
 
-BEFORE
-~~~~~~
+BEFORE / AFTER
+~~~~~~~~~~~~~~
 
 Description:
-    ``BEFORE`` is used to execute something before an event.
-    Events can be:
-      - ``BREAKPOINT``
-      - ``INITIAL``: will be called before the ``INITIAL`` block. But when ``v`` is already set.
-      - ``STEP``
-    ``TODO``: Add existing example mod file
+    BEFORE INITIAL executes just before any INITIAL blocks of any mod file execute (but after all the FInitializeHandler(0,..) are called).
+    AFTER INITIAL executes just after the INITIAL blocks of all mod files execute (but before all the FInitializeHandler(1, ...) are called).
+    Note that the INITIAL blocks are ordered so that mechanisms that write
+    concentrations are after [the initialization of] ions and before mechanisms that read
+    concentrations.
+        
+    But that is also the case for the order of the list of mechanisms that do INITIAL, BREAKPOINT, SOLVE, etc.
+    BEFORE BREAKPOINT executes whenever the tree matrix is setup before any BREAKPOINT blocks execute
+    AFTER SOLVE executes afer all the SOLVE blocks (have updated the states for the fixed step method.) For the fixed step method that is more or less the end of fadvance. But for variable step methods that refers to the completion of a cvode step which is not quite what is desired in practice because event arrival can cause cvode to retreat to an earlier time. Hence the use of BEFORE_STEP. Which executed just before vector record takes place.
+    I.e. BEFORE STEP takes place when the entire system of equations and events are consistent at time t.
 
-
-AFTER
-~~~~~
-
-Description:
-    ``AFTER`` is used to execute sometihng after an event.
-    Events can be:
-      - ``SOLVE``
-      - ``INITIAL``: will be called after the ``INITIAL`` block.
     ``TODO``: Add existing example mod file
 
 
