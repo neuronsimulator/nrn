@@ -418,10 +418,7 @@ extern Memb_func* memb_func;\n\
         Lappendstr(defs_list, "_extcall_prop = _prop;\n");
     } else {
         Lappendstr(defs_list,
-                   "auto [_, local_ml, local_iml] = create_ml(_prop);\n"
-                   "_ml_real = *local_ml;\n"
-                   "_ml = &_ml_real;\n"
-                   "_iml = local_iml;\n"
+                   "neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
                    "_ppvar = _prop->dparam;\n");
     }
     Lappendstr(defs_list, "}\n");
@@ -1010,9 +1007,7 @@ static const char *_mechanism[] = {\n\
             Lappendstr(procfunc,
                        "\n"
                        "static void _constructor(Prop* _prop) {\n"
-                       "  auto [_, local_ml, local_iml] = create_ml(_prop);\n"
-                       "  _ml = local_ml;\n"
-                       "  _iml = local_iml;\n"
+                       "  neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
                        "  _ppvar = _prop->dparam;\n"
                        "  {\n");
         }
@@ -1313,9 +1308,7 @@ if (_nd->_extnode) {\n\
             Lappendstr(procfunc,
                        "\n"
                        "static void _destructor(Prop* _prop) {\n"
-                       "  auto [_, local_ml, local_iml] = create_ml(_prop);\n"
-                       "  _ml = local_ml;\n"
-                       "  _iml = local_iml;\n"
+                       "  neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
                        "  _ppvar = _prop->dparam;\n"
                        "  {\n");
         }
