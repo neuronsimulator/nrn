@@ -48,7 +48,7 @@ copy "c:\Windows\SysWoW64\msmpi.dll" "c:\msmpi\lib\x86\msmpi.dll" || goto :error
 if "%MSYS2_ROOT%"=="" set MSYS2_ROOT=C:\msys64
 
 :: install msys2 / mingw packages.
-:: NOTE: msys2 is already installed in the CI VM image. We check if if msys2 is not installed, then download and install it with choco
+:: NOTE: msys2 is already installed in the CI VM image. We check if msys2 is not installed, then download and install it with choco
 if not exist "%MSYS2_ROOT%\usr\bin\bash.exe" (
     choco install -y --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath" || goto :error
 )
