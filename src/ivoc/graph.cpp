@@ -2574,7 +2574,7 @@ GraphLine::GraphLine(const char* expr,
                 hoc_execerror(expr, "is invalid left hand side of assignment statement");
             }
         }
-        // oc.notify_when_freed(pval_, this);
+        neuron::container::notify_when_handle_dies(pval_, this);
     } else {
         if (obj) {
             obj_ = obj;
@@ -2696,6 +2696,8 @@ bool GraphLine::change_expr(const char* expr, Symlist** symlist) {
     if (sym) {
         expr_ = sym;
         if (pval_) {
+            // we are no longer interested in updates to pval_
+            nrn_notify_pointer_disconnect(this);
             pval_ = {};
             nrn_forget_history(pval_);
         }
@@ -3378,8 +3380,7 @@ void GraphVector::add(float x, neuron::container::data_handle<double> py) {
     // Dubious
     if (dp_->count() == 0 ||
         static_cast<double*>(py) != static_cast<double*>(dp_->p(dp_->count() - 1)) + 1) {
-        Oc oc;
-        oc.notify_when_freed(static_cast<double*>(py), this);
+        neuron::container::notify_when_handle_dies(py, this);
     }
     x_->add(x);
     if (!py) {

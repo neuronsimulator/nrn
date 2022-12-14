@@ -4,6 +4,7 @@
 #include <ocnotify.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "neuron/container/soa_container.hpp"
 #include <nrnmutdec.h>
 #include "oc2iv.h"
 #include "ocfunc.h"
@@ -30,6 +31,9 @@ static FList* f_list;
 
 static nrn::tool::bimap<void*, Observer*>* pvob;
 static nrn::tool::bimap<double*, Observer*>* pdob;
+using identifier_observer_bimap =
+    nrn::tool::bimap<neuron::container::non_owning_identifier_without_container, Observer*>;
+static identifier_observer_bimap* phob;
 
 // fast insert, find, and remove of (double*, Observer*) using either as
 // a key. Use pair of multimap since there can be many observers of the
@@ -76,8 +80,59 @@ void nrn_notify_pointer_disconnect(Observer* ob) {
     if (pdob) {
         pdob->obremove(ob);
     }
+    if (phob) {
+        phob->obremove(ob);
+    }
     MUTUNLOCK
 }
+
+namespace neuron::container {
+/**
+ * @brief Register that `obs` should be notified when `dh` dies.
+ *
+ * In general this should happen less often than before, as data_handle<double> can remain valid
+ * even when the pointed-to value changes address.
+ */
+void notify_when_handle_dies(data_handle<double> dh, Observer* obs) {
+    if (dh.refers_to_a_modern_data_structure()) {
+        assert(dh);  // strange to set up notification-on-death for something that's already dead
+        MUTLOCK
+        if (!phob) {
+            phob = new identifier_observer_bimap{};
+        }
+        phob->insert(dh.identifier(), obs);
+        MUTUNLOCK
+    } else {
+        // The handle is wrapping a raw pointer, fall back to the old code
+        nrn_notify_when_double_freed(static_cast<double*>(dh), obs);
+    }
+}
+namespace detail {
+/**
+ * @brief Respond to the news that data_handles relying on `p` are now dead.
+ *
+ * The data_handle<T> and generic_data_handle wrappers ultimately hold something like `vector_ptr`
+ * and `p`, where `p` is basically `std::size_t*`, and yield vector_ptr->at(*p). When the relevant
+ * value gets deleted, `*p` is set to a sentinel value, then this method is called, and then `p`
+ * is transferred to a garbage heap.
+ */
+void notify_handle_dying(non_owning_identifier_without_container p) {
+    // call Observer::update on everything that was observing `p`, and remove those entries from the
+    // table
+    if (!phob) {
+        return;
+    }
+    MUTLOCK
+    non_owning_identifier_without_container pv;
+    Observer* ob;
+    while (phob->find(p, pv, ob)) {
+        ob->update(nullptr);
+        phob->remove(pv, ob);
+    }
+    MUTUNLOCK
+}
+}  // namespace detail
+}  // namespace neuron::container
 
 void notify_pointer_freed(void* pt) {
     if (pvob) {
@@ -85,7 +140,7 @@ void notify_pointer_freed(void* pt) {
         void* pv;
         Observer* ob;
         while (pvob->find(pt, pv, ob)) {
-            ob->update(NULL);
+            ob->update(nullptr);
             pvob->remove(pv, ob);
         }
         MUTUNLOCK

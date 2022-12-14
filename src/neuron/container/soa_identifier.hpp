@@ -98,6 +98,11 @@ struct non_owning_identifier_without_container {
         return !(lhs == rhs);
     }
 
+    friend bool operator<(non_owning_identifier_without_container lhs,
+                          non_owning_identifier_without_container rhs) {
+        return lhs.m_ptr < rhs.m_ptr;
+    }
+
   protected:
     // Needed to convert owning_identifier<T> to non_owning_identifier<T>
     template <typename>
@@ -154,6 +159,10 @@ struct non_owning_identifier: non_owning_identifier_without_container {
   private:
     Storage* m_storage;
 };
+
+namespace detail {
+void notify_handle_dying(non_owning_identifier_without_container);
+}
 
 /**
  * @brief An owning permutation-stable identifier for a entry in a container.
@@ -254,6 +263,9 @@ struct owning_identifier {
             // We don't know how many people know the pointer `p`, so write a sentinel
             // value to it and transfer ownership "elsewhere".
             *p = detail::invalid_row;
+            // This is to provide compatibility with NEURON's old nrn_notify_when_double_freed and
+            // nrn_notify_when_void_freed methods.
+            detail::notify_handle_dying(p);
             // This is sort-of formalising a memory leak. In principle we could
             // cleanup garbage by scanning all our data structures and finding
             // references to the pointers that it contains. In practice it seems
