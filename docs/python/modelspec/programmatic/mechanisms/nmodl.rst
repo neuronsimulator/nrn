@@ -933,42 +933,82 @@ FUNCTION_TABLE
 
 Description:
     This keyword defines function tables whose values are given by vectors prior to the simulation.
-    For example let's say we have the following declaration in a ΝMODΛ file:
+    For example let's say we have the following declaration in a ΝMODL file:
 
-    .. code-block::
-        none
+    .. code-block:: none
 
         FUNCTION_TABLE tau1(v(mV)) (ms)
 
     This means that there is a function `tau1` that takes as argument a variable `v` (voltage). Its
     values can be then passed from HOC/Python using the following call:
 
-    .. code-block::
-        none
+    .. code-block:: none
 
         table_tau1_<MOD_SUFFIX>(tau1_vec, v_vec)
 
-    Then whenever tau1(x) is called in the NMODL file, or tau1_k3st(x) is called from hoc, the
+    Here is a FUNCTION_TABLE defined with:
+
+    .. code-block:: python
+
+        voltage = [0.1, 0.2, 0.3, 0.4, 0.5]
+        temperature = [10, 17, 35, 45, 68]
+        table_tau1_k3st(temperature, voltage)
+
+        temp = tau1_k3st(0.32)
+        # Print "Temperature for voltage 0.32 is 37"
+        print("Temperature for voltage ", 0.32, " is ", temp)
+
+    .. image:: ../../../images/function_table_vT.png
+        :align: center
+
+    Then whenever tau1(x) is called in the NMODL file, or tau1_k3st(x) is called from python, the
     interpolated value of the array is returned.
     A useful feature of FUNCTION_TABLEs is that prior to developing the Vector database, they can
     be attached to a scalar value as in
 
-    .. code-block::
-        none
+    .. code-block:: none
 
         table_tau1_<MOD_SUFFIX>(100)
 
-    effectively becoming constant functions. Also FUNCTION_TABLEs can be declared with two
-    arguments and doubly dimensioned hoc arrays attached to them. The latter is useful, for example,
-    with voltage- and calcium-sensitive rates. In this case the table is linearly interpolated in
-    both dimensions.
+    effectively becoming constant functions.
 
+    FUNCTION_TABLEs can too be declared with two or more arguments and n-ly dimensioned python
+    arrays attached to them. The latter is useful, for example, with voltage- and calcium-sensitive
+    rates.
+    If n is 2, table will be linearly interpolated otherwise a floor rounding will happened.
 
-SWEEP
-~~~~~
+    There is two way to define arguments values. Firstly, with a size, a minimum and a maximum, this
+    way the interval will be split by the size.
+    Secondly, with a size and a 1-D array.
 
-Description:
-    ``TODO``: Add description and new example mod file
+    Here is an example with two arguments. The first one 'v', is defined with min and max, the second
+    one 'k' is defined with an array.
+
+    The first argument is a 2-D continuous array.
+
+    .. code-block:: none
+
+        FUNCTION_TABLE tau2(v, k)
+
+    .. code-block:: python
+
+        T_value = [70, 90, 90, 90, 20,
+                   60, 80, 50, 60, 55,
+                   40, 70, 75, 70, 40,
+                   20, 50, 60, 50, 20,
+                   90, 80, 70, 80, 90,
+                   100, 80, 70, 80, 100]
+        v_min = 1
+        v_max = 5
+        v_size = 5
+        k = [1, 5, 10, 50, 75, 100]
+        k_size = 6
+        table_tau2_<MOD_SUFFIX>(T_value, v_size, v_min, v_max, k_size, k)
+
+        tau2_<MOD_SUFFIX>(2.5, 30) # This is 63,75
+
+    .. image:: ../../../images/function_table_vkT.png
+        :align: center
 
 
 CONDUCTANCE

@@ -680,10 +680,15 @@ if(NRN_ENABLE_DOCS)
   # Target to execute && convert notebooks to html. Note that neuron must be available for python
   # import, so we use NRN_RUN_FROM_BUILD_DIR_ENV. See docs/README.md.
   add_custom_target(
+    notebooks_nrnivmodl
+    COMMAND ${PROJECT_BINARY_DIR}/bin/nrnivmodl mod
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs/nmodl)
+  add_custom_target(
     notebooks
     COMMAND ${NRN_DOCS_COMMAND_PREFIX} NEURON_MODULE_OPTIONS="-nogui" bash
             ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs)
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+    DEPENDS notebooks_nrnivmodl)
   if(NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
     message(STATUS "**Not** making the notebooks target depend on the rest of the NEURON build.")
     message(STATUS "Documentation building will probably fail if you haven't installed NEURON.")

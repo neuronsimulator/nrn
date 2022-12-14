@@ -4,6 +4,7 @@ set -e
 notebook_dirs=(
   "tutorials"
   "rxd-tutorials"
+  "nmodl"
 )
 
 convert_notebooks() {
