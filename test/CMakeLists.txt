@@ -1,4 +1,5 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
 
 include_directories(${NRN_INCLUDE_DIRS})
 
@@ -386,6 +387,38 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       COMMAND ${modtests_launch_py} test/coreneuron/test_psolve.py)
   endif()
 
+  nrn_add_test_group(
+    NAME nmodl_tests
+    SCRIPT_PATTERNS test/nmodl/*.py
+    MODFILE_PATTERNS "docs/nmodl/mod/*.mod")
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME test_table
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/nmodl/test_table.py
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME test_disc
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/nmodl/test_disc.py
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/nmodl/test_disc.py)
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME test_function_table
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/nmodl/test_function_table.py
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/nmodl/test_function_table.py)
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME test_kinetic
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/nmodl/test_kinetic.py
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/nmodl/test_kinetic.py)
   nrn_add_test_group(
     CORENEURON
     NAME coreneuron_modtests
