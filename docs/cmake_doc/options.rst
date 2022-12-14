@@ -218,7 +218,7 @@ NRN_ENABLE_MUSIC:BOOL=OFF
   Enable MUSIC. MUlti SImulation Coordinator.
 
   MUSIC must already be installed. See https://github.com/INCF/MUSIC.
-  Hints for MUSIC installation: use the switch-to-MPI-C-interface branch.
+  Hints for MUSIC installation: at the time of 8.2.2 release (Dec 2022), one needs to use `switch-to-MPI-C-interface` branch of MUSIC repository.
   Python3 must have mpi4py and cython modules. I needed a PYTHON_PREFIX, so
   on my Apple M1 used: ``./configure --prefix=`pwd`/musicinstall PYTHON_PREFIX=/Library/Frameworks/Python.framework/Versions/3.11 --disable-anysource``
 
