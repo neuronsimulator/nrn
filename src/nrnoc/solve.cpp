@@ -467,33 +467,15 @@ short nrn_value_mark(Section* sec) {
     return sec->volatile_mark;
 }
 
-/* allocate space for sections (but no nodes) */
-/* returns pointer to Section */
-Section* sec_alloc(void) {
-    Section* sec;
-
-    /* changed from emalloc to allocation from a SectionPool in order
-       to allow safe checking of whether a void* is a possible Section*
-       without the possibility of invalid memory read errors.
-       Note that freeing sections must be done
-       with nrn_section_free(Section*)
-    */
-    sec = nrn_section_alloc();
-    sec->refcount = 0;
-    sec->nnode = 0;
-    sec->parentsec = sec->sibling = sec->child = (Section*) 0;
-    sec->parentnode = (Node*) 0;
-    sec->pnode = (Node**) 0;
-#if DIAMLIST
-    sec->npt3d = 0;
-    sec->pt3d_bsize = 0;
-    sec->pt3d = (Pt3d*) 0;
-    sec->logical_connection = (Pt3d*) 0;
-#endif
-    sec->prop = (Prop*) 0;
-    sec->recalc_area_ = 0;
-
-    return sec;
+/**
+ * @brief Allocate a new Section object.
+ *
+ * Changed from emalloc to allocation from a SectionPool in order to allow safe checking of whether
+ * a void* is a possible Section* without the possibility of invalid memory read errors. Note that
+ * freeing sections must be done with nrn_section_free(Section*).
+ */
+Section* sec_alloc() {
+    return nrn_section_alloc();
 }
 
 /* free a node vector for one section */
@@ -566,6 +548,7 @@ printf("section_unref: freed\n");
         nrn_section_free(sec);
     }
 }
+
 void section_ref(Section* sec) {
     /*printf("section_ref %lx %d\n", (long)sec,sec->refcount+1);*/
     ++sec->refcount;
