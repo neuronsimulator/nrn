@@ -388,7 +388,6 @@ class KSChan {
     void setname(const char*);
     void setsname(int, const char*);
     void setion(const char*);
-    void setligand(int i, const char*);
     void settype(KSTransition*, int type, const char*);
     void setivrelation(int);
     // hoc incremental management
@@ -397,7 +396,7 @@ class KSChan {
     void remove_state(int);
     // these are only for kinetic scheme transitions since an hh
     // always has one and only one transition.
-    KSTransition* add_transition(int src, int target, const char* ligand);
+    KSTransition* add_transition(int src, int target);
     void remove_transition(int);
     void setcond();
     void power(KSGateComplex*, int);

@@ -23,6 +23,10 @@ else:
         chk(key, capture)
 
 
+def chkpr(key):
+    chkstdout(key, capture_stdout("h.ks.pr()", True))
+
+
 # Cover KSChan::state_consist(int shift) in nrniv/kschan.cpp
 
 h.load_file("chanbild.hoc")
@@ -137,9 +141,10 @@ def test_1():
     locals()
 
 
-def mk_khh0():
+def mk_khh(chan_name):
     # to cover the "shift" fragments. Need a POINT_PROCESS KSChan
-    # copy from nrn/share/demo/singhhchan.hoc
+    # copy from nrn/share/demo/singhhchan.hoc (concept of shift is
+    # obsolete but such a channel is still needed for testing).
     h(
         """
 { ion_register("k", 1) }
@@ -154,7 +159,7 @@ objref ks, ksvec, ksgate, ksstates, kstransitions, tobj
 // k ohmic ion current
 //     ik (mA/cm2) = khh0.g * (v - ek)*(0.01/area)
 {
-  ks.name("khh0")
+  ks.name("%s")
   ks.ion("k")
   ks.iv_type(0)
   ks.gmax(0.036)
@@ -209,11 +214,12 @@ objref ks, ksvec, ksgate, ksstates, kstransitions, tobj
 { ksstates.remove_all  kstransitions.remove_all }
 { ks.single(1) }
   """
+        % chan_name
     )
 
 
 def test_2():
-    mk_khh0()
+    mk_khh("khh0")
     s = h.Section(name="soma")
     kchan = h.khh0(s(0.5))
     chkstdout("kchan with single", capture_stdout("h.psection()", True))
@@ -240,9 +246,9 @@ def test_2():
     locals()
     assert h.ks.nstate() == 5
     assert h.ks.ntrans() == 4
-    chkstdout("before remove transition", capture_stdout("h.ks.pr()", True))
+    chkpr("before remove transition")
     h.ks.remove_transition(0)
-    chkstdout("after remove transition", capture_stdout("h.ks.pr()", True))
+    chkpr("after remove transition")
     assert h.ks.ntrans() == 3
     h.ks.remove_transition(h.ks.add_transition(0, 1))
     h.ks.add_transition(0, 1)
@@ -256,8 +262,30 @@ def test_2():
     locals()
 
 
+def test_3():
+    # ligand tests (mostly for coverage) start with fresh channel.
+    mk_khh("khh2")
+    h.ion_register("ca", 2)
+    h.ion_register("cl", -1)
+
+    # replace 1<->2 transition with ligand sensitive transition
+    expect_err('h.ks.trans(h.ks.state(1), h.ks.state(2)).type(2, "ca")')
+    h.ks.trans(h.ks.state(1), h.ks.state(2)).type(3, "cai")
+    chkpr("KSTrans 1<->2 with cai")
+    assert h.ks.trans(h.ks.state(1), h.ks.state(2)).ligand() == "cai"
+    h.ks.trans(h.ks.state(1), h.ks.state(2)).type(2, "cao")
+    chkpr("KSTrans 1<->2 change to cao")
+    h.ks.trans(h.ks.state(1), h.ks.state(2)).type(3, "cli")
+    chkpr("KSTrans 1<->2 change to cli")
+    h.ks.trans(h.ks.state(1), h.ks.state(2)).type(0)
+    chkpr("KSTrans 1<->2 has no ligand")
+
+    # try for a few more lines of coverage by using ligands for two KSTrans
+
+
 if __name__ == "__main__":
     test_1()
     test_2()
+    test_3()
 
     chk.save()

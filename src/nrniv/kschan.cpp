@@ -356,10 +356,7 @@ static Object** ks_add_ksstate(void* v) {
 
 static Object** ks_add_transition(void* v) {
     KSChan* ks = (KSChan*) v;
-    const char* lig = NULL;
-    if (ifarg(3)) {
-        lig = gargstr(3);
-    }
+    // Does not deal here with ligands.
     int src, target;
     if (hoc_is_double_arg(1)) {
         src = (int) chkarg(1, ks->nhhstate_, ks->nstate_ - 1);
@@ -372,7 +369,7 @@ static Object** ks_add_transition(void* v) {
         check_objtype(obj, ksstate_sym);
         target = ((KSState*) obj->u.this_pointer)->index_;
     }
-    KSTransition* kst = ks->add_transition(src, target, lig);
+    KSTransition* kst = ks->add_transition(src, target);
     return temp_objvar("KSTrans", kst, &kst->obj_);
 }
 
@@ -1381,25 +1378,6 @@ void KSChan::setcond() {
     }
 }
 
-void KSChan::setligand(int i, const char* lig) {
-    char buf[100];
-    // printf("KSChan::setligand %d %s\n", i, lig);
-    Sprintf(buf, "%s_ion", lig);
-    Symbol* s = looksym(buf);
-    if (!s) {
-        ion_reg(lig, 0);
-        s = looksym(buf);
-    }
-    if (s->type != MECHANISM ||
-        memb_func[s->subtype].alloc != memb_func[looksym("na_ion")->subtype].alloc) {
-        hoc_execerror(buf, "is already in use and is not an ion.");
-    }
-    ligands_[i] = s;
-    if (mechsym_) {
-        ion_consist();
-    }
-}
-
 void KSChan::settype(KSTransition* t, int type, const char* lig) {
     int i, j;
     // if no ligands involved then it is just a type change.
@@ -1702,12 +1680,11 @@ void KSChan::remove_state(int is) {
     setupmat();
 }
 
-KSTransition* KSChan::add_transition(int src, int target, const char* ligand) {
-    // might increase nligand.
-    must_allow_size_update(false, ion_sym_ != nullptr, nligand_ + (ligand ? 1 : 0), nstate_);
+KSTransition* KSChan::add_transition(int src, int target) {
+    // does not deal here with ligands
+    must_allow_size_update(false, ion_sym_ != nullptr, nligand_, nstate_);
     usetable(false);
-    assert(ligand == NULL);
-    int it = (ligand ? ntrans_ : iligtrans_);
+    int it = iligtrans_;
     trans_insert(it, src, target);
     trans_[it].ligand_index_ = -1;
     trans_[it].type_ = 0;

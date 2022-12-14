@@ -7,5 +7,9 @@
   "kchan failed to turn off single": "6f048fec580e7ea282192fdb2998db68",
   "kchan without single": "588d3ac984df64d16ef33d777eb29295",
   "before remove transition": "277655b8ea0d4483a3449f9a1c2c951b",
-  "after remove transition": "35033bca7e44b8b88945fdc3f71cd23a"
+  "after remove transition": "35033bca7e44b8b88945fdc3f71cd23a",
+  "KSTrans 1<->2 with cai": "a3ee87362e20cb7fafecfdae59305539",
+  "KSTrans 1<->2 change to cao": "5b1729b60c4f8f5f134498975a70be78",
+  "KSTrans 1<->2 change to cli": "b41397bb15644a328ee0fb8a0d4a587d",
+  "KSTrans 1<->2 has no ligand": "292155541558e8ed3e218a9122242562"
 }
