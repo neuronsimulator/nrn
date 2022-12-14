@@ -37,7 +37,6 @@ Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
     p->_alloc_seq = datumpools()[type]->ntget();
     auto* const ppd = datumpools()[type]->alloc();  // allocates storage for the datums
     for (int i = 0; i < count; ++i) {
-        auto* const semantics = memb_func[type].dparam_semantics;
         // Call the Datum constructor
         new (ppd + i) Datum();
     }
@@ -64,10 +63,15 @@ Section* nrn_section_alloc() {
     if (!secpool_) {
         secpool_ = new SectionPool(1000);
     }
-    return secpool_->alloc();
+    auto* const sec = secpool_->alloc();
+    // Call the Section constructor
+    new (sec) Section();
+    return sec;
 }
 
 void nrn_section_free(Section* s) {
+    // Call the Section destructor
+    s->~Section();
     secpool_->hpfree(s);
 }
 
