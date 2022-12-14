@@ -230,6 +230,16 @@ struct data_handle {
         return !(lhs == rhs);
     }
 
+    /**
+     * @brief Get the identifier used by this handle.
+     *
+     * This is likely to only be useful for the (hopefully temporary) method
+     * neuron::container::notify_when_handle_dies.
+     */
+    [[nodiscard]] non_owning_identifier_without_container identifier() const {
+        return m_offset;
+    }
+
   private:
     friend struct generic_data_handle;
     friend struct std::hash<data_handle>;
