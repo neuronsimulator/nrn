@@ -126,19 +126,7 @@ void nrn_popsec(void) {
         if (!sec) {
             return;
         }
-#if 0
-		if (sec->prop && sec->prop->dparam[0].sym) {
-			printf("popsec %s\n", sec->prop->dparam[0].sym->name);
-		}else{
-			printf("popsec unnamed or with no properties\n");
-		}
-#endif
-        if (--sec->refcount <= 0) {
-#if 0
-			printf("sec freed after pop\n");
-#endif
-            nrn_section_free(sec);
-        }
+        section_unref(sec);
     }
 }
 
