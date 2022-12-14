@@ -5,5 +5,7 @@
   "cb.ks.pr()": "7086b928209ac8d065c50226b66a9e92",
   "kchan with single": "6f048fec580e7ea282192fdb2998db68",
   "kchan failed to turn off single": "6f048fec580e7ea282192fdb2998db68",
-  "kchan without single": "588d3ac984df64d16ef33d777eb29295"
+  "kchan without single": "588d3ac984df64d16ef33d777eb29295",
+  "before remove transition": "277655b8ea0d4483a3449f9a1c2c951b",
+  "after remove transition": "35033bca7e44b8b88945fdc3f71cd23a"
 }

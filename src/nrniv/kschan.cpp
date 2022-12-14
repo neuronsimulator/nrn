@@ -1166,9 +1166,22 @@ void KSChan::update_prop() {
         ppsym[gmaxoffset_ + 1] = esym;
         esym->u.rng.index = gmaxoffset_ + 1;
     }
-    int j;
-    for (j = soffset_, i = old_soffset; i < old_svarn; ++i, ++j) {
-        ppsym[j] = rlsym_->u.ppsym[i];
+    // The state list may have changed (e.g. removal), so remove entirely
+    // and reconstruct from kschan information.
+    for (int i = old_soffset; i < old_svarn; ++i) {
+        freesym(rlsym_->u.ppsym[i], searchsym);
+    }
+    for (int i = 0; i < nstate_; ++i) {
+        std::string name{state(i)};
+        if (!is_point()) {  // only called from set_single so never reached.
+            name += "_";
+            name += name_.string();
+        }
+        int j = i + soffset_;
+
+        ppsym[j] = installsym(name.c_str(), RANGEVAR, searchsym);
+        ppsym[j]->subtype = STATE;
+        ppsym[j]->u.rng.type = rlsym_->subtype;
         ppsym[j]->u.rng.index = j;
     }
     free(rlsym_->u.ppsym);
@@ -1564,6 +1577,7 @@ hoc_object_name(trans_[i].obj_));
 
 KSState* KSChan::add_hhstate(const char* name) {
     int i;
+    must_allow_size_update(false, ion_sym_ != nullptr, nligand_, nstate_ + 1);
     usetable(false);
     // new state, transition, gate, and f
     int is = nhhstate_;
@@ -1589,6 +1603,7 @@ KSState* KSChan::add_hhstate(const char* name) {
 }
 
 KSState* KSChan::add_ksstate(int ig, const char* name) {
+    must_allow_size_update(false, ion_sym_ != nullptr, nligand_, nstate_ + 1);
     // states must be added so that the gate states are in sequence
     int i, is;
     usetable(false);
@@ -1626,6 +1641,7 @@ KSState* KSChan::add_ksstate(int ig, const char* name) {
 
 void KSChan::remove_state(int is) {
     int i;
+    must_allow_size_update(false, ion_sym_ != nullptr, nligand_, nstate_ - 1);
     usetable(false);
     if (is < nhhstate_) {
         state_remove(is);
@@ -1687,6 +1703,8 @@ void KSChan::remove_state(int is) {
 }
 
 KSTransition* KSChan::add_transition(int src, int target, const char* ligand) {
+    // might increase nligand.
+    must_allow_size_update(false, ion_sym_ != nullptr, nligand_ + (ligand ? 1 : 0), nstate_);
     usetable(false);
     assert(ligand == NULL);
     int it = (ligand ? ntrans_ : iligtrans_);
@@ -1700,6 +1718,8 @@ KSTransition* KSChan::add_transition(int src, int target, const char* ligand) {
 }
 
 void KSChan::remove_transition(int it) {
+    // might reduce nstate, might reduce nligand.
+    must_allow_size_update(false, ion_sym_ != nullptr, nligand_, nstate_ - 1);
     usetable(false);
     assert(it >= ivkstrans_);
     set_single(false);

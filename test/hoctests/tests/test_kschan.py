@@ -1,7 +1,7 @@
 from neuron import h, gui
 from neuron.expect_hocerr import expect_err
 from neuron import expect_hocerr
-import os
+import os, sys
 
 expect_hocerr.quiet = False
 
@@ -12,9 +12,28 @@ from neuron.tests.utils.checkresult import Chk
 dir_path = os.path.dirname(os.path.realpath(__file__))
 chk = Chk(os.path.join(dir_path, "test_kschan.json"))
 
+if sys.argv[0].split("/")[-1] == "nrniv":
+
+    def chkstdout(key, capture):
+        print(key, " not checked")
+
+else:
+
+    def chkstdout(key, capture):
+        chk(key, capture)
+
+
 # Cover KSChan::state_consist(int shift) in nrniv/kschan.cpp
 
 h.load_file("chanbild.hoc")
+
+
+def cmp(trec, vrec, std, atol=0):
+    tdif = trec.sub(std[0]).abs().max()
+    vdif = vrec.sub(std[1]).abs().max()
+    print("ZZZ", tdif, vdif)
+    assert tdif <= atol
+    assert vdif <= atol
 
 
 def test_1():
@@ -22,22 +41,38 @@ def test_1():
     cb.khh()  # HH potassium channel
     s = h.Section(name="soma")
     s.insert("khh")  # exists in soma and has one state
-    chk("khh inserted", capture_stdout("h.psection()", True))
+    chkstdout("khh inserted", capture_stdout("h.psection()", True))
     # It is not supported (anymore) to change the number of variables
     # of a mechanism while instances of that mechanism are active.
     # In this case the change would be from 1 state to 2 states.
     expect_err("cb.nahh()")  # cb changes name and inserted na_ion before failure
     cb.ks.name("khh")  # change name back
-    chk("khh same except for na_ion", capture_stdout("h.psection()", True))
+    chkstdout("khh same except for na_ion", capture_stdout("h.psection()", True))
     s.uninsert("khh")
     cb.nahh()  # try again
     s.insert("nahh")
-    chk("nahh now", capture_stdout("h.psection()", True))
-    chk("cb.ks.pr()", capture_stdout("cb.ks.pr()", True))
+    chkstdout("nahh now", capture_stdout("h.psection()", True))
+    chkstdout("cb.ks.pr()", capture_stdout("cb.ks.pr()", True))
     assert cb.ks.ntrans() == 2.0
     assert cb.ks.nstate() == 2.0
     assert cb.ks.ngate() == 2.0
     assert cb.ks.nligand() == 0.0
+    assert cb.ks.gate(0).nstate() == 1
+    assert cb.ks.gate(0).power() == 3
+    assert cb.ks.gate(0).power(3) == 3
+    assert cb.ks.gate(0).sindex() == 0
+    assert cb.ks.gate(0).index() == 0
+    assert cb.ks.trans(1).index() == 1
+    assert cb.ks.trans(0).ftype(0) == 3
+    assert cb.ks.trans(0).ftype(1) == 2
+    # cover inteface. Should verify return
+    cb.ks.trans(0).ab(h.Vector().indgen(-80, 60, 10), h.Vector(), h.Vector())
+    cb.ks.trans(0).inftau(h.Vector().indgen(-80, 60, 10), h.Vector(), h.Vector())
+    assert cb.ks.trans(0).f(0, -10) == 3.157187089473768
+    assert cb.ks.trans(0).src() == cb.ks.state(0)
+    assert cb.ks.trans(0).target() == cb.ks.state(0)
+    assert cb.ks.trans(0).parm(0).to_python() == [1.0, 0.1, -40.0]
+    assert cb.ks.trans(0).parm(1).to_python() == [4.0, -0.05555555555555555, -65.0]
 
     expect_err("h.KSState()")  # kss_cons
     expect_err("h.KSGate()")  # ksg_cons
@@ -51,7 +86,54 @@ def test_1():
             h.cvode.cache_efficient(cache)
             h.run()
 
-    del cb, s
+    s.uninsert("nahh")
+    kss = cb.ks.add_hhstate("xxx")
+    assert cb.ks.nstate() == 3
+    assert kss.name() == "xxx"
+    cb.ks.remove_state(kss.index())
+    assert cb.ks.nstate() == 2
+    kss = cb.ks.add_hhstate("xxx")
+    cb.ks.remove_state(kss)
+    print("hello")
+    cb.ks.ion("NonSpecific")
+
+    cb.nahh()
+    s.insert("hh")
+    s.diam = 10
+    s.L = 10
+    ic = h.IClamp(s(0.5))
+    ic.dur = 0.2
+    ic.amp = 0.4
+    trec = h.Vector().record(h._ref_t, sec=s)
+    vrec = h.Vector().record(s(0.5)._ref_v, sec=s)
+    h.usetable_hh = 0
+    h.run()
+    std = (trec.c(), vrec.c())
+    # nahh gives same results as sodium channel in hh (usetable_hh is on)
+    s.gnabar_hh = 0
+    s.insert("nahh")
+    s.gmax_nahh = 0.12
+
+    def run(tol):
+        h.run()
+        cmp(trec, vrec, std, tol)
+
+    run(1e-9)
+    # table
+    cb.ks.usetable(1)
+    run(0.5)
+    cb.ks.usetable(1, 1000, -80, 60)
+    run(1e-3)
+    # cover usetable return info
+    vmin = h.ref(0)
+    vmax = h.ref(1)
+    n = cb.ks.usetable(vmin, vmax)
+    assert n == 1000 and vmin[0] == -80 and vmax[0] == 60
+    # cover some table limit code.
+    cb.ks.usetable(1, 200, -50, 30)
+    run(20)
+
+    del cb, s, kss, ic, trec, vrec, std
     locals()
 
 
@@ -134,16 +216,16 @@ def test_2():
     mk_khh0()
     s = h.Section(name="soma")
     kchan = h.khh0(s(0.5))
-    chk("kchan with single", capture_stdout("h.psection()", True))
+    chkstdout("kchan with single", capture_stdout("h.psection()", True))
     assert kchan.nsingle(10) == 10.0
     assert kchan.nsingle() == 10.0
     expect_err("h.ks.single(0)")
-    chk("kchan failed to turn off single", capture_stdout("h.psection()", True))
+    chkstdout("kchan failed to turn off single", capture_stdout("h.psection()", True))
     del kchan
     locals()
     h.ks.single(0)
     kchan = h.khh0(s(0.5))
-    chk("kchan without single", capture_stdout("h.psection()", True))
+    chkstdout("kchan without single", capture_stdout("h.psection()", True))
 
     # location coverage
     assert kchan.has_loc() == True
@@ -153,18 +235,24 @@ def test_2():
     kchan.loc(s(1))
     assert kchan.get_segment() == s(1)
 
-    """ bug
-  # remove transition and state
-  del kchan
-  assert h.ks.nstate() == 5
-  assert h.ks.ntrans() == 4
-  h.ks.remove_transition(0)
-  assert h.ks.ntrans() == 3
-  h.ks.remove_state(0)
-  assert h.ks.nstate() == 4
-  """
+    # remove transition and state
+    del kchan
+    locals()
+    assert h.ks.nstate() == 5
+    assert h.ks.ntrans() == 4
+    chkstdout("before remove transition", capture_stdout("h.ks.pr()", True))
+    h.ks.remove_transition(0)
+    chkstdout("after remove transition", capture_stdout("h.ks.pr()", True))
+    assert h.ks.ntrans() == 3
+    h.ks.remove_transition(h.ks.add_transition(0, 1))
+    h.ks.add_transition(0, 1)
+    h.ks.remove_transition(h.ks.trans(h.ks.state(0), h.ks.state(1)))
+    h.ks.remove_state(0)
+    assert h.ks.nstate() == 4
+    assert h.ks.vres(0.01) == 0.01
+    assert h.ks.rseed(10) == 10
 
-    del kchan, s
+    del s
     locals()
 
 
