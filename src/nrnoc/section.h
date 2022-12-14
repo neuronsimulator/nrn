@@ -40,39 +40,35 @@
 
 #include <optional>
 
-typedef struct Section {
-    int refcount;              /* may be in more than one list */
-    short nnode;               /* Number of nodes for ith section */
-    struct Section* parentsec; /* parent section of node 0 */
-    struct Section* child;     /* root of the list of children
-                       connected to this parent kept in
-                       order of increasing x */
-    struct Section* sibling;   /* used as list of sections that have same parent */
-
-
-    /* the parentnode is only valid when tree_changed = 0 */
-    struct Node* parentnode; /* parent node */
-    struct Node** pnode;     /* Pointer to  pointer vector of node structures */
-    int order;               /* index of this in secorder vector */
-    short recalc_area_;      /* NODEAREA, NODERINV, diam, L need recalculation */
-    short volatile_mark;     /* for searching */
-    void* volatile_ptr;      /* e.g. ShapeSection* */
 #if DIAMLIST
-    short npt3d;                     /* number of 3-d points */
-    short pt3d_bsize;                /* amount of allocated space for 3-d points */
-    struct Pt3d* pt3d;               /* list of 3d points with diameter */
-    struct Pt3d* logical_connection; /* nil for legacy, otherwise specifies logical connection
-                                        position (for translation) */
-#endif
-    struct Prop* prop; /* eg. length, etc. */
-} Section;
-
-#if DIAMLIST
-typedef struct Pt3d {
-    float x, y, z, d; /* 3d point, microns */
+struct Pt3d {
+    float x, y, z, d;  // 3d point, microns
     double arc;
-} Pt3d;
+};
 #endif
+struct Section {
+    int refcount{};        // may be in more than one list
+    short nnode{};         // Number of nodes for ith section
+    Section* parentsec{};  // parent section of node 0
+    Section* child{};      // root of the list of children connected to this parent kept in order of
+                           // increasing x
+    Section* sibling{};    // used as list of sections that have same parent
+
+    Node* parentnode{};     // parent node; only valid when tree_changed = 0
+    Node** pnode{};         // Pointer to pointer vector of node structures
+    int order{};            // index of this in secorder vector
+    short recalc_area_{};   // NODEAREA, NODERINV, diam, L need recalculation
+    short volatile_mark{};  // for searching
+    void* volatile_ptr{};   // e.g. ShapeSection*
+#if DIAMLIST
+    short npt3d{};               // number of 3-d points
+    short pt3d_bsize{};          // amount of allocated space for 3-d points
+    Pt3d* pt3d{};                // list of 3d points with diameter
+    Pt3d* logical_connection{};  // nil for legacy, otherwise specifies logical connection position
+                                 // (for translation)
+#endif
+    Prop* prop{};  // eg. length, etc.
+};
 
 typedef float NodeCoef;
 typedef double NodeVal;
