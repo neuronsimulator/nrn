@@ -137,6 +137,7 @@ void LinearMechanism::create() {
             double x = chkarg(i, 0., 1.);
             Section* sec = chk_access();
             nodes_[0] = node_exact(sec, x);
+            neuron::container::notify_when_handle_dies(nodes_[0]->v_handle(), this);
         } else {
             Object* o = *hoc_objgetarg(i);
             check_obj_type(o, "SectionList");
@@ -148,6 +149,7 @@ void LinearMechanism::create() {
             nodes_ = new Node*[x->size()];
             for (sec = sl->begin(); sec; sec = sl->next()) {
                 nodes_[nnode_] = node_exact(sec, x->elem(nnode_));
+                neuron::container::notify_when_handle_dies(nodes_[nnode_]->v_handle(), this);
                 ++nnode_;
             }
             if (ifarg(i + 2)) {
