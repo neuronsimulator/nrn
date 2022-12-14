@@ -35,7 +35,7 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install  build-essential doxygen lcov libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg
+          sudo apt-get install  build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg
         shell: bash
 
       - name: Setup Caliper profiler
