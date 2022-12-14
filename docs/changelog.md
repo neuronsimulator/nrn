@@ -21,6 +21,7 @@ _Release Date_ : 15-12-2022
     - adapt scripts for local usage
   - added NMODL documentation in various constructs in hoc and python (#2011)
 - SETUPTOOLS_USE_DISTUTILS=stdlib (#1924)
+- Update CoreNEURON submodule to latest version
 
 For the complete list of commits, see the list in [GitHub Issue #2109](https://github.com/neuronsimulator/nrn/issues/2109)
 
