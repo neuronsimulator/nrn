@@ -5043,11 +5043,7 @@ PreSyn::PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section
 #endif
 #if DISCRETE_EVENT_OBSERVER
     if (thvar_) {
-        // FIXME: this is taking the current address, which may be invalidated
-        // in future. Better for the underlying Observer to take a handle (that
-        // may become invalid later if the relevant owning_handle is deleted)?
-        // assert(thvar_.refers_to_a_modern_data_structure());
-        // nrn_notify_when_double_freed(static_cast<double*>(thvar_), this);
+        neuron::container::notify_when_handle_dies(thvar_, this);
     } else if (osrc_) {
         nrn_notify_when_void_freed(osrc_, this);
     }
@@ -6204,8 +6200,8 @@ PlayRecord::PlayRecord(neuron::container::data_handle<double> pd, Object* ppobj)
     // printf("PlayRecord::PlayRecord %p\n", this);
     cvode_ = nil;
     ith_ = 0;
-    if (!pd_.refers_to_a_modern_data_structure()) {
-        nrn_notify_when_double_freed(static_cast<double*>(pd_), this);
+    if (pd_) {
+        neuron::container::notify_when_handle_dies(pd_, this);
     }
     ppobj_ = ppobj;
     if (ppobj_) {
@@ -6225,7 +6221,7 @@ PlayRecord::~PlayRecord() {
 
 void PlayRecord::update_ptr(neuron::container::data_handle<double> pd) {
     nrn_notify_pointer_disconnect(this);
-    nrn_notify_when_double_freed(static_cast<double*>(pd), this);
+    neuron::container::notify_when_handle_dies(pd, this);
     pd_ = pd;
 }
 
