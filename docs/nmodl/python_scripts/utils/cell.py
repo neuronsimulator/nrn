@@ -18,7 +18,12 @@ class Cell:
     def record(self):
         pass
 
-    def simulate(self, tstop, dt):
+    def simulate(self, tstop, dt, corenrn=False, gpu=False):
+        from neuron import coreneuron
+
+        coreneuron.enable = corenrn
+        coreneuron.gpu = gpu
+
         h.dt = dt
         h.finitialize()
         while h.t < tstop - dt / 2:

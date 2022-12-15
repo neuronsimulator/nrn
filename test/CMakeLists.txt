@@ -597,6 +597,38 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           special ${MPIEXEC_POSTFLAGS} -mpi -python
           ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
     endif()
+    nrn_add_test_group(
+      NAME nmodl_tests_coreneuron
+      SCRIPT_PATTERNS test/nmodl/*.py
+      MODFILE_PATTERNS "docs/nmodl/mod/*.mod")
+    nrn_add_test(
+      GROUP nmodl_tests_coreneuron
+      NAME test_table_coreneuron_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/nmodl/test_table.py
+      ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${processor_env}
+      COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
+    nrn_add_test(
+      GROUP nmodl_tests_coreneuron
+      NAME test_disc_coreneuron_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/nmodl/test_disc.py
+      ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${processor_env}
+      COMMAND ${modtests_launch_py} test/nmodl/test_disc.py)
+    nrn_add_test(
+      GROUP nmodl_tests_coreneuron
+      NAME test_function_table_coreneuron_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/nmodl/test_function_table.py
+      ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${processor_env}
+      COMMAND ${modtests_launch_py} test/nmodl/test_function_table.py)
+    nrn_add_test(
+      GROUP nmodl_tests_coreneuron
+      NAME test_kinetic_coreneuron_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/nmodl/test_kinetic.py
+      ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${processor_env}
+      COMMAND ${modtests_launch_py} test/nmodl/test_kinetic.py)
   endforeach()
 
   if(NRN_ENABLE_MUSIC)
