@@ -44,15 +44,15 @@ extern "C" void nrn_random_play();
 
 class RandomPlay: public Observer, public Resource {
   public:
-    RandomPlay(Rand*, double*);
-    virtual ~RandomPlay();
+    RandomPlay(Rand*, neuron::container::data_handle<double> px);
+    virtual ~RandomPlay() {}
     void play();
     void list_remove();
     virtual void update(Observable*);
 
   private:
     Rand* r_;
-    double* px_;
+    neuron::container::data_handle<double> px_;
 };
 
 using RandomPlayList = std::vector<RandomPlay*>;
@@ -170,17 +170,13 @@ Isaac64::~Isaac64() {
 
 uint32_t Isaac64::cnt_ = 0;
 
-RandomPlay::RandomPlay(Rand* r, double* px) {
-    // printf("RandomPlay\n");
-    r_ = r;
-    px_ = px;
+RandomPlay::RandomPlay(Rand* r, neuron::container::data_handle<double> px)
+    : r_{r}
+    , px_{std::move(px)} {
     random_play_list_->push_back(this);
     ref();
-    nrn_notify_when_double_freed(px_, this);
-    nrn_notify_when_void_freed((void*) r->obj_, this);
-}
-RandomPlay::~RandomPlay() {
-    // printf("~RandomPlay\n");
+    neuron::container::notify_when_handle_dies(px_, this);
+    nrn_notify_when_void_freed(r->obj_, this);
 }
 void RandomPlay::play() {
     // printf("RandomPlay::play\n");
@@ -601,7 +597,7 @@ static double r_weibull(void* r) {
 }
 
 static double r_play(void* r) {
-    new RandomPlay((Rand*) r, hoc_pgetarg(1));
+    new RandomPlay(static_cast<Rand*>(r), hoc_get_arg<neuron::container::data_handle<double>>(1));
     return 0.;
 }
 
