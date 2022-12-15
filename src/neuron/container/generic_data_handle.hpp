@@ -45,8 +45,8 @@ struct generic_data_handle {
     // The exact criteria could be refined, it is definitely not possible to
     // store types with non-trivial destructors.
     template <typename T>
-    static constexpr bool can_be_stored_literally_v = std::is_trivial_v<T> &&
-                                                      sizeof(T) <= sizeof(void*);
+    static constexpr bool can_be_stored_literally_v =
+        std::is_trivial_v<T> && !std::is_pointer_v<T> && sizeof(T) <= sizeof(void*);
 
   public:
     /** @brief Construct a null data handle.
@@ -78,6 +78,18 @@ struct generic_data_handle {
     template <typename T, std::enable_if_t<can_be_stored_literally_v<T>, int> = 0>
     generic_data_handle& operator=(T value) {
         return *this = generic_data_handle{value};
+    }
+
+    /**
+     * @brief Store a pointer inside this generic data handle.
+     *
+     * Explicit handling of pointer types (with redirection via data_handle<T>) ensures that
+     * `some_generic_handle = some_ptr_to_T` promotes the raw `T*` to a modern `data_handle<T>` that
+     * is stable to permutation.
+     */
+    template <typename T, std::enable_if_t<std::is_pointer_v<T>, int> = 0>
+    generic_data_handle& operator=(T value) {
+        return *this = generic_data_handle{data_handle<std::remove_pointer_t<T>>{value}};
     }
 
     /**
