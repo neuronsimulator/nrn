@@ -308,9 +308,12 @@ void InlineVisitor::visit_wrapped_expression(WrappedExpression& node) {
     const auto& e = node.get_expression();
     if (e->is_function_call()) {
         auto expression = dynamic_cast<FunctionCall*>(e.get());
+        // if node is inlined, replace it with corresponding variable name
+        // and remove entry from the bookkeeping map
         if (replaced_fun_calls.find(expression) != replaced_fun_calls.end()) {
             auto var = replaced_fun_calls[expression];
             node.set_expression(std::make_shared<Name>(new String(var)));
+            replaced_fun_calls.erase(expression);
         }
     }
 }
