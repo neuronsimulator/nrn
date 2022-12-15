@@ -12,10 +12,20 @@ struct do_not_search_t {};
 inline constexpr do_not_search_t do_not_search{};
 
 namespace detail {
-inline auto print_value(...) {}
+// 3rd argument ensures the no-op implementation has lower precedence than the one that prints val.
+// This implementation avoids passing a T through ... in the no-output-operator case, which is
+// important if T is a non-trivial type without an output operator.
 template <typename T>
-inline auto print_value(std::ostream& os, T const& val) -> decltype(os << val) {
+std::ostream& print_value_impl(std::ostream& os, T const&, ...) {
+    return os;
+}
+template <typename T>
+auto print_value_impl(std::ostream& os, T const& val, std::nullptr_t) -> decltype(os << val) {
     return os << " val=" << val;
+}
+template <typename T>
+std::ostream& print_value(std::ostream& os, T const& val) {
+    return print_value_impl(os, val, nullptr);
 }
 }  // namespace detail
 
