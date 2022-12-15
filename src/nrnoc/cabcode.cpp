@@ -1056,31 +1056,17 @@ static Datum* pdprop(Symbol* s, int indx, Section* sec, short inode) {
     return m->dparam + s->u.rng.index + indx;
 }
 
-void connectpointer(void) { /* pointer symbol at pc, target variable on stack, maybe
-    range variable location on stack */
-    Datum* dat;
-    double* pd;
-    double d;
-    Symbol* s = (pc++)->sym;
-    pd = hoc_pxpop();
+// pointer symbol at pc, target variable on stack, maybe range variable location on stack
+void connectpointer() {
+    auto* const s = (hoc_pc++)->sym;
+    auto const pd = hoc_pop_handle<double>();
     if (s->subtype != NRNPOINTER) {
         hoc_execerror(s->name, "not a model variable POINTER");
     }
-#if 0
-/* can't be since parser sees object syntax and generates different code. */
-	if (s->type == NRNPNTVAR) {
-		dat = ppnrnpnt(s);
-	}else
-#endif
-    {
-        short i;
-        Section* sec;
-
-        d = hoc_xpop();
-        sec = nrn_sec_pop();
-        i = node_index(sec, d);
-        dat = pdprop(s, range_vec_indx(s), sec, i);
-    }
+    auto const d = hoc_xpop();
+    auto* const sec = nrn_sec_pop();
+    auto const i = node_index(sec, d);
+    auto* const dat = pdprop(s, range_vec_indx(s), sec, i);
     *dat = pd;
 }
 
