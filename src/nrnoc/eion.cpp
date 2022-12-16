@@ -21,7 +21,7 @@ extern Section* nrn_noerr_access();
 
 extern void hoc_register_prop_size(int, int, int);
 
-#define nparm 5
+static constexpr auto nparm = 5;
 static const char* mechanism[] = {/*just a template*/
                                   "0",
                                   "na_ion",
@@ -555,16 +555,16 @@ void nrn_promote(Prop* p, int conc, int rev) {
 
 /* Must be called prior to any channels which update the currents */
 static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
-    int count = ml->nodecount;
-    Node** vnode = ml->nodelist;
-    Datum** ppd = ml->pdata;
+    Memb_list_cache<nparm> ml_cache{*ml};
+    auto const count = ml->nodecount;
+    Datum** ppd = ml->pdata;  // used in iontype below
     /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
     for (int i = 0; i < count; ++i) {
-        ml->data(i, dcurdv_index) = 0.0;
-        ml->data(i, cur_index) = 0.0;
+        ml_cache.data(i, dcurdv_index) = 0.0;
+        ml_cache.data(i, cur_index) = 0.0;
         if (iontype & 0100) {
-            ml->data(i, erev_index) =
-                nrn_nernst(ml->data(i, conci_index), ml->data(i, conco_index), charge);
+            ml_cache.data(i, erev_index) =
+                nrn_nernst(ml_cache.data(i, conci_index), ml_cache.data(i, conco_index), charge);
         }
     };
 }
@@ -573,21 +573,21 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
     concentrations based on their own states
 */
 static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
-    int count = ml->nodecount;
-    Node** vnode = ml->nodelist;
-    Datum** ppd = ml->pdata;
     int i;
+    Memb_list_cache<nparm> ml_cache{*ml};
+    int count = ml->nodecount;
+    Datum** ppd = ml->pdata;
     /*printf("ion_init %s\n", memb_func[type].sym->name);*/
     for (i = 0; i < count; ++i) {
         if (iontype & 04) {
-            ml->data(i, conci_index) = conci0;
-            ml->data(i, conco_index) = conco0;
+            ml_cache.data(i, conci_index) = conci0;
+            ml_cache.data(i, conco_index) = conco0;
         }
     }
     for (i = 0; i < count; ++i) {
         if (iontype & 040) {
-            ml->data(i, erev_index) =
-                nrn_nernst(ml->data(i, conci_index), ml->data(i, conco_index), charge);
+            ml_cache.data(i, erev_index) =
+                nrn_nernst(ml_cache.data(i, conci_index), ml_cache.data(i, conco_index), charge);
         }
     }
 }
