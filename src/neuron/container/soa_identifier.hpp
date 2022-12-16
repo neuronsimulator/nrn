@@ -156,6 +156,8 @@ struct non_owning_identifier: non_owning_identifier_without_container {
         return *m_storage;
     }
 
+    using storage_type = Storage;
+
   private:
     Storage* m_storage;
 };
@@ -224,6 +226,8 @@ struct owning_identifier {
     friend std::ostream& operator<<(std::ostream& os, owning_identifier const& oi) {
         return os << "owning " << non_owning_identifier<Storage>{oi};
     }
+
+    using storage_type = Storage;
 
   private:
     owning_identifier() = default;

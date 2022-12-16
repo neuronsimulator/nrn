@@ -24,6 +24,7 @@
 */
 
 #include "membfunc.h"
+#include "neuron/cache/mechanism_range.hpp"
 #include "neuron/container/mechanism.hpp"
 #include "neuron/container/node.hpp"
 
@@ -233,6 +234,28 @@ struct Extnode {
 
 #define PROP_PY_INDEX 10
 
+struct PropAdaptor {
+    PropAdaptor(neuron::container::Mechanism::handle handle) : m_handle{std::move(handle)} {}
+    template <std::size_t field_index>
+    [[nodiscard]] auto& fpfield(std::size_t instance) {
+        assert(instance == 0);
+        return m_handle.fpfield(field_index);
+    }
+
+    template <std::size_t field_index>
+    [[nodiscard]] auto const& fpfield(std::size_t instance) const {
+        assert(instance == 0);
+        return m_handle.fpfield(field_index);
+    }
+
+    [[nodiscard]] auto& data(std::size_t instance, std::size_t field_index) {
+        assert(instance == 0);
+        return m_handle.fpfield(field_index);
+    }
+private:
+    neuron::container::Mechanism::handle m_handle;
+};
+
 struct Prop {
     // Working assumption is that we can safely equate "Prop" with "instance
     // of a mechanism" apart from a few special cases like CABLESECTION
@@ -318,6 +341,23 @@ struct Prop {
         }
     }
 
+    /**
+     * @brief Return a non-owning handle to this mechanism instance and zero.
+     * 
+     * This is intended to be an adapter for the case where translated MOD file code is executed on a single instance of the mechanism.
+     * An expression like
+     *   auto [_, _ml, _iml] = prop->make_nocmodl_macros_work();
+     * allows the macros
+     *   #define foo _ml->template fpfield<7>(_iml)
+     * to compile and be routed through PropAdaptor, while the same macros can expand to MechanismRange elsehwere.
+     */
+    [[nodiscard]] std::tuple<PropAdaptor, PropAdaptor*, std::size_t> make_nocmodl_macros_work() {
+        assert(m_mech_handle);
+        std::tuple<PropAdaptor, PropAdaptor*, std::size_t> ret{neuron::container::Mechanism::handle{m_mech_handle->non_owning_identifier()}, nullptr, 0};
+        std::get<1>(ret) = &std::get<0>(ret);
+        return ret;
+    }
+
   private:
     // This is a handle that owns a row of the ~global mechanism data for
     // `_type`. Usage of `param` and `param_size` should be replaced with
@@ -344,10 +384,10 @@ inline std::tuple<Memb_list, Memb_list*, std::size_t> create_ml(Prop* p) {
     return ret;
 }
 
-template <std::size_t N>
-std::tuple<Memb_list_cache<N>, Memb_list_cache<N>*, std::size_t> create_ml_cache(Prop* p) {
+template <std::size_t N, std::size_t M>
+std::tuple<neuron::cache::MechanismRange<N, M>, neuron::cache::MechanismRange<N, M>*, std::size_t> create_ml_cache(Prop* p) {
     auto [ml, ml_ptr, iml] = create_ml(p);
-    std::tuple<Memb_list_cache<N>, Memb_list_cache<N>*, std::size_t> ret{ml, nullptr, iml};
+    std::tuple<neuron::cache::MechanismRange<N, M>, neuron::cache::MechanismRange<N, M>*, std::size_t> ret{ml, nullptr, iml};
     std::get<1>(ret) = &std::get<0>(ret);
     return ret;
 }

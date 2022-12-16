@@ -212,8 +212,10 @@ void c_out() {
 
     if (brkpnt_exists) {
         P("\nstatic void nrn_cur(NrnThread* _nt, Memb_list* _ml_arg, int _type){\n");
+        P("LocalMechanismRange _lmr{*_ml_arg};\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _cntml;\n");
         P("_ml = _ml_arg;\n");  // global _ml
+        P("auto* const _ml = &_lmr;\n"); // shadow the global one
         P("#if CACHEVEC\n");
         P("    _ni = _ml_arg->_nodeindices;\n");
         P("#endif\n");
@@ -285,8 +287,8 @@ void c_out() {
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
         P("\nstatic void nrn_jacob(NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
-        P("Memb_list_cache<number_of_floating_point_variables> ml_cache{*_ml_arg};\n");
-        P("auto* const _ml = &ml_cache;\n");
+        P("LocalMechanismRange _lmr{*_ml_arg};\n");
+        P("auto* const _ml = &_lmr;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
         P("#if CACHEVEC\n");
         P("    _ni = _ml_arg->_nodeindices;\n");
@@ -510,6 +512,9 @@ static void funcdec() {
     SYMITER(NAME) {
         more = 0;
         if (s->subtype & PROCED) {
+            if (vectorize) {
+                Fprintf(fcout, "_internaltemplatedecl_\n");    
+            }
             Fprintf(fcout, "static int %s(", s->name);
             more = 1;
         }
@@ -575,7 +580,7 @@ void c_out_vectorize() {
 
     /* Initialization function must always be present */
 
-    P("\nstatic void initmodel(_internalthreadargsproto_) {\n  int "
+    P("\n_internaltemplatedecl_\nstatic void initmodel(_internalthreadargsproto_) {\n  int "
       "_i; double _save;");
     P("{\n");
     initstates();
@@ -585,8 +590,8 @@ void c_out_vectorize() {
 
     /* generation of initmodel interface */
     P("\nstatic void nrn_init(NrnThread* _nt, Memb_list* _ml_arg, int _type){\n");
-    P("Memb_list_cache<number_of_floating_point_variables> ml_cache{*_ml_arg};\n");
-    P("auto* const _ml = &ml_cache;\n");
+    P("LocalMechanismRange _lmr{*_ml_arg};\n");
+    P("auto* const _ml = &_lmr;\n");
     P("Datum* _ppvar; Datum* _thread;\n");
     P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
     P("#if CACHEVEC\n");
@@ -615,7 +620,7 @@ void c_out_vectorize() {
 
     /* standard modl EQUATION without solve computes current */
     if (!conductance_) {
-        P("\nstatic double _nrn_current(_internalthreadargsprotocomma_ double _v) {\n"
+        P("\n_internaltemplatedecl_\nstatic double _nrn_current(_internalthreadargsprotocomma_ double _v) {\n"
           "double _current=0.; v=_v;\n");
         if (cvode_nrn_current_solve_) {
             fprintf(fcout,
@@ -644,8 +649,8 @@ void c_out_vectorize() {
 
     if (brkpnt_exists) {
         P("\nstatic void nrn_cur(NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
-        P("Memb_list_cache<number_of_floating_point_variables> ml_cache{*_ml_arg};\n");
-        P("auto* const _ml = &ml_cache;\n");
+        P("LocalMechanismRange _lmr{*_ml_arg};\n");
+        P("auto* const _ml = &_lmr;\n");
         P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
         P("#if CACHEVEC\n");
@@ -730,8 +735,8 @@ void c_out_vectorize() {
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
         P("\nstatic void nrn_jacob(NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
-        P("Memb_list_cache<number_of_floating_point_variables> ml_cache{*_ml_arg};\n");
-        P("auto* const _ml = &ml_cache;\n");
+        P("LocalMechanismRange _lmr{*_ml_arg};\n");
+        P("auto* const _ml = &_lmr;\n");
         P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
         P("#if CACHEVEC\n");
@@ -782,8 +787,8 @@ void c_out_vectorize() {
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
     P("\nstatic void nrn_state(NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
-    P("Memb_list_cache<number_of_floating_point_variables> ml_cache{*_ml_arg};\n");
-    P("auto* const _ml = &ml_cache;\n");
+    P("LocalMechanismRange _lmr{*_ml_arg};\n");
+    P("auto* const _ml = &_lmr;\n");
     if (nrnstate || currents->next == currents) {
         P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
