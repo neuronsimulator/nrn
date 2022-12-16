@@ -485,13 +485,13 @@ void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4) {
     Lappendsym(massage_list_, SYM(q2));
 
     /* all this junk is still in the intoken list */
-    Sprintf(buf, "static int %s(_threadargsproto_);\n", SYM(q2)->name);
+    Sprintf(buf, "static int %s(_internalthreadargsproto_);\n", SYM(q2)->name);
     Linsertstr(procfunc, buf);
     replacstr(q1, "\nstatic int");
     q = insertstr(q3, "() {_reset=0;\n");
     derfun = SYM(q2);
     vectorize_substitute(q,
-                         "(_threadargsproto_) {\n"
+                         "(_internalthreadargsproto_) {\n"
                          "  int _reset=0;\n"
                          "  int error = 0;\n");
 
@@ -577,7 +577,7 @@ is not allowed on the left hand side.");
     {
         Item* qq = procfunc->prev;
         copyitems(q1->next, q4, procfunc->prev);
-        vectorize_substitute(qq->next, "(_threadargsproto_) {int _reset = 0;");
+        vectorize_substitute(qq->next, "(_internalthreadargsproto_) {int _reset = 0;");
         vectorize_scan_for_func(qq->next, procfunc);
     }
     lappendstr(procfunc, "return _reset;\n}\n");
@@ -588,7 +588,7 @@ is not allowed on the left hand side.");
         Item* qextra = q1->next->next->next->next;
         Sprintf(buf, "static int _ode_matsol%d", numlist);
         Lappendstr(procfunc, buf);
-        vectorize_substitute(lappendstr(procfunc, "() {\n"), "(_threadargsproto_) {\n");
+        vectorize_substitute(lappendstr(procfunc, "() {\n"), "(_internalthreadargsproto_) {\n");
         qq = procfunc->next;
         cvode_cnexp_possible = 1;
         ITERATE(q, cvode_diffeq_list) {
@@ -909,7 +909,7 @@ int cvode_cnexp_success(Item* q1, Item* q2) {
             Item* qq = procfunc->prev;
             copyitems(q1, q2, procfunc->prev);
             /* more or less redundant with massagederiv */
-            vectorize_substitute(qq->next->next, "(_threadargsproto_) {");
+            vectorize_substitute(qq->next->next, "(_internalthreadargsproto_) {");
             vectorize_scan_for_func(qq->next->next, procfunc);
         }
         lappendstr(procfunc, " return 0;\n}\n");
