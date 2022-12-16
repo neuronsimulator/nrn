@@ -344,6 +344,14 @@ inline std::tuple<Memb_list, Memb_list*, std::size_t> create_ml(Prop* p) {
     return ret;
 }
 
+template <std::size_t N>
+std::tuple<Memb_list_cache<N>, Memb_list_cache<N>*, std::size_t> create_ml_cache(Prop* p) {
+    auto [ml, ml_ptr, iml] = create_ml(p);
+    std::tuple<Memb_list_cache<N>, Memb_list_cache<N>*, std::size_t> ret{ml, nullptr, iml};
+    std::get<1>(ret) = &std::get<0>(ret);
+    return ret;
+}
+
 namespace neuron::legacy {
 /**
  * @brief Helper for legacy MOD files that mess with _p in VERBATIM blocks.

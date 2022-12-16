@@ -279,16 +279,20 @@ void parout() {
                    "\n\
 #define _threadargscomma_ _ml, _iml, _ppvar, _thread, _nt,\n\
 #define _threadargsprotocomma_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
+#define _internalthreadargsprotocomma_ Memb_list_cache<number_of_floating_point_variables>* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
 #define _threadargs_ _ml, _iml, _ppvar, _thread, _nt\n\
 #define _threadargsproto_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
+#define _internalthreadargsproto_ Memb_list_cache<number_of_floating_point_variables>* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
 ");
     } else {
         Lappendstr(defs_list,
                    "\n\
 #define _threadargscomma_ /**/\n\
 #define _threadargsprotocomma_ /**/\n\
+#define _internalthreadargsprotocomma_ /**/\n\
 #define _threadargs_ /**/\n\
 #define _threadargsproto_ /**/\n\
+#define _internalthreadargsprotocomma_ /**/\n\
 ");
     }
     Lappendstr(defs_list,
@@ -485,9 +489,9 @@ extern Memb_func* memb_func;\n\
             Lappendstr(defs_list, buf);
             if (vectorize && !s->no_threadargs) {
                 if (s->varnum) {
-                    Lappendstr(defs_list, "_threadargsprotocomma_");
+                    Lappendstr(defs_list, "_internalthreadargsprotocomma_");
                 } else {
-                    Lappendstr(defs_list, "_threadargsproto_");
+                    Lappendstr(defs_list, "_internalthreadargsproto_");
                 }
             }
             for (j = 0; j < s->varnum; ++j) {
@@ -867,10 +871,11 @@ static const char *_mechanism[] = {\n\
     }
     // seems that even in the old code and with vectorize == false that the global _p, _ppvar were
     // shadowed, so don't worry about shadowing the global _ml and _iml here
-    Sprintf(buf,
-            "    auto [_, _ml, _iml] = create_ml(_prop);\n"
-            "    assert(_prop->param_size() == %d);\n",
-            parraycount);
+    Sprintf(
+        buf,
+        "    auto [_, _ml, _iml] = create_ml_cache<number_of_floating_point_variables>(_prop);\n"
+        "    assert(_prop->param_size() == %d);\n",
+        parraycount);
     Lappendstr(defs_list, buf);
     Lappendstr(defs_list, "	/*initialize range parameters*/\n");
     ITERATE(q, rangeparm) {
@@ -1000,7 +1005,8 @@ static const char *_mechanism[] = {\n\
             Lappendstr(procfunc,
                        "\n"
                        "static void _constructor(Prop* _prop) {\n"
-                       "  auto [_, _ml, _iml] = create_ml(_prop);\n"
+                       "  auto [_, _ml, _iml] = "
+                       "create_ml_cache<number_of_floating_point_variables>(_prop);\n"
                        "  Datum *_ppvar{_prop->dparam}, *_thread{};\n"
                        "  {\n");
         } else {
@@ -1301,7 +1307,8 @@ if (_nd->_extnode) {\n\
             Lappendstr(procfunc,
                        "\n"
                        "static void _destructor(Prop* _prop) {\n"
-                       "  auto [_, _ml, _iml] = create_ml(_prop);\n"
+                       "  auto [_, _ml, _iml] = "
+                       "create_ml_cache<number_of_floating_point_variables>(_prop);\n"
                        "  Datum *_ppvar{_prop->dparam}, *_thread{};\n"
                        "  {\n");
         } else {
@@ -1659,7 +1666,7 @@ void defs_h(Symbol* s) {
         q = lappendstr(defs_list, buf);
     } else {
         Sprintf(buf,
-                "#define %s _ml->data(_iml, %d)\n"
+                "#define %s _ml->data<%d>(_iml)\n"
                 "#define %s_columnindex %d\n",
                 s->name,
                 parraycount,
@@ -1996,6 +2003,8 @@ void declare_p() {
         s = ifnew_install("_tsav");
         var_count(s);
     }
+    Sprintf(buf, "static constexpr auto number_of_floating_point_variables = %d;\n", parraycount);
+    lappendstr(defs_list, buf);
 }
 
 List* set_ion_variables(int block)
@@ -2503,17 +2512,18 @@ void out_nt_ml_frag(List* p) {
     vectorize_substitute(lappendstr(p, "  Datum* _thread;\n"),
                          "  Datum* _ppvar; Datum* _thread;\n");
     vectorize_substitute(lappendstr(p, ""), "size_t _iml;");
-    vectorize_substitute(lappendstr(p, ""), "Memb_list* _ml;");
+    vectorize_substitute(lappendstr(p, ""),
+                         "Memb_list_cache<number_of_floating_point_variables>* _ml;");
     Lappendstr(p,
-               "  Node* _nd; double _v; int _cntml;\n\
-  _ml = _ml_arg;\n\
-  _cntml = _ml->_nodecount;\n\
-  _thread = _ml->_thread;\n\
-  for (_iml = 0; _iml < _cntml; ++_iml) {\n\
-    _ppvar = _ml->_pdata[_iml];\n\
-    _nd = _ml->_nodelist[_iml];\n\
-    v = NODEV(_nd);\n\
-");
+               "  Node* _nd; double _v; int _cntml;\n"
+               "  Memb_list_cache<number_of_floating_point_variables> ml_cache{*_ml_arg};\n"
+               "  _ml = &ml_cache;\n"
+               "  _cntml = _ml_arg->_nodecount;\n"
+               "  _thread = _ml_arg->_thread;\n"
+               "  for (_iml = 0; _iml < _cntml; ++_iml) {\n"
+               "    _ppvar = _ml_arg->_pdata[_iml];\n"
+               "    _nd = _ml_arg->_nodelist[_iml];\n"
+               "    v = NODEV(_nd);\n");
 }
 
 void cvode_emit_interface() {
@@ -2588,14 +2598,18 @@ static void _ode_map(int _ieq, double** _pv, double** _pvdot, Memb_list* _ml, si
                 Lappendstr(procfunc,
                            "auto const _cnt = _ml->_nodecount;\n"
                            "for (int _iml = 0; _iml < _cnt; ++_iml) {\n"
-                           "  Datum* _ppvar = _ml->_pdata[_iml];\n");
+                           "  Datum* _ppvar = _ml_arg->_pdata[_iml];\n");
                 movelist(ion_synonym->next, ion_synonym->prev, procfunc);
                 Lappendstr(procfunc, "  }\n}\n");
             }
 
-            Sprintf(buf, "static void _ode_matsol_instance%d(_threadargsproto_);\n", cvode_num_);
+            Sprintf(buf,
+                    "static void _ode_matsol_instance%d(_internalthreadargsproto_);\n",
+                    cvode_num_);
             Lappendstr(defs_list, buf);
-            Sprintf(buf, "\nstatic void _ode_matsol_instance%d(_threadargsproto_) {\n", cvode_num_);
+            Sprintf(buf,
+                    "\nstatic void _ode_matsol_instance%d(_internalthreadargsproto_) {\n",
+                    cvode_num_);
             Lappendstr(procfunc, buf);
             if (cvode_fun_->subtype == KINF) {
                 int i = cvode_num_;
@@ -2689,8 +2703,8 @@ void cvode_interface(Symbol* fun, int num, int neq) {
     }
     Sprintf(buf,
             "\n\
-static int _ode_spec%d(_threadargsproto_);\n\
-/*static int _ode_matsol%d(_threadargsproto_);*/\n\
+static int _ode_spec%d(_internalthreadargsproto_);\n\
+/*static int _ode_matsol%d(_internalthreadargsproto_);*/\n\
 ",
             num,
             num);
@@ -2766,7 +2780,8 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
         insertstr(qstmt, "  int _watch_rm = 0;\n");
     }
     q = insertstr(qstmt,
-                  "  auto [_, local_ml, local_iml] = create_ml(_pnt->_prop);\n"
+                  "  auto [_, local_ml, local_iml] = "
+                  "create_ml_cache<number_of_floating_point_variables>(_pnt->_prop);\n"
                   "  _ppvar = _pnt->_prop->dparam;\n");
     // when not vectorised we need to update the global _ml and _iml variables
     vectorize_substitute(insertstr(qstmt, "  _ml = local_ml; _iml = local_iml;\n"),
@@ -2858,7 +2873,8 @@ void net_init(Item* qinit, Item* qp2) {
     replacstr(qinit, "\nstatic void _net_init(Point_process* _pnt, double* _args, double _lflag)");
     Sprintf(buf, "    _ppvar = _pnt->_prop->dparam;\n");
     vectorize_substitute(insertstr(qinit->next->next, buf),
-                         "  auto [_, _ml, _iml] = create_ml(_pnt->_prop);\n"
+                         "  auto [_, _ml, _iml] = "
+                         "create_ml_cache<number_of_floating_point_variables>(_pnt->_prop);\n"
                          "  Datum* _ppvar = _pnt->_prop->dparam;\n"
                          "  Datum* _thread = (Datum*)0;\n"
                          "  NrnThread* _nt = (NrnThread*)_pnt->_vnt;\n");
