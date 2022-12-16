@@ -22,6 +22,7 @@ extern Section* nrn_noerr_access();
 extern void hoc_register_prop_size(int, int, int);
 
 static constexpr auto nparm = 5;
+static constexpr auto ndparam = 1;
 static const char* mechanism[] = {/*just a template*/
                                   "0",
                                   "na_ion",
@@ -174,7 +175,7 @@ void ion_reg(const char* name, double valence) {
         hoc_symbol_units(hoc_lookup(buf[6].c_str()), "S/cm2");
         s = hoc_lookup(buf[0].c_str());
         mechtype = nrn_get_mechtype(mechanism[1]);
-        hoc_register_prop_size(mechtype, nparm, 1);
+        hoc_register_prop_size(mechtype, nparm, ndparam);
         hoc_register_dparam_semantics(mechtype, 0, "iontype");
         nrn_writes_conc(mechtype, 1);
         if (ion_global_map_size <= s->subtype) {
@@ -555,16 +556,16 @@ void nrn_promote(Prop* p, int conc, int rev) {
 
 /* Must be called prior to any channels which update the currents */
 static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
-    Memb_list_cache<nparm> ml_cache{*ml};
+    neuron::cache::MechanismRange<nparm, ndparam> ml_cache{*ml};
     auto const count = ml->nodecount;
     Datum** ppd = ml->pdata;  // used in iontype below
     /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
     for (int i = 0; i < count; ++i) {
-        ml_cache.data(i, dcurdv_index) = 0.0;
-        ml_cache.data(i, cur_index) = 0.0;
+        ml_cache.fpfield<dcurdv_index>(i) = 0.0;
+        ml_cache.fpfield<cur_index>(i) = 0.0;
         if (iontype & 0100) {
-            ml_cache.data(i, erev_index) =
-                nrn_nernst(ml_cache.data(i, conci_index), ml_cache.data(i, conco_index), charge);
+            ml_cache.fpfield<erev_index>(i) =
+                nrn_nernst(ml_cache.fpfield<conci_index>(i), ml_cache.fpfield<conco_index>(i), charge);
         }
     };
 }
@@ -574,20 +575,20 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 */
 static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
     int i;
-    Memb_list_cache<nparm> ml_cache{*ml};
+    neuron::cache::MechanismRange<nparm, ndparam> ml_cache{*ml};
     int count = ml->nodecount;
     Datum** ppd = ml->pdata;
     /*printf("ion_init %s\n", memb_func[type].sym->name);*/
     for (i = 0; i < count; ++i) {
         if (iontype & 04) {
-            ml_cache.data(i, conci_index) = conci0;
-            ml_cache.data(i, conco_index) = conco0;
+            ml_cache.fpfield<conci_index>(i) = conci0;
+            ml_cache.fpfield<conco_index>(i) = conco0;
         }
     }
     for (i = 0; i < count; ++i) {
         if (iontype & 040) {
-            ml_cache.data(i, erev_index) =
-                nrn_nernst(ml_cache.data(i, conci_index), ml_cache.data(i, conco_index), charge);
+            ml_cache.fpfield<erev_index>(i) =
+                nrn_nernst(ml_cache.fpfield<conci_index>(i), ml_cache.fpfield<conco_index>(i), charge);
         }
     }
 }
@@ -613,7 +614,7 @@ static void ion_alloc(Prop* p) {
         p->set_param(conci_index, DEF_ioni);
         p->set_param(conco_index, DEF_iono);
     }
-    p->dparam = nrn_prop_datum_alloc(p->_type, 1, p);
+    p->dparam = nrn_prop_datum_alloc(p->_type, ndparam, p);
     p->dparam[0] = 0;
 }
 
