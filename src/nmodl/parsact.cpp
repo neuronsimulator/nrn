@@ -243,7 +243,7 @@ void defarg(Item* q1, Item* q2) /* copy arg list and define as doubles */
     Item *q3, *q;
 
     if (q1->next == q2) {
-        vectorize_substitute(insertstr(q2, ""), "_internalthreadargsproto_");
+        vectorize_substitute(insertstr(q2, ""), "_internalthreadargsproto_ /* foo32432 */");
         return;
     }
     for (q = q1->next; q != q2; q = q->next) {
@@ -373,11 +373,11 @@ int check_tables_threads(List* p) {
     Item* q;
     if (check_table_thread_list) {
         ITERATE(q, check_table_thread_list) {
-            Sprintf(buf, "\nstatic void %s(_internalthreadargsproto_);", STR(q));
+            Sprintf(buf, "\n_internaltemplatedecl_\nstatic void %s(_internalthreadargsproto_);", STR(q));
             lappendstr(p, buf);
         }
         lappendstr(
-            p, "\nstatic void _check_table_thread(_internalthreadargsprotocomma_ int _type) {\n");
+            p, "\n_internaltemplatedecl_\nstatic void _check_table_thread(_internalthreadargsprotocomma_ int _type) {\n");
         ITERATE(q, check_table_thread_list) {
             Sprintf(buf, "  %s(_threadargs_);\n", STR(q));
             lappendstr(p, buf);
@@ -447,13 +447,13 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
         fsym->subtype |= FUNCT;
         Sprintf(buf, "static double _n_%s(double);\n", fname);
         q = linsertstr(procfunc, buf);
-        Sprintf(buf, "static double _n_%s(_internalthreadargsprotocomma_ double _lv);\n", fname);
+        Sprintf(buf, "_internaltemplatedecl_\nstatic double _n_%s(_internalthreadargsprotocomma_ double _lv);\n", fname);
         vectorize_substitute(q, buf);
     } else {
         fsym->subtype |= PROCED;
         Sprintf(buf, "static void _n_%s(double);\n", fname);
         q = linsertstr(procfunc, buf);
-        Sprintf(buf, "static void _n_%s(_internalthreadargsprotocomma_ double _lv);\n", fname);
+        Sprintf(buf, "_internaltemplatedecl_\nstatic void _n_%s(_internalthreadargsprotocomma_ double _lv);\n", fname);
         vectorize_substitute(q, buf);
     }
     fsym->usage |= FUNCT;
@@ -473,7 +473,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     vectorize_substitute(q, "");
     Sprintf(buf, "static void _check_%s() {\n", fname);
     q = lappendstr(procfunc, buf);
-    Sprintf(buf, "static void _check_%s(_internalthreadargsproto_) {\n", fname);
+    Sprintf(buf, "_internaltemplatedecl_\nstatic void _check_%s(_internalthreadargsproto_) {\n", fname);
     vectorize_substitute(q, buf);
     Lappendstr(procfunc, " static int _maktable=1; int _i, _j, _ix = 0;\n");
     Lappendstr(procfunc, " double _xi, _tmax;\n");
@@ -563,7 +563,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "%s(double %s){", fname, arg->name);
     Lappendstr(procfunc, buf);
-    Sprintf(buf, "%s(_internalthreadargsprotocomma_ double %s) {", fname, arg->name);
+    Sprintf(buf, "_internaltemplatedecl_\n%s(_internalthreadargsprotocomma_ double %s) {", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     /* check the table */
     Sprintf(buf, "_check_%s();\n", fname);
@@ -590,7 +590,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "_n_%s(double %s){", fname, arg->name);
     Lappendstr(procfunc, buf);
-    Sprintf(buf, "_n_%s(_internalthreadargsprotocomma_ double %s){", fname, arg->name);
+    Sprintf(buf, "_internaltemplatedecl_\n_n_%s(_internalthreadargsprotocomma_ double %s){", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     Lappendstr(procfunc, "int _i, _j;\n");
     Lappendstr(procfunc, "double _xi, _theta;\n");
@@ -744,15 +744,17 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
         vectorize_substitute(lappendstr(procfunc, "  _hoc_setdata(_vptr);\n"),
                              "\
   Prop *_p{static_cast<Point_process*>(_vptr)->_prop};\n\
-  auto [_, _ml, _iml] = create_ml_cache<number_of_floating_point_variables>(_p);\n\
+  auto [_, _ml, _iml] = _p->make_nocmodl_macros_work();\n\
+//   auto [_, _ml, _iml] = create_ml_cache<number_of_floating_point_variables, number_of_datum_variables>(_p);\n\
   _ppvar = ((Point_process*)_vptr)->_prop->dparam;\n\
   _thread = _extcall_thread.data();\n\
   _nt = (NrnThread*)((Point_process*)_vptr)->_vnt;\n\
 ");
     } else {
         vectorize_substitute(lappendstr(procfunc, ""),
-                             "auto [_, _ml, _iml] = "
-                             "create_ml_cache<number_of_floating_point_variables>(_extcall_prop);\n"
+                             "auto [_, _ml, _iml] = _extcall_prop->make_nocmodl_macros_work();\n"
+                            //  "auto [_, _ml, _iml] = "
+                            //  "create_ml_cache<number_of_floating_point_variables, number_of_datum_variables>(_extcall_prop);\n"
                              "_ppvar = _extcall_prop ? _extcall_prop->dparam : nullptr;\n"
                              "_thread = _extcall_thread.data();\n"
                              "_nt = nrn_threads;\n");
@@ -784,7 +786,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
     if (i) {
         vectorize_substitute(qp, "_threadargscomma_");
     } else if (!hack) {
-        vectorize_substitute(qp, "_threadargs_");
+        vectorize_substitute(qp, "_threadargs_ /* foo */");
     }
 }
 
@@ -935,8 +937,9 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
                          "  NrnThread* _nt{static_cast<NrnThread*>(_pnt->_vnt)};\n");
     Sprintf(buf,
             "  _ppvar = _pnt->_prop->dparam;\n"
-            "  auto [_, _ml, _iml] = "
-            "create_ml_cache<number_of_floating_point_variables>(_pnt->_prop);\n"
+            "  auto [_, _ml, _iml] = _pnt->_prop->make_nocmodl_macros_work();\n"
+            // "  auto [_, _ml, _iml] = "
+            // "create_ml_cache<number_of_floating_point_variables, number_of_datum_variables>(_pnt->_prop);\n"
             "  v = NODEV(_pnt->node);\n"
             "	return ");
     lappendstr(procfunc, buf);

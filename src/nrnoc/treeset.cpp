@@ -455,11 +455,13 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     */
 #if CACHEVEC
     if (use_cachevec) {
+        auto* const actual_v = &(nt.actual_v(0));
+        auto* const parent_i = nt._v_parent_index;
         for (i = i2; i < i3; ++i) {
-            double dv = VEC_V(_nt->_v_parent_index[i]) - VEC_V(i);
+            auto const dv = actual_v[parent_i[i]] - actual_v[i];
             /* our connection coefficients are negative so */
             VEC_RHS(i) -= VEC_B(i) * dv;
-            VEC_RHS(_nt->_v_parent_index[i]) += VEC_A(i) * dv;
+            VEC_RHS(parent_i[i]) += VEC_A(i) * dv;
         }
     } else
 #endif /* CACHEVEC */
@@ -1744,7 +1746,7 @@ void v_setup_vectors(void) {
             // to the NrnThread they are assigned to, but without this change
             // then the pdata order encoded in the global non-thread-specific
             // memb_list[i] structure was different, with threads interleaved.
-            // This was a problem when we wanted  to e.g. run the initialisation
+            // This was a problem when we wanted to e.g. run the initialisation
             // kernels in finitialize using that global structure, as the i-th
             // rows of data and pdata did not refer to the same mechanism
             // instance. The temporary solution here is to manually organise
@@ -2146,6 +2148,25 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
     // sorted
     if (type != MORPHOLOGY) {
         std::size_t const mech_data_size{mech_data.size()};
+        auto const pdata_size = nrn_prop_dparam_size_[type];
+        auto* const dparam_semantics = memb_func[type].dparam_semantics;
+        std::vector<unsigned short> pdata_fields_to_cache;
+        pdata_fields_to_cache.reserve(pdata_size);
+        for (auto field = 0; field < pdata_size; ++field) {
+            // Check if the field-th dparam of this mechanism type is an ion variable. See
+            // hoc_register_dparam_semantics.
+            auto const sem = dparam_semantics[field];
+            // TODO is area constant? could we cache the value instead of a pointer to it?
+            if (sem > 0 || sem == -1 /* area */) {
+                pdata_fields_to_cache.push_back(field);
+            }
+        }
+        if (!pdata_fields_to_cache.empty()) {
+            cache.mechanism.at(type).pdata_hack.resize(1 + pdata_fields_to_cache.back());
+            for (auto const field: pdata_fields_to_cache) {
+                cache.mechanism.at(type).pdata_hack.at(field).reserve(mech_data_size);
+            }
+        }
         std::size_t global_i{};
         std::vector<std::size_t> mech_data_permutation(mech_data_size,
                                                        std::numeric_limits<std::size_t>::max());
@@ -2180,6 +2201,9 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
                     // considering.
                     auto const current_global_row = p->id().current_row();
                     mech_data_permutation.at(current_global_row) = global_i++;
+                    for (auto const field: pdata_fields_to_cache) {
+                        cache.mechanism.at(type).pdata_hack.at(field).push_back(p->dparam + field);
+                    }
                     // Checks
                     assert(ml->nodelist[nt_mech_count] == nd);
                     assert(ml->nodeindices[nt_mech_count] == nd->v_node_index);
@@ -2198,6 +2222,10 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
                     if (nt == pnt->_vnt) {
                         auto const current_global_row = pnt->prop->id().current_row();
                         mech_data_permutation.at(current_global_row) = global_i++;
+                        for (auto const field: pdata_fields_to_cache) {
+                            cache.mechanism.at(type).pdata_hack.at(field).push_back(
+                                pnt->prop->dparam + field);
+                        }
                     }
                 }
             }
@@ -2233,6 +2261,36 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
         mech_data.apply_reverse_permutation(std::move(mech_data_permutation));
     }
     return mech_data.get_sorted_token();
+}
+
+void nrn_fill_mech_data_caches(neuron::cache::Model& cache,
+                               neuron::container::Mechanism::storage& mech_data) {
+    // Generate some temporary "flattened" vectors from pdata
+    // For example, when a mechanism uses an ion then one of its pdata fields holds Datum
+    // (=generic_data_handle) objects that wrap data_handles to ion (RANGE) variables.
+    // Dereferencing those fields to access the relevant double values can be indirect and
+    // expensive, so here we can generate a std::vector<double*> that can be used directly in
+    // hot loops. This is partitioned for the threads in the same way as the other data.
+    // Note that this needs to come after *all* of the mechanism types' data have been permuted, not
+    // just the type that we are filling the cache for.
+    // TODO could identify the case that the pointers are all monotonically increasing and optimise further?
+    auto const type = mech_data.type();
+    // Some special types are not "really" mechanisms and don't need to be
+    // sorted
+    if (type != MORPHOLOGY) {
+        auto& mech_cache = cache.mechanism.at(type);
+        // Transform the vector<Datum> in pdata_hack into vector<double*> in pdata
+        std::transform(mech_cache.pdata_hack.begin(), mech_cache.pdata_hack.end(), std::back_inserter(mech_cache.pdata), [](std::vector<Datum*>& pdata_hack){
+            std::vector<double*> tmp{};
+            std::transform(pdata_hack.begin(), pdata_hack.end(), std::back_inserter(tmp), [](Datum* datum) {
+                return datum->get<double*>();
+            });
+            pdata_hack.clear();
+            pdata_hack.shrink_to_fit();
+            return tmp;
+        });
+        mech_cache.pdata_hack.clear();
+    }
 }
 
 /** @brief Sort the underlying storage for Nodes.
@@ -2316,8 +2374,11 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
             [&all_sorted](auto& mech_data) { all_sorted = all_sorted && mech_data.is_sorted(); });
         assert(!all_sorted);
         cache.thread.resize(nrn_nthread);
+        // How big an array needs to be to be indexed by mechanism type
+        auto const mech_storage_size = neuron::model().mechanism_storage_size();
+        cache.mechanism.resize(mech_storage_size);
         for (auto& thread_cache: cache.thread) {
-            thread_cache.mechanism_offset.resize(neuron::model().mechanism_storage_size());
+            thread_cache.mechanism_offset.resize(mech_storage_size);
         }
         ret.node_data_token = nrn_sort_node_data(cache);
         // TODO should we pass a token saying the node data are sorted to
@@ -2325,6 +2386,9 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         neuron::model().apply_to_mechanisms([&cache, &tokens](auto& mech_data) {
             tokens.emplace_back(nrn_sort_mech_data(cache, mech_data));
         });
+        // Now that all the mechanism data is sorted we can fill in pdata caches
+        neuron::model().apply_to_mechanisms(
+            [&cache](auto& mech_data) { nrn_fill_mech_data_caches(cache, mech_data); });
         neuron::cache::model = std::move(cache);
     }
     return ret;

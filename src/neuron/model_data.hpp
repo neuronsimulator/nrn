@@ -142,6 +142,12 @@ struct model_sorted_token {
     void set_cache(cache::Model&& cache) {
         m_cache = cache;
     }
+    [[nodiscard]] cache::Mechanism& mech_cache(std::size_t i) {
+        return cache().mechanism.at(i);
+    }
+    [[nodiscard]] cache::Mechanism const& mech_cache(std::size_t i) const {
+        return cache().mechanism.at(i);
+    }
     [[nodiscard]] cache::Thread& thread_cache(std::size_t i) {
         return cache().thread.at(i);
     }
