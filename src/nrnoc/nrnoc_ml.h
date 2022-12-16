@@ -74,8 +74,13 @@ struct Memb_list {
     }
 
     template <std::size_t variable>
-    [[nodiscard]] double& data(std::size_t instance) {
+    [[nodiscard]] double& fpfield(std::size_t instance) {
         return data(instance, variable);
+    }
+
+    template <std::size_t variable>
+    [[nodiscard]] double* dptr_field(std::size_t instance) {
+        return _pdata[instance][variable].get<double*>();
     }
 
     /**
@@ -263,6 +268,11 @@ struct Memb_list {
         return m_storage->at(m_storage_offset + instance);
     }
 
+    [[nodiscard]] auto type() const {
+        assert(m_storage);
+        return m_storage->type();
+    }
+
   private:
     /**
      * @brief Pointer to the global mechanism data structure for this mech type.
@@ -278,33 +288,4 @@ struct Memb_list {
      * permanent...in which case this value should probably not live here.
      */
     std::size_t m_storage_offset{std::numeric_limits<std::size_t>::max()};
-};
-
-/**
- * @brief Version of Memb_list for use in performance-critical code.
- *
- * Unlike Memb_list, this requires that the number of fields is known at compile time.
- * This is typically only true in translated MOD file code. The idea is that an instance of this
- * class will be created outside a loop over the data vectors and then used inside the loop.
- */
-template <std::size_t N>
-struct Memb_list_cache {
-    Memb_list_cache(Memb_list& ml) {
-        assert(N == ml.num_floating_point_fields());
-        for (auto i = 0; i < N; ++i) {
-            m_ptrs[i] = &ml.data(0, i);
-        }
-    }
-    template <std::size_t variable>
-    [[nodiscard]] double& data(std::size_t instance) {
-        static_assert(variable < N);
-        return m_ptrs[variable][instance];
-    }
-    [[nodiscard]] double& data(std::size_t instance, std::size_t variable) {
-        assert(variable < N);
-        return m_ptrs[variable][instance];
-    }
-
-  private:
-    std::array<double*, N> m_ptrs{};
 };

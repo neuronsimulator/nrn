@@ -277,22 +277,24 @@ void parout() {
     if (vectorize) {
         Lappendstr(defs_list,
                    "\n\
+#define _internaltemplatedecl_ template <typename MechData>\n\
 #define _threadargscomma_ _ml, _iml, _ppvar, _thread, _nt,\n\
 #define _threadargsprotocomma_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
-#define _internalthreadargsprotocomma_ Memb_list_cache<number_of_floating_point_variables>* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
+#define _internalthreadargsprotocomma_ MechData* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
 #define _threadargs_ _ml, _iml, _ppvar, _thread, _nt\n\
 #define _threadargsproto_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
-#define _internalthreadargsproto_ Memb_list_cache<number_of_floating_point_variables>* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
+#define _internalthreadargsproto_ MechData* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
 ");
     } else {
         Lappendstr(defs_list,
                    "\n\
+#define _internaltemplatedecl_ /**/\n\
 #define _threadargscomma_ /**/\n\
 #define _threadargsprotocomma_ /**/\n\
 #define _internalthreadargsprotocomma_ /**/\n\
 #define _threadargs_ /**/\n\
 #define _threadargsproto_ /**/\n\
-#define _internalthreadargsprotocomma_ /**/\n\
+#define _internalthreadargsproto_ /**/\n\
 ");
     }
     Lappendstr(defs_list,
@@ -485,7 +487,7 @@ extern Memb_func* memb_func;\n\
         int j;
         s = SYM(q);
         if ((s->subtype & FUNCT)) {
-            Sprintf(buf, "extern double %s(", s->name);
+            Sprintf(buf, "_internaltemplatedecl_\nextern double %s(", s->name);
             Lappendstr(defs_list, buf);
             if (vectorize && !s->no_threadargs) {
                 if (s->varnum) {
@@ -873,7 +875,8 @@ static const char *_mechanism[] = {\n\
     // shadowed, so don't worry about shadowing the global _ml and _iml here
     Sprintf(
         buf,
-        "    auto [_, _ml, _iml] = create_ml_cache<number_of_floating_point_variables>(_prop);\n"
+        "    auto [_, _ml, _iml] = _prop->make_nocmodl_macros_work();\n"
+        //"    auto [_, _ml, _iml] = create_ml_cache<number_of_floating_point_variables, number_of_datum_variables>(_prop);\n"
         "    assert(_prop->param_size() == %d);\n",
         parraycount);
     Lappendstr(defs_list, buf);
@@ -1005,8 +1008,9 @@ static const char *_mechanism[] = {\n\
             Lappendstr(procfunc,
                        "\n"
                        "static void _constructor(Prop* _prop) {\n"
-                       "  auto [_, _ml, _iml] = "
-                       "create_ml_cache<number_of_floating_point_variables>(_prop);\n"
+                       "  auto [_, _ml, _iml] = _prop->make_nocmodl_macros_work();\n"
+                    //    "  auto [_, _ml, _iml] = "
+                    //    "create_ml_cache<number_of_floating_point_variables, number_of_datum_variables>(_prop);\n"
                        "  Datum *_ppvar{_prop->dparam}, *_thread{};\n"
                        "  {\n");
         } else {
@@ -1307,8 +1311,9 @@ if (_nd->_extnode) {\n\
             Lappendstr(procfunc,
                        "\n"
                        "static void _destructor(Prop* _prop) {\n"
-                       "  auto [_, _ml, _iml] = "
-                       "create_ml_cache<number_of_floating_point_variables>(_prop);\n"
+                       "  auto [_, _ml, _iml] = _prop->make_nocmodl_macros_work();\n"
+                    //    "  auto [_, _ml, _iml] = "
+                    //    "create_ml_cache<number_of_floating_point_variables, number_of_datum_variables>(_prop);\n"
                        "  Datum *_ppvar{_prop->dparam}, *_thread{};\n"
                        "  {\n");
         } else {
@@ -1666,7 +1671,7 @@ void defs_h(Symbol* s) {
         q = lappendstr(defs_list, buf);
     } else {
         Sprintf(buf,
-                "#define %s _ml->data<%d>(_iml)\n"
+                "#define %s _ml->template fpfield<%d>(_iml)\n"
                 "#define %s_columnindex %d\n",
                 s->name,
                 parraycount,
@@ -2145,7 +2150,7 @@ int iondef(int* p_pointercount) {
     ioncount = 0;
     if (point_process) {
         ioncount = 2;
-        q = lappendstr(defs_list, "#define _nd_area  *_ppvar[0].get<double*>()\n");
+        q = lappendstr(defs_list, "#define _nd_area *_ml->dptr_field<0>(_iml)\n");
         q->itemtype = VERBATIM;
         ppvar_semantics(0, "area");
         ppvar_semantics(1, "pntproc");
@@ -2159,7 +2164,8 @@ int iondef(int* p_pointercount) {
         ITERATE(q1, LST(q)) {
             SYM(q1)->nrntype |= NRNIONFLAG;
             Sprintf(buf,
-                    "#define _ion_%s	*(_ppvar[%d].get<double*>())\n",
+                    // "#define _ion_%s	*(_ppvar[%d].get<double*>())\n",
+                    "#define _ion_%s *(_ml->dptr_field<%d>(_iml))\n",
                     SYM(q1)->name,
                     ioncount);
             q2 = lappendstr(defs_list, buf);
@@ -2174,7 +2180,8 @@ int iondef(int* p_pointercount) {
                 SYM(q1)->nrntype &= ~NRNIONFLAG;
             } else {
                 Sprintf(buf,
-                        "#define _ion_%s	*_ppvar[%d].get<double*>()\n",
+                        //"#define _ion_%s	*_ppvar[%d].get<double*>()\n",
+                        "#define _ion_%s *(_ml->dptr_field<%d>(_iml))\n",
                         SYM(q1)->name,
                         ioncount);
                 q2 = lappendstr(defs_list, buf);
@@ -2187,7 +2194,8 @@ int iondef(int* p_pointercount) {
             if (it == IONCUR) {
                 dcurdef = 1;
                 Sprintf(buf,
-                        "#define _ion_di%sdv\t*_ppvar[%d].get<double*>()\n",
+                        //"#define _ion_di%sdv\t*_ppvar[%d].get<double*>()\n",
+                        "#define _ion_di%sdv *(_ml->dptr_field<%d>(_iml))\n",
                         sion->name,
                         ioncount);
                 q2 = lappendstr(defs_list, buf);
@@ -2204,7 +2212,8 @@ int iondef(int* p_pointercount) {
             // nrn_wrote_conc, the old code naviated to this value via pointer
             // arithmetic that is not valid now the mechanism data are stored in
             // SOA format
-            Sprintf(buf, "#define _ion_%s_erev *_ppvar[%d].get<double*>()\n", sion->name, ioncount);
+            //Sprintf(buf, "#define _ion_%s_erev *_ppvar[%d].get<double*>()\n", sion->name, ioncount);
+            Sprintf(buf, "#define _ion_%s_erev *_ml->dptr_field<%d>(_iml)\n", sion->name, ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
             ppvar_semantics(ioncount, ionname);  // ppvar semantics by trial-and-error
@@ -2218,7 +2227,8 @@ int iondef(int* p_pointercount) {
         }
         q = q->next;
         if (!dcurdef && ldifuslist) {
-            Sprintf(buf, "#define _ion_di%sdv\t*_ppvar[%d].get<double*>()\n", sion->name, ioncount);
+            //Sprintf(buf, "#define _ion_di%sdv\t*_ppvar[%d].get<double*>()\n", sion->name, ioncount);
+            Sprintf(buf, "#define _ion_di%sdv *_ml->dptr_field<%d>(_iml)\n", sion->name, ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
             ppvar_semantics(ioncount, ionname);
@@ -2263,6 +2273,11 @@ int iondef(int* p_pointercount) {
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
     } /* notice that ioncount is not incremented */
+    Sprintf(buf, "static constexpr auto number_of_datum_variables = %d;\n", ioncount + *p_pointercount + diamdec + 1);
+    q2 = lappendstr(defs_list, buf);
+    q2->itemtype = VERBATIM;
+    q2 = lappendstr(defs_list, "using LocalMechanismRange = neuron::cache::MechanismRange<number_of_floating_point_variables, number_of_datum_variables>;");
+    q2->itemtype = VERBATIM;
     return ioncount;
 }
 
@@ -2512,12 +2527,12 @@ void out_nt_ml_frag(List* p) {
     vectorize_substitute(lappendstr(p, "  Datum* _thread;\n"),
                          "  Datum* _ppvar; Datum* _thread;\n");
     vectorize_substitute(lappendstr(p, ""), "size_t _iml;");
-    vectorize_substitute(lappendstr(p, ""),
-                         "Memb_list_cache<number_of_floating_point_variables>* _ml;");
+    // vectorize_substitute(lappendstr(p, ""),
+    //                      "LocalMechanismRange* _ml;");
     Lappendstr(p,
                "  Node* _nd; double _v; int _cntml;\n"
-               "  Memb_list_cache<number_of_floating_point_variables> ml_cache{*_ml_arg};\n"
-               "  _ml = &ml_cache;\n"
+               "  LocalMechanismRange _lmr{*_ml_arg};\n"
+               "  auto* const _ml = &_lmr;\n"
                "  _cntml = _ml_arg->_nodecount;\n"
                "  _thread = _ml_arg->_thread;\n"
                "  for (_iml = 0; _iml < _cntml; ++_iml) {\n"
@@ -2604,11 +2619,11 @@ static void _ode_map(int _ieq, double** _pv, double** _pvdot, Memb_list* _ml, si
             }
 
             Sprintf(buf,
-                    "static void _ode_matsol_instance%d(_internalthreadargsproto_);\n",
+                    "_internaltemplatedecl_\nstatic void _ode_matsol_instance%d(_internalthreadargsproto_);\n",
                     cvode_num_);
             Lappendstr(defs_list, buf);
             Sprintf(buf,
-                    "\nstatic void _ode_matsol_instance%d(_internalthreadargsproto_) {\n",
+                    "\n_internaltemplatedecl_\nstatic void _ode_matsol_instance%d(_internalthreadargsproto_) {\n",
                     cvode_num_);
             Lappendstr(procfunc, buf);
             if (cvode_fun_->subtype == KINF) {
@@ -2703,7 +2718,7 @@ void cvode_interface(Symbol* fun, int num, int neq) {
     }
     Sprintf(buf,
             "\n\
-static int _ode_spec%d(_internalthreadargsproto_);\n\
+_internaltemplatedecl_\nstatic int _ode_spec%d(_internalthreadargsproto_);\n\
 /*static int _ode_matsol%d(_internalthreadargsproto_);*/\n\
 ",
             num,
@@ -2780,8 +2795,9 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
         insertstr(qstmt, "  int _watch_rm = 0;\n");
     }
     q = insertstr(qstmt,
-                  "  auto [_, local_ml, local_iml] = "
-                  "create_ml_cache<number_of_floating_point_variables>(_pnt->_prop);\n"
+                  "  auto [_, local_ml, local_iml] = _pnt->_prop->make_nocmodl_macros_work();\n"
+                //   "  auto [_, local_ml, local_iml] = "
+                //   "create_ml_cache<number_of_floating_point_variables, number_of_datum_variables>(_pnt->_prop);\n"
                   "  _ppvar = _pnt->_prop->dparam;\n");
     // when not vectorised we need to update the global _ml and _iml variables
     vectorize_substitute(insertstr(qstmt, "  _ml = local_ml; _iml = local_iml;\n"),
@@ -2873,8 +2889,9 @@ void net_init(Item* qinit, Item* qp2) {
     replacstr(qinit, "\nstatic void _net_init(Point_process* _pnt, double* _args, double _lflag)");
     Sprintf(buf, "    _ppvar = _pnt->_prop->dparam;\n");
     vectorize_substitute(insertstr(qinit->next->next, buf),
-                         "  auto [_, _ml, _iml] = "
-                         "create_ml_cache<number_of_floating_point_variables>(_pnt->_prop);\n"
+                         "  auto [_, _ml, _iml] = _pnt->_prop->make_nocmodl_macros_work();\n"
+                        //  "  auto [_, _ml, _iml] = "
+                        //  "create_ml_cache<number_of_floating_point_variables, number_of_datum_variables>(_pnt->_prop);\n"
                          "  Datum* _ppvar = _pnt->_prop->dparam;\n"
                          "  Datum* _thread = (Datum*)0;\n"
                          "  NrnThread* _nt = (NrnThread*)_pnt->_vnt;\n");
