@@ -363,11 +363,9 @@ class KSChan {
 
   public:
     // hoc accessibilty
-    int state(const char* name);
     const char* state(int index);
-    int trans_index(const char* src, const char* target);  // index of the transition
-    int trans_index(int src, int target);                  // index of the transition
-    int gate_index(int state_index);                       // index of the gate
+    int trans_index(int src, int target);  // index of the transition
+    int gate_index(int state_index);       // index of the gate
     bool is_point() {
         return is_point_;
     }

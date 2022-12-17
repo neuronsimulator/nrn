@@ -69,7 +69,11 @@ def test_1():
     assert cb.ks.trans(1).index() == 1
     assert cb.ks.trans(0).ftype(0) == 3
     assert cb.ks.trans(0).ftype(1) == 2
-    # cover inteface. Should verify return
+    assert cb.ks.state(0).gate().index() == 0
+    assert cb.ks.state(1).gate().index() == 1
+    expect_err("cb.ks.trans(cb.ks.state(0), cb.ks.state(1))")
+
+    # cover interface. Should verify return
     cb.ks.trans(0).ab(h.Vector().indgen(-80, 60, 10), h.Vector(), h.Vector())
     cb.ks.trans(0).inftau(h.Vector().indgen(-80, 60, 10), h.Vector(), h.Vector())
     assert cb.ks.trans(0).f(0, -10) == 3.157187089473768
@@ -133,15 +137,31 @@ def test_1():
     vmax = h.ref(1)
     n = cb.ks.usetable(vmin, vmax)
     assert n == 1000 and vmin[0] == -80 and vmax[0] == 60
+
+    # cover KSChanTable
+    cb.ks.usetable(0)
+    xvec = h.Vector().indgen(-80, 60, 0.1)
+    avec = h.Vector()
+    bvec = h.Vector()
+    cb.ks.trans(0).ab(xvec, avec, bvec)
+    cb.ks.trans(0).set_f(0, 7, avec, xvec[0], xvec[xvec.size() - 1])
+    run(1e-3)
+    aref = h.ref(0)
+    bref = h.ref(0)
+    cb.ks.trans(0).parm(0, aref, bref)
+    assert aref[0] == xvec[0] and bref[0] == xvec[xvec.size() - 1]
+
     # cover some table limit code.
     cb.ks.usetable(1, 200, -50, 30)
-    run(20)
+    for cache in [1, 0]:
+        h.cvode.cache_efficient(cache)
+        run(20)
 
     del cb, s, kss, ic, trec, vrec, std
     locals()
 
 
-def mk_khh(chan_name):
+def mk_khh(chan_name, is_pnt=1):
     # to cover the "shift" fragments. Need a POINT_PROCESS KSChan
     # copy from nrn/share/demo/singhhchan.hoc (concept of shift is
     # obsolete but such a channel is still needed for testing).
@@ -153,7 +173,7 @@ objref ks, ksvec, ksgate, ksstates, kstransitions, tobj
   ksvec = new Vector()
   ksstates = new List()
   kstransitions = new List()
-  ks = new KSChan(1)
+  ks = new KSChan(%d)
 }
 // khh0 Point Process (Allow Single Channels)
 // k ohmic ion current
@@ -212,9 +232,9 @@ objref ks, ksvec, ksgate, ksstates, kstransitions, tobj
   tobj.set_f(1, 2, ksvec.c.append(0.5, -0.0125, -65))
 }
 { ksstates.remove_all  kstransitions.remove_all }
-{ ks.single(1) }
+{ ks.single(%d) }
   """
-        % chan_name
+        % (is_pnt, chan_name, is_pnt)
     )
 
 
@@ -232,6 +252,9 @@ def test_2():
     h.ks.single(0)
     kchan = h.khh0(s(0.5))
     chkstdout("kchan without single", capture_stdout("h.psection()", True))
+    h.cvode_active(1)
+    h.run()  # At least executes KSChan::mulmat
+    h.cvode_active(0)
 
     # location coverage
     assert kchan.has_loc() == True
@@ -272,6 +295,7 @@ def test_3():
     expect_err('h.ks.trans(h.ks.state(1), h.ks.state(2)).type(2, "ca")')
     h.ks.trans(h.ks.state(1), h.ks.state(2)).type(3, "cai")
     chkpr("KSTrans 1<->2 with cai")
+    assert h.ks.ligand(0) == "ca_ion"
     assert h.ks.trans(h.ks.state(1), h.ks.state(2)).ligand() == "cai"
     h.ks.trans(h.ks.state(1), h.ks.state(2)).type(2, "cao")
     chkpr("KSTrans 1<->2 change to cao")
@@ -281,11 +305,64 @@ def test_3():
     chkpr("KSTrans 1<->2 has no ligand")
 
     # try for a few more lines of coverage by using ligands for two KSTrans
+    h.ks.trans(h.ks.state(1), h.ks.state(2)).type(3, "cai")
+    h.ks.trans(h.ks.state(2), h.ks.state(3)).type(3, "cli")
+
+    s = h.Section(name="soma")
+    for cvon in [1, 0]:
+        for singleon in [1, 0]:
+            h.cvode_active(cvon)
+            h.ks.single(singleon)
+            kchan = h.khh2(s(0.5))
+            h.run()
+            del kchan
+            locals()
+
+    h.ks.trans(h.ks.state(2), h.ks.state(3)).type(3, "cai")
+    h.ks.trans(h.ks.state(2), h.ks.state(3)).type(0)
+    chkpr("bug? cl_ion not used but still ligand 0")
+    h.ion_register("u238", 3)
+    h.ks.trans(h.ks.state(1), h.ks.state(2)).type(3, "u238i")
+    h.ks.trans(h.ks.state(2), h.ks.state(3)).type(2, "u238o")
+    h.ks.trans(h.ks.state(1), h.ks.state(2)).type(0)
+    h.ks.trans(h.ks.state(2), h.ks.state(3)).type(0)
+    chkpr("bug? 4 ligands (cl_ion, 2 u238_ion, ca_ion), none in use")
+
+    del s
+    locals()
+
+
+def test_4():
+    # KSChan.iv_type tests, mostly for coverage
+    mk_khh("khh3")
+    kpnt = h.ks
+    kpnt.single(0)
+    mk_khh("khh4", is_pnt=False)
+    kden = h.ks
+    s = h.Section(name="soma")
+
+    for ivtype in range(3):
+        for ion in ["NonSpecific", "k"]:
+            kpnt.ion(ion)
+            kpnt.iv_type(ivtype)
+            kchan = h.khh3(s(0.5))
+            kden.ion(ion)
+            kden.iv_type(ivtype)
+            s.insert("khh4")
+            h.run()
+            s.uninsert("khh4")
+            del kchan
+            locals()
+
+    del s
+    locals()
 
 
 if __name__ == "__main__":
     test_1()
     test_2()
     test_3()
+    test_4()
 
     chk.save()
+    print("DONE")

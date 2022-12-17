@@ -11,5 +11,7 @@
   "KSTrans 1<->2 with cai": "a3ee87362e20cb7fafecfdae59305539",
   "KSTrans 1<->2 change to cao": "5b1729b60c4f8f5f134498975a70be78",
   "KSTrans 1<->2 change to cli": "b41397bb15644a328ee0fb8a0d4a587d",
-  "KSTrans 1<->2 has no ligand": "292155541558e8ed3e218a9122242562"
+  "KSTrans 1<->2 has no ligand": "292155541558e8ed3e218a9122242562",
+  "bug? cl_ion not used but still ligand 0": "db46a89fe983ac7a3d30ea05be7a7e39",
+  "bug? 4 ligands (cl_ion, 2 u238_ion, ca_ion), none in use": "e901ab7ab099e838de6636b72728d2ff"
 }

@@ -386,7 +386,11 @@ static Object** ks_trans(void* v) {
         obj = *hoc_objgetarg(2);
         check_objtype(obj, ksstate_sym);
         target = ((KSState*) obj->u.this_pointer)->index_;
-        kst = ks->trans_ + ks->trans_index(src, target);
+        int index = ks->trans_index(src, target);
+        if (index < 0) {
+            hoc_execerr_ext("no transition between state index %d and %d", src, target);
+        }
+        kst = ks->trans_ + index;
     }
     return temp_objvar("KSTrans", kst, &kst->obj_);
 }
@@ -896,14 +900,6 @@ KSChan::KSChan(Object* obj, bool is_p) {
     gmax_deflt_ = 0.;
     erev_deflt_ = 0.;
     soffset_ = 4;  // gmax, e, g, i before the first state in p array
-    if (strcmp(ion_.string(), "NonSpecific") != 0) {
-        ion_reg(ion_.string(), -10000.);
-        Sprintf(buf, "%s_ion", ion_.string());
-        ion_sym_ = looksym(buf);
-        if (!ion_sym_) {
-            hoc_execerror(buf, " is not an ion mechanism");
-        }
-    }
     const char* suffix = name_.string();
     char unsuffix[100];
     if (is_point()) {
@@ -999,16 +995,6 @@ void KSChan::setname(const char* s) {
     }
 }
 
-int KSChan::state(const char* s) {
-    int i;
-    for (i = 0; i < nstate_; ++i) {
-        if (strcmp(state_[i].string(), s) == 0) {
-            return i;
-        }
-    }
-    return -1;
-}
-
 void KSChan::power(KSGateComplex* gc, int p) {
     if (is_single() && p != 1) {
         set_single(false);
@@ -1050,17 +1036,6 @@ void KSChan::set_single(bool b, bool update) {
 
 const char* KSChan::state(int i) {
     return state_[i].string();
-}
-
-int KSChan::trans_index(const char* s, const char* t) {
-    int i;
-    for (i = 0; i < ntrans_; ++i) {
-        if (strcmp(state_[trans_[i].src_].string(), s) == 0 &&
-            strcmp(state_[trans_[i].target_].string(), t) == 0) {
-            return i;
-        }
-    }
-    return -1;
 }
 
 int KSChan::trans_index(int s, int t) {
@@ -2841,8 +2816,8 @@ double KSPPIvghk::jacob(Datum* pd,
                         std::size_t offset) {
     double afac = 1.e2 / (*pd[0].get<double*>());
     pd += ppoff_;
-    auto ci = pd[3].get<double>();
-    auto co = pd[4].get<double>();
+    auto ci = *pd[3].get<double*>();
+    auto co = *pd[4].get<double*>();
     double i1 = ml->data(instance, offset + 1) * nrn_ghk(v + .001, ci, co, z) * 1e6;  // g is p[1]
     double didv = (i1 - ml->data(instance, offset + 2)) * 1000.;
     didv *= afac;
