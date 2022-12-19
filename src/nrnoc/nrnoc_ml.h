@@ -183,7 +183,8 @@ struct Memb_list {
      * this is used in translated MOD file code for array variables. Ideally
      * it would be deprecated and removed, with data(i, j) used instead.
      */
-    [[nodiscard]] array_view data_array(std::size_t instance, std::size_t zeroth_variable) {
+    template <std::size_t zeroth_variable, std::size_t array_size>
+    [[nodiscard]] array_view data_array(std::size_t instance) {
         assert(m_storage);
         assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
         return {m_storage, m_storage_offset + instance, zeroth_variable};

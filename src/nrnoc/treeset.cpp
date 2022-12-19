@@ -2273,22 +2273,27 @@ void nrn_fill_mech_data_caches(neuron::cache::Model& cache,
     // hot loops. This is partitioned for the threads in the same way as the other data.
     // Note that this needs to come after *all* of the mechanism types' data have been permuted, not
     // just the type that we are filling the cache for.
-    // TODO could identify the case that the pointers are all monotonically increasing and optimise further?
+    // TODO could identify the case that the pointers are all monotonically increasing and optimise
+    // further?
     auto const type = mech_data.type();
     // Some special types are not "really" mechanisms and don't need to be
     // sorted
     if (type != MORPHOLOGY) {
         auto& mech_cache = cache.mechanism.at(type);
         // Transform the vector<Datum> in pdata_hack into vector<double*> in pdata
-        std::transform(mech_cache.pdata_hack.begin(), mech_cache.pdata_hack.end(), std::back_inserter(mech_cache.pdata), [](std::vector<Datum*>& pdata_hack){
-            std::vector<double*> tmp{};
-            std::transform(pdata_hack.begin(), pdata_hack.end(), std::back_inserter(tmp), [](Datum* datum) {
-                return datum->get<double*>();
-            });
-            pdata_hack.clear();
-            pdata_hack.shrink_to_fit();
-            return tmp;
-        });
+        std::transform(mech_cache.pdata_hack.begin(),
+                       mech_cache.pdata_hack.end(),
+                       std::back_inserter(mech_cache.pdata),
+                       [](std::vector<Datum*>& pdata_hack) {
+                           std::vector<double*> tmp{};
+                           std::transform(pdata_hack.begin(),
+                                          pdata_hack.end(),
+                                          std::back_inserter(tmp),
+                                          [](Datum* datum) { return datum->get<double*>(); });
+                           pdata_hack.clear();
+                           pdata_hack.shrink_to_fit();
+                           return tmp;
+                       });
         mech_cache.pdata_hack.clear();
     }
 }

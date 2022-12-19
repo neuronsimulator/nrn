@@ -214,8 +214,8 @@ void c_out() {
         P("\nstatic void nrn_cur(NrnThread* _nt, Memb_list* _ml_arg, int _type){\n");
         P("LocalMechanismRange _lmr{*_ml_arg};\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _cntml;\n");
-        P("_ml = _ml_arg;\n");  // global _ml
-        P("auto* const _ml = &_lmr;\n"); // shadow the global one
+        P("_ml = _ml_arg;\n");            // global _ml
+        P("auto* const _ml = &_lmr;\n");  // shadow the global one
         P("#if CACHEVEC\n");
         P("    _ni = _ml_arg->_nodeindices;\n");
         P("#endif\n");
@@ -513,7 +513,7 @@ static void funcdec() {
         more = 0;
         if (s->subtype & PROCED) {
             if (vectorize) {
-                Fprintf(fcout, "_internaltemplatedecl_\n");    
+                Fprintf(fcout, "_internaltemplatedecl_\n");
             }
             Fprintf(fcout, "static int %s(", s->name);
             more = 1;
@@ -620,7 +620,8 @@ void c_out_vectorize() {
 
     /* standard modl EQUATION without solve computes current */
     if (!conductance_) {
-        P("\n_internaltemplatedecl_\nstatic double _nrn_current(_internalthreadargsprotocomma_ double _v) {\n"
+        P("\n_internaltemplatedecl_\nstatic double _nrn_current(_internalthreadargsprotocomma_ "
+          "double _v) {\n"
           "double _current=0.; v=_v;\n");
         if (cvode_nrn_current_solve_) {
             fprintf(fcout,
