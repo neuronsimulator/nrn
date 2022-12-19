@@ -485,7 +485,9 @@ void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4) {
     Lappendsym(massage_list_, SYM(q2));
 
     /* all this junk is still in the intoken list */
-    Sprintf(buf, "_internaltemplatedecl_\nstatic int %s(_internalthreadargsproto_);\n", SYM(q2)->name);
+    Sprintf(buf,
+            "_internaltemplatedecl_\nstatic int %s(_internalthreadargsproto_);\n",
+            SYM(q2)->name);
     Linsertstr(procfunc, buf);
     replacstr(q1, "\n_internaltemplatedecl_\nstatic int");
     q = insertstr(q3, "() {_reset=0;\n");
