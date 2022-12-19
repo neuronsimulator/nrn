@@ -1869,6 +1869,9 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
     void visit_derivimplicit_callback(const ast::DerivimplicitCallback& node) override;
     void visit_for_netcon(const ast::ForNetcon& node) override;
     void visit_update_dt(const ast::UpdateDt& node) override;
+    void visit_protect_statement(const ast::ProtectStatement& node) override;
+    void visit_mutex_lock(const ast::MutexLock& node) override;
+    void visit_mutex_unlock(const ast::MutexUnlock& node) override;
 };
 
 

@@ -422,3 +422,34 @@ SCENARIO("Check code generation for TABLE statements", "[codegen][array_variable
         }
     }
 }
+
+SCENARIO("Check codegen for MUTEX and PROTECT", "[codegen][mutex_protect]") {
+    GIVEN("A mod file containing MUTEX & PROTECT") {
+        std::string const nmodl_text = R"(
+            NEURON {
+                SUFFIX TEST
+                RANGE tmp
+            }
+            PARAMETER {
+                tmp = 10
+            }
+            INITIAL {
+                MUTEXLOCK
+                tmp = 11
+                MUTEXUNLOCK
+                PROTECT tmp = 12
+            }
+        )";
+
+        THEN("Code with OpenMP critical sections is generated") {
+            auto const generated = get_cpp_code(nmodl_text);
+            std::string expected_code = R"(#pragma omp critical TEST {
+                    inst->tmp[id] = 11.0;
+                }
+                #pragma omp critical TEST {
+                    inst->tmp[id] = 12.0;
+                })";
+            REQUIRE_THAT(generated, Contains(expected_code));
+        }
+    }
+}

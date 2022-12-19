@@ -314,7 +314,7 @@ int main(int argc, const char* argv[]) {
         /// Check some rules that ast should follow
         {
             logger->info("Running semantic analysis visitor");
-            if (SemanticAnalysisVisitor().check(*ast)) {
+            if (SemanticAnalysisVisitor(oacc_backend).check(*ast)) {
                 return 1;
             }
         }
