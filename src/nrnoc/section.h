@@ -235,7 +235,8 @@ struct Extnode {
 #define PROP_PY_INDEX 10
 
 struct PropAdaptor {
-    PropAdaptor(neuron::container::Mechanism::handle handle) : m_handle{std::move(handle)} {}
+    PropAdaptor(neuron::container::Mechanism::handle handle)
+        : m_handle{std::move(handle)} {}
     template <std::size_t field_index>
     [[nodiscard]] auto& fpfield(std::size_t instance) {
         assert(instance == 0);
@@ -252,7 +253,32 @@ struct PropAdaptor {
         assert(instance == 0);
         return m_handle.fpfield(field_index);
     }
-private:
+    /**
+     * @brief Proxy type used in data_array.
+     */
+    template <std::size_t zeroth_variable, std::size_t array_size>
+    struct array_view {
+        array_view(neuron::container::Mechanism::handle handle)
+            : m_handle{handle} {}
+        [[nodiscard]] double& operator[](std::size_t array_entry) {
+            assert(array_entry < array_size);
+            return m_handle.fpfield(zeroth_variable + array_entry);
+        }
+        [[nodiscard]] double const& operator[](std::size_t array_entry) const {
+            assert(array_entry < array_size);
+            return m_handle.fpfield(zeroth_variable + array_entry);
+        }
+
+      private:
+        neuron::container::Mechanism::handle m_handle;
+    };
+    template <std::size_t zeroth_variable, std::size_t array_size>
+    [[nodiscard]] array_view<zeroth_variable, array_size> data_array(std::size_t instance) {
+        assert(instance == 0);
+        return m_handle;
+    }
+
+  private:
     neuron::container::Mechanism::handle m_handle;
 };
 
@@ -343,17 +369,22 @@ struct Prop {
 
     /**
      * @brief Return a non-owning handle to this mechanism instance and zero.
-     * 
-     * This is intended to be an adapter for the case where translated MOD file code is executed on a single instance of the mechanism.
-     * An expression like
-     *   auto [_, _ml, _iml] = prop->make_nocmodl_macros_work();
-     * allows the macros
-     *   #define foo _ml->template fpfield<7>(_iml)
-     * to compile and be routed through PropAdaptor, while the same macros can expand to MechanismRange elsehwere.
+     *
+     * This is intended to be an adapter for the case where translated MOD file code is executed on
+     * a single instance of the mechanism. An expression like auto [_, _ml, _iml] =
+     * prop->make_nocmodl_macros_work(); allows the macros #define foo _ml->template
+     * fpfield<7>(_iml) to compile and be routed through PropAdaptor, while the same macros can
+     * expand to MechanismRange elsehwere.
+     *
+     * @todo revive the "view" concept in addition to handle and owning_handle? i.e. store the
+     * offset by value, not by dereferencing std::size_t* ?
      */
     [[nodiscard]] std::tuple<PropAdaptor, PropAdaptor*, std::size_t> make_nocmodl_macros_work() {
         assert(m_mech_handle);
-        std::tuple<PropAdaptor, PropAdaptor*, std::size_t> ret{neuron::container::Mechanism::handle{m_mech_handle->non_owning_identifier()}, nullptr, 0};
+        std::tuple<PropAdaptor, PropAdaptor*, std::size_t> ret{
+            neuron::container::Mechanism::handle{m_mech_handle->non_owning_identifier()},
+            nullptr,
+            0};
         std::get<1>(ret) = &std::get<0>(ret);
         return ret;
     }
@@ -385,9 +416,13 @@ inline std::tuple<Memb_list, Memb_list*, std::size_t> create_ml(Prop* p) {
 }
 
 template <std::size_t N, std::size_t M>
-std::tuple<neuron::cache::MechanismRange<N, M>, neuron::cache::MechanismRange<N, M>*, std::size_t> create_ml_cache(Prop* p) {
+std::tuple<neuron::cache::MechanismRange<N, M>, neuron::cache::MechanismRange<N, M>*, std::size_t>
+create_ml_cache(Prop* p) {
     auto [ml, ml_ptr, iml] = create_ml(p);
-    std::tuple<neuron::cache::MechanismRange<N, M>, neuron::cache::MechanismRange<N, M>*, std::size_t> ret{ml, nullptr, iml};
+    std::tuple<neuron::cache::MechanismRange<N, M>,
+               neuron::cache::MechanismRange<N, M>*,
+               std::size_t>
+        ret{ml, nullptr, iml};
     std::get<1>(ret) = &std::get<0>(ret);
     return ret;
 }

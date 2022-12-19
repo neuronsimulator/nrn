@@ -564,8 +564,9 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
         ml_cache.fpfield<dcurdv_index>(i) = 0.0;
         ml_cache.fpfield<cur_index>(i) = 0.0;
         if (iontype & 0100) {
-            ml_cache.fpfield<erev_index>(i) =
-                nrn_nernst(ml_cache.fpfield<conci_index>(i), ml_cache.fpfield<conco_index>(i), charge);
+            ml_cache.fpfield<erev_index>(i) = nrn_nernst(ml_cache.fpfield<conci_index>(i),
+                                                         ml_cache.fpfield<conco_index>(i),
+                                                         charge);
         }
     };
 }
@@ -587,8 +588,9 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
     }
     for (i = 0; i < count; ++i) {
         if (iontype & 040) {
-            ml_cache.fpfield<erev_index>(i) =
-                nrn_nernst(ml_cache.fpfield<conci_index>(i), ml_cache.fpfield<conco_index>(i), charge);
+            ml_cache.fpfield<erev_index>(i) = nrn_nernst(ml_cache.fpfield<conci_index>(i),
+                                                         ml_cache.fpfield<conco_index>(i),
+                                                         charge);
         }
     }
 }
