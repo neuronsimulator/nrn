@@ -70,13 +70,15 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
     if (use_cachevec) {
         int* ni = ml->nodeindices;
         for (int i = 0; i < count; i++) {
-            ml_cache.fpfield<i_cap_index>(i) = cfac * ml_cache.fpfield<cm_index>(i) * VEC_RHS(ni[i]);
+            ml_cache.fpfield<i_cap_index>(i) = cfac * ml_cache.fpfield<cm_index>(i) *
+                                               VEC_RHS(ni[i]);
         }
     } else
 #endif /* CACHEVEC */
     {
         for (int i = 0; i < count; ++i) {
-            ml_cache.fpfield<i_cap_index>(i) = cfac * ml_cache.fpfield<cm_index>(i) * NODERHS(vnode[i]);
+            ml_cache.fpfield<i_cap_index>(i) = cfac * ml_cache.fpfield<cm_index>(i) *
+                                               NODERHS(vnode[i]);
         }
     }
 }
