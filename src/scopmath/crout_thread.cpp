@@ -7,12 +7,13 @@
  *   Duke University
  *
  ******************************************************************************/
-#include "errcodes.h"
+#include "errcodes.hpp"
 #include "newton_struct.h"
 
 #include <cmath>
 #include <cstdlib>
 
+using namespace neuron::scopmath; // for errcodes.hpp
 /*--------------------------------------------------------------*/
 /*                                                              */
 /*  CROUT 		                                        */

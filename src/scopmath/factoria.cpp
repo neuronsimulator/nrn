@@ -8,10 +8,12 @@
  *   Duke University
  *
  ******************************************************************************/
-#include "errcodes.h"
+#include "errcodes.hpp"
 #include "scoplib.h"
 
 #include <cmath>
+
+using namespace neuron::scopmath; // for errcodes.hpp
 /****************************************************************/
 /*								*/
 /*  Abstract: factorial()					*/

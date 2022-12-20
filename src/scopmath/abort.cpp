@@ -7,12 +7,14 @@
  *   Duke University
  *
  ******************************************************************************/
-#include "errcodes.h"
+#include "errcodes.hpp"
 #include "oc_ansi.h"
 #include "scoplib.h"
 
 #include <cmath>
 #include <cstdio>
+
+using namespace neuron::scopmath; // for errcodes.hpp
 /*-----------------------------------------------------------------------------
  *
  * ABORT_RUN()

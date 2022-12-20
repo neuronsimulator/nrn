@@ -7,9 +7,11 @@
  *   Duke University
  *
  ******************************************************************************/
-#include "errcodes.h"
+#include "errcodes.hpp"
 #include "newton_struct.h"
 #include "scoplib.h"
+
+using namespace neuron::scopmath; // for errcodes.hpp
 /****************************************************************/
 /*                                                              */
 /*  Abstract: runge	                                        */

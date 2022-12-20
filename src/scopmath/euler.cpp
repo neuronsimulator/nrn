@@ -7,9 +7,10 @@
  *   Duke University
  *
  ******************************************************************************/
-#include "errcodes.h"
+#include "errcodes.hpp"
 #include "scoplib.h"
 
+using namespace neuron::scopmath; // for errcodes.hpp
 /****************************************************************/
 /*                                                              */
 /*  Abstract:  euler()                                          */

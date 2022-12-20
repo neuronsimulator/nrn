@@ -7,13 +7,14 @@
  *   Duke University
  *
  ******************************************************************************/
-#include "errcodes.h"
+#include "errcodes.hpp"
 #include "scoplib.h"
 #include "newton_struct.h"
 
 #include <cstdlib>
 #include <cmath>
 
+using namespace neuron::scopmath; // for errcodes.hpp
 static int oldsimeq(int n, double** coef, double* soln);
 /*-----------------------------------------------------------------------------
  *

@@ -7,7 +7,7 @@
  *   Duke University
  *
  ******************************************************************************/
-#include "errcodes.h"
+#include "errcodes.hpp"
 #include "hocdec.h"
 #include "scoplib.h"
 
@@ -15,6 +15,8 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+
+using namespace neuron::scopmath; // for errcodes.hpp
 /* 4/23/93 converted to object so many models can use it */
 /*-----------------------------------------------------------------------------
  *

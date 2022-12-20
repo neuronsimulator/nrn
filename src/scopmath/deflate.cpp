@@ -7,7 +7,7 @@
  *   Duke University
  *
  ******************************************************************************/
-#include "errcodes.h"
+#include "errcodes.hpp"
 #include "newton_struct.h"
 #include "scoplib.h"
 
@@ -16,6 +16,7 @@
 
 #define CONTINUE 0
 
+using namespace neuron::scopmath; // for errcodes.hpp
 /*-----------------------------------------------------------------------------
  *
  *  DEFLATE()

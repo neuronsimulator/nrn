@@ -1,6 +1,8 @@
 #include <../../nrnconf.h>
-#include "errcodes.h"
+#include "errcodes.hpp"
 #include "scoplib.h"
+
+using namespace neuron::scopmath; // for errcodes.hpp
 #define s_(arg)	p[s[arg]]
 
 extern double _modl_get_dt_thread(NrnThread*);
