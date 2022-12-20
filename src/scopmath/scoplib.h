@@ -1,13 +1,9 @@
 #pragma once
 /** @file scoplib.h
- *  @copyright (c) 1984, 1985, 1986, 1987, 1988, 1989 Duke University
+ *  @copyright (c) 1984-9 Duke University
  *
  *  This file declares all the SCoP library functions that can be called by the
- *  user to describe or solve his model's	equations.
- *
- *  This header has to be both valid C and C++ because the scoplib sources are
- *  compiled as C. This file is the result of merging the parallel version
- *  scoplib_ansi.h back into scoplib.h to avoid duplication and inconsistency.
+ *  user to describe or solve his model's equations.
  */
 #include "newton_struct.h"
 
