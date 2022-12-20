@@ -4,6 +4,7 @@
 set(HEADER_FILES_TO_INSTALL
     bbsavestate.h
     cabvars.h
+    crout.hpp
     cspmatrix.h
     cspredef.h
     errcodes.hpp
@@ -389,7 +390,6 @@ set(SCOPMATH_FILES_LIST
     advance.cpp
     boundary.cpp
     crank.cpp
-    crout.cpp
     deflate.cpp
     dimplic.cpp
     scoperf.cpp

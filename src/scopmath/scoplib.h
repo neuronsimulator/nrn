@@ -5,6 +5,7 @@
  *  This file declares all the SCoP library functions that can be called by the
  *  user to describe or solve his model's equations.
  */
+#include "crout.hpp"
 #include "euler.hpp"
 #include "runge.hpp"
 #include "newton_struct.h"
@@ -50,8 +51,6 @@ double legendre(double a, double b, int (*func)());
 /* Solution of simultaneous algebraic equations */
 int simeq(int n, double** coef, double* soln, int* index);
 int invert(int n, double** matrix);
-int crout(int n, double** a, int* perm);
-int solve(int n, double** a, double* b, int* perm, double* p, int* y);
 int tridiag(int n, double* a, double* b, double* c, double* d, double* soln);
 int newton(int n, int* index, double* x, int(*pfunc)(), double* value);
 int buildjacobian(int n, int* index, double* x, int (*pfunc)(), double* value, double** jacobian);
