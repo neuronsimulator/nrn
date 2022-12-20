@@ -12,8 +12,6 @@
 #include "newton_struct.h"
 
 /* Memory allocation routines */
-int zero_vector(double* vector, int n);
-int zero_ptrvector(double** ptrvector, int n);
 int zero_matrix(double** matrix, int rows, int cols);
 
 /* Printing error messages */

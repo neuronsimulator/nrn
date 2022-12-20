@@ -76,17 +76,3 @@ int zero_matrix(double** matrix, int rows, int cols) {
     }
     return 0;
 }
-
-int zero_vector(double* vector, int n) {
-    for (int i = 0; i < n; i++) {
-	    vector[i] = 0.0;
-    }
-    return 0;
-}
-
-int zero_ptrvector(double** ptrvector, int n) {
-    for (int i = 0; i < n; i++) {
-	    *ptrvector[i] = 0.0;
-    }
-    return 0;
-}
