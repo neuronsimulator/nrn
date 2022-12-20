@@ -45,6 +45,7 @@ set(HEADER_FILES_TO_INSTALL
     ocmisc.h
     options.h
     parse_with_deps.hpp
+    runge.hpp
     scoplib.h
     section.h
     spconfig.h
@@ -417,7 +418,6 @@ set(SCOPMATH_FILES_LIST
     revsawto.cpp
     revsigmo.cpp
     romberg.cpp
-    runge.cpp
     sawtooth.cpp
     sigmoid.cpp
     simeq.cpp

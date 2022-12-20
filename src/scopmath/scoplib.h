@@ -6,6 +6,7 @@
  *  user to describe or solve his model's equations.
  */
 #include "euler.hpp"
+#include "runge.hpp"
 #include "newton_struct.h"
 
 /* Memory allocation routines */
@@ -14,17 +15,6 @@ int zero_matrix(double** matrix, int rows, int cols);
 /* Printing error messages */
 int abort_run(int error_code);
 int prterr(const char* message_string);
-
-/* Solution of first order ordinary differential equations */
-int runge(int ninits,
-          int n,
-          int* y,
-          int* d,
-          double* p,
-          double* t,
-          double h,
-          int (*dy)(),
-          double** work);
 
 /* Implicit backwards eulerian integration.  Can find steady-state solution of
  * first-order odes by passing "infinite" time step h */
