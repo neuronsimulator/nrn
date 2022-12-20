@@ -1,7 +1,7 @@
 from neuron import h, gui
 from neuron.expect_hocerr import expect_err
 from neuron import expect_hocerr
-import os, sys
+import os, sys, hashlib
 
 expect_hocerr.quiet = False
 
@@ -40,10 +40,56 @@ def cmp(trec, vrec, std, atol=0):
     assert vdif <= atol
 
 
+def valhash(val):
+    return hashlib.md5(str(val).encode("utf-8")).hexdigest()
+
+
+# For checking if a run is doing something useful
+# Activate the graphics by uncomment the "# return" statement in
+# hrun below. Need to press the "Continue" button after each pause.
+# If the graph seems incorrect or unexpected, you can stop by hitting
+# (ctrl)C in the terminal window and then pressing the "Continue" button
+# From the exception you can determine which hrun you are stopping at.
+trec = h.Vector()
+vrec = h.Vector()
+grph = h.Graph()
+hrun_count = 0
+
+
+def hrun():
+    global hrun_count
+    hrun_count += 1
+    h.run()
+    chk("hrun %d" % hrun_count, valhash([trec.to_python(), vrec.to_python()]))
+    return
+    grph.erase()
+    trec.printf()
+    vrec.printf()
+    vrec.line(grph, trec)
+    vrec.resize(0)
+    trec.resize(0)
+    grph.exec_menu("View = plot")
+    print("hrun %d\n" % hrun_count)
+    h.continue_dialog("continue")
+
+
+def cell():
+    s = h.Section(name="soma")
+    s.L = 3.18
+    s.diam = 10
+    s.insert("hh")
+    ic = h.IClamp(s(0.5))
+    ic.dur = 0.1
+    ic.amp = 0.3
+    trec.record(h._ref_t, sec=s)
+    vrec.record(s(0.5)._ref_v, sec=s)
+    return s, ic
+
+
 def test_1():
     cb = h.ChannelBuild()
     cb.khh()  # HH potassium channel
-    s = h.Section(name="soma")
+    s, ic = cell()
     s.insert("khh")  # exists in soma and has one state
     chkstdout("khh inserted", capture_stdout("h.psection()", True))
     # It is not supported (anymore) to change the number of variables
@@ -92,7 +138,7 @@ def test_1():
         h.cvode_active(cvode)
         for cache in [1, 0]:
             h.cvode.cache_efficient(cache)
-            h.run()
+            hrun()
 
     s.uninsert("nahh")
     kss = cb.ks.add_hhstate("xxx")
@@ -102,20 +148,12 @@ def test_1():
     assert cb.ks.nstate() == 2
     kss = cb.ks.add_hhstate("xxx")
     cb.ks.remove_state(kss)
-    print("hello")
     cb.ks.ion("NonSpecific")
 
     cb.nahh()
     s.insert("hh")
-    s.diam = 10
-    s.L = 10
-    ic = h.IClamp(s(0.5))
-    ic.dur = 0.2
-    ic.amp = 0.4
-    trec = h.Vector().record(h._ref_t, sec=s)
-    vrec = h.Vector().record(s(0.5)._ref_v, sec=s)
     h.usetable_hh = 0
-    h.run()
+    hrun()
     std = (trec.c(), vrec.c())
     # nahh gives same results as sodium channel in hh (usetable_hh is on)
     s.gnabar_hh = 0
@@ -123,7 +161,7 @@ def test_1():
     s.gmax_nahh = 0.12
 
     def run(tol):
-        h.run()
+        hrun()
         cmp(trec, vrec, std, tol)
 
     run(1e-9)
@@ -157,7 +195,7 @@ def test_1():
         h.cvode.cache_efficient(cache)
         run(20)
 
-    del cb, s, kss, ic, trec, vrec, std
+    del cb, s, kss, ic, std
     locals()
 
 
@@ -239,8 +277,9 @@ objref ks, ksvec, ksgate, ksstates, kstransitions, tobj
 
 
 def test_2():
+    print("test_2")
     mk_khh("khh0")
-    s = h.Section(name="soma")
+    s, ic = cell()
     kchan = h.khh0(s(0.5))
     chkstdout("kchan with single", capture_stdout("h.psection()", True))
     assert kchan.nsingle(10) == 10.0
@@ -251,9 +290,11 @@ def test_2():
     locals()
     h.ks.single(0)
     kchan = h.khh0(s(0.5))
+    s.gkbar_hh = 0
+    kchan.gmax = 0.036
     chkstdout("kchan without single", capture_stdout("h.psection()", True))
     h.cvode_active(1)
-    h.run()  # At least executes KSChan::mulmat
+    hrun()  # At least executes KSChan::mulmat
     h.cvode_active(0)
 
     # location coverage
@@ -281,15 +322,17 @@ def test_2():
     assert h.ks.vres(0.01) == 0.01
     assert h.ks.rseed(10) == 10
 
-    del s
+    del s, ic
     locals()
 
 
 def test_3():
+    print("test_3")
     # ligand tests (mostly for coverage) start with fresh channel.
     mk_khh("khh2")
     h.ion_register("ca", 2)
     h.ion_register("cl", -1)
+    s, ic = cell()
 
     # replace 1<->2 transition with ligand sensitive transition
     expect_err('h.ks.trans(h.ks.state(1), h.ks.state(2)).type(2, "ca")')
@@ -308,13 +351,12 @@ def test_3():
     h.ks.trans(h.ks.state(1), h.ks.state(2)).type(3, "cai")
     h.ks.trans(h.ks.state(2), h.ks.state(3)).type(3, "cli")
 
-    s = h.Section(name="soma")
     for cvon in [1, 0]:
         for singleon in [1, 0]:
             h.cvode_active(cvon)
             h.ks.single(singleon)
             kchan = h.khh2(s(0.5))
-            h.run()
+            hrun()
             del kchan
             locals()
 
@@ -328,18 +370,19 @@ def test_3():
     h.ks.trans(h.ks.state(2), h.ks.state(3)).type(0)
     chkpr("bug? 4 ligands (cl_ion, 2 u238_ion, ca_ion), none in use")
 
-    del s
+    del s, ic
     locals()
 
 
 def test_4():
+    print("test_4")
     # KSChan.iv_type tests, mostly for coverage
     mk_khh("khh3")
     kpnt = h.ks
     kpnt.single(0)
     mk_khh("khh4", is_pnt=False)
     kden = h.ks
-    s = h.Section(name="soma")
+    s, ic = cell()
 
     for ivtype in range(3):
         for ion in ["NonSpecific", "k"]:
@@ -349,12 +392,21 @@ def test_4():
             kden.ion(ion)
             kden.iv_type(ivtype)
             s.insert("khh4")
-            h.run()
+            s.gkbar_hh = 0
+            if ivtype == 2 and ion == "k":
+                s(0.5).khh4.pmax = 0.00025  # works
+                assert s.gmax_khh4 == 0.00025
+                s.gmax_khh4 = 0.00025  # bug python should know about pmax_khh4
+                kchan.pmax = 2.5e-10
+            else:
+                s.gmax_khh4 = 0.036 / 2.0
+                kchan.gmax = 0.036 / 2.0
+            hrun()
             s.uninsert("khh4")
             del kchan
             locals()
 
-    del s
+    del s, ic
     locals()
 
 
