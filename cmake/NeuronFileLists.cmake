@@ -6,6 +6,8 @@ set(HEADER_FILES_TO_INSTALL
     cabvars.h
     cspmatrix.h
     cspredef.h
+    errcodes.hpp
+    euler.hpp
     hoc.h
     hoc_membf.h
     hocassrt.h
@@ -390,7 +392,6 @@ set(SCOPMATH_FILES_LIST
     deflate.cpp
     dimplic.cpp
     scoperf.cpp
-    euler.cpp
     expfit.cpp
     exprand.cpp
     f2cmisc.cpp

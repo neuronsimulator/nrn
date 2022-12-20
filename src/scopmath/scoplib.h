@@ -5,6 +5,7 @@
  *  This file declares all the SCoP library functions that can be called by the
  *  user to describe or solve his model's equations.
  */
+#include "euler.hpp"
 #include "newton_struct.h"
 
 /* Memory allocation routines */
@@ -15,15 +16,6 @@ int abort_run(int error_code);
 int prterr(const char* message_string);
 
 /* Solution of first order ordinary differential equations */
-int euler(int ninits,
-          int neqn,
-          int* var,
-          int* der,
-          double* p,
-          double* t,
-          double dt,
-          int (*func)(),
-          double** work);
 int runge(int ninits,
           int n,
           int* y,
