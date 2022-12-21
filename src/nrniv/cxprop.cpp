@@ -43,6 +43,13 @@ Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
     return ppd;
 }
 
+int nrn_mechanism_prop_datum_count(int type) {
+    if (type >= datumpools().size() || datumpools()[type] == nullptr) {
+        return 0;
+    }
+    return datumpools()[type]->d2();
+}
+
 void nrn_prop_datum_free(int type, Datum* ppd) {
     // if (type > 1) printf("nrn_prop_datum_free %d %s %p\n", type,
     // memb_func[type].sym->name, ppd);
@@ -57,6 +64,21 @@ void nrn_prop_datum_free(int type, Datum* ppd) {
         // Deallocate them
         datumpool->hpfree(ppd);
     }
+}
+
+void nrn_delete_mechanism_prop_datum(int type) {
+    if (type >= datumpools().size() || datumpools()[type] == nullptr) {
+        return;
+    }
+    if (auto const size = datumpools()[type]->nget(); size != 0) {
+        hoc_execerr_ext(
+            "nrn_delete_mechanism_prop_datum(%d):"
+            " refusing to delete storage that still hosts"
+            " %ld instances",
+            type,
+            size);
+    }
+    datumpools()[type] = nullptr;
 }
 
 Section* nrn_section_alloc() {
