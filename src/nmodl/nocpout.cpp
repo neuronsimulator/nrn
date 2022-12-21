@@ -2164,8 +2164,10 @@ int iondef(int* p_pointercount) {
         ITERATE(q1, LST(q)) {
             SYM(q1)->nrntype |= NRNIONFLAG;
             Sprintf(buf,
-                    // "#define _ion_%s	*(_ppvar[%d].get<double*>())\n",
-                    "#define _ion_%s *(_ml->dptr_field<%d>(_iml))\n",
+                    "#define _ion_%s *(_ml->dptr_field<%d>(_iml))\n"
+                    "#define _p_ion_%s static_cast<neuron::container::data_handle<double>>(_ppvar[%d])\n",
+                    SYM(q1)->name,
+                    ioncount,
                     SYM(q1)->name,
                     ioncount);
             q2 = lappendstr(defs_list, buf);
@@ -2180,8 +2182,10 @@ int iondef(int* p_pointercount) {
                 SYM(q1)->nrntype &= ~NRNIONFLAG;
             } else {
                 Sprintf(buf,
-                        //"#define _ion_%s	*_ppvar[%d].get<double*>()\n",
-                        "#define _ion_%s *(_ml->dptr_field<%d>(_iml))\n",
+                        "#define _ion_%s *(_ml->dptr_field<%d>(_iml))\n"
+                        "#define _p_ion_%s static_cast<neuron::container::data_handle<double>>(_ppvar[%d])\n",
+                        SYM(q1)->name,
+                        ioncount,
                         SYM(q1)->name,
                         ioncount);
                 q2 = lappendstr(defs_list, buf);
@@ -2480,7 +2484,7 @@ static void cvode_conc_map() {
             if (SYM(q1)->nrntype & IONCONC) {
                 if ((SYM(q1)->subtype & STAT)) {
                     sindex = slist_search(cvode_num_, SYM(q1));
-                    Sprintf(buf, "\t_pv[%d] = &(_ion_%s);\n", sindex, SYM(q1)->name);
+                    Sprintf(buf, "\t_pv[%d] = _p_ion_%s;\n", sindex, SYM(q1)->name);
                     lappendstr(procfunc, buf);
                 } else { /* not a STATE but WRITE it*/
                          /*its got to have an assignment in a SOLVE block and that assignment
