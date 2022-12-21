@@ -367,11 +367,9 @@ class KSChan {
 
   public:
     // hoc accessibilty
-    int state(const char* name);
     const char* state(int index);
-    int trans_index(const char* src, const char* target);  // index of the transition
-    int trans_index(int src, int target);                  // index of the transition
-    int gate_index(int state_index);                       // index of the gate
+    int trans_index(int src, int target);  // index of the transition
+    int gate_index(int state_index);       // index of the gate
     bool is_point() {
         return is_point_;
     }
@@ -392,7 +390,6 @@ class KSChan {
     void setname(const char*);
     void setsname(int, const char*);
     void setion(const char*);
-    void setligand(int i, const char*);
     void settype(KSTransition*, int type, const char*);
     void setivrelation(int);
     // hoc incremental management
@@ -401,7 +398,7 @@ class KSChan {
     void remove_state(int);
     // these are only for kinetic scheme transitions since an hh
     // always has one and only one transition.
-    KSTransition* add_transition(int src, int target, const char* ligand);
+    KSTransition* add_transition(int src, int target);
     void remove_transition(int);
     void setcond();
     void power(KSGateComplex*, int);
@@ -423,7 +420,6 @@ class KSChan {
     void ion_consist();
     void ligand_consist(int, int, Prop*, Node*);
     Prop* needion(Symbol*, Node*, Prop*);
-    void state_consist(int shift = 0);
     void sname_install();
     Symbol* looksym(const char*, Symbol* tmplt = NULL);
     Symbol* installsym(const char*, int, Symbol* tmplt = NULL);
@@ -432,8 +428,8 @@ class KSChan {
     void delete_schan_node_data();
     void alloc_schan_node_data();
     void update_prop();  // can add and remove Nsingle and SingleNodeData
-    void update_param_size();
-    [[nodiscard]] bool param_size_update_allowed(std::size_t soffset, std::size_t nstate) const;
+    void update_size();
+    void must_allow_size_update(bool single, bool ion, int ligand, int nstate) const;
 
     KSState* state_insert(int i, const char* name, double frac);
     void state_remove(int i);
