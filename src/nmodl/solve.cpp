@@ -96,7 +96,7 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
     Sprintf(buf,
             "if(error){\n"
             "  std_cerr_stream << \"%s\\n\";\n"
-            "  std_cerr_stream << _ml->instance_handle(_iml) << '\\n';\n"
+            "  std_cerr_stream << _ml << ' ' << _iml << '\\n';\n"
             "  abort_run(error);\n"
             "}\n",
             current_line());

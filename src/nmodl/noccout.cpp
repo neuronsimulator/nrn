@@ -171,7 +171,8 @@ void c_out() {
     /* generation of initmodel interface */
     P("\nstatic void nrn_init(NrnThread* _nt, Memb_list* _ml_arg, int _type){\n");
     P("Node *_nd; double _v; int* _ni; int _cntml;\n");
-    P("_ml = _ml_arg;\n");  // update global _ml
+    P("LocalMechanismRange _lmr{*_ml_arg};\n");
+    P("_ml = &_lmr;\n");  // update global _ml
     P("#if CACHEVEC\n");
     P("    _ni = _ml_arg->_nodeindices;\n");
     P("#endif\n");
@@ -214,8 +215,7 @@ void c_out() {
         P("\nstatic void nrn_cur(NrnThread* _nt, Memb_list* _ml_arg, int _type){\n");
         P("LocalMechanismRange _lmr{*_ml_arg};\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _cntml;\n");
-        P("_ml = _ml_arg;\n");            // global _ml
-        P("auto* const _ml = &_lmr;\n");  // shadow the global one
+        P("_ml = &_lmr;\n");  // update global _ml
         P("#if CACHEVEC\n");
         P("    _ni = _ml_arg->_nodeindices;\n");
         P("#endif\n");
@@ -342,7 +342,8 @@ void c_out() {
             P("double _dtsav = dt;\n"
               "if (secondorder) { dt *= 0.5; }\n");
         }
-        P("_ml = _ml_arg;\n");  // update the global _ml
+        P("LocalMechanismRange _lmr{*_ml_arg};\n");
+        P("_ml = &_lmr;\n");  // update global _ml
         P("#if CACHEVEC\n");
         P("    _ni = _ml_arg->_nodeindices;\n");
         P("#endif\n");
