@@ -761,7 +761,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
         vectorize_substitute(lappendstr(procfunc, "  _hoc_setdata(_vptr);\n"),
                              "\
   Prop *_p{static_cast<Point_process*>(_vptr)->_prop};\n\
-  auto [_, _ml, _iml] = _p->make_nocmodl_macros_work();\n\
+  auto [_, _ml, _iml] = neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_p);\n\
 //   auto [_, _ml, _iml] = create_ml_cache<number_of_floating_point_variables, number_of_datum_variables>(_p);\n\
   _ppvar = ((Point_process*)_vptr)->_prop->dparam;\n\
   _thread = _extcall_thread.data();\n\
@@ -769,7 +769,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
 ");
     } else {
         vectorize_substitute(lappendstr(procfunc, ""),
-                             "auto [_, _ml, _iml] = _extcall_prop->make_nocmodl_macros_work();\n"
+                             "auto [_, _ml, _iml] = neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_extcall_prop);\n"
                              //  "auto [_, _ml, _iml] = "
                              //  "create_ml_cache<number_of_floating_point_variables,
                              //  number_of_datum_variables>(_extcall_prop);\n"
@@ -955,7 +955,7 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
                          "  NrnThread* _nt{static_cast<NrnThread*>(_pnt->_vnt)};\n");
     Sprintf(buf,
             "  _ppvar = _pnt->_prop->dparam;\n"
-            "  auto [_, _ml, _iml] = _pnt->_prop->make_nocmodl_macros_work();\n"
+            "  auto [_, _ml, _iml] = neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_pnt->_prop);\n"
             // "  auto [_, _ml, _iml] = "
             // "create_ml_cache<number_of_floating_point_variables,
             // number_of_datum_variables>(_pnt->_prop);\n"
