@@ -64,13 +64,6 @@ struct handle_base {
     }
 
     /**
-     * @brief Obtain a non-owning identifier corresponding to this handle.
-     */
-    [[nodiscard]] non_owning_identifier<typename Identifier::storage_type> non_owning_identifier() {
-        return {&this->underlying_storage(), this->id()};
-    }
-
-    /**
      * @brief Obtain a reference to the storage this handle refers to.
      */
     auto& underlying_storage() {
