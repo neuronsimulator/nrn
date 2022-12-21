@@ -2127,6 +2127,30 @@ void nrn_recalc_ptrs() {
     }
 }
 
+namespace neuron::cache {
+/**
+ * @brief Return the range of dparam indices that should be cached for a mechanism.
+ * 
+ * 
+ */
+std::vector<short> indices_to_cache(short type) {
+    auto const pdata_size = nrn_prop_dparam_size_[type];
+    auto* const dparam_semantics = memb_func[type].dparam_semantics;
+    std::vector<short> pdata_fields_to_cache;
+    pdata_fields_to_cache.reserve(pdata_size);
+    for (auto field = 0; field < pdata_size; ++field) {
+        // Check if the field-th dparam of this mechanism type is an ion variable. See hoc_register_dparam_semantics.
+        auto const sem = dparam_semantics[field];
+        // TODO is area constant? could we cache the value instead of a pointer to it?
+        // TODO ion type can be handled differently
+        if ((sem > 0 && sem < 1000) || sem == -1 /* area */) {
+            pdata_fields_to_cache.push_back(field);
+        }
+    }
+    return pdata_fields_to_cache;
+}
+}
+
 /** @brief Sort the underlying storage for a particular mechanism.
  *
  *  After model building is complete the storage vectors backing all Mechanism
@@ -2146,19 +2170,7 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
     // sorted
     if (type != MORPHOLOGY) {
         std::size_t const mech_data_size{mech_data.size()};
-        auto const pdata_size = nrn_prop_dparam_size_[type];
-        auto* const dparam_semantics = memb_func[type].dparam_semantics;
-        std::vector<unsigned short> pdata_fields_to_cache;
-        pdata_fields_to_cache.reserve(pdata_size);
-        for (auto field = 0; field < pdata_size; ++field) {
-            // Check if the field-th dparam of this mechanism type is an ion variable. See
-            // hoc_register_dparam_semantics.
-            auto const sem = dparam_semantics[field];
-            // TODO is area constant? could we cache the value instead of a pointer to it?
-            if (sem > 0 || sem == -1 /* area */) {
-                pdata_fields_to_cache.push_back(field);
-            }
-        }
+        auto const pdata_fields_to_cache = neuron::cache::indices_to_cache(type);
         if (!pdata_fields_to_cache.empty()) {
             cache.mechanism.at(type).pdata_hack.resize(1 + pdata_fields_to_cache.back());
             for (auto const field: pdata_fields_to_cache) {
