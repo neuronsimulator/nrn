@@ -261,7 +261,8 @@ NonLinImpRep::NonLinImpRep() {
         // utilize nd->eqn_index in case of use_sparse13 later
         Node* nd = _nt->_v_node[i];
         pv_[i] = nd->v_handle();
-        pvdot_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search, nd->_rhs};
+        pvdot_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                           nd->_rhs};
         v_index_[i] = i + 1;
     }
     for (i = 0; i < n_v_; ++i) {
@@ -299,12 +300,8 @@ void NonLinImpRep::delta(double deltafac) {  // also defines pv_,pvdot_ map for 
         if (nrn_ode_count_t s = memb_func[i].ode_count; s && (cnt = s(i)) > 0) {
             nrn_ode_map_t ode_map = memb_func[i].ode_map;
             for (auto j = 0; j < nc; ++j) {
-                ode_map(ml->prop[j],
-                        ieq,
-                        pv_.data() + ieq,
-                        pvdot_.data() + ieq,
-                        deltavec_ + ieq,
-                        i);
+                ode_map(
+                    ml->prop[j], ieq, pv_.data() + ieq, pvdot_.data() + ieq, deltavec_ + ieq, i);
                 ieq += cnt;
             }
         }

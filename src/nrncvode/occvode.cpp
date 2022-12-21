@@ -222,7 +222,8 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             auto* const node = z.cmlcap_->ml.size() == 1 ? z.cmlcap_->ml[0].nodelist[i]
                                                          : z.cmlcap_->ml[i].nodelist[0];
             z.pv_[i] = node->v_handle();
-            z.pvdot_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search, &(NODERHS(node))};
+            z.pvdot_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                 &(NODERHS(node))};
             *z.pvdot_[i] = 0.;  // only ones = 1 are no_cap
         }
 
@@ -407,12 +408,15 @@ void Cvode::daspk_init_eqn() {
             nde = nd->extnode;
             i = nd->eqn_index_ - 1;  // the sparse matrix index starts at 1
             z.pv_[i] = nd->v_handle();
-            z.pvdot_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search, nd->_rhs};
+            z.pvdot_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                 nd->_rhs};
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
                     k = i + ie + 1;
                     z.pv_[k] = neuron::container::data_handle<double>{nde->v + ie};
-                    z.pvdot_[k] = neuron::container::data_handle<double>{neuron::container::do_not_search, nde->_rhs[ie]};
+                    z.pvdot_[k] =
+                        neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                               nde->_rhs[ie]};
                 }
             }
         }
