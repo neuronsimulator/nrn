@@ -9,6 +9,7 @@
 #include "dimplic.hpp"
 #include "euler.hpp"
 #include "newton.hpp"
+#include "newton_thread.hpp"
 #include "runge.hpp"
 #include "sparse.hpp"
 #include "sparse_thread.hpp"

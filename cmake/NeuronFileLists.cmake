@@ -30,6 +30,7 @@ set(HEADER_FILES_TO_INSTALL
     neuron.h
     newton.hpp
     newton_struct.h
+    newton_thread.hpp
     nmodlmutex.h
     nrn_ansi.h
     nrnapi.h
@@ -430,7 +431,6 @@ set(SCOPMATH_FILES_LIST
     step.cpp
     threshol.cpp
     tridiag.cpp
-    newton_thread.cpp
     crout_thread.cpp)
 
 set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
