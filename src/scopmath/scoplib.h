@@ -6,6 +6,7 @@
  *  user to describe or solve his model's equations.
  */
 #include "crout.hpp"
+#include "dimplic.hpp"
 #include "euler.hpp"
 #include "newton.hpp"
 #include "runge.hpp"
@@ -120,15 +121,6 @@ int _cvode_sparse_thread(void**,
                                 int*,
                                 double*,
                                 int (*)(void*, double*, double*, Datum*, Datum*, NrnThread*),
-                                Datum*,
-                                Datum*,
-                                NrnThread*);
-int derivimplicit(int, int, int*, int*, double*, double*, double, int (*)(), double**);
-int derivimplicit_thread(int,
-                                int*,
-                                int*,
-                                double*,
-                                int (*)(double*, Datum*, Datum*, NrnThread*),
                                 Datum*,
                                 Datum*,
                                 NrnThread*);

@@ -8,6 +8,7 @@ set(HEADER_FILES_TO_INSTALL
     cspmatrix.h
     cspredef.h
     deflate.hpp
+    dimplic.hpp
     errcodes.hpp
     euler.hpp
     hoc.h
@@ -393,7 +394,6 @@ set(SCOPMATH_FILES_LIST
     advance.cpp
     boundary.cpp
     crank.cpp
-    dimplic.cpp
     scoperf.cpp
     expfit.cpp
     exprand.cpp
