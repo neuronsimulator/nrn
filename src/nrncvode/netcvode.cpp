@@ -1442,9 +1442,8 @@ void CvodeThreadData::delete_memb_list(CvMembList* cmlist) {
 #if CACHEVEC
             delete[] std::exchange(ml.nodeindices, nullptr);
 #endif
-            if (memb_func[cml->index].hoc_mech) {
-                delete[] std::exchange(ml.prop, nullptr);
-            } else {
+            delete[] std::exchange(ml.prop, nullptr);
+            if (!memb_func[cml->index].hoc_mech) {
                 delete[] std::exchange(ml.pdata, nullptr);
             }
         }
@@ -1625,9 +1624,9 @@ bool NetCvode::init_global() {
 #if CACHEVEC
                     cml->ml[0].nodeindices = ml->nodeindices;
 #endif
-                    if (mf->hoc_mech) {
-                        cml->ml[0].prop = ml->prop;
-                    } else {
+                    assert(ml->prop);
+                    cml->ml[0].prop = ml->prop; // used for ode_map even when hoc_mech = false
+                    if (!mf->hoc_mech) {
                         cml->ml[0].pdata = ml->pdata;
                     }
                     cml->ml[0]._thread = ml->_thread;
@@ -1794,9 +1793,8 @@ bool NetCvode::init_global() {
 #if CACHEVEC
                         newml.nodeindices = new int[1]{ml->nodeindices[j]};
 #endif
-                        if (mf->hoc_mech) {
-                            newml.prop = new Prop* [1] { ml->prop[j] };
-                        } else {
+                        newml.prop = new Prop* [1] { ml->prop[j] };
+                        if (!mf->hoc_mech) {
                             newml.set_storage_offset(ml->get_storage_offset() + j);
                             newml.pdata = new Datum* [1] { ml->pdata[j] };
                         }
