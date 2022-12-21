@@ -326,6 +326,8 @@ struct Prop {
 
 extern Datum* nrn_prop_datum_alloc(int type, int count, Prop* p);
 extern void nrn_prop_datum_free(int type, Datum* ppd);
+extern void nrn_delete_mechanism_prop_datum(int type);
+extern int nrn_mechanism_prop_datum_count(int type);
 extern double nrn_ghk(double, double, double, double);
 
 /* a point process is computed just like regular mechanisms. Ie it appears
