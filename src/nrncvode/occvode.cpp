@@ -158,14 +158,8 @@ void Cvode::init_eqn() {
             }
         }
         z.nonvint_extra_offset_ = zneq;
-        if (!z.pv_.empty()) {
-            z.pv_.clear();
-            delete[] std::exchange(z.pvdot_, nullptr);
-        }
-        if (z.nonvint_extra_offset_) {
-            z.pv_.resize(z.nonvint_extra_offset_);
-            z.pvdot_ = new double*[z.nonvint_extra_offset_];
-        }
+        z.pv_.resize(z.nonvint_extra_offset_);
+        z.pvdot_.resize(z.nonvint_extra_offset_);
         zneq += nrn_nonvint_block_ode_count(zneq, _nt->id);
         z.nvsize_ = zneq;
         z.nvoffset_ = neq_;
@@ -228,7 +222,7 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             auto* const node = z.cmlcap_->ml.size() == 1 ? z.cmlcap_->ml[0].nodelist[i]
                                                          : z.cmlcap_->ml[i].nodelist[0];
             z.pv_[i] = node->v_handle();
-            z.pvdot_[i] = &(NODERHS(node));
+            z.pvdot_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search, &(NODERHS(node))};
             *z.pvdot_[i] = 0.;  // only ones = 1 are no_cap
         }
 
@@ -256,10 +250,6 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
 
         // map the membrane mechanism ode state and dstate pointers
         int ieq = zneq_v;
-        // convert data_handle<double> -> double* for calling nrn_ode_map_t below
-        auto pv_raw_ptrs = z.raw_pv_pointers();
-        auto const pv_raw_ptrs_prev = pv_raw_ptrs;
-        assert(pv_raw_ptrs.size() == z.pv_.size());
         for (cml = z.cv_memb_list_; cml; cml = cml->next) {
             mf = memb_func + cml->index;
             if (!mf->ode_count) {
@@ -274,23 +264,15 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
                     // nrn_ode_..._t prototypes to avoid segfault
                     // with Apple M1.
                     for (j = 0; j < ml.nodecount; ++j) {
-                        mf->ode_map(ieq,
-                                    pv_raw_ptrs.data() + ieq,
-                                    z.pvdot_ + ieq,
-                                    &ml,
-                                    j,
-                                    ml.pdata[j],
+                        mf->ode_map(ml.prop[j],
+                                    ieq,
+                                    z.pv_.data() + ieq,
+                                    z.pvdot_.data() + ieq,
                                     atv + ieq,
                                     cml->index);
                         ieq += n;
                     }
                 }
-            }
-        }
-        // pv_raw_ptrs may have been modified, propagate the modifications back
-        for (auto i = 0ul; i < pv_raw_ptrs.size(); ++i) {
-            if (pv_raw_ptrs[i] != pv_raw_ptrs_prev[i]) {
-                z.pv_[i] = neuron::container::data_handle<double>{pv_raw_ptrs[i]};
             }
         }
         nrn_nonvint_block_ode_abstol(z.nvsize_, atv, id);
@@ -397,12 +379,8 @@ void Cvode::daspk_init_eqn() {
     z.nvoffset_ = neq_;
     neq_ = z.nvsize_;
     // printf("Cvode::daspk_init_eqn: neq_v_=%d neq_=%d\n", neq_v_, neq_);
-    if (!z.pv_.empty()) {
-        z.pv_.clear();
-        delete[] z.pvdot_;
-    }
     z.pv_.resize(z.nonvint_extra_offset_);
-    z.pvdot_ = new double*[z.nonvint_extra_offset_];
+    z.pvdot_.resize(z.nonvint_extra_offset_);
     atolvec_alloc(neq_);
     double* atv = n_vector_data(atolnvec_, 0);
     for (i = 0; i < neq_; ++i) {
@@ -430,12 +408,12 @@ void Cvode::daspk_init_eqn() {
             nde = nd->extnode;
             i = nd->eqn_index_ - 1;  // the sparse matrix index starts at 1
             z.pv_[i] = nd->v_handle();
-            z.pvdot_[i] = nd->_rhs;
+            z.pvdot_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search, nd->_rhs};
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
                     k = i + ie + 1;
                     z.pv_[k] = neuron::container::data_handle<double>{nde->v + ie};
-                    z.pvdot_[k] = nde->_rhs[ie];
+                    z.pvdot_[k] = neuron::container::data_handle<double>{neuron::container::do_not_search, nde->_rhs[ie]};
                 }
             }
         }
@@ -447,9 +425,6 @@ void Cvode::daspk_init_eqn() {
 
     // map the membrane mechanism ode state and dstate pointers
     int ieq = z.neq_v_;
-    // convert data_handle<double> -> double* for calling nrn_ode_map_t below
-    auto pv_raw_ptrs = z.raw_pv_pointers();
-    auto const pv_raw_ptrs_prev = pv_raw_ptrs;
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {
         int n;
         mf = memb_func + cml->index;
@@ -459,22 +434,14 @@ void Cvode::daspk_init_eqn() {
             Memb_list* ml = &cml->ml[0];
             nrn_ode_map_t s = mf->ode_map;
             for (j = 0; j < ml->nodecount; ++j) {
-                (*s)(ieq,
-                     pv_raw_ptrs.data() + ieq,
-                     z.pvdot_ + ieq,
-                     ml,
-                     j,
-                     ml->pdata[j],
+                (*s)(ml->prop[j],
+                     ieq,
+                     z.pv_.data() + ieq,
+                     z.pvdot_.data() + ieq,
                      atv + ieq,
                      cml->index);
                 ieq += n;
             }
-        }
-    }
-    // pv_raw_ptrs may have been modified, propagate the modifications back
-    for (auto i = 0ul; i < pv_raw_ptrs.size(); ++i) {
-        if (pv_raw_ptrs[i] != pv_raw_ptrs_prev[i]) {
-            z.pv_[i] = neuron::container::data_handle<double>{pv_raw_ptrs[i]};
         }
     }
     structure_change_ = false;

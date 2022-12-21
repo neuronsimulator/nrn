@@ -974,15 +974,16 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
             prop_alloc(&(node.prop), MORPHOLOGY, &node);     /* in case we need diam */
             auto* p = prop_alloc(&(node.prop), type, &node); /* this and any ions */
             // Fill `pv` with pointers to `2*n` parameters inside `p`
-            std::vector<double*> pv(2 * n);
-            auto [_, ml, iml] = create_ml(p);
-            memb_func[type].ode_map(0, pv.data(), pv.data() + n, ml, iml, p->dparam, nullptr, type);
+            std::vector<neuron::container::data_handle<double>> pv(2 * n);
+            //auto [_, ml, iml] = create_ml(p);
+            memb_func[type].ode_map(p, 0, pv.data(), pv.data() + n, nullptr, type);
+            // TODO now pv contains data_handle then maybe the next part can be done more directly
             for (int i = 0; i < n; ++i) {  // only check the first `n` for some reason
                 int index = -1;
                 for (p = node.prop; p; p = p->next) {
                     auto const num_params = p->param_size();
                     for (auto i_param = 0; i_param < num_params; ++i_param) {
-                        if (pv[i] == static_cast<double*>(p->param_handle(i_param))) {
+                        if (pv[i] == p->param_handle(i_param)) {
                             index = i_param;  // ambiguous between the two Prop attached to Node?
                             break;
                         }

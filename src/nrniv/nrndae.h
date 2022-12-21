@@ -86,7 +86,7 @@ class NrnDAE {
      * @param pvdot         pointers to voltage derivatives (set by this
      *                      function)
      */
-    void dkmap(std::vector<neuron::container::data_handle<double>>& pv, double** pvdot);
+    void dkmap(std::vector<neuron::container::data_handle<double>>& pv, std::vector<neuron::container::data_handle<double>>& pvdot);
 
     /**
      * Destructor.

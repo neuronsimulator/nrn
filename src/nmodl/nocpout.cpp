@@ -2568,7 +2568,7 @@ static int _ode_count(int _type){ hoc_execerror(\"%s\", \"cannot be used with CV
         Lappendstr(defs_list,
                    "\n\
 static int _ode_count(int);\n\
-static void _ode_map(int, double**, double**, Memb_list*, size_t, Datum*, double*, int);\n\
+static void _ode_map(Prop*, int, neuron::container::data_handle<double>*, neuron::container::data_handle<double>*, double*, int);\n\
 static void _ode_spec(NrnThread*, Memb_list*, int);\n\
 static void _ode_matsol(NrnThread*, Memb_list*, int);\n\
 ");
@@ -2600,14 +2600,14 @@ static int _ode_count(int _type){ return %d;}\n",
 
             Lappendstr(procfunc,
                        "\n\
-static void _ode_map(int _ieq, double** _pv, double** _pvdot, Memb_list* _ml, size_t _iml, Datum* _ppd, double* _atol, int _type) {");
+static void _ode_map(Prop* _prop, int _ieq, neuron::container::data_handle<double>* _pv, neuron::container::data_handle<double>* _pvdot, double* _atol, int _type) {");
             vectorize_substitute(lappendstr(procfunc, "\n"), "\n  Datum* _ppvar;\n");
             Sprintf(buf,
-                    " _ppvar = _ppd;\n"
+                    " _ppvar = _prop->dparam;\n"
                     "  _cvode_ieq = _ieq;\n"
                     "  for (int _i=0; _i < %d; ++_i) {\n"
-                    "    _pv[_i] = &_ml->data(_iml, _slist%d[_i]);\n"
-                    "    _pvdot[_i] = &_ml->data(_iml, _dlist%d[_i]);\n"
+                    "    _pv[_i] = _prop->param_handle(_slist%d[_i]);\n"//&_ml->data(_iml, _slist%d[_i]);\n"
+                    "    _pvdot[_i] = _prop->param_handle(_dlist%d[_i]);\n"//&_ml->data(_iml, _dlist%d[_i]);\n"
                     "    _cvode_abstol(_atollist, _atol, _i);\n"
                     "  }\n",
                     cvode_neq_,
