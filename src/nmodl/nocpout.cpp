@@ -305,20 +305,21 @@ void parout() {
 	/*SUPPRESS 765*/\n\
 	");
     Lappendstr(defs_list, "extern double *hoc_getarg(int);\n");
-    if (vectorize) {
-        Sprintf(buf, "/* Thread safe. No static _ml, _iml or _ppvar. */\n");
-    } else {
-        Sprintf(buf,
-                "static Memb_list _ml_real{}, *_ml{&_ml_real};\n"
-                "static size_t _iml{0};\n"
-                "static Datum *_ppvar;\n");
-    }
-    Lappendstr(defs_list, buf);
 
     nrndeclare();
     varcount = parraycount = 0;
     declare_p();
+    // iondef defined LocalMechanismRange
     ioncount = iondef(&pointercount); /* first is _nd_area if point process */
+    if (vectorize) {
+        Sprintf(buf, "/* Thread safe. No static _ml, _iml or _ppvar. */\n");
+    } else {
+        Sprintf(buf,
+                "static LocalMechanismRange _ml_real{nullptr}, *_ml{&_ml_real};\n"
+                "static size_t _iml{0};\n"
+                "static Datum *_ppvar;\n");
+    }
+    Lappendstr(defs_list, buf);
     Lappendstr(defs_list,
                "\n#if MAC\n#if !defined(v)\n#define v _mlhv\n#endif\n#if !defined(h)\n#define h "
                "_mlhh\n#endif\n#endif\n");
@@ -866,17 +867,21 @@ static const char *_mechanism[] = {\n\
                "  Datum *_ppvar{};\n");
     if (point_process) {
         Lappendstr(defs_list,
-                   "  if (nrn_point_prop_) {\n"
+                   " if (nrn_point_prop_) {\n"
                    "    _prop->_alloc_seq = nrn_point_prop_->_alloc_seq;\n"
                    "    _ppvar = nrn_point_prop_->dparam;\n"
                    "  } else {\n");
     }
+    // need to fill _prop->dparam before calling make_nocmodl_macros_work
+    if (ppvar_cnt) {
+        Sprintf(buf, "  _ppvar = nrn_prop_datum_alloc(_mechtype, %d, _prop);\n", ppvar_cnt);
+        Lappendstr(defs_list, buf);  
+        Lappendstr(defs_list, "   _prop->dparam = _ppvar;\n");
+    }
     // seems that even in the old code and with vectorize == false that the global _p, _ppvar were
     // shadowed, so don't worry about shadowing the global _ml and _iml here
     Sprintf(buf,
-            "    auto [_, _ml, _iml] = _prop->make_nocmodl_macros_work();\n"
-            //"    auto [_, _ml, _iml] = create_ml_cache<number_of_floating_point_variables,
-            //number_of_datum_variables>(_prop);\n"
+            "    auto [_, _ml, _iml] = neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_prop);\n"
             "    assert(_prop->param_size() == %d);\n",
             parraycount);
     Lappendstr(defs_list, buf);
@@ -896,14 +901,6 @@ static const char *_mechanism[] = {\n\
     Sprintf(buf, "\t assert(_prop->param_size() == %d);\n", parraycount);
     Lappendstr(defs_list, buf);
     if (ppvar_cnt) {
-        if (point_process) {
-            Lappendstr(defs_list, " if (!nrn_point_prop_) {\n");
-        }
-        Sprintf(buf, "	_ppvar = nrn_prop_datum_alloc(_mechtype, %d, _prop);\n", ppvar_cnt);
-        Lappendstr(defs_list, buf);
-        if (point_process) {
-            Lappendstr(defs_list, " }\n");
-        }
         Lappendstr(defs_list, "\t_prop->dparam = _ppvar;\n");
         Lappendstr(defs_list, "\t/*connect ionic variables to this model*/\n");
     }
@@ -1008,7 +1005,7 @@ static const char *_mechanism[] = {\n\
             Lappendstr(procfunc,
                        "\n"
                        "static void _constructor(Prop* _prop) {\n"
-                       "  auto [_, _ml, _iml] = _prop->make_nocmodl_macros_work();\n"
+                       "  auto [_, _ml, _iml] = neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_prop);\n"
                        //    "  auto [_, _ml, _iml] = "
                        //    "create_ml_cache<number_of_floating_point_variables,
                        //    number_of_datum_variables>(_prop);\n"
@@ -1312,7 +1309,7 @@ if (_nd->_extnode) {\n\
             Lappendstr(procfunc,
                        "\n"
                        "static void _destructor(Prop* _prop) {\n"
-                       "  auto [_, _ml, _iml] = _prop->make_nocmodl_macros_work();\n"
+                       "  auto [_, _ml, _iml] = neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_prop);\n"
                        //    "  auto [_, _ml, _iml] = "
                        //    "create_ml_cache<number_of_floating_point_variables,
                        //    number_of_datum_variables>(_prop);\n"
@@ -2286,7 +2283,7 @@ int iondef(int* p_pointercount) {
     q2 = lappendstr(defs_list,
                     "using LocalMechanismRange = "
                     "neuron::cache::MechanismRange<number_of_floating_point_variables, "
-                    "number_of_datum_variables>;");
+                    "number_of_datum_variables>;\n");
     q2->itemtype = VERBATIM;
     return ioncount;
 }
@@ -2534,17 +2531,17 @@ printf("|%s||%s||%s|\n",STR(q3), s, buf);
 }
 
 void out_nt_ml_frag(List* p) {
-    vectorize_substitute(lappendstr(p, "  Datum* _thread;\n"),
-                         "  Datum* _ppvar; Datum* _thread;\n");
-    vectorize_substitute(lappendstr(p, ""), "size_t _iml;");
-    // vectorize_substitute(lappendstr(p, ""),
-    //                      "LocalMechanismRange* _ml;");
+    vectorize_substitute(lappendstr(p, ""), "  Datum* _ppvar;\n");
+    vectorize_substitute(lappendstr(p, ""), "  size_t _iml;");
+    vectorize_substitute(lappendstr(p, ""), "  LocalMechanismRange* _ml;");
     Lappendstr(p,
-               "  Node* _nd; double _v; int _cntml;\n"
+               "  Node* _nd{};\n"
+               "  double _v{};\n"
+               "  int _cntml;\n"
                "  LocalMechanismRange _lmr{*_ml_arg};\n"
-               "  auto* const _ml = &_lmr;\n"
+               "  _ml = &_lmr;\n"
                "  _cntml = _ml_arg->_nodecount;\n"
-               "  _thread = _ml_arg->_thread;\n"
+               "  Datum *_thread{_ml_arg->_thread};\n"
                "  for (_iml = 0; _iml < _cntml; ++_iml) {\n"
                "    _ppvar = _ml_arg->_pdata[_iml];\n"
                "    _nd = _ml_arg->_nodelist[_iml];\n"
@@ -2808,18 +2805,13 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     if (watch_seen_) {
         insertstr(qstmt, "  int _watch_rm = 0;\n");
     }
-    q = insertstr(qstmt,
-                  "  auto [_, local_ml, local_iml] = _pnt->_prop->make_nocmodl_macros_work();\n"
-                  //   "  auto [_, local_ml, local_iml] = "
-                  //   "create_ml_cache<number_of_floating_point_variables,
-                  //   number_of_datum_variables>(_pnt->_prop);\n"
-                  "  _ppvar = _pnt->_prop->dparam;\n");
-    // when not vectorised we need to update the global _ml and _iml variables
-    // TODO this is problematic now
-    vectorize_substitute(
-        insertstr(qstmt, "  _ml = nullptr; auto* const _ml = local_ml; _iml = local_iml;\n"),
-        "  auto _ml = local_ml; auto _iml = local_iml;\n");
-    vectorize_substitute(insertstr(q, ""), "  _thread = (Datum*)0; _nt = (NrnThread*)_pnt->_vnt;");
+    if (vectorize) {
+        q = insertstr(qstmt, "  auto [_, _ml, _iml] = neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_pnt->_prop);\n");
+    } else {
+        q = insertstr(qstmt, "  neuron::legacy::set_globals_from_prop(_pnt->_prop, _ml_real, _ml, _iml);\n");
+    }
+    q = insertstr(qstmt, "  _ppvar = _pnt->_prop->dparam;\n");
+    vectorize_substitute(insertstr(q, ""), "  _thread = nullptr; _nt = (NrnThread*)_pnt->_vnt;");
     if (debugging_) {
         if (0) {
             insertstr(qstmt, " assert(_tsav <= t); _tsav = t;");
@@ -2906,7 +2898,7 @@ void net_init(Item* qinit, Item* qp2) {
     replacstr(qinit, "\nstatic void _net_init(Point_process* _pnt, double* _args, double _lflag)");
     Sprintf(buf, "    _ppvar = _pnt->_prop->dparam;\n");
     vectorize_substitute(insertstr(qinit->next->next, buf),
-                         "  auto [_, _ml, _iml] = _pnt->_prop->make_nocmodl_macros_work();\n"
+                         "  auto [_, _ml, _iml] = neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_pnt->_prop);\n"
                          //  "  auto [_, _ml, _iml] = "
                          //  "create_ml_cache<number_of_floating_point_variables,
                          //  number_of_datum_variables>(_pnt->_prop);\n"
