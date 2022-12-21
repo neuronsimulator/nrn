@@ -32,8 +32,7 @@ class NonLinImpRep {
     char* m_;
     int scnt_;  // structure_change
     int n_v_, n_ext_, n_lin_, n_ode_, neq_v_, neq_;
-    std::vector<neuron::container::data_handle<double>> pv_;
-    double** pvdot_;
+    std::vector<neuron::container::data_handle<double>> pv_, pvdot_;
     int* v_index_;
     double* rv_;
     double* jv_;
@@ -249,7 +248,7 @@ NonLinImpRep::NonLinImpRep() {
     m_ = cmplx_spCreate(neq_, 1, &err);
     assert(err == spOKAY);
     pv_.resize(neq_);
-    pvdot_ = new double*[neq_];
+    pvdot_.resize(neq_);
     v_index_ = new int[n_v_];
     rv_ = new double[neq_ + 1];
     rv_ += 1;
@@ -262,7 +261,7 @@ NonLinImpRep::NonLinImpRep() {
         // utilize nd->eqn_index in case of use_sparse13 later
         Node* nd = _nt->_v_node[i];
         pv_[i] = nd->v_handle();
-        pvdot_[i] = nd->_rhs;
+        pvdot_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search, nd->_rhs};
         v_index_[i] = i + 1;
     }
     for (i = 0; i < n_v_; ++i) {
@@ -279,7 +278,6 @@ NonLinImpRep::~NonLinImpRep() {
         return;
     }
     cmplx_spDestroy(m_);
-    delete[] pvdot_;
     delete[] v_index_;
     delete[](rv_ - 1);
     delete[](jv_ - 1);
@@ -288,41 +286,27 @@ NonLinImpRep::~NonLinImpRep() {
 }
 
 void NonLinImpRep::delta(double deltafac) {  // also defines pv_,pvdot_ map for ode
-    int i, j, nc, cnt, ieq;
+    int i, nc, cnt, ieq;
     NrnThread* nt = nrn_threads;
     for (i = 0; i < neq_; ++i) {
         deltavec_[i] = deltafac;  // all v's wasted but no matter.
     }
     ieq = neq_v_;
-    std::vector<double*> pv_raw_ptrs;
-    std::transform(pv_.begin(), pv_.end(), std::back_inserter(pv_raw_ptrs), [](auto& handle) {
-        return static_cast<double*>(handle);
-    });
-    auto const pv_raw_ptrs_prev = pv_raw_ptrs;
     for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
         Memb_list* ml = tml->ml;
         i = tml->index;
         nc = ml->nodecount;
-        nrn_ode_count_t s = memb_func[i].ode_count;
-        if (s && (cnt = (*s)(i)) > 0) {
-            nrn_ode_map_t m = memb_func[i].ode_map;
-            for (j = 0; j < nc; ++j) {
-                (*m)(ieq,
-                     pv_raw_ptrs.data() + ieq,
-                     pvdot_ + ieq,
-                     ml,
-                     j,
-                     ml->pdata[j],
-                     deltavec_ + ieq,
-                     i);
+        if (nrn_ode_count_t s = memb_func[i].ode_count; s && (cnt = s(i)) > 0) {
+            nrn_ode_map_t ode_map = memb_func[i].ode_map;
+            for (auto j = 0; j < nc; ++j) {
+                ode_map(ml->prop[j],
+                        ieq,
+                        pv_.data() + ieq,
+                        pvdot_.data() + ieq,
+                        deltavec_ + ieq,
+                        i);
                 ieq += cnt;
             }
-        }
-    }
-    // pv_raw_ptrs may have been modified, propagate the modifications back
-    for (auto i = 0ul; i < pv_raw_ptrs.size(); ++i) {
-        if (pv_raw_ptrs[i] != pv_raw_ptrs_prev[i]) {
-            pv_[i] = neuron::container::data_handle<double>{pv_raw_ptrs[i]};
         }
     }
     delta_ = (vsymtol_ && (*vsymtol_ != 0.)) ? *vsymtol_ : 1.;

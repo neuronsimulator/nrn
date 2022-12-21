@@ -1341,7 +1341,6 @@ CvodeThreadData::CvodeThreadData() {
     v_parent_ = nil;
     psl_th_ = nil;
     watch_list_ = nil;
-    pvdot_ = nil;
     nvoffset_ = 0;
     nvsize_ = 0;
     neq_v_ = nonvint_offset_ = 0;
@@ -1352,9 +1351,6 @@ CvodeThreadData::CvodeThreadData() {
 CvodeThreadData::~CvodeThreadData() {
     if (no_cap_memb_) {
         delete_memb_list(no_cap_memb_);
-    }
-    if (!pv_.empty()) {
-        delete[] pvdot_;
     }
     if (no_cap_node_) {
         delete[] no_cap_node_;
