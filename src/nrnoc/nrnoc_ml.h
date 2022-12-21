@@ -146,50 +146,6 @@ struct Memb_list {
         return m_storage->num_floating_point_fields();
     }
 
-    /**
-     * @brief Proxy type used in data_array.
-     */
-    struct array_view {
-        array_view(neuron::container::Mechanism::storage* storage,
-                   std::size_t instance,
-                   std::size_t zeroth_column)
-            : m_storage{storage}
-            , m_instance{instance}
-            , m_zeroth_column{zeroth_column} {}
-        [[nodiscard]] double& operator[](std::size_t array_entry) {
-            return m_storage
-                ->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
-                    m_zeroth_column + array_entry, m_instance);
-        }
-        [[nodiscard]] double const& operator[](std::size_t array_entry) const {
-            return m_storage
-                ->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
-                    m_zeroth_column + array_entry, m_instance);
-        }
-
-      private:
-        neuron::container::Mechanism::storage* m_storage{};
-        std::size_t m_instance{}, m_zeroth_column{};
-    };
-
-    /**
-     * @brief Get a proxy to a range of variables in a mechanism instance.
-     *
-     * Concretely
-     *   auto proxy = ml.data_array(instance, zeroth_variable)
-     *   proxy[variable_index]
-     * is equivalent to
-     *   ml.data(instance, zeroth_variable + variable_index)
-     * this is used in translated MOD file code for array variables. Ideally
-     * it would be deprecated and removed, with data(i, j) used instead.
-     */
-    template <std::size_t zeroth_variable, std::size_t array_size>
-    [[nodiscard]] array_view data_array(std::size_t instance) {
-        assert(m_storage);
-        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
-        return {m_storage, m_storage_offset + instance, zeroth_variable};
-    }
-
     /** @brief Helper for compatibility with legacy code.
      *
      * The scopmath solvers have a complicated relationship with NEURON data

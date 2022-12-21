@@ -24,7 +24,6 @@
 */
 
 #include "membfunc.h"
-#include "neuron/cache/mechanism_range.hpp"
 #include "neuron/container/mechanism.hpp"
 #include "neuron/container/node.hpp"
 
@@ -233,55 +232,6 @@ struct Extnode {
 #endif
 
 #define PROP_PY_INDEX 10
-
-struct PropAdaptor {
-    PropAdaptor(neuron::container::Mechanism::handle handle)
-        : m_handle{std::move(handle)} {}
-    template <std::size_t field_index>
-    [[nodiscard]] auto& fpfield(std::size_t instance) {
-        assert(instance == 0);
-        return m_handle.fpfield(field_index);
-    }
-
-    template <std::size_t field_index>
-    [[nodiscard]] auto const& fpfield(std::size_t instance) const {
-        assert(instance == 0);
-        return m_handle.fpfield(field_index);
-    }
-
-    [[nodiscard]] auto& data(std::size_t instance, std::size_t field_index) {
-        assert(instance == 0);
-        return m_handle.fpfield(field_index);
-    }
-    /**
-     * @brief Proxy type used in data_array.
-     */
-    template <std::size_t zeroth_variable, std::size_t array_size>
-    struct array_view {
-        array_view(neuron::container::Mechanism::handle handle)
-            : m_handle{handle} {}
-        [[nodiscard]] double& operator[](std::size_t array_entry) {
-            assert(array_entry < array_size);
-            return m_handle.fpfield(zeroth_variable + array_entry);
-        }
-        [[nodiscard]] double const& operator[](std::size_t array_entry) const {
-            assert(array_entry < array_size);
-            return m_handle.fpfield(zeroth_variable + array_entry);
-        }
-
-      private:
-        neuron::container::Mechanism::handle m_handle;
-    };
-    template <std::size_t zeroth_variable, std::size_t array_size>
-    [[nodiscard]] array_view<zeroth_variable, array_size> data_array(std::size_t instance) {
-        assert(instance == 0);
-        return m_handle;
-    }
-
-  private:
-    neuron::container::Mechanism::handle m_handle;
-};
-
 struct Prop {
     // Working assumption is that we can safely equate "Prop" with "instance
     // of a mechanism" apart from a few special cases like CABLESECTION
@@ -367,80 +317,12 @@ struct Prop {
         }
     }
 
-    /**
-     * @brief Return a non-owning handle to this mechanism instance and zero.
-     *
-     * This is intended to be an adapter for the case where translated MOD file code is executed on
-     * a single instance of the mechanism. An expression like auto [_, _ml, _iml] =
-     * prop->make_nocmodl_macros_work(); allows the macros #define foo _ml->template
-     * fpfield<7>(_iml) to compile and be routed through PropAdaptor, while the same macros can
-     * expand to MechanismRange elsehwere.
-     *
-     * @todo revive the "view" concept in addition to handle and owning_handle? i.e. store the
-     * offset by value, not by dereferencing std::size_t* ?
-     */
-    [[nodiscard]] std::tuple<PropAdaptor, PropAdaptor*, std::size_t> make_nocmodl_macros_work() {
-        assert(m_mech_handle);
-        std::tuple<PropAdaptor, PropAdaptor*, std::size_t> ret{
-            neuron::container::Mechanism::handle{m_mech_handle->non_owning_identifier()},
-            nullptr,
-            0};
-        std::get<1>(ret) = &std::get<0>(ret);
-        return ret;
-    }
-
   private:
     // This is a handle that owns a row of the ~global mechanism data for
     // `_type`. Usage of `param` and `param_size` should be replaced with
     // indirection through this.
     std::optional<neuron::container::Mechanism::owning_handle> m_mech_handle;
 };
-
-/** @brief Helper to generate an _ml, _iml pair from Prop*.
- *
- *  In generated code then things like range variables are preprocessor macros
- *  that expand to things like _ml->data(_iml, 42). If one wants to call
- *  something using these variables for a single mechanism instance (single
- *  Prop) then one needs to create an appropriate _ml and _iml pair so the
- *  macros expand to something that compiles. Guaranteed copy elision in C++17
- *  should guarantee that the Memb_list* is valid in the calling scope.
- */
-inline std::tuple<Memb_list, Memb_list*, std::size_t> create_ml(Prop* p) {
-    std::tuple<Memb_list, Memb_list*, std::size_t> ret{};
-    if (p) {
-        std::get<0>(ret) = {p->_type};
-        std::get<0>(ret).set_storage_offset(p->id().current_row());
-        std::get<1>(ret) = &std::get<0>(ret);
-    }
-    return ret;
-}
-
-template <std::size_t N, std::size_t M>
-std::tuple<neuron::cache::MechanismRange<N, M>, neuron::cache::MechanismRange<N, M>*, std::size_t>
-create_ml_cache(Prop* p) {
-    auto [ml, ml_ptr, iml] = create_ml(p);
-    std::tuple<neuron::cache::MechanismRange<N, M>,
-               neuron::cache::MechanismRange<N, M>*,
-               std::size_t>
-        ret{ml, nullptr, iml};
-    std::get<1>(ret) = &std::get<0>(ret);
-    return ret;
-}
-
-namespace neuron::legacy {
-/**
- * @brief Helper for legacy MOD files that mess with _p in VERBATIM blocks.
- */
-inline void set_globals_from_prop(Prop* p, Memb_list& ml, Memb_list*& ml_ptr, std::size_t& iml) {
-    if (!p) {
-        return;
-    }
-    ml = {p->_type};
-    ml.set_storage_offset(p->id().current_row());
-    ml_ptr = &ml;
-    iml = 0;
-}
-}  // namespace neuron::legacy
 
 extern Datum* nrn_prop_datum_alloc(int type, int count, Prop* p);
 extern void nrn_prop_datum_free(int type, Datum* ppd);

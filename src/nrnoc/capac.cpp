@@ -3,6 +3,7 @@
 
 #include "section.h"
 #include "membdef.h"
+#include "neuron/cache/mechanism_range.hpp"
 #include "nrniv_mf.h"
 
 
