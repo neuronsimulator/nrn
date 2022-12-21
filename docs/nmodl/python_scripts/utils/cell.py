@@ -24,11 +24,11 @@ class Cell:
         coreneuron.enable = corenrn
         coreneuron.gpu = gpu
 
-        h.dt = dt
         h.CVode().cache_efficient(1)
         pc = h.ParallelContext()
         pc.set_maxstep(10)
         h.stdinit()
+        h.dt = dt
         pc.psolve(tstop)
 
     def output(self):
