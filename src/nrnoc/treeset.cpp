@@ -1629,7 +1629,7 @@ void v_setup_vectors(void) {
 #if CACHEVEC
                 free((void*) memb_list[i].nodeindices);
 #endif /* CACHEVEC */
-                delete [] memb_list[i].prop;
+                delete[] memb_list[i].prop;
                 if (!memb_func[i].hoc_mech) {
                     // free(memb_list[i]._data);
                     free(memb_list[i].pdata);
@@ -2130,8 +2130,8 @@ void nrn_recalc_ptrs() {
 namespace neuron::cache {
 /**
  * @brief Return the range of dparam indices that should be cached for a mechanism.
- * 
- * 
+ *
+ *
  */
 std::vector<short> indices_to_cache(short type) {
     auto const pdata_size = nrn_prop_dparam_size_[type];
@@ -2139,7 +2139,8 @@ std::vector<short> indices_to_cache(short type) {
     std::vector<short> pdata_fields_to_cache;
     pdata_fields_to_cache.reserve(pdata_size);
     for (auto field = 0; field < pdata_size; ++field) {
-        // Check if the field-th dparam of this mechanism type is an ion variable. See hoc_register_dparam_semantics.
+        // Check if the field-th dparam of this mechanism type is an ion variable. See
+        // hoc_register_dparam_semantics.
         auto const sem = dparam_semantics[field];
         // TODO is area constant? could we cache the value instead of a pointer to it?
         // TODO ion type can be handled differently
@@ -2149,7 +2150,7 @@ std::vector<short> indices_to_cache(short type) {
     }
     return pdata_fields_to_cache;
 }
-}
+}  // namespace neuron::cache
 
 /** @brief Sort the underlying storage for a particular mechanism.
  *
