@@ -493,9 +493,33 @@ def mac_osx_setenv():
             " for a recent MACOS version (from brew?). Your wheel won't be portable."
             " Consider using an official Python build from python.org"
         )
-    macos_target = "%d.%d" % tuple(py_osx_framework[:2])
-    log.info("Setting MACOSX_DEPLOYMENT_TARGET=%s", macos_target)
-    os.environ["MACOSX_DEPLOYMENT_TARGET"] = macos_target
+        if py_osx_framework is not None and explicit_target > py_osx_framework:
+            log.warn(
+                "You are building wheels for macOS >={}; this is more "
+                "restrictive than your Python framework, which supports "
+                ">={}".format(fmt(explicit_target), fmt(py_osx_framework))
+            )
+    else:
+        # Target not set explicitly, set MACOSX_DEPLOYMENT_TARGET to match the
+        # Python framework, or 10.9 if the version targeted by the framework
+        # cannot be determined
+        if py_osx_framework is None:
+            py_osx_framework = (10, 15)
+        if py_osx_framework < (10, 15):
+            log.warn(
+                "C++17 support is required to build NEURON on macOS, "
+                "therefore minimum MACOSX_DEPLOYMENT_TARGET version is 10.15."
+            )
+            py_osx_framework = (10, 15)
+        if py_osx_framework > (10, 15):
+            log.warn(
+                "You are building a wheel with a Python built for macOS >={}. "
+                "Your wheel won't run on older versions, consider using an "
+                "official Python build from python.org".format(fmt(py_osx_framework))
+            )
+        macos_target = "%d.%d" % tuple(py_osx_framework[:2])
+        log.warn("Setting MACOSX_DEPLOYMENT_TARGET=%s", macos_target)
+        os.environ["MACOSX_DEPLOYMENT_TARGET"] = macos_target
 
 
 if __name__ == "__main__":
