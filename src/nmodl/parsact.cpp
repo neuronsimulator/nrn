@@ -373,14 +373,11 @@ int check_tables_threads(List* p) {
     Item* q;
     if (check_table_thread_list) {
         ITERATE(q, check_table_thread_list) {
-            Sprintf(buf,
-                    "\n_internaltemplatedecl_\nstatic void %s(_internalthreadargsproto_);",
-                    STR(q));
+            Sprintf(buf, "\nstatic void %s(_internalthreadargsproto_);", STR(q));
             lappendstr(p, buf);
         }
-        lappendstr(p,
-                   "\n_internaltemplatedecl_\nstatic void "
-                   "_check_table_thread(_internalthreadargsprotocomma_ int _type) {\n");
+        lappendstr(
+            p, "\nstatic void _check_table_thread(_internalthreadargsprotocomma_ int _type) {\n");
         ITERATE(q, check_table_thread_list) {
             Sprintf(buf, "  %s(_threadargs_);\n", STR(q));
             lappendstr(p, buf);
@@ -450,19 +447,13 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
         fsym->subtype |= FUNCT;
         Sprintf(buf, "static double _n_%s(double);\n", fname);
         q = linsertstr(procfunc, buf);
-        Sprintf(buf,
-                "_internaltemplatedecl_\nstatic double _n_%s(_internalthreadargsprotocomma_ double "
-                "_lv);\n",
-                fname);
+        Sprintf(buf, "static double _n_%s(_internalthreadargsprotocomma_ double _lv);\n", fname);
         vectorize_substitute(q, buf);
     } else {
         fsym->subtype |= PROCED;
         Sprintf(buf, "static void _n_%s(double);\n", fname);
         q = linsertstr(procfunc, buf);
-        Sprintf(buf,
-                "_internaltemplatedecl_\nstatic void _n_%s(_internalthreadargsprotocomma_ double "
-                "_lv);\n",
-                fname);
+        Sprintf(buf, "static void _n_%s(_internalthreadargsprotocomma_ double _lv);\n", fname);
         vectorize_substitute(q, buf);
     }
     fsym->usage |= FUNCT;
@@ -482,9 +473,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     vectorize_substitute(q, "");
     Sprintf(buf, "static void _check_%s() {\n", fname);
     q = lappendstr(procfunc, buf);
-    Sprintf(buf,
-            "_internaltemplatedecl_\nstatic void _check_%s(_internalthreadargsproto_) {\n",
-            fname);
+    Sprintf(buf, "static void _check_%s(_internalthreadargsproto_) {\n", fname);
     vectorize_substitute(q, buf);
     Lappendstr(procfunc, " static int _maktable=1; int _i, _j, _ix = 0;\n");
     Lappendstr(procfunc, " double _xi, _tmax;\n");
@@ -566,9 +555,6 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
 
     /* create the new function (steers to analytic or table) */
     /*declaration*/
-    if (vectorize) {
-        Lappendstr(procfunc, "_internaltemplatedecl_\n");
-    }
     if (type == FUNCTION1) {
 #define GLOBFUNC 1
         Lappendstr(procfunc, "double");
@@ -597,9 +583,6 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     Lappendstr(procfunc, "}\n\n"); /* end of new function */
 
     /* _n_name function for table lookup with no checking */
-    if (vectorize) {
-        Lappendstr(procfunc, "_internaltemplatedecl_\n");
-    }
     if (type == FUNCTION1) {
         Lappendstr(procfunc, "static double");
     } else {

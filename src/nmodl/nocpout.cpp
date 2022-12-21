@@ -277,7 +277,6 @@ void parout() {
     if (vectorize) {
         Lappendstr(defs_list,
                    "\n\
-#define _internaltemplatedecl_\n\
 #define _threadargscomma_ _ml, _iml, _ppvar, _thread, _nt,\n\
 #define _threadargsprotocomma_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
 #define _internalthreadargsprotocomma_ LocalMechanismRange* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
@@ -288,7 +287,6 @@ void parout() {
     } else {
         Lappendstr(defs_list,
                    "\n\
-#define _internaltemplatedecl_ /**/\n\
 #define _threadargscomma_ /**/\n\
 #define _threadargsprotocomma_ /**/\n\
 #define _internalthreadargsprotocomma_ /**/\n\
@@ -488,7 +486,7 @@ extern Memb_func* memb_func;\n\
         int j;
         s = SYM(q);
         if ((s->subtype & FUNCT)) {
-            Sprintf(buf, "_internaltemplatedecl_\nextern double %s(", s->name);
+            Sprintf(buf, "extern double %s(", s->name);
             Lappendstr(defs_list, buf);
             if (vectorize && !s->no_threadargs) {
                 if (s->varnum) {
@@ -2631,13 +2629,11 @@ static void _ode_map(Prop* _prop, int _ieq, neuron::container::data_handle<doubl
             }
 
             Sprintf(buf,
-                    "_internaltemplatedecl_\nstatic void "
-                    "_ode_matsol_instance%d(_internalthreadargsproto_);\n",
+                    "static void _ode_matsol_instance%d(_internalthreadargsproto_);\n",
                     cvode_num_);
             Lappendstr(defs_list, buf);
             Sprintf(buf,
-                    "\n_internaltemplatedecl_\nstatic void "
-                    "_ode_matsol_instance%d(_internalthreadargsproto_) {\n",
+                    "\nstatic void _ode_matsol_instance%d(_internalthreadargsproto_) {\n",
                     cvode_num_);
             Lappendstr(procfunc, buf);
             if (cvode_fun_->subtype == KINF) {
@@ -2732,7 +2728,7 @@ void cvode_interface(Symbol* fun, int num, int neq) {
     }
     Sprintf(buf,
             "\n\
-_internaltemplatedecl_\nstatic int _ode_spec%d(_internalthreadargsproto_);\n\
+static int _ode_spec%d(_internalthreadargsproto_);\n\
 /*static int _ode_matsol%d(_internalthreadargsproto_);*/\n\
 ",
             num,
