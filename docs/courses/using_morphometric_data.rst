@@ -145,8 +145,11 @@ Some morphometric reconstructions contain orphan branches, or measurement points
 
 Here's an example that used a toy cell:
 
+.. image:: img/v0.gif
+    :align: left
+
 .. image:: img/v5.gif
-    :align: center
+    :align: right
 
 Left: Vm at t = 0 ms. Right: Vm at 5 ms.
 
