@@ -21,7 +21,7 @@ C:\Python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" 
 C:\Python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python39\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python310\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
-
+C:\Python311\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 :: install numpy dependency
 python -m pip install numpy
 :: run also using whatever is system python
