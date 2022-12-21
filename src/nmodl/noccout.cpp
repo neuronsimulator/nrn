@@ -117,6 +117,7 @@ void c_out() {
     P("#include \"section.h\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
+    P("#include \"neuron/cache/mechanism_range.hpp\"\n");
     P("#include <vector>\n");
 
     /* avoid clashes with mech names */
@@ -554,6 +555,7 @@ void c_out_vectorize() {
     P("#include \"section.h\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
+    P("#include \"neuron/cache/mechanism_range.hpp\"\n");
     printlist(defs_list);
     printlist(firstlist);
     P("static int _reset;\n");
