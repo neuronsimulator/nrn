@@ -51,6 +51,7 @@ set(HEADER_FILES_TO_INSTALL
     runge.hpp
     scoplib.h
     section.h
+    sparse.hpp
     spconfig.h
     spmatrix.h
     treeset.h
@@ -421,7 +422,6 @@ set(SCOPMATH_FILES_LIST
     sawtooth.cpp
     sigmoid.cpp
     simeq.cpp
-    sparse.cpp
     spline.cpp
     squarewa.cpp
     ssimplic.cpp

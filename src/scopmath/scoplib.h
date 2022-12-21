@@ -9,6 +9,7 @@
 #include "euler.hpp"
 #include "newton.hpp"
 #include "runge.hpp"
+#include "sparse.hpp"
 #include "newton_struct.h"
 
 /* Memory allocation routines */
@@ -114,7 +115,6 @@ double scop_erf(double z);
 
 typedef struct NrnThread NrnThread;
 typedef struct SparseObj SparseObj;
-int _cvode_sparse(void**, int, int*, double*, int (*)(), double**);
 int _cvode_sparse_thread(void**,
                                 int,
                                 int*,
@@ -132,10 +132,8 @@ int derivimplicit_thread(int,
                                 Datum*,
                                 Datum*,
                                 NrnThread*);
-double* _getelm(int, int);
 void _nrn_destroy_sparseobj_thread(SparseObj*);
 double* _nrn_thread_getelm(SparseObj*, int, int);
-int sparse(void**, int, int*, int*, double*, double*, double, int (*)(), double**, int);
 int sparse_thread(void**,
                          int,
                          int*,
