@@ -114,17 +114,15 @@ static int ode_count(int type) {
     KSChan* c = (*channels)[type];
     return c->count();
 }
-static void ode_map(int ieq,
-                    double** pv,
-                    double** pvdot,
-                    Memb_list* ml,
-                    std::size_t iml,
-                    Datum* pd,
+static void ode_map(Prop* prop,
+                    int ieq,
+                    neuron::container::data_handle<double>* pv,
+                    neuron::container::data_handle<double>* pvdot,
                     double* atol,
                     int type) {
     // printf("ode_map\n");
     KSChan* c = (*channels)[type];
-    c->map(ieq, pv, pvdot, ml, iml, pd, atol);
+    c->map(prop, ieq, pv, pvdot, atol);
 }
 static void ode_spec(NrnThread*, Memb_list* ml, int type) {
     // printf("ode_spec\n");
@@ -3120,16 +3118,14 @@ int KSChan::count() {
     return nstate_;
 }
 
-void KSChan::map(int ieq,
-                 double** pv,
-                 double** pvdot,
-                 Memb_list* ml,
-                 std::size_t iml,
-                 Datum* pd,
+void KSChan::map(Prop* prop,
+                 int ieq,
+                 neuron::container::data_handle<double>* pv,
+                 neuron::container::data_handle<double>* pvdot,
                  double* atol) {
     for (int i = 0; i < nstate_; ++i) {
-        pv[i] = &ml->data(iml, soffset_ + i);
-        pvdot[i] = &ml->data(iml, soffset_ + nstate_ + i);
+        pv[i] = prop->param_handle(soffset_ + i);
+        pvdot[i] = prop->param_handle(soffset_ + nstate_ + i);
     }
 }
 
