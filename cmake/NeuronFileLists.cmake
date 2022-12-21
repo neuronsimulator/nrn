@@ -5,6 +5,7 @@ set(HEADER_FILES_TO_INSTALL
     bbsavestate.h
     cabvars.h
     crout.hpp
+    crout_thread.hpp
     cspmatrix.h
     cspredef.h
     deflate.hpp
@@ -430,8 +431,7 @@ set(SCOPMATH_FILES_LIST
     squarewa.cpp
     step.cpp
     threshol.cpp
-    tridiag.cpp
-    crout_thread.cpp)
+    tridiag.cpp)
 
 set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
 

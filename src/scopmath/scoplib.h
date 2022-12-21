@@ -6,6 +6,7 @@
  *  user to describe or solve his model's equations.
  */
 #include "crout.hpp"
+#include "crout_thread.hpp"
 #include "dimplic.hpp"
 #include "euler.hpp"
 #include "newton.hpp"

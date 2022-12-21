@@ -2,6 +2,7 @@
  *  @copyright (c) 1987-90 Duke University
  */
 #pragma once
+#include "crout_thread.hpp"
 #include "errcodes.hpp"
 #include "newton_struct.h"
 #include "oc_ansi.h"
