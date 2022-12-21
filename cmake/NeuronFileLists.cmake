@@ -53,6 +53,7 @@ set(HEADER_FILES_TO_INSTALL
     scoplib.h
     section.h
     sparse.hpp
+    sparse_thread.hpp
     spconfig.h
     spmatrix.h
     treeset.h
@@ -428,7 +429,6 @@ set(SCOPMATH_FILES_LIST
     step.cpp
     threshol.cpp
     tridiag.cpp
-    sparse_thread.cpp
     newton_thread.cpp
     crout_thread.cpp
     ssimplic_thread.cpp)

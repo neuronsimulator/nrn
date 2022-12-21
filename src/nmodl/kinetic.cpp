@@ -853,15 +853,6 @@ for(_i=%d;_i<%d;_i++){\n",
                         "*(_nrn_thread_getelm(static_cast<SparseObj*>(_so), _row + 1, _col + 1))\n",
                         fun->u.i);
                 vectorize_substitute(qv, buf);
-                {
-                    static int first = 1;
-                    if (first) {
-                        first = 0;
-                        if (vectorize) {
-                            linsertstr(procfunc,"extern double *_nrn_thread_getelm(SparseObj*, int, int);\n");
-                        }
-                    }
-                }
             }
         }
     } /* end of NOT_CVODE_FLAG */
