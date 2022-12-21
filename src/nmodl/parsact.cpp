@@ -243,7 +243,7 @@ void defarg(Item* q1, Item* q2) /* copy arg list and define as doubles */
     Item *q3, *q;
 
     if (q1->next == q2) {
-        vectorize_substitute(insertstr(q2, ""), "_internalthreadargsproto_ /* foo32432 */");
+        vectorize_substitute(insertstr(q2, ""), "_internalthreadargsproto_");
         return;
     }
     for (q = q1->next; q != q2; q = q->next) {
@@ -791,7 +791,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
     if (i) {
         vectorize_substitute(qp, "_threadargscomma_");
     } else if (!hack) {
-        vectorize_substitute(qp, "_threadargs_ /* foo */");
+        vectorize_substitute(qp, "_threadargs_");
     }
 }
 

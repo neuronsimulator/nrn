@@ -1753,11 +1753,12 @@ void bablk(int ba, int type, Item* q1, Item* q2) {
     }
     Sprintf(buf,
             "static void _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* "
-            "_ml, size_t _iml) ",
+            "_ml_arg, size_t _iml) ",
             ++ba_index_);
     insertstr(q1, buf);
     q = q1->next;
     vectorize_substitute(insertstr(q, ""), "Datum* _ppvar;");
+    qv = insertstr(q, "LocalMechanismRange _lmr{*_ml_arg}; auto* const _ml = &_lmr;\n");
     qv = insertstr(q, "_ppvar = _ppd;\n");
     movelist(qb, q2, procfunc);
 
