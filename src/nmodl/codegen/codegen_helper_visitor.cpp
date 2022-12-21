@@ -569,6 +569,11 @@ void CodegenHelperVisitor::visit_function_block(const ast::FunctionBlock& node) 
 }
 
 
+void CodegenHelperVisitor::visit_function_table_block(const ast::FunctionTableBlock& node) {
+    info.function_tables.push_back(&node);
+}
+
+
 void CodegenHelperVisitor::visit_eigen_newton_solver_block(
     const ast::EigenNewtonSolverBlock& node) {
     info.eigen_newton_solver_exist = true;

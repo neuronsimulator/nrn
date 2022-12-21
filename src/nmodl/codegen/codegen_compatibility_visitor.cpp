@@ -20,8 +20,6 @@ const std::map<ast::AstNodeType, CodegenCompatibilityVisitor::FunctionPointer>
     CodegenCompatibilityVisitor::unhandled_ast_types_func(
         {{AstNodeType::DISCRETE_BLOCK,
           &CodegenCompatibilityVisitor::return_error_with_name<DiscreteBlock>},
-         {AstNodeType::FUNCTION_TABLE_BLOCK,
-          &CodegenCompatibilityVisitor::return_error_without_name<FunctionTableBlock>},
          {AstNodeType::SOLVE_BLOCK,
           &CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandled},
          {AstNodeType::GLOBAL_VAR, &CodegenCompatibilityVisitor::return_error_global_var},

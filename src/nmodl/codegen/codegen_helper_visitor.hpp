@@ -89,6 +89,7 @@ class CodegenHelperVisitor: public visitor::ConstAstVisitor {
     void visit_conductance_hint(const ast::ConductanceHint& node) override;
     void visit_procedure_block(const ast::ProcedureBlock& node) override;
     void visit_function_block(const ast::FunctionBlock& node) override;
+    void visit_function_table_block(const ast::FunctionTableBlock& node) override;
     void visit_eigen_newton_solver_block(const ast::EigenNewtonSolverBlock& node) override;
     void visit_eigen_linear_solver_block(const ast::EigenLinearSolverBlock& node) override;
     void visit_statement_block(const ast::StatementBlock& node) override;

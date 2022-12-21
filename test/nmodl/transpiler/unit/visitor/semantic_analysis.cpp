@@ -146,3 +146,22 @@ SCENARIO("INDEPENDENT block", "[visitor][semantic_analysis]") {
         }
     }
 }
+
+SCENARIO("FUNCTION_TABLE block", "[visitor][semantic_analysis]") {
+    GIVEN("A mod file with FUNCTION_TABLE without argument") {
+        std::string nmodl_text = R"(
+            FUNCTION_TABLE ttt()
+        )";
+        THEN("Semantic analysis should fail") {
+            REQUIRE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+    GIVEN("A mod file with FUNCTION_TABLE with at least one argument") {
+        std::string nmodl_text = R"(
+            FUNCTION_TABLE ttt(w (mV))
+        )";
+        THEN("Semantic analysis should success") {
+            REQUIRE_FALSE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+}

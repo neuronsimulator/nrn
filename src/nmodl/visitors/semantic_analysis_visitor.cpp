@@ -1,5 +1,6 @@
 #include "visitors/semantic_analysis_visitor.hpp"
 #include "ast/function_block.hpp"
+#include "ast/function_table_block.hpp"
 #include "ast/independent_block.hpp"
 #include "ast/procedure_block.hpp"
 #include "ast/program.hpp"
@@ -112,6 +113,17 @@ void SemanticAnalysisVisitor::visit_independent_block(const ast::IndependentBloc
                 "'t' is allowed.",
                 n->get_value()->get_value());
         }
+    }
+    /// -->
+}
+
+void SemanticAnalysisVisitor::visit_function_table_block(const ast::FunctionTableBlock& node) {
+    /// <-- This code is for check 7
+    if (node.get_parameters().size() < 1) {
+        logger->critical(
+            "SemanticAnalysisVisitor :: Function table '{}' must have one or more arguments.",
+            node.get_node_name());
+        check_fail = true;
     }
     /// -->
 }
