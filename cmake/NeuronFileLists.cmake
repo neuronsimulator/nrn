@@ -57,6 +57,7 @@ set(HEADER_FILES_TO_INSTALL
     spconfig.h
     spmatrix.h
     ssimplic.hpp
+    ssimplic_thread.hpp
     treeset.h
     wrap_sprintf.h)
 
@@ -430,8 +431,7 @@ set(SCOPMATH_FILES_LIST
     threshol.cpp
     tridiag.cpp
     newton_thread.cpp
-    crout_thread.cpp
-    ssimplic_thread.cpp)
+    crout_thread.cpp)
 
 set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
 

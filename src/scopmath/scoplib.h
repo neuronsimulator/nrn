@@ -13,6 +13,7 @@
 #include "sparse.hpp"
 #include "sparse_thread.hpp"
 #include "ssimplic.hpp"
+#include "ssimplic_thread.hpp"
 #include "newton_struct.h"
 
 /* Memory allocation routines */
@@ -115,29 +116,6 @@ double normrand(double mean, double std_dev);
 double poisson(double x, double mean);
 double gauss(double x, double mean, double std_dev);
 double scop_erf(double z);
-
-typedef struct NrnThread NrnThread;
-typedef struct SparseObj SparseObj;
-int _ss_derivimplicit_thread(int,
-                                    int*,
-                                    int*,
-                                    double*,
-                                    int (*)(void*, Datum*, Datum*, NrnThread*),
-                                    Datum*,
-                                    Datum*,
-                                    NrnThread*);
-int _ss_sparse_thread(void**,
-                             int,
-                             int*,
-                             int*,
-                             double*,
-                             double*,
-                             double,
-                             int (*)(void*, double*, double*, Datum*, Datum*, NrnThread*),
-                             int,
-                             Datum*,
-                             Datum*,
-                             NrnThread*);
 
 void hoc_after_prax_quad(char*);
 double* praxis_paxis(int);
