@@ -595,7 +595,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
             mlmap[i] = tml->ml;
             CACHELINE_ALLOC(tml->ml->nodelist, Node*, mlcnt[i]);
             CACHELINE_ALLOC(tml->ml->nodeindices, int, mlcnt[i]);
-            tml->ml->prop = new Prop*[mlcnt[i]]; // used for ode_map
+            tml->ml->prop = new Prop*[mlcnt[i]];  // used for ode_map
             if (!memb_func[i].hoc_mech) {
                 CACHELINE_ALLOC(tml->ml->pdata, Datum*, mlcnt[i]);
             }
