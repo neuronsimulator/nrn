@@ -977,7 +977,6 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
             auto* p = prop_alloc(&(node.prop), type, &node); /* this and any ions */
             // Fill `pv` with pointers to `2*n` parameters inside `p`
             std::vector<neuron::container::data_handle<double>> pv(2 * n);
-            //auto [_, ml, iml] = create_ml(p);
             memb_func[type].ode_map(p, 0, pv.data(), pv.data() + n, nullptr, type);
             // TODO now pv contains data_handle then maybe the next part can be done more directly
             for (int i = 0; i < n; ++i) {  // only check the first `n` for some reason

@@ -875,13 +875,14 @@ static const char *_mechanism[] = {\n\
     // need to fill _prop->dparam before calling make_nocmodl_macros_work
     if (ppvar_cnt) {
         Sprintf(buf, "  _ppvar = nrn_prop_datum_alloc(_mechtype, %d, _prop);\n", ppvar_cnt);
-        Lappendstr(defs_list, buf);  
+        Lappendstr(defs_list, buf);
         Lappendstr(defs_list, "   _prop->dparam = _ppvar;\n");
     }
     // seems that even in the old code and with vectorize == false that the global _p, _ppvar were
     // shadowed, so don't worry about shadowing the global _ml and _iml here
     Sprintf(buf,
-            "    auto [_, _ml, _iml] = neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_prop);\n"
+            "    auto [_, _ml, _iml] = "
+            "neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_prop);\n"
             "    assert(_prop->param_size() == %d);\n",
             parraycount);
     Lappendstr(defs_list, buf);
@@ -1005,10 +1006,8 @@ static const char *_mechanism[] = {\n\
             Lappendstr(procfunc,
                        "\n"
                        "static void _constructor(Prop* _prop) {\n"
-                       "  auto [_, _ml, _iml] = neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_prop);\n"
-                       //    "  auto [_, _ml, _iml] = "
-                       //    "create_ml_cache<number_of_floating_point_variables,
-                       //    number_of_datum_variables>(_prop);\n"
+                       "  auto [_, _ml, _iml] = "
+                       "neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_prop);\n"
                        "  Datum *_ppvar{_prop->dparam}, *_thread{};\n"
                        "  {\n");
         } else {
@@ -1309,10 +1308,8 @@ if (_nd->_extnode) {\n\
             Lappendstr(procfunc,
                        "\n"
                        "static void _destructor(Prop* _prop) {\n"
-                       "  auto [_, _ml, _iml] = neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_prop);\n"
-                       //    "  auto [_, _ml, _iml] = "
-                       //    "create_ml_cache<number_of_floating_point_variables,
-                       //    number_of_datum_variables>(_prop);\n"
+                       "  auto [_, _ml, _iml] = "
+                       "neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_prop);\n"
                        "  Datum *_ppvar{_prop->dparam}, *_thread{};\n"
                        "  {\n");
         } else {
@@ -2165,7 +2162,8 @@ int iondef(int* p_pointercount) {
             SYM(q1)->nrntype |= NRNIONFLAG;
             Sprintf(buf,
                     "#define _ion_%s *(_ml->dptr_field<%d>(_iml))\n"
-                    "#define _p_ion_%s static_cast<neuron::container::data_handle<double>>(_ppvar[%d])\n",
+                    "#define _p_ion_%s "
+                    "static_cast<neuron::container::data_handle<double>>(_ppvar[%d])\n",
                     SYM(q1)->name,
                     ioncount,
                     SYM(q1)->name,
@@ -2183,7 +2181,8 @@ int iondef(int* p_pointercount) {
             } else {
                 Sprintf(buf,
                         "#define _ion_%s *(_ml->dptr_field<%d>(_iml))\n"
-                        "#define _p_ion_%s static_cast<neuron::container::data_handle<double>>(_ppvar[%d])\n",
+                        "#define _p_ion_%s "
+                        "static_cast<neuron::container::data_handle<double>>(_ppvar[%d])\n",
                         SYM(q1)->name,
                         ioncount,
                         SYM(q1)->name,
@@ -2606,8 +2605,8 @@ static void _ode_map(Prop* _prop, int _ieq, neuron::container::data_handle<doubl
                     " _ppvar = _prop->dparam;\n"
                     "  _cvode_ieq = _ieq;\n"
                     "  for (int _i=0; _i < %d; ++_i) {\n"
-                    "    _pv[_i] = _prop->param_handle(_slist%d[_i]);\n"//&_ml->data(_iml, _slist%d[_i]);\n"
-                    "    _pvdot[_i] = _prop->param_handle(_dlist%d[_i]);\n"//&_ml->data(_iml, _dlist%d[_i]);\n"
+                    "    _pv[_i] = _prop->param_handle(_slist%d[_i]);\n"
+                    "    _pvdot[_i] = _prop->param_handle(_dlist%d[_i]);\n"
                     "    _cvode_abstol(_atollist, _atol, _i);\n"
                     "  }\n",
                     cvode_neq_,
@@ -2810,9 +2809,13 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
         insertstr(qstmt, "  int _watch_rm = 0;\n");
     }
     if (vectorize) {
-        q = insertstr(qstmt, "  auto [_, _ml, _iml] = neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_pnt->_prop);\n");
+        q = insertstr(
+            qstmt,
+            "  auto [_, _ml, _iml] = "
+            "neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_pnt->_prop);\n");
     } else {
-        q = insertstr(qstmt, "  neuron::legacy::set_globals_from_prop(_pnt->_prop, _ml_real, _ml, _iml);\n");
+        q = insertstr(
+            qstmt, "  neuron::legacy::set_globals_from_prop(_pnt->_prop, _ml_real, _ml, _iml);\n");
     }
     q = insertstr(qstmt, "  _ppvar = _pnt->_prop->dparam;\n");
     vectorize_substitute(insertstr(q, ""), "  _thread = nullptr; _nt = (NrnThread*)_pnt->_vnt;");
@@ -2901,14 +2904,13 @@ void net_init(Item* qinit, Item* qp2) {
     /* qinit=INITIAL { stmtlist qp2=} */
     replacstr(qinit, "\nstatic void _net_init(Point_process* _pnt, double* _args, double _lflag)");
     Sprintf(buf, "    _ppvar = _pnt->_prop->dparam;\n");
-    vectorize_substitute(insertstr(qinit->next->next, buf),
-                         "  auto [_, _ml, _iml] = neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_pnt->_prop);\n"
-                         //  "  auto [_, _ml, _iml] = "
-                         //  "create_ml_cache<number_of_floating_point_variables,
-                         //  number_of_datum_variables>(_pnt->_prop);\n"
-                         "  Datum* _ppvar = _pnt->_prop->dparam;\n"
-                         "  Datum* _thread = (Datum*)0;\n"
-                         "  NrnThread* _nt = (NrnThread*)_pnt->_vnt;\n");
+    vectorize_substitute(
+        insertstr(qinit->next->next, buf),
+        "  auto [_, _ml, _iml] = "
+        "neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_pnt->_prop);\n"
+        "  Datum* _ppvar = _pnt->_prop->dparam;\n"
+        "  Datum* _thread = (Datum*)0;\n"
+        "  NrnThread* _nt = (NrnThread*)_pnt->_vnt;\n");
     if (net_init_q1_) {
         diag("NET_RECEIVE block can contain only one INITIAL block", (char*) 0);
     }
