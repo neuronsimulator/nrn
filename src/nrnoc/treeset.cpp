@@ -1629,9 +1629,8 @@ void v_setup_vectors(void) {
 #if CACHEVEC
                 free((void*) memb_list[i].nodeindices);
 #endif /* CACHEVEC */
-                if (memb_func[i].hoc_mech) {
-                    free(memb_list[i].prop);
-                } else {
+                delete [] memb_list[i].prop;
+                if (!memb_func[i].hoc_mech) {
                     // free(memb_list[i]._data);
                     free(memb_list[i].pdata);
                 }
@@ -1656,12 +1655,11 @@ void v_setup_vectors(void) {
 #if CACHEVEC
                 memb_list[i].nodeindices = (int*) emalloc(memb_list[i].nodecount * sizeof(int));
 #endif /* CACHEVEC */
-                if (memb_func[i].hoc_mech) {
-                    memb_list[i].prop = (Prop**) emalloc(memb_list[i].nodecount * sizeof(Prop*));
-                } else {
-                    // memb_list[i]._data = (double**) emalloc(memb_list[i].nodecount *
-                    //                                         sizeof(double*));
-                    memb_list[i].pdata = (Datum**) emalloc(memb_list[i].nodecount * sizeof(Datum*));
+                // Prop used by ode_map even when hoc_mech is false
+                memb_list[i].prop = new Prop*[memb_list[i].nodecount];
+                if (!memb_func[i].hoc_mech) {
+                    memb_list[i].pdata = (Datum**) emalloc(memb_list[i].nodecount *
+                                                            sizeof(Datum*));
                 }
                 memb_list[i].nodecount = 0; /* counted again below */
             }

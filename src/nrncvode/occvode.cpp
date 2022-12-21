@@ -326,9 +326,8 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
 #if CACHEVEC
                     newml.nodeindices = new int[1]{ml.nodeindices[i]};
 #endif
-                    if (mf->hoc_mech) {
-                        newml.prop = new Prop* [1] { ml.prop[i] };
-                    } else {
+                    newml.prop = new Prop* [1] { ml.prop[i] };
+                    if (!mf->hoc_mech) {
                         // Danger: this is not stable w.r.t. permutation
                         newml.set_storage_offset(ml.get_storage_offset() + i);
                         newml.pdata = new Datum* [1] { ml.pdata[i] };
