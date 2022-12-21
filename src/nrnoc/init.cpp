@@ -13,10 +13,12 @@
 #include "nrniv_mf.h"
 #include "cabvars.h"
 #include "neuron.h"
+#include "neuron/container/data_handle.hpp"
 #include "membdef.h"
 #include "multicore.h"
 #include "nrnmpi.h"
 
+#include <vector>
 
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] = "7.7.0";
