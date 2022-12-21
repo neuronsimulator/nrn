@@ -277,13 +277,13 @@ void parout() {
     if (vectorize) {
         Lappendstr(defs_list,
                    "\n\
-#define _internaltemplatedecl_ template <typename MechData>\n\
+#define _internaltemplatedecl_\n\
 #define _threadargscomma_ _ml, _iml, _ppvar, _thread, _nt,\n\
 #define _threadargsprotocomma_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
-#define _internalthreadargsprotocomma_ MechData* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
+#define _internalthreadargsprotocomma_ LocalMechanismRange* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
 #define _threadargs_ _ml, _iml, _ppvar, _thread, _nt\n\
 #define _threadargsproto_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
-#define _internalthreadargsproto_ MechData* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
+#define _internalthreadargsproto_ LocalMechanismRange* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
 ");
     } else {
         Lappendstr(defs_list,
