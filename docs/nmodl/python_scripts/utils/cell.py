@@ -1,4 +1,4 @@
-from neuron import h
+from neuron import h, gui
 
 
 class Cell:
@@ -18,11 +18,18 @@ class Cell:
     def record(self):
         pass
 
-    def simulate(self, tstop, dt):
+    def simulate(self, tstop, dt, corenrn=False, gpu=False):
+        from neuron import coreneuron
+
+        coreneuron.enable = corenrn
+        coreneuron.gpu = gpu
+
+        h.CVode().cache_efficient(1)
+        pc = h.ParallelContext()
+        pc.set_maxstep(10)
+        h.stdinit()
         h.dt = dt
-        h.finitialize()
-        while h.t < tstop - dt / 2:
-            h.fadvance()
+        pc.psolve(tstop)
 
     def output(self):
         for variable in self.record_vectors:
