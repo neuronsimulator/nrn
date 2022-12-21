@@ -12,6 +12,7 @@
 #include "runge.hpp"
 #include "sparse.hpp"
 #include "sparse_thread.hpp"
+#include "ssimplic.hpp"
 #include "newton_struct.h"
 
 /* Memory allocation routines */
@@ -117,7 +118,6 @@ double scop_erf(double z);
 
 typedef struct NrnThread NrnThread;
 typedef struct SparseObj SparseObj;
-int _ss_derivimplicit(int, int, int*, int*, double*, double*, double, int (*)(), double**);
 int _ss_derivimplicit_thread(int,
                                     int*,
                                     int*,
@@ -126,7 +126,6 @@ int _ss_derivimplicit_thread(int,
                                     Datum*,
                                     Datum*,
                                     NrnThread*);
-int _ss_sparse(void**, int, int*, int*, double*, double*, double, int (*)(), double**, int);
 int _ss_sparse_thread(void**,
                              int,
                              int*,

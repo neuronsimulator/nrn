@@ -56,6 +56,7 @@ set(HEADER_FILES_TO_INSTALL
     sparse_thread.hpp
     spconfig.h
     spmatrix.h
+    ssimplic.hpp
     treeset.h
     wrap_sprintf.h)
 
@@ -425,7 +426,6 @@ set(SCOPMATH_FILES_LIST
     simeq.cpp
     spline.cpp
     squarewa.cpp
-    ssimplic.cpp
     step.cpp
     threshol.cpp
     tridiag.cpp
