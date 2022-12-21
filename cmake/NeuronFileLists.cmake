@@ -54,8 +54,6 @@ set(HEADER_FILES_TO_INSTALL
     parse_with_deps.hpp
     runge.hpp
     scoplib.h
-    sparse_thread.hpp
-    ssimplic_thread.hpp
     section.h
     simeq.hpp
     sparse.hpp
