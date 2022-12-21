@@ -7,6 +7,7 @@
  *   Duke University
  *
  ******************************************************************************/
+#include "deflate.hpp"
 #include "errcodes.hpp"
 #include "../oc/nrnassrt.h"
 #include "scoplib.h"

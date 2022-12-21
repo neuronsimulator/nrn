@@ -59,13 +59,6 @@ int derivs(int nbase, double* x, double* y, double* h, double* der);
 double spline(int nbase, double* x, double* y, double* h, double* der, double x_inter);
 double force(double t, char* filename);
 double stepforce(int* reset_integ, double* old_value, double t, char* filename);
-/* Using deflate as a global symbol name is unfortunate and clashes with zlib;
- * hopefully this can improved by porting the scoplib sources to C++ and moving
- * them into an appropriate namespace. In the meantime, hack around this with
- * the preprocessor.
- */
-#define deflate scoplib_deflate
-int deflate(double degree, double* pcoeff, double* root);
 int expfit(double* terms, char* reffile, double* amplitude, double* lambda, double* error);
 
 /* General modeling functions */
