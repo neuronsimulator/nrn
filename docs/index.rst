@@ -95,7 +95,7 @@ Installation
 
          pip3 install neuron
       
-      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.1/nrn-8.2.1-macosx-10.9-universal2-py-38-39-310.pkg>`_.
+      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.2/nrn-8.2.2-macosx-10.9-universal2-py-38-39-310-311.pkg>`_.
 
       For troubleshooting, see the `detailed installation instructions <install/install_instructions.html>`_.
 
@@ -113,7 +113,7 @@ Installation
 
    .. tab-item:: Windows
 
-      `Download the Windows Installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.1/nrn-8.2.1.w64-mingw-py-37-38-39-310-setup.exe>`_.
+      `Download the Windows Installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.2/nrn-8.2.2.w64-mingw-py-37-38-39-310-311-setup.exe>`_.
 
       You can also install the Linux wheel via the Windows Subsystem for Linux (WSL). See `instructions <install/install_instructions.html#windows-subsystem-for-linux-wsl-python-wheel>`_.
 
