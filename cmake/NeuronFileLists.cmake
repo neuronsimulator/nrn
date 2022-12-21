@@ -26,6 +26,7 @@ set(HEADER_FILES_TO_INSTALL
     multicore.h
     multisplit.h
     neuron.h
+    newton.hpp
     newton_struct.h
     nmodlmutex.h
     nrn_ansi.h
@@ -405,7 +406,6 @@ set(SCOPMATH_FILES_LIST
     invert.cpp
     lag.cpp
     legendre.cpp
-    newton.cpp
     normrand.cpp
     perpulse.cpp
     perstep.cpp
