@@ -11,7 +11,6 @@
  */
 #include "bbsavestate.h"
 #include "mcran4.h"
-#include "neuron/cache/mechanism_range.hpp"
 #include "nrncvode.h"
 #include "nrnran123.h"
 #include "nrnrandom.h"
