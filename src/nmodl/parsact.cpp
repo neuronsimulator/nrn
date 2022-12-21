@@ -376,13 +376,19 @@ int check_tables_threads(List* p) {
             Sprintf(buf, "\nstatic void %s(_internalthreadargsproto_);", STR(q));
             lappendstr(p, buf);
         }
-        lappendstr(
-            p, "\nstatic void _check_table_thread(_internalthreadargsprotocomma_ int _type) {\n");
+        lappendstr(p,
+                   "\n"
+                   "static void _check_table_thread(_threadargsprotocomma_ int _type) {\n"
+                   "  LocalMechanismRange _lmr{*_ml};\n"
+                   "  {\n"
+                   "    auto* const _ml = &_lmr;\n");
         ITERATE(q, check_table_thread_list) {
             Sprintf(buf, "  %s(_threadargs_);\n", STR(q));
             lappendstr(p, buf);
         }
-        lappendstr(p, "}\n");
+        lappendstr(p,
+                   "  }\n"
+                   "}\n");
         return 1;
     }
     return 0;
