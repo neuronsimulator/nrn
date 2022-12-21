@@ -485,11 +485,9 @@ void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4) {
     Lappendsym(massage_list_, SYM(q2));
 
     /* all this junk is still in the intoken list */
-    Sprintf(buf,
-            "_internaltemplatedecl_\nstatic int %s(_internalthreadargsproto_);\n",
-            SYM(q2)->name);
+    Sprintf(buf, "static int %s(_internalthreadargsproto_);\n", SYM(q2)->name);
     Linsertstr(procfunc, buf);
-    replacstr(q1, "\n_internaltemplatedecl_\nstatic int");
+    replacstr(q1, "\nstatic int");
     q = insertstr(q3, "() {_reset=0;\n");
     derfun = SYM(q2);
     vectorize_substitute(q,
@@ -574,7 +572,7 @@ is not allowed on the left hand side.");
     Linsertstr(procfunc, buf);
 
     Lappendstr(procfunc, "\n/*CVODE*/\n");
-    Sprintf(buf, "_internaltemplatedecl_\nstatic int _ode_spec%d", numlist);
+    Sprintf(buf, "static int _ode_spec%d", numlist);
     Lappendstr(procfunc, buf);
     {
         Item* qq = procfunc->prev;
@@ -588,7 +586,7 @@ is not allowed on the left hand side.");
     if (!lookup("cvodematsol")) {
         Item* qq;
         Item* qextra = q1->next->next->next->next;
-        Sprintf(buf, "_internaltemplatedecl_\nstatic int _ode_matsol%d", numlist);
+        Sprintf(buf, "static int _ode_matsol%d", numlist);
         Lappendstr(procfunc, buf);
         vectorize_substitute(lappendstr(procfunc, "() {\n"), "(_internalthreadargsproto_) {\n");
         qq = procfunc->next;
@@ -906,7 +904,7 @@ int cvode_cnexp_success(Item* q1, Item* q2) {
             }
         }
 
-        lappendstr(procfunc, "_internaltemplatedecl_\nstatic int");
+        lappendstr(procfunc, "static int");
         {
             Item* qq = procfunc->prev;
             copyitems(q1, q2, procfunc->prev);

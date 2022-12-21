@@ -514,9 +514,6 @@ static void funcdec() {
     SYMITER(NAME) {
         more = 0;
         if (s->subtype & PROCED) {
-            if (vectorize) {
-                Fprintf(fcout, "_internaltemplatedecl_\n");
-            }
             Fprintf(fcout, "static int %s(", s->name);
             more = 1;
         }
@@ -583,7 +580,7 @@ void c_out_vectorize() {
 
     /* Initialization function must always be present */
 
-    P("\n_internaltemplatedecl_\nstatic void initmodel(_internalthreadargsproto_) {\n  int "
+    P("\nstatic void initmodel(_internalthreadargsproto_) {\n  int "
       "_i; double _save;");
     P("{\n");
     initstates();
@@ -623,7 +620,7 @@ void c_out_vectorize() {
 
     /* standard modl EQUATION without solve computes current */
     if (!conductance_) {
-        P("\n_internaltemplatedecl_\nstatic double _nrn_current(_internalthreadargsprotocomma_ "
+        P("\nstatic double _nrn_current(_internalthreadargsprotocomma_ "
           "double _v) {\n"
           "double _current=0.; v=_v;\n");
         if (cvode_nrn_current_solve_) {
