@@ -355,7 +355,7 @@ class KSChan {
     void add_channel(const char**);
     // for cvode
     virtual int count();
-    virtual void map(int, double**, double**, Memb_list*, std::size_t, Datum*, double*);
+    virtual void map(Prop*, int, neuron::container::data_handle<double>*, neuron::container::data_handle<double>*, double*);
     virtual void spec(Memb_list*);
     virtual void matsol(NrnThread*, Memb_list*);
     virtual void cv_sc_update(NrnThread*, Memb_list*);

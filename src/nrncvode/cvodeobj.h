@@ -74,16 +74,7 @@ class CvodeThreadData {
     Node** v_parent_;
     PreSynList* psl_th_;  // with a threshold
     HTList* watch_list_;
-    std::vector<neuron::container::data_handle<double>> pv_;
-    [[nodiscard]] std::vector<double*> raw_pv_pointers() {
-        std::vector<double*> ret{};
-        std::transform(pv_.begin(), pv_.end(), std::back_inserter(ret), [](auto& handle) {
-            return static_cast<double*>(handle);
-        });
-        assert(ret.size() == pv_.size());
-        return ret;
-    }
-    double** pvdot_;
+    std::vector<neuron::container::data_handle<double>> pv_, pvdot_;
     int nvoffset_;              // beginning of this threads states
     int nvsize_;                // total number of states for this thread
     int neq_v_;                 // for daspk, number of voltage states for this thread
