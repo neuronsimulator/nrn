@@ -239,7 +239,7 @@ void nrn2ncs_netcons();
 extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 #endif
 
-#if BGPDMA
+#if NRNMPI
 extern void bgp_dma_send(PreSyn*, double t);
 extern bool use_bgpdma_;
 extern void nrnbgp_messager_advance();
@@ -3262,11 +3262,11 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 #endif  // ndef USENCS
 #if USENCS || NRNMPI
     if (output_index_ >= 0) {
-#if BGPDMA
+#if NRNMPI
         if (use_bgpdma_) {
             bgp_dma_send(this, tt);
         } else {
-#endif  // BGPDMA
+#endif  // NRNMPI
 
 #if NRNMPI
             if (nrn_use_localgid_) {
@@ -3274,9 +3274,9 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
             } else
 #endif  // NRNMPI
                 nrn2ncs_outputevent(output_index_, tt);
-#if BGPDMA
+#if NRNMPI
         }
-#endif  // BGPDMA
+#endif  // NRNMPI
 #if NRN_MUSIC
         if (music_port_) {
             nrnmusic_injectlist(music_port_, tt);
@@ -5063,7 +5063,7 @@ PreSyn::PreSyn(double* src, Object* osrc, Section* ssrc) {
 #if 1 || USENCS || NRNMPI
     output_index_ = -1;
 #endif
-#if BGPDMA
+#if NRNMPI
     bgp.dma_send_ = 0;
 #endif
 #if NRN_MUSIC
@@ -6133,7 +6133,7 @@ void nrn2core_transfer_WATCH(void (*cb)(int, int, int, int, int)) {
 void NetCvode::deliver_net_events(NrnThread* nt) {  // for default method
     TQItem* q;
     double tm, tsav;
-#if BGPDMA
+#if NRNMPI
     if (use_bgpdma_) {
         nrnbgp_messager_advance();
     }

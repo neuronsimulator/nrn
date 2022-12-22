@@ -70,13 +70,7 @@ extern double nrnmpi_step_wait_;  // barrier at beginning of spike exchange.
 extern "C" int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec,
                                                   std::vector<int>& spikegidvec);
 
-// BGPDMA can be 0 or 1
-// (BGPDMA & 1) > 0 means multisend ISend allowed
-#if !defined(BGPDMA)
-#define BGPDMA 0
-#endif
-
-#if BGPDMA == 0
+#if NRNMPI == 0
 double nrn_bgp_receive_time(int) {
     return 0.;
 }
@@ -187,7 +181,7 @@ static int idxout_;
 static void nrn_spike_exchange_compressed(NrnThread*);
 #endif  // NRNMPI
 
-#if BGPDMA
+#if NRNMPI
 bool use_bgpdma_;  // false: allgather, true: multisend (ISend, bgpdma)
 static void bgp_dma_setup();
 static void bgp_dma_init();
@@ -245,7 +239,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
         MUTUNLOCK
         if (seq == nrn_nthread) {
             last_nt_ = nt;
-#if BGPDMA
+#if NRNMPI
             if (use_bgpdma_) {
                 bgp_dma_receive(nt);
             } else {
@@ -433,7 +427,7 @@ static int nrn_need_npe() {
 static void calc_actual_mindelay() {
     // reasons why mindelay_ can be smaller than min_interprocessor_delay
     // are use_bgpdma_ when BGP_INTERVAL == 2
-#if BGPDMA && (BGP_INTERVAL == 2)
+#if NRNMPI && (BGP_INTERVAL == 2)
     if (use_bgpdma_ && n_bgp_interval == 2) {
         mindelay_ = min_interprocessor_delay_ / 2.;
     } else {
@@ -442,7 +436,7 @@ static void calc_actual_mindelay() {
 #endif
 }
 
-#if BGPDMA
+#if NRNMPI
 #include "bgpdma.cpp"
 #else
 #define TBUFSIZE 0
@@ -487,7 +481,7 @@ void nrn_spike_exchange_init() {
     itbuf_ = 0;
 #endif
 
-#if BGPDMA
+#if NRNMPI
     if (use_bgpdma_) {
         bgp_dma_init();
     }
@@ -545,7 +539,7 @@ void nrn_spike_exchange(NrnThread* nt) {
     if (!active_) {
         return;
     }
-#if BGPDMA
+#if NRNMPI
     if (use_bgpdma_) {
         bgp_dma_receive(nt);
         return;
@@ -969,7 +963,7 @@ void BBS::set_gid2node(int gid, int nid) {
 static int gid_donot_remove = 0;  // avoid  gid2in_, gid2out removal when iterating
 
 void nrn_cleanup_presyn(PreSyn* ps) {
-#if BGPDMA
+#if NRNMPI
     bgpdma_cleanup_presyn(ps);
 #endif
     if (gid_donot_remove) {
@@ -1006,7 +1000,7 @@ void nrnmpi_gid_clear(int arg) {
             if (arg == 4) {
                 delete ps;
             } else {
-#if BGPDMA
+#if NRNMPI
                 bgpdma_cleanup_presyn(ps);
 #endif
                 ps->gid_ = -1;
@@ -1022,7 +1016,7 @@ void nrnmpi_gid_clear(int arg) {
         if (arg == 4) {
             delete ps;
         } else {
-#if BGPDMA
+#if NRNMPI
             bgpdma_cleanup_presyn(ps);
 #endif
             ps->gid_ = -1;
@@ -1292,7 +1286,7 @@ void BBS::netpar_solve(double tstop) {
     }
     impl_->integ_time_ += nrnmpi_wtime() - wt;
     impl_->integ_time_ -= (npe_ ? (npe_[0].wx_ + npe_[0].ws_) : 0.);
-#if BGPDMA
+#if NRNMPI
     if (use_bgpdma_) {
 #if BGP_INTERVAL == 2
         for (int i = 0; i < n_bgp_interval; ++i) {
@@ -1416,7 +1410,7 @@ static double set_mindelay(double maxdelay) {
 }
 
 double BBS::netpar_mindelay(double maxdelay) {
-#if BGPDMA
+#if NRNMPI
     bgp_dma_setup();
 #endif
     double tt = set_mindelay(maxdelay);
@@ -1496,16 +1490,12 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 #if BGP_INTERVAL == 2
         n_bgp_interval = (xchng_meth & 4) ? 2 : 1;
 #endif
-#if BGPDMA
         use_bgpdma_ = (xchng_meth & 1) == 1;
         use_phase2_ = (xchng_meth & 8) ? 1 : 0;
         if (use_bgpdma_) {
-            assert(BGPDMA);
+            assert(NRNMPI);
         }
         bgpdma_cleanup();
-#else  // BGPDMA == 0
-        assert(xchng_meth == 0);
-#endif
     }
     if (nspike >= 0) {
         ag_send_nspike_ = 0;

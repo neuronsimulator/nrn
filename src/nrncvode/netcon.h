@@ -316,7 +316,7 @@ class PreSyn: public ConditionEvent {
 #if NRN_MUSIC
     void* music_port_;
 #endif
-#if BGPDMA
+#if NRNMPI
     union {  // A PreSyn cannot be both a source spike generator
         // and a receiver of off-host spikes.
         BGP_DMASend* dma_send_;

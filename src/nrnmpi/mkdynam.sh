@@ -2,16 +2,12 @@
 
 names=`sed -n '
 /extern /s/extern [a-z*]* \(nrnmpi_[a-zA-Z0-9_]*\)(.*);/\1/p
-/BGPDMA/s/.*/BGPDMA/p
-$s/.*/ENDIF/p
 ' nrnmpidec.h`
 
 #generate nrnmpi_dynam_wrappers.inc
 sed -n '
 /extern void/s/extern \(void\) \(nrnmpi_[a-zA-Z0-9_]*\)\(.*\);/\1 \2\3 {@  (*p_\2)\3;@}/p
 /extern [^v]/s/extern \([a-z*]*\) \(nrnmpi_[a-zA-Z0-9_]*\)\(.*\);/\1 \2\3 {@  return (*p_\2)\3;@}/p
-/BGPDMA/p
-$p
 ' nrnmpidec.h | tr '@' '\n' | sed '
 /p_nrnmpi/ {
 s/, [a-zA-Z0-9_*]* /, /g
@@ -30,13 +26,7 @@ echo '
 #if NRNMPI_DYNAMICLOAD
 '
 for i in $names ; do
-	if test "$i" = "BGPDMA" ; then
-		echo "#if BGPDMA"
-	elif test "$i" = "ENDIF" ; then
-		echo "#endif"
-	else
-		echo "#define $i f_$i"
-	fi
+	echo "#define $i f_$i"
 done
 
 echo '
@@ -51,8 +41,6 @@ echo '
 
 sed -n '
 /extern/s/extern \([a-z*]*\) \(nrnmpi_[a-zA-Z0-9_]*\)\(.*\);/static \1 (*p_\2)\3;/p
-/BGPDMA/p
-$p
 ' nrnmpidec.h
 echo '
 static struct {
@@ -60,13 +48,7 @@ static struct {
 	void** ppf;
 } ftable[] = {'
 for i in $names ; do
-	if test "$i" = "BGPDMA" ; then
-		echo "#if BGPDMA"
-	elif test "$i" = "ENDIF" ; then
-		echo "#endif"
-	else
-		echo "	\"f_$i\", (void**)&p_$i,"
-	fi
+	echo "	\"f_$i\", (void**)&p_$i,"
 done
 echo '	0,0
 };

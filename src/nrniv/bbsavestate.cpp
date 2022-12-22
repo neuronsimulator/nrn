@@ -263,7 +263,7 @@ static void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
 }
 #endif  // NRNMPI
 
-#if BGPDMA
+#if NRNMPI
 extern bool use_bgpdma_;
 #endif
 
@@ -817,7 +817,7 @@ void bbss_restore_done(void* bbss) {
     npe->savestate_restore(t, net_cvode_instance);
     delete npe;
     nrn_spike_exchange(nrn_threads);
-#if BGPDMA
+#if NRNMPI
     // only necessary if multisend method is using two subintervals
     if (use_bgpdma_) {
         nrn_spike_exchange(nrn_threads);
