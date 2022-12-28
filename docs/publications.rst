@@ -3,9 +3,9 @@
 Publications about NEURON
 =========================
 
-Awile, O., Kumbhar, P., Cornu, N., Dura-Bernal, S., King, J. G., Lupton, O., Magkanaris, I., McDougal, R. A., Newton, A. J. H., Pereira, F., Săvulescu, A., Carnevale, N. T., Lytton, W. W., Hines, M. L., Schürmann, F. (2022). Modernizing the NEURON Simulator for Sustainability, Portability, and Performance. *bioRxiv*. `doi:10.1101/2022.03.03.482816 <https://doi.org/10.1101/2022.03.03.482816>`_
+Awile, O., Kumbhar, P., Cornu, N., Dura-Bernal, S., King, J. G., Lupton, O., Magkanaris, I., McDougal, R. A., Newton, A. J. H., Pereira, F., Săvulescu, A., Carnevale, N. T., Lytton, W. W., Hines, M. L., Schürmann, F. (2022). Modernizing the NEURON Simulator for Sustainability, Portability, and Performance. *Frontiers in Neuroinformatics*. 16:884046. `doi:10.3389/fninf.2022.884046 <https://doi.org/10.3389/fninf.2022.884046>`_
 
-McDougal, R. A., Conte, C., Eggleston, L., Newton, A. J. H., Galijasevic, H. (2022). Efficient simulation of 3D reaction-diffusion in models of neurons and networks. *bioRxiv*. `doi:10.1101/2022.01.01.474683 <https://doi.org/10.1101/2022.01.01.474683>`_
+McDougal, R. A., Conte, C., Eggleston, L., Newton, A. J. H., Galijasevic, H. (2022). Efficient simulation of 3D reaction-diffusion in models of neurons and networks. *Frontiers in Neuroinformatics*. 16:847108. `doi:10.3389/fninf.2022.847108 <https://doi.org/10.3389/fninf.2022.847108>`_
 
 Hines M., Carnevale T., McDougal R.A. NEURON Simulation Environment (2019). In: Jaeger D., Jung R. (eds) *Encyclopedia of Computational Neuroscience*. Springer, New York, NY. `doi:10.1007/978-1-4614-7320-6_795-2 <https://doi.org/10.1007/978-1-4614-7320-6_795-2>`_
 
