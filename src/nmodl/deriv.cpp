@@ -124,7 +124,8 @@ void solv_diffeq(Item* qsol,
             Strcpy(deriv2_advance, "");
         }
         Sprintf(buf,
-                "%s %s%s(_ninits, %d, _slist%d, _dlist%d, neuron::scopmath::row_view{_ml, _iml}, &%s, %s, %s, &_temp%d%s);\n%s",
+                "%s %s%s(_ninits, %d, _slist%d, _dlist%d, neuron::scopmath::row_view{_ml, _iml}, "
+                "&%s, %s, %s, &_temp%d%s);\n%s",
                 deriv1_advance,
                 ssprefix,
                 method->name,
@@ -158,17 +159,17 @@ void solv_diffeq(Item* qsol,
     replacstr(qsol, buf);
     if (method->subtype & DERF) { /* derivimplicit */
         // derivimplicit_thread
-        Sprintf(
-            buf,
-            "%s %s%s_thread(%d, _slist%d, _dlist%d, neuron::scopmath::row_view{_ml, _iml}, %s, _ml, _iml, _ppvar, _thread, _nt);\n%s",
-            deriv1_advance,
-            ssprefix,
-            method->name,
-            numeqn,
-            listnum,
-            listnum,
-            fun->name,
-            deriv2_advance);
+        Sprintf(buf,
+                "%s %s%s_thread(%d, _slist%d, _dlist%d, neuron::scopmath::row_view{_ml, _iml}, %s, "
+                "_ml, _iml, _ppvar, _thread, _nt);\n%s",
+                deriv1_advance,
+                ssprefix,
+                method->name,
+                numeqn,
+                listnum,
+                listnum,
+                fun->name,
+                deriv2_advance);
         vectorize_substitute(qsol, buf);
     } else { /* kinetic */
         if (vectorize) {
