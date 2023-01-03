@@ -6,6 +6,7 @@
 #include "multisplit.h"
 #include "nrn_ansi.h"
 #include "neuron.h"
+#include "neuron/cache/mechanism_range.hpp"
 #include "neuron/cache/model_data.hpp"
 #include "neuron/container/soa_container.hpp"
 #include "nonvintblock.h"
@@ -2127,31 +2128,6 @@ void nrn_recalc_ptrs() {
     }
 }
 
-namespace neuron::cache {
-/**
- * @brief Return the range of dparam indices that should be cached for a mechanism.
- *
- *
- */
-std::vector<short> indices_to_cache(short type) {
-    auto const pdata_size = nrn_prop_dparam_size_[type];
-    auto* const dparam_semantics = memb_func[type].dparam_semantics;
-    std::vector<short> pdata_fields_to_cache;
-    pdata_fields_to_cache.reserve(pdata_size);
-    for (auto field = 0; field < pdata_size; ++field) {
-        // Check if the field-th dparam of this mechanism type is an ion variable. See
-        // hoc_register_dparam_semantics.
-        auto const sem = dparam_semantics[field];
-        // TODO is area constant? could we cache the value instead of a pointer to it?
-        // TODO ion type can be handled differently
-        if ((sem > 0 && sem < 1000) || sem == -1 /* area */) {
-            pdata_fields_to_cache.push_back(field);
-        }
-    }
-    return pdata_fields_to_cache;
-}
-}  // namespace neuron::cache
-
 /** @brief Sort the underlying storage for a particular mechanism.
  *
  *  After model building is complete the storage vectors backing all Mechanism
@@ -2171,13 +2147,19 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
     // sorted
     if (type != MORPHOLOGY) {
         std::size_t const mech_data_size{mech_data.size()};
-        auto const pdata_fields_to_cache = neuron::cache::indices_to_cache(type);
-        if (!pdata_fields_to_cache.empty()) {
-            cache.mechanism.at(type).pdata_hack.resize(1 + pdata_fields_to_cache.back());
-            for (auto const field: pdata_fields_to_cache) {
-                cache.mechanism.at(type).pdata_hack.at(field).reserve(mech_data_size);
-            }
-        }
+        std::vector<short> pdata_fields_to_cache{};
+        neuron::cache::indices_to_cache(type,
+                                        [mech_data_size,
+                                         &pdata_fields_to_cache,
+                                         &pdata_hack = cache.mechanism.at(type).pdata_hack](
+                                            auto field) {
+                                            if (field >= pdata_hack.size()) {
+                                                // we get called with the largest field first
+                                                pdata_hack.resize(field + 1);
+                                            }
+                                            pdata_hack.at(field).reserve(mech_data_size);
+                                            pdata_fields_to_cache.push_back(field);
+                                        });
         std::size_t global_i{};
         std::vector<std::size_t> mech_data_permutation(mech_data_size,
                                                        std::numeric_limits<std::size_t>::max());

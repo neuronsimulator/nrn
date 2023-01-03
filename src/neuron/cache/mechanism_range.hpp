@@ -1,4 +1,5 @@
 #pragma once
+#include "membfunc.h"
 #include "nrn_ansi.h"
 #include "nrnoc_ml.h"
 #include "section.h"
@@ -8,9 +9,26 @@
 
 namespace neuron::cache {
 /**
- * @brief Return the range of dparam indices that should be cached for a mechanism.
+ * @brief Call the given method with each dparam index that should be cached for a mechanism.
+ *
+ * The callable will be invoked with the largest index first. This is useful if you want to resize a
+ * container and use the indices as offsets into it.
  */
-std::vector<short> indices_to_cache(short type);
+template <typename Callable>
+void indices_to_cache(short type, Callable callable) {
+    auto const pdata_size = nrn_prop_dparam_size_[type];
+    auto* const dparam_semantics = memb_func[type].dparam_semantics;
+    for (int field = pdata_size - 1; field >= 0; --field) {
+        // Check if the field-th dparam of this mechanism type is an ion variable. See
+        // hoc_register_dparam_semantics.
+        auto const sem = dparam_semantics[field];
+        // TODO is area constant? could we cache the value instead of a pointer to it?
+        // TODO ion type can be handled differently
+        if ((sem > 0 && sem < 1000) || sem == -1 /* area */) {
+            std::invoke(callable, field);
+        }
+    }
+}
 
 /**
  * @brief Version of Memb_list for use in performance-critical code.
@@ -44,15 +62,12 @@ struct MechanismRange {
             assert(m_ptrs[i]);
         }
         auto& cache = std::get<dptr_cache_t>(m_token_or_cache);
-        auto const indices = indices_to_cache(prop->_type);
-        if (!indices.empty()) {
-            assert(indices.back() < NumDatumFields);
-            for (auto field: indices) {
-                auto& datum = prop->dparam[field];
-                cache[field] = datum.get<double*>();
-                m_dptr_datums[field] = &cache[field];
-            }
-        }
+        indices_to_cache(prop->_type, [this, &cache, prop](auto field) {
+            assert(field < NumDatumFields);
+            auto& datum = prop->dparam[field];
+            cache[field] = datum.template get<double*>();
+            m_dptr_datums[field] = &cache[field];
+        });
     }
     /**
      * @brief ...
