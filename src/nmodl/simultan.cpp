@@ -16,7 +16,7 @@ void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnu
     // added so that method->name != "newton" then those methods may need to be modified as newton
     // was
     Sprintf(buf,
-            "%s<%d>(_slist%d, %s_wrapper_returning_int, _dlist%d);\n",
+            "%s<%d>(_slist%d, neuron::scopmath::row_view{_ml, _iml}, %s_wrapper_returning_int, _dlist%d);\n",
             method->name,
             numeqn,
             listnum,
@@ -29,15 +29,13 @@ void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnu
 }
 
 void solv_lineq(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum) {
+    // examples of method->name: simeq
     Sprintf(buf,
             " 0;\n"
             " %s();\n"
-            " error = %s(%d, _coef%d, _ml->vector_of_pointers_for_scopmath(_iml, %d, "
-            "_slist%d).data(), _slist%d);\n",
+            " error = %s(%d, _coef%d, neuron::scopmath::row_view{_ml, _iml}, _slist%d);\n",
             fun->name,
             method->name,
-            numeqn,
-            listnum,
             numeqn,
             listnum,
             listnum);
@@ -201,8 +199,9 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
             numlist);
     qret = insertstr(q3, buf);
     Sprintf(buf,
-            "error = nrn_newton_thread(_newtonspace%d, %d, _slist%d, %s, "
-            "_dlist%d, _ppvar, _thread, _nt, _ml, _iml);\n",
+            "error = nrn_newton_thread(_newtonspace%d, %d, _slist%d, "
+            "neuron::scopmath::row_view{_ml, _iml}, %s, _dlist%d, _ml,"
+            " _iml, _ppvar, _thread, _nt);\n",
             numlist - 1,
             counts,
             numlist,

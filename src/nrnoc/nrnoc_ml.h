@@ -146,32 +146,6 @@ struct Memb_list {
         return m_storage->num_floating_point_fields();
     }
 
-    /** @brief Helper for compatibility with legacy code.
-     *
-     * The scopmath solvers have a complicated relationship with NEURON data
-     * structures. The simplest solution for now seems to be to modify the
-     * scopmath code to follow an extra layer of indirection, and then when
-     * calling into it to generate a temporary vector of pointers to the right
-     * elements in SOA format. In the old AOS data then ml->data[i] could be
-     * used directly, but no more... If the scopmath code is removed or updated
-     * to be compiled as C++ then this layer could go away again.
-     */
-    template <typename... ListTypes>
-    [[nodiscard]] std::vector<double*> vector_of_pointers_for_scopmath(std::size_t instance,
-                                                                       std::size_t num_eqns,
-                                                                       ListTypes... lists) {
-        static_assert(sizeof...(ListTypes) > 0);
-        static_assert(std::conjunction_v<std::is_pointer<ListTypes>...>);
-        assert(num_eqns);
-        assert((lists && ...));  // all lists should be non-null
-        std::array const max_elements{*std::max_element(lists, lists + num_eqns)...};
-        std::vector<double*> p(1 + *std::max_element(max_elements.begin(), max_elements.end()));
-        for (auto i = 0; i < num_eqns; ++i) {
-            ((p[lists[i]] = &data(instance, lists[i])), ...);
-        }
-        return p;
-    }
-
     /**
      * @brief Get the offset of this Memb_list into global storage for this type.
      *
