@@ -88,10 +88,6 @@ int expfit(double* terms, char* reffile, double* amplitude, double* lambda, doub
 
     L = makematrix(dimen, dimen + 1);
     work = makevector(dimen + 1);
-    double** work_ptrs = (double**)malloc((dimen + 1) * sizeof(double*));
-    for (i = 0; i < dimen + 1; ++i) {
-        work_ptrs[i] = &work[i];
-    }
     coeff = makevector(dimen + 1);
 
     /* Compute least squares matrix */
@@ -118,7 +114,7 @@ int expfit(double* terms, char* reffile, double* amplitude, double* lambda, doub
      * lambda[0] to lambda[dimen-1].  Deflate() returns the number of
      * exponentials with real time constants.
      */
-    if ((ierr = simeq(dimen, L, work_ptrs, (int*) 0)) != SUCCESS)
+    if ((ierr = simeq(dimen, L, work, (int*) 0)) != SUCCESS)
         goto FINISH;
 
     coeff[0] = 1.0;
@@ -152,7 +148,7 @@ int expfit(double* terms, char* reffile, double* amplitude, double* lambda, doub
 
     /* Solve for amplitudes */
 
-    if ((ierr = simeq(dimen, L, work_ptrs, (int*) 0)) != SUCCESS)
+    if ((ierr = simeq(dimen, L, work, (int*) 0)) != SUCCESS)
         goto FINISH;
 
     for (i = 0; i < dimen; i++)
@@ -184,7 +180,6 @@ FINISH:
     freevector(x);
     freevector(work);
     freematrix(L);
-    free(work_ptrs);
     return (ierr);
 }
 
