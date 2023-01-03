@@ -861,6 +861,12 @@ void _modl_set_dt(double newdt) {
     dt = newdt;
     nrn_threads->_dt = newdt;
 }
+void _modl_set_dt_thread(double newdt, NrnThread* nt) {
+    nt->_dt = newdt;
+}
+double _modl_get_dt_thread(NrnThread* nt) {
+    return nt->_dt;
+}
 
 int state_discon_flag_ = 0;
 void state_discontinuity(int i, double* pd, double d) {
