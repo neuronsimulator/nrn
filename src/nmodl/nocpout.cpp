@@ -2651,7 +2651,8 @@ static void _ode_map(Prop* _prop, int _ieq, neuron::container::data_handle<doubl
                 Lappendstr(procfunc, buf);
                 Sprintf(buf,
                         "_cvode_sparse_thread(&(_thread[_cvspth%d].literal_value<void*>()), %d, "
-                        "_dlist%d, neuron::scopmath::row_view{_ml, _iml}, _ode_matsol%d, _threadargs_);\n",
+                        "_dlist%d, neuron::scopmath::row_view{_ml, _iml}, _ode_matsol%d, "
+                        "_threadargs_);\n",
                         i,
                         cvode_neq_,
                         i,
