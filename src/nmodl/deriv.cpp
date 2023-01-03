@@ -35,15 +35,6 @@ void cvode_diffeq(Symbol* ds, Item* qbegin, Item* qend);
 static List *cvode_diffeq_list, *cvode_eqn;
 static int cvode_cnexp_possible;
 
-static std::string vec_of_ptrs(std::string const& name, int numeqn, int listnum, bool thread) {
-    if (name == "derivimplicit" || (thread && name == "euler")) {
-        return "nullptr /* not needed for " + name + (thread ? "_thread" : "") + " */";
-    } else {
-        return "_ml->vector_of_pointers_for_scopmath(_iml, " + std::to_string(numeqn) + ", _slist" +
-               std::to_string(listnum) + ", _dlist" + std::to_string(listnum) + ").data()";
-    }
-}
-
 void solv_diffeq(Item* qsol,
                  Symbol* fun,
                  Symbol* method,
@@ -133,14 +124,13 @@ void solv_diffeq(Item* qsol,
             Strcpy(deriv2_advance, "");
         }
         Sprintf(buf,
-                "%s %s%s(_ninits, %d, _slist%d, _dlist%d, %s, &%s, %s, %s, &_temp%d%s);\n%s",
+                "%s %s%s(_ninits, %d, _slist%d, _dlist%d, neuron::scopmath::row_view{_ml, _iml}, &%s, %s, %s, &_temp%d%s);\n%s",
                 deriv1_advance,
                 ssprefix,
                 method->name,
                 numeqn,
                 listnum,
                 listnum,
-                vec_of_ptrs(method->name, numeqn, listnum, false).c_str(),
                 indepsym->name,
                 dindepname,
                 fun->name,
@@ -148,15 +138,13 @@ void solv_diffeq(Item* qsol,
                 maxerr_str,
                 deriv2_advance);
     } else {
+        // examples of ssprefix + method->name: sparse, _ss_sparse
         Sprintf(buf,
                 "%s%s(&_sparseobj%d, %d, _slist%d, _dlist%d, "
-                "_ml->vector_of_pointers_for_scopmath(_iml, %d, _slist%d, _dlist%d).data(), &%s, "
+                "neuron::scopmath::row_view{_ml, _iml}, &%s, "
                 "%s, %s, &_coef%d, _linmat%d);\n",
                 ssprefix,
                 method->name,
-                listnum,
-                numeqn,
-                listnum,
                 listnum,
                 numeqn,
                 listnum,
@@ -169,31 +157,28 @@ void solv_diffeq(Item* qsol,
     }
     replacstr(qsol, buf);
     if (method->subtype & DERF) { /* derivimplicit */
+        // derivimplicit_thread
         Sprintf(
             buf,
-            "%s %s%s_thread(%d, _slist%d, _dlist%d, %s, %s, _ppvar, _thread, _nt, _ml, _iml);\n%s",
+            "%s %s%s_thread(%d, _slist%d, _dlist%d, neuron::scopmath::row_view{_ml, _iml}, %s, _ml, _iml, _ppvar, _thread, _nt);\n%s",
             deriv1_advance,
             ssprefix,
             method->name,
             numeqn,
             listnum,
             listnum,
-            vec_of_ptrs(method->name, numeqn, listnum, true).c_str(),
             fun->name,
             deriv2_advance);
         vectorize_substitute(qsol, buf);
     } else { /* kinetic */
         if (vectorize) {
+            // sparse_thread, _ss_sparse_thread
             Sprintf(buf,
-                    "%s%s_thread(&(_thread[_spth%d].literal_value<void*>()), %d, _slist%d, "
-                    "_dlist%d, _ml->vector_of_pointers_for_scopmath(_iml, %d, _slist%d, "
-                    "_dlist%d).data(), &%s, %s, %s, _linmat%d, _ppvar, "
-                    "_thread, _nt, _ml, _iml);\n",
+                    "%s%s_thread(&(_thread[_spth%d].literal_value<void*>()), %d, "
+                    "_slist%d, _dlist%d, neuron::scopmath::row_view{_ml, _iml}, "
+                    "&%s, %s, %s, _linmat%d, _threadargs_);\n",
                     ssprefix,
                     method->name,
-                    listnum,
-                    numeqn,
-                    listnum,
                     listnum,
                     numeqn,
                     listnum,

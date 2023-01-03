@@ -120,23 +120,6 @@ struct MechanismRange {
         return {instance, m_ptrs.data() + zeroth_variable};
     }
 
-    // TODO this is copy/pasted -- maybe it can be done better than this
-    template <typename... ListTypes>
-    [[nodiscard]] std::vector<double*> vector_of_pointers_for_scopmath(std::size_t instance,
-                                                                       std::size_t num_eqns,
-                                                                       ListTypes... lists) {
-        static_assert(sizeof...(ListTypes) > 0);
-        static_assert(std::conjunction_v<std::is_pointer<ListTypes>...>);
-        assert(num_eqns);
-        assert((lists && ...));  // all lists should be non-null
-        std::array const max_elements{*std::max_element(lists, lists + num_eqns)...};
-        std::vector<double*> p(1 + *std::max_element(max_elements.begin(), max_elements.end()));
-        for (auto i = 0; i < num_eqns; ++i) {
-            ((p[lists[i]] = &data(instance, lists[i])), ...);
-        }
-        return p;
-    }
-
   private:
     std::array<double*, NumFloatingPointFields> m_ptrs{};
     std::array<double**, NumDatumFields> m_dptr_datums{};
