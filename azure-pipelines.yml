@@ -161,7 +161,7 @@ stages:
             python.installer.name: 'macos11.pkg'
           Python311:
             python.version: '3.11'
-            python.org.version: '3.11.0'
+            python.org.version: '3.11.1'
             python.installer.name: 'macos11.pkg'
 
       steps:

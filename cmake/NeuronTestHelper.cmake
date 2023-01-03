@@ -409,6 +409,8 @@ function(nrn_add_test)
     list(TRANSFORM test_env REPLACE "^PATH="
                                     "PATH=${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:")
   endif()
+  list(TRANSFORM test_env REPLACE "^PYTHONPATH="
+                                  "PYTHONPATH=${CMAKE_SOURCE_DIR}/docs/nmodl/python_scripts:")
   # Get the list of variables being set
   set(extra_env_var_names ${extra_environment})
   list(TRANSFORM extra_env_var_names REPLACE "^([^=]+)=.*$" "\\1")

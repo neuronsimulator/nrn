@@ -7,12 +7,15 @@
  *   Duke University
  *
  ******************************************************************************/
-#include "errcodes.h"
+#include "deflate.hpp"
+#include "errcodes.hpp"
 #include "../oc/nrnassrt.h"
 #include "scoplib.h"
 
 #include <cmath>
 #include <cstdio>
+
+using namespace neuron::scopmath; // for errcodes.hpp
 /****************************************************************
  *
  *  Abstract: expfit()

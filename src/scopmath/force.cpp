@@ -12,7 +12,7 @@
  *			the y value for the next lowest x.
  *
  ******************************************************************************/
-#include "errcodes.h"
+#include "errcodes.hpp"
 #include "newton_struct.h"
 #include "../oc/nrnassrt.h"
 #include "scoplib.h"
@@ -20,6 +20,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
+using namespace neuron::scopmath; // for errcodes.hpp
 typedef struct Spline
 {
     struct Spline *next;	/* link to next spline in list */

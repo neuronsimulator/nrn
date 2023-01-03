@@ -21,7 +21,7 @@ on:
 
 env:
   PY_MIN_VERSION: '3.7'
-  PY_MAX_VERSION: '3.10'
+  PY_MAX_VERSION: '3.11'
 
 jobs:
   coverage:
@@ -116,3 +116,4 @@ jobs:
           directory: ./build
           fail_ci_if_error: true
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
