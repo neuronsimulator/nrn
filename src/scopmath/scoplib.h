@@ -18,6 +18,7 @@
 #include "sparse_thread.hpp"
 #include "ssimplic.hpp"
 #include "ssimplic_thread.hpp"
+#include "newton_struct.h"
 
 /* Memory allocation routines */
 int zero_matrix(double** matrix, int rows, int cols);
