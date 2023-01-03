@@ -280,16 +280,15 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtl
     fun->u.i = numlist;
 
     vectorize_substitute(linsertstr(procfunc, "();\n"),
-                         "(void* _so, double* _rhs, _threadargsproto_);\n");
+                         "(void* _so, double* _rhs, _internalthreadargsproto_);\n");
     Sprintf(buf, "static int %s", SYM(q2)->name);
     linsertstr(procfunc, buf);
+
     replacstr(q1, "\nstatic int");
     qv = insertstr(q3, "()\n");
     if (vectorize) {
         kin_vect1(q1, q2, q4);
-        vectorize_substitute(qv,
-                             "(void* _so, double* _rhs, Datum* _ppvar, Datum* _thread, "
-                             "NrnThread* _nt, LocalMechanismRange* _ml, size_t _iml)\n");
+        vectorize_substitute(qv, "(void* _so, double* _rhs, _internalthreadargsproto_)\n");
     }
     qv = insertstr(q3, "{_reset=0;\n");
     Sprintf(buf, "{int _reset=0;\n");
@@ -1376,8 +1375,8 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum) {
     Sprintf(buf, "static int _ode_matsol%d() {_reset=0;{\n", fun->u.i);
     Lappendstr(procfunc, buf);
     Sprintf(buf,
-            "static int _ode_matsol%d(void* _so, double* _rhs, Datum* _ppvar, Datum* "
-            "_thread, NrnThread* _nt, LocalMechanismRange* _ml, size_t _iml) {int _reset=0;{\n",
+            "static int _ode_matsol%d(void* _so, double* _rhs, _internalthreadargsproto_) {int "
+            "_reset=0;{\n",
             fun->u.i);
     vectorize_substitute(procfunc->prev, buf);
     cvode_flag = 1;
