@@ -792,7 +792,7 @@ void c_out_vectorize() {
     P("auto* const _ml = &_lmr;\n");
     if (nrnstate || currents->next == currents) {
         P("Datum* _ppvar; Datum* _thread;\n");
-        P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
+        P("Node *_nd; double _v = 0.0; int* _ni;\n");
         if (dtsav_for_nrn_state && nrnstate) {
             P("double _dtsav = dt;\n"
               "if (secondorder) { dt *= 0.5; }\n");
@@ -800,9 +800,9 @@ void c_out_vectorize() {
         P("#if CACHEVEC\n");
         P("    _ni = _ml_arg->_nodeindices;\n");
         P("#endif\n");
-        P("_cntml = _ml_arg->_nodecount;\n");
+        P("std::size_t _cntml = _ml_arg->_nodecount;\n");
         P("_thread = _ml_arg->_thread;\n");
-        P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
+        P("for (std::size_t _iml = 0; _iml < _cntml; ++_iml) {\n");
         P(" _ppvar = _ml_arg->_pdata[_iml];\n");
         P(" _nd = _ml_arg->_nodelist[_iml];\n");
         ext_vdef();
