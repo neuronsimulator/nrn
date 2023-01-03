@@ -52,6 +52,7 @@ set(HEADER_FILES_TO_INSTALL
     ocmisc.h
     options.h
     parse_with_deps.hpp
+    row_view.hpp
     runge.hpp
     scoplib.h
     section.h
