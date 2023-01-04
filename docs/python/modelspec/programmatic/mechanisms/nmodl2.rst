@@ -425,7 +425,7 @@ Description:
     thread safe. If the mod file is using the ``GLOBAL`` as a counter, prefix
     the offending assignment statements with the ``PROTECT`` keyword so that
     multiple threads do not attempt to update the value at the same time
-    (race condition). If the mod file is using the ``GLOBAL`` essentially as
+    (leading to a race condition). If the mod file is using the ``GLOBAL`` essentially as
     a file scope :ref:`LOCAL` along with the possibility of passing values back
     to hoc in response to calling a :ref:`PROCEDURE`, use the :ref:`THREADSAFE` keyword
     in the :ref:`NEURON` block to automatically treat those GLOBAL variables
@@ -434,7 +434,7 @@ Description:
     Python, the thread 0 version of these globals are used.
 
     .. note::
-        Protect share the same mutex than :ref:`MUTEXLOCK / MUTEXUNLOCK`
+        ``PROTECT`` shares the same mutex as :ref:`MUTEXLOCK / MUTEXUNLOCK`
 
     ``TODO``: Add existing example mod file (share/demo/release/mcna.mod)
 
@@ -460,8 +460,8 @@ Description:
             : ...
         }
 
-    ``MUTEXLOCK`` and ``MUTEXUNLOCK`` are the two directives to handle threadsafety inside zones.
-    Directive respectively lock and unlock the unique global mutex (one per mechanismi's instance).
+    ``MUTEXLOCK`` and ``MUTEXUNLOCK`` are two related directives to handle thread-safety inside zones.
+    The two directives respectively lock and unlock the unique global mutex (one per mechanism's instance).
 
     .. note::
         They share the same mutex than :ref:`PROTECT`.
