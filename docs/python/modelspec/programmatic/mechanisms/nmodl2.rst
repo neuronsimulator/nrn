@@ -461,16 +461,28 @@ BEFORE / AFTER
 ~~~~~~~~~~~~~~
 
 Description:
-    BEFORE INITIAL executes just before any INITIAL blocks of any mod file execute (but after all the FInitializeHandler(0,..) are called).
-    AFTER INITIAL executes just after the INITIAL blocks of all mod files execute (but before all the FInitializeHandler(1, ...) are called).
-    Note that the INITIAL blocks are ordered so that mechanisms that write
-    concentrations are after [the initialization of] ions and before mechanisms that read
-    concentrations.
+    .. code-block::
+
+        BEFORE <INITIAL/BREAKPOINT/STEP> {
+           ...
+        }
+
+        AFTER <INTIAL/SOLVE> {
+           ...
+        }
+
+    - ``BEFORE INITIAL`` executes just before any :ref:`INITIAL` blocks of any mod file execute (but after all the type ``0`` of :ref:`FInitializeHandler` are called).
+    - ``AFTER INITIAL`` executes just after the :ref:`INITIAL` blocks of all mod files execute (but before all the type ``1`` of :ref:`FInitializeHandler` are called).
+    - ``BEFORE BREAKPOINT`` executes whenever the tree matrix is setup before any :ref:`BREAKPOINT` blocks execute
+    - ``AFTER SOLVE`` executes afer all the :ref:`SOLVE` blocks (have updated the states for the fixed step method). For the fixed step method that is more or less the end of :ref:`fadvance()`. But for variable step methods that refers to the completion of a cvode step which is not quite what is desired in practice because event arrival can cause cvode to retreat to an earlier time. Hence the use of ``BEFORE STEP``.
+    - ``BEFORE STEP`` executes just before vector record takes place. I.e. ``BEFORE STEP`` takes place when the entire system of equations and events are consistent at time `t`.
+
+    .. note::
+        Note that the ``INITIAL`` blocks are ordered so that mechanisms that write
+        concentrations are after the initialization of ions and before mechanisms that read
+        concentrations.
+        But that is also the case for the order of the list of mechanisms that do ``INITIAL``, ``BREAKPOINT``, ``SOLVE``, etc.
         
-    But that is also the case for the order of the list of mechanisms that do INITIAL, BREAKPOINT, SOLVE, etc.
-    BEFORE BREAKPOINT executes whenever the tree matrix is setup before any BREAKPOINT blocks execute
-    AFTER SOLVE executes afer all the SOLVE blocks (have updated the states for the fixed step method.) For the fixed step method that is more or less the end of fadvance. But for variable step methods that refers to the completion of a cvode step which is not quite what is desired in practice because event arrival can cause cvode to retreat to an earlier time. Hence the use of BEFORE_STEP. Which executed just before vector record takes place.
-    I.e. BEFORE STEP takes place when the entire system of equations and events are consistent at time t.
 
     ``TODO``: Add existing example mod file
 
