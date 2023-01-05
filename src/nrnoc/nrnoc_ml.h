@@ -36,7 +36,9 @@ struct Memb_list {
      * @brief Construct a Memb_list that knows its type + underlying storage.
      */
     Memb_list(int type)
-        : m_storage{&neuron::model().mechanism_data(type)} {}
+        : m_storage{&neuron::model().mechanism_data(type)} {
+        assert(type == m_storage->type());
+    }
 
     Node** nodelist{};
 #if CACHEVEC != 0
