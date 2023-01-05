@@ -8,6 +8,10 @@ expect_hocerr.quiet = False
 from neuron.tests.utils.capture_stdout import capture_stdout
 from neuron.tests.utils.checkresult import Chk
 
+# Avoid needing different results depending on NRN_ENABLE_CORENEURON
+if hasattr(h, "usetable_hh"):
+    h.usetable_hh = False
+
 # Create a helper for managing reference results
 dir_path = os.path.dirname(os.path.realpath(__file__))
 chk = Chk(os.path.join(dir_path, "test_kschan.json"))
@@ -40,12 +44,6 @@ def cmp(trec, vrec, std, atol=0):
     assert vdif <= atol
 
 
-def valhash(val):
-    hash = hashlib.md5(str(val).encode("utf-8")).hexdigest()
-    print("valhash", val, hash)
-    return hash
-
-
 # For checking if a run is doing something useful
 # Activate the graphics by uncomment the "# return" statement in
 # hrun below. Need to press the "Continue" button after each pause.
@@ -62,7 +60,7 @@ def hrun():
     global hrun_count
     hrun_count += 1
     h.run()
-    chk("hrun %d" % hrun_count, valhash([trec.to_python(), vrec.to_python()]))
+    chk("hrun %d" % hrun_count, [trec.to_python(), vrec.to_python()])
     return
     grph.erase()
     trec.printf()
@@ -154,7 +152,6 @@ def test_1():
 
     cb.nahh()
     s.insert("hh")
-    h.usetable_hh = 0
     hrun()
     std = (trec.c(), vrec.c())
     # nahh gives same results as sodium channel in hh (usetable_hh is on)
@@ -412,16 +409,11 @@ def test_4():
     locals()
 
 
-def test_5():
-    raise Exception("make this test always fail")
-
-
 if __name__ == "__main__":
     test_1()
     test_2()
     test_3()
     test_4()
-    test_5()
 
     chk.save()
     print("DONE")
