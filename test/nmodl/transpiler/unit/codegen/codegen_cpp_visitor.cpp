@@ -423,6 +423,39 @@ SCENARIO("Check code generation for TABLE statements", "[codegen][array_variable
     }
 }
 
+SCENARIO("Check CONSTANT variables are added to global variable structure",
+         "[codegen][global_variables]") {
+    GIVEN("A MOD file that use CONSTANT variables") {
+        std::string const nmodl_text = R"(
+            NEURON {
+                SUFFIX CONST
+                GLOBAL zGateS1
+            }
+            PARAMETER {
+                zGateS1 = 1.2 (1)
+            }
+            CONSTANT {
+                e0 = 1.60217646e-19 (coulombs)
+                kB = 1.3806505e-23 (joule/kelvin)
+                q10Fluo = 1.67 (1)
+            }
+        )";
+        THEN("The global struct should contain these variables") {
+            auto const generated = get_cpp_code(nmodl_text);
+            std::string expected_code = R"(
+    struct CONST_Store {
+        int reset{};
+        int mech_type{};
+        double zGateS1{1.2};
+        double e0{1.60218e-19};
+        double kB{1.38065e-23};
+        double q10Fluo{1.67};
+    };)";
+            REQUIRE_THAT(generated, Contains(reindent_text(stringutils::trim(expected_code))));
+        }
+    }
+}
+
 SCENARIO("Check code generation for FUNCTION_TABLE block", "[codegen][function_table]") {
     GIVEN("A MOD file with Function table block") {
         std::string const nmodl_text = R"(

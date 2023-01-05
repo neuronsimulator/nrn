@@ -44,7 +44,7 @@ NEURON {
 }
 
  * i.e. we get first non-empty line and count number of leading whitespaces (X).
- * Then for every sub-sequent line, we remove first X characters (assuing those
+ * Then for every sub-sequent line, we remove first X characters (assuming those
  * all are whitespaces). This is done because when ast is transformed back to
  * nmodl, the nmodl output is without "extra" whitespaces in the provided input.
  */
