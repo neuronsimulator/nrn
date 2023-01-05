@@ -36,8 +36,6 @@ void indices_to_cache(short type, Callable callable) {
  * Unlike Memb_list, this requires that the number of fields is known at compile time.
  * This is typically only true in translated MOD file code. The idea is that an instance of this
  * class will be created outside a loop over the data vectors and then used inside the loop.
- *
- * @todo Avoid calling nrn_ensure_model_data_are_sorted every time?
  */
 template <std::size_t NumFloatingPointFields, std::size_t NumDatumFields>
 struct MechanismRange {
@@ -51,12 +49,12 @@ struct MechanismRange {
      * in the global storage vectors. In this case, m_token_or_cache contains an array of pointers
      * that m_dptr_datums can refer to.
      */
-    MechanismRange(Prop* prop) {
+    MechanismRange(Prop* prop)
+        : m_token_or_cache{dptr_cache_t{}} {
         if (!prop) {
             // grrr...see cagkftab test where setdata is not called(?) and extcall_prop is null(?)
             return;
         }
-        m_token_or_cache = dptr_cache_t{};
         for (auto i = 0; i < NumFloatingPointFields; ++i) {
             m_ptrs[i] = &prop->param(i);
             assert(m_ptrs[i]);
@@ -139,7 +137,7 @@ struct MechanismRange {
     std::array<double*, NumFloatingPointFields> m_ptrs{};
     std::array<double**, NumDatumFields> m_dptr_datums{};
     using dptr_cache_t = std::array<double*, NumDatumFields>;
-    std::variant<std::monostate, neuron::model_sorted_token, dptr_cache_t> m_token_or_cache{};
+    std::variant<neuron::model_sorted_token, dptr_cache_t> m_token_or_cache;
 };
 
 template <typename MechanismRange>
