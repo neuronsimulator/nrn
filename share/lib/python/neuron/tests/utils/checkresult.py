@@ -37,7 +37,6 @@ class Chk:
         For the Vector case, assert the maximum relative element difference is <= tol.
         If the key does not exist add {key:value} to the dict.
         """
-
         if key in self.d:
             if type(value) == type(h.Vector):  # actually hoc.HocObject
                 # Convert to list to keep the `equal` method below simple
@@ -72,6 +71,8 @@ class Chk:
                 print(key, "difference")
                 print("std = ", self.d[key])
                 print("val = ", value)
+                self.d[key] = value
+                self.modified = True
             assert match
         else:
             print("{} added {}".format(self, key))
