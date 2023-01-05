@@ -3,10 +3,6 @@ ARG MANYLINUX_IMAGE=manylinux2014_x86_64
 FROM quay.io/pypa/$MANYLINUX_IMAGE
 LABEL authors="Pramod Kumbhar, Fernando Pereira, Alexandru Savulescu"
 
-# Enable devtoolset-9 in order to get GCC 9
-RUN yum install -y centos-release-scl && yum install -y devtoolset-9
-SHELL [ "/usr/bin/scl", "enable", "devtoolset-9" ]
-
 RUN gcc --version && python --version
 
 # install basic packages
@@ -77,7 +73,3 @@ COPY Dockerfile .
 
 # build wheels from there
 WORKDIR /root
-
-ENV BASH_ENV=/opt/rh/devtoolset-9/enable  \
-    ENV=/opt/rh/devtoolset-9/enable  \
-    PROMPT_COMMAND=". /opt/rh/devtoolset-9/enable "
