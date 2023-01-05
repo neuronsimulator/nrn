@@ -41,7 +41,9 @@ def cmp(trec, vrec, std, atol=0):
 
 
 def valhash(val):
-    return hashlib.md5(str(val).encode("utf-8")).hexdigest()
+    hash = hashlib.md5(str(val).encode("utf-8")).hexdigest()
+    print("valhash", val, hash)
+    return hash
 
 
 # For checking if a run is doing something useful
@@ -410,11 +412,16 @@ def test_4():
     locals()
 
 
+def test_5():
+    raise Exception("make this test always fail")
+
+
 if __name__ == "__main__":
     test_1()
     test_2()
     test_3()
     test_4()
+    test_5()
 
     chk.save()
     print("DONE")
