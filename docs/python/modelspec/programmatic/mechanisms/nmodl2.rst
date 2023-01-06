@@ -457,18 +457,34 @@ Description:
 
 
 
-BEFORE
-~~~~~~
+BEFORE / AFTER
+~~~~~~~~~~~~~~
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    .. code-block::
 
+        BEFORE <INITIAL/BREAKPOINT/STEP> {
+           ...
+        }
 
-AFTER
-~~~~~
+        AFTER <INTIAL/SOLVE> {
+           ...
+        }
 
-Description:
-    ``TODO``: Add description and existing example mod file
+    - ``BEFORE INITIAL`` executes just before any :ref:`INITIAL` blocks of any mod file execute (but after all the type ``0`` of :ref:`FInitializeHandler` are called).
+    - ``AFTER INITIAL`` executes just after the :ref:`INITIAL` blocks of all mod files execute (but before all the type ``1`` of :ref:`FInitializeHandler` are called).
+    - ``BEFORE BREAKPOINT`` executes whenever the tree matrix is setup before any :ref:`BREAKPOINT` blocks execute
+    - ``AFTER SOLVE`` executes afer all the :ref:`SOLVE` blocks (have updated the states for the fixed step method). For the fixed step method that is more or less the end of :ref:`fadvance()`. But for variable step methods that refers to the completion of a cvode step which is not quite what is desired in practice because event arrival can cause cvode to retreat to an earlier time. Hence the use of ``BEFORE STEP``.
+    - ``BEFORE STEP`` executes just before vector record takes place. I.e. ``BEFORE STEP`` takes place when the entire system of equations and events are consistent at time `t`.
+
+    .. note::
+        Note that the ``INITIAL`` blocks are ordered so that mechanisms that write
+        concentrations are after the initialization of ions and before mechanisms that read
+        concentrations.
+        But that is also the case for the order of the list of mechanisms that do ``INITIAL``, ``BREAKPOINT``, ``SOLVE``, etc.
+        
+
+    ``TODO``: Add existing example mod file
 
 
 FOR_NETCONS
