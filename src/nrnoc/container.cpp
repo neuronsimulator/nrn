@@ -1,4 +1,5 @@
 #include "membfunc.h"
+#include "neuron/container/generic_data_handle.hpp"
 #include "neuron/model_data.hpp"
 
 namespace {
