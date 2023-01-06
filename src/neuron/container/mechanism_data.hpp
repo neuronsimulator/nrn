@@ -24,8 +24,8 @@ struct storage: soa<storage, field::FloatingPoint> {
     }
 
   private:
-    std::string m_mech_name{};
     short m_mech_type{};
+    std::string m_mech_name{};
 };
 
 /**
