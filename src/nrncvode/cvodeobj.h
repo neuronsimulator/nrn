@@ -21,6 +21,9 @@ class PlayRecList;
 class PlayRecord;
 class STEList;
 class HTList;
+namespace neuron {
+struct model_sorted_token;
+}
 
 /**
  * @brief Wrapper for Memb_list in CVode related code.

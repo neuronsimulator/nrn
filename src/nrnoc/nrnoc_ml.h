@@ -1,18 +1,22 @@
 #pragma once
-#include "hocdec.h"  // Datum
-#include "neuron/container/mechanism_data.hpp"
 #include "options.h"  // CACHEVEC
 
-#include <algorithm>    // std::max_element
-#include <array>        // std::array
-#include <cstddef>      // std::ptrdiff_t, std::size_t
-#include <iterator>     // std::distance, std::next
-#include <limits>       // std::numeric_limits
-#include <type_traits>  // std::conjunction_v
-#include <vector>       // std::vector
+#include <cstddef>  // std::ptrdiff_t, std::size_t
+#include <limits>   // std::numeric_limits
+#include <vector>   // std::vector
 
 struct Node;
 struct Prop;
+
+namespace neuron::container {
+struct generic_data_handle;
+}
+using Datum = neuron::container::generic_data_handle;
+
+// Only include a forward declaration to help avoid translated MOD file code relying on its layout
+namespace neuron::container::Mechanism {
+struct storage;
+}
 
 /**
  * @brief A view into a set of mechanism instances.
@@ -25,6 +29,9 @@ struct Prop;
  * partitioned by NrnThread in nrn_sort_mech_data so all the instances of a
  * particular mechanism in a particular thread are next to each other in the
  * storage.
+ *
+ * Because this type is passed from NEURON library code into code generated from MOD files, it is
+ * prone to ABI issues -- particularly when dealing with Python wheels.
  */
 struct Memb_list {
     /**
@@ -34,11 +41,11 @@ struct Memb_list {
 
     /**
      * @brief Construct a Memb_list that knows its type + underlying storage.
+     *
+     * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
+     * code.
      */
-    Memb_list(int type)
-        : m_storage{&neuron::model().mechanism_data(type)} {
-        assert(type == m_storage->type());
-    }
+    Memb_list(int type);
 
     Node** nodelist{};
 #if CACHEVEC != 0
@@ -53,27 +60,20 @@ struct Memb_list {
     Prop** prop{};
     Datum* _thread{}; /* thread specific data (when static is no good) */
     int nodecount{};
-    /** @brief Get a vector of double* representing the model data.
+    /**
+     * @brief Get a vector of double* representing the model data.
      *
-     *  Calling .data() on the return value yields a double** that is similar to
-     *  the old _data member, with the key difference that its indices are
-     *  transposed. Now, the first index corresponds to the variable and the
-     *  second index corresponds to the instance of the mechanism. This method
-     *  is useful for interfacing with CoreNEURON but should be deprecated and
-     *  removed along with the translation layer between NEURON and CoreNEURON.
+     * Calling .data() on the return value yields a double** that is similar to
+     * the old _data member, with the key difference that its indices are
+     * transposed. Now, the first index corresponds to the variable and the
+     * second index corresponds to the instance of the mechanism. This method
+     * is useful for interfacing with CoreNEURON but should be deprecated and
+     * removed along with the translation layer between NEURON and CoreNEURON.
+     *
+     * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
+     * code.
      */
-    [[nodiscard]] std::vector<double*> data() {
-        assert(m_storage);
-        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
-        auto const num_fields = m_storage->num_floating_point_fields();
-        std::vector<double*> ret(num_fields, nullptr);
-        for (auto i = 0ul; i < num_fields; ++i) {
-            ret[i] =
-                &m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
-                    i, m_storage_offset);
-        }
-        return ret;
-    }
+    [[nodiscard]] std::vector<double*> data();
 
     template <std::size_t variable>
     [[nodiscard]] double& fpfield(std::size_t instance) {
@@ -82,53 +82,44 @@ struct Memb_list {
 
     template <std::size_t variable>
     [[nodiscard]] double* dptr_field(std::size_t instance) {
-        return _pdata[instance][variable].get<double*>();
+        return pdata(instance, variable);
     }
 
     /**
      * @brief Get the `variable`-th floating point value in `instance` of the mechanism.
-     */
-    [[nodiscard]] double& data(std::size_t instance, std::size_t variable) {
-        assert(m_storage);
-        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
-        return m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
-            variable, m_storage_offset + instance);
-    }
-
-    /**
-     * @brief Get the `variable`-th floating point value in `instance` of the mechanism.
-     */
-    [[nodiscard]] double const& data(std::size_t instance, std::size_t variable) const {
-        assert(m_storage);
-        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
-        return m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
-            variable, m_storage_offset + instance);
-    }
-
-    /** @brief Calculate a legacy index of the given pointer in this mechanism data.
      *
-     *  This used to be defined as ptr - ml->_data[0] if ptr belonged to the
-     *  given mechanism, i.e. an offset from the zeroth element of the zeroth
-     *  mechanism. This is useful when interfacing with CoreNEURON and for
-     *  parameter exchange with other MPI ranks.
+     * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
+     * code.
      */
-    [[nodiscard]] std::ptrdiff_t legacy_index(double const* ptr) const {
-        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
-        auto const size = m_storage->size();
-        auto const num_fields = m_storage->num_floating_point_fields();
-        for (auto field = 0ul; field < num_fields; ++field) {
-            auto const* const vec_data =
-                &m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
-                    field, 0);
-            auto const index = std::distance(vec_data, ptr);
-            if (index >= 0 && index < size) {
-                // ptr lives in the field-th data column
-                return (index - m_storage_offset) * num_fields + field;
-            }
-        }
-        // ptr doesn't live in this mechanism data, cannot compute a legacy index
-        return -1;
-    }
+    [[nodiscard]] double& data(std::size_t instance, std::size_t variable);
+
+    /**
+     * @brief Get the `variable`-th pointer-to-double in `instance` of the mechanism.
+     *
+     * Defined in .cpp to hide the full definition of Datum from translated MOD file code.
+     */
+    [[nodiscard]] double* pdata(std::size_t instance, std::size_t variable);
+
+    /**
+     * @brief Get the `variable`-th floating point value in `instance` of the mechanism.
+     *
+     * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
+     * code.
+     */
+    [[nodiscard]] double const& data(std::size_t instance, std::size_t variable) const;
+
+    /**
+     * @brief Calculate a legacy index of the given pointer in this mechanism data.
+     *
+     * This used to be defined as ptr - ml->_data[0] if ptr belonged to the
+     * given mechanism, i.e. an offset from the zeroth element of the zeroth
+     * mechanism. This is useful when interfacing with CoreNEURON and for
+     * parameter exchange with other MPI ranks.
+     *
+     * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
+     * code.
+     */
+    [[nodiscard]] std::ptrdiff_t legacy_index(double const* ptr) const;
 
     /**
      * @brief Calculate a legacy index from a data handle.
@@ -142,11 +133,11 @@ struct Memb_list {
      * @brief The number of floating point fields in this mechanism.
      *
      * Currently a synonym for the number of RANGE variables.
+     *
+     * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
+     * code.
      */
-    [[nodiscard]] std::size_t num_floating_point_fields() const {
-        assert(m_storage);
-        return m_storage->num_floating_point_fields();
-    }
+    [[nodiscard]] std::size_t num_floating_point_fields() const;
 
     /**
      * @brief Get the offset of this Memb_list into global storage for this type.
@@ -190,21 +181,13 @@ struct Memb_list {
         m_storage = storage;
     }
 
-    /** @brief Get a stable handle to the current instance-th handle.
+    /**
+     * @brief Get the mechanism type.
      *
-     *  The returned value refers to the same instance of this mechanism
-     *  regardless of how the underlying storage are permuted.
+     * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
+     * code.
      */
-    [[nodiscard]] neuron::container::Mechanism::handle instance_handle(std::size_t instance) {
-        assert(m_storage);
-        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
-        return m_storage->at(m_storage_offset + instance);
-    }
-
-    [[nodiscard]] auto type() const {
-        assert(m_storage);
-        return m_storage->type();
-    }
+    [[nodiscard]] int type() const;
 
   private:
     /**
