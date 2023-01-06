@@ -48,6 +48,9 @@ typedef struct _nrn_Fast_Imem {
     double* _nrn_sav_d;
 } _nrn_Fast_Imem;
 
+struct hoc_Item;
+using hoc_List = hoc_Item;
+struct Object;
 
 /**
  * \class NrnThread
