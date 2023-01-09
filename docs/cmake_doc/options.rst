@@ -19,6 +19,12 @@ This is often very much faster than a single process make. One can add a number
 after the ``-j`` (e.g. ``make -j 6``) to specify the maximum number of processes
 to use. This can be useful if there is the possibility of running out of memory.
 
+The make targets that are made available by cmake can be listed with
+
+.. code-block:: shell
+
+  make help
+
 You can list CMake options with
 ``cmake .. -LH``
 which runs ``cmake ..`` as above and lists the cache variables along with help
@@ -235,7 +241,7 @@ NRN_ENABLE_MUSIC:BOOL=OFF
     /path/lib/libmusic.so
 
   With the music installed above, cmake configuration example is
-  ``build % cmake .. -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python3.11` -DNRN_ENABLE_RX3D=OFF -DCMAKE_BUILD_TYPE=Debug -DNRN_CLANG_FORMAT=ON -DNRN_ENABLE_TESTS=ON -DNRN_ENABLE_MUSIC=ON -DCMAKE_PREFIX_PATH=$HOME/neuron/MUSIC/musicinstall``
+  ``build % cmake .. -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python3.11` -DNRN_ENABLE_RX3D=OFF -DCMAKE_BUILD_TYPE=Debug -DNRN_ENABLE_TESTS=ON -DNRN_ENABLE_MUSIC=ON -DCMAKE_PREFIX_PATH=$HOME/neuron/MUSIC/musicinstall``
 
 Python options:
 ===============
@@ -320,8 +326,8 @@ NRN_ENABLE_CORENEURON:BOOL=OFF
 ------------------------------
   Enable CoreNEURON support
 
-  If ON and no argument pointing to an external installation, CoreNEURON
-  will be cloned as a submodule along with all its NMODL submodule dependencies.
+  If ON CoreNEURON will be built and any needed NMODL submodule dependencies
+  cloned as external submodules.
 
 NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
 -------------------------------------
@@ -338,21 +344,6 @@ Other CoreNEURON options:
   build that are listed in https://github.com/BlueBrain/CoreNeuron/blob/master/CMakeLists.txt.
   The ones of particular interest that can be used on the NEURON
   CMake configure line are `CORENRN_ENABLE_NMODL` and `CORENRN_ENABLE_GPU`.
-  For developers preparing a pull request that involves associated changes
-  to CoreNEURON sources, a CoreNEURON pull request will fail if the
-  changes are not formatted properly. In this case, note that
-  `CORENRN_CLANG_FORMAT` can only be used in a CoreNEURON specific CMake
-  configure line in external/coreneuron/build.
-
-  .. code-block::
-
-    cd external/coreneuron
-    mkdir build
-    cd build
-    cmake .. -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python` -DCORENRN_CLANG_FORMAT=ON
-    make clang-format
-
-
 
 Occasionally useful advanced options:
 =====================================
@@ -520,30 +511,6 @@ NRN_COVERAGE_FILES:STRING=
   relative to ``PROJECT_SOURCE_DIR``.
 
   ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
-
-NRN_CMAKE_FORMAT:BOOL=OFF
-----------------------------
-  Enable CMake code formatting
-
-  Clones the submodule coding-conventions from https://github.com/BlueBrain/hpc-coding-conventions.git.
-  Also need to ``pip install cmake-format=0.6.0 --user``.
-  After a build using ``make`` can reformat cmake files with ``make cmake-format``
-  See nrn/CONTRIBUTING.md for further details.
-  How does one reformat a specific cmake file?
-
-NRN_CLANG_FORMAT:BOOL=OFF
--------------------------
-  Enable code formatting
-
-  Clones the submodule coding-conventions from https://github.com/BlueBrain/hpc-coding-conventions.git.
-  For mac, need: ``brew install clang-format``
-  After a build using ``make``, can reformat all sources with ``make clang_format``
-  Incremental code formatting (of the current patch) can be done by setting additional build flags
-  ``NRN_FORMATTING_ON="since-ref:master"`` and ``NRN_FORMATTING_CPP_CHANGES_ONLY=ON``.
-  ```
-
-  To manually format a single file, run in the top folder, e.g.:
-  ``clang-format --style=file -i src/nrniv/bbsavestate.cpp``
 
 NRN_SANITIZERS:STRING=
 ----------------------
