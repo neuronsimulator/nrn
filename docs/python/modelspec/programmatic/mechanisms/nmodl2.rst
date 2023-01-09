@@ -528,8 +528,6 @@ Description:
     .. note::
         ``PROTECT`` shares the same mutex as :ref:`MUTEXLOCK / MUTEXUNLOCK`
 
-    ``TODO``: Add existing example mod file (share/demo/release/mcna.mod)
-
 
 MUTEXLOCK / MUTEXUNLOCK
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -557,10 +555,6 @@ Description:
 
     .. note::
         They share the same mutex than :ref:`PROTECT`.
-
-    ``TODO``: Add description and existing example mod file (share/examples/nrniv/nmodl/cadif.mod)
-
-
 
 
 .. _connectingmechanismstogether:
