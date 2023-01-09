@@ -638,14 +638,26 @@ CONSTRUCTOR
 """""""""""
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    .. code-block::
+
+        CONSTRUCTOR {
+            : ...
+        }
+
+    This block is used for allocation and initialisation. It will not be run on GPU.
 
 
 DESTRUCTOR
 """"""""""
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    .. code-block::
+
+        DESTRUCTOR {
+            : ...
+        }
+
+    This block is used for deallocation and finitialisation. It will not be run on GPU.
 
 
 LINEAR
