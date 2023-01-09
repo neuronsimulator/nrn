@@ -503,28 +503,58 @@ PROTECT
 ~~~~~~~
 
 Description:
-    Mod files that assign values to GLOBAL variables are not considered 
-    thread safe. If the mod file is using the GLOBAL as a counter, prefix 
-    the offending assignment statements with the PROTECT keyword so that 
-    multiple threads do not attempt to update the value at the same time 
-    (race condition). If the mod file is using the GLOBAL essentially as 
-    a file scope LOCAL along with the possibility of passing values back 
-    to hoc in response to calling a PROCEDURE, use the THREADSAFE keyword 
-    in the ``NEURON`` block to automatically treat those GLOBAL variables
-    as thread specific variables. ``NEURON`` assigns and evaluates only
-    the thread 0 version and if FUNCTIONs and PROCEDUREs are called from 
+    .. code-block::
+
+        NEURON {
+            GLOBAL var
+        }
+
+        BREAKPOINT {
+            PROTECT var = var + 1
+        }
+
+    Mod files that assign values to :ref:`GLOBAL` variables are not considered
+    thread safe. If the mod file is using the ``GLOBAL`` as a counter, prefix
+    the offending assignment statements with the ``PROTECT`` keyword so that
+    multiple threads do not attempt to update the value at the same time
+    (leading to a race condition). If the mod file is using the ``GLOBAL`` essentially as
+    a file scope :ref:`LOCAL` along with the possibility of passing values back
+    to hoc in response to calling a :ref:`PROCEDURE`, use the :ref:`THREADSAFE` keyword
+    in the :ref:`NEURON` block to automatically treat those ``GLOBAL`` variables
+    as thread specific variables. NEURON assigns and evaluates only
+    the thread 0 version and if :ref:`FUNCTION` and ::ref:`PROCEDURE` are called from
     Python, the thread 0 version of these globals are used.
 
-    ``TODO``: Add existing example mod file (share/demo/release/mcna.mod)
+    .. note::
+        ``PROTECT`` shares the same mutex as :ref:`MUTEXLOCK / MUTEXUNLOCK`
 
 
 MUTEXLOCK / MUTEXUNLOCK
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Description:
-    ``TODO``: Add description and existing example mod file (share/examples/nrniv/nmodl/cadif.mod)
+    .. code-block::
 
+        LOCAL factors_done
 
+        INITIAL {
+            MUTEXLOCK
+            if (factors_done == 0) {
+                  factors_done = 1
+                  factors()
+            }
+            MUTEXUNLOCK
+        }
+
+        PROCEDURE factors() {
+            : ...
+        }
+
+    ``MUTEXLOCK`` and ``MUTEXUNLOCK`` are two related directives to handle thread-safety inside zones.
+    The two directives respectively lock and unlock the unique global mutex (one per mechanism's instance).
+
+    .. note::
+        They share the same mutex than :ref:`PROTECT`.
 
 
 .. _connectingmechanismstogether:
