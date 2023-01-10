@@ -373,6 +373,9 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         for (i = 1; i <= neqn; ++i) {
             _nt->_sp13_rhs[i] = 0.;
         }
+        for (i = i1; i < i3; ++i) {
+            NODERHS(_nt->_v_node[i]) = 0.;
+        }
     } else {
 #if CACHEVEC
         if (use_cachevec) {
@@ -419,6 +422,10 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
                 }
             }
         }
+    std::cout << "After nrn_cur_mech " << std::endl;
+    for(int i = 0; i < _nt->end; i++) {
+        std::cout << "_nt->actual_rhs(" << i << ") = " << _nt->actual_rhs(i) << std::endl;
+    }
     activsynapse_rhs();
 
     if (_nt->_nrn_fast_imem) {
