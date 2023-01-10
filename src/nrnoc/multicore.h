@@ -95,7 +95,8 @@ struct NrnThread {
     int* _v_parent_index;
     Node** _v_node;
     Node** _v_parent;
-    double* _sp13_rhs;
+    double* _sp13_rhs;           /* rhs matrix for sparse13 solver. updates to and from this vector
+                                    need to be transfered to actual_rhs */
     char* _sp13mat;              /* handle to general sparse matrix */
     Memb_list* _ecell_memb_list; /* normally nil */
     Node** _ecell_children;      /* nodes with no extcell but parent has it */

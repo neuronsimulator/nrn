@@ -783,7 +783,6 @@ void reorder_secorder() {
             }
         }
         _nt->end = inode;
-        // CACHELINE_CALLOC(_nt->node_rhs_storage(), double, inode); // Not sure that actual_rhs needs to be handled any more by this function?
         CACHELINE_CALLOC(_nt->_actual_d, double, inode);
         CACHELINE_CALLOC(_nt->_actual_a, double, inode);
         CACHELINE_CALLOC(_nt->_actual_b, double, inode);
@@ -867,7 +866,6 @@ void reorder_secorder() {
         for (j = 0; j < _nt->end; ++j) {
             Node* nd = _nt->_v_node[j];
             nd->_d = _nt->_actual_d + j;
-            // nd->_rhs = _nt->node_rhs_storage() + j; // This is also not needed anymore?
         }
     }
     /* because the d,rhs changed, if multisplit is used we need to update

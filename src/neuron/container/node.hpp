@@ -30,10 +30,6 @@ struct Voltage {
 
 struct RHS {
     using type = double;
-    // Not needed for 0
-    // constexpr type default_value() const {
-    //     return 0.0;
-    // }
 };
 
 }  // namespace field

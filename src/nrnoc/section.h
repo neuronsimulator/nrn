@@ -151,7 +151,6 @@ struct Node {
     }
     double _rinv{}; /* conductance uS from node to parent */
     double* _d;     /* diagonal element in node equation */
-    double* _sp13_rhs;
     double* _a_matelm;
     double* _b_matelm;
     int eqn_index_;                 /* sparse13 matrix row/col index */
