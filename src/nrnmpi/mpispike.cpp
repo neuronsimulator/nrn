@@ -738,4 +738,3 @@ int nrnmpi_bgp_conserve(int nsend, int nrecv) {
 }
 
 #endif /*NRNMPI*/
-
