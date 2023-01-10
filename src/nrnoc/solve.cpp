@@ -376,9 +376,16 @@ void nrn_solve(NrnThread* _nt) {
                 hoc_execerror("spFactor error:", "Singular");
             }
         }
-        spSolve(_nt->_sp13mat, _nt->_sp13_rhs, _nt->_sp13_rhs);
+        std::cout << "before spSolve" << std::endl;
         for(int i = 0; i < _nt->end; i++) {
-            _nt->actual_rhs(i) = _nt->_sp13_rhs[i];
+            _nt->_sp13_rhs[_nt->_v_node[i]->eqn_index_] = _nt->actual_rhs(i);
+            std::cout << "_nt->_sp13_rhs[" << _nt->_v_node[i]->eqn_index_ << "] " << _nt->_sp13_rhs[_nt->_v_node[i]->eqn_index_] << std::endl;
+        }
+        spSolve(_nt->_sp13mat, _nt->_sp13_rhs, _nt->_sp13_rhs);
+        std::cout << "after spSolve" << std::endl;
+        for(int i = 0; i < _nt->end; i++) {
+            _nt->actual_rhs(i) = _nt->_sp13_rhs[_nt->_v_node[i]->eqn_index_];
+            std::cout << "_nt->actual_rhs(" << i << ") " << _nt->actual_rhs(i) << std::endl;
         }
     } else {
         triang(_nt);
