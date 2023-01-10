@@ -2160,7 +2160,7 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
                                             pdata_hack.at(field).reserve(mech_data_size);
                                             pdata_fields_to_cache.push_back(field);
                                         });
-        std::size_t global_i{};
+        std::size_t global_i{}, trivial_counter{};
         std::vector<std::size_t> mech_data_permutation(mech_data_size,
                                                        std::numeric_limits<std::size_t>::max());
         NrnThread* nt{};
@@ -2193,6 +2193,7 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
                     // OK, p is an instance of the mechanism we're currently
                     // considering.
                     auto const current_global_row = p->id().current_row();
+                    trivial_counter += (current_global_row == global_i);
                     mech_data_permutation.at(current_global_row) = global_i++;
                     for (auto const field: pdata_fields_to_cache) {
                         cache.mechanism.at(type).pdata_hack.at(field).push_back(p->dparam + field);
@@ -2214,6 +2215,7 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
                     assert(pnt->prop->_type == type);
                     if (nt == pnt->_vnt) {
                         auto const current_global_row = pnt->prop->id().current_row();
+                        trivial_counter += (current_global_row == global_i);
                         mech_data_permutation.at(current_global_row) = global_i++;
                         for (auto const field: pdata_fields_to_cache) {
                             cache.mechanism.at(type).pdata_hack.at(field).push_back(
@@ -2237,6 +2239,7 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
             // still std::numeric_limits<std::size_t>::max().
             for (auto global_row = 0ul; global_row < mech_data_size; ++global_row) {
                 if (mech_data_permutation[global_row] == std::numeric_limits<std::size_t>::max()) {
+                    trivial_counter += (global_row == global_i);
                     mech_data_permutation[global_row] = global_i++;
                     --missing_elements;
                     if (missing_elements == 0) {
@@ -2250,8 +2253,12 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
                     std::to_string(mech_data_size) + ") for " + mech_data.name());
             }
         }
-        // Should this and other permuting operations return a "sorted token"?
-        mech_data.apply_reverse_permutation(std::move(mech_data_permutation));
+        assert(trivial_counter <= mech_data_size);
+        if (trivial_counter < mech_data_size) {
+            // The `mech_data_permutation` vector is not a unit transformation
+            // Should this and other permuting operations return a "sorted token"?
+            mech_data.apply_reverse_permutation(std::move(mech_data_permutation));
+        }
     }
     return mech_data.get_sorted_token();
 }
