@@ -376,7 +376,15 @@ void nrn_solve(NrnThread* _nt) {
                 hoc_execerror("spFactor error:", "Singular");
             }
         }
+        // Update _sp13_rhs based on actual_rhs
+        for(int i = 0; i < _nt->end; i++) {
+            _nt->_sp13_rhs[_nt->_v_node[i]->eqn_index_] = _nt->actual_rhs(i);
+        }
         spSolve(_nt->_sp13mat, _nt->_sp13_rhs, _nt->_sp13_rhs);
+        // Update actual_rhs based on _sp13_rhs
+        for(int i = 0; i < _nt->end; i++) {
+            _nt->actual_rhs(i) = _nt->_sp13_rhs[_nt->_v_node[i]->eqn_index_];
+        }
     } else {
         triang(_nt);
 #if PARANEURON
