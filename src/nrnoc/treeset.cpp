@@ -408,11 +408,6 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
             nrn::Instrumentor::phase_begin(mechname.c_str());
             current(cache_token, _nt, tml->ml, tml->index);
             nrn::Instrumentor::phase_end(mechname.c_str());
-            // std::cout << "After " << mechname << std::endl;
-            // for(int i = 0; i < _nt->end; i++) {
-            //     // _nt->actual_rhs(i) = _nt->_sp13_rhs[i];
-            //     std::cout << "_nt->actual_rhs(" << i << ") = " << _nt->actual_rhs(i) << std::endl;
-            // }
             if (measure) {
                 nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w;
             }
@@ -422,10 +417,6 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
                 }
             }
         }
-    std::cout << "After nrn_cur_mech " << std::endl;
-    for(int i = 0; i < _nt->end; i++) {
-        std::cout << "_nt->actual_rhs(" << i << ") = " << _nt->actual_rhs(i) << std::endl;
-    }
     activsynapse_rhs();
 
     if (_nt->_nrn_fast_imem) {
@@ -2050,7 +2041,6 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
                 i += nlayer;
             }
         }
-        std::cout << "nrn_matrix_node_alloc" << std::endl;
         for (in = 0; in < nt->end; ++in) {
             int ie, k;
             Node *nd, *pnd;
@@ -2059,11 +2049,7 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
             nde = nd->extnode;
             pnd = nt->_v_parent[in];
             i = nd->eqn_index_;
-            std::cout << "i: " << i << std::endl;
             nt->_sp13_rhs[i] = nt->actual_rhs(in);
-            // double* nt_rhs = nt->node_rhs_storage();
-            // double* nt_rhs_in = nt_rhs + in;
-            // nt_rhs_in = nt->_sp13_rhs + i;
             nd->_d = spGetElement(nt->_sp13mat, i, i);
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
