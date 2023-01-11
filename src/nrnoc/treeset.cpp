@@ -2107,25 +2107,16 @@ All Vector record and play pointers that deal with v.
 All PreSyn threshold detectors that watch v.
 */
 
-static int n_recalc_ptr_callback;
-static void (*recalc_ptr_callback[20])();
-
+double* nrn_recalc_ptr(double* old) {
+    return neuron::container::recalculate_ptr(old);
+}
 void nrn_register_recalc_ptr_callback(Pfrv f) {
-    if (n_recalc_ptr_callback >= 20) {
-        Printf("More than 20 recalc_ptr_callback functions\n");
-        exit(1);
-    }
-    recalc_ptr_callback[n_recalc_ptr_callback++] = f;
+    neuron::container::register_ptr_update_callback(f);
 }
 
 void nrn_recalc_ptrs() {
     /* update pointers managed by c++ */
     nrniv_recalc_ptrs();
-
-    /* user callbacks to update pointers */
-    for (int i = 0; i < n_recalc_ptr_callback; ++i) {
-        (*recalc_ptr_callback[i])();
-    }
 }
 
 /** @brief Sort the underlying storage for a particular mechanism.
