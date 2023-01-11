@@ -1,5 +1,6 @@
 #pragma once
 #include "neuron/container/data_handle.hpp"
+double* nrn_recalc_ptr(double* old);
 /**
  * Placeholder that has been inserted where nrn_recalc_ptr used to be called.
  * The idea here is that nrn_recalc_ptr already showed us the various places
