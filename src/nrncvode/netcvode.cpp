@@ -430,8 +430,7 @@ struct InterThreadEvent {
 };
 
 typedef std::vector<WatchCondition*> WatchList;
-declarePool(SelfEventPool, SelfEvent)
-implementPool(SelfEventPool, SelfEvent)
+using SelfEventPool = MutexPool<SelfEvent>;
 typedef std::vector<TQItem*> TQList;
 
 // allows marshalling of all items in the event queue that need to be

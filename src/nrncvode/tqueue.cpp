@@ -105,7 +105,6 @@ void TQueue_reg() {
 
 //----------------
 
-implementPool(TQItemPool, TQItem)
 #if BBTQ == 0
 #include <bbtqueue.cpp>
 #endif
