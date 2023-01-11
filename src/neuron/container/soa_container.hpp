@@ -1,9 +1,11 @@
 #pragma once
 #include "backtrace_utils.h"
+#include "neuron/container/callbacks.hpp"
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/soa_identifier.hpp"
 
 #include <atomic>
+#include <cstddef>
 #include <functional>
 #include <limits>
 #include <string_view>
@@ -301,6 +303,22 @@ struct soa {
         for_all_vectors(*this, [new_size = old_size - 1](auto const& tag, auto& vec) {
             vec.resize(new_size);
         });
+        // If there are any callbacks registered that want to be notified when raw pointers into the
+        // data structures are invalidated, then we need to tell recalculate_ptr how to handle the
+        // changes we just made, and then invoke those callbacks
+        invoke_ptr_update_callbacks([i, old_size, this](ptr_update_data& recalc_ptr_data) {
+            // This is only executed if callbacks are registered; we should add entries to
+            // `recalc_ptr_data` that allow recalculate_ptr to correctly handle the swap we just
+            // did
+            for_all_vectors(*this, [i, old_size, &recalc_ptr_data](auto const& tag, auto& vec) {
+                // The old i-th pointer is to an element that has been deleted
+                recalc_ptr_data.old_new_pair(vec.data() + i, nullptr);
+                // The old last element is now the i-th element, if those aren't the same thing
+                if (i != old_size - 1) {
+                    recalc_ptr_data.old_new_pair(vec.data() + old_size - 1, vec.data() + i);
+                }
+            });
+        });
     }
 
     friend struct state_token<Storage>;
@@ -433,6 +451,26 @@ struct soa {
             throw_error("apply_reverse_permutation() called on a frozen structure");
         }
         mark_as_unsorted_impl<true>();
+        // If there are any callbacks registered that want to be notified when raw pointers into the
+        // data structures are invalidated, then we need to tell recalculate_ptr how to handle the
+        // changes we just made, and then invoke those callbacks
+        invoke_ptr_update_callbacks(
+            [my_size, &permutation, this](ptr_update_data& recalc_ptr_data) {
+                // This is only executed if callbacks are registered; we should add entries to
+                // `recalc_ptr_data` that allow recalculate_ptr to correctly handle the permutation
+                // we are about to apply
+                for_all_vectors(
+                    *this, [my_size, &permutation, &recalc_ptr_data](auto const& tag, auto& vec) {
+                        // Required information to figure out where an old pointer into vec
+                        // has been permuted to
+                        recalc_ptr_data.permuted_vector(vec.data(), permutation.data(), my_size);
+                    });
+            });
+        // NOTE if we re-work this to defer actually executing callbacks: the permutation vector is
+        // destroyed by apply_reverse_permutation, so if we defer calling the callbacks (e.g. to
+        // call them once after permuting *all* model data) then we'd need to take a copy of the
+        // permutation vector
+
         // Now we apply the reverse permutation in `permutation` to all of the columns in the
         // container. Depending on whether or not the tag types have num_instances() member
         // functions the relevant elements of m_data will either be std::vector<T> or
@@ -500,16 +538,39 @@ struct soa {
         //    never invalidates indices
         mark_as_unsorted_impl<true>();
         // Append to all of the vectors
-        for_all_vectors(*this, [](auto const& tag, auto& vec) {
+        std::vector<std::tuple<std::byte*, std::byte*, std::size_t, std::size_t>> realloc_data{};
+        auto const old_size = size();
+        for_all_vectors(*this, [old_size, &realloc_data](auto const& tag, auto& vec) {
             using Tag = ::std::decay_t<decltype(tag)>;
+            auto* const old_data = vec.data();
             if constexpr (detail::has_default_value_v<Tag>) {
                 vec.emplace_back(tag.default_value());
             } else {
                 vec.emplace_back();
             }
+            if (ptr_update_callbacks_exist()) {
+                auto* const new_data = vec.data();
+                if (old_data != new_data) {
+                    // reallocation happened, so we'll need to execute pointer-updating callbacks
+                    realloc_data.emplace_back(static_cast<std::byte*>(static_cast<void*>(old_data)),
+                                              static_cast<std::byte*>(static_cast<void*>(new_data)),
+                                              sizeof(typename Tag::type),
+                                              old_size);
+                }
+            }
         });
+        if (!realloc_data.empty()) {
+            // Only bother with this if insertion actually caused reallocation
+            invoke_ptr_update_callbacks(
+                [realloc_data = std::move(realloc_data)](ptr_update_data& recalc_ptr_data) {
+                    // This is only executed if callbacks are registered; we should add entries to
+                    // `recalc_ptr_data` that allow recalculate_ptr to correctly handle the
+                    // reallocations that just occured
+                    recalc_ptr_data.reallocation_data(std::move(realloc_data));
+                });
+        }
         // Important that this comes after the m_frozen_count check
-        owning_identifier<Storage> index{static_cast<Storage&>(*this), size() - 1};
+        owning_identifier<Storage> index{static_cast<Storage&>(*this), old_size};
         // Update the pointer-to-row-number in m_indices so it refers to the
         // same thing as index
         m_indices.back() = static_cast<non_owning_identifier<Storage>>(index);

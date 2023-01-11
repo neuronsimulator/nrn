@@ -423,5 +423,67 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                 REQUIRE_NOTHROW(::Node{});
             }
         }
+        WHEN("A pointer-update handler is registered") {
+            // Store handles to all of the Node voltages
+            std::vector<data_handle<double>> node_voltage_handles;
+            std::transform(nodes.begin(),
+                           nodes.end(),
+                           std::back_inserter(node_voltage_handles),
+                           [](auto& node) { return node.v_handle(); });
+            // Store raw pointers to all of the Node voltages
+            auto const get_raw_pointers = [](auto& handles) {
+                std::vector<double*> pointers;
+                std::transform(handles.begin(),
+                               handles.end(),
+                               std::back_inserter(pointers),
+                               [](auto& handle) { return static_cast<double*>(handle); });
+                return pointers;
+            };
+            auto node_voltage_pointers = get_raw_pointers(node_voltage_handles);
+            // There should be no callbacks already registered
+            REQUIRE_FALSE(ptr_update_callbacks_exist());
+            // Register a callback that keeps `node_voltage_pointers` up to date
+            neuron::container::register_ptr_update_callback([&node_voltage_pointers]() {
+                std::transform(node_voltage_pointers.begin(),
+                               node_voltage_pointers.end(),
+                               node_voltage_pointers.begin(),
+                               [](auto* ptr) { return recalculate_ptr(ptr); });
+            });
+            REQUIRE(ptr_update_callbacks_exist());
+            // Check that the handles and the pointers refer to the same values
+            auto const check_handles_and_pointers = [&]() {
+                REQUIRE(node_voltage_pointers == get_raw_pointers(node_voltage_handles));
+            };
+            // Sanity check; no pointers have been invalidated yet
+            check_handles_and_pointers();
+            AND_WHEN("Single nodes are deleted") {
+                auto const nodes_size = nodes.size();
+                auto index_to_delete = GENERATE_COPY(0, nodes_size / 2, nodes_size - 1);
+                nodes.erase(std::next(nodes.begin(), index_to_delete));
+                check_handles_and_pointers();
+            }
+            AND_WHEN("Insertion causes reallocation") {
+                // Insert nodes until the underlying vector for the voltages is forced to reallocate
+                auto const get_v_data = [&]() { return &node_data.get<field::Voltage>(0); };
+                auto* const old_v_data = get_v_data();
+                while (old_v_data == get_v_data()) {
+                    nodes.emplace_back();
+                }
+                REQUIRE_FALSE(old_v_data == get_v_data());
+                // Check that the pointer update handler dealt with reallocation correctly
+                check_handles_and_pointers();
+            }
+            AND_WHEN("The underlying storage is rotated") {
+                auto rotated = perm_vector;
+                std::rotate(rotated.begin(), std::next(rotated.begin()), rotated.end());
+                node_data.apply_reverse_permutation(std::move(rotated));
+                // Check that the pointer update handler deals with permutations correctly
+                check_handles_and_pointers();
+            }
+            // Clean up global state that we touched
+            remove_ptr_update_callbacks();
+            // After we remove callbacks, there should be none
+            REQUIRE_FALSE(ptr_update_callbacks_exist());
+        }
     }
 }
