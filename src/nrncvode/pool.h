@@ -13,6 +13,8 @@
 
 #include <nrnmutdec.h>
 
+#include <cassert>
+
 template<typename T>
 class MutexPool {
 public:
