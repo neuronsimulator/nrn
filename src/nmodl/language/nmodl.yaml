@@ -834,7 +834,7 @@
                             brief: "Represents a `BREAKPOINT` block in NMODL"
                             description: |
                                         The `BREAKPOINT` block is used to update current and conductance.
-                                        at each time step. Here is an example of `BEFORE` :
+                                        at each time step. Here is an example of `BREAKPOINT` :
 
                                         \code{.mod}
                                             BREAKPOINT {
