@@ -697,6 +697,7 @@ if(NRN_ENABLE_DOCS)
     sphinx
     COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${SPHINX_EXECUTABLE} -j auto -b html
             "${PROJECT_SOURCE_DIR}/docs" "${PROJECT_SOURCE_DIR}/docs/_build"
+    COMMAND echo "Copy/Paste to Browser ${PROJECT_SOURCE_DIR}/docs/_build/index.html"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
     COMMENT "Generating documentation with Sphinx")
 
@@ -721,11 +722,29 @@ if(NRN_ENABLE_DOCS)
 endif()
 
 # =============================================================================
-# Add coding-conventions submodule if code formatting enabled
+# Black, Clang-format, Cmake-format (see $PROJECT_SOURCE_DIR/.bbp-project.yaml)
 # =============================================================================
-if(NRN_CMAKE_FORMAT OR NRN_CLANG_FORMAT)
-  add_subdirectory(external/coding-conventions/cpp)
-endif()
+add_custom_target(
+  format
+  COMMAND ${PROJECT_SOURCE_DIR}/external/coding-conventions/bin/format
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# Prepare a shell script to format only files modified with respect to master branch
+file(
+  WRITE ${CMAKE_CURRENT_BINARY_DIR}/format-pr.sh
+  "\
+#!bash\n\
+set -e\n\
+cmd='cd ${PROJECT_SOURCE_DIR} && external/coding-conventions/bin/format `git diff --name-only master`'\n\
+echo $cmd\n\
+cd ${PROJECT_SOURCE_DIR} && external/coding-conventions/bin/format `git diff --name-only master`\n\
+")
+
+add_custom_target(
+  format-pr
+  COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/format-pr.sh
+  COMMENT "Format only files modified with respect to master branch."
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 # =============================================================================
 # ~~~
