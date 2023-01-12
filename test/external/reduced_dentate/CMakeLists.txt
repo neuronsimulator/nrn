@@ -6,7 +6,14 @@ nrn_add_test_group(
   ENVIRONMENT HOC_LIBRARY_PATH=templates OMP_NUM_THREADS=1
   OUTPUT "asciispikes::results/dentatenet_spikeout_*.dat"
   MODFILE_PATTERNS "mechanisms/*.mod"
-  SCRIPT_PATTERNS "commonutils.py" "dat/*.dat" "datasets/Control/*.dat" "*.hoc" "templates/*.hoc")
+  SCRIPT_PATTERNS
+    "commonutils.py"
+    "dat/*.dat"
+    "datasets/Control/*.dat"
+    "datasets/Control/MPP/MPPspiketrain.dat"
+    "*.hoc"
+    "parameters/Control.hoc"
+    "templates/*.hoc")
 
 set(reduced_dentate_mpi_ranks 4)
 set(reduced_dentate_sim_time 10)
