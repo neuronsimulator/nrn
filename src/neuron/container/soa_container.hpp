@@ -538,7 +538,8 @@ struct soa {
         //    never invalidates indices
         mark_as_unsorted_impl<true>();
         // Append to all of the vectors
-        std::vector<std::tuple<std::byte*, std::byte*, std::size_t, std::size_t>> realloc_data{};
+        std::vector<std::tuple<::std::byte*, ::std::byte*, std::size_t, std::size_t>>
+            realloc_data{};
         auto const old_size = size();
         for_all_vectors(*this, [old_size, &realloc_data](auto const& tag, auto& vec) {
             using Tag = ::std::decay_t<decltype(tag)>;
@@ -552,10 +553,11 @@ struct soa {
                 auto* const new_data = vec.data();
                 if (old_data != new_data) {
                     // reallocation happened, so we'll need to execute pointer-updating callbacks
-                    realloc_data.emplace_back(static_cast<std::byte*>(static_cast<void*>(old_data)),
-                                              static_cast<std::byte*>(static_cast<void*>(new_data)),
-                                              sizeof(typename Tag::type),
-                                              old_size);
+                    realloc_data.emplace_back(
+                        static_cast<::std::byte*>(static_cast<void*>(old_data)),
+                        static_cast<::std::byte*>(static_cast<void*>(new_data)),
+                        sizeof(typename Tag::type),
+                        old_size);
                 }
             }
         });
