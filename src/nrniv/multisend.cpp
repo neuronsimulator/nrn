@@ -562,7 +562,8 @@ void nrn_multisend_receive(NrnThread* nt) {
     tbuf_[itbuf_++] = (unsigned long) r;
     tbuf_[itbuf_++] = (unsigned long) dmasend_time_;
     if (use_phase2_) {
-        tbuf_[itbuf_++] = (unsigned long) multisend_receive_buffer[current_rbuf]->phase2_nsend_cell_;
+        tbuf_[itbuf_++] =
+            (unsigned long) multisend_receive_buffer[current_rbuf]->phase2_nsend_cell_;
         tbuf_[itbuf_++] = (unsigned long) multisend_receive_buffer[current_rbuf]->phase2_nsend_;
     }
 #endif
