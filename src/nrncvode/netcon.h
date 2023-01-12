@@ -33,8 +33,8 @@ class HocEventPool;
 class HocCommand;
 struct STETransition;
 class IvocVect;
-class BGP_DMASend;
-class BGP_DMASend_Phase2;
+class Multisend_Send;
+class Multisend_Send_Phase2;
 struct hoc_Item;
 struct Object;
 struct Point_process;
@@ -319,8 +319,8 @@ class PreSyn: public ConditionEvent {
 #if NRNMPI
     union {  // A PreSyn cannot be both a source spike generator
         // and a receiver of off-host spikes.
-        BGP_DMASend* dma_send_;
-        BGP_DMASend_Phase2* dma_send_phase2_;
+        Multisend_Send* multisend_send_;
+        Multisend_Send_Phase2* multisend_send_phase2_;
         int srchost_;
     } bgp;
 #endif

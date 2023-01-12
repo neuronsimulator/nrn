@@ -111,10 +111,10 @@ extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
 
 extern void nrnmpi_dbl_allgather(double* s, double* r, int n);
 #if NRNMPI
-extern void nrnmpi_bgp_comm();
-extern void nrnmpi_bgp_multisend(NRNMPI_Spike* spk, int n, int* hosts);
-extern int nrnmpi_bgp_single_advance(NRNMPI_Spike* spk);
-extern int nrnmpi_bgp_conserve(int nsend, int nrecv);
+extern void nrnmpi_multisend_comm();
+extern void nrnmpi_multisend_multisend(NRNMPI_Spike* spk, int n, int* hosts);
+extern int nrnmpi_multisend_single_advance(NRNMPI_Spike* spk);
+extern int nrnmpi_multisend_conserve(int nsend, int nrecv);
 #endif
 // clang-format on
 }

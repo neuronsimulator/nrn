@@ -240,9 +240,9 @@ extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 #endif
 
 #if NRNMPI
-extern void bgp_dma_send(PreSyn*, double t);
+extern void nrn_multisend_send(PreSyn*, double t);
 extern bool use_multisend_;
-extern void nrnbgp_messager_advance();
+extern void nrn_multisend_advance();
 #endif
 
 bool nrn_use_fifo_queue_;
@@ -3264,7 +3264,7 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
     if (output_index_ >= 0) {
 #if NRNMPI
         if (use_multisend_) {
-            bgp_dma_send(this, tt);
+            nrn_multisend_send(this, tt);
         } else {
 #endif  // NRNMPI
 
@@ -5064,7 +5064,7 @@ PreSyn::PreSyn(double* src, Object* osrc, Section* ssrc) {
     output_index_ = -1;
 #endif
 #if NRNMPI
-    bgp.dma_send_ = 0;
+    bgp.multisend_send_ = 0;
 #endif
 #if NRN_MUSIC
     music_port_ = 0;
@@ -6135,7 +6135,7 @@ void NetCvode::deliver_net_events(NrnThread* nt) {  // for default method
     double tm, tsav;
 #if NRNMPI
     if (use_multisend_) {
-        nrnbgp_messager_advance();
+        nrn_multisend_advance();
     }
 #endif
     int tid = nt->id;

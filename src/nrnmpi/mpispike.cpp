@@ -703,13 +703,13 @@ void nrnmpi_dbl_allgather(double* s, double* r, int n) {
 
 static MPI_Comm bgp_comm;
 
-void nrnmpi_bgp_comm() {
+void nrnmpi_multisend_comm() {
     if (!bgp_comm) {
         MPI_Comm_dup(nrnmpi_comm, &bgp_comm);
     }
 }
 
-void nrnmpi_bgp_multisend(NRNMPI_Spike* spk, int n, int* hosts) {
+void nrnmpi_multisend_multisend(NRNMPI_Spike* spk, int n, int* hosts) {
     int i;
     MPI_Request r;
     MPI_Status status;
@@ -719,7 +719,7 @@ void nrnmpi_bgp_multisend(NRNMPI_Spike* spk, int n, int* hosts) {
     }
 }
 
-int nrnmpi_bgp_single_advance(NRNMPI_Spike* spk) {
+int nrnmpi_multisend_single_advance(NRNMPI_Spike* spk) {
     int flag = 0;
     MPI_Status status;
     MPI_Iprobe(MPI_ANY_SOURCE, 1, bgp_comm, &flag, &status);
@@ -730,7 +730,7 @@ int nrnmpi_bgp_single_advance(NRNMPI_Spike* spk) {
 }
 
 static int iii;
-int nrnmpi_bgp_conserve(int nsend, int nrecv) {
+int nrnmpi_multisend_conserve(int nsend, int nrecv) {
     int tcnts[2];
     tcnts[0] = nsend - nrecv;
     MPI_Allreduce(tcnts, tcnts + 1, 1, MPI_INT, MPI_SUM, bgp_comm);

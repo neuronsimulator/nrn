@@ -49,7 +49,7 @@ int nrn_set_timeout(int);
 void nrnmpi_gid_clear(int);
 extern void nrn_partrans_clear();
 void nrn_spike_exchange_init();
-extern double nrn_bgp_receive_time(int);
+extern double nrn_multisend_receive_time(int);
 typedef void (*PFIO)(int, Object*);
 extern void nrn_gidout_iter(PFIO);
 extern Object* nrn_gid2obj(int);
@@ -68,7 +68,7 @@ extern "C" int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec
                                                   std::vector<int>& spikegidvec);
 
 #if NRNMPI == 0
-double nrn_bgp_receive_time(int) {
+double nrn_multisend_receive_time(int) {
     return 0.;
 }
 #endif
@@ -92,14 +92,14 @@ bool nrn_use_compress_;  // global due to bbsavestate
 #define use_compress_ nrn_use_compress_
 
 #ifdef USENCS
-extern int ncs_bgp_sending_info(int**);
-extern int ncs_bgp_target_hosts(int, int**);
-extern int ncs_bgp_target_info(int**);
-extern int ncs_bgp_mindelays(int**, double**);
+extern int ncs_multisend_sending_info(int**);
+extern int ncs_multisend_target_hosts(int, int**);
+extern int ncs_multisend_target_info(int**);
+extern int ncs_multisend_mindelays(int**, double**);
 
 // get minimum delays for all presyn objects in gid2in_
 int ncs_netcon_mindelays(int** hosts, double** delays) {
-    return ncs_bgp_mindelays(hosts, delays);
+    return ncs_multisend_mindelays(hosts, delays);
 }
 
 double ncs_netcon_localmindelay(int srcgid) {
@@ -144,16 +144,16 @@ void ncs_netcon_inject(int srcgid, int netconIndex, double spikeTime, bool local
 }
 
 int ncs_gid_receiving_info(int** presyngids) {
-    return ncs_bgp_target_info(presyngids);
+    return ncs_multisend_target_info(presyngids);
 }
 
 // given the gid of a cell, retrieve its target count
 int ncs_gid_sending_count(int** sendlist2build) {
-    return ncs_bgp_sending_info(sendlist2build);
+    return ncs_multisend_sending_info(sendlist2build);
 }
 
 int ncs_target_hosts(int gid, int** targetnodes) {
-    return ncs_bgp_target_hosts(gid, targetnodes);
+    return ncs_multisend_target_hosts(gid, targetnodes);
 }
 
 #endif
@@ -179,12 +179,12 @@ static void nrn_spike_exchange_compressed(NrnThread*);
 #endif  // NRNMPI
 
 #if NRNMPI
-bool use_multisend_;  // false: allgather, true: multisend (ISend, bgpdma)
-static void bgp_dma_setup();
-static void bgp_dma_init();
-static void bgp_dma_receive(NrnThread*);
-extern void bgp_dma_send(PreSyn*, double t);
-static void bgpdma_cleanup_presyn(PreSyn*);
+bool use_multisend_;  // false: allgather, true: multisend (MPI_ISend)
+static void nrn_multisend_setup();
+static void nrn_multisend_init();
+static void nrn_multisend_receive(NrnThread*);
+extern void nrn_multisend_send(PreSyn*, double t);
+static void nrn_multisend_cleanup_presyn(PreSyn*);
 #endif
 
 static int active_;
@@ -238,7 +238,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
             last_nt_ = nt;
 #if NRNMPI
             if (use_multisend_) {
-                bgp_dma_receive(nt);
+                nrn_multisend_receive(nt);
             } else {
                 nrn_spike_exchange(nt);
             }
@@ -434,7 +434,7 @@ static void calc_actual_mindelay() {
 }
 
 #if NRNMPI
-#include "bgpdma.cpp"
+#include "multisend.cpp"
 #else
 #define TBUFSIZE 0
 #define TBUF     /**/
@@ -445,7 +445,7 @@ void nrn_spike_exchange_init() {
         nrnmpi_step_wait_ = 0.0;
     }
 #ifdef USENCS
-    bgp_dma_setup();
+    nrn_multisend_setup();
     return;
 #endif
     // printf("nrn_spike_exchange_init\n");
@@ -480,7 +480,7 @@ void nrn_spike_exchange_init() {
 
 #if NRNMPI
     if (use_multisend_) {
-        bgp_dma_init();
+        nrn_multisend_init();
     }
 #endif
 
@@ -538,7 +538,7 @@ void nrn_spike_exchange(NrnThread* nt) {
     }
 #if NRNMPI
     if (use_multisend_) {
-        bgp_dma_receive(nt);
+        nrn_multisend_receive(nt);
         return;
     }
 #endif
@@ -961,7 +961,7 @@ static int gid_donot_remove = 0;  // avoid  gid2in_, gid2out removal when iterat
 
 void nrn_cleanup_presyn(PreSyn* ps) {
 #if NRNMPI
-    bgpdma_cleanup_presyn(ps);
+    nrn_multisend_cleanup_presyn(ps);
 #endif
     if (gid_donot_remove) {
         return;
@@ -998,7 +998,7 @@ void nrnmpi_gid_clear(int arg) {
                 delete ps;
             } else {
 #if NRNMPI
-                bgpdma_cleanup_presyn(ps);
+                nrn_multisend_cleanup_presyn(ps);
 #endif
                 ps->gid_ = -1;
                 ps->output_index_ = -1;
@@ -1014,7 +1014,7 @@ void nrnmpi_gid_clear(int arg) {
             delete ps;
         } else {
 #if NRNMPI
-            bgpdma_cleanup_presyn(ps);
+            nrn_multisend_cleanup_presyn(ps);
 #endif
             ps->gid_ = -1;
             ps->output_index_ = -1;
@@ -1286,7 +1286,7 @@ void BBS::netpar_solve(double tstop) {
 #if NRNMPI
     if (use_multisend_) {
         for (int i = 0; i < n_multisend_interval; ++i) {
-            bgp_dma_receive(nrn_threads);
+            nrn_multisend_receive(nrn_threads);
         }
     } else {
         nrn_spike_exchange(nrn_threads);
@@ -1404,7 +1404,7 @@ static double set_mindelay(double maxdelay) {
 
 double BBS::netpar_mindelay(double maxdelay) {
 #if NRNMPI
-    bgp_dma_setup();
+    nrn_multisend_setup();
 #endif
     double tt = set_mindelay(maxdelay);
     return tt;
@@ -1471,7 +1471,7 @@ balanced than spikes sent per processor per interval. And presently
 DCMF multisend injects 10000 messages per spike into the network which
 is quite expensive.
 
-See case 8 of nrn_bgp_receive_time for the xchng_meth properties
+See case 8 of nrn_multisend_receive_time for the xchng_meth properties
 */
 
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
@@ -1486,7 +1486,7 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
         if (use_multisend_) {
             assert(NRNMPI);
         }
-        bgpdma_cleanup();
+        nrn_multisend_cleanup();
     }
     if (nspike >= 0) {
         ag_send_nspike_ = 0;
