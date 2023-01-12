@@ -167,12 +167,10 @@ class BGP_DMASend_Phase2 {
     int* target_hosts_phase2_;
 };
 
-static BGP_ReceiveBuffer* bgp_receive_buffer[BGP_INTERVAL];
+static BGP_ReceiveBuffer* bgp_receive_buffer[2];
 static int current_rbuf, next_rbuf;
-#if BGP_INTERVAL == 2
 // note that if a spike is supposed to be received by bgp_receive_buffer[1]
 // then during transmission its gid is complemented.
-#endif
 
 BGP_ReceiveBuffer::BGP_ReceiveBuffer() {
     busy_ = 0;
@@ -437,12 +435,10 @@ static int bgp_advance() {
     while (nrnmpi_bgp_single_advance(&spk)) {
         i += 1;
         int j = 0;
-#if BGP_INTERVAL == 2
         if (spk.gid < 0) {
             spk.gid = ~spk.gid;
             j = 1;
         }
-#endif
         bgp_receive_buffer[j]->incoming(spk.gid, spk.spiketime);
     }
     nrecv_ += i;
@@ -498,16 +494,11 @@ void BGP_DMASend::send(int gid, double t) {
     if (NTARGET_HOSTS_PHASE1) {
         spk_.gid = gid;
         spk_.spiketime = t;
-#if BGP_INTERVAL == 2
         bgp_receive_buffer[next_rbuf]->nsend_ += ntarget_hosts_;
         bgp_receive_buffer[next_rbuf]->nsend_cell_ += 1;
         if (next_rbuf == 1) {
             spk_.gid = ~spk_.gid;
         }
-#else
-        bgp_receive_buffer[0]->nsend_ += ntarget_hosts_;
-        bgp_receive_buffer[0]->nsend_cell_ += 1;
-#endif
         nsend_ += 1;
         if (use_bgpdma_) {
             nrnmpi_bgp_multisend(&spk_, NTARGET_HOSTS_PHASE1, target_hosts_);
@@ -521,11 +512,9 @@ void BGP_DMASend_Phase2::send_phase2(int gid, double t, BGP_ReceiveBuffer* rb) {
     if (ntarget_hosts_phase2_) {
         spk_.gid = gid;
         spk_.spiketime = t;
-#if BGP_INTERVAL == 2
         if (rb->index_ == 1) {
             spk_.gid = ~spk_.gid;
         }
-#endif
         rb->phase2_nsend_cell_ += 1;
         rb->phase2_nsend_ += ntarget_hosts_phase2_;
         if (use_bgpdma_) {
@@ -604,13 +593,11 @@ void bgp_dma_receive(NrnThread* nt) {
 #endif  // ENQUEUE == 2
     wt1_ = nrnmpi_wtime() - w2;
     wt_ = w1;
-#if BGP_INTERVAL == 2
     // printf("%d reverse buffers %g\n", nrnmpi_myid, t);
     if (n_bgp_interval == 2) {
         current_rbuf = next_rbuf;
         next_rbuf = ((next_rbuf + 1) & 1);
     }
-#endif
     TBUF
 }
 
@@ -651,12 +638,10 @@ static void bgpdma_cleanup() {
         delete bgp_receive_buffer[0];
         bgp_receive_buffer[0] = NULL;
     }
-#if BGP_INTERVAL == 2
     if ((!use_bgpdma_ || n_bgp_interval != 2) && bgp_receive_buffer[1]) {
         delete bgp_receive_buffer[1];
         bgp_receive_buffer[1] = NULL;
     }
-#endif
 }
 
 #ifndef BGPTIMEOUT
@@ -744,11 +729,9 @@ void bgp_dma_setup() {
     if (!bgp_receive_buffer[0]) {
         bgp_receive_buffer[0] = new BGP_ReceiveBuffer();
     }
-#if BGP_INTERVAL == 2
     if (n_bgp_interval == 2 && !bgp_receive_buffer[1]) {
         bgp_receive_buffer[1] = new BGP_ReceiveBuffer();
     }
-#endif
 }
 
 #ifdef USENCS

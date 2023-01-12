@@ -26,10 +26,7 @@ using Gid2PreSyn = std::unordered_map<int, PreSyn*>;
 #include <vector>
 #include "ivocvect.h"
 
-#define BGP_INTERVAL 2
-#if BGP_INTERVAL == 2
 static int n_bgp_interval;
-#endif
 
 static Symbol* netcon_sym_;
 static Gid2PreSyn gid2out_;
@@ -426,8 +423,8 @@ static int nrn_need_npe() {
 
 static void calc_actual_mindelay() {
     // reasons why mindelay_ can be smaller than min_interprocessor_delay
-    // are use_bgpdma_ when BGP_INTERVAL == 2
-#if NRNMPI && (BGP_INTERVAL == 2)
+    // are use_bgpdma_
+#if NRNMPI
     if (use_bgpdma_ && n_bgp_interval == 2) {
         mindelay_ = min_interprocessor_delay_ / 2.;
     } else {
@@ -1288,13 +1285,9 @@ void BBS::netpar_solve(double tstop) {
     impl_->integ_time_ -= (npe_ ? (npe_[0].wx_ + npe_[0].ws_) : 0.);
 #if NRNMPI
     if (use_bgpdma_) {
-#if BGP_INTERVAL == 2
         for (int i = 0; i < n_bgp_interval; ++i) {
             bgp_dma_receive(nrn_threads);
         }
-#else
-        bgp_dma_receive(nrn_threads);
-#endif
     } else {
         nrn_spike_exchange(nrn_threads);
     }
@@ -1487,9 +1480,7 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
         return 0;
     }
     if (nspike >= 0) {  // otherwise don't set any multisend properties
-#if BGP_INTERVAL == 2
         n_bgp_interval = (xchng_meth & 4) ? 2 : 1;
-#endif
         use_bgpdma_ = (xchng_meth & 1) == 1;
         use_phase2_ = (xchng_meth & 8) ? 1 : 0;
         if (use_bgpdma_) {
