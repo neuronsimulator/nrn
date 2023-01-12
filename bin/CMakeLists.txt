@@ -74,7 +74,7 @@ add_custom_command(
     "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn" "${PROJECT_BINARY_DIR}/bin/neurondemo" "-nobanner"
     "-c" "quit()"
   VERBATIM)
-add_custom_target(generate-neurondemo-mechanism-library ALL DEPENDS ${neurondemo_files})
+add_custom_target(generate-neurondemo-mechanism-library ALL DEPENDS ${neurondemo_files} nrniv_lib)
 file(REMOVE_RECURSE ${PROJECT_BINARY_DIR}/bin/tmp)
 
 # =============================================================================
