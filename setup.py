@@ -138,7 +138,8 @@ setup(
         "nbconvert",
         "nbsphinx>=0.3.2",
         "pytest>=3.7.2",
-        "sphinx<5", # myst_parser requires <5 and pip falls over
+        "sphinxcontrib-applehelp<1.0.3",
+        "sphinx<6",
         "sphinx-rtd-theme",
     ]
     + install_requirements,
