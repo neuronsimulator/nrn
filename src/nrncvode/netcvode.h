@@ -5,6 +5,7 @@
 
 #include "mymath.h"
 
+#include "cvodeobj.h"
 #include "tqueue.h"
 
 #include <cmath>
