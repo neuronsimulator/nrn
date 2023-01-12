@@ -638,14 +638,32 @@ CONSTRUCTOR
 """""""""""
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    .. code-block::
+
+        CONSTRUCTOR {
+            : ...
+        }
+
+    This block is executed at the beginning and before the INITIAL block when the simulator allocates the memory
+    for a given mechanism. As this block is executed only once, it is typically used for memory allocation and
+    initialization of custom data structures (e.g. file I/O with VERBATIM blocks). You can find examples on
+    ModelDB models like  `ModelDBRepository/136095 <https://github.com/ModelDBRepository/136095/blob/7886f6a53e92d0202ee666239bcad0786f06a5f7/clampex.mod>`_.
 
 
 DESTRUCTOR
 """"""""""
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    .. code-block::
+
+        DESTRUCTOR {
+            : ...
+        }
+
+    This block is executed at the end of execution when simulator cleanups all mechanisms. Similar to CONSTRUCTOR,
+    this block is executed only once and is typically used to finalize and deallocate custom data structures that
+    are allocated in CONSTRUCTOR block. You can find examples on ModelDB models like
+    `ModelDBRepository/136095 <https://github.com/ModelDBRepository/136095/blob/7886f6a53e92d0202ee666239bcad0786f06a5f7/clampex.mod>`_.
 
 
 LINEAR
