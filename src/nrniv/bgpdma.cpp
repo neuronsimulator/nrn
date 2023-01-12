@@ -344,15 +344,15 @@ double nrn_bgp_receive_time(int type) {  // and others
     double rt = 0.;
     switch (type) {
     case 2:  // in msend_recv
-        if (!use_bgpdma_) {
+        if (!use_multisend_) {
             return rt;
         }
-        for (int i = 0; i < n_bgp_interval; ++i) {
+        for (int i = 0; i < n_multisend_interval; ++i) {
             rt += bgp_receive_buffer[i]->timebase_ * DCMFTICK;
         }
         break;
     case 3:  // in BGP_DMAsend::send
-        if (!use_bgpdma_) {
+        if (!use_multisend_) {
             return rt;
         }
         rt = dmasend_time_ * DCMFTICK;
@@ -361,7 +361,7 @@ double nrn_bgp_receive_time(int type) {  // and others
         rt = double(n_xtra_cons_check_);
         // and if there is second vector arg then also return the histogram
 #if MAXNCONS
-        if (ifarg(2) && use_bgpdma_) {
+        if (ifarg(2) && use_multisend_) {
             IvocVect* vec = vector_arg(2);
             vector_resize(vec, MAXNCONS + 1);
             for (int i = 0; i <= MAXNCONS; ++i) {
@@ -383,13 +383,13 @@ double nrn_bgp_receive_time(int type) {  // and others
     case 8:  // exchange method properties
              // bit 0: 0 allgather, 1 multisend (MPI_ISend)
              // bit 1: unused, legacy
-             // bit 2: n_bgp_interval, 0 means one interval, 1 means 2
+             // bit 2: n_multisend_interval, 0 means one interval, 1 means 2
              // bit 3: number of phases, 0 means 1 phase, 1 means 2
              // bit 4: unused (1 used to mean althash used)
              // bit 5: 1 means enqueue separated into two parts for timeing
     {
-        int method = use_bgpdma_ ? 1 : 0;
-        int p = method + 4 * (n_bgp_interval == 2 ? 1 : 0) + 8 * use_phase2_ +
+        int method = use_multisend_ ? 1 : 0;
+        int p = method + 4 * (n_multisend_interval == 2 ? 1 : 0) + 8 * use_phase2_ +
                 16 * (0)  // no hash selection, just std::unordered_map
                 + 32 * ENQUEUE;
         rt = double(p);
@@ -409,11 +409,11 @@ extern int nrnmpi_bgp_single_advance(NRNMPI_Spike*);
 extern int nrnmpi_bgp_conserve(int nsend, int nrecv);
 
 static void bgp_dma_init() {
-    for (int i = 0; i < n_bgp_interval; ++i) {
+    for (int i = 0; i < n_multisend_interval; ++i) {
         bgp_receive_buffer[i]->init(i);
     }
     current_rbuf = 0;
-    next_rbuf = n_bgp_interval - 1;
+    next_rbuf = n_multisend_interval - 1;
 #if TBUFSIZE
     itbuf_ = 0;
 #endif
@@ -447,7 +447,7 @@ static int bgp_advance() {
 
 #if NRNMPI
 void nrnbgp_messager_advance() {
-    if (use_bgpdma_) {
+    if (use_multisend_) {
         bgp_advance();
     }
 #if ENQUEUE == 2
@@ -500,7 +500,7 @@ void BGP_DMASend::send(int gid, double t) {
             spk_.gid = ~spk_.gid;
         }
         nsend_ += 1;
-        if (use_bgpdma_) {
+        if (use_multisend_) {
             nrnmpi_bgp_multisend(&spk_, NTARGET_HOSTS_PHASE1, target_hosts_);
         }
     }
@@ -517,7 +517,7 @@ void BGP_DMASend_Phase2::send_phase2(int gid, double t, BGP_ReceiveBuffer* rb) {
         }
         rb->phase2_nsend_cell_ += 1;
         rb->phase2_nsend_ += ntarget_hosts_phase2_;
-        if (use_bgpdma_) {
+        if (use_multisend_) {
             nrnmpi_bgp_multisend(&spk_, ntarget_hosts_phase2_, target_hosts_phase2_);
         }
     }
@@ -535,7 +535,7 @@ void bgp_dma_receive(NrnThread* nt) {
     unsigned long tfind, tsend;
 #endif
     w1 = nrnmpi_wtime();
-    if (use_bgpdma_) {
+    if (use_multisend_) {
         nrnbgp_messager_advance();
         TBUF
 #if ENQUEUE == 2 && TBUFSIZE
@@ -594,7 +594,7 @@ void bgp_dma_receive(NrnThread* nt) {
     wt1_ = nrnmpi_wtime() - w2;
     wt_ = w1;
     // printf("%d reverse buffers %g\n", nrnmpi_myid, t);
-    if (n_bgp_interval == 2) {
+    if (n_multisend_interval == 2) {
         current_rbuf = next_rbuf;
         next_rbuf = ((next_rbuf + 1) & 1);
     }
@@ -634,11 +634,11 @@ static void bgpdma_cleanup() {
     for (const auto& iter: gid2in_) {
         bgpdma_cleanup_presyn(iter.second);
     }
-    if (!use_bgpdma_ && bgp_receive_buffer[1]) {
+    if (!use_multisend_ && bgp_receive_buffer[1]) {
         delete bgp_receive_buffer[0];
         bgp_receive_buffer[0] = NULL;
     }
-    if ((!use_bgpdma_ || n_bgp_interval != 2) && bgp_receive_buffer[1]) {
+    if ((!use_multisend_ || n_multisend_interval != 2) && bgp_receive_buffer[1]) {
         delete bgp_receive_buffer[1];
         bgp_receive_buffer[1] = NULL;
     }
@@ -697,7 +697,7 @@ static void ensure_ntarget_gt_3(BGP_DMASend* bs) {
 
 void bgp_dma_setup() {
     bgpdma_cleanup();
-    if (!use_bgpdma_) {
+    if (!use_multisend_) {
         return;
     }
     // not sure this is useful for debugging when stuck in a collective.
@@ -729,7 +729,7 @@ void bgp_dma_setup() {
     if (!bgp_receive_buffer[0]) {
         bgp_receive_buffer[0] = new BGP_ReceiveBuffer();
     }
-    if (n_bgp_interval == 2 && !bgp_receive_buffer[1]) {
+    if (n_multisend_interval == 2 && !bgp_receive_buffer[1]) {
         bgp_receive_buffer[1] = new BGP_ReceiveBuffer();
     }
 }

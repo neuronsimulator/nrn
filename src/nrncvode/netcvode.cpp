@@ -241,7 +241,7 @@ extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 
 #if NRNMPI
 extern void bgp_dma_send(PreSyn*, double t);
-extern bool use_bgpdma_;
+extern bool use_multisend_;
 extern void nrnbgp_messager_advance();
 #endif
 
@@ -3263,7 +3263,7 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 #if USENCS || NRNMPI
     if (output_index_ >= 0) {
 #if NRNMPI
-        if (use_bgpdma_) {
+        if (use_multisend_) {
             bgp_dma_send(this, tt);
         } else {
 #endif  // NRNMPI
@@ -6134,7 +6134,7 @@ void NetCvode::deliver_net_events(NrnThread* nt) {  // for default method
     TQItem* q;
     double tm, tsav;
 #if NRNMPI
-    if (use_bgpdma_) {
+    if (use_multisend_) {
         nrnbgp_messager_advance();
     }
 #endif

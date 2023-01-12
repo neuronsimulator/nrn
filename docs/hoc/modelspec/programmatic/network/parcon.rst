@@ -2372,9 +2372,9 @@ Description:
 
         xchng_meth is a bit-field.
         bits | usage
-           0 | 0: Allgather, 1: MPI_ISend
+           0 | 0: Allgather, 1: Multisend (MPI_ISend)
            1 | unused
-           2 | 0: bgp_interval = 1, 1: bgp_interval = 2
+           2 | 0: multisend_interval = 1, 1: multisend_interval = 2
            3 | 0: don't use phase2, 1: use phase2
 
     .. seealso::

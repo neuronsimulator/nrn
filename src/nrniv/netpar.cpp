@@ -26,7 +26,7 @@ using Gid2PreSyn = std::unordered_map<int, PreSyn*>;
 #include <vector>
 #include "ivocvect.h"
 
-static int n_bgp_interval;
+static int n_multisend_interval;
 
 static Symbol* netcon_sym_;
 static Gid2PreSyn gid2out_;
@@ -179,7 +179,7 @@ static void nrn_spike_exchange_compressed(NrnThread*);
 #endif  // NRNMPI
 
 #if NRNMPI
-bool use_bgpdma_;  // false: allgather, true: multisend (ISend, bgpdma)
+bool use_multisend_;  // false: allgather, true: multisend (ISend, bgpdma)
 static void bgp_dma_setup();
 static void bgp_dma_init();
 static void bgp_dma_receive(NrnThread*);
@@ -237,7 +237,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
         if (seq == nrn_nthread) {
             last_nt_ = nt;
 #if NRNMPI
-            if (use_bgpdma_) {
+            if (use_multisend_) {
                 bgp_dma_receive(nt);
             } else {
                 nrn_spike_exchange(nt);
@@ -423,9 +423,9 @@ static int nrn_need_npe() {
 
 static void calc_actual_mindelay() {
     // reasons why mindelay_ can be smaller than min_interprocessor_delay
-    // are use_bgpdma_
+    // are use_multisend_
 #if NRNMPI
-    if (use_bgpdma_ && n_bgp_interval == 2) {
+    if (use_multisend_ && n_multisend_interval == 2) {
         mindelay_ = min_interprocessor_delay_ / 2.;
     } else {
         mindelay_ = min_interprocessor_delay_;
@@ -479,7 +479,7 @@ void nrn_spike_exchange_init() {
 #endif
 
 #if NRNMPI
-    if (use_bgpdma_) {
+    if (use_multisend_) {
         bgp_dma_init();
     }
 #endif
@@ -537,7 +537,7 @@ void nrn_spike_exchange(NrnThread* nt) {
         return;
     }
 #if NRNMPI
-    if (use_bgpdma_) {
+    if (use_multisend_) {
         bgp_dma_receive(nt);
         return;
     }
@@ -1284,8 +1284,8 @@ void BBS::netpar_solve(double tstop) {
     impl_->integ_time_ += nrnmpi_wtime() - wt;
     impl_->integ_time_ -= (npe_ ? (npe_[0].wx_ + npe_[0].ws_) : 0.);
 #if NRNMPI
-    if (use_bgpdma_) {
-        for (int i = 0; i < n_bgp_interval; ++i) {
+    if (use_multisend_) {
+        for (int i = 0; i < n_multisend_interval; ++i) {
             bgp_dma_receive(nrn_threads);
         }
     } else {
@@ -1449,7 +1449,7 @@ The situation that needs to be captured by xchng_meth is
 0: Allgather
 1: multisend implemented as MPI_ISend
 
-n_bgp_interval 1 or 2 per minimum interprocessor NetCon delay
+n_multisend_interval 1 or 2 per minimum interprocessor NetCon delay
  that concept valid for all methods
 
 Note that Allgather allows spike compression and an allgather spike buffer
@@ -1462,7 +1462,7 @@ Note that, in principle, MPI_ISend allows the source to send the index
  variant)
 
 Not all variation are useful. e.g. it is pointless to combine Allgather and
-n_bgp_interval=2.
+n_multisend_interval=2.
 The whole point is to make the
 spike transfer initiation as lowcost as possible since that is what causes
 most load imbalance. I.e. since 10K more spikes arrive than are sent, spikes
@@ -1480,10 +1480,10 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
         return 0;
     }
     if (nspike >= 0) {  // otherwise don't set any multisend properties
-        n_bgp_interval = (xchng_meth & 4) ? 2 : 1;
-        use_bgpdma_ = (xchng_meth & 1) == 1;
+        n_multisend_interval = (xchng_meth & 4) ? 2 : 1;
+        use_multisend_ = (xchng_meth & 1) == 1;
         use_phase2_ = (xchng_meth & 8) ? 1 : 0;
-        if (use_bgpdma_) {
+        if (use_multisend_) {
             assert(NRNMPI);
         }
         bgpdma_cleanup();
