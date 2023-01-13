@@ -567,7 +567,7 @@ void nrn_multisend_receive(NrnThread* nt) {
         tbuf_[itbuf_++] = (unsigned long) multisend_receive_buffer[current_rbuf]->phase2_nsend_;
     }
 #endif
-#if (BGPMDA & 2) && MAXNCONS
+#if MAXNCONS
     if (ncons > MAXNCONS) {
         ncons = MAXNCONS;
     }
