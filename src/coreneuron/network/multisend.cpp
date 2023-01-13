@@ -56,8 +56,6 @@ int n_multisend_interval = 2;
 
 #if NRN_MULTISEND
 
-#define MAXNCONS 10
-
 // ENQUEUE 0 means to  Multisend_ReceiveBuffer buffer -> InputPreSyn.send
 // ENQUEUE 1 means to Multisend_ReceiveBuffer buffer -> psbuf -> InputPreSyn.send
 // ENQUEUE 2 means to Multisend_ReceiveBuffer.incoming -> InputPrySyn.send

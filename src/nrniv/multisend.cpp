@@ -44,7 +44,6 @@ of spikes sent is equal to the number of spikes sent.
 // phase2 list of target hosts.
 
 static unsigned long long dmasend_time_;
-#define MAXNCONS 10
 
 // asm/msr.h no longer compiles on my machine.
 // only for basic testing of logic when not on blue gene/p
@@ -336,15 +335,6 @@ double nrn_multisend_receive_time(int type) {  // and others
     case 4:  // number of extra conservation checks
         rt = 0.;
         // and if there is second vector arg then also return the histogram
-#if MAXNCONS
-        if (ifarg(2) && use_multisend_) {
-            IvocVect* vec = vector_arg(2);
-            vector_resize(vec, MAXNCONS + 1);
-            for (int i = 0; i <= MAXNCONS; ++i) {
-                vector_vec(vec)[i] = 0.;
-            }
-        }
-#endif  // MAXNCONS
 #if TBUFSIZE
         if (ifarg(3)) {
             IvocVect* vec = vector_arg(3);
