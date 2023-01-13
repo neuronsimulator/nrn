@@ -203,7 +203,7 @@ void NrnDAE::dkmap(std::vector<neuron::container::data_handle<double>>& pv,
                                                                   y_.data() + i};
         pvdot[bmap_[i] - 1] =
             neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                   _nt->node_rhs_storage() + bmap_[i]};
+                                                   _nt->_sp13_rhs + bmap_[i]};
     }
 }
 
