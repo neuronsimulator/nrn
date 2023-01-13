@@ -56,11 +56,7 @@ int n_multisend_interval = 2;
 
 #if NRN_MULTISEND
 
-static int n_xtra_cons_check_;
 #define MAXNCONS 10
-#if MAXNCONS
-static int xtra_cons_hist_[MAXNCONS + 1];
-#endif
 
 // ENQUEUE 0 means to  Multisend_ReceiveBuffer buffer -> InputPreSyn.send
 // ENQUEUE 1 means to Multisend_ReceiveBuffer buffer -> psbuf -> InputPreSyn.send
@@ -328,12 +324,6 @@ void nrn_multisend_init() {
 #if ENQUEUE == 2
     enq2_find_time_ = enq2_enqueue_time_ = 0;
 #endif
-    n_xtra_cons_check_ = 0;
-#if MAXNCONS
-    for (int i = 0; i <= MAXNCONS; ++i) {
-        xtra_cons_hist_[i] = 0;
-    }
-#endif  // MAXNCONS
 }
 
 static int multisend_advance() {
