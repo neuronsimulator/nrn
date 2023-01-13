@@ -50,33 +50,14 @@ static void all2allv_helper(int* scnt, int* sdispl, int*& rcnt, int*& rdispl) {
     rdispl = newoffset(rcnt, np);
 }
 
-/*
-define following to 1 if desire space/performance information such as:
-all2allv_int gidin to intermediate space=1552 total=37345104 time=0.000495835
-all2allv_int gidout space=528 total=37379376 time=1.641e-05
-all2allv_int lists space=3088 total=37351312 time=4.4708e-05
-*/
-#define all2allv_perf 0
 // input s, scnt, sdispl ; output, newly allocated r, rcnt, rdispl
 static void
 all2allv_int(int* s, int* scnt, int* sdispl, int*& r, int*& rcnt, int*& rdispl, const char* dmes) {
-#if all2allv_perf
-    double tm = nrnmpi_wtime();
-#endif
     int np = nrnmpi_numprocs;
     all2allv_helper(scnt, sdispl, rcnt, rdispl);
     r = newintval(0, rdispl[np]);
 
     nrnmpi_int_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
-
-    // when finished with r, rcnt, rdispl, caller should del them.
-#if all2allv_perf
-    if (nrnmpi_myid == 0) {
-        int nb = 4 * nrnmpi_numprocs + sdispl[nrnmpi_numprocs] + rdispl[nrnmpi_numprocs];
-        tm = nrnmpi_wtime() - tm;
-        printf("all2allv_int %s space=%d total=%llu time=%g\n", dmes, nb, nrn_mallinfo(0), tm);
-    }
-#endif
 }
 
 class TarList {
