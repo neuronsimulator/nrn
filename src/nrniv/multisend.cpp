@@ -26,7 +26,6 @@ At the end of a computation subinterval the even or odd buffer spikes
 are enqueued in the priority queue after checking that the number
 of spikes sent is equal to the number of spikes sent.
 */
-extern void (*nrntimeout_call)();
 // The initial idea behind use_phase2_ is to avoid the large overhead of
 // initiating a send of the up to 10k list of target hosts when a cell fires.
 // I.e. when there are a small number of cells on a processor, this causes
@@ -588,7 +587,6 @@ void nrn_multisend_cleanup_presyn(PreSyn* ps) {
 }
 
 static void nrn_multisend_cleanup() {
-    nrntimeout_call = 0;
     for (const auto& iter: gid2out_) {
         nrn_multisend_cleanup_presyn(iter.second);
     }
@@ -604,20 +602,6 @@ static void nrn_multisend_cleanup() {
         multisend_receive_buffer[1] = NULL;
     }
 }
-
-#ifndef BGPTIMEOUT
-#define BGPTIMEOUT 0
-#endif
-
-#if BGPTIMEOUT
-static void bgptimeout() {
-    printf("%d timeout %d %d %d\n",
-           nrnmpi_myid,
-           current_rbuf,
-           multisend_receive_buffer[current_rbuf]->nsend_,
-           multisend_receive_buffer[current_rbuf]->nrecv_);
-}
-#endif
 
 #if WORK_AROUND_RECORD_BUG
 static void ensure_ntarget_gt_3(Multisend_Send* bs) {
@@ -658,10 +642,6 @@ void nrn_multisend_setup() {
     if (!use_multisend_) {
         return;
     }
-    // not sure this is useful for debugging when stuck in a collective.
-#if BGPTIMEOUT
-    nrntimeout_call = bgptimeout;
-#endif
     nrnmpi_multisend_comm();
     // if (nrnmpi_myid == 0) printf("nrn_multisend_setup()\n");
     // although we only care about the set of hosts that gid2out_
