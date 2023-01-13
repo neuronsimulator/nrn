@@ -43,8 +43,6 @@ of spikes sent is equal to the number of spikes sent.
 // setup time with a bgp.dma_send_ so as to pass on the spike to the
 // phase2 list of target hosts.
 
-static unsigned long long dmasend_time_;
-
 // asm/msr.h no longer compiles on my machine.
 // only for basic testing of logic when not on blue gene/p
 #define USE_RDTSCL 0
@@ -383,7 +381,6 @@ static void nrn_multisend_init() {
 #if TBUFSIZE
     itbuf_ = 0;
 #endif
-    dmasend_time_ = 0;
 #if ENQUEUE == 2
     enq2_find_time_ = enq2_enqueue_time_ = 0;
 #endif
@@ -504,7 +501,7 @@ void nrn_multisend_receive(NrnThread* nt) {
     tbuf_[itbuf_++] = (unsigned long) multisend_receive_buffer[current_rbuf]->nsend_cell_;
     tbuf_[itbuf_++] = (unsigned long) s;
     tbuf_[itbuf_++] = (unsigned long) r;
-    tbuf_[itbuf_++] = (unsigned long) dmasend_time_;
+    tbuf_[itbuf_++] = 0UL;
     if (use_phase2_) {
         tbuf_[itbuf_++] =
             (unsigned long) multisend_receive_buffer[current_rbuf]->phase2_nsend_cell_;
