@@ -39,7 +39,6 @@ set(bindir \${exec_prefix}/bin)
 set(modsubdir ${host_cpu})
 set(bindir \${exec_prefix}/bin)
 set(libdir \${exec_prefix}/lib)
-set(BGPDMA ${NRNMPI})
 
 # =============================================================================
 # Comment or empty character to enable/disable cmake specific settings
