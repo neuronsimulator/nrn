@@ -550,7 +550,8 @@ void nrn_spike_exchange(NrnThread* nt) {
 #if TBUFSIZE
     nrnmpi_barrier();
 #endif
-    TBUF double wt;
+    TBUF
+    double wt;
     int i, n;
 #if NRNSTAT
     nsend_ += nout_;
@@ -571,7 +572,7 @@ void nrn_spike_exchange(NrnThread* nt) {
     wt = nrnmpi_wtime();
     TBUF
 #if TBUFSIZE
-        tbuf_[itbuf_++] = (unsigned long) nout_;
+    tbuf_[itbuf_++] = (unsigned long) nout_;
     tbuf_[itbuf_++] = (unsigned long) n;
 #endif
 
@@ -586,7 +587,8 @@ void nrn_spike_exchange(NrnThread* nt) {
             vector_vec(max_histogram_)[0] += 1.;
         }
 #endif
-        TBUF return;
+        TBUF
+        return;
     }
 #if NRNSTAT
     nrecv_ += n;
@@ -652,7 +654,8 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
 #if TBUFSIZE
     nrnmpi_barrier();
 #endif
-    TBUF assert(!cvode_active_);
+    TBUF
+    assert(!cvode_active_);
     double wt;
     int i, n, idx;
 #if NRNSTAT
@@ -675,7 +678,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
     wt = nrnmpi_wtime();
     TBUF
 #if TBUFSIZE
-        tbuf_[itbuf_++] = (unsigned long) nout_;
+    tbuf_[itbuf_++] = (unsigned long) nout_;
     tbuf_[itbuf_++] = (unsigned long) n;
 #endif
     errno = 0;
@@ -691,7 +694,8 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
         }
 #endif
         t_exchange_ = nrn_threads->_t;
-        TBUF return;
+        TBUF
+        return;
     }
 #if NRNSTAT
     nrecv_ += n;
