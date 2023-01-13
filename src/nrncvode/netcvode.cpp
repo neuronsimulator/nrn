@@ -3266,9 +3266,6 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
         if (use_multisend_) {
             nrn_multisend_send(this, tt);
         } else {
-#endif  // NRNMPI
-
-#if NRNMPI
             if (nrn_use_localgid_) {
                 nrn_outputevent(localgid_, tt);
             } else
