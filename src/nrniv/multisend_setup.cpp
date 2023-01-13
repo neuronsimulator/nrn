@@ -68,7 +68,6 @@ all2allv_int(int* s, int* scnt, int* sdispl, int*& r, int*& rcnt, int*& rdispl, 
     r = newintval(0, rdispl[np]);
 
     nrnmpi_int_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
-    alltoalldebug(dmes, s, scnt, sdispl, r, rcnt, rdispl);
 
     // when finished with r, rcnt, rdispl, caller should del them.
 #if all2allv_perf
@@ -272,8 +271,8 @@ static void fill_multisend_send_lists(int sz, int* r) {
             if (max_ntarget_host < bs->ntarget_hosts_) {
                 max_ntarget_host = bs->ntarget_hosts_;
             }
-            if (max_multisend_targets < bs->NTARGET_HOSTS_PHASE1) {
-                max_multisend_targets = bs->NTARGET_HOSTS_PHASE1;
+            if (max_multisend_targets < bs->ntarget_hosts_phase1_) {
+                max_multisend_targets = bs->ntarget_hosts_phase1_;
             }
         }
     }
@@ -292,9 +291,6 @@ static void fill_multisend_send_lists(int sz, int* r) {
 static int setup_target_lists(int** r_return) {
     int *s, *r, *scnt, *rcnt, *sdispl, *rdispl;
     int nhost = nrnmpi_numprocs;
-
-    celldebug("output gid", gid2out_);
-    celldebug("input gid", gid2in_);
 
     // What are the target ranks for a given input gid. All the ranks
     // with the same input gid send that gid to the intermediate
