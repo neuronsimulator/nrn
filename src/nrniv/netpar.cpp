@@ -163,11 +163,8 @@ bool nrn_use_localgid_;
 void nrn_outputevent(unsigned char localgid, double firetime);
 static std::vector<std::unique_ptr<Gid2PreSyn>> localmaps_;
 
-#define NRNSTAT 1
 static int nsend_, nsendmax_, nrecv_, nrecv_useful_;
-#if NRNSTAT
 static IvocVect* max_histogram_;
-#endif
 
 static int ocapacity_;  // for spikeout_
 // require it to be smaller than  min_interprocessor_delay.
@@ -553,12 +550,10 @@ void nrn_spike_exchange(NrnThread* nt) {
     TBUF
     double wt;
     int i, n;
-#if NRNSTAT
     nsend_ += nout_;
     if (nsendmax_ < nout_) {
         nsendmax_ = nout_;
     }
-#endif
 #if nrn_spikebuf_size > 0
     spbufout_->nspike = nout_;
 #endif
@@ -582,15 +577,12 @@ void nrn_spike_exchange(NrnThread* nt) {
     //}
     nout_ = 0;
     if (n == 0) {
-#if NRNSTAT
         if (max_histogram_) {
             vector_vec(max_histogram_)[0] += 1.;
         }
-#endif
         TBUF
         return;
     }
-#if NRNSTAT
     nrecv_ += n;
     if (max_histogram_) {
         int mx = 0;
@@ -611,7 +603,6 @@ void nrn_spike_exchange(NrnThread* nt) {
         mx = (mx < ms) ? mx : ms;
         vector_vec(max_histogram_)[mx] += 1.;
     }
-#endif  // NRNSTAT
 #if nrn_spikebuf_size > 0
     for (i = 0; i < nrnmpi_numprocs; ++i) {
         int j;
@@ -624,9 +615,7 @@ void nrn_spike_exchange(NrnThread* nt) {
             if (iter != gid2in_.end()) {
                 PreSyn* ps = iter->second;
                 ps->send(spbufin_[i].spiketime[j], net_cvode_instance, nt);
-#if NRNSTAT
                 ++nrecv_useful_;
-#endif
             }
         }
     }
@@ -637,9 +626,7 @@ void nrn_spike_exchange(NrnThread* nt) {
         if (iter != gid2in_.end()) {
             PreSyn* ps = iter->second;
             ps->send(spikein_[i].spiketime, net_cvode_instance, nt);
-#if NRNSTAT
             ++nrecv_useful_;
-#endif
         }
     }
     wt1_ = nrnmpi_wtime() - wt;
@@ -658,12 +645,10 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
     assert(!cvode_active_);
     double wt;
     int i, n, idx;
-#if NRNSTAT
     nsend_ += nout_;
     if (nsendmax_ < nout_) {
         nsendmax_ = nout_;
     }
-#endif
     assert(nout_ < 0x10000);
     spfixout_[1] = (unsigned char) (nout_ & 0xff);
     spfixout_[0] = (unsigned char) (nout_ >> 8);
@@ -688,16 +673,13 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
     nout_ = 0;
     idxout_ = 2;
     if (n == 0) {
-#if NRNSTAT
         if (max_histogram_) {
             vector_vec(max_histogram_)[0] += 1.;
         }
-#endif
         t_exchange_ = nrn_threads->_t;
         TBUF
         return;
     }
-#if NRNSTAT
     nrecv_ += n;
     if (max_histogram_) {
         int mx = 0;
@@ -712,7 +694,6 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
         mx = (mx < ms) ? mx : ms;
         vector_vec(max_histogram_)[mx] += 1.;
     }
-#endif  // NRNSTAT
     if (nrn_use_localgid_) {
         int idxov = 0;
         for (i = 0; i < nrnmpi_numprocs; ++i) {
@@ -741,9 +722,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
                     if (iter != gps->end()) {
                         PreSyn* ps = iter->second;
                         ps->send(firetime + 1e-10, net_cvode_instance, nt);
-#if NRNSTAT
                         ++nrecv_useful_;
-#endif
                     }
                 }
                 for (; j < nn; ++j) {
@@ -754,9 +733,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
                     if (iter != gps->end()) {
                         PreSyn* ps = iter->second;
                         ps->send(firetime + 1e-10, net_cvode_instance, nt);
-#if NRNSTAT
                         ++nrecv_useful_;
-#endif
                     }
                 }
             }
@@ -778,9 +755,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
                 if (iter != gid2in_.end()) {
                     PreSyn* ps = iter->second;
                     ps->send(firetime + 1e-10, net_cvode_instance, nt);
-#if NRNSTAT
                     ++nrecv_useful_;
-#endif
                 }
             }
         }
@@ -794,9 +769,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
             if (iter != gid2in_.end()) {
                 PreSyn* ps = iter->second;
                 ps->send(firetime + 1e-10, net_cvode_instance, nt);
-#if NRNSTAT
                 ++nrecv_useful_;
-#endif
             }
         }
     }
@@ -901,9 +874,7 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
             ps = iter->second;
             // printf("nrn_fake_fire %d %g\n", gid, spiketime);
             ps->send(spiketime, net_cvode_instance, nrn_threads);
-#if NRNSTAT
             ++nrecv_useful_;
-#endif
         }
     } else if (fake_out && !ps) {
         auto iter = gid2out_.find(gid);
@@ -911,9 +882,7 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
             ps = iter->second;
             // printf("nrn_fake_fire fake_out %d %g\n", gid, spiketime);
             ps->send(spiketime, net_cvode_instance, nrn_threads);
-#if NRNSTAT
             ++nrecv_useful_;
-#endif
         }
     }
 }
@@ -1425,7 +1394,7 @@ void BBS::netpar_spanning_statistics(int* nsend, int* nsendmax, int* nrecv, int*
 
 // unfortunately, ivocvect.h conflicts with STL
 IvocVect* BBS::netpar_max_histogram(IvocVect* mh) {
-#if NRNMPI && NRNSTAT
+#if NRNMPI
     IvocVect* h = max_histogram_;
     if (max_histogram_) {
         max_histogram_ = NULL;
@@ -1435,7 +1404,7 @@ IvocVect* BBS::netpar_max_histogram(IvocVect* mh) {
     }
     return h;
 #else
-    return NULL;
+    return nullptr;
 #endif
 }
 
