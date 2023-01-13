@@ -66,8 +66,7 @@ mac_m1_cmake_build:
                    -DNRN_ENABLE_TESTS=ON
                    -DNRN_ENABLE_CORENEURON=${cmake_coreneuron}
                    -DNRN_ENABLE_INTERVIEWS=${cmake_interviews}
-                   -DNRN_ENABLE_RX3D=${cmake_rx3d}
-                   -DCORENRN_SANITIZERS=${sanitizer})
+                   -DNRN_ENABLE_RX3D=${cmake_rx3d})
     - cmake_args+=(-DPYTHON_EXECUTABLE="${PYTHON}")
     - mkdir build && cd build
     - echo "Building with ${cmake_args[@]}"
