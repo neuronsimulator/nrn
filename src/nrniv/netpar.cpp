@@ -874,7 +874,9 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
             ps = iter->second;
             // printf("nrn_fake_fire %d %g\n", gid, spiketime);
             ps->send(spiketime, net_cvode_instance, nrn_threads);
+#if NRNMPI
             ++nrecv_useful_;
+#endif
         }
     } else if (fake_out && !ps) {
         auto iter = gid2out_.find(gid);
@@ -882,7 +884,9 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
             ps = iter->second;
             // printf("nrn_fake_fire fake_out %d %g\n", gid, spiketime);
             ps->send(spiketime, net_cvode_instance, nrn_threads);
+#if NRNMPI
             ++nrecv_useful_;
+#endif
         }
     }
 }
