@@ -324,8 +324,7 @@ struct soa {
     friend struct state_token<Storage>;
     friend struct owning_identifier<Storage>;
 
-    static_assert(detail::are_types_unique_v<non_owning_identifier<Storage>, Tags...>,
-                  "All tag types should be unique");
+    static_assert(detail::are_types_unique_v<Tags...>, "All tag types should be unique");
     template <typename Tag>
     static constexpr std::size_t tag_index_v = detail::index_of_type_v<Tag, Tags...>;
 
@@ -350,7 +349,8 @@ struct soa {
      */
     template <typename This, typename Callable>
     static void for_all_vectors(This& this_ref, Callable const& callable) {
-        callable(detail::type_identity<non_owning_identifier<Storage>>{}, this_ref.m_indices);
+        callable(detail::type_identity<non_owning_identifier_without_container>{},
+                 this_ref.m_indices);
         (for_all_tag_vectors<Tags>(this_ref, callable), ...);
     }
 
@@ -553,6 +553,9 @@ struct soa {
                 auto* const new_data = vec.data();
                 if (old_data != new_data) {
                     // reallocation happened, so we'll need to execute pointer-updating callbacks
+                    static_assert(::std::is_same_v<
+                                  typename ::std::remove_reference_t<decltype(vec)>::value_type,
+                                  typename Tag::type>);
                     realloc_data.emplace_back(
                         static_cast<::std::byte*>(static_cast<void*>(old_data)),
                         static_cast<::std::byte*>(static_cast<void*>(new_data)),
@@ -575,7 +578,7 @@ struct soa {
         owning_identifier<Storage> index{static_cast<Storage&>(*this), old_size};
         // Update the pointer-to-row-number in m_indices so it refers to the
         // same thing as index
-        m_indices.back() = static_cast<non_owning_identifier<Storage>>(index);
+        m_indices.back() = static_cast<non_owning_identifier_without_container>(index);
         return index;
     }
 
@@ -744,6 +747,8 @@ struct soa {
     [[nodiscard]] std::optional<utils::storage_info> find_container_info(void const* cont) const {
         utils::storage_info info{};
         // FIXME: generate a proper tag type for the index column?
+        // The template argument is just used to derive a name for the column; it doesn't matter
+        // that the argument for m_indices does not match m_indices's value type.
         if (find_container_info<non_owning_identifier<Storage>>(info, m_indices, cont) ||
             (find_container_info<Tags>(info, std::get<tag_index_v<Tags>>(m_data), cont) || ...)) {
             return info;
