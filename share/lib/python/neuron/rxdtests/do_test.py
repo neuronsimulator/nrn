@@ -72,7 +72,7 @@ def do_test(test_to_run, results_location, num_record=10):
                 repr(h.t),
                 data["record_count"],
             )
-            print(outstr)
+            print(outstr, flush=True)
 
     def save_and_cleanup():
         import array
@@ -81,10 +81,8 @@ def do_test(test_to_run, results_location, num_record=10):
         # save the data
         with open(results_location, "wb") as f:
             array.array("d", data["data"]).tofile(f)
-
-        import sys
-
-        sys.exit(0)
+        # hard exit so Python teardown doesn't do bad things
+        os._exit(0)
 
     h.CVode().extra_scatter_gather(0, collect_data)
 

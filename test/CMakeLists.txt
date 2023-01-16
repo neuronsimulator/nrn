@@ -34,13 +34,7 @@ endforeach()
 # =============================================================================
 # Copy necessary hoc files to build directory if they have not been copied yet
 # =============================================================================
-if(NOT TARGET hoc_module)
-  add_custom_command(
-    TARGET testneuron
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
-            ${PROJECT_BINARY_DIR}/share/nrn/lib)
-endif()
+add_dependencies(testneuron copy_share_lib_to_build)
 
 # =============================================================================
 # Unit tests  (testneuron, ...)

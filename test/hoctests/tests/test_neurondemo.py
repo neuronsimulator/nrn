@@ -49,10 +49,26 @@ quit()
 # run neurondemo and return the stdout lines between ZZZbegin and ZZZend
 def neurondemo(extra, input):
     input = extra + input
-    result = run("neurondemo -nobanner", input)
-    result = result[0].splitlines()
-    result = result[result.index("ZZZbegin") + 1 : result.index("ZZZend")]
-    return result
+    stdout, stderr = run("neurondemo -nobanner", input)
+    stdout = stdout.splitlines()
+    stderr = stderr.splitlines()
+    if len(stderr) != 0:
+        for line in stderr:
+            print("stderr:", line.strip())
+        raise Exception("Unexpected stderr")
+    begin_index = stdout.index("ZZZbegin")
+    end_index = stdout.index("ZZZend")
+    prefix = stdout[:begin_index]
+    suffix = stdout[end_index + 1 :]
+    if len(prefix):
+        print("stdout prefix, excluded from comparison:")
+        for line in prefix:
+            print("stdout:", line.strip())
+    if len(suffix):
+        print("stdout suffix, excluded from comparison:")
+        for line in suffix:
+            print("stdout:", line.strip())
+    return stdout[begin_index + 1 : end_index]
 
 
 # HOC: procedure to print all lines of all Graphs

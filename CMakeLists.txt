@@ -584,6 +584,30 @@ endif()
 # Add project directories AFTER CMake modules
 # =============================================================================
 add_subdirectory(src/nrniv)
+
+# Collect the environment variables that are needed to execute NEURON from the build directory. This
+# is used when configuring tests, and when building documentation targets.
+function(prepend_to_var var new_path)
+  set(old_list "${NRN_RUN_FROM_BUILD_DIR_ENV}")
+  set(new_val "${var}=${new_path}")
+  if(DEFINED ENV{${var}} AND NOT "$ENV{${var}}" STREQUAL "")
+    string(APPEND new_val ":$ENV{${var}}")
+  endif()
+  list(APPEND old_list "${new_val}")
+  set(NRN_RUN_FROM_BUILD_DIR_ENV
+      "${old_list}"
+      PARENT_SCOPE)
+endfunction()
+set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
+                               "NRNHOME=${PROJECT_BINARY_DIR}")
+prepend_to_var(PATH "${PROJECT_BINARY_DIR}/bin")
+prepend_to_var(LD_LIBRARY_PATH "${PROJECT_BINARY_DIR}/lib")
+if(NRN_ENABLE_CORENEURON)
+  list(APPEND NRN_RUN_FROM_BUILD_DIR_ENV "CORENRNHOME=${PROJECT_BINARY_DIR}")
+endif()
+if(NRN_ENABLE_PYTHON)
+  prepend_to_var(PYTHONPATH "${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd")
+endif()
 add_subdirectory(bin)
 
 if(NRN_ENABLE_PYTHON)
@@ -604,31 +628,6 @@ endif()
 
 if(MINGW)
   add_subdirectory(src/mswin)
-endif()
-
-# Collect the environment variables that are needed to execute NEURON from the build directory. This
-# is used when configuring tests, and when building documentation targets.
-function(prepend_to_var var new_path)
-  set(old_list "${NRN_RUN_FROM_BUILD_DIR_ENV}")
-  set(new_val "${var}=${new_path}")
-  if(DEFINED ENV{${var}} AND NOT "$ENV{${var}}" STREQUAL "")
-    string(APPEND new_val ":$ENV{${var}}")
-  endif()
-  list(APPEND old_list "${new_val}")
-  set(NRN_RUN_FROM_BUILD_DIR_ENV
-      "${old_list}"
-      PARENT_SCOPE)
-endfunction()
-set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
-                               "NRNHOME=${PROJECT_BINARY_DIR}")
-prepend_to_var(PATH "${PROJECT_BINARY_DIR}/bin")
-prepend_to_var(LD_LIBRARY_PATH "${PROJECT_BINARY_DIR}/lib")
-if(NRN_ENABLE_CORENEURON AND NOT coreneuron_FOUND)
-  # CoreNEURON is enabled *and* is being built internally
-  list(APPEND NRN_RUN_FROM_BUILD_DIR_ENV "CORENRNHOME=${PROJECT_BINARY_DIR}")
-endif()
-if(NRN_ENABLE_PYTHON)
-  prepend_to_var(PYTHONPATH "${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd")
 endif()
 
 if(NRN_ENABLE_DOCS)
@@ -697,6 +696,7 @@ if(NRN_ENABLE_DOCS)
     sphinx
     COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${SPHINX_EXECUTABLE} -j auto -b html
             "${PROJECT_SOURCE_DIR}/docs" "${PROJECT_SOURCE_DIR}/docs/_build"
+    COMMAND echo "Copy/Paste to Browser ${PROJECT_SOURCE_DIR}/docs/_build/index.html"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
     COMMENT "Generating documentation with Sphinx")
 
@@ -721,11 +721,29 @@ if(NRN_ENABLE_DOCS)
 endif()
 
 # =============================================================================
-# Add coding-conventions submodule if code formatting enabled
+# Black, Clang-format, Cmake-format (see $PROJECT_SOURCE_DIR/.bbp-project.yaml)
 # =============================================================================
-if(NRN_CMAKE_FORMAT OR NRN_CLANG_FORMAT)
-  add_subdirectory(external/coding-conventions/cpp)
-endif()
+add_custom_target(
+  format
+  COMMAND ${PROJECT_SOURCE_DIR}/external/coding-conventions/bin/format
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# Prepare a shell script to format only files modified with respect to master branch
+file(
+  WRITE ${CMAKE_CURRENT_BINARY_DIR}/format-pr.sh
+  "\
+#!bash\n\
+set -e\n\
+cmd='cd ${PROJECT_SOURCE_DIR} && external/coding-conventions/bin/format `git diff --name-only master`'\n\
+echo $cmd\n\
+cd ${PROJECT_SOURCE_DIR} && external/coding-conventions/bin/format `git diff --name-only master`\n\
+")
+
+add_custom_target(
+  format-pr
+  COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/format-pr.sh
+  COMMENT "Format only files modified with respect to master branch."
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 # =============================================================================
 # ~~~
@@ -774,6 +792,31 @@ if(NRN_ENABLE_PYTHON)
   add_dependencies(nrniv_lib help_data_dat)
 endif()
 
+include("${CODING_CONV_CMAKE}/build-time-copy.cmake") # cpp_cc_build_time_copy
+function(copy_share_subdir_at_build_time)
+  cmake_parse_arguments(opt "" "SUBDIR;TARGET" "" ${ARGN})
+  set(src_dir "${PROJECT_SOURCE_DIR}/share/${opt_SUBDIR}")
+  set(tgt_dir "${NRN_BUILD_SHARE_DIR}/${opt_SUBDIR}")
+  file(
+    GLOB_RECURSE files_to_copy
+    LIST_DIRECTORIES false
+    RELATIVE "${src_dir}"
+    CONFIGURE_DEPENDS "${src_dir}/*")
+  foreach(file_to_copy ${files_to_copy})
+    cpp_cc_build_time_copy(
+      INPUT "${src_dir}/${file_to_copy}"
+      OUTPUT "${tgt_dir}/${file_to_copy}"
+      NO_TARGET)
+    list(APPEND files_to_depend_on "${tgt_dir}/${file_to_copy}")
+  endforeach()
+  add_custom_target(
+    ${opt_TARGET}
+    COMMENT "Copying ${src_dir} to ${tgt_dir}"
+    DEPENDS ${files_to_depend_on})
+endfunction()
+copy_share_subdir_at_build_time(SUBDIR demo TARGET copy_share_demo_to_build)
+copy_share_subdir_at_build_time(SUBDIR lib TARGET copy_share_lib_to_build)
+
 # =============================================================================
 # Add tests if enabled
 # =============================================================================
@@ -794,15 +837,24 @@ if(NRN_ENABLE_TESTS)
     elseif(NOT PYTEST_COV_FOUND)
       message(INFO "pytest-cov package not installed. Python coverage will not be generated.")
     endif()
-  else() # share/demo still required for testing
-    add_custom_target(
-      copy_demo_to_build
-      COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
-              ${NRN_BUILD_SHARE_DIR}/demo
-      COMMENT "Copying ${PROJECT_SOURCE_DIR}/share/demo to ${NRN_BUILD_SHARE_DIR}"
-      VERBATIM)
-    add_dependencies(nrniv_lib copy_demo_to_build)
   endif()
+  add_dependencies(nrniv_lib copy_share_demo_to_build)
+  # Execute neurondemo as part of the build because it lazily calls nrnivmodl. If we don't do this
+  # then test_neurondemo.py will run nrnivmodl in a clean build, and report compilation warnings as
+  # unexpected stderr.
+  set(neurondemo_prefix
+      "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}")
+  set(neurondemo_files
+      "${neurondemo_prefix}/special"
+      "${neurondemo_prefix}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  add_custom_command(
+    OUTPUT ${neurondemo_files}
+    COMMAND
+      ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_SANITIZER_ENABLE_ENVIRONMENT}
+      "${PROJECT_BINARY_DIR}/bin/neurondemo" "-nobanner" "-nogui" "-c" "quit()"
+    VERBATIM)
+  add_custom_target(generate-neurondemo-mechanism-library ALL DEPENDS ${neurondemo_files} nrniv_lib
+                                                                      copy_share_lib_to_build)
   # Initialize the submodule *before* including the test/CMakeLists.txt that uses it. This ensures
   # that the test infrastructure can find the names of the input data files and set up rules to copy
   # them into the test working directories.
