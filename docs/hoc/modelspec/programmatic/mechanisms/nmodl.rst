@@ -409,7 +409,6 @@ Description:
     one value across for all instances of a given mechanism.
 
 .. code-block::
-    none
 
     CONSTANT {
         e0 = 1.6021e-19 (coulombs)
@@ -432,7 +431,6 @@ Description:
     outside using HOC/Python API.
 
 .. code-block::
-    none
 
     FUNCTION oca_ss(v(mV)) {
         LOCAL a, b
