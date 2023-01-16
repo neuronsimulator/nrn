@@ -58,25 +58,6 @@ foreach(NRN_CONFIG_EXE_FILE ${NRN_CONFIG_EXE_FILES})
       WORLD_READ
       WORLD_EXECUTE)
 endforeach()
-if(NRN_ENABLE_TESTS)
-  # Execute neurondemo as part of the build because it lazily calls nrnivmodl. If we don't do this
-  # then test_neurondemo.py will run nrnivmodl in a clean build, and report compilation warnings as
-  # unexpected stderr.
-  set(neurondemo_prefix
-      "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}")
-  set(neurondemo_files
-      "${neurondemo_prefix}/special"
-      "${neurondemo_prefix}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
-  add_custom_command(
-    OUTPUT ${neurondemo_files}
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
-            ${PROJECT_BINARY_DIR}/share/nrn/demo
-    COMMAND
-      ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_SANITIZER_ENABLE_ENVIRONMENT}
-      "${PROJECT_BINARY_DIR}/bin/neurondemo" "-nobanner" "-nogui" "-c" "quit()"
-    VERBATIM)
-  add_custom_target(generate-neurondemo-mechanism-library ALL DEPENDS ${neurondemo_files} nrniv_lib)
-endif()
 file(REMOVE_RECURSE ${PROJECT_BINARY_DIR}/bin/tmp)
 
 # =============================================================================
