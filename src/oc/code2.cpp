@@ -708,7 +708,7 @@ Symbol* hoc_parse_stmt(const char* str, Symlist** psymlist) {
 neuron::container::data_handle<double> hoc_varhandle;
 
 void hoc_pointer() {
-    hoc_varhandle = hoc_get_arg<neuron::container::data_handle<double>>(1);
+    hoc_varhandle = hoc_hgetarg<double>(1);
     hoc_ret();
     hoc_pushx(1.);
 }

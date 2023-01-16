@@ -271,6 +271,17 @@ neuron::container::data_handle<T> hoc_pop_handle() {
     return hoc_pop<neuron::container::data_handle<T>>();
 }
 
+/**
+ * @brief Shorthand for hoc_get_arg<data_handle<T>>(narg).
+ *
+ * Migrating code to be data_handle-aware typically involves replacing hoc_pgetarg with
+ * hoc_hgetarg<double>.
+ */
+template <typename T>
+[[nodiscard]] neuron::container::data_handle<T> hoc_hgetarg(int narg) {
+    return hoc_get_arg<neuron::container::data_handle<T>>(narg);
+}
+
 [[noreturn]] void hoc_execerror_mes(const char*, const char*, int);
 void hoc_warning(const char*, const char*);
 double* hoc_val_pointer(const char*);

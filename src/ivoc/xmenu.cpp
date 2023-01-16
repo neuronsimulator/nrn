@@ -364,7 +364,7 @@ static void hoc_xvalue_helper() {
         if (hoc_is_object_arg(2)) {
             pyvar = *hoc_objgetarg(2);
         } else if (hoc_is_pdouble_arg(2)) {
-            ptr2 = hoc_get_arg<neuron::container::data_handle<double>>(2);
+            ptr2 = hoc_hgetarg<double>(2);
         } else {
             s2 = gargstr(2);
         }
@@ -438,7 +438,7 @@ static void hoc_xpvalue_helper() {
     Symbol* sym;
     s1 = gargstr(1);
     if (ifarg(2)) {
-        pd = hoc_get_arg<neuron::container::data_handle<double>>(2);
+        pd = hoc_hgetarg<double>(2);
         sym = hoc_get_last_pointer_symbol();
     } else {
         pd = hoc_val_handle(s1);

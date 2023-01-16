@@ -63,7 +63,7 @@ void nrn_vecsim_add(void* v, bool record) {
     } else {
         // Vector.play(&SEClamp[0].amp1, ...)
         // Vector.record(&SEClamp[0].i, ...)
-        dh = hoc_get_arg<neuron::container::data_handle<double>>(iarg + 1);
+        dh = hoc_hgetarg<double>(iarg + 1);
     }
     tvec = NULL;
     dvec = NULL;
