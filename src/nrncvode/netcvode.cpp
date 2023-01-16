@@ -846,7 +846,7 @@ static void* cons(Object* o) {
             hoc_execerror("if arg 1 is an object it must be a point process or NULLObject", 0);
         }
     } else {
-        psrc = hoc_get_arg<neuron::container::data_handle<double>>(1);
+        psrc = hoc_hgetarg<double>(1);
         srcsec = chk_access();
     }
     otar = *hoc_objgetarg(2);
@@ -6437,7 +6437,7 @@ void VecRecordDt::deliver(double tt, NetCvode* nc) {
 }
 
 void NetCvode::vecrecord_add() {
-    auto const pd = hoc_get_arg<neuron::container::data_handle<double>>(1);
+    auto const pd = hoc_hgetarg<double>(1);
     consist_sec_pd("Cvode.record", chk_access(), pd);
     IvocVect* y = vector_arg(2);
     IvocVect* t = vector_arg(3);
