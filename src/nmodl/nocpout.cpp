@@ -2616,7 +2616,7 @@ static void _ode_synonym(int _cnt, double** _pp, Datum** _ppd) {");
                 Sprintf(buf,
                         "_cvode_sparse_thread(&(_thread[_cvspth%d].literal_value<void*>()), %d, "
                         "_dlist%d, _p, "
-                        "_ode_matsol%d, _ppvar, _thread, _nt);\n",
+                        "_ode_matsol%d, _p, _ppvar, _thread, _nt);\n",
                         i,
                         cvode_neq_,
                         i,
