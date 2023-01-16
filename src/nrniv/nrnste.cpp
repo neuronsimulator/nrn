@@ -15,8 +15,8 @@ static double ste_transition(void* v) {
     auto* const ste = static_cast<StateTransitionEvent*>(v);
     int src = (int) chkarg(1, 0, ste->nstate() - 1);
     int dest = (int) chkarg(2, 0, ste->nstate() - 1);
-    auto var1 = hoc_get_arg<neuron::container::data_handle<double>>(3);
-    auto var2 = hoc_get_arg<neuron::container::data_handle<double>>(4);
+    auto var1 = hoc_hgetarg<double>(3);
+    auto var2 = hoc_hgetarg<double>(4);
     std::unique_ptr<HocCommand> hc{};
     if (ifarg(5)) {
         Object* obj = NULL;

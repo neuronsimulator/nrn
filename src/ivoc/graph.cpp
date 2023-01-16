@@ -525,7 +525,7 @@ static void gr_add(void* v, bool var) {
                 pd = hoc_val_handle(hoc_gargstr(2));
                 ioff += 1;
             } else if (hoc_is_pdouble_arg(2)) {
-                pd = hoc_get_arg<neuron::container::data_handle<double>>(2);
+                pd = hoc_hgetarg<double>(2);
                 ioff += 1;
             }
         } else if (hoc_is_str_arg(2)) {  // 1 label, 2 expression
