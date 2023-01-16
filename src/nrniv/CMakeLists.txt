@@ -491,7 +491,7 @@ if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv Threads::Threads)
 endif()
 if(NOT MINGW)
-  target_link_libraries(nrniv ${CMAKE_DL_LIBS})
+  target_link_libraries(nrniv_lib ${CMAKE_DL_LIBS})
 endif()
 
 # TODO: unset in top level CMake is not working

@@ -46,6 +46,10 @@ proc test_template_err2() {
     s.nseg = 3
     s.insert("hh")
     h.topology()
+    # WARNING: calling s.psection() triggers importing the rxd python module,
+    # which in turn registers some callbacks like rxd_nonvint_block in the
+    # NEURON C++ code. These callbacks are not de-registered, so in a pytest
+    # environment then they also continue to affect later tests.
     print(s.psection())
     h.delete_section(sec=h.test_template_err_sec)
 
