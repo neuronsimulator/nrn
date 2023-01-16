@@ -413,6 +413,15 @@ def test_hocObj_error_in_construction():
     expect_hocerr(h.List, h.NetStim())
 
 
+def test_recording_deleted_node():
+    soma = h.Section()
+    soma_v = h.Vector().record(soma(0.5)._ref_v)
+    del soma
+    # Now soma_v is still alive, but the node whose voltage it is recording is
+    # dead. The current behaviour is that the record instance is silently deleted in this case
+    h.finitialize()
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()

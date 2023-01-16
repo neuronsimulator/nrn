@@ -129,10 +129,7 @@ list(TRANSFORM CORENRN_COMPILE_DEFS PREPEND -D OUTPUT_VARIABLE CORENRN_COMPILE_D
 # do not need to be passed to NEURON to use when linking nrniv/special (why?)
 # =============================================================================
 string(JOIN " " CORENRN_COMMON_LDFLAGS ${CORENRN_LIB_LINK_DEP_FLAGS} ${CORENRN_EXTRA_LINK_FLAGS})
-if(CORENRN_SANITIZER_LIBRARY_DIR)
-  string(APPEND CORENRN_COMMON_LDFLAGS " -Wl,-rpath,${CORENRN_SANITIZER_LIBRARY_DIR}")
-endif()
-string(JOIN " " CORENRN_SANITIZER_ENABLE_ENVIRONMENT_STRING ${CORENRN_SANITIZER_ENABLE_ENVIRONMENT})
+string(JOIN " " CORENRN_SANITIZER_ENABLE_ENVIRONMENT_STRING ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
 
 # =============================================================================
 # compile flags : common to all backend
