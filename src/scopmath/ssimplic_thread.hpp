@@ -1,14 +1,14 @@
 #pragma once
 #include "dimplic.hpp"
 #include "errcodes.hpp"
-#include "hocdec.h" // Datum
+#include "hocdec.h"  // Datum
 #include "sparse_thread.hpp"
 
 struct NrnThread;
 double _modl_get_dt_thread(NrnThread*);
 void _modl_set_dt_thread(double, NrnThread*);
 namespace neuron::scopmath {
-template <typename Array>
+template <typename Array, typename Callable, typename... Args>
 int _ss_sparse_thread(void** v,
                       int n,
                       int* s,
@@ -16,11 +16,9 @@ int _ss_sparse_thread(void** v,
                       Array p,
                       double* t,
                       double dt,
-                      int (*fun)(void*, double*, double*, Datum*, Datum*, NrnThread*),
+                      Callable fun,
                       int linflag,
-                      Datum* ppvar,
-                      Datum* thread,
-                      NrnThread* nt) {
+                      Args... args) {
     auto const check_state = [&p](int n, int* s) {
         auto const s_ = [&p, s](auto arg) -> auto& {
             return p[s[arg]];
@@ -36,19 +34,21 @@ int _ss_sparse_thread(void** v,
     };
     int err, i;
     auto const ss_dt = 1e9;
+    // get the NrnThread* from args
+    auto* const nt = std::get<NrnThread*>(std::tuple{args...});
     _modl_set_dt_thread(ss_dt, nt);
 
     if (linflag) { /*iterate linear solution*/
-        err = sparse_thread(v, n, s, d, p, t, ss_dt, fun, 0, ppvar, thread, nt);
+        err = sparse_thread(v, n, s, d, p, t, ss_dt, fun, 0, args...);
     } else {
         constexpr auto NIT = 7;
         for (i = 0; i < NIT; i++) {
-            err = sparse_thread(v, n, s, d, p, t, ss_dt, fun, 1, ppvar, thread, nt);
+            err = sparse_thread(v, n, s, d, p, t, ss_dt, fun, 1, args...);
             if (err) {
                 break; /* perhaps we should re-start */
             }
             if (check_state(n, s)) {
-                err = sparse_thread(v, n, s, d, p, t, ss_dt, fun, 0, ppvar, thread, nt);
+                err = sparse_thread(v, n, s, d, p, t, ss_dt, fun, 0, args...);
                 break;
             }
         }

@@ -15,7 +15,7 @@
 #include <cmath>
 #include <cstdio>
 
-using namespace neuron::scopmath; // for errcodes.hpp
+using namespace neuron::scopmath;  // for errcodes.hpp
 /****************************************************************
  *
  *  Abstract: expfit()
