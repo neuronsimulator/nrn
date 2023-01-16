@@ -350,7 +350,7 @@ void nrnmpi_target_var() {
         ob = *hoc_objgetarg(iarg++);
         pp = ob2pntproc(ob);
     }
-    auto ptv = hoc_get_arg<neuron::container::data_handle<double>>(iarg++);
+    auto ptv = hoc_hgetarg<double>(iarg++);
     double x = *hoc_getarg(iarg++);
     if (x < 0) {
         hoc_execerr_ext("target_var sgid must be >= 0: arg %d is %g\n", iarg - 1, x);

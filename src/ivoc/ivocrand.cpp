@@ -597,7 +597,7 @@ static double r_weibull(void* r) {
 }
 
 static double r_play(void* r) {
-    new RandomPlay(static_cast<Rand*>(r), hoc_get_arg<neuron::container::data_handle<double>>(1));
+    new RandomPlay(static_cast<Rand*>(r), hoc_hgetarg<double>(1));
     return 0.;
 }
 
