@@ -11,92 +11,6 @@ the source host owning the gid.
 
 #include "oc_ansi.h"
 
-#if 0
-void celldebug(const char* p, Gid2PreSyn& map) {
-	FILE* f;
-	char fname[100];
-	Sprintf(fname, "debug.%d", nrnmpi_myid);
-	f = fopen(fname, "a");
-	fprintf(f, "\n%s\n", p);
-	int rank = nrnmpi_myid;
-	fprintf(f, "  %2d:", rank);
-	for (const auto& iter: map) {
-		int gid = iter.first;
-		fprintf(f, " %2d", gid);
-	}
-	fprintf(f, "\n");
-	fclose(f);
-}
-
-void alltoalldebug(const char* p, int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl){
-	FILE* f;
-	char fname[100];
-	Sprintf(fname, "debug.%d", nrnmpi_myid);
-	f = fopen(fname, "a");
-	fprintf(f, "\n%s\n", p);
-	int rank = nrnmpi_myid;
-	fprintf(f, "  rank %d\n", rank);
-	for (int i=0; i < nrnmpi_numprocs; ++i) {
-		fprintf(f, "    s%d : %d %d :", i, scnt[i], sdispl[i]);
-		for (int j = sdispl[i]; j < sdispl[i+1]; ++j) {
-			fprintf(f, " %2d", s[j]);
-		}
-		fprintf(f, "\n");
-	}
-	for (int i=0; i < nrnmpi_numprocs; ++i) {
-		fprintf(f, "    r%d : %d %d :", i, rcnt[i], rdispl[i]);
-		for (int j = rdispl[i]; j < rdispl[i+1]; ++j) {
-			fprintf(f, " %2d", r[j]);
-		}
-		fprintf(f, "\n");
-	}
-	fclose(f);
-}
-#else
-void celldebug(const char* p, Gid2PreSyn& map) {}
-void alltoalldebug(const char* p, int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) {}
-#endif
-
-#if 0
-void phase1debug() {
-	FILE* f;
-	char fname[100];
-	Sprintf(fname, "debug.%d", nrnmpi_myid);
-	f = fopen(fname, "a");
-	fprintf(f, "\nphase1debug %d", nrnmpi_myid);
-	for (const auto* iter: gid2out_) {
-		PreSyn* ps = iter.second;
-		fprintf(f, "\n %2d:", ps->gid_);
-		BGP_DMASend* bs = ps->bgp.dma_send_;
-		for (int i=0; i < bs->ntarget_hosts_; ++i) {
-			fprintf(f, " %2d", bs->target_hosts_[i]);
-		}
-	}
-	fprintf(f, "\n");
-	fclose(f);
-}
-
-void phase2debug() {
-	FILE* f;
-	char fname[100];
-	Sprintf(fname, "debug.%d", nrnmpi_myid);
-	f = fopen(fname, "a");
-	fprintf(f, "\nphase2debug %d", nrnmpi_myid);
-	for (const auto& iter: gid2in_) {
-		PreSyn* ps = iter.second;
-		fprintf(f, "\n %2d:", ps->gid_);
-		BGP_DMASend_Phase2* bs = ps->bgp.dma_send_phase2_;
-	    if (bs) {
-		for (int i=0; i < bs->ntarget_hosts_phase2_; ++i) {
-			fprintf(f, " %2d", bs->target_hosts_phase2_[i]);
-		}
-	    }
-	}
-	fprintf(f, "\n");
-	fclose(f);
-}
-#endif
-
 static void del(int* a) {
     if (a) {
         delete[] a;
@@ -136,34 +50,14 @@ static void all2allv_helper(int* scnt, int* sdispl, int*& rcnt, int*& rdispl) {
     rdispl = newoffset(rcnt, np);
 }
 
-/*
-define following to 1 if desire space/performance information such as:
-all2allv_int gidin to intermediate space=1552 total=37345104 time=0.000495835
-all2allv_int gidout space=528 total=37379376 time=1.641e-05
-all2allv_int lists space=3088 total=37351312 time=4.4708e-05
-*/
-#define all2allv_perf 0
 // input s, scnt, sdispl ; output, newly allocated r, rcnt, rdispl
 static void
 all2allv_int(int* s, int* scnt, int* sdispl, int*& r, int*& rcnt, int*& rdispl, const char* dmes) {
-#if all2allv_perf
-    double tm = nrnmpi_wtime();
-#endif
     int np = nrnmpi_numprocs;
     all2allv_helper(scnt, sdispl, rcnt, rdispl);
     r = newintval(0, rdispl[np]);
 
     nrnmpi_int_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
-    alltoalldebug(dmes, s, scnt, sdispl, r, rcnt, rdispl);
-
-    // when finished with r, rcnt, rdispl, caller should del them.
-#if all2allv_perf
-    if (nrnmpi_myid == 0) {
-        int nb = 4 * nrnmpi_numprocs + sdispl[nrnmpi_numprocs] + rdispl[nrnmpi_numprocs];
-        tm = nrnmpi_wtime() - tm;
-        printf("all2allv_int %s space=%d total=%llu time=%g\n", dmes, nb, nrn_mallinfo(0), tm);
-    }
-#endif
 }
 
 class TarList {
@@ -358,8 +252,8 @@ static void fill_multisend_send_lists(int sz, int* r) {
             if (max_ntarget_host < bs->ntarget_hosts_) {
                 max_ntarget_host = bs->ntarget_hosts_;
             }
-            if (max_multisend_targets < bs->NTARGET_HOSTS_PHASE1) {
-                max_multisend_targets = bs->NTARGET_HOSTS_PHASE1;
+            if (max_multisend_targets < bs->ntarget_hosts_phase1_) {
+                max_multisend_targets = bs->ntarget_hosts_phase1_;
             }
         }
     }
@@ -378,9 +272,6 @@ static void fill_multisend_send_lists(int sz, int* r) {
 static int setup_target_lists(int** r_return) {
     int *s, *r, *scnt, *rcnt, *sdispl, *rdispl;
     int nhost = nrnmpi_numprocs;
-
-    celldebug("output gid", gid2out_);
-    celldebug("input gid", gid2in_);
 
     // What are the target ranks for a given input gid. All the ranks
     // with the same input gid send that gid to the intermediate
