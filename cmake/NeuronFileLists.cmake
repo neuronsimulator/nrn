@@ -137,9 +137,7 @@ set(NRNOC_FILE_LIST
     treeset.cpp
     multicore.cpp)
 
-set(NRNOC_GENERATED_FILE_LIST
-    nrnversion.h
-)
+set(NRNOC_GENERATED_FILE_LIST nrnversion.h)
 
 # =============================================================================
 # Files in ivoc directory
