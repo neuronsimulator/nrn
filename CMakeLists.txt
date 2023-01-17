@@ -780,16 +780,14 @@ add_dependencies(nrniv_lib hh_update)
 if(NRN_ENABLE_PYTHON)
   add_custom_target(
     help_data_dat
-    COMMAND
-      ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py ${PROJECT_SOURCE_DIR}/docs/python
-      ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-    COMMAND
-      ${CMAKE_COMMAND} -E copy_if_different
-      ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-      ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/lib/python/neuron
+    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
+            ${PROJECT_SOURCE_DIR}/docs/python ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
     COMMENT "Generating help_data.dat"
     VERBATIM)
   add_dependencies(nrniv_lib help_data_dat)
+  # also ensure help_data.dat is copied to the install location
+  install(FILES ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat DESTINATION lib/python/neuron)
 endif()
 
 include("${CODING_CONV_CMAKE}/build-time-copy.cmake") # cpp_cc_build_time_copy
