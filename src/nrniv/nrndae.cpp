@@ -31,9 +31,12 @@ int nrndae_extra_eqn_count() {
 }
 
 void nrndae_update() {
+    NrnThread* _nt = nrn_threads;
+    update_sp13_rhs_based_on_actual_rhs(_nt);
     for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
         (*m)->update();
     }
+    update_actual_rhs_based_on_sp13_rhs(_nt);
 }
 
 void nrndae_alloc() {
@@ -60,6 +63,7 @@ void nrndae_init() {
     for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
         (*m)->init();
     }
+    update_actual_rhs_based_on_sp13_rhs(_nt);
 }
 
 void nrndae_rhs() {
