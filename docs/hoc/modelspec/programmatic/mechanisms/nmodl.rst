@@ -408,12 +408,12 @@ Description:
     not be set or accessed via Python/HOC interface. Also, they can have only
     one value across for all instances of a given mechanism.
 
-.. code-block::
+    .. code-block::
 
-    CONSTANT {
-        e0 = 1.6021e-19 (coulombs)
-        q10 = 2.70
-    }
+        CONSTANT {
+            e0 = 1.6021e-19 (coulombs)
+            q10 = 2.70
+        }
 
 The current implementation allows changing the value of a constant variable in
 other blocks (e.g. in like PROCEDURE, INITIAL) but such usage is discouraged. One
@@ -430,14 +430,14 @@ Description:
     can only access a local variable inside the function or MOD file but never from
     outside using HOC/Python API.
 
-.. code-block::
+    .. code-block::
 
-    FUNCTION oca_ss(v(mV)) {
-        LOCAL a, b
-        a = 1(1/ms)*efun(.1(1/mV)*(25-v))
-        b = 4(1/ms)*exp(-v/18(mV))
-        oca_ss = a/(a + b)
-    }
+        FUNCTION oca_ss(v(mV)) {
+            LOCAL a, b
+            a = 1(1/ms)*efun(.1(1/mV)*(25-v))
+            b = 4(1/ms)*exp(-v/18(mV))
+            oca_ss = a/(a + b)
+        }
 
 
 INDEPENDENT
