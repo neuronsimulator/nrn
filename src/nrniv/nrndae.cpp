@@ -3,6 +3,7 @@
 #include "nrndae.h"
 #include "nrndae_c.h"
 #include "nrnoc2iv.h"
+#include "treeset.h"
 
 extern int secondorder;
 
@@ -50,6 +51,8 @@ void nrndae_alloc() {
 
 
 void nrndae_init() {
+    NrnThread* _nt = nrn_threads;
+    update_sp13_rhs_based_on_actual_rhs(_nt);
     if ((!nrndae_list.empty()) &&
         (secondorder > 0 || ((cvode_active_ > 0) && (nrn_use_daspk_ == 0)))) {
         hoc_execerror("NrnDAEs only work with secondorder==0 or daspk", 0);
@@ -60,9 +63,12 @@ void nrndae_init() {
 }
 
 void nrndae_rhs() {
+    NrnThread* _nt = nrn_threads;
+    update_sp13_rhs_based_on_actual_rhs(_nt);
     for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
         (*m)->rhs();
     }
+    update_actual_rhs_based_on_sp13_rhs(_nt);
 }
 
 void nrndae_lhs() {

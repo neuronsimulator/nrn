@@ -342,6 +342,24 @@ vm += dvi-dvx
 
 */
 
+/*
+ * Update actual_rhs based on _sp13_rhs used for sparse13 solver
+ */
+void update_actual_rhs_based_on_sp13_rhs(NrnThread* nt) {
+    for(int i = 0; i < nt->end; i++) {
+        nt->actual_rhs(i) = nt->_sp13_rhs[nt->_v_node[i]->eqn_index_];
+    }
+}
+
+/*
+ * Update _sp13_rhs used for sparse13 solver based on changes on actual_rhs
+ */
+void update_sp13_rhs_based_on_actual_rhs(NrnThread* nt) {
+    for(int i = 0; i < nt->end; i++) {
+        nt->_sp13_rhs[nt->_v_node[i]->eqn_index_] = nt->actual_rhs(i);
+    }
+}
+
 /* calculate right hand side of
 cm*dvm/dt = -i(vm) + is(vi) + ai_j*(vi_j - vi)
 cx*dvx/dt - cm*dvm/dt = -gx*(vx - ex) + i(vm) + ax_j*(vx_j - vx)
@@ -446,13 +464,7 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     if (use_sparse13) {
         /* must be after nrn_rhs_ext so that whatever is put in
         nd->_rhs does not get added to nde->rhs */
-        for(int i = 0; i < _nt->end; i++) {
-            _nt->_sp13_rhs[_nt->_v_node[i]->eqn_index_] = _nt->actual_rhs(i);
-        }
         nrndae_rhs();
-        for(int i = 0; i < _nt->end; i++) {
-            _nt->actual_rhs(i) = _nt->_sp13_rhs[_nt->_v_node[i]->eqn_index_];
-        }
     }
 
     activstim_rhs();

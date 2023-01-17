@@ -930,14 +930,7 @@ void nrn_finitialize(int setv, double v) {
             }
     }
     if (use_sparse13) {
-        // Update _sp13_rhs based on actual_rhs
-        for(int i = 0; i < _nt->end; i++) {
-            _nt->_sp13_rhs[_nt->_v_node[i]->eqn_index_] = _nt->actual_rhs(i);
-        }
         nrndae_init();
-        for(int i = 0; i < _nt->end; i++) {
-            _nt->actual_rhs(i) = _nt->_sp13_rhs[_nt->_v_node[i]->eqn_index_];
-        }
     }
 
     init_net_events();
