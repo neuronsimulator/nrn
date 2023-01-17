@@ -26,6 +26,7 @@ nrnpython_pyver = "@NRNPYTHON_PYVER@"
 nrnpython_pyver10 = "nrnpython"
 use_libnrnpython_majorminor = @USE_LIBNRNPYTHON_MAJORMINOR@
 nrn_srcdir = get_escaped_path("@NRN_SRCDIR@")
+nrn_builddir = get_escaped_path("@NRN_BUILDDIR@")
 build_rx3d = @BUILD_RX3D@
 ivlibdir = get_escaped_path("@IV_LIBDIR@")
 if ivlibdir == "" :
@@ -223,7 +224,7 @@ setup(name="NEURON", version="@PACKAGE_VERSION@",
       description = "NEURON bindings for python",
       package_dir = {'':instdir+('/lib/python' if 'win32' in sys.platform else '/share/nrn/lib/python')},
       packages=packages,
-      data_files = [('neuron', [nrn_srcdir + '/share/lib/python/neuron/help_data.dat'])],
+      data_files = [('neuron', [nrn_builddir + '/lib/python/neuron/help_data.dat'])],
       ext_modules=ext_modules
 )
 
