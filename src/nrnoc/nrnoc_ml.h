@@ -82,7 +82,7 @@ struct Memb_list {
 
     template <std::size_t variable>
     [[nodiscard]] double* dptr_field(std::size_t instance) {
-        return pdata(instance, variable);
+        return dptr_field(instance, variable);
     }
 
     /**
@@ -98,7 +98,7 @@ struct Memb_list {
      *
      * Defined in .cpp to hide the full definition of Datum from translated MOD file code.
      */
-    [[nodiscard]] double* pdata(std::size_t instance, std::size_t variable);
+    [[nodiscard]] double* dptr_field(std::size_t instance, std::size_t variable);
 
     /**
      * @brief Get the `variable`-th floating point value in `instance` of the mechanism.

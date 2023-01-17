@@ -626,7 +626,10 @@ static double gr_vector(void* v) {
     Graph* g = (Graph*) v;
     int n = int(chkarg(1, 1., 1.e5));
     double* x = hoc_pgetarg(2);
-    double* y = hoc_pgetarg(3);
+    auto y_handle = hoc_hgetarg<double>(3);
+    assert(!y_handle.refers_to_a_modern_data_structure());  // y + i below does not make sense with
+                                                            // modern data
+    auto* const y = static_cast<double*>(y_handle);
     GraphVector* gv = new GraphVector("");
     if (ifarg(4)) {
         gv->color(colors->color(int(*getarg(4))));
@@ -636,8 +639,8 @@ static double gr_vector(void* v) {
         gv->brush(g->brush());
     }
     for (int i = 0; i < n; ++i) {
-        // TODO avoid the conversion?
-        gv->add(x[i], neuron::container::data_handle<double>{y + i});
+        gv->add(x[i],
+                neuron::container::data_handle<double>{neuron::container::do_not_search, y + i});
     }
     //	GLabel* glab = g->label(gv->name());
     //	((GraphItem*)g->component(g->glyph_index(glab)))->save(false);
@@ -2487,6 +2490,9 @@ void Graph::choose_sym() {
         // printf("Graph selected %s\n", sc_->selected()->string());
         char buf[256];
         double* pd = sc_->selected_var();
+        neuron::container::data_handle<double> pd_handle{pd};
+        assert(!pd_handle.refers_to_a_modern_data_structure());  // pd + i below would be
+                                                                 // problematic
         if (sc_->selected_vector_count()) {
             Sprintf(buf, "%s", sc_->selected()->string());
             GraphVector* gv = new GraphVector(buf);
@@ -2494,8 +2500,9 @@ void Graph::choose_sym() {
             gv->brush(brush());
             int n = sc_->selected_vector_count();
             for (int i = 0; i < n; ++i) {
-                // avoid the conversion here?
-                gv->add(double(i), neuron::container::data_handle<double>{pd + i});
+                gv->add(double(i),
+                        neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                               pd + i});
             }
             GLabel* glab = label(gv->name());
             ((GraphItem*) component(glyph_index(glab)))->save(false);

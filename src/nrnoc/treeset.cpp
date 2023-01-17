@@ -1659,8 +1659,7 @@ void v_setup_vectors(void) {
                 // Prop used by ode_map even when hoc_mech is false
                 memb_list[i].prop = new Prop*[memb_list[i].nodecount];
                 if (!memb_func[i].hoc_mech) {
-                    memb_list[i].pdata = (Datum**) emalloc(memb_list[i].nodecount *
-                                                            sizeof(Datum*));
+                    memb_list[i].pdata = (Datum**) emalloc(memb_list[i].nodecount * sizeof(Datum*));
                 }
                 memb_list[i].nodecount = 0; /* counted again below */
             }

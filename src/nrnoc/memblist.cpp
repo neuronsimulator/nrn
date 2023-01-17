@@ -60,8 +60,8 @@ Memb_list::Memb_list(int type)
     return m_storage->num_floating_point_fields();
 }
 
-[[nodiscard]] double* Memb_list::pdata(std::size_t instance, std::size_t variable) {
-    return _pdata[instance][variable].get<double*>();
+[[nodiscard]] double* Memb_list::dptr_field(std::size_t instance, std::size_t variable) {
+    return pdata[instance][variable].get<double*>();
 }
 
 [[nodiscard]] int Memb_list::type() const {
