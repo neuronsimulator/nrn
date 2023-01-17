@@ -853,7 +853,7 @@ if(NRN_ENABLE_TESTS)
       ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_SANITIZER_ENABLE_ENVIRONMENT}
       "${PROJECT_BINARY_DIR}/bin/neurondemo" "-nobanner" "-nogui" "-c" "quit()"
     VERBATIM)
-  add_custom_target(generate-neurondemo-mechanism-library ALL DEPENDS ${neurondemo_files} nrniv_lib
+  add_custom_target(generate-neurondemo-mechanism-library ALL DEPENDS ${neurondemo_files} nrniv
                                                                       copy_share_lib_to_build)
   # Initialize the submodule *before* including the test/CMakeLists.txt that uses it. This ensures
   # that the test infrastructure can find the names of the input data files and set up rules to copy
