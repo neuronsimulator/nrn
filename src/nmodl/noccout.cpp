@@ -40,7 +40,7 @@ static List* vectorize_replacements; /* pairs of item pointer, strings */
 extern int electrode_current;        /* 1 means we should watch out for extracellular
                            and handle it correctly */
 
-#if __TURBOC__ || SYSV || VMS
+#if SYSV
 #define index strchr
 #endif
 
@@ -890,9 +890,9 @@ static void conductance_cout() {
 
     ITERATE(q, currents) {
         if (i == 0) {
-            sprintf(buf, "  _rhs = %s", breakpoint_current(SYM(q))->name);
+            Sprintf(buf, "  _rhs = %s", breakpoint_current(SYM(q))->name);
         } else {
-            sprintf(buf, " + %s", breakpoint_current(SYM(q))->name);
+            Sprintf(buf, " + %s", breakpoint_current(SYM(q))->name);
         }
         P(buf);
         i += 1;
@@ -904,9 +904,9 @@ static void conductance_cout() {
     i = 0;
     ITERATE(q, conductance_) {
         if (i == 0) {
-            sprintf(buf, "  _g = %s", SYM(q)->name);
+            Sprintf(buf, "  _g = %s", SYM(q)->name);
         } else {
-            sprintf(buf, " + %s", SYM(q)->name);
+            Sprintf(buf, " + %s", SYM(q)->name);
         }
         P(buf);
         i += 1;
@@ -918,7 +918,7 @@ static void conductance_cout() {
 
     ITERATE(q, conductance_) {
         if (SYM(q->next)) {
-            sprintf(buf, "  _ion_di%sdv += %s", SYM(q->next)->name, SYM(q)->name);
+            Sprintf(buf, "  _ion_di%sdv += %s", SYM(q->next)->name, SYM(q)->name);
             P(buf);
             if (point_process) {
                 P("* 1.e2/(_nd_area)");

@@ -43,7 +43,6 @@ void parse_restart(Item* q, int i);
 void parsepass(int);
 void pop_file_stack();
 void poplocal();
-void print_unit_expr(int);
 void printitem(Item* q, FILE* fp);
 void printitems(Item* q1, Item* q2);
 void printlist(List*);

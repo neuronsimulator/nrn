@@ -930,7 +930,7 @@ FUNCTION_TABLE
 
 Description:
     This keyword defines function tables whose values are given by vectors prior to the simulation.
-    For example let's say we have the following declaration in a ΝMODΛ file:
+    For example let's say we have the following declaration in a ΝMODL file:
 
     .. code-block::
         none
@@ -959,13 +959,6 @@ Description:
     arguments and doubly dimensioned hoc arrays attached to them. The latter is useful, for example,
     with voltage- and calcium-sensitive rates. In this case the table is linearly interpolated in
     both dimensions.
-
-
-SWEEP
-~~~~~
-
-Description:
-    ``TODO``: Add description and new example mod file
 
 
 CONDUCTANCE

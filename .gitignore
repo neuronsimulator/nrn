@@ -20,6 +20,8 @@ virtualenv
 .python-version
 *.o
 *.lo
+docs/_build
+docs/_generated
 
 # These files are generated at build time
 # It would be a good idea to create them in the

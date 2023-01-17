@@ -4,8 +4,14 @@
 set(HEADER_FILES_TO_INSTALL
     bbsavestate.h
     cabvars.h
+    crout.hpp
+    crout_thread.hpp
     cspmatrix.h
     cspredef.h
+    deflate.hpp
+    dimplic.hpp
+    errcodes.hpp
+    euler.hpp
     hoc.h
     hoc_membf.h
     hocassrt.h
@@ -23,7 +29,9 @@ set(HEADER_FILES_TO_INSTALL
     multicore.h
     multisplit.h
     neuron.h
+    newton.hpp
     newton_struct.h
+    newton_thread.hpp
     nmodlmutex.h
     nrn_ansi.h
     nrnapi.h
@@ -43,11 +51,17 @@ set(HEADER_FILES_TO_INSTALL
     ocmisc.h
     options.h
     parse_with_deps.hpp
+    runge.hpp
     scoplib.h
     section.h
+    sparse.hpp
+    sparse_thread.hpp
     spconfig.h
     spmatrix.h
-    treeset.h)
+    ssimplic.hpp
+    ssimplic_thread.hpp
+    treeset.h
+    wrap_sprintf.h)
 
 # =============================================================================
 # Lists of headers populated using check_include_files
@@ -236,7 +250,6 @@ set(NRNIV_FILE_LIST
     secbrows.cpp
     shape.cpp
     shapeplt.cpp
-    singlech.cpp
     spaceplt.cpp
     splitcell.cpp
     symdir.cpp
@@ -382,58 +395,43 @@ set(SPARSE13_FILES_LIST
 
 # scopmath sources
 set(SCOPMATH_FILES_LIST
-    abort.c
-    advance.c
-    boundary.c
-    crank.c
-    crout.c
-    deflate.c
-    dimplic.c
-    scoperf.c
-    euler.c
-    expfit.c
-    exprand.c
-    f2cmisc.c
-    factoria.c
-    force.c
-    gauss.c
-    getmem.c
-    harmonic.c
-    hyperbol.c
-    invert.c
-    lag.c
-    legendre.c
-    newton.c
-    normrand.c
-    perpulse.c
-    perstep.c
-    poisrand.c
-    poisson.c
-    praxis.c
-    pulse.c
-    quad.c
-    ramp.c
-    revhyper.c
-    revsawto.c
-    revsigmo.c
-    romberg.c
-    runge.c
-    sawtooth.c
-    schedule.c
-    sigmoid.c
-    simeq.c
-    sparse.c
-    vsparse.c
-    spline.c
-    squarewa.c
-    ssimplic.c
-    step.c
-    threshol.c
-    tridiag.c
-    sparse_thread.c
-    newton_thread.c
-    crout_thread.c
-    ssimplic_thread.c)
+    abort.cpp
+    advance.cpp
+    boundary.cpp
+    crank.cpp
+    scoperf.cpp
+    expfit.cpp
+    exprand.cpp
+    f2cmisc.cpp
+    factoria.cpp
+    force.cpp
+    gauss.cpp
+    getmem.cpp
+    harmonic.cpp
+    hyperbol.cpp
+    invert.cpp
+    lag.cpp
+    legendre.cpp
+    normrand.cpp
+    perpulse.cpp
+    perstep.cpp
+    poisrand.cpp
+    poisson.cpp
+    praxis.cpp
+    pulse.cpp
+    ramp.cpp
+    revhyper.cpp
+    revsawto.cpp
+    revsigmo.cpp
+    romberg.cpp
+    sawtooth.cpp
+    sigmoid.cpp
+    simeq.cpp
+    spline.cpp
+    squarewa.cpp
+    step.cpp
+    threshol.cpp
+    tridiag.cpp)
 
 set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
 

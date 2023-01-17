@@ -557,14 +557,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     // But I have decided to use the environment variable if it exists
     neuron_home = getenv("NEURONHOME");
     if (!neuron_home) {
-#if defined(HAVE_PUTENV)
-        // the only reason the following is static is to prevent valgrind
-        // from complaining it is a memory leak.
-        static char* buffer = new char[strlen(NEURON_DATA_DIR) + 12];
-        sprintf(buffer, "NEURONHOME=%s", NEURON_DATA_DIR);
-        putenv(buffer);
-        neuron_home = NEURON_DATA_DIR;
-#elif defined(HAVE_SETENV)
+#if defined(HAVE_SETENV)
         setenv("NEURONHOME", NEURON_DATA_DIR, 1);
         neuron_home = NEURON_DATA_DIR;
 #else
@@ -636,10 +629,10 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     ENDGUI
 #endif
 #endif
-    char* nrn_props;
-    nrn_props = new char[strlen(neuron_home) + 20];
+    auto const nrn_props_size = strlen(neuron_home) + 20;
+    char* nrn_props = new char[nrn_props_size];
     if (session) {
-        sprintf(nrn_props, "%s/%s", neuron_home, "lib/nrn.defaults");
+        std::snprintf(nrn_props, nrn_props_size, "%s/%s", neuron_home, "lib/nrn.defaults");
 #ifdef WIN32
         FILE* f;
         if ((f = fopen(nrn_props, "r")) != (FILE*) 0) {
@@ -647,16 +640,16 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
             session->style()->load_file(String(nrn_props), -5);
         } else {
 #ifdef MINGW
-            sprintf(nrn_props, "%s/%s", neuron_home, "lib/nrn.def");
+            std::snprintf(nrn_props, nrn_props_size, "%s/%s", neuron_home, "lib/nrn.def");
 #else
-            sprintf(nrn_props, "%s\\%s", neuron_home, "lib\\nrn.def");
+            std::snprintf(nrn_props, nrn_props_size, "%s\\%s", neuron_home, "lib\\nrn.def");
 #endif
             if ((f = fopen(nrn_props, "r")) != (FILE*) 0) {
                 fclose(f);
                 session->style()->load_file(String(nrn_props), -5);
             } else {
                 char buf[256];
-                sprintf(buf, "Can't load NEURON resources from %s[aults]", nrn_props);
+                Sprintf(buf, "Can't load NEURON resources from %s[aults]", nrn_props);
                 printf("%s\n", buf);
             }
         }
@@ -666,7 +659,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #if !MAC
         char* h = getenv("HOME");
         if (h) {
-            sprintf(nrn_props, "%s/%s", h, ".nrn.defaults");
+            std::snprintf(nrn_props, nrn_props_size, "%s/%s", h, ".nrn.defaults");
             session->style()->load_file(String(nrn_props), -5);
         }
 #endif

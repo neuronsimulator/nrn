@@ -2,12 +2,12 @@
 #ifndef hocdec_h
 #define hocdec_h
 #define INCLUDEHOCH 1
-#define OOP         1
 
 
 #include "nrnapi.h"
 #include "hocassrt.h" /* hoc_execerror instead of abort */
 #include "nrnassrt.h" /* assert in case of side effects (eg. scanf) */
+#include "wrap_sprintf.h"
 
 #include <iostream>
 #include <cstdint>
@@ -180,7 +180,6 @@ struct Datum { /* interpreter stack type */
     };
 };
 
-#if OOP
 struct cTemplate {
     Symbol* sym;
     Symlist* symtable;
@@ -225,7 +224,6 @@ struct Object {
     short recurse;           /* to stop infinite recursions */
     short unref_recurse_cnt; /* free only after last return from unref callback */
 };
-#endif
 
 struct VoidFunc { /* User Functions */
     const char* name;
@@ -260,8 +258,7 @@ struct HocParmUnits { /* units for symbol values */
 
 #include "oc_ansi.h"
 
-// Used in sparse.c so needs C linkage.
-extern "C" void* emalloc(size_t n);
+void* emalloc(size_t n);
 void* ecalloc(size_t n, size_t size);
 void* erealloc(void* ptr, size_t n);
 
@@ -307,24 +304,18 @@ int ilint;
 #define Strncat cplint = strncat
 #define Strcpy  cplint = strcpy
 #define Strncpy cplint = strncpy
-#define Sprintf cplint = sprintf
 #define Printf  ilint = printf
-#else
-#if defined(__TURBOC__)
-#undef IGNORE
-#define IGNORE
 #else
 #undef IGNORE
 #define IGNORE(arg) arg
-#endif
 #define LINTUSE(arg)
 #define Strcat  strcat
 #define Strncat strncat
 #define Strcpy  strcpy
 #define Strncpy strncpy
-#define Sprintf sprintf
 #define Printf  nrnpy_pr
 #endif
+using neuron::Sprintf;
 
 #define ERRCHK(c1) c1
 

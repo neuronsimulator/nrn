@@ -2628,7 +2628,7 @@ Description:
 .. method:: ParallelContext.spike_compress
 
     Syntax:
-        :samp:`nspike = pc.spike_compress({nspike}, {gid_compress})`
+        :samp:`nspike = pc.spike_compress({nspike}, {gid_compress}, {xchng_meth})`
 
     Description:
         If nspike > 0, selects an alternative implementation of spike exchange 
@@ -2658,6 +2658,13 @@ Description:
         interprocessor spikes, the real 4 byte integer gids are used in the 
         (spiketime, gid) pairs and only the spiketime is compressed to 1 byte. i.e. 
         instead of 2 bytes the pair consists of 5 bytes. 
+
+        xchng_meth is a bit-field.
+        bits | usage
+           0 | 0: Allgather, 1: Multisend (MPI_ISend)
+           1 | unused
+           2 | 0: multisend_interval = 1, 1: multisend_interval = 2
+           3 | 0: don't use phase2, 1: use phase2
 
     .. seealso::
         :meth:`CVode.queue_mode`

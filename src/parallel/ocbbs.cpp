@@ -32,7 +32,7 @@ extern int nrnmpi_multisplit(Section*, double x, int sid, int backbonestyle);
 extern int nrn_set_timeout(int timeout);
 extern void nrnmpi_gid_clear(int);
 double nrnmpi_rtcomp_time_;
-extern double nrn_bgp_receive_time(int);
+extern double nrn_multisend_receive_time(int);
 char* (*nrnpy_po2pickle)(Object*, size_t*);
 Object* (*nrnpy_pickle2po)(char*, size_t);
 char* (*nrnpy_callpicklef)(char*, size_t, int, size_t*);
@@ -311,7 +311,7 @@ static double post(void* v) {
         bbs->post(gargstr(1));
     } else {
         char key[50];
-        sprintf(key, "%g", *getarg(1));
+        Sprintf(key, "%g", *getarg(1));
         bbs->post(key);
     }
     return 1.;
@@ -433,7 +433,7 @@ static char* key_help() {
     if (hoc_is_str_arg(1)) {
         return gargstr(1);
     } else {
-        sprintf(key, "%g", *getarg(1));
+        Sprintf(key, "%g", *getarg(1));
         return key;
     }
 }
@@ -537,7 +537,7 @@ static double step_wait(void* v) {
 static double send_time(void* v) {
     int arg = ifarg(1) ? int(chkarg(1, 0, 20)) : 0;
     if (arg) {
-        return nrn_bgp_receive_time(arg);
+        return nrn_multisend_receive_time(arg);
     }
     return ((OcBBS*) v)->send_time();
 }

@@ -23,7 +23,6 @@ extern int thread_data_index;
 extern List* thread_cleanup_list;
 extern int vectorize;
 
-int singlechan_;
 static int cvode_flag;
 static void cvode_kin_remove();
 static Item *cvode_sbegin, *cvode_send;
@@ -225,7 +224,7 @@ void flux(Item* qREACTION, Item* qdir, Item* qlast) {
                             if (sr == rterm->sym) {
                                 c1 = qconcat(qdir->next->next, q->prev);
                                 c2 = qconcat(q->next, qlast);
-                                sprintf(buf,
+                                Sprintf(buf,
                                         "nrn_nernst_coef(_type_%s)*(%s _ion_d%sdv %s)",
                                         s->name,
                                         c1,
@@ -655,10 +654,12 @@ void kinetic_implicit(Symbol* fun, const char* dt, const char* mname) {
         ncons = 0;
         Sprintf(buf, "static void* _cvsparseobj%d;\n", fun->u.i);
         q = linsertstr(procfunc, buf);
-        sprintf(buf, "static int _cvspth%d = %d;\n", fun->u.i, thread_data_index++);
+        Sprintf(buf, "static int _cvspth%d = %d;\n", fun->u.i, thread_data_index++);
         vectorize_substitute(q, buf);
-        sprintf(buf,
-                "  _nrn_destroy_sparseobj_thread(_thread[_cvspth%d].get<void*>());\n",
+        Sprintf(buf,
+                "  "
+                "_nrn_destroy_sparseobj_thread(static_cast<SparseObj*>(_thread[_cvspth%d].get<void*"
+                ">()));\n",
                 fun->u.i);
         lappendstr(thread_cleanup_list, buf);
     }
@@ -684,10 +685,12 @@ void kinetic_implicit(Symbol* fun, const char* dt, const char* mname) {
             Lappendsym(done_list1, fun);
             Sprintf(buf, "static void* _sparseobj%d;\n", fun->u.i);
             q = linsertstr(procfunc, buf);
-            sprintf(buf, "static int _spth%d = %d;\n", fun->u.i, thread_data_index++);
+            Sprintf(buf, "static int _spth%d = %d;\n", fun->u.i, thread_data_index++);
             vectorize_substitute(q, buf);
-            sprintf(buf,
-                    "  _nrn_destroy_sparseobj_thread(_thread[_spth%d].get<void*>());\n",
+            Sprintf(buf,
+                    "  "
+                    "_nrn_destroy_sparseobj_thread(static_cast<SparseObj*>(_thread[_spth%d].get<"
+                    "void*>()));\n",
                     fun->u.i);
             lappendstr(thread_cleanup_list, buf);
         }
@@ -850,16 +853,6 @@ for(_i=%d;_i<%d;_i++){\n",
                         "*(_nrn_thread_getelm(static_cast<SparseObj*>(_so), _row + 1, _col + 1))\n",
                         fun->u.i);
                 vectorize_substitute(qv, buf);
-                {
-                    static int first = 1;
-                    if (first) {
-                        first = 0;
-                        Sprintf(buf, "extern double *_getelm(int, int);\n");
-                        qv = linsertstr(procfunc, buf);
-                        Sprintf(buf, "extern double *_nrn_thread_getelm(SparseObj*, int, int);\n");
-                        vectorize_substitute(qv, buf);
-                    }
-                }
             }
         }
     } /* end of NOT_CVODE_FLAG */
@@ -1359,9 +1352,9 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum) {
         }
     kinetic_intmethod(fun, "NEURON's CVode");
     Lappendstr(procfunc, "\n/*CVODE ode begin*/\n");
-    sprintf(buf, "static int _ode_spec%d() {_reset=0;{\n", fun->u.i);
+    Sprintf(buf, "static int _ode_spec%d() {_reset=0;{\n", fun->u.i);
     Lappendstr(procfunc, buf);
-    sprintf(buf,
+    Sprintf(buf,
             "static int _ode_spec%d(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) "
             "{int _reset=0;{\n",
             fun->u.i);
@@ -1369,9 +1362,9 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum) {
     copyitems(cvode_sbegin, cvode_send, procfunc->prev);
 
     Lappendstr(procfunc, "\n/*CVODE matsol*/\n");
-    sprintf(buf, "static int _ode_matsol%d() {_reset=0;{\n", fun->u.i);
+    Sprintf(buf, "static int _ode_matsol%d() {_reset=0;{\n", fun->u.i);
     Lappendstr(procfunc, buf);
-    sprintf(buf,
+    Sprintf(buf,
             "static int _ode_matsol%d(void* _so, double* _rhs, double* _p, Datum* _ppvar, Datum* "
             "_thread, NrnThread* _nt) {int _reset=0;{\n",
             fun->u.i);
@@ -1423,124 +1416,4 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum) {
     Lappendstr(procfunc, "\n/*CVODE end*/\n");
 
 #endif
-}
-
-void single_channel(Item* qsol, Symbol* fun, int numeqn, int listnum) {
-    Rlist *rlst, *clst;
-    int nstate, i;
-    int out;
-    Item *q, *pbeg, *pend, *qnext;
-
-    Reaction* r1;
-
-    return;
-    nstate = number_states(fun, &rlst, &clst);
-
-    for (r1 = rlst->reaction; r1; r1 = r1->reactnext) {
-        if (!r1->rterm[0]) {
-            /*			printf("there is a flux\n");*/
-            return;
-        }
-        if (!r1->rterm[1]) {
-            /*			printf("there is a sink\n");*/
-            return;
-        }
-        for (i = 0; i < 2; ++i) {
-            if (r1->rterm[i]->rnext) {
-                /*				printf("The scheme is nonlinear\n");*/
-                return;
-            }
-            if (!r1->rterm[i]->isstate) {
-                /*				printf("reaction term is not a STATE\n");*/
-                return;
-            }
-        }
-    }
-
-    for (i = 0; i < rlst->nsym; ++i) {
-        if (rlst->capacity[i][0] != '\0') {
-            /*			printf("there are COMPARTMENT statements\n");*/
-            return;
-        }
-    }
-
-    cvode_kin_remove();
-
-    for (r1 = rlst->reaction; r1; r1 = r1->reactnext) {
-        for (i = 0; i < 2; ++i) {
-            sprintf(buf, " _nrn_single_react(%d", r1->rterm[i]->sym->varnum);
-            insertstr(r1->position, buf);
-            if (r1->rterm[i]->str) {
-                sprintf(buf, "+ %s", r1->rterm[i]->str);
-                insertstr(r1->position, buf);
-            }
-            sprintf(buf, ",%d", r1->rterm[(i + 1) % 2]->sym->varnum);
-            insertstr(r1->position, buf);
-            if (r1->rterm[(i + 1) % 2]->str) {
-                sprintf(buf, "+ %s", r1->rterm[(i + 1) % 2]->str);
-                insertstr(r1->position, buf);
-            }
-            sprintf(buf, ", %s);\n", r1->krate[i]);
-            insertstr(r1->position, buf);
-        }
-    }
-    Lappendstr(procfunc, "\n/*Single Channel begin*/\n");
-    sprintf(buf,
-            "static int _singlechan%d(_v, _pp, _ppd) double _v; double* _pp; Datum* _ppd;{\n\
-	_p = _pp; _ppvar = _ppd; v = _v; _reset=0;\n{\n",
-            fun->u.i);
-    Lappendstr(procfunc, buf);
-    pbeg = procfunc->prev;
-    copyitems(cvode_sbegin, cvode_send, procfunc->prev);
-    pend = procfunc->prev;
-#if 1
-    /* remove statements containing f_flux or b_flux */
-    for (q = pbeg; q != pend; q = qnext) {
-        qnext = q->next;
-        if (q->itemtype == SYMBOL &&
-            (strcmp(SYM(q)->name, "f_flux") == 0 || strcmp(SYM(q)->name, "b_flux") == 0)) {
-            /* find the beginning of the statement */
-            out = 0;
-            for (;;) {
-                switch (q->itemtype) {
-                case STRING:
-                    if (strchr(STR(q), ';')) {
-                        out = 1;
-                    }
-                    break;
-                case SYMBOL:
-                    if (SYM(q)->name[0] == ';') {
-                        out = 1;
-                    }
-                    break;
-                }
-                if (out) {
-                    break;
-                }
-                q = q->prev;
-            }
-            q = q->next;
-            /* delete the statement */
-            while (q->itemtype != SYMBOL || SYM(q)->name[0] != ';') {
-                qnext = q->next;
-                remove(q);
-                q = qnext;
-            }
-            qnext = q->next;
-            remove(q);
-        }
-    }
-#endif
-    sprintf(buf,
-            "\nstatic _singlechan_declare%d() {\n\
-	_singlechan_declare(_singlechan%d, _slist%d, %d);\n\
-}\n",
-            listnum,
-            listnum,
-            listnum,
-            numeqn);
-    Lappendstr(procfunc, buf);
-    Lappendstr(procfunc, "\n/*Single Channel end*/\n");
-    cvode_kin_remove();
-    singlechan_ = listnum;
 }

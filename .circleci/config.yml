@@ -31,6 +31,7 @@ jobs:
                 -e NRN_RELEASE_UPLOAD \
                 -e NEURON_WHEEL_VERSION \
                 -e NRN_BUILD_FOR_UPLOAD=1 \
+                -e SETUPTOOLS_USE_DISTUTILS=stdlib \
                 'neuronsimulator/neuron_wheel:latest-gcc9-aarch64' \
                 packaging/python/build_wheels.bash linux << parameters.NRN_PYTHON_VERSION >> coreneuron
 
@@ -53,6 +54,7 @@ jobs:
               38) pyenv_py_ver="3.8.7" ;;
               39) pyenv_py_ver="3.9.1" ;;
               310) pyenv_py_ver="3.10.1" ;;
+              311) pyenv_py_ver="3.11.0" ;;
               *) echo "Error: pyenv python version not specified!" && exit 1;;
             esac
 
@@ -63,6 +65,7 @@ jobs:
               sudo apt install python3.10 libpython3.10 python3.10-venv
               export PYTHON_EXE=$(which python3.10)
             else
+              cd /opt/circleci/.pyenv/plugins/python-build/../.. && git pull && cd -
               env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $pyenv_py_ver --force
               pyenv global $pyenv_py_ver
               export PYTHON_EXE=$(which python)
@@ -93,7 +96,7 @@ workflows:
                 - /circleci\/.*/
           matrix:
             parameters:
-              NRN_PYTHON_VERSION: ["310"]
+              NRN_PYTHON_VERSION: ["311"]
               NRN_NIGHTLY_UPLOAD: ["false"]
 
   nightly:
@@ -108,5 +111,5 @@ workflows:
       - manylinux2014-aarch64:
           matrix:
             parameters:
-              NRN_PYTHON_VERSION: ["37", "38", "39", "310"]
+              NRN_PYTHON_VERSION: ["37", "38", "39", "310", "311"]
               NRN_NIGHTLY_UPLOAD: ["true"]

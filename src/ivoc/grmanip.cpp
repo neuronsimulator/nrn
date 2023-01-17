@@ -321,10 +321,10 @@ void LineRubberMarker::draw(Coord x, Coord y) {
     char s[50];
 
 #if defined(WIN32) || MAC
-    sprintf(s, "crosshair x=%g y=%g", x_, y_);
+    Sprintf(s, "crosshair x=%g y=%g", x_, y_);
     ((DismissableWindow*) canvas()->window())->name(s);
 #else
-    sprintf(s, "(%g,%g)", x_, y_);
+    Sprintf(s, "(%g,%g)", x_, y_);
     Resource::unref(label_);
     label_ = new Label(s, WidgetKit::instance()->font(), Rubberband::color());
 #endif

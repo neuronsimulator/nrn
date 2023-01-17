@@ -1004,18 +1004,18 @@ int nrn_user_partition() {
             ++nt->ncell;
             ++n;
             if (sec->parentsec) {
-                sprintf(buf, "in thread partition %d is not a root section", it);
+                Sprintf(buf, "in thread partition %d is not a root section", it);
                 hoc_execerror(secname(sec), buf);
             }
             if (sec->volatile_mark) {
-                sprintf(buf, "appeared again in partition %d", it);
+                Sprintf(buf, "appeared again in partition %d", it);
                 hoc_execerror(secname(sec), buf);
             }
             sec->volatile_mark = 1;
         }
     }
     if (n != nrn_global_ncell) {
-        sprintf(buf,
+        Sprintf(buf,
                 "The total number of cells, %d, is different than the number of user partition "
                 "cells, %d\n",
                 nrn_global_ncell,

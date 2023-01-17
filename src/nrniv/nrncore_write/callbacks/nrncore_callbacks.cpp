@@ -97,7 +97,7 @@ void* get_global_dbl_item(void* p, const char*& name, int& size, double*& val) {
                     val = new double[size];
                     for (int i = 0; i < a->sub[0]; ++i) {
                         char n[256];
-                        sprintf(n, "%s[%d]", sp->name, i);
+                        Sprintf(n, "%s[%d]", sp->name, i);
                         val[i] = *hoc_val_pointer(n);
                     }
                 }

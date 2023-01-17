@@ -7,7 +7,6 @@ concurrency:
 on:
   push:
     branches: 
-      - master
       - release/**
   pull_request:
     branches:
@@ -19,17 +18,12 @@ on:
 #      - '**.rst'
 #      - 'docs/**'
 
-env:
-  BUILD_TYPE: Release
-  DESIRED_CMAKE_VERSION: 3.15.0
-  PY_MIN_VERSION: '3.7'
-  PY_MAX_VERSION: '3.10'
 
 jobs:
   ci:
     runs-on: ${{ matrix.os }}
 
-    name: ${{ matrix.os }} - ${{ matrix.config.build_mode }} (${{ matrix.config.cmake_option }}${{ matrix.config.config_options }}${{ matrix.config.matrix_eval }})
+    name: ${{ matrix.os }} - ${{ matrix.config.build_mode }} (${{ matrix.config.cmake_option }}${{ matrix.config.config_options }}${{ matrix.config.matrix_eval }}${{ matrix.config.sanitizer }})
 
     timeout-minutes: 45
 
@@ -37,6 +31,10 @@ jobs:
       INSTALL_DIR: install
       SDK_ROOT: $(xcrun --sdk macosx --show-sdk-path)
       SKIP_WHEELHOUSE_REPAIR: true
+      BUILD_TYPE: Release
+      DESIRED_CMAKE_VERSION: 3.15.0
+      PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.7' }}
+      PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
 
     strategy:
       matrix:
@@ -54,7 +52,7 @@ jobs:
               build_mode: cmake
               # TODO: -DCORENRN_ENABLE_NMODL=ON -DNMODL_SANITIZERS=undefined
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
-                -DNRN_ENABLE_INTERVIEWS=OFF -DCORENRN_SANITIZERS=undefined
+                -DNRN_ENABLE_INTERVIEWS=OFF
               flag_warnings: ON
               sanitizer: undefined
           - os: ubuntu-22.04
@@ -63,7 +61,7 @@ jobs:
               # TODO: -DCORENRN_ENABLE_NMODL=ON -DNMODL_SANITIZERS=address,leak
               # TODO: CoreNEURON is only LeakSanitizer-clean if we disable MPI
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
-                -DNRN_ENABLE_INTERVIEWS=OFF -DCORENRN_SANITIZERS=address
+                -DNRN_ENABLE_INTERVIEWS=OFF
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
               sanitizer: address
@@ -72,9 +70,11 @@ jobs:
               build_mode: cmake
               # TODO: investigate rxd test timeouts in this build and re-enable them
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
-                -DNRN_ENABLE_RX3D=OFF -DCORENRN_SANITIZERS=address
+                -DNRN_ENABLE_RX3D=OFF
               sanitizer: address
               ccache_fudge: 1 # manually invalidate the cache for this build
+              # TODO: fix AddressSanitizer on GH macOS for Python311
+              python_max_version: '3.10'
       fail-fast: false
 
     steps:
@@ -196,6 +196,10 @@ jobs:
             # However it does not get stuck: neuron module not found and script goes to interpreter, seeming stuck.
             # This needs to be addressed and SKIP_EMBEDED_PYTHON_TEST logic removed everywhere.
             export SKIP_EMBEDED_PYTHON_TEST="true"
+            # long TMPDIR path on MacOS can results into runtime failures with OpenMPI
+            # Set shorter path as discussed in https://github.com/open-mpi/ompi/issues/8510
+            export TMPDIR=/tmp/$GITHUB_JOB
+            mkdir -p $TMPDIR
           fi
 
           # Python setup

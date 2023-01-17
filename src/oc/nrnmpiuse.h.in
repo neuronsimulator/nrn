@@ -22,9 +22,6 @@
 /* Number of times to retry a failed open */
 #undef FILE_OPEN_RETRY
 
-/* Define bits for BGPDMA & 1 (ISend) & 2 (DMA spike transfer) & 4 (DMA Record Replay */
-#undef BGPDMA
-
 /* Define to 1 for possibility of rank 0 xopen/ropen a file and broadcast everywhere */
 #undef USE_NRNFILEWRAP
 

@@ -11,10 +11,14 @@ include("${CODING_CONV_CMAKE}/sanitizers.cmake")
 # Propagate the sanitizer flags to the NEURON sources
 list(APPEND NRN_COMPILE_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 list(APPEND NRN_LINK_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
+# And to CoreNEURON as we don't have CORENRN_SANITIZERS any more
+list(APPEND CORENRN_EXTRA_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
+list(APPEND CORENRN_EXTRA_LINK_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 if(NRN_SANITIZER_LIBRARY_DIR)
   # At least Clang 14 does not add rpath entries for the sanitizer runtime libraries. Adding this
   # argument saves having to carefully set LD_LIBRARY_PATH and friends.
   list(APPEND NRN_LINK_FLAGS "-Wl,-rpath,${NRN_SANITIZER_LIBRARY_DIR}")
+  list(APPEND CORENRN_EXTRA_LINK_FLAGS "-Wl,-rpath,${NRN_SANITIZER_LIBRARY_DIR}")
 endif()
 if(NRN_SANITIZERS)
   # nocmodl is quite noisy when run under LeakSanitizer, so only set the environment variables that
@@ -54,9 +58,7 @@ if(NRN_SANITIZERS)
   endif()
   # Needed for using sanitizers on macOS
   cpp_cc_strip_python_shims(EXECUTABLE "${PYTHON_EXECUTABLE}" OUTPUT PYTHON_EXECUTABLE)
-  set(NRN_DEFAULT_PYTHON_EXECUTABLE
-      "${PYTHON_EXECUTABLE}"
-      PARENT_SCOPE)
+  set(NRN_DEFAULT_PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}")
   configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
   install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrn-enable-sanitizer
           DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

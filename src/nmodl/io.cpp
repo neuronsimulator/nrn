@@ -25,7 +25,7 @@ int in_comment_;
 char* inputline() {
     /* and removes comment, newline, beginning and trailing blanks */
     /* used to get the TITLE line */
-#if __TURBOC__ || SYSV || VMS || defined(MINGW)
+#if SYSV || defined(MINGW)
 #define index strchr
 #endif
     char* cp;
@@ -217,7 +217,7 @@ void unGets(char* buf)		/* all this because we don't have an ENDBLOCK
 char* current_line() { /* assumes we actually want the previous line */
     static char buf[NRN_BUFSIZE];
     char* p;
-    sprintf(
+    Sprintf(
         buf, "at line %d in file %s:\\n%s", linenum - 1, finname, inlinebuf[whichbuf ? 0 : 1] + 30);
     for (p = buf; *p; ++p) {
         if (*p == '\n') {
@@ -346,7 +346,7 @@ static FILE* include_open(char* fname, int err) {
         free(buf);
         return f;
     }
-    sprintf(buf, "../%s", fname); /* Next try next dir up. */
+    std::snprintf(buf, NRN_BUFSIZE, "../%s", fname); /* Next try next dir up. */
     if ((f = fopen(buf, "r")) != NULL) {
         strcpy(fname, buf);
         free(buf);
@@ -420,20 +420,20 @@ void include_file(Item* q) {
     linenum = 0;
 
     qinc = filetxtlist->prev;
-    sprintf(buf, ":::%s", STR(qinc));
+    Sprintf(buf, ":::%s", STR(qinc));
     replacstr(qinc, buf);
 #if HAVE_REALPATH
     pf = realpath(fname, NULL);
 #endif
     if (pf) {
-        sprintf(buf, ":::realpath %s\n", pf);
+        Sprintf(buf, ":::realpath %s\n", pf);
         free(pf);
         lappendstr(filetxtlist, buf);
     }
 }
 
 static void pop_file_stack() {
-    sprintf(buf, ":::end INCLUDE %s\n", finname);
+    Sprintf(buf, ":::end INCLUDE %s\n", finname);
     lappendstr(filetxtlist, buf);
     FileStackItem* fsi;
     fsi = (FileStackItem*) (SYM(filestack->prev));

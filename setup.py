@@ -337,6 +337,7 @@ def setup_package():
         "neuron",
         "neuron.neuroml",
         "neuron.tests",
+        "neuron.tests.utils",
         "neuron.rxd",
         "neuron.crxd",
         "neuron.gui2",
@@ -513,8 +514,14 @@ def mac_osx_setenv():
         # Python framework, or 10.9 if the version targeted by the framework
         # cannot be determined
         if py_osx_framework is None:
-            py_osx_framework = (10, 9)
-        if py_osx_framework > (10, 9):
+            py_osx_framework = (10, 15)
+        if py_osx_framework < (10, 15):
+            log.warn(
+                "C++17 support is required to build NEURON on macOS, "
+                "therefore minimum MACOSX_DEPLOYMENT_TARGET version is 10.15."
+            )
+            py_osx_framework = (10, 15)
+        if py_osx_framework > (10, 15):
             log.warn(
                 "You are building a wheel with a Python built for macOS >={}. "
                 "Your wheel won't run on older versions, consider using an "

@@ -332,7 +332,7 @@ void OcDeck::save_action(const char* creat, Object* o) {
 void OcDeck::save(std::ostream& o) {
     char buf[256];
     if (bi_->save_action_) {
-        sprintf(buf, "{ocbox_ = %s", bi_->save_action_->string());
+        Sprintf(buf, "{ocbox_ = %s", bi_->save_action_->string());
         o << buf << std::endl;
     } else {
         o << "{ocbox_ = new Deck()" << std::endl;
@@ -347,7 +347,7 @@ void OcDeck::save(std::ostream& o) {
         o << "ocbox_.intercept(0)" << std::endl;
     }
     if (has_window()) {
-        sprintf(buf,
+        Sprintf(buf,
                 "ocbox_.map(\"%s\", %g, %g, %g, %g)}",
                 window()->name(),
                 window()->save_left(),
@@ -359,7 +359,7 @@ void OcDeck::save(std::ostream& o) {
         o << "ocbox_.map()}" << std::endl;
     }
     if (bi_->oc_ref_) {
-        sprintf(buf, "%s = ocbox_", hoc_object_pathname(bi_->oc_ref_));
+        Sprintf(buf, "%s = ocbox_", hoc_object_pathname(bi_->oc_ref_));
         o << buf << std::endl;
     }
 }

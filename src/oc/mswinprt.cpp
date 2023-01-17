@@ -131,7 +131,7 @@ void hoc_win32_cleanup() {
 #endif
     path = getenv("TEMP");
     if (path) {
-        sprintf(buf, "%s/oc%d.hl", path, getpid());
+        Sprintf(buf, "%s/oc%d.hl", path, getpid());
         unlink(buf);
         //      DebugMessage("unlinked %s\n", buf);
     }

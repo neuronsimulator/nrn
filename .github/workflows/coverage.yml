@@ -21,7 +21,7 @@ on:
 
 env:
   PY_MIN_VERSION: '3.7'
-  PY_MAX_VERSION: '3.10'
+  PY_MAX_VERSION: '3.11'
 
 jobs:
   coverage:
@@ -35,7 +35,7 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install  build-essential doxygen lcov libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg
+          sudo apt-get install  build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg
         shell: bash
 
       - name: Setup Caliper profiler
@@ -85,7 +85,7 @@ jobs:
           # CMake options & flags
           export COVERAGE_FLAGS="--coverage -O0 -fno-inline -g";
           export CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_PROFILING=ON -DNRN_ENABLE_BACKTRACE=ON";
-          cmake $CMAKE_OPTION -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" ..;
+          cmake $CMAKE_OPTION -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" -DCORENRN_ENABLE_UNIT_TESTS=ON ..;
 
           # Coverage
           # The Linux runners apparently have 2 cores, but jobs were being killed when we did not specify this explicitly.
@@ -98,17 +98,6 @@ jobs:
           (cd ..; lcov --capture  --directory . --no-external --output-file build/coverage-run.info)
           lcov --add-tracefile coverage-base.info --add-tracefile coverage-run.info --output-file coverage-combined.info
 
-          # Download codecov script and perform integrity checks
-          curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --import # One-time step 
-          curl -Os https://uploader.codecov.io/latest/linux/codecov 
-          curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM 
-          curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig 
-          gpg --verify codecov.SHA256SUM.sig codecov.SHA256SUM 
-          shasum -a 256 -c codecov.SHA256SUM 
-          chmod +x codecov 
-
-          # Prefer auto-discovery for now. Specify reports once all python testing is unified under single report (-f option).
-          ./codecov
         env:
           MATRIX_EVAL: "CC=gcc CXX=g++"
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
@@ -121,3 +110,10 @@ jobs:
       - name: live debug session on failure (manual steps required, check `.github/coverage.yml`)
         if: failure() && contains(github.event.pull_request.title, 'live-debug-coverage')
         uses: mxschmitt/action-tmate@v3
+
+      - uses: codecov/codecov-action@v3
+        with:
+          directory: ./build
+          fail_ci_if_error: true
+          verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}

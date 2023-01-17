@@ -1,4 +1,5 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
 
 include_directories(${NRN_INCLUDE_DIRS})
 
@@ -12,28 +13,28 @@ include(NeuronTestHelper)
 # =============================================================================
 # Test executables
 # =============================================================================
-add_executable(testneuron unit_tests/unit_test.cpp unit_tests/oc/hoc_interpreter.cpp
-                          unit_tests/threads/test_multicore.cpp)
-cpp_cc_configure_sanitizers(TARGET testneuron)
-target_compile_features(testneuron PUBLIC cxx_std_11)
-target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
-if(NRN_ENABLE_THREADS)
-  target_link_libraries(testneuron Threads::Threads)
+add_executable(testneuron common/catch2_main.cpp unit_tests/basic.cpp
+                          unit_tests/oc/hoc_interpreter.cpp)
+set(catch2_targets testneuron)
+# Benchmarks are known to be slow if you turn off optimisation...
+if(NRN_ENABLE_THREADS AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+  add_executable(nrn-benchmarks common/catch2_main.cpp benchmarks/threads/test_multicore.cpp)
+  target_link_libraries(nrn-benchmarks Threads::Threads)
+  list(APPEND catch2_targets nrn-benchmarks)
 endif()
-if(NOT MINGW)
-  target_link_libraries(testneuron ${CMAKE_DL_LIBS})
-endif()
+foreach(target ${catch2_targets})
+  cpp_cc_configure_sanitizers(TARGET ${target})
+  target_link_libraries(${target} Catch2::Catch2 nrniv_lib)
+  if(NOT MINGW)
+    target_link_libraries(${target} ${CMAKE_DL_LIBS})
+  endif()
+  target_compile_definitions(testneuron PUBLIC "USE_PYTHON=${USE_PYTHON}")
+endforeach()
 
 # =============================================================================
 # Copy necessary hoc files to build directory if they have not been copied yet
 # =============================================================================
-if(NOT TARGET hoc_module)
-  add_custom_command(
-    TARGET testneuron
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
-            ${PROJECT_BINARY_DIR}/share/nrn/lib)
-endif()
+add_dependencies(testneuron copy_share_lib_to_build)
 
 # =============================================================================
 # Unit tests  (testneuron, ...)
@@ -42,9 +43,14 @@ nrn_add_test_group(NAME unit_tests MODFILE_PATTERNS NONE)
 nrn_add_test(
   GROUP unit_tests
   NAME testneuron
-  PROCESSORS 16
-  COMMAND $<TARGET_FILE:testneuron> --processors=16)
-
+  COMMAND $<TARGET_FILE:testneuron>)
+if(TARGET nrn-benchmarks)
+  nrn_add_test(
+    GROUP unit_tests
+    NAME benchmarks
+    PROCESSORS 16
+    COMMAND $<TARGET_FILE:nrn-benchmarks> --processors=16)
+endif()
 # =============================================================================
 # Add ringtest
 # =============================================================================
@@ -175,12 +181,9 @@ endforeach()
 # Add pytest
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
-  set(pytest -m pytest)
-  if(NRN_SANITIZERS)
-    # We configure the santiziers to abort on errors, which can lead to unhelpful output from
-    # pytest. Passing -s means the sanitizer output will be visible in the log.
-    list(APPEND pytest -s)
-  endif()
+  # use `--capture=tee-sys`: combines 'sys' and '-s', capturing sys.stdout/stderr and passing it
+  # along to the actual sys.stdout/stderr
+  set(pytest -m pytest --capture=tee-sys)
   if(PYTEST_COV_FOUND)
     list(APPEND pytest --cov-report=xml --cov=neuron)
   endif()
@@ -233,11 +236,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     NAME hoctests
     MODFILE_PATTERNS *.mod
     SIM_DIRECTORY test/hoctests)
-  set(py_exe ${PYTHON_EXECUTABLE})
-  set(py_preload PRELOAD_SANITIZER)
-  set(hoc_exe nrniv)
   set(hoctest_utils expect_err.hoc)
-
   foreach(ext hoc py)
     file(
       GLOB hoc_scripts
@@ -249,7 +248,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         GROUP hoctests
         NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
         COMMAND ${${ext}_exe} "${hoc_script}"
-        SCRIPT_PATTERNS "${hoc_script}" "${name}.ses" ${hoctest_utils})
+        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})
     endforeach()
   endforeach()
 
@@ -257,7 +256,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     nrn_add_test_group(
       NAME rxdmod_tests
       MODFILE_PATTERNS test/rxd/*.mod
-      SCRIPT_PATTERNS test/rxd/*.py test/rxd/3d/*.asc test/rxd/testdata/*.dat)
+      SCRIPT_PATTERNS test/rxd/*.py test/rxd/3d/*.asc test/rxd/testdata/**/*.dat)
     # These tests include comparisons against saved data, which appears to have been generated using
     # GCC. Other compilers produce larger differences.
     if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
@@ -382,6 +381,38 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       COMMAND ${modtests_launch_py} test/coreneuron/test_psolve.py)
   endif()
 
+  nrn_add_test_group(
+    NAME nmodl_tests
+    SCRIPT_PATTERNS test/nmodl/*.py
+    MODFILE_PATTERNS "docs/nmodl/mod/*.mod")
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME test_table
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/nmodl/test_table.py
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME test_disc
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/nmodl/test_disc.py
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/nmodl/test_disc.py)
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME test_function_table
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/nmodl/test_function_table.py
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/nmodl/test_function_table.py)
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME test_kinetic
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/nmodl/test_kinetic.py
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/nmodl/test_kinetic.py)
   nrn_add_test_group(
     CORENEURON
     NAME coreneuron_modtests
@@ -560,7 +591,52 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           special ${MPIEXEC_POSTFLAGS} -mpi -python
           ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
     endif()
+    nrn_add_test_group(
+      NAME nmodl_tests_coreneuron
+      SCRIPT_PATTERNS test/nmodl/*.py
+      MODFILE_PATTERNS "docs/nmodl/mod/*.mod")
+    nrn_add_test(
+      GROUP nmodl_tests_coreneuron
+      NAME test_table_coreneuron_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/nmodl/test_table.py
+      ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${processor_env}
+      COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
+    nrn_add_test(
+      GROUP nmodl_tests_coreneuron
+      NAME test_disc_coreneuron_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/nmodl/test_disc.py
+      ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${processor_env}
+      COMMAND ${modtests_launch_py} test/nmodl/test_disc.py)
+    nrn_add_test(
+      GROUP nmodl_tests_coreneuron
+      NAME test_function_table_coreneuron_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/nmodl/test_function_table.py
+      ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${processor_env}
+      COMMAND ${modtests_launch_py} test/nmodl/test_function_table.py)
+    nrn_add_test(
+      GROUP nmodl_tests_coreneuron
+      NAME test_kinetic_coreneuron_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/nmodl/test_kinetic.py
+      ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${processor_env}
+      COMMAND ${modtests_launch_py} test/nmodl/test_kinetic.py)
   endforeach()
+
+  if(NRN_ENABLE_MUSIC)
+    nrn_add_test_group(
+      NAME nrnmusic
+      ENVIRONMENT MUSIC_LIBDIR=${MUSIC_LIBDIR}
+      MODFILE_PATTERNS NONE)
+    nrn_add_test(
+      GROUP nrnmusic
+      NAME music_tests
+      PROCESSORS 2
+      COMMAND ${PYTHON_EXECUTABLE} test/music_tests/runtests.py
+      SCRIPT_PATTERNS test/music_tests/*.music test/music_tests/*.py)
+  endif()
 endif()
 
 # ============================================

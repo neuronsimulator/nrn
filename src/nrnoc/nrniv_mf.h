@@ -6,7 +6,6 @@
 
 struct NrnThread;
 struct Point_process;
-struct SparseObj;
 
 typedef double (*ldifusfunc3_t)(int, double*, Datum*, double*, double*, Datum*, NrnThread*);
 typedef void ldifusfunc2_t(int, ldifusfunc3_t, void**, int, int, int, NrnThread*);
@@ -105,5 +104,10 @@ void nrn_net_move(Datum*, Point_process*, double);
 
 typedef void (*NrnWatchAllocateFunc_t)(Datum*);
 extern NrnWatchAllocateFunc_t* nrn_watch_allocate_;
+
+void* nrn_pool_alloc(void* pool);
+void* nrn_pool_create(long count, int itemsize);
+void nrn_pool_delete(void* pool);
+void nrn_pool_freeall(void* pool);
 
 #endif /* nrniv_mf_h */

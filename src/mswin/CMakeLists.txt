@@ -34,6 +34,8 @@ if(MINGW)
   add_executable(neuron ${mswinsrc}/extra/neuron.cpp nrnicon.res)
   add_executable(mos2nrn ${mswinsrc}/extra/mos2nrn.cpp)
   add_executable(nrnbinstr ${mswinsrc}/extra/nrnbinstr.cpp)
+  set(INCDIRS ${PROJECT_SOURCE_DIR}/src/oc)
+  target_include_directories(mos2nrn PUBLIC ${INCDIRS})
 
   # ~~~
   # Presumes previous 'make install'

@@ -411,7 +411,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 eindex = *dparam[j].get<int*>();
             } else {
                 char errmes[100];
-                sprintf(errmes, "Unknown semantics type %d for dparam item %d of", dmap[j], j);
+                Sprintf(errmes, "Unknown semantics type %d for dparam item %d of", dmap[j], j);
                 hoc_execerror(errmes, memb_func[di.type].sym->name);
             }
             di.ion_type[offset + j] = etype;
