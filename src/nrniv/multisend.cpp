@@ -26,7 +26,6 @@ At the end of a computation subinterval the even or odd buffer spikes
 are enqueued in the priority queue after checking that the number
 of spikes sent is equal to the number of spikes sent.
 */
-extern void (*nrntimeout_call)();
 // The initial idea behind use_phase2_ is to avoid the large overhead of
 // initiating a send of the up to 10k list of target hosts when a cell fires.
 // I.e. when there are a small number of cells on a processor, this causes
@@ -43,18 +42,6 @@ extern void (*nrntimeout_call)();
 // Since bgp.srchost_ is used only for setup, it can be overwritten at phase2
 // setup time with a bgp.dma_send_ so as to pass on the spike to the
 // phase2 list of target hosts.
-
-#if !defined(DCMFTICK)
-#define DCMFTICK     0
-#define DCMFTIMEBASE 0
-#endif
-
-static unsigned long long dmasend_time_;
-static int n_xtra_cons_check_;
-#define MAXNCONS 10
-#if MAXNCONS
-static int xtra_cons_hist_[MAXNCONS + 1];
-#endif
 
 // asm/msr.h no longer compiles on my machine.
 // only for basic testing of logic when not on blue gene/p
@@ -143,28 +130,27 @@ class Multisend_ReceiveBuffer {
 };
 
 static int use_phase2_;
-#define NTARGET_HOSTS_PHASE1 ntarget_hosts_phase1_
 
 class Multisend_Send {
   public:
-    Multisend_Send();
+    Multisend_Send() = default;
     virtual ~Multisend_Send();
     void send(int gid, double t);
-    int ntarget_hosts_;
-    int* target_hosts_;
-    NRNMPI_Spike spk_;
-    int ntarget_hosts_phase1_;
+    int ntarget_hosts_{};
+    int* target_hosts_{};
+    NRNMPI_Spike spk_{};
+    int ntarget_hosts_phase1_{};
 };
 
 class Multisend_Send_Phase2 {
   public:
-    Multisend_Send_Phase2();
+    Multisend_Send_Phase2() = default;
     virtual ~Multisend_Send_Phase2();
     NRNMPI_Spike spk_;
 
     void send_phase2(int gid, double t, Multisend_ReceiveBuffer*);
-    int ntarget_hosts_phase2_;
-    int* target_hosts_phase2_;
+    int ntarget_hosts_phase2_{};
+    int* target_hosts_phase2_{};
 };
 
 static Multisend_ReceiveBuffer* multisend_receive_buffer[2];
@@ -242,10 +228,6 @@ void Multisend_ReceiveBuffer::enqueue() {
 #if 1
     for (int i = 0; i < count_; ++i) {
         NRNMPI_Spike* spk = buffer_[i];
-#if ENQUEUE == 2
-        unsigned long long tb = DCMFTIMEBASE;
-#endif
-
         auto iter = gid2in_.find(spk->gid);
         nrn_assert(iter != gid2in_.end());
         PreSyn* ps = iter->second;
@@ -258,14 +240,8 @@ void Multisend_ReceiveBuffer::enqueue() {
             pb.ps = ps;
             pb.spiketime = spk->spiketime;
         }
-#if ENQUEUE == 2
-        enq2_find_time_ += (unsigned long) (DCMFTIMEBASE - tb);
-#endif
         ps->send(spk->spiketime, net_cvode_instance, nrn_threads);
         pool_->hpfree(spk);
-#if ENQUEUE == 2
-        enq2_enqueue_time_ += (unsigned long) (DCMFTIMEBASE - tb);
-#endif
     }
 #endif
     count_ = 0;
@@ -347,28 +323,16 @@ double nrn_multisend_receive_time(int type) {  // and others
         if (!use_multisend_) {
             return rt;
         }
-        for (int i = 0; i < n_multisend_interval; ++i) {
-            rt += multisend_receive_buffer[i]->timebase_ * DCMFTICK;
-        }
         break;
     case 3:  // in MULTISENDsend::send
         if (!use_multisend_) {
             return rt;
         }
-        rt = dmasend_time_ * DCMFTICK;
+        rt = 0;
         break;
     case 4:  // number of extra conservation checks
-        rt = double(n_xtra_cons_check_);
+        rt = 0.;
         // and if there is second vector arg then also return the histogram
-#if MAXNCONS
-        if (ifarg(2) && use_multisend_) {
-            IvocVect* vec = vector_arg(2);
-            vector_resize(vec, MAXNCONS + 1);
-            for (int i = 0; i <= MAXNCONS; ++i) {
-                vector_vec(vec)[i] = double(xtra_cons_hist_[i]);
-            }
-        }
-#endif  // MAXNCONS
 #if TBUFSIZE
         if (ifarg(3)) {
             IvocVect* vec = vector_arg(3);
@@ -376,7 +340,7 @@ double nrn_multisend_receive_time(int type) {  // and others
             for (int i = 0; i <= itbuf_; ++i) {
                 vector_vec(vec)[i] = double(tbuf_[i]);
             }
-            vector_vec(vec)[itbuf_] = DCMFTICK;
+            vector_vec(vec)[itbuf_] = 0;
         }
 #endif
         break;
@@ -417,16 +381,9 @@ static void nrn_multisend_init() {
 #if TBUFSIZE
     itbuf_ = 0;
 #endif
-    dmasend_time_ = 0;
 #if ENQUEUE == 2
     enq2_find_time_ = enq2_enqueue_time_ = 0;
 #endif
-    n_xtra_cons_check_ = 0;
-#if MAXNCONS
-    for (int i = 0; i <= MAXNCONS; ++i) {
-        xtra_cons_hist_[i] = 0;
-    }
-#endif  // MAXNCONS
 }
 
 static int multisend_advance() {
@@ -455,21 +412,10 @@ void nrn_multisend_advance() {
 #endif
 }
 
-Multisend_Send::Multisend_Send() {
-    ntarget_hosts_ = 0;
-    target_hosts_ = NULL;
-    ntarget_hosts_phase1_ = 0;
-}
-
 Multisend_Send::~Multisend_Send() {
     if (target_hosts_) {
         delete[] target_hosts_;
     }
-}
-
-Multisend_Send_Phase2::Multisend_Send_Phase2() {
-    ntarget_hosts_phase2_ = 0;
-    target_hosts_phase2_ = 0;
 }
 
 Multisend_Send_Phase2::~Multisend_Send_Phase2() {
@@ -490,8 +436,7 @@ static void myrestart(DCMF_Request_t* arg) {
 #endif
 
 void Multisend_Send::send(int gid, double t) {
-    unsigned long long tb = DCMFTIMEBASE;
-    if (NTARGET_HOSTS_PHASE1) {
+    if (ntarget_hosts_phase1_) {
         spk_.gid = gid;
         spk_.spiketime = t;
         multisend_receive_buffer[next_rbuf]->nsend_ += ntarget_hosts_;
@@ -501,14 +446,12 @@ void Multisend_Send::send(int gid, double t) {
         }
         nsend_ += 1;
         if (use_multisend_) {
-            nrnmpi_multisend_multisend(&spk_, NTARGET_HOSTS_PHASE1, target_hosts_);
+            nrnmpi_multisend_multisend(&spk_, ntarget_hosts_phase1_, target_hosts_);
         }
     }
-    dmasend_time_ += DCMFTIMEBASE - tb;
 }
 
 void Multisend_Send_Phase2::send_phase2(int gid, double t, Multisend_ReceiveBuffer* rb) {
-    unsigned long long tb = DCMFTIMEBASE;
     if (ntarget_hosts_phase2_) {
         spk_.gid = gid;
         spk_.spiketime = t;
@@ -521,32 +464,30 @@ void Multisend_Send_Phase2::send_phase2(int gid, double t, Multisend_ReceiveBuff
             nrnmpi_multisend_multisend(&spk_, ntarget_hosts_phase2_, target_hosts_phase2_);
         }
     }
-    dmasend_time_ += DCMFTIMEBASE - tb;
 }
 
 void nrn_multisend_receive(NrnThread* nt) {
     //	nrn_spike_exchange();
     assert(nt == nrn_threads);
-    TBUF double w1, w2;
+    TBUF
+    double w2;
     int ncons = 0;
     int& s = multisend_receive_buffer[current_rbuf]->nsend_;
     int& r = multisend_receive_buffer[current_rbuf]->nrecv_;
-#if ENQUEUE == 2 && TBUFSIZE
-    unsigned long tfind, tsend;
-#endif
-    w1 = nrnmpi_wtime();
+    double w1 = nrnmpi_wtime();
     if (use_multisend_) {
         nrn_multisend_advance();
         TBUF
-#if ENQUEUE == 2 && TBUFSIZE
-            // want the overlap with computation, not conserve
-            tfind = enq2_find_time_;
-        tsend = enq2_enqueue_time_ - enq2_find_time_;
-#endif
 #if TBUFSIZE
+#if ENQUEUE == 2
+        // want the overlap with computation, not conserve
+        unsigned long tfind = enq2_find_time_;
+        unsigned long tsend = enq2_enqueue_time_ - enq2_find_time_;
+#endif
         nrnmpi_barrier();
 #endif
-        TBUF while (nrnmpi_multisend_conserve(s, r) != 0) {
+        TBUF
+        while (nrnmpi_multisend_conserve(s, r) != 0) {
             nrn_multisend_advance();
             ++ncons;
         }
@@ -560,25 +501,20 @@ void nrn_multisend_receive(NrnThread* nt) {
     tbuf_[itbuf_++] = (unsigned long) multisend_receive_buffer[current_rbuf]->nsend_cell_;
     tbuf_[itbuf_++] = (unsigned long) s;
     tbuf_[itbuf_++] = (unsigned long) r;
-    tbuf_[itbuf_++] = (unsigned long) dmasend_time_;
+    tbuf_[itbuf_++] = 0UL;
     if (use_phase2_) {
         tbuf_[itbuf_++] =
             (unsigned long) multisend_receive_buffer[current_rbuf]->phase2_nsend_cell_;
         tbuf_[itbuf_++] = (unsigned long) multisend_receive_buffer[current_rbuf]->phase2_nsend_;
     }
 #endif
-#if MAXNCONS
-    if (ncons > MAXNCONS) {
-        ncons = MAXNCONS;
-    }
-    ++xtra_cons_hist_[ncons];
-#endif  // MAXNCONS
 #if ENQUEUE == 0
     multisend_receive_buffer[current_rbuf]->enqueue();
 #endif
 #if ENQUEUE == 1
     multisend_receive_buffer[current_rbuf]->enqueue1();
-    TBUF multisend_receive_buffer[current_rbuf]->enqueue2();
+    TBUF
+    multisend_receive_buffer[current_rbuf]->enqueue2();
 #endif
 #if ENQUEUE == 2
     multisend_receive_buffer[current_rbuf]->enqueue();
@@ -628,7 +564,6 @@ void nrn_multisend_cleanup_presyn(PreSyn* ps) {
 }
 
 static void nrn_multisend_cleanup() {
-    nrntimeout_call = 0;
     for (const auto& iter: gid2out_) {
         nrn_multisend_cleanup_presyn(iter.second);
     }
@@ -644,20 +579,6 @@ static void nrn_multisend_cleanup() {
         multisend_receive_buffer[1] = NULL;
     }
 }
-
-#ifndef BGPTIMEOUT
-#define BGPTIMEOUT 0
-#endif
-
-#if BGPTIMEOUT
-static void bgptimeout() {
-    printf("%d timeout %d %d %d\n",
-           nrnmpi_myid,
-           current_rbuf,
-           multisend_receive_buffer[current_rbuf]->nsend_,
-           multisend_receive_buffer[current_rbuf]->nrecv_);
-}
-#endif
 
 #if WORK_AROUND_RECORD_BUG
 static void ensure_ntarget_gt_3(Multisend_Send* bs) {
@@ -691,20 +612,13 @@ static void ensure_ntarget_gt_3(Multisend_Send* bs) {
 }
 #endif
 
-#define FASTSETUP 1
-#if FASTSETUP
 #include "multisend_setup.cpp"
-#endif
 
 void nrn_multisend_setup() {
     nrn_multisend_cleanup();
     if (!use_multisend_) {
         return;
     }
-    // not sure this is useful for debugging when stuck in a collective.
-#if BGPTIMEOUT
-    nrntimeout_call = bgptimeout;
-#endif
     nrnmpi_multisend_comm();
     // if (nrnmpi_myid == 0) printf("nrn_multisend_setup()\n");
     // although we only care about the set of hosts that gid2out_
@@ -719,13 +633,8 @@ void nrn_multisend_setup() {
     max_ntarget_host = 0;
     max_multisend_targets = 0;
 
-#if FASTSETUP
     // completely new algorithm does one and two phase.
     setup_presyn_multisend_lists();
-#else  // obsolete
-    // see 672:544c61a730ec
-#error "FASTSETUP required"
-#endif  // obsolete (not FASTSETUP)
 
     if (!multisend_receive_buffer[0]) {
         multisend_receive_buffer[0] = new Multisend_ReceiveBuffer();

@@ -27,7 +27,6 @@ void nrn_timeout(int seconds) {}
 
 #else
 
-void (*nrntimeout_call)();
 static double told;
 static struct itimerval value;
 static struct sigaction act, oact;
@@ -39,9 +38,6 @@ static void timed_out(int sig) {
 #endif
     if (nrn_threads->_t == told) { /* nothing has been accomplished since last signal*/
         printf("nrn_timeout t=%g\n", nrn_threads->_t);
-        if (nrntimeout_call) {
-            (*nrntimeout_call)();
-        }
         nrn_abort(0);
     }
     told = nrn_threads->_t;
