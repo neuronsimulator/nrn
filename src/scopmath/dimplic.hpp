@@ -26,6 +26,6 @@ int derivimplicit_thread(int /* n */,
     fun(std::forward<Args>(args)...);
     return 0;
 }
-} // namespace neuron::scopmath
+}  // namespace neuron::scopmath
 using neuron::scopmath::derivimplicit;
 using neuron::scopmath::derivimplicit_thread;

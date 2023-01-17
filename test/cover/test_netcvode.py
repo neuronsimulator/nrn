@@ -731,7 +731,7 @@ def playrecord():
     sys.stdout = old_stdout
     chk("playrecord debug_event", debug_event_filter(mystdout.getvalue()))
     del net.ic
-    h.finitialize(-65)  # should this give an error or not?
+    h.finitialize(-65)
 
 
 def interthread():
