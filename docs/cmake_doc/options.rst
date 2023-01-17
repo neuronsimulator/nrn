@@ -19,6 +19,12 @@ This is often very much faster than a single process make. One can add a number
 after the ``-j`` (e.g. ``make -j 6``) to specify the maximum number of processes
 to use. This can be useful if there is the possibility of running out of memory.
 
+The make targets that are made available by cmake can be listed with
+
+.. code-block:: shell
+
+  make help
+
 You can list CMake options with
 ``cmake .. -LH``
 which runs ``cmake ..`` as above and lists the cache variables along with help
@@ -107,7 +113,7 @@ CMAKE_BUILD_TYPE:STRING=RelWithDebInfo
 
 Ninja
 -----
-  Use the Ninja build system ('make' is the default 'CMake' build system).
+  Use the Ninja build system (``make`` is the default CMake build system).
 
   .. code-block:: shell
 
@@ -213,6 +219,30 @@ NRN_MPI_DYNAMIC:STRING=
 
   This option is ignored unless NRN_ENABLE_MPI_DYNAMIC=ON
 
+NRN_ENABLE_MUSIC:BOOL=OFF
+-------------------------
+  Enable MUSIC. MUlti SImulation Coordinator.
+
+  MUSIC must already be installed. See https://github.com/INCF/MUSIC.
+  Hints for MUSIC installation: use the switch-to-MPI-C-interface branch.
+  Python3 must have mpi4py and cython modules. I needed a PYTHON_PREFIX, so
+  on my Apple M1 used: ``./configure --prefix=`pwd`/musicinstall PYTHON_PREFIX=/Library/Frameworks/Python.framework/Versions/3.11 --disable-anysource``
+
+  MPI and Python must be enabled.
+
+  If MUSIC is installed but CMake cannot find its ``/path``, augment the
+  semicolon separated list of paths ``-DCMAKE_PREFIX_PATH=...;/path;...``
+  or pass the ``/path`` with ``-DMUSIC_ROOT=/path`` to cmake.
+  CMake needs to find
+
+  .. code-block:: shell
+
+    /path/include/music.hh
+    /path/lib/libmusic.so
+
+  With the music installed above, cmake configuration example is
+  ``build % cmake .. -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python3.11` -DNRN_ENABLE_RX3D=OFF -DCMAKE_BUILD_TYPE=Debug -DNRN_ENABLE_TESTS=ON -DNRN_ENABLE_MUSIC=ON -DCMAKE_PREFIX_PATH=$HOME/neuron/MUSIC/musicinstall``
+
 Python options:
 ===============
 
@@ -240,7 +270,7 @@ NRN_PYTHON_DYNAMIC:STRING=
 
   .. code-block:: shell
 
-    -DNRN_PYTHON_DYNAMIC="python3.6;python3.7;python3.8;python3.9"
+    -DNRN_PYTHON_DYNAMIC="python3.7;python3.8;python3.9;python3.10"
 
   This option is ignored unless NRN_ENABLE_PYTHON_DYNAMIC=ON
 
@@ -296,8 +326,8 @@ NRN_ENABLE_CORENEURON:BOOL=OFF
 ------------------------------
   Enable CoreNEURON support
 
-  If ON and no argument pointing to an external installation, CoreNEURON
-  will be cloned as a submodule along with all its NMODL submodule dependencies.
+  If ON CoreNEURON will be built and any needed NMODL submodule dependencies
+  cloned as external submodules.
 
 NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
 -------------------------------------
@@ -314,21 +344,6 @@ Other CoreNEURON options:
   build that are listed in https://github.com/BlueBrain/CoreNeuron/blob/master/CMakeLists.txt.
   The ones of particular interest that can be used on the NEURON
   CMake configure line are `CORENRN_ENABLE_NMODL` and `CORENRN_ENABLE_GPU`.
-  For developers preparing a pull request that involves associated changes
-  to CoreNEURON sources, a CoreNEURON pull request will fail if the
-  changes are not formatted properly. In this case, note that
-  `CORENRN_CLANG_FORMAT` can only be used in a CoreNEURON specific CMake
-  configure line in external/coreneuron/build.
-
-  .. code-block::
-
-    cd external/coreneuron
-    mkdir build
-    cd build
-    cmake .. -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python` -DCORENRN_CLANG_FORMAT=ON
-    make clang-format
-
-
 
 Occasionally useful advanced options:
 =====================================
@@ -354,6 +369,52 @@ CMAKE_C_COMPILER:FILEPATH=/usr/bin/cc
 CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++
 ----------------------------------------
   C plus plus compiler
+
+NRN_ENABLE_DOCS:BOOL=OFF
+------------------------
+  Enable documentation targets in the build.
+  This also makes all documentation dependencies into hard requirements, so
+  CMake will report an error if anything is missing.
+  There are five documentation targets:
+    * ``doxygen`` generates Doxygen documentation from the NEURON source code.
+    * ``notebooks`` executes the various Jupyter notebooks that are included in
+      the documentation, so they contain both code and results, instead of just
+      code. These are run in situ in the source tree, so if you run this target
+      manually then make sure not to accidentally commit the results to git.
+    * ``sphinx`` generates Sphinx documentation. This logically depends on
+      ``notebooks``, as it generates HTML from the executed notebooks, but this
+      dependency is not declared in the build system.
+    * ``notebooks-clean`` removes the execution results from the Jupyter
+      notebooks, leaving them in a clean state. This logically depends on
+      ``sphinx``, as the execution results need to be converted to HTML before
+      they are discarded, but this dependency is not declared in the build
+      system.
+    * ``docs`` is shorthand for building ``doxygen``, ``notebooks``, ``sphinx``
+      and ``notebooks-clean`` in that order.
+
+  .. warning::
+    Executing the notebooks requires a functional NEURON installation.
+    There are two possibilities here:
+      * The default, which is sensible for local development, is that the
+        ``notebooks`` target uses NEURON from the current CMake build directory.
+        This implies that building the documentation builds NEURON too.
+      * The alternative, which is enabled by setting
+        ``-DNRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION=ON``, is that ``notebooks``
+        does not depend on any other NEURON build targets. In this case you must
+        provide an installation of NEURON by some other means. It will be assumed
+        that commands like ``nrnivmodl`` work and that ``import neuron`` works
+        in Python.
+
+NRN_EXTRA_CXX_FLAGS:STRING=""
+-----------------------------
+  Compiler flags that are used to build NEURON code but not (unlike
+  ``CMAKE_CXX_FLAGS``) code of dependencies built as submodules.
+  This can be useful for tuning things like compiler warning flags.
+
+NRN_EXTRA_MECH_CXX_FLAGS:STRING=""
+----------------------------------
+  Compiler flags that are used to build the C code generated by ``nocmodl`` but
+  not source code files that are committed to the repository.
 
 NRN_NMODL_CXX_FLAGS:STRING=""
 -----------------------------
@@ -397,8 +458,9 @@ NRN_ENABLE_TESTS:BOOL=OFF
   seen with the CI tests, use ``ctest -VV`` (executed in the
   build folder) or an individual test with ``ctest -VV -R name_of_the_test``.
   One can also run individual test files
-  with ``python3 -m pytest <testfile.py>`` or all the test files in that
-  folder with ``python3 -m pytest``. Note: It is helpful to ``make test``
+  with ``python3 -m pytest -s <testfile.py>`` or all the test files in that
+  folder with ``python3 -m pytest -s``. (The ``-s`` shows all output on
+  the terminal.) Note: It is helpful to ``make test``
   first to ensure any mod files needed are available to the tests. If
   running a test outside the folder where the test is located, it may be
   necessary to add the folder to PYTHONPATH. Note: The last python
@@ -450,29 +512,12 @@ NRN_COVERAGE_FILES:STRING=
 
   ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
 
-NRN_CMAKE_FORMAT:BOOL=OFF
-----------------------------
-  Enable CMake code formatting
-
-  Clones the submodule coding-conventions from https://github.com/BlueBrain/hpc-coding-conventions.git.
-  Also need to ``pip install cmake-format=0.6.0 --user``.
-  After a build using ``make`` can reformat cmake files with ``make cmake-format``
-  See nrn/CONTRIBUTING.md for further details.
-  How does one reformat a specific cmake file?
-
-NRN_CLANG_FORMAT:BOOL=OFF
--------------------------
-  Enable code formatting
-
-  Clones the submodule coding-conventions from https://github.com/BlueBrain/hpc-coding-conventions.git.
-  For mac, need: ``brew install clang-format``
-  After a build using ``make``, can reformat all sources with ``make clang_format``
-  Incremental code formatting (of the current patch) can be done by setting additional build flags
-  ``NRN_FORMATTING_ON="since-ref:master"`` and ``NRN_FORMATTING_CPP_CHANGES_ONLY=ON``.
-  ```
-
-  To manually format a single file, run in the top folder, e.g.:
-  ``clang-format --style=file -i src/nrniv/bbsavestate.cpp``
+NRN_SANITIZERS:STRING=
+----------------------
+  Enable some combination of AddressSanitizer, LeakSanitizer and
+  UndefinedBehaviorSanitizer. Accepts a comma-separated list of ``address``,
+  ``leak`` and ``undefined``. See the "Diagnosis and Debugging" section for more
+  information.
 
 Miscellaneous Rarely used options specific to NEURON:
 =====================================================

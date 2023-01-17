@@ -36,9 +36,9 @@ ukcc2 = 0.3 * mM / sec
 unkcc1 = 0.1 * mM / sec
 p_max = 0.8 * mM / sec
 alpha = 5.3
-epsilon = 0.17 * sec * (10 ** -1)
+epsilon = 0.17 * sec * (10**-1)
 g_gliamax = 5.0 * mM / sec
-e_kmax = 0.25 * sec * (10 ** -1)
+e_kmax = 0.25 * sec * (10**-1)
 oa_bath = 32.0 / alpha
 o_bath = 32.0 * mM
 beta_o = 5
@@ -86,8 +86,8 @@ surface_area = 2 * pi * soma.diam / 2.0 * soma.L
 volume = 2.0 * pi * (soma.diam / 2) ** 2 * soma.L
 glia_surface_area = 2.0 * pi * glia.diam / 2.0 * glia.L
 glia_volume = 2.0 * pi * (glia.diam / 2.0) ** 2 * glia.L
-volume_scale = avo * volume / surface_area * 10 ** -18
-glia_volume_scale = avo * glia_volume / glia_surface_area * 10 ** -18
+volume_scale = avo * volume / surface_area * 10**-18
+glia_volume_scale = avo * glia_volume / glia_surface_area * 10**-18
 
 
 # In[5]:
@@ -158,8 +158,8 @@ ngate = rxd.State([cyt, mem], name="ngate", initial=0.02284760152971809)
 
 # ALL EQUATIONS------------------------------------------------------------------------------------------------------------------
 
-gna = gnabar * mgate ** 3 * hgate
-gk = gkbar * ngate ** 4
+gna = gnabar * mgate**3 * hgate
+gk = gkbar * ngate**4
 fko = 1.0 / (1.0 + exp(16.0 - ko))
 nkcc1 = unkcc1 * fko * (log((ki * cli) / (ko * clo)) + log((nai * cli) / (nao * clo)))
 kcc2 = ukcc2 * log((ki * cli) / (ko * clo))

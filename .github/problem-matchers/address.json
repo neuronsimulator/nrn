@@ -1,0 +1,15 @@
+
+{
+    "problemMatcher": [
+        {
+            "owner": "asan-problem-matcher",
+            "severity": "warning",
+            "pattern": [
+                {
+                    "regexp": "^.*AddressSanitizer: (.*)$",
+                    "message": 1
+                }
+            ]
+        }
+    ]
+}

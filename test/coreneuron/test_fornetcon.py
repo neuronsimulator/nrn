@@ -104,6 +104,14 @@ def test_fornetcon():
         runassert(mode)
 
     coreneuron.enable = False
+
+    # help cover/test_netcvode.cpp cover the NetCon.setpost method
+    # with respect to a change in weight vector size
+    assert len(nclist[0].weight) == 5
+    a = h.IntFire1()
+    nclist[0].setpost(a)
+    assert len(nclist[0].weight) == 1
+
     # teardown
     pc.gid_clear()
 

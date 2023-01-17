@@ -70,8 +70,10 @@ cp_dlls $N/bin
   export N
   export MODLUNIT=$N/lib/nrnunits.lib
   export PATH=$nx/bin:$nx/mingw/usr/bin:$nx/mingw/mingw64/bin:$PATH
-  cd $N/demo/release ; $N/lib/mknrndl2.sh
-  rm *.o *.c
+  cd $N/demo/release
+  # wrapper for mknrndl2.sh is needed because child bash has almost empty environment
+  $srcdir/src/mswin/lib/mknrndl2a.sh "$N" "$PATH" "$MODLUNIT"
+  rm *.o *.cpp
   if test ! -f nrnmech.dll ; then
     echo 'could not build nrnmech.dll'
     exit 1;

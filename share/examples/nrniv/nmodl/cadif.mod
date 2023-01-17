@@ -2,7 +2,7 @@
 TITLE Calcium ion accumulation with longitudinal and radial diffusion
 
 COMMENT
-PROCEDURE factors_cadifus() sets up the scale factors 
+PROCEDURE factors_cadif() sets up the scale factors 
 needed to model radial diffusion.
 These scale factors do not have to be recomputed
 when diam or DFree is changed.
@@ -14,7 +14,7 @@ model of bullfrog sympathetic ganglion cell.
 ENDCOMMENT
 
 NEURON {
-	SUFFIX cadifus
+	SUFFIX cadif
 	USEION ca READ cai, ica WRITE cai
 	GLOBAL vol, TotalBuffer
 	RANGE cai0

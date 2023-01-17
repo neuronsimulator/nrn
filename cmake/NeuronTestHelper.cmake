@@ -4,6 +4,8 @@
 # of operation.
 #
 # 1. nrn_add_test_group(NAME name
+#                       [CORENEURON]
+#                       [ENVIRONMENT var1=val2 ...]
 #                       [MODFILE_PATTERNS mod/file/dir/*.mod ...]
 #                       [NRNIVMODL_ARGS arg1 ...]
 #                       [OUTPUT datatype::file.ext ...]
@@ -16,9 +18,18 @@
 #    consists of different configurations of running logically the same
 #    simulation. The outputs of the different configurations will be compared.
 #
+#    CORENEURON       - if this is passed, the mechanisms will be compiled for
+#                       CoreNEURON if CoreNEURON is enabled. You should pass
+#                       this if any test in the group is going to include
+#                       `coreneuron` in its REQUIRES clause.
+#    ENVIRONMENT      - extra environment variables that should be set when the
+#                       test is run. These must not overlap with the variables
+#                       that are automatically set internally, such as PATH.
 #    MODFILE_PATTERNS - a list of patterns that will be matched against the
 #                       submodule directory tree to find the modfiles that must
-#                       be compiled (using nrnivmodl) to run the test.
+#                       be compiled (using nrnivmodl) to run the test. The special
+#                       value "NONE" will not emit a warning if nothing matches it
+#                       and will stop nrnivmodl from being called.
 #    NRNIVMODL_ARGS   - extra arguments that will be passed to nrnivmodl.
 #    OUTPUT           - zero or more expressions of the form `datatype::path`
 #                       describing the output data produced by a test. The
@@ -35,25 +46,23 @@
 #                       assumptions about directory layout.
 #    SUBMODULE        - the name of the git submodule containing test data.
 #
-#    The MODFILE_PATTERNS, NRNIVMODL_ARGS, OUTPUT, SCRIPT_PATTERNS,
-#    SIM_DIRECTORY and SUBMODULE arguments are default values that will be
-#    inherited tests that are added to this group using nrn_add_test.
-#    They can be overriden for specific tests by passing the same keyword
-#    arguments to nrn_add_test.
+#    The ENVIRONMENT, OUTPUT, SCRIPT_PATTERNS and SIM_DIRECTORY arguments are
+#    default values that will be inherited by tests that are added to this
+#    group using nrn_add_test. They can be overriden for specific tests by
+#    passing the same keyword arguments to nrn_add_test.
 #
 # 2. nrn_add_test(GROUP group_name
 #                 NAME test_name
 #                 COMMAND command [arg ...]
+#                 [ENVIRONMENT VAR1=value1 ...]
+#                 [PRELOAD_SANITIZER]
 #                 [CONFLICTS feature1 ...]
 #                 [PRECOMMAND command ...]
 #                 [PROCESSORS required_processors]
 #                 [REQUIRES feature1 ...]
-#                 [MODFILE_PATTERNS mod/file/dir/*.mod ...]
-#                 [NRNIVMODL_ARGS arg1 ...]
 #                 [OUTPUT datatype::file.ext ...]
 #                 [SCRIPT_PATTERNS "*.py" ...]
 #                 [SIM_DIRECTORY sim_dir]
-#                 [SUBMODULE some/submodule]
 #                )
 #
 #    Create a new integration test inside the given group, which must have
@@ -68,7 +77,10 @@
 #    prepare input data for simulations. The PROCESSORS argument specifies the
 #    number of processors used by the test. This is passed to CTest and allows
 #    invocations such as `ctest -j 16` to avoid overcommitting resources by
-#    running too many tests with internal parallelism.
+#    running too many tests with internal parallelism. The PRELOAD_SANITIZER
+#    flag controls whether or not the PRELOAD flag is passed to
+#    cpp_cc_configure_sanitizers; this needs to be set when the test executable
+#    is *not* built by NEURON, typically because it is `python`.
 #    The remaining arguments can documented in nrn_add_test_group. The default
 #    values specified there can be overriden on a test-by-test basis by passing
 #    the same arguments here.
@@ -85,11 +97,15 @@
 # Load the cpp_cc_build_time_copy helper function.
 include("${CODING_CONV_CMAKE}/build-time-copy.cmake")
 function(nrn_add_test_group)
-  # NAME is used as a key, everything else is a default that can be overriden in subsequent calls to
-  # nrn_add_test
+  # NAME is used as a key, [CORENEURON, MODFILE_PATTERNS, NRNIVMODL_ARGS and SUBMODULE] are used to
+  # set up a custom target that runs nrnivmod, everything else is a default that can be overriden in
+  # subsequent calls to nrn_add_test that actually set up CTest tests.
+  set(options CORENEURON)
   set(oneValueArgs NAME SUBMODULE)
-  set(multiValueArgs MODFILE_PATTERNS NRNIVMODL_ARGS OUTPUT SCRIPT_PATTERNS SIM_DIRECTORY)
-  cmake_parse_arguments(NRN_ADD_TEST_GROUP "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  set(multiValueArgs ENVIRONMENT MODFILE_PATTERNS NRNIVMODL_ARGS OUTPUT SCRIPT_PATTERNS
+                     SIM_DIRECTORY)
+  cmake_parse_arguments(NRN_ADD_TEST_GROUP "${options}" "${oneValueArgs}" "${multiValueArgs}"
+                        ${ARGN})
   if(DEFINED NRN_ADD_TEST_GROUP_MISSING_VALUES)
     message(
       WARNING
@@ -101,11 +117,8 @@ function(nrn_add_test_group)
 
   # Store the default values for this test group in parent-scope variables based on the group name
   set(prefix NRN_TEST_GROUP_${NRN_ADD_TEST_GROUP_NAME})
-  set(${prefix}_DEFAULT_MODFILE_PATTERNS
-      "${NRN_ADD_TEST_GROUP_MODFILE_PATTERNS}"
-      PARENT_SCOPE)
-  set(${prefix}_DEFAULT_NRNIVMODL_ARGS
-      "${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS}"
+  set(${prefix}_DEFAULT_ENVIRONMENT
+      "${NRN_ADD_TEST_GROUP_ENVIRONMENT}"
       PARENT_SCOPE)
   set(${prefix}_DEFAULT_OUTPUT
       "${NRN_ADD_TEST_GROUP_OUTPUT}"
@@ -116,25 +129,134 @@ function(nrn_add_test_group)
   set(${prefix}_DEFAULT_SIM_DIRECTORY
       "${NRN_ADD_TEST_GROUP_SIM_DIRECTORY}"
       PARENT_SCOPE)
-  set(${prefix}_DEFAULT_SUBMODULE
-      "${NRN_ADD_TEST_GROUP_SUBMODULE}"
+  # Set up a target that runs nrnivmodl for this group of tests. First, make sure the specified
+  # submodule is initialised. If there is no submodule, everything is relative to the root nrn/
+  # directory.
+  if(NOT ${NRN_ADD_TEST_GROUP_SUBMODULE} STREQUAL "")
+    cpp_cc_git_submodule(${NRN_ADD_TEST_GROUP_SUBMODULE} QUIET)
+    # Construct the name of the source tree directory where the submodule has been checked out.
+    set(test_source_directory "${PROJECT_SOURCE_DIR}/external/${NRN_ADD_TEST_GROUP_SUBMODULE}")
+  else()
+    set(test_source_directory "${PROJECT_SOURCE_DIR}")
+  endif()
+  set(${prefix}_TEST_SOURCE_DIRECTORY
+      "${test_source_directory}"
       PARENT_SCOPE)
+  if(NOT DEFINED NRN_RUN_FROM_BUILD_DIR_ENV)
+    # To avoid duplication we take this value from the {nrn}/test/CMakeLists.txt file by assuming
+    # this variable name.
+    message(WARNING "nrn_add_test: NRN_RUN_FROM_BUILD_DIR_ENV was not defined;"
+                    " building test files may not work")
+  endif()
+  if(NOT "${NRN_ADD_TEST_GROUP_MODFILE_PATTERNS}" STREQUAL "NONE")
+    # Add a rule to build the modfiles for this test group. Multiple groups may ask for exactly the
+    # same thing (testcorenrn), so it's worth deduplicating.
+    set(hash_components ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
+    # Escape special characters (problematic with Windows paths when calling nrnivmodl)
+    string(REGEX REPLACE "([][+.*()^])" "\\\\\\1" NRN_RUN_FROM_BUILD_DIR_ENV
+                         "${NRN_RUN_FROM_BUILD_DIR_ENV}")
+    set(nrnivmodl_command cmake -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
+                          ${CMAKE_BINARY_DIR}/bin/nrnivmodl ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
+    # The user decides whether or not this test group should have its MOD files compiled for
+    # CoreNEURON.
+    set(nrnivmodl_dependencies)
+    if(NRN_ADD_TEST_GROUP_CORENEURON AND NRN_ENABLE_CORENEURON)
+      list(APPEND hash_components -coreneuron)
+      list(APPEND nrnivmodl_dependencies ${CORENEURON_TARGET_TO_DEPEND})
+      list(APPEND nrnivmodl_command -coreneuron)
+    endif()
+    list(APPEND nrnivmodl_command .)
+    # Collect the list of modfiles that need to be compiled.
+    set(modfiles)
+    foreach(modfile_pattern ${NRN_ADD_TEST_GROUP_MODFILE_PATTERNS})
+      file(GLOB pattern_modfiles
+           "${test_source_directory}/${NRN_ADD_TEST_GROUP_SIM_DIRECTORY}/${modfile_pattern}")
+      list(APPEND modfiles ${pattern_modfiles})
+    endforeach()
+    if("${modfiles}" STREQUAL "")
+      message(WARNING "Didn't find any modfiles in ${test_source_directory} "
+                      "using ${NRN_ADD_TEST_GROUP_MODFILE_PATTERNS}")
+    endif()
+    list(SORT modfiles)
+    foreach(modfile ${modfiles})
+      # ${modfile} is an absolute path starting with ${PROJECT_SOURCE_DIR}, let's only add the part
+      # below this common prefix to the hash
+      string(LENGTH "${PROJECT_SOURCE_DIR}/" prefix_length)
+      string(SUBSTRING "${modfile}" ${prefix_length} -1 relative_modfile)
+      list(APPEND hash_components "${relative_modfile}")
+    endforeach()
+    # Get a hash that forms the working directory for nrnivmodl.
+    string(SHA256 nrnivmodl_command_hash "${hash_components}")
+    # Construct the name of a target that refers to the compiled special binaries
+    set(binary_target_name "NRN_TEST_nrnivmodl_${nrnivmodl_command_hash}")
+    set(nrnivmodl_directory "${PROJECT_BINARY_DIR}/test/nrnivmodl/${nrnivmodl_command_hash}")
+    # Short-circuit if the target has already been created.
+    if(NOT TARGET "${binary_target_name}")
+      # Copy modfiles from source -> build tree.
+      foreach(modfile ${modfiles})
+        # Construct the build tree path of the modfile.
+        get_filename_component(modfile_name "${modfile}" NAME)
+        set(modfile_build_path "${nrnivmodl_directory}/${modfile_name}")
+        # Add a build rule that copies this modfile from the source tree to the build tree.
+        cpp_cc_build_time_copy(
+          INPUT "${modfile}"
+          OUTPUT "${modfile_build_path}"
+          NO_TARGET)
+        # Store a list of the modfile paths in the build tree so we can declare nrnivmodl's
+        # dependency on these.
+        list(APPEND modfile_build_paths "${modfile_build_path}")
+      endforeach()
+      # Construct the names of the important output files
+      set(special "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/special")
+      # Add the custom command to generate the binaries. Get nrnivmodl from the build directory. At
+      # the moment it seems that `nrnivmodl` is generated at configure time, so there is no target
+      # to depend on and it should always be available, but it will try and link against libnrniv.so
+      # and libcorenrnmech.so so we must depend on those. TODO: could the logic of `nrnivmodl` be
+      # translated to CMake, so it can be called natively here and the `nrnivmodl` executable would
+      # be a wrapper that invokes CMake?
+      set(output_binaries "${special}")
+      list(APPEND nrnivmodl_dependencies nrniv_lib)
+      if(NRN_ENABLE_CORENEURON AND NRN_ADD_TEST_GROUP_CORENEURON)
+        list(APPEND output_binaries "${special}-core")
+        if((NOT coreneuron_FOUND) AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES))
+          message(WARNING "nrn_add_test_group couldn't find the names of the builtin "
+                          "CoreNEURON modfiles that nrnivmodl-core implicitly depends "
+                          "on *and* CoreNEURON is being built internally")
+        endif()
+        list(APPEND nrnivmodl_dependencies ${CORENEURON_BUILTIN_MODFILES})
+      endif()
+      add_custom_command(
+        OUTPUT ${output_binaries}
+        DEPENDS ${nrnivmodl_dependencies} ${modfile_build_paths}
+        COMMAND ${nrnivmodl_command}
+        COMMENT "Building special[-core] for test group ${NRN_ADD_TEST_GROUP_NAME}"
+        WORKING_DIRECTORY "${nrnivmodl_directory}")
+      # Add a target that depends on the binaries that will always be built.
+      add_custom_target(${binary_target_name} DEPENDS ${output_binaries})
+    endif()
+    set(${prefix}_NRNIVMODL_DIRECTORY
+        "${nrnivmodl_directory}"
+        PARENT_SCOPE)
+    set(${prefix}_NRNIVMODL_TARGET_NAME
+        "${binary_target_name}"
+        PARENT_SCOPE)
+  endif()
 endfunction()
 
 function(nrn_add_test)
   # Parse the function arguments
-  set(oneValueArgs GROUP NAME PROCESSORS SUBMODULE)
+  set(oneValueArgs GROUP NAME PROCESSORS)
   set(multiValueArgs
       COMMAND
+      ENVIRONMENT
       CONFLICTS
       PRECOMMAND
       REQUIRES
-      MODFILE_PATTERNS
-      NRNIVMODL_ARGS
       OUTPUT
       SCRIPT_PATTERNS
       SIM_DIRECTORY)
-  cmake_parse_arguments(NRN_ADD_TEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  cmake_parse_arguments(NRN_ADD_TEST "PRELOAD_SANITIZER" "${oneValueArgs}" "${multiValueArgs}"
+                        ${ARGN})
   if(DEFINED NRN_ADD_TEST_MISSING_VALUES)
     message(
       WARNING "nrn_add_test: missing values for keyword arguments: ${NRN_ADD_TEST_MISSING_VALUES}")
@@ -142,20 +264,18 @@ function(nrn_add_test)
   if(DEFINED NRN_ADD_TEST_UNPARSED_ARGUMENTS)
     message(WARNING "nrn_add_test: unknown arguments: ${NRN_ADD_TEST_UNPARSED_ARGUMENTS}")
   endif()
-
-  if(NOT DEFINED NRN_TEST_ENV)
-    # To avoid duplication we take this value from the {nrn}/test/CMakeLists.txt file by assuming
-    # this variable name.
-    message(WARNING "nrn_add_test: NRN_TEST_ENV was not defined; building test files may not work")
-  endif()
-
   # Check if the REQUIRES and/or CONFLICTS arguments mean we should disable this test.
   set(feature_cpu_enabled ON)
   set(feature_mpi_enabled ${NRN_ENABLE_MPI})
   set(feature_mpi_dynamic_enabled ${NRN_ENABLE_MPI_DYNAMIC})
   set(feature_python_enabled ${NRN_ENABLE_PYTHON})
   set(feature_coreneuron_enabled ${NRN_ENABLE_CORENEURON})
-  if(${NRN_ENABLE_CORENEURON} OR ${NRN_ENABLE_MOD_COMPATIBILITY})
+  if(NRN_ENABLE_CORENEURON AND CORENRN_ENABLE_SHARED)
+    set(feature_coreneuron_shared_enabled ON)
+  else()
+    set(feature_coreneuron_shared_enabled OFF)
+  endif()
+  if(NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY)
     set(feature_mod_compatibility_enabled ON)
   else()
     set(feature_mod_compatibility_enabled OFF)
@@ -168,7 +288,7 @@ function(nrn_add_test)
     if(NOT DEFINED feature_${required_feature}_enabled)
       message(FATAL_ERROR "Unknown feature ${required_feature} used in REQUIRES expression")
     endif()
-    if(NOT ${feature_${required_feature}_enabled})
+    if(NOT feature_${required_feature}_enabled)
       message(
         STATUS
           "Disabling ${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}: ${required_feature} not enabled")
@@ -181,32 +301,34 @@ function(nrn_add_test)
   # Check CONFLICTS
   foreach(conflicting_feature ${NRN_ADD_TEST_CONFLICTS})
     if(NOT DEFINED feature_${conflicting_feature}_enabled)
-      message(FATAL_ERROR "Unknown feature ${conflicting_feature} used in REQUIRES expression")
+      message(FATAL_ERROR "Unknown feature ${conflicting_feature} used in CONFLICTS expression")
     endif()
-    if(${feature_${conflicting_feature}_enabled})
+    if(feature_${conflicting_feature}_enabled)
       message(
         STATUS
           "Disabling ${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}: ${conflicting_feature} enabled")
       return()
     endif()
   endforeach()
-
   # Get the prefix under which we stored information about this test group
   set(prefix NRN_TEST_GROUP_${NRN_ADD_TEST_GROUP})
-
-  # Get the submodule etc. variables that have global defaults but which can be overriden locally
-  set(modfile_patterns "${${prefix}_DEFAULT_MODFILE_PATTERNS}")
-  set(nrnivmodl_args "${${prefix}_DEFAULT_NRNIVMODL_ARGS}")
+  # Name of the target created by nrn_add_test_group that we should depend on. This might not exist
+  # if the test group does not have any MOD files of its own.
+  set(binary_target_name "${${prefix}_NRNIVMODL_TARGET_NAME}")
+  if(TARGET "${binary_target_name}")
+    # Directory where nrn_add_test_group ran nrnivmodl. If the target exists, this will be created.
+    set(nrnivmodl_directory "${${prefix}_NRNIVMODL_DIRECTORY}")
+  endif()
+  # Path to the test repository.
+  set(test_source_directory "${${prefix}_TEST_SOURCE_DIRECTORY}")
+  # Get the variables that have global defaults but which can be overriden locally
+  set(extra_environment "${${prefix}_DEFAULT_ENVIRONMENT}")
   set(output_files "${${prefix}_DEFAULT_OUTPUT}")
   set(script_patterns "${${prefix}_DEFAULT_SCRIPT_PATTERNS}")
   set(sim_directory "${${prefix}_DEFAULT_SIM_DIRECTORY}")
-  set(submodule "${${prefix}_DEFAULT_SUBMODULE}")
   # Override them locally if appropriate
-  if(DEFINED NRN_ADD_TEST_MODFILE_PATTERNS)
-    set(modfile_patterns "${NRN_ADD_TEST_MODFILE_PATTERNS}")
-  endif()
-  if(DEFINED NRN_ADD_TEST_NRNIVMODL_ARGS)
-    set(nrnivmodl_args "${NRN_ADD_TEST_NRNIVMODL_ARGS}")
+  if(DEFINED NRN_ADD_TEST_ENVIRONMENT)
+    set(extra_environment "${NRN_ADD_TEST_ENVIRONMENT}")
   endif()
   if(DEFINED NRN_ADD_TEST_OUTPUT)
     set(output_files "${NRN_ADD_TEST_OUTPUT}")
@@ -217,150 +339,102 @@ function(nrn_add_test)
   if(DEFINED NRN_ADD_TEST_SIM_DIRECTORY)
     set(sim_directory "${NRN_ADD_TEST_SIM_DIRECTORY}")
   endif()
-  if(DEFINED NRN_ADD_TEST_SUBMODULE)
-    set(submodule "${NRN_ADD_TEST_SUBMODULE}")
-  endif()
-  # First, make sure the specified submodule is initialised. If there is no submodule, everything is
-  # relative to the root nrn/ directory.
-  if(NOT ${submodule} STREQUAL "")
-    cpp_cc_git_submodule(${submodule} QUIET)
-    # Construct the name of the source tree directory where the submodule has been checked out.
-    set(test_source_directory "${PROJECT_SOURCE_DIR}/external/${submodule}")
-  else()
-    set(test_source_directory "${PROJECT_SOURCE_DIR}")
-  endif()
-  # Construct the name of a working directory in the build tree for this group of tests
-  set(group_working_directory "${PROJECT_BINARY_DIR}/test/${NRN_ADD_TEST_GROUP}")
   # Finally a working directory for this specific test within the group
-  set(working_directory "${group_working_directory}/${NRN_ADD_TEST_NAME}")
-  if(NOT ${sim_directory} STREQUAL "")
-    set(simulation_directory ${working_directory}/${sim_directory})
-  else()
-    set(simulation_directory ${working_directory})
+  set(working_directory "${PROJECT_BINARY_DIR}/test/${NRN_ADD_TEST_GROUP}/${NRN_ADD_TEST_NAME}")
+  file(MAKE_DIRECTORY "${working_directory}")
+  if(DEFINED nrnivmodl_directory)
+    execute_process(
+      COMMAND
+        ${CMAKE_COMMAND} -E create_symlink "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
+        "${working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}")
   endif()
-
-  # Add a rule to build the modfiles for this test. The assumption is that it is likely that most
-  # members of the group will ask for exactly the same thing, so it's worth de-duplicating. TODO:
-  # allow extra arguments to be inserted here
-  set(nrnivmodl_command cmake -E env ${NRN_TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl
-                        ${nrnivmodl_args})
-  set(hash_components nrnivmodl ${nrnivmodl_args})
-  # This condition used to be `requires_coreneuron`. This tends to mean that NEURON and CoreNEURON
-  # versions of a test will share the same hash, which is probably fine, but also means that any
-  # NEURON-only tests will be compiled for CoreNEURON too.
-  set(nrnivmodl_dependencies)
-  if(NRN_ENABLE_CORENEURON)
-    list(APPEND nrnivmodl_dependencies ${CORENEURON_TARGET_TO_DEPEND})
-    list(APPEND nrnivmodl_command -coreneuron)
-    list(APPEND hash_components -coreneuron)
-  endif()
-  list(APPEND nrnivmodl_command .)
-  # Collect the list of modfiles that need to be compiled.
-  set(modfiles)
-  foreach(modfile_pattern ${modfile_patterns})
-    file(GLOB pattern_modfiles "${test_source_directory}/${modfile_pattern}")
-    list(APPEND modfiles ${pattern_modfiles})
-  endforeach()
-  if("${modfiles}" STREQUAL "")
-    message(
-      WARNING "Didn't find any modfiles in ${test_source_directory} using ${modfile_patterns}")
-  endif()
-  list(SORT modfiles)
-  foreach(modfile ${modfiles})
-    # ${modfile} is an absolute path starting with ${PROJECT_SOURCE_DIR}, let's only add the part
-    # below this common prefix to the hash
-    string(LENGTH "${PROJECT_SOURCE_DIR}/" prefix_length)
-    string(SUBSTRING "${modfile}" ${prefix_length} -1 relative_modfile)
-    list(APPEND hash_components "${relative_modfile}")
-  endforeach()
-  # Get a hash of the nrnivmodl arguments and use that to make a unique working directory
-  string(SHA256 nrnivmodl_command_hash "${hash_components}")
-  # Construct the name of a target that refers to the compiled special binaries
-  set(binary_target_name "NRN_TEST_nrnivmodl_${nrnivmodl_command_hash}")
-  set(nrnivmodl_working_directory "${PROJECT_BINARY_DIR}/test/nrnivmodl/${nrnivmodl_command_hash}")
-  # Short-circuit in case we set up these rules already
-  if(NOT TARGET ${binary_target_name})
-    # Copy modfiles from source -> build tree.
-    foreach(modfile ${modfiles})
-      # Construct the build tree path of the modfile.
-      get_filename_component(modfile_name "${modfile}" NAME)
-      set(modfile_build_path "${nrnivmodl_working_directory}/${modfile_name}")
-      # Add a build rule that copies this modfile from the source tree to the build tree.
-      cpp_cc_build_time_copy(
-        INPUT "${modfile}"
-        OUTPUT "${modfile_build_path}"
-        NO_TARGET)
-      # Store a list of the modfile paths in the build tree so we can declare nrnivmodl's dependency
-      # on these.
-      list(APPEND modfile_build_paths "${modfile_build_path}")
-    endforeach()
-    # Construct the names of the important output files
-    set(special "${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/special")
-    # Add the custom command to generate the binaries. Get nrnivmodl from the build directory. At
-    # the moment it seems that `nrnivmodl` is generated at configure time, so there is no target to
-    # depend on and it should always be available, but it will try and link against libnrniv.so and
-    # libcoreneuron.so so we must depend on those. TODO: could the logic of `nrnivmodl` be
-    # translated to CMake, so it can be called natively here and the `nrnivmodl` executable would be
-    # a wrapper that invokes CMake?
-    set(output_binaries "${special}")
-    list(APPEND nrnivmodl_dependencies nrniv_lib)
-    if(requires_coreneuron)
-      list(APPEND output_binaries "${special}-core")
-      if((NOT coreneuron_FOUND) AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES))
-        message(
-          WARNING
-            "nrn_add_test couldn't find the names of the builtin CoreNEURON modfiles that nrnivmodl-core implicitly depends on *and* CoreNEURON is being built internally"
-        )
-      endif()
-      list(APPEND nrnivmodl_dependencies ${CORENEURON_BUILTIN_MODFILES})
-    endif()
-    add_custom_command(
-      OUTPUT ${output_binaries}
-      DEPENDS ${nrnivmodl_dependencies} ${modfile_build_paths}
-      COMMAND ${nrnivmodl_command}
-      COMMENT "Building special[-core] for test ${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}"
-      WORKING_DIRECTORY ${nrnivmodl_working_directory})
-    # Add a target that depends on the binaries that will always be built.
-    add_custom_target(${binary_target_name} ALL DEPENDS ${output_binaries})
-  endif()
-
   # Set up the actual test. First, collect the script files that need to be copied into the test-
   # specific working directory and copy them there.
-  file(MAKE_DIRECTORY "${working_directory}")
-  execute_process(
-    COMMAND
-      ${CMAKE_COMMAND} -E create_symlink
-      "${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
-      "${working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}")
   foreach(script_pattern ${script_patterns})
     # We want to preserve directory structures, so if you pass SCRIPT_PATTERNS path/to/*.py then you
     # end up with {build_directory}/path/to/test_working_directory/path/to/script.py
     file(
-      GLOB_RECURSE script_files
-      RELATIVE "${test_source_directory}"
-      "${test_source_directory}/${script_pattern}")
+      GLOB script_files
+      RELATIVE "${test_source_directory}/${sim_directory}"
+      "${test_source_directory}/${sim_directory}/${script_pattern}")
     foreach(script_file ${script_files})
       # We use NO_TARGET because otherwise we would in some cases generate a lot of
       # build-time-copy-{hash} top-level targets, which the Makefile build system struggles with.
       # Instead we make a single top-level target that depends on all scripts copied for this test.
       cpp_cc_build_time_copy(
-        INPUT "${test_source_directory}/${script_file}"
+        INPUT "${test_source_directory}/${sim_directory}/${script_file}"
         OUTPUT "${working_directory}/${script_file}"
         NO_TARGET)
       list(APPEND all_copied_script_files "${working_directory}/${script_file}")
     endforeach()
   endforeach()
-
   # Construct the name of the test and store it in a parent-scope list to be used when setting up
   # the comparison job
   set(test_name "${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}")
   add_custom_target(copy-scripts-${NRN_ADD_TEST_GROUP}-${NRN_ADD_TEST_NAME} ALL
                     DEPENDS ${all_copied_script_files})
+  # Depend on the target that runs nrnivmodl, if it exists. Otherwise it will not be run.
+  if(TARGET ${binary_target_name})
+    add_dependencies(copy-scripts-${NRN_ADD_TEST_GROUP}-${NRN_ADD_TEST_NAME} ${binary_target_name})
+  endif()
   set(group_members "${${prefix}_TESTS}")
   list(APPEND group_members "${test_name}")
   set(${prefix}_TESTS
       "${group_members}"
       PARENT_SCOPE)
+  set(test_env "${NRN_RUN_FROM_BUILD_DIR_ENV}")
+  if(requires_coreneuron AND CORENRN_ENABLE_SHARED)
+    # Did we run nrnivmodl specifically for this test, or does it just use default mechanisms?
+    if(DEFINED nrnivmodl_directory)
+      set(build_prefix "${nrnivmodl_directory}")
+      set(mech_lib_name "corenrnmech")
+    else()
+      set(build_prefix "${CMAKE_BINARY_DIR}/bin")
+      set(mech_lib_name "corenrnmech_internal")
+    endif()
+    list(
+      APPEND
+      test_env
+      "CORENEURONLIB=${build_prefix}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}${mech_lib_name}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+    )
+  endif()
+  # Get [VAR1, VAR2, ...] from [VAR1=VAL1, VAR2=VAL2, ...]
+  set(test_env_var_names ${test_env})
+  list(TRANSFORM test_env_var_names REPLACE "^([^=]+)=.*$" "\\1")
+  if(DEFINED nrnivmodl_directory)
+    if(NOT "PATH" IN_LIST test_env_var_names)
+      message(FATAL_ERROR "Expected to find PATH in ${test_env_var_names} but didn't")
+    endif()
+    # PATH will already be set in test_env
+    list(TRANSFORM test_env REPLACE "^PATH="
+                                    "PATH=${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:")
+  endif()
+  list(TRANSFORM test_env REPLACE "^PYTHONPATH="
+                                  "PYTHONPATH=${CMAKE_SOURCE_DIR}/docs/nmodl/python_scripts:")
+  # Get the list of variables being set
+  set(extra_env_var_names ${extra_environment})
+  list(TRANSFORM extra_env_var_names REPLACE "^([^=]+)=.*$" "\\1")
+  # Make sure the new variables don't overlap with the old ones; otherwise we'd need to do some
+  # merging, which sounds hard in the general case.
+  list(APPEND new_vars_being_set ${extra_env_var_names})
+  list(REMOVE_ITEM new_vars_being_set ${test_env_var_names})
+  if(NOT "${new_vars_being_set}" STREQUAL "${extra_env_var_names}")
+    message(FATAL_ERROR "New (${extra_env_var_names}) vars overlap old (${test_env_var_names}). "
+                        "This is not supported.")
+  endif()
+  list(APPEND test_env ${extra_environment})
+  if(NRN_ADD_TEST_PRELOAD_SANITIZER AND NRN_SANITIZER_LIBRARY_PATH)
+    list(APPEND test_env ${NRN_SANITIZER_PRELOAD_VAR}=${NRN_SANITIZER_LIBRARY_PATH})
+    # On macOS with SIP then dynamic loader preload variables are not propagated to child processes.
+    # By passing the key/value in our own private variables we make it easy to manually re-set the
+    # preload variables in tests that spawn subprocesses. See also:
+    # https://jonasdevlieghere.com/sanitizing-python-modules/ and
+    # https://tobywf.com/2021/02/python-ext-asan/
+    list(APPEND test_env NRN_SANITIZER_PRELOAD_VAR=${NRN_SANITIZER_PRELOAD_VAR})
+    list(APPEND test_env NRN_SANITIZER_PRELOAD_VAL=${NRN_SANITIZER_LIBRARY_PATH})
+    list(APPEND test_env NRN_PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE})
+  endif()
+  list(APPEND test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
   # Add the actual test job, including the `special` and `special-core` binaries in the path. TODOs:
   #
   # * Do we need to manipulate PYTHONPATH more to make `python options.py` invocations work?
@@ -371,33 +445,27 @@ function(nrn_add_test)
   #   same directory).
   add_test(
     NAME "${test_name}"
-    COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_COMMAND}
-    WORKING_DIRECTORY "${simulation_directory}")
+    COMMAND ${CMAKE_COMMAND} -E env ${test_env} ${NRN_ADD_TEST_COMMAND}
+    WORKING_DIRECTORY "${working_directory}")
   set(test_names ${test_name})
-  if(DEFINED NRN_ADD_TEST_PRECOMMAND)
+  if(NRN_ADD_TEST_PRECOMMAND)
     add_test(
       NAME ${test_name}::preparation
-      COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_PRECOMMAND}
-      WORKING_DIRECTORY "${simulation_directory}")
+      COMMAND ${CMAKE_COMMAND} -E env ${test_env} ${NRN_ADD_TEST_PRECOMMAND}
+      WORKING_DIRECTORY "${working_directory}")
     list(APPEND test_names ${test_name}::preparation)
     set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
   endif()
+  set_tests_properties(${test_names} PROPERTIES TIMEOUT 300)
   if(DEFINED NRN_ADD_TEST_PROCESSORS)
     set_tests_properties(${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
   endif()
-  set_tests_properties(
-    ${test_names}
-    PROPERTIES
-      ENVIRONMENT
-      "${NRN_TEST_ENV};PATH=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:$ENV{PATH};CORENEURONLIB=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/libcorenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
-  )
-
   # Construct an expression containing the names of the test output files that will be passed to the
   # comparison script.
   set(output_file_string "${NRN_ADD_TEST_NAME}")
   foreach(output_file ${output_files})
     # output_file is `type1::fname1` output_full_path is `type1::${working_directory}/fname1`
-    string(REGEX REPLACE "^([^:]+)::(.*)$" "\\1::${simulation_directory}/\\2" output_full_path
+    string(REGEX REPLACE "^([^:]+)::(.*)$" "\\1::${working_directory}/\\2" output_full_path
                          "${output_file}")
     set(output_file_string "${output_file_string}::${output_full_path}")
   endforeach()

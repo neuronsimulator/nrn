@@ -1,5 +1,5 @@
 #include <../../nrnconf.h>
-#if HAVE_IV // to end of file
+#if HAVE_IV  // to end of file
 
 #ifdef WIN32
 #include <IV-Win/MWlib.h>
@@ -51,61 +51,66 @@ extern void ivoc_dismiss_defer();
 #endif
 
 // just because avoiding virtual resource
-/*static*/ class DBAction : public Action {
-public:
-	DBAction(WinDismiss*);
-	virtual ~DBAction();
-	virtual void diswin(WinDismiss*);
-	virtual void execute();
-private:
-	friend class DismissableWindow;
-	WinDismiss* wd_;
+/*static*/ class DBAction: public Action {
+  public:
+    DBAction(WinDismiss*);
+    virtual ~DBAction();
+    virtual void diswin(WinDismiss*);
+    virtual void execute();
+
+  private:
+    friend class DismissableWindow;
+    WinDismiss* wd_;
 };
-DBAction::DBAction(WinDismiss* wd){
-	wd_ = wd;
-	Resource::ref(wd_);
+DBAction::DBAction(WinDismiss* wd) {
+    wd_ = wd;
+    Resource::ref(wd_);
 }
-DBAction::~DBAction(){
-//	printf("~DBAction wd_=%p\n", wd_);
-	Resource::unref(wd_);
+DBAction::~DBAction() {
+    //	printf("~DBAction wd_=%p\n", wd_);
+    Resource::unref(wd_);
 }
 void DBAction::execute() {
-	if (wd_) {
-		wd_->execute();
-	}
+    if (wd_) {
+        wd_->execute();
+    }
 }
 
 void DBAction::diswin(WinDismiss* wd) {
-	Resource::ref(wd);
-	Resource::unref(wd_);
-	wd_ = wd;
+    Resource::ref(wd);
+    Resource::unref(wd_);
+    wd_ = wd;
 }
 
 // WinDismiss
 
-WinDismiss::WinDismiss(DismissableWindow* w) { win_ = w;}
+WinDismiss::WinDismiss(DismissableWindow* w) {
+    win_ = w;
+}
 
 WinDismiss::~WinDismiss() {
-//	printf("~WinDismiss %p win_=%p\n", this, win_);
+    //	printf("~WinDismiss %p win_=%p\n", this, win_);
 }
 
 DismissableWindow* WinDismiss::win_defer_;
 DismissableWindow* WinDismiss::win_defer_longer_;
 
 void WinDismiss::execute() {
-        if (Oc::helpmode()) {
-                Oc::help("Dismiss GUI");
-                return;
-        }
-//printf("WinDismiss:: execute win_defer_=%p win_=%p\n", win_defer_,win_);
-	if (win_) {win_->unmap();}
+    if (Oc::helpmode()) {
+        Oc::help("Dismiss GUI");
+        return;
+    }
+    // printf("WinDismiss:: execute win_defer_=%p win_=%p\n", win_defer_,win_);
+    if (win_) {
+        win_->unmap();
+    }
 #if MAC
 #else
-	Session::instance()->quit();
+    Session::instance()->quit();
 #endif
-	dismiss_defer();
-	win_defer_ = win_;
-	win_ = NULL;
+    dismiss_defer();
+    win_defer_ = win_;
+    win_ = NULL;
 }
 
 // the win_defer_longer_ mechanism is a hack to both avoid changing InterViews and to
@@ -119,29 +124,31 @@ void WinDismiss::execute() {
 // For this reason we avoid deleting the window while inside WinDismiss::event
 
 bool WinDismiss::event(Event&) {
-	win_defer_longer_ = win_;
-	execute();
-	// but maybe it is not supposed to be dismissed
-	if (!win_) {
-		dismiss_defer();
-		win_defer_ = win_defer_longer_;
-		win_defer_longer_ = NULL;
-	}
-	return true;
+    win_defer_longer_ = win_;
+    execute();
+    // but maybe it is not supposed to be dismissed
+    if (!win_) {
+        dismiss_defer();
+        win_defer_ = win_defer_longer_;
+        win_defer_longer_ = NULL;
+    }
+    return true;
 }
 
-void ivoc_dismiss_defer() { WinDismiss::dismiss_defer(); }
+void ivoc_dismiss_defer() {
+    WinDismiss::dismiss_defer();
+}
 
 void WinDismiss::dismiss_defer() {
-	/* purify complains when window is deleted during handling of
-		event that occurred in the window. So we defer the deletion
-	*/
-	if (win_defer_ && win_defer_ != win_defer_longer_) {
-//printf("WinDismiss::dismiss_defer %p %p\n", win_defer_, win_defer_longer_);
-		DismissableWindow* w = win_defer_; //prevents BadDrawable X Errors
-		win_defer_ = NULL;
-		delete w;
-	}
+    /* purify complains when window is deleted during handling of
+        event that occurred in the window. So we defer the deletion
+    */
+    if (win_defer_ && win_defer_ != win_defer_longer_) {
+        // printf("WinDismiss::dismiss_defer %p %p\n", win_defer_, win_defer_longer_);
+        DismissableWindow* w = win_defer_;  // prevents BadDrawable X Errors
+        win_defer_ = NULL;
+        delete w;
+    }
 }
 
 // DismissableWindow
@@ -151,195 +158,199 @@ PrintableWindow* PrintableWindow::leader_;
 
 
 #ifdef WIN32
-DismissableWindow::DismissableWindow(Glyph* g, bool force_menubar) : TransientWindow(
-  new Background(
-	LayoutKit::instance()->vbox(2),
-	WidgetKit::instance()->background()
-  )
-)
+DismissableWindow::DismissableWindow(Glyph* g, bool force_menubar)
+    : TransientWindow(
+          new Background(LayoutKit::instance()->vbox(2), WidgetKit::instance()->background()))
 #else
 DismissableWindow::DismissableWindow(Glyph* g, bool force_menubar)
- : TransientWindow( LayoutKit::instance()->vbox(2))
+    : TransientWindow(LayoutKit::instance()->vbox(2))
 #endif
 {
-	glyph_ = g;
-	Resource::ref(g);
+    glyph_ = g;
+    Resource::ref(g);
 #ifdef WIN32
-	PolyGlyph* pg = (PolyGlyph*)((MonoGlyph*)Window::glyph())->body();
+    PolyGlyph* pg = (PolyGlyph*) ((MonoGlyph*) Window::glyph())->body();
 #else
-	PolyGlyph* pg = (PolyGlyph*)Window::glyph();
+    PolyGlyph* pg = (PolyGlyph*) Window::glyph();
 #endif
-	wd_ = new WinDismiss(this);
-	wd_->ref();
-	wm_delete(wd_);
-	dbutton_ = NULL;
-	Style* style = Session::instance()->style();
-	String str("Close");
+    wd_ = new WinDismiss(this);
+    wd_->ref();
+    wm_delete(wd_);
+    dbutton_ = NULL;
+    Style* style = Session::instance()->style();
+    String str("Close");
 #if MAC
-	if (0) {
+    if (0) {
 #else
-	if ((style->find_attribute("dismiss_button", str) && str != "off")
-	  || force_menubar) {
+    if ((style->find_attribute("dismiss_button", str) && str != "off") || force_menubar) {
 #endif
-		if (!PrintableWindow::leader()) {
-			style->find_attribute("pwm_dismiss_button", str);
-		}
-		dbutton_ = new DBAction(wd_);
-		Resource::ref(dbutton_);
-		menubar_ = WidgetKit::instance()->menubar();
-		Resource::ref(menubar_);
-		pg->append(menubar_);
-		MenuItem* mi = append_menubar(str.string());
-		mi->action(dbutton_);
-	}else{
-		menubar_ = NULL;
-	}
-	if (style->find_attribute("use_transient_windows", str) && str == "yes") {
-		is_transient_ = true;
-	}
-	pg->append(g);
+        if (!PrintableWindow::leader()) {
+            style->find_attribute("pwm_dismiss_button", str);
+        }
+        dbutton_ = new DBAction(wd_);
+        Resource::ref(dbutton_);
+        menubar_ = WidgetKit::instance()->menubar();
+        Resource::ref(menubar_);
+        pg->append(menubar_);
+        MenuItem* mi = append_menubar(str.string());
+        mi->action(dbutton_);
+    } else {
+        menubar_ = NULL;
+    }
+    if (style->find_attribute("use_transient_windows", str) && str == "yes") {
+        is_transient_ = true;
+    }
+    pg->append(g);
 }
-DismissableWindow::~DismissableWindow(){
-//	printf("~DismissableWindow %p\n", this);
-	Resource::unref(glyph_);
-	Resource::unref(wd_);
-	Resource::unref(dbutton_);
-	Resource::unref(menubar_);
-	single_event_run();
+DismissableWindow::~DismissableWindow() {
+    //	printf("~DismissableWindow %p\n", this);
+    Resource::unref(glyph_);
+    Resource::unref(wd_);
+    Resource::unref(dbutton_);
+    Resource::unref(menubar_);
+    single_event_run();
 }
 
 MenuItem* DismissableWindow::append_menubar(const char* name) {
-	MenuItem* mi;
-	if (menubar_) {
-		mi = WidgetKit::instance()->menubar_item(
-			LayoutKit::instance()->r_margin(
-			WidgetKit::instance()->fancy_label(name), 0.0, fil, 0.0));
-		menubar_ ->append_item(mi);
-		return mi;
-	}
-	return NULL;
+    MenuItem* mi;
+    if (menubar_) {
+        mi = WidgetKit::instance()->menubar_item(LayoutKit::instance()->r_margin(
+            WidgetKit::instance()->fancy_label(name), 0.0, fil, 0.0));
+        menubar_->append_item(mi);
+        return mi;
+    }
+    return NULL;
 }
 
 void DismissableWindow::dismiss() {
-//	unmap();
-//	delete this;
-	wd_->execute();
+    //	unmap();
+    //	delete this;
+    wd_->execute();
 }
 
 const char* DismissableWindow::name() const {
-	String v;
-	if (!style()->find_attribute("name", v)) {
-		v = Session::instance()->name();
-	}
-//printf("DismissableWindow::name %s\n", v.string());
-	return v.string();
+    String v;
+    if (!style()->find_attribute("name", v)) {
+        v = Session::instance()->name();
+    }
+    // printf("DismissableWindow::name %s\n", v.string());
+    return v.string();
 }
-#if defined(MINGW)
+#ifdef MINGW
 static const char* s_;
 static void setwindowtext(void* v) {
-  HWND hw = (HWND)v;
-  SetWindowText(hw, s_);
+    HWND hw = (HWND) v;
+    SetWindowText(hw, s_);
 }
 #endif
 
 void DismissableWindow::name(const char* s) {
 #ifdef WIN32
-	HWND hw = Window::rep()->msWindow();
-	if (hw) {
-#if defined(MINGW)
-		if (!nrn_is_gui_thread()) {
-			s_ = s;
-			nrn_gui_exec(setwindowtext, hw);
-		}else
+    HWND hw = Window::rep()->msWindow();
+    if (hw) {
+#ifdef MINGW
+        if (!nrn_is_gui_thread()) {
+            s_ = s;
+            nrn_gui_exec(setwindowtext, hw);
+        } else
 #endif
-		{
-			SetWindowText(hw, s);
-		}
-	}else
+        {
+            SetWindowText(hw, s);
+        }
+    } else
 #endif
 #if MAC
-	Str255 st;
-	strncpy(&st[1], s, 254);
-	st[0] = strlen(s);
-	WindowPtr theWin = Window::rep()->macWindow();
-	if (theWin) {
-		SetWTitle(theWin, st);
-	} 
+        Str255 st;
+    strncpy(&st[1], s, 254);
+    st[0] = strlen(s);
+    WindowPtr theWin = Window::rep()->macWindow();
+    if (theWin) {
+        SetWTitle(theWin, st);
+    }
 #endif
-	if (style()) {
-		style()->attribute("name", s);
-		set_props(); //replaces following two statements
-//		rep()->wm_name(this);
-//		rep()->do_set(this, &ManagedWindowRep::set_name);
-//printf("DismissableWindow::name set to %s\n", name());
-	}else{
-		style(new Style(Session::instance()->style()));
-		style()->attribute("name", s);
-	}
+    if (style()) {
+        style()->attribute("name", s);
+        set_props();  // replaces following two statements
+        //		rep()->wm_name(this);
+        //		rep()->do_set(this, &ManagedWindowRep::set_name);
+        // printf("DismissableWindow::name set to %s\n", name());
+    } else {
+        style(new Style(Session::instance()->style()));
+        style()->attribute("name", s);
+    }
 }
 
 void DismissableWindow::replace_dismiss_action(WinDismiss* wd) {
-	Resource::ref(wd);
-	Resource::unref(wd_);
-	wd_ = wd;
-	wm_delete(wd_);
-	if (dbutton_) {
-		((DBAction*)dbutton_)->diswin(wd_);
-	}
+    Resource::ref(wd);
+    Resource::unref(wd_);
+    wd_ = wd;
+    wm_delete(wd_);
+    if (dbutton_) {
+        ((DBAction*) dbutton_)->diswin(wd_);
+    }
 }
 
 void DismissableWindow::configure() {
-	if (is_transient()) {
-		TransientWindow::configure();
-	}else{
-		TopLevelWindow::configure();
-	}
+    if (is_transient()) {
+        TransientWindow::configure();
+    } else {
+        TopLevelWindow::configure();
+    }
 }
 void DismissableWindow::set_attributes() {
-	if (is_transient()) {
-		TransientWindow::set_attributes();
-	}else{
-		TopLevelWindow::set_attributes();
-	}
+    if (is_transient()) {
+        TransientWindow::set_attributes();
+    } else {
+        TopLevelWindow::set_attributes();
+    }
 }
 
-//PrintableWindow
-PrintableWindow::PrintableWindow(OcGlyph* g) : DismissableWindow(g) {
-//printf("PrintableWindow %p\n", this);
-	xplace_ = false;
-	g->window(this);
-	if (intercept_) {
-		intercept_->box_append(g);
-		mappable_ = false;
-	}else{
-		if (!leader_) {
-			leader_ = this;
-		}else{
-			MenuItem* mi = append_menubar("Hide");
-			if (mi) {
-mi->action(new ActionCallback(PrintableWindow)(this,&PrintableWindow::hide));
-			}
-		}
-		PrintableWindowManager::current()->append(this);
-		mappable_ = true;
-	}
-	type_ = "";
+// PrintableWindow
+PrintableWindow::PrintableWindow(OcGlyph* g)
+    : DismissableWindow(g) {
+    // printf("PrintableWindow %p\n", this);
+    xplace_ = false;
+    g->window(this);
+    if (intercept_) {
+        intercept_->box_append(g);
+        mappable_ = false;
+    } else {
+        if (!leader_) {
+            leader_ = this;
+        } else {
+            MenuItem* mi = append_menubar("Hide");
+            if (mi) {
+                mi->action(new ActionCallback(PrintableWindow)(this, &PrintableWindow::hide));
+            }
+        }
+        PrintableWindowManager::current()->append(this);
+        mappable_ = true;
+    }
+    type_ = "";
 };
-PrintableWindow::~PrintableWindow(){
-//printf("~PrintableWindow %p\n", this);
-	((OcGlyph*)glyph())->window(NULL);
-	if (leader_ == this) {
-		leader_ = NULL; // mswin deletes everthing on quit
-	}
-	PrintableWindowManager::current()->remove(this);
+PrintableWindow::~PrintableWindow() {
+    // printf("~PrintableWindow %p\n", this);
+    ((OcGlyph*) glyph())->window(NULL);
+    if (leader_ == this) {
+        leader_ = NULL;  // mswin deletes everthing on quit
+    }
+    PrintableWindowManager::current()->remove(this);
 }
-Coord PrintableWindow::left_pw() const { return Window::left();}
-Coord PrintableWindow::bottom_pw() const { return Window::bottom();}
-Coord PrintableWindow::width_pw() const { return Window::width();}
-Coord PrintableWindow::height_pw() const { return Window::height();}
+Coord PrintableWindow::left_pw() const {
+    return Window::left();
+}
+Coord PrintableWindow::bottom_pw() const {
+    return Window::bottom();
+}
+Coord PrintableWindow::width_pw() const {
+    return Window::width();
+}
+Coord PrintableWindow::height_pw() const {
+    return Window::height();
+}
 
 void PrintableWindow::request_on_resize(bool b) {
-	((Window*)this)->rep()->request_on_resize_ = b;
+    ((Window*) this)->rep()->request_on_resize_ = b;
 }
 
 Coord PrintableWindow::save_left() const {
@@ -350,7 +361,7 @@ Coord PrintableWindow::save_left() const {
 	}
 	return Window::left() - decor;
 #else
-	return Coord(xleft());
+    return Coord(xleft());
 #endif
 }
 
@@ -362,256 +373,238 @@ Coord PrintableWindow::save_bottom() const {
 	}
 	return Window::bottom() + decor;
 #else
-	return Coord(xtop());
+    return Coord(xtop());
 #endif
 }
 
 Glyph* PrintableWindow::print_glyph() {
-	return glyph();
+    return glyph();
 }
 
-#if MAC && carbon
-// Apparently the collapse item does not send an event to the application.
-// Would like to do this only for PrintableWindows but this handler must be
-// removed whenever theMacWindow is destroyed ( can unbind without deleteing he
-// PrintableWindow
-static EventTypeSpec myCollapseTypeSpec[] = {
-	{kEventClassWindow, kEventWindowClickCollapseRgn}
-};
-static OSStatus MyHandleCollapse(EventHandlerCallRef, EventRef, void*);
-static OSStatus MyHandleCollapse(EventHandlerCallRef, EventRef, void* v) {
-	PrintableWindow* w = (PrintableWindow*)v;
-	if (PrintableWindow::leader() != w) {
-		w->unmap();
-	}else {
-		return eventNotHandledErr;
-	}
-	return noErr;
-}
-#endif
-	
 void PrintableWindow::map() {
-	if (mappable_) {
-		DismissableWindow::map();
+    if (mappable_) {
+        DismissableWindow::map();
 #if MAC
-		// just can't transform between top and bottom and also take into account decorations.
-		if (xplace_) {
-			xmove(xleft_, xtop_);
-		}
-#if carbon
-	// it's bound due to the map and according to my checking it will not become
-	// unbound til window deletion
-	EventHandlerUPP myHandleCollapse = NewEventHandlerUPP((EventHandlerProcPtr)MyHandleCollapse);
-	InstallWindowEventHandler(Window::rep()->macWindow(), myHandleCollapse, 1, myCollapseTypeSpec, (void*)this, NULL);
+        // just can't transform between top and bottom and also take into account decorations.
+        if (xplace_) {
+            xmove(xleft_, xtop_);
+        }
 #endif
-#endif
-		single_event_run();
-		notify();
-	}else{
-		delete this;
-	}
+        single_event_run();
+        notify();
+    } else {
+        delete this;
+    }
 }
 
 void PrintableWindow::unmap() {
-	handle_old_focus();
-	if (is_mapped()) {
-//printf("unmap %p xleft=%d xtop=%d\n", this, xleft(), xtop());
-xplace_ = true;
-xleft_ = xleft();
-xtop_ = xtop();
-		DismissableWindow::unmap();
-	}
-	notify();
+    handle_old_focus();
+    if (is_mapped()) {
+        // printf("unmap %p xleft=%d xtop=%d\n", this, xleft(), xtop());
+        xplace_ = true;
+        xleft_ = xleft();
+        xtop_ = xtop();
+        DismissableWindow::unmap();
+    }
+    notify();
 }
 
 OcGlyphContainer* PrintableWindow::intercept_ = NULL;
 
 OcGlyphContainer* PrintableWindow::intercept(OcGlyphContainer* b) {
-	OcGlyphContainer* i = intercept_;
-	Resource::ref(b);
-	Resource::unref(i) ;
-	intercept_ = b;
-	return i;
+    OcGlyphContainer* i = intercept_;
+    Resource::ref(b);
+    Resource::unref(i);
+    intercept_ = b;
+    return i;
 }
 #ifdef WIN32
 void virtual_window_top();
 bool iv_user_keydown(long w) {
-	if (w == 0x70) { //F1
-		virtual_window_top();
-	}
-   return false;
+    if (w == 0x70) {  // F1
+        virtual_window_top();
+    }
+    return false;
 }
 
 bool PrintableWindow::receive(const Event& e) {
-	if (e.rep()->messageOf() == WM_WINDOWPOSCHANGED) {
-			reconfigured();
-			notify();
-	}
-	return DismissableWindow::receive(e);
+    if (e.rep()->messageOf() == WM_WINDOWPOSCHANGED) {
+        reconfigured();
+        notify();
+    }
+    return DismissableWindow::receive(e);
 }
 #else
 #if MAC
 bool PrintableWindow::receive(const Event& e) {
-	reconfigured();
-	notify();
-	return(false);
+    reconfigured();
+    notify();
+    return (false);
 }
 #else
 bool PrintableWindow::receive(const Event& e) {
-	DismissableWindow::receive(e);
-	if (e.type() == Event::other_event) {
-		XEvent& xe = e.rep()->xevent_;
-		switch(xe.type) {
-		case ConfigureNotify:
-			reconfigured();
-			notify();
-			break;
-		case MapNotify:
-if (xplace_) {
-	if (xtop() != xtop_ || xleft() != xleft_) {
-//printf("MapNotify move %p (%d, %d) to (%d, %d)\n", this, xleft(), xtop(), xleft_, xtop_);
-		xmove(xleft_, xtop_);
-	}
-}
-			map_notify();
-			notify();
-			break;
-		case UnmapNotify:
-//printf("UnMapNotify %p xleft=%d xtop=%d\n", this, xleft(), xtop());
-//having trouble with remapping after a "hide" that the left and top are
-// set to incorrect values. i.e.the symptom is that xleft() and xtop() are
-// wrong by the time we get this event.
-//xplace_ = true;
-//xleft_ = xleft();
-//xtop_ = xtop();
-			unmap_notify();
-			notify();
-			break;
-		case EnterNotify:
-//			printf("EnterNotify\n");
-			Oc::helpmode(this);
-			break;
-		}
-	}
-	return false;
+    DismissableWindow::receive(e);
+    if (e.type() == Event::other_event) {
+        XEvent& xe = e.rep()->xevent_;
+        switch (xe.type) {
+        case ConfigureNotify:
+            reconfigured();
+            notify();
+            break;
+        case MapNotify:
+            if (xplace_) {
+                if (xtop() != xtop_ || xleft() != xleft_) {
+                    // printf("MapNotify move %p (%d, %d) to (%d, %d)\n", this, xleft(), xtop(),
+                    // xleft_, xtop_);
+                    xmove(xleft_, xtop_);
+                }
+            }
+            map_notify();
+            notify();
+            break;
+        case UnmapNotify:
+            // printf("UnMapNotify %p xleft=%d xtop=%d\n", this, xleft(), xtop());
+            // having trouble with remapping after a "hide" that the left and top are
+            // set to incorrect values. i.e.the symptom is that xleft() and xtop() are
+            // wrong by the time we get this event.
+            // xplace_ = true;
+            // xleft_ = xleft();
+            // xtop_ = xtop();
+            unmap_notify();
+            notify();
+            break;
+        case EnterNotify:
+            //			printf("EnterNotify\n");
+            Oc::helpmode(this);
+            break;
+        }
+    }
+    return false;
 }
 #endif
 #endif
 
 void PrintableWindow::type(const char* s) {
-	type_ = s;
+    type_ = s;
 }
 const char* PrintableWindow::type() const {
-	return type_.string();
+    return type_.string();
 }
 
 // StandardWindow
 
-StandardWindow::StandardWindow(
- Glyph* main, Glyph* info, Menu* m, Glyph* l, Glyph* r
-) : PrintableWindow( new OcGlyph(new Background(
-     LayoutKit::instance()->variable_span(LayoutKit::instance()->vbox(
-       info,
-       m,
-       LayoutKit::instance()->variable_span(LayoutKit::instance()->hbox(
-         l,
-         LayoutKit::instance()->variable_span(LayoutKit::instance()->vbox(
-           WidgetKit::instance()->inset_frame(
-             LayoutKit::instance()->variable_span(
-               main
-             )
-           )
-         )),
-	 r
-       ))
-     )),
-     WidgetKit::instance()->background()
-   )
-   ))
-{
-	m_ = m;
-	can_ = main;
-	info_ = info;
-	l_ = l;
-	r_ = r;
-	Resource::ref(m_);
-	Resource::ref(can_);
-	Resource::ref(info_);
-	Resource::ref(l_);
-	Resource::ref(r_);
+StandardWindow::StandardWindow(Glyph* main, Glyph* info, Menu* m, Glyph* l, Glyph* r)
+    : PrintableWindow(new OcGlyph(
+          new Background(LayoutKit::instance()->variable_span(LayoutKit::instance()->vbox(
+                             info,
+                             m,
+                             LayoutKit::instance()->variable_span(LayoutKit::instance()->hbox(
+                                 l,
+                                 LayoutKit::instance()->variable_span(
+                                     LayoutKit::instance()->vbox(WidgetKit::instance()->inset_frame(
+                                         LayoutKit::instance()->variable_span(main)))),
+                                 r)))),
+                         WidgetKit::instance()->background()))) {
+    m_ = m;
+    can_ = main;
+    info_ = info;
+    l_ = l;
+    r_ = r;
+    Resource::ref(m_);
+    Resource::ref(can_);
+    Resource::ref(info_);
+    Resource::ref(l_);
+    Resource::ref(r_);
 }
 
 StandardWindow::~StandardWindow() {
-//	printf("~StandardWindow\n");
-	Resource::unref(m_);
-	Resource::unref(can_);
-	Resource::unref(info_);
-	Resource::unref(l_);
-	Resource::unref(r_);
+    //	printf("~StandardWindow\n");
+    Resource::unref(m_);
+    Resource::unref(can_);
+    Resource::unref(info_);
+    Resource::unref(l_);
+    Resource::unref(r_);
 }
 
-Glyph* StandardWindow::canvas_glyph() { return can_; }
-Menu* StandardWindow::menubar() { return m_; }
-Glyph* StandardWindow::info() { return info_; }
-Glyph* StandardWindow::lbox() { return l_; }
-Glyph* StandardWindow::rbox() { return r_; }
+Glyph* StandardWindow::canvas_glyph() {
+    return can_;
+}
+Menu* StandardWindow::menubar() {
+    return m_;
+}
+Glyph* StandardWindow::info() {
+    return info_;
+}
+Glyph* StandardWindow::lbox() {
+    return l_;
+}
+Glyph* StandardWindow::rbox() {
+    return r_;
+}
 
-OcGlyph::OcGlyph(Glyph* body) : MonoGlyph(body) {
-	w_ = NULL;
-	parents_ = 0;
-	def_w_ = -1;
-	def_h_ = -1;
-	d_ = NULL;
-	session_priority_ = 1;
+OcGlyph::OcGlyph(Glyph* body)
+    : MonoGlyph(body) {
+    w_ = NULL;
+    parents_ = 0;
+    def_w_ = -1;
+    def_h_ = -1;
+    d_ = NULL;
+    session_priority_ = 1;
 }
 
 OcGlyph::~OcGlyph() {
-//	printf("~OcGlyph\n");
+    //	printf("~OcGlyph\n");
 }
 
-void OcGlyph::def_size(Coord& w, Coord& h)const {
-	if (def_w_ > 0) {
-		w = def_w_;
-		h = def_h_;
-	}
+void OcGlyph::def_size(Coord& w, Coord& h) const {
+    if (def_w_ > 0) {
+        w = def_w_;
+        h = def_h_;
+    }
 }
 
-void OcGlyph::save(ostream&) {
-	printf("OcGlyph::save (not implemented for relevant class)\n");
+void OcGlyph::save(std::ostream&) {
+    printf("OcGlyph::save (not implemented for relevant class)\n");
 }
 
-bool OcGlyph::has_window() { return (w_ != NULL); }
+bool OcGlyph::has_window() {
+    return (w_ != NULL);
+}
 
-PrintableWindow* OcGlyph::window() { return w_;}
-void OcGlyph::window(PrintableWindow* w) { w_ = w; parents(w_ != NULL);}
+PrintableWindow* OcGlyph::window() {
+    return w_;
+}
+void OcGlyph::window(PrintableWindow* w) {
+    w_ = w;
+    parents(w_ != NULL);
+}
 
-PrintableWindow* OcGlyph::make_window(Coord left, Coord top, Coord w,
-  Coord h) {
-	new PrintableWindow(this);
+PrintableWindow* OcGlyph::make_window(Coord left, Coord top, Coord w, Coord h) {
+    new PrintableWindow(this);
 #if 0
 if (has_window()) {
 printf("%s %g %g\n", window()->name(), window()->width(), window()->height());
 }
 #endif
-	def_w_ = w;
-	def_h_ = h;
-	if (left >= 0) {
-		w_->xplace((int)left, (int)top);
-//		w_->place(left, bottom);
-	}
-	return w_;
+    def_w_ = w;
+    def_h_ = h;
+    if (left >= 0) {
+        w_->xplace((int) left, (int) top);
+        //		w_->place(left, bottom);
+    }
+    return w_;
 }
 
 void OcGlyph::parents(bool b) {
-	if (b) {
-		++parents_;
-	}else{
-		--parents_;
-	}
-	if (parents_ <= 0) {
-		no_parents();
-		parents_ = 0;
-	}
+    if (b) {
+        ++parents_;
+    } else {
+        --parents_;
+    }
+    if (parents_ <= 0) {
+        no_parents();
+        parents_ = 0;
+    }
 }
 
 void OcGlyph::no_parents() {}

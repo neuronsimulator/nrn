@@ -3,10 +3,11 @@
 Publications about NEURON
 =========================
 
-McDougal, R. A., Conte, C., Eggleston, L., Newton, A. J. H., Galijasevic, H. (2022). Efficient simulation of 3D reaction-diffusion in models of neurons and networks. *bioRxiv*. `doi:10.1101/2022.01.01.474683 <https://doi.org/10.1101/2022.01.01.474683>`_
+Awile, O., Kumbhar, P., Cornu, N., Dura-Bernal, S., King, J. G., Lupton, O., Magkanaris, I., McDougal, R. A., Newton, A. J. H., Pereira, F., Săvulescu, A., Carnevale, N. T., Lytton, W. W., Hines, M. L., Schürmann, F. (2022). Modernizing the NEURON Simulator for Sustainability, Portability, and Performance. *Frontiers in Neuroinformatics*. 16:884046. `doi:10.3389/fninf.2022.884046 <https://doi.org/10.3389/fninf.2022.884046>`_
+
+McDougal, R. A., Conte, C., Eggleston, L., Newton, A. J. H., Galijasevic, H. (2022). Efficient simulation of 3D reaction-diffusion in models of neurons and networks. *Frontiers in Neuroinformatics*. 16:847108. `doi:10.3389/fninf.2022.847108 <https://doi.org/10.3389/fninf.2022.847108>`_
 
 Hines M., Carnevale T., McDougal R.A. NEURON Simulation Environment (2019). In: Jaeger D., Jung R. (eds) *Encyclopedia of Computational Neuroscience*. Springer, New York, NY. `doi:10.1007/978-1-4614-7320-6_795-2 <https://doi.org/10.1007/978-1-4614-7320-6_795-2>`_
-
 
 Newton, A. J., McDougal, R. A., Hines, M. L., Lytton, W. W. (2018). 
 Using NEURON for Reaction-Diffusion modeling of extracellular dynamics.
@@ -37,7 +38,7 @@ Carnevale NT, Hines ML. (2008). Translating network models to parallel hardware 
 
 Cannon, R. C., Gewaltig, M. O., Gleeson, P., Bhalla, U. S., Cornelis, H., Hines, M. L., ...  De Schutter, E. (2007). Interoperability of neuroscience modeling software: current status and future directions. *Neuroinformatics*, 5(2), 127-138. `doi:10.1007/s12021-007-0004-5 <https://doi.org/10.1007/s12021-007-0004-5>`_
 
-Hines ML, Morse TM, Carnevale NT (2007). Model structure analysis in NEURON (2007). In Crasto CJ. (Ed)*Methods in Molecular Biology, vol 401: Neuroinformatics.* Humana Press Inc., Totowa, NJ. `doi:10.1007/978-1-59745-520-6 <https://doi.org/10.1007/978-1-59745-520-6>`_
+Hines ML, Morse TM, Carnevale NT (2007). Model structure analysis in NEURON (2007). In Crasto CJ. (Ed) *Methods in Molecular Biology, vol 401: Neuroinformatics.* Humana Press Inc., Totowa, NJ. `doi:10.1007/978-1-59745-520-6 <https://doi.org/10.1007/978-1-59745-520-6>`_
 
 Brette, R., Rudolph, M., Carnevale, T., Hines, M., Beeman, D., Bower, J. M., ...  Destexhe, A. (2007). Simulation of networks of spiking neurons: a review of tools and strategies. *Journal of computational neuroscience*, 23(3), 349-398. `doi:10.1007/s10827-007-0038-6 <https://doi.org/10.1007/s10827-007-0038-6>`_
 

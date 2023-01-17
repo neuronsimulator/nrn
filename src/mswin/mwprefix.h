@@ -16,34 +16,29 @@
 #ifndef _Windows
 #define _Windows 1
 #endif
-#if __cplusplus
 struct Section;
 struct Object;
 struct Symbol;
-#endif
 #define motif_kit
 #define sgi_motif_kit
-#define printf myprintf
+#define printf  myprintf
 #define vprintf myvprintf
-#define gets mygets
-#define puts myputs
+#define gets    mygets
+#define puts    myputs
 #define fprintf myfprintf
 #undef small
 #undef near
 #define small mysmall
-#define near mynear
+#define near  mynear
 
 #define stricmp _stricmp
-#define putenv _putenv
+#define putenv  _putenv
 
 //#define system mysystem
 #undef DELETE
 #undef IGNORE
-#define CABLE 1
-#define HOC 1
-#define OOP 1
+#define HOC        1
+#define OOP        1
 #define OC_CLASSES "nrnclass.h"
-#define USECVODE 1
-#define CVODE 1
-#define USEMATRIX 1
-
+#define USECVODE   1
+#define USEMATRIX  1

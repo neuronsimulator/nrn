@@ -94,6 +94,7 @@ register_rate.argtypes = [
         ctypes.c_double, flags="contiguous"
     ),  # multicompartment multipliers
     ctypes.POINTER(ctypes.py_object),  # voltage pointers
+    ctypes._CFuncPtr,
 ]  # Reaction rate function
 
 setup_currents = nrn_dll_sym("setup_currents")
@@ -118,6 +119,7 @@ ics_register_reaction.argtypes = [
     numpy.ctypeslib.ndpointer(dtype=numpy.uint64),
     ctypes.c_int,
     numpy.ctypeslib.ndpointer(dtype=float),
+    ctypes._CFuncPtr,
 ]
 
 ecs_register_reaction = nrn_dll_sym("ecs_register_reaction")
@@ -126,6 +128,7 @@ ecs_register_reaction.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
     _int_ptr,
+    ctypes._CFuncPtr,
 ]
 
 
@@ -192,6 +195,7 @@ _c_headers = """#include <math.h>
 /*Some functions supported by numpy that aren't included in math.h
  * names and arguments match the wrappers used in rxdmath.py
  */
+extern "C" {
 double factorial(const double);
 double degrees(const double);
 void radians(const double, double*);
@@ -519,35 +523,35 @@ def _find_librxdmath():
     return dll
 
 
-def _c_compile(formula):
+def _cxx_compile(formula):
     filename = "rxddll" + str(uuid.uuid1())
-    with open(filename + ".c", "w") as f:
+    with open(filename + ".cpp", "w") as f:
         f.write(formula)
     math_library = "-lm"
     fpic = "-fPIC"
     try:
-        gcc = os.environ["CC"]
+        gcc = os.environ["CXX"]
     except:
         # when running on windows try and used the gcc included with NEURON
         if sys.platform.lower().startswith("win"):
             math_library = ""
             fpic = ""
             gcc = os.path.join(
-                h.neuronhome(), "mingw", "mingw64", "bin", "x86_64-w64-mingw32-gcc.exe"
+                h.neuronhome(), "mingw", "mingw64", "bin", "x86_64-w64-mingw32-g++.exe"
             )
             if not os.path.isfile(gcc):
                 raise RxDException(
-                    "unable to locate a C compiler. Please `set CC=<path to C compiler>`"
+                    "unable to locate a CXX compiler. Please `set CXX=<path to CXX compiler>`"
                 )
         else:
-            gcc = "gcc"
+            gcc = "g++"
     # TODO: Check this works on non-Linux machines
     gcc_cmd = "%s -I%s -I%s " % (
         gcc,
         sysconfig.get_path("include"),
         os.path.join(h.neuronhome(), "..", "..", "include", "nrn"),
     )
-    gcc_cmd += "-shared %s  %s.c %s " % (fpic, filename, _find_librxdmath())
+    gcc_cmd += "-shared %s  %s.cpp %s " % (fpic, filename, _find_librxdmath())
     gcc_cmd += "-o %s.so %s" % (filename, math_library)
     if sys.platform.lower().startswith("win"):
         my_path = os.getenv("PATH")
@@ -568,7 +572,7 @@ def _c_compile(formula):
         ctypes.POINTER(ctypes.c_double),
     ]
     reaction.restype = ctypes.c_double
-    os.remove(filename + ".c")
+    os.remove(filename + ".cpp")
     if sys.platform.lower().startswith("win"):
         # cannot remove dll that are in use
         _windows_dll.append(weakref.ref(dll))
@@ -833,7 +837,7 @@ def _setup_matrices():
                 sp = grid_id_species[grid_id]
                 # TODO: use 3D anisotropic diffusion coefficients
                 dc = grid_id_dc[grid_id]
-                grids_dx.append(sp._dx ** 3)
+                grids_dx.append(sp._dx**3)
                 num_1d_indices_per_grid.append(len(grid_id_indices1d[grid_id]))
                 grid_3d_indices_cnt = 0
                 for index1d in grid_id_indices1d[grid_id]:
@@ -1357,6 +1361,12 @@ def _compile_reactions():
                 r = rptr()
                 if isinstance(r, rate.Rate):
                     s = r._species()
+                    if s._id in creg._params_ids:
+                        warn(
+                            "Parameters values are fixed, %r will not change the value of %r"
+                            % (r, s)
+                        )
+                        continue
                     species_id = creg._species_ids[s._id]
                     for reg in creg._react_regions[rptr]:
                         if reg() in r._rate:
@@ -1458,7 +1468,7 @@ def _compile_reactions():
                         summed_mults = collections.defaultdict(lambda: 0)
                         for (mult, sp) in zip(r._mult, r._sources + r._dests):
                             summed_mults[creg._species_ids.get(sp()._id)] += mult
-                        for idx in sorted(summed_mults.keys()):
+                        for idx in sorted([k for k in summed_mults if k is not None]):
                             operator = "+=" if species_ids_used[idx][region_id] else "="
                             species_ids_used[idx][region_id] = True
                             fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (
@@ -1467,7 +1477,7 @@ def _compile_reactions():
                                 operator,
                                 summed_mults[idx],
                             )
-            fxn_string += "\n}\n"
+            fxn_string += "\n}\n}\n"
             register_rate(
                 creg.num_species,
                 creg.num_params,
@@ -1481,7 +1491,7 @@ def _compile_reactions():
                 mc_mult_count,
                 numpy.array(mc_mult_list, dtype=ctypes.c_double),
                 _list_to_pyobject_array(creg._vptrs),
-                _c_compile(fxn_string),
+                _cxx_compile(fxn_string),
             )
 
     # Setup intracellular 3D reactions
@@ -1710,7 +1720,7 @@ def _compile_reactions():
                             r._mult[idx],
                         )
                         idx += 1
-            fxn_string += "\n}\n"
+            fxn_string += "\n}\n}\n"
             for i, ele in enumerate(mults):
                 if ele == []:
                     mults[i] = numpy.ones(len(reg._xs))
@@ -1723,7 +1733,7 @@ def _compile_reactions():
                 numpy.asarray(mc3d_indices_start, dtype=numpy.uint64),
                 mc3d_region_size,
                 numpy.asarray(mults),
-                _c_compile(fxn_string),
+                _cxx_compile(fxn_string),
             )
     # Setup extracellular reactions
     if len(ecs_regions_inv) > 0:
@@ -1833,13 +1843,13 @@ def _compile_reactions():
                             r._mult[idx],
                         )
                         idx += 1
-            fxn_string += "\n}\n"
+            fxn_string += "\n}\n}\n"
             ecs_register_reaction(
                 0,
                 len(all_gids),
                 len(param_gids),
                 _list_to_cint_array(all_gids + param_gids),
-                _c_compile(fxn_string),
+                _cxx_compile(fxn_string),
             )
 
 

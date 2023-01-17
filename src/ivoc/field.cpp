@@ -1,27 +1,27 @@
 #include <../../nrnconf.h>
-#if HAVE_IV // to end of file
+#if HAVE_IV  // to end of file
 
 /*
  * Copyright (c) 1991 Stanford University
  * Copyright (c) 1991 Silicon Graphics, Inc.
  *
- * Permission to use, copy, modify, distribute, and sell this software and 
+ * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
  * that (i) the above copyright notices and this permission notice appear in
  * all copies of the software and related documentation, and (ii) the names of
  * Stanford and Silicon Graphics may not be used in any advertising or
  * publicity relating to the software without the specific, prior written
  * permission of Stanford and Silicon Graphics.
- * 
- * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY 
- * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  
+ *
+ * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY
+ * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
  *
  * IN NO EVENT SHALL STANFORD OR SILICON GRAPHICS BE LIABLE FOR
  * ANY SPECIAL, INCIDENTAL, INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND,
  * OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
- * WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF 
- * LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE 
+ * WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF
+ * LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
  */
 
@@ -54,11 +54,9 @@
 #include <OS/string.h>
 #include <stdio.h>
 
-class FieldStringSEditor : public StringEditor {
-public:
-    FieldStringSEditor(
-	ButtonState* bs, const char* sample, WidgetKit*, Style*
-    );
+class FieldStringSEditor: public StringEditor {
+  public:
+    FieldStringSEditor(ButtonState* bs, const char* sample, WidgetKit*, Style*);
     virtual ~FieldStringSEditor();
 
     virtual void print(Printer*, const Allocation&) const;
@@ -78,9 +76,11 @@ public:
     void Select(int pos);
     void Select(int left, int right);
     void selection(int& start, int& index);
-protected:
+
+  protected:
     virtual void Reconfig();
-private:
+
+  private:
     WidgetKit* kit_;
     Style* style_;
     int start_;
@@ -96,9 +96,11 @@ private:
 declareSelectionCallback(FieldStringSEditor)
 implementSelectionCallback(FieldStringSEditor)
 
-FieldStringSEditor::FieldStringSEditor(
-    ButtonState* bs, const char* sample, WidgetKit* kit, Style* style
-) : StringEditor(bs, sample) {
+FieldStringSEditor::FieldStringSEditor(ButtonState* bs,
+                                       const char* sample,
+                                       WidgetKit* kit,
+                                       Style* style)
+    : StringEditor(bs, sample) {
     kit_ = kit;
     style_ = style;
     Resource::ref(style);
@@ -112,17 +114,17 @@ FieldStringSEditor::~FieldStringSEditor() {
 }
 
 void FieldStringSEditor::Select(int pos) {
-	start_ = index_ = pos;
-	StringEditor::Select(pos);
+    start_ = index_ = pos;
+    StringEditor::Select(pos);
 }
 void FieldStringSEditor::Select(int left, int right) {
-	start_ = left;
-	index_ = right;
-	StringEditor::Select(left, right);
+    start_ = left;
+    index_ = right;
+    StringEditor::Select(left, right);
 }
 void FieldStringSEditor::selection(int& start, int& index) {
-	start = start_;
-	index = index_;
+    start = start_;
+    index = index_;
 }
 
 void FieldStringSEditor::print(Printer* p, const Allocation& a) const {
@@ -131,22 +133,19 @@ void FieldStringSEditor::print(Printer* p, const Allocation& a) const {
     FontBoundingBox b;
     f->font_bbox(b);
     Coord x = a.left(), y = a.bottom() + b.font_descent();
-    FieldStringSEditor* e = (FieldStringSEditor*)this;
+    FieldStringSEditor* e = (FieldStringSEditor*) this;
     for (const char* s = e->Text(); *s != '\0'; s++) {
-	Coord w = f->width(*s);
-	p->character(f, *s, w, fg, x, y);
-	x += w;
+        Coord w = f->width(*s);
+        p->character(f, *s, w, fg, x, y);
+        x += w;
     }
 }
 
-void FieldStringSEditor::pick(
-    Canvas*, const Allocation& a, int depth, Hit& h
-) {
+void FieldStringSEditor::pick(Canvas*, const Allocation& a, int depth, Hit& h) {
     const Event* ep = h.event();
-    if (ep != NULL && h.left() < a.right() && h.right() >= a.left() &&
-	h.bottom() < a.top() && h.top() >= a.bottom()
-    ) {
-	h.target(depth, this, 0);
+    if (ep != NULL && h.left() < a.right() && h.right() >= a.left() && h.bottom() < a.top() &&
+        h.top() >= a.bottom()) {
+        h.target(depth, this, 0);
     }
 }
 
@@ -159,10 +158,10 @@ void FieldStringSEditor::press(const Event& event) {
     case Event::right:
         origin_ = display->Left(0, 0);
         width_ = display->Width();
-	Poll(e);
-	start_ = display->LineIndex(0, e.x);
-	do_select(e);
-	break;
+        Poll(e);
+        start_ = display->LineIndex(0, e.x);
+        do_select(e);
+        break;
 #if 0
     case Event::middle:
 	do_grab_scroll(e);
@@ -176,12 +175,10 @@ void FieldStringSEditor::press(const Event& event) {
 
 void FieldStringSEditor::drag(const Event&) {
     Event e;
-// I have no idea why the event.pointer_button() is 0.
+    // I have no idea why the event.pointer_button() is 0.
     Poll(e);
-//    if (e.leftmouse)
-    {
-	do_select(e);
-    }
+    //    if (e.leftmouse)
+    { do_select(e); }
 }
 
 void FieldStringSEditor::release(const Event& event) {
@@ -189,30 +186,24 @@ void FieldStringSEditor::release(const Event& event) {
     switch (event.pointer_button()) {
     case Event::left:
     case Event::middle:
-    case Event::right:
-	{
-	Poll(e);
-	do_select(e);
-	SelectionManager* s = e.display()->primary_selection();
-	s->own(
-	    new SelectionCallback(FieldStringSEditor)(this, &FieldStringSEditor::cut)
-	);
-	}
-	break;
-   }
+    case Event::right: {
+        Poll(e);
+        do_select(e);
+        SelectionManager* s = e.display()->primary_selection();
+        s->own(new SelectionCallback(FieldStringSEditor)(this, &FieldStringSEditor::cut));
+    } break;
+    }
 }
 
 void FieldStringSEditor::do_select(Event& e) {
-	if (e.x < 0) {
-	    origin_ = Math::min(0, origin_ - e.x);
-	} else if (e.x > xmax) {
-	    origin_ = Math::max(
-		xmax - width_, origin_ - (e.x - xmax)
-	    );
-	}
-	display->Scroll(0, origin_, ymax);
-	index_ = display->LineIndex(0, e.x);
-	DoSelect(start_, index_);
+    if (e.x < 0) {
+        origin_ = Math::min(0, origin_ - e.x);
+    } else if (e.x > xmax) {
+        origin_ = Math::max(xmax - width_, origin_ - (e.x - xmax));
+    }
+    display->Scroll(0, origin_, ymax);
+    index_ = display->LineIndex(0, e.x);
+    DoSelect(start_, index_);
 }
 
 void FieldStringSEditor::do_grab_scroll(Event& e) {
@@ -224,13 +215,11 @@ void FieldStringSEditor::do_grab_scroll(Event& e) {
     Poll(e);
     int x = e.x;
     do {
-	origin += e.x - x;
-	origin = Math::min(
-	    0, Math::max(Math::min(0, xmax - width), origin)
-	);
-	display->Scroll(0, origin, ymax);
-	x = e.x;
-	Poll(e);
+        origin += e.x - x;
+        origin = Math::min(0, Math::max(Math::min(0, xmax - width), origin));
+        display->Scroll(0, origin, ymax);
+        x = e.x;
+        Poll(e);
     } while (e.middlemouse);
     w->cursor(c);
 }
@@ -246,17 +235,15 @@ void FieldStringSEditor::do_rate_scroll(Event& e) {
     Poll(e);
     int x = e.x;
     do {
-	origin += x - e.x;
-	origin = Math::min(
-	    0, Math::max(Math::min(0, xmax - width), origin)
-	);
-	display->Scroll(0, origin, ymax);
-	if (e.x - x < 0) {
-	    w->cursor(left);
-	} else {
-	    w->cursor(right);
-	}
-	Poll(e);
+        origin += x - e.x;
+        origin = Math::min(0, Math::max(Math::min(0, xmax - width), origin));
+        display->Scroll(0, origin, ymax);
+        if (e.x - x < 0) {
+            w->cursor(left);
+        } else {
+            w->cursor(right);
+        }
+        Poll(e);
     } while (e.rightmouse);
     w->cursor(c);
 }
@@ -268,22 +255,23 @@ bool FieldStringSEditor::keystroke(const Event& e) {
 
 void FieldStringSEditor::cursor_on() {
     if (canvas != NULL) {
-	display->CaretStyle(BarCaret);
+        display->CaretStyle(BarCaret);
     }
 }
 
 void FieldStringSEditor::cursor_off() {
     if (canvas != NULL) {
-	display->CaretStyle(NoCaret);
+        display->CaretStyle(NoCaret);
     }
 }
 
-void FieldStringSEditor::focus_in() { }
-void FieldStringSEditor::focus_out() { }
+void FieldStringSEditor::focus_in() {}
+void FieldStringSEditor::focus_out() {}
 
 void FieldStringSEditor::cut(SelectionManager* s) {
-//    s->put_value(Text() + start_, index_ - start_);
-    int st = Math::min(start_, index_); int i = Math::max(index_, start_);
+    //    s->put_value(Text() + start_, index_ - start_);
+    int st = Math::min(start_, index_);
+    int i = Math::max(index_, start_);
     s->put_value(Text() + st, i - st);
 }
 
@@ -303,19 +291,20 @@ void FieldStringSEditor::Reconfig() {
     kit_->pop_style();
 }
 
-class FieldSButton : public ButtonState {
-public:
+class FieldSButton: public ButtonState {
+  public:
     FieldSButton(FieldSEditor*, FieldSEditorAction*);
     virtual ~FieldSButton();
 
     virtual void Notify();
-private:
+
+  private:
     FieldSEditor* editor_;
     FieldSEditorAction* action_;
 };
 
 class FieldSEditorImpl {
-private:
+  private:
     friend class FieldSEditor;
 
     WidgetKit* kit_;
@@ -334,9 +323,11 @@ private:
 declareIOCallback(FieldSEditorImpl)
 implementIOCallback(FieldSEditorImpl)
 
-FieldSEditor::FieldSEditor(
-    const String& sample, WidgetKit* kit, Style* s, FieldSEditorAction* action
-) : InputHandler(NULL, s) {
+FieldSEditor::FieldSEditor(const String& sample,
+                           WidgetKit* kit,
+                           Style* s,
+                           FieldSEditorAction* action)
+    : InputHandler(NULL, s) {
     impl_ = new FieldSEditorImpl;
     impl_->kit_ = kit;
     NullTerminatedString ns(sample);
@@ -365,15 +356,15 @@ void FieldSEditor::press(const Event& e) {
 void FieldSEditor::drag(const Event& e) {
     impl_->editor_->drag(e);
 }
-void FieldSEditor::release(const Event& e) { 
+void FieldSEditor::release(const Event& e) {
     impl_->editor_->release(e);
 }
 
 void FieldSEditor::keystroke(const Event& e) {
     FieldSEditorImpl& f = *impl_;
     if (f.editor_->keystroke(e)) {
-	select(text()->length());
-	next_focus();
+        select(text()->length());
+        next_focus();
     }
 }
 
@@ -433,28 +424,20 @@ const String* FieldSEditor::text() const {
 
 /** class FieldSEditorImpl **/
 
-void FieldSEditorImpl::build(
-    FieldSEditor* e, const char* str, FieldSEditorAction* a
-) {
+void FieldSEditorImpl::build(FieldSEditor* e, const char* str, FieldSEditorAction* a) {
     WidgetKit& kit = *kit_;
     kit.begin_style("FieldEditor");
-    Style* s  = kit.style();
+    Style* s = kit.style();
     bs_ = new FieldSButton(e, a);
     editor_ = new FieldStringSEditor(bs_, str, kit_, s);
     Glyph* g = editor_;
     if (s->value_is_on("beveled")) {
-	g = kit.inset_frame(
-	    new Background(
-		LayoutKit::instance()->h_margin(editor_, 2.0),
-		kit.background()
-	    )
-	);
+        g = kit.inset_frame(
+            new Background(LayoutKit::instance()->h_margin(editor_, 2.0), kit.background()));
     }
     e->body(g);
     cursor_is_on_ = false;
-    blink_handler_ = new IOCallback(FieldSEditorImpl)(
-	this, &FieldSEditorImpl::blink_cursor
-    );
+    blink_handler_ = new IOCallback(FieldSEditorImpl)(this, &FieldSEditorImpl::blink_cursor);
     float sec = 0.5;
     s->find_attribute("cursorFlashRate", sec);
     flash_rate_ = long(sec * 1000000);
@@ -463,14 +446,14 @@ void FieldSEditorImpl::build(
 
 void FieldSEditorImpl::blink_cursor(long, long) {
     if (cursor_is_on_) {
-	editor_->cursor_off();
-	cursor_is_on_ = false;
+        editor_->cursor_off();
+        cursor_is_on_ = false;
     } else {
-	editor_->cursor_on();
-	cursor_is_on_ = true;
+        editor_->cursor_on();
+        cursor_is_on_ = true;
     }
     if (flash_rate_ > 10) {
-	Dispatcher::instance().startTimer(0, flash_rate_, blink_handler_);
+        Dispatcher::instance().startTimer(0, flash_rate_, blink_handler_);
     }
 }
 
@@ -503,24 +486,24 @@ void FieldSButton::Notify() {
     GetValue(v);
     value = 0;
     if (action_ != NULL) {
-	switch (v) {
-	case '\r':
-	    action_->accept(editor_);
-	    break;
-	case /*  ^G */ '\007':
-	case /* Esc */ '\033':
-	    action_->cancel(editor_);
-	    break;
-	default:
-	    break;
-	}
+        switch (v) {
+        case '\r':
+            action_->accept(editor_);
+            break;
+        case /*  ^G */ '\007':
+        case /* Esc */ '\033':
+            action_->cancel(editor_);
+            break;
+        default:
+            break;
+        }
     }
 }
 
 /** class FieldSEditorAction **/
 
-FieldSEditorAction::FieldSEditorAction() { }
-FieldSEditorAction::~FieldSEditorAction() { }
-void FieldSEditorAction::accept(FieldSEditor*) { }
-void FieldSEditorAction::cancel(FieldSEditor*) { }
+FieldSEditorAction::FieldSEditorAction() {}
+FieldSEditorAction::~FieldSEditorAction() {}
+void FieldSEditorAction::accept(FieldSEditor*) {}
+void FieldSEditorAction::cancel(FieldSEditor*) {}
 #endif

@@ -31,6 +31,11 @@ SaveState
     change the value of t in a network simulation since most NET_RECEIVE 
     blocks keep t0 (the last event time) as part of their state. 
 
+    .. versionchanged:: 8.1
+
+        Prior to NEURON 8.1, :class:`SaveState` did not save 
+        reaction-diffusion states.
+
     .. warning::
         The intention is that a save followed by 
         any number of simulation-continue,restore 

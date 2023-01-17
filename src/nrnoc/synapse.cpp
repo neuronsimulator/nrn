@@ -16,14 +16,14 @@ fsyn(i, loc, delay, tau, gmax, erev)
  stim in namps.
 
  a synaptic current defined by
- 	i = g * (v - erev) 	i(nanoamps), g(microsiemens);
- 	where
- 	 g = 0 for t < delay and
- 	 g = gmax * (t - delay)/tau * exp(-(t - delay - tau)/tau)
- 	  for t > onset
+    i = g * (v - erev) 	i(nanoamps), g(microsiemens);
+    where
+     g = 0 for t < delay and
+     g = gmax * (t - delay)/tau * exp(-(t - delay - tau)/tau)
+      for t > onset
  this has the property that the maximum value is gmax and occurs at
   t = delay + tau.
-  
+
 fsyni(i)
  returns synaptic current for ith synapse at the value of the
  global time t in units of nanoamps.
@@ -41,24 +41,23 @@ fsyng(i)
 #include <math.h>
 
 
-
 #define nt_t nrn_threads->_t
 
 /* impress the stimulus code to do synapses */
 typedef struct Stimulus {
-    double loc;    /* parameter location (0--1) */
+    double loc;      /* parameter location (0--1) */
     double delay;    /* value of t in msec for onset */
-    double duration;/* turns off at t = delay + duration */
-    double mag;    /* conductance in microsiemens */
+    double duration; /* turns off at t = delay + duration */
+    double mag;      /* conductance in microsiemens */
     double erev;
-    double mag_seg;    /* value added to rhs, depends on area of seg*/
-    double g;    /* holds conductance when current calculated */
-    Node *pnd;    /* segment location */
-    Section *sec;
+    double mag_seg; /* value added to rhs, depends on area of seg*/
+    double g;       /* holds conductance when current calculated */
+    Node* pnd;      /* segment location */
+    Section* sec;
 } Stimulus;
 
-static int maxstim = 0;        /* size of stimulus array */
-static Stimulus *pstim;        /* pointer to stimulus array */
+static int maxstim = 0; /* size of stimulus array */
+static Stimulus* pstim; /* pointer to stimulus array */
 static void free_syn(void);
 
 static void stim_record(int);
@@ -66,19 +65,24 @@ static void stim_record(int);
 void print_syn(void) {
     int i;
 
-    if (maxstim == 0) return;
+    if (maxstim == 0)
+        return;
     /*SUPPRESS 440*/
-    Printf("fsyn(%d)\n/* section	fsyn( #, loc, delay(ms), tau(ms), conduct(uS), erev(mV)) */\n", maxstim);
+    Printf("fsyn(%d)\n/* section	fsyn( #, loc, delay(ms), tau(ms), conduct(uS), erev(mV)) */\n",
+           maxstim);
     for (i = 0; i < maxstim; i++) {
         Printf("%-15s fsyn(%2d,%4g,%10g,%8g,%14g,%9g)\n",
-               secname(pstim[i].sec), i,
-               pstim[i].loc, pstim[i].delay, pstim[i].duration, pstim[i].mag,
+               secname(pstim[i].sec),
+               i,
+               pstim[i].loc,
+               pstim[i].delay,
+               pstim[i].duration,
+               pstim[i].mag,
                pstim[i].erev);
     }
 }
 
 static double alpha(double x) {
-
     if (x > 0.0 && x < 10.0) {
         return x * exp(-x + 1.0);
     }
@@ -93,9 +97,7 @@ static double stimulus(int i) {
         pstim[i].g = 0.0;
         return 0.0;
     }
-#if CVODE
     at_time(nrn_threads, pstim[i].delay);
-#endif
     x = (nt_t - pstim[i].delay) / pstim[i].duration;
     pstim[i].g = g * alpha(x);
     return pstim[i].g * (NODEV(pstim[i].pnd) - pstim[i].erev);
@@ -134,7 +136,7 @@ void fsyn(void) {
     i = chkarg(1, 0., 10000.);
     if (ifarg(2)) {
         if (i >= maxstim) {
-            hoc_execerror("index out of range", (char *) 0);
+            hoc_execerror("index out of range", (char*) 0);
         }
         pstim[i].loc = chkarg(2, 0., 1.);
         pstim[i].delay = chkarg(3, 0., 1e21);
@@ -148,7 +150,7 @@ void fsyn(void) {
         free_syn();
         maxstim = i;
         if (maxstim) {
-            pstim = (Stimulus *) emalloc((unsigned) (maxstim * sizeof(Stimulus)));
+            pstim = (Stimulus*) emalloc((unsigned) (maxstim * sizeof(Stimulus)));
         }
         for (i = 0; i < maxstim; i++) {
             pstim[i].loc = 0;
@@ -171,15 +173,15 @@ static void free_syn(void) {
                 section_unref(pstim[i].sec);
             }
         }
-        free((char *) pstim);
+        free((char*) pstim);
         maxstim = 0;
     }
 }
 
-static void stim_record(int i)    /*fill in the section info*/
+static void stim_record(int i) /*fill in the section info*/
 {
     double area;
-    Section *sec;
+    Section* sec;
 
     sec = pstim[i].sec;
     if (sec) {
@@ -202,7 +204,6 @@ void synapse_prepare(void) {
 }
 
 void activsynapse_rhs(void) {
-
     int i;
     for (i = 0; i < maxstim; i++) {
         if (pstim[i].sec) {
@@ -212,7 +213,6 @@ void activsynapse_rhs(void) {
 }
 
 void activsynapse_lhs() {
-
     int i;
 
     for (i = 0; i < maxstim; i++) {
@@ -221,4 +221,3 @@ void activsynapse_lhs() {
         }
     }
 }
-

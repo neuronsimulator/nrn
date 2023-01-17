@@ -108,11 +108,9 @@ class _c_region:
             if isinstance(s, ParameterOnRegion):
                 if s._species() and s._species not in self._react_params:
                     self._react_params.append(s._species)
-            elif (
-                isinstance(s._species(), Parameter)
-                and s._species not in self._react_params
-            ):
-                self._react_params.append(weakref.ref(s))
+            elif isinstance(s, Parameter):
+                if s._species not in self._react_params:
+                    self._react_params.append(s._species)
             elif isinstance(s, SpeciesOnRegion):
                 if s._species() and s._species not in self._react_species:
                     self._react_species.append(s._species)
@@ -330,15 +328,18 @@ class Extracellular:
             )
 
     def __repr__(self):
-        return "Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)" % (
-            self._xlo,
-            self._ylo,
-            self._zlo,
-            self._xhi,
-            self._yhi,
-            self._zhi,
-            self.tortuosity,
-            self.alpha,
+        return (
+            "Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)"
+            % (
+                self._xlo,
+                self._ylo,
+                self._zlo,
+                self._xhi,
+                self._yhi,
+                self._zhi,
+                self.tortuosity,
+                self.alpha,
+            )
         )
 
     def _short_repr(self):
@@ -538,7 +539,7 @@ class Extracellular:
     @property
     def permeability(self):
         if hasattr(self, "_tortuosity"):
-            return 1.0 / self._tortuosity ** 2
+            return 1.0 / self._tortuosity**2
         return self._permeability
 
     @tortuosity.setter
@@ -774,9 +775,9 @@ class Region(object):
             nx = x - sec.x3d(n - 2)
             ny = y - sec.y3d(n - 2)
             nz = z - sec.z3d(n - 2)
-            x -= dx * nx / (nx ** 2 + ny ** 2 + nz ** 2) ** 0.5
-            y -= dx * ny / (nx ** 2 + ny ** 2 + nz ** 2) ** 0.5
-            z -= dx * nz / (nx ** 2 + ny ** 2 + nz ** 2) ** 0.5
+            x -= dx * nx / (nx**2 + ny**2 + nz**2) ** 0.5
+            y -= dx * ny / (nx**2 + ny**2 + nz**2) ** 0.5
+            z -= dx * nz / (nx**2 + ny**2 + nz**2) ** 0.5
 
         else:
             raise RxDException("should never get here")
@@ -788,7 +789,7 @@ class Region(object):
         # dn = (nx**2 + ny**2 + nz**2)**0.5
         # nx, ny, nz = nx/dn, ny/dn, nz/dn
         # x, y, z = x * x1 + (1 - x) * x0, x * y1 + (1 - x) * y0, x * z1 + (1 - x) * z1
-        r = sec(position).diam * 0.5 + self.dx * 3 ** 0.5
+        r = sec(position).diam * 0.5 + self.dx * 3**0.5
         plane_of_disc = geometry3d.graphicsPrimitives.Plane(x, y, z, nx, ny, nz)
         potential_coordinates = []
 
@@ -818,7 +819,7 @@ class Region(object):
         sphere_indices = [
             (i, j, k)
             for i, j, k in itertools.product(i_indices, j_indices, k_indices)
-            if (xs[i] - x) ** 2 + (ys[j] - y) ** 2 + (zs[k] - z) ** 2 <= r ** 2
+            if (xs[i] - x) ** 2 + (ys[j] - y) ** 2 + (zs[k] - z) ** 2 <= r**2
         ]
         dx = self.dx
         disc_indices = []

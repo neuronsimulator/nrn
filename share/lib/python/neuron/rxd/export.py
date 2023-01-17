@@ -266,7 +266,7 @@ def sbml(segment, filename=None, model_name=None, pretty=True):
 
     for i in rxd.rxd._all_reactions:
         if isinstance(i, rxd.MultiCompartmentReaction):
-            RxDException("Cannot export MultiCompartmentReactions")
+            raise RxDException("Cannot export MultiCompartmentReactions")
 
     # MIGHT BE A PROBLEM WHEN MULTI COMPARTMENT REACTIONS
     reactions = [

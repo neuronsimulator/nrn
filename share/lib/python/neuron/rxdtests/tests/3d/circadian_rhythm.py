@@ -91,8 +91,8 @@ declare_species(
     CN=1.34728 * nM,
 )
 
-MTtranscription = rxd.Rate(MT, vsT * KIT ** n / (KIT ** n + CN ** n))
-MPtranscription = rxd.Rate(MP, vsP * KIP ** n / (KIP ** n + CN ** n))
+MTtranscription = rxd.Rate(MT, vsT * KIT**n / (KIT**n + CN**n))
+MPtranscription = rxd.Rate(MP, vsP * KIP**n / (KIP**n + CN**n))
 MTdegradation = rxd.Rate(MT, -(vmT * MT / (KmT + MT) + kd * MT))
 MPdegradation = rxd.Rate(MP, -(vmP * MP / (KmP + MP) + kd * MP))
 T0production = rxd.Rate(T0, ksT * MT)

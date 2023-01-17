@@ -111,14 +111,17 @@ def _instantiate_reactions(reactions):
         if kind == "rate":
             reaction_spec = "Rate(%s, %s)" % (data["species"], data["kf"])
         elif kind == "multicompartmentreaction":
-            reaction_spec = "MultiCompartmentReaction(%s, %s, %s, membrane=%s, custom_dynamics=%r, membrane_flux=%r, scale_by_area=%r)" % (
-                _construct_schema(data["lhs"], data["rhs"]),
-                data.get("kf", 0),
-                data.get("kb", 0),
-                data["membrane"],
-                not data.get("massaction", True),
-                data.get("membrane_current", False),
-                data.get("scale_with_area", True),
+            reaction_spec = (
+                "MultiCompartmentReaction(%s, %s, %s, membrane=%s, custom_dynamics=%r, membrane_flux=%r, scale_by_area=%r)"
+                % (
+                    _construct_schema(data["lhs"], data["rhs"]),
+                    data.get("kf", 0),
+                    data.get("kb", 0),
+                    data["membrane"],
+                    not data.get("massaction", True),
+                    data.get("membrane_current", False),
+                    data.get("scale_with_area", True),
+                )
             )
         elif kind == "reaction":
             reaction_spec = "Reaction(%s, %s, %s, custom_dynamics=%r)" % (

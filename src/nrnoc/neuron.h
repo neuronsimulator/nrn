@@ -1,10 +1,5 @@
 #include "options.h"
 
-
-#if METHOD3
-extern int spatial_method();
-#endif
-
 #if NEMO
 extern int neuron2nemo(), nemo2neuron();
 #endif

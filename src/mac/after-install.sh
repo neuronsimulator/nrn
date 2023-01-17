@@ -49,9 +49,6 @@ rm -f hoc_e ivoc mos2nrn nrnoc oc
 for i in modlunit nocmodl nrniv ; do
 	strip -x $i
 done
-if test "$carbon" = "yes" ; then
-	strip -x nrniv.app/Contents/MacOS/nrniv
-fi
 
 # force rebuild of the neurondemo and clean it up
 DEMO="${N}/share/nrn/demo"
@@ -87,9 +84,6 @@ if test -d "$ivlibdir" ; then
 	done
 	cd ../bin
 	rm -f iclass idemo
-	if test "$carbon" != "yes" ; then
-		strip -x idraw
-	fi
 fi
 
 vv=`sw_vers -productVersion|sed 's/.*\.\(.*\)\..*/\1/'`

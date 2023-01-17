@@ -2,6 +2,11 @@
 # A simple set of tests checking if a wheel is working correctly
 set -xe
 
+# See CMake's CMAKE_HOST_SYSTEM_PROCESSOR documentation
+# On the systems where we are building wheel we can rely
+# on uname -m. Note that this is just wheel testing script.
+ARCH_DIR=`uname -m`
+
 if [ ! -f setup.py ]; then
     echo "Error: Please launch $0 from the root dir"
     exit 1
@@ -61,8 +66,12 @@ run_mpi_test () {
   if [[ "$has_coreneuron" == "true" ]] && [[ $mpi_name == *"MPICH"* || $mpi_name == *"Intel MPI"* ]]; then
       site_package_dir=`$python_exe -c 'import os, neuron; print(os.path.dirname(neuron.__file__))'`
       corenrn_mpi_lib=`ls $site_package_dir/.data/lib/libcorenrnmpi_mpich*`
-      $mpi_launcher -n 1 nrniv-core --datpath external/coreneuron/tests/integration/ring --mpi-lib=$corenrn_mpi_lib
-      diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
+
+      HOC_LIBRARY_PATH=${PWD}/test/ringtest nrniv test/ringtest/ring.hoc
+      mv out.dat out.nrn.dat
+      $mpi_launcher -n 1 nrniv-core --datpath . --mpi-lib=$corenrn_mpi_lib
+      diff -w out.dat out.nrn.dat
+      rm -rf *.dat
   fi
 
   # rest of the tests we need development environment. For GPU wheel
@@ -73,19 +82,19 @@ run_mpi_test () {
   fi
 
   # build new special
-  rm -rf x86_64
+  rm -rf $ARCH_DIR
   nrnivmodl tmp_mod
 
   # run python test via nrniv and special (except on azure pipelines)
   if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-    $mpi_launcher -n 2 ./x86_64/special -python src/parallel/test0.py -mpi --expected-hosts 2
+    $mpi_launcher -n 2 ./$ARCH_DIR/special -python src/parallel/test0.py -mpi --expected-hosts 2
     $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
   fi
 
   # coreneuron execution via neuron
   if [[ "$has_coreneuron" == "true" ]]; then
-    rm -rf x86_64
-    nrnivmodl -coreneuron test/coreneuron/mod/
+    rm -rf $ARCH_DIR
+    nrnivmodl -coreneuron "test/coreneuron/mod files/"
 
     # python as a launcher can be used only with non-gpi build
     if [[ "$has_gpu_support" == "false" ]]; then
@@ -98,7 +107,7 @@ run_mpi_test () {
         $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
       fi
       run_on_gpu=$([ "$run_gpu_test" == "true" ] && echo "1" || echo "0")
-      NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=$run_on_gpu $mpi_launcher -n 2 ./x86_64/special -python -mpi test/coreneuron/test_direct.py
+      NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=$run_on_gpu $mpi_launcher -n 2 ./$ARCH_DIR/special -python -mpi test/coreneuron/test_direct.py
     fi
   fi
 
@@ -119,8 +128,11 @@ run_serial_test () {
 
     # Test 3: run coreneuron binary shipped inside wheel
     if [[ "$has_coreneuron" == "true" ]]; then
-        nrniv-core --datpath external/coreneuron/tests/integration/ring
-        diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
+        HOC_LIBRARY_PATH=${PWD}/test/ringtest nrniv test/ringtest/ring.hoc
+        mv out.dat out.nrn.dat
+        nrniv-core --datpath .
+        diff -w out.dat out.nrn.dat
+        rm -rf *.dat
     fi
 
     # rest of the tests we need development environment
@@ -130,11 +142,11 @@ run_serial_test () {
     fi
 
     # Test 4: execute nrnivmodl
-    rm -rf x86_64
+    rm -rf $ARCH_DIR
     nrnivmodl tmp_mod
 
     # Test 5: execute special hoc interpreter
-    ./x86_64/special -c "print \"hello\""
+    ./$ARCH_DIR/special -c "print \"hello\""
 
     # Test 6: run basic tests via python while loading shared library
     $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
@@ -145,7 +157,7 @@ run_serial_test () {
     # Test 8: run basic tests via special : azure pipelines get stuck with their
     # own python from hosted cache (most likely security settings).
     if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-      ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+      ./$ARCH_DIR/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
       nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     else
       $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
@@ -153,8 +165,14 @@ run_serial_test () {
 
     # Test 9: coreneuron execution via neuron
     if [[ "$has_coreneuron" == "true" ]]; then
-      rm -rf x86_64
-      nrnivmodl -coreneuron test/coreneuron/mod/
+      rm -rf $ARCH_DIR
+
+      # first test vanialla coreneuron support, without nrnivmodl
+      if [[ "$has_gpu_support" == "false" ]]; then
+        $python_exe test/coreneuron/test_psolve.py
+      fi
+
+      nrnivmodl -coreneuron "test/coreneuron/mod files/"
 
       # coreneuron+gpu can be used via python but special only
       if [[ "$has_gpu_support" == "false" ]]; then
@@ -164,7 +182,7 @@ run_serial_test () {
       # using -python doesn't work on Azure CI
       if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
         # we can run special with or without gpu wheel
-        ./x86_64/special -python test/coreneuron/test_direct.py
+        ./$ARCH_DIR/special -python test/coreneuron/test_direct.py
 
         # python and nrniv can be used only for non-gpu wheel
         if [[ "$has_gpu_support" == "false" ]]; then
@@ -172,11 +190,11 @@ run_serial_test () {
         fi
 
         if [[ "$run_gpu_test" == "true" ]]; then
-          NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=1 ./x86_64/special -python test/coreneuron/test_direct.py
+          NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=1 ./$ARCH_DIR/special -python test/coreneuron/test_direct.py
         fi
       fi
 
-      rm -rf x86_64
+      rm -rf $ARCH_DIR
     fi
 
 
@@ -195,28 +213,37 @@ run_parallel_test() {
 
       brew unlink openmpi
       brew link mpich
-
-      # TODO : latest mpich has issuee on Azure OSX
-      if [[ "$CI_OS_NAME" == "osx" ]]; then
-          run_mpi_test "/usr/local/opt/mpich/bin/mpirun" "MPICH" ""
-      fi
+      BREW_PREFIX=$(brew --prefix)
+      run_mpi_test "${BREW_PREFIX}/opt/mpich/bin/mpirun" "MPICH" ""
 
       brew unlink mpich
       brew link openmpi
-      run_mpi_test "/usr/local/opt/open-mpi/bin/mpirun" "OpenMPI" ""
+      run_mpi_test "${BREW_PREFIX}/opt/open-mpi/bin/mpirun" "OpenMPI" ""
 
     # CI Linux or Azure Linux
     elif [[ "$CI_OS_NAME" == "linux" || "$AGENT_OS" == "Linux" ]]; then
-      sudo update-alternatives --set mpi /usr/include/mpich
+      # make debugging easier
+      sudo update-alternatives --get-selections | grep mpi
+      sudo update-alternatives --list mpi-x86_64-linux-gnu
+      # choose mpich
+      sudo update-alternatives --set mpi-x86_64-linux-gnu /usr/include/x86_64-linux-gnu/mpich
       run_mpi_test "mpirun.mpich" "MPICH" ""
-      sudo update-alternatives --set mpi /usr/lib/x86_64-linux-gnu/openmpi/include
+      # choose openmpi
+      sudo update-alternatives --set mpi-x86_64-linux-gnu /usr/lib/x86_64-linux-gnu/openmpi/include
       run_mpi_test "mpirun.openmpi" "OpenMPI" ""
 
     # BB5 with multiple MPI libraries
     elif [[ $(hostname -f) = *r*bbp.epfl.ch* ]]; then
       run_mpi_test "srun" "HPE-MPT" "hpe-mpi"
-      run_mpi_test "mpirun" "Intel MPI" "intel-mpi"
+      run_mpi_test "mpirun" "Intel MPI" "intel-oneapi-mpi"
       run_mpi_test "srun" "MVAPICH2" "mvapich2"
+
+    # circle-ci build
+    elif [[ "$CIRCLECI" == "true" ]]; then
+      sudo update-alternatives --set mpi-aarch64-linux-gnu /usr/include/aarch64-linux-gnu/mpich
+      run_mpi_test "mpirun.mpich" "MPICH" ""
+      sudo update-alternatives --set mpi-aarch64-linux-gnu /usr/lib/aarch64-linux-gnu/openmpi/include
+      run_mpi_test "mpirun.openmpi" "OpenMPI" ""
 
     # linux desktop or docker container used for wheel
     else
@@ -236,6 +263,9 @@ test_wheel () {
     mkdir -p tmp_mod
     cp share/examples/nrniv/nmodl/cacum.mod tmp_mod/
 
+    # check gcc and python versions
+    gcc --version && python --version
+
     echo "Using `which $python_exe` : `$python_exe --version`"
     echo "=========== SERIAL TESTS ==========="
     run_serial_test
@@ -244,7 +274,7 @@ test_wheel () {
     run_parallel_test
 
     #clean-up
-    rm -rf tmp_mod x86_64
+    rm -rf tmp_mod $ARCH_DIR
 }
 
 
@@ -264,7 +294,7 @@ else
 fi
 
 
-# python 3.6 and gpu wheel needs updated pip
+# gpu wheel needs updated pip
 $python_exe -m pip install --upgrade pip
 
 

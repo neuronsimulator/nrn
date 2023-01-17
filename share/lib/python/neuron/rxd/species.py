@@ -855,7 +855,7 @@ class _IntracellularSpecies(_SpeciesMathable):
 
     def create_alphas(self):
         self._isalive()
-        alphas = [vol / self._dx ** 3 for vol in self._region._vol]
+        alphas = [vol / self._dx**3 for vol in self._region._vol]
         return numpy.asarray(alphas, dtype=float)
 
     def _import_concentration(self):
@@ -938,7 +938,6 @@ class _IntracellularSpecies(_SpeciesMathable):
                     # TODO: this better
                     if not isinstance(my_dx, tuple):
                         my_dx = (my_dx, my_dx, my_dx)
-                    scale_factor = tenthousand_over_charge_faraday / (numpy.prod(my_dx))
                     self._current_neuron_pointers = [
                         getattr(seg, ion_curr)
                         for seg in self._region._segs3d(
@@ -951,9 +950,11 @@ class _IntracellularSpecies(_SpeciesMathable):
                         for sec in self._region._secs3d
                     ]
                     node_area = [node.surface_area for node in self._nodes]
-                    scale = sum(node_area) / geom_area
+                    node_vol = [node.volume for node in self._nodes]
+                    scale = geom_area / sum(node_area)
                     scale_factors = [
-                        sign * area * scale * scale_factor for area in node_area
+                        sign * area * scale * tenthousand_over_charge_faraday / vol
+                        for area, vol in zip(node_area, node_vol)
                     ]
                     self._scale_factors = numpy.asarray(scale_factors, dtype=float)
                     _ics_set_grid_currents(
@@ -1551,7 +1552,7 @@ class Species(_SpeciesMathable):
 
         d -- the diffusion constant of the species (optional; default is 0, i.e. non-diffusing)
 
-        name -- the name of the Species; used for syncing with HOC (optional; default is none)
+        name -- the name of the Species; used for syncing with NMODL and HOC (optional; default is none)
 
         charge -- the charge of the Species (optional; default is 0)
 
@@ -1908,7 +1909,7 @@ class Species(_SpeciesMathable):
 
     @property
     def states(self):
-        """A vector of all the states corresponding to this species"""
+        """A list of all the state values corresponding to this species"""
         all_states = node._get_states()
         return [all_states[i] for i in numpy.sort(self.indices())]
 
@@ -2019,7 +2020,7 @@ class Species(_SpeciesMathable):
     def charge(self):
         """Get or set the charge of the Species.
 
-        .. note:: Setting is new in NEURON 7.4+ and is allowed only before the reaction-diffusion model is instantiated.
+        .. note:: Setting was added in NEURON 7.4+ and is allowed only before the reaction-diffusion model is instantiated.
         """
         return self._charge
 
@@ -2352,18 +2353,18 @@ class Parameter(Species):
     """
     s = rxd.Parameter(regions, name=None, charge=0, value=None, represents=None)
 
-    Declare a parameter, it can be used in place of a rxd.Species, but unlike rxd.Speices a parameter will not change.
+    Declare a parameter, it can be used in place of a rxd.Species, but unlike rxd.Species a parameter will not change.
 
     Parameters:
-    regions -- a Region or list of Region objects containing the species
+    regions -- a Region or list of Region objects containing the parameter
 
-    name -- the name of the parameter; used for syncing with HOC (optional; default is none)
+    name -- the name of the parameter; used for syncing with NMODL and HOC (optional; default is none)
 
     charge -- the charge of the Parameter (optional; default is 0)
 
-    value -- the value or None (if None, then imports from HOC if the species is defined at finitialize, else 0)
+    value -- the value or None (if None, then imports from HOC if the parameter is defined at finitialize, else 0)
 
-    represents -- optionally provide CURIE (Compact URI) to annotate what the species represents e.g. CHEBI:29101 for sodium(1+)
+    represents -- optionally provide CURIE (Compact URI) to annotate what the parameter represents e.g. CHEBI:29101 for sodium(1+)
 
     Note:
     charge must match the charges specified in NMODL files for the same ion, if any.
@@ -2376,7 +2377,7 @@ class Parameter(Species):
                 and kwargs["initial"]
                 and kwargs["initial"] != kwargs["value"]
             ):
-                raise RxdException(
+                raise RxDException(
                     "Parameter cannot be assigned both a 'value=%g' and 'initial=%g'"
                     % (kwargs["value"], kwargs["initial"])
                 )

@@ -1,9 +1,10 @@
+import re
 import sys
 from neuron.expect_hocerr import expect_hocerr, expect_err, set_quiet
 
 import numpy as np
 
-from neuron import h, hoc
+from neuron import config, h, hoc
 
 
 def test_soma():
@@ -321,9 +322,8 @@ def test_deleted_sec():
     expect_hocerr(h.distance, (0, seg))
 
     del ic, imp, dend
+    del vref, gnabarref, rvlist, mech, seg, s
     locals()
-
-    return s, seg, mech, rvlist, vref, gnabarref
 
 
 def test_disconnect():
@@ -379,12 +379,56 @@ def test_nosection():
     locals()
 
 
+def test_nrn_mallinfo():
+    # figure out if ASan was enabled, see comment in unit_test.cpp
+    if "address" in config.arguments["NRN_SANITIZERS"]:
+        print("Skipping nrn_mallinfo checks because ASan was enabled")
+        return
+    assert h.nrn_mallinfo(0) > 0
+
+
+def test_errorcode():
+    import os, sys, subprocess
+
+    process = subprocess.run('nrniv -c "1/0"', shell=True)
+    assert process.returncode > 0
+
+    exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
+    env = os.environ.copy()
+    try:
+        env[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
+            "NRN_SANITIZER_PRELOAD_VAL"
+        ]
+    except:
+        pass
+    process = subprocess.run(
+        [exe, "-c", "from neuron import h; h.sqrt(-1)"], env=env, shell=False
+    )
+    assert process.returncode > 0
+
+
+def test_hocObj_error_in_construction():
+    # test unref hoc obj when error during construction
+    expect_hocerr(h.List, "A")
+    expect_hocerr(h.List, h.NetStim())
+
+
+def test_recording_deleted_node():
+    soma = h.Section()
+    soma_v = h.Vector().record(soma(0.5)._ref_v)
+    del soma
+    # Now soma_v is still alive, but the node whose voltage it is recording is
+    # dead. The current behaviour is that the record instance is silently deleted in this case
+    h.finitialize()
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()
     test_simple_sim()
-    result = test_deleted_sec()
+    test_deleted_sec()
     test_disconnect()
     h.topology()
     h.allobjects()
     test_nosection()
+    test_nrn_mallinfo()

@@ -27,13 +27,12 @@ find_path(
   NAMES readline/readline.h
   HINTS ${Readline_ROOT_DIR}/include)
 
-# On platforms like debian/ubuntu with multi-arch support
-# libraries might be under separate directory like /usr/lib/x86_64-linux-gnu/
-# With NVHPC compilers CMake can not find these librarise, see
+# On platforms like debian/ubuntu with multi-arch support libraries might be under separate
+# directory like /usr/lib/x86_64-linux-gnu/ With NVHPC compilers CMake can not find these librarise,
+# see
 # https://forums.developer.nvidia.com/t/nvhpc-cmake-issues-cmake-library-architecture-is-not-set-and-hence-system-libraries-are-not-found/200659
 # Hence, provide extra directories as hint to search for libraries
-file(GLOB EXTRA_SEARCH_DIRS
-  "${Readline_ROOT_DIR}/lib*/${CMAKE_SYSTEM_PROCESSOR}-*-*")
+file(GLOB EXTRA_SEARCH_DIRS "${Readline_ROOT_DIR}/lib*/${CMAKE_SYSTEM_PROCESSOR}-*-*")
 
 find_library(
   Readline_LIBRARY

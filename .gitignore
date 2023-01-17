@@ -1,7 +1,10 @@
+.bbp-project-venv/
 .clang-format
 .cmake-format.yaml
+external/tests/
 nmodlconf.h.in
 nrnconf.h.in
+test/ringtest/*.dat
 build
 .DS_Store
 .eggs/
@@ -17,3 +20,5 @@ virtualenv
 .python-version
 *.o
 *.lo
+docs/_build
+docs/_generated

@@ -2,9 +2,16 @@
 # Lists of header files to install
 # =============================================================================
 set(HEADER_FILES_TO_INSTALL
+    bbsavestate.h
     cabvars.h
+    crout.hpp
+    crout_thread.hpp
     cspmatrix.h
     cspredef.h
+    deflate.hpp
+    dimplic.hpp
+    errcodes.hpp
+    euler.hpp
     hoc.h
     hoc_membf.h
     hocassrt.h
@@ -12,16 +19,19 @@ set(HEADER_FILES_TO_INSTALL
     hocgetsym.h
     hoclist.h
     hocparse.h
-    isoc99.h
     ivstream.h
+    mcran4.h
     md1redef.h
     md2redef.h
+    mech_api.h
     membdef.h
     membfunc.h
     multicore.h
     multisplit.h
     neuron.h
+    newton.hpp
     newton_struct.h
+    newton_thread.hpp
     nmodlmutex.h
     nrn_ansi.h
     nrnapi.h
@@ -29,20 +39,29 @@ set(HEADER_FILES_TO_INSTALL
     nrncvode.h
     nrnisaac.h
     nrniv_mf.h
-    nrnjava.h
     nrnoc_ml.h
     nrnmpi.h
     nrnmpidec.h
+    nrnrandom.h
     nrnran123.h
     nrnredef.h
+    nrnversionmacros.h
     oc_ansi.h
     ocfunc.h
     ocmisc.h
     options.h
+    parse_with_deps.hpp
+    runge.hpp
     scoplib.h
     section.h
+    sparse.hpp
+    sparse_thread.hpp
     spconfig.h
-    spmatrix.h)
+    spmatrix.h
+    ssimplic.hpp
+    ssimplic_thread.hpp
+    treeset.h
+    wrap_sprintf.h)
 
 # =============================================================================
 # Lists of headers populated using check_include_files
@@ -63,7 +82,6 @@ set(OC_FILE_LIST
     axis.cpp
     code.cpp
     code2.cpp
-    cygwinprt.cpp
     debug.cpp
     fileio.cpp
     fmenu.cpp
@@ -74,9 +92,9 @@ set(OC_FILE_LIST
     hocusr.cpp
     hoc_init.cpp
     hoc_oop.cpp
-    isoc99.cpp
     list.cpp
     math.cpp
+    mswinprt.cpp
     nonlin.cpp
     nrnfilewrap.cpp
     ocerf.cpp
@@ -105,7 +123,7 @@ set(NRNOC_FILE_LIST
     hocprax.cpp
     init.cpp
     ldifus.cpp
-    method3.cpp
+    membfunc.cpp
     nrnnemo.cpp
     nrntimeout.cpp
     nrnversion.cpp
@@ -116,7 +134,8 @@ set(NRNOC_FILE_LIST
     secref.cpp
     solve.cpp
     synapse.cpp
-    treeset.cpp)
+    treeset.cpp
+    multicore.cpp)
 
 set(NRNOC_GENERATED_FILE_LIST
     nrnversion.h
@@ -234,7 +253,6 @@ set(NRNIV_FILE_LIST
     secbrows.cpp
     shape.cpp
     shapeplt.cpp
-    singlech.cpp
     spaceplt.cpp
     splitcell.cpp
     symdir.cpp
@@ -361,13 +379,7 @@ set(MESCH_FILES_LIST
     zsolve.c
     zvecop.c)
 
-
-set(SPARSE_FILES_LIST
-    bksub.cpp
-    getelm.cpp
-    lineq.cpp
-    prmat.cpp
-    subrows.cpp)
+set(SPARSE_FILES_LIST bksub.cpp getelm.cpp lineq.cpp prmat.cpp subrows.cpp)
 
 # sparse13 matrix sources
 set(SPARSE13_FILES_LIST
@@ -386,67 +398,43 @@ set(SPARSE13_FILES_LIST
 
 # scopmath sources
 set(SCOPMATH_FILES_LIST
-    abort.c
-    adams.c
-    adeuler.c
-    adrunge.c
-    advance.c
-    boundary.c
-    crank.c
-    crout.c
-    csoda.c
-    csodabnc.c
-    deflate.c
-    dimplic.c
-    scoperf.c
-    euler.c
-    expfit.c
-    exprand.c
-    f2cmisc.c
-    factoria.c
-    force.c
-    gauss.c
-    gear.c
-    getmem.c
-    harmonic.c
-    heun.c
-    hyperbol.c
-    invert.c
-    lag.c
-    legendre.c
-    newton.c
-    normrand.c
-    perpulse.c
-    perstep.c
-    poisrand.c
-    poisson.c
-    praxis.c
-    pulse.c
-    quad.c
-    ramp.c
-    revhyper.c
-    revsawto.c
-    revsigmo.c
-    romberg.c
-    runge.c
-    sawtooth.c
-    schedule.c
-    seidel.c
-    sigmoid.c
-    simeq.c
-    simplex.c
-    sparse.c
-    vsparse.c
-    spline.c
-    squarewa.c
-    ssimplic.c
-    step.c
-    threshol.c
-    tridiag.c
-    sparse_thread.c
-    newton_thread.c
-    crout_thread.c
-    ssimplic_thread.c)
+    abort.cpp
+    advance.cpp
+    boundary.cpp
+    crank.cpp
+    scoperf.cpp
+    expfit.cpp
+    exprand.cpp
+    f2cmisc.cpp
+    factoria.cpp
+    force.cpp
+    gauss.cpp
+    getmem.cpp
+    harmonic.cpp
+    hyperbol.cpp
+    invert.cpp
+    lag.cpp
+    legendre.cpp
+    normrand.cpp
+    perpulse.cpp
+    perstep.cpp
+    poisrand.cpp
+    poisson.cpp
+    praxis.cpp
+    pulse.cpp
+    ramp.cpp
+    revhyper.cpp
+    revsawto.cpp
+    revsigmo.cpp
+    romberg.cpp
+    sawtooth.cpp
+    sigmoid.cpp
+    simeq.cpp
+    spline.cpp
+    squarewa.cpp
+    step.cpp
+    threshol.cpp
+    tridiag.cpp)
 
 set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
 
@@ -530,24 +518,13 @@ set(NMODL_FILES_LIST
     noccout.cpp
     parsact.cpp
     netrec_discon.cpp
-    partial.cpp
-    sens.cpp
     simultan.cpp
     solve.cpp
     symbol.cpp
     units.cpp
     version.cpp)
 
-set(IVOS_FILES_LIST
-    file.cpp
-    listimpl.cpp
-    math.cpp
-    memory.cpp
-    string.cpp
-    ustring.cpp
-    observe.cpp
-    regexp.cpp
-    resource.cpp)
+set(IVOS_FILES_LIST listimpl.cpp string.cpp observe.cpp regexp.cpp resource.cpp)
 
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
 
@@ -578,8 +555,7 @@ nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
                      nvector_parallel.c)
 nrn_create_file_list(NRN_MESCH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mesch ${MESCH_FILES_LIST})
-nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse
-                     ${SPARSE_FILES_LIST})
+nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPARSE_FILES_LIST})
 nrn_create_file_list(NRN_SPARSE13_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse13
                      ${SPARSE13_FILES_LIST})
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath

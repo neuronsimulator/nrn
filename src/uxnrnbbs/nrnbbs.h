@@ -22,7 +22,7 @@ void nrnbbs_exec(const char*);
 void nrnbbs_notify(const char*, NrnBBSCallback);
 
 // return when *pflag = true or one step wait if no arg
-void nrnbbs_wait(bool* pflag = (bool*)0);
+void nrnbbs_wait(bool* pflag = (bool*) 0);
 
 /* for debugging and bbs management */
 #if 0

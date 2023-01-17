@@ -9,7 +9,7 @@ set -xe
 #  - cmake (>=3.5)
 #  - flex
 #  - bison
-#  - python >= 3.6
+#  - python >= 3.7
 #  - cython
 #  - MPI
 #  - X11
@@ -53,12 +53,14 @@ pip_numpy_install() {
       37) numpy_ver="numpy==1.14.6" ;;
       38) numpy_ver="numpy==1.17.5" ;;
       39) numpy_ver="numpy==1.19.3" ;;
-      *) numpy_ver="numpy";;
+      310) numpy_ver="numpy==1.21.3" ;;
+      311) numpy_ver="numpy==1.23.5" ;;
+      *) echo "Error: numpy version not specified for this python!" && exit 1;;
     esac
 
-    # no old version exist for apple m1 and building from source fails
+    # older version for apple m1 as building from source fails
     if [[ `uname -m` == 'arm64' ]]; then
-      numpy_ver="numpy"
+      numpy_ver="numpy==1.21.3"
     fi
 
     echo " - pip install $numpy_ver"
@@ -72,7 +74,6 @@ build_wheel_linux() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    #auditwheel needs to be installed with python3
     pip install auditwheel
     pip install -r packaging/python/build_requirements.txt
     pip_numpy_install
@@ -82,7 +83,7 @@ build_wheel_linux() {
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
-      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_STATIC_READLINE=ON"
+      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
     fi
 
     if [ "$2" == "coreneuron" ]; then
@@ -94,11 +95,15 @@ build_wheel_linux() {
         source ~/.bashrc
         module load nvhpc
         unset CC CXX
+        # make the NVIDIA compilers default to targeting haswell CPUs
         # the default is currently 70;80, partly because NVHPC does not
         # support OpenMP target offload with 60. Wheels use mod2c and
         # OpenACC for now, so we can be a little more generic.
-        CMAKE_DEFS="${CMAKE_DEFS},CMAKE_CUDA_ARCHITECTURES=60;70;80"
+        CMAKE_DEFS="${CMAKE_DEFS},CMAKE_CUDA_ARCHITECTURES=60;70;80,CMAKE_C_FLAGS=-tp=haswell,CMAKE_CXX_FLAGS=-tp=haswell"
     fi
+
+    # Workaround for https://github.com/pypa/manylinux/issues/1309
+    git config --global --add safe.directory "*"
 
     python setup.py build_ext --cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
@@ -110,7 +115,15 @@ build_wheel_linux() {
         echo " - Auditwheel show"
         auditwheel show dist/*.whl
         echo " - Repairing..."
-        auditwheel repair dist/*.whl
+        # NOTE:
+        #   libgomp:  still need work to make sure this robust and usable
+        #             currently this will break when coreneuron is used and when
+        #             dev environment is not installed. Note that on aarch64 we have
+        #             seen issue with libgomp.so and hence we started excluding it.
+        #   libnrniv: we ship precompiled version of neurondemo containing libnrnmech.so
+        #             which is linked to libnrniv.so. auditwheel manipulate rpaths and
+        #             ships an extra copy of libnrniv.so and hence exclude it here.
+        auditwheel -v repair dist/*.whl --exclude "libgomp.so.1" --exclude "libnrniv.so"
     fi
 
     deactivate
@@ -139,7 +152,7 @@ build_wheel_osx() {
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
-      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_STATIC_READLINE=ON"
+      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
     fi
 
     # We need to "fix" the platform tag if the Python installer is universal2
@@ -220,7 +233,7 @@ case "$1" in
         MPI_INCLUDE_HEADERS="${BREW_PREFIX}/opt/openmpi/include;${BREW_PREFIX}/opt/mpich/include"
         build_wheel_osx $(which python3) "$coreneuron" "$MPI_INCLUDE_HEADERS"
     else
-        MPI_INCLUDE_HEADERS="/usr/lib/x86_64-linux-gnu/openmpi/include;/usr/include/mpich"
+        MPI_INCLUDE_HEADERS="/usr/lib/x86_64-linux-gnu/openmpi/include;/usr/include/x86_64-linux-gnu/mpich"
         build_wheel_linux $(which python3) "$coreneuron" "$MPI_INCLUDE_HEADERS"
     fi
     ls wheelhouse/

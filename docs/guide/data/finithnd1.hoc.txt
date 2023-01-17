@@ -1,0 +1,50 @@
+//@code
+// specify an example model
+load_file("nrngui.hoc")
+create a, b
+access a
+forall insert hh
+
+objref fih[3]
+fih[0] = new FInitializeHandler(0, "fi0()")
+fih[1] = new FInitializeHandler(1, "fi1()")
+fih[2] = new FInitializeHandler(2, "fi2()")
+
+proc fi0() {
+	print "fi0() called after v set but before INITIAL blocks"
+	printf("  a.v=%g a.m_hh=%g\n", a.v, a.m_hh)
+	a.v = 10
+}
+
+proc fi1() {
+	print "fi1() called after INITIAL blocks but before BREAKPOINT blocks"
+	print "     or variable step initialization."
+	print "     Good place to change any states."
+	printf("  a.v=%g a.m_hh=%g\n", a.v, a.m_hh)
+	printf("  b.v=%g b.m_hh=%g\n", b.v, b.m_hh)
+	b.v = 10
+}
+
+proc fi2() {
+	print "fi2() called after everything initialized. Just before return"
+	print "     from finitialize."
+	print "     Good place to record or plot initial values"
+	printf("  a.v=%g a.m_hh=%g\n", a.v, a.m_hh)
+	printf("  b.v=%g b.m_hh=%g\n", b.v, b.m_hh)
+}
+
+begintemplate Test
+objref fih, this
+proc init() {
+	fih = new FInitializeHandler("p()", this)
+}
+proc p() {
+	printf("inside %s.p()\n", this)
+}
+endtemplate Test
+
+objref test
+test = new Test()
+
+stdinit()
+fih[0].allprint()

@@ -1,0 +1,11 @@
+np = 1
+[group1]
+  np=1
+  binary = nrniv
+  args = -music -python test3.py -g 1
+[group2]
+  np=1
+  binary = nrniv
+  args = -music -python test3.py -g 2
+  group1.output -> group2.input
+  group2.output -> group1.input
