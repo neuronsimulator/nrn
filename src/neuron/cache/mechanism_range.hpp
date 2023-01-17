@@ -55,6 +55,7 @@ struct MechanismRange {
             // grrr...see cagkftab test where setdata is not called(?) and extcall_prop is null(?)
             return;
         }
+        assert(prop->param_size() == NumFloatingPointFields);
         for (auto i = 0; i < NumFloatingPointFields; ++i) {
             m_ptrs[i] = &prop->param(i);
             assert(m_ptrs[i]);

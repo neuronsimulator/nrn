@@ -15,9 +15,6 @@ def sortspikes(spiketime, gidvec):
 # Set globally so we can ensure the IClamp duration is shorter
 tstop = 1
 
-# Set globally so we can ensure the IClamp duration is shorter
-tstop = 1
-
 # Passive cell random tree so there is some inhomogeneity of ia and im
 class Cell:
     def __init__(self, id, nsec):
