@@ -97,7 +97,7 @@ endif()
 # Translate all MOD files to C and mark them generated
 # =============================================================================
 foreach(modfile ${NRN_MODFILE_BASE_NAMES})
-  nocmodl_mod_to_c(${modfile})
+  nocmodl_mod_to_cpp(${modfile})
   set_property(
     SOURCE ${modfile}.cpp
     APPEND
