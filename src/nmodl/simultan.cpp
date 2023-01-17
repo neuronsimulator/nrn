@@ -3,8 +3,6 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
-#include <tuple>
-
 extern int numlist;
 static List* eqnq;
 
@@ -16,7 +14,8 @@ void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnu
     // added so that method->name != "newton" then those methods may need to be modified as newton
     // was
     Sprintf(buf,
-            "%s<%d>(_slist%d, neuron::scopmath::row_view{_ml, _iml}, %s_wrapper_returning_int, _dlist%d);\n",
+            "%s<%d>(_slist%d, neuron::scopmath::row_view{_ml, _iml}, %s_wrapper_returning_int, "
+            "_dlist%d);\n",
             method->name,
             numeqn,
             listnum,
@@ -191,8 +190,9 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
             counts);
     vectorize_substitute(q, buf);
     Insertstr(q3, "if (!_recurse) {\n _recurse = 1;\n");
+    // olupton 2023-01-19: this code does not appear to be covered by the test suite
     Sprintf(buf,
-            "error = newton<%d>(_slist%d, %s, _dlist%d, _ml, _iml);\n",
+            "error = newton<%d>(_slist%d, neuron::scopmath::row_view{_ml, _iml}, %s, _dlist%d);\n",
             counts,
             numlist,
             SYM(q2)->name,
