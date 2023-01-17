@@ -786,6 +786,8 @@ if(NRN_ENABLE_PYTHON)
     COMMENT "Generating help_data.dat"
     VERBATIM)
   add_dependencies(nrniv_lib help_data_dat)
+  # also ensure help_data.dat is copied to the install location
+  install(FILES ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat DESTINATION lib/python/neuron)
 endif()
 
 include("${CODING_CONV_CMAKE}/build-time-copy.cmake") # cpp_cc_build_time_copy
