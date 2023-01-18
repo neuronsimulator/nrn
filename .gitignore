@@ -22,30 +22,3 @@ virtualenv
 *.lo
 docs/_build
 docs/_generated
-
-# These files are generated at build time
-# It would be a good idea to create them in the
-# build directory in the future.
-src/nrnoc/apcount.cpp
-src/nrnoc/exp2syn.cpp
-src/nrnoc/expsyn.cpp
-src/nrnoc/feature.cpp
-src/nrnoc/hh.cpp
-src/nrnoc/hh.mod
-src/nrnoc/hh.mod.orig
-src/nrnoc/hocusr.h
-src/nrnoc/intfire1.cpp
-src/nrnoc/intfire2.cpp
-src/nrnoc/intfire4.cpp
-src/nrnoc/netstim.cpp
-src/nrnoc/nrnversion.
-src/nrnoc/nrnversion.h
-src/nrnoc/oclmp.cpp
-src/nrnoc/passive.cpp
-src/nrnoc/pattern.cpp
-src/nrnoc/ppmark.cpp
-src/nrnoc/stim.cpp
-src/nrnoc/svclmp.cpp
-src/nrnoc/syn.cpp
-src/nrnoc/vclmp.cpp
-share/lib/python/neuron/help_data.dat
