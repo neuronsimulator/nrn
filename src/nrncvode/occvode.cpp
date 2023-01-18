@@ -405,8 +405,7 @@ void Cvode::daspk_init_eqn() {
             nde = nd->extnode;
             i = nd->eqn_index_ - 1;  // the sparse matrix index starts at 1
             z.pv_[i] = nd->v_handle();
-            z.pvdot_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                                 _nt->_sp13_rhs + in};
+            z.pvdot_[i] = nd->rhs_handle();
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
                     k = i + ie + 1;
