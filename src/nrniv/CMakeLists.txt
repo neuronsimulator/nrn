@@ -102,7 +102,7 @@ foreach(modfile ${NRN_MODFILE_BASE_NAMES})
     SOURCE ${modfile}.cpp
     APPEND
     PROPERTY COMPILE_OPTIONS ${NRN_EXTRA_MECH_CXX_FLAGS})
-  list(APPEND NRN_MODFILE_CPP ${modfile}.cpp)
+  list(APPEND NRN_MODFILE_CPP ${PROJECT_BINARY_DIR}/${modfile}.cpp)
 endforeach()
 
 set_source_files_properties(${NRN_MODFILE_CPP} PROPERTIES GENERATED TRUE)
@@ -216,10 +216,11 @@ add_custom_target(
   nrnversion_h
   COMMAND ${CMAKE_COMMAND} -E env PROJECT_VERSION=${PROJECT_VERSION} bash
           ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} > nrnversion.h.tmp
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp ${NRN_NRNOC_SRC_DIR}/nrnversion.h
-  DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh)
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp nrnversion.h
+  DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh
+  WORKING_DIRECTORY ${NRN_NRNOC_BUILD_DIR})
 
-add_custom_command(OUTPUT ${NRN_NRNOC_SRC_DIR}/nrnversion.h DEPENDS nrnversion_h)
+add_custom_command(OUTPUT ${NRN_NRNOC_BUILD_DIR}/nrnversion.h DEPENDS nrnversion_h)
 add_dependencies(generated_source_files nrnversion_h)
 
 # avoid error with nvector_serial.cpp for #include <../../../nrnconf.h>
