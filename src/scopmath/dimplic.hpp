@@ -2,7 +2,6 @@
  *  @copyright (c) 1989-90 Duke University
  */
 #pragma once
-struct NrnThread;
 namespace neuron::scopmath {
 template <typename Array>
 int derivimplicit(int /* _ninits */,

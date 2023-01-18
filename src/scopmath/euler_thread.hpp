@@ -7,7 +7,7 @@ double _modl_get_dt_thread(NrnThread*);
 namespace neuron::scopmath {
 template <typename Array, typename Callable, typename... Args>
 int euler_thread(int neqn, int* var, int* der, Array p, Callable func, Args&&... args) {
-    auto* const nt = std::get<NrnThread*>(std::tuple{args...});
+    auto* const nt = get_first<NrnThread*>(std::forward<Args>(args)...);
     auto const dt = _modl_get_dt_thread(nt);
 
     // Calculate the derivatives

@@ -2,6 +2,8 @@
  *  @copyright (c) 1984-90 Duke University
  */
 #pragma once
+#include <type_traits>
+#include <utility>
 namespace neuron::scopmath {
 inline constexpr auto ROUNDOFF = 1.e-20;
 inline constexpr auto ZERO = 1.e-8;
@@ -34,4 +36,12 @@ inline constexpr auto NOFORCE = 11;
 inline constexpr auto DIVERGED = 12;
 inline constexpr auto NEG_ARG = 13;
 inline constexpr auto RANGE = 14;
+template <typename T, typename U, typename... Ts>
+decltype(auto) get_first(U&& first, Ts&&... args) {
+    if constexpr (std::is_same_v<std::decay_t<U>, T>) {
+        return std::forward<U>(first);
+    } else {
+        return get_first<T>(std::forward<Ts>(args)...);
+    }
+}
 }  // namespace neuron::scopmath

@@ -1,7 +1,6 @@
 #pragma once
 #include "dimplic.hpp"
 #include "errcodes.hpp"
-#include "hocdec.h"  // Datum
 #include "sparse_thread.hpp"
 
 struct NrnThread;
@@ -18,7 +17,7 @@ int _ss_sparse_thread(void** v,
                       double dt,
                       Callable fun,
                       int linflag,
-                      Args... args) {
+                      Args&&... args) {
     auto const check_state = [&p](int n, int* s) {
         auto const s_ = [&p, s](auto arg) -> auto& {
             return p[s[arg]];
@@ -35,11 +34,11 @@ int _ss_sparse_thread(void** v,
     int err, i;
     auto const ss_dt = 1e9;
     // get the NrnThread* from args
-    auto* const nt = std::get<NrnThread*>(std::tuple{args...});
+    auto* const nt = get_first<NrnThread*>(std::forward<Args>(args)...);
     _modl_set_dt_thread(ss_dt, nt);
 
     if (linflag) { /*iterate linear solution*/
-        err = sparse_thread(v, n, s, d, p, t, ss_dt, fun, 0, args...);
+        err = sparse_thread(v, n, s, d, p, t, ss_dt, std::move(fun), 0, std::forward<Args>(args)...);
     } else {
         constexpr auto NIT = 7;
         for (i = 0; i < NIT; i++) {
@@ -60,18 +59,17 @@ int _ss_sparse_thread(void** v,
     _modl_set_dt_thread(dt, nt);
     return err;
 }
-template <typename Array>
+template <typename Array, typename Callable, typename... Args>
 int _ss_derivimplicit_thread(int n,
                              int* slist,
                              int* dlist,
                              Array p,
-                             int (*fun)(double*, Datum*, Datum*, NrnThread*),
-                             Datum* ppvar,
-                             Datum* thread,
-                             NrnThread* nt) {
+                             Callable fun,
+                             Args&&... args) {
+    auto* const nt = get_first<NrnThread*>(std::forward<Args>(args)...);
     auto const dtsav = _modl_get_dt_thread(nt);
     _modl_set_dt_thread(1e-9, nt);
-    auto const err = derivimplicit_thread(n, slist, dlist, p, fun, ppvar, thread, nt);
+    auto const err = derivimplicit_thread(n, slist, dlist, std::move(p), std::move(fun), std::forward<Args>(args)...);
     _modl_set_dt_thread(dtsav, nt);
     return err;
 }

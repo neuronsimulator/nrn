@@ -5,7 +5,7 @@
  *  Jan 2008 thread safe
  */
 #pragma once
-#include "hocdec.h"  // Datum, emalloc
+#include "hocdec.h"  // emalloc
 #include "errcodes.hpp"
 
 #include <cassert>
@@ -13,7 +13,6 @@
 #include <cstdio>
 #include <cstdlib>
 
-struct NrnThread;
 // avoid including nrniv_mf.h becausee of #define hackery
 void* nrn_pool_alloc(void* pool);
 void* nrn_pool_create(long count, int itemsize);
@@ -572,7 +571,7 @@ inline void spar_minorder(SparseObj* so) {
 }
 
 template <typename Callable, typename... Args>
-void create_coef_list(SparseObj* so, int n, Callable fun, Args... args) {
+void create_coef_list(SparseObj* so, int n, Callable fun, Args&&... args) {
     initeqn(so, (unsigned) n);
     so->phase = 1;
     so->ngetcall = 0;
@@ -584,7 +583,7 @@ void create_coef_list(SparseObj* so, int n, Callable fun, Args... args) {
     spar_minorder(so);
     so->phase = 2;
     so->ngetcall = 0;
-    fun(so, so->rhs, args...);
+    fun(so, so->rhs, std::forward<Args>(args)...);
     so->phase = 0;
 }
 
@@ -650,7 +649,7 @@ int sparse_thread(void** v,
                   double dt,
                   Callable fun,
                   int linflag,
-                  Args... args) {
+                  Args&&... args) {
     auto const s_ = [&p, s](auto arg) -> auto& {
         return p[s[arg]];
     };
@@ -694,7 +693,7 @@ int sparse_thread(void** v,
             break;
     }
     detail::sparse_thread::init_coef_list(so);
-    fun(so, so->rhs, args...);
+    fun(so, so->rhs, std::forward<Args>(args)...);
     for (i = 0; i < n; i++) { /*restore Dstate at t+dt*/
         d_(i) = (s_(i) - d_(i)) / dt;
     }
@@ -703,7 +702,7 @@ int sparse_thread(void** v,
 
 /* for solving ax=b */
 template <typename Array, typename Callable, typename... Args>
-int _cvode_sparse_thread(void** v, int n, int* x, Array p, Callable fun, Args... args) {
+int _cvode_sparse_thread(void** v, int n, int* x, Array p, Callable fun, Args&&... args) {
     auto const x_ = [&p, x](auto arg) -> auto& {
         return p[x[arg]];
     };
@@ -722,7 +721,7 @@ int _cvode_sparse_thread(void** v, int n, int* x, Array p, Callable fun, Args...
         detail::sparse_thread::create_coef_list(so, n, fun, args...);
     }
     detail::sparse_thread::init_coef_list(so);
-    fun(so, so->rhs, args...);
+    fun(so, so->rhs, std::forward<Args>(args)...);
     if ((ierr = detail::sparse_thread::matsol(so))) {
         return ierr;
     }

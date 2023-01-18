@@ -10,7 +10,6 @@
 #include <cmath>
 #include <cstdlib>
 
-struct NrnThread;
 namespace neuron::scopmath {
 namespace detail::newton_thread {
 /**
@@ -34,7 +33,7 @@ void buildjacobian(NewtonSpace* ns,
                    Callable pfunc,
                    double* value,
                    double** jacobian,
-                   Args... args) {
+                   Args&&... args) {
     int i, j;
     double increment, *high_value, *low_value;
 
@@ -114,7 +113,7 @@ int nrn_newton_thread(NewtonSpace* ns,
                       Array x,
                       Function pfunc,
                       double* value,
-                      Args... args) {
+                      Args&&... args) {
     int i, count = 0, error, *perm;
     double **jacobian, *delta_x, change = 1.0, max_dev, temp;
 
