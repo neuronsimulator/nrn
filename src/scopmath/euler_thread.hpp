@@ -1,7 +1,7 @@
 #pragma once
 #include "errcodes.hpp"
 
-#include <tuple>
+#include <utility>
 struct NrnThread;
 double _modl_get_dt_thread(NrnThread*);
 namespace neuron::scopmath {
