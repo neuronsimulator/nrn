@@ -13,7 +13,7 @@
 #include <cmath>
 #include <cstdlib>
 
-using namespace neuron::scopmath; // for errcodes.hpp
+using namespace neuron::scopmath;  // for errcodes.hpp
 /****************************************************************/
 /*								*/
 /*  Abstract: tridiag()						*/
@@ -45,7 +45,7 @@ using namespace neuron::scopmath; // for errcodes.hpp
 /*  Files accessed: none					*/
 /*								*/
 /****************************************************************/
-int tridiag(int n, double* a, double *b, double* c, double* d, double* soln) {
+int tridiag(int n, double* a, double* b, double* c, double* d, double* soln) {
     int k, nn;
     double denom;
 
@@ -53,32 +53,30 @@ int tridiag(int n, double* a, double *b, double* c, double* d, double* soln) {
 
     /* Perform LU decomposition on tridiagonal matrix */
 
-    for (k = 1; k < nn; ++k)
-    {
-	/* Check for singularity */
-	denom = b[k - 1];
-	if (fabs(denom) < ROUNDOFF)
-	    return (SINGULAR);
+    for (k = 1; k < nn; ++k) {
+        /* Check for singularity */
+        denom = b[k - 1];
+        if (fabs(denom) < ROUNDOFF)
+            return (SINGULAR);
 
-	/* Skip lower triangle if matrix unchanged */
+        /* Skip lower triangle if matrix unchanged */
 
-	if (n > 0)
-	{
-	    /* Note that a[0] and c[nn-2] are not present in matrix */
-	    a[k] /= denom;
-	    b[k] -= a[k] * c[k - 1];
-	}
+        if (n > 0) {
+            /* Note that a[0] and c[nn-2] are not present in matrix */
+            a[k] /= denom;
+            b[k] -= a[k] * c[k - 1];
+        }
 
-	/* Transform constant vector */
+        /* Transform constant vector */
 
-	d[k] -= a[k] * d[k - 1];
+        d[k] -= a[k] * d[k - 1];
     }
 
     /* Perform back substitution */
 
     soln[nn - 1] = d[nn - 1] / b[nn - 1];
     for (k = nn - 2; k >= 0; --k)
-	soln[k] = (d[k] - c[k] * (soln[k + 1])) / b[k];
+        soln[k] = (d[k] - c[k] * (soln[k + 1])) / b[k];
 
     return (SUCCESS);
 }

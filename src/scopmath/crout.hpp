@@ -1,27 +1,31 @@
 /** @file crout.hpp
  *  @copyright (c) 1987-90 Duke University
  */
+#pragma once
 #include "errcodes.hpp"
 #include "newton_struct.h"
 
 #include <cmath>
 namespace neuron::scopmath {
 /**
- * Performs an LU triangular factorization of a real matrix by the Crout algorithm using partial
- * pivoting. Rows are not normalized; implicit equilibration is used. ROUNDOFF is the minimal value
- * for a pivot element without its being considered too close to zero (currently set to 1.0E-20).
+ * Performs an LU triangular factorization of a real matrix by the Crout
+ * algorithm using partial pivoting. Rows are not normalized; implicit
+ * equilibration is used. ROUNDOFF is the minimal value for a pivot element
+ * without its being considered too close to zero (currently set to 1.0E-20).
  *
  * @param n Number of rows of the matrix.
  * @param a Double precision matrix to be factored.
  * @param perm Permutation vector to store row interchanges.
  *
- * Output: a, factors required to transform the constant vector in the set of simultaneous equations
- * are stored in the lower triangle; factors for back substitution are stored in the upper triangle.
- * perm, permutation vector to store row interchanges.
+ * Output: a, factors required to transform the constant vector in the set of
+ * simultaneous equations are stored in the lower triangle; factors for back
+ * substitution are stored in the upper triangle. perm, permutation vector to
+ * store row interchanges.
  *
  * @returns 0 if no error; 2 if matrix is singular or ill-conditioned.
  */
-inline int crout(int n, double** a, int* perm) {
+template <typename Matrix, typename Permutation>
+int crout(int n, Matrix& a, Permutation& perm) {
     int i, j, k, r, pivot, irow, save_i = 0, krow;
     double sum, *rowmax, equil_1, equil_2;
 
@@ -103,20 +107,21 @@ inline int crout(int n, double** a, int* perm) {
 }
 
 /**
- * Performs forward substitution algorithm to transform the constant vector in the linear
- * simultaneous equations to be consistent with the factored matrix. Then performs back substitution
- * to find the solution to the simultaneous linear equations.
+ * Performs forward substitution algorithm to transform the constant vector in
+ * the linear simultaneous equations to be consistent with the factored matrix.
+ * Then performs back substitution to find the solution to the simultaneous
+ * linear equations.
  *
  * @param n Number of rows of the matrix
- * @param a Double precision matrix containing the factored matrix of coefficients of the linear
- * equations.
+ * @param a Double precision matrix containing the factored matrix of
+ * coefficients of the linear equations.
  * @param b Vector of function values
  * @param perm Permutation vector to store row interchanges
  *
  * Output: p[y[i]] contains the solution vector.
  */
-template <typename Array>
-int solve(int n, double** a, double* b, int* perm, Array p, int* y) {
+template <typename Array, typename Matrix, typename Permutation>
+int solve(int n, Matrix& a, double* b, Permutation& perm, Array& p, int* y) {
     auto const y_ = [&p, y](auto arg) -> auto& {
         return p[y[arg]];
     };

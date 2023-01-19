@@ -10,22 +10,22 @@
 #include <cmath>
 #include <cstdlib>
 
-struct NrnThread;
 namespace neuron::scopmath {
 namespace detail::newton_thread {
 /**
- * Creates the Jacobian matrix by computing partial derivatives by finite central differences. If
- * the column variable is nonzero, an increment of 2% of the variable is used. STEP is the minimum
- * increment allowed; it is currently set to 1.0E-6.
+ * Creates the Jacobian matrix by computing partial derivatives by finite
+ * central differences. If the column variable is nonzero, an increment of 2% of
+ * the variable is used. STEP is the minimum increment allowed; it is currently
+ * set to 1.0E-6.
  * @param n number of variables
  * @param x pointer to array of addresses of the solution vector elements
  * @param p array of parameter values
- * @param pfunc pointer to function which computes the deviation from zero of each equation in the
- * model.
+ * @param pfunc pointer to function which computes the deviation from zero of
+ * each equation in the model.
  * @param value pointer to array of addresses of function values
  * @param[out] jacobian computed jacobian matrix
  */
-template <typename Array, typename Callable>
+template <typename Array, typename Callable, typename... Args>
 void buildjacobian(NewtonSpace* ns,
                    int n,
                    int* index,
@@ -33,9 +33,7 @@ void buildjacobian(NewtonSpace* ns,
                    Callable pfunc,
                    double* value,
                    double** jacobian,
-                   Datum* ppvar,
-                   Datum* thread,
-                   NrnThread* nt) {
+                   Args&&... args) {
     int i, j;
     double increment, *high_value, *low_value;
 
@@ -48,11 +46,11 @@ void buildjacobian(NewtonSpace* ns,
         for (j = 0; j < n; j++) {
             increment = std::fmax(fabs(0.02 * (x[index[j]])), STEP);
             x[index[j]] += increment;
-            (*pfunc)(x, ppvar, thread, nt);
+            pfunc(args...);
             for (i = 0; i < n; i++)
                 high_value[i] = value[i];
             x[index[j]] -= 2.0 * increment;
-            (*pfunc)(x, ppvar, thread, nt);
+            pfunc(args...);
             for (i = 0; i < n; i++) {
                 low_value[i] = value[i];
 
@@ -64,17 +62,17 @@ void buildjacobian(NewtonSpace* ns,
             /* Restore original variable and function values. */
 
             x[index[j]] += increment;
-            (*pfunc)(x, ppvar, thread, nt);
+            pfunc(args...);
         }
     } else {
         for (j = 0; j < n; j++) {
             increment = std::fmax(fabs(0.02 * (x[j])), STEP);
             x[j] += increment;
-            (*pfunc)(x, ppvar, thread, nt);
+            pfunc(args...);
             for (i = 0; i < n; i++)
                 high_value[i] = value[i];
             x[j] -= 2.0 * increment;
-            (*pfunc)(x, ppvar, thread, nt);
+            pfunc(args...);
             for (i = 0; i < n; i++) {
                 low_value[i] = value[i];
 
@@ -86,37 +84,36 @@ void buildjacobian(NewtonSpace* ns,
             /* Restore original variable and function values. */
 
             x[j] += increment;
-            (*pfunc)(x, ppvar, thread, nt);
+            pfunc(args...);
         }
     }
 }
 }  // namespace detail::newton_thread
 /**
- * Iteratively solves simultaneous nonlinear equations by Newton's method, using a Jacobian matrix
- * computed by finite differences.
+ * Iteratively solves simultaneous nonlinear equations by Newton's method, using
+ * a Jacobian matrix computed by finite differences.
  *
  * @param n number of variables to solve for.
- * @param x pointer to array of the solution vector elements possibly indexed by index
+ * @param x pointer to array of the solution vector elements possibly indexed by
+ * index
  * @param p array of parameter values
- * @param pfunc pointer to function which computes the deviation from zero of each equation in the
- * model.
+ * @param pfunc pointer to function which computes the deviation from zero of
+ * each equation in the model.
  * @param value pointer to array to array of the function values.
- * @param[out] x contains the solution value or the most recent iteration's result in the event of
- * an error.
+ * @param[out] x contains the solution value or the most recent iteration's
+ * result in the event of an error.
  *
- * @returns 0 if no error; 2 if matrix is singular or ill-conditioned; 1 if maximum iterations
- * exceeded
+ * @returns 0 if no error; 2 if matrix is singular or ill-conditioned; 1 if
+ * maximum iterations exceeded
  */
-template <typename Array, typename Function>
+template <typename Array, typename Function, typename... Args>
 int nrn_newton_thread(NewtonSpace* ns,
                       int n,
                       int* index,
                       Array x,
                       Function pfunc,
                       double* value,
-                      Datum* ppvar,
-                      Datum* thread,
-                      NrnThread* nt) {
+                      Args&&... args) {
     int i, count = 0, error, *perm;
     double **jacobian, *delta_x, change = 1.0, max_dev, temp;
 
@@ -136,8 +133,7 @@ int nrn_newton_thread(NewtonSpace* ns,
              * than MAXCHANGE
              */
 
-            detail::newton_thread::buildjacobian(
-                ns, n, index, x, pfunc, value, jacobian, ppvar, thread, nt);
+            detail::newton_thread::buildjacobian(ns, n, index, x, pfunc, value, jacobian, args...);
             for (i = 0; i < n; i++)
                 value[i] = -value[i]; /* Required correction to
                                        * function values */
@@ -145,7 +141,7 @@ int nrn_newton_thread(NewtonSpace* ns,
             if ((error = nrn_crout_thread(ns, n, jacobian, perm)) != SUCCESS)
                 break;
         }
-        nrn_scopmath_solve_thread(n, jacobian, value, perm, delta_x, (int*) 0);
+        nrn_scopmath_solve_thread(n, jacobian, value, perm, delta_x, nullptr);
 
         /* Update solution vector and compute norms of delta_x and value */
 
@@ -163,7 +159,8 @@ int nrn_newton_thread(NewtonSpace* ns,
                 x[i] += delta_x[i];
             }
         }
-        (*pfunc)(x, ppvar, thread, nt); /* Evaluate function values with new solution */
+        // Evaluate function values with new solution
+        pfunc(args...);
         max_dev = 0.0;
         for (i = 0; i < n; i++) {
             value[i] = -value[i]; /* Required correction to function

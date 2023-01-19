@@ -156,7 +156,7 @@ void solv_diffeq(Item* qsol,
     replacstr(qsol, buf);
     if (method->subtype & DERF) { /* derivimplicit */
         Sprintf(buf,
-                "%s %s%s_thread(%d, _slist%d, _dlist%d, _p, %s, _ppvar, _thread, _nt);\n%s",
+                "%s %s%s_thread(%d, _slist%d, _dlist%d, _p, %s, _p, _ppvar, _thread, _nt);\n%s",
                 deriv1_advance,
                 ssprefix,
                 method->name,
@@ -171,7 +171,7 @@ void solv_diffeq(Item* qsol,
             Sprintf(
                 buf,
                 "%s%s_thread(&(_thread[_spth%d].literal_value<void*>()), %d, _slist%d, _dlist%d, _p, &%s, %s, %s\
-, _linmat%d, _ppvar, _thread, _nt);\n",
+, _linmat%d, _p, _ppvar, _thread, _nt);\n",
                 ssprefix,
                 method->name,
                 listnum,

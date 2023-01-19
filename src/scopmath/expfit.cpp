@@ -15,7 +15,7 @@
 #include <cmath>
 #include <cstdio>
 
-using namespace neuron::scopmath; // for errcodes.hpp
+using namespace neuron::scopmath;  // for errcodes.hpp
 /****************************************************************
  *
  *  Abstract: expfit()
@@ -60,8 +60,14 @@ using namespace neuron::scopmath; // for errcodes.hpp
  *  Files accessed: reffile
  *
  ****************************************************************/
-static int expinit(char* filename, double *deltat, double **data);
-static int testfit(int ndata, double* data, double* terms, double* amplitude, double* lambda, double h, double* errfit);
+static int expinit(char* filename, double* deltat, double** data);
+static int testfit(int ndata,
+                   double* data,
+                   double* terms,
+                   double* amplitude,
+                   double* lambda,
+                   double h,
+                   double* errfit);
 int expfit(double* terms, char* reffile, double* amplitude, double* lambda, double* error) {
     int i, j, k, npts, dimen, ierr;
     double h, *x, **L, *coeff, *work;
@@ -71,12 +77,12 @@ int expfit(double* terms, char* reffile, double* amplitude, double* lambda, doub
      */
 
     if ((npts = expinit(reffile, &h, &x)) <= 0)
-	return (NODATA);
+        return (NODATA);
 
     if (*terms < 0.)
-	dimen = (int) -(*terms - 0.1);
+        dimen = (int) -(*terms - 0.1);
     else
-	dimen = (int) (*terms + 0.1);
+        dimen = (int) (*terms + 0.1);
 
     /* Allocate storage for arrays */
 
@@ -86,22 +92,20 @@ int expfit(double* terms, char* reffile, double* amplitude, double* lambda, doub
 
     /* Compute least squares matrix */
 
-    for (i = 0; i < dimen; i++)
-    {
-	for (j = 0; j <= i; j++)
-	{
-	    L[i][j] = 0.0;
-	    for (k = 1; k <= npts - dimen; k++)
-		L[i][j] += x[i + k] * x[j + k];
-	    if (i != j)
-		L[j][i] = L[i][j];
-	}
+    for (i = 0; i < dimen; i++) {
+        for (j = 0; j <= i; j++) {
+            L[i][j] = 0.0;
+            for (k = 1; k <= npts - dimen; k++)
+                L[i][j] += x[i + k] * x[j + k];
+            if (i != j)
+                L[j][i] = L[i][j];
+        }
 
-	/* Compute constant vector */
+        /* Compute constant vector */
 
-	L[i][dimen] = 0.0;
-	for (k = 1; k <= npts - dimen; k++)
-	    L[i][dimen] -= x[i + k] * x[k - 1];
+        L[i][dimen] = 0.0;
+        for (k = 1; k <= npts - dimen; k++)
+            L[i][dimen] -= x[i + k] * x[k - 1];
     }
 
     /*
@@ -110,59 +114,54 @@ int expfit(double* terms, char* reffile, double* amplitude, double* lambda, doub
      * lambda[0] to lambda[dimen-1].  Deflate() returns the number of
      * exponentials with real time constants.
      */
-    if ((ierr = simeq(dimen, L, work, (int *)0)) != SUCCESS)
-	goto FINISH;
+    if ((ierr = simeq(dimen, L, work, (int*) 0)) != SUCCESS)
+        goto FINISH;
 
     coeff[0] = 1.0;
     for (i = 1; i <= dimen; i++)
-	coeff[i] = work[i - 1];
-    if ((dimen = deflate((double) dimen, coeff, lambda)) < 0)
-    {
-	ierr = -dimen;
-	goto FINISH;
-    }
-    else if (dimen == 0)
-    {
-	ierr = NO_SOLN;
-	goto FINISH;
+        coeff[i] = work[i - 1];
+    if ((dimen = deflate((double) dimen, coeff, lambda)) < 0) {
+        ierr = -dimen;
+        goto FINISH;
+    } else if (dimen == 0) {
+        ierr = NO_SOLN;
+        goto FINISH;
     }
 
     /* Set up least squares matrix for amplitudes */
 
-    for (i = 0; i < dimen; i++)
-    {
-	for (j = 0; j <= i; j++)
-	{
-	    L[i][j] = 1.0;
-	    for (k = 1; k < npts - dimen; k++)
-		L[i][j] += pow(lambda[i] * lambda[j], (double) k);
-	    if (i != j)
-		L[j][i] = L[i][j];
-	}
+    for (i = 0; i < dimen; i++) {
+        for (j = 0; j <= i; j++) {
+            L[i][j] = 1.0;
+            for (k = 1; k < npts - dimen; k++)
+                L[i][j] += pow(lambda[i] * lambda[j], (double) k);
+            if (i != j)
+                L[j][i] = L[i][j];
+        }
 
-	/* Compute constant vector */
+        /* Compute constant vector */
 
-	L[i][dimen] = x[0];
-	for (k = 1; k < npts - dimen; k++)
-	    L[i][dimen] += pow(lambda[i], (double) k) * x[k];
+        L[i][dimen] = x[0];
+        for (k = 1; k < npts - dimen; k++)
+            L[i][dimen] += pow(lambda[i], (double) k) * x[k];
     }
 
     /* Solve for amplitudes */
 
-    if ((ierr = simeq(dimen, L, work, (int *)0)) != SUCCESS)
-	goto FINISH;
+    if ((ierr = simeq(dimen, L, work, (int*) 0)) != SUCCESS)
+        goto FINISH;
 
     for (i = 0; i < dimen; i++)
-	amplitude[i] = work[i];
+        amplitude[i] = work[i];
 
     /* Convert basis function values to time constants */
 
     for (i = 0; i < dimen; i++)
-	if (lambda[i] <= 0.0)
-	    /* Basis functions must be positive to take logarithm */
-	    amplitude[i] = 0.0;
-	else
-	    lambda[i] = log(lambda[i]) / h;
+        if (lambda[i] <= 0.0)
+            /* Basis functions must be positive to take logarithm */
+            amplitude[i] = 0.0;
+        else
+            lambda[i] = log(lambda[i]) / h;
 
     /*
      * If trial number of exponential terms is negative, compute the standard
@@ -170,11 +169,11 @@ int expfit(double* terms, char* reffile, double* amplitude, double* lambda, doub
      * less than that error.
      */
     if (*terms < 0.)
-	testfit(npts, x, terms, amplitude, lambda, h, error);
+        testfit(npts, x, terms, amplitude, lambda, h, error);
     else
-	*error = -1.0;
+        *error = -1.0;
     if (*terms <= ZERO)
-	ierr = NO_SOLN;
+        ierr = NO_SOLN;
 
 FINISH:
     freevector(coeff);
@@ -205,8 +204,8 @@ FINISH:
  *
  * Files accessed: filename (input)
  *------------------------------------------------------------------------*/
-static int expinit(char* filename, double *deltat, double **data) {
-    FILE *refdata;
+static int expinit(char* filename, double* deltat, double** data) {
+    FILE* refdata;
     int i, npts = -6;
     double temp;
     char tmpstr[81];
@@ -217,22 +216,21 @@ static int expinit(char* filename, double *deltat, double **data) {
      */
 
     if ((refdata = fopen(filename, "r")) == NULL)
-	return (0);
+        return (0);
     while (fgets(tmpstr, 80, refdata) != NULL)
-	npts++;
+        npts++;
     *data = makevector(npts);
     rewind(refdata);
 
     for (i = 0; i < 7; i++)
-	nrn_assert(fgets(tmpstr, 80, refdata));
+        nrn_assert(fgets(tmpstr, 80, refdata));
     sscanf(tmpstr, "%lf %lf", &temp, *data);
     nrn_assert(fgets(tmpstr, 80, refdata));
     sscanf(tmpstr, "%lf %lf", deltat, *data + 1);
     *deltat -= temp;
-    for (i = 2; i < npts; i++)
-    {
-	nrn_assert(fgets(tmpstr, 80, refdata));
-	sscanf(tmpstr, "%lf %lf", &temp, *data + i);
+    for (i = 2; i < npts; i++) {
+        nrn_assert(fgets(tmpstr, 80, refdata));
+        sscanf(tmpstr, "%lf %lf", &temp, *data + i);
     }
 
     fclose(refdata);
@@ -269,7 +267,13 @@ static int expinit(char* filename, double *deltat, double **data) {
  * Files accessed:
  *------------------------------------------------------------------------*/
 
-static int testfit(int ndata, double* data, double* terms, double* amplitude, double* lambda, double h, double* errfit) {
+static int testfit(int ndata,
+                   double* data,
+                   double* terms,
+                   double* amplitude,
+                   double* lambda,
+                   double h,
+                   double* errfit) {
     int n, i, j;
     double temp;
 
@@ -277,34 +281,30 @@ static int testfit(int ndata, double* data, double* terms, double* amplitude, do
 
     n = (int) -(*terms - 0.1);
     *errfit = 0.0;
-    for (i = 0; i < ndata; i++)
-    {
-	temp = 0.0;
-	for (j = 0; j < n; j++)
-	    temp += amplitude[j] * exp(lambda[j] * i * h);
-	temp -= data[i];
-	*errfit += temp * temp;
+    for (i = 0; i < ndata; i++) {
+        temp = 0.0;
+        for (j = 0; j < n; j++)
+            temp += amplitude[j] * exp(lambda[j] * i * h);
+        temp -= data[i];
+        *errfit += temp * temp;
     }
     *errfit = sqrt(*errfit / (ndata - n - 1));
 
     /* Reject any exponential with an amplitude less than the standard error */
 
-    for (i = 0; i < n; i++)
-    {
-	if (fabs(amplitude[i]) < *errfit)
-	    amplitude[i] = 0.0;
-	if (fabs(amplitude[i]) <= ZERO)
-	{
-	    /* Ripple down rest of amplitude and lambda arrays */
-	    for (j = i; j < n; j++)
-	    {
-		amplitude[j] = amplitude[j + 1];
-		lambda[j] = lambda[j + 1];
-	    }
-	    amplitude[n] = 0.0;
-	    lambda[n] = 0.0;
-	    n--;
-	}
+    for (i = 0; i < n; i++) {
+        if (fabs(amplitude[i]) < *errfit)
+            amplitude[i] = 0.0;
+        if (fabs(amplitude[i]) <= ZERO) {
+            /* Ripple down rest of amplitude and lambda arrays */
+            for (j = i; j < n; j++) {
+                amplitude[j] = amplitude[j + 1];
+                lambda[j] = lambda[j + 1];
+            }
+            amplitude[n] = 0.0;
+            lambda[n] = 0.0;
+            n--;
+        }
     }
     *terms = (double) n;
     return 0;
