@@ -2,8 +2,6 @@
  *  @copyright (c) 1989-90 Duke University
  */
 #pragma once
-struct Datum;
-struct NrnThread;
 namespace neuron::scopmath {
 template <typename Array>
 int derivimplicit(int /* _ninits */,
@@ -18,15 +16,14 @@ int derivimplicit(int /* _ninits */,
     fun();
     return 0;
 }
-inline int derivimplicit_thread(int /* n */,
-                                int* /* slist */,
-                                int* /* dlist */,
-                                double* p,
-                                int (*fun)(double*, Datum*, Datum*, NrnThread*),
-                                Datum* ppvar,
-                                Datum* thread,
-                                NrnThread* nt) {
-    fun(p, ppvar, thread, nt);
+template <typename Array, typename Callable, typename... Args>
+int derivimplicit_thread(int /* n */,
+                         int* /* slist */,
+                         int* /* dlist */,
+                         Array /* p */,
+                         Callable fun,
+                         Args&&... args) {
+    fun(std::forward<Args>(args)...);
     return 0;
 }
 }  // namespace neuron::scopmath

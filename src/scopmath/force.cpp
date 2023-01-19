@@ -21,24 +21,23 @@
 #include <cstdlib>
 #include <cstring>
 
-using namespace neuron::scopmath; // for errcodes.hpp
-typedef struct Spline
-{
-    struct Spline *next;	/* link to next spline in list */
-    char *name;			/* filename where spline came from */
-    int npts;			/* number of base points in spline */
-    double *x;			/* x-values of base points */
-    double *y;			/* y-values of base points */
-    double *width;		/* interval widths */
-    double *der;		/* 2nd derivatives at base points */
-}   Spline;
+using namespace neuron::scopmath;  // for errcodes.hpp
+typedef struct Spline {
+    struct Spline* next; /* link to next spline in list */
+    char* name;          /* filename where spline came from */
+    int npts;            /* number of base points in spline */
+    double* x;           /* x-values of base points */
+    double* y;           /* y-values of base points */
+    double* width;       /* interval widths */
+    double* der;         /* 2nd derivatives at base points */
+} Spline;
 
-#define SP0     (Spline *)0
+#define SP0 (Spline*) 0
 
-static Spline *splist = SP0;	/* list of splines */
-static Spline *steplist = SP0;	/* list of steps */
-static Spline *lastspline = SP0;/* the spline used on previous call */
-static Spline *laststep = SP0;/* the step list used on previous call */
+static Spline* splist = SP0;     /* list of splines */
+static Spline* steplist = SP0;   /* list of steps */
+static Spline* lastspline = SP0; /* the spline used on previous call */
+static Spline* laststep = SP0;   /* the step list used on previous call */
 
 extern int DEFLT;
 
@@ -56,7 +55,7 @@ extern int DEFLT;
  *
  *  Arguments:
  *    t, double, value of test variable at which interpoated value
-				of forcing function is desired
+                of forcing function is desired
  *    filename, string, name of file containing coordinates of
  *				forcing function
  *
@@ -65,55 +64,53 @@ extern int DEFLT;
  *  Files accessed:
  *
  **************************************************************************/
-static int init_force(char *);
+static int init_force(char*);
 double force(double t, char* filename) {
-    Spline *sp;
+    Spline* sp;
     /* Check if Spline structure already made */
 
-    for (sp = splist; sp; sp = sp->next)
-    {
-	if (strcmp(filename, sp->name) == 0)
-	    break;
+    for (sp = splist; sp; sp = sp->next) {
+        if (strcmp(filename, sp->name) == 0)
+            break;
     }
     if (sp == NULL)
-	/* Read file and create Spline structure */
-	init_force(filename);
+        /* Read file and create Spline structure */
+        init_force(filename);
     else
-	lastspline = sp;
+        lastspline = sp;
 
     /* Check if interpolation point is outside range of base points */
 
-    if (t < lastspline->x[0])	/* Below 1st base point ?*/
+    if (t < lastspline->x[0]) /* Below 1st base point ?*/
     {
-	if ((lastspline->x[0] - t) > (0.1 * lastspline->width[0]))
-				/* Low by more than 10% of the 1st interval? */
-	    abort_run(RANGE);		/* Yes, abort with error message. */
-	else				/* No, do linear extrapolation */
-	{
-	    return(lastspline->y[0] - (lastspline->x[0] - t) *
-		(lastspline->y[1] - lastspline->y[0]) / lastspline->width[0]);
-	}
-    }
-    else if (t > lastspline->x[lastspline->npts-1]) /* Above last base point? */
+        if ((lastspline->x[0] - t) > (0.1 * lastspline->width[0]))
+            /* Low by more than 10% of the 1st interval? */
+            abort_run(RANGE); /* Yes, abort with error message. */
+        else                  /* No, do linear extrapolation */
+        {
+            return (lastspline->y[0] - (lastspline->x[0] - t) *
+                                           (lastspline->y[1] - lastspline->y[0]) /
+                                           lastspline->width[0]);
+        }
+    } else if (t > lastspline->x[lastspline->npts - 1]) /* Above last base point? */
     {
-	if ((t - lastspline->x[lastspline->npts-1]) >
-		(0.1 * lastspline->width[lastspline->npts-2]))
-			/* High by more than 10% of the last interval? */
-	    abort_run(RANGE);		/* Yes, abort with error message. */
-	else
-	{
-	    int n;			/* No, do linear interpolation. */
-	    n = lastspline->npts;
-	    return(lastspline->y[n-1] + (t - lastspline->x[n-1]) *
-		(lastspline->y[n-1] - lastspline->y[n-2]) /
-		lastspline->width[n-2]);
-	}
+        if ((t - lastspline->x[lastspline->npts - 1]) >
+            (0.1 * lastspline->width[lastspline->npts - 2]))
+            /* High by more than 10% of the last interval? */
+            abort_run(RANGE); /* Yes, abort with error message. */
+        else {
+            int n; /* No, do linear interpolation. */
+            n = lastspline->npts;
+            return (lastspline->y[n - 1] + (t - lastspline->x[n - 1]) *
+                                               (lastspline->y[n - 1] - lastspline->y[n - 2]) /
+                                               lastspline->width[n - 2]);
+        }
     }
 
     /* Within range; perform spline interpolation */
 
-    return (spline(lastspline->npts, lastspline->x, lastspline->y,
-		   lastspline->width, lastspline->der, t));
+    return (spline(
+        lastspline->npts, lastspline->x, lastspline->y, lastspline->width, lastspline->der, t));
 }
 
 /**************************************************************************
@@ -144,7 +141,7 @@ double force(double t, char* filename) {
  **************************************************************************/
 double stepforce(int* reset_integ, double* old_value, double t, char* filename) {
     double return_val;
-    Spline *sp;
+    Spline* sp;
     static int initialized = 0;
     extern int _ninits;
 
@@ -152,45 +149,44 @@ double stepforce(int* reset_integ, double* old_value, double t, char* filename) 
     /* Note: this function uses the Spline structure for storing */
     /*       data points, even though there is no interpolation. */
 
-    for (sp = splist; sp; sp = sp->next)
-    {
-	if (strcmp(filename, sp->name) == 0)
-	    break;
+    for (sp = splist; sp; sp = sp->next) {
+        if (strcmp(filename, sp->name) == 0)
+            break;
     }
     if (sp == NULL)
-	/* Read file and create Spline structure */
-	init_force(filename);
+        /* Read file and create Spline structure */
+        init_force(filename);
     else
-	lastspline = sp;
+        lastspline = sp;
 
     /* Check if starting a new run */
 
-    if (initialized < _ninits)
-    {
-	initialized = _ninits;
-	*old_value = 0.;
+    if (initialized < _ninits) {
+        initialized = _ninits;
+        *old_value = 0.;
     }
 
     /* Check if interpolation point is outside range of base points */
 
     if (t < (lastspline->x[0] - 0.1 * lastspline->width[0]))
-	/* Below lower limit: Print message and return to main menu */
-	abort_run(RANGE);
-    else if (t <= (lastspline->x[lastspline->npts-1] + 0.1 *
-		lastspline->width[lastspline->npts - 2]))
-	/* Within tolerance; use point at or below current t value */
+        /* Below lower limit: Print message and return to main menu */
+        abort_run(RANGE);
+    else if (t <=
+             (lastspline->x[lastspline->npts - 1] + 0.1 * lastspline->width[lastspline->npts - 2]))
+    /* Within tolerance; use point at or below current t value */
     {
-	int i;
-	for (i = 0; i <= (lastspline->npts - 2); ++i)
-	    if (t < lastspline->x[i+1]) break;
-	return_val = lastspline->y[i];
-	if (return_val != *old_value) *reset_integ = 1;
-	*old_value = return_val;
-	return(return_val);
-    }
-    else
-	/* Above upper limit; Print message and return to main menu */
-	    abort_run(RANGE);
+        int i;
+        for (i = 0; i <= (lastspline->npts - 2); ++i)
+            if (t < lastspline->x[i + 1])
+                break;
+        return_val = lastspline->y[i];
+        if (return_val != *old_value)
+            *reset_integ = 1;
+        *old_value = return_val;
+        return (return_val);
+    } else
+        /* Above upper limit; Print message and return to main menu */
+        abort_run(RANGE);
     return 0;
 }
 
@@ -210,87 +206,85 @@ double stepforce(int* reset_integ, double* old_value, double t, char* filename) 
  *
  * Files accessed: filename (input)
  *-------------------------------------------------------------------------*/
-static Spline* getspline(char *filename, int ipt);
-static int init_force(char *filename) {
-    FILE *pfile;
-	extern char *fgets(char *, int, FILE *);
-    extern char *gets();
+static Spline* getspline(char* filename, int ipt);
+static int init_force(char* filename) {
+    FILE* pfile;
+    extern char* fgets(char*, int, FILE*);
+    extern char* gets();
     char tmpstr[81];
     int n, i, j = 0, jmove, error;
     float tempx, tempy;
-    Spline *newspline;
+    Spline* newspline;
 
-    if ((pfile = fopen(filename, "r")) != NULL)
-    {
-	/* Count number of base points in data file */
+    if ((pfile = fopen(filename, "r")) != NULL) {
+        /* Count number of base points in data file */
 
-	for (n = -6; fgets(tmpstr, 81, pfile) != NULL; ++n);
-	rewind(pfile);
+        for (n = -6; fgets(tmpstr, 81, pfile) != NULL; ++n)
+            ;
+        rewind(pfile);
 
-	/* Create new Spline structure and link to existing ones */
+        /* Create new Spline structure and link to existing ones */
 
-	newspline = getspline(filename, n);
-	if (splist == NULL)
-	    splist = newspline;
-	else
-	    lastspline->next = newspline;
+        newspline = getspline(filename, n);
+        if (splist == NULL)
+            splist = newspline;
+        else
+            lastspline->next = newspline;
 
-	/* Make new spline the default spline */
+        /* Make new spline the default spline */
 
-	lastspline = newspline;
+        lastspline = newspline;
 
-	/* Skip first 6 lines of file */
+        /* Skip first 6 lines of file */
 
-	for (i = 0; i < 6; ++i)
-	    nrn_assert(fgets(tmpstr, 81, pfile));
+        for (i = 0; i < 6; ++i)
+            nrn_assert(fgets(tmpstr, 81, pfile));
 
-	/* Read coordinates of forcing function */
+        /* Read coordinates of forcing function */
 
-	while (fscanf(pfile, "%e %e", &tempx, &tempy) != EOF)
-	{
-	    lastspline->x[j] = tempx;
-	    lastspline->y[j++] = tempy;
-	}
+        while (fscanf(pfile, "%e %e", &tempx, &tempy) != EOF) {
+            lastspline->x[j] = tempx;
+            lastspline->y[j++] = tempy;
+        }
 
-	/* Sort base points in ascending order of x values */
+        /* Sort base points in ascending order of x values */
 
-	for (j = 1; j < n; j++)
-	{
-	    jmove = j;
-	    for (i = j - 1; i >= 0; i--)
-		if (lastspline->x[i] > lastspline->x[j])
-		    jmove = i;
-	    if (jmove == j)
-		continue;
+        for (j = 1; j < n; j++) {
+            jmove = j;
+            for (i = j - 1; i >= 0; i--)
+                if (lastspline->x[i] > lastspline->x[j])
+                    jmove = i;
+            if (jmove == j)
+                continue;
 
-	    tempx = lastspline->x[j];
-	    tempy = lastspline->y[j];
+            tempx = lastspline->x[j];
+            tempy = lastspline->y[j];
 
-	    /* Ripple base points with larger x values one location higher */
+            /* Ripple base points with larger x values one location higher */
 
-	    for (i = j; i > jmove; i--)
-	    {
-		lastspline->x[i] = lastspline->x[i - 1];
-		lastspline->y[i] = lastspline->y[i - 1];
-	    }
+            for (i = j; i > jmove; i--) {
+                lastspline->x[i] = lastspline->x[i - 1];
+                lastspline->y[i] = lastspline->y[i - 1];
+            }
 
-	    /* Move current base point to proper location */
+            /* Move current base point to proper location */
 
-	    lastspline->x[i] = tempx;
-	    lastspline->y[i] = tempy;
-	}
+            lastspline->x[i] = tempx;
+            lastspline->y[i] = tempy;
+        }
 
-	/* Calculate spacings of base points and second derivatives */
+        /* Calculate spacings of base points and second derivatives */
 
-	    fclose(pfile);
-	if ((error = derivs(lastspline->npts, lastspline->x, lastspline->y,
-			   lastspline->width, lastspline->der)) != SUCCESS)
-	{
-	    abort_run(error);
-	}
-    }
-    else	/* Forcing function file not found */
-	abort_run(NOFORCE);
+        fclose(pfile);
+        if ((error = derivs(lastspline->npts,
+                            lastspline->x,
+                            lastspline->y,
+                            lastspline->width,
+                            lastspline->der)) != SUCCESS) {
+            abort_run(error);
+        }
+    } else /* Forcing function file not found */
+        abort_run(NOFORCE);
     return 0;
 }
 
@@ -311,16 +305,16 @@ static int init_force(char *filename) {
  *
  * Files accessed:
  *-------------------------------------------------------------------------*/
-static Spline* getspline(char *filename, int ipt) {
-    Spline *newspline;
+static Spline* getspline(char* filename, int ipt) {
+    Spline* newspline;
 
     /* Allocate memory for Spline structure */
 
-    if ((newspline = (Spline *) malloc((unsigned) sizeof(Spline))) == NULL)
-	abort_run(LOWMEM);
+    if ((newspline = (Spline*) malloc((unsigned) sizeof(Spline))) == NULL)
+        abort_run(LOWMEM);
 
     newspline->next = SP0;
-    newspline->name = (char *) malloc((unsigned) strlen(filename) + 1);
+    newspline->name = (char*) malloc((unsigned) strlen(filename) + 1);
     strcpy(newspline->name, filename);
     newspline->npts = ipt;
     newspline->x = makevector(ipt);

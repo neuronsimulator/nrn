@@ -14,7 +14,7 @@
 #include <cmath>
 #include <cstdlib>
 
-using namespace neuron::scopmath; // for errcodes.hpp
+using namespace neuron::scopmath;  // for errcodes.hpp
 /****************************************************************/
 /*                                                              */
 /* Abstract: invert();                                          */
@@ -45,22 +45,21 @@ using namespace neuron::scopmath; // for errcodes.hpp
 /*                                                              */
 /****************************************************************/
 int invert(int n, double** matrix) {
-    int ipivot, isave=0, jrow, krow, kcol, i, j, *perm;
-    double **soln;
+    int ipivot, isave = 0, jrow, krow, kcol, i, j, *perm;
+    double** soln;
 
     /* Create and initialize solution matrix and permutation vector */
 
     soln = makematrix(n, n);
-    perm = (int *) malloc((unsigned) (n * sizeof(int)));
+    perm = (int*) malloc((unsigned) (n * sizeof(int)));
 
-    for (i = 0; i < n; i++)
-    {
-	perm[i] = i;
-	for (j = i; j < n; j++)
-	    if (i == j)
-		soln[i][j] = 1.0;
-	    else
-		soln[i][j] = soln[j][i] = 0.0;
+    for (i = 0; i < n; i++) {
+        perm[i] = i;
+        for (j = i; j < n; j++)
+            if (i == j)
+                soln[i][j] = 1.0;
+            else
+                soln[i][j] = soln[j][i] = 0.0;
     }
 
     /*
@@ -71,81 +70,72 @@ int invert(int n, double** matrix) {
      * right of the diagonal in a row are modified by the algorithm).
      */
 
-    for (j = 0; j < n; j++)
-    {
+    for (j = 0; j < n; j++) {
+        /*
+         * First, find pivot row (i.e., row of the lower triangle which, when
+         * transposed into the jth position, will put the largest column
+         * element on the diagonal.  Store pivot index in perm[].
+         */
 
-	/*
-	 * First, find pivot row (i.e., row of the lower triangle which, when
-	 * transposed into the jth position, will put the largest column
-	 * element on the diagonal.  Store pivot index in perm[].
-	 */
+        ipivot = perm[j];
+        for (i = j + 1; i < n; i++) {
+            jrow = perm[i];
+            if (fabs(matrix[ipivot][j]) < fabs(matrix[jrow][j])) {
+                ipivot = jrow;
+                isave = i;
+            }
+        }
 
-	ipivot = perm[j];
-	for (i = j + 1; i < n; i++)
-	{
-	    jrow = perm[i];
-	    if (fabs(matrix[ipivot][j]) < fabs(matrix[jrow][j]))
-	    {
-		ipivot = jrow;
-		isave = i;
-	    }
-	}
+        /* Now be sure the pivot found isn't too small  */
 
-	/* Now be sure the pivot found isn't too small  */
+        if (fabs(matrix[ipivot][j]) < ROUNDOFF)
+            return (SINGULAR);
 
-	if (fabs(matrix[ipivot][j]) < ROUNDOFF)
-	    return (SINGULAR);
+        /* Swap row indices in perm[] if pivot is not perm[j] */
 
-	/* Swap row indices in perm[] if pivot is not perm[j] */
+        if (ipivot != perm[j]) {
+            perm[isave] = perm[j];
+            perm[j] = ipivot;
+        }
 
-	if (ipivot != perm[j])
-	{
-	    perm[isave] = perm[j];
-	    perm[j] = ipivot;
-	}
+        /* Row normalization */
 
-	/* Row normalization */
+        for (kcol = j + 1; kcol < n; kcol++)
+            matrix[ipivot][kcol] /= matrix[ipivot][j];
+        for (kcol = 0; kcol < n; kcol++)
+            soln[ipivot][kcol] /= matrix[ipivot][j];
 
-	for (kcol = j + 1; kcol < n; kcol++)
-	    matrix[ipivot][kcol] /= matrix[ipivot][j];
-	for (kcol = 0; kcol < n; kcol++)
-	    soln[ipivot][kcol] /= matrix[ipivot][j];
+        /* Row reduction */
 
-	/* Row reduction */
-
-	for (i = j + 1; i < n; i++)
-	{
-	    jrow = perm[i];
-	    for (kcol = j + 1; kcol < n; kcol++)
-		matrix[jrow][kcol] -= matrix[ipivot][kcol] * matrix[jrow][j];
-	    for (kcol = 0; kcol < n; kcol++)
-		soln[jrow][kcol] -= soln[ipivot][kcol] * matrix[jrow][j];
-	}
-    }				/* end loop over all rows */
+        for (i = j + 1; i < n; i++) {
+            jrow = perm[i];
+            for (kcol = j + 1; kcol < n; kcol++)
+                matrix[jrow][kcol] -= matrix[ipivot][kcol] * matrix[jrow][j];
+            for (kcol = 0; kcol < n; kcol++)
+                soln[jrow][kcol] -= soln[ipivot][kcol] * matrix[jrow][j];
+        }
+    } /* end loop over all rows */
 
     /* Back substitution */
 
-    for (i = n - 1; i >= 0; i--)
-    {
-	jrow = perm[i];
-	for (kcol = 0; kcol < n; kcol++)
-	    for (j = i + 1; j < n; j++)
-	    {
-		krow = perm[j];
-		soln[jrow][kcol] -= matrix[jrow][j] * soln[krow][kcol];
-	    }
+    for (i = n - 1; i >= 0; i--) {
+        jrow = perm[i];
+        for (kcol = 0; kcol < n; kcol++)
+            for (j = i + 1; j < n; j++) {
+                krow = perm[j];
+                soln[jrow][kcol] -= matrix[jrow][j] * soln[krow][kcol];
+            }
     }
 
     /* Copy solution into original matrix */
 
-    for (i = 0; i < n; i++)
-    {
-	jrow = perm[i];
-	for (j = 0; j < n; j++)
-	    matrix[i][j] = soln[jrow][j];
+    for (i = 0; i < n; i++) {
+        jrow = perm[i];
+        for (j = 0; j < n; j++)
+            matrix[i][j] = soln[jrow][j];
     }
 
-    free((char *) perm);
+    free((char*) perm);
     freematrix(soln);
     return (SUCCESS);
 }

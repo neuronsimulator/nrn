@@ -279,8 +279,10 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtl
     numlist++;
     fun->u.i = numlist;
 
-    Sprintf(buf, "static int %s();\n", SYM(q2)->name);
-    Linsertstr(procfunc, buf);
+    vectorize_substitute(linsertstr(procfunc, "();\n"),
+                         "(void* _so, double* _rhs, _threadargsproto_);\n");
+    Sprintf(buf, "static int %s", SYM(q2)->name);
+    linsertstr(procfunc, buf);
     replacstr(q1, "\nstatic int");
     qv = insertstr(q3, "()\n");
     if (vectorize) {

@@ -31,11 +31,14 @@ jobs:
 
     timeout-minutes: 45
 
+    env:
+      DISPLAY: ${{ ':0' }}
+
     steps:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install  build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg
+          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg
         shell: bash
 
       - name: Setup Caliper profiler
@@ -45,6 +48,11 @@ jobs:
           mkdir build && cd build
           cmake ..
           make && sudo make install
+
+      - name: Setup Xvfb
+        run: |
+          sudo apt-get install xvfb
+          sudo /usr/bin/Xvfb $DISPLAY -screen 0 1600x1200x24 -noreset -nolock -shmem &  # run in bg
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         uses: actions/setup-python@v4
@@ -94,7 +102,7 @@ jobs:
           cmake --build . --parallel 2
           (cd ..;  lcov --capture  --initial --directory . --no-external --output-file build/coverage-base.info)
           export PATH=`pwd`/bin:$PATH;
-          ctest -VV;
+          xvfb-run ctest -VV --output-on-failure;
           (cd ..; lcov --capture  --directory . --no-external --output-file build/coverage-run.info)
           lcov --add-tracefile coverage-base.info --add-tracefile coverage-run.info --output-file coverage-combined.info
 

@@ -1,29 +1,33 @@
 /** @file runge.hpp
  *  @copyright (c) 1984-90 Duke University
  */
+#pragma once
 #include "errcodes.hpp"
 #include "newton_struct.h"
 #include "scoplib.h"
 namespace neuron::scopmath {
 /**
- * Solves simultaneous differential equations using a fourth order Runge-Kutta algorithm. The
- * independent variable is assumed to be time. The dependent variables are indexed from 0 to n - 1;
- * n = no. of differential equations. The state variables and their derivatives must each be in a
- * contiguous block in the variable array and quantities refering to the same variable must appear
+ * Solves simultaneous differential equations using a fourth order Runge-Kutta
+ * algorithm. The independent variable is assumed to be time. The dependent
+ * variables are indexed from 0 to n - 1; n = no. of differential equations. The
+ * state variables and their derivatives must each be in a contiguous block in
+ * the variable array and quantities refering to the same variable must appear
  * in the same order in each block.
  *
  * @param ninits ???
  * @param n Number of differential equations.
  * @param y Pointer to array of addresses of the state variables
- * @param d Pointer to array of addresses of the derivatives of the state variables.
+ * @param d Pointer to array of addresses of the derivatives of the state
+ * variables.
  * @param p Double precision variable array.
  * @param t Pointer to current time
  * @param h Integration step size = delta_t.
- * @param dy Function that evaluates the time derivatives of the dependent variables.
+ * @param dy Function that evaluates the time derivatives of the dependent
+ * variables.
  * @param work Double precision work array.
  *
- * Output: p[], double precision array containing the values of the dependent variables and their
- * derivatives at time + h. Time is also updated.
+ * Output: p[], double precision array containing the values of the dependent
+ * variables and their derivatives at time + h. Time is also updated.
  * @return Error code (always SUCCESS for runge)
  */
 template <typename Array>
