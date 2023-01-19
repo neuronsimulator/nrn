@@ -14,7 +14,7 @@
 #include <cmath>
 #include <cstdio>
 
-using namespace neuron::scopmath; // for errcodes.hpp
+using namespace neuron::scopmath;  // for errcodes.hpp
 /*-----------------------------------------------------------------------------
  *
  * ABORT_RUN()
@@ -33,55 +33,56 @@ using namespace neuron::scopmath; // for errcodes.hpp
  * Files accessed:
  *---------------------------------------------------------------------------*/
 int abort_run(int code) {
-	using std::puts;
-    switch (std::abs(code))
-    {
-	case EXCEED_ITERS:
-	    puts("Convergence not achieved in maximum number of iterations");
-	    break;
-	case SINGULAR:
-	    puts("The matrix in the solution method is singular or ill-conditioned");
-	    break;
-	case PRECISION:
-	    puts("The increment in the independent variable is less than machine roundoff error");
-	    break;
-	case CORR_FAIL:
-	    puts("The corrector failed to satisfy the error check");
-	    break;
-	case DIVERGED:
-	    puts("The corrector iteration diverged");
-	    break;
-	case INCONSISTENT:
-            puts("Inconsistent boundary conditions");
-	    puts("Convergence not acheived in maximum number of iterations");
-	    break;
-	case BAD_START:
-            puts("Poor starting estimate for initial conditions");
-	    puts("The matrix in the solution method is singular or ill-conditioned");
-	    break;
-	case NODATA:
-	    puts("No data found in data file");
-	    break;
-	case NO_SOLN:
-	    puts("No solution was obtained for the coefficients");
-	    break;
-	case LOWMEM:
-	    puts("Insufficient memory to run the model");
-	    break;
-	case DIVCHECK:
-	    puts("Attempt to divide by zero");
-	    break;
-	case NOFORCE:
-	    puts("Could not open forcing function file\nThe model cannot be run without the forcing function");
-	    break;
-	case NEG_ARG:
-	    puts("Cannot compute factorial of negative argument");
-	    break;
-	case RANGE:
-	    puts("Value of variable is outside the range of the forcing function data table");
-	    break;
-	default:
-	    puts("Origin of error is unknown");
+    using std::puts;
+    switch (std::abs(code)) {
+    case EXCEED_ITERS:
+        puts("Convergence not achieved in maximum number of iterations");
+        break;
+    case SINGULAR:
+        puts("The matrix in the solution method is singular or ill-conditioned");
+        break;
+    case PRECISION:
+        puts("The increment in the independent variable is less than machine roundoff error");
+        break;
+    case CORR_FAIL:
+        puts("The corrector failed to satisfy the error check");
+        break;
+    case DIVERGED:
+        puts("The corrector iteration diverged");
+        break;
+    case INCONSISTENT:
+        puts("Inconsistent boundary conditions");
+        puts("Convergence not acheived in maximum number of iterations");
+        break;
+    case BAD_START:
+        puts("Poor starting estimate for initial conditions");
+        puts("The matrix in the solution method is singular or ill-conditioned");
+        break;
+    case NODATA:
+        puts("No data found in data file");
+        break;
+    case NO_SOLN:
+        puts("No solution was obtained for the coefficients");
+        break;
+    case LOWMEM:
+        puts("Insufficient memory to run the model");
+        break;
+    case DIVCHECK:
+        puts("Attempt to divide by zero");
+        break;
+    case NOFORCE:
+        puts(
+            "Could not open forcing function file\nThe model cannot be run without the forcing "
+            "function");
+        break;
+    case NEG_ARG:
+        puts("Cannot compute factorial of negative argument");
+        break;
+    case RANGE:
+        puts("Value of variable is outside the range of the forcing function data table");
+        break;
+    default:
+        puts("Origin of error is unknown");
     }
     hoc_execerror("scopmath library error", nullptr);
     return 0;
@@ -89,6 +90,6 @@ int abort_run(int code) {
 
 /* define some routines needed for shared libraries to work */
 int prterr(const char* s) {
-	hoc_execerror(s, "from prterr");
-	return 0;
+    hoc_execerror(s, "from prterr");
+    return 0;
 }

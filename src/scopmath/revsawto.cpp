@@ -48,7 +48,8 @@ double revsawtooth(int* reset_integ, double* old_value, double t, double period,
 
     value = amplitude * (1.0 - std::modf(t / period, &value));
 
-    if (value != *old_value) *reset_integ = 1;
+    if (value != *old_value)
+        *reset_integ = 1;
     *old_value = value;
     return (value);
 }

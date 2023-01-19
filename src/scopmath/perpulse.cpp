@@ -40,22 +40,28 @@
 /*                              call                            */
 /*								*/
 /*--------------------------------------------------------------*/
-double perpulse(int* reset_integ, double* old_value, double t, double lag, double height, double duration, double delay) {
+double perpulse(int* reset_integ,
+                double* old_value,
+                double t,
+                double lag,
+                double height,
+                double duration,
+                double delay) {
     double temp, period, value;
 
     if (t < lag)
-	value = 0.0;
-    else
-    {
-	period = duration + delay;
-	temp = std::modf((t - lag) / period, &value);
-	if ((temp *= period) < duration)
-	    value = height;
-	else
-	    value = 0.0;
+        value = 0.0;
+    else {
+        period = duration + delay;
+        temp = std::modf((t - lag) / period, &value);
+        if ((temp *= period) < duration)
+            value = height;
+        else
+            value = 0.0;
     }
 
-    if (*old_value != value) *reset_integ = 1;
+    if (*old_value != value)
+        *reset_integ = 1;
     *old_value = value;
 
     return (value);

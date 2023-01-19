@@ -38,7 +38,8 @@ int _ss_sparse_thread(void** v,
     _modl_set_dt_thread(ss_dt, nt);
 
     if (linflag) { /*iterate linear solution*/
-        err = sparse_thread(v, n, s, d, p, t, ss_dt, std::move(fun), 0, std::forward<Args>(args)...);
+        err =
+            sparse_thread(v, n, s, d, p, t, ss_dt, std::move(fun), 0, std::forward<Args>(args)...);
     } else {
         constexpr auto NIT = 7;
         for (i = 0; i < NIT; i++) {
@@ -60,16 +61,12 @@ int _ss_sparse_thread(void** v,
     return err;
 }
 template <typename Array, typename Callable, typename... Args>
-int _ss_derivimplicit_thread(int n,
-                             int* slist,
-                             int* dlist,
-                             Array p,
-                             Callable fun,
-                             Args&&... args) {
+int _ss_derivimplicit_thread(int n, int* slist, int* dlist, Array p, Callable fun, Args&&... args) {
     auto* const nt = get_first<NrnThread*>(std::forward<Args>(args)...);
     auto const dtsav = _modl_get_dt_thread(nt);
     _modl_set_dt_thread(1e-9, nt);
-    auto const err = derivimplicit_thread(n, slist, dlist, std::move(p), std::move(fun), std::forward<Args>(args)...);
+    auto const err = derivimplicit_thread(
+        n, slist, dlist, std::move(p), std::move(fun), std::forward<Args>(args)...);
     _modl_set_dt_thread(dtsav, nt);
     return err;
 }
