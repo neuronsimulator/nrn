@@ -48,26 +48,25 @@ double threshold(int* reset_integ, double* old_value, double x, double limit, ch
     double ret_val;
 
     for (i = 0; *(mode + i) != '\0'; i++)
-	if (isupper(*(mode + i)))
-	    *(mode + i) = tolower(*(mode + i));
+        if (isupper(*(mode + i)))
+            *(mode + i) = tolower(*(mode + i));
 
-    if (strcmp(mode, "min") == 0)
-    {
-	if (x >= limit)
-	    ret_val = 1.;
-	else
-	    ret_val = 0.;
+    if (strcmp(mode, "min") == 0) {
+        if (x >= limit)
+            ret_val = 1.;
+        else
+            ret_val = 0.;
     }
 
-    else if (strcmp(mode, "max") == 0)
-    {
-	if (x <= limit)
-	    ret_val = 1.;
-	else
-	    ret_val = 0.;
-    }
-    else ret_val = -1.;
-    if (*old_value != ret_val) *reset_integ = 1;
+    else if (strcmp(mode, "max") == 0) {
+        if (x <= limit)
+            ret_val = 1.;
+        else
+            ret_val = 0.;
+    } else
+        ret_val = -1.;
+    if (*old_value != ret_val)
+        *reset_integ = 1;
     *old_value = ret_val;
-    return(ret_val);
+    return (ret_val);
 }

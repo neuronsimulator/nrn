@@ -29,9 +29,9 @@
  *		duration,double duration of the pulse
  *
  *    Output:  reset_integ, *int  set to 1 if discontinuity is
- *                              generated                    
+ *                              generated
  *              old_value, *double  saved value from previous
- *                              call                        
+ *                              call
  *
  *  Returns:
  *
@@ -41,17 +41,23 @@
  *	none
  *
  */
-double pulse(int* reset_integ, double* old_value, double t, double lag, double height, double duration) {
+double pulse(int* reset_integ,
+             double* old_value,
+             double t,
+             double lag,
+             double height,
+             double duration) {
     double value = 0.0;
 
     if (t < lag)
-	value = 0.0;
+        value = 0.0;
     else if (t < lag + duration)
-	value = height;
+        value = height;
     else
-	value = 0.0;
+        value = 0.0;
 
-    if (*old_value != value) *reset_integ = 1;
+    if (*old_value != value)
+        *reset_integ = 1;
     *old_value = value;
     return (value);
 }

@@ -14,7 +14,7 @@
 #include <cstdlib>
 #include <cmath>
 
-using namespace neuron::scopmath; // for errcodes.hpp
+using namespace neuron::scopmath;  // for errcodes.hpp
 static int oldsimeq(int n, double** coef, double* soln);
 /*-----------------------------------------------------------------------------
  *
@@ -25,22 +25,29 @@ static int oldsimeq(int n, double** coef, double* soln);
  *  and its identity is meant to be concealed from the user.
  *
  */
-int _advance(int _ninits, int n, int* s, int* d, double* p, double* t, double dt, int (*fun)(), double*** pcoef, int linflag)
-#define d_(arg)  p[d[arg]]
-#define s_(arg)  p[s[arg]]
+int _advance(int _ninits,
+             int n,
+             int* s,
+             int* d,
+             double* p,
+             double* t,
+             double dt,
+             int (*fun)(),
+             double*** pcoef,
+             int linflag)
+#define d_(arg) p[d[arg]]
+#define s_(arg) p[s[arg]]
 {
     int i, j, ier;
     double err, **coef;
 
-    if (!*pcoef)
-    {
-	*pcoef = makematrix(n + 1, n + 1);
+    if (!*pcoef) {
+        *pcoef = makematrix(n + 1, n + 1);
     }
     coef = *pcoef;
 
-    for (i = 0; i < n; i++)
-    {				/* save old state */
-	d_(i) = s_(i);
+    for (i = 0; i < n; i++) { /* save old state */
+        d_(i) = s_(i);
     }
 
 #if 0
@@ -56,13 +63,12 @@ int _advance(int _ninits, int n, int* s, int* d, double* p, double* t, double dt
     }
 #endif
 
-    for (err = 1, j = 0; err > CONVERGE; j++)
-    {
-	zero_matrix(coef, n + 1, n + 1);
-	(*fun) ();
-	if ((ier = oldsimeq(n, coef, coef[n]))) {
-		return ier;	/* answer in coef[n] */
-	}
+    for (err = 1, j = 0; err > CONVERGE; j++) {
+        zero_matrix(coef, n + 1, n + 1);
+        (*fun)();
+        if ((ier = oldsimeq(n, coef, coef[n]))) {
+            return ier; /* answer in coef[n] */
+        }
 
 #if 0
 	{
@@ -77,25 +83,22 @@ int _advance(int _ninits, int n, int* s, int* d, double* p, double* t, double dt
 	}
 #endif
 
-	for (err = 0., i = 0; i < n; i++)
-	{
-	    s_(i) += coef[n][i];
-	    err += fabs(coef[n][i]);
-	}
-	if (j > MAXSTEPS)
-	{
-		return EXCEED_ITERS;
-	}
-	if (linflag)
-	    break;
+        for (err = 0., i = 0; i < n; i++) {
+            s_(i) += coef[n][i];
+            err += fabs(coef[n][i]);
+        }
+        if (j > MAXSTEPS) {
+            return EXCEED_ITERS;
+        }
+        if (linflag)
+            break;
     }
     zero_matrix(coef, n + 1, n + 1);
-    (*fun) ();
-    for (i = 0; i < n; i++)
-    {				/* restore Dstate at t+dt */
-	d_(i) = (s_(i) - d_(i)) / dt;
+    (*fun)();
+    for (i = 0; i < n; i++) { /* restore Dstate at t+dt */
+        d_(i) = (s_(i) - d_(i)) / dt;
     }
-	return SUCCESS;
+    return SUCCESS;
 }
 
 /*--------------------------------------------------------------*/
@@ -126,15 +129,14 @@ int _advance(int _ninits, int n, int* s, int* d, double* p, double* t, double dt
 /*--------------------------------------------------------------*/
 
 
-static int oldsimeq(int n, double** coef, double* soln)
-{
-    int ipivot, isave=0, jrow, kcol, i, j, *perm;
+static int oldsimeq(int n, double** coef, double* soln) {
+    int ipivot, isave = 0, jrow, kcol, i, j, *perm;
 
     /* Create and initialize permutation vector */
 
-    perm = (int *) malloc((unsigned) (n * sizeof(int)));
+    perm = (int*) malloc((unsigned) (n * sizeof(int)));
     for (i = 0; i < n; i++)
-	perm[i] = i;
+        perm[i] = i;
 
     /*
      * The following loop is performed once for each row and implicitly
@@ -144,62 +146,55 @@ static int oldsimeq(int n, double** coef, double* soln)
      * right of the diagonal in a row are modified by the algorithm).
      */
 
-    for (j = 0; j < n; j++)
-    {
+    for (j = 0; j < n; j++) {
+        /*
+         * First, find pivot row (i.e., row of the lower triangle which, when
+         * transposed into the jth position, will put the largest column
+         * element on the diagonal.  Store pivot index in perm[].
+         */
 
-	/*
-	 * First, find pivot row (i.e., row of the lower triangle which, when
-	 * transposed into the jth position, will put the largest column
-	 * element on the diagonal.  Store pivot index in perm[].
-	 */
+        ipivot = perm[j];
+        for (i = j + 1; i < n; i++) {
+            jrow = perm[i];
+            if (fabs(coef[ipivot][j]) < fabs(coef[jrow][j])) {
+                ipivot = jrow;
+                isave = i;
+            }
+        }
 
-	ipivot = perm[j];
-	for (i = j + 1; i < n; i++)
-	{
-	    jrow = perm[i];
-	    if (fabs(coef[ipivot][j]) < fabs(coef[jrow][j]))
-	    {
-		ipivot = jrow;
-		isave = i;
-	    }
-	}
+        /* Now be sure the pivot found isn't too small  */
 
-	/* Now be sure the pivot found isn't too small  */
+        if (fabs(coef[ipivot][j]) < ROUNDOFF)
+            return (SINGULAR);
 
-	if (fabs(coef[ipivot][j]) < ROUNDOFF)
-	    return (SINGULAR);
+        /* Swap row indices in perm[] if pivot is not perm[j] */
 
-	/* Swap row indices in perm[] if pivot is not perm[j] */
+        if (ipivot != perm[j]) {
+            perm[isave] = perm[j];
+            perm[j] = ipivot;
+        }
 
-	if (ipivot != perm[j])
-	{
-	    perm[isave] = perm[j];
-	    perm[j] = ipivot;
-	}
+        /* Row normalization */
 
-	/* Row normalization */
+        for (kcol = j + 1; kcol <= n; kcol++)
+            coef[ipivot][kcol] /= coef[ipivot][j];
 
-	for (kcol = j + 1; kcol <= n; kcol++)
-	    coef[ipivot][kcol] /= coef[ipivot][j];
+        /* Row reduction */
 
-	/* Row reduction */
-
-	for (i = j + 1; i < n; i++)
-	{
-	    jrow = perm[i];
-	    for (kcol = j + 1; kcol <= n; kcol++)
-		coef[jrow][kcol] -= coef[ipivot][kcol] * coef[jrow][j];
-	}
-    }				/* end loop over all rows */
+        for (i = j + 1; i < n; i++) {
+            jrow = perm[i];
+            for (kcol = j + 1; kcol <= n; kcol++)
+                coef[jrow][kcol] -= coef[ipivot][kcol] * coef[jrow][j];
+        }
+    } /* end loop over all rows */
 
     /* Back substitution */
 
-    for (i = n - 1; i >= 0; i--)
-    {
-	jrow = perm[i];
-	soln[i] = coef[jrow][n];
-	for (j = i + 1; j < n; j++)
-	    soln[i] -= coef[jrow][j] * (soln[j]);
+    for (i = n - 1; i >= 0; i--) {
+        jrow = perm[i];
+        soln[i] = coef[jrow][n];
+        for (j = i + 1; j < n; j++)
+            soln[i] -= coef[jrow][j] * (soln[j]);
     }
 
     free(perm);

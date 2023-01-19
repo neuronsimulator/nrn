@@ -33,16 +33,6 @@ extern double nrn_ion_charge(Symbol*);
 extern Point_process* ob2pntproc(Object*);
 extern Point_process* ob2pntproc_0(Object*);
 
-int euler_thread(int,
-                 int*,
-                 int*,
-                 double*,
-                 int (*)(double*, Datum*, Datum*, NrnThread*),
-                 Datum*,
-                 Datum*,
-                 NrnThread*);
-
-
 extern void register_mech(const char**, Pvmp, Pvmi, Pvmi, Pvmi, Pvmi, int, int);
 extern int point_register_mech(const char**,
                                Pvmp,

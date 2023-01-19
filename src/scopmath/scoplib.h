@@ -9,9 +9,11 @@
 #include "crout_thread.hpp"
 #include "dimplic.hpp"
 #include "euler.hpp"
+#include "euler_thread.hpp"
 #include "newton.hpp"
 #include "newton_thread.hpp"
 #include "runge.hpp"
+#include "simeq.hpp"
 #include "sparse.hpp"
 #include "sparse_thread.hpp"
 #include "ssimplic.hpp"
@@ -39,7 +41,12 @@ int _advance(int ninits,
              int linflag);
 
 /* Solution of boundary value problems */
-int boundary(int npts, double* x, double* y, double (*f)(double), double (*g)(double), double (*q)(double));
+int boundary(int npts,
+             double* x,
+             double* y,
+             double (*f)(double),
+             double (*g)(double),
+             double (*q)(double));
 
 /* Solution of parabolic partial differential equations */
 int crank(int n,
@@ -57,7 +64,6 @@ double romberg(double a, double b, int (*func)());
 double legendre(double a, double b, int (*func)());
 
 /* Solution of simultaneous algebraic equations */
-int simeq(int n, double** coef, double* soln, int* index);
 int invert(int n, double** matrix);
 int tridiag(int n, double* a, double* b, double* c, double* d, double* soln);
 
@@ -124,11 +130,11 @@ double* praxis_paxis(int);
 double praxis_pval(int);
 int praxis_stop(int);
 double praxis(double* t0,
-                     double* machep,
-                     double* h0,
-                     long int nval,
-                     long int* prin,
-                     double* x,
-                     double (*f)(double*, long int),
-                     double* fmin,
-                     char* after_quad);
+              double* machep,
+              double* h0,
+              long int nval,
+              long int* prin,
+              double* x,
+              double (*f)(double*, long int),
+              double* fmin,
+              char* after_quad);

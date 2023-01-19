@@ -58,39 +58,54 @@
 /*  Functions called: bounds(), tridiag(), makevector(),	*/
 /*								*/
 /*--------------------------------------------------------------*/
-static int bounds(int n, double* a, double* b, double* c, double* d, double* y, double* fval, double dt, double dx, double** bound);
-int crank(int n, double* y, double* fval, double* gval, double dt, double dx, double t, double** bound, double** pwork) {
+static int bounds(int n,
+                  double* a,
+                  double* b,
+                  double* c,
+                  double* d,
+                  double* y,
+                  double* fval,
+                  double dt,
+                  double dx,
+                  double** bound);
+int crank(int n,
+          double* y,
+          double* fval,
+          double* gval,
+          double dt,
+          double dx,
+          double t,
+          double** bound,
+          double** pwork) {
     int i, error;
     double temp, r;
     double *main_diag, *sub_diag, *sup_diag, *const_vec;
 
-    if (!*pwork)
-    {
-	*pwork = makevector(4*n);
+    if (!*pwork) {
+        *pwork = makevector(4 * n);
     }
-	main_diag = *pwork;
-	sub_diag = main_diag + n;
-	sup_diag = sub_diag + n;
-	const_vec = sup_diag + n;
+    main_diag = *pwork;
+    sub_diag = main_diag + n;
+    sup_diag = sub_diag + n;
+    const_vec = sup_diag + n;
 
     temp = dt / (dx * dx);
-    for (i = 0; i < n; i++)
-    {
-	r = temp * fval[i];
-	/*
-	 * Compute diagonals of tridiagonal matrix A.  Note that sub_diag[0]
-	 * and sup_diag[n-1] are ignored in tridiag().
-	 */
-	main_diag[i] = 2. + 2. * r;
-	sub_diag[i] = sup_diag[i] = -r;
+    for (i = 0; i < n; i++) {
+        r = temp * fval[i];
+        /*
+         * Compute diagonals of tridiagonal matrix A.  Note that sub_diag[0]
+         * and sup_diag[n-1] are ignored in tridiag().
+         */
+        main_diag[i] = 2. + 2. * r;
+        sub_diag[i] = sup_diag[i] = -r;
 
-	/* Set up constant vector */
+        /* Set up constant vector */
 
-	const_vec[i] = (2. - 2. * r) * (y[i]) + 2. * gval[i] * dt;
-	if (i > 0)
-	    const_vec[i] += r * (y[i - 1]);
-	if (i < n - 1)
-	    const_vec[i] += r * (y[i + 1]);
+        const_vec[i] = (2. - 2. * r) * (y[i]) + 2. * gval[i] * dt;
+        if (i > 0)
+            const_vec[i] += r * (y[i - 1]);
+        if (i < n - 1)
+            const_vec[i] += r * (y[i + 1]);
     }
 
     /*
@@ -133,7 +148,16 @@ int crank(int n, double* y, double* fval, double* gval, double dt, double dx, do
  *  Files accessed:
  *---------------------------------------------------------------------------*/
 
-static int bounds(int n, double* a, double* b, double* c, double* d, double* y, double* fval, double dt, double dx, double** bound) {
+static int bounds(int n,
+                  double* a,
+                  double* b,
+                  double* c,
+                  double* d,
+                  double* y,
+                  double* fval,
+                  double dt,
+                  double dx,
+                  double** bound) {
     int i;
     double temp;
 
@@ -142,37 +166,35 @@ static int bounds(int n, double* a, double* b, double* c, double* d, double* y, 
      * boundary conditions.
      */
     temp = dt / (dx * dx);
-    for (i = 0; i < 4; i++)
-    {
-	if (bound[i] == (double *) 0)
-	    continue;
+    for (i = 0; i < 4; i++) {
+        if (bound[i] == (double*) 0)
+            continue;
 
-	switch (i)
-	{
-	    case 0:	/* dy[0]/dx = value */
-		c[0] -= temp * fval[0];
-		d[0] += temp * fval[0] * (y[1] - 4. * dx * (*bound[0]));
-		break;
+        switch (i) {
+        case 0: /* dy[0]/dx = value */
+            c[0] -= temp * fval[0];
+            d[0] += temp * fval[0] * (y[1] - 4. * dx * (*bound[0]));
+            break;
 
-	    case 1:	/* dy[n-1]/dx = value */
-		a[n - 1] -= temp * fval[n - 1];
-		d[n - 1] += temp * fval[n - 1] * (y[n - 2] + 4. * dx * (*bound[1]));
-		break;
+        case 1: /* dy[n-1]/dx = value */
+            a[n - 1] -= temp * fval[n - 1];
+            d[n - 1] += temp * fval[n - 1] * (y[n - 2] + 4. * dx * (*bound[1]));
+            break;
 
-	    case 2:	/* y[0] = bound */
-		a[0] = 0.;
-		b[0] = 1.;
-		c[0] = 0.;
-		d[0] = *bound[2];
-		break;
+        case 2: /* y[0] = bound */
+            a[0] = 0.;
+            b[0] = 1.;
+            c[0] = 0.;
+            d[0] = *bound[2];
+            break;
 
-	    case 3:	/* y[n-1] = bound */
-		a[n-1] = 0.;
-		b[n-1] = 1.;
-		c[n-1] = 0.;
-		d[n-1] = *bound[3];
-		break;
-	}
+        case 3: /* y[n-1] = bound */
+            a[n - 1] = 0.;
+            b[n - 1] = 1.;
+            c[n - 1] = 0.;
+            d[n - 1] = *bound[3];
+            break;
+        }
     }
     return 0;
 }
