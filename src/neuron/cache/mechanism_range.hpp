@@ -140,14 +140,6 @@ struct MechanismRange {
     using dptr_cache_t = std::array<double*, NumDatumFields>;
     std::variant<neuron::model_sorted_token, dptr_cache_t> m_token_or_cache;
 };
-
-template <typename MechanismRange>
-std::tuple<MechanismRange, MechanismRange*, std::size_t> make_nocmodl_macros_work(Prop* prop) {
-    std::tuple<MechanismRange, MechanismRange*, std::size_t> ret{prop, nullptr, 0};
-    std::get<1>(ret) = &std::get<0>(ret);
-    return ret;
-}
-
 }  // namespace neuron::cache
 
 namespace neuron::legacy {
@@ -156,9 +148,8 @@ namespace neuron::legacy {
  */
 template <typename MechRange>
 inline void set_globals_from_prop(Prop* p, MechRange& ml, MechRange*& ml_ptr, std::size_t& iml) {
-    auto [new_ml, new_mlptr, new_iml] = cache::make_nocmodl_macros_work<MechRange>(p);
-    ml = std::move(new_ml);
+    ml = {p};
     ml_ptr = &ml;
-    iml = new_iml;
+    iml = 0;
 }
 }  // namespace neuron::legacy
