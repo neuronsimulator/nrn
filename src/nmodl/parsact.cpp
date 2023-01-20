@@ -748,21 +748,22 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
                          "Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n");
     if (point_process) {
         vectorize_substitute(lappendstr(procfunc, "  _hoc_setdata(_vptr);\n"),
-                             "\
-  Prop *_p{static_cast<Point_process*>(_vptr)->_prop};\n\
-  auto [_, _ml, _iml] = neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_p);\n\
-  _ppvar = ((Point_process*)_vptr)->_prop->dparam;\n\
-  _thread = _extcall_thread.data();\n\
-  _nt = (NrnThread*)((Point_process*)_vptr)->_vnt;\n\
-");
+                             "  auto* const _pnt = static_cast<Point_process*>(_vptr);\n"
+                             "  auto* const _p = _pnt->_prop;\n"
+                             "  LocalMechanismRange _ml_real{_p};\n"
+                             "  auto* const _ml = &_ml_real;\n"
+                             "  std::size_t const _iml{};\n"
+                             "  _ppvar = _p->dparam;\n"
+                             "  _thread = _extcall_thread.data();\n"
+                             "  _nt = static_cast<NrnThread*>(_pnt->_vnt);\n");
     } else {
-        vectorize_substitute(
-            lappendstr(procfunc, ""),
-            "auto [_, _ml, _iml] = "
-            "neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_extcall_prop);\n"
-            "_ppvar = _extcall_prop ? _extcall_prop->dparam : nullptr;\n"
-            "_thread = _extcall_thread.data();\n"
-            "_nt = nrn_threads;\n");
+        vectorize_substitute(lappendstr(procfunc, ""),
+                             "LocalMechanismRange _ml_real{_extcall_prop};\n"
+                             "auto* const _ml = &_ml_real;\n"
+                             "std::size_t const _iml{};\n"
+                             "_ppvar = _extcall_prop ? _extcall_prop->dparam : nullptr;\n"
+                             "_thread = _extcall_thread.data();\n"
+                             "_nt = nrn_threads;\n");
     }
     if (n == last_func_using_table) {
         qp = lappendstr(procfunc, "");
@@ -941,9 +942,11 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
                          "  Datum* _ppvar; Datum* _thread{};\n"
                          "  NrnThread* _nt{static_cast<NrnThread*>(_pnt->_vnt)};\n");
     Sprintf(buf,
-            "  _ppvar = _pnt->_prop->dparam;\n"
-            "  auto [_, _ml, _iml] = "
-            "neuron::cache::make_nocmodl_macros_work<LocalMechanismRange>(_pnt->_prop);\n"
+            "  auto* const _prop = _pnt->_prop;\n"
+            "  LocalMechanismRange _ml_real{_prop};\n"
+            "  auto* const _ml = &_ml_real;\n"
+            "  std::size_t _iml{};\n"
+            "  _ppvar = _prop->dparam;\n"
             "  v = NODEV(_pnt->node);\n"
             "	return ");
     lappendstr(procfunc, buf);
