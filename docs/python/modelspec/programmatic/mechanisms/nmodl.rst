@@ -401,8 +401,23 @@ CONSTANT
 
 
 Description:
-    These are variables that cannot be changed during the simulation. Better to use ``UNITS`` to
-    define those variables.
+    As the name suggests, this block represents variables with constant values.
+    Unlike other variables (e.g. PARAMETER or ASSIGNED), these variables can
+    not be set or accessed via Python/HOC interface. Also, they can have only
+    one value across for all instances of a given mechanism.
+
+    .. code-block::
+        none
+
+        CONSTANT {
+            e0 = 1.6021e-19 (coulombs)
+            q10 = 2.70
+        }
+
+The current implementation allows changing the value of a constant variable in
+other blocks (e.g. in like PROCEDURE, INITIAL) but such usage is discouraged. One
+can use other variable types like GLOBAL, PARAMETER or UNITS to achieve the same
+purpose.
 
 
 LOCAL
@@ -410,8 +425,19 @@ LOCAL
 
 
 Description:
-    These are equivalent to C static variables ie shared 
-    between all instances of a given mechanism. 
+    These variables are defined within a local scope of a block or MOD file. A user
+    can only access a local variable inside the function or MOD file but never from
+    outside using HOC/Python API.
+
+    .. code-block::
+        none
+
+        FUNCTION oca_ss(v(mV)) {
+            LOCAL a, b
+            a = 1(1/ms)*efun(.1(1/mV)*(25-v))
+            b = 4(1/ms)*exp(-v/18(mV))
+            oca_ss = a/(a + b)
+        }
 
 
 INDEPENDENT
