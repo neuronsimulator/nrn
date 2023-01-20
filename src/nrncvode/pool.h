@@ -15,9 +15,9 @@
 
 #include <cassert>
 
-template<typename T>
+template <typename T>
 class MutexPool {
-public:
+  public:
     MutexPool(long count, int mkmut = 0);
     ~MutexPool();
     T* alloc();
@@ -26,7 +26,8 @@ public:
         return maxget_;
     }
     void free_all();
-private:
+
+  private:
     void grow();
     T** items_;
     T* pool_;
@@ -40,7 +41,7 @@ private:
     MUTDEC
 };
 
-template<typename T>
+template <typename T>
 MutexPool<T>::MutexPool(long count, int mkmut) {
     count_ = count;
     pool_ = new T[count_];
@@ -58,7 +59,7 @@ MutexPool<T>::MutexPool(long count, int mkmut) {
     MUTCONSTRUCT(mkmut)
 }
 
-template<typename T>
+template <typename T>
 void MutexPool<T>::grow() {
     assert(get_ == put_);
     MutexPool<T>* p = new MutexPool<T>(count_);
@@ -90,7 +91,7 @@ void MutexPool<T>::grow() {
     count_ = newcnt;
 }
 
-template<typename T>
+template <typename T>
 MutexPool<T>::~MutexPool() {
     {
         if (chain_) {
@@ -106,7 +107,7 @@ MutexPool<T>::~MutexPool() {
     MUTDESTRUCT
 }
 
-template<typename T>
+template <typename T>
 T* MutexPool<T>::alloc() {
     MUTLOCK {
         if (nget_ >= count_) {
@@ -125,7 +126,7 @@ T* MutexPool<T>::alloc() {
     return item;
 }
 
-template<typename T>
+template <typename T>
 void MutexPool<T>::hpfree(T* item) {
     MUTLOCK
     assert(nget_ > 0);
@@ -135,7 +136,7 @@ void MutexPool<T>::hpfree(T* item) {
     MUTUNLOCK
 }
 
-template<typename T>
+template <typename T>
 void MutexPool<T>::free_all() {
     MUTLOCK
     MutexPool<T>* pp;
