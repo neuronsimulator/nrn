@@ -223,6 +223,9 @@ typedef struct Symbol {
 #define NRNPOINTER       04000
 #define IONCONC          010000
 #define NRNBBCOREPOINTER 020000
+// Implicit ion concentration variable that has been added so we can call nrn_wrote_conc, but which
+// is not used in the MOD file
+#define IONCONC_IMPLICIT 040000
 
 
 extern char *emalloc(unsigned),    /* malloc with out of space checking */

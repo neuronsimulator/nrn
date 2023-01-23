@@ -1355,11 +1355,44 @@ void check_ion_vars_as_constant(char* ion_name, const List* ion_var_list) {
     }
 }
 
+static void check_sufficient_ion_read_statements(std::string const& ion_name,
+                                                 List* read_variables,
+                                                 List* write_variables) {
+    auto const have_type = [ion_name, read_variables, write_variables](int type) {
+        for (auto* const ion_var_list: {read_variables, write_variables}) {
+            Item* var;
+            ITERATE(var, ion_var_list) {
+                const Symbol* var_sym = SYM(var);
+                if (iontype(var_sym->name, const_cast<char*>(ion_name.c_str())) == type) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+    auto const add_readion = [read_variables](std::string name) {
+        auto* const sym = install(name.c_str(), NAME);
+        sym->nrntype |= IONCONC;
+        sym->nrntype |= IONCONC_IMPLICIT;
+        lappendsym(read_variables, sym);
+    };
+    bool const have_ionin{have_type(IONIN)}, have_ionout{have_type(IONOUT)};
+    if (have_ionin && !have_ionout) {
+        add_readion(ion_name + "o");
+    } else if (have_ionout && !have_ionin) {
+        add_readion(ion_name + "i");
+    }
+}
 
 // check semantics of read & write variables from USEION statements
 void check_useion_variables() {
     const Item* ion_var;
     ITERATE(ion_var, useion) {
+        // with SoA data then if we emit any calls for nrn_wrote_conc then we need explicit READ
+        // statements for all arguments
+        check_sufficient_ion_read_statements(SYM(ion_var)->name,
+                                             LST(ion_var->next),
+                                             LST(ion_var->next->next));
         // read variables
         check_ion_vars_as_constant(SYM(ion_var)->name, LST(ion_var->next));
         // write variables
@@ -2063,29 +2096,16 @@ List* set_ion_variables(int block)
            another variable pointing to the ionstyle
         */
         if (block == 2 && qconc) {
-            int ic = iontype(SYM(qconc)->name, in);
-            if (ic == IONIN) {
-                ic = 1;
-            } else if (ic == IONOUT) {
-                ic = 2;
-            } else {
-                assert(0);
-            }
+            int const ic = iontype(SYM(qconc)->name, in);
+            assert(ic == IONIN || ic == IONOUT);
             // first arg is just for the charge, last arg is the style. the old
             // code with a single double* as a 2nd parameter was problematic as
-            // it implicitly assumed AOS format.
-            // TODO remove the #ifdef kludge for cacum.mod somehow
+            // it implicitly assumed AoS format; now we require that explicit
+            // names are defined for erev and the internal/external concentrations
             Sprintf(buf,
-                    " nrn_wrote_conc(_%s_sym, _ion_%s_erev, _ion_%s,\n"
-                    "#ifdef _ion_%so\n"
-                    "  _ion_%so,\n"
-                    "#else\n"
-                    "  -1e-12,\n"
-                    "#endif\n"
-                    "  _style_%s);\n",
+                    " nrn_wrote_conc(_%s_sym, _ion_%s_erev, _ion_%si, _ion_%so, _style_%s);\n",
                     in,
                     in,
-                    SYM(qconc)->name,
                     in,
                     in,
                     in);
@@ -2107,6 +2127,9 @@ List* get_ion_variables(int block)
     ITERATE(q, useion) {
         q = q->next;
         ITERATE(q1, LST(q)) {
+            if (SYM(q1)->nrntype & IONCONC_IMPLICIT) {
+                continue;
+            }
             if (block == 2 && (SYM(q1)->nrntype & IONCONC) && (SYM(q1)->subtype & STAT)) {
                 continue;
             }
@@ -2120,6 +2143,9 @@ List* get_ion_variables(int block)
         }
         q = q->next;
         ITERATE(q1, LST(q)) {
+            if (SYM(q1)->nrntype & IONCONC_IMPLICIT) {
+                continue;
+            }
             if (block == 2 && (SYM(q1)->nrntype & IONCONC) && (SYM(q1)->subtype & STAT)) {
                 continue;
             }
@@ -2199,7 +2225,6 @@ int iondef(int* p_pointercount) {
             if (it == IONCUR) {
                 dcurdef = 1;
                 Sprintf(buf,
-                        //"#define _ion_di%sdv\t*_ppvar[%d].get<double*>()\n",
                         "#define _ion_di%sdv *(_ml->dptr_field<%d>(_iml))\n",
                         sion->name,
                         ioncount);
@@ -2217,8 +2242,6 @@ int iondef(int* p_pointercount) {
             // nrn_wrote_conc, the old code naviated to this value via pointer
             // arithmetic that is not valid now the mechanism data are stored in
             // SOA format
-            // Sprintf(buf, "#define _ion_%s_erev *_ppvar[%d].get<double*>()\n", sion->name,
-            // ioncount);
             Sprintf(buf, "#define _ion_%s_erev *_ml->dptr_field<%d>(_iml)\n", sion->name, ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
