@@ -29,15 +29,15 @@ class MutexPool {
 
   private:
     void grow();
-    T** items_;
-    T* pool_;
-    long pool_size_;
-    long count_;
-    long get_;
-    long put_;
-    long nget_;
-    long maxget_;
-    MutexPool<T>* chain_;
+    T** items_{};
+    T* pool_{};
+    long pool_size_{};
+    long count_{};
+    long get_{};
+    long put_{};
+    long nget_{};
+    long maxget_{};
+    MutexPool<T>* chain_{};
     MUTDEC
 };
 
@@ -51,11 +51,6 @@ MutexPool<T>::MutexPool(long count, int mkmut) {
         for (long i = 0; i < count_; ++i)
             items_[i] = pool_ + i;
     }
-    get_ = 0;
-    put_ = 0;
-    nget_ = 0;
-    maxget_ = 0;
-    chain_ = 0;
     MUTCONSTRUCT(mkmut)
 }
 
