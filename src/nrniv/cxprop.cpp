@@ -10,7 +10,6 @@ greater cache efficiency
 #include <stdlib.h>
 #include <InterViews/resource.h>
 #include "nrniv_mf.h"
-#include <netcvode.h>
 #include <nrnmpi.h>
 #include <nrnoc2iv.h>
 #include <membfunc.h>
@@ -388,7 +387,6 @@ void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip) {
     dp[id] = pvar + ip;
 }
 
-extern NetCvode* net_cvode_instance;
 
 void nrn_poolshrink(int shrink) {
     if (shrink) {

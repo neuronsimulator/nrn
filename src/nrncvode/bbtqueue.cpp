@@ -104,9 +104,6 @@ TQueue::~TQueue() {
     if (root_) {
         deleteitem(root_);
     }
-    if (tpool_) {
-        delete tpool_;
-    }
 }
 
 void TQueue::print() {
