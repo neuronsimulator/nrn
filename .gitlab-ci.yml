@@ -185,8 +185,16 @@ build:nmodl:
     # avoids more rebuilding when +report is set (which it is by default)
     SPACK_PACKAGE_DEPENDENCIES: ^hpe-mpi%gcc ^hdf5%gcc
 
+.build_neuron_mod2c:
+  extends: [.build_neuron]
+  variables:
+    # libsonata-report and reportinglib parts avoid those libraries being
+    # compiled with intel, nvhpc and gcc in every pipeline; the
+    # hpe-mpi/python/py-setuptools parts try to avoid re-building py-mpi4py
+    SPACK_PACKAGE_DEPENDENCIES: ^libsonata-report%gcc ^reportinglib%gcc ^hpe-mpi%gcc ^python%gcc ^py-setuptools%gcc
+
 build:neuron:mod2c:intel:shared:debug:
-  extends: [.build_neuron, .spack_intel]
+  extends: [.build_neuron_mod2c, .spack_intel]
   variables:
     SPACK_PACKAGE_SPEC: +debug~rx3d~caliper~gpu+coreneuron~legacy-unit~nmodl~openmp+shared+tests~unified build_type=Debug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
@@ -201,7 +209,7 @@ build:neuron:nmodl:intel:shared:debug:
     SPACK_PACKAGE_SPEC: +debug~rx3d~caliper~gpu+coreneuron~legacy-unit+nmodl~openmp+shared+sympy+tests~unified build_type=Debug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
 build:neuron:mod2c:nvhpc:acc:shared:
-  extends: [.build_neuron, .spack_nvhpc]
+  extends: [.build_neuron_mod2c, .spack_nvhpc]
   variables:
     SPACK_PACKAGE_SPEC: +debug~rx3d~caliper+gpu+coreneuron~legacy-unit~nmodl~openmp+shared+tests~unified build_type=RelWithDebInfo model_tests=channel-benchmark,olfactory,tqperf-heavy
 
