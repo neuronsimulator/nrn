@@ -18,6 +18,7 @@ extern int hoc_return_type_code;
 #include "netcvode.h"
 #include "membfunc.h"
 #include "nrn_ansi.h"
+#include "nrncvode.h"
 #include "nrndaspk.h"
 #include "nrniv_mf.h"
 #include "tqueue.h"
@@ -588,6 +589,11 @@ static double poolshrink(void*) {
     return double(i);
 }
 
+static double clear_event_queue(void*) {
+    clear_event_queue();
+    return 0;
+}
+
 static Member_func members[] = {{"solve", solve},
                                 {"atol", nrn_atol},
                                 {"rtol", rtol},
@@ -637,6 +643,7 @@ static Member_func members[] = {{"solve", solve},
                                 {"extra_scatter_gather_remove", extra_scatter_gather_remove},
                                 {"use_fast_imem", use_fast_imem},
                                 {"poolshrink", poolshrink},
+                                {"clear_event_queue", clear_event_queue},
                                 {nullptr, nullptr}};
 
 static Member_ret_obj_func omembers[] = {{"netconlist", netconlist}, {nullptr, nullptr}};

@@ -403,15 +403,6 @@ void nrn_poolshrink(int shrink) {
                 datumpools_[i] = NULL;
             }
         }
-        for (int it = 0; it < nrn_nthread; ++it) {
-            NetCvodeThreadData& nctd = net_cvode_instance->p[it];
-            if (nctd.sepool_) {
-                nctd.sepool_->free_all();
-            }
-            if (nctd.tpool_) {
-                nctd.tpool_->free_all();
-            }
-        }
     } else {
         Printf("poolshrink --- type name (dbluse, size) (datumuse, size)\n");
         for (int i = 0; i < npools_; ++i) {
