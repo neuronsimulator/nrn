@@ -183,6 +183,9 @@ void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true);
 // Direct transfer with respect to PatternStim
 void nrn2core_patternstim(void** info);
 
+// Info from NEURON subworlds at beginning of psolve.
+void nrn2core_subworld_info(int &cnt, int &subworld_index, int& subworld_rank);
+
 }  // end of extern "C"
 
 static core2nrn_callback_t cnbs[] = {
@@ -227,6 +230,8 @@ static core2nrn_callback_t cnbs[] = {
 
     {"nrn2core_patternstim_", (CNB) nrn2core_patternstim},
 
+    {"nrn2core_subworld_info_", (CNB) nrn2core_subworld_info},
+                                                                                   
     {NULL, NULL}};
 
 
