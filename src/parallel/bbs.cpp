@@ -54,7 +54,7 @@ void BBS::init(int) {
         return;
     }
     if (!BBSImpl::started_) {
-        BBSImpl::is_master_ = (nrnmpi_myid_bbs == 0) ? true : false;
+        BBSImpl::is_master_ = ((nrnmpi_myid == 0) && (nrnmpi_myid_bbs == 0)) ? true : false;
         BBSImpl::master_works_ = true;
         // printf("%d BBS::init is_master=%d\n", nrnmpi_myid_bbs, BBSImpl::is_master_);
     }
@@ -428,7 +428,7 @@ void BBSImpl::worker() {
     double st, et;
     int id;
     if (!is_master()) {
-        if (nrnmpi_myid_bbs == -1) {  // wait for message from
+        if (nrnmpi_myid != 0) {  // wait for message from
             for (;;) {                // the proper nrnmpi_myid == 0
                 subworld_worker_execute();
             }
