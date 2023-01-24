@@ -99,6 +99,9 @@ mac_m1_cmake_build:
     - fi;
 
 variables:
+  BLUECONFIGS_BRANCH:
+    description: Branch of blueconfigs to trigger the simulation stack pipeline from
+    value: main
   LIBSONATA_REPORT_BRANCH:
     description: Branch of libsonata-report to build BlueBrain models against in the simulation stack pipeline (LIBSONATA_REPORT_COMMIT and LIBSONATA_REPORT_TAG also possible)
     value: master
@@ -118,17 +121,25 @@ variables:
 # Set up Spack
 spack_setup:
   extends: .spack_setup_ccache
+  script:
+    - !reference [.spack_setup_ccache, script]
+    # try and make sure these are propagated to the simulation_stack bridge job and child pipeline
+    - echo "BLUECONFIGS_BRANCH=${BLUECONFIGS_BRANCH}" >> commit-mapping.env
+    - echo "BLUECONFIGS_BRANCH=${BLUECONFIGS_BRANCH}" >> spack_clone_variables.env
   variables:
     NEURON_COMMIT: ${CI_COMMIT_SHA}
     # Enable fetching GitHub PR descriptions and parsing them to find out what
     # branches to build of other projects.
     PARSE_GITHUB_PR_DESCRIPTIONS: "true"
+    # BLUECONFIGS_BRANCH does not correspond to a Spack package called blueconfigs
+    SPACK_SETUP_IGNORE_PACKAGE_VARIABLES: BLUECONFIGS
 
 simulation_stack:
   stage: .pre
   # Take advantage of GitHub PR description parsing in the spack_setup job.
   needs: [spack_setup]
   trigger:
+    branch: $BLUECONFIGS_BRANCH
     project: hpc/sim/blueconfigs
     # NEURON CI status depends on the BlueConfigs CI status.
     strategy: depend
