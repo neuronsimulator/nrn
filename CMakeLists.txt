@@ -403,23 +403,11 @@ endif()
 # Enable Python support
 # =============================================================================
 
-# Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE is not set, look it up
-# in the PATH exclusively.
-if(NOT PYTHON_EXECUTABLE)
-  message(
-    STATUS "-DPYTHON_EXECUTABLE not specified. Looking for `python3` in the PATH exclusively...")
-  find_program(
-    PYTHON_EXECUTABLE python3
-    PATHS ENV PATH
-    NO_DEFAULT_PATH)
-  message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
-endif()
-
-find_package(PythonInterp 3.7 REQUIRED)
+find_package(PythonInterp 3.8 REQUIRED)
 if(NRN_ENABLE_PYTHON)
   # start afresh with PythonLibsNew's find_library without this, -DPYTHON_EXECUTABLE=`which python3`
-  # -DNRN_PYTHON_DYNAMIC="python3.7;python3.9" would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
-  # /usr/lib/x86_64-linux-gnu/libpython3.7.so
+  # -DNRN_PYTHON_DYNAMIC="python3.8;python3.9" would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
+  # /usr/lib/x86_64-linux-gnu/libpython3.8.so
   unset(PYTHON_LIBRARY CACHE)
 
   find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)

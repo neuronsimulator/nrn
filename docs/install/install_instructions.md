@@ -27,10 +27,10 @@ You can download legacy versions from:
 * [Legacy Versions](https://neuron.yale.edu/ftp/neuron/versions/)
 
 Earlier Mac OS pkg installers have name in the format of
-`nrn-<version-id>-osx-37-38-39-310.pkg`.
+`nrn-<version-id>-osx-38-39-310-311.pkg`.
 Like windows installers,
-the, `py-37-38-39-310` string in the installer name indicates that the given installer is
-compatible with Python versions  3.7, 3.8, 3.9 and 3.10. Note that if you double-click the installer
+the, `py-38-39-310-311` string in the installer name indicates that the given installer is
+compatible with Python versions  3.8, 3.9, 3.10 and 3.11. Note that if you double-click the installer
 then you might see warning like below. In this case you have to right-click on the installer and then
 click `Open`. You can then see an option to `Open` installer: 
 
@@ -124,9 +124,9 @@ or recent releases from:
 * [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
 * [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
 
-The naming convention for Windows installers is `nrn-<version-id>-mingw-py-37-38-39-310-setup.exe`.
-The `py-37-38-39-310` string in the installer name indicates that the given installer is compatible
-with Python versions 3.7, 3.8, 3.9 and 3.10. Once the installer is downloaded, you can install it
+The naming convention for Windows installers is `nrn-<version-id>-mingw-py-38-39-310-311-setup.exe`.
+The `py-38-39-310-311` string in the installer name indicates that the given installer is compatible
+with Python versions 3.8, 3.9, 3.10 and 3.11. Once the installer is downloaded, you can install it
 by double clicking like any other Windows application. Note that you have to install python separately
 if python support is required. You can find detailed step-by-step instructions in
 [this presentation](https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
@@ -204,7 +204,7 @@ In order to build NEURON from source, the following packages must be available:
 
 The following packages are optional (see build options):
 
-- Python >=3.7 (for Python interface)
+- Python >=3.8 (for Python interface)
 - Cython (for RXD)
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)

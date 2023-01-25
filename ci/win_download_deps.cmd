@@ -3,7 +3,6 @@
 :: download all installers
 
 :: python
-pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.7.exe https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64.exe || goto :error
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.8.exe https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe || goto :error
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.9.exe https://www.python.org/ftp/python/3.9.0/python-3.9.0-amd64.exe || goto :error
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.10.exe https://www.python.org/ftp/python/3.10.0/python-3.10.0-amd64.exe || goto :error

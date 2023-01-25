@@ -13,3 +13,4 @@
 #define PY_SSIZE_T_CLEAN
 #endif
 #include <Python.h>
+#undef snprintf
