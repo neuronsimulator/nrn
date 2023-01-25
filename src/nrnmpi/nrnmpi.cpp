@@ -42,7 +42,6 @@ MPI_Comm nrnmpi_comm;
 MPI_Comm nrn_bbs_comm;
 static MPI_Group grp_bbs;
 static MPI_Group grp_net;
-int nrnmpi_subworld_change_cnt;  // increment from within void nrnmpi_subworld_size(int n)
 
 extern void nrnmpi_spike_initialize();
 
