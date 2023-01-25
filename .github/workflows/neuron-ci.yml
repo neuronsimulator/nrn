@@ -33,7 +33,7 @@ jobs:
       SKIP_WHEELHOUSE_REPAIR: true
       BUILD_TYPE: Release
       DESIRED_CMAKE_VERSION: 3.15.0
-      PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.7' }}
+      PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
       PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
 
     strategy:

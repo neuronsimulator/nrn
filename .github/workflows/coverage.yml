@@ -20,7 +20,7 @@ on:
 #      - 'docs/**'
 
 env:
-  PY_MIN_VERSION: '3.7'
+  PY_MIN_VERSION: '3.8'
   PY_MAX_VERSION: '3.11'
 
 jobs:
