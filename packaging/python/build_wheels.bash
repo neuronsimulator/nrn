@@ -6,10 +6,10 @@ set -xe
 # Note: It should be invoked from nrn directory
 #
 # PREREQUESITES:
-#  - cmake (>=3.5)
+#  - cmake (>=3.15.0)
 #  - flex
 #  - bison
-#  - python >= 3.7
+#  - python >= 3.8
 #  - cython
 #  - MPI
 #  - X11

@@ -50,7 +50,6 @@ jobs:
             # choose available python versions from pyenv
             pyenv_py_ver=""
             case << parameters.NRN_PYTHON_VERSION >> in
-              37) pyenv_py_ver="3.7.9" ;;
               38) pyenv_py_ver="3.8.7" ;;
               39) pyenv_py_ver="3.9.1" ;;
               310) pyenv_py_ver="3.10.1" ;;
@@ -111,5 +110,5 @@ workflows:
       - manylinux2014-aarch64:
           matrix:
             parameters:
-              NRN_PYTHON_VERSION: ["37", "38", "39", "310", "311"]
+              NRN_PYTHON_VERSION: ["38", "39", "310", "311"]
               NRN_NIGHTLY_UPLOAD: ["true"]

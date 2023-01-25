@@ -183,7 +183,7 @@ On BB5, we can test CPU wheels with:
 ```
 salloc -A proj16  -N 1 --ntasks-per-node=4 -C "cpu" --time=1:00:00 -p interactive
 module load unstable python
-bash packaging/python/test_wheels.sh python3.7 wheelhouse/NEURON-7.8.0.236-cp37-cp37m-manylinux1_x86_64.whl
+bash packaging/python/test_wheels.sh python3.8 wheelhouse/NEURON-7.8.0.236-cp38-cp38m-manylinux1_x86_64.whl
 ```
 
 The GPU wheels can be also tested in same way on the CPU partition. In this case only pre-compiled binaries
@@ -270,8 +270,8 @@ $ git diff
        - manylinux2014-aarch64:
            matrix:
              parameters:
--              NRN_PYTHON_VERSION: ["310"]
-+              NRN_PYTHON_VERSION: ["37", "38", "39", "310"]
+-              NRN_PYTHON_VERSION: ["311"]
++              NRN_PYTHON_VERSION: ["38", "39", "310", "311"]
 ```
 
 The reason we are setting `NEURON_WHEEL_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
