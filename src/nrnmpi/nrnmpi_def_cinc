@@ -5,6 +5,7 @@ int nrnmpi_numprocs_world = 1;
 int nrnmpi_myid_world = 0;
 int nrnmpi_numprocs_bbs = 1;
 int nrnmpi_myid_bbs = 0;
+int nrnmpi_subworld_change_cnt = 0;
 
 int nrnmpi_nout_;
 int* nrnmpi_nin_;
