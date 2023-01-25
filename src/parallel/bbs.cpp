@@ -429,7 +429,7 @@ void BBSImpl::worker() {
     int id;
     if (!is_master()) {
         if (nrnmpi_myid != 0) {  // wait for message from
-            for (;;) {                // the proper nrnmpi_myid == 0
+            for (;;) {           // the proper nrnmpi_myid == 0
                 subworld_worker_execute();
             }
         }

@@ -42,7 +42,7 @@ MPI_Comm nrnmpi_comm;
 MPI_Comm nrn_bbs_comm;
 static MPI_Group grp_bbs;
 static MPI_Group grp_net;
-int nrnmpi_subworld_change_cnt; // increment from within void nrnmpi_subworld_size(int n)
+int nrnmpi_subworld_change_cnt;  // increment from within void nrnmpi_subworld_size(int n)
 
 extern void nrnmpi_spike_initialize();
 
@@ -147,7 +147,7 @@ for (i=0; i < *pargc; ++i) {
     nrnmpi_spike_initialize();
     nrnmpi_use = 1;
     nrnmpi_subworld_change_cnt = 0;  // increment from within void nrnmpi_subworld_size(int n)
-    
+
     /*begin instrumentation*/
 #if USE_HPM
     hpmInit(nrnmpi_myid_world, "mpineuron");
@@ -219,7 +219,7 @@ void nrnmpi_abort(int errcode) {
 
 #if NRNMPI
 
- 
+
 void nrnmpi_subworld_size(int n) {
     /* n is the (desired) size of a subworld (pc.nhost) */
     /* A subworld (net) is contiguous */
@@ -304,16 +304,16 @@ void nrnmpi_subworld_size(int n) {
             asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
             asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
         } else {
-          nrnmpi_myid_bbs = r / n;
-          nrnmpi_numprocs_bbs = nb;
-          
-// #if 1
-//             nrnmpi_myid_bbs = -1;
-//             nrnmpi_numprocs_bbs = -1;
-// #else
-//             nrnmpi_myid_bbs = r / n;
-//             nrnmpi_numprocs_bbs = nb;
-// #endif
+            nrnmpi_myid_bbs = r / n;
+            nrnmpi_numprocs_bbs = nb;
+
+            // #if 1
+            //             nrnmpi_myid_bbs = -1;
+            //             nrnmpi_numprocs_bbs = -1;
+            // #else
+            //             nrnmpi_myid_bbs = r / n;
+            //             nrnmpi_numprocs_bbs = nb;
+            // #endif
         }
     }
     nrnmpi_subworld_change_cnt++;

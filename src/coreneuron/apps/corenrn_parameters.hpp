@@ -58,14 +58,14 @@ struct corenrn_parameters_data {
 
     bool mpi_enable = false;         /// Enable MPI flag.
     bool skip_mpi_finalize = false;  /// Skip MPI finalization
-    int  mpi_subworld = -1;          /// MPI subworld index if ParallelContext.subworlds has been used.
-    bool multisend = false;          /// Use Multisend spike exchange instead of Allgather.
-    bool threading = false;          /// Enable pthread/openmp
-    bool gpu = false;                /// Enable GPU computation.
-    bool cuda_interface = false;     /// Enable CUDA interface (default is the OpenACC interface).
+    int mpi_subworld = -1;        /// MPI subworld index if ParallelContext.subworlds has been used.
+    bool multisend = false;       /// Use Multisend spike exchange instead of Allgather.
+    bool threading = false;       /// Enable pthread/openmp
+    bool gpu = false;             /// Enable GPU computation.
+    bool cuda_interface = false;  /// Enable CUDA interface (default is the OpenACC interface).
                                   /// Branch of the code is executed through CUDA kernels instead of
                                   /// OpenACC regions.
-    bool binqueue = false;  /// Use bin queue.
+    bool binqueue = false;        /// Use bin queue.
 
     bool show_version = false;  /// Print version and exit.
 

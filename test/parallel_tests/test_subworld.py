@@ -1,5 +1,7 @@
+import sys
 from neuron import h
 
+h.nrnmpi_init()
 pc = h.ParallelContext()
 
 # each subworld has 3 ranks if nhost_world is multiple of subsize
@@ -13,7 +15,7 @@ x = 0 if pc.nhost_world() % subsize == 0 else 1
 
 if pc.id_world() == 0:
     print("id_world nhost_world id_bbs nhost_bbs ibbs nbbs  id  nhost")
-pc.barrier()
+
 print(
     "%5d %9d %8d %8d %7d %3d %5d %4d"
     % (
@@ -30,9 +32,14 @@ print(
 
 assert pc.nhost() == (subsize if ibbs < nbbs else (pc.nhost_world() - subsize * nbbs))
 assert pc.id() == pc.id_world() % subsize
+
+print(f"nbbs = {nbbs}")
+print(f"pc.nhost_bbs() = {pc.nhost_bbs()}")
+sys.stdout.flush()
+
 # id_bbs and nhost_bbs for non-zero id not -1.
-assert pc.nhost_bbs() == ((nbbs + x) if pc.id() == 0 else -1)
-assert pc.id_bbs() == (ibbs if pc.id() == 0 else -1)
+assert pc.nhost_bbs() == nbbs
+assert pc.id_bbs() == ibbs
 
 
 def f(arg):
