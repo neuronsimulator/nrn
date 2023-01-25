@@ -13,7 +13,7 @@ extern int nrnmpi_numprocs;       /* size of subworld */
 extern int nrnmpi_myid;           /* rank in subworld */
 extern int nrnmpi_numprocs_bbs;   /* number of subworlds */
 extern int nrnmpi_myid_bbs;       /* rank in nrn_bbs_comm of rank 0 of a subworld */
-extern int nrnmpi_subworld_change_cnt;
+extern int nrnmpi_subworld_change_cnt; // increment from within void nrnmpi_subworld_size(int n)
 
 typedef struct {
     int gid;

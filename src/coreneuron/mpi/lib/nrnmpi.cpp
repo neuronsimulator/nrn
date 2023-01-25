@@ -89,7 +89,7 @@ void nrnmpi_finalize_impl(void) {
 }
 
 extern "C" {
-void (*nrn2core_subworld_info_)(int&, int&, int&);
+  extern void (*nrn2core_subworld_info_)(int&, int&, int&);
 }
 
 void corenrn_subworld() {

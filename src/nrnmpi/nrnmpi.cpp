@@ -263,13 +263,8 @@ void nrnmpi_subworld_size(int n) {
         asrt(MPI_Comm_create(nrnmpi_world_comm, grp_bbs, &nrn_bbs_comm));
         asrt(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid));
         asrt(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
-        if (r == 0) {
-            asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
-            asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
-        } else {
-            nrnmpi_myid_bbs = -1;
-            nrnmpi_numprocs_bbs = -1;
-        }
+        nrnmpi_myid_bbs = 0;
+        nrnmpi_numprocs_bbs = 1;
     } else {
         int nw = nrnmpi_numprocs_world;
         int nb = nw / n; /* nrnmpi_numprocs_bbs */
@@ -305,14 +300,6 @@ void nrnmpi_subworld_size(int n) {
         } else {
             nrnmpi_myid_bbs = r / n;
             nrnmpi_numprocs_bbs = nb;
-
-            // #if 1
-            //             nrnmpi_myid_bbs = -1;
-            //             nrnmpi_numprocs_bbs = -1;
-            // #else
-            //             nrnmpi_myid_bbs = r / n;
-            //             nrnmpi_numprocs_bbs = nb;
-            // #endif
         }
     }
     nrnmpi_subworld_change_cnt++;
