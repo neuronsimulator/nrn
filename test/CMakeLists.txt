@@ -529,6 +529,14 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       COMMAND ${modtests_launch_py} test/coreneuron/test_psolve.py)
     nrn_add_test(
       GROUP coreneuron_modtests
+      NAME test_subworlds_py_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/coreneuron/test_subworlds.py
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_test_subworlds_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_subworlds.py)
+    nrn_add_test(
+      GROUP coreneuron_modtests
       NAME test_ba_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_ba.py
