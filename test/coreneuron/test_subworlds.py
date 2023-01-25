@@ -5,6 +5,7 @@ use_coreneuron = True
 
 if use_coreneuron:
     from neuron import coreneuron
+
     coreneuron.enable = True
     coreneuron.verbose = 1
 
@@ -30,8 +31,8 @@ def test_subworlds():
     rec_t = h.Vector()
     rec_v.record(soma(0.5)._ref_v)  # Membrane potential vector
     rec_t.record(h._ref_t)
-    #h.fadvance()
-    #h.continuerun(250)
+    # h.fadvance()
+    # h.continuerun(250)
     syn = h.ExpSyn(soma(0.5))
     spike_detector = h.NetCon(soma(0.5)._ref_v, None, sec=soma)
     netstim = h.NetStim()
@@ -45,11 +46,9 @@ def test_subworlds():
     h.finitialize(-65)
     pc.set_maxstep(10)
     pc.psolve(250.0)
-    
+
     print(rec_v.max())
 
 
 if __name__ == "__main__":
     test_subworlds()
-
-
