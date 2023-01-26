@@ -73,8 +73,6 @@ jobs:
                 -DNRN_ENABLE_RX3D=OFF
               sanitizer: address
               ccache_fudge: 1 # manually invalidate the cache for this build
-              # TODO: fix AddressSanitizer on GH macOS for Python311
-              python_max_version: '3.10'
       fail-fast: false
 
     steps:
