@@ -3,7 +3,6 @@
 
 #include <OS/string.h>
 #include "ndatclas.h"
-#include <ivstream.h>
 class MechTypeImpl;
 
 class MechanismStandard: public Resource {

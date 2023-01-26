@@ -14,7 +14,6 @@
 #include <InterViews/background.h>
 #include <OS/math.h>
 
-#include <ivstream.h>
 #include <stdio.h>
 #include "scenepic.h"
 #endif

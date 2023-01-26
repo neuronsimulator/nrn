@@ -1,7 +1,6 @@
 #include <../../nrnconf.h>
 #if HAVE_IV  // to end of file
 
-#include <ivstream.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -17,10 +16,6 @@
 #include <IV-look/kit.h>
 #include <IV-look/dialogs.h>
 #include <OS/string.h>
-
-#define Input  IOS_IN
-#define Output IOS_OUT
-#define Append IOS_APP | IOS_OUT
 
 #include "graph.h"
 #include "utility.h"
@@ -142,14 +137,14 @@ static void open_fail(const char* s, Window* w, const char* io) {
 
 bool ok_to_write(const char* s, Window* w) {
     std::filebuf obuf;
-    if (obuf.open(s, Input)) {
+    if (obuf.open(s, std::ios::in)) {
         obuf.close();
         if (!ok_if_already_exists(s, w)) {
             errno = 0;
             return false;
         }
     }
-    if (obuf.open(s, Append)) {
+    if (obuf.open(s, std::ios::app | std::ios::out)) {
         obuf.close();
     } else {
         open_fail(s, w, "writ");
@@ -162,7 +157,7 @@ bool ok_to_write(const char* s, Window* w) {
 
 bool ok_to_read(const char* s, Window* w) {
     std::filebuf obuf;
-    if (obuf.open(s, Input)) {
+    if (obuf.open(s, std::ios::in)) {
         obuf.close();
         errno = 0;
         return true;

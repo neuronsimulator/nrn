@@ -10,7 +10,6 @@
 #include <InterViews/box.h>
 #include <IV-look/kit.h>
 #include <InterViews/input.h>
-#include <ivstream.h>
 #include <stdio.h>
 #include "ocbox.h"
 #include "apwindow.h"

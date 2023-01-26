@@ -24,6 +24,7 @@
 
 #include <vector>
 #include <variant>
+#include <sstream>
 
 
 int bbs_poll_;

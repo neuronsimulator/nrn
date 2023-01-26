@@ -20,7 +20,6 @@ char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strpt
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include <ivstream.h>
 #include <cctype>
 #include <cerrno>
 
