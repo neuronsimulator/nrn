@@ -616,7 +616,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         SCRIPT_PATTERNS test/coreneuron/test_subworlds.py
         PROCESSORS 6
         ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
-        COVERAGE_FILE=.coverage.coreneuron_test_subworlds_py
+                    COVERAGE_FILE=.coverage.coreneuron_test_subworlds_py
         COMMAND ${modtests_launch_py_mpi_subworlds} test/coreneuron/test_subworlds.py)
     endif()
     nrn_add_test_group(

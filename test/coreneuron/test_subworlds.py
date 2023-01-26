@@ -1,6 +1,9 @@
 import sys
 from neuron import h
 
+h("""objref cvode""")
+h.cvode = h.CVode()
+
 use_coreneuron = True
 subsize = 3
 
@@ -9,8 +12,6 @@ if use_coreneuron:
 
     coreneuron.enable = True
     coreneuron.verbose = 0
-
-h.load_file("stdrun.hoc")
 
 
 def test_subworlds():
