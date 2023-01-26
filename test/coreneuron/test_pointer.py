@@ -1,3 +1,5 @@
+import os
+import distutils.util
 from neuron import h
 import subprocess
 from subprocess import PIPE
@@ -208,7 +210,12 @@ def test_axial():
 
     coreneuron.verbose = 0
     coreneuron.enable = True
-    coreneuron.cell_permute = 0
+    coreneuron.gpu = bool(
+        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
+    )
+
+    # test (0,1) for CPU and (1,2) for GPU
+    coreneuron.cell_permute = 2 if coreneuron.gpu else 0
     chk(std, run(tstop))
     coreneuron.cell_permute = 1
     chk(std, run(tstop))
@@ -261,7 +268,8 @@ def test_checkpoint():
     from neuron import coreneuron
 
     coreneuron.enable = True
-    for perm in [0, 1]:
+    cell_permute_values = (1, 2) if coreneuron.gpu else (0, 1)
+    for perm in cell_permute_values:
         coreneuron.cell_permute = perm
         run(5)
         pc.psolve(10)
