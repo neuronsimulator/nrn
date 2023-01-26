@@ -70,6 +70,7 @@ extern void debugfile(const char*, ...);
 #include <InterViews/style.h>
 #include <InterViews/background.h>
 #include <InterViews/label.h>
+#include <InterViews/resource.h>
 #include <OS/string.h>
 #include "apwindow.h"
 #include "scenevie.h"
@@ -3382,7 +3383,6 @@ Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <InterViews/resource.h>
 #include "oc2iv.h"
 
 #endif  // HAVE_IV

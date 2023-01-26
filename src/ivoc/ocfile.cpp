@@ -13,13 +13,13 @@ extern int hoc_return_type_code;
 #include <io.h>
 #include <fcntl.h>
 #endif
-#include <InterViews/resource.h>
 #if HAVE_IV
 #include "utility.h"
 #include <IV-look/dialogs.h>
 #include <InterViews/session.h>
 #include <InterViews/display.h>
 #include <InterViews/style.h>
+#include <InterViews/resource.h>
 #endif
 #include "nrnmpi.h"
 #include "oc2iv.h"
