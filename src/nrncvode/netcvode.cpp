@@ -2918,6 +2918,19 @@ void NetCvode::clear_events() {
     }
 }
 
+void NetCvode::free_event_pools() {
+    clear_events();
+    for (int i = 0; i < nrn_nthread; ++i) {
+        NetCvodeThreadData& d = p[i];
+        if (d.sepool_) {
+            delete d.sepool_;
+        }
+        if (d.selfqueue_) {
+            delete d.selfqueue_;
+        }
+    }
+}
+
 void NetCvode::init_events() {
     hoc_Item* q;
     int i, j;

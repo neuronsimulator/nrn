@@ -113,6 +113,7 @@ class NetCvode {
     void deliver_events(double til, NrnThread*);  // for initialization events
     void solver_prepare();
     void clear_events();
+    void free_event_pools();
     void init_events();
     void print_event_queue();
     void event_queue_info();

@@ -589,8 +589,8 @@ static double poolshrink(void*) {
     return double(i);
 }
 
-static double clear_event_queue(void*) {
-    clear_event_queue();
+static double free_event_queues(void*) {
+    free_event_queues();
     return 0;
 }
 
@@ -643,7 +643,7 @@ static Member_func members[] = {{"solve", solve},
                                 {"extra_scatter_gather_remove", extra_scatter_gather_remove},
                                 {"use_fast_imem", use_fast_imem},
                                 {"poolshrink", poolshrink},
-                                {"clear_event_queue", clear_event_queue},
+                                {"free_event_queues", free_event_queues},
                                 {nullptr, nullptr}};
 
 static Member_ret_obj_func omembers[] = {{"netconlist", netconlist}, {nullptr, nullptr}};
