@@ -71,6 +71,9 @@ def test_subworlds():
 
         print(f"subworld {pc.id_bbs()}: {rec_v.max()}")
 
+    pc.done()
+    h.quit()
+
 
 if __name__ == "__main__":
     test_subworlds()
