@@ -73,8 +73,6 @@ jobs:
                 -DNRN_ENABLE_RX3D=OFF
               sanitizer: address
               ccache_fudge: 1 # manually invalidate the cache for this build
-              # TODO: fix AddressSanitizer on GH macOS for Python311
-              python_max_version: '3.10'
       fail-fast: false
 
     steps:
@@ -305,17 +303,20 @@ jobs:
                 cat bin/nrn-enable-sanitizer
                 echo ---
                 nrn_enable_sanitizer=${INSTALL_DIR}/bin/nrn-enable-sanitizer
-                nrn_enable_sanitizer_preload="${nrn_enable_sanitizer} --preload"
+                nrn_enable_sanitizer_preload_python="${nrn_enable_sanitizer} --preload python"
               else
                 echo nrn-enable-sanitizer not found, not using it
               fi
           elif [[ "$BUILD_MODE" == "setuptools" ]]; then
             ./packaging/python/build_wheels.bash CI;
           fi;
+          if [[ -z "${nrn_enable_sanitizer_preload_python}" ]]; then
+            nrn_enable_sanitizer_preload_python="${PYTHON}"
+          fi
 
           # basic test for cmake when python is not disabled
           if [[ "$BUILD_MODE" == "cmake" && ! "${cmake_args[*]}" =~ "NRN_ENABLE_PYTHON=OFF" ]]; then
-            $PYTHON --version && ${nrn_enable_sanitizer_preload} $PYTHON -c 'import neuron; neuron.test()'
+            ${nrn_enable_sanitizer_preload_python} --version && ${nrn_enable_sanitizer_preload_python} -c 'import neuron; neuron.test()'
           fi;
 
           # test neurondemo with cmake
@@ -325,8 +326,8 @@ jobs:
 
           # with cmake dynamic check python_min and python_max together
           if [[ "$BUILD_MODE" == "cmake" && "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
-            ${nrn_enable_sanitizer_preload} $PYTHON_MAX -c 'import neuron; neuron.test()'
-            ${nrn_enable_sanitizer_preload} $PYTHON_MIN -c 'import neuron; neuron.test()'
+            ${nrn_enable_sanitizer_preload_python} -c 'import neuron; neuron.test()'
+            $PYTHON_MIN -c 'import neuron; neuron.test()'
           fi;
 
           # run rxd tests manually if rxd is enabled *and CoreNEURON is
@@ -334,15 +335,15 @@ jobs:
           if [[ "$BUILD_MODE" == "cmake" \
                 && ! "${cmake_args[*]}" =~ "NRN_ENABLE_RX3D=OFF" \
                 && ! "${cmake_args[*]}" =~ "NRN_ENABLE_CORENEURON=ON" ]]; then
-            ${nrn_enable_sanitizer_preload} $PYTHON ../share/lib/python/neuron/rxdtests/run_all.py
+            ${nrn_enable_sanitizer_preload_python} ../share/lib/python/neuron/rxdtests/run_all.py
           fi;
 
           if [ "$BUILD_MODE" == "setuptools" ]; then
             neuron_wheel=wheelhouse/NEURON*.whl;
             # test with virtual environment
-            ${nrn_enable_sanitizer_preload} ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel
+            ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel
             # test with global installation
-            ${nrn_enable_sanitizer_preload} ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel false
+            ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel false
           fi;
         env:
           BUILD_MODE: ${{ matrix.config.build_mode }}
