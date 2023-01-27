@@ -2928,6 +2928,13 @@ void NetCvode::free_event_pools() {
         if (d.selfqueue_) {
             delete d.selfqueue_;
         }
+        if (d.tqe_) {
+            delete d.tqe_;
+        }
+        if (d.tpool_) {
+            d.tpool_->free_all();
+            delete d.tpool_;
+        }
     }
 }
 
