@@ -1736,8 +1736,7 @@ Description:
     to the bulletin board. Remember, all the workers also have :hoc:meth:`ParallelContext.id`
     == 0 but different :hoc:meth:`~ParallelContext.id_world` and :hoc:meth:`~ParallelContext.id_bbs` ranks. The subworld
     :hoc:meth:`ParallelContext.id` ranks greater than 0 are not called workers --- their
-    global rank is :hoc:meth:`~ParallelContext.id_world` but their bulletin board rank,
-    :hoc:meth:`~ParallelContext.id_bbs` is the subworld index.
+    global rank is :hoc:meth:`~ParallelContext.id_world` but their bulletin board rank, :hoc:meth:`~ParallelContext.id_bbs` is -1.
     When a worker (or the master) receives a task to execute, the exact same 
     function with arguments that define the task will be executed on all the 
     processes of the subworld. A subworld is exactly analogous to the old 
@@ -1745,10 +1744,10 @@ Description:
     by means of :hoc:meth:`ParallelContext.id` which is unique among
     the :hoc:meth:`ParallelContext.nhost` processes in the subworld.
      
-    A runtime error will result if an :hoc:meth:`~ParallelContext.id_bbs` > 0 rank processor tries
+    A runtime error will result if an :hoc:meth:`~ParallelContext.id_bbs` == -1 rank processor tries
     to communicate with the bulletin board, thus the general idiom for 
     a task posting or taking information from the bulletin board should be either 
-    ``if (pc.id == 0) { ... }`` or ``if (pc.id_bbs == 0) { ... }``. 
+    ``if (pc.id == 0) { ... }`` or ``if (pc.id_bbs != -1) { ... }``. 
     The latter is more general since the former would not be correct if 
     :hoc:meth:`~ParallelContext.subworlds` has NOT been called since in that case
     ``pc.id == pc.id_world == pc.id_bbs`` and 
@@ -1958,7 +1957,8 @@ Description:
 
     Description:
         If :hoc:func:`subworlds` has been called, nhost_bbs() returns the number of
-        subworlds. 
+        subworlds if :hoc:meth:`ParallelContext.id` == 0 and -1 for all other ranks in
+        the subworld. 
         If subworlds has NOT been called then nhost_bbs, nhost_world, and nhost 
         are the same. 
 
@@ -1977,7 +1977,8 @@ Description:
 
     Description:
         If :hoc:func:`subworlds` has been called id_bbs() returns the subworld rank
-        for all ranks in the subworld. 
+        if :hoc:meth:`ParallelContext.id` == 0 and -1 for all other ranks in the
+        subworld. 
         If subworlds has not been called then id_bbs, id_world, and id are the 
         same. 
 
