@@ -146,6 +146,7 @@ for (i=0; i < *pargc; ++i) {
     nrnmpi_spike_initialize();
     nrnmpi_use = 1;
     nrnmpi_subworld_change_cnt = 0;  // increment from within void nrnmpi_subworld_size(int n)
+    nrnmpi_subworld_id = 0;          // Subworld index of current rank
 
     /*begin instrumentation*/
 #if USE_HPM
@@ -257,14 +258,21 @@ void nrnmpi_subworld_size(int n) {
         asrt(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
         asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
         asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
+        nrnmpi_subworld_id = nrnmpi_myid_bbs;
     } else if (n == nrnmpi_numprocs_world) {
         asrt(MPI_Group_incl(wg, 1, &r, &grp_bbs));
         asrt(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm));
         asrt(MPI_Comm_create(nrnmpi_world_comm, grp_bbs, &nrn_bbs_comm));
         asrt(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid));
         asrt(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
-        nrnmpi_myid_bbs = 0;
-        nrnmpi_numprocs_bbs = 1;
+        if (r == 0) {
+            asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
+            asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
+        } else {
+            nrnmpi_myid_bbs = -1;
+            nrnmpi_numprocs_bbs = -1;
+        }
+        nrnmpi_subworld_id = 0;
     } else {
         int nw = nrnmpi_numprocs_world;
         int nb = nw / n; /* nrnmpi_numprocs_bbs */
@@ -298,9 +306,10 @@ void nrnmpi_subworld_size(int n) {
             asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
             asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
         } else {
-            nrnmpi_myid_bbs = r / n;
-            nrnmpi_numprocs_bbs = nb;
+            nrnmpi_myid_bbs = -1;
+            nrnmpi_numprocs_bbs = -1;
         }
+        nrnmpi_subworld_id = r / n;
     }
     nrnmpi_subworld_change_cnt++;
     asrt(MPI_Group_free(&wg));

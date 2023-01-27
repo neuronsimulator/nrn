@@ -9,7 +9,7 @@ void BBSImpl::subworld_worker_execute() {
     // The broadcast functions are particularly useful and those are
     // how execute_worker passes messages into here.
 
-    // printf("%d enter subworld_worker_execute\n", nrnmpi_myid_world);
+    printf("%d enter subworld_worker_execute\n", nrnmpi_myid_world);
     int info[2];
     // wait for something to do
     nrnmpi_int_broadcast(info, 2, 0);

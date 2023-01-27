@@ -1,4 +1,3 @@
-import sys
 from neuron import h
 
 h.nrnmpi_init()
@@ -33,13 +32,9 @@ print(
 assert pc.nhost() == (subsize if ibbs < nbbs else (pc.nhost_world() - subsize * nbbs))
 assert pc.id() == pc.id_world() % subsize
 
-print(f"nbbs = {nbbs}")
-print(f"pc.nhost_bbs() = {pc.nhost_bbs()}")
-sys.stdout.flush()
-
 # id_bbs and nhost_bbs for non-zero id not -1.
-assert pc.nhost_bbs() == nbbs
-assert pc.id_bbs() == ibbs
+assert pc.nhost_bbs() == ((nbbs + x) if pc.id() == 0 else -1)
+assert pc.id_bbs() == (ibbs if pc.id() == 0 else -1)
 
 
 def f(arg):

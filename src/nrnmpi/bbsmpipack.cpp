@@ -109,7 +109,7 @@ void nrnmpi_upkbegin(bbsmpibuf* r) {
            r->keypos);
 #endif
     assert(r && r->buf && r->size > 0);
-    if ((nrnmpi_myid_bbs >= 0) && (nrnmpi_myid != 0)) {
+    if (nrnmpi_myid_bbs == -1) {
         hoc_execerror("subworld process with nhost > 0 cannot use", "the bulletin board");
     }
     r->upkpos = 0;
@@ -223,7 +223,7 @@ static void resize(bbsmpibuf* r, int size) {
 
 void nrnmpi_pkbegin(bbsmpibuf* r) {
     int type;
-    if ((nrnmpi_myid_bbs >= 0) && (nrnmpi_myid != 0)) {
+    if (nrnmpi_myid_bbs == -1) {
         hoc_execerror("subworld process with nhost > 0 cannot use", "the bulletin board");
     }
     r->pkposition = 0;

@@ -1226,6 +1226,6 @@ void nrn2core_patternstim(void** info) {
 // Info from NEURON subworlds at beginning of psolve.
 void nrn2core_subworld_info(int& cnt, int& subworld_index, int& subworld_rank) {
     cnt = nrnmpi_subworld_change_cnt;
-    subworld_index = nrnmpi_myid_bbs;
+    subworld_index = nrnmpi_subworld_id;
     subworld_rank = nrnmpi_myid;
 }
