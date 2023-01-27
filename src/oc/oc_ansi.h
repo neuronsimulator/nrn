@@ -52,6 +52,9 @@ char* hoc_object_name(Object*);
 void hoc_retpushx(double);
 
 namespace neuron::oc {
+struct runtime_error: ::std::runtime_error {
+    using ::std::runtime_error::runtime_error;
+};
 /**
  * @brief Execute C++ code that may throw and propagate HOC information.
  *
@@ -60,12 +63,16 @@ namespace neuron::oc {
  * messages if the exception is caught high up the stack. This wrapper is designed to be used at the
  * points where we leave the HOC world and call lower level code. If that lower level code throws an
  * exception, the message will be passed to hoc_execerror. This saves additional information so that
- * the final error message provides additional context.
+ * the final error message provides additional context. If the "lower level" code called
+ * hoc_execerror itself then we pass on the exception without re-calling hoc_execerror.
  */
 template <typename Callable, typename... Args>
 decltype(auto) invoke_method_that_may_throw(Callable message_prefix, Args&&... args) {
     try {
         return std::invoke(std::forward<Args>(args)...);
+    } catch (runtime_error const&) {
+        // This message was thrown by hoc_execerror; just pass it on
+        throw;
     } catch (std::exception const& e) {
         std::string message{message_prefix()};
         std::string_view what{e.what()};

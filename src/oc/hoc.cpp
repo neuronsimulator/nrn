@@ -685,7 +685,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
         message.append(1, ' ');
         message.append(t);
     }
-    throw std::runtime_error(std::move(message));
+    throw neuron::oc::runtime_error(std::move(message));
 }
 
 void hoc_execerror(const char* s, const char* t) /* recover from run-time error */

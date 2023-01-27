@@ -180,10 +180,7 @@ SCENARIO("Test calling code from HOC that throws exceptions", "[NEURON][hoc_inte
         WHEN("A member function that calls hoc_execerror is called") {
             REQUIRE_THAT(hoc_oc_require_error(
                              ("util.call_execerror" + method_suffix + "()\n").c_str()),
-                         Contains("hoc_execerror: UtilityThatLikesThrowing[0]::call_execerror" +
-                                  method_suffix +
-                                  ": "
-                                  "hoc_execerror: throwing a tantrum"));
+                         Contains("hoc_execerror: throwing a tantrum"));
         }
     }
 }
