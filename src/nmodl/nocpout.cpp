@@ -314,7 +314,8 @@ void parout() {
         Sprintf(buf, "/* Thread safe. No static _ml, _iml or _ppvar. */\n");
     } else {
         Sprintf(buf,
-                "static LocalMechanismRange _ml_real{nullptr}, *_ml{&_ml_real};\n"
+                "static LocalMechanismInstance _ml_real{nullptr};\n"
+                "static LocalMechanismRange *_ml{&_ml_real};\n"
                 "static size_t _iml{0};\n"
                 "static Datum *_ppvar;\n");
     }
@@ -700,11 +701,11 @@ extern Memb_func* memb_func;\n\
     if (ba_index_ > 0) {
         Lappendstr(defs_list,
                    "static void _ba1(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, "
-                   "Memb_list* _ml, size_t _iml)");
+                   "Memb_list* _ml, size_t _iml, neuron::model_sorted_token const&)");
         for (i = 2; i <= ba_index_; ++i) {
             Sprintf(buf,
                     ", _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* "
-                    "_ml, size_t _iml)",
+                    "_ml, size_t _iml, neuron::model_sorted_token const&)",
                     i);
             Lappendstr(defs_list, buf);
         }
@@ -716,12 +717,15 @@ extern Memb_func* memb_func;\n\
     /*declaration of the range variables names to HOC */
     Lappendstr(
         defs_list,
-        "static void nrn_alloc(Prop*);\nstatic void  nrn_init(NrnThread*, Memb_list*, int);\nstatic void nrn_state(NrnThread*, Memb_list*, int);\n\
-");
+        "static void nrn_alloc(Prop*);\n"
+        "static void nrn_init(neuron::model_sorted_token const&, NrnThread*, Memb_list*, int);\n"
+        "static void nrn_state(neuron::model_sorted_token const&, NrnThread*, Memb_list*, int);\n");
     if (brkpnt_exists) {
-        Lappendstr(defs_list,
-                   "static void nrn_cur(NrnThread*, Memb_list*, int);\nstatic void  "
-                   "nrn_jacob(NrnThread*, Memb_list*, int);\n");
+        Lappendstr(
+            defs_list,
+            "static void nrn_cur(neuron::model_sorted_token const&, NrnThread*, Memb_list*, int);\n"
+            "static void nrn_jacob(neuron::model_sorted_token const&, NrnThread*, "
+            "Memb_list*, int);\n");
     }
     /* count the number of pointers needed */
     ppvar_cnt = ioncount + diamdec + pointercount + areadec;
@@ -880,7 +884,7 @@ static const char *_mechanism[] = {\n\
     // seems that even in the old code and with vectorize == false that the global _p, _ppvar were
     // shadowed, so don't worry about shadowing the global _ml and _iml here
     Sprintf(buf,
-            "    LocalMechanismRange _ml_real{_prop};\n"
+            "    LocalMechanismInstance _ml_real{_prop};\n"
             "    auto* const _ml = &_ml_real;\n"
             "    size_t const _iml{};\n"
             "    assert(_prop->param_size() == %d);\n",
@@ -1006,7 +1010,7 @@ static const char *_mechanism[] = {\n\
             Lappendstr(procfunc,
                        "\n"
                        "static void _constructor(Prop* _prop) {\n"
-                       "  LocalMechanismRange _ml_real{_prop};\n"
+                       "  LocalMechanismInstance _ml_real{_prop};\n"
                        "  auto* const _ml = &_ml_real;\n"
                        "  size_t const _iml{};\n"
                        "  Datum *_ppvar{_prop->dparam}, *_thread{};\n"
@@ -1085,7 +1089,7 @@ static const char *_mechanism[] = {\n\
                "\
 extern Symbol* hoc_lookup(const char*);\n\
 extern void _nrn_thread_reg(int, int, void(*)(Datum*));\n\
-extern void _nrn_thread_table_reg(int, void(*)(Memb_list*, size_t, Datum*, Datum*, NrnThread*, int));\n\
+void _nrn_thread_table_reg(int, nrn_thread_table_check_t);\n\
 extern void hoc_register_tolerance(int, HocStateTolerance*, Symbol***);\n\
 extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 ");
@@ -1309,7 +1313,7 @@ if (_nd->_extnode) {\n\
             Lappendstr(procfunc,
                        "\n"
                        "static void _destructor(Prop* _prop) {\n"
-                       "  LocalMechanismRange _ml_real{_prop};\n"
+                       "  LocalMechanismInstance _ml_real{_prop};\n"
                        "  auto* const _ml = &_ml_real;\n"
                        "  size_t const _iml{};\n"
                        "  Datum *_ppvar{_prop->dparam}, *_thread{};\n"
@@ -1450,8 +1454,9 @@ void ldifusreg() {
                 "static void* _difspace%d;\n"
                 "extern double nrn_nernst_coef(int);\n"
                 "static double _difcoef%d(int _i, Memb_list* _ml_arg, size_t _iml, Datum* _ppvar, "
-                "double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt) {\n"
-                "  LocalMechanismRange _lmr{*_ml_arg};\n"
+                "double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt, "
+                "neuron::model_sorted_token const& _sorted_token) {\n"
+                "  LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _ml_arg->type()};\n"
                 "  auto* const _ml = &_lmr;\n"
                 "  *_pdvol = ",
                 n,
@@ -1794,12 +1799,15 @@ void bablk(int ba, int type, Item* q1, Item* q2) {
     }
     Sprintf(buf,
             "static void _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* "
-            "_ml_arg, size_t _iml) ",
+            "_ml_arg, size_t _iml, neuron::model_sorted_token const& _sorted_token) ",
             ++ba_index_);
     insertstr(q1, buf);
     q = q1->next;
     vectorize_substitute(insertstr(q, ""), "Datum* _ppvar;");
-    qv = insertstr(q, "LocalMechanismRange _lmr{*_ml_arg}; auto* const _ml = &_lmr;\n");
+    qv = insertstr(
+        q,
+        "LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _ml_arg->type()}; auto* const "
+        "_ml = &_lmr;\n");
     qv = insertstr(q, "_ppvar = _ppd;\n");
     movelist(qb, q2, procfunc);
 
@@ -2316,6 +2324,9 @@ int iondef(int* p_pointercount) {
     q2 = lappendstr(defs_list,
                     "using LocalMechanismRange = "
                     "neuron::cache::MechanismRange<number_of_floating_point_variables, "
+                    "number_of_datum_variables>;\n"
+                    "using LocalMechanismInstance = "
+                    "neuron::cache::MechanismInstance<number_of_floating_point_variables, "
                     "number_of_datum_variables>;\n");
     q2->itemtype = VERBATIM;
     return ioncount;
@@ -2571,7 +2582,7 @@ void out_nt_ml_frag(List* p) {
                "  Node* _nd{};\n"
                "  double _v{};\n"
                "  int _cntml;\n"
-               "  LocalMechanismRange _lmr{*_ml_arg};\n"
+               "  LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n"
                "  _ml = &_lmr;\n"
                "  _cntml = _ml_arg->_nodecount;\n"
                "  Datum *_thread{_ml_arg->_thread};\n"
@@ -2598,8 +2609,8 @@ static int _ode_count(int _type){ hoc_execerror(\"%s\", \"cannot be used with CV
                    "\n\
 static int _ode_count(int);\n\
 static void _ode_map(Prop*, int, neuron::container::data_handle<double>*, neuron::container::data_handle<double>*, double*, int);\n\
-static void _ode_spec(NrnThread*, Memb_list*, int);\n\
-static void _ode_matsol(NrnThread*, Memb_list*, int);\n\
+static void _ode_spec(neuron::model_sorted_token const&, NrnThread*, Memb_list*, int);\n\
+static void _ode_matsol(neuron::model_sorted_token const&, NrnThread*, Memb_list*, int);\n\
 ");
         Sprintf(buf,
                 "\n\
@@ -2612,9 +2623,9 @@ static int _ode_count(int _type){ return %d;}\n",
         if (cvode_fun_->subtype == PROCED) {
             cvode_proced_emit();
         } else {
-            Lappendstr(
-                procfunc,
-                "\nstatic void _ode_spec(NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
+            Lappendstr(procfunc,
+                       "\nstatic void _ode_spec(neuron::model_sorted_token const& _sorted_token, "
+                       "NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
             out_nt_ml_frag(procfunc);
             lst = get_ion_variables(1);
             if (lst->next->itemtype)
@@ -2648,14 +2659,18 @@ static void _ode_map(Prop* _prop, int _ieq, neuron::container::data_handle<doubl
             cvode_conc_map();
             Lappendstr(procfunc, "}\n");
             if (ion_synonym) {
-                Lappendstr(defs_list, "static void _ode_synonym(Memb_list*);\n");
-                Lappendstr(procfunc, "static void _ode_synonym(Memb_list* _ml_arg) {\n");
+                Lappendstr(defs_list,
+                           "static void _ode_synonym(neuron::model_sorted_token const&, "
+                           "NrnThread&, Memb_list&, int);\n");
                 Lappendstr(procfunc,
-                           "LocalMechanismRange _lmr{*_ml_arg};\n"
+                           "static void _ode_synonym(neuron::model_sorted_token const& "
+                           "_sorted_token, NrnThread& _nt, Memb_list& _ml_arg, int _type) {\n");
+                Lappendstr(procfunc,
+                           "LocalMechanismRange _lmr{_sorted_token, _nt, _ml_arg, _type};\n"
                            "auto* const _ml = &_lmr;\n"
-                           "auto const _cnt = _ml_arg->_nodecount;\n"
+                           "auto const _cnt = _ml_arg._nodecount;\n"
                            "for (int _iml = 0; _iml < _cnt; ++_iml) {\n"
-                           "  Datum* _ppvar = _ml_arg->_pdata[_iml];\n");
+                           "  Datum* _ppvar = _ml_arg._pdata[_iml];\n");
                 movelist(ion_synonym->next, ion_synonym->prev, procfunc);
                 Lappendstr(procfunc, "  }\n}\n");
             }
@@ -2695,9 +2710,9 @@ static void _ode_map(Prop* _prop, int _ieq, neuron::container::data_handle<doubl
                 vectorize_substitute(lappendstr(procfunc, "();\n"), "(_threadargs_);\n");
             }
             Lappendstr(procfunc, "}\n");
-            Lappendstr(
-                procfunc,
-                "\nstatic void _ode_matsol(NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
+            Lappendstr(procfunc,
+                       "\nstatic void _ode_matsol(neuron::model_sorted_token const& _sorted_token, "
+                       "NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
             out_nt_ml_frag(procfunc);
             lst = get_ion_variables(1);
             if (lst->next->itemtype)
@@ -2833,7 +2848,7 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     }
     if (vectorize) {
         q = insertstr(qstmt,
-                      "  LocalMechanismRange _ml_real{_pnt->_prop};\n"
+                      "  LocalMechanismInstance _ml_real{_pnt->_prop};\n"
                       "  auto* const _ml = &_ml_real;\n"
                       "  size_t const _iml{};\n");
     } else {
@@ -2928,7 +2943,7 @@ void net_init(Item* qinit, Item* qp2) {
     replacstr(qinit, "\nstatic void _net_init(Point_process* _pnt, double* _args, double _lflag)");
     Sprintf(buf, "    _ppvar = _pnt->_prop->dparam;\n");
     vectorize_substitute(insertstr(qinit->next->next, buf),
-                         "  LocalMechanismRange _ml_real{_pnt->_prop};\n"
+                         "  LocalMechanismInstance _ml_real{_pnt->_prop};\n"
                          "  auto* const _ml = &_ml_real;\n"
                          "  size_t const _iml{};\n"
                          "  Datum* _ppvar = _pnt->_prop->dparam;\n"

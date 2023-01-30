@@ -909,10 +909,11 @@ void nrn_mk_table_check() {
 }
 
 void nrn_thread_table_check() {
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
     for (auto [id, tml]: table_check_) {
         Memb_list* ml = tml->ml;
-        (*memb_func[tml->index].thread_table_check_)(
-            ml, 0, ml->pdata[0], ml->_thread, nrn_threads + id, tml->index);
+        memb_func[tml->index].thread_table_check_(
+            ml, 0, ml->pdata[0], ml->_thread, nrn_threads + id, tml->index, sorted_token);
     }
 }
 

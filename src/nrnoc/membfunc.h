@@ -2,6 +2,7 @@
 extern void hoc_register_prop_size(int type, int psize, int dpsize);
 
 #include "neuron/container/data_handle.hpp"
+#include "neuron/model_data.hpp"
 #include "nrnoc_ml.h"
 
 #include <vector>
@@ -13,15 +14,33 @@ typedef Datum* (*Pfrpdat)();
 typedef void (*Pvmi)(struct NrnThread*, Memb_list*, int);
 typedef void (*Pvmp)(Prop*);
 typedef int (*nrn_ode_count_t)(int);
-// First two could be std::span in c++20
+using nrn_bamech_t = void (*)(Node*,
+                              Datum*,
+                              Datum*,
+                              NrnThread*,
+                              Memb_list*,
+                              std::size_t,
+                              neuron::model_sorted_token const&);
+using nrn_cur_t = void (*)(neuron::model_sorted_token const&, NrnThread*, Memb_list*, int);
+using nrn_init_t = nrn_cur_t;
+using nrn_jacob_t = nrn_cur_t;
 using nrn_ode_map_t = void (*)(Prop*,
                                int /* ieq */,
-                               neuron::container::data_handle<double>* /* pv */,
-                               neuron::container::data_handle<double>* /* pvdot */,
+                               neuron::container::data_handle<double>* /* pv (std::span) */,
+                               neuron::container::data_handle<double>* /* pvdot (std::span) */,
                                double* /* atol */,
                                int /* type */);
-using nrn_bamech_t = void (*)(Node*, Datum*, Datum*, NrnThread*, Memb_list*, std::size_t);
-using nrn_ode_synonym_t = void (*)(Memb_list*);
+using nrn_ode_matsol_t = nrn_cur_t;
+using nrn_ode_spec_t = nrn_cur_t;
+using nrn_ode_synonym_t = void (*)(neuron::model_sorted_token const&, NrnThread&, Memb_list&, int);
+using nrn_state_t = nrn_cur_t;
+using nrn_thread_table_check_t = void (*)(Memb_list*,
+                                          std::size_t,
+                                          Datum*,
+                                          Datum*,
+                                          NrnThread*,
+                                          int,
+                                          neuron::model_sorted_token const&);
 
 #define NULL_CUR        (Pfri) 0
 #define NULL_ALLOC      (Pfri) 0
@@ -30,35 +49,38 @@ using nrn_ode_synonym_t = void (*)(Memb_list*);
 
 struct Memb_func {
     Pvmp alloc;
-    Pvmi current;
-    Pvmi jacob;
-    Pvmi state;
+    nrn_cur_t current;
+    nrn_jacob_t jacob;
+    nrn_state_t state;
     bool has_initialize() const {
         return m_initialize;
     }
-    void invoke_initialize(NrnThread* nt, Memb_list* ml, int type) const;
-    void set_initialize(Pvmi init) {
+    void invoke_initialize(neuron::model_sorted_token const& sorted_token,
+                           NrnThread* nt,
+                           Memb_list* ml,
+                           int type) const;
+    void set_initialize(nrn_init_t init) {
         m_initialize = init;
     }
     Pvmp destructor; /* only for point processes */
     Symbol* sym;
     nrn_ode_count_t ode_count;
     nrn_ode_map_t ode_map;
-    Pvmi ode_spec;
-    Pvmi ode_matsol;
+    nrn_ode_spec_t ode_spec;
+    nrn_ode_matsol_t ode_matsol;
     nrn_ode_synonym_t ode_synonym;
     Pvmi singchan_; /* managed by kschan for variable step methods */
     int vectorized;
     int thread_size_;                 /* how many Datum needed in Memb_list if vectorized */
     void (*thread_mem_init_)(Datum*); /* after Memb_list._thread is allocated */
     void (*thread_cleanup_)(Datum*);  /* before Memb_list._thread is freed */
-    void (*thread_table_check_)(Memb_list*, std::size_t, Datum*, Datum*, NrnThread*, int);
+    nrn_thread_table_check_t thread_table_check_;
     int is_point;
     void* hoc_mech;
     void (*setdata_)(struct Prop*);
     int* dparam_semantics;  // for nrncore writing.
   private:
-    Pvmi m_initialize{};
+    nrn_init_t m_initialize{};
 };
 
 
