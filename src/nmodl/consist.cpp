@@ -9,7 +9,7 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
-#include <cstdlib> // for exit()
+#include <cstdlib>  // for exit()
 
 extern Symbol* scop_indep;
 extern Symbol* indepsym;
