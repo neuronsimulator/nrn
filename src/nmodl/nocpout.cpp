@@ -881,7 +881,7 @@ static const char *_mechanism[] = {\n\
     Sprintf(buf,
             "    LocalMechanismRange _ml_real{_prop};\n"
             "    auto* const _ml = &_ml_real;\n"
-            "    std::size_t const _iml{};\n"
+            "    size_t const _iml{};\n"
             "    assert(_prop->param_size() == %d);\n",
             parraycount);
     Lappendstr(defs_list, buf);
@@ -1007,7 +1007,7 @@ static const char *_mechanism[] = {\n\
                        "static void _constructor(Prop* _prop) {\n"
                        "  LocalMechanismRange _ml_real{_prop};\n"
                        "  auto* const _ml = &_ml_real;\n"
-                       "  std::size_t const _iml{};\n"
+                       "  size_t const _iml{};\n"
                        "  Datum *_ppvar{_prop->dparam}, *_thread{};\n"
                        "  {\n");
         } else {
@@ -1310,7 +1310,7 @@ if (_nd->_extnode) {\n\
                        "static void _destructor(Prop* _prop) {\n"
                        "  LocalMechanismRange _ml_real{_prop};\n"
                        "  auto* const _ml = &_ml_real;\n"
-                       "  std::size_t const _iml{};\n"
+                       "  size_t const _iml{};\n"
                        "  Datum *_ppvar{_prop->dparam}, *_thread{};\n"
                        "  {\n");
         } else {
@@ -1446,9 +1446,13 @@ void ldifusreg() {
         dfdcur = STR(q);
         ++n;
         Sprintf(buf,
-                "static void* _difspace%d;\nextern double nrn_nernst_coef(int);\n\
-static double _difcoef%d(int _i, Memb_list* _ml, size_t _iml, Datum* _ppvar, double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt) {\n  \
- *_pdvol = ",
+                "static void* _difspace%d;\n"
+                "extern double nrn_nernst_coef(int);\n"
+                "static double _difcoef%d(int _i, Memb_list* _ml_arg, size_t _iml, Datum* _ppvar, "
+                "double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt) {\n"
+                "  LocalMechanismRange _lmr{*_ml_arg};\n"
+                "  auto* const _ml = &_lmr;\n"
+                "  *_pdvol = ",
                 n,
                 n);
         lappendstr(procfunc, buf);
@@ -2830,7 +2834,7 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
         q = insertstr(qstmt,
                       "  LocalMechanismRange _ml_real{_pnt->_prop};\n"
                       "  auto* const _ml = &_ml_real;\n"
-                      "  std::size_t const _iml{};\n");
+                      "  size_t const _iml{};\n");
     } else {
         q = insertstr(
             qstmt, "  neuron::legacy::set_globals_from_prop(_pnt->_prop, _ml_real, _ml, _iml);\n");
@@ -2925,7 +2929,7 @@ void net_init(Item* qinit, Item* qp2) {
     vectorize_substitute(insertstr(qinit->next->next, buf),
                          "  LocalMechanismRange _ml_real{_pnt->_prop};\n"
                          "  auto* const _ml = &_ml_real;\n"
-                         "  std::size_t const _iml{};\n"
+                         "  size_t const _iml{};\n"
                          "  Datum* _ppvar = _pnt->_prop->dparam;\n"
                          "  Datum* _thread = (Datum*)0;\n"
                          "  NrnThread* _nt = (NrnThread*)_pnt->_vnt;\n");
