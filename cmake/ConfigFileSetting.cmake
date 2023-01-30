@@ -271,7 +271,6 @@ nrn_configure_file(nrnpython_config.h src/nrnpython)
 nrn_configure_file(bbsconf.h src/parallel)
 nrn_configure_file(nrnneosm.h src/nrncvode)
 nrn_configure_file(sundials_config.h src/sundials)
-nrn_configure_file(mos2nrn.h src/uxnrnbbs)
 nrn_configure_dest_src(nrnunits.lib share/nrn/lib nrnunits.lib share/lib)
 nrn_configure_dest_src(nrn.defaults share/nrn/lib nrn.defaults share/lib)
 # NRN_DYNAMIC_UNITS requires nrnunits.lib.in be in same places as nrnunits.lib
