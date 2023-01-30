@@ -8,12 +8,12 @@
 #define nparm 2
 static const char* mechanism[] = {"0", "fastpas", "g_fastpas", "e_fastpas", 0, 0, 0};
 static void pas_alloc(Prop* p);
-static void pas_cur(NrnThread* nt, Memb_list* ml, int type);
-static void pas_jacob(NrnThread* nt, Memb_list* ml, int type);
+static void pas_cur(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type);
+static void pas_jacob(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type);
 
 extern "C" void passive0_reg_(void) {
     int mechtype;
-    register_mech(mechanism, pas_alloc, pas_cur, pas_jacob, (Pvmi) 0, (Pvmi) 0, -1, 1);
+    register_mech(mechanism, pas_alloc, pas_cur, pas_jacob, nullptr, nullptr, -1, 1);
     mechtype = nrn_get_mechtype(mechanism[1]);
     hoc_register_prop_size(mechtype, nparm, 0);
 }
@@ -21,7 +21,7 @@ extern "C" void passive0_reg_(void) {
 static constexpr auto g_index = 0;
 static constexpr auto e_index = 1;
 
-static void pas_cur(NrnThread* nt, Memb_list* ml, int type) {
+static void pas_cur(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
     for (int i = 0; i < count; ++i) {
@@ -29,7 +29,7 @@ static void pas_cur(NrnThread* nt, Memb_list* ml, int type) {
     }
 }
 
-static void pas_jacob(NrnThread* nt, Memb_list* ml, int type) {
+static void pas_jacob(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type) {
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
     for (int i = 0; i < count; ++i) {

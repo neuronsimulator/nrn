@@ -61,9 +61,9 @@ void Cvode::rhs_memb(neuron::model_sorted_token const& sorted_token,
     errno = 0;
     for (CvMembList* cml = cmlist; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
-        if (Pvmi current = mf->current; current) {
+        if (auto const current = mf->current; current) {
             for (auto& ml: cml->ml) {
-                current(_nt, &ml, cml->index);
+                current(sorted_token, _nt, &ml, cml->index);
                 if (errno && nrn_errno_check(cml->index)) {
                     hoc_warning("errno set during calculation of currents", nullptr);
                 }
@@ -75,7 +75,7 @@ void Cvode::rhs_memb(neuron::model_sorted_token const& sorted_token,
     activclamp_rhs();
 }
 
-void Cvode::lhs(NrnThread* _nt) {
+void Cvode::lhs(neuron::model_sorted_token const& sorted_token, NrnThread* _nt) {
     int i;
 
     CvodeThreadData& z = CTD(_nt->id);
@@ -86,10 +86,10 @@ void Cvode::lhs(NrnThread* _nt) {
         NODED(z.v_node_[i]) = 0.;
     }
 
-    lhs_memb(z.cv_memb_list_, _nt);
+    lhs_memb(sorted_token, z.cv_memb_list_, _nt);
     nrn_nonvint_block_conductance(_nt->end, _nt->_actual_rhs, _nt->id);
     for (auto& ml: z.cmlcap_->ml) {
-        nrn_cap_jacob(_nt, &ml);
+        nrn_cap_jacob(sorted_token, _nt, &ml);
     }
 
     // _nrn_fast_imem not needed since exact icap added in nrn_div_capacity
@@ -103,13 +103,15 @@ void Cvode::lhs(NrnThread* _nt) {
     }
 }
 
-void Cvode::lhs_memb(CvMembList* cmlist, NrnThread* _nt) {
+void Cvode::lhs_memb(neuron::model_sorted_token const& sorted_token,
+                     CvMembList* cmlist,
+                     NrnThread* _nt) {
     CvMembList* cml;
     for (cml = cmlist; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
         if (auto const jacob = mf->jacob; jacob) {
             for (auto& ml: cml->ml) {
-                jacob(_nt, &ml, cml->index);
+                jacob(sorted_token, _nt, &ml, cml->index);
                 if (errno && nrn_errno_check(cml->index)) {
                     hoc_warning("errno set during calculation of di/dv", nullptr);
                 }
