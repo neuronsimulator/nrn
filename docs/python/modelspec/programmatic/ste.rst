@@ -20,7 +20,7 @@ StateTransitionEvent
     the source for a transition, then the only exit from it is when a transition enters it and the consequent callback
     executes a :meth:`StateTransitionEvent.state` with arg different from ``istate``.
     
-    ``The pointprocess`` arg is needed only if the simulation uses multiple threads or the local variable time
+    The ``pointprocess`` arg is needed only if the simulation uses multiple threads or the local variable time
     step method. (an admittedly grotesque requirement to give a hint as to which thread and cell is appropriate for
     all the trigger variables specified by the transitions)
     
