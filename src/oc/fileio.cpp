@@ -764,6 +764,9 @@ static int hoc_Load_file(int always, const char* name) {
                  base);
         b = hoc_oc(cmd);
         b = (int) hoc_ac_;
+        if (!b) {
+            hoc_execerror("hoc_Load_file", base);
+        }
     }
     /* change back */
     if (path[0] && goback) {
