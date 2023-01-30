@@ -958,7 +958,7 @@ Object** NetCvode::netconlist() {
             try {
                 spost = std::regex(escape_bracket(s.data()));
             } catch (std::regex_error& e) {
-                hoc_execerror(gargstr(1), "not a valid regular expression");
+                hoc_execerror(gargstr(2), "not a valid regular expression");
             }
         }
     }
@@ -972,7 +972,7 @@ Object** NetCvode::netconlist() {
             try {
                 star = std::regex(escape_bracket(s.data()));
             } catch (std::regex_error& e) {
-                hoc_execerror(gargstr(1), "not a valid regular expression");
+                hoc_execerror(gargstr(3), "not a valid regular expression");
             }
         }
     }
@@ -988,7 +988,7 @@ Object** NetCvode::netconlist() {
                     b = precell == opre;
                 } else {
                     std::string s(hoc_object_name(precell));
-                    b = std::regex_match(s, spre);
+                    b = std::regex_search(s, spre);
                 }
             } else if (ps->osrc_) {
                 Object* presyn = ps->osrc_;
@@ -996,7 +996,7 @@ Object** NetCvode::netconlist() {
                     b = presyn == opre;
                 } else {
                     std::string s(hoc_object_name(presyn));
-                    b = std::regex_match(s, spre);
+                    b = std::regex_search(s, spre);
                 }
             }
             if (b) {
@@ -1014,14 +1014,14 @@ Object** NetCvode::netconlist() {
                         b = postcell == opost;
                     } else {
                         std::string s(hoc_object_name(postcell));
-                        b = std::regex_match(s, spost);
+                        b = std::regex_search(s, spost);
                     }
                     if (b) {
                         if (otar) {
                             b = target == otar;
                         } else {
                             std::string s(hoc_object_name(target));
-                            b = std::regex_match(s, star);
+                            b = std::regex_search(s, star);
                         }
                         if (b) {
                             o->append(d->obj_);

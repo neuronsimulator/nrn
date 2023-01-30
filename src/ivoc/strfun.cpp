@@ -55,6 +55,7 @@ static double l_head(void*) {
         hoc_assign_str(head, buf.c_str());
     } else {
         hoc_assign_str(head, "");
+        i = -1;
     }
     hoc_return_type_code = 1;  // integer
     return double(i);
@@ -72,6 +73,7 @@ static double l_tail(void*) {
         hoc_assign_str(tail, buf.c_str());
     } else {
         hoc_assign_str(tail, "");
+        i = -1;
     }
     hoc_return_type_code = 1;  // integer
     return double(i);
