@@ -2,6 +2,8 @@
 #if HAVE_IV  // to end of file
 
 #include <stdio.h>
+#include <fstream>
+
 #include <InterViews/color.h>
 #include <InterViews/brush.h>
 #include <InterViews/font.h>

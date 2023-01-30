@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <fstream>
 
 #include <InterViews/dialog.h>
 #include <InterViews/session.h>
