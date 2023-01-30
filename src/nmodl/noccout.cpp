@@ -800,9 +800,9 @@ void c_out_vectorize() {
         P("#if CACHEVEC\n");
         P("    _ni = _ml_arg->_nodeindices;\n");
         P("#endif\n");
-        P("std::size_t _cntml = _ml_arg->_nodecount;\n");
+        P("size_t _cntml = _ml_arg->_nodecount;\n");
         P("_thread = _ml_arg->_thread;\n");
-        P("for (std::size_t _iml = 0; _iml < _cntml; ++_iml) {\n");
+        P("for (size_t _iml = 0; _iml < _cntml; ++_iml) {\n");
         P(" _ppvar = _ml_arg->_pdata[_iml];\n");
         P(" _nd = _ml_arg->_nodelist[_iml];\n");
         ext_vdef();
