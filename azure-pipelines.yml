@@ -251,6 +251,7 @@ stages:
             displayName: 'Resolve Azure drop URL'
               
           - task: GitHubComment@0
+            continueOnError: true
             inputs:
               gitHubConnection: 'neuronsimulator'
               repositoryName: '$(Build.Repository.Name)'
