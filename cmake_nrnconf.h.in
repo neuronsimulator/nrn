@@ -361,7 +361,6 @@
  * mesch (and maybe others)
  */
 #if defined(__cplusplus)
-#include <ivstream.h>
 #include <string_view>
 namespace neuron::config {
    constexpr std::string_view shared_library_prefix{"@CMAKE_SHARED_LIBRARY_PREFIX@"};

@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <OS/string.h>
-#include <ivstream.h>
 
 #if HAVE_IV
 #include "secbrows.h"

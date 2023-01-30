@@ -27,7 +27,6 @@ extern char** environ;
 void iv_display_scale(float);
 #endif
 
-#include <ivstream.h>
 #include <assert.h>
 #include "ivoc.h"
 #include "idraw.h"

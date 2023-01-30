@@ -7,7 +7,6 @@
 #include <InterViews/layout.h>
 #include <InterViews/background.h>
 #include <IV-look/kit.h>
-#include <ivstream.h>
 #include <stdio.h>
 #include "ocdeck.h"
 #include "apwindow.h"
