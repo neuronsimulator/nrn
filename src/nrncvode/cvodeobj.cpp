@@ -1174,7 +1174,7 @@ int Cvode::advance_tn(neuron::model_sorted_token const& sorted_token) {
         } else {
             nt_t = t_;
         }
-        do_nonode(nth_);
+        do_nonode(sorted_token, nth_);
 #if PARANEURON
         opmode_ = 1;
 #endif

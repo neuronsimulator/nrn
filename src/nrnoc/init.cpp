@@ -378,7 +378,7 @@ void hoc_last_init(void) {
     }
     SectionList_reg();
     SectionRef_reg();
-    register_mech(morph_mech, morph_alloc, (Pvmi) 0, (Pvmi) 0, (Pvmi) 0, (Pvmi) 0, -1, 0);
+    register_mech(morph_mech, morph_alloc, nullptr, nullptr, nullptr, nullptr, -1, 0);
     hoc_register_prop_size(MORPHOLOGY, 1, 0);
     for (m = mechanism; *m; m++) {
         (*m)();
@@ -453,10 +453,10 @@ int n_memb_func;
 /* if vectorized then thread_data_size added to it */
 void nrn_register_mech_common(const char** m,
                               Pvmp alloc,
-                              Pvmi cur,
-                              Pvmi jacob,
-                              Pvmi stat,
-                              Pvmi initialize,
+                              nrn_cur_t cur,
+                              nrn_jacob_t jacob,
+                              nrn_state_t stat,
+                              nrn_init_t initialize,
                               int nrnpointerindex, /* if -1 then there are none */
                               int vectorized) {
     static int type = 2; /* 0 unused, 1 for cable section */
@@ -681,10 +681,10 @@ It's version %s \"c\" code is incompatible with this neuron version.\n",
 
 void register_mech(const char** m,
                    Pvmp alloc,
-                   Pvmi cur,
-                   Pvmi jacob,
-                   Pvmi stat,
-                   Pvmi initialize,
+                   nrn_cur_t cur,
+                   nrn_jacob_t jacob,
+                   nrn_state_t stat,
+                   nrn_init_t initialize,
                    int nrnpointerindex, /* if -1 then there are none */
                    int vectorized) {
     int type = n_memb_func;
@@ -782,7 +782,11 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
 #endif  // 0
 }
 
-void hoc_register_cvode(int i, nrn_ode_count_t cnt, nrn_ode_map_t map, Pvmi spec, Pvmi matsol) {
+void hoc_register_cvode(int i,
+                        nrn_ode_count_t cnt,
+                        nrn_ode_map_t map,
+                        nrn_ode_spec_t spec,
+                        nrn_ode_matsol_t matsol) {
     memb_func[i].ode_count = cnt;
     memb_func[i].ode_map = map;
     memb_func[i].ode_spec = spec;
@@ -818,10 +822,10 @@ extern void class2oc(const char*,
 
 int point_register_mech(const char** m,
                         Pvmp alloc,
-                        Pvmi cur,
-                        Pvmi jacob,
-                        Pvmi stat,
-                        Pvmi initialize,
+                        nrn_cur_t cur,
+                        nrn_jacob_t jacob,
+                        nrn_state_t stat,
+                        nrn_init_t initialize,
                         int nrnpointerindex,
                         int vectorized,
 
@@ -1033,8 +1037,7 @@ void _nrn_thread_reg(int i, int cons, void (*f)(Datum*)) {
     }
 }
 
-void _nrn_thread_table_reg(int i,
-                           void (*f)(Memb_list*, std::size_t, Datum*, Datum*, NrnThread*, int)) {
+void _nrn_thread_table_reg(int i, nrn_thread_table_check_t f) {
     memb_func[i].thread_table_check_ = f;
 }
 

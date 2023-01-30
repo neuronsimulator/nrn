@@ -397,15 +397,14 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     nrn_ba(cache_token, nt, BEFORE_BREAKPOINT);
     /* note that CAP has no current */
     for (tml = _nt->tml; tml; tml = tml->next)
-        if (memb_func[tml->index].current) {
-            Pvmi s = memb_func[tml->index].current;
+        if (auto const current = memb_func[tml->index].current; current) {
             std::string mechname("cur-");
             mechname += memb_func[tml->index].sym->name;
             if (measure) {
                 w = nrnmpi_wtime();
             }
             nrn::Instrumentor::phase_begin(mechname.c_str());
-            (*s)(_nt, tml->ml, tml->index);
+            current(cache_token, _nt, tml->ml, tml->index);
             nrn::Instrumentor::phase_end(mechname.c_str());
             if (measure) {
                 nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w;
@@ -486,7 +485,8 @@ hand side after solving.
 This is a common operation for fixed step, cvode, and daspk methods
 */
 
-void nrn_lhs(NrnThread* _nt) {
+void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
+    auto* const _nt = &nt;
     int i, i1, i2, i3;
     NrnThreadMembList* tml;
 
@@ -525,12 +525,11 @@ void nrn_lhs(NrnThread* _nt) {
 
     /* note that CAP has no jacob */
     for (tml = _nt->tml; tml; tml = tml->next)
-        if (memb_func[tml->index].jacob) {
-            Pvmi s = memb_func[tml->index].jacob;
+        if (auto const jacob = memb_func[tml->index].jacob; jacob) {
             std::string mechname("cur-");
             mechname += memb_func[tml->index].sym->name;
             nrn::Instrumentor::phase_begin(mechname.c_str());
-            (*s)(_nt, tml->ml, tml->index);
+            jacob(sorted_token, _nt, tml->ml, tml->index);
             nrn::Instrumentor::phase_end(mechname.c_str());
             if (errno) {
                 if (nrn_errno_check(tml->index)) {
@@ -544,7 +543,7 @@ void nrn_lhs(NrnThread* _nt) {
     /* note, the first is CAP */
     if (_nt->tml) {
         assert(_nt->tml->index == CAP);
-        nrn_cap_jacob(_nt, _nt->tml->ml);
+        nrn_cap_jacob(sorted_token, _nt, _nt->tml->ml);
     }
 
     activsynapse_lhs();
@@ -620,7 +619,7 @@ void nrn_lhs(NrnThread* _nt) {
 void setup_tree_matrix(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     nrn::Instrumentor::phase _{"setup-tree-matrix"};
     nrn_rhs(cache_token, nt);
-    nrn_lhs(&nt);
+    nrn_lhs(cache_token, nt);
     nrn_nonvint_block_current(nt.end, nt._actual_rhs, nt.id);
     nrn_nonvint_block_conductance(nt.end, nt._actual_d, nt.id);
 }
@@ -2285,6 +2284,20 @@ void nrn_fill_mech_data_caches(neuron::cache::Model& cache,
                            return tmp;
                        });
         mech_cache.pdata_hack.clear();
+        // For the regular floating point data, create a flat vector of raw pointers that we can use
+        // inside generated code
+        mech_cache.data_ptr_cache.resize(mech_data.num_floating_point_fields());
+        std::size_t k{};
+        for (auto var_j = 0; var_j < mech_data.num_floating_point_fields(); ++var_j) {
+            mech_cache.data_ptr_cache.at(k++) =
+                &mech_data.get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
+                    var_j, 0);
+        }
+        // Create a flat list of pointers we can use inside generated code
+        std::transform(mech_cache.pdata.begin(),
+                       mech_cache.pdata.end(),
+                       std::back_inserter(mech_cache.pdata_ptr_cache),
+                       [](auto const& pdata) { return pdata.empty() ? nullptr : pdata.data(); });
     }
 }
 

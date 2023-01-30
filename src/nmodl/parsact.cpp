@@ -378,8 +378,9 @@ int check_tables_threads(List* p) {
         }
         lappendstr(p,
                    "\n"
-                   "static void _check_table_thread(_threadargsprotocomma_ int _type) {\n"
-                   "  LocalMechanismRange _lmr{*_ml};\n"
+                   "static void _check_table_thread(_threadargsprotocomma_ int _type, "
+                   "neuron::model_sorted_token const& _sorted_token) {\n"
+                   "  LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml, _type};\n"
                    "  {\n"
                    "    auto* const _ml = &_lmr;\n");
         ITERATE(q, check_table_thread_list) {
@@ -750,7 +751,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
         vectorize_substitute(lappendstr(procfunc, "  _hoc_setdata(_vptr);\n"),
                              "  auto* const _pnt = static_cast<Point_process*>(_vptr);\n"
                              "  auto* const _p = _pnt->_prop;\n"
-                             "  LocalMechanismRange _ml_real{_p};\n"
+                             "  LocalMechanismInstance _ml_real{_p};\n"
                              "  auto* const _ml = &_ml_real;\n"
                              "  size_t const _iml{};\n"
                              "  _ppvar = _p->dparam;\n"
@@ -758,7 +759,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
                              "  _nt = static_cast<NrnThread*>(_pnt->_vnt);\n");
     } else {
         vectorize_substitute(lappendstr(procfunc, ""),
-                             "LocalMechanismRange _ml_real{_extcall_prop};\n"
+                             "LocalMechanismInstance _ml_real{_extcall_prop};\n"
                              "auto* const _ml = &_ml_real;\n"
                              "size_t const _iml{};\n"
                              "_ppvar = _extcall_prop ? _extcall_prop->dparam : nullptr;\n"
@@ -943,7 +944,7 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
                          "  NrnThread* _nt{static_cast<NrnThread*>(_pnt->_vnt)};\n");
     Sprintf(buf,
             "  auto* const _prop = _pnt->_prop;\n"
-            "  LocalMechanismRange _ml_real{_prop};\n"
+            "  LocalMechanismInstance _ml_real{_prop};\n"
             "  auto* const _ml = &_ml_real;\n"
             "  size_t _iml{};\n"
             "  _ppvar = _prop->dparam;\n"

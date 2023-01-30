@@ -170,9 +170,10 @@ void c_out() {
     Fflush(fcout);
 
     /* generation of initmodel interface */
-    P("\nstatic void nrn_init(NrnThread* _nt, Memb_list* _ml_arg, int _type){\n");
+    P("\nstatic void nrn_init(neuron::model_sorted_token const& _sorted_token, NrnThread* _nt, "
+      "Memb_list* _ml_arg, int _type){\n");
     P("Node *_nd; double _v; int* _ni; int _cntml;\n");
-    P("LocalMechanismRange _lmr{*_ml_arg};\n");
+    P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
     P("_ml = &_lmr;\n");  // update global _ml
     P("#if CACHEVEC\n");
     P("    _ni = _ml_arg->_nodeindices;\n");
@@ -213,8 +214,9 @@ void c_out() {
        well as make sure all currents accumulated properly (currents list) */
 
     if (brkpnt_exists) {
-        P("\nstatic void nrn_cur(NrnThread* _nt, Memb_list* _ml_arg, int _type){\n");
-        P("LocalMechanismRange _lmr{*_ml_arg};\n");
+        P("\nstatic void nrn_cur(neuron::model_sorted_token const& _sorted_token, NrnThread* _nt, "
+          "Memb_list* _ml_arg, int _type){\n");
+        P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _cntml;\n");
         P("_ml = &_lmr;\n");  // update global _ml
         P("#if CACHEVEC\n");
@@ -287,8 +289,9 @@ void c_out() {
 
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
-        P("\nstatic void nrn_jacob(NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
-        P("LocalMechanismRange _lmr{*_ml_arg};\n");
+        P("\nstatic void nrn_jacob(neuron::model_sorted_token const& _sorted_token, NrnThread* "
+          "_nt, Memb_list* _ml_arg, int _type) {\n");
+        P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("auto* const _ml = &_lmr;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
         P("#if CACHEVEC\n");
@@ -336,14 +339,15 @@ void c_out() {
 
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
-    P("\nstatic void nrn_state(NrnThread* _nt, Memb_list* _ml_arg, int _type){\n");
+    P("\nstatic void nrn_state(neuron::model_sorted_token const& _sorted_token, NrnThread* _nt, "
+      "Memb_list* _ml_arg, int _type){\n");
     if (nrnstate || currents->next == currents) {
         P("Node *_nd; double _v = 0.0; int* _ni; int _cntml;\n");
         if (dtsav_for_nrn_state && nrnstate) {
             P("double _dtsav = dt;\n"
               "if (secondorder) { dt *= 0.5; }\n");
         }
-        P("LocalMechanismRange _lmr{*_ml_arg};\n");
+        P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("_ml = &_lmr;\n");  // update global _ml
         P("#if CACHEVEC\n");
         P("    _ni = _ml_arg->_nodeindices;\n");
@@ -589,8 +593,9 @@ void c_out_vectorize() {
     Fflush(fcout);
 
     /* generation of initmodel interface */
-    P("\nstatic void nrn_init(NrnThread* _nt, Memb_list* _ml_arg, int _type){\n");
-    P("LocalMechanismRange _lmr{*_ml_arg};\n");
+    P("\nstatic void nrn_init(neuron::model_sorted_token const& _sorted_token, NrnThread* _nt, "
+      "Memb_list* _ml_arg, int _type){\n");
+    P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
     P("auto* const _ml = &_lmr;\n");
     P("Datum* _ppvar; Datum* _thread;\n");
     P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
@@ -649,8 +654,9 @@ void c_out_vectorize() {
        well as make sure all currents accumulated properly (currents list) */
 
     if (brkpnt_exists) {
-        P("\nstatic void nrn_cur(NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
-        P("LocalMechanismRange _lmr{*_ml_arg};\n");
+        P("\nstatic void nrn_cur(neuron::model_sorted_token const& _sorted_token, NrnThread* _nt, "
+          "Memb_list* _ml_arg, int _type) {\n");
+        P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("auto* const _ml = &_lmr;\n");
         P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
@@ -735,8 +741,9 @@ void c_out_vectorize() {
         P(" \n}\n");
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
-        P("\nstatic void nrn_jacob(NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
-        P("LocalMechanismRange _lmr{*_ml_arg};\n");
+        P("\nstatic void nrn_jacob(neuron::model_sorted_token const& _sorted_token, NrnThread* "
+          "_nt, Memb_list* _ml_arg, int _type) {\n");
+        P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("auto* const _ml = &_lmr;\n");
         P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
@@ -787,8 +794,9 @@ void c_out_vectorize() {
 
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
-    P("\nstatic void nrn_state(NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
-    P("LocalMechanismRange _lmr{*_ml_arg};\n");
+    P("\nstatic void nrn_state(neuron::model_sorted_token const& _sorted_token, NrnThread* _nt, "
+      "Memb_list* _ml_arg, int _type) {\n");
+    P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
     P("auto* const _ml = &_lmr;\n");
     if (nrnstate || currents->next == currents) {
         P("Datum* _ppvar; Datum* _thread;\n");
