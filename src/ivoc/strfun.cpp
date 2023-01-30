@@ -1,11 +1,11 @@
 #include <../../nrnconf.h>
 #include <OS/string.h>
-#include <InterViews/regexp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "classreg.h"
 #include "oc2iv.h"
 #include <string.h>
+#include <regex>
 // for alias
 #include <symdir.h>
 #include <oclist.h>
@@ -43,18 +43,16 @@ static double l_len(void*) {
 }
 
 static double l_head(void*) {
-    String text(gargstr(1));
-    Regexp r(gargstr(2));
-    r.Search(text.string(), text.length(), 0, text.length());
-    int i = r.BeginningOfMatch();
+    std::string text(gargstr(1));
+    std::regex r(gargstr(2));
+    std::smatch sm;
+    bool found = std::regex_search(text, sm, r);
+    int i = sm.position();
     //	text.set_to_left(i); doesnt work
     char** head = hoc_pgargstr(3);
-    if (i > 0) {
-        char* buf = new char[i + 1];
-        strncpy(buf, text.string(), i);
-        buf[i] = '\0';
-        hoc_assign_str(head, buf);
-        delete[] buf;
+    if (found) {
+        auto buf = sm.prefix().str();
+        hoc_assign_str(head, buf.c_str());
     } else {
         hoc_assign_str(head, "");
     }
@@ -63,13 +61,15 @@ static double l_head(void*) {
 }
 
 static double l_tail(void*) {
-    CopyString text(gargstr(1));
-    Regexp r(gargstr(2));
-    r.Search(text.string(), text.length(), 0, text.length());
-    int i = r.EndOfMatch();
+    std::string text(gargstr(1));
+    std::regex r(gargstr(2));
+    std::smatch sm;
+    bool found = std::regex_search(text, sm, r);
+    int i = sm.position() + sm.length();
     char** tail = hoc_pgargstr(3);
     if (i >= 0) {
-        hoc_assign_str(tail, text.string() + i);
+        auto buf = sm.suffix().str();
+        hoc_assign_str(tail, buf.c_str());
     } else {
         hoc_assign_str(tail, "");
     }
