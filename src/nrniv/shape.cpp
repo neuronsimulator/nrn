@@ -21,7 +21,6 @@
 #include <InterViews/layout.h>
 #include <IV-look/kit.h>
 #include <OS/list.h>
-#include <ivstream.h>
 #include <cmath>
 #include "mymath.h"
 #include "apwindow.h"
