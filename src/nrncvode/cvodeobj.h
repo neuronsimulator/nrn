@@ -175,7 +175,7 @@ class Cvode {
     void play_continuous(double t);
     void play_continuous_thread(double t, NrnThread*);
     void do_ode(neuron::model_sorted_token const&, NrnThread&);
-    void do_nonode(NrnThread* nt = 0);
+    void do_nonode(neuron::model_sorted_token const&, NrnThread* nt = 0);
     double* n_vector_data(N_Vector, int);
 
   private:
@@ -194,7 +194,7 @@ class Cvode {
     N_Vector ewtvec();
     N_Vector acorvec();
     void new_no_cap_memb(CvodeThreadData&, NrnThread*);
-    void before_after(BAMechList*, NrnThread*);
+    void before_after(neuron::model_sorted_token const&, BAMechList*, NrnThread*);
 
   public:
     // daspk
@@ -206,7 +206,7 @@ class Cvode {
     void daspk_gather_y(N_Vector);
     void daspk_scatter_y(double*, int);
     void daspk_gather_y(double*, int);
-    void scatter_y(double*, int);
+    void scatter_y(neuron::model_sorted_token const&, double*, int);
     void gather_y(N_Vector);
     void gather_y(double*, int);
     void scatter_ydot(double*, int);
@@ -246,8 +246,8 @@ class Cvode {
   private:
     void rhs(neuron::model_sorted_token const&, NrnThread*);
     void rhs_memb(neuron::model_sorted_token const&, CvMembList*, NrnThread*);
-    void lhs(NrnThread*);
-    void lhs_memb(CvMembList*, NrnThread*);
+    void lhs(neuron::model_sorted_token const&, NrnThread*);
+    void lhs_memb(neuron::model_sorted_token const&, CvMembList*, NrnThread*);
     void triang(NrnThread*);
     void bksub(NrnThread*);
 

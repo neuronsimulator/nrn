@@ -361,7 +361,7 @@ static void stagger(int m,
         int pin = pld->pindex[i];
         int mi = pld->mindex[i];
         double dfdi;
-        pld->dc[i] = diffunc(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt);
+        pld->dc[i] = diffunc(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt, sorted_token);
         pld->d[i] = 0.;
         if (pin > -1) {
             /* D * area between compartments */
@@ -415,7 +415,7 @@ static void ode(int m,
         int pin = pld->pindex[i];
         int mi = pld->mindex[i];
         double dfdi;
-        pld->dc[i] = diffunc(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt);
+        pld->dc[i] = diffunc(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt, sorted_token);
         if (pin > -1) {
             /* D * area between compartments */
             double const dc = (pld->dc[i] + pld->dc[pin]) / 2.;
@@ -460,7 +460,7 @@ static void matsol(int m,
         int pin = pld->pindex[i];
         int mi = pld->mindex[i];
         double dfdi;
-        pld->dc[i] = diffunc(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt);
+        pld->dc[i] = diffunc(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt, sorted_token);
         pld->d[i] = 0.;
         if (dfdi) {
             pld->d[i] += fabs(dfdi) / pld->vol[i] / pld->state[i][ai];

@@ -11,6 +11,7 @@
 #include "cvodeobj.h"
 #include "nrndaspk.h"
 #include "netcvode.h"
+#include "nrn_ansi.h"
 #include "ida/ida.h"
 #include "ida/ida_impl.h"
 #include "mymath.h"
@@ -29,7 +30,6 @@ double Daspk::dteps_;
 
 extern void nrndae_dkres(double*, double*, double*);
 extern void nrndae_dkpsol(double);
-extern void nrn_lhs(NrnThread*);
 extern void nrn_solve(NrnThread*);
 void nrn_daspk_init_step(double, double, int);
 // this is private in ida.cpp but we want to check if our initialization
@@ -400,7 +400,7 @@ void Cvode::daspk_scatter_y(double* y, int tid) {
     // not needed since the matrix solve is already with respect to vi,vx
     // in all cases. (i.e. the solution vector is in the right hand side
     // and refers to vi, vx.
-    scatter_y(y, tid);
+    scatter_y(nrn_ensure_model_data_are_sorted(), y, tid);
     // transform the vm+vext to vm
     CvodeThreadData& z = ctd_[tid];
     if (z.cmlext_) {
@@ -587,7 +587,7 @@ for (i=0; i < z.nvsize_; ++i) {
             delta[i] -= tps[i] * fac;
         }
     }
-    before_after(z.after_solve_, nt);
+    before_after(sorted_token, z.after_solve_, nt);
 #if 0
 printf("Cvode::res exit res_=%d tt=%20.12g\n", res_, tt);
 for (i=0; i < z.nvsize_; ++i) {
@@ -625,7 +625,8 @@ printf("\n");
     _nt->_vcv = this;
     daspk_scatter_y(y, _nt->id);  // I'm not sure this is necessary.
     if (solve_state_ == INVALID) {
-        nrn_lhs(_nt);  // designed to setup M*[dvm+dvext, dvext, dy] = ...
+        nrn_lhs(nrn_ensure_model_data_are_sorted(),
+                *_nt);  // designed to setup M*[dvm+dvext, dvext, dy] = ...
         solve_state_ = SETUP;
     }
     if (solve_state_ == SETUP) {

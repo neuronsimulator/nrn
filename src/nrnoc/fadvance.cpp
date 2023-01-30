@@ -300,7 +300,7 @@ static void daspk_init_step_thread(neuron::model_sorted_token const& cache_token
     setup_tree_matrix(cache_token, nt);
     nrn_solve(&nt);
     if (_upd) {
-        nrn_update_voltage(&nt);
+        nrn_update_voltage(cache_token, &nt);
     }
 }
 
@@ -483,7 +483,7 @@ static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token,
     }
     {
         nrn::Instrumentor::phase p("update");
-        nrn_update_voltage(nth);
+        nrn_update_voltage(cache_token, *nth);
     }
     CTADD
     /*
@@ -544,11 +544,12 @@ void* nrn_ms_bksub(NrnThread* nth) {
     CTBEGIN
     nrn_multisplit_bksub(nth);
     second_order_cur(nth);
-    nrn_update_voltage(nth);
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
+    nrn_update_voltage(cache_token, *nth);
     CTADD
     /* see above comment in nrn_fixed_step_thread */
     if (!nrnthread_v_transfer_) {
-        nrn_fixed_step_lastpart(nrn_ensure_model_data_are_sorted(), *nth);
+        nrn_fixed_step_lastpart(cache_token, *nth);
     }
     return nullptr;
 }
@@ -566,7 +567,8 @@ void* nrn_ms_bksub_through_triang(NrnThread* nth) {
 }
 
 
-void nrn_update_voltage(NrnThread* _nt) {
+void nrn_update_voltage(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
+    auto* const _nt = &nt;
     int i, i1, i2;
     i1 = 0;
     i2 = _nt->end;
@@ -610,7 +612,7 @@ void nrn_update_voltage(NrnThread* _nt) {
 #if I_MEMBRANE
     if (_nt->tml) {
         assert(_nt->tml->index == CAP);
-        nrn_capacity_current(_nt, _nt->tml->ml);
+        nrn_capacity_current(sorted_token, _nt, _nt->tml->ml);
     }
 #endif
     if (nrn_use_fast_imem) {
@@ -773,10 +775,9 @@ static void nonvint(neuron::model_sorted_token const& sorted_token, NrnThread& n
         if (memb_func[tml->index].state) {
             std::string mechname("state-");
             mechname += memb_func[tml->index].sym->name;
-            Pvmi s = memb_func[tml->index].state;
             auto const w = measure ? nrnmpi_wtime() : -1.0;
             nrn::Instrumentor::phase_begin(mechname.c_str());
-            s(&nt, tml->ml, tml->index);
+            memb_func[tml->index].state(sorted_token, &nt, tml->ml, tml->index);
             nrn::Instrumentor::phase_end(mechname.c_str());
             if (measure) {
                 nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w;
@@ -898,7 +899,7 @@ void nrn_finitialize(int setv, double v) {
         NrnThreadMembList* tml;
         for (tml = nt->tml; tml; tml = tml->next) {
             if (memb_func[tml->index].has_initialize()) {
-                memb_func[tml->index].invoke_initialize(nt, tml->ml, tml->index);
+                memb_func[tml->index].invoke_initialize(sorted_token, nt, tml->ml, tml->index);
             }
         }
     }
@@ -912,7 +913,7 @@ void nrn_finitialize(int setv, double v) {
                     // initialize all artificial cells in all threads at once
                     auto& ml = memb_list[i];
                     ml.set_storage_offset(0);
-                    memb_func[i].invoke_initialize(nrn_threads, &ml, i);
+                    memb_func[i].invoke_initialize(sorted_token, nrn_threads, &ml, i);
                 }
                 if (errno) {
                     if (nrn_errno_check(i)) {
@@ -1020,7 +1021,7 @@ void nrn_ba(neuron::model_sorted_token const& cache_token, NrnThread& nt, int ba
         Memb_list* const ml{tbl->ml};
         // TODO move this loop into the translated MOD file code
         for (int i = 0; i < ml->nodecount; ++i) {
-            f(ml->nodelist[i], ml->pdata[i], ml->_thread, &nt, ml, i);
+            f(ml->nodelist[i], ml->pdata[i], ml->_thread, &nt, ml, i, cache_token);
         }
     }
 }

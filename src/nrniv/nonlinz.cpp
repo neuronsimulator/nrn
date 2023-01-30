@@ -558,7 +558,6 @@ void NonLinImpRep::dsds() {
 
 void NonLinImpRep::current(int im, Memb_list* ml, int in) {  // assume there is in fact a current
                                                              // method
-    Pvmi s = memb_func[im].current;
     // fake a 1 element memb_list
     Memb_list mfake{im};
 #if CACHEVEC != 0
@@ -570,12 +569,11 @@ void NonLinImpRep::current(int im, Memb_list* ml, int in) {  // assume there is 
     mfake.prop = ml->prop ? ml->prop + in : nullptr;
     mfake.nodecount = 1;
     mfake._thread = ml->_thread;
-    (*s)(nrn_threads, &mfake, im);
+    memb_func[im].current(nrn_ensure_model_data_are_sorted(), nrn_threads, &mfake, im);
 }
 
 void NonLinImpRep::ode(int im, Memb_list* ml) {  // assume there is in fact an ode method
-    Pvmi s = memb_func[im].ode_spec;
-    (*s)(nrn_threads, ml, im);
+    memb_func[im].ode_spec(nrn_ensure_model_data_are_sorted(), nrn_threads, ml, im);
 }
 
 int NonLinImpRep::gapsolve() {

@@ -4335,7 +4335,7 @@ double nrn_hoc2scatter_y(void* v) {
     if (nrn_nthread > 1) {
         hoc_execerror("only one thread allowed", 0);
     }
-    d->gcv_->scatter_y(vector_vec(s), 0);
+    d->gcv_->scatter_y(nrn_ensure_model_data_are_sorted(), vector_vec(s), 0);
     return 0.;
 }
 

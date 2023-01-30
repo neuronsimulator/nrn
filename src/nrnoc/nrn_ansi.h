@@ -126,7 +126,9 @@ extern void nrniv_recalc_ptrs(void);
 extern void nrn_recalc_ptrvector(void);
 extern void nrn_rhs_ext(NrnThread*);
 extern void nrn_setup_ext(NrnThread*);
-extern void nrn_cap_jacob(NrnThread*, Memb_list*);
+void nrn_cap_jacob(neuron::model_sorted_token const&, NrnThread*, Memb_list*);
+void nrn_div_capacity(neuron::model_sorted_token const&, NrnThread*, Memb_list*);
+void nrn_mul_capacity(neuron::model_sorted_token const&, NrnThread*, Memb_list*);
 extern void clear_point_process_struct(Prop* p);
 extern void ext_con_coef(void);
 extern void nrn_multisplit_ptr_update(void);
@@ -144,6 +146,7 @@ extern void synapse_prepare(void);
 
 void nrn_fixed_step(neuron::model_sorted_token const&);
 void nrn_fixed_step_group(neuron::model_sorted_token const&, int n);
+void nrn_lhs(neuron::model_sorted_token const&, NrnThread&);
 void nrn_rhs(neuron::model_sorted_token const&, NrnThread&);
 void setup_tree_matrix(neuron::model_sorted_token const&, NrnThread&);
 extern void v_setup_vectors(void);

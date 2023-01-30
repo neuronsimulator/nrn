@@ -47,7 +47,7 @@ static HocParmUnits units[] = {{"xraxial", "MOhm/cm"},
                                {0, 0}};
 
 static void extcell_alloc(Prop*);
-static void extcell_init(NrnThread* nt, Memb_list* ml, int type);
+static void extcell_init(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type);
 #if 0
 static void printnode(const char* s);
 #endif
@@ -79,7 +79,7 @@ static void update_parmsize() {
 }
 
 extern "C" void extracell_reg_(void) {
-    register_mech(mechanism, extcell_alloc, (Pvmi) 0, (Pvmi) 0, (Pvmi) 0, extcell_init, -1, 1);
+    register_mech(mechanism, extcell_alloc, nullptr, nullptr, nullptr, extcell_init, -1, 1);
     int const i = nrn_get_mechtype(mechanism[1]);
     assert(i == EXTRACELL);
     hoc_register_cvode(i, _ode_count, nullptr, nullptr, nullptr);
@@ -190,7 +190,10 @@ static void extcell_alloc(Prop* p) {
 }
 
 /*ARGSUSED*/
-static void extcell_init(NrnThread* nt, Memb_list* ml, int type) {
+static void extcell_init(neuron::model_sorted_token const&,
+                         NrnThread* nt,
+                         Memb_list* ml,
+                         int type) {
     int ndcount = ml->nodecount;
     Node** ndlist = ml->nodelist;
     if ((cvode_active_ > 0) && (nrn_use_daspk_ == 0)) {

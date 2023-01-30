@@ -208,13 +208,12 @@ static part1_ret part1() {
     }
     CellGroup::setup_nrn_has_net_event();
     cellgroups_ = new CellGroup[nrn_nthread];  // here because following needs mlwithart
-    auto const cache_token = nrn_ensure_model_data_are_sorted();
-    CellGroup::mk_tml_with_art(cache_token, cellgroups_);
+    CellGroup::mk_tml_with_art(sorted_token, cellgroups_);
 
     rankbytes += CellGroup::get_mla_rankbytes(cellgroups_);
     rankbytes += nrncore_netpar_bytes();
     // printf("%d bytes %ld\n", nrnmpi_myid, rankbytes);
-    CellGroup::mk_cellgroups(cache_token, cellgroups_);
+    CellGroup::mk_cellgroups(sorted_token, cellgroups_);
     CellGroup::datumtransform(cellgroups_);
     return {rankbytes, std::move(sorted_token)};
 }

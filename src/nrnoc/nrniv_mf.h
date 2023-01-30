@@ -8,8 +8,15 @@ struct Memb_list;
 struct NrnThread;
 struct Point_process;
 
-using ldifusfunc3_t =
-    double (*)(int, Memb_list*, std::size_t, Datum*, double*, double*, Datum*, NrnThread*);
+using ldifusfunc3_t = double (*)(int,
+                                 Memb_list*,
+                                 std::size_t,
+                                 Datum*,
+                                 double*,
+                                 double*,
+                                 Datum*,
+                                 NrnThread*,
+                                 neuron::model_sorted_token const&);
 using ldifusfunc2_t =
     void(int, ldifusfunc3_t, void**, int, int, int, neuron::model_sorted_token const&, NrnThread&);
 using ldifusfunc_t = void (*)(ldifusfunc2_t, neuron::model_sorted_token const&, NrnThread&);
@@ -35,22 +42,22 @@ void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, doubl
 extern double nrn_ion_charge(Symbol*);
 extern Point_process* ob2pntproc(Object*);
 extern Point_process* ob2pntproc_0(Object*);
-extern void register_mech(const char**, Pvmp, Pvmi, Pvmi, Pvmi, Pvmi, int, int);
-extern int point_register_mech(const char**,
-                               Pvmp,
-                               Pvmi,
-                               Pvmi,
-                               Pvmi,
-                               Pvmi,
-                               int,
-                               int,
-                               void* (*) (Object*),
-                               void (*)(void*),
-                               Member_func*);
+void register_mech(const char**, Pvmp, nrn_cur_t, nrn_jacob_t, nrn_state_t, nrn_init_t, int, int);
+int point_register_mech(const char**,
+                        Pvmp,
+                        nrn_cur_t,
+                        nrn_jacob_t,
+                        nrn_state_t,
+                        nrn_init_t,
+                        int,
+                        int,
+                        void* (*) (Object*),
+                        void (*)(void*),
+                        Member_func*);
 extern int nrn_get_mechtype(const char*);
 extern void nrn_writes_conc(int, int);
 extern void add_nrn_has_net_event(int);
-extern void hoc_register_cvode(int, nrn_ode_count_t, nrn_ode_map_t, Pvmi, Pvmi);
+void hoc_register_cvode(int, nrn_ode_count_t, nrn_ode_map_t, nrn_ode_spec_t, nrn_ode_matsol_t);
 void hoc_register_synonym(int, nrn_ode_synonym_t);
 extern void register_destructor(Pvmp);
 extern void ion_reg(const char*, double);

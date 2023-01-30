@@ -2,6 +2,7 @@
 #undef check
 #include <InterViews/resource.h>
 #include <ctype.h>
+#include "membfunc.h"
 #include "nrnoc2iv.h"
 #include "nrniv_mf.h"
 
@@ -164,7 +165,7 @@ static void call(Symbol* s, Node* nd, Prop* p) {
     nrn_popsec();
 }
 
-static void initial(void* nt, Memb_list* ml, int type) {
+static void initial(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type) {
     HocMech* hm = (HocMech*) memb_func[type].hoc_mech;
     int i, cnt = ml->nodecount;
     for (i = 0; i < cnt; ++i) {
@@ -172,7 +173,7 @@ static void initial(void* nt, Memb_list* ml, int type) {
     }
 }
 
-static void after_step(void* nt, Memb_list* ml, int type) {
+static void after_step(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type) {
     HocMech* hm = (HocMech*) memb_func[type].hoc_mech;
     int i, cnt = ml->nodecount;
     for (i = 0; i < cnt; ++i) {
@@ -187,20 +188,21 @@ static HocMech* common_register(const char** m,
                                 Symlist* slist,
                                 void(hm_alloc)(Prop*),
                                 int& type) {
-    Pvmi cur, jacob, stat, initialize;
-    cur = NULL;
-    jacob = NULL;
-    stat = NULL;
-    initialize = NULL;
+    nrn_cur_t cur{};
+    nrn_init_t initialize{};
+    nrn_jacob_t jacob{};
+    nrn_state_t stat{};
     HocMech* hm = new HocMech();
     hm->slist = NULL;
     hm->mech = classsym;
     hm->initial = hoc_table_lookup("initial", slist);
     hm->after_step = hoc_table_lookup("after_step", slist);
-    if (hm->initial)
-        initialize = (Pvmi) initial;
-    if (hm->after_step)
-        stat = (Pvmi) after_step;
+    if (hm->initial) {
+        initialize = initial;
+    }
+    if (hm->after_step) {
+        stat = after_step;
+    }
     register_mech(m, hm_alloc, cur, jacob, stat, initialize, -1, 0);
     type = nrn_get_mechtype(m[1]);
     hoc_register_cvode(type, nullptr, nullptr, nullptr, nullptr);
