@@ -722,7 +722,7 @@ neuron::container::data_handle<double> hoc_val_handle(std::string_view s) {
     code.append(")}\n");
     hoc_varhandle = {};
     auto const status = hoc_oc(code.c_str());
-    assret(status == 0);
+    assert(status == 0);
     return hoc_varhandle;
 }
 
