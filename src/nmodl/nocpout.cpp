@@ -62,6 +62,7 @@ directly by hoc.
 #include "modl.h"
 #include "parse1.hpp"
 #include <stdlib.h>
+#include <string>
 #include <unistd.h>
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)
 
