@@ -33,7 +33,6 @@
  * Scene - arbitrary placements seen from several views
  */
 
-#include <ivstream.h>
 #include <stdio.h>
 #include <assert.h>
 
@@ -892,7 +891,7 @@ void Scene::printfile(const char* fname) {
 
 void XYView::printfile(const char* fname) {
     std::filebuf obuf;
-    if (!obuf.open(fname, IOS_OUT)) {
+    if (!obuf.open(fname, std::ios::out)) {
         return;
     }
     std::ostream o(&obuf);

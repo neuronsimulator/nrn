@@ -2,7 +2,6 @@
 #define ocglyph_h
 
 #include <InterViews/monoglyph.h>
-#include <ivstream.h>
 class PrintableWindow;
 class Dialog;
 

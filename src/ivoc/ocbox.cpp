@@ -8,9 +8,9 @@
 #include <InterViews/patch.h>
 #include <InterViews/background.h>
 #include <InterViews/box.h>
+#include <InterViews/resource.h>
 #include <IV-look/kit.h>
 #include <InterViews/input.h>
-#include <ivstream.h>
 #include <stdio.h>
 #include "ocbox.h"
 #include "apwindow.h"
@@ -18,7 +18,6 @@
 #include "ivoc.h"
 #endif /* HAVE_IV */
 
-#include <InterViews/resource.h>
 #include "oc2iv.h"
 #include "classreg.h"
 

@@ -20,7 +20,6 @@ set(HEADER_FILES_TO_INSTALL
     hocgetsym.h
     hoclist.h
     hocparse.h
-    ivstream.h
     mcran4.h
     md1redef.h
     md2redef.h

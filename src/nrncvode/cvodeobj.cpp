@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
 // solver interface to CVode
-#include <InterViews/resource.h>
 
 #include "nrnmpi.h"
 

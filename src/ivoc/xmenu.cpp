@@ -1,7 +1,6 @@
 
 #include <../../nrnconf.h>
 
-#include <InterViews/resource.h>
 #include "oc2iv.h"
 #include "classreg.h"
 double (*nrnpy_guigetval)(Object*);
@@ -20,7 +19,6 @@ char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strpt
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include <ivstream.h>
 #include <cctype>
 #include <cerrno>
 
@@ -40,6 +38,7 @@ char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strpt
 #include <InterViews/color.h>
 #include <InterViews/telltale.h>
 #include <InterViews/hit.h>
+#include <InterViews/resource.h>
 
 #include <InterViews/display.h>
 #include "mymath.h"
