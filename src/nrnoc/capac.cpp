@@ -9,14 +9,14 @@
 
 static const char* mechanism[] = {"0", "capacitance", "cm", 0, "i_cap", 0, 0};
 static void cap_alloc(Prop*);
-static void cap_init(NrnThread*, Memb_list*, int);
+static void cap_init(neuron::model_sorted_token const&, NrnThread*, Memb_list*, int);
 
 static constexpr auto nparm = 2;
 static constexpr auto ndparm = 0;
 extern "C" void capac_reg_(void) {
     int mechtype;
     /* all methods deal with capacitance in special ways */
-    register_mech(mechanism, cap_alloc, (Pvmi) 0, (Pvmi) 0, (Pvmi) 0, cap_init, -1, 1);
+    register_mech(mechanism, cap_alloc, nullptr, nullptr, nullptr, cap_init, -1, 1);
     mechtype = nrn_get_mechtype(mechanism[1]);
     hoc_register_prop_size(mechtype, nparm, 0);
 }
@@ -31,8 +31,8 @@ for pure implicit fixed step it is 1/dt
 It used to be static but is now a thread data variable
 */
 
-void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
-    neuron::cache::MechanismRange<nparm, ndparm> ml_cache{*ml};
+void nrn_cap_jacob(neuron::model_sorted_token const& sorted_token, NrnThread* _nt, Memb_list* ml) {
+    neuron::cache::MechanismRange<nparm, ndparm> ml_cache{sorted_token, *_nt, *ml, ml->type()};
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
     double cfac = .001 * _nt->cj;
@@ -51,16 +51,21 @@ void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
     }
 }
 
-static void cap_init(NrnThread* _nt, Memb_list* ml, int type) {
-    neuron::cache::MechanismRange<nparm, ndparm> ml_cache{*ml};
+static void cap_init(neuron::model_sorted_token const& sorted_token,
+                     NrnThread* _nt,
+                     Memb_list* ml,
+                     int type) {
+    neuron::cache::MechanismRange<nparm, ndparm> ml_cache{sorted_token, *_nt, *ml, type};
     int count = ml->nodecount;
     for (int i = 0; i < count; ++i) {
         ml_cache.fpfield<i_cap_index>(i) = 0;
     }
 }
 
-void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
-    neuron::cache::MechanismRange<nparm, ndparm> ml_cache{*ml};
+void nrn_capacity_current(neuron::model_sorted_token const& sorted_token,
+                          NrnThread* _nt,
+                          Memb_list* ml) {
+    neuron::cache::MechanismRange<nparm, ndparm> ml_cache{sorted_token, *_nt, *ml, ml->type()};
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
     double cfac = .001 * _nt->cj;
@@ -85,8 +90,10 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
 }
 
 
-void nrn_mul_capacity(NrnThread* _nt, Memb_list* ml) {
-    neuron::cache::MechanismRange<nparm, ndparm> ml_cache{*ml};
+void nrn_mul_capacity(neuron::model_sorted_token const& sorted_token,
+                      NrnThread* _nt,
+                      Memb_list* ml) {
+    neuron::cache::MechanismRange<nparm, ndparm> ml_cache{sorted_token, *_nt, *ml, ml->type()};
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
     double cfac = .001 * _nt->cj;
@@ -105,8 +112,10 @@ void nrn_mul_capacity(NrnThread* _nt, Memb_list* ml) {
     }
 }
 
-void nrn_div_capacity(NrnThread* _nt, Memb_list* ml) {
-    neuron::cache::MechanismRange<nparm, ndparm> ml_cache{*ml};
+void nrn_div_capacity(neuron::model_sorted_token const& sorted_token,
+                      NrnThread* _nt,
+                      Memb_list* ml) {
+    neuron::cache::MechanismRange<nparm, ndparm> ml_cache{sorted_token, *_nt, *ml, ml->type()};
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
 #if CACHEVEC

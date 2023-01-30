@@ -1048,11 +1048,11 @@ void pargap_jacobi_rhs(double* b, double* x) {
     for (int i = 0; i < _nt->end; ++i) {
         VEC_RHS(i) = 0.0;
     }
-
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
     for (int k = 0; k < imped_current_type_count_; ++k) {
         int type = imped_current_type_[k];
         Memb_list* ml = imped_current_ml_[k];
-        (*memb_func[type].current)(_nt, ml, type);
+        memb_func[type].current(sorted_token, _nt, ml, type);
     }
 
     // possibly many gap junctions in same node (and possible even different

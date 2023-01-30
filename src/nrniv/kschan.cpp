@@ -54,7 +54,13 @@ static void chkobj(void* v) {
     }
 }
 
-static void check_table_thread_(Memb_list*, std::size_t, Datum*, Datum*, NrnThread* vnt, int type) {
+static void check_table_thread_(Memb_list*,
+                                std::size_t,
+                                Datum*,
+                                Datum*,
+                                NrnThread* vnt,
+                                int type,
+                                neuron::model_sorted_token const&) {
     KSChan* c = (*channels)[type];
     c->check_table_thread(vnt);
 }
@@ -64,13 +70,13 @@ static void nrn_alloc(Prop* prop) {
     c->alloc(prop);
 }
 
-static void nrn_init(NrnThread* nt, Memb_list* ml, int type) {
+static void nrn_init(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_init\n");
     KSChan* c = (*channels)[type];
     c->init(nt, ml);
 }
 
-static void nrn_cur(NrnThread* nt, Memb_list* ml, int type) {
+static void nrn_cur(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_cur\n");
     KSChan* c = (*channels)[type];
 #if CACHEVEC
@@ -83,7 +89,7 @@ static void nrn_cur(NrnThread* nt, Memb_list* ml, int type) {
     }
 }
 
-static void nrn_jacob(NrnThread* nt, Memb_list* ml, int type) {
+static void nrn_jacob(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_jacob\n");
     KSChan* c = (*channels)[type];
 #if CACHEVEC
@@ -96,7 +102,7 @@ static void nrn_jacob(NrnThread* nt, Memb_list* ml, int type) {
     }
 }
 
-static void nrn_state(NrnThread* nt, Memb_list* ml, int type) {
+static void nrn_state(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_state\n");
     KSChan* c = (*channels)[type];
 #if CACHEVEC
@@ -124,12 +130,15 @@ static void ode_map(Prop* prop,
     KSChan* c = (*channels)[type];
     c->map(prop, ieq, pv, pvdot, atol);
 }
-static void ode_spec(NrnThread*, Memb_list* ml, int type) {
+static void ode_spec(neuron::model_sorted_token const& token, NrnThread*, Memb_list* ml, int type) {
     // printf("ode_spec\n");
     KSChan* c = (*channels)[type];
     c->spec(ml);
 }
-static void ode_matsol(NrnThread* nt, Memb_list* ml, int type) {
+static void ode_matsol(neuron::model_sorted_token const& token,
+                       NrnThread* nt,
+                       Memb_list* ml,
+                       int type) {
     // printf("ode_matsol\n");
     KSChan* c = (*channels)[type];
     c->matsol(nt, ml);

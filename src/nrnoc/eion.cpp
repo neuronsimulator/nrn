@@ -42,9 +42,9 @@ static DoubScal scdoub[] = {/* just a template*/
 
 static void ion_alloc(Prop*);
 
-static void ion_cur(NrnThread*, Memb_list*, int);
+static void ion_cur(neuron::model_sorted_token const&, NrnThread*, Memb_list*, int);
 
-static void ion_init(NrnThread*, Memb_list*, int);
+static void ion_init(neuron::model_sorted_token const&, NrnThread*, Memb_list*, int);
 
 static int na_ion, k_ion, ca_ion; /* will get type for these special ions */
 
@@ -556,8 +556,11 @@ void nrn_promote(Prop* p, int conc, int rev) {
 }
 
 /* Must be called prior to any channels which update the currents */
-static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
-    neuron::cache::MechanismRange<nparm, ndparam> ml_cache{*ml};
+static void ion_cur(neuron::model_sorted_token const& sorted_token,
+                    NrnThread* nt,
+                    Memb_list* ml,
+                    int type) {
+    neuron::cache::MechanismRange<nparm, ndparam> ml_cache{sorted_token, *nt, *ml, type};
     auto const count = ml->nodecount;
     Datum** ppd = ml->pdata;  // used in iontype below
     /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
@@ -575,9 +578,12 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 /* Must be called prior to other models which possibly also initialize
     concentrations based on their own states
 */
-static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
+static void ion_init(neuron::model_sorted_token const& sorted_token,
+                     NrnThread* nt,
+                     Memb_list* ml,
+                     int type) {
     int i;
-    neuron::cache::MechanismRange<nparm, ndparam> ml_cache{*ml};
+    neuron::cache::MechanismRange<nparm, ndparam> ml_cache{sorted_token, *nt, *ml, type};
     int count = ml->nodecount;
     Datum** ppd = ml->pdata;
     /*printf("ion_init %s\n", memb_func[type].sym->name);*/
