@@ -752,7 +752,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
                              "  auto* const _p = _pnt->_prop;\n"
                              "  LocalMechanismRange _ml_real{_p};\n"
                              "  auto* const _ml = &_ml_real;\n"
-                             "  std::size_t const _iml{};\n"
+                             "  size_t const _iml{};\n"
                              "  _ppvar = _p->dparam;\n"
                              "  _thread = _extcall_thread.data();\n"
                              "  _nt = static_cast<NrnThread*>(_pnt->_vnt);\n");
@@ -760,7 +760,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
         vectorize_substitute(lappendstr(procfunc, ""),
                              "LocalMechanismRange _ml_real{_extcall_prop};\n"
                              "auto* const _ml = &_ml_real;\n"
-                             "std::size_t const _iml{};\n"
+                             "size_t const _iml{};\n"
                              "_ppvar = _extcall_prop ? _extcall_prop->dparam : nullptr;\n"
                              "_thread = _extcall_thread.data();\n"
                              "_nt = nrn_threads;\n");
@@ -945,7 +945,7 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
             "  auto* const _prop = _pnt->_prop;\n"
             "  LocalMechanismRange _ml_real{_prop};\n"
             "  auto* const _ml = &_ml_real;\n"
-            "  std::size_t _iml{};\n"
+            "  size_t _iml{};\n"
             "  _ppvar = _prop->dparam;\n"
             "  v = NODEV(_pnt->node);\n"
             "	return ");
