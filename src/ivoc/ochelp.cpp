@@ -26,7 +26,6 @@ static FILE* help_pipe;
 #ifndef WIN32
 #define WIN32
 #define UNIX 1
-//#include "../uxnrnbbs/nrnbbs.h"
 #endif
 
 extern const char* hoc_current_xopen();
