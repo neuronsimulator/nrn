@@ -31,4 +31,10 @@ double nrn_wtime() {
         return (time1.tv_sec + time1.tv_usec / 1.e6);
     }
 }
+
+extern "C" {
+void (*nrn2core_subworld_info_)(int&, int&, int&);
+}
+
+
 }  // namespace coreneuron
