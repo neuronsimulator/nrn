@@ -217,6 +217,7 @@ def test_axial():
     m._callback_setup = None  # get rid of the callback first.
     del m
 
+
 def run_coreneuron_offline_checkpoint_restore(spikes_std):
     # standard to compare with checkpoint series
     tpnts = [5.0, 10.0]
