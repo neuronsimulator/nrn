@@ -25,7 +25,7 @@ SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
                            "cvode = new CVode()\n"
                            "cvode.use_fast_imem(1)\n") == 0);
             WHEN("iinitialize and run nrn_calc_fast_imem") {
-                hoc_oc("finitialize(-65)\n");
+                REQUIRE(hoc_oc("finitialize(-65)\n") == 0);
                 for (NrnThread* nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
                     nrn_calc_fast_imem(nt);
                 }

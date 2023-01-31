@@ -8,6 +8,7 @@
 #include "oc2iv.h"
 #include "ocfunc.h"
 #include "ocnotify.h"
+#include "oc_ansi.h"
 
 extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
 extern double (*nrnpy_object_to_double_)(Object*);
@@ -161,7 +162,6 @@ void nrn_err_dialog(const char* mes) {
  */
 
 extern void hoc_main1_init(const char* pname, const char** env);
-extern int hoc_oc(const char*);
 extern int hoc_interviews;
 extern Symbol* hoc_parse_expr(const char*, Symlist**);
 extern double hoc_run_expr(Symbol*);

@@ -2,7 +2,6 @@
 #define ocdeck_h
 
 #include "ocglyph.h"
-#include <ivstream.h>
 
 class OcDeckImpl;
 struct Object;

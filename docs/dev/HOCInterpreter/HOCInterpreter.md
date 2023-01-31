@@ -223,7 +223,6 @@ With respect to the HOC grammar we have:
         }  // namespace nrn::oc
         using Frame = nrn::oc::frame;
         #define NFRAME 512 /* default size */
-        #define nframe hoc_nframe
         static Frame *frame, *fp, *framelast; /* first, frame pointer, last */
       ```
     

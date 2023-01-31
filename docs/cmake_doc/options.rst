@@ -270,7 +270,7 @@ NRN_PYTHON_DYNAMIC:STRING=
 
   .. code-block:: shell
 
-    -DNRN_PYTHON_DYNAMIC="python3.7;python3.8;python3.9;python3.10"
+    -DNRN_PYTHON_DYNAMIC="python3.8;python3.9;python3.10;python3.11"
 
   This option is ignored unless NRN_ENABLE_PYTHON_DYNAMIC=ON
 
@@ -281,7 +281,7 @@ PYTHON_EXECUTABLE:PATH=
 
   .. code-block:: shell
 
-    -DPYTHON_EXECUTABLE=`which python3.7`
+    -DPYTHON_EXECUTABLE=`which python3.8`
 
 NRN_ENABLE_MODULE_INSTALL:BOOL=ON
 ---------------------------------

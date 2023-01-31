@@ -3,7 +3,6 @@
 //#include <string.h>
 #include <cstdio>
 #include <cstdlib>
-#include <ivstream.h>
 #include <cmath>
 #include <cerrno>
 #include <numeric>
@@ -28,7 +27,6 @@
 
 #include <IV-look/kit.h>
 #else
-#include <InterViews/resource.h>
 #include <OS/list.h>
 #endif
 
