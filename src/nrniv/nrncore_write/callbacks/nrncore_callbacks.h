@@ -184,7 +184,11 @@ void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true);
 void nrn2core_patternstim(void** info);
 
 // Info from NEURON subworlds at beginning of psolve.
-void nrn2core_subworld_info(int& cnt, int& subworld_index, int& subworld_rank);
+void nrn2core_subworld_info(int& cnt,
+                            int& subworld_index,
+                            int& subworld_rank,
+                            int& subworld_size,
+                            int& numprocs_world);
 
 }  // end of extern "C"
 

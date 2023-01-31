@@ -89,18 +89,23 @@ void nrnmpi_finalize_impl(void) {
 }
 
 extern "C" {
-extern void (*nrn2core_subworld_info_)(int&, int&, int&);
+extern void (*nrn2core_subworld_info_)(int&, int&, int&, int&, int&);
 }
 
 void corenrn_subworld() {
     // If ParallelContext.subworlds has been invoked, split the world
     // communicator according to the subworld partitioning.
     static int change_cnt{0};
-    int nrn_subworld_change_cnt, nrn_subworld_index, nrn_subworld_rank;
+    int nrn_subworld_change_cnt, nrn_subworld_index, nrn_subworld_rank, nrn_mpi_numprocs_subworld,
+        nrn_mpi_numprocs_world;
     if (!nrn2core_subworld_info_) {
         return;
     }
-    (*nrn2core_subworld_info_)(nrn_subworld_change_cnt, nrn_subworld_index, nrn_subworld_rank);
+    (*nrn2core_subworld_info_)(nrn_subworld_change_cnt,
+                               nrn_subworld_index,
+                               nrn_subworld_rank,
+                               nrn_mpi_numprocs_subworld,
+                               nrn_mpi_numprocs_world);
     if (nrn_subworld_change_cnt == change_cnt) {
         return;
     }
@@ -109,10 +114,24 @@ void corenrn_subworld() {
     // clean up / free old nrn_mpi_comm
     nrn_assert(MPI_Comm_free(&nrnmpi_comm) == MPI_SUCCESS);
 
-    // create a new nrnmpi_com based on subworld partitioning
+    // ensure world size is the same as NEURON
+    int world_size{-1};
+    nrn_assert(MPI_Comm_size(nrnmpi_world_comm, &world_size) == MPI_SUCCESS);
+    nrn_assert(world_size == nrn_mpi_numprocs_world);
+
+    // create a new nrnmpi_comm based on subworld partitioning
     nrn_assert(
         MPI_Comm_split(nrnmpi_world_comm, nrn_subworld_index, nrn_subworld_rank, &nrnmpi_comm) ==
         MPI_SUCCESS);
+
+    // assert that rank order and size is consistent between NEURON and CoreNEURON
+    int subworld_rank{-1};
+    nrn_assert(MPI_Comm_rank(nrnmpi_comm, &subworld_rank) == MPI_SUCCESS);
+    nrn_assert(nrn_subworld_rank == subworld_rank);
+
+    int subworld_size{-1};
+    nrn_assert(MPI_Comm_size(nrnmpi_comm, &subworld_size) == MPI_SUCCESS);
+    nrn_assert(subworld_size == nrn_mpi_numprocs_subworld);
 }
 
 

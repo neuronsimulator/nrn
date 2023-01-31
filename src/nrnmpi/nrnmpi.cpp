@@ -147,6 +147,7 @@ for (i=0; i < *pargc; ++i) {
     nrnmpi_use = 1;
     nrnmpi_subworld_change_cnt = 0;  // increment from within void nrnmpi_subworld_size(int n)
     nrnmpi_subworld_id = 0;          // Subworld index of current rank
+    nrnmpi_numprocs_subworld = nrnmpi_numprocs_bbs;  // Size of subworld of current rank
 
     /*begin instrumentation*/
 #if USE_HPM
@@ -259,6 +260,7 @@ void nrnmpi_subworld_size(int n) {
         asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
         asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
         nrnmpi_subworld_id = nrnmpi_myid_bbs;
+        nrnmpi_numprocs_subworld = nrnmpi_numprocs_bbs;
     } else if (n == nrnmpi_numprocs_world) {
         asrt(MPI_Group_incl(wg, 1, &r, &grp_bbs));
         asrt(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm));
@@ -273,6 +275,7 @@ void nrnmpi_subworld_size(int n) {
             nrnmpi_numprocs_bbs = -1;
         }
         nrnmpi_subworld_id = 0;
+        nrnmpi_numprocs_subworld = nrnmpi_numprocs;
     } else {
         int nw = nrnmpi_numprocs_world;
         int nb = nw / n; /* nrnmpi_numprocs_bbs */
@@ -310,6 +313,10 @@ void nrnmpi_subworld_size(int n) {
             nrnmpi_numprocs_bbs = -1;
         }
         nrnmpi_subworld_id = r / n;
+        nrnmpi_numprocs_subworld = n;
+        if ((nw % n != 0) && (nrnmpi_subworld_id == (nb - 1))) {
+            nrnmpi_numprocs_subworld = nw % n; /* and the last will have pc.nhost = nw%n */
+        }
     }
     nrnmpi_subworld_change_cnt++;
     asrt(MPI_Group_free(&wg));
