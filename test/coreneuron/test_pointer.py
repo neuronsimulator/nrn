@@ -215,10 +215,9 @@ def test_axial():
     )
 
     # test (0,1) for CPU and (1,2) for GPU
-    coreneuron.cell_permute = 2 if coreneuron.gpu else 0
-    chk(std, run(tstop))
-    coreneuron.cell_permute = 1
-    chk(std, run(tstop))
+    for perm in coreneuron.valid_cell_permute():
+        coreneuron.cell_permute = perm
+        chk(std, run(tstop))
     coreneuron.enable = False
 
     m._callback_setup = None  # get rid of the callback first.
@@ -268,8 +267,7 @@ def test_checkpoint():
     from neuron import coreneuron
 
     coreneuron.enable = True
-    cell_permute_values = (1, 2) if coreneuron.gpu else (0, 1)
-    for perm in cell_permute_values:
+    for perm in coreneuron.valid_cell_permute():
         coreneuron.cell_permute = perm
         run(5)
         pc.psolve(10)
