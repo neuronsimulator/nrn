@@ -7,7 +7,6 @@
 #include <InterViews/handler.h>
 #include <InterViews/observe.h>
 #include <OS/string.h>
-#include <ivstream.h>
 
 class Menu;
 class MenuItem;

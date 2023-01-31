@@ -99,8 +99,17 @@ mac_m1_cmake_build:
     - fi;
 
 variables:
+  BLUECONFIGS_BRANCH:
+    description: Branch of blueconfigs to trigger the simulation stack pipeline from
+    value: main
+  LIBSONATA_REPORT_BRANCH:
+    description: Branch of libsonata-report to build BlueBrain models against in the simulation stack pipeline (LIBSONATA_REPORT_COMMIT and LIBSONATA_REPORT_TAG also possible)
+    value: master
   NMODL_BRANCH:
     description: Branch of NMODL to build CoreNEURON against (NMODL_COMMIT and NMODL_TAG also possible)
+    value: master
+  REPORTINGLIB_BRANCH:
+    description: Branch of reportinglib to build BlueBrain models against in the simulation stack pipeline (REPORTINGLIB_COMMIT and REPORTINGLIB_TAG also possible)
     value: master
   SPACK_BRANCH:
     description: Branch of BlueBrain Spack to use for the CI pipeline
@@ -112,17 +121,25 @@ variables:
 # Set up Spack
 spack_setup:
   extends: .spack_setup_ccache
+  script:
+    - !reference [.spack_setup_ccache, script]
+    # try and make sure these are propagated to the simulation_stack bridge job and child pipeline
+    - echo "BLUECONFIGS_BRANCH=${BLUECONFIGS_BRANCH}" >> commit-mapping.env
+    - echo "BLUECONFIGS_BRANCH=${BLUECONFIGS_BRANCH}" >> spack_clone_variables.env
   variables:
     NEURON_COMMIT: ${CI_COMMIT_SHA}
     # Enable fetching GitHub PR descriptions and parsing them to find out what
     # branches to build of other projects.
     PARSE_GITHUB_PR_DESCRIPTIONS: "true"
+    # BLUECONFIGS_BRANCH does not correspond to a Spack package called blueconfigs
+    SPACK_SETUP_IGNORE_PACKAGE_VARIABLES: BLUECONFIGS
 
 simulation_stack:
   stage: .pre
   # Take advantage of GitHub PR description parsing in the spack_setup job.
   needs: [spack_setup]
   trigger:
+    branch: $BLUECONFIGS_BRANCH
     project: hpc/sim/blueconfigs
     # NEURON CI status depends on the BlueConfigs CI status.
     strategy: depend
@@ -150,7 +167,7 @@ simulation_stack:
   variables:
     bb5_duration: "2:00:00"
     SPACK_PACKAGE: neuron
-    SPACK_PACKAGE_SPEC: +coreneuron+debug+tests~legacy-unit~rx3d model_tests=channel-benchmark,olfactory,tqperf-heavy
+    SPACK_PACKAGE_SPEC: +coreneuron+tests~legacy-unit~rx3d build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
 .gpu_node:
   variables:
     bb5_constraint: volta
@@ -179,66 +196,74 @@ build:nmodl:
     # avoids more rebuilding when +report is set (which it is by default)
     SPACK_PACKAGE_DEPENDENCIES: ^hpe-mpi%gcc ^hdf5%gcc
 
-build:neuron:mod2c:intel:shared:debug:
-  extends: [.build_neuron, .spack_intel]
+.build_neuron_mod2c:
+  extends: [.build_neuron]
   variables:
-    SPACK_PACKAGE_SPEC: +debug~rx3d~caliper~gpu+coreneuron~legacy-unit~nmodl~openmp+shared+tests~unified build_type=Debug model_tests=channel-benchmark,olfactory,tqperf-heavy
+    # libsonata-report and reportinglib parts avoid those libraries being
+    # compiled with intel, nvhpc and gcc in every pipeline; the
+    # hpe-mpi/python/py-setuptools parts try to avoid re-building py-mpi4py
+    SPACK_PACKAGE_DEPENDENCIES: ^libsonata-report%gcc ^reportinglib%gcc ^hpe-mpi%gcc ^python%gcc ^py-setuptools%gcc
 
-build:neuron:nmodl:intel:debug:legacy:
+build:neuron:mod2c:intel:shared:
+  extends: [.build_neuron_mod2c, .spack_intel]
+  variables:
+    SPACK_PACKAGE_SPEC: ~rx3d~caliper~gpu+coreneuron~legacy-unit~nmodl~openmp+shared+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
+
+build:neuron:nmodl:intel:legacy:
   extends: [.build_neuron_nmodl, .spack_intel]
   variables:
-    SPACK_PACKAGE_SPEC: +debug~rx3d~caliper~gpu+coreneuron~legacy-unit+nmodl~openmp~shared~sympy+tests~unified build_type=Debug model_tests=channel-benchmark,olfactory,tqperf-heavy
+    SPACK_PACKAGE_SPEC: ~rx3d~caliper~gpu+coreneuron~legacy-unit+nmodl~openmp~shared~sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
-build:neuron:nmodl:intel:shared:debug:
+build:neuron:nmodl:intel:shared:
   extends: [.build_neuron_nmodl, .spack_intel]
   variables:
-    SPACK_PACKAGE_SPEC: +debug~rx3d~caliper~gpu+coreneuron~legacy-unit+nmodl~openmp+shared+sympy+tests~unified build_type=Debug model_tests=channel-benchmark,olfactory,tqperf-heavy
+    SPACK_PACKAGE_SPEC: ~rx3d~caliper~gpu+coreneuron~legacy-unit+nmodl~openmp+shared+sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
 build:neuron:mod2c:nvhpc:acc:shared:
-  extends: [.build_neuron, .spack_nvhpc]
+  extends: [.build_neuron_mod2c, .spack_nvhpc]
   variables:
-    SPACK_PACKAGE_SPEC: +debug~rx3d~caliper+gpu+coreneuron~legacy-unit~nmodl~openmp+shared+tests~unified build_type=RelWithDebInfo model_tests=channel-benchmark,olfactory,tqperf-heavy
+    SPACK_PACKAGE_SPEC: ~rx3d~caliper+gpu+coreneuron~legacy-unit~nmodl~openmp+shared+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
-build:neuron:nmodl:nvhpc:acc:debug:legacy:
+build:neuron:nmodl:nvhpc:acc:legacy:
   extends: [.build_neuron_nmodl, .spack_nvhpc]
   variables:
-    SPACK_PACKAGE_SPEC: +debug~rx3d~caliper+gpu+coreneuron~legacy-unit+nmodl~openmp~shared~sympy+tests~unified build_type=Debug model_tests=channel-benchmark,olfactory,tqperf-heavy
+    SPACK_PACKAGE_SPEC: ~rx3d~caliper+gpu+coreneuron~legacy-unit+nmodl~openmp~shared~sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
 build:neuron:nmodl:nvhpc:acc:shared:
   extends: [.build_neuron_nmodl, .spack_nvhpc]
   variables:
-    SPACK_PACKAGE_SPEC: +debug~rx3d~caliper+gpu+coreneuron~legacy-unit+nmodl~openmp+shared+sympy+tests~unified build_type=RelWithDebInfo model_tests=channel-benchmark,olfactory,tqperf-heavy
+    SPACK_PACKAGE_SPEC: ~rx3d~caliper+gpu+coreneuron~legacy-unit+nmodl~openmp+shared+sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
-build:neuron:nmodl:nvhpc:omp:legacy:debug:
+build:neuron:nmodl:nvhpc:omp:legacy:
   extends: [.build_neuron_nmodl, .spack_nvhpc]
   variables:
-    SPACK_PACKAGE_SPEC: +debug~rx3d+caliper+gpu+coreneuron~legacy-unit+nmodl+openmp~shared~sympy+tests~unified build_type=Debug model_tests=channel-benchmark,olfactory,tqperf-heavy ^caliper+cuda%gcc cuda_arch=70
+    SPACK_PACKAGE_SPEC: ~rx3d+caliper+gpu+coreneuron~legacy-unit+nmodl+openmp~shared~sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy ^caliper+cuda%gcc cuda_arch=70
 
-build:neuron:nmodl:nvhpc:omp:debug:
+build:neuron:nmodl:nvhpc:omp:
   extends: [.build_neuron_nmodl, .spack_nvhpc]
   variables:
-    SPACK_PACKAGE_SPEC: +debug~rx3d+caliper+gpu+coreneuron~legacy-unit+nmodl+openmp~shared+sympy+tests~unified build_type=Debug model_tests=channel-benchmark,olfactory,tqperf-heavy ^caliper+cuda%gcc cuda_arch=70
+    SPACK_PACKAGE_SPEC: ~rx3d+caliper+gpu+coreneuron~legacy-unit+nmodl+openmp~shared+sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy ^caliper+cuda%gcc cuda_arch=70
 
 # Test NEURON
-test:neuron:mod2c:intel:shared:debug:
+test:neuron:mod2c:intel:shared:
   extends: [.test_neuron]
-  needs: ["build:neuron:mod2c:intel:shared:debug"]
+  needs: ["build:neuron:mod2c:intel:shared"]
 
-test:neuron:nmodl:intel:debug:legacy:
+test:neuron:nmodl:intel:legacy:
   extends: [.test_neuron]
-  needs: ["build:neuron:nmodl:intel:debug:legacy"]
+  needs: ["build:neuron:nmodl:intel:legacy"]
 
-test:neuron:nmodl:intel:shared:debug:
+test:neuron:nmodl:intel:shared:
   extends: [.test_neuron]
-  needs: ["build:neuron:nmodl:intel:shared:debug"]
+  needs: ["build:neuron:nmodl:intel:shared"]
 
 test:neuron:mod2c:nvhpc:acc:shared:
   extends: [.test_neuron, .gpu_node]
   needs: ["build:neuron:mod2c:nvhpc:acc:shared"]
 
-test:neuron:nmodl:nvhpc:acc:debug:legacy:
+test:neuron:nmodl:nvhpc:acc:legacy:
   extends: [.test_neuron, .gpu_node]
-  needs: ["build:neuron:nmodl:nvhpc:acc:debug:legacy"]
+  needs: ["build:neuron:nmodl:nvhpc:acc:legacy"]
 
 test:neuron:nmodl:nvhpc:acc:shared:
   extends: [.test_neuron, .gpu_node]
@@ -246,8 +271,8 @@ test:neuron:nmodl:nvhpc:acc:shared:
 
 test:neuron:nmodl:nvhpc:omp:legacy:
   extends: [.test_neuron, .gpu_node]
-  needs: ["build:neuron:nmodl:nvhpc:omp:legacy:debug"]
+  needs: ["build:neuron:nmodl:nvhpc:omp:legacy"]
 
-test:neuron:nmodl:nvhpc:omp:debug:
+test:neuron:nmodl:nvhpc:omp:
   extends: [.test_neuron, .gpu_node]
-  needs: ["build:neuron:nmodl:nvhpc:omp:debug"]
+  needs: ["build:neuron:nmodl:nvhpc:omp"]

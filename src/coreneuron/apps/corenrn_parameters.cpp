@@ -20,8 +20,7 @@ corenrn_parameters::corenrn_parameters()
         ->check(CLI::ExistingFile);
     app.add_option("--write-config",
                    this->writeParametersFilepath,
-                   "Write parameters to this file",
-                   false);
+                   "Write parameters to this file");
 
     app.add_flag(
         "--mpi",
@@ -29,21 +28,22 @@ corenrn_parameters::corenrn_parameters()
         "Enable MPI. In order to initialize MPI environment this argument must be specified.");
     app.add_option("--mpi-lib",
                    this->mpi_lib,
-                   "CoreNEURON MPI library to load for dynamic MPI support",
-                   false);
+                   "CoreNEURON MPI library to load for dynamic MPI support");
     app.add_flag("--gpu", this->gpu, "Activate GPU computation.");
     app.add_option("--dt",
                    this->dt,
-                   "Fixed time step. The default value is set by defaults.dat or is 0.025.",
-                   true)
+                   "Fixed time step. The default value is set by defaults.dat or is 0.025.")
+        ->capture_default_str()
         ->check(CLI::Range(-1'000., 1e9));
     app.add_option("-e, --tstop", this->tstop, "Stop Time in ms.")->check(CLI::Range(0., 1e9));
     app.add_flag("--show");
-    app.add_set(
-        "--verbose",
-        this->verbose,
-        {verbose_level::NONE, verbose_level::ERROR, verbose_level::INFO, verbose_level::DEBUG_INFO},
-        "Verbose level: 0 = NONE, 1 = ERROR, 2 = INFO, 3 = DEBUG. Default is INFO");
+    app.add_option("--verbose",
+                   this->verbose,
+                   "Verbose level: 0 = NONE, 1 = ERROR, 2 = INFO, 3 = DEBUG. Default is INFO")
+        ->check(CLI::IsMember({verbose_level::NONE,
+                               verbose_level::ERROR,
+                               verbose_level::INFO,
+                               verbose_level::DEBUG_INFO}));
     app.add_flag("--model-stats",
                  this->model_stats,
                  "Print number of instances of each mechanism and detailed memory stats.");
@@ -53,15 +53,15 @@ corenrn_parameters::corenrn_parameters()
         ->add_option("-W, --nwarp",
                      this->nwarp,
                      "Number of warps to execute in parallel the Hines solver. Each warp solves a "
-                     "group of cells. (Only used with cell permute 2)",
-                     true)
+                     "group of cells. (Only used with cell permute 2)")
+        ->capture_default_str()
         ->check(CLI::Range(0, 1'000'000));
     sub_gpu
         ->add_option("-R, --cell-permute",
                      this->cell_interleave_permute,
                      "Cell permutation: 0 No permutation; 1 optimise node adjacency; 2 optimize "
-                     "parent adjacency.",
-                     true)
+                     "parent adjacency.")
+        ->capture_default_str()
         ->check(CLI::Range(0, 2));
     sub_gpu->add_flag("--cuda-interface",
                       this->cuda_interface,
@@ -71,7 +71,8 @@ corenrn_parameters::corenrn_parameters()
     auto sub_input = app.add_option_group("input", "Input dataset options.");
     sub_input->add_option("-d, --datpath", this->datpath, "Path containing CoreNeuron data files.")
         ->check(CLI::ExistingDirectory);
-    sub_input->add_option("-f, --filesdat", this->filesdat, "Name for the distribution file.", true)
+    sub_input->add_option("-f, --filesdat", this->filesdat, "Name for the distribution file.")
+        ->capture_default_str()
         ->check(CLI::ExistingFile);
     sub_input
         ->add_option("-p, --pattern",
@@ -104,14 +105,14 @@ corenrn_parameters::corenrn_parameters()
                            "Do not call mpi finalize.");
 
     auto sub_spike = app.add_option_group("spike", "Spike exchange options.");
-    sub_spike
-        ->add_option("--ms-phases", this->ms_phases, "Number of multisend phases, 1 or 2.", true)
+    sub_spike->add_option("--ms-phases", this->ms_phases, "Number of multisend phases, 1 or 2.")
+        ->capture_default_str()
         ->check(CLI::Range(1, 2));
     sub_spike
         ->add_option("--ms-subintervals",
                      this->ms_subint,
-                     "Number of multisend subintervals, 1 or 2.",
-                     true)
+                     "Number of multisend subintervals, 1 or 2.")
+        ->capture_default_str()
         ->check(CLI::Range(1, 2));
     sub_spike->add_flag("--multisend",
                         this->multisend,
@@ -119,13 +120,14 @@ corenrn_parameters::corenrn_parameters()
     sub_spike
         ->add_option("--spkcompress",
                      this->spkcompress,
-                     "Spike compression. Up to ARG are exchanged during MPI_Allgather.",
-                     true)
+                     "Spike compression. Up to ARG are exchanged during MPI_Allgather.")
+        ->capture_default_str()
         ->check(CLI::Range(0, 100'000));
     sub_spike->add_flag("--binqueue", this->binqueue, "Use bin queue.");
 
     auto sub_config = app.add_option_group("config", "Config options.");
-    sub_config->add_option("-b, --spikebuf", this->spikebuf, "Spike buffer size.", true)
+    sub_config->add_option("-b, --spikebuf", this->spikebuf, "Spike buffer size.")
+        ->capture_default_str()
         ->check(CLI::Range(0, 2'000'000'000));
     sub_config
         ->add_option("-g, --prcellgid",
@@ -138,14 +140,14 @@ corenrn_parameters::corenrn_parameters()
         ->add_option(
             "-l, --celsius",
             this->celsius,
-            "Temperature in degC. The default value is set in defaults.dat or else is 34.0.",
-            true)
+            "Temperature in degC. The default value is set in defaults.dat or else is 34.0.")
+        ->capture_default_str()
         ->check(CLI::Range(-1000., 1000.));
     sub_config
         ->add_option("--mindelay",
                      this->mindelay,
-                     "Maximum integration interval (likely reduced by minimum NetCon delay).",
-                     true)
+                     "Maximum integration interval (likely reduced by minimum NetCon delay).")
+        ->capture_default_str()
         ->check(CLI::Range(0., 1e9));
     sub_config
         ->add_option("--report-buffer-size",
@@ -154,12 +156,11 @@ corenrn_parameters::corenrn_parameters()
         ->check(CLI::Range(1, 128));
 
     auto sub_output = app.add_option_group("output", "Output configuration.");
-    sub_output->add_option("-i, --dt_io", this->dt_io, "Dt of I/O.", true)
+    sub_output->add_option("-i, --dt_io", this->dt_io, "Dt of I/O.")
+        ->capture_default_str()
         ->check(CLI::Range(-1000., 1e9));
-    sub_output->add_option("-o, --outpath",
-                           this->outpath,
-                           "Path to place output data files.",
-                           true);
+    sub_output->add_option("-o, --outpath", this->outpath, "Path to place output data files.")
+        ->capture_default_str();
     sub_output->add_option("--checkpoint",
                            this->checkpointpath,
                            "Enable checkpoint and specify directory to store related files.");

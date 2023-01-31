@@ -19,7 +19,6 @@ extern int hoc_return_type_code;
 
 #define DECO 2  // 1 means default on, 2 off. for Carnvale,Hines book figures
 
-#include <ivstream.h>
 #include <string.h>
 #include "ivoc.h"
 #endif  // HAVE_IV
@@ -45,7 +44,6 @@ char* hoc_back2forward(char*);
 #if MAC
 #include <fstream.h>
 #include <file_io.h>
-#undef IOS_OUT
 #define IOS_OUT (ios::out | ios::trunc)
 extern char* mktemp(char*);
 extern int unlink(const char*);
@@ -53,7 +51,7 @@ extern int unlink(const char*);
 extern void debugfile(const char*, ...);
 #else  //! MAC
 #include <unistd.h>
-#define Output output
+#define IOS_OUT std::ios::out
 #endif  // MAC
 
 
@@ -72,6 +70,7 @@ extern void debugfile(const char*, ...);
 #include <InterViews/style.h>
 #include <InterViews/background.h>
 #include <InterViews/label.h>
+#include <InterViews/resource.h>
 #include <OS/string.h>
 #include "apwindow.h"
 #include "scenevie.h"
@@ -1743,7 +1742,7 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
     static char* tmpfile = (char*) 0;
     std::filebuf obuf;
 #if MAC && !DARWIN
-    obuf.open(name, IOS_OUT);
+    obuf.open(name, std::ios::out | std::ios::trunc);
 #else
     if (!tmpfile) {
         tmpfile = ivoc_get_temp_file();
@@ -3384,7 +3383,6 @@ Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <InterViews/resource.h>
 #include "oc2iv.h"
 
 #endif  // HAVE_IV

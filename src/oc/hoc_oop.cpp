@@ -48,7 +48,8 @@ void hoc_install_hoc_obj(void) {
     hoc_objectdata[s->u.oboff].pobj = pobj = (Object**) emalloc(sizeof(Object*));
     pobj[0] = nullptr;
 
-    hoc_oc("objref hoc_obj_[2]\n");
+    auto const code = hoc_oc("objref hoc_obj_[2]\n");
+    assert(code == 0);
     hoc_obj_ = hoc_lookup("hoc_obj_");
 }
 
@@ -625,7 +626,14 @@ static void call_constructor(Object* ob, Symbol* sym, int narg) {
     pcsav = pc;
 
     push_frame(sym, narg);
-    ob->u.this_pointer = (ob->ctemplate->constructor)(ob);
+    ob->u.this_pointer = neuron::oc::invoke_method_that_may_throw(
+        [ob]() -> std::string {
+            std::string rval{hoc_object_name(ob)};
+            rval.append(" constructor");
+            return rval;
+        },
+        ob->ctemplate->constructor,
+        ob);
     pop_frame();
 
     pc = pcsav;
@@ -661,26 +669,34 @@ void call_ob_proc(Object* ob, Symbol* sym, int narg) {
         gui_redirect_obj_ = ob;
         push_frame(sym, narg);
         hoc_thisobject = obsav;
+        auto const error_prefix_generator = [ob, sym]() {
+            std::string rval{hoc_object_name(ob)};
+            rval.append(2, ':');
+            rval.append(sym->name);
+            return rval;
+        };
         if (sym->type == OBFUNCTION) {
-            Object** o;
-            o = (*(sym->u.u_proc->defn.pfo_vp))(ob->u.this_pointer);
+            auto* const o = neuron::oc::invoke_method_that_may_throw(error_prefix_generator,
+                                                                     sym->u.u_proc->defn.pfo_vp,
+                                                                     ob->u.this_pointer);
             if (*o) {
                 ++(*o)->refcount;
             } /* in case unreffed below */
-            pop_frame();
+            hoc_pop_frame();
             if (*o) {
                 --(*o)->refcount;
             }
             hoc_pushobj(o);
         } else if (sym->type == STRFUNCTION) {
-            char** s;
-            s = (char**) (*(sym->u.u_proc->defn.pfs_vp))(ob->u.this_pointer);
-            pop_frame();
+            auto* const s = const_cast<char**>(neuron::oc::invoke_method_that_may_throw(
+                error_prefix_generator, sym->u.u_proc->defn.pfs_vp, ob->u.this_pointer));
+            hoc_pop_frame();
             hoc_pushstr(s);
         } else {
-            double x;
-            x = (*(sym->u.u_proc->defn.pfd_vp))(ob->u.this_pointer);
-            pop_frame();
+            auto x = neuron::oc::invoke_method_that_may_throw(error_prefix_generator,
+                                                              sym->u.u_proc->defn.pfd_vp,
+                                                              ob->u.this_pointer);
+            hoc_pop_frame();
             hoc_pushx(x);
         }
     } else if (ob->ctemplate->is_point_ && special_pnt_call(ob, sym, narg)) {
@@ -1792,6 +1808,25 @@ void hoc_dec_refcount(Object** pobj) {
     hoc_obj_unref(obj);
 }
 
+namespace {
+struct helper_in_case_dtor_throws {
+    helper_in_case_dtor_throws(Object* obj)
+        : m_obj{obj} {}
+    ~helper_in_case_dtor_throws() {
+        if (--m_obj->ctemplate->count <= 0) {
+            m_obj->ctemplate->index = 0;
+        }
+        m_obj->ctemplate = nullptr;
+        /* for testing purposes we don't free the object in order
+        to make sure no object variable ever uses a freed object */
+        hoc_free_object(m_obj);
+    }
+
+  private:
+    Object* m_obj;
+};
+}  // namespace
+
 void hoc_obj_unref(Object* obj) {
     Object* obsav;
 
@@ -1820,9 +1855,18 @@ printf("unreffing %s with refcount %d\n", hoc_object_name(obj), obj->refcount);
         if (obj->ctemplate->observers) {
             hoc_template_notify(obj, 0);
         }
+        // make sure that dereffing happens even if the destructor throws
+        helper_in_case_dtor_throws _{obj};
         if (obj->ctemplate->sym->subtype & (CPLUSOBJECT | JAVAOBJECT)) {
-            if (obj->u.this_pointer) {
-                (obj->ctemplate->destructor)(obj->u.this_pointer);
+            if (auto* const tp = obj->u.this_pointer; tp) {
+                neuron::oc::invoke_method_that_may_throw(
+                    [obj]() {
+                        std::string rval{hoc_object_name(obj)};
+                        rval.append(" destructor");
+                        return rval;
+                    },
+                    obj->ctemplate->destructor,
+                    tp);
             }
         } else {
             obsav = hoc_thisobject;
@@ -1831,15 +1875,6 @@ printf("unreffing %s with refcount %d\n", hoc_object_name(obj), obj->refcount);
             obj->u.dataspace = (Objectdata*) 0;
             hoc_thisobject = obsav;
         }
-        if (--obj->ctemplate->count <= 0) {
-            obj->ctemplate->index = 0;
-        }
-        obj->ctemplate = nullptr;
-        /* for testing purposes we don't free the object in order
-        to make sure no object variable ever uses a freed object */
-#if 1
-        hoc_free_object(obj);
-#endif
     }
 }
 
