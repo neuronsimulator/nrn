@@ -116,7 +116,7 @@ jobs:
               PATH="${PWD}/bin" \
               LD_LIBRARY_PATH="${PWD}/lib:${LD_LIBRARY_PATH}" \
               DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
-              "${python}" -c "from neuron import h; import neuron; neuron.test()"
+              "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd();"
           done
           (cd ..; lcov --capture  --directory . --no-external --output-file build/coverage-run.info)
           lcov --add-tracefile coverage-base.info --add-tracefile coverage-run.info --output-file coverage-combined.info
