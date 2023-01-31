@@ -2918,6 +2918,7 @@ void NetCvode::clear_events() {
     }
 }
 
+// Frees the allocated memory for the SelfEvent pool and TQItemPool after cleaning them
 void NetCvode::free_event_pools() {
     clear_events();
     for (int i = 0; i < nrn_nthread; ++i) {
