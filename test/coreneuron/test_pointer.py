@@ -299,7 +299,7 @@ def test_checkpoint():
     del m
 
     # Shrink memory pools of mechanisms
-    h.CVode().poolshrink()
+    h.CVode().poolshrink(1)
     # Free event queues
     h.CVode().free_event_queues()
     # After clearing the above data structures it's not possible to proceed with the NEURON
