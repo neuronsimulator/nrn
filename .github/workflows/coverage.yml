@@ -112,8 +112,8 @@ jobs:
           do
             echo "Using ${python}"
             NEURONHOME="${PWD}/share/nrn" \
-              PYTHONPATH="${PWD}/lib/python" \
-              PATH="${PWD}/bin" \
+              PYTHONPATH="${PWD}/lib/python:${PYTHONPATH}" \
+              PATH="${PWD}/bin:${PATH}" \
               LD_LIBRARY_PATH="${PWD}/lib:${LD_LIBRARY_PATH}" \
               DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
               "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd();"
