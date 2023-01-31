@@ -24,6 +24,7 @@
 
 #include <vector>
 #include <variant>
+#include <sstream>
 
 
 int bbs_poll_;
@@ -90,8 +91,7 @@ struct frame {             /* proc/func call stack frame */
 };
 }  // namespace nrn::oc
 using Frame = nrn::oc::frame;
-#define NFRAME 512 /* default size */
-#define nframe hoc_nframe
+#define NFRAME 512                    /* default size */
 static Frame *frame, *fp, *framelast; /* first, frame pointer, last */
 
 /* temporary object references come from this pool. This allows the
@@ -419,8 +419,8 @@ static void stack_obtmp_recover_on_err(int tcnt) {
 
 // create space for stack and code
 void hoc_init_space() {
-    if (nframe == 0) {
-        nframe = NFRAME;
+    if (hoc_nframe == 0) {
+        hoc_nframe = NFRAME;
     }
     if (hoc_nstack == 0) {
         // Default stack size
@@ -428,8 +428,8 @@ void hoc_init_space() {
     }
     stack.reserve(hoc_nstack);
     progp = progbase = prog = (Inst*) emalloc(sizeof(Inst) * NPROG);
-    fp = frame = (Frame*) emalloc(sizeof(Frame) * nframe);
-    framelast = frame + nframe;
+    fp = frame = (Frame*) emalloc(sizeof(Frame) * hoc_nframe);
+    framelast = frame + hoc_nframe;
     hoc_temp_obj_pool_ = (Object**) emalloc(sizeof(Object*) * TOBJ_POOL_SIZE);
 }
 

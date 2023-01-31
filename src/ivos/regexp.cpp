@@ -30,8 +30,8 @@
  */
 
 #include <InterViews/regexp.h>
-#include <ivstream.h>
 #include <string.h>
+#include <iostream>
 
 /*
  * This version is based on the Henry Spencers public domain reimplementation

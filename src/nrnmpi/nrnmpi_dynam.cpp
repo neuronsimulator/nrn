@@ -8,6 +8,8 @@
 
 #include <array>
 #include <cstdlib>
+#include <iostream>
+#include <string>
 
 #if NRNMPI_DYNAMICLOAD /* to end of file */
 

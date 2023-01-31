@@ -15,6 +15,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <sstream>
 
 #if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
 // when compiled with different Python.h, force correct value

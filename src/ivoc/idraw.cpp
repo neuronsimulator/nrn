@@ -2,7 +2,8 @@
 #if HAVE_IV  // to end of file
 
 #include <stdio.h>
-#include <ivstream.h>
+#include <fstream>
+
 #include <InterViews/color.h>
 #include <InterViews/brush.h>
 #include <InterViews/font.h>
@@ -40,7 +41,7 @@ void OcIdraw::prologue() {
 #if defined(WIN32) || defined(MAC)
     if (!ibuf.open(name.string(), std::ios::in)) {
 #else
-    if (!ibuf.open(name.string(), IOS_IN)) {
+    if (!ibuf.open(name.string(), std::ios::in)) {
 #endif
         printf("can't open the idraw prologue in %s\n", name.string());
         return;
