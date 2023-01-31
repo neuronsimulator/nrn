@@ -20,6 +20,7 @@
 #include <mpi.h>
 namespace coreneuron {
 
+
 MPI_Comm nrnmpi_world_comm;
 MPI_Comm nrnmpi_comm;
 int nrnmpi_numprocs_;
@@ -33,6 +34,8 @@ static void nrn_fatal_error(const char* msg) {
     }
     nrnmpi_abort_impl(-1);
 }
+
+void corenrn_subworld();
 
 nrnmpi_init_ret_t nrnmpi_init_impl(int* pargc, char*** pargv, bool is_quiet) {
     // Execute at most once per launch. Avoid memory leak.
@@ -54,10 +57,13 @@ nrnmpi_init_ret_t nrnmpi_init_impl(int* pargc, char*** pargv, bool is_quiet) {
         nrn_assert(MPI_Init(pargc, pargv) == MPI_SUCCESS);
 #endif
     }
+
     nrn_assert(MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_world_comm) == MPI_SUCCESS);
     nrn_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm) == MPI_SUCCESS);
-    nrn_assert(MPI_Comm_rank(nrnmpi_world_comm, &nrnmpi_myid_) == MPI_SUCCESS);
-    nrn_assert(MPI_Comm_size(nrnmpi_world_comm, &nrnmpi_numprocs_) == MPI_SUCCESS);
+    corenrn_subworld();  // split nrnmpi_comm if ParallelContext.subworlds has been used
+    nrn_assert(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid_) == MPI_SUCCESS);
+    nrn_assert(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs_) == MPI_SUCCESS);
+
     nrnmpi_spike_initialize();
 
     if (nrnmpi_myid_ == 0 && !is_quiet) {
@@ -81,6 +87,53 @@ void nrnmpi_finalize_impl(void) {
         }
     }
 }
+
+extern "C" {
+extern void (*nrn2core_subworld_info_)(int&, int&, int&, int&, int&);
+}
+
+void corenrn_subworld() {
+    // If ParallelContext.subworlds has been invoked, split the world
+    // communicator according to the subworld partitioning.
+    static int change_cnt{0};
+    int nrn_subworld_change_cnt, nrn_subworld_index, nrn_subworld_rank, nrn_mpi_numprocs_subworld,
+        nrn_mpi_numprocs_world;
+    if (!nrn2core_subworld_info_) {
+        return;
+    }
+    (*nrn2core_subworld_info_)(nrn_subworld_change_cnt,
+                               nrn_subworld_index,
+                               nrn_subworld_rank,
+                               nrn_mpi_numprocs_subworld,
+                               nrn_mpi_numprocs_world);
+    if (nrn_subworld_change_cnt == change_cnt) {
+        return;
+    }
+    change_cnt = nrn_subworld_change_cnt;
+
+    // clean up / free old nrn_mpi_comm
+    nrn_assert(MPI_Comm_free(&nrnmpi_comm) == MPI_SUCCESS);
+
+    // ensure world size is the same as NEURON
+    int world_size{-1};
+    nrn_assert(MPI_Comm_size(nrnmpi_world_comm, &world_size) == MPI_SUCCESS);
+    nrn_assert(world_size == nrn_mpi_numprocs_world);
+
+    // create a new nrnmpi_comm based on subworld partitioning
+    nrn_assert(
+        MPI_Comm_split(nrnmpi_world_comm, nrn_subworld_index, nrn_subworld_rank, &nrnmpi_comm) ==
+        MPI_SUCCESS);
+
+    // assert that rank order and size is consistent between NEURON and CoreNEURON
+    int subworld_rank{-1};
+    nrn_assert(MPI_Comm_rank(nrnmpi_comm, &subworld_rank) == MPI_SUCCESS);
+    nrn_assert(nrn_subworld_rank == subworld_rank);
+
+    int subworld_size{-1};
+    nrn_assert(MPI_Comm_size(nrnmpi_comm, &subworld_size) == MPI_SUCCESS);
+    nrn_assert(subworld_size == nrn_mpi_numprocs_subworld);
+}
+
 
 // check if appropriate threading level supported (i.e. MPI_THREAD_FUNNELED)
 void nrnmpi_check_threading_support_impl() {
