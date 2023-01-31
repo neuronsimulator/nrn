@@ -44,18 +44,20 @@ static double l_len(void*) {
 
 static double l_head(void*) {
     std::string text(gargstr(1));
-    std::regex r(gargstr(2));
+    std::regex r(gargstr(2), std::regex::ECMAScript | std::regex::multiline);
     std::smatch sm;
     bool found = std::regex_search(text, sm, r);
     int i = sm.position();
     //	text.set_to_left(i); doesnt work
     char** head = hoc_pgargstr(3);
-    if (found) {
+    if (found && i > 0) {
         auto buf = sm.prefix().str();
         hoc_assign_str(head, buf.c_str());
     } else {
         hoc_assign_str(head, "");
-        i = -1;
+        if (i > 0) {
+            i = -1;
+        }
     }
     hoc_return_type_code = 1;  // integer
     return double(i);
@@ -63,17 +65,19 @@ static double l_head(void*) {
 
 static double l_tail(void*) {
     std::string text(gargstr(1));
-    std::regex r(gargstr(2));
+    std::regex r(gargstr(2), std::regex::ECMAScript | std::regex::multiline);
     std::smatch sm;
     bool found = std::regex_search(text, sm, r);
     int i = sm.position() + sm.length();
     char** tail = hoc_pgargstr(3);
-    if (i >= 0) {
+    if (found && i > 0) {
         auto buf = sm.suffix().str();
         hoc_assign_str(tail, buf.c_str());
     } else {
         hoc_assign_str(tail, "");
-        i = -1;
+        if (i > 0) {
+            i = -1;
+        }
     }
     hoc_return_type_code = 1;  // integer
     return double(i);
