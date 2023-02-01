@@ -102,11 +102,7 @@ mark_as_advanced(NRN_WHEEL_BUILD)
 # Build options (string)
 # =============================================================================
 # ~~~
-# NEURON module installation:
-#   - OFF       : do not install
-#   - ON        : install with --home in ${CMAKE_INSTALL_PREFIX}
-#   - <string>  : install using other modes or locations using an appropriate
-#                 string that goes after python setup.py install
+# NOTE: NEURON modules will also be installed in ${CMAKE_INSTALL_PREFIX}
 # Dynamic Python version support:
 #   - OFF       : nrnpython interface is linked into libnrniv.so
 #   - ON        : nrnpython interface consistent with default python3 (falling back to python)
@@ -132,10 +128,6 @@ mark_as_advanced(NRN_WHEEL_BUILD)
 # ~~~
 option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module"
        ${NRN_ENABLE_MODULE_INSTALL_DEFAULT})
-set(NRN_MODULE_INSTALL_OPTIONS
-    "${NRN_MODULE_INSTALL_OPTIONS_DEFAULT}"
-    CACHE STRING "setup.py options, everything after setup.py install")
-
 option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support"
        ${NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT})
 set(NRN_PYTHON_DYNAMIC
@@ -1009,7 +1001,7 @@ if(NRN_ENABLE_PYTHON)
       message(STATUS "    EXE       | ${exe}")
       message(STATUS "    INC       | ${include}")
       message(STATUS "    LIB       | ${lib}")
-      message(STATUS "    INSTALL C | ${exe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}")
+
     endforeach(val)
   endif()
 endif()

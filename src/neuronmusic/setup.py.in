@@ -1,5 +1,5 @@
 #setup.py for neuronmusic extension
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 nrn_srcdir = "@NRN_SRCDIR@"
 instdir = "@prefix@"
