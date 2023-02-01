@@ -7,6 +7,7 @@ extern void nrncvode_set_t(double);
 extern void deliver_net_events(NrnThread*);
 extern void nrn_deliver_events(NrnThread*);
 void clear_event_queue();
+void free_event_queues();
 extern void init_net_events();
 extern void nrn_record_init();
 extern void nrn_play_init();

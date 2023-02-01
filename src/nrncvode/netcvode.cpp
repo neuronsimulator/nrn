@@ -429,8 +429,7 @@ struct InterThreadEvent {
 };
 
 typedef std::vector<WatchCondition*> WatchList;
-declarePool(SelfEventPool, SelfEvent)
-implementPool(SelfEventPool, SelfEvent)
+using SelfEventPool = MutexPool<SelfEvent>;
 typedef std::vector<TQItem*> TQList;
 
 // allows marshalling of all items in the event queue that need to be
@@ -2862,6 +2861,27 @@ void NetCvode::clear_events() {
     if (cvode_active_) {  // in case there is a net_send from INITIAL cvode
         // then this needs to be done before INITIAL blocks are called
         init_global();
+    }
+}
+
+// Frees the allocated memory for the SelfEvent pool and TQItemPool after cleaning them
+void NetCvode::free_event_pools() {
+    clear_events();
+    for (int i = 0; i < nrn_nthread; ++i) {
+        NetCvodeThreadData& d = p[i];
+        if (d.sepool_) {
+            delete d.sepool_;
+        }
+        if (d.selfqueue_) {
+            delete d.selfqueue_;
+        }
+        if (d.tqe_) {
+            delete d.tqe_;
+        }
+        if (d.tpool_) {
+            d.tpool_->free_all();
+            delete d.tpool_;
+        }
     }
 }
 

@@ -16,7 +16,6 @@
 #define COLLECT_TQueue_STATISTICS 1
 template <typename T>
 struct SPTREE;
-class TQItemPool;
 
 class TQItem {
   public:

@@ -4,8 +4,7 @@
 #include <nrnoc2iv.h>
 #include <mymath.h>
 
-declarePool(HocEventPool, HocEvent)
-implementPool(HocEventPool, HocEvent)
+using HocEventPool = MutexPool<HocEvent>;
 HocEventPool* HocEvent::hepool_;
 
 HocEvent::HocEvent() {
