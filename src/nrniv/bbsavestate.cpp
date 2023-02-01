@@ -2058,7 +2058,7 @@ void BBSaveState::mech(Prop* p) {
         std::vector<double*> tmp{};
         tmp.reserve(size);
         for (auto i = 0; i < size; ++i) {
-            tmp.push_back(static_cast<double*>(p->param_handle(ssi[p->_type].offset + i)));
+            tmp.push_back(static_cast<double*>(p->param_handle_legacy(ssi[p->_type].offset + i)));
         }
         f->d(size, tmp.data());
     }

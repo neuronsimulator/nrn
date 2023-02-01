@@ -5,7 +5,6 @@
 
 #include <ostream>
 #include <sstream>
-#include <vector>
 
 namespace neuron::container {
 struct do_not_search_t {};
@@ -105,11 +104,16 @@ struct data_handle {
     // data_handle<T> from a view into a frozen container, even though it
     // isn't possible to get std::vector<T>& from a frozen container. And
     // data_handle<T const> should forbid writing to the data value.
-    data_handle(non_owning_identifier_without_container offset, std::vector<T> const& container)
+    data_handle(non_owning_identifier_without_container offset,
+                T* const* container,
+                int array_dim,
+                int array_index)
         : m_offset{std::move(offset)}
-        , m_container_or_raw_ptr{&const_cast<std::vector<T>&>(container)} {}
+        , m_container_or_raw_ptr{const_cast<T**>(container)}
+        , m_array_dim{array_dim}
+        , m_array_index{array_index} {}
 
-    explicit operator bool() const {
+    [[nodiscard]] explicit operator bool() const {
         if (bool{m_offset}) {
             // valid, modern
             return true;
@@ -126,18 +130,21 @@ struct data_handle {
      *  of the given container.
      */
     template <typename Tag, typename Container>
-    bool refers_to(Container const& container) const {
+    [[nodiscard]] bool refers_to(Container const& container) const {
         static_assert(Container::template has_tag_v<Tag>);
         if (bool{m_offset} || m_offset.was_once_valid()) {
             // basically in modern mode (possibly the entry we refer to has
             // died)
-            return container.template is_storage_pointer<Tag>(container_ptr());
+            return container.template is_storage_pointer<Tag>(container_data());
         } else {
             // raw-ptr mode or null
             return false;
         }
     }
 
+    /**
+     * @brief Get the current logical row number.
+     */
     [[nodiscard]] std::size_t current_row() const {
         assert(refers_to_a_modern_data_structure());
         assert(m_offset);
@@ -147,34 +154,35 @@ struct data_handle {
   private:
     // Try and cover the different operator* and operator T* cases with/without
     // const in a more composable way
-    T* raw_ptr() {
+    [[nodiscard]] T* raw_ptr() {
         return static_cast<T*>(m_container_or_raw_ptr);
     }
-    T const* raw_ptr() const {
+    [[nodiscard]] T const* raw_ptr() const {
         return static_cast<T const*>(m_container_or_raw_ptr);
     }
-    std::vector<T>* container_ptr() {
-        return static_cast<std::vector<T>*>(m_container_or_raw_ptr);
+    [[nodiscard]] T* container_data() {
+        return *static_cast<T* const*>(m_container_or_raw_ptr);
     }
-    std::vector<T> const* container_ptr() const {
-        return static_cast<std::vector<T> const*>(m_container_or_raw_ptr);
+    [[nodiscard]] T const* container_data() const {
+        return *static_cast<T const* const*>(m_container_or_raw_ptr);
     }
     template <typename This>
-    static auto get_ptr_helper(This& this_ref) {
+    [[nodiscard]] static auto get_ptr_helper(This& this_ref) {
         if (this_ref.m_offset.has_always_been_null()) {
             // null or raw pointer
             return this_ref.raw_ptr();
         }
         if (this_ref.m_offset) {
             // valid, modern mode
-            return this_ref.container_ptr()->data() + this_ref.m_offset.current_row();
+            return this_ref.container_data() +
+                   this_ref.m_array_dim * this_ref.m_offset.current_row() + this_ref.m_array_index;
         }
         // no longer valid, modern mode
         return decltype(this_ref.raw_ptr()){nullptr};
     }
 
   public:
-    T& operator*() {
+    [[nodiscard]] T& operator*() {
         auto* const ptr = get_ptr_helper(*this);
         if (ptr) {
             return *ptr;
@@ -185,7 +193,7 @@ struct data_handle {
         }
     }
 
-    T const& operator*() const {
+    [[nodiscard]] T const& operator*() const {
         auto* const ptr = get_ptr_helper(*this);
         if (ptr) {
             return *ptr;
@@ -196,23 +204,35 @@ struct data_handle {
         }
     }
 
-    explicit operator T*() {
+    [[nodiscard]] explicit operator T*() {
         return get_ptr_helper(*this);
     }
 
-    explicit operator T const *() const {
+    [[nodiscard]] explicit operator T const *() const {
         return get_ptr_helper(*this);
     }
 
     friend std::ostream& operator<<(std::ostream& os, data_handle const& dh) {
         os << "data_handle<" << cxx_demangle(typeid(T).name()) << ">{";
         if (auto const valid = dh.m_offset; valid || dh.m_offset.was_once_valid()) {
-            auto const maybe_info = utils::find_container_info(dh.container_ptr());
+            auto const maybe_info = utils::find_container_info(dh.container_data());
             if (maybe_info) {
                 if (!maybe_info->container.empty()) {
                     os << "cont=" << maybe_info->container << ' ';
                 }
-                os << maybe_info->field << ' ' << dh.m_offset << '/' << maybe_info->size;
+                // the printout will show the logical row number, but we have the physical size.
+                // these are different in case of array variables. convert the size to a logical
+                // one, but add some printout showing what we did
+                auto size = maybe_info->size;
+                assert(dh.m_array_dim >= 1);
+                assert(dh.m_array_index < dh.m_array_dim);
+                assert(size % dh.m_array_dim == 0);
+                size /= dh.m_array_dim;
+                os << maybe_info->field;
+                if (dh.m_array_dim > 1) {
+                    os << '[' << dh.m_array_index << '/' << dh.m_array_dim << ']';
+                }
+                os << ' ' << dh.m_offset << '/' << size;
             } else {
                 os << "cont=unknown " << dh.m_offset << "/unknown";
             }
@@ -231,12 +251,13 @@ struct data_handle {
     // TODO should a "modern" handle that has become invalid compare equal to a
     // null handle that was never valid? Perhaps yes, as both evaluate to
     // boolean false, but their string representations are different.
-    friend bool operator==(data_handle const& lhs, data_handle const& rhs) {
+    [[nodiscard]] friend bool operator==(data_handle const& lhs, data_handle const& rhs) {
         return lhs.m_offset == rhs.m_offset &&
-               lhs.m_container_or_raw_ptr == rhs.m_container_or_raw_ptr;
+               lhs.m_container_or_raw_ptr == rhs.m_container_or_raw_ptr &&
+               lhs.m_array_dim == rhs.m_array_dim && lhs.m_array_index == rhs.m_array_index;
     }
 
-    friend bool operator!=(data_handle const& lhs, data_handle const& rhs) {
+    [[nodiscard]] friend bool operator!=(data_handle const& lhs, data_handle const& rhs) {
         return !(lhs == rhs);
     }
 
@@ -254,21 +275,23 @@ struct data_handle {
     friend struct generic_data_handle;
     friend struct std::hash<data_handle>;
     non_owning_identifier_without_container m_offset{};  // basically std::size_t*
-    // If m_offset is/was valid for a modern container, this is std::vector<T>*,
+    // If m_offset is/was valid for a modern container, this is a pointer to a value containing the
+    // start of the underlying contiguous storage (i.e. the return value of std::vector<T>::data())
     // otherwise it is possibly-null T*
     void* m_container_or_raw_ptr{};
+    // These are needed for "modern" handles to array variables, where the offset
+    // yielded by m_offset needs to be scaled/shifted by an array dimension/index
+    // before being applied to m_container_or_raw_ptr
+    int m_array_dim{1}, m_array_index{};
 };
 
 /**
  * @brief Explicit specialisation data_handle<void>.
  *
  * This is convenient as it allows void* to be stored in generic_data_handle.
- * The default implementation of data_handle<T> would otherwise need several
- * special cases to avoid instantiating std::vector<void> and forming references
- * to void. The "modern style" data handles that hold a reference to a container
- * and a way of determining an offset into that container do not make sense with
- * a void value type, so this only supports the "legacy" mode where a data
- * handle wraps a plain pointer.
+ * The "modern style" data handles that hold a reference to a container and a way of determining an
+ * offset into that container do not make sense with a void value type, so this only supports the
+ * "legacy" mode where a data handle wraps a plain pointer.
  */
 template <>
 struct data_handle<void> {

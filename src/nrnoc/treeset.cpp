@@ -758,7 +758,7 @@ static double diam_from_list(Section* sec, int inode, Prop* p, double rparent);
 int recalc_diam_count_, nrn_area_ri_nocount_, nrn_area_ri_count_;
 void nrn_area_ri(Section* sec) {
     int j;
-    double ra, dx, diam, rright, rleft;
+    double ra, dx, rright, rleft;
     Prop* p;
     Node* nd;
     if (nrn_area_ri_nocount_ == 0) {
@@ -794,9 +794,9 @@ void nrn_area_ri(Section* sec) {
             /* area for right circular cylinders. Ri as right half of parent + left half
                of this
             */
-            diam = p->param(0);
+            auto& diam = p->param(0);
             if (diam <= 0.) {
-                p->set_param(0, 1e-6);
+                diam = 1e-6;
                 hoc_execerror(secname(sec), "diameter diam = 0. Setting to 1e-6");
             }
             nd->set_area(PI * diam * dx);                           // um^2
@@ -1586,7 +1586,7 @@ static double diam_from_list(Section* sec, int inode, Prop* p, double rparent)
     NODERINV(sec->pnode[inode]) = 1. / (rparent + rleft);
     diam *= .5 / ds;
     if (fabs(diam - p->param(0)) > 1e-9 || diam < 1e-5) {
-        p->set_param(0, diam); /* microns */
+        p->param(0) = diam; /* microns */
     }
     sec->pnode[inode]->set_area(area * .5 * PI); /* microns^2 */
 #if NTS_SPINE
@@ -2105,12 +2105,11 @@ All Vector record and play pointers that deal with v.
 All PreSyn threshold detectors that watch v.
 */
 
+// TODO re-remove these too
 double* nrn_recalc_ptr(double* old) {
-    return neuron::container::recalculate_ptr(old);
+    return old;
 }
-void nrn_register_recalc_ptr_callback(Pfrv f) {
-    neuron::container::register_ptr_update_callback(f);
-}
+void nrn_register_recalc_ptr_callback(Pfrv f) {}
 
 void nrn_recalc_ptrs() {
     /* update pointers managed by c++ */
@@ -2284,15 +2283,6 @@ void nrn_fill_mech_data_caches(neuron::cache::Model& cache,
                            return tmp;
                        });
         mech_cache.pdata_hack.clear();
-        // For the regular floating point data, create a flat vector of raw pointers that we can use
-        // inside generated code
-        mech_cache.data_ptr_cache.resize(mech_data.num_floating_point_fields());
-        std::size_t k{};
-        for (auto var_j = 0; var_j < mech_data.num_floating_point_fields(); ++var_j) {
-            mech_cache.data_ptr_cache.at(k++) =
-                &mech_data.get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
-                    var_j, 0);
-        }
         // Create a flat list of pointers we can use inside generated code
         std::transform(mech_cache.pdata.begin(),
                        mech_cache.pdata.end(),

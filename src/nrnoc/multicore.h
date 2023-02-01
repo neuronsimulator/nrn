@@ -136,7 +136,7 @@ void nrn_multithread_job(worker_job_t);
 void nrn_multithread_job(neuron::model_sorted_token const&, worker_job_with_token_t);
 extern void nrn_onethread_job(int, void* (*) (NrnThread*) );
 extern void nrn_wait_for_threads();
-extern void nrn_thread_table_check();
+void nrn_thread_table_check(neuron::model_sorted_token const&);
 extern void nrn_threads_free();
 extern int nrn_user_partition();
 extern void reorder_secorder();

@@ -18,6 +18,8 @@ extern "C" void capac_reg_(void) {
     /* all methods deal with capacitance in special ways */
     register_mech(mechanism, cap_alloc, nullptr, nullptr, nullptr, cap_init, -1, 1);
     mechtype = nrn_get_mechtype(mechanism[1]);
+    using neuron::mechanism::field;
+    neuron::mechanism::register_data_fields(mechtype, field<double>{"cm"}, field<double>{"i_cap"});
     hoc_register_prop_size(mechtype, nparm, 0);
 }
 
@@ -146,5 +148,5 @@ void nrn_div_capacity(neuron::model_sorted_token const& sorted_token,
 
 static void cap_alloc(Prop* p) {
     assert(p->param_size() == nparm);
-    p->set_param(0, DEF_cm);  // default capacitance/cm^2
+    p->param(0) = DEF_cm;  // default capacitance/cm^2
 }
