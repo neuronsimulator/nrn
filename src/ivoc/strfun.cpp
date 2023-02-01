@@ -44,7 +44,10 @@ static double l_len(void*) {
 
 static double l_head(void*) {
     std::string text(gargstr(1));
-    std::regex r(gargstr(2), std::regex::ECMAScript | std::regex::multiline);
+    while(!text.empty() && text.back() == '\n') {
+        text.pop_back();
+    }
+    std::regex r(gargstr(2));
     std::smatch sm;
     bool found = std::regex_search(text, sm, r);
     int i = sm.position();
@@ -65,7 +68,10 @@ static double l_head(void*) {
 
 static double l_tail(void*) {
     std::string text(gargstr(1));
-    std::regex r(gargstr(2), std::regex::ECMAScript | std::regex::multiline);
+    while(!text.empty() && text.back() == '\n') {
+        text.pop_back();
+    }
+    std::regex r(gargstr(2));
     std::smatch sm;
     bool found = std::regex_search(text, sm, r);
     int i = sm.position() + sm.length();
