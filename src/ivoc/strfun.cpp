@@ -44,7 +44,7 @@ static double l_len(void*) {
 
 static double l_head(void*) {
     std::string text(gargstr(1));
-    while(!text.empty() && text.back() == '\n') {
+    while (!text.empty() && text.back() == '\n') {
         text.pop_back();
     }
     std::regex r(gargstr(2));
@@ -68,7 +68,7 @@ static double l_head(void*) {
 
 static double l_tail(void*) {
     std::string text(gargstr(1));
-    while(!text.empty() && text.back() == '\n') {
+    while (!text.empty() && text.back() == '\n') {
         text.pop_back();
     }
     std::regex r(gargstr(2));
