@@ -9,6 +9,7 @@ NEURON {
         GLOBAL depth,cainf,taur
         RANGE var
         RANGE ainf
+        RANGE alpha
 }
 
 UNITS {
@@ -25,6 +26,7 @@ PARAMETER {
         taur =  200 (ms)	: rate of calcium removal for stress conditions
 	cainf	= 50e-6(mM)	:changed oct2
 	cai		(mM)
+	alpha = 1
 }
 
 ASSIGNED {
@@ -53,7 +55,11 @@ DERIVATIVE state {
         ca' = drive_channel/18 + (cainf -ca)/taur*11
 	cai = ca
 
-    if (FOO == 0) { }
+    if (FOO == 1) {
+        MUTEXLOCK
+        alpha = alpha + 1
+        MUTEXUNLOCK
+    }
 }
 
 : to test code generation for TABLE statement
@@ -72,5 +78,5 @@ PROCEDURE test_table_p(br) {
 
 INITIAL {
     var_init(var)
-    ca = cainf
+    PROTECT ca = ca + 1
 }

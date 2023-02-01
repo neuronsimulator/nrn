@@ -286,12 +286,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
     std::shared_ptr<CodePrinter> printer;
 
     /**
-     * List of shadow statements in the current block
-     */
-    std::vector<ShadowUseStatement> shadow_statements;
-
-
-    /**
      * Return Nmodl language version
      * \return A version
      */
@@ -1249,7 +1243,8 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      *
      * \param type The block type
      */
-    virtual void print_channel_iteration_block_parallel_hint(BlockType type);
+    virtual void print_channel_iteration_block_parallel_hint(BlockType type,
+                                                             const ast::Block* block);
 
 
     /**
@@ -1424,7 +1419,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
     /**
      * Print atomic update pragma for reduction statements
-     *
      */
     virtual void print_atomic_reduction_pragma();
 

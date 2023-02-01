@@ -431,11 +431,13 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
             }
             BEFORE BREAKPOINT {
                 init_before_breakpoint()
-                inc = 0
+                PROTECT inc = inc + 1
             }
             AFTER SOLVE {
+                MUTEXLOCK
                 init_after_solve()
                 inc = 0
+                MUTEXUNLOCK
             }
             BEFORE INITIAL {
                 init_before_initial()
@@ -456,9 +458,9 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
             {
                 REQUIRE_THAT(generated,
                              Contains("hoc_reg_ba(mech_type, nrn_before_after_0_ba1, 11);"));
+                // in case of PROTECT, there should not be simd or ivdep pragma
                 std::string generated_code = R"(
-        #pragma ivdep
-        #pragma omp simd
+
         for (int id = 0; id < nodecount; id++) {
             int node_id = node_index[id];
             double v = voltage[node_id];
@@ -467,7 +469,8 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
             #endif
             {
                 init_before_breakpoint();
-                inc = 0.0;
+                #pragma omp atomic update
+                inc = inc + 1.0;
             }
         })";
                 auto const expected = generated_code;
@@ -477,9 +480,9 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
             {
                 REQUIRE_THAT(generated,
                              Contains("hoc_reg_ba(mech_type, nrn_before_after_1_ba1, 22);"));
+                // in case of MUTEXLOCK/MUTEXUNLOCK, there should not be simd or ivdep pragma
                 std::string generated_code = R"(
-        #pragma ivdep
-        #pragma omp simd
+
         for (int id = 0; id < nodecount; id++) {
             int node_id = node_index[id];
             double v = voltage[node_id];
@@ -487,8 +490,11 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
             inst->v_unused[id] = v;
             #endif
             {
-                init_after_solve();
-                inc = 0.0;
+                #pragma omp critical (ba1)
+                {
+                    init_after_solve();
+                    inc = 0.0;
+                }
             }
         })";
                 auto const expected = generated_code;
@@ -637,28 +643,39 @@ SCENARIO("Check codegen for MUTEX and PROTECT", "[codegen][mutex_protect]") {
         std::string const nmodl_text = R"(
             NEURON {
                 SUFFIX TEST
-                RANGE tmp
+                RANGE tmp, foo
             }
             PARAMETER {
                 tmp = 10
+                foo = 20
             }
             INITIAL {
                 MUTEXLOCK
                 tmp = 11
                 MUTEXUNLOCK
-                PROTECT tmp = 12
+                PROTECT tmp = tmp / 2.5
+            }
+            PROCEDURE bar() {
+                PROTECT foo = foo - 21
             }
         )";
 
         THEN("Code with OpenMP critical sections is generated") {
             auto const generated = get_cpp_code(nmodl_text);
-            std::string expected_code = R"(#pragma omp critical TEST {
+            // critical section for the mutex block
+            std::string expected_code_initial = R"(#pragma omp critical (TEST)
+                {
                     inst->tmp[id] = 11.0;
                 }
-                #pragma omp critical TEST {
-                    inst->tmp[id] = 12.0;
-                })";
-            REQUIRE_THAT(generated, Contains(expected_code));
+                #pragma omp atomic update
+                inst->tmp[id] = inst->tmp[id] / 2.5;)";
+
+            // atomic update for the PROTECT construct
+            std::string expected_code_proc = R"(#pragma omp atomic update
+        inst->foo[id] = inst->foo[id] - 21.0;)";
+
+            REQUIRE_THAT(generated, Contains(expected_code_initial));
+            REQUIRE_THAT(generated, Contains(expected_code_proc));
         }
     }
 }

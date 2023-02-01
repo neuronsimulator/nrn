@@ -144,6 +144,7 @@ setup(
         "nbsphinx>=0.3.2",
         "pytest>=3.7.2",
         "sphinxcontrib-applehelp<1.0.3",
+        "sphinxcontrib-htmlhelp<=2.0.0",
         "sphinx<6",
         "sphinx-rtd-theme",
     ]

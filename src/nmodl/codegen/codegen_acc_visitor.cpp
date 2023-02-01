@@ -9,6 +9,7 @@
 
 #include "ast/eigen_linear_solver_block.hpp"
 #include "ast/integer.hpp"
+#include "ast/protect_statement.hpp"
 
 
 namespace nmodl {
@@ -30,7 +31,8 @@ namespace codegen {
  *      for(int id=0; id<nodecount; id++) {
  *
  */
-void CodegenAccVisitor::print_channel_iteration_block_parallel_hint(BlockType type) {
+void CodegenAccVisitor::print_channel_iteration_block_parallel_hint(BlockType type,
+                                                                    const ast::Block* block) {
     if (info.artificial_cell) {
         return;
     }

@@ -319,16 +319,16 @@ void CodegenCVisitor::visit_update_dt(const ast::UpdateDt& node) {
 }
 
 void CodegenCVisitor::visit_protect_statement(const ast::ProtectStatement& node) {
-    printer->fmt_start_block("#pragma omp critical {}", info.mod_suffix);
+    print_atomic_reduction_pragma();
     printer->add_indent();
     node.get_expression()->accept(*this);
     printer->add_text(";");
-    printer->add_newline();
-    printer->end_block(1);
 }
 
 void CodegenCVisitor::visit_mutex_lock(const ast::MutexLock& node) {
-    printer->fmt_start_block("#pragma omp critical {}", info.mod_suffix);
+    printer->fmt_line("#pragma omp critical ({})", info.mod_suffix);
+    printer->add_indent();
+    printer->start_block();
 }
 
 void CodegenCVisitor::visit_mutex_unlock(const ast::MutexUnlock& node) {
@@ -1121,16 +1121,32 @@ void CodegenCVisitor::print_net_init_acc_serial_annotation_block_end() {
  * for parallelization. For example:
  *
  * \code
- *      #pragma ivdep
+ *      #pragma omp simd
  *      for(int id = 0; id < nodecount; id++) {
  *
  *      #pragma acc parallel loop
  *      for(int id = 0; id < nodecount; id++) {
  * \endcode
  */
-void CodegenCVisitor::print_channel_iteration_block_parallel_hint(BlockType /* type */) {
-    printer->add_line("#pragma ivdep");
-    printer->add_line("#pragma omp simd");
+void CodegenCVisitor::print_channel_iteration_block_parallel_hint(BlockType /* type */,
+                                                                  const ast::Block* block) {
+    // ivdep allows SIMD parallelisation of a block/loop but doesn't provide
+    // a standard mechanism for atomics. Also, even with openmp 5.0, openmp
+    // atomics do not enable vectorisation under "omp simd" (gives compiler
+    // error with gcc < 9 if atomic and simd pragmas are nested). So, emit
+    // ivdep/simd pragma when no MUTEXLOCK/MUTEXUNLOCK/PROTECT statements
+    // are used in the given block.
+    std::vector<std::shared_ptr<const ast::Ast>> nodes;
+    if (block) {
+        nodes = collect_nodes(*block,
+                              {ast::AstNodeType::PROTECT_STATEMENT,
+                               ast::AstNodeType::MUTEX_LOCK,
+                               ast::AstNodeType::MUTEX_UNLOCK});
+    }
+    if (nodes.empty()) {
+        printer->add_line("#pragma ivdep");
+        printer->add_line("#pragma omp simd");
+    }
 }
 
 
@@ -1154,9 +1170,7 @@ void CodegenCVisitor::print_nrn_cur_matrix_shadow_update() {
     } else {
         auto rhs_op = operator_for_rhs();
         auto d_op = operator_for_d();
-        print_atomic_reduction_pragma();
         printer->fmt_line("vec_rhs[node_id] {} rhs;", rhs_op);
-        print_atomic_reduction_pragma();
         printer->fmt_line("vec_d[node_id] {} g;", d_op);
     }
 }
@@ -1167,27 +1181,19 @@ void CodegenCVisitor::print_nrn_cur_matrix_shadow_reduction() {
     auto d_op = operator_for_d();
     if (info.point_process) {
         printer->add_line("int node_id = node_index[id];");
-        print_atomic_reduction_pragma();
         printer->fmt_line("vec_rhs[node_id] {} shadow_rhs[id];", rhs_op);
-        print_atomic_reduction_pragma();
         printer->fmt_line("vec_d[node_id] {} shadow_d[id];", d_op);
     }
 }
 
 
+/**
+ * In the current implementation of CPU/CPP backend we need to emit atomic pragma
+ * only with PROTECT construct (atomic rduction requirement for other cases on CPU
+ * is handled via separate shadow vectors).
+ */
 void CodegenCVisitor::print_atomic_reduction_pragma() {
-    // backend specific, do nothing
-}
-
-
-void CodegenCVisitor::print_shadow_reduction_statements() {
-    for (const auto& statement: shadow_statements) {
-        print_atomic_reduction_pragma();
-        auto lhs = get_variable_name(statement.lhs);
-        auto rhs = get_variable_name(shadow_varname(statement.lhs));
-        printer->fmt_line("{} {} {};", lhs, statement.op, rhs);
-    }
-    shadow_statements.clear();
+    printer->add_line("#pragma omp atomic update");
 }
 
 
@@ -3503,7 +3509,7 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
         print_dt_update_to_device();
     }
 
-    print_channel_iteration_block_parallel_hint(BlockType::Initial);
+    print_channel_iteration_block_parallel_hint(BlockType::Initial, info.initial_node);
     printer->start_block("for (int id = 0; id < nodecount; id++)");
 
     if (info.net_receive_node != nullptr) {
@@ -3512,7 +3518,6 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
 
     print_initial_block(info.initial_node);
     printer->end_block(1);
-    print_shadow_reduction_statements();
 
     if (!info.changed_dt.empty()) {
         printer->fmt_line("{} = _save_prev_dt;", get_variable_name(naming::NTHREAD_DT_VARIABLE));
@@ -3561,7 +3566,7 @@ void CodegenCVisitor::print_before_after_block(const ast::Block* node, size_t bl
     printer->fmt_line("/** {} of block type {} # {} */", ba_type, ba_block_type, block_id);
     print_global_function_common_code(BlockType::BeforeAfter, function_name);
 
-    print_channel_iteration_block_parallel_hint(BlockType::BeforeAfter);
+    print_channel_iteration_block_parallel_hint(BlockType::BeforeAfter, node);
     printer->start_block("for (int id = 0; id < nodecount; id++)");
 
     printer->add_line("int node_id = node_index[id];");
@@ -3688,7 +3693,13 @@ void CodegenCVisitor::print_watch_check() {
     printer->add_newline(2);
     printer->add_line("/** routine to check watch activation */");
     print_global_function_common_code(BlockType::Watch);
-    print_channel_iteration_block_parallel_hint(BlockType::Watch);
+
+    // WATCH statements appears in NET_RECEIVE block and while printing
+    // net_receive function we already check if it contains any MUTEX/PROTECT
+    // constructs. As WATCH is not a top level block but list of statements,
+    // we don't need to have ivdep pragma related check
+    print_channel_iteration_block_parallel_hint(BlockType::Watch, nullptr);
+
     printer->start_block("for (int id = 0; id < nodecount; id++)");
 
     if (info.is_voltage_used_by_watch_statements()) {
@@ -3978,7 +3989,7 @@ void CodegenCVisitor::print_get_memb_list() {
 
 void CodegenCVisitor::print_net_receive_loop_begin() {
     printer->add_line("int count = nrb->_displ_cnt;");
-    print_channel_iteration_block_parallel_hint(BlockType::NetReceive);
+    print_channel_iteration_block_parallel_hint(BlockType::NetReceive, info.net_receive_node);
     printer->start_block("for (int i = 0; i < count; i++)");
 }
 
@@ -4330,7 +4341,7 @@ void CodegenCVisitor::print_nrn_state() {
     printer->add_newline(2);
     printer->add_line("/** update state */");
     print_global_function_common_code(BlockType::State);
-    print_channel_iteration_block_parallel_hint(BlockType::State);
+    print_channel_iteration_block_parallel_hint(BlockType::State, info.nrn_state_block);
     printer->start_block("for (int id = 0; id < nodecount; id++)");
     
     printer->add_line("int node_id = node_index[id];");
@@ -4365,11 +4376,6 @@ void CodegenCVisitor::print_nrn_state() {
         printer->add_line(text);
     }
     printer->end_block(1);
-    if (!shadow_statements.empty()) {
-        printer->start_block("for (int id = 0; id < nodecount; id++)");
-        print_shadow_reduction_statements();
-        printer->end_block(1);
-    }
 
     print_kernel_data_present_annotation_block_end();
 
@@ -4528,9 +4534,7 @@ void CodegenCVisitor::print_fast_imem_calculation() {
         printer->start_block("for (int id = 0; id < nodecount; id++)");
         printer->add_line("int node_id = node_index[id];");
     }
-    print_atomic_reduction_pragma();
     printer->fmt_line("nt->nrn_fast_imem->nrn_sav_rhs[node_id] {} {};", rhs_op, rhs);
-    print_atomic_reduction_pragma();
     printer->fmt_line("nt->nrn_fast_imem->nrn_sav_d[node_id] {} {};", d_op, d);
     if (nrn_cur_reduction_loop_required()) {
         printer->end_block(1);
@@ -4551,7 +4555,7 @@ void CodegenCVisitor::print_nrn_cur() {
     printer->add_newline(2);
     printer->add_line("/** update current */");
     print_global_function_common_code(BlockType::Equation);
-    print_channel_iteration_block_parallel_hint(BlockType::Equation);
+    print_channel_iteration_block_parallel_hint(BlockType::Equation, info.breakpoint_node);
     printer->start_block("for (int id = 0; id < nodecount; id++)");
     print_nrn_cur_kernel(*info.breakpoint_node);
     print_nrn_cur_matrix_shadow_update();
@@ -4563,7 +4567,6 @@ void CodegenCVisitor::print_nrn_cur() {
     if (nrn_cur_reduction_loop_required()) {
         printer->start_block("for (int id = 0; id < nodecount; id++)");
         print_nrn_cur_matrix_shadow_reduction();
-        print_shadow_reduction_statements();
         printer->end_block(1);
         print_fast_imem_calculation();
     }
