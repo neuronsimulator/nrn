@@ -6,7 +6,7 @@
 #include <pool.h>
 
 class TQItem;
-declarePool(TQItemPool, TQItem)
+using TQItemPool = MutexPool<TQItem>;
 
 // 0 use bbtqueue, 1 use rbtqueue, 2 use sptqueue, 3 use sptfifoq
 #define BBTQ 5
