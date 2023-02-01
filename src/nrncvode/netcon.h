@@ -9,6 +9,7 @@
 #include "htlist.h"
 #include "nrnmpi.h"
 #include "nrnneosm.h"
+#include "pool.h"
 
 #include <InterViews/observe.h>
 
@@ -29,7 +30,8 @@ class TQueue;
 class TQItem;
 struct NrnThread;
 class NetCvode;
-class HocEventPool;
+class HocEvent;
+using HocEventPool = MutexPool<HocEvent>;
 class HocCommand;
 struct STETransition;
 class IvocVect;

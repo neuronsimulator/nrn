@@ -58,6 +58,12 @@ void clear_event_queue() {
     }
 }
 
+void free_event_queues() {
+    if (net_cvode_instance) {
+        net_cvode_instance->free_event_pools();
+    }
+}
+
 void init_net_events() {
     if (net_cvode_instance) {
         net_cvode_instance->init_events();
