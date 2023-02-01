@@ -5,53 +5,8 @@ add_compile_definitions(${NRN_COMPILE_DEFS})
 add_link_options(${NRN_LINK_FLAGS})
 
 # =============================================================================
-# Definitions used in setup.py
+# List of python executables to build nrnpython against
 # =============================================================================
-set(NRN_SRCDIR ${PROJECT_SOURCE_DIR})
-set(NRN_BUILDDIR ${PROJECT_BINARY_DIR})
-set(NRNPYTHON_DEFINES "")
-
-# ~~~
-# If NRN_PYTHON_DYNAMIC then the following three will be determined from the
-# actual pyexe that runs setup.py
-# ~~~
-set(NRNPYTHON_EXEC ${PYTHON_EXECUTABLE})
-set(NRNPYTHON_PYVER ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR})
-set(npy_pyver10 "")
-
-# reset since no " allowed
-set(PACKAGE_VERSION ${PROJECT_VERSION})
-set(NRN_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib)
-
-# set by IV's cmake module
-set(IV_LIBDIR "${IV_INCLUDE_DIR}/../lib")
-
-# no suffix for readline
-set(READLINE_SOSUFFIX "")
-
-if(NRN_ENABLE_RX3D)
-  set(BUILD_RX3D "1")
-else()
-  set(BUILD_RX3D "0")
-endif()
-
-if(NRN_ENABLE_INTERVIEWS)
-  set(IVHINES "interviews")
-else()
-  set(IVHINES "")
-endif()
-
-# use compiler from CMake
-set(CC ${CMAKE_C_COMPILER})
-set(CXX ${CMAKE_CXX_COMPILER})
-
-# =============================================================================
-# Options that get expanded to comments
-# =============================================================================
-set(BUILD_NRNMPI_DYNAMIC_FALSE "#")
-set(BUILD_NRNPYTHON_DYNAMIC_TRUE "")
-set(BUILD_NRNPYTHON_DYNAMIC_FALSE "#")
-
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   if("${NRN_PYTHON_DYNAMIC}" STREQUAL "")
     set(NRN_PYTHON_EXE_LIST
@@ -63,30 +18,14 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
         CACHE INTERNAL "" FORCE)
   endif()
 else()
-  set(BUILD_NRNPYTHON_DYNAMIC_TRUE "#")
-  set(BUILD_NRNPYTHON_DYNAMIC_FALSE "")
   set(NRN_PYTHON_EXE_LIST
       ${PYTHON_EXECUTABLE}
       CACHE INTERNAL "" FORCE)
 endif()
 
-if(NRN_MACOS_BUILD)
-  set(MAC_DARWIN_TRUE "")
-  set(MAC_DARWIN_FALSE "#")
-else()
-  set(MAC_DARWIN_TRUE "#")
-  set(MAC_DARWIN_FALSE "")
-endif()
-
-if(NRN_WINDOWS_BUILD)
-  set(BUILD_MINGW_TRUE "")
-  set(BUILD_MINGW_FALSE "#")
-else()
-  set(BUILD_MINGW_TRUE "#")
-  set(BUILD_MINGW_FALSE "")
-endif()
-
+# =============================================================================
 # rxdmath libraries (always build)
+# =============================================================================
 add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
 install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
@@ -144,7 +83,7 @@ endif()
 # Install package files that were created in build (e.g. .py.in)
 install(
   DIRECTORY ${PROJECT_BINARY_DIR}/share/lib/python
-  DESTINATION ${NRN_LIBDIR}
+  DESTINATION lib
   FILES_MATCHING
   PATTERN *.py
   PATTERN *.so
@@ -155,9 +94,6 @@ install(
 # If NEURON python module installation is enabled (CMake install)
 # =============================================================================
 if(NRN_ENABLE_MODULE_INSTALL)
-
-  # All variables are set, prepare setup.py for python module install
-  nrn_configure_file(setup.py src/nrnpython)
 
   # Setup MinGW toolchain for setuptools
   if(MINGW)
@@ -180,6 +116,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # need to copy inithoc.cpp in from source to binary dir if any module
   # dependent changes and make a custom target as well.
   # ~~~
+
   set(binary_dir_filename ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp)
   set(source_dir_filename ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
   set(inithoc_hdeps
@@ -190,7 +127,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
     OUTPUT ${binary_dir_filename}
     COMMAND cp ${source_dir_filename} ${binary_dir_filename}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS ${source_dir_filename} ${CMAKE_CURRENT_BINARY_DIR}/setup.py ${inithoc_hdeps})
+    DEPENDS ${source_dir_filename} ${inithoc_hdeps})
 
   add_custom_target(
     hoc_module ALL
@@ -207,6 +144,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # =============================================================================
   # for each python detected / provided by user, install module at install time
 
+  list(APPEND extra_env "CC=${CMAKE_C_COMPILER}" "CXX=${CMAKE_CXX_COMPILER}")
   if(NRN_SANITIZERS)
     # Make sure the same compiler (currently always clang in the sanitizer builds) is used to link
     # as was used to build. By default, Python will try to use the compiler that was used to build
@@ -215,22 +153,49 @@ if(NRN_ENABLE_MODULE_INSTALL)
          "LDCXXSHARED=${CMAKE_CXX_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS}")
   endif()
 
+  # Prepare build options for setup.py build
+  set(NRN_SETUP_PY_BUILD_OPTIONS "--cmake-build-dir")
+  list(APPEND NRN_SETUP_PY_BUILD_OPTIONS ${CMAKE_BINARY_DIR})
+  if(NOT NRN_ENABLE_RX3D)
+    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--disable-rx3d")
+  endif()
+  if(MINGW)
+    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--compiler=mingw32")
+  endif()
+  if(NOT NRN_ENABLE_PYTHON_DYNAMIC)
+    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--without-nrnpython")
+  endif()
+  if(NRN_ENABLE_MUSIC)
+    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--enable-music")
+  endif()
+  list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--build-lib=${NRN_PYTHON_BUILD_LIB}")
+
+  # Prepare build_ext options for setup.py build
+  set(NRN_SETUP_PY_BUILD_EXT_OPTIONS "build_ext")
+  if(NRN_ENABLE_MUSIC)
+    # NRN_SETUP_PY_INC_DIRS is crafted for the MUSIC build, to be extended to other if needed
+    set(NRN_SETUP_PY_INC_DIRS "${MUSIC_INCDIR};${MPI_INCLUDE_PATH}")
+    string(REPLACE ";" ":" NRN_SETUP_PY_INC_DIRS "${NRN_SETUP_PY_INC_DIRS}")
+    list(APPEND NRN_SETUP_PY_BUILD_EXT_OPTIONS "--include-dirs=${NRN_SETUP_PY_INC_DIRS}")
+  endif()
+  if(MINGW)
+    list(APPEND NRN_SETUP_PY_BUILD_EXT_OPTIONS "--define=MS_WIN64")
+  endif()
+
+  # Build python module
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     add_custom_command(
       TARGET hoc_module
       POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
               ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-      COMMAND ${CMAKE_COMMAND} -E env ${extra_env} ${pyexe} setup.py --quiet build
-              --build-lib=${NRN_PYTHON_BUILD_LIB}
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMENT "Building python module with: ${pyexe}")
+      COMMAND ${CMAKE_COMMAND} -E env ${extra_env} ${pyexe} setup.py build
+              ${NRN_SETUP_PY_BUILD_OPTIONS} ${NRN_SETUP_PY_BUILD_EXT_OPTIONS}
+      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+      COMMENT "Building python module with: ${pyexe} setup.py build
+      ${NRN_SETUP_PY_BUILD_OPTIONS} ${NRN_SETUP_PY_BUILD_EXT_OPTIONS}")
   endforeach(pyexe)
 
   add_dependencies(hoc_module nrniv_lib ${nrnpython_lib_list})
-  if(NRN_ENABLE_RX3D)
-    add_dependencies(hoc_module rxd_cython_generated)
-  endif()
-  # install modules from NRN_PYTHON_BUILD_LIB
   install(DIRECTORY ${NRN_PYTHON_BUILD_LIB} DESTINATION lib)
 endif()
