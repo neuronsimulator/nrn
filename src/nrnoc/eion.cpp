@@ -176,6 +176,14 @@ void ion_reg(const char* name, double valence) {
         hoc_symbol_units(hoc_lookup(buf[6].c_str()), "S/cm2");
         s = hoc_lookup(buf[0].c_str());
         mechtype = nrn_get_mechtype(mechanism[1]);
+        using neuron::mechanism::field;
+        neuron::mechanism::register_data_fields(mechtype,
+                                                field<double>{buf[1]},  // erev
+                                                field<double>{buf[2]},  // conci
+                                                field<double>{buf[3]},  // conco
+                                                field<double>{buf[5]},  // cur
+                                                field<double>{buf[6]},  // dcurdv
+                                                field<int>{"iontype", "iontype"});
         hoc_register_prop_size(mechtype, nparm, ndparam);
         hoc_register_dparam_semantics(mechtype, 0, "iontype");
         nrn_writes_conc(mechtype, 1);
@@ -604,24 +612,24 @@ static void ion_init(neuron::model_sorted_token const& sorted_token,
 
 static void ion_alloc(Prop* p) {
     assert(p->param_size() == nparm);
-    p->set_param(cur_index, 0.);
-    p->set_param(dcurdv_index, 0.);
+    p->param(cur_index) = 0.;
+    p->param(dcurdv_index) = 0.;
     if (p->_type == na_ion) {
-        p->set_param(erev_index, DEF_ena);
-        p->set_param(conci_index, DEF_nai);
-        p->set_param(conco_index, DEF_nao);
+        p->param(erev_index) = DEF_ena;
+        p->param(conci_index) = DEF_nai;
+        p->param(conco_index) = DEF_nao;
     } else if (p->_type == k_ion) {
-        p->set_param(erev_index, DEF_ek);
-        p->set_param(conci_index, DEF_ki);
-        p->set_param(conco_index, DEF_ko);
+        p->param(erev_index) = DEF_ek;
+        p->param(conci_index) = DEF_ki;
+        p->param(conco_index) = DEF_ko;
     } else if (p->_type == ca_ion) {
-        p->set_param(erev_index, DEF_eca);
-        p->set_param(conci_index, DEF_cai);
-        p->set_param(conco_index, DEF_cao);
+        p->param(erev_index) = DEF_eca;
+        p->param(conci_index) = DEF_cai;
+        p->param(conco_index) = DEF_cao;
     } else {
-        p->set_param(erev_index, DEF_eion);
-        p->set_param(conci_index, DEF_ioni);
-        p->set_param(conco_index, DEF_iono);
+        p->param(erev_index) = DEF_eion;
+        p->param(conci_index) = DEF_ioni;
+        p->param(conco_index) = DEF_iono;
     }
     p->dparam = nrn_prop_datum_alloc(p->_type, ndparam, p);
     p->dparam[0] = 0;

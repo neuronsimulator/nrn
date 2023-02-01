@@ -15,6 +15,10 @@ extern "C" void passive0_reg_(void) {
     int mechtype;
     register_mech(mechanism, pas_alloc, pas_cur, pas_jacob, nullptr, nullptr, -1, 1);
     mechtype = nrn_get_mechtype(mechanism[1]);
+    using neuron::mechanism::field;
+    neuron::mechanism::register_data_fields(mechtype,
+                                            field<double>{"g_fastpas"},
+                                            field<double>{"e_fastpas"});
     hoc_register_prop_size(mechtype, nparm, 0);
 }
 
@@ -41,11 +45,6 @@ static void pas_jacob(neuron::model_sorted_token const&, NrnThread* nt, Memb_lis
 
 static void pas_alloc(Prop* p) {
     assert(p->param_size() == nparm);
-#if defined(__MWERKS__)
-    p->set_param(0, 5.e-4); /*DEF_g;*/
-#else
-    p->set_param(0, DEF_g);
-#endif
-    p->set_param(1, DEF_e);
-    // p->param = pd;
+    p->param(0) = DEF_g;
+    p->param(1) = DEF_e;
 }

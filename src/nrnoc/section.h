@@ -261,52 +261,122 @@ struct Prop {
         return m_mech_handle->id_hack();
     }
 
-    /** @brief Check if the given handle refers to data owned by this Prop.
+    /**
+     * @brief Check if the given handle refers to data owned by this Prop.
      */
     [[nodiscard]] bool owns(neuron::container::data_handle<double> const& handle) const {
         auto const num_fpfields = param_size();
         auto* const raw_ptr = static_cast<double const*>(handle);
         for (auto i = 0; i < num_fpfields; ++i) {
-            if (raw_ptr == &m_mech_handle->fpfield(i)) {
-                return true;
+            for (auto j = 0; j < m_mech_handle->fpfield_dimension(i); ++j) {
+                if (raw_ptr == &m_mech_handle->fpfield(i, j)) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
-    /** @brief Return a reference to the i-th double value associated with this Prop.
+    /**
+     * @brief Return a reference to the i-th floating point data field associated with this Prop.
+     *
+     * Note that there is a subtlety with the numbering scheme in case of array variables.
+     * If we have 3 array variables (a, b, c) with dimensions x, y, z:
+     *   a[x] b[y] c[z]
+     * then, for example, the second element of b (assume y >= 2) is obtained with param(1, 1).
+     * In AoS NEURON these values were all stored contiguously, and the values were obtained using
+     * a single index; taking the same example, the second element of b used to be found at index
+     * x + 1 in the param array. In all of the above, scalar variables are treated the same and
+     * simply have dimension 1. In SoA NEURON then a[1] is stored immediately after a[0] in memory,
+     * but for a given mechanism instance b[0] is **not** stored immediately after a[x-1].
+     *
+     * It is possible, but a little inefficient, to calculate the new pair of indices from an old
+     * index. For that, see the param_legacy and param_handle_legacy functions.
      */
-    [[nodiscard]] double& param(std::size_t i) {
+    [[nodiscard]] double& param(int field_index, int array_index = 0) {
         assert(m_mech_handle);
-        return m_mech_handle->fpfield(i);
+        return m_mech_handle->fpfield(field_index, array_index);
     }
 
-    /** @brief Return a reference to the i-th double value associated with this Prop.
+    /**
+     * @brief Return a reference to the i-th double value associated with this Prop.
+     *
+     * See the discussion above about numbering schemes.
      */
-    [[nodiscard]] double const& param(std::size_t i) const {
+    [[nodiscard]] double const& param(int field_index, int array_index = 0) const {
         assert(m_mech_handle);
-        return m_mech_handle->fpfield(i);
+        return m_mech_handle->fpfield(field_index, array_index);
     }
 
-    /** @brief Return a handle to the i-th double value associated with this Prop.
+    /**
+     * @brief Return a handle to the i-th double value associated with this Prop.
+     *
+     * See the discussion above about numbering schemes.
      */
-    [[nodiscard]] auto param_handle(std::size_t i) {
+    [[nodiscard]] auto param_handle(int field, int array_index = 0) {
         assert(m_mech_handle);
-        return m_mech_handle->fpfield_handle(i);
+        return m_mech_handle->fpfield_handle(field, array_index);
     }
 
-    /** @brief Return how many double values are assocated with this Prop.
+    [[nodiscard]] auto param_handle(neuron::field_index ind) {
+        return param_handle(ind.field, ind.array_index);
+    }
+
+  private:
+    /**
+     * @brief Translate a legacy (flat) index into a (variable, array offset) pair.
      */
-    [[nodiscard]] std::size_t param_size() const {
+    [[nodiscard]] std::pair<int, int> translate_legacy_index(int legacy_index) const {
+        assert(m_mech_handle);
+        int total{};
+        auto const num_fields = m_mech_handle->num_fpfields();
+        for (auto field = 0; field < num_fields; ++field) {
+            auto const array_dim = m_mech_handle->fpfield_dimension(field);
+            if (legacy_index < total + array_dim) {
+                auto const array_index = legacy_index - total;
+                return {field, array_index};
+            }
+            total += array_dim;
+        }
+        throw std::runtime_error("could not translate legacy index " +
+                                 std::to_string(legacy_index));
+    }
+
+  public:
+    [[nodiscard]] double& param_legacy(int legacy_index) {
+        auto const [array_dim, array_index] = translate_legacy_index(legacy_index);
+        return param(array_dim, array_index);
+    }
+
+    [[nodiscard]] double const& param_legacy(int legacy_index) const {
+        auto const [array_dim, array_index] = translate_legacy_index(legacy_index);
+        return param(array_dim, array_index);
+    }
+
+    [[nodiscard]] auto param_handle_legacy(int legacy_index) {
+        auto const [array_dim, array_index] = translate_legacy_index(legacy_index);
+        return param_handle(array_dim, array_index);
+    }
+
+    /**
+     * @brief Return how many double values are assocated with this Prop.
+     */
+    [[nodiscard]] int param_size() const {
         assert(m_mech_handle);
         return m_mech_handle->num_fpfields();
     }
 
-    /** @brief Update the i-th double value associated with this Prop.
+    /**
+     * @brief Return the array dimension of the given value.
      */
-    void set_param(std::size_t i, double value) {
+    [[nodiscard]] int param_array_dimension(int field) const {
         assert(m_mech_handle);
-        m_mech_handle->set_fpfield(i, value);
+        return m_mech_handle->fpfield_dimension(field);
+    }
+
+    [[nodiscard]] std::size_t current_row() const {
+        assert(m_mech_handle);
+        return m_mech_handle->current_row();
     }
 
     friend std::ostream& operator<<(std::ostream& os, Prop const& p) {

@@ -99,14 +99,14 @@ int nonlin_common(Item* q4) /* used by massagenonlin() and mixed_eqns() */
                 int dim = s->araydim;
                 using_array = 1;
                 Sprintf(buf,
-                        "for(_i=0;_i<%d;_i++){\n  _slist%d[%d+_i] = %s_columnindex + _i;}\n",
+                        "for(_i=0;_i<%d;_i++){\n  _slist%d[%d+_i] = {%s_columnindex, _i};}\n",
                         dim,
                         numlist,
                         counts,
                         s->name);
                 counts += dim;
             } else {
-                Sprintf(buf, "_slist%d[%d] = %s_columnindex;\n", numlist, counts, s->name);
+                Sprintf(buf, "_slist%d[%d] = {%s_columnindex, 0};\n", numlist, counts, s->name);
                 counts++;
             }
             Lappendstr(initlist, buf);
@@ -152,13 +152,13 @@ int nonlin_common(Item* q4) /* used by massagenonlin() and mixed_eqns() */
     }
     freeqnqueue();
     Sprintf(buf,
-            "static int _slist%d[%d]; static double _dlist%d[%d];\n",
+            "static neuron::field_index _slist%d[%d]; static double _dlist%d[%d];\n",
             numlist,
             counts,
             numlist,
             counts);
     q = linsertstr(procfunc, buf);
-    Sprintf(buf, "static int _slist%d[%d];\n", numlist, counts);
+    Sprintf(buf, "static neuron::field_index _slist%d[%d];\n", numlist, counts);
     vectorize_substitute(q, buf);
     return counts;
 }
@@ -265,14 +265,14 @@ void lin_state_term(Item* q1, Item* q2) /* term last*/
             int dim = statsym->araydim;
             using_array = 1;
             Sprintf(buf,
-                    "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = %s_columnindex + _i;}\n",
+                    "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = {%s_columnindex, _i};}\n",
                     dim,
                     numlist,
                     nstate,
                     statsym->name);
             nstate += dim;
         } else {
-            Sprintf(buf, "_slist%d[%d] = %s_columnindex;\n", numlist, nstate, statsym->name);
+            Sprintf(buf, "_slist%d[%d] = {%s_columnindex, 0};\n", numlist, nstate, statsym->name);
             nstate++;
         }
         Lappendstr(initlist, buf);
@@ -350,7 +350,11 @@ void massage_linblk(Item* q1, Item* q2, Item* q3, Item* q4) /* LINEAR NAME stmtl
 #endif
     }
     linblk->used = nstate;
-    Sprintf(buf, "static int _slist%d[%d];static double **_coef%d;\n", numlist, nstate, numlist);
+    Sprintf(buf,
+            "static neuron::field_index _slist%d[%d];static double **_coef%d;\n",
+            numlist,
+            nstate,
+            numlist);
     Linsertstr(procfunc, buf);
     Sprintf(buf, "\n#define _RHS%d(arg) _coef%d[arg][%d]\n", numlist, numlist, nstate);
     Linsertstr(procfunc, buf);
