@@ -15,25 +15,27 @@ Memb_list::Memb_list(int type)
     assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
     auto const num_fields = m_storage->num_floating_point_fields();
     std::vector<double*> ret(num_fields, nullptr);
-    for (auto i = 0ul; i < num_fields; ++i) {
+    for (auto i = 0; i < num_fields; ++i) {
         ret[i] = &m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
-            i, m_storage_offset);
+            m_storage_offset, i);
     }
     return ret;
 }
 
-[[nodiscard]] double& Memb_list::data(std::size_t instance, std::size_t variable) {
+[[nodiscard]] double& Memb_list::data(std::size_t instance, int variable, int array_index) {
     assert(m_storage);
     assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
     return m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
-        variable, m_storage_offset + instance);
+        m_storage_offset + instance, variable, array_index);
 }
 
-[[nodiscard]] double const& Memb_list::data(std::size_t instance, std::size_t variable) const {
+[[nodiscard]] double const& Memb_list::data(std::size_t instance,
+                                            int variable,
+                                            int array_index) const {
     assert(m_storage);
     assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
     return m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
-        variable, m_storage_offset + instance);
+        m_storage_offset + instance, variable, array_index);
 }
 
 
@@ -41,10 +43,10 @@ Memb_list::Memb_list(int type)
     assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
     auto const size = m_storage->size();
     auto const num_fields = m_storage->num_floating_point_fields();
-    for (auto field = 0ul; field < num_fields; ++field) {
+    for (auto field = 0; field < num_fields; ++field) {
         auto const* const vec_data =
             &m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
-                field, 0);
+                0, field);
         auto const index = std::distance(vec_data, ptr);
         if (index >= 0 && index < size) {
             // ptr lives in the field-th data column
@@ -60,7 +62,7 @@ Memb_list::Memb_list(int type)
     return m_storage->num_floating_point_fields();
 }
 
-[[nodiscard]] double* Memb_list::dptr_field(std::size_t instance, std::size_t variable) {
+[[nodiscard]] double* Memb_list::dptr_field(std::size_t instance, int variable) {
     return pdata[instance][variable].get<double*>();
 }
 

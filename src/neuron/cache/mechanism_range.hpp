@@ -42,64 +42,60 @@ void indices_to_cache(short type, Callable callable) {
 template <std::size_t NumFloatingPointFields, std::size_t NumDatumFields>
 struct MechanismRange {
     MechanismRange(neuron::model_sorted_token const& cache_token,
-                   NrnThread& nt,
+                   NrnThread&,
                    Memb_list& ml,
                    int type)
-        : m_data_ptrs{cache_token.mech_cache(type).data_ptr_cache.data()}
-        , m_pdata_ptrs{cache_token.mech_cache(type).pdata_ptr_cache.data()}
-        , m_offset{ml.get_storage_offset()} {
-        assert(cache_token.mech_cache(type).data_ptr_cache.size() == NumFloatingPointFields);
-        assert(cache_token.mech_cache(type).pdata_ptr_cache.size() <= NumDatumFields);
+        : MechanismRange{&neuron::model().mechanism_data(type), ml.get_storage_offset()} {
+        auto const& ptr_cache = cache_token.mech_cache(type).pdata_ptr_cache;
+        m_pdata_ptrs = ptr_cache.data();
+        assert(ptr_cache.size() <= NumDatumFields);
     }
+
+  protected:
+    MechanismRange(container::Mechanism::storage* mech_data, std::size_t offset)
+        : m_data_ptrs{mech_data
+                          ? mech_data->get_data_ptrs<container::Mechanism::field::FloatingPoint>()
+                          : nullptr}
+        , m_data_array_dims{mech_data
+                                ? mech_data
+                                      ->get_array_dims<container::Mechanism::field::FloatingPoint>()
+                                : nullptr}
+        , m_offset{offset} {
+        assert(!mech_data ||
+               mech_data->get_tag<container::Mechanism::field::FloatingPoint>().num_instances() ==
+                   NumFloatingPointFields);
+    }
+
+  public:
     template <std::size_t variable>
     [[nodiscard]] double& fpfield(std::size_t instance) {
         static_assert(variable < NumFloatingPointFields);
         return m_data_ptrs[variable][m_offset + instance];
     }
-    [[nodiscard]] double& data(std::size_t instance, std::size_t variable) {
+    [[nodiscard]] double& data(std::size_t instance, int variable) {
         assert(variable < NumFloatingPointFields);
         return m_data_ptrs[variable][m_offset + instance];
+    }
+    [[nodiscard]] double& data(std::size_t instance, field_index ind) {
+        assert(ind.field < NumFloatingPointFields);
+        auto const array_dim = m_data_array_dims[ind.field];
+        return m_data_ptrs[ind.field][array_dim * (m_offset + instance) + ind.array_index];
     }
     template <std::size_t variable>
     [[nodiscard]] double* dptr_field(std::size_t instance) {
         static_assert(variable < NumDatumFields);
         return m_pdata_ptrs[variable][m_offset + instance];
     }
-    /**
-     * @brief Proxy type used in data_array.
-     *
-     * Note that this takes a pointer to an element of MechanismRange::m_ptrs, so any instance of
-     * data_array must have a lifetime strictly shorter than that of the MechanismRange that
-     * produced it.
-     */
-    template <std::size_t N>
-    struct array_view {
-        array_view(std::size_t offset, double* const* ptrs)
-            : m_ptrs_in_mech_range_cache{ptrs}
-            , m_offset{offset} {}
-        [[nodiscard]] double& operator[](std::size_t array_entry) {
-            return m_ptrs_in_mech_range_cache[array_entry][m_offset];
-        }
-        [[nodiscard]] double const& operator[](std::size_t array_entry) const {
-            return m_ptrs_in_mech_range_cache[array_entry][m_offset];
-        }
-
-      private:
-        double* const* m_ptrs_in_mech_range_cache{};
-        std::size_t m_offset{};
-    };
     template <std::size_t zeroth_variable, std::size_t array_size>
-    [[nodiscard]] array_view<array_size> data_array(std::size_t instance) {
-        static_assert(zeroth_variable + array_size < NumFloatingPointFields);
-        return {m_offset + instance, m_data_ptrs + zeroth_variable};
+    [[nodiscard]] double* data_array(std::size_t instance) {
+        assert(array_size == m_data_array_dims[zeroth_variable]);
+        return std::next(m_data_ptrs[zeroth_variable], array_size * (m_offset + instance));
     }
 
   protected:
-    MechanismRange() = default;
     double* const* m_data_ptrs{};
+    int const* m_data_array_dims{};
     double* const* const* m_pdata_ptrs{};
-
-  private:
     std::size_t m_offset{};
 };
 /**
@@ -116,12 +112,12 @@ template <std::size_t NumFloatingPointFields, std::size_t NumDatumFields>
 struct MechanismInstance: MechanismRange<NumFloatingPointFields, NumDatumFields> {
     using base_type = MechanismRange<NumFloatingPointFields, NumDatumFields>;
     MechanismInstance(Prop* prop)
-        : m_ptrs{fill_ptrs(prop, std::make_index_sequence<NumFloatingPointFields>{})} {
+        : base_type{prop ? &neuron::model().mechanism_data(prop->_type) : nullptr,
+                    prop ? prop->current_row() : std::numeric_limits<std::size_t>::max()} {
         if (!prop) {
             // grrr...see cagkftab test where setdata is not called(?) and extcall_prop is null(?)
             return;
         }
-        this->m_data_ptrs = m_ptrs.data();
         indices_to_cache(prop->_type, [this, prop](auto field) {
             assert(field < NumDatumFields);
             auto& datum = prop->dparam[field];
@@ -135,30 +131,21 @@ struct MechanismInstance: MechanismRange<NumFloatingPointFields, NumDatumFields>
     }
     MechanismInstance& operator=(MechanismInstance const& other) {
         if (this != &other) {
+            this->m_data_ptrs = other.m_data_ptrs;
+            this->m_data_array_dims = other.m_data_array_dims;
+            this->m_offset = other.m_offset;
             m_dptr_cache = other.m_dptr_cache;
             for (auto i = 0; i < NumDatumFields; ++i) {
                 m_dptr_datums[i] = &m_dptr_cache[i];
             }
-            m_ptrs = other.m_ptrs;
-            this->m_data_ptrs = m_ptrs.data();
             this->m_pdata_ptrs = m_dptr_datums.data();
         }
         return *this;
     }
 
   private:
-    template <std::size_t... Is>
-    static std::array<double*, sizeof...(Is)> fill_ptrs(Prop* prop, std::index_sequence<Is...>) {
-        if (!prop) {
-            // see above
-            return {};
-        }
-        assert(prop->param_size() == sizeof...(Is));
-        return {&prop->param(Is)...};
-    }
     std::array<double*, NumDatumFields> m_dptr_cache{};
     std::array<double* const*, NumDatumFields> m_dptr_datums{};
-    std::array<double*, NumFloatingPointFields> m_ptrs{};
 };
 }  // namespace neuron::cache
 

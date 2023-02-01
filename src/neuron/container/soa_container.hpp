@@ -1,6 +1,5 @@
 #pragma once
 #include "backtrace_utils.h"
-#include "neuron/container/callbacks.hpp"
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/soa_identifier.hpp"
 
@@ -12,6 +11,15 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+
+namespace neuron {
+/**
+ * @brief Struct used to index SoAoS data, such as array range variables.
+ */
+struct field_index {
+    int field{}, array_index{};
+};
+}  // namespace neuron
 
 namespace neuron::container {
 namespace detail {
@@ -58,6 +66,23 @@ template <typename T>
 inline constexpr bool
     has_default_value_v<T, std::void_t<decltype(std::declval<T>().default_value())>> = true;
 
+// Get the array dimension for a given field within a given tag, or 1 if the array_dimension
+// function is not defined in the tag type
+template <typename T>
+auto get_array_dimension(T const& t) -> decltype(t.array_dimension(), 0) {
+    // TODO this one is probably broken -- don't have an example of a tag type with
+    // array_dimension() but without num_instances()
+    return t.array_dimension();
+}
+template <typename T>
+auto get_array_dimension(T const& t, int i) -> decltype(t.array_dimension(i), 0) {
+    return t.array_dimension(i);
+}
+template <typename T>
+int get_array_dimension(T const&, ...) {
+    return 1;
+}
+
 // Detect if a type T has a non-static member function called num_instances().
 template <typename T, typename = void>
 struct has_num_instances: std::false_type {};
@@ -67,7 +92,46 @@ struct has_num_instances<T, std::void_t<decltype(std::declval<T>().num_instances
 template <typename T>
 inline constexpr bool has_num_instances_v = has_num_instances<T>::value;
 
-// Detect if a type T has a non-static member function called num_instances().
+// Get a name for a given field within a given tag
+template <typename Tag>
+auto get_name_impl(Tag const& tag, int field_index, std::nullptr_t)
+    -> decltype(tag.name(field_index), std::string()) {
+    return tag.name(field_index);
+}
+
+template <typename Tag>
+std::string get_name_impl(Tag const& tag, int field_index, ...) {
+    auto ret = cxx_demangle(typeid(Tag).name());
+    if (field_index >= 0) {
+        ret.append(1, '#');
+        ret.append(std::to_string(field_index));
+    }
+    constexpr std::string_view prefix{"neuron::container::"};
+    if (std::string_view{ret}.substr(0, prefix.size()) == prefix) {
+        ret.erase(0, prefix.size());
+    }
+    return ret;
+}
+
+/**
+ * @brief Get the nicest available name for the field_index-th instance of Tag.
+ *
+ * This should elegantly handle field_index == -1 (=> the tag doesn't get have num_instances()) and
+ * field_index being out of range.
+ */
+template <typename Tag>
+auto get_name(Tag const& tag, int field_index) {
+    if constexpr (has_num_instances_v<Tag>) {
+        if (field_index >= 0 && field_index < tag.num_instances()) {
+            // use tag.name(field_index) if it's available, otherwise fall back
+            return get_name_impl(tag, field_index, nullptr);
+        }
+    }
+    // no num_instances() or invalid field_index, use the fallback
+    return get_name_impl(tag, field_index, 1 /* does not match nullptr */);
+}
+
+// Detect if a type T has a non-static member function called name().
 template <typename T, typename = void>
 struct has_name: std::false_type {};
 template <typename T>
@@ -75,11 +139,10 @@ struct has_name<T, std::void_t<decltype(std::declval<T>().name())>>: std::true_t
 template <typename T>
 inline constexpr bool has_name_v = has_name<T>::value;
 
-// std::type_identity in C++20
-template <typename T>
-struct type_identity {
-    using type = T;
+struct index_column_tag {
+    using type = non_owning_identifier_without_container;
 };
+
 /** Check if the given range is a permutation of the first N integers.
  */
 template <typename Rng>
@@ -100,44 +163,183 @@ void check_permutation_vector(Rng const& range, std::size_t size) {
     }
 }
 
-template <typename Diff>
-void swap_all(Diff i, Diff n) {}
+enum struct may_cause_reallocation { Yes, No };
 
-template <typename Diff, typename T, typename... U>
-void swap_all(Diff i, Diff n, T&& t, U&&... u) {
-    static_assert(
-        std::is_lvalue_reference_v<T>,
-        "Argument of apply_reverse_permutation should be reference as the algorithm is in place.");
-    using ::std::swap;
-    using plain_T = typename std::remove_reference_t<std::remove_cv_t<T>>::value_type;
-    if constexpr (std::is_arithmetic_v<plain_T> ||
-                  std::is_same_v<plain_T, non_owning_identifier_without_container>) {
-        swap(t[i], t[n]);
-    } else {
-        using plain_inner_T =
-            typename std::remove_reference_t<std::remove_cv_t<plain_T>>::value_type;
-        static_assert(std::is_arithmetic_v<plain_inner_T> ||
-                          std::is_same_v<plain_inner_T, non_owning_identifier_without_container>,
-                      "Only 1 level of inner container is allowed in apply_reverse_permutation.");
-        for (auto& e: t) {
-            swap(e[i], e[n]);
+template <typename, bool has_num_instances>
+struct field_data {};
+
+/**
+ * @brief Storage manager for a tag type that implements num_instances().
+ *
+ * An illustrative example is that this is responsible for the storage associated with floating
+ * point mechanism data, where the number of fields is set at runtime via num_instances.
+ *
+ * As well as owning the actual storage containers, this type maintains two spans of values that
+ * can be used by other types, in particular neuron::cache::MechanismRange:
+ * - array_dims() returns a pointer to the first element of a num_instances()-sized range holding
+ *   the array dimensions of the variables.
+ * - data_ptrs() returns a pointer to the first element of a num_instances()-sized range holding
+ *   pointers to the start of the storage associated with each variable (i.e. the result of calling
+ *   data() on the underlying vector).
+ *
+ * This is a helper type for use by neuron::container::soa and it should not be used directly.
+ */
+template <typename Tag>
+struct field_data<Tag, true> {
+    using data_type = typename Tag::type;
+    static_assert(has_num_instances_v<Tag>);
+    field_data(Tag tag)
+        : m_tag{std::move(tag)}
+        , m_storage{m_tag.num_instances()} {
+        m_data_ptrs.reserve(m_tag.num_instances());
+        update_data_ptr_storage();
+        m_array_dims.reserve(m_tag.num_instances());
+        for (auto i = 0; i < m_tag.num_instances(); ++i) {
+            m_array_dims.push_back(get_array_dimension(m_tag, i));
         }
     }
-    swap_all(i, n, std::forward<U>(u)...);
-}
 
-template <typename IndexType, typename... T>
-void apply_reverse_permutation(IndexType&& ind, T&&... items) {
-    using ::std::swap;
-    using Diff = typename IndexType::difference_type;
-    for (Diff i = 0; i < std::size(ind); i++) {
-        while (i != ind[i]) {
-            Diff next = ind[i];
-            swap_all(i, next, std::forward<T>(items)...);
-            swap(ind[i], ind[next]);
+    /**
+     * @brief Return a reference to the tag instance.
+     */
+    Tag const& tag() const {
+        return m_tag;
+    }
+
+    /**
+     * @brief Return a pointer to an array of array dimensions for this tag.
+     *
+     * This avoids indirection via the tag type instances. Because array dimensions are not
+     * permitted to change, this is guaranteed to remain valid as long as the underlying soa<...>
+     * container does. This is mainly intended for use in neuron::cache::MechanismRange and friends.
+     */
+    [[nodiscard]] int const* array_dims() const {
+        return m_array_dims.data();
+    }
+
+    [[nodiscard]] int check_array_dim(int field_index, int array_index) const {
+        assert(field_index >= 0);
+        assert(array_index >= 0);
+        if (auto const num_fields = m_tag.num_instances(); field_index >= num_fields) {
+            throw std::runtime_error(get_name(m_tag, field_index) + "/" +
+                                     std::to_string(num_fields) + ": out of range");
+        }
+        auto const array_dim = m_array_dims[field_index];
+        if (array_index >= array_dim) {
+            throw std::runtime_error(get_name(m_tag, field_index) + ": index " +
+                                     std::to_string(array_index) + " out of range");
+        }
+        return array_dim;
+    }
+
+    /**
+     * @brief Return a pointer to an array of data pointers for this tag.
+     *
+     * This array is guaranteed to be kept up to date when the actual storage is re-allocated.
+     * This is mainly intended for use in neuron::cache::MechanismRange and friends.
+     */
+    [[nodiscard]] data_type* const* const data_ptrs() const {
+        return m_data_ptrs.data();
+    }
+
+    /**
+     * @brief Invoke the given callable for each vector.
+     *
+     * @tparam might_reallocate Might the callable cause reallocation of the vector it is given?
+     * @param callable Callable to invoke.
+     */
+    template <may_cause_reallocation might_reallocate, typename Callable>
+    void for_all_vectors(Callable const& callable) {
+        for (auto i = 0; i < m_storage.size(); ++i) {
+            callable(m_tag, m_storage[i], i, m_array_dims[i]);
+        }
+        if constexpr (might_reallocate == may_cause_reallocation::Yes) {
+            update_data_ptr_storage();
         }
     }
-}
+
+    template <typename Callable>
+    void for_all_vectors(Callable const& callable) const {
+        for (auto i = 0; i < m_storage.size(); ++i) {
+            callable(m_tag, m_storage[i], i, m_array_dims[i]);
+        }
+    }
+
+    // TODO actually use this
+    // TODO consider precomputing something
+    [[nodiscard]] neuron::field_index translate_legacy_index(int legacy_index) const {
+        int total{};
+        auto const num_fields = m_tag.num_instances();
+        for (auto field = 0; field < num_fields; ++field) {
+            auto const array_dim = m_array_dims[field];
+            if (legacy_index < total + array_dim) {
+                auto const array_index = legacy_index - total;
+                return {field, array_index};
+            }
+            total += array_dim;
+        }
+        throw std::runtime_error("could not translate legacy index " +
+                                 std::to_string(legacy_index));
+    }
+
+  private:
+    void update_data_ptr_storage() {
+        auto* const old_data_ptrs = m_data_ptrs.data();
+        m_data_ptrs.clear();
+        std::transform(m_storage.begin(),
+                       m_storage.end(),
+                       std::back_inserter(m_data_ptrs),
+                       [](auto& vec) { return vec.data(); });
+        assert(old_data_ptrs == m_data_ptrs.data());
+    }
+    Tag m_tag;
+    std::vector<std::vector<data_type>> m_storage;
+    std::vector<data_type*> m_data_ptrs;  // always contains .data() for everything in m_storage
+    std::vector<int> m_array_dims;
+};
+
+template <typename Tag>
+struct field_data<Tag, false> {
+    using data_type = typename Tag::type;
+    static_assert(!has_num_instances_v<Tag>);
+    field_data(Tag tag)
+        : m_tag{std::move(tag)}
+        , m_array_dim{get_array_dimension(m_tag)} {}
+
+    /**
+     * @brief Return a reference to the tag instance.
+     */
+    Tag const& tag() const {
+        return m_tag;
+    }
+
+    template <may_cause_reallocation might_reallocate, typename Callable>
+    void for_all_vectors(Callable const& callable) {
+        callable(m_tag, m_storage, -1, m_array_dim);
+        if constexpr (might_reallocate == may_cause_reallocation::Yes) {
+            m_data_ptr = m_storage.data();
+        }
+    }
+
+    template <typename Callable>
+    void for_all_vectors(Callable const& callable) const {
+        callable(m_tag, m_storage, -1, m_array_dim);
+    }
+
+    [[nodiscard]] data_type* const* data_ptrs() const {
+        return &m_data_ptr;
+    }
+
+    [[nodiscard]] int const* array_dims() const {
+        return &m_array_dim;
+    }
+
+  private:
+    Tag m_tag;
+    std::vector<data_type> m_storage;
+    data_type* m_data_ptr{};  // m_storage.data()
+    int m_array_dim;
+};
 }  // namespace detail
 
 /** @brief Token whose lifetime manages frozen/sorted state of a container.
@@ -201,24 +403,8 @@ struct soa {
      * This is useful if the tag types are not empty, for example if the number
      * of times a column is duplicated is a runtime value.
      */
-    soa(Tags&&... tag_instances)
-        : m_tags{std::forward<Tags>(tag_instances)...} {
-        // For all tags that have a runtime-specified number of copies, get the
-        // vector<vector<T>> and resize it to hold num_instances() vector<T>
-        (
-            [](auto const& tag, auto& data) {
-                using Tag = std::decay_t<decltype(tag)>;
-                if constexpr (detail::has_num_instances_v<Tag>) {
-                    // std::vector<std::vector<T>>
-                    using Data = std::decay_t<decltype(data)>;
-                    using Vector = typename Data::value_type;
-                    assert(data.empty());
-                    static_assert(std::is_same_v<typename Vector::value_type, typename Tag::type>);
-                    data.resize(tag.num_instances());
-                }
-            }(get_tag<Tags>(), std::get<tag_index_v<Tags>>(m_data)),
-            ...);
-    }
+    soa(Tags... tag_instances)
+        : m_data{std::move(tag_instances)...} {}
 
     /**
      * @brief @ref soa is not movable
@@ -258,9 +444,12 @@ struct soa {
         // Check our various std::vector members are still the same size as each
         // other. This check could be omitted in release builds...
         auto const check_size = m_indices.size();
-        for_all_vectors(*this, [check_size](auto const& tag, auto const& vec) {
-            assert(vec.size() == check_size);
-        });
+        for_all_vectors(
+            [check_size](auto const& tag, auto const& vec, int field_index, int array_dim) {
+                auto const size = vec.size();
+                assert(size % array_dim == 0);
+                assert(size / array_dim == check_size);
+            });
         return check_size;
     }
 
@@ -269,7 +458,7 @@ struct soa {
      */
     [[nodiscard]] bool empty() const {
         auto const result = m_indices.empty();
-        for_all_vectors(*this, [result](auto const& tag, auto const& vec) {
+        for_all_vectors([result](auto const& tag, auto const& vec, int field_index, int array_dim) {
             assert(vec.empty() == result);
         });
         return result;
@@ -292,33 +481,21 @@ struct soa {
         auto const old_size = size();
         assert(i < old_size);
         if (i != old_size - 1) {
-            // Swap positions `i` and `old_size - 1` in each vector
-            for_all_vectors(*this, [i](auto const& tag, auto& vec) {
-                using ::std::swap;
-                swap(vec[i], vec.back());
-            });
+            // Swap ranges of size array_dim at logical positions `i` and `old_size - 1` in each
+            // vector
+            for_all_vectors<detail::may_cause_reallocation::No>(
+                [i](auto const& tag, auto& vec, int field_index, int array_dim) {
+                    std::swap_ranges(std::next(vec.begin(), i * array_dim),
+                                     std::next(vec.begin(), (i + 1) * array_dim),
+                                     std::prev(vec.end(), array_dim));
+                });
             // Tell the new entry at `i` that its index is `i` now.
             m_indices[i].set_current_row(i);
         }
-        for_all_vectors(*this, [new_size = old_size - 1](auto const& tag, auto& vec) {
-            vec.resize(new_size);
-        });
-        // If there are any callbacks registered that want to be notified when raw pointers into the
-        // data structures are invalidated, then we need to tell recalculate_ptr how to handle the
-        // changes we just made, and then invoke those callbacks
-        invoke_ptr_update_callbacks([i, old_size, this](ptr_update_data& recalc_ptr_data) {
-            // This is only executed if callbacks are registered; we should add entries to
-            // `recalc_ptr_data` that allow recalculate_ptr to correctly handle the swap we just
-            // did
-            for_all_vectors(*this, [i, old_size, &recalc_ptr_data](auto const& tag, auto& vec) {
-                // The old i-th pointer is to an element that has been deleted
-                recalc_ptr_data.old_new_pair(vec.data() + i, nullptr);
-                // The old last element is now the i-th element, if those aren't the same thing
-                if (i != old_size - 1) {
-                    recalc_ptr_data.old_new_pair(vec.data() + old_size - 1, vec.data() + i);
-                }
+        for_all_vectors<detail::may_cause_reallocation::No>(
+            [new_size = old_size - 1](auto const& tag, auto& vec, int field_index, int array_dim) {
+                vec.resize(new_size * array_dim);
             });
-        });
     }
 
     friend struct state_token<Storage>;
@@ -328,30 +505,34 @@ struct soa {
     template <typename Tag>
     static constexpr std::size_t tag_index_v = detail::index_of_type_v<Tag, Tags...>;
 
-    template <typename Tag, typename This, typename Callable>
-    static void for_all_tag_vectors(This& this_ref, Callable const& callable) {
-        auto const& tag = this_ref.template get_tag<Tag>();
-        if constexpr (detail::has_num_instances_v<Tag>) {
-            auto const num_instances = tag.num_instances();
-            for (auto i = 0; i < num_instances; ++i) {
-                callable(tag, get_field_instance_helper<Tag>(this_ref, i));
-            }
-        } else {
-            callable(tag, std::get<tag_index_v<Tag>>(this_ref.m_data));
-        }
+    /**
+     * @brief Apply the given function to non-const versions of all vectors.
+     *
+     * @tparam might_reallocate Might the callable trigger reallocation of the vectors?
+     * @param callable Callable to invoke on each vector.
+     *
+     * If might_allocate is true then the "cached" values of .data() for each vector will be
+     * updated.
+     */
+    template <detail::may_cause_reallocation might_reallocate, typename Callable>
+    void for_all_vectors(Callable const& callable) {
+        // might_reallocate is not relevant for m_indices because we do not expose the location of
+        // its storage, so it doesn't matter whether or not this triggers reallocation
+        callable(detail::index_column_tag{}, m_indices, -1, 1);
+        (std::get<tag_index_v<Tags>>(m_data).template for_all_vectors<might_reallocate>(callable),
+         ...);
     }
 
     /**
-     * @brief Apply the given function to all data vectors in this container.
+     * @brief Apply the given function to const-qualified versions of all vectors.
      *
-     * This centralises handling of tag types that are duplicated a
-     * runtime-specified number of times.
+     * Because of the const qualification this cannot cause reallocation and trigger updates of
+     * pointers inside m_data, so no might_reallocate parameter is needed.
      */
-    template <typename This, typename Callable>
-    static void for_all_vectors(This& this_ref, Callable const& callable) {
-        callable(detail::type_identity<non_owning_identifier_without_container>{},
-                 this_ref.m_indices);
-        (for_all_tag_vectors<Tags>(this_ref, callable), ...);
+    template <typename Callable>
+    void for_all_vectors(Callable const& callable) const {
+        callable(detail::index_column_tag{}, m_indices, -1, 1);
+        (std::get<tag_index_v<Tags>>(m_data).for_all_vectors(callable), ...);
     }
 
     /**
@@ -451,34 +632,22 @@ struct soa {
             throw_error("apply_reverse_permutation() called on a frozen structure");
         }
         mark_as_unsorted_impl<true>();
-        // If there are any callbacks registered that want to be notified when raw pointers into the
-        // data structures are invalidated, then we need to tell recalculate_ptr how to handle the
-        // changes we just made, and then invoke those callbacks
-        invoke_ptr_update_callbacks(
-            [my_size, &permutation, this](ptr_update_data& recalc_ptr_data) {
-                // This is only executed if callbacks are registered; we should add entries to
-                // `recalc_ptr_data` that allow recalculate_ptr to correctly handle the permutation
-                // we are about to apply
-                for_all_vectors(
-                    *this, [my_size, &permutation, &recalc_ptr_data](auto const& tag, auto& vec) {
-                        // Required information to figure out where an old pointer into vec
-                        // has been permuted to
-                        recalc_ptr_data.permuted_vector(vec.data(), permutation.data(), my_size);
-                    });
-            });
-        // NOTE if we re-work this to defer actually executing callbacks: the permutation vector is
-        // destroyed by apply_reverse_permutation, so if we defer calling the callbacks (e.g. to
-        // call them once after permuting *all* model data) then we'd need to take a copy of the
-        // permutation vector
-
         // Now we apply the reverse permutation in `permutation` to all of the columns in the
-        // container. Depending on whether or not the tag types have num_instances() member
-        // functions the relevant elements of m_data will either be std::vector<T> or
-        // std::vector<std::vector<U>>, where in both cases T and U are simple value types that can
-        // be swapped.
-        detail::apply_reverse_permutation(std::move(permutation),
-                                          m_indices,
-                                          std::get<tag_index_v<Tags>>(m_data)...);
+        // container. This is the algorithm from boost::algorithm::apply_reverse_permutation.
+        for (std::size_t i = 0; i < my_size; ++i) {
+            while (i != permutation[i]) {
+                using ::std::swap;
+                auto const next = permutation[i];
+                for_all_vectors<detail::may_cause_reallocation::No>(
+                    [i, next](auto const& tag, auto& vec, auto field_index, auto array_dim) {
+                        // swap the i-th and next-th array_dim-sized sub-ranges of vec
+                        std::swap_ranges(std::next(vec.begin(), i * array_dim),
+                                         std::next(vec.begin(), (i + 1) * array_dim),
+                                         std::next(vec.begin(), next * array_dim));
+                    });
+                swap(permutation[i], permutation[next]);
+            }
+        }
         // update the indices in the container
         for (auto i = 0ul; i < my_size; ++i) {
             m_indices[i].set_current_row(i);
@@ -538,42 +707,17 @@ struct soa {
         //    never invalidates indices
         mark_as_unsorted_impl<true>();
         // Append to all of the vectors
-        std::vector<std::tuple<::std::byte*, ::std::byte*, std::size_t, std::size_t>>
-            realloc_data{};
         auto const old_size = size();
-        for_all_vectors(*this, [old_size, &realloc_data](auto const& tag, auto& vec) {
-            using Tag = ::std::decay_t<decltype(tag)>;
-            auto* const old_data = vec.data();
-            if constexpr (detail::has_default_value_v<Tag>) {
-                vec.emplace_back(tag.default_value());
-            } else {
-                vec.emplace_back();
-            }
-            if (ptr_update_callbacks_exist()) {
-                auto* const new_data = vec.data();
-                if (old_data != new_data) {
-                    // reallocation happened, so we'll need to execute pointer-updating callbacks
-                    static_assert(::std::is_same_v<
-                                  typename ::std::remove_reference_t<decltype(vec)>::value_type,
-                                  typename Tag::type>);
-                    realloc_data.emplace_back(
-                        static_cast<::std::byte*>(static_cast<void*>(old_data)),
-                        static_cast<::std::byte*>(static_cast<void*>(new_data)),
-                        sizeof(typename Tag::type),
-                        old_size);
+        for_all_vectors<detail::may_cause_reallocation::Yes>(
+            [old_size](auto const& tag, auto& vec, auto field_index, auto array_dim) {
+                using Tag = ::std::decay_t<decltype(tag)>;
+                auto* const old_data = vec.data();
+                if constexpr (detail::has_default_value_v<Tag>) {
+                    vec.insert(vec.end(), array_dim, tag.default_value());
+                } else {
+                    vec.insert(vec.end(), array_dim, {});
                 }
-            }
-        });
-        if (!realloc_data.empty()) {
-            // Only bother with this if insertion actually caused reallocation
-            invoke_ptr_update_callbacks(
-                [realloc_data = std::move(realloc_data)](ptr_update_data& recalc_ptr_data) {
-                    // This is only executed if callbacks are registered; we should add entries to
-                    // `recalc_ptr_data` that allow recalculate_ptr to correctly handle the
-                    // reallocations that just occured
-                    recalc_ptr_data.reallocation_data(std::move(realloc_data));
-                });
-        }
+            });
         // Important that this comes after the m_frozen_count check
         owning_identifier<Storage> index{static_cast<Storage&>(*this), old_size};
         // Update the pointer-to-row-number in m_indices so it refers to the
@@ -586,8 +730,8 @@ struct soa {
     /**
      * @brief Get a non-owning identifier to the offset-th entry.
      */
-    [[nodiscard]] non_owning_identifier<Storage> at(std::size_t offset) {
-        return {static_cast<Storage*>(this), m_indices[offset]};
+    [[nodiscard]] non_owning_identifier<Storage> at(std::size_t offset) const {
+        return {const_cast<Storage*>(static_cast<Storage const*>(this)), m_indices[offset]};
     }
 
     /**
@@ -595,7 +739,7 @@ struct soa {
      */
     template <typename Tag>
     [[nodiscard]] constexpr Tag const& get_tag() const {
-        return std::get<Tag>(m_tags);
+        return std::get<tag_index_v<Tag>>(m_data).tag();
     }
 
     template <typename Tag>
@@ -613,7 +757,7 @@ struct soa {
     [[nodiscard]] typename Tag::type& get(std::size_t offset) {
         static_assert(has_tag_v<Tag>);
         static_assert(!detail::has_num_instances_v<Tag>);
-        return std::get<tag_index_v<Tag>>(m_data)[offset];
+        return std::get<tag_index_v<Tag>>(m_data).data_ptrs()[0][offset];
     }
 
     /**
@@ -623,7 +767,7 @@ struct soa {
     [[nodiscard]] typename Tag::type const& get(std::size_t offset) const {
         static_assert(has_tag_v<Tag>);
         static_assert(!detail::has_num_instances_v<Tag>);
-        return std::get<tag_index_v<Tag>>(m_data)[offset];
+        return std::get<tag_index_v<Tag>>(m_data).data_ptrs()[0][offset];
     }
 
     /**
@@ -631,10 +775,18 @@ struct soa {
      */
     template <typename Tag>
     [[nodiscard]] data_handle<typename Tag::type> get_handle(
-        non_owning_identifier_without_container id) const {
+        non_owning_identifier_without_container id,
+        int array_index = 0) const {
         static_assert(has_tag_v<Tag>);
         static_assert(!detail::has_num_instances_v<Tag>);
-        return {std::move(id), std::get<tag_index_v<Tag>>(m_data)};
+        auto const array_dim = std::get<tag_index_v<Tag>>(m_data).array_dims()[0];
+        assert(array_dim > 0);
+        assert(array_index >= 0);
+        assert(array_index < array_dim);
+        return {std::move(id),
+                std::get<tag_index_v<Tag>>(m_data).data_ptrs(),
+                array_dim,
+                array_index};
     }
 
     /**
@@ -642,41 +794,48 @@ struct soa {
      */
     template <typename Tag>
     [[nodiscard]] data_handle<typename Tag::type> get_field_instance_handle(
-        std::size_t field_index,
-        non_owning_identifier_without_container id) const {
+        non_owning_identifier_without_container id,
+        int field_index,
+        int array_index = 0) const {
         static_assert(has_tag_v<Tag>);
         static_assert(detail::has_num_instances_v<Tag>);
-        return {std::move(id), get_field_instance_helper<Tag>(*this, field_index)};
-    }
-
-  private:
-    // Helper that unifies different [non-]const 1/2-parameter versions of get_field_instance
-    template <typename Tag, typename This>
-    static decltype(auto) get_field_instance_helper(This& this_ref, std::size_t field_index) {
-        static_assert(has_tag_v<Tag>);
-        static_assert(detail::has_num_instances_v<Tag>);
-        assert(field_index < this_ref.template get_tag<Tag>().num_instances());
-        decltype(auto) vector_of_vectors = std::get<tag_index_v<Tag>>(this_ref.m_data);
-        assert(vector_of_vectors.size() == this_ref.template get_tag<Tag>().num_instances());
-        return vector_of_vectors[field_index];
-    }
-
-  public:
-    /**
-     * @brief Get the offset-th element of the field_index-th instance of the column named by Tag.
-     */
-    template <typename Tag>
-    typename Tag::type& get_field_instance(std::size_t field_index, std::size_t offset) {
-        return get_field_instance_helper<Tag>(*this, field_index)[offset];
+        auto const array_dim = std::get<tag_index_v<Tag>>(m_data).check_array_dim(field_index,
+                                                                                  array_index);
+        return {std::move(id),
+                std::get<tag_index_v<Tag>>(m_data).data_ptrs() + field_index,
+                array_dim,
+                array_index};
     }
 
     /**
      * @brief Get the offset-th element of the field_index-th instance of the column named by Tag.
+     *
+     * Put differently:
+     *  - offset: index of a mechanism instance
+     *  - field_index: index of a RANGE variable inside a mechanism
+     *  - array_index: offset inside an array RANGE variable
      */
     template <typename Tag>
-    typename Tag::type const& get_field_instance(std::size_t field_index,
-                                                 std::size_t offset) const {
-        return get_field_instance_helper<Tag>(*this, field_index)[offset];
+    typename Tag::type& get_field_instance(std::size_t offset,
+                                           int field_index,
+                                           int array_index = 0) {
+        auto const array_dim = std::get<tag_index_v<Tag>>(m_data).check_array_dim(field_index,
+                                                                                  array_index);
+        return std::get<tag_index_v<Tag>>(m_data)
+            .data_ptrs()[field_index][offset * array_dim + array_index];
+    }
+
+    /**
+     * @brief Get the offset-th element of the field_index-th instance of the column named by Tag.
+     */
+    template <typename Tag>
+    typename Tag::type const& get_field_instance(std::size_t offset,
+                                                 int field_index,
+                                                 int array_index = 0) const {
+        auto const array_dim = std::get<tag_index_v<Tag>>(m_data).check_array_dim(field_index,
+                                                                                  array_index);
+        return std::get<tag_index_v<Tag>>(m_data)
+            .data_ptrs()[field_index][offset * array_dim + array_index];
     }
 
     /**
@@ -686,51 +845,40 @@ struct soa {
      *       container?
      */
     template <typename T>
-    [[nodiscard]] neuron::container::data_handle<T> find_data_handle(T* ptr) {
+    [[nodiscard]] neuron::container::data_handle<T> find_data_handle(T* ptr) const {
         neuron::container::data_handle<T> handle{};
-        // Don't go via non-const get<T>() because of the m_frozen_count check
-        find_data_handle(handle, m_indices, ptr) ||
-            (find_data_handle(handle, std::get<tag_index_v<Tags>>(m_data), ptr) || ...);
+        for_all_vectors(
+            [this, &handle, ptr](auto const& tag, auto const& vec, int field_index, int array_dim) {
+                using Tag = ::std::decay_t<decltype(tag)>;
+                using Data = typename Tag::type;
+                if constexpr (std::is_same_v<T, Data>) {
+                    if (handle) {
+                        // Half-hearted short-circuit
+                        return;
+                    }
+                    if (vec.empty()) {
+                        return;
+                    }
+                    if (ptr < vec.data() || ptr >= std::next(vec.data(), vec.size())) {
+                        return;
+                    }
+                    auto const physical_row = ptr - vec.data();
+                    assert(physical_row < vec.size());
+                    // This pointer seems to live inside this container. This is all a
+                    // bit fragile.
+                    int const array_index = physical_row % array_dim;
+                    int const logical_row = physical_row / array_dim;
+                    handle = neuron::container::data_handle<T>{
+                        at(logical_row),
+                        std::get<tag_index_v<Tag>>(m_data).data_ptrs() + std::max(field_index, 0),
+                        array_dim,
+                        array_index};
+                    assert(handle.refers_to_a_modern_data_structure());
+                }
+            });
         return handle;
     }
 
-  private:
-    template <typename Tag, typename T>
-    constexpr bool find_container_info(utils::storage_info& info,
-                                       std::vector<T> const& cont1,
-                                       void const* cont2,
-                                       int field = -1) const {
-        if (&cont1 != cont2) {
-            return false;
-        }
-        if constexpr (detail::has_name_v<Storage>) {
-            info.container = static_cast<Storage const&>(*this).name();
-        }
-        info.field = cxx_demangle(typeid(Tag).name());
-        info.size = cont1.size();
-        constexpr std::string_view prefix{"neuron::container::"};
-        if (std::string_view{info.field}.substr(0, prefix.size()) == prefix) {
-            info.field.erase(0, prefix.size());
-            if (field >= 0) {
-                info.field.append(1, '#');
-                info.field.append(std::to_string(field));
-            }
-        }
-        return true;
-    }
-    template <typename Tag, typename T>
-    constexpr bool find_container_info(utils::storage_info& info,
-                                       std::vector<std::vector<T>> const& conts,
-                                       void const* cont2) const {
-        for (auto field = 0; field < conts.size(); ++field) {
-            if (find_container_info<Tag>(info, conts[field], cont2, field)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-  public:
     /**
      * @brief Query whether the given pointer-to-vector is the one associated to Tag.
      *
@@ -738,60 +886,62 @@ struct soa {
      * particular container.
      */
     template <typename Tag>
-    [[nodiscard]] bool is_storage_pointer(std::vector<typename Tag::type> const* ptr) const {
+    [[nodiscard]] bool is_storage_pointer(typename Tag::type const* ptr) const {
         static_assert(has_tag_v<Tag>);
         static_assert(!detail::has_num_instances_v<Tag>);
-        return ptr == &std::get<tag_index_v<Tag>>(m_data);
+        return ptr == std::get<tag_index_v<Tag>>(m_data).data_ptrs()[0];
     }
 
     [[nodiscard]] std::optional<utils::storage_info> find_container_info(void const* cont) const {
-        utils::storage_info info{};
-        // FIXME: generate a proper tag type for the index column?
-        // The template argument is just used to derive a name for the column; it doesn't matter
-        // that the argument for m_indices does not match m_indices's value type.
-        if (find_container_info<non_owning_identifier<Storage>>(info, m_indices, cont) ||
-            (find_container_info<Tags>(info, std::get<tag_index_v<Tags>>(m_data), cont) || ...)) {
-            return info;
-        } else {
-            return {std::nullopt};
-        }
+        std::optional<utils::storage_info> opt_info{std::nullopt};
+        for_all_vectors([cont,
+                         &opt_info,
+                         this](auto const& tag, auto const& vec, int field_index, int array_dim) {
+            if (opt_info) {
+                // Short-circuit
+                return;
+            }
+            if (vec.data() != cont) {
+                // This isn't the right vector
+                return;
+            }
+            // We found the right container/tag combination! Populate the
+            // information struct.
+            auto& info = opt_info.emplace();
+            if constexpr (detail::has_name_v<Storage>) {
+                info.container = static_cast<Storage const&>(*this).name();
+            }
+            info.field = detail::get_name(tag, field_index);
+            assert(vec.size() % array_dim == 0);
+            info.size = vec.size();
+        });
+        return opt_info;
+    }
+
+    /**
+     * @brief Get a pointer to a range of pointers that always point to the start of the contiguous
+     * storage.
+     */
+    template <typename Tag>
+    [[nodiscard]] typename Tag::type* const* get_data_ptrs() const {
+        return std::get<tag_index_v<Tag>>(m_data).data_ptrs();
+    }
+
+    /**
+     * @brief Get a pointer to an array holding the array dimensions of the fields associated with
+     * this tag.
+     */
+    template <typename Tag>
+    [[nodiscard]] int const* get_array_dims() const {
+        return std::get<tag_index_v<Tag>>(m_data).array_dims();
+    }
+
+    template <typename Tag>
+    [[nodiscard]] neuron::field_index translate_legacy_index(int legacy_index) const {
+        return std::get<tag_index_v<Tag>>(m_data).translate_legacy_index(legacy_index);
     }
 
   private:
-    template <typename T, typename U>
-    constexpr bool find_data_handle(neuron::container::data_handle<T>& handle,
-                                    std::vector<U>& container,
-                                    T* ptr) {
-        assert(!handle);
-        if constexpr (std::is_same_v<T, U>) {
-            if (!container.empty() && ptr >= container.data() &&
-                ptr < std::next(container.data(), container.size())) {
-                auto const row = ptr - container.data();
-                assert(row < container.size());
-                // This pointer seems to live inside this container. This is all
-                // a bit fragile; these pointers can be invalidated by almost
-                // all mutating operations on the container. To make things a
-                // bit more robust, we could insist that the container is
-                // "sorted". FIXME: re-enable this
-                // assert(is_sorted());
-                // Probably OK to call this in read-only mode?
-                handle = neuron::container::data_handle<T>{at(row), container};
-                assert(handle.refers_to_a_modern_data_structure());
-                return true;
-            } else {
-                return false;
-            }
-        } else if constexpr (std::is_same_v<std::vector<T>, U>) {
-            // Handle the case where U=std::vector<T> because we have a
-            // runtime-variable number of copies of a column
-            return std::any_of(container.begin(), container.end(), [&](auto& vec) {
-                return find_data_handle(handle, vec, ptr);
-            });
-        } else {
-            return false;
-        }
-    }
-
     [[noreturn]] void throw_error(std::string_view message) const {
         std::ostringstream oss;
         oss << cxx_demangle(typeid(Storage).name()) << "[frozen_count=" << m_frozen_count
@@ -819,7 +969,7 @@ struct soa {
     std::vector<non_owning_identifier_without_container> m_indices{};
 
     /**
-     * @brief Storage type for this Tag.
+     * @brief Collection of data columns.
      *
      * If the tag implements a num_instances() method then it is duplicated a
      * runtime-determined number of times and get_field_instance<Tag>(i) returns
@@ -827,24 +977,11 @@ struct soa {
      * vectors. If is no num_instances() method then the outer vector can be
      * omitted and get<Tag>() returns a vector of values.
      */
-    template <typename Tag>
-    using storage_t = std::conditional_t<detail::has_num_instances_v<Tag>,
-                                         std::vector<std::vector<typename Tag::type>>,
-                                         std::vector<typename Tag::type>>;
-
-    /**
-     * @brief Collection of data columns.
-     */
-    std::tuple<storage_t<Tags>...> m_data{};
+    std::tuple<detail::field_data<Tags, detail::has_num_instances_v<Tags>>...> m_data{};
 
     /**
      * @brief Callback that is invoked when the container becomes unsorted.
      */
     std::function<void()> m_unsorted_callback{};
-
-    /**
-     * @brief Instances of the tag types.
-     */
-    std::tuple<Tags...> m_tags{};
 };
 }  // namespace neuron::container

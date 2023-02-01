@@ -885,7 +885,6 @@ foreach(
   neuron/model_data_fwd.hpp
   neuron/cache/mechanism_range.hpp
   neuron/cache/model_data.hpp
-  neuron/container/callbacks.hpp
   neuron/container/data_handle.hpp
   neuron/container/generic_data_handle.hpp
   neuron/container/mechanism.hpp

@@ -379,6 +379,7 @@ void hoc_last_init(void) {
     SectionList_reg();
     SectionRef_reg();
     register_mech(morph_mech, morph_alloc, nullptr, nullptr, nullptr, nullptr, -1, 0);
+    neuron::mechanism::register_data_fields(MORPHOLOGY, neuron::mechanism::field<double>{"diam"});
     hoc_register_prop_size(MORPHOLOGY, 1, 0);
     for (m = mechanism; *m; m++) {
         (*m)();
@@ -542,7 +543,7 @@ void nrn_register_mech_common(const char** m,
     memb_func[type].is_point = 0;
     memb_func[type].hoc_mech = nullptr;
     memb_func[type].setdata_ = nullptr;
-    memb_func[type].dparam_semantics = (int*) 0;
+    memb_func[type].dparam_semantics = nullptr;
     memb_order_[type] = type;
     memb_func[type].ode_count = nullptr;
     memb_func[type].ode_map = nullptr;
@@ -709,77 +710,101 @@ void nrn_writes_conc(int type, int unused) {
     }
 }
 
-void hoc_register_prop_size(int type, int psize, int dpsize) {
-    nrn_prop_param_size_[type] = psize;
-    nrn_prop_dparam_size_[type] = dpsize;
-    if (memb_func[type].dparam_semantics) {
-        free(memb_func[type].dparam_semantics);
-        memb_func[type].dparam_semantics = (int*) 0;
+namespace {
+/**
+ * @brief Translate a dparam semantic string to integer form.
+ *
+ * This logic used to live inside hoc_register_dparam_semantics.
+ */
+int dparam_semantics_to_int(std::string_view name) {
+    // only interested in area, iontype, cvode_ieq, netsend, pointer, pntproc, bbcorepointer, watch,
+    // diam, fornetcon, xx_ion and #xx_ion which will get a semantics value of -1, -2, -3, -4, -5,
+    // -6, -7, -8, -9, -10 type, and type+1000 respectively
+    if (name == "area") {
+        return -1;
+    } else if (name == "iontype") {
+        return -2;
+    } else if (name == "cvodeieq") {
+        return -3;
+    } else if (name == "netsend") {
+        return -4;
+    } else if (name == "pointer") {
+        return -5;
+    } else if (name == "pntproc") {
+        return -6;
+    } else if (name == "bbcorepointer") {
+        return -7;
+    } else if (name == "watch") {
+        return -8;
+    } else if (name == "diam") {
+        return -9;
+    } else if (name == "fornetcon") {
+        return -10;
+    } else {
+        bool const i{name[0] == '#'};
+        Symbol* s = hoc_lookup(std::string{name.substr(i)}.c_str());
+        if (s && s->type == MECHANISM) {
+            return s->subtype + i * 1000;
+        }
+        throw std::runtime_error("unknown dparam semantics: " + std::string{name});
     }
-    if (dpsize) {
-        memb_func[type].dparam_semantics = (int*) ecalloc(dpsize, sizeof(int));
+}
+}  // namespace
+
+namespace neuron::mechanism::detail {
+void register_data_fields(int type,
+                          std::vector<std::pair<const char*, int>> const& param_info,
+                          std::vector<std::pair<const char*, const char*>> const& dparam_info) {
+    nrn_prop_param_size_[type] = param_info.size();
+    nrn_prop_dparam_size_[type] = dparam_info.size();
+    delete[] std::exchange(memb_func[type].dparam_semantics, nullptr);
+    if (!dparam_info.empty()) {
+        memb_func[type].dparam_semantics = new int[dparam_info.size()];
+        for (auto i = 0; i < dparam_info.size(); ++i) {
+            // dparam_info[i].first is the name of the variable, currently unused...
+            memb_func[type].dparam_semantics[i] = dparam_semantics_to_int(dparam_info[i].second);
+        }
     }
+    // Translate param_info into the type we want to use internally now we're fully inside NEURON
+    // library code (wheels...)
+    std::vector<container::Mechanism::Variable> param_info_new{};
+    std::transform(param_info.begin(),
+                   param_info.end(),
+                   std::back_inserter(param_info_new),
+                   [](auto const& old) -> container::Mechanism::Variable {
+                       return {old.first, old.second};
+                   });
     // Create a per-mechanism data structure as part of the top-level
     // neuron::model() structure.
     auto& model = neuron::model();
     model.delete_mechanism(type);  // e.g. extracellular can call hoc_register_prop_size multiple
                                    // times
     auto& mech_data = model.add_mechanism(type,
-                                          memb_func[type].sym->name,    // the mechanism name
-                                          nrn_prop_param_size_[type]);  // how many `double`
-                                                                        // per-instance variables
-                                                                        // there are
+                                          memb_func[type].sym->name,   // the mechanism name
+                                          std::move(param_info_new));  // names and array dimensions
+                                                                       // of double-valued
+                                                                       // per-instance variables
     memb_list[type].set_storage_pointer(&mech_data);
 }
+}  // namespace neuron::mechanism::detail
+
+/**
+ * @brief Legacy way of registering mechanism data/pdata size.
+ *
+ * Superseded by neuron::mechanism::register_data_fields.
+ */
+void hoc_register_prop_size(int type, int psize, int dpsize) {
+    assert(nrn_prop_param_size_[type] == psize);
+    assert(nrn_prop_dparam_size_[type] == dpsize);
+}
+
+/**
+ * @brief Legacy way of registering pdata semantics.
+ *
+ * Superseded by neuron::mechanism::register_data_fields.
+ */
 void hoc_register_dparam_semantics(int type, int ix, const char* name) {
-    /* only interested in area, iontype, cvode_ieq,
-       netsend, pointer, pntproc, bbcorepointer, watch, diam,
-       fornetcon,
-       xx_ion and #xx_ion which will get
-       a semantics value of -1, -2, -3,
-       -4, -5, -6, -7, -8, -9, -10
-       type, and type+1000 respectively
-    */
-    if (strcmp(name, "area") == 0) {
-        memb_func[type].dparam_semantics[ix] = -1;
-    } else if (strcmp(name, "iontype") == 0) {
-        memb_func[type].dparam_semantics[ix] = -2;
-    } else if (strcmp(name, "cvodeieq") == 0) {
-        memb_func[type].dparam_semantics[ix] = -3;
-    } else if (strcmp(name, "netsend") == 0) {
-        memb_func[type].dparam_semantics[ix] = -4;
-    } else if (strcmp(name, "pointer") == 0) {
-        memb_func[type].dparam_semantics[ix] = -5;
-    } else if (strcmp(name, "pntproc") == 0) {
-        memb_func[type].dparam_semantics[ix] = -6;
-    } else if (strcmp(name, "bbcorepointer") == 0) {
-        memb_func[type].dparam_semantics[ix] = -7;
-    } else if (strcmp(name, "watch") == 0) {
-        memb_func[type].dparam_semantics[ix] = -8;
-    } else if (strcmp(name, "diam") == 0) {
-        memb_func[type].dparam_semantics[ix] = -9;
-    } else if (strcmp(name, "fornetcon") == 0) {
-        memb_func[type].dparam_semantics[ix] = -10;
-    } else {
-        int i = 0;
-        if (name[0] == '#') {
-            i = 1;
-        }
-        Symbol* s = hoc_lookup(name + i);
-        if (s && s->type == MECHANISM) {
-            memb_func[type].dparam_semantics[ix] = s->subtype + i * 1000;
-        } else {
-            fprintf(stderr,
-                    "mechanism %s : unknown semantics for %s\n",
-                    memb_func[type].sym->name,
-                    name);
-            assert(0);
-        }
-    }
-#if 0
-	printf("dparam semantics %s ix=%d %s %d\n", memb_func[type].sym->name,
-	  ix, name, memb_func[type].dparam_semantics[ix]);
-#endif  // 0
+    assert(memb_func[type].dparam_semantics[ix] == dparam_semantics_to_int(name));
 }
 
 void hoc_register_cvode(int i,
@@ -993,10 +1018,15 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
                 int index = -1;
                 for (p = node.prop; p; p = p->next) {
                     auto const num_params = p->param_size();
+                    int legacy_index{};
                     for (auto i_param = 0; i_param < num_params; ++i_param) {
-                        if (pv[i] == p->param_handle(i_param)) {
-                            index = i_param;  // ambiguous between the two Prop attached to Node?
-                            break;
+                        auto const array_dim = p->param_array_dimension(i_param);
+                        for (auto j = 0; j < array_dim; ++j) {
+                            if (pv[i] == p->param_handle(i_param, j)) {
+                                index = legacy_index++;  // ambiguous between the two Prop attached
+                                                         // to Node?
+                                break;
+                            }
                         }
                     }
                     if (index >= 0) {

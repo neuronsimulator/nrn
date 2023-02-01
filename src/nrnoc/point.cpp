@@ -115,7 +115,7 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
         nrn_pnt_sec_for_need_ = nullptr;
         nrn_point_prop_ = nullptr;
         pnt->prop = p;
-        pnt->prop->dparam[1] = pnt;
+        pnt->prop->dparam[1] = {neuron::container::do_not_search, pnt};
     }
     // Update pnt->sec with sec, unreffing the old value and reffing the new one
     nrn_sec_ref(&pnt->sec, sec);
@@ -276,7 +276,7 @@ neuron::container::data_handle<double> point_process_pointer(Point_process* pnt,
             return neuron::container::data_handle<double>{
                 pnt->prop->ob->u.dataspace[sym->u.rng.index].pval + index};
         } else {
-            return pnt->prop->param_handle(sym->u.rng.index + index);
+            return pnt->prop->param_handle_legacy(sym->u.rng.index + index);
         }
     }
 }

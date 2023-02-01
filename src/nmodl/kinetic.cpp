@@ -374,7 +374,7 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtl
     }
     fun->used = count;
     Sprintf(buf,
-            "static int _slist%d[%d], _dlist%d[%d]; static double *_temp%d;\n",
+            "static neuron::field_index _slist%d[%d], _dlist%d[%d]; static double *_temp%d;\n",
             numlist,
             count,
             numlist,
@@ -1087,19 +1087,19 @@ void kinlist(Symbol* fun, Rlist* rlst) {
         if (s->subtype & ARRAY) {
             int dim = s->araydim;
             Sprintf(buf,
-                    "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = %s_columnindex + _i;",
+                    "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = {%s_columnindex, _i};",
                     dim,
                     fun->u.i,
                     s->varnum,
                     s->name);
             qv = lappendstr(initlist, buf);
             Sprintf(
-                buf, " _dlist%d[%d+_i] = D%s_columnindex + _i;}\n", fun->u.i, s->varnum, s->name);
+                buf, " _dlist%d[%d+_i] = {D%s_columnindex, _i};}\n", fun->u.i, s->varnum, s->name);
             qv = lappendstr(initlist, buf);
         } else {
-            Sprintf(buf, "_slist%d[%d] = %s_columnindex;", fun->u.i, s->varnum, s->name);
+            Sprintf(buf, "_slist%d[%d] = {%s_columnindex, 0};", fun->u.i, s->varnum, s->name);
             qv = lappendstr(initlist, buf);
-            Sprintf(buf, " _dlist%d[%d] = D%s_columnindex;\n", fun->u.i, s->varnum, s->name);
+            Sprintf(buf, " _dlist%d[%d] = {D%s_columnindex, 0};\n", fun->u.i, s->varnum, s->name);
             qv = lappendstr(initlist, buf);
         }
         s->used = 0;
