@@ -91,15 +91,16 @@ struct Memb_list {
      * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
      * code.
      */
-    [[nodiscard]] __attribute__((pure)) double& data(std::size_t instance, std::size_t variable);
+    [[nodiscard]] __attribute__((pure)) double& data(std::size_t instance,
+                                                     int variable,
+                                                     int array_index = 0);
 
     /**
      * @brief Get the `variable`-th pointer-to-double in `instance` of the mechanism.
      *
      * Defined in .cpp to hide the full definition of Datum from translated MOD file code.
      */
-    [[nodiscard]] __attribute__((pure)) double* dptr_field(std::size_t instance,
-                                                           std::size_t variable);
+    [[nodiscard]] __attribute__((pure)) double* dptr_field(std::size_t instance, int variable);
 
     /**
      * @brief Get the `variable`-th floating point value in `instance` of the mechanism.
@@ -108,7 +109,8 @@ struct Memb_list {
      * code.
      */
     [[nodiscard]] __attribute__((pure)) double const& data(std::size_t instance,
-                                                           std::size_t variable) const;
+                                                           int variable,
+                                                           int array_index = 0) const;
 
     /**
      * @brief Calculate a legacy index of the given pointer in this mechanism data.
@@ -190,6 +192,10 @@ struct Memb_list {
      * code.
      */
     [[nodiscard]] int type() const;
+
+    [[nodiscard]] int _type() const {
+        return type();
+    }
 
   private:
     /**

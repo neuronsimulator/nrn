@@ -178,7 +178,9 @@ bool NrnProperty::assign(Prop* src, Prop* dest, int vartype) {
             if (vartype == 0) {
                 n = src->param_size();
                 for (int i = 0; i < n; ++i) {
-                    dest->set_param(i, src->param(i));
+                    for (auto j = 0; j < src->param_array_dimension(i); ++j) {
+                        dest->param(i, j) = src->param(i, j);
+                    }
                 }
             } else {
                 Symbol* msym = memb_func[src->_type].sym;
@@ -188,8 +190,9 @@ bool NrnProperty::assign(Prop* src, Prop* dest, int vartype) {
                     if (nrn_vartype(sym) == vartype) {
                         jmax = hoc_total_array_data(sym, 0);
                         n = sym->u.rng.index;
+                        assert(src->param_size() == dest->param_size());
                         for (j = 0; j < jmax; ++j) {
-                            dest->set_param(n + j, src->param(n + j));
+                            dest->param_legacy(n + j) = src->param_legacy(n + j);
                         }
                     }
                 }
@@ -229,7 +232,7 @@ neuron::container::data_handle<double> NrnProperty::prop_pval(const Symbol* s, i
             return static_cast<neuron::container::data_handle<double>>(
                 npi_->p_->dparam[prop_index(s) + index]);
         } else {
-            return npi_->p_->param_handle(prop_index(s) + index);
+            return npi_->p_->param_handle_legacy(prop_index(s) + index);
         }
     }
 }

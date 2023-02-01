@@ -869,7 +869,7 @@ void KSChan::add_channel(const char** m) {
         channels->push_back(nullptr);
     }
     channels->push_back(this);
-    neuron::model().add_mechanism(mechtype_, m[1], 0 /* number of floating point variables */);
+    neuron::model().add_mechanism(mechtype_, m[1]);  // no floating point fields
 }
 
 KSChan::KSChan(Object* obj, bool is_p) {
@@ -2305,10 +2305,12 @@ void KSChan::update_size() {
             std::to_string(new_dparam_size) + " while " + std::to_string(mech_data.size()) +
             " instances are active");
     }
+    std::vector<neuron::container::Mechanism::Variable> new_param_info;
+    new_param_info.resize(new_param_size, {"kschan_field", 1});
     auto mech_name = mech_data.name();
     neuron::model().delete_mechanism(mechtype_);
     nrn_delete_mechanism_prop_datum(mechtype_);
-    neuron::model().add_mechanism(mechtype_, std::move(mech_name), new_param_size);
+    neuron::model().add_mechanism(mechtype_, std::move(mech_name), std::move(new_param_info));
 }
 
 void KSChan::alloc(Prop* prop) {
@@ -2321,12 +2323,12 @@ void KSChan::alloc(Prop* prop) {
         // prop->param = nrn_point_prop_->param;
         prop->dparam = nrn_point_prop_->dparam;
     } else {
-        prop->set_param(gmaxoffset_, gmax_deflt_);
+        prop->param(gmaxoffset_) = gmax_deflt_;
         if (is_point()) {
-            prop->set_param(NSingleIndex, 1.);
+            prop->param(NSingleIndex) = 1.;
         }
         if (!ion_sym_) {
-            prop->set_param(1 + gmaxoffset_, erev_deflt_);
+            prop->param(1 + gmaxoffset_) = erev_deflt_;
         }
     }
     int ppsize = ppoff_;

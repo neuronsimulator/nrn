@@ -5,6 +5,8 @@ extern void hoc_register_prop_size(int type, int psize, int dpsize);
 #include "neuron/model_data.hpp"
 #include "nrnoc_ml.h"
 
+#include <string>
+#include <type_traits>
 #include <vector>
 
 typedef struct NrnThread NrnThread;
@@ -91,6 +93,43 @@ struct Memb_func {
 #define CAP          3
 #if EXTRACELLULAR
 #define EXTRACELL 5
+extern int nrn_nlayer_extracellular;
+namespace neuron::extracellular {
+// these are the fields in the standard NEURON mechanism data structures
+static constexpr auto xraxial_index = 0;          // array of size nlayer
+static constexpr auto xg_index = 1;               // array of size nlayer
+static constexpr auto xc_index = 2;               // array of size nlayer
+static constexpr auto e_extracellular_index = 3;  // scalar
+static constexpr auto i_membrane_index = 4;       // scalar, might not exist
+static constexpr auto sav_g_index = 5;            // scalar, might not exist
+static constexpr auto sav_rhs_index = 6;          // scalar, might not exist
+
+// these are the indices into the Extnode param array
+inline std::size_t xraxial_index_ext(std::size_t ilayer) {
+    return ilayer;
+}
+inline std::size_t xg_index_ext(std::size_t ilayer) {
+    return nrn_nlayer_extracellular + ilayer;
+}
+inline std::size_t xc_index_ext(std::size_t ilayer) {
+    return 2 * nrn_nlayer_extracellular + ilayer;
+}
+inline std::size_t e_extracellular_index_ext() {
+    return 3 * nrn_nlayer_extracellular;
+}
+#if I_MEMBRANE
+inline std::size_t sav_rhs_index_ext() {
+    return 3 * nrn_nlayer_extracellular + 3;
+}
+#endif
+inline std::size_t vext_pseudoindex() {
+#if I_MEMBRANE
+    return 3 * nrn_nlayer_extracellular + 4;
+#else
+    return 3 * nrn_nlayer_extracellular + 1;
+#endif
+}
+}  // namespace neuron::extracellular
 #endif
 
 #define nrnocCONST 1
@@ -125,3 +164,56 @@ pointers which connect variables  from other mechanisms via the _ppval array. \
 */
 
 #define _AMBIGUOUS 5
+
+namespace neuron::mechanism {
+template <typename T>
+struct field {
+    using type = T;
+    field(std::string name_)
+        : name{std::move(name_)} {}
+    field(std::string name_, int array_size_)
+        : name{std::move(name_)}
+        , array_size{array_size_} {}
+    field(std::string name_, std::string semantics_)
+        : name{std::move(name_)}
+        , semantics{std::move(semantics_)} {}
+    int array_size{1};
+    std::string name{}, semantics{};
+};
+namespace detail {
+void register_data_fields(int mech_type,
+                          std::vector<std::pair<const char*, int>> const& param_info,
+                          std::vector<std::pair<const char*, const char*>> const& dparam_size);
+}
+/**
+ * @brief Type- and array-aware version of hoc_register_prop_size.
+ *
+ * hoc_register_prop_size did not propagate enough information to know which parts of the "data"
+ * size were ranges corresponding to a single array variable. This also aims to be ready for
+ * supporting multiple variable data types in MOD files.
+ */
+template <typename... Fields>
+void register_data_fields(int mech_type, Fields const&... fields) {
+    // Use of const char* aims to avoid wheel ABI issues with std::string
+    std::vector<std::pair<const char*, int>> param_info{};
+    std::vector<std::pair<const char*, const char*>> dparam_info{};
+    auto const process = [&](auto const& field) {
+        using field_t = std::decay_t<decltype(field)>;
+        using data_t = typename field_t::type;
+        if constexpr (std::is_same_v<data_t, double>) {
+            assert(field.semantics.empty());
+            param_info.emplace_back(field.name.c_str(), field.array_size);
+        } else {
+            static_assert(std::is_same_v<data_t, int> /* TODO */ || std::is_pointer_v<data_t>,
+                          "only pointers, doubles and ints are supported");
+            assert(field.array_size == 1);  // only scalar dparam data is supported
+            dparam_info.emplace_back(field.name.c_str(), field.semantics.c_str());
+        }
+    };
+    // fold expression with the comma operator is neater, but hits AppleClang expression depth
+    // limits for large sizeof...(Fields); the old initializer_list trick avoids that.
+    static_cast<void>(std::initializer_list<int>{(static_cast<void>(process(fields)), 0)...});
+    // beware, the next call crosses from translated mechanism code into the main NEURON library
+    detail::register_data_fields(mech_type, param_info, dparam_info);
+}
+}  // namespace neuron::mechanism

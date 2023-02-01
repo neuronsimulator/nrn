@@ -772,7 +772,7 @@ void reorder_secorder() {
         for (isec = order - _nt->ncell; isec < order; ++isec) {
             sec = secorder[isec];
             /* to make it easy to fill in PreSyn.nt_*/
-            sec->prop->dparam[9] = _nt;
+            sec->prop->dparam[9] = {neuron::container::do_not_search, _nt};
             for (j = 0; j < sec->nnode; ++j) {
                 nd = sec->pnode[j];
                 nd->_nt = _nt;
@@ -823,7 +823,7 @@ void reorder_secorder() {
         for (isec = order - _nt->ncell; isec < order; ++isec) {
             sec = secorder[isec];
             /* to make it easy to fill in PreSyn.nt_*/
-            sec->prop->dparam[9] = _nt;
+            sec->prop->dparam[9] = {neuron::container::do_not_search, _nt};
             for (j = 0; j < sec->nnode; ++j) {
                 nd = sec->pnode[j];
                 nd->_nt = _nt;
@@ -908,8 +908,7 @@ void nrn_mk_table_check() {
     }
 }
 
-void nrn_thread_table_check() {
-    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+void nrn_thread_table_check(neuron::model_sorted_token const& sorted_token) {
     for (auto [id, tml]: table_check_) {
         Memb_list* ml = tml->ml;
         memb_func[tml->index].thread_table_check_(

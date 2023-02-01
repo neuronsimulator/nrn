@@ -8,6 +8,10 @@
 #include <memory>
 
 namespace neuron::container::Mechanism {
+struct Variable {
+    std::string name{};
+    int array_size{1};
+};
 namespace field {
 /** @brief Catch-all for floating point per-instance variables in the MOD file.
  *
@@ -15,17 +19,38 @@ namespace field {
  *  hh_a, hh_b, ...> type instead of fudging things this way.
  */
 struct FloatingPoint {
-    constexpr FloatingPoint(std::size_t num_copies)
-        : m_num_copies{num_copies} {}
-    /** @brief How many copes of this column should be created?
+    FloatingPoint(std::vector<Variable> var_info)
+        : m_var_info{std::move(var_info)} {}
+    /**
+     * @brief How many copies of this column should be created?
+     *
+     * Typically this is the number of different RANGE variables in a mechanism.
      */
-    constexpr std::size_t num_instances() const {
-        return m_num_copies;
+    [[nodiscard]] std::size_t num_instances() const {
+        return m_var_info.size();
     }
+
+    [[nodiscard]] Variable const& info(std::size_t i) const {
+        return m_var_info.at(i);
+    }
+
+    /**
+     * @brief What is the array dimension of the i-th copy of this column?
+     *
+     * Typically this is 1 for a normal RANGE variable and larger for an array RANGE variable.
+     */
+    [[nodiscard]] int array_dimension(int i) const {
+        return info(i).array_size;
+    }
+
+    [[nodiscard]] const char* name(int i) const {
+        return info(i).name.c_str();
+    }
+
     using type = double;
 
   private:
-    std::size_t m_num_copies{};
+    std::vector<Variable> m_var_info{};
 };
 }  // namespace field
 
@@ -47,47 +72,40 @@ struct handle_interface: handle_base<Identifier> {
     using base_type = handle_base<Identifier>;
     using base_type::base_type;
 
-    /** @brief Return the number of floating point fields accessible via fpfield.
+    /**
+     * @brief Return the number of floating point fields accessible via fpfield.
      */
-    [[nodiscard]] std::size_t num_fpfields() const {
+    [[nodiscard]] int num_fpfields() const {
         return this->template get_tag<field::FloatingPoint>().num_instances();
     }
 
-    [[nodiscard]] field::FloatingPoint::type& fpfield(std::size_t field_index) {
-        if (field_index >= num_fpfields()) {
-            throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
-                                     ") field index out of range");
-        }
-        return this->template get<field::FloatingPoint>(field_index);
-    }
-
-    [[nodiscard]] field::FloatingPoint::type const& fpfield(std::size_t field_index) const {
-        if (field_index >= num_fpfields()) {
-            throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
-                                     ") field index out of range");
-        }
-        return this->template get<field::FloatingPoint>(field_index);
-    }
-
-    /** @brief Return a data_handle to the area.
+    /**
+     * @brief Return the array size of the given field.
      */
-    [[nodiscard]] data_handle<field::FloatingPoint::type> fpfield_handle(std::size_t field_index) {
-        if (field_index >= num_fpfields()) {
-            throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
-                                     ") field index out of range");
+    [[nodiscard]] int fpfield_dimension(int field_index) const {
+        if (auto const num_fields = num_fpfields(); field_index >= num_fields) {
+            throw std::runtime_error("fpfield #" + std::to_string(field_index) + " out of range (" +
+                                     std::to_string(num_fields) + ")");
         }
-        return this->template get_handle<field::FloatingPoint>(field_index);
+        return this->template get_tag<field::FloatingPoint>().info(field_index).array_size;
     }
 
-    /** @brief Set the area.
-     */
-    void set_fpfield(std::size_t field_index, field::FloatingPoint::type area) {
-        if (field_index >= num_fpfields()) {
-            throw std::runtime_error("Mechanism::fpfield(" + std::to_string(field_index) +
-                                     ") field index out of range");
-        }
-        this->template get<field::FloatingPoint>(field_index) = area;
+    [[nodiscard]] field::FloatingPoint::type& fpfield(int field_index, int array_index = 0) {
+        return this->template get<field::FloatingPoint>(field_index, array_index);
     }
+
+    [[nodiscard]] field::FloatingPoint::type const& fpfield(int field_index,
+                                                            int array_index = 0) const {
+        return this->template get<field::FloatingPoint>(field_index, array_index);
+    }
+
+    /** @brief Return a data_handle to a floating point value.
+     */
+    [[nodiscard]] data_handle<field::FloatingPoint::type> fpfield_handle(int field_index,
+                                                                         int array_index = 0) {
+        return this->template get_handle<field::FloatingPoint>(field_index, array_index);
+    }
+
     friend std::ostream& operator<<(std::ostream& os, handle_interface const& handle) {
         os << handle.underlying_storage().name() << '{' << handle.id() << '/'
            << handle.underlying_storage().size();

@@ -658,6 +658,7 @@ void SaveState::savenode(NodeState& ns, Node* nd) {
 #endif
         {
             for (int ip = ssi[type].offset; ip < max; ++ip) {
+                assert(p->param_array_dimension(ip) == 1);
                 ns.state[istate++] = p->param(ip);
             }
         }
@@ -743,7 +744,8 @@ void SaveState::restorenode(NodeState& ns, Node* nd) {
 #endif
         {
             for (int ip = ssi[type].offset; ip < max; ++ip) {
-                p->set_param(ip, ns.state[istate++]);
+                assert(p->param_array_dimension(ip) == 1);
+                p->param(ip) = ns.state[istate++];
             }
         }
     }

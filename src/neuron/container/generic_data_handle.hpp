@@ -7,7 +7,6 @@
 #include <cstring>
 #include <typeinfo>
 #include <type_traits>
-#include <vector>
 
 namespace neuron::container {
 
@@ -92,6 +91,10 @@ struct generic_data_handle {
         return *this = generic_data_handle{data_handle<std::remove_pointer_t<T>>{value}};
     }
 
+    template <typename T>
+    generic_data_handle(do_not_search_t dns, T* raw_ptr)
+        : generic_data_handle{data_handle<T>{dns, raw_ptr}} {}
+
     /**
      * @brief Wrap a data_handle<void> in a generic data handle.
      *
@@ -112,7 +115,9 @@ struct generic_data_handle {
     generic_data_handle(data_handle<T> const& handle)
         : m_offset{handle.m_offset}
         , m_container{handle.m_container_or_raw_ptr}
-        , m_type{&typeid(T*)} {
+        , m_type{&typeid(T*)}
+        , m_array_dim{handle.m_array_dim}
+        , m_array_index{handle.m_array_index} {
         static_assert(!std::is_same_v<T, void>);
     }
 
@@ -160,7 +165,7 @@ struct generic_data_handle {
         } else {
             // A real and still-valid data handle
             assert(m_container);
-            return {m_offset, *static_cast<std::vector<T>*>(m_container)};
+            return {m_offset, static_cast<T* const*>(m_container), m_array_dim, m_array_index};
         }
     }
 
@@ -288,10 +293,12 @@ struct generic_data_handle {
     // Offset into the underlying storage container. If this handle is holding a
     // literal value, such as a raw pointer, then this will be null.
     non_owning_identifier_without_container m_offset{};
-    // std::vector<T>* for the T encoded in m_type if m_offset is non-null,
+    // T* const* for the T encoded in m_type if m_offset is non-null,
     // otherwise a literal value is stored in this space.
     void* m_container{};
     // Pointer to typeid(T) for the wrapped type
     std::type_info const* m_type{};
+    // Extra information required for data_handle<T> to point at array variables
+    int m_array_dim{1}, m_array_index{};
 };
 }  // namespace neuron::container

@@ -61,8 +61,11 @@ directly by hoc.
 
 #include "modl.h"
 #include "parse1.hpp"
+
+#include <algorithm>
 #include <stdlib.h>
 #include <string>
+#include <vector>
 #include <unistd.h>
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)
 
@@ -137,7 +140,7 @@ int iondef(int*);
 void ion_promote(Item*);
 static int ppvar_cnt;
 static List* ppvar_semantics_;
-static void ppvar_semantics(int, const char*);
+static void ppvar_semantics(int, const char* semantics, const char* name, const char* type);
 static int for_netcons_; /* number of FOR_NETCONS statements */
 static Item* net_init_q1_;
 static Item* net_init_q2_;
@@ -175,6 +178,8 @@ static Item* net_send_delivered_; /* location for if flag is 1 then clear the
    pvarcount indexes pointers to variables such as ena
 */
 static int varcount, parraycount;
+static std::vector<std::pair<int, std::string>> ppvar_data_field_strings;
+static std::vector<std::string> data_field_strings;
 
 void nrninit() {
     currents = newlist();
@@ -381,7 +386,6 @@ void parout() {
     Lappendstr(defs_list,
                "static int _mechtype;\n\
 extern void _nrn_cacheloop_reg(int, int);\n\
-extern void hoc_register_prop_size(int, int, int);\n\
 extern void hoc_register_limits(int, HocParmLimits*);\n\
 extern void hoc_register_units(int, HocParmUnits*);\n\
 extern void nrn_promote(Prop*, int, int);\n\
@@ -526,7 +530,10 @@ extern Memb_func* memb_func;\n\
                 }
             }
         }
-        Sprintf(buf, "  _thread[%d] = new double[%d];\n", thread_data_index, cnt);
+        Sprintf(buf,
+                "  _thread[%d] = {neuron::container::do_not_search, new double[%d]};\n",
+                thread_data_index,
+                cnt);
         lappendstr(thread_mem_init_list, buf);
         Sprintf(buf, "  delete[] _thread[%d].get<double*>();\n", thread_data_index);
         lappendstr(thread_cleanup_list, buf);
@@ -583,9 +590,9 @@ extern Memb_func* memb_func;\n\
         Lappendstr(defs_list, buf);
         Sprintf(buf,
                 "if (_thread1data_inuse) {\n"
-                "  _thread[_gth] = new double[%d];\n"
+                "  _thread[_gth] = {neuron::container::do_not_search, new double[%d]};\n"
                 "} else {\n"
-                "  _thread[_gth] = _thread1data;\n"
+                "  _thread[_gth] = {neuron::container::do_not_search, _thread1data};\n"
                 "  _thread1data_inuse = 1;\n"
                 "}\n",
                 gind);
@@ -731,13 +738,17 @@ extern Memb_func* memb_func;\n\
     ppvar_cnt = ioncount + diamdec + pointercount + areadec;
     if (net_send_seen_) {
         tqitem_index = ppvar_cnt;
-        ppvar_semantics(ppvar_cnt, "netsend");
+        ppvar_semantics(
+            ppvar_cnt,
+            "netsend",
+            "_tqitem",
+            "void*" /* TQItem* really, but that's not defined in translated MOD file code */);
         ppvar_cnt++;
     }
     if (watch_seen_) {
         watch_index = ppvar_cnt;
         for (i = 0; i < watch_seen_; ++i) {
-            ppvar_semantics(i + ppvar_cnt, "watch");
+            ppvar_semantics(i + ppvar_cnt, "watch", "_watch_array", "void*" /* FIXME */);
         }
         ppvar_cnt += watch_seen_;
         Sprintf(buf, "\n#define _watch_array _ppvar + %d", watch_index);
@@ -751,7 +762,7 @@ extern Memb_func* memb_func;\n\
     if (for_netcons_) {
         Sprintf(buf, "\n#define _fnc_index %d\n", ppvar_cnt);
         Lappendstr(defs_list, buf);
-        ppvar_semantics(ppvar_cnt, "fornetcon");
+        ppvar_semantics(ppvar_cnt, "fornetcon", "_fnc_index", "void*" /* I think this is how it's currently used to avoid exposing an internal type */);
         ppvar_cnt += 1;
     }
     if (point_process) {
@@ -776,7 +787,7 @@ extern Memb_func* memb_func;\n\
     }
     if (cvode_emit) {
         cvode_ieq_index = ppvar_cnt;
-        ppvar_semantics(ppvar_cnt, "cvodeieq");
+        ppvar_semantics(ppvar_cnt, "cvodeieq", "_cvode_ieq", "int");
         ppvar_cnt++;
     }
     cvode_emit_interface();
@@ -916,14 +927,14 @@ static const char *_mechanism[] = {\n\
                 "\t_ppvar[%d] = prop_ion->param_handle(0); /* diam */\n",
                 ioncount + pointercount),
             Lappendstr(defs_list, buf);
-        ppvar_semantics(ioncount + pointercount, "diam");
+        ppvar_semantics(ioncount + pointercount, "diam", "diam", "double*");
     }
     if (areadec) {
         Sprintf(buf,
                 "\t_ppvar[%d] = nrn_alloc_node_->area_handle();\n",
                 ioncount + pointercount + diamdec),
             Lappendstr(defs_list, buf);
-        ppvar_semantics(ioncount + pointercount + diamdec, "area");
+        ppvar_semantics(ioncount + pointercount + diamdec, "area", "area", "double*");
     }
 
     if (point_process) {
@@ -987,7 +998,8 @@ static const char *_mechanism[] = {\n\
                     sion->name);
             Lappendstr(defs_list, buf);
             Sprintf(buf,
-                    "\t_ppvar[%d] = &(prop_ion->dparam[0].literal_value<int>()); /* "
+                    "\t_ppvar[%d] = {neuron::container::do_not_search, "
+                    "&(prop_ion->dparam[0].literal_value<int>())}; /* "
                     "iontype for %s */\n",
                     ioncount++,
                     sion->name);
@@ -1167,6 +1179,23 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             lappendstr(defs_list,
                        "#if NMODL_TEXT\n  register_nmodl_text_and_filename(_mechtype);\n#endif\n");
         }
+        std::sort(ppvar_data_field_strings.begin(), ppvar_data_field_strings.end());
+        std::transform(ppvar_data_field_strings.begin(),
+                       ppvar_data_field_strings.end(),
+                       std::back_inserter(data_field_strings),
+                       [](auto const& pair) { return pair.second; });
+        lappendstr(defs_list, "  using neuron::mechanism::field;\n");
+        std::string register_data_fields{"  neuron::mechanism::register_data_fields("};
+        auto const prefix_length = register_data_fields.size() +
+                                   1 /* defs_list handling adds this */;
+        register_data_fields.append("_mechtype");
+        for (auto const& data_field_str: data_field_strings) {
+            register_data_fields.append(",\n");
+            register_data_fields.append(prefix_length, ' ');
+            register_data_fields.append(data_field_str);
+        }
+        register_data_fields.append(");\n");
+        lappendstr(defs_list, register_data_fields.c_str());
         Sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", parraycount, ppvar_cnt);
         Lappendstr(defs_list, buf);
         if (watch_seen_) {
@@ -1456,7 +1485,7 @@ void ldifusreg() {
                 "static double _difcoef%d(int _i, Memb_list* _ml_arg, size_t _iml, Datum* _ppvar, "
                 "double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt, "
                 "neuron::model_sorted_token const& _sorted_token) {\n"
-                "  LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _ml_arg->type()};\n"
+                "  LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _ml_arg->_type()};\n"
                 "  auto* const _ml = &_lmr;\n"
                 "  *_pdvol = ",
                 n,
@@ -1690,11 +1719,20 @@ static void var_count(Symbol* s) {
     defs_h(s);
     s->used = varcount++;
     s->varnum = parraycount;
+    std::string field{"field<double>{\""};
+    field.append(s->name);
+    field.append(1, '"');
     if (s->subtype & ARRAY) {
-        parraycount += s->araydim;
-    } else {
-        parraycount++;
+        field.append(", ");
+        field.append(std::to_string(s->araydim));
     }
+    // **ATTENTION** in AoS NEURON then parraycount was incremented by s->araydim if the variable
+    // was an array. In SoA NEURON this is not done; the array dimension is communicated separately.
+    ++parraycount;
+    field.append("} /* ");
+    field.append(std::to_string(s->varnum));
+    field.append(" */");
+    data_field_strings.push_back(std::move(field));
 }
 
 void defs_h(Symbol* s) {
@@ -1806,7 +1844,7 @@ void bablk(int ba, int type, Item* q1, Item* q2) {
     vectorize_substitute(insertstr(q, ""), "Datum* _ppvar;");
     qv = insertstr(
         q,
-        "LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _ml_arg->type()}; auto* const "
+        "LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _ml_arg->_type()}; auto* const "
         "_ml = &_lmr;\n");
     qv = insertstr(q, "_ppvar = _ppd;\n");
     movelist(qb, q2, procfunc);
@@ -2190,8 +2228,8 @@ int iondef(int* p_pointercount) {
         ioncount = 2;
         q = lappendstr(defs_list, "#define _nd_area *_ml->dptr_field<0>(_iml)\n");
         q->itemtype = VERBATIM;
-        ppvar_semantics(0, "area");
-        ppvar_semantics(1, "pntproc");
+        ppvar_semantics(0, "area", "_nd_area", "double*");
+        ppvar_semantics(1, "pntproc", "_pntproc" /* I made this up*/, "Point_process*");
     }
     ITERATE(q, useion) {
         int dcurdef = 0;
@@ -2201,18 +2239,23 @@ int iondef(int* p_pointercount) {
         q = q->next;
         ITERATE(q1, LST(q)) {
             SYM(q1)->nrntype |= NRNIONFLAG;
-            Sprintf(buf,
-                    "#define _ion_%s *(_ml->dptr_field<%d>(_iml))\n"
-                    "#define _p_ion_%s "
-                    "static_cast<neuron::container::data_handle<double>>(_ppvar[%d])\n",
-                    SYM(q1)->name,
-                    ioncount,
-                    SYM(q1)->name,
-                    ioncount);
+            std::string name{"_ion_"};
+            name.append(SYM(q1)->name);
+            Sprintf(
+                buf,
+                "#define %s *(_ml->dptr_field<%d>(_iml))\n"
+                "#define _p%s static_cast<neuron::container::data_handle<double>>(_ppvar[%d])\n",
+                name.c_str(),
+                ioncount,
+                name.c_str(),
+                ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
             SYM(q1)->ioncount_ = ioncount;
-            ppvar_semantics(ioncount, ionname);
+            ppvar_semantics(ioncount,
+                            ionname,
+                            ("_ion_" + std::string{SYM(q1)->name}).c_str(),
+                            "double*");
             ioncount++;
         }
         q = q->next;
@@ -2220,30 +2263,32 @@ int iondef(int* p_pointercount) {
             if (SYM(q1)->nrntype & NRNIONFLAG) {
                 SYM(q1)->nrntype &= ~NRNIONFLAG;
             } else {
+                std::string name{"_ion_"};
+                name.append(SYM(q1)->name);
                 Sprintf(buf,
-                        "#define _ion_%s *(_ml->dptr_field<%d>(_iml))\n"
-                        "#define _p_ion_%s "
+                        "#define %s *(_ml->dptr_field<%d>(_iml))\n"
+                        "#define _p%s "
                         "static_cast<neuron::container::data_handle<double>>(_ppvar[%d])\n",
-                        SYM(q1)->name,
+                        name.c_str(),
                         ioncount,
-                        SYM(q1)->name,
+                        name.c_str(),
                         ioncount);
                 q2 = lappendstr(defs_list, buf);
                 q2->itemtype = VERBATIM;
                 SYM(q1)->ioncount_ = ioncount;
-                ppvar_semantics(ioncount, ionname);
+                ppvar_semantics(ioncount, ionname, name.c_str(), "double*");
                 ioncount++;
             }
             it = iontype(SYM(q1)->name, sion->name);
             if (it == IONCUR) {
                 dcurdef = 1;
-                Sprintf(buf,
-                        "#define _ion_di%sdv *(_ml->dptr_field<%d>(_iml))\n",
-                        sion->name,
-                        ioncount);
+                std::string name{"_ion_di"};
+                name.append(sion->name);
+                name.append("dv");
+                Sprintf(buf, "#define %s *(_ml->dptr_field<%d>(_iml))\n", name.c_str(), ioncount);
                 q2 = lappendstr(defs_list, buf);
                 q2->itemtype = VERBATIM;
-                ppvar_semantics(ioncount, ionname);
+                ppvar_semantics(ioncount, ionname, name.c_str(), "double*");
                 ioncount++;
             }
             if (it == IONIN || it == IONOUT) { /* would have wrote_ion_conc */
@@ -2255,26 +2300,35 @@ int iondef(int* p_pointercount) {
             // nrn_wrote_conc, the old code naviated to this value via pointer
             // arithmetic that is not valid now the mechanism data are stored in
             // SOA format
-            Sprintf(buf, "#define _ion_%s_erev *_ml->dptr_field<%d>(_iml)\n", sion->name, ioncount);
+            std::string name{"_ion_"};
+            name.append(sion->name);
+            name.append("_erev");
+            Sprintf(buf, "#define %s *_ml->dptr_field<%d>(_iml)\n", name.c_str(), ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
-            ppvar_semantics(ioncount, ionname);  // ppvar semantics by trial-and-error
+            ppvar_semantics(ioncount, ionname, name.c_str(), "double*");  // ppvar semantics by
+                                                                          // trial-and-error
             ioncount++;
-            Sprintf(buf, "#define _style_%s\t*_ppvar[%d].get<int*>()\n", sion->name, ioncount);
+            std::string stylename{"_style_"};
+            stylename.append(sion->name);
+            Sprintf(buf, "#define %s\t*_ppvar[%d].get<int*>()\n", stylename.c_str(), ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
             Sprintf(buf, "#%s", ionname);
-            ppvar_semantics(ioncount, buf);
+            ppvar_semantics(ioncount, buf, stylename.c_str(), "int*");
             ioncount++;
         }
         q = q->next;
         if (!dcurdef && ldifuslist) {
             // Sprintf(buf, "#define _ion_di%sdv\t*_ppvar[%d].get<double*>()\n", sion->name,
             // ioncount);
-            Sprintf(buf, "#define _ion_di%sdv *_ml->dptr_field<%d>(_iml)\n", sion->name, ioncount);
+            std::string name{"_ion_di"};
+            name.append(sion->name);
+            name.append("dv");
+            Sprintf(buf, "#define %s *_ml->dptr_field<%d>(_iml)\n", name.c_str(), ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
-            ppvar_semantics(ioncount, ionname);
+            ppvar_semantics(ioncount, ionname, name.c_str(), "double*");
             ioncount++;
         }
     }
@@ -2296,9 +2350,9 @@ int iondef(int* p_pointercount) {
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
         if (sion->nrntype & NRNPOINTER) {
-            ppvar_semantics(ioncount + *p_pointercount, "pointer");
+            ppvar_semantics(ioncount + *p_pointercount, "pointer", sion->name, "double*");
         } else {
-            ppvar_semantics(ioncount + *p_pointercount, "bbcorepointer");
+            ppvar_semantics(ioncount + *p_pointercount, "bbcorepointer", sion->name, "double*");
         }
         (*p_pointercount)++;
     }
@@ -2332,13 +2386,24 @@ int iondef(int* p_pointercount) {
     return ioncount;
 }
 
-void ppvar_semantics(int i, const char* name) {
+void ppvar_semantics(int i, const char* semantics, const char* name, const char* type) {
     Item* q;
     if (!ppvar_semantics_) {
         ppvar_semantics_ = newlist();
     }
-    q = Lappendstr(ppvar_semantics_, const_cast<char*>(name));  // TODO - ugly but ok for now
+    q = Lappendstr(ppvar_semantics_, const_cast<char*>(semantics));  // TODO - ugly but ok for now
     q->itemtype = (short) i;
+    std::string field{"field<"};
+    field.append(type);
+    field.append(">{\"");
+    field.append(name);
+    field.append("\", \"");
+    field.append(semantics);
+    field.append("\"} /* ");
+    field.append(std::to_string(i));
+    field.append(" */");
+    // track the index because ppvar_semantics(...) is not necessarily called in order
+    ppvar_data_field_strings.emplace_back(i, std::move(field));
 }
 
 List* begin_dion_stmt() {

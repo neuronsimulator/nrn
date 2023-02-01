@@ -312,13 +312,14 @@ void nrn_daspk_init_step(double tt, double dteps, int upd) {
     t = tt;
     secondorder = 0;
     dt2thread(dteps);
-    nrn_thread_table_check();
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    nrn_thread_table_check(sorted_token);
     _upd = upd;
-    nrn_multithread_job(nrn_ensure_model_data_are_sorted(), daspk_init_step_thread);
+    nrn_multithread_job(sorted_token, daspk_init_step_thread);
     dt = dtsav;
     secondorder = so;
     dt2thread(dtsav);
-    nrn_thread_table_check();
+    nrn_thread_table_check(sorted_token);
 }
 
 void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
@@ -332,7 +333,7 @@ void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     } else {
         dt2thread(dt);
     }
-    nrn_thread_table_check();
+    nrn_thread_table_check(cache_token);
     if (nrn_multisplit_setup_) {
         nrn_multithread_job(nrn_ms_treeset_through_triang);
         // remove to avoid possible deadlock where some ranks do a
@@ -383,7 +384,7 @@ void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) 
     nrn_chk_ndt();
 #endif
     dt2thread(dt);
-    nrn_thread_table_check();
+    nrn_thread_table_check(cache_token);
     if (nrn_multisplit_setup_) {
         int b = 0;
         nrn_multithread_job(nrn_ms_treeset_through_triang);
@@ -677,13 +678,11 @@ void fcurrent(void) {
     }
 
     dt2thread(-1.);
-    nrn_thread_table_check();
-    {
-        auto const sorted_token = nrn_ensure_model_data_are_sorted();
-        state_discon_allowed_ = 0;
-        nrn_multithread_job(sorted_token, setup_tree_matrix);
-        state_discon_allowed_ = 1;
-    }
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    nrn_thread_table_check(sorted_token);
+    state_discon_allowed_ = 0;
+    nrn_multithread_job(sorted_token, setup_tree_matrix);
+    state_discon_allowed_ = 1;
     hoc_retpushx(1.);
 }
 
@@ -853,7 +852,7 @@ void nrn_finitialize(int setv, double v) {
     if (cvode_active_) {
         nrncvode_set_t(t);
     }
-    nrn_thread_table_check();
+    nrn_thread_table_check(sorted_token);
     clear_event_queue();
     nrn_spike_exchange_init();
     nrn_random_play();

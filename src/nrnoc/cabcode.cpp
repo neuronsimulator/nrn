@@ -256,9 +256,9 @@ static Section* new_section(Object* ob, Symbol* sym, int i) {
     sec = sec_alloc();
     section_ref(sec);
     prop = prop_alloc(&(sec->prop), CABLESECTION, (Node*) 0);
-    prop->dparam[0] = sym;
+    prop->dparam[0] = {neuron::container::do_not_search, sym};
     prop->dparam[5] = i;
-    prop->dparam[6] = ob;
+    prop->dparam[6] = {neuron::container::do_not_search, ob};
 #if USE_PYTHON
     prop->dparam[PROP_PY_INDEX] = nullptr;
 #endif
@@ -284,7 +284,7 @@ void new_sections(Object* ob, Symbol* sym, Item** pitm, int size) {
         } else {
             pitm[i] = lappendsec(section_list, sec);
         }
-        sec->prop->dparam[8] = pitm[i];
+        sec->prop->dparam[8] = {neuron::container::do_not_search, pitm[i]};
     }
 }
 
@@ -404,7 +404,7 @@ void cab_alloc(Prop* p) {
 
 void morph_alloc(Prop* p) {
     assert(p->param_size() == 1);
-    p->set_param(0, DEF_diam); /* microns */
+    p->param(0) = DEF_diam; /* microns */
     diam_changed = 1;
 }
 
@@ -1854,16 +1854,9 @@ double* nrn_vext_pd(Symbol* s, int indx, Node* nd) {
     if (s->u.rng.type != EXTRACELL) {
         return (double*) 0;
     }
-#if I_MEMBRANE
-    if (s->u.rng.index != 3 * (nlayer) + 2) {
-        return (double*) 0;
+    if (s->u.rng.index != neuron::extracellular::vext_pseudoindex()) {
+        return nullptr;
     }
-#else /* not I_MEMBRANE */
-    if (s->u.rng.index != 3 * (nlayer) + 1) {
-        return (double*) 0;
-    }
-#endif
-
     zero = 0.;
     if (nd->extnode) {
         return nd->extnode->v + indx;
@@ -1886,13 +1879,10 @@ double* nrn_vext_pd(Symbol* s, int indx, Node* nd) {
 neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, short inode) {
     auto* const m = nrn_mechanism_check(s->u.rng.type, sec, inode);
 #if EXTRACELLULAR
-/* this does not handle vext(0) and vext(1) properly at this time */
-#if I_MEMBRANE
-    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 2) {
-#else
-    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 1) {
-#endif
-        return neuron::container::data_handle<double>{sec->pnode[inode]->extnode->v + indx};
+    // old comment: this does not handle vext(0) and vext(1) properly at this time
+    if (m->_type == EXTRACELL && s->u.rng.index == neuron::extracellular::vext_pseudoindex()) {
+        return neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                      sec->pnode[inode]->extnode->v + indx};
     }
 #endif
     if (s->subtype != NRNPOINTER) {
@@ -1900,7 +1890,7 @@ neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, 
             return neuron::container::data_handle<double>{m->ob->u.dataspace[s->u.rng.index].pval +
                                                           indx};
         } else {
-            return m->param_handle(s->u.rng.index + indx);
+            return m->param_handle_legacy(s->u.rng.index + indx);
         }
     } else {
         neuron::container::data_handle<double> const p{m->dparam[s->u.rng.index + indx]};
@@ -1924,12 +1914,8 @@ neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
         return {};
     }
 #if EXTRACELLULAR
-/* this does not handle vext(0) and vext(1) properly at this time */
-#if I_MEMBRANE
-    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 2) {
-#else
-    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 1) {
-#endif
+    /* this does not handle vext(0) and vext(1) properly at this time */
+    if (m->_type == EXTRACELL && s->u.rng.index == neuron::extracellular::vext_pseudoindex()) {
         return neuron::container::data_handle<double>{sec->pnode[inode]->extnode->v + indx};
     }
 #endif
@@ -1938,7 +1924,7 @@ neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
             return neuron::container::data_handle<double>{m->ob->u.dataspace[s->u.rng.index].pval +
                                                           indx};
         } else {
-            return m->param_handle(s->u.rng.index + indx);
+            return m->param_handle_legacy(s->u.rng.index + indx);
         }
     } else {
         neuron::container::data_handle<double> const p{m->dparam[s->u.rng.index + indx]};

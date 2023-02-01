@@ -156,7 +156,7 @@ static double s_rename(void* v) {
 
     if (size == 0) {
         pitm[index] = qsec;
-        sec->prop->dparam[0] = sym;
+        sec->prop->dparam[0] = {neuron::container::do_not_search, sym};
         sec->prop->dparam[5] = index;
         sec->prop->dparam[6] = static_cast<Object*>(nullptr);
         OPSECITM(sym)[0] = qsec;
