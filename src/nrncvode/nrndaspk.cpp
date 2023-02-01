@@ -516,7 +516,7 @@ for (i=0; i < z.nvsize_; ++i) {
 #if I_MEMBRANE
                 // add i_cap to i_ion which is in sav_g
                 // this will be copied to i_membrane below
-                *nde->param[3 + 3 * nlayer] += cdvm;
+                *nde->param[neuron::extracellular::sav_rhs_index_ext()] += cdvm;
 #endif
             } else {
                 cdvm = 1e-3 * ml->data(i, 0) * yprime[j];
@@ -541,27 +541,27 @@ for (i=0; i < z.nvsize_; ++i) {
 #if EXTRACELLULAR
 #if I_MEMBRANE
             // i_membrane = sav_rhs --- even for zero area nodes
-            ml->data(i, 1 + 3 * nrn_nlayer_extracellular) =
-                ml->data(i, 3 + 3 * nrn_nlayer_extracellular);
+            ml->data(i, neuron::extracellular::i_membrane_index) =
+                ml->data(i, neuron::extracellular::sav_rhs_index);
 #endif /*I_MEMBRANE*/
             if (nrn_nlayer_extracellular == 1) {
                 // only works for one layer
                 // otherwise loop over layer,
                 // xc is (pd + 2*(nlayer))[layer]
                 // and deal with yprime[i+layer]-yprime[i+layer+1]
-                delta[j] -= 1e-3 * ml->data(i, 2) * yprime[j];
+                delta[j] -= 1e-3 *
+                            ml->data(i, neuron::extracellular::xc_index, 0 /* 0th/only layer */) *
+                            yprime[j];
             } else {
-                int k, jj;
-                double x;
-                k = nrn_nlayer_extracellular - 1;
-                jj = j + k;
-                delta[jj] -= 1e-3 * ml->data(i, 2 * nrn_nlayer_extracellular + k) * (yprime[jj]);
+                int k = nrn_nlayer_extracellular - 1;
+                int jj = j + k;
+                delta[jj] -= 1e-3 * ml->data(i, neuron::extracellular::xc_index, k) * (yprime[jj]);
                 for (k = nrn_nlayer_extracellular - 2; k >= 0; --k) {
                     // k=0 refers to stuff between layer 0 and 1
                     // j is for vext[0]
                     jj = j + k;
-                    x = 1e-3 * ml->data(i, 2 * nrn_nlayer_extracellular + k) *
-                        (yprime[jj] - yprime[jj + 1]);
+                    auto const x = 1e-3 * ml->data(i, neuron::extracellular::xc_index, k) *
+                                   (yprime[jj] - yprime[jj + 1]);
                     delta[jj] -= x;
                     delta[jj + 1] += x;  // last one in iteration is nlayer-1
                 }

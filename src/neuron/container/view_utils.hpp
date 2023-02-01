@@ -102,9 +102,10 @@ struct handle_base {
      * @todo Const cleanup as above for the zero-argument version.
      */
     template <typename Tag>
-    [[nodiscard]] auto get_handle(std::size_t field_index) {
-        return underlying_storage().template get_field_instance_handle<Tag>(field_index,
-                                                                            this->id());
+    [[nodiscard]] auto get_handle(int field_index, int array_offset = 0) {
+        return underlying_storage().template get_field_instance_handle<Tag>(this->id(),
+                                                                            field_index,
+                                                                            array_offset);
     }
     template <typename Tag>
     [[nodiscard]] auto& get() {
@@ -119,12 +120,16 @@ struct handle_base {
         return underlying_storage().template get_tag<Tag>();
     }
     template <typename Tag>
-    [[nodiscard]] auto& get(std::size_t field_index) {
-        return underlying_storage().template get_field_instance<Tag>(field_index, current_row());
+    [[nodiscard]] auto& get(int field_index, int array_offset = 0) {
+        return underlying_storage().template get_field_instance<Tag>(current_row(),
+                                                                     field_index,
+                                                                     array_offset);
     }
     template <typename Tag>
-    [[nodiscard]] auto const& get(std::size_t field_index) const {
-        return underlying_storage().template get_field_instance<Tag>(field_index, current_row());
+    [[nodiscard]] auto const& get(int field_index, int array_offset = 0) const {
+        return underlying_storage().template get_field_instance<Tag>(current_row(),
+                                                                     field_index,
+                                                                     array_offset);
     }
 
   private:

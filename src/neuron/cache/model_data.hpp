@@ -9,13 +9,6 @@ using Datum = neuron::container::generic_data_handle;
 namespace neuron::cache {
 struct Mechanism {
     /**
-     * @brief Raw pointers into floating point data for use during simulation.
-     *
-     * data_ptr_cache contains pointers to the start of the storage for each floating point
-     * variable.
-     */
-    std::vector<double*> data_ptr_cache{};
-    /**
      * @brief Raw pointers into pointer data for use during simulation.
      *
      * pdata_ptr_cache contains pointers to the start of the storage for each pdata variable that is

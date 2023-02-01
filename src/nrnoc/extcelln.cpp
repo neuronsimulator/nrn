@@ -18,21 +18,21 @@ int nrn_nlayer_extracellular = EXTRACELLULAR;
 /* the N index is a keyword in the following. See init.cpp for implementation.*/
 /* if nlayer is changed the symbol table arayinfo->sub[0] must be updated
    for xraxial, xg, xc, and vext */
-static const char* mechanism[] = {
-    "0",
-    "extracellular",
-    "xraxial[N]",
-    "xg[N]",
-    "xc[N]",
-    "e_extracellular",
-    0,
+static const char* mechanism[] = {"0",
+                                  "extracellular",
+                                  "xraxial[N]",
+                                  "xg[N]",
+                                  "xc[N]",
+                                  "e_extracellular",
+                                  nullptr,
 #if I_MEMBRANE
-    "i_membrane",
+                                  "i_membrane",
+                                  "sav_g",
+                                  "sav_rhs",
 #endif
-    0,
-    "vext[N]",
-    0,
-};
+                                  nullptr,
+                                  "vext[N]",  // not handled with other mech data
+                                  nullptr};
 static HocParmLimits limits[] = {{"xraxial", {1e-9, 1e15}},
                                  {"xg", {0., 1e15}},
                                  {"xc", {0., 1e15}},
@@ -62,20 +62,31 @@ static int _ode_count(int type) {
     return 0;
 }
 
-// number of doubles for property data. 3 are the nlayer size arrays xg, xc,
-// xraxial
-static int nparm() {
+// 4: xraxial[nlayer], xg[nlayer], xc[nlayer], e_extracellular
+constexpr static auto nparm = 4
 #if I_MEMBRANE
-    /* 4 is for e_extracellular, i_membrane, sav_g, and sav_rhs */
-    return 3 * nrn_nlayer_extracellular + 4;
-#else
-    /* 1 is for e_extracellular */
-    return 3 * nrn_nlayer_extracellular + 1;
+                              + 3  // i_membrane, sav_g, and sav_rhs
 #endif
-}
+    ;
+// it seems that one past the end (i.e. index nparm) is used to refer to vext, but that is
+// allocated/managed separately; see neuron::extracellular::vext_pseudoindex() and its usage
 
 static void update_parmsize() {
-    hoc_register_prop_size(EXTRACELL, nparm(), 0);
+    using neuron::mechanism::field;
+    // clang-format off
+    neuron::mechanism::register_data_fields(EXTRACELL
+        , field<double>{"xraxial", nrn_nlayer_extracellular}
+        , field<double>{"xg", nrn_nlayer_extracellular}
+        , field<double>{"xc", nrn_nlayer_extracellular}
+        , field<double>{"e_extracellular"}
+#if I_MEMBRANE
+        , field<double>{"i_membrane"}
+        , field<double>{"sav_g"}
+        , field<double>{"sav_rhs"}
+#endif
+    );
+    // clang-format on
+    hoc_register_prop_size(EXTRACELL, nparm, 0);
 }
 
 extern "C" void extracell_reg_(void) {
@@ -92,27 +103,7 @@ extern "C" void extracell_reg_(void) {
 /* solving is done with sparse13 */
 
 /* interface between hoc and extcell */
-inline std::size_t xraxial_index(std::size_t ilayer) {
-    return ilayer;
-}
-inline std::size_t xg_index(std::size_t ilayer) {
-    return nrn_nlayer_extracellular + ilayer;
-}
-inline std::size_t xc_index(std::size_t ilayer) {
-    return 2 * nrn_nlayer_extracellular + ilayer;
-}
-inline std::size_t e_extracellular_index() {
-    return 3 * nrn_nlayer_extracellular;
-}
-inline std::size_t i_membrane_index() {
-    return 3 * nrn_nlayer_extracellular + 1;
-}
-inline std::size_t sav_g_index() {
-    return 3 * nrn_nlayer_extracellular + 2;
-}
-inline std::size_t sav_rhs_index() {
-    return 3 * nrn_nlayer_extracellular + 3;
-}
+using namespace neuron::extracellular;
 
 /* based on update() in fadvance.cpp */
 /* update has already been called so modify nd->v based on dvi
@@ -146,8 +137,8 @@ void nrn_update_2d(NrnThread* nt) {
     for (i = 0; i < cnt; ++i) {
         nd = ndlist[i];
         NODERHS(nd) -= *nd->extnode->_rhs[0];
-        ml->data(i, i_membrane_index()) = ml->data(i, sav_g_index()) * (NODERHS(nd)) +
-                                          ml->data(i, sav_rhs_index());
+        ml->data(i, i_membrane_index) = ml->data(i, sav_g_index) * (NODERHS(nd)) +
+                                        ml->data(i, sav_rhs_index);
 #if 1
         /* i_membrane is a current density (mA/cm2). However
             it contains contributions from Non-ELECTRODE_CURRENT
@@ -167,7 +158,7 @@ void nrn_update_2d(NrnThread* nt) {
             insert them at the points x=0 or x=1
         */
 #else
-        ml->data(i, i_membrane_index()) *= NODEAREA(nd);
+        ml->data(i, i_membrane_index) *= NODEAREA(nd);
         /* i_membrane is nA for every segment. This is different
             from all other continuous mechanism currents and
             same as PointProcess currents since it contains
@@ -180,13 +171,13 @@ void nrn_update_2d(NrnThread* nt) {
 }
 
 static void extcell_alloc(Prop* p) {
-    assert(p->param_size() == nparm());
+    assert(p->param_size() == nparm);
     for (auto i = 0; i < nrn_nlayer_extracellular; ++i) {
-        p->set_param(xraxial_index(i), 1e9);
-        p->set_param(xg_index(i), 1e9);
-        p->set_param(xc_index(i), 0.0);
+        p->param(xraxial_index, i) = 1e9;
+        p->param(xg_index, i) = 1e9;
+        p->param(xc_index, i) = 0.0;
     }
-    p->set_param(e_extracellular_index(), 0.0);
+    p->param(e_extracellular_index) = 0.0;
 }
 
 /*ARGSUSED*/
@@ -204,7 +195,7 @@ static void extcell_init(neuron::model_sorted_token const&,
             ndlist[i]->extnode->v[j] = 0.;
         }
 #if I_MEMBRANE
-        ml->data(i, i_membrane_index()) = 0.0;
+        ml->data(i, i_membrane_index) = 0.0;
 #endif
     }
 }
@@ -317,7 +308,10 @@ void extcell_node_create(Node* nd) {
         for (p = nd->prop; p; p = p->next) {
             if (p->_type == EXTRACELL) {
                 for (auto i = 0; i < p->param_size(); ++i) {
-                    nde->param.push_back(p->param_handle(i));
+                    for (auto array_index = 0; array_index < p->param_array_dimension(i);
+                         ++array_index) {
+                        nde->param.push_back(p->param_handle(i, array_index));
+                    }
                 }
                 break;
             }
@@ -360,7 +354,7 @@ void nrn_rhs_ext(NrnThread* _nt) {
         nde = nd->extnode;
         *nde->_rhs[0] -= NODERHS(nd);
 #if I_MEMBRANE
-        ml->data(i, sav_rhs_index()) = *nde->_rhs[0];
+        ml->data(i, sav_rhs_index) = *nde->_rhs[0];
         /* and for daspk this is the ionic current which can be
            combined later with i_cap before return from solve. */
 #endif
@@ -399,10 +393,10 @@ void nrn_rhs_ext(NrnThread* _nt) {
             /* series resistance and battery to ground */
             /* between nlayer-1 and ground */
             j = nrn_nlayer_extracellular - 1;
-            *nde->_rhs[j] -= *nde->param[xg_index(j)] *
-                             (nde->v[j] - *nde->param[e_extracellular_index()]);
+            *nde->_rhs[j] -= *nde->param[xg_index_ext(j)] *
+                             (nde->v[j] - *nde->param[e_extracellular_index_ext()]);
             for (--j; j >= 0; --j) { /* between j and j+1 layer */
-                double x = *nde->param[xg_index(j)] * (nde->v[j] - nde->v[j + 1]);
+                double x = *nde->param[xg_index_ext(j)] * (nde->v[j] - nde->v[j + 1]);
                 *nde->_rhs[j] -= x;
                 *nde->_rhs[j + 1] += x;
             }
@@ -448,7 +442,7 @@ void nrn_setup_ext(NrnThread* _nt) {
         *nde->_x12[0] -= d;
         *nde->_x21[0] -= d;
 #if I_MEMBRANE
-        ml->data(i, sav_g_index()) = d;
+        ml->data(i, sav_g_index) = d;
 #endif
     }
     /* series resistance, capacitance, and axial terms. */
@@ -460,7 +454,7 @@ void nrn_setup_ext(NrnThread* _nt) {
             /* series resistance and capacitance to ground */
             j = 0;
             for (;;) { /* between j and j+1 layer */
-                mfac = (*nde->param[xg_index(j)] + *nde->param[xc_index(j)] * cfac);
+                mfac = (*nde->param[xg_index_ext(j)] + *nde->param[xc_index_ext(j)] * cfac);
                 *nde->_d[j] += mfac;
                 ++j;
                 if (j == nrn_nlayer_extracellular) {
@@ -506,23 +500,24 @@ void ext_con_coef(void) /* setup a and b */
             for (j = 0; j < sec->nnode - 1; j++) {
                 nde = sec->pnode[j]->extnode;
                 for (k = 0; k < nrn_nlayer_extracellular; ++k) {
-                    *nde->_rhs[k] = 1e-4 * *nde->param[xraxial_index(k)] * (dx / 2.); /*Megohms*/
+                    *nde->_rhs[k] = 1e-4 * *nde->param[xraxial_index_ext(k)] *
+                                    (dx / 2.); /*Megohms*/
                 }
             }
             /* last segment has 0 length. */
             nde = sec->pnode[j]->extnode;
             for (k = 0; k < nrn_nlayer_extracellular; ++k) {
                 *nde->_rhs[k] = 0.;
-                *nde->param[xc_index(k)] = 0.;
-                *nde->param[xg_index(k)] = 0.;
+                *nde->param[xc_index_ext(k)] = 0.;
+                *nde->param[xg_index_ext(k)] = 0.;
             }
             /* if owns a rootnode */
             if (!sec->parentsec) {
                 nde = sec->parentnode->extnode;
                 for (k = 0; k < nrn_nlayer_extracellular; ++k) {
                     *nde->_rhs[k] = 0.;
-                    *nde->param[xc_index(k)] = 0.;
-                    *nde->param[xg_index(k)] = 0.;
+                    *nde->param[xc_index_ext(k)] = 0.;
+                    *nde->param[xg_index_ext(k)] = 0.;
                 }
             }
         }

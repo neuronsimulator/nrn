@@ -15,7 +15,6 @@
 #include <stdint.h>
 #endif
 
-#include <map>            // Introduced for NonVSrcUpdateInfo
 #include <unordered_map>  // Replaces NrnHash for MapSgid2Int
 #include <utility>
 #include <vector>
@@ -194,8 +193,8 @@ static NodePList visources_;        // list of source Node*, (multiples possible
 static SgidList sgids_;             // source gids
 static MapSgid2Int sgid2srcindex_;  // sgid2srcindex[sgids[i]] == i
 
-typedef std::map<sgid_t, std::pair<int, int>> NonVSrcUpdateInfo;
-static NonVSrcUpdateInfo non_vsrc_update_info_;  // source ssid -> (type,parray_index)
+static std::unordered_map<sgid_t, std::pair<int, neuron::field_index>>
+    non_vsrc_update_info_;  // source ssid -> (type,parray_index)
 
 
 static int max_targets_;
@@ -225,26 +224,31 @@ static void delete_imped_info() {
 // If *pv exists, store mechtype and parray_index.
 static bool non_vsrc_setinfo(sgid_t ssid, Node* nd, double const* pv) {
     for (Prop* p = nd->prop; p; p = p->next) {
-        for (auto i = 0ul; i < p->param_size(); ++i) {
-            if (pv == static_cast<double const*>(p->param_handle(i))) {
-                non_vsrc_update_info_[ssid] = std::pair<int, int>(p->_type, i);
-                // printf("non_vsrc_setinfo %p %d %ld %s\n", pv, p->_type, pv-p->param,
-                // memb_func[p->_type].sym->name);
-                return true;
+        for (auto i = 0; i < p->param_size(); ++i) {
+            for (auto j = 0; j < p->param_array_dimension(i); ++j) {
+                if (pv == static_cast<double const*>(p->param_handle(i, j))) {
+                    non_vsrc_update_info_[ssid] = {p->_type, {i, j}};
+                    // printf("non_vsrc_setinfo %p %d %ld %s\n", pv, p->_type, pv-p->param,
+                    // memb_func[p->_type].sym->name);
+                    return true;
+                }
             }
         }
     }
     return false;
 }
 
-static neuron::container::data_handle<double> non_vsrc_update(Node* nd, int type, int ix) {
+static neuron::container::data_handle<double> non_vsrc_update(Node* nd,
+                                                              int type,
+                                                              neuron::field_index ix) {
     for (Prop* p = nd->prop; p; p = p->next) {
         if (type == p->_type) {
             return p->param_handle(ix);
         }
     }
-    hoc_execerr_ext("partrans update: could not find parameter index %d of %s",
-                    ix,
+    hoc_execerr_ext("partrans update: could not find parameter index (%d, %d) of %s",
+                    ix.field,
+                    ix.array_index,
                     memb_func[type].sym->name);
 }
 
@@ -309,16 +313,19 @@ static int compute_parray_index(Point_process* pp,
     if (!pp) {
         return -1;
     }
+    int legacy_index{};
     for (int i = 0; i < pp->prop->param_size(); ++i) {
-        if (ptv == pp->prop->param_handle(i)) {
-            return i;
+        for (auto j = 0; j < pp->prop->param_array_dimension(i); ++j, ++legacy_index) {
+            if (ptv == pp->prop->param_handle(i, j)) {
+                return legacy_index;
+            }
         }
     }
     std::cout << ptv << std::endl;
     throw std::runtime_error("compute_parray_index");
 }
 static neuron::container::data_handle<double> tar_ptr(Point_process* pp, int index) {
-    return pp->prop->param_handle(index);
+    return pp->prop->param_handle_legacy(index);
 }
 
 static void target_ptr_update() {
@@ -427,7 +434,6 @@ static std::unordered_map<Node*, double*> mk_svibuf() {
     }
 
     source_vi_buf_.resize(nrn_nthread);
-    NonVSrcUpdateInfo::iterator it;
 
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         source_vi_buf_[tid].cnt = 0;
@@ -435,7 +441,7 @@ static std::unordered_map<Node*, double*> mk_svibuf() {
     // count
     for (size_t i = 0; i < visources_.size(); ++i) {
         Node* nd = visources_[i];
-        it = non_vsrc_update_info_.find(sgids_[i]);
+        auto const it = non_vsrc_update_info_.find(sgids_[i]);
         if (nd->extnode && it == non_vsrc_update_info_.end()) {
             assert(nd->_nt >= nrn_threads && nd->_nt < (nrn_threads + nrn_nthread));
             ++source_vi_buf_[nd->_nt->id].cnt;
@@ -451,7 +457,7 @@ static std::unordered_map<Node*, double*> mk_svibuf() {
     // fill
     for (size_t i = 0; i < visources_.size(); ++i) {
         Node* nd = visources_[i];
-        it = non_vsrc_update_info_.find(sgids_[i]);
+        auto const it = non_vsrc_update_info_.find(sgids_[i]);
         if (nd->extnode && it == non_vsrc_update_info_.end()) {
             int tid = nd->_nt->id;
             SourceViBuf& svib = source_vi_buf_[tid];
@@ -479,7 +485,7 @@ static std::unordered_map<Node*, double*> mk_svibuf() {
     for (int i = 0; i < outsrc_buf_size_; ++i) {
         int isrc = poutsrc_indices_[i];
         Node* nd = visources_[isrc];
-        it = non_vsrc_update_info_.find(sgids_[isrc]);
+        auto const it = non_vsrc_update_info_.find(sgids_[isrc]);
         if (nd->extnode && it == non_vsrc_update_info_.end()) {
             auto const search = ndvi2pd.find(nd);
             nrn_assert(search != ndvi2pd.end());
@@ -857,8 +863,7 @@ void nrnmpi_setup_transfer() {
             auto search = sgid2srcindex_.find(sid);
             nrn_assert(search != sgid2srcindex_.end());
             Node* nd = visources_[search->second];
-            NonVSrcUpdateInfo::iterator it;
-            it = non_vsrc_update_info_.find(sid);
+            auto const it = non_vsrc_update_info_.find(sid);
             if (it != non_vsrc_update_info_.end()) {
                 poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
             } else if (!nd->extnode) {
@@ -1191,13 +1196,12 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
             int tid = nd->_nt ? nd->_nt->id : 0;
             int type = -1;  // default voltage
             int ix = 0;     // fill below
-            NonVSrcUpdateInfo::iterator it = non_vsrc_update_info_.find(sid);
+            auto const it = non_vsrc_update_info_.find(sid);
             if (it != non_vsrc_update_info_.end()) {  // not a voltage source
                 type = it->second.first;
-                ix = it->second.second;
                 // this entire context needs to be reworked. If the source is a
                 // point process, then if more than one in this nd, it is an error.
-                auto d = non_vsrc_update(nd, type, ix);
+                auto d = non_vsrc_update(nd, type, it->second.second);
                 NrnThread* nt = nd->_nt ? nd->_nt : nrn_threads;
                 Memb_list& ml = *nt->_ml_list[type];
                 ix = ml.legacy_index(d);

@@ -109,8 +109,8 @@ struct Model {
     /**
      * @brief Find some metadata about the given container.
      *
-     * The argument type will typically be std::vector<T>*, and the return value will only be
-     * non-null if that vector is part of the global model data structure.
+     * The argument type will typically be a T* that contains the result of calling .data() on some
+     * vector in the global model data structure.
      */
     [[nodiscard]] std::optional<container::utils::storage_info> find_container_info(
         void const* cont) const;

@@ -524,24 +524,24 @@ is not allowed on the left hand side.");
             if (s->subtype & ARRAY) {
                 int dim = s->araydim;
                 Sprintf(buf,
-                        "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = %s_columnindex + _i;",
+                        "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = {%s_columnindex, _i};",
                         dim,
                         numlist,
                         count,
                         state->name);
                 Lappendstr(initlist, buf);
                 Sprintf(buf,
-                        " _dlist%d[%d+_i] = %s_columnindex + _i;}\n",
+                        " _dlist%d[%d+_i] = {%s_columnindex, _i};}\n",
                         numlist,
                         count,
                         name_forderiv(indx + 1));
                 Lappendstr(initlist, buf);
                 count += dim;
             } else {
-                Sprintf(buf, "_slist%d[%d] = %s_columnindex;", numlist, count, state->name);
+                Sprintf(buf, "_slist%d[%d] = {%s_columnindex, 0};", numlist, count, state->name);
                 Lappendstr(initlist, buf);
                 Sprintf(buf,
-                        " _dlist%d[%d] = %s_columnindex;\n",
+                        " _dlist%d[%d] = {%s_columnindex, 0};\n",
                         numlist,
                         count,
                         name_forderiv(indx + 1));
@@ -554,7 +554,12 @@ is not allowed on the left hand side.");
         diag("DERIVATIVE contains no derivatives", (char*) 0);
     }
     derfun->used = count;
-    Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n", numlist, count, numlist, count);
+    Sprintf(buf,
+            "static neuron::field_index _slist%d[%d], _dlist%d[%d];\n",
+            numlist,
+            count,
+            numlist,
+            count);
     Linsertstr(procfunc, buf);
 
     Lappendstr(procfunc, "\n/*CVODE*/\n");
