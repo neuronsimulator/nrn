@@ -54,19 +54,24 @@ jobs:
           sudo apt-get install xvfb
           sudo /usr/bin/Xvfb $DISPLAY -screen 0 1600x1200x24 -noreset -nolock -shmem &  # run in bg
 
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
 
+      - name: Install Python@${{ env.PY_MIN_VERSION }} dependencies
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+          python -m pip install --upgrade pip -r nrn_requirements.txt
+
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MAX_VERSION }}
-
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
 
       - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
@@ -103,6 +108,16 @@ jobs:
           (cd ..;  lcov --capture  --initial --directory . --no-external --output-file build/coverage-base.info)
           export PATH=`pwd`/bin:$PATH;
           xvfb-run ctest -VV --output-on-failure;
+          for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
+          do
+            echo "Using ${python}"
+            NEURONHOME="${PWD}/share/nrn" \
+              PYTHONPATH="${PWD}/lib/python:${PYTHONPATH}" \
+              PATH="${PWD}/bin:${PATH}" \
+              LD_LIBRARY_PATH="${PWD}/lib:${LD_LIBRARY_PATH}" \
+              DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
+              "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd();"
+          done
           (cd ..; lcov --capture  --directory . --no-external --output-file build/coverage-run.info)
           lcov --add-tracefile coverage-base.info --add-tracefile coverage-run.info --output-file coverage-combined.info
 
