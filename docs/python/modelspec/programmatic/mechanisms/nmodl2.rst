@@ -533,11 +533,8 @@ Description:
 
     .. code-block::
 
-        var1 = var2
         var1 = var1 binary_operator expression
         var1 = expression binary_operator var1
-        var1 = var1 binary_operator expression
-        var1 = expression
 
     If the mod file is using the ``GLOBAL`` essentially as a file scope :ref:`LOCAL`
     along with the possibility of passing values back to hoc in response to calling a
