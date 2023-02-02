@@ -428,27 +428,72 @@ PROTECT
 ~~~~~~~
 
 Description:
-    Mod files that assign values to GLOBAL variables are not considered 
-    thread safe. If the mod file is using the GLOBAL as a counter, prefix 
-    the offending assignment statements with the PROTECT keyword so that 
-    multiple threads do not attempt to update the value at the same time 
-    (race condition). If the mod file is using the GLOBAL essentially as 
-    a file scope LOCAL along with the possibility of passing values back 
-    to hoc in response to calling a PROCEDURE, use the THREADSAFE keyword 
-    in the NEURON block to automatically treat those GLOBAL variables 
-    as thread specific variables. NEURON assigns and evaluates only 
-    the thread 0 version and if FUNCTIONs and PROCEDUREs are called from 
-    Python, the thread 0 version of these globals are used.
+    .. code-block::
 
-    ``TODO``: Add existing example mod file (share/demo/release/mcna.mod)
+        NEURON {
+            GLOBAL var
+        }
+
+        BREAKPOINT {
+            PROTECT var = var + 1
+        }
+
+    Mod files that update values to :ref:`GLOBAL` variables are not considered
+    thread safe. In case of multi-threaded/SIMD/GPU execution, such updates can result
+    in a race condition. To avoid this, one needs to use ``PROTECT`` keyword. Note that
+    ``PROTECT`` internally uses atomic operations on CPU or GPU execution and hence
+    the statement needs to be of a simple form such as:
+
+    .. code-block::
+
+        var1 = var2
+        var1 = var1 binary_operator expression
+        var1 = expression binary_operator var1
+        var1 = var1 binary_operator expression
+        var1 = expression
+
+    If the mod file is using the ``GLOBAL`` essentially as a file scope :ref:`LOCAL`
+    along with the possibility of passing values back to hoc in response to calling a
+    :ref:`PROCEDURE`, make sure to use the :ref:`THREADSAFE` keyword in the
+    :ref:`NEURON` block to automatically treat those ``GLOBAL`` variables as thread
+    specific variables. NEURON assigns and evaluates only the thread 0 version and if
+    :ref:`FUNCTION` and ::ref:`PROCEDURE` are called from Python, the thread 0 version
+    of these globals are used.
+
+    .. note::
+        For the performance reason, we recommend to reduce or remove the use of
+        ``PROTECT`` construct.
 
 
 MUTEXLOCK / MUTEXUNLOCK
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Description:
-    ``TODO``: Add description and existing example mod file (share/examples/nrniv/nmodl/cadif.mod)
+    .. code-block::
 
+        LOCAL factors_done
+
+        INITIAL {
+            MUTEXLOCK
+            if (factors_done == 0) {
+                  factors_done = 1
+                  factors()
+            }
+            MUTEXUNLOCK
+        }
+
+        PROCEDURE factors() {
+            : ...
+        }
+
+    Similar to ``PROTECT``, ``MUTEXLOCK`` and ``MUTEXUNLOCK`` are two constructs to
+    handle thread-safety in case update of updates to ``GLOBAL`` variables in
+    multi-threaded execution. Internally it uses mutex mechanism to avoid race condition.
+
+    .. note::
+        This construct is not supported in the case of GPU execution via CoreNEURON.
+        For the performance reason and compatibility with GPU execution, either avoid
+        the usage of this construct or check alternatives using ``PROTECT`` construct.
 
 
 
