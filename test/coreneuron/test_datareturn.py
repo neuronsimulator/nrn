@@ -180,7 +180,7 @@ def test_datareturn():
     )
 
     results = []
-    cell_permute_values = (1, 2) if coreneuron.gpu else (0, 1)
+    cell_permute_values = coreneuron.valid_cell_permute()
     for mode, nthread, cell_permute in itertools.product(
         [0, 1, 2], [1, 2], cell_permute_values
     ):

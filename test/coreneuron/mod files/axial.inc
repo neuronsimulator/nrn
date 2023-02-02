@@ -43,7 +43,7 @@ AFTER SOLVE {
 
 BEFORE STEP {
     if (ri > 0) {
-        pim = pim - ia : child contributions
+        PROTECT pim = pim - ia : child contributions
     }
 }
 

@@ -38,11 +38,11 @@ class coreneuron(object):
         self._prcellstate = -1
         self._model_stats = False
 
-    def _valid_cell_permute(self):
-        return {1, 2} if self._gpu else {0, 1}
-
     def _default_cell_permute(self):
         return 1 if self._gpu else 0
+
+    def valid_cell_permute(self):
+        return {1, 2} if self._gpu else {0, 1}
 
     @property
     def enable(self):
@@ -65,7 +65,7 @@ class coreneuron(object):
         # setting, change it and print a warning.
         if (
             self._cell_permute is not None
-            and self._cell_permute not in self._valid_cell_permute()
+            and self._cell_permute not in self.valid_cell_permute()
         ):
             print(
                 "WARNING: coreneuron.gpu = {} forbids coreneuron.cell_permute = {}, using {} instead".format(
@@ -108,7 +108,7 @@ class coreneuron(object):
     @cell_permute.setter
     def cell_permute(self, value):
         value = int(value)
-        assert value in self._valid_cell_permute()
+        assert value in self.valid_cell_permute()
         self._cell_permute = value
 
     @property
