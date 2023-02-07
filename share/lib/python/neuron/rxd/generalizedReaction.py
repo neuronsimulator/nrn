@@ -85,23 +85,6 @@ class GeneralizedReaction(object):
 
         from . import species
 
-        sources = [
-            r
-            for r in self._sources
-            if not isinstance(r(), species.SpeciesOnExtracellular)
-        ]
-        dests = [
-            r
-            for r in self._dests
-            if not isinstance(r(), species.SpeciesOnExtracellular)
-        ]
-
-        sources_ecs = [
-            r for r in self._sources if isinstance(r(), species.SpeciesOnExtracellular)
-        ]
-        dests_ecs = [
-            r for r in self._dests if isinstance(r(), species.SpeciesOnExtracellular)
-        ]
         # locate the regions containing all species (including the one that changes)
         # if all(sptr() for sptr in sources) and all(dptr() for dptr in dests):
         #    active_regions = [r for r in self._regions if all(sptr().indices(r) for sptr in sources + dests)]
@@ -132,8 +115,6 @@ class GeneralizedReaction(object):
         # Default values
         self._indices_dict = {}
         self._indices = []
-        # self._jac_rows = []
-        # self._jac_cols = []
         self._mult = [1]
         self._mult_extended = self._mult
         active_secs = None
@@ -277,8 +258,7 @@ class GeneralizedReaction(object):
                 )
                 if not src_regions:
                     raise RxDException(
-                        "Error in %r. The source species do not share a common region"
-                        % self
+                        f"Error in {self}. The source species do not share a common region"
                     )
                 src_sections = intersection(
                     [set(reg.secs) for reg in src_regions if reg is not None]
@@ -293,8 +273,7 @@ class GeneralizedReaction(object):
                 )
                 if not dest_regions:
                     raise RxDException(
-                        "Error in %r. The destination species do not share a common region"
-                        % self
+                        f"Error in {self}. The destination species do not share a common region"
                     )
                 dest_sections = intersection(
                     [set(reg.secs) for reg in dest_regions if reg is not None]
@@ -314,7 +293,7 @@ class GeneralizedReaction(object):
                 )
                 if not active_regions:
                     raise RxDException(
-                        "Error in %r. The species do not share a common region" % self
+                        f"Error in {self}. The species do not share a common region"
                     )
                 active_secs = set.intersection(
                     *[set(reg.secs) for reg in active_regions if reg]
@@ -384,13 +363,13 @@ class GeneralizedReaction(object):
             )
             if not self._scale_by_area:
                 areas = numpy.ones(len(areas))
-            if len(sources_ecs) == len(dests_ecs) == 0:
+            if not sources_ecs and not dests_ecs:
                 self._mult = [
                     -areas / volumes[si] / molecules_per_mM_um3
                     for si in sources_indices
                 ] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             # TODO: check for multicompartment reaction within the ECS
-            elif len(sources_ecs) > 0 and len(dests_ecs) == 0:
+            elif sources_ecs and not dests_ecs:
                 self._mult = [
                     -areas
                     / (
@@ -400,7 +379,7 @@ class GeneralizedReaction(object):
                     / molecules_per_mM_um3
                     for s, di in zip(sources_ecs, dests_indices)
                 ] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
-            elif len(sources_ecs) == 0 and len(dests_ecs) > 0:
+            elif not sources_ecs and dests_ecs:
                 self._mult = [
                     -areas / volumes[si] / molecules_per_mM_um3
                     for si in sources_indices
@@ -446,37 +425,6 @@ class GeneralizedReaction(object):
             return []
 
     def _update_jac_cache(self):
-        from . import species
-
-        num_involved = len(self._involved_species)
-        # self._jac_rows = list(_itertools_chain(*[ind * num_involved for ind in self._indices]))
-        num_ind = len(self._indices)
-        # self._jac_cols = list(_itertools_chain(*[self._indices_dict[s()] for s in self._involved_species if not isinstance(s(),species.SpeciesOnExtracellular)])) * num_ind
-        if self._trans_membrane:
-            self._mult_extended = self._mult
-            # self._mult_extended = [sum([list(mul) * num_involved], []) for mul in self._mult]
-            # self._mult_extended = [list(_itertools_chain.from_iterable(list(mul) * num_involved)) for mul in self._mult]
-        else:
-            self._mult_extended = self._mult
+        self._mult_extended = self._mult
 
 
-"""
-    def _jacobian_entries(self, states, multiply=1, dx=1.e-10):
-        args = self._get_args(states)
-        indices, mult, base_value = self._evaluate_args(args)
-        mult = self._mult_extended
-        derivs = []
-        derivs_append = derivs.append
-        for i, arg in enumerate(args):
-            args[i] = arg + dx
-            new_value = self._evaluate_args(args)[2]
-            args[i] = arg
-            derivs_append((new_value - base_value) / dx)
-        derivs = _numpy_array(list(_itertools_chain(*derivs)))
-        if self._trans_membrane:
-            data = list(_itertools_chain(*[derivs * mul * multiply for mul in mult]))
-            #data = derivs * mult * multiply
-        else:
-            data = list(_itertools_chain(*[derivs * mul * multiply for mul in mult]))
-        return self._jac_rows, self._jac_cols, data
-"""
