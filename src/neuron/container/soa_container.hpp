@@ -95,7 +95,7 @@ inline constexpr bool has_num_instances_v = has_num_instances<T>::value;
 // Get a name for a given field within a given tag
 template <typename Tag>
 auto get_name_impl(Tag const& tag, int field_index, std::nullptr_t)
-    -> decltype(tag.name(field_index), std::string()) {
+    -> decltype(static_cast<void>(tag.name(field_index)), std::string()) {
     return tag.name(field_index);
 }
 
@@ -238,7 +238,7 @@ struct field_data<Tag, true> {
      * This array is guaranteed to be kept up to date when the actual storage is re-allocated.
      * This is mainly intended for use in neuron::cache::MechanismRange and friends.
      */
-    [[nodiscard]] data_type* const* const data_ptrs() const {
+    [[nodiscard]] data_type* const* data_ptrs() const {
         return m_data_ptrs.data();
     }
 
@@ -485,9 +485,9 @@ struct soa {
             // vector
             for_all_vectors<detail::may_cause_reallocation::No>(
                 [i](auto const& tag, auto& vec, int field_index, int array_dim) {
-                    std::swap_ranges(std::next(vec.begin(), i * array_dim),
-                                     std::next(vec.begin(), (i + 1) * array_dim),
-                                     std::prev(vec.end(), array_dim));
+                    ::std::swap_ranges(::std::next(vec.begin(), i * array_dim),
+                                       ::std::next(vec.begin(), (i + 1) * array_dim),
+                                       ::std::prev(vec.end(), array_dim));
                 });
             // Tell the new entry at `i` that its index is `i` now.
             m_indices[i].set_current_row(i);
@@ -641,9 +641,9 @@ struct soa {
                 for_all_vectors<detail::may_cause_reallocation::No>(
                     [i, next](auto const& tag, auto& vec, auto field_index, auto array_dim) {
                         // swap the i-th and next-th array_dim-sized sub-ranges of vec
-                        std::swap_ranges(std::next(vec.begin(), i * array_dim),
-                                         std::next(vec.begin(), (i + 1) * array_dim),
-                                         std::next(vec.begin(), next * array_dim));
+                        ::std::swap_ranges(::std::next(vec.begin(), i * array_dim),
+                                           ::std::next(vec.begin(), (i + 1) * array_dim),
+                                           ::std::next(vec.begin(), next * array_dim));
                     });
                 swap(permutation[i], permutation[next]);
             }
