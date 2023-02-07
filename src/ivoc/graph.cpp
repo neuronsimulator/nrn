@@ -627,9 +627,6 @@ static double gr_vector(void* v) {
     int n = int(chkarg(1, 1., 1.e5));
     double* x = hoc_pgetarg(2);
     auto y_handle = hoc_hgetarg<double>(3);
-    assert(!y_handle.refers_to_a_modern_data_structure());  // y + i below does not make sense with
-                                                            // modern data
-    auto* const y = static_cast<double*>(y_handle);
     GraphVector* gv = new GraphVector("");
     if (ifarg(4)) {
         gv->color(colors->color(int(*getarg(4))));
@@ -639,8 +636,7 @@ static double gr_vector(void* v) {
         gv->brush(g->brush());
     }
     for (int i = 0; i < n; ++i) {
-        gv->add(x[i],
-                neuron::container::data_handle<double>{neuron::container::do_not_search, y + i});
+        gv->add(x[i], y_handle.next_array_element(i));
     }
     //	GLabel* glab = g->label(gv->name());
     //	((GraphItem*)g->component(g->glyph_index(glab)))->save(false);

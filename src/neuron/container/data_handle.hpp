@@ -96,6 +96,30 @@ struct data_handle {
     data_handle(do_not_search_t, T* raw_ptr)
         : m_container_or_raw_ptr{raw_ptr} {}
 
+    /**
+     * @brief Get a data handle to a different element of the same array variable.
+     *
+     * Given an array variable a[N], this method allows a handle to a[i] to yield a handle to a[j]
+     * within the same logical row. If the handle is wrapping a raw pointer T*, the shift is applied
+     * to that raw pointer.
+     */
+    [[nodiscard]] data_handle next_array_element(int shift = 1) const {
+        if (refers_to_a_modern_data_structure()) {
+            int const new_array_index{m_array_index + shift};
+            if (new_array_index < 0 || new_array_index >= m_array_dim) {
+                std::ostringstream oss;
+                oss << *this << " next_array_element(" << shift << "): out of range";
+                throw std::runtime_error(oss.str());
+            }
+            return {m_offset,
+                    static_cast<T* const*>(m_container_or_raw_ptr),
+                    m_array_dim,
+                    new_array_index};
+        } else {
+            return {do_not_search, static_cast<T*>(m_container_or_raw_ptr) + shift};
+        }
+    }
+
     [[nodiscard]] bool refers_to_a_modern_data_structure() const {
         return bool{m_offset} || m_offset.was_once_valid();
     }
