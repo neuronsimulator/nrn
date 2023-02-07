@@ -426,6 +426,11 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtl
             q = q->next;
             qend = ITM(q);
             for (q1 = qb->next; q1 != qend; q1 = q1->next) {
+                // if a state compartment variable is not used in
+                // the kinetic block then skip it
+                if (!SYM(q1)->used) {
+                    continue;
+                }
                 Sprintf(buf1, "(%s)", qconcat(qexp, qb->prev));
                 rlist->capacity[SYM(q1)->used - 1] = stralloc(buf1, (char*) 0);
             }
