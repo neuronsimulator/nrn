@@ -131,14 +131,6 @@ auto get_name(Tag const& tag, int field_index) {
     return get_name_impl(tag, field_index, 1 /* does not match nullptr */);
 }
 
-// Detect if a type T has a non-static member function called name().
-template <typename T, typename = void>
-struct has_name: std::false_type {};
-template <typename T>
-struct has_name<T, std::void_t<decltype(std::declval<T>().name())>>: std::true_type {};
-template <typename T>
-inline constexpr bool has_name_v = has_name<T>::value;
-
 struct index_column_tag {
     using type = non_owning_identifier_without_container;
 };
@@ -908,12 +900,10 @@ struct soa {
             // We found the right container/tag combination! Populate the
             // information struct.
             auto& info = opt_info.emplace();
-            if constexpr (detail::has_name_v<Storage>) {
-                info.container = static_cast<Storage const&>(*this).name();
-            }
+            info.container = static_cast<Storage const&>(*this).name();
             info.field = detail::get_name(tag, field_index);
-            assert(vec.size() % array_dim == 0);
             info.size = vec.size();
+            assert(info.size % array_dim == 0);
         });
         return opt_info;
     }
