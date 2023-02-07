@@ -1013,29 +1013,27 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
             // Fill `pv` with pointers to `2*n` parameters inside `p`
             std::vector<neuron::container::data_handle<double>> pv(2 * n);
             memb_func[type].ode_map(p, 0, pv.data(), pv.data() + n, nullptr, type);
-            // TODO now pv contains data_handle then maybe the next part can be done more directly
-            for (int i = 0; i < n; ++i) {  // only check the first `n` for some reason
-                int index = -1;
-                for (p = node.prop; p; p = p->next) {
-                    auto const num_params = p->param_size();
-                    int legacy_index{};
-                    for (auto i_param = 0; i_param < num_params; ++i_param) {
-                        auto const array_dim = p->param_array_dimension(i_param);
-                        for (auto j = 0; j < array_dim; ++j) {
-                            if (pv[i] == p->param_handle(i_param, j)) {
-                                index = legacy_index++;  // ambiguous between the two Prop attached
-                                                         // to Node?
-                                break;
+            // The first n elements of `pv` are "pv", the second n are "pvdot"
+            for (int i = 0; i < n; ++i) {
+                // `index` is the legacy index of `pv[i]` inside mechanism instance `p`
+                auto const [p, index] = [&h = pv[i]](Prop* p) {
+                    for (; p; p = p->next) {
+                        int legacy_index{};
+                        auto const num_params = p->param_size();
+                        for (auto i_param = 0; i_param < num_params; ++i_param) {
+                            auto const array_dim = p->param_array_dimension(i_param);
+                            for (auto j = 0; j < array_dim; ++j) {
+                                if (h == p->param_handle(i_param, j)) {
+                                    return std::make_pair(p, legacy_index);
+                                }
+                                ++legacy_index;
                             }
                         }
                     }
-                    if (index >= 0) {
-                        break;
-                    }
-                }
-                /* p is the prop and index is the index
-                    into the p->param array */
-                assert(p);  // assert that we reached the break statement
+                    std::ostringstream oss;
+                    oss << "could not find " << h << " starting from " << *p;
+                    throw std::runtime_error(oss.str());
+                }(node.prop);
                 /* need to find symbol for this */
                 auto* msym = memb_func[p->_type].sym;
                 for (int j = 0; j < msym->s_varn; ++j) {

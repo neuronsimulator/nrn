@@ -85,4 +85,8 @@ storage::storage(short mech_type, std::string name, std::vector<Variable> floati
     : base_type{field::FloatingPoint{std::move(floating_point_fields)}}
     , m_mech_name{std::move(name)}
     , m_mech_type{mech_type} {}
+// defined in C++ to try and avoid wheel issues
+int storage::num_floating_point_fields() const {
+    return get_tag<field::FloatingPoint>().num_instances();
+}
 }  // namespace neuron::container::Mechanism
