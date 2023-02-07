@@ -236,11 +236,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
     std::vector<SymbolType> codegen_global_variables;
 
     /**
-     * All ion variables that could be possibly written
-     */
-    std::vector<SymbolType> codegen_shadow_variables;
-
-    /**
      * \c true if currently net_receive block being printed
      */
     bool printing_net_receive = false;
@@ -411,16 +406,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      */
     std::string method_name(const std::string& name) const {
         return name + "_" + info.mod_suffix;
-    }
-
-
-    /**
-     * Constructs a shadow variable name
-     * \param name The name of the variable
-     * \return     The name of the variable prefixed with \c shadow_
-     */
-    std::string shadow_varname(const std::string& name) const {
-        return "shadow_" + name;
     }
 
 
@@ -625,14 +610,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * Determine the variable name for a shadow variable given its symbol
-     * \param symbol The symbol of a variable for which we want to obtain its name
-     * \return       The C string representing the access to the shadow variable
-     */
-    static std::string ion_shadow_variable_name(const SymbolType& symbol);
-
-
-    /**
      * Determine variable name in the structure of mechanism properties
      *
      * \param name         Variable name that is being printed
@@ -670,13 +647,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * \return A \c vector of \c int variables
      */
     std::vector<IndexVariableInfo> get_int_variables();
-
-
-    /**
-     * Determine all ion write variables that require shadow vectors during code generation
-     * \return A \c vector of ion variables
-     */
-    std::vector<SymbolType> get_shadow_variables();
 
 
     /**

@@ -1012,31 +1012,6 @@ std::vector<IndexVariableInfo> CodegenCVisitor::get_int_variables() {
 }
 
 
-/**
- * \details When we enable fine level parallelism at channel level, we have do updates
- * to ion variables in atomic way. As cpus don't have atomic instructions in
- * simd loop, we have to use shadow vectors for every ion variables. Here
- * we return list of all such variables.
- *
- * \todo If conductances are specified, we don't need all below variables
- */
-std::vector<SymbolType> CodegenCVisitor::get_shadow_variables() {
-    std::vector<SymbolType> variables;
-    for (const auto& ion: info.ions) {
-        for (const auto& var: ion.writes) {
-            variables.push_back({make_symbol(shadow_varname(naming::ION_VARNAME_PREFIX + var))});
-            if (ion.is_ionic_current(var)) {
-                variables.push_back({make_symbol(shadow_varname(
-                    std::string(naming::ION_VARNAME_PREFIX) + "di" + ion.name + "dv"))});
-            }
-        }
-    }
-    variables.push_back({make_symbol("ml_rhs")});
-    variables.push_back({make_symbol("ml_d")});
-    return variables;
-}
-
-
 /****************************************************************************************/
 /*                      Routines must be overloaded in backend                          */
 /****************************************************************************************/
@@ -2388,11 +2363,6 @@ std::string CodegenCVisitor::global_variable_name(const SymbolType& symbol,
 }
 
 
-std::string CodegenCVisitor::ion_shadow_variable_name(const SymbolType& symbol) {
-    return fmt::format("inst->{}[id]", symbol->get_name());
-}
-
-
 std::string CodegenCVisitor::update_if_ion_variable_name(const std::string& name) const {
     std::string result(name);
     if (ion_variable_struct_required()) {
@@ -2444,14 +2414,6 @@ std::string CodegenCVisitor::get_variable_name(const std::string& name, bool use
                           symbol_comparator);
     if (g != codegen_global_variables.end()) {
         return global_variable_name(*g, use_instance);
-    }
-
-    // shadow variable
-    auto s = std::find_if(codegen_shadow_variables.begin(),
-                          codegen_shadow_variables.end(),
-                          symbol_comparator);
-    if (s != codegen_shadow_variables.end()) {
-        return ion_shadow_variable_name(*s);
     }
 
     if (varname == naming::NTHREAD_DT_VARIABLE) {
@@ -4712,7 +4674,6 @@ void CodegenCVisitor::setup(const Program& node) {
 
     codegen_float_variables = get_float_variables();
     codegen_int_variables = get_int_variables();
-    codegen_shadow_variables = get_shadow_variables();
 
     update_index_semantics();
     rename_function_arguments();
