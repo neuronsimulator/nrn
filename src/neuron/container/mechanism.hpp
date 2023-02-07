@@ -76,7 +76,7 @@ struct handle_interface: handle_base<Identifier> {
      * @brief Return the number of floating point fields accessible via fpfield.
      */
     [[nodiscard]] int num_fpfields() const {
-        return this->template get_tag<field::FloatingPoint>().num_instances();
+        return this->underlying_storage().num_floating_point_fields();
     }
 
     /**
