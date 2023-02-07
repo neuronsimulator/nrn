@@ -202,8 +202,19 @@ static NrnThread* last_nt_;
 #endif
 
 #if NRN_MUSIC
-#include "nrnmusic.cpp"
+#include "nrnmusicapi.h"
+int nrnmusic;
 #endif
+
+double nrn_usable_mindelay() {
+    return usable_mindelay_;
+}
+Symbol* nrn_netcon_sym() {
+    return netcon_sym_;
+}
+Gid2PreSyn& nrn_gid2out() {
+    return gid2out_;
+}
 
 NetParEvent::NetParEvent() {
     wx_ = ws_ = 0.;

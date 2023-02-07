@@ -167,6 +167,10 @@ if(NOT NRN_ENABLE_INTERVIEWS)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_IVOS_SRC_FILES})
 endif()
 
+if(NRN_ENABLE_MUSIC)
+    list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_MUSIC_SRC_FILES})
+endif()
+
 # =============================================================================
 # Include directories for #include <../../nrnconf.h>
 # =============================================================================
@@ -199,6 +203,9 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}/src/sundials/cvodes
     ${PROJECT_SOURCE_DIR}/src/sundials/ida
     ${PROJECT_SOURCE_DIR}/src/sundials/shared)
+if(NRN_ENABLE_MUSIC)
+  list(APPEND NRN_INCLUDE_DIRS ${NRN_MUSIC_SRC_DIR})
+endif()
 set(NRN_INCLUDE_DIRS
     ${NRN_INCLUDE_DIRS}
     PARENT_SCOPE)
@@ -335,7 +342,7 @@ if(NRN_ENABLE_MPI_DYNAMIC)
 endif()
 
 if(NRN_ENABLE_MUSIC)
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrniv/netpar.cpp
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/neuronmusic/nrnmusic.cpp
                               PROPERTIES INCLUDE_DIRECTORIES ${MUSIC_INCDIR})
 endif()
 

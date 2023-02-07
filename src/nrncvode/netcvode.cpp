@@ -118,7 +118,7 @@ extern "C" void nrnthread_trajectory_return(int tid,
                                             double t);
 bool nrn_trajectory_request_per_time_step_ = false;
 #if NRN_MUSIC
-extern void nrnmusic_injectlist(void*, double);
+#include "nrnmusicapi.h"
 #endif
 
 extern int hoc_return_type_code;
