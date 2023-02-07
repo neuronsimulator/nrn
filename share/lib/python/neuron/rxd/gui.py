@@ -1072,12 +1072,7 @@ class SpeciesPanel:
         self.vbox.map()
 
     def regions(self):
-        return dict(
-            [
-                (name, loc.regions())
-                for name, loc in self.species_locs.items()
-            ]
-        )
+        return dict([(name, loc.regions()) for name, loc in self.species_locs.items()])
 
 
 class _SpeciesEditor:

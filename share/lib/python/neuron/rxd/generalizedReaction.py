@@ -426,5 +426,3 @@ class GeneralizedReaction(object):
 
     def _update_jac_cache(self):
         self._mult_extended = self._mult
-
-

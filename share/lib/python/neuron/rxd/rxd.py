@@ -1525,9 +1525,7 @@ def _compile_reactions():
                 ]
             else:
                 mc3d_region_size = 0
-                mc3d_indices_start = [0] * (
-                    len(all_ics_gids) + len(ics_param_gids)
-                )
+                mc3d_indices_start = [0] * (len(all_ics_gids) + len(ics_param_gids))
             mults = [[] for i in range(len(all_ics_gids + ics_param_gids))]
             for rptr in regions_inv[reg]:
                 r = rptr()
