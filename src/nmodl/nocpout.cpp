@@ -2911,15 +2911,12 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     if (watch_seen_) {
         insertstr(qstmt, "  int _watch_rm = 0;\n");
     }
-    if (vectorize) {
-        q = insertstr(qstmt,
-                      "  LocalMechanismInstance _ml_real{_pnt->_prop};\n"
-                      "  auto* const _ml = &_ml_real;\n"
-                      "  size_t const _iml{};\n");
-    } else {
-        q = insertstr(
-            qstmt, "  neuron::legacy::set_globals_from_prop(_pnt->_prop, _ml_real, _ml, _iml);\n");
-    }
+    vectorize_substitute(
+        insertstr(qstmt,
+                  "  neuron::legacy::set_globals_from_prop(_pnt->_prop, _ml_real, _ml, _iml);\n"),
+        "  LocalMechanismInstance _ml_real{_pnt->_prop};\n"
+        "  auto* const _ml = &_ml_real;\n"
+        "  size_t const _iml{};\n");
     q = insertstr(qstmt, "  _ppvar = _pnt->_prop->dparam;\n");
     vectorize_substitute(insertstr(q, ""), "  _thread = nullptr; _nt = (NrnThread*)_pnt->_vnt;");
     if (debugging_) {
