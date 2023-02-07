@@ -61,9 +61,7 @@ struct MechanismRange {
                                       ->get_array_dims<container::Mechanism::field::FloatingPoint>()
                                 : nullptr}
         , m_offset{offset} {
-        assert(!mech_data ||
-               mech_data->get_tag<container::Mechanism::field::FloatingPoint>().num_instances() ==
-                   NumFloatingPointFields);
+        assert(!mech_data || (mech_data->num_floating_point_fields() == NumFloatingPointFields));
     }
 
   public:
