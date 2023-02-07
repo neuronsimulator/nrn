@@ -630,7 +630,6 @@ def _update_node_data(force=False, newspecies=False):
             # _curr_scales = _numpy_array(_curr_scales)
 
 
-
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
 
@@ -683,7 +682,6 @@ def _setup_matrices():
                     == len(euler_matrix_j)
                     == len(euler_matrix_nonzero)
                 )
-
 
         # Hybrid logic
         if species._has_1d and species._has_3d:

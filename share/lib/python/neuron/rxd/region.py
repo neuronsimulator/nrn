@@ -663,9 +663,7 @@ class Region(object):
             elif dim == 3:
                 self._secs3d.append(sec)
             else:
-                raise RxDException(
-                    f"unknown dimension: {dim} in section {sec}"
-                )
+                raise RxDException(f"unknown dimension: {dim} in section {sec}")
 
         # TODO: I used to not sort secs in 3D if hasattr(self._secs, 'sections'); figure out why
         self._secs = _sort_secs(self._secs)
