@@ -1,7 +1,7 @@
 from .rxdmath import _Arithmeticed
 import weakref
 from .section1d import Section1D
-from neuron import h, nrn, nrn_dll_sym
+from neuron import h, nrn_dll_sym
 from . import node, nodelist, rxdmath, region
 import numpy
 import warnings
@@ -975,9 +975,9 @@ class _IntracellularSpecies(_SpeciesMathable):
                         sp = s()
                         break
             if isinstance(sp, Parameter):
-                return "params_3d[%d]" % (self._grid_id)
+                return f"params_3d[{self._grid_id}]"
             else:
-                return "species_3d[%d]" % (self._grid_id)
+                return f"species_3d[{self._grid_id}]"
         raise RxDException("_semi_compile received inconsistent state")
 
     def _register_cptrs(self):
@@ -1502,13 +1502,12 @@ class _ExtracellularSpecies(_SpeciesMathable):
                     sp = s()
                     break
         if isinstance(sp, Parameter):
-            return "params_3d[%d]" % (self._grid_id)
+            return f"params_3d[{self._grid_id}]"
         else:
-            return "species_3d[%d]" % (self._grid_id)
+            return f"species_3d[{self._grid_id}]"
 
     @property
     def d(self):
-
         self._isalive()
         return self._d
 
@@ -1932,7 +1931,7 @@ class Species(_SpeciesMathable):
         metadata_array.frombytes(oldstate[:16])
         version, length = metadata_array
         if version != 0:
-            raise RxdException("Unsupported state data version")
+            raise RxDException("Unsupported state data version")
         data = array.array("d")
         try:
             data.frombytes(oldstate[16:])
@@ -1999,7 +1998,6 @@ class Species(_SpeciesMathable):
         data = numpy.array(r._mesh.values, dtype=float)
         # things outside of the volume will be NaN
         data[:] = numpy.NAN
-        max_concentration = -1
         for node in self.nodes:
             data[node._i, node._j, node._k] = node.concentration
         return data
