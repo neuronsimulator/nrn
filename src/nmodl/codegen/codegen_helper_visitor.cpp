@@ -577,6 +577,13 @@ void CodegenHelperVisitor::visit_function_table_block(const ast::FunctionTableBl
 void CodegenHelperVisitor::visit_eigen_newton_solver_block(
     const ast::EigenNewtonSolverBlock& node) {
     info.eigen_newton_solver_exist = true;
+    // Avoid extra declaration for `functor` corresponding to the DERIVATIVE block which is not
+    // printed to the generated CPP file
+    if (!under_derivative_block) {
+        const auto new_unique_functor_name = "functor_" + info.mod_suffix + "_" +
+                                             std::to_string(info.functor_names.size());
+        info.functor_names[&node] = new_unique_functor_name;
+    }
     node.visit_children(*this);
 }
 

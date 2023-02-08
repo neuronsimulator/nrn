@@ -8,21 +8,30 @@
 #include <catch2/catch.hpp>
 
 #include "ast/program.hpp"
+#include "codegen/codegen_cpp_visitor.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "test/unit/utils/test_utils.hpp"
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
+#include "visitors/inline_visitor.hpp"
 #include "visitors/kinetic_block_visitor.hpp"
 #include "visitors/loop_unroll_visitor.hpp"
+#include "visitors/neuron_solve_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
+#include "visitors/solve_block_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 
 
 using namespace nmodl;
+using namespace codegen;
 using namespace visitor;
 using namespace test;
 using namespace test_utils;
+
+using Catch::Matchers::Contains;  // ContainsSubstring in newer Catch2
+
+using nmodl::test_utils::reindent_text;
 
 using ast::AstNodeType;
 using nmodl::parser::NmodlDriver;
@@ -2221,6 +2230,209 @@ SCENARIO("Solve KINETIC block using SympySolver Visitor", "[visitor][solver][sym
             REQUIRE_NOTHROW(result = run_sympy_solver_visitor(
                                 nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK, true));
             compare_blocks(reindent_text(result[0]), reindent_text(expected_text));
+        }
+    }
+}
+
+/// Helper for creating C codegen visitor
+std::shared_ptr<CodegenCVisitor> create_c_visitor(const std::shared_ptr<ast::Program>& ast,
+                                                  const std::string& /* text */,
+                                                  std::stringstream& ss,
+                                                  bool inline_visitor = true,
+                                                  bool pade = false,
+                                                  bool cse = false) {
+    /// construct symbol table
+    SymtabVisitor().visit_program(*ast);
+
+    /// run all necessary pass
+    if (inline_visitor) {
+        InlineVisitor().visit_program(*ast);
+    }
+    // unroll loops and fold constants
+    ConstantFolderVisitor().visit_program(*ast);
+    LoopUnrollVisitor().visit_program(*ast);
+    ConstantFolderVisitor().visit_program(*ast);
+    SymtabVisitor().visit_program(*ast);
+
+    // run SympySolver on AST
+    SympySolverVisitor(pade, cse).visit_program(*ast);
+    SymtabVisitor(true).visit_program(*ast);
+
+    // Solve states
+    NeuronSolveVisitor().visit_program(*ast);
+    SolveBlockVisitor().visit_program(*ast);
+
+    // Update symtab before CodegenCVisitor
+    SymtabVisitor(true).visit_program(*ast);
+
+    // check that, after visitor rearrangement, parents are still up-to-date
+    CheckParentVisitor().check_ast(*ast);
+
+    /// create C code generation visitor
+    auto cv = std::make_shared<CodegenCVisitor>("temp.mod", ss, "double", false);
+    cv->setup(*ast);
+    return cv;
+}
+
+/// print entire code
+std::string get_cpp_code(const std::string& nmodl_text) {
+    const auto& ast = NmodlDriver().parse_string(nmodl_text);
+    std::stringstream ss;
+    auto cvisitor = create_c_visitor(ast, nmodl_text, ss);
+    cvisitor->visit_program(*ast);
+    auto generated_string = ss.str();
+    return reindent_text(generated_string);
+}
+
+SCENARIO("Code generation for EigenNewtonSolver", "[visitor][solver][sympy][derivimplicit]") {
+    GIVEN("A mod file containing two SOLVE statements") {
+        std::string const nmodl_text = R"(
+            NEURON {
+                SUFFIX cacum
+                USEION ca READ ica WRITE cai
+                RANGE depth, tau, cai0
+            }
+
+            UNITS {
+                (mM) = (milli/liter)
+                (mA) = (milliamp)
+                F = 96485.3 (coulombs)
+            }
+
+            PARAMETER {
+                depth = 1 (nm)	: assume volume = area*depth
+                tau = 10 (ms)
+                cai0 = 50e-6 (mM)	: Requires explicit use in INITIAL
+                        : block for it to take precedence over cai0_ca_ion
+                        : Do not forget to initialize in hoc if different
+                        : from this default.
+            }
+
+            ASSIGNED {
+                ica (mA/cm2)
+            }
+
+            STATE {
+                cai (mM)
+            }
+
+            INITIAL {
+                cai = cai0
+                extra_solve()
+            }
+
+            BREAKPOINT {
+                SOLVE integrate METHOD derivimplicit
+            }
+
+            DERIVATIVE integrate {
+                cai' = -ica/depth/F/2 * (1e7) + (cai0 - cai)/tau
+            }
+
+            PROCEDURE extra_solve() {
+                SOLVE integrate
+            }
+        )";
+
+        THEN("Three different functor structs defined and used") {
+            auto const generated = get_cpp_code(nmodl_text);
+
+            // Expected functor definitions
+            std::string expected_functor_cacum_0_definition =
+                R"(struct functor_cacum_0 {
+        NrnThread* nt;
+        cacum_Instance* inst;
+        int id, pnodecount;
+        double v;
+        const Datum* indexes;
+        double* data;
+        ThreadDatum* thread;
+        double old_cai;
+
+        void initialize() {
+            old_cai = inst->cai[id];
+        }
+
+        functor_cacum_0(NrnThread* nt, cacum_Instance* inst, int id, int pnodecount, double v, const Datum* indexes, double* data, ThreadDatum* thread) : nt{nt}, inst{inst}, id{id}, pnodecount{pnodecount}, v{v}, indexes{indexes}, data{data}, thread{thread} {}
+        void operator()(const Eigen::Matrix<double, 1, 1>& nmodl_eigen_xm, Eigen::Matrix<double, 1, 1>& nmodl_eigen_fm, Eigen::Matrix<double, 1, 1>& nmodl_eigen_jm) const {
+            const double* nmodl_eigen_x = nmodl_eigen_xm.data();
+            double* nmodl_eigen_j = nmodl_eigen_jm.data();
+            double* nmodl_eigen_f = nmodl_eigen_fm.data();
+            nmodl_eigen_f[static_cast<int>(0)] =  -nmodl_eigen_x[static_cast<int>(0)] * nt->_dt / inst->tau[id] - nmodl_eigen_x[static_cast<int>(0)] + inst->cai0[id] * nt->_dt / inst->tau[id] + old_cai - 5000000.0 * nt->_dt * inst->ica[id] / (F * inst->depth[id]);
+            nmodl_eigen_j[static_cast<int>(0)] =  -(nt->_dt + inst->tau[id]) / inst->tau[id];
+        }
+
+        void finalize() {
+        }
+    };)";
+            std::string expected_functor_cacum_1_definition =
+                R"(struct functor_cacum_1 {
+        NrnThread* nt;
+        cacum_Instance* inst;
+        int id, pnodecount;
+        double v;
+        const Datum* indexes;
+        double* data;
+        ThreadDatum* thread;
+        double old_cai;
+
+        void initialize() {
+            old_cai = inst->cai[id];
+        }
+
+        functor_cacum_1(NrnThread* nt, cacum_Instance* inst, int id, int pnodecount, double v, const Datum* indexes, double* data, ThreadDatum* thread) : nt{nt}, inst{inst}, id{id}, pnodecount{pnodecount}, v{v}, indexes{indexes}, data{data}, thread{thread} {}
+        void operator()(const Eigen::Matrix<double, 1, 1>& nmodl_eigen_xm, Eigen::Matrix<double, 1, 1>& nmodl_eigen_fm, Eigen::Matrix<double, 1, 1>& nmodl_eigen_jm) const {
+            const double* nmodl_eigen_x = nmodl_eigen_xm.data();
+            double* nmodl_eigen_j = nmodl_eigen_jm.data();
+            double* nmodl_eigen_f = nmodl_eigen_fm.data();
+            nmodl_eigen_f[static_cast<int>(0)] =  -nmodl_eigen_x[static_cast<int>(0)] * nt->_dt / inst->tau[id] - nmodl_eigen_x[static_cast<int>(0)] + inst->cai0[id] * nt->_dt / inst->tau[id] + old_cai - 5000000.0 * nt->_dt * inst->ica[id] / (F * inst->depth[id]);
+            nmodl_eigen_j[static_cast<int>(0)] =  -(nt->_dt + inst->tau[id]) / inst->tau[id];
+        }
+
+        void finalize() {
+        }
+    };)";
+            std::string expected_functor_cacum_2_definition =
+                R"(struct functor_cacum_2 {
+        NrnThread* nt;
+        cacum_Instance* inst;
+        int id, pnodecount;
+        double v;
+        const Datum* indexes;
+        double* data;
+        ThreadDatum* thread;
+        double old_cai;
+
+        void initialize() {
+            old_cai = inst->cai[id];
+        }
+
+        functor_cacum_2(NrnThread* nt, cacum_Instance* inst, int id, int pnodecount, double v, const Datum* indexes, double* data, ThreadDatum* thread) : nt{nt}, inst{inst}, id{id}, pnodecount{pnodecount}, v{v}, indexes{indexes}, data{data}, thread{thread} {}
+        void operator()(const Eigen::Matrix<double, 1, 1>& nmodl_eigen_xm, Eigen::Matrix<double, 1, 1>& nmodl_eigen_fm, Eigen::Matrix<double, 1, 1>& nmodl_eigen_jm) const {
+            const double* nmodl_eigen_x = nmodl_eigen_xm.data();
+            double* nmodl_eigen_j = nmodl_eigen_jm.data();
+            double* nmodl_eigen_f = nmodl_eigen_fm.data();
+            nmodl_eigen_f[static_cast<int>(0)] =  -nmodl_eigen_x[static_cast<int>(0)] * nt->_dt / inst->tau[id] - nmodl_eigen_x[static_cast<int>(0)] + inst->cai0[id] * nt->_dt / inst->tau[id] + old_cai - 5000000.0 * nt->_dt * inst->ica[id] / (F * inst->depth[id]);
+            nmodl_eigen_j[static_cast<int>(0)] =  -(nt->_dt + inst->tau[id]) / inst->tau[id];
+        }
+
+        void finalize() {
+        }
+    };)";
+            // Expected functor usages
+            std::string expected_functor_cacum_0_usage =
+                R"(functor_cacum_0 newton_functor(nt, inst, id, pnodecount, v, indexes, data, thread);)";
+            std::string expected_functor_cacum_1_usage =
+                R"(functor_cacum_1 newton_functor(nt, inst, id, pnodecount, v, indexes, data, thread);)";
+            std::string expected_functor_cacum_2_usage =
+                R"(functor_cacum_2 newton_functor(nt, inst, id, pnodecount, v, indexes, data, thread);)";
+
+            REQUIRE_THAT(generated, Contains(expected_functor_cacum_0_definition));
+            REQUIRE_THAT(generated, Contains(expected_functor_cacum_1_definition));
+            REQUIRE_THAT(generated, Contains(expected_functor_cacum_2_definition));
+            REQUIRE_THAT(generated, Contains(expected_functor_cacum_0_usage));
+            REQUIRE_THAT(generated, Contains(expected_functor_cacum_1_usage));
+            REQUIRE_THAT(generated, Contains(expected_functor_cacum_2_usage));
         }
     }
 }

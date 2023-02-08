@@ -13,6 +13,7 @@
  */
 
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 
 #include "ast/ast.hpp"
@@ -375,6 +376,9 @@ struct CodegenInfo {
 
     /// all variables/symbols used in the verbatim block
     std::unordered_set<std::string> variables_in_verbatim;
+
+    /// unique functor names for all the \c EigenNewtonSolverBlock s
+    std::unordered_map<const ast::EigenNewtonSolverBlock*, std::string> functor_names;
 
     /// true if eigen newton solver is used
     bool eigen_newton_solver_exist = false;

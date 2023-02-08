@@ -87,6 +87,7 @@ target_link_libraries(
   util
   test_util
   printer
+  codegen
   ${NMODL_WRAPPER_LIBS})
 target_link_libraries(
   testcodegen
