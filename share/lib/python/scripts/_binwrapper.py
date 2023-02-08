@@ -8,11 +8,11 @@ import shutil
 import subprocess
 import sys
 from pkg_resources import working_set
-from distutils.ccompiler import new_compiler
+from setuptools.command.build_ext import new_compiler
+from packaging.version import Version
 from sysconfig import get_config_vars, get_config_var
 
 
-# This replaces the now depricated distutils.sysutils.customize_compiler
 def _customize_compiler(compiler):
     """Do platform-sepcific customizations of compilers on unix platforms."""
     if compiler.compiler_type == "unix":
@@ -38,6 +38,26 @@ def _set_default_compiler():
         ccompiler.compiler_cxx[0] = get_config_var("CXX")
     os.environ.setdefault("CC", ccompiler.compiler[0])
     os.environ.setdefault("CXX", ccompiler.compiler_cxx[0])
+
+
+def _check_cpp_compiler_version():
+    """Check if GCC compiler is >= 9.0 otherwise show warning"""
+    try:
+        cpp_compiler = os.environ.get("CXX", "")
+        version = subprocess.run(
+            [cpp_compiler, "--version"], stdout=subprocess.PIPE
+        ).stdout.decode("utf-8")
+        if "GCC" in version:
+            version = subprocess.run(
+                [cpp_compiler, "-dumpversion"], stdout=subprocess.PIPE
+            ).stdout.decode("utf-8")
+            if Version(version) <= Version("9.0"):
+                print(
+                    "Warning: GCC >= 9.0 is required with this version of NEURON but found",
+                    version,
+                )
+    except:
+        pass
 
 
 def _config_exe(exe_name):
