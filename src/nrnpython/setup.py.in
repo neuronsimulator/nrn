@@ -1,5 +1,5 @@
 #setup.py
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 from sysconfig import get_python_version
 
 import sys
@@ -83,26 +83,6 @@ if using_pgi:
   os.environ["LDSHARED"] = os.environ['CC'] + " -shared"
   os.environ["LDCXXSHARED"] = os.environ["CXX"] + " -shared"
 
-# apparently we do not need the following
-#################################
-## following http://code.google.com/p/maroonmpi/wiki/Installation
-## hack into distutils to replace the compiler in "linker_so" with mpicxx_bin
-#
-#import distutils
-#import distutils.unixccompiler
-#
-#class MPI_UnixCCompiler(distutils.unixccompiler.UnixCCompiler):
-#    __set_executable = distutils.unixccompiler.UnixCCompiler.set_executable
-#
-#    def set_executable(self,key,value):
-#	print "MPI_UnixCCompiler ", key, " | ", value
-#        if key == 'linker_so' and type(value) == str:
-#            value = mpicxx_bin + ' ' + ' '.join(value.split()[1:])
-#
-#        return self.__set_executable(key,value)
-#    
-#distutils.unixccompiler.UnixCCompiler = MPI_UnixCCompiler
-#################################
 
 #include_dirs for hoc module
 include_dirs = [nrn_srcdir+'/src/nrnpython', nrn_srcdir+'/src/oc', '../oc', nrn_srcdir+'/src/nrnmpi']
@@ -162,12 +142,6 @@ hoc_module = Extension(
     include_dirs = include_dirs+include_dirs_common,
     define_macros=defines
     )
-
-# specify that the data_files paths are relative to same place as python files
-# from http://stackoverflow.com/questions/1612733/including-non-python-files-with-setup-py
-from distutils.command.install import INSTALL_SCHEMES
-for scheme in list(INSTALL_SCHEMES.values()):
-    scheme['data'] = scheme['purelib']
 
 ext_modules = [hoc_module]
 

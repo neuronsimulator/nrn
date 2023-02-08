@@ -35,13 +35,14 @@ jobs:
       DESIRED_CMAKE_VERSION: 3.15.0
       PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
       PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
+      MUSIC_INSTALL_DIR: /opt/MUSIC
 
     strategy:
       matrix:
         os: [ macOS-11, ubuntu-20.04]
         config:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
-          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake"}
+          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake", music: ON}
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake", python_dynamic: ON}
           - { matrix_eval : "CC=gcc-7 CXX=g++-7" ,  build_mode: "cmake", cmake_option: "-DNRN_ENABLE_CORENEURON=ON"}
           - { matrix_eval : "CC=gcc-7 CXX=g++-7",   build_mode: "cmake", cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"}
@@ -84,7 +85,7 @@ jobs:
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install ccache coreutils doxygen flex mpich ninja xz
+          brew install ccache coreutils doxygen flex mpich ninja xz autoconf autoconf automake libtool
           brew unlink mpich
           brew install openmpi
           brew install --cask xquartz
@@ -136,6 +137,23 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
+
+      - name: Setup MUSIC
+        if: matrix.config.music == 'ON'
+        run: |
+          python3 -m venv music-venv
+          source music-venv/bin/activate
+          python3 -m pip install mpi4py cython numpy
+          sudo mkdir -p $MUSIC_INSTALL_DIR
+          sudo chown -R $USER $MUSIC_INSTALL_DIR
+          # Stable build: https://github.com/INCF/MUSIC/archive/refs/heads/switch-to-MPI-C-interface.zip  @ f33b66ea9348888eed1761738ab48c23ffc8a0d0
+          curl -L -o MUSIC.zip https://codeload.github.com/INCF/MUSIC/zip/f33b66ea9348888eed1761738ab48c23ffc8a0d0
+          unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
+          ./autogen.sh
+          ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
+          make -j install
+          deactivate
+        working-directory: ${{runner.temp}} 
 
       - name: Register gcc problem matcher
         if: ${{matrix.config.flag_warnings == 'ON'}}
@@ -250,6 +268,11 @@ jobs:
               else
                 cmake_args+=(-DPYTHON_EXECUTABLE="${PYTHON}")
               fi
+              if [[ "$NRN_ENABLE_MUSIC" == "ON" ]]; then
+                cmake_args+=(-DNRN_ENABLE_MUSIC=ON \
+                             -DCMAKE_PREFIX_PATH=${MUSIC_INSTALL_DIR} \
+                             -DMUSIC_ROOT=${MUSIC_INSTALL_DIR})
+              fi
               # Enable more warnings in the builds whose compiler warnings we
               # highlight in the GitHub UI
               if [[ "${{matrix.config.flag_warnings}}" == "ON" ]]; then
@@ -350,6 +373,7 @@ jobs:
           CCACHE_BASEDIR: ${{runner.workspace}}/nrn
           CCACHE_DIR: ${{runner.workspace}}/ccache
           NRN_ENABLE_PYTHON_DYNAMIC : ${{ matrix.config.python_dynamic }}
+          NRN_ENABLE_MUSIC: ${{ matrix.config.music }}
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
           INSTALL_DIR : ${{ runner.workspace }}/install
