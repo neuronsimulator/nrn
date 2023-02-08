@@ -290,21 +290,12 @@ PYTHON_EXECUTABLE:PATH=
 
 NRN_ENABLE_MODULE_INSTALL:BOOL=ON
 ---------------------------------
-  Enable installation of NEURON Python module.
+  Enable installation of the NEURON Python module. 
+  By default, the NEURON module is installed in CMAKE_INSTALL_PREFIX/lib/python.
 
-  By default, the neuron module is installed in CMAKE_INSTALL_PREFIX/lib/python.
+  Note: When building wheels, this must be set to OFF since the top-level `setup.py`
+  is already building the extensions.
 
-NRN_MODULE_INSTALL_OPTIONS:STRING=--home=/usr/local
----------------------------------------------------
-  setup.py options, everything after setup.py install
-
-  To install in site-packages use an empty string
-
-  .. code-block:: shell
-
-    -DNRN_MODULE_INSTALL_OPTIONS=""
-
-  This option is (or should be) ignored unless NRN_ENABLE_MODULE_INSTALL=ON.
 
 NRN_ENABLE_RX3D:BOOL=ON
 -----------------------
