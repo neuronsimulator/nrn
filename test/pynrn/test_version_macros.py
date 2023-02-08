@@ -1,4 +1,4 @@
-import distutils.util
+from neuron.tests.utils.strtobool import strtobool
 import os
 from neuron import coreneuron, h
 
@@ -17,7 +17,7 @@ def test_version_macros():
     s = h.Section()
     s.insert("VersionMacros")
     coreneuron.enable = bool(
-        distutils.util.strtobool(os.environ.get("NRN_CORENEURON_ENABLE", "false"))
+        strtobool(os.environ.get("NRN_CORENEURON_ENABLE", "false"))
     )
     coreneuron.verbose = True
     h.CVode().cache_efficient(True)
