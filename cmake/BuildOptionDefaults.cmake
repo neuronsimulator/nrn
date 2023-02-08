@@ -29,7 +29,6 @@ set(NRN_NMODL_CXX_FLAGS_DEFAULT "-O0")
 set(NRN_SANITIZERS_DEFAULT "")
 
 # Some distributions may set the prefix. To avoid errors, unset it
-set(NRN_MODULE_INSTALL_OPTIONS_DEFAULT "--prefix= --home=${CMAKE_INSTALL_PREFIX}")
 set(NRN_PYTHON_DYNAMIC_DEFAULT "")
 set(NRN_MPI_DYNAMIC_DEFAULT "")
 set(NRN_RX3D_OPT_LEVEL_DEFAULT "0")

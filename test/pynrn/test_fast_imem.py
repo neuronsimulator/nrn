@@ -1,7 +1,7 @@
 # Sum of all i_membrane_ should equal sum of all ElectrodeCurrent
 # For a demanding test, use a tree with many IClamp and ExpSyn point processes
 # sprinkled on zero and non-zero area nodes.
-import distutils.util
+from neuron.tests.utils.strtobool import strtobool
 import os
 
 from neuron import h
@@ -324,9 +324,11 @@ def test_fastimem_corenrn():
     while h.t < tstop - h.dt / 2:
         dt_above = 1.1 * h.dt  # comfortably above dt to avoid 0 step advance
         coreneuron.enable = True
-        told = h.t
-        pc.psolve(h.t + dt_above)
-        assert h.t > told
+        coreneuron.verbose = 0
+        coreneuron.gpu = strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
+        tolerance = 5e-11
+        run(tstop)
+        compare("CoreNEURON online mode", rel_tol=tolerance)
         coreneuron.enable = False
         pc.psolve(h.t + dt_above)
     compare()
