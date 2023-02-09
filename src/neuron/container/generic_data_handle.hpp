@@ -1,18 +1,13 @@
 #pragma once
 #include "backtrace_utils.h"
 #include "neuron/container/data_handle.hpp"
-#include "neuron/container/soa_identifier.hpp"
-#include "neuron/model_data.hpp"
+#include "neuron/container/non_owning_soa_identifier.hpp"
 
 #include <cstring>
 #include <typeinfo>
 #include <type_traits>
 
 namespace neuron::container {
-
-template <typename>
-struct data_handle;
-
 /**
  * @brief Non-template stable handle to a generic value.
  *
@@ -301,4 +296,22 @@ struct generic_data_handle {
     // Extra information required for data_handle<T> to point at array variables
     int m_array_dim{1}, m_array_index{};
 };
+
+namespace utils {
+namespace detail {
+/**
+ * @brief Try and promote a generic_data_handle wrapping a raw pointer.
+ *
+ * If the raw pointer can be found in the model data structures, a "modern" permutation-stable
+ * handle to it will be returned. If it cannot be found, a null generic_data_handle will be
+ * returned.
+ */
+[[nodiscard]] generic_data_handle promote_or_clear(generic_data_handle);
+}  // namespace detail
+// forward declared in model_data_fwd.hpp
+template <typename T>
+[[nodiscard]] data_handle<T> find_data_handle(T* ptr) {
+    return static_cast<data_handle<T>>(detail::promote_or_clear({do_not_search, ptr}));
+}
+}  // namespace utils
 }  // namespace neuron::container

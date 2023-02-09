@@ -2,7 +2,6 @@
 #include "membfunc.h"
 #include "nrn_ansi.h"
 #include "nrnoc_ml.h"
-#include "section.h"
 
 #include <array>
 
@@ -45,23 +44,19 @@ struct MechanismRange {
                    NrnThread&,
                    Memb_list& ml,
                    int type)
-        : MechanismRange{&neuron::model().mechanism_data(type), ml.get_storage_offset()} {
-        auto const& ptr_cache = cache_token.mech_cache(type).pdata_ptr_cache;
+        : MechanismRange{type, ml.get_storage_offset()} {
+        auto const& ptr_cache = mechanism::_get::_pdata_ptr_cache_data(cache_token, type);
         m_pdata_ptrs = ptr_cache.data();
         assert(ptr_cache.size() <= NumDatumFields);
     }
 
   protected:
-    MechanismRange(container::Mechanism::storage* mech_data, std::size_t offset)
-        : m_data_ptrs{mech_data
-                          ? mech_data->get_data_ptrs<container::Mechanism::field::FloatingPoint>()
-                          : nullptr}
-        , m_data_array_dims{mech_data
-                                ? mech_data
-                                      ->get_array_dims<container::Mechanism::field::FloatingPoint>()
-                                : nullptr}
+    MechanismRange(int mech_type, std::size_t offset)
+        : m_data_ptrs{mechanism::get_data_ptrs<double>(mech_type)}
+        , m_data_array_dims{mechanism::get_array_dims<double>(mech_type)}
         , m_offset{offset} {
-        assert(!mech_data || (mech_data->num_floating_point_fields() == NumFloatingPointFields));
+        assert((mech_type < 0) ||
+               (mechanism::get_field_count<double>(mech_type) == NumFloatingPointFields));
     }
 
   public:
@@ -74,7 +69,7 @@ struct MechanismRange {
         assert(variable < NumFloatingPointFields);
         return m_data_ptrs[variable][m_offset + instance];
     }
-    [[nodiscard]] double& data(std::size_t instance, field_index ind) {
+    [[nodiscard]] double& data(std::size_t instance, container::field_index ind) {
         assert(ind.field < NumFloatingPointFields);
         auto const array_dim = m_data_array_dims[ind.field];
         return m_data_ptrs[ind.field][array_dim * (m_offset + instance) + ind.array_index];
@@ -110,15 +105,14 @@ template <std::size_t NumFloatingPointFields, std::size_t NumDatumFields>
 struct MechanismInstance: MechanismRange<NumFloatingPointFields, NumDatumFields> {
     using base_type = MechanismRange<NumFloatingPointFields, NumDatumFields>;
     MechanismInstance(Prop* prop)
-        : base_type{prop ? &neuron::model().mechanism_data(prop->_type) : nullptr,
-                    prop ? prop->current_row() : std::numeric_limits<std::size_t>::max()} {
+        : base_type{_nrn_mechanism_get_type(prop), mechanism::_get::_current_row(prop)} {
         if (!prop) {
             // grrr...see cagkftab test where setdata is not called(?) and extcall_prop is null(?)
             return;
         }
-        indices_to_cache(prop->_type, [this, prop](auto field) {
+        indices_to_cache(_nrn_mechanism_get_type(prop), [this, prop](auto field) {
             assert(field < NumDatumFields);
-            auto& datum = prop->dparam[field];
+            auto& datum = _nrn_mechanism_access_dparam(prop)[field];
             m_dptr_cache[field] = datum.template get<double*>();
             this->m_dptr_datums[field] = &m_dptr_cache[field];
         });

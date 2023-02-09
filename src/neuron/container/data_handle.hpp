@@ -1,6 +1,6 @@
 #pragma once
 #include "backtrace_utils.h"
-#include "neuron/container/soa_identifier.hpp"
+#include "neuron/container/non_owning_soa_identifier.hpp"
 #include "neuron/model_data_fwd.hpp"
 
 #include <ostream>
@@ -241,18 +241,18 @@ struct data_handle {
         if (auto const valid = dh.m_offset; valid || dh.m_offset.was_once_valid()) {
             auto const maybe_info = utils::find_container_info(dh.container_data());
             if (maybe_info) {
-                if (!maybe_info->container.empty()) {
-                    os << "cont=" << maybe_info->container << ' ';
+                if (!maybe_info->container().empty()) {
+                    os << "cont=" << maybe_info->container() << ' ';
                 }
                 // the printout will show the logical row number, but we have the physical size.
                 // these are different in case of array variables. convert the size to a logical
                 // one, but add some printout showing what we did
-                auto size = maybe_info->size;
+                auto size = maybe_info->size();
                 assert(dh.m_array_dim >= 1);
                 assert(dh.m_array_index < dh.m_array_dim);
                 assert(size % dh.m_array_dim == 0);
                 size /= dh.m_array_dim;
-                os << maybe_info->field;
+                os << maybe_info->field();
                 if (dh.m_array_dim > 1) {
                     os << '[' << dh.m_array_index << '/' << dh.m_array_dim << ']';
                 }

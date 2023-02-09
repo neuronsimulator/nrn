@@ -26,7 +26,7 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
         auto const mech_type = 0;
         neuron::model().delete_mechanism(mech_type);
         auto& mech_data = neuron::model().add_mechanism(mech_type, "test_mechanism", field_info);
-        REQUIRE(mech_data.num_floating_point_fields() == num_fields);
+        REQUIRE(mech_data.get_tag<field::FloatingPoint>().num_instances() == num_fields);
         WHEN("A row is added") {
             owning_handle mech_instance{mech_data};
             THEN("Values can be read and written") {
@@ -115,8 +115,7 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                     auto const field_matches =
                         [&](auto const& reference, int index, int array_index = 0) {
                             for (auto i = 0; i < mech_data.size(); ++i) {
-                                if (mech_data.get_field_instance<field::FloatingPoint>(
-                                        i, index, array_index) != reference[i]) {
+                                if (mech_data.fpfield(i, index, array_index) != reference[i]) {
                                     return false;
                                 }
                             }

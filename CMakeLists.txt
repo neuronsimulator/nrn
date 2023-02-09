@@ -878,19 +878,9 @@ list(FILTER NRN_HEADERS_PATHS EXCLUDE REGEX "src/coreneuron")
 # TODO support structured headers via HEADER_FILES_TO_INSTALL
 foreach(
   header
-  neuron/model_data.hpp
-  neuron/model_data_fwd.hpp
-  neuron/cache/mechanism_range.hpp
-  neuron/cache/model_data.hpp
-  neuron/container/data_handle.hpp
-  neuron/container/generic_data_handle.hpp
-  neuron/container/mechanism.hpp
-  neuron/container/mechanism_data.hpp
-  neuron/container/node.hpp
-  neuron/container/node_data.hpp
-  neuron/container/soa_container.hpp
-  neuron/container/soa_identifier.hpp
-  neuron/container/view_utils.hpp)
+  neuron/model_data_fwd.hpp neuron/cache/mechanism_range.hpp neuron/cache/model_data.hpp
+  neuron/container/data_handle.hpp neuron/container/generic_data_handle.hpp
+  neuron/container/non_owning_soa_identifier.hpp)
   configure_file("src/${header}" "${PROJECT_BINARY_DIR}/include/${header}" COPYONLY)
 endforeach()
 file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/nrnoc/nrnsemanticversion.h

@@ -27,7 +27,6 @@ actual_v, etc.
 */
 
 #include "membfunc.h"
-#include "neuron/model_data.hpp"
 
 #include <cstddef>
 
@@ -77,30 +76,14 @@ struct NrnThread {
      */
     std::size_t _node_data_offset{};
 
-    double* node_area_storage() {
-        // Need to be able to use this method while the model is frozen, so
-        // avoid calling the zero-parameter get()
-        return &neuron::model().node_data().get<neuron::container::Node::field::Area>(
-            _node_data_offset);
+    [[nodiscard]] double* node_area_storage();
+    [[nodiscard]] double* node_voltage_storage();
+    [[nodiscard]] double& actual_area(std::size_t row) {
+        return node_area_storage()[row];
     }
 
-    double* node_voltage_storage() {
-        // Need to be able to use this method while the model is frozen, so
-        // avoid calling the zero-parameter get()
-        return &neuron::model().node_data().get<neuron::container::Node::field::Voltage>(
-            _node_data_offset);
-    }
-
-    double& actual_area(std::size_t row) {
-        assert(neuron::model().node_data().is_sorted());
-        return neuron::model().node_data().get<neuron::container::Node::field::Area>(
-            _node_data_offset + row);
-    }
-
-    double& actual_v(std::size_t row) {
-        assert(neuron::model().node_data().is_sorted());
-        return neuron::model().node_data().get<neuron::container::Node::field::Voltage>(
-            _node_data_offset + row);
+    [[nodiscard]] double& actual_v(std::size_t row) {
+        return node_voltage_storage()[row];
     }
 
     double* _actual_rhs;

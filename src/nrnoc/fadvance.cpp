@@ -300,7 +300,7 @@ static void daspk_init_step_thread(neuron::model_sorted_token const& cache_token
     setup_tree_matrix(cache_token, nt);
     nrn_solve(&nt);
     if (_upd) {
-        nrn_update_voltage(cache_token, &nt);
+        nrn_update_voltage(cache_token, nt);
     }
 }
 

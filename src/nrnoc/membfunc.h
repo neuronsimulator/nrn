@@ -2,14 +2,15 @@
 extern void hoc_register_prop_size(int type, int psize, int dpsize);
 
 #include "neuron/container/data_handle.hpp"
-#include "neuron/model_data.hpp"
 #include "nrnoc_ml.h"
+#include "oc_ansi.h"  // neuron::model_sorted_token
 
 #include <string>
 #include <type_traits>
 #include <vector>
 
 typedef struct NrnThread NrnThread;
+struct Extnode;
 struct Symbol;
 
 typedef Datum* (*Pfrpdat)();
@@ -184,7 +185,7 @@ namespace detail {
 void register_data_fields(int mech_type,
                           std::vector<std::pair<const char*, int>> const& param_info,
                           std::vector<std::pair<const char*, const char*>> const& dparam_size);
-}
+}  // namespace detail
 /**
  * @brief Type- and array-aware version of hoc_register_prop_size.
  *
@@ -216,4 +217,59 @@ void register_data_fields(int mech_type, Fields const&... fields) {
     // beware, the next call crosses from translated mechanism code into the main NEURON library
     detail::register_data_fields(mech_type, param_info, dparam_info);
 }
+
+/**
+ * @brief Get the number of fields (some of which may be arrays) of the given type.
+ *
+ * If the given mechanism type is negative, -1 will be returned.
+ */
+template <typename>
+[[nodiscard]] int get_field_count(int mech_type);
+
+/**
+ * @brief Pointer to a range of pointers to the start of contiguous storage ranges.
+ *
+ * If the given mechanism type is negative, nullptr will be returned.
+ */
+template <typename T>
+[[nodiscard]] T* const* get_data_ptrs(int mech_type);
+
+/**
+ * @brief Get the array dimensions for fields of the given type.
+ *
+ * This forms part of the API used by translated MOD file code to access the
+ * mechanism data managed by NEURON. It serves to help hide the implementation
+ * of the mechanism data storage from translated MOD file code and reduce ABI
+ * compatibility issues arising from Python wheel support.
+ *
+ * If the given mechanism type is negative, nullptr will be returned.
+ */
+template <typename>
+[[nodiscard]] int const* get_array_dims(int mech_type);
+namespace _get {
+[[nodiscard]] std::size_t _current_row(Prop*);
+[[nodiscard]] std::vector<double* const*> const& _pdata_ptr_cache_data(
+    neuron::model_sorted_token const& cache_token,
+    int mech_type);
+}  // namespace _get
 }  // namespace neuron::mechanism
+
+// See https://github.com/neuronsimulator/nrn/issues/2234 for context of how this might be done
+// better in future...
+[[nodiscard]] long& _nrn_mechanism_access_alloc_seq(Prop*);
+[[nodiscard]] double& _nrn_mechanism_access_d(Node*);
+[[nodiscard]] neuron::container::generic_data_handle*& _nrn_mechanism_access_dparam(Prop*);
+[[nodiscard]] Extnode*& _nrn_mechanism_access_extnode(Node*);
+[[nodiscard]] double& _nrn_mechanism_access_rhs(Node*);
+[[nodiscard]] double& _nrn_mechanism_access_voltage(Node*);
+[[nodiscard]] neuron::container::data_handle<double> _nrn_mechanism_get_area_handle(Node*);
+[[nodiscard]] int _nrn_mechanism_get_num_vars(Prop*);
+[[nodiscard]] neuron::container::data_handle<double> _nrn_mechanism_get_param_handle(
+    Prop* prop,
+    neuron::container::field_index field);
+[[nodiscard]] inline neuron::container::data_handle<double>
+_nrn_mechanism_get_param_handle(Prop* prop, int field, int array_index = 0) {
+    return _nrn_mechanism_get_param_handle(prop,
+                                           neuron::container::field_index{field, array_index});
+}
+[[nodiscard]] int _nrn_mechanism_get_type(Prop*);

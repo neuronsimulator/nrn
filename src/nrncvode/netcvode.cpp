@@ -1437,7 +1437,7 @@ void CvodeThreadData::delete_memb_list(CvMembList* cmlist) {
     for (cml = cmlist; cml; cml = cmlnext) {
         auto const& ml = cml->ml;
         cmlnext = cml->next;
-        for (auto const& ml: cml->ml) {
+        for (auto& ml: cml->ml) {
             delete[] std::exchange(ml.nodelist, nullptr);
 #if CACHEVEC
             delete[] std::exchange(ml.nodeindices, nullptr);
@@ -1615,7 +1615,7 @@ bool NetCvode::init_global() {
                     cml->next = nil;
                     auto const mech_offset = cache_token.thread_cache(_nt->id).mechanism_offset.at(
                         i);
-                    assert(mech_offset != std::numeric_limits<std::size_t>::max());
+                    assert(mech_offset != neuron::container::invalid_row);
                     assert(cml->ml.size() == 1);
                     cml->ml[0].set_storage_offset(mech_offset);
                     cml->ml[0].nodecount = ml->nodecount;

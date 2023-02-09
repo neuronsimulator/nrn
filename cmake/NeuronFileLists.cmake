@@ -55,7 +55,7 @@ set(HEADER_FILES_TO_INSTALL
     row_view.hpp
     runge.hpp
     scoplib.h
-    section.h
+    section_fwd.hpp
     simeq.hpp
     sparse.hpp
     sparse_thread.hpp
