@@ -20,6 +20,7 @@
 #include "../nrniv/backtrace_utils.h"
 
 #include <condition_variable>
+#include <iostream>
 #include <mutex>
 #include <thread>
 #include <utility>

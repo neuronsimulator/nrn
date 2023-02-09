@@ -155,43 +155,43 @@ int NrnProperty::var_type(Symbol* sym) const {
 }
 
 bool NrnProperty::assign(Prop* src, Prop* dest, int vartype) {
-    int n;
     assert(vartype != NRNPOINTER);
     if (src && dest && src != dest && src->_type == dest->_type) {
         if (src->ob) {
             Symbol* msym = memb_func[src->_type].sym;
-            int i, j, jmax, cnt = msym->s_varn;
-            for (i = 0; i < cnt; ++i) {
+            auto const cnt = msym->s_varn;
+            for (int i = 0; i < cnt; ++i) {
                 Symbol* sym = msym->u.ppsym[i];
                 if (vartype == 0 || nrn_vartype(sym) == vartype) {
-                    jmax = hoc_total_array_data(sym, 0);
-                    n = sym->u.rng.index;
-                    double *x, *y;
-                    y = dest->ob->u.dataspace[n].pval;
-                    x = src->ob->u.dataspace[n].pval;
-                    for (j = 0; j < jmax; ++j) {
+                    auto const jmax = hoc_total_array_data(sym, 0);
+                    auto const n = sym->u.rng.index;
+                    auto* const y = dest->ob->u.dataspace[n].pval;
+                    auto* const x = src->ob->u.dataspace[n].pval;
+                    for (int j = 0; j < jmax; ++j) {
                         y[j] = x[j];
                     }
                 }
             }
         } else {
             if (vartype == 0) {
-                n = src->param_size();
+                assert(dest->param_num_vars() == src->param_num_vars());
+                auto const n = src->param_num_vars();
                 for (int i = 0; i < n; ++i) {
+                    assert(dest->param_array_dimension(i) == src->param_array_dimension(i));
                     for (auto j = 0; j < src->param_array_dimension(i); ++j) {
                         dest->param(i, j) = src->param(i, j);
                     }
                 }
             } else {
                 Symbol* msym = memb_func[src->_type].sym;
-                int i, j, jmax, cnt = msym->s_varn;
-                for (i = 0; i < cnt; ++i) {
+                auto const cnt = msym->s_varn;
+                for (int i = 0; i < cnt; ++i) {
                     Symbol* sym = msym->u.ppsym[i];
                     if (nrn_vartype(sym) == vartype) {
-                        jmax = hoc_total_array_data(sym, 0);
-                        n = sym->u.rng.index;
+                        auto const jmax = hoc_total_array_data(sym, 0);
+                        auto const n = sym->u.rng.index;
                         assert(src->param_size() == dest->param_size());
-                        for (j = 0; j < jmax; ++j) {
+                        for (int j = 0; j < jmax; ++j) {
                             dest->param_legacy(n + j) = src->param_legacy(n + j);
                         }
                     }

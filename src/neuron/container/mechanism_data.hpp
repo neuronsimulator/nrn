@@ -2,24 +2,45 @@
 #include "neuron/container/mechanism.hpp"
 #include "neuron/container/soa_container.hpp"
 
+#include <string_view>
+
 namespace neuron::container::Mechanism {
-/** @brief Underlying storage for all instances of a particular Mechanism.
+/**
+ * @brief Underlying storage for all instances of a particular Mechanism.
+ *
+ * To mitigate Python wheel ABI issues, a basic set of methods are defined in .cpp code that is
+ * compiled as part of NEURON.
  */
 struct storage: soa<storage, field::FloatingPoint> {
     using base_type = soa<storage, field::FloatingPoint>;
     // Defined in .cpp to avoid instantiating base_type constructors too often.
     storage(short mech_type, std::string name, std::vector<Variable> floating_point_fields = {});
-    [[nodiscard]] int num_floating_point_fields() const;
-    [[nodiscard]] auto name() const {
-        return m_mech_name;
-    }
-    [[nodiscard]] constexpr short type() const {
-        return m_mech_type;
-    }
-    friend std::ostream& operator<<(std::ostream& os, storage const& data) {
-        return os << data.name() << "::storage{type=" << data.type() << ", "
-                  << data.num_floating_point_fields() << " fields}";
-    }
+    /**
+     * @brief Access floating point values.
+     */
+    [[nodiscard]] double& fpfield(std::size_t instance, int field, int array_index = 0);
+    /**
+     * @brief Access floating point values.
+     */
+    [[nodiscard]] double const& fpfield(std::size_t instance, int field, int array_index = 0) const;
+    /**
+     * @brief Access floating point values.
+     */
+    [[nodiscard]] data_handle<double> fpfield_handle(non_owning_identifier_without_container id,
+                                                     int field,
+                                                     int array_index = 0);
+    /**
+     * @brief The name of this mechanism.
+     */
+    [[nodiscard]] std::string_view name() const;
+    /**
+     * @brief The type of this mechanism.
+     */
+    [[nodiscard]] short type() const;
+    /**
+     * @brief Pretty printing for mechanism data structures.
+     */
+    friend std::ostream& operator<<(std::ostream& os, storage const& data);
 
   private:
     short m_mech_type{};

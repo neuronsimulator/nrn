@@ -152,13 +152,13 @@ int nonlin_common(Item* q4) /* used by massagenonlin() and mixed_eqns() */
     }
     freeqnqueue();
     Sprintf(buf,
-            "static neuron::field_index _slist%d[%d]; static double _dlist%d[%d];\n",
+            "static neuron::container::field_index _slist%d[%d]; static double _dlist%d[%d];\n",
             numlist,
             counts,
             numlist,
             counts);
     q = linsertstr(procfunc, buf);
-    Sprintf(buf, "static neuron::field_index _slist%d[%d];\n", numlist, counts);
+    Sprintf(buf, "static neuron::container::field_index _slist%d[%d];\n", numlist, counts);
     vectorize_substitute(q, buf);
     return counts;
 }
@@ -351,7 +351,7 @@ void massage_linblk(Item* q1, Item* q2, Item* q3, Item* q4) /* LINEAR NAME stmtl
     }
     linblk->used = nstate;
     Sprintf(buf,
-            "static neuron::field_index _slist%d[%d];static double **_coef%d;\n",
+            "static neuron::container::field_index _slist%d[%d];static double **_coef%d;\n",
             numlist,
             nstate,
             numlist);

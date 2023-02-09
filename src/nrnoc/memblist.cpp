@@ -1,10 +1,11 @@
 #include "neuron/container/generic_data_handle.hpp"
 #include "neuron/container/mechanism_data.hpp"
+#include "neuron/model_data.hpp"
 #include "nrnoc_ml.h"
 
 #include <cassert>
 #include <iterator>  // std::distance, std::next
-#include <numeric>   // std::reduce
+#include <numeric>   // std::accumulate
 
 Memb_list::Memb_list(int type)
     : m_storage{&neuron::model().mechanism_data(type)} {
@@ -12,20 +13,20 @@ Memb_list::Memb_list(int type)
 }
 
 [[nodiscard]] std::vector<double*> Memb_list::data() {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
     assert(m_storage);
-    assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
-    auto const num_fields = m_storage->num_floating_point_fields();
+    assert(m_storage_offset != neuron::container::invalid_row);
+    auto const num_fields = m_storage->get_tag<Tag>().num_instances();
     std::vector<double*> ret(num_fields, nullptr);
     for (auto i = 0; i < num_fields; ++i) {
-        ret[i] = &m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
-            m_storage_offset, i);
+        ret[i] = &m_storage->get_field_instance<Tag>(m_storage_offset, i);
     }
     return ret;
 }
 
 [[nodiscard]] double& Memb_list::data(std::size_t instance, int variable, int array_index) {
     assert(m_storage);
-    assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
+    assert(m_storage_offset != neuron::container::invalid_row);
     return m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
         m_storage_offset + instance, variable, array_index);
 }
@@ -34,14 +35,14 @@ Memb_list::Memb_list(int type)
                                             int variable,
                                             int array_index) const {
     assert(m_storage);
-    assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
+    assert(m_storage_offset != neuron::container::invalid_row);
     return m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
         m_storage_offset + instance, variable, array_index);
 }
 
 
 [[nodiscard]] std::ptrdiff_t Memb_list::legacy_index(double const* ptr) const {
-    assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
+    assert(m_storage_offset != neuron::container::invalid_row);
     // For a mechanism with (in order) range variables: a, b[2], c the mechanism data are
     //              ______________________
     //  instance 0 | a   b[0]   b[1]   c   |
@@ -58,8 +59,8 @@ Memb_list::Memb_list(int type)
     // calculates the (hypothetical) index into the old (single) vector
     using Tag = neuron::container::Mechanism::field::FloatingPoint;
     auto const size = m_storage->size();  // number of instances; 3 in the example above
-    auto const num_fields = m_storage->num_floating_point_fields();   // ex: 3 (a, b, c)
-    auto const* const array_dims = m_storage->get_array_dims<Tag>();  // ex: [1, 2, 1]
+    auto const num_fields = m_storage->get_tag<Tag>().num_instances();  // ex: 3 (a, b, c)
+    auto const* const array_dims = m_storage->get_array_dims<Tag>();    // ex: [1, 2, 1]
     auto const sum_of_array_dims = std::accumulate(array_dims, array_dims + num_fields, 0);
     int sum_of_array_dims_of_previous_fields{};
     for (auto field = 0; field < num_fields; ++field) {  // a, b or c in the example above
@@ -80,11 +81,6 @@ Memb_list::Memb_list(int type)
     assert(sum_of_array_dims_of_previous_fields == sum_of_array_dims);
     // ptr doesn't live in this mechanism data, cannot compute a legacy index
     return -1;
-}
-
-[[nodiscard]] std::size_t Memb_list::num_floating_point_fields() const {
-    assert(m_storage);
-    return m_storage->num_floating_point_fields();
 }
 
 [[nodiscard]] double* Memb_list::dptr_field(std::size_t instance, int variable) {

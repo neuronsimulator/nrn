@@ -54,8 +54,8 @@ static void ext_vdef() {
     if (electrode_current) {
         P("#if EXTRACELLULAR\n");
         P(" _nd = _ml_arg->_nodelist[_iml];\n");
-        P(" if (_nd->_extnode) {\n");
-        P("    _v = NODEV(_nd) +_nd->_extnode->_v[0];\n");
+        P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
+        P("    _v = NODEV(_nd) + _extnode->_v[0];\n");
         P(" }else\n");
         P("#endif\n");
         P(" {\n");
@@ -114,7 +114,7 @@ void c_out() {
     P("#define nil 0\n");
     P("#define _pval pval\n");  // due to some old models using _pval
     P("#include \"md1redef.h\"\n");
-    P("#include \"section.h\"\n");
+    P("#include \"section_fwd.hpp\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
     P("#include \"neuron/cache/mechanism_range.hpp\"\n");
@@ -170,10 +170,10 @@ void c_out() {
     Fflush(fcout);
 
     /* generation of initmodel interface */
-    P("\nstatic void nrn_init(neuron::model_sorted_token const& _sorted_token, NrnThread* _nt, "
+    P("\nstatic void nrn_init(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
       "Memb_list* _ml_arg, int _type){\n");
     P("Node *_nd; double _v; int* _ni; int _cntml;\n");
-    P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+    P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
     P("_ml = &_lmr;\n");  // update global _ml
     P("#if CACHEVEC\n");
     P("    _ni = _ml_arg->_nodeindices;\n");
@@ -214,9 +214,9 @@ void c_out() {
        well as make sure all currents accumulated properly (currents list) */
 
     if (brkpnt_exists) {
-        P("\nstatic void nrn_cur(neuron::model_sorted_token const& _sorted_token, NrnThread* _nt, "
+        P("\nstatic void nrn_cur(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
           "Memb_list* _ml_arg, int _type){\n");
-        P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+        P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _cntml;\n");
         P("_ml = &_lmr;\n");  // update global _ml
         P("#if CACHEVEC\n");
@@ -266,8 +266,8 @@ void c_out() {
                   "_rhs; }\n");
 #endif
                 P("#if EXTRACELLULAR\n");
-                P(" if (_nd->_extnode) {\n");
-                P("   *_nd->_extnode->_rhs[0] += _rhs;\n");
+                P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
+                P("   *_extnode->_rhs[0] += _rhs;\n");
                 P(" }\n");
                 P("#endif\n");
             } else {
@@ -289,9 +289,9 @@ void c_out() {
 
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
-        P("\nstatic void nrn_jacob(neuron::model_sorted_token const& _sorted_token, NrnThread* "
+        P("\nstatic void nrn_jacob(_nrn_model_sorted_token const& _sorted_token, NrnThread* "
           "_nt, Memb_list* _ml_arg, int _type) {\n");
-        P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+        P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("auto* const _ml = &_lmr;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
         P("#if CACHEVEC\n");
@@ -315,8 +315,8 @@ void c_out() {
             P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_d[_ni[_iml]] -= _g; }\n");
 #endif
             P("#if EXTRACELLULAR\n");
-            P(" if (_nd->_extnode) {\n");
-            P("   *_nd->_extnode->_d[0] += _g;\n");
+            P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
+            P("   *_extnode->_d[0] += _g;\n");
             P(" }\n");
             P("#endif\n");
         } else {
@@ -339,7 +339,7 @@ void c_out() {
 
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
-    P("\nstatic void nrn_state(neuron::model_sorted_token const& _sorted_token, NrnThread* _nt, "
+    P("\nstatic void nrn_state(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
       "Memb_list* _ml_arg, int _type){\n");
     if (nrnstate || currents->next == currents) {
         P("Node *_nd; double _v = 0.0; int* _ni; int _cntml;\n");
@@ -347,7 +347,7 @@ void c_out() {
             P("double _dtsav = dt;\n"
               "if (secondorder) { dt *= 0.5; }\n");
         }
-        P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+        P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("_ml = &_lmr;\n");  // update global _ml
         P("#if CACHEVEC\n");
         P("    _ni = _ml_arg->_nodeindices;\n");
@@ -553,7 +553,7 @@ void c_out_vectorize() {
     P("#define nil 0\n");
     P("#define _pval pval\n");  // due to some old models using _pval
     P("#include \"md1redef.h\"\n");
-    P("#include \"section.h\"\n");
+    P("#include \"section_fwd.hpp\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
     P("#include \"neuron/cache/mechanism_range.hpp\"\n");
@@ -593,9 +593,9 @@ void c_out_vectorize() {
     Fflush(fcout);
 
     /* generation of initmodel interface */
-    P("\nstatic void nrn_init(neuron::model_sorted_token const& _sorted_token, NrnThread* _nt, "
+    P("\nstatic void nrn_init(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
       "Memb_list* _ml_arg, int _type){\n");
-    P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+    P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
     P("auto* const _ml = &_lmr;\n");
     P("Datum* _ppvar; Datum* _thread;\n");
     P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
@@ -654,9 +654,9 @@ void c_out_vectorize() {
        well as make sure all currents accumulated properly (currents list) */
 
     if (brkpnt_exists) {
-        P("\nstatic void nrn_cur(neuron::model_sorted_token const& _sorted_token, NrnThread* _nt, "
+        P("\nstatic void nrn_cur(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
           "Memb_list* _ml_arg, int _type) {\n");
-        P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+        P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("auto* const _ml = &_lmr;\n");
         P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
@@ -718,8 +718,8 @@ void c_out_vectorize() {
                   "_rhs; }\n");
 #endif
                 P("#if EXTRACELLULAR\n");
-                P(" if (_nd->_extnode) {\n");
-                P("   *_nd->_extnode->_rhs[0] += _rhs;\n");
+                P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
+                P("   *_extnode->_rhs[0] += _rhs;\n");
                 P(" }\n");
                 P("#endif\n");
             } else {
@@ -741,9 +741,9 @@ void c_out_vectorize() {
         P(" \n}\n");
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
-        P("\nstatic void nrn_jacob(neuron::model_sorted_token const& _sorted_token, NrnThread* "
+        P("\nstatic void nrn_jacob(_nrn_model_sorted_token const& _sorted_token, NrnThread* "
           "_nt, Memb_list* _ml_arg, int _type) {\n");
-        P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+        P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("auto* const _ml = &_lmr;\n");
         P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
@@ -769,8 +769,8 @@ void c_out_vectorize() {
             P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_d[_ni[_iml]] -= _g; }\n");
 #endif
             P("#if EXTRACELLULAR\n");
-            P(" if (_nd->_extnode) {\n");
-            P("   *_nd->_extnode->_d[0] += _g;\n");
+            P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
+            P("   *_extnode->_d[0] += _g;\n");
             P(" }\n");
             P("#endif\n");
         } else {
@@ -794,9 +794,9 @@ void c_out_vectorize() {
 
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
-    P("\nstatic void nrn_state(neuron::model_sorted_token const& _sorted_token, NrnThread* _nt, "
+    P("\nstatic void nrn_state(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
       "Memb_list* _ml_arg, int _type) {\n");
-    P("LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+    P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
     P("auto* const _ml = &_lmr;\n");
     if (nrnstate || currents->next == currents) {
         P("Datum* _ppvar; Datum* _thread;\n");

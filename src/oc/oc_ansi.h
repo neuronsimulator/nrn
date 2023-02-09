@@ -37,6 +37,9 @@ struct Symbol;
 struct Symlist;
 struct VoidFunc;
 
+namespace neuron {
+struct model_sorted_token;
+}
 namespace neuron::container {
 template <typename>
 struct data_handle;

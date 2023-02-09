@@ -249,7 +249,7 @@ void SaveState::ssi_def() {
         // param array including PARAMETERs.
         if (pnt_receive[im]) {
             ssi[im].offset = 0;
-            ssi[im].size = np->prop()->param_size();
+            ssi[im].size = np->prop()->param_size();  // sum over array dimensions
         } else {
             int type = STATE;
             for (Symbol* sym = np->first_var(); np->more_var(); sym = np->next_var()) {
@@ -257,6 +257,10 @@ void SaveState::ssi_def() {
                     sym->subtype == _AMBIGUOUS) {
                     if (ssi[im].offset < 0) {
                         ssi[im].offset = np->prop_index(sym);
+                    } else {
+                        // assert what we assume: that after this code the variables we want are
+                        // `size` contiguous legacy indices starting at `offset`
+                        assert(ssi[im].offset + ssi[im].size == np->prop_index(sym));
                     }
                     ssi[im].size += hoc_total_array_data(sym, 0);
                 }
@@ -658,8 +662,7 @@ void SaveState::savenode(NodeState& ns, Node* nd) {
 #endif
         {
             for (int ip = ssi[type].offset; ip < max; ++ip) {
-                assert(p->param_array_dimension(ip) == 1);
-                ns.state[istate++] = p->param(ip);
+                ns.state[istate++] = p->param_legacy(ip);
             }
         }
     }
@@ -744,8 +747,7 @@ void SaveState::restorenode(NodeState& ns, Node* nd) {
 #endif
         {
             for (int ip = ssi[type].offset; ip < max; ++ip) {
-                assert(p->param_array_dimension(ip) == 1);
-                p->param(ip) = ns.state[istate++];
+                p->param_legacy(ip) = ns.state[istate++];
             }
         }
     }

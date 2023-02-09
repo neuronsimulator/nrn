@@ -1,5 +1,5 @@
 #pragma once
-#include "neuron/model_data.hpp"  // neuron::model_sorted_token
+#include "oc_ansi.h"  // neuron::model_sorted_token
 struct Memb_list;
 struct NrnThread;
 void cvode_fadvance(double);

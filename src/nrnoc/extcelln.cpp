@@ -171,7 +171,8 @@ void nrn_update_2d(NrnThread* nt) {
 }
 
 static void extcell_alloc(Prop* p) {
-    assert(p->param_size() == nparm);
+    assert(p->param_size() == (nparm - 3) + 3 * nrn_nlayer_extracellular);
+    assert(p->param_num_vars() == nparm);
     for (auto i = 0; i < nrn_nlayer_extracellular; ++i) {
         p->param(xraxial_index, i) = 1e9;
         p->param(xg_index, i) = 1e9;
@@ -307,7 +308,7 @@ void extcell_node_create(Node* nd) {
         }
         for (p = nd->prop; p; p = p->next) {
             if (p->_type == EXTRACELL) {
-                for (auto i = 0; i < p->param_size(); ++i) {
+                for (auto i = 0; i < p->param_num_vars(); ++i) {
                     for (auto array_index = 0; array_index < p->param_array_dimension(i);
                          ++array_index) {
                         nde->param.push_back(p->param_handle(i, array_index));

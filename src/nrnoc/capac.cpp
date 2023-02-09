@@ -148,5 +148,6 @@ void nrn_div_capacity(neuron::model_sorted_token const& sorted_token,
 
 static void cap_alloc(Prop* p) {
     assert(p->param_size() == nparm);
+    assert(p->param_num_vars() == nparm);
     p->param(0) = DEF_cm;  // default capacitance/cm^2
 }

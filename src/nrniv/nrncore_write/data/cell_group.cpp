@@ -332,7 +332,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] == -5) {  // POINTER
                 // must be a pointer into nt->_data. Handling is similar to eion so
                 // give proper index into the type.
-                neuron::container::data_handle<double> pd{dparam[j].get<double*>()};
+                auto const pd = static_cast<neuron::container::data_handle<double>>(dparam[j]);
                 nrn_dblpntr2nrncore(pd, nt, etype, eindex);
                 if (etype == 0) {
                     fprintf(stderr,

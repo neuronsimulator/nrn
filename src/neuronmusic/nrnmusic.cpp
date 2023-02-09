@@ -182,7 +182,7 @@ PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
     }
     // nrn_assert (gi_table.count(gi) == 0);
     if (gi_table->count(gi) == 0) {
-        ps = new PreSyn(NULL, NULL, NULL);
+        ps = new PreSyn({}, {}, {});
         net_cvode_instance->psl_append(ps);
         (*gi_table)[gi] = ps;
         ps->gid_ = -2;

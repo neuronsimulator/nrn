@@ -2236,9 +2236,10 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
                 }
             }
             if (global_i != mech_data_size) {
-                throw std::runtime_error(
-                    "(global_i = " + std::to_string(global_i) + ") != (mech_data_size = " +
-                    std::to_string(mech_data_size) + ") for " + mech_data.name());
+                std::ostringstream oss;
+                oss << "(global_i = " << global_i << ") != (mech_data_size = " << mech_data_size
+                    << ") for " << mech_data.name();
+                throw std::runtime_error(oss.str());
             }
         }
         assert(trivial_counter <= mech_data_size);
