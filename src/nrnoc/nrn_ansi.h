@@ -2,8 +2,6 @@
 #include "hocdec.h"
 #include "membfunc.h"  // nrn_bamech_t
 #include "neuron/container/data_handle.hpp"
-#include "neuron/container/soa_container.hpp"
-#include "neuron/model_data.hpp"
 struct Extnode;
 struct hoc_Item;
 struct HocParmLimits;
@@ -101,7 +99,7 @@ extern void fixed_play_continuous(NrnThread*);
 extern void* setup_tree_matrix(NrnThread*);
 extern void nrn_solve(NrnThread*);
 extern void second_order_cur(NrnThread*);
-extern void nrn_update_voltage(NrnThread*);
+void nrn_update_voltage(neuron::model_sorted_token const& sorted_token, NrnThread& nt);
 extern void* nrn_fixed_step_lastpart(NrnThread*);
 extern void hoc_register_dparam_size(int, int);
 extern void setup_topology(void);

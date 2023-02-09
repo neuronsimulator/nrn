@@ -193,7 +193,7 @@ static NodePList visources_;        // list of source Node*, (multiples possible
 static SgidList sgids_;             // source gids
 static MapSgid2Int sgid2srcindex_;  // sgid2srcindex[sgids[i]] == i
 
-static std::unordered_map<sgid_t, std::pair<int, neuron::field_index>>
+static std::unordered_map<sgid_t, std::pair<int, neuron::container::field_index>>
     non_vsrc_update_info_;  // source ssid -> (type,parray_index)
 
 
@@ -224,7 +224,7 @@ static void delete_imped_info() {
 // If *pv exists, store mechtype and parray_index.
 static bool non_vsrc_setinfo(sgid_t ssid, Node* nd, double const* pv) {
     for (Prop* p = nd->prop; p; p = p->next) {
-        for (auto i = 0; i < p->param_size(); ++i) {
+        for (auto i = 0; i < p->param_num_vars(); ++i) {
             for (auto j = 0; j < p->param_array_dimension(i); ++j) {
                 if (pv == static_cast<double const*>(p->param_handle(i, j))) {
                     non_vsrc_update_info_[ssid] = {p->_type, {i, j}};
@@ -240,7 +240,7 @@ static bool non_vsrc_setinfo(sgid_t ssid, Node* nd, double const* pv) {
 
 static neuron::container::data_handle<double> non_vsrc_update(Node* nd,
                                                               int type,
-                                                              neuron::field_index ix) {
+                                                              neuron::container::field_index ix) {
     for (Prop* p = nd->prop; p; p = p->next) {
         if (type == p->_type) {
             return p->param_handle(ix);
@@ -314,7 +314,7 @@ static int compute_parray_index(Point_process* pp,
         return -1;
     }
     int legacy_index{};
-    for (int i = 0; i < pp->prop->param_size(); ++i) {
+    for (int i = 0; i < pp->prop->param_num_vars(); ++i) {
         for (auto j = 0; j < pp->prop->param_array_dimension(i); ++j, ++legacy_index) {
             if (ptv == pp->prop->param_handle(i, j)) {
                 return legacy_index;

@@ -1045,14 +1045,16 @@ static void ssi_def() {
         // param array including PARAMETERs.
         if (pnt_receive[im]) {
             ssi[im].offset = 0;
-            ssi[im].size = np.prop()->param_size();
+            ssi[im].size = np.prop()->param_size();  // sum over array dims
         } else {
-            int type = STATE;
             for (Symbol* sym = np.first_var(); np.more_var(); sym = np.next_var()) {
-                if (np.var_type(sym) == type || np.var_type(sym) == STATE ||
-                    sym->subtype == _AMBIGUOUS) {
+                if (np.var_type(sym) == STATE || sym->subtype == _AMBIGUOUS) {
                     if (ssi[im].offset < 0) {
                         ssi[im].offset = np.prop_index(sym);
+                    } else {
+                        // assert what we assume: that after this code the variables we want are
+                        // `size` contiguous legacy indices starting at `offset`
+                        assert(ssi[im].offset + ssi[im].size == np.prop_index(sym));
                     }
                     ssi[im].size += hoc_total_array_data(sym, 0);
                 }
@@ -2054,7 +2056,7 @@ void BBSaveState::mech(Prop* p) {
     Sprintf(buf, "//%s", memb_func[type].sym->name);
     f->s(buf, 1);
     {
-        auto const size = ssi[p->_type].size;
+        auto const size = ssi[p->_type].size;  // sum over array dimensions for range variables
         std::vector<double*> tmp{};
         tmp.reserve(size);
         for (auto i = 0; i < size; ++i) {

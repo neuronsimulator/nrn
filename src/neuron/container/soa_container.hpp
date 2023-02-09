@@ -1,6 +1,7 @@
 #pragma once
 #include "backtrace_utils.h"
 #include "neuron/container/data_handle.hpp"
+#include "neuron/container/generic_data_handle.hpp"
 #include "neuron/container/soa_identifier.hpp"
 
 #include <atomic>
@@ -11,15 +12,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-namespace neuron {
-/**
- * @brief Struct used to index SoAoS data, such as array range variables.
- */
-struct field_index {
-    int field{}, array_index{};
-};
-}  // namespace neuron
 
 namespace neuron::container {
 namespace detail {
@@ -170,6 +162,9 @@ struct field_data {};
  * can be used by other types, in particular neuron::cache::MechanismRange:
  * - array_dims() returns a pointer to the first element of a num_instances()-sized range holding
  *   the array dimensions of the variables.
+ * - array_dim_prefix_sums() returns a pointer to the first element of a num_instances()-sized
+ *   range holding the prefix sum over the array dimensions (i.e. if array_dims() returns [1, 2, 1]
+ *   then array_dim_prefix_sums() returns [1, 3, 4]).
  * - data_ptrs() returns a pointer to the first element of a num_instances()-sized range holding
  *   pointers to the start of the storage associated with each variable (i.e. the result of calling
  *   data() on the underlying vector).
@@ -183,11 +178,16 @@ struct field_data<Tag, true> {
     field_data(Tag tag)
         : m_tag{std::move(tag)}
         , m_storage{m_tag.num_instances()} {
-        m_data_ptrs.reserve(m_tag.num_instances());
+        auto const num = m_tag.num_instances();
+        m_data_ptrs.reserve(num);
         update_data_ptr_storage();
-        m_array_dims.reserve(m_tag.num_instances());
+        m_array_dims.reserve(num);
+        m_array_dim_prefix_sums.reserve(num);
         for (auto i = 0; i < m_tag.num_instances(); ++i) {
             m_array_dims.push_back(get_array_dimension(m_tag, i));
+            m_array_dim_prefix_sums.push_back(
+                (m_array_dim_prefix_sums.empty() ? 0 : m_array_dim_prefix_sums.back()) +
+                m_array_dims.back());
         }
     }
 
@@ -207,6 +207,13 @@ struct field_data<Tag, true> {
      */
     [[nodiscard]] int const* array_dims() const {
         return m_array_dims.data();
+    }
+
+    /**
+     * @brief Return a pointer to an array of the prefix sum of array dimensions for this tag.
+     */
+    [[nodiscard]] int const* array_dim_prefix_sums() const {
+        return m_array_dim_prefix_sums.data();
     }
 
     [[nodiscard]] int check_array_dim(int field_index, int array_index) const {
@@ -258,8 +265,8 @@ struct field_data<Tag, true> {
     }
 
     // TODO actually use this
-    // TODO consider precomputing something
-    [[nodiscard]] neuron::field_index translate_legacy_index(int legacy_index) const {
+    // TODO use array_dim_prefix_sums
+    [[nodiscard]] field_index translate_legacy_index(int legacy_index) const {
         int total{};
         auto const num_fields = m_tag.num_instances();
         for (auto field = 0; field < num_fields; ++field) {
@@ -287,7 +294,7 @@ struct field_data<Tag, true> {
     Tag m_tag;
     std::vector<std::vector<data_type>> m_storage;
     std::vector<data_type*> m_data_ptrs;  // always contains .data() for everything in m_storage
-    std::vector<int> m_array_dims;
+    std::vector<int> m_array_dims, m_array_dim_prefix_sums;
 };
 
 template <typename Tag>
@@ -326,11 +333,29 @@ struct field_data<Tag, false> {
         return &m_array_dim;
     }
 
+    [[nodiscard]] int const* array_dim_prefix_sums() const {
+        return &m_array_dim;
+    }
+
   private:
     Tag m_tag;
     std::vector<data_type> m_storage;
     data_type* m_data_ptr{};  // m_storage.data()
     int m_array_dim;
+};
+
+struct storage_info_impl: utils::storage_info {
+    std::string_view container() const override {
+        return m_container;
+    }
+    std::string_view field() const override {
+        return m_field;
+    }
+    std::size_t size() const override {
+        return m_size;
+    }
+    std::string m_container{}, m_field{};
+    std::size_t m_size{};
 };
 }  // namespace detail
 
@@ -836,38 +861,45 @@ struct soa {
      *       data_handle<T const>, which would hold a pointer-to-const for the
      *       container?
      */
-    template <typename T>
-    [[nodiscard]] neuron::container::data_handle<T> find_data_handle(T* ptr) const {
-        neuron::container::data_handle<T> handle{};
-        for_all_vectors(
-            [this, &handle, ptr](auto const& tag, auto const& vec, int field_index, int array_dim) {
-                using Tag = ::std::decay_t<decltype(tag)>;
+    [[nodiscard]] neuron::container::generic_data_handle find_data_handle(
+        neuron::container::generic_data_handle input_handle) const {
+        bool done{false};
+        neuron::container::generic_data_handle handle{};
+        for_all_vectors([this, &done, &handle, &input_handle](
+                            auto const& tag, auto const& vec, int field_index, int array_dim) {
+            using Tag = ::std::decay_t<decltype(tag)>;
+            if constexpr (!std::is_same_v<Tag, detail::index_column_tag>) {
                 using Data = typename Tag::type;
-                if constexpr (std::is_same_v<T, Data>) {
-                    if (handle) {
-                        // Half-hearted short-circuit
-                        return;
-                    }
-                    if (vec.empty()) {
-                        return;
-                    }
-                    if (ptr < vec.data() || ptr >= std::next(vec.data(), vec.size())) {
-                        return;
-                    }
-                    auto const physical_row = ptr - vec.data();
-                    assert(physical_row < vec.size());
-                    // This pointer seems to live inside this container. This is all a
-                    // bit fragile.
-                    int const array_index = physical_row % array_dim;
-                    int const logical_row = physical_row / array_dim;
-                    handle = neuron::container::data_handle<T>{
-                        at(logical_row),
-                        std::get<tag_index_v<Tag>>(m_data).data_ptrs() + std::max(field_index, 0),
-                        array_dim,
-                        array_index};
-                    assert(handle.refers_to_a_modern_data_structure());
+                if (done) {
+                    // Short circuit
+                    return;
                 }
-            });
+                if (vec.empty()) {
+                    // input_handle can't point into an empty vector
+                    return;
+                }
+                if (!input_handle.holds<Data*>()) {
+                    // input_handle can't point into a vector of the wrong type
+                    return;
+                }
+                auto* const ptr = input_handle.get<Data*>();
+                if (ptr < vec.data() || ptr >= std::next(vec.data(), vec.size())) {
+                    return;
+                }
+                auto const physical_row = ptr - vec.data();
+                assert(physical_row < vec.size());
+                // This pointer seems to live inside this container. This is all a bit fragile.
+                int const array_index = physical_row % array_dim;
+                int const logical_row = physical_row / array_dim;
+                handle = neuron::container::data_handle<Data>{
+                    at(logical_row),
+                    std::get<tag_index_v<Tag>>(m_data).data_ptrs() + std::max(field_index, 0),
+                    array_dim,
+                    array_index};
+                assert(handle.refers_to_a_modern_data_structure());
+                done = true;  // generic_data_handle doesn't convert to bool
+            }
+        });
         return handle;
     }
 
@@ -884,8 +916,8 @@ struct soa {
         return ptr == std::get<tag_index_v<Tag>>(m_data).data_ptrs()[0];
     }
 
-    [[nodiscard]] std::optional<utils::storage_info> find_container_info(void const* cont) const {
-        std::optional<utils::storage_info> opt_info{std::nullopt};
+    [[nodiscard]] std::unique_ptr<utils::storage_info> find_container_info(void const* cont) const {
+        std::unique_ptr<utils::storage_info> opt_info;
         for_all_vectors([cont,
                          &opt_info,
                          this](auto const& tag, auto const& vec, int field_index, int array_dim) {
@@ -899,11 +931,13 @@ struct soa {
             }
             // We found the right container/tag combination! Populate the
             // information struct.
-            auto& info = opt_info.emplace();
-            info.container = static_cast<Storage const&>(*this).name();
-            info.field = detail::get_name(tag, field_index);
-            info.size = vec.size();
-            assert(info.size % array_dim == 0);
+            auto impl_ptr = std::make_unique<detail::storage_info_impl>();
+            auto& info = *impl_ptr;
+            info.m_container = static_cast<Storage const&>(*this).name();
+            info.m_field = detail::get_name(tag, field_index);
+            info.m_size = vec.size();
+            assert(info.m_size % array_dim == 0);
+            opt_info = std::move(impl_ptr);
         });
         return opt_info;
     }
@@ -926,8 +960,16 @@ struct soa {
         return std::get<tag_index_v<Tag>>(m_data).array_dims();
     }
 
+    /**
+     * @brief Get a pointer to an array holding the prefix sum of array dimensions for this tag.
+     */
     template <typename Tag>
-    [[nodiscard]] neuron::field_index translate_legacy_index(int legacy_index) const {
+    [[nodiscard]] int const* get_array_dim_prefix_sums() const {
+        return std::get<tag_index_v<Tag>>(m_data).array_dim_prefix_sums();
+    }
+
+    template <typename Tag>
+    [[nodiscard]] field_index translate_legacy_index(int legacy_index) const {
         return std::get<tag_index_v<Tag>>(m_data).translate_legacy_index(legacy_index);
     }
 

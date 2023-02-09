@@ -374,7 +374,8 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtl
     }
     fun->used = count;
     Sprintf(buf,
-            "static neuron::field_index _slist%d[%d], _dlist%d[%d]; static double *_temp%d;\n",
+            "static neuron::container::field_index _slist%d[%d], _dlist%d[%d]; static double "
+            "*_temp%d;\n",
             numlist,
             count,
             numlist,

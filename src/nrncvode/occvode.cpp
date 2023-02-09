@@ -930,7 +930,6 @@ void Cvode::do_ode(neuron::model_sorted_token const& sorted_token, NrnThread& nt
     CvodeThreadData& z = CTD(nt.id);
     for (auto* cml = z.cv_memb_list_; cml; cml = cml->next) {  // probably can start at 6 or hh
         if (auto* const ode_spec = memb_func[cml->index].ode_spec; ode_spec) {
-            // std::cout << "cml->ml.size()=" << cml->ml.size() << std::endl;
             for (auto& ml: cml->ml) {
                 ode_spec(sorted_token, &nt, &ml, cml->index);
                 if (errno && nrn_errno_check(cml->index)) {

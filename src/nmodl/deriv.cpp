@@ -555,7 +555,7 @@ is not allowed on the left hand side.");
     }
     derfun->used = count;
     Sprintf(buf,
-            "static neuron::field_index _slist%d[%d], _dlist%d[%d];\n",
+            "static neuron::container::field_index _slist%d[%d], _dlist%d[%d];\n",
             numlist,
             count,
             numlist,

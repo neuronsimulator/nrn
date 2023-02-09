@@ -76,7 +76,17 @@ struct handle_interface: handle_base<Identifier> {
      * @brief Return the number of floating point fields accessible via fpfield.
      */
     [[nodiscard]] int num_fpfields() const {
-        return this->underlying_storage().num_floating_point_fields();
+        return this->underlying_storage().template get_tag<field::FloatingPoint>().num_instances();
+    }
+
+    /**
+     * @brief Get the sum of array dimensions of floating point fields.
+     */
+    [[nodiscard]] int fpfields_size() const {
+        auto* const prefix_sums =
+            this->underlying_storage().template get_array_dim_prefix_sums<field::FloatingPoint>();
+        auto const num_fields = num_fpfields();
+        return prefix_sums[num_fields - 1];
     }
 
     /**
@@ -87,23 +97,25 @@ struct handle_interface: handle_base<Identifier> {
             throw std::runtime_error("fpfield #" + std::to_string(field_index) + " out of range (" +
                                      std::to_string(num_fields) + ")");
         }
-        return this->template get_tag<field::FloatingPoint>().info(field_index).array_size;
+        auto* const array_dims =
+            this->underlying_storage().template get_array_dims<field::FloatingPoint>();
+        return array_dims[field_index];
     }
 
     [[nodiscard]] field::FloatingPoint::type& fpfield(int field_index, int array_index = 0) {
-        return this->template get<field::FloatingPoint>(field_index, array_index);
+        return this->underlying_storage().fpfield(this->current_row(), field_index, array_index);
     }
 
     [[nodiscard]] field::FloatingPoint::type const& fpfield(int field_index,
                                                             int array_index = 0) const {
-        return this->template get<field::FloatingPoint>(field_index, array_index);
+        return this->underlying_storage().fpfield(this->current_row(), field_index, array_index);
     }
 
     /** @brief Return a data_handle to a floating point value.
      */
     [[nodiscard]] data_handle<field::FloatingPoint::type> fpfield_handle(int field_index,
                                                                          int array_index = 0) {
-        return this->template get_handle<field::FloatingPoint>(field_index, array_index);
+        return this->underlying_storage().fpfield_handle(this->id(), field_index, array_index);
     }
 
     friend std::ostream& operator<<(std::ostream& os, handle_interface const& handle) {

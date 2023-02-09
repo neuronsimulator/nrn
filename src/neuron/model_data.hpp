@@ -88,31 +88,13 @@ struct Model {
         return m_mech_data.size();
     }
 
-    /** @brief T* -> data_handle<T> if ptr is in model data.
-     */
-    template <typename T>
-    [[nodiscard]] container::data_handle<T> find_data_handle(T* ptr) {
-        if (auto h = m_node_data.find_data_handle(ptr); h) {
-            return h;
-        }
-        for (auto& mech_data: m_mech_data) {
-            if (!mech_data) {
-                continue;
-            }
-            if (auto h = mech_data->find_data_handle(ptr); h) {
-                return h;
-            }
-        }
-        return {};
-    }
-
     /**
      * @brief Find some metadata about the given container.
      *
      * The argument type will typically be a T* that contains the result of calling .data() on some
      * vector in the global model data structure.
      */
-    [[nodiscard]] std::optional<container::utils::storage_info> find_container_info(
+    [[nodiscard]] std::unique_ptr<container::utils::storage_info> find_container_info(
         void const* cont) const;
 
   private:
@@ -177,18 +159,4 @@ extern Model model_data;
 inline Model& model() {
     return detail::model_data;
 }
-
-namespace container::utils {
-template <typename T>
-data_handle<T> find_data_handle(T* ptr) {
-    return model().find_data_handle(ptr);
-}
-
-[[nodiscard]] inline std::optional<storage_info> find_container_info(void const* c) {
-    return model().find_container_info(c);
-}
-
-}  // namespace container::utils
-
-
 }  // namespace neuron
