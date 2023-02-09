@@ -21,7 +21,7 @@
 typedef struct _object PyObject;
 PyObject* (*nrnpy_p_ho2po)(Object*);
 Object* (*nrnpy_p_po2ho)(PyObject*);
-#endif // USE_PYTHON
+#endif  // USE_PYTHON
 
 extern int nrn_nopython;
 extern int nrnpy_nositeflag;
