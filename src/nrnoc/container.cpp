@@ -1,6 +1,7 @@
 #include "membfunc.h"
 #include "neuron/container/generic_data_handle.hpp"
 #include "neuron/model_data.hpp"
+#include "section.h"
 
 #include <cstddef>
 #include <optional>
@@ -14,7 +15,7 @@ namespace neuron {
 Model::Model() {
     m_node_data.set_unsorted_callback(invalidate_cache);
 }
-std::optional<container::utils::storage_info> Model::find_container_info(void const* cont) const {
+std::unique_ptr<container::utils::storage_info> Model::find_container_info(void const* cont) const {
     if (auto maybe_info = m_node_data.find_container_info(cont); maybe_info) {
         return maybe_info;
     }
@@ -26,7 +27,7 @@ std::optional<container::utils::storage_info> Model::find_container_info(void co
             return maybe_info;
         }
     }
-    return {std::nullopt};
+    return {};
 }
 
 void Model::set_unsorted_callback(container::Mechanism::storage& mech_data) {
@@ -53,10 +54,10 @@ std::ostream& operator<<(std::ostream& os, generic_data_handle const& dh) {
         // modern and valid or once-valid data handle
         auto const maybe_info = utils::find_container_info(*static_cast<void**>(dh.m_container));
         if (maybe_info) {
-            if (!maybe_info->container.empty()) {
-                os << "cont=" << maybe_info->container << ' ';
+            if (!maybe_info->container().empty()) {
+                os << "cont=" << maybe_info->container() << ' ';
             }
-            os << maybe_info->field << ' ' << dh.m_offset << '/' << maybe_info->size;
+            os << maybe_info->field() << ' ' << dh.m_offset << '/' << maybe_info->size();
         } else {
             // couldn't find which container it points into
             os << "cont=unknown " << dh.m_offset << "/unknown";
@@ -79,14 +80,59 @@ namespace neuron::container::detail {
 // See neuron/container/soa_identifier.hpp
 std::vector<std::unique_ptr<std::size_t>> garbage;
 }  // namespace neuron::container::detail
-
 namespace neuron::container::Mechanism {
 storage::storage(short mech_type, std::string name, std::vector<Variable> floating_point_fields)
     : base_type{field::FloatingPoint{std::move(floating_point_fields)}}
     , m_mech_name{std::move(name)}
     , m_mech_type{mech_type} {}
-// defined in C++ to try and avoid wheel issues
-int storage::num_floating_point_fields() const {
-    return get_tag<field::FloatingPoint>().num_instances();
+double& storage::fpfield(std::size_t instance, int field, int array_index) {
+    return get_field_instance<field::FloatingPoint>(instance, field, array_index);
+}
+double const& storage::fpfield(std::size_t instance, int field, int array_index) const {
+    return get_field_instance<field::FloatingPoint>(instance, field, array_index);
+}
+data_handle<double> storage::fpfield_handle(non_owning_identifier_without_container id,
+                                            int field,
+                                            int array_index) {
+    return get_field_instance_handle<field::FloatingPoint>(id, field, array_index);
+}
+std::string_view storage::name() const {
+    return m_mech_name;
+}
+short storage::type() const {
+    return m_mech_type;
+}
+std::ostream& operator<<(std::ostream& os, storage const& data) {
+    return os << data.name() << "::storage{type=" << data.type() << ", "
+              << data.get_tag<field::FloatingPoint>().num_instances() << " fields}";
 }
 }  // namespace neuron::container::Mechanism
+namespace neuron::container::utils {
+namespace detail {
+generic_data_handle promote_or_clear(generic_data_handle gdh) {
+    // The whole point of this method is that it receives a raw pointer
+    assert(!gdh.refers_to_a_modern_data_structure());
+    auto& model = neuron::model();
+    if (auto h = model.node_data().find_data_handle(gdh); h.refers_to_a_modern_data_structure()) {
+        return h;
+    }
+    bool done{false};
+    model.apply_to_mechanisms([&done, &gdh](auto& mech_data) {
+        if (done) {
+            return;
+        }
+        if (auto h = mech_data.find_data_handle(gdh); h.refers_to_a_modern_data_structure()) {
+            gdh = std::move(h);
+            done = true;
+        }
+    });
+    if (done) {
+        return gdh;
+    }
+    return {};
+}
+}  // namespace detail
+std::unique_ptr<storage_info> find_container_info(void const* c) {
+    return model().find_container_info(c);
+}
+}  // namespace neuron::container::utils

@@ -2307,7 +2307,7 @@ void KSChan::update_size() {
     }
     std::vector<neuron::container::Mechanism::Variable> new_param_info;
     new_param_info.resize(new_param_size, {"kschan_field", 1});
-    auto mech_name = mech_data.name();
+    std::string mech_name{mech_data.name()};
     neuron::model().delete_mechanism(mechtype_);
     nrn_delete_mechanism_prop_datum(mechtype_);
     neuron::model().add_mechanism(mechtype_, std::move(mech_name), std::move(new_param_info));
@@ -2317,7 +2317,8 @@ void KSChan::alloc(Prop* prop) {
     // printf("KSChan::alloc nstate_=%d nligand_=%d\n", nstate_, nligand_);
     // printf("KSChan::alloc %s param=%p\n", name_.string(), prop->param);
     int j;
-    assert(prop->param_size() == soffset_ + 2 * nstate_);
+    assert(prop->param_size() == prop->param_num_vars());  // no array vars
+    assert(prop->param_num_vars() == soffset_ + 2 * nstate_);
     if (is_point() && nrn_point_prop_) {
         assert(nrn_point_prop_->param_size() == prop->param_size());
         // prop->param = nrn_point_prop_->param;

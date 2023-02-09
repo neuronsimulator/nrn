@@ -22,14 +22,14 @@
    d is assumed to be non-zero.
    d and rhs is calculated from the property list.
 */
-
+#include "hoclist.h"
 #include "membfunc.h"
-#include "neuron/container/mechanism.hpp"
-#include "neuron/container/node.hpp"
-
+#include "neuron/container/mechanism_data.hpp"
+#include "neuron/container/node_data.hpp"
+#include "neuron/model_data.hpp"
 #include "nrnredef.h"
 #include "options.h"
-#include "hoclist.h"
+#include "section_fwd.hpp"
 
 /*#define DEBUGSOLVE 1*/
 #define xpop      hoc_xpop
@@ -97,32 +97,10 @@ typedef struct Info3Val { /* storage to help build matrix efficiently */
 /* if any double is added after area then think about changing
 the notify_free_val parameter in node_free in solve.cpp
 */
-
-#define NODED(n)   (*((n)->_d))
-#define NODERHS(n) (*((n)->_rhs))
-
-#undef NODEV /* sparc-sun-solaris2.9 */
-
-#define NODEV(n)    ((n)->v_hack())
 #define NODEAREA(n) ((n)->area())
 #define NODERINV(n) ((n)->_rinv)
-// The VEC_* vectors access the underlying array storage, i.e. the vectors that
-// live inside structures like neuron::model().node_data().
-// TODO: note that the new draft has one set of underlying storage vectors for
-// all threads, while the old version had separate vectors for each NrnThread
-#define VEC_A(i)    (_nt->_actual_a[(i)])
-#define VEC_B(i)    (_nt->_actual_b[(i)])
-#define VEC_D(i)    (_nt->_actual_d[(i)])
-#define VEC_RHS(i)  (_nt->_actual_rhs[(i)])
-#define VEC_V(i)    (_nt->actual_v(i))
-#define VEC_AREA(i) (_nt->actual_area(i))
 #define NODEA(n)    (VEC_A((n)->v_node_index))
 #define NODEB(n)    (VEC_B((n)->v_node_index))
-
-extern int use_sparse13;
-extern int use_cachevec;
-extern int secondorder;
-extern int cvode_active_;
 
 struct Extnode;
 struct Node {
@@ -203,30 +181,6 @@ struct Node {
     }
 };
 
-#if EXTRACELLULAR
-/* pruned to only work with sparse13 */
-extern int nrn_nlayer_extracellular;
-#define nlayer (nrn_nlayer_extracellular) /* first (0) layer is extracellular next to membrane */
-struct Extnode {
-    std::vector<neuron::container::data_handle<double>> param{};
-    // double* param; /* points to extracellular parameter vector */
-    /* v is membrane potential. so v internal = Node.v + Node.vext[0] */
-    /* However, the Node equation is for v internal. */
-    /* This is reconciled during update. */
-
-    /* Following all have allocated size of nlayer */
-    double* v; /* v external. */
-    double* _a;
-    double* _b;
-    double** _d;
-    double** _rhs; /* d, rhs, a, and b are analogous to those in node */
-    double** _a_matelm;
-    double** _b_matelm;
-    double** _x12; /* effect of v[layer] on eqn layer-1 (or internal)*/
-    double** _x21; /* effect of v[layer-1 or internal] on eqn layer*/
-};
-#endif
-
 #if !INCLUDEHOCH
 #include "hocdec.h" /* Prop needs Datum and Datum needs Symbol */
 #endif
@@ -265,7 +219,8 @@ struct Prop {
      * @brief Check if the given handle refers to data owned by this Prop.
      */
     [[nodiscard]] bool owns(neuron::container::data_handle<double> const& handle) const {
-        auto const num_fpfields = param_size();
+        assert(m_mech_handle);
+        auto const num_fpfields = m_mech_handle->num_fpfields();
         auto* const raw_ptr = static_cast<double const*>(handle);
         for (auto i = 0; i < num_fpfields; ++i) {
             for (auto j = 0; j < m_mech_handle->fpfield_dimension(i); ++j) {
@@ -318,13 +273,14 @@ struct Prop {
         return m_mech_handle->fpfield_handle(field, array_index);
     }
 
-    [[nodiscard]] auto param_handle(neuron::field_index ind) {
+    [[nodiscard]] auto param_handle(neuron::container::field_index ind) {
         return param_handle(ind.field, ind.array_index);
     }
 
   private:
     /**
      * @brief Translate a legacy (flat) index into a (variable, array offset) pair.
+     * @todo Reimplement this using the new helpers.
      */
     [[nodiscard]] std::pair<int, int> translate_legacy_index(int legacy_index) const {
         assert(m_mech_handle);
@@ -360,8 +316,22 @@ struct Prop {
 
     /**
      * @brief Return how many double values are assocated with this Prop.
+     *
+     * In case of array variables, this is the sum over array dimensions.
+     * i.e. if a mechanism has a[2] b[2] then param_size()=4 and param_num_vars()=2.
      */
     [[nodiscard]] int param_size() const {
+        assert(m_mech_handle);
+        return m_mech_handle->fpfields_size();
+    }
+
+    /**
+     * @brief Return how many (possibly-array) variables are associated with this Prop.
+     *
+     * In case of array variables, this ignores array dimensions.
+     * i.e. if a mechanism has a[2] b[2] then param_size()=4 and param_num_vars()=2.
+     */
+    [[nodiscard]] int param_num_vars() const {
         assert(m_mech_handle);
         return m_mech_handle->num_fpfields();
     }
@@ -394,40 +364,9 @@ struct Prop {
     std::optional<neuron::container::Mechanism::owning_handle> m_mech_handle;
 };
 
-extern Datum* nrn_prop_datum_alloc(int type, int count, Prop* p);
 extern void nrn_prop_datum_free(int type, Datum* ppd);
 extern void nrn_delete_mechanism_prop_datum(int type);
 extern int nrn_mechanism_prop_datum_count(int type);
-extern double nrn_ghk(double, double, double, double);
-
-/* a point process is computed just like regular mechanisms. Ie it appears
-in the property list whose type specifies which allocation, current, and
-state functions to call.  This means some nodes have more properties than
-other nodes even in the same section.  The Point_process structure allows
-the interface to hoc variable names.
-Each variable symbol u.rng->type refers to the point process mechanism.
-The variable is treated as a vector
-variable whose first index specifies "which one" of that mechanisms insertion
-points we are talking about.  Finally the variable u.rng->index tells us
-where in the p-array to look.  The number of point_process vectors is the
-number of different point process types.  This is different from the
-mechanism type which enumerates all mechanisms including the point_processes.
-It is the responsibility of create_point_process to set up the vectors and
-fill in the symbol information.  However only after the process is given
-a location can the variables be set or accessed. This is because the
-allocation function may have to connect to some ionic parameters and the
-process exists primarily as a property of a node.
-*/
-struct Point_process {
-    Section* sec{}; /* section and node location for the point mechanism*/
-    Node* node{};
-    Prop* prop{};    /* pointer to the actual property linked to the
-                  node property list */
-    Object* ob{};    /* object that owns this process */
-    void* presyn_{}; /* non-threshold presynapse for NetCon */
-    void* nvi_{};    /* NrnVarIntegrator (for local step method) */
-    void* _vnt{};    /* NrnThread* (for NET_RECEIVE and multicore) */
-};
 
 #if EXTRAEQN
 /*Blocks of equations can hang off each node of the current conservation

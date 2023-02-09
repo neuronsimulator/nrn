@@ -1,6 +1,6 @@
 #pragma once
-#include <optional>
-#include <string>
+#include <memory>
+#include <string_view>
 
 namespace neuron {
 struct Model;
@@ -10,12 +10,19 @@ template <typename>
 struct data_handle;
 namespace utils {
 template <typename T>
-[[nodiscard]] data_handle<T> find_data_handle(T*);
+[[nodiscard]] data_handle<T> find_data_handle(T* ptr);
 
+/**
+ * @brief Interface for obtaining information about model data containers.
+ *
+ * This indirection via an abstract interface helps reduce the ABI surface between translated MOD
+ * file code and the rest of the library.
+ */
 struct storage_info {
-    std::string container{};
-    std::string field{};
-    std::size_t size{};
+    virtual ~storage_info() {}
+    virtual std::string_view container() const = 0;
+    virtual std::string_view field() const = 0;
+    virtual std::size_t size() const = 0;
 };
 
 /** @brief Try and find a helpful name for a container.
@@ -25,7 +32,7 @@ struct storage_info {
  *  information about the container can be found the returned std::optional will
  *  not contain a value.
  */
-[[nodiscard]] inline std::optional<storage_info> find_container_info(void const*);
+[[nodiscard]] std::unique_ptr<storage_info> find_container_info(void const*);
 }  // namespace utils
 }  // namespace container
 }  // namespace neuron

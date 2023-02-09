@@ -134,16 +134,6 @@ struct Memb_list {
     }
 
     /**
-     * @brief The number of floating point fields in this mechanism.
-     *
-     * Currently a synonym for the number of RANGE variables.
-     *
-     * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
-     * code.
-     */
-    [[nodiscard]] std::size_t num_floating_point_fields() const;
-
-    /**
      * @brief Get the offset of this Memb_list into global storage for this type.
      *
      * In the simplest case then this Memb_list represents all instances of a
@@ -156,7 +146,7 @@ struct Memb_list {
      * not the global structure.
      */
     [[nodiscard]] std::size_t get_storage_offset() const {
-        assert(m_storage_offset != std::numeric_limits<std::size_t>::max());
+        assert(m_storage_offset != neuron::container::invalid_row);
         return m_storage_offset;
     }
 
@@ -211,5 +201,5 @@ struct Memb_list {
      * transient/cache type, in which case this is fine, or if it's considered
      * permanent...in which case this value should probably not live here.
      */
-    std::size_t m_storage_offset{std::numeric_limits<std::size_t>::max()};
+    std::size_t m_storage_offset{neuron::container::invalid_row};
 };
