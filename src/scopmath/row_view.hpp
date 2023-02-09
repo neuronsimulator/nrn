@@ -1,15 +1,15 @@
 #pragma once
-#include "neuron/container/soa_container.hpp"
+#include "neuron/container/non_owning_soa_identifier.hpp"
 namespace neuron::scopmath {
 template <typename MechRange>
 struct row_view {
     row_view(MechRange* ml, std::size_t iml)
         : m_iml{iml}
         , m_ml{ml} {}
-    [[nodiscard]] double& operator[](field_index ind) {
+    [[nodiscard]] double& operator[](container::field_index ind) {
         return m_ml->data(m_iml, ind);
     }
-    [[nodiscard]] double const& operator[](field_index ind) const {
+    [[nodiscard]] double const& operator[](container::field_index ind) const {
         return m_ml->data(m_iml, ind);
     }
     [[nodiscard]] double& operator[](std::size_t col) {

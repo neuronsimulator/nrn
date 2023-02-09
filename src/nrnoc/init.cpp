@@ -787,6 +787,36 @@ void register_data_fields(int type,
     memb_list[type].set_storage_pointer(&mech_data);
 }
 }  // namespace neuron::mechanism::detail
+namespace neuron::mechanism {
+template <>
+int const* get_array_dims<double>(int mech_type) {
+    if (mech_type < 0) {
+        return nullptr;
+    }
+    return neuron::model()
+        .mechanism_data(mech_type)
+        .get_array_dims<container::Mechanism::field::FloatingPoint>();
+}
+template <>
+double* const* get_data_ptrs<double>(int mech_type) {
+    if (mech_type < 0) {
+        return nullptr;
+    }
+    return neuron::model()
+        .mechanism_data(mech_type)
+        .get_data_ptrs<container::Mechanism::field::FloatingPoint>();
+}
+template <>
+int get_field_count<double>(int mech_type) {
+    if (mech_type < 0) {
+        return -1;
+    }
+    return neuron::model()
+        .mechanism_data(mech_type)
+        .get_tag<container::Mechanism::field::FloatingPoint>()
+        .num_instances();
+}
+}  // namespace neuron::mechanism
 
 /**
  * @brief Legacy way of registering mechanism data/pdata size.
@@ -1019,14 +1049,13 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
                 auto const [p, index] = [&h = pv[i]](Prop* p) {
                     for (; p; p = p->next) {
                         int legacy_index{};
-                        auto const num_params = p->param_size();
+                        auto const num_params = p->param_num_vars();
                         for (auto i_param = 0; i_param < num_params; ++i_param) {
                             auto const array_dim = p->param_array_dimension(i_param);
-                            for (auto j = 0; j < array_dim; ++j) {
+                            for (auto j = 0; j < array_dim; ++j, ++legacy_index) {
                                 if (h == p->param_handle(i_param, j)) {
                                     return std::make_pair(p, legacy_index);
                                 }
-                                ++legacy_index;
                             }
                         }
                     }

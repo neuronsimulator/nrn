@@ -1132,3 +1132,17 @@ int nrn_how_many_processors() {
 std::size_t nof_worker_threads() {
     return worker_threads.get() ? worker_threads->num_workers() : 0;
 }
+
+double* NrnThread::node_area_storage() {
+    // Need to be able to use this method while the model is frozen, so
+    // avoid calling the zero-parameter get()
+    return &neuron::model().node_data().get<neuron::container::Node::field::Area>(
+        _node_data_offset);
+}
+
+double* NrnThread::node_voltage_storage() {
+    // Need to be able to use this method while the model is frozen, so
+    // avoid calling the zero-parameter get()
+    return &neuron::model().node_data().get<neuron::container::Node::field::Voltage>(
+        _node_data_offset);
+}

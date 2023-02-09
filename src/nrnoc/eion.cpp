@@ -612,6 +612,7 @@ static void ion_init(neuron::model_sorted_token const& sorted_token,
 
 static void ion_alloc(Prop* p) {
     assert(p->param_size() == nparm);
+    assert(p->param_num_vars() == nparm);
     p->param(cur_index) = 0.;
     p->param(dcurdv_index) = 0.;
     if (p->_type == na_ion) {

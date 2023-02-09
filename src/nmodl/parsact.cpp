@@ -379,8 +379,8 @@ int check_tables_threads(List* p) {
         lappendstr(p,
                    "\n"
                    "static void _check_table_thread(_threadargsprotocomma_ int _type, "
-                   "neuron::model_sorted_token const& _sorted_token) {\n"
-                   "  LocalMechanismRange _lmr{_sorted_token, *_nt, *_ml, _type};\n"
+                   "_nrn_model_sorted_token const& _sorted_token) {\n"
+                   "  _nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml, _type};\n"
                    "  {\n"
                    "    auto* const _ml = &_lmr;\n");
         ITERATE(q, check_table_thread_list) {
@@ -751,20 +751,21 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
         vectorize_substitute(lappendstr(procfunc, "  _hoc_setdata(_vptr);\n"),
                              "  auto* const _pnt = static_cast<Point_process*>(_vptr);\n"
                              "  auto* const _p = _pnt->_prop;\n"
-                             "  LocalMechanismInstance _ml_real{_p};\n"
+                             "  _nrn_mechanism_cache_instance _ml_real{_p};\n"
                              "  auto* const _ml = &_ml_real;\n"
                              "  size_t const _iml{};\n"
-                             "  _ppvar = _p->dparam;\n"
+                             "  _ppvar = _nrn_mechanism_access_dparam(_p);\n"
                              "  _thread = _extcall_thread.data();\n"
                              "  _nt = static_cast<NrnThread*>(_pnt->_vnt);\n");
     } else {
-        vectorize_substitute(lappendstr(procfunc, ""),
-                             "LocalMechanismInstance _ml_real{_extcall_prop};\n"
-                             "auto* const _ml = &_ml_real;\n"
-                             "size_t const _iml{};\n"
-                             "_ppvar = _extcall_prop ? _extcall_prop->dparam : nullptr;\n"
-                             "_thread = _extcall_thread.data();\n"
-                             "_nt = nrn_threads;\n");
+        vectorize_substitute(
+            lappendstr(procfunc, ""),
+            "_nrn_mechanism_cache_instance _ml_real{_extcall_prop};\n"
+            "auto* const _ml = &_ml_real;\n"
+            "size_t const _iml{};\n"
+            "_ppvar = _extcall_prop ? _nrn_mechanism_access_dparam(_extcall_prop) : nullptr;\n"
+            "_thread = _extcall_thread.data();\n"
+            "_nt = nrn_threads;\n");
     }
     if (n == last_func_using_table) {
         qp = lappendstr(procfunc, "");
@@ -944,10 +945,10 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
                          "  NrnThread* _nt{static_cast<NrnThread*>(_pnt->_vnt)};\n");
     Sprintf(buf,
             "  auto* const _prop = _pnt->_prop;\n"
-            "  LocalMechanismInstance _ml_real{_prop};\n"
+            "  _nrn_mechanism_cache_instance _ml_real{_prop};\n"
             "  auto* const _ml = &_ml_real;\n"
             "  size_t _iml{};\n"
-            "  _ppvar = _prop->dparam;\n"
+            "  _ppvar = _nrn_mechanism_access_dparam(_prop);\n"
             "  v = NODEV(_pnt->node);\n"
             "	return ");
     lappendstr(procfunc, buf);

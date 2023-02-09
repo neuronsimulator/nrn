@@ -18,3 +18,5 @@
 #include "nrnversionmacros.h"
 #include "scoplib.h"
 #include "treeset.h"
+
+#include <iostream>  // nocmodl uses std::cerr
