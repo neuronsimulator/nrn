@@ -33,6 +33,7 @@ jobs:
 
     env:
       DISPLAY: ${{ ':0' }}
+      MUSIC_INSTALL_DIR: /opt/MUSIC
 
     steps:
 
@@ -54,14 +55,14 @@ jobs:
           python3 -m venv music-venv
           source music-venv/bin/activate
           python3 -m pip install mpi4py cython numpy
+          sudo mkdir -p $MUSIC_INSTALL_DIR
+          sudo chown -R $USER $MUSIC_INSTALL_DIR
           # Stable build: https://github.com/INCF/MUSIC/archive/refs/heads/switch-to-MPI-C-interface.zip  @ f33b66ea9348888eed1761738ab48c23ffc8a0d0
-          curl -L -o MUSIC.zip https://codeload.github.com/INCF/MUSIC/zip/f33b66ea9348888eed1761738ab48c23ffc8a0d0 &&
-              unzip MUSIC.zip &&
-              mv MUSIC-* MUSIC &&
-              cd MUSIC &&
-              ./autogen.sh &&
-              ./configure --with-python-sys-prefix --disable-anysource &&
-              sudo make -j install
+          curl -L -o MUSIC.zip https://codeload.github.com/INCF/MUSIC/zip/f33b66ea9348888eed1761738ab48c23ffc8a0d0
+          unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
+          ./autogen.sh
+          ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
+          make -j install
           deactivate
         working-directory: ${{runner.temp}} 
 
@@ -113,7 +114,7 @@ jobs:
 
           # CMake options & flags
           export COVERAGE_FLAGS="--coverage -O0 -fno-inline -g";
-          export CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_PROFILING=ON -DNRN_ENABLE_BACKTRACE=ON -DNRN_ENABLE_MUSIC=ON";
+          export CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_PROFILING=ON -DNRN_ENABLE_BACKTRACE=ON -DNRN_ENABLE_MUSIC=ON -DCMAKE_PREFIX_PATH=${MUSIC_INSTALL_DIR} -DMUSIC_ROOT=${MUSIC_INSTALL_DIR}";
           cmake $CMAKE_OPTION -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" -DCORENRN_ENABLE_UNIT_TESTS=ON ..;
 
           # Coverage
