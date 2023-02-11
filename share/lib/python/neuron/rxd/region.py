@@ -384,18 +384,18 @@ class Extracellular:
                 ecs_permeability = h.Vector(parsed_value.flatten())
             else:
                 ecs_permeability = h.Vector(parsed_value.flatten()).pow(-2)
-        elif hasattr(value, "_extracellular_instances") or hasattr(
-            self, "_extracellular"
+        elif hasattr(value, "_extracellular_regions") or hasattr(
+            value, "_extracellular"
         ):
             # Check Species or SpeciesOnExtracellular is defined on this region
             if (
-                hasattr(value, "_extracellular_instances")
-                and self not in value._extracellular_instances
+                hasattr(value, "_extracellular_regions")
+                and self not in value._extracellular_regions
             ) or (
                 (
                     hasattr(value, "_extracellular")
                     and value._extracellular()
-                    and value._extracellular() != self
+                    and value._extracellular()._region != self
                 )
             ):
                 raise RxDException(
@@ -403,6 +403,12 @@ class Extracellular:
                     % self
                 )
             else:
+                # make sure permeability has been initialized
+                if(hasattr(value, "_extracellular_regions") and not
+                   hasattr(value, "_extracellular_instances")):
+                    initializer._do_init()
+                    value._finitialize()
+
                 if is_permeability:
                     parsed_value = value
                     ecs_permeability = None
@@ -455,18 +461,18 @@ class Extracellular:
             warnings.warn(
                 "Dynamic changes to the volume fraction does not change the concentrations of species already in the region."
             )
-        elif hasattr(volume_fraction, "_extracellular_instances") or hasattr(
-            self, "_extracellular"
+        elif hasattr(volume_fraction, "_extracellular_regions") or hasattr(
+            volume_fraction, "_extracellular"
         ):
             # Check Species or SpeciesOnExtracellular is defined on this region
             if (
-                hasattr(volume_fraction, "_extracellular_instances")
-                and self not in volume_fraction._extracellular_instances
+                hasattr(volume_fraction, "_extracellular_regions")
+                and self not in volume_fraction._extracellular_regions
             ) or (
                 (
                     hasattr(volume_fraction, "_extracellular")
                     and volume_fraction._extracellular()
-                    and volume_fraction._extracellular() != self
+                    and volume_fraction._extracellular()._region != self
                 )
             ):
                 raise RxDException(
@@ -474,6 +480,11 @@ class Extracellular:
                     % self
                 )
             else:
+                # make sure volume_fraction has been initialized
+                if(hasattr(volume_fraction, "_extracellular_regions") and not
+                   hasattr(volume_fraction, "_extracellular_instances")):
+                    initializer._do_init()
+                    volume_fraction._finitialize()
                 alpha = volume_fraction
                 ecs_alpha = None
                 warnings.warn(
