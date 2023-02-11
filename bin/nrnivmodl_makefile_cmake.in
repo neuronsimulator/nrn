@@ -26,11 +26,11 @@ datadir_lib := ${ROOT}/@CMAKE_INSTALL_DATADIR@/lib
 # For a static build with Interviews need -linterviews -lreadline
 IV_LINK =
 READLINE_LINK =
-ifeq (@IV_ENABLE_SHARED@, OFF)
-    ifeq (@NRN_ENABLE_INTERVIEWS@, ON)
+ifeq ("@NRN_ENABLE_SHARED@@IV_ENABLE_SHARED@", "OFFOFF")
+    ifeq ("@NRN_ENABLE_INTERVIEWS@", "ON")
         IV_LINK = -linterviews
     endif
-    ifeq (@NRN_MACOS_BUILD@, ON)
+    ifeq ("@NRN_MACOS_BUILD@", "TRUE")
         READLINE_LINK = -lreadline
     endif
 endif
