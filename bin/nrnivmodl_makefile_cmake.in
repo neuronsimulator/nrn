@@ -30,14 +30,8 @@ ifeq (@IV_ENABLE_SHARED@, OFF)
     ifeq (@NRN_ENABLE_INTERVIEWS@, ON)
         IV_LINK = -linterviews
     endif
-    ifeq (@NRN_WINDOWS_BUILD@, ON)
-        READLINE_LINK = @Readline_LIBRARY@
-    else
-        ifeq (@READLINE_FOUND@, ON)
-            READLINE_LINK = @Readline_LIBRARY@
-        else
-            READLINE_LINK = -lreadline
-        endif
+    ifeq (@NRN_MACOS_BUILD@, ON)
+        READLINE_LINK = -lreadline
     endif
 endif
 
