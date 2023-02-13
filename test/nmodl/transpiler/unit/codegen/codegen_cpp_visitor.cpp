@@ -421,6 +421,24 @@ SCENARIO("Check code generation for TABLE statements", "[codegen][array_variable
             REQUIRE_THAT(generated, Contains("inst->global->tau = inst->global->t_tau[i]"));
         }
     }
+    GIVEN("A MOD file with two table statements") {
+        std::string const nmodl_text = R"(
+            NEURON {
+                RANGE inf, tau
+            }
+            PROCEDURE foo(v) {
+                TABLE inf FROM 1 TO 3 WITH 100
+                FROM i=0 TO 1 {
+                }
+                TABLE tau FROM 1 TO 3 WITH 100
+                FROM i=0 TO 1 {
+                }
+            }
+        )";
+        THEN("It should throw") {
+            REQUIRE_THROWS(get_cpp_code(nmodl_text));
+        }
+    }
 }
 
 SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/after]") {
@@ -637,6 +655,342 @@ SCENARIO("Check code generation for FUNCTION_TABLE block", "[codegen][function_t
         }
     }
 }
+
+SCENARIO("Check that loops are well generated", "[codegen][loops]") {
+    GIVEN("A mod file containing for/while/if/else/FROM") {
+        std::string const nmodl_text = R"(
+            PROCEDURE foo() {
+                LOCAL a, b
+                if (a == 1) {
+                    b = 5
+                } else if (a == 2) {
+                    b = 6
+                } else {
+                    b = 7 ^ 2
+                }
+
+                while (b > 0) {
+                    b = b - 1
+                }
+                FROM a = 1 TO 10 BY 2 {
+                    b = b + 1
+                }
+            })";
+
+        THEN("Correct code is generated") {
+            auto const generated = get_cpp_code(nmodl_text);
+            std::string expected_code = R"(double a, b;
+        if (a == 1.0) {
+            b = 5.0;
+        } else if (a == 2.0) {
+            b = 6.0;
+        } else {
+            b = pow(7.0, 2.0);
+        }
+        while (b > 0.0) {
+            b = b - 1.0;
+        }
+        for (int a = 1; a <= 10; a += 2) {
+            b = b + 1.0;
+        })";
+            REQUIRE_THAT(generated, Contains(expected_code));
+        }
+    }
+}
+
+
+SCENARIO("Check that top verbatim blocks are well generated", "[codegen][top verbatim block]") {
+    GIVEN("A mod file containing top verbatim block") {
+        std::string const nmodl_text = R"(
+            PROCEDURE foo(nt) {
+            }
+            VERBATIM
+            // This is a top verbatim block
+            double a = 2.;
+            // This procedure should be replaced
+            foo(_nt);
+            _tqitem;
+            _STRIDE;
+            ENDVERBATIM
+        )";
+
+        THEN("Correct code is generated") {
+            auto const generated = get_cpp_code(nmodl_text);
+            std::string expected_code = R"(using namespace coreneuron;
+
+
+            double a = 2.;
+            foo_(nt);
+            &tqitem;
+            pnodecount+id;)";
+            REQUIRE_THAT(generated, Contains(expected_code));
+        }
+    }
+}
+
+
+SCENARIO("Check that codegen generate event functions well", "[codegen][net_events]") {
+    GIVEN("A mod file with events") {
+        std::string const nmodl_text = R"(
+            NET_RECEIVE(w) {
+                INITIAL {}
+                if (flag == 0) {
+                    net_event(t)
+                    net_move(t+1)
+                } else {
+                    net_send(1, 1)
+                }
+            }
+        )";
+
+        THEN("Correct code is generated") {
+            auto const generated = get_cpp_code(nmodl_text);
+            std::string net_send_expected_code =
+                R"(static inline void net_send_buffering(NetSendBuffer_t* nsb, int type, int vdata_index, int weight_index, int point_index, double t, double flag) {
+        int i = 0;
+        i = nsb->_cnt++;
+        if (i >= nsb->_size) {
+            nsb->grow();
+        }
+        if (i < nsb->_size) {
+            nsb->_sendtype[i] = type;
+            nsb->_vdata_index[i] = vdata_index;
+            nsb->_weight_index[i] = weight_index;
+            nsb->_pnt_index[i] = point_index;
+            nsb->_nsb_t[i] = t;
+            nsb->_nsb_flag[i] = flag;
+        }
+    })";
+            REQUIRE_THAT(generated, Contains(net_send_expected_code));
+            std::string net_receive_kernel_expected_code =
+                R"(static inline void net_receive_kernel_(double t, Point_process* pnt, _Instance* inst, NrnThread* nt, Memb_list* ml, int weight_index, double flag) {
+        int tid = pnt->_tid;
+        int id = pnt->_i_instance;
+        double v = 0;
+        int nodecount = ml->nodecount;
+        int pnodecount = ml->_nodecount_padded;
+        double* data = ml->data;
+        double* weights = nt->weights;
+        Datum* indexes = ml->pdata;
+        ThreadDatum* thread = ml->_thread;
+
+        inst->tsave[id] = t;
+        {
+            if (flag == 0.0) {
+                net_send_buffering(ml->_net_send_buffer, 1, -1, -1, point_process, t, 0.0);
+                net_send_buffering(ml->_net_send_buffer, 2, inst->tqitem[0*pnodecount+id], -1, point_process, t + 1.0, 0.0);
+            } else {
+                net_send_buffering(ml->_net_send_buffer, 0, inst->tqitem[0*pnodecount+id], weight_index, point_process, t+1.0, 1.0);
+            }
+        }
+    })";
+            REQUIRE_THAT(generated, Contains(net_receive_kernel_expected_code));
+            std::string net_receive_expected_code =
+                R"(static void net_receive_(Point_process* pnt, int weight_index, double flag) {
+        NrnThread* nt = nrn_threads + pnt->_tid;
+        Memb_list* ml = get_memb_list(nt);
+        NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
+        if (nrb->_cnt >= nrb->_size) {
+            realloc_net_receive_buffer(nt, ml);
+        }
+        int id = nrb->_cnt;
+        nrb->_pnt_index[id] = pnt-nt->pntprocs;
+        nrb->_weight_index[id] = weight_index;
+        nrb->_nrb_t[id] = nt->_t;
+        nrb->_nrb_flag[id] = flag;
+        nrb->_cnt++;
+    })";
+            REQUIRE_THAT(generated, Contains(net_receive_expected_code));
+            std::string net_buf_receive_expected_code = R"(void net_buf_receive_(NrnThread* nt) {
+        Memb_list* ml = get_memb_list(nt);
+        if (!ml) {
+            return;
+        }
+
+        NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
+        auto* const inst = static_cast<_Instance*>(ml->instance);
+        int count = nrb->_displ_cnt;
+        #pragma ivdep
+        #pragma omp simd
+        for (int i = 0; i < count; i++) {
+            int start = nrb->_displ[i];
+            int end = nrb->_displ[i+1];
+            for (int j = start; j < end; j++) {
+                int index = nrb->_nrb_index[j];
+                int offset = nrb->_pnt_index[index];
+                double t = nrb->_nrb_t[index];
+                int weight_index = nrb->_weight_index[index];
+                double flag = nrb->_nrb_flag[index];
+                Point_process* point_process = nt->pntprocs + offset;
+                net_receive_kernel_(t, point_process, inst, nt, ml, weight_index, flag);
+            }
+        }
+        nrb->_displ_cnt = 0;
+        nrb->_cnt = 0;
+
+        NetSendBuffer_t* nsb = ml->_net_send_buffer;
+        for (int i=0; i < nsb->_cnt; i++) {
+            int type = nsb->_sendtype[i];
+            int tid = nt->id;
+            double t = nsb->_nsb_t[i];
+            double flag = nsb->_nsb_flag[i];
+            int vdata_index = nsb->_vdata_index[i];
+            int weight_index = nsb->_weight_index[i];
+            int point_index = nsb->_pnt_index[i];
+            net_sem_from_gpu(type, vdata_index, weight_index, tid, point_index, t, flag);
+        }
+        nsb->_cnt = 0;
+    })";
+            REQUIRE_THAT(generated, Contains(net_buf_receive_expected_code));
+            std::string net_init_expected_code =
+                R"(static void net_init(Point_process* pnt, int weight_index, double flag) {
+        // do nothing
+    })";
+            REQUIRE_THAT(generated, Contains(net_init_expected_code));
+            std::string set_pnt_receive_expected_code =
+                "set_pnt_receive(mech_type, net_receive_, net_init, num_net_receive_args());";
+            REQUIRE_THAT(generated, Contains(set_pnt_receive_expected_code));
+        }
+    }
+    GIVEN("A mod file with an INITIAL inside NET_RECEIVE") {
+        std::string const nmodl_text = R"(
+            NET_RECEIVE(w) {
+                INITIAL {
+                    a = 1
+                }
+            }
+        )";
+        THEN("It should generate a net_init") {
+            auto const generated = get_cpp_code(nmodl_text);
+            std::string expected_code =
+                R"(static void net_init(Point_process* pnt, int weight_index, double flag) {
+        int tid = pnt->_tid;
+        int id = pnt->_i_instance;
+        double v = 0;
+        NrnThread* nt = nrn_threads + tid;
+        Memb_list* ml = nt->_ml_list[pnt->_type];
+        int nodecount = ml->nodecount;
+        int pnodecount = ml->_nodecount_padded;
+        double* data = ml->data;
+        double* weights = nt->weights;
+        Datum* indexes = ml->pdata;
+        ThreadDatum* thread = ml->_thread;
+        auto* const inst = static_cast<_Instance*>(ml->instance);
+
+        a = 1.0;
+        auto& nsb = ml->_net_send_buffer;
+    })";
+            REQUIRE_THAT(generated, Contains(expected_code));
+        }
+    }
+    GIVEN("A mod file with FOR_NETCONS") {
+        std::string const nmodl_text = R"(
+            NET_RECEIVE(w) {
+                FOR_NETCONS(v) {
+                    b = 2
+                }
+            }
+        )";
+        THEN("New code is generated for for_netcons") {
+            auto const generated = get_cpp_code(nmodl_text);
+            std::string net_receive_kernel_expected_code =
+                R"(static inline void net_receive_kernel_(double t, Point_process* pnt, _Instance* inst, NrnThread* nt, Memb_list* ml, int weight_index, double flag) {
+        int tid = pnt->_tid;
+        int id = pnt->_i_instance;
+        double v = 0;
+        int nodecount = ml->nodecount;
+        int pnodecount = ml->_nodecount_padded;
+        double* data = ml->data;
+        double* weights = nt->weights;
+        Datum* indexes = ml->pdata;
+        ThreadDatum* thread = ml->_thread;
+
+        int node_id = ml->nodeindices[id];
+        v = nt->_actual_v[node_id];
+        inst->tsave[id] = t;
+        {
+            const size_t offset = 0*pnodecount + id;
+            const size_t for_netcon_start = nt->_fornetcon_perm_indices[indexes[offset]];
+            const size_t for_netcon_end = nt->_fornetcon_perm_indices[indexes[offset] + 1];
+            for (auto i = for_netcon_start; i < for_netcon_end; ++i) {
+                b = 2.0;
+            }
+
+        }
+    })";
+            REQUIRE_THAT(generated, Contains(net_receive_kernel_expected_code));
+            std::string registration_expected_code = "add_nrn_fornetcons(mech_type, 0);";
+            REQUIRE_THAT(generated, Contains(registration_expected_code));
+        }
+    }
+    GIVEN("A mod file with a net_move outside NET_RECEIVE") {
+        std::string const nmodl_text = R"(
+            PROCEDURE foo() {
+                net_move(t+1)
+            }
+        )";
+        THEN("It should throw") {
+            REQUIRE_THROWS(get_cpp_code(nmodl_text));
+        }
+    }
+}
+
+
+SCENARIO("Some tests on derivimplicit", "[codegen][derivimplicit_solver]") {
+    GIVEN("A mod file with derivimplicit") {
+        std::string const nmodl_text = R"(
+            STATE {
+                m
+            }
+            BREAKPOINT {
+                SOLVE state METHOD derivimplicit
+            }
+            DERIVATIVE state {
+               m' = 2 * m
+            }
+        )";
+        THEN("Correct code is generated") {
+            auto const generated = get_cpp_code(nmodl_text);
+            std::string newton_state_expected_code = R"(namespace {
+        struct _newton_state_ {
+            int operator()(int id, int pnodecount, double* data, Datum* indexes, ThreadDatum* thread, NrnThread* nt, Memb_list* ml, double v) const {
+                auto* const inst = static_cast<_Instance*>(ml->instance);
+                double* savstate1 = static_cast<double*>(thread[dith1()].pval);
+                auto const& slist1 = inst->global->slist1;
+                auto const& dlist1 = inst->global->dlist1;
+                double* dlist2 = static_cast<double*>(thread[dith1()].pval) + (1*pnodecount);
+                inst->Dm[id] = 2.0 * inst->m[id];
+                int counter = -1;
+                for (int i=0; i<1; i++) {
+                    if (*deriv1_advance(thread)) {
+                        dlist2[(++counter)*pnodecount+id] = data[dlist1[i]*pnodecount+id]-(data[slist1[i]*pnodecount+id]-savstate1[i*pnodecount+id])/nt->_dt;
+                    } else {
+                        dlist2[(++counter)*pnodecount+id] = data[slist1[i]*pnodecount+id]-savstate1[i*pnodecount+id];
+                    }
+                }
+                return 0;
+            }
+        };
+    })";
+            REQUIRE_THAT(generated, Contains(newton_state_expected_code));
+            std::string state_expected_code =
+                R"(int state_(int id, int pnodecount, double* data, Datum* indexes, ThreadDatum* thread, NrnThread* nt, Memb_list* ml, double v) {
+        auto* const inst = static_cast<_Instance*>(ml->instance);
+        double* savstate1 = (double*) thread[dith1()].pval;
+        auto const& slist1 = inst->global->slist1;
+        auto& slist2 = inst->global->slist2;
+        double* dlist2 = static_cast<double*>(thread[dith1()].pval) + (1*pnodecount);
+        for (int i=0; i<1; i++) {
+            savstate1[i*pnodecount+id] = data[slist1[i]*pnodecount+id];
+        }
+        int reset = nrn_newton_thread(static_cast<NewtonSpace*>(*newtonspace1(thread)), 1, slist2, _newton_state_{}, dlist2, id, pnodecount, data, indexes, thread, nt, ml, v);
+        return reset;
+    })";
+            REQUIRE_THAT(generated, Contains(state_expected_code));
+        }
+    }
+}
+
 
 SCENARIO("Check codegen for MUTEX and PROTECT", "[codegen][mutex_protect]") {
     GIVEN("A mod file containing MUTEX & PROTECT") {

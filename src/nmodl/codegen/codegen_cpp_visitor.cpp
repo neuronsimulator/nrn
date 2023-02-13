@@ -214,17 +214,17 @@ void CodegenCVisitor::visit_from_statement(const ast::FromStatement& node) {
     const auto& to = node.get_to();
     const auto& inc = node.get_increment();
     const auto& block = node.get_statement_block();
-    printer->fmt_text("for(int {}=", name);
+    printer->fmt_text("for (int {} = ", name);
     from->accept(*this);
-    printer->fmt_text("; {}<=", name);
+    printer->fmt_text("; {} <= ", name);
     to->accept(*this);
     if (inc) {
-        printer->fmt_text("; {}+=", name);
+        printer->fmt_text("; {} += ", name);
         inc->accept(*this);
     } else {
         printer->fmt_text("; {}++", name);
     }
-    printer->add_text(")");
+    printer->add_text(") ");
     block->accept(*this);
 }
 
@@ -2901,7 +2901,7 @@ static size_t get_register_type_for_ba_block(const ast::Block* block) {
 void CodegenCVisitor::print_mechanism_register() {
     printer->add_newline(2);
     printer->add_line("/** register channel with the simulator */");
-    printer->fmt_start_block("void _{}_reg() ", info.mod_file);
+    printer->fmt_start_block("void _{}_reg()", info.mod_file);
 
     // type related information
     auto suffix = add_escape_quote(info.mod_suffix);
@@ -3603,7 +3603,7 @@ void CodegenCVisitor::print_functors_definitions() {
 void CodegenCVisitor::print_nrn_alloc() {
     printer->add_newline(2);
     auto method = method_name(naming::NRN_ALLOC_METHOD);
-    printer->fmt_start_block("static void {}(double* data, Datum* indexes, int type) ", method);
+    printer->fmt_start_block("static void {}(double* data, Datum* indexes, int type)", method);
     printer->add_line("// do nothing");
     printer->end_block(1);
 }
@@ -3821,8 +3821,7 @@ void CodegenCVisitor::print_net_send_call(const FunctionCall& node) {
 
 void CodegenCVisitor::print_net_move_call(const FunctionCall& node) {
     if (!printing_net_receive) {
-        std::cout << "Error : net_move only allowed in NET_RECEIVE block" << std::endl;
-        abort();
+        throw std::runtime_error("Error : net_move only allowed in NET_RECEIVE block");
     }
 
     auto const& arguments = node.get_arguments();
@@ -3913,7 +3912,7 @@ void CodegenCVisitor::print_net_init() {
     auto args = "Point_process* pnt, int weight_index, double flag";
     printer->add_newline(2);
     printer->add_line("/** initialize block for net receive */");
-    printer->fmt_start_block("static void net_init({}) ", args);
+    printer->fmt_start_block("static void net_init({})", args);
     auto block = node->get_statement_block().get();
     if (block->get_statements().empty()) {
         printer->add_line("// do nothing");
@@ -4015,13 +4014,12 @@ void CodegenCVisitor::print_net_receive_buffering(bool need_mech_inst) {
         print_send_event_move();
     }
 
-    printer->add_newline();
     print_kernel_data_present_annotation_block_end();
     printer->end_block(1);
 }
 
 void CodegenCVisitor::print_net_send_buffering_grow() {
-    printer->start_block("if(i >= nsb->_size)");
+    printer->start_block("if (i >= nsb->_size)");
     printer->add_line("nsb->grow();");
     printer->end_block(1);
 }
@@ -4036,12 +4034,12 @@ void CodegenCVisitor::print_net_send_buffering() {
     auto args =
         "NetSendBuffer_t* nsb, int type, int vdata_index, "
         "int weight_index, int point_index, double t, double flag";
-    printer->fmt_start_block("static inline void net_send_buffering({}) ", args);
+    printer->fmt_start_block("static inline void net_send_buffering({})", args);
     printer->add_line("int i = 0;");
     print_device_atomic_capture_annotation();
     printer->add_line("i = nsb->_cnt++;");
     print_net_send_buffering_grow();
-    printer->start_block("if(i < nsb->_size)");
+    printer->start_block("if (i < nsb->_size)");
     printer->add_line("nsb->_sendtype[i] = type;");
     printer->add_line("nsb->_vdata_index[i] = vdata_index;");
     printer->add_line("nsb->_weight_index[i] = weight_index;");
@@ -4121,7 +4119,7 @@ void CodegenCVisitor::print_net_receive_kernel() {
     }
 
     printer->add_newline(2);
-    printer->fmt_start_block("static inline void {}({}) ", name, get_parameter_str(params));
+    printer->fmt_start_block("static inline void {}({})", name, get_parameter_str(params));
     print_net_receive_common_code(*node, info.artificial_cell);
     if (info.artificial_cell) {
         printer->add_line("double t = nt->_t;");
@@ -4164,7 +4162,7 @@ void CodegenCVisitor::print_net_receive() {
         params.emplace_back("", "int", "", "weight_index");
         params.emplace_back("", "double", "", "flag");
         printer->add_newline(2);
-        printer->fmt_start_block("static void {}({}) ", name, get_parameter_str(params));
+        printer->fmt_start_block("static void {}({})", name, get_parameter_str(params));
         printer->add_line("NrnThread* nt = nrn_threads + pnt->_tid;");
         printer->add_line("Memb_list* ml = get_memb_list(nt);");
         printer->add_line("NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;");
