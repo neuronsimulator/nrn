@@ -7,6 +7,8 @@ concurrency:
 on:
   push:
     branches: 
+      # If nothing else, this is important for the ccache logic below...
+      - master
       - release/**
   pull_request:
     branches:
@@ -74,7 +76,6 @@ jobs:
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
                 -DNRN_ENABLE_RX3D=OFF
               sanitizer: address
-              ccache_fudge: 1 # manually invalidate the cache for this build
       fail-fast: false
 
     steps:
