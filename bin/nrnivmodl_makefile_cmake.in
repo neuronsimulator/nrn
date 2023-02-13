@@ -23,10 +23,22 @@ incdir := ${ROOT}/@CMAKE_INSTALL_INCLUDEDIR@
 datadir:= ${ROOT}/@CMAKE_INSTALL_DATADIR@
 datadir_lib := ${ROOT}/@CMAKE_INSTALL_DATADIR@/lib
 
+# For a static build with Interviews need -linterviews -lreadline
+IV_LINK =
+READLINE_LINK =
+ifeq ("@NRN_ENABLE_SHARED@@IV_ENABLE_SHARED@", "OFFOFF")
+    ifeq ("@NRN_ENABLE_INTERVIEWS@", "ON")
+        IV_LINK = -linterviews
+    endif
+    ifeq ("@NRN_MACOS_BUILD@", "TRUE")
+        READLINE_LINK = -lreadline
+    endif
+endif
+
 # Additional variables set in CMAKE usable here
 # - @NRN_COMPILE_DEFS
 # - @NRN_LINK_DEFS
-LDFLAGS = $(LINKFLAGS) $(UserLDFLAGS) @NRN_LINK_DEFS@
+LDFLAGS = $(IV_LINK) $(READLINE_LINK) $(LINKFLAGS) $(UserLDFLAGS) @NRN_LINK_DEFS@
 
 # In GPU wheel distributions then the shipped libnrniv.so is linked against
 # some NVIDIA runtime libraries that are shipped with the wheel. If we use
