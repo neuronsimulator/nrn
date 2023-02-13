@@ -32,9 +32,9 @@ void debugzz(Inst* p) {
         prcod(hoc_sub, "SUB\n");
         prcod(mul, "MUL\n");
         prcod(hoc_div, "DIV\n");
-        prcod(negate, "NEGATE\n");
+        prcod(hoc_negate, "NEGATE\n");
         prcod(power, "POWER\n");
-        prcod(assign, "ASSIGN\n");
+        prcod(hoc_assign, "ASSIGN\n");
         prcod(bltin, "BLTIN\n");
         prcod(varpush, "VARPUSH\n");
         prcod(constpush, "CONSTPUSH\n");
@@ -44,8 +44,8 @@ void debugzz(Inst* p) {
         prcod(prexpr, "PREXPR\n");
         prcod(prstr, "PRSTR\n");
         prcod(gt, "GT\n");
-        prcod(lt, "LT\n");
-        prcod(eq, "EQ\n");
+        prcod(hoc_lt, "LT\n");
+        prcod(hoc_eq, "EQ\n");
         prcod(ge, "GE\n");
         prcod(le, "LE\n");
         prcod(ne, "NE\n");
@@ -56,7 +56,7 @@ void debugzz(Inst* p) {
         prcod(forcode, "FORCODE\n");
         prcod(shortfor, "SHORTFOR\n");
         prcod(call, "CALL\n");
-        prcod(arg, "ARG\n");
+        prcod(hoc_arg, "ARG\n");
         prcod(argassign, "ARGASSIGN\n");
         prcod(funcret, "FUNCRET\n");
         prcod(procret, "PROCRET\n");

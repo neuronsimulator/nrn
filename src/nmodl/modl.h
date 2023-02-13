@@ -1,3 +1,5 @@
+#pragma once
+#include "wrap_sprintf.h"
 
 #include <stdio.h>
 #if HAVE_STRING_H
@@ -254,8 +256,8 @@ extern Symbol *install(const char*, int), /* Install token in symbol table */
                                             * not already done. */
 #include "nmodlfunc.h"
 
-extern char* finname; /* the input file prefix */
-extern char buf[];    /* general purpose temporary buffer */
+extern char finname[NRN_BUFSIZE]; /* the input file prefix */
+extern char buf[NRN_BUFSIZE];     /* general purpose temporary buffer */
 extern char* modprefix;
 
 extern List *intoken, /* Main list of input tokens */
@@ -284,7 +286,6 @@ extern void printlist(List*);
 extern char* clint;
 extern int ilint;
 extern Item* qlint;
-#define Sprintf     clint = sprintf
 #define Fprintf     ilint = fprintf
 #define Fclose      ilint = fclose
 #define Fflush      ilint = fflush
@@ -306,7 +307,6 @@ extern Item* qlint;
     }
 #define Free(arg) free((char*) (arg))
 #else
-#define Sprintf     sprintf
 #define Fprintf     fprintf
 #define Fclose      fclose
 #define Fflush      fflush
@@ -324,6 +324,7 @@ extern Item* qlint;
 #define IGNORE(arg) arg
 #define Free(arg)   free((void*) (arg))
 #endif
+using neuron::Sprintf;
 
 
 void verbatim_adjust(char* q);

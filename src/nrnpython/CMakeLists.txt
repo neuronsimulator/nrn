@@ -8,6 +8,7 @@ add_link_options(${NRN_LINK_FLAGS})
 # Definitions used in setup.py
 # =============================================================================
 set(NRN_SRCDIR ${PROJECT_SOURCE_DIR})
+set(NRN_BUILDDIR ${PROJECT_BINARY_DIR})
 set(NRNPYTHON_DEFINES "")
 
 # ~~~
@@ -151,7 +152,7 @@ install(
   PATTERN *.dat)
 
 # =============================================================================
-# If NEURON python module installation is enabled
+# If NEURON python module installation is enabled (CMake install)
 # =============================================================================
 if(NRN_ENABLE_MODULE_INSTALL)
 
@@ -199,32 +200,12 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # =============================================================================
   # Copy necessary files to build directory
   # =============================================================================
-
-  add_custom_command(
-    TARGET hoc_module
-    PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
-            ${PROJECT_BINARY_DIR}/share/nrn/lib
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
-            ${PROJECT_BINARY_DIR}/share/nrn/demo)
-  # Don't do exactly the same copy twice in a row. Presumably it's sometimes important to do both...
-  if(NOT "${NRN_BUILD_SHARE_DIR}/lib" STREQUAL "${PROJECT_BINARY_DIR}/share/nrn/lib")
-    add_custom_command(
-      TARGET hoc_module
-      PRE_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
-              ${NRN_BUILD_SHARE_DIR}/lib)
-  endif()
+  add_dependencies(hoc_module copy_share_demo_to_build copy_share_lib_to_build)
 
   # =============================================================================
   # Build python module
   # =============================================================================
   # for each python detected / provided by user, install module at install time
-
-  # Workaround for: https://github.com/neuronsimulator/nrn/issues/1605 See:
-  # https://setuptools.pypa.io/en/latest/deprecated/distutils-legacy.html
-  # https://setuptools.pypa.io/en/latest/history.html#id228
-  set(extra_env ${CMAKE_COMMAND} -E env "SETUPTOOLS_USE_DISTUTILS=stdlib")
 
   if(NRN_SANITIZERS)
     # Make sure the same compiler (currently always clang in the sanitizer builds) is used to link
@@ -240,11 +221,8 @@ if(NRN_ENABLE_MODULE_INSTALL)
       POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
               ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-      COMMAND
-        ${CMAKE_COMMAND} -E copy_if_different
-        ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-        ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/help_data.dat
-      COMMAND ${extra_env} ${pyexe} setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB}
+      COMMAND ${CMAKE_COMMAND} -E env ${extra_env} ${pyexe} setup.py --quiet build
+              --build-lib=${NRN_PYTHON_BUILD_LIB}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Building python module with: ${pyexe}")
   endforeach(pyexe)
@@ -253,35 +231,6 @@ if(NRN_ENABLE_MODULE_INSTALL)
   if(NRN_ENABLE_RX3D)
     add_dependencies(hoc_module rxd_cython_generated)
   endif()
-
-  # ~~~
-  # neuron module (possibly with multiple extension versions) was built
-  # in NRN_PYTHON_BUILD_LIB. Not a problem if install overwrites multiple
-  # times to same install folder or if each install ends up in different
-  # place.
-  # ~~~
-  file(
-    WRITE ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh
-    "\
-#!bash\n\
-echo 'Installing python module using:'\n\
-set -ex\n\
-cd ${CMAKE_CURRENT_BINARY_DIR}\n\
-export SETUPTOOLS_USE_DISTUTILS=stdlib
-$1 setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB} install ${NRN_MODULE_INSTALL_OPTIONS}\n\
-")
-  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-    # install(CODE ...) only takes a single CMake code expression, so we can't easily roll our own
-    # check on the return code. Modern CMake versions support the COMMAND_ERROR_IS_FATAL option,
-    # which will cause the installation to abort if the shell script returns an error code.
-    if(${CMAKE_VERSION} VERSION_LESS "3.19")
-      install(
-        CODE "execute_process(COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh ${pyexe})"
-      )
-    else()
-      install(
-        CODE "execute_process(COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh ${pyexe} COMMAND_ERROR_IS_FATAL LAST)"
-      )
-    endif()
-  endforeach(pyexe)
+  # install modules from NRN_PYTHON_BUILD_LIB
+  install(DIRECTORY ${NRN_PYTHON_BUILD_LIB} DESTINATION lib)
 endif()

@@ -25,9 +25,7 @@
 #define arayinstal         hoc_arayinstal
 #define free_arrayinfo     hoc_free_arrayinfo
 #define araypt             hoc_araypt
-#define arg                hoc_arg
 #define argassign          hoc_argassign
-#define assign             hoc_assign
 #define assstr             hoc_assstr
 #define bltin              hoc_bltin
 #define call               hoc_call
@@ -45,7 +43,6 @@
 #define defnonly           hoc_defnonly
 #define dep_make           hoc_dep_make
 #define do_equation        hoc_do_equation
-#define eq                 hoc_eq
 #define eqinit             hoc_eqinit
 #define eqn_init           hoc_eqn_init
 #define eqn_lhs            hoc_eqn_lhs
@@ -87,10 +84,8 @@
 #define le                 hoc_le
 #define lineno             hoc_lineno
 #define lookup             hoc_lookup
-#define lt                 hoc_lt
 #define mul                hoc_mul
 #define ne                 hoc_ne
-#define negate             hoc_negate
 #define onintr             hoc_onintr
 #define p_symlist          hoc_p_symlist
 #define parserror          hoc_parserror

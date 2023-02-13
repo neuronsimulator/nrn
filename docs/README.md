@@ -16,14 +16,13 @@ Contents:
 It is recommended to use a Python virtual environment, for example:
 
 ```
-pip3 install virtualenv
 python3 -m venv venv
 source venv/bin/activate
 ```
 
 In order to build documentation locally, you need to pip install the ``docs_requirements.txt`` :
 ```
-pip3 install --user -r docs/docs_requirements.txt --upgrade
+pip3 install -r docs/docs_requirements.txt --upgrade
 ```
 
 Also, make sure to have `Doxygen` and `pandoc` installed, and the dependencies listed in [conda_environment.yml](conda_environment.yml)

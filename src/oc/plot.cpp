@@ -430,7 +430,7 @@ void Fig_plt(int mode, double x, double y) {
         text = 0;
         state = 0;
         if (mode == -2) {
-            IGNORE(sprintf(fig_text_preamble, "%s %d %d ", text_preamble, SCX(oldx), SCY(oldy)));
+            IGNORE(Sprintf(fig_text_preamble, "%s %d %d ", text_preamble, SCX(oldx), SCY(oldy)));
             state = TEXT;
             text = 1;
             return;

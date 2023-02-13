@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <hocdec.h>
 
-int hoc_nstack, hoc_nframe;
 extern const char* neuron_home;
 
 extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj) = NULL;
@@ -33,13 +32,7 @@ static void setnrnhome(const char* arg) {
     */
     neuron_home = getenv("NEURONHOME");
     if (!neuron_home) {
-#if defined(HAVE_PUTENV)
-        static char* buffer;
-        buffer = static_cast<char*>(malloc(strlen(NEURON_DATA_DIR) + 12));
-        sprintf(buffer, "NEURONHOME=%s", NEURON_DATA_DIR);
-        putenv(buffer);
-        neuron_home = NEURON_DATA_DIR;
-#elif defined(HAVE_SETENV)
+#if defined(HAVE_SETENV)
         setenv("NEURONHOME", NEURON_DATA_DIR, 1);
         neuron_home = NEURON_DATA_DIR;
 #else

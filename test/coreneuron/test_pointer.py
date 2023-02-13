@@ -1,3 +1,5 @@
+import os
+import distutils.util
 from neuron import h
 import subprocess
 from subprocess import PIPE
@@ -9,6 +11,9 @@ cvode = h.CVode()
 def sortspikes(spiketime, gidvec):
     return sorted(zip(spiketime, gidvec))
 
+
+# Set globally so we can ensure the IClamp duration is shorter
+tstop = 1
 
 # Passive cell random tree so there is some inhomogeneity of ia and im
 class Cell:
@@ -42,7 +47,7 @@ class Cell:
         # im_axial should be done after ic completes.
         ic = h.IClamp(self.secs[2](0))
         ic.delay = 0.0
-        ic.dur = 0.2
+        ic.dur = min(0.2, tstop / 2)
         ic.amp = 5.0
         self.ic = ic
 
@@ -196,22 +201,51 @@ def test_axial():
         pc.psolve(tstop)
         return result(m)
 
-    std = run(1)
+    std = run(tstop)
 
     cvode.cache_efficient(1)
-    chk(std, run(1))
+    chk(std, run(tstop))
 
     from neuron import coreneuron
 
     coreneuron.verbose = 0
     coreneuron.enable = True
-    coreneuron.cell_permute = 0
-    for coreneuron.cell_permute in [0, 1]:
-        chk(std, run(1))
+    coreneuron.gpu = bool(
+        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
+    )
+
+    # test (0,1) for CPU and (1,2) for GPU
+    for perm in coreneuron.valid_cell_permute():
+        coreneuron.cell_permute = perm
+        chk(std, run(tstop))
     coreneuron.enable = False
 
     m._callback_setup = None  # get rid of the callback first.
     del m
+
+
+def run_coreneuron_offline_checkpoint_restore(spikes_std):
+    # standard to compare with checkpoint series
+    tpnts = [5.0, 10.0]
+    for perm in [0, 1]:
+        print("\n\ncell_permute ", perm)
+        common = "-d coredat --voltage 1000 --verbose 0 --cell-permute %d" % (perm,)
+        # standard full run
+        runcn(common + " --tstop %g" % float(tpnts[-1]) + " -o coredat")
+        # sequence of checkpoints
+        for i, tpnt in enumerate(tpnts):
+            tend = tpnt
+            restore = " --restore coredat/chkpnt%d" % (i,) if i > 0 else ""
+            checkpoint = " --checkpoint coredat/chkpnt%d" % (i + 1,)
+            outpath = " -o coredat/chkpnt%d" % (i + 1,)
+            runcn(
+                common + " --tstop %g" % (float(tend),) + outpath + restore + checkpoint
+            )
+
+        # compare spikes
+        cmp_spks(
+            spikes_std, "coredat", ["coredat/chkpnt%d" % (i,) for i in range(1, 3)]
+        )
 
 
 def test_checkpoint():
@@ -257,7 +291,7 @@ def test_checkpoint():
     from neuron import coreneuron
 
     coreneuron.enable = True
-    for perm in [0, 1]:
+    for perm in coreneuron.valid_cell_permute():
         coreneuron.cell_permute = perm
         run(5)
         pc.psolve(10)
@@ -265,31 +299,21 @@ def test_checkpoint():
         assert spikes_std == spikes
     coreneuron.enable = False
 
-    # standard to compare with checkpoint series
-    tpnts = [5.0, 10.0]
-    for perm in [0, 1]:
-        print("\n\ncell_permute ", perm)
-        common = "-d coredat --voltage 1000 --verbose 0 --cell-permute %d" % (perm,)
-        # standard full run
-        runcn(common + " --tstop %g" % float(tpnts[-1]) + " -o coredat")
-        # sequence of checkpoints
-        for i, tpnt in enumerate(tpnts):
-            tend = tpnt
-            restore = " --restore coredat/chkpnt%d" % (i,) if i > 0 else ""
-            checkpoint = " --checkpoint coredat/chkpnt%d" % (i + 1,)
-            outpath = " -o coredat/chkpnt%d" % (i + 1,)
-            runcn(
-                common + " --tstop %g" % (float(tend),) + outpath + restore + checkpoint
-            )
-
-        # compare spikes
-        cmp_spks(
-            spikes_std, "coredat", ["coredat/chkpnt%d" % (i,) for i in range(1, 3)]
-        )
-
+    # Delete model before launching the CoreNEURON simulation offline
     m._callback_setup = None
     pc.gid_clear()
     del m
+
+    # Shrink memory pools of mechanisms
+    h.CVode().poolshrink(1)
+    # Free event queues
+    h.CVode().free_event_queues()
+    # After clearing the above data structures it's not possible to proceed with the NEURON
+    # simulation again or edit the Model
+
+    # Execute CoreNEURON checkpoint-restore simulation in offline mode using the `coredat` dumped
+    # to disk above
+    run_coreneuron_offline_checkpoint_restore(spikes_std)
 
 
 def cmp_spks(spikes, dir, chkpntdirs):

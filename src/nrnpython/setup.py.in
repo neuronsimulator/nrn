@@ -1,5 +1,5 @@
 #setup.py
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 from sysconfig import get_python_version
 
 import sys
@@ -26,6 +26,7 @@ nrnpython_pyver = "@NRNPYTHON_PYVER@"
 nrnpython_pyver10 = "nrnpython"
 use_libnrnpython_majorminor = @USE_LIBNRNPYTHON_MAJORMINOR@
 nrn_srcdir = get_escaped_path("@NRN_SRCDIR@")
+nrn_builddir = get_escaped_path("@NRN_BUILDDIR@")
 build_rx3d = @BUILD_RX3D@
 ivlibdir = get_escaped_path("@IV_LIBDIR@")
 if ivlibdir == "" :
@@ -82,26 +83,6 @@ if using_pgi:
   os.environ["LDSHARED"] = os.environ['CC'] + " -shared"
   os.environ["LDCXXSHARED"] = os.environ["CXX"] + " -shared"
 
-# apparently we do not need the following
-#################################
-## following http://code.google.com/p/maroonmpi/wiki/Installation
-## hack into distutils to replace the compiler in "linker_so" with mpicxx_bin
-#
-#import distutils
-#import distutils.unixccompiler
-#
-#class MPI_UnixCCompiler(distutils.unixccompiler.UnixCCompiler):
-#    __set_executable = distutils.unixccompiler.UnixCCompiler.set_executable
-#
-#    def set_executable(self,key,value):
-#	print "MPI_UnixCCompiler ", key, " | ", value
-#        if key == 'linker_so' and type(value) == str:
-#            value = mpicxx_bin + ' ' + ' '.join(value.split()[1:])
-#
-#        return self.__set_executable(key,value)
-#    
-#distutils.unixccompiler.UnixCCompiler = MPI_UnixCCompiler
-#################################
 
 #include_dirs for hoc module
 include_dirs = [nrn_srcdir+'/src/nrnpython', nrn_srcdir+'/src/oc', '../oc', nrn_srcdir+'/src/nrnmpi']
@@ -162,12 +143,6 @@ hoc_module = Extension(
     define_macros=defines
     )
 
-# specify that the data_files paths are relative to same place as python files
-# from http://stackoverflow.com/questions/1612733/including-non-python-files-with-setup-py
-from distutils.command.install import INSTALL_SCHEMES
-for scheme in list(INSTALL_SCHEMES.values()):
-    scheme['data'] = scheme['purelib']
-
 ext_modules = [hoc_module]
 
 # The rx3d extensions are built using the setup.py.in in
@@ -215,7 +190,7 @@ if build_rx3d:
   except:
     pass
 
-packages=['neuron','neuron.neuroml','neuron.tests', 'neuron.rxd', 'neuron.crxd', 'neuron.gui2']
+packages=['neuron','neuron.neuroml','neuron.tests', 'neuron.tests.utils', 'neuron.rxd', 'neuron.crxd', 'neuron.gui2']
 if build_rx3d:
   packages +=['neuron.rxd.geometry3d']
 
@@ -223,7 +198,7 @@ setup(name="NEURON", version="@PACKAGE_VERSION@",
       description = "NEURON bindings for python",
       package_dir = {'':instdir+('/lib/python' if 'win32' in sys.platform else '/share/nrn/lib/python')},
       packages=packages,
-      data_files = [('neuron', [nrn_srcdir + '/share/lib/python/neuron/help_data.dat'])],
+      data_files = [('neuron', [nrn_builddir + '/lib/python/neuron/help_data.dat'])],
       ext_modules=ext_modules
 )
 

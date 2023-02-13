@@ -354,7 +354,7 @@ function(nrn_add_test)
     # We want to preserve directory structures, so if you pass SCRIPT_PATTERNS path/to/*.py then you
     # end up with {build_directory}/path/to/test_working_directory/path/to/script.py
     file(
-      GLOB_RECURSE script_files
+      GLOB script_files
       RELATIVE "${test_source_directory}/${sim_directory}"
       "${test_source_directory}/${sim_directory}/${script_pattern}")
     foreach(script_file ${script_files})
@@ -387,13 +387,15 @@ function(nrn_add_test)
     # Did we run nrnivmodl specifically for this test, or does it just use default mechanisms?
     if(DEFINED nrnivmodl_directory)
       set(build_prefix "${nrnivmodl_directory}")
+      set(mech_lib_name "corenrnmech")
     else()
       set(build_prefix "${CMAKE_BINARY_DIR}/bin")
+      set(mech_lib_name "corenrnmech_internal")
     endif()
     list(
       APPEND
       test_env
-      "CORENEURONLIB=${build_prefix}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}corenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
+      "CORENEURONLIB=${build_prefix}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}${mech_lib_name}${CMAKE_SHARED_LIBRARY_SUFFIX}"
     )
   endif()
   # Get [VAR1, VAR2, ...] from [VAR1=VAL1, VAR2=VAL2, ...]
@@ -407,6 +409,8 @@ function(nrn_add_test)
     list(TRANSFORM test_env REPLACE "^PATH="
                                     "PATH=${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:")
   endif()
+  list(TRANSFORM test_env REPLACE "^PYTHONPATH="
+                                  "PYTHONPATH=${CMAKE_SOURCE_DIR}/docs/nmodl/python_scripts:")
   # Get the list of variables being set
   set(extra_env_var_names ${extra_environment})
   list(TRANSFORM extra_env_var_names REPLACE "^([^=]+)=.*$" "\\1")

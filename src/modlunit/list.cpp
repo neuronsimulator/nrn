@@ -62,9 +62,9 @@ void freelist(List** plist) /*free the list but not the elements*/
     }
     for (i1 = (*plist)->next; i1 != *plist; i1 = i2) {
         i2 = i1->next;
-        Free(i1);
+        free(i1);
     }
-    Free(*plist);
+    free(*plist);
     *plist = (List*) 0;
 }
 
@@ -151,7 +151,7 @@ void remove(Item* item) {
     assert(item->itemtype); /* can't delete list */
     item->next->prev = item->prev;
     item->prev->next = item->next;
-    Free(item);
+    free(item);
 }
 
 static long mallocsize = 0;
@@ -180,7 +180,7 @@ char* stralloc(const char* buf, char* rel) {
     s = (char*) emalloc((unsigned) (strlen(buf) + 1));
     Strcpy(s, buf);
     if (rel) {
-        Free(rel);
+        free(rel);
     }
     return s;
 }

@@ -23,6 +23,8 @@ except:
 
 def run(cmd):
     result = subprocess.run(cmd, shell=True, env=my_env, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(result.stderr)
     result.check_returncode()
     return result
 
@@ -64,8 +66,10 @@ def chkresult(r, std):
     assert rlines == stdlines
 
 
-result = run("mpirun -np 2 music test2.music")
+# retrieve mpiexec from environment (ctest), otherwise use musicrun
+mpiexec = os.getenv("MPIEXEC_COMMAND", "musicrun 2")
+result = run("{} test2.music".format(mpiexec))
 chkresult(result, out2)
 
-result = run("mpirun -np 2 music test3.music")
+result = run("{} test3.music".format(mpiexec))
 chkresult(result, out3)

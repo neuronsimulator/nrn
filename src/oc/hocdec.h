@@ -7,6 +7,7 @@
 #include "nrnapi.h"
 #include "hocassrt.h" /* hoc_execerror instead of abort */
 #include "nrnassrt.h" /* assert in case of side effects (eg. scanf) */
+#include "wrap_sprintf.h"
 
 #include <iostream>
 #include <cstdint>
@@ -257,8 +258,7 @@ struct HocParmUnits { /* units for symbol values */
 
 #include "oc_ansi.h"
 
-// Used in sparse.c so needs C linkage.
-extern "C" void* emalloc(size_t n);
+void* emalloc(size_t n);
 void* ecalloc(size_t n, size_t size);
 void* erealloc(void* ptr, size_t n);
 
@@ -304,7 +304,6 @@ int ilint;
 #define Strncat cplint = strncat
 #define Strcpy  cplint = strcpy
 #define Strncpy cplint = strncpy
-#define Sprintf cplint = sprintf
 #define Printf  ilint = printf
 #else
 #undef IGNORE
@@ -314,9 +313,9 @@ int ilint;
 #define Strncat strncat
 #define Strcpy  strcpy
 #define Strncpy strncpy
-#define Sprintf sprintf
 #define Printf  nrnpy_pr
 #endif
+using neuron::Sprintf;
 
 #define ERRCHK(c1) c1
 

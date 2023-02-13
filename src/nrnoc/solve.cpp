@@ -310,7 +310,7 @@ static void dashes(Section* sec, int offset, int first) {
     Section* ch;
     char direc[30];
     i = (int) nrn_section_orientation(sec);
-    sprintf(direc, "(%d-%d)", i, 1 - i);
+    Sprintf(direc, "(%d-%d)", i, 1 - i);
     for (i = 0; i < offset; i++)
         Printf(" ");
     Printf("%c", first);

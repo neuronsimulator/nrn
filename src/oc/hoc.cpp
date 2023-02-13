@@ -679,10 +679,16 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
 
     hoc_intset = 0;
     hoc_oop_initaftererror();
-    throw std::runtime_error("hoc_execerror");
+    std::string message{"hoc_execerror: "};
+    message.append(s);
+    if (t) {
+        message.append(1, ' ');
+        message.append(t);
+    }
+    throw neuron::oc::runtime_error(std::move(message));
 }
 
-extern "C" void hoc_execerror(const char* s, const char* t) /* recover from run-time error */
+void hoc_execerror(const char* s, const char* t) /* recover from run-time error */
 {
     hoc_execerror_mes(s, t, hoc_execerror_messages);
 }
@@ -959,11 +965,17 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
             ++gargv;
             --gargc;
         }
+        // If we pass multiple HOC files to special then this loop runs once for each one of them
         while (hoc_moreinput()) {
             exit_status = hoc_run1();
+            if (exit_status) {
+                // Abort if one of the HOC files we're processing gives an error
+                break;
+            }
         }
         return exit_status;
-    } catch (...) {
+    } catch (std::exception const& e) {
+        std::cerr << "hoc_main1 caught exception: " << e.what() << std::endl;
         nrn_exit(1);
     }
 }
@@ -1015,14 +1027,10 @@ void hoc_final_exit(void) {
 #ifdef WIN32
     hoc_win32_cleanup();
 #else
-    buf = static_cast<char*>(malloc(strlen(neuron_home) + 30));
-    if (buf) {
-        sprintf(buf, "%s/lib/cleanup %d", neuron_home, hoc_pid());
-        if (system(buf)) {
-            ;
-        } /* ignore return value */
-        free(buf);
-    }                    /* else did not call cleanup */
+    std::string cmd{neuron_home};
+    cmd += "/lib/cleanup ";
+    cmd += std::to_string(hoc_pid());
+    system(cmd.c_str());
 #endif
 }
 
@@ -1162,7 +1170,7 @@ int hoc_moreinput() {
         infile = double_at2space(infile);
 #endif
         hs = hocstr_create(strlen(infile) + 2);
-        sprintf(hs->buf, "%s\n", infile);
+        std::snprintf(hs->buf, hs->size + 1, "%s\n", infile);
         /* now infile is a hoc statement */
         hpfi = hoc_print_first_instance;
         fin = (NrnFILEWrap*) 0;
@@ -1287,7 +1295,12 @@ static int hoc_run1() {
                 }
             } catch (std::exception const& e) {
                 hoc_fin = sav_fin;
-                std::cerr << "hoc_run1: caught exception: " << e.what() << std::endl;
+                std::cerr << "hoc_run1: caught exception";
+                std::string_view what{e.what()};
+                if (!what.empty()) {
+                    std::cerr << ": " << what;
+                }
+                std::cerr << std::endl;
                 // Exit if we're not in interactive mode
                 if (!nrn_fw_eq(hoc_fin, stdin)) {
                     return EXIT_FAILURE;
@@ -1361,6 +1374,10 @@ void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
 }
 
 int hoc_oc(const char* buf) {
+    return hoc_oc(buf, std::cerr);
+}
+
+int hoc_oc(const char* buf, std::ostream& os) {
     // the substantive code to execute, everything else is to do with handling
     // errors here or elsewhere
     auto const kernel = [buf]() {
@@ -1387,7 +1404,7 @@ int hoc_oc(const char* buf) {
             signal_handler_guard _{};
             kernel();
         } catch (std::exception const& e) {
-            std::cerr << "hoc_oc caught exception: " << e.what() << std::endl;
+            os << "hoc_oc caught exception: " << e.what() << std::endl;
             hoc_initcode();
             hoc_intset = 0;
             return 1;
@@ -1403,7 +1420,7 @@ void warning(const char* s, const char* t) /* print warning message */
     char id[10];
     int n;
     if (nrnmpi_numprocs_world > 1) {
-        sprintf(id, "%d ", nrnmpi_myid_world);
+        Sprintf(id, "%d ", nrnmpi_myid_world);
     } else {
         id[0] = '\0';
     }

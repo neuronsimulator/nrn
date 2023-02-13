@@ -4,8 +4,15 @@
 set(HEADER_FILES_TO_INSTALL
     bbsavestate.h
     cabvars.h
+    crout.hpp
+    crout_thread.hpp
     cspmatrix.h
     cspredef.h
+    deflate.hpp
+    dimplic.hpp
+    errcodes.hpp
+    euler.hpp
+    euler_thread.hpp
     hoc.h
     hoc_membf.h
     hocassrt.h
@@ -13,7 +20,6 @@ set(HEADER_FILES_TO_INSTALL
     hocgetsym.h
     hoclist.h
     hocparse.h
-    ivstream.h
     mcran4.h
     md1redef.h
     md2redef.h
@@ -23,7 +29,9 @@ set(HEADER_FILES_TO_INSTALL
     multicore.h
     multisplit.h
     neuron.h
+    newton.hpp
     newton_struct.h
+    newton_thread.hpp
     nmodlmutex.h
     nrn_ansi.h
     nrnapi.h
@@ -43,11 +51,18 @@ set(HEADER_FILES_TO_INSTALL
     ocmisc.h
     options.h
     parse_with_deps.hpp
+    runge.hpp
     scoplib.h
     section.h
+    simeq.hpp
+    sparse.hpp
+    sparse_thread.hpp
     spconfig.h
     spmatrix.h
-    treeset.h)
+    ssimplic.hpp
+    ssimplic_thread.hpp
+    treeset.h
+    wrap_sprintf.h)
 
 # =============================================================================
 # Lists of headers populated using check_include_files
@@ -113,7 +128,6 @@ set(NRNOC_FILE_LIST
     nrnnemo.cpp
     nrntimeout.cpp
     nrnversion.cpp
-    nrnversion.h
     passive0.cpp
     point.cpp
     psection.cpp
@@ -123,6 +137,8 @@ set(NRNOC_FILE_LIST
     synapse.cpp
     treeset.cpp
     multicore.cpp)
+
+set(NRNOC_GENERATED_FILE_LIST nrnversion.h)
 
 # =============================================================================
 # Files in ivoc directory
@@ -381,58 +397,42 @@ set(SPARSE13_FILES_LIST
 
 # scopmath sources
 set(SCOPMATH_FILES_LIST
-    abort.c
-    advance.c
-    boundary.c
-    crank.c
-    crout.c
-    deflate.c
-    dimplic.c
-    scoperf.c
-    euler.c
-    expfit.c
-    exprand.c
-    f2cmisc.c
-    factoria.c
-    force.c
-    gauss.c
-    getmem.c
-    harmonic.c
-    hyperbol.c
-    invert.c
-    lag.c
-    legendre.c
-    newton.c
-    normrand.c
-    perpulse.c
-    perstep.c
-    poisrand.c
-    poisson.c
-    praxis.c
-    pulse.c
-    quad.c
-    ramp.c
-    revhyper.c
-    revsawto.c
-    revsigmo.c
-    romberg.c
-    runge.c
-    sawtooth.c
-    schedule.c
-    sigmoid.c
-    simeq.c
-    sparse.c
-    vsparse.c
-    spline.c
-    squarewa.c
-    ssimplic.c
-    step.c
-    threshol.c
-    tridiag.c
-    sparse_thread.c
-    newton_thread.c
-    crout_thread.c
-    ssimplic_thread.c)
+    abort.cpp
+    advance.cpp
+    boundary.cpp
+    crank.cpp
+    scoperf.cpp
+    expfit.cpp
+    exprand.cpp
+    f2cmisc.cpp
+    factoria.cpp
+    force.cpp
+    gauss.cpp
+    getmem.cpp
+    harmonic.cpp
+    hyperbol.cpp
+    invert.cpp
+    lag.cpp
+    legendre.cpp
+    normrand.cpp
+    perpulse.cpp
+    perstep.cpp
+    poisrand.cpp
+    poisson.cpp
+    praxis.cpp
+    pulse.cpp
+    ramp.cpp
+    revhyper.cpp
+    revsawto.cpp
+    revsigmo.cpp
+    romberg.cpp
+    sawtooth.cpp
+    sigmoid.cpp
+    spline.cpp
+    squarewa.cpp
+    step.cpp
+    threshol.cpp
+    tridiag.cpp)
 
 set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
 
@@ -471,22 +471,22 @@ set(NRNPYTHON_FILES_LIST
 # built-in mod files
 set(MODFILE_BASE_NAMES
     apcount
-    feature
-    intfire2
-    oclmp
-    ppmark
-    syn
     exp2syn
-    hh
-    intfire4
-    passive
-    stim
-    vclmp
     expsyn
+    feature
+    hh
     intfire1
+    intfire2
+    intfire4
     netstim
+    oclmp
+    passive
     pattern
-    svclmp)
+    ppmark
+    stim
+    svclmp
+    syn
+    vclmp)
 
 set(MODLUNIT_FILES_LIST
     consist.cpp
@@ -533,6 +533,7 @@ set(NRN_MUSIC_FILES_LIST nrnmusic.cpp)
 # =============================================================================
 set(NRN_OC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/oc)
 set(NRN_NRNOC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrnoc)
+set(NRN_NRNOC_BUILD_DIR ${PROJECT_BINARY_DIR}/src/nrnoc)
 set(NRN_IVOC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivoc)
 set(NRN_NRNCVODE_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrncvode)
 set(NRN_NRNIV_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrniv)
@@ -546,6 +547,7 @@ set(NRN_MUSIC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/neuronmusic)
 # =============================================================================
 nrn_create_file_list(NRN_OC_SRC_FILES ${NRN_OC_SRC_DIR} ${OC_FILE_LIST})
 nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_SRC_DIR} ${NRNOC_FILE_LIST})
+nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_BUILD_DIR} ${NRNOC_GENERATED_FILE_LIST})
 nrn_create_file_list(NRN_IVOC_SRC_FILES ${NRN_IVOC_SRC_DIR} ${IVOC_FILE_LIST})
 nrn_create_file_list(NRN_NRNCVODE_SRC_FILES ${NRN_NRNCVODE_SRC_DIR} ${NRNCVODE_FILE_LIST})
 nrn_create_file_list(NRN_NRNIV_SRC_FILES ${NRN_NRNIV_SRC_DIR} ${NRNIV_FILE_LIST})
@@ -563,7 +565,7 @@ nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRN
 nrn_create_file_list(NRN_NRNGNU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/gnu ${NRNGNU_FILES_LIST})
 nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
                      ${NRNPYTHON_FILES_LIST})
-nrn_create_file_list(NRN_MODFILE_BASE_NAMES ${PROJECT_SOURCE_DIR}/src/nrnoc ${MODFILE_BASE_NAMES})
+nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.cpp)
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
 nrn_create_file_list(NRN_MODLUNIT_SRC_FILES ${NRN_MODLUNIT_SRC_DIR} ${MODLUNIT_FILES_LIST})

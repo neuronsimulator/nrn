@@ -188,7 +188,7 @@ void nrn_prcellstate(int gid, const char* suffix) {
     }
     // found it so create a <gid>_<suffix>.nrn file
     char buf[200];
-    sprintf(buf, "%d_%s.nrndat", gid, suffix);
+    Sprintf(buf, "%d_%s.nrndat", gid, suffix);
     FILE* f = fopen(buf, "w");
     assert(f);
     NrnThread& nt = *ps->nt_;

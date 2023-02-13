@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include <InterViews/resource.h>
 #include "tqueue.h"
 #include "pool.h"
 
@@ -105,7 +104,6 @@ void TQueue_reg() {
 
 //----------------
 
-implementPool(TQItemPool, TQItem)
 #if BBTQ == 0
 #include <bbtqueue.cpp>
 #endif

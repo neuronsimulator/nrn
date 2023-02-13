@@ -34,8 +34,6 @@ stages:
         vmImage: 'ubuntu-20.04'
       strategy:
         matrix:
-          Python37:
-            python.version: '3.7'
           Python38:
             python.version: '3.8'
           Python39:
@@ -89,8 +87,6 @@ stages:
         GPU_BUILD: 'true'
       strategy:
         matrix:
-          Python37:
-            python.version: '3.7'
           Python38:
             python.version: '3.8'
           Python39:
@@ -142,10 +138,6 @@ stages:
         vmImage: 'macOS-11'
       strategy:
         matrix:
-          Python37:
-            python.version: '3.7'
-            python.org.version: '3.7.9'
-            python.installer.name: 'macosx10.9.pkg'
           Python38:
             python.version: '3.8'
             python.org.version: '3.8.10'
@@ -160,7 +152,7 @@ stages:
             python.installer.name: 'macos11.pkg'
           Python311:
             python.version: '3.11'
-            python.org.version: '3.11.0'
+            python.org.version: '3.11.1'
             python.installer.name: 'macos11.pkg'
 
       steps:
@@ -258,6 +250,7 @@ stages:
             displayName: 'Resolve Azure drop URL'
               
           - task: GitHubComment@0
+            continueOnError: true
             inputs:
               gitHubConnection: 'neuronsimulator'
               repositoryName: '$(Build.Repository.Name)'

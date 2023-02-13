@@ -117,9 +117,9 @@ static struct HocInst {
                  {hoc_sub, 0},
                  {mul, 0},
                  {hoc_div, 0},
-                 {negate, 0},
+                 {hoc_negate, nullptr},
                  {power, 0},
-                 {assign, 0},
+                 {hoc_assign, nullptr},
                  {bltin, "s"},    // requires change
                  {varpush, "s"},  // 10
                  {constpush, "s"},
@@ -129,8 +129,8 @@ static struct HocInst {
                  {prexpr, 0},
                  {prstr, 0},
                  {gt, 0},
-                 {lt, 0},
-                 {eq, 0},  // 20
+                 {hoc_lt, nullptr},
+                 {hoc_eq, nullptr},  // 20
                  {ge, 0},
                  {le, 0},
                  {ne, 0},
@@ -141,7 +141,7 @@ static struct HocInst {
                  {forcode, "iii"},
                  {shortfor, "ii"},
                  {call, "si"},  // 30
-                 {arg, "i"},
+                 {hoc_arg, "i"},
                  {argassign, "i"},
                  {funcret, 0},
                  {procret, 0},

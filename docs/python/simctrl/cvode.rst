@@ -233,6 +233,47 @@ CVode
 
 
 
+.. method:: CVode.free_event_queues
+
+
+    Syntax:
+        ``cvode.free_event_queues()``
+
+
+    Description:
+        This function takes cares of clearing and free all the event queues allocated in NEURON.
+        More specifically, it frees the `TQItemPool`, `SelfEventPool` and `SelfQueue` members of
+        the `NetCvodeThreadData`.
+        This method should be called only after the end of the NEURON simulation since calling it
+        will clear all the Event Queues and it should only be used for freeing up memory.
+
+----
+
+
+
+.. method:: CVode.poolshrink
+
+
+    Syntax:
+        ``cvode.poolshrink()``
+
+        ``cvode.poolshrink(1)``
+
+
+    Description:
+        This function is used to either print or free the `DoubleArrayPool` s and `DatumArrayPool` s
+        used by the mechanisms' data.
+        If the function is called with argument `1` it deletes the pools if the number of items used
+        is 0.
+        If the function is called without arguments or with argument `0` it prints current number of
+        items used and number of items allocated for double arrays and Datum arrays.
+        This method should be called only after the end of the NEURON simulation for freeing up
+        memory.
+
+----
+
+
+
 .. method:: CVode.rtol
 
 

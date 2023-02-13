@@ -3,7 +3,6 @@
 //#include <string.h>
 #include <cstdio>
 #include <cstdlib>
-#include <ivstream.h>
 #include <cmath>
 #include <cerrno>
 #include <numeric>
@@ -28,7 +27,6 @@
 
 #include <IV-look/kit.h>
 #else
-#include <InterViews/resource.h>
 #include <OS/list.h>
 #endif
 
@@ -352,7 +350,7 @@ extern char* neuron_home;
 void load_ocmatrix() {
     struct DLL* dll = NULL;
     char buf[256];
-    sprintf(buf, "%s\\lib\\ocmatrix.dll", neuron_home);
+    Sprintf(buf, "%s\\lib\\ocmatrix.dll", neuron_home);
     dll = dll_load(buf);
     if (dll) {
         Pfri mreg = (Pfri) dll_lookup(dll, "_Matrix_reg");

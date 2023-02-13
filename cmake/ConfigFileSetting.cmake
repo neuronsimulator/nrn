@@ -39,7 +39,6 @@ set(bindir \${exec_prefix}/bin)
 set(modsubdir ${host_cpu})
 set(bindir \${exec_prefix}/bin)
 set(libdir \${exec_prefix}/lib)
-set(BGPDMA ${NRNMPI})
 
 # =============================================================================
 # Comment or empty character to enable/disable cmake specific settings
@@ -211,7 +210,6 @@ nrn_check_symbol_exists("mkdir" "" HAVE_MKDIR)
 nrn_check_symbol_exists("mkstemp" "" HAVE_MKSTEMP)
 nrn_check_symbol_exists("namespaces" "" HAVE_NAMESPACES)
 nrn_check_symbol_exists("posix_memalign" "" HAVE_POSIX_MEMALIGN)
-nrn_check_symbol_exists("putenv" "" HAVE_PUTENV)
 nrn_check_symbol_exists("realpath" "" HAVE_REALPATH)
 nrn_check_symbol_exists("select" "" HAVE_SELECT)
 nrn_check_symbol_exists("setenv" "" HAVE_SETENV)
@@ -273,7 +271,6 @@ nrn_configure_file(nrnpython_config.h src/nrnpython)
 nrn_configure_file(bbsconf.h src/parallel)
 nrn_configure_file(nrnneosm.h src/nrncvode)
 nrn_configure_file(sundials_config.h src/sundials)
-nrn_configure_file(mos2nrn.h src/uxnrnbbs)
 nrn_configure_dest_src(nrnunits.lib share/nrn/lib nrnunits.lib share/lib)
 nrn_configure_dest_src(nrn.defaults share/nrn/lib nrn.defaults share/lib)
 # NRN_DYNAMIC_UNITS requires nrnunits.lib.in be in same places as nrnunits.lib

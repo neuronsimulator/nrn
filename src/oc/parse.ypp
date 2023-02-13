@@ -176,7 +176,7 @@ goto yynewstate;
 asgn:	varname ROP expr
 		{Symbol *s; TPD; s = spop();
 		hoc_obvar_declare(s, VAR, 1);
-		code3(varpush, s, assign); codei($2); PN;}
+		code3(varpush, s, hoc_assign); codei($2); PN;}
 	| ARG ROP expr
 		{  TPD; defnonly("$"); argcode(argassign, $1); codei($2); $$=$3; PN;}
 	| ARGREF argrefdim ROP expr
@@ -659,7 +659,7 @@ expr:	NUMBER
 	| varname
 		{ code3(varpush, spop(), eval); PN;}
 	| ARG
-		{ defnonly("$"); $$ = argcode(arg, $1); PN;}
+		{ defnonly("$"); $$ = argcode(hoc_arg, $1); PN;}
 	| ARGREF argrefdim
 		{ defnonly("$&"); $$ = argrefcode(hoc_argref, $1, $2); PN;}
 /* NEWCABLE */
@@ -698,17 +698,17 @@ expr:	NUMBER
 	| expr '^' expr
 		{ TPD; TPD; code(power); PN;}
 	| '-' expr %prec UNARYMINUS
-		{ TPD; $$ = $2; code(negate); PN;}
+		{ TPD; $$ = $2; code(hoc_negate); PN;}
 	| expr GT expr
 		{ TPD; TPD; code(gt); PN;}
 	| expr GE expr
 		{ TPD; TPD; code(ge); PN;}
 	| expr LT expr
-		{ TPD; TPD; code(lt); PN;}
+		{ TPD; TPD; code(hoc_lt); PN;}
 	| expr LE expr
 		{ TPD; TPD; code(le); PN;}
 	| expr EQ expr
-		{ hoc_ob_check(-1); hoc_ob_check(-1); code(eq); PN;}
+		{ hoc_ob_check(-1); hoc_ob_check(-1); code(hoc_eq); PN;}
 	| expr NE expr
 		{ hoc_ob_check(-1); hoc_ob_check(-1); code(ne); PN;}
 	| expr AND expr

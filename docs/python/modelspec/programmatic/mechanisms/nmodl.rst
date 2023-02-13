@@ -401,8 +401,23 @@ CONSTANT
 
 
 Description:
-    These are variables that cannot be changed during the simulation. Better to use ``UNITS`` to
-    define those variables.
+    As the name suggests, this block represents variables with constant values.
+    Unlike other variables (e.g. PARAMETER or ASSIGNED), these variables can
+    not be set or accessed via Python/HOC interface. Also, they can have only
+    one value across for all instances of a given mechanism.
+
+    .. code-block::
+        none
+
+        CONSTANT {
+            e0 = 1.6021e-19 (coulombs)
+            q10 = 2.70
+        }
+
+The current implementation allows changing the value of a constant variable in
+other blocks (e.g. in like PROCEDURE, INITIAL) but such usage is discouraged. One
+can use other variable types like GLOBAL, PARAMETER or UNITS to achieve the same
+purpose.
 
 
 LOCAL
@@ -410,8 +425,19 @@ LOCAL
 
 
 Description:
-    These are equivalent to C static variables ie shared 
-    between all instances of a given mechanism. 
+    These variables are defined within a local scope of a block or MOD file. A user
+    can only access a local variable inside the function or MOD file but never from
+    outside using HOC/Python API.
+
+    .. code-block::
+        none
+
+        FUNCTION oca_ss(v(mV)) {
+            LOCAL a, b
+            a = 1(1/ms)*efun(.1(1/mV)*(25-v))
+            b = 4(1/ms)*exp(-v/18(mV))
+            oca_ss = a/(a + b)
+        }
 
 
 INDEPENDENT
@@ -638,14 +664,32 @@ CONSTRUCTOR
 """""""""""
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    .. code-block::
+
+        CONSTRUCTOR {
+            : ...
+        }
+
+    This block is executed at the beginning and before the INITIAL block when the simulator allocates the memory
+    for a given mechanism. As this block is executed only once, it is typically used for memory allocation and
+    initialization of custom data structures (e.g. file I/O with VERBATIM blocks). You can find examples on
+    ModelDB models like  `ModelDBRepository/136095 <https://github.com/ModelDBRepository/136095/blob/7886f6a53e92d0202ee666239bcad0786f06a5f7/clampex.mod>`_.
 
 
 DESTRUCTOR
 """"""""""
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    .. code-block::
+
+        DESTRUCTOR {
+            : ...
+        }
+
+    This block is executed at the end of execution when simulator cleanups all mechanisms. Similar to CONSTRUCTOR,
+    this block is executed only once and is typically used to finalize and deallocate custom data structures that
+    are allocated in CONSTRUCTOR block. You can find examples on ModelDB models like
+    `ModelDBRepository/136095 <https://github.com/ModelDBRepository/136095/blob/7886f6a53e92d0202ee666239bcad0786f06a5f7/clampex.mod>`_.
 
 
 LINEAR
@@ -933,42 +977,82 @@ FUNCTION_TABLE
 
 Description:
     This keyword defines function tables whose values are given by vectors prior to the simulation.
-    For example let's say we have the following declaration in a ΝMODΛ file:
+    For example let's say we have the following declaration in a ΝMODL file:
 
-    .. code-block::
-        none
+    .. code-block:: none
 
         FUNCTION_TABLE tau1(v(mV)) (ms)
 
     This means that there is a function `tau1` that takes as argument a variable `v` (voltage). Its
     values can be then passed from HOC/Python using the following call:
 
-    .. code-block::
-        none
+    .. code-block:: none
 
         table_tau1_<MOD_SUFFIX>(tau1_vec, v_vec)
 
-    Then whenever tau1(x) is called in the NMODL file, or tau1_k3st(x) is called from hoc, the
+    Here is a FUNCTION_TABLE defined with:
+
+    .. code-block:: python
+
+        voltage = [0.1, 0.2, 0.3, 0.4, 0.5]
+        temperature = [10, 17, 35, 45, 68]
+        table_tau1_k3st(temperature, voltage)
+
+        temp = tau1_k3st(0.32)
+        # Print "Temperature for voltage 0.32 is 37"
+        print("Temperature for voltage ", 0.32, " is ", temp)
+
+    .. image:: ../../../images/function_table_vT.png
+        :align: center
+
+    Then whenever tau1(x) is called in the NMODL file, or tau1_k3st(x) is called from python, the
     interpolated value of the array is returned.
     A useful feature of FUNCTION_TABLEs is that prior to developing the Vector database, they can
     be attached to a scalar value as in
 
-    .. code-block::
-        none
+    .. code-block:: none
 
         table_tau1_<MOD_SUFFIX>(100)
 
-    effectively becoming constant functions. Also FUNCTION_TABLEs can be declared with two
-    arguments and doubly dimensioned hoc arrays attached to them. The latter is useful, for example,
-    with voltage- and calcium-sensitive rates. In this case the table is linearly interpolated in
-    both dimensions.
+    effectively becoming constant functions.
 
+    FUNCTION_TABLEs can too be declared with two or more arguments and n-ly dimensioned python
+    arrays attached to them. The latter is useful, for example, with voltage- and calcium-sensitive
+    rates.
+    If n is 2, table will be linearly interpolated otherwise a floor rounding will happened.
 
-SWEEP
-~~~~~
+    There is two way to define arguments values. Firstly, with a size, a minimum and a maximum, this
+    way the interval will be split by the size.
+    Secondly, with a size and a 1-D array.
 
-Description:
-    ``TODO``: Add description and new example mod file
+    Here is an example with two arguments. The first one 'v', is defined with min and max, the second
+    one 'k' is defined with an array.
+
+    The first argument is a 2-D continuous array.
+
+    .. code-block:: none
+
+        FUNCTION_TABLE tau2(v, k)
+
+    .. code-block:: python
+
+        T_value = [70, 90, 90, 90, 20,
+                   60, 80, 50, 60, 55,
+                   40, 70, 75, 70, 40,
+                   20, 50, 60, 50, 20,
+                   90, 80, 70, 80, 90,
+                   100, 80, 70, 80, 100]
+        v_min = 1
+        v_max = 5
+        v_size = 5
+        k = [1, 5, 10, 50, 75, 100]
+        k_size = 6
+        table_tau2_<MOD_SUFFIX>(T_value, v_size, v_min, v_max, k_size, k)
+
+        tau2_<MOD_SUFFIX>(2.5, 30) # This is 63,75
+
+    .. image:: ../../../images/function_table_vkT.png
+        :align: center
 
 
 CONDUCTANCE

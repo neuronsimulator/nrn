@@ -24,6 +24,7 @@
 
 #include <vector>
 #include <variant>
+#include <sstream>
 
 
 int bbs_poll_;
@@ -90,8 +91,7 @@ struct frame {             /* proc/func call stack frame */
 };
 }  // namespace nrn::oc
 using Frame = nrn::oc::frame;
-#define NFRAME 512 /* default size */
-#define nframe hoc_nframe
+#define NFRAME 512                    /* default size */
 static Frame *frame, *fp, *framelast; /* first, frame pointer, last */
 
 /* temporary object references come from this pool. This allows the
@@ -419,8 +419,8 @@ static void stack_obtmp_recover_on_err(int tcnt) {
 
 // create space for stack and code
 void hoc_init_space() {
-    if (nframe == 0) {
-        nframe = NFRAME;
+    if (hoc_nframe == 0) {
+        hoc_nframe = NFRAME;
     }
     if (hoc_nstack == 0) {
         // Default stack size
@@ -428,8 +428,8 @@ void hoc_init_space() {
     }
     stack.reserve(hoc_nstack);
     progp = progbase = prog = (Inst*) emalloc(sizeof(Inst) * NPROG);
-    fp = frame = (Frame*) emalloc(sizeof(Frame) * nframe);
-    framelast = frame + nframe;
+    fp = frame = (Frame*) emalloc(sizeof(Frame) * hoc_nframe);
+    framelast = frame + hoc_nframe;
     hoc_temp_obj_pool_ = (Object**) emalloc(sizeof(Object*) * TOBJ_POOL_SIZE);
 }
 
@@ -876,6 +876,10 @@ int hoc_is_object_arg(int narg) {
     return (type == OBJECTVAR || type == OBJECTTMP);
 }
 
+int hoc_is_tempobj_arg(int narg) {
+    return (hoc_argtype(narg) == OBJECTTMP);
+}
+
 Object* hoc_obj_look_inside_stack(int i) { /* stack pointer at depth i; i=0 is top */
     auto const& entry = get_stack_entry_variant(i);
     return std::visit(
@@ -1011,7 +1015,7 @@ static void warn_assign_dynam_unit(const char* name) {
     if (first) {
         char mes[100];
         first = 0;
-        sprintf(mes,
+        Sprintf(mes,
                 "Assignment to %s physical constant %s",
                 _nrnunit_use_legacy_ ? "legacy" : "modern",
                 name);
@@ -1331,7 +1335,7 @@ void frame_debug() {
     char id[10];
 
     if (nrnmpi_numprocs_world > 1) {
-        sprintf(id, "%d ", nrnmpi_myid_world);
+        Sprintf(id, "%d ", nrnmpi_myid_world);
     } else {
         id[0] = '\0';
     }
@@ -1651,14 +1655,13 @@ int hoc_argindex(void) {
     return j;
 }
 
-void arg(void) /* push argument onto stack */
-{
-    int i;
-    i = (pc++)->i;
+// push argument onto stack
+void hoc_arg() {
+    int i = (pc++)->i;
     if (i == 0) {
         i = hoc_argindex();
     }
-    hoc_pushx(*getarg(i));
+    hoc_pushx(*hoc_getarg(i));
 }
 
 void hoc_stringarg(void) /* push string arg onto stack */
@@ -2051,10 +2054,9 @@ void hoc_cyclic(void) /* the modulus function */
     hoc_pushx(r);
 }
 
-void negate(void) /* negate top element on stack */
-{
-    double d;
-    d = hoc_xpop();
+// negate top element on stack
+void hoc_negate() {
+    double const d = hoc_xpop();
     hoc_pushx(-d);
 }
 
@@ -2066,7 +2068,7 @@ void gt(void) {
     hoc_pushx(d1);
 }
 
-void lt(void) {
+void hoc_lt() {
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
@@ -2424,17 +2426,17 @@ void prexpr() {
         s = hocstr_create(256);
     switch (hoc_stacktype()) {
     case NUMBER:
-        Sprintf(s->buf, "%.8g ", hoc_xpop());
+        std::snprintf(s->buf, s->size + 1, "%.8g ", hoc_xpop());
         break;
     case STRING:
         ss = *(hoc_strpop());
         hocstr_resize(s, strlen(ss) + 1);
-        Sprintf(s->buf, "%s ", ss);
+        std::snprintf(s->buf, s->size + 1, "%s ", ss);
         break;
     case OBJECTTMP:
     case OBJECTVAR:
         pob = hoc_objpop();
-        Sprintf(s->buf, "%s ", hoc_object_name(*pob));
+        std::snprintf(s->buf, s->size + 1, "%s ", hoc_object_name(*pob));
         hoc_tobj_unref(pob);
         break;
     default:
@@ -2451,7 +2453,7 @@ void prstr(void) /* print string value */
         s = hocstr_create(256);
     cpp = hoc_strpop();
     hocstr_resize(s, strlen(*cpp) + 10);
-    Sprintf(s->buf, "%s", *cpp);
+    std::snprintf(s->buf, s->size + 1, "%s", *cpp);
     plprint(s->buf);
 }
 

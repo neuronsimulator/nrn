@@ -208,10 +208,10 @@ PathValue* HocDataPathImpl::found_v(void* v, const char* buf, Symbol* sym) {
         char path[500];
         CopyString cs("");
         for (const auto& str: strlist_) {
-            sprintf(path, "%s%s.", cs.string(), str);
+            Sprintf(path, "%s%s.", cs.string(), str);
             cs = path;
         }
-        sprintf(path, "%s%s", cs.string(), buf);
+        Sprintf(path, "%s%s", cs.string(), buf);
         const auto& it = table_.find(v);
         if (it == table_.end()) {
             hoc_warning("table lookup failed for pointer for-", path);
@@ -277,7 +277,7 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                     }
                     for (i = 0; i < total; ++i) {
                         if (pd[i] == sentinal) {
-                            sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
+                            Sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                             cs = buf;
                             found(pd + i, cs.string(), sym);
                         }
@@ -286,7 +286,7 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                 case STRING: {
                     char** pstr = object_pstr(sym, od);
                     if (*pstr == NULL) {
-                        sprintf(buf, "%s", sym->name);
+                        Sprintf(buf, "%s", sym->name);
                         cs = buf;
                         found(pstr, cs.string(), sym);
                     }
@@ -303,7 +303,7 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                             if (!t->constructor) {
                                 // not the this pointer
                                 if (obp[i]->u.dataspace != od) {
-                                    sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
+                                    Sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                                     cs = buf;
                                     strlist_.push_back((char*) cs.string());
                                     obp[i]->recurse = 1;
@@ -314,7 +314,7 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                             } else {
                                 /* point processes */
                                 if (t->is_point_) {
-                                    sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
+                                    Sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                                     cs = buf;
                                     strlist_.push_back((char*) cs.string());
                                     search((Point_process*) obp[i]->u.this_pointer, sym);
@@ -329,7 +329,7 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                     for (i = 0; i < total; ++i) {
                         hoc_Item** pitm = object_psecitm(sym, od);
                         if (pitm[i]) {
-                            sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
+                            Sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                             cs = buf;
                             strlist_.push_back((char*) cs.string());
                             search(hocSEC(pitm[i]));
@@ -342,7 +342,7 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                     hoc_Item* q;
                     ITERATE(q, t->olist) {
                         Object* obj = OBJ(q);
-                        sprintf(buf, "%s[%d]", sym->name, obj->index);
+                        Sprintf(buf, "%s[%d]", sym->name, obj->index);
                         cs = buf;
                         strlist_.push_back((char*) cs.string());
                         if (!t->constructor) {
@@ -367,7 +367,7 @@ void HocDataPathImpl::search_vectors() {
     hoc_Item* q;
     ITERATE(q, t->olist) {
         Object* obj = OBJ(q);
-        sprintf(buf, "%s[%d]", sym_vec->name, obj->index);
+        Sprintf(buf, "%s[%d]", sym_vec->name, obj->index);
         cs = buf;
         strlist_.push_back((char*) cs.string());
         Vect* vec = (Vect*) obj->u.this_pointer;
@@ -375,7 +375,7 @@ void HocDataPathImpl::search_vectors() {
         double* pd = vector_vec(vec);
         for (size_t i = 0; i < size; ++i) {
             if (pd[i] == sentinal) {
-                sprintf(buf, "x[%zu]", i);
+                Sprintf(buf, "x[%zu]", i);
                 found(pd + i, buf, sym_vec);
             }
         }
@@ -421,7 +421,7 @@ void HocDataPathImpl::search(Node* nd, double x) {
     char buf[100];
     CopyString cs("");
     if (NODEV(nd) == sentinal) {
-        sprintf(buf, "v(%g)", x);
+        Sprintf(buf, "v(%g)", x);
         found(static_cast<double*>(&NODEV(nd)), buf, sym_v);
     }
 
@@ -431,9 +431,9 @@ void HocDataPathImpl::search(Node* nd, double x) {
         for (i = 0; i < nlayer; ++i) {
             if (nd->extnode->v[i] == sentinal) {
                 if (i == 0) {
-                    sprintf(buf, "vext(%g)", x);
+                    Sprintf(buf, "vext(%g)", x);
                 } else {
-                    sprintf(buf, "vext[%d](%g)", i, x);
+                    Sprintf(buf, "vext[%d](%g)", i, x);
                 }
                 found(&(nd->extnode->v[i]), buf, sym_vext);
             }
@@ -478,9 +478,9 @@ void HocDataPathImpl::search(Prop* prop, double x) {
         for (i = 0; i < imax; ++i) {
             if (pd[i] == sentinal) {
                 if (x < 0) {
-                    sprintf(buf, "%s%s", psym->name, hoc_araystr(psym, i, 0));
+                    Sprintf(buf, "%s%s", psym->name, hoc_araystr(psym, i, 0));
                 } else {
-                    sprintf(buf, "%s%s(%g)", psym->name, hoc_araystr(psym, i, 0), x);
+                    Sprintf(buf, "%s%s(%g)", psym->name, hoc_araystr(psym, i, 0), x);
                 }
                 found(pd + i, buf, psym);
             }

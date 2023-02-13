@@ -1,6 +1,6 @@
 from neuron import h
 from neuron.expect_hocerr import expect_err
-from checkresult import Chk
+from neuron.tests.utils.checkresult import Chk
 
 import io, math, os, re, sys
 

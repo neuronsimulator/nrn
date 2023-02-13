@@ -6,10 +6,10 @@ set -xe
 # Note: It should be invoked from nrn directory
 #
 # PREREQUESITES:
-#  - cmake (>=3.5)
+#  - cmake (>=3.15.0)
 #  - flex
 #  - bison
-#  - python >= 3.7
+#  - python >= 3.8
 #  - cython
 #  - MPI
 #  - X11
@@ -54,7 +54,7 @@ pip_numpy_install() {
       38) numpy_ver="numpy==1.17.5" ;;
       39) numpy_ver="numpy==1.19.3" ;;
       310) numpy_ver="numpy==1.21.3" ;;
-      311) numpy_ver="numpy==1.23.4" ;;
+      311) numpy_ver="numpy==1.23.5" ;;
       *) echo "Error: numpy version not specified for this python!" && exit 1;;
     esac
 
@@ -115,10 +115,15 @@ build_wheel_linux() {
         echo " - Auditwheel show"
         auditwheel show dist/*.whl
         echo " - Repairing..."
-	# TODO: still need work to make sure this robust and usable
-	# currently this will break when coreneuron is used and when
-	# dev environment is not installed.
-        auditwheel repair dist/*.whl --exclude "libgomp.so.1"
+        # NOTE:
+        #   libgomp:  still need work to make sure this robust and usable
+        #             currently this will break when coreneuron is used and when
+        #             dev environment is not installed. Note that on aarch64 we have
+        #             seen issue with libgomp.so and hence we started excluding it.
+        #   libnrniv: we ship precompiled version of neurondemo containing libnrnmech.so
+        #             which is linked to libnrniv.so. auditwheel manipulate rpaths and
+        #             ships an extra copy of libnrniv.so and hence exclude it here.
+        auditwheel -v repair dist/*.whl --exclude "libgomp.so.1" --exclude "libnrniv.so"
     fi
 
     deactivate

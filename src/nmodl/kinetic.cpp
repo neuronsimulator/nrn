@@ -224,7 +224,7 @@ void flux(Item* qREACTION, Item* qdir, Item* qlast) {
                             if (sr == rterm->sym) {
                                 c1 = qconcat(qdir->next->next, q->prev);
                                 c2 = qconcat(q->next, qlast);
-                                sprintf(buf,
+                                Sprintf(buf,
                                         "nrn_nernst_coef(_type_%s)*(%s _ion_d%sdv %s)",
                                         s->name,
                                         c1,
@@ -279,8 +279,10 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtl
     numlist++;
     fun->u.i = numlist;
 
-    Sprintf(buf, "static int %s();\n", SYM(q2)->name);
-    Linsertstr(procfunc, buf);
+    vectorize_substitute(linsertstr(procfunc, "();\n"),
+                         "(void* _so, double* _rhs, _threadargsproto_);\n");
+    Sprintf(buf, "static int %s", SYM(q2)->name);
+    linsertstr(procfunc, buf);
     replacstr(q1, "\nstatic int");
     qv = insertstr(q3, "()\n");
     if (vectorize) {
@@ -424,6 +426,11 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtl
             q = q->next;
             qend = ITM(q);
             for (q1 = qb->next; q1 != qend; q1 = q1->next) {
+                // if a state compartment variable is not used in
+                // the kinetic block then skip it
+                if (!SYM(q1)->used) {
+                    continue;
+                }
                 Sprintf(buf1, "(%s)", qconcat(qexp, qb->prev));
                 rlist->capacity[SYM(q1)->used - 1] = stralloc(buf1, (char*) 0);
             }
@@ -654,10 +661,12 @@ void kinetic_implicit(Symbol* fun, const char* dt, const char* mname) {
         ncons = 0;
         Sprintf(buf, "static void* _cvsparseobj%d;\n", fun->u.i);
         q = linsertstr(procfunc, buf);
-        sprintf(buf, "static int _cvspth%d = %d;\n", fun->u.i, thread_data_index++);
+        Sprintf(buf, "static int _cvspth%d = %d;\n", fun->u.i, thread_data_index++);
         vectorize_substitute(q, buf);
-        sprintf(buf,
-                "  _nrn_destroy_sparseobj_thread(_thread[_cvspth%d].get<void*>());\n",
+        Sprintf(buf,
+                "  "
+                "_nrn_destroy_sparseobj_thread(static_cast<SparseObj*>(_thread[_cvspth%d].get<void*"
+                ">()));\n",
                 fun->u.i);
         lappendstr(thread_cleanup_list, buf);
     }
@@ -683,10 +692,12 @@ void kinetic_implicit(Symbol* fun, const char* dt, const char* mname) {
             Lappendsym(done_list1, fun);
             Sprintf(buf, "static void* _sparseobj%d;\n", fun->u.i);
             q = linsertstr(procfunc, buf);
-            sprintf(buf, "static int _spth%d = %d;\n", fun->u.i, thread_data_index++);
+            Sprintf(buf, "static int _spth%d = %d;\n", fun->u.i, thread_data_index++);
             vectorize_substitute(q, buf);
-            sprintf(buf,
-                    "  _nrn_destroy_sparseobj_thread(_thread[_spth%d].get<void*>());\n",
+            Sprintf(buf,
+                    "  "
+                    "_nrn_destroy_sparseobj_thread(static_cast<SparseObj*>(_thread[_spth%d].get<"
+                    "void*>()));\n",
                     fun->u.i);
             lappendstr(thread_cleanup_list, buf);
         }
@@ -849,16 +860,6 @@ for(_i=%d;_i<%d;_i++){\n",
                         "*(_nrn_thread_getelm(static_cast<SparseObj*>(_so), _row + 1, _col + 1))\n",
                         fun->u.i);
                 vectorize_substitute(qv, buf);
-                {
-                    static int first = 1;
-                    if (first) {
-                        first = 0;
-                        Sprintf(buf, "extern double *_getelm(int, int);\n");
-                        qv = linsertstr(procfunc, buf);
-                        Sprintf(buf, "extern double *_nrn_thread_getelm(SparseObj*, int, int);\n");
-                        vectorize_substitute(qv, buf);
-                    }
-                }
             }
         }
     } /* end of NOT_CVODE_FLAG */
@@ -1358,9 +1359,9 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum) {
         }
     kinetic_intmethod(fun, "NEURON's CVode");
     Lappendstr(procfunc, "\n/*CVODE ode begin*/\n");
-    sprintf(buf, "static int _ode_spec%d() {_reset=0;{\n", fun->u.i);
+    Sprintf(buf, "static int _ode_spec%d() {_reset=0;{\n", fun->u.i);
     Lappendstr(procfunc, buf);
-    sprintf(buf,
+    Sprintf(buf,
             "static int _ode_spec%d(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) "
             "{int _reset=0;{\n",
             fun->u.i);
@@ -1368,9 +1369,9 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum) {
     copyitems(cvode_sbegin, cvode_send, procfunc->prev);
 
     Lappendstr(procfunc, "\n/*CVODE matsol*/\n");
-    sprintf(buf, "static int _ode_matsol%d() {_reset=0;{\n", fun->u.i);
+    Sprintf(buf, "static int _ode_matsol%d() {_reset=0;{\n", fun->u.i);
     Lappendstr(procfunc, buf);
-    sprintf(buf,
+    Sprintf(buf,
             "static int _ode_matsol%d(void* _so, double* _rhs, double* _p, Datum* _ppvar, Datum* "
             "_thread, NrnThread* _nt) {int _reset=0;{\n",
             fun->u.i);

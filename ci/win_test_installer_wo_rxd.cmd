@@ -20,10 +20,10 @@ echo %NEURONHOME%
 if not exist association.hoc.out (start /wait /REALTIME %cd%\ci\association.hoc)
 
 :: test all pythons
-C:\Python37\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python38\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python39\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python310\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
+C:\Python311\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 
 :: install numpy dependency
 python -m pip install numpy

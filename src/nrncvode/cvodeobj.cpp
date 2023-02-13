@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
 // solver interface to CVode
-#include <InterViews/resource.h>
 
 #include "nrnmpi.h"
 
@@ -18,6 +17,7 @@ extern int hoc_return_type_code;
 #include "netcvode.h"
 #include "membfunc.h"
 #include "nrn_ansi.h"
+#include "nrncvode.h"
 #include "nrndaspk.h"
 #include "nrniv_mf.h"
 #include "tqueue.h"
@@ -588,6 +588,11 @@ static double poolshrink(void*) {
     return double(i);
 }
 
+static double free_event_queues(void*) {
+    free_event_queues();
+    return 0;
+}
+
 static Member_func members[] = {{"solve", solve},
                                 {"atol", nrn_atol},
                                 {"rtol", rtol},
@@ -637,6 +642,7 @@ static Member_func members[] = {{"solve", solve},
                                 {"extra_scatter_gather_remove", extra_scatter_gather_remove},
                                 {"use_fast_imem", use_fast_imem},
                                 {"poolshrink", poolshrink},
+                                {"free_event_queues", free_event_queues},
                                 {nullptr, nullptr}};
 
 static Member_ret_obj_func omembers[] = {{"netconlist", netconlist}, {nullptr, nullptr}};

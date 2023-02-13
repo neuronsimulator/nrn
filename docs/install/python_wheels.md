@@ -183,7 +183,7 @@ On BB5, we can test CPU wheels with:
 ```
 salloc -A proj16  -N 1 --ntasks-per-node=4 -C "cpu" --time=1:00:00 -p interactive
 module load unstable python
-bash packaging/python/test_wheels.sh python3.7 wheelhouse/NEURON-7.8.0.236-cp37-cp37m-manylinux1_x86_64.whl
+bash packaging/python/test_wheels.sh python3.8 wheelhouse/NEURON-7.8.0.236-cp38-cp38m-manylinux1_x86_64.whl
 ```
 
 The GPU wheels can be also tested in same way on the CPU partition. In this case only pre-compiled binaries
@@ -208,19 +208,28 @@ Similar to BB5, the wheel can be tested on any desktop system provided that NVHP
 
 ## Publishing the wheels on Pypi via Azure
 
+### Variables that drive PyPI upload
+
+We need to manipulate the following three predefined variables, listed hereafter with their default values:
+   * `NRN_NIGHTLY_UPLOAD` : `true`
+   * `NRN_RELEASE_UPLOAD` : `false`
+   * `NEURON_NIGHTLY_TAG` : `-nightly`
+
+### Release wheels
+
 Head over to the [neuronsimulator.nrn](https://dev.azure.com/neuronsimulator/nrn/_build?definitionId=1) pipeline on Azure.
 
 After creating the tag on the `release/x.y` or on the `master` branch, perform the following steps:
 
 1) Click on `Run pipeline`
 2) Input the release tag ref `refs/tags/x.y.z`
-3) Click on `Variables`
-4) We need to define three variables:
+3) Click on `Advanced options` then select `Variables`
+4) Update driving variables to:
    * `NRN_NIGHTLY_UPLOAD` : `false`
    * `NRN_RELEASE_UPLOAD` : `false`
    * `NEURON_NIGHTLY_TAG` : undefined (leave empty)
 
-   Do so by clicking `Add variable`, input the variable name and optionally the value and then click `Create`.
+   Do so by clicking `Variables` in `Advanced options` and update/clear the variable values.
 5) Click on `Run`
 
 ![](images/azure-release-no-upload.png)
@@ -230,7 +239,6 @@ With above, wheel will be created like release from the provided tag but they wo
    * `NRN_RELEASE_UPLOAD` : `true`
    * `NEURON_NIGHTLY_TAG` : undefined (leave empty)
 
-![](images/azure-release.png)
 
 
 ## Publishing the wheels on Pypi via CircleCI
@@ -262,8 +270,8 @@ $ git diff
        - manylinux2014-aarch64:
            matrix:
              parameters:
--              NRN_PYTHON_VERSION: ["310"]
-+              NRN_PYTHON_VERSION: ["37", "38", "39", "310"]
+-              NRN_PYTHON_VERSION: ["311"]
++              NRN_PYTHON_VERSION: ["38", "39", "310", "311"]
 ```
 
 The reason we are setting `NEURON_WHEEL_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
@@ -272,4 +280,3 @@ The reason we are setting `NEURON_WHEEL_VERSION` to a desired version `8.1a` bec
 ## Nightly wheels
 
 Nightly wheels get automatically published from `master` in CRON mode.
-
