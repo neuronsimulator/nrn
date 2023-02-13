@@ -16,6 +16,13 @@
 #include <algorithm>
 #include <cctype>
 
+// needed by nrnmusic.cpp but must exist if python is loaded.
+#if USE_PYTHON
+typedef struct _object PyObject;
+PyObject* (*nrnpy_p_ho2po)(Object*);
+Object* (*nrnpy_p_po2ho)(PyObject*);
+#endif  // USE_PYTHON
+
 extern int nrn_nopython;
 extern int nrnpy_nositeflag;
 extern char* nrnpy_pyexe;

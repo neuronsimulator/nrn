@@ -653,9 +653,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   endforeach()
 
   if(NRN_ENABLE_MUSIC)
+    set(music_launch_command
+        "${MPIEXEC_NAME}  ${MPIEXEC_NUMPROC_FLAG}  2 ${MPIEXEC_OVERSUBSCRIBE}   ${MPIEXEC_PREFLAGS} music"
+    )
     nrn_add_test_group(
       NAME nrnmusic
       ENVIRONMENT MUSIC_LIBDIR=${MUSIC_LIBDIR}
+      ENVIRONMENT MPIEXEC_COMMAND=${music_launch_command}
       MODFILE_PATTERNS NONE)
     nrn_add_test(
       GROUP nrnmusic
