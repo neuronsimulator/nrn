@@ -167,6 +167,18 @@ if(NOT NRN_ENABLE_INTERVIEWS)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_IVOS_SRC_FILES})
 endif()
 
+if(NRN_ENABLE_MUSIC)
+  if(NRN_ENABLE_MPI_DYNAMIC)
+    list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/neuronmusic/nrnmusic_dynam.cpp)
+    set_property(
+      SOURCE ${NRN_NRNIV_LIB_SRC_FILES} ${NRN_NRNMPI_SRC_FILES}
+      APPEND
+      PROPERTY COMPILE_DEFINITIONS NRNMUSIC_DYNAMIC=1)
+  else()
+    list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_MUSIC_SRC_FILES})
+  endif()
+endif()
+
 # =============================================================================
 # Include directories for #include <../../nrnconf.h>
 # =============================================================================
@@ -199,6 +211,11 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}/src/sundials/cvodes
     ${PROJECT_SOURCE_DIR}/src/sundials/ida
     ${PROJECT_SOURCE_DIR}/src/sundials/shared)
+
+if(NRN_ENABLE_MUSIC)
+  list(APPEND NRN_INCLUDE_DIRS ${NRN_MUSIC_SRC_DIR})
+endif()
+
 set(NRN_INCLUDE_DIRS
     ${NRN_INCLUDE_DIRS}
     PARENT_SCOPE)
@@ -335,7 +352,7 @@ if(NRN_ENABLE_MPI_DYNAMIC)
 endif()
 
 if(NRN_ENABLE_MUSIC)
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrniv/netpar.cpp
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/neuronmusic/nrnmusic.cpp
                               PROPERTIES INCLUDE_DIRECTORIES ${MUSIC_INCDIR})
 endif()
 
@@ -386,7 +403,7 @@ else()
   endif()
 endif()
 
-if(NRN_ENABLE_MUSIC)
+if(NRN_ENABLE_MUSIC AND NOT NRN_ENABLE_MPI_DYNAMIC)
   target_link_libraries(nrniv_lib ${MUSIC_LIBRARY})
 endif()
 
@@ -429,6 +446,19 @@ if(NRN_ENABLE_MPI)
       set_property(TARGET ${libname}_lib PROPERTY OUTPUT_NAME ${libname})
       install(TARGETS ${libname}_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
     endforeach(val)
+    if(NRN_ENABLE_MUSIC)
+      # libnrnmusic does not depend explicitly on MPI so don't need mpi version specific versions.
+      set(libnrnmusic "nrnmusic")
+      set(NRNMUSIC_DYNAM_LIB
+          "'${libnrnmusic}'"
+          PARENT_SCOPE)
+      add_library(${libnrnmusic}_lib SHARED ${NRN_MUSIC_SRC_FILES})
+      target_include_directories(${libnrnmusic}_lib BEFORE PUBLIC ${include})
+      add_dependencies(${libnrnmusic}_lib nrniv_lib ${libname}_lib)
+      target_link_libraries(${libnrnmusic}_lib nrniv_lib ${libname}_lib)
+      set_property(TARGET ${libnrnmusic}_lib PROPERTY OUTPUT_NAME ${libnrnmusic})
+      install(TARGETS ${libnrnmusic}_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+    endif()
   else()
     target_link_libraries(nrniv_lib ${MPI_C_LIBRARIES})
     target_include_directories(nrniv_lib PUBLIC ${MPI_INCLUDE_PATH})

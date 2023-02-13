@@ -79,6 +79,10 @@ set(NRN_ENABLE_MODEL_TESTS
     CACHE STRING "Comma-separated list of detailed models to enable tests of.")
 # parse NRN_ENABLE_MODEL_TESTS as list
 string(REPLACE "," ";" NRN_ENABLE_MODEL_TESTS "${NRN_ENABLE_MODEL_TESTS}")
+option(
+  NRN_ENABLE_PERFORMANCE_TESTS
+  "Enable tests that measure performance. These are known to be unreliable when run on busy/oversubscribed machines such as CI runners."
+  ${NRN_ENABLE_PERFORMANCE_TESTS_DEFAULT})
 # This can be helpful in very specific CI build configurations, where ccache is used *and* different
 # CI builds are built under different directories.
 option(NRN_AVOID_ABSOLUTE_PATHS
@@ -426,6 +430,8 @@ endif()
 # Enable sanitizer support if the NRN_SANITIZERS variable is set
 # =============================================================================
 include(cmake/SanitizerHelper.cmake)
+# Make a CMake list NRN_SANITIZERS_LIST
+string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 
 # =============================================================================
 # Enable Threads support

@@ -64,6 +64,7 @@ mac_m1_cmake_build:
                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
                    -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}"
                    -DNRN_ENABLE_TESTS=ON
+                   -DNRN_ENABLE_PERFORMANCE_TESTS=OFF
                    -DNRN_ENABLE_CORENEURON=${cmake_coreneuron}
                    -DNRN_ENABLE_INTERVIEWS=${cmake_interviews}
                    -DNRN_ENABLE_RX3D=${cmake_rx3d})
