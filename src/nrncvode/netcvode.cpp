@@ -2921,7 +2921,9 @@ void NetCvode::clear_events() {
     enqueueing_ = 0;
     for (i = 0; i < nrn_nthread; ++i) {
         NetCvodeThreadData& d = p[i];
-        delete d.tqe_;
+        if (d.tqe_) {
+            delete d.tqe_;
+        }
         d.tqe_ = new TQueue(p[i].tpool_);
         d.unreffed_event_cnt_ = 0;
         d.sepool_->free_all();
