@@ -2863,7 +2863,9 @@ void NetCvode::clear_events() {
         NetCvodeThreadData& d = p[i];
         delete std::exchange(d.tqe_, new TQueue(p[i].tpool_));
         d.unreffed_event_cnt_ = 0;
-        d.sepool_->free_all();
+        if (d.sepool_) {
+            d.sepool_->free_all();
+        }
         d.immediate_deliver_ = -1e100;
         d.ite_cnt_ = 0;
         if (nrn_use_selfqueue_) {
