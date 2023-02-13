@@ -469,7 +469,6 @@ def setup_package():
                 "-DNRN_ENABLE_MPI=" + ("ON" if Components.MPI else "OFF"),
                 "-DNRN_ENABLE_MPI_DYNAMIC=" + ("ON" if Components.MPI else "OFF"),
                 "-DNRN_ENABLE_MUSIC=" + ("ON" if Components.MUSIC else "OFF"),
-                "" + (("-DMUSIC_ROOT=" + music_home) if Components.MUSIC else ""),
                 "-DNRN_ENABLE_PYTHON_DYNAMIC=ON",
                 "-DNRN_ENABLE_MODULE_INSTALL=OFF",
                 "-DNRN_ENABLE_REL_RPATH=ON",

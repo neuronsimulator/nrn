@@ -55,9 +55,9 @@ RUN curl -L -o openmpi-4.0.3.tar.gz  https://download.open-mpi.org/release/open-
     && ./configure --prefix=/nrnwheel/openmpi \
     && make -j install
 
-RUN curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/heads/switch-to-MPI-C-interface.zip \
+RUN curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/1.2.0.zip \
     && unzip MUSIC.zip \
-    && mv MUSIC-switch-to-MPI-C-interface MUSIC \
+    && mv MUSIC-* MUSIC \
     && cd MUSIC \
     && ./autogen.sh \
     && ./configure --prefix=/nrnwheel/MUSIC --with-python-sys-prefix --disable-anysource \
