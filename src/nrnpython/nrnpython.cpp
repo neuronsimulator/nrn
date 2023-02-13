@@ -143,6 +143,10 @@ extern "C" int nrnpython_start(int b) {
     static int started = 0;
     // printf("nrnpython_start %d started=%d\n", b, started);
     if (b == 1 && !started) {
+#if PY_VERSION_HEX >= 0x03080000
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
+#endif
         p_nrnpy_pyrun = nrnpy_pyrun;
         if (nrnpy_nositeflag) {
             Py_NoSiteFlag = 1;
@@ -151,19 +155,30 @@ extern "C" int nrnpython_start(int b) {
         // work with virtual environments.
         // But use only if not overridden by the PYTHONHOME environment variable.
         char* _p_pyhome = getenv("PYTHONHOME");
-        if (_p_pyhome == NULL) {
+        if (_p_pyhome == nullptr) {
             _p_pyhome = nrnpy_pyhome;
         }
+#if PY_VERSION_HEX >= 0x03080000
+        if (_p_pyhome) {
+            PyConfig_SetBytesString(&config, &config.home, _p_pyhome);
+        }
+        PyConfig_SetBytesArgv(&config, nrn_global_argc, nrn_global_argv);
+        Py_InitializeFromConfig(&config);
+#else
         if (_p_pyhome) {
             Py_SetPythonHome(mywstrdup(_p_pyhome));
         }
         Py_Initialize();
-#if NRNPYTHON_DYNAMICLOAD
-        // return from Py_Initialize means there was no site problem
-        nrnpy_site_problem = 0;
-#endif
         copy_argv_wcargv(nrn_global_argc, nrn_global_argv);
         PySys_SetArgv(nrn_global_argc, wcargv);
+#endif
+#if NRNPYTHON_DYNAMICLOAD
+        // return from Py_InitializeFromConfig means there was no site problem
+        nrnpy_site_problem = 0;
+#endif
+#if PY_VERSION_HEX >= 0x03080000
+        PyConfig_Clear(&config);
+#endif
         started = 1;
         // see nrnpy_reg.h
         for (int i = 0; nrnpy_reg_[i]; ++i) {
