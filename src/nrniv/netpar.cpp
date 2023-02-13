@@ -34,11 +34,6 @@ static int n_multisend_interval;
 int nrnmusic;
 #endif
 
-#if NRN_MUSIC
-#include "nrnmusicapi.h"
-int nrnmusic;
-#endif
-
 static Symbol* netcon_sym_;
 static Gid2PreSyn gid2out_;
 static Gid2PreSyn gid2in_;
