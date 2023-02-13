@@ -139,13 +139,11 @@ endforeach()
 # Add pytest
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
-  set(pytest -m pytest)
-  if(NRN_SANITIZERS)
-    # We configure the santiziers to abort on errors, which can lead to unhelpful output from
-    # pytest. Passing -s means the sanitizer output will be visible in the log.
-    list(APPEND pytest -s)
-  endif()
-  if(PYTEST_COV_FOUND)
+  # use `--capture=tee-sys`: combines 'sys' and '-s', capturing sys.stdout/stderr and passing it
+  # along to the actual sys.stdout/stderr
+  set(pytest -m pytest --capture=tee-sys)
+  # pytest-cov runs extremely slowly under AddressSanitizer
+  if(PYTEST_COV_FOUND AND NOT "address" IN_LIST NRN_SANITIZERS_LIST)
     list(APPEND pytest --cov-report=xml --cov=neuron)
   endif()
   # TODO: consider allowing the group-related parts to be dropped here

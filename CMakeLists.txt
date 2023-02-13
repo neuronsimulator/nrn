@@ -412,6 +412,13 @@ else()
 endif()
 
 # =============================================================================
+# Enable sanitizer support if the NRN_SANITIZERS variable is set
+# =============================================================================
+include(cmake/SanitizerHelper.cmake)
+# Make a CMake list NRN_SANITIZERS_LIST
+string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
+
+# =============================================================================
 # Enable Threads support
 # =============================================================================
 if(NRN_ENABLE_THREADS)
