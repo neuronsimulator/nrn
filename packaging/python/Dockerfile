@@ -55,6 +55,8 @@ RUN curl -L -o openmpi-4.0.3.tar.gz  https://download.open-mpi.org/release/open-
     && ./configure --prefix=/nrnwheel/openmpi \
     && make -j install
 
+ENV PATH /nrnwheel/openmpi/bin:$PATH
+
 RUN curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/1.2.0.zip \
     && unzip MUSIC.zip \
     && mv MUSIC-* MUSIC \
@@ -76,7 +78,7 @@ RUN cd /nrnwheel/readline/lib \
     && ar cq libreadline.a *.o \
     && rm *.o
 
-ENV PATH /nrnwheel/openmpi/bin:$PATH
+
 RUN yum -y install epel-release libX11-devel libXcomposite-devel vim-enhanced
 RUN yum -y remove ncurses-devel
 
