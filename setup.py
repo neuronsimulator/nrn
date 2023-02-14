@@ -40,10 +40,12 @@ try:
     __version__ = v[: v.rfind("-")].replace("-", ".") if "-" in v else v
 
     # if version is not a valid PEP440 version, then create a bogus version
-    # that will be used only for development purposes which appends the commit hash 
+    # that will be used only for development purposes which appends the commit hash
     if not re.match(r"^\d+(\.\d+)*$", __version__):
         __version__ = "0.0.dev0+g" + (
-            subprocess.run(["git", "rev-parse", "--short", "HEAD"], stdout=subprocess.PIPE)
+            subprocess.run(
+                ["git", "rev-parse", "--short", "HEAD"], stdout=subprocess.PIPE
+            )
             .stdout.strip()
             .decode()
         )
