@@ -40,10 +40,13 @@ try:
     __version__ = v[: v.rfind("-")].replace("-", ".") if "-" in v else v
 
     # if version is not a valid PEP440 version, then create a bogus version
-    # that will be used only for development purposes. this usually happens
-    # when we do a shallow clone of the repo (e.g. in github actions)
+    # that will be used only for development purposes which appends the commit hash 
     if not re.match(r"^\d+(\.\d+)*$", __version__):
-        __version__ = "0.0.dev0"
+        __version__ = "0.0.dev0+g" + (
+            subprocess.run(["git", "rev-parse", "--short", "HEAD"], stdout=subprocess.PIPE)
+            .stdout.strip()
+            .decode()
+        )
 
     # allow to override version during development/testing
     if "NEURON_WHEEL_VERSION" in os.environ:
