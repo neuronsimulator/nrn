@@ -2627,7 +2627,7 @@ void NetCvode::vec_event_store() {
     }
 }
 
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
 TQItem* NetCvode::fifo_event(double td, DiscreteEvent* db) {
     if (nrn_use_fifo_queue_) {
 #if PRINT_EVENT
@@ -2964,7 +2964,7 @@ void NetCvode::init_events() {
             // also decide what to do about use_min_delay_
             // the rule for now is to use it if all delays are
             // the same and there are more than 2
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
             // but
             // if we desire nrn_use_fifo_queue_ then use it
             // even if just one
@@ -2989,7 +2989,7 @@ void NetCvode::init_events() {
                 if (ps->use_min_delay_ && ps->delay_ != d->delay_) {
                     ps->use_min_delay_ = false;
                 }
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
                 if (nrn_use_fifo_queue_ && d->delay_ != fifodelay) {
                     hoc_warning(
                         "Use of the event fifo queue is turned off due to more than one value for "
@@ -3248,7 +3248,7 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 #ifndef USENCS
     if (use_min_delay_) {
         STATISTICS(presyn_send_mindelay_);
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
         ns->fifo_event(tt + delay_, this);
 #else
 #if BBTQ == 5

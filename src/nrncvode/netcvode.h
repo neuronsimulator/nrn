@@ -86,7 +86,7 @@ class NetCvode {
     void move_event(TQItem*, double, NrnThread*);
     void remove_event(TQItem*, int threadid);
     TQItem* event(double tdeliver, DiscreteEvent*, NrnThread*);
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
     TQItem* fifo_event(double tdeliver, DiscreteEvent*, NrnThread*);
 #endif
 #if BBTQ == 5
