@@ -15,7 +15,7 @@ class Components:
     RX3D = True
     IV = True
     MPI = True
-    MUSIC = True
+    MUSIC = False  # to avoid building with MUSIC by default (RTD, docs, setuptools CIs)
     CORENRN = False  # still early support
     GPU = False  # still early support
 
@@ -61,9 +61,9 @@ if "--disable-mpi" in sys.argv:
     Components.MUSIC = False
     sys.argv.remove("--disable-mpi")
 
-if "--disable-music" in sys.argv:
-    Components.MUSIC = False
-    sys.argv.remove("--disable-music")
+if "--enable-music" in sys.argv:
+    Components.MUSIC = True
+    sys.argv.remove("--enable-music")
 
 if "--enable-coreneuron" in sys.argv:
     Components.CORENRN = True

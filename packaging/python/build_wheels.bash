@@ -101,7 +101,7 @@ build_wheel_linux() {
         # OpenACC for now, so we can be a little more generic.
         CMAKE_DEFS="${CMAKE_DEFS},CMAKE_CUDA_ARCHITECTURES=60;70;80,CMAKE_C_FLAGS=-tp=haswell,CMAKE_CXX_FLAGS=-tp=haswell"
     fi
-
+    setup_args += " --enable-music"
     # Workaround for https://github.com/pypa/manylinux/issues/1309
     git config --global --add safe.directory "*"
 
@@ -149,7 +149,8 @@ build_wheel_osx() {
         echo "Error: GPU support on MacOS is not available!"
         exit 1
     fi
-
+    setup_args += " --enable-music"
+     
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
       CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
