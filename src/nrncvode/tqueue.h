@@ -11,8 +11,6 @@ using TQItemPool = MutexPool<TQItem>;
 // 0 use bbtqueue, 2 use sptqueue, 4 use spt2queue, 5 use sptbinqueue
 #define BBTQ 5
 
-#define FAST_LEAST 1
-
 #if BBTQ == 0
 #include <bbtqueue.h>
 #elif BBTQ == 2
@@ -20,16 +18,10 @@ using TQItemPool = MutexPool<TQItem>;
 #define SplayTQItem TQItem
 #include <sptqueue.h>
 #elif BBTQ == 4
-#undef FAST_LEAST
-// required
-#define FAST_LEAST   1
 #define Splay2TQueue TQueue
 #define Splay2TQItem TQItem
 #include <spt2queue.h>
 #elif BBTQ == 5
-#undef FAST_LEAST
-// required
-#define FAST_LEAST     1
 #define SplayTBinQueue TQueue
 #define SplayTBinQItem TQItem
 #include <sptbinq.h>
