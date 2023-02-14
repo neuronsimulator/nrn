@@ -188,6 +188,7 @@ stages:
 
       # TODO: this can be built once and stored as a secure file on Azure.
       - script: |
+          sudo mkdir -p /opt/nrnwheel
           sudo packaging/python/build_MUSIC_osx.bash
         displayName: 'MUSIC Install'
 
@@ -199,7 +200,7 @@ stages:
           export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           export NRN_BUILD_FOR_UPLOAD=1
-          sudo mkdir /opt/nrnwheel
+          sudo mkdir -p /opt/nrnwheel
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/
           packaging/python/build_wheels.bash osx $(python.version) coreneuron
         displayName: 'Build MacOS Wheel'
