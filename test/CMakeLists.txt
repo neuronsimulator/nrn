@@ -16,8 +16,7 @@ include(NeuronTestHelper)
 add_executable(testneuron common/catch2_main.cpp unit_tests/basic.cpp
                           unit_tests/oc/hoc_interpreter.cpp)
 set(catch2_targets testneuron)
-# Benchmarks are known to be slow if you turn off optimisation...
-if(NRN_ENABLE_THREADS AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(NRN_ENABLE_THREADS)
   add_executable(nrn-benchmarks common/catch2_main.cpp benchmarks/threads/test_multicore.cpp)
   target_link_libraries(nrn-benchmarks Threads::Threads)
   list(APPEND catch2_targets nrn-benchmarks)
@@ -44,7 +43,7 @@ nrn_add_test(
   GROUP unit_tests
   NAME testneuron
   COMMAND $<TARGET_FILE:testneuron>)
-if(TARGET nrn-benchmarks)
+if(TARGET nrn-benchmarks AND NRN_ENABLE_PERFORMANCE_TESTS)
   nrn_add_test(
     GROUP unit_tests
     NAME benchmarks
@@ -184,7 +183,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   # use `--capture=tee-sys`: combines 'sys' and '-s', capturing sys.stdout/stderr and passing it
   # along to the actual sys.stdout/stderr
   set(pytest -m pytest --capture=tee-sys)
-  if(PYTEST_COV_FOUND)
+  # pytest-cov runs extremely slowly under AddressSanitizer
+  if(PYTEST_COV_FOUND AND NOT "address" IN_LIST NRN_SANITIZERS_LIST)
     list(APPEND pytest --cov-report=xml --cov=neuron)
   endif()
   # TODO: consider allowing the group-related parts to be dropped here
@@ -654,9 +654,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   endforeach()
 
   if(NRN_ENABLE_MUSIC)
+    set(music_launch_command
+        "${MPIEXEC_NAME}  ${MPIEXEC_NUMPROC_FLAG}  2 ${MPIEXEC_OVERSUBSCRIBE}   ${MPIEXEC_PREFLAGS} music"
+    )
     nrn_add_test_group(
       NAME nrnmusic
       ENVIRONMENT MUSIC_LIBDIR=${MUSIC_LIBDIR}
+      ENVIRONMENT MPIEXEC_COMMAND=${music_launch_command}
       MODFILE_PATTERNS NONE)
     nrn_add_test(
       GROUP nrnmusic
