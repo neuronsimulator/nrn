@@ -86,103 +86,6 @@ if Components.RX3D:
 else:
     from setuptools.command.build_ext import build_ext
 
-music_home = ""
-if Components.MUSIC:
-    """
-    If music is not installed, try to install it. In principle, a dynamic
-    build requires only music include files. But demand a <full> installation
-    where music is in the PATH and can find include and lib. If not installed,
-    give up with Components.MUSIC = False and go on. Otherwise set some
-    variables for cmake.
-    """
-
-    def run(cmd, env, on_err=print):
-        # on_err is print --  on failure prints everything and raises error
-        # on_err is not False -- on failure raises error
-        # on_err is False -- on failure does not raise error and returns result
-
-        result = subprocess.run(
-            cmd, shell=True, env=env, capture_output=True, text=True
-        )
-        if result.returncode:
-            if on_err is print:
-                print(result)
-            if on_err is not False:
-                result.check_returncode()
-        return result
-
-    def is_music_installed(env, pr_err=False):
-        # returns home for music or "" if music not in PATH
-        music_home = ""
-        try:
-            print("is_music_installed")
-            result = run("which music", env)
-            music_home = "/".join(result.stdout.strip().split("/")[:-2])
-            from os.path import exists
-
-            # does the library exist?
-            name = ""
-            for suffix in ["so", "dylib", "dll", None]:
-                name = music_home + "/lib/libmusic." + suffix
-                if exists(name):
-                    break
-            if name == "":
-                raise FileNotFoundError("no libmusic in {}/lib".format(musicHome))
-            # does include exist
-            name = music_home + "/include/music.hh"
-            if not exists(name):
-                raise FileNotFoundError(name + " does not exist")
-        except Exception as e:
-            if pr_err:
-                print(e)
-            music_home = ""
-        return music_home
-
-    def install_mpi4py(myenv):
-        installed = True
-        try:
-            import mpi4py
-        except:
-            installed = False
-        if not installed:
-            run(sys.executable + " -m pip install mpi4py", myenv)
-
-    def install_music():
-        myenv = os.environ.copy()
-        if not is_music_installed(myenv):
-            print("Attempt to install MUSIC")
-            try:
-                install_mpi4py(myenv)
-            except:
-                print("mpi4py not installed")
-                return ""
-            musicinst = os.getcwd() + "/MUSIC/instdir"
-            cmd = (
-                r"""curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/heads/switch-to-MPI-C-interface.zip \
-                     && unzip MUSIC.zip \
-                     && mv MUSIC-switch-to-MPI-C-interface MUSIC \
-                     && cd MUSIC \
-                     && ./autogen.sh \
-                     && ./configure --prefix="""
-                + musicinst
-                + r""" --with-python-sys-prefix --disable-anysource \
-                     && make -j install
-                  """
-            )
-            myenv["PATH"] = myenv["PATH"] + ":" + musicinst + "/bin"
-            try:
-                result = run(cmd, myenv)
-            except:
-                return ""
-        return is_music_installed(myenv, pr_err=True)
-
-    music_home = install_music()
-    if not music_home:
-        Components.MUSIC = False
-
-print("Components.MUSIC = ", Components.MUSIC)
-print("music_home: ", music_home)
-
 
 class CMakeAugmentedExtension(Extension):
     """
@@ -468,7 +371,10 @@ def setup_package():
                 "-DNRN_ENABLE_RX3D=OFF",  # Never build within CMake
                 "-DNRN_ENABLE_MPI=" + ("ON" if Components.MPI else "OFF"),
                 "-DNRN_ENABLE_MPI_DYNAMIC=" + ("ON" if Components.MPI else "OFF"),
-                "-DNRN_ENABLE_MUSIC=" + ("ON" if Components.MUSIC else "OFF"),
+                "-DNRN_ENABLE_MUSIC="
+                + (
+                    "ON" if Components.MUSIC else "OFF"
+                ),  # MUSIC path passed via build_wheels.bash
                 "-DNRN_ENABLE_PYTHON_DYNAMIC=ON",
                 "-DNRN_ENABLE_MODULE_INSTALL=OFF",
                 "-DNRN_ENABLE_REL_RPATH=ON",

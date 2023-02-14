@@ -176,7 +176,7 @@ build_wheel_osx() {
       fi
     fi
 
-    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
+    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline;/opt/nrnwheel/MUSIC;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
     echo " - Calling delocate-listdeps"
     delocate-listdeps dist/*.whl
