@@ -404,8 +404,9 @@ class Extracellular:
                 )
             else:
                 # make sure permeability has been initialized
-                if(hasattr(value, "_extracellular_regions") and not
-                   hasattr(value, "_extracellular_instances")):
+                if hasattr(value, "_extracellular_regions") and not hasattr(
+                    value, "_extracellular_instances"
+                ):
                     initializer._do_init()
                     value._finitialize()
 
@@ -481,8 +482,9 @@ class Extracellular:
                 )
             else:
                 # make sure volume_fraction has been initialized
-                if(hasattr(volume_fraction, "_extracellular_regions") and not
-                   hasattr(volume_fraction, "_extracellular_instances")):
+                if hasattr(volume_fraction, "_extracellular_regions") and not hasattr(
+                    volume_fraction, "_extracellular_instances"
+                ):
                     initializer._do_init()
                     volume_fraction._finitialize()
                 alpha = volume_fraction

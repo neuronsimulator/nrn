@@ -138,7 +138,6 @@ _set_volume_fraction = nrn_dll_sym("set_volume_fraction")
 _set_volume_fraction.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object]
 
 
-
 # The difference here is that defined species only exists after rxd initialization
 _all_species = []
 _defined_species = {}
@@ -169,7 +168,7 @@ def _update_tortuosity(region):
             and not hasattr(s, "_deleted")
             and not s._diffusion_characteristic
         ):
-            if hasattr(region._permeability_vector, '_ref_x'):
+            if hasattr(region._permeability_vector, "_ref_x"):
                 _set_tortuosity(0, s._grid_id, region._permeability_vector._ref_x[0])
             else:
                 _set_tortuosity(0, s._grid_id, region._permeability_vector)
@@ -185,8 +184,10 @@ def _update_volume_fraction(region):
             and not hasattr(s, "_deleted")
             and not s._diffusion_characteristic
         ):
-            if hasattr(region._volume_fraction_vector, '_ref_x'):
-                _set_volume_fraction(0, s._grid_id, region._volume_fraction_vector._ref_x[0])
+            if hasattr(region._volume_fraction_vector, "_ref_x"):
+                _set_volume_fraction(
+                    0, s._grid_id, region._volume_fraction_vector._ref_x[0]
+                )
             else:
                 _set_volume_fraction(0, s._grid_id, region._volume_fraction_vector)
 
@@ -410,8 +411,8 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         e = self._extracellular()._region
         if numpy.isscalar(e.alpha):
             return e.alpha
-        elif hasattr(e.alpha,'nodes'):
-           alphas = [e.alpha.nodes((x,y,z)).value[0] for (x,y,z) in locs]
+        elif hasattr(e.alpha, "nodes"):
+            alphas = [e.alpha.nodes((x, y, z)).value[0] for (x, y, z) in locs]
         else:
             alphas = []
             for loc in locs:

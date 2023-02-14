@@ -197,6 +197,7 @@ def test_ecs_nodelists(ecs_example):
     nd = x[ecs].nodes((-38, 27, 27))[0]
     assert (nd.x3d, nd.y3d, nd.z3d) == (-38.5, 27.5, 27.5)
 
+
 def test_ecs_example_dynamic_tort(ecs_example):
     """Test ecs_example with dynamic tortuosity"""
 
@@ -218,13 +219,14 @@ def test_ecs_example_dynamic_tort(ecs_example):
         createX,
         cyt_org_leak,
     ) = model
-    perm = rxd.Species(ecs, name="perm", initial=1.0/1.6**2)
+    perm = rxd.Species(ecs, name="perm", initial=1.0 / 1.6**2)
     ecs.permeability = perm
     h.continuerun(1000)
 
     if not save_path:
         max_err = compare_data(data)
         assert max_err < tol
+
 
 def test_ecs_example_dynamic_alpha(ecs_example):
     """Test ecs_example with fixed step and inhomogeneous tortuosity methods"""
