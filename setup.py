@@ -38,6 +38,13 @@ try:
     )
 
     __version__ = v[: v.rfind("-")].replace("-", ".") if "-" in v else v
+
+    # if version is not a valid PEP440 version, then create a bogus version
+    # that will be used only for development purposes. this usually happens
+    # when we do a shallow clone of the repo (e.g. in github actions)
+    if not re.match(r"^\d+(\.\d+)*$", __version__):
+        __version__ = "0.0.dev0"
+
     # allow to override version during development/testing
     if "NEURON_WHEEL_VERSION" in os.environ:
         __version__ = os.environ["NEURON_WHEEL_VERSION"]
