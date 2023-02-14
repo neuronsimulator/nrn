@@ -14,16 +14,10 @@ using TQItemPool = MutexPool<TQItem>;
 #if BBTQ == 0
 #include <bbtqueue.h>
 #elif BBTQ == 2
-#define SplayTQueue TQueue
-#define SplayTQItem TQItem
 #include <sptqueue.h>
 #elif BBTQ == 4
-#define Splay2TQueue TQueue
-#define Splay2TQItem TQItem
 #include <spt2queue.h>
 #elif BBTQ == 5
-#define SplayTBinQueue TQueue
-#define SplayTBinQItem TQItem
 #include <sptbinq.h>
 #endif
 
