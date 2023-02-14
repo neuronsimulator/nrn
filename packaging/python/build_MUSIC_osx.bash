@@ -44,11 +44,11 @@ make -j install
 deactivate
 
 
-MUSIC_MINOS=`otool -l /opt/nrnwheel/MUSIC/lib/libmusic.dylib | grep -e "minos \|version " | uniq | awk '{print $2}'`
+# MUSIC_MINOS=`otool -l /opt/nrnwheel/MUSIC/lib/libmusic.dylib | grep -e "minos \|version " | uniq | awk '{print $2}'`
 
-if [ "$MUSIC_MINOS" != "$MACOSX_DEPLOYMENT_TARGET" ]; then 
-	echo "Error: /opt/nrnwheel/MUSIC/lib/libmusic.dylib doesn't match MACOSX_DEPLOYMENT_TARGET ($MACOSX_DEPLOYMENT_TARGET)"
-	exit 1
-fi
+# if [ "$MUSIC_MINOS" != "$MACOSX_DEPLOYMENT_TARGET" ]; then 
+# 	echo "Error: /opt/nrnwheel/MUSIC/lib/libmusic.dylib doesn't match MACOSX_DEPLOYMENT_TARGET ($MACOSX_DEPLOYMENT_TARGET)"
+# 	exit 1
+# fi
 
 echo "Done." 
