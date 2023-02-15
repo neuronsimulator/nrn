@@ -22,10 +22,10 @@ pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -repl
 pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
 
 :: install numpy
-C:\Python38\python.exe -m pip install numpy==1.17.5 || goto :error
-C:\Python39\python.exe -m pip install numpy==1.19.3 || goto :error
-C:\Python310\python.exe -m pip install numpy==1.21.3 || goto :error
-C:\Python311\python.exe -m pip install numpy==1.23.5 || goto :error
+C:\Python38\python.exe -m pip install numpy==1.17.5 cython || goto :error
+C:\Python39\python.exe -m pip install numpy==1.19.3 cython || goto :error
+C:\Python310\python.exe -m pip install numpy==1.21.3 cython || goto :error
+C:\Python311\python.exe -m pip install numpy==1.23.5 cython || goto :error
 
 :: install nsis
 nsis-3.05-setup.exe /S || goto :error
