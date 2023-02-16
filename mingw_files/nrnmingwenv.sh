@@ -22,7 +22,15 @@ mkdir -p "$NM/etc"
 mkdir -p "$NM/tmp"
 mkdir -p "$NM/usr/share/terminfo/78"
 cp /usr/share/terminfo/78/* $NM/usr/share/terminfo/78
-cp $HOME/.inputrc $NM/etc/inputrc
+if test -f $HOME/.inputrc ; then
+  cp $HOME/.inputrc $NM/etc/inputrc
+else
+  echo '"\ep":history-search-backward
+"\en":history-search-forward
+' > $NM/etc/inputrc
+else
+
+fi
 
 #cp /msys2.ico $NM
 #cp /msys2.ini $NM
