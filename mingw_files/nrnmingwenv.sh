@@ -28,8 +28,6 @@ else
   echo '"\ep":history-search-backward
 "\en":history-search-forward
 ' > $NM/etc/inputrc
-else
-
 fi
 
 #cp /msys2.ico $NM
