@@ -122,7 +122,7 @@ static double spikestat(void* v) {
 }
 static double queue_mode(void* v) {
     hoc_return_type_code = 1;  // integer
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
     if (ifarg(1)) {
         nrn_use_fifo_queue_ = chkarg(1, 0, 1) ? true : false;
     }

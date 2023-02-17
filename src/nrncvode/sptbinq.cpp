@@ -90,11 +90,9 @@ void TQueue::deleteitem(TQItem* i) {
 
 void TQueue::print() {
     MUTLOCK
-#if FAST_LEAST
     if (least_) {
         prnt(least_, 0);
     }
-#endif
     spscan(prnt, static_cast<TQItem*>(nil), sptree_);
     for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
         prnt(q, 0);
@@ -104,11 +102,9 @@ void TQueue::print() {
 
 void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
     MUTLOCK
-#if FAST_LEAST
     if (least_) {
         f(least_, 0);
     }
-#endif
     spscan(f, static_cast<TQItem*>(nil), sptree_);
     for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
         f(q, 0);
@@ -118,7 +114,6 @@ void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
 
 void TQueue::check(const char* mes) {}
 
-#if FAST_LEAST
 // for Parallel Global Variable Timestep method.
 // Assume not using bin queue.
 TQItem* TQueue::second_least(double t) {
@@ -129,7 +124,6 @@ TQItem* TQueue::second_least(double t) {
     }
     return 0;
 }
-#endif
 
 void TQueue::move_least(double tnew) {
     MUTLOCK
