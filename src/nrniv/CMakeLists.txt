@@ -331,8 +331,9 @@ if(NRN_HAVE_NVHPC_COMPILER)
     list(APPEND NVHPC_MATH_COMPILE_OPTIONS "-Kieee")
   endif()
   set_source_files_properties(
-    ${PROJECT_SOURCE_DIR}/src/oc/math.cpp PROPERTIES COMPILE_DEFINITIONS NVHPC_CHECK_FE_EXCEPTIONS=1
-                                                     COMPILE_OPTIONS ${NVHPC_MATH_COMPILE_OPTIONS})
+    ${PROJECT_SOURCE_DIR}/src/oc/math.cpp
+    PROPERTIES COMPILE_DEFINITIONS NVHPC_CHECK_FE_EXCEPTIONS=1 COMPILE_OPTIONS
+                                                               "${NVHPC_MATH_COMPILE_OPTIONS}")
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
   # When optimisation is enabled then icpc apparently does not set errno
   set_property(
