@@ -726,9 +726,8 @@ struct soa {
         // Append to all of the vectors
         auto const old_size = size();
         for_all_vectors<detail::may_cause_reallocation::Yes>(
-            [old_size](auto const& tag, auto& vec, auto field_index, auto array_dim) {
+            [](auto const& tag, auto& vec, auto field_index, auto array_dim) {
                 using Tag = ::std::decay_t<decltype(tag)>;
-                auto* const old_data = vec.data();
                 if constexpr (detail::has_default_value_v<Tag>) {
                     vec.insert(vec.end(), array_dim, tag.default_value());
                 } else {
