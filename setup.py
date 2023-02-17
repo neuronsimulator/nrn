@@ -6,7 +6,7 @@ import sys
 from collections import defaultdict
 import logging
 from shutil import copytree
-from packaging.version import Version
+from packaging.version import Version, parse as parse_version
 from setuptools import Command, Extension
 from setuptools import setup
 
@@ -37,11 +37,14 @@ try:
         .decode()
     )
 
-    __version__ = v[: v.rfind("-")].replace("-", ".") if "-" in v else v
+    # make git describe output PEP440 compliant
+    __version__ = v.replace("-", ".", 1).replace("-", "+", 1)
 
     # if version is not a valid PEP440 version, then create a bogus version
     # that will be used only for development purposes which appends the commit hash
-    if not re.match(r"^\d+(\.\d+)*$", __version__):
+    try:
+        version_obj = parse_version(__version__)
+    except ValueError:
         __version__ = "0.0.dev0+g" + (
             subprocess.run(
                 ["git", "rev-parse", "--short", "HEAD"], stdout=subprocess.PIPE
