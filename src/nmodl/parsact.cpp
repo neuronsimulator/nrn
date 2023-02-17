@@ -619,7 +619,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     /* table lookup */
     Sprintf(buf, "_xi = _mfac_%s * (%s - _tmin_%s);\n", fname, arg->name, fname);
     Lappendstr(procfunc, buf);
-    Lappendstr(procfunc, "if (isnan(_xi)) {\n");
+    Lappendstr(procfunc, "if (std::isnan(_xi)) {\n");
     if (type == FUNCTION1) {
         Lappendstr(procfunc, " return _xi; }\n");
     } else {
