@@ -451,6 +451,10 @@ def setup_package():
 
     logging.info("Extension common compile flags %s" % str(extension_common_params))
 
+    # Get extra_compile_args and  extra_link_args from environment variable
+    extra_link_args = os.environ.get("LDFLAGS", "")
+    extra_compile_args = os.environ.get("CFLAGS", "")
+
     extensions = [
         CMakeAugmentedExtension(
             "neuron.hoc",
@@ -486,11 +490,11 @@ def setup_package():
                 "src/nrnpython",
                 "src/nrnmpi",
             ],
-            extra_compile_args=["-std=c++17"],
+            extra_compile_args=["-std=c++17"] + extra_compile_args.split(),
             extra_link_args=[
                 # use relative rpath to .data/lib
                 "-Wl,-rpath,{}".format(REL_RPATH + "/.data/lib/")
-            ]
+            ] + extra_link_args.split()
             if not just_extensions
             else [
                 "-Wl,-rpath,{}/../../".format(REL_RPATH),

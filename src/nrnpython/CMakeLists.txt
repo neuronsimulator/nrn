@@ -145,6 +145,10 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # for each python detected / provided by user, install module at install time
 
   list(APPEND extra_env "CC=${CMAKE_C_COMPILER}" "CXX=${CMAKE_CXX_COMPILER}")
+  if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
+    list(APPEND extra_env "CFLAGS=-noswitcherror")
+    list(APPEND extra_env "LDFLAGS=-noswitcherror")
+  endif() 
   if(NRN_SANITIZERS)
     # Make sure the same compiler (currently always clang in the sanitizer builds) is used to link
     # as was used to build. By default, Python will try to use the compiler that was used to build
