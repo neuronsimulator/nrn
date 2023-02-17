@@ -150,12 +150,12 @@ if(NRN_ENABLE_MODULE_INSTALL)
   endif()
   if(NRN_LINK_FLAGS)
     list(APPEND extra_env "LDFLAGS=${NRN_LINK_FLAGS_STRING}")
-  endif() 
-  # Make sure the same compiler (currently always clang in the sanitizer builds) is used to link
-  # as was used to build. By default, Python will try to use the compiler that was used to build
+  endif()
+  # Make sure the same compiler (currently always clang in the sanitizer builds) is used to link as
+  # was used to build. By default, Python will try to use the compiler that was used to build
   # Python, which is often gcc.
   list(APPEND extra_env "LDCSHARED=${CMAKE_C_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS}"
-        "LDCXXSHARED=${CMAKE_CXX_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS}")
+       "LDCXXSHARED=${CMAKE_CXX_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS}")
 
   # Prepare build options for setup.py build
   set(NRN_SETUP_PY_BUILD_OPTIONS "--cmake-build-dir")
