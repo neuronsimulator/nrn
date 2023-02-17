@@ -193,8 +193,18 @@ void register_data_fields(int mech_type,
  * size were ranges corresponding to a single array variable. This also aims to be ready for
  * supporting multiple variable data types in MOD files.
  */
+// This is declared static on purpose. When we are using binary Python wheels and a user runs
+// nrnivmodl on their local machine then we link together a libnrniv.so from the binary wheel
+// with object files that were produced from .mod files on the user's machine. If the files
+// compiled on the user's machine have the same number/type of variables as a built in mechanism
+// that is embedded in libnrniv.so then there will be two calls to this function with the same
+// template arguments. If this function was not static, those would have external linkage and a
+// call from one of the user's .mod files might use a definition of this function from
+// libnrniv.so. This can cause problems due to ABI mismatches, and the ::detail version above
+// essentially exists to ensure that *it* is the interface between libnrniv.so and code compiled
+// on the user's machine. Yes, this is horrible. See #1963 and #2234 for more information.
 template <typename... Fields>
-void register_data_fields(int mech_type, Fields const&... fields) {
+static void register_data_fields(int mech_type, Fields const&... fields) {
     // Use of const char* aims to avoid wheel ABI issues with std::string
     std::vector<std::pair<const char*, int>> param_info{};
     std::vector<std::pair<const char*, const char*>> dparam_info{};
