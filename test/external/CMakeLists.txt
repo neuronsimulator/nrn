@@ -19,7 +19,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   nrntest
   GIT_REPOSITORY https://github.com/neuronsimulator/nrntest
-  GIT_TAG aa899cec3109a17d7484ed6edb6cc66712662075
+  GIT_TAG 3b651b2d708ab6d1ac0aff12419a048d4c9f25f9
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/nrntest)
 
 FetchContent_Declare(
