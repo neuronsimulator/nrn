@@ -145,17 +145,17 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # for each python detected / provided by user, install module at install time
 
   list(APPEND extra_env "CC=${CMAKE_C_COMPILER}" "CXX=${CMAKE_CXX_COMPILER}")
-  if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
-    list(APPEND extra_env "CFLAGS=-noswitcherror")
-    list(APPEND extra_env "LDFLAGS=-noswitcherror")
-  endif() 
-  if(NRN_SANITIZERS)
-    # Make sure the same compiler (currently always clang in the sanitizer builds) is used to link
-    # as was used to build. By default, Python will try to use the compiler that was used to build
-    # Python, which is often gcc.
-    list(APPEND extra_env "LDCSHARED=${CMAKE_C_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS}"
-         "LDCXXSHARED=${CMAKE_CXX_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS}")
+  if(NRN_COMPILE_FLAGS)
+    list(APPEND extra_env "CFLAGS=${NRN_COMPILE_FLAGS_STRING}")
   endif()
+  if(NRN_LINK_FLAGS)
+    list(APPEND extra_env "LDFLAGS=${NRN_LINK_FLAGS_STRING}")
+  endif() 
+  # Make sure the same compiler (currently always clang in the sanitizer builds) is used to link
+  # as was used to build. By default, Python will try to use the compiler that was used to build
+  # Python, which is often gcc.
+  list(APPEND extra_env "LDCSHARED=${CMAKE_C_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS}"
+        "LDCXXSHARED=${CMAKE_CXX_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS}")
 
   # Prepare build options for setup.py build
   set(NRN_SETUP_PY_BUILD_OPTIONS "--cmake-build-dir")

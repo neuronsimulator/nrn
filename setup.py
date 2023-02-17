@@ -452,8 +452,8 @@ def setup_package():
     logging.info("Extension common compile flags %s" % str(extension_common_params))
 
     # Get extra_compile_args and  extra_link_args from environment variable
-    extra_link_args = os.environ.get("LDFLAGS", "")
-    extra_compile_args = os.environ.get("CFLAGS", "")
+    extra_link_args = os.environ.get("LDFLAGS", "").split()
+    extra_compile_args = os.environ.get("CFLAGS", "").split()
 
     extensions = [
         CMakeAugmentedExtension(
@@ -490,11 +490,11 @@ def setup_package():
                 "src/nrnpython",
                 "src/nrnmpi",
             ],
-            extra_compile_args=["-std=c++17"] + extra_compile_args.split(),
-            extra_link_args=[
+            extra_compile_args=extra_compile_args + ["-std=c++17"],
+            extra_link_args=extra_link_args + [
                 # use relative rpath to .data/lib
                 "-Wl,-rpath,{}".format(REL_RPATH + "/.data/lib/")
-            ] + extra_link_args.split()
+            ]
             if not just_extensions
             else [
                 "-Wl,-rpath,{}/../../".format(REL_RPATH),
@@ -519,15 +519,14 @@ def setup_package():
 
         # Cython files take a long time to compile with O2 so default O0
         # But pay the price if uploading distribution
-        extra_compile_args = ["-O2" if "NRN_BUILD_FOR_UPLOAD" in os.environ else "-O0"]
         rxd_params = extension_common_params.copy()
         rxd_params["libraries"].append("rxdmath")
         rxd_params.update(
             dict(
                 # Cython files take a long time to compile with O2 but this
                 # is a distribution...
-                extra_compile_args=extra_compile_args,
-                extra_link_args=[
+                extra_compile_args=extra_compile_args + ["-O2" if "NRN_BUILD_FOR_UPLOAD" in os.environ else "-O0"], 
+                extra_link_args=extra_link_args + [
                     "-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")
                 ],
             )
