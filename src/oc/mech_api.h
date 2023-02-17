@@ -19,4 +19,5 @@
 #include "scoplib.h"
 #include "treeset.h"
 
+#include <cmath>     // nocmodl uses std::isnan
 #include <iostream>  // nocmodl uses std::cerr
