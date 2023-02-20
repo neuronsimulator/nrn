@@ -109,6 +109,7 @@ BOOST_AUTO_TEST_CASE(LFP_PointSource_LineSource) {
 #endif
 }
 
+#if defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
 BOOST_AUTO_TEST_CASE(LFP_ReportEvent) {
     const std::string report_name = "compartment_report";
     const std::vector<uint64_t> gids = {42, 134};
@@ -180,3 +181,4 @@ BOOST_AUTO_TEST_CASE(LFP_ReportEvent) {
     delete mapinfo;
     delete nt.nrn_fast_imem;
 }
+#endif  // defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
