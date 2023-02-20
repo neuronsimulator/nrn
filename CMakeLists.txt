@@ -876,11 +876,9 @@ install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
 list(FILTER NRN_HEADERS_PATHS EXCLUDE REGEX "src/coreneuron")
 # TODO support structured headers via HEADER_FILES_TO_INSTALL
-foreach(
-  header
-  neuron/model_data_fwd.hpp neuron/cache/mechanism_range.hpp neuron/cache/model_data.hpp
-  neuron/container/data_handle.hpp neuron/container/generic_data_handle.hpp
-  neuron/container/non_owning_soa_identifier.hpp)
+foreach(header
+        neuron/model_data_fwd.hpp neuron/cache/mechanism_range.hpp neuron/container/data_handle.hpp
+        neuron/container/generic_data_handle.hpp neuron/container/non_owning_soa_identifier.hpp)
   configure_file("src/${header}" "${PROJECT_BINARY_DIR}/include/${header}" COPYONLY)
 endforeach()
 file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/nrnoc/nrnsemanticversion.h
