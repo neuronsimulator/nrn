@@ -104,6 +104,14 @@ if "--cmake-build-dir" in sys.argv:
         )
     just_extensions = True
 
+# Check for RX3D Optimization Level
+rx3d_opt_level = "-O0"
+if "--rx3d-opt-level" in sys.argv:
+    rx3d_opt_level_arg = sys.argv[sys.argv.index("--rx3d-opt-level") + 1]
+    rx3d_opt_level = "-O{}".format(int(rx3d_opt_level_arg))
+    sys.argv.remove("--rx3d-opt-level")
+    sys.argv.remove(rx3d_opt_level_arg)
+
 # If NRN_ENABLE_PYTHON_DYNAMIC is ON, we will build the wheel without the nrnpython library
 without_nrnpython = False
 if "--without-nrnpython" in sys.argv:
@@ -527,7 +535,7 @@ def setup_package():
                 # Cython files take a long time to compile with O2 but this
                 # is a distribution...
                 extra_compile_args=extra_compile_args
-                + ["-O2" if "NRN_BUILD_FOR_UPLOAD" in os.environ else "-O0"],
+                + ["-O2" if "NRN_BUILD_FOR_UPLOAD" in os.environ else rx3d_opt_level],
                 extra_link_args=extra_link_args
                 + ["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")],
             )
