@@ -17,7 +17,6 @@ except ImportError:
 from setuptools import Command, Extension
 from setuptools import setup
 
-sys.setrecursionlimit(1500)
 
 logging.info("setup.py called with:" + " ".join(sys.argv))
 
@@ -69,7 +68,7 @@ except Exception as e:
 # Check if we've got --cmake-build-dir path that will be used to build extensions only
 # and not to build NEURON wheels.
 just_extensions = False
-cmake_build_dir = None
+cmake_build_dir = "build/cmake_install"  # default for wheels
 if "--cmake-build-dir" in sys.argv:
     cmake_build_dir = sys.argv[sys.argv.index("--cmake-build-dir") + 1]
     sys.argv.remove("--cmake-build-dir")
@@ -189,11 +188,7 @@ class CMakeAugmentedExtension(Extension):
         Extension.__init__(self, name, sources, **kw)
         self.sourcedir = os.path.abspath(cmake_proj_dir)
         self.cmake_flags = cmake_flags or []
-        self.cmake_install_prefix = (
-            os.path.abspath("build/cmake_install")
-            if not just_extensions
-            else cmake_build_dir
-        )
+        self.cmake_install_prefix = os.path.abspath(cmake_build_dir)
         self.cmake_collect_dirs = cmake_collect_dirs or []
         self.cmake_install_python_files = cmake_install_python_files
         self.cmake_done = False
@@ -450,9 +445,7 @@ def setup_package():
 
     extension_common_params = defaultdict(
         list,
-        library_dirs=["build/cmake_install/lib"]
-        if not just_extensions
-        else [os.path.join(cmake_build_dir, "lib")],
+        library_dirs=[os.path.join(cmake_build_dir, "lib")],
         libraries=ext_common_libraries,
         language="c++",
     )
@@ -501,13 +494,9 @@ def setup_package():
             extra_compile_args=extra_compile_args + ["-std=c++17"],
             extra_link_args=extra_link_args
             + [
-                # use relative rpath to .data/lib
-                "-Wl,-rpath,{}".format(REL_RPATH + "/.data/lib/")
-            ]
-            if not just_extensions
-            else [
-                "-Wl,-rpath,{}/../../".format(REL_RPATH),
-                # "-Wl,-rpath,%s" % ivlibdir
+                "-Wl,-rpath,{}{}".format(
+                    REL_RPATH, "/../../" if just_extensions else "/.data/lib/"
+                )
             ],
             **extension_common_params,
         )
