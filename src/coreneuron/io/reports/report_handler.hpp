@@ -22,7 +22,7 @@ class ReportHandler {
     virtual ~ReportHandler() = default;
 
     virtual void create_report(ReportConfiguration& config, double dt, double tstop, double delay);
-#if defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
+#ifdef ENABLE_SONATA_REPORTS
     virtual void register_section_report(const NrnThread& nt,
                                          const ReportConfiguration& config,
                                          const VarsToReport& vars_to_report,
@@ -44,11 +44,11 @@ class ReportHandler {
                                             const ReportConfiguration& report,
                                             const std::vector<int>& nodes_to_gids) const;
     std::vector<int> map_gids(const NrnThread& nt) const;
-#endif  // defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
+#endif
   protected:
-#if defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
+#ifdef ENABLE_SONATA_REPORTS
     std::vector<std::unique_ptr<ReportEvent>> m_report_events;
-#endif  // defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
+#endif
 };
 
 }  // Namespace coreneuron
