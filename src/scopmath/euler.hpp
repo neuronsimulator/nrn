@@ -22,11 +22,11 @@
  * @return Error code (always SUCCESS for euler)
  */
 namespace neuron::scopmath {
-template <typename Array>
+template <typename Array, typename IndexArray>
 int euler(int ninits,
           int neqn,
-          int* var,
-          int* der,
+          IndexArray var,
+          IndexArray der,
           Array p,
           double* t,
           double dt,
