@@ -693,9 +693,7 @@ Prop* prop_alloc(Prop** pp, int type, Node* nd) {
     /* returning *Prop because allocation may */
     /* cause other properties to be linked ahead */
     /* some models need the node (to find area) */
-    if (nd) {
-        nrn_alloc_node_ = nd;
-    }
+    nrn_alloc_node_ = nd;  // this might be null
     v_structure_change = 1;
     current_prop_list = pp;
     auto* p = new Prop{static_cast<short>(type)};
