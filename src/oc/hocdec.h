@@ -9,8 +9,11 @@
 #include "nrnassrt.h" /* assert in case of side effects (eg. scanf) */
 #include "wrap_sprintf.h"
 
-#include <stdio.h>
-#include <string.h>
+#include <iostream>
+#include <cstdint>
+#include <cstring>
+#include <vector>
+
 
 #define gargstr hoc_gargstr
 #define getarg  hoc_getarg
