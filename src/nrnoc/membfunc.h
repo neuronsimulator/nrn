@@ -11,6 +11,7 @@ extern void hoc_register_prop_size(int type, int psize, int dpsize);
 
 typedef struct NrnThread NrnThread;
 struct Extnode;
+struct Section;
 struct Symbol;
 
 typedef Datum* (*Pfrpdat)();
@@ -270,9 +271,12 @@ namespace _get {
 [[nodiscard]] double& _nrn_mechanism_access_d(Node*);
 [[nodiscard]] neuron::container::generic_data_handle*& _nrn_mechanism_access_dparam(Prop*);
 [[nodiscard]] Extnode*& _nrn_mechanism_access_extnode(Node*);
+[[nodiscard]] double& _nrn_mechanism_access_param(Prop*, int field, int array_index = 0);
 [[nodiscard]] double& _nrn_mechanism_access_rhs(Node*);
 [[nodiscard]] double& _nrn_mechanism_access_voltage(Node*);
 [[nodiscard]] neuron::container::data_handle<double> _nrn_mechanism_get_area_handle(Node*);
+[[nodiscard]] int _nrn_mechanism_get_nnode(Section*);
+[[nodiscard]] Node* _nrn_mechanism_get_node(Section*, int);
 [[nodiscard]] int _nrn_mechanism_get_num_vars(Prop*);
 [[nodiscard]] neuron::container::data_handle<double> _nrn_mechanism_get_param_handle(
     Prop* prop,
@@ -282,4 +286,6 @@ _nrn_mechanism_get_param_handle(Prop* prop, int field, int array_index = 0) {
     return _nrn_mechanism_get_param_handle(prop,
                                            neuron::container::field_index{field, array_index});
 }
+[[nodiscard]] NrnThread* _nrn_mechanism_get_thread(Node*);
 [[nodiscard]] int _nrn_mechanism_get_type(Prop*);
+[[nodiscard]] int _nrn_mechanism_get_v_node_index(Node*);
