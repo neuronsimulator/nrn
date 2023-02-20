@@ -1,7 +1,6 @@
 #include <../../nrnconf.h>
 
 #include "partrans.h"  // sgid_t and SetupTransferInfo for CoreNEURON
-#include "treeset.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -142,8 +141,6 @@ extern void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
 extern void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
 extern void nrnmpi_dbl_alltoallv_sparse(double*, int*, int*, double*, int*, int*);
 #endif
-
-void nrn_partrans_update_ptrs();
 
 struct TransferThreadData {
     int cnt;

@@ -134,7 +134,6 @@ class ShapeSection: public FastShape {  // single section
     Coord scale() {
         return len_scale_;
     }
-    void update_ptrs();
 
   private:
     void trapezoid(Canvas*, const Color*, int i) const;

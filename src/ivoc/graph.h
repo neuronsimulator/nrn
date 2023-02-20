@@ -146,7 +146,6 @@ class Graph: public Scene {  // Scene of GraphLines labels and polylines
     void name(char*);
     void change_label_color(GLabel*);
     void change_line_color(GPolyLine*);
-    void update_ptrs();
 
     virtual void save_phase1(std::ostream&);
     virtual void save_phase2(std::ostream&);
@@ -253,7 +252,6 @@ class DataPointers: public Resource {  // vector of pointers
         assert(i < px_.size());
         return px_[i];
     }
-    void update_ptrs();
 
   private:
     std::vector<neuron::container::data_handle<double>> px_;
@@ -369,7 +367,6 @@ class GraphLine: public GPolyLine, public Observer {  // An oc variable to plot
     void simgraph_activate(bool);
     void simgraph_init();
     void simgraph_continuous(double);
-    void update_ptrs();
 
     Symbol* expr_;
     neuron::container::data_handle<double> pval_;
@@ -399,7 +396,6 @@ class GraphVector: public GPolyLine, public Observer {  // fixed x and vector of
     DataPointers* py_data() {
         return dp_;
     }
-    void update_ptrs();
     void record_install();
     void record_uninstall();
 

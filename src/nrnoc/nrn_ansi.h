@@ -120,7 +120,7 @@ extern double nrn_ra(Section*);
 extern int node_index_exact(Section*, double);
 void nrn_cachevec(int);
 void nrn_ba(neuron::model_sorted_token const&, NrnThread&, int);
-extern void nrniv_recalc_ptrs(void);
+void nrniv_recalc_ptrs();
 extern void nrn_recalc_ptrvector(void);
 extern void nrn_rhs_ext(NrnThread*);
 extern void nrn_setup_ext(NrnThread*);
