@@ -72,7 +72,6 @@ class ShapePlot: public ShapeScene, public ShapePlotInterface {
     virtual float high();
     virtual bool has_iv_view();
     virtual Object* neuron_section_list();
-    void update_ptrs();
     void has_iv_view(bool);
 
   private:
