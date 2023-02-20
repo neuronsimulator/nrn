@@ -99,8 +99,6 @@ the notify_free_val parameter in node_free in solve.cpp
 */
 #define NODEAREA(n) ((n)->area())
 #define NODERINV(n) ((n)->_rinv)
-#define NODEA(n)    (VEC_A((n)->v_node_index))
-#define NODEB(n)    (VEC_B((n)->v_node_index))
 
 struct Extnode;
 struct Node {
