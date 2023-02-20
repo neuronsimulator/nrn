@@ -29,6 +29,9 @@ neuron::container::generic_data_handle*& _nrn_mechanism_access_dparam(Prop* prop
 Extnode*& _nrn_mechanism_access_extnode(Node* node) {
     return node->extnode;
 }
+double& _nrn_mechanism_access_param(Prop* prop, int field, int array_index) {
+    return prop->param(field, array_index);
+}
 double& _nrn_mechanism_access_rhs(Node* node) {
     return *node->_rhs;
 }
@@ -38,6 +41,12 @@ double& _nrn_mechanism_access_voltage(Node* node) {
 neuron::container::data_handle<double> _nrn_mechanism_get_area_handle(Node* node) {
     return node->area_handle();
 }
+int _nrn_mechanism_get_nnode(Section* sec) {
+    return sec->nnode;
+}
+Node* _nrn_mechanism_get_node(Section* sec, int idx) {
+    return sec->pnode[idx];
+}
 int _nrn_mechanism_get_num_vars(Prop* prop) {
     return prop->param_num_vars();
 }
@@ -46,8 +55,14 @@ neuron::container::data_handle<double> _nrn_mechanism_get_param_handle(
     neuron::container::field_index field) {
     return prop->param_handle(field);
 }
+NrnThread* _nrn_mechanism_get_thread(Node* node) {
+    return node->_nt;
+}
 int _nrn_mechanism_get_type(Prop* prop) {
     return prop ? prop->_type : -1;
+}
+int _nrn_mechanism_get_v_node_index(Node* node) {
+    return node->v_node_index;
 }
 namespace neuron::mechanism::_get {
 std::size_t _current_row(Prop* prop) {

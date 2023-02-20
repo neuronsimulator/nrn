@@ -43,6 +43,15 @@ struct Extnode {
 };
 #endif
 
+#define VEC_A(i)    (_nt->_actual_a[(i)])
+#define VEC_AREA(i) (_nt->actual_area(i))
+#define VEC_B(i)    (_nt->_actual_b[(i)])
+#define VEC_D(i)    (_nt->_actual_d[(i)])
+#define VEC_RHS(i)  (_nt->_actual_rhs[(i)])
+#define VEC_V(i)    (_nt->actual_v(i))
+
+#define NODEA(n)   VEC_A(_nrn_mechanism_get_v_node_index(n))
+#define NODEB(n)   VEC_B(_nrn_mechanism_get_v_node_index(n))
 #define NODED(n)   _nrn_mechanism_access_d(n)
 #define NODERHS(n) _nrn_mechanism_access_rhs(n)
 #ifdef NODEV
@@ -51,12 +60,6 @@ struct Extnode {
 #endif
 #define NODEV(n) _nrn_mechanism_access_voltage(n)
 
-#define VEC_A(i)    (_nt->_actual_a[(i)])
-#define VEC_AREA(i) (_nt->actual_area(i))
-#define VEC_B(i)    (_nt->_actual_b[(i)])
-#define VEC_D(i)    (_nt->_actual_d[(i)])
-#define VEC_RHS(i)  (_nt->_actual_rhs[(i)])
-#define VEC_V(i)    (_nt->actual_v(i))
 /**
  * A point process is computed just like regular mechanisms. Ie it appears in the property list
  * whose type specifies which allocation, current, and state functions to call. This means some
