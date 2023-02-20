@@ -305,6 +305,6 @@ else()
   file(REMOVE "${PROJECT_BINARY_DIR}/config.h")
 endif()
 
-# Prepare some variables for @VAR@ expansion in setup.py(nrnpython and rx3d)
+# Prepare some variables for setup.py extension building (hoc_module, rx3d and music)
 string(JOIN " " NRN_COMPILE_FLAGS_STRING ${NRN_COMPILE_FLAGS})
 string(JOIN " " NRN_LINK_FLAGS_STRING ${NRN_LINK_FLAGS})
