@@ -50,8 +50,6 @@ char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strpt
 #include "parse.hpp"
 #include "utility.h"
 #include "scenepic.h"
-#include "treeset.h"
-
 
 // The problem this overcomes is that the pick of an input handler normally
 // succeeds for a keystroke only if the mouse is over one of the child
@@ -972,18 +970,6 @@ void HocPanel::save_all(std::ostream&) {
             hoc_panel_list->item(i)->data_path(data_paths, false);
         }
     delete data_paths;
-}
-
-void HocPanel::update_ptrs() {
-    if (!hoc_panel_list)
-        return;
-    int i, j;
-    for (i = 0; i < hoc_panel_list->count(); ++i) {
-        HocUpdateItemList& ul = hoc_panel_list->item(i)->elist_;
-        for (j = 0; j < ul.count(); ++j) {
-            ul.item(j)->update_ptrs();
-        }
-    }
 }
 
 #if MAC
@@ -3243,22 +3229,3 @@ static Member_func vfe_members[] = {{"default", vfe_default}, {0, 0}};
 void ValueFieldEditor_reg() {
     class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members, NULL, NULL, NULL);
 }
-
-#if HAVE_IV
-void HocValEditor::update_ptrs() {
-    nrn_forget_history(pval_);
-}
-
-void OcSlider::update_ptrs() {
-    nrn_forget_history(pval_);
-}
-
-void HocStateButton::update_ptrs() {
-    nrn_forget_history(pval_);
-}
-
-void HocStateMenuItem::update_ptrs() {
-    nrn_forget_history(pval_);
-}
-
-#endif

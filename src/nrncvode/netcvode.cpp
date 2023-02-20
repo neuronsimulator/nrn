@@ -39,7 +39,6 @@
 #include "nrniv_mf.h"
 #include "nrnste.h"
 #include "profile.h"
-#include "treeset.h"
 #include "utils/profile/profiler_interface.h"
 
 #include <array>
@@ -6776,7 +6775,6 @@ void NetCvode::recalc_ptrs() {
         if (pr->pd_ && !pr->pd_.refers_to_a_modern_data_structure()) {
             pr->update_ptr(pr->pd_);
         }
-        nrn_forget_history(pr->pd_);
     }
 #endif
 }

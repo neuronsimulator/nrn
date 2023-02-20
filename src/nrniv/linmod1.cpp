@@ -8,7 +8,6 @@
 #include "classreg.h"
 #include "linmod.h"
 #include "nrnoc2iv.h"
-#include "treeset.h"
 
 // hoc interface to a LinearModelAddition
 // remember that the policy for equation additions to the tree matrix is
