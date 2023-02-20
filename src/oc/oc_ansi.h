@@ -1,4 +1,5 @@
 #pragma once
+#include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 
 #include <cstdio>
@@ -40,10 +41,6 @@ struct VoidFunc;
 namespace neuron {
 struct model_sorted_token;
 }
-namespace neuron::container {
-template <typename>
-struct data_handle;
-}  // namespace neuron::container
 
 // nocpout.cpp
 Symbol* hoc_get_symbol(const char* var);
