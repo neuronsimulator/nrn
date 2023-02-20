@@ -30,3 +30,5 @@ struct SetupTransferInfo {
 extern "C" {
 extern SetupTransferInfo* nrn_get_partrans_setup_info(int, int, size_t);
 }
+
+void nrn_partrans_update_ptrs();

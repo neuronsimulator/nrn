@@ -14,9 +14,9 @@
 #include "nrniv_mf.h"
 #include "nrnmpi.h"
 #include "ocnotify.h"
+#include "partrans.h"
 #include "section.h"
 #include "spmatrix.h"
-#include "treeset.h"
 #include "utils/profile/profiler_interface.h"
 #include "multicore.h"
 
@@ -43,7 +43,6 @@ extern int* nrn_prop_dparam_size_;
 extern int* nrn_dparam_ptr_start_;
 extern int* nrn_dparam_ptr_end_;
 extern void nrn_define_shape();
-extern void nrn_partrans_update_ptrs();
 
 #if 1 || PARANEURON
 void (*nrn_multisplit_setup_)();
@@ -2102,12 +2101,6 @@ All Graph addvar pointers that plot v.
 All Vector record and play pointers that deal with v.
 All PreSyn threshold detectors that watch v.
 */
-
-// TODO re-remove these too
-double* nrn_recalc_ptr(double* old) {
-    return old;
-}
-void nrn_register_recalc_ptr_callback(Pfrv f) {}
 
 void nrn_recalc_ptrs() {
     /* update pointers managed by c++ */

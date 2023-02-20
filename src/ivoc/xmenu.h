@@ -123,7 +123,6 @@ class HocPanel: public OcGlyph {
                           ScenePicker*,
                           Object* pycallback = NULL,
                           Object* pyselact = NULL);
-    static void update_ptrs();
 
   private:
     PolyGlyph* box_;
@@ -201,7 +200,6 @@ class HocUpdateItem: public HocItem {
     virtual void update_hoc_item();
     virtual void check_pointer(void*, int vector_size);
     virtual void data_path(HocDataPaths*, bool);
-    virtual void update_ptrs() {}
 };
 
 class HocLabel: public HocItem {
@@ -341,7 +339,6 @@ class HocValEditor: public HocUpdateItem {
     bool active() {
         return active_;
     }
-    virtual void update_ptrs();
 
   private:
     friend class HocEditorForItem;
@@ -453,7 +450,6 @@ class OcSlider: public HocUpdateItem, public Observer {
     virtual void check_pointer(void*, int vector_size);
     virtual void data_path(HocDataPaths*, bool);
     virtual double slider_val();
-    virtual void update_ptrs();
 
   private:
     void audit();
@@ -490,7 +486,6 @@ class HocStateButton: public HocUpdateItem, public Observer {
     virtual void check_pointer(void*, int);
     virtual void data_path(HocDataPaths*, bool);
     virtual void print(Printer*, const Allocation&) const;
-    virtual void update_ptrs();
     enum { CHECKBOX, PALETTE };
 
   private:
@@ -522,7 +517,6 @@ class HocStateMenuItem: public HocUpdateItem, public Observer {
     virtual void check_pointer(void*, int);
     virtual void data_path(HocDataPaths*, bool);
     virtual void print(Printer*, const Allocation&) const;
-    virtual void update_ptrs();
 
   private:
     CopyString* variable_;
