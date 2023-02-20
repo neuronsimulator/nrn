@@ -39,7 +39,11 @@ double& _nrn_mechanism_access_voltage(Node* node) {
     return node->v();
 }
 neuron::container::data_handle<double> _nrn_mechanism_get_area_handle(Node* node) {
-    return node->area_handle();
+    if (node) {
+        return node->area_handle();
+    } else {
+        return {};
+    }
 }
 int _nrn_mechanism_get_nnode(Section* sec) {
     return sec->nnode;
