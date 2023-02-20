@@ -11,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <cmath>
 #include <sys/stat.h>
 
 #include "coreneuron/utils/nrn_assert.h"
@@ -145,6 +146,10 @@ class FileHandler {
                 ntmapping->add_segment_id(seg[i]);
                 int factor_offset = i * num_electrodes;
                 if (total_lfp_factors > 0) {
+                    // Abort if the factors contains a NaN
+                    nrn_assert(count_if(lfp_factors.begin(), lfp_factors.end(), [](double d) {
+                                   return std::isnan(d);
+                               }) == 0);
                     std::vector<double> segment_factors(lfp_factors.begin() + factor_offset,
                                                         lfp_factors.begin() + factor_offset +
                                                             num_electrodes);

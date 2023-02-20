@@ -212,10 +212,12 @@ struct NrnThreadMappingInfo {
 
     /** @brief Resize the lfp vector */
     void prepare_lfp() {
-        size_t lfp_size = 0;
-        for (const auto& mapping: mappingvec) {
-            lfp_size += mapping->num_electrodes();
-        }
+        size_t lfp_size = std::accumulate(mappingvec.begin(),
+                                          mappingvec.end(),
+                                          0,
+                                          [](size_t total, const auto& mapping) {
+                                              return total + mapping->num_electrodes();
+                                          });
         _lfp.resize(lfp_size);
     }
 };
