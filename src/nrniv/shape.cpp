@@ -38,7 +38,6 @@
 #include "ocobserv.h"
 #include "parse.hpp"
 #include "ivoc.h"
-#include "treeset.h"
 
 #define Shape_Section_ "Section PlotShape"
 #define Shape_Rotate_  "Rotate3D PlotShape"
@@ -1496,16 +1495,6 @@ Section* ShapeSection::section() const {
 
 bool ShapeSection::good() const {
     return sec_->prop != 0;
-}
-
-void ShapeSection::update_ptrs() {
-    if (pvar_.empty()) {
-        return;
-    }
-    auto const n = section()->nnode - 1;
-    for (int i = 0; i < n; ++i) {
-        nrn_forget_history(pvar_[i]);
-    }
 }
 
 void ShapeSection::set_range_variable(Symbol* sym) {

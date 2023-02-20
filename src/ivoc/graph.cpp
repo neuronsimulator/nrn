@@ -48,7 +48,6 @@ extern Image* gif_image(const char*);
 
 #include "classreg.h"
 #include "gui-redirect.h"
-#include "treeset.h"
 
 extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
 extern double (*nrnpy_object_to_double_)(Object*);
@@ -2681,7 +2680,6 @@ void GraphLine::simgraph_continuous(double tt) {
 void GraphLine::update(Observable*) {  // *pval_ has been freed
                                        // printf("GraphLine::update pval_ has been freed\n");
     pval_ = {};
-    nrn_forget_history(pval_);
     if (obj_) {
         expr_ = NULL;
     }
@@ -2701,7 +2699,6 @@ bool GraphLine::change_expr(const char* expr, Symlist** symlist) {
             // we are no longer interested in updates to pval_
             nrn_notify_pointer_disconnect(this);
             pval_ = {};
-            nrn_forget_history(pval_);
         }
         return true;
     } else {
@@ -3474,43 +3471,6 @@ void Graph::change_prop() {
     ColorBrushWidget::start(this);
     if (Oc::helpmode()) {
         help();
-    }
-}
-
-void Graph::update_ptrs() {
-    nrn_forget_history(x_pval_);
-    if (rvp_) {
-        rvp_->update_ptrs();
-    }
-    GlyphIndex i, cnt = count();
-    for (i = 0; i < cnt; ++i) {
-        GraphItem* gi = (GraphItem*) component(i);
-        if (gi->is_graphVector()) {
-            GraphVector* gv = (GraphVector*) (gi->body());
-            if (gv) {
-                gv->update_ptrs();
-            }
-        }
-    }
-    cnt = line_list_.count();
-    for (i = 0; i < line_list_.count(); ++i) {
-        line_list_.item(i)->update_ptrs();
-    }
-}
-
-void DataPointers::update_ptrs() {
-    for (auto& dh: px_) {
-        nrn_forget_history(dh);
-    }
-}
-
-void GraphLine::update_ptrs() {
-    nrn_forget_history(pval_);
-}
-
-void GraphVector::update_ptrs() {
-    if (dp_) {
-        dp_->update_ptrs();
     }
 }
 

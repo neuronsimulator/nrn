@@ -530,15 +530,6 @@ void ShapePlot::observe(SectionList* sl) {
     }
 }
 
-void ShapePlot::update_ptrs() {
-    PolyGlyph* pg = shape_section_list();
-    GlyphIndex i, cnt = pg->count();
-    for (i = 0; i < cnt; ++i) {
-        ShapeSection* ss = (ShapeSection*) pg->component(i);
-        ss->update_ptrs();
-    }
-}
-
 void ShapePlot::erase_all() {
     Resource::unref(spi_->colorbar_);
     spi_->colorbar_ = NULL;
