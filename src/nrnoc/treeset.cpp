@@ -1923,6 +1923,9 @@ void nrn_matrix_node_free() {
             nt->_actual_b = (double*) 0;
         }
 #endif /* CACHEVEC */
+        if (nt->_sp13_rhs) {
+            free(std::exchange(nt->_sp13_rhs, nullptr));
+        }
         if (nt->_sp13mat) {
             spDestroy(nt->_sp13mat);
             nt->_sp13mat = (char*) 0;

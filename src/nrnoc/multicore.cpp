@@ -344,6 +344,7 @@ void nrn_threads_create(int n, bool parallel) {
                 nt->_actual_d = 0;
                 nt->_actual_a = 0;
                 nt->_actual_b = 0;
+                nt->_sp13_rhs = 0;
                 nt->_v_parent_index = 0;
                 nt->_v_node = 0;
                 nt->_v_parent = 0;
