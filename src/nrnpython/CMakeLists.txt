@@ -187,6 +187,10 @@ if(NRN_ENABLE_MODULE_INSTALL)
   if(MINGW)
     list(APPEND NRN_SETUP_PY_BUILD_EXT_OPTIONS "--define=MS_WIN64")
   endif()
+  # force rebuild of cython generated files for PYTHON_DYNAMIC
+  if(NRN_ENABLE_PYTHON_DYNAMIC)
+    list(APPEND NRN_SETUP_PY_BUILD_EXT_OPTIONS "--force")
+  endif()
 
   # Build python module
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
