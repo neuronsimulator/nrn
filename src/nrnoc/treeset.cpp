@@ -2023,7 +2023,7 @@ static void nrn_matrix_node_alloc(void) {
             v_setup_vectors();
             return;
         } else {
-            if (nt->node_rhs_storage() != nullptr) {
+            if (nt->_actual_d != nullptr) {
                 return;
             }
         }
