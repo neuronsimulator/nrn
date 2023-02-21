@@ -1,7 +1,6 @@
 #include "neuron/container/node.hpp"
 #include "neuron/container/soa_container.hpp"
 #include "section.h"
-#include "../model_test_utils.hpp"
 
 #include <catch2/catch.hpp>
 
@@ -239,7 +238,7 @@ std::vector<double> get_node_voltages(std::vector<::Node> const& nodes) {
     return ret;
 }
 std::tuple<std::vector<::Node>, std::vector<double>> get_nodes_and_reference_voltages(
-    std::size_t num_nodes) {
+    std::size_t num_nodes = 10) {
     std::vector<double> reference_voltages{};
     std::generate_n(std::back_inserter(reference_voltages), num_nodes, [i = 0]() mutable {
         auto x = i++;
