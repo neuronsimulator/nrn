@@ -24,8 +24,6 @@ class TQueue {
   public:
     TQueue();
     virtual ~TQueue();
-
-#if FAST_LEAST
     TQItem* least() {
         return least_;
     }
@@ -37,10 +35,6 @@ class TQueue {
         }
     }
     TQItem* second_least(double t);
-#else
-    TQItem* least();  // does not remove from TQueue
-    double least_t();
-#endif
     TQItem* insert(double t, void* data_);
     TQItem* find(double t);
     void remove(TQItem*);
