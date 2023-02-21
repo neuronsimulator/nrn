@@ -85,7 +85,6 @@ storage::storage(short mech_type, std::string name, std::vector<Variable> floati
     : base_type{field::FloatingPoint{std::move(floating_point_fields)}}
     , m_mech_name{std::move(name)}
     , m_mech_type{mech_type} {}
-<<<<<<< HEAD
 double& storage::fpfield(std::size_t instance, int field, int array_index) {
     return get_field_instance<field::FloatingPoint>(instance, field, array_index);
 }

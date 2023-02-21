@@ -160,7 +160,7 @@ struct handle_interface: handle_base<Identifier> {
      */
     void set_rhs(field::RHS::type rhs) {
         this->template get<field::RHS>() = rhs;
-    }   
+    }
 
     friend std::ostream& operator<<(std::ostream& os, handle_interface const& handle) {
         return os << "Node{" << handle.id() << '/' << handle.underlying_storage().size()

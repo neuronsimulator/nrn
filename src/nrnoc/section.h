@@ -98,7 +98,6 @@ typedef struct Info3Val { /* storage to help build matrix efficiently */
 the notify_free_val parameter in node_free in solve.cpp
 */
 #define NODEAREA(n) ((n)->area())
-#define NODERHS(n) ((n)->rhs())
 #define NODERINV(n) ((n)->_rinv)
 
 struct Extnode;

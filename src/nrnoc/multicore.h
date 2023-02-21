@@ -83,7 +83,7 @@ struct NrnThread {
         return node_area_storage()[row];
     }
     [[nodiscard]] double& actual_rhs(std::size_t row) {
-      return node_rhs_storage()[row];
+        return node_rhs_storage()[row];
     }
     [[nodiscard]] double& actual_v(std::size_t row) {
         return node_voltage_storage()[row];

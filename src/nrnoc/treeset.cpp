@@ -346,7 +346,7 @@ vm += dvi-dvx
  * Update actual_rhs based on _sp13_rhs used for sparse13 solver
  */
 void update_actual_rhs_based_on_sp13_rhs(NrnThread* nt) {
-    for(int i = 0; i < nt->end; i++) {
+    for (int i = 0; i < nt->end; i++) {
         nt->actual_rhs(i) = nt->_sp13_rhs[nt->_v_node[i]->eqn_index_];
     }
 }
@@ -355,7 +355,7 @@ void update_actual_rhs_based_on_sp13_rhs(NrnThread* nt) {
  * Update _sp13_rhs used for sparse13 solver based on changes on actual_rhs
  */
 void update_sp13_rhs_based_on_actual_rhs(NrnThread* nt) {
-    for(int i = 0; i < nt->end; i++) {
+    for (int i = 0; i < nt->end; i++) {
         nt->_sp13_rhs[nt->_v_node[i]->eqn_index_] = nt->actual_rhs(i);
     }
 }
