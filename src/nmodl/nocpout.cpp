@@ -1292,13 +1292,13 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
             lst = get_ion_variables(0);
             if (lst->next != lst->prev) {
                 move(lst->next, lst->prev, ITM(q));
-                freelist((List**) lst);
+                freelist(&lst);
             }
             q = q->next;
             lst = set_ion_variables(0);
             if (lst->next != lst->prev) {
                 move(lst->next, lst->prev, ITM(q));
-                freelist((List**) lst);
+                freelist(&lst);
             }
             q = q->next;
             Sprintf(buf, "\thoc_reg_ba(_mechtype, _ba%d, %s);\n", i, STR(q));
