@@ -30,7 +30,6 @@ if test x$mingw = x1 ; then\n\
   pyver=`$pyexe -c 'import sys; print (sys.version_info[0]); quit()'`\n\
   echo pyver=$pyver\n\
   if test x$pyver = x3 ; then # python3.x builds with msvc\n\
-    . ${PROJECT_SOURCE_DIR}/mingw_files/vcenv.sh\n\
     $pyexe setup.py build_ext --build-lib=${NRN_PYTHON_BUILD_LIB}\n\
   fi\n\
 else #mac/linux does not need anything special\n\
