@@ -18,7 +18,7 @@ extern void nrn_solver_prepare();
 extern "C" void nrn_random_play();
 extern void nrn_daspk_init_step(double, double, int);
 extern void nrndae_init();
-extern void nrndae_update();
+extern void nrndae_update(NrnThread*);
 extern void nrn_update_2d(NrnThread*);
 void nrn_capacity_current(neuron::model_sorted_token const&, NrnThread* _nt, Memb_list* ml);
 extern void nrn_spike_exchange_init();

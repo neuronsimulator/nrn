@@ -599,7 +599,7 @@ void nrn_update_voltage(neuron::model_sorted_token const& sorted_token, NrnThrea
                 node->v() += NODERHS(_nt->_v_node[i]);
             }
             if (use_sparse13) {
-                nrndae_update();
+                nrndae_update(_nt);
             }
         }
     } /* end of non-vectorized update */

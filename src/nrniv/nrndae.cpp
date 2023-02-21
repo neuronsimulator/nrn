@@ -30,8 +30,7 @@ int nrndae_extra_eqn_count() {
     return neqn;
 }
 
-void nrndae_update() {
-    NrnThread* _nt = nrn_threads;
+void nrndae_update(NrnThread* _nt) {
     update_sp13_rhs_based_on_actual_rhs(_nt);
     for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
         (*m)->update();
@@ -54,8 +53,10 @@ void nrndae_alloc() {
 
 
 void nrndae_init() {
-    NrnThread* _nt = nrn_threads;
-    update_sp13_rhs_based_on_actual_rhs(_nt);
+    for (int it = 0; it < nrn_nthread; ++it) {
+        NrnThread* _nt = &nrn_threads[it];
+        update_sp13_rhs_based_on_actual_rhs(_nt);
+    }
     if ((!nrndae_list.empty()) &&
         (secondorder > 0 || ((cvode_active_ > 0) && (nrn_use_daspk_ == 0)))) {
         hoc_execerror("NrnDAEs only work with secondorder==0 or daspk", 0);
@@ -63,11 +64,13 @@ void nrndae_init() {
     for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
         (*m)->init();
     }
-    update_actual_rhs_based_on_sp13_rhs(_nt);
+    for (int it = 0; it < nrn_nthread; ++it) {
+        NrnThread* _nt = &nrn_threads[it];
+        update_actual_rhs_based_on_sp13_rhs(_nt);
+    }
 }
 
-void nrndae_rhs() {
-    NrnThread* _nt = nrn_threads;
+void nrndae_rhs(NrnThread* _nt) {
     update_sp13_rhs_based_on_actual_rhs(_nt);
     for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
         (*m)->rhs();

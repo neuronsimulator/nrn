@@ -464,7 +464,7 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     if (use_sparse13) {
         /* must be after nrn_rhs_ext so that whatever is put in
         nd->_rhs does not get added to nde->rhs */
-        nrndae_rhs();
+        nrndae_rhs(_nt);
     }
 
     activstim_rhs();
