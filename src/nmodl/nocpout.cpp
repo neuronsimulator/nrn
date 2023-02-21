@@ -531,7 +531,7 @@ extern Memb_func* memb_func;\n\
             }
         }
         Sprintf(buf,
-                "  _thread[%d] = {neuron::container::do_not_search, new double[%d]};\n",
+                "  _thread[%d] = {neuron::container::do_not_search, new double[%d]{}};\n",
                 thread_data_index,
                 cnt);
         lappendstr(thread_mem_init_list, buf);
@@ -590,7 +590,7 @@ extern Memb_func* memb_func;\n\
         Lappendstr(defs_list, buf);
         Sprintf(buf,
                 "if (_thread1data_inuse) {\n"
-                "  _thread[_gth] = {neuron::container::do_not_search, new double[%d]};\n"
+                "  _thread[_gth] = {neuron::container::do_not_search, new double[%d]{}};\n"
                 "} else {\n"
                 "  _thread[_gth] = {neuron::container::do_not_search, _thread1data};\n"
                 "  _thread1data_inuse = 1;\n"
