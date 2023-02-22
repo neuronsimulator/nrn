@@ -706,6 +706,18 @@ Prop* prop_alloc(Prop** pp, int type, Node* nd) {
     return p;
 }
 
+void prop_update_ion_variables(Prop* prop, Node* node) {
+    nrn_alloc_node_ = node;
+    nrn_point_prop_ = prop;
+    current_prop_list = &node->prop;
+    auto const type = prop->_type;
+    assert(memb_func[type].alloc);
+    memb_func[type].alloc(prop);
+    current_prop_list = nullptr;
+    nrn_point_prop_ = nullptr;
+    nrn_alloc_node_ = nullptr;
+}
+
 Prop* prop_alloc_disallow(Prop** pp, short type, Node* nd) {
     disallow_needmemb = 1;
     auto* p = prop_alloc(pp, type, nd);
