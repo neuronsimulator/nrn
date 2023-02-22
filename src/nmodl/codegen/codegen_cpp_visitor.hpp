@@ -66,9 +66,6 @@ enum BlockType {
     /// breakpoint block
     Equation,
 
-    /// ode_* routines block (not used)
-    Ode,
-
     /// derivative block
     State,
 
@@ -417,14 +414,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
     SymbolType make_symbol(const std::string& name) const {
         return std::make_shared<symtab::Symbol>(name, ModToken());
     }
-
-
-    /**
-     * Checks if the given variable name belongs to a state variable
-     * \param name The variable name
-     * \return     \c true if the variable is a state variable
-     */
-    bool state_variable(const std::string& name) const;
 
 
     /**
