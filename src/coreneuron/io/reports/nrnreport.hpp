@@ -90,7 +90,7 @@ struct ReportConfiguration {
     std::vector<std::string> var_names;   // variable names
     std::vector<int> mech_ids;            // mechanisms
     std::string unit;                     // unit of the report
-    std::string format;                   // format of the report (hdf5, SONATA)
+    std::string format;                   // format of the report (SONATA)
     std::string type_str;                 // type of report string
     TargetType target_type;               // type of the target
     ReportType type;                      // type of the report
