@@ -351,6 +351,7 @@ void ghk(void) {
     hoc_retpushx(val);
 }
 
+static constexpr auto iontype_index_dparam = 0;
 static constexpr auto erev_index = 0; /* From Eion */
 static constexpr auto conci_index = 1;
 static constexpr auto conco_index = 2;
@@ -370,17 +371,6 @@ ion_style("name_ion", [c_style, e_style, einit, eadvance, cinit])
 
  nernst(ci, co, charge) and ghk(v, ci, co, charge) available to hoc
  and models.
-*/
-
-#define iontype ppd[i][0].get<int>() /* how _AMBIGUOUS is to be handled */
-/*the bitmap is
-03	concentration unused, nrnocCONST, DEP, STATE
-04	initialize concentrations
-030	reversal potential unused, nrnocCONST, DEP, STATE
-040	initialize reversal potential
-0100	calc reversal during fadvance
-0200	ci being written by a model
-0400	co being written by a model
 */
 
 #define charge global_charge(type)
@@ -432,7 +422,7 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
     }
 
     chk_conc_[2 * p_ok->_type + i] |= ion_bit_[pion->_type];
-    if (pion->dparam[0].get<int>() & flag) {
+    if (pion->dparam[iontype_index_dparam].get<int>() & flag) {
         /* now comes the hard part. Is the possibility in fact actual.*/
         for (p = pion->next; p; p = p->next) {
             if (p == p_ok) {
@@ -451,9 +441,9 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
             }
         }
     }
-    auto ii = pion->dparam[0].get<int>();
+    auto ii = pion->dparam[iontype_index_dparam].get<int>();
     ii |= flag;
-    pion->dparam[0] = ii;
+    pion->dparam[iontype_index_dparam] = ii;
 }
 
 void ion_style(void) {
@@ -471,7 +461,7 @@ void ion_style(void) {
     p = nrn_mechanism(s->subtype, sec->pnode[0]);
     oldstyle = -1;
     if (p) {
-        oldstyle = p->dparam[0].get<int>();
+        oldstyle = p->dparam[iontype_index_dparam].get<int>();
     }
 
     if (ifarg(2)) {
@@ -480,31 +470,15 @@ void ion_style(void) {
         istyle += 040 * (int) chkarg(4, 0., 1.);  /* einit */
         istyle += 0100 * (int) chkarg(5, 0., 1.); /* eadvance */
         istyle += 04 * (int) chkarg(6, 0., 1.);   /* cinit*/
-
-#if 0 /* global effect */
-        {
-            int count;
-            Datum** ppd;
-            v_setup_vectors();
-            count = memb_list[s->subtype].nodecount;
-            ppd = memb_list[s->subtype].pdata;
-            for (i=0; i < count; ++i) {
-                iontype = (iontype&(0200+0400)) + istyle;
+        for (i = 0; i < sec->nnode; ++i) {
+            p = nrn_mechanism(s->subtype, sec->pnode[i]);
+            if (p) {
+                auto ii = p->dparam[iontype_index_dparam].get<int>();
+                ii &= (0200 + 0400);
+                ii += istyle;
+                p->dparam[iontype_index_dparam] = ii;
             }
         }
-#else /* currently accessed section */
-        {
-            for (i = 0; i < sec->nnode; ++i) {
-                p = nrn_mechanism(s->subtype, sec->pnode[i]);
-                if (p) {
-                    auto ii = p->dparam[0].get<int>();
-                    ii &= (0200 + 0400);
-                    ii += istyle;
-                    p->dparam[0] = ii;
-                }
-            }
-        }
-#endif
     }
     hoc_retpushx((double) oldstyle);
 }
@@ -521,7 +495,7 @@ int nrn_vartype(Symbol* sym) {
         }
         p = nrn_mechanism(sym->u.rng.type, sec->pnode[0]);
         if (p) {
-            auto it = p->dparam[0].get<int>();
+            auto it = p->dparam[iontype_index_dparam].get<int>();
             if (sym->u.rng.index == 0) { /* erev */
                 i = (it & 030) >> 3;     /* unused, nrnocCONST, DEP, or STATE */
             } else {                     /* concentration */
@@ -534,10 +508,9 @@ int nrn_vartype(Symbol* sym) {
 
 /* the ion mechanism it flag  defines how _AMBIGUOUS is to be interpreted */
 void nrn_promote(Prop* p, int conc, int rev) {
-    int oldconc, oldrev;
-    int it = p->dparam[0].get<int>();
-    oldconc = (it & 03);
-    oldrev = (it & 030) >> 3;
+    int it = p->dparam[iontype_index_dparam].get<int>();
+    int oldconc = (it & 03);
+    int oldrev = (it & 030) >> 3;
     /* precedence */
     if (oldconc < conc) {
         oldconc = conc;
@@ -560,8 +533,18 @@ void nrn_promote(Prop* p, int conc, int rev) {
     if (oldconc > 0 && oldrev == 2) { /*einit*/
         it += 040;
     }
-    p->dparam[0] = it;
+    p->dparam[iontype_index_dparam] = it;  // this sets iontype to 8
 }
+
+/*the bitmap is
+03	concentration unused, nrnocCONST, DEP, STATE
+04	initialize concentrations
+030	reversal potential unused, nrnocCONST, DEP, STATE
+040	initialize reversal potential
+0100	calc reversal during fadvance
+0200	ci being written by a model
+0400	co being written by a model
+*/
 
 /* Must be called prior to any channels which update the currents */
 static void ion_cur(neuron::model_sorted_token const& sorted_token,
@@ -570,11 +553,11 @@ static void ion_cur(neuron::model_sorted_token const& sorted_token,
                     int type) {
     neuron::cache::MechanismRange<nparm, ndparam> ml_cache{sorted_token, *nt, *ml, type};
     auto const count = ml->nodecount;
-    Datum** ppd = ml->pdata;  // used in iontype below
     /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
     for (int i = 0; i < count; ++i) {
         ml_cache.fpfield<dcurdv_index>(i) = 0.0;
         ml_cache.fpfield<cur_index>(i) = 0.0;
+        auto const iontype = ml->pdata[i][iontype_index_dparam].get<int>();
         if (iontype & 0100) {
             ml_cache.fpfield<erev_index>(i) = nrn_nernst(ml_cache.fpfield<conci_index>(i),
                                                          ml_cache.fpfield<conco_index>(i),
@@ -593,15 +576,16 @@ static void ion_init(neuron::model_sorted_token const& sorted_token,
     int i;
     neuron::cache::MechanismRange<nparm, ndparam> ml_cache{sorted_token, *nt, *ml, type};
     int count = ml->nodecount;
-    Datum** ppd = ml->pdata;
     /*printf("ion_init %s\n", memb_func[type].sym->name);*/
     for (i = 0; i < count; ++i) {
+        auto const iontype = ml->pdata[i][iontype_index_dparam].get<int>();
         if (iontype & 04) {
             ml_cache.fpfield<conci_index>(i) = conci0;
             ml_cache.fpfield<conco_index>(i) = conco0;
         }
     }
     for (i = 0; i < count; ++i) {
+        auto const iontype = ml->pdata[i][iontype_index_dparam].get<int>();
         if (iontype & 040) {
             ml_cache.fpfield<erev_index>(i) = nrn_nernst(ml_cache.fpfield<conci_index>(i),
                                                          ml_cache.fpfield<conco_index>(i),
@@ -633,7 +617,7 @@ static void ion_alloc(Prop* p) {
         p->param(conco_index) = DEF_iono;
     }
     p->dparam = nrn_prop_datum_alloc(p->_type, ndparam, p);
-    p->dparam[0] = 0;
+    p->dparam[iontype_index_dparam] = 0;
 }
 
 void second_order_cur(NrnThread* nt) {
