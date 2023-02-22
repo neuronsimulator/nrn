@@ -3714,8 +3714,10 @@ void CodegenCVisitor::print_watch_check() {
         printer->add_indent();
         printer->add_text("net_send_buffering(");
         auto t = get_variable_name("t");
-        printer->add_text(
-            fmt::format("ml->_net_send_buffer, 0, {}, -1, {}, {}+0.0, ", tqitem, point_process, t));
+        printer->fmt_text("nt, ml->_net_send_buffer, 0, {}, -1, {}, {}+0.0, ",
+                          tqitem,
+                          point_process,
+                          t);
         watch->get_value()->accept(*this);
         printer->add_text(");");
         printer->add_newline();
@@ -3811,7 +3813,7 @@ void CodegenCVisitor::print_net_send_call(const FunctionCall& node) {
         auto point_process = get_variable_name("point_process");
         std::string t = get_variable_name("t");
         printer->add_text("net_send_buffering(");
-        printer->fmt_text("ml->_net_send_buffer, 0, {}, {}, {}, {}+", tqitem, weight_index, point_process, t);
+        printer->fmt_text("nt, ml->_net_send_buffer, 0, {}, {}, {}, {}+", tqitem, weight_index, point_process, t);
     }
     // clang-format off
     print_vector_elements(arguments, ", ");
@@ -3839,7 +3841,7 @@ void CodegenCVisitor::print_net_move_call(const FunctionCall& node) {
         auto point_process = get_variable_name("point_process");
         std::string t = get_variable_name("t");
         printer->add_text("net_send_buffering(");
-        printer->fmt_text("ml->_net_send_buffer, 2, {}, {}, {}, ", tqitem, weight_index, point_process);
+        printer->fmt_text("nt, ml->_net_send_buffer, 2, {}, {}, {}, ", tqitem, weight_index, point_process);
         print_vector_elements(arguments, ", ");
         printer->add_text(", 0.0");
         printer->add_text(")");
@@ -3855,7 +3857,7 @@ void CodegenCVisitor::print_net_event_call(const FunctionCall& node) {
     } else {
         auto point_process = get_variable_name("point_process");
         printer->add_text("net_send_buffering(");
-        printer->fmt_text("ml->_net_send_buffer, 1, -1, -1, {}, ", point_process);
+        printer->fmt_text("nt, ml->_net_send_buffer, 1, -1, -1, {}, ", point_process);
         print_vector_elements(arguments, ", ");
         printer->add_text(", 0.0");
     }
@@ -4018,6 +4020,10 @@ void CodegenCVisitor::print_net_receive_buffering(bool need_mech_inst) {
     printer->end_block(1);
 }
 
+void CodegenCVisitor::print_net_send_buffering_cnt_update() const {
+    printer->add_line("i = nsb->_cnt++;");
+}
+
 void CodegenCVisitor::print_net_send_buffering_grow() {
     printer->start_block("if (i >= nsb->_size)");
     printer->add_line("nsb->grow();");
@@ -4032,12 +4038,11 @@ void CodegenCVisitor::print_net_send_buffering() {
     printer->add_newline(2);
     print_device_method_annotation();
     auto args =
-        "NetSendBuffer_t* nsb, int type, int vdata_index, "
+        "const NrnThread* nt, NetSendBuffer_t* nsb, int type, int vdata_index, "
         "int weight_index, int point_index, double t, double flag";
     printer->fmt_start_block("static inline void net_send_buffering({})", args);
     printer->add_line("int i = 0;");
-    print_device_atomic_capture_annotation();
-    printer->add_line("i = nsb->_cnt++;");
+    print_net_send_buffering_cnt_update();
     print_net_send_buffering_grow();
     printer->start_block("if (i < nsb->_size)");
     printer->add_line("nsb->_sendtype[i] = type;");

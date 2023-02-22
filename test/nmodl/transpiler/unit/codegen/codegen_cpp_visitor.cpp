@@ -8,6 +8,7 @@
 #include <catch2/catch.hpp>
 
 #include "ast/program.hpp"
+#include "codegen/codegen_acc_visitor.hpp"
 #include "codegen/codegen_cpp_visitor.hpp"
 #include "codegen/codegen_helper_visitor.hpp"
 #include "parser/nmodl_driver.hpp"
@@ -47,6 +48,24 @@ std::shared_ptr<CodegenCVisitor> create_c_visitor(const std::shared_ptr<ast::Pro
     return cv;
 }
 
+/// Helper for creating OpenACC codegen visitor
+std::shared_ptr<CodegenAccVisitor> create_acc_visitor(const std::shared_ptr<ast::Program>& ast,
+                                                      const std::string& /* text */,
+                                                      std::stringstream& ss) {
+    /// construct symbol table
+    SymtabVisitor().visit_program(*ast);
+
+    /// run all necessary pass
+    InlineVisitor().visit_program(*ast);
+    NeuronSolveVisitor().visit_program(*ast);
+    SolveBlockVisitor().visit_program(*ast);
+
+    /// create C code generation visitor
+    auto cv = std::make_shared<CodegenAccVisitor>("temp.mod", ss, "double", false);
+    cv->setup(*ast);
+    return cv;
+}
+
 /// print instance structure for testing purpose
 std::string get_instance_var_setup_function(std::string& nmodl_text) {
     const auto& ast = NmodlDriver().parse_string(nmodl_text);
@@ -57,11 +76,16 @@ std::string get_instance_var_setup_function(std::string& nmodl_text) {
 }
 
 /// print entire code
-std::string get_cpp_code(const std::string& nmodl_text) {
+std::string get_cpp_code(const std::string& nmodl_text, const bool generate_gpu_code = false) {
     const auto& ast = NmodlDriver().parse_string(nmodl_text);
     std::stringstream ss;
-    auto cvisitor = create_c_visitor(ast, nmodl_text, ss);
-    cvisitor->visit_program(*ast);
+    if (generate_gpu_code) {
+        auto accvisitor = create_acc_visitor(ast, nmodl_text, ss);
+        accvisitor->visit_program(*ast);
+    } else {
+        auto cvisitor = create_c_visitor(ast, nmodl_text, ss);
+        cvisitor->visit_program(*ast);
+    }
     return reindent_text(ss.str());
 }
 
@@ -745,8 +769,8 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
 
         THEN("Correct code is generated") {
             auto const generated = get_cpp_code(nmodl_text);
-            std::string net_send_expected_code =
-                R"(static inline void net_send_buffering(NetSendBuffer_t* nsb, int type, int vdata_index, int weight_index, int point_index, double t, double flag) {
+            std::string cpu_net_send_expected_code =
+                R"(static inline void net_send_buffering(const NrnThread* nt, NetSendBuffer_t* nsb, int type, int vdata_index, int weight_index, int point_index, double t, double flag) {
         int i = 0;
         i = nsb->_cnt++;
         if (i >= nsb->_size) {
@@ -761,7 +785,28 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
             nsb->_nsb_flag[i] = flag;
         }
     })";
-            REQUIRE_THAT(generated, Contains(net_send_expected_code));
+            REQUIRE_THAT(generated, Contains(cpu_net_send_expected_code));
+            auto const gpu_generated = get_cpp_code(nmodl_text, true);
+            std::string gpu_net_send_expected_code =
+                R"(static inline void net_send_buffering(const NrnThread* nt, NetSendBuffer_t* nsb, int type, int vdata_index, int weight_index, int point_index, double t, double flag) {
+        int i = 0;
+        if (nt->compute_gpu) {
+            nrn_pragma_acc(atomic capture)
+            nrn_pragma_omp(atomic capture)
+            i = nsb->_cnt++;
+        } else {
+            i = nsb->_cnt++;
+        }
+        if (i < nsb->_size) {
+            nsb->_sendtype[i] = type;
+            nsb->_vdata_index[i] = vdata_index;
+            nsb->_weight_index[i] = weight_index;
+            nsb->_pnt_index[i] = point_index;
+            nsb->_nsb_t[i] = t;
+            nsb->_nsb_flag[i] = flag;
+        }
+    })";
+            REQUIRE_THAT(gpu_generated, Contains(gpu_net_send_expected_code));
             std::string net_receive_kernel_expected_code =
                 R"(static inline void net_receive_kernel_(double t, Point_process* pnt, _Instance* inst, NrnThread* nt, Memb_list* ml, int weight_index, double flag) {
         int tid = pnt->_tid;
@@ -777,10 +822,10 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
         inst->tsave[id] = t;
         {
             if (flag == 0.0) {
-                net_send_buffering(ml->_net_send_buffer, 1, -1, -1, point_process, t, 0.0);
-                net_send_buffering(ml->_net_send_buffer, 2, inst->tqitem[0*pnodecount+id], -1, point_process, t + 1.0, 0.0);
+                net_send_buffering(nt, ml->_net_send_buffer, 1, -1, -1, point_process, t, 0.0);
+                net_send_buffering(nt, ml->_net_send_buffer, 2, inst->tqitem[0*pnodecount+id], -1, point_process, t + 1.0, 0.0);
             } else {
-                net_send_buffering(ml->_net_send_buffer, 0, inst->tqitem[0*pnodecount+id], weight_index, point_process, t+1.0, 1.0);
+                net_send_buffering(nt, ml->_net_send_buffer, 0, inst->tqitem[0*pnodecount+id], weight_index, point_process, t+1.0, 1.0);
             }
         }
     })";

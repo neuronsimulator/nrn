@@ -1316,6 +1316,14 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
     /**
+     * Print the code related to the update of NetSendBuffer_t cnt. For GPU this needs to be done
+     * with atomic operation, on CPU it's not needed.
+     *
+     */
+    virtual void print_net_send_buffering_cnt_update() const;
+
+
+    /**
      * Print statement that grows NetSendBuffering_t structure if needed.
      * This function should be overridden for backends that cannot dynamically reallocate the buffer
      */

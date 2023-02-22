@@ -126,6 +126,9 @@ class CodegenAccVisitor: public CodegenCVisitor {
     // print atomic capture pragma
     void print_device_atomic_capture_annotation() const override;
 
+    // print atomic update of NetSendBuffer_t cnt
+    void print_net_send_buffering_cnt_update() const override;
+
     void print_net_send_buffering_grow() override;
 
 
