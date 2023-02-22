@@ -67,4 +67,10 @@ extern int cellorder_nwarp;
 
 // Mechanism pdata index values into _actual_v and _actual_area data need to be updated.
 enum Layout { SoA = 0, AoS = 1 };
+
+// Blocks associated with BEFORE and AFTER have different values based on type.
+// There values are based on neuron/coreneuron implementation details.
+class BAType {
+    enum BAType { BREAKPOINT = 1, SOLVE = 2, INITIAL = 3, STEP = 4, BEFORE = 10, AFTER = 20 };
+};
 }  // namespace coreneuron
