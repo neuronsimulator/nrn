@@ -30,20 +30,20 @@ namespace neuron::scopmath {
  * variables and their derivatives at time + h. Time is also updated.
  * @return Error code (always SUCCESS for runge)
  */
-template <typename Array>
+template <typename Array, typename IndexArray>
 int runge(int ninits,
           int n,
-          int* y,
-          int* d,
+          IndexArray y,
+          IndexArray d,
           Array p,
           double* t,
           double h,
           int (*dy)(),
           double** work) {
-    auto const d_ = [d, &p](auto arg) -> auto& {
+    auto const d_ = [&d, &p](auto arg) -> auto& {
         return p[d[arg]];
     };
-    auto const y_ = [y, &p](auto arg) -> auto& {
+    auto const y_ = [&y, &p](auto arg) -> auto& {
         return p[y[arg]];
     };
     int i;

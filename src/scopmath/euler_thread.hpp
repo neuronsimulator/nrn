@@ -5,8 +5,8 @@
 struct NrnThread;
 double _modl_get_dt_thread(NrnThread*);
 namespace neuron::scopmath {
-template <typename Array, typename Callable, typename... Args>
-int euler_thread(int neqn, int* var, int* der, Array p, Callable func, Args&&... args) {
+template <typename Array, typename Callable, typename IndexArray, typename... Args>
+int euler_thread(int neqn, IndexArray var, IndexArray der, Array p, Callable func, Args&&... args) {
     auto* const nt = get_first<NrnThread*>(std::forward<Args>(args)...);
     auto const dt = _modl_get_dt_thread(nt);
 

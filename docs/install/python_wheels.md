@@ -261,7 +261,7 @@ $ git diff
      machine:
        image: ubuntu-2004:202101-01
 +    environment:
-+      NEURON_WHEEL_VERSION: 8.1a
++      SETUPTOOLS_SCM_PRETEND_VERSION: 8.1a
 +      NEURON_NIGHTLY_TAG: ""
 +      NRN_NIGHTLY_UPLOAD: false
 +      NRN_RELEASE_UPLOAD: false
@@ -274,7 +274,7 @@ $ git diff
 +              NRN_PYTHON_VERSION: ["38", "39", "310", "311"]
 ```
 
-The reason we are setting `NEURON_WHEEL_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
+The reason we are setting `SETUPTOOLS_SCM_PRETEND_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
 
 
 ## Nightly wheels
