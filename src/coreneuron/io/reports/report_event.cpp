@@ -77,7 +77,10 @@ void ReportEvent::deliver(double t, NetCvode* nc, NrnThread* nt) {
         summation_alu(nt);
         // each thread needs to know its own step
 #ifdef ENABLE_SONATA_REPORTS
-        sonata_record_node_data(step, gids_to_report.size(), gids_to_report.data(), report_path.data());
+        sonata_record_node_data(step,
+                                gids_to_report.size(),
+                                gids_to_report.data(),
+                                report_path.data());
 #endif
         send(t + dt, nc, nt);
         step++;
