@@ -100,6 +100,10 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
         // Tell the new Node about pnt->prop
         pnt->prop->next = node->prop;
         node->prop = pnt->prop;
+        // Call the nrn_alloc function from the MOD file with nrn_point_prop_ set: this will skip
+        // resetting parameter values and calling the CONSTRUCTOR block, but it *will* update ion
+        // variables to point to the ion mechanism instance in the new Node
+        prop_update_ion_variables(pnt->prop, node);
     } else {
         // Allocate a new Prop for this Point_process
         Prop* p;

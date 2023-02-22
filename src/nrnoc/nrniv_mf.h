@@ -25,6 +25,7 @@ typedef void (*pnt_receive_init_t)(Point_process*, double*, double);
 
 extern Prop* need_memb_cl(Symbol*, int*, int*);
 extern Prop* prop_alloc(Prop**, int, Node*);
+void prop_update_ion_variables(Prop*, Node*);
 
 [[deprecated("non-void* overloads are preferred")]] void artcell_net_send(void* v,
                                                                           double* weight,
