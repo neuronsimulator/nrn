@@ -22,10 +22,10 @@ pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -repl
 pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
 
 :: install numpy
-C:\Python38\python.exe -m pip install numpy==1.17.5 cython || goto :error
-C:\Python39\python.exe -m pip install numpy==1.19.3 cython || goto :error
-C:\Python310\python.exe -m pip install numpy==1.21.3 cython || goto :error
-C:\Python311\python.exe -m pip install numpy==1.23.5 cython || goto :error
+C:\Python38\python.exe -m pip install numpy==1.17.5 cython packaging || goto :error
+C:\Python39\python.exe -m pip install numpy==1.19.3 cython packaging || goto :error
+C:\Python310\python.exe -m pip install numpy==1.21.3 cython packaging || goto :error
+C:\Python311\python.exe -m pip install numpy==1.23.5 cython packaging || goto :error
 
 :: install nsis
 nsis-3.05-setup.exe /S || goto :error
@@ -65,6 +65,7 @@ mingw-w64-x86_64-readline ^
 mingw-w64-x86_64-python3 ^
 mingw64/mingw-w64-x86_64-cython ^
 mingw-w64-x86_64-python3-setuptools ^
+mingw-w64-x86_64-python3-packaging ^
 mingw-w64-x86_64-python3-pip ^
 mingw64/mingw-w64-x86_64-dlfcn ^
 mingw-w64-x86_64-toolchain || goto :error
