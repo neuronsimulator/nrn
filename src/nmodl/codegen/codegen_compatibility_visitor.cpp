@@ -25,7 +25,8 @@ const std::map<ast::AstNodeType, CodegenCompatibilityVisitor::FunctionPointer>
          {AstNodeType::GLOBAL_VAR, &CodegenCompatibilityVisitor::return_error_global_var},
          {AstNodeType::PARAM_ASSIGN, &CodegenCompatibilityVisitor::return_error_param_var},
          {AstNodeType::BBCORE_POINTER_VAR,
-          &CodegenCompatibilityVisitor::return_error_if_no_bbcore_read_write}});
+          &CodegenCompatibilityVisitor::return_error_if_no_bbcore_read_write},
+         {AstNodeType::EXTERNAL, &CodegenCompatibilityVisitor::return_error_with_name<External>}});
 
 
 std::string CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandled(
@@ -35,7 +36,7 @@ std::string CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandl
     std::stringstream unhandled_method_error_message;
     auto method = solve_block_ast_node->get_method();
     if (!method) {
-        return "";
+        return {};
     }
     auto unhandled_solver_method = handled_solvers.find(method->get_node_name()) ==
                                    handled_solvers.end();

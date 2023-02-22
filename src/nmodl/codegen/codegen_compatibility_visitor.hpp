@@ -100,10 +100,17 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     template <typename T>
     std::string return_error_with_name(ast::Ast& node, const std::shared_ptr<ast::Ast>& ast_node) {
         auto real_type_block = std::dynamic_pointer_cast<T>(ast_node);
-        return fmt::format("\"{}\" {}construct found at [{}] is not handled\n",
-                           ast_node->get_node_name(),
-                           real_type_block->get_nmodl_name(),
-                           real_type_block->get_token()->position());
+        auto token = real_type_block->get_token();
+        try {
+            return fmt::format("\"{}\" {}construct found at [{}] is not handled\n",
+                               ast_node->get_node_name(),
+                               real_type_block->get_nmodl_name(),
+                               token ? token->position() : "unknown location");
+        } catch (const std::logic_error&) {
+            return fmt::format("{}construct found at [{}] is not handled\n",
+                               real_type_block->get_nmodl_name(),
+                               token ? token->position() : "unknown location");
+        }
     }
 
     /// Takes as parameter an std::shared_ptr<ast::Ast> node
