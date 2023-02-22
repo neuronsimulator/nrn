@@ -319,7 +319,7 @@ endif()
 if(NRN_HAVE_NVHPC_COMPILER)
   # NVHPC/21.7 cannot compile znorm.c with -O2 or above. See also:
   # https://forums.developer.nvidia.com/t/nvc-21-7-regression-internal-compiler-error-can-only-coerce-indirect-args/184847
-  if(${CMAKE_C_COMPILER_VERSION} VERSION_EQUAL 21.7)
+  if(${CMAKE_CXX_COMPILER_VERSION} VERSION_EQUAL 21.7)
     set_source_files_properties(${PROJECT_SOURCE_DIR}/src/mesch/znorm.c PROPERTIES COMPILE_OPTIONS
                                                                                    -Mnovect)
   endif()
@@ -327,7 +327,7 @@ if(NRN_HAVE_NVHPC_COMPILER)
   # builtins. One caveat is that if we use an optimization level greater than -O1, the FE exception
   # is not raised. See https://github.com/neuronsimulator/nrn/pull/1930
   set(NVHPC_MATH_COMPILE_OPTIONS "-O1")
-  if(${CMAKE_C_COMPILER_VERSION} VERSION_GREATER_EQUAL 23.1)
+  if(${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 23.1)
     list(APPEND NVHPC_MATH_COMPILE_OPTIONS "-Kieee")
   endif()
   set_source_files_properties(
