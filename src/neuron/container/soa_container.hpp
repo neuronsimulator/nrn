@@ -854,6 +854,10 @@ struct soa {
             .data_ptrs()[field_index][offset * array_dim + array_index];
     }
 
+    [[nodiscard]] non_owning_identifier_without_container get_identifier(std::size_t offset) const {
+        return m_indices.at(offset);
+    }
+
     /**
      * @brief Return a permutation-stable handle if ptr is inside us.
      * @todo Check const-correctness. Presumably a const version would return

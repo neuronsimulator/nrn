@@ -14,10 +14,10 @@
 #define nt_dt nrn_threads->_dt
 
 struct LongDifus {
-    int dchange;
+    int dchange{};
     int* mindex; /* index into memb_list[m] */
     int* pindex; /* parent in this struct */
-    double** state;
+    std::vector<neuron::container::data_handle<double>> state;
     double* a;
     double* b;
     double* d;
@@ -27,6 +27,8 @@ struct LongDifus {
     double* vol; /* volatile volume from COMPARTMENT */
     double* dc;  /* volatile diffusion constant * cross sectional
                 area from LONGITUDINAL_DIFFUSION */
+    LongDifus(std::size_t n)
+        : state(n) {}
 };
 
 struct LongDifusThreadData {
@@ -45,23 +47,6 @@ void hoc_register_ldifus1(ldifusfunc_t f) {
     ldifusfunc[ldifusfunccnt] = f;
     ++ldifusfunccnt;
 }
-
-#if MAC
-/* this avoids a missing _ptrgl12 in the mac library that was called by
-the MrC compiled object
-*/
-void mac_difusfunc(ldifusfunc2_t* f,
-                   int m,
-                   ldifusfunc3_t diffunc,
-                   void** v,
-                   int ai,
-                   int sindex,
-                   int dindex,
-                   NrnThread* nt) {
-    (*f)(m, diffunc, v, ai, sindex, dindex, nt);
-}
-#endif
-
 
 extern "C" void nrn_tree_solve(double* a, double* d, double* b, double* rhs, int* pindex, int n) {
     /*
@@ -125,12 +110,8 @@ void long_difus_solve(neuron::model_sorted_token const& sorted_token, int method
 static void longdifusfree(LongDifus** ppld) {
     if (*ppld) {
         LongDifus* pld = *ppld;
-#if 0
-printf("free longdifus structure_change=%d %d\n", pld->schange, structure_change_cnt);
-#endif
         free(pld->mindex);
         free(pld->pindex);
-        free(pld->state);
         free(pld->a);
         free(pld->b);
         free(pld->d);
@@ -139,11 +120,11 @@ printf("free longdifus structure_change=%d %d\n", pld->schange, structure_change
         free(pld->bf);
         free(pld->vol);
         free(pld->dc);
-        free(pld);
     }
-    *ppld = (LongDifus*) 0;
+    delete std::exchange(*ppld, nullptr);
 }
 
+// sindex is a non-legacy field index
 static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* ml, NrnThread* _nt) {
     int i, n, mi, mpi, j, index, pindex, vnodecount;
     Node *nd, *pnd;
@@ -160,13 +141,11 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
         /* Also child may butte end to end with parent or attach to middle */
         mi = pld->mindex[i];
         if (sindex < 0) {
-            pld->state[i] = ml->pdata[mi][-sindex - 1].get<double*>();
+            pld->state[i] = static_cast<neuron::container::data_handle<double>>(
+                ml->pdata[mi][-sindex - 1].get<double*>());
         } else {
-            // With the new SOA format it's not possible to easily navigate from
-            // the nth array element for a particular index to the mth array
-            // element. That was trivial in AOS and led to usage like
-            // pld->state[i][ai], but that should now be avoided.
-            pld->state[i] = &ml->data(mi, sindex);
+            // if this is an array variable then take a handle to the zeroth entry of it
+            pld->state[i] = ml->data_handle(mi, {sindex, 0});
         }
         nd = ml->nodelist[mi];
         pindex = pld->pindex[i];
@@ -188,20 +167,12 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
 }
 
 static void longdifusalloc(LongDifus** ppld, int m, int sindex, Memb_list* ml, NrnThread* _nt) {
-    LongDifus* pld;
-    int i, n, mi, mpi, j, index, pindex, vnodecount;
-    int *map, *omap;
-    Node *nd, *pnd;
-    hoc_Item* qsec;
-
-    vnodecount = _nt->end;
-    *ppld = pld = (LongDifus*) emalloc(sizeof(LongDifus));
-    n = ml->nodecount;
-
-    pld->dchange = 0;
+    auto const n = ml->nodecount;
+    assert(n > 0);
+    auto* const pld = new LongDifus{static_cast<std::size_t>(n)};
+    *ppld = pld;
     pld->mindex = (int*) ecalloc(n, sizeof(int));
     pld->pindex = (int*) ecalloc(n, sizeof(int));
-    pld->state = (double**) ecalloc(n, sizeof(double*));
     pld->a = (double*) ecalloc(n, sizeof(double));
     pld->b = (double*) ecalloc(n, sizeof(double));
     pld->d = (double*) ecalloc(n, sizeof(double));
@@ -212,30 +183,22 @@ static void longdifusalloc(LongDifus** ppld, int m, int sindex, Memb_list* ml, N
     pld->dc = (double*) ecalloc(n, sizeof(double));
 
     /* make a map from node_index to memb_list index. -1 means no exist*/
-    map = (int*) ecalloc(vnodecount, sizeof(int));
-    omap = (int*) ecalloc(n, sizeof(int));
-    for (i = 0; i < vnodecount; ++i) {
-        map[i] = -1;
-    }
-    for (i = 0; i < n; ++i) {
+    auto const vnodecount = _nt->end;
+    std::vector<int> map(vnodecount, -1), omap(n);
+    for (int i = 0; i < n; ++i) {
         map[ml->nodelist[i]->v_node_index] = i;
     }
-#if 0
-for (i=0; i < vnodecount; ++i) {
-	printf("%d index=%d\n", i, map[i]);
-}
-#endif
     /* order the indices for efficient gaussian elimination */
     /* But watch out for 0 area nodes. Use the parent of parent */
     /* But if parent of parent does not have diffusion mechanism
        check the parent section */
     /* And watch out for root. Use first node of root section */
-    for (i = 0, j = 0; i < vnodecount; ++i) {
+    for (int i = 0, j = 0; i < vnodecount; ++i) {
         if (map[i] > -1) {
             pld->mindex[j] = map[i];
             omap[map[i]] = j; /* from memb list index to order */
-            pnd = _nt->_v_parent[i];
-            pindex = map[pnd->v_node_index];
+            Node* pnd = _nt->_v_parent[i];
+            auto pindex = map[pnd->v_node_index];
             if (pindex == -1) { /* maybe this was zero area node */
                 pnd = _nt->_v_parent[pnd->v_node_index];
                 if (pnd) {
@@ -264,16 +227,6 @@ for (i=0; i < vnodecount; ++i) {
         }
     }
     longdifus_diamchange(pld, m, sindex, ml, _nt);
-#if 0
-	for (i=0; i < n; ++i) {
-printf("i=%d pin=%d mi=%d :%s node %d state[(%i)]=%g\n", i, pld->pindex[i],
-	pld->mindex[i], secname(ml->nodelist[pld->mindex[i]]->sec),
-	ml->nodelist[pld->mindex[i]]->sec_node_index_
-	, sindex, *pld->state[i]);
-	}
-#endif
-    free(map);
-    free(omap);
 }
 
 /* called at end of v_setup_vectors only for thread 0 */
@@ -335,9 +288,9 @@ static Memb_list* v2ml(void** v, int tid) {
 static void stagger(int m,
                     ldifusfunc3_t diffunc,
                     void** v,
-                    int ai,
-                    int sindex,
-                    int dindex,
+                    int ai,      // array index
+                    int sindex,  // field index of {x} variable
+                    int dindex,  // field index of D{x} variable
                     neuron::model_sorted_token const& sorted_token,
                     NrnThread& ntr) {
     auto* const _nt = &ntr;
@@ -345,17 +298,12 @@ static void stagger(int m,
     if (!pld) {
         return;
     }
-    int const di = dindex + ai;
     auto* const ml = v2ml(v, _nt->id);
     int const n = ml->nodecount;
     Datum** const pdata = ml->pdata;
     Datum* const thread = ml->_thread;
 
-    // with SOA data we can't get from the 0th element of an array variable
-    // starting at sindex to the nth element, which used to be easy in AOS
-    // format. try to mitigate that by baking in ai here and not applying it
-    // again later
-    longdifus_diamchange(pld, m, sindex > 0 ? sindex + ai : sindex, ml, _nt);
+    longdifus_diamchange(pld, m, sindex, ml, _nt);
     /*flux and volume coefficients (if dc is constant this is too often)*/
     for (int i = 0; i < n; ++i) {
         int pin = pld->pindex[i];
@@ -375,7 +323,7 @@ static void stagger(int m,
         int pin = pld->pindex[i];
         int mi = pld->mindex[i];
         pld->d[i] += 1. / nt_dt;
-        pld->rhs[i] = *pld->state[i] / nt_dt;
+        pld->rhs[i] = *(pld->state[i].next_array_element(ai)) / nt_dt;
         if (pin > -1) {
             pld->d[i] -= pld->b[i];
             pld->d[pin] -= pld->a[i];
@@ -387,16 +335,16 @@ static void stagger(int m,
 
     /* update answer */
     for (int i = 0; i < n; ++i) {
-        *pld->state[i] = pld->rhs[i];
+        *(pld->state[i].next_array_element(ai)) = pld->rhs[i];
     }
 }
 
 static void ode(int m,
                 ldifusfunc3_t diffunc,
                 void** v,
-                int ai,
-                int sindex,
-                int dindex,
+                int ai,      // array index
+                int sindex,  // field index of {x} variable
+                int dindex,  // field index of D{x} variable
                 neuron::model_sorted_token const& sorted_token,
                 NrnThread& ntr) {
     auto* const _nt = &ntr;
@@ -405,7 +353,6 @@ static void ode(int m,
         return;
     }
     auto* const ml = v2ml(v, _nt->id);
-    int const di = dindex + ai;
     int const n = ml->nodecount;
     Datum** const pdata = ml->pdata;
     Datum* const thread = ml->_thread;
@@ -429,9 +376,10 @@ static void ode(int m,
         int pin = pld->pindex[i];
         int mi = pld->mindex[i];
         if (pin > -1) {
-            dif = (pld->state[pin][ai] - pld->state[i][ai]);
-            ml->data(mi, di) += dif * pld->b[i];
-            ml->data(pld->mindex[pin], di) -= dif * pld->a[i];
+            dif = *(pld->state[pin].next_array_element(ai)) -
+                  *(pld->state[i].next_array_element(ai));
+            ml->data(mi, dindex, ai) += dif * pld->b[i];
+            ml->data(pld->mindex[pin], dindex, ai) -= dif * pld->a[i];
         }
     }
 }
@@ -439,9 +387,9 @@ static void ode(int m,
 static void matsol(int m,
                    ldifusfunc3_t diffunc,
                    void** v,
-                   int ai,
-                   int sindex,
-                   int dindex,
+                   int ai,      // array index
+                   int sindex,  // field index of {x} variable
+                   int dindex,  // field index of D{x} variable
                    neuron::model_sorted_token const& sorted_token,
                    NrnThread& ntr) {
     auto* const _nt = &ntr;
@@ -450,7 +398,6 @@ static void matsol(int m,
         return;
     }
     auto* const ml = v2ml(v, _nt->id);
-    auto const di = dindex + ai;
     int const n = ml->nodecount;
     Datum** const pdata = ml->pdata;
     Datum* const thread = ml->_thread;
@@ -463,7 +410,7 @@ static void matsol(int m,
         pld->dc[i] = diffunc(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt, sorted_token);
         pld->d[i] = 0.;
         if (dfdi) {
-            pld->d[i] += fabs(dfdi) / pld->vol[i] / pld->state[i][ai];
+            pld->d[i] += fabs(dfdi) / pld->vol[i] / *(pld->state[i].next_array_element(ai));
         }
         if (pin > -1) {
             /* D * area between compartments */
@@ -477,7 +424,7 @@ static void matsol(int m,
         int pin = pld->pindex[i];
         int mi = pld->mindex[i];
         pld->d[i] += 1. / nt_dt;
-        pld->rhs[i] = ml->data(mi, di) / nt_dt;
+        pld->rhs[i] = ml->data(mi, dindex, ai) / nt_dt;
         if (pin > -1) {
             pld->d[i] -= pld->b[i];
             pld->d[pin] -= pld->a[i];
@@ -504,6 +451,6 @@ static void matsol(int m,
     /* update answer */
     for (int i = 0; i < n; ++i) {
         int mi = pld->mindex[i];
-        ml->data(mi, di) = pld->rhs[i];
+        ml->data(mi, dindex, ai) = pld->rhs[i];
     }
 }
