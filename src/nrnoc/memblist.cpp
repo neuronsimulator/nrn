@@ -24,6 +24,18 @@ Memb_list::Memb_list(int type)
     return ret;
 }
 
+neuron::container::data_handle<double> Memb_list::data_handle(
+    std::size_t instance,
+    neuron::container::field_index field) const {
+    assert(m_storage);
+    assert(m_storage_offset != neuron::container::invalid_row);
+    auto const offset = m_storage_offset + instance;
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_field_instance_handle<Tag>(m_storage->get_identifier(offset),
+                                                     field.field,
+                                                     field.array_index);
+}
+
 [[nodiscard]] double& Memb_list::data(std::size_t instance, int variable, int array_index) {
     assert(m_storage);
     assert(m_storage_offset != neuron::container::invalid_row);

@@ -85,6 +85,10 @@ struct Memb_list {
         return dptr_field(instance, variable);
     }
 
+    [[nodiscard]] neuron::container::data_handle<double> data_handle(
+        std::size_t instance,
+        neuron::container::field_index field) const;
+
     /**
      * @brief Get the `variable`-th floating point value in `instance` of the mechanism.
      *
