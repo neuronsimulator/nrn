@@ -38,7 +38,6 @@ option(CORENRN_ENABLE_MPI_DYNAMIC "Enable dynamic MPI support" OFF)
 option(CORENRN_ENABLE_HOC_EXP "Enable wrapping exp with hoc_exp()" OFF)
 option(CORENRN_ENABLE_SPLAYTREE_QUEUING "Enable use of Splay tree for spike queuing" ON)
 option(CORENRN_ENABLE_NET_RECEIVE_BUFFER "Enable event buffering in net_receive function" ON)
-option(CORENRN_ENABLE_NMODL "Enable external nmodl source-to-source compiler" OFF)
 option(CORENRN_ENABLE_CALIPER_PROFILING "Enable Caliper instrumentation" OFF)
 option(CORENRN_ENABLE_LIKWID_PROFILING "Enable LIKWID instrumentation" OFF)
 option(CORENRN_ENABLE_CUDA_UNIFIED_MEMORY "Enable CUDA unified memory support" OFF)
@@ -129,15 +128,10 @@ if(CORENRN_ENABLE_GPU)
       "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr -Xcudafe --diag_suppress=3057,--diag_suppress=3085"
   )
 
-  if(CORENRN_ENABLE_NMODL)
-    # NMODL supports both OpenACC and OpenMP target offload
-    if(CORENRN_ENABLE_OPENMP AND CORENRN_ENABLE_OPENMP_OFFLOAD)
-      set(CORENRN_ACCELERATOR_OFFLOAD "OpenMP")
-    else()
-      set(CORENRN_ACCELERATOR_OFFLOAD "OpenACC")
-    endif()
+  # NMODL supports both OpenACC and OpenMP target offload
+  if(CORENRN_ENABLE_OPENMP AND CORENRN_ENABLE_OPENMP_OFFLOAD)
+    set(CORENRN_ACCELERATOR_OFFLOAD "OpenMP")
   else()
-    # MOD2C only supports OpenACC offload
     set(CORENRN_ACCELERATOR_OFFLOAD "OpenACC")
   endif()
 endif()
@@ -175,11 +169,9 @@ endif()
 # =============================================================================
 # Build option specific compiler flags
 # =============================================================================
-if(CORENRN_ENABLE_NMODL)
-  # We use Eigen for "small" matrices with thread-level parallelism handled at a higher level; tell
-  # Eigen not to try to multithread internally
-  list(APPEND CORENRN_COMPILE_DEFS EIGEN_DONT_PARALLELIZE)
-endif()
+# We use Eigen for "small" matrices with thread-level parallelism handled at a higher level; tell
+# Eigen not to try to multithread internally
+list(APPEND CORENRN_COMPILE_DEFS EIGEN_DONT_PARALLELIZE)
 if(CORENRN_HAVE_NVHPC_COMPILER)
   # PGI with llvm code generation doesn't have necessary assembly intrinsic headers
   list(APPEND CORENRN_COMPILE_DEFS EIGEN_DONT_VECTORIZE=1)
@@ -305,40 +297,33 @@ endif()
 # =============================================================================
 # NMODL specific options
 # =============================================================================
-if(CORENRN_ENABLE_NMODL)
-  find_package(nmodl)
-  if(NOT "${CORENRN_NMODL_DIR}" STREQUAL "" AND NOT nmodl_FOUND)
-    message(FATAL_ERROR "Cannot find NMODL in ${CORENRN_NMODL_DIR}")
-  endif()
-  if(nmodl_FOUND)
-    set(CORENRN_MOD2CPP_BINARY ${nmodl_BINARY})
-    set(CORENRN_MOD2CPP_INCLUDE ${nmodl_INCLUDE})
-    # path to python interface
-    set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
-    set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
-  else()
-    set(NMODL_ENABLE_PYTHON_BINDINGS
-        OFF
-        CACHE BOOL "Disable NMODL python bindings")
-    include(AddNmodlSubmodule)
-    set(CORENRN_MOD2CPP_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
-    set(CORENRN_MOD2CPP_INCLUDE ${CMAKE_BINARY_DIR}/include)
-    set(ENV{PYTHONPATH} "$ENV{PYTHONPATH}")
-    set(nmodl_PYTHONPATH "${CMAKE_BINARY_DIR}/lib")
-    set(CORENRN_NMODL_PYTHONPATH "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
-    set(NMODL_TARGET_TO_DEPEND nmodl)
-  endif()
-
-  # set correct arguments for nmodl for cpu/gpu target
-  set(CORENRN_NMODL_FLAGS
-      ""
-      CACHE STRING "Extra NMODL options such as passes")
-else()
-  include(AddMod2cSubmodule)
-  set(NMODL_TARGET_TO_DEPEND mod2c_core)
-  set(CORENRN_MOD2CPP_BINARY ${CMAKE_BINARY_DIR}/bin/mod2c_core${CMAKE_EXECUTABLE_SUFFIX})
-  set(CORENRN_MOD2CPP_INCLUDE ${CMAKE_BINARY_DIR}/include)
+find_package(nmodl)
+if(NOT "${CORENRN_NMODL_DIR}" STREQUAL "" AND NOT nmodl_FOUND)
+  message(FATAL_ERROR "Cannot find NMODL in ${CORENRN_NMODL_DIR}")
 endif()
+if(nmodl_FOUND)
+  set(CORENRN_MOD2CPP_BINARY ${nmodl_BINARY})
+  set(CORENRN_MOD2CPP_INCLUDE ${nmodl_INCLUDE})
+  # path to python interface
+  set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
+  set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
+else()
+  set(NMODL_ENABLE_PYTHON_BINDINGS
+      OFF
+      CACHE BOOL "Disable NMODL python bindings")
+  include(AddNmodlSubmodule)
+  set(CORENRN_MOD2CPP_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
+  set(CORENRN_MOD2CPP_INCLUDE ${CMAKE_BINARY_DIR}/include)
+  set(ENV{PYTHONPATH} "$ENV{PYTHONPATH}")
+  set(nmodl_PYTHONPATH "${CMAKE_BINARY_DIR}/lib")
+  set(CORENRN_NMODL_PYTHONPATH "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
+  set(NMODL_TARGET_TO_DEPEND nmodl)
+endif()
+
+# set correct arguments for nmodl for cpu/gpu target
+set(CORENRN_NMODL_FLAGS
+    ""
+    CACHE STRING "Extra NMODL options such as passes")
 
 # =============================================================================
 # Profiler/Instrumentation Options
@@ -483,7 +468,7 @@ if(CORENRN_ENABLE_GPU)
   # different matrix sizes in partial_piv_lu.cpp (with CUDA attributes but without OpenACC or OpenMP
   # annotations) and dispatch to these from a wrapper in partial_piv_lu.h that does have
   # OpenACC/OpenMP annotations.
-  if(CORENRN_ENABLE_NMODL AND EXISTS ${CORENRN_MOD2CPP_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
+  if(EXISTS ${CORENRN_MOD2CPP_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
     list(APPEND CORENEURON_CODE_FILES ${CORENRN_MOD2CPP_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
     if(CORENRN_ENABLE_GPU
        AND CORENRN_HAVE_NVHPC_COMPILER
@@ -770,10 +755,6 @@ install(FILES ${MODFUNC_PERL_SCRIPT} ${ENGINEMECH_CODE_FILE} DESTINATION share/c
 # copy mod2c/nmodl for nrnivmodl-core
 install(PROGRAMS ${CORENRN_MOD2CPP_BINARY} DESTINATION bin)
 
-if(NOT CORENRN_ENABLE_NMODL)
-  install(FILES ${NMODL_UNITS_FILE} DESTINATION share/mod2c)
-endif()
-
 # install nrniv-core app
 install(
   PROGRAMS ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/special-core
@@ -838,10 +819,6 @@ if(CORENRN_ENABLE_MPI)
 endif()
 message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")
 message(STATUS "Use legacy units    | ${CORENRN_ENABLE_LEGACY_UNITS}")
-message(STATUS "NMODL               | ${CORENRN_ENABLE_NMODL}")
-if(CORENRN_ENABLE_NMODL)
-  message(STATUS "  FLAGS             | ${CORENRN_NMODL_FLAGS}")
-endif()
 message(STATUS "MOD2CPP PATH        | ${CORENRN_MOD2CPP_BINARY}")
 message(STATUS "GPU Support         | ${CORENRN_ENABLE_GPU}")
 if(CORENRN_ENABLE_GPU)
