@@ -58,6 +58,7 @@ node.v + extnode.v[0]
 #include "ocnotify.h"
 #include "section.h"
 #include "spmatrix.h"
+#include "treeset.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -376,7 +377,9 @@ void nrn_solve(NrnThread* _nt) {
                 hoc_execerror("spFactor error:", "Singular");
             }
         }
-        spSolve(_nt->_sp13mat, _nt->_actual_rhs, _nt->_actual_rhs);
+        update_sp13_rhs_based_on_actual_rhs(_nt);
+        spSolve(_nt->_sp13mat, _nt->_sp13_rhs, _nt->_sp13_rhs);
+        update_actual_rhs_based_on_sp13_rhs(_nt);
     } else {
         triang(_nt);
 #if PARANEURON

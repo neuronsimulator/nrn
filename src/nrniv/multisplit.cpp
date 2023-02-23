@@ -2670,13 +2670,13 @@ void ReducedTree::pr_map(int tsize, double* trbuf) {
             if (rmap[i] >= trbuf && rmap[i] < (trbuf + tsize)) {
                 Printf(" %2d rhs[%2d] += tbuf[%ld]\n", i, irmap[i], rmap[i] - trbuf);
             }
-            if (rmap[i] >= nt->_actual_rhs && rmap[i] < (nt->_actual_rhs + nt->end)) {
-                Node* nd = nt->_v_node[rmap[i] - nt->_actual_rhs];
+            if (rmap[i] >= nt->node_rhs_storage() && rmap[i] < (nt->node_rhs_storage() + nt->end)) {
+                Node* nd = nt->_v_node[rmap[i] - nt->node_rhs_storage()];
                 Printf(" %2d rhs[%2d] rhs[%d] += rhs[%ld] \t%s{%d}\n",
                        i,
                        irmap[i],
                        irmap[i],
-                       rmap[i] - nt->_actual_rhs,
+                       rmap[i] - nt->node_rhs_storage(),
                        secname(nd->sec),
                        nd->sec_node_index_);
             }
