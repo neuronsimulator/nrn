@@ -43,7 +43,7 @@ nonvintblock_extern int (
 /* called at end of nrnoc/treeset.cpp:rhs and nrncvode/cvtrset.cpp:rhs */
 #define nrn_nonvint_block_current(size, rhs, tid) nonvint_block(2, size, rhs, 0, tid)
 /*if any ionic membrane currents are generated, they subtract from
-  NrnThread._actual_rhs*/
+  NrnThread.node_rhs_storage()*/
 
 /* called at end of nrnoc/treeset.cpp:lhs and nrncvode/cvtrset.cpp:lhs */
 #define nrn_nonvint_block_conductance(size, d, tid) nonvint_block(3, size, d, 0, tid)
