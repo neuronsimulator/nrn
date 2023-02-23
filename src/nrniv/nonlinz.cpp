@@ -261,8 +261,7 @@ NonLinImpRep::NonLinImpRep() {
         // utilize nd->eqn_index in case of use_sparse13 later
         Node* nd = _nt->_v_node[i];
         pv_[i] = nd->v_handle();
-        pvdot_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                           nd->_rhs};
+        pvdot_[i] = nd->rhs_handle();
         v_index_[i] = i + 1;
     }
     for (i = 0; i < n_v_; ++i) {

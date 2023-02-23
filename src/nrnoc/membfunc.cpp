@@ -33,7 +33,7 @@ double& _nrn_mechanism_access_param(Prop* prop, int field, int array_index) {
     return prop->param(field, array_index);
 }
 double& _nrn_mechanism_access_rhs(Node* node) {
-    return *node->_rhs;
+    return node->rhs();
 }
 double& _nrn_mechanism_access_voltage(Node* node) {
     return node->v();
