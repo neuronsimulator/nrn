@@ -63,6 +63,7 @@ set(HEADER_FILES_TO_INSTALL
     spmatrix.h
     ssimplic.hpp
     ssimplic_thread.hpp
+    treeset.h
     wrap_sprintf.h)
 
 # =============================================================================

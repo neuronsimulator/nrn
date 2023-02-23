@@ -342,6 +342,24 @@ vm += dvi-dvx
 
 */
 
+/*
+ * Update actual_rhs based on _sp13_rhs used for sparse13 solver
+ */
+void update_actual_rhs_based_on_sp13_rhs(NrnThread* nt) {
+    for (int i = 0; i < nt->end; i++) {
+        nt->actual_rhs(i) = nt->_sp13_rhs[nt->_v_node[i]->eqn_index_];
+    }
+}
+
+/*
+ * Update _sp13_rhs used for sparse13 solver based on changes on actual_rhs
+ */
+void update_sp13_rhs_based_on_actual_rhs(NrnThread* nt) {
+    for (int i = 0; i < nt->end; i++) {
+        nt->_sp13_rhs[nt->_v_node[i]->eqn_index_] = nt->actual_rhs(i);
+    }
+}
+
 /* calculate right hand side of
 cm*dvm/dt = -i(vm) + is(vi) + ai_j*(vi_j - vi)
 cx*dvx/dt - cm*dvm/dt = -gx*(vx - ex) + i(vm) + ax_j*(vx_j - vx)
@@ -371,7 +389,10 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         nrn_thread_error("nrn_rhs use_sparse13");
         neqn = spGetSize(_nt->_sp13mat, 0);
         for (i = 1; i <= neqn; ++i) {
-            _nt->_actual_rhs[i] = 0.;
+            _nt->_sp13_rhs[i] = 0.;
+        }
+        for (i = i1; i < i3; ++i) {
+            NODERHS(_nt->_v_node[i]) = 0.;
         }
     } else {
 #if CACHEVEC
@@ -443,7 +464,7 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     if (use_sparse13) {
         /* must be after nrn_rhs_ext so that whatever is put in
         nd->_rhs does not get added to nde->rhs */
-        nrndae_rhs();
+        nrndae_rhs(_nt);
     }
 
     activstim_rhs();
@@ -619,7 +640,7 @@ void setup_tree_matrix(neuron::model_sorted_token const& cache_token, NrnThread&
     nrn::Instrumentor::phase _{"setup-tree-matrix"};
     nrn_rhs(cache_token, nt);
     nrn_lhs(cache_token, nt);
-    nrn_nonvint_block_current(nt.end, nt._actual_rhs, nt.id);
+    nrn_nonvint_block_current(nt.end, nt.node_rhs_storage(), nt.id);
     nrn_nonvint_block_conductance(nt.end, nt._actual_d, nt.id);
 }
 
@@ -1888,10 +1909,6 @@ void node_data(void) {
 void nrn_matrix_node_free() {
     NrnThread* nt;
     FOR_THREADS(nt) {
-        if (nt->_actual_rhs) {
-            free(nt->_actual_rhs);
-            nt->_actual_rhs = (double*) 0;
-        }
         if (nt->_actual_d) {
             free(nt->_actual_d);
             nt->_actual_d = (double*) 0;
@@ -1906,6 +1923,9 @@ void nrn_matrix_node_free() {
             nt->_actual_b = (double*) 0;
         }
 #endif /* CACHEVEC */
+        if (nt->_sp13_rhs) {
+            free(std::exchange(nt->_sp13_rhs, nullptr));
+        }
         if (nt->_sp13mat) {
             spDestroy(nt->_sp13mat);
             nt->_sp13mat = (char*) 0;
@@ -2003,7 +2023,7 @@ static void nrn_matrix_node_alloc(void) {
             v_setup_vectors();
             return;
         } else {
-            if (nt->_actual_rhs != (double*) 0) {
+            if (nt->_actual_d != nullptr) {
                 return;
             }
         }
@@ -2031,7 +2051,7 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
         }
         /*printf(" %d extracellular nodes\n", extn);*/
         neqn += extn;
-        nt->_actual_rhs = (double*) ecalloc(neqn + 1, sizeof(double));
+        nt->_sp13_rhs = (double*) ecalloc(neqn + 1, sizeof(double));
         nt->_sp13mat = spCreate(neqn, 0, &err);
         if (err != spOKAY) {
             hoc_execerror("Couldn't create sparse matrix", (char*) 0);
@@ -2050,13 +2070,13 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
             nde = nd->extnode;
             pnd = nt->_v_parent[in];
             i = nd->eqn_index_;
-            nd->_rhs = nt->_actual_rhs + i;
+            nt->_sp13_rhs[i] = nt->actual_rhs(in);
             nd->_d = spGetElement(nt->_sp13mat, i, i);
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
                     k = i + ie + 1;
                     nde->_d[ie] = spGetElement(nt->_sp13mat, k, k);
-                    nde->_rhs[ie] = nt->_actual_rhs + k;
+                    nde->_rhs[ie] = nt->_sp13_rhs + k;
                     nde->_x21[ie] = spGetElement(nt->_sp13mat, k, k - 1);
                     nde->_x12[ie] = spGetElement(nt->_sp13mat, k - 1, k);
                 }
@@ -2083,11 +2103,9 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
             assert(nrndae_extra_eqn_count() == 0);
             assert(!nt->_ecell_memb_list || nt->_ecell_memb_list->nodecount == 0);
             nt->_actual_d = (double*) ecalloc(nt->end, sizeof(double));
-            nt->_actual_rhs = (double*) ecalloc(nt->end, sizeof(double));
             for (i = 0; i < nt->end; ++i) {
                 Node* nd = nt->_v_node[i];
                 nd->_d = nt->_actual_d + i;
-                nd->_rhs = nt->_actual_rhs + i;
             }
         }
     }

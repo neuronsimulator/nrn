@@ -339,10 +339,10 @@ void nrn_threads_create(int n, bool parallel) {
                 for (j = 0; j < BEFORE_AFTER_SIZE; ++j) {
                     nt->tbl[j] = (NrnThreadBAList*) 0;
                 }
-                nt->_actual_rhs = 0;
                 nt->_actual_d = 0;
                 nt->_actual_a = 0;
                 nt->_actual_b = 0;
+                nt->_sp13_rhs = 0;
                 nt->_v_parent_index = 0;
                 nt->_v_node = 0;
                 nt->_v_parent = 0;
@@ -498,10 +498,6 @@ void nrn_threads_free() {
         if (nt->userpart == 0 && nt->roots) {
             hoc_l_freelist(&nt->roots);
             nt->ncell = 0;
-        }
-        if (nt->_actual_rhs) {
-            free((char*) nt->_actual_rhs);
-            nt->_actual_rhs = 0;
         }
         if (nt->_actual_d) {
             free((char*) nt->_actual_d);
@@ -786,7 +782,6 @@ void reorder_secorder() {
             }
         }
         _nt->end = inode;
-        CACHELINE_CALLOC(_nt->_actual_rhs, double, inode);
         CACHELINE_CALLOC(_nt->_actual_d, double, inode);
         CACHELINE_CALLOC(_nt->_actual_a, double, inode);
         CACHELINE_CALLOC(_nt->_actual_b, double, inode);
@@ -870,7 +865,6 @@ void reorder_secorder() {
         for (j = 0; j < _nt->end; ++j) {
             Node* nd = _nt->_v_node[j];
             nd->_d = _nt->_actual_d + j;
-            nd->_rhs = _nt->_actual_rhs + j;
         }
     }
     /* because the d,rhs changed, if multisplit is used we need to update
@@ -1138,6 +1132,12 @@ double* NrnThread::node_area_storage() {
     // avoid calling the zero-parameter get()
     return &neuron::model().node_data().get<neuron::container::Node::field::Area>(
         _node_data_offset);
+}
+
+double* NrnThread::node_rhs_storage() {
+    // Need to be able to use this method while the model is frozen, so
+    // avoid calling the zero-parameter get()
+    return &neuron::model().node_data().get<neuron::container::Node::field::RHS>(_node_data_offset);
 }
 
 double* NrnThread::node_voltage_storage() {

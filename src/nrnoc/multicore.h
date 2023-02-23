@@ -77,22 +77,26 @@ struct NrnThread {
     std::size_t _node_data_offset{};
 
     [[nodiscard]] double* node_area_storage();
+    [[nodiscard]] double* node_rhs_storage();
     [[nodiscard]] double* node_voltage_storage();
     [[nodiscard]] double& actual_area(std::size_t row) {
         return node_area_storage()[row];
     }
-
+    [[nodiscard]] double& actual_rhs(std::size_t row) {
+        return node_rhs_storage()[row];
+    }
     [[nodiscard]] double& actual_v(std::size_t row) {
         return node_voltage_storage()[row];
     }
 
-    double* _actual_rhs;
     double* _actual_d;
     double* _actual_a;
     double* _actual_b;
     int* _v_parent_index;
     Node** _v_node;
     Node** _v_parent;
+    double* _sp13_rhs;           /* rhs matrix for sparse13 solver. updates to and from this vector
+                                    need to be transfered to actual_rhs */
     char* _sp13mat;              /* handle to general sparse matrix */
     Memb_list* _ecell_memb_list; /* normally nil */
     Node** _ecell_children;      /* nodes with no extcell but parent has it */
