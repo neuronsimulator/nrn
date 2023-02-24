@@ -3260,6 +3260,7 @@ static int CVStep(CVodeMem cv_mem)
     }
 
     /* CV_STAGGERED1 approach for sensitivities */
+    // LCOV_EXCL_START
     if (do_sensi_stg1) {
       /* Reset counters for states */
       ncf = nef = 0;
@@ -3284,7 +3285,7 @@ static int CVStep(CVodeMem cv_mem)
         dsm = CVStgrUpdateDsm(cv_mem, dsm, dsmS);
       }
     }
-    
+    // LCOV_EXCL_END
     /* Everything went fine; exit loop */ 
     break;
 
