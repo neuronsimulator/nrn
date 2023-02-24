@@ -71,6 +71,6 @@ enum Layout { SoA = 0, AoS = 1 };
 // Blocks associated with BEFORE and AFTER have different values based on type.
 // There values are based on neuron/coreneuron implementation details.
 struct BAType {
-    enum BAType_ { BREAKPOINT = 1, SOLVE = 2, INITIAL = 3, STEP = 4, BEFORE = 10, AFTER = 20 }; 
+    enum { Breakpoint = 1, Solve = 2, Initial = 3, Step = 4, Before = 10, After = 20 }; 
 };
 }  // namespace coreneuron
