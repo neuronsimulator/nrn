@@ -149,8 +149,8 @@ string(
   ${CORENRN_EXTRA_COMPILE_FLAGS})
 
 # =============================================================================
-# nmodl/mod2c related options : TODO
+# nmodl related options : TODO
 # =============================================================================
-# name of nmodl/mod2c binary
-get_filename_component(nmodl_name ${CORENRN_MOD2CPP_BINARY} NAME)
+# name of nmodl binary
+get_filename_component(nmodl_name ${CORENRN_NMODL_BINARY} NAME)
 set(nmodl_binary_name ${nmodl_name})

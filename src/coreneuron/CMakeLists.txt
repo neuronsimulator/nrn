@@ -302,8 +302,8 @@ if(NOT "${CORENRN_NMODL_DIR}" STREQUAL "" AND NOT nmodl_FOUND)
   message(FATAL_ERROR "Cannot find NMODL in ${CORENRN_NMODL_DIR}")
 endif()
 if(nmodl_FOUND)
-  set(CORENRN_MOD2CPP_BINARY ${nmodl_BINARY})
-  set(CORENRN_MOD2CPP_INCLUDE ${nmodl_INCLUDE})
+  set(CORENRN_NMODL_BINARY ${nmodl_BINARY})
+  set(CORENRN_NMODL_INCLUDE ${nmodl_INCLUDE})
   # path to python interface
   set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
   set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
@@ -312,8 +312,8 @@ else()
       OFF
       CACHE BOOL "Disable NMODL python bindings")
   include(AddNmodlSubmodule)
-  set(CORENRN_MOD2CPP_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
-  set(CORENRN_MOD2CPP_INCLUDE ${CMAKE_BINARY_DIR}/include)
+  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
+  set(CORENRN_NMODL_INCLUDE ${CMAKE_BINARY_DIR}/include)
   set(ENV{PYTHONPATH} "$ENV{PYTHONPATH}")
   set(nmodl_PYTHONPATH "${CMAKE_BINARY_DIR}/lib")
   set(CORENRN_NMODL_PYTHONPATH "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
@@ -468,14 +468,14 @@ if(CORENRN_ENABLE_GPU)
   # different matrix sizes in partial_piv_lu.cpp (with CUDA attributes but without OpenACC or OpenMP
   # annotations) and dispatch to these from a wrapper in partial_piv_lu.h that does have
   # OpenACC/OpenMP annotations.
-  if(EXISTS ${CORENRN_MOD2CPP_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
-    list(APPEND CORENEURON_CODE_FILES ${CORENRN_MOD2CPP_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
+  if(EXISTS ${CORENRN_NMODL_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
+    list(APPEND CORENEURON_CODE_FILES ${CORENRN_NMODL_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
     if(CORENRN_ENABLE_GPU
        AND CORENRN_HAVE_NVHPC_COMPILER
        AND CMAKE_BUILD_TYPE STREQUAL "Debug")
       # In this case OpenAccHelper.cmake passes -gpu=debug, which makes these Eigen functions
       # extremely slow. Downgrade that to -gpu=lineinfo for this file.
-      set_source_files_properties(${CORENRN_MOD2CPP_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp
+      set_source_files_properties(${CORENRN_NMODL_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp
                                   PROPERTIES COMPILE_FLAGS "-gpu=lineinfo,nodebug -O1")
     endif()
   endif()
@@ -645,7 +645,7 @@ add_custom_command(
   OUTPUT ${output_binaries}
   DEPENDS coreneuron-core ${NMODL_TARGET_TO_DEPEND} ${CORENEURON_BUILTIN_MODFILES}
   COMMAND ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b ${COMPILE_LIBRARY_TYPE} -m
-          ${CORENRN_MOD2CPP_BINARY} -n "internal" -p 4 "."
+          ${CORENRN_NMODL_BINARY} -n "internal" -p 4 "."
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
   COMMENT "Running nrnivmodl-core with internal mod files")
 add_custom_target(nrniv-core ALL DEPENDS ${output_binaries})
@@ -753,7 +753,7 @@ install(
 install(FILES ${MODFUNC_PERL_SCRIPT} ${ENGINEMECH_CODE_FILE} DESTINATION share/coreneuron)
 
 # copy mod2c/nmodl for nrnivmodl-core
-install(PROGRAMS ${CORENRN_MOD2CPP_BINARY} DESTINATION bin)
+install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION bin)
 
 # install nrniv-core app
 install(
@@ -819,7 +819,7 @@ if(CORENRN_ENABLE_MPI)
 endif()
 message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")
 message(STATUS "Use legacy units    | ${CORENRN_ENABLE_LEGACY_UNITS}")
-message(STATUS "MOD2CPP PATH        | ${CORENRN_MOD2CPP_BINARY}")
+message(STATUS "NMODL PATH          | ${CORENRN_NMODL_BINARY}")
 message(STATUS "GPU Support         | ${CORENRN_ENABLE_GPU}")
 if(CORENRN_ENABLE_GPU)
   message(STATUS "  CUDA              | ${CUDAToolkit_LIBRARY_DIR}")
