@@ -150,7 +150,7 @@ void nrnran123_set_globalindex(uint32_t gix) {
 void nrnran123_initialise_global_state_on_device() {
     if (coreneuron::gpu_enabled()) {
 #ifndef __CUDACC__
-        nrn_pragma_acc(enter data copyin(g_k))
+        nrn_pragma_acc(enter data copyin(random123_global::g_k))
 #endif
     }
 }
@@ -158,7 +158,7 @@ void nrnran123_initialise_global_state_on_device() {
 void nrnran123_destroy_global_state_on_device() {
     if (coreneuron::gpu_enabled()) {
 #ifndef __CUDACC__
-        nrn_pragma_acc(exit data delete (g_k))
+        nrn_pragma_acc(exit data delete (random123_global::g_k))
 #endif
     }
 }
