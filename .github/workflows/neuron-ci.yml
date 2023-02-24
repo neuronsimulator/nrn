@@ -54,7 +54,7 @@ jobs:
           - os: ubuntu-22.04
             config:
               build_mode: cmake
-              # TODO: -DCORENRN_ENABLE_NMODL=ON -DNMODL_SANITIZERS=undefined
+              # TODO: -DNMODL_SANITIZERS=undefined
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
                 -DNRN_ENABLE_INTERVIEWS=OFF
               flag_warnings: ON
@@ -62,7 +62,7 @@ jobs:
           - os: ubuntu-22.04
             config:
               build_mode: cmake
-              # TODO: -DCORENRN_ENABLE_NMODL=ON -DNMODL_SANITIZERS=address,leak
+              # TODO: -DNMODL_SANITIZERS=address,leak
               # TODO: CoreNEURON is only LeakSanitizer-clean if we disable MPI
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
                 -DNRN_ENABLE_INTERVIEWS=OFF
@@ -129,6 +129,7 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
+          python -m pip install --upgrade sympy
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
         uses: actions/setup-python@v4
@@ -139,6 +140,7 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
+          python -m pip install --upgrade sympy
 
       - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
         if: matrix.config.music == 'ON'
