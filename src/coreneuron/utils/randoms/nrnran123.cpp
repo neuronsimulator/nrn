@@ -89,7 +89,6 @@ namespace random123_global {
 #define g_k_qualifiers
 #endif
 g_k_qualifiers philox4x32_key_t g_k{};
-}
 
 // Cannot refer to g_k directly from a nrn_pragma_acc(routine seq) method like
 // coreneuron_random123_philox4x32_helper, and cannot have this inlined there at
@@ -97,10 +96,11 @@ g_k_qualifiers philox4x32_key_t g_k{};
 __attribute__((noinline)) philox4x32_key_t& global_state() {
     return random123_global::g_k;
 }
+}  // namespace random123_global
 
 CORENRN_HOST_DEVICE philox4x32_ctr_t
 coreneuron_random123_philox4x32_helper(coreneuron::nrnran123_State* s) {
-    return philox4x32(s->c, global_state());
+    return philox4x32(s->c, random123_global::global_state());
 }
 
 namespace coreneuron {
@@ -110,13 +110,13 @@ std::size_t nrnran123_instance_count() {
 
 /* if one sets the global, one should reset all the stream sequences. */
 uint32_t nrnran123_get_globalindex() {
-    return global_state().v[0];
+    return random123_global::global_state().v[0];
 }
 
 /* nrn123 streams are created from cpu launcher routine */
 void nrnran123_set_globalindex(uint32_t gix) {
     // If the global seed is changing then we shouldn't have any active streams.
-    auto& g_k = global_state();
+    auto& g_k = random123_global::global_state();
     {
         std::lock_guard<OMP_Mutex> _{g_instance_count_mutex};
         if (g_instance_count != 0 && nrnmpi_myid == 0) {
