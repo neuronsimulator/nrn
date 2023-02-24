@@ -84,6 +84,7 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
+          python -m pip install --upgrade sympy
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
         uses: actions/setup-python@v4
@@ -94,6 +95,7 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
+          python -m pip install --upgrade sympy
 
       - name: Build & Test
         id: build-test
