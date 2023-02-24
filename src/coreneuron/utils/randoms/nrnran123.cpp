@@ -80,6 +80,8 @@ using random123_allocator = coreneuron::unified_allocator<coreneuron::nrnran123_
 OMP_Mutex g_instance_count_mutex;
 std::size_t g_instance_count{};
 
+}  // namespace
+
 #ifdef __CUDACC__
 #define g_k_qualifiers __device__ __constant__
 #else
@@ -92,7 +94,6 @@ g_k_qualifiers philox4x32_key_t g_k{};
 __attribute__((noinline)) philox4x32_key_t& global_state() {
     return g_k;
 }
-}  // namespace
 
 CORENRN_HOST_DEVICE philox4x32_ctr_t
 coreneuron_random123_philox4x32_helper(coreneuron::nrnran123_State* s) {
