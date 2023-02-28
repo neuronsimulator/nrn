@@ -16,8 +16,7 @@ include(NeuronTestHelper)
 add_executable(testneuron common/catch2_main.cpp unit_tests/basic.cpp
                           unit_tests/oc/hoc_interpreter.cpp)
 set(catch2_targets testneuron)
-# Benchmarks are known to be slow if you turn off optimisation...
-if(NRN_ENABLE_THREADS AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(NRN_ENABLE_THREADS)
   add_executable(nrn-benchmarks common/catch2_main.cpp benchmarks/threads/test_multicore.cpp)
   target_link_libraries(nrn-benchmarks Threads::Threads)
   list(APPEND catch2_targets nrn-benchmarks)
@@ -44,7 +43,7 @@ nrn_add_test(
   GROUP unit_tests
   NAME testneuron
   COMMAND $<TARGET_FILE:testneuron>)
-if(TARGET nrn-benchmarks)
+if(TARGET nrn-benchmarks AND NRN_ENABLE_PERFORMANCE_TESTS)
   nrn_add_test(
     GROUP unit_tests
     NAME benchmarks
@@ -184,7 +183,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   # use `--capture=tee-sys`: combines 'sys' and '-s', capturing sys.stdout/stderr and passing it
   # along to the actual sys.stdout/stderr
   set(pytest -m pytest --capture=tee-sys)
-  if(PYTEST_COV_FOUND)
+  # pytest-cov runs extremely slowly under AddressSanitizer
+  if(PYTEST_COV_FOUND AND NOT "address" IN_LIST NRN_SANITIZERS_LIST)
     list(APPEND pytest --cov-report=xml --cov=neuron)
   endif()
   # TODO: consider allowing the group-related parts to be dropped here
@@ -346,6 +346,16 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${MPIEXEC_POSTFLAGS}
         -notatty
         -python)
+    set(modtests_launch_py_mpi_subworlds
+        ${MPIEXEC_NAME}
+        ${MPIEXEC_NUMPROC_FLAG}
+        6
+        ${MPIEXEC_OVERSUBSCRIBE}
+        ${MPIEXEC_PREFLAGS}
+        special
+        ${MPIEXEC_POSTFLAGS}
+        -notatty
+        -python)
   else()
     set(modtests_preload_sanitizer PRELOAD_SANITIZER)
     set(modtests_launch_py ${PYTHON_EXECUTABLE} ${pytest})
@@ -354,6 +364,15 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${MPIEXEC_NAME}
         ${MPIEXEC_NUMPROC_FLAG}
         2
+        ${MPIEXEC_OVERSUBSCRIBE}
+        ${MPIEXEC_PREFLAGS}
+        ${preload_sanitizer_mpiexec}
+        ${PYTHON_EXECUTABLE}
+        ${MPIEXEC_POSTFLAGS})
+    set(modtests_launch_py_mpi_subworlds
+        ${MPIEXEC_NAME}
+        ${MPIEXEC_NUMPROC_FLAG}
+        6
         ${MPIEXEC_OVERSUBSCRIBE}
         ${MPIEXEC_PREFLAGS}
         ${preload_sanitizer_mpiexec}
@@ -590,6 +609,15 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
           special ${MPIEXEC_POSTFLAGS} -mpi -python
           ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
+      nrn_add_test(
+        GROUP coreneuron_modtests
+        NAME test_subworlds_py_${processor}
+        REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+        SCRIPT_PATTERNS test/coreneuron/test_subworlds.py
+        PROCESSORS 6
+        ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                    COVERAGE_FILE=.coverage.coreneuron_test_subworlds_py
+        COMMAND ${modtests_launch_py_mpi_subworlds} test/coreneuron/test_subworlds.py)
     endif()
     nrn_add_test_group(
       NAME nmodl_tests_coreneuron
@@ -626,9 +654,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   endforeach()
 
   if(NRN_ENABLE_MUSIC)
+    set(music_launch_command
+        "${MPIEXEC_NAME}  ${MPIEXEC_NUMPROC_FLAG}  2 ${MPIEXEC_OVERSUBSCRIBE}   ${MPIEXEC_PREFLAGS} music"
+    )
     nrn_add_test_group(
       NAME nrnmusic
       ENVIRONMENT MUSIC_LIBDIR=${MUSIC_LIBDIR}
+      ENVIRONMENT MPIEXEC_COMMAND=${music_launch_command}
       MODFILE_PATTERNS NONE)
     nrn_add_test(
       GROUP nrnmusic

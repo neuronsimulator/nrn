@@ -47,6 +47,8 @@ extern Object* (*nrnpy_pickle2po)(char*, size_t size);
 extern char* (*nrnpy_callpicklef)(char*, size_t size, int narg, size_t* retsize);
 extern int (*nrnpy_pysame)(Object*, Object*);  // contain same Python object
 extern Object* (*nrnpympi_alltoall_type)(int, int);
+extern Object* (*nrnpy_p_po2ho)(PyObject*);
+extern PyObject* (*nrnpy_p_ho2po)(Object*);
 typedef struct {
     PyObject_HEAD
     Section* sec_;
@@ -160,6 +162,8 @@ extern "C" void nrnpython_reg_real() {
     nrnpy_save_thread = save_thread;
     nrnpy_restore_thread = restore_thread;
     nrnpy_opaque_obj2pyobj_p_ = opaque_obj2pyobj;
+    nrnpy_p_ho2po = nrnpy_ho2po;
+    nrnpy_p_po2ho = nrnpy_po2ho;
     dlist = hoc_l_newlist();
 #if NRNPYTHON_DYNAMICLOAD
     nrnpy_site_problem_p = &nrnpy_site_problem;

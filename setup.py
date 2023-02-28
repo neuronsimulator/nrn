@@ -4,9 +4,9 @@ import shutil
 import subprocess
 import sys
 from collections import defaultdict
-from distutils import log
-from distutils.dir_util import copy_tree
-from distutils.version import LooseVersion
+import logging
+from shutil import copytree
+from packaging.version import Version, parse as parse_version
 from setuptools import Command, Extension
 from setuptools import setup
 
@@ -24,27 +24,6 @@ if os.name != "posix":
         "Python NEURON distributions are currently only available "
         "for Mac and Linux systems (POSIX)"
     )
-
-# Main source of the version. Dont rename, used by Cmake
-try:
-    # github actions somehow fails with check_output and python3
-
-    # Official Versioning shall rely on annotated tags (don't use `--tags` or `--all`)
-    # (please refer to NEURON SCM documentation)
-    v = (
-        subprocess.run(["git", "describe"], stdout=subprocess.PIPE)
-        .stdout.strip()
-        .decode()
-    )
-
-    __version__ = v[: v.rfind("-")].replace("-", ".") if "-" in v else v
-    # allow to override version during development/testing
-    if "NEURON_WHEEL_VERSION" in os.environ:
-        __version__ = os.environ["NEURON_WHEEL_VERSION"]
-
-except Exception as e:
-    raise RuntimeError("Could not get version from Git repo : " + str(e))
-
 
 # setup options must be checked for very early as it impacts imports
 if "--disable-rx3d" in sys.argv:
@@ -73,7 +52,7 @@ if Components.RX3D:
         from Cython.Distutils import build_ext
         import numpy
     except ImportError:
-        log.error(
+        logging.error(
             "ERROR: RX3D wheel requires Cython and numpy. Please install beforehand"
         )
         sys.exit(1)
@@ -151,7 +130,7 @@ class CMakeAugmentedBuilder(build_ext):
 
                 # Collect project files to be installed
                 # These go directly into final package, regardless of setuptools filters
-                log.info("\n==> Collecting CMAKE files")
+                logging.info("\n==> Collecting CMAKE files")
                 rel_package = ext.name.split(".")[:-1]
                 package_data_d = os.path.join(
                     self.build_lib, *(rel_package + [".data"])
@@ -162,16 +141,16 @@ class CMakeAugmentedBuilder(build_ext):
                     ext.cmake_install_prefix, ext.cmake_install_python_files
                 )
                 if os.path.isdir(src_py_dir):
-                    copy_tree(src_py_dir, self.build_lib)  # accepts existing dst dir
+                    copytree(src_py_dir, self.build_lib, dirs_exist_ok=True)
                     shutil.rmtree(src_py_dir)  # avoid being collected to data dir
 
                 for d in ext.cmake_collect_dirs:
-                    log.info("  - Collecting %s (and everything under it)", d)
+                    logging.info("  - Collecting %s (and everything under it)", d)
                     src_dir = os.path.join(ext.cmake_install_prefix, d)
                     dst_dir = os.path.join(package_data_d, d)
                     if not os.path.isdir(dst_dir):
                         shutil.copytree(src_dir, dst_dir)
-                log.info("==> Done building CMake project\n.")
+                logging.info("==> Done building CMake project\n.")
 
                 # Make the temp include paths in the building the extension
                 ext.include_dirs += [
@@ -182,7 +161,7 @@ class CMakeAugmentedBuilder(build_ext):
                 ext.cmake_done = True
 
         # Now build the extensions normally
-        log.info("==> Building Python extensions")
+        logging.info("==> Building Python extensions")
         build_ext.run(self, *args, **kw)
 
     def _run_cmake(self, ext):
@@ -190,7 +169,7 @@ class CMakeAugmentedBuilder(build_ext):
         cfg = "Debug" if self.debug else "Release"
         self.outdir = os.path.abspath(ext.cmake_install_prefix)
 
-        log.info("Building lib to: %s", self.outdir)
+        logging.info("Building lib to: %s", self.outdir)
         cmake_args = [
             # Generic options only. project options shall be passed as ext param
             "-DCMAKE_INSTALL_PREFIX=" + self.outdir,
@@ -220,7 +199,9 @@ class CMakeAugmentedBuilder(build_ext):
         try:
             # Configure project
             subprocess.Popen("echo $CXX", shell=True, stdout=subprocess.PIPE)
-            log.info("[CMAKE] cmd: %s", " ".join([cmake, ext.sourcedir] + cmake_args))
+            logging.info(
+                "[CMAKE] cmd: %s", " ".join([cmake, ext.sourcedir] + cmake_args)
+            )
             subprocess.check_call(
                 [cmake, ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env
             )
@@ -285,7 +266,7 @@ class CMakeAugmentedBuilder(build_ext):
                     )
 
         except subprocess.CalledProcessError as exc:
-            log.error("Status : FAIL. Log:\n%s", exc.output)
+            logging.error("Status : FAIL. Logging.\n%s", exc.output)
             raise
 
     @staticmethod
@@ -293,10 +274,10 @@ class CMakeAugmentedBuilder(build_ext):
         for candidate in ["cmake", "cmake3"]:
             try:
                 out = subprocess.check_output([candidate, "--version"])
-                cmake_version = LooseVersion(
+                cmake_version = Version(
                     re.search(r"version\s*([\d.]+)", out.decode()).group(1)
                 )
-                if cmake_version >= "3.15.0":
+                if cmake_version >= Version("3.15.0"):
                     return candidate
             except OSError:
                 pass
@@ -414,7 +395,7 @@ def setup_package():
             )
         )
 
-        log.info("RX3D compile flags %s" % str(rxd_params))
+        logging.info("RX3D compile flags %s" % str(rxd_params))
 
         extensions += [
             CyExtension(
@@ -440,7 +421,7 @@ def setup_package():
             ),
         ]
 
-    log.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
+    logging.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
 
     # package name
     package_name = "NEURON-gpu" if Components.GPU else "NEURON"
@@ -454,7 +435,6 @@ def setup_package():
 
     setup(
         name=package_name,
-        version=__version__,
         package_dir={"": NRN_PY_ROOT},
         packages=py_packages,
         package_data={"neuron": ["*.dat"]},
@@ -464,10 +444,18 @@ def setup_package():
             for f in os.listdir(NRN_PY_SCRIPTS)
             if f[0] != "_"
         ],
+        use_scm_version={
+            "local_scheme": "no-local-version"
+            if os.getenv("NRN_NIGHTLY_UPLOAD", False) == "true"
+            else "node-and-date"
+        },
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
         install_requires=["numpy>=1.9.3"] + maybe_patchelf,
         tests_require=["flake8", "pytest"],
-        setup_requires=["wheel"] + maybe_docs + maybe_test_runner + maybe_rxd_reqs,
+        setup_requires=["wheel", "setuptools_scm"]
+        + maybe_docs
+        + maybe_test_runner
+        + maybe_rxd_reqs,
         dependency_links=[],
     )
 
@@ -488,7 +476,7 @@ def mac_osx_setenv():
         .decode()
         .strip()
     )
-    log.info("Setting SDKROOT=%s", sdk_root)
+    logging.info("Setting SDKROOT=%s", sdk_root)
     os.environ["SDKROOT"] = sdk_root
 
     # Extract the macOS version targeted by the Python framework
@@ -504,7 +492,7 @@ def mac_osx_setenv():
             int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split(".")
         )
         if py_osx_framework is not None and explicit_target > py_osx_framework:
-            log.warn(
+            logging.warn(
                 "You are building wheels for macOS >={}; this is more "
                 "restrictive than your Python framework, which supports "
                 ">={}".format(fmt(explicit_target), fmt(py_osx_framework))
@@ -516,19 +504,19 @@ def mac_osx_setenv():
         if py_osx_framework is None:
             py_osx_framework = (10, 15)
         if py_osx_framework < (10, 15):
-            log.warn(
+            logging.warn(
                 "C++17 support is required to build NEURON on macOS, "
                 "therefore minimum MACOSX_DEPLOYMENT_TARGET version is 10.15."
             )
             py_osx_framework = (10, 15)
         if py_osx_framework > (10, 15):
-            log.warn(
+            logging.warn(
                 "You are building a wheel with a Python built for macOS >={}. "
                 "Your wheel won't run on older versions, consider using an "
                 "official Python build from python.org".format(fmt(py_osx_framework))
             )
         macos_target = "%d.%d" % tuple(py_osx_framework[:2])
-        log.warn("Setting MACOSX_DEPLOYMENT_TARGET=%s", macos_target)
+        logging.warn("Setting MACOSX_DEPLOYMENT_TARGET=%s", macos_target)
         os.environ["MACOSX_DEPLOYMENT_TARGET"] = macos_target
 
 

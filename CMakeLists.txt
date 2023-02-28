@@ -79,6 +79,10 @@ set(NRN_ENABLE_MODEL_TESTS
     CACHE STRING "Comma-separated list of detailed models to enable tests of.")
 # parse NRN_ENABLE_MODEL_TESTS as list
 string(REPLACE "," ";" NRN_ENABLE_MODEL_TESTS "${NRN_ENABLE_MODEL_TESTS}")
+option(
+  NRN_ENABLE_PERFORMANCE_TESTS
+  "Enable tests that measure performance. These are known to be unreliable when run on busy/oversubscribed machines such as CI runners."
+  ${NRN_ENABLE_PERFORMANCE_TESTS_DEFAULT})
 # This can be helpful in very specific CI build configurations, where ccache is used *and* different
 # CI builds are built under different directories.
 option(NRN_AVOID_ABSOLUTE_PATHS
@@ -102,11 +106,7 @@ mark_as_advanced(NRN_WHEEL_BUILD)
 # Build options (string)
 # =============================================================================
 # ~~~
-# NEURON module installation:
-#   - OFF       : do not install
-#   - ON        : install with --home in ${CMAKE_INSTALL_PREFIX}
-#   - <string>  : install using other modes or locations using an appropriate
-#                 string that goes after python setup.py install
+# NOTE: NEURON modules will also be installed in ${CMAKE_INSTALL_PREFIX}
 # Dynamic Python version support:
 #   - OFF       : nrnpython interface is linked into libnrniv.so
 #   - ON        : nrnpython interface consistent with default python3 (falling back to python)
@@ -132,10 +132,6 @@ mark_as_advanced(NRN_WHEEL_BUILD)
 # ~~~
 option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module"
        ${NRN_ENABLE_MODULE_INSTALL_DEFAULT})
-set(NRN_MODULE_INSTALL_OPTIONS
-    "${NRN_MODULE_INSTALL_OPTIONS_DEFAULT}"
-    CACHE STRING "setup.py options, everything after setup.py install")
-
 option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support"
        ${NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT})
 set(NRN_PYTHON_DYNAMIC
@@ -434,6 +430,8 @@ endif()
 # Enable sanitizer support if the NRN_SANITIZERS variable is set
 # =============================================================================
 include(cmake/SanitizerHelper.cmake)
+# Make a CMake list NRN_SANITIZERS_LIST
+string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 
 # =============================================================================
 # Enable Threads support
@@ -1009,7 +1007,7 @@ if(NRN_ENABLE_PYTHON)
       message(STATUS "    EXE       | ${exe}")
       message(STATUS "    INC       | ${include}")
       message(STATUS "    LIB       | ${lib}")
-      message(STATUS "    INSTALL C | ${exe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}")
+
     endforeach(val)
   endif()
 endif()

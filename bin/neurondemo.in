@@ -27,4 +27,8 @@ if [ ! -f "${NRNDEMO}neuron" ] ; then
 	(cd "${NRNDEMO}release" ; "${NRNBIN}nrnivmodl" ; cd .. ; rm -f neuron ; touch neuron)
 fi
 
-${NRNBIN}nrniv -dll "${NRNDEMO}release/${MODSUBDIR}/.libs/libnrnmech.so" "${NRNDEMO}demo.hoc" "$@" -
+if [ "@NRN_ENABLE_SHARED@" = "ON" ]; then
+    ${NRNBIN}nrniv -dll "${NRNDEMO}release/${MODSUBDIR}/.libs/libnrnmech.so" "${NRNDEMO}demo.hoc" "$@" -
+else
+    "${NRNDEMO}release/${MODSUBDIR}/special" "${NRNDEMO}demo.hoc" "$@" -
+fi

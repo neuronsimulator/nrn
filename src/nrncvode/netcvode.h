@@ -5,6 +5,7 @@
 
 #include "mymath.h"
 
+#include "cvodeobj.h"
 #include "tqueue.h"
 
 #include <cmath>
@@ -17,9 +18,8 @@ class HocDataPaths;
 using PreSynTable = std::unordered_map<double*, PreSyn*>;
 class NetCon;
 class DiscreteEvent;
-class TQItemPool;
-class SelfEventPool;
 class SelfEvent;
+using SelfEventPool = MutexPool<SelfEvent>;
 struct hoc_Item;
 class PlayRecord;
 class PlayRecList;
@@ -86,7 +86,7 @@ class NetCvode {
     void move_event(TQItem*, double, NrnThread*);
     void remove_event(TQItem*, int threadid);
     TQItem* event(double tdeliver, DiscreteEvent*, NrnThread*);
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
     TQItem* fifo_event(double tdeliver, DiscreteEvent*, NrnThread*);
 #endif
 #if BBTQ == 5
@@ -113,6 +113,7 @@ class NetCvode {
     void deliver_events(double til, NrnThread*);  // for initialization events
     void solver_prepare();
     void clear_events();
+    void free_event_pools();
     void init_events();
     void print_event_queue();
     void event_queue_info();
