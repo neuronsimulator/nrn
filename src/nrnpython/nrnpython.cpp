@@ -209,6 +209,7 @@ extern "C" int nrnpython_start(int b) {
         if (nrn_istty_) {
 #if !defined(MINGW)
             PyRun_InteractiveLoop(hoc_fin, "stdin");
+            // clang-format off
             /*
             Thread 1 received signal ? , Unknown signal.
                 #0  0x00007ffb3a0adf28 in ucrtbase!_invoke_watson() from C : \Windows\System32\ucrtbase.dll
@@ -216,7 +217,9 @@ extern "C" int nrnpython_start(int b) {
                 #16 0x00007ffaa3b0ffe1 in python311!PyRun_InteractiveLoopFlags() from E : \Python311\python311.dll
                 #17 0x00007ffaa3711ec7 in nrnpython_start(b = 2) at  nrn/src/nrnpython/nrnpython.cpp : 211
             */
-            // I attribute this to mean that FILE is incompatible in Windows 11 between nrniv and Python311
+            // clang-format on
+            // I attribute this to mean that FILE is incompatible in
+            // Windows 11 between nrniv and Python311
 #else
             char* args[2];
             args[0] = strdup("nrniv");
@@ -224,7 +227,7 @@ extern "C" int nrnpython_start(int b) {
             Py_BytesMain(2, args);
             free(args[0]);
             free(args[1]);
-#endif 
+#endif
         }
         return python_error_encountered;
     }

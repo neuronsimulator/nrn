@@ -101,8 +101,8 @@ int main(int argc, char** argv) {
 #endif
     auto const msg_size = strlen(buf) + 100;
     char* const msg = new char[msg_size];
-    
-    // Windows 11 exits immediately 
+
+    // Windows 11 exits immediately
     // err = WinExec(buf, SW_SHOW);
     // https://stackoverflow.com/questions/2255608/force-application-to-wait-until-winexec-has-completed
     // WinExec is no longer recommended. You can use CreateProcess and WaitForSingleObject as
@@ -112,17 +112,17 @@ int main(int argc, char** argv) {
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
     ZeroMemory(&pi, sizeof(pi));
-    // Start the child process. 
+    // Start the child process.
     err = CreateProcess(NULL,   // No module name (use command line)
-        buf,        // Command line
-        NULL,           // Process handle not inheritable
-        NULL,           // Thread handle not inheritable
-        FALSE,          // Set handle inheritance to FALSE
-        0,              // No creation flags
-        NULL,           // Use parent's environment block
-        NULL,           // Use parent's starting directory 
-        &si,            // Pointer to STARTUPINFO structure
-        &pi);           // Pointer to PROCESS_INFORMATION structure
+                        buf,    // Command line
+                        NULL,   // Process handle not inheritable
+                        NULL,   // Thread handle not inheritable
+                        FALSE,  // Set handle inheritance to FALSE
+                        0,      // No creation flags
+                        NULL,   // Use parent's environment block
+                        NULL,   // Use parent's starting directory
+                        &si,    // Pointer to STARTUPINFO structure
+                        &pi);   // Pointer to PROCESS_INFORMATION structure
 
     if (!err) {
         std::snprintf(msg, msg_size, "CreateProcess failed (%d).  %s\n", GetLastError(), buf);
@@ -133,9 +133,9 @@ int main(int argc, char** argv) {
     // Wait until child process exits.
     WaitForSingleObject(pi.hProcess, INFINITE);
 
-    // Close process and thread handles. 
+    // Close process and thread handles.
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
-  
+
     return 0;
 }
