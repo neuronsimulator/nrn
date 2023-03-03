@@ -344,7 +344,8 @@ class CMakeAugmentedBuilder(build_ext):
             raise RuntimeError("Project requires CMake")
 
         return cmake_cmd
-    
+
+
 class Docs(Command):
     description = "Generate & optionally upload documentation to docs server"
     user_options = [("upload", None, "Upload to docs server")]
