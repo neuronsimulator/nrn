@@ -8,11 +8,6 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 from shutil import copytree
-
-try:
-    from packaging.version import Version  # may fail with mingw
-except ImportError:
-    from pip._vendor.packaging.version import Version
 from setuptools import Command, Extension
 from setuptools import setup
 
@@ -346,10 +341,8 @@ class CMakeAugmentedBuilder(build_ext):
         for candidate in ["cmake", "cmake3"]:
             try:
                 out = subprocess.check_output([candidate, "--version"])
-                cmake_version = Version(
-                    re.search(r"version\s*([\d.]+)", out.decode()).group(1)
-                )
-                if cmake_version >= Version("3.15.0"):
+                cmake_version = re.search(r"version\s*([\d.]+)", out.decode()).group(1)
+                if cmake_version >= "3.15.0":
                     return candidate
             except OSError:
                 pass
@@ -549,9 +542,9 @@ def setup_package():
             else "node-and-date"
         },
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
-        install_requires=["numpy>=1.9.3"] + maybe_patchelf,
+        install_requires=["numpy>=1.9.3", "packaging"] + maybe_patchelf,
         tests_require=["flake8", "pytest"],
-        setup_requires=["wheel", "setuptools_scm", "packaging"]
+        setup_requires=["wheel", "setuptools_scm"]
         + maybe_docs
         + maybe_test_runner
         + maybe_rxd_reqs,
