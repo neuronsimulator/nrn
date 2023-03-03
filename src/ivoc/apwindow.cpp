@@ -447,10 +447,12 @@ bool PrintableWindow::receive(const Event& e) {
     if (e.type() == Event::other_event) {
         XEvent& xe = e.rep()->xevent_;
         switch (xe.type) {
+        // LCOV_EXCL_START
         case ConfigureNotify:
             reconfigured();
             notify();
             break;
+        // LCOV_EXCL_END
         case MapNotify:
             if (xplace_) {
                 if (xtop() != xtop_ || xleft() != xleft_) {

@@ -1492,6 +1492,7 @@ void PrintableWindow::map_notify() {
     }
 }
 
+// LCOV_EXCL_START
 void PrintableWindow::reconfigured() {
     if (!pixres) {
         return;
@@ -1505,6 +1506,7 @@ void PrintableWindow::reconfigured() {
         xmove(x, y);
     }
 }
+// LCOV_EXCL_END
 
 void ViewWindow::reconfigured() {
     if (!pixres) {

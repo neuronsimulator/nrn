@@ -106,25 +106,11 @@ void TQueue_reg() {
 
 #if BBTQ == 0
 #include <bbtqueue.cpp>
-#endif
-
-#if BBTQ == 1
-#include <rbtqueue.cpp>
-#endif
-
-#if BBTQ == 2
+#elif BBTQ == 2
 #include <sptqueue.cpp>
-#endif
-
-#if BBTQ == 3
-#include <sptfifoq.cpp>
-#endif
-
-#if BBTQ == 4
+#elif BBTQ == 4
 #include <spt2queue.cpp>
-#endif
-
-#if BBTQ == 5
+#elif BBTQ == 5
 #include <sptbinq.cpp>
 #endif
 

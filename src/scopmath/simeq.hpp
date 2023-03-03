@@ -23,8 +23,8 @@ namespace neuron::scopmath {
  *
  * @return 0 if no error; 2 if matrix is singular or ill-conditioned
  */
-template <typename Array>
-int simeq(int n, double** coef, Array soln, int* index) {
+template <typename Array, typename IndexArray>
+int simeq(int n, double** coef, Array soln, IndexArray index) {
     static int np = 0;
     static int* perm = nullptr;
 

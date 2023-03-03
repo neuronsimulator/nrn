@@ -6,7 +6,7 @@ import sys
 from collections import defaultdict
 import logging
 from shutil import copytree
-from packaging.version import Version
+from packaging.version import Version, parse as parse_version
 from setuptools import Command, Extension
 from setuptools import setup
 
@@ -25,27 +25,6 @@ if os.name != "posix":
         "Python NEURON distributions are currently only available "
         "for Mac and Linux systems (POSIX)"
     )
-
-# Main source of the version. Dont rename, used by Cmake
-try:
-    # github actions somehow fails with check_output and python3
-
-    # Official Versioning shall rely on annotated tags (don't use `--tags` or `--all`)
-    # (please refer to NEURON SCM documentation)
-    v = (
-        subprocess.run(["git", "describe"], stdout=subprocess.PIPE)
-        .stdout.strip()
-        .decode()
-    )
-
-    __version__ = v[: v.rfind("-")].replace("-", ".") if "-" in v else v
-    # allow to override version during development/testing
-    if "NEURON_WHEEL_VERSION" in os.environ:
-        __version__ = os.environ["NEURON_WHEEL_VERSION"]
-
-except Exception as e:
-    raise RuntimeError("Could not get version from Git repo : " + str(e))
-
 
 # setup options must be checked for very early as it impacts imports
 if "--disable-rx3d" in sys.argv:
@@ -466,7 +445,6 @@ def setup_package():
 
     setup(
         name=package_name,
-        version=__version__,
         package_dir={"": NRN_PY_ROOT},
         packages=py_packages,
         package_data={"neuron": ["*.dat"]},
@@ -476,10 +454,18 @@ def setup_package():
             for f in os.listdir(NRN_PY_SCRIPTS)
             if f[0] != "_"
         ],
+        use_scm_version={
+            "local_scheme": "no-local-version"
+            if os.getenv("NRN_NIGHTLY_UPLOAD", False) == "true"
+            else "node-and-date"
+        },
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
         install_requires=["numpy>=1.9.3"] + maybe_patchelf,
         tests_require=["flake8", "pytest"],
-        setup_requires=["wheel"] + maybe_docs + maybe_test_runner + maybe_rxd_reqs,
+        setup_requires=["wheel", "setuptools_scm"]
+        + maybe_docs
+        + maybe_test_runner
+        + maybe_rxd_reqs,
         dependency_links=[],
     )
 
