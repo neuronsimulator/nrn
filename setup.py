@@ -10,6 +10,7 @@ logging.basicConfig(level=logging.INFO)
 from shutil import copytree
 from setuptools import Command, Extension
 from setuptools import setup
+from shutil import which
 
 
 logging.info("setup.py called with:" + " ".join(sys.argv))
@@ -276,18 +277,18 @@ class CMakeAugmentedBuilder(build_ext):
                 # RTD will call sphinx for us. We just need notebooks and doxygen
                 if os.environ.get("READTHEDOCS"):
                     subprocess.check_call(
-                        ["cmake", "--build", ".", "--target", "notebooks"],
+                        [cmake, "--build", ".", "--target", "notebooks"],
                         cwd=self.build_temp,
                         env=env,
                     )
                     subprocess.check_call(
-                        ["cmake", "--build", ".", "--target", "doxygen"],
+                        [cmake, "--build", ".", "--target", "doxygen"],
                         cwd=self.build_temp,
                         env=env,
                     )
                 else:
                     subprocess.check_call(
-                        ["cmake", "--build", ".", "--target", "docs"],
+                        [cmake, "--build", ".", "--target", "docs"],
                         cwd=self.build_temp,
                         env=env,
                     )
@@ -338,18 +339,12 @@ class CMakeAugmentedBuilder(build_ext):
 
     @staticmethod
     def _find_cmake():
-        for candidate in ["cmake", "cmake3"]:
-            try:
-                out = subprocess.check_output([candidate, "--version"])
-                cmake_version = re.search(r"version\s*([\d.]+)", out.decode()).group(1)
-                if cmake_version >= "3.15.0":
-                    return candidate
-            except OSError:
-                pass
+        cmake_cmd = which("cmake") or which("cmake3")
+        if not cmake_cmd:
+            raise RuntimeError("Project requires CMake")
 
-        raise RuntimeError("Project requires CMake >=3.15.0")
-
-
+        return cmake_cmd
+    
 class Docs(Command):
     description = "Generate & optionally upload documentation to docs server"
     user_options = [("upload", None, "Upload to docs server")]
