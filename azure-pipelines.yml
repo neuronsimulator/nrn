@@ -188,7 +188,7 @@ stages:
 
       - task: DownloadSecureFile@1
         name: musicSF
-        displayName: 'Download mpt_headers secure file'
+        displayName: 'Download MUSIC secure file'
         inputs:
           secureFile: 'MUSIC-1.2.0.tar.gz'
 
