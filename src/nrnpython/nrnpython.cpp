@@ -221,12 +221,16 @@ extern "C" int nrnpython_start(int b) {
             // I attribute this to mean that FILE is incompatible in
             // Windows 11 between nrniv and Python311
 #else
-            char* args[2];
-            args[0] = strdup("nrniv");
-            args[1] = strdup("-q");  // no Python banner
-            Py_BytesMain(2, args);
-            free(args[0]);
-            free(args[1]);
+            char* arg0 = strdup("nrniv");
+            char* arg1 = strdup("-q");  // no Python banner
+            char* args[] = {arg0, arg1};
+            int ret = Py_BytesMain(2, args);
+            free(arg0);
+            free(arg1);
+            if (ret) {
+                python_error_encountered = ret;
+            }
+            Py_Initialize();
 #endif
         }
         return python_error_encountered;
