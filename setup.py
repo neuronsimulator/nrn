@@ -7,10 +7,9 @@ from collections import defaultdict
 import logging
 
 logging.basicConfig(level=logging.INFO)
-from shutil import copytree
+from shutil import copytree, which
 from setuptools import Command, Extension
 from setuptools import setup
-from shutil import which
 
 
 logging.info("setup.py called with:" + " ".join(sys.argv))
