@@ -1550,7 +1550,7 @@ extern void hoc_notify_value(void);
 #if READLINE
 #ifdef MINGW
 extern "C" int (*rl_getc_function)(void);
-extern "C" int rl_getc();
+extern "C" int rl_getc(void);
 static int getc_hook(void) {
     if (!inputReady_) {
         stdin_event_ready(); /* store main thread id */
@@ -1575,12 +1575,12 @@ static int getc_hook(void) {
 /* e.g. mac libedit.3.dylib missing rl_event_hook */
 
 extern int iv_dialog_is_running;
-extern int (*rl_getc_function)(void);
+extern "C" int (*rl_getc_function)(void);
 static int getc_hook(void) {
     while (1) {
         int r;
         unsigned char c;
-        if (run_til_stdin() == 0) {
+        if (hoc_interviews && !hoc_in_yyparse && run_til_stdin() == 0) {
             // nothing in stdin  (happens when windows are dismissed)
             continue;
         }
@@ -1763,7 +1763,7 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
                 rl_getc_function = getc_hook;
                 hoc_notify_value();
             } else {
-                rl_getc_function = NULL;
+                rl_getc_function = getc_hook;
             }
 #else  /* not use_rl_getc_function */
             if (hoc_interviews && !hoc_in_yyparse) {
