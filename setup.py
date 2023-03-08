@@ -420,6 +420,7 @@ def setup_package():
                 "-DNRN_ENABLE_RX3D=OFF",  # Never build within CMake
                 "-DNRN_ENABLE_MPI=" + ("ON" if Components.MPI else "OFF"),
                 "-DNRN_ENABLE_MPI_DYNAMIC=" + ("ON" if Components.MPI else "OFF"),
+                "-DNRN_ENABLE_MUSIC=" + ("ON" if Components.MUSIC else "OFF"),
                 "-DNRN_ENABLE_PYTHON_DYNAMIC=ON",
                 "-DNRN_ENABLE_MODULE_INSTALL=OFF",
                 "-DNRN_ENABLE_REL_RPATH=ON",
