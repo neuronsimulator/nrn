@@ -142,6 +142,11 @@ extern char* readline(const char* prompt);
 extern void rl_deprep_terminal(void);
 extern void add_history(const char*);
 }
+#if defined(MINGW) || defined(use_rl_getc_function)
+extern "C" int (*rl_getc_function)(void);
+static int (*rl_getc_default)(void);
+#endif
+
 #endif
 
 int nrn_nobanner_;
@@ -824,6 +829,12 @@ int hoc_main1_inited_;
 void hoc_main1_init(const char* pname, const char** envp) {
     extern NrnFILEWrap* frin;
     extern FILE* fout;
+
+#if READLINE && (defined(MINGW) || defined(use_rl_getc_function))
+    if (!rl_getc_default) {
+        rl_getc_default = rl_getc_function;
+    }
+#endif
 
     if (!hoc_xopen_file_) {
         hoc_xopen_file_size_ = 200;
@@ -1550,7 +1561,7 @@ extern void hoc_notify_value(void);
 #if READLINE
 #ifdef MINGW
 extern "C" int (*rl_getc_function)(void);
-extern "C" int rl_getc();
+extern "C" int rl_getc(void);
 static int getc_hook(void) {
     if (!inputReady_) {
         stdin_event_ready(); /* store main thread id */
@@ -1575,7 +1586,7 @@ static int getc_hook(void) {
 /* e.g. mac libedit.3.dylib missing rl_event_hook */
 
 extern int iv_dialog_is_running;
-extern int (*rl_getc_function)(void);
+
 static int getc_hook(void) {
     while (1) {
         int r;
@@ -1754,7 +1765,7 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
                 rl_getc_function = getc_hook;
                 hoc_notify_value();
             } else {
-                rl_getc_function = rl_getc;
+                rl_getc_function = rl_getc_default;
             }
             ENDGUI
 #else /* not MINGW */
@@ -1763,7 +1774,7 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
                 rl_getc_function = getc_hook;
                 hoc_notify_value();
             } else {
-                rl_getc_function = NULL;
+                rl_getc_function = rl_getc_default;
             }
 #else  /* not use_rl_getc_function */
             if (hoc_interviews && !hoc_in_yyparse) {
