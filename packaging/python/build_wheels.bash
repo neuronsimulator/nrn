@@ -60,7 +60,7 @@ pip_numpy_install() {
 
     # older version for apple m1 as building from source fails
     if [[ `uname -m` == 'arm64' ]]; then
-      numpy_ver="numpy==1.21.3"
+      numpy_ver="numpy==1.23.5"
     fi
 
     echo " - pip install $numpy_ver"
@@ -168,6 +168,9 @@ build_wheel_osx() {
         echo " - Python installation is universal2 and we are on arm64, setting _PYTHON_HOST_PLATFORM to: ${_PYTHON_HOST_PLATFORM}"
         export ARCHFLAGS="-arch arm64"
         echo " - Setting ARCHFLAGS to: ${ARCHFLAGS}"
+        # This is a shortcut to have a successful delocate-wheel. See:
+        # https://github.com/matthew-brett/delocate/issues/153
+        python -c "import os,delocate; print(os.path.join(os.path.dirname(delocate.__file__), 'tools.py'));quit()"  | xargs -I{} sed -i."" "s/first, /input.pop('i386',None); first, /g" {}
       else
         export _PYTHON_HOST_PLATFORM="${py_platform/universal2/x86_64}"
         echo " - Python installation is universal2 and we are on x84_64, setting _PYTHON_HOST_PLATFORM to: ${_PYTHON_HOST_PLATFORM}"

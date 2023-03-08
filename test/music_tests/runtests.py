@@ -25,6 +25,7 @@ def run(cmd):
     result = subprocess.run(cmd, shell=True, env=my_env, capture_output=True, text=True)
     if result.returncode != 0:
         print(result.stderr)
+        print(result.stdout)
     result.check_returncode()
     return result
 

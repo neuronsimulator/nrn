@@ -174,7 +174,22 @@ class CMakeAugmentedBuilder(build_ext):
         the CMake building, sets the extension build environment and collects files.
         """
         for ext in self.extensions:
+            if ext.name == "neuronmusic" and not just_extensions:
+                # Since MUSIC is not a CMakeAugmentedExtension, we need to add the include_dirs manually
+                # Of interest are the include_dirs for the MPI library and the CMAKE_PREFIX_PATH
+                if self.cmake_prefix:
+                    ext.include_dirs += [
+                        os.path.join(inc_dir, "include")
+                        for inc_dir in self.cmake_prefix.split(";")
+                    ]
+                # Look for NRN_MPI_DYNAMIC in cmake_defs, split it and add to include_dirs
+                if self.cmake_defs:
+                    for cmake_def in self.cmake_defs.split(","):
+                        if cmake_def.startswith("NRN_MPI_DYNAMIC"):
+                            ext.include_dirs += cmake_def.split("=")[1].split(";")
+                            break
 
+                continue
             if isinstance(ext, CMakeAugmentedExtension):
                 if ext.cmake_done:
                     continue
@@ -382,7 +397,9 @@ def setup_package():
         "neuron.rxd",
         "neuron.crxd",
         "neuron.gui2",
-    ] + (["neuron.rxd.geometry3d"] if Components.RX3D else [])
+    ]
+    py_packages += ["neuron.rxd.geometry3d"] if Components.RX3D else []
+    #py_packages += ["neuronmusic"] if Components.MUSIC else []
 
     REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
 
@@ -407,6 +424,8 @@ def setup_package():
     # Get extra_compile_args and  extra_link_args from environment variable
     extra_link_args = os.environ.get("LDFLAGS", "").split()
     extra_compile_args = os.environ.get("CFLAGS", "").split()
+    logging.info("CFLAGS %s" % str(extra_compile_args))
+    logging.info("LDFLAGS %s" % str(extra_link_args))
 
     extensions = [
         CMakeAugmentedExtension(
@@ -456,12 +475,21 @@ def setup_package():
     ]
 
     if Components.MUSIC:
+        music_libraries = ["nrniv"]
+        if not just_extensions:
+            music_libraries.append("nrnmusic")
         extensions += [
             CyExtension(
                 "neuronmusic",
                 ["src/neuronmusic/neuronmusic.pyx"],
+                libraries=music_libraries,
+                library_dirs=[os.path.join(cmake_build_dir, "lib")],
                 include_dirs=["src/nrnpython", "src/nrnmusic"],
-                **extension_common_params,
+                language="c++",
+                extra_link_args=extra_link_args
+                + ["-Wl,-rpath,{}{}".format(REL_RPATH, "/neuron/.data/lib/")]
+                if not just_extensions
+                else [],
             )
         ]
 
