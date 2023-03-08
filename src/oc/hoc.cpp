@@ -1549,8 +1549,8 @@ extern void hoc_notify_value(void);
 
 #if READLINE
 #ifdef MINGW
-extern int (*rl_getc_function)(void);
-extern int rl_getc;
+extern "C" int (*rl_getc_function)(void);
+extern "C" int rl_getc();
 static int getc_hook(void) {
     if (!inputReady_) {
         stdin_event_ready(); /* store main thread id */
