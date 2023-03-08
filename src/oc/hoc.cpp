@@ -1550,6 +1550,7 @@ extern void hoc_notify_value(void);
 #if READLINE
 #ifdef MINGW
 extern int (*rl_getc_function)(void);
+extern int rl_getc;
 static int getc_hook(void) {
     if (!inputReady_) {
         stdin_event_ready(); /* store main thread id */
@@ -1753,7 +1754,7 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
                 rl_getc_function = getc_hook;
                 hoc_notify_value();
             } else {
-                rl_getc_function = NULL;
+                rl_getc_function = rl_getc;
             }
             ENDGUI
 #else /* not MINGW */
