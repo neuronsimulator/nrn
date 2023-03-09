@@ -2323,7 +2323,7 @@ int iondef(int* p_pointercount) {
         }
         if (need_style) {
             // Need to be able to explicitly reference this when calling
-            // nrn_wrote_conc, the old code naviated to this value via pointer
+            // nrn_wrote_conc, the old code navigated to this value via pointer
             // arithmetic that is not valid now the mechanism data are stored in
             // SOA format
             std::string name{"_ion_"};
@@ -2346,8 +2346,6 @@ int iondef(int* p_pointercount) {
         }
         q = q->next;
         if (!dcurdef && ldifuslist) {
-            // Sprintf(buf, "#define _ion_di%sdv\t*_ppvar[%d].get<double*>()\n", sion->name,
-            // ioncount);
             std::string name{"_ion_di"};
             name.append(sion->name);
             name.append("dv");
