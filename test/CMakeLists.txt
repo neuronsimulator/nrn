@@ -269,6 +269,8 @@ if(NRN_ENABLE_PYTHON)
     # GCC. Other compilers produce larger differences.
     if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
       set(change_test_tolerance NRN_RXD_TEST_TOLERANCE=1e-8)
+    elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "IntelLLVM")
+      set(change_test_tolerance NRN_RXD_TEST_TOLERANCE=3e-8)
     elseif(NRN_HAVE_NVHPC_COMPILER)
       set(change_test_tolerance NRN_RXD_TEST_TOLERANCE=1e-4)
     endif()
