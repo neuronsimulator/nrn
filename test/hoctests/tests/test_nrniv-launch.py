@@ -1,3 +1,9 @@
+from sys import platform
+
+if platform == "win32":  # skip the test.
+    # Cannot get subprocess.run to feed stdin to nrniv
+    quit()
+
 import subprocess
 
 
@@ -10,7 +16,7 @@ def srun(cmd, inp):
 
 
 r = srun(
-    "nrniv -isatty -c 'a=5' -",
+    'nrniv -isatty -c "a=5" -',
     r"""
 func square() {
   return $1*$1
@@ -24,4 +30,5 @@ quit()
 assert r[0] == 0
 print(r[2])
 assert "square(a)=25" in r[2]
-assert "oc>quit()" in r[2]
+if platform != "darwin":  # Mac does not print the "oc>" prompt
+    assert "oc>quit()" in r[2]
