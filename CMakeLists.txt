@@ -106,7 +106,10 @@ mark_as_advanced(NRN_WHEEL_BUILD)
 # Build options (string)
 # =============================================================================
 # ~~~
-# NOTE: NEURON modules will also be installed in ${CMAKE_INSTALL_PREFIX}
+# NEURON module installation:
+#   - OFF       : do not install
+#   - ON        : install in ${CMAKE_INSTALL_PREFIX} (default)
+#   NOTE: When building the wheel, this is set to OFF.
 # Dynamic Python version support:
 #   - OFF       : nrnpython interface is linked into libnrniv.so
 #   - ON        : nrnpython interface consistent with default python3 (falling back to python)
@@ -130,7 +133,8 @@ mark_as_advanced(NRN_WHEEL_BUILD)
 #   - ON        : Collect code coverage for files (default all).
 #   - <string>  : semicolon (;) separated list of files to collect coverage.
 # ~~~
-option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module"
+option(NRN_ENABLE_MODULE_INSTALL
+       "Enable installation of NEURON Python module for regular CMake builds"
        ${NRN_ENABLE_MODULE_INSTALL_DEFAULT})
 option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support"
        ${NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT})
@@ -610,14 +614,6 @@ add_subdirectory(bin)
 
 if(NRN_ENABLE_PYTHON)
   add_subdirectory(src/nrnpython)
-endif()
-
-if(NRN_ENABLE_RX3D)
-  add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
-endif()
-
-if(NRN_ENABLE_MUSIC)
-  add_subdirectory(src/neuronmusic)
 endif()
 
 if(NRN_MACOS_BUILD)
