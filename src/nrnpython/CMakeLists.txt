@@ -144,7 +144,14 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # =============================================================================
   # for each python detected / provided by user, install module at install time
 
-  list(APPEND extra_env "CC=${CMAKE_C_COMPILER}" "CXX=${CMAKE_CXX_COMPILER}")
+  # setup.py tries to compile C++ code with the C compiler. This works with gcc and intel but fails
+  # with at least PGI/NVHPC compiler. Hence, use C++ compiler if PGI/NVHPC compiler is used.
+  if(NRN_HAVE_NVHPC_COMPILER)
+    list(APPEND extra_env "CC=${CMAKE_CXX_COMPILER}" "CXX=${CMAKE_CXX_COMPILER}")
+  else()
+    list(APPEND extra_env "CC=${CMAKE_C_COMPILER}" "CXX=${CMAKE_CXX_COMPILER}")
+  endif()
+
   if(NRN_COMPILE_FLAGS)
     list(APPEND extra_env "CFLAGS=${NRN_COMPILE_FLAGS_STRING}")
   endif()

@@ -7,12 +7,7 @@ from collections import defaultdict
 import logging
 
 logging.basicConfig(level=logging.INFO)
-from shutil import copytree
-
-try:
-    from packaging.version import Version  # may fail with mingw
-except ImportError:
-    from pip._vendor.packaging.version import Version
+from shutil import copytree, which
 from setuptools import Command, Extension
 from setuptools import setup
 
@@ -281,18 +276,18 @@ class CMakeAugmentedBuilder(build_ext):
                 # RTD will call sphinx for us. We just need notebooks and doxygen
                 if os.environ.get("READTHEDOCS"):
                     subprocess.check_call(
-                        ["cmake", "--build", ".", "--target", "notebooks"],
+                        [cmake, "--build", ".", "--target", "notebooks"],
                         cwd=self.build_temp,
                         env=env,
                     )
                     subprocess.check_call(
-                        ["cmake", "--build", ".", "--target", "doxygen"],
+                        [cmake, "--build", ".", "--target", "doxygen"],
                         cwd=self.build_temp,
                         env=env,
                     )
                 else:
                     subprocess.check_call(
-                        ["cmake", "--build", ".", "--target", "docs"],
+                        [cmake, "--build", ".", "--target", "docs"],
                         cwd=self.build_temp,
                         env=env,
                     )
@@ -343,18 +338,11 @@ class CMakeAugmentedBuilder(build_ext):
 
     @staticmethod
     def _find_cmake():
-        for candidate in ["cmake", "cmake3"]:
-            try:
-                out = subprocess.check_output([candidate, "--version"])
-                cmake_version = Version(
-                    re.search(r"version\s*([\d.]+)", out.decode()).group(1)
-                )
-                if cmake_version >= Version("3.15.0"):
-                    return candidate
-            except OSError:
-                pass
+        cmake_cmd = which("cmake") or which("cmake3")
+        if not cmake_cmd:
+            raise RuntimeError("Project requires CMake")
 
-        raise RuntimeError("Project requires CMake >=3.15.0")
+        return cmake_cmd
 
 
 class Docs(Command):
@@ -549,7 +537,7 @@ def setup_package():
             else "node-and-date"
         },
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
-        install_requires=["numpy>=1.9.3"] + maybe_patchelf,
+        install_requires=["numpy>=1.9.3", "packaging"] + maybe_patchelf,
         tests_require=["flake8", "pytest"],
         setup_requires=["wheel", "setuptools_scm", "packaging"]
         + maybe_docs
