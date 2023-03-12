@@ -56,7 +56,7 @@ def test_vector_api():
     v.append(2)
     v.append(1)
     v.append(5)
-    
+
     v3 = h.Vector([4, 2, 61, 17, 13])
 
     """
