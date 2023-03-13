@@ -20,9 +20,10 @@ try:
 except:
     pass
 
+my_env = os.environ.copy()
 
 def run(cmd):
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    result = subprocess.run(cmd, env=my_env, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
         print(result.stderr)
         print(result.stdout)
@@ -32,10 +33,12 @@ def run(cmd):
 
 # try to find path to music binary based on MUSIC_LIBDIR
 if os.getenv("MUSIC_LIBDIR") is not None:
-    os.environ["PATH"] = os.path.join(
-        os.getenv("MUSIC_LIBDIR") + "/../bin"
-    ) + os.getenv("PATH")
-
+    music_libdir = os.getenv("MUSIC_LIBDIR")
+    print("MUSIC_LIBDIR:", music_libdir)
+     # assume bin is in same dir as lib
+    music_bin_path = os.path.dirname(music_libdir) + "/bin:" 
+    print("MUSIC_BINPATH:", music_bin_path)
+    my_env["PATH"] = music_bin_path + my_env["PATH"]
 
 result = run("which music")
 print("music path:", result.stdout)
