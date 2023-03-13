@@ -2997,8 +2997,8 @@ Vector
 
         Some older versions of NEURON reported erroneous values for `max_ind`
         when `start` and `end` are specified. Test for this with the example 
-        above. All released versions _newer_ than 8.2.2 and the current
-        development version work correctly.
+        above. All released versions _newer_ than 8.2.2 work correctly, as 
+        does the current develoopment version.
 
 ----
 
