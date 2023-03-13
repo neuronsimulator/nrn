@@ -9,9 +9,6 @@ export MINGW_CHOST=x86_64-w64-mingw32
 export MSYSTEM_PREFIX=/mingw64
 export PATH=/mingw64/bin:$PATH
 
-# set core.autocrlf to true
-# in order to avoid GLOB mismatch on `install` target
-git config --global core.autocrlf true
 
 # if BUILD_SOURCESDIRECTORY not available, use te root of the repo
 if [ -z "$BUILD_SOURCESDIRECTORY" ]; then
@@ -39,7 +36,7 @@ cd $BUILD_SOURCESDIRECTORY/build
 	-DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
 make -j 2
 ctest -VV
-make install
+VERBOSE=1 make install
 make setup_exe
 
 # copy installer with fixed name for nightly upload
