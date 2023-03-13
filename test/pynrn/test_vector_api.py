@@ -126,6 +126,7 @@ def test_vector_api():
     assert v.max_ind(0, 2) == 0
     assert v3.max_ind(2, 4) == 2
     assert v3.max_ind(1, 2) == 2
+    assert v3.max_ind(3, 4) == 3
     assert h.Vector().max_ind() == -1.0
     assert v.dot(h.Vector((1, 2, 3, 4, 5))) == 44.0
     assert np.allclose(v.mag(), 6.928203230275509)
