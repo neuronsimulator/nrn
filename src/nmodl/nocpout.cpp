@@ -2396,7 +2396,7 @@ int iondef(int* p_pointercount) {
     } /* notice that ioncount is not incremented */
     Sprintf(buf,
             "static constexpr auto number_of_datum_variables = %d;\n",
-            ioncount + *p_pointercount + diamdec + 1);
+            ioncount + *p_pointercount + diamdec + areadec);
     linsertstr(defs_list, buf)->itemtype = VERBATIM;
     return ioncount;
 }
