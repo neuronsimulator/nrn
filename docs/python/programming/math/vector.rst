@@ -2982,7 +2982,23 @@ Vector
     Description:
         Return the index of the maximum value. 
 
-         
+    Examples:
+
+        .. code::
+            python
+
+            v = h.Vector([4, 2, 61, 17, 13])
+            print(v.max_ind())      # 2
+            print(v.max_ind(1, 2))  # 2
+            print(v.max_ind(3, 4))  # 3
+
+
+    .. warning::
+
+        Some older versions of NEURON reported erroneous values for `max_ind`
+        when `start` and `end` are specified. Test for this with the example 
+        above. All released versions _newer_ than 8.2.2 and the current
+        development version work correctly.
 
 ----
 
