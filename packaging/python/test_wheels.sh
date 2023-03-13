@@ -36,6 +36,7 @@ has_coreneuron=false   # true if coreneuron support is available
 has_gpu_support=false  # true if coreneuron gpu support is available
 has_dev_env=true       # true if c/c++ dev environment exist to compile mod files
 run_gpu_test=false     # true if test should be run on the gpu
+has_music=false        # true if music support is available
 
 # python version being used
 python_ver=$("$python_exe" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
@@ -109,6 +110,12 @@ run_mpi_test () {
       run_on_gpu=$([ "$run_gpu_test" == "true" ] && echo "1" || echo "0")
       NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=$run_on_gpu $mpi_launcher -n 2 ./$ARCH_DIR/special -python -mpi test/coreneuron/test_direct.py
     fi
+  fi
+
+  # test MUSIC if enabled
+  if [[ "$has_music" == "true" ]]  && [[ $mpi_name == *"OpenMPI"* || $mpi_name == *"MPICH"* ]]; then
+    export PATH=/opt/nrnwheel/MUSIC/bin:/nrnwheel/MUSIC/bin:$PATH
+    $python_exe test/music_tests/runtests.py
   fi
 
   if [ -n "$mpi_module" ]; then
@@ -330,6 +337,11 @@ if [[ "$has_gpu_support" == "true" ]]; then
   fi
 fi
 
+# check the existence of music support
+compile_options=`nrniv -nobanner -nogui -c 'nrnversion(6)'`
+if echo $compile_options | grep "NRN_ENABLE_MUSIC=ON" > /dev/null ; then
+  has_music=true
+fi
 
 # run tests
 test_wheel $(which python)
