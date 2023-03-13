@@ -399,7 +399,7 @@ def setup_package():
         "neuron.gui2",
     ]
     py_packages += ["neuron.rxd.geometry3d"] if Components.RX3D else []
-    #py_packages += ["neuronmusic"] if Components.MUSIC else []
+    # py_packages += ["neuronmusic"] if Components.MUSIC else []
 
     REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
 

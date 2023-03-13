@@ -32,7 +32,9 @@ def run(cmd):
 
 # try to find path to music binary based on MUSIC_LIBDIR
 if os.getenv("MUSIC_LIBDIR") is not None:
-    os.environ["PATH"] = os.path.join(os.getenv("MUSIC_LIBDIR") + "/../bin") + os.getenv("PATH")
+    os.environ["PATH"] = os.path.join(
+        os.getenv("MUSIC_LIBDIR") + "/../bin"
+    ) + os.getenv("PATH")
 
 
 result = run("which music")
@@ -52,7 +54,7 @@ if "NRN_ENABLE_MPI_DYNAMIC=ON" in h.nrnversion(6):
             if exists(name):
                 break
         os.environ["NRN_LIBMUSIC_PATH"] = name
-    print("NRN_LIBMUSIC_PATH={}".format(os.getenv("NRN_LIBMUSIC_PATH")))    
+    print("NRN_LIBMUSIC_PATH={}".format(os.getenv("NRN_LIBMUSIC_PATH")))
 
 out2 = "numprocs=1\nRank 0: Event (0, 0.001175) detected at 0\nRank 0: Event (0, 0.013825) detected at 0\n"
 
