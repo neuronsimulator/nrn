@@ -58,9 +58,17 @@ As you can see in the script, a typical configuration would be:
 	-DMPI_C_LIB_NAMES:STRING=msmpi \
 	-DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
 ```
+In order to build:
+```
+make -j 2
+```
+Install:
+```
+make install
+```
+
 To create the Windows installer, you need to run:
 ```bash
-make install
 make setup_exe
 ```
 
