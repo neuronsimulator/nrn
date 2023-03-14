@@ -642,7 +642,6 @@ def _update_node_data(force=False, newspecies=False):
             # end#if
 
 
-
 def _matrix_to_rxd_sparse(m):
     """precondition: assumes m a numpy array"""
     nonzero_i, nonzero_j = list(zip(*list(m.keys())))
@@ -659,6 +658,7 @@ def _matrix_to_rxd_sparse(m):
         nonzero_values,
     )
 
+
 def _get_root(sec):
     while sec is not None:
         last_sec = sec
@@ -668,11 +668,11 @@ def _get_root(sec):
             sec = sec.sec
     return last_sec
 
+
 def _check_multigridding_supported_3d():
     # if there are no 3D sections, then all is well
     if not species._has_3d:
         return True
-     
 
     # if each root only has one dx, all is well
     # NOTE: this is actually stricter than we need
@@ -693,7 +693,7 @@ def _check_multigridding_supported_3d():
 
     return True
 
-    
+
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
 
@@ -867,7 +867,7 @@ def _setup_matrices():
                 sp = grid_id_species[grid_id]
                 # TODO: use 3D anisotropic diffusion coefficients
                 dc = grid_id_dc[grid_id]
-                grids_dx.append(sp._dx**3)
+                grids_dx.append(sp._dx ** 3)
                 num_1d_indices_per_grid.append(len(grid_id_indices1d[grid_id]))
                 grid_3d_indices_cnt = 0
                 for index1d in grid_id_indices1d[grid_id]:
