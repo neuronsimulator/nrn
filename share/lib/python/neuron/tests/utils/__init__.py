@@ -52,13 +52,19 @@ def hh_table_disabled():
 
     old_value = None
     if hasattr(h, "usetable_hh"):
+        # Hard to cover this in a coverage build that has CoreNEURON enabled
+        # and thus has the TABLE statement in hh.mod disabled.
+        # LCOV_EXCL_START
         old_value = h.usetable_hh
         h.usetable_hh = False
+        # LCOV_EXCL_END
     try:
         yield None
     finally:
         if old_value is not None:
+            # LCOV_EXCL_START
             h.usetable_hh = old_value
+            # LCOV_EXCL_END
 
 
 @contextmanager

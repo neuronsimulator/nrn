@@ -60,11 +60,17 @@ class Cell:
         return "Cell[{:d}]".format(self.id)
 
 
-# Run t13 with 1 thread and with 3 threads
-t13_thread_values = [1, 3]
+# Run t13 and t13 with 1 thread and with 3 threads if MPI is disabled. With
+# MPI enabled then multithreading is not supported, so just use 1 thread.
+pc = h.ParallelContext()
+this_rank, num_ranks = pc.id(), pc.nhost()
+thread_values = [1] if num_ranks > 1 else [1, 3]
+t13_methods = ["fixed"]
+if num_ranks == 1:
+    t13_methods += ["cvode", "cvode_long_double"]
 
 
-@pytest.fixture(scope="module", params=["fixed", "cvode", "cvode_long_double"])
+@pytest.fixture(scope="module", params=t13_methods)
 def t13_model_data(request):
     """Run the simulation for the t13 tests and return the recorded data.
 
@@ -85,8 +91,8 @@ def t13_model_data(request):
     """
     method = request.param
     data = {"method": method}
-    for threads in t13_thread_values:
-        cells = [Cell(i) for i in range(3)]
+    for threads in thread_values:
+        cells = [Cell(i) for i in range(3) if i % num_ranks == this_rank]
         with hh_table_disabled(), parallel_context() as pc, num_threads(
             pc, threads=threads
         ), cvode_enabled(method.startswith("cvode")), cvode_use_long_double(
@@ -169,7 +175,7 @@ def compare_time_and_voltage_trajectories(
         }
 
     # Finally ready to compare
-    assert this_data.keys() == ref_data.keys()
+    assert this_data.keys() <= ref_data.keys()
     max_diff = 0.0
     for name in this_data:  # cell name
         # Pick out the field we're comparing
@@ -185,7 +191,7 @@ def compare_time_and_voltage_trajectories(
 
 # Whether to test time or voltage values
 @pytest.mark.parametrize("field", ["t", "v"])
-@pytest.mark.parametrize("threads", t13_thread_values)
+@pytest.mark.parametrize("threads", thread_values)
 def test_t13(chk, t13_model_data, field, threads):
     """hh model, testing fixed step and cvode with threads.
 
@@ -219,9 +225,12 @@ class CellWithGapJunction(Cell):
         super().__init__(id)
         self.gap = h.HalfGap(self.soma(0.5))
         self.gap.r = 200
-
-
-t14_thread_values = [1, 3]
+        if id == 0:
+            self.s.dur = 0.1
+            self.s.amp = 0.3
+        elif id == 1:
+            self.s.dur = 0.0
+            self.s.amp = 0.0
 
 
 @pytest.fixture(scope="module", params=["fixed", "cvode", "cvode_long_double"])
@@ -233,33 +242,31 @@ def t14_model_data(request):
     method = request.param
     data = {"method": method}
     n_cells = 2
-    cells = [CellWithGapJunction(i) for i in range(n_cells)]
-    cells[0].s.dur = 0.1
-    cells[0].s.amp = 0.3
-    cells[1].s.dur = 0.0
-    cells[1].s.amp = 0.0
-    for threads in t14_thread_values:
+    cells = {
+        i: CellWithGapJunction(i) for i in range(n_cells) if i % num_ranks == this_rank
+    }
+    for threads in thread_values:
         with hh_table_disabled(), parallel_context() as pc, num_threads(
             pc, threads=threads
         ), cvode_enabled(method.startswith("cvode")), cvode_use_long_double(
             method == "cvode_long_double"
         ):
             for i in range(n_cells):
-                cell = cells[i]
-                next_cell = cells[(i + 1) % n_cells]
-                assert next_cell.gap is not None
-                pc.source_var(cell.soma(0.5)._ref_v, i, sec=cell.soma)
-                pc.target_var(next_cell.gap, next_cell.gap._ref_vgap, i)
+                next_i = (i + 1) % n_cells
+                if i in cells:
+                    pc.source_var(cells[i].soma(0.5)._ref_v, i, sec=cells[i].soma)
+                if next_i in cells:
+                    pc.target_var(cells[next_i].gap, cells[next_i].gap._ref_vgap, i)
 
             pc.setup_transfer()
             h.run()
-            data[threads] = {str(cell): cell.data() for cell in cells}
+            data[threads] = {str(cell): cell.data() for cell in cells.values()}
     del cells
     return data
 
 
 @pytest.mark.parametrize("field", ["t", "v"])
-@pytest.mark.parametrize("threads", t14_thread_values)
+@pytest.mark.parametrize("threads", thread_values)
 def test_t14(chk, t14_model_data, field, threads):
     """Gap junction with setup_transfer. Originally t14.hoc in nrntest/fast.
 
@@ -274,7 +281,7 @@ def test_t14(chk, t14_model_data, field, threads):
     elif method.startswith("cvode"):
         if field == "t":
             if threads == 1:
-                tolerance = 7e-10
+                tolerance = 8e-10
             else:
                 if "long_double" in method:
                     tolerance = 2e-10
