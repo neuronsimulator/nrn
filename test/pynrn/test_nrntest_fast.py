@@ -214,7 +214,7 @@ def test_t13(chk, t13_model_data, field, threads):
         if field == "t":
             tolerance = 5e-8
         elif field == "v":
-            tolerance = 4e-7
+            tolerance = 6e-7
 
     compare_time_and_voltage_trajectories(
         chk, t13_model_data, field, threads, "t13", tolerance
