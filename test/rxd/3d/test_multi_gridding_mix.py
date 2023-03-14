@@ -1,5 +1,6 @@
 from neuron.units import µm, mM, ms, mV
 import sys
+
 sys.path.append("..")
 from testutils import compare_data, tol
 
@@ -12,7 +13,6 @@ def test_multi_gridding_mix(neuron_instance):
     axon.nseg = 110
     axon.pt3dadd(5, 5, 0, 5)
     axon.pt3dadd(5, 5, 5, 5)
-
 
     axon2 = h.Section(name="axon2")
     axon2.L = 5 * µm
@@ -27,25 +27,25 @@ def test_multi_gridding_mix(neuron_instance):
         else:
             return 0 * mM
 
-
     import random
+
     random.seed(1)
+
     def my_initial1(node):
         return random.random()
 
     cyt = rxd.Region([axon], nrn_region="i", name="cyt", dx=0.125)
     ca = rxd.Species(cyt, name="ca", charge=2, initial=my_initial1, d=1)
 
-
     cyt2 = rxd.Region([axon2], nrn_region="i", name="cyt2", dx=0.25)
     ca2 = rxd.Species(cyt2, name="ca2", charge=2, initial=my_initial, d=1)
-    '''
+    """
     nodeList = rxd.nodelist.NodeList
     for node in ca.nodes:
         nodeList.append(node)
-    '''
-    magic = rxd.Rate(ca, -ca * (1-ca)*(0.2-ca))
-    magic2 = rxd.Rate(ca2, -ca2 * (1-ca2)*(0.3-ca2))
+    """
+    magic = rxd.Rate(ca, -ca * (1 - ca) * (0.2 - ca))
+    magic2 = rxd.Rate(ca2, -ca2 * (1 - ca2) * (0.3 - ca2))
 
     rxd.set_solve_type(dimension=3)
 
@@ -55,8 +55,3 @@ def test_multi_gridding_mix(neuron_instance):
     if not save_path:
         max_err = compare_data(data)
         assert max_err < tol
-
-
-    
-
-
