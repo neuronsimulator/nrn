@@ -327,7 +327,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     NAME nrntest_fast
     PROCESSORS 2
     REQUIRES mpi
-    ENVIRONMENT COVERAGE_FILE=.coverage.pynrn_parallel "NRN_PYTEST_ARGS=${pytest_arg_string}"
+    ENVIRONMENT "NRN_PYTEST_ARGS=${pytest_arg_string}"
     SCRIPT_PATTERNS test/pynrn/run_pytest.py test/pynrn/test_nrntest_fast.json
                     test/pynrn/test_nrntest_fast.py
     COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
