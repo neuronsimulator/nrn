@@ -1,6 +1,5 @@
 from neuron import h, nrn, nrn_dll_sym
 from . import species, node, section1d, region, generalizedReaction, constants
-from .nodelist import NodeList
 from .node import _point_indices
 import weakref
 import numpy
@@ -21,11 +20,8 @@ import platform
 from warnings import warn
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
-_numpy_array = numpy.array
-_numpy_zeros = numpy.zeros
 _species_get_all_species = species._get_all_species
 _node_get_states = node._get_states
-_section1d_transfer_to_legacy = section1d._transfer_to_legacy
 _ctypes_c_int = ctypes.c_int
 _weakref_ref = weakref.ref
 
@@ -645,7 +641,6 @@ def _update_node_data(force=False, newspecies=False):
 
             # end#if
 
-            # _curr_scales = _numpy_array(_curr_scales)
 
 
 def _matrix_to_rxd_sparse(m):
