@@ -198,7 +198,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     PRELOAD_SANITIZER
     ENVIRONMENT COVERAGE_FILE=.coverage.basic_tests
     COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/pynrn
-    SCRIPT_PATTERNS test/pynrn/*.py)
+    SCRIPT_PATTERNS test/pynrn/*.json test/pynrn/*.py)
 
   # Mostly to increase coverage
   nrn_add_test_group(NAME coverage_tests MODFILE_PATTERNS test/cover/mod/*.mod)
