@@ -3141,6 +3141,54 @@ Parallel Transfer
 
 
 
+.. method:: ParallelContext.nworker
+
+
+    Syntax:
+        ``n = pc.nworker()``
+
+
+    Description:
+        Queries the number of active **worker** threads, that is to say the
+        number of system threads that are executing work in parallel. If no
+        work is being processed in parallel, this returns **zero**. This is
+        related to, but sometimes different from, the number of threads that
+        is set by :func:`ParallelContext.nthread`. That function sets (and
+        queries) the number of thread data structures (``NrnThread``) that the
+        model is partitioned into, and its second argument determines whether
+        or not worker threads are launched to actually process those data in
+        parallel.
+
+        .. code-block:: python
+
+            from neuron import config, h
+            pc = h.ParallelContext()
+            threads_enabled = config.arguments["NRN_ENABLE_THREADS"]
+
+            # single threaded mode, no workers
+            pc.nthread(1)
+            assert pc.nworker() == 0
+
+            # second argument specifies serial execution, no workers (but
+            # there are two thread data structures)
+            pc.nthread(2, False)
+            assert pc.nworker() == 0
+
+            # second argument specifies parallel execution, two workers if
+            # threading was enabled at compile time
+            pc.nthread(2, True)
+            assert pc.nworker() == 2 * threads_enabled
+
+
+        In the current implementation, ``nworker - 1`` extra threads are
+        launched, and the final thread data structure is processed by the main
+        application thread in parallel.
+
+
+----
+
+
+
 .. method:: ParallelContext.partition
 
 
