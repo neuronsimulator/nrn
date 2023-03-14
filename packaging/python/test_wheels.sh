@@ -114,7 +114,7 @@ run_mpi_test () {
 
   # test MUSIC if enabled
   if [[ "$has_music" == "true" ]]  && [[ $mpi_name == *"OpenMPI"* || $mpi_name == *"MPICH"* ]]; then
-    export PATH=/opt/nrnwheel/MUSIC/bin:/nrnwheel/MUSIC/bin:$PATH
+    export MUSIC_LIBDIR=/nrnwheel/MUSIC/lib
     $python_exe test/music_tests/runtests.py
   fi
 

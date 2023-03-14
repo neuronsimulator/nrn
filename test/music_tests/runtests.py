@@ -2,9 +2,9 @@ from neuron import h
 
 if not "NRN_ENABLE_MUSIC=ON" in h.nrnversion(6):
     print("skip music_tests; NRN_ENABLE_MUSIC is not ON")
-    quit()
 
 import subprocess
+from shutil import which
 
 # the test system copies the files in the source folder to
 # .../build/test/nrnmusic/music_tests/test/music_tests
@@ -24,6 +24,7 @@ my_env = os.environ.copy()
 
 def run(cmd):
     result = subprocess.run(cmd, env=my_env, shell=True, capture_output=True, text=True)
+    print("PATH:", my_env["PATH"])
     if result.returncode != 0:
         print(result.stderr)
         print(result.stdout)
@@ -40,9 +41,9 @@ if os.getenv("MUSIC_LIBDIR") is not None:
     print("MUSIC_BINPATH:", music_bin_path)
     my_env["PATH"] = music_bin_path + my_env["PATH"]
 
-result = run("which music")
-print("music path:", result.stdout)
-musicpath = "/".join(result.stdout.strip().split("/")[:-2])
+result = which("music", path=my_env["PATH"])
+print("music exe:", result)
+musicpath = "/".join(result.strip().split("/")[:-2])
 
 # need NRN_LIBMUSIC_PATH if mpi dynamic
 if "NRN_ENABLE_MPI_DYNAMIC=ON" in h.nrnversion(6):
