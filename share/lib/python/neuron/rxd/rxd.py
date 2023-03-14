@@ -664,11 +664,48 @@ def _matrix_to_rxd_sparse(m):
         nonzero_values,
     )
 
+def _get_root(sec):
+    while sec is not None:
+        last_sec = sec
+        # technically this is the segment, but need to check non-None
+        sec = sec.trueparentseg()
+        if sec is not None:
+            sec = sec.sec
+    return last_sec
 
+def _check_multigridding_supported_3d():
+    # if there are no 3D sections, then all is well
+    if not species._has_3d:
+        return True
+     
+
+    # if each root only has one dx, all is well
+    # NOTE: this is actually stricter than we need
+    dx_by_root = {}
+    for sr in _species_get_all_species():
+        s = sr()
+        if s is not None:
+            if s._intracellular_instances:
+                for r in s._intracellular_instances:
+                    dx = r.dx
+                    for sec in r._secs3d:
+                        root = _get_root(sec)
+                        if root in dx_by_root:
+                            if dx != dx_by_root[root]:
+                                return False
+                        else:
+                            dx_by_root[root] = dx
+
+    return True
+
+    
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
 
     with initializer._init_lock:
+
+        if not _check_multigridding_supported_3d():
+            raise RxDException("unsupported multigridding case")
 
         # update _node_fluxes in C
         _include_flux()
@@ -682,14 +719,12 @@ def _setup_matrices():
         if species._has_1d:
             # TODO: initialization is slow. track down why
 
-            _last_dt = None
             for sr in _species_get_all_species():
                 s = sr()
                 if s is not None:
                     s._assign_parents()
 
             # remove old linearmodeladdition
-            _linmodadd_cur = None
             n = species._1d_submatrix_n()
             if n:
                 # create sparse matrix for C in cy'+gy=b
