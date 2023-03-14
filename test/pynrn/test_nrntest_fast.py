@@ -67,6 +67,9 @@ this_rank, num_ranks = pc.id(), pc.nhost()
 thread_values = [1] if num_ranks > 1 else [1, 3]
 t13_methods = ["fixed"]
 if num_ranks == 1:
+    # There are diffs if we try and run t13 + cvode with multiple ranks.
+    # TODO: verify why/check with Michael, maybe because the different cells
+    # are only coupled via a global CVODE instance?
     t13_methods += ["cvode", "cvode_long_double"]
 
 
