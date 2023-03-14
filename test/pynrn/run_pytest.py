@@ -1,7 +1,6 @@
 import coverage
 import os
 import pytest
-import sys
 import warnings
 
 if __name__ == "__main__":
@@ -22,6 +21,5 @@ if __name__ == "__main__":
             message=r"Module neuron was previously imported, but not measured \(module-not-measured\)",
         )
         code = pytest.main(args)
-    pc.barrier()
     print("run_pytest: exiting with code", code, int(code))
-    sys.exit(int(code))
+    h.quit(int(code))
