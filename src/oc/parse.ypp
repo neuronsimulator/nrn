@@ -93,7 +93,7 @@ static void hoc_opasgn_invalid(int op);
 %token	<sym>	NUMBER STRING PRINT parseDELETE VAR BLTIN UNDEF WHILE IF ELSE FOR
 %token	<sym>	FUNCTION PROCEDURE RETURN FUNC parsePROC HOCOBJFUNC READ parseDOUBLE
 %token	<sym>	DEBUG EDIT FUN_BLTIN DEPENDENT EQUATION LOCAL HOCOBJFUNCTION
-%token	<sym>	BREAK CONTINUE AUTO STRDEF STOPSTMT CSTRING PARALLEL HELP
+%token	<sym>	BREAK CONTINUE AUTO STRDEF STOPSTMT CSTRING HELP
 %token	<sym>	ITERATOR ITERKEYWORD ITERSTMT STRINGFUNC OBJECTFUNC
 %token	<sym>	LOCALOBJ AUTOOBJ
 %token	<narg>	ARG NUMZERO ARGREF
@@ -389,19 +389,6 @@ if (0){YYERROR;}
 		stmt end
 		  { $$ = $2; ($<inst>8)[1].i = relative($9, $<inst>8, 1); /* body */
 			   ($<inst>8)[2].i = relative($10, $<inst>8, 2); /* exit */
-		  }
-	| PARALLEL FOR varname
-		  { Symbol *s; $<inst>$ = Code(varpush); codesym(s = spop());
-			hoc_obvar_declare(s, VAR, 1);
-		  }
-		ROP expr ',' expr
-		  {TPD; TPD; hoc_opasgn_invalid($5); 
-		     code(hoc_parallel_begin);
-		     $<inst>$ = code(shortfor); codei(0); codei(0);}
-		stmt end
-		  { $$ = $3; ($<inst>9)[1].i = relative($10, $<inst>9, 1); /* body */
-			   ($<inst>9)[2].i = relative($11, $<inst>9, 2); /* exit */
-			code(hoc_parallel_end);
 		  }
 	| while cond stmt end
 		{

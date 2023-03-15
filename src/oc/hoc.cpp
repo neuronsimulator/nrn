@@ -856,13 +856,11 @@ void hoc_main1_init(const char* pname, const char** envp) {
     ctp = cbuf;
     frin = nrn_fw_set_stdin();
     fout = stdout;
-    if (!parallel_sub) {
-        if (!nrn_is_cable()) {
-            Fprintf(stderr, "OC INTERPRETER   %s   %s\n", RCS_hoc_version, RCS_hoc_date);
-            Fprintf(
-                stderr,
-                "Copyright 1992 -  Michael Hines, Neurobiology Dept., DUMC, Durham, NC.  27710\n");
-        }
+    if (!nrn_is_cable()) {
+        Fprintf(stderr, "OC INTERPRETER   %s   %s\n", RCS_hoc_version, RCS_hoc_date);
+        Fprintf(
+            stderr,
+            "Copyright 1992 -  Michael Hines, Neurobiology Dept., DUMC, Durham, NC.  27710\n");
     }
     progname = pname;
     hoc_init();
@@ -1019,7 +1017,7 @@ void hoc_final_exit(void) {
 
     /* Don't close the plots for the sub-processes when they finish,
        by default they are then closed when the master process ends */
-    NOT_PARALLEL_SUB(hoc_close_plot();)
+    hoc_close_plot();
 #if READLINE && !defined(MINGW) && !defined(MAC)
     rl_deprep_terminal();
 #endif
