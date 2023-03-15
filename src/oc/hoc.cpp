@@ -858,9 +858,8 @@ void hoc_main1_init(const char* pname, const char** envp) {
     fout = stdout;
     if (!nrn_is_cable()) {
         Fprintf(stderr, "OC INTERPRETER   %s   %s\n", RCS_hoc_version, RCS_hoc_date);
-        Fprintf(
-            stderr,
-            "Copyright 1992 -  Michael Hines, Neurobiology Dept., DUMC, Durham, NC.  27710\n");
+        Fprintf(stderr,
+                "Copyright 1992 -  Michael Hines, Neurobiology Dept., DUMC, Durham, NC.  27710\n");
     }
     progname = pname;
     hoc_init();
