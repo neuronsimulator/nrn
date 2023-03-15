@@ -918,7 +918,6 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
 #if PVM
     init_parallel(&argc, argv);
 #endif
-    save_parallel_argv(argc, argv);
 
     hoc_audit_from_hoc_main1(argc, argv, envp);
     hoc_main1_init(argv[0], envp);
