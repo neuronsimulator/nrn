@@ -113,8 +113,9 @@ run_mpi_test () {
   fi
 
   # test MUSIC if enabled
-  if [[ "$has_music" == "true" ]]  && [[ $mpi_name == *"OpenMPI"* || $mpi_name == *"MPICHz"* ]]; then
+  if [[ "$has_music" == "true" ]]  && [[ $mpi_name == *"OpenMPI"* || $mpi_name == *"MPICH"* ]]; then
     export MUSIC_LIBDIR=/opt/nrnwheel/MUSIC/lib
+    export MPIEXEC_COMMAND="mpiexec  -n  2 /opt/nrnwheel/MUSIC/bin/music"
     $python_exe test/music_tests/runtests.py
   fi
 

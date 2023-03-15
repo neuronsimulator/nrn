@@ -38,13 +38,18 @@ if os.getenv("MUSIC_LIBDIR") is not None:
     music_libdir = os.getenv("MUSIC_LIBDIR")
     print("MUSIC_LIBDIR:", music_libdir)
     # assume bin is in same dir as lib
-    music_bin_path = os.path.dirname(music_libdir) + "/bin:"
+    musicpath = str(os.path.dirname(music_libdir))
+    print("MUSIC located in:", music_libdir)
+    music_bin_path = musicpath + "/bin:"
     print("MUSIC_BINPATH:", music_bin_path)
     my_env["PATH"] = music_bin_path + my_env["PATH"]
-
-result = which("music", path=my_env["PATH"])
-print("music exe:", result)
-musicpath = "/".join(result.strip().split("/")[:-2])
+else:
+    result = which("music", path=my_env["PATH"])
+    if result is not None:
+        print("music exe:", result)
+        musicpath = "/".join(result.strip().split("/")[:-2])
+    else:
+        raise Exception("music not found")
 
 # need NRN_LIBMUSIC_PATH if mpi dynamic
 if "NRN_ENABLE_MPI_DYNAMIC=ON" in h.nrnversion(6):

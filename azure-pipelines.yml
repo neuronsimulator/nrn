@@ -203,6 +203,7 @@ stages:
           sudo mkdir -p /opt/nrnwheel
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/
           sudo tar -zxf $(musicSF.secureFilePath) --directory /opt/nrnwheel/
+          sudo chown -R $(whoami) /opt/nrnwheel
           packaging/python/build_wheels.bash osx $(python.version) coreneuron
         displayName: 'Build MacOS Wheel'
 
