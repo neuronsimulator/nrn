@@ -25,7 +25,7 @@ jobs:
             docker run --rm \
                 -w /root/nrn \
                 -v $PWD:/root/nrn \
-                -v /opt/nrnwheel/mpt:/nrnwheel/mpt \
+                -v /opt/nrnwheel/mpt:/opt/nrnwheel/mpt \
                 -e NEURON_NIGHTLY_TAG \
                 -e NRN_NIGHTLY_UPLOAD \
                 -e NRN_RELEASE_UPLOAD \

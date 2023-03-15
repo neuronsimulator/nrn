@@ -40,39 +40,39 @@ RUN rpmbuild --rebuild https://vault.centos.org/8-stream/AppStream/Source/SPacka
 RUN wget http://ftpmirror.gnu.org/ncurses/ncurses-6.2.tar.gz \
     && tar -xvzf ncurses-6.2.tar.gz \
     && cd ncurses-6.2  \
-    && ./configure --prefix=/nrnwheel/ncurses --without-shared CFLAGS="-fPIC" \
+    && ./configure --prefix=/opt/nrnwheel/ncurses --without-shared CFLAGS="-fPIC" \
     && make -j install
 
 RUN curl -L -o mpich-3.3.2.tar.gz http://www.mpich.org/static/downloads/3.3.2/mpich-3.3.2.tar.gz \
     && tar -xvzf mpich-3.3.2.tar.gz \
     && cd mpich-3.3.2 \
-    && ./configure --disable-fortran --prefix=/nrnwheel/mpich \
+    && ./configure --disable-fortran --prefix=/opt/nrnwheel/mpich \
     && make -j install
 
 RUN curl -L -o openmpi-4.0.3.tar.gz  https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.3.tar.gz \
     && tar -xvzf openmpi-4.0.3.tar.gz \
     && cd openmpi-4.0.3 \
-    && ./configure --prefix=/nrnwheel/openmpi \
+    && ./configure --prefix=/opt/nrnwheel/openmpi \
     && make -j install
 
-ENV PATH /nrnwheel/openmpi/bin:$PATH
+ENV PATH /opt/nrnwheel/openmpi/bin:$PATH
 
 RUN curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/1.2.0.zip \
     && unzip MUSIC.zip \
     && mv MUSIC-* MUSIC \
     && cd MUSIC \
     && ./autogen.sh \
-    && ./configure --prefix=/nrnwheel/MUSIC --with-python-sys-prefix --disable-anysource \
+    && ./configure --prefix=/opt/nrnwheel/MUSIC --with-python-sys-prefix --disable-anysource \
     && make -j install
 
 RUN curl -L -o readline-7.0.tar.gz https://ftp.gnu.org/gnu/readline/readline-7.0.tar.gz \
     && tar -xvzf readline-7.0.tar.gz \
     && cd readline-7.0  \
-    && ./configure --prefix=/nrnwheel/readline --disable-shared CFLAGS="-fPIC" \
+    && ./configure --prefix=/opt/nrnwheel/readline --disable-shared CFLAGS="-fPIC" \
     && make -j install
 
 # create readline with ncurses
-RUN cd /nrnwheel/readline/lib \
+RUN cd /opt/nrnwheel/readline/lib \
     && ar -x libreadline.a \
     && ar -x ../../ncurses/lib/libncurses.a \
     && ar cq libreadline.a *.o \

@@ -98,9 +98,9 @@ The `neuronsimulator/neuron_wheel` provides out-of-the-box support for `mpich` a
 For `HPE-MPT MPI`, since it's not open source, you need to acquire the headers and mount them in the docker image:
 
 ```
-docker run -v $PWD/nrn:/root/nrn -w /root/nrn -v $PWD/mpt-headers/2.21/include:/nrnwheel/mpt/include -it neuronsimulator/neuron_wheel bash
+docker run -v $PWD/nrn:/root/nrn -w /root/nrn -v $PWD/mpt-headers/2.21/include:/opt/nrnwheel/mpt/include -it neuronsimulator/neuron_wheel bash
 ```
-where `$PWD/mpt-headers` is the path to the HPE-MPT MPI headers on the host machine that end up mounted at `/nrnwheel/mpt/include`.
+where `$PWD/mpt-headers` is the path to the HPE-MPT MPI headers on the host machine that end up mounted at `/opt/nrnwheel/mpt/include`.
 You can download the headers with:
 
 ```

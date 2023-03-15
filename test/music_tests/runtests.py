@@ -22,6 +22,7 @@ except:
 
 my_env = os.environ.copy()
 
+
 def run(cmd):
     result = subprocess.run(cmd, env=my_env, shell=True, capture_output=True, text=True)
     print("PATH:", my_env["PATH"])
@@ -36,8 +37,8 @@ def run(cmd):
 if os.getenv("MUSIC_LIBDIR") is not None:
     music_libdir = os.getenv("MUSIC_LIBDIR")
     print("MUSIC_LIBDIR:", music_libdir)
-     # assume bin is in same dir as lib
-    music_bin_path = os.path.dirname(music_libdir) + "/bin:" 
+    # assume bin is in same dir as lib
+    music_bin_path = os.path.dirname(music_libdir) + "/bin:"
     print("MUSIC_BINPATH:", music_bin_path)
     my_env["PATH"] = music_bin_path + my_env["PATH"]
 
@@ -57,8 +58,8 @@ if "NRN_ENABLE_MPI_DYNAMIC=ON" in h.nrnversion(6):
             name = musicpath + "/lib/libmusic." + suffix
             if exists(name):
                 break
-        os.environ["NRN_LIBMUSIC_PATH"] = name
-    print("NRN_LIBMUSIC_PATH={}".format(os.getenv("NRN_LIBMUSIC_PATH")))
+        my_env["NRN_LIBMUSIC_PATH"] = name
+    print("NRN_LIBMUSIC_PATH={}".format(my_env["NRN_LIBMUSIC_PATH"]))
 
 out2 = "numprocs=1\nRank 0: Event (0, 0.001175) detected at 0\nRank 0: Event (0, 0.013825) detected at 0\n"
 

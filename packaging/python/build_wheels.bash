@@ -104,7 +104,7 @@ build_wheel_linux() {
     # Workaround for https://github.com/pypa/manylinux/issues/1309
     git config --global --add safe.directory "*"
 
-    python setup.py build_ext --cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline;/nrnwheel/MUSIC" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
+    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline;/opt/nrnwheel/MUSIC" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
     # For CI runs we skip wheelhouse repairs
     if [ "$SKIP_WHEELHOUSE_REPAIR" = true ] ; then
@@ -208,9 +208,9 @@ coreneuron=$3
 case "$1" in
 
   linux)
-    MPI_INCLUDE_HEADERS="/nrnwheel/openmpi/include;/nrnwheel/mpich/include"
+    MPI_INCLUDE_HEADERS="/opt/nrnwheel/openmpi/include;/opt/nrnwheel/mpich/include"
     # Check for MPT headers. On Azure, we extract them from a secure file and mount them in the docker image in:
-    MPT_INCLUDE_PATH="/nrnwheel/mpt/include"
+    MPT_INCLUDE_PATH="/opt/nrnwheel/mpt/include"
     if [ -d "$MPT_INCLUDE_PATH" ]; then
         MPI_INCLUDE_HEADERS="${MPI_INCLUDE_HEADERS};${MPT_INCLUDE_PATH}"
     fi

@@ -53,7 +53,7 @@ stages:
         inputs:
           secureFile: 'mpt_headears.2.21.tar.gz'
 
-      # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
+      # Note that mpt headers must be mounted in the docker imager under `/opt/nrnwheel/mpt`
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
           sudo mkdir -p /opt/nrnwheel/mpt
@@ -61,7 +61,7 @@ stages:
           docker run --rm \
             -w /root/nrn \
             -v $PWD:/root/nrn \
-            -v /opt/nrnwheel/mpt:/nrnwheel/mpt \
+            -v /opt/nrnwheel/mpt:/opt/nrnwheel/mpt \
             -e NEURON_NIGHTLY_TAG \
             -e NRN_NIGHTLY_UPLOAD \
             -e NRN_RELEASE_UPLOAD \
@@ -106,7 +106,7 @@ stages:
         inputs:
           secureFile: 'mpt_headears.2.21.tar.gz'
 
-      # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
+      # Note that mpt headers must be mounted in the docker imager under `/opt/nrnwheel/mpt`
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
           sudo mkdir -p /opt/nrnwheel/mpt
@@ -114,7 +114,7 @@ stages:
           docker run --rm \
             -w /root/nrn \
             -v $PWD:/root/nrn \
-            -v /opt/nrnwheel/mpt:/nrnwheel/mpt \
+            -v /opt/nrnwheel/mpt:/opt/nrnwheel/mpt \
             -e NEURON_NIGHTLY_TAG \
             -e NRN_NIGHTLY_UPLOAD \
             -e NRN_RELEASE_UPLOAD \
