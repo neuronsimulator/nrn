@@ -159,7 +159,7 @@ Vector
 
     .. warning::
         ``vec.x[-1]`` or ``vec[-1]`` return or set the value of the last element of the vector but ``vec._ref_x`` cannot be accessed in
-    this way.
+        this way.
 
 ----
 
