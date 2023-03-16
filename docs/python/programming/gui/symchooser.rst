@@ -87,7 +87,7 @@ SymChooser
             from neuron import h, gui
 
             h('create soma')
-            h.soma.insert('hh')
+            h.soma.insert(h.hh)
 
             scobj = h.SymChooser()
             scobj.run()
@@ -95,7 +95,7 @@ SymChooser
             # read the result
             resultPtr = h.ref('')
             scobj.text(resultPtr)
-            print('You selected: ' + resultPtr[0])
+            print(f'You selected: {resultPtr[0]}')
 
         .. image:: ../../images/symchooser.png
             :align: center  

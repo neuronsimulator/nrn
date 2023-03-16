@@ -285,26 +285,26 @@ Random Class
             r.MCellRan4(1) 
 
             for i in range(11):
-                print('{} {}'.format(i, r.repick()))
+                print(i, r.repick())
 
             r.MCellRan4(1) 
             for i in range(6):
-                print('%d %g' % (i, r.repick()))
+                print(i, r.repick())
 
             idum = r.seq() 
-            print("idum = {}".format(idum ))
+            print(f"idum = {idum}")
             for i in range(6, 11):
-                print('{} {}'.format(i, r.repick()))
+                print(i, r.repick())
 
             print("restarting")
             r.seq(idum) 
             for i in range(6, 11):
-                print('{} {}'.format(i, r.repick()))
+                print(i, r.repick())
 
             print("restarting")
             r.seq(idum) 
             for i in range(6, 11):
-                print('{} {}'.format(i, r.repick()))
+                print(i, r.repick())
 
         Output:
 
@@ -479,7 +479,7 @@ Random Class
             hist.plot(g, vec)
             for i in range(500):
             	x = r.repick() 
-            	print('%d %g' % (i, x))
+            	print(i, x)
             	j = int((x+3)*10) # -3 to 2 -> 0 to 50 
             	if j >= 0:
             		hist[j] += 1
@@ -528,7 +528,7 @@ Random Class
             hist.plot(g, xvec) 
             for i in range(500):
             	x = r.repick() 
-            	print('%d %g' % (i, x))
+            	print(i, x)
             	j = 3 * int(x) + 1 
             	if j >= hist.size():  # don't let any off the edge 
             		j = hist.size() - 1
@@ -578,7 +578,7 @@ Random Class
             hist.plot(g, xvec)
             for i in range(500):
             	x = r.repick() 
-            	print('%d %g' % (i, x))
+            	print(i, x)
             	j = int(x) 
             	j = 3*j+1 
             	if j >= hist.size():

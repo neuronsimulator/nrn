@@ -894,10 +894,10 @@ CVode
         .. code-block::
             python
     
-    	    from neuron import h, gui
+    	    from neuron import h
      
     	    def hi():
-    	        print('hello from hi, h.t = %g' % h.t)
+    	        print(f'hello from hi, h.t = {h.t}')
 
     	    h.finitialize(-65)
 
@@ -1334,7 +1334,7 @@ CVode
                 # sum over all ELECTRODE_CURRENT (if only using IClamp)
                 total_iclamp_cur = sum(ic.i for ic in h.List('IClamp'))
 
-                print("total_imem=%g total_iclamp_cur=%g" % (total_imem, total_iclamp_cur))
+                print(f"total_imem={total_imem} total_iclamp_cur={total_iclamp_cur}")
                 assert(abs(total_imem - total_iclamp_cur) < 1e-12)
 
 

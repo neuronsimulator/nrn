@@ -230,7 +230,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
             h.nrnmpi_init()
 
             pc = h.ParallelContext()
-            print ("I am %d of %d" % (pc.id(), pc.nhost()))
+            print (f"I am {pc.id()} of {pc.nhost()}")
 
             pc.barrier()
             h.quit()            
@@ -268,7 +268,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
 
             if pc.nhost() == 1:
                for i in range(20):
-                  print('%d %g' % (i, sin(i)))
+                  print(i, math.sin(i))
                
             else: 
                for i in range(20):
@@ -276,7 +276,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
                
              
                while pc.working():
-                  print('%d %g' % (pc.userid(), pc.pyret()))
+                  print(pc.userid(), pc.pyret())
 
     .. note::
 
@@ -446,7 +446,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
                 id = pc.working()
                 if id == 0: break
                 # gather results of previous pc.submit calls
-                print('{} {}'.format(id, pc.pyret()))
+                print(id, pc.pyret())
         
         Note that if the submission did not have an explicit userid then 
         all the arguments of the executed function may be unpacked. 
@@ -1560,7 +1560,7 @@ Description:
             if rank == 0:
                 print('source data')
             for r in serialize():
-                print('{} {}'.format(rank, data))
+                print(rank, data)
 
             data = pc.py_alltoall(data)
 
@@ -1568,7 +1568,7 @@ Description:
                 print('destination data')
 
             for r in serialize():
-                print('{} {}'.format(rank, data))
+                print(rank, data)
 
             pc.runworker()
             pc.done()
@@ -1631,7 +1631,7 @@ Description:
           def pr(label, val):
             from time import sleep
             sleep(0.1) # try to avoid mixing different pr output
-            print("%d: %s: %s" % (rank, label, val))
+            print(f"{rank}: {label}: {val}")
 
           pr("allgather src", src)  
           pr("allgather dest", dest)
@@ -1713,7 +1713,7 @@ Description:
           def pr(label, val):
             from time import sleep
             sleep(.1) # try to avoid mixing different pr output
-            print("%d: %s: %s" % (rank, label, val))
+            print(f"{rank}: {label}: {val}")
 
           pr("gather src", src)     
           pr("gather dest", dest)
@@ -1799,7 +1799,7 @@ Description:
           def pr(label, val):
             from time import sleep
             sleep(.1) # try to avoid mixing different pr output
-            print("%d: %s: %s" % (rank, label, val))
+            print(f"{rank}: {label}: {val}")
 
           pr("scatter src", src)     
           pr("scatter dest", dest)
@@ -1883,7 +1883,7 @@ Description:
           def pr(label, val):
             from time import sleep
             sleep(.1) # try to avoid mixing different pr output
-            print("%d: %s: %s" % (rank, label, val))
+            print(f"{rank}: {label}: {val}")
 
           pr("broadcast src", src)
           pr("broadcast dest", dest)
