@@ -758,8 +758,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(10) 
-            vec.indgen(5) 
+            vec = h.Vector(range(0, 49, 5)) 
             vec.contains(30) 
 
         returns True, meaning the vector does contain an element whose value is 30. 
@@ -836,8 +835,7 @@ Vector
             python
         
  
-            v1 = h.Vector(30) 
-            v1.indgen() 
+            v1 = h.Vector(range(30))
             v1.printf() 
             
             v2 = h.Vector() 
@@ -882,8 +880,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(20) 
-            vec.indgen() 
+            vec = h.Vector(range(20))
             vec.copy(vec, 10) 
 
         produces  a 30 element vector cycling three times from 0 to 9. However 
@@ -1083,9 +1080,8 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(25) 
+            vec = h.Vector(range(0, 245, 10))
             vec1 = h.Vector() 
-            vec.indgen(10) 
             vec1.where(vec, ">=", 50) 
 
         creates ``vec1`` with 20 elements ranging in value from 50 to 240 in 
@@ -1321,8 +1317,7 @@ Vector
         .. code-block::
             python
 
-            v1 = h.Vector() 
-            v1.indgen(20,30,2) 
+            v1 = h.Vector(range(20, 31, 2))
             v1.printf() 
             f = h.File() 
             f.wopen("temp.tmp") 
@@ -2035,8 +2030,7 @@ Vector
             python
 
             from neuron import h
-            vec = h.Vector() 
-            vec.indgen(0, 10, 2) 
+            vec = h.Vector(range(0, 10, 2))
             h("func sq(){return $1*$1}")
             print(vec.reduce("sq", 100))
 
@@ -2139,7 +2133,7 @@ Vector
             python
 
             from neuron import h
-            v = h.Vector(5).indgen()
+            v = h.Vector(range(5))
             n = v.as_numpy()
             print(n) #[0.  1.  2.  3.  4.]
             v[1] += 10
@@ -2242,10 +2236,8 @@ Vector
                 return (x - 1) ** 2 + (y - 0.5) ** 2
 
             dvec = h.Vector(2) 
-            fvec = h.Vector(2) 
-            fvec.fill(1) 
-            ivec = h.Vector(2) 
-            ivec.indgen() 
+            fvec = h.Vector([1, 1]) 
+            ivec = h.Vector(range(2))
              
             a = h.ref(2)
             b = h.ref(1) 
@@ -2289,8 +2281,7 @@ Vector
             g.size(0,10,0,100) 
 
             #... 
-            xs = h.Vector(10) 
-            xs.indgen()
+            xs = h.Vector(range(10))
             ys = xs * xs
             ys.line(g, xs, 1, 0) # black reference line 
              
@@ -2685,8 +2676,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector() 
-            vec.indgen(1,5,1) 
+            vec = h.Vector(range(1, 6)) 
             vec.printf()
             vec.c().rotate(2).printf()
             vec.c().rotate(2, 0).printf() 
