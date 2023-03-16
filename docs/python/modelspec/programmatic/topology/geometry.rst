@@ -119,7 +119,7 @@ truncated cones as long as the diameter does not change too much.
         seg.diam = numpy.interp(seg.x, [0, 1], [11, 100])
 
     for seg in sec.allseg():
-        print(seg.diam, seg.area(),
+        print(seg.x, seg.diam, seg.area(),
               h.PI * seg.diam * sec.L / sec.nseg, seg.ri(),
               0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2))
 
