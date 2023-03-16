@@ -119,9 +119,9 @@ truncated cones as long as the diameter does not change too much.
         seg.diam = numpy.interp(seg.x, [0, 1], [11, 100])
 
     for seg in sec.allseg():
-        print('{} {} {} {} {} {}'.format(seg.x, seg.diam, seg.area(),
-                h.PI * seg.diam * sec.L / sec.nseg, seg.ri(),
-                0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2)))
+        print(seg.diam, seg.area(),
+              h.PI * seg.diam * sec.L / sec.nseg, seg.ri(),
+              0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2))
 
 Output:
 
@@ -198,7 +198,7 @@ Example:
         for sec in h.allsec():
             print(sec)
             for i in range(sec.n3d()):
-                print('%d: (%g, %g, %g; %g)' % (i, sec.x3d(i), sec.y3d(i), sec.z3d(i), sec.diam3d(i)))
+                print(f'{i}: ({sec.x3d(i)}, {sec.y3d(i)}, {sec.z3d(i)}; {sec.diam3d(i)})')
 
     .. image:: ../../../images/geometry1.png
         :align: center
@@ -245,7 +245,7 @@ Example:
 
         def print_stats():
             for seg in sec.allseg():
-                print('%g %g %g %g' % (seg.x * sec.L, seg.diam, seg.area(), seg.ri()))
+                print(seg.x * sec.L, seg.diam, seg.area(), seg.ri())
 
         h.xpanel("change nseg")
         h.xradiobutton("nseg = 3", (pr, 3))
@@ -264,9 +264,9 @@ Example:
         s.show(False)
 
         for i in range(sec.n3d()):
-            print('%d: %g %g') % (i, sec.arc3d(i), sec.diam3d(i)))
+            print(f'{i}: {sec.arc3d(i)} {sec.diam3d(i)}')
 
-        print("L= %g" % sec.L)
+        print(f"L= {sec.L}")
         print_stats()
 
          
@@ -335,19 +335,19 @@ Example:
         sec = h.Section(name='sec')
         sec.Ra=100 
         sec.nseg = 11 
-        h.pt3dclear(sec=sec) 
+        sec.pt3dclear() 
         for i in range(31): 
             x = h.PI * i / 30.
-            h.pt3dadd(200 * sin(x), 200 * cos(x), 0, 100 * sin(4 * x), sec=sec) 
+            sec.pt3dadd(200 * sin(x), 200 * cos(x), 0, 100 * sin(4 * x)) 
 
         s = h.Shape() 
         s.show(0) 
         print(sec.L)
         for seg in sec.allseg():
-            print('{} {} {} {} {} {}'.format(
+            print(
                 seg.x, seg.diam, seg.area(), h.PI * seg.diam * sec.L / sec.nseg,
                 seg.ri(),
-                0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2)))
+                0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2))
 
     .. image:: ../../../images/geometry3.png
         :align: center
@@ -650,6 +650,9 @@ Defining the 3D Shape
 
         leaves the pt3d info unchanged. 
 
+    .. note::
+
+        A more object-oriented approach is to use ``sec.pt3dchange`` instead.
          
 
 ----
@@ -903,7 +906,7 @@ Reading 3D Data from NEURON
             python
 
             for seg in sec.allseg():
-                print('%g %g %g' % (seg.x * sec.L, seg.area(), seg.ri()))
+                print(seg.x * sec.L, seg.area(), seg.ri())
 
         will print the arc length, the segment area at that arc length, and the resistance along that length 
         for the section ``sec``. 
@@ -1016,19 +1019,19 @@ Reading 3D Data from NEURON
             import time
 
             diam_change_cnt = neuron.nrn_dll_sym('diam_change_cnt', ctypes.c_int)
-            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 1 0
+            print(h.diam_changed, diam_change_cnt.value)    # 1 0
 
             s = h.Section(name='s')
-            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 1 0
+            print(h.diam_changed, diam_change_cnt.value)    # 1 0
 
             time.sleep(0.2)
-            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 0 1
+            print(h.diam_changed, diam_change_cnt.value)    # 0 1
 
             s.diam = 42
-            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 1 1
+            print(h.diam_changed, diam_change_cnt.value)    # 1 1
 
             time.sleep(0.2)
-            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 1 2
+            print(h.diam_changed, diam_change_cnt.value)    # 1 2
 
          
          

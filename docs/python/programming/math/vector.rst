@@ -1172,7 +1172,7 @@ Vector
             vs.printf()
              
             print(vs.indwhere(">", .3))
-            print("note roundoff error, vs[3] - 0.3 = %g" % (vs[3] - 0.3))
+            print(f"note roundoff error, vs[3] - 0.3 = {vs[3] - 0.3}")
             print(vs.indwhere("==", .5))
              
             vd = vs.c().indvwhere(vs, "[)", .3, .7) 
@@ -2238,7 +2238,7 @@ Vector
                 if a == 0:
                     g.line(x, y)
                     g.flush()
-                    print('{} {} {}'.format(a, x, y))
+                    print(a, x, y)
                 return (x - 1) ** 2 + (y - 0.5) ** 2
 
             dvec = h.Vector(2) 
@@ -2251,7 +2251,7 @@ Vector
             b = h.ref(1) 
             g.beginline() 
             error = dvec.fit(fvec, fun, ivec, a, b) 
-            print('{} {} {}'.format(a[0], b[0], error))
+            print(a[0], b[0], error)
 
 
     .. warning::
