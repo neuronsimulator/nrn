@@ -417,7 +417,7 @@ def setup_package():
                 "-DNRN_ENABLE_CORENEURON=" + ("ON" if Components.CORENRN else "OFF"),
                 "-DNRN_ENABLE_INTERVIEWS=" + ("ON" if Components.IV else "OFF"),
                 "-DIV_ENABLE_X11_DYNAMIC=" + ("ON" if Components.IV else "OFF"),
-                "-DNRN_ENABLE_RX3D=OFF",  # Never build within CMake
+                "-DNRN_ENABLE_RX3D=" + ("ON" if Components.RX3D else "OFF"),
                 "-DNRN_ENABLE_MPI=" + ("ON" if Components.MPI else "OFF"),
                 "-DNRN_ENABLE_MPI_DYNAMIC=" + ("ON" if Components.MPI else "OFF"),
                 "-DNRN_ENABLE_PYTHON_DYNAMIC=ON",
