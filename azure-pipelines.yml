@@ -206,11 +206,14 @@ stages:
     - job: 'WindowsInstaller'
       timeoutInMinutes: 45
       pool:
-        vmImage: windows-2019
+        vmImage: windows-latest
       variables:
         MSYS2_ROOT: C:\msys64
 
       steps:
+      - checkout: self
+        submodules: 'true'
+        clean: 'true'
 
       - task: BatchScript@1
         inputs:
