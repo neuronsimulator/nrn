@@ -50,12 +50,6 @@ class Cell:
     def data(self):
         return {"t": list(self.tv), "v": list(self.vv)}
 
-    def pr(self, file=None):
-        print("\n{}".format(self), file=file)
-        assert self.tv.size() == self.vv.size()
-        for t, v in zip(self.tv, self.vv):
-            print("{:.15g} {:.15g}".format(t, v), file=file)
-
     def __str__(self):
         return "Cell[{:d}]".format(self.id)
 
@@ -172,17 +166,25 @@ def compare_time_and_voltage_trajectories(
             assert np.all(np.diff(old_t) > 0)
             return np.interp(new_t, old_t, old_v)
 
-        this_data = {
-            name: {"v": interp(ref_data[name]["t"], data["t"], data["v"])}
-            for name, data in this_data.items()
-        }
+        new_data = {}
+        for name, data in this_data.items():
+            ref_t = ref_data[name]["t"]
+            raw_t, raw_v = data["t"], data["v"]
+            assert len(raw_t) == len(ref_t)
+            assert len(raw_v) == len(ref_t)
+            new_v = interp(ref_t, raw_t, raw_v)
+            new_data[name] = {"v": new_v}
+        this_data = new_data
 
     # Finally ready to compare
     assert this_data.keys() <= ref_data.keys()
     max_diff = 0.0
     for name in this_data:  # cell name
         # Pick out the field we're comparing
-        for a, b in zip(this_data[name][field], ref_data[name][field]):
+        these_vals = this_data[name][field]
+        ref_vals = ref_data[name][field]
+        assert len(these_vals) == len(ref_vals)
+        for a, b in zip(these_vals, ref_vals):
             match = math.isclose(a, b, rel_tol=tolerance)
             if match:
                 continue
