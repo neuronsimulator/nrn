@@ -99,7 +99,6 @@ set(OC_FILE_LIST
     nonlin.cpp
     nrnfilewrap.cpp
     ocerf.cpp
-    parallel.cpp
     plot.cpp
     plt.cpp
     regexp.cpp
