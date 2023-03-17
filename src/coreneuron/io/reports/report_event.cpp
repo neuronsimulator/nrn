@@ -69,9 +69,6 @@ void ReportEvent::summation_alu(NrnThread* nt) {
     }
 }
 
-<<<<<<< HEAD
-/** on deliver, call libsonata and setup next event */
-=======
 void ReportEvent::lfp_calc(NrnThread* nt) {
     auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt->mapping);
     double* fast_imem_rhs = nt->nrn_fast_imem->nrn_sav_rhs;
@@ -104,7 +101,6 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
 }
 
 /** on deliver, call ReportingLib and setup next event */
->>>>>>> 34e53c767 (CoreNEURON: Support Online LFP calculation)
 void ReportEvent::deliver(double t, NetCvode* nc, NrnThread* nt) {
 /* libsonata is not thread safe */
 #pragma omp critical
