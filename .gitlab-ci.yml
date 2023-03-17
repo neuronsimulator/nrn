@@ -109,9 +109,6 @@ variables:
   NMODL_BRANCH:
     description: Branch of NMODL to build CoreNEURON against (NMODL_COMMIT and NMODL_TAG also possible)
     value: master
-  REPORTINGLIB_BRANCH:
-    description: Branch of reportinglib to build BlueBrain models against in the simulation stack pipeline (REPORTINGLIB_COMMIT and REPORTINGLIB_TAG also possible)
-    value: master
   SPACK_BRANCH:
     description: Branch of BlueBrain Spack to use for the CI pipeline
     value: develop
