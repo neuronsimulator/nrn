@@ -9,6 +9,7 @@ import pytest
 from neuron import h
 from neuron.tests.utils import (
     cvode_enabled,
+    cvode_use_global_timestep,
     cvode_use_long_double,
     hh_table_disabled,
     num_threads,
@@ -59,12 +60,7 @@ class Cell:
 pc = h.ParallelContext()
 this_rank, num_ranks = pc.id(), pc.nhost()
 thread_values = [1] if num_ranks > 1 else [1, 3]
-t13_methods = ["fixed"]
-if num_ranks == 1:
-    # There are diffs if we try and run t13 + cvode with multiple ranks.
-    # TODO: verify why/check with Michael, maybe because the different cells
-    # are only coupled via a global CVODE instance?
-    t13_methods += ["cvode", "cvode_long_double"]
+t13_methods = ["fixed", "cvode", "cvode_long_double"]
 
 
 @pytest.fixture(scope="module", params=t13_methods)
@@ -90,10 +86,15 @@ def t13_model_data(request):
     data = {"method": method}
     for threads in thread_values:
         cells = [Cell(i) for i in range(3) if i % num_ranks == this_rank]
+        # cvode_use_global_timestep takes care of enabling global
+        # synchronisation of the variable timestep method across ranks
+        # even though the cells have no connectivity
         with hh_table_disabled(), parallel_context() as pc, num_threads(
             pc, threads=threads
-        ), cvode_enabled(method.startswith("cvode")), cvode_use_long_double(
-            method == "cvode_long_double"
+        ), cvode_enabled(method.startswith("cvode")) as cv, cvode_use_global_timestep(
+            cv, True
+        ), cvode_use_long_double(
+            cv, method == "cvode_long_double"
         ):
             h.run()
             data[threads] = {str(cell): cell.data() for cell in cells}
@@ -253,8 +254,8 @@ def t14_model_data(request):
     for threads in thread_values:
         with hh_table_disabled(), parallel_context() as pc, num_threads(
             pc, threads=threads
-        ), cvode_enabled(method.startswith("cvode")), cvode_use_long_double(
-            method == "cvode_long_double"
+        ), cvode_enabled(method.startswith("cvode")) as cv, cvode_use_long_double(
+            cv, method == "cvode_long_double"
         ):
             for i in range(n_cells):
                 next_i = (i + 1) % n_cells
@@ -304,3 +305,9 @@ def test_t14(chk, t14_model_data, field, threads):
     compare_time_and_voltage_trajectories(
         chk, t14_model_data, field, threads, "t14", tolerance
     )
+
+
+if __name__ == "__main__":
+    # python test_nrntest_fast.py will run all the tests in this file
+    # e.g. __file__ --> __file__ + "::test_t13" would just run test_t13
+    pytest.main([__file__])

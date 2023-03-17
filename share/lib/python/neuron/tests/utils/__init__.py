@@ -9,6 +9,8 @@ def cvode_enabled(enabled):
     """
     Helper for tests to enable/disable CVode, leaving the setting as they found it.
 
+    Yields an instance of CVode if enabled == True, otherwise None.
+
     For example:
     from neuron.tests.utils import cvode_enabled
     with cvode_enabled(True):
@@ -21,25 +23,67 @@ def cvode_enabled(enabled):
     old_status = h.cvode_active()
     h.cvode_active(enabled)
     try:
-        yield None
+        yield h.CVode() if enabled else None
     finally:
         h.cvode_active(old_status)
 
 
 @contextmanager
-def cvode_use_long_double(enabled):
+def cvode_use_global_timestep(cv, enabled):
+    """
+    Test helper. Ensure that CVode uses the global timestep method.
+
+    This handles a special case, namely that when the model consists of
+    cells that are not coupled to each other, and there are multiple
+    MPI ranks, the global CVode instance on each rank will proceed
+    independently, resulting in per-cell results that depend on the
+    number of ranks and the distribution of cells across them.
+
+    For example:
+
+    # some old CVode state active here
+    with cvode_enabled(True) as cv, cvode_use_global_timestep(cv,True):
+        # global timestep method active here, even if the model is just
+        # a set of cells that aren't coupled to each other
+    # old settings restored here
+    """
+    if cv is None:
+        # CVode not enabled, do nothing
+        yield None
+    else:
+        from neuron import h
+
+        mpi_enabled = h.ParallelContext().nhost() > 1
+        old_use_local_dt = cv.use_local_dt()
+        cv.use_local_dt(not enabled)
+        use_parallel = enabled and mpi_enabled
+        if use_parallel:
+            # make sure the global timestep method is really global
+            cv.use_parallel()
+        try:
+            yield None
+        finally:
+            if use_parallel:
+                # toggle use_local_dt to clear the use_parallel setting
+                cv.use_local_dt(not old_use_local_dt)
+            cv.use_local_dt(old_use_local_dt)
+
+
+@contextmanager
+def cvode_use_long_double(cv, enabled):
     """
     Helper for tests to enable/disable long double support in CVode, leaving the setting as they found it.
     """
-    from neuron import h
-
-    cv = h.CVode()
-    old_setting = cv.use_long_double()
-    cv.use_long_double(enabled)
-    try:
+    if cv is None:
+        # CVode not enabled, do nothing
         yield None
-    finally:
-        cv.use_long_double(old_setting)
+    else:
+        old_setting = cv.use_long_double()
+        cv.use_long_double(enabled)
+        try:
+            yield None
+        finally:
+            cv.use_long_double(old_setting)
 
 
 @contextmanager
