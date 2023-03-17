@@ -648,7 +648,7 @@ NetCon
             from neuron import h, gui
 
             soma = h.Section(name='soma')
-            soma.insert('hh')
+            soma.insert(h.hh)
             soma.L = 3.183098861837907
             soma.diam = 10
             ic = h.IClamp(soma(0.5))

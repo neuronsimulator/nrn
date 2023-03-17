@@ -632,7 +632,7 @@ Graph
             while i != -1:
             	# xvec and yvec contain the line with Graph internal index i. 
             	# and can be associated with the sequential index j. 
-            	print('{} {} {}'.format(j, i, yvec.label))
+            	print(j, i, yvec.label)
             	xline.append(xvec.c())
             	yline.append(yvec.cl()) # clone label as well 
                 i = h.Graph[0].getline(i, xvec, yvec)
@@ -1379,7 +1379,7 @@ Graph
             from neuron import h, gui
 
             def on_event(event_type, x, y, keystate):
-                print('{} {} {} {}'.format(event_type, x, y, keystate))
+                print(event_type, x, y, keystate)
 
             g = h.Graph()
             g.menu_tool("mouse events", on_event)

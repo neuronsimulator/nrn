@@ -336,7 +336,7 @@ General
             s3 = h.Section(name='s3')
 
             for sec in [s1, s2, s3]:
-                sec.insert('hh')
+                sec.insert('hh')   # equivalently: sec.insert(h.hh)
                 sec.L = sec.diam = 3
 
             c1 = h.IClamp(s1(0.5))
@@ -349,8 +349,7 @@ General
             c3.dur[0] = 1
 
             # record an action potential
-            ap = h.Vector()
-            ap.record(s1(0.5)._ref_v)
+            ap = h.Vector().record(s1(0.5)._ref_v)
             h.finitialize(-65)
             while h.t < 1:
                 h.fadvance()
@@ -697,7 +696,7 @@ General
       pc.psolve(7)
       
       for i, tsp in enumerate(out[0]):
-        print ("%g %d" %(tsp, int(out[1][i])))
+        print (tsp, int(out[1][i]))
 
   Output:
     Notice that 2.1 is the first output because (0, 0) is discarded by PatternStim
@@ -1004,6 +1003,8 @@ Mechanisms
     Syntax:
         ``section.insert('hh')``
 
+        ``section.insert(h.hh)``
+
 
     Description:
         See `<nrn src dir>/src/nrnoc/hh.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/hh.mod>`_
@@ -1041,6 +1042,8 @@ Mechanisms
 
     Syntax:
         ``section.insert('pas')``
+
+        ``section.insert(h.pas)``
 
         ``section(x).pas.g -- mho/cm2	conductance``
 
