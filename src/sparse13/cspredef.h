@@ -47,4 +47,3 @@ where temp is the last part of spmatrix.h
 #define spcCreateElement cmplx_spcCreateElement
 #define spcRowExchange cmplx_spcRowExchange
 #define spcColExchange cmplx_spcColExchange
-
