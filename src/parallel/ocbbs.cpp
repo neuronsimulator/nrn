@@ -913,6 +913,11 @@ static double nthrd(void*) {
     return double(nrn_nthread);
 }
 
+static double number_of_worker_threads(void*) {
+    hoc_return_type_code = 1;  // integer
+    return nof_worker_threads();
+}
+
 static double partition(void*) {
     Object* ob = 0;
     int it;
@@ -1085,6 +1090,7 @@ static Member_func members[] = {{"submit", submit},
                                 {"broadcast", broadcast},
 
                                 {"nthread", nthrd},
+                                {"nworker", number_of_worker_threads},
                                 {"partition", partition},
                                 {"thread_stat", thread_stat},
                                 {"thread_busywait", thread_busywait},
