@@ -60,6 +60,7 @@ zip ^
 unzip ^
 base-devel ^
 mingw-w64-x86_64-cmake ^
+mingw-w64-x86_64-ninja ^
 mingw-w64-x86_64-ncurses ^
 mingw-w64-x86_64-readline ^
 mingw-w64-x86_64-python3 ^
