@@ -744,6 +744,32 @@ if(NRN_ENABLE_PYTHON)
   install(FILES ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat DESTINATION lib/python/neuron)
 endif()
 
+include("${CODING_CONV_CMAKE}/build-time-copy.cmake") # cpp_cc_build_time_copy
+function(copy_share_subdir_at_build_time)
+  cmake_parse_arguments(opt "" "SUBDIR;TARGET" "" ${ARGN})
+  set(src_dir "${PROJECT_SOURCE_DIR}/share/${opt_SUBDIR}")
+  set(tgt_dir "${NRN_BUILD_SHARE_DIR}/${opt_SUBDIR}")
+  # Note CONFIGURE_DEPENDS causes GLOB mismatch for MINGW, see #2277
+  file(
+    GLOB_RECURSE files_to_copy
+    LIST_DIRECTORIES false
+    RELATIVE "${src_dir}"
+    CONFIGURE_DEPENDS "${src_dir}/*")
+  foreach(file_to_copy ${files_to_copy})
+    cpp_cc_build_time_copy(
+      INPUT "${src_dir}/${file_to_copy}"
+      OUTPUT "${tgt_dir}/${file_to_copy}"
+      NO_TARGET)
+    list(APPEND files_to_depend_on "${tgt_dir}/${file_to_copy}")
+  endforeach()
+  add_custom_target(
+    ${opt_TARGET}
+    COMMENT "Copying ${src_dir} to ${tgt_dir}"
+    DEPENDS ${files_to_depend_on})
+endfunction()
+copy_share_subdir_at_build_time(SUBDIR demo TARGET copy_share_demo_to_build)
+copy_share_subdir_at_build_time(SUBDIR lib TARGET copy_share_lib_to_build)
+
 # =============================================================================
 # Add tests if enabled
 # =============================================================================
