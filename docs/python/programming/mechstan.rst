@@ -78,7 +78,7 @@ MechanismStandard (Parameter Control)
                 s = h.ref('')
                 for i in range(-1, 4):
                     ms = h.MechanismStandard(msname, i)
-                    print('\n{}   vartype={}'.format(msname, i))
+                    print(f'\n{msname}   vartype={i}')
                     for j in range(ms.count()):
                         k = ms.name(s, j)
                         print('%-5d %-20s size=%d' % (j, s[0], k))
@@ -90,7 +90,7 @@ MechanismStandard (Parameter Control)
                     for j in range(mt.count()):
                         mt.select(j)
                         mt.selected(msname)
-                        print('\n\n{} mechanismtype={}'.format(msname[0], j))
+                        print('\n\n{msname[0]} mechanismtype={j}')
                         pname(msname[0])
 
 
@@ -189,9 +189,9 @@ MechanismStandard (Parameter Control)
             axon = h.Section(name='axon')
             dend = [h.Section(name='dend[%d]' % i) for i in range(3)]
 
-            axon.insert('hh')
+            axon.insert(h.hh)
             for sec in dend:
-                sec.insert('pas')
+                sec.insert(h.pas)
 
             h.xpanel("Updated when MechanismStandard is changed")
             for i, sec in enumerate(dend):
@@ -260,8 +260,8 @@ MechanismStandard (Parameter Control)
             from neuron import h
 
             s = h.Section(name='soma')
-            s.insert('hh')
-            s(.5).hh.gnabar = 0.5
+            s.insert(h.hh)
+            s(0.5).hh.gnabar = 0.5
 
             ms = h.MechanismStandard('hh')
             ms.set("gnabar_hh", 0.3)

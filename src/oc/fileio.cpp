@@ -302,7 +302,7 @@ void PRintf(void) /* printf function */
 
     hoc_sprint1(&buf, 1);
     d = (int) strlen(buf);
-    NOT_PARALLEL_SUB(plprint(buf);)
+    plprint(buf);
     fflush(stdout);
     ret();
     pushx(d);

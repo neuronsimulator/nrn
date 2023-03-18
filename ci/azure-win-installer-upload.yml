@@ -18,9 +18,7 @@ steps:
 
   - task: BatchScript@1
     inputs:
-      # temporarily disable rxd testing ( ci/win_test_installer.cmd <-> ci/win_test_installer_wo_rxd.cmd)
-      # see https://github.com/neuronsimulator/nrn/issues/1522
-      filename: ci/win_test_installer_wo_rxd.cmd
+      filename: ci/win_test_installer.cmd
     displayName: "Test Installer"
     condition: succeeded()
 

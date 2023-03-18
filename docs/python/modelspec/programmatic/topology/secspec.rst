@@ -75,7 +75,7 @@ stack by the following commands. *Use this only as a last resort.*
             stims = [h.IClamp(soma(i / 4.)) for i in range(5)] + [h.IClamp(apical(0.5))]
             for stim in stims: 
                 x = stim.get_loc() 
-                print("location of %s is %s(%g)" % (stim, h.secname(), x))
+                print(f"location of {stim} is {h.secname()}({x})")
                 h.pop_section() 
             
         (Note: in this example as ``nseg=1``, the current clamps will either be at position 0, 0.5, or 1.)

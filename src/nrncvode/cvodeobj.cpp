@@ -364,7 +364,7 @@ static double use_long_double(void* v) {
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         d->use_long_double_ = i;
-        recalc_diam();
+        d->structure_change();
     }
     return (double) d->use_long_double_;
 }

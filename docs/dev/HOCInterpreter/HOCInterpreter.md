@@ -479,7 +479,7 @@ _**call()**_ will continue on to check the symbol, which  tells us we are callin
      315
   -> 316 	    hoc_sprint1(&buf, 1);
      317 	    d = (int) strlen(buf);
-     318 	    NOT_PARALLEL_SUB(plprint(buf);)
+     318 	    plprint(buf);
      319 	    fflush(stdout);
   Target 0: (nrniv) stopped.
   ```
