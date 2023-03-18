@@ -789,6 +789,7 @@ function(copy_share_subdir_at_build_time)
   cmake_parse_arguments(opt "" "SUBDIR;TARGET" "" ${ARGN})
   set(src_dir "${PROJECT_SOURCE_DIR}/share/${opt_SUBDIR}")
   set(tgt_dir "${NRN_BUILD_SHARE_DIR}/${opt_SUBDIR}")
+  # Note CONFIGURE_DEPENDS causes GLOB mismatch for MINGW, see #2277
   file(
     GLOB_RECURSE files_to_copy
     LIST_DIRECTORIES false
