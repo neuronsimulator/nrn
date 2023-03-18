@@ -50,8 +50,8 @@ if not exist "%MSYS2_ROOT%\usr\bin\bash.exe" (
 )
 set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%PATH%
 
-:: update cache (should be temporary)
-%MSYS2_ROOT%\usr\bin\pacman -Syy
+:: update pacman cache (sometimes required when new GH/Azure runner images are deployed)
+:: %MSYS2_ROOT%\usr\bin\pacman -Syy
 
 %MSYS2_ROOT%\usr\bin\pacman --noconfirm --needed -S --disable-download-timeout ^
 cmake ^
