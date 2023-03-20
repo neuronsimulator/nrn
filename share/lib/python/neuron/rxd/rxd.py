@@ -711,7 +711,7 @@ def _check_multigridding_supported_3d():
                         groups_by_root_and_dx[root].setdefault(dx, [])
                         groups_by_root_and_dx[root][dx].append(sec)
     for root, groups in groups_by_root_and_dx.items():
-        if _do_section_groups_border(groups):
+        if _do_section_groups_border(groups.values()):
             return False
 
     return True
