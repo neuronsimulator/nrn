@@ -682,6 +682,7 @@ def _do_sections_border_each_other(sec1, sec2):
         return True
     return False
 
+
 def _do_section_groups_border(groups):
     for g1, g2 in itertools.combinations(groups, 2):
         for sec1 in g1:
@@ -689,6 +690,7 @@ def _do_section_groups_border(groups):
                 if _do_sections_border_each_other(sec1, sec2):
                     return True
     return False
+
 
 def _check_multigridding_supported_3d():
     # if there are no 3D sections, then all is well
@@ -711,7 +713,7 @@ def _check_multigridding_supported_3d():
     for root, groups in groups_by_root_and_dx.items():
         if _do_section_groups_border(groups):
             return False
-    
+
     return True
 
 
