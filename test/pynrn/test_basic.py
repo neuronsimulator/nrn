@@ -1,6 +1,10 @@
 import re
 import sys
 from neuron.expect_hocerr import expect_hocerr, expect_err, set_quiet
+from neuron.tests.utils import (
+    num_threads,
+    parallel_context,
+)
 
 import numpy as np
 
@@ -420,6 +424,22 @@ def test_recording_deleted_node():
     # Now soma_v is still alive, but the node whose voltage it is recording is
     # dead. The current behaviour is that the record instance is silently deleted in this case
     h.finitialize()
+
+
+def test_nworker():
+    threads_enabled = config.arguments["NRN_ENABLE_THREADS"]
+    with parallel_context() as pc:
+        # single threaded mode, no workers
+        with num_threads(pc, threads=1):
+            assert pc.nworker() == 0
+
+        # parallel argument specifies serial execution, no workers
+        with num_threads(pc, threads=2, parallel=False):
+            assert pc.nworker() == 0
+
+        # two workers if threading was enabled at compile time
+        with num_threads(pc, threads=2, parallel=True):
+            assert pc.nworker() == 2 * threads_enabled
 
 
 if __name__ == "__main__":

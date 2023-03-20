@@ -230,7 +230,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
             h.nrnmpi_init()
 
             pc = h.ParallelContext()
-            print ("I am %d of %d" % (pc.id(), pc.nhost()))
+            print (f"I am {pc.id()} of {pc.nhost()}")
 
             pc.barrier()
             h.quit()            
@@ -268,7 +268,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
 
             if pc.nhost() == 1:
                for i in range(20):
-                  print('%d %g' % (i, sin(i)))
+                  print(i, math.sin(i))
                
             else: 
                for i in range(20):
@@ -276,7 +276,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
                
              
                while pc.working():
-                  print('%d %g' % (pc.userid(), pc.pyret()))
+                  print(pc.userid(), pc.pyret())
 
     .. note::
 
@@ -446,7 +446,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
                 id = pc.working()
                 if id == 0: break
                 # gather results of previous pc.submit calls
-                print('{} {}'.format(id, pc.pyret()))
+                print(id, pc.pyret())
         
         Note that if the submission did not have an explicit userid then 
         all the arguments of the executed function may be unpacked. 
@@ -1560,7 +1560,7 @@ Description:
             if rank == 0:
                 print('source data')
             for r in serialize():
-                print('{} {}'.format(rank, data))
+                print(rank, data)
 
             data = pc.py_alltoall(data)
 
@@ -1568,7 +1568,7 @@ Description:
                 print('destination data')
 
             for r in serialize():
-                print('{} {}'.format(rank, data))
+                print(rank, data)
 
             pc.runworker()
             pc.done()
@@ -1631,7 +1631,7 @@ Description:
           def pr(label, val):
             from time import sleep
             sleep(0.1) # try to avoid mixing different pr output
-            print("%d: %s: %s" % (rank, label, val))
+            print(f"{rank}: {label}: {val}")
 
           pr("allgather src", src)  
           pr("allgather dest", dest)
@@ -1713,7 +1713,7 @@ Description:
           def pr(label, val):
             from time import sleep
             sleep(.1) # try to avoid mixing different pr output
-            print("%d: %s: %s" % (rank, label, val))
+            print(f"{rank}: {label}: {val}")
 
           pr("gather src", src)     
           pr("gather dest", dest)
@@ -1799,7 +1799,7 @@ Description:
           def pr(label, val):
             from time import sleep
             sleep(.1) # try to avoid mixing different pr output
-            print("%d: %s: %s" % (rank, label, val))
+            print(f"{rank}: {label}: {val}")
 
           pr("scatter src", src)     
           pr("scatter dest", dest)
@@ -1883,7 +1883,7 @@ Description:
           def pr(label, val):
             from time import sleep
             sleep(.1) # try to avoid mixing different pr output
-            print("%d: %s: %s" % (rank, label, val))
+            print(f"{rank}: {label}: {val}")
 
           pr("broadcast src", src)
           pr("broadcast dest", dest)
@@ -3135,6 +3135,54 @@ Parallel Transfer
         conditions due to programming errors. With no args, the number of threads 
         is not changed. In all cases the number of threads is returned. On launch, 
         there is one thread. 
+
+
+----
+
+
+
+.. method:: ParallelContext.nworker
+
+
+    Syntax:
+        ``n = pc.nworker()``
+
+
+    Description:
+        Queries the number of active **worker** threads, that is to say the
+        number of system threads that are executing work in parallel. If no
+        work is being processed in parallel, this returns **zero**. This is
+        related to, but sometimes different from, the number of threads that
+        is set by :func:`ParallelContext.nthread`. That function sets (and
+        queries) the number of thread data structures (``NrnThread``) that the
+        model is partitioned into, and its second argument determines whether
+        or not worker threads are launched to actually process those data in
+        parallel.
+
+        .. code-block:: python
+
+            from neuron import config, h
+            pc = h.ParallelContext()
+            threads_enabled = config.arguments["NRN_ENABLE_THREADS"]
+
+            # single threaded mode, no workers
+            pc.nthread(1)
+            assert pc.nworker() == 0
+
+            # second argument specifies serial execution, no workers (but
+            # there are two thread data structures)
+            pc.nthread(2, False)
+            assert pc.nworker() == 0
+
+            # second argument specifies parallel execution, two workers if
+            # threading was enabled at compile time
+            pc.nthread(2, True)
+            assert pc.nworker() == 2 * threads_enabled
+
+
+        In the current implementation, ``nworker - 1`` extra threads are
+        launched, and the final thread data structure is processed by the main
+        application thread in parallel.
 
 
 ----

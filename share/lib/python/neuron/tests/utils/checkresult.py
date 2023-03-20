@@ -81,6 +81,10 @@ class Chk:
                 self.d[key] = value
             self.modified = True
 
+    def get(self, key, default=None):
+        """Get an element from the dict. Returns default if it doesn't exist."""
+        return self.d.get(key, default)
+
     def rm(self, key):
         """Remove key from dict.
         Only needed temporarily when a key value needs updating.

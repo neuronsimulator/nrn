@@ -28,13 +28,13 @@ a class. This allows multiple independent instances to be created. For example:
             h.xvalue('Type a number', (self, 'myval'), 1, self.numberset)
             h.xpanel()
         def clicked(self, choice):
-            print('you switched the radio button! choice = %g' % choice)
+            print(f'you switched the radio button! choice = {choice}')
         def statepressed(self):
-            print('you pressed the state button. Value = %g' % self.mystate)
+            print(f'you pressed the state button. Value = {self.mystate}')
         def checkboxpressed(self):
-            print('you clicked the checkbox. state = %g' % self.checkbox)
+            print(f'you clicked the checkbox. state = {self.checkbox}')
         def numberset(self):
-            print('you set the number to: %g' % self.myval)
+            print(f'you set the number to: {self.myval}')
 
     window = MyWindow()
 
@@ -148,10 +148,10 @@ a class. This allows multiple independent instances to be created. For example:
             from neuron import h, gui
 
             def on_press(button_id):
-                print('You clicked button: %d' % button_id)
+                print(f'You clicked button: {button_id}')
 
             def on_press3(a, b):
-                print('Button args: %s, %s' % (a, b))
+                print(f'Button args: {a}, {b}')
 
             h.xpanel('Button demo 2')
             h.xbutton('Button 1', (on_press, 1))
@@ -192,7 +192,7 @@ a class. This allows multiple independent instances to be created. For example:
             button_state = 0
 
             def on_press():
-                print('You pressed the button. The state is now: %g' % button_state)
+                print(f'You pressed the button. The state is now: {button_state}')
 
             h.xpanel('StateButton demo')
             h.xstatebutton('Press me', (this_module, 'button_state'), on_press)
@@ -260,7 +260,7 @@ a class. This allows multiple independent instances to be created. For example:
             h.xpanel('panel')
             h.xmenu('menu')
             for i in range(1, 11):
-                h.xradiobutton('item %d' % i, (a, i))
+                h.xradiobutton(f'item {i}', (a, i))
 
             h.xmenu()
             h.xpanel()
@@ -336,7 +336,7 @@ a class. This allows multiple independent instances to be created. For example:
                 import sys
 
                 def item_selected(n):
-                    print('selected value %g' % n)
+                    print(f'selected value {n}')
 
                 h.xpanel("menubar") 
                 h.xmenu("first") 
@@ -390,12 +390,12 @@ a class. This allows multiple independent instances to be created. For example:
                 from neuron import h, gui
 
                 def select(i):
-                    print('you selected %d' % i)
+                    print(f'you selected {i}')
 
                 def make():
                     make.n += 1
                     for i in range(1, make.n + 1):
-                        h.xbutton('label %d' % i, (select, i))
+                        h.xbutton(f'label {i}', (select, i))
 
                 make.n = 0
 
@@ -565,7 +565,7 @@ a class. This allows multiple independent instances to be created. For example:
             val = h.ref(42)
 
             def show_val():
-                print('value is: %g' % val[0])
+                print(f'value is: {val[0]}')
 
             h.xpanel('demo')
             h.xpvalue('enter value', val, 1)
@@ -645,7 +645,7 @@ a class. This allows multiple independent instances to be created. For example:
             val = 42
             val_str = h.ref('Slider value:         ')
             def show_val():
-                val_str[0] = 'Slider value: %g' % val
+                val_str[0] = f'Slider value: {val}'
 
             h.xpanel('demo')
             h.xvarlabel(val_str)
@@ -667,7 +667,7 @@ a class. This allows multiple independent instances to be created. For example:
             val = h.ref(42)
             val_str = h.ref('Slider value:         ')
             def show_val():
-                val_str[0] = 'Slider value: %g' % val[0]
+                val_str[0] = f'Slider value: {val[0]}'
 
             h.xpanel('demo')
             h.xvarlabel(val_str)

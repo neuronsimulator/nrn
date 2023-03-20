@@ -89,7 +89,7 @@ Machine Identification
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import h
             type = h.unix_mac_pc()
 
             if type == 1:
@@ -167,20 +167,21 @@ Machine Identification
 
             from neuron import h, gui
             h.nrnversion() 
-            NEURON -- VERSION 7.1 (296:ff4976021aae) 2009-02-27 
+            'NEURON -- VERSION 8.2.2 HEAD (93d41fafd) 2022-12-15'
 
-            for i in range(6): 
-                print('{} : {}'.format(i, h.nrnversion(i)))
+            for i in range(10): 
+                print(f'{i} : {h.nrnversion(i)}')
             
-            0 :  7.5
-            1 :  NEURON -- VERSION 7.5 (1482:5fb6a5cbbdb7) 2016-11-25
-            2 :  VERSION 7.5 (1482:5fb6a5cbbdb7)
-            3 :  5fb6a5cbbdb7
-            4 :  2016-11-25
-            5 :  1482
-            6 :   '--with-iv=/usr/site/nrniv/iv' '--prefix=/usr/site/../arch/nrn' '--with-nrnpython' '--with-paranrn'
-
-        
+            0 : 8.2.2
+            1 : NEURON -- VERSION 8.2.2 HEAD (93d41fafd) 2022-12-15
+            2 : VERSION 8.2.2 HEAD (93d41fafd)
+            3 : 93d41fafd
+            4 : 2022-12-15
+            5 : 8.2.2
+            6 : cmake option default differences: 'NRN_ENABLE_RX3D=OFF' 'NRN_ENABLE_CORENEURON=ON' 'NRN_ENABLE_MODULE_INSTALL=OFF' 'NRN_ENABLE_PYTHON_DYNAMIC=ON' 'NRN_MPI_DYNAMIC=/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include' 'CMAKE_BUILD_TYPE=Release' 'CMAKE_INSTALL_PREFIX=/Users/runner/work/1/s/build/cmake_install' 'CMAKE_C_COMPILER=/Applications/Xcode_13.2.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc' 'CMAKE_CXX_COMPILER=/Applications/Xcode_13.2.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++' 'PYTHON_EXECUTABLE=/Users/runner/work/1/s/nrn_build_venv38_-4745831/bin/python'
+            7 : NEURON
+            8 : x86_64-Darwin
+            9 : 2        
 
 
 ----
@@ -279,7 +280,7 @@ Timing
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import h
             from math import sin
             h.startsw()
             for i in range(100000):
