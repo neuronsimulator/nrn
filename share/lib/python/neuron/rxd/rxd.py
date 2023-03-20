@@ -668,14 +668,35 @@ def _get_root(sec):
     return last_sec
 
 
+def _do_sections_border_each_other(sec1, sec2):
+    # two basic ways they could border each other:
+    # (1) the distance between a section and the ends
+    #     of another section is zero (note: this includes
+    #     the case that the sections are the same)
+    # (2) a section connects to the interior of another
+    for x1, x2 in itertools.product([0, 1], repeat=2):
+        if h.distance(sec1(x1), sec2(x2)) == 0:
+            # need this check in case the trueparentseg isn't in either
+            return True
+    if sec1.trueparentseg() in sec2 or sec2.trueparentseg() in sec1:
+        return True
+    return False
+
+def _do_section_groups_border(groups):
+    for g1, g2 in itertools.combinations(groups, 2):
+        for sec1 in g1:
+            for sec2 in g2:
+                if _do_sections_border_each_other(sec1, sec2):
+                    return True
+    return False
+
 def _check_multigridding_supported_3d():
     # if there are no 3D sections, then all is well
     if not species._has_3d:
         return True
 
-    # if each root only has one dx, all is well
-    # NOTE: this is actually stricter than we need
-    dx_by_root = {}
+    # if any different dxs are directly connected, then not okay
+    groups_by_root_and_dx = {}
     for sr in _species_get_all_species():
         s = sr()
         if s is not None:
@@ -684,12 +705,13 @@ def _check_multigridding_supported_3d():
                     dx = r.dx
                     for sec in r._secs3d:
                         root = _get_root(sec)
-                        if root in dx_by_root:
-                            if dx != dx_by_root[root]:
-                                return False
-                        else:
-                            dx_by_root[root] = dx
-
+                        groups_by_root_and_dx.setdefault(root, {})
+                        groups_by_root_and_dx[root].setdefault(dx, [])
+                        groups_by_root_and_dx[root][dx].append(sec)
+    for root, groups in groups_by_root_and_dx.items():
+        if _do_section_groups_border(groups):
+            return False
+    
     return True
 
 
