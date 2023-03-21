@@ -62,7 +62,6 @@ static struct { /* Keywords */
                 {"local", LOCAL},
                 {"localobj", LOCALOBJ},
                 {"strdef", STRDEF},
-                {"parallel", PARALLEL},
                 {"help", HELP},
                 {"iterator", ITERKEYWORD},
                 {"iterator_statement", ITERSTMT},

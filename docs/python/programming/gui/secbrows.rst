@@ -96,10 +96,10 @@ SectionBrowser
             axon = h.Section(name='axon')
 
             def select(sec):
-                print('select: {} {}'.format(sec, type(sec)))
+                print(f'select: {sec} {type(sec)}')
 
             def accept(sec):
-                print('accept: {}'.format(sec))
+                print(f'accept: {sec}')
 
             sb = h.SectionBrowser()
             sb.select_action(select)
@@ -139,10 +139,10 @@ SectionBrowser
             axon = h.Section(name='axon')
 
             def select(sec):
-                print('select: {} {}'.format(sec, type(sec)))
+                print(f'select: {sec} {type(sec)}')
 
             def accept(sec):
-                print('accept: {}'.format(sec))
+                print(f'accept: {sec}')
 
             sb = h.SectionBrowser()
             sb.select_action(select)

@@ -5,25 +5,76 @@ import subprocess
 import sys
 from collections import defaultdict
 import logging
-from shutil import copytree
-from packaging.version import Version, parse as parse_version
+
+logging.basicConfig(level=logging.INFO)
+from shutil import copytree, which
 from setuptools import Command, Extension
 from setuptools import setup
+
+
+logging.info("setup.py called with:" + " ".join(sys.argv))
 
 
 class Components:
     RX3D = True
     IV = True
     MPI = True
+    MUSIC = False  # still early support
     CORENRN = False  # still early support
     GPU = False  # still early support
 
 
-if os.name != "posix":
-    raise Exception(
-        "Python NEURON distributions are currently only available "
-        "for Mac and Linux systems (POSIX)"
-    )
+# Check if we've got --cmake-build-dir path that will be used to build extensions only
+# and not to build NEURON wheels.
+just_extensions = False
+cmake_build_dir = "build/cmake_install"  # default for wheels
+if "--cmake-build-dir" in sys.argv:
+    cmake_build_dir = sys.argv[sys.argv.index("--cmake-build-dir") + 1]
+    sys.argv.remove("--cmake-build-dir")
+    sys.argv.remove(cmake_build_dir)
+    # Check that the CMake build directory is valid
+    if not os.path.exists(cmake_build_dir):
+        raise RuntimeError(
+            "CMake build directory does not exist: {}".format(cmake_build_dir)
+        )
+    # Check that the CMake build directory has been configured and built
+    if not os.path.exists(os.path.join(cmake_build_dir, "CMakeCache.txt")):
+        raise RuntimeError(
+            "CMake build directory does not contain CMakeCache.txt: {}".format(
+                cmake_build_dir
+            )
+        )
+    # check for libnrniv.{so,dylib, dll.a} depending on platform
+    check_suffix = "so" if sys.platform != "darwin" else "dylib"
+    if sys.platform == "win32":
+        check_suffix = "dll.a"
+    if not os.path.exists(
+        os.path.join(
+            cmake_build_dir,
+            "lib",
+            "libnrniv.{}".format(check_suffix),
+        )
+    ):
+        raise RuntimeError(
+            "CMake build directory does not contain libnrniv: {}".format(
+                cmake_build_dir
+            )
+        )
+    just_extensions = True
+
+# Check for RX3D Optimization Level
+rx3d_opt_level = "-O0"
+if "--rx3d-opt-level" in sys.argv:
+    rx3d_opt_level_arg = sys.argv[sys.argv.index("--rx3d-opt-level") + 1]
+    rx3d_opt_level = "-O{}".format(int(rx3d_opt_level_arg))
+    sys.argv.remove("--rx3d-opt-level")
+    sys.argv.remove(rx3d_opt_level_arg)
+
+# If NRN_ENABLE_PYTHON_DYNAMIC is ON, we will build the wheel without the nrnpython library
+without_nrnpython = False
+if "--without-nrnpython" in sys.argv:
+    without_nrnpython = True
+    sys.argv.remove("--without-nrnpython")
 
 # setup options must be checked for very early as it impacts imports
 if "--disable-rx3d" in sys.argv:
@@ -36,6 +87,7 @@ if "--disable-iv" in sys.argv:
 
 if "--disable-mpi" in sys.argv:
     Components.MPI = False
+    Components.MUSIC = False
     sys.argv.remove("--disable-mpi")
 
 if "--enable-coreneuron" in sys.argv:
@@ -45,6 +97,10 @@ if "--enable-coreneuron" in sys.argv:
 if "--enable-gpu" in sys.argv:
     Components.GPU = True
     sys.argv.remove("--enable-gpu")
+
+if "--enable-music" in sys.argv:
+    Components.MUSIC = True
+    sys.argv.remove("--enable-music")
 
 if Components.RX3D:
     try:
@@ -91,7 +147,7 @@ class CMakeAugmentedExtension(Extension):
         Extension.__init__(self, name, sources, **kw)
         self.sourcedir = os.path.abspath(cmake_proj_dir)
         self.cmake_flags = cmake_flags or []
-        self.cmake_install_prefix = os.path.abspath("build/cmake_install")
+        self.cmake_install_prefix = os.path.abspath(cmake_build_dir)
         self.cmake_collect_dirs = cmake_collect_dirs or []
         self.cmake_install_python_files = cmake_install_python_files
         self.cmake_done = False
@@ -122,9 +178,18 @@ class CMakeAugmentedBuilder(build_ext):
             if isinstance(ext, CMakeAugmentedExtension):
                 if ext.cmake_done:
                     continue
-
-                self._run_cmake(ext)  # Build cmake project
-
+                if just_extensions:
+                    self.build_temp = cmake_build_dir
+                    self.build_base = cmake_build_dir
+                    # Make the temp include paths in the building the extension
+                    ext.include_dirs += [
+                        os.path.join(self.build_temp, inc_dir)
+                        for inc_dir in ext.include_dirs
+                        if not os.path.isabs(inc_dir)
+                    ]
+                    continue
+                else:
+                    self._run_cmake(ext)  # Build cmake project
                 if self.docs:
                     return
 
@@ -132,6 +197,7 @@ class CMakeAugmentedBuilder(build_ext):
                 # These go directly into final package, regardless of setuptools filters
                 logging.info("\n==> Collecting CMAKE files")
                 rel_package = ext.name.split(".")[:-1]
+
                 package_data_d = os.path.join(
                     self.build_lib, *(rel_package + [".data"])
                 )
@@ -193,6 +259,7 @@ class CMakeAugmentedBuilder(build_ext):
         env["CXXFLAGS"] = "{} -DVERSION_INFO='{}'".format(
             env.get("CXXFLAGS", ""), self.distribution.get_version()
         )
+
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
 
@@ -209,18 +276,18 @@ class CMakeAugmentedBuilder(build_ext):
                 # RTD will call sphinx for us. We just need notebooks and doxygen
                 if os.environ.get("READTHEDOCS"):
                     subprocess.check_call(
-                        ["cmake", "--build", ".", "--target", "notebooks"],
+                        [cmake, "--build", ".", "--target", "notebooks"],
                         cwd=self.build_temp,
                         env=env,
                     )
                     subprocess.check_call(
-                        ["cmake", "--build", ".", "--target", "doxygen"],
+                        [cmake, "--build", ".", "--target", "doxygen"],
                         cwd=self.build_temp,
                         env=env,
                     )
                 else:
                     subprocess.check_call(
-                        ["cmake", "--build", ".", "--target", "docs"],
+                        [cmake, "--build", ".", "--target", "docs"],
                         cwd=self.build_temp,
                         env=env,
                     )
@@ -271,18 +338,11 @@ class CMakeAugmentedBuilder(build_ext):
 
     @staticmethod
     def _find_cmake():
-        for candidate in ["cmake", "cmake3"]:
-            try:
-                out = subprocess.check_output([candidate, "--version"])
-                cmake_version = Version(
-                    re.search(r"version\s*([\d.]+)", out.decode()).group(1)
-                )
-                if cmake_version >= Version("3.15.0"):
-                    return candidate
-            except OSError:
-                pass
+        cmake_cmd = which("cmake") or which("cmake3")
+        if not cmake_cmd:
+            raise RuntimeError("Project requires CMake")
 
-        raise RuntimeError("Project requires CMake >=3.15.0")
+        return cmake_cmd
 
 
 class Docs(Command):
@@ -326,11 +386,27 @@ def setup_package():
 
     REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
 
+    ext_common_libraries = ["nrniv"]
+    if not without_nrnpython:
+        nrn_python_lib = "nrnpython{}".format(
+            sys.version_info[0]
+            if sys.platform != "win32"
+            else str(sys.version_info[0]) + str(sys.version_info[1])
+        )
+        ext_common_libraries.append(nrn_python_lib)
+
     extension_common_params = defaultdict(
         list,
-        library_dirs=["build/cmake_install/lib"],
-        libraries=["nrniv", "nrnpython{}".format(sys.version_info[0])],
+        library_dirs=[os.path.join(cmake_build_dir, "lib")],
+        libraries=ext_common_libraries,
+        language="c++",
     )
+
+    logging.info("Extension common compile flags %s" % str(extension_common_params))
+
+    # Get extra_compile_args and  extra_link_args from environment variable
+    extra_link_args = os.environ.get("LDFLAGS", "").split()
+    extra_compile_args = os.environ.get("CFLAGS", "").split()
 
     extensions = [
         CMakeAugmentedExtension(
@@ -341,7 +417,7 @@ def setup_package():
                 "-DNRN_ENABLE_CORENEURON=" + ("ON" if Components.CORENRN else "OFF"),
                 "-DNRN_ENABLE_INTERVIEWS=" + ("ON" if Components.IV else "OFF"),
                 "-DIV_ENABLE_X11_DYNAMIC=" + ("ON" if Components.IV else "OFF"),
-                "-DNRN_ENABLE_RX3D=OFF",  # Never build within CMake
+                "-DNRN_ENABLE_RX3D=" + ("ON" if Components.RX3D else "OFF"),
                 "-DNRN_ENABLE_MPI=" + ("ON" if Components.MPI else "OFF"),
                 "-DNRN_ENABLE_MPI_DYNAMIC=" + ("ON" if Components.MPI else "OFF"),
                 "-DNRN_ENABLE_PYTHON_DYNAMIC=ON",
@@ -367,31 +443,42 @@ def setup_package():
                 "src/nrnpython",
                 "src/nrnmpi",
             ],
-            extra_compile_args=["-std=c++17"],
-            extra_link_args=[
-                # use relative rpath to .data/lib
-                "-Wl,-rpath,{}".format(REL_RPATH + "/.data/lib/")
+            extra_compile_args=extra_compile_args + ["-std=c++17"],
+            extra_link_args=extra_link_args
+            + [
+                "-Wl,-rpath,{}{}".format(
+                    REL_RPATH, "/../../" if just_extensions else "/.data/lib/"
+                )
             ],
             **extension_common_params,
         )
     ]
+
+    if Components.MUSIC:
+        extensions += [
+            CyExtension(
+                "neuronmusic",
+                ["src/neuronmusic/neuronmusic.pyx"],
+                include_dirs=["src/nrnpython", "src/nrnmusic"],
+                **extension_common_params,
+            )
+        ]
 
     if Components.RX3D:
         include_dirs = ["share/lib/python/neuron/rxd/geometry3d", numpy.get_include()]
 
         # Cython files take a long time to compile with O2 so default O0
         # But pay the price if uploading distribution
-        extra_compile_args = ["-O2" if "NRN_BUILD_FOR_UPLOAD" in os.environ else "-O0"]
         rxd_params = extension_common_params.copy()
         rxd_params["libraries"].append("rxdmath")
         rxd_params.update(
             dict(
                 # Cython files take a long time to compile with O2 but this
                 # is a distribution...
-                extra_compile_args=extra_compile_args,
-                extra_link_args=[
-                    "-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")
-                ],
+                extra_compile_args=extra_compile_args
+                + ["-O2" if "NRN_BUILD_FOR_UPLOAD" in os.environ else rx3d_opt_level],
+                extra_link_args=extra_link_args
+                + ["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")],
             )
         )
 
@@ -450,7 +537,7 @@ def setup_package():
             else "node-and-date"
         },
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
-        install_requires=["numpy>=1.9.3"] + maybe_patchelf,
+        install_requires=["numpy>=1.9.3", "packaging"] + maybe_patchelf,
         tests_require=["flake8", "pytest"],
         setup_requires=["wheel", "setuptools_scm"]
         + maybe_docs
@@ -492,7 +579,7 @@ def mac_osx_setenv():
             int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split(".")
         )
         if py_osx_framework is not None and explicit_target > py_osx_framework:
-            logging.warn(
+            logging.warning(
                 "You are building wheels for macOS >={}; this is more "
                 "restrictive than your Python framework, which supports "
                 ">={}".format(fmt(explicit_target), fmt(py_osx_framework))
@@ -504,19 +591,19 @@ def mac_osx_setenv():
         if py_osx_framework is None:
             py_osx_framework = (10, 15)
         if py_osx_framework < (10, 15):
-            logging.warn(
+            logging.warning(
                 "C++17 support is required to build NEURON on macOS, "
                 "therefore minimum MACOSX_DEPLOYMENT_TARGET version is 10.15."
             )
             py_osx_framework = (10, 15)
         if py_osx_framework > (10, 15):
-            logging.warn(
+            logging.warning(
                 "You are building a wheel with a Python built for macOS >={}. "
                 "Your wheel won't run on older versions, consider using an "
                 "official Python build from python.org".format(fmt(py_osx_framework))
             )
         macos_target = "%d.%d" % tuple(py_osx_framework[:2])
-        logging.warn("Setting MACOSX_DEPLOYMENT_TARGET=%s", macos_target)
+        logging.warning("Setting MACOSX_DEPLOYMENT_TARGET=%s", macos_target)
         os.environ["MACOSX_DEPLOYMENT_TARGET"] = macos_target
 
 

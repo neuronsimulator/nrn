@@ -204,7 +204,7 @@ MechanismType
                 mt.select(i)
                 nameref = h.ref("")
                 mt.selected(nameref)
-                print ("selected %s" % nameref[0])
+                print (f"selected {nameref[0]}")
 
             mtypes = [h.MechanismType(i) for i in range(2)]
             h.xpanel("MechanismTypes")
@@ -324,7 +324,7 @@ MechanismType
             pp = mt.pp_begin()
             while h.object_id(pp) != 0:
                 seg = pp.get_segment() 
-                print("%s located at %s(%g)" % (pp, seg.sec, seg.x))
+                print(f"{pp} located at {seg}")
                 pp = mt.pp_next()
 
 

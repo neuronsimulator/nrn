@@ -16,8 +16,6 @@
  * -----------------------------------------------------------------
  */
 
-#define USELONGDOUBLE 1
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -41,12 +39,6 @@
 #define mydebug2(a, b) /**/
 #endif
 
-#if USELONGDOUBLE
-#define ldrealtype long double
-#else
-#define ldrealtype realtype
-#endif
-
 #if NRN_ENABLE_THREADS
 static MUTDEC
 #endif
@@ -60,9 +52,8 @@ static realtype a_;
 static realtype b_;
 static realtype c_;
 static realtype retval;
-#if USELONGDOUBLE
-static long double longdretval;
-#endif
+// for use alongside retval in Kahan summation that replaces old long double code
+static realtype retval_comp;
 static booleantype bretval;
 #define xpass    x_ = x;
 #define ypass    y_ = y;
@@ -86,14 +77,6 @@ static booleantype bretval;
     lock;            \
     retval += arg;   \
     unlock;
-#if USELONGDOUBLE
-#define locklongdadd(arg) \
-    lock;                 \
-    longdretval += arg;   \
-    unlock;
-#else
-#define locklongdadd(arg) lockadd(arg)
-#endif
 #define lockmax(arg)    \
     lock;               \
     if (retval < arg) { \
@@ -608,41 +591,45 @@ realtype N_VMaxNorm_NrnThreadLD(N_Vector x) {
 }
 
 
-static ldrealtype vwrmsnorm_help(N_Vector x, N_Vector w) {
+static realtype vwrmsnorm_help(N_Vector x, N_Vector w) {
     long int i, N;
-    ldrealtype sum = ZERO;
-    realtype prodi, *xd, *wd;
+    realtype *xd, *wd;
 
     N = NV_LENGTH_S(x);
     xd = NV_DATA_S(x);
     wd = NV_DATA_S(w);
 
+    realtype sum{}, c{};
     for (i = 0; i < N; i++) {
-        prodi = (*xd++) * (*wd++);
-        sum += prodi * prodi;
+        auto const prodi = (*xd++) * (*wd++);
+        auto const y = prodi * prodi - c;
+        auto const t = sum + y;
+        c = (t - sum) - y;
+        sum = t;
     }
 
-    return (sum);
+    return sum;
 }
 static void* vwrmsnorm(NrnThread* nt) {
-    ldrealtype s;
     int i = nt->id;
-    s = vwrmsnorm_help(xarg(i), warg(i));
-    locklongdadd(s);
+    auto const s = vwrmsnorm_help(xarg(i), warg(i));
+    // olupton 2023-03-13: this produces results that differ on x86_64 from the long double based
+    // calculation at the 1e-16 relative precision level. unfortunately NEURON with cvode amplifies
+    // these to larger differences in the precise variable time steps used. however, it should be
+    // more consistent across architectures than the long double version.
+    lock;
+    auto const tmp_y = s - retval_comp;
+    auto const tmp_t = retval + tmp_y;
+    retval_comp = (tmp_t - retval) - tmp_y;
+    retval = tmp_t;
+    unlock;
     return nullptr;
 }
 realtype N_VWrmsNorm_NrnThreadLD(N_Vector x, N_Vector w) {
     long int N;
     N = NV_LENGTH_NT_LD(x);
-#if USELONGDOUBLE
-    longdretval = ZERO;
-#else
-    retval = ZERO;
-#endif
+    retval = retval_comp = 0.0;
     xpass wpass nrn_multithread_job(vwrmsnorm);
-#if USELONGDOUBLE
-    retval = longdretval;
-#endif
     mydebug2("vwrmsnorm %.20g\n", RSqrt(retval / N));
     return (RSqrt(retval / N));
 }

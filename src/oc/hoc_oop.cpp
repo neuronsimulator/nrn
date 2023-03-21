@@ -160,7 +160,7 @@ void hoc_obvar_declare(Symbol* sym, int type, int pmes) {
         b = (hoc_fin == stdin);
 #endif
         if (nrnmpi_myid_world == 0 && (hoc_print_first_instance && b)) {
-            NOT_PARALLEL_SUB(Printf("first instance of %s\n", sym->name);)
+            Printf("first instance of %s\n", sym->name);
         }
         sym->defined_on_the_fly = 1;
     }
@@ -1111,6 +1111,20 @@ void hoc_object_component() {
                 if (!ISARRAY(sym) || OPARINFO(sym)->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
                 }
+                if (narg) {
+                    // there are a few modeldb examples that use (index) instead
+                    // of [index] syntax for an array in this context. So we
+                    // have decided to keep allowing this legacy syntax for one
+                    // dimensional arrays.
+                    if (narg == 1) {
+                        hoc_push_ndim(1);
+                    } else {
+                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
+                                        hoc_object_name(obp),
+                                        sym->name,
+                                        sym->name);
+                    }
+                }
                 nindex = araypt(sym, OBJECTVAR);
             }
             hoc_pop_defer(); /*finally get rid of symbol */
@@ -1262,6 +1276,20 @@ void hoc_object_component() {
             if (nindex) {
                 if (!ISARRAY(sym) || sym->arayinfo->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
+                }
+                if (narg) {
+                    // there are a few modeldb examples that use (index) instead
+                    // of [index] syntax for an array in this context. So we
+                    // have decided to keep allowing this legacy syntax for one
+                    // dimensional arrays.
+                    if (narg == 1) {
+                        hoc_push_ndim(1);
+                    } else {
+                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
+                                        hoc_object_name(obp),
+                                        sym->name,
+                                        sym->name);
+                    }
                 }
             }
             hoc_pushs(sym);

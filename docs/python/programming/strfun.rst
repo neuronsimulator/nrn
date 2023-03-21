@@ -268,9 +268,9 @@ StringFunctions (String Manipulation Class)
             sf = h.StringFunctions()
             v = h.Vector()
             sf.alias(v, 't', h._ref_t)
-            print('v.t = %g' % v.t)
+            print(f'v.t = {v.t}')
             h.t = 42
-            print('v.t = %g' % v.t)
+            print(f'v.t = {v.t}')
 
          
 

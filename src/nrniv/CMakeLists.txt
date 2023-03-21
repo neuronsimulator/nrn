@@ -334,6 +334,10 @@ if(NRN_HAVE_NVHPC_COMPILER)
     ${PROJECT_SOURCE_DIR}/src/oc/math.cpp
     PROPERTIES COMPILE_DEFINITIONS NVHPC_CHECK_FE_EXCEPTIONS=1 COMPILE_OPTIONS
                                                                "${NVHPC_MATH_COMPILE_OPTIONS}")
+  # Versions of nvc++ around ~22.5 up to at least 23.1 have problems with this file see
+  # https://github.com/BlueBrain/CoreNeuron/issues/888
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/ivoc/ivocvect.cpp PROPERTIES COMPILE_OPTIONS
+                                                                                     "-O1")
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
   # When optimisation is enabled then icpc apparently does not set errno
   set_property(
