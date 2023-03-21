@@ -121,7 +121,7 @@ General
 
 
     Description:
-        See `<nrn src dir>/src/nrnoc/stim.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/stim.mod>`_
+        See `<nrn src dir>/src/nrnoc/stim.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/stim.mod>`_
          
         Single pulse current clamp point process. This is an electrode current 
         so positive amp depolarizes the cell. i is set to amp when t is within 
@@ -152,7 +152,7 @@ General
 
 
     Description:
-        See `<nrn src dir>/src/nrnoc/syn.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/syn.mod>`_. The comment in this file reads: 
+        See `<nrn src dir>/src/nrnoc/syn.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/syn.mod>`_. The comment in this file reads: 
 
         .. code-block::
             none
@@ -190,7 +190,7 @@ General
     Description:
         Two electrode voltage clamp. 
          
-        See `<nrn src dir>/src/nrnoc/vclmp.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/vclmp.mod>`_. The comment in this file reads: 
+        See `<nrn src dir>/src/nrnoc/vclmp.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/vclmp.mod>`_. The comment in this file reads: 
          
         Voltage clamp with three levels. Clamp is on at time 0, and off at time 
         dur[0]+dur[1]+dur[2]. When clamp is off the injected current is 0. 
@@ -272,7 +272,7 @@ General
     Description:
         Single electrode voltage clamp with three levels. 
          
-        See `<nrn src dir>/src/nrnoc/svclmp.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/svclmp.mod>`_. The comment in this file reads: 
+        See `<nrn src dir>/src/nrnoc/svclmp.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/svclmp.mod>`_. The comment in this file reads: 
          
         Single electrode Voltage clamp with three levels. 
         Clamp is on at time 0, and off at time 
@@ -368,7 +368,7 @@ General
         The apc is not notified if the vector is freed but this can be fixed if 
         it is convenient to add this feature. 
          
-        See `<nrn src dir>/src/nrnoc/apcount.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/apcount.mod>`_
+        See `<nrn src dir>/src/nrnoc/apcount.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/apcount.mod>`_
 
 
 ----
@@ -404,7 +404,7 @@ General
          
         This synapse summates. 
          
-        See `<nrn src dir>/src/nrnoc/expsyn.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/expsyn.mod>`_
+        See `<nrn src dir>/src/nrnoc/expsyn.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/expsyn.mod>`_
 
 
 ----
@@ -464,7 +464,7 @@ General
          
         This synapse summates. 
          
-        See `<nrn src dir>/src/nrnoc/exp2syn.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/exp2syn.mod>`_
+        See `<nrn src dir>/src/nrnoc/exp2syn.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/exp2syn.mod>`_
          
 
 
@@ -518,7 +518,7 @@ General
 
         That is, do not use ``&nc.y`` as the source for the netcon. 
          
-        See `<nrn src dir>/src/nrnoc/netstim.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/netstim.mod>`_
+        See `<nrn src dir>/src/nrnoc/netstim.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/netstim.mod>`_
 
     .. warning::
         Prior to version 5.2.1 an attempt was made to 
@@ -570,7 +570,7 @@ General
         for the first 0.5 ms and -1 for the rest of the period. Otherwise it 
         returns exp((t-t0)/tau) 
          
-        See `<nrn src dir>/src/nrnoc/intfire1.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/intfire1.mod>`_
+        See `<nrn src dir>/src/nrnoc/intfire1.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/intfire1.mod>`_
 
 
 ----
@@ -612,7 +612,7 @@ General
         changes abruptly by 
         the amount w. 
         
-        See `<nrn src dir>/src/nrnoc/intfire2.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/intfire2.mod>`_         
+        See `<nrn src dir>/src/nrnoc/intfire2.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/intfire2.mod>`_         
 
          
 
@@ -674,7 +674,7 @@ General
         an isolated inhibitory event of weight -1 will produce a minimum 
         membrane potential of -1. 
          
-        See `<nrn src dir>/src/nrnoc/intfire4.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/intfire4.mod>`_         
+        See `<nrn src dir>/src/nrnoc/intfire4.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/intfire4.mod>`_         
 
 ----
 
@@ -765,7 +765,7 @@ Mechanisms
 
 
     Description:
-        See `<nrn src dir>/src/nrnoc/hh.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/hh.mod>`_
+        See `<nrn src dir>/src/nrnoc/hh.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/hh.mod>`_
          
         Hodgkin-Huxley sodium, potassium, and leakage channels. Range variables 
         specific to this model are: 
@@ -810,7 +810,7 @@ Mechanisms
 
 
     Description:
-        See `<nrn src dir>/src/nrnoc/passive.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/passive.mod>`_
+        See `<nrn src dir>/src/nrnoc/passive.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/passive.mod>`_
          
         Passive membrane channel. 
 
@@ -826,7 +826,7 @@ Mechanisms
 
 **fastpas**
 
-        See `<nrn src dir>/src/nrnoc/passive0.c <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/passive0.c>`_
+        See `<nrn src dir>/src/nrnoc/passive0.c <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/passive0.c>`_
          
         Passive membrane channel. Same as the :ref:`pas <hoc_mech_pas>` mechanism but hand coded to
         be a bit faster (avoids the wasteful numerical derivative computation of 
@@ -943,8 +943,8 @@ Mechanisms
         It is best to start out believing that there are bugs in the method 
         and attempt to prove their existence. 
 
-        See `<nrn src dir>/src/nrnoc/extcell.c <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/extcell.c>`_
-        and `<nrn src dir>/examples/nrnoc/extcab*.hoc <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/examples/nrniv/nrnoc>`_.
+        See `<nrn src dir>/src/nrnoc/extcell.c <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/extcell.c>`_
+        and `<nrn src dir>/share/examples/nrniv/nrnoc/extcab*.hoc <https://github.com/neuronsimulator/nrn/tree/master/share/examples/nrniv/nrnoc>`_.
          
         NEURON can be compiled with any number of extracellular layers. 
         See below. 
