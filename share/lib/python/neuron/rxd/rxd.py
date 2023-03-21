@@ -1,6 +1,5 @@
 from neuron import h, nrn, nrn_dll_sym
 from . import species, node, section1d, region, generalizedReaction, constants
-from .nodelist import NodeList
 from .node import _point_indices
 import weakref
 import numpy
@@ -21,11 +20,8 @@ import platform
 from warnings import warn
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
-_numpy_array = numpy.array
-_numpy_zeros = numpy.zeros
 _species_get_all_species = species._get_all_species
 _node_get_states = node._get_states
-_section1d_transfer_to_legacy = section1d._transfer_to_legacy
 _ctypes_c_int = ctypes.c_int
 _weakref_ref = weakref.ref
 
@@ -612,7 +608,6 @@ def _update_node_data(force=False, newspecies=False):
         or _structure_change_count.value != last_structure_change_cnt
         or force
     ):
-
         last_diam_change_cnt = _diam_change_count.value
         last_structure_change_cnt = _structure_change_count.value
         # if not species._has_3d:
@@ -645,8 +640,6 @@ def _update_node_data(force=False, newspecies=False):
 
             # end#if
 
-            # _curr_scales = _numpy_array(_curr_scales)
-
 
 def _matrix_to_rxd_sparse(m):
     """precondition: assumes m a numpy array"""
@@ -665,10 +658,70 @@ def _matrix_to_rxd_sparse(m):
     )
 
 
+def _get_root(sec):
+    while sec is not None:
+        last_sec = sec
+        # technically this is the segment, but need to check non-None
+        sec = sec.trueparentseg()
+        if sec is not None:
+            sec = sec.sec
+    return last_sec
+
+
+def _do_sections_border_each_other(sec1, sec2):
+    # two basic ways they could border each other:
+    # (1) the distance between a section and the ends
+    #     of another section is zero (note: this includes
+    #     the case that the sections are the same)
+    # (2) a section connects to the interior of another
+    for x1, x2 in itertools.product([0, 1], repeat=2):
+        if h.distance(sec1(x1), sec2(x2)) == 0:
+            # need this check in case the trueparentseg isn't in either
+            return True
+    if sec1.trueparentseg() in sec2 or sec2.trueparentseg() in sec1:
+        return True
+    return False
+
+
+def _do_section_groups_border(groups):
+    for g1, g2 in itertools.combinations(groups, 2):
+        for sec1 in g1:
+            for sec2 in g2:
+                if _do_sections_border_each_other(sec1, sec2):
+                    return True
+    return False
+
+
+def _check_multigridding_supported_3d():
+    # if there are no 3D sections, then all is well
+    if not species._has_3d:
+        return True
+
+    # if any different dxs are directly connected, then not okay
+    groups_by_root_and_dx = {}
+    for sr in _species_get_all_species():
+        s = sr()
+        if s is not None:
+            if s._intracellular_instances:
+                for r in s._intracellular_instances:
+                    dx = r.dx
+                    for sec in r._secs3d:
+                        root = _get_root(sec)
+                        groups_by_root_and_dx.setdefault(root, {})
+                        groups_by_root_and_dx[root].setdefault(dx, [])
+                        groups_by_root_and_dx[root][dx].append(sec)
+    for root, groups in groups_by_root_and_dx.items():
+        if _do_section_groups_border(groups.values()):
+            return False
+
+    return True
+
+
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
-
     with initializer._init_lock:
+        if not _check_multigridding_supported_3d():
+            raise RxDException("unsupported multigridding case")
 
         # update _node_fluxes in C
         _include_flux()
@@ -682,14 +735,12 @@ def _setup_matrices():
         if species._has_1d:
             # TODO: initialization is slow. track down why
 
-            _last_dt = None
             for sr in _species_get_all_species():
                 s = sr()
                 if s is not None:
                     s._assign_parents()
 
             # remove old linearmodeladdition
-            _linmodadd_cur = None
             n = species._1d_submatrix_n()
             if n:
                 # create sparse matrix for C in cy'+gy=b
@@ -1466,7 +1517,7 @@ def _compile_reactions():
                             continue
                         fxn_string += "\n\trate = %s;" % rate_str
                         summed_mults = collections.defaultdict(lambda: 0)
-                        for (mult, sp) in zip(r._mult, r._sources + r._dests):
+                        for mult, sp in zip(r._mult, r._sources + r._dests):
                             summed_mults[creg._species_ids.get(sp()._id)] += mult
                         for idx in sorted([k for k in summed_mults if k is not None]):
                             operator = "+=" if species_ids_used[idx][region_id] else "="
@@ -2011,7 +2062,7 @@ def _windows_remove_dlls():
             kernel32.FreeLibrary.argtypes = [ctypes.c_void_p]
         else:
             kernel32 = ctypes.windll.kernel32
-    for (dll_ptr, filepath) in zip(_windows_dll, _windows_dll_files):
+    for dll_ptr, filepath in zip(_windows_dll, _windows_dll_files):
         dll = dll_ptr()
         if dll:
             handle = dll._handle
