@@ -46,7 +46,7 @@ Description:
 
     Most of the following is from the perspective of someone familiar
     with HOC; for a Python-based introduction to NEURON, see
-    http://neuron.yale.edu/neuron/static/docs/neuronpython/index.html
+    `Scripting NEURON Basics <../../tutorials/scripting-neuron-basics.html>`_
 
 
 .. class:: neuron.hoc.HocObject
