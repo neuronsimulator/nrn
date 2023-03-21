@@ -826,7 +826,7 @@ Mechanisms
 
 **fastpas**
 
-        See `<nrn src dir>/src/nrnoc/passive0.c <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/passive0.c>`_
+        See `<nrn src dir>/src/nrnoc/passive0.cpp <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/passive0.cpp>`_
          
         Passive membrane channel. Same as the :ref:`pas <hoc_mech_pas>` mechanism but hand coded to
         be a bit faster (avoids the wasteful numerical derivative computation of 
@@ -943,7 +943,7 @@ Mechanisms
         It is best to start out believing that there are bugs in the method 
         and attempt to prove their existence. 
 
-        See `<nrn src dir>/src/nrnoc/extcell.c <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/extcell.c>`_
+        See `<nrn src dir>/src/nrnoc/extcell.cpp <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/extcell.cpp>`_
         and `<nrn src dir>/share/examples/nrniv/nrnoc/extcab*.hoc <https://github.com/neuronsimulator/nrn/tree/master/share/examples/nrniv/nrnoc>`_.
          
         NEURON can be compiled with any number of extracellular layers. 
