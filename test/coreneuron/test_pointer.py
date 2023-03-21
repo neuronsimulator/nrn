@@ -1,5 +1,5 @@
 import os
-import distutils.util
+from neuron.tests.utils.strtobool import strtobool
 from neuron import h
 import subprocess
 from subprocess import PIPE
@@ -210,9 +210,7 @@ def test_axial():
 
     coreneuron.verbose = 0
     coreneuron.enable = True
-    coreneuron.gpu = bool(
-        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-    )
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
 
     # test (0,1) for CPU and (1,2) for GPU
     for perm in coreneuron.valid_cell_permute():

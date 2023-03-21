@@ -44,7 +44,7 @@ StateTransitionEvent
       fih = h.FInitializeHandler(1, fteinit)
 
       def foo(src): # current state is the destination. arg gives the source
-        print('{} transition {} {} t-tnext = {}'.format(h.t, src, int(ste.state()), h.t-tnext[0]))
+        print(f'{h.t} transition {src} {int(ste.state())} t-tnext = {h.t-tnext[0]}')
         tnext[0] += 1.0 # update for next transition
       
       ste.transition(0, 0, h._ref_t, tnext, (foo, 0))
@@ -54,12 +54,12 @@ StateTransitionEvent
       
       h.steps_per_ms = 64
       h.dt = 1.0/h.steps_per_ms
-      print("dt=1/64 fixed step run %g" % h.dt)
+      print(f"dt=1/64 fixed step run {h.dt}")
       h.run()
 
       for i in [1,2]:
         h.cvode.condition_order(i)
-        print("cvode.condition_order() = %d" % int(h.cvode.condition_order()))
+        print(f"cvode.condition_order() = {h.cvode.condition_order()}")
         h.cvode_active(True)
         h.run()
 
