@@ -2,7 +2,7 @@ from neuron.expect_hocerr import expect_hocerr
 
 
 def should_not_work(h, rxd):
-    '''not allowed because regions with different dx neighbor'''
+    """not allowed because regions with different dx neighbor"""
     soma1 = h.Section(name="soma1")
     dend1 = h.Section(name="dend1")
     soma1.L = dend1.L = 2
@@ -18,7 +18,7 @@ def should_not_work(h, rxd):
 
 
 def should_not_work2(h, rxd):
-    '''not allowed because regions with different dx overlap'''
+    """not allowed because regions with different dx overlap"""
     soma1 = h.Section(name="soma1")
     soma2 = h.Section(name="soma2")
     dend1 = h.Section(name="dend1")
@@ -36,7 +36,7 @@ def should_not_work2(h, rxd):
 
 
 def should_work(h, rxd):
-    '''regions don't overlap so ok'''
+    """regions don't overlap so ok"""
     soma1 = h.Section(name="soma1")
     soma2 = h.Section(name="soma2")
     dend1 = h.Section(name="dend1")
@@ -54,7 +54,7 @@ def should_work(h, rxd):
 
 
 def should_work2(h, rxd):
-    '''regions overlap but have same dx, so no problem'''
+    """regions overlap but have same dx, so no problem"""
     soma1 = h.Section(name="soma1")
     soma2 = h.Section(name="soma2")
     dend1 = h.Section(name="dend1")
