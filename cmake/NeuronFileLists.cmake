@@ -97,7 +97,6 @@ set(OC_FILE_LIST
     math.cpp
     mswinprt.cpp
     nonlin.cpp
-    nrnfilewrap.cpp
     ocerf.cpp
     plot.cpp
     plt.cpp
