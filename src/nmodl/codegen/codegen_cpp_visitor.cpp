@@ -2823,18 +2823,18 @@ void CodegenCVisitor::print_global_variables_for_hoc() {
  * STEP, the registration type (as an integer) is calculated.
  * These values are then interpreted by CoreNEURON internally.
  */
-static size_t get_register_type_for_ba_block(const ast::Block* block) {
-    size_t register_type = 0;
+static std::string get_register_type_for_ba_block(const ast::Block* block) {
+    std::string register_type{};
     BAType ba_type{};
     /// before block have value 10 and after block 20
     if (block->is_before_block()) {
         // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-        register_type = 10;
+        register_type = "BAType::Before";
         ba_type =
             dynamic_cast<const ast::BeforeBlock*>(block)->get_bablock()->get_type()->get_value();
     } else {
         // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-        register_type = 20;
+        register_type = "BAType::After";
         ba_type =
             dynamic_cast<const ast::AfterBlock*>(block)->get_bablock()->get_type()->get_value();
     }
@@ -2842,13 +2842,13 @@ static size_t get_register_type_for_ba_block(const ast::Block* block) {
     /// associated blocks have different values (1 to 4) based on type.
     /// These values are based on neuron/coreneuron implementation details.
     if (ba_type == BATYPE_BREAKPOINT) {
-        register_type += 1;
+        register_type += " + BAType::Breakpoint";
     } else if (ba_type == BATYPE_SOLVE) {
-        register_type += 2;
+        register_type += " + BAType::Solve";
     } else if (ba_type == BATYPE_INITIAL) {
-        register_type += 3;
+        register_type += " + BAType::Initial";
     } else if (ba_type == BATYPE_STEP) {
-        register_type += 4;
+        register_type += " + BAType::Step";
     } else {
         throw std::runtime_error("Unhandled Before/After type encountered during code generation");
     }
@@ -3004,7 +3004,7 @@ void CodegenCVisitor::print_mechanism_register() {
     for (size_t i = 0; i < info.before_after_blocks.size(); i++) {
         // register type and associated function name for the block
         const auto& block = info.before_after_blocks[i];
-        size_t register_type = get_register_type_for_ba_block(block);
+        std::string register_type = get_register_type_for_ba_block(block);
         std::string function_name = method_name(fmt::format("nrn_before_after_{}", i));
         printer->fmt_line("hoc_reg_ba(mech_type, {}, {});", function_name, register_type);
     }

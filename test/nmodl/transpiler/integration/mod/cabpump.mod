@@ -76,7 +76,15 @@ PROCEDURE test_table_p(br) {
 : to test \r only as newlinePROCEDURE test_r(){
 } : add something that will breaks the parser
 
+BEFORE INITIAL {
+    ainf = 2
+}
+
 INITIAL {
     var_init(var)
     PROTECT ca = ca + 1
+}
+
+AFTER SOLVE {
+    ainf = 3
 }
