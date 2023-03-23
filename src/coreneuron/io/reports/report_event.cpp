@@ -43,8 +43,8 @@ ReportEvent::ReportEvent(double dt,
 void ReportEvent::summation_alu(NrnThread* nt) {
     auto& summation_report = nt->summation_report_handler_->summation_reports_[report_path];
     // Add currents of all variables in each segment
-    double sum = 0.0;
     for (const auto& kv: summation_report.currents_) {
+        double sum = 0.0;
         int segment_id = kv.first;
         for (const auto& value: kv.second) {
             double current_value = *value.first;
@@ -52,19 +52,17 @@ void ReportEvent::summation_alu(NrnThread* nt) {
             sum += current_value * scale;
         }
         summation_report.summation_[segment_id] = sum;
-        sum = 0.0;
     }
     // Add all currents in the soma
     // Only when type summation and soma target
     if (!summation_report.gid_segments_.empty()) {
-        double sum_soma = 0.0;
         for (const auto& kv: summation_report.gid_segments_) {
+            double sum_soma = 0.0;
             int gid = kv.first;
             for (const auto& segment_id: kv.second) {
                 sum_soma += summation_report.summation_[segment_id];
             }
             *(vars_to_report[gid].front().var_value) = sum_soma;
-            sum_soma = 0.0;
         }
     }
 }

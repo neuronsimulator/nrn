@@ -151,7 +151,7 @@ struct CellMapping {
     }
 
     /** @brief add the lfp electrode factors of a segment_id */
-    void add_segment_lfp_factor(const int segment_id, std::vector<double> factors) {
+    void add_segment_lfp_factor(const int segment_id, std::vector<double>& factors) {
         lfp_factors.insert({segment_id, factors});
     }
 
