@@ -154,11 +154,7 @@ void hoc_obvar_declare(Symbol* sym, int type, int pmes) {
     assert(sym->cpublic != 2);
     if (pmes && hoc_symlist == hoc_top_level_symlist) {
         int b = 0;
-#if USE_NRNFILEWRAP
-        b = (hoc_fin && hoc_fin->f == stdin);
-#else
         b = (hoc_fin == stdin);
-#endif
         if (nrnmpi_myid_world == 0 && (hoc_print_first_instance && b)) {
             Printf("first instance of %s\n", sym->name);
         }
