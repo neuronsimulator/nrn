@@ -207,7 +207,6 @@ struct Prop {
     }
     Prop* next;      /* linked list of properties */
     short _type;     /* type of membrane, e.g. passive, HH, etc. */
-    short unused1;   /* gcc and borland need pairs of shorts to align the same.*/
     int dparam_size; /* for notifying hoc_free_val_array */
     // double* param;     /* vector of doubles for this property */
     Datum* dparam;   /* usually vector of pointers to doubles
