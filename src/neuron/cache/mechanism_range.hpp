@@ -35,11 +35,22 @@ void indices_to_cache(short type, Callable callable) {
  * This is typically only true in translated MOD file code. The idea is that an instance of this
  * class will be created outside a loop over the data vectors and then used inside the loop.
  *
- * It is the responsibility of the caller to ensure that the model remains sorted beyond the
- * lifetime of the MechanismRange instance.
+ * @warning It is the responsibility of the caller to ensure that the model remains sorted beyond
+ * the lifetime of the MechanismRange instance.
  */
 template <std::size_t NumFloatingPointFields, std::size_t NumDatumFields>
 struct MechanismRange {
+    /**
+     * @brief Construct a MechanismRange from sorted model data.
+     * @param cache_token Token showing the model data are sorted.
+     * @param nt          Thread that this MechanismRange corresponds to.
+     * @param ml          Range of mechanisms this MechanismRange refers to.
+     * @param type        The type of this mechanism.
+     *
+     * This mirrors the signature of the functions (nrn_state, nrn_cur, nrn_init...) that are
+     * generated in C++ from MOD files. Typically those generated functions immediately create an
+     * instance of MechanismRange using this constructor.
+     */
     MechanismRange(neuron::model_sorted_token const& cache_token,
                    NrnThread&,
                    Memb_list& ml,
@@ -51,6 +62,9 @@ struct MechanismRange {
     }
 
   protected:
+    /**
+     * @brief Hidden helper constructor used by MechanismRange and MechanismInstance.
+     */
     MechanismRange(int mech_type, std::size_t offset)
         : m_data_ptrs{mechanism::get_data_ptrs<double>(mech_type)}
         , m_data_array_dims{mechanism::get_array_dims<double>(mech_type)}
@@ -60,35 +74,94 @@ struct MechanismRange {
     }
 
   public:
-    template <std::size_t variable>
-    [[nodiscard]] double& fpfield(std::size_t instance) {
+    /**
+     * @brief Get the range of values for an array RANGE variable.
+     * @tparam variable   The index of the RANGE variable in the mechanism.
+     * @tparam array_size The array dimension of the RANGE variable.
+     * @param instance    Which mechanism instance to access inside this mechanism range.
+     */
+    template <int variable, int array_size>
+    [[nodiscard]] double* data_array(std::size_t instance) {
         static_assert(variable < NumFloatingPointFields);
-        return m_data_ptrs[variable][m_offset + instance];
+        assert(array_size == m_data_array_dims[variable]);
+        return std::next(m_data_ptrs[variable], array_size * (m_offset + instance));
     }
-    [[nodiscard]] double& data(std::size_t instance, int variable) {
-        assert(variable < NumFloatingPointFields);
-        return m_data_ptrs[variable][m_offset + instance];
+
+    /**
+     * @brief Get a RANGE variable value.
+     * @tparam variable The index of the RANGE variable in the mechanism.
+     * @param instance  Which mechanism instance to access inside this MechanismRange.
+     *
+     * This is only intended for use with non-array RANGE variables, otherwise use @ref data_array.
+     */
+    template <int variable>
+    [[nodiscard]] double& fpfield(std::size_t instance) {
+        return *data_array<variable, 1>(instance);
     }
+
+    /**
+     * @brief Get a RANGE variable value.
+     * @param instance Which mechanism instance to access inside this MechanismRange.
+     * @param ind      The index of the RANGE variable in the mechanism. This includes both the
+     *                 index of the variable and the index into an array RANGE variable.
+     */
     [[nodiscard]] double& data(std::size_t instance, container::field_index ind) {
         assert(ind.field < NumFloatingPointFields);
         auto const array_dim = m_data_array_dims[ind.field];
+        assert(ind.array_index < array_dim);
         return m_data_ptrs[ind.field][array_dim * (m_offset + instance) + ind.array_index];
     }
-    template <std::size_t variable>
+
+    /**
+     * @brief Get a POINTER variable.
+     * @tparam variable The index of the POINTER variable in the pdata/dparam entries of the
+     *                  mechanism.
+     * @param instance  Which mechanism instance to access inside this mechanism range.
+     */
+    template <int variable>
     [[nodiscard]] double* dptr_field(std::size_t instance) {
         static_assert(variable < NumDatumFields);
         return m_pdata_ptrs[variable][m_offset + instance];
     }
-    template <std::size_t zeroth_variable, std::size_t array_size>
-    [[nodiscard]] double* data_array(std::size_t instance) {
-        assert(array_size == m_data_array_dims[zeroth_variable]);
-        return std::next(m_data_ptrs[zeroth_variable], array_size * (m_offset + instance));
-    }
 
   protected:
+    /**
+     * @brief Pointer to a range of pointers to the start of RANGE variable storage.
+     *
+     * @c m_data_ptrs[i] is a pointer to the start of the contiguous storage for the
+     * @f$\texttt{i}^{th}@f$ RANGE variable.
+     * @see container::detail::field_data<Tag, true>::data_ptrs()
+     */
     double* const* m_data_ptrs{};
+
+    /**
+     * @brief Pointer to a range of array dimensions for the RANGE variables in this mechanism.
+     *
+     * @c m_data_array_dims[i] is the array dimension of the @f$\texttt{i}^{th}@f$ RANGE variable.
+     */
     int const* m_data_array_dims{};
+
+    /**
+     * @brief Pointer to a range of pointers to the start of POINTER variable caches.
+     *
+     * @c m_pdata_ptrs[i][j] is the @c double* corresponding to the @f$\texttt{i}^{th}@f$ @c pdata /
+     * @c dparam field and the @f$\texttt{j}^{th}@f$ instance of the mechanism in the program.
+     * @see MechanismInstance::MechanismInstance(Prop*) and @ref nrn_sort_mech_data.
+     */
     double* const* const* m_pdata_ptrs{};
+
+    /**
+     * @brief Offset of this contiguous range of mechanism instances into the global range.
+     *
+     * Typically if there is more than one thread in the process then the instances of a particular
+     * mechanism type will be distributed across multiple NrnThread objects and processed by
+     * different threads, and the mechanism data will be permuted so that the instances owned by a
+     * given thread are contiguous. In that case the MechanismRange for the 0th thread would have an
+     * @c m_offset of zero, and the MechanismRange for the next thread would have an @c m_offset of
+     * the number of instances in the 0th thread.
+     *
+     * @see @ref nrn_sort_mech_data.
+     */
     std::size_t m_offset{};
 };
 /**
@@ -98,12 +171,20 @@ struct MechanismRange {
  * range of instances (Memb_list). A key feature of methods that take Prop is that they should
  * *not* require a call to nrn_ensure_model_data_are_sorted(). This is conceptually fine, as if
  * we are only concerned with a single mechanism instance then it doesn't matter where it lives
- * in the global storage vectors. In this case, m_token_or_cache contains an array of pointers
- * that m_dptr_datums can refer to.
+ * in the global storage vectors. In this case, @ref m_dptr_cache contains an array of pointers
+ * that @ref m_dptr_datums can refer to.
  */
 template <std::size_t NumFloatingPointFields, std::size_t NumDatumFields>
 struct MechanismInstance: MechanismRange<NumFloatingPointFields, NumDatumFields> {
+    /**
+     * @brief Shorthand for the MechanismRange base class.
+     */
     using base_type = MechanismRange<NumFloatingPointFields, NumDatumFields>;
+
+    /**
+     * @brief Construct from a single mechanism instance.
+     * @param prop Handle to a single mechanism instance.
+     */
     MechanismInstance(Prop* prop)
         : base_type{_nrn_mechanism_get_type(prop), mechanism::_get::_current_row(prop)} {
         if (!prop) {
@@ -118,9 +199,21 @@ struct MechanismInstance: MechanismRange<NumFloatingPointFields, NumDatumFields>
         });
         this->m_pdata_ptrs = m_dptr_datums.data();
     }
+
+    /**
+     * @brief Copy constructor.
+     */
     MechanismInstance(MechanismInstance const& other) {
-        *this = other;
+        *this = other;  // Implement using copy assignment.
     }
+
+    /**
+     * @brief Copy assignment
+     *
+     * This has to be implemented manually because the base class (MechanismInstance) member @ref
+     * m_pdata_ptrs has to be updated to point at the derived class (MechanismInstance) member @ref
+     * m_dptr_datums.
+     */
     MechanismInstance& operator=(MechanismInstance const& other) {
         if (this != &other) {
             this->m_data_ptrs = other.m_data_ptrs;
@@ -136,7 +229,16 @@ struct MechanismInstance: MechanismRange<NumFloatingPointFields, NumDatumFields>
     }
 
   private:
+    /**
+     * @brief Cached @c double* values for this instance, calculated from @ref Datum.
+     */
     std::array<double*, NumDatumFields> m_dptr_cache{};
+
+    /**
+     * @brief Pointers to m_dptr_cache needed to satisfy MechanismRange's requirements.
+     * @invariant @ref m_dptr_datums[i] is equal to &@ref m_dptr_cache[i] for all @c i.
+     * @invariant @c MechanismInstance::m_pdata_ptrs is equal to @ref m_dptr_datums.%data().
+     */
     std::array<double* const*, NumDatumFields> m_dptr_datums{};
 };
 }  // namespace neuron::cache

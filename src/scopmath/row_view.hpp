@@ -12,11 +12,20 @@ struct row_view {
     [[nodiscard]] double const& operator[](container::field_index ind) const {
         return m_ml->data(m_iml, ind);
     }
-    [[nodiscard]] double& operator[](std::size_t col) {
-        return m_ml->data(m_iml, col);
+    /**
+     * @brief Wrapper taking plain int indices.
+     * @see @ref simeq for why :-(
+     */
+    [[nodiscard]] double& operator[](int col) {
+        return m_ml->data(m_iml, container::field_index{col, 0});
     }
-    [[nodiscard]] double const& operator[](std::size_t col) const {
-        return m_ml->data(m_iml, col);
+
+    /**
+     * @brief Wrapper taking plain int indices.
+     * @see @ref simeq for why :-(
+     */
+    [[nodiscard]] double const& operator[](int col) const {
+        return m_ml->data(m_iml, container::field_index{col, 0});
     }
 
   private:

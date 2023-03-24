@@ -748,7 +748,8 @@ extern Memb_func* memb_func;\n\
     if (watch_seen_) {
         watch_index = ppvar_cnt;
         for (i = 0; i < watch_seen_; ++i) {
-            ppvar_semantics(i + ppvar_cnt, "watch", "_watch_array", "void*" /* FIXME */);
+            // TODO: improve type safety by not using void* here
+            ppvar_semantics(i + ppvar_cnt, "watch", "_watch_array", "void*");
         }
         ppvar_cnt += watch_seen_;
         Sprintf(buf, "\n#define _watch_array _ppvar + %d", watch_index);
@@ -762,7 +763,8 @@ extern Memb_func* memb_func;\n\
     if (for_netcons_) {
         Sprintf(buf, "\n#define _fnc_index %d\n", ppvar_cnt);
         Lappendstr(defs_list, buf);
-        ppvar_semantics(ppvar_cnt, "fornetcon", "_fnc_index", "void*" /* I think this is how it's currently used to avoid exposing an internal type */);
+        // TODO: improve type safety by not using void* here
+        ppvar_semantics(ppvar_cnt, "fornetcon", "_fnc_index", "void*");
         ppvar_cnt += 1;
     }
     if (point_process) {
@@ -2332,8 +2334,7 @@ int iondef(int* p_pointercount) {
             Sprintf(buf, "#define %s *_ml->dptr_field<%d>(_iml)\n", name.c_str(), ioncount);
             q2 = lappendstr(defs_list, buf);
             q2->itemtype = VERBATIM;
-            ppvar_semantics(ioncount, ionname, name.c_str(), "double*");  // ppvar semantics by
-                                                                          // trial-and-error
+            ppvar_semantics(ioncount, ionname, name.c_str(), "double*");
             ioncount++;
             std::string stylename{"_style_"};
             stylename.append(sion->name);
