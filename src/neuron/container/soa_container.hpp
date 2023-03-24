@@ -63,7 +63,7 @@ inline constexpr bool
 template <typename T>
 auto get_array_dimension(T const& t) -> decltype(t.array_dimension(), 0) {
     // TODO this one is probably broken -- don't have an example of a tag type with
-    // array_dimension() but without num_instances()
+    // array_dimension() but without num_variables()
     return t.array_dimension();
 }
 template <typename T>
@@ -75,14 +75,14 @@ int get_array_dimension(T const&, ...) {
     return 1;
 }
 
-// Detect if a type T has a non-static member function called num_instances().
+// Detect if a type T has a non-static member function called num_variables().
 template <typename T, typename = void>
-struct has_num_instances: std::false_type {};
+struct has_num_variables: std::false_type {};
 template <typename T>
-struct has_num_instances<T, std::void_t<decltype(std::declval<T>().num_instances())>>
+struct has_num_variables<T, std::void_t<decltype(std::declval<T>().num_variables())>>
     : std::true_type {};
 template <typename T>
-inline constexpr bool has_num_instances_v = has_num_instances<T>::value;
+inline constexpr bool has_num_variables_v = has_num_variables<T>::value;
 
 // Get a name for a given field within a given tag
 template <typename Tag>
@@ -108,18 +108,18 @@ std::string get_name_impl(Tag const& tag, int field_index, ...) {
 /**
  * @brief Get the nicest available name for the field_index-th instance of Tag.
  *
- * This should elegantly handle field_index == -1 (=> the tag doesn't get have num_instances()) and
+ * This should elegantly handle field_index == -1 (=> the tag doesn't get have num_variables()) and
  * field_index being out of range.
  */
 template <typename Tag>
 auto get_name(Tag const& tag, int field_index) {
-    if constexpr (has_num_instances_v<Tag>) {
-        if (field_index >= 0 && field_index < tag.num_instances()) {
+    if constexpr (has_num_variables_v<Tag>) {
+        if (field_index >= 0 && field_index < tag.num_variables()) {
             // use tag.name(field_index) if it's available, otherwise fall back
             return get_name_impl(tag, field_index, nullptr);
         }
     }
-    // no num_instances() or invalid field_index, use the fallback
+    // no num_variables() or invalid field_index, use the fallback
     return get_name_impl(tag, field_index, 1 /* does not match nullptr */);
 }
 
@@ -149,23 +149,23 @@ void check_permutation_vector(Rng const& range, std::size_t size) {
 
 enum struct may_cause_reallocation { Yes, No };
 
-template <typename, bool has_num_instances>
+template <typename, bool has_num_variables>
 struct field_data {};
 
 /**
- * @brief Storage manager for a tag type that implements num_instances().
+ * @brief Storage manager for a tag type that implements num_variables().
  *
  * An illustrative example is that this is responsible for the storage associated with floating
- * point mechanism data, where the number of fields is set at runtime via num_instances.
+ * point mechanism data, where the number of fields is set at runtime via num_variables.
  *
  * As well as owning the actual storage containers, this type maintains two spans of values that
  * can be used by other types, in particular neuron::cache::MechanismRange:
- * - array_dims() returns a pointer to the first element of a num_instances()-sized range holding
+ * - array_dims() returns a pointer to the first element of a num_variables()-sized range holding
  *   the array dimensions of the variables.
- * - array_dim_prefix_sums() returns a pointer to the first element of a num_instances()-sized
+ * - array_dim_prefix_sums() returns a pointer to the first element of a num_variables()-sized
  *   range holding the prefix sum over the array dimensions (i.e. if array_dims() returns [1, 2, 1]
  *   then array_dim_prefix_sums() returns [1, 3, 4]).
- * - data_ptrs() returns a pointer to the first element of a num_instances()-sized range holding
+ * - data_ptrs() returns a pointer to the first element of a num_variables()-sized range holding
  *   pointers to the start of the storage associated with each variable (i.e. the result of calling
  *   data() on the underlying vector).
  *
@@ -174,16 +174,16 @@ struct field_data {};
 template <typename Tag>
 struct field_data<Tag, true> {
     using data_type = typename Tag::type;
-    static_assert(has_num_instances_v<Tag>);
+    static_assert(has_num_variables_v<Tag>);
     field_data(Tag tag)
         : m_tag{std::move(tag)}
-        , m_storage{m_tag.num_instances()} {
-        auto const num = m_tag.num_instances();
+        , m_storage{m_tag.num_variables()} {
+        auto const num = m_tag.num_variables();
         m_data_ptrs.reserve(num);
         update_data_ptr_storage();
         m_array_dims.reserve(num);
         m_array_dim_prefix_sums.reserve(num);
-        for (auto i = 0; i < m_tag.num_instances(); ++i) {
+        for (auto i = 0; i < m_tag.num_variables(); ++i) {
             m_array_dims.push_back(get_array_dimension(m_tag, i));
             m_array_dim_prefix_sums.push_back(
                 (m_array_dim_prefix_sums.empty() ? 0 : m_array_dim_prefix_sums.back()) +
@@ -219,7 +219,7 @@ struct field_data<Tag, true> {
     [[nodiscard]] int check_array_dim(int field_index, int array_index) const {
         assert(field_index >= 0);
         assert(array_index >= 0);
-        if (auto const num_fields = m_tag.num_instances(); field_index >= num_fields) {
+        if (auto const num_fields = m_tag.num_variables(); field_index >= num_fields) {
             throw std::runtime_error(get_name(m_tag, field_index) + "/" +
                                      std::to_string(num_fields) + ": out of range");
         }
@@ -268,7 +268,7 @@ struct field_data<Tag, true> {
     // TODO use array_dim_prefix_sums
     [[nodiscard]] field_index translate_legacy_index(int legacy_index) const {
         int total{};
-        auto const num_fields = m_tag.num_instances();
+        auto const num_fields = m_tag.num_variables();
         for (auto field = 0; field < num_fields; ++field) {
             auto const array_dim = m_array_dims[field];
             if (legacy_index < total + array_dim) {
@@ -291,16 +291,74 @@ struct field_data<Tag, true> {
                        [](auto& vec) { return vec.data(); });
         assert(old_data_ptrs == m_data_ptrs.data());
     }
+    /**
+     * @brief Tag type instance.
+     *
+     * An instance of @c soa contains an instance of @c field_data for each tag type in its @c
+     * Tags... pack. The instance of the tag type contains the metadata about the field it
+     * represents, and @c field_data adds the actual data for that field. For example, with @c Tag =
+     * @c Mechanism::field::FloatingPoint, which represents RANGE variables in mechanisms, @c m_tag
+     * holds the names and array dimensions of the RANGE variables.
+     */
     Tag m_tag;
+
+    /**
+     * @brief Storage for the data associated with @c Tag.
+     *
+     * These are the "large" data arrays holding the model data. Because this specialisation of @c
+     * field_data is for @c Tag types that @b do have @c num_variables() members, such as @c
+     * Mechanism::field::FloatingPoint, there is an outer vector with this dimension.
+     *
+     * @invariant @c m_storage.size() is equal to @c m_tag.num_variables()
+     *
+     * For Mechanism data, this size is equal to the number of RANGE variables, while
+     * @c m_storage[i].size() is (assuming an array dimension of 1) the number of instances (in this
+     * case of the given Mechanism type) that exist in the program.
+     */
     std::vector<std::vector<data_type>> m_storage;
-    std::vector<data_type*> m_data_ptrs;  // always contains .data() for everything in m_storage
-    std::vector<int> m_array_dims, m_array_dim_prefix_sums;
+
+    /**
+     * @brief Storage where we maintain an up-to-date cache of .data() pointers from m_storage.
+     * @invariant @c m_storage.size() is equal to @c m_data_ptrs.size()
+     * @invariant @c m_storage[i].data() is equal to @c m_data_ptrs[i] for all @c i.
+     *
+     * This is useful because it allows @c data_handle<T> to store something like @c T** instead of
+     * having to store something like @c std::vector<T>*, which avoids hardcoding unnecessary
+     * details about the allocator and so on, and allows @c cache::MechanismRange to similarly have
+     * a C-like interface.
+     */
+    std::vector<data_type*> m_data_ptrs;
+
+    /**
+     * @brief Array dimensions of the data associated with @c Tag.
+     * @invariant @c m_storage.size() is equal to @c m_array_dims.size()
+     * @invariant @c m_array_dims[i] is equal to @c m_tag.array_dimension(i), if that function
+     *            exists, or otherwise 1, for all @c i
+     *
+     * Similar to @c m_data_ptrs, this allows the array dimensions to be communicated simply across
+     * a C-like interface.
+     */
+    std::vector<int> m_array_dims;
+
+    /**
+     * @brief Prefix sum over array dimensions for the data associated with @c Tag.
+     * @invariant @c m_storage.size() is equal to @c m_array_dim_prefix_sums.size()
+     * @invariant @c m_array_dim_prefix_sums[i] is equal to the sum of @c m_array_dims[0] .. @c
+     *            m_array_dims[i] for all @c i.
+     * @todo This could be used to more efficiently convert legacy indices.
+     *
+     * This is mainly useful for logic that aids the transition from AoS to SoAoS format in NEURON.
+     * For example, the size of the old @c _p vectors in NEURON was @c
+     * m_array_dim_prefix_sums.back(), the sum over all array dimensions, which is generally larger
+     * than @c m_tag.num_variables().
+     */
+    std::vector<int> m_array_dim_prefix_sums;
 };
 
 template <typename Tag>
 struct field_data<Tag, false> {
     using data_type = typename Tag::type;
-    static_assert(!has_num_instances_v<Tag>);
+    static_assert(!has_num_variables_v<Tag>);
     field_data(Tag tag)
         : m_tag{std::move(tag)}
         , m_array_dim{get_array_dimension(m_tag)} {}
@@ -338,9 +396,41 @@ struct field_data<Tag, false> {
     }
 
   private:
+    /**
+     * @brief Tag type instance.
+     *
+     * An instance of @c soa contains an instance of @c field_data for each tag type in its @c
+     * Tags... pack. The instance of the tag type contains the metadata about the field it
+     * represents, and @c field_data adds the actual data for that field. For example, with @c Tag =
+     * @c Node::field::Voltage, which represents the voltage in a given Node, @c m_tag is just an
+     * empty type that defines the @c data_type and default value of voltages.
+     */
     Tag m_tag;
+
+    /**
+     * @brief Storage for the data associated with @c Tag.
+     *
+     * This is one of the "large" data arrays holding the model data. Because this specialisation of
+     * @c field_data is for @c Tag types that @b don't have @c num_variables() members, such as @c
+     * Node::field::Voltage, there is exactly one vector per instance of @c field_data. Because the
+     * fields in @c Node::storage all have array dimension 1, in that case the size of this vector
+     * is the number of Node instances in the program.
+     */
     std::vector<data_type> m_storage;
-    data_type* m_data_ptr{};  // m_storage.data()
+
+    /**
+     * @brief Storage where we maintain an up-to-date cache of @c m_storage.data().
+     * @invariant @c m_storage.data() is equal to @c m_data_ptr.
+     * @see field_data<Tag, true>::m_data_ptrs %for the motivation.
+     */
+    data_type* m_data_ptr{};
+
+    /**
+     * @brief Array dimension of the data associated with @c Tag.
+     * @invariant @c m_array_dim is equal to @c m_tag.array_dimension(), if that function exists,
+     *            or 1.
+     * @see field_data<Tag, true>::m_array_dims %for the motivation.
+     */
     int m_array_dim;
 };
 
@@ -751,7 +841,18 @@ struct soa {
     }
 
     /**
-     * @brief Get the instance of the tag type Tag.
+     * @brief Get the instance of the given tag type.
+     * @tparam Tag The tag type, which must be a member of the @c Tags... pack.
+     * @return Const reference to the given tag type instance.
+     *
+     * For example, if this is called on the @c Node::storage then @c Tag would be something like @c
+     * Node::field::Area, @c Node::field::RHS or @c Node::field::Voltage, which are empty types that
+     * serve to define the default values and types of those quantities.
+     *
+     * At the time of writing the other possibility is that this is called on an instance of @c
+     * Mechanism::storage, in which case @c Tag must (currently) be @c
+     * Mechanism::field::FloatingPoint. This stores the names and array dimensions of the RANGE
+     * variables in the mechanism (MOD file), which are only known at runtime.
      */
     template <typename Tag>
     [[nodiscard]] constexpr Tag const& get_tag() const {
@@ -772,7 +873,7 @@ struct soa {
     template <typename Tag>
     [[nodiscard]] typename Tag::type& get(std::size_t offset) {
         static_assert(has_tag_v<Tag>);
-        static_assert(!detail::has_num_instances_v<Tag>);
+        static_assert(!detail::has_num_variables_v<Tag>);
         return std::get<tag_index_v<Tag>>(m_data).data_ptrs()[0][offset];
     }
 
@@ -782,7 +883,7 @@ struct soa {
     template <typename Tag>
     [[nodiscard]] typename Tag::type const& get(std::size_t offset) const {
         static_assert(has_tag_v<Tag>);
-        static_assert(!detail::has_num_instances_v<Tag>);
+        static_assert(!detail::has_num_variables_v<Tag>);
         return std::get<tag_index_v<Tag>>(m_data).data_ptrs()[0][offset];
     }
 
@@ -794,7 +895,7 @@ struct soa {
         non_owning_identifier_without_container id,
         int array_index = 0) const {
         static_assert(has_tag_v<Tag>);
-        static_assert(!detail::has_num_instances_v<Tag>);
+        static_assert(!detail::has_num_variables_v<Tag>);
         auto const array_dim = std::get<tag_index_v<Tag>>(m_data).array_dims()[0];
         assert(array_dim > 0);
         assert(array_index >= 0);
@@ -814,7 +915,7 @@ struct soa {
         int field_index,
         int array_index = 0) const {
         static_assert(has_tag_v<Tag>);
-        static_assert(detail::has_num_instances_v<Tag>);
+        static_assert(detail::has_num_variables_v<Tag>);
         auto const array_dim = std::get<tag_index_v<Tag>>(m_data).check_array_dim(field_index,
                                                                                   array_index);
         return {std::move(id),
@@ -915,7 +1016,7 @@ struct soa {
     template <typename Tag>
     [[nodiscard]] bool is_storage_pointer(typename Tag::type const* ptr) const {
         static_assert(has_tag_v<Tag>);
-        static_assert(!detail::has_num_instances_v<Tag>);
+        static_assert(!detail::has_num_variables_v<Tag>);
         return ptr == std::get<tag_index_v<Tag>>(m_data).data_ptrs()[0];
     }
 
@@ -1006,13 +1107,13 @@ struct soa {
     /**
      * @brief Collection of data columns.
      *
-     * If the tag implements a num_instances() method then it is duplicated a
+     * If the tag implements a num_variables() method then it is duplicated a
      * runtime-determined number of times and get_field_instance<Tag>(i) returns
-     * the i-th element of the outer vector (of length num_instances()) of
-     * vectors. If is no num_instances() method then the outer vector can be
+     * the i-th element of the outer vector (of length num_variables()) of
+     * vectors. If is no num_variables() method then the outer vector can be
      * omitted and get<Tag>() returns a vector of values.
      */
-    std::tuple<detail::field_data<Tags, detail::has_num_instances_v<Tags>>...> m_data{};
+    std::tuple<detail::field_data<Tags, detail::has_num_variables_v<Tags>>...> m_data{};
 
     /**
      * @brief Callback that is invoked when the container becomes unsorted.

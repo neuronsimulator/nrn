@@ -814,7 +814,7 @@ int get_field_count<double>(int mech_type) {
     return neuron::model()
         .mechanism_data(mech_type)
         .get_tag<container::Mechanism::field::FloatingPoint>()
-        .num_instances();
+        .num_variables();
 }
 }  // namespace neuron::mechanism
 

@@ -2288,7 +2288,7 @@ void KSChan::update_size() {
     std::size_t const new_dparam_size = (is_point_ ? 2 : 0) + (is_single_ ? 1 : 0) +
                                         (ion_sym_ != nullptr ? 5 : 0) + 2 * nligand_;
     auto const old_param_size =
-        mech_data.get_tag<neuron::container::Mechanism::field::FloatingPoint>().num_instances();
+        mech_data.get_tag<neuron::container::Mechanism::field::FloatingPoint>().num_variables();
     auto const old_dparam_size = nrn_mechanism_prop_datum_count(mechtype_);
     if (new_param_size == old_param_size && new_dparam_size == old_dparam_size) {
         // no change
