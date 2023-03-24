@@ -45,6 +45,9 @@ neuron::container::data_handle<double> _nrn_mechanism_get_area_handle(Node* node
         return {};
     }
 }
+Section* _nrn_mechanism_get_child(Section* sec) {
+    return sec->child;
+}
 int _nrn_mechanism_get_nnode(Section* sec) {
     return sec->nnode;
 }
@@ -61,6 +64,9 @@ neuron::container::data_handle<double> _nrn_mechanism_get_param_handle(
 }
 NrnThread* _nrn_mechanism_get_thread(Node* node) {
     return node->_nt;
+}
+Section* _nrn_mechanism_get_sibling(Section* sec) {
+    return sec->sibling;
 }
 int _nrn_mechanism_get_type(Prop* prop) {
     return prop ? prop->_type : -1;
