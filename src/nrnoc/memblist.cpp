@@ -16,7 +16,7 @@ Memb_list::Memb_list(int type)
     using Tag = neuron::container::Mechanism::field::FloatingPoint;
     assert(m_storage);
     assert(m_storage_offset != neuron::container::invalid_row);
-    auto const num_fields = m_storage->get_tag<Tag>().num_instances();
+    auto const num_fields = m_storage->get_tag<Tag>().num_variables();
     std::vector<double*> ret(num_fields, nullptr);
     for (auto i = 0; i < num_fields; ++i) {
         ret[i] = &m_storage->get_field_instance<Tag>(m_storage_offset, i);
@@ -71,7 +71,7 @@ neuron::container::data_handle<double> Memb_list::data_handle(
     // calculates the (hypothetical) index into the old (single) vector
     using Tag = neuron::container::Mechanism::field::FloatingPoint;
     auto const size = m_storage->size();  // number of instances; 3 in the example above
-    auto const num_fields = m_storage->get_tag<Tag>().num_instances();  // ex: 3 (a, b, c)
+    auto const num_fields = m_storage->get_tag<Tag>().num_variables();  // ex: 3 (a, b, c)
     auto const* const array_dims = m_storage->get_array_dims<Tag>();    // ex: [1, 2, 1]
     auto const sum_of_array_dims = std::accumulate(array_dims, array_dims + num_fields, 0);
     int sum_of_array_dims_of_previous_fields{};

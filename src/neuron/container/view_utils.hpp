@@ -115,6 +115,15 @@ struct handle_base {
     [[nodiscard]] auto const& get() const {
         return underlying_storage().template get<Tag>(current_row());
     }
+    /**
+     * @brief Get the instance of the given tag type from underlying storage.
+     * @tparam Tag The tag type.
+     * @return Const reference to the given tag type instance inside the ~global storage struct.
+     *
+     * This is a thin wrapper that calls @c soa::get_tag<Tag> on the storage container (currently an
+     * instance of @c Node::storage or @c Mechanism::storage) that this handle refers to an instance
+     * inside.
+     */
     template <typename Tag>
     [[nodiscard]] constexpr Tag const& get_tag() const {
         return underlying_storage().template get_tag<Tag>();

@@ -26,7 +26,7 @@ struct FloatingPoint {
      *
      * Typically this is the number of different RANGE variables in a mechanism.
      */
-    [[nodiscard]] std::size_t num_instances() const {
+    [[nodiscard]] std::size_t num_variables() const {
         return m_var_info.size();
     }
 
@@ -76,7 +76,7 @@ struct handle_interface: handle_base<Identifier> {
      * @brief Return the number of floating point fields accessible via fpfield.
      */
     [[nodiscard]] int num_fpfields() const {
-        return this->underlying_storage().template get_tag<field::FloatingPoint>().num_instances();
+        return this->template get_tag<field::FloatingPoint>().num_variables();
     }
 
     /**

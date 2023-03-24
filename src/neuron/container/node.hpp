@@ -68,7 +68,7 @@ struct handle_interface: handle_base<Identifier> {
      * @brief This is a workaround for area sometimes being a macro.
      * @todo Remove those macros once and for all.
      */
-    [[nodiscard]] field::Voltage::type& area_hack() {
+    [[nodiscard]] field::Area::type& area_hack() {
         return area();
     }
 
@@ -76,7 +76,7 @@ struct handle_interface: handle_base<Identifier> {
      * @brief This is a workaround for area sometimes being a macro.
      * @todo Remove those macros once and for all.
      */
-    [[nodiscard]] field::Voltage::type const& area_hack() const {
+    [[nodiscard]] field::Area::type const& area_hack() const {
         return area();
     }
 

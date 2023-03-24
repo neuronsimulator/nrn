@@ -104,7 +104,7 @@ short storage::type() const {
 }
 std::ostream& operator<<(std::ostream& os, storage const& data) {
     return os << data.name() << "::storage{type=" << data.type() << ", "
-              << data.get_tag<field::FloatingPoint>().num_instances() << " fields}";
+              << data.get_tag<field::FloatingPoint>().num_variables() << " fields}";
 }
 }  // namespace neuron::container::Mechanism
 namespace neuron::container::utils {
