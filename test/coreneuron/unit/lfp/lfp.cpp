@@ -6,6 +6,8 @@
 # =============================================================================.
 */
 #include "coreneuron/io/lfp.hpp"
+#include "coreneuron/io/nrnsection_mapping.hpp"
+#include "coreneuron/io/reports/report_event.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
 
 #define BOOST_TEST_MODULE LFPTest
@@ -106,3 +108,77 @@ BOOST_AUTO_TEST_CASE(LFP_PointSource_LineSource) {
     nrnmpi_finalize();
 #endif
 }
+
+#ifdef ENABLE_SONATA_REPORTS
+BOOST_AUTO_TEST_CASE(LFP_ReportEvent) {
+    const std::string report_name = "compartment_report";
+    const std::vector<uint64_t> gids = {42, 134};
+    const std::vector<int> segment_ids = {0, 1, 2, 3, 4};
+    std::vector<double> curr(segment_ids.size());
+
+    NrnThread nt;
+    nt.mapping = new NrnThreadMappingInfo;
+    auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
+    // Generate mapinfo CellMapping
+    for (const auto& gid: gids) {
+        mapinfo->mappingvec.push_back(new CellMapping(gid));
+        for (const auto& segment: segment_ids) {
+            mapinfo->mappingvec.back()->add_segment_lfp_factor(segment,
+                                                               {segment + 1.0, segment + 2.0});
+        }
+    }
+    mapinfo->prepare_lfp();
+    // Total number of electrodes 2 gids * 2 factors
+    BOOST_REQUIRE_EQUAL(mapinfo->_lfp.size(), 4);
+
+    CellMapping* c42 = mapinfo->mappingvec[0];
+    CellMapping* c134 = mapinfo->mappingvec[1];
+    BOOST_REQUIRE_EQUAL(c42->lfp_factors.size(), 5);
+    BOOST_REQUIRE_EQUAL(c134->num_electrodes(), 2);
+
+    // Pass _lfp variable to vars_to_report
+    size_t offset_lfp = 0;
+    VarsToReport vars_to_report;
+    for (const auto& gid: gids) {
+        std::vector<VarWithMapping> to_report;
+        const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
+        int num_electrodes = cell_mapping->num_electrodes();
+        for (int electrode_id = 0; electrode_id < num_electrodes; electrode_id++) {
+            to_report.emplace_back(VarWithMapping(electrode_id, mapinfo->_lfp.data() + offset_lfp));
+            offset_lfp++;
+        }
+        if (!to_report.empty()) {
+            vars_to_report[gid] = to_report;
+        }
+    }
+
+    // Generate summation for IClamp
+    nt.summation_report_handler_ = std::make_unique<SummationReportMapping>(
+        SummationReportMapping());
+    for (const auto& segment_id: segment_ids) {
+        curr[segment_id] = (segment_id + 1) / 10.0;
+        nt.summation_report_handler_->summation_reports_[report_name]
+            .currents_[segment_id]
+            .push_back(std::make_pair(curr.data() + segment_id, -1));
+    }
+
+    // Generate currents
+    std::vector<double> currents = {0.2, 0.4, 0.6, 0.8, 1.0};
+    nt.nrn_fast_imem = new NrnFastImem;
+    nt.nrn_fast_imem->nrn_sav_rhs = currents.data();
+
+    const double dt = 0.025;
+    const double tstart = 0.0;
+    const double report_dt = 0.1;
+    ReportType report_type = CompartmentReport;
+
+    ReportEvent event(dt, tstart, vars_to_report, report_name.data(), report_dt, report_type);
+    event.lfp_calc(&nt);
+
+    BOOST_REQUIRE_CLOSE(mapinfo->_lfp[0], 5.5, 1.0);
+    BOOST_REQUIRE_CLOSE(mapinfo->_lfp[3], 7.0, 1.0);
+
+    delete mapinfo;
+    delete nt.nrn_fast_imem;
+}
+#endif
