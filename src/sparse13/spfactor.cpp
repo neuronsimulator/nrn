@@ -1635,7 +1635,7 @@ static ElementPtr SearchDiagonal(MatrixPtr Matrix, int Step)
  *  LargestElementMag  (RealNumber)
  *      Magnitude of the largest element yet found in the reduced submatrix.
  *  Size  (int)
- *      Local version of Size; placed in a for speed.
+ *      Local version of Size.
  *  Magnitude  (RealNumber)
  *      Absolute value of diagonal element.
  *  MinMarkowitzProduct  (long)
