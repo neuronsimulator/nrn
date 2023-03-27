@@ -171,6 +171,7 @@ simulation_stack:
     bb5_constraint: volta
     bb5_cpus_per_task: 2
     bb5_partition: prod # assume this is a good source of GPU nodes
+    bb5_reservation: nvidia
 .test_neuron:
   extends: [.ctest]
   variables:
