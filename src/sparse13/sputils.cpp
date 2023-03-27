@@ -864,7 +864,7 @@ static void ComplexTransposedMatrixMultiply(MatrixPtr Matrix, RealVector RHS, Re
  *  Norm  (RealNumber)
  *      L-infinity norm of a complex number.
  *  Size  (int)
- *      Local storage for Matrix->Size.  Placed in a register for speed.
+ *      Local storage for Matrix->Size.
  *  Temp  (RealNumber)
  *      Temporary storage for real portion of determinant.
  */

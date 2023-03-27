@@ -1529,7 +1529,7 @@ static ElementPtr QuicklySearchDiagonal(MatrixPtr Matrix, int Step)
  *  ChosenPivot  (ElementPtr)
  *      Pointer to the element that has been chosen to be the pivot.
  *  Size  (int)
- *      Local version of size which is placed in a to increase speed.
+ *      Local version of size.
  *  Magnitude  (RealNumber)
  *      Absolute value of diagonal element.
  *  MinMarkowitzProduct  (long)

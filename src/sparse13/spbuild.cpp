@@ -746,9 +746,7 @@ ElementPtr spcCreateElement(MatrixPtr Matrix, int Row, int Col, ElementPtr* Last
  *      A pointer into the FirstInRow array.  Points to the FirstInRow entry
  *      currently being operated upon.
  *  FirstInRowArray  (ArrayOfElementPtrs)
- *      A pointer to the FirstInRow array.  Same as Matrix->FirstInRow but
- *      resides in a register and requires less indirection so is faster to
- *      use.
+ *      A pointer to the FirstInRow array.  Same as Matrix->FirstInRow.
  *  Col  (int)
  *      Column currently being operated upon.
  */
