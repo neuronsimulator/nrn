@@ -1833,12 +1833,15 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
             return NULL;
         }
         if (po->type_ == PyHoc::HocScalarPtr) {
-            if (ix != 0) {
-                PyErr_SetString(PyExc_IndexError, "index of pointer to hoc scalar must be 0");
-                return NULL;
-            }
-            if (nrn_chk_data_handle(po->u.px_)) {
-                result = Py_BuildValue("d", *(po->u.px_));
+            try {
+                auto const h = po->u.px_.next_array_element(ix);
+                if (nrn_chk_data_handle(h)) {
+                    result = Py_BuildValue("d", *h);
+                }
+            } catch (std::exception const& e) {
+                // next_array_element throws if ix is invalid
+                PyErr_SetString(PyExc_IndexError, e.what());
+                return nullptr;
             }
         } else if (po->type_ == PyHoc::HocRefNum) {
             result = Py_BuildValue("d", po->u.x_);
@@ -1975,14 +1978,18 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
             return -1;
         }
         if (po->type_ == PyHoc::HocScalarPtr) {
-            if (i != 0) {
-                PyErr_SetString(PyExc_IndexError, "index of pointer to hoc scalar must be 0");
+            try {
+                auto const h = po->u.px_.next_array_element(i);
+                if (nrn_chk_data_handle(h)) {
+                    PyArg_Parse(arg, "d", static_cast<double const*>(h));
+                } else {
+                    return -1;
+                }
+            } catch (std::exception const& e) {
+                // next_array_element throws if ix is invalid
+                PyErr_SetString(PyExc_IndexError, e.what());
                 return -1;
             }
-            if (!nrn_chk_data_handle(po->u.px_)) {
-                return -1;
-            }
-            PyArg_Parse(arg, "d", static_cast<double*>(po->u.px_));
         } else if (po->type_ == PyHoc::HocRefNum) {
             PyArg_Parse(arg, "d", &po->u.x_);
         } else if (po->type_ == PyHoc::HocRefStr) {
