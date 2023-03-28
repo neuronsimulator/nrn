@@ -375,10 +375,12 @@ def test_fastimem_corenrn():
 
         # args needed for offline run of coreneuron
         coreneuron.enable = True
+        old_file_mode = coreneuron.file_mode
         coreneuron.file_mode = True
 
         arg = coreneuron.nrncore_arg(tstop)
         coreneuron.enable = False
+        coreneuron.file_mode = old_file_mode
         pc.gid_clear()
         print(arg)
 
