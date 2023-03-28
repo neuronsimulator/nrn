@@ -124,16 +124,14 @@ For a list of symbols defined in neuron.h try:
 
 NOTE: Several Hoc symbols are not useful in Python, and thus raise an exception when accessed, for example:
 
-In []: h.objref
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-
-/home/emuller/hg/nrn_neurens_hg/<ipython console> in <module>()
-
-TypeError: Cannot access objref (NEURON type 323) directly.
-
-In []: h.objref ?
-Object `h.objref` not found.
+>>> h.objref
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: Cannot access objref (NEURON type 325) directly.
+>>> help(h.objref)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: Cannot access objref (NEURON type 325) directly.
 
 
 """
@@ -143,7 +141,7 @@ default_class_doc_template = """
 No docstring available for class '%s'
 
 Try checking the online documentation at:
-https://www.neuron.yale.edu/neuron/static/py_doc/index.html
+https://nrn.readthedocs.org/
 """
 
 
@@ -151,7 +149,7 @@ default_object_doc_template = """
 No docstring available for object type '%s'
 
 Try checking the online documentation at:
-https://www.neuron.yale.edu/neuron/static/py_doc/index.html
+https://nrn.readthedocs.org/
 """
 
 
@@ -159,7 +157,7 @@ default_member_doc_template = """
 No docstring available for the class member '%s.%s'
 
 Try checking the online documentation at:
-https://www.neuron.yale.edu/neuron/static/py_doc/index.html
+https://nrn.readthedocs.org/
 
 ==================================================
 
@@ -178,8 +176,8 @@ def _get_class_from_help_dict(name):
         return ""
     methods = dir(h.__getattribute__(name))
     for m in methods:
-        if name + "." + m in _help_dict:
-            result += "\n\n\n%s.%s:\n\n%s" % (name, m, _help_dict[name + "." + m])
+        if f"{name}.{m}" in _help_dict:
+            result += "\n\n\n%s.%s:\n\n%s" % (name, m, _help_dict[f"{name}.{m}"])
     return result
 
 
@@ -225,7 +223,7 @@ def get_docstring(objtype, symbol):
             return default_object_doc_template % symbol
 
     # are we asking for help on a member of an object, e.g. h.Vector.size
-    full_name = "%s.%s" % (objtype, symbol)
+    full_name = f"{objtype}.{symbol}"
     if full_name in _help_dict:
         return _get_from_help_dict(full_name)
     else:

@@ -78,8 +78,6 @@ void debugzz(Inst* p) {
         prcod(hoc_newline, "newline\n");
         prcod(hoc_delete_symbol, "delete_symbol\n");
         prcod(hoc_cyclic, "cyclic\n");
-        prcod(hoc_parallel_begin, "parallel_begin\n");
-        prcod(hoc_parallel_end, "parallel_end\n");
 
         prcod(dep_make, "DEPENDENT\n");
         prcod(eqn_name, "EQUATION\n");

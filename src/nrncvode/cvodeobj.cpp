@@ -122,7 +122,7 @@ static double spikestat(void* v) {
 }
 static double queue_mode(void* v) {
     hoc_return_type_code = 1;  // integer
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
     if (ifarg(1)) {
         nrn_use_fifo_queue_ = chkarg(1, 0, 1) ? true : false;
     }
@@ -364,7 +364,7 @@ static double use_long_double(void* v) {
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         d->use_long_double_ = i;
-        recalc_diam();
+        d->structure_change();
     }
     return (double) d->use_long_double_;
 }

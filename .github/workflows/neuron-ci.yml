@@ -7,6 +7,8 @@ concurrency:
 on:
   push:
     branches: 
+      # If nothing else, this is important for the ccache logic below...
+      - master
       - release/**
   pull_request:
     branches:
@@ -35,13 +37,15 @@ jobs:
       DESIRED_CMAKE_VERSION: 3.15.0
       PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
       PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
+      MUSIC_INSTALL_DIR: /opt/MUSIC
+      MUSIC_VERSION: 1.2.0
 
     strategy:
       matrix:
         os: [ macOS-11, ubuntu-20.04]
         config:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
-          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake"}
+          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake", music: ON}
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake", python_dynamic: ON}
           - { matrix_eval : "CC=gcc-7 CXX=g++-7" ,  build_mode: "cmake", cmake_option: "-DNRN_ENABLE_CORENEURON=ON"}
           - { matrix_eval : "CC=gcc-7 CXX=g++-7",   build_mode: "cmake", cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"}
@@ -72,7 +76,6 @@ jobs:
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
                 -DNRN_ENABLE_RX3D=OFF
               sanitizer: address
-              ccache_fudge: 1 # manually invalidate the cache for this build
       fail-fast: false
 
     steps:
@@ -84,7 +87,7 @@ jobs:
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install ccache coreutils doxygen flex mpich ninja xz
+          brew install ccache coreutils doxygen flex mpich ninja xz autoconf autoconf automake libtool
           brew unlink mpich
           brew install openmpi
           brew install --cask xquartz
@@ -136,6 +139,22 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
+
+      - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
+        if: matrix.config.music == 'ON'
+        run: |
+          python3 -m venv music-venv
+          source music-venv/bin/activate
+          python3 -m pip install mpi4py cython numpy
+          sudo mkdir -p $MUSIC_INSTALL_DIR
+          sudo chown -R $USER $MUSIC_INSTALL_DIR
+          curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
+          unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
+          ./autogen.sh
+          ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
+          make -j install
+          deactivate
+        working-directory: ${{runner.temp}} 
 
       - name: Register gcc problem matcher
         if: ${{matrix.config.flag_warnings == 'ON'}}
@@ -241,6 +260,7 @@ jobs:
                            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
                            -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
                            -DNRN_ENABLE_TESTS=ON \
+                           -DNRN_ENABLE_PERFORMANCE_TESTS=OFF \
                            ${{matrix.config.cmake_option}})
               if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
                 cmake_args+=(-DNRN_ENABLE_PYTHON=ON \
@@ -249,6 +269,11 @@ jobs:
                              -DNRN_ENABLE_CORENEURON=ON)
               else
                 cmake_args+=(-DPYTHON_EXECUTABLE="${PYTHON}")
+              fi
+              if [[ "$NRN_ENABLE_MUSIC" == "ON" ]]; then
+                cmake_args+=(-DNRN_ENABLE_MUSIC=ON \
+                             -DCMAKE_PREFIX_PATH=${MUSIC_INSTALL_DIR} \
+                             -DMUSIC_ROOT=${MUSIC_INSTALL_DIR})
               fi
               # Enable more warnings in the builds whose compiler warnings we
               # highlight in the GitHub UI
@@ -350,6 +375,7 @@ jobs:
           CCACHE_BASEDIR: ${{runner.workspace}}/nrn
           CCACHE_DIR: ${{runner.workspace}}/ccache
           NRN_ENABLE_PYTHON_DYNAMIC : ${{ matrix.config.python_dynamic }}
+          NRN_ENABLE_MUSIC: ${{ matrix.config.music }}
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
           INSTALL_DIR : ${{ runner.workspace }}/install

@@ -959,7 +959,7 @@ void read_phase3(NrnThread& nt, UserParams& userParams) {
         // read section-segment mapping for every section list
         for (int j = 0; j < nseclist; j++) {
             SecMapping* smap = new SecMapping();
-            F.read_mapping_info(smap);
+            F.read_mapping_info(smap, ntmapping, cmap);
             cmap->add_sec_map(smap);
         }
 

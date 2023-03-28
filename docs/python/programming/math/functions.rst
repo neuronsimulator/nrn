@@ -105,7 +105,7 @@ Diagnostics:
             from neuron import h
 
             for i in range(6,12):
-                print('%g %g' % (i, h.exp(i)))
+                print(i, h.exp(i))
         
         .. note::
         

@@ -22,7 +22,7 @@ extern void hoc_argrefasgn(void), hoc_argref(void), hoc_iterator(void), hoc_iter
 extern void funcret(void), procret(void), Break(void), Continue(void), Stop(void);
 extern void debug(void), hoc_evalpointer(void);
 extern void hoc_newline(void), hoc_delete_symbol(void), hoc_stringarg(void), hoc_push_string(void);
-extern void hoc_parallel_begin(void), hoc_parallel_end(void), hoc_argrefarg(void);
+extern void hoc_argrefarg(void);
 extern void hoc_arayinstal(void);
 
 /* OOP */

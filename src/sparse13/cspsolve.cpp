@@ -1,3 +1,2 @@
 #define cmplx_spPrefix
-#include "spbuild.c"
-
+#include "spsolve.cpp"

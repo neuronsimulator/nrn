@@ -1,5 +1,5 @@
 #setup.py for neuronmusic extension
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 nrn_srcdir = "@NRN_SRCDIR@"
 instdir = "@prefix@"
@@ -12,7 +12,7 @@ import os
 os.environ["CC"]=mpicc_bin
 os.environ["CXX"]=mpicxx_bin
 
-include_dirs = ['@MUSIC_INCDIR@', '@MPI_INCLUDE_PATH@', nrn_srcdir+'/src/neuronmusic', nrn_srcdir + '/src/nrnpython', '.']
+include_dirs = ['@MUSIC_INCDIR@', nrn_srcdir+'/src/neuronmusic', nrn_srcdir + '/src/nrnpython', '.'] + '@MPI_INCLUDE_PATH@'.split(';')
 libdirs = ['@MUSIC_LIBDIR@', @NRN_LIBDIR@]
 
 
@@ -22,11 +22,13 @@ libdirs = ['@MUSIC_LIBDIR@', @NRN_LIBDIR@]
 # added to rpath to avoid issues with dlopen.
 libdirs.append("@CMAKE_BINARY_DIR@/lib")
 
+nrnmusic_lib = [@NRNMUSIC_DYNAM_LIB@]
+
 neuronmusic_module = Extension(
     'neuronmusic',
     ['neuronmusic.cpp'],
     library_dirs = libdirs,
-    libraries = ['music', 'nrniv'],
+    libraries = ['nrniv'] + nrnmusic_lib,
     runtime_library_dirs = [@NRN_LIBDIR@],
     include_dirs = include_dirs
 )

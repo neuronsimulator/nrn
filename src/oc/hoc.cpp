@@ -856,13 +856,10 @@ void hoc_main1_init(const char* pname, const char** envp) {
     ctp = cbuf;
     frin = nrn_fw_set_stdin();
     fout = stdout;
-    if (!parallel_sub) {
-        if (!nrn_is_cable()) {
-            Fprintf(stderr, "OC INTERPRETER   %s   %s\n", RCS_hoc_version, RCS_hoc_date);
-            Fprintf(
-                stderr,
+    if (!nrn_is_cable()) {
+        Fprintf(stderr, "OC INTERPRETER   %s   %s\n", RCS_hoc_version, RCS_hoc_date);
+        Fprintf(stderr,
                 "Copyright 1992 -  Michael Hines, Neurobiology Dept., DUMC, Durham, NC.  27710\n");
-        }
     }
     progname = pname;
     hoc_init();
@@ -921,7 +918,6 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
 #if PVM
     init_parallel(&argc, argv);
 #endif
-    save_parallel_argv(argc, argv);
 
     hoc_audit_from_hoc_main1(argc, argv, envp);
     hoc_main1_init(argv[0], envp);
@@ -1019,7 +1015,7 @@ void hoc_final_exit(void) {
 
     /* Don't close the plots for the sub-processes when they finish,
        by default they are then closed when the master process ends */
-    NOT_PARALLEL_SUB(hoc_close_plot();)
+    hoc_close_plot();
 #if READLINE && !defined(MINGW) && !defined(MAC)
     rl_deprep_terminal();
 #endif
@@ -1549,7 +1545,8 @@ extern void hoc_notify_value(void);
 
 #if READLINE
 #ifdef MINGW
-extern int (*rl_getc_function)(void);
+extern "C" int (*rl_getc_function)(void);
+extern "C" int rl_getc(void);
 static int getc_hook(void) {
     if (!inputReady_) {
         stdin_event_ready(); /* store main thread id */
@@ -1574,12 +1571,12 @@ static int getc_hook(void) {
 /* e.g. mac libedit.3.dylib missing rl_event_hook */
 
 extern int iv_dialog_is_running;
-extern int (*rl_getc_function)(void);
+extern "C" int (*rl_getc_function)(void);
 static int getc_hook(void) {
     while (1) {
         int r;
         unsigned char c;
-        if (run_til_stdin() == 0) {
+        if (hoc_interviews && !hoc_in_yyparse && run_til_stdin() == 0) {
             // nothing in stdin  (happens when windows are dismissed)
             continue;
         }
@@ -1753,7 +1750,7 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
                 rl_getc_function = getc_hook;
                 hoc_notify_value();
             } else {
-                rl_getc_function = NULL;
+                rl_getc_function = rl_getc;
             }
             ENDGUI
 #else /* not MINGW */
@@ -1762,7 +1759,7 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
                 rl_getc_function = getc_hook;
                 hoc_notify_value();
             } else {
-                rl_getc_function = NULL;
+                rl_getc_function = getc_hook;
             }
 #else  /* not use_rl_getc_function */
             if (hoc_interviews && !hoc_in_yyparse) {

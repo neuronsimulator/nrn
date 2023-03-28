@@ -243,6 +243,11 @@ NRN_ENABLE_MUSIC:BOOL=OFF
   With the music installed above, cmake configuration example is
   ``build % cmake .. -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python3.11` -DNRN_ENABLE_RX3D=OFF -DCMAKE_BUILD_TYPE=Debug -DNRN_ENABLE_TESTS=ON -DNRN_ENABLE_MUSIC=ON -DCMAKE_PREFIX_PATH=$HOME/neuron/MUSIC/musicinstall``
 
+  If -DNRN_ENABLE_MPI_DYNAMIC=ON then the nrnmusic interface to
+  NEURON will also be dynamically loaded at runtime. (Generally useful
+  only for binary distributions of NEURON (e.g. wheels) where NEURON may
+  be installed and used prior to installing music.)
+
 Python options:
 ===============
 
@@ -285,21 +290,12 @@ PYTHON_EXECUTABLE:PATH=
 
 NRN_ENABLE_MODULE_INSTALL:BOOL=ON
 ---------------------------------
-  Enable installation of NEURON Python module.
+  Enable installation of the NEURON Python module. 
+  By default, the NEURON module is installed in CMAKE_INSTALL_PREFIX/lib/python.
 
-  By default, the neuron module is installed in CMAKE_INSTALL_PREFIX/lib/python.
+  Note: When building wheels, this must be set to OFF since the top-level `setup.py`
+  is already building the extensions.
 
-NRN_MODULE_INSTALL_OPTIONS:STRING=--home=/usr/local
----------------------------------------------------
-  setup.py options, everything after setup.py install
-
-  To install in site-packages use an empty string
-
-  .. code-block:: shell
-
-    -DNRN_MODULE_INSTALL_OPTIONS=""
-
-  This option is (or should be) ignored unless NRN_ENABLE_MODULE_INSTALL=ON.
 
 NRN_ENABLE_RX3D:BOOL=ON
 -----------------------

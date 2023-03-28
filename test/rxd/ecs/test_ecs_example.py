@@ -196,3 +196,63 @@ def test_ecs_nodelists(ecs_example):
     # test accessing specific node by location
     nd = x[ecs].nodes((-38, 27, 27))[0]
     assert (nd.x3d, nd.y3d, nd.z3d) == (-38.5, 27.5, 27.5)
+
+
+def test_ecs_example_dynamic_tort(ecs_example):
+    """Test ecs_example with dynamic tortuosity"""
+
+    (h, rxd, data, save_path), make_model = ecs_example
+    model = make_model(lambda x, y, z: 1.0, 1)
+    h.finitialize(-65)
+    (
+        cell1,
+        cell2,
+        cyt,
+        org,
+        cyt_org_membrane,
+        ecs,
+        x,
+        Xcyt,
+        Xorg,
+        createX,
+        cell1_param,
+        createX,
+        cyt_org_leak,
+    ) = model
+    perm = rxd.Species(ecs, name="perm", initial=1.0 / 1.6**2)
+    ecs.permeability = perm
+    h.continuerun(1000)
+
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
+
+
+def test_ecs_example_dynamic_alpha(ecs_example):
+    """Test ecs_example with fixed step and inhomogeneous tortuosity methods"""
+
+    (h, rxd, data, save_path), make_model = ecs_example
+    model = make_model(lambda x, y, z: 1.0, 1.6)
+    h.finitialize(-65)
+    (
+        cell1,
+        cell2,
+        cyt,
+        org,
+        cyt_org_membrane,
+        ecs,
+        x,
+        Xcyt,
+        Xorg,
+        createX,
+        cell1_param,
+        createX,
+        cyt_org_leak,
+    ) = model
+    alpha = rxd.Species(ecs, name="alpha", initial=0.2)
+    ecs.alpha = alpha
+    h.continuerun(1000)
+
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol

@@ -37,7 +37,7 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
                                   double dt,
                                   double tstop,
                                   double delay) {
-#if defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
+#ifdef ENABLE_SONATA_REPORTS
     if (report_config.start < t) {
         report_config.start = t;
     }
@@ -57,6 +57,7 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         if (!nt.ncell) {
             continue;
         }
+        auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
         const std::vector<int>& nodes_to_gid = map_gids(nt);
         const std::vector<int> gids_to_report = intersection_gids(nt, report_config.target);
         VarsToReport vars_to_report;
@@ -79,27 +80,38 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
                 get_summation_vars_to_report(nt, gids_to_report, report_config, nodes_to_gid);
             register_custom_report(nt, report_config, vars_to_report);
             break;
+        case LFPReport:
+            mapinfo->prepare_lfp();
+            vars_to_report = get_lfp_vars_to_report(
+                nt, gids_to_report, report_config, mapinfo->_lfp.data(), nodes_to_gid);
+            is_soma_target = report_config.section_type == SectionType::Soma ||
+                             report_config.section_type == SectionType::Cell;
+            register_section_report(nt, report_config, vars_to_report, is_soma_target);
+            break;
         default:
             vars_to_report =
                 get_synapse_vars_to_report(nt, gids_to_report, report_config, nodes_to_gid);
             register_custom_report(nt, report_config, vars_to_report);
         }
         if (!vars_to_report.empty()) {
-            auto report_event = std::make_unique<ReportEvent>(
-                dt, t, vars_to_report, report_config.output_path.data(), report_config.report_dt);
+            auto report_event = std::make_unique<ReportEvent>(dt,
+                                                              t,
+                                                              vars_to_report,
+                                                              report_config.output_path.data(),
+                                                              report_config.report_dt,
+                                                              report_config.type);
             report_event->send(t, net_cvode_instance, &nt);
             m_report_events.push_back(std::move(report_event));
         }
     }
 #else
     if (nrnmpi_myid == 0) {
-        std::cerr << "[WARNING] : Reporting is disabled. Please recompile with either libsonata or "
-                     "reportinglib. \n";
+        std::cerr << "[WARNING] : Reporting is disabled. Please recompile with libsonata.\n";
     }
-#endif  // defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
+#endif
 }
 
-#if defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
+#ifdef ENABLE_SONATA_REPORTS
 void ReportHandler::register_section_report(const NrnThread& nt,
                                             const ReportConfiguration& config,
                                             const VarsToReport& vars_to_report,
@@ -341,6 +353,52 @@ VarsToReport ReportHandler::get_synapse_vars_to_report(
     return vars_to_report;
 }
 
+VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
+                                                   const std::vector<int>& gids_to_report,
+                                                   ReportConfiguration& report,
+                                                   double* report_variable,
+                                                   const std::vector<int>& nodes_to_gids) const {
+    const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
+    if (!mapinfo) {
+        std::cerr << "[LFP] Error : mapping information is missing for a Cell group " << nt.ncell
+                  << '\n';
+        nrn_abort(1);
+    }
+    auto& summation_report = nt.summation_report_handler_->summation_reports_[report.output_path];
+    VarsToReport vars_to_report;
+    off_t offset_lfp = 0;
+    for (const auto& gid: gids_to_report) {
+        // IClamp is needed for the LFP calculation
+        auto mech_id = nrn_get_mechtype("IClamp");
+        Memb_list* ml = nt._ml_list[mech_id];
+        if (ml) {
+            for (int j = 0; j < ml->nodecount; j++) {
+                auto segment_id = ml->nodeindices[j];
+                if ((nodes_to_gids[segment_id] == gid)) {
+                    double* var_value = get_var_location_from_var_name(mech_id, "i", ml, j);
+                    summation_report.currents_[segment_id].push_back(std::make_pair(var_value, -1));
+                }
+            }
+        }
+        const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
+        if (cell_mapping == nullptr) {
+            std::cerr << "[LFP] Error : Compartment mapping information is missing for gid " << gid
+                      << '\n';
+            nrn_abort(1);
+        }
+        std::vector<VarWithMapping> to_report;
+        int num_electrodes = cell_mapping->num_electrodes();
+        for (int electrode_id = 0; electrode_id < num_electrodes; electrode_id++) {
+            to_report.emplace_back(VarWithMapping(electrode_id, report_variable + offset_lfp));
+            offset_lfp++;
+        }
+        if (!to_report.empty()) {
+            vars_to_report[gid] = to_report;
+        }
+    }
+    return vars_to_report;
+}
+
 // map GIDs of every compartment, it consist in a backward sweep then forward sweep algorithm
 std::vector<int> ReportHandler::map_gids(const NrnThread& nt) const {
     std::vector<int> nodes_gid(nt.end, -1);
@@ -367,6 +425,6 @@ std::vector<int> ReportHandler::map_gids(const NrnThread& nt) const {
     }
     return nodes_gid;
 }
-#endif  // defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
+#endif
 
 }  // Namespace coreneuron
