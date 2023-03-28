@@ -54,8 +54,11 @@ class Cell:
 
     def data(self):
         return {"ina": list(self.ina_vec), "t": list(self.tv)}
-    
+
+
 mcna_threads = [1, 3]
+
+
 @pytest.fixture(scope="module")
 def mcna_model_data():
     data = {}
@@ -96,6 +99,7 @@ def test_mcna(chk, mcna_model_data, threads):
             return
     # No fuzziness yet
     assert new_data == ref_data
+
 
 if __name__ == "__main__":
     # python test_nrntest_fast.py will run all the tests in this file
