@@ -1,3 +1,2 @@
 #define cmplx_spPrefix
-#include "spfactor.c"
-
+#include "spalloc.cpp"

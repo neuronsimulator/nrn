@@ -380,18 +380,18 @@ set(SPARSE_FILES_LIST bksub.cpp getelm.cpp lineq.cpp prmat.cpp subrows.cpp)
 
 # sparse13 matrix sources
 set(SPARSE13_FILES_LIST
-    spalloc.c
-    spbuild.c
-    spfactor.c
-    spoutput.c
-    spsolve.c
-    sputils.c
-    cspalloc.c
-    cspbuild.c
-    cspfactor.c
-    cspoutput.c
-    cspsolve.c
-    csputils.c)
+    spalloc.cpp
+    spbuild.cpp
+    spfactor.cpp
+    spoutput.cpp
+    spsolve.cpp
+    sputils.cpp
+    cspalloc.cpp
+    cspbuild.cpp
+    cspfactor.cpp
+    cspoutput.cpp
+    cspsolve.cpp
+    csputils.cpp)
 
 # scopmath sources
 set(SCOPMATH_FILES_LIST
