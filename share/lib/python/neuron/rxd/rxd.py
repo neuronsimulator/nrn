@@ -535,7 +535,7 @@ def _cxx_compile(formula):
         os.path.join(h.neuronhome(), "..", "..", "include", "nrn"),
     )
     gcc_cmd += f"-shared {fpic} {filename}.cpp {_find_librxdmath()}"
-    gcc_cmd += f"-o {filename}.so {math_library}"
+    gcc_cmd += f" -o {filename}.so {math_library}"
     if sys.platform.lower().startswith("win"):
         my_path = os.getenv("PATH")
         os.putenv(
