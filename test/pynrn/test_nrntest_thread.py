@@ -2,18 +2,17 @@
 Tests that used to live in the thread/ subdirectory of the
 https://github.com/neuronsimulator/nrntest repository
 """
-import math
-import numpy as np
+from itertools import product
 import os
 import pytest
 from neuron import h
+from neuron.config import arguments
 from neuron.tests.utils import (
+    coreneuron_enabled,
     num_threads,
     parallel_context,
 )
 from neuron.tests.utils.checkresult import Chk
-
-h.load_file("stdrun.hoc")
 
 
 @pytest.fixture(scope="module")
@@ -56,49 +55,51 @@ class Cell:
         return {"ina": list(self.ina_vec), "t": list(self.tv)}
 
 
-mcna_threads = [1, 3]
+simulators = ["neuron"] + ["coreneuron"] if arguments["NRN_ENABLE_CORENEURON"] else []
 
 
-@pytest.fixture(scope="module")
-def mcna_model_data():
-    data = {}
-    ncell = 10
-    cells = [Cell(id, ncell) for id in range(ncell)]
-    for threads in mcna_threads:
-        with parallel_context() as pc, num_threads(pc, threads=threads):
-            h.run()
-        t_vector = None
-        model_data = {"cnt1": h.cnt1_MCna, "cnt2": h.cnt2_MCna}
-        for cell in cells:
-            cell_data = cell.data()
-            cell_times = cell_data.pop("t")
-            assert t_vector is None or t_vector == cell_times
-            t_vector = cell_times
-            model_data[str(cell)] = cell_data
-        model_data["t"] = t_vector
-        data[threads] = model_data
-    del cells
-    return data
-
-
+@pytest.mark.parametrize("simulator", simulators)
 @pytest.mark.parametrize("threads", [1, 3])
-def test_mcna(chk, mcna_model_data, threads):
+def test_mcna(chk, simulator, threads):
     """
     Derived from nrntest/thread/mcna.hoc, which used to be run with neurondemo.
     Old comment "test GLOBAL counter".
     """
-    new_data = mcna_model_data[threads]
-    if threads > 1:
-        ref_data = mcna_model_data[1]
-    else:
-        assert threads == 1
-        ref_data = chk.get("mcna")
-        if ref_data is None:
-            # No comparison to be done; store the data as a new reference
-            chk("mcna", mcna_model_data[threads])
-            return
-    # No fuzziness yet
-    assert new_data == ref_data
+    ncell = 10
+    cells = [Cell(id, ncell) for id in range(ncell)]
+    with coreneuron_enabled(
+        simulator == "coreneuron", verbose=0
+    ), parallel_context() as pc, num_threads(pc, threads=threads):
+        pc.set_maxstep(10)
+        h.finitialize()
+        pc.psolve(5)
+    t_vector = None
+    model_data = {}
+    model_data["cnt1"] = h.cnt1_MCna
+    model_data["cnt2"] = h.cnt2_MCna
+    for cell in cells:
+        cell_data = cell.data()
+        # The time vector should be identical for all cells
+        cell_times = cell_data.pop("t")
+        assert t_vector is None or t_vector == cell_times
+        t_vector = cell_times
+        # The other data should vary across cells
+        model_data[str(cell)] = cell_data
+    model_data["t"] = t_vector
+    del cells
+    ref_data = chk.get("mcna", None)
+    if ref_data is None:
+        # bootstrapping
+        chk("mcna", model_data)
+        return
+    if simulator == "coreneuron":
+        # CoreNEURON does not handle GLOBAL variables that are updated during
+        # simulation.
+        ref_data = ref_data.copy()
+        for key in ("cnt1", "cnt2"):
+            ref_data.pop(key)
+            model_data.pop(key)
+    assert model_data == ref_data
 
 
 if __name__ == "__main__":
