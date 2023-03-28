@@ -97,9 +97,19 @@ proc prgraphs() {local i, j, k  localobj xvec, yvec, glist
 }
 """
 
+run_mcna = r"""
+load_file("tests/test_neurondemo/mcna.hoc")
+{printf("\nZZZbegin\n")}
+prgraphs()
+{printf("ZZZend\n")}
+quit()
+"""
+
 # Run all the demos and compare their results to the reference
-for i in range(1, 8):
-    data = neurondemo(prgraphs, input % i)
+inputs = [("demo" + str(i), input % i) for i in range(1, 8)]
+inputs.append(("mcna", run_mcna))
+for key, input in inputs:
+    data = neurondemo(prgraphs, input)
     data.reverse()
     # parse the prgraphs output back into a rich structure
     rich_data = []

@@ -1,0 +1,17 @@
+objectvar save_window_, rvp_
+objectvar scene_vector_[3]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,5,-1,1)
+scene_vector_[2] = save_window_
+{save_window_.view(0, -1, 5, 2, 663, 38, 300.48, 200.32)}
+graphList[1].append(save_window_)
+save_window_.save_name("graphList[1].")
+save_window_.addvar("Cell[0].soma.ina( 0.5 )", 1, 1, 0.8, 0.9, 2)
+save_window_.addexpr("Cell[5].soma.ina( 0.5 )", 2, 1, 0.8, 0.9, 2)
+save_window_.addexpr("Cell[9].soma.ina( 0.5 )", 3, 1, 0.8, 0.9, 2)
+}
+objectvar scene_vector_[1]
+{doNotify()}
