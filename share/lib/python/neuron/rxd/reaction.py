@@ -1,7 +1,4 @@
-import weakref
-from . import species, rxdmath, rxd, node, initializer
-import numpy
-import copy
+from . import rxdmath, rxd, initializer
 from .generalizedReaction import (
     GeneralizedReaction,
     ref_list_with_mult,
@@ -71,7 +68,7 @@ class Reaction(GeneralizedReaction):
                     "unidirectional Reaction can have only one rate constant"
                 )
         else:
-            raise RxDException("unknown reaction scheme direction: %r" % scheme._dir)
+            raise RxDException(f"unknown reaction scheme direction: {scheme._dir}")
 
         self._original_rate_f = rate_f
         self._original_rate_b = rate_b
@@ -121,7 +118,7 @@ class Reaction(GeneralizedReaction):
                 else:
                     rate_f *= k**v
             if self._dir == "<>":
-                for k, v in zip(list(rhs.keys()), list(rhs.values())):
+                for k, v in rhs.items():
                     if v == 1:
                         rate_b *= k
                     else:

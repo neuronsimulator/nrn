@@ -1,9 +1,7 @@
 import weakref
 from neuron import h, nrn
 from . import node, rxdsection, nodelist
-import numpy
 from .rxdException import RxDException
-import warnings
 
 # all concentration ptrs and indices
 _all_cptrs = []
@@ -257,14 +255,12 @@ class Section1D(rxdsection.RxDSection):
         return list(range(self._offset, self._offset + self.nseg))
 
     def _setup_currents(self, indices, scales, ptrs, cur_map):
-        from . import rxd
-
         if (
             self.nrn_region is not None
             and self.species.name is not None
             and self.species.charge != 0
         ):
-            ion_curr = "_ref_i%s" % self.species.name
+            ion_curr = f"_ref_i{self.species.name}"
             indices.extend(self.indices)
             volumes, surface_area, diffs = node._get_data()
             # TODO: this implicitly assumes that o and i border the membrane
@@ -308,11 +304,10 @@ class Section1D(rxdsection.RxDSection):
     def _register_cptrs(self):
         global _all_cptrs, _all_cindices
         if self.nrn_region is not None and self.species.name is not None:
-            ion = "_ref_" + self.species.name + self.nrn_region
+            ion = f"_ref_{self.species.name}{self.nrn_region}"
             nseg = self.nseg
-            for i in range(nseg):
-                x = (i + 0.5) / nseg
-                _all_cptrs.append(getattr(self._sec(x), ion))
+            for i, seg in enumerate(self._sec):
+                _all_cptrs.append(getattr(seg, ion))
                 _all_cindices.append(self._offset + i)
             self._concentration_ptrs = _all_cptrs[-nseg:]
         else:
@@ -326,8 +321,6 @@ class Section1D(rxdsection.RxDSection):
         _volumes, _surface_area, _diffs = node._get_data()
         offset = self._offset
         dx = self.L / self.nseg
-        # print 'volumes:', _volumes
-        # print 'areas:', self._neighbor_areas
         for i in range(self.nseg):
             io = i + offset
             if i > 0:
