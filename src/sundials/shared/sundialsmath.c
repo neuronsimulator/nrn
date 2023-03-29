@@ -43,22 +43,22 @@ realtype RPowerR(realtype base, realtype exponent)
 {
   if (base <= ZERO) return(ZERO);
 
-  return(powf(base, exponent));
+  return((realtype) pow((double) base, (double) exponent));
 }
 
 realtype RSqrt(realtype x)
 {
   if (x <= ZERO) return(ZERO);
 
-  return(sqrtf(x));
+  return((realtype) sqrt((double) x));
 }
 
 realtype RAbs(realtype x)
 {
-  return(fabsf(x));
+  return((realtype) fabs((double) x));
 }
 
 realtype RPower2(realtype x)
 {
-  return(powf(x, TWO));
+  return((realtype) pow((double) x, 2.0));
 }
