@@ -1054,7 +1054,7 @@ static double mt_is_artificial(void* v) {
 static double mt_is_ion(void* v) {
     auto* mt = static_cast<MechanismType*>(v);
     hoc_return_type_code = 2;
-    return double(mt->is_ion(int(chkarg(1, 0, mt->count()))));
+    return double(mt->is_ion());
 }
 
 static Object** mt_pp_begin(void* v) {
@@ -1250,9 +1250,8 @@ bool MechanismType::is_artificial(int i) {
     return (nrn_is_artificial_[j] ? true : false);
 }
 
-bool MechanismType::is_ion(int i) {
-    int j = mti_->type_[i];
-    return nrn_is_ion(j);
+bool MechanismType::is_ion() {
+    return nrn_is_ion(internal_type());
 }
 
 void MechanismType::select(const char* name) {
