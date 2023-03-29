@@ -5,43 +5,16 @@ from contextlib import contextmanager
 
 
 @contextmanager
-def coreneuron_enabled(enabled, verbose=None):
-    """
-    Helper for tests to enable/disable CoreNEURON, leaving the setting as it was.
-    """
+def cache_efficient(enabled):
+    from neuron import h
+
+    cvode = h.CVode()
+    old_setting = cvode.cache_efficient()
+    cvode.cache_efficient(enabled)
     try:
-        from neuron import coreneuron
-
-        have_coreneuron = True
-    except:
-        have_coreneuron = False
-
-    if have_coreneuron:
-        from neuron import h
-
-        cvode = h.CVode()
-        old_coreneuron = coreneuron.enable
-        old_efficiency = cvode.cache_efficient()
-        old_verbose = coreneuron.verbose
-        coreneuron.enable = enabled
-        if enabled:
-            cvode.cache_efficient(True)
-        if verbose is not None:
-            coreneuron.verbose = verbose
-        try:
-            yield None
-        finally:
-            coreneuron.enable = old_coreneuron
-            cvode.cache_efficient(old_efficiency)
-            coreneuron.verbose = old_verbose
-    else:
-        # Trivial case when CoreNEURON is not available
-        if enabled:
-            raise Exception("Cannot enable CoreNEURON")
-        try:
-            yield None
-        finally:
-            pass
+        yield None
+    finally:
+        cvode.cache_efficient(old_setting)
 
 
 @contextmanager
