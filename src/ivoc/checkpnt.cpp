@@ -155,8 +155,6 @@ static struct HocInst {
                  {hoc_newline, 0},
                  {hoc_delete_symbol, "s"},
                  {hoc_cyclic, 0},
-                 {hoc_parallel_begin, 0},
-                 {hoc_parallel_end, 0},
                  {dep_make, 0},
                  {eqn_name, 0},
                  {eqn_init, 0},

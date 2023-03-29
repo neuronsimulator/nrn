@@ -7,6 +7,8 @@ concurrency:
 on:
   push:
     branches: 
+      # If nothing else, this is important for the ccache logic below...
+      - master
       - release/**
   pull_request:
     branches:
@@ -36,6 +38,7 @@ jobs:
       PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
       PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
       MUSIC_INSTALL_DIR: /opt/MUSIC
+      MUSIC_VERSION: 1.2.0
 
     strategy:
       matrix:
@@ -73,7 +76,6 @@ jobs:
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
                 -DNRN_ENABLE_RX3D=OFF
               sanitizer: address
-              ccache_fudge: 1 # manually invalidate the cache for this build
       fail-fast: false
 
     steps:
@@ -138,7 +140,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
-      - name: Setup MUSIC
+      - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
         if: matrix.config.music == 'ON'
         run: |
           python3 -m venv music-venv
@@ -146,8 +148,7 @@ jobs:
           python3 -m pip install mpi4py cython numpy
           sudo mkdir -p $MUSIC_INSTALL_DIR
           sudo chown -R $USER $MUSIC_INSTALL_DIR
-          # Stable build: https://github.com/INCF/MUSIC/archive/refs/heads/switch-to-MPI-C-interface.zip  @ f33b66ea9348888eed1761738ab48c23ffc8a0d0
-          curl -L -o MUSIC.zip https://codeload.github.com/INCF/MUSIC/zip/f33b66ea9348888eed1761738ab48c23ffc8a0d0
+          curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
           unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
           ./autogen.sh
           ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
@@ -259,6 +260,7 @@ jobs:
                            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
                            -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
                            -DNRN_ENABLE_TESTS=ON \
+                           -DNRN_ENABLE_PERFORMANCE_TESTS=OFF \
                            ${{matrix.config.cmake_option}})
               if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
                 cmake_args+=(-DNRN_ENABLE_PYTHON=ON \

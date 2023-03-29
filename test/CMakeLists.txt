@@ -16,8 +16,7 @@ include(NeuronTestHelper)
 add_executable(testneuron common/catch2_main.cpp unit_tests/basic.cpp
                           unit_tests/oc/hoc_interpreter.cpp)
 set(catch2_targets testneuron)
-# Benchmarks are known to be slow if you turn off optimisation...
-if(NRN_ENABLE_THREADS AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(NRN_ENABLE_THREADS)
   add_executable(nrn-benchmarks common/catch2_main.cpp benchmarks/threads/test_multicore.cpp)
   target_link_libraries(nrn-benchmarks Threads::Threads)
   list(APPEND catch2_targets nrn-benchmarks)
@@ -44,7 +43,7 @@ nrn_add_test(
   GROUP unit_tests
   NAME testneuron
   COMMAND $<TARGET_FILE:testneuron>)
-if(TARGET nrn-benchmarks)
+if(TARGET nrn-benchmarks AND NRN_ENABLE_PERFORMANCE_TESTS)
   nrn_add_test(
     GROUP unit_tests
     NAME benchmarks
@@ -183,10 +182,12 @@ endforeach()
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   # use `--capture=tee-sys`: combines 'sys' and '-s', capturing sys.stdout/stderr and passing it
   # along to the actual sys.stdout/stderr
-  set(pytest -m pytest --capture=tee-sys)
-  if(PYTEST_COV_FOUND)
-    list(APPEND pytest --cov-report=xml --cov=neuron)
+  set(pytest_args --capture=tee-sys)
+  # pytest-cov runs extremely slowly under AddressSanitizer
+  if(PYTEST_COV_FOUND AND NOT "address" IN_LIST NRN_SANITIZERS_LIST)
+    list(APPEND pytest_args --cov-report=xml --cov=neuron)
   endif()
+  set(pytest -m pytest ${pytest_args})
   # TODO: consider allowing the group-related parts to be dropped here
   nrn_add_test_group(
     CORENEURON
@@ -198,7 +199,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     PRELOAD_SANITIZER
     ENVIRONMENT COVERAGE_FILE=.coverage.basic_tests
     COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/pynrn
-    SCRIPT_PATTERNS test/pynrn/*.py)
+    SCRIPT_PATTERNS test/pynrn/*.json test/pynrn/*.py)
 
   # Mostly to increase coverage
   nrn_add_test_group(NAME coverage_tests MODFILE_PATTERNS test/cover/mod/*.mod)
@@ -256,7 +257,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     nrn_add_test_group(
       NAME rxdmod_tests
       MODFILE_PATTERNS test/rxd/*.mod
-      SCRIPT_PATTERNS test/rxd/*.py test/rxd/3d/*.asc test/rxd/testdata/**/*.dat)
+      SCRIPT_PATTERNS test/rxd/*.py test/rxd/*/*.py test/rxd/3d/*.asc test/rxd/testdata/**/*.dat)
     # These tests include comparisons against saved data, which appears to have been generated using
     # GCC. Other compilers produce larger differences.
     if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
@@ -285,7 +286,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       endif()
     endif()
   endif()
-  nrn_add_test_group(NAME parallel MODFILE_PATTERNS NONE)
+  nrn_add_test_group(NAME parallel MODFILE_PATTERNS test/pynrn/*.mod)
   nrn_add_test(
     GROUP parallel
     NAME subworld
@@ -318,6 +319,19 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     SCRIPT_PATTERNS test/parallel_tests/test_bas.py
     COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
             nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/parallel_tests/test_bas.py)
+  # TODO if we need to pass more complicated argument strings then some smarter escaping will be
+  # needed
+  string(JOIN " " pytest_arg_string ${pytest_args})
+  nrn_add_test(
+    GROUP parallel
+    NAME nrntest_fast
+    PROCESSORS 2
+    REQUIRES mpi
+    ENVIRONMENT "NRN_PYTEST_ARGS=${pytest_arg_string}"
+    SCRIPT_PATTERNS test/pynrn/run_pytest.py test/pynrn/test_nrntest_fast.json
+                    test/pynrn/test_nrntest_fast.py
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            special ${MPIEXEC_POSTFLAGS} -mpi -python test/pynrn/run_pytest.py)
   # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude
   # workaround.
   if(CORENRN_ENABLE_REPORTING)
@@ -654,9 +668,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   endforeach()
 
   if(NRN_ENABLE_MUSIC)
+    set(music_launch_command
+        "${MPIEXEC_NAME}  ${MPIEXEC_NUMPROC_FLAG}  2 ${MPIEXEC_OVERSUBSCRIBE}   ${MPIEXEC_PREFLAGS} music"
+    )
     nrn_add_test_group(
       NAME nrnmusic
       ENVIRONMENT MUSIC_LIBDIR=${MUSIC_LIBDIR}
+      ENVIRONMENT MPIEXEC_COMMAND=${music_launch_command}
       MODFILE_PATTERNS NONE)
     nrn_add_test(
       GROUP nrnmusic

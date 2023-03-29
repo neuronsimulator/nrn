@@ -43,7 +43,7 @@ class reaction:
 class unit_definition:
     def __init__(self, name):
         self.name = name
-        self.units = list()
+        self.units = []
 
 
 # structure defined as the middle man between NEURON and SBML file types
@@ -54,15 +54,15 @@ class middle_man:
         self.name = name
         # dict of species in the simulation and their corresponding compartment, indexed by id
         # id = name + compartment
-        self.species = dict()
+        self.species = {}
         # dict of compartments
         # id = compartment + index of compartment
-        self.compartments = dict()
+        self.compartments = {}
         self.num_compartments = 0
-        self.reactions = list()
-        self.parameters = dict()
+        self.reactions = []
+        self.parameters = {}
         # Of the form [kind,exponent,scale]
-        self.unit_defs = dict()
+        self.unit_defs = {}
 
     # The parts that are required for a species are name and compartment, and optionally initial amount
     def add_species(self, name, compartment, initial_amount=0):
@@ -308,11 +308,11 @@ def sbml(segment, filename=None, model_name=None, pretty=True):
             reacting_regions = react._regions
         for reg in reacting_regions:
             reactants = [
-                [key.name + "_" + reg.name, value]
+                [f"{key.name}_{reg.name}", value]
                 for key, value in zip(list(lhs.keys()), list(lhs.values()))
             ]
             products = [
-                [key.name + "_" + reg.name, value]
+                [f"{key.name}_{reg.name}", value]
                 for key, value in zip(list(rhs.keys()), list(rhs.values()))
             ]
 
@@ -449,7 +449,6 @@ function_names = {
 def recursive_search(arth_obj, kineticLaw, parameters, compartment_name):
     items = []
     counts = []
-    result = ""
     node = ET.SubElement(kineticLaw, "apply")
 
     for item, count in zip(
@@ -468,7 +467,7 @@ def recursive_search(arth_obj, kineticLaw, parameters, compartment_name):
                 if compartment_name == "":
                     temp.text = item.name
                 else:
-                    temp.text = item.name + "_" + compartment_name
+                    temp.text = f"{item.name}_{compartment_name}"
                 items.append(temp)
                 counts.append(count)
             elif isinstance(item, int):
@@ -524,7 +523,6 @@ def determine_type(obj, parameters, comp_name):
             if obj._fname == "atan2":
                 temp = ET.SubElement(tree, function_names["atan"])
                 applytemp = ET.SubElement(temp, "apply")
-                temp2 = ET.SubElement(temp, "divide")
                 recursive_search(obj._obj1, applytemp, parameters, comp_name)
                 recursive_search(obj._obj2, applytemp, parameters, comp_name)
         elif function_names[obj._fname] == "ERROR":

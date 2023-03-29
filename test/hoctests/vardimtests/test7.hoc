@@ -1,8 +1,8 @@
 load_file("expect_err.hoc")
 
 begintemplate Foo
-public x, foo, bar, bas
-double x[2][2]
+public x, y, foo, bar, bas
+double x[2][2], y[5]
 proc init() {
 }
 func foo() {
@@ -34,4 +34,15 @@ expect_err("f.bas[1][2]")
 
 print f.bar[2]
 expect_err("print f.bar[2][100000]")
+
+f.y(1) = 1
+expect_err("f.y(1,1) = 1")
+expect_err("f.x(1,1) = 1")
+
+
+create soma
+objref vc
+vc = new VClamp(0.5)
+vc.dur(1) = 1
+expect_err("vc.dur(1,0) = 1")
 

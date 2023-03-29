@@ -20,19 +20,37 @@ try:
 except:
     pass
 
-# Also try to find path to music binary
+
+def run(cmd):
+    result = subprocess.run(cmd, shell=True, env=my_env, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(result.stderr)
+    result.check_returncode()
+    return result
+
+
+# try to find path to music binary
 my_env = os.environ.copy()
 try:
     my_env["PATH"] = os.getenv("MUSIC_LIBDIR") + "/../bin:" + my_env["PATH"]
 except:
     pass
 
+result = run("which music")
+musicpath = "/".join(result.stdout.strip().split("/")[:-2])
+# need NRN_LIBMUSIC_PATH if mpi dynamic
+if "NRN_ENABLE_MPI_DYNAMIC=ON" in h.nrnversion(6):
+    if os.getenv("NRN_LIBMUSIC_PATH") is None:
+        from os.path import exists
 
-def run(cmd):
-    result = subprocess.run(cmd, shell=True, env=my_env, capture_output=True, text=True)
-    result.check_returncode()
-    return result
-
+        prefix = os.getenv("MUSIC_LIBDIR")
+        name = ""
+        for suffix in ["so", "dylib", "dll", None]:
+            name = musicpath + "/lib/libmusic." + suffix
+            if exists(name):
+                break
+        my_env["NRN_LIBMUSIC_PATH"] = name
+    print(my_env["NRN_LIBMUSIC_PATH"])
 
 out2 = "numprocs=1\nRank 0: Event (0, 0.001175) detected at 0\nRank 0: Event (0, 0.013825) detected at 0\n"
 
@@ -48,8 +66,10 @@ def chkresult(r, std):
     assert rlines == stdlines
 
 
-result = run("mpirun -np 2 music test2.music")
+# retrieve mpiexec from environment (ctest), otherwise use musicrun
+mpiexec = os.getenv("MPIEXEC_COMMAND", "musicrun 2")
+result = run("{} test2.music".format(mpiexec))
 chkresult(result, out2)
 
-result = run("mpirun -np 2 music test3.music")
+result = run("{} test3.music".format(mpiexec))
 chkresult(result, out3)

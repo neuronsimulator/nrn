@@ -46,7 +46,7 @@ Description:
 
     Most of the following is from the perspective of someone familiar
     with HOC; for a Python-based introduction to NEURON, see
-    http://neuron.yale.edu/neuron/static/docs/neuronpython/index.html
+    `Scripting NEURON Basics <../../tutorials/scripting-neuron-basics.html>`_
 
 
 .. class:: neuron.hoc.HocObject
@@ -262,9 +262,9 @@ Description:
             h('x = 1') 
             y = h.ref(h.x) 
             print(y)                     # prints hoc ref value 1 
-            print('%g %g' % (h.x, y[0])) # prints 1.0 1.0 
+            print(h.x, y[0])             # prints 1.0 1.0 
             h.x = 2 
-            print('%g %g' % (h.x, y[0])) # prints 2.0 1.0 
+            print(h.x, y[0])             # prints 2.0 1.0 
             
         and thus in not what is needed in the most common 
         case of a hoc function holding a pointer to a variable such as 
@@ -277,11 +277,11 @@ Description:
             h('x = 1') 
             y = h._ref_x 
             print(y)                     # prints pointer to hoc value 1
-            print('%g %g' % (h.x, y[0])) # prints 1.0 1.0 
+            print(h.x, y[0])             # prints 1.0 1.0 
             h.x = 2 
-            print('%g %g' % (h.x, y[0])) # prints 2.0 2.0 
+            print(h.x, y[0])             # prints 2.0 2.0 
             y[0] = 3 
-            print('%g %g' % (h.x, y[0])) # prints 3.0 3.0 
+            print(h.x, y[0])             # prints 3.0 3.0 
 
         Of course, this works only for hoc variables, not python variables.  For 
         arrays, use all the index arguments and prefix the name with _ref_.  The 
@@ -294,7 +294,7 @@ Description:
 
             v = h.Vector(range(10, 14)) 
             y = v._ref_x[1]    # holds pointer to second element of v 
-            print('%g %g' % (v[2], y[1])) # prints 12.0 12.0 
+            print(v[2], y[1])  # prints 12.0 12.0 
             y[1] = 50 
             v.printf()         # prints 10 11 50 13 
 
@@ -305,7 +305,7 @@ Description:
 
             from neuron import h
             soma = h.Section(name='soma')
-            soma.insert('pas')
+            soma.insert(h.pas)
             v = h.Vector().record(soma(0.5)._ref_v)
             pi = h.Vector().record(soma(0.5).pas._ref_i)
             ip = h.Vector().record(soma(0.5)._ref_i_pas)
@@ -329,6 +329,13 @@ Description:
 
             vt = h.Vector 
             v = vt(4).indgen().add(10) 
+        
+        or equivalently,
+
+        .. code-block::
+            python
+
+            v = h.Vector(range(4)) + 10
 
         Any Python object can be stored in a Hoc List. It is more efficient 
         when navigating the List to use a python callable that avoids repeated 
@@ -525,11 +532,11 @@ Description:
             sec = h.Section() 
             print(sec)         # prints __nrnsec_0x7fa44eb70000
             sec.nseg = 3       # section has 3 segments (compartments) 
-            sec.insert("hh")   # all compartments have the hh mechanism 
+            sec.insert(h.hh)   # all compartments have the hh mechanism 
             sec.L = 20         # Length of the entire section is 20 um. 
             for seg in sec:    # iterates over the section compartments 
               for mech in seg: # iterates over the segment mechanisms 
-                print('%s %g %s' % (sec, seg.x, mech.name()))
+                print(sec, seg.x, mech.name())
 
         A Python Section can be made the currently accessed 
         section by using its push method. Be sure to use :func:`pop_section` 
@@ -585,7 +592,7 @@ Description:
             python
 
             sr = h.SectionRef(sec=h.dend[2]) 
-            print('%s %s' % (sr.root.name(), h.secname(sec=sr.root)))
+            print(sr.root.name(), h.secname(sec=sr.root))
 
          
         Iteration over sections is accomplished with 
@@ -650,7 +657,7 @@ Segment
         the location x. The x value of the segment is seg.x and the section is 
         seg.sec . From a Segment one can obtain a Mechanism. 
 
-        To iterate over segments, use ``for seg in sec: print ("%s(%g)" % (seg.sec.name, seg.x))``
+        To iterate over segments, use e.g. ``for seg in sec: print(seg)``
         This does not include 0 area segments at 0 and 1. For those use ``for seg in sec.allseg():...``
 
 ----

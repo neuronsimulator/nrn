@@ -302,7 +302,7 @@ void PRintf(void) /* printf function */
 
     hoc_sprint1(&buf, 1);
     d = (int) strlen(buf);
-    NOT_PARALLEL_SUB(plprint(buf);)
+    plprint(buf);
     fflush(stdout);
     ret();
     pushx(d);
@@ -634,11 +634,7 @@ static int hoc_Load_file(int always, const char* name) {
     const char* base;
     char path[hoc_load_file_size_], old[hoc_load_file_size_];
     char fname[hoc_load_file_size_], cmd[hoc_load_file_size_ + 50];
-#if USE_NRNFILEWRAP
-    int f;
-#else
     FILE* f;
-#endif
 
     old[0] = '\0';
     goback = 0;
@@ -666,20 +662,12 @@ static int hoc_Load_file(int always, const char* name) {
         strncpy(path, name, base - name);
         path[base - name] = '\0';
         ++base;
-#if USE_NRNFILEWRAP
-        f = nrn_fw_readaccess(name);
-#else
         f = fopen(name, "r");
-#endif
     } else {
         base = name;
         path[0] = '\0';
         /* otherwise find the file in the default directories */
-#if USE_NRNFILEWRAP
-        f = nrn_fw_readaccess(base);
-#else
         f = fopen(base, "r"); /* cwd */
-#endif
 #if !MAC
         if (!f) { /* try HOC_LIBRARY_PATH */
             char* hlp;
@@ -703,11 +691,7 @@ static int hoc_Load_file(int always, const char* name) {
                 if (path[0]) {
                     nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
                                hoc_load_file_size_);
-#if USE_NRNFILEWRAP
-                    f = nrn_fw_readaccess(expand_env_var(fname));
-#else
                     f = fopen(expand_env_var(fname), "r");
-#endif
                     if (f) {
                         break;
                     }
@@ -722,11 +706,7 @@ static int hoc_Load_file(int always, const char* name) {
             assert(strlen(path) + strlen(base) + 1 < hoc_load_file_size_);
             nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
                        hoc_load_file_size_);
-#if USE_NRNFILEWRAP
-            f = nrn_fw_readaccess(expand_env_var(fname));
-#else
             f = fopen(expand_env_var(fname), "r");
-#endif
         }
     }
     /* add the name to the list of loaded packages */
@@ -734,9 +714,6 @@ static int hoc_Load_file(int always, const char* name) {
         if (!is_loaded) {
             hoc_l_lappendstr(loaded, name);
         }
-#if USE_NRNFILEWRAP == 0
-        fclose(f);
-#endif
         b = 1;
     } else {
         b = 0;

@@ -27,7 +27,7 @@ Brief summaries of the menu options are provided below, for more information on 
     runctrl.rst
     family.rst
 
-Implementations of the standard tools are in `$NEURONHOME/lib/hoc/*.hoc <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/lib/hoc>`_ 
+Implementations of the standard tools are in `$NEURONHOME/lib/hoc/*.hoc <https://github.com/neuronsimulator/nrn/tree/master/share/lib/hoc>`_ 
      
 
 .. _hoc_NEURONMainMenu:
@@ -58,7 +58,7 @@ There is often reason to substitute a new step or advance
 procedure to do intermediate calculations on the fly. 
 Sometimes it is useful to replace the init() procedure. If so 
 make sure you don't take away functionality which is already 
-there. See `$NEURONHOME/lib/hoc/stdrun.hoc <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/lib/hoc/stdrun.hoc>`_ for the 
+there. See `$NEURONHOME/lib/hoc/stdrun.hoc <https://github.com/neuronsimulator/nrn/tree/master/share/lib/hoc/stdrun.hoc>`_ for the 
 implementations of these procedures. 
      
      
@@ -549,7 +549,7 @@ the label and count are always present in the file.
 For long files retrieval is much more efficient if the count is present. 
  
 The implementation of these operations is in 
-`$NEURONHOME/lib/hoc/stdlib.hoc <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/lib/hoc/stdlib.hoc>`_
+`$NEURONHOME/lib/hoc/stdlib.hoc <https://github.com/neuronsimulator/nrn/tree/master/share/lib/hoc/stdlib.hoc>`_
 vectors and performing simple manipulations on them. 
 
 .. seealso::

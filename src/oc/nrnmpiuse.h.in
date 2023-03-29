@@ -22,7 +22,4 @@
 /* Number of times to retry a failed open */
 #undef FILE_OPEN_RETRY
 
-/* Define to 1 for possibility of rank 0 xopen/ropen a file and broadcast everywhere */
-#undef USE_NRNFILEWRAP
-
 #endif

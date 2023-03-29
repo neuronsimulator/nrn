@@ -326,11 +326,11 @@ Matrix
                 m.printf()
                 print('m.nrow()', m.nrow())
                 for i in range(m.nrow()):    
-                    print("%d  " % i, end='')
+                    print(f"{i}  ", end='')
                     for jx in range(m.sprowlen(i)):
                         j = h.ref(0)
                         x=m.spgetrowval(i, jx, j) 
-                        print("  %d:%f" % (j[0], x), end='')
+                        print(f"  {j[0]}:{x}", end='')
                     print()
 
 
@@ -432,7 +432,7 @@ Matrix
             f.ropen() 
             m = h.Matrix() 
             m.scanf(f) 
-            print('{} {}'.format(m.nrow(), m.ncol()))
+            print(m.nrow(), m.ncol())
 
     .. warning::
         Works only for full matrix types 
@@ -467,8 +467,7 @@ Matrix
 
             from neuron import h
 
-            v1 = h.Vector(4) 
-            v1.indgen(1,1) 
+            v1 = h.Vector([1, 2, 3, 4]) 
             m = h.Matrix(3, 4) 
             for i in range(3):
                 for j in range(3):
@@ -477,9 +476,9 @@ Matrix
         .. code-block::
             python
 
-            print("v1 {}".format(v1))
+            print("v1", v1)
             v1.printf() 
-            print("m {}".format(m))
+            print("m", m)
             m.printf()
             print("m * v1")
             m.mulv(v1).printf()
@@ -491,8 +490,7 @@ Matrix
 
             from neuron import h
 
-            v1 = h.Vector(100) 
-            v1.indgen(1,1) 
+            v1 = h.Vector(range(1, 101)) 
             m = h.Matrix(100, 100, 2) ##sparse matrix 
             ##reverse permutation 
             for i in range(100): 
@@ -586,7 +584,7 @@ Matrix
             m.printf()
 
             for i in range(1 - m.nrow(), m.ncol()):
-                print("diagonal %d: " % i, end='')
+                print(f"diagonal {i}: ", end='')
                 print(list(m.getdiag(i))[max(0, -i) : (m.nrow() - i)])
 
 
