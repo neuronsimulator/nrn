@@ -528,10 +528,9 @@ def _cxx_compile(formula):
         else:
             gcc = "g++"
     # TODO: Check this works on non-Linux machines
-    gcc_cmd = "%s -I%s -I%s " % (
+    gcc_cmd = "%s -I%s " % (
         gcc,
         sysconfig.get_path("include"),
-        os.path.join(h.neuronhome(), "..", "..", "include", "nrn"),
     )
     gcc_cmd += f"-shared {fpic} {filename}.cpp {_find_librxdmath()}"
     gcc_cmd += f" -o {filename}.so {math_library}"
