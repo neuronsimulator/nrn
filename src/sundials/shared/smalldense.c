@@ -228,7 +228,13 @@ void denprint(realtype **a, long int n)
   printf("\n");
   for (i=0; i < n; i++) {
     for (j=0; j < n; j++) {
+#if defined(SUNDIALS_EXTENDED_PRECISION)
+      printf("%10Lg", a[j][i]);
+#elif defined(SUNDIALS_DOUBLE_PRECISION)
       printf("%10lg", a[j][i]);
+#else
+      printf("%10g", a[j][i]);
+#endif
     }
     printf("\n");
   }

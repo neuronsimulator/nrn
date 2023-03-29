@@ -140,6 +140,12 @@ else()
 endif()
 
 # =============================================================================
+# Dependencies option
+# =============================================================================
+set(SUNDIALS_DOUBLE_PRECISION 1)
+set(SUNDIALS_USE_GENERIC_MATH 1)
+
+# =============================================================================
 # Similar to check_include_files but also construct NRN_HEADERS_INCLUDE_LIST
 # =============================================================================
 nrn_check_include_files(alloca.h HAVE_ALLOCA_H)

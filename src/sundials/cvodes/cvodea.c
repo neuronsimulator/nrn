@@ -1342,8 +1342,16 @@ int CVadjGetY(void *cvadj_mem, realtype t, N_Vector y)
     }
     else {
       printf("\n TROUBLE IN GETY\n ");
+#if defined(SUNDIALS_EXTENDED_PRECISION)
+      printf("%Lg = ABS(t-dt_mem[0]->t) > troundoff = %Lg  uround = %Lg\n",
+             ABS(t - dt_mem[0]->t), troundoff, uround);
+#elif defined(SUNDIALS_DOUBLE_PRECISION)
       printf("%lg = ABS(t-dt_mem[0]->t) > troundoff = %lg  uround = %lg\n",
              ABS(t - dt_mem[0]->t), troundoff, uround);
+#else
+      printf("%g = ABS(t-dt_mem[0]->t) > troundoff = %g  uround = %g\n",
+             ABS(t - dt_mem[0]->t), troundoff, uround);
+#endif
       return(CV_GETY_BADT);
     }
   }
@@ -1395,8 +1403,16 @@ void CVadjGetCheckPointsList(void *cvadj_mem)
   i = 0;
 
   while (ck_mem != NULL) {
+#if defined(SUNDIALS_EXTENDED_PRECISION)
+    printf("%2d  addr: %p  time = [ %9.3Le %9.3Le ]  next: %p\n", 
+           nckpnts-i, (void *)ck_mem, t0_, t1_, (void *)next_ );
+#elif defined(SUNDIALS_DOUBLE_PRECISION)
     printf("%2d  addr: %p  time = [ %9.3le %9.3le ]  next: %p\n", 
            nckpnts-i, (void *)ck_mem, t0_, t1_, (void *)next_ );
+#else
+    printf("%2d  addr: %p  time = [ %9.3e %9.3e ]  next: %p\n", 
+           nckpnts-i, (void *)ck_mem, t0_, t1_, (void *)next_ );
+#endif
     ck_mem = next_;
     i++;
   }

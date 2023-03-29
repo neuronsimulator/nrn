@@ -399,10 +399,28 @@ typedef struct CVodeMemRec {
  * =================================================================
  */
 
+#if defined(SUNDIALS_EXTENDED_PRECISION)
+
+#define MSG_TIME      "t = %Lg"
+#define MSG_TIME_H    "t = %Lg and h = %Lg"
+#define MSG_TIME_INT  "t = %Lg is not between tcur - hu = %Lg and tcur = %Lg.\n\n"
+#define MSG_TIME_TOUT "tout = %Lg"
+
+#elif defined(SUNDIALS_DOUBLE_PRECISION)
+
 #define MSG_TIME      "t = %lg"
 #define MSG_TIME_H    "t = %lg and h = %lg"
 #define MSG_TIME_INT  "t = %lg is not between tcur - hu = %lg and tcur = %lg.\n\n"
 #define MSG_TIME_TOUT "tout = %lg"
+
+#else
+
+#define MSG_TIME      "t = %g"
+#define MSG_TIME_H    "t = %g and h = %g"
+#define MSG_TIME_INT  "t = %g is not between tcur - hu = %g and tcur = %g.\n\n"
+#define MSG_TIME_TOUT "tout = %g"
+
+#endif
 
 /* CvodeCreate Error Messages */
 
