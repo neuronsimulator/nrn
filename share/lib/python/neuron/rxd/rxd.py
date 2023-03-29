@@ -545,7 +545,8 @@ def _cxx_compile(formula):
         os.putenv("PATH", my_path)
     else:
         os.system(gcc_cmd)
-    # TODO: Find a better way of letting the system locate librxdmath.so.0
+    # the rxdmath_dll appears necessary for using librxdmath under certain gcc/OS pairs
+    rxdmath_dll = ctypes.cdll[_find_librxdmath()]
     dll = ctypes.cdll[f"{os.path.abspath(filename)}.so"]
     reaction = dll.reaction
     reaction.argtypes = [
