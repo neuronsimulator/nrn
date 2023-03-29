@@ -4,7 +4,6 @@ Functions for allowing solver plugins/overrides.
 """
 from .rxdException import RxDException
 from . import rxd
-from . import options
 from . import species
 from . import node
 from . import section1d
@@ -205,7 +204,6 @@ def set_solver(plugin_solver_object=None):
         _default_solver()
     else:
         change_currents = lambda rhs: None
-        change_conductance = None
         rxd._setup = rxd._orig_setup
         rxd._currents = change_currents
         rxd._ode_count = _cvode_error
