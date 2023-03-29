@@ -2,7 +2,6 @@
 Tests that used to live in the thread/ subdirectory of the
 https://github.com/neuronsimulator/nrntest repository
 """
-from itertools import product
 import os
 import pytest
 from neuron import coreneuron, h
@@ -19,7 +18,7 @@ from neuron.tests.utils.checkresult import Chk
 def chk():
     """Manage access to JSON reference data."""
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    checker = Chk(os.path.join(dir_path, "test_nrntest_thread.json"), must_exist=False)
+    checker = Chk(os.path.join(dir_path, "test_nrntest_thread.json"))
     yield checker
     # Save results to disk if they've changed; this is called after all tests
     # using chk have executed
@@ -89,7 +88,7 @@ def test_mcna(chk, simulator, threads):
     model_data["t"] = t_vector
     del cells
     ref_data = chk.get("mcna", None)
-    if ref_data is None:
+    if ref_data is None:  # pragma: no cover
         # bootstrapping
         chk("mcna", model_data)
         return
@@ -104,6 +103,6 @@ def test_mcna(chk, simulator, threads):
 
 
 if __name__ == "__main__":
-    # python test_nrntest_fast.py will run all the tests in this file
-    # e.g. __file__ --> __file__ + "::test_t13" would just run test_t13
+    # python test_nrntest_thread.py will run all the tests in this file
+    # e.g. __file__ --> __file__ + "::test_mcna" would just run test_mcna
     pytest.main([__file__])
