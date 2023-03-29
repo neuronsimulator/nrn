@@ -7,7 +7,7 @@ mt = new MechanismType(0)
 
 // check for non ion type
 mt.select("hh")
-if (mt.is_ion() != 1) {
+if (mt.is_ion() != 0) {
     exit_with_error()
 }
 
