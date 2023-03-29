@@ -43,46 +43,22 @@ realtype RPowerR(realtype base, realtype exponent)
 {
   if (base <= ZERO) return(ZERO);
 
-#if defined(SUNDIALS_USE_GENERIC_MATH)
-  return((realtype) pow((double) base, (double) exponent));
-#elif defined(SUNDIALS_SINGLE_PRECISION)
   return(powf(base, exponent));
-#elif defined(SUNDIALS_EXTENDED_PRECISION)
-  return(powl(base, exponent));
-#endif
 }
 
 realtype RSqrt(realtype x)
 {
   if (x <= ZERO) return(ZERO);
 
-#if defined(SUNDIALS_USE_GENERIC_MATH)
-  return((realtype) sqrt((double) x));
-#elif defined(SUNDIALS_SINGLE_PRECISION)
   return(sqrtf(x));
-#elif defined(SUNDIALS_EXTENDED_PRECISION)
-  return(sqrtl(x));
-#endif
 }
 
 realtype RAbs(realtype x)
 {
-#if defined(SUNDIALS_USE_GENERIC_MATH)
-  return((realtype) fabs((double) x));
-#elif defined(SUNDIALS_SINGLE_PRECISION)
   return(fabsf(x));
-#elif defined(SUNDIALS_EXTENDED_PRECISION)
-  return(fabsl(x));
-#endif
 }
 
 realtype RPower2(realtype x)
 {
-#if defined(SUNDIALS_USE_GENERIC_MATH)
-  return((realtype) pow((double) x, 2.0));
-#elif defined(SUNDIALS_SINGLE_PRECISION)
   return(powf(x, TWO));
-#elif defined(SUNDIALS_EXTENDED_PRECISION)
-  return(powl(x, TWO));
-#endif
 }

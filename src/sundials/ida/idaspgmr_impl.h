@@ -93,20 +93,7 @@ typedef struct {
  * -----------------------------------------------------------------
  */
 
-#if defined(SUNDIALS_EXTENDED_PRECISION)
-
-#define MSGS_TIME "at t = %Lg, "
-
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
-
 #define MSGS_TIME "at t = %lg, "
-
-#else
-
-#define MSGS_TIME "at t = %g, "
-
-#endif
-
 
 /* Error Messages */
 
@@ -133,19 +120,6 @@ typedef struct {
 #define MSGS_WARN1      "Warning. Poor iterative algorithm performance\n"
 #define MSGS_WARN       "IDASpgmrPerf-- " MSGS_TIME MSGS_WARN1 
 
-#if defined(SUNDIALS_EXTENDED_PRECISION)
-
-#define MSGS_AVD_WARN1  "Average number of linear iterations is %Le.\n\n"
-#define MSGS_AVD_WARN   MSGS_WARN MSGS_AVD_WARN1
-
-#define MSGS_CFN_WARN1  "Nonlinear convergence failure rate is %Le.\n\n"
-#define MSGS_CFN_WARN   MSGS_WARN MSGS_CFN_WARN1
-
-#define MSGS_CFL_WARN1  "Linear convergence failure rate is %Le.\n\n"
-#define MSGS_CFL_WARN   MSGS_WARN MSGS_CFL_WARN1
-
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
-
 #define MSGS_AVD_WARN1  "Average number of linear iterations is %le.\n\n"
 #define MSGS_AVD_WARN   MSGS_WARN MSGS_AVD_WARN1
 
@@ -154,19 +128,6 @@ typedef struct {
 
 #define MSGS_CFL_WARN1  "Linear convergence failure rate is %le.\n\n"
 #define MSGS_CFL_WARN   MSGS_WARN MSGS_CFL_WARN1
-
-#else
-
-#define MSGS_AVD_WARN1  "Average number of linear iterations is %e.\n\n"
-#define MSGS_AVD_WARN   MSGS_WARN MSGS_AVD_WARN1
-
-#define MSGS_CFN_WARN1  "Nonlinear convergence failure rate is %e.\n\n"
-#define MSGS_CFN_WARN   MSGS_WARN MSGS_CFN_WARN1
-
-#define MSGS_CFL_WARN1  "Linear convergence failure rate is %e.\n\n"
-#define MSGS_CFL_WARN   MSGS_WARN MSGS_CFL_WARN1
-
-#endif
 
 #ifdef __cplusplus
 }

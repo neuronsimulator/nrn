@@ -18,10 +18,6 @@
  * program file and use the exported name realtype instead of
  * float, double or long double.
  *
- * The constants SUNDIALS_SINGLE_PRECISION, SUNDIALS_DOUBLE_PRECISION
- * and SUNDIALS_LONG_DOUBLE_PRECISION indicate the underlying data
- * type of realtype. It is set at the configuration stage.
- *
  * The legal types for realtype are float, double and long double.
  *
  * The macro RCONST gives the user a convenient way to define
@@ -52,31 +48,11 @@ extern "C" {
 
 #include <float.h>
   
-#if defined(SUNDIALS_SINGLE_PRECISION)
-
-typedef float realtype;
-#define RCONST(x) x##F
-#define BIG_REAL FLT_MAX
-#define SMALL_REAL FLT_MIN
-#define UNIT_ROUNDOFF FLT_EPSILON
-
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
-
 typedef double realtype;
 #define RCONST(x) x
 #define BIG_REAL DBL_MAX
 #define SMALL_REAL DBL_MIN
 #define UNIT_ROUNDOFF DBL_EPSILON
-
-#elif defined(SUNDIALS_EXTENDED_PRECISION)
-
-typedef long double realtype;
-#define RCONST(x) x##L
-#define BIG_REAL LDBL_MAX
-#define SMALL_REAL LDBL_MIN
-#define UNIT_ROUNDOFF LDBL_EPSILON
-
-#endif
 
 /*
  *------------------------------------------------------------------

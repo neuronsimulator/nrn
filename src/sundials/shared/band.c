@@ -351,13 +351,7 @@ void bandprint(realtype **a, long int n, long int mu, long int ml,
     finish = MIN(n-1,i+mu);
     for (j=0; j < start; j++) printf("%10s","");
     for (j=start; j <= finish; j++) {
-#if defined(SUNDIALS_EXTENDED_PRECISION)
-      printf("%10Lg", a[j][i-j+smu]);
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
       printf("%10lg", a[j][i-j+smu]);
-#else
-      printf("%10g", a[j][i-j+smu]);
-#endif
     }
     printf("\n");
   }

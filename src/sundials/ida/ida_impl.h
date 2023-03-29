@@ -203,28 +203,10 @@ typedef struct IDAMemRec {
  *----------------------------------------------------------------
  */
 
-#if defined(SUNDIALS_EXTENDED_PRECISION)
-
-#define MSG_TIME "at t = %Lg, "
-#define MSG_TIME_H "at t = %Lg and h = %Lg, "
-#define MSG_TIME_INT "t is not between tcur - hu = %Lg and tcur = %Lg.\n\n"
-#define MSG_TIME_TOUT "tout = %Lg"
-
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
-
 #define MSG_TIME "at t = %lg, "
 #define MSG_TIME_H "at t = %lg and h = %lg, "
 #define MSG_TIME_INT "t is not between tcur - hu = %lg and tcur = %lg.\n\n"
 #define MSG_TIME_TOUT "tout = %lg"
-
-#else
-
-#define MSG_TIME "at t = %g, "
-#define MSG_TIME_H "at t = %g and h = %g, "
-#define MSG_TIME_INT "t is not between tcur - hu = %g and tcur = %g.\n\n"
-#define MSG_TIME_TOUT "tout = %g"
-
-#endif
 
 /* IDACreate error messages */
 

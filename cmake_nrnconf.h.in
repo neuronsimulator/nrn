@@ -310,9 +310,6 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* Define SUNDIALS data type 'realtype' as 'long double' */
-#undef SUNDIALS_DOUBLE_PRECISION
-
 /* Use generic math functions */
 #undef SUNDIALS_USE_GENERIC_MATH
 

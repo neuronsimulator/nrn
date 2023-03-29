@@ -70,24 +70,6 @@ extern "C" {
  * -----------------------------------------------------------------
  */
 
-/* define MPI data types */
-
-#if defined(SUNDIALS_SINGLE_PRECISION)
-
-#define PVEC_REAL_MPI_TYPE MPI_FLOAT
-
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
-
-#define PVEC_REAL_MPI_TYPE MPI_DOUBLE
-
-#elif defined(SUNDIALS_EXTENDED_PRECISION)
-
-#define PVEC_REAL_MPI_TYPE MPI_LONG_DOUBLE
-
-#endif
-
-#define PVEC_INTEGER_MPI_TYPE MPI_LONG
-
 /* parallel implementation of the N_Vector 'content' structure
    contains the global and local lengths of the vector, a pointer
    to an array of realtype components, the MPI communicator,

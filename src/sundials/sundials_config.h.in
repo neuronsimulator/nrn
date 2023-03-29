@@ -81,15 +81,6 @@
 /* FCMIX: Make function names uppercase */
 #undef SUNDIALS_CASE_UPPER
 
-/* Define SUNDIALS data type 'realtype' as 'double' */
-#undef SUNDIALS_DOUBLE_PRECISION
-
-/* Define SUNDIALS data type 'realtype' as 'long double' */
-#undef SUNDIALS_EXTENDED_PRECISION
-
-/* Define SUNDIALS data type 'realtype' as 'float' */
-#undef SUNDIALS_SINGLE_PRECISION
-
 /* FCMIX: Do NOT append any underscores to functions names */
 #undef SUNDIALS_UNDERSCORE_NONE
 
