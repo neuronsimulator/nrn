@@ -184,13 +184,11 @@ if(NRN_ENABLE_PYTHON)
   # along to the actual sys.stdout/stderr
   set(pytest_args --capture=tee-sys)
   # pytest-cov runs extremely slowly under AddressSanitizer
-  if(PYTEST_COV_FOUND AND NOT "address" IN_LIST NRN_SANITIZERS_LIST)
+  if(NRN_ENABLE_COVERAGE AND PYTEST_COV_FOUND AND NOT "address" IN_LIST NRN_SANITIZERS_LIST)
     list(APPEND pytest_args --cov-report=xml --cov=neuron)
   endif()
   set(pytest -m pytest ${pytest_args})
-  if(COVERAGE_FOUND)
-    # Might want to skip this when AddressSanitizer is enabled -- TBC.
-    # ~~~
+  if(NRN_ENABLE_COVERAGE AND COVERAGE_FOUND)
     # We want to use either:
     #   ${PYTHON_EXECUTABLE} ${pytest} path/to/tests
     # or
@@ -198,7 +196,8 @@ if(NRN_ENABLE_PYTHON)
     # ~~~
     # depending on whether or not the tests expect to be driven by pytest. The -p option to coverage
     # run appends the host and pid to the .coverage filename, fixing MPI execution. With pytest-cov
-    # we use run_pytest.py to achieve something similar.
+    # we use run_pytest.py to achieve something similar. Note that this means .coverage.X.Y.Z files
+    # will accumulate in the test working directories, which might be surprising.
     set(coverage -m coverage run -p)
   endif()
   # TODO: consider allowing the group-related parts to be dropped here
@@ -412,7 +411,7 @@ if(NRN_ENABLE_PYTHON)
         ${MPIEXEC_PREFLAGS}
         ${preload_sanitizer_mpiexec}
         ${NRN_DEFAULT_PYTHON_EXECUTABLE}
-        ${MPIEXEC_POSTFLAGS})
+        ${MPIEXEC_POSTFLAGS} ${coverage})
   endif()
 
   # External coreneuron can be used for testing but for simplicity we are testing only submodule
@@ -651,8 +650,7 @@ if(NRN_ENABLE_PYTHON)
         SCRIPT_PATTERNS test/coreneuron/test_subworlds.py
         PROCESSORS 6
         ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
-                    COVERAGE_FILE=.coverage.coreneuron_test_subworlds_py
-        COMMAND ${modtests_launch_py_mpi_subworlds} ${coverage} test/coreneuron/test_subworlds.py)
+        COMMAND ${modtests_launch_py_mpi_subworlds} test/coreneuron/test_subworlds.py)
     endif()
     nrn_add_test_group(
       NAME nmodl_tests_coreneuron
