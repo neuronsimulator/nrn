@@ -232,9 +232,6 @@ class DataVec: public Resource {  // info for single dimension
 
 class DataPointers: public Resource {  // vector of pointers
   public:
-    DataPointers(std::size_t size = 50) {
-        px_.reserve(size);
-    }
     virtual ~DataPointers() {}
     void add(neuron::container::data_handle<double> dh) {
         px_.push_back(std::move(dh));

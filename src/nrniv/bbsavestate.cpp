@@ -340,7 +340,7 @@ void BBSS_Cnt::d(int n, double* p) {
     nd += n;
     ++nl;
 }
-void BBSS_Cnt::d(int n, double** p) {
+void BBSS_Cnt::d(int n, double**) {
     nd += n;
     ++nl;
 }

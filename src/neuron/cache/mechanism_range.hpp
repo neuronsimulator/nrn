@@ -20,8 +20,8 @@ void indices_to_cache(short type, Callable callable) {
         // Check if the field-th dparam of this mechanism type is an ion variable. See
         // hoc_register_dparam_semantics.
         auto const sem = dparam_semantics[field];
-        // TODO is area constant? could we cache the value instead of a pointer to it?
-        // TODO ion type can be handled differently
+        // See https://github.com/neuronsimulator/nrn/issues/2312 for discussion of possible
+        // extensions to caching.
         if ((sem > 0 && sem < 1000) || sem == -1 /* area */) {
             std::invoke(callable, field);
         }

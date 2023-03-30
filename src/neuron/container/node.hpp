@@ -10,7 +10,8 @@
 
 namespace neuron::container::Node {
 namespace field {
-/** @brief Area in um^2 but see treesetup.cpp.
+/**
+ * @brief Area in um^2 but see treeset.cpp.
  */
 struct Area {
     using type = double;
