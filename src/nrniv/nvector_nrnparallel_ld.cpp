@@ -101,7 +101,7 @@ N_Vector N_VNewEmpty_NrnParallelLD(MPI_Comm comm, long int local_length, long in
     nrnmpi_long_allreduce_vec(&n, &Nsum, 1, 1);
 #else
     comm = nrnmpi_comm;
-    MPI_Allreduce(&n, &Nsum, 1, PVEC_INTEGER_MPI_TYPE, MPI_SUM, comm);
+    MPI_Allreduce(&n, &Nsum, 1, MPI_LONG, MPI_SUM, comm);
 #endif
     if (Nsum != global_length) {
         printf(BAD_N);
@@ -376,13 +376,7 @@ void N_VPrint_NrnParallelLD(N_Vector x) {
     xd = NV_DATA_P_LD(x);
 
     for (i = 0; i < N; i++) {
-#if defined(SUNDIALS_EXTENDED_PRECISION)
-        printf("%Lg\n", *xd++);
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
         printf("%lg\n", *xd++);
-#else
-        printf("%g\n", *xd++);
-#endif
     }
     printf("\n");
 }
@@ -919,15 +913,15 @@ static realtype VAllReduce_NrnParallelLD(realtype d, int op, MPI_Comm comm) {
 #else
     switch (op) {
     case 1:
-        MPI_Allreduce(&d, &out, 1, PVEC_REAL_MPI_TYPE, MPI_SUM, comm);
+        MPI_Allreduce(&d, &out, 1, MPI_DOUBLE, MPI_SUM, comm);
         break;
 
     case 2:
-        MPI_Allreduce(&d, &out, 1, PVEC_REAL_MPI_TYPE, MPI_MAX, comm);
+        MPI_Allreduce(&d, &out, 1, MPI_DOUBLE, MPI_MAX, comm);
         break;
 
     case 3:
-        MPI_Allreduce(&d, &out, 1, PVEC_REAL_MPI_TYPE, MPI_MIN, comm);
+        MPI_Allreduce(&d, &out, 1, MPI_DOUBLE, MPI_MIN, comm);
         break;
 
     default:
