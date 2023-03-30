@@ -196,8 +196,10 @@ if(NRN_ENABLE_PYTHON)
     # or
     #   ${PYTHON_EXECUTABLE} ${coverage} path/to/file.py
     # ~~~
-    # depending on whether or not the tests expect to be driven by pytest.
-    set(coverage -m coverage run)
+    # depending on whether or not the tests expect to be driven by pytest. The -p option to coverage
+    # run appends the host and pid to the .coverage filename, fixing MPI execution. With pytest-cov
+    # we use run_pytest.py to achieve something similar.
+    set(coverage -m coverage run -p)
   endif()
   # TODO: consider allowing the group-related parts to be dropped here
   nrn_add_test_group(
