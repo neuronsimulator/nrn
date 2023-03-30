@@ -2,12 +2,10 @@ from neuron.tests.utils.strtobool import strtobool
 import os
 
 # Hacky, but it's non-trivial to pass commandline arguments to pytest tests.
-enable_gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
-mpi4py_option = bool(strtobool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", "false")))
-file_mode_option = bool(strtobool(os.environ.get("NRN_TEST_SPIKES_FILE_MODE", "false")))
-nrnmpi_init_option = bool(
-    strtobool(os.environ.get("NRN_TEST_SPIKES_NRNMPI_INIT", "false"))
-)
+enable_gpu = strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
+mpi4py_option = strtobool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", "false"))
+file_mode_option = strtobool(os.environ.get("NRN_TEST_SPIKES_FILE_MODE", "false"))
+nrnmpi_init_option = strtobool(os.environ.get("NRN_TEST_SPIKES_NRNMPI_INIT", "false"))
 
 # following at top level and early enough avoids...
 # *** The MPI_Iprobe() function was called after MPI_FINALIZE was invoked.
@@ -15,17 +13,11 @@ nrnmpi_init_option = bool(
 # mpi4py needs to be imported before importing h
 if mpi4py_option:
     from mpi4py import MPI
-    from neuron import h, gui
-# without mpi4py we need to call nrnmpi_init explicitly
-elif nrnmpi_init_option:
-    from neuron import h
+from neuron import h
 
+# without mpi4py we need to call nrnmpi_init explicitly
+if not mpi4py_option and nrnmpi_init_option:
     h.nrnmpi_init()
-    # if mpi is active, don't ask for gui til it is turned off for all ranks > 0
-    from neuron import gui
-# otherwise serial execution
-else:
-    from neuron import h, gui
 
 
 def test_spikes(
@@ -38,6 +30,7 @@ def test_spikes(
             use_mpi4py, use_nrnmpi_init, file_mode
         )
     )
+    h.load_file("stdrun.hoc")
     h("""create soma""")
     h.soma.L = 5.6419
     h.soma.diam = 5.6419
@@ -129,13 +122,11 @@ def test_spikes(
     else:
         run(0)
 
-    return h
-
 
 if __name__ == "__main__":
-    h = test_spikes()
+    test_spikes()
     if mpi4py_option or nrnmpi_init_option:
         pc = h.ParallelContext()
-        pc.barrier()
+        h.nrnmpi_terminate()
     # Calling h.quit() here broke coverage collection.
     # https://coverage.readthedocs.io/en/7.2.2/subprocess.html#process-termination
