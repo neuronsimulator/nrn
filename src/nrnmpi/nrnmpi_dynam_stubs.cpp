@@ -17,7 +17,7 @@ static double stub_nrnmpi_mindelay(double m) {
 static int stub_nrnmpi_int_allmax(int x) {
     return x;
 }
-static void stub_nrnmpi_barrier() {}
+static void stub_nrnmpi_barrier(bool) {}
 
 void nrnmpi_stubs() {
     p_nrnmpi_init = stub_nrnmpi_init;

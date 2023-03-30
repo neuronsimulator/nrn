@@ -738,7 +738,8 @@ static double barrier(void*) {
 #if NRNMPI
     if (nrnmpi_numprocs > 1) {
         t = nrnmpi_wtime();
-        nrnmpi_barrier();
+        bool const whole_neuron_world{ifarg(1) ? static_cast<bool>(*hoc_getarg(1)) : false};
+        nrnmpi_barrier(whole_neuron_world);
         t = nrnmpi_wtime() - t;
     }
     errno = 0;

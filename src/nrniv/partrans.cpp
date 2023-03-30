@@ -135,13 +135,6 @@ extern void (*nrn_mk_transfer_thread_data_)();
 #endif
 #if PARANEURON
 extern double nrnmpi_transfer_wait_;
-extern void nrnmpi_barrier();
-extern void nrnmpi_int_allgather(int*, int*, int);
-extern int nrnmpi_int_allmax(int);
-extern void sgid_alltoallv(sgid_t*, int*, int*, sgid_t*, int*, int*);
-extern void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
-extern void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
-extern void nrnmpi_dbl_alltoallv_sparse(double*, int*, int*, double*, int*, int*);
 #endif
 
 void nrn_partrans_update_ptrs();
