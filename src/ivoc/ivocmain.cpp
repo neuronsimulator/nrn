@@ -384,7 +384,9 @@ void hoc_nrnmpi_init() {
 }
 
 void hoc_nrnmpi_terminate() {
+#if NRNMPI
     nrnmpi_terminate();
+#endif
     hoc_retpushx(0.0);
 }
 
