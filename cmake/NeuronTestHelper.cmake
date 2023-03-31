@@ -607,7 +607,7 @@ function(nrn_add_pytest)
   # Assemble pytest options to use. --capture=tee-sys combines 'sys' and '-s', capturing
   # sys.stdout/stderr and passing it along to the actual sys.stdout/stderr.
   set(pytest_args --capture=tee-sys)
-  if(NRN_ENABLE_COVERAGE AND PYTEST_COV_FOUND)
+  if(NRN_ENABLE_COVERAGE AND COVERAGE_FOUND)
     list(APPEND extra_environment NRN_PYTEST_ENABLE_COVERAGE=1)
   endif()
   # Append PYTEST_ARGS
