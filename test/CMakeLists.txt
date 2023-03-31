@@ -309,6 +309,8 @@ if(NRN_ENABLE_PYTHON)
       endif()
     endif()
   endif()
+  # We are not currently collecting Python coverage for tests in this group, except for
+  # nrntest_fast.
   nrn_add_test_group(NAME parallel MODFILE_PATTERNS test/pynrn/*.mod)
   nrn_add_test(
     GROUP parallel
@@ -372,6 +374,7 @@ if(NRN_ENABLE_PYTHON)
     # ${nrniv_mpi_arg} is not enough here, it crashes without -mpi even if CoreNEURON reports are
     # disabled.
     set(modtests_launch_hoc special -notatty -mpi)
+    # When launching via special we do not collect Python coverage
     set(modtests_launch_py ${modtests_launch_hoc} -python)
     set(modtests_launch_py_mpi
         ${MPIEXEC_NAME}
@@ -405,7 +408,8 @@ if(NRN_ENABLE_PYTHON)
         ${MPIEXEC_PREFLAGS}
         ${preload_sanitizer_mpiexec}
         ${NRN_DEFAULT_PYTHON_EXECUTABLE}
-        ${MPIEXEC_POSTFLAGS})
+        ${MPIEXEC_POSTFLAGS}
+        ${coverage})
     set(modtests_launch_py_mpi_subworlds
         ${MPIEXEC_NAME}
         ${MPIEXEC_NUMPROC_FLAG}
@@ -588,13 +592,14 @@ if(NRN_ENABLE_PYTHON)
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(MODULE mpi4py)
       if(mpi4py_FOUND)
+        # coverage run -p avoids different ranks' .coverage files clobbering each other
         nrn_add_test(
           GROUP coreneuron_modtests
           NAME spikes_mpi_py_${processor}
           REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
           PROCESSORS 2
           ENVIRONMENT ${processor_env} NRN_TEST_SPIKES_MPI4PY=1
-          COMMAND ${modtests_launch_py_mpi} ${coverage} test/coreneuron/test_spikes.py)
+          COMMAND ${modtests_launch_py_mpi} test/coreneuron/test_spikes.py)
       endif()
       # See https://www.neuron.yale.edu/phpBB/viewtopic.php?t=4297 and links therein for more
       # discussion. Launching this test via `python` (not `special`) does not work on Linux with
@@ -614,8 +619,9 @@ if(NRN_ENABLE_PYTHON)
             -python)
         message(STATUS "Hitting workaround")
       else()
-        set(launch_spikes_mpi_file_mode_py ${modtests_launch_py_mpi} ${coverage})
+        set(launch_spikes_mpi_file_mode_py ${modtests_launch_py_mpi})
       endif()
+      # coverage run -p avoids different ranks' .coverage files clobbering each other
       nrn_add_test(
         GROUP coreneuron_modtests
         NAME spikes_mpi_file_mode_py_${processor}
@@ -628,10 +634,8 @@ if(NRN_ENABLE_PYTHON)
         NAME inputpresyn_py_${processor}
         REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
         PROCESSORS 2
-        COMMAND
-          ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-          special ${MPIEXEC_POSTFLAGS} -mpi -python
-          ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
+        SCRIPT_PATTERNS test/coreneuron/test_inputpresyn.py
+        COMMAND ${modtests_launch_py_mpi} test/coreneuron/test_inputpresyn.py)
       nrn_add_test(
         GROUP coreneuron_modtests
         NAME test_subworlds_py_${processor}
