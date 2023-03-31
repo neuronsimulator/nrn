@@ -371,21 +371,39 @@ function(nrn_add_test)
   # specific working directory and copy them there.
   foreach(script_pattern ${script_patterns})
     # We want to preserve directory structures, so if you pass SCRIPT_PATTERNS path/to/*.py then you
-    # end up with {build_directory}/path/to/test_working_directory/path/to/script.py
-    file(
-      GLOB script_files
-      RELATIVE "${test_source_directory}/${sim_directory}"
-      "${test_source_directory}/${sim_directory}/${script_pattern}")
-    foreach(script_file ${script_files})
-      # We use NO_TARGET because otherwise we would in some cases generate a lot of
-      # build-time-copy-{hash} top-level targets, which the Makefile build system struggles with.
-      # Instead we make a single top-level target that depends on all scripts copied for this test.
-      cpp_cc_build_time_copy(
-        INPUT "${test_source_directory}/${sim_directory}/${script_file}"
-        OUTPUT "${working_directory}/${script_file}"
-        NO_TARGET)
-      list(APPEND all_copied_script_files "${working_directory}/${script_file}")
-    endforeach()
+    # end up with {build_dir}/path/to/test_working_directory/path/to/script.py. An exception to this
+    # is that if you put an absolute path into SCRIPT_PATTERNS, none of the directories will be
+    # preserved, i.e. /a/b/c.py will end up in {build_dir}/path/to/test_working_directory/c.py
+    if(IS_ABSOLUTE "${script_pattern}")
+      file(GLOB script_files "${script_pattern}")
+      foreach(script_file ${script_files})
+        # We use NO_TARGET because otherwise we would in some cases generate a lot of
+        # build-time-copy-{hash} top-level targets, which the Makefile build system struggles with.
+        # Instead we make a single top-level target that depends on all scripts copied for this
+        # test.
+        get_filename_component(script_name "${script_file}" NAME)
+        cpp_cc_build_time_copy(
+          INPUT "${script_file}"
+          OUTPUT "${working_directory}/${script_name}"
+          NO_TARGET)
+        list(APPEND all_copied_script_files "${working_directory}/${script_name}")
+      endforeach()
+    else()
+      # Not an absolute path
+      set(script_pattern "${test_source_directory}/${sim_directory}/${script_pattern}")
+      file(
+        GLOB script_files
+        RELATIVE "${test_source_directory}/${sim_directory}"
+        "${script_pattern}")
+      foreach(script_file ${script_files})
+        # See above for NO_TARGET explanation
+        cpp_cc_build_time_copy(
+          INPUT "${test_source_directory}/${sim_directory}/${script_file}"
+          OUTPUT "${working_directory}/${script_file}"
+          NO_TARGET)
+        list(APPEND all_copied_script_files "${working_directory}/${script_file}")
+      endforeach()
+    endif()
   endforeach()
   # Construct the name of the test and store it in a parent-scope list to be used when setting up
   # the comparison job
@@ -503,6 +521,57 @@ function(nrn_add_test)
       PARENT_SCOPE)
 endfunction()
 
+# =============================================================================
+# Check if --oversubscribe is a valid option for mpiexec
+# =============================================================================
+if(NRN_ENABLE_MPI)
+  # Detect if the MPI implementation supports the --oversubscribe option (at the time of writing the
+  # available version of OpenMPI does but those of HPE-MPI and MPICH do not).
+  set(MPIEXEC_OVERSUBSCRIBE --oversubscribe)
+  execute_process(
+    COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_OVERSUBSCRIBE} --version
+    RESULT_VARIABLE MPIEXEC_OVERSUBSCRIBE_TEST
+    OUTPUT_QUIET ERROR_QUIET)
+  if(NOT MPIEXEC_OVERSUBSCRIBE_TEST EQUAL 0)
+    message(STATUS "mpiexec does not support ${MPIEXEC_OVERSUBSCRIBE}")
+    unset(MPIEXEC_OVERSUBSCRIBE)
+  endif()
+  if(APPLE
+     AND NRN_ENABLE_PYTHON
+     AND NRN_SANITIZERS)
+    # Detect how to tell ${MPIEXEC_EXECUTABLE} to set extra environment variables when launching the
+    # child process. This is important for using the sanitizers on macOS, as there variables like
+    # DYLD_INSERT_LIBRARIES are not propagated from parent processes to their children.
+    # ~~~
+    # -env works with mpich, -genv works with HPE-MPI, -x works with OpenMPI
+    foreach(option
+            "-env;NRN_PROBE_VARIABLE=NRN_PROBE_VALUE" "-genv;NRN_PROBE_VARIABLE;NRN_PROBE_VALUE"
+            "-x;NRN_PROBE_VARIABLE=NRN_PROBE_VALUE")
+      set(probe_command
+          ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${option}
+          ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} -c
+          "import os\; print(os.environ['NRN_PROBE_VARIABLE'])")
+      execute_process(
+        COMMAND ${probe_command}
+        RESULT_VARIABLE mpiexec_env_test
+        OUTPUT_VARIABLE mpiexec_env_test_stdout
+        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE)
+      if(mpiexec_env_test EQUAL 0 AND mpiexec_env_test_stdout STREQUAL "NRN_PROBE_VALUE")
+        set(preload_sanitizer_mpiexec "${option}")
+        string(REPLACE "NRN_PROBE_VARIABLE" "${NRN_SANITIZER_PRELOAD_VAR}"
+                       preload_sanitizer_mpiexec "${preload_sanitizer_mpiexec}")
+        string(REPLACE "NRN_PROBE_VALUE" "${NRN_SANITIZER_LIBRARY_PATH}" preload_sanitizer_mpiexec
+                       "${preload_sanitizer_mpiexec}")
+        break()
+      endif()
+    endforeach()
+    if(NOT DEFINED preload_sanitizer_mpiexec)
+      message(WARNING "Could not detect how to preload sanitizer runtimes under mpiexec.")
+      message(WARNING "You may see failures in tests launched as mpiexec ... python ...")
+    endif()
+  endif()
+endif()
+
 function(nrn_add_pytest)
   # Parse the function arguments
   set(oneValueArgs GROUP NAME MPI_RANKS)
@@ -526,6 +595,23 @@ function(nrn_add_pytest)
     # Use environment settings from nrn_add_test_group(ENVIRONMENT ...)
     set(extra_environment "${${prefix}_DEFAULT_ENVIRONMENT}")
   endif()
+  # Figure out if the SCRIPT_PATTERNS are coming from nrn_add_test_group or nrn_add_pytest. We need
+  # to have this list so we can append test/run_pytest.py to it.
+  if(DEFINED NRN_ADD_PYTEST_SCRIPT_PATTERNS)
+    set(script_patterns ${NRN_ADD_PYTEST_SCRIPT_PATTERNS})
+  else()
+    set(script_patterns "${${prefix}_DEFAULT_SCRIPT_PATTERNS}")
+  endif()
+  list(APPEND script_patterns "${CMAKE_SOURCE_DIR}/test/run_pytest.py") # FIXME needs to be an
+                                                                        # absolute path?
+  # Assemble pytest options to use. --capture=tee-sys combines 'sys' and '-s', capturing
+  # sys.stdout/stderr and passing it along to the actual sys.stdout/stderr.
+  set(pytest_args --capture=tee-sys)
+  if(NRN_ENABLE_COVERAGE AND PYTEST_COV_FOUND)
+    list(APPEND pytest_args --cov-report=xml --cov=neuron)
+  endif()
+  # Append PYTEST_ARGS
+  list(APPEND pytest_args ${NRN_ADD_PYTEST_PYTEST_ARGS})
   # We have a lot of tests that are driven by pytest. Normally these would be launched with
   # something like `${PYTHON_EXECUTABLE} ${pytest} ...`, which would expand to something like:
   # `python -m pytest ...`. Unfortunately we have some build configurations with static libraries,
@@ -536,12 +622,15 @@ function(nrn_add_pytest)
   # This leads to a commandline like `NRN_PYTEST_ARGS="--cov tests" special -python run_pytest.py`.
   # run_pytest.py additionally helps when executing with MPI, as it ensures that each MPI rank has a
   # different value for the COVERAGE_FILE environment variable.
-  set(pytest_args ${NRN_ADD_PYTEST_PYTEST_ARGS})
-  set(add_test_args GROUP ${NRN_ADD_PYTEST_GROUP} NAME ${NRN_ADD_PYTEST_NAME})
+  set(add_test_args GROUP ${NRN_ADD_PYTEST_GROUP} NAME ${NRN_ADD_PYTEST_NAME} SCRIPT_PATTERNS
+                    ${script_patterns})
   if(NRN_ENABLE_SHARED AND (NOT NRN_ENABLE_CORENEURON OR CORENRN_ENABLE_SHARED))
     # We can launch using ${PYTHON_EXECUTABLE} -- let's do that
     list(APPEND add_test_args PRELOAD_SANITIZER)
-    set(exe ${PYTHON_EXECUTABLE} -m pytest ${pytest_args})
+    if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
+      set(exe ${preload_sanitizer_mpiexec})
+    endif()
+    list(APPEND exe ${PYTHON_EXECUTABLE})
   else()
     # We have to launch using nrniv or special and set NRN_PYTEST_ARGS
     if(DEFINED ${prefix}_NRNIVMODL_DIRECTORY)
@@ -549,21 +638,21 @@ function(nrn_add_pytest)
     else()
       set(exe nrniv)
     endif()
-    if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
-      # use env instead?
-      set(exe_args -mpi)
-    endif()
-    list(APPEND exe_args -python test/run_pytest.py)
-    list(APPEND extra_environment "NRN_PYTEST_ARGS=${pytest_args}")
+    list(APPEND exe_args -notatty -python)
   endif()
+  list(APPEND exe_args run_pytest.py)
+  # Might need more sophisticated escaping
+  string(JOIN " " pytest_args_string ${pytest_args})
+  list(APPEND extra_environment "NRN_PYTEST_ARGS=${pytest_args_string}")
   if(DEFINED NRN_ADD_PYTEST_REQUIRES)
     list(APPEND add_test_args REQUIRES ${NRN_ADD_PYTEST_REQUIRES})
   endif()
-  if(DEFINED NRN_ADD_PYTEST_SCRIPT_PATTERNS)
-    list(APPEND add_test_args SCRIPT_PATTERNS ${NRN_ADD_PYTEST_SCRIPT_PATTERNS})
-  endif()
   if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
     list(APPEND add_test_args PROCESSORS ${NRN_ADD_PYTEST_MPI_RANKS})
+    list(APPEND extra_environment NEURON_INIT_MPI=1)
+    # If you consider changing how ${cmd} is constructed (notably the use of ${MPIEXEC_NAME} instead
+    # of ${MPIEXEC}) then first refer to GitHub issue BlueBrain/CoreNeuron#894 and note that
+    # nrn_add_test prefixes the command with ${CMAKE_COMMAND} -E env.
     set(cmd
         ${MPIEXEC_NAME}
         ${MPIEXEC_NUMPROC_FLAG}

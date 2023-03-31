@@ -2,7 +2,7 @@
 # Some minor coverage increase for netpar.cpp when nhost > 1
 
 # Prepend the location of the current script to the search path, so we can
-# import from test_hoc_po.
+# import from ring.py
 import os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
@@ -12,7 +12,7 @@ from neuron import config, h
 pc = h.ParallelContext()
 
 from neuron.expect_hocerr import expect_err
-from test_hoc_po import Ring
+from ring import Ring
 
 cvode = h.CVode()
 
