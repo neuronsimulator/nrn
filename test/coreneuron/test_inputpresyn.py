@@ -1,6 +1,6 @@
 # arrange for InputPreSyn to be on queue after finitialize
-
 from neuron import h
+from neuron.tests.utils.strtobool import strtobool
 
 pc = h.ParallelContext()
 
@@ -64,6 +64,7 @@ def test_inputpresyn():
     from neuron import coreneuron
 
     coreneuron.enable = 1
+    coreneuron.gpu = strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
     coreneuron.verbose = 0
     run(2)
     same()

@@ -1,4 +1,6 @@
 from neuron import h, coreneuron
+from neuron.tests.utils.strtobool import strtobool
+import os
 
 pc = h.ParallelContext()
 
@@ -125,6 +127,7 @@ def test_ba():
     cmp(r, std)
 
     coreneuron.enable = True
+    coreneuron.gpu = strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
     h.CVode().cache_efficient(1)
     r = run(m)
     cmp(r, std)
