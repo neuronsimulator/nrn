@@ -12,7 +12,6 @@
 
 
 extern void hoc_nrnmpi_init();
-extern void hoc_nrnmpi_terminate();
 
 #if PVM
 extern int numprocs(), myproc(), psync();
@@ -218,7 +217,6 @@ static struct { /* Builtin functions with multiple or variable args */
                  {"mcell_ran4_init", hoc_mcran4init},
                  {"nrn_feenableexcept", nrn_feenableexcept},
                  {"nrnmpi_init", hoc_nrnmpi_init},
-                 {"nrnmpi_terminate", hoc_nrnmpi_terminate},
                  {"coreneuron_handle", hoc_coreneuron_handle},
                  {"nrn_num_config_keys", hoc_num_config_keys},
 #if PVM

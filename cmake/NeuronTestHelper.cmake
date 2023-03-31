@@ -608,7 +608,7 @@ function(nrn_add_pytest)
   # sys.stdout/stderr and passing it along to the actual sys.stdout/stderr.
   set(pytest_args --capture=tee-sys)
   if(NRN_ENABLE_COVERAGE AND PYTEST_COV_FOUND)
-    list(APPEND pytest_args --cov-report=xml --cov=neuron)
+    list(APPEND extra_environment NRN_PYTEST_ENABLE_COVERAGE=1)
   endif()
   # Append PYTEST_ARGS
   list(APPEND pytest_args ${NRN_ADD_PYTEST_PYTEST_ARGS})
@@ -673,7 +673,6 @@ function(nrn_add_pytest)
     set(cmd ${exe} ${exe_args})
   endif()
   list(APPEND add_test_args COMMAND ${cmd} ENVIRONMENT ${extra_environment})
-  message(STATUS "add_test_args=${add_test_args}")
   nrn_add_test(${add_test_args})
 endfunction()
 

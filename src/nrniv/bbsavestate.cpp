@@ -218,7 +218,15 @@ extern Object* nrn_gid2obj(int gid);
 extern PreSyn* nrn_gid2presyn(int gid);
 extern int nrn_gid_exists(int gid);
 
-#if !NRNMPI
+#if NRNMPI
+extern void nrnmpi_barrier();
+extern void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
+extern void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
+extern int nrnmpi_int_allmax(int);
+extern void nrnmpi_int_allgather(int* s, int* r, int n);
+extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
+extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
+#else
 static void nrnmpi_barrier() {}
 static void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) {
     for (int i = 0; i < scnt[0]; ++i) {

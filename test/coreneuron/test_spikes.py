@@ -127,6 +127,5 @@ if __name__ == "__main__":
     test_spikes()
     if mpi4py_option or nrnmpi_init_option:
         pc = h.ParallelContext()
-        h.nrnmpi_terminate()
-    # Calling h.quit() here broke coverage collection.
-    # https://coverage.readthedocs.io/en/7.2.2/subprocess.html#process-termination
+        pc.barrier()
+    h.quit()

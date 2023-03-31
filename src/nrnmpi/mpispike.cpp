@@ -606,11 +606,11 @@ void nrnmpi_wait(void** request) {
     MPI_Wait((MPI_Request*) request, &status);
 }
 
-void nrnmpi_barrier(bool world) {
+void nrnmpi_barrier() {
     if (nrnmpi_numprocs < 2) {
         return;
     }
-    MPI_Barrier(world ? nrnmpi_world_comm : nrnmpi_comm);
+    MPI_Barrier(nrnmpi_comm);
 }
 
 double nrnmpi_dbl_allreduce(double x, int type) {

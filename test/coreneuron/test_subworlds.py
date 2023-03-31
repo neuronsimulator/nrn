@@ -71,10 +71,8 @@ def test_subworlds():
         print(f"subworld {pc.id_bbs()}: {rec_v.max()}")
 
     pc.done()
-    h.nrnmpi_terminate()
-    # Calling h.quit() here broke coverage collection.
-    # https://coverage.readthedocs.io/en/7.2.2/subprocess.html#process-termination
 
 
 if __name__ == "__main__":
     test_subworlds()
+    h.quit()

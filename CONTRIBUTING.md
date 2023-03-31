@@ -148,7 +148,9 @@ make && make format-pr
 ## Python Contributions
 
 The Python source code is located under `share/lib/python/neuron`. Python unit tests are
-located under `test/pynrn` and use the [pytest](https://docs.pytest.org/) framework, along with [pytest-cov](https://pytest-cov.readthedocs.io/) for code coverage. Code coverage report can be found on [codecov.io under share/lib](https://codecov.io/gh/neuronsimulator/nrn/tree/master/share/lib)
+located under `test/pynrn` and use the [pytest](https://docs.pytest.org/) framework, along
+with [coverage](https://coverage.readthedocs.io/) for code coverage. Code coverage report
+can be found on [codecov.io under share/lib](https://codecov.io/gh/neuronsimulator/nrn/tree/master/share/lib)
 
 ### Code conventions
 
