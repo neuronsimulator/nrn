@@ -85,7 +85,26 @@
 #    values specified there can be overriden on a test-by-test basis by passing
 #    the same arguments here.
 #
-# 3. nrn_add_test_group_comparison(GROUP group_name
+# 3. nrn_add_pytest(GROUP group_name
+#                   NAME test_name
+#                   [ENVIRONMENT VAR1=value2 ...]
+#                   [MPI_RANKS n]
+#                   [PYTEST_ARGS arg1 ...]
+#                   [REQUIRES feature1 ...]
+#                   [SCRIPT_PATTERNS "*.py" ...])
+#
+#    Create a new pytest-driven test inside the given group, which must have
+#    previously been created using nrn_add_test_group. This is a helper that
+#    sits on top of nrn_add_test and specifically caters to sets of Python
+#    tests that are driven by pytest. This helper takes care of falling back to
+#    launching using `nrniv -python` or `special -python` if dynamic loading is
+#    not possible, and also takes care of launching multiple MPI ranks if
+#    needed. The GROUP, NAME, ENVIRONMENT, REQUIRES and SCRIPT_PATTERNS
+#    arguments are simply forwarded to nrn_add_test. This helper generates an
+#    appropriate command that behaves similarly to:
+#      [mpiexec -n ${MPI_RANKS}] ${PYTHON_EXECUTABLE} -m pytest ${PYTEST_ARGS}
+#
+# 4. nrn_add_test_group_comparison(GROUP group_name
 #                                  [REFERENCE_OUTPUT datatype::file.ext ...])
 #
 #    Add a test job that runs after all the tests in this group (as defined by

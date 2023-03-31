@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     pc = h.ParallelContext()
     if have_coverage:
-        os.environ["COVERAGE_FILE"] = ".coverage.pynrn." + str(pc.id())
+        os.environ["COVERAGE_FILE"] = ".coverage." + str(pc.id())
     # Importing neuron just above causes a warning, which seems hard to avoid
     with warnings.catch_warnings():
         if have_coverage:

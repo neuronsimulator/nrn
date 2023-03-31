@@ -26,6 +26,16 @@ additional_commands:
       OUTPUT: '*'
       SCRIPT_PATTERNS: '*'
       SIM_DIRECTORY: '?'
+  nrn_add_pytest:
+    pargs: 0
+    kwargs:
+      GROUP: 1
+      NAME: 1
+      ENVIRONMENT: '+'
+      MPI_RANKS: 1
+      PYTEST_ARGS: '+'
+      REQUIRES: '+'
+      SCRIPT_PATTERNS: '*'
   nrn_add_test_group_comparison:
     pargs: 0
     kwargs:

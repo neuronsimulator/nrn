@@ -16,9 +16,7 @@ def test_version_macros():
     pc = h.ParallelContext()
     s = h.Section()
     s.insert("VersionMacros")
-    coreneuron.enable = bool(
-        strtobool(os.environ.get("NRN_CORENEURON_ENABLE", "false"))
-    )
+    coreneuron.enable = strtobool(os.environ.get("NRN_CORENEURON_ENABLE", "false"))
     coreneuron.verbose = True
     h.CVode().cache_efficient(True)
     h.finitialize()
