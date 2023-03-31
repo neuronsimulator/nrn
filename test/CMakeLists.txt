@@ -131,16 +131,10 @@ endforeach()
 # ============================================================================================
 if(NRN_ENABLE_PYTHON)
   if(NRN_ENABLE_COVERAGE AND COVERAGE_FOUND)
-    # We want to use either:
-    # ~~~
-    #   ${PYTHON_EXECUTABLE} ${pytest} path/to/tests
-    # or
-    #   ${PYTHON_EXECUTABLE} ${coverage} path/to/file.py
-    # ~~~
-    # depending on whether or not the tests expect to be driven by pytest. The -p option to coverage
-    # run appends the host and pid to the .coverage filename, fixing MPI execution. With pytest-cov
-    # we use run_pytest.py to achieve something similar. Note that this means .coverage.X.Y.Z files
-    # will accumulate in the test working directories, which might be surprising.
+    # Tests that expect to be driven by pytest should use nrn_add_pytest(...). Tests that expect to
+    # be run directly as Python scripts should use ${PYTHON_EXECUTABLE} ${coverage} path/to/file.py
+    # to enable code coverage. The -p option to coverage run appends the host and pid to the
+    # .coverage filename, fixing MPI execution.
     set(coverage -m coverage run -p)
   endif()
   # This includes most pytest-driven NEURON tests. MOD files are compiled for CoreNEURON if
@@ -162,9 +156,25 @@ if(NRN_ENABLE_PYTHON)
       SCRIPT_PATTERNS *.json *.py)
   endforeach()
 
-  # Just do the MPI version with the default Python
-  # The only reason to have multiple basic_tests_parallel* jobs is because the tests are sloppy and
-  # pollute global state.
+  # This test is steered via the NRN_CORENEURON_ENABLE. TODO make it just dynamically test
+  # CoreNEURON if it's available.
+  nrn_add_pytest(
+    GROUP pynrn
+    NAME explicit_coreneuron
+    REQUIRES coreneuron
+    SCRIPT_PATTERNS test_version_macros.py
+    ENVIRONMENT NRN_CORENEURON_ENABLE=true)
+  # This test only runs on GPU if explicitly configured with CORENRN_ENABLE_GPU. TODO make it less
+  # hacky.
+  nrn_add_pytest(
+    GROUP pynrn
+    NAME explicit_coreneuron_gpu
+    REQUIRES coreneuron gpu
+    SCRIPT_PATTERNS test_fast_imem.py
+    ENVIRONMENT CORENRN_ENABLE_GPU=true)
+  # Also execute some test/pynrn/ tests under MPI for additional coverage. If the tests were all
+  # well-behaved and left the global state clean hen there would be no reason to have multiple
+  # nrn_add_pytest calls here. Only do this with the default Python.
   nrn_add_pytest(
     GROUP pynrn
     NAME basic_tests_parallel_netpar
@@ -242,11 +252,12 @@ if(NRN_ENABLE_PYTHON)
   endforeach()
 
   if(NRN_ENABLE_RX3D)
+    # SIM_DIRECTORY test/rxd would be less repetitive, but rxd is overly fussy about what directory
+    # it runs in and where the x86_64 output from nrnivmodl sits in the tree
     nrn_add_test_group(
       NAME rxdmod_tests
-      MODFILE_PATTERNS *.mod
-      SCRIPT_PATTERNS *.py */*.py 3d/*.asc testdata/**/*.dat # can we use more **?
-      SIM_DIRECTORY test/rxd)
+      MODFILE_PATTERNS test/rxd/*.mod
+      SCRIPT_PATTERNS test/rxd/*.py test/rxd/*/*.py test/rxd/3d/*.asc test/rxd/testdata/**/*.dat)
     # These tests include comparisons against saved data, which appears to have been generated using
     # GCC. Other compilers produce larger differences.
     if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
@@ -254,24 +265,26 @@ if(NRN_ENABLE_PYTHON)
     elseif(NRN_HAVE_NVHPC_COMPILER)
       set(change_test_tolerance NRN_RXD_TEST_TOLERANCE=1e-4)
     endif()
+    # Run all the RxD tests in a single pytest run
     nrn_add_pytest(
       GROUP rxdmod_tests
       NAME rxd_tests
       ENVIRONMENT ${change_test_tolerance})
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(MODULE mpi4py)
-      if(mpi4py_FOUND)
+      if(MPI4PY_FOUND)
+        # Run all the RxD tests with mpiexec -n 1 too
         nrn_add_pytest(
           GROUP rxdmod_tests
           NAME rxd_mpi_tests
           ENVIRONMENT ${change_test_tolerance}
           MPI_RANKS 1
-          PYTEST_ARGS --mpi)
+          PYTEST_ARGS ./test/rxd/ --mpi)
       endif()
     endif()
   endif()
   # We are not currently collecting Python coverage for tests in this group, which are not all
-  # pytest-compatible.
+  # pytest-compatible. TODO: clean these up for inclusion in basic_tests_parallel*
   nrn_add_test_group(
     CORENEURON
     NAME parallel
@@ -295,7 +308,6 @@ if(NRN_ENABLE_PYTHON)
   # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude
   # workaround.
   if(CORENRN_ENABLE_REPORTING)
-    set(nrniv_mpi_arg -mpi)
     set(nrnpython_mpi_env NEURON_INIT_MPI=1)
     # see #1619, required when coreneuron is linked to sonata library
     set(sonata_zero_gid_env LIBSONATA_ZERO_BASED_GIDS=1)
@@ -318,25 +330,23 @@ if(NRN_ENABLE_PYTHON)
   endif()
 
   # Build and test examples from the NMODL language documentation. First, build and test all of them
-  # for NEURON.
+  # for NEURON, using pytest.
   nrn_add_test_group(
     NAME nmodl_tests
     SCRIPT_PATTERNS test/nmodl/*.py
     MODFILE_PATTERNS "docs/nmodl/mod/*.mod")
-  nrn_add_pytest(
-    GROUP nmodl_tests
-    NAME neuron
-    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env})
+  nrn_add_pytest(GROUP nmodl_tests NAME neuron)
 
-  # Second, build and test the subset that are compatible with CoreNEURON
+  # Second, build and test the subset that are compatible with CoreNEURON.
   nrn_add_test_group(
-    CORENEURON
+    CORENEURON # build MOD files for CoreNEURON
     NAME nmodl_tests_coreneuron
     # Not: test_disc.py test_function_table.py test_kinetic.py
     SCRIPT_PATTERNS test/nmodl/test_table.py
     # Not: cadif.mod, disc.mod, k3st.mod, variabletypes.mod
     MODFILE_PATTERNS docs/nmodl/mod/fornetcon.mod docs/nmodl/mod/hhwatch.mod
                      docs/nmodl/mod/table.mod)
+  # These require CoreNEURON and GPU support to be steered via environment variables
   nrn_add_pytest(
     GROUP nmodl_tests_coreneuron
     NAME cpu
@@ -349,49 +359,53 @@ if(NRN_ENABLE_PYTHON)
     ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} NRN_CORENEURON_ENABLE=true
                 CORENRN_ENABLE_GPU=true)
 
+  # TODO test/gjtests is not executed?
+
+  # Build CoreNEURON tests and execute them on both CPU and GPU, steering that by hoping everything
+  # respects the CORENRN_ENABLE_GPU environment variable. See
+  # https://github.com/neuronsimulator/nrn/issues/1792 ...
   nrn_add_test_group(
     CORENEURON
     NAME coreneuron_modtests
-    # This get used in 4 tests so make it the default and override in other tests.
-    SCRIPT_PATTERNS test/coreneuron/test_spikes.py
-    MODFILE_PATTERNS
-      "test/coreneuron/mod files/*.mod" "test/coreneuron/mod files/axial.inc"
-      test/pynrn/unitstest.mod test/pynrn/version_macros.mod test/gjtests/natrans.mod)
-  # Run some pynrn/ tests with CoreNEURON enabled explicitly. TODO: these should already test
-  # CoreNEURON when run inside pynrn if it's available.
+    MODFILE_PATTERNS "mod files/*.mod" "mod files/axial.inc" ../pynrn/unitstest.mod
+                     ../gjtests/natrans.mod
+    SIM_DIRECTORY test/coreneuron)
+  # This test needs more ranks to make sense, but there's no need to run it on GPU
   nrn_add_pytest(
     GROUP coreneuron_modtests
-    NAME version_macros
+    NAME mpi_6ranks
     REQUIRES coreneuron
-    SCRIPT_PATTERNS test/pynrn/test_version_macros.py
-    ENVIRONMENT NRN_CORENEURON_ENABLE=true ${sonata_zero_gid_env} ${nrnpython_mpi_env}
-    PYTEST_ARGS test/pynrn/test_version_macros.py)
-  # In GPU builds run all of the tests on both CPU and GPU
+    MPI_RANKS 6
+    SCRIPT_PATTERNS test_subworlds.py)
   set(coreneuron_modtests_gpu_env CORENRN_ENABLE_GPU=true)
   foreach(processor cpu gpu)
     set(processor_env ${coreneuron_modtests_${processor}_env})
     set(modtests_processor_env ${processor_env} ${sonata_zero_gid_env})
+    # Everything on CPU|GPU, without MPI
     nrn_add_pytest(
       GROUP coreneuron_modtests
       NAME ${processor}
       REQUIRES coreneuron ${processor}
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
-      SCRIPT_PATTERNS test/coreneuron/*.py test/pynrn/test_fast_imem.py)
+      SCRIPT_PATTERNS *.py)
+    # One HOC test. It can even run on GPU.
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME direct_hoc_${processor}
       REQUIRES coreneuron ${processor}
-      SCRIPT_PATTERNS test/coreneuron/test_direct.hoc
+      SCRIPT_PATTERNS test_direct.hoc
       ENVIRONMENT ${processor_env}
-      COMMAND special -notatty -mpi test/coreneuron/test_direct.hoc)
-    # non-MPI version
+      COMMAND special -notatty -mpi test_direct.hoc)
+    # Run this test in file mode too. TODO: this should be handled internally...
     nrn_add_pytest(
       GROUP coreneuron_modtests
       NAME spikes_file_mode_py_${processor}
       REQUIRES coreneuron ${processor}
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env} NRN_TEST_SPIKES_FILE_MODE=1
-      SCRIPT_PATTERNS test/coreneuron/test_spikes.py)
+      SCRIPT_PATTERNS test_spikes.py)
     if(NRN_ENABLE_MPI)
+      # Run this test using mpi4py too. TODO: is this really needed given that we have the mpi_init
+      # tests?
       nrn_find_python_module(MODULE mpi4py)
       if(mpi4py_FOUND)
         nrn_add_pytest(
@@ -400,28 +414,16 @@ if(NRN_ENABLE_PYTHON)
           REQUIRES coreneuron ${processor}
           MPI_RANKS 2
           ENVIRONMENT ${processor_env} NRN_TEST_SPIKES_MPI4PY=1
-          SCRIPT_PATTERNS test/coreneuron/test_spikes.py)
+          SCRIPT_PATTERNS test_spikes.py)
       endif()
-      # See https://www.neuron.yale.edu/phpBB/viewtopic.php?t=4297 and links therein for more
-      # discussion. Launching this test via `python` (not `special`) does not work on Linux with
-      # OpenMPI 2.x and without dynamic MPI enabled in NEURON, which corresponds to the GitHub
-      # Actions environment. GPU builds are already launched using `special`. if(NOT
-      # NRN_ENABLE_MPI_DYNAMIC AND NOT CORENEURON_ENABLE_GPU AND NRN_HAVE_OPENMPI2_OR_LESS) --> use
-      # special, not python
+      # Run some of the tests with 2 MPI ranks too
       nrn_add_pytest(
         GROUP coreneuron_modtests
         NAME mpi_2ranks_${processor}
         REQUIRES coreneuron ${processor}
         MPI_RANKS 2
         ENVIRONMENT ${processor_env} NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1
-        SCRIPT_PATTERNS test/coreneuron/test_spikes.py test/coreneuron/test_inputpresyn.py)
-      nrn_add_pytest(
-        GROUP coreneuron_modtests
-        NAME mpi_6ranks_${processor}
-        REQUIRES coreneuron ${processor}
-        MPI_RANKS 6
-        ENVIRONMENT ${processor_env}
-        SCRIPT_PATTERNS test/coreneuron/test_subworlds.py)
+        SCRIPT_PATTERNS test_spikes.py test_inputpresyn.py)
     endif()
   endforeach()
 
