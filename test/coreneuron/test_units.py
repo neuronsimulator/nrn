@@ -20,7 +20,7 @@ def test_units():
 
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
-    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+    coreneuron.gpu = strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
     pc.set_maxstep(10)
     h.finitialize(-65)
     pc.psolve(h.dt)

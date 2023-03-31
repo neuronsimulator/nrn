@@ -47,7 +47,7 @@ def test_psolve():
 
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+    coreneuron.gpu = strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
     h.CVode().cache_efficient(True)
     run(h.tstop)
     if vvec_std.eq(vvec) == 0:

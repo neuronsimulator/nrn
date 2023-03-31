@@ -38,7 +38,7 @@ def test_direct_memory_transfer():
     coreneuron.enable = True
     coreneuron.verbose = 0
     coreneuron.model_stats = True
-    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+    coreneuron.gpu = strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
     coreneuron.num_gpus = 1
 
     pc = h.ParallelContext()

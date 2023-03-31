@@ -210,7 +210,7 @@ def test_axial():
 
     coreneuron.verbose = 0
     coreneuron.enable = True
-    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+    coreneuron.gpu = strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
 
     # test (0,1) for CPU and (1,2) for GPU
     for perm in coreneuron.valid_cell_permute():
