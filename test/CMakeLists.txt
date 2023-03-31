@@ -381,24 +381,28 @@ if(NRN_ENABLE_PYTHON)
   foreach(processor cpu gpu)
     set(processor_env ${coreneuron_modtests_${processor}_env})
     set(modtests_processor_env ${processor_env} ${sonata_zero_gid_env})
-    # Everything except test_subworlds.py on CPU|GPU, without MPI
-    nrn_add_pytest(
-      GROUP coreneuron_modtests
-      NAME ${processor}
-      REQUIRES coreneuron ${processor}
-      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
-      SCRIPT_PATTERNS
-        test_ba.py
-        test_datareturn.py
-        test_direct.py
-        test_fornetcon.py
-        test_inputpresyn.py
-        test_netmove.py
-        test_pointer.py
-        test_spikes.py
-        test_psolve.py
-        test_units.py
-        test_watchrange.py)
+    # Everything except test_subworlds.py on CPU|GPU, without MPI. These tests are two fragile to
+    # run in the same pytest process...
+    foreach(
+      name
+      ba
+      datareturn
+      direct
+      fornetcon
+      inputpresyn
+      netmove
+      pointer
+      spikes
+      psolve
+      units
+      watchwange)
+      nrn_add_pytest(
+        GROUP coreneuron_modtests
+        NAME ${name}_${processor}
+        REQUIRES coreneuron ${processor}
+        ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+        SCRIPT_PATTERNS test_${name}.py)
+    endforeach()
     # One HOC test. It can even run on GPU.
     nrn_add_test(
       GROUP coreneuron_modtests
