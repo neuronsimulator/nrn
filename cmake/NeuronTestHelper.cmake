@@ -503,6 +503,84 @@ function(nrn_add_test)
       PARENT_SCOPE)
 endfunction()
 
+function(nrn_add_pytest)
+  # Parse the function arguments
+  set(oneValueArgs GROUP NAME MPI_RANKS)
+  set(multiValueArgs ENVIRONMENT PYTEST_ARGS REQUIRES SCRIPT_PATTERNS)
+  cmake_parse_arguments(NRN_ADD_PYTEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  if(DEFINED NRN_ADD_PYTEST_MISSING_VALUES)
+    message(
+      WARNING
+        "nrn_add_pytest: missing values for keyword arguments: ${NRN_ADD_PYTEST_MISSING_VALUES}")
+  endif()
+  if(DEFINED NRN_ADD_PYTEST_UNPARSED_ARGUMENTS)
+    message(WARNING "nrn_add_pytest: unknown arguments: ${NRN_ADD_PYTEST_UNPARSED_ARGUMENTS}")
+  endif()
+  set(prefix NRN_TEST_GROUP_${NRN_ADD_PYTEST_GROUP})
+  # Figure out if the ENVIRONMENT is coming from nrn_add_test_group or nrn_add_pytest. We need to
+  # have this list so we can append NRN_PYTEST_ARGS to it.
+  if(DEFINED NRN_ADD_PYTEST_ENVIRONMENT)
+    # Use environment settings from nrn_add_pytest(ENVIRONMENT ...)
+    set(extra_environment ${NRN_ADD_PYTEST_ENVIRONMENT})
+  else()
+    # Use environment settings from nrn_add_test_group(ENVIRONMENT ...)
+    set(extra_environment "${${prefix}_DEFAULT_ENVIRONMENT}")
+  endif()
+  # We have a lot of tests that are driven by pytest. Normally these would be launched with
+  # something like `${PYTHON_EXECUTABLE} ${pytest} ...`, which would expand to something like:
+  # `python -m pytest ...`. Unfortunately we have some build configurations with static libraries,
+  # where the only way to launch a python script is with something like: `nrniv -python foo.py`, or
+  # if custom mechanisms have been built: `special -python foo.py`. In this case we cannot easily
+  # pass extra arguments (...) to pytest. In this case we can use a helper script, called
+  # run_pytest.py, which receives arguments to pytest in an environment variable (NRN_PYTEST_ARGS).
+  # This leads to a commandline like `NRN_PYTEST_ARGS="--cov tests" special -python run_pytest.py`.
+  # run_pytest.py additionally helps when executing with MPI, as it ensures that each MPI rank has a
+  # different value for the COVERAGE_FILE environment variable.
+  set(pytest_args ${NRN_ADD_PYTEST_PYTEST_ARGS})
+  set(add_test_args GROUP ${NRN_ADD_PYTEST_GROUP} NAME ${NRN_ADD_PYTEST_NAME})
+  if(NRN_ENABLE_SHARED AND (NOT NRN_ENABLE_CORENEURON OR CORENRN_ENABLE_SHARED))
+    # We can launch using ${PYTHON_EXECUTABLE} -- let's do that
+    list(APPEND add_test_args PRELOAD_SANITIZER)
+    set(exe ${PYTHON_EXECUTABLE} -m pytest ${pytest_args})
+  else()
+    # We have to launch using nrniv or special and set NRN_PYTEST_ARGS
+    if(DEFINED ${prefix}_NRNIVMODL_DIRECTORY)
+      set(exe special)
+    else()
+      set(exe nrniv)
+    endif()
+    if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
+      # use env instead?
+      set(exe_args -mpi)
+    endif()
+    list(APPEND exe_args -python test/run_pytest.py)
+    list(APPEND extra_environment "NRN_PYTEST_ARGS=${pytest_args}")
+  endif()
+  if(DEFINED NRN_ADD_PYTEST_REQUIRES)
+    list(APPEND add_test_args REQUIRES ${NRN_ADD_PYTEST_REQUIRES})
+  endif()
+  if(DEFINED NRN_ADD_PYTEST_SCRIPT_PATTERNS)
+    list(APPEND add_test_args SCRIPT_PATTERNS ${NRN_ADD_PYTEST_SCRIPT_PATTERNS})
+  endif()
+  if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
+    list(APPEND add_test_args PROCESSORS ${NRN_ADD_PYTEST_MPI_RANKS})
+    set(cmd
+        ${MPIEXEC_NAME}
+        ${MPIEXEC_NUMPROC_FLAG}
+        ${NRN_ADD_PYTEST_MPI_RANKS}
+        ${MPIEXEC_OVERSUBSCRIBE}
+        ${MPIEXEC_PREFLAGS}
+        ${exe}
+        ${MPIEXEC_POSTFLAGS}
+        ${exe_args})
+  else()
+    set(cmd ${exe} ${exe_args})
+  endif()
+  list(APPEND add_test_args COMMAND ${cmd} ENVIRONMENT ${extra_environment})
+  message(STATUS "add_test_args=${add_test_args}")
+  nrn_add_test(${add_test_args})
+endfunction()
+
 function(nrn_add_test_group_comparison)
   # Parse function arguments
   set(oneValueArgs GROUP)

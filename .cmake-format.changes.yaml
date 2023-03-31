@@ -12,7 +12,7 @@ additional_commands:
       SIM_DIRECTORY: 1
       SUBMODULE: 1
   nrn_add_test:
-    pargs: 0
+    pargs: '+' # otherwise nrn_add_test(${add_test_args}) kills cmake-format
     kwargs:
       GROUP: 1
       NAME: 1
