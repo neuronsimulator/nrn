@@ -1,6 +1,7 @@
 # arrange for InputPreSyn to be on queue after finitialize
 from neuron import h
 from neuron.tests.utils.strtobool import strtobool
+import os
 
 pc = h.ParallelContext()
 

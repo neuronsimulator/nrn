@@ -156,16 +156,16 @@ if(NRN_ENABLE_PYTHON)
       SCRIPT_PATTERNS *.json *.py)
   endforeach()
 
-  # This test is steered via the NRN_CORENEURON_ENABLE. TODO make it just dynamically test
-  # CoreNEURON if it's available.
+  # This test is steered via the NRN_CORENEURON_ENABLE environment variable. TODO make it just
+  # dynamically test CoreNEURON if it's available.
   nrn_add_pytest(
     GROUP pynrn
     NAME explicit_coreneuron
     REQUIRES coreneuron
     SCRIPT_PATTERNS test_version_macros.py
     ENVIRONMENT NRN_CORENEURON_ENABLE=true)
-  # This test only runs on GPU if explicitly configured with CORENRN_ENABLE_GPU. TODO make it less
-  # hacky.
+  # This test only runs on GPU if explicitly told to with the CORENRN_ENABLE_GPU environment
+  # variable. TODO make it less hacky.
   nrn_add_pytest(
     GROUP pynrn
     NAME explicit_coreneuron_gpu
@@ -370,7 +370,9 @@ if(NRN_ENABLE_PYTHON)
     MODFILE_PATTERNS "mod files/*.mod" "mod files/axial.inc" ../pynrn/unitstest.mod
                      ../gjtests/natrans.mod
     SIM_DIRECTORY test/coreneuron)
-  # This test needs more ranks to make sense, but there's no need to run it on GPU
+  # This test needs more ranks to make sense, but there's no need to run it on GPU. It's also not
+  # clear that it will ever be possible *not* to run it in a dedicated process, given what it does
+  # with MPI communicators.
   nrn_add_pytest(
     GROUP coreneuron_modtests
     NAME mpi_6ranks
@@ -383,6 +385,7 @@ if(NRN_ENABLE_PYTHON)
     set(modtests_processor_env ${processor_env} ${sonata_zero_gid_env})
     # Everything except test_subworlds.py on CPU|GPU, without MPI. These tests are too fragile to
     # run in the same pytest process/CTest job as each other.
+    set(skip_mpi ba datareturn direct units) # Don't bother running a few with MPI
     foreach(
       name
       ba
@@ -402,6 +405,16 @@ if(NRN_ENABLE_PYTHON)
         REQUIRES coreneuron ${processor}
         ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
         SCRIPT_PATTERNS test_${name}.py)
+      if(NOT name IN_LIST skip_mpi)
+        # Run with 2 MPI ranks too
+        nrn_add_pytest(
+          GROUP coreneuron_modtests
+          NAME ${name}_${processor}_mpi
+          REQUIRES coreneuron mpi ${processor}
+          MPI_RANKS 2
+          ENVIRONMENT ${processor_env}
+          SCRIPT_PATTERNS test_${name}.py)
+      endif()
     endforeach()
     # One HOC test. It can even run on GPU.
     nrn_add_test(
@@ -431,14 +444,6 @@ if(NRN_ENABLE_PYTHON)
           ENVIRONMENT ${processor_env} NRN_TEST_SPIKES_MPI4PY=1
           SCRIPT_PATTERNS test_spikes.py)
       endif()
-      # Run some of the tests with 2 MPI ranks too
-      nrn_add_pytest(
-        GROUP coreneuron_modtests
-        NAME mpi_2ranks_${processor}
-        REQUIRES coreneuron ${processor}
-        MPI_RANKS 2
-        ENVIRONMENT ${processor_env} NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1
-        SCRIPT_PATTERNS test_spikes.py test_inputpresyn.py)
     endif()
   endforeach()
 
