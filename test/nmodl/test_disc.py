@@ -11,10 +11,8 @@ from disc import DiscCell
 def test_disc():
     disc_cell = DiscCell()
     disc_cell.record()
-    coreneuron_enable = bool(
-        strtobool(os.environ.get("NRN_CORENEURON_ENABLE", "false"))
-    )
-    coreneuron_gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+    coreneuron_enable = strtobool(os.environ.get("NRN_CORENEURON_ENABLE", "false"))
+    coreneuron_gpu = strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
     disc_cell.simulate(1, 0.1, coreneuron_enable, coreneuron_gpu)
 
     assert np.isclose([disc_cell.record_vectors["a"][2]], [8.1])

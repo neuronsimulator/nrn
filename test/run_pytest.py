@@ -6,6 +6,7 @@ except ImportError:
     have_coverage = False
 import os
 import pytest
+import sys
 import warnings
 
 if __name__ == "__main__":
@@ -14,11 +15,11 @@ if __name__ == "__main__":
     # collect coverage files from all ranks and write them to the same file,
     # with predictable race conditions and errors. Try and avoid that by
     # telling each rank to write to a different output file.
-    from neuron import h
+    # from neuron import h
 
-    pc = h.ParallelContext()
+    # pc = h.ParallelContext()
     if have_coverage:
-        os.environ["COVERAGE_FILE"] = ".coverage." + str(pc.id())
+        os.environ["COVERAGE_FILE"] = ".coverage." + str(os.getpid())
     # Importing neuron just above causes a warning, which seems hard to avoid
     with warnings.catch_warnings():
         if have_coverage:
@@ -29,4 +30,5 @@ if __name__ == "__main__":
             )
         code = pytest.main(args)
     print("run_pytest: exiting with code", code, int(code))
-    h.quit(int(code))
+    sys.exit(int(code))
+    # h.quit(int(code))

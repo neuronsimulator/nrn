@@ -624,6 +624,14 @@ function(nrn_add_pytest)
   # different value for the COVERAGE_FILE environment variable.
   set(add_test_args GROUP ${NRN_ADD_PYTEST_GROUP} NAME ${NRN_ADD_PYTEST_NAME} SCRIPT_PATTERNS
                     ${script_patterns})
+
+  # Historically we have needed some workarounds for ancient OpenMPI versions. See
+  # https://www.neuron.yale.edu/phpBB/viewtopic.php?t=4297 and links therein for more discussion.
+  # Launching this some tests via `python` (not `special`) does not work on Linux with OpenMPI 2.x
+  # and without dynamic MPI enabled in NEURON, which corresponds/corresponded at some point to the
+  # GitHub Actions environment. GPU builds are already launched using `special`. We might need to
+  # make the condition here more complicated, along the lines of if(NOT NRN_ENABLE_MPI_DYNAMIC AND
+  # NOT CORENEURON_ENABLE_GPU AND NRN_HAVE_OPENMPI2_OR_LESS) => use special/nrniv -python.
   if(NRN_ENABLE_SHARED AND (NOT NRN_ENABLE_CORENEURON OR CORENRN_ENABLE_SHARED))
     # We can launch using ${PYTHON_EXECUTABLE} -- let's do that
     list(APPEND add_test_args PRELOAD_SANITIZER)
@@ -649,7 +657,6 @@ function(nrn_add_pytest)
   endif()
   if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
     list(APPEND add_test_args PROCESSORS ${NRN_ADD_PYTEST_MPI_RANKS})
-    list(APPEND extra_environment NEURON_INIT_MPI=1)
     # If you consider changing how ${cmd} is constructed (notably the use of ${MPIEXEC_NAME} instead
     # of ${MPIEXEC}) then first refer to GitHub issue BlueBrain/CoreNeuron#894 and note that
     # nrn_add_test prefixes the command with ${CMAKE_COMMAND} -E env.
