@@ -359,7 +359,17 @@ if(NRN_ENABLE_PYTHON)
     ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} NRN_CORENEURON_ENABLE=true
                 CORENRN_ENABLE_GPU=true)
 
-  # TODO test/gjtests is not executed?
+  nrn_add_test_group(
+    CORENEURON
+    NAME gjtests
+    MODFILE_PATTERNS *.mod
+    SIM_DIRECTORY test/gjtests)
+  # Doesn't execute on GPU for now
+  nrn_add_pytest(
+    GROUP gjtests
+    NAME natrans
+    REQUIRES coreneuron
+    SCRIPT_PATTERNS test_natrans.py)
 
   # Build CoreNEURON tests and execute them on both CPU and GPU, steering that by hoping everything
   # respects the CORENRN_ENABLE_GPU environment variable. See
@@ -368,7 +378,6 @@ if(NRN_ENABLE_PYTHON)
     CORENEURON
     NAME coreneuron_modtests
     MODFILE_PATTERNS "mod files/*.mod" "mod files/axial.inc" ../pynrn/unitstest.mod
-                     ../gjtests/natrans.mod
     SIM_DIRECTORY test/coreneuron)
   # This test needs more ranks to make sense, but there's no need to run it on GPU. It's also not
   # clear that it will ever be possible *not* to run it in a dedicated process, given what it does
