@@ -160,6 +160,7 @@ foreach(mpiexec "" "_mpiexec")
     set(python ${mpi_init_prefix${mpiexec}} ${preload_sanitizer${mpiexec}}
                ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${mpi_init_suffix${mpiexec}})
   endif()
+  # Note that we don't collect coverage from these tests...
   nrn_add_test(
     GROUP mpi_init
     NAME python${mpiexec}_nrnmpi_init
