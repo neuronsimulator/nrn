@@ -14,7 +14,7 @@ import time
 def chk():
     """Manage access to JSON reference data."""
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    checker = Chk(os.path.join(dir_path, "test_par_gj.json"), must_exist=False)
+    checker = Chk(os.path.join(dir_path, "test_par_gj.json"))
     yield checker
     # Save results to disk if they've changed; this is called after all tests
     # using chk have executed

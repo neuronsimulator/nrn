@@ -100,7 +100,7 @@ def test_fornetcon():
 
     coreneuron_modes = [0, 1]
     if pc.nhost() == 1:
-        # TODO open ticket and add reference here. This does not pass when launched with 2 MPI ranks.
+        # This does not pass when launched with 2 MPI ranks. See https://github.com/neuronsimulator/nrn/issues/2314.
         coreneuron_modes.append(2)
     for mode in coreneuron_modes:
         runassert(mode)
