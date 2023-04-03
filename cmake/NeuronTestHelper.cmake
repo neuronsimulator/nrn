@@ -636,6 +636,9 @@ function(nrn_add_pytest)
     # We can launch using ${PYTHON_EXECUTABLE} -- let's do that
     list(APPEND add_test_args PRELOAD_SANITIZER)
     if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
+      # We'll be doing something like `mpiexec -n 2 python`; on macOS we need to pass extra
+      # arguments to mpiexec to make sure sanitizer runtime libraries are preloaded into individual
+      # MPI ranks' Python processes.
       set(exe ${preload_sanitizer_mpiexec})
     endif()
     list(APPEND exe ${PYTHON_EXECUTABLE})
@@ -657,6 +660,8 @@ function(nrn_add_pytest)
   endif()
   if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
     list(APPEND add_test_args PROCESSORS ${NRN_ADD_PYTEST_MPI_RANKS})
+    # Implicitly initialise MPI in NEURON
+    list(APPEND extra_environment NEURON_INIT_MPI=1)
     # If you consider changing how ${cmd} is constructed (notably the use of ${MPIEXEC_NAME} instead
     # of ${MPIEXEC}) then first refer to GitHub issue BlueBrain/CoreNeuron#894 and note that
     # nrn_add_test prefixes the command with ${CMAKE_COMMAND} -E env.
