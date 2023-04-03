@@ -1,13 +1,24 @@
-import itertools
 from neuron import h
 from neuron.tests.utils import (
     parallel_context,
     sparse_partrans,
     time_step,
 )
-import numpy as np
+from neuron.tests.utils.checkresult import Chk
+import os
 import pytest
 import time
+
+
+@pytest.fixture(scope="module")
+def chk():
+    """Manage access to JSON reference data."""
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    checker = Chk(os.path.join(dir_path, "test_par_gj.json"), must_exist=False)
+    yield checker
+    # Save results to disk if they've changed; this is called after all tests
+    # using chk have executed
+    checker.save()
 
 
 class Cell:
@@ -24,6 +35,12 @@ class Cell:
         self.dend.insert("pas")
         self.dend(0.5).pas.e = -65
         self.soma(0.5).pas.e = -65
+        # Record membrane potential
+        self.dend_v = h.Vector()
+        self.dend_v.record(self.dend(0.5)._ref_v)
+
+    def data(self):
+        return {"v": list(self.dend_v)}
 
 
 ## Creates half-gap junction mechanism
@@ -50,9 +67,16 @@ class Model:
         self._cells = []
         self._gjlist = []
         self._stims = []
-        self._vrecs = []
         self._make_cells(pc, ngids)
         self._make_gap_junctions(pc, ngids)
+        # Record the time step values
+        self._tvec = h.Vector()
+        self._tvec.record(h._ref_t)
+
+    def data(self):
+        d = {str(cell): cell.data() for cell in self._cells}
+        d["t"] = list(self._tvec)
+        return d
 
     def _make_cells(self, pc, ngids):
         nranks = int(pc.nhost())
@@ -77,11 +101,6 @@ class Model:
                 stim.dur = 20
                 stim.amp = 10
                 self._stims.append(stim)
-
-                # Record membrane potential
-                v = h.Vector()
-                v.record(cell.dend(0.5)._ref_v)
-                self._vrecs.append(v)
 
                 if myrank == 0:
                     print(
@@ -120,49 +139,29 @@ class Model:
             ggid += 2
 
 
-@pytest.mark.parametrize(
-    "enable_sparse_partrans", [True, False]
-)  # use sparse parallel transfer
-def test_par_gj(enable_sparse_partrans):
+@pytest.mark.parametrize("enable_spt", [True, False])  # sparse parallel transfer
+def test_par_gj(chk, enable_spt):
     """Test of ParallelTransfer-based gap junctions.
     Assumes the presence of a conductance-based half-gap junction model ggap.mod"""
     ngids = 2  # number of gids to create (must be even)
-    result_prefix = (
-        "."  # place output files in given directory (must exist before launch)
-    )
-    with sparse_partrans(enable_sparse_partrans), parallel_context() as pc, time_step(
-        0.25
-    ):
+    with sparse_partrans(enable_spt), parallel_context() as pc, time_step(0.25):
         model = Model(pc, ngids)
-        myrank = int(pc.id())
-
         pc.setup_transfer()
-
-        rec_t = h.Vector()
-        rec_t.record(h._ref_t)
-
         wt = time.time()
-
         pc.set_maxstep(10)
         h.finitialize(-65)
-        pc.psolve(500)
-
+        pc.psolve(75)
+        # compute time
         total_wt = time.time() - wt
-
+        # parallel transfer time
         gjtime = pc.vtransfer_time()
-
-        print("rank %d: parallel transfer time: %.02f" % (myrank, gjtime))
-        print("rank %d: total compute time: %.02f" % (myrank, total_wt))
-
-        output = itertools.chain(
-            [np.asarray(rec_t.to_python())],
-            [np.asarray(vrec.to_python()) for vrec in model._vrecs],
-        )
-        np.savetxt(
-            "%s/ParGJ_%04i.dat" % (result_prefix, myrank),
-            np.column_stack(tuple(output)),
-        )
-
-        pc.runworker()
-        pc.done()
+        # model data
+        model_data = model.data()
         del model
+        # reference data
+        ref_data = chk.get("test_par_gj", None)
+        if ref_data is None:  # pragma: no cover
+            # bootstrapping
+            chk("test_par_gj", model_data)
+        for key in model_data:
+            assert model_data[key] == ref_data[key]

@@ -214,7 +214,8 @@ if(NRN_ENABLE_PYTHON)
     GROUP pynrn
     NAME basic_tests_parallel
     MPI_RANKS 2
-    SCRIPT_PATTERNS test_natrans.py test_nrntest_fast.json test_nrntest_fast.py)
+    SCRIPT_PATTERNS test_natrans.py test_nrntest_fast.json test_nrntest_fast.py test_par_gj.json
+                    test_par_gj.py)
   nrn_add_pytest(
     GROUP pynrn
     NAME basic_tests_parallel_netpar
