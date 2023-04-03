@@ -120,8 +120,20 @@
 #    the comparison job with the magic name "reference_file". Paths are
 #    specified relative to the root of the NEURON repository.
 # ~~~
-# Load the cpp_cc_build_time_copy helper function.
-include("${CODING_CONV_CMAKE}/build-time-copy.cmake")
+function(create_symlink)
+  cmake_parse_arguments(opt "" "INPUT;OUTPUT" "" ${ARGN})
+  if(NOT DEFINED opt_INPUT)
+    message(ERROR "build_time_copy missing required keyword argument INPUT.")
+  endif()
+  if(NOT DEFINED opt_OUTPUT)
+    message(ERROR "build_time_copy missing required keyword argument OUTPUT.")
+  endif()
+  execute_process(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${opt_INPUT}" "${opt_OUTPUT}"
+                  RESULT_VARIABLE status)
+  if(NOT status EQUAL 0)
+    message(FATAL_ERROR "Could not create symlink named ${opt_INPUT} pointing to ${opt_OUTPUT}")
+  endif()
+endfunction()
 function(nrn_add_test_group)
   # NAME is used as a key, [CORENEURON, MODFILE_PATTERNS, NRNIVMODL_ARGS and SUBMODULE] are used to
   # set up a custom target that runs nrnivmod, everything else is a default that can be overriden in
@@ -224,10 +236,7 @@ function(nrn_add_test_group)
         get_filename_component(modfile_name "${modfile}" NAME)
         set(modfile_build_path "${nrnivmodl_directory}/${modfile_name}")
         # Add a build rule that copies this modfile from the source tree to the build tree.
-        cpp_cc_build_time_copy(
-          INPUT "${modfile}"
-          OUTPUT "${modfile_build_path}"
-          NO_TARGET)
+        create_symlink(INPUT "${modfile}" OUTPUT "${modfile_build_path}")
         # Store a list of the modfile paths in the build tree so we can declare nrnivmodl's
         # dependency on these.
         list(APPEND modfile_build_paths "${modfile_build_path}")
@@ -384,15 +393,8 @@ function(nrn_add_test)
     if(IS_ABSOLUTE "${script_pattern}")
       file(GLOB script_files "${script_pattern}")
       foreach(script_file ${script_files})
-        # We use NO_TARGET because otherwise we would in some cases generate a lot of
-        # build-time-copy-{hash} top-level targets, which the Makefile build system struggles with.
-        # Instead we make a single top-level target that depends on all scripts copied for this
-        # test.
         get_filename_component(script_name "${script_file}" NAME)
-        cpp_cc_build_time_copy(
-          INPUT "${script_file}"
-          OUTPUT "${working_directory}/${script_name}"
-          NO_TARGET)
+        create_symlink(INPUT "${script_file}" OUTPUT "${working_directory}/${script_name}")
         list(APPEND all_copied_script_files "${working_directory}/${script_name}")
       endforeach()
     else()
@@ -403,11 +405,8 @@ function(nrn_add_test)
         RELATIVE "${test_source_directory}/${sim_directory}"
         "${script_pattern}")
       foreach(script_file ${script_files})
-        # See above for NO_TARGET explanation
-        cpp_cc_build_time_copy(
-          INPUT "${test_source_directory}/${sim_directory}/${script_file}"
-          OUTPUT "${working_directory}/${script_file}"
-          NO_TARGET)
+        create_symlink(INPUT "${test_source_directory}/${sim_directory}/${script_file}" OUTPUT
+                       "${working_directory}/${script_file}")
         list(APPEND all_copied_script_files "${working_directory}/${script_file}")
       endforeach()
     endif()
@@ -622,7 +621,7 @@ function(nrn_add_pytest)
   # sys.stdout/stderr and passing it along to the actual sys.stdout/stderr.
   set(pytest_args --capture=tee-sys)
   if(NRN_ENABLE_COVERAGE AND COVERAGE_FOUND)
-    list(APPEND extra_environment NRN_PYTEST_ENABLE_COVERAGE=1)
+    list(APPEND extra_environment ${NRN_COVERAGE_ENVIRONMENT} NRN_PYTEST_ENABLE_COVERAGE=1)
   endif()
   # Append PYTEST_ARGS
   list(APPEND pytest_args ${NRN_ADD_PYTEST_PYTEST_ARGS})
@@ -765,13 +764,13 @@ function(nrn_add_test_group_comparison)
     string(REGEX REPLACE "^([^:]+)::(.*)$" "\\1::${test_directory}/\\2"
                          reference_file_string_addition "${reference_expression}")
     set(reference_file_string "${reference_file_string}::${reference_file_string_addition}")
-    cpp_cc_build_time_copy(INPUT "${PROJECT_SOURCE_DIR}/${reference_path}"
-                           OUTPUT "${test_directory}/${reference_path}")
+    create_symlink(INPUT "${PROJECT_SOURCE_DIR}/${reference_path}" OUTPUT
+                   "${test_directory}/${reference_path}")
   endforeach()
 
   # Copy the comparison script
-  cpp_cc_build_time_copy(INPUT "${PROJECT_SOURCE_DIR}/test/scripts/compare_test_results.py"
-                         OUTPUT "${test_directory}/compare_test_results.py")
+  create_symlink(INPUT "${PROJECT_SOURCE_DIR}/test/scripts/compare_test_results.py" OUTPUT
+                 "${test_directory}/compare_test_results.py")
 
   # Add a test job that compares the results of the previous test jobs
   set(comparison_name "${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}::compare_results")

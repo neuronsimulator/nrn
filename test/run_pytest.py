@@ -15,7 +15,7 @@ if check_coverage:
 
 if check_coverage:
     # data_suffix=True should mean that each MPI rank will write to a file with a unique suffix.
-    cov = coverage.Coverage(data_suffix=True, source_pkgs=["neuron"])
+    cov = coverage.Coverage(data_suffix=True)
     cov.start()
 
 # Run pytest. Don't want to import NEURON before here if we can help it.

@@ -148,8 +148,10 @@ jobs:
           cmake --build . --target cover_baseline
           xvfb-run ctest -VV --output-on-failure;
           cmake --build . --target cover_collect
+          # Combine coverage.py results (.coverage.XXX) into .coverage
           cmake --build . --target cover_combine
-          cmake --build . --target cover_html
+          # Generate an XML report from .coverage
+          cmake --build . --target cover_xml
         env:
           MATRIX_EVAL: "CC=gcc CXX=g++"
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"

@@ -86,6 +86,9 @@ if(NRN_ENABLE_COVERAGE)
       "${PROJECT_BINARY_DIR}" "--output-file" "coverage-run.info")
   set(cover_combine_command "${LCOV}" "--add-tracefile" "coverage-base.info" "--add-tracefile"
                             "coverage-run.info" "--output-file" "coverage-combined.info")
+  set(cover_combine_py_command find "${PROJECT_BINARY_DIR}" "-name" ".coverage.*" "-type" "f" "|"
+                               "xargs" "${PYTHON_EXECUTABLE}" "-m" "coverage" "combine")
+  set(cover_xml_command "${PYTHON_EXECUTABLE}" "-m" "coverage" "xml")
   set(cover_html_command genhtml "coverage-combined.info" "--output-directory" html)
   add_custom_target(
     cover_clean
@@ -107,6 +110,11 @@ if(NRN_ENABLE_COVERAGE)
   add_custom_target(
     cover_combine
     COMMAND ${cover_combine_command}
+    COMMAND ${cover_combine_py_command}
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+  add_custom_target(
+    cover_xml
+    COMMAND ${cover_xml_command}
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
   add_custom_target(
     cover_html
@@ -115,4 +123,20 @@ if(NRN_ENABLE_COVERAGE)
     COMMAND ${cover_html_command}
     COMMAND echo "View in browser at file://${PROJECT_BINARY_DIR}/html/index.html"
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+  # Write a .coveragerc file into the build directory for steering Python coverage. This should
+  # automatically be picked up by the coverage combine and coverage xml commands that run in
+  # ${PROJECT_BINARY_DIR}.
+  set(coveragerc "${PROJECT_BINARY_DIR}/.coveragerc")
+  file(
+    WRITE "${coveragerc}"
+    "[paths]\n"
+    # Remap paths from the Python module that gets copied to the build directory to the original
+    # files in the source tree.
+    "source =\n"
+    "    ${PROJECT_SOURCE_DIR}/share\n"
+    "    ${PROJECT_BINARY_DIR}\n"
+    "[run]\n"
+    "relative_files = True\n"
+    "source = ${PROJECT_SOURCE_DIR}\n")
+  list(APPEND NRN_COVERAGE_ENVIRONMENT "COVERAGE_RCFILE=${coveragerc}")
 endif()

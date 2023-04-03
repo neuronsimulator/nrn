@@ -47,7 +47,7 @@ def test_natrans(config):
 
     with parallel_context() as pc, num_threads(pc, 4), cache_efficient(
         True
-    ), coreneuron(cell_permute=0, enable="coreneuron" in config, gpu="gpu" in config):
+    ), coreneuron(enable="coreneuron" in config, gpu="gpu" in config):
         rank = pc.id()
         nhost = pc.nhost()
 
