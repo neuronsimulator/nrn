@@ -595,6 +595,13 @@ function(nrn_add_pytest)
     # Use environment settings from nrn_add_test_group(ENVIRONMENT ...)
     set(extra_environment "${${prefix}_DEFAULT_ENVIRONMENT}")
   endif()
+  # Figure out if the REQUIRES are coming from nrn_add_test_group or nrn_add_pytest. We need to have
+  # this list so we can append `mpi` to it if MPI_RANKS is set.
+  if(DEFINED NRN_ADD_PYTEST_REQUIRES)
+    set(requires ${NRN_ADD_PYTEST_REQUIRES})
+  else()
+    set(requires "${${prefix}_DEFAULT_REQUIRES}")
+  endif()
   # Figure out if the SCRIPT_PATTERNS are coming from nrn_add_test_group or nrn_add_pytest. We need
   # to have this list so we can append test/run_pytest.py to it.
   if(DEFINED NRN_ADD_PYTEST_SCRIPT_PATTERNS)
@@ -655,13 +662,12 @@ function(nrn_add_pytest)
   # Might need more sophisticated escaping
   string(JOIN " " pytest_args_string ${pytest_args})
   list(APPEND extra_environment "NRN_PYTEST_ARGS=${pytest_args_string}")
-  if(DEFINED NRN_ADD_PYTEST_REQUIRES)
-    list(APPEND add_test_args REQUIRES ${NRN_ADD_PYTEST_REQUIRES})
-  endif()
   if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
     list(APPEND add_test_args PROCESSORS ${NRN_ADD_PYTEST_MPI_RANKS})
     # Implicitly initialise MPI in NEURON
     list(APPEND extra_environment NEURON_INIT_MPI=1)
+    # Implicitly make the test require MPI
+    list(APPEND requires mpi)
     # If you consider changing how ${cmd} is constructed (notably the use of ${MPIEXEC_NAME} instead
     # of ${MPIEXEC}) then first refer to GitHub issue BlueBrain/CoreNeuron#894 and note that
     # nrn_add_test prefixes the command with ${CMAKE_COMMAND} -E env.
@@ -677,7 +683,15 @@ function(nrn_add_pytest)
   else()
     set(cmd ${exe} ${exe_args})
   endif()
-  list(APPEND add_test_args COMMAND ${cmd} ENVIRONMENT ${extra_environment})
+  list(
+    APPEND
+    add_test_args
+    COMMAND
+    ${cmd}
+    ENVIRONMENT
+    ${extra_environment}
+    REQUIRES
+    ${requires})
   nrn_add_test(${add_test_args})
 endfunction()
 
