@@ -164,13 +164,13 @@ if(NRN_ENABLE_PYTHON)
       NAME py_${python_version}_neuron
       PRELOAD_SANITIZER
       SCRIPT_PATTERNS test_neuron.py
-      COMMAND ${PYTHON_EXECUTABLE} ${coverage} test_neuron.py)
+      COMMAND ${stripped_python} ${coverage} test_neuron.py)
     nrn_add_test(
       GROUP python_unit_tests
       NAME py_${python_version}_rxd
       PRELOAD_SANITIZER
       SCRIPT_PATTERNS rxd.py
-      COMMAND ${PYTHON_EXECUTABLE} ${coverage} rxd.py)
+      COMMAND ${stripped_python} ${coverage} rxd.py)
   endforeach()
   # This includes most pytest-driven NEURON tests. MOD files are compiled for CoreNEURON if
   # CoreNEURON is enabled at compile time. Some tests dynamically enable CoreNEURON when it is
@@ -212,14 +212,14 @@ if(NRN_ENABLE_PYTHON)
   # nrn_add_pytest calls here. Only do this with the default Python.
   nrn_add_pytest(
     GROUP pynrn
+    NAME basic_tests_parallel
+    MPI_RANKS 2
+    SCRIPT_PATTERNS test_natrans.py test_nrntest_fast.json test_nrntest_fast.py)
+  nrn_add_pytest(
+    GROUP pynrn
     NAME basic_tests_parallel_netpar
     MPI_RANKS 2
     SCRIPT_PATTERNS ring.py test_netpar.py)
-  nrn_add_pytest(
-    GROUP pynrn
-    NAME basic_tests_parallel_nrntest
-    MPI_RANKS 2
-    SCRIPT_PATTERNS test_nrntest_fast.json test_nrntest_fast.py)
   nrn_add_pytest(
     GROUP pynrn
     NAME basic_tests_parallel_partrans

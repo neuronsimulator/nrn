@@ -5,6 +5,19 @@ from contextlib import contextmanager
 
 
 @contextmanager
+def cache_efficient(enabled):
+    from neuron import h
+
+    cvode = h.CVode()
+    old_setting = cvode.cache_efficient()
+    cvode.cache_efficient(enabled)
+    try:
+        yield None
+    finally:
+        cvode.cache_efficient(old_setting)
+
+
+@contextmanager
 def cvode_enabled(enabled):
     """
     Helper for tests to enable/disable CVode, leaving the setting as they found it.

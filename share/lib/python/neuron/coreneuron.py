@@ -1,6 +1,32 @@
 import sys
 
 
+class CoreNEURONContextHelper(object):
+    def __init__(self, coreneuron, new_values):
+        self._coreneuron = coreneuron
+        self._new_values = new_values
+        self._old_values = None
+
+    def __enter__(self):
+        assert self._new_values is not None
+        assert self._old_values is None
+        self._old_values = {}
+        for k, v in self._new_values.items():
+            self._old_values[k] = getattr(self._coreneuron, k)
+            setattr(self._coreneuron, k, v)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        assert self._new_values is not None
+        assert self._old_values is not None
+        assert self._new_values.keys() == self._old_values.keys()
+        # Make sure we restore values in reverse order to how we set them.
+        # This is important for pairs like gpu and cell_permute that interact.
+        for k in reversed(self._new_values.keys()):
+            assert getattr(self._coreneuron, k) == self._new_values[k]
+            setattr(self._coreneuron, k, self._old_values[k])
+        return False
+
+
 class coreneuron(object):
     """
     CoreNEURON configuration values.
@@ -9,8 +35,12 @@ class coreneuron(object):
     a class instead of a module allows getter/setter methods to be used, which
     lets us ensure its properties have consistent types and values.
 
+    This can also be used as a context manager to change CoreNEURON settings
+    only inside a particular scope.
+
     Attributes
     ----------
+    available
     cell_permute
     enable
     file_mode
@@ -25,9 +55,18 @@ class coreneuron(object):
     >>> coreneuron.enable = True
     >>> coreneuron.enable
     True
+
+    >>> coreneuron.enable = False
+    >>> with coreneuron(enable=True):
+    ...   assert coreneuron.enable
+    ... coreneuron.enable
+    False
     """
 
     def __init__(self):
+        from neuron.config import arguments
+
+        self._available = arguments["NRN_ENABLE_CORENEURON"]
         self._enable = False
         self._gpu = False
         self._num_gpus = 0
@@ -38,11 +77,28 @@ class coreneuron(object):
         self._prcellstate = -1
         self._model_stats = False
 
+    def __call__(self, **kwargs):
+        """
+        Yields a context manager helper that can be used in a with statement.
+        This allows the syntax
+        with coreneuron(foo=bar):
+            assert coreneuron.foo == bar
+        assert coreneuron.foo == old_value
+        Discarding the return value, or using it in any way other than in a
+        with statement, will have no effect.
+        """
+        return CoreNEURONContextHelper(self, kwargs)
+
     def _default_cell_permute(self):
         return 1 if self._gpu else 0
 
     def valid_cell_permute(self):
         return {1, 2} if self._gpu else {0, 1}
+
+    @property
+    def available(self):
+        """Is CoreNEURON support enabled in this build?"""
+        return self._available
 
     @property
     def enable(self):
