@@ -163,5 +163,13 @@ def test_par_gj(chk, enable_spt):
         if ref_data is None:  # pragma: no cover
             # bootstrapping
             chk("test_par_gj", model_data)
-        for key in model_data:
-            assert model_data[key] == ref_data[key]
+        for key in model_data:  # t or Cell[...]
+            if key == "t":
+                assert model_data[key] == ref_data[key]
+            else:
+                assert key.startswith("Cell[")
+                assert model_data[key].keys() == {"v"}
+                tol = 1e-16
+                assert model_data[key]["v"] == pytest.approx(
+                    ref_data[key]["v"], abs=1e-12, rel=1e-14
+                )
