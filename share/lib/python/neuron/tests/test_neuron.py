@@ -51,6 +51,7 @@ class NeuronTestCase(unittest.TestCase):
         p = Process(target=NeuronTestCase.psection)
         p.start()
         p.join()
+        assert p.exitcode == 0
 
     def testABI(self):
         """Test use of some  Py_LIMITED_API for python3."""
@@ -164,6 +165,7 @@ class NeuronTestCase(unittest.TestCase):
         p = Process(target=NeuronTestCase.ExtendedSection)
         p.start()
         p.join()
+        assert p.exitcode == 0
 
     @classmethod
     def RxDexistence(cls):
@@ -284,10 +286,12 @@ def basicRxD3D():
 
 
 def suite():
-    import os
+    import multiprocessing, os
 
     # For sanitizer runtimes that need to be preloaded on macOS, we need to
     # propagate this manually so multiprocessing.Process works
+    exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
+    multiprocessing.set_executable(exe)
     try:
         os.environ[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
             "NRN_SANITIZER_PRELOAD_VAL"

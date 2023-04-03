@@ -798,10 +798,12 @@ class RxDTestCase(unittest.TestCase):
 
 
 def suite():
-    import os
+    import multiprocessing, os
 
     # For sanitizer runtimes that need to be preloaded on macOS, we need to
     # propagate this manually so multiprocessing.Process works
+    exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
+    multiprocessing.set_executable(exe)
     try:
         os.environ[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
             "NRN_SANITIZER_PRELOAD_VAL"
