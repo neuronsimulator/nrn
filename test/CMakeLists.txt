@@ -137,6 +137,41 @@ if(NRN_ENABLE_PYTHON)
     # .coverage filename, fixing MPI execution.
     set(coverage -m coverage run -p)
   endif()
+  # Basic Python unit tests, driven by neuron.test() and neuron.test_rxd(). If we are compiling for
+  # multiple Python versions, test all of them.
+  nrn_add_test_group(
+    NAME python_unit_tests
+    MODFILE_PATTERNS NONE
+    SIM_DIRECTORY test/python_unit_tests)
+  if(NRN_ENABLE_PYTHON_DYNAMIC)
+    set(pythons ${NRN_PYTHON_DYNAMIC})
+  else()
+    set(pythons ${PYTHON_EXECUTABLE})
+  endif()
+  foreach(python ${pythons})
+    cpp_cc_strip_python_shims(EXECUTABLE "${python}" OUTPUT stripped_python)
+    execute_process(
+      COMMAND
+        "${stripped_python}" -c
+        "import sys; print('.'.join([str(sys.version_info.major), str(sys.version_info.minor)]), end='')"
+      RESULT_VARIABLE result
+      OUTPUT_VARIABLE python_version)
+    if(NOT result EQUAL 0)
+      message(FATAL_ERROR "Could not get version from ${stripped_python}")
+    endif()
+    nrn_add_test(
+      GROUP python_unit_tests
+      NAME py_${python_version}_neuron
+      PRELOAD_SANITIZER
+      SCRIPT_PATTERNS test_neuron.py
+      COMMAND ${PYTHON_EXECUTABLE} ${coverage} test_neuron.py)
+    nrn_add_test(
+      GROUP python_unit_tests
+      NAME py_${python_version}_rxd
+      PRELOAD_SANITIZER
+      SCRIPT_PATTERNS rxd.py
+      COMMAND ${PYTHON_EXECUTABLE} ${coverage} rxd.py)
+  endforeach()
   # This includes most pytest-driven NEURON tests. MOD files are compiled for CoreNEURON if
   # CoreNEURON is enabled at compile time. Some tests dynamically enable CoreNEURON when it is
   # available.

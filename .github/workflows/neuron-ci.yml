@@ -309,19 +309,6 @@ jobs:
                 mkdir -p src/nrnpython
                 echo $'[install]\nprefix='>src/nrnpython/setup.cfg;
               fi
-              if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
-                echo "--RUNNING BASIC TESTS FROM BUILD DIR--"
-                for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
-                do
-                  echo "Using ${python}"
-                  NEURONHOME="${PWD}/share/nrn" \
-                    PYTHONPATH="${PWD}/lib/python" \
-                    PATH="${PWD}/bin" \
-                    LD_LIBRARY_PATH="${PWD}/lib:${LD_LIBRARY_PATH}" \
-                    DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
-                    "${python}" -c "from neuron import h; import neuron; neuron.test()"
-                done
-              fi
               ctest --output-on-failure
               cmake --build . --target install
               export PATH="${INSTALL_DIR}/bin:${PATH}"
@@ -341,20 +328,9 @@ jobs:
             nrn_enable_sanitizer_preload_python="${PYTHON}"
           fi
 
-          # basic test for cmake when python is not disabled
-          if [[ "$BUILD_MODE" == "cmake" && ! "${cmake_args[*]}" =~ "NRN_ENABLE_PYTHON=OFF" ]]; then
-            ${nrn_enable_sanitizer_preload_python} --version && ${nrn_enable_sanitizer_preload_python} -c 'import neuron; neuron.test()'
-          fi;
-
           # test neurondemo with cmake
           if [[ "$BUILD_MODE" != "setuptools" ]]; then
             ${nrn_enable_sanitizer} neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
-          fi;
-
-          # with cmake dynamic check python_min and python_max together
-          if [[ "$BUILD_MODE" == "cmake" && "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
-            ${nrn_enable_sanitizer_preload_python} -c 'import neuron; neuron.test()'
-            $PYTHON_MIN -c 'import neuron; neuron.test()'
           fi;
 
           # run rxd tests manually if rxd is enabled *and CoreNEURON is
