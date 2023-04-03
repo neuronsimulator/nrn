@@ -1,8 +1,10 @@
+from neuron import coreneuron
 from neuron.tests.utils import (
     cache_efficient,
     num_threads,
     parallel_context,
 )
+import pytest
 
 
 class Cell:
@@ -23,7 +25,15 @@ class Cell:
         return "Cell[{:d}]".format(self.id)
 
 
-def test_natrans():
+configs = ["neuron"]
+if coreneuron.available:
+    configs.append("coreneuron")
+    if coreneuron.gpu_available:
+        configs.append("coreneuron-gpu")
+
+
+@pytest.mark.parametrize("config", configs)
+def test_natrans(config):
     """Want to exercise the internal indexing schemes. So need mpi and threads.
 
     * Random order of sgid calls to source_var.
@@ -33,9 +43,11 @@ def test_natrans():
 
     Might be a good idea to add some voltage sources and ki sources.
     """
-    from neuron import coreneuron, h
+    from neuron import h
 
-    with parallel_context() as pc, num_threads(pc, 4), cache_efficient(True):
+    with parallel_context() as pc, num_threads(pc, 4), cache_efficient(
+        True
+    ), coreneuron(cell_permute=0, enable="coreneuron" in config, gpu="gpu" in config):
         rank = pc.id()
         nhost = pc.nhost()
 
@@ -105,12 +117,12 @@ def test_natrans():
                     )
                 assert diff <= threshold
 
-        # NEURON: Fails if tar.napre not what is expected
+        # NEURON: fails if tar.napre not what is expected
+        # CoreNEURON: fails if does not copy expected tar.napre to NEURON
         run()
 
-        if not coreneuron.available:
-            return
 
-        with coreneuron(enable=True, cell_permute=0):
-            # Fails if CoreNEURON does not copy expected tar.napre to NEURON
-            run()
+if __name__ == "__main__":
+    # python test_natrans.py will run all the tests in this file
+    # e.g. __file__ --> __file__ + "::test_foo" would just run test_foo
+    pytest.main([__file__])

@@ -399,12 +399,6 @@ if(NRN_ENABLE_PYTHON)
     NAME gjtests
     MODFILE_PATTERNS *.mod
     SIM_DIRECTORY test/gjtests)
-  # Doesn't execute on GPU for now
-  nrn_add_pytest(
-    GROUP gjtests
-    NAME natrans
-    REQUIRES coreneuron
-    SCRIPT_PATTERNS test_natrans.py)
 
   # Build CoreNEURON tests and execute them on both CPU and GPU, steering that by hoping everything
   # respects the CORENRN_ENABLE_GPU environment variable. See

@@ -40,11 +40,12 @@ class coreneuron(object):
 
     Attributes
     ----------
-    available
+    available [read-only]
     cell_permute
     enable
     file_mode
     gpu
+    gpu_available [read-only]
     prcellstate
     verbose
     warp_balance
@@ -69,6 +70,7 @@ class coreneuron(object):
         self._available = arguments["NRN_ENABLE_CORENEURON"]
         self._enable = False
         self._gpu = False
+        self._gpu_available = arguments["CORENRN_ENABLE_GPU"]
         self._num_gpus = 0
         self._file_mode = False
         self._cell_permute = None
@@ -129,6 +131,11 @@ class coreneuron(object):
                 )
             )
             self._cell_permute = self._default_cell_permute()
+
+    @property
+    def gpu_available(self):
+        """Is CoreNEURON support enabled in this build?"""
+        return self._gpu_available
 
     @property
     def num_gpus(self):
