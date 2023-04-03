@@ -40,7 +40,11 @@
 #    SCRIPT_PATTERNS  - zero or more glob expressions, defined relative to the
 #                       submodule directory, matching scripts that must be
 #                       copied from the submodule to the working directory in
-#                       which the test is run.
+#                       which the test is run. Directory structure is preserved
+#                       if the expressions are not absolute paths. If the given
+#                       patterns are absolute, the directory structure is
+#                       ignored and matching files are placed directly in the
+#                       working directory in which the test is run.
 #    SIM_DIRECTORY    - extra directory name under which the test will be run,
 #                       this is useful for some models whose scripts make
 #                       assumptions about directory layout.
@@ -100,9 +104,12 @@
 #    launching using `nrniv -python` or `special -python` if dynamic loading is
 #    not possible, and also takes care of launching multiple MPI ranks if
 #    needed. The GROUP, NAME, ENVIRONMENT, REQUIRES and SCRIPT_PATTERNS
-#    arguments are simply forwarded to nrn_add_test. This helper generates an
-#    appropriate command that behaves similarly to:
+#    arguments are forwarded to nrn_add_test with minor additions. This helper
+#    generates an appropriate command that behaves similarly to:
 #      [mpiexec -n ${MPI_RANKS}] ${PYTHON_EXECUTABLE} -m pytest ${PYTEST_ARGS}
+#    and, if MPI_RANKS is set, adds `mpi` to the REQUIRES list and sets the
+#    NEURON_INIT_MPI environment variable so that NEURON will implicitly
+#    initialize MPI when it is imported.
 #
 # 4. nrn_add_test_group_comparison(GROUP group_name
 #                                  [REFERENCE_OUTPUT datatype::file.ext ...])
