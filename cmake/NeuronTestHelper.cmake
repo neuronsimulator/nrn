@@ -121,17 +121,20 @@
 #    specified relative to the root of the NEURON repository.
 # ~~~
 function(create_symlink)
-  cmake_parse_arguments(opt "" "INPUT;OUTPUT" "" ${ARGN})
-  if(NOT DEFINED opt_INPUT)
-    message(ERROR "build_time_copy missing required keyword argument INPUT.")
+  cmake_parse_arguments(opt "" "TARGET;NAME" "" ${ARGN})
+  if(NOT DEFINED opt_TARGET)
+    message(FATAL_ERROR "create_symlink missing required keyword argument TARGET.")
   endif()
-  if(NOT DEFINED opt_OUTPUT)
-    message(ERROR "build_time_copy missing required keyword argument OUTPUT.")
+  if(NOT DEFINED opt_NAME)
+    message(FATAL_ERROR "create_symlink missing required keyword argument NAME.")
   endif()
-  execute_process(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${opt_INPUT}" "${opt_OUTPUT}"
+  # Make sure the output directory exists
+  get_filename_component(target_directory "${opt_NAME}" DIRECTORY)
+  file(MAKE_DIRECTORY "${target_directory}")
+  execute_process(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${opt_TARGET}" "${opt_NAME}"
                   RESULT_VARIABLE status)
   if(NOT status EQUAL 0)
-    message(FATAL_ERROR "Could not create symlink named ${opt_INPUT} pointing to ${opt_OUTPUT}")
+    message(FATAL_ERROR "Could not create symlink named ${opt_NAME} pointing to ${opt_TARGET}")
   endif()
 endfunction()
 function(nrn_add_test_group)
@@ -236,7 +239,7 @@ function(nrn_add_test_group)
         get_filename_component(modfile_name "${modfile}" NAME)
         set(modfile_build_path "${nrnivmodl_directory}/${modfile_name}")
         # Add a build rule that copies this modfile from the source tree to the build tree.
-        create_symlink(INPUT "${modfile}" OUTPUT "${modfile_build_path}")
+        create_symlink(TARGET "${modfile}" NAME "${modfile_build_path}")
         # Store a list of the modfile paths in the build tree so we can declare nrnivmodl's
         # dependency on these.
         list(APPEND modfile_build_paths "${modfile_build_path}")
@@ -378,10 +381,8 @@ function(nrn_add_test)
   set(working_directory "${PROJECT_BINARY_DIR}/test/${NRN_ADD_TEST_GROUP}/${NRN_ADD_TEST_NAME}")
   file(MAKE_DIRECTORY "${working_directory}")
   if(DEFINED nrnivmodl_directory)
-    execute_process(
-      COMMAND
-        ${CMAKE_COMMAND} -E create_symlink "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
-        "${working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}")
+    create_symlink(NAME "${working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
+                   TARGET "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}")
   endif()
   # Set up the actual test. First, collect the script files that need to be copied into the test-
   # specific working directory and copy them there.
@@ -394,7 +395,7 @@ function(nrn_add_test)
       file(GLOB script_files "${script_pattern}")
       foreach(script_file ${script_files})
         get_filename_component(script_name "${script_file}" NAME)
-        create_symlink(INPUT "${script_file}" OUTPUT "${working_directory}/${script_name}")
+        create_symlink(TARGET "${script_file}" NAME "${working_directory}/${script_name}")
         list(APPEND all_copied_script_files "${working_directory}/${script_name}")
       endforeach()
     else()
@@ -405,8 +406,8 @@ function(nrn_add_test)
         RELATIVE "${test_source_directory}/${sim_directory}"
         "${script_pattern}")
       foreach(script_file ${script_files})
-        create_symlink(INPUT "${test_source_directory}/${sim_directory}/${script_file}" OUTPUT
-                       "${working_directory}/${script_file}")
+        create_symlink(TARGET "${test_source_directory}/${sim_directory}/${script_file}"
+                       NAME "${working_directory}/${script_file}")
         list(APPEND all_copied_script_files "${working_directory}/${script_file}")
       endforeach()
     endif()
@@ -764,13 +765,13 @@ function(nrn_add_test_group_comparison)
     string(REGEX REPLACE "^([^:]+)::(.*)$" "\\1::${test_directory}/\\2"
                          reference_file_string_addition "${reference_expression}")
     set(reference_file_string "${reference_file_string}::${reference_file_string_addition}")
-    create_symlink(INPUT "${PROJECT_SOURCE_DIR}/${reference_path}" OUTPUT
-                   "${test_directory}/${reference_path}")
+    create_symlink(TARGET "${PROJECT_SOURCE_DIR}/${reference_path}"
+                   NAME "${test_directory}/${reference_path}")
   endforeach()
 
   # Copy the comparison script
-  create_symlink(INPUT "${PROJECT_SOURCE_DIR}/test/scripts/compare_test_results.py" OUTPUT
-                 "${test_directory}/compare_test_results.py")
+  create_symlink(TARGET "${PROJECT_SOURCE_DIR}/test/scripts/compare_test_results.py"
+                 NAME "${test_directory}/compare_test_results.py")
 
   # Add a test job that compares the results of the previous test jobs
   set(comparison_name "${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}::compare_results")

@@ -46,3 +46,7 @@ additional_commands:
     kwargs:
       INPUT: '1'
       OUTPUT: '1'
+  create_symlink:
+    kwargs:
+      NAME: '1'
+      TARGET: '1'
