@@ -394,12 +394,6 @@ if(NRN_ENABLE_PYTHON)
     ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} NRN_CORENEURON_ENABLE=true
                 CORENRN_ENABLE_GPU=true)
 
-  nrn_add_test_group(
-    CORENEURON
-    NAME gjtests
-    MODFILE_PATTERNS *.mod
-    SIM_DIRECTORY test/gjtests)
-
   # Build CoreNEURON tests and execute them on both CPU and GPU, steering that by hoping everything
   # respects the CORENRN_ENABLE_GPU environment variable. See
   # https://github.com/neuronsimulator/nrn/issues/1792 ...

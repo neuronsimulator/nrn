@@ -100,6 +100,21 @@ def cvode_use_long_double(cv, enabled):
 
 
 @contextmanager
+def time_step(value):
+    """
+    Helper for tests to ensure that h.dt has a particular value.
+    """
+    from neuron import h
+
+    old_value = h.dt
+    h.dt = value
+    try:
+        yield None
+    finally:
+        h.dt = old_value
+
+
+@contextmanager
 def hh_table_disabled():
     """
     Helper for tests to ensure that the TABLE statement in hh.mod will not be used.
@@ -152,3 +167,15 @@ def parallel_context():
         yield pc
     finally:
         pc.gid_clear()
+
+
+@contextmanager
+def sparse_partrans(enabled):
+    from neuron import h
+
+    old_setting = h.nrn_sparse_partrans
+    h.nrn_sparse_partrans = enabled
+    try:
+        yield None
+    finally:
+        h.nrn_sparse_partrans = old_setting

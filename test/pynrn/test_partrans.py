@@ -5,6 +5,10 @@ import sys
 from io import StringIO
 
 from neuron import h
+from neuron.tests.utils import (
+    sparse_partrans,
+)
+
 
 # h.nrnmpi_init()
 
@@ -282,13 +286,12 @@ def test_partrans():
     check_values()
 
     # nrnmpi_int_alltoallv_sparse
-    h.nrn_sparse_partrans = 1
-    mkmodel(5)
-    transfer1()
-    init_values()
-    run()
-    check_values()
-    h.nrn_sparse_partrans = 0
+    with sparse_partrans(True):
+        mkmodel(5)
+        transfer1()
+        init_values()
+        run()
+        check_values()
 
     # impedance error (number of gap junction not equal to number of pc.transfer_var)
     imp = h.Impedance()
