@@ -2,3 +2,6 @@ codecov:
   require_ci_to_pass: false
   notify: 
     wait_for_ci: false
+ignore:
+  - "setup.py"
+  - "test/benchmarks/*"
