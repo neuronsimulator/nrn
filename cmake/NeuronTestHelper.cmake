@@ -654,6 +654,8 @@ function(nrn_add_pytest)
       # arguments to mpiexec to make sure sanitizer runtime libraries are preloaded into individual
       # MPI ranks' Python processes.
       set(exe ${preload_sanitizer_mpiexec})
+      # Implicitly initialise MPI in NEURON when the module is imported
+      list(APPEND extra_environment NEURON_INIT_MPI=1)
     endif()
     list(APPEND exe ${PYTHON_EXECUTABLE})
   else()
@@ -664,6 +666,9 @@ function(nrn_add_pytest)
       set(exe nrniv)
     endif()
     list(APPEND exe_args -notatty -python)
+    if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
+      list(APPEND exe_args -mpi)
+    endif()
   endif()
   list(APPEND exe_args run_pytest.py)
   # Might need more sophisticated escaping
@@ -671,8 +676,6 @@ function(nrn_add_pytest)
   list(APPEND extra_environment "NRN_PYTEST_ARGS=${pytest_args_string}")
   if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
     list(APPEND add_test_args PROCESSORS ${NRN_ADD_PYTEST_MPI_RANKS})
-    # Implicitly initialise MPI in NEURON
-    list(APPEND extra_environment NEURON_INIT_MPI=1)
     # Implicitly make the test require MPI
     list(APPEND requires mpi)
     # If you consider changing how ${cmd} is constructed (notably the use of ${MPIEXEC_NAME} instead
