@@ -211,13 +211,18 @@ struct NrnThreadMappingInfo {
     }
 
     /** @brief Resize the lfp vector */
-    void prepare_lfp() {
-        size_t lfp_size = std::accumulate(mappingvec.begin(),
-                                          mappingvec.end(),
-                                          0,
-                                          [](size_t total, const auto& mapping) {
-                                              return total + mapping->num_electrodes();
-                                          });
+    void prepare_lfp(bool all_cells) {
+        size_t lfp_size = 0;
+        if(all_cells){
+            lfp_size = std::accumulate(mappingvec.begin(),
+                                        mappingvec.end(),
+                                        0,
+                                        [](size_t total, const auto& mapping) {
+                                            return total + mapping->num_electrodes();
+                                        });
+        } else if (!mappingvec.empty()) {
+            lfp_size = mappingvec.front()->num_electrodes();
+        }
         _lfp.resize(lfp_size);
     }
 };

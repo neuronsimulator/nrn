@@ -81,7 +81,7 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             register_custom_report(nt, report_config, vars_to_report);
             break;
         case LFPReport:
-            mapinfo->prepare_lfp();
+            mapinfo->prepare_lfp(report_config.section_all_compartments);
             vars_to_report = get_lfp_vars_to_report(
                 nt, gids_to_report, report_config, mapinfo->_lfp.data(), nodes_to_gid);
             is_soma_target = report_config.section_type == SectionType::Soma ||
@@ -96,10 +96,12 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         if (!vars_to_report.empty()) {
             auto report_event = std::make_unique<ReportEvent>(dt,
                                                               t,
+                                                              gids_to_report,
                                                               vars_to_report,
                                                               report_config.output_path.data(),
                                                               report_config.report_dt,
-                                                              report_config.type);
+                                                              report_config.type,
+                                                              report_config.section_all_compartments);
             report_event->send(t, net_cvode_instance, &nt);
             m_report_events.push_back(std::move(report_event));
         }
@@ -369,13 +371,13 @@ VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
     VarsToReport vars_to_report;
     std::size_t offset_lfp = 0;
     for (const auto& gid: gids_to_report) {
+        std::vector<VarWithMapping> to_report;
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
         if (cell_mapping == nullptr) {
             std::cerr << "[LFP] Error : Compartment mapping information is missing for gid " << gid
-                      << '\n';
+                    << '\n';
             nrn_abort(1);
         }
-        std::vector<VarWithMapping> to_report;
         int num_electrodes = cell_mapping->num_electrodes();
         for (int electrode_id = 0; electrode_id < num_electrodes; electrode_id++) {
             to_report.emplace_back(VarWithMapping(electrode_id, report_variable + offset_lfp));
@@ -383,6 +385,13 @@ VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
         }
         if (!to_report.empty()) {
             vars_to_report[gid] = to_report;
+        }
+        // single value report
+        if(!report.section_all_compartments) {
+            if (nrnmpi_myid != 0) {
+                vars_to_report[gid].clear();
+            }
+            return vars_to_report;
         }
     }
     return vars_to_report;
