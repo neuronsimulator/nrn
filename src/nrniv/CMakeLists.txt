@@ -90,7 +90,7 @@ add_dependencies(generated_source_files nocmodl_generated_files)
 add_executable(nocmodl ${NRN_NMODL_SRC_FILES} "${NRN_NMODL_GEN}/lex.cpp"
                        "${NRN_NMODL_GEN}/parse1.cpp" "${NRN_NMODL_GEN}/diffeq.cpp")
 cpp_cc_configure_sanitizers(TARGET nocmodl)
-target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1 NRN_DYNAMIC_UNITS=1)
+target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1)
 # Otherwise the generated code in the binary directory does not find headers in the modlunit source
 # directory and the source files in the source directory do not find generated headers in the binary
 # directory.
