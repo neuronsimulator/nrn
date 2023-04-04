@@ -18,6 +18,27 @@ def cache_efficient(enabled):
 
 
 @contextmanager
+def coverage_enabled():
+    from neuron import config
+
+    enable = config.arguments["NRN_ENABLE_COVERAGE"]
+    if enable:
+        try:
+            import coverage
+        except ImportError:
+            enable = False
+    if enable:
+        # data_suffix => .coverage.uniquesuffix
+        cov = coverage.Coverage(data_suffix=True)
+        cov.start()
+    try:
+        yield None
+    finally:
+        cov.stop()  # stop collecting coverage
+        cov.save()  # save the .coverage file
+
+
+@contextmanager
 def cvode_enabled(enabled):
     """
     Helper for tests to enable/disable CVode, leaving the setting as they found it.

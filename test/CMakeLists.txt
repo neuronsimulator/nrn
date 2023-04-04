@@ -165,12 +165,14 @@ if(NRN_ENABLE_PYTHON)
       PRELOAD_SANITIZER
       SCRIPT_PATTERNS test_neuron.py
       COMMAND ${stripped_python} ${coverage} test_neuron.py)
-    nrn_add_test(
-      GROUP python_unit_tests
-      NAME py_${python_version}_rxd
-      PRELOAD_SANITIZER
-      SCRIPT_PATTERNS rxd.py
-      COMMAND ${stripped_python} ${coverage} rxd.py)
+    if(NRN_ENABLE_RX3D)
+      nrn_add_test(
+        GROUP python_unit_tests
+        NAME py_${python_version}_rxd
+        PRELOAD_SANITIZER
+        SCRIPT_PATTERNS rxd.py
+        COMMAND ${stripped_python} ${coverage} rxd.py)
+    endif()
   endforeach()
   # This includes most pytest-driven NEURON tests. MOD files are compiled for CoreNEURON if
   # CoreNEURON is enabled at compile time. Some tests dynamically enable CoreNEURON when it is

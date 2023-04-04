@@ -8,6 +8,7 @@ $Id$
 import unittest
 import neuron
 from neuron import h
+from neuron.tests.utils import coverage_enabled
 
 
 class NeuronTestCase(unittest.TestCase):
@@ -41,9 +42,9 @@ class NeuronTestCase(unittest.TestCase):
     @classmethod
     def psection(cls):
         """Test neuron.psection(Section)"""
-
-        s = h.Section(name="soma")
-        neuron.psection(s)
+        with coverage_enabled():
+            s = h.Section(name="soma")
+            neuron.psection(s)
 
     def testpsection(self):
         from multiprocessing import Process
@@ -154,10 +155,11 @@ class NeuronTestCase(unittest.TestCase):
     @classmethod
     def ExtendedSection(cls):
         """test prsection (modified print statement)"""
-        from neuron.sections import ExtendedSection
+        with coverage_enabled():
+            from neuron.sections import ExtendedSection
 
-        s = ExtendedSection(name="test")
-        s.psection()
+            s = ExtendedSection(name="test")
+            s.psection()
 
     def testExtendedSection(self):
         from multiprocessing import Process
@@ -170,24 +172,24 @@ class NeuronTestCase(unittest.TestCase):
     @classmethod
     def RxDexistence(cls):
         """test import rxd and geometry3d"""
-        error = 0
-        try:
-            from neuron import rxd
-            from neuron.rxd import geometry
-
-            print("has_geometry3d is " + str(geometry.has_geometry3d))
-        except Exception as e:
-            print("'from neuron import rxd' failed", e)
-            error = 1
-        else:
+        with coverage_enabled():
+            error = 0
             try:
-                a = basicRxD3D()
-                print("    basicRxD3D() ran with no exception")
+                from neuron import rxd
+                from neuron.rxd import geometry
+
+                print("has_geometry3d is " + str(geometry.has_geometry3d))
             except Exception as e:
-                print("'basicRxD3D()' failed", e)
+                print("'from neuron import rxd' failed", e)
                 error = 1
-        assert error == 0
-        return 0
+            else:
+                try:
+                    a = basicRxD3D()
+                    print("    basicRxD3D() ran with no exception")
+                except Exception as e:
+                    print("'basicRxD3D()' failed", e)
+                    error = 1
+            assert error == 0
 
     def testHelp(self):
         error = False
