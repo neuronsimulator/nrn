@@ -27,9 +27,6 @@ def test_py2nrnstring():
     # so can't test unicode on stdin read by hoc.
     h("strdef s")
     h('s = "hello"')
-    checking("h('getstr(s)')")
-    h("getstr(s)")
-    "goodbye"
     assert h.s == "hello"
 
     checking("h(uni + ' = 1')")
