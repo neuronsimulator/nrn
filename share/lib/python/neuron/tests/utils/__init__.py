@@ -31,11 +31,13 @@ def coverage_enabled():
         # data_suffix => .coverage.uniquesuffix
         cov = coverage.Coverage(data_suffix=True)
         cov.start()
-    try:
+        try:
+            yield None
+        finally:
+            cov.stop()  # stop collecting coverage
+            cov.save()  # save the .coverage file
+    else:
         yield None
-    finally:
-        cov.stop()  # stop collecting coverage
-        cov.save()  # save the .coverage file
 
 
 @contextmanager
