@@ -5,6 +5,7 @@ from neuron.tests.utils import (
     parallel_context,
 )
 import pytest
+import sys
 
 
 class Cell:
@@ -125,4 +126,4 @@ def test_natrans(config):
 if __name__ == "__main__":
     # python test_natrans.py will run all the tests in this file
     # e.g. __file__ --> __file__ + "::test_foo" would just run test_foo
-    pytest.main([__file__])
+    sys.exit(pytest.main([__file__]))

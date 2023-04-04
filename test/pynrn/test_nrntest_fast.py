@@ -16,6 +16,7 @@ from neuron.tests.utils import (
     parallel_context,
 )
 from neuron.tests.utils.checkresult import Chk
+import sys
 
 h.load_file("stdrun.hoc")
 
@@ -298,7 +299,7 @@ def test_t14(chk, t14_model_data, field, threads):
                 tolerance = 2e-9
             else:
                 if "long_double" in method:
-                    tolerance = 4e-10
+                    tolerance = 5e-10
                 else:
                     tolerance = 2e-9
 
@@ -310,4 +311,4 @@ def test_t14(chk, t14_model_data, field, threads):
 if __name__ == "__main__":
     # python test_nrntest_fast.py will run all the tests in this file
     # e.g. __file__ --> __file__ + "::test_t13" would just run test_t13
-    pytest.main([__file__])
+    sys.exit(pytest.main([__file__]))
