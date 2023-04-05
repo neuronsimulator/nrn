@@ -4,4 +4,4 @@ codecov:
     wait_for_ci: false
 ignore:
   - "setup.py"
-  - "test/benchmarks/*"
+  - "test/benchmarks"
