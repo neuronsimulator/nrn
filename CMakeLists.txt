@@ -748,7 +748,7 @@ if(NRN_ENABLE_PYTHON)
   add_custom_target(
     help_data_dat
     COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/lib/python/neuron
-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
             ${PROJECT_SOURCE_DIR}/docs/python ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
     COMMENT "Generating help_data.dat"
     VERBATIM)
@@ -795,9 +795,9 @@ if(NRN_ENABLE_TESTS)
     include(Catch)
   endif()
   include(CTest)
-  nrn_find_python_module(pytest)
-  nrn_find_python_module(pytest_cov)
   if(NRN_ENABLE_PYTHON)
+    nrn_find_python_module(pytest REQUIRED)
+    nrn_find_python_module(pytest_cov)
     if(NOT PYTEST_FOUND)
       message(SEND_ERROR "pytest Python package is required.")
     elseif(NOT PYTEST_COV_FOUND)

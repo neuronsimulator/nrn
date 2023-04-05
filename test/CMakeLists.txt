@@ -114,7 +114,7 @@ if(NRN_ENABLE_MPI)
             "-x;NRN_PROBE_VARIABLE=NRN_PROBE_VALUE")
       set(probe_command
           ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${option}
-          ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} -c
+          ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} -c
           "import os\; print(os.environ['NRN_PROBE_VARIABLE'])")
       execute_process(
         COMMAND ${probe_command}
@@ -157,8 +157,8 @@ foreach(mpiexec "" "_mpiexec")
   if(NRN_HAVE_OPENMPI2_OR_LESS AND NOT NRN_ENABLE_MPI_DYNAMIC)
     set(python ${mpi_init_prefix${mpiexec}} nrniv ${mpi_init_suffix${mpiexec}} -python)
   else()
-    set(python ${mpi_init_prefix${mpiexec}} ${preload_sanitizer${mpiexec}} ${PYTHON_EXECUTABLE}
-               ${mpi_init_suffix${mpiexec}})
+    set(python ${mpi_init_prefix${mpiexec}} ${preload_sanitizer${mpiexec}}
+               ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${mpi_init_suffix${mpiexec}})
   endif()
   nrn_add_test(
     GROUP mpi_init
@@ -192,13 +192,17 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     CORENEURON
     NAME pynrn
     MODFILE_PATTERNS test/pynrn/*.mod)
-  nrn_add_test(
-    GROUP pynrn
-    NAME basic_tests
-    PRELOAD_SANITIZER
-    ENVIRONMENT COVERAGE_FILE=.coverage.basic_tests
-    COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/pynrn
-    SCRIPT_PATTERNS test/pynrn/*.json test/pynrn/*.py)
+  # In case of multiple Python versions, run these tests with all of them
+  foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+    list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
+    list(GET NRN_PYTHON_VERSIONS ${val} pyver)
+    nrn_add_test(
+      GROUP pynrn
+      NAME basic_tests_py${pyver}
+      PRELOAD_SANITIZER
+      COMMAND "${exe}" ${pytest} ./test/pynrn
+      SCRIPT_PATTERNS test/pynrn/*.json test/pynrn/*.py)
+  endforeach()
 
   # Mostly to increase coverage
   nrn_add_test_group(NAME coverage_tests MODFILE_PATTERNS test/cover/mod/*.mod)
@@ -207,13 +211,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     NAME cover_tests
     PRELOAD_SANITIZER
     ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests
-    COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/cover
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/cover
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
   nrn_add_test_group(
     NAME example_nmodl
     MODFILE_PATTERNS *.mod *.inc
     SIM_DIRECTORY share/examples/nrniv/nmodl)
-  set(py_exe ${PYTHON_EXECUTABLE})
+  set(py_exe ${NRN_DEFAULT_PYTHON_EXECUTABLE})
   set(py_preload PRELOAD_SANITIZER)
   set(hoc_exe special)
   foreach(ext hoc py)
@@ -269,7 +273,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       NAME rxd_tests
       PRELOAD_SANITIZER
       ENVIRONMENT COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance}
-      COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/rxd)
+      COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/rxd)
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(mpi4py)
       if(mpi4py_FOUND)
@@ -280,8 +284,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           ENVIRONMENT COVERAGE_FILE=.coverage.rxd_mpi_tests ${change_test_tolerance}
           COMMAND
             ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
-            ${preload_sanitizer_mpiexec} ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} ${pytest}
-            ./test/rxd --mpi)
+            ${preload_sanitizer_mpiexec} ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
+            ${pytest} ./test/rxd --mpi)
       endif()
     endif()
   endif()
@@ -371,7 +375,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         -python)
   else()
     set(modtests_preload_sanitizer PRELOAD_SANITIZER)
-    set(modtests_launch_py ${PYTHON_EXECUTABLE} ${pytest})
+    set(modtests_launch_py ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest})
     set(modtests_launch_hoc nrniv ${nrniv_mpi_arg})
     set(modtests_launch_py_mpi
         ${MPIEXEC_NAME}
@@ -380,7 +384,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${MPIEXEC_OVERSUBSCRIBE}
         ${MPIEXEC_PREFLAGS}
         ${preload_sanitizer_mpiexec}
-        ${PYTHON_EXECUTABLE}
+        ${NRN_DEFAULT_PYTHON_EXECUTABLE}
         ${MPIEXEC_POSTFLAGS})
     set(modtests_launch_py_mpi_subworlds
         ${MPIEXEC_NAME}
@@ -389,7 +393,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${MPIEXEC_OVERSUBSCRIBE}
         ${MPIEXEC_PREFLAGS}
         ${preload_sanitizer_mpiexec}
-        ${PYTHON_EXECUTABLE}
+        ${NRN_DEFAULT_PYTHON_EXECUTABLE}
         ${MPIEXEC_POSTFLAGS})
   endif()
 
@@ -679,7 +683,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP nrnmusic
       NAME music_tests
       PROCESSORS 2
-      COMMAND ${PYTHON_EXECUTABLE} test/music_tests/runtests.py
+      COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} test/music_tests/runtests.py
       SCRIPT_PATTERNS test/music_tests/*.music test/music_tests/*.py)
   endif()
 endif()

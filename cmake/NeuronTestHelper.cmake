@@ -432,7 +432,7 @@ function(nrn_add_test)
     # https://tobywf.com/2021/02/python-ext-asan/
     list(APPEND test_env NRN_SANITIZER_PRELOAD_VAR=${NRN_SANITIZER_PRELOAD_VAR})
     list(APPEND test_env NRN_SANITIZER_PRELOAD_VAL=${NRN_SANITIZER_LIBRARY_PATH})
-    list(APPEND test_env NRN_PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE})
+    list(APPEND test_env NRN_PYTHON_EXECUTABLE=${NRN_DEFAULT_PYTHON_EXECUTABLE})
   endif()
   list(APPEND test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
   # Add the actual test job, including the `special` and `special-core` binaries in the path. TODOs:

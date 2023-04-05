@@ -10,7 +10,7 @@
 
 # Parse commandline options so that:
 #
-# * PYTHON_EXECUTABLE is the default Python, which is used for running tests and so on.
+# * NRN_DEFAULT_PYTHON_EXECUTABLE is the default Python, which is used for running tests and so on.
 # * NRN_PYTHON_EXECUTABLES is a list of all the Pythons that we are building against. This will only
 #   have a length > 1 if NRN_ENABLE_PYTHON_DYNAMIC is defined.
 if(NOT PYTHON_EXECUTABLE AND (NOT NRN_ENABLE_PYTHON_DYNAMIC OR NOT NRN_PYTHON_DYNAMIC))
@@ -33,40 +33,23 @@ if(NRN_ENABLE_PYTHON_DYNAMIC AND NRN_PYTHON_DYNAMIC)
     # NRN_PYTHON_DYNAMIC is taken to be the default python version
     message(
       WARNING
-        "NRN_ENABLE_PYTHON_DYNAMIC and NRN_PYTHON_DYNAMIC overriding PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} to ${NRN_PYTHON_DYNAMIC_0}"
+        "Setting default Python version ${NRN_PYTHON_DYNAMIC_0}, not ${PYTHON_EXECUTABLE}, because NRN_ENABLE_PYTHON_DYNAMIC is enabled"
     )
   endif()
-  set(PYTHON_EXECUTABLE "${NRN_PYTHON_DYNAMIC_0}")
   set(python_executables ${NRN_PYTHON_DYNAMIC})
 else()
   # In other cases, there is just one Python and it's PYTHON_EXECUTABLE.
   set(python_executables "${PYTHON_EXECUTABLE}")
-endif()
-# In any case, the default (PYTHON_EXECUTABLE) should always be the zeroth entry in the list of
-# Pythons
-list(GET python_executables 0 python_executables_0)
-if(NOT python_executables_0 STREQUAL PYTHON_EXECUTABLE)
-  message(
-    FATAL_ERROR
-      "PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} should be the zeroth entry in ${python_executables}")
 endif()
 
 # For each Python in NRN_PYTHON_EXECUTABLES, find its version number, it's include directory, and
 # its library path. Store those in the new lists NRN_PYTHON_VERSIONS, NRN_PYTHON_INCLUDES and
 # NRN_PYTHON_LIBRARIES. Set NRN_PYTHON_COUNT to be the length of those lists, and
 # NRN_PYTHON_ITERATION_LIMIT to be NRN_PYTHON_COUNT - 1.
-set(NRN_PYTHON_EXECUTABLES
-    ""
-    CACHE INTERNAL "" FORCE)
-set(NRN_PYTHON_VERSIONS
-    ""
-    CACHE INTERNAL "" FORCE)
-set(NRN_PYTHON_INCLUDES
-    ""
-    CACHE INTERNAL "" FORCE)
-set(NRN_PYTHON_LIBRARIES
-    ""
-    CACHE INTERNAL "" FORCE)
+set(NRN_PYTHON_EXECUTABLES)
+set(NRN_PYTHON_VERSIONS)
+set(NRN_PYTHON_INCLUDES)
+set(NRN_PYTHON_LIBRARIES)
 if(NRN_ENABLE_PYTHON)
   foreach(pyexe ${python_executables})
     message(STATUS "Checking if ${pyexe} is a working python")
@@ -129,5 +112,10 @@ if(NRN_ENABLE_PYTHON)
     list(APPEND NRN_PYTHON_LIBRARIES "${Python3_LIBRARIES}")
   endforeach()
 endif()
+# In any case, the default (NRN_DEFAULT_PYTHON_EXECUTABLE) should always be the zeroth entry in the
+# list of Pythons
+list(GET NRN_PYTHON_EXECUTABLES 0 NRN_DEFAULT_PYTHON_EXECUTABLE)
+list(GET NRN_PYTHON_INCLUDES 0 NRN_DEFAULT_PYTHON_INCLUDES)
+list(GET NRN_PYTHON_LIBRARIES 0 NRN_DEFAULT_PYTHON_LIBRARIES)
 list(LENGTH NRN_PYTHON_EXECUTABLES NRN_PYTHON_COUNT)
 math(EXPR NRN_PYTHON_ITERATION_LIMIT "${NRN_PYTHON_COUNT} - 1")

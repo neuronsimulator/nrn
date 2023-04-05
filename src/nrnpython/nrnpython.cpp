@@ -172,6 +172,7 @@ extern "C" int nrnpython_start(int b) {
         check("Could not initialise Python", Py_InitializeFromConfig(config));
         // Manipulate sys.path, starting from the default values
         {
+            PyLockGIL _{};
             auto* const sys_path = PySys_GetObject("path");
             if (!sys_path) {
                 throw std::runtime_error("Could not get sys.path from C++");
@@ -202,6 +203,7 @@ extern "C" int nrnpython_start(int b) {
             // sys.path[0] between the two scripts. Real Python doesn't have this
             // problem, because you can't pass multiple scripts/commands/modules on
             // a single commandline.
+
             // For the moment, just unconditionally add an empty string
             auto* ustr = PyUnicode_DecodeFSDefaultAndSize("", 0);
             if (!ustr) {
