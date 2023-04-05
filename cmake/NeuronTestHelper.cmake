@@ -528,20 +528,22 @@ function(nrn_add_test)
       PARENT_SCOPE)
 endfunction()
 
-# =============================================================================
-# Check if --oversubscribe is a valid option for mpiexec
-# =============================================================================
-if(NRN_ENABLE_MPI)
+# =================================================================================
+# Detect some features of the MPI implementation and store them as cache variables.
+# =================================================================================
+if(NRN_ENABLE_MPI
+   AND NOT DEFINED CACHE{MPIEXEC_OVERSUBSCRIBE}
+   AND NOT DEFINED CACHE{MPIEXEC_PRELOAD_SANITIZER})
   # Detect if the MPI implementation supports the --oversubscribe option (at the time of writing the
   # available version of OpenMPI does but those of HPE-MPI and MPICH do not).
-  set(MPIEXEC_OVERSUBSCRIBE --oversubscribe)
+  set(oversubscribe --oversubscribe)
   execute_process(
-    COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_OVERSUBSCRIBE} --version
+    COMMAND ${MPIEXEC_EXECUTABLE} ${oversubscribe} --version
     RESULT_VARIABLE MPIEXEC_OVERSUBSCRIBE_TEST
     OUTPUT_QUIET ERROR_QUIET)
   if(NOT MPIEXEC_OVERSUBSCRIBE_TEST EQUAL 0)
-    message(STATUS "mpiexec does not support ${MPIEXEC_OVERSUBSCRIBE}")
-    unset(MPIEXEC_OVERSUBSCRIBE)
+    message(STATUS "mpiexec does not support ${oversubscribe}")
+    unset(oversubscribe)
   endif()
   if(APPLE
      AND NRN_ENABLE_PYTHON
@@ -577,6 +579,12 @@ if(NRN_ENABLE_MPI)
       message(WARNING "You may see failures in tests launched as mpiexec ... python ...")
     endif()
   endif()
+  set(MPIEXEC_OVERSUBSCRIBE
+      "${oversubscribe}"
+      CACHE INTERNAL "")
+  set(MPIEXEC_PRELOAD_SANITIZER
+      "${preload_sanitizer_mpiexec}"
+      CACHE INTERNAL "")
 endif()
 
 function(nrn_add_pytest)
@@ -653,7 +661,7 @@ function(nrn_add_pytest)
       # We'll be doing something like `mpiexec -n 2 python`; on macOS we need to pass extra
       # arguments to mpiexec to make sure sanitizer runtime libraries are preloaded into individual
       # MPI ranks' Python processes.
-      set(exe ${preload_sanitizer_mpiexec})
+      set(exe ${MPIEXEC_PRELOAD_SANITIZER})
       # Implicitly initialise MPI in NEURON when the module is imported
       list(APPEND extra_environment NEURON_INIT_MPI=1)
     endif()
