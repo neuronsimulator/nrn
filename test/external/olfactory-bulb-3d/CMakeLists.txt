@@ -9,7 +9,12 @@ else()
   set(launch_executable ${preload_sanitizer_mpiexec} ${NRN_DEFAULT_PYTHON_EXECUTABLE})
   set(extra_env NEURON_INIT_MPI=1)
 endif()
-list(APPEND olfactory_bulb_3d_neuron_args bulb3dtest.py)
+list(APPEND olfactory_bulb_3d_neuron_args run.py)
+# Want to modify the bulb3dtest.py script slightly. Cannot use sed -i anymore because bulb3dtest.py
+# is a symlink to the source tree, and macOS sed complains.
+set(precmd
+    sed "s/runsim.build_part_model(.*/runsim.build_part_model([5], [])/g$<SEMICOLON>w run.py"
+    bulb3dtest.py)
 set(olfactory_bulb_3d_neuron_prefix
     ${MPIEXEC_NAME}
     ${MPIEXEC_NUMPROC_FLAG}
@@ -34,8 +39,7 @@ nrn_add_test(
   NAME neuron ${preload_sanitizer}
   REQUIRES mpi python
   PROCESSORS ${olfactory_bulb_3d_mpi_ranks}
-  PRECOMMAND sed -i.bak "s/runsim.build_part_model(.*/runsim.build_part_model([5], [])/g"
-             bulb3dtest.py
+  PRECOMMAND ${precmd}
   COMMAND ${olfactory_bulb_3d_neuron_prefix} ${olfactory_bulb_3d_neuron_args} --tstop
           ${olfactory_bulb_3d_sim_time})
 foreach(processor gpu cpu)
@@ -55,8 +59,7 @@ foreach(processor gpu cpu)
       NAME coreneuron_${processor}_${mode} ${preload_sanitizer}
       REQUIRES coreneuron mpi python ${processor}
       PROCESSORS ${olfactory_bulb_3d_mpi_ranks}
-      PRECOMMAND sed -i.bak "s/runsim.build_part_model(.*/runsim.build_part_model([5], [])/g"
-                 bulb3dtest.py
+      PRECOMMAND ${precmd}
       COMMAND
         ${olfactory_bulb_3d_neuron_prefix} ${olfactory_bulb_3d_neuron_args} --tstop
         ${olfactory_bulb_3d_sim_time} --coreneuron ${olfactory_bulb_3d_gpu_args}
