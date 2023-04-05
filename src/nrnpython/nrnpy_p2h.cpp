@@ -82,7 +82,7 @@ static int pysame(Object*, Object*);
 static PyObject* main_module;
 static PyObject* main_namespace;
 static hoc_List* dlist;
-#if NRNPYTHON_DYNAMICLOAD
+#ifdef NRNPYTHON_DYNAMICLOAD
 extern int nrnpy_site_problem;
 extern int* nrnpy_site_problem_p;
 #endif
@@ -165,7 +165,7 @@ extern "C" void nrnpython_reg_real() {
     nrnpy_p_ho2po = nrnpy_ho2po;
     nrnpy_p_po2ho = nrnpy_po2ho;
     dlist = hoc_l_newlist();
-#if NRNPYTHON_DYNAMICLOAD
+#ifdef NRNPYTHON_DYNAMICLOAD
     nrnpy_site_problem_p = &nrnpy_site_problem;
 #endif
 }

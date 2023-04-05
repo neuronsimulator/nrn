@@ -6,12 +6,13 @@
 #include <InterViews/session.h>
 #endif
 #include <nrnoc2iv.h>
-#include <nrnpy_reg.h>
 #include <hoccontext.h>
-#include <string>
 #include <ocfile.h>  // bool isDirExist(const std::string& path);
 
 #include <hocstr.h>
+
+#include <string>
+#include <sstream>
 extern "C" void nrnpython_real();
 extern "C" int nrnpython_start(int);
 extern int hoc_get_line();
@@ -28,12 +29,11 @@ extern const char* path_prefix_to_libnrniv();
 static char* nrnpython_getline(FILE*, FILE*, const char*);
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
-void nrnpy_augment_path();
 int nrnpy_pyrun(const char*);
 extern int (*p_nrnpy_pyrun)(const char*);
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
-#if NRNPYTHON_DYNAMICLOAD
+#ifdef NRNPYTHON_DYNAMICLOAD
 int nrnpy_site_problem;
 #endif
 
@@ -41,7 +41,7 @@ extern "C" {
 extern void rl_stuff_char(int);
 }  // extern "C"
 
-void nrnpy_augment_path() {
+static void nrnpy_augment_path() {
     static int augmented = 0;
     if (!augmented && strlen(neuronhome_forward()) > 0) {
         augmented = 1;
@@ -93,41 +93,26 @@ int nrnpy_pyrun(const char* fname) {
 #endif  // MINGW not defined
 }
 
-static wchar_t** wcargv;
-
-static void del_wcargv(int argc) {
-    if (wcargv) {
-        for (int i = 0; i < argc; ++i) {
-            PyMem_Free(wcargv[i]);
-        }
-        PyMem_Free(wcargv);
-        wcargv = NULL;
+namespace {
+struct PythonConfigWrapper {
+    PythonConfigWrapper() {
+        PyConfig_InitPythonConfig(&config);
     }
-}
-
-static void copy_argv_wcargv(int argc, char** argv) {
-    del_wcargv(argc);
-    // basically a copy of code from Modules/python.c
-    wcargv = (wchar_t**) PyMem_Malloc(sizeof(wchar_t*) * argc);
-    if (!wcargv) {
-        fprintf(stderr, "out of memory\n");
-        exit(1);
+    ~PythonConfigWrapper() {
+        PyConfig_Clear(&config);
     }
-    for (int i = 0; i < argc; ++i) {
-        wcargv[i] = Py_DecodeLocale(argv[i], NULL);
-        if (!wcargv[i]) {
-            fprintf(stderr, "out of memory\n");
-            exit(1);
-        }
+    operator PyConfig*() {
+        return &config;
     }
-}
+    PyConfig* operator->() {
+        return &config;
+    }
+    PyConfig config;
+};
+}  // namespace
 
-static wchar_t* mywstrdup(char* s) {
-    size_t sz = mbstowcs(NULL, s, 0);
-    wchar_t* ws = new wchar_t[sz + 1];
-    int count = mbstowcs(ws, s, sz + 1);
-    return ws;
-}
+extern PyObject* nrnpy_hoc();
+extern PyObject* nrnpy_nrn();
 
 /** @brief Start the Python interpreter.
  *  @arg b Mode of operation, can be 0 (finalize), 1 (initialize),
@@ -147,49 +132,73 @@ extern "C" int nrnpython_start(int b) {
         if (nrnpy_nositeflag) {
             Py_NoSiteFlag = 1;
         }
+        // Create a Python configuration, see
+        // https://docs.python.org/3.8/c-api/init_config.html#python-configuration, so that
+        // {nrniv,special} -python behaves as similarly as possible to python. In particular this
+        // affects locale coercion. Under some circumstances Python does not straightforwardly
+        // handle settings like LC_ALL=C, so using a different configuration can lead to surprising
+        // differences.
+        PythonConfigWrapper config;
         // nrnpy_pyhome hopefully holds the python base root and should
         // work with virtual environments.
         // But use only if not overridden by the PYTHONHOME environment variable.
         char* _p_pyhome = getenv("PYTHONHOME");
-        if (_p_pyhome == NULL) {
+        if (!_p_pyhome) {
             _p_pyhome = nrnpy_pyhome;
         }
+        auto const check = [](const char* desc, PyStatus status) {
+            if (PyStatus_Exception(status)) {
+                std::ostringstream oss;
+                oss << desc;
+                if (status.err_msg) {
+                    oss << ": " << status.err_msg;
+                    if (status.func) {
+                        oss << " in " << status.func;
+                    }
+                }
+                throw std::runtime_error(oss.str());
+            }
+        };
         if (_p_pyhome) {
-            Py_SetPythonHome(mywstrdup(_p_pyhome));
+            // Py_SetPythonHome is deprecated in Python 3.11+, write to config.home instead.
+            check("Could not set PyConfig.home",
+                  PyConfig_SetBytesString(config, &config->home, _p_pyhome));
         }
-        Py_Initialize();
-#if NRNPYTHON_DYNAMICLOAD
+        // PySys_SetArgv is deprecated in Python 3.11+, write to config.XXX instead.
+        // nrn_global_argv contains the arguments passed to nrniv/special, which are not valid
+        // Python arguments, so tell Python not to try and parse them. In future we might like to
+        // remove the NEURON-specific arguments and pass whatever is left to Python?
+        config->parse_argv = 0;
+        check("Could not set PyConfig.argv",
+              PyConfig_SetBytesArgv(config, nrn_global_argc, nrn_global_argv));
+        // Initialise Python
+        check("Could not initialise Python", Py_InitializeFromConfig(config));
+#ifdef NRNPYTHON_DYNAMICLOAD
         // return from Py_Initialize means there was no site problem
         nrnpy_site_problem = 0;
 #endif
-        copy_argv_wcargv(nrn_global_argc, nrn_global_argv);
-        PySys_SetArgv(nrn_global_argc, wcargv);
         started = 1;
-        // see nrnpy_reg.h
-        for (int i = 0; nrnpy_reg_[i]; ++i) {
-            (*nrnpy_reg_[i])();
-        }
+        nrnpy_hoc();
+        nrnpy_nrn();
         nrnpy_augment_path();
     }
     if (b == 0 && started) {
         PyGILState_STATE gilsav = PyGILState_Ensure();
         Py_Finalize();
-        del_wcargv(nrn_global_argc);
         // because of finalize, no PyGILState_Release(gilsav);
         started = 0;
     }
     if (b == 2 && started) {
-        int i;
-        copy_argv_wcargv(nrn_global_argc, nrn_global_argv);
-        PySys_SetArgv(nrn_global_argc, wcargv);
-        nrnpy_augment_path();
+        // There used to be a call to PySys_SetArgv here, which dates back to
+        // e48d933e03b5c25a454e294deea55e399f8ba1b1 and a comment about sys.argv not being set with
+        // nrniv -python. Today, it seems like this is not needed any more.
 #if !defined(MINGW)
         // cannot get this to avoid crashing with MINGW
         PyOS_ReadlineFunctionPointer = nrnpython_getline;
 #endif
         // Is there a -c "command" or file.py arg.
         bool python_error_encountered{false};
-        for (i = 1; i < nrn_global_argc; ++i) {
+        for (int i = 1; i < nrn_global_argc; ++i) {
             char* arg = nrn_global_argv[i];
             if (strcmp(arg, "-c") == 0 && i + 1 < nrn_global_argc) {
                 if (PyRun_SimpleString(nrn_global_argv[i + 1])) {

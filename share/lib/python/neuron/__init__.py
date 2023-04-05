@@ -1614,25 +1614,24 @@ def nrnpy_pr(stdoe, s):
     return 0
 
 
-if not embedded:
-    try:
-        # nrnpy_pr callback in place of hoc printf
-        # ensures consistent with python stdout even with jupyter notebook.
-        # nrnpy_pass callback used by h.doNotify() in MINGW when not called from
-        # gui thread in order to allow the gui thread to run.
+try:
+    # nrnpy_pr callback in place of hoc printf
+    # ensures consistent with python stdout even with jupyter notebook.
+    # nrnpy_pass callback used by h.doNotify() in MINGW when not called from
+    # gui thread in order to allow the gui thread to run.
 
-        nrnpy_set_pr_etal = nrn_dll_sym("nrnpy_set_pr_etal")
+    nrnpy_set_pr_etal = nrn_dll_sym("nrnpy_set_pr_etal")
 
-        nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
-        nrnpy_pass_proto = ctypes.CFUNCTYPE(ctypes.c_int)
-        nrnpy_set_pr_etal.argtypes = [nrnpy_pr_proto, nrnpy_pass_proto]
+    nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
+    nrnpy_pass_proto = ctypes.CFUNCTYPE(ctypes.c_int)
+    nrnpy_set_pr_etal.argtypes = [nrnpy_pr_proto, nrnpy_pass_proto]
 
-        nrnpy_pr_callback = nrnpy_pr_proto(nrnpy_pr)
-        nrnpy_pass_callback = nrnpy_pass_proto(nrnpy_pass)
-        nrnpy_set_pr_etal(nrnpy_pr_callback, nrnpy_pass_callback)
-    except:
-        print("Failed to setup nrnpy_pr")
-        pass
+    nrnpy_pr_callback = nrnpy_pr_proto(nrnpy_pr)
+    nrnpy_pass_callback = nrnpy_pass_proto(nrnpy_pass)
+    nrnpy_set_pr_etal(nrnpy_pr_callback, nrnpy_pass_callback)
+except:
+    print("Failed to setup nrnpy_pr")
+    pass
 
 
 def nrnpy_vec_math(op, flag, arg1, arg2=None):

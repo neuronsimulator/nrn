@@ -40,7 +40,7 @@ extern void nrn_possible_mismatched_arch(const char*);
 
 // following is undefined or else has the value of sys.api_version
 // at time of configure (using the python first in the PATH).
-#if defined(NRNPYTHON_DYNAMICLOAD)
+#ifdef NRNPYTHON_DYNAMICLOAD
 
 #include "nrnwrap_dlfcn.h"
 #if !defined(RTLD_NOLOAD)
@@ -48,21 +48,7 @@ extern void nrn_possible_mismatched_arch(const char*);
 #endif  // RTLD_NOLOAD
 
 extern char* neuron_home;
-
-#if NRNPYTHON_DYNAMICLOAD >= 30
-
-#ifdef MINGW
-static const char* ver[] = {"3.8", 0};
-#else
-static const char* ver[] = {"3.11", "3.10", "3.9", "3.8", 0};
-#endif  // !MINGW
-
-#else
-
 static const char* ver[] = {0};
-
-#endif
-
 static int iver;  // which python is loaded?
 static void* python_already_loaded();
 static void* load_python();
@@ -92,7 +78,7 @@ static void* p_cons(Object*) {
 static void p_destruct(void* v) {}
 static Member_func p_members[] = {{0, 0}};
 
-#if NRNPYTHON_DYNAMICLOAD
+#ifdef NRNPYTHON_DYNAMICLOAD
 static char* nrnpy_pylib;
 
 static void siteprob(void) {
@@ -190,43 +176,6 @@ static void set_nrnpylib() {
     }
 #endif
 }
-
-#if 0
-static void set_pythonhome(void* handle){
-	if (nrnmpi_myid == 0) {atexit(siteprob);}
-#ifdef MINGW
-#else
-	if (getenv("PYTHONHOME") || nrnpy_nositeflag) { return; }
-	if (nrnpy_pyhome) {
-		int res = setenv("PYTHONHOME", nrnpy_pyhome, 1);
-		assert(res == 0);
-		return;
-	}
-
-	Dl_info dl_info;
-	void* s = dlsym(handle, "Py_Initialize");
-        assert(s != NULL);
-	int success = dladdr(s, &dl_info);
-	if (success) {
-		//printf("%s\n", dl_info.dli_fname);
-		nrnpy_pyhome = strdup(dl_info.dli_fname);
-		char* p = nrnpy_pyhome;
-		int n = strlen(p);
-		int seen = 0;
-		for (int i = n-1; i > 0; --i) {
-			if (p[i] == '/') {
-				if (++seen >= 2) {
-					p[i] = '\0' ;
-					break;
-				}
-			}
-		}
-		int res = setenv("PYTHONHOME", p, 1);
-		assert(res == 0);
-	}
-#endif
-}
-#endif  // if 0
 #endif
 
 void nrnpython_reg() {
@@ -237,7 +186,7 @@ void nrnpython_reg() {
         p_nrnpython_real = 0;
         p_nrnpython_reg_real = 0;
     } else {
-#if NRNPYTHON_DYNAMICLOAD
+#ifdef NRNPYTHON_DYNAMICLOAD
         void* handle = NULL;
 
         if (!nrn_is_python_extension) {
@@ -299,7 +248,7 @@ void nrnpython_reg() {
     class2oc("PythonObject", p_cons, p_destruct, p_members, NULL, NULL, NULL);
 }
 
-#if NRNPYTHON_DYNAMICLOAD  // to end of file
+#ifdef NRNPYTHON_DYNAMICLOAD  // to end of file
 
 // important dlopen flags :
 // RTLD_NOLOAD returns NULL if not open, or handle if it is resident.
@@ -379,29 +328,17 @@ static int pylib2pyver10(std::string pylib) {
 }
 
 static void load_nrnpython(int pyver10, const char* pylib) {
-    void* handle = NULL;
-#if (defined(__MINGW32__) || \
-     (defined(USE_LIBNRNPYTHON_MAJORMINOR) && USE_LIBNRNPYTHON_MAJORMINOR == 1))
-    char name[256];
     int pv10 = pyver10;
     if (pyver10 < 1 && pylib) {
         pv10 = pylib2pyver10(pylib);
     }
-    Sprintf(name, "libnrnpython%d", pv10);
-    handle = load_nrnpython_helper(name);
+    std::string name{"libnrnpython" + std::to_string(pv10)};
+    auto* const handle = load_nrnpython_helper(name.c_str());
     if (!handle) {
-        printf("Could not load %s\n", name);
-        printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
+        std::cout << "Could not load " << name << std::endl;
+        std::cout << "pyver10=" << pyver10 << " pylib=" << (pylib ? pylib : "(null)") << std::endl;
         return;
     }
-#else
-    handle = load_nrnpython_helper("libnrnpython3");
-    if (!handle) {
-        printf("Could not load libnrnpython3\n");
-        printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
-        return;
-    }
-#endif
     p_nrnpython_start = (int (*)(int)) load_sym(handle, "nrnpython_start");
     p_nrnpython_real = (void (*)()) load_sym(handle, "nrnpython_real");
     p_nrnpython_reg_real = (void (*)()) load_sym(handle, "nrnpython_reg_real");

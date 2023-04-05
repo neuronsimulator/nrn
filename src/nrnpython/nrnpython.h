@@ -10,10 +10,6 @@
 #include <../../nrnconf.h>
 #include <nrnpython_config.h>
 
-#if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD >= 30
-#define PY_LIMITED_API
-#endif
-
 #if defined(USE_PYTHON)
 #undef _POSIX_C_SOURCE
 #undef _XOPEN_SOURCE

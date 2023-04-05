@@ -129,8 +129,7 @@ else()
 endif()
 
 if(NRN_ENABLE_PYTHON_DYNAMIC)
-  # the value needs to be made not to matter
-  set(NRNPYTHON_DYNAMICLOAD 3)
+  set(NRNPYTHON_DYNAMICLOAD 1)
 endif()
 
 if(NRN_DYNAMIC_UNITS_USE_LEGACY)

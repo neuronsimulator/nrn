@@ -13,13 +13,6 @@
 #include <iostream>
 #include <string>
 
-#if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
-// when compiled with different Python.h, force correct value
-#undef NRNPYTHON_DYNAMICLOAD
-#define NRNPYTHON_DYNAMICLOAD PY_MAJOR_VERSION
-#endif
-
-
 extern int nrn_is_python_extension;
 extern int nrn_nobanner_;
 extern int ivocmain(int, const char**, const char**);
@@ -28,8 +21,6 @@ extern int nrn_main_launch;
 
 // int nrn_global_argc;
 extern char** nrn_global_argv;
-
-extern void nrnpy_augment_path();
 extern void (*p_nrnpython_finalize)();
 extern PyObject* nrnpy_hoc();
 
@@ -37,7 +28,7 @@ extern PyObject* nrnpy_hoc();
 extern void nrnmpi_stubs();
 extern std::string nrnmpi_load(int is_python);
 #endif
-#if NRNPYTHON_DYNAMICLOAD
+#ifdef NRNPYTHON_DYNAMICLOAD
 extern int nrnpy_site_problem;
 #endif
 
@@ -375,8 +366,7 @@ extern "C" PyObject* PyInit_hoc() {
 
     nrn_main_launch = 2;
     ivocmain(argc, (const char**) argv, (const char**) env);
-//	nrnpy_augment_path();
-#if NRNPYTHON_DYNAMICLOAD
+#ifdef NRNPYTHON_DYNAMICLOAD
     nrnpy_site_problem = 0;
 #endif  // NRNPYTHON_DYNAMICLOAD
     return nrnpy_hoc();

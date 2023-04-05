@@ -111,15 +111,19 @@ mark_as_advanced(NRN_WHEEL_BUILD)
 #   - ON        : install in ${CMAKE_INSTALL_PREFIX} (default)
 #   NOTE: When building the wheel, this is set to OFF.
 # Dynamic Python version support:
-#   - OFF       : nrnpython interface is linked into libnrniv.so
-#   - ON        : nrnpython interface consistent with default python3 (falling back to python)
-#                 is built and loaded dynamically at run time (nrniv still works in the absence
-#                 of any Python at all).
-#   - <string>  : semicolon (;) separated list of python executable used to create a separate
-#                 interface for each. When one of those versions of Python is launched,
-#                 "import neuron" will automatically load the appropriate module interface along
-#                 with the rest of neuron. Also nrniv -pyexe <python> will work with any <python>
-#                 in the list of python executables.
+#   - NRN_ENABLE_PYTHON_DYNAMIC=OFF  : libnrniv is linked against a single Python version, which
+#                                      can be steered with PYTHON_EXECUTABLE
+#   - NRN_ENABLE_PYTHON_DYNAMIC=ON   : libnrniv is not linked against Python, distinct libnrnpython
+#                                      libraries are built for each configured Python major.minor
+#                                      version. nrniv/special still works in the absence of Python,
+#                                      and dynamically loads the appropriate libnrnpythonX.Y as
+#                                      needed
+#   - NRN_PYTHON_DYNAMIC=pythonX;... : semicolon separated list of Python versions used when
+#                                      NRN_ENABLE_PYTHON_DYNAMIC=ON, if not set then it defaults to
+#                                      PYTHON_EXECUTABLE. This must include all major.minor
+#                                      versions that you want nrniv -python to be able to load. If
+#                                      this *is* set then the first entry will be used as the
+#                                      default Python version.
 # Dynamic MPI support:
 #   - OFF       : nrnmpi is linked into libnrniv.so
 #   - ON        : nrnmpi interface consistent with default mpi is built and loaded dynamically
@@ -184,25 +188,6 @@ set(NRN_PROFILER
     CACHE STRING "Set which profiler to build against ('caliper', 'likwid')")
 
 # =============================================================================
-# Set Python additional versions earlier (especially for old CMake)
-# =============================================================================
-set(Python_ADDITIONAL_VERSIONS
-    3
-    3.9
-    3.8
-    3.7
-    3.6
-    3.5
-    3.4
-    3.3
-    3.2
-    3.1
-    3.0
-    2.8
-    2.7
-    2.6)
-
-# =============================================================================
 # Include cmake modules
 # =============================================================================
 # sub-directorty containing project submodules
@@ -247,17 +232,26 @@ endif()
 include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
 
-# Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE is not set, look it up
-# in the PATH exclusively. Need to set PYTHON_EXECUTABLE before calling SanitizerHelper.cmake
-if(NOT PYTHON_EXECUTABLE)
-  message(
-    STATUS "-DPYTHON_EXECUTABLE not specified. Looking for `python3` in the PATH exclusively...")
-  find_program(
-    PYTHON_EXECUTABLE python3
-    PATHS ENV PATH
-    NO_DEFAULT_PATH)
-  message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
-endif()
+# =================================================================================================
+# Enable sanitizer support if the NRN_SANITIZERS variable is set. Comes befores PythonHelper.cmake.
+# =================================================================================================
+include(cmake/SanitizerHelper.cmake)
+# Make a CMake list NRN_SANITIZERS_LIST
+string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
+
+# =================================================================================================
+# Juggle PYTHON_EXECUTABLE and NRN_ENABLE_PYTHON_DYNAMIC to make sure that:
+#
+# * PYTHON_EXECUTABLE is the default Python version
+# * NRN_PYTHON_EXECUTABLES is a list of absolute paths to all Python executables to be built against
+#   (length >=1 if NRN_ENABLE_PYTHON_DYNAMIC else == 1)
+# * NRN_PYTHON_VERSIONS (38, 311, ...), NRN_PYTHON_INCLUDES and NRN_PYTHON_LIBRARIES are populated
+#   with values patching NRN_PYTHON_EXECUTABLES
+# * NRN_PYTHON_COUNT is set to the number of entries in those lists (i.e. number of Pythons), and
+#   NRN_PYTHON_ITERATION_LIMIT is set to ${NRN_PYTHON_COUNT} - 1
+# =================================================================================================
+set(NRN_MINIMUM_PYTHON_VERSION 3.8)
+include(cmake/PythonHelper.cmake)
 
 # =============================================================================
 # Find required packages
@@ -413,29 +407,10 @@ endif()
 # =============================================================================
 # Enable Python support
 # =============================================================================
-
-find_package(PythonInterp 3.8 REQUIRED)
 if(NRN_ENABLE_PYTHON)
-  # start afresh with PythonLibsNew's find_library without this, -DPYTHON_EXECUTABLE=`which python3`
-  # -DNRN_PYTHON_DYNAMIC="python3.8;python3.9" would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
-  # /usr/lib/x86_64-linux-gnu/libpython3.8.so
-  unset(PYTHON_LIBRARY CACHE)
-
-  find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
-  set(NRN_DEFAULT_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
-  set(NRN_DEFAULT_PYTHON_LIBRARIES ${PYTHON_LIBRARIES})
-  set(NRN_DEFAULT_PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS})
-  set(USE_PYTHON 1)
-else()
-  set(USE_PYTHON 0)
+  # Make sure the USE_PYTHON macro is defined in the C++ code
+  list(APPEND NRN_COMPILE_DEFS USE_PYTHON)
 endif()
-
-# =============================================================================
-# Enable sanitizer support if the NRN_SANITIZERS variable is set
-# =============================================================================
-include(cmake/SanitizerHelper.cmake)
-# Make a CMake list NRN_SANITIZERS_LIST
-string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 
 # =============================================================================
 # Enable Threads support
@@ -479,7 +454,6 @@ endif()
 # =============================================================================
 include(NeuronFileLists)
 include(MPIDynamicHelper)
-include(PythonDynamicHelper)
 
 # Set variable to include mpi headers
 set(NRN_INCLUDE_MPI_HEADERS OFF)
@@ -527,7 +501,6 @@ if(NRN_ENABLE_CORENEURON)
         CACHE BOOL "" FORCE)
   endif()
   set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron)
-  include(PythonDynamicHelper)
 
   # initialize CLI11 submodule
   cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
@@ -985,28 +958,22 @@ if(NRN_ENABLE_MUSIC)
 endif()
 message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")
 if(NRN_ENABLE_PYTHON)
-  message(STATUS "  EXE         | ${NRN_DEFAULT_PYTHON_EXECUTABLE}")
-  message(STATUS "  INC         | ${NRN_DEFAULT_PYTHON_INCLUDE_DIRS}")
-  message(STATUS "  LIB         | ${NRN_DEFAULT_PYTHON_LIBRARIES}")
-  message(STATUS "  MODULE      | ${NRN_ENABLE_MODULE_INSTALL}")
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_PYTHON_DYNAMIC}")
-  if(NRN_ENABLE_PYTHON_DYNAMIC)
-    list(LENGTH NRN_PYTHON_EXE_LIST _num_pythons)
-    math(EXPR num_pythons "${_num_pythons} - 1")
-    foreach(val RANGE ${num_pythons})
-      list(GET NRN_PYTHON_EXE_LIST ${val} exe)
-      list(GET NRN_PYTHON_VER_LIST ${val} version)
-      if(${version} LESS 3)
-        message(SEND_ERROR "Python 3 required. Please upgrade.")
-      endif()
-      list(GET NRN_PYTHON_INCLUDE_LIST ${val} include)
-      list(GET NRN_PYTHON_LIB_LIST ${val} lib)
-      message(STATUS "    EXE       | ${exe}")
-      message(STATUS "    INC       | ${include}")
-      message(STATUS "    LIB       | ${lib}")
-
-    endforeach(val)
-  endif()
+  message(STATUS "  MODULE      | ${NRN_ENABLE_MODULE_INSTALL}")
+  foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+    list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
+    list(GET NRN_PYTHON_VERSIONS ${val} pyver)
+    list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
+    list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
+    unset(suffix)
+    if(val EQUAL 0)
+      set(suffix " (default)")
+    endif()
+    message(STATUS " python${pyver}${suffix}")
+    message(STATUS "  EXE         | ${exe}")
+    message(STATUS "  INC         | ${pyinc}")
+    message(STATUS "  LIB         | ${pylib}")
+  endforeach()
 endif()
 if(READLINE_FOUND)
   message(STATUS "Readline      | ${Readline_LIBRARY}")

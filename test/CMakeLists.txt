@@ -27,7 +27,6 @@ foreach(target ${catch2_targets})
   if(NOT MINGW)
     target_link_libraries(${target} ${CMAKE_DL_LIBS})
   endif()
-  target_compile_definitions(testneuron PUBLIC "USE_PYTHON=${USE_PYTHON}")
 endforeach()
 
 # =============================================================================
