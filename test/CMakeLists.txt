@@ -143,32 +143,19 @@ if(NRN_ENABLE_PYTHON)
     NAME python_unit_tests
     MODFILE_PATTERNS NONE
     SIM_DIRECTORY test/python_unit_tests)
-  if(NRN_ENABLE_PYTHON_DYNAMIC)
-    set(pythons ${NRN_PYTHON_DYNAMIC})
-  else()
-    set(pythons ${PYTHON_EXECUTABLE})
-  endif()
-  foreach(python ${pythons})
-    cpp_cc_strip_python_shims(EXECUTABLE "${python}" OUTPUT stripped_python)
-    execute_process(
-      COMMAND
-        "${stripped_python}" -c
-        "import sys; print('.'.join([str(sys.version_info.major), str(sys.version_info.minor)]), end='')"
-      RESULT_VARIABLE result
-      OUTPUT_VARIABLE python_version)
-    if(NOT result EQUAL 0)
-      message(FATAL_ERROR "Could not get version from ${stripped_python}")
-    endif()
+  foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+    list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
+    list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     nrn_add_test(
       GROUP python_unit_tests
-      NAME py_${python_version}_neuron
+      NAME py_${pyver}_neuron
       PRELOAD_SANITIZER
       SCRIPT_PATTERNS test_neuron.py
       COMMAND ${stripped_python} ${coverage} test_neuron.py)
     if(NRN_ENABLE_RX3D)
       nrn_add_test(
         GROUP python_unit_tests
-        NAME py_${python_version}_rxd
+        NAME py_${pyver}_rxd
         PRELOAD_SANITIZER
         SCRIPT_PATTERNS rxd.py
         COMMAND ${stripped_python} ${coverage} rxd.py)
