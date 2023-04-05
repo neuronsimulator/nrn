@@ -37,30 +37,22 @@ extern char** nrn_global_argv;
 int nrnpy_site_problem;
 #endif
 
-extern "C" {
-extern void rl_stuff_char(int);
-}  // extern "C"
-
-static void nrnpy_augment_path() {
-    static int augmented = 0;
-    if (!augmented && strlen(neuronhome_forward()) > 0) {
-        augmented = 1;
-        int err = PyRun_SimpleString("import sys");
-        assert(err == 0);
-#if defined(__linux__) || defined(DARWIN)
-        // If /where/installed/lib/python/neuron exists, then append to sys.path
-        std::string lib = std::string(path_prefix_to_libnrniv());
-#else   // not defined(__linux__) || defined(DARWIN)
-        std::string lib = std::string(neuronhome_forward()) + std::string("/lib/");
-#endif  // not defined(__linux__) || defined(DARWIN)
-        if (isDirExist(lib + std::string("python/neuron"))) {
-            std::string cmd = std::string("sys.path.append('") + lib + "python')";
-            err = PyRun_SimpleString(cmd.c_str());
-            assert(err == 0);
-        }
-        err = PyRun_SimpleString("sys.path.insert(0, '')");
-        assert(err == 0);
+static std::string python_sys_path_to_append() {
+    std::string path{neuronhome_forward()};
+    if (path.empty()) {
+        return {};
     }
+#if defined(__linux__) || defined(DARWIN)
+    // If /where/installed/lib/python/neuron exists, then append to sys.path
+    path = path_prefix_to_libnrniv();
+#else   // not defined(__linux__) || defined(DARWIN)
+    path += "/lib/";
+#endif  // not defined(__linux__) || defined(DARWIN)
+    path += "python";
+    if (isDirExist(path + "/neuron")) {
+        return path;
+    }
+    return {};
 }
 
 /** @brief Execute a Python script.
@@ -108,6 +100,11 @@ struct PythonConfigWrapper {
         return &config;
     }
     PyConfig config;
+};
+struct PyMem_RawFree_Deleter {
+    void operator()(wchar_t* ptr) const {
+        PyMem_RawFree(ptr);
+    }
 };
 }  // namespace
 
@@ -173,6 +170,47 @@ extern "C" int nrnpython_start(int b) {
               PyConfig_SetBytesArgv(config, nrn_global_argc, nrn_global_argv));
         // Initialise Python
         check("Could not initialise Python", Py_InitializeFromConfig(config));
+        // Manipulate sys.path, starting from the default values
+        {
+            auto* const sys_path = PySys_GetObject("path");
+            if (!sys_path) {
+                throw std::runtime_error("Could not get sys.path from C++");
+            }
+            // Append a path to sys.path based on where libnrniv.so is.
+            if (auto const path = python_sys_path_to_append(); !path.empty()) {
+                auto* ustr = PyUnicode_DecodeFSDefaultAndSize(path.c_str(), path.size());
+                if (!ustr) {
+                    throw std::runtime_error("Could not decode: " + path);
+                }
+                if (PyList_Append(sys_path, ustr)) {
+                    throw std::runtime_error("Could not append " + path + " to sys.path");
+                }
+            }
+            // To match regular Python, we should also prepend an entry to sys.path:
+            // from https://docs.python.org/3/library/sys.html#sys.path:
+            // * python -m module command line: prepend the current working directory.
+            // * python script.py command line: prepend the script’s directory. If
+            //   it's a symbolic link, resolve symbolic links.
+            // * python -c code and python (REPL) command lines: prepend an empty
+            //   string, which means the current working directory.
+            // For the moment, this is not done. The old code unconditionally added
+            // an empty string. It's not trivial to get this right, because there
+            // are several ways that Python code can be executed: both the code
+            // below in this function, which currently only allows a single -c or
+            // .py file, and the hoc_moreinput function, which in principle allows
+            // `nrniv /dir1/script1.py /dir2/script2.py` and should change
+            // sys.path[0] between the two scripts. Real Python doesn't have this
+            // problem, because you can't pass multiple scripts/commands/modules on
+            // a single commandline.
+            // For the moment, just unconditionally add an empty string
+            auto* ustr = PyUnicode_DecodeFSDefaultAndSize("", 0);
+            if (!ustr) {
+                throw std::runtime_error("Could not decode an empty string");
+            }
+            if (PyList_Insert(sys_path, 0, ustr)) {
+                throw std::runtime_error("Could not prepend an empty string to sys.path");
+            }
+        }
 #ifdef NRNPYTHON_DYNAMICLOAD
         // return from Py_Initialize means there was no site problem
         nrnpy_site_problem = 0;
@@ -180,7 +218,6 @@ extern "C" int nrnpython_start(int b) {
         started = 1;
         nrnpy_hoc();
         nrnpy_nrn();
-        nrnpy_augment_path();
     }
     if (b == 0 && started) {
         PyGILState_STATE gilsav = PyGILState_Ensure();

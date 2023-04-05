@@ -1182,7 +1182,9 @@ int hoc_moreinput() {
         if (!p_nrnpy_pyrun) {
             hoc_execerror("Python not available to interpret", infile);
         }
-        (*p_nrnpy_pyrun)(infile);
+        if (!p_nrnpy_pyrun(infile)) {
+            hoc_execerror("Python error", infile);
+        }
         return hoc_moreinput();
     } else if ((fin = nrn_fw_fopen(infile, "r")) == (NrnFILEWrap*) 0) {
 #if OCSMALL
