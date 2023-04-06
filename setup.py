@@ -388,7 +388,7 @@ def setup_package():
 
     ext_common_libraries = ["nrniv"]
     if not without_nrnpython:
-        nrn_python_lib = "nrnpython{}{}".format(*sys.version_info[:2])
+        nrn_python_lib = "nrnpython{}.{}".format(*sys.version_info[:2])
         ext_common_libraries.append(nrn_python_lib)
 
     extension_common_params = defaultdict(
