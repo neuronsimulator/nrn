@@ -122,8 +122,12 @@ struct handle_interface: handle_base<Identifier> {
         os << handle.underlying_storage().name() << '{' << handle.id() << '/'
            << handle.underlying_storage().size();
         auto const num = handle.num_fpfields();
-        for (auto i = 0ul; i < num; ++i) {
-            os << ' ' << handle.fpfield(i);
+        for (auto i = 0; i < num; ++i) {
+            os << " fpfield[" << i << "]{";
+            for (auto j = 0; j < handle.fpfield_dimension(i); ++j) {
+                os << " " << handle.fpfield(i, j);
+            }
+            os << " }";
         }
         return os << '}';
     }
