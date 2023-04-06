@@ -19,7 +19,7 @@ template <typename T>
  * file code and the rest of the library.
  */
 struct storage_info {
-    virtual ~storage_info() {}
+    virtual ~storage_info() = default;
     virtual std::string_view container() const = 0;
     virtual std::string_view field() const = 0;
     virtual std::size_t size() const = 0;

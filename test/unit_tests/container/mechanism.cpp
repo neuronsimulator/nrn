@@ -29,6 +29,9 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
         REQUIRE(mech_data.get_tag<field::FloatingPoint>().num_variables() == num_fields);
         WHEN("A row is added") {
             owning_handle mech_instance{mech_data};
+            THEN("We cannot delete the mechanism type") {
+                REQUIRE_THROWS(neuron::model().delete_mechanism(mech_type));
+            }
             THEN("Values can be read and written") {
                 constexpr auto field0_value = 42.0;
                 mech_instance.fpfield(foo_index) = field0_value;
@@ -42,6 +45,16 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                     REQUIRE(mech_instance.fpfield(bar_index, i) == bar_values[i]);
                 }
                 REQUIRE_THROWS(mech_instance.fpfield(num_fields));
+
+                REQUIRE(mech_instance.fpfield_dimension(foo_index) == 1);
+                REQUIRE(mech_instance.fpfield_dimension(bar_index) == bar_values.size());
+                REQUIRE_THROWS(mech_instance.fpfield_dimension(num_fields));
+
+                auto bar_handle = mech_instance.fpfield_handle(bar_index);
+                REQUIRE(*bar_handle.next_array_element(2) == 0.9);
+                REQUIRE_THROWS(*bar_handle.next_array_element(bar_values.size()));
+
+
                 AND_THEN("Data handles give useful information when printed") {
                     auto const require_str = [&mech_instance](std::string_view ref, auto... args) {
                         auto const dh = mech_instance.fpfield_handle(args...);
@@ -63,6 +76,10 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                                 bar_index,
                                 2);
                 }
+                std::ostringstream actual;
+                actual << mech_instance;
+                REQUIRE(actual.str() ==
+                        "test_mechanism{row=0/1 fpfield[0]{ 42 } fpfield[1]{ 7 0.7 0.9 }}");
             }
         }
         WHEN("Many rows are added") {
@@ -156,6 +173,22 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
             AND_WHEN("An element is deleted") {
                 apply_to_all([](auto& vec) { vec.erase(vec.begin()); });
                 check_field_values(StorageCheck::Skip);
+            }
+        }
+        WHEN("We want to manipulate other mechanism data") {
+            THEN("We cannot readd the same type") {
+                REQUIRE_THROWS(
+                    neuron::model().add_mechanism(mech_type, "test_mechanism_2", field_info));
+            }
+            THEN("We cannot access a non-existing mechanism") {
+                auto const non_existing_mech_type = 313;
+                REQUIRE_THROWS(neuron::model().mechanism_data(non_existing_mech_type));
+            }
+            THEN("We cannot get data for a null mechanism") {
+                auto const null_mech_type = 345;
+                neuron::model().add_mechanism(null_mech_type, "null_mechanism");
+                neuron::model().delete_mechanism(null_mech_type);
+                REQUIRE_THROWS(neuron::model().mechanism_data(null_mech_type));
             }
         }
     }

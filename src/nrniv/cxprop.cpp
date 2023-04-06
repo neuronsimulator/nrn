@@ -114,7 +114,7 @@ void nrn_poolshrink(int shrink) {
     } else {
         Printf("poolshrink --- type name (dbluse, size) (datumuse, size)\n");
         for (auto i = 0; i < datumpools().size(); ++i) {
-            auto& pdatum = datumpools()[i];
+            auto const& pdatum = datumpools()[i];
             if (pdatum) {
                 Printf("%d %s (%ld, %d)\n",
                        i,
