@@ -254,6 +254,13 @@ string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 set(NRN_MINIMUM_PYTHON_VERSION 3.8)
 include(cmake/PythonHelper.cmake)
 
+# This needs NRN_DEFAULT_PYTHON_EXECUTABLE, which comes from PythonHelper.cmake
+if(NRN_SANITIZERS)
+  configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
+  install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrn-enable-sanitizer
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+endif()
+
 # =============================================================================
 # Find required packages
 # =============================================================================
