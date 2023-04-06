@@ -1149,4 +1149,5 @@ void nrnunit_dynamic_str(char (&buf)[NRN_BUFSIZE], const char* name, char* u1, c
             name,
             modern,
             legacy);
+
 }
