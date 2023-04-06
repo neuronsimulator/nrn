@@ -75,7 +75,7 @@
 
 
 %type   <std::string>   top
-%type   <diffeq::Term>          expression e arglist arg
+%type   <diffeq::Term>          expression e arglist arg arglist_opt
 
 
 /* operator associativity */
@@ -149,7 +149,7 @@ e               : ATOM                      {
                                                 $$ = eq_context.solution;
                                             }
 
-                | ATOM "(" arglist ")"      {
+                | ATOM "(" arglist_opt ")"  {
                                                 eq_context.solution = Term();
                                                 eq_context.solution.expr = $1 +  "(" + $3.expr + ")";
                                                 eq_context.solution.b = $1 + "(" + $3.expr + ")";
@@ -194,10 +194,14 @@ e               : ATOM                      {
 
 
 
-arglist         : /*nothing*/               { $$ = Term("", "0.0", "0.0", ""); }
+arglist_opt     : /*nothing*/               { $$ = Term("", "0.0", "0.0", ""); }
 
-                | arg                       { $$ = $1; }
+                | arglist                   { $$ = $1; }
 
+                ;
+
+
+arglist   : arg { $$ = $1; }
                 | arglist arg               {
                                                 eq_context.solution.expr = $1.expr + " " + $2.expr;
                                                 eq_context.solution.b    = $1.expr + " " + $2.expr;
@@ -209,7 +213,7 @@ arglist         : /*nothing*/               { $$ = Term("", "0.0", "0.0", ""); }
                                                 eq_context.solution.b    = $1.expr + "," + $3.expr;
                                                 $$ = eq_context.solution;
                                             }
-                ;
+                                            ;
 
 
 

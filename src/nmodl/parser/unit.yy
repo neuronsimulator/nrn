@@ -98,8 +98,7 @@
 %%
 
 unit_table
-    : END
-    | table_insertion END
+    : table_insertion END
 
 table_insertion
     : {
