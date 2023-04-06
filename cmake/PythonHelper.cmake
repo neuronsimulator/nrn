@@ -31,10 +31,9 @@ if(NRN_ENABLE_PYTHON_DYNAMIC AND NRN_PYTHON_DYNAMIC)
   if(PYTHON_EXECUTABLE AND NOT PYTHON_EXECUTABLE STREQUAL NRN_PYTHON_DYNAMIC_0)
     # When NRN_ENABLE_PYTHON_DYNAMIC and NRN_PYTHON_DYNAMIC are set, the first entry of
     # NRN_PYTHON_DYNAMIC is taken to be the default python version
-    message(
-      WARNING
-        "Setting default Python version ${NRN_PYTHON_DYNAMIC_0}, not ${PYTHON_EXECUTABLE}, because NRN_ENABLE_PYTHON_DYNAMIC is enabled"
-    )
+    message(WARNING "Default python version is ${NRN_PYTHON_DYNAMIC_0} (from NRN_PYTHON_DYNAMIC),"
+                    " not ${PYTHON_EXECUTABLE} (from PYTHON_EXECUTABLE),"
+                    " because NRN_ENABLE_PYTHON_DYNAMIC=ON")
   endif()
   set(python_executables ${NRN_PYTHON_DYNAMIC})
 else()
@@ -50,29 +49,50 @@ set(NRN_PYTHON_EXECUTABLES)
 set(NRN_PYTHON_VERSIONS)
 set(NRN_PYTHON_INCLUDES)
 set(NRN_PYTHON_LIBRARIES)
-if(NRN_ENABLE_PYTHON)
-  foreach(pyexe ${python_executables})
-    message(STATUS "Checking if ${pyexe} is a working python")
-    if(NOT IS_ABSOLUTE "${pyexe}")
-      # Find the full path to ${pyexe} as Python3_EXECUTABLE does not accept relative paths.
-      find_program(
-        "${pyexe}_full" "${pyexe}"
-        PATHS ENV PATH
-        NO_DEFAULT_PATH)
-      if(${pyexe}_full STREQUAL "${pyexe}_full-NOTFOUND")
-        message(FATAL_ERROR "Could not resolve ${pyexe} to an absolute path")
-      endif()
-      set(pyexe "${${pyexe}_full}")
+foreach(pyexe ${python_executables})
+  message(STATUS "Checking if ${pyexe} is a working python")
+  if(NOT IS_ABSOLUTE "${pyexe}")
+    # Find the full path to ${pyexe} as Python3_EXECUTABLE does not accept relative paths.
+    find_program(
+      "${pyexe}_full" "${pyexe}"
+      PATHS ENV PATH
+      NO_DEFAULT_PATH)
+    if(${pyexe}_full STREQUAL "${pyexe}_full-NOTFOUND")
+      message(FATAL_ERROR "Could not resolve ${pyexe} to an absolute path")
     endif()
+    set(pyexe "${${pyexe}_full}")
+  endif()
+  # Resolve symlinks too
+  get_filename_component(pyexe "${pyexe}" REALPATH)
+  # Only bother finding version/include/library information if NRN_ENABLE_PYTHON is set.
+  if(NRN_ENABLE_PYTHON)
     # Run find_package(Python3 ...) in a subprocess, so there is no pollution of CMakeCache.txt and
     # so on. Our desire to include multiple Python versions in one build means we have to handle
     # lists of versions/libraries/... manually. Unfortunately one cannot safely use find_package in
     # CMake script mode, so we configure an extra project.
     string(SHA1 pyexe_hash "${pyexe}")
     string(SUBSTRING "${pyexe_hash}" 0 6 pyexe_hash)
+    # Which attributes we're trying to learn about this Python
+    set(python_vars Python3_INCLUDE_DIRS Python3_VERSION_MAJOR Python3_VERSION_MINOR)
+    if(NRN_ENABLE_PYTHON_DYNAMIC)
+      # Do not link against Python, so we don't need the library -- just as well, it's not available
+      # in manylinux
+      if(${CMAKE_VERSION} VERSION_LESS 3.18)
+        message(
+          FATAL_ERROR
+            "NRN_ENABLE_PYTHON_DYNAMIC=ON requires CMake >= 3.18 for the Development.Module component in FindPython"
+        )
+      endif()
+      set(dev_component "Development.Module")
+      set(Python3_LIBRARIES "do-not-link-against-libpython-in-dynamic-python-builds")
+    else()
+      set(dev_component "Development")
+      list(APPEND python_vars Python3_LIBRARIES)
+    endif()
     execute_process(
       COMMAND
-        ${CMAKE_COMMAND} -D "Python3_EXECUTABLE=${pyexe}" -S
+        ${CMAKE_COMMAND} "-DPython3_EXECUTABLE:STRING=${pyexe}"
+        "-DPython3_COMPONENTS=${dev_component};Interpreter" -S
         ${CMAKE_SOURCE_DIR}/cmake/ExecuteFindPython -B
         ${CMAKE_BINARY_DIR}/ExecuteFindPython_${pyexe_hash}
       RESULT_VARIABLE result
@@ -83,8 +103,11 @@ if(NRN_ENABLE_PYTHON)
                           "status=${result}\n" "stdout:\n${stdout}\n" "stderr:\n${stderr}\n")
     endif()
     # Parse out the variables printed by ExecuteFindPython.cmake
-    foreach(var Python3_INCLUDE_DIRS Python3_LIBRARIES Python3_VERSION_MAJOR Python3_VERSION_MINOR)
+    foreach(var ${python_vars})
       string(REGEX MATCH "-- ${var}=([^\n]*)\n" _junk "${stdout}")
+      if(NOT _junk OR NOT CMAKE_MATCH_1)
+        message(FATAL_ERROR "Could not extract ${var} from\n===\n${stdout}\n===")
+      endif()
       set(${var} "${CMAKE_MATCH_1}")
     endforeach()
     if(${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR} VERSION_LESS NRN_MINIMUM_PYTHON_VERSION)
@@ -93,9 +116,6 @@ if(NRN_ENABLE_PYTHON)
           "${pyexe} (${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}) is too old for NEURON, which requires at least ${NRN_MINIMUM_PYTHON_VERSION}"
       )
     endif()
-    # One final transformation, for convenience when using macOS and sanitizers that need to have
-    # their runtime libraries loaded, replace any shims with the real Python executable.
-    cpp_cc_strip_python_shims(EXECUTABLE "${pyexe}" OUTPUT pyexe)
     # Now Python3_INCLUDE_DIRS and friends correspond to ${pyexe} Assert that there is only one
     # value per Python version for now, as otherwise we'd need to handle a list of lists...
     list(LENGTH Python3_INCLUDE_DIRS num_include_dirs)
@@ -111,16 +131,21 @@ if(NRN_ENABLE_PYTHON)
         FATAL_ERROR
           "Cannot currently handle multiple Python libraries: ${Python3_LIBRARIES} from ${pyexe}")
     endif()
-    list(APPEND NRN_PYTHON_EXECUTABLES "${pyexe}")
     list(APPEND NRN_PYTHON_VERSIONS "${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
     list(APPEND NRN_PYTHON_INCLUDES "${Python3_INCLUDE_DIRS}")
     list(APPEND NRN_PYTHON_LIBRARIES "${Python3_LIBRARIES}")
-  endforeach()
-endif()
+  endif()
+  # One final transformation, for convenience when using macOS and sanitizers that need to have
+  # their runtime libraries loaded, replace any shims with the real Python executable.
+  cpp_cc_strip_python_shims(EXECUTABLE "${pyexe}" OUTPUT pyexe)
+  list(APPEND NRN_PYTHON_EXECUTABLES "${pyexe}")
+endforeach()
 # In any case, the default (NRN_DEFAULT_PYTHON_EXECUTABLE) should always be the zeroth entry in the
-# list of Pythons
+# list of Pythons, and we need to set it even if NRN_ENABLE_PYTHON=OFF -- for use in build scripts.
 list(GET NRN_PYTHON_EXECUTABLES 0 NRN_DEFAULT_PYTHON_EXECUTABLE)
-list(GET NRN_PYTHON_INCLUDES 0 NRN_DEFAULT_PYTHON_INCLUDES)
-list(GET NRN_PYTHON_LIBRARIES 0 NRN_DEFAULT_PYTHON_LIBRARIES)
-list(LENGTH NRN_PYTHON_EXECUTABLES NRN_PYTHON_COUNT)
-math(EXPR NRN_PYTHON_ITERATION_LIMIT "${NRN_PYTHON_COUNT} - 1")
+if(NRN_ENABLE_PYTHON)
+  list(GET NRN_PYTHON_INCLUDES 0 NRN_DEFAULT_PYTHON_INCLUDES)
+  list(GET NRN_PYTHON_LIBRARIES 0 NRN_DEFAULT_PYTHON_LIBRARIES)
+  list(LENGTH NRN_PYTHON_EXECUTABLES NRN_PYTHON_COUNT)
+  math(EXPR NRN_PYTHON_ITERATION_LIMIT "${NRN_PYTHON_COUNT} - 1")
+endif()

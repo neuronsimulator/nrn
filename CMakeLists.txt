@@ -115,9 +115,9 @@ mark_as_advanced(NRN_WHEEL_BUILD)
 #                                      can be steered with PYTHON_EXECUTABLE
 #   - NRN_ENABLE_PYTHON_DYNAMIC=ON   : libnrniv is not linked against Python, distinct libnrnpython
 #                                      libraries are built for each configured Python major.minor
-#                                      version. nrniv/special still works in the absence of Python,
-#                                      and dynamically loads the appropriate libnrnpythonX.Y as
-#                                      needed
+#                                      version but not linked against the relevant libpython.
+#                                      nrniv/special still works in the absence of Python, and
+#                                      dynamically loads the appropriate libnrnpythonX.Y as needed
 #   - NRN_PYTHON_DYNAMIC=pythonX;... : semicolon separated list of Python versions used when
 #                                      NRN_ENABLE_PYTHON_DYNAMIC=ON, if not set then it defaults to
 #                                      PYTHON_EXECUTABLE. This must include all major.minor
