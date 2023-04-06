@@ -29,6 +29,7 @@ ASSIGNED {
   planck (joule-sec)
   hbar (joule-sec)
   gasconst (joule/degC)
+  gasconst_exact (joule/degC)
   avogadro (1)
   k (joule/degC)
   erev (mV)
