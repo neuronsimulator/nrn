@@ -1,6 +1,6 @@
 NEURON {
   POINT_PROCESS UnitsTest
-  RANGE mole, e, faraday, planck, hbar, gasconst, avogadro, k
+  RANGE mole, e, faraday, planck, hbar, gasconst, gasconst_exact, avogadro, k
   RANGE erev, ghk
   USEION na READ ena WRITE ina
 }
@@ -15,6 +15,7 @@ UNITS {
   h = (planck) (joule-sec)
   hb = (hbar) (joule-sec)
   R = (k-mole) (joule/degC)
+  Rexact = 8.313424 (joule/degC)
   boltzmann = (k) (joule/degC)
 
   (avogadro) = (mole)
@@ -43,6 +44,7 @@ INITIAL {
   planck = h
   hbar = hb
   gasconst = R
+  gasconst_exact = Rexact
   avogadro = avo
   k = boltzmann
   erev = ena
