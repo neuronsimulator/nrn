@@ -242,7 +242,8 @@ string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 # =================================================================================================
 # Juggle PYTHON_EXECUTABLE and NRN_ENABLE_PYTHON_DYNAMIC to make sure that:
 #
-# * PYTHON_EXECUTABLE is the default Python version
+# * NRN_DEFAULT_PYTHON_EXECUTABLE is the default Python version, and NRN_DEFAULT_PYTHON_INCLUDES and
+#   NRN_DEFAULT_PYTHON_LIBRARIES are its include direcory and library
 # * NRN_PYTHON_EXECUTABLES is a list of absolute paths to all Python executables to be built against
 #   (length >=1 if NRN_ENABLE_PYTHON_DYNAMIC else == 1)
 # * NRN_PYTHON_VERSIONS (38, 311, ...), NRN_PYTHON_INCLUDES and NRN_PYTHON_LIBRARIES are populated

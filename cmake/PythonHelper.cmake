@@ -66,10 +66,15 @@ if(NRN_ENABLE_PYTHON)
     endif()
     # Run find_package(Python3 ...) in a subprocess, so there is no pollution of CMakeCache.txt and
     # so on. Our desire to include multiple Python versions in one build means we have to handle
-    # lists of versions/libraries/... manually.
+    # lists of versions/libraries/... manually. Unfortunately one cannot safely use find_package in
+    # CMake script mode, so we configure an extra project.
+    string(SHA1 pyexe_hash "${pyexe}")
+    string(SUBSTRING "${pyexe_hash}" 0 6 pyexe_hash)
     execute_process(
-      COMMAND ${CMAKE_COMMAND} -D "Python3_EXECUTABLE=${pyexe}" -P
-              ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ExecuteFindPython.cmake
+      COMMAND
+        ${CMAKE_COMMAND} -D "Python3_EXECUTABLE=${pyexe}" -S
+        ${CMAKE_SOURCE_DIR}/cmake/ExecuteFindPython -B
+        ${CMAKE_BINARY_DIR}/ExecuteFindPython_${pyexe_hash}
       RESULT_VARIABLE result
       OUTPUT_VARIABLE stdout
       ERROR_VARIABLE stderr)
