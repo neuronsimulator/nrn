@@ -115,7 +115,9 @@ mark_as_advanced(NRN_WHEEL_BUILD)
 #                                      can be steered with PYTHON_EXECUTABLE
 #   - NRN_ENABLE_PYTHON_DYNAMIC=ON   : libnrniv is not linked against Python, distinct libnrnpython
 #                                      libraries are built for each configured Python major.minor
-#                                      version but not linked against the relevant libpython.
+#                                      version but are only linked against the relevant libpython
+#                                      if NRN_LINK_AGAINST_PYTHON is true, which is by default only
+#                                      the case on windows.
 #                                      nrniv/special still works in the absence of Python, and
 #                                      dynamically loads the appropriate libnrnpythonX.Y as needed
 #   - NRN_PYTHON_DYNAMIC=pythonX;... : semicolon separated list of Python versions used when
@@ -142,6 +144,9 @@ option(NRN_ENABLE_MODULE_INSTALL
        ${NRN_ENABLE_MODULE_INSTALL_DEFAULT})
 option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support"
        ${NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT})
+option(NRN_LINK_AGAINST_PYTHON
+       "Link libnrnpythonX.Y against libpythonX.Y when NRN_ENABLE_PYTHON_DYNAMIC=ON"
+       ${NRN_LINK_AGAINST_PYTHON_DEFAULT})
 set(NRN_PYTHON_DYNAMIC
     ""
     CACHE
