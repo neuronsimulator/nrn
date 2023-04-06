@@ -36,6 +36,18 @@ export originalPYTHONPATH="$PYTHONPATH"
 export originalPYTHONHOME="$PYTHONHOME"
 export originalLDLIBRARYPATH="$LD_LIBRARY_PATH"
 
+# list the Python versions that this NEURON build supports
+# the format is {major}.{minor}, i.e. 3.8, 3.9, 3.10, ...
+_this_neuron_py_versions=(@NRN_PYTHON_VERSIONS_STRING@)
+
+# order of preference is: python, python3, pythonX..pythonY, where X..Y are
+# the versions in _this_neuron_py_versions. In this order, we accept the
+# first one yielding a version we support
+_pythons_to_try=(python python3)
+for _ver_with_dot in "${_this_neuron_py_versions[@]}"; do
+  _pythons_to_try+=("python${_ver_with_dot}")
+done
+
 # get the last argument
 for last; do true; done
 
@@ -83,7 +95,8 @@ function trypy {
 # attempt at finding a Python.
 while true ; do
   PYTHON=""
-  # Priority is the argument -pyexe, NRN_PYTHONEXE, python3 and then python
+  # Priority is the argument -pyexe, NRN_PYTHONEXE, then searching for
+  # pythonXXX in PATH, then other platform-specific hacks
 
   # check -pyexe option
   if test "$1" != "" ; then
@@ -93,10 +106,19 @@ while true ; do
   # If NRN_PYTHONEXE is set (e.g. from wheel wrapper) then use it
   elif test "$NRN_PYTHONEXE" != ""; then
     PYTHON=$NRN_PYTHONEXE
-  elif $WHICH python3 >& /dev/null ; then
-    PYTHON=python3
-  elif $WHICH python >& /dev/null ; then
-    PYTHON=python
+  else
+    # check all the Python names in _pythons_to_try to see if any of them match
+    for _python in "${_pythons_to_try[@]}"; do
+      if $WHICH "${_python}" >& /dev/null; then
+        # this one exists, is it a version we support?
+        _python_ver=$("${_python}" -c "import sys; print('{}.{}'.format(*sys.version_info[:2]))")
+        if [[ " ${_this_neuron_py_versions[*]} " =~ " ${_python_ver} " ]]; then
+          # and we support this one, all good!
+          PYTHON="${_python}"
+          break
+        fi
+      fi
+    done
   fi
 
   # do not do the following craziness if not Windows.
@@ -162,7 +184,7 @@ if test "$PYTHON" = "" ; then
 fi
 
 if test "$PYTHON" = "" ; then
-  echo "Cannot find executable python3 or python" 1>&2
+  echo "Cannot find a Python in ${_pythons_to_try[@]} that matches the versions this NEURON installation supports: ${_this_neuron_py_versions[@]}" 1>&2
   exit 1;
 fi
 

@@ -131,7 +131,7 @@ foreach(pyexe ${python_executables})
         FATAL_ERROR
           "Cannot currently handle multiple Python libraries: ${Python3_LIBRARIES} from ${pyexe}")
     endif()
-    list(APPEND NRN_PYTHON_VERSIONS "${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
+    list(APPEND NRN_PYTHON_VERSIONS "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
     list(APPEND NRN_PYTHON_INCLUDES "${Python3_INCLUDE_DIRS}")
     list(APPEND NRN_PYTHON_LIBRARIES "${Python3_LIBRARIES}")
   endif()
