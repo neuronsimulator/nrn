@@ -76,7 +76,7 @@ struct Model {
             throw std::runtime_error("mechanism_data(" + std::to_string(type) +
                                      "): type out of range");
         }
-        auto& data_ptr = m_mech_data[type];
+        const auto& data_ptr = m_mech_data[type];
         if (!data_ptr) {
             throw std::runtime_error("mechanism_data(" + std::to_string(type) +
                                      "): data for type was null");
