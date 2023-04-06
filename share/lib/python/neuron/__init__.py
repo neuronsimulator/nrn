@@ -661,7 +661,7 @@ def nrn_dll_sym_nt(name, type):
         path = os.path.join(h.neuronhome().replace("/", "\\"), b)
         for dllname in [
             "libnrniv.dll",
-            "libnrnpython{}.{}.dll".format(sys.version_info[:2]),
+            "libnrnpython{}.{}.dll".format(*sys.version_info[:2]),
         ]:
             p = os.path.join(path, dllname)
             try:
