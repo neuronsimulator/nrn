@@ -239,8 +239,7 @@ struct data_handle {
     friend std::ostream& operator<<(std::ostream& os, data_handle const& dh) {
         os << "data_handle<" << cxx_demangle(typeid(T).name()) << ">{";
         if (auto const valid = dh.m_offset; valid || dh.m_offset.was_once_valid()) {
-            auto const maybe_info = utils::find_container_info(dh.container_data());
-            if (maybe_info) {
+            if (auto const maybe_info = utils::find_container_info(dh.container_data())) {
                 if (!maybe_info->container().empty()) {
                     os << "cont=" << maybe_info->container() << ' ';
                 }

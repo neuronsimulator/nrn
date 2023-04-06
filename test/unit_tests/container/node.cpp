@@ -8,6 +8,7 @@
 #include <optional>
 #include <sstream>
 #include <vector>
+#include <unordered_map>
 
 static_assert(std::is_default_constructible_v<Node>);
 static_assert(!std::is_copy_constructible_v<Node>);
@@ -52,10 +53,24 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
             data_handle<double> const other_handle{};
             REQUIRE(handle == other_handle);
         }
+        THEN("Check it prints the right value") {
+            std::ostringstream os;
+            os << handle;
+            REQUIRE(os.str() == "data_handle<double>{nullptr}");
+        }
+        THEN("Check it doesn't claim to be modern") {
+            REQUIRE_FALSE(handle.refers_to_a_modern_data_structure());
+        }
+        THEN("Check it decays to a null pointer") {
+            auto* foo_ptr = static_cast<double*>(handle);
+            REQUIRE(foo_ptr == nullptr);
+        }
     }
     GIVEN("A handle wrapping a raw pointer (compatibility mode)") {
-        double foo{magic_voltage_value};
-        data_handle<double> handle{&foo};
+        std::vector<double> foo(10);
+        std::iota(foo.begin(), foo.end(), magic_voltage_value);
+
+        data_handle<double> handle{foo.data()};
         handle = transform(handle,
                            GENERATE(Transform::None,
                                     Transform::ViaRawPointer,
@@ -68,23 +83,64 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
             REQUIRE(handle != null_handle);
         }
         THEN("Check it compares equal to a different handle wrapping the same raw pointer") {
-            data_handle<double> other_handle{&foo};
+            data_handle<double> other_handle{foo.data()};
             REQUIRE(handle == other_handle);
         }
         THEN("Check it yields the right value") {
-            REQUIRE(*handle == foo);
+            REQUIRE(*handle == magic_voltage_value);
+        }
+        THEN("Check it doesn't claim to be modern") {
+            REQUIRE_FALSE(handle.refers_to_a_modern_data_structure());
+            REQUIRE_FALSE(handle.refers_to<neuron::container::Node::field::Voltage>(
+                neuron::model().node_data()));
+        }
+        THEN("Check it decays to the right raw pointer") {
+            auto* foo_ptr = static_cast<double*>(handle);
+            REQUIRE(foo_ptr == foo.data());
+        }
+        THEN("Check it prints the right value") {
+            std::ostringstream actual, expected{};
+            actual << handle;
+            expected << "data_handle<double>{raw=" << foo.data() << '}';
+            REQUIRE(actual.str() == expected.str());
+        }
+        THEN("Check that we can store/retrieve in/from unordered_map") {
+            std::unordered_map<data_handle<double>, std::string> map;
+            map[handle] = "unordered_map";
+            REQUIRE(map[handle] == "unordered_map");
+        }
+        THEN("Check that next_array_element works") {
+            auto next = handle.next_array_element(5);
+            REQUIRE(next);
+            REQUIRE(*next == magic_voltage_value + 5);
+        }
+    }
+    GIVEN("A handle to a void pointer") {
+        auto foo = std::make_shared<double>(magic_voltage_value);
+
+        data_handle<void> handle{foo.get()};
+        handle = transform(handle,
+                           GENERATE(Transform::None,
+                                    Transform::ViaRawPointer,
+                                    Transform::ViaGenericDataHandle));
+        THEN("Check it is not null") {
+            REQUIRE(handle);
         }
         THEN("Check it doesn't claim to be modern") {
             REQUIRE_FALSE(handle.refers_to_a_modern_data_structure());
         }
         THEN("Check it decays to the right raw pointer") {
-            auto* foo_ptr = static_cast<double*>(handle);
-            REQUIRE(foo_ptr == &foo);
+            auto* foo_ptr = static_cast<void*>(handle);
+            REQUIRE(foo_ptr == foo.get());
+        }
+        THEN("Check it matches another data_handle<void> to same pointer") {
+            const data_handle<void> other_handle{foo.get()};
+            REQUIRE(handle == other_handle);
         }
         THEN("Check it prints the right value") {
             std::ostringstream actual, expected{};
             actual << handle;
-            expected << "data_handle<double>{raw=" << &foo << '}';
+            expected << "data_handle<void>{raw=" << foo.get() << '}';
             REQUIRE(actual.str() == expected.str());
         }
     }
@@ -93,12 +149,19 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
         std::optional<::Node> node{std::in_place};
         node->set_v(magic_voltage_value);
         auto handle = node->v_handle();
+        const auto handle_id = handle.identifier();
         handle = transform(handle,
                            GENERATE(Transform::None,
                                     Transform::ViaRawPointer,
                                     Transform::ViaGenericDataHandle));
         THEN("Check it is not null") {
             REQUIRE(handle);
+        }
+        THEN("Check it actually refers_to voltage and not something else") {
+            REQUIRE(handle.refers_to<neuron::container::Node::field::Voltage>(
+                neuron::model().node_data()));
+            REQUIRE_FALSE(handle.refers_to<neuron::container::Node::field::Area>(
+                neuron::model().node_data()));
         }
         THEN("Check it does not compare equal to a null handle") {
             data_handle<double> null_handle{};
@@ -111,6 +174,8 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
         }
         THEN("Check it yields the right value") {
             REQUIRE(*handle == magic_voltage_value);
+            const auto const_handle(handle);
+            REQUIRE(*const_handle == magic_voltage_value);
         }
         THEN("Check it claims to be modern") {
             REQUIRE(handle.refers_to_a_modern_data_structure());
@@ -120,6 +185,17 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
             actual << handle;
             REQUIRE(actual.str() == "data_handle<double>{Node::field::Voltage row=0/1 val=42}");
         }
+        THEN("Check that getting next_array_element throws, dimension is 1") {
+            REQUIRE_THROWS(handle.next_array_element());
+        }
+        THEN("Check that we can store/retrieve in/from unordered_map") {
+            std::unordered_map<data_handle<double>, std::string> map;
+            map[handle] = "unordered_map_modern_dh";
+            REQUIRE(map[handle] == "unordered_map_modern_dh");
+        }
+        THEN("Make sure we get the current logical row number") {
+            REQUIRE(handle.current_row() == 0);
+        }
         THEN("Check that deleting the (Node) object it refers to invalidates the handle") {
             node.reset();  // delete the underlying Node object
             REQUIRE_FALSE(handle);
@@ -128,6 +204,12 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
             std::ostringstream actual;
             actual << handle;
             REQUIRE(actual.str() == "data_handle<double>{Node::field::Voltage died/0}");
+            REQUIRE(handle.refers_to<neuron::container::Node::field::Voltage>(
+                neuron::model().node_data()));
+            REQUIRE_THROWS(*handle);
+            const auto const_handle(handle);
+            REQUIRE_THROWS(*const_handle);
+            REQUIRE(handle.identifier() == handle_id);
         }
         THEN(
             "Check that mutating the underlying container while holding a raw pointer has the "
@@ -194,12 +276,19 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
         THEN("Check it does not claim to refer to a modern container") {
             REQUIRE_FALSE(handle.refers_to_a_modern_data_structure());
         }
+        THEN("Check we can't get another type out of it") {
+            REQUIRE_THROWS(handle.get<int>());
+            REQUIRE_THROWS(handle.literal_value<int>());
+        }
     }
     GIVEN("A generic_handle referring to an entry in an SOA container") {
         REQUIRE(neuron::model().node_data().size() == 0);
         std::optional<::Node> node{std::in_place};
         node->set_v(magic_voltage_value);
         auto typed_handle = node->v_handle();
+        THEN("Match typed_handle as true") {
+            REQUIRE(typed_handle);
+        }
         generic_data_handle handle{typed_handle};
         THEN("Check it remembered the double type") {
             REQUIRE(handle.type_name() == "double*");
@@ -219,10 +308,16 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
         THEN("Check that it knows it refers to a modern data structure") {
             REQUIRE(handle.refers_to_a_modern_data_structure());
         }
+        THEN("Check that we can't get another type out of it") {
+            REQUIRE_THROWS(handle.get<int>());
+        }
         WHEN("The row of the modern data structure is deleted") {
             node.reset();
             THEN("Check it still reports referring to a modern data structure") {
                 REQUIRE(handle.refers_to_a_modern_data_structure());
+            }
+            THEN("Check we cannot obtain a literal value") {
+                REQUIRE_THROWS(handle.literal_value<double>());
             }
         }
     }
