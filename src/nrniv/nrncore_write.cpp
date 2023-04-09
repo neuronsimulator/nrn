@@ -299,7 +299,7 @@ int nrncore_run(const char* arg) {
         // ranks that have not been enqueued on this rank.
         nrn_spike_exchange(nrn_threads);
     }
-	
+
     // prepare the model
     part1();
 
