@@ -360,7 +360,7 @@ Particularly useful CMake options are (use **ON** to enable and **OFF** to disab
 * **-DCMAKE_INSTALL_PREFIX=/install/dir/path** : Location for installing
 * **-DCORENRN\_ENABLE\_NMODL=ON** : Use [NMODL](https://github.com/BlueBrain/nmodl/) instead of [MOD2C](https://github.com/BlueBrain/mod2c/) for code generation with CoreNEURON
 
-Please refer to [docs/cmake_doc/options.rst](docs/cmake_doc/options.rst) for more information on
+Please refer to [docs/cmake_doc/options.rst](https://github.com/neuronsimulator/nrn/blob/master/docs/cmake_doc/options.rst) for more information on
 the CMake options.
 
 #### Optimized CPU and GPU Support using CoreNEURON
