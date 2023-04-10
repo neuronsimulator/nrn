@@ -67,11 +67,18 @@ def neuron_nosave_instance(neuron_import):
             s().__del__()
     gc.enable()
     rxd.region._all_regions = []
+    rxd.rxd.node._states = numpy.array([])
+    rxd.rxd.node._volumes = numpy.array([])
+    rxd.rxd.node._surface_area = numpy.array([])
+    rxd.rxd.node._diffs = numpy.array([])
+    rxd.rxd.node._states = numpy.array([])
     rxd.region._region_count = 0
     rxd.region._c_region_lookup = None
     rxd.species._species_counts = 0
     rxd.section1d._purge_cptrs()
     rxd.initializer.has_initialized = False
+    rxd.initializer.is_initializing = False
+    rxd.rxd.last_nrn_legacy_units = False
     rxd.rxd.free_conc_ptrs()
     rxd.rxd.free_curr_ptrs()
     rxd.rxd.rxd_include_node_flux1D(0, None, None, None)

@@ -492,7 +492,6 @@ extern "C" void set_setup_matrices(fptr setup_matrices) {
 
 extern "C" void set_setup_units(fptr setup_units) {
     _setup_units = setup_units;
-    _setup_units();
 }
 
 /* nrn_tree_solve modified from nrnoc/ldifus.c */
