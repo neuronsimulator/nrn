@@ -178,7 +178,7 @@ PtrVector
          
         Resizing a pointer vector that has been plotted will remove it from the Graph. 
          
-        The number of points plotted is the minimum of vec.size and x_vec.size 
+        The number of points plotted is the minimum of len(vec) and len(x_vec)
         at the time pv.plot is called. x_vec is assumed to be an unchanging 
         Vector. 
          

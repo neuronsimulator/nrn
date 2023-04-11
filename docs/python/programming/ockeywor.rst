@@ -265,7 +265,7 @@ HOC Keywords
 
             i = 0   //initialize i 
             j = 0   //initialize j 
-            if(vec.x[i] <= 10 && i < vec.size()){   //if the value of the ith element in vec 
+            if(vec.x[i] <= 10 && i < len(vec)){   //if the value of the ith element in vec
                                 //is less than or equal to 10, and 
                                 //if i is an index within vec 
                 vec1.x[j] = vec.x[i]        //set the jth element of vec1 equal to that 

@@ -97,7 +97,7 @@ Description:
 
 
         Any hoc object can be handled in Python, and can use Python idioms for that type of
-        object despite being created in hoc. e.g. in hoc, you would have to use vec.size() to
+        object despite being created in hoc. e.g. in hoc, you would have to use len(vec) to
         get the Vector's size. This still works in Python, but you can also use the Pythonic
         len(h.vec): 
 
@@ -127,8 +127,8 @@ Description:
         .. code-block::
             python
 
-            x = h.vec.size     # not 5 but a python callable object 
-            print(x)            # prints: Vector[0].size() 
+            x = len(h.vec) # not 5 but a python callable object
+            print(x)            # prints: len(Vector[0])
             print(x())          # prints 5
 
         This is also true for indices 
@@ -376,7 +376,7 @@ Description:
             
             v = MyVector(10) 
             v.zzz = 'hello' # a new attribute 
-            print(v.size()) # call any base method 
+            print(len(v)) # call any base method
 
         If you override a base method such as 'size' use 
 
@@ -845,5 +845,3 @@ HOC accessing Python
 
     .. seealso::
         :func:`nrnpython`
-
-    

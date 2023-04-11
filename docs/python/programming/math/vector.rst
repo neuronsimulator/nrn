@@ -1506,7 +1506,7 @@ Vector
          
         Resizing a vector that has been plotted will remove it from the Graph. 
          
-        The number of points plotted is the minimum of vec.size and x_vec.size 
+        The number of points plotted is the minimum of len(vec) and len(xvec)
         at the time vec.plot is called. x_vec is assumed to be an unchanging 
         Vector. 
          

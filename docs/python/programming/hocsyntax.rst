@@ -128,7 +128,7 @@ Example:
 
         i = 0	//initialize i 
         j = 0	//initialize j 
-        if(vec.x[i] <= 10 && i < vec.size()){	//In the parentheses is an expression: 
+        if(vec.x[i] <= 10 && i < len(vec)){	//In the parentheses is an expression:
         					//if the value of the ith element in vec 
         					//is less than or equal to 10, and 
         					//if i is an index within vec 

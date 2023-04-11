@@ -473,7 +473,7 @@ Random Class
              
             vec = h.Vector() 
             vec.indgen(-3, 2, .1)	# x-axis for plot 
-            hist = h.Vector(vec.size()) 
+            hist = h.Vector(len(vec))
             g = h.Graph() 
             g.size(-3, 2, 0, 50) 
             hist.plot(g, vec)
@@ -522,7 +522,7 @@ Random Class
             	xvec[3*i+1] = i 
             	xvec[3*i+2] = i + .1 
             
-            hist = h.Vector(xvec.size()) 
+            hist = h.Vector(len(xvec))
             g = h.Graph() 
             g.size(0, 15, 0, 120) 
             hist.plot(g, xvec) 
@@ -572,7 +572,7 @@ Random Class
             	xvec[3*i+1] = i 
             	xvec[3*i+2] = i+.1 
             
-            hist = h.Vector(xvec.size()) 
+            hist = h.Vector(len(xvec))
             g = h.Graph() 
             g.size(0, 15, 0, 120) 
             hist.plot(g, xvec)
