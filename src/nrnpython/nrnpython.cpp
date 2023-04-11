@@ -82,39 +82,22 @@ PyObject* basic_sys_path{};
 
 /**
  * @brief Reset sys.path to be basic_sys_path and prepend something.
- * @param gil GIL helper, so this code can assume the GIL is held
  * @param new_first Path to decode and prepend to sys.path.
  */
 void reset_sys_path(std::string_view new_first) {
     PyLockGIL _{};
-    assert(basic_sys_path);
-    auto* const sys_path = PySys_GetObject("path");
-    if (!sys_path) {
-        throw std::runtime_error("Could not get sys.path from C++");
-    }
-    {
-        // Clear sys.path
-        auto const code = PyList_SetSlice(sys_path, 0, PyList_Size(sys_path), nullptr);
-        assert(code != -1);
-    }
-    {
-        // Decode new_first and make a Python unicode string out of it
-        auto* ustr = PyUnicode_DecodeFSDefaultAndSize(new_first.data(), new_first.size());
-        if (!ustr) {
-            throw std::runtime_error("Could not decode " + std::string{new_first});
-        }
-        // Put the decoded string into sys.path
-        auto const code = PyList_Insert(sys_path, 0, ustr);
-        assert(code == 0);
-    }
-    {
-        // Append basic_sys_path to sys.path
-        assert(basic_sys_path && PyTuple_Check(basic_sys_path));
-        auto const code =
-            PySequence_SetSlice(sys_path, 1, 1 + PyTuple_Size(basic_sys_path), basic_sys_path);
-        assert(code == 0);
-    }
-    assert(PyList_Size(sys_path) == PyTuple_Size(basic_sys_path) + 1);
+    auto* const path = PySys_GetObject("path");
+    nrn_assert(path);
+    // Clear sys.path
+    nrn_assert(PyList_SetSlice(path, 0, PyList_Size(path), nullptr) != -1);
+    // Decode new_first and make a Python unicode string out of it
+    auto* const ustr = PyUnicode_DecodeFSDefaultAndSize(new_first.data(), new_first.size());
+    nrn_assert(ustr);
+    // Put the decoded string into sys.path
+    nrn_assert(PyList_Insert(path, 0, ustr) == 0);
+    // Append basic_sys_path to sys.path
+    assert(basic_sys_path && PyTuple_Check(basic_sys_path));
+    nrn_assert(PySequence_SetSlice(path, 1, 1 + PyTuple_Size(basic_sys_path), basic_sys_path) == 0);
 }
 }  // namespace
 
@@ -259,8 +242,7 @@ extern "C" int nrnpython_start(int b) {
             // We only find out later what we are going to do, so for the moment we just save a copy
             // of sys.path and then restore + modify a copy of it before each script or command we
             // execute.
-            assert(PyList_Check(sys_path));
-            assert(!basic_sys_path);
+            assert(PyList_Check(sys_path) && !basic_sys_path);
             basic_sys_path = PyList_AsTuple(sys_path);
         }
 #ifdef NRNPYTHON_DYNAMICLOAD
@@ -273,6 +255,8 @@ extern "C" int nrnpython_start(int b) {
     }
     if (b == 0 && started) {
         PyGILState_STATE gilsav = PyGILState_Ensure();
+        assert(basic_sys_path);
+        Py_DECREF(basic_sys_path);
         Py_Finalize();
         // because of finalize, no PyGILState_Release(gilsav);
         started = 0;
