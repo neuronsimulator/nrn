@@ -19,7 +19,7 @@ extern int hoc_get_line();
 extern HocStr* hoc_cbufstr;
 extern int nrnpy_nositeflag;
 extern char* nrnpy_pyhome;
-extern const char* nrnpy_pyexe;
+extern char* nrnpy_pyexe;
 extern char* hoc_ctp;
 extern FILE* hoc_fin;
 extern const char* hoc_promptstr;

@@ -26,7 +26,7 @@ Object* (*nrnpy_p_po2ho)(PyObject*);
 
 extern int nrn_nopython;
 extern int nrnpy_nositeflag;
-extern const char* nrnpy_pyexe;
+extern char* nrnpy_pyexe;
 extern int nrn_is_python_extension;
 int* nrnpy_site_problem_p;
 extern int (*p_nrnpython_start)(int);
@@ -174,6 +174,7 @@ static void set_nrnpylib() {
     }
 #if NRNMPI
     if (nrnmpi_numprocs_world > 1) {  // 0 broadcasts to everyone else.
+        nrnmpi_char_broadcast_world(&nrnpy_pyexe, 0);
         nrnmpi_char_broadcast_world(&nrnpy_pylib, 0);
         nrnmpi_char_broadcast_world(&nrnpy_pyhome, 0);
     }

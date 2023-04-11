@@ -148,7 +148,7 @@ extern const char* nrn_mech_dll;
 int nrn_nopython;
 extern int use_python_interpreter;
 extern int (*p_nrnpython_start)(int);
-const char* nrnpy_pyexe;
+char* nrnpy_pyexe;
 #endif
 
 /*****************************************************************************/
