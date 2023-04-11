@@ -62,8 +62,6 @@ foreach(pyexe ${python_executables})
     endif()
     set(pyexe "${${pyexe}_full}")
   endif()
-  # Resolve symlinks too
-  get_filename_component(pyexe "${pyexe}" REALPATH)
   # Only bother finding version/include/library information if NRN_ENABLE_PYTHON is set.
   if(NRN_ENABLE_PYTHON)
     # Run find_package(Python3 ...) in a subprocess, so there is no pollution of CMakeCache.txt and

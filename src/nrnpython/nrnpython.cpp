@@ -19,6 +19,7 @@ extern int hoc_get_line();
 extern HocStr* hoc_cbufstr;
 extern int nrnpy_nositeflag;
 extern char* nrnpy_pyhome;
+extern const char* nrnpy_pyexe;
 extern char* hoc_ctp;
 extern FILE* hoc_fin;
 extern const char* hoc_promptstr;
@@ -156,8 +157,19 @@ extern "C" int nrnpython_start(int b) {
                 throw std::runtime_error(oss.str());
             }
         };
+        // Virtual environments are discovered by Python by looking for pyvenv.cfg in the directory
+        // above sys.executable (https://docs.python.org/3/library/site.html), so we want to make
+        // sure that sys.executable is the path to a reasonable choice of Python executable. If we
+        // were to let sys.executable be `/some/path/to/arch/special` then we pick up a surprising
+        // dependency on whether or not `nrnivmodl` happened to be run in the root directory of the
+        // virtual environment
+        if (nrnpy_pyexe) {
+            check("Could not set PyConfig.program_name",
+                  PyConfig_SetBytesString(config, &config->program_name, nrnpy_pyexe));
+        }
         if (_p_pyhome) {
             // Py_SetPythonHome is deprecated in Python 3.11+, write to config.home instead.
+            // olupton 2023-04-11 is not sure if this is still needed or useful
             check("Could not set PyConfig.home",
                   PyConfig_SetBytesString(config, &config->home, _p_pyhome));
         }

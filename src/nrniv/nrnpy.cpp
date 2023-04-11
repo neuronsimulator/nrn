@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <sstream>
 
 // needed by nrnmusic.cpp but must exist if python is loaded.
 #if USE_PYTHON
@@ -25,7 +26,7 @@ Object* (*nrnpy_p_po2ho)(PyObject*);
 
 extern int nrn_nopython;
 extern int nrnpy_nositeflag;
-extern char* nrnpy_pyexe;
+extern const char* nrnpy_pyexe;
 extern int nrn_is_python_extension;
 int* nrnpy_site_problem_p;
 extern int (*p_nrnpython_start)(int);
@@ -143,27 +144,29 @@ static void set_nrnpylib() {
         if (!p) {
             printf("could not popen '%s'\n", line);
         } else {
-            if (!fgets(line, linesz, p)) {
-                printf("failed: %s\n", line);
-            }
             while (fgets(line, linesz, p)) {
                 char* cp;
                 // must get rid of beginning '"' and trailing '"\n'
                 if (!nrnpy_pyhome && (cp = strstr(line, "export NRN_PYTHONHOME="))) {
                     cp += strlen("export NRN_PYTHONHOME=") + 1;
                     cp[strlen(cp) - 2] = '\0';
-                    if (nrnpy_pyhome) {
-                        free(nrnpy_pyhome);
-                    }
                     nrnpy_pyhome = strdup(cp);
                 } else if (!nrnpy_pylib && (cp = strstr(line, "export NRN_PYLIB="))) {
                     cp += strlen("export NRN_PYLIB=") + 1;
                     cp[strlen(cp) - 2] = '\0';
-                    if (nrnpy_pylib) {
-                        free(nrnpy_pylib);
-                    }
                     nrnpy_pylib = strdup(cp);
+                } else if (!nrnpy_pyexe && (cp = strstr(line, "export NRN_PYTHONEXE="))) {
+                    cp += strlen("export NRN_PYTHONEXE=") + 1;
+                    cp[strlen(cp) - 2] = '\0';
+                    nrnpy_pyexe = strdup(cp);
                 }
+            }
+            if (std::ferror(p)) {
+                // see if we terminated for some non-EOF reason
+                std::ostringstream oss;
+                oss << "reading from: " << line << " failed with error: " << std::strerror(errno)
+                    << std::endl;
+                throw std::runtime_error(oss.str());
             }
             pclose(p);
         }
@@ -210,17 +213,6 @@ void nrnpython_reg() {
             if (!handle) {  // embed python
                 handle = load_python();
             }
-#if 0
-	// No longer do this as Py_SetPythonHome is used
-	if (handle) {
-		// need to worry about the site.py problem
-		// can fix with a proper PYTHONHOME but need to know
-		// what path was used to load the python library.
-		set_pythonhome(handle);
-	}
-#endif
-        } else {
-            // printf("nrn_is_python_extension = %d\n", nrn_is_python_extension);
         }
         // for some mysterious reason on max osx 10.12
         // (perhaps due to System Integrity Protection?) when python is

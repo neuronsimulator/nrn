@@ -188,7 +188,7 @@ if test "$PYTHON" = "" ; then
   exit 1;
 fi
 
-echo "# PYTHON=`$WHICH $PYTHON`"
+echo "export NRN_PYTHONEXE=\"$(${WHICH} $PYTHON)\""
 
 # what is the python library for Darwin
 nrnpylib_provenance=""
