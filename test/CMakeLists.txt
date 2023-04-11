@@ -294,11 +294,18 @@ if(NRN_ENABLE_PYTHON)
     SCRIPT_PATTERNS test/python_init/do_nothing.py test/python_init/assert_false.py)
   set_property(TEST pynrn::nrniv_python_script.py_twice PROPERTY PASS_REGULAR_EXPRESSION
                                                                  "[\r\n]doing nothing[\r\n]")
+  string(
+    JOIN
+    "$<SEMICOLON> "
+    python_cmd
+    "import sys"
+    "actual = sys.argv[-2:]"
+    "print(actual)"
+    "assert actual == ['foo', 'bar']")
   nrn_add_test(
     GROUP pynrn
     NAME nrniv_python_command_args
-    COMMAND nrniv ${nrniv_args} -python -c "import sys; assert sys.argv[-2:] == ['foo', 'bar']" foo
-            bar
+    COMMAND nrniv ${nrniv_args} -python -c "${python_cmd}" foo bar
     SCRIPT_PATTERNS)
   nrn_add_test(
     GROUP pynrn
@@ -339,11 +346,18 @@ if(NRN_ENABLE_PYTHON)
     set(nrnivpy nrniv_py${pyexe_name})
     # Now move on to checking things about which Python is actually used. First, make sure the
     # version matches our expectation.
+    string(
+      JOIN
+      "$<SEMICOLON> "
+      python_cmd
+      "import sys"
+      "actual = '{}.{}'.format(*sys.version_info[:2])"
+      "print(actual)"
+      "assert actual == '${pyver}'")
     nrn_add_test(
       GROUP pynrn
       NAME ${nrnivpy}_python_command_version_check
-      COMMAND ${nrniv} ${nrniv_args} -python -c
-              "import sys; assert '{}.{}'.format(*sys.version_info[:2]) == '${pyver}'"
+      COMMAND nrniv ${nrniv_args} -python -c "${python_cmd}"
       SCRIPT_PATTERNS)
     # Now check that some other Python things match between `nrniv -python` and `${exe}` directly
     foreach(attr executable path prefix exec_prefix base_prefix base_exec_prefix)
@@ -352,7 +366,7 @@ if(NRN_ENABLE_PYTHON)
         GROUP pynrn
         NAME ${nrnivpy}_python_check_sys_${attr}
         PRECOMMAND "${exe}" test/python_init/dump_sys_attr.py ref.json ${attr}
-        COMMAND ${nrniv} ${nrniv_args} -python test/python_init/check_sys_attr.py ref.json ${attr}
+        COMMAND nrniv ${nrniv_args} -python test/python_init/check_sys_attr.py ref.json ${attr}
         SCRIPT_PATTERNS test/python_init/check_sys_attr.py test/python_init/dump_sys_attr.py)
     endforeach()
     # Now check some other TODO: something about implicit sys.path[0] entries? # First, some checks

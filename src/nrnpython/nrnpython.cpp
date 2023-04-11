@@ -11,6 +11,7 @@
 
 #include <hocstr.h>
 
+#include <filesystem>
 #include <string>
 #include <sstream>
 extern "C" void nrnpython_real();
@@ -56,10 +57,77 @@ static std::string python_sys_path_to_append() {
     return {};
 }
 
-/** @brief Execute a Python script.
- *  @return 0 on failure, 1 on success.
+namespace {
+struct PythonConfigWrapper {
+    PythonConfigWrapper() {
+        PyConfig_InitPythonConfig(&config);
+    }
+    ~PythonConfigWrapper() {
+        PyConfig_Clear(&config);
+    }
+    operator PyConfig*() {
+        return &config;
+    }
+    PyConfig* operator->() {
+        return &config;
+    }
+    PyConfig config;
+};
+struct PyMem_RawFree_Deleter {
+    void operator()(wchar_t* ptr) const {
+        PyMem_RawFree(ptr);
+    }
+};
+PyObject* basic_sys_path{};
+
+/**
+ * @brief Reset sys.path to be basic_sys_path and prepend something.
+ * @param gil GIL helper, so this code can assume the GIL is held
+ * @param new_first Path to decode and prepend to sys.path.
+ */
+void reset_sys_path(std::string_view new_first) {
+    PyLockGIL _{};
+    assert(basic_sys_path);
+    auto* const sys_path = PySys_GetObject("path");
+    if (!sys_path) {
+        throw std::runtime_error("Could not get sys.path from C++");
+    }
+    {
+        // Clear sys.path
+        auto const code = PyList_SetSlice(sys_path, 0, PyList_Size(sys_path), nullptr);
+        assert(code != -1);
+    }
+    {
+        // Decode new_first and make a Python unicode string out of it
+        auto* ustr = PyUnicode_DecodeFSDefaultAndSize(new_first.data(), new_first.size());
+        if (!ustr) {
+            throw std::runtime_error("Could not decode " + std::string{new_first});
+        }
+        // Put the decoded string into sys.path
+        auto const code = PyList_Insert(sys_path, 0, ustr);
+        assert(code == 0);
+    }
+    {
+        // Append basic_sys_path to sys.path
+        assert(basic_sys_path && PyTuple_Check(basic_sys_path));
+        auto const code =
+            PySequence_SetSlice(sys_path, 1, 1 + PyTuple_Size(basic_sys_path), basic_sys_path);
+        assert(code == 0);
+    }
+    assert(PyList_Size(sys_path) == PyTuple_Size(basic_sys_path) + 1);
+}
+}  // namespace
+
+/**
+ * @brief Execute a Python script.
+ * @return 0 on failure, 1 on success.
  */
 int nrnpy_pyrun(const char* fname) {
+    // Figure out what sys.path[0] should be; this involves first resolving symlinks in fname and
+    // second getting the directory name from it.
+    auto const realpath = std::filesystem::canonical(fname);
+    auto const dirname = realpath.parent_path();
+    reset_sys_path(dirname.native());
 #ifdef MINGW
     // perhaps this should be the generic implementation
     auto const sz = strlen(fname) + 40;
@@ -85,29 +153,6 @@ int nrnpy_pyrun(const char* fname) {
     }
 #endif  // MINGW not defined
 }
-
-namespace {
-struct PythonConfigWrapper {
-    PythonConfigWrapper() {
-        PyConfig_InitPythonConfig(&config);
-    }
-    ~PythonConfigWrapper() {
-        PyConfig_Clear(&config);
-    }
-    operator PyConfig*() {
-        return &config;
-    }
-    PyConfig* operator->() {
-        return &config;
-    }
-    PyConfig config;
-};
-struct PyMem_RawFree_Deleter {
-    void operator()(wchar_t* ptr) const {
-        PyMem_RawFree(ptr);
-    }
-};
-}  // namespace
 
 extern PyObject* nrnpy_hoc();
 extern PyObject* nrnpy_nrn();
@@ -189,13 +234,18 @@ extern "C" int nrnpython_start(int b) {
             if (!sys_path) {
                 throw std::runtime_error("Could not get sys.path from C++");
             }
-            // Append a path to sys.path based on where libnrniv.so is.
+            // Append a path to sys.path based on where libnrniv.so is, if it's not already there.
+            // Note that this is magic that is specific to launching via nrniv/special and not
+            // Python, which is unfortunate for consistency...
             if (auto const path = python_sys_path_to_append(); !path.empty()) {
                 auto* ustr = PyUnicode_DecodeFSDefaultAndSize(path.c_str(), path.size());
                 if (!ustr) {
                     throw std::runtime_error("Could not decode: " + path);
                 }
-                if (PyList_Append(sys_path, ustr)) {
+                auto const already_there = PySequence_Contains(sys_path, ustr);
+                assert(already_there != -1);
+                if (already_there == 0 && PyList_Append(sys_path, ustr)) {
+                    // TODO need to cover this without breaking sys.path consistency tests
                     throw std::runtime_error("Could not append " + path + " to sys.path");
                 }
             }
@@ -206,24 +256,12 @@ extern "C" int nrnpython_start(int b) {
             //   it's a symbolic link, resolve symbolic links.
             // * python -c code and python (REPL) command lines: prepend an empty
             //   string, which means the current working directory.
-            // For the moment, this is not done. The old code unconditionally added
-            // an empty string. It's not trivial to get this right, because there
-            // are several ways that Python code can be executed: both the code
-            // below in this function, which currently only allows a single -c or
-            // .py file, and the hoc_moreinput function, which in principle allows
-            // `nrniv /dir1/script1.py /dir2/script2.py` and should change
-            // sys.path[0] between the two scripts. Real Python doesn't have this
-            // problem, because you can't pass multiple scripts/commands/modules on
-            // a single commandline.
-
-            // For the moment, just unconditionally add an empty string
-            auto* ustr = PyUnicode_DecodeFSDefaultAndSize("", 0);
-            if (!ustr) {
-                throw std::runtime_error("Could not decode an empty string");
-            }
-            if (PyList_Insert(sys_path, 0, ustr)) {
-                throw std::runtime_error("Could not prepend an empty string to sys.path");
-            }
+            // We only find out later what we are going to do, so for the moment we just save a copy
+            // of sys.path and then restore + modify a copy of it before each script or command we
+            // execute.
+            assert(PyList_Check(sys_path));
+            assert(!basic_sys_path);
+            basic_sys_path = PyList_AsTuple(sys_path);
         }
 #ifdef NRNPYTHON_DYNAMICLOAD
         // return from Py_Initialize means there was no site problem
@@ -248,10 +286,13 @@ extern "C" int nrnpython_start(int b) {
         PyOS_ReadlineFunctionPointer = nrnpython_getline;
 #endif
         // Is there a -c "command" or file.py arg.
-        bool python_error_encountered{false};
+        bool python_error_encountered{false}, have_reset_sys_path{false};
         for (int i = 1; i < nrn_global_argc; ++i) {
             char* arg = nrn_global_argv[i];
             if (strcmp(arg, "-c") == 0 && i + 1 < nrn_global_argc) {
+                // sys.path[0] should be an empty string for -c
+                reset_sys_path("");
+                have_reset_sys_path = true;
                 if (PyRun_SimpleString(nrn_global_argv[i + 1])) {
                     python_error_encountered = true;
                 }
@@ -260,6 +301,7 @@ extern "C" int nrnpython_start(int b) {
                 if (!nrnpy_pyrun(arg)) {
                     python_error_encountered = true;
                 }
+                have_reset_sys_path = true;  // inside nrnpy_pyrun
                 break;
             }
         }
@@ -267,6 +309,12 @@ extern "C" int nrnpython_start(int b) {
         // code. In noninteractive/batch mode that happens immediately, in
         // interactive mode then we start a Python interpreter first.
         if (nrn_istty_) {
+            if (!have_reset_sys_path) {
+                // sys.path[0] should be 0 for interactive use, but if we're dropping into an
+                // interactive shell after executing something else then we don't want to mess with
+                // it.
+                reset_sys_path("");
+            }
             PyRun_InteractiveLoop(hoc_fin, "stdin");
         }
         return python_error_encountered;
