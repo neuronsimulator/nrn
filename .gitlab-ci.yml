@@ -48,7 +48,6 @@ mac_m1_cmake_build:
     - echo $LANG
     - echo $LC_ALL
     - source venv/bin/activate
-    - 'export PYTHONPATH=$(${PYTHON} -c "import site; print(\":\".join(site.getsitepackages()))")'
     - 'export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/'
     - ${PYTHON} -c 'import os,sys; os.set_blocking(sys.stdout.fileno(), True)'
     - cmake_args=(-G Ninja)
