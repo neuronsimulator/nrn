@@ -1,9 +1,9 @@
 # Make sure that exit codes are propagated as expected, and that the expected number of arguments is
 # processed. Start out with checking that the right amount of code is executed, and that error codes
-# are propagated. Here, we don't bother to duplicate for all explicit/implicit Python versions.s
+# are propagated. Here, we don't bother to duplicate for all explicit/implicit Python versions.
 nrn_add_test_group(
   NAME pyinit
-  MODFILE_PATTERNS NONE
+  MODFILE_PATTERNS NONE # no special, for now
   SIM_DIRECTORY test/pyinit)
 set(nrniv_args_common -notatty)
 set(nrniv_args ${nrniv_args_common})
@@ -122,22 +122,53 @@ nrn_add_test(
 # these should assert that the variants launched with `python` and `nrniv` end up with consistent
 # values of `sys.path`, `sys.[base_][exec_]prefix`, `sys.std{err,in,out}` encoding and Python
 # version number. If we are building (with dynamic Python) for multiple Python versions, replicate
-# the tests for all of them. Add these tests to the pynrn group so that a custom special is
-# available as well as plain nrniv.
+# the tests for all of them. TODO use NRN_PYTHON_EXTRA_FOR_TESTS.
 foreach(val RANGE ${NRN_PYTHON_COUNT})
   # val = 0 .. NRN_PYTHON_COUNT-1 means explicitly use that Python; val = NRN_PYTHON_COUNT means
   # don't specify and check we get the expected default.
   set(nrniv_args ${nrniv_args_common})
   if(val EQUAL NRN_PYTHON_COUNT)
-    list(GET NRN_PYTHON_EXECUTABLES 0 exe)
-    list(GET NRN_PYTHON_VERSIONS 0 pyver)
-    set(pyexe_name "def")
-    # TODO figure out what version we expect to pick up by default; with dynamic Python this depends
-    # on the runtime $PATH
+    # Figure out which Python we expect nrniv -python to pick up in these tests:
+    #
+    # * we know we're not passing -pyexe here
+    # * we know(?) that NRN_PYTHONEXE is not set
+    # * the order of precedence is: python python3 pythonX0.Y0 .. pythonXn.Yn
+    # * disable the tests if that yields nothing
+    #
+    # python3.999 is to make sure we test skipping names in the search path that don't exist
+    set(search_names python python3 python3.999)
+    foreach(val2 RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+      list(GET NRN_PYTHON_VERSIONS ${val2} pyver)
+      list(APPEND search_names python${pyver})
+    endforeach()
+    unset(pyexe)
+    foreach(candidate ${search_names})
+      nrn_find_python(NAME "${candidate}" PREFIX nrnpy)
+      if(nrnpy_EXECUTABLE STREQUAL "nrnpy_EXECUTABLE-NOTFOUND")
+        # Not an error if a user's system doesn't have all the names in search_path
+        continue()
+      endif()
+      set(nrnpy_VERSION "${nrnpy_VERSION_MAJOR}.${nrnpy_VERSION_MINOR}")
+      if(NOT nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
+        # e.g. python or python3 points to a version we didn't build against
+        continue()
+      endif()
+      # Right, so the default should be nrnpy_EXECUTABLE, which is nrnpy_VERSION
+      set(pyexe "${nrnpy_EXECUTABLE}")
+      set(pyver "${nrnpy_VERSION}")
+      set(pyexe_name "def")
+      break()
+    endforeach()
+    if(NOT DEFINED pyexe)
+      message(
+        WARNING "Couldn't figure out what Python version nrniv -python will choose by default")
+      # Skip these tests
+      continue()
+    endif()
   else()
-    list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
+    list(GET NRN_PYTHON_EXECUTABLES ${val} pyexe)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
-    list(APPEND nrniv_args -pyexe "${exe}")
+    list(APPEND nrniv_args -pyexe "${pyexe}")
     set(pyexe_name "${pyver}")
   endif()
   set(nrnivpy nrniv_py${pyexe_name})
@@ -172,7 +203,7 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
     nrn_add_test(
       GROUP pyinit
       NAME ${nrnivpy}_python_check_sys_${attr}
-      PRECOMMAND "${exe}" dump_sys_attr.py ref.json ${attr}
+      PRECOMMAND "${pyexe}" dump_sys_attr.py ref.json ${attr}
       COMMAND nrniv ${nrniv_args} -python check_sys_attr.py ref.json ${attr}
       SCRIPT_PATTERNS check_sys_attr.py dump_sys_attr.py)
   endforeach()

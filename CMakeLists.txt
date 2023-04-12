@@ -126,6 +126,12 @@ mark_as_advanced(NRN_WHEEL_BUILD)
 #                                      versions that you want nrniv -python to be able to load. If
 #                                      this *is* set then the first entry will be used as the
 #                                      default Python version.
+# Extra options for extended Python tests:
+#   - NRN_PYTHON_EXTRA_FOR_TESTS=... : semicolon separated list of Python executables that NEURON
+#                                      is *not* built against. These are only used for testing, and
+#                                      there must be no overlap in major.minor versions between
+#                                      this list and the set of versions that NEURON *is* built
+#                                      against. This allows tests of failure modes.
 # Dynamic MPI support:
 #   - OFF       : nrnmpi is linked into libnrniv.so
 #   - ON        : nrnmpi interface consistent with default mpi is built and loaded dynamically
@@ -153,6 +159,9 @@ set(NRN_PYTHON_DYNAMIC
       STRING
       "semicolon (;) separated list of python executables to create interface for (default python3)"
 )
+set(NRN_PYTHON_EXTRA_FOR_TESTS
+    ""
+    CACHE STRING "semicolon (;) separated list of python executables to use for testing")
 
 option(NRN_ENABLE_MPI_DYNAMIC "Enable dynamic MPI library support" OFF)
 set(NRN_MPI_DYNAMIC

@@ -41,26 +41,32 @@ else()
   set(python_executables "${PYTHON_EXECUTABLE}")
 endif()
 
-# For each Python in NRN_PYTHON_EXECUTABLES, find its version number, its include directory, and
-# its library path. Store those in the new lists NRN_PYTHON_VERSIONS, NRN_PYTHON_INCLUDES and
-# NRN_PYTHON_LIBRARIES. Set NRN_PYTHON_COUNT to be the length of those lists, and
-# NRN_PYTHON_ITERATION_LIMIT to be NRN_PYTHON_COUNT - 1.
-set(NRN_PYTHON_EXECUTABLES)
-set(NRN_PYTHON_VERSIONS)
-set(NRN_PYTHON_INCLUDES)
-set(NRN_PYTHON_LIBRARIES)
-foreach(pyexe ${python_executables})
-  message(STATUS "Checking if ${pyexe} is a working python")
-  if(NOT IS_ABSOLUTE "${pyexe}")
-    # Find the full path to ${pyexe} as Python3_EXECUTABLE does not accept relative paths.
+# Given a name (e.g. python3.11) find the include directories, full executable path, libraries and
+# version information. Usage: nrn_find_python(NAME python3.11 PREFIX nrnpy) sets nrnpy_EXECUTABLE,
+# nrnpy_INCLUDES, nrnpy_LIBRARIES, nrnpy_VERSION_MAJOR and nrnpy_VERSION_MINOR. If NRN_ENABLE_PYTHON
+# is *not* set then only nrnpy_EXECUTABLE will be set.
+function(nrn_find_python)
+  set(oneVal NAME PREFIX)
+  cmake_parse_arguments(opt "" "${oneVal}" "" ${ARGN})
+  if(opt_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "Unexpected arguments: ${opt_UNPARSED_ARGUMENTS}")
+  endif()
+  if(opt_KEYWORDS_MISSING_VALUES)
+    message(FATAL_ERROR "${opt_KEYWORDS_MISSING_VALUES} values are required")
+  endif()
+  if(NOT IS_ABSOLUTE "${opt_NAME}")
+    # Find the full path to ${opt_NAME} as Python3_EXECUTABLE does not accept relative paths.
     find_program(
-      "${pyexe}_full" "${pyexe}"
+      "${opt_NAME}_full" "${opt_NAME}"
       PATHS ENV PATH
       NO_DEFAULT_PATH)
-    if(${pyexe}_full STREQUAL "${pyexe}_full-NOTFOUND")
-      message(FATAL_ERROR "Could not resolve ${pyexe} to an absolute path")
+    if(${opt_NAME}_full STREQUAL "${opt_NAME}_full-NOTFOUND")
+      set("${opt_PREFIX}_EXECUTABLE"
+          "${opt_PREFIX}_EXECUTABLE-NOTFOUND"
+          PARENT_SCOPE)
+      return()
     endif()
-    set(pyexe "${${pyexe}_full}")
+    set(opt_NAME "${${opt_NAME}_full}")
   endif()
   # Only bother finding version/include/library information if NRN_ENABLE_PYTHON is set.
   if(NRN_ENABLE_PYTHON)
@@ -68,7 +74,7 @@ foreach(pyexe ${python_executables})
     # so on. Our desire to include multiple Python versions in one build means we have to handle
     # lists of versions/libraries/... manually. Unfortunately one cannot safely use find_package in
     # CMake script mode, so we configure an extra project.
-    string(SHA1 pyexe_hash "${pyexe}")
+    string(SHA1 pyexe_hash "${opt_NAME}")
     string(SUBSTRING "${pyexe_hash}" 0 6 pyexe_hash)
     # Which attributes we're trying to learn about this Python
     set(python_vars Python3_INCLUDE_DIRS Python3_VERSION_MAJOR Python3_VERSION_MINOR)
@@ -89,7 +95,7 @@ foreach(pyexe ${python_executables})
     endif()
     execute_process(
       COMMAND
-        ${CMAKE_COMMAND} "-DPython3_EXECUTABLE:STRING=${pyexe}"
+        ${CMAKE_COMMAND} "-DPython3_EXECUTABLE:STRING=${opt_NAME}"
         "-DPython3_COMPONENTS=${dev_component};Interpreter" -S
         ${CMAKE_SOURCE_DIR}/cmake/ExecuteFindPython -B
         ${CMAKE_BINARY_DIR}/ExecuteFindPython_${pyexe_hash}
@@ -97,7 +103,7 @@ foreach(pyexe ${python_executables})
       OUTPUT_VARIABLE stdout
       ERROR_VARIABLE stderr)
     if(NOT result EQUAL 0)
-      message(FATAL_ERROR "find_package could not discover information about ${pyexe}\n"
+      message(FATAL_ERROR "find_package could not discover information about ${opt_NAME}\n"
                           "status=${result}\n" "stdout:\n${stdout}\n" "stderr:\n${stderr}\n")
     endif()
     # Parse out the variables printed by ExecuteFindPython.cmake
@@ -108,35 +114,64 @@ foreach(pyexe ${python_executables})
       endif()
       set(${var} "${CMAKE_MATCH_1}")
     endforeach()
-    if(${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR} VERSION_LESS NRN_MINIMUM_PYTHON_VERSION)
-      message(
-        FATAL_ERROR
-          "${pyexe} (${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}) is too old for NEURON, which requires at least ${NRN_MINIMUM_PYTHON_VERSION}"
-      )
-    endif()
-    # Now Python3_INCLUDE_DIRS and friends correspond to ${pyexe} Assert that there is only one
-    # value per Python version for now, as otherwise we'd need to handle a list of lists...
-    list(LENGTH Python3_INCLUDE_DIRS num_include_dirs)
-    if(NOT num_include_dirs EQUAL 1)
-      message(
-        FATAL_ERROR
-          "Cannot currently handle multiple Python include dirs: ${Python3_INCLUDE_DIRS} from ${pyexe}"
-      )
-    endif()
-    list(LENGTH Python3_LIBRARIES num_libs)
-    if(NOT num_libs EQUAL 1)
-      message(
-        FATAL_ERROR
-          "Cannot currently handle multiple Python libraries: ${Python3_LIBRARIES} from ${pyexe}")
-    endif()
-    list(APPEND NRN_PYTHON_VERSIONS "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
-    list(APPEND NRN_PYTHON_INCLUDES "${Python3_INCLUDE_DIRS}")
-    list(APPEND NRN_PYTHON_LIBRARIES "${Python3_LIBRARIES}")
+    set("${opt_PREFIX}_INCLUDES"
+        "${Python3_INCLUDE_DIRS}"
+        PARENT_SCOPE)
+    set("${opt_PREFIX}_LIBRARIES"
+        "${Python3_LIBRARIES}"
+        PARENT_SCOPE)
+    set("${opt_PREFIX}_VERSION_MAJOR"
+        "${Python3_VERSION_MAJOR}"
+        PARENT_SCOPE)
+    set("${opt_PREFIX}_VERSION_MINOR"
+        "${Python3_VERSION_MINOR}"
+        PARENT_SCOPE)
   endif()
   # One final transformation, for convenience when using macOS and sanitizers that need to have
-  # their runtime libraries loaded, replace any shims with the real Python executable.
-  cpp_cc_strip_python_shims(EXECUTABLE "${pyexe}" OUTPUT pyexe)
-  list(APPEND NRN_PYTHON_EXECUTABLES "${pyexe}")
+  # their runtime libraries preloaded, replace any shims with the real Python executable. TODO: this
+  # seems problematic if we also want to support virtual environments.
+  cpp_cc_strip_python_shims(EXECUTABLE "${opt_NAME}" OUTPUT opt_NAME)
+  set("${opt_PREFIX}_EXECUTABLE"
+      "${opt_NAME}"
+      PARENT_SCOPE)
+endfunction()
+
+# For each Python in NRN_PYTHON_EXECUTABLES, find its version number, its include directory, and its
+# library path. Store those in the new lists NRN_PYTHON_VERSIONS, NRN_PYTHON_INCLUDES and
+# NRN_PYTHON_LIBRARIES. Set NRN_PYTHON_COUNT to be the length of those lists, and
+# NRN_PYTHON_ITERATION_LIMIT to be NRN_PYTHON_COUNT - 1.
+set(NRN_PYTHON_EXECUTABLES)
+set(NRN_PYTHON_VERSIONS)
+set(NRN_PYTHON_INCLUDES)
+set(NRN_PYTHON_LIBRARIES)
+foreach(pyexe ${python_executables})
+  message(STATUS "Checking if ${pyexe} is a working python")
+  nrn_find_python(NAME "${pyexe}" PREFIX nrnpy)
+  if(NRN_ENABLE_PYTHON)
+    # If NRN_ENABLE_PYTHON=OFF then we're only using Python to run build scripts etc.
+    set(nrnpy_VERSION "${nrnpy_VERSION_MAJOR}.${nrnpy_VERSION_MINOR}")
+    if(${nrnpy_VERSION} VERSION_LESS NRN_MINIMUM_PYTHON_VERSION)
+      message(FATAL_ERROR "${pyexe} too old (${nrnpy_VERSION} < ${NRN_MINIMUM_PYTHON_VERSION})")
+    endif()
+    # Now nrnpy_INCLUDES and friends correspond to ${pyexe}. Assert that there is only one value per
+    # Python version for now, as otherwise we'd need to handle a list of lists...
+    list(LENGTH nrnpy_INCLUDES num_include_dirs)
+    list(LENGTH nrnpy_LIBRARIES num_lib_dirs)
+    if(NOT num_include_dirs EQUAL 1)
+      message(FATAL_ERROR "Cannot handle multiple Python include dirs: ${nrnpy_INCLUDES}")
+    endif()
+    if(NOT num_lib_dirs EQUAL 1)
+      message(FATAL_ERROR "Cannot handle multiple Python libraries: ${Python3_LIBRARIES}")
+    endif()
+    if(nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
+      # We cannot build against multiple copies of the same pythonX.Y version.
+      message(FATAL_ERROR "Got duplicate version ${nrnpy_VERSION} from ${pyexe}")
+    endif()
+    list(APPEND NRN_PYTHON_VERSIONS "${nrnpy_VERSION}")
+    list(APPEND NRN_PYTHON_INCLUDES "${nrnpy_INCLUDES}")
+    list(APPEND NRN_PYTHON_LIBRARIES "${nrnpy_LIBRARIES}")
+  endif()
+  list(APPEND NRN_PYTHON_EXECUTABLES "${nrnpy_EXECUTABLE}")
 endforeach()
 # In any case, the default (NRN_DEFAULT_PYTHON_EXECUTABLE) should always be the zeroth entry in the
 # list of Pythons, and we need to set it even if NRN_ENABLE_PYTHON=OFF -- for use in build scripts.
@@ -146,4 +181,17 @@ if(NRN_ENABLE_PYTHON)
   list(GET NRN_PYTHON_LIBRARIES 0 NRN_DEFAULT_PYTHON_LIBRARIES)
   list(LENGTH NRN_PYTHON_EXECUTABLES NRN_PYTHON_COUNT)
   math(EXPR NRN_PYTHON_ITERATION_LIMIT "${NRN_PYTHON_COUNT} - 1")
+endif()
+if(NRN_ENABLE_TESTS AND NRN_ENABLE_PYTHON)
+  # Make sure that, if NRN_PYTHON_EXTRA_FOR_TESTS is set, none of its versions clash with versions
+  # we're building against
+  foreach(pyexe ${NRN_PYTHON_EXTRA_FOR_TESTS})
+    nrn_find_python(NAME "${pyexe}" PREFIX nrnpy)
+    set(nrnpy_VERSION "${nrnpy_VERSION_MAJOR}.${nrnpy_VERSION_MINOR}")
+    if(nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
+      string(JOIN ", " versions ${NRN_PYTHON_VERSIONS})
+      message(FATAL_ERROR "NRN_PYTHON_EXTRA_FOR_TESTS=${NRN_PYTHON_EXTRA_FOR_TESTS} cannot contain"
+                          " Python versions that NEURON *is* being built against (${versions})")
+    endif()
+  endforeach()
 endif()
