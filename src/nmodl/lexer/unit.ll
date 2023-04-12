@@ -140,7 +140,7 @@ NEWUNIT ({CHAR}+{D}*)|({CHAR}+{D}*"_"{CHAR}+{D}*)|({CHAR}+{D}*"/"{CHAR}+{D}*)|({
                     return UnitParser::make_DOUBLE(yytext, loc);
                 }
 
-{DBL}"|"{DBL}   {
+"|"             {
                     return UnitParser::make_FRACTION(yytext, loc);
                 }
 

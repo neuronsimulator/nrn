@@ -46,10 +46,9 @@ TEST_CASE("Unit Lexer tests for valid tokens", "[lexer][unit]") {
         REQUIRE(check_token_type("1", Token::DOUBLE));
         REQUIRE(check_token_type("-1.324e+10", Token::DOUBLE));
         REQUIRE(check_token_type("1-1", Token::DOUBLE));
-        REQUIRE(check_token_type("1|100", Token::FRACTION));
+        REQUIRE(check_token_type("|", Token::FRACTION));
         REQUIRE(check_token_type(".03", Token::DOUBLE));
         REQUIRE(check_token_type("12345e-2", Token::DOUBLE));
-        REQUIRE(check_token_type("1|8.988e9", Token::FRACTION));
     }
 
     SECTION("Tests for units") {

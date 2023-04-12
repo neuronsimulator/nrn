@@ -70,8 +70,7 @@
 %token <std::string>    UNIT_PROD
 %token <std::string>    DIVISION
 
-%type <std::shared_ptr<std::vector<std::string>>>    units_nom
-%type <std::shared_ptr<std::vector<std::string>>>    units_denom
+%type <std::shared_ptr<std::vector<std::string>>>    units
 %type <std::shared_ptr<nmodl::units::Unit>>          nominator
 %type <std::shared_ptr<nmodl::units::Unit>>          item
 %type <std::shared_ptr<nmodl::units::Prefix>>        prefix
@@ -117,56 +116,39 @@ table_insertion
       }
     ;
 
-units_nom
+units
     : {
         $$ = std::make_shared<std::vector<std::string>>();
       }
-    | UNIT units_nom {
+    | UNIT units {
         $2->push_back($1);
         $$ = $2;
       }
-    | UNIT_POWER units_nom {
+    | UNIT_POWER units {
         $2->push_back($1);
         $$ = $2;
       }
-    | UNIT_PROD units_nom {
-        $$ = $2;
-      }
-    ;
-
-units_denom
-    : {
-        $$ = std::make_shared<std::vector<std::string>>();
-      }
-    | UNIT units_denom {
-        $2->push_back($1);
-        $$ = $2;
-      }
-    | UNIT_POWER units_denom {
-        $2->push_back($1);
-        $$ = $2;
-      }
-    | UNIT_PROD units_denom {
+    | UNIT_PROD units {
         $$ = $2;
       }
     ;
 
 nominator
-    : units_nom {
+    : units {
         auto newunit = std::make_shared<nmodl::units::Unit>();
         newunit->add_nominator_unit($1);
         $$ = newunit;
       }
-    | DOUBLE units_nom {
+    | DOUBLE units {
         auto newunit = std::make_shared<nmodl::units::Unit>();
         newunit->add_nominator_unit($2);
         newunit->add_nominator_double($1);
         $$ = newunit;
       }
-    | FRACTION units_nom {
+    | DOUBLE FRACTION DOUBLE units {
         auto newunit = std::make_shared<nmodl::units::Unit>();
-        newunit->add_nominator_unit($2);
-        newunit->add_fraction($1);
+        newunit->add_nominator_unit($4);
+        newunit->add_fraction($1, $3);
         $$ = newunit;
       }
     ;
@@ -195,7 +177,7 @@ item
         $2->add_unit($1);
         $$ = $2;
       }
-    | NEW_UNIT nominator DIVISION units_denom {
+    | NEW_UNIT nominator DIVISION units {
         $2->add_unit($1);
         $2->add_denominator_unit($4);
         $$ = $2;

@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "units.hpp"
+#include <fmt/format.h>
 
 /**
  * \file
@@ -93,57 +94,26 @@ void Unit::mul_factor(const double double_factor) {
     unit_factor *= double_factor;
 }
 
-void Unit::add_fraction(const std::string& fraction_string) {
-    double nom{}, denom{};
-    std::string nominator;
-    std::string denominator;
-    std::string::const_iterator it;
-    for (it = fraction_string.begin(); it != fraction_string.end() && *it != '|'; ++it) {
-        nominator.push_back(*it);
-    }
-    // pass "|" char
-    ++it;
-    for (auto itm = it; itm != fraction_string.end(); ++itm) {
-        denominator.push_back(*itm);
-    }
-    nom = parse_double(nominator);
-    denom = parse_double(denominator);
+void Unit::add_fraction(const std::string& nominator, const std::string& denominator) {
+    double nom = parse_double(nominator);
+    double denom = parse_double(denominator);
     unit_factor = nom / denom;
 }
 
+/**
+ * Double numbers in the \c nrnunits.lib file are defined in the form [.0-9]+[-+][0-9]+
+ * To make sure they are parsed in the correct way and similarly to the NEURON parser
+ * we convert this string to a string compliant to scientific notation to be able to be parsed
+ * from std::stod(). To do that we have to add an `e` in case there is `-+` in the number
+ *string if it doesn't exist.
+ */
 double Unit::parse_double(std::string double_string) {
-    long double d_number{};
-    double d_magnitude{};
-    std::string s_number;
-    std::string s_magnitude;
-    std::string::const_iterator it;
-    // if double is positive sign = 1 else sign = -1
-    // to be able to be multiplied by the d_number
-    int sign = 1;
-    if (double_string.front() == '-') {
-        sign = -1;
-        double_string.erase(double_string.begin());
+    auto pos = double_string.find_first_of("+-", 1);  // start at 1 pos, because we don't care with
+                                                      // the front sign
+    if (pos != std::string::npos && double_string.find_last_of("eE", pos) == std::string::npos) {
+        double_string.insert(pos, "e");
     }
-    // if *it reached an exponent related char, then the whole double number is read
-    for (it = double_string.begin();
-         it != double_string.end() && *it != 'e' && *it != '+' && *it != '-';
-         ++it) {
-        s_number.push_back(*it);
-    }
-    // then read the magnitude of the double number
-    for (auto itm = it; itm != double_string.end(); ++itm) {
-        if (*itm != 'e') {
-            s_magnitude.push_back(*itm);
-        }
-    }
-    d_number = std::stold(s_number);
-    if (s_magnitude.empty()) {
-        d_magnitude = 0.0;
-    } else {
-        d_magnitude = std::stod(s_magnitude);
-    }
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-    return static_cast<double>(d_number * powl(10.0, d_magnitude) * sign);
+    return std::stod(double_string);
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
@@ -210,9 +180,8 @@ void UnitTable::calc_nominator_dims(const std::shared_ptr<Unit>& unit, std::stri
     // if the nominator is still not found in the table then output error
     // else multiply its factor to the unit factor and calculate unit's dimensions
     if (nominator == table.end()) {
-        std::stringstream ss;
-        ss << "Unit " << nominator_name << " not defined!" << std::endl;
-        throw std::runtime_error(ss.str());
+        std::string ss = fmt::format("Unit {} not defined!", nominator_name);
+        throw std::runtime_error(ss);
     } else {
         for (int i = 0; i < nominator_power; i++) {
             unit->mul_factor(nominator_prefix_factor * nominator->second->get_factor());
@@ -238,15 +207,15 @@ void UnitTable::calc_denominator_dims(const std::shared_ptr<Unit>& unit,
 
     // if the denominator_name is not in the table, check if there are any prefixes or power
     if (denominator == table.end()) {
-        int changed_denominator_name = 1;
+        bool changed_denominator_name = true;
 
         while (changed_denominator_name) {
-            changed_denominator_name = 0;
+            changed_denominator_name = false;
             for (const auto& it: prefixes) {
                 auto res =
                     std::mismatch(it.first.begin(), it.first.end(), denominator_name.begin());
                 if (res.first == it.first.end()) {
-                    changed_denominator_name = 1;
+                    changed_denominator_name = true;
                     denominator_prefix_factor *= it.second;
                     denominator_name.erase(denominator_name.begin(),
                                            denominator_name.begin() +
@@ -285,9 +254,8 @@ void UnitTable::calc_denominator_dims(const std::shared_ptr<Unit>& unit,
     }
 
     if (denominator == table.end()) {
-        std::stringstream ss;
-        ss << "Unit " << denominator_name << " not defined!" << std::endl;
-        throw std::runtime_error(ss.str());
+        std::string ss = fmt::format("Unit {} not defined!", denominator_name);
+        throw std::runtime_error(ss);
     } else {
         for (int i = 0; i < denominator_power; i++) {
             unit->mul_factor(1.0 / (denominator_prefix_factor * denominator->second->get_factor()));
@@ -341,52 +309,25 @@ void UnitTable::insert_prefix(const std::shared_ptr<Prefix>& prfx) {
     prefixes.insert({prfx->get_name(), prfx->get_factor()});
 }
 
-void UnitTable::print_units() const {
-    for (const auto& it: table) {
-        std::cout << std::fixed << std::setprecision(output_precision) << it.first << ' '
-                  << it.second->get_factor() << ':';
-        for (const auto& dims: it.second->get_dimensions()) {
-            std::cout << ' ' << dims;
-        }
-        std::cout << '\n';
-    }
-}
-
-void UnitTable::print_base_units() const {
-    int first_print = 1;
-    for (const auto& it: base_units_names) {
-        if (!it.empty()) {
-            if (first_print) {
-                first_print = 0;
-                std::cout << it;
-            } else {
-                std::cout << ' ' << it;
-            }
-        }
-    }
-    std::cout << '\n';
-}
-
 void UnitTable::print_units_sorted(std::ostream& units_details) const {
     std::vector<std::pair<std::string, std::shared_ptr<Unit>>> sorted_elements(table.begin(),
                                                                                table.end());
     std::sort(sorted_elements.begin(), sorted_elements.end());
     for (const auto& it: sorted_elements) {
-        units_details << std::fixed << std::setprecision(output_precision) << it.first << ' '
-                      << it.second->get_factor() << ':';
-        for (const auto& dims: it.second->get_dimensions()) {
-            units_details << ' ' << dims;
-        }
-        units_details << '\n';
+        units_details << fmt::format("{} {:.{}f}: {}\n",
+                                     it.first,
+                                     it.second->get_factor(),
+                                     output_precision,
+                                     fmt::join(it.second->get_dimensions(), " "));
     }
 }
 
 void UnitTable::print_base_units(std::ostream& base_units_details) const {
-    int first_print = 1;
+    bool first_print = true;
     for (const auto& it: base_units_names) {
         if (!it.empty()) {
             if (first_print) {
-                first_print = 0;
+                first_print = false;
                 base_units_details << it;
             } else {
                 base_units_details << ' ' << it;

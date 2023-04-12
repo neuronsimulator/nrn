@@ -143,7 +143,7 @@ class Unit {
     void mul_factor(double double_factor);
 
     /// Parse a fraction given as string and store the result to the factor of the Unit
-    void add_fraction(const std::string& fraction_string);
+    void add_fraction(const std::string& nominator, const std::string& denominator);
 
     /// Parse a double number given as string. The double can be positive or negative and
     /// have all kinds of representations
@@ -276,15 +276,9 @@ class UnitTable {
     }
 
     /// Print the details of the units that are stored in the UnitTable
-    void print_units() const;
-
-    /// Print the details of the units that are stored in the UnitTable
     /// to the output stream units_details in ascending order to be printed
     /// in tests in specific order
     void print_units_sorted(std::ostream& units_details) const;
-
-    /// Print the base units that are stored in the UnitTable
-    void print_base_units() const;
 
     /// Print the base units that are stored in the UnitTable to the
     /// output stream base_units_details

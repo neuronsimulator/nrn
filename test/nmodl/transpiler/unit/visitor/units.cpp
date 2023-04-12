@@ -153,6 +153,8 @@ SCENARIO("Parse UNITS block of mod files using Units Visitor", "[visitor][units]
                 KTOMV = 0.0853 (mV/degC)
                 B = 0.26 (mM-cm2/mA-ms)
                 TEMP = 25 (degC)
+                toyfuzz = (1) (volt)
+                numbertwo = 2 (1)
             }
         )";
 
@@ -194,6 +196,8 @@ SCENARIO("Parse UNITS block of mod files using Units Visitor", "[visitor][units]
         KTOMV 0.0853: m2 kg1 sec-2 coul-1 K-1
         B 0.26: m-1 coul-1
         TEMP 25: K1
+        toyfuzz 1: constant
+        numbertwo 2: constant
         )";
 
         THEN("Print the units that were added") {

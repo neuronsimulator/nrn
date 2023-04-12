@@ -43,6 +43,7 @@ int main(int argc, const char* argv[]) {
 
         // just call parser method
         driver.parse_stream(file);
+        driver.table->print_units_sorted(std::cout);
     }
 
     return 0;
