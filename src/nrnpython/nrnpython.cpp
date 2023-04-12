@@ -10,8 +10,8 @@
 #include <ocfile.h>  // bool isDirExist(const std::string& path);
 
 #include <hocstr.h>
+#include "nrn_filesystem.h"
 
-#include <filesystem>
 #include <string>
 #include <sstream>
 extern "C" void nrnpython_real();
@@ -108,7 +108,7 @@ void reset_sys_path(std::string_view new_first) {
 int nrnpy_pyrun(const char* fname) {
     // Figure out what sys.path[0] should be; this involves first resolving symlinks in fname and
     // second getting the directory name from it.
-    auto const realpath = std::filesystem::canonical(fname);
+    auto const realpath = neuron::std::filesystem::canonical(fname);
     auto const dirname = realpath.parent_path();
     reset_sys_path(dirname.native());
 #ifdef MINGW
@@ -191,10 +191,34 @@ extern "C" int nrnpython_start(int b) {
         // were to let sys.executable be `/some/path/to/arch/special` then we pick up a surprising
         // dependency on whether or not `nrnivmodl` happened to be run in the root directory of the
         // virtual environment
-        if (nrnpy_pyexe) {
-            check("Could not set PyConfig.program_name",
-                  PyConfig_SetBytesString(config, &config->program_name, nrnpy_pyexe));
+        const char* pyexe{nrnpy_pyexe};
+#ifndef NRNPYTHON_DYNAMICLOAD
+        // In non-dynamic builds, the -pyexe option has no effect on which Python is linked and
+        // used, but it can be used to change PyConfig.program_name. If -pyexe is not passed then
+        // we use the Python that was discovered at build time. We have to make an std::string
+        // because Python's API requires the null terminator.
+        std::string default_python{neuron::config::default_python_executable};
+        if (!pyexe && !default_python.empty()) {
+            // -pyexe was not passed
+            pyexe = default_python.c_str();  // need the null terminator for Python
         }
+#endif
+        if (!pyexe) {
+            throw std::runtime_error("Do not know what to set PyConfig.program_name to");
+        }
+        // Surprisingly, given the documentation, it seems that passing a non-absolute path to
+        // PyConfig.program_name does not lead to a lookup in $PATH, but rather to the real (nrniv)
+        // path being placed in sys.executable -- at least on macOS.
+        if (auto p = neuron::std::filesystem::path{pyexe}; !p.is_absolute()) {
+            throw std::runtime_error(
+                "Setting PyConfig.program_name to a non-absolute path is not portable; try passing "
+                "an absolute path to -pyexe");
+        }
+        // TODO: in non-dynamic builds then -pyexe cannot change the used Python version, and `nrniv
+        // -pyexe /path/to/python3.10 -python` may well not use Python 3.10 at all. Should we do
+        // something about that?
+        check("Could not set PyConfig.program_name",
+              PyConfig_SetBytesString(config, &config->program_name, pyexe));
         if (_p_pyhome) {
             // Py_SetPythonHome is deprecated in Python 3.11+, write to config.home instead.
             // olupton 2023-04-11 is not sure if this is still needed or useful

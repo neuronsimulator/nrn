@@ -185,6 +185,7 @@ endif()
 if(NRN_ENABLE_TESTS AND NRN_ENABLE_PYTHON)
   # Make sure that, if NRN_PYTHON_EXTRA_FOR_TESTS is set, none of its versions clash with versions
   # we're building against
+  set(NRN_PYTHON_EXTRA_FOR_TESTS_EXECUTABLES)
   set(NRN_PYTHON_EXTRA_FOR_TESTS_VERSIONS)
   foreach(pyexe ${NRN_PYTHON_EXTRA_FOR_TESTS})
     nrn_find_python(NAME "${pyexe}" PREFIX nrnpy)
@@ -194,6 +195,7 @@ if(NRN_ENABLE_TESTS AND NRN_ENABLE_PYTHON)
       message(FATAL_ERROR "NRN_PYTHON_EXTRA_FOR_TESTS=${NRN_PYTHON_EXTRA_FOR_TESTS} cannot contain"
                           " Python versions that NEURON *is* being built against (${versions})")
     endif()
+    list(APPEND NRN_PYTHON_EXTRA_FOR_TESTS_EXECUTABLES "${nrnpy_EXECUTABLE}")
     list(APPEND NRN_PYTHON_EXTRA_FOR_TESTS_VERSIONS "${nrnpy_VERSION}")
   endforeach()
   list(LENGTH NRN_PYTHON_EXTRA_FOR_TESTS NRN_PYTHON_EXTRA_FOR_TESTS_COUNT)

@@ -106,17 +106,17 @@ import weakref
 
 embedded = True if "hoc" in sys.modules else False
 
-# First, check that the compiled extension (neuron.hoc) was built for this
-# version of Python. If not, fail early and helpfully.
+# First, check that the compiled extension (neuron.hoc) was built for this version of
+# Python. If not, fail early and helpfully.
 from ._config_params import supported_python_versions
 
 current_version = "{}.{}".format(*sys.version_info[:2])
 if current_version not in supported_python_versions:
     message = (
-        "This NEURON installation does not support the current Python version "
-        "({}). Either re-build NEURON with support for this version, use a "
-        "supported version of Python ({}), or try using nrniv -python so that "
-        "NEURON can suggest a compatible version for you."
+        "This NEURON installation does not support the current Python version ({}). "
+        "Either re-build NEURON with support for this version, use a supported version"
+        " of Python ({}), or try using nrniv -python so that NEURON can suggest a "
+        "compatible version for you."
     ).format(current_version, ", ".join(supported_python_versions))
     raise ImportError(message)
 
@@ -145,9 +145,14 @@ try:
 except:
     pass
 
-# Import the compiled HOC extension. We already checked above that it exists
-# for the current Python version.
+# Import the compiled HOC extension. We already checked above that it exists for the
+# current Python version.
 from . import hoc
+
+# These are strange beasts that are defined inside the compiled `hoc` extension, all
+# efforts to make them relative imports (because they are internal) have failed. It's
+# not clear if the import of _neuron_section is needed, and this could probably be
+# handled more idiomatically.
 import nrn
 import _neuron_section
 
