@@ -222,9 +222,7 @@ extern "C" int nrnpython_start(int b) {
             // Python, which is unfortunate for consistency...
             if (auto const path = python_sys_path_to_append(); !path.empty()) {
                 auto* ustr = PyUnicode_DecodeFSDefaultAndSize(path.c_str(), path.size());
-                if (!ustr) {
-                    throw std::runtime_error("Could not decode: " + path);
-                }
+                assert(ustr);
                 auto const already_there = PySequence_Contains(sys_path, ustr);
                 assert(already_there != -1);
                 if (already_there == 0 && PyList_Append(sys_path, ustr)) {

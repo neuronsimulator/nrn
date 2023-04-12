@@ -1,8 +1,9 @@
+from functools import reduce
 import json
 import sys
 
 fname, attr = sys.argv[-2:]
-data = getattr(sys, attr)
+data = reduce(getattr, [sys] + attr.split("."))
 print("checking sys.{} = {} against reference file {}".format(attr, data, fname))
 with open(fname) as ifile:
     ref_data = json.load(ifile)
