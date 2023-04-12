@@ -941,6 +941,39 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
             REQUIRE_THAT(generated, Contains(expected_code));
         }
     }
+
+    GIVEN("A mod file with an INITIAL with net_send() inside NET_RECEIVE") {
+        std::string const nmodl_text = R"(
+            NET_RECEIVE(w) {
+                INITIAL {
+                    net_send(5, 1)
+                }
+            }
+        )";
+        THEN("It should generate a net_send_buffering with weight_index as parameter variable") {
+            auto const generated = get_cpp_code(nmodl_text);
+            std::string expected_code(
+                "net_send_buffering(nt, ml->_net_send_buffer, 0, inst->tqitem[0*pnodecount+id], "
+                "weight_index, point_process, nt->_t+5.0, 1.0);");
+            REQUIRE_THAT(generated, Contains(expected_code));
+        }
+    }
+
+    GIVEN("A mod file with a top level INITIAL block with net_send()") {
+        std::string const nmodl_text = R"(
+            INITIAL {
+                net_send(5, 1)
+            }
+        )";
+        THEN("It should generate a net_send_buffering with weight_index parameter as 0") {
+            auto const generated = get_cpp_code(nmodl_text);
+            std::string expected_code(
+                "net_send_buffering(nt, ml->_net_send_buffer, 0, inst->tqitem[0*pnodecount+id], 0, "
+                "point_process, nt->_t+5.0, 1.0);");
+            REQUIRE_THAT(generated, Contains(expected_code));
+        }
+    }
+
     GIVEN("A mod file with FOR_NETCONS") {
         std::string const nmodl_text = R"(
             NET_RECEIVE(w) {

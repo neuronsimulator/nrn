@@ -238,6 +238,12 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
     bool printing_net_receive = false;
 
     /**
+     * \c true if currently initial block of net_receive being printed
+     */
+    bool printing_net_init = false;
+
+
+    /**
      * \c true if currently printing top level verbatim blocks
      */
     bool printing_top_verbatim_blocks = false;
