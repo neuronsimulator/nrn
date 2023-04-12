@@ -189,7 +189,8 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
   # Now check that some other Python things match between `nrniv -python` and `${exe}` directly
   foreach(
     attr
-    executable
+    # executable # seems tricky to get exact matches portably, maybe replace with a looser "they all
+    # look like python not nrniv/special" check
     path
     prefix
     exec_prefix
