@@ -206,7 +206,7 @@ if(NRN_ENABLE_PYTHON)
 
   # Add some tests that are specifically aimed at NEURON - Python integration, covering different
   # ways NEURON can be made to execute Python code.
-  add_subdirectory(python_init)
+  add_subdirectory(pyinit)
 
   # Mostly to increase coverage
   nrn_add_test_group(NAME coverage_tests MODFILE_PATTERNS test/cover/mod/*.mod)

@@ -2,94 +2,93 @@
 # processed. Start out with checking that the right amount of code is executed, and that error codes
 # are propagated. Here, we don't bother to duplicate for all explicit/implicit Python versions.s
 nrn_add_test_group(
-  NAME python_init
+  NAME pyinit
   MODFILE_PATTERNS NONE
-  SIM_DIRECTORY test/python_init)
+  SIM_DIRECTORY test/pyinit)
 set(nrniv_args_common -notatty)
 set(nrniv_args ${nrniv_args_common})
 # Passing a .py file without -python takes a different code path to passing a .py file *with*
 # -python
 nrn_add_test(
-  GROUP python_init
+  GROUP pyinit
   NAME nrniv_script.py
   COMMAND nrniv ${nrniv_args} do_nothing.py
   SCRIPT_PATTERNS do_nothing.py)
-set_property(TEST python_init::nrniv_script.py PROPERTY PASS_REGULAR_EXPRESSION
-                                                        "[\r\n]doing nothing[\r\n]")
+set_property(TEST pyinit::nrniv_script.py PROPERTY PASS_REGULAR_EXPRESSION
+                                                   "[\r\n]doing nothing[\r\n]")
 # If the script returns an error code, nrniv should return that code too
 nrn_add_test(
-  GROUP python_init
+  GROUP pyinit
   NAME nrniv_script.py_error
   COMMAND nrniv ${nrniv_args} assert_false.py
   SCRIPT_PATTERNS assert_false.py)
-set_property(TEST python_init::nrniv_script.py_error PROPERTY WILL_FAIL ON)
+set_property(TEST pyinit::nrniv_script.py_error PROPERTY WILL_FAIL ON)
 # Passing two .py files *without* -python executes both of them, but that behaviour is not really
 # documented and should perhaps be deprecated due to ambiguity about how to match python's semantics
 # for sys.path.
 nrn_add_test(
-  GROUP python_init
+  GROUP pyinit
   NAME nrniv_two_scripts.py
   COMMAND nrniv ${nrniv_args} do_nothing.py do_nothing.py
   SCRIPT_PATTERNS do_nothing.py)
-set_property(TEST python_init::nrniv_two_scripts.py
+set_property(TEST pyinit::nrniv_two_scripts.py
              PROPERTY PASS_REGULAR_EXPRESSION "[\r\n]doing nothing[\r\n]doing nothing[\r\n]")
 nrn_add_test(
-  GROUP python_init
+  GROUP pyinit
   NAME nrniv_two_scripts.py_error
   COMMAND nrniv ${nrniv_args} do_nothing.py assert_false.py
   SCRIPT_PATTERNS exit_0.py assert_false.py)
-set_property(TEST python_init::nrniv_two_scripts.py_error PROPERTY PASS_REGULAR_EXPRESSION
-                                                                   "[\r\n]doing nothing[\r\n]")
-set_property(TEST python_init::nrniv_two_scripts.py_error PROPERTY WILL_FAIL ON)
+set_property(TEST pyinit::nrniv_two_scripts.py_error PROPERTY PASS_REGULAR_EXPRESSION
+                                                              "[\r\n]doing nothing[\r\n]")
+set_property(TEST pyinit::nrniv_two_scripts.py_error PROPERTY WILL_FAIL ON)
 # When we pass -python then we have the option of passing a .py script file or a -c command; first
 # test -c
 nrn_add_test(
-  GROUP python_init
+  GROUP pyinit
   NAME nrniv_python_command
   COMMAND nrniv ${nrniv_args} -python -c "print('foo')"
   SCRIPT_PATTERNS)
-set_property(TEST python_init::nrniv_python_command PROPERTY PASS_REGULAR_EXPRESSION
-                                                             "[\r\n]foo[\r\n]")
+set_property(TEST pyinit::nrniv_python_command PROPERTY PASS_REGULAR_EXPRESSION "[\r\n]foo[\r\n]")
 nrn_add_test(
-  GROUP python_init
+  GROUP pyinit
   NAME nrniv_python_command_error
   COMMAND nrniv ${nrniv_args} -python -c "assert False"
   SCRIPT_PATTERNS)
 set_property(
-  TEST python_init::nrniv_python_command_error
+  TEST pyinit::nrniv_python_command_error
   PROPERTY
   PROPERTY WILL_FAIL ON)
 # Then test -python foo.py
 nrn_add_test(
-  GROUP python_init
+  GROUP pyinit
   NAME nrniv_python_script.py
   COMMAND nrniv ${nrniv_args} -python do_nothing.py
   SCRIPT_PATTERNS do_nothing.py)
-set_property(TEST python_init::nrniv_python_script.py PROPERTY PASS_REGULAR_EXPRESSION
-                                                               "[\r\n]doing nothing[\r\n]")
+set_property(TEST pyinit::nrniv_python_script.py PROPERTY PASS_REGULAR_EXPRESSION
+                                                          "[\r\n]doing nothing[\r\n]")
 nrn_add_test(
-  GROUP python_init
+  GROUP pyinit
   NAME nrniv_python_script.py_error
   COMMAND nrniv ${nrniv_args} -python assert_false.py
   SCRIPT_PATTERNS assert_false.py)
-set_property(TEST python_init::nrniv_python_script.py_error PROPERTY WILL_FAIL ON)
+set_property(TEST pyinit::nrniv_python_script.py_error PROPERTY WILL_FAIL ON)
 # With -python then NEURON has the same semantics as python, i.e only one file.py or -c "code"
 # argument is processed and the remainder is just passed as arguments. So asserting False in a
 # second -c should not cause a non-zero exit code.
 nrn_add_test(
-  GROUP python_init
+  GROUP pyinit
   NAME nrniv_python_command_twice
   COMMAND nrniv ${nrniv_args} -python -c "print('hello')" -c "assert False"
   SCRIPT_PATTERNS)
-set_property(TEST python_init::nrniv_python_command_twice PROPERTY PASS_REGULAR_EXPRESSION
-                                                                   "[\r\n]hello[\r\n]")
+set_property(TEST pyinit::nrniv_python_command_twice PROPERTY PASS_REGULAR_EXPRESSION
+                                                              "[\r\n]hello[\r\n]")
 nrn_add_test(
-  GROUP python_init
+  GROUP pyinit
   NAME nrniv_python_script.py_twice
   COMMAND nrniv ${nrniv_args} -python do_nothing.py assert_false.py
   SCRIPT_PATTERNS do_nothing.py assert_false.py)
-set_property(TEST python_init::nrniv_python_script.py_twice PROPERTY PASS_REGULAR_EXPRESSION
-                                                                     "[\r\n]doing nothing[\r\n]")
+set_property(TEST pyinit::nrniv_python_script.py_twice PROPERTY PASS_REGULAR_EXPRESSION
+                                                                "[\r\n]doing nothing[\r\n]")
 string(
   JOIN
   "$<SEMICOLON> "
@@ -99,12 +98,12 @@ string(
   "print(actual)"
   "assert actual == ['foo', 'bar']")
 nrn_add_test(
-  GROUP python_init
+  GROUP pyinit
   NAME nrniv_python_command_args
   COMMAND nrniv ${nrniv_args} -python -c "${python_cmd}" foo bar
   SCRIPT_PATTERNS)
 nrn_add_test(
-  GROUP python_init
+  GROUP pyinit
   NAME nrniv_python_script.py_args
   COMMAND nrniv ${nrniv_args} -python assert_last_args_are_foo_and_bar.py foo bar
   SCRIPT_PATTERNS assert_last_args_are_foo_and_bar.py)
@@ -153,7 +152,7 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
     "print(actual)"
     "assert actual == '${pyver}'")
   nrn_add_test(
-    GROUP python_init
+    GROUP pyinit
     NAME ${nrnivpy}_python_command_version_check
     COMMAND nrniv ${nrniv_args} -python -c "${python_cmd}"
     SCRIPT_PATTERNS)
@@ -171,7 +170,7 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
     stdout.encoding)
     # Make sure that sys.${attr} matches when we run `python a.py` and `nrniv -python a.py`
     nrn_add_test(
-      GROUP python_init
+      GROUP pyinit
       NAME ${nrnivpy}_python_check_sys_${attr}
       PRECOMMAND "${exe}" dump_sys_attr.py ref.json ${attr}
       COMMAND nrniv ${nrniv_args} -python check_sys_attr.py ref.json ${attr}
