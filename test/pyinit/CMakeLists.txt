@@ -216,36 +216,38 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
     NAME py${pyexe_name}_command_import_neuron
     COMMAND "${pyexe}" -c "import neuron")
 endforeach()
-# Run some tests using Python versions that are installed on the system, but which NEURON is *not*
-# built with support for.
-foreach(val RANGE ${NRN_PYTHON_EXTRA_FOR_TESTS_ITERATION_LIMIT})
-  list(GET NRN_PYTHON_EXTRA_FOR_TESTS ${val} pyexe)
-  list(GET NRN_PYTHON_EXTRA_FOR_TESTS_VERSIONS ${val} pyver)
-  # As above, we can't easily add CTest tests that check exit codes *and* regex output. So we just
-  # run the tests twice.
-  foreach(check code output)
-    # Should not be able to import NEURON
-    nrn_add_test(
-      GROUP pyinit
-      NAME python${pyver}_import_fail_check_${check}
-      COMMAND "${pyexe}" -c "import neuron")
-    # Telling nrniv to use this Python should fail
-    nrn_add_test(
-      GROUP pyinit
-      NAME nrniv_py${pyver}_import_fail_check_${check}
-      COMMAND nrniv ${nrniv_args_common} -pyexe ${pyexe} -python -c "import neuron")
-    if(check STREQUAL code)
-      set(properties WILL_FAIL ON)
-    else()
-      # output
-      string(REPLACE "." "\\." pyver_escaped "${pyver}")
-      set(properties
-          PASS_REGULAR_EXPRESSION
-          "This NEURON installation does not support the current Python version \\(${pyver_escaped}\\)"
-      )
-    endif()
-    set_tests_properties(
-      pyinit::python${pyver}_import_fail_check_${check}
-      pyinit::nrniv_py${pyver}_import_fail_check_${check} PROPERTIES ${properties})
+if(NRN_PYTHON_EXTRA_FOR_TESTS)
+  # Run some tests using Python versions that are installed on the system, but which NEURON is *not*
+  # built with support for.
+  foreach(val RANGE ${NRN_PYTHON_EXTRA_FOR_TESTS_ITERATION_LIMIT})
+    list(GET NRN_PYTHON_EXTRA_FOR_TESTS ${val} pyexe)
+    list(GET NRN_PYTHON_EXTRA_FOR_TESTS_VERSIONS ${val} pyver)
+    # As above, we can't easily add CTest tests that check exit codes *and* regex output. So we just
+    # run the tests twice.
+    foreach(check code output)
+      # Should not be able to import NEURON
+      nrn_add_test(
+        GROUP pyinit
+        NAME python${pyver}_import_fail_check_${check}
+        COMMAND "${pyexe}" -c "import neuron")
+      # Telling nrniv to use this Python should fail
+      nrn_add_test(
+        GROUP pyinit
+        NAME nrniv_py${pyver}_import_fail_check_${check}
+        COMMAND nrniv ${nrniv_args_common} -pyexe ${pyexe} -python -c "import neuron")
+      if(check STREQUAL code)
+        set(properties WILL_FAIL ON)
+      else()
+        # output
+        string(REPLACE "." "\\." pyver_escaped "${pyver}")
+        set(properties
+            PASS_REGULAR_EXPRESSION
+            "This NEURON installation does not support the current Python version \\(${pyver_escaped}\\)"
+        )
+      endif()
+      set_tests_properties(
+        pyinit::python${pyver}_import_fail_check_${check}
+        pyinit::nrniv_py${pyver}_import_fail_check_${check} PROPERTIES ${properties})
+    endforeach()
   endforeach()
-endforeach()
+endif()

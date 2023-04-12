@@ -148,7 +148,6 @@ except:
 # Import the compiled HOC extension. We already checked above that it exists
 # for the current Python version.
 from . import hoc
-
 import nrn
 import _neuron_section
 

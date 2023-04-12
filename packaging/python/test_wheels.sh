@@ -159,6 +159,8 @@ run_serial_test () {
     if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
       ./$ARCH_DIR/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
       nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+    else
+      $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     fi
 
     # Test 9: coreneuron execution via neuron

@@ -255,6 +255,7 @@ extern "C" int nrnpython_start(int b) {
         PyGILState_STATE gilsav = PyGILState_Ensure();
         assert(basic_sys_path);
         Py_DECREF(basic_sys_path);
+        basic_sys_path = nullptr;
         Py_Finalize();
         // because of finalize, no PyGILState_Release(gilsav);
         started = 0;
