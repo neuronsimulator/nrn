@@ -186,4 +186,8 @@ if(NRN_ENABLE_MODULE_INSTALL)
 
   add_dependencies(hoc_module nrniv_lib rxdmath ${nrnpython_lib_list})
   install(DIRECTORY ${NRN_PYTHON_BUILD_LIB} DESTINATION lib)
+else()
+  # Make sure this is included in the wheels
+  install(FILES "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
+          DESTINATION lib/python/neuron)
 endif()

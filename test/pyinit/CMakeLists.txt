@@ -215,7 +215,8 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
   nrn_add_test(
     GROUP pyinit
     NAME py${pyexe_name}_command_import_neuron
-    COMMAND "${pyexe}" -c "import neuron")
+    COMMAND "${pyexe}" -c "import neuron"
+    PRELOAD_SANITIZER)
 endforeach()
 if(NRN_PYTHON_EXTRA_FOR_TESTS)
   # Run some tests using Python versions that are installed on the system, but which NEURON is *not*
@@ -230,7 +231,8 @@ if(NRN_PYTHON_EXTRA_FOR_TESTS)
       nrn_add_test(
         GROUP pyinit
         NAME python${pyver}_import_fail_check_${check}
-        COMMAND "${pyexe}" -c "import neuron")
+        COMMAND "${pyexe}" -c "import neuron"
+        PRELOAD_SANITIZER)
       if(check STREQUAL code)
         set(properties WILL_FAIL ON)
       else()
