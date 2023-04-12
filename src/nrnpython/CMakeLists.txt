@@ -48,6 +48,9 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
   endforeach()
 endif()
 
+configure_file(_config_params.py.in "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
+               @ONLY)
+
 # Install package files that were created in build (e.g. .py.in)
 install(
   DIRECTORY ${PROJECT_BINARY_DIR}/share/lib/python

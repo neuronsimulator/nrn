@@ -106,6 +106,20 @@ import weakref
 
 embedded = True if "hoc" in sys.modules else False
 
+# First, check that the compiled extension (neuron.hoc) was built for this
+# version of Python. If not, fail early and helpfully.
+from ._config_params import supported_python_versions
+
+current_version = "{}.{}".format(*sys.version_info[:2])
+if current_version not in supported_python_versions:
+    message = (
+        "This NEURON installation does not support the current Python version "
+        "({}). Either re-build NEURON with support for this version, use a "
+        "supported version of Python ({}), or try using nrniv -python so that "
+        "NEURON can suggest a compatible version for you."
+    ).format(current_version, ", ".join(supported_python_versions))
+    raise ImportError(message)
+
 try:  # needed since python 3.8 on windows if python launched
     # do this here as NEURONHOME may be changed below
     nrnbindir = os.path.abspath(os.environ["NEURONHOME"] + "/bin")
@@ -131,10 +145,9 @@ try:
 except:
     pass
 
-try:
-    from . import hoc
-except:
-    import neuron.hoc
+# Import the compiled HOC extension. We already checked above that it exists
+# for the current Python version.
+from . import hoc
 
 import nrn
 import _neuron_section
@@ -1630,6 +1643,7 @@ nrnpy_set_pr_etal.argtypes = [nrnpy_pr_proto, nrnpy_pass_proto]
 nrnpy_pr_callback = nrnpy_pr_proto(nrnpy_pr)
 nrnpy_pass_callback = nrnpy_pass_proto(nrnpy_pass)
 nrnpy_set_pr_etal(nrnpy_pr_callback, nrnpy_pass_callback)
+
 
 def nrnpy_vec_math(op, flag, arg1, arg2=None):
     import numbers

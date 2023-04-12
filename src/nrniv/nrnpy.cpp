@@ -326,8 +326,28 @@ static void load_nrnpython(int pyver10, const char* pylib) {
         pv10 = pylib2pyver10(pylib);
     }
     auto const factor = (pv10 >= 100) ? 100 : 10;
-    std::string name{"libnrnpython" + std::to_string(pv10 / factor) + "." +
-                     std::to_string(pv10 % factor)};
+    std::string const target_version{std::to_string(pv10 / factor) + "." +
+                                     std::to_string(pv10 % factor)},
+        name{"libnrnpython" + target_version};
+    auto const& supported_versions = neuron::config::supported_python_versions;
+    auto const iter =
+        std::find(supported_versions.begin(), supported_versions.end(), target_version);
+    if (iter == supported_versions.end()) {
+        std::cerr << "This NEURON installation does not support the current Python version ("
+                  << target_version
+                  << "). Either re-build NEURON with support for this version, use a supported "
+                     "version of Python (";
+        for (auto i = supported_versions.begin(); i != supported_versions.end(); ++i) {
+            std::cerr << *i;
+            if (std::next(i) != supported_versions.end()) {
+                std::cerr << ", ";
+            }
+        }
+        std::cerr << "), or try using nrniv -python so that NEURON can suggest a compatible "
+                     "version for you."
+                  << std::endl;
+        return;
+    }
     auto* const handle = load_nrnpython_helper(name.c_str());
     if (!handle) {
         std::cout << "Could not load " << name << std::endl;

@@ -33,31 +33,33 @@ nrn_add_test(
   SCRIPT_PATTERNS do_nothing.py)
 set_property(TEST pyinit::nrniv_two_scripts.py
              PROPERTY PASS_REGULAR_EXPRESSION "[\r\n]doing nothing[\r\n]doing nothing[\r\n]")
-nrn_add_test(
-  GROUP pyinit
-  NAME nrniv_two_scripts.py_error
-  COMMAND nrniv ${nrniv_args} do_nothing.py assert_false.py
-  SCRIPT_PATTERNS exit_0.py assert_false.py)
-set_property(TEST pyinit::nrniv_two_scripts.py_error PROPERTY PASS_REGULAR_EXPRESSION
-                                                              "[\r\n]doing nothing[\r\n]")
-set_property(TEST pyinit::nrniv_two_scripts.py_error PROPERTY WILL_FAIL ON)
+# Unfortunately we can't easily add CTest tests that check exit codes *and* regex output. So we just
+# run the tests twice.
+foreach(check code output)
+  nrn_add_test(
+    GROUP pyinit
+    NAME nrniv_two_scripts.py_error_check_${check}
+    COMMAND nrniv ${nrniv_args} do_nothing.py assert_false.py
+    SCRIPT_PATTERNS do_nothing.py assert_false.py)
+  if(check STREQUAL code)
+    set(property WILL_FAIL ON)
+  else()
+    set(property PASS_REGULAR_EXPRESSION "[\r\n]doing nothing[\r\n]")
+  endif()
+  set_property(TEST pyinit::nrniv_two_scripts.py_error_check_${check} PROPERTY ${property})
+endforeach()
 # When we pass -python then we have the option of passing a .py script file or a -c command; first
 # test -c
 nrn_add_test(
   GROUP pyinit
   NAME nrniv_python_command
-  COMMAND nrniv ${nrniv_args} -python -c "print('foo')"
-  SCRIPT_PATTERNS)
+  COMMAND nrniv ${nrniv_args} -python -c "print('foo')")
 set_property(TEST pyinit::nrniv_python_command PROPERTY PASS_REGULAR_EXPRESSION "[\r\n]foo[\r\n]")
 nrn_add_test(
   GROUP pyinit
   NAME nrniv_python_command_error
-  COMMAND nrniv ${nrniv_args} -python -c "assert False"
-  SCRIPT_PATTERNS)
-set_property(
-  TEST pyinit::nrniv_python_command_error
-  PROPERTY
-  PROPERTY WILL_FAIL ON)
+  COMMAND nrniv ${nrniv_args} -python -c "assert False")
+set_property(TEST pyinit::nrniv_python_command_error PROPERTY WILL_FAIL ON)
 # Then test -python foo.py
 nrn_add_test(
   GROUP pyinit
@@ -78,8 +80,7 @@ set_property(TEST pyinit::nrniv_python_script.py_error PROPERTY WILL_FAIL ON)
 nrn_add_test(
   GROUP pyinit
   NAME nrniv_python_command_twice
-  COMMAND nrniv ${nrniv_args} -python -c "print('hello')" -c "assert False"
-  SCRIPT_PATTERNS)
+  COMMAND nrniv ${nrniv_args} -python -c "print('hello')" -c "assert False")
 set_property(TEST pyinit::nrniv_python_command_twice PROPERTY PASS_REGULAR_EXPRESSION
                                                               "[\r\n]hello[\r\n]")
 nrn_add_test(
@@ -100,8 +101,7 @@ string(
 nrn_add_test(
   GROUP pyinit
   NAME nrniv_python_command_args
-  COMMAND nrniv ${nrniv_args} -python -c "${python_cmd}" foo bar
-  SCRIPT_PATTERNS)
+  COMMAND nrniv ${nrniv_args} -python -c "${python_cmd}" foo bar)
 nrn_add_test(
   GROUP pyinit
   NAME nrniv_python_script.py_args
@@ -145,7 +145,7 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
     foreach(candidate ${search_names})
       nrn_find_python(NAME "${candidate}" PREFIX nrnpy)
       if(nrnpy_EXECUTABLE STREQUAL "nrnpy_EXECUTABLE-NOTFOUND")
-        # Not an error if a user's system doesn't have all the names in search_path
+        # Not an error if a user's system doesn't have all the names in ${search_names}
         continue()
       endif()
       set(nrnpy_VERSION "${nrnpy_VERSION_MAJOR}.${nrnpy_VERSION_MINOR}")
@@ -185,8 +185,7 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
   nrn_add_test(
     GROUP pyinit
     NAME ${nrnivpy}_python_command_version_check
-    COMMAND nrniv ${nrniv_args} -python -c "${python_cmd}"
-    SCRIPT_PATTERNS)
+    COMMAND nrniv ${nrniv_args} -python -c "${python_cmd}")
   # Now check that some other Python things match between `nrniv -python` and `${exe}` directly
   foreach(
     attr
@@ -206,5 +205,47 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
       PRECOMMAND "${pyexe}" dump_sys_attr.py ref.json ${attr}
       COMMAND nrniv ${nrniv_args} -python check_sys_attr.py ref.json ${attr}
       SCRIPT_PATTERNS check_sys_attr.py dump_sys_attr.py)
+  endforeach()
+  # Finally make sure that we can import neuron
+  nrn_add_test(
+    GROUP pyinit
+    NAME ${nrnivpy}_python_command_import_neuron
+    COMMAND nrniv ${nrniv_args} -python -c "import neuron")
+  nrn_add_test(
+    GROUP pyinit
+    NAME py${pyexe_name}_command_import_neuron
+    COMMAND "${pyexe}" -c "import neuron")
+endforeach()
+# Run some tests using Python versions that are installed on the system, but which NEURON is *not*
+# built with support for.
+foreach(val RANGE ${NRN_PYTHON_EXTRA_FOR_TESTS_ITERATION_LIMIT})
+  list(GET NRN_PYTHON_EXTRA_FOR_TESTS ${val} pyexe)
+  list(GET NRN_PYTHON_EXTRA_FOR_TESTS_VERSIONS ${val} pyver)
+  # As above, we can't easily add CTest tests that check exit codes *and* regex output. So we just
+  # run the tests twice.
+  foreach(check code output)
+    # Should not be able to import NEURON
+    nrn_add_test(
+      GROUP pyinit
+      NAME python${pyver}_import_fail_check_${check}
+      COMMAND "${pyexe}" -c "import neuron")
+    # Telling nrniv to use this Python should fail
+    nrn_add_test(
+      GROUP pyinit
+      NAME nrniv_py${pyver}_import_fail_check_${check}
+      COMMAND nrniv ${nrniv_args_common} -pyexe ${pyexe} -python -c "import neuron")
+    if(check STREQUAL code)
+      set(properties WILL_FAIL ON)
+    else()
+      # output
+      string(REPLACE "." "\\." pyver_escaped "${pyver}")
+      set(properties
+          PASS_REGULAR_EXPRESSION
+          "This NEURON installation does not support the current Python version \\(${pyver_escaped}\\)"
+      )
+    endif()
+    set_tests_properties(
+      pyinit::python${pyver}_import_fail_check_${check}
+      pyinit::nrniv_py${pyver}_import_fail_check_${check} PROPERTIES ${properties})
   endforeach()
 endforeach()

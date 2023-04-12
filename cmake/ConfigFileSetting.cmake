@@ -262,6 +262,10 @@ endif()
 # =============================================================================
 # Generate file from file.in template
 # =============================================================================
+set(version_strs ${NRN_PYTHON_VERSIONS})
+list(TRANSFORM version_strs APPEND "\"")
+list(TRANSFORM version_strs PREPEND "\"")
+string(JOIN ", " NRN_DYNAMIC_PYTHON_LIST_OF_VERSION_STRINGS ${version_strs})
 nrn_configure_dest_src(nrnconf.h . cmake_nrnconf.h .)
 nrn_configure_dest_src(nmodlconf.h . cmake_nrnconf.h .)
 nrn_configure_file(nrnmpiuse.h src/oc)
