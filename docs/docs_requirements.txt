@@ -2,6 +2,7 @@ sphinx
 sphinx_rtd_theme
 jupyter
 nbconvert
+# do not check import of next line
 myst_parser
 matplotlib
 # bokeh 3 seems to break docs notebooks
