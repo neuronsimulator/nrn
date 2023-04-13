@@ -9,6 +9,7 @@
 #include "hoclist.h"
 #include "nrn_ansi.h"
 #include "nrnmpi.h"
+#include "nrnpy.h"
 #include "nrnfilewrap.h"
 #include "ocfunc.h"
 
@@ -19,7 +20,6 @@
 Symbol* nrnpy_pyobj_sym_;
 void (*nrnpy_py2n_component)(Object* o, Symbol* s, int nindex, int isfunc);
 void (*nrnpy_hpoasgn)(Object* o, int type);
-void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
 #endif
 
 #include "section.h"
@@ -2089,11 +2089,9 @@ int is_obj_type(Object* obj, const char* type_name) {
 
 
 void* nrn_opaque_obj2pyobj(Object* ho) {
-#if USE_PYTHON
     // The PyObject* reference is not incremented. Use only as last resort
-    if (nrnpy_opaque_obj2pyobj_p_) {
-        return (*nrnpy_opaque_obj2pyobj_p_)(ho);
+    if (neuron::python::methods.opaque_obj2pyobj) {
+        return neuron::python::methods.opaque_obj2pyobj(ho);
     }
-#endif
     return nullptr;
 }

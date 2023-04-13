@@ -11,6 +11,7 @@
 #endif
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
+#include "nrnpy.h"
 #include "nrnmenu.h"
 #include "classreg.h"
 #include "gui-redirect.h"
@@ -42,9 +43,7 @@ void nrnglobalmechmenu();
 void nrnmechmenu();
 void nrnpointmenu();
 
-Object* (*nrnpy_callable_with_args)(Object*, int narg);
 int (*nrnpy_ob_is_seg)(Object*);
-
 
 #if HAVE_IV
 static void pnodemenu(Prop* p1, double, int type, const char* path, MechSelector* = NULL);
@@ -759,11 +758,11 @@ void MechanismStandard::panel(const char* label) {
             Object* pyactval = NULL;
             int size = hoc_total_array_data(sym, 0);
             if (pyact_) {
-                assert(nrnpy_callable_with_args);
+                assert(neuron::python::methods.callable_with_args);
                 hoc_push_object(msobj_);
                 hoc_pushx(double(i));
                 hoc_pushx(0.0);
-                pyactval = (*nrnpy_callable_with_args)(pyact_, 3);
+                pyactval = neuron::python::methods.callable_with_args(pyact_, 3);
             } else {
                 Sprintf(buf, "hoc_ac_ = %d  %s", i, action_.string());
             }
@@ -784,11 +783,11 @@ void MechanismStandard::panel(const char* label) {
             for (j = 1; j < size; ++j) {
                 ++i;
                 if (pyact_) {
-                    assert(nrnpy_callable_with_args);
+                    assert(neuron::python::methods.callable_with_args);
                     hoc_push_object(msobj_);
                     hoc_pushx(double(i));
                     hoc_pushx(double(j));
-                    pyactval = (*nrnpy_callable_with_args)(pyact_, 3);
+                    pyactval = neuron::python::methods.callable_with_args(pyact_, 3);
                 } else {
                     Sprintf(buf, "hoc_ac_ = %d %s", i, action_.string());
                 }
@@ -1300,10 +1299,10 @@ void MechanismType::menu() {
         Symbol* s = memb_func[mti_->type_[i]].sym;
         if (s->subtype != MORPHOLOGY) {
             if (mti_->pyact_) {
-                assert(nrnpy_callable_with_args);
+                assert(neuron::python::methods.callable_with_args);
                 hoc_push_object(mtobj_);
                 hoc_pushx(double(i));
-                Object* pyactval = (*nrnpy_callable_with_args)(mti_->pyact_, 2);
+                Object* pyactval = neuron::python::methods.callable_with_args(mti_->pyact_, 2);
                 hoc_ivbutton(s->name, NULL, pyactval);
                 hoc_obj_unref(pyactval);
             } else {

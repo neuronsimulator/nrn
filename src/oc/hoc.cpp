@@ -1208,7 +1208,8 @@ int hoc_moreinput() {
             hoc_xopen_file_ = static_cast<char*>(erealloc(hoc_xopen_file_, hoc_xopen_file_size_));
         }
         strcpy(hoc_xopen_file_, infile);
-        // This is, unfortunately rather implicitly, how we trigger execution of HOC files on a commandline like `nrniv a.hoc b.hoc`
+        // This is, unfortunately rather implicitly, how we trigger execution of HOC files on a
+        // commandline like `nrniv a.hoc b.hoc`
         if (neuron::python::methods.interpreter_set_path) {
             neuron::python::methods.interpreter_set_path(hoc_xopen_file_);
         }

@@ -23,13 +23,11 @@ PyObject* hocobj_call_arg(int);
 Object* nrnpy_pyobject_in_obj(PyObject*);
 int nrnpy_ho_eq_po(Object*, PyObject*);
 char* nrnpyerr_str();
-extern void* (*nrnpy_save_thread)();
-extern void (*nrnpy_restore_thread)(void*);
-static void* save_thread() {
+static PyThreadState* save_thread() {
     return PyEval_SaveThread();
 }
-static void restore_thread(void* g) {
-    PyEval_RestoreThread((PyThreadState*) g);
+static void restore_thread(PyThreadState* g) {
+    PyEval_RestoreThread(g);
 }
 extern Symbol* nrnpy_pyobj_sym_;
 extern void (*nrnpy_py2n_component)(Object*, Symbol*, int, int);
@@ -39,15 +37,6 @@ extern int (*nrnpy_hoccommand_exec)(Object*);
 extern int (*nrnpy_hoccommand_exec_strret)(Object*, char*, int);
 extern void (*nrnpy_cmdtool)(Object*, int, double, double, int);
 extern double (*nrnpy_func_call)(Object*, int, int*);
-extern Object* (*nrnpy_callable_with_args)(Object*, int);
-extern double (*nrnpy_guigetval)(Object*);
-extern void (*nrnpy_guisetval)(Object*, double);
-extern int (*nrnpy_guigetstr)(Object*, char**);
-extern char* (*nrnpy_po2pickle)(Object*, size_t* size);
-extern Object* (*nrnpy_pickle2po)(char*, size_t size);
-extern char* (*nrnpy_callpicklef)(char*, size_t size, int narg, size_t* retsize);
-extern int (*nrnpy_pysame)(Object*, Object*);  // contain same Python object
-extern Object* (*nrnpympi_alltoall_type)(int, int);
 typedef struct {
     PyObject_HEAD
     Section* sec_;
@@ -68,15 +57,6 @@ static int hoccommand_exec(Object*);
 static int hoccommand_exec_strret(Object*, char*, int);
 static void grphcmdtool(Object*, int, double, double, int);
 static double func_call(Object*, int, int*);
-static Object* callable_with_args(Object*, int);
-static double guigetval(Object*);
-static void guisetval(Object*, double);
-static int guigetstr(Object*, char**);
-static char* po2pickle(Object*, size_t* size);
-static Object* pickle2po(char*, size_t size);
-static char* call_picklef(char*, size_t size, int narg, size_t* retsize);
-static Object* py_alltoall_type(int, int);
-static int pysame(Object*, Object*);
 static PyObject* main_module;
 static PyObject* main_namespace;
 static hoc_List* dlist;
@@ -122,53 +102,12 @@ static void call_python_with_section(Object* pyact, Section* sec) {
     }
 }
 
-extern void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
 static void* opaque_obj2pyobj(Object* ho) {
     assert(ho && ho->ctemplate->sym == nrnpy_pyobj_sym_);
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
     assert(po);
     return po;
 }
-
-/**
- * @brief Populate NEURON state with information from a specific Python.
- * @param ptrs Logically a return value; avoidi
- */
-extern "C" void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
-    assert(ptrs);
-    class2oc("PythonObject", p_cons, p_destruct, p_members, NULL, NULL, NULL);
-    Symbol* s = hoc_lookup("PythonObject");
-    assert(s);
-    neuron::python::impl_ptrs r;
-    nrnpy_pyobj_sym_ = s;
-    nrnpy_py2n_component = py2n_component;
-    nrnpy_call_python_with_section = call_python_with_section;
-    nrnpy_hpoasgn = hpoasgn;
-    nrnpy_praxis_efun = praxis_efun;
-    nrnpy_hoccommand_exec = hoccommand_exec;
-    nrnpy_hoccommand_exec_strret = hoccommand_exec_strret;
-    nrnpy_cmdtool = grphcmdtool;
-    nrnpy_func_call = func_call;
-    nrnpy_callable_with_args = callable_with_args;
-    nrnpy_guigetval = guigetval;
-    nrnpy_guisetval = guisetval;
-    nrnpy_guigetstr = guigetstr;
-    nrnpy_po2pickle = po2pickle;
-    nrnpy_pickle2po = pickle2po;
-    nrnpy_callpicklef = call_picklef;
-    nrnpympi_alltoall_type = py_alltoall_type;
-    nrnpy_pysame = pysame;
-    nrnpy_save_thread = save_thread;
-    nrnpy_restore_thread = restore_thread;
-    nrnpy_opaque_obj2pyobj_p_ = opaque_obj2pyobj;
-    ptrs->hoc_nrnpython = nrnpython_real;
-    ptrs->ho2po = nrnpy_ho2po;
-    ptrs->interpreter_set_path = nrnpython_set_path;
-    ptrs->interpreter_start = nrnpython_start;
-    ptrs->po2ho = nrnpy_po2ho;
-    dlist = hoc_l_newlist();
-}
-
 
 Py2Nrn::Py2Nrn() {
     po_ = NULL;
@@ -188,7 +127,8 @@ int nrnpy_ho_eq_po(Object* ho, PyObject* po) {
     return 0;
 }
 
-int pysame(Object* o1, Object* o2) {
+// contain same Python object
+static int pysame(Object* o1, Object* o2) {
     if (o2->ctemplate->sym == nrnpy_pyobj_sym_) {
         return nrnpy_ho_eq_po(o1, ((Py2Nrn*) o2->u.this_pointer)->po_);
     }
@@ -751,7 +691,7 @@ static char* pickle(PyObject* p, size_t* size) {
     return buf;
 }
 
-static char* po2pickle(Object* ho, size_t* size) {
+static char* po2pickle(Object* ho, std::size_t* size) {
     setpickle();
     if (ho && ho->ctemplate->sym == nrnpy_pyobj_sym_) {
         PyObject* po = nrnpy_hoc2pyobject(ho);
@@ -772,7 +712,7 @@ static PyObject* unpickle(char* s, size_t size) {
     return po;
 }
 
-static Object* pickle2po(char* s, size_t size) {
+static Object* pickle2po(char* s, std::size_t size) {
     setpickle();
     PyObject* po = unpickle(s, size);
     Object* ho = nrnpy_pyobject_in_obj(po);
@@ -841,7 +781,7 @@ char* nrnpyerr_str() {
     return NULL;
 }
 
-char* call_picklef(char* fname, size_t size, int narg, size_t* retsize) {
+char* call_picklef(char* fname, std::size_t size, int narg, std::size_t* retsize) {
     // fname is a pickled callable, narg is the number of args on the
     // hoc stack with types double, char*, hoc Vector, and PythonObject
     // callable return must be pickleable.
@@ -992,7 +932,7 @@ static PyObject* py_broadcast(PyObject* psrc, int root) {
 
 // type 1-alltoall, 2-allgather, 3-gather, 4-broadcast, 5-scatter
 // size for 3, 4, 5 refer to rootrank.
-Object* py_alltoall_type(int size, int type) {
+static Object* py_alltoall_type(int size, int type) {
     int np = nrnmpi_numprocs;  // of subworld communicator
     PyObject* psrc = NULL;
     PyObject* pdest = NULL;
@@ -1214,4 +1154,42 @@ Object* py_alltoall_type(int size, int type) {
     assert(0);
     return NULL;
 #endif
+}
+
+/**
+ * @brief Populate NEURON state with information from a specific Python.
+ * @param ptrs Logically a return value; avoidi
+ */
+extern "C" void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
+    assert(ptrs);
+    class2oc("PythonObject", p_cons, p_destruct, p_members, NULL, NULL, NULL);
+    Symbol* s = hoc_lookup("PythonObject");
+    assert(s);
+    nrnpy_pyobj_sym_ = s;
+    nrnpy_py2n_component = py2n_component;
+    nrnpy_call_python_with_section = call_python_with_section;
+    nrnpy_hpoasgn = hpoasgn;
+    nrnpy_praxis_efun = praxis_efun;
+    nrnpy_hoccommand_exec = hoccommand_exec;
+    nrnpy_hoccommand_exec_strret = hoccommand_exec_strret;
+    nrnpy_cmdtool = grphcmdtool;
+    nrnpy_func_call = func_call;
+    ptrs->callable_with_args = callable_with_args;
+    ptrs->call_picklef = call_picklef;
+    ptrs->guigetstr = guigetstr;
+    ptrs->guigetval = guigetval;
+    ptrs->guisetval = guisetval;
+    ptrs->hoc_nrnpython = nrnpython_real;
+    ptrs->ho2po = nrnpy_ho2po;
+    ptrs->interpreter_set_path = nrnpython_set_path;
+    ptrs->interpreter_start = nrnpython_start;
+    ptrs->mpi_alltoall_type = py_alltoall_type;
+    ptrs->opaque_obj2pyobj = opaque_obj2pyobj;
+    ptrs->pickle2po = pickle2po;
+    ptrs->po2ho = nrnpy_po2ho;
+    ptrs->po2pickle = po2pickle;
+    ptrs->pysame = pysame;
+    ptrs->restore_thread = restore_thread;
+    ptrs->save_thread = save_thread;
+    dlist = hoc_l_newlist();
 }

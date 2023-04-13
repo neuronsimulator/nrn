@@ -20,6 +20,7 @@ extern int hoc_return_type_code;
 #include "nrncvode.h"
 #include "nrndaspk.h"
 #include "nrniv_mf.h"
+#include "nrnpy.h"
 #include "tqueue.h"
 #include "mymath.h"
 #include "htlist.h"
@@ -516,7 +517,6 @@ static double nrn_diam_change_count(void* v) {
     return double(diam_change_cnt);
 }
 
-int (*nrnpy_pysame)(Object*, Object*);
 extern int (*nrnpy_hoccommand_exec)(Object*);
 
 using ExtraScatterList = std::vector<Object*>;
@@ -556,7 +556,7 @@ static double extra_scatter_gather_remove(void* v) {
             for (auto it = esl->begin(); it != esl->end();) {
                 Object* o1 = *it;
                 // if esl exists then python exists
-                if ((*nrnpy_pysame)(o, o1)) {
+                if (neuron::python::methods.pysame(o, o1)) {
                     it = esl->erase(it);
                     hoc_obj_unref(o1);
                 } else {

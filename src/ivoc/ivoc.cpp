@@ -40,10 +40,6 @@ static nrn::tool::bimap<double*, Observer*>* pdob;
 
 int nrn_err_dialog_active_;
 
-
-void* (*nrnpy_save_thread)();
-void (*nrnpy_restore_thread)(void*);
-
 void nrn_notify_freed(PF pf) {
     if (!f_list) {
         f_list = new FList;

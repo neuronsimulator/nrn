@@ -10,13 +10,27 @@ struct Object;
 // the wild that we hope Python won't dare change it.
 struct _object;
 typedef _object PyObject;
+struct _ts;
+typedef _ts PyThreadState;
 namespace neuron::python {
 struct impl_ptrs {
+    Object* (*callable_with_args)(Object*, int narg){};
+    char* (*call_picklef)(char*, std::size_t size, int narg, std::size_t* retsize){};
+    int (*guigetstr)(Object*, char**){};
+    double (*guigetval)(Object*){};
+    void (*guisetval)(Object*, double){};
     void (*hoc_nrnpython)(){};
     PyObject* (*ho2po)(Object*){};
-    Object* (*po2ho)(PyObject*){};
-    void (*interpreter_set_path)(std::string_view);
+    void (*interpreter_set_path)(std::string_view){};
     int (*interpreter_start)(int){};
+    Object* (*mpi_alltoall_type)(int, int){};
+    void* (*opaque_obj2pyobj)(Object*){};
+    Object* (*pickle2po)(char*, std::size_t size){};
+    Object* (*po2ho)(PyObject*){};
+    char* (*po2pickle)(Object*, std::size_t* size);
+    int (*pysame)(Object* o1, Object* o2){};
+    void (*restore_thread)(PyThreadState*){};
+    PyThreadState* (*save_thread)(){};
 };
 /**
  * @brief Collection of pointers to functions with python-version-specific implementations.

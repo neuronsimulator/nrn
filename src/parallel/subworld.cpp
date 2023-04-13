@@ -89,7 +89,7 @@ void BBSImpl::subworld_worker_execute() {
             char* s;
             s = new char[n];
             nrnmpi_char_broadcast(s, n, 0);
-            Object* po = nrnpy_pickle2po(s, size_t(n));
+            Object* po = neuron::python::methods.pickle2po(s, size_t(n));
             delete[] s;
             hoc_pushobj(hoc_temp_objptr(po));
         }
@@ -97,7 +97,7 @@ void BBSImpl::subworld_worker_execute() {
 
     if (style == 3) {
         size_t size;
-        char* rs = (*nrnpy_callpicklef)(s, size_t(npickle), narg, &size);
+        char* rs = neuron::python::methods.call_picklef(s, size_t(npickle), narg, &size);
         assert(rs);
         delete[] rs;
     } else {
