@@ -105,20 +105,6 @@ int nrnpy_pyrun(const char* fname) {
     // .string() ensures this is not a wchar_t string on Windows
     auto const dirname = realpath.parent_path().string();
     reset_sys_path(dirname);
-#ifdef MINGW
-    // perhaps this should be the generic implementation
-    auto const sz = strlen(fname) + 40;
-    char* cmd = new char[sz];
-    std::snprintf(cmd, sz, "exec(open(\"%s\").read(), globals())", fname);
-    int err = PyRun_SimpleString(cmd);
-    delete[] cmd;
-    if (err != 0) {
-        PyErr_Print();
-        PyErr_Clear();
-        return 0;
-    }
-    return 1;
-#else   // MINGW not defined
     FILE* fp = fopen(fname, "r");
     if (fp) {
         int const code = PyRun_AnyFile(fp, fname);
@@ -128,7 +114,6 @@ int nrnpy_pyrun(const char* fname) {
         std::cerr << "Could not open " << fname << std::endl;
         return 0;
     }
-#endif  // MINGW not defined
 }
 
 extern PyObject* nrnpy_hoc();
