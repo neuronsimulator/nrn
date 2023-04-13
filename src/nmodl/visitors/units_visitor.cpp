@@ -151,7 +151,7 @@ void UnitsVisitor::visit_factor_def(ast::FactorDef& node) {
 #ifdef USE_LEGACY_UNITS
         auto unit_factor = stringutils::to_string(unit1_factor / unit2_factor, "{:g}");
 #else
-        auto unit_factor = stringutils::to_string(unit1_factor / unit2_factor, "{:.18g}");
+        auto unit_factor = stringutils::to_string(unit1_factor / unit2_factor, "{:a}");
 #endif
 
         auto double_value_ptr = std::make_shared<ast::Double>(ast::Double(unit_factor));

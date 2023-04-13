@@ -2148,14 +2148,8 @@ void CodegenCVisitor::print_nmodl_constants() {
         printer->add_newline(2);
         printer->add_line("/** constants used in nmodl from UNITS */");
         for (const auto& it: info.factor_definitions) {
-#ifdef USE_LEGACY_UNITS
-            const std::string format_string = "static const double {} = {:g};";
-#else
-            const std::string format_string = "static const double {} = {:.18g};";
-#endif
-            printer->fmt_line(format_string,
-                              it->get_node_name(),
-                              stod(it->get_value()->get_value()));
+            const std::string format_string = "static const double {} = {};";
+            printer->fmt_line(format_string, it->get_node_name(), it->get_value()->get_value());
         }
     }
 }
