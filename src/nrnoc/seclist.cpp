@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
 #define HOC_L_LIST 1
-#include <nrnpython_config.h>
 #include "section.h"
 #include "neuron.h"
 #include "parse.hpp"

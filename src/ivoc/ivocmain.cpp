@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include <../nrnpython/nrnpython_config.h>
 #include "nrn_ansi.h"
 
 long hoc_nframe, hoc_nstack;

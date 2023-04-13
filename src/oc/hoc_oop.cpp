@@ -10,7 +10,6 @@
 #include "nrn_ansi.h"
 #include "nrnmpi.h"
 #include "nrnfilewrap.h"
-#include <nrnpython_config.h>
 #include "ocfunc.h"
 
 

@@ -3,8 +3,6 @@
 // Solve the problem of not knowing what version of Python the user has by
 // possibly deferring linking to libnrnpython.so to run time using the proper
 // Python interface
-
-#include <../nrnpython/nrnpython_config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <InterViews/resource.h>
@@ -19,7 +17,7 @@
 
 // needed by nrnmusic.cpp but must exist if python is loaded.
 #if USE_PYTHON
-typedef struct _object PyObject;
+struct PyObject;
 PyObject* (*nrnpy_p_ho2po)(Object*);
 Object* (*nrnpy_p_po2ho)(PyObject*);
 #endif  // USE_PYTHON

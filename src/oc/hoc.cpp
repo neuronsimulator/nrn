@@ -1,6 +1,4 @@
 #include <../../nrnconf.h>
-
-#include "../nrnpython/nrnpython_config.h"
 #include "hoc.h"
 #include "hocstr.h"
 #include "equation.h"

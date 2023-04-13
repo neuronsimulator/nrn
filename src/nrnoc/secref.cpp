@@ -20,7 +20,6 @@ access s1.sec	// soma becomes the default section
 #include "parse.hpp"
 #include "hoc_membf.h"
 #include "oc_ansi.h"
-#include <nrnpython_config.h>
 
 extern int hoc_return_type_code;
 

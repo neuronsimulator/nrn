@@ -1,7 +1,0 @@
-#ifndef H_nrnpython_config_included
-#define H_nrnpython_config_included
-#ifndef NRNHOSTCPU
-/* Define to the nrnivmodl consistent cpu name */
-#undef NRNHOSTCPU
-#endif
-#endif /* H_nrnpython_config_included */

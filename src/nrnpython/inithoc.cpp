@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "nrnmpi.h"
-#include "nrnpython_config.h"
 #if defined(__MINGW32__)
 #define _hypot hypot
 #endif
@@ -300,7 +299,8 @@ extern "C" PyObject* PyInit_hoc() {
     }
 
 #endif  // NRNMPI
-    std::string buf{NRNHOSTCPU "/.libs/libnrnmech.so"};
+    std::string buf{neuron::config::system_processor};
+    buf += "/.libs/libnrnmech.so";
     // printf("buf = |%s|\n", buf);
     FILE* f;
     if ((f = fopen(buf.c_str(), "r")) != 0) {

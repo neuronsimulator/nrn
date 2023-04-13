@@ -8,7 +8,6 @@
 #endif
 
 #include <../../nrnconf.h>
-#include <nrnpython_config.h>
 
 #if defined(USE_PYTHON)
 #undef _POSIX_C_SOURCE

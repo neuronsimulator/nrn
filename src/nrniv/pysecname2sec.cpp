@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 #include <hocparse.h>
-#include <nrnpython_config.h>
 
 #include <parse.hpp>
 

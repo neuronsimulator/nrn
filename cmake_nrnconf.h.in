@@ -257,9 +257,6 @@
 /* host triplet */
 #undef NRNHOST
 
-/* cpu type consistent with nrnivmodl */
-#undef NRNHOSTCPU
-
 /* if 1 then dlopen nrnmech instead of special */
 #undef NRNMECH_DLL_STYLE
 

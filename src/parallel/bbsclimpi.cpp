@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include "../nrnpython/nrnpython_config.h"
 #include <nrnmpi.h>
 #include "bbsconf.h"
 #ifdef NRNMPI  // to end of file
