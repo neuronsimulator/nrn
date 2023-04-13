@@ -53,7 +53,7 @@ static const char* ver[] = {0};
 static int iver;  // which python is loaded?
 static void* python_already_loaded();
 static void* load_python();
-static void load_nrnpython(int, const char*);
+static void load_nrnpython();
 #else   //! defined(NRNPYTHON_DYNAMICLOAD)
 extern "C" int nrnpython_start(int);
 extern "C" void nrnpython_reg_real();
@@ -80,7 +80,7 @@ static void p_destruct(void* v) {}
 static Member_func p_members[] = {{0, 0}};
 
 #ifdef NRNPYTHON_DYNAMICLOAD
-static char* nrnpy_pylib;
+static char *nrnpy_pylib{}, *nrnpy_pyversion{};
 
 static void siteprob(void) {
     if (nrnpy_site_problem_p && (*nrnpy_site_problem_p)) {
@@ -103,7 +103,8 @@ to %s/lib/nrn.defaults (or .nrn.defaults in your $HOME directory)\n",
 static void set_nrnpylib() {
     nrnpy_pylib = getenv("NRN_PYLIB");
     nrnpy_pyhome = getenv("NRN_PYTHONHOME");
-    if (nrnpy_pylib && nrnpy_pyhome) {
+    nrnpy_pyversion = getenv("NRN_PYTHONVERSION");
+    if (nrnpy_pylib && nrnpy_pyhome && nrnpy_pyversion) {
         return;
     }
     // copy allows free of the copy if needed
@@ -112,6 +113,9 @@ static void set_nrnpylib() {
     }
     if (nrnpy_pyhome) {
         nrnpy_pyhome = strdup(nrnpy_pyhome);
+    }
+    if (nrnpy_pyversion) {
+        nrnpy_pyversion = strdup(nrnpy_pyversion);
     }
 
     if (nrnmpi_myid_world == 0) {
@@ -159,6 +163,10 @@ static void set_nrnpylib() {
                     cp += strlen("export NRN_PYTHONEXE=") + 1;
                     cp[strlen(cp) - 2] = '\0';
                     nrnpy_pyexe = strdup(cp);
+                } else if (!nrnpy_pyexe && (cp = strstr(line, "export NRN_PYTHONVERSION="))) {
+                    cp += strlen("export NRN_PYTHONVERSION=") + 1;
+                    cp[strlen(cp) - 2] = '\0';
+                    nrnpy_pyversion = strdup(cp);
                 }
             }
             if (std::ferror(p)) {
@@ -177,6 +185,7 @@ static void set_nrnpylib() {
         nrnmpi_char_broadcast_world(&nrnpy_pyexe, 0);
         nrnmpi_char_broadcast_world(&nrnpy_pylib, 0);
         nrnmpi_char_broadcast_world(&nrnpy_pyhome, 0);
+        nrnmpi_char_broadcast_world(&nrnpy_pyversion, 0);
     }
 #endif
 }
@@ -222,7 +231,7 @@ void nrnpython_reg() {
         // in these circumstances, it is sufficient to go ahead and dlopen
         // the nrnpython interface library
         if (handle || nrn_is_python_extension) {
-            load_nrnpython(nrn_is_python_extension, nrnpy_pylib);
+            load_nrnpython();
         }
 #else
         p_nrnpython_start = nrnpython_start;
@@ -289,54 +298,30 @@ static void* load_sym(void* handle, const char* name) {
     return p;
 }
 
-static void* load_nrnpython_helper(const char* npylib) {
-    char name[2048];
-#ifdef MINGW
-    Sprintf(name, "%s.dll", npylib);
-#else  // !MINGW
-#if DARWIN
-    Sprintf(name, "%s/../../lib/%s.dylib", neuron_home, npylib);
-#else   // !DARWIN
-    Sprintf(name, "%s/../../lib/%s.so", neuron_home, npylib);
-#endif  // DARWIN
-#endif  // MINGW
-    void* handle = dlopen(name, RTLD_NOW);
-    return handle;
-}
-
-// Get python version as integer from pythonlib path
-static int pylib2pyver10(std::string pylib) {
-    // skip past last \ or /
-    const auto pos = pylib.find_last_of("/\\");
-    if (pos != std::string::npos) {
-        pylib = pylib.substr(pos + 1);
+static void load_nrnpython() {
+    std::string pyversion{};
+    if (int pv10 = nrn_is_python_extension; pv10 > 0) {
+        // pv10 is one of the packed integers like 310 (3.10) or 38 (3.8)
+        auto const factor = (pv10 >= 100) ? 100 : 10;
+        pyversion = std::to_string(pv10 / factor) + "." + std::to_string(pv10 % factor);
+    } else {
+        if (!nrnpy_pylib || !nrnpy_pyversion) {
+            std::cerr << "Do not know what Python to load [nrnpy_pylib="
+                      << (nrnpy_pylib ? nrnpy_pylib : "nullptr")
+                      << " nrnpy_pyversion=" << (nrnpy_pyversion ? nrnpy_pyversion : "nullptr")
+                      << ']' << std::endl;
+            return;
+        }
+        pyversion = nrnpy_pyversion;
     }
-
-    // erase nondigits
-    pylib.erase(std::remove_if(pylib.begin(), pylib.end(), [](char c) { return !std::isdigit(c); }),
-                pylib.end());
-
-    // parse number. 0 is fine to return as error (no need for stoi)
-    return std::atoi(pylib.c_str());
-}
-
-static void load_nrnpython(int pyver10, const char* pylib) {
-    int pv10 = pyver10;
-    if (pyver10 < 1 && pylib) {
-        pv10 = pylib2pyver10(pylib);
-    }
-    auto const factor = (pv10 >= 100) ? 100 : 10;
-    std::string const target_version{std::to_string(pv10 / factor) + "." +
-                                     std::to_string(pv10 % factor)},
-        name{"libnrnpython" + target_version};
+    std::string const name{neuron::config::shared_library_prefix + "nrnpython" + pyversion +
+                           neuron::config::shared_library_suffix};
     auto const& supported_versions = neuron::config::supported_python_versions;
-    auto const iter =
-        std::find(supported_versions.begin(), supported_versions.end(), target_version);
+    auto const iter = std::find(supported_versions.begin(), supported_versions.end(), pyversion);
     if (iter == supported_versions.end()) {
         std::cerr << "This NEURON installation does not support the current Python version ("
-                  << target_version
-                  << "). Either re-build NEURON with support for this version, use a supported "
-                     "version of Python (";
+                  << pyversion << "). Either re-build NEURON with support for this version, use "
+                  << "a supported version of Python (";
         for (auto i = supported_versions.begin(); i != supported_versions.end(); ++i) {
             std::cerr << *i;
             if (std::next(i) != supported_versions.end()) {
@@ -349,15 +334,19 @@ static void load_nrnpython(int pyver10, const char* pylib) {
                   << std::endl;
         return;
     }
-    auto* const handle = load_nrnpython_helper(name.c_str());
+#ifndef MINGW
+    // Build a path from neuron_home on macOS and Linux
+    name = neuron_home + ("/../../lib/" + name);
+#endif
+    auto* const handle = dlopen(name.c_str(), RTLD_NOW);
     if (!handle) {
         std::cout << "Could not load " << name << std::endl;
         std::cout << "pyver10=" << pyver10 << " pylib=" << (pylib ? pylib : "(null)") << std::endl;
         return;
     }
-    p_nrnpython_start = (int (*)(int)) load_sym(handle, "nrnpython_start");
-    p_nrnpython_real = (void (*)()) load_sym(handle, "nrnpython_real");
-    p_nrnpython_reg_real = (void (*)()) load_sym(handle, "nrnpython_reg_real");
+    p_nrnpython_start = static_cast<int (*)(int)>(load_sym(handle, "nrnpython_start"));
+    p_nrnpython_real = static_cast<void (*)()>(load_sym(handle, "nrnpython_real"));
+    p_nrnpython_reg_real = static_cast<void (*)()>(load_sym(handle, "nrnpython_reg_real"));
 }
 
 #endif

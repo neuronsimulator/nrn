@@ -188,7 +188,9 @@ if test "$PYTHON" = "" ; then
   exit 1;
 fi
 
+NRN_PYTHONVERSION=$("${PYTHON}" -c "import sys; print(\"{}.{}\".format(*sys.version_info[:2]))")
 echo "export NRN_PYTHONEXE=\"$(${WHICH} $PYTHON)\""
+echo "export NRN_PYTHONVERSION=\"${NRN_PYTHONVERSION}\""
 
 # what is the python library for Darwin
 nrnpylib_provenance=""
