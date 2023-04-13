@@ -326,6 +326,8 @@ extern "C" void nrnpython_real() {
     HocTopContextSet
     {
         PyLockGIL lock;
+        // Handle this like `python -c`: sys.path[0] should be an empty string
+        reset_sys_path("");
         retval = PyRun_SimpleString(gargstr(1)) == 0;
     }
     HocContextRestore
