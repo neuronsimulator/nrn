@@ -89,22 +89,37 @@ void reset_sys_path(std::string_view new_first) {
     // Put the decoded string into sys.path
     nrn_assert(PyList_Insert(path, 0, ustr) == 0);
     // Append basic_sys_path to sys.path
-    assert(basic_sys_path && PyTuple_Check(basic_sys_path));
+    assert(basic_sys_path && PyTuple_Check(basic_sys_path));  // failing in docs build
     nrn_assert(PySequence_SetSlice(path, 1, 1 + PyTuple_Size(basic_sys_path), basic_sys_path) == 0);
 }
 }  // namespace
+
+/**
+ * @brief Reset sys.path to its value at initialisation and prepend fname.
+ *
+ * Calling this with fname empty is appropriate ahead of executing code similar to `python -c
+ * "..."`, if fname is non-empty then resolve symlinks in it and get the directory name -- this is
+ * appropriate for `python script.py` compatibility.
+ */
+void nrnpython_set_path(std::string_view fname) {
+    if (fname.empty()) {
+        reset_sys_path(fname);
+    } else {
+        // Figure out what sys.path[0] should be; this involves first resolving symlinks in fname
+        // and second getting the directory name from it.
+        auto const realpath = neuron::std::filesystem::canonical(fname);
+        // .string() ensures this is not a wchar_t string on Windows
+        auto const dirname = realpath.parent_path().string();
+        reset_sys_path(dirname);
+    }
+}
 
 /**
  * @brief Execute a Python script.
  * @return 0 on failure, 1 on success.
  */
 int nrnpy_pyrun(const char* fname) {
-    // Figure out what sys.path[0] should be; this involves first resolving symlinks in fname and
-    // second getting the directory name from it.
-    auto const realpath = neuron::std::filesystem::canonical(fname);
-    // .string() ensures this is not a wchar_t string on Windows
-    auto const dirname = realpath.parent_path().string();
-    reset_sys_path(dirname);
+    nrnpython_set_path(fname);
     auto* const fp = fopen(fname, "r");
     if (fp) {
         int const code = PyRun_AnyFile(fp, fname);
@@ -128,10 +143,9 @@ extern PyObject* nrnpy_nrn();
  *  been initialized. Mode 1 only has an effect if Python is not initialized,
  *  while the other modes only take effect if Python is already initialized.
  */
-extern "C" int nrnpython_start(int b) {
+int nrnpython_start(int b) {
 #if USE_PYTHON
     static int started = 0;
-    // printf("nrnpython_start %d started=%d\n", b, started);
     if (b == 1 && !started) {
         p_nrnpy_pyrun = nrnpy_pyrun;
         if (nrnpy_nositeflag) {
@@ -213,6 +227,7 @@ extern "C" int nrnpython_start(int b) {
               PyConfig_SetBytesArgv(config, nrn_global_argc, nrn_global_argv));
         // Initialise Python
         check("Could not initialise Python", Py_InitializeFromConfig(config));
+        std::cout << "Initialized python" << std::endl;
         // Manipulate sys.path, starting from the default values
         {
             PyLockGIL _{};
@@ -306,12 +321,13 @@ extern "C" int nrnpython_start(int b) {
 }
 
 /**
- * @brief Backend to nrnpython(...) in HOC code.
+ * @brief Backend to nrnpython(...) in HOC/Python code.
  *
  * This can be called both with nrniv and python as the top-level executable, with different code
- * responsible for initialising Python in the two cases, so we just hope for the best.
+ * responsible for initialising Python in the two cases. We trust that Python was initialised
+ * correctly somewhere higher up the call stack.
  */
-extern "C" void nrnpython_real() {
+void nrnpython_real() {
     int retval = 0;
 #if USE_PYTHON
     HocTopContextSet

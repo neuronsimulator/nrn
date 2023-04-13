@@ -6,6 +6,7 @@
 #include <classreg.h>
 #include <nrnpython.h>
 #include <hoccontext.h>
+#include "nrnpy.h"
 #include "nrnpy_utils.h"
 
 #include "parse.hpp"
@@ -47,8 +48,6 @@ extern Object* (*nrnpy_pickle2po)(char*, size_t size);
 extern char* (*nrnpy_callpicklef)(char*, size_t size, int narg, size_t* retsize);
 extern int (*nrnpy_pysame)(Object*, Object*);  // contain same Python object
 extern Object* (*nrnpympi_alltoall_type)(int, int);
-extern Object* (*nrnpy_p_po2ho)(PyObject*);
-extern PyObject* (*nrnpy_p_ho2po)(Object*);
 typedef struct {
     PyObject_HEAD
     Section* sec_;
@@ -57,7 +56,6 @@ typedef struct {
 } NPySecObj;
 extern NPySecObj* newpysechelp(Section* sec);
 extern void (*nrnpy_call_python_with_section)(Object*, Section*);
-extern "C" void nrnpython_reg_real();
 PyObject* nrnpy_ho2po(Object*);
 void nrnpy_decref_defer(PyObject*);
 PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
@@ -132,11 +130,16 @@ static void* opaque_obj2pyobj(Object* ho) {
     return po;
 }
 
-extern "C" void nrnpython_reg_real() {
-    // printf("nrnpython_reg_real()\n");
+/**
+ * @brief Populate NEURON state with information from a specific Python.
+ * @param ptrs Logically a return value; avoidi
+ */
+extern "C" void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
+    assert(ptrs);
     class2oc("PythonObject", p_cons, p_destruct, p_members, NULL, NULL, NULL);
     Symbol* s = hoc_lookup("PythonObject");
     assert(s);
+    neuron::python::impl_ptrs r;
     nrnpy_pyobj_sym_ = s;
     nrnpy_py2n_component = py2n_component;
     nrnpy_call_python_with_section = call_python_with_section;
@@ -158,8 +161,11 @@ extern "C" void nrnpython_reg_real() {
     nrnpy_save_thread = save_thread;
     nrnpy_restore_thread = restore_thread;
     nrnpy_opaque_obj2pyobj_p_ = opaque_obj2pyobj;
-    nrnpy_p_ho2po = nrnpy_ho2po;
-    nrnpy_p_po2ho = nrnpy_po2ho;
+    ptrs->hoc_nrnpython = nrnpython_real;
+    ptrs->ho2po = nrnpy_ho2po;
+    ptrs->interpreter_set_path = nrnpython_set_path;
+    ptrs->interpreter_start = nrnpython_start;
+    ptrs->po2ho = nrnpy_po2ho;
     dlist = hoc_l_newlist();
 }
 

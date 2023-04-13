@@ -16,6 +16,8 @@
 
 #endif /*USE_PYTHON*/
 
+#include <string_view>
+
 #define PyString_FromString PyUnicode_FromString
 #define PyInt_Check         PyLong_Check
 #define PyInt_CheckExact    PyLong_CheckExact
@@ -66,5 +68,9 @@ enum ObjectType {
 };
 enum IteratorState { Begin, NextNotLast, Last };
 }  // namespace PyHoc
+
+void nrnpython_real();
+void nrnpython_set_path(std::string_view);
+int nrnpython_start(int);
 
 #endif

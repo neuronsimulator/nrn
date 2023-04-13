@@ -1,3 +1,4 @@
+#include "nrnpy.h"
 #include <../../nrnconf.h>
 // For Linux and Max OS X,
 // Solve the problem of not knowing what version of Python the user has by
@@ -15,51 +16,37 @@
 #include <cctype>
 #include <sstream>
 
-// needed by nrnmusic.cpp but must exist if python is loaded.
-#if USE_PYTHON
-struct PyObject;
-PyObject* (*nrnpy_p_ho2po)(Object*);
-Object* (*nrnpy_p_po2ho)(PyObject*);
-#endif  // USE_PYTHON
+namespace neuron::python {
+// Declared extern in nrnpy.h, defined here.
+impl_ptrs methods;
+}  // namespace neuron::python
 
 extern int nrn_nopython;
 extern char* nrnpy_pyexe;
 extern int nrn_is_python_extension;
-using nrnpython_real_t = void (*)();
-using nrnpython_reg_real_t = void (*)();
-using nrnpython_start_t = int (*)(int);
-extern nrnpython_start_t p_nrnpython_start;
-void nrnpython();
-static nrnpython_real_t p_nrnpython_real{};
-static nrnpython_reg_real_t p_nrnpython_reg_real{};
+using nrnpython_reg_real_t = void (*)(neuron::python::impl_ptrs*);
 char* hoc_back2forward(char* s);
 char* hoc_forward2back(char* s);
 #if DARWIN
 extern void nrn_possible_mismatched_arch(const char*);
 #endif
 
-// following is undefined or else has the value of sys.api_version
-// at time of configure (using the python first in the PATH).
 #ifdef NRNPYTHON_DYNAMICLOAD
 #include "nrnwrap_dlfcn.h"
 extern char* neuron_home;
-static void load_nrnpython();
+static nrnpython_reg_real_t load_nrnpython();
 #else
-extern "C" int nrnpython_start(int);
-extern "C" void nrnpython_reg_real();
-extern "C" void nrnpython_real();
+void nrnpython_reg_real(neuron::python::impl_ptrs*);
 #endif
 
 char* nrnpy_pyhome;
 
 void nrnpython() {
-#if USE_PYTHON
-    if (p_nrnpython_real) {
-        p_nrnpython_real();
-        return;
+    if (neuron::python::methods.hoc_nrnpython) {
+        neuron::python::methods.hoc_nrnpython();
+    } else {
+        hoc_retpushx(0.);
     }
-#endif
-    hoc_retpushx(0.);
 }
 
 // Stub class for when Python does not exist
@@ -162,16 +149,19 @@ static void set_nrnpylib() {
 }
 #endif
 
+/**
+ * @brief Load + register an nrnpython library for a specific Python version.
+ *
+ * This finds the library (if needed because dynamic Python is enabled), opens it and gets + calls
+ * its nrnpython_reg_real method. This ensures that NEURON's global state knows about a Python
+ * implementation.
+ */
 void nrnpython_reg() {
-    // printf("nrnpython_reg in nrnpy.cpp\n");
+    nrnpython_reg_real_t reg_fn{};
 #if USE_PYTHON
-    if (nrn_nopython) {
-        p_nrnpython_start = nullptr;
-        p_nrnpython_real = nullptr;
-        p_nrnpython_reg_real = nullptr;
-    } else {
+    if (!nrn_nopython) {
 #ifdef NRNPYTHON_DYNAMICLOAD
-        void* handle = NULL;
+        void* handle{};
         if (!nrn_is_python_extension) {
             // As last resort (or for python3) load $NRN_PYLIB
             set_nrnpylib();
@@ -189,33 +179,26 @@ void nrnpython_reg() {
             }
         }
         if (handle || nrn_is_python_extension) {
-            load_nrnpython();
+            reg_fn = load_nrnpython();
         }
 #else
-        p_nrnpython_start = nrnpython_start;
-        p_nrnpython_real = nrnpython_real;
-        p_nrnpython_reg_real = nrnpython_reg_real;
+        // Python enabled, but not dynamic
+        reg_fn = nrnpython_reg_real;
 #endif
     }
-    if (p_nrnpython_reg_real) {
-        p_nrnpython_reg_real();
+    if (reg_fn) {
+        // Register Python-specific things in the NEURON global state
+        reg_fn(&neuron::python::methods);
         return;
     }
 #endif
+    // Stub implementation of PythonObject if Python support was not enabled, or a nrnpython library
+    // could not be loaded.
     class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr, nullptr);
 }
 
 #ifdef NRNPYTHON_DYNAMICLOAD  // to end of file
-static void* load_sym(void* handle, const char* name) {
-    void* p = dlsym(handle, name);
-    if (!p) {
-        printf("Could not load %s\n", name);
-        exit(1);
-    }
-    return p;
-}
-
-static void load_nrnpython() {
+static nrnpython_reg_real_t load_nrnpython() {
     std::string pyversion{};
     auto const& pv10 = nrn_is_python_extension;
     if (pv10 > 0) {
@@ -228,7 +211,7 @@ static void load_nrnpython() {
                       << (nrnpy_pylib ? nrnpy_pylib : "nullptr")
                       << " nrnpy_pyversion=" << (nrnpy_pyversion ? nrnpy_pyversion : "nullptr")
                       << ']' << std::endl;
-            return;
+            return nullptr;
         }
         pyversion = nrnpy_pyversion;
     }
@@ -254,7 +237,7 @@ static void load_nrnpython() {
                   << pv10 << " nrnpy_pylib=" << (nrnpy_pylib ? nrnpy_pylib : "nullptr")
                   << " nrnpy_pyversion=" << (nrnpy_pyversion ? nrnpy_pyversion : "nullptr") << ']'
                   << std::endl;
-        return;
+        return nullptr;
     }
 #ifndef MINGW
     // Build a path from neuron_home on macOS and Linux
@@ -265,12 +248,12 @@ static void load_nrnpython() {
         std::cerr << "Could not load " << name << std::endl;
         std::cerr << "pv10=" << pv10 << " nrnpy_pylib=" << (nrnpy_pylib ? nrnpy_pylib : "(null)")
                   << std::endl;
-        return;
+        return nullptr;
     }
-    p_nrnpython_start = reinterpret_cast<nrnpython_start_t>(load_sym(handle, "nrnpython_start"));
-    p_nrnpython_real = reinterpret_cast<nrnpython_real_t>(load_sym(handle, "nrnpython_real"));
-    p_nrnpython_reg_real = reinterpret_cast<nrnpython_reg_real_t>(
-        load_sym(handle, "nrnpython_reg_real"));
+    auto* const reg = reinterpret_cast<nrnpython_reg_real_t>(dlsym(handle, "nrnpython_reg_real"));
+    if (!reg) {
+        std::cerr << "Could not load registration function from " << name << std::endl;
+    }
+    return reg;
 }
-
 #endif

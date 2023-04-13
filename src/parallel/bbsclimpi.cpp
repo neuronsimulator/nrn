@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <InterViews/resource.h>
+#include "nrnpy.h"
 #include "oc2iv.h"
 #include "bbs.h"
 #include "bbsrcli.h"
@@ -15,10 +16,6 @@
 extern void nrnmpi_int_broadcast(int*, int, int);
 
 #define debug 0
-
-#if defined(USE_PYTHON)
-extern int (*p_nrnpython_start)(int);
-#endif
 
 #if defined(HAVE_STL)
 #if defined(HAVE_SSTREAM)  // the standard ...
@@ -311,8 +308,8 @@ void BBSClient::done() {
         }
     }
 #if defined(USE_PYTHON)
-    if (p_nrnpython_start) {
-        (*p_nrnpython_start)(0);
+    if (neuron::python::methods.interpreter_start) {
+        neuron::python::methods.interpreter_start(0);
     }
 #endif
     BBSImpl::done();
