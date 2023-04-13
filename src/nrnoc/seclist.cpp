@@ -2,6 +2,7 @@
 #define HOC_L_LIST 1
 #include "section.h"
 #include "neuron.h"
+#include "nrnpy.h"
 #include "parse.hpp"
 #include "hocparse.h"
 #include "code.h"
@@ -144,9 +145,6 @@ static double allroots(void* v) {
 }
 
 static double seclist_remove(void* v) {
-#if USE_PYTHON
-    extern Symbol* nrnpy_pyobj_sym_;
-#endif
     Section *sec, *s;
     Item *q, *q1;
     List* sl;

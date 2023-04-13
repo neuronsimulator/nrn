@@ -517,8 +517,6 @@ static double nrn_diam_change_count(void* v) {
     return double(diam_change_cnt);
 }
 
-extern int (*nrnpy_hoccommand_exec)(Object*);
-
 using ExtraScatterList = std::vector<Object*>;
 static ExtraScatterList* extra_scatterlist[2];  // 0 scatter, 1 gather
 
@@ -527,7 +525,7 @@ void nrn_extra_scatter_gather(int direction, int tid) {
     if (esl) {
         nrn_thread_error("extra_scatter_gather not allowed with multiple threads");
         for (Object* callable: *esl) {
-            if (!(*nrnpy_hoccommand_exec)(callable)) {
+            if (!neuron::python::methods.hoccommand_exec(callable)) {
                 hoc_execerror("extra_scatter_gather runtime error", 0);
             }
         }

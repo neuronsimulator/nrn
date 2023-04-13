@@ -4,6 +4,7 @@
 #include <InterViews/resource.h>
 #include "nrniv_mf.h"
 #include <nrnoc2iv.h>
+#include "nrnpy.h"
 #include "nrnpy_utils.h"
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
@@ -118,7 +119,6 @@ extern int nrn_is_hocobj_ptr(PyObject*, double*&);
 extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
 extern Object* nrnpy_po2ho(PyObject*);
 extern Object* nrnpy_pyobject_in_obj(PyObject*);
-extern Symbol* nrnpy_pyobj_sym_;
 extern int nrnpy_ho_eq_po(Object*, PyObject*);
 extern PyObject* nrnpy_hoc2pyobject(Object*);
 extern PyObject* nrnpy_ho2po(Object*);

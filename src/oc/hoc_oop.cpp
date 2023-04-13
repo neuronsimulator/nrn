@@ -16,12 +16,7 @@
 
 #define PDEBUG 0
 
-#if USE_PYTHON
-Symbol* nrnpy_pyobj_sym_;
-void (*nrnpy_py2n_component)(Object* o, Symbol* s, int nindex, int isfunc);
-void (*nrnpy_hpoasgn)(Object* o, int type);
-#endif
-
+Symbol* nrnpy_pyobj_sym_{};
 #include "section.h"
 #include "nrniv_mf.h"
 int section_object_seen;
@@ -1023,7 +1018,7 @@ void hoc_object_component() {
                 /* note obp is now on stack twice */
                 /* hpoasgn will pop both */
             } else {
-                (*nrnpy_py2n_component)(obp, sym0, nindex, isfunc);
+                neuron::python::methods.py2n_component(obp, sym0, nindex, isfunc);
             }
             return;
         }
@@ -1459,7 +1454,7 @@ void hoc_object_asgn() {
         if (op) {
             hoc_execerror("Invalid assignment operator for PythonObject", nullptr);
         }
-        (*nrnpy_hpoasgn)(o, type1);
+        neuron::python::methods.hpoasgn(o, type1);
     } break;
 #endif
     default:

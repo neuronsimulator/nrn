@@ -2,6 +2,7 @@
 #include "nrniv_mf.h"
 #include "nrn_pyhocobject.h"
 #include "nrnoc2iv.h"
+#include "nrnpy.h"
 #include "nrnpy_utils.h"
 #include "nrnpython.h"
 #include "nrnwrap_dlfcn.h"
@@ -69,7 +70,6 @@ extern PyObject* nrnpy_cas(PyObject*, PyObject*);
 extern PyObject* nrnpy_forall(PyObject*, PyObject*);
 extern PyObject* nrnpy_newsecobj(PyObject*, PyObject*, PyObject*);
 extern int section_object_seen;
-extern Symbol* nrnpy_pyobj_sym_;
 extern Symbol* nrn_child_sym;
 extern int nrn_secref_nchild(Section*);
 extern PyObject* nrnpy_hoc2pyobject(Object*);
