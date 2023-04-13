@@ -134,7 +134,7 @@ static void set_nrnpylib() {
                     cp += strlen("export NRN_PYTHONEXE=") + 1;
                     cp[strlen(cp) - 2] = '\0';
                     nrnpy_pyexe = strdup(cp);
-                } else if (!nrnpy_pyexe && (cp = strstr(line, "export NRN_PYTHONVERSION="))) {
+                } else if (!nrnpy_pyversion && (cp = strstr(line, "export NRN_PYTHONVERSION="))) {
                     cp += strlen("export NRN_PYTHONVERSION=") + 1;
                     cp[strlen(cp) - 2] = '\0';
                     nrnpy_pyversion = strdup(cp);
@@ -217,7 +217,8 @@ static void* load_sym(void* handle, const char* name) {
 
 static void load_nrnpython() {
     std::string pyversion{};
-    if (int pv10 = nrn_is_python_extension; pv10 > 0) {
+    auto const& pv10 = nrn_is_python_extension;
+    if (pv10 > 0) {
         // pv10 is one of the packed integers like 310 (3.10) or 38 (3.8)
         auto const factor = (pv10 >= 100) ? 100 : 10;
         pyversion = std::to_string(pv10 / factor) + "." + std::to_string(pv10 % factor);
@@ -231,8 +232,11 @@ static void load_nrnpython() {
         }
         pyversion = nrnpy_pyversion;
     }
-    std::string const name{neuron::config::shared_library_prefix + "nrnpython" + pyversion +
-                           neuron::config::shared_library_suffix};
+    std::string name;
+    name.append(neuron::config::shared_library_prefix);
+    name.append("nrnpython");
+    name.append(pyversion);
+    name.append(neuron::config::shared_library_suffix);
     auto const& supported_versions = neuron::config::supported_python_versions;
     auto const iter = std::find(supported_versions.begin(), supported_versions.end(), pyversion);
     if (iter == supported_versions.end()) {
@@ -246,8 +250,9 @@ static void load_nrnpython() {
             }
         }
         std::cerr << "), or try using nrniv -python so that NEURON can suggest a compatible "
-                     "version for you. [pyver10="
-                  << pyver10 << " pv10=" << pv10 << " pylib=" << (pylib ? pylib : "nullptr") << ']'
+                     "version for you. [pv10="
+                  << pv10 << " nrnpy_pylib=" << (nrnpy_pylib ? nrnpy_pylib : "nullptr")
+                  << " nrnpy_pyversion=" << (nrnpy_pyversion ? nrnpy_pyversion : "nullptr") << ']'
                   << std::endl;
         return;
     }
@@ -257,8 +262,9 @@ static void load_nrnpython() {
 #endif
     auto* const handle = dlopen(name.c_str(), RTLD_NOW);
     if (!handle) {
-        std::cout << "Could not load " << name << std::endl;
-        std::cout << "pyver10=" << pyver10 << " pylib=" << (pylib ? pylib : "(null)") << std::endl;
+        std::cerr << "Could not load " << name << std::endl;
+        std::cerr << "pv10=" << pv10 << " nrnpy_pylib=" << (nrnpy_pylib ? nrnpy_pylib : "(null)")
+                  << std::endl;
         return;
     }
     p_nrnpython_start = reinterpret_cast<nrnpython_start_t>(load_sym(handle, "nrnpython_start"));

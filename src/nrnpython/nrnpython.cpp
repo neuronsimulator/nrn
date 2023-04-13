@@ -261,10 +261,6 @@ extern "C" int nrnpython_start(int b) {
             assert(PyList_Check(sys_path) && !basic_sys_path);
             basic_sys_path = PyList_AsTuple(sys_path);
         }
-#ifdef NRNPYTHON_DYNAMICLOAD
-        // return from Py_Initialize means there was no site problem
-        nrnpy_site_problem = 0;
-#endif
         started = 1;
         nrnpy_hoc();
         nrnpy_nrn();
