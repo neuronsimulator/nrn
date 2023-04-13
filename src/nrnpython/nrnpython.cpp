@@ -105,7 +105,7 @@ int nrnpy_pyrun(const char* fname) {
     // .string() ensures this is not a wchar_t string on Windows
     auto const dirname = realpath.parent_path().string();
     reset_sys_path(dirname);
-    FILE* fp = fopen(fname, "r");
+    auto* const fp = fopen(fname, "r");
     if (fp) {
         int const code = PyRun_AnyFile(fp, fname);
         fclose(fp);
@@ -305,19 +305,23 @@ extern "C" int nrnpython_start(int b) {
     return 0;
 }
 
+/**
+ * @brief Backend to nrnpython(...) in HOC code.
+ *
+ * This can be called both with nrniv and python as the top-level executable, with different code
+ * responsible for initialising Python in the two cases, so we just hope for the best.
+ */
 extern "C" void nrnpython_real() {
     int retval = 0;
 #if USE_PYTHON
     HocTopContextSet
     {
         PyLockGIL lock;
-        // Handle this like `python -c`: sys.path[0] should be an empty string
-        reset_sys_path("");
-        retval = PyRun_SimpleString(gargstr(1)) == 0;
+        retval = (PyRun_SimpleString(hoc_gargstr(1)) == 0);
     }
     HocContextRestore
 #endif
-    hoc_retpushx(double(retval));
+    hoc_retpushx(retval);
 }
 
 static char* nrnpython_getline(FILE*, FILE*, const char* prompt) {
@@ -326,21 +330,16 @@ static char* nrnpython_getline(FILE*, FILE*, const char* prompt) {
     int r = hoc_get_line();
     // printf("r=%d c=%d\n", r, hoc_cbufstr->buf[0]);
     if (r == 1) {
-        size_t n = strlen(hoc_cbufstr->buf) + 1;
+        auto const n = std::strlen(hoc_cbufstr->buf) + 1;
         hoc_ctp = hoc_cbufstr->buf + n - 1;
-        char* p = static_cast<char*>(PyMem_RawMalloc(n));
-        if (p == 0) {
-            return 0;
+        auto* const p = static_cast<char*>(PyMem_RawMalloc(n));
+        if (!p) {
+            return nullptr;
         }
-        strcpy(p, hoc_cbufstr->buf);
+        std::strcpy(p, hoc_cbufstr->buf);
         return p;
     } else if (r == EOF) {
-        char* p = static_cast<char*>(PyMem_RawMalloc(2));
-        if (p == 0) {
-            return 0;
-        }
-        p[0] = '\0';
-        return p;
+        return static_cast<char*>(PyMem_RawCalloc(1, sizeof(char)));
     }
     return 0;
 }
