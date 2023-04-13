@@ -28,9 +28,6 @@ extern PyObject* nrnpy_hoc();
 extern void nrnmpi_stubs();
 extern std::string nrnmpi_load(int is_python);
 #endif
-#ifdef NRNPYTHON_DYNAMICLOAD
-extern int nrnpy_site_problem;
-#endif
 
 #if NRN_ENABLE_THREADS
 #include <thread>
@@ -366,9 +363,6 @@ extern "C" PyObject* PyInit_hoc() {
 
     nrn_main_launch = 2;
     ivocmain(argc, (const char**) argv, (const char**) env);
-#ifdef NRNPYTHON_DYNAMICLOAD
-    nrnpy_site_problem = 0;
-#endif  // NRNPYTHON_DYNAMICLOAD
     return nrnpy_hoc();
 }
 

@@ -25,14 +25,15 @@ Object* (*nrnpy_p_po2ho)(PyObject*);
 #endif  // USE_PYTHON
 
 extern int nrn_nopython;
-extern int nrnpy_nositeflag;
 extern char* nrnpy_pyexe;
 extern int nrn_is_python_extension;
-int* nrnpy_site_problem_p;
-extern int (*p_nrnpython_start)(int);
+using nrnpython_real_t = void (*)();
+using nrnpython_reg_real_t = void (*)();
+using nrnpython_start_t = int (*)(int);
+extern nrnpython_start_t p_nrnpython_start;
 void nrnpython();
-static void (*p_nrnpython_real)();
-static void (*p_nrnpython_reg_real)();
+static nrnpython_real_t p_nrnpython_real{};
+static nrnpython_reg_real_t p_nrnpython_reg_real{};
 char* hoc_back2forward(char* s);
 char* hoc_forward2back(char* s);
 #if DARWIN
@@ -42,30 +43,21 @@ extern void nrn_possible_mismatched_arch(const char*);
 // following is undefined or else has the value of sys.api_version
 // at time of configure (using the python first in the PATH).
 #ifdef NRNPYTHON_DYNAMICLOAD
-
 #include "nrnwrap_dlfcn.h"
-#if !defined(RTLD_NOLOAD)
-#define RTLD_NOLOAD 0
-#endif  // RTLD_NOLOAD
-
 extern char* neuron_home;
-static const char* ver[] = {0};
-static int iver;  // which python is loaded?
-static void* python_already_loaded();
-static void* load_python();
 static void load_nrnpython();
-#else   //! defined(NRNPYTHON_DYNAMICLOAD)
+#else
 extern "C" int nrnpython_start(int);
 extern "C" void nrnpython_reg_real();
 extern "C" void nrnpython_real();
-#endif  // defined(NRNPYTHON_DYNAMICLOAD)
+#endif
 
 char* nrnpy_pyhome;
 
 void nrnpython() {
 #if USE_PYTHON
     if (p_nrnpython_real) {
-        (*p_nrnpython_real)();
+        p_nrnpython_real();
         return;
     }
 #endif
@@ -74,32 +66,13 @@ void nrnpython() {
 
 // Stub class for when Python does not exist
 static void* p_cons(Object*) {
-    return 0;
+    return nullptr;
 }
-static void p_destruct(void* v) {}
-static Member_func p_members[] = {{0, 0}};
+static void p_destruct(void*) {}
+static Member_func p_members[] = {{nullptr, nullptr}};
 
 #ifdef NRNPYTHON_DYNAMICLOAD
 static char *nrnpy_pylib{}, *nrnpy_pyversion{};
-
-static void siteprob(void) {
-    if (nrnpy_site_problem_p && (*nrnpy_site_problem_p)) {
-        printf("Py_Initialize exited. PYTHONHOME probably needs to be set correctly.\n");
-        if (nrnpy_pyhome) {
-            printf(
-                "The value of PYTHONHOME or our automatic guess based on the output of "
-                "nrnpyenv.sh:\n    export PYTHONHOME=%s\ndid not work.\n",
-                nrnpy_pyhome);
-        }
-        printf(
-            "It will help to examine the output of:\nnrnpyenv.sh\n\
-and set the indicated environment variables, or avoid python by adding\n\
-nopython: on\n\
-to %s/lib/nrn.defaults (or .nrn.defaults in your $HOME directory)\n",
-            neuron_home);
-    }
-}
-
 static void set_nrnpylib() {
     nrnpy_pylib = getenv("NRN_PYLIB");
     nrnpy_pyhome = getenv("NRN_PYTHONHOME");
@@ -195,13 +168,12 @@ void nrnpython_reg() {
     // printf("nrnpython_reg in nrnpy.cpp\n");
 #if USE_PYTHON
     if (nrn_nopython) {
-        p_nrnpython_start = 0;
-        p_nrnpython_real = 0;
-        p_nrnpython_reg_real = 0;
+        p_nrnpython_start = nullptr;
+        p_nrnpython_real = nullptr;
+        p_nrnpython_reg_real = nullptr;
     } else {
 #ifdef NRNPYTHON_DYNAMICLOAD
         void* handle = NULL;
-
         if (!nrn_is_python_extension) {
             // As last resort (or for python3) load $NRN_PYLIB
             set_nrnpylib();
@@ -217,19 +189,7 @@ void nrnpython_reg() {
                     exit(1);
                 }
             }
-            if (!handle) {
-                python_already_loaded();
-            }
-            if (!handle) {  // embed python
-                handle = load_python();
-            }
         }
-        // for some mysterious reason on max osx 10.12
-        // (perhaps due to System Integrity Protection?) when python is
-        // launched, python_already_loaded() returns a NULL handle unless
-        // the full path to the dylib is used. Since we know it is loaded
-        // in these circumstances, it is sufficient to go ahead and dlopen
-        // the nrnpython interface library
         if (handle || nrn_is_python_extension) {
             load_nrnpython();
         }
@@ -240,55 +200,14 @@ void nrnpython_reg() {
 #endif
     }
     if (p_nrnpython_reg_real) {
-        (*p_nrnpython_reg_real)();
-        if (nrnpy_site_problem_p) {
-            *nrnpy_site_problem_p = 1;
-        }
+        p_nrnpython_reg_real();
         return;
     }
 #endif
-    class2oc("PythonObject", p_cons, p_destruct, p_members, NULL, NULL, NULL);
+    class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr, nullptr);
 }
 
 #ifdef NRNPYTHON_DYNAMICLOAD  // to end of file
-
-// important dlopen flags :
-// RTLD_NOLOAD returns NULL if not open, or handle if it is resident.
-
-static void* ver_dlo(int flag) {
-    for (int i = 0; ver[i]; ++i) {
-        char name[100];
-#ifdef MINGW
-        Sprintf(name, "python%c%c.dll", ver[i][0], ver[i][2]);
-#else
-#if DARWIN
-        Sprintf(name, "libpython%s.dylib", ver[i]);
-#else
-        Sprintf(name, "libpython%s.so", ver[i]);
-#endif
-#endif
-        void* handle = dlopen(name, flag);
-        iver = i;
-        if (handle) {
-            return handle;
-        }
-    }
-    iver = -1;
-    return NULL;
-}
-
-static void* python_already_loaded() {
-    void* handle = ver_dlo(RTLD_NOW | RTLD_GLOBAL | RTLD_NOLOAD);
-    // printf("python_already_loaded %d\n", iver);
-    return handle;
-}
-
-static void* load_python() {
-    void* handle = ver_dlo(RTLD_NOW | RTLD_GLOBAL);
-    // printf("load_python %d\n", iver);
-    return handle;
-}
-
 static void* load_sym(void* handle, const char* name) {
     void* p = dlsym(handle, name);
     if (!p) {
@@ -344,9 +263,10 @@ static void load_nrnpython() {
         std::cout << "pyver10=" << pyver10 << " pylib=" << (pylib ? pylib : "(null)") << std::endl;
         return;
     }
-    p_nrnpython_start = static_cast<int (*)(int)>(load_sym(handle, "nrnpython_start"));
-    p_nrnpython_real = static_cast<void (*)()>(load_sym(handle, "nrnpython_real"));
-    p_nrnpython_reg_real = static_cast<void (*)()>(load_sym(handle, "nrnpython_reg_real"));
+    p_nrnpython_start = reinterpret_cast<nrnpython_start_t>(load_sym(handle, "nrnpython_start"));
+    p_nrnpython_real = reinterpret_cast<nrnpython_real_t>(load_sym(handle, "nrnpython_real"));
+    p_nrnpython_reg_real = reinterpret_cast<nrnpython_reg_real_t>(
+        load_sym(handle, "nrnpython_reg_real"));
 }
 
 #endif

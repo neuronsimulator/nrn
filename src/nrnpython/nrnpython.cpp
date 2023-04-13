@@ -1,5 +1,6 @@
 #include <nrnpython.h>
 #include <nrnpy_utils.h>
+#include "oc_ansi.h"
 #include <stdio.h>
 #include <InterViews/resource.h>
 #if HAVE_IV
@@ -14,9 +15,6 @@
 
 #include <string>
 #include <sstream>
-extern "C" void nrnpython_real();
-extern "C" int nrnpython_start(int);
-extern int hoc_get_line();
 extern HocStr* hoc_cbufstr;
 extern int nrnpy_nositeflag;
 extern char* nrnpy_pyhome;
@@ -33,11 +31,6 @@ extern int nrn_global_argc;
 extern char** nrn_global_argv;
 int nrnpy_pyrun(const char*);
 extern int (*p_nrnpy_pyrun)(const char*);
-extern int nrn_global_argc;
-extern char** nrn_global_argv;
-#ifdef NRNPYTHON_DYNAMICLOAD
-int nrnpy_site_problem;
-#endif
 
 static std::string python_sys_path_to_append() {
     std::string path{neuronhome_forward()};
