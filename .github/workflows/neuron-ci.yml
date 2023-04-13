@@ -306,6 +306,7 @@ jobs:
               ccache -vs 2>/dev/null || ccache -s
               if [ "$RUNNER_OS" == "macOS" ]
               then
+                mkdir src/nrnpython
                 echo $'[install]\nprefix='>src/nrnpython/setup.cfg;
               fi
               if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then

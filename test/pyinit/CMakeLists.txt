@@ -206,8 +206,18 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
       PRECOMMAND "${pyexe}" dump_sys_attr.py ref.json ${attr}
       COMMAND nrniv ${nrniv_args} -python check_sys_attr.py ref.json ${attr}
       SCRIPT_PATTERNS check_sys_attr.py dump_sys_attr.py)
+    # Replicate this with nrnpython(...) inside a .hoc script too. This checks that the Python
+    # environment inside nrnpython(...) inside foo.hoc is the same as in foo.py -- which seems like
+    # a reasonable choice.
+    nrn_add_test(
+      GROUP pyinit
+      NAME ${nrnivpy}_nrnpython_check_sys_${attr}
+      PRECOMMAND "${pyexe}" dump_sys_attr.py ref.json ${attr}
+      COMMAND nrniv ${nrniv_args} -c "strdef attr, fname" -c "attr=\"${attr}\"" -c
+              "fname=\"ref.json\"" check_sys_attr.hoc
+      SCRIPT_PATTERNS check_sys_attr.hoc dump_sys_attr.py)
   endforeach()
-  # Finally make sure that we can import neuron
+  # Make sure that we can import neuron
   nrn_add_test(
     GROUP pyinit
     NAME ${nrnivpy}_python_command_import_neuron
@@ -217,6 +227,18 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
     NAME py${pyexe_name}_command_import_neuron
     COMMAND "${pyexe}" -c "import neuron"
     PRELOAD_SANITIZER)
+  # Check using Python from HOC using nrnpython(...). The only reasonable approach here seems to be
+  # that sys.path should match the code calling nrnpython(...), i.e.
+  #
+  # * foo.hoc or foo.py: sys.path[0] should be the directory containing the script, with symlinks
+  #   resolved
+  # * nrniv -c "hoc_code_including_nrnpython" or nrniv -python -c "from neuron import h;
+  #   h.nrnpython(...)": sys.path[0] should be an empty string
+  #
+  nrn_add_test(
+    GROUP pyinit
+    NAME ${nrnivpy}_hoc_command_nrnpython
+    COMMAND nrniv ${nrniv_args} -c "nrnpython(\"import sys$<SEMICOLON> print(sys.path)\")")
 endforeach()
 if(NRN_PYTHON_EXTRA_FOR_TESTS)
   # Run some tests using Python versions that are installed on the system, but which NEURON is *not*
