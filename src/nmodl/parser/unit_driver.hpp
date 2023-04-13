@@ -38,12 +38,6 @@ class location;
  */
 class UnitDriver {
   private:
-    /// enable debug output in the flex scanner
-    bool trace_scanner = false;
-
-    /// enable debug output in the bison parser
-    bool trace_parser = false;
-
     /// pointer to the lexer instance being used
     UnitLexer* lexer = nullptr;
 
@@ -68,12 +62,9 @@ class UnitDriver {
 
     /// \}
 
-    static void error(const std::string& m);
     bool parse_stream(std::istream& in);
     bool parse_string(const std::string& input);
     bool parse_file(const std::string& filename);
-    void scan_string(std::string& text);
-    static void error(const std::string& m, const location& l);
 
     void set_verbose(bool b) {
         verbose = b;

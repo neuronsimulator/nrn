@@ -14,10 +14,6 @@
 namespace nmodl {
 namespace parser {
 
-UnitDriver::UnitDriver(bool strace, bool ptrace)
-    : trace_scanner(strace)
-    , trace_parser(ptrace) {}
-
 /// parse Units file provided as istream
 bool UnitDriver::parse_stream(std::istream& in) {
     UnitLexer scanner(*this, &in);
@@ -26,8 +22,6 @@ bool UnitDriver::parse_stream(std::istream& in) {
     this->lexer = &scanner;
     this->parser = &parser;
 
-    scanner.set_debug(trace_scanner);
-    parser.set_debug_level(trace_parser);
     return (parser.parse() == 0);
 }
 
@@ -46,29 +40,6 @@ bool UnitDriver::parse_file(const std::string& filename) {
 bool UnitDriver::parse_string(const std::string& input) {
     std::istringstream iss(input);
     return parse_stream(iss);
-}
-
-void UnitDriver::error(const std::string& m) {
-    std::cerr << m << std::endl;
-}
-
-void UnitDriver::error(const std::string& m, const location& l) {
-    std::cerr << l << " : " << m << std::endl;
-}
-
-void UnitDriver::scan_string(std::string& text) {
-    std::istringstream in(text);
-    UnitLexer scanner(*this, &in);
-    UnitParser parser(scanner, *this);
-    this->lexer = &scanner;
-    this->parser = &parser;
-    while (true) {
-        auto sym = lexer->next_token();
-        auto token_type = sym.type_get();
-        if (token_type == UnitParser::by_type(UnitParser::token::END).type_get()) {
-            break;
-        }
-    }
 }
 
 }  // namespace parser

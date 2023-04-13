@@ -21,6 +21,7 @@ using namespace visitor;
 using namespace test;
 using namespace test_utils;
 
+using Catch::Matchers::Equals;
 using nmodl::parser::NmodlDriver;
 
 //=============================================================================
@@ -55,7 +56,7 @@ SCENARIO("Inlining of external procedure calls", "[visitor][inline]") {
             }
         )";
 
-        THEN("nothing gets inlinine") {
+        THEN("nothing gets inlined") {
             std::string input = reindent_text(nmodl_text);
             auto result = run_inline_visitor(input);
             REQUIRE(result == input);
@@ -643,6 +644,63 @@ SCENARIO("Inlining pass handles local-global name conflict", "[visitor][inline]"
             auto expected_result = reindent_text(output_nmodl);
             auto result = run_inline_visitor(input);
             REQUIRE(result == expected_result);
+        }
+    }
+}
+
+SCENARIO("Trying to inline a function with VERBATIM block") {
+    GIVEN("A VERBATIM block without a return inside") {
+        std::string input_nmodl = R"(
+            PROCEDURE verb_1() {
+                VERBATIM
+                    pow(1,2);
+                ENDVERBATIM
+            }
+
+            PROCEDURE verb_2() {
+                verb_1()
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            PROCEDURE verb_1() {
+                VERBATIM
+                    pow(1,2);
+                ENDVERBATIM
+            }
+
+            PROCEDURE verb_2() {
+                {
+                    VERBATIM
+                    pow(1,2);
+                ENDVERBATIM
+                }
+            }
+        )";
+        THEN("It gets inlined") {
+            std::string input = reindent_text(input_nmodl);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_inline_visitor(input);
+            REQUIRE(expected_result == result);
+        }
+    }
+    GIVEN("A VERBATIM block with a return value") {
+        std::string nmodl_text = R"(
+            PROCEDURE verb_1() {
+                VERBATIM
+                    return pow(1,2);
+                ENDVERBATIM
+            }
+
+            PROCEDURE verb_2() {
+                verb_1()
+            }
+        )";
+
+        THEN("It is not inlined") {
+            std::string input = reindent_text(nmodl_text);
+            auto result = run_inline_visitor(input);
+            REQUIRE(result == input);
         }
     }
 }
