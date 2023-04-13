@@ -360,7 +360,7 @@ Particularly useful CMake options are (use **ON** to enable and **OFF** to disab
 * **-DCMAKE_INSTALL_PREFIX=/install/dir/path** : Location for installing
 * **-DCORENRN\_ENABLE\_NMODL=ON** : Use [NMODL](https://github.com/BlueBrain/nmodl/) instead of [MOD2C](https://github.com/BlueBrain/mod2c/) for code generation with CoreNEURON
 
-Please refer to [docs/cmake_doc/options.rst](docs/cmake_doc/options.rst) for more information on
+Please refer to [docs/cmake_doc/options.rst](../cmake_doc/index.rst) for more information on
 the CMake options.
 
 #### Optimized CPU and GPU Support using CoreNEURON
@@ -368,7 +368,7 @@ the CMake options.
 NEURON now integrates [CoreNEURON library](https://github.com/BlueBrain/CoreNeuron/) for improved simulation
 performance on modern CPU and GPU architectures. CoreNEURON is designed as a library within the NEURON simulator
 and can transparently handle all spiking network simulations including gap junction coupling with the fixed time
-step method. You can find detailed instructions [here](../coreneuron/index.html) and
+step method. You can find detailed instructions [here](../coreneuron/index.rst) and
 [here](https://github.com/BlueBrain/CoreNeuron/#installation).
 
 #### Run integrated tests
