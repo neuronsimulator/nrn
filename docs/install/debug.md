@@ -25,14 +25,14 @@ while continuing to experience the error, it may be worthwhile to look into
 [LLVM address sanitizer](https://github.com/neuronsimulator/nrn/issues/1213).
 
 #### NaN or Inf values
-Use [h.nrn_feenableexcept(1)](../python/programming/errors.html#nrn_fenableexcept)
+Use [h.nrn_feenableexcept(1)](../python/programming/errors.rst#nrn_feenableexcept)
 to generate floating point exception for
 DIVBYZERO, INVALID, OVERFLOW, exp(700). [GDB](#GDB) can then be used to show
 where the SIGFPE occurred.
 
 #### Different results with different nhost or nthread.
 What is the gid and spiketime of the earliest difference?
-Use [ParallelContext.prcellstate](../python/modelspec/programmatic/network/parcon.html?highlight=prcellstate#ParallelContext.prcellstate)
+Use [ParallelContext.prcellstate](../python/modelspec/programmatic/network/parcon.rst#ParallelContext.prcellstate)
 for that gid at various times
 before spiketime to see why and when the prcellstate files become different.
 Time 0 after initialization is often a good place to start.
