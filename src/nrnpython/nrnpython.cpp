@@ -109,8 +109,9 @@ int nrnpy_pyrun(const char* fname) {
     // Figure out what sys.path[0] should be; this involves first resolving symlinks in fname and
     // second getting the directory name from it.
     auto const realpath = neuron::std::filesystem::canonical(fname);
-    auto const dirname = realpath.parent_path();
-    reset_sys_path(dirname.native());
+    // .string() ensures this is not a wchar_t string on Windows
+    auto const dirname = realpath.parent_path().string();
+    reset_sys_path(dirname);
 #ifdef MINGW
     // perhaps this should be the generic implementation
     auto const sz = strlen(fname) + 40;

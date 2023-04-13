@@ -344,7 +344,8 @@ static void load_nrnpython(int pyver10, const char* pylib) {
             }
         }
         std::cerr << "), or try using nrniv -python so that NEURON can suggest a compatible "
-                     "version for you."
+                     "version for you. [pyver10="
+                  << pyver10 << " pv10=" << pv10 << " pylib=" << (pylib ? pylib : "nullptr") << ']'
                   << std::endl;
         return;
     }
