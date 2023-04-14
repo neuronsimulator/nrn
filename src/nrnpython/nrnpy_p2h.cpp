@@ -1143,6 +1143,8 @@ static Object* py_alltoall_type(int size, int type) {
 #endif
 }
 
+void nrnpython_reg_real_nrnpython_cpp(neuron::python::impl_ptrs* ptrs);
+
 /**
  * @brief Populate NEURON state with information from a specific Python.
  * @param ptrs Logically a return value; avoidi
@@ -1162,11 +1164,8 @@ extern "C" void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     ptrs->guisetval = guisetval;
     ptrs->hoccommand_exec = hoccommand_exec;
     ptrs->hoccommand_exec_strret = hoccommand_exec_strret;
-    ptrs->hoc_nrnpython = nrnpython_real;
     ptrs->ho2po = nrnpy_ho2po;
     ptrs->hpoasgn = hpoasgn;
-    ptrs->interpreter_set_path = nrnpython_set_path;
-    ptrs->interpreter_start = nrnpython_start;
     ptrs->mpi_alltoall_type = py_alltoall_type;
     ptrs->opaque_obj2pyobj = opaque_obj2pyobj;
     ptrs->pickle2po = pickle2po;
@@ -1177,5 +1176,7 @@ extern "C" void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     ptrs->py2n_component = py2n_component;
     ptrs->restore_thread = restore_thread;
     ptrs->save_thread = save_thread;
+    // call a function in nrnpython.cpp to register the functions defined there
+    nrnpython_reg_real_nrnpython_cpp(ptrs);
     dlist = hoc_l_newlist();
 }

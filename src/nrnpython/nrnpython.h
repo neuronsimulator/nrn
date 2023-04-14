@@ -68,9 +68,4 @@ enum ObjectType {
 };
 enum IteratorState { Begin, NextNotLast, Last };
 }  // namespace PyHoc
-
-void nrnpython_real();
-void nrnpython_set_path(std::string_view);
-int nrnpython_start(int);
-
 #endif

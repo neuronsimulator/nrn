@@ -11,6 +11,7 @@
 #include <ocfile.h>  // bool isDirExist(const std::string& path);
 
 #include <hocstr.h>
+#include "nrnpy.h"
 #include "nrn_filesystem.h"
 
 #include <string>
@@ -101,7 +102,7 @@ void reset_sys_path(std::string_view new_first) {
  * "..."`, if fname is non-empty then resolve symlinks in it and get the directory name -- this is
  * appropriate for `python script.py` compatibility.
  */
-void nrnpython_set_path(std::string_view fname) {
+static void nrnpython_set_path(std::string_view fname) {
     if (fname.empty()) {
         reset_sys_path(fname);
     } else {
@@ -143,7 +144,7 @@ extern PyObject* nrnpy_nrn();
  *  been initialized. Mode 1 only has an effect if Python is not initialized,
  *  while the other modes only take effect if Python is already initialized.
  */
-int nrnpython_start(int b) {
+static int nrnpython_start(int b) {
 #if USE_PYTHON
     static int started = 0;
     if (b == 1 && !started) {
@@ -326,7 +327,7 @@ int nrnpython_start(int b) {
  * responsible for initialising Python in the two cases. We trust that Python was initialised
  * correctly somewhere higher up the call stack.
  */
-void nrnpython_real() {
+static void nrnpython_real() {
     int retval = 0;
 #if USE_PYTHON
     HocTopContextSet
@@ -357,4 +358,10 @@ static char* nrnpython_getline(FILE*, FILE*, const char* prompt) {
         return static_cast<char*>(PyMem_RawCalloc(1, sizeof(char)));
     }
     return 0;
+}
+
+void nrnpython_reg_real_nrnpython_cpp(neuron::python::impl_ptrs* ptrs) {
+    ptrs->hoc_nrnpython = nrnpython_real;
+    ptrs->interpreter_set_path = nrnpython_set_path;
+    ptrs->interpreter_start = nrnpython_start;
 }
