@@ -20,15 +20,6 @@
 
 extern PyTypeObject* psection_type;
 
-// copied from nrnpy_nrn
-typedef struct {
-    PyObject_HEAD
-    Section* sec_;
-    char* name_;
-    PyObject* cell_;
-} NPySecObj;
-
-
 #include "parse.hpp"
 extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
 extern void* (*nrnpy_get_pyobj)(Object* obj);
@@ -68,10 +59,6 @@ extern PyObject* nrnpy_newsecobj(PyObject*, PyObject*, PyObject*);
 extern int section_object_seen;
 extern Symbol* nrn_child_sym;
 extern int nrn_secref_nchild(Section*);
-extern PyObject* nrnpy_hoc2pyobject(Object*);
-PyObject* nrnpy_ho2po(Object*);
-Object* nrnpy_po2ho(PyObject*);
-extern Object* nrnpy_pyobject_in_obj(PyObject*);
 static void pyobject_in_objptr(Object**, PyObject*);
 extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
@@ -84,7 +71,6 @@ extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
 class NetCon;
 extern int nrn_netcon_weight(NetCon*, double**);
 extern int nrn_matrix_dim(void*, int);
-extern NPySecObj* newpysechelp(Section* sec);
 
 extern PyObject* pmech_types;  // Python map for name to Mechanism
 extern PyObject* rangevars_;   // Python map for name to Symbol
@@ -513,6 +499,7 @@ PyObject* nrnpy_ho2po(Object* o) {
     return po;
 }
 
+// not static because it's used in nrnpy_nrn.cpp
 Object* nrnpy_po2ho(PyObject* po) {
     // po may be None, or encapsulate a hoc object (via the
     // PyHocObject, or be a native Python instance such as [1,2,3]

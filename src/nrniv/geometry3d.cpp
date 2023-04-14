@@ -709,8 +709,6 @@ double geometry3d_Plane_signed_distance(void* ptr, double px, double py, double 
 }
 
 /*
-    PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
-
     void print_numbers(PyObject *p) {
         for (Py_ssize_t i = 0; i< PyList_Size(p); i++) {
             PyObject* obj = PyList_GetItem(p, i);

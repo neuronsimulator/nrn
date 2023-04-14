@@ -8,64 +8,34 @@
 #include <hoccontext.h>
 #include "nrnpy.h"
 #include "nrnpy_utils.h"
+#include "oc_ansi.h"
 
 #include "parse.hpp"
-extern void hoc_nopop();
-extern void hoc_pop_defer();
-extern Object* hoc_new_object(Symbol*, void*);
-extern int hoc_stack_type();
-extern char** hoc_strpop();
-extern Object** hoc_objpop();
-extern void hoc_tobj_unref(Object**);
-extern int hoc_ipop();
-PyObject* nrnpy_hoc2pyobject(Object*);
-PyObject* hocobj_call_arg(int);
-Object* nrnpy_pyobject_in_obj(PyObject*);
-int nrnpy_ho_eq_po(Object*, PyObject*);
-char* nrnpyerr_str();
-static PyThreadState* save_thread() {
-    return PyEval_SaveThread();
-}
-static void restore_thread(PyThreadState* g) {
-    PyEval_RestoreThread(g);
-}
-typedef struct {
-    PyObject_HEAD
-    Section* sec_;
-    char* name_;
-    PyObject* cell_;
-} NPySecObj;
-extern NPySecObj* newpysechelp(Section* sec);
-PyObject* nrnpy_ho2po(Object*);
-void nrnpy_decref_defer(PyObject*);
-PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
-
-Object* nrnpy_po2ho(PyObject*);
-static void py2n_component(Object*, Symbol*, int, int);
-static double praxis_efun(Object*, Object*);
-static double func_call(Object*, int, int*);
+static void nrnpy_decref_defer(PyObject*);
+static char* nrnpyerr_str();
+static PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
 static PyObject* main_module;
 static PyObject* main_namespace;
 static hoc_List* dlist;
 
-class Py2Nrn {
-  public:
-    Py2Nrn();
-    virtual ~Py2Nrn();
-    int type_;  // 0 toplevel
-    PyObject* po_;
+struct Py2Nrn final {
+    ~Py2Nrn() {
+        PyLockGIL lock{};
+        Py_XDECREF(po_);
+    }
+    int type_{};  // 0 toplevel
+    PyObject* po_{};
 };
 
 static void* p_cons(Object*) {
-    Py2Nrn* p = new Py2Nrn();
-    return p;
+    return new Py2Nrn{};
 }
 
 static void p_destruct(void* v) {
-    delete (Py2Nrn*) v;
+    delete static_cast<Py2Nrn*>(v);
 }
 
-Member_func p_members[] = {{0, 0}};
+Member_func p_members[] = {{nullptr, nullptr}};
 
 static void call_python_with_section(Object* pyact, Section* sec) {
     PyObject* po = ((Py2Nrn*) pyact->u.this_pointer)->po_;
@@ -94,17 +64,6 @@ static void* opaque_obj2pyobj(Object* ho) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
     assert(po);
     return po;
-}
-
-Py2Nrn::Py2Nrn() {
-    po_ = NULL;
-    type_ = 0;
-    //	printf("Py2Nrn() %p\n", this);
-}
-Py2Nrn::~Py2Nrn() {
-    PyLockGIL lock;
-    Py_XDECREF(po_);
-    //	printf("~Py2Nrn() %p\n", this);
 }
 
 int nrnpy_ho_eq_po(Object* ho, PyObject* po) {
@@ -146,7 +105,7 @@ Object* nrnpy_pyobject_in_obj(PyObject* po) {
     return on;
 }
 
-PyObject* nrnpy_pyCallObject(PyObject* callable, PyObject* args) {
+static PyObject* nrnpy_pyCallObject(PyObject* callable, PyObject* args) {
     // When hoc calls a PythonObject method, then in case python
     // calls something back in hoc, the hoc interpreter must be
     // at the top level
@@ -182,7 +141,7 @@ printf("\nreturn %p\n", p);
     return p;
 }
 
-void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
+static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
 #if 0
 	if (isfunc) {
 	printf("py2n_component %s.%s(%d)\n", hoc_object_name(ob), sym->name, nindex);
@@ -360,7 +319,7 @@ static void hpoasgn(Object* o, int type) {
     }
 }
 
-void nrnpy_decref_defer(PyObject* po) {
+static void nrnpy_decref_defer(PyObject* po) {
     if (po) {
 #if 0
 		PyObject* ps = PyObject_Str(po);
@@ -710,7 +669,7 @@ static Object* pickle2po(char* s, std::size_t size) {
 /** Full python traceback error message returned as string.
  *  Caller should free the return value if not NULL
  **/
-char* nrnpyerr_str() {
+static char* nrnpyerr_str() {
     if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_Exception)) {
         PyObject *ptype, *pvalue, *ptraceback;
         PyErr_Fetch(&ptype, &pvalue, &ptraceback);
@@ -1141,6 +1100,13 @@ static Object* py_alltoall_type(int size, int type) {
     assert(0);
     return NULL;
 #endif
+}
+
+static PyThreadState* save_thread() {
+    return PyEval_SaveThread();
+}
+static void restore_thread(PyThreadState* g) {
+    PyEval_RestoreThread(g);
 }
 
 void nrnpython_reg_real_nrnpython_cpp(neuron::python::impl_ptrs* ptrs);

@@ -68,4 +68,20 @@ enum ObjectType {
 };
 enum IteratorState { Begin, NextNotLast, Last };
 }  // namespace PyHoc
+// Declare methods that are used in different translation units within one libnrnpythonX.Y
+struct Object;
+struct Section;
+PyObject* hocobj_call_arg(int);
+struct NPySecObj {
+    PyObject_HEAD
+    Section* sec_;
+    char* name_;
+    PyObject* cell_weakref_;
+};
+NPySecObj* newpysechelp(Section* sec);
+PyObject* nrnpy_hoc2pyobject(Object* ho);
+int nrnpy_ho_eq_po(Object*, PyObject*);
+PyObject* nrnpy_ho2po(Object*);
+Object* nrnpy_po2ho(PyObject*);
+Object* nrnpy_pyobject_in_obj(PyObject*);
 #endif

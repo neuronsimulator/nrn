@@ -23,7 +23,6 @@ void nrnmusic_injectlist(void* vp, double tt);
 void nrnmusic_inject(void* port, int gindex, double tt);
 void nrnmusic_spikehandle(void* vport, double tt, int gindex);
 
-extern Object* hoc_new_object(Symbol*, void*);
 extern NetCvode* net_cvode_instance;
 
 MUSIC::Setup* nrnmusic_setup;
