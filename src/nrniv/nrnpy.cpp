@@ -20,6 +20,7 @@ namespace neuron::python {
 // Declared extern in nrnpy.h, defined here.
 impl_ptrs methods;
 }  // namespace neuron::python
+int (*nrnpy_hoccommand_exec)(Object*);
 
 extern int nrn_nopython;
 extern char* nrnpy_pyexe;
@@ -189,6 +190,8 @@ void nrnpython_reg() {
     if (reg_fn) {
         // Register Python-specific things in the NEURON global state
         reg_fn(&neuron::python::methods);
+        // Compatibility hack for legacy MOD file in nrntest
+        nrnpy_hoccommand_exec = neuron::python::methods.hoccommand_exec;
         return;
     }
 #endif
