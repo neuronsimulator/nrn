@@ -7,4 +7,4 @@ tree /F C:\nrn_test\lib\python
 
 :: Test of association with hoc files. This test is very tricky to handle. We do it in two steps
 :: 1st step -> launch association.hoc here and test the output in another step
-start /wait /REALTIME %cd%\ci\association.hoc
+start /B /wait /REALTIME %cd%\ci\association.hoc
