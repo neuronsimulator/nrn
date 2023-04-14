@@ -74,20 +74,32 @@ else()
 endif()
 
 if(NRN_ENABLE_COVERAGE)
+  set(LCOV_EXCLUDE
+      "--exclude"
+      "\\*diffeq.cpp"
+      "--exclude"
+      "\\*lex.cpp"
+      "--exclude"
+      "\\*parse.cpp"
+      "--exclude"
+      "\\*parse1.cpp")
 
   add_custom_target(
     cover_begin
     COMMAND find "${PROJECT_BINARY_DIR}" "-name" "*.gcda" "-type" "f" "-delete"
-    COMMAND "${LCOV}" "--capture" "--initial" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}"
-            "--directory" "${PROJECT_BINARY_DIR}" "--output-file" "coverage-base.info"
+    COMMAND
+      "${LCOV}" ${LCOV_EXCLUDE} "--capture" "--initial" "--no-external" "--directory"
+      "${PROJECT_SOURCE_DIR}" "--directory" "${PROJECT_BINARY_DIR}" "--output-file"
+      "coverage-base.info"
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
   add_custom_target(
     cover_html
-    COMMAND ${LCOV} "--capture" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}" "--directory"
-            ${PROJECT_BINARY_DIR} "--output-file" "coverage-run.info"
-    COMMAND "${LCOV}" "--add-tracefile" "coverage-base.info" "--add-tracefile" "coverage-run.info"
-            "--output-file" "coverage-combined.info"
+    COMMAND
+      ${LCOV} ${LCOV_EXCLUDE} "--capture" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}"
+      "--directory" ${PROJECT_BINARY_DIR} "--output-file" "coverage-run.info"
+    COMMAND "${LCOV}" ${LCOV_EXCLUDE} "--add-tracefile" "coverage-base.info" "--add-tracefile"
+            "coverage-run.info" "--output-file" "coverage-combined.info"
     COMMAND genhtml "coverage-combined.info" "--output-directory" html
     COMMAND echo "View in browser at file://${PROJECT_BINARY_DIR}/html/index.html"
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
