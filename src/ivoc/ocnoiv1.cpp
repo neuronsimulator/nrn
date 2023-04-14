@@ -10,7 +10,6 @@
 extern void hoc_ret();
 extern void hoc_pushx(double);
 extern "C" void nrn_shape_update();
-extern Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr);
 
 void ivoc_help(const char*) {}
 void ivoc_cleanup() {}
@@ -74,8 +73,8 @@ void hoc_xfixedvalue() {
     hoc_pushx(0.);
 }
 void hoc_xvarlabel() {
-    if (nrnpy_gui_helper3_) {
-        nrnpy_gui_helper3_("xvarlabel", NULL, 1);
+    if (neuron::python::methods.gui_helper3) {
+        neuron::python::methods.gui_helper3("xvarlabel", nullptr, 1);
     }
     hoc_ret();
     hoc_pushx(0.);

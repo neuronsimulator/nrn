@@ -30,6 +30,8 @@ struct impl_ptrs {
     int (*guigetstr)(Object*, char**){};
     double (*guigetval)(Object*){};
     Object** (*gui_helper)(const char* name, Object* obj){};
+    Object** (*gui_helper3)(const char* name, Object* obj, int handle_strptr){};
+    char** (*gui_helper3_str)(const char*, Object*, int){};
     void (*guisetval)(Object*, double){};
     int (*hoccommand_exec)(Object*){};
     int (*hoccommand_exec_strret)(Object*, char*, int){};

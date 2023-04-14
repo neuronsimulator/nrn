@@ -5,9 +5,6 @@
 #include "classreg.h"
 #include "gui-redirect.h"
 
-Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr) = NULL;
-char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr) = NULL;
-
 #if HAVE_IV  // to end of file except for a few small fragments.
 
 #include <cstdio>

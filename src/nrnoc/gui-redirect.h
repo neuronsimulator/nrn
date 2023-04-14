@@ -56,18 +56,19 @@ extern Object* nrn_get_gui_redirect_obj();
 #define TRY_GUI_REDIRECT_ACTUAL_DOUBLE(name, obj)                                      \
     if (auto* const ngh_result =                                                       \
             neuron::python::methods.try_gui_helper(name, static_cast<Object*>(obj))) { \
-        return neuron::python::methods.object_to_double_(*ngh_result);                 \
+        return neuron::python::methods.object_to_double(*ngh_result);                  \
     }
 
-#define TRY_GUI_REDIRECT_ACTUAL_STR(name, obj)                                       \
-    {                                                                                \
-        char** ngh_result;                                                           \
-        if (nrnpy_gui_helper3_str_) {                                                \
-            ngh_result = nrnpy_gui_helper3_str_(name, static_cast<Object*>(obj), 0); \
-            if (ngh_result) {                                                        \
-                return ((const char**) ngh_result);                                  \
-            }                                                                        \
-        }                                                                            \
+#define TRY_GUI_REDIRECT_ACTUAL_STR(name, obj)                                               \
+    {                                                                                        \
+        char** ngh_result;                                                                   \
+        if (neuron::python::methods.gui_helper3_str) {                                       \
+            ngh_result =                                                                     \
+                neuron::python::methods.gui_helper3_str(name, static_cast<Object*>(obj), 0); \
+            if (ngh_result) {                                                                \
+                return ((const char**) ngh_result);                                          \
+            }                                                                                \
+        }                                                                                    \
     }
 
 #define TRY_GUI_REDIRECT_ACTUAL_OBJ(name, obj)                                         \
@@ -76,17 +77,17 @@ extern Object* nrn_get_gui_redirect_obj();
         return ngh_result;                                                             \
     }
 
-#define TRY_GUI_REDIRECT_DOUBLE_SEND_STRREF(name, obj)                            \
-    {                                                                             \
-        Object** ngh_result;                                                      \
-        if (nrnpy_gui_helper3_) {                                                 \
-            ngh_result = nrnpy_gui_helper3_(name, static_cast<Object*>(obj), 1);  \
-            if (ngh_result) {                                                     \
-                hoc_ret();                                                        \
-                hoc_pushx(neuron::python::methods.object_to_double(*ngh_result)); \
-                return;                                                           \
-            }                                                                     \
-        }                                                                         \
+#define TRY_GUI_REDIRECT_DOUBLE_SEND_STRREF(name, obj)                                            \
+    {                                                                                             \
+        Object** ngh_result;                                                                      \
+        if (neuron::python::methods.gui_helper3) {                                                \
+            ngh_result = neuron::python::methods.gui_helper3(name, static_cast<Object*>(obj), 1); \
+            if (ngh_result) {                                                                     \
+                hoc_ret();                                                                        \
+                hoc_pushx(neuron::python::methods.object_to_double(*ngh_result));                 \
+                return;                                                                           \
+            }                                                                                     \
+        }                                                                                         \
     }
 
 #endif

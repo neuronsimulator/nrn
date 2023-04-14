@@ -23,8 +23,6 @@
 #include "oc2iv.h"
 #include "ivoc.h"
 
-extern Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr);
-
 bool nrn_spec_dialog_pos(Coord& x, Coord& y) {
     Style* s = Session::instance()->style();
     if (s->value_is_on("dialog_spec_position")) {

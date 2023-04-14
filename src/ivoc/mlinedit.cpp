@@ -22,8 +22,6 @@ extern int hoc_return_type_code;
 
 #include "gui-redirect.h"
 
-extern char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr);
-
 #if HAVE_IV
 class OcText: public Text {
   public:
