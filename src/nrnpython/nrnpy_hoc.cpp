@@ -33,7 +33,6 @@ typedef struct {
 extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
 extern Object** (*nrnpy_gui_helper3_)(const char*, Object*, int);
 extern char** (*nrnpy_gui_helper3_str_)(const char*, Object*, int);
-extern double (*nrnpy_object_to_double_)(Object*);
 extern void* (*nrnpy_get_pyobj)(Object* obj);
 extern void (*nrnpy_restore_savestate)(int64_t, char*);
 extern void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size);
@@ -3130,7 +3129,6 @@ PyObject* nrnpy_hoc() {
     nrnpy_nrncore_arg_p_ = nrncore_arg;
     nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
     nrnpy_nrncore_file_mode_value_p_ = nrncore_file_mode_value;
-    nrnpy_object_to_double_ = object_to_double_;
     nrnpy_rvp_rxd_to_callable = rvp_rxd_to_callable_;
     PyLockGIL lock;
 
@@ -3202,4 +3200,5 @@ fail:
 
 void nrnpython_reg_real_nrnpy_hoc_cpp(neuron::python::impl_ptrs* ptrs) {
     ptrs->gui_helper = gui_helper_;
+    ptrs->object_to_double = object_to_double_;
 }

@@ -10,8 +10,6 @@
 #include "oc2iv.h"
 #include "ivocvect.h"
 
-extern double (*nrnpy_object_to_double_)(Object*);
-
 Object** DataVec::new_vect(GLabel* gl) const {
     int i, cnt;
     Vect* vec;

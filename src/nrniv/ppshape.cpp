@@ -9,8 +9,6 @@
 #endif  // HAVE_IV
 #include "gui-redirect.h"
 
-extern double (*nrnpy_object_to_double_)(Object*);
-
 // ppshape registration
 
 static double pp_append(void* v) {

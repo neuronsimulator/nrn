@@ -50,8 +50,6 @@ extern Image* gif_image(const char*);
 #include "gui-redirect.h"
 #include "treeset.h"
 
-extern double (*nrnpy_object_to_double_)(Object*);
-
 #if HAVE_IV
 #define Graph_Crosshair_           "Crosshair Graph"
 #define Graph_Change_label_        "ChangeText Graph"

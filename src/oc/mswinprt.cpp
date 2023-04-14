@@ -14,8 +14,6 @@
 
 #include "gui-redirect.h"
 
-extern double (*nrnpy_object_to_double_)(Object*);
-
 extern char* neuron_home;
 extern char* neuron_home_dos;
 extern void hoc_quit();

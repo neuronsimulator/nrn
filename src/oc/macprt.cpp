@@ -8,8 +8,6 @@
 
 #include "gui-redirect.h"
 
-extern double (*nrnpy_object_to_double_)(Object*);
-
 extern void debugfile(const char*, ...);
 extern int oc_print_from_dll(char*);
 extern void single_event_run();

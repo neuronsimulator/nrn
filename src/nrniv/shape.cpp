@@ -181,8 +181,6 @@ bool OcShapeHandler::event(Event&) {
 }
 #endif  // HAVE_IV
 
-extern double (*nrnpy_object_to_double_)(Object*);
-
 // Shape class registration for oc
 static double sh_view(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.view", v);

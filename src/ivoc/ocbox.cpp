@@ -25,8 +25,6 @@
 
 extern int hoc_return_type_code;
 
-extern double (*nrnpy_object_to_double_)(Object*);
-
 #if HAVE_IV
 
 class NrnFixedLayout: public Layout {

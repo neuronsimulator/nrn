@@ -6,7 +6,6 @@
 #include <hocdec.h>
 
 extern const char* neuron_home;
-extern double (*nrnpy_object_to_double_)(Object*) = NULL;
 
 #if MAC
 char hoc_console_buffer[256];

@@ -15,8 +15,6 @@
 #include "nrnmenu.h"
 #include "classreg.h"
 #include "gui-redirect.h"
-extern double (*nrnpy_object_to_double_)(Object*);
-
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 extern int hoc_return_type_code;

@@ -5,7 +5,6 @@
 #include "classreg.h"
 #include "gui-redirect.h"
 
-double (*nrnpy_object_to_double_)(Object*) = NULL;
 Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr) = NULL;
 char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr) = NULL;
 

@@ -40,7 +40,6 @@
 extern Symlist* hoc_built_in_symlist;
 #endif  // HAVE_IV
 
-extern double (*nrnpy_object_to_double_)(Object*);
 void* (*nrnpy_get_pyobj)(Object* obj) = 0;
 void (*nrnpy_decref)(void* pyobj) = 0;
 

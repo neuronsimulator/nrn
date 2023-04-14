@@ -15,8 +15,6 @@
 #include "classreg.h"
 #include "gui-redirect.h"
 
-extern double (*nrnpy_object_to_double_)(Object*);
-
 #if HAVE_IV
 class SpecialPatch: public Patch {
   public:

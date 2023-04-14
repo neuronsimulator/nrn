@@ -39,6 +39,7 @@ struct impl_ptrs {
     void (*interpreter_set_path)(std::string_view){};
     int (*interpreter_start)(int){};
     Object* (*mpi_alltoall_type)(int, int){};
+    double (*object_to_double)(Object*){};
     void* (*opaque_obj2pyobj)(Object*){};
     Object* (*pickle2po)(char*, std::size_t size){};
     Object* (*po2ho)(PyObject*){};

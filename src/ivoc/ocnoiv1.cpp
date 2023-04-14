@@ -11,7 +11,6 @@ extern void hoc_ret();
 extern void hoc_pushx(double);
 extern "C" void nrn_shape_update();
 extern Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 void ivoc_help(const char*) {}
 void ivoc_cleanup() {}
@@ -89,7 +88,7 @@ void hoc_xslider() {
 void hoc_boolean_dialog() {
     if (auto* const result = neuron::python::methods.try_gui_helper("boolean_dialog", nullptr)) {
         hoc_ret();
-        hoc_pushx(nrnpy_object_to_double_(*result));
+        hoc_pushx(neuron::python::methods.object_to_double(*result));
     } else {
         hoc_ret();
         hoc_pushx(0.);
@@ -105,7 +104,7 @@ void hoc_string_dialog() {
     if (auto* const result = neuron::python::methods.try_gui_helper("string_dialog", nullptr);
         result) {
         hoc_ret();
-        hoc_pushx(nrnpy_object_to_double_(*result));
+        hoc_pushx(neuron::python::methods.object_to_double(*result));
     } else {
         hoc_ret();
         hoc_pushx(0.);

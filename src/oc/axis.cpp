@@ -137,8 +137,6 @@ axis.cpp,v
 #include "hoc.h"
 #include "gui-redirect.h"
 
-extern double (*nrnpy_object_to_double_)(Object*);
-
 #define CLIP 1e9
 #define XS   500.
 #define YS   400.

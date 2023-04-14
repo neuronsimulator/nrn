@@ -18,7 +18,6 @@
 #include "nrnoc2iv.h"
 #include "nrnpy.h"
 #include "membfunc.h"
-extern double (*nrnpy_object_to_double_)(Object*);
 
 //-----------------------------------------
 static double sb_select(void* v) {
