@@ -227,7 +227,6 @@ int nrnpython_start(int b) {
               PyConfig_SetBytesArgv(config, nrn_global_argc, nrn_global_argv));
         // Initialise Python
         check("Could not initialise Python", Py_InitializeFromConfig(config));
-        std::cout << "Initialized python" << std::endl;
         // Manipulate sys.path, starting from the default values
         {
             PyLockGIL _{};
