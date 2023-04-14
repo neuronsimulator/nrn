@@ -36,7 +36,7 @@ extern void nrn_possible_mismatched_arch(const char*);
 extern char* neuron_home;
 static nrnpython_reg_real_t load_nrnpython();
 #else
-void nrnpython_reg_real(neuron::python::impl_ptrs*);
+extern "C" void nrnpython_reg_real(neuron::python::impl_ptrs*);
 #endif
 
 char* nrnpy_pyhome;
