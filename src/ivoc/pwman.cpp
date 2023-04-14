@@ -433,7 +433,6 @@ char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV
 
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
 extern double (*nrnpy_object_to_double_)(Object*);
 extern char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr);
 

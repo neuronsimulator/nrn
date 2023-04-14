@@ -31,7 +31,6 @@ typedef struct {
 
 #include "parse.hpp"
 extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
-extern Object** (*nrnpy_gui_helper_)(const char*, Object*);
 extern Object** (*nrnpy_gui_helper3_)(const char*, Object*, int);
 extern char** (*nrnpy_gui_helper3_str_)(const char*, Object*, int);
 extern double (*nrnpy_object_to_double_)(Object*);
@@ -3124,7 +3123,6 @@ PyObject* nrnpy_hoc() {
     nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
     nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
     nrnpy_sectionlist_helper_ = sectionlist_helper_;
-    nrnpy_gui_helper_ = gui_helper_;
     nrnpy_gui_helper3_ = gui_helper_3_;
     nrnpy_gui_helper3_str_ = gui_helper_3_str_;
     nrnpy_get_pyobj = nrnpy_get_pyobj_;
@@ -3200,4 +3198,8 @@ PyObject* nrnpy_hoc() {
     return m;
 fail:
     return NULL;
+}
+
+void nrnpython_reg_real_nrnpy_hoc_cpp(neuron::python::impl_ptrs* ptrs) {
+    ptrs->gui_helper = gui_helper_;
 }

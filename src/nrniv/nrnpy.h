@@ -29,6 +29,7 @@ struct impl_ptrs {
     void (*cmdtool)(Object*, int type, double x, double y, int kd){};
     int (*guigetstr)(Object*, char**){};
     double (*guigetval)(Object*){};
+    Object** (*gui_helper)(const char* name, Object* obj){};
     void (*guisetval)(Object*, double){};
     int (*hoccommand_exec)(Object*){};
     int (*hoccommand_exec_strret)(Object*, char*, int){};
@@ -47,6 +48,14 @@ struct impl_ptrs {
     void (*py2n_component)(Object*, Symbol*, int, int){};
     void (*restore_thread)(PyThreadState*){};
     PyThreadState* (*save_thread)(){};
+    // Such a common pattern it gets a wrapper
+    Object** try_gui_helper(const char* name, Object* obj) const {
+        if (gui_helper) {
+            return gui_helper(name, obj);
+        } else {
+            return nullptr;
+        }
+    }
 };
 /**
  * @brief Collection of pointers to functions with python-version-specific implementations.

@@ -18,7 +18,6 @@
 #include "graph.h"
 #endif
 #include "gui-redirect.h"
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
 extern double (*nrnpy_object_to_double_)(Object*);
 
 extern int hoc_return_type_code;

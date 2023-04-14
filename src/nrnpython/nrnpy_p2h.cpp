@@ -1144,6 +1144,7 @@ static Object* py_alltoall_type(int size, int type) {
 }
 
 void nrnpython_reg_real_nrnpython_cpp(neuron::python::impl_ptrs* ptrs);
+void nrnpython_reg_real_nrnpy_hoc_cpp(neuron::python::impl_ptrs* ptrs);
 
 /**
  * @brief Populate NEURON state with information from a specific Python.
@@ -1178,5 +1179,7 @@ extern "C" void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     ptrs->save_thread = save_thread;
     // call a function in nrnpython.cpp to register the functions defined there
     nrnpython_reg_real_nrnpython_cpp(ptrs);
+    // call a function in nrnpy_hoc.cpp to register the functions defined there
+    nrnpython_reg_real_nrnpy_hoc_cpp(ptrs);
     dlist = hoc_l_newlist();
 }
