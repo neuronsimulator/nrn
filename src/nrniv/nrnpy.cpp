@@ -61,6 +61,7 @@ static Member_func p_members[] = {{nullptr, nullptr}};
 static char *nrnpy_pylib{}, *nrnpy_pyversion{};
 static void set_nrnpylib() {
     nrnpy_pylib = getenv("NRN_PYLIB");
+    nrnpy_pyexe = getenv("NRN_PYTHONEXE");
     nrnpy_pyhome = getenv("NRN_PYTHONHOME");
     nrnpy_pyversion = getenv("NRN_PYTHONVERSION");
     if (nrnpy_pylib && nrnpy_pyhome && nrnpy_pyversion) {
@@ -69,6 +70,9 @@ static void set_nrnpylib() {
     // copy allows free of the copy if needed
     if (nrnpy_pylib) {
         nrnpy_pylib = strdup(nrnpy_pylib);
+    }
+    if (nrnpy_pyexe) {
+        nrnpy_pyexe = strdup(nrnpy_pyexe);
     }
     if (nrnpy_pyhome) {
         nrnpy_pyhome = strdup(nrnpy_pyhome);
