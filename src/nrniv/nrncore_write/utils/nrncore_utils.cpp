@@ -10,21 +10,11 @@
 #include "nrnsection_mapping.h"
 #include "vrecitem.h"  // for nrnbbcore_vecplay_write
 #include "parse.hpp"
+#include "nrn_filesystem.h"
 #include <string>
 #include <unistd.h>
 #include <algorithm>
 #include <cerrno>
-#if __has_include(<filesystem>)
-#include <filesystem>
-namespace neuron::std {
-namespace filesystem = ::std::filesystem;
-}
-#else
-#include <experimental/filesystem>
-namespace neuron::std {
-namespace filesystem = ::std::experimental::filesystem;
-}
-#endif
 
 #include "nrnwrap_dlfcn.h"
 
