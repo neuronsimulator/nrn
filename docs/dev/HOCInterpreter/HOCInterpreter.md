@@ -4,8 +4,8 @@
   - [**Source Code**](#source-code)
   - [**HOC Grammar**](#hoc-grammar)
   - [**HOC Initialization**](#hoc-initialization)
-  - [****HOC Interpreter - executing the machine****](#hoc-interpreter-executing-the-machine)
-  - [****HOC Interpreter example - printf****](#hoc-interpreter-example-printf)
+  - [****HOC Interpreter - executing the machine****](#hoc-interpreter---executing-the-machine)
+  - [****HOC Interpreter example - printf****](#hoc-interpreter-example---printf)
 
   
 ---

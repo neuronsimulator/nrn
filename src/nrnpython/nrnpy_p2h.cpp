@@ -224,7 +224,8 @@ PyObject* nrnpy_pyCallObject(PyObject* callable, PyObject* args) {
     // When hoc calls a PythonObject method, then in case python
     // calls something back in hoc, the hoc interpreter must be
     // at the top level
-    HocTopContextSet PyObject* p = PyObject_CallObject(callable, args);
+    HocTopContextSet
+    PyObject* p = PyObject_CallObject(callable, args);
 #if 0
 printf("PyObject_CallObject callable\n");
 PyObject_Print(callable, stdout, 0);
@@ -233,26 +234,26 @@ PyObject_Print(args, stdout, 0);
 printf("\nreturn %p\n", p);
 #endif
     HocContextRestore
-        // It would be nice to handle the error here, ending with a hoc_execerror
-        // for any Exception (note, that does not include SystemExit). However
-        // since many, but not all, of the callers need to clean up and
-        // release the GIL, errors get handled by the caller or higher up.
-        // The almost generic idiom is:
-        /**
-        if (!p) {
-          char* mes = nrnpyerr_str();
-          if (mes) {
-            Fprintf(stderr, "%s\n", mes);
-            free(mes);
-            hoc_execerror("Call of Python Callable failed", NULL);
-          }
-          if (PyErr_Occurred()) {
-            PyErr_Print(); // Python process will exit with the error code specified by the
-        SystemExit instance.
-          }
-        }
-        **/
-        return p;
+    // It would be nice to handle the error here, ending with a hoc_execerror
+    // for any Exception (note, that does not include SystemExit). However
+    // since many, but not all, of the callers need to clean up and
+    // release the GIL, errors get handled by the caller or higher up.
+    // The almost generic idiom is:
+    /**
+    if (!p) {
+      char* mes = nrnpyerr_str();
+      if (mes) {
+        Fprintf(stderr, "%s\n", mes);
+        free(mes);
+        hoc_execerror("Call of Python Callable failed", NULL);
+      }
+      if (PyErr_Occurred()) {
+        PyErr_Print(); // Python process will exit with the error code specified by the
+    SystemExit instance.
+      }
+    }
+    **/
+    return p;
 }
 
 void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {

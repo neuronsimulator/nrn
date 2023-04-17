@@ -709,7 +709,8 @@ static void* fcall(void* vself, void* vargs) {
         hocobj_pushargs_free_strings(strings_to_free);
         return result;
     } else {
-        HocTopContextSet Inst fc[4];
+        HocTopContextSet
+        Inst fc[4];
         // ugh. so a potential call of hoc_get_last_pointer_symbol will return nil.
         fc[0].in = STOP;
         fc[1].sym = self->sym_;
@@ -1209,7 +1210,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         }
     }
     // top level interpreter fork
-    HocTopContextSet switch (sym->type) {
+    HocTopContextSet
+    switch (sym->type) {
     case VAR:  // double*
         if (!ISARRAY(sym)) {
             if (sym->subtype == USERINT) {
@@ -1318,7 +1320,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         }
     }
     }
-    HocContextRestore;
+    HocContextRestore
     return result;
 }
 
@@ -1442,7 +1444,8 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
             return -1;
         }
     }
-    HocTopContextSet switch (sym->type) {
+    HocTopContextSet
+    switch (sym->type) {
     case VAR:  // double*
         if (ISARRAY(sym)) {
             PyErr_SetString(PyExc_TypeError, "Wrong number of subscripts");
@@ -1540,7 +1543,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
         err = -1;
         break;
     }
-    HocContextRestore;
+    HocContextRestore
     return err;
 }
 
@@ -1928,7 +1931,8 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 }
             }
         } else {  // must be a top level intermediate
-            HocTopContextSet switch (po->sym_->type) {
+            HocTopContextSet
+            switch (po->sym_->type) {
             case VAR:
                 hocobj_pushtop(po, po->sym_, ix);
                 if (hoc_evalpointer_err()) {
@@ -2047,7 +2051,8 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
             err = set_final_from_stk(arg);
         }
     } else {  // must be a top level intermediate
-        HocTopContextSet switch (po->sym_->type) {
+        HocTopContextSet
+        switch (po->sym_->type) {
         case VAR:
             hocobj_pushtop(po, po->sym_, i);
             if (hoc_evalpointer_err()) {
