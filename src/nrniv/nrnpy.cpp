@@ -20,6 +20,7 @@ namespace neuron::python {
 // Declared extern in nrnpy.h, defined here.
 impl_ptrs methods;
 }  // namespace neuron::python
+// Backwards-compatibility hack
 int (*nrnpy_hoccommand_exec)(Object*);
 
 extern int nrn_nopython;
