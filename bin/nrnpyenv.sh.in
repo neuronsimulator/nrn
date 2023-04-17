@@ -39,9 +39,6 @@ export originalLDLIBRARYPATH="$LD_LIBRARY_PATH"
 # the format is {major}.{minor}, i.e. 3.8, 3.9, 3.10, ...
 _this_neuron_py_versions=(@NRN_PYTHON_VERSIONS_STRING@)
 
-# The first argument passed to this script is the value of nrniv -pyexe
-pyexe_arg="$1"
-
 # order of preference is: -pyexe, $NRN_PYTHONEXE, python, python3,
 # pythonX..pythonY, where X..Y are the versions in
 # _this_neuron_py_versions. In this order, we accept the first one yielding a
@@ -61,6 +58,9 @@ export PATH=/cygdrive/${last//:/}/mingw/usr/bin:/cygdrive/${last//:/}/mingw/ming
 # remove the last argument
 set -- "${@:1:$(($#-1))}"
 fi
+
+# The first argument passed to this script is the value of nrniv -pyexe
+pyexe_arg="$1"
 
 if test "$PYTHONHOME" != "" ; then
   echo "# Ignoring existing PYTHONHOME=$PYTHONHOME."

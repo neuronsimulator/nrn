@@ -161,9 +161,7 @@ static void set_nrnpylib() {
         // then proc_line(x, "FOO") sets x to bar
         auto const proc_line = [](std::string_view line, auto& glob_var, std::string_view env_var) {
             std::string_view const suffix{"\""};
-            std::string prefix{"export "};
-            prefix.append(env_var);
-            prefix.append("=\"");
+            auto const prefix = "export " + std::string{env_var} + "=\"";
             if (starts_with(line, prefix) && ends_with(line, suffix)) {
                 line.remove_prefix(prefix.size());
                 line.remove_suffix(suffix.size());
