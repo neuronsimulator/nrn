@@ -159,26 +159,25 @@ static void set_nrnpylib() {
         // if line is of the form:
         // export FOO="bar"
         // then proc_line(x, "FOO") sets x to bar
-        auto const proc_line = [&line](std::string& glob_var, std::string_view env_var) {
+        auto const proc_line = [](std::string_view line, auto& glob_var, std::string_view env_var) {
             std::string_view const suffix{"\""};
             std::string prefix{"export "};
             prefix.append(env_var);
             prefix.append("=\"");
             if (starts_with(line, prefix) && ends_with(line, suffix)) {
-                auto const new_val = std::string_view{line}.substr(prefix.size(),
-                                                                   line.size() - prefix.size() -
-                                                                       suffix.size());
-                if (!glob_var.empty() && glob_var != new_val) {
-                    std::cout << "WARNING: overriding env_var=" << glob_var << " with " << new_val
-                              << std::endl;
+                line.remove_prefix(prefix.size());
+                line.remove_suffix(suffix.size());
+                if (!glob_var.empty() && glob_var != line) {
+                    std::cout << "WARNING: overriding " << env_var << '=' << glob_var << " with "
+                              << line << std::endl;
                 }
-                glob_var = new_val;
+                glob_var = line;
             }
         };
         // Process the output of nrnpyenv.sh line by line
         while (std::getline(cmd_stdout, line)) {
             for (auto& [glob_var, env_var]: params) {
-                proc_line(glob_var, env_var);
+                proc_line(line, glob_var, env_var);
             }
         }
         // After having run nrnpyenv.sh, we should know everything about the Python library that is
@@ -186,7 +185,7 @@ static void set_nrnpylib() {
         if (!all_set()) {
             std::ostringstream err;
             err << "After running nrnpyenv.sh (" << command << ") with output:\n"
-                << stdout.str()
+                << cmd_stdout.str()
                 << "\nwe are still missing information about the Python to be loaded:\n"
                 << "  nrnpy_pyexe=" << nrnpy_pyexe << '\n'
                 << "  nrnpy_pylib=" << nrnpy_pylib << '\n'
