@@ -13,6 +13,7 @@ sed -n '
 s/, [a-zA-Z0-9_*]* /, /g
 s/)([a-zA-Z_0-9*]* /)(/
 s/char\* //g
+s/std::string& //g
 }
 '> nrnmpi_dynam_wrappers.inc
 
