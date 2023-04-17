@@ -135,48 +135,51 @@ for _python in "${_explicit_pythons_to_try[@]}"; do
   fi
 done
 
-# On some windows systems python is an empty executable which, when
-# launched in a Command Prompt, directs the user to the Microsoft Store.
-# With bash, it returns a 128 exit status. So we loop until we
-# find a working python (or no python). Each time a python is non-working
-# we remove that path from the PATH. If not Windows, break out after first
-# attempt at finding a Python.
-while true ; do
-  # _pythons_to_try is a list of command names to be looked up in $PATH
-  PYTHON_COMMANDS_THAT_RETURNED_CODE_128=() # hack for Windows, see below
-  for _python in "${_pythons_to_try[@]}"; do
-    if try_python "${_python}"; then
-      break 2 # break out of the inner for _python .. and the outer while true
+# Fall back to PATH-based searches if this explicit approach didn't work
+if [ -z "${PYTHON}" ]; then
+  # On some windows systems python is an empty executable which, when
+  # launched in a Command Prompt, directs the user to the Microsoft Store.
+  # With bash, it returns a 128 exit status. So we loop until we
+  # find a working python (or no python). Each time a python is non-working
+  # we remove that path from the PATH. If not Windows, break out after first
+  # attempt at finding a Python.
+  while true ; do
+    # _pythons_to_try is a list of command names to be looked up in $PATH
+    PYTHON_COMMANDS_THAT_RETURNED_CODE_128=() # hack for Windows, see below
+    for _python in "${_pythons_to_try[@]}"; do
+      if try_python "${_python}"; then
+        break 2 # break out of the inner `for` and the outer `while`
+      fi
+    done
+
+    # do not do the following craziness if not Windows.
+    if test "$OS" != "Windows_NT" ; then
+      break
     fi
+
+    if [ ${#PYTHON_COMMANDS_THAT_RETURNED_CODE_128[@]} -eq 0 ]; then
+      # Don't bother messing with PATH if we didn't get any of the 128 status
+      # codes referred to above
+      break
+    fi
+    # try and remove from PATH the location of the first command we tried that
+    # returned code 128
+    echo "# ${PYTHON_COMMANDS_THAT_RETURNED_CODE_128[@]} returned code 128"
+    oldpath="${PATH}"
+    a=$($WHICH "${PYTHON_COMMANDS_THAT_RETURNED_CODE_128[0]}")
+    b=$(dirname "$a")
+    echo "# trying to remove ${b} from the PATH"
+    PATH="`echo \"$PATH\" | sed \"s,:$b:,:,\"`" #remove b from path if internal
+    PATH="`echo \"$PATH\" | sed \"s,^$b:,,\"`"  #remove b from path if begin
+    PATH="`echo \"$PATH\" | sed \"s,:$b\$,\",`" #remove b from path if end
+    export PATH
+    if [ "$oldpath" = "$PATH" ]; then
+      echo "\"$b\", that contained a failing Python, did not get removed from PATH=\"$PATH\"" 1>&2
+      exit 1
+    fi
+    unset PYTHON_COMMANDS_THAT_RETURNED_CODE_128
   done
-
-  # do not do the following craziness if not Windows.
-  if test "$OS" != "Windows_NT" ; then
-    break
-  fi
-
-  if [ ${#PYTHON_COMMANDS_THAT_RETURNED_CODE_128[@]} -eq 0 ]; then
-    # Don't bother messing with PATH if we didn't get any of the 128 status
-    # codes referred to above
-    break
-  fi
-  # try and remove from PATH the location of the first command we tried that
-  # returned code 128
-  echo "# ${PYTHON_COMMANDS_THAT_RETURNED_CODE_128[@]} returned code 128"
-  oldpath="${PATH}"
-  a=$($WHICH "${PYTHON_COMMANDS_THAT_RETURNED_CODE_128[0]}")
-  b=$(dirname "$a")
-  echo "# trying to remove ${b} from the PATH"
-  PATH="`echo \"$PATH\" | sed \"s,:$b:,:,\"`" #remove b from path if internal
-  PATH="`echo \"$PATH\" | sed \"s,^$b:,,\"`"  #remove b from path if begin
-  PATH="`echo \"$PATH\" | sed \"s,:$b\$,\",`" #remove b from path if end
-  export PATH
-  if [ "$oldpath" = "$PATH" ]; then
-    echo "\"$b\", that contained a failing Python, did not get removed from PATH=\"$PATH\"" 1>&2
-    exit 1
-  fi
-  unset PYTHON_COMMANDS_THAT_RETURNED_CODE_128
-done
+fi
 
 # Searching PATH didn't work; there are even more hacks to try on Windows
 if [ -z "${PYTHON}" -a "${OS}" = "Windows_NT" -a -n "${APPDATA}" ]; then
