@@ -203,9 +203,10 @@ static int nrnpython_start(int b) {
         // PyConfig.program_name does not lead to a lookup in $PATH, but rather to the real (nrniv)
         // path being placed in sys.executable -- at least on macOS.
         if (auto p = neuron::std::filesystem::path{pyexe}; !p.is_absolute()) {
-            throw std::runtime_error(
-                "Setting PyConfig.program_name to a non-absolute path is not portable; try passing "
-                "an absolute path to -pyexe");
+            std::ostringstream oss;
+            oss << "Setting PyConfig.program_name to a non-absolute path (" << pyexe
+                << ") is not portable; try passing an absolute path to -pyexe or NRN_PYTHONEXE";
+            throw std::runtime_error(oss.str());
         }
         // TODO: in non-dynamic builds then -pyexe cannot change the used Python version, and `nrniv
         // -pyexe /path/to/python3.10 -python` may well not use Python 3.10 at all. Should we do
