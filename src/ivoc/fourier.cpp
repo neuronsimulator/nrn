@@ -9,6 +9,9 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <iostream>
+#include <complex>
+#include <valarray>
 
 // to print diagnostic statements
 // #define DEBUG_SPCTRM
@@ -26,14 +29,51 @@ static inline double SQUARE(double a) {
     return a * a;
 }
 
-#include "nrngsl_real_radix2.cpp"
-#include "nrngsl_hc_radix2.cpp"
 
-void nrngsl_realft(double* data, unsigned long n, int direction) {
-    if (direction == 1) {
-        nrngsl_fft_real_radix2_transform(data, 1, n);
-    } else {
-        nrngsl_fft_halfcomplex_radix2_inverse(data, 1, n);
+void fft(std::vector<std::complex<double>>& x, bool inverse = false) {
+    const int n = x.size();
+    const double pi = inverse ? acos(-1) : -acos(-1);
+    for (int i = 1, j = 0; i < n; i++) {
+        int bit = n >> 1;
+        for (; j >= bit; bit >>= 1) {
+            j -= bit;
+        }
+        j += bit;
+        if (i < j) {
+            std::swap(x[i], x[j]);
+        }
+    }
+    for (int len = 2; len <= n; len <<= 1) {
+        double ang = 2 * pi / len;
+        std::complex<double> wlen(cos(ang), sin(ang));
+        for (int i = 0; i < n; i += len) {
+            std::complex<double> w(1);
+            for (int j = 0; j < len / 2; j++) {
+                std::complex<double> u = x[i + j], v = x[i + j + len / 2] * w;
+                x[i + j] = u + v;
+                x[i + j + len / 2] = u - v;
+                w *= wlen;
+            }
+        }
+    }
+    if (inverse) {
+        for (int i = 0; i < n; i++) {
+            x[i] /= n;
+        }
+    }
+}
+
+void nrngsl_realft(double* data, unsigned long size, int direction) {
+    // fft_radix2(data, size, direction);
+
+    const int padded_n = std::pow(2, std::ceil(std::log2(size)));
+    std::vector<std::complex<double>> padded(padded_n);
+    for (int i = 0; i < size; ++i) {
+        padded[i] = std::complex<double>(data[i], 0.0);
+    }
+    fft(padded, direction == -1);
+    for (int i = 0; i < size; ++i) {
+        data[i] = padded[i].real();
     }
 }
 
