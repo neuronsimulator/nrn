@@ -147,7 +147,7 @@ extern const char* nrn_mech_dll;
 #if defined(USE_PYTHON)
 int nrn_nopython;
 extern int use_python_interpreter;
-char* nrnpy_pyexe;
+std::string nrnpy_pyexe;
 #endif
 
 /*****************************************************************************/
@@ -691,9 +691,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
             }
             String str;
             if (session->style()->find_attribute("pyexe", str)) {
-                if (auto* const c_str = str.string(); std::strlen(c_str)) {
-                    nrnpy_pyexe = strdup(c_str);
-                }
+                nrnpy_pyexe = str.string();
             }
         } else
 #endif
@@ -701,9 +699,8 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
             if (nrn_optarg_on("-nopython", &our_argc, our_argv)) {
                 nrn_nopython = 1;
             }
-            const char* buf = nrn_optarg("-pyexe", &our_argc, our_argv);
-            if (buf && std::strlen(buf)) {
-                nrnpy_pyexe = strdup(buf);
+            if (const char* buf = nrn_optarg("-pyexe", &our_argc, our_argv)) {
+                nrnpy_pyexe = buf;
             }
         }
     }

@@ -18,8 +18,7 @@
 #include <sstream>
 extern HocStr* hoc_cbufstr;
 extern int nrnpy_nositeflag;
-extern char* nrnpy_pyhome;
-extern char* nrnpy_pyexe;
+extern std::string nrnpy_pyhome, nrnpy_pyexe;
 extern char* hoc_ctp;
 extern FILE* hoc_fin;
 extern const char* hoc_promptstr;
@@ -162,9 +161,9 @@ static int nrnpython_start(int b) {
         // nrnpy_pyhome hopefully holds the python base root and should
         // work with virtual environments.
         // But use only if not overridden by the PYTHONHOME environment variable.
-        char* _p_pyhome = getenv("PYTHONHOME");
+        char const* _p_pyhome = std::getenv("PYTHONHOME");
         if (!_p_pyhome) {
-            _p_pyhome = nrnpy_pyhome;
+            _p_pyhome = nrnpy_pyhome.c_str();
         }
         auto const check = [](const char* desc, PyStatus status) {
             if (PyStatus_Exception(status)) {
@@ -185,7 +184,7 @@ static int nrnpython_start(int b) {
         // were to let sys.executable be `/some/path/to/arch/special` then we pick up a surprising
         // dependency on whether or not `nrnivmodl` happened to be run in the root directory of the
         // virtual environment
-        const char* pyexe{nrnpy_pyexe};
+        const char* pyexe{nrnpy_pyexe.c_str()};
 #ifndef NRNPYTHON_DYNAMICLOAD
         // In non-dynamic builds, the -pyexe option has no effect on which Python is linked and
         // used, but it can be used to change PyConfig.program_name. If -pyexe is not passed then

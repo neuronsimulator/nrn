@@ -24,7 +24,7 @@ impl_ptrs methods;
 int (*nrnpy_hoccommand_exec)(Object*);
 
 extern int nrn_nopython;
-extern char* nrnpy_pyexe;
+extern std::string nrnpy_pyexe;
 extern int nrn_is_python_extension;
 using nrnpython_reg_real_t = void (*)(neuron::python::impl_ptrs*);
 char* hoc_back2forward(char* s);
@@ -41,7 +41,7 @@ static nrnpython_reg_real_t load_nrnpython();
 extern "C" void nrnpython_reg_real(neuron::python::impl_ptrs*);
 #endif
 
-char* nrnpy_pyhome;
+std::string nrnpy_pyhome;
 
 void nrnpython() {
     if (neuron::python::methods.hoc_nrnpython) {
@@ -59,31 +59,54 @@ static void p_destruct(void*) {}
 static Member_func p_members[] = {{nullptr, nullptr}};
 
 #ifdef NRNPYTHON_DYNAMICLOAD
-static char *nrnpy_pylib{}, *nrnpy_pyversion{};
-static void set_nrnpylib() {
-    nrnpy_pylib = getenv("NRN_PYLIB");
-    nrnpy_pyexe = getenv("NRN_PYTHONEXE");
-    nrnpy_pyhome = getenv("NRN_PYTHONHOME");
-    nrnpy_pyversion = getenv("NRN_PYTHONVERSION");
-    if (nrnpy_pylib && nrnpy_pyhome && nrnpy_pyversion) {
-        return;
-    }
-    // copy allows free of the copy if needed
-    if (nrnpy_pylib) {
-        nrnpy_pylib = strdup(nrnpy_pylib);
-    }
-    if (nrnpy_pyexe) {
-        nrnpy_pyexe = strdup(nrnpy_pyexe);
-    }
-    if (nrnpy_pyhome) {
-        nrnpy_pyhome = strdup(nrnpy_pyhome);
-    }
-    if (nrnpy_pyversion) {
-        nrnpy_pyversion = strdup(nrnpy_pyversion);
-    }
+static std::string nrnpy_pylib{}, nrnpy_pyversion{};
 
+/**
+ * @brief Figure out which Python to load.
+ *
+ * When dynamic Python support is enabled, NEURON needs to figure out which
+ * libpythonX.Y to load, and then load it followed by the corresponding
+ * libnrnpythonX.Y. This can be steered both using commandline options and by
+ * using environment variables. The logic is as follows:
+ *
+ * * the -pyexe argument to nrniv (special) takes precedence over NRN_PYTHONEXE
+ *   and we have to assume that the other NRN_PY* environment variables are not
+ *   compatible with it and use nrnpyenv.sh to find compatible values for them,
+ *   i.e. -pyexe implies that NRN_PY* are ignored.
+ * * if -pyexe is *not* passed, then we examine the NRN_PY* environment
+ *   variables:
+ *   * if all of them are set, nrnpyenv.sh is not run and they are assumed to
+ *     form a coherent set
+ *   * if only some, or none, of them are set, nrnpyenv.sh is run to fill in
+ *     the missing values. NRN_PYTHONEXE is an input to nrnpyenv.sh, so if this
+ *     is set then we will not search $PATH
+ */
+static void set_nrnpylib() {
+    if (nrnpy_pyexe.empty()) {
+        // -pyexe was not passed, read from the environment
+        if (auto const* v = std::getenv("NRN_PYLIB")) {
+            nrnpy_pylib = v;
+        }
+        if (auto const* v = std::getenv("NRN_PYTHONEXE")) {
+            nrnpy_pyexe = v;
+        }
+        if (auto const* v = std::getenv("NRN_PYTHONHOME")) {
+            nrnpy_pyhome = v;
+        }
+        if (auto const* v = std::getenv("NRN_PYTHONVERSION")) {
+            nrnpy_pyversion = v;
+        }
+        if (!nrnpy_pyexe.empty() && !nrnpy_pylib.empty() && !nrnpy_pyhome.empty() &&
+            !nrnpy_pyversion.empty()) {
+            // the environment specified everything, nothing more to do
+            return;
+        }
+    }
+    // Populate missing values using nrnpyenv.sh. Pass the possibly-null value of nrnpy_pyexe, which
+    // may have come from -pyexe or NRN_PYTHONEXE, to nrnpyenv.sh. Do all of this on rank 0, and
+    // broadcast the results to other ranks afterwards.
     if (nrnmpi_myid_world == 0) {
-        int linesz = 1024 + (nrnpy_pyexe ? strlen(nrnpy_pyexe) : 0);
+        int linesz = 1024 + nrnpy_pyexe.size();
 #ifdef MINGW
         linesz += 3 * strlen(neuron_home);
         char* line = new char[linesz + 1];
@@ -96,17 +119,14 @@ static void set_nrnpylib() {
                       "%s\\mingw\\usr\\bin\\bash %s/bin/nrnpyenv.sh %s --NEURON_HOME=%s",
                       bnrnhome,
                       fnrnhome,
-                      (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "",
+                      nrnpy_pyexe.c_str(),
                       fnrnhome);
         free(fnrnhome);
         free(bnrnhome);
 #else
         char* line = new char[linesz + 1];
-        std::snprintf(line,
-                      linesz + 1,
-                      "bash %s/../../bin/nrnpyenv.sh %s",
-                      neuron_home,
-                      (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
+        std::snprintf(
+            line, linesz + 1, "bash %s/../../bin/nrnpyenv.sh %s", neuron_home, nrnpy_pyexe.c_str());
 #endif
         FILE* p = popen(line, "r");
         if (!p) {
@@ -115,22 +135,23 @@ static void set_nrnpylib() {
             while (fgets(line, linesz, p)) {
                 char* cp;
                 // must get rid of beginning '"' and trailing '"\n'
-                if (!nrnpy_pyhome && (cp = strstr(line, "export NRN_PYTHONHOME="))) {
+                if (nrnpy_pyhome.empty() && (cp = strstr(line, "export NRN_PYTHONHOME="))) {
                     cp += strlen("export NRN_PYTHONHOME=") + 1;
                     cp[strlen(cp) - 2] = '\0';
-                    nrnpy_pyhome = strdup(cp);
-                } else if (!nrnpy_pylib && (cp = strstr(line, "export NRN_PYLIB="))) {
+                    nrnpy_pyhome = cp;
+                } else if (nrnpy_pylib.empty() && (cp = strstr(line, "export NRN_PYLIB="))) {
                     cp += strlen("export NRN_PYLIB=") + 1;
                     cp[strlen(cp) - 2] = '\0';
-                    nrnpy_pylib = strdup(cp);
-                } else if (!nrnpy_pyexe && (cp = strstr(line, "export NRN_PYTHONEXE="))) {
+                    nrnpy_pylib = cp;
+                } else if (nrnpy_pyexe.empty() && (cp = strstr(line, "export NRN_PYTHONEXE="))) {
                     cp += strlen("export NRN_PYTHONEXE=") + 1;
                     cp[strlen(cp) - 2] = '\0';
-                    nrnpy_pyexe = strdup(cp);
-                } else if (!nrnpy_pyversion && (cp = strstr(line, "export NRN_PYTHONVERSION="))) {
+                    nrnpy_pyexe = cp;
+                } else if (nrnpy_pyversion.empty() &&
+                           (cp = strstr(line, "export NRN_PYTHONVERSION="))) {
                     cp += strlen("export NRN_PYTHONVERSION=") + 1;
                     cp[strlen(cp) - 2] = '\0';
-                    nrnpy_pyversion = strdup(cp);
+                    nrnpy_pyversion = cp;
                 }
             }
             if (std::ferror(p)) {
@@ -146,10 +167,10 @@ static void set_nrnpylib() {
     }
 #if NRNMPI
     if (nrnmpi_numprocs_world > 1) {  // 0 broadcasts to everyone else.
-        nrnmpi_char_broadcast_world(&nrnpy_pyexe, 0);
-        nrnmpi_char_broadcast_world(&nrnpy_pylib, 0);
-        nrnmpi_char_broadcast_world(&nrnpy_pyhome, 0);
-        nrnmpi_char_broadcast_world(&nrnpy_pyversion, 0);
+        nrnmpi_str_broadcast_world(nrnpy_pyexe, 0);
+        nrnmpi_str_broadcast_world(nrnpy_pylib, 0);
+        nrnmpi_str_broadcast_world(nrnpy_pyhome, 0);
+        nrnmpi_str_broadcast_world(nrnpy_pyversion, 0);
     }
 #endif
 }
@@ -171,14 +192,12 @@ void nrnpython_reg() {
         if (!nrn_is_python_extension) {
             // As last resort (or for python3) load $NRN_PYLIB
             set_nrnpylib();
-            // printf("nrnpy_pylib %s\n", nrnpy_pylib);
-            // printf("nrnpy_pyhome %s\n", nrnpy_pyhome);
-            if (nrnpy_pylib) {
-                handle = dlopen(nrnpy_pylib, RTLD_NOW | RTLD_GLOBAL);
+            if (!nrnpy_pylib.empty()) {  // ???
+                handle = dlopen(nrnpy_pylib.c_str(), RTLD_NOW | RTLD_GLOBAL);
                 if (!handle) {
-                    fprintf(stderr, "Could not dlopen NRN_PYLIB: %s\n", nrnpy_pylib);
+                    std::cerr << "Could not dlopen NRN_PYLIB: " << nrnpy_pylib << std::endl;
 #if DARWIN
-                    nrn_possible_mismatched_arch(nrnpy_pylib);
+                    nrn_possible_mismatched_arch(nrnpy_pylib.c_str());
 #endif
                     exit(1);
                 }
@@ -214,11 +233,9 @@ static nrnpython_reg_real_t load_nrnpython() {
         auto const factor = (pv10 >= 100) ? 100 : 10;
         pyversion = std::to_string(pv10 / factor) + "." + std::to_string(pv10 % factor);
     } else {
-        if (!nrnpy_pylib || !nrnpy_pyversion) {
-            std::cerr << "Do not know what Python to load [nrnpy_pylib="
-                      << (nrnpy_pylib ? nrnpy_pylib : "nullptr")
-                      << " nrnpy_pyversion=" << (nrnpy_pyversion ? nrnpy_pyversion : "nullptr")
-                      << ']' << std::endl;
+        if (nrnpy_pylib.empty() || nrnpy_pyversion.empty()) {
+            std::cerr << "Do not know what Python to load [nrnpy_pylib=" << nrnpy_pylib
+                      << " nrnpy_pyversion=" << nrnpy_pyversion << ']' << std::endl;
             return nullptr;
         }
         pyversion = nrnpy_pyversion;
@@ -242,9 +259,8 @@ static nrnpython_reg_real_t load_nrnpython() {
         }
         std::cerr << "), or try using nrniv -python so that NEURON can suggest a compatible "
                      "version for you. [pv10="
-                  << pv10 << " nrnpy_pylib=" << (nrnpy_pylib ? nrnpy_pylib : "nullptr")
-                  << " nrnpy_pyversion=" << (nrnpy_pyversion ? nrnpy_pyversion : "nullptr") << ']'
-                  << std::endl;
+                  << pv10 << " nrnpy_pylib=" << nrnpy_pylib
+                  << " nrnpy_pyversion=" << nrnpy_pyversion << ']' << std::endl;
         return nullptr;
     }
 #ifndef MINGW
@@ -254,8 +270,7 @@ static nrnpython_reg_real_t load_nrnpython() {
     auto* const handle = dlopen(name.c_str(), RTLD_NOW);
     if (!handle) {
         std::cerr << "Could not load " << name << std::endl;
-        std::cerr << "pv10=" << pv10 << " nrnpy_pylib=" << (nrnpy_pylib ? nrnpy_pylib : "(null)")
-                  << std::endl;
+        std::cerr << "pv10=" << pv10 << " nrnpy_pylib=" << nrnpy_pylib << std::endl;
         return nullptr;
     }
     auto* const reg = reinterpret_cast<nrnpython_reg_real_t>(dlsym(handle, "nrnpython_reg_real"));

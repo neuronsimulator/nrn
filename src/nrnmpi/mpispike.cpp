@@ -478,22 +478,15 @@ void nrnmpi_char_broadcast(char* buf, int cnt, int root) {
     MPI_Bcast(buf, cnt, MPI_CHAR, root, nrnmpi_comm);
 }
 
-void nrnmpi_char_broadcast_world(char** pstr, int root) {
-    int sz;
-    sz = *pstr ? (strlen(*pstr) + 1) : 0;
+void nrnmpi_str_broadcast_world(std::string& str, int root) {
+    assert(str.size() <= std::numeric_limits<int>::max());
+    // broadcast the size from `root` to everyone
+    int sz = str.size();
     MPI_Bcast(&sz, 1, MPI_INT, root, nrnmpi_world_comm);
-    if (nrnmpi_myid_world != root) {
-        if (*pstr) {
-            free(*pstr);
-            *pstr = NULL;
-        }
-        if (sz) {
-            *pstr = static_cast<char*>(hoc_Emalloc(sz * sizeof(char)));
-            hoc_malchk();
-        }
-    }
+    // resize to the size we received from root
+    str.resize(sz);
     if (sz) {
-        MPI_Bcast(*pstr, sz, MPI_CHAR, root, nrnmpi_world_comm);
+        MPI_Bcast(str.data(), sz, MPI_CHAR, root, nrnmpi_world_comm);
     }
 }
 
