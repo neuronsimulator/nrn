@@ -154,7 +154,7 @@ static void set_nrnpylib() {
         }();
         // Execute the command, capture its stdout and wrap that in a C++ stream. This will throw if
         // the commnand fails.
-        std::istringstream stdout{check_output(command)};
+        std::istringstream cmd_stdout{check_output(command)};
         std::string line;
         // if line is of the form:
         // export FOO="bar"
@@ -176,7 +176,7 @@ static void set_nrnpylib() {
             }
         };
         // Process the output of nrnpyenv.sh line by line
-        while (std::getline(stdout, line)) {
+        while (std::getline(cmd_stdout, line)) {
             for (auto& [glob_var, env_var]: params) {
                 proc_line(glob_var, env_var);
             }
@@ -277,17 +277,16 @@ static nrnpython_reg_real_t load_nrnpython() {
     auto const& supported_versions = neuron::config::supported_python_versions;
     auto const iter = std::find(supported_versions.begin(), supported_versions.end(), pyversion);
     if (iter == supported_versions.end()) {
+        // Still reachable if you explicitly set NRN_PY* environment variables for a bad Python?
         std::cerr << "Python " << pyversion
                   << " is not supported by this NEURON installation (supported:";
         for (auto const& good_ver: supported_versions) {
             std::cerr << ' ' << good_ver;
         }
-        std::cerr
-            << "). Either re-build NEURON with support for this version, use a supported version "
-               "of Python  or try using nrniv -python so that NEURON can suggest a compatible "
-               "version for you. [pv10="
-            << pv10 << " nrnpy_pylib=" << nrnpy_pylib << " nrnpy_pyversion=" << nrnpy_pyversion
-            << ']' << std::endl;
+        std::cerr << "). Either re-build NEURON with support for this version, use a supported "
+                  << "version of Python  or try using nrniv -python so that NEURON can suggest a "
+                  << "compatible version for you. [pv10=" << pv10 << " nrnpy_pylib=" << nrnpy_pylib
+                  << " nrnpy_pyversion=" << nrnpy_pyversion << ']' << std::endl;
         return nullptr;
     }
 #ifndef MINGW
