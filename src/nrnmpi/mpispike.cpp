@@ -20,6 +20,9 @@
 #include "mpispike.h"
 #include <mpi.h>
 
+#include <limits>
+#include <string>
+
 extern void nrnbbs_context_wait();
 
 static int np;
