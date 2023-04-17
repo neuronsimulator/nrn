@@ -5,7 +5,6 @@
 # environment as python
 
 # May specify the python executable with explicit first argument.
-# Without arg use python3 and if that does not exist then python
 
 # Overcome environment issues when --with-nrnpython=dynamic .
 
@@ -40,9 +39,13 @@ export originalLDLIBRARYPATH="$LD_LIBRARY_PATH"
 # the format is {major}.{minor}, i.e. 3.8, 3.9, 3.10, ...
 _this_neuron_py_versions=(@NRN_PYTHON_VERSIONS_STRING@)
 
-# order of preference is: python, python3, pythonX..pythonY, where X..Y are
-# the versions in _this_neuron_py_versions. In this order, we accept the
-# first one yielding a version we support
+# The first argument passed to this script is the value of nrniv -pyexe
+pyexe_arg="$1"
+
+# order of preference is: -pyexe, $NRN_PYTHONEXE, python, python3,
+# pythonX..pythonY, where X..Y are the versions in
+# _this_neuron_py_versions. In this order, we accept the first one yielding a
+# version we support
 _pythons_to_try=(python python3)
 for _ver_with_dot in "${_this_neuron_py_versions[@]}"; do
   _pythons_to_try+=("python${_ver_with_dot}")
@@ -87,6 +90,51 @@ function trypy {
   fi
 }
 
+unset PYTHON
+unset PYTHON_VERSION
+function try_python {
+  cmd_name="$1"
+  if [ -z "${cmd_name}" ]; then
+    return 1
+  fi
+  ver_and_path=$("${cmd_name}" -c "import sys; print('{}.{} {}'.format(*sys.version_info[:2], sys.executable))" 2>&1)
+  code="$?"
+  if [ $code -ne 0 ]; then
+    echo "# failed to run ${cmd_name} (${ver_and_path})"
+    if [ $code -eq 128 ]; then
+      PYTHON_COMMANDS_THAT_RETURNED_CODE_128+=("${cmd_name}")
+    fi
+    return 1
+  fi
+  full_path=${ver_and_path#* }
+  version=${ver_and_path%" ${full_path}"}
+  if [[ ! " ${_this_neuron_py_versions[*]} " =~ " ${version} " ]]; then
+    echo "# ran ${cmd_name} (${full_path}) but its version ${version} was not OK (${_this_neuron_py_versions[*]})"
+    return 1
+  fi
+  PYTHON="${full_path}"
+  PYTHON_VERSION="${version}"
+}
+
+# If either -pyexe or NRN_PYTHONEXE was set, it is an immediate hard error if
+# they do not point to a a valid Python
+_explicit_pythons_to_try=("${pyexe_arg}" "${NRN_PYTHONEXE}")
+for _python in "${_explicit_pythons_to_try[@]}"; do
+  if [ -z "${_python}" ]; then
+    # don't bother distinguishing between "not set" and "set to empty string"
+    continue
+  fi
+  if ! try_python "${_python}"; then
+    echo "Given the explicit instructions:"
+    echo " -pyexe='${pyexe_arg}'"
+    echo " NRN_PYTHONEXE='${NRN_PYTHONEXE}'"
+    echo "we determined that '${_python}' is not valid."
+    echo "Because this was an explicit request, this script is returning an"
+    echo "error code instead of falling back to other search strategies..."
+    exit 1
+  fi
+done
+
 # On some windows systems python is an empty executable which, when
 # launched in a Command Prompt, directs the user to the Microsoft Store.
 # With bash, it returns a 128 exit status. So we loop until we
@@ -94,92 +142,76 @@ function trypy {
 # we remove that path from the PATH. If not Windows, break out after first
 # attempt at finding a Python.
 while true ; do
-  PYTHON=""
-  # Priority is the argument -pyexe, NRN_PYTHONEXE, then searching for
-  # pythonXXX in PATH, then other platform-specific hacks
-
-  # check -pyexe option
-  if test "$1" != "" ; then
-    if $WHICH "$1" >& /dev/null ; then
-      PYTHON="$1"
+  # _pythons_to_try is a list of command names to be looked up in $PATH
+  PYTHON_COMMANDS_THAT_RETURNED_CODE_128=() # hack for Windows, see below
+  for _python in "${_pythons_to_try[@]}"; do
+    if try_python "${_python}"; then
+      break 2 # break out of the inner for _python .. and the outer while true
     fi
-  # If NRN_PYTHONEXE is set (e.g. from wheel wrapper) then use it
-  elif test "$NRN_PYTHONEXE" != ""; then
-    PYTHON=$NRN_PYTHONEXE
-  else
-    # check all the Python names in _pythons_to_try to see if any of them match
-    for _python in "${_pythons_to_try[@]}"; do
-      if $WHICH "${_python}" >& /dev/null; then
-        # this one exists, is it a version we support?
-        _python_ver=$("${_python}" -c "import sys; print('{}.{}'.format(*sys.version_info[:2]))")
-        if [[ " ${_this_neuron_py_versions[*]} " =~ " ${_python_ver} " ]]; then
-          # and we support this one, all good!
-          PYTHON="${_python}"
-          break
-        fi
-      fi
-    done
-  fi
+  done
 
   # do not do the following craziness if not Windows.
   if test "$OS" != "Windows_NT" ; then
     break
   fi
 
-  if test "$PYTHON" == "" ; then
+  if [ ${#PYTHON_COMMANDS_THAT_RETURNED_CODE_128[@]} -eq 0 ]; then
+    # Don't bother messing with PATH if we didn't get any of the 128 status
+    # codes referred to above
     break
-  else
-    if $PYTHON -c 'quit()' >& /dev/null ; then #working
-      break
-    else # remove from PATH
-      oldpath="$PATH"
-      a="`$WHICH $PYTHON`"
-      b="`dirname \"$a\"`"
-      PATH="`echo \"$PATH\" | sed \"s,:$b:,:,\"`" #remove b from path if internal
-      PATH="`echo \"$PATH\" | sed \"s,^$b:,,\"`" #remove b from path if begin
-      PATH="`echo \"$PATH\" | sed \"s,:$b\$,\",`" #remove b from path if end
-      export PATH
-      if test "$oldpath" = "$PATH" ; then
-        echo "\"$b\", that contained a failing Python, did not get removed from PATH=\"$PATH\"" 1>&2
-        exit 1
-      fi
-    fi
   fi
+  # try and remove from PATH the location of the first command we tried that
+  # returned code 128
+  echo "# ${PYTHON_COMMANDS_THAT_RETURNED_CODE_128[@]} returned code 128"
+  oldpath="${PATH}"
+  a=$($WHICH "${PYTHON_COMMANDS_THAT_RETURNED_CODE_128[0]}")
+  b=$(dirname "$a")
+  echo "# trying to remove ${b} from the PATH"
+  PATH="`echo \"$PATH\" | sed \"s,:$b:,:,\"`" #remove b from path if internal
+  PATH="`echo \"$PATH\" | sed \"s,^$b:,,\"`"  #remove b from path if begin
+  PATH="`echo \"$PATH\" | sed \"s,:$b\$,\",`" #remove b from path if end
+  export PATH
+  if [ "$oldpath" = "$PATH" ]; then
+    echo "\"$b\", that contained a failing Python, did not get removed from PATH=\"$PATH\"" 1>&2
+    exit 1
+  fi
+  unset PYTHON_COMMANDS_THAT_RETURNED_CODE_128
 done
 
-if test "$PYTHON" = "" ; then
+# Searching PATH didn't work; there are even more hacks to try on Windows
+if [ -z "${PYTHON}" -a "${OS}" = "Windows_NT" -a -n "${APPDATA}" ]; then
   # Often people install Anaconda on Windows without adding it to PATH
-  if test "$OS" = "Windows_NT" -a "$APPDATA" != "" ; then
-    smenu="$APPDATA/Microsoft/Windows/Start Menu/Programs"
-    if test "$PYTHON" = "" ; then
-      trypy "$smenu" "Anaconda3 (64-bit)" "Anaconda Prompt (anaconda3).lnk" activate.bat
-      # Anaconda3 2020 may need more PATH for numpy to work.
-      if test "$PYTHON" != "" ; then
-        if ! $PYTHON -c 'import numpy' >& /dev/null ; then
-          # first item added in trypy
-          a="`echo $PATH | sed 's/:.*//'`"
-          export PATH="$PATH:$a/Library/mingw-w64/bin:$a/Library/usr/bin:$a/Library/bin:$a/Scripts:$a/bin:$a/condabin"
-          # Actually get this PATH when scripts do a -- eval "`nrnpyenv.sh`"
-          echo "export PATH=\"$PATH\""
-        fi
-      fi
+  smenu="${APPDATA}/Microsoft/Windows/Start Menu/Programs"
+  trypy "${smenu}" "Anaconda3 (64-bit)" "Anaconda Prompt (anaconda3).lnk" activate.bat
+  # Anaconda3 2020 may need more PATH for numpy to work.
+  if test "$PYTHON" != "" ; then
+    if ! $PYTHON -c 'import numpy' >& /dev/null ; then
+      # first item added in trypy
+      a="`echo $PATH | sed 's/:.*//'`"
+      export PATH="$PATH:$a/Library/mingw-w64/bin:$a/Library/usr/bin:$a/Library/bin:$a/Scripts:$a/bin:$a/condabin"
+      # Actually get this PATH when scripts do a -- eval "`nrnpyenv.sh`"
+      echo "export PATH=\"$PATH\""
     fi
-    if test "$PYTHON" = "" ; then
-      trypy "$smenu" Anaconda3 "Anaconda Prompt.lnk" activate.bat
+  fi
+  if test "$PYTHON" = "" ; then
+    trypy "$smenu" Anaconda3 "Anaconda Prompt.lnk" activate.bat
+  fi
+  if test "$PYTHON" = "" ; then
+    trypy "$smenu" Anaconda2 "Anaconda Prompt.lnk" activate.bat
+  fi
+  if test "$PYTHON" = "" ; then
+    trypy "$smenu" Anaconda "Anaconda Prompt.lnk" activate.bat
+  fi
+  if test "$PYTHON" = "" ; then #brittle but try Enthought
+    a=`cygpath -U "$APPDATA/../local/enthought/canopy/edm/envs/user"`
+    if test -d "$a" ; then
+      export PATH="$a":"$PATH"
+      PYTHON=python
     fi
-    if test "$PYTHON" = "" ; then
-      trypy "$smenu" Anaconda2 "Anaconda Prompt.lnk" activate.bat
-    fi
-    if test "$PYTHON" = "" ; then
-      trypy "$smenu" Anaconda "Anaconda Prompt.lnk" activate.bat
-    fi
-    if test "$PYTHON" = "" ; then #brittle but try Enthought
-      a=`cygpath -U "$APPDATA/../local/enthought/canopy/edm/envs/user"`
-      if test -d "$a" ; then
-        export PATH="$a":"$PATH"
-        PYTHON=python
-      fi
-    fi
+  fi
+  if [ -n "${PYTHON}" -a -z "${PYTHON_VERSION}"]; then
+    # In case one of the last-resort Windows hacks worked
+    PYTHON_VERSION=$("${PYTHON}" -c "import sys; print(\"{}.{}\".format(*sys.version_info[:2]))")
   fi
 fi
 
@@ -188,9 +220,8 @@ if test "$PYTHON" = "" ; then
   exit 1;
 fi
 
-NRN_PYTHONVERSION=$("${PYTHON}" -c "import sys; print(\"{}.{}\".format(*sys.version_info[:2]))")
-echo "export NRN_PYTHONEXE=\"$(${WHICH} $PYTHON)\""
-echo "export NRN_PYTHONVERSION=\"${NRN_PYTHONVERSION}\""
+echo "export NRN_PYTHONEXE=\"${PYTHON}\""
+echo "export NRN_PYTHONVERSION=\"${PYTHON_VERSION}\""
 
 # what is the python library for Darwin
 nrnpylib_provenance=""
