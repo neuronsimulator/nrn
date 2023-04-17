@@ -184,19 +184,19 @@ static int nrnpython_start(int b) {
         // were to let sys.executable be `/some/path/to/arch/special` then we pick up a surprising
         // dependency on whether or not `nrnivmodl` happened to be run in the root directory of the
         // virtual environment
-        const char* pyexe{nrnpy_pyexe.c_str()};
+        auto pyexe = nrnpy_pyexe;
 #ifndef NRNPYTHON_DYNAMICLOAD
         // In non-dynamic builds, the -pyexe option has no effect on which Python is linked and
         // used, but it can be used to change PyConfig.program_name. If -pyexe is not passed then
         // we use the Python that was discovered at build time. We have to make an std::string
         // because Python's API requires the null terminator.
-        std::string default_python{neuron::config::default_python_executable};
-        if (!pyexe && !default_python.empty()) {
+        auto const& default_python = neuron::config::default_python_executable;
+        if (pyexe.empty() && !default_python.empty()) {
             // -pyexe was not passed
-            pyexe = default_python.c_str();  // need the null terminator for Python
+            pyexe = default_python;
         }
 #endif
-        if (!pyexe) {
+        if (pyexe.empty()) {
             throw std::runtime_error("Do not know what to set PyConfig.program_name to");
         }
         // Surprisingly, given the documentation, it seems that passing a non-absolute path to
@@ -211,7 +211,7 @@ static int nrnpython_start(int b) {
         // -pyexe /path/to/python3.10 -python` may well not use Python 3.10 at all. Should we do
         // something about that?
         check("Could not set PyConfig.program_name",
-              PyConfig_SetBytesString(config, &config->program_name, pyexe));
+              PyConfig_SetBytesString(config, &config->program_name, pyexe.c_str()));
         if (_p_pyhome) {
             // Py_SetPythonHome is deprecated in Python 3.11+, write to config.home instead.
             // olupton 2023-04-11 is not sure if this is still needed or useful
