@@ -262,8 +262,7 @@ if(NRN_PYTHON_EXTRA_FOR_TESTS)
         string(REPLACE "." "\\." pyver_escaped "${pyver}")
         set(properties
             PASS_REGULAR_EXPRESSION
-            "This NEURON installation does not support the current Python version \\(${pyver_escaped}\\)"
-        )
+            "Python ${pyver_escaped} is not supported by this NEURON installation \\(supported:")
       endif()
       set_tests_properties(pyinit::python${pyver}_import_fail_check_${check}
                            PROPERTIES ${properties})

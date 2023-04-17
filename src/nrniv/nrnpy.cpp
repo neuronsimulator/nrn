@@ -27,8 +27,6 @@ extern int nrn_nopython;
 extern std::string nrnpy_pyexe;
 extern int nrn_is_python_extension;
 using nrnpython_reg_real_t = void (*)(neuron::python::impl_ptrs*);
-char* hoc_back2forward(char* s);
-char* hoc_forward2back(char* s);
 #if DARWIN
 extern void nrn_possible_mismatched_arch(const char*);
 #endif
@@ -62,6 +60,40 @@ static Member_func p_members[] = {{nullptr, nullptr}};
 static std::string nrnpy_pylib{}, nrnpy_pyversion{};
 
 /**
+ * @brief Wrapper that executes a command and captures stdout.
+ *
+ * Throws std::runtime_error if the command does not execute cleanly.
+ */
+static std::string check_output(std::string command) {
+    std::FILE* const p = popen(command.c_str(), "r");
+    if (!p) {
+        throw std::runtime_error("popen(" + command + ", \"r\") failed");
+    }
+    std::string output;
+    std::array<char, 1024> buffer{};
+    while (std::fgets(buffer.data(), buffer.size() - 1, p)) {
+        output += buffer.data();
+    }
+    if (auto const code = pclose(p)) {
+        std::ostringstream err;
+        err << "'" << command << "' did not terminate cleanly, pclose returned non-zero (" << code
+            << ") after the following output had been read:\n"
+            << output;
+        throw std::runtime_error(err.str());
+    }
+    return output;
+}
+
+// Included in C++20
+static bool starts_with(std::string_view str, std::string_view prefix) {
+    return str.substr(0, prefix.size()) == prefix;
+}
+static bool ends_with(std::string_view str, std::string_view suffix) {
+    return str.size() >= suffix.size() &&
+           str.substr(str.size() - suffix.size(), std::string_view::npos) == suffix;
+}
+
+/**
  * @brief Figure out which Python to load.
  *
  * When dynamic Python support is enabled, NEURON needs to figure out which
@@ -82,22 +114,24 @@ static std::string nrnpy_pylib{}, nrnpy_pyversion{};
  *     is set then we will not search $PATH
  */
 static void set_nrnpylib() {
+    std::array<std::pair<std::string&, const char*>, 4> params{
+        {{nrnpy_pylib, "NRN_PYLIB"},
+         {nrnpy_pyexe, "NRN_PYTHONEXE"},
+         {nrnpy_pyhome, "NRN_PYTHONHOME"},
+         {nrnpy_pyversion, "NRN_PYTHONVERSION"}}};
+    auto const all_set = [&params]() {
+        return std::all_of(params.begin(), params.end(), [](auto const& p) {
+            return !p.first.empty();
+        });
+    };
     if (nrnpy_pyexe.empty()) {
         // -pyexe was not passed, read from the environment
-        if (auto const* v = std::getenv("NRN_PYLIB")) {
-            nrnpy_pylib = v;
+        for (auto& [glob_var, env_var]: params) {
+            if (const char* v = std::getenv(env_var)) {
+                glob_var = v;
+            }
         }
-        if (auto const* v = std::getenv("NRN_PYTHONEXE")) {
-            nrnpy_pyexe = v;
-        }
-        if (auto const* v = std::getenv("NRN_PYTHONHOME")) {
-            nrnpy_pyhome = v;
-        }
-        if (auto const* v = std::getenv("NRN_PYTHONVERSION")) {
-            nrnpy_pyversion = v;
-        }
-        if (!nrnpy_pyexe.empty() && !nrnpy_pylib.empty() && !nrnpy_pyhome.empty() &&
-            !nrnpy_pyversion.empty()) {
+        if (all_set()) {
             // the environment specified everything, nothing more to do
             return;
         }
@@ -106,64 +140,60 @@ static void set_nrnpylib() {
     // may have come from -pyexe or NRN_PYTHONEXE, to nrnpyenv.sh. Do all of this on rank 0, and
     // broadcast the results to other ranks afterwards.
     if (nrnmpi_myid_world == 0) {
-        int linesz = 1024 + nrnpy_pyexe.size();
+        // Construct a command to execute
+        auto const command = []() -> std::string {
 #ifdef MINGW
-        linesz += 3 * strlen(neuron_home);
-        char* line = new char[linesz + 1];
-        char* bnrnhome = strdup(neuron_home);
-        char* fnrnhome = strdup(neuron_home);
-        hoc_forward2back(bnrnhome);
-        hoc_back2forward(fnrnhome);
-        std::snprintf(line,
-                      linesz + 1,
-                      "%s\\mingw\\usr\\bin\\bash %s/bin/nrnpyenv.sh %s --NEURON_HOME=%s",
-                      bnrnhome,
-                      fnrnhome,
-                      nrnpy_pyexe.c_str(),
-                      fnrnhome);
-        free(fnrnhome);
-        free(bnrnhome);
+            std::string bnrnhome{neuron_home}, fnrnhome{neuron_home};
+            std::replace(bnrnhome.begin(), bnrnhome.end(), '/', '\\');
+            std::replace(fnrnhome.begin(), fnrnhome.end(), '\\', '/');
+            return bnrnhome + R"(\mingw\usr\bin\bash )" + fnrnhome + "/bin/nrnpyenv.sh " +
+                   nrnpy_pyexe + " --NEURON_HOME=" + fnrnhome;
 #else
-        char* line = new char[linesz + 1];
-        std::snprintf(
-            line, linesz + 1, "bash %s/../../bin/nrnpyenv.sh %s", neuron_home, nrnpy_pyexe.c_str());
+            return "bash " + std::string{neuron_home} + "/../../bin/nrnpyenv.sh " + nrnpy_pyexe;
 #endif
-        FILE* p = popen(line, "r");
-        if (!p) {
-            printf("could not popen '%s'\n", line);
-        } else {
-            while (fgets(line, linesz, p)) {
-                char* cp;
-                // must get rid of beginning '"' and trailing '"\n'
-                if (nrnpy_pyhome.empty() && (cp = strstr(line, "export NRN_PYTHONHOME="))) {
-                    cp += strlen("export NRN_PYTHONHOME=") + 1;
-                    cp[strlen(cp) - 2] = '\0';
-                    nrnpy_pyhome = cp;
-                } else if (nrnpy_pylib.empty() && (cp = strstr(line, "export NRN_PYLIB="))) {
-                    cp += strlen("export NRN_PYLIB=") + 1;
-                    cp[strlen(cp) - 2] = '\0';
-                    nrnpy_pylib = cp;
-                } else if (nrnpy_pyexe.empty() && (cp = strstr(line, "export NRN_PYTHONEXE="))) {
-                    cp += strlen("export NRN_PYTHONEXE=") + 1;
-                    cp[strlen(cp) - 2] = '\0';
-                    nrnpy_pyexe = cp;
-                } else if (nrnpy_pyversion.empty() &&
-                           (cp = strstr(line, "export NRN_PYTHONVERSION="))) {
-                    cp += strlen("export NRN_PYTHONVERSION=") + 1;
-                    cp[strlen(cp) - 2] = '\0';
-                    nrnpy_pyversion = cp;
+        }();
+        // Execute the command, capture its stdout and wrap that in a C++ stream. This will throw if
+        // the commnand fails.
+        std::istringstream stdout{check_output(command)};
+        std::string line;
+        // if line is of the form:
+        // export FOO="bar"
+        // then proc_line(x, "FOO") sets x to bar
+        auto const proc_line = [&line](std::string& glob_var, std::string_view env_var) {
+            std::string_view const suffix{"\""};
+            std::string prefix{"export "};
+            prefix.append(env_var);
+            prefix.append("=\"");
+            if (starts_with(line, prefix) && ends_with(line, suffix)) {
+                auto const new_val = std::string_view{line}.substr(prefix.size(),
+                                                                   line.size() - prefix.size() -
+                                                                       suffix.size());
+                if (!glob_var.empty() && glob_var != new_val) {
+                    std::cout << "WARNING: overriding env_var=" << glob_var << " with " << new_val
+                              << std::endl;
                 }
+                glob_var = new_val;
             }
-            if (std::ferror(p)) {
-                // see if we terminated for some non-EOF reason
-                std::ostringstream oss;
-                oss << "reading from: " << line << " failed with error: " << std::strerror(errno)
-                    << std::endl;
-                throw std::runtime_error(oss.str());
+        };
+        // Process the output of nrnpyenv.sh line by line
+        while (std::getline(stdout, line)) {
+            for (auto& [glob_var, env_var]: params) {
+                proc_line(glob_var, env_var);
             }
-            pclose(p);
         }
-        delete[] line;
+        // After having run nrnpyenv.sh, we should know everything about the Python library that is
+        // to be loaded.
+        if (!all_set()) {
+            std::ostringstream err;
+            err << "After running nrnpyenv.sh (" << command << ") with output:\n"
+                << stdout.str()
+                << "\nwe are still missing information about the Python to be loaded:\n"
+                << "  nrnpy_pyexe=" << nrnpy_pyexe << '\n'
+                << "  nrnpy_pylib=" << nrnpy_pylib << '\n'
+                << "  nrnpy_pyhome=" << nrnpy_pyhome << '\n'
+                << "  nrnpy_pyversion=" << nrnpy_pyversion << '\n';
+            throw std::runtime_error(err.str());
+        }
     }
 #if NRNMPI
     if (nrnmpi_numprocs_world > 1) {  // 0 broadcasts to everyone else.
@@ -190,20 +220,19 @@ void nrnpython_reg() {
 #ifdef NRNPYTHON_DYNAMICLOAD
         void* handle{};
         if (!nrn_is_python_extension) {
-            // As last resort (or for python3) load $NRN_PYLIB
-            set_nrnpylib();
-            if (!nrnpy_pylib.empty()) {  // ???
-                handle = dlopen(nrnpy_pylib.c_str(), RTLD_NOW | RTLD_GLOBAL);
-                if (!handle) {
-                    std::cerr << "Could not dlopen NRN_PYLIB: " << nrnpy_pylib << std::endl;
+            // find the details of the libpythonX.Y.so we are going to load.
+            set_nrnpylib();  // throws on error
+            handle = dlopen(nrnpy_pylib.c_str(), RTLD_NOW | RTLD_GLOBAL);
+            if (!handle) {
+                std::cerr << "Could not dlopen NRN_PYLIB: " << nrnpy_pylib << std::endl;
 #if DARWIN
-                    nrn_possible_mismatched_arch(nrnpy_pylib.c_str());
+                nrn_possible_mismatched_arch(nrnpy_pylib.c_str());
 #endif
-                    exit(1);
-                }
+                exit(1);
             }
         }
         if (handle || nrn_is_python_extension) {
+            // Load libnrnpython.X.Y.so
             reg_fn = load_nrnpython();
         }
 #else
@@ -248,19 +277,17 @@ static nrnpython_reg_real_t load_nrnpython() {
     auto const& supported_versions = neuron::config::supported_python_versions;
     auto const iter = std::find(supported_versions.begin(), supported_versions.end(), pyversion);
     if (iter == supported_versions.end()) {
-        std::cerr << "This NEURON installation does not support the current Python version ("
-                  << pyversion << "). Either re-build NEURON with support for this version, use "
-                  << "a supported version of Python (";
-        for (auto i = supported_versions.begin(); i != supported_versions.end(); ++i) {
-            std::cerr << *i;
-            if (std::next(i) != supported_versions.end()) {
-                std::cerr << ", ";
-            }
+        std::cerr << "Python " << pyversion
+                  << " is not supported by this NEURON installation (supported:";
+        for (auto const& good_ver: supported_versions) {
+            std::cerr << ' ' << good_ver;
         }
-        std::cerr << "), or try using nrniv -python so that NEURON can suggest a compatible "
-                     "version for you. [pv10="
-                  << pv10 << " nrnpy_pylib=" << nrnpy_pylib
-                  << " nrnpy_pyversion=" << nrnpy_pyversion << ']' << std::endl;
+        std::cerr
+            << "). Either re-build NEURON with support for this version, use a supported version "
+               "of Python  or try using nrniv -python so that NEURON can suggest a compatible "
+               "version for you. [pv10="
+            << pv10 << " nrnpy_pylib=" << nrnpy_pylib << " nrnpy_pyversion=" << nrnpy_pyversion
+            << ']' << std::endl;
         return nullptr;
     }
 #ifndef MINGW

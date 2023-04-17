@@ -109,7 +109,7 @@ function try_python {
   full_path=${ver_and_path#* }
   version=${ver_and_path%" ${full_path}"}
   if [[ ! " ${_this_neuron_py_versions[*]} " =~ " ${version} " ]]; then
-    echo "# ran ${cmd_name} (${full_path}) but its version ${version} was not OK (${_this_neuron_py_versions[*]})"
+    echo "# ran ${cmd_name} (${full_path}) but Python ${version} is not supported by this NEURON installation (supported: ${_this_neuron_py_versions[*]})."
     return 1
   fi
   PYTHON="${full_path}"
@@ -126,8 +126,8 @@ for _python in "${_explicit_pythons_to_try[@]}"; do
   fi
   if ! try_python "${_python}"; then
     echo "Given the explicit instructions:"
-    echo " -pyexe='${pyexe_arg}'"
-    echo " NRN_PYTHONEXE='${NRN_PYTHONEXE}'"
+    echo " -pyexe=${pyexe_arg}"
+    echo " NRN_PYTHONEXE=${NRN_PYTHONEXE}"
     echo "we determined that '${_python}' is not valid."
     echo "Because this was an explicit request, this script is returning an"
     echo "error code instead of falling back to other search strategies..."

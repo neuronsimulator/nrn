@@ -113,11 +113,10 @@ from ._config_params import supported_python_versions
 current_version = "{}.{}".format(*sys.version_info[:2])
 if current_version not in supported_python_versions:
     message = (
-        "This NEURON installation does not support the current Python version ({}). "
-        "Either re-build NEURON with support for this version, use a supported version"
-        " of Python ({}), or try using nrniv -python so that NEURON can suggest a "
-        "compatible version for you."
-    ).format(current_version, ", ".join(supported_python_versions))
+        "Python {} is not supported by this NEURON installation (supported: {}). Either re-build "
+        "NEURON with support for this version, use a supported version of Python, or try using "
+        "nrniv -python so that NEURON can suggest a compatible version for you."
+    ).format(current_version, " ".join(supported_python_versions))
     raise ImportError(message)
 
 try:  # needed since python 3.8 on windows if python launched
