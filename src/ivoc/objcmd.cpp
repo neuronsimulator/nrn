@@ -69,9 +69,9 @@ void HocCommand::help() {
 #if HAVE_IV
     char buf[200];
     if (obj_) {
-        sprintf(buf, "%s %s", s_->string(), obj_->ctemplate->sym->name);
+        Sprintf(buf, "%s %s", s_->string(), obj_->ctemplate->sym->name);
     } else {
-        sprintf(buf, "%s", s_->string());
+        Sprintf(buf, "%s", s_->string());
     }
     Oc::help(buf);
 #endif
@@ -92,9 +92,9 @@ void HocCommand::audit() {
     }
     char buf[256];
     if (obj_) {
-        sprintf(buf, "// execute(\"%s\", %p)\n", name(), obj_);
+        Sprintf(buf, "// execute(\"%s\", %p)\n", name(), obj_);
     } else {
-        sprintf(buf, "{%s}\n", name());
+        Sprintf(buf, "{%s}\n", name());
     }
     hoc_audit_command(buf);
 }
@@ -109,7 +109,7 @@ int HocCommand::execute(bool notify) {
             return 0;
         }
         char buf[256];
-        sprintf(buf, "{%s}\n", s_->string());
+        Sprintf(buf, "{%s}\n", s_->string());
         err = hoc_obj_run(buf, obj_);
     }
 #if HAVE_IV
@@ -134,7 +134,7 @@ int HocCommand::exec_strret(char* buf, int size, bool notify) {
 int HocCommand::execute(const char* s, bool notify) {
     assert(po_ == NULL);
     char buf[256];
-    sprintf(buf, "{%s}\n", s);
+    Sprintf(buf, "{%s}\n", s);
     int err = hoc_obj_run(buf, obj_);
 #if HAVE_IV
     if (notify) {
@@ -223,7 +223,7 @@ bool HocCommandTool::event(Event& e) {
         Oc oc;
         oc.notify();
     } else {
-        sprintf(buf, "%s(%d, %g, %g, %d)", hc_->name(), e.type(), x, y, kd);
+        Sprintf(buf, "%s(%d, %g, %g, %d)", hc_->name(), e.type(), x, y, kd);
         hc_->execute(buf, true);
     }
     if (e.type() == Event::up) {

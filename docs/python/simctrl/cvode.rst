@@ -233,6 +233,47 @@ CVode
 
 
 
+.. method:: CVode.free_event_queues
+
+
+    Syntax:
+        ``cvode.free_event_queues()``
+
+
+    Description:
+        This function takes cares of clearing and free all the event queues allocated in NEURON.
+        More specifically, it frees the `TQItemPool`, `SelfEventPool` and `SelfQueue` members of
+        the `NetCvodeThreadData`.
+        This method should be called only after the end of the NEURON simulation since calling it
+        will clear all the Event Queues and it should only be used for freeing up memory.
+
+----
+
+
+
+.. method:: CVode.poolshrink
+
+
+    Syntax:
+        ``cvode.poolshrink()``
+
+        ``cvode.poolshrink(1)``
+
+
+    Description:
+        This function is used to either print or free the `DoubleArrayPool` s and `DatumArrayPool` s
+        used by the mechanisms' data.
+        If the function is called with argument `1` it deletes the pools if the number of items used
+        is 0.
+        If the function is called without arguments or with argument `0` it prints current number of
+        items used and number of items allocated for double arrays and Datum arrays.
+        This method should be called only after the end of the NEURON simulation for freeing up
+        memory.
+
+----
+
+
+
 .. method:: CVode.rtol
 
 
@@ -853,10 +894,10 @@ CVode
         .. code-block::
             python
     
-    	    from neuron import h, gui
+    	    from neuron import h
      
     	    def hi():
-    	        print('hello from hi, h.t = %g' % h.t)
+    	        print(f'hello from hi, h.t = {h.t}')
 
     	    h.finitialize(-65)
 
@@ -1293,7 +1334,7 @@ CVode
                 # sum over all ELECTRODE_CURRENT (if only using IClamp)
                 total_iclamp_cur = sum(ic.i for ic in h.List('IClamp'))
 
-                print("total_imem=%g total_iclamp_cur=%g" % (total_imem, total_iclamp_cur))
+                print(f"total_imem={total_imem} total_iclamp_cur={total_iclamp_cur}")
                 assert(abs(total_imem - total_iclamp_cur) < 1e-12)
 
 

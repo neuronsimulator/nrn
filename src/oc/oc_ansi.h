@@ -1,6 +1,10 @@
 #pragma once
 #include <cstdio>
+#include <functional>
 #include <memory>
+#include <stdexcept>
+#include <string>
+#include <string_view>
 /**
  * \dir
  * \brief HOC Interpreter
@@ -39,19 +43,47 @@ void ivoc_help(const char*);
 
 Symbol* hoc_lookup(const char*);
 
-// olupton 2022-05-30: This has to have C linkage for now because it is used in
-//                     praxis.c
-extern "C" void* hoc_Ecalloc(std::size_t nmemb, std::size_t size);
-// olupton 2022-05-30: These have to have C linkage for now because they are used
-//                     in newton_thread.c
-extern "C" void* hoc_Emalloc(size_t size);
-extern "C" void hoc_malchk();
-// olupton 2022-05-30: This has to have C linkage for now because it is used in
-//                     abort.c and praxis.c
-extern "C" [[noreturn]] void hoc_execerror(const char*, const char*);
-void hoc_execerr_ext(const char* fmt, ...);
+void* hoc_Ecalloc(std::size_t nmemb, std::size_t size);
+void* hoc_Emalloc(size_t size);
+void hoc_malchk();
+[[noreturn]] void hoc_execerror(const char*, const char*);
+[[noreturn]] void hoc_execerr_ext(const char* fmt, ...);
 char* hoc_object_name(Object*);
 void hoc_retpushx(double);
+
+namespace neuron::oc {
+struct runtime_error: ::std::runtime_error {
+    using ::std::runtime_error::runtime_error;
+};
+/**
+ * @brief Execute C++ code that may throw and propagate HOC information.
+ *
+ * Low level C++ code called from HOC/Python may throw exceptions that do not carry any information
+ * about the HOC/Python expression that generated the exception. This can lead to unhelpful error
+ * messages if the exception is caught high up the stack. This wrapper is designed to be used at the
+ * points where we leave the HOC world and call lower level code. If that lower level code throws an
+ * exception, the message will be passed to hoc_execerror. This saves additional information so that
+ * the final error message provides additional context. If the "lower level" code called
+ * hoc_execerror itself then we pass on the exception without re-calling hoc_execerror.
+ */
+template <typename Callable, typename... Args>
+decltype(auto) invoke_method_that_may_throw(Callable message_prefix, Args&&... args) {
+    try {
+        return std::invoke(std::forward<Args>(args)...);
+    } catch (runtime_error const&) {
+        // This message was thrown by hoc_execerror; just pass it on
+        throw;
+    } catch (std::exception const& e) {
+        std::string message{message_prefix()};
+        std::string_view what{e.what()};
+        if (!what.empty()) {
+            message.append(": ");
+            message.append(what);
+        }
+        hoc_execerror(message.c_str(), nullptr);
+    }
+}
+}  // namespace neuron::oc
 
 double* hoc_getarg(int);
 double* hoc_pgetarg(int);
@@ -63,6 +95,7 @@ void install_vector_method(const char*, double (*)(void*));
 int vector_arg_px(int i, double** p);
 
 double hoc_Exp(double);
+int hoc_is_tempobj_arg(int narg);
 std::FILE* hoc_obj_file_arg(int i);
 void hoc_reg_nmodl_text(int type, const char* txt);
 void hoc_reg_nmodl_filename(int type, const char* filename);
@@ -242,7 +275,6 @@ std::size_t hoc_total_array(Symbol*);
 void hoc_menu_cleanup();
 void frame_debug();
 void hoc_oop_initaftererror();
-void save_parallel_argv(int, const char**);
 void hoc_init();
 void initplot();
 void hoc_audit_command(const char*);
@@ -257,7 +289,8 @@ int hoc_saveaudit();
 void hoc_close_plot();
 void ivoc_cleanup();
 void ivoc_final_exit();
-int hoc_oc(const char*);
+[[nodiscard]] int hoc_oc(const char*);
+[[nodiscard]] int hoc_oc(const char*, std::ostream& os);
 void hoc_initcode();
 int hoc_ParseExec(int);
 int hoc_get_line();
@@ -303,9 +336,7 @@ void bbs_done(void);
 int hoc_main1(int, const char**, const char**);
 char* cxx_char_alloc(std::size_t size);
 
-// olupton 2022-01-31: This has to have C linkage for now because it is used in
-//                     praxis.c.
-extern "C" int stoprun;
+extern int stoprun;
 extern int nrn_mpiabort_on_error_;
 
 /** @} */  // end of hoc_functions

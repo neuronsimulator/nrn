@@ -4,6 +4,8 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
+#include <string>
+
 List* symlist[128]; /* symbol table: linked list
             first char gives which list to use,but*/
 
@@ -98,10 +100,9 @@ void poplocal() /* a lot of storage leakage here for symbols we are guaranteed
 }
 
 Symbol* copylocal(Symbol* s) {
-    if (s->name[0] == '_') {
-        Sprintf(buf, "%s", s->name);
-    } else {
-        Sprintf(buf, "_l%s", s->name);
+    std::string tmp{s->name};
+    if (tmp[0] != '_') {
+        tmp.insert(0, "_l");
     }
-    return install(buf, -1);
+    return install(tmp.c_str(), -1);
 }

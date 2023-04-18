@@ -66,9 +66,7 @@ extern int v_structure_change;
 extern int diam_changed;
 extern Section** secorder;
 extern int section_count;
-extern "C" {
 extern void spDestroy(char*);
-}
 
 void nrn_mk_table_check();
 static std::vector<std::pair<int, NrnThreadMembList*>> table_check_;
@@ -1004,18 +1002,18 @@ int nrn_user_partition() {
             ++nt->ncell;
             ++n;
             if (sec->parentsec) {
-                sprintf(buf, "in thread partition %d is not a root section", it);
+                Sprintf(buf, "in thread partition %d is not a root section", it);
                 hoc_execerror(secname(sec), buf);
             }
             if (sec->volatile_mark) {
-                sprintf(buf, "appeared again in partition %d", it);
+                Sprintf(buf, "appeared again in partition %d", it);
                 hoc_execerror(secname(sec), buf);
             }
             sec->volatile_mark = 1;
         }
     }
     if (n != nrn_global_ncell) {
-        sprintf(buf,
+        Sprintf(buf,
                 "The total number of cells, %d, is different than the number of user partition "
                 "cells, %d\n",
                 nrn_global_ncell,

@@ -1,8 +1,11 @@
 include:
+  - project: hpc/gitlab-pipelines
+    file:
+      - spack-build-components.gitlab-ci.yml
+      - github-project-pipelines.gitlab-ci.yml
+    ref: '$GITLAB_PIPELINES_BRANCH'
   - project: hpc/gitlab-upload-logs
     file: enable-upload.yml
-  - project: hpc/gitlab-pipelines
-    file: github-project-pipelines.gitlab-ci.yml
 
 variables:
   CMAKE_BUILD_PARALLEL_LEVEL: 3

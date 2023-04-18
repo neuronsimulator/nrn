@@ -111,35 +111,35 @@ truncated cones as long as the diameter does not change too much.
     import numpy
 
     sec = h.Section(name='sec')
-    sec.nseg = 10
+    sec.nseg = 11
     sec.Ra = 100
     sec.L = 1000
-    # linearly interpolate diameters from 10 to 100
+    # linearly interpolate diameters from 11 to 100
     for seg in sec:
-        seg.diam = numpy.interp(seg.x, [0, 1], [10, 100])
+        seg.diam = numpy.interp(seg.x, [0, 1], [11, 100])
 
     for seg in sec.allseg():
-        print('{} {} {} {} {} {}'.format(seg.x, seg.diam, seg.area(),
-                h.PI * seg.diam * sec.L / sec.nseg, seg.ri(),
-                0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2)))
+        print(seg.x, seg.diam, seg.area(),
+              h.PI * seg.diam * sec.L / sec.nseg, seg.ri(),
+              0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2))
 
 Output:
 
     .. code-block::
         none
 
-        0.0 14.5 0.0 4555.30934771 1e+30 0.30279180612
-        0.05 14.5 4555.30934771 4555.30934771 0.30279180612 0.30279180612
-        0.15 23.5 7382.74273594 7382.74273594 0.418069266033 0.115277459913
-        0.25 32.5 10210.1761242 10210.1761242 0.175549154338 0.0602716944253
-        0.35 41.5 13037.6095124 13037.6095124 0.0972361172657 0.0369644228403
-        0.45 50.5 15865.0429006 15865.0429006 0.0619274567534 0.0249630339131
-        0.55 59.5 18692.4762889 18692.4762889 0.0429453733627 0.0179823394497
-        0.65 68.5 21519.9096771 21519.9096771 0.0315498128871 0.0135674734374
-        0.75 77.5 24347.3430653 24347.3430653 0.0241667620512 0.0105992886138
-        0.85 86.5 27174.7764536 27174.7764536 0.0191076887925 0.00850840017866
-        0.95 95.5 30002.2098418 30002.2098418 0.0154886887932 0.00698028861454
-        1.0 95.5 0.0 30002.2098418 0.00698028861454 0.00698028861454        
+        0.0 14.5 0.0 4555.309347705201 1e+30 0.30279180612013384
+        0.05 14.5 4555.3093477052 4555.309347705201 0.30279180612013384 0.30279180612013384
+        0.15 23.5 7382.7427359360145 7382.742735936014 0.41806926603277866 0.11527745991264488
+        0.25 32.5 10210.176124166826 10210.176124166826 0.17554915433797802 0.060271694425333144
+        0.35 41.5 13037.609512397643 13037.609512397643 0.09723611726566303 0.03696442284032988
+        0.45 50.5 15865.042900628456 15865.042900628458 0.061927456753380815 0.024963033913050933
+        0.55 59.50000000000001 18692.47628885927 18692.47628885927 0.04294537336273899 0.01798233944968805
+        0.65 68.5 21519.909677090083 21519.909677090083 0.0315498128871132 0.013567473437425146
+        0.75 77.5 24347.343065320896 24347.343065320896 0.02416676205124544 0.010599288613820293
+        0.85 86.5 27174.77645355171 27174.77645355171 0.019107688792477533 0.00850840017865724
+        0.95 95.5 30002.209841782525 30002.209841782525 0.015488688793197206 0.006980288614539967
+        1.0 95.5 0.0 30002.209841782525 0.006980288614539967 0.006980288614539967        
 
 Note that the area (and length) of the 0,1 terminal ends is equal to 0 
 and the axial resistance 
@@ -185,7 +185,7 @@ Example:
         d.connect(b)
         e.connect(a(0)) # connect the 0 end of e to the 0 end of a
         for sec in h.allsec():
-            sec.nseg = 20
+            sec.nseg = 21
             sec.L = 100
             for seg in sec:
                 seg.diam = numpy.interp(seg.x, [0, 1], [10, 40])
@@ -198,7 +198,7 @@ Example:
         for sec in h.allsec():
             print(sec)
             for i in range(sec.n3d()):
-                print('%d: (%g, %g, %g; %g)' % (i, sec.x3d(i), sec.y3d(i), sec.z3d(i), sec.diam3d(i)))
+                print(f'{i}: ({sec.x3d(i)}, {sec.y3d(i)}, {sec.z3d(i)}; {sec.diam3d(i)})')
 
     .. image:: ../../../images/geometry1.png
         :align: center
@@ -245,7 +245,7 @@ Example:
 
         def print_stats():
             for seg in sec.allseg():
-                print('%g %g %g %g' % (seg.x * sec.L, seg.diam, seg.area(), seg.ri()))
+                print(seg.x * sec.L, seg.diam, seg.area(), seg.ri())
 
         h.xpanel("change nseg")
         h.xradiobutton("nseg = 3", (pr, 3))
@@ -264,9 +264,9 @@ Example:
         s.show(False)
 
         for i in range(sec.n3d()):
-            print('%d: %g %g') % (i, sec.arc3d(i), sec.diam3d(i)))
+            print(f'{i}: {sec.arc3d(i)} {sec.diam3d(i)}')
 
-        print("L= %g" % sec.L)
+        print(f"L= {sec.L}")
         print_stats()
 
          
@@ -334,20 +334,20 @@ Example:
 
         sec = h.Section(name='sec')
         sec.Ra=100 
-        sec.nseg = 10 
-        h.pt3dclear(sec=sec) 
+        sec.nseg = 11 
+        sec.pt3dclear() 
         for i in range(31): 
             x = h.PI * i / 30.
-            h.pt3dadd(200 * sin(x), 200 * cos(x), 0, 100 * sin(4 * x), sec=sec) 
+            sec.pt3dadd(200 * sin(x), 200 * cos(x), 0, 100 * sin(4 * x)) 
 
         s = h.Shape() 
         s.show(0) 
         print(sec.L)
         for seg in sec.allseg():
-            print('{} {} {} {} {} {}'.format(
+            print(
                 seg.x, seg.diam, seg.area(), h.PI * seg.diam * sec.L / sec.nseg,
                 seg.ri(),
-                0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2)))
+                0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2))
 
     .. image:: ../../../images/geometry3.png
         :align: center
@@ -650,6 +650,9 @@ Defining the 3D Shape
 
         leaves the pt3d info unchanged. 
 
+    .. note::
+
+        A more object-oriented approach is to use ``sec.pt3dchange`` instead.
          
 
 ----
@@ -903,7 +906,7 @@ Reading 3D Data from NEURON
             python
 
             for seg in sec.allseg():
-                print('%g %g %g' % (seg.x * sec.L, seg.area(), seg.ri()))
+                print(seg.x * sec.L, seg.area(), seg.ri())
 
         will print the arc length, the segment area at that arc length, and the resistance along that length 
         for the section ``sec``. 
@@ -1016,19 +1019,19 @@ Reading 3D Data from NEURON
             import time
 
             diam_change_cnt = neuron.nrn_dll_sym('diam_change_cnt', ctypes.c_int)
-            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 1 0
+            print(h.diam_changed, diam_change_cnt.value)    # 1 0
 
             s = h.Section(name='s')
-            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 1 0
+            print(h.diam_changed, diam_change_cnt.value)    # 1 0
 
             time.sleep(0.2)
-            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 0 1
+            print(h.diam_changed, diam_change_cnt.value)    # 0 1
 
             s.diam = 42
-            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 1 1
+            print(h.diam_changed, diam_change_cnt.value)    # 1 1
 
             time.sleep(0.2)
-            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 1 2
+            print(h.diam_changed, diam_change_cnt.value)    # 1 2
 
          
          

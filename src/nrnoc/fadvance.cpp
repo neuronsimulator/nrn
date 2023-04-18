@@ -54,9 +54,6 @@ extern void nrn_fixed_step();
 extern void nrn_fixed_step_group(int);
 static void* nrn_fixed_step_thread(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread* nth);
-static void* nrn_fixed_step_lastpart(NrnThread*);
-extern void* setup_tree_matrix(NrnThread*);
-extern void nrn_solve(NrnThread*);
 extern void nonvint(NrnThread* nt);
 extern void nrncvode_set_t(double t);
 
@@ -72,8 +69,6 @@ void (*nrn_allthread_handle)();
 
 extern int state_discon_allowed_;
 extern double hoc_epsilon;
-
-static void update(NrnThread*);
 
 #define NRNCTIME          1
 #define NONVINT_ODE_COUNT 5
@@ -303,7 +298,7 @@ static void* daspk_init_step_thread(NrnThread* nt) {
     setup_tree_matrix(nt);
     nrn_solve(nt);
     if (_upd) {
-        update(nt);
+        nrn_update_voltage(nt);
     }
     return nullptr;
 }
@@ -485,7 +480,7 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
     }
     {
         nrn::Instrumentor::phase p("update");
-        update(nth);
+        nrn_update_voltage(nth);
     }
     CTADD
     /*
@@ -547,7 +542,7 @@ void* nrn_ms_bksub(NrnThread* nth) {
     CTBEGIN
     nrn_multisplit_bksub(nth);
     second_order_cur(nth);
-    update(nth);
+    nrn_update_voltage(nth);
     CTADD
     /* see above comment in nrn_fixed_step_thread */
     if (!nrnthread_v_transfer_) {
@@ -569,7 +564,7 @@ void* nrn_ms_bksub_through_triang(NrnThread* nth) {
 }
 
 
-static void update(NrnThread* _nt) {
+void nrn_update_voltage(NrnThread* _nt) {
     int i, i1, i2;
     i1 = 0;
     i2 = _nt->end;
@@ -1087,39 +1082,4 @@ int nrn_nonvint_block_helper(int method, int size, double* pd1, double* pd2, int
         hoc_execerror("nrn_nonvint_block error", 0);
     }
     return rval;
-}
-
-/*
-   Derived from scopmath/euler.cpp. Here because scopmath does not know
-   about NrnThread
-*/
-#include "nrniv_mf.h"
-
-#undef SUCCESS
-#define SUCCESS   0
-#define der_(arg) p[der[arg]]
-#define var_(arg) p[var[arg]]
-
-/* ARGSUSED */
-int euler_thread(int neqn,
-                 int* var,
-                 int* der,
-                 double* p,
-                 int (*func)(double*, Datum*, Datum*, NrnThread*),
-                 Datum* ppvar,
-                 Datum* thread,
-                 NrnThread* nt) {
-    int i;
-    double dt = nt->_dt;
-
-    /* Calculate the derivatives */
-
-    (*func)(p, ppvar, thread, nt);
-
-    /* Update dependent variables --- note defines in euler above*/
-
-    for (i = 0; i < neqn; i++)
-        var_(i) += dt * (der_(i));
-
-    return (SUCCESS);
 }

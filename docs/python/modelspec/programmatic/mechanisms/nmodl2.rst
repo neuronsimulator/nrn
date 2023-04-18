@@ -5,12 +5,12 @@
 NEURON Extension to NMODL
 -------------------------
 
-This section describes the special NEURON block that has been added to 
+This section describes the special ``NEURON`` block that has been added to
 the standard model description language in order to allow translation of 
-a model into a form suitable for linking with NEURON. 
+a model into a form suitable for linking with ``NEURON``.
  
-The keyword NEURON introduces a special block which contains statements 
-that tell NMODL how to organize the variables for access at the NEURON 
+The keyword ``NEURON`` introduces a special block which contains statements
+that tell NMODL how to organize the variables for access at the ``NEURON``
 user level. It declares: 
 
 -   Which names are to be treated as range variables. 
@@ -32,35 +32,43 @@ NEURON
 
 
 Description:
-
     .. code-block::
-        none
 
         NEURON{ 
-           SUFFIX ... 
-           RANGE ... 
-           GLOBAL ... 
-           NONSPECIFIC_CURRENT ... 
-           USEION ... READ ... WRITE ... VALENCE real 
+           SUFFIX name
+           RANGE range1, ...
+           GLOBAL global1, ...
+           NONSPECIFIC_CURRENT nonspec1, ...
+           ELECTRODE_CURRENT elec1, ...
+           USEION name [READ read1, ...] [WRITE write1, ...] [VALENCE real] [REPRESENTS ontology_id]
            POINT_PROCESS ... 
-           POINTER ... 
-           EXTERNAL ... 
+           POINTER pointer1, ...
+           BBCOREPOINTER bbcore1, ...
+           EXTERNAL external1, ...
+           THREADSAFE
+           REPRESENTS ontology_id
         } 
 
 
 
 SUFFIX
-~~~~~~
+######
 
 
 Description:
+    .. code-block::
+
+        NEURON {
+            SUFFIX _name
+        }
+
     The suffix, "``_name``" is appended to all variables, functions, and 
-    procedures that are accessible from the user level of NEURON. If the ``SUFFIX``
+    procedures that are accessible from the user level of ``NEURON``. If the ``SUFFIX``
     statement is absent, the file name is used as the suffix (with the addition 
     of an underscore character).  If there is a :ref:`mech` statement, 
     that name 
     is used as the suffix.  Suffixes prevent overloading of names at the user 
-    level of NEURON.  At some point in the future I may add something similar 
+    level of ``NEURON``.  At some point in the future I may add something similar
     to the access statement which will allow the omission of the suffix for a 
     specified mechanism. 
     Note that suffixes are not used within the model 
@@ -70,21 +78,27 @@ Description:
     However, the mechanism name will be the base file name. 
     This is useful if you know that no conflict of names 
     will exist or if the :file:`.mod` file is primarily used to create functions callable 
-    from NEURON by the user and you want to specify those function names exactly. 
+    from ``NEURON`` by the user and you want to specify those function names exactly.
 
 
 RANGE
-~~~~~
+#####
 
 
 Description:
+    .. code-block::
+
+        NEURON {
+            RANGE range1, ...
+        }
+
     These names will be become range variables. Do not add suffixes here. 
     The names should also be declared in the normal ``PARAMETER`` or ``ASSIGNED`` 
     statement outside 
-    of the ``NEURON`` block.  Parameters that do not appear in a ``NEURON RANGE``
+    of the ``NEURON`` block.  Parameters that do not appear in a ``RANGE``
     statement will become global variables. 
     Assigned variables that do not appear in this statement or in the
-    ``NEURON GLOBAL`` statement will be hidden from the user. 
+    ``GLOBAL`` statement will be hidden from the user.
     When a mechanism is inserted in 
     a section, the values of these range variables are set to the values 
     specified in the normal ``PARAMETER`` statement outside the
@@ -92,10 +106,16 @@ Description:
 
 
 GLOBAL
-~~~~~~
+######
 
 
 Description:
+    .. code-block::
+
+        NEURON {
+            GLOBAL global1, ...
+        }
+
     These names, which should be declared elsewhere as ``ASSIGNED`` or ``PARAMETER``
     variables, 
     become global variables instead of range variables.  Notice here that 
@@ -106,23 +126,35 @@ Description:
 .. nonspecific_current:
 
 NONSPECIFIC_CURRENT
-~~~~~~~~~~~~~~~~~~~
+###################
 
 
 Description:
+    .. code-block::
+
+        NEURON {
+            NONSPECIFIC_CURRENT nonspec1, ...
+        }
+
     This signifies that we are calculating local currents which get added 
     to the total membrane current but will not contribute to any particular 
     ionic concentration.  This current should be assigned a value 
     after any ``SOLVE`` statement but before the end of the ``BREAKPOINT`` block. 
     This name will be hidden at the user level unless it appears in a
-    ``NEURON RANGE`` statement. 
+    ``RANGE`` statement.
 
 
 ELECTRODE_CURRENT
-~~~~~~~~~~~~~~~~~
+#################
 
 
 Description:
+    .. code-block::
+
+        NEURON {
+            ELECTRODE_CURRENT elec1, ...
+        }
+
     The ELECTRODE_CURRENT statement has two important consequences: positive values of the current
     will depolarize the cell (in contrast to the hyperpolarizing effect of positive transmembrane
     currents), and when the extracellular mechanism is present there will be a change in the
@@ -131,10 +163,16 @@ Description:
 
 
 USEION
-~~~~~~
+######
 
 
 Description:
+    .. code-block::
+
+        NEURON {
+            USEION name [READ read1, ...] [WRITE write1, ...] [VALENCE real] [REPRESENTS ontology_id]
+        }
+
     This statement declares that a  specific ionic species will be used within 
     this model. The built-in 
     HH channel uses the ions ``na`` and ``k``. Different models which deal with 
@@ -143,7 +181,7 @@ Description:
     ``na``.  The example models using calcium call it, ``ca``. If an ion is 
     declared, suppose it is called, 
     ``ion``, then a separate mechanism is internally created 
-    within NEURON, denoted by ``ion``, and automatically inserted whenever 
+    within ``NEURON``, denoted by ``ion``, and automatically inserted whenever
     the "using" mechanism is inserted.  The variables of the mechanism 
     called ``ion`` are 
     outward total current carried by this ion, ``iion``; internal and 
@@ -168,12 +206,11 @@ Description:
     ion_style(). Three cases are noteworthy. 
 
 READ
-====
+````
 
     Assume only one model is inserted in a section. 
 
     .. code-block::
-        none
 
         	USEION ca READ eca 
 
@@ -183,7 +220,6 @@ READ
     Now insert another model at the same section that has 
 
     .. code-block::
-        none
 
         	USEION ca READ cai, cao 
 
@@ -192,13 +228,12 @@ READ
     from the Nernst equation when finitialize() is called. 
 
 WRITE
-=====
+`````
 
     Lastly, insert a final model at the same location in addition to the 
     first two. 
 
     .. code-block::
-        none
 
         	USEION ca WRITE cai, cao 
 
@@ -231,7 +266,7 @@ WRITE
     parameters unless explicitly calculated by some mechanism. 
 
 VALENCE
-=======
+```````
 
     The ``READ`` list of a ``USEION`` specifies those ionic variables which 
     will be used to calculate other values but is not calculated itself. 
@@ -270,60 +305,80 @@ VALENCE
     functions such that WRITE currents are added to ion currents. 
 
 REPRESENTS
-==========
-    Optionally provide CURIE (Compact URI) to annotate what the species represents
-    e.g. ``CHEBI:29101`` for sodium(1+).
+``````````
 
-    ``TODO``: Add existing example mod file (src/nrnoc/hh.mod)
+    See ``REPRESENTS`` statement.
 
 .. point_process:
 
 POINT_PROCESS
-~~~~~~~~~~~~~
+#############
 
 
 Description:
-    The ``READ`` list of a ``USEION`` specifies those ionic variables which 
-    will be used to calculate other values but is not calculated itself. 
-    The ``WRITE`` list of a ``USEION`` specifies those ionic variables which 
-    will be calculated within this mechanism. Normally, a channel will read 
-    the concentration or reversal potential variables and write a current. 
-    A mechanism that calculates concentrations will normally read a current 
-    and write the intracellular and/or extracellular; it is no longer necessary 
-    to ever write the reversal potential as that will be automatically computed 
-    via the nernst equation. 
-    It usually does not make sense to both read and 
-    write the same ionic concentrations. 
-    It is possible to READ and WRITE currents. 
-    One can imagine,  a large calcium 
-    model which would ``WRITE`` all the ion variables (including current) 
-    and READ the ion current. 
-    And one can imagine 
-    models which ``READ`` some ion variables and do not ``WRITE`` any. 
-    It would be an error if more than one mechanism at the same location tried 
-    to WRITE the same concentration. 
-     
-    
+    .. code-block::
 
- 
-    A bit of implementation specific discussion may be in order here. 
-    All the statements after the SOLVE statement in the BREAKPOINT block are 
-    collected to form a function which is called during the construction of 
-    the charge conservation matrix equation.  This function is called 
-    several times in order to compute the current and conductance  to be added 
-    into the matrix equation.  This function is never called if you are not 
-    writing any current.  The SOLVE statement is executed after the new voltages 
-    have been computed in order to integrate the states over the time step, ``dt``. 
-    Local static variables get appropriate copies of the proper ion variables 
-    for use in the mechanism. Ion variables get updated on exit from these 
-    functions such that WRITE currents are added to ion currents. 
+        NEURON {
+            POINT_PROCESS ...
+        }
+
+        
+    Point models are used for synapses, electrode stimuli, etc.
+    They are distinguished from standard mechanisms in that instead of inserting
+    the mechanism into a section and accessing parameters via range variables,
+    point mechanisms are created as interpreter objects, eg.
+
+
+    .. code-block::
+        none
+
+            objref stim
+            stim = new IClamp(x)
+        
+
+    Values are accessed via the standard object syntax, eg. ``stim.amp = 2``.
+    Since standard mechanisms are considered in terms of density,
+    the appropriate current units for standard mechanisms are mA/cm2 and conductance units are mho/cm2.
+    However, point process current units are nA and conductance units are umho.
+    These conventions ensure that the simulation is independent of the number of segments in a section
+    (assuming the number of segments is large enough so spatial discretization error is small).
+
+    At the NEURON user level, all variables and functions associated with a POINT_PROCESS
+    are accessed via the normal object syntax. A point process, call it ``pnt`` is inserted into (or moved to)
+    the currently specified section at location, ``0 < x < 1``, with the function, ``pnt.loc(x)``. See :py:meth:`pnt.get_loc`
+    
+    If a point process is created with no argument then it is not located anywhere.
+    If an argument is present and there is a currently accessed section then the point process is placed there.
+    At this time, point processes are placed at the center of the nearest segment.
+
+    ``pnt.has_loc()`` returns 1 if the point process is located in a section and returns 0 if not located.
+    If a point process has no location then attempts to access its variables or get its location will
+    produce an error message. See :py:meth:`pnt.has_loc`
+    
+    One finds the location of a point process via the function,  ``x = pnt.get_loc()``. See :py:meth:`pnt.get_loc` 
+
+    
+    The function returns the x location at the center of the segment where the process was placed and pushes the section name onto the stack so that it becomes the currently accessed section. The stack must be popped with pop_section() at a subsequent time. BE SURE TO POP THE SECTION STACK! This can be a dangerous function in the sense that if the stack is not popped, then section access is completely screwed up.
+
+    The POINT_PROCESS mechanism can be used to implement classes written in c/c++ for use by the interpreter.
+    To aid in this the special block CONSTRUCTOR is called when a point process is created with the ``new``  command in the interpreter.
+    Just before the memory associated with a point process instance is freed the users DESTRUCTOR block (if any) is called.
+
+    .. seealso:: 
+        :ref:`mech`
 
 
 POINTER
-~~~~~~~
+#######
 
 
 Description:
+    .. code-block::
+
+        NEURON {
+            POINTER pointer1, ...
+        }
+
     These names are pointer references to variables outside the model. 
     They should be declared in the body of the description as normal variables 
     with units and are used exactly like normal variables. The user is responsible 
@@ -331,7 +386,7 @@ Description:
     hoc interpreter level. Actual variables are normal variables in other 
     mechanisms, membrane potential, or any hoc variable. See below for how this 
     connection is made. If a POINTER variable is ever used without being 
-    set to the address of an actual variable, NEURON may crash with a memory 
+    set to the address of an actual variable, ``NEURON`` may crash with a memory
     reference error, or worse, produce wrong results. Unfortunately the errors 
     that arise can be quite subtle. For example, if you set a POINTER correctly 
     to a mechanism variable in section a. And then change the number of segments in 
@@ -341,23 +396,35 @@ Description:
 
 
 BBCOREPOINTER
-~~~~~~~~~~~~~~
+#############
 
 
 Description:
+    .. code-block::
+
+        NEURON {
+            BBCOREPOINTER bbcore1, ...
+        }
+
     See: :ref:`Memory Management for POINTER Variables`
 
     ``TODO``: Add description (?) and existing example mod file (provided by link)
 
 
 EXTERNAL
-~~~~~~~~
+########
 
 
 Description:
+    .. code-block::
+
+        NEURON {
+            EXTERNAL external1, ...
+        }
+
     These names, which should be declared elsewhere as ``ASSIGNED``
     or ``PARAMETER``
-    variables allow global variables in other models or NEURON c files to be 
+    variables allow global variables in other models or ``NEURON`` c files to be
     used in this model. That is, the definition of this variable must appear 
     in some other file. Note that if the definition appeared in another mod file 
     this name should explicitly contain the proper suffix of that model. 
@@ -365,7 +432,6 @@ Description:
     make sure you declare them as 
 
     .. code-block::
-        none
 
         extern double fname_othermodelsuffix(); 
 
@@ -373,26 +439,64 @@ Description:
 
 
 THREADSAFE
-~~~~~~~~~~
+##########
 
 Description:
+    .. code-block::
+
+        NEURON {
+            THREADSAFE
+        }
+
     See: :ref:`Multithreaded paralellization` and :ref:`Thread Safe MOD Files`
 
     ``TODO``: Add description and existing example mod file
 
-
-BEFORE
-~~~~~~
-
-Description:
-    ``TODO``: Add description and existing example mod file
-
-
-AFTER
-~~~~~
+REPRESENTS
+##########
 
 Description:
-    ``TODO``: Add description and existing example mod file
+    .. code-block::
+
+        NEURON {
+            REPRESENTS ontology_id
+        }
+
+    Optionally provide CURIE (Compact URI) to annotate what the species represents
+    e.g. ``CHEBI:29101`` for sodium(1+).
+
+    ``TODO``: Add existing example mod file (src/nrnoc/hh.mod)
+
+
+
+BEFORE / AFTER
+~~~~~~~~~~~~~~
+
+Description:
+    .. code-block::
+
+        BEFORE <INITIAL/BREAKPOINT/STEP> {
+           ...
+        }
+
+        AFTER <INTIAL/SOLVE> {
+           ...
+        }
+
+    - ``BEFORE INITIAL`` executes just before any :ref:`INITIAL` blocks of any mod file execute (but after all the type ``0`` of :ref:`FInitializeHandler` are called).
+    - ``AFTER INITIAL`` executes just after the :ref:`INITIAL` blocks of all mod files execute (but before all the type ``1`` of :ref:`FInitializeHandler` are called).
+    - ``BEFORE BREAKPOINT`` executes whenever the tree matrix is setup before any :ref:`BREAKPOINT` blocks execute
+    - ``AFTER SOLVE`` executes afer all the :ref:`SOLVE` blocks (have updated the states for the fixed step method). For the fixed step method that is more or less the end of :ref:`fadvance()`. But for variable step methods that refers to the completion of a cvode step which is not quite what is desired in practice because event arrival can cause cvode to retreat to an earlier time. Hence the use of ``BEFORE STEP``.
+    - ``BEFORE STEP`` executes just before vector record takes place. I.e. ``BEFORE STEP`` takes place when the entire system of equations and events are consistent at time `t`.
+
+    .. note::
+        Note that the ``INITIAL`` blocks are ordered so that mechanisms that write
+        concentrations are after the initialization of ions and before mechanisms that read
+        concentrations.
+        But that is also the case for the order of the list of mechanisms that do ``INITIAL``, ``BREAKPOINT``, ``SOLVE``, etc.
+        
+
+    ``TODO``: Add existing example mod file
 
 
 FOR_NETCONS
@@ -411,28 +515,69 @@ PROTECT
 ~~~~~~~
 
 Description:
-    Mod files that assign values to GLOBAL variables are not considered 
-    thread safe. If the mod file is using the GLOBAL as a counter, prefix 
-    the offending assignment statements with the PROTECT keyword so that 
-    multiple threads do not attempt to update the value at the same time 
-    (race condition). If the mod file is using the GLOBAL essentially as 
-    a file scope LOCAL along with the possibility of passing values back 
-    to hoc in response to calling a PROCEDURE, use the THREADSAFE keyword 
-    in the NEURON block to automatically treat those GLOBAL variables 
-    as thread specific variables. NEURON assigns and evaluates only 
-    the thread 0 version and if FUNCTIONs and PROCEDUREs are called from 
-    Python, the thread 0 version of these globals are used.
+    .. code-block::
 
-    ``TODO``: Add existing example mod file (share/demo/release/mcna.mod)
+        NEURON {
+            GLOBAL var
+        }
+
+        BREAKPOINT {
+            PROTECT var = var + 1
+        }
+
+    Mod files that update values to :ref:`GLOBAL` variables are not considered
+    thread safe. In case of multi-threaded/SIMD/GPU execution, such updates can result
+    in a race condition. To avoid this, one needs to use ``PROTECT`` keyword. Note that
+    ``PROTECT`` internally uses atomic operations on CPU or GPU execution and hence
+    the statement needs to be of a simple form such as:
+
+    .. code-block::
+
+        var1 = var1 binary_operator expression
+        var1 = expression binary_operator var1
+
+    If the mod file is using the ``GLOBAL`` essentially as a file scope :ref:`LOCAL`
+    along with the possibility of passing values back to hoc in response to calling a
+    :ref:`PROCEDURE`, make sure to use the :ref:`THREADSAFE` keyword in the
+    :ref:`NEURON` block to automatically treat those ``GLOBAL`` variables as thread
+    specific variables. NEURON assigns and evaluates only the thread 0 version and if
+    :ref:`FUNCTION` and ::ref:`PROCEDURE` are called from Python, the thread 0 version
+    of these globals are used.
+
+    .. note::
+        For the performance reason, we recommend to reduce or remove the use of
+        ``PROTECT`` construct.
 
 
 MUTEXLOCK / MUTEXUNLOCK
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Description:
-    ``TODO``: Add description and existing example mod file (share/examples/nrniv/nmodl/cadif.mod)
+    .. code-block::
 
+        LOCAL factors_done
 
+        INITIAL {
+            MUTEXLOCK
+            if (factors_done == 0) {
+                  factors_done = 1
+                  factors()
+            }
+            MUTEXUNLOCK
+        }
+
+        PROCEDURE factors() {
+            : ...
+        }
+
+    Similar to ``PROTECT``, ``MUTEXLOCK`` and ``MUTEXUNLOCK`` are two constructs to
+    handle thread-safety in case update of updates to ``GLOBAL`` variables in
+    multi-threaded execution. Internally it uses mutex mechanism to avoid race condition.
+
+    .. note::
+        This construct is not supported in the case of GPU execution via CoreNEURON.
+        For the performance reason and compatibility with GPU execution, either avoid
+        the usage of this construct or check alternatives using ``PROTECT`` construct.
 
 
 .. _connectingmechanismstogether:
@@ -447,7 +592,7 @@ Connecting Mechanisms Together
     at a specific 
     location. (Normally, mechanism functions callable from HOC should not 
     modify range variables since the function does not know where the mechanism 
-    data for a segment is located. Normally, the pointers are set when NEURON 
+    data for a segment is located. Normally, the pointers are set when ``NEURON`` 
     calls the ``BREAKPOINT`` block and the associated ``SOLVE`` blocks.) 
      
     
@@ -470,7 +615,6 @@ Description:
     Basically what is needed is a way to implement the Python statement 
 
     .. code-block::
-        none
 
         section1(x).mech1.var1 =  section2(x2).mech2.var2 
 
@@ -481,7 +625,6 @@ Description:
     are declared within the NEURON block via 
 
     .. code-block::
-        none
 
         NEURON { 
            POINTER var1, var2, ... 
@@ -509,7 +652,7 @@ Description:
  
     Note: For a density mechanism, the 'POINTER_name' cannot have the SUFFIX appended. For example if a mechanism with suffix foo has a POINTER bar and you want it to point to h.t use
 
-    .. code-blocK::
+    .. code-block::
         python
 
         h.setpointer(h._ref_t, 'bar', sec(x).foo)
@@ -525,7 +668,6 @@ Description:
     declaration in the presynaptic model 
 
     .. code-block::
-        none
 
         NEURON { POINTPROCESS Syn   POINTER vpre } 
 

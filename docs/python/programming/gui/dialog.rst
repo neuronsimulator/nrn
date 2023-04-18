@@ -85,7 +85,7 @@ Dialog Boxes
 
             my_str = h.ref('')
             if h.string_dialog('Type a string:', my_str):
-                print('You typed: %s' % my_str[0])
+                print(f'You typed: {my_str[0]}')
             else:
                 print('You canceled')
                 

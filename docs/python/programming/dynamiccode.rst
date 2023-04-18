@@ -74,7 +74,7 @@ code-executing
         .. code-block::
             python
             
-            h.execute1("%s.var = outside_var" % obj_name)
+            h.execute1(f"{obj_name}.var = outside_var")
 
         Here, outside_var is unavailable from within the object and so 
         a command is constructed which can be executed at the top level where that 

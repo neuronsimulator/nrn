@@ -16,20 +16,19 @@ Contents:
 It is recommended to use a Python virtual environment, for example:
 
 ```
-pip3 install virtualenv
 python3 -m venv venv
 source venv/bin/activate
 ```
 
 In order to build documentation locally, you need to pip install the ``docs_requirements.txt`` :
 ```
-pip3 install --user -r docs/docs_requirements.txt --upgrade
+pip3 install -r docs/docs_requirements.txt --upgrade
 ```
 
 Also, make sure to have `Doxygen` and `pandoc` installed, and the dependencies listed in [conda_environment.yml](conda_environment.yml)
 Note that this file is tailored to the ReadTheDocs setup, but lists all desired requirements.
 
-With all dependencies installed, configure project with CMake as described in [CMake Build Options](cmake_doc/options.rst#nrn_enable_docsbooloff).
+With all dependencies installed, configure project with CMake as described in [CMake Build Options](./cmake_doc/options.rst#nrn-enable-docs-bool-off).
 
 e.g. in your CMake build folder:
 
@@ -58,7 +57,7 @@ make sphinx
 
 When working locally on documentation, depending on what you work on, be aware of the following targets to speed up building process:
 
-* `doxygen` 			- build the API documentation only. Ends up in [_generated](_generated)
+* `doxygen` 			- build the API documentation only. Ends up in ``_generated`` folder under ``docs``.
 * `notebooks` 			- execute & embed outputs in-place into jupyter notebooks, see [notebooks.sh](notebooks.sh)
 * `notebooks-clean`     - clears outputs from notebooks. Remember that executing notebooks will add outputs in-place, and we don't want those committed to the repo.
 * `sphinx` 				- build Sphinx documentation

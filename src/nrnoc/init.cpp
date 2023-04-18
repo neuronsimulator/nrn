@@ -52,9 +52,9 @@ void nrn_possible_mismatched_arch(const char* libname) {
 #endif  // !__arm64__
 
         // what arch did we try to dlopen
-        char* cmd;
-        cmd = new char[strlen(libname) + 100];
-        sprintf(cmd, "lipo -archs %s 2> /dev/null", libname);
+        auto const cmd_size = strlen(libname) + 100;
+        auto* cmd = new char[cmd_size];
+        std::snprintf(cmd, cmd_size, "lipo -archs %s 2> /dev/null", libname);
         char libname_arch[20]{0};
         FILE* p = popen(cmd, "r");
         delete[] cmd;
@@ -843,17 +843,16 @@ double* makevector(int nrows)
 #endif  // 0
 
 int _ninits;
-extern "C" void _modl_cleanup(void) {}
 
 #if 1
-extern "C" void _modl_set_dt(double newdt) {
+void _modl_set_dt(double newdt) {
     dt = newdt;
     nrn_threads->_dt = newdt;
 }
-extern "C" void _modl_set_dt_thread(double newdt, NrnThread* nt) {
+void _modl_set_dt_thread(double newdt, NrnThread* nt) {
     nt->_dt = newdt;
 }
-extern "C" double _modl_get_dt_thread(NrnThread* nt) {
+double _modl_get_dt_thread(NrnThread* nt) {
     return nt->_dt;
 }
 #endif  // 1

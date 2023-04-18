@@ -113,10 +113,10 @@ truncated cones as long as the diameter does not change too much.
     forall delete_section() 
     create a 
     access a 
-    nseg = 10 
+    nseg = 11 
     Ra = 100 
     L=1000 
-    diam(0:1)=10:100 
+    diam(0:1)=11:100 
     for (x) print x, diam(x), area(x), PI*diam(x)*L/nseg, ri(x), .01*Ra*(L/2/nseg)/(PI*(diam(x)/2)^2) 
 
 Note that the area (and length) of the 0,1 terminal ends is equal to 0 
@@ -160,7 +160,7 @@ Example:
         connect c(1), b(1) 
         connect d(0), b(1) 
         connect e(0), a(0) 
-        forall nseg=20 
+        forall nseg=21 
         forall L=100 
         forall diam(0:1) = 10:40 
          
@@ -300,7 +300,7 @@ Example:
         create a 
         access a 
         Ra=100 
-        nseg = 10 
+        nseg = 11 
         pt3dclear() 
         for i=0,30 { 
         	x = PI*i/30 

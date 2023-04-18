@@ -4,7 +4,7 @@ INCF/CNS 2022 Online Tutorial
 A free online webinar series was offered on June 28, 2022.
 
 For those who prefer, this video series may also be accessed as a 
- `YouTube playlist <https://youtube.com/playlist?list=PLydMjAmHmOmj8gCwQPvedIwJqqJAmMqYe>`_.
+`YouTube playlist <https://youtube.com/playlist?list=PLydMjAmHmOmj8gCwQPvedIwJqqJAmMqYe>`_.
 
 Course Welcome
 ----------------------

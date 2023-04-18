@@ -15,22 +15,27 @@ endif()
 # =============================================================================
 # Build modlunit : Mod file units checker
 # =============================================================================
+set(BISON_FLEX_WORKING_DIR "${CMAKE_BINARY_DIR}")
 set(NRN_MODLUNIT_GEN "${CMAKE_CURRENT_BINARY_DIR}/modlunit_generated")
 file(MAKE_DIRECTORY "${NRN_MODLUNIT_GEN}")
-file(RELATIVE_PATH NRN_MODLUNIT_SRC_REL "${NRN_MODLUNIT_GEN}" "${NRN_MODLUNIT_SRC_DIR}")
+file(RELATIVE_PATH NRN_MODLUNIT_GEN_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_MODLUNIT_GEN}")
+file(RELATIVE_PATH NRN_MODLUNIT_SRC_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_MODLUNIT_SRC_DIR}")
 # Run flex and bison with relative paths, so absolute paths are not present in the generated source
-# file because of include, __FILE__ and so on. This improves ccache performance.
+# file because of include, __FILE__ and so on. This improves ccache performance. To generate code
+# coverage correctly, the *relative* paths that are present need to be with respect to the build
+# directory.
 add_custom_command(
   OUTPUT "${NRN_MODLUNIT_GEN}/lex.cpp"
-  WORKING_DIRECTORY "${NRN_MODLUNIT_GEN}"
-  COMMAND "${FLEX_EXECUTABLE}" ARGS -o lex.cpp "${NRN_MODLUNIT_SRC_REL}/lex.lpp"
+  WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
+  COMMAND "${FLEX_EXECUTABLE}" ARGS -o "${NRN_MODLUNIT_GEN_REL}/lex.cpp"
+          "${NRN_MODLUNIT_SRC_REL}/lex.lpp"
   DEPENDS "${NRN_MODLUNIT_SRC_DIR}/lex.lpp"
   COMMENT "[FLEX][modlunitlexer] Building scanner with flex ${FLEX_VERSION}")
 add_custom_command(
   OUTPUT "${NRN_MODLUNIT_GEN}/parse1.hpp" "${NRN_MODLUNIT_GEN}/parse1.cpp"
-  WORKING_DIRECTORY "${NRN_MODLUNIT_GEN}"
-  COMMAND "${BISON_EXECUTABLE}" ARGS --defines=parse1.hpp -o parse1.cpp
-          "${NRN_MODLUNIT_SRC_REL}/parse1.ypp"
+  WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
+  COMMAND "${BISON_EXECUTABLE}" ARGS "--defines=${NRN_MODLUNIT_GEN_REL}/parse1.hpp" -o
+          "${NRN_MODLUNIT_GEN_REL}/parse1.cpp" "${NRN_MODLUNIT_SRC_REL}/parse1.ypp"
   DEPENDS "${NRN_MODLUNIT_SRC_DIR}/parse1.ypp"
   COMMENT "[BISON][modlunitparser] Building parser with bison ${BISON_VERSION}")
 
@@ -54,25 +59,26 @@ endif()
 # =============================================================================
 set(NRN_NMODL_GEN "${CMAKE_CURRENT_BINARY_DIR}/nocmodl_generated")
 file(MAKE_DIRECTORY "${NRN_NMODL_GEN}")
-file(RELATIVE_PATH NRN_NMODL_SRC_REL "${NRN_NMODL_GEN}" "${NRN_NMODL_SRC_DIR}")
+file(RELATIVE_PATH NRN_NMODL_GEN_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_NMODL_GEN}")
+file(RELATIVE_PATH NRN_NMODL_SRC_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_NMODL_SRC_DIR}")
 add_custom_command(
   OUTPUT "${NRN_NMODL_GEN}/lex.cpp"
-  WORKING_DIRECTORY "${NRN_NMODL_GEN}"
-  COMMAND "${FLEX_EXECUTABLE}" ARGS -o lex.cpp "${NRN_NMODL_SRC_REL}/lex.lpp"
+  WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
+  COMMAND "${FLEX_EXECUTABLE}" ARGS -o "${NRN_NMODL_GEN_REL}/lex.cpp" "${NRN_NMODL_SRC_REL}/lex.lpp"
   DEPENDS "${NRN_NMODL_SRC_DIR}/lex.lpp"
   COMMENT "[FLEX][nocmodllexer] Building scanner with flex ${FLEX_VERSION}")
 add_custom_command(
   OUTPUT "${NRN_NMODL_GEN}/parse1.hpp" "${NRN_NMODL_GEN}/parse1.cpp"
-  WORKING_DIRECTORY "${NRN_NMODL_GEN}"
-  COMMAND "${BISON_EXECUTABLE}" ARGS --defines=parse1.hpp -o parse1.cpp
-          "${NRN_NMODL_SRC_REL}/parse1.ypp"
+  WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
+  COMMAND "${BISON_EXECUTABLE}" ARGS "--defines=${NRN_NMODL_GEN_REL}/parse1.hpp" -o
+          "${NRN_NMODL_GEN_REL}/parse1.cpp" "${NRN_NMODL_SRC_REL}/parse1.ypp"
   DEPENDS "${NRN_NMODL_SRC_DIR}/parse1.ypp"
   COMMENT "[BISON][nocmodlparser] Building parser with bison ${BISON_VERSION}")
 add_custom_command(
   OUTPUT "${NRN_NMODL_GEN}/diffeq.hpp" "${NRN_NMODL_GEN}/diffeq.cpp"
-  WORKING_DIRECTORY "${NRN_NMODL_GEN}"
-  COMMAND "${BISON_EXECUTABLE}" ARGS --defines=diffeq.hpp -o diffeq.cpp
-          "${NRN_NMODL_SRC_REL}/diffeq.ypp"
+  WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
+  COMMAND "${BISON_EXECUTABLE}" ARGS "--defines=${NRN_NMODL_GEN_REL}/diffeq.hpp" -o
+          "${NRN_NMODL_GEN_REL}/diffeq.cpp" "${NRN_NMODL_SRC_REL}/diffeq.ypp"
   DEPENDS "${NRN_NMODL_SRC_DIR}/diffeq.ypp"
   COMMENT "[BISON][nocmodlparser] Building parser with bison ${BISON_VERSION}")
 
@@ -102,7 +108,7 @@ foreach(modfile ${NRN_MODFILE_BASE_NAMES})
     SOURCE ${modfile}.cpp
     APPEND
     PROPERTY COMPILE_OPTIONS ${NRN_EXTRA_MECH_CXX_FLAGS})
-  list(APPEND NRN_MODFILE_CPP ${modfile}.cpp)
+  list(APPEND NRN_MODFILE_CPP ${PROJECT_BINARY_DIR}/${modfile}.cpp)
 endforeach()
 
 set_source_files_properties(${NRN_MODFILE_CPP} PROPERTIES GENERATED TRUE)
@@ -112,11 +118,13 @@ set_source_files_properties(${NRN_MODFILE_CPP} PROPERTIES GENERATED TRUE)
 # =============================================================================
 set(NRN_OC_GEN "${CMAKE_CURRENT_BINARY_DIR}/oc_generated")
 file(MAKE_DIRECTORY "${NRN_OC_GEN}")
-file(RELATIVE_PATH NRN_OC_SRC_REL "${NRN_OC_GEN}" "${NRN_OC_SRC_DIR}")
+file(RELATIVE_PATH NRN_OC_GEN_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_OC_GEN}")
+file(RELATIVE_PATH NRN_OC_SRC_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_OC_SRC_DIR}")
 add_custom_command(
   OUTPUT "${NRN_OC_GEN}/parse.hpp" "${NRN_OC_GEN}/parse.cpp"
-  WORKING_DIRECTORY "${NRN_OC_GEN}"
-  COMMAND "${BISON_EXECUTABLE}" ARGS --defines=parse.hpp -o parse.cpp "${NRN_OC_SRC_REL}/parse.ypp"
+  WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
+  COMMAND "${BISON_EXECUTABLE}" ARGS "--defines=${NRN_OC_GEN_REL}/parse.hpp" -o
+          "${NRN_OC_GEN_REL}/parse.cpp" "${NRN_OC_SRC_REL}/parse.ypp"
   DEPENDS "${NRN_OC_SRC_DIR}/parse.ypp"
   COMMENT "[BISON][ocparser] Building parser with bison ${BISON_VERSION}")
 add_custom_target(oc_generated_files DEPENDS "${NRN_OC_GEN}/parse.hpp" "${NRN_OC_GEN}/parse.cpp")
@@ -167,6 +175,18 @@ if(NOT NRN_ENABLE_INTERVIEWS)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_IVOS_SRC_FILES})
 endif()
 
+if(NRN_ENABLE_MUSIC)
+  if(NRN_ENABLE_MPI_DYNAMIC)
+    list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/neuronmusic/nrnmusic_dynam.cpp)
+    set_property(
+      SOURCE ${NRN_NRNIV_LIB_SRC_FILES} ${NRN_NRNMPI_SRC_FILES}
+      APPEND
+      PROPERTY COMPILE_DEFINITIONS NRNMUSIC_DYNAMIC=1)
+  else()
+    list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_MUSIC_SRC_FILES})
+  endif()
+endif()
+
 # =============================================================================
 # Include directories for #include <../../nrnconf.h>
 # =============================================================================
@@ -199,6 +219,11 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}/src/sundials/cvodes
     ${PROJECT_SOURCE_DIR}/src/sundials/ida
     ${PROJECT_SOURCE_DIR}/src/sundials/shared)
+
+if(NRN_ENABLE_MUSIC)
+  list(APPEND NRN_INCLUDE_DIRS ${NRN_MUSIC_SRC_DIR})
+endif()
+
 set(NRN_INCLUDE_DIRS
     ${NRN_INCLUDE_DIRS}
     PARENT_SCOPE)
@@ -216,10 +241,11 @@ add_custom_target(
   nrnversion_h
   COMMAND ${CMAKE_COMMAND} -E env PROJECT_VERSION=${PROJECT_VERSION} bash
           ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} > nrnversion.h.tmp
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp ${NRN_NRNOC_SRC_DIR}/nrnversion.h
-  DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh)
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp nrnversion.h
+  DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh
+  WORKING_DIRECTORY ${NRN_NRNOC_BUILD_DIR})
 
-add_custom_command(OUTPUT ${NRN_NRNOC_SRC_DIR}/nrnversion.h DEPENDS nrnversion_h)
+add_custom_command(OUTPUT ${NRN_NRNOC_BUILD_DIR}/nrnversion.h DEPENDS nrnversion_h)
 add_dependencies(generated_source_files nrnversion_h)
 
 # avoid error with nvector_serial.cpp for #include <../../../nrnconf.h>
@@ -301,16 +327,25 @@ endif()
 if(NRN_HAVE_NVHPC_COMPILER)
   # NVHPC/21.7 cannot compile znorm.c with -O2 or above. See also:
   # https://forums.developer.nvidia.com/t/nvc-21-7-regression-internal-compiler-error-can-only-coerce-indirect-args/184847
-  if(${CMAKE_C_COMPILER_VERSION} VERSION_EQUAL 21.7)
+  if(${CMAKE_CXX_COMPILER_VERSION} VERSION_EQUAL 21.7)
     set_source_files_properties(${PROJECT_SOURCE_DIR}/src/mesch/znorm.c PROPERTIES COMPILE_OPTIONS
                                                                                    -Mnovect)
   endif()
   # For NVHPC we will rely on FE exceptions as opposed to errno in order to make use of faster
   # builtins. One caveat is that if we use an optimization level greater than -O1, the FE exception
   # is not raised. See https://github.com/neuronsimulator/nrn/pull/1930
+  set(NVHPC_MATH_COMPILE_OPTIONS "-O1")
+  if(${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 23.1)
+    list(APPEND NVHPC_MATH_COMPILE_OPTIONS "-Kieee")
+  endif()
   set_source_files_properties(
-    ${PROJECT_SOURCE_DIR}/src/oc/math.cpp PROPERTIES COMPILE_DEFINITIONS NVHPC_CHECK_FE_EXCEPTIONS=1
-                                                     COMPILE_OPTIONS -O1)
+    ${PROJECT_SOURCE_DIR}/src/oc/math.cpp
+    PROPERTIES COMPILE_DEFINITIONS NVHPC_CHECK_FE_EXCEPTIONS=1 COMPILE_OPTIONS
+                                                               "${NVHPC_MATH_COMPILE_OPTIONS}")
+  # Versions of nvc++ around ~22.5 up to at least 23.1 have problems with this file see
+  # https://github.com/BlueBrain/CoreNeuron/issues/888
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/ivoc/ivocvect.cpp PROPERTIES COMPILE_OPTIONS
+                                                                                     "-O1")
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
   # When optimisation is enabled then icpc apparently does not set errno
   set_property(
@@ -331,6 +366,11 @@ if(NRN_ENABLE_MPI_DYNAMIC)
                               PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
   set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.cpp
                               PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
+endif()
+
+if(NRN_ENABLE_MUSIC)
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/neuronmusic/nrnmusic.cpp
+                              PROPERTIES INCLUDE_DIRECTORIES ${MUSIC_INCDIR})
 endif()
 
 if(NRN_COVERAGE_FILES)
@@ -357,10 +397,6 @@ add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")
-# See: https://en.cppreference.com/w/cpp/filesystem#Notes
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1)
-  target_link_libraries(nrniv_lib stdc++fs)
-endif()
 if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv_lib Threads::Threads)
 endif()
@@ -378,6 +414,10 @@ else()
   elseif(TERMCAP_FOUND)
     target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES})
   endif()
+endif()
+
+if(NRN_ENABLE_MUSIC AND NOT NRN_ENABLE_MPI_DYNAMIC)
+  target_link_libraries(nrniv_lib ${MUSIC_LIBRARY})
 endif()
 
 if(NRN_ENABLE_PROFILING)
@@ -419,6 +459,19 @@ if(NRN_ENABLE_MPI)
       set_property(TARGET ${libname}_lib PROPERTY OUTPUT_NAME ${libname})
       install(TARGETS ${libname}_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
     endforeach(val)
+    if(NRN_ENABLE_MUSIC)
+      # libnrnmusic does not depend explicitly on MPI so don't need mpi version specific versions.
+      set(libnrnmusic "nrnmusic")
+      set(NRNMUSIC_DYNAM_LIB
+          "'${libnrnmusic}'"
+          PARENT_SCOPE)
+      add_library(${libnrnmusic}_lib SHARED ${NRN_MUSIC_SRC_FILES})
+      target_include_directories(${libnrnmusic}_lib BEFORE PUBLIC ${include})
+      add_dependencies(${libnrnmusic}_lib nrniv_lib ${libname}_lib)
+      target_link_libraries(${libnrnmusic}_lib nrniv_lib ${libname}_lib)
+      set_property(TARGET ${libnrnmusic}_lib PROPERTY OUTPUT_NAME ${libnrnmusic})
+      install(TARGETS ${libnrnmusic}_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+    endif()
   else()
     target_link_libraries(nrniv_lib ${MPI_C_LIBRARIES})
     target_include_directories(nrniv_lib PUBLIC ${MPI_INCLUDE_PATH})
@@ -482,7 +535,7 @@ if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv Threads::Threads)
 endif()
 if(NOT MINGW)
-  target_link_libraries(nrniv ${CMAKE_DL_LIBS})
+  target_link_libraries(nrniv_lib ${CMAKE_DL_LIBS})
 endif()
 
 # TODO: unset in top level CMake is not working

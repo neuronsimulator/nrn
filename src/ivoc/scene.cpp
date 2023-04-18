@@ -33,7 +33,6 @@
  * Scene - arbitrary placements seen from several views
  */
 
-#include <ivstream.h>
 #include <stdio.h>
 #include <assert.h>
 
@@ -853,7 +852,7 @@ void Scene::save_all(std::ostream& o) {
     }
     long count = scene_list->count();
     if (count) {
-        sprintf(buf, "objectvar scene_vector_[%ld]", count);
+        Sprintf(buf, "objectvar scene_vector_[%ld]", count);
         o << buf << std::endl;
     }
     for (long i = 0; i < count; ++i) {
@@ -877,7 +876,7 @@ void Scene::save_class(std::ostream& o, const char* s) {
         top = y2();
     }
 
-    sprintf(buf, "save_window_.size(%g,%g,%g,%g)", left, right, bottom, top);
+    Sprintf(buf, "save_window_.size(%g,%g,%g,%g)", left, right, bottom, top);
     o << buf << std::endl;
 }
 
@@ -892,7 +891,7 @@ void Scene::printfile(const char* fname) {
 
 void XYView::printfile(const char* fname) {
     std::filebuf obuf;
-    if (!obuf.open(fname, IOS_OUT)) {
+    if (!obuf.open(fname, std::ios::out)) {
         return;
     }
     std::ostream o(&obuf);

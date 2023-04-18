@@ -1,0 +1,14 @@
+/*
+# =============================================================================
+# Copyright (c) 2022 Blue Brain Project/EPFL
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+*/
+#pragma once
+
+// This is the CoreNEURON analogue of nrnsemanticversion.h in NEURON. Hopefully
+// the duplication can go away soon.
+#define NRN_VERSION_MAJOR @NRN_VERSION_MAJOR@
+#define NRN_VERSION_MINOR @NRN_VERSION_MINOR@
+#define NRN_VERSION_PATCH @NRN_VERSION_PATCH@

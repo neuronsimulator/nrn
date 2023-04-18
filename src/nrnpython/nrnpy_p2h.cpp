@@ -47,6 +47,8 @@ extern Object* (*nrnpy_pickle2po)(char*, size_t size);
 extern char* (*nrnpy_callpicklef)(char*, size_t size, int narg, size_t* retsize);
 extern int (*nrnpy_pysame)(Object*, Object*);  // contain same Python object
 extern Object* (*nrnpympi_alltoall_type)(int, int);
+extern Object* (*nrnpy_p_po2ho)(PyObject*);
+extern PyObject* (*nrnpy_p_ho2po)(Object*);
 typedef struct {
     PyObject_HEAD
     Section* sec_;
@@ -160,6 +162,8 @@ extern "C" void nrnpython_reg_real() {
     nrnpy_save_thread = save_thread;
     nrnpy_restore_thread = restore_thread;
     nrnpy_opaque_obj2pyobj_p_ = opaque_obj2pyobj;
+    nrnpy_p_ho2po = nrnpy_ho2po;
+    nrnpy_p_po2ho = nrnpy_po2ho;
     dlist = hoc_l_newlist();
 #if NRNPYTHON_DYNAMICLOAD
     nrnpy_site_problem_p = &nrnpy_site_problem;
@@ -220,7 +224,8 @@ PyObject* nrnpy_pyCallObject(PyObject* callable, PyObject* args) {
     // When hoc calls a PythonObject method, then in case python
     // calls something back in hoc, the hoc interpreter must be
     // at the top level
-    HocTopContextSet PyObject* p = PyObject_CallObject(callable, args);
+    HocTopContextSet
+    PyObject* p = PyObject_CallObject(callable, args);
 #if 0
 printf("PyObject_CallObject callable\n");
 PyObject_Print(callable, stdout, 0);
@@ -229,26 +234,26 @@ PyObject_Print(args, stdout, 0);
 printf("\nreturn %p\n", p);
 #endif
     HocContextRestore
-        // It would be nice to handle the error here, ending with a hoc_execerror
-        // for any Exception (note, that does not include SystemExit). However
-        // since many, but not all, of the callers need to clean up and
-        // release the GIL, errors get handled by the caller or higher up.
-        // The almost generic idiom is:
-        /**
-        if (!p) {
-          char* mes = nrnpyerr_str();
-          if (mes) {
-            Fprintf(stderr, "%s\n", mes);
-            free(mes);
-            hoc_execerror("Call of Python Callable failed", NULL);
-          }
-          if (PyErr_Occurred()) {
-            PyErr_Print(); // Python process will exit with the error code specified by the
-        SystemExit instance.
-          }
-        }
-        **/
-        return p;
+    // It would be nice to handle the error here, ending with a hoc_execerror
+    // for any Exception (note, that does not include SystemExit). However
+    // since many, but not all, of the callers need to clean up and
+    // release the GIL, errors get handled by the caller or higher up.
+    // The almost generic idiom is:
+    /**
+    if (!p) {
+      char* mes = nrnpyerr_str();
+      if (mes) {
+        Fprintf(stderr, "%s\n", mes);
+        free(mes);
+        hoc_execerror("Call of Python Callable failed", NULL);
+      }
+      if (PyErr_Occurred()) {
+        PyErr_Print(); // Python process will exit with the error code specified by the
+    SystemExit instance.
+      }
+    }
+    **/
+    return p;
 }
 
 void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
@@ -319,6 +324,14 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         }
     } else if (nindex) {
         PyObject* arg;
+        int n = hoc_pop_ndim();
+        if (n > 1) {
+            hoc_execerr_ext(
+                "%d dimensional python objects "
+                "can't be accessed from hoc with var._[i1][i2]... syntax. "
+                "Must use var._[i1]._[i2]... hoc syntax.",
+                n);
+        }
         if (hoc_stack_type() == NUMBER) {
             arg = Py_BuildValue("l", (long) hoc_xpop());
         } else {
@@ -390,8 +403,16 @@ static void hpoasgn(Object* o, int type) {
     if (nindex == 0) {
         err = PyObject_SetAttrString(poleft, sym->name, poright);
     } else if (nindex == 1) {
+        int ndim = hoc_pop_ndim();
+        assert(ndim == 1);
         PyObject* key = PyLong_FromDouble(hoc_xpop());
-        PyObject* a = PyObject_GetAttrString(poleft, sym->name);
+        PyObject* a;
+        if (strcmp(sym->name, "_") == 0) {
+            a = poleft;
+            Py_INCREF(a);
+        } else {
+            a = PyObject_GetAttrString(poleft, sym->name);
+        }
         if (a) {
             err = PyObject_SetItem(a, key, poright);
             Py_DECREF(a);
@@ -400,9 +421,11 @@ static void hpoasgn(Object* o, int type) {
         }
         Py_DECREF(key);
     } else {
-        char buf[512];
-        sprintf(buf, "%s.%s[][]...=...:", hoc_object_name(o), sym->name);
-        hoc_execerror(buf, "HOC cannot handle PythonObject assignment with more than one index.");
+        hoc_execerr_ext(
+            "%d dimensional python objects "
+            "can't be accessed from hoc with var._[i1][i2]... syntax. "
+            "Must use var._[i1]._[i2]... hoc syntax.",
+            nindex);
     }
     Py_DECREF(poright);
     if (err) {

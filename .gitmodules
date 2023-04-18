@@ -1,9 +1,6 @@
 [submodule "modules/iv"]
 	path = external/iv
 	url = https://github.com/neuronsimulator/iv.git
-[submodule "external/coreneuron"]
-	path = external/coreneuron
-	url = https://github.com/BlueBrain/CoreNeuron.git
 [submodule "external/catch2"]
 	path = external/catch2
 	url = https://github.com/catchorg/Catch2.git
@@ -19,3 +16,12 @@
 [submodule "external/Random123"]
 	path = external/Random123
 	url = https://github.com/BlueBrain/Random123.git
+[submodule "external/nmodl"]
+	path = external/nmodl
+	url = https://github.com/BlueBrain/nmodl
+[submodule "external/CLI11"]
+	path = external/CLI11
+	url = https://github.com/CLIUtils/CLI11.git
+[submodule "external/mod2c"]
+	path = external/mod2c
+	url = https://github.com/BlueBrain/mod2c

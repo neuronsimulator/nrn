@@ -20,8 +20,8 @@ on:
 #      - 'docs/**'
 
 env:
-  PY_MIN_VERSION: '3.7'
-  PY_MAX_VERSION: '3.10'
+  PY_MIN_VERSION: '3.8'
+  PY_MAX_VERSION: '3.11'
 
 jobs:
   coverage:
@@ -31,11 +31,16 @@ jobs:
 
     timeout-minutes: 45
 
+    env:
+      DISPLAY: ${{ ':0' }}
+      MUSIC_INSTALL_DIR: /opt/MUSIC
+      MUSIC_VERSION: 1.2.0
+
     steps:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install  build-essential doxygen lcov libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg
+          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg ninja-build
         shell: bash
 
       - name: Setup Caliper profiler
@@ -46,19 +51,44 @@ jobs:
           cmake ..
           make && sudo make install
 
+      - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
+        run: |
+          python3 -m venv music-venv
+          source music-venv/bin/activate
+          python3 -m pip install mpi4py cython numpy
+          sudo mkdir -p $MUSIC_INSTALL_DIR
+          sudo chown -R $USER $MUSIC_INSTALL_DIR
+          curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
+          unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
+          ./autogen.sh
+          ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
+          make -j install
+          deactivate
+        working-directory: ${{runner.temp}} 
+
+      - name: Setup Xvfb
+        run: |
+          sudo apt-get install xvfb
+          sudo /usr/bin/Xvfb $DISPLAY -screen 0 1600x1200x24 -noreset -nolock -shmem &  # run in bg
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
 
+      - name: Install Python@${{ env.PY_MIN_VERSION }} dependencies
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+          python -m pip install --upgrade pip -r nrn_requirements.txt
+
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MAX_VERSION }}
-
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
 
       - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
@@ -83,32 +113,44 @@ jobs:
           mkdir build && cd build;
 
           # CMake options & flags
-          export COVERAGE_FLAGS="--coverage -O0 -fno-inline -g";
-          export CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_PROFILING=ON -DNRN_ENABLE_BACKTRACE=ON";
-          cmake $CMAKE_OPTION -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" ..;
-
+          cmake_args=(-G Ninja \
+                      -DCMAKE_BUILD_TYPE=Debug \
+                      -DCMAKE_C_COMPILER="$CC" \
+                      -DCMAKE_CXX_COMPILER="$CXX" \
+                      -DNRN_ENABLE_BACKTRACE=ON \
+                      -DNRN_ENABLE_CORENEURON=ON \
+                      -DNRN_ENABLE_COVERAGE=ON \
+                      -DNRN_ENABLE_INTERVIEWS=ON \
+                      -DNRN_ENABLE_MPI=ON \
+                      -DNRN_ENABLE_PERFORMANCE_TESTS=OFF \
+                      -DNRN_ENABLE_PROFILING=ON \
+                      -DNRN_ENABLE_PYTHON=ON \
+                      -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
+                      -DNRN_PYTHON_DYNAMIC="${PYTHON_MIN};${PYTHON_MAX}" \
+                      -DNRN_ENABLE_TESTS=ON
+                      -DNRN_ENABLE_MUSIC=ON \
+                      -DCMAKE_PREFIX_PATH="${MUSIC_INSTALL_DIR}" \
+                      -DMUSIC_ROOT="${MUSIC_INSTALL_DIR}")
+          cmake .. "${cmake_args[@]}"
           # Coverage
           # The Linux runners apparently have 2 cores, but jobs were being killed when we did not specify this explicitly.
           # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
           # By default we get a modern version of CMake that understands --parallel.
           cmake --build . --parallel 2
-          (cd ..;  lcov --capture  --initial --directory . --no-external --output-file build/coverage-base.info)
-          export PATH=`pwd`/bin:$PATH;
-          ctest -VV;
-          (cd ..; lcov --capture  --directory . --no-external --output-file build/coverage-run.info)
-          lcov --add-tracefile coverage-base.info --add-tracefile coverage-run.info --output-file coverage-combined.info
-
-          # Download codecov script and perform integrity checks
-          curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --import # One-time step 
-          curl -Os https://uploader.codecov.io/latest/linux/codecov 
-          curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM 
-          curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig 
-          gpg --verify codecov.SHA256SUM.sig codecov.SHA256SUM 
-          shasum -a 256 -c codecov.SHA256SUM 
-          chmod +x codecov 
-
-          # Prefer auto-discovery for now. Specify reports once all python testing is unified under single report (-f option).
-          ./codecov
+          cmake --build . --target cover_baseline
+          xvfb-run ctest -VV --output-on-failure;
+          for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
+          do
+            echo "Using ${python}"
+            NEURONHOME="${PWD}/share/nrn" \
+              PYTHONPATH="${PWD}/lib/python:${PYTHONPATH}" \
+              PATH="${PWD}/bin:${PATH}" \
+              LD_LIBRARY_PATH="${PWD}/lib:${LD_LIBRARY_PATH}" \
+              DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
+              "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd();"
+          done
+          cmake --build . --target cover_collect
+          cmake --build . --target cover_combine
         env:
           MATRIX_EVAL: "CC=gcc CXX=g++"
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
@@ -121,3 +163,10 @@ jobs:
       - name: live debug session on failure (manual steps required, check `.github/coverage.yml`)
         if: failure() && contains(github.event.pull_request.title, 'live-debug-coverage')
         uses: mxschmitt/action-tmate@v3
+
+      - uses: codecov/codecov-action@v3
+        with:
+          directory: ./build
+          fail_ci_if_error: true
+          verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}

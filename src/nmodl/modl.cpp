@@ -37,6 +37,9 @@
 #include <stdlib.h>
 #endif
 #include "modl.h"
+
+#include <cstring>
+
 FILE *fin,    /* input file descriptor for filename.mod */
               /* or file2 from the second argument */
     *fparout, /* output file descriptor for filename.var */
@@ -45,7 +48,7 @@ FILE *fin,    /* input file descriptor for filename.mod */
 
 char* modprefix;
 
-char* finname;
+char finname[NRN_BUFSIZE];
 
 #if LINT
 char* clint;
@@ -137,7 +140,7 @@ int main(int argc, char** argv) {
     init(); /* keywords into symbol table, initialize
              * lists, etc. */
 
-    finname = argv[optind];
+    std::strncpy(finname, argv[optind], sizeof(finname));
 
     openfiles(finname, output_dir); /* .mrg else .mod,  .var, .c */
     IGNORE(yyparse());

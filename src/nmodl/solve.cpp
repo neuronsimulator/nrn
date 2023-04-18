@@ -5,6 +5,8 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
+#include <cstdlib>
+
 /* make it an error if 2 solve statements are called on a single call to
 model() */
 extern List* indeplist;
@@ -91,7 +93,7 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
     List* errstmt = newlist();
     lq = lappendsym(solvq, SYM0);
     LST(lq) = errstmt;
-    sprintf(buf,
+    Sprintf(buf,
             "if(error){fprintf(stderr,\"%s\\n\"); nrn_complain(_p); abort_run(error);}\n",
             current_line());
     insertstr(errstmt, buf);
@@ -193,7 +195,6 @@ void solvhandler() {
                 if (strcmp(method->name, "sparse") == 0) {
                     cvode_interface(fun, listnum, numeqn);
                     cvode_kinetic(qsol, fun, numeqn, listnum);
-                    single_channel(qsol, fun, numeqn, listnum);
                 }
             }
             solv_diffeq(qsol, fun, method, numeqn, listnum, steadystate, btype);

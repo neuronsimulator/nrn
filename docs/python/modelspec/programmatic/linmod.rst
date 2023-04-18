@@ -90,7 +90,7 @@ LinearMechanism
             tstop = 5
             
             soma = h.Section(name="soma")
-            soma.insert('hh')
+            soma.insert(h.hh)
             
             # ideal voltage clamp. 
             c = h.Matrix(2, 2, 2) # sparse - no elements used 
@@ -160,10 +160,8 @@ LinearMechanism
             nlm = h.LinearMechanism(callback, cmat, gmat, y, y0, b)
 
             dummy = h.Section(name="dummy")
-            trajec = h.Vector()
-            tvec = h.Vector()
-            trajec.record(y._ref_x[0])
-            tvec.record(h._ref_t)
+            trajec = h.Vector().record(y._ref_x[0])
+            tvec = h.Vector().record(h._ref_t)
 
             graph = h.Graph()
             h.tstop=50

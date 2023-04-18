@@ -4,7 +4,6 @@
 using std::vector;
 
 #include "spmatrix.h"
-extern spREAL* spGetElement(char*, int, int);
 
 MatrixMap::MatrixMap(Matrix& mat)
     : m_(mat)

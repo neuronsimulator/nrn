@@ -16,8 +16,6 @@
  * -----------------------------------------------------------------
  */
 
-#define USELONGDOUBLE 1
-
 #include <../../nrnconf.h>
 #include <hocassrt.h>
 #include <nrnassrt.h>
@@ -40,12 +38,6 @@
 #define HALF   RCONST(0.5)
 #define ONE    RCONST(1.0)
 #define ONEPT5 RCONST(1.5)
-
-#if USELONGDOUBLE
-#define ldrealtype long double
-#else
-#define ldrealtype realtype
-#endif
 
 /* Private function prototypes */
 /* z=x */
@@ -338,13 +330,7 @@ void N_VPrint_NrnSerialLD(N_Vector x) {
     xd = NV_DATA_S_LD(x);
 
     for (i = 0; i < N; i++) {
-#if defined(SUNDIALS_EXTENDED_PRECISION)
-        printf("%11.8Lg\n", *xd++);
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
         printf("%11.8lg\n", *xd++);
-#else
-        printf("%11.8g\n", *xd++);
-#endif
     }
     printf("\n");
 }
@@ -621,39 +607,47 @@ realtype N_VMaxNorm_NrnSerialLD(N_Vector x) {
 
 realtype N_VWrmsNorm_NrnSerialLD(N_Vector x, N_Vector w) {
     long int i, N;
-    realtype prodi, *xd, *wd;
-    ldrealtype sum = ZERO;
+    realtype *xd, *wd;
 
     N = NV_LENGTH_S_LD(x);
     xd = NV_DATA_S_LD(x);
     wd = NV_DATA_S_LD(w);
 
+    // Use Kahan summation instead of a long double accumulator for better portability.
+    realtype sum{}, c{};
     for (i = 0; i < N; i++) {
-        prodi = (*xd++) * (*wd++);
-        sum += prodi * prodi;
+        auto const prodi = (*xd++) * (*wd++);
+        auto const y = prodi * prodi - c;
+        auto const t = sum + y;
+        c = (t - sum) - y;
+        sum = t;
     }
 
-    return (RSqrt((realtype) sum / N));
+    return RSqrt(sum / N);
 }
 
 realtype N_VWrmsNormMask_NrnSerialLD(N_Vector x, N_Vector w, N_Vector id) {
     long int i, N;
-    realtype prodi, *xd, *wd, *idd;
-    ldrealtype sum = ZERO;
+    realtype *xd, *wd, *idd;
 
     N = NV_LENGTH_S_LD(x);
     xd = NV_DATA_S_LD(x);
     wd = NV_DATA_S_LD(w);
     idd = NV_DATA_S_LD(id);
 
+    // Use Kahan summation instead of a long double accumulator for better portability.
+    realtype sum{}, c{};
     for (i = 0; i < N; i++) {
         if (idd[i] > ZERO) {
-            prodi = xd[i] * wd[i];
-            sum += prodi * prodi;
+            auto const prodi = xd[i] * wd[i];
+            auto const y = prodi * prodi - c;
+            auto const t = sum + y;
+            c = (t - sum) - y;
+            sum = t;
         }
     }
 
-    return (RSqrt((realtype) sum / N));
+    return RSqrt(sum / N);
 }
 
 realtype N_VMin_NrnSerialLD(N_Vector x) {
@@ -676,33 +670,42 @@ realtype N_VMin_NrnSerialLD(N_Vector x) {
 
 realtype N_VWL2Norm_NrnSerialLD(N_Vector x, N_Vector w) {
     long int i, N;
-    realtype prodi, *xd, *wd;
-    ldrealtype sum = ZERO;
+    realtype *xd, *wd;
 
     N = NV_LENGTH_S_LD(x);
     xd = NV_DATA_S_LD(x);
     wd = NV_DATA_S_LD(w);
 
+    // Use Kahan summation instead of a long double accumulator for better portability.
+    realtype sum{}, c{};
     for (i = 0; i < N; i++) {
-        prodi = (*xd++) * (*wd++);
-        sum += prodi * prodi;
+        auto const prodi = (*xd++) * (*wd++);
+        auto const y = prodi * prodi - c;
+        auto const t = sum + y;
+        c = (t - sum) - y;
+        sum = t;
     }
 
-    return (RSqrt((realtype) sum));
+    return RSqrt(sum);
 }
 
 realtype N_VL1Norm_NrnSerialLD(N_Vector x) {
     long int i, N;
     realtype* xd;
-    ldrealtype sum = ZERO;
 
     N = NV_LENGTH_S_LD(x);
     xd = NV_DATA_S_LD(x);
 
-    for (i = 0; i < N; i++)
-        sum += ABS(xd[i]);
+    // Use Kahan summation instead of a long double accumulator for better portability.
+    realtype sum{}, c{};
+    for (i = 0; i < N; i++) {
+        auto const y = ABS(xd[i]) - c;
+        auto const t = sum + y;
+        c = (t - sum) - y;
+        sum = t;
+    }
 
-    return ((realtype) sum);
+    return sum;
 }
 
 void N_VOneMask_NrnSerialLD(N_Vector x) {

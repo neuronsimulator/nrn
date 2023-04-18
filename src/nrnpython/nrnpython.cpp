@@ -69,8 +69,9 @@ void nrnpy_augment_path() {
 int nrnpy_pyrun(const char* fname) {
 #ifdef MINGW
     // perhaps this should be the generic implementation
-    char* cmd = new char[strlen(fname) + 40];
-    sprintf(cmd, "exec(open(\"%s\").read(), globals())", fname);
+    auto const sz = strlen(fname) + 40;
+    char* cmd = new char[sz];
+    std::snprintf(cmd, sz, "exec(open(\"%s\").read(), globals())", fname);
     int err = PyRun_SimpleString(cmd);
     delete[] cmd;
     if (err != 0) {
@@ -217,7 +218,8 @@ extern "C" int nrnpython_start(int b) {
 extern "C" void nrnpython_real() {
     int retval = 0;
 #if USE_PYTHON
-    HocTopContextSet {
+    HocTopContextSet
+    {
         PyLockGIL lock;
         retval = PyRun_SimpleString(gargstr(1)) == 0;
     }

@@ -93,7 +93,7 @@ static void hoc_opasgn_invalid(int op);
 %token	<sym>	NUMBER STRING PRINT parseDELETE VAR BLTIN UNDEF WHILE IF ELSE FOR
 %token	<sym>	FUNCTION PROCEDURE RETURN FUNC parsePROC HOCOBJFUNC READ parseDOUBLE
 %token	<sym>	DEBUG EDIT FUN_BLTIN DEPENDENT EQUATION LOCAL HOCOBJFUNCTION
-%token	<sym>	BREAK CONTINUE AUTO STRDEF STOPSTMT CSTRING PARALLEL HELP
+%token	<sym>	BREAK CONTINUE AUTO STRDEF STOPSTMT CSTRING HELP
 %token	<sym>	ITERATOR ITERKEYWORD ITERSTMT STRINGFUNC OBJECTFUNC
 %token	<sym>	LOCALOBJ AUTOOBJ
 %token	<narg>	ARG NUMZERO ARGREF
@@ -176,7 +176,7 @@ goto yynewstate;
 asgn:	varname ROP expr
 		{Symbol *s; TPD; s = spop();
 		hoc_obvar_declare(s, VAR, 1);
-		code3(varpush, s, assign); codei($2); PN;}
+		code3(varpush, s, hoc_assign); codei($2); PN;}
 	| ARG ROP expr
 		{  TPD; defnonly("$"); argcode(argassign, $1); codei($2); $$=$3; PN;}
 	| ARGREF argrefdim ROP expr
@@ -389,19 +389,6 @@ if (0){YYERROR;}
 		stmt end
 		  { $$ = $2; ($<inst>8)[1].i = relative($9, $<inst>8, 1); /* body */
 			   ($<inst>8)[2].i = relative($10, $<inst>8, 2); /* exit */
-		  }
-	| PARALLEL FOR varname
-		  { Symbol *s; $<inst>$ = Code(varpush); codesym(s = spop());
-			hoc_obvar_declare(s, VAR, 1);
-		  }
-		ROP expr ',' expr
-		  {TPD; TPD; hoc_opasgn_invalid($5); 
-		     code(hoc_parallel_begin);
-		     $<inst>$ = code(shortfor); codei(0); codei(0);}
-		stmt end
-		  { $$ = $3; ($<inst>9)[1].i = relative($10, $<inst>9, 1); /* body */
-			   ($<inst>9)[2].i = relative($11, $<inst>9, 2); /* exit */
-			code(hoc_parallel_end);
 		  }
 	| while cond stmt end
 		{
@@ -659,7 +646,7 @@ expr:	NUMBER
 	| varname
 		{ code3(varpush, spop(), eval); PN;}
 	| ARG
-		{ defnonly("$"); $$ = argcode(arg, $1); PN;}
+		{ defnonly("$"); $$ = argcode(hoc_arg, $1); PN;}
 	| ARGREF argrefdim
 		{ defnonly("$&"); $$ = argrefcode(hoc_argref, $1, $2); PN;}
 /* NEWCABLE */
@@ -698,17 +685,17 @@ expr:	NUMBER
 	| expr '^' expr
 		{ TPD; TPD; code(power); PN;}
 	| '-' expr %prec UNARYMINUS
-		{ TPD; $$ = $2; code(negate); PN;}
+		{ TPD; $$ = $2; code(hoc_negate); PN;}
 	| expr GT expr
 		{ TPD; TPD; code(gt); PN;}
 	| expr GE expr
 		{ TPD; TPD; code(ge); PN;}
 	| expr LT expr
-		{ TPD; TPD; code(lt); PN;}
+		{ TPD; TPD; code(hoc_lt); PN;}
 	| expr LE expr
 		{ TPD; TPD; code(le); PN;}
 	| expr EQ expr
-		{ hoc_ob_check(-1); hoc_ob_check(-1); code(eq); PN;}
+		{ hoc_ob_check(-1); hoc_ob_check(-1); code(hoc_eq); PN;}
 	| expr NE expr
 		{ hoc_ob_check(-1); hoc_ob_check(-1); code(ne); PN;}
 	| expr AND expr

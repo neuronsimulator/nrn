@@ -23,10 +23,22 @@ incdir := ${ROOT}/@CMAKE_INSTALL_INCLUDEDIR@
 datadir:= ${ROOT}/@CMAKE_INSTALL_DATADIR@
 datadir_lib := ${ROOT}/@CMAKE_INSTALL_DATADIR@/lib
 
+# For a static build with Interviews need -linterviews -lreadline
+IV_LINK =
+READLINE_LINK =
+ifeq ("@NRN_ENABLE_SHARED@@IV_ENABLE_SHARED@", "OFFOFF")
+    ifeq ("@NRN_ENABLE_INTERVIEWS@", "ON")
+        IV_LINK = -linterviews
+    endif
+    ifeq ("@NRN_MACOS_BUILD@", "TRUE")
+        READLINE_LINK = -lreadline
+    endif
+endif
+
 # Additional variables set in CMAKE usable here
 # - @NRN_COMPILE_DEFS
 # - @NRN_LINK_DEFS
-LDFLAGS = $(LINKFLAGS) $(UserLDFLAGS) @NRN_LINK_DEFS@
+LDFLAGS = $(IV_LINK) $(READLINE_LINK) $(LINKFLAGS) $(UserLDFLAGS) @NRN_LINK_DEFS@
 
 # In GPU wheel distributions then the shipped libnrniv.so is linked against
 # some NVIDIA runtime libraries that are shipped with the wheel. If we use
@@ -67,8 +79,14 @@ ifeq ($(origin CXX), default)
 endif
 CXXFLAGS = @BUILD_TYPE_CXX_FLAGS@ @CMAKE_CXX_FLAGS@ @CMAKE_CXX17_STANDARD_COMPILE_OPTION@
 CXXCOMPILE = $(CXX) $(CXXFLAGS) @NRN_COMPILE_DEFS_STRING@ @NRN_COMPILE_FLAGS_STRING@
+ifeq ($(origin CC), default)
+    CC = @CMAKE_C_COMPILER@
+endif
+CFLAGS = @BUILD_TYPE_C_FLAGS@ @CMAKE_C_FLAGS@ @CMAKE_C17_STANDARD_COMPILE_OPTION@
+CCOMPILE = $(CC) $(CFLAGS) @NRN_COMPILE_DEFS_STRING@ @NRN_COMPILE_FLAGS_STRING@
+
 CXX_LINK_EXE = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@ @NRN_LINK_FLAGS_STRING@
-CXX_LINK_SHARED = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
+CXX_LINK_SHARED = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@ @NRN_LINK_FLAGS_STRING@
 
 NOCMODL = $(bindir)/nocmodl
 NRNUNITS = $(datadir_lib)/nrnunits.lib

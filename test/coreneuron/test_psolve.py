@@ -1,4 +1,4 @@
-import distutils.util
+from neuron.tests.utils.strtobool import strtobool
 import os
 
 from neuron import h, gui
@@ -47,9 +47,7 @@ def test_psolve():
 
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = bool(
-        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-    )
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
     h.CVode().cache_efficient(True)
     run(h.tstop)
     if vvec_std.eq(vvec) == 0:
