@@ -107,6 +107,22 @@ nrn_add_test(
   NAME nrniv_python_script.py_args
   COMMAND nrniv ${nrniv_args} -python assert_last_args_are_foo_and_bar.py foo bar
   SCRIPT_PATTERNS assert_last_args_are_foo_and_bar.py)
+# With -nopython then there should be a dummy PythonObject implementation, and Python-related
+# settings should be ignored
+set(PythonObject_cmd -c "objref x" -c "x=new PythonObject()")
+nrn_add_test(
+  GROUP pyinit
+  NAME nrniv_nopython_PythonObject
+  COMMAND nrniv ${nrniv_args} -nopython ${PythonObject_cmd})
+nrn_add_test(
+  GROUP pyinit
+  NAME nrniv_nopython_PythonObject_pyexe
+  COMMAND nrniv ${nrniv_args} -nopython -pyexe /deep/thought ${PythonObject_cmd})
+nrn_add_test(
+  GROUP pyinit
+  NAME nrniv_nopython_PythonObject_pyenv
+  COMMAND NRN_PYTHONVERSION=life NRN_PYLIB=the-universe NRN_PYTHONEXE=and-everything nrniv
+          ${nrniv_args} -nopython ${PythonObject_cmd})
 #
 # * nrniv -pyexe /path/to/python -python ...
 # * NRN_PYTHONEXE=... nrniv -python ...

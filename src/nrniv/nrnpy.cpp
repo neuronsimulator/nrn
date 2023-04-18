@@ -213,7 +213,13 @@ void nrnpython_reg() {
         void* handle{};
         if (!nrn_is_python_extension) {
             // find the details of the libpythonX.Y.so we are going to load.
-            set_nrnpylib();  // throws on error
+            try {
+                set_nrnpylib();
+            } catch (std::exception const& e) {
+                std::cerr << "Could not determine Python library details: " << e.what()
+                          << std::endl;
+                exit(1);
+            }
             handle = dlopen(nrnpy_pylib.c_str(), RTLD_NOW | RTLD_GLOBAL);
             if (!handle) {
                 std::cerr << "Could not dlopen NRN_PYLIB: " << nrnpy_pylib << std::endl;
