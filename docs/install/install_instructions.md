@@ -201,7 +201,7 @@ In order to build NEURON from source, the following packages must be available:
 - Flex >= 2.6
 - C/C++ compiler suite supporting C++17 (e.g. GCC >=9.3.1, Clang >= 11.0.0)
   - Note that some C++17 features require a newer compiler version.
-  - Features that require extra linking are not supported, such as `std::filesystem`, where we'd need to link against the `stdc++fs` library.
+  - C++17 features must be available without linking extra libraries. This notably excludes some older versions of GCC where `std::filesystem` required `libstdc++fs.so`.
 - CMake 3.15.0
 
 The following packages are optional (see build options):
