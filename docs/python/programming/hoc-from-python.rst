@@ -1,7 +1,16 @@
 .. _python_accessing_hoc:
 
 Accessing HOC from Python
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
+
+This section describes how one can interact with HOC features and the HOC
+interpreter from Python code.
+
+In many cases, HOC provides features that are natively supported in Python.
+In these cases, it is usually preferable to use the Python version, which will
+be familiar to a wider range of people.
+Nonetheless, in isolated situations the following section may be useful:
+:ref:`hoc_features_you_should_not_use_from_python`.
 
 .. warning::
 
@@ -790,4 +799,19 @@ Mechanism
     .. seealso::
         :func:`nrnpython`
 
-    
+.. _hoc_features_you_should_not_use_from_python:
+Python-specific documentation of discouraged HOC features
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This section contains versions of the HOC documentation for certain features
+that have been updated to be somewhat Python-specific.
+You may find them useful, but in general Python-native versions are to be
+preferred.
+
+.. toctree::
+    :maxdepth: 1
+
+    io/file.rst
+    io/printf.rst
+    io/read.rst
+    io/ropen.rst

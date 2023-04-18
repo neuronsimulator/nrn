@@ -4,6 +4,11 @@ NEURON Python documentation
 ===========================
 (:ref:`Switch to HOC documentation <hoc_prog_ref>`)
 
+For a basic introduction on how to run Python scripts with NEURON, see
+:ref:`running Python scripts with NEURON <launching_hoc_and_python_scripts>`,
+and you may also like to refer to the `NEURON Python tutorial
+<../tutorials/scripting-neuron-basics.html>`_.
+
 Quick Links
 -----------
 - :ref:`genindex`
@@ -28,19 +33,14 @@ Quick Links
     `SectionList <modelspec/programmatic/topology/seclist.html>`_, `SectionRef <modelspec/programmatic/topology/secref.html>`_, `Shape <visualization/shape.html>`_,
     `StateTransitionEvent <modelspec/programmatic/ste.html>`_
 
-    :ref:`panel`, :ref:`funfit`, :ref:`geometry`, :ref:`printf_doc`, :ref:`ockeywor`, :ref:`math`,
-    :ref:`nmodl2`, :ref:`nmodl`, :ref:`mech`, :ref:`predec`, :ref:`standardruntools`,
-    :ref:`ocsyntax`, :ref:`topology`
+    :ref:`panel`, :ref:`funfit`, :ref:`geometry`, :ref:`printf_doc`, :ref:`math`,
+    :ref:`nmodl2`, :ref:`nmodl`, :ref:`mech`, :ref:`standardruntools`,
+    :ref:`topology`
     
     :ref:`neuron_rxd`
 
 Basic Programming
 -----------------
-
-For a basic introduction on how to run Python scripts with NEURON, see
-:ref:`running Python scripts with NEURON <launching_hoc_and_python_scripts>`,
-and you may also like to refer to the `NEURON Python tutorial
-<../tutorials/scripting-neuron-basics.html>`_.
 
 .. toctree::
     :maxdepth: 1
@@ -56,7 +56,6 @@ and you may also like to refer to the `NEURON Python tutorial
     programming/projectmanagement.rst
     programming/internals.rst
     programming/hoc-from-python.rst
-    programming/hoc.rst
 
 Model Specification
 -------------------
