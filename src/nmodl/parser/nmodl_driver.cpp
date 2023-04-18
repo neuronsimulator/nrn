@@ -5,12 +5,15 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 
 #include "lexer/nmodl_lexer.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "utils/logger.hpp"
+
+namespace fs = std::filesystem;
 
 namespace nmodl {
 namespace parser {
@@ -30,9 +33,9 @@ std::shared_ptr<ast::Program> NmodlDriver::parse_stream(std::istream& in) {
     return astRoot;
 }
 
-std::shared_ptr<ast::Program> NmodlDriver::parse_file(const std::string& filename,
+std::shared_ptr<ast::Program> NmodlDriver::parse_file(const fs::path& filename,
                                                       const location* loc) {
-    std::ifstream in(filename.c_str());
+    std::ifstream in(filename);
     if (!in.good()) {
         std::ostringstream oss;
         if (loc == nullptr) {
@@ -47,26 +50,25 @@ std::shared_ptr<ast::Program> NmodlDriver::parse_file(const std::string& filenam
     }
 
     auto current_stream_name = stream_name;
-    stream_name = filename;
-    auto absolute_path = utils::cwd() + utils::pathsep + filename;
+    stream_name = filename.string();
+    auto absolute_path = fs::absolute(filename);
     {
-        const auto last_slash = filename.find_last_of(utils::pathsep);
-        if (utils::file_is_abs(filename)) {
-            const auto path_prefix = filename.substr(0, last_slash + 1);
+        if (filename.is_absolute()) {
+            const auto path_prefix = filename.parent_path();
             library.push_current_directory(path_prefix);
-            absolute_path = filename;
-        } else if (last_slash == std::string::npos) {
-            library.push_current_directory(utils::cwd());
+            absolute_path = filename.string();
+        } else if (!filename.has_parent_path()) {
+            library.push_current_directory(fs::current_path());
         } else {
-            const auto path_prefix = filename.substr(0, last_slash + 1);
-            const auto path = utils::cwd() + utils::pathsep + path_prefix;
+            const auto path_prefix = filename.parent_path();
+            const auto path = fs::absolute(path_prefix);
             library.push_current_directory(path);
         }
     }
 
-    open_files.emplace(absolute_path, loc);
+    open_files.emplace(absolute_path.string(), loc);
     parse_stream(in);
-    open_files.erase(absolute_path);
+    open_files.erase(absolute_path.string());
     library.pop_current_directory();
     stream_name = current_stream_name;
 
@@ -79,24 +81,24 @@ std::shared_ptr<ast::Program> NmodlDriver::parse_string(const std::string& input
     return astRoot;
 }
 
-std::shared_ptr<ast::Include> NmodlDriver::parse_include(const std::string& name,
+std::shared_ptr<ast::Include> NmodlDriver::parse_include(const fs::path& name,
                                                          const location& loc) {
     if (name.empty()) {
         parse_error(loc, "empty filename");
     }
 
     // Try to find directory containing the file to import
-    const auto directory_path = library.find_file(name);
+    const auto directory_path = fs::path{library.find_file(name)};
 
     // Complete path of file (directory + filename).
-    std::string absolute_path = name;
+    auto absolute_path = name;
 
     if (!directory_path.empty()) {
-        absolute_path = directory_path + std::string(1, utils::pathsep) + name;
+        absolute_path = directory_path / name;
     }
 
     // Detect recursive inclusion.
-    auto already_included = open_files.find(absolute_path);
+    auto already_included = open_files.find(absolute_path.string());
     if (already_included != open_files.end()) {
         std::ostringstream oss;
         oss << name << ": recursive inclusion.\n";
@@ -113,7 +115,7 @@ std::shared_ptr<ast::Include> NmodlDriver::parse_include(const std::string& name
 
     program.swap(astRoot);
     auto filename_node = std::shared_ptr<ast::String>(
-        new ast::String(std::string(1, '"') + name + std::string(1, '"')));
+        new ast::String(fmt::format("\"{}\"", name.string())));
     return std::shared_ptr<ast::Include>(new ast::Include(filename_node, program->get_blocks()));
 }
 

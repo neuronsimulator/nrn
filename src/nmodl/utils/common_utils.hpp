@@ -40,61 +40,13 @@ bool is_last(Iter iter, const Cont& cont) {
     return ((iter != cont.end()) && (next(iter) == cont.end()));
 }
 
-/// Given full file path, returns only name of the file
-template <class T>
-T base_name(T const& path, T const& delims = "/\\") {
-    return path.substr(path.find_last_of(delims) + 1);
-}
-
-/// Given the file name, returns name of the file without extension
-template <class T>
-T remove_extension(T const& filename) {
-    typename T::size_type const p(filename.find_last_of('.'));
-    return p > 0 && p != T::npos ? filename.substr(0, p) : filename;
-}
-
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
-/// The character used by the operating system to separate pathname components
-static constexpr char pathsep{'\\'};
 /// The character conventionally used by the operating system to separate search path components
 static constexpr char envpathsep{';'};
-/// Maximum size of a directory path
-static constexpr int max_path_len{_MAX_DIR};
 #else
-/// The character used by the operating system to separate pathname components
-static constexpr char pathsep{'/'};
 /// The character conventionally used by the operating system to separate search path components
 static constexpr char envpathsep{':'};
-/// Maximum size of a directory path
-static constexpr int max_path_len{MAXPATHLEN};
 #endif
-
-/// Given directory path, create sub-directories
-bool make_path(const std::string& path);
-
-/// Check if directory with given path exists
-bool is_dir_exist(const std::string& path);
-
-/// Check if specified file path exists
-bool file_exists(const std::string& path);
-
-/// Check if specified file path is absolute
-bool file_is_abs(const std::string& path);
-
-/// get current working directory
-std::string cwd();
-
-/**
- * \brief Create an empty file which is then removed when the C++ object is destructed
- */
-struct TempFile {
-    explicit TempFile(std::string path);
-    TempFile(std::string path, const std::string& content);
-    ~TempFile();
-
-  private:
-    std::string path_;
-};
 
 /// Enum to wrap bool variable to select if random string
 /// should have numbers or not

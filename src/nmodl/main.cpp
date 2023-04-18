@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <CLI/CLI.hpp>
+#include <filesystem>
 
 #include "ast/program.hpp"
 #include "codegen/codegen_acc_visitor.hpp"
@@ -51,6 +52,7 @@
  * \brief Main NMODL code generation program
  */
 
+namespace fs = std::filesystem;
 using namespace nmodl;
 using namespace codegen;
 using namespace visitor;
@@ -62,7 +64,7 @@ int main(int argc, const char* argv[]) {
                              Version::to_string())};
 
     /// list of mod files to process
-    std::vector<std::string> mod_files;
+    std::vector<fs::path> mod_files;
 
     /// true if debug logger statements should be shown
     std::string verbose("info");
@@ -261,8 +263,8 @@ int main(int argc, const char* argv[]) {
 
     CLI11_PARSE(app, argc, argv);
 
-    utils::make_path(output_dir);
-    utils::make_path(scratch_dir);
+    fs::create_directories(output_dir);
+    fs::create_directories(scratch_dir);
 
     if (sympy_opt) {
         nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance()
@@ -281,9 +283,9 @@ int main(int argc, const char* argv[]) {
     };
 
     for (const auto& file: mod_files) {
-        logger->info("Processing {}", file);
+        logger->info("Processing {}", file.string());
 
-        const auto modfile = utils::remove_extension(utils::base_name(file));
+        const auto modfile = file.stem().string();
 
         /// create file path for nmodl file
         auto filepath = [scratch_dir, modfile](const std::string& suffix) {

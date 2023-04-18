@@ -5,9 +5,15 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
+#include "test_utils.hpp"
+#include "utils/logger.hpp"
 #include "utils/string_utils.hpp"
 
 #include <cassert>
+#include <filesystem>
+#include <fstream>
+
+namespace fs = std::filesystem;
 
 namespace nmodl {
 namespace test_utils {
@@ -78,6 +84,21 @@ std::string reindent_text(const std::string& text) {
         }
     }
     return indented_text;
+}
+
+TempFile::TempFile(fs::path path, const std::string& content)
+    : path_(std::move(path)) {
+    std::ofstream output(path_);
+    output << content;
+}
+
+TempFile::~TempFile() {
+    try {
+        fs::remove(path_);
+    } catch (...) {
+        // TODO: remove .string() once spdlog use fmt 9.1.0
+        logger->error("Cannot delete temporary file {}", path_.string());
+    }
 }
 
 }  // namespace test_utils

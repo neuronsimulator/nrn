@@ -134,7 +134,7 @@ SCENARIO("NMODL parser accepts empty unit specification") {
 }
 
 SCENARIO("NMODL parser running number of valid NMODL constructs") {
-    nmodl::utils::TempFile unit("Unit.inc", nmodl_valid_constructs.at("unit_statement_1").input);
+    TempFile unit("Unit.inc", nmodl_valid_constructs.at("unit_statement_1").input);
     for (const auto& construct: nmodl_valid_constructs) {
         auto test_case = construct.second;
         GIVEN(test_case.name) {
@@ -167,12 +167,11 @@ SCENARIO("Check that the parser doesn't crash when passing invalid INCLUDE const
 
     GIVEN("An missing included file") {
         REQUIRE_THROWS_WITH(is_valid_construct("INCLUDE \"unknown.file\""),
-                            Catch::Contains("can not open file : unknown.file"));
+                            Catch::Contains("can not open file : \"unknown.file\""));
     }
 
     GIVEN("An invalid included file") {
-        nmodl::utils::TempFile included("included.file",
-                                        nmodl_invalid_constructs.at("title_1").input);
+        TempFile included("included.file", nmodl_invalid_constructs.at("title_1").input);
         REQUIRE_THROWS_WITH(is_valid_construct("INCLUDE \"included.file\""),
                             Catch::Contains("unexpected End of file"));
     }
@@ -199,7 +198,7 @@ SCENARIO("NEURON block can add CURIE information", "[parser][represents]") {
 
 SCENARIO("Check parents in valid NMODL constructs") {
     nmodl::parser::NmodlDriver driver;
-    nmodl::utils::TempFile unit("Unit.inc", nmodl_valid_constructs.at("unit_statement_1").input);
+    TempFile unit("Unit.inc", nmodl_valid_constructs.at("unit_statement_1").input);
     for (const auto& construct: nmodl_valid_constructs) {
         // parse the string and get the ast
         const auto ast = driver.parse_string(construct.second.input);

@@ -154,7 +154,7 @@ SCENARIO("Unit parser accepting valid units definition", "[unit][parser]") {
             THEN("parser multiply the number by the factor") {
                 std::string parsed_unit{};
                 REQUIRE_NOTHROW(parsed_unit = parse_string("pew 1 1/milli"));
-                REQUIRE_THAT(parsed_unit, Contains("pew 0.00100000: 0 0 0 0 0 0 0 0 0 0"));
+                REQUIRE_THAT(parsed_unit, Contains("pew 0.001: 0 0 0 0 0 0 0 0 0 0"));
             }
         }
     }
@@ -192,19 +192,19 @@ SCENARIO("Unit parser accepting dependent/nested units definition", "[unit][pars
                 R2      8314 mV-coul/degC
                 )";
                 std::string parsed_units = parse_string(reindent_text(units_definitions));
-                REQUIRE_THAT(parsed_units, Contains("mV 0.00100000: 2 1 -2 -1 0 0 0 0 0 0"));
-                REQUIRE_THAT(parsed_units, Contains("mM 1.00000000: -3 0 0 0 0 0 0 0 0 0"));
-                REQUIRE_THAT(parsed_units, Contains("mA 0.00100000: 0 0 -1 1 0 0 0 0 0 0"));
-                REQUIRE_THAT(parsed_units, Contains("KTOMV 0.00008530: 2 1 -2 -1 0 0 0 0 0 -1"));
-                REQUIRE_THAT(parsed_units, Contains("B 26.00000000: -1 0 0 -1 0 0 0 0 0 0"));
-                REQUIRE_THAT(parsed_units, Contains("dummy1 0.02500000: -2 0 0 0 0 0 0 0 0 0"));
-                REQUIRE_THAT(parsed_units, Contains("dummy2 0.02500000: -2 0 0 0 0 0 0 0 0 0"));
-                REQUIRE_THAT(parsed_units, Contains("dummy3 0.02500000: -2 0 0 0 0 0 0 0 0 0"));
-                REQUIRE_THAT(parsed_units, Contains("dummy4 -0.02500000: -2 0 0 0 0 0 0 0 0 0"));
-                REQUIRE_THAT(parsed_units, Contains("dummy5 0.02500000: 0 0 0 0 0 0 0 0 0 0"));
-                REQUIRE_THAT(parsed_units, Contains("R 8.31446262: 2 1 -2 0 0 0 0 0 0 -1"));
-                REQUIRE_THAT(parsed_units, Contains("R1 8.31400000: 2 1 -2 0 0 0 0 0 0 -1"));
-                REQUIRE_THAT(parsed_units, Contains("R2 8.31400000: 2 1 -2 0 0 0 0 0 0 -1"));
+                REQUIRE_THAT(parsed_units, Contains("mV 0.001: 2 1 -2 -1 0 0 0 0 0 0"));
+                REQUIRE_THAT(parsed_units, Contains("mM 1: -3 0 0 0 0 0 0 0 0 0"));
+                REQUIRE_THAT(parsed_units, Contains("mA 0.001: 0 0 -1 1 0 0 0 0 0 0"));
+                REQUIRE_THAT(parsed_units, Contains("KTOMV 8.53e-05: 2 1 -2 -1 0 0 0 0 0 -1"));
+                REQUIRE_THAT(parsed_units, Contains("B 26: -1 0 0 -1 0 0 0 0 0 0"));
+                REQUIRE_THAT(parsed_units, Contains("dummy1 0.025: -2 0 0 0 0 0 0 0 0 0"));
+                REQUIRE_THAT(parsed_units, Contains("dummy2 0.025: -2 0 0 0 0 0 0 0 0 0"));
+                REQUIRE_THAT(parsed_units, Contains("dummy3 0.025: -2 0 0 0 0 0 0 0 0 0"));
+                REQUIRE_THAT(parsed_units, Contains("dummy4 -0.025: -2 0 0 0 0 0 0 0 0 0"));
+                REQUIRE_THAT(parsed_units, Contains("dummy5 0.025: 0 0 0 0 0 0 0 0 0 0"));
+                REQUIRE_THAT(parsed_units, Contains("R 8.31446: 2 1 -2 0 0 0 0 0 0 -1"));
+                REQUIRE_THAT(parsed_units, Contains("R1 8.314: 2 1 -2 0 0 0 0 0 0 -1"));
+                REQUIRE_THAT(parsed_units, Contains("R2 8.314: 2 1 -2 0 0 0 0 0 0 -1"));
                 REQUIRE_THAT(parsed_units, Contains("m kg sec coul candela dollar bit erlang K"));
             }
         }

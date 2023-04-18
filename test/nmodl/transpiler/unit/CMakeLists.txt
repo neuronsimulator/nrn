@@ -17,6 +17,7 @@ include_directories(${NMODL_PROJECT_SOURCE_DIR}/ext/eigen)
 # Common input data library
 # =============================================================================
 add_library(test_util STATIC utils/nmodl_constructs.cpp utils/test_utils.cpp)
+target_link_libraries(test_util PUBLIC spdlog::spdlog_header_only)
 
 # =============================================================================
 # Common input data library

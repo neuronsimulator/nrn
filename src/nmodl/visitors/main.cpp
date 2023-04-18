@@ -6,6 +6,7 @@
  *************************************************************************/
 
 #include <CLI/CLI.hpp>
+#include <filesystem>
 
 #include "ast/program.hpp"
 #include "config/config.h"
@@ -33,6 +34,7 @@
 
 using namespace nmodl;
 using namespace visitor;
+namespace fs = std::filesystem;
 
 /**
  * \file
@@ -64,7 +66,7 @@ int main(int argc, const char* argv[]) {
         fmt::format("NMODL Visitor : Runs standalone visitor classes({})", Version::to_string())};
 
     bool verbose = false;
-    std::vector<std::string> files;
+    std::vector<fs::path> files;
 
     app.add_flag("-v,--verbose", verbose, "Enable debug log level");
     app.add_option("-f,--file,file", files, "One or more MOD files to process")
@@ -107,9 +109,9 @@ int main(int argc, const char* argv[]) {
     nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance().api()->initialize_interpreter();
 
     for (const auto& filename: files) {
-        logger->info("Processing {}", filename);
+        logger->info("Processing {}", filename.string());
 
-        const std::string mod_file(utils::remove_extension(utils::base_name(filename)));
+        const std::string mod_file = filename.stem().string();
 
         /// driver object that creates lexer and parser
         parser::NmodlDriver driver;

@@ -25,10 +25,6 @@
  * \brief Units processing while being processed from lexer and parser
  */
 
-namespace {
-constexpr std::size_t output_precision{8};
-}
-
 namespace nmodl {
 namespace units {
 
@@ -314,10 +310,9 @@ void UnitTable::print_units_sorted(std::ostream& units_details) const {
                                                                                table.end());
     std::sort(sorted_elements.begin(), sorted_elements.end());
     for (const auto& it: sorted_elements) {
-        units_details << fmt::format("{} {:.{}f}: {}\n",
+        units_details << fmt::format("{} {:g}: {}\n",
                                      it.first,
                                      it.second->get_factor(),
-                                     output_precision,
                                      fmt::join(it.second->get_dimensions(), " "));
     }
 }

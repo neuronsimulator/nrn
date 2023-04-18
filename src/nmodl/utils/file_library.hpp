@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -41,7 +42,6 @@ class FileLibrary {
      * \name Managing inclusion paths.
      * \{
      */
-    void append_dir(const std::string& path);
     void append_env_var(const std::string& env_var);
     /** \} */
 
@@ -49,7 +49,7 @@ class FileLibrary {
      * \name current directory
      * \{
      */
-    void push_current_directory(const std::string& path);
+    void push_current_directory(const std::filesystem::path& path);
     void pop_current_directory();
     /** \} */
 
@@ -58,14 +58,14 @@ class FileLibrary {
      * Determine real path of \a file
      * \return Directory containing \a file, or "" if not found.
      */
-    std::string find_file(const std::string& file);
+    std::string find_file(const std::filesystem::path& file);
 
   private:
     /// push the working directory in the directories stack
     void push_cwd();
 
     /// inclusion path list
-    std::vector<std::string> paths_;
+    std::vector<std::filesystem::path> paths_;
 };
 
 }  // namespace nmodl
