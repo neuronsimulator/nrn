@@ -10,11 +10,11 @@
 #include "nrnsection_mapping.h"
 #include "vrecitem.h"  // for nrnbbcore_vecplay_write
 #include "parse.hpp"
-#include "nrn_filesystem.h"
 #include <string>
 #include <unistd.h>
 #include <algorithm>
 #include <cerrno>
+#include <filesystem>
 
 #include "nrnwrap_dlfcn.h"
 
@@ -184,7 +184,7 @@ bool is_coreneuron_loaded() {
 
 
 /** Open library with given path and return dlopen handle **/
-void* get_handle_for_lib(neuron::std::filesystem::path const& path) {
+void* get_handle_for_lib(std::filesystem::path const& path) {
     // On windows path.c_str() is wchar_t*
     void* handle = dlopen(path.string().c_str(), RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
     if (!handle) {
@@ -203,15 +203,15 @@ void* get_coreneuron_handle() {
     }
 
     // record what we tried so we can give a helpful error message
-    std::vector<neuron::std::filesystem::path> paths_tried;
+    std::vector<std::filesystem::path> paths_tried;
     paths_tried.reserve(3);
 
     // env variable get highest preference
     const char* corenrn_lib = std::getenv("CORENEURONLIB");
     if (corenrn_lib) {
-        neuron::std::filesystem::path const corenrn_lib_path{corenrn_lib};
+        std::filesystem::path const corenrn_lib_path{corenrn_lib};
         paths_tried.push_back(corenrn_lib_path);
-        if (neuron::std::filesystem::exists(corenrn_lib_path)) {
+        if (std::filesystem::exists(corenrn_lib_path)) {
             return get_handle_for_lib(corenrn_lib_path);
         }
     }
@@ -223,17 +223,17 @@ void* get_coreneuron_handle() {
     // first check if coreneuron specific library exist in <arch>/.libs
     // note that we need to get full path especially for OSX
     {
-        auto const corenrn_lib_path = neuron::std::filesystem::current_path() /
+        auto const corenrn_lib_path = std::filesystem::current_path() /
                                       neuron::config::system_processor / corenrn_lib_name;
         paths_tried.push_back(corenrn_lib_path);
-        if (neuron::std::filesystem::exists(corenrn_lib_path)) {
+        if (std::filesystem::exists(corenrn_lib_path)) {
             return get_handle_for_lib(corenrn_lib_path);
         }
     }
 
     // last fallback is minimal library with internal mechanisms
     // named libcorenrnmech_internal
-    neuron::std::filesystem::path corenrn_lib_path{neuron_home};
+    std::filesystem::path corenrn_lib_path{neuron_home};
     auto const corenrn_internal_lib_name = std::string{neuron::config::shared_library_prefix}
                                                .append("corenrnmech_internal")
                                                .append(neuron::config::shared_library_suffix);
@@ -242,7 +242,7 @@ void* get_coreneuron_handle() {
 #endif
     (corenrn_lib_path /= "lib") /= corenrn_internal_lib_name;
     paths_tried.push_back(corenrn_lib_path);
-    if (neuron::std::filesystem::exists(corenrn_lib_path)) {
+    if (std::filesystem::exists(corenrn_lib_path)) {
         return get_handle_for_lib(corenrn_lib_path);
     }
     // Nothing worked => error
