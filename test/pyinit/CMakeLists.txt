@@ -273,8 +273,31 @@ if(NRN_PYTHON_EXTRA_FOR_TESTS)
           GROUP pyinit
           NAME nrniv_py${pyver}_import_fail_check_${check}
           COMMAND nrniv ${nrniv_args_common} -pyexe ${pyexe} -python -c "import neuron")
-        set_tests_properties(pyinit::nrniv_py${pyver}_import_fail_check_${check}
-                             PROPERTIES ${properties})
+        # Setting the full set of environment variables (NRN_PYLIB, NRN_PYTHONEXE and
+        # NRN_PYTHONVERSION) will prevent nrnpyenv.sh from being run, but we should still get an
+        # error if NRN_PYTHONVERSION is not valid for this NEURON.
+        execute_process(
+          COMMAND "${pyexe}" -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
+          RESULT_VARIABLE code
+          OUTPUT_VARIABLE libdir
+          OUTPUT_STRIP_TRAILING_WHITESPACE)
+        set(pylib
+            "${libdir}/${CMAKE_SHARED_LIBRARY_PREFIX}python${pyver}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+        if(code OR NOT EXISTS "${pylib}")
+          message(
+            WARNING
+              "Could not identify libpythonX.Y for NRN_PYTHON_EXTRA_FOR_TESTS test (tried ${pylib})"
+          )
+          continue()
+        endif()
+        nrn_add_test(
+          GROUP pyinit
+          NAME nrniv_py${pyver}_forced_from_env_check_${check}
+          COMMAND NRN_PYTHONVERSION=${pyver} "NRN_PYLIB=${pylib}" "NRN_PYTHONEXE=${pyexe}" nrniv
+                  -python -c "import neuron")
+        set_tests_properties(
+          pyinit::nrniv_py${pyver}_import_fail_check_${check}
+          pyinit::nrniv_py${pyver}_forced_from_env_check_${check} PROPERTIES ${properties})
       endif()
     endforeach()
   endforeach()

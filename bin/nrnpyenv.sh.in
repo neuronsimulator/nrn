@@ -13,7 +13,6 @@
 # and not loading the correct python library.
 
 #Run python and generate the following on stdout
-#export PYTHONHOME=...
 #export PYTHONPATH=...
 #export LD_LIBRARY_PATH=...
 #export PATH=...
@@ -32,7 +31,6 @@
 
 export originalPATH="$PATH"
 export originalPYTHONPATH="$PYTHONPATH"
-export originalPYTHONHOME="$PYTHONHOME"
 export originalLDLIBRARYPATH="$LD_LIBRARY_PATH"
 
 # list the Python versions that this NEURON build supports
@@ -61,11 +59,6 @@ fi
 
 # The first argument passed to this script is the value of nrniv -pyexe
 pyexe_arg="$1"
-
-if test "$PYTHONHOME" != "" ; then
-  echo "# Ignoring existing PYTHONHOME=$PYTHONHOME."
-  unset PYTHONHOME
-fi
 
 WHICH=which
 
@@ -613,9 +606,6 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
 
   print("\n#NRN_PYLIB provenance: " + str(nrnpylib_provenance))
   print ("\n# if launch nrniv, then likely need:")
-  if pythonhome:
-    pythonhome=u2d(pythonhome)
-    print ("export NRN_PYTHONHOME=" + dq + pythonhome + dq)
   if ldpath and nrn_pylib is None:
     print ("export LD_LIBRARY_PATH=" + dq + ldpath + upathsep + "$LD_LIBRARY_PATH" + dq)
   if nrn_pylib is not None:

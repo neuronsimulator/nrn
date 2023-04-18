@@ -39,8 +39,6 @@ static nrnpython_reg_real_t load_nrnpython();
 extern "C" void nrnpython_reg_real(neuron::python::impl_ptrs*);
 #endif
 
-std::string nrnpy_pyhome;
-
 void nrnpython() {
     if (neuron::python::methods.hoc_nrnpython) {
         neuron::python::methods.hoc_nrnpython();
@@ -114,10 +112,9 @@ static bool ends_with(std::string_view str, std::string_view suffix) {
  *     is set then we will not search $PATH
  */
 static void set_nrnpylib() {
-    std::array<std::pair<std::string&, const char*>, 4> params{
+    std::array<std::pair<std::string&, const char*>, 3> params{
         {{nrnpy_pylib, "NRN_PYLIB"},
          {nrnpy_pyexe, "NRN_PYTHONEXE"},
-         {nrnpy_pyhome, "NRN_PYTHONHOME"},
          {nrnpy_pyversion, "NRN_PYTHONVERSION"}}};
     auto const all_set = [&params]() {
         return std::all_of(params.begin(), params.end(), [](auto const& p) {
@@ -187,7 +184,6 @@ static void set_nrnpylib() {
                 << "\nwe are still missing information about the Python to be loaded:\n"
                 << "  nrnpy_pyexe=" << nrnpy_pyexe << '\n'
                 << "  nrnpy_pylib=" << nrnpy_pylib << '\n'
-                << "  nrnpy_pyhome=" << nrnpy_pyhome << '\n'
                 << "  nrnpy_pyversion=" << nrnpy_pyversion << '\n';
             throw std::runtime_error(err.str());
         }
@@ -196,7 +192,6 @@ static void set_nrnpylib() {
     if (nrnmpi_numprocs_world > 1) {  // 0 broadcasts to everyone else.
         nrnmpi_str_broadcast_world(nrnpy_pyexe, 0);
         nrnmpi_str_broadcast_world(nrnpy_pylib, 0);
-        nrnmpi_str_broadcast_world(nrnpy_pyhome, 0);
         nrnmpi_str_broadcast_world(nrnpy_pyversion, 0);
     }
 #endif
@@ -253,8 +248,7 @@ void nrnpython_reg() {
 #ifdef NRNPYTHON_DYNAMICLOAD  // to end of file
 static nrnpython_reg_real_t load_nrnpython() {
     std::string pyversion{};
-    auto const& pv10 = nrn_is_python_extension;
-    if (pv10 > 0) {
+    if (auto const pv10 = nrn_is_python_extension; pv10 > 0) {
         // pv10 is one of the packed integers like 310 (3.10) or 38 (3.8)
         auto const factor = (pv10 >= 100) ? 100 : 10;
         pyversion = std::to_string(pv10 / factor) + "." + std::to_string(pv10 % factor);
@@ -265,27 +259,31 @@ static nrnpython_reg_real_t load_nrnpython() {
             return nullptr;
         }
         pyversion = nrnpy_pyversion;
+        // It's possible to get this far with an incompatible version, if nrnpy_pyversion and
+        // friends were set from the environment to bypass nrnpyenv.sh, and nrniv -python was
+        // launched.
+        auto const& supported_versions = neuron::config::supported_python_versions;
+        auto const iter =
+            std::find(supported_versions.begin(), supported_versions.end(), pyversion);
+        if (iter == supported_versions.end()) {
+            std::cerr << "Python " << pyversion
+                      << " is not supported by this NEURON installation (supported:";
+            for (auto const& good_ver: supported_versions) {
+                std::cerr << ' ' << good_ver;
+            }
+            std::cerr << "). If you are seeing this message, your environment probably contains "
+                         "NRN_PYLIB, NRN_PYTHONEXE and NRN_PYTHONVERSION settings that are "
+                         "incompatible with this NEURON. Try unsetting them."
+                      << std::endl;
+            return nullptr;
+        }
     }
+    // Construct libnrnpythonX.Y.so (or other platforms' equivalent)
     std::string name;
     name.append(neuron::config::shared_library_prefix);
     name.append("nrnpython");
     name.append(pyversion);
     name.append(neuron::config::shared_library_suffix);
-    auto const& supported_versions = neuron::config::supported_python_versions;
-    auto const iter = std::find(supported_versions.begin(), supported_versions.end(), pyversion);
-    if (iter == supported_versions.end()) {
-        // Still reachable if you explicitly set NRN_PY* environment variables for a bad Python?
-        std::cerr << "Python " << pyversion
-                  << " is not supported by this NEURON installation (supported:";
-        for (auto const& good_ver: supported_versions) {
-            std::cerr << ' ' << good_ver;
-        }
-        std::cerr << "). Either re-build NEURON with support for this version, use a supported "
-                  << "version of Python  or try using nrniv -python so that NEURON can suggest a "
-                  << "compatible version for you. [pv10=" << pv10 << " nrnpy_pylib=" << nrnpy_pylib
-                  << " nrnpy_pyversion=" << nrnpy_pyversion << ']' << std::endl;
-        return nullptr;
-    }
 #ifndef MINGW
     // Build a path from neuron_home on macOS and Linux
     name = neuron_home + ("/../../lib/" + name);
@@ -293,7 +291,7 @@ static nrnpython_reg_real_t load_nrnpython() {
     auto* const handle = dlopen(name.c_str(), RTLD_NOW);
     if (!handle) {
         std::cerr << "Could not load " << name << std::endl;
-        std::cerr << "pv10=" << pv10 << " nrnpy_pylib=" << nrnpy_pylib << std::endl;
+        std::cerr << "nrn_is_python_extension=" << nrn_is_python_extension << std::endl;
         return nullptr;
     }
     auto* const reg = reinterpret_cast<nrnpython_reg_real_t>(dlsym(handle, "nrnpython_reg_real"));

@@ -18,7 +18,7 @@
 #include <sstream>
 extern HocStr* hoc_cbufstr;
 extern int nrnpy_nositeflag;
-extern std::string nrnpy_pyhome, nrnpy_pyexe;
+extern std::string nrnpy_pyexe;
 extern char* hoc_ctp;
 extern FILE* hoc_fin;
 extern const char* hoc_promptstr;
@@ -158,13 +158,6 @@ static int nrnpython_start(int b) {
         // handle settings like LC_ALL=C, so using a different configuration can lead to surprising
         // differences.
         PythonConfigWrapper config;
-        // nrnpy_pyhome hopefully holds the python base root and should
-        // work with virtual environments.
-        // But use only if not overridden by the PYTHONHOME environment variable.
-        char const* _p_pyhome = std::getenv("PYTHONHOME");
-        if (!_p_pyhome) {
-            _p_pyhome = nrnpy_pyhome.c_str();
-        }
         auto const check = [](const char* desc, PyStatus status) {
             if (PyStatus_Exception(status)) {
                 std::ostringstream oss;
@@ -213,12 +206,6 @@ static int nrnpython_start(int b) {
         // something about that?
         check("Could not set PyConfig.program_name",
               PyConfig_SetBytesString(config, &config->program_name, pyexe.c_str()));
-        if (_p_pyhome) {
-            // Py_SetPythonHome is deprecated in Python 3.11+, write to config.home instead.
-            // olupton 2023-04-11 is not sure if this is still needed or useful
-            check("Could not set PyConfig.home",
-                  PyConfig_SetBytesString(config, &config->home, _p_pyhome));
-        }
         // PySys_SetArgv is deprecated in Python 3.11+, write to config.XXX instead.
         // nrn_global_argv contains the arguments passed to nrniv/special, which are not valid
         // Python arguments, so tell Python not to try and parse them. In future we might like to
