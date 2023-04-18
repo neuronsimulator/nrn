@@ -12,8 +12,8 @@
 
 #include <hocstr.h>
 #include "nrnpy.h"
-#include "nrn_filesystem.h"
 
+#include <filesystem>
 #include <string>
 #include <sstream>
 extern HocStr* hoc_cbufstr;
@@ -107,7 +107,7 @@ static void nrnpython_set_path(std::string_view fname) {
     } else {
         // Figure out what sys.path[0] should be; this involves first resolving symlinks in fname
         // and second getting the directory name from it.
-        auto const realpath = neuron::std::filesystem::canonical(fname);
+        auto const realpath = std::filesystem::canonical(fname);
         // .string() ensures this is not a wchar_t string on Windows
         auto const dirname = realpath.parent_path().string();
         reset_sys_path(dirname);
@@ -195,7 +195,7 @@ static int nrnpython_start(int b) {
         // Surprisingly, given the documentation, it seems that passing a non-absolute path to
         // PyConfig.program_name does not lead to a lookup in $PATH, but rather to the real (nrniv)
         // path being placed in sys.executable -- at least on macOS.
-        if (auto p = neuron::std::filesystem::path{pyexe}; !p.is_absolute()) {
+        if (auto p = std::filesystem::path{pyexe}; !p.is_absolute()) {
             std::ostringstream oss;
             oss << "Setting PyConfig.program_name to a non-absolute path (" << pyexe
                 << ") is not portable; try passing an absolute path to -pyexe or NRN_PYTHONEXE";
