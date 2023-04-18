@@ -44,7 +44,6 @@ Basic Programming
 .. toctree::
     :maxdepth: 1
     
-    programming/python.rst
     programming/hoc.rst
     programming/mathematics.rst
     programming/strings.rst
@@ -55,6 +54,7 @@ Basic Programming
     programming/errors.rst
     programming/dynamiccode.rst
     programming/projectmanagement.rst
+    programming/python-from-hoc.rst
     programming/internals.rst
 
 Model Specification
