@@ -164,7 +164,8 @@ function(nrn_find_python)
           FATAL_ERROR
             "${opt_NAME} points into a virtual environment that was configured using a Python "
             "shim. This will not work with sanitizers enabled on macOS.\nTry re-creating your "
-            "virtual environment using the real Python binary: ${deshimmed} -mvenv new_venv_path")
+            "virtual environment using the real Python binary:\n"
+            "PYTHONEXECUTABLE=${deshimmed} ${deshimmed} -mvenv new_venv_path")
       endif()
       # the virtual environment sits on top of the real (non-shimmed) Python, so it should all work:
       # opt_NAME is correct
