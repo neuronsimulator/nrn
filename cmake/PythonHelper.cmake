@@ -42,9 +42,27 @@ else()
 endif()
 
 # Given a name (e.g. python3.11) find the include directories, full executable path, libraries and
-# version information. Usage: nrn_find_python(NAME python3.11 PREFIX nrnpy) sets nrnpy_EXECUTABLE,
-# nrnpy_INCLUDES, nrnpy_LIBRARIES, nrnpy_VERSION_MAJOR and nrnpy_VERSION_MINOR. If NRN_ENABLE_PYTHON
-# is *not* set then only nrnpy_EXECUTABLE will be set.
+# version information.
+# ~~~
+# Usage: nrn_find_python(NAME python3.11 PREFIX nrnpy)
+# ~~~
+# Sets:
+#
+# * nrnpy_EXECUTABLE
+# * nrnpy_INCLUDES
+# * nrnpy_LIBRARIES
+# * nrnpy_VERSION_MAJOR
+# * nrnpy_VERSION_MINOR
+#
+# If NRN_ENABLE_PYTHON is *not* set then only nrnpy_EXECUTABLE will be set. There is some special
+# handling on macOS when sanitizers are enabled:
+#
+# * if the Python executable does *not* belong to a virtual environment but *is* a shim (as is often
+#   the case with binaries like /usr/bin/python on macOS) then nrnpy_EXECUTABLE will be set to the
+#   real (non-shim) binary.
+# * if the Python executable *does* point to a virtual environment that was configured using a
+#   Python shim, an error is emitted with advice on how to re-create the virtual environment using
+#   the real (non-shim) binary.
 function(nrn_find_python)
   set(oneVal NAME PREFIX)
   cmake_parse_arguments(opt "" "${oneVal}" "" ${ARGN})
@@ -127,10 +145,37 @@ function(nrn_find_python)
         "${Python3_VERSION_MINOR}"
         PARENT_SCOPE)
   endif()
-  # One final transformation, for convenience when using macOS and sanitizers that need to have
-  # their runtime libraries preloaded, replace any shims with the real Python executable. TODO: this
-  # seems problematic if we also want to support virtual environments.
-  cpp_cc_strip_python_shims(EXECUTABLE "${opt_NAME}" OUTPUT opt_NAME)
+  # Finally do our special treatment for macOS + sanitizers
+  if(APPLE AND NRN_SANITIZERS)
+    # Detect if the binary we have in opt_NAME points to a virtual environment.
+    execute_process(
+      COMMAND "${opt_NAME}" -c "import sys; print(sys.prefix != sys.base_prefix)"
+      RESULT_VARIABLE code
+      OUTPUT_VARIABLE isvenv_str
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(code EQUAL 0 AND isvenv_str STREQUAL "True")
+      # opt_NAME points into a virtual environment. This will only work with sanitizers if the
+      # {venv}/bin/python symlink does *not* point to a shim.
+      file(REAL_PATH "${opt_NAME}" pyexe_without_symlinks)
+      cpp_cc_strip_python_shims(EXECUTABLE "${pyexe_without_symlinks}" OUTPUT deshimmed)
+      if(NOT deshimmed STREQUAL pyexe_without_symlinks)
+        # this is the sad case: a virtual environment sitting on top of a shim
+        message(
+          FATAL_ERROR
+            "${opt_NAME} points into a virtual environment that was configured using a Python "
+            "shim. This will not work with sanitizers enabled on macOS.\nTry re-creating your "
+            "virtual environment using the real Python binary: ${deshimmed} -mvenv new_venv_path")
+      endif()
+      # the virtual environment sits on top of the real (non-shimmed) Python, so it should all work:
+      # opt_NAME is correct
+    elseif(code EQUAL 0 AND isvenv_str STREQUAL "False")
+      # opt_NAME does not point into a virtual environment, so we can safely strip out any shims
+      cpp_cc_strip_python_shims(EXECUTABLE "${opt_NAME}" OUTPUT opt_NAME)
+    else()
+      message(FATAL_ERROR "Could not determine if ${opt_NAME} points into a virtual environment "
+                          "(code=${code} isvenv_str=${isvenv_str})")
+    endif()
+  endif()
   set("${opt_PREFIX}_EXECUTABLE"
       "${opt_NAME}"
       PARENT_SCOPE)
