@@ -51,7 +51,8 @@ mac_m1_cmake_build:
       print(name.value.decode())
       END_SCRIPT
     - real_python=$(python3 resolve_shim.py)
-    - real_python -mvenv venv
+    - echo "python3=$(command -v python3) is really ${real_python}"
+    - ${real_python} -mvenv venv
     - venv/bin/pip install --upgrade pip -r nrn_requirements.txt
     - export PYTHON=${PWD}/venv/bin/python
     - ${PYTHON} --version
