@@ -1,46 +1,12 @@
-.. _python:
+.. _python_accessing_hoc:
+
+Accessing HOC from Python
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. warning::
 
     Some of the idioms on this page are out of date, but they still work.
     See the NEURON Python tutorial for modern idioms.
-
-Python Language
----------------
-
-This document describes installation and basic use of NEURON's Python interface. For information on the modules in the ``neuron`` namespace, see:
-
-.. toctree:: :maxdepth: 1
-
-    neuronpython.rst
-
-
-.. _python_accessing_hoc:
-
-Python Accessing HOC
-~~~~~~~~~~~~~~~~~~~~
-
-
-
-Syntax:
-    ``nrniv -python [file.hoc file.py  -c "python_statement"]``
-
-    ``nrngui -python ...``
-
-    ``neurondemo -python ...``
-
-
-Description:
-    Launches NEURON with Python as the command line interpreter. 
-    File arguments with a .hoc suffix are interpreted using the 
-    Hoc interpreter. File arguments with the .py suffix are interpreted 
-    using the Python interpreter. The -c statement causes python to 
-    execute the statement. 
-    The import statements allow use of the following 
-
-         
-
-----
 
 .. note::
 
@@ -48,7 +14,7 @@ Description:
     with HOC; for a Python-based introduction to NEURON, see
     `Scripting NEURON Basics <../../tutorials/scripting-neuron-basics.html>`_
 
-
+.. _python_HocObject_class:
 .. class:: neuron.hoc.HocObject
 
 
@@ -681,28 +647,6 @@ Mechanism
         To get a python list of point processes in a segment: ``pplist = seg.point_processes()``
 
 ----
-
-.. _Hoc_accessing_Python:
-
-HOC accessing Python
-~~~~~~~~~~~~~~~~~~~~
-
-
-    Syntax:
-        ``nrniv [file.py|file.hoc...]``
-
-
-    Description:
-        The absence of a -python argument causes NEURON to launch with Hoc 
-        as the command line interpreter. Python files (or Hoc files) are run
-        with the appropriate interpreter before presenting a Hoc user-interface.
-        From the hoc world any python statement can be executed and anything 
-        in the python world can be assigned or evaluated. 
-
-
-----
-
-
 
 .. function:: nrnpython
 

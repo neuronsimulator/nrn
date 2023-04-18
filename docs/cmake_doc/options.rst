@@ -256,6 +256,7 @@ NRN_ENABLE_PYTHON:BOOL=ON
   Enable Python interpreter support
   (default python, fallback to python3, but see PYTHON_EXECUTABLE below)
 
+.. _cmake_nrn_enable_python_dynamic:
 NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
 ----------------------------------
   Enable dynamic Python version support
@@ -263,21 +264,31 @@ NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
   This is mostly useful for binary distributions where it is unknown which
   version, if any, of python exists on the target machine.
 
+.. _cmake_nrn_python_dynamic:
 NRN_PYTHON_DYNAMIC:STRING=
 --------------------------
-  semicolon (;) separated list of python executables to create interfaces. (default python3)
+  Semicolon (;) separated list of Python executables to build support for.
 
-  If the string is empty use the python specified by PYTHON_EXECUTABLE
-  or else the default python. Binary distributions often specify a list
-  of python versions so that if any one of them is available on the
-  target machine, NEURON + Python will be fully functional. Eg. the
-  mac package build script on my machine, nrn/bldnrnmacpkgcmake.sh uses
+  If the string is empty use the python specified by ``PYTHON_EXECUTABLE``.
+  or else the default python (``python3`` in the ``$PATH``).
+  Binary distributions often specify a list of python versions so that if any
+  one of them is available on the target machine, NEURON + Python will be fully
+  functional.
+  You must specify exactly one executable for each minor version of Python that
+  you would like to support.
+  For example:
 
   .. code-block:: shell
 
     -DNRN_PYTHON_DYNAMIC="python3.8;python3.9;python3.10;python3.11"
 
-  This option is ignored unless NRN_ENABLE_PYTHON_DYNAMIC=ON
+  The first entry in the list is considered to be the default version, followed
+  by alternatives in decreasing order of preference.
+  The default version is used to execute build scripts, and many tests are only
+  executed using this version.
+
+  This option is ignored unless ``NRN_ENABLE_PYTHON_DYNAMIC=ON``, in which case
+  ``PYTHON_EXECUTABLE`` is ignored.
 
 PYTHON_EXECUTABLE:PATH=
 -----------------------
@@ -514,6 +525,9 @@ NRN_SANITIZERS:STRING=
   UndefinedBehaviorSanitizer. Accepts a comma-separated list of ``address``,
   ``leak`` and ``undefined``. See the "Diagnosis and Debugging" section for more
   information.
+  Note that on macOS it can be a little intricate to combine
+  ``-DNRN_SANITIZERS=address`` with the use of Python virtual environments; if
+  you attempt this then the CMake code should recommend a solution.
 
 Miscellaneous Rarely used options specific to NEURON:
 =====================================================
@@ -572,3 +586,19 @@ NRN_ENABLE_BACKTRACE:BOOL=OFF
   Does not work with python.
 
   Note: floating exceptions are turned on with :func:`nrn_feenableexcept`.
+
+NRN_LINK_AGAINST_PYTHON:BOOL=OFF
+--------------------------------
+  When ``NRN_ENABLE_PYTHON_DYNAMIC=ON`` then link the NEURON-Python interface
+  libraries ``libnrnpythonX.Y.so`` against the corresponding Python library
+  that was found at configuration time (``libpythonX.Y.so``).
+  This is enabled by default on Windows, but is not generally needed on macOS
+  and Linux, where the Python library is found and loaded dynamically at
+  runtime.
+
+NRN_PYTHON_EXTRA_FOR_TESTS:STRING=
+----------------------------------
+  Semicolon (;) separated list of Python executables that NEURON is **not**
+  built with support for, for use in tests of error messages and reporting.
+  For these purposes, minor versions (3.X and 3.Y) are considered different
+  and patch versions (3.8.X and 3.8.Y) are considered to be the same.

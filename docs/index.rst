@@ -38,6 +38,7 @@ explore the `source code for over 750 NEURON models on ModelDB <https://senselab
    :caption: NEURON scripting:
    :hidden:
 
+   scripting.rst
    python/index
    hoc/index
    otherscripting.rst

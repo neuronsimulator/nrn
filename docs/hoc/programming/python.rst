@@ -5,110 +5,17 @@
 Python Language
 ---------------
 
-This document describes installation and basic use of NEURON's Python interface. For information on the modules in the ``neuron`` namespace, see:
+This document describes basic use of NEURON's Python interface.
+For information on the modules in the ``neuron`` namespace, see:
 
 .. toctree:: :maxdepth: 1
 
     neuronpython.rst
 
-
-Installation
-~~~~~~~~~~~~
-
-
-Syntax:
-    ``./configure --with-nrnpython ...``
-
-    ``make``
-
-    ``make install``
-
-
-Description:
-    Builds NEURON with Python embedded as an alternative interpreter to HOC. 
-    The python version used is that found from ``which python``. 
-     
-    NEURON can be used as an extension to Python if, after building as above, 
-    one goes to the src/nrnpython directory containing the Makefile and types 
-    something analogous to 
-
-    .. code-block::
-        none
-
-        python setup.py install --home=$HOME 
-
-    Which on my machine installs in :file:`/home/hines/lib64/python/neuron`
-    and can be imported into NEURON with 
-
-    .. code-block::
-        python
-
-        ipython 
-        import sys 
-        sys.path.append("/home/hines/lib64/python") 
-        import neuron 
-
-    It is probably better to avoid the incessant ``import sys``... and instead 
-    add to your shell environment something analogous to 
-
-    .. code-block::
-        none
-
-        export PYTHONPATH=$PYTHONPATH:/home/hines/lib64/python 
-
-    since when launching NEURON and embedding Python, the path is automatically 
-    defined so that ``import neuron`` does not require any prerequisites. 
-    If there is a ``@<host-cpu@>/.libs/libnrnmech.so`` file in your working 
-    directory, those nmodl mechanisms will be loaded as well. 
-    After this, you will probably want to: 
-
-    .. code-block::
-        python
-
-        h = neuron.h # neuron imports hoc and does a  h = hoc.HocObject() 
-
-    In the past we also recommended an "import nrn" but this is no longer 
-    necessary as everything in that module is also directly available from 
-    the "h" object. 
-    You can use the hoc function :hoc:func:`nrn_load_dll` to load mechanism files
-    as well, e.g. if neurondemo was used earlier so the shared object exists, 
-
-    .. code-block::
-        python
-
-        h = hoc.HocObject() 
-        h('nrn_load_dll("$(NEURONHOME)/demo/release/x86_64/.libs/libnrnmech.so")') 
-
-
-
 .. _hoc_python_accessing_hoc:
 
 Python Accessing HOC
 ~~~~~~~~~~~~~~~~~~~~
-
-
-
-Syntax:
-    ``nrniv -python [file.hoc file.py  -c "python_statement"]``
-
-    ``nrngui -python ...``
-
-    ``neurondemo -python ...``
-
-
-Description:
-    Launches NEURON with Python as the command line interpreter. 
-    File arguments with a .hoc suffix are interpreted using the 
-    Hoc interpreter. File arguments with the .py suffix are interpreted 
-    using the Python interpreter. The -c statement causes python to 
-    execute the statement. 
-    The import statements allow use of the following 
-
-         
-
-----
-
-
 
 .. hoc:method:: neuron.hoc.execute
 
@@ -758,7 +665,7 @@ HOC accessing Python
 ----
 
 
-
+.. _hoc_function_nrnpython:
 .. hoc:function:: nrnpython
 
 
