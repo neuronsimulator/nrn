@@ -607,11 +607,6 @@ target_include_directories(
   coreneuron-core SYSTEM PRIVATE ${CLI11_HEADER_DIRECTORY}
                                  ${PROJECT_SOURCE_DIR}/external/Random123/include)
 
-# See: https://en.cppreference.com/w/cpp/filesystem#Notes
-if(CMAKE_CXX_COMPILER_IS_GCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1)
-  target_link_libraries(coreneuron-core PUBLIC stdc++fs)
-endif()
-
 if(CORENRN_ENABLE_GPU)
   # nrnran123.cpp uses Boost.Pool in GPU builds if it's available.
   find_package(Boost QUIET)
