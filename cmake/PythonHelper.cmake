@@ -222,6 +222,7 @@ endforeach()
 # In any case, the default (NRN_DEFAULT_PYTHON_EXECUTABLE) should always be the zeroth entry in the
 # list of Pythons, and we need to set it even if NRN_ENABLE_PYTHON=OFF -- for use in build scripts.
 list(GET NRN_PYTHON_EXECUTABLES 0 NRN_DEFAULT_PYTHON_EXECUTABLE)
+list(GET NRN_PYTHON_VERSIONS 0 NRN_DEFAULT_PYTHON_VERSION)
 if(NRN_ENABLE_PYTHON)
   list(GET NRN_PYTHON_INCLUDES 0 NRN_DEFAULT_PYTHON_INCLUDES)
   list(GET NRN_PYTHON_LIBRARIES 0 NRN_DEFAULT_PYTHON_LIBRARIES)

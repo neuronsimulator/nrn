@@ -144,43 +144,52 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
   # don't specify and check we get the expected default.
   set(nrniv_args ${nrniv_args_common})
   if(val EQUAL NRN_PYTHON_COUNT)
-    # Figure out which Python we expect nrniv -python to pick up in these tests:
+    # Figure out which Python we expect nrniv -python to pick up in these tests. First, for dynamic
+    # Python:
     #
     # * we know we're not passing -pyexe here
     # * we know(?) that NRN_PYTHONEXE is not set
     # * the order of precedence is: python python3 pythonX0.Y0 .. pythonXn.Yn
     # * disable the tests if that yields nothing
     #
-    # python3.999 is to make sure we test skipping names in the search path that don't exist
-    set(search_names python python3 python3.999)
-    foreach(val2 RANGE ${NRN_PYTHON_ITERATION_LIMIT})
-      list(GET NRN_PYTHON_VERSIONS ${val2} pyver)
-      list(APPEND search_names python${pyver})
-    endforeach()
-    unset(pyexe)
-    foreach(candidate ${search_names})
-      nrn_find_python(NAME "${candidate}" PREFIX nrnpy)
-      if(nrnpy_EXECUTABLE STREQUAL "nrnpy_EXECUTABLE-NOTFOUND")
-        # Not an error if a user's system doesn't have all the names in ${search_names}
-        continue()
-      endif()
-      set(nrnpy_VERSION "${nrnpy_VERSION_MAJOR}.${nrnpy_VERSION_MINOR}")
-      if(NOT nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
-        # e.g. python or python3 points to a version we didn't build against
-        continue()
-      endif()
-      # Right, so the default should be nrnpy_EXECUTABLE, which is nrnpy_VERSION
-      set(pyexe "${nrnpy_EXECUTABLE}")
-      set(pyver "${nrnpy_VERSION}")
-      set(pyexe_name "def")
-      break()
-    endforeach()
+    # python3.999 is to make sure we test skipping names in the search path that don't exist.
+    # Secondly, if dynamic Python is disabled, then we know it will use the default.
+    if(NRN_ENABLE_PYTHON_DYNAMIC)
+      set(search_names python python3 python3.999)
+      foreach(val2 RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+        list(GET NRN_PYTHON_VERSIONS ${val2} pyver)
+        list(APPEND search_names python${pyver})
+      endforeach()
+      unset(pyexe)
+      foreach(candidate ${search_names})
+        nrn_find_python(NAME "${candidate}" PREFIX nrnpy)
+        if(nrnpy_EXECUTABLE STREQUAL "nrnpy_EXECUTABLE-NOTFOUND")
+          # Not an error if a user's system doesn't have all the names in ${search_names}
+          continue()
+        endif()
+        set(nrnpy_VERSION "${nrnpy_VERSION_MAJOR}.${nrnpy_VERSION_MINOR}")
+        if(NOT nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
+          # e.g. python or python3 points to a version we didn't build against
+          continue()
+        endif()
+        # Right, so the default should be nrnpy_EXECUTABLE, which is nrnpy_VERSION
+        set(pyexe "${nrnpy_EXECUTABLE}")
+        set(pyver "${nrnpy_VERSION}")
+        break()
+      endforeach()
+    else()
+      # non-dynamic Python, so nrniv -python will always use this. -pyexe in this case just steers
+      # the value of sys.executable, but we're not passing that here anyway.
+      set(pyexe "${NRN_DEFAULT_PYTHON_EXECUTABLE}")
+      set(pyver "${NRN_DEFAULT_PYTHON_VERSION}")
+    endif()
     if(NOT DEFINED pyexe)
       message(
         WARNING "Couldn't figure out what Python version nrniv -python will choose by default")
       # Skip these tests
       continue()
     endif()
+    set(pyexe_name "def")
   else()
     list(GET NRN_PYTHON_EXECUTABLES ${val} pyexe)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
