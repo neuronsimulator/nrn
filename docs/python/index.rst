@@ -45,7 +45,6 @@ and you may also like to refer to the `NEURON Python tutorial
 .. toctree::
     :maxdepth: 1
     
-    programming/hoc.rst
     programming/mathematics.rst
     programming/strings.rst
     programming/guidesign.rst
