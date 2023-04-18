@@ -56,6 +56,10 @@ and you may also like to refer to the `NEURON Python tutorial
     programming/projectmanagement.rst
     programming/internals.rst
     programming/hoc-from-python.rst
+    programming/io/file.rst
+    programming/io/printf.rst
+    programming/io/read.rst
+    programming/io/ropen.rst
 
 Model Specification
 -------------------
