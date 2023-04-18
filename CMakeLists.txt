@@ -620,6 +620,10 @@ if(MINGW)
 endif()
 
 if(NRN_ENABLE_DOCS)
+  if(APPLE AND "address" IN_LIST NRN_SANITIZERS)
+    # IPython notebook execution doesn't have enough magic to preload ASan
+    message(FATAL_ERROR "macOS + ASan + docs is not supported")
+  endif()
   # Do we need to set extra environment variables to find NEURON?
   set(NRN_DOCS_COMMAND_PREFIX ${CMAKE_COMMAND} -E env)
   if(NOT NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
