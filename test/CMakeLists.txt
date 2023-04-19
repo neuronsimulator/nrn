@@ -132,9 +132,9 @@ endforeach()
 if(NRN_ENABLE_PYTHON)
   if(NRN_ENABLE_COVERAGE AND COVERAGE_FOUND)
     # Tests that expect to be driven by pytest should use nrn_add_pytest(...). Tests that expect to
-    # be run directly as Python scripts should use ${PYTHON_EXECUTABLE} ${coverage} path/to/file.py
-    # to enable code coverage. The -p option to coverage run appends the host and pid to the
-    # .coverage filename, fixing MPI execution.
+    # be run directly as Python scripts should use ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${coverage}
+    # path/to/file.py to enable code coverage. The -p option to coverage run appends the host and
+    # pid to the .coverage filename, fixing MPI execution.
     set(coverage -m coverage run -p)
   endif()
   # Basic Python unit tests, driven by neuron.test() and neuron.test_rxd(). If we are compiling for

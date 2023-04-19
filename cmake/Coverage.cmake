@@ -87,8 +87,8 @@ if(NRN_ENABLE_COVERAGE)
   set(cover_combine_command "${LCOV}" "--add-tracefile" "coverage-base.info" "--add-tracefile"
                             "coverage-run.info" "--output-file" "coverage-combined.info")
   set(cover_combine_py_command find "${PROJECT_BINARY_DIR}" "-name" ".coverage.*" "-type" "f" "|"
-                               "xargs" "${PYTHON_EXECUTABLE}" "-m" "coverage" "combine")
-  set(cover_xml_command "${PYTHON_EXECUTABLE}" "-m" "coverage" "xml")
+                               "xargs" "${NRN_DEFAULT_PYTHON_EXECUTABLE}" "-m" "coverage" "combine")
+  set(cover_xml_command "${NRN_DEFAULT_PYTHON_EXECUTABLE}" "-m" "coverage" "xml")
   set(cover_html_command genhtml "coverage-combined.info" "--output-directory" html)
   add_custom_target(
     cover_clean

@@ -583,7 +583,7 @@ if(NRN_ENABLE_MPI
             "-x;NRN_PROBE_VARIABLE=NRN_PROBE_VALUE")
       set(probe_command
           ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${option}
-          ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} -c
+          ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} -c
           "import os\; print(os.environ['NRN_PROBE_VARIABLE'])")
       execute_process(
         COMMAND ${probe_command}

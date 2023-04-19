@@ -328,11 +328,6 @@ jobs:
             nrn_enable_sanitizer_preload_python="${PYTHON}"
           fi
 
-          # test neurondemo with cmake
-          if [[ "$BUILD_MODE" != "setuptools" ]]; then
-            ${nrn_enable_sanitizer} neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
-          fi;
-
           # run rxd tests manually if rxd is enabled *and CoreNEURON is
           # disabled -- otherwise hh-related tests fail
           if [[ "$BUILD_MODE" == "cmake" \

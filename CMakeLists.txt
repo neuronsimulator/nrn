@@ -213,7 +213,6 @@ include(cmake/MacroHelper.cmake)
 include(cmake/RpathHelper.cmake)
 include(cmake/ExternalProjectHelper.cmake)
 include(cmake/modules/FindPythonModule.cmake)
-include(cmake/Coverage.cmake)
 
 # set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
 set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
@@ -269,6 +268,9 @@ set(NRN_MINIMUM_PYTHON_VERSION 3.8)
 include(cmake/PythonHelper.cmake)
 
 # This needs NRN_DEFAULT_PYTHON_EXECUTABLE, which comes from PythonHelper.cmake
+include(cmake/Coverage.cmake)
+
+# This also needs NRN_DEFAULT_PYTHON_EXECUTABLE
 if(NRN_SANITIZERS)
   configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
   install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrn-enable-sanitizer
