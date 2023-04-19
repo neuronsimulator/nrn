@@ -173,10 +173,10 @@ if(NRN_ENABLE_PYTHON)
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
     list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
-    # FIXME how do we say which Python to use???
     nrn_add_pytest(
       GROUP pynrn
       NAME basic_tests_py${pyver}
+      PYTHON "${exe}"
       SCRIPT_PATTERNS *.json *.py)
   endforeach()
 

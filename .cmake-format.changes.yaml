@@ -12,7 +12,7 @@ additional_commands:
       SIM_DIRECTORY: 1
       SUBMODULE: 1
   nrn_add_test:
-    pargs: '+' # otherwise nrn_add_test(${add_test_args}) kills cmake-format
+    pargs: 0
     kwargs:
       GROUP: 1
       NAME: 1
@@ -33,6 +33,7 @@ additional_commands:
       NAME: 1
       ENVIRONMENT: '+'
       MPI_RANKS: 1
+      PYTHON: 1
       PYTEST_ARGS: '+'
       REQUIRES: '+'
       SCRIPT_PATTERNS: '*'

@@ -59,7 +59,7 @@
 #                 NAME test_name
 #                 COMMAND command [arg ...]
 #                 [ENVIRONMENT VAR1=value1 ...]
-#                 [PRELOAD_SANITIZER]
+#                 [PRELOAD_SANITIZER [python_executable]]
 #                 [CONFLICTS feature1 ...]
 #                 [PRECOMMAND command ...]
 #                 [PROCESSORS required_processors]
@@ -70,21 +70,34 @@
 #                )
 #
 #    Create a new integration test inside the given group, which must have
-#    previously been created using nrn_add_test_group. The COMMAND option is
-#    the test expression, which is run in an environment whose PATH includes
-#    the `special` binary built from the specified modfiles.
-#    The REQUIRES and CONFLICTS arguments allow a test to be disabled if
-#    certain features are, or are not, available. Eight features are currently
-#    supported: coreneuron, cpu, gpu, mod_compatibility, mpi, mpi_dynamic,
-#    nmodl and python. The PRECOMMAND argument is an optional command that will
-#    be executed before COMMAND and in the same directory. It can be used to
-#    prepare input data for simulations. The PROCESSORS argument specifies the
-#    number of processors used by the test. This is passed to CTest and allows
-#    invocations such as `ctest -j 16` to avoid overcommitting resources by
-#    running too many tests with internal parallelism. The PRELOAD_SANITIZER
-#    flag controls whether or not the PRELOAD flag is passed to
-#    cpp_cc_configure_sanitizers; this needs to be set when the test executable
-#    is *not* built by NEURON, typically because it is `python`.
+#    previously been created using nrn_add_test_group. The options are:
+#
+#    COMMAND           - the test expression, which is run in an environment
+#                        whose PATH includes the `special` binary built from
+#                        the .mod files associated with the test group.
+#    CONFLICTS         - list of features that will cause the test to be
+#                        disabled if any of them are enabled. The features that
+#                        are currently supported are: coreneuron, cpu, gpu,
+#                        mod_compatibility, mpi, mpi_dynamic, nmodl and python.
+#    REQUIRES          - like CONFLICTS, but tests are disabled if any of the
+#                        listed features is *not* available.
+#    PRECOMMAND        - an additional command that will be executed before
+#                        COMMAND and in the same directory. It can be used to
+#                        prepare input data for simulations.
+#    PROCESSORS        - the number of processors used by the test. This is
+#                        passed to CTest and allows invocations such as
+#                        `ctest -j 16` to avoid overcommitting resources by
+#                        running too many tests with internal parallelism.
+#    PRELOAD_SANITIZER - control whether runtime libraries for sanitizers are
+#                        preloaded using LD_PRELOAD or similiar, and whether
+#                        additional environment variables should be set to
+#                        allow Python subprocesses to be launched in tests.
+#                        Typically this is needed when the test executable is
+#                        *not* built by NEURON, normally because it is Python.
+#                        If you want to use a Python version that is not
+#                        NRN_DEFAULT_PYTHON_EXECUTABLE, then you can pass a
+#                        different executable as the argument to this option.
+#
 #    The remaining arguments can documented in nrn_add_test_group. The default
 #    values specified there can be overriden on a test-by-test basis by passing
 #    the same arguments here.
@@ -93,6 +106,7 @@
 #                   NAME test_name
 #                   [ENVIRONMENT VAR1=value2 ...]
 #                   [MPI_RANKS n]
+#                   [PYTHON python_exe]
 #                   [PYTEST_ARGS arg1 ...]
 #                   [REQUIRES feature1 ...]
 #                   [SCRIPT_PATTERNS "*.py" ...])
@@ -104,9 +118,10 @@
 #    launching using `nrniv -python` or `special -python` if dynamic loading is
 #    not possible, and also takes care of launching multiple MPI ranks if
 #    needed. The GROUP, NAME, ENVIRONMENT, REQUIRES and SCRIPT_PATTERNS
-#    arguments are forwarded to nrn_add_test with minor additions. This helper
-#    generates an appropriate command that behaves similarly to:
-#      [mpiexec -n ${MPI_RANKS}] ${PYTHON_EXECUTABLE} -m pytest ${PYTEST_ARGS}
+#    arguments are forwarded to nrn_add_test with minor additions. If the
+#    PYTHON argument is not passed then NRN_DEFAULT_PYTHON_EXECUTABLE is used.
+#    This helper generates an appropriate command that behaves similarly to:
+#      [mpiexec -n ${MPI_RANKS}] ${PYTHON} -m pytest ${PYTEST_ARGS}
 #    and, if MPI_RANKS is set, adds `mpi` to the REQUIRES list and sets the
 #    NEURON_INIT_MPI environment variable so that NEURON will implicitly
 #    initialize MPI when it is imported.
@@ -283,7 +298,7 @@ endfunction()
 
 function(nrn_add_test)
   # Parse the function arguments
-  set(oneValueArgs GROUP NAME PROCESSORS)
+  set(oneValueArgs GROUP NAME PRELOAD_SANITIZER PROCESSORS)
   set(multiValueArgs
       COMMAND
       ENVIRONMENT
@@ -293,8 +308,18 @@ function(nrn_add_test)
       OUTPUT
       SCRIPT_PATTERNS
       SIM_DIRECTORY)
-  cmake_parse_arguments(NRN_ADD_TEST "PRELOAD_SANITIZER" "${oneValueArgs}" "${multiValueArgs}"
-                        ${ARGN})
+  cmake_parse_arguments(NRN_ADD_TEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  if(PRELOAD_SANITIZER IN_LIST NRN_ADD_TEST_MISSING_VALUES)
+    # PRELOAD_SANITIZER passed without argument
+    list(REMOVE_ITEM NRN_ADD_TEST_MISSING_VALUES "PRELOAD_SANITIZER")
+    set(preload_python_exe "${NRN_DEFAULT_PYTHON_EXECUTABLE}")
+  elseif(NRN_ADD_TEST_PRELOAD_SANITIZER)
+    # PRELOAD_SANITIZER passed with an argument
+    set(preload_python_exe "${NRN_ADD_TEST_PRELOAD_SANITIZER}")
+  else()
+    # PRELOAD_SANITIZER not passed
+    unset(preload_python_exe)
+  endif()
   if(DEFINED NRN_ADD_TEST_MISSING_VALUES)
     message(
       WARNING "nrn_add_test: missing values for keyword arguments: ${NRN_ADD_TEST_MISSING_VALUES}")
@@ -467,7 +492,7 @@ function(nrn_add_test)
                         "This is not supported.")
   endif()
   list(APPEND test_env ${extra_environment})
-  if(NRN_ADD_TEST_PRELOAD_SANITIZER AND NRN_SANITIZER_LIBRARY_PATH)
+  if(preload_python_exe AND NRN_SANITIZER_LIBRARY_PATH)
     list(APPEND test_env ${NRN_SANITIZER_PRELOAD_VAR}=${NRN_SANITIZER_LIBRARY_PATH})
     # On macOS with SIP then dynamic loader preload variables are not propagated to child processes.
     # By passing the key/value in our own private variables we make it easy to manually re-set the
@@ -476,7 +501,7 @@ function(nrn_add_test)
     # https://tobywf.com/2021/02/python-ext-asan/
     list(APPEND test_env NRN_SANITIZER_PRELOAD_VAR=${NRN_SANITIZER_PRELOAD_VAR})
     list(APPEND test_env NRN_SANITIZER_PRELOAD_VAL=${NRN_SANITIZER_LIBRARY_PATH})
-    list(APPEND test_env NRN_PYTHON_EXECUTABLE=${NRN_DEFAULT_PYTHON_EXECUTABLE})
+    list(APPEND test_env NRN_PYTHON_EXECUTABLE=${preload_python_exe})
   endif()
   list(APPEND test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
   # Add the actual test job, including the `special` and `special-core` binaries in the path. TODOs:
@@ -589,7 +614,7 @@ endif()
 
 function(nrn_add_pytest)
   # Parse the function arguments
-  set(oneValueArgs GROUP NAME MPI_RANKS)
+  set(oneValueArgs GROUP NAME MPI_RANKS PYTHON)
   set(multiValueArgs ENVIRONMENT PYTEST_ARGS REQUIRES SCRIPT_PATTERNS)
   cmake_parse_arguments(NRN_ADD_PYTEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   if(DEFINED NRN_ADD_PYTEST_MISSING_VALUES)
@@ -624,8 +649,14 @@ function(nrn_add_pytest)
   else()
     set(script_patterns "${${prefix}_DEFAULT_SCRIPT_PATTERNS}")
   endif()
-  list(APPEND script_patterns "${CMAKE_SOURCE_DIR}/test/run_pytest.py") # FIXME needs to be an
-                                                                        # absolute path?
+  list(APPEND script_patterns "${CMAKE_SOURCE_DIR}/test/run_pytest.py")
+
+  # Figure out which Python executable we are going to use.
+  if(DEFINED NRN_ADD_PYTEST_PYTHON)
+    set(python_exe "${NRN_ADD_PYTEST_PYTHON}")
+  else()
+    set(python_exe "${NRN_DEFAULT_PYTHON_EXECUTABLE}")
+  endif()
   # Assemble pytest options to use. --capture=tee-sys combines 'sys' and '-s', capturing
   # sys.stdout/stderr and passing it along to the actual sys.stdout/stderr.
   set(pytest_args --capture=tee-sys)
@@ -656,7 +687,7 @@ function(nrn_add_pytest)
   # NOT CORENEURON_ENABLE_GPU AND NRN_HAVE_OPENMPI2_OR_LESS) => use special/nrniv -python.
   if(NRN_ENABLE_SHARED AND (NOT NRN_ENABLE_CORENEURON OR CORENRN_ENABLE_SHARED))
     # We can launch using ${PYTHON_EXECUTABLE} -- let's do that
-    list(APPEND add_test_args PRELOAD_SANITIZER)
+    list(APPEND add_test_args PRELOAD_SANITIZER "${python_exe}")
     if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
       # We'll be doing something like `mpiexec -n 2 python`; on macOS we need to pass extra
       # arguments to mpiexec to make sure sanitizer runtime libraries are preloaded into individual
@@ -665,7 +696,7 @@ function(nrn_add_pytest)
       # Implicitly initialise MPI in NEURON when the module is imported
       list(APPEND extra_environment NEURON_INIT_MPI=1)
     endif()
-    list(APPEND exe ${PYTHON_EXECUTABLE})
+    list(APPEND exe "${python_exe}")
   else()
     # We have to launch using nrniv or special and set NRN_PYTEST_ARGS
     if(DEFINED ${prefix}_NRNIVMODL_DIRECTORY)
@@ -673,7 +704,7 @@ function(nrn_add_pytest)
     else()
       set(exe nrniv)
     endif()
-    list(APPEND exe_args -notatty -python)
+    list(APPEND exe_args -notatty -python -pyexe "${python_exe}")
     if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
       list(APPEND exe_args -mpi)
     endif()
@@ -701,16 +732,10 @@ function(nrn_add_pytest)
   else()
     set(cmd ${exe} ${exe_args})
   endif()
-  list(
-    APPEND
-    add_test_args
-    COMMAND
-    ${cmd}
-    ENVIRONMENT
-    ${extra_environment}
-    REQUIRES
-    ${requires})
-  nrn_add_test(${add_test_args})
+  nrn_add_test(
+    COMMAND ${cmd}
+    ENVIRONMENT ${extra_environment}
+    REQUIRES ${requires} ${add_test_args})
 endfunction()
 
 function(nrn_add_test_group_comparison)
