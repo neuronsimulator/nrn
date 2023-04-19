@@ -23,6 +23,7 @@ extensions, so:
     nrniv script.py
     nrniv -python script.hoc
     nrniv -python script.py
+    python script.py
 
 Will all work as expected.
 It is also possible to execute code from the commandline, for example:
@@ -30,7 +31,8 @@ It is also possible to execute code from the commandline, for example:
 .. code-block:: shell
 
     nrniv -c "hoc_statement"
-    nrniv -python "python_statement"
+    nrniv -python -c "python_statement"
+    python -c "python_statement"
 
 In this case, it is necessary to tell NEURON whether or not the code being
 passed to ``-c`` is HOC or Python code, using the ``-python`` option.
@@ -118,7 +120,7 @@ Multiple script files and commands:
     * ``python``, ``python3``, ``pythonA.B`` ... ``pythonX.Y`` in ``$PATH``,
       where the set of ``pythonX.Y`` names corresponds to all the Python
       versions supported by the NEURON installation.
-      The search other matches the :ref:`NRN_PYTHON_DYNAMIC
+      The search order matches the :ref:`NRN_PYTHON_DYNAMIC
       <cmake_nrn_python_dynamic>` setting that was used at build time.
     * On Windows, some other heuristics are applied as a last resort.
 
