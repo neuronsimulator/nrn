@@ -1,6 +1,7 @@
 #ifndef ocpointer_h
 #define ocpointer_h
 
+#include "neuron/container/data_handle.hpp"
 #include <InterViews/observe.h>
 #include <OS/string.h>
 #include "oc2iv.h"
@@ -8,14 +9,13 @@ class StmtInfo;
 
 class OcPointer: public Observer {
   public:
-    OcPointer(const char*, double*);
+    OcPointer(const char*, neuron::container::data_handle<double>);
     virtual ~OcPointer();
     virtual void update(Observable*);
     void assign(double);
-    double* p_;
+    neuron::container::data_handle<double> pd_;
     char* s_;
     StmtInfo* sti_;
-    bool valid_;
 };
 
 class StmtInfo {
