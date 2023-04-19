@@ -261,6 +261,20 @@ void UnitTable::calc_denominator_dims(const std::shared_ptr<Unit>& unit,
 }
 
 void UnitTable::insert(const std::shared_ptr<Unit>& unit) {
+    // if the unit is already in the table throw error because
+    // redefinition of a unit is not allowed
+    if (table.find(unit->get_name()) != table.end()) {
+        std::stringstream ss_unit_string;
+        ss_unit_string << fmt::format("{:g} {}",
+                                      unit->get_factor(),
+                                      fmt::join(unit->get_nominator_unit(), ""));
+        if (!unit->get_denominator_unit().empty()) {
+            ss_unit_string << fmt::format("/{}", fmt::join(unit->get_denominator_unit(), ""));
+        }
+        throw std::runtime_error(fmt::format("Redefinition of units ({}) to {} is not allowed.",
+                                             unit->get_name(),
+                                             ss_unit_string.str()));
+    }
     // check if the unit is a base unit and
     // then add it to the base units vector
     auto unit_nominator = unit->get_nominator_unit();
@@ -273,14 +287,7 @@ void UnitTable::insert(const std::shared_ptr<Unit>& unit) {
         assert(index >= 0 && index < base_units_names.size());
         // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index)
         base_units_names[index] = unit->get_name();
-        // if  unit is found in table replace it
-        auto find_unit_name = table.find(unit->get_name());
-        if (find_unit_name == table.end()) {
-            table.insert({unit->get_name(), unit});
-        } else {
-            table.erase(unit->get_name());
-            table.insert({unit->get_name(), unit});
-        }
+        table.insert({unit->get_name(), unit});
         return;
     }
     // calculate unit's dimensions based on its nominator and denominator
@@ -290,15 +297,7 @@ void UnitTable::insert(const std::shared_ptr<Unit>& unit) {
     for (const auto& it: unit->get_denominator_unit()) {
         calc_denominator_dims(unit, it);
     }
-    // if unit is not in the table simply insert it, else replace with it with
-    // new definition
-    auto find_unit_name = table.find(unit->get_name());
-    if (find_unit_name == table.end()) {
-        table.insert({unit->get_name(), unit});
-    } else {
-        table.erase(unit->get_name());
-        table.insert({unit->get_name(), unit});
-    }
+    table.insert({unit->get_name(), unit});
 }
 
 void UnitTable::insert_prefix(const std::shared_ptr<Prefix>& prfx) {

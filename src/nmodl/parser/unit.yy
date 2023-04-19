@@ -104,7 +104,12 @@ table_insertion
         $$ = driver.table;
       }
     | table_insertion item  {
-        $1->insert($2);
+        try {
+          $1->insert($2);
+        }
+        catch (std::runtime_error e) {
+          error(scanner.loc, e.what());
+        }
         $$ = $1;
       }
     | table_insertion prefix  {

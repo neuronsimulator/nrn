@@ -187,7 +187,7 @@ SCENARIO("Unit parser accepting dependent/nested units definition", "[unit][pars
                 dummy3  25-3  / m2
                 dummy4  -0.025 /m2
                 dummy5  2.5 %
-                R       k-mole
+                newR       k-mole
                 R1      8.314 volt-coul/degC
                 R2      8314 mV-coul/degC
                 )";
@@ -202,7 +202,7 @@ SCENARIO("Unit parser accepting dependent/nested units definition", "[unit][pars
                 REQUIRE_THAT(parsed_units, Contains("dummy3 0.025: -2 0 0 0 0 0 0 0 0 0"));
                 REQUIRE_THAT(parsed_units, Contains("dummy4 -0.025: -2 0 0 0 0 0 0 0 0 0"));
                 REQUIRE_THAT(parsed_units, Contains("dummy5 0.025: 0 0 0 0 0 0 0 0 0 0"));
-                REQUIRE_THAT(parsed_units, Contains("R 8.31446: 2 1 -2 0 0 0 0 0 0 -1"));
+                REQUIRE_THAT(parsed_units, Contains("newR 8.31446: 2 1 -2 0 0 0 0 0 0 -1"));
                 REQUIRE_THAT(parsed_units, Contains("R1 8.314: 2 1 -2 0 0 0 0 0 0 -1"));
                 REQUIRE_THAT(parsed_units, Contains("R2 8.314: 2 1 -2 0 0 0 0 0 0 -1"));
                 REQUIRE_THAT(parsed_units, Contains("m kg sec coul candela dollar bit erlang K"));
