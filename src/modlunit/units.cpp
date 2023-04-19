@@ -1194,7 +1194,7 @@ void nrnunit_dynamic_str(char (&buf)[NRN_BUFSIZE], const char* name, char* u1, c
 #if (defined(LegacyFR) && LegacyFR == 1)
     Sprintf(buf, "static double %s = %g;\n", name, unit_mag());
 #else
-    Sprintf(buf, "static double %s = %.12g;\n", name, unit_mag());
+    Sprintf(buf, "static double %s = %a;\n", name, unit_mag());
 #endif
     unit_pop();
 
