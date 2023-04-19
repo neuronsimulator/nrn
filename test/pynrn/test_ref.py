@@ -65,12 +65,13 @@ class Cell:  # with many random vars so easy to compare _ref_var and var
     def compare(self):
         for i, item in enumerate(self.refvars):
             # deferenced handle is same as fully qualified var value
-            if item[0][1] == "i_membrane_" and item[1][0] != getattr(item[0][0], item[0][1]):
+            if item[0][1] == "i_membrane_" and item[1][0] != getattr(
+                item[0][0], item[0][1]
+            ):
                 # note and update i_membrane_ failures
-                x = getattr(item[0][0], "_ref_"+item[0][1])
+                x = getattr(item[0][0], "_ref_" + item[0][1])
                 print(item[1], item[0][1], item[1][0], getattr(item[0][0], item[0][1]))
-                print("at this moment, a new data_handle and value would be ",
-                    x, x[0]);
+                print("at this moment, a new data_handle and value would be ", x, x[0])
                 self.refvars[i] = (item[0], x)
             else:
                 assert item[1][0] == getattr(item[0][0], item[0][1])

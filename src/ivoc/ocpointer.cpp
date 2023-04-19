@@ -22,14 +22,13 @@
 #include "ivoc.h"
 #endif
 
-OcPointer::OcPointer(const char* st, double* d)
+OcPointer::OcPointer(const char* st, neuron::container::data_handle<double> pd)
     : Observer() {
     sti_ = NULL;
     s_ = new char[strlen(st) + 1];
     strcpy(s_, st);
-    p_ = d;
-    valid_ = true;
-    nrn_notify_when_double_freed(p_, this);
+    pd_ = pd;
+    neuron::container::notify_when_handle_dies(pd_, this);
 }
 
 OcPointer::~OcPointer() {
@@ -41,12 +40,12 @@ OcPointer::~OcPointer() {
 }
 
 void OcPointer::update(Observable*) {
-    valid_ = false;
+    printf("OcPointer::update %p %s\n", this, s_);
 }
 
 void OcPointer::assign(double x) {
-    assert(valid_);
-    *p_ = x;
+    assert(pd_);
+    *pd_ = x;
     if (sti_) {
         sti_->play_one(x);
     }
@@ -54,11 +53,11 @@ void OcPointer::assign(double x) {
 
 static double assign(void* v) {
     OcPointer* ocp = (OcPointer*) v;
-    if (!ocp->valid_) {
+    if (!ocp->pd_) {
         hoc_execerror("Pointer points to freed address:", ocp->s_);
     }
     ocp->assign(*getarg(1));
-    return *ocp->p_;
+    return *ocp->pd_;
 }
 
 static const char** pname(void* v) {
@@ -74,20 +73,20 @@ static Member_ret_str_func s_memb[] = {{"s", pname}, {nullptr, nullptr}};
 
 
 static void* cons(Object*) {
-    double* p;
+    neuron::container::data_handle<double> pd;
     const char* s;
     if (hoc_is_pdouble_arg(1)) {
-        p = hoc_pgetarg(1);
+        pd = hoc_hgetarg<double>(1);
         s = "unknown";
     } else {
         s = gargstr(1);
         ParseTopLevel ptl;
-        p = hoc_val_pointer(s);
+        pd = hoc_val_handle(s);
     }
-    if (!p) {
+    if (!pd) {
         hoc_execerror("Pointer constructor failed", 0);
     }
-    OcPointer* ocp = new OcPointer(s, p);
+    OcPointer* ocp = new OcPointer(s, pd);
     if (ifarg(2)) {
         ocp->sti_ = new StmtInfo(gargstr(2));
     }
@@ -101,10 +100,10 @@ static void destruct(void* v) {
 static void steer_val(void* v) {
     OcPointer* ocp = (OcPointer*) v;
     hoc_spop();
-    if (!ocp->valid_) {
+    if (!ocp->pd_) {
         hoc_execerror("Pointer points to freed address:", ocp->s_);
     }
-    hoc_pushpx(ocp->p_);
+    hoc_push(ocp->pd_);
 }
 
 void OcPointer_reg() {

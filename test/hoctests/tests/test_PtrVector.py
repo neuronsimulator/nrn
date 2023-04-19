@@ -56,12 +56,13 @@ def test_ptrvector():
     h.cvode.cache_efficient(1)
     h.finitialize()
 
+    # hoc version of a callback
     h(
         """
 begintemplate Foo
 public callback, x
 proc callback() {
-    print "inside callback"
+    print "inside hoc callback"
     x = 1
 }
 endtemplate Foo
@@ -74,12 +75,30 @@ endtemplate Foo
     h.finitialize()
     assert foo.x == 1.0
     pc.nthread(1)
+
+    # python version of a callback
+    global x
+
+    def callback():
+        global x
+        x = 2
+        print("inside python callback x=", x)
+
+    pvec.ptr_update_callback(callback)
+    x = 0
+    pc.nthread(2)
+    h.finitialize()
+    assert x == 2
+
     # former gives 100% coverage of ocptrvector.cpp
     std_eq_seg()  # only substantive test of data handles so far
     s.nseg = 4
     expect_err("std_eq_seg()")  # one of the datahandles is invalid
-    return g, s, pvec
+
+    h.PtrVector(10)  # create and destroy
+
+    return g
 
 
 if __name__ == "__main__":
-    rval = test_ptrvector()
+    g = test_ptrvector()
