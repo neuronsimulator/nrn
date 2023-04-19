@@ -626,8 +626,7 @@ function(nrn_add_pytest)
     message(WARNING "nrn_add_pytest: unknown arguments: ${NRN_ADD_PYTEST_UNPARSED_ARGUMENTS}")
   endif()
   set(prefix NRN_TEST_GROUP_${NRN_ADD_PYTEST_GROUP})
-  # Figure out if the ENVIRONMENT is coming from nrn_add_test_group or nrn_add_pytest. We need to
-  # have this list so we can append NRN_PYTEST_ARGS to it.
+  # Figure out if the ENVIRONMENT is coming from nrn_add_test_group or nrn_add_pytest.
   if(DEFINED NRN_ADD_PYTEST_ENVIRONMENT)
     # Use environment settings from nrn_add_pytest(ENVIRONMENT ...)
     set(extra_environment ${NRN_ADD_PYTEST_ENVIRONMENT})
@@ -669,12 +668,8 @@ function(nrn_add_pytest)
   # something like `${python_exe} ${pytest} ...`, which would expand to something like: `python -m
   # pytest ...`. Unfortunately we have some build configurations with static libraries, where the
   # only way to launch a python script is with something like: `nrniv -python foo.py`, or if custom
-  # mechanisms have been built: `special -python foo.py`. In this case we cannot easily pass extra
-  # arguments (...) to pytest. In this case we can use a helper script, called run_pytest.py, which
-  # receives arguments to pytest in an environment variable (NRN_PYTEST_ARGS). This leads to a
-  # commandline like `NRN_PYTEST_ARGS="--cov tests" special -python run_pytest.py`. run_pytest.py
-  # additionally helps when executing with MPI, as it ensures that each MPI rank has a different
-  # value for the COVERAGE_FILE environment variable.
+  # mechanisms have been built: `special -python foo.py`. nrniv/special do not support executing a
+  # module with -m, so we use a helper script called run_pytest.py.
 
   # Make sure these start empty..
   set(exe)
@@ -700,7 +695,7 @@ function(nrn_add_pytest)
     endif()
     list(APPEND exe "${python_exe}")
   else()
-    # We have to launch using nrniv or special and set NRN_PYTEST_ARGS
+    # We have to launch using nrniv or special
     if(DEFINED ${prefix}_NRNIVMODL_DIRECTORY)
       set(exe special)
     else()
@@ -711,10 +706,7 @@ function(nrn_add_pytest)
       list(APPEND exe_args -mpi)
     endif()
   endif()
-  list(APPEND exe_args run_pytest.py)
-  # Might need more sophisticated escaping
-  string(JOIN " " pytest_args_string ${pytest_args})
-  list(APPEND extra_environment "NRN_PYTEST_ARGS=${pytest_args_string}")
+  list(APPEND exe_args run_pytest.py -- ${pytest_args})
   if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
     list(APPEND add_test_args PROCESSORS ${NRN_ADD_PYTEST_MPI_RANKS})
     # Implicitly make the test require MPI

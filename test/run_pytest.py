@@ -1,16 +1,20 @@
 import os
 import pytest
+import sys
 
-args = os.environ.get("NRN_PYTEST_ARGS", "").split()
+# Raises ValueError if the wrong syntax is used.
+# Expect: [python | nrniv -python ...] run_pytest.py -- X Y Z
+# Want to pass X Y Z to pytest.
+args = sys.argv[sys.argv.index("--") + 1 :]
 check_coverage = int(os.environ.get("NRN_PYTEST_ENABLE_COVERAGE", "0")) != 0
+
+print("run_pytest: args={} check_coverage={}".format(args, check_coverage))
 
 if check_coverage:
     try:
         import coverage
     except ImportError:
-        print(
-            "run_pytest: could not import coverage despite having been told to check it"
-        )
+        print("run_pytest: could not import coverage, skipping it")
         check_coverage = False
 
 if check_coverage:
