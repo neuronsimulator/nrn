@@ -679,93 +679,94 @@ trivial_ecs_data = {
 }
 
 
+@coverage_enabled()
 def scalar_bistable():
-    with coverage_enabled():
-        from neuron import rxd
+    from neuron import rxd
 
-        h.load_file("stdrun.hoc")
-        s = h.Section(name="s")
-        s.nseg = 101
-        cyt = rxd.Region(h.allsec())
-        c = rxd.Species(
-            cyt, name="c", initial=lambda node: 1 if 0.4 < node.x < 0.6 else 0, d=1
-        )
-        r = rxd.Rate(c, -c * (1 - c) * (0.3 - c))
-        h.finitialize()
-        h.run()
+    h.load_file("stdrun.hoc")
+    s = h.Section(name="s")
+    s.nseg = 101
+    cyt = rxd.Region(h.allsec())
+    c = rxd.Species(
+        cyt, name="c", initial=lambda node: 1 if 0.4 < node.x < 0.6 else 0, d=1
+    )
+    r = rxd.Rate(c, -c * (1 - c) * (0.3 - c))
+    h.finitialize()
+    h.run()
 
-        # check the results
-        result = h.Vector(c.nodes.concentration)
-        cmpV = h.Vector(scalar_bistable_data)
-        cmpV.sub(result)
-        cmpV.abs()
-        code = 0 if cmpV.sum() < 1e-6 else -1
-        sys.exit(code)
+    # check the results
+    result = h.Vector(c.nodes.concentration)
+    cmpV = h.Vector(scalar_bistable_data)
+    cmpV.sub(result)
+    cmpV.abs()
+    if cmpV.sum() < 1e-6:
+        sys.exit(0)
+    sys.exit(-1)
 
 
+@coverage_enabled()
 def trivial_ecs(scale):
-    with coverage_enabled():
-        from neuron import h, crxd as rxd
-        import numpy
-        import warnings
+    from neuron import h, crxd as rxd
+    import numpy
+    import warnings
 
-        warnings.simplefilter("ignore", UserWarning)
-        h.load_file("stdrun.hoc")
-        tstop = 10
-        if scale:  # variable step case
-            h.CVode().active(True)
-            h.CVode().event(tstop)
-        else:  # fixed step case
-            h.dt = 0.1
+    warnings.simplefilter("ignore", UserWarning)
+    h.load_file("stdrun.hoc")
+    tstop = 10
+    if scale:  # variable step case
+        h.CVode().active(True)
+        h.CVode().event(tstop)
+    else:  # fixed step case
+        h.dt = 0.1
 
-        sec = h.Section()  # NEURON requires at least 1 section
+    sec = h.Section()  # NEURON requires at least 1 section
 
-        # enable extracellular RxD
-        rxd.options.enable.extracellular = True
+    # enable extracellular RxD
+    rxd.options.enable.extracellular = True
 
-        # simulation parameters
-        dx = 1.0  # voxel size
-        L = 9.0  # length of initial cube
-        Lecs = 21.0  # lengths of ECS
+    # simulation parameters
+    dx = 1.0  # voxel size
+    L = 9.0  # length of initial cube
+    Lecs = 21.0  # lengths of ECS
 
-        # define the extracellular region
-        extracellular = rxd.Extracellular(
-            -Lecs / 2.0,
-            -Lecs / 2.0,
-            -Lecs / 2.0,
-            Lecs / 2.0,
-            Lecs / 2.0,
-            Lecs / 2.0,
-            dx=dx,
-            volume_fraction=0.2,
-            tortuosity=1.6,
-        )
+    # define the extracellular region
+    extracellular = rxd.Extracellular(
+        -Lecs / 2.0,
+        -Lecs / 2.0,
+        -Lecs / 2.0,
+        Lecs / 2.0,
+        Lecs / 2.0,
+        Lecs / 2.0,
+        dx=dx,
+        volume_fraction=0.2,
+        tortuosity=1.6,
+    )
 
-        # define the extracellular species
-        k_rxd = rxd.Species(
-            extracellular,
-            name="k",
-            d=2.62,
-            charge=1,
-            atolscale=scale,
-            initial=lambda nd: 1.0
-            if abs(nd.x3d) <= L / 2.0
-            and abs(nd.y3d) <= L / 2.0
-            and abs(nd.z3d) <= L / 2.0
-            else 0.0,
-        )
+    # define the extracellular species
+    k_rxd = rxd.Species(
+        extracellular,
+        name="k",
+        d=2.62,
+        charge=1,
+        atolscale=scale,
+        initial=lambda nd: 1.0
+        if abs(nd.x3d) <= L / 2.0 and abs(nd.y3d) <= L / 2.0 and abs(nd.z3d) <= L / 2.0
+        else 0.0,
+    )
 
-        # record the concentration at (0,0,0)
-        ecs_vec = h.Vector()
-        ecs_vec.record(k_rxd[extracellular].node_by_location(0, 0, 0)._ref_value)
-        h.finitialize()
-        h.continuerun(tstop)  # run the simulation
+    # record the concentration at (0,0,0)
+    ecs_vec = h.Vector()
+    ecs_vec.record(k_rxd[extracellular].node_by_location(0, 0, 0)._ref_value)
+    h.finitialize()
+    h.continuerun(tstop)  # run the simulation
 
-        # compare with previous solution
-        ecs_vec.sub(h.Vector(trivial_ecs_data[scale]))
-        ecs_vec.abs()
-        code = -1 if ecs_vec.sum() > 1e-9 else 0
-        return code  # FIXME should be sys.exit(code)
+    # compare with previous solution
+    ecs_vec.sub(h.Vector(trivial_ecs_data[scale]))
+    ecs_vec.abs()
+    # FIXME should be sys.exit not return
+    if ecs_vec.sum() > 1e-9:
+        return -1
+    return 0
 
 
 class RxDTestCase(unittest.TestCase):
@@ -806,7 +807,7 @@ def suite():
     # For sanitizer runtimes that need to be preloaded on macOS, we need to
     # propagate this manually so multiprocessing.Process works
     exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
-    multiprocessing.set_executable(exe)
+    # multiprocessing.set_executable(exe)
     try:
         os.environ[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
             "NRN_SANITIZER_PRELOAD_VAL"

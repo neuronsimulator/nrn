@@ -28,7 +28,7 @@ def coverage_enabled():
         except ImportError:
             enable = False
     if enable:
-        # data_suffix => .coverage.uniquesuffix
+        # data_suffix => .coverage.uniquesuffix output file
         cov = coverage.Coverage(data_suffix=True)
         cov.start()
         try:

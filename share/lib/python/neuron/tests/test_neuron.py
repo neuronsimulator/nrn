@@ -40,11 +40,11 @@ class NeuronTestCase(unittest.TestCase):
         assert h.List("A").count() == 0
 
     @classmethod
+    @coverage_enabled()
     def psection(cls):
         """Test neuron.psection(Section)"""
-        with coverage_enabled():
-            s = h.Section(name="soma")
-            neuron.psection(s)
+        s = h.Section(name="soma")
+        neuron.psection(s)
 
     def testpsection(self):
         from multiprocessing import Process
@@ -153,13 +153,13 @@ class NeuronTestCase(unittest.TestCase):
         assert 2 and h.cas() == soma
 
     @classmethod
+    @coverage_enabled()
     def ExtendedSection(cls):
         """test prsection (modified print statement)"""
-        with coverage_enabled():
-            from neuron.sections import ExtendedSection
+        from neuron.sections import ExtendedSection
 
-            s = ExtendedSection(name="test")
-            s.psection()
+        s = ExtendedSection(name="test")
+        s.psection()
 
     def testExtendedSection(self):
         from multiprocessing import Process
@@ -170,26 +170,26 @@ class NeuronTestCase(unittest.TestCase):
         assert p.exitcode == 0
 
     @classmethod
+    @coverage_enabled()
     def RxDexistence(cls):
         """test import rxd and geometry3d"""
-        with coverage_enabled():
-            error = 0
-            try:
-                from neuron import rxd
-                from neuron.rxd import geometry
+        error = 0
+        try:
+            from neuron import rxd
+            from neuron.rxd import geometry
 
-                print("has_geometry3d is " + str(geometry.has_geometry3d))
+            print("has_geometry3d is " + str(geometry.has_geometry3d))
+        except Exception as e:
+            print("'from neuron import rxd' failed", e)
+            error = 1
+        else:
+            try:
+                a = basicRxD3D()
+                print("    basicRxD3D() ran with no exception")
             except Exception as e:
-                print("'from neuron import rxd' failed", e)
+                print("'basicRxD3D()' failed", e)
                 error = 1
-            else:
-                try:
-                    a = basicRxD3D()
-                    print("    basicRxD3D() ran with no exception")
-                except Exception as e:
-                    print("'basicRxD3D()' failed", e)
-                    error = 1
-            assert error == 0
+        assert error == 0
 
     def testHelp(self):
         error = False
@@ -293,7 +293,7 @@ def suite():
     # For sanitizer runtimes that need to be preloaded on macOS, we need to
     # propagate this manually so multiprocessing.Process works
     exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
-    multiprocessing.set_executable(exe)
+    # multiprocessing.set_executable(exe)
     try:
         os.environ[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
             "NRN_SANITIZER_PRELOAD_VAL"
