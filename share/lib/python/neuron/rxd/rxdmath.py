@@ -1,8 +1,5 @@
 import math
 import numpy
-import functools
-import copy
-import sys
 from .rxdException import RxDException
 from . import initializer
 
@@ -650,7 +647,7 @@ class _Arithmeticed:
         value = self._compiled_form[0](*concentrations)
         if len(value) != 1:
             # this could happen in 3D
-            raise RxDException("found %d values; expected 1." % len(value))
+            raise RxDException(f"found {len(value)} values; expected 1.")
         return value[0]
 
     # Change any Species to _ExtracellularSpecies so _semi_compile gives the
@@ -677,9 +674,7 @@ class _Arithmeticed:
         if intracellular3d and hasattr(self, "_items"):
             from . import species
 
-            for item, count in zip(
-                list(self._items.keys()), list(self._items.values())
-            ):
+            for item, count in self._items.items():
                 if count:
                     if isinstance(item, species.Species):
                         ics_species = item._intracellular_instances[intracellular3d]
@@ -695,11 +690,10 @@ class _Arithmeticed:
         return new_arith
 
     def _short_repr(self):
-        from . import species
 
         items = []
         counts = []
-        for item, count in zip(list(self._items.keys()), list(self._items.values())):
+        for item, count in self._items.items():
             if count:
                 items.append(item)
                 counts.append(count)

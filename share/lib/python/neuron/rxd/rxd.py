@@ -1,6 +1,5 @@
 from neuron import h, nrn, nrn_dll_sym
 from . import species, node, section1d, region, generalizedReaction, constants
-from .nodelist import NodeList
 from .node import _point_indices
 import weakref
 import numpy
@@ -21,11 +20,8 @@ import platform
 from warnings import warn
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
-_numpy_array = numpy.array
-_numpy_zeros = numpy.zeros
 _species_get_all_species = species._get_all_species
 _node_get_states = node._get_states
-_section1d_transfer_to_legacy = section1d._transfer_to_legacy
 _ctypes_c_int = ctypes.c_int
 _weakref_ref = weakref.ref
 
@@ -266,8 +262,6 @@ _all_reactions = []
 nrn_tree_solve = nrn_dll_sym("nrn_tree_solve")
 nrn_tree_solve.restype = None
 
-_dptr = _double_ptr
-
 _dimensions = {1: h.SectionList(), 3: h.SectionList()}
 _dimensions_default = 1
 _default_dx = 0.25
@@ -460,16 +454,6 @@ def _setup_memb_currents():
         num_fluxes = numpy.array(cur_counts).sum()
         num_currents = len(memb_cur_ptrs)
         memb_cur_ptrs = list(itertools.chain.from_iterable(memb_cur_ptrs))
-        """print("num_currents",num_currents)
-        print("num_fluxes",num_fluxes)
-        print("num_nodes",curr_indices)
-        print("num_species",cur_counts)
-        print("cur_idxs",curr_indices)
-        print("node_idxs",cur_node_indices)
-        print("scales",rxd_memb_scales)
-        print("ptrs",memb_cur_ptrs)
-        print("mapped",ics_map,min(abs(numpy.array(ics_map))),max(ics_map))
-        print("mapped_ecs",ecs_map,max(ecs_map))"""
         setup_currents(
             num_currents,
             num_fluxes,
@@ -498,8 +482,6 @@ def _setup():
 
 
 def _find_librxdmath():
-    import glob
-
     # cmake doesn't create x86_64 directory under install prefix
     base_path = os.path.join(h.neuronhome(), "..", "..", platform.machine())
     if not os.path.exists(base_path):
@@ -546,13 +528,12 @@ def _cxx_compile(formula):
         else:
             gcc = "g++"
     # TODO: Check this works on non-Linux machines
-    gcc_cmd = "%s -I%s -I%s " % (
+    gcc_cmd = "%s -I%s " % (
         gcc,
         sysconfig.get_path("include"),
-        os.path.join(h.neuronhome(), "..", "..", "include", "nrn"),
     )
-    gcc_cmd += "-shared %s  %s.cpp %s " % (fpic, filename, _find_librxdmath())
-    gcc_cmd += "-o %s.so %s" % (filename, math_library)
+    gcc_cmd += f"-shared {fpic} {filename}.cpp {_find_librxdmath()}"
+    gcc_cmd += f" -o {filename}.so {math_library}"
     if sys.platform.lower().startswith("win"):
         my_path = os.getenv("PATH")
         os.putenv(
@@ -563,22 +544,22 @@ def _cxx_compile(formula):
         os.putenv("PATH", my_path)
     else:
         os.system(gcc_cmd)
-    # TODO: Find a better way of letting the system locate librxdmath.so.0
+    # the rxdmath_dll appears necessary for using librxdmath under certain gcc/OS pairs
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
-    dll = ctypes.cdll["%s.so" % os.path.abspath(filename)]
+    dll = ctypes.cdll[f"{os.path.abspath(filename)}.so"]
     reaction = dll.reaction
     reaction.argtypes = [
         ctypes.POINTER(ctypes.c_double),
         ctypes.POINTER(ctypes.c_double),
     ]
     reaction.restype = ctypes.c_double
-    os.remove(filename + ".cpp")
+    os.remove(f"{filename}.cpp")
     if sys.platform.lower().startswith("win"):
         # cannot remove dll that are in use
         _windows_dll.append(weakref.ref(dll))
-        _windows_dll_files.append(filename + ".so")
+        _windows_dll_files.append(f"{filename}.so")
     else:
-        os.remove(filename + ".so")
+        os.remove(f"{filename}.so")
     return reaction
 
 
@@ -612,7 +593,6 @@ def _update_node_data(force=False, newspecies=False):
         or _structure_change_count.value != last_structure_change_cnt
         or force
     ):
-
         last_diam_change_cnt = _diam_change_count.value
         last_structure_change_cnt = _structure_change_count.value
         # if not species._has_3d:
@@ -645,8 +625,6 @@ def _update_node_data(force=False, newspecies=False):
 
             # end#if
 
-            # _curr_scales = _numpy_array(_curr_scales)
-
 
 def _matrix_to_rxd_sparse(m):
     """precondition: assumes m a numpy array"""
@@ -665,10 +643,70 @@ def _matrix_to_rxd_sparse(m):
     )
 
 
+def _get_root(sec):
+    while sec is not None:
+        last_sec = sec
+        # technically this is the segment, but need to check non-None
+        sec = sec.trueparentseg()
+        if sec is not None:
+            sec = sec.sec
+    return last_sec
+
+
+def _do_sections_border_each_other(sec1, sec2):
+    # two basic ways they could border each other:
+    # (1) the distance between a section and the ends
+    #     of another section is zero (note: this includes
+    #     the case that the sections are the same)
+    # (2) a section connects to the interior of another
+    for x1, x2 in itertools.product([0, 1], repeat=2):
+        if h.distance(sec1(x1), sec2(x2)) == 0:
+            # need this check in case the trueparentseg isn't in either
+            return True
+    if sec1.trueparentseg() in sec2 or sec2.trueparentseg() in sec1:
+        return True
+    return False
+
+
+def _do_section_groups_border(groups):
+    for g1, g2 in itertools.combinations(groups, 2):
+        for sec1 in g1:
+            for sec2 in g2:
+                if _do_sections_border_each_other(sec1, sec2):
+                    return True
+    return False
+
+
+def _check_multigridding_supported_3d():
+    # if there are no 3D sections, then all is well
+    if not species._has_3d:
+        return True
+
+    # if any different dxs are directly connected, then not okay
+    groups_by_root_and_dx = {}
+    for sr in _species_get_all_species():
+        s = sr()
+        if s is not None:
+            if s._intracellular_instances:
+                for r in s._intracellular_instances:
+                    dx = r.dx
+                    for sec in r._secs3d:
+                        root = _get_root(sec)
+                        groups_by_root_and_dx.setdefault(root, {})
+                        groups_by_root_and_dx[root].setdefault(dx, [])
+                        groups_by_root_and_dx[root][dx].append(sec)
+    for root, groups in groups_by_root_and_dx.items():
+        if _do_section_groups_border(groups.values()):
+            return False
+
+    return True
+
+
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
-
     with initializer._init_lock:
+        if not _check_multigridding_supported_3d():
+            raise RxDException("unsupported multigridding case")
 
         # update _node_fluxes in C
         _include_flux()
@@ -681,15 +719,12 @@ def _setup_matrices():
         zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
         if species._has_1d:
             # TODO: initialization is slow. track down why
-
-            _last_dt = None
             for sr in _species_get_all_species():
                 s = sr()
                 if s is not None:
                     s._assign_parents()
 
             # remove old linearmodeladdition
-            _linmodadd_cur = None
             n = species._1d_submatrix_n()
             if n:
                 # create sparse matrix for C in cy'+gy=b
@@ -720,13 +755,6 @@ def _setup_matrices():
                     == len(euler_matrix_j)
                     == len(euler_matrix_nonzero)
                 )
-                # modify C for cases where no diffusive coupling of 0, 1 ends
-                # TODO: is there a better way to handle no diffusion?
-                # for i in range(n):
-                #    if not _diffusion_matrix[i, i]:
-                #        _linmodadd_c[i, i] = 1
-
-                # _cvode_object.re_init()
 
         # Hybrid logic
         if species._has_1d and species._has_3d:
@@ -849,7 +877,7 @@ def _setup_matrices():
                         if neigh not in neighbors3d:
                             neighbors3d.append(neigh)
                             vols3d.append(vol)
-                    if len(neighbors3d) < 1:
+                    if not neighbors3d:
                         raise RxDException(
                             "No 3D neighbors detected for 1D segment. Try perturbing dx"
                         )
@@ -987,7 +1015,7 @@ def _setup_matrices():
         else:
             rxd_set_no_diffusion()
 
-        if section1d._all_cindices is not None and len(section1d._all_cindices) > 0:
+        if section1d._all_cindices is not None and section1d._all_cindices:
             rxd_setup_conc_ptrs(
                 len(section1d._all_cindices),
                 _list_to_cint_array(section1d._all_cindices),
@@ -1466,7 +1494,7 @@ def _compile_reactions():
                             continue
                         fxn_string += "\n\trate = %s;" % rate_str
                         summed_mults = collections.defaultdict(lambda: 0)
-                        for (mult, sp) in zip(r._mult, r._sources + r._dests):
+                        for mult, sp in zip(r._mult, r._sources + r._dests):
                             summed_mults[creg._species_ids.get(sp()._id)] += mult
                         for idx in sorted([k for k in summed_mults if k is not None]):
                             operator = "+=" if species_ids_used[idx][region_id] else "="
@@ -1568,9 +1596,7 @@ def _compile_reactions():
                 ]
             else:
                 mc3d_region_size = 0
-                mc3d_indices_start = [
-                    0 for i in range(len(all_ics_gids + ics_param_gids))
-                ]
+                mc3d_indices_start = [0] * (len(all_ics_gids) + len(ics_param_gids))
             mults = [[] for i in range(len(all_ics_gids + ics_param_gids))]
             for rptr in regions_inv[reg]:
                 r = rptr()
@@ -1688,7 +1714,7 @@ def _compile_reactions():
 
                 else:
                     idx = 0
-                    fxn_string += "\n\trate = %s;" % rate_str
+                    fxn_string += f"\n\trate = {rate_str};"
                     for sp in r._sources + r._dests:
                         s = sp()
                         # Get underlying rxd._IntracellularSpecies for the grid_id
@@ -1813,10 +1839,10 @@ def _compile_reactions():
                     pid = [
                         pid for pid, gid in enumerate(all_gids) if gid == s._grid_id
                     ][0]
-                    fxn_string += "\n\trhs[%d] %s %s;" % (pid, operator, rate_str)
+                    fxn_string += f"\n\trhs[{pid}] {operator} {rate_str};"
                 else:
                     idx = 0
-                    fxn_string += "\n\trate = %s;" % rate_str
+                    fxn_string += f"\n\trate = {rate_str};"
                     for sp in r._sources + r._dests:
                         s = sp()
                         # Get underlying rxd._ExtracellularSpecies for the grid_id
@@ -1854,7 +1880,7 @@ def _compile_reactions():
 
 
 def _init():
-    if len(species._all_species) == 0:
+    if not species._all_species:
         return None
     initializer._do_init()
     # TODO: check about the 0<x<1 problem alluded to in the documentation
@@ -1938,7 +1964,7 @@ def _include_flux(force=False):
 
 
 def _init_concentration():
-    if len(species._all_species) == 0:
+    if not species._all_species:
         return None
     for sr in _species_get_all_species():
         s = sr()
@@ -2011,7 +2037,7 @@ def _windows_remove_dlls():
             kernel32.FreeLibrary.argtypes = [ctypes.c_void_p]
         else:
             kernel32 = ctypes.windll.kernel32
-    for (dll_ptr, filepath) in zip(_windows_dll, _windows_dll_files):
+    for dll_ptr, filepath in zip(_windows_dll, _windows_dll_files):
         dll = dll_ptr()
         if dll:
             handle = dll._handle

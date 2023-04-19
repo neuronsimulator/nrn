@@ -40,7 +40,7 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg
+          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg ninja-build
         shell: bash
 
       - name: Setup Caliper profiler
@@ -115,17 +115,31 @@ jobs:
           mkdir build && cd build;
 
           # CMake options & flags
-          export COVERAGE_FLAGS="--coverage -O0 -fno-inline -g";
-          export CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_PROFILING=ON -DNRN_ENABLE_BACKTRACE=ON -DNRN_ENABLE_MUSIC=ON -DCMAKE_PREFIX_PATH=${MUSIC_INSTALL_DIR} -DMUSIC_ROOT=${MUSIC_INSTALL_DIR}";
-          cmake $CMAKE_OPTION -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DNRN_ENABLE_PERFORMANCE_TESTS=OFF -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" -DCORENRN_ENABLE_UNIT_TESTS=ON ..;
-
+          cmake_args=(-G Ninja \
+                      -DCMAKE_BUILD_TYPE=Debug \
+                      -DCMAKE_C_COMPILER="$CC" \
+                      -DCMAKE_CXX_COMPILER="$CXX" \
+                      -DNRN_ENABLE_BACKTRACE=ON \
+                      -DNRN_ENABLE_CORENEURON=ON \
+                      -DNRN_ENABLE_COVERAGE=ON \
+                      -DNRN_ENABLE_INTERVIEWS=ON \
+                      -DNRN_ENABLE_MPI=ON \
+                      -DNRN_ENABLE_PERFORMANCE_TESTS=OFF \
+                      -DNRN_ENABLE_PROFILING=ON \
+                      -DNRN_ENABLE_PYTHON=ON \
+                      -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
+                      -DNRN_PYTHON_DYNAMIC="${PYTHON_MIN};${PYTHON_MAX}" \
+                      -DNRN_ENABLE_TESTS=ON
+                      -DNRN_ENABLE_MUSIC=ON \
+                      -DCMAKE_PREFIX_PATH="${MUSIC_INSTALL_DIR}" \
+                      -DMUSIC_ROOT="${MUSIC_INSTALL_DIR}")
+          cmake .. "${cmake_args[@]}"
           # Coverage
           # The Linux runners apparently have 2 cores, but jobs were being killed when we did not specify this explicitly.
           # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
           # By default we get a modern version of CMake that understands --parallel.
           cmake --build . --parallel 2
-          (cd ..;  lcov --capture  --initial --directory . --no-external --output-file build/coverage-base.info)
-          export PATH=`pwd`/bin:$PATH;
+          cmake --build . --target cover_baseline
           xvfb-run ctest -VV --output-on-failure;
           for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
           do
@@ -137,9 +151,8 @@ jobs:
               DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
               "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd();"
           done
-          (cd ..; lcov --capture  --directory . --no-external --output-file build/coverage-run.info)
-          lcov --add-tracefile coverage-base.info --add-tracefile coverage-run.info --output-file coverage-combined.info
-
+          cmake --build . --target cover_collect
+          cmake --build . --target cover_combine
         env:
           MATRIX_EVAL: "CC=gcc CXX=g++"
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"

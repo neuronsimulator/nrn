@@ -45,10 +45,10 @@ jobs:
         os: [ macOS-11, ubuntu-20.04]
         config:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
-          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake", music: ON}
-          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake", python_dynamic: ON}
-          - { matrix_eval : "CC=gcc-7 CXX=g++-7" ,  build_mode: "cmake", cmake_option: "-DNRN_ENABLE_CORENEURON=ON"}
-          - { matrix_eval : "CC=gcc-7 CXX=g++-7",   build_mode: "cmake", cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", music: ON}
+          - { matrix_eval : "CC=gcc-10 CXX=g++-10",   build_mode: "cmake", python_dynamic: ON}
+          - { matrix_eval : "CC=gcc-9 CXX=g++-9" ,  build_mode: "cmake", cmake_option: "-DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake", cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"}
           - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"}
         include:
           - os: ubuntu-22.04
@@ -390,3 +390,19 @@ jobs:
       - name: live debug session on failure (manual steps required, check `.github/neuron-ci.yml`)
         if: failure() && contains(github.event.pull_request.title, 'live-debug-ci')
         uses: mxschmitt/action-tmate@v3
+
+  # see https://github.com/orgs/community/discussions/26822
+  final:
+    name: Final CI
+    needs: [ci]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check ci matrix all done
+        if: >-
+          ${{
+               contains(needs.*.result, 'failure')
+            || contains(needs.*.result, 'cancelled')
+            || contains(needs.*.result, 'skipped')
+          }}
+        run: exit 1

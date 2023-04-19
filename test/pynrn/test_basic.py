@@ -442,6 +442,18 @@ def test_nworker():
             assert pc.nworker() == 2 * threads_enabled
 
 
+def test_help():
+    # a little fragile in the event we change the docs, but easily fixed
+    # checks the main paths for generating docstrings
+    assert h.Vector().to_python.__doc__.startswith(
+        "Syntax:\n    ``pythonlist = vec.to_python()"
+    )
+    assert h.Vector().__doc__.startswith("This class was imple")
+    assert h.Vector.__doc__.startswith("This class was imple")
+    assert h.finitialize.__doc__.startswith("Syntax:\n    ``h.finiti")
+    assert h.__doc__.startswith("\n\nneuron.h\n====")
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()
@@ -452,3 +464,4 @@ if __name__ == "__main__":
     h.allobjects()
     test_nosection()
     test_nrn_mallinfo()
+    test_help()

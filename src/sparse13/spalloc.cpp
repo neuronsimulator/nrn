@@ -32,7 +32,6 @@
  *  ExpandTranslationArrays
  */
 
-
 /*
  *  Revision and copyright information.
  *
@@ -50,13 +49,9 @@
  */
 
 #ifndef lint
-static char copyright[] =
-    "Sparse1.3: Copyright (c) 1985,86,87,88 by Kenneth S. Kundert";
-static char RCSid[] =
-    "@(#)$Header$";
+static char copyright[] = "Sparse1.3: Copyright (c) 1985,86,87,88 by Kenneth S. Kundert";
+static char RCSid[] = "@(#)$Header$";
 #endif
-
-
 
 /*
  *  IMPORTS
@@ -72,16 +67,14 @@ static char RCSid[] =
 
 #define spINSIDE_SPARSE
 #include "spconfig.h"
-#include "spmatrix.h"
 #include "spdefs.h"
-
+#include "spmatrix.h"
 
 /* avoid "declared implicitly `extern' and later `static' " warnings. */
-static void InitializeElementBlocks();
-static void RecordAllocation();
-static void AllocateBlockOfAllocationList();
+static void InitializeElementBlocks(MatrixPtr Matrix, int InitialNumberOfElements, int NumberOfFillinsExpected);
+static void RecordAllocation(MatrixPtr Matrix, char* AllocatedPtr);
+static void AllocateBlockOfAllocationList(MatrixPtr Matrix);
 
-
 /*
  *  MATRIX ALLOCATION
  *
@@ -118,48 +111,47 @@ static void AllocateBlockOfAllocationList();
  *  Error is cleared in this routine.
  */
 
-char *
-spCreate( int Size, BOOLEAN Complex, int* pError )
+char* spCreate(int Size, BOOLEAN Complex, int* pError)
 {
-register  unsigned  SizePlusOne;
-register  MatrixPtr  Matrix;
-register  int  I;
-int  AllocatedSize;
+    unsigned SizePlusOne;
+    MatrixPtr Matrix;
+    int I;
+    int AllocatedSize;
 
-/* Begin `spCreate'. */
-/* Clear error flag. */
+    /* Begin `spCreate'. */
+    /* Clear error flag. */
     *pError = spOKAY;
 
-/* Test for valid size. */
-    if ((Size < 0) OR (Size == 0 AND NOT EXPANDABLE))
-    {   *pError = spPANIC;
+    /* Test for valid size. */
+    if ((Size < 0) OR(Size == 0 AND NOT EXPANDABLE)) {
+        *pError = spPANIC;
         return NULL;
     }
 
 /* Test for valid type. */
 #if NOT spCOMPLEX
-    if (Complex)
-    {   *pError = spPANIC;
+    if (Complex) {
+        *pError = spPANIC;
         return NULL;
     }
 #endif
 #if NOT REAL
-    if (NOT Complex)
-    {   *pError = spPANIC;
+    if (NOT Complex) {
+        *pError = spPANIC;
         return NULL;
     }
 #endif
 
-/* Create Matrix. */
-    AllocatedSize = MAX( Size, MINIMUM_ALLOCATED_SIZE );
+    /* Create Matrix. */
+    AllocatedSize = MAX(Size, MINIMUM_ALLOCATED_SIZE);
     SizePlusOne = (unsigned)(AllocatedSize + 1);
 
-    if ((Matrix = ALLOC(struct MatrixFrame, 1)) == NULL)
-    {   *pError = spNO_MEMORY;
+    if ((Matrix = ALLOC(struct MatrixFrame, 1)) == NULL) {
+        *pError = spNO_MEMORY;
         return NULL;
     }
 
-/* Initialize matrix */
+    /* Initialize matrix */
     Matrix->ID = SPARSE_ID;
     Matrix->Complex = Complex;
     Matrix->PreviousMatrixWasComplex = Complex;
@@ -198,10 +190,11 @@ int  AllocatedSize;
     Matrix->ElementsRemaining = 0;
     Matrix->FillinsRemaining = 0;
 
-    RecordAllocation( Matrix, (char *)Matrix );
-    if (Matrix->Error == spNO_MEMORY) goto MemoryError;
+    RecordAllocation(Matrix, (char*)Matrix);
+    if (Matrix->Error == spNO_MEMORY)
+        goto MemoryError;
 
-/* Take out the trash. */
+    /* Take out the trash. */
     Matrix->TrashCan.Real = 0.0;
 #if spCOMPLEX
     Matrix->TrashCan.Imag = 0.0;
@@ -214,78 +207,70 @@ int  AllocatedSize;
     Matrix->TrashCan.pInitInfo = NULL;
 #endif
 
-/* Allocate space in memory for Diag pointer vector. */
-    CALLOC( Matrix->Diag, ElementPtr, SizePlusOne);
+    /* Allocate space in memory for Diag pointer vector. */
+    CALLOC(Matrix->Diag, ElementPtr, SizePlusOne);
     if (Matrix->Diag == NULL)
         goto MemoryError;
 
-/* Allocate space in memory for FirstInCol pointer vector. */
-    CALLOC( Matrix->FirstInCol, ElementPtr, SizePlusOne);
+    /* Allocate space in memory for FirstInCol pointer vector. */
+    CALLOC(Matrix->FirstInCol, ElementPtr, SizePlusOne);
     if (Matrix->FirstInCol == NULL)
         goto MemoryError;
 
-/* Allocate space in memory for FirstInRow pointer vector. */
-    CALLOC( Matrix->FirstInRow, ElementPtr, SizePlusOne);
+    /* Allocate space in memory for FirstInRow pointer vector. */
+    CALLOC(Matrix->FirstInRow, ElementPtr, SizePlusOne);
     if (Matrix->FirstInRow == NULL)
         goto MemoryError;
 
-/* Allocate space in memory for IntToExtColMap vector. */
-    if (( Matrix->IntToExtColMap = ALLOC(int, SizePlusOne)) == NULL)
+    /* Allocate space in memory for IntToExtColMap vector. */
+    if ((Matrix->IntToExtColMap = ALLOC(int, SizePlusOne)) == NULL)
         goto MemoryError;
 
-/* Allocate space in memory for IntToExtRowMap vector. */
-    if (( Matrix->IntToExtRowMap = ALLOC(int, SizePlusOne)) == NULL)
+    /* Allocate space in memory for IntToExtRowMap vector. */
+    if ((Matrix->IntToExtRowMap = ALLOC(int, SizePlusOne)) == NULL)
         goto MemoryError;
 
-/* Initialize MapIntToExt vectors. */
-    for (I = 1; I <= AllocatedSize; I++)
-    {   Matrix->IntToExtRowMap[I] = I;
+    /* Initialize MapIntToExt vectors. */
+    for (I = 1; I <= AllocatedSize; I++) {
+        Matrix->IntToExtRowMap[I] = I;
         Matrix->IntToExtColMap[I] = I;
     }
 
 #if TRANSLATE
-/* Allocate space in memory for ExtToIntColMap vector. */
-    if (( Matrix->ExtToIntColMap = ALLOC(int, SizePlusOne)) == NULL)
+    /* Allocate space in memory for ExtToIntColMap vector. */
+    if ((Matrix->ExtToIntColMap = ALLOC(int, SizePlusOne)) == NULL)
         goto MemoryError;
 
-/* Allocate space in memory for ExtToIntRowMap vector. */
-    if (( Matrix->ExtToIntRowMap = ALLOC(int, SizePlusOne)) == NULL)
+    /* Allocate space in memory for ExtToIntRowMap vector. */
+    if ((Matrix->ExtToIntRowMap = ALLOC(int, SizePlusOne)) == NULL)
         goto MemoryError;
 
-/* Initialize MapExtToInt vectors. */
-    for (I = 1; I <= AllocatedSize; I++)
-    {   Matrix->ExtToIntColMap[I] = -1;
+    /* Initialize MapExtToInt vectors. */
+    for (I = 1; I <= AllocatedSize; I++) {
+        Matrix->ExtToIntColMap[I] = -1;
         Matrix->ExtToIntRowMap[I] = -1;
     }
     Matrix->ExtToIntColMap[0] = 0;
     Matrix->ExtToIntRowMap[0] = 0;
 #endif
 
-/* Allocate space for fill-ins and initial set of elements. */
-    InitializeElementBlocks( Matrix, SPACE_FOR_ELEMENTS*AllocatedSize,
-                                     SPACE_FOR_FILL_INS*AllocatedSize );
+    /* Allocate space for fill-ins and initial set of elements. */
+    InitializeElementBlocks(Matrix, SPACE_FOR_ELEMENTS * AllocatedSize,
+        SPACE_FOR_FILL_INS * AllocatedSize);
     if (Matrix->Error == spNO_MEMORY)
         goto MemoryError;
 
-    return (char *)Matrix;
+    return (char*)Matrix;
 
 MemoryError:
 
-/* Deallocate matrix and return no pointer to matrix if there is not enough
-   memory. */
+    /* Deallocate matrix and return no pointer to matrix if there is not enough
+       memory. */
     *pError = spNO_MEMORY;
-    spDestroy( (char *)Matrix);
+    spDestroy((char*)Matrix);
     return NULL;
 }
 
-
-
-
-
-
-
-
-
 /*
  *  ELEMENT ALLOCATION
  *
@@ -309,37 +294,27 @@ MemoryError:
  *  spNO_MEMORY
  */
 
-ElementPtr
-spcGetElement( Matrix )
-
-MatrixPtr Matrix;
+ElementPtr spcGetElement(MatrixPtr Matrix)
 {
-ElementPtr  pElement;
+    ElementPtr pElement;
 
-/* Begin `spcGetElement'. */
+    /* Begin `spcGetElement'. */
 
-/* Allocate block of MatrixElements if necessary. */
-    if (Matrix->ElementsRemaining == 0)
-    {   pElement = ALLOC(struct MatrixElement, ELEMENTS_PER_ALLOCATION);
-        RecordAllocation( Matrix, (char *)pElement );
-        if (Matrix->Error == spNO_MEMORY) return NULL;
+    /* Allocate block of MatrixElements if necessary. */
+    if (Matrix->ElementsRemaining == 0) {
+        pElement = ALLOC(struct MatrixElement, ELEMENTS_PER_ALLOCATION);
+        RecordAllocation(Matrix, (char*)pElement);
+        if (Matrix->Error == spNO_MEMORY)
+            return NULL;
         Matrix->ElementsRemaining = ELEMENTS_PER_ALLOCATION;
         Matrix->NextAvailElement = pElement;
     }
 
-/* Update Element counter and return pointer to Element. */
+    /* Update Element counter and return pointer to Element. */
     Matrix->ElementsRemaining--;
     return Matrix->NextAvailElement++;
-
 }
 
-
-
-
-
-
-
-
 /*
  *  ELEMENT ALLOCATION INITIALIZATION
  *
@@ -370,53 +345,42 @@ ElementPtr  pElement;
  *  spNO_MEMORY
  */
 
-static
-void InitializeElementBlocks( Matrix, InitialNumberOfElements,
-                         NumberOfFillinsExpected )
-
-MatrixPtr Matrix;
-int  InitialNumberOfElements, NumberOfFillinsExpected;
+static void InitializeElementBlocks(MatrixPtr Matrix, int InitialNumberOfElements, int NumberOfFillinsExpected)
 {
-ElementPtr  pElement;
+    ElementPtr pElement;
 
-/* Begin `InitializeElementBlocks'. */
+    /* Begin `InitializeElementBlocks'. */
 
-/* Allocate block of MatrixElements for elements. */
+    /* Allocate block of MatrixElements for elements. */
     pElement = ALLOC(struct MatrixElement, InitialNumberOfElements);
-    RecordAllocation( Matrix, (char *)pElement );
-    if (Matrix->Error == spNO_MEMORY) return;
+    RecordAllocation(Matrix, (char*)pElement);
+    if (Matrix->Error == spNO_MEMORY)
+        return;
     Matrix->ElementsRemaining = InitialNumberOfElements;
     Matrix->NextAvailElement = pElement;
 
-/* Allocate block of MatrixElements for fill-ins. */
+    /* Allocate block of MatrixElements for fill-ins. */
     pElement = ALLOC(struct MatrixElement, NumberOfFillinsExpected);
-    RecordAllocation( Matrix, (char *)pElement );
-    if (Matrix->Error == spNO_MEMORY) return;
+    RecordAllocation(Matrix, (char*)pElement);
+    if (Matrix->Error == spNO_MEMORY)
+        return;
     Matrix->FillinsRemaining = NumberOfFillinsExpected;
     Matrix->NextAvailFillin = pElement;
 
-/* Allocate a fill-in list structure. */
-    Matrix->FirstFillinListNode = ALLOC(struct FillinListNodeStruct,1);
-    RecordAllocation( Matrix, (char *)Matrix->FirstFillinListNode );
-    if (Matrix->Error == spNO_MEMORY) return;
+    /* Allocate a fill-in list structure. */
+    Matrix->FirstFillinListNode = ALLOC(struct FillinListNodeStruct, 1);
+    RecordAllocation(Matrix, (char*)Matrix->FirstFillinListNode);
+    if (Matrix->Error == spNO_MEMORY)
+        return;
     Matrix->LastFillinListNode = Matrix->FirstFillinListNode;
 
     Matrix->FirstFillinListNode->pFillinList = pElement;
-    Matrix->FirstFillinListNode->NumberOfFillinsInList =NumberOfFillinsExpected;
+    Matrix->FirstFillinListNode->NumberOfFillinsInList = NumberOfFillinsExpected;
     Matrix->FirstFillinListNode->Next = NULL;
 
     return;
 }
 
-
-
-
-
-
-
-
-
-
 /*
  *  FILL-IN ALLOCATION
  *
@@ -436,44 +400,41 @@ ElementPtr  pElement;
  *  spNO_MEMORY
  */
 
-ElementPtr
-spcGetFillin( Matrix )
-
-MatrixPtr Matrix;
+ElementPtr spcGetFillin(MatrixPtr Matrix)
 {
-struct FillinListNodeStruct *pListNode;
-ElementPtr  pFillins;
+    struct FillinListNodeStruct* pListNode;
+    ElementPtr pFillins;
 
-/* Begin `spcGetFillin'. */
+    /* Begin `spcGetFillin'. */
 
 #if NOT STRIP OR LINT
     if (Matrix->FillinsRemaining == 0)
-        return spcGetElement( Matrix );
+        return spcGetElement(Matrix);
 #endif
 #if STRIP OR LINT
 
-    if (Matrix->FillinsRemaining == 0)
-    {   pListNode = Matrix->LastFillinListNode;
+    if (Matrix->FillinsRemaining == 0) {
+        pListNode = Matrix->LastFillinListNode;
 
-/* First see if there are any stripped fill-ins left. */
-        if (pListNode->Next != NULL)
-        {   Matrix->LastFillinListNode = pListNode = pListNode->Next;
+        /* First see if there are any stripped fill-ins left. */
+        if (pListNode->Next != NULL) {
+            Matrix->LastFillinListNode = pListNode = pListNode->Next;
             Matrix->FillinsRemaining = pListNode->NumberOfFillinsInList;
             Matrix->NextAvailFillin = pListNode->pFillinList;
-        }
-        else
-        {
-/* Allocate block of fill-ins. */
+        } else {
+            /* Allocate block of fill-ins. */
             pFillins = ALLOC(struct MatrixElement, ELEMENTS_PER_ALLOCATION);
-            RecordAllocation( Matrix, (char *)pFillins );
-            if (Matrix->Error == spNO_MEMORY) return NULL;
+            RecordAllocation(Matrix, (char*)pFillins);
+            if (Matrix->Error == spNO_MEMORY)
+                return NULL;
             Matrix->FillinsRemaining = ELEMENTS_PER_ALLOCATION;
             Matrix->NextAvailFillin = pFillins;
 
-/* Allocate a fill-in list structure. */
-            pListNode->Next = ALLOC(struct FillinListNodeStruct,1);
-            RecordAllocation( Matrix, (char *)pListNode->Next );
-            if (Matrix->Error == spNO_MEMORY) return NULL;
+            /* Allocate a fill-in list structure. */
+            pListNode->Next = ALLOC(struct FillinListNodeStruct, 1);
+            RecordAllocation(Matrix, (char*)pListNode->Next);
+            if (Matrix->Error == spNO_MEMORY)
+                return NULL;
             Matrix->LastFillinListNode = pListNode = pListNode->Next;
 
             pListNode->pFillinList = pFillins;
@@ -483,19 +444,11 @@ ElementPtr  pFillins;
     }
 #endif
 
-/* Update Fill-in counter and return pointer to Fill-in. */
+    /* Update Fill-in counter and return pointer to Fill-in. */
     Matrix->FillinsRemaining--;
     return Matrix->NextAvailFillin++;
 }
 
-
-
-
-
-
-
-
-
 /*
  *  RECORD A MEMORY ALLOCATION
  *
@@ -513,47 +466,35 @@ ElementPtr  pFillins;
  *  spNO_MEMORY
  */
 
-static
-void RecordAllocation( Matrix, AllocatedPtr )
-
-MatrixPtr Matrix;
-char  *AllocatedPtr;
+static void RecordAllocation(MatrixPtr Matrix, char* AllocatedPtr)
 {
-/* Begin `RecordAllocation'. */
-/*
- * If Allocated pointer is NULL, assume that malloc returned a NULL pointer,
- * which indicates a spNO_MEMORY error.
- */
-    if (AllocatedPtr == NULL)
-    {   Matrix->Error = spNO_MEMORY;
+    /* Begin `RecordAllocation'. */
+    /*
+     * If Allocated pointer is NULL, assume that malloc returned a NULL pointer,
+     * which indicates a spNO_MEMORY error.
+     */
+    if (AllocatedPtr == NULL) {
+        Matrix->Error = spNO_MEMORY;
         return;
     }
 
-/* Allocate block of MatrixElements if necessary. */
-    if (Matrix->RecordsRemaining == 0)
-    {   AllocateBlockOfAllocationList( Matrix );
-        if (Matrix->Error == spNO_MEMORY)
-        {   FREE(AllocatedPtr);
+    /* Allocate block of MatrixElements if necessary. */
+    if (Matrix->RecordsRemaining == 0) {
+        AllocateBlockOfAllocationList(Matrix);
+        if (Matrix->Error == spNO_MEMORY) {
+            FREE(AllocatedPtr);
             return;
         }
     }
 
-/* Add Allocated pointer to Allocation List. */
+    /* Add Allocated pointer to Allocation List. */
     (++Matrix->TopOfAllocationList)->AllocatedPtr = AllocatedPtr;
     Matrix->RecordsRemaining--;
     return;
-
 }
 
-
-
-
-
-
-
-
 /*
- *  ADD A BLOCK OF SLOTS TO ALLOCATION LIST     
+ *  ADD A BLOCK OF SLOTS TO ALLOCATION LIST
  *
  *  This routine increases the size of the allocation list.
  *
@@ -570,47 +511,37 @@ char  *AllocatedPtr;
  *  spNO_MEMORY
  */
 
-static
-void AllocateBlockOfAllocationList( Matrix )
-
-MatrixPtr Matrix;
+static void AllocateBlockOfAllocationList(MatrixPtr Matrix)
 {
-register  int  I;
-register  AllocationListPtr  ListPtr;
+    int I;
+    AllocationListPtr ListPtr;
 
-/* Begin `AllocateBlockOfAllocationList'. */
-/* Allocate block of records for allocation list. */
-    ListPtr = ALLOC(struct AllocationRecord, (ELEMENTS_PER_ALLOCATION+1));
-    if (ListPtr == NULL)
-    {   Matrix->Error = spNO_MEMORY;
+    /* Begin `AllocateBlockOfAllocationList'. */
+    /* Allocate block of records for allocation list. */
+    ListPtr = ALLOC(struct AllocationRecord, (ELEMENTS_PER_ALLOCATION + 1));
+    if (ListPtr == NULL) {
+        Matrix->Error = spNO_MEMORY;
         return;
     }
 
-/* String entries of allocation list into singly linked list.  List is linked
-   such that any record points to the one before it. */
+    /* String entries of allocation list into singly linked list.  List is linked
+       such that any record points to the one before it. */
 
     ListPtr->NextRecord = Matrix->TopOfAllocationList;
     Matrix->TopOfAllocationList = ListPtr;
     ListPtr += ELEMENTS_PER_ALLOCATION;
-    for (I = ELEMENTS_PER_ALLOCATION; I > 0; I--)
-    {    ListPtr->NextRecord = ListPtr - 1;
-         ListPtr--;
+    for (I = ELEMENTS_PER_ALLOCATION; I > 0; I--) {
+        ListPtr->NextRecord = ListPtr - 1;
+        ListPtr--;
     }
 
-/* Record allocation of space for allocation list on allocation list. */
-    Matrix->TopOfAllocationList->AllocatedPtr = (char *)ListPtr;
+    /* Record allocation of space for allocation list on allocation list. */
+    Matrix->TopOfAllocationList->AllocatedPtr = (char*)ListPtr;
     Matrix->RecordsRemaining = ELEMENTS_PER_ALLOCATION;
 
     return;
 }
 
-
-
-
-
-
-
-
 /*
  *  MATRIX DEALLOCATION
  *
@@ -631,50 +562,40 @@ register  AllocationListPtr  ListPtr;
  *      in the allocation list.
  */
 
-void
-spDestroy( eMatrix )
-
-register char *eMatrix;
+void spDestroy(char* eMatrix)
 {
-MatrixPtr Matrix = (MatrixPtr)eMatrix;
-register  AllocationListPtr  ListPtr, NextListPtr;
+    MatrixPtr Matrix = (MatrixPtr)eMatrix;
+    AllocationListPtr ListPtr, NextListPtr;
 
+    /* Begin `spDestroy'. */
+    ASSERT(IS_SPARSE(Matrix));
 
-/* Begin `spDestroy'. */
-    ASSERT( IS_SPARSE( Matrix ) );
+    /* Deallocate the vectors that are located in the matrix frame. */
+    FREE(Matrix->IntToExtColMap);
+    FREE(Matrix->IntToExtRowMap);
+    FREE(Matrix->ExtToIntColMap);
+    FREE(Matrix->ExtToIntRowMap);
+    FREE(Matrix->Diag);
+    FREE(Matrix->FirstInRow);
+    FREE(Matrix->FirstInCol);
+    FREE(Matrix->MarkowitzRow);
+    FREE(Matrix->MarkowitzCol);
+    FREE(Matrix->MarkowitzProd);
+    FREE(Matrix->DoCmplxDirect);
+    FREE(Matrix->DoRealDirect);
+    FREE(Matrix->Intermediate);
 
-/* Deallocate the vectors that are located in the matrix frame. */
-    FREE( Matrix->IntToExtColMap );
-    FREE( Matrix->IntToExtRowMap );
-    FREE( Matrix->ExtToIntColMap );
-    FREE( Matrix->ExtToIntRowMap );
-    FREE( Matrix->Diag );
-    FREE( Matrix->FirstInRow );
-    FREE( Matrix->FirstInCol );
-    FREE( Matrix->MarkowitzRow );
-    FREE( Matrix->MarkowitzCol );
-    FREE( Matrix->MarkowitzProd );
-    FREE( Matrix->DoCmplxDirect );
-    FREE( Matrix->DoRealDirect );
-    FREE( Matrix->Intermediate );
-
-/* Sequentially step through the list of allocated pointers freeing pointers
- * along the way. */
+    /* Sequentially step through the list of allocated pointers freeing pointers
+     * along the way. */
     ListPtr = Matrix->TopOfAllocationList;
-    while (ListPtr != NULL)
-    {   NextListPtr = ListPtr->NextRecord;
-        FREE( ListPtr->AllocatedPtr );
+    while (ListPtr != NULL) {
+        NextListPtr = ListPtr->NextRecord;
+        FREE(ListPtr->AllocatedPtr);
         ListPtr = NextListPtr;
     }
     return;
 }
 
-
-
-
-
-
-
 /*
  *  RETURN MATRIX ERROR STATUS
  *
@@ -688,29 +609,18 @@ register  AllocationListPtr  ListPtr, NextListPtr;
  *      The matrix for which the error status is desired.
  */
 
-int
-spError( eMatrix )
-
-char  *eMatrix;
+int spError(char* eMatrix)
 {
-/* Begin `spError'. */
+    /* Begin `spError'. */
 
-    if (eMatrix != NULL)
-    {   ASSERT(((MatrixPtr)eMatrix)->ID == SPARSE_ID);
+    if (eMatrix != NULL) {
+        ASSERT(((MatrixPtr)eMatrix)->ID == SPARSE_ID);
         return ((MatrixPtr)eMatrix)->Error;
-    }
-    else return spNO_MEMORY;   /* This error may actually be spPANIC,
-                                * no way to tell. */
+    } else
+        return spNO_MEMORY; /* This error may actually be spPANIC,
+                             * no way to tell. */
 }
 
-
-
-
-
-
-
-
-
 /*
  *  WHERE IS MATRIX SINGULAR
  *
@@ -726,30 +636,21 @@ char  *eMatrix;
  *      The column number.
  */
 
-void
-spWhereSingular( eMatrix, pRow, pCol )
-
-char *eMatrix;
-int *pRow, *pCol;
+void spWhereSingular(char* eMatrix, int* pRow, int* pCol)
 {
-MatrixPtr Matrix = (MatrixPtr)eMatrix;
+    MatrixPtr Matrix = (MatrixPtr)eMatrix;
 
-/* Begin `spWhereSingular'. */
-    ASSERT( IS_SPARSE( Matrix ) );
+    /* Begin `spWhereSingular'. */
+    ASSERT(IS_SPARSE(Matrix));
 
-    if (Matrix->Error == spSINGULAR OR Matrix->Error == spZERO_DIAG)
-    {   *pRow = Matrix->SingularRow;
+    if (Matrix->Error == spSINGULAR OR Matrix->Error == spZERO_DIAG) {
+        *pRow = Matrix->SingularRow;
         *pCol = Matrix->SingularCol;
-    }
-    else *pRow = *pCol = 0;
+    } else
+        *pRow = *pCol = 0;
     return;
 }
 
-
-
-
-
-
 /*
  *  MATRIX SIZE
  *
@@ -766,16 +667,12 @@ MatrixPtr Matrix = (MatrixPtr)eMatrix;
  *      may differ if the TRANSLATE option is set true.
  */
 
-int
-spGetSize( eMatrix, External )
-
-char  *eMatrix;
-BOOLEAN  External;
+int spGetSize(char* eMatrix, BOOLEAN External)
 {
-MatrixPtr Matrix = (MatrixPtr)eMatrix;
+    MatrixPtr Matrix = (MatrixPtr)eMatrix;
 
-/* Begin `spGetSize'. */
-    ASSERT( IS_SPARSE( Matrix ) );
+    /* Begin `spGetSize'. */
+    ASSERT(IS_SPARSE(Matrix));
 
 #if TRANSLATE
     if (External)
@@ -787,13 +684,6 @@ MatrixPtr Matrix = (MatrixPtr)eMatrix;
 #endif
 }
 
-
-
-
-
-
-
-
 /*
  *  SET MATRIX COMPLEX OR REAL
  *
@@ -804,39 +694,24 @@ MatrixPtr Matrix = (MatrixPtr)eMatrix;
  *      Pointer to matrix.
  */
 
-void
-spSetReal( eMatrix )
-
-char *eMatrix;
+void spSetReal(char* eMatrix)
 {
-/* Begin `spSetReal'. */
+    /* Begin `spSetReal'. */
 
-    ASSERT( IS_SPARSE( (MatrixPtr)eMatrix ) AND REAL);
+    ASSERT(IS_SPARSE((MatrixPtr)eMatrix) AND REAL);
     ((MatrixPtr)eMatrix)->Complex = NO;
     return;
 }
 
-
-void
-spSetComplex( eMatrix )
-
-char  *eMatrix;
+void spSetComplex(char* eMatrix)
 {
-/* Begin `spSetComplex'. */
+    /* Begin `spSetComplex'. */
 
-    ASSERT( IS_SPARSE( (MatrixPtr)eMatrix ) AND spCOMPLEX);
+    ASSERT(IS_SPARSE((MatrixPtr)eMatrix) AND spCOMPLEX);
     ((MatrixPtr)eMatrix)->Complex = YES;
     return;
 }
 
-
-
-
-
-
-
-
-
 /*
  *  ELEMENT OR FILL-IN COUNT
  *
@@ -848,25 +723,18 @@ char  *eMatrix;
  *      Pointer to matrix.
  */
 
-int
-spFillinCount( eMatrix )
-
-char *eMatrix;
+int spFillinCount(char* eMatrix)
 {
-/* Begin `spFillinCount'. */
+    /* Begin `spFillinCount'. */
 
-    ASSERT( IS_SPARSE( (MatrixPtr)eMatrix ) );
+    ASSERT(IS_SPARSE((MatrixPtr)eMatrix));
     return ((MatrixPtr)eMatrix)->Fillins;
 }
 
-
-int
-spElementCount( eMatrix )
-
-char  *eMatrix;
+int spElementCount(char* eMatrix)
 {
-/* Begin `spElementCount'. */
+    /* Begin `spElementCount'. */
 
-    ASSERT( IS_SPARSE( (MatrixPtr)eMatrix ) );
+    ASSERT(IS_SPARSE((MatrixPtr)eMatrix));
     return ((MatrixPtr)eMatrix)->Elements;
 }
