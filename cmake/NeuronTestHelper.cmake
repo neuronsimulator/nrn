@@ -492,7 +492,7 @@ function(nrn_add_test)
                         "This is not supported.")
   endif()
   list(APPEND test_env ${extra_environment})
-  if(preload_python_exe AND NRN_SANITIZER_LIBRARY_PATH)
+  if(DEFINED preload_python_exe AND NRN_SANITIZER_LIBRARY_PATH)
     list(APPEND test_env ${NRN_SANITIZER_PRELOAD_VAR}=${NRN_SANITIZER_LIBRARY_PATH})
     # On macOS with SIP then dynamic loader preload variables are not propagated to child processes.
     # By passing the key/value in our own private variables we make it easy to manually re-set the
@@ -666,17 +666,19 @@ function(nrn_add_pytest)
   # Append PYTEST_ARGS
   list(APPEND pytest_args ${NRN_ADD_PYTEST_PYTEST_ARGS})
   # We have a lot of tests that are driven by pytest. Normally these would be launched with
-  # something like `${PYTHON_EXECUTABLE} ${pytest} ...`, which would expand to something like:
-  # `python -m pytest ...`. Unfortunately we have some build configurations with static libraries,
-  # where the only way to launch a python script is with something like: `nrniv -python foo.py`, or
-  # if custom mechanisms have been built: `special -python foo.py`. In this case we cannot easily
-  # pass extra arguments (...) to pytest. In this case we can use a helper script, called
-  # run_pytest.py, which receives arguments to pytest in an environment variable (NRN_PYTEST_ARGS).
-  # This leads to a commandline like `NRN_PYTEST_ARGS="--cov tests" special -python run_pytest.py`.
-  # run_pytest.py additionally helps when executing with MPI, as it ensures that each MPI rank has a
-  # different value for the COVERAGE_FILE environment variable.
-  set(add_test_args GROUP ${NRN_ADD_PYTEST_GROUP} NAME ${NRN_ADD_PYTEST_NAME} SCRIPT_PATTERNS
-                    ${script_patterns})
+  # something like `${python_exe} ${pytest} ...`, which would expand to something like: `python -m
+  # pytest ...`. Unfortunately we have some build configurations with static libraries, where the
+  # only way to launch a python script is with something like: `nrniv -python foo.py`, or if custom
+  # mechanisms have been built: `special -python foo.py`. In this case we cannot easily pass extra
+  # arguments (...) to pytest. In this case we can use a helper script, called run_pytest.py, which
+  # receives arguments to pytest in an environment variable (NRN_PYTEST_ARGS). This leads to a
+  # commandline like `NRN_PYTEST_ARGS="--cov tests" special -python run_pytest.py`. run_pytest.py
+  # additionally helps when executing with MPI, as it ensures that each MPI rank has a different
+  # value for the COVERAGE_FILE environment variable.
+
+  # Make sure these start empty..
+  set(exe)
+  set(add_test_args)
 
   # Historically we have needed some workarounds for ancient OpenMPI versions. See
   # https://www.neuron.yale.edu/phpBB/viewtopic.php?t=4297 and links therein for more discussion.
@@ -686,7 +688,7 @@ function(nrn_add_pytest)
   # make the condition here more complicated, along the lines of if(NOT NRN_ENABLE_MPI_DYNAMIC AND
   # NOT CORENEURON_ENABLE_GPU AND NRN_HAVE_OPENMPI2_OR_LESS) => use special/nrniv -python.
   if(NRN_ENABLE_SHARED AND (NOT NRN_ENABLE_CORENEURON OR CORENRN_ENABLE_SHARED))
-    # We can launch using ${PYTHON_EXECUTABLE} -- let's do that
+    # We can launch using ${python_exe} -- let's do that
     list(APPEND add_test_args PRELOAD_SANITIZER "${python_exe}")
     if(DEFINED NRN_ADD_PYTEST_MPI_RANKS)
       # We'll be doing something like `mpiexec -n 2 python`; on macOS we need to pass extra
@@ -733,6 +735,9 @@ function(nrn_add_pytest)
     set(cmd ${exe} ${exe_args})
   endif()
   nrn_add_test(
+    GROUP ${NRN_ADD_PYTEST_GROUP}
+    NAME ${NRN_ADD_PYTEST_NAME}
+    SCRIPT_PATTERNS ${script_patterns}
     COMMAND ${cmd}
     ENVIRONMENT ${extra_environment}
     REQUIRES ${requires} ${add_test_args})
