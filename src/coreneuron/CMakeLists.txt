@@ -304,7 +304,8 @@ if(CORENRN_ENABLE_NMODL)
     set(NMODL_ENABLE_PYTHON_BINDINGS
         OFF
         CACHE BOOL "Disable NMODL python bindings")
-    include(AddNmodlSubmodule)
+    nrn_add_external_project(nmodl OFF)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/external/nmodl ${CMAKE_BINARY_DIR}/external/nmodl)
     set(CORENRN_MOD2CPP_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
     set(CORENRN_MOD2CPP_INCLUDE ${CMAKE_BINARY_DIR}/include)
     set(ENV{PYTHONPATH} "$ENV{PYTHONPATH}")
@@ -318,7 +319,8 @@ if(CORENRN_ENABLE_NMODL)
       ""
       CACHE STRING "Extra NMODL options such as passes")
 else()
-  include(AddMod2cSubmodule)
+  nrn_add_external_project(mod2c OFF)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/external/mod2c ${CMAKE_BINARY_DIR}/external/mod2c)
   set(NMODL_TARGET_TO_DEPEND mod2c_core)
   set(CORENRN_MOD2CPP_BINARY ${CMAKE_BINARY_DIR}/bin/mod2c_core${CMAKE_EXECUTABLE_SUFFIX})
   set(CORENRN_MOD2CPP_INCLUDE ${CMAKE_BINARY_DIR}/include)
@@ -606,11 +608,6 @@ get_target_property(CLI11_HEADER_DIRECTORY CLI11::CLI11 INTERFACE_INCLUDE_DIRECT
 target_include_directories(
   coreneuron-core SYSTEM PRIVATE ${CLI11_HEADER_DIRECTORY}
                                  ${PROJECT_SOURCE_DIR}/external/Random123/include)
-
-# See: https://en.cppreference.com/w/cpp/filesystem#Notes
-if(CMAKE_CXX_COMPILER_IS_GCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1)
-  target_link_libraries(coreneuron-core PUBLIC stdc++fs)
-endif()
 
 if(CORENRN_ENABLE_GPU)
   # nrnran123.cpp uses Boost.Pool in GPU builds if it's available.
