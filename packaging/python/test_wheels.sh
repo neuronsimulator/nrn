@@ -332,7 +332,7 @@ fi
 
 
 # run tests
-test_wheel $(which python)
+test_wheel "${python_exe}"
 
 
 # cleanup

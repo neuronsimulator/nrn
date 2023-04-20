@@ -218,7 +218,8 @@ extern "C" int nrnpython_start(int b) {
 extern "C" void nrnpython_real() {
     int retval = 0;
 #if USE_PYTHON
-    HocTopContextSet {
+    HocTopContextSet
+    {
         PyLockGIL lock;
         retval = PyRun_SimpleString(gargstr(1)) == 0;
     }

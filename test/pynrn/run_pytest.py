@@ -1,4 +1,9 @@
-import coverage
+try:
+    import coverage
+
+    have_coverage = True
+except ImportError:
+    have_coverage = False
 import os
 import pytest
 import warnings
@@ -12,14 +17,16 @@ if __name__ == "__main__":
     from neuron import h
 
     pc = h.ParallelContext()
-    os.environ["COVERAGE_FILE"] = ".coverage.pynrn." + str(pc.id())
+    if have_coverage:
+        os.environ["COVERAGE_FILE"] = ".coverage.pynrn." + str(pc.id())
     # Importing neuron just above causes a warning, which seems hard to avoid
     with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            category=coverage.exceptions.CoverageWarning,
-            message=r"Module neuron was previously imported, but not measured \(module-not-measured\)",
-        )
+        if have_coverage:
+            warnings.filterwarnings(
+                "ignore",
+                category=coverage.exceptions.CoverageWarning,
+                message=r"Module neuron was previously imported, but not measured \(module-not-measured\)",
+            )
         code = pytest.main(args)
     print("run_pytest: exiting with code", code, int(code))
     h.quit(int(code))

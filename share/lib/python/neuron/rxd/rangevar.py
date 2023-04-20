@@ -25,7 +25,7 @@ class RangeVar:
         name = self._name
         for node in nodes:
             seg = node.segment
-            ptrs_append(getattr(seg, "_ref_%s" % name))
+            ptrs_append(getattr(seg, f"_ref_{name}"))
             # TODO: is this the right index? or do I need to change things to
             #       account for the zero-volume nodes?
             locs_append(node._index)
