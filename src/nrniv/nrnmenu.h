@@ -53,6 +53,7 @@ class MechanismType: public Resource {
     bool is_netcon_target(int);
     bool has_net_event(int);
     bool is_artificial(int);
+    bool is_ion();
     void select(const char*);
     const char* selected();
     void insert(Section*);

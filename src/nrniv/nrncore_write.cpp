@@ -293,6 +293,13 @@ int nrncore_run(const char* arg) {
         hoc_execerror("Could not get symbol corenrn_embedded_run from", NULL);
     }
 
+    if (nrnmpi_numprocs > 1 && t > 0.0) {
+        // In case t was reached by an fadvance on the NEURON side,
+        // it may be the case that there are spikes generated on other
+        // ranks that have not been enqueued on this rank.
+        nrn_spike_exchange(nrn_threads);
+    }
+
     // prepare the model
     part1();
 
