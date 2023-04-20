@@ -43,6 +43,7 @@ class NeuronTestCase(unittest.TestCase):
     @coverage_enabled()
     def psection(cls):
         """Test neuron.psection(Section)"""
+
         s = h.Section(name="soma")
         neuron.psection(s)
 

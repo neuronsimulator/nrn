@@ -90,6 +90,7 @@ nrn_add_test_group(NAME mpi_init MODFILE_PATTERNS NONE)
 set(mpi_init_requires_mpiexec mpi)
 set(mpi_init_prefix_mpiexec ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS})
 set(mpi_init_suffix_mpiexec ${MPIEXEC_POSTFLAGS})
+set(preload_sanitizer_mpiexec "${MPIEXEC_PRELOAD_SANITIZER}")
 foreach(mpiexec "" "_mpiexec")
   set(nrniv ${mpi_init_prefix${mpiexec}} nrniv ${mpi_init_suffix${mpiexec}})
   nrn_add_test(
@@ -149,14 +150,14 @@ if(NRN_ENABLE_PYTHON)
     nrn_add_test(
       GROUP python_unit_tests
       NAME py_${pyver}_neuron
-      PRELOAD_SANITIZER
+      PRELOAD_SANITIZER ${exe}
       SCRIPT_PATTERNS test_neuron.py
       COMMAND ${exe} ${coverage} test_neuron.py)
     if(NRN_ENABLE_RX3D)
       nrn_add_test(
         GROUP python_unit_tests
         NAME py_${pyver}_rxd
-        PRELOAD_SANITIZER
+        PRELOAD_SANITIZER ${exe}
         SCRIPT_PATTERNS rxd.py
         COMMAND ${exe} ${coverage} rxd.py)
     endif()

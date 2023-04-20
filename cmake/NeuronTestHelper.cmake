@@ -309,9 +309,9 @@ function(nrn_add_test)
       SCRIPT_PATTERNS
       SIM_DIRECTORY)
   cmake_parse_arguments(NRN_ADD_TEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-  if(PRELOAD_SANITIZER IN_LIST NRN_ADD_TEST_MISSING_VALUES)
+  if(PRELOAD_SANITIZER IN_LIST NRN_ADD_TEST_KEYWORDS_MISSING_VALUES)
     # PRELOAD_SANITIZER passed without argument
-    list(REMOVE_ITEM NRN_ADD_TEST_MISSING_VALUES "PRELOAD_SANITIZER")
+    list(REMOVE_ITEM NRN_ADD_TEST_KEYWORDS_MISSING_VALUES "PRELOAD_SANITIZER")
     set(preload_python_exe "${NRN_DEFAULT_PYTHON_EXECUTABLE}")
   elseif(NRN_ADD_TEST_PRELOAD_SANITIZER)
     # PRELOAD_SANITIZER passed with an argument
@@ -320,9 +320,8 @@ function(nrn_add_test)
     # PRELOAD_SANITIZER not passed
     unset(preload_python_exe)
   endif()
-  if(DEFINED NRN_ADD_TEST_MISSING_VALUES)
-    message(
-      WARNING "nrn_add_test: missing values for keyword arguments: ${NRN_ADD_TEST_MISSING_VALUES}")
+  if(DEFINED NRN_ADD_TEST_KEYWORDS_MISSING_VALUES)
+    message(WARNING "nrn_add_test: missing values for: ${NRN_ADD_TEST_KEYWORDS_MISSING_VALUES}")
   endif()
   if(DEFINED NRN_ADD_TEST_UNPARSED_ARGUMENTS)
     message(WARNING "nrn_add_test: unknown arguments: ${NRN_ADD_TEST_UNPARSED_ARGUMENTS}")
