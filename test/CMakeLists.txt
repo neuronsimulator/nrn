@@ -214,7 +214,7 @@ if(NRN_ENABLE_PYTHON)
     GROUP datahandle
     NAME datahandle_tests
     PRELOAD_SANITIZER
-    COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/datahandle
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/datahandle
     SCRIPT_PATTERNS test/datahandle/*.py)
 
   # Mostly to increase coverage
