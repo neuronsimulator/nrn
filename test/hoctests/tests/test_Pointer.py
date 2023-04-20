@@ -2,7 +2,7 @@
 # h.Pointer is unnecessary in Python as _ref_var suffices
 
 from neuron import h
-from neuron.expect_hocerr import expect_err
+from neuron.expect_hocerr import expect_err, set_quiet
 
 
 def test_ptr():
@@ -30,8 +30,18 @@ def test_ptr():
     s.nseg = 1
     expect_err("ptr.val = 1.0")
     expect_err("ptr.assign(2.0)")
+
+    v = h.Vector(100).indgen().mul(2)
+    ptr = h.Pointer(v._ref_x[4])
+    assert ptr.val == 8.0
+    v = h.Vector(100).indgen().mul(3)
+    expect_err("print(ptr.val)")
+    expect_err("ptr.val = 1.0")
+    expect_err("ptr.assign(4.0)")
+
     return ptr
 
 
 if __name__ == "__main__":
+    set_quiet(False)
     ptr = test_ptr()

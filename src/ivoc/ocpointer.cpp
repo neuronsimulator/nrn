@@ -40,7 +40,7 @@ OcPointer::~OcPointer() {
 }
 
 void OcPointer::update(Observable*) {
-    printf("OcPointer::update %p %s\n", this, s_);
+    pd_ = {};
 }
 
 void OcPointer::assign(double x) {
