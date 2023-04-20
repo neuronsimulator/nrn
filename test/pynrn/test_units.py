@@ -1,4 +1,4 @@
-from neuron import embedded, h
+from neuron import h
 
 
 def switch_units(legacy):
@@ -73,24 +73,19 @@ def test_hoc_legacy():
 def test_env_legacy():
     import os, subprocess, sys
 
-    # Don't know a priori whether this test was launched using special -python or python.
-    # If it was launched with python, need to use NRN_PYTHON_EXECUTABLE if that's defined.
-    run_python_cmd = (
-        [sys.executable, "-notatty", "-python", "-c"]
-        if embedded
-        else [os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable), "-c"]
-    )
     for i in [0, 1]:
         env = os.environ.copy()
         env["NRNUNIT_USE_LEGACY"] = str(i)
         try:
-            env[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
-                "NRN_SANITIZER_PRELOAD_VAL"
-            ]
+            env[env["NRN_SANITIZER_PRELOAD_VAR"]] = env["NRN_SANITIZER_PRELOAD_VAL"]
         except:
             pass
         a = subprocess.check_output(
-            run_python_cmd + ["from neuron import h; print(h.nrnunit_use_legacy())"],
+            [
+                sys.executable,
+                "-c",
+                "from neuron import h; print(h.nrnunit_use_legacy())",
+            ],
             env=env,
             shell=False,
         )
