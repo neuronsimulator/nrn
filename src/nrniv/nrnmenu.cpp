@@ -1051,6 +1051,12 @@ static double mt_is_artificial(void* v) {
     hoc_return_type_code = 2;
     return double(mt->is_artificial(int(chkarg(1, 0, mt->count()))));
 }
+static double mt_is_ion(void* v) {
+    auto* mt = static_cast<MechanismType*>(v);
+    hoc_return_type_code = 2;
+    return double(mt->is_ion());
+}
+
 static Object** mt_pp_begin(void* v) {
     MechanismType* mt = (MechanismType*) v;
     Point_process* pp = mt->pp_begin();
@@ -1115,6 +1121,7 @@ static Member_func mt_members[] = {{"select", mt_select},
                                    {"is_netcon_target", mt_is_target},
                                    {"has_net_event", mt_has_net_event},
                                    {"is_artificial", mt_is_artificial},
+                                   {"is_ion", mt_is_ion},
                                    {"internal_type", mt_internal_type},
                                    {0, 0}};
 static Member_ret_obj_func mt_retobj_members[] = {{"pp_begin", mt_pp_begin},
@@ -1241,6 +1248,10 @@ bool MechanismType::has_net_event(int i) {
 bool MechanismType::is_artificial(int i) {
     int j = mti_->type_[i];
     return (nrn_is_artificial_[j] ? true : false);
+}
+
+bool MechanismType::is_ion() {
+    return nrn_is_ion(internal_type());
 }
 
 void MechanismType::select(const char* name) {
