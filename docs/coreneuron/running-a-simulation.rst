@@ -30,6 +30,7 @@ of your system).
 If you see any compilation error then one of the MOD files might be incompatible with CoreNEURON.
 In this case, you should first consult the :ref:`CoreNEURON compatibility` section, and if that does not provide a clear explanation then you should `open an issue <https://github.com/BlueBrain/CoreNeuron/issues>`_ with an example of your MOD file.
 
+.. _enabling_coreneuron:
 Enabling CoreNEURON
 *******************
 With CoreNEURON, existing NEURON models can be run with minimal changes.

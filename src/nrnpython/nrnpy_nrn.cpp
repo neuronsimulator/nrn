@@ -4,6 +4,7 @@
 #include <InterViews/resource.h>
 #include "nrniv_mf.h"
 #include <nrnoc2iv.h>
+#include "nrnpy.h"
 #include "nrnpy_utils.h"
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
@@ -29,13 +30,6 @@ extern Section* nrn_noerr_access();
 double* nrnpy_rangepointer(Section*, Symbol*, double, int*, int);
 extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
 extern int has_membrane(char*, Section*);
-typedef struct {
-    PyObject_HEAD
-    Section* sec_;
-    char* name_;
-    PyObject* cell_weakref_;
-} NPySecObj;
-NPySecObj* newpysechelp(Section* sec);
 
 typedef struct {
     PyObject_HEAD
@@ -116,12 +110,6 @@ extern void mech_uninsert1(Section*, Symbol*);
 extern "C" PyObject* nrn_hocobj_ptr(double*);
 extern int nrn_is_hocobj_ptr(PyObject*, double*&);
 extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
-extern Object* nrnpy_po2ho(PyObject*);
-extern Object* nrnpy_pyobject_in_obj(PyObject*);
-extern Symbol* nrnpy_pyobj_sym_;
-extern int nrnpy_ho_eq_po(Object*, PyObject*);
-extern PyObject* nrnpy_hoc2pyobject(Object*);
-extern PyObject* nrnpy_ho2po(Object*);
 static void nrnpy_reg_mech(int);
 extern void (*nrnpy_reg_mech_p_)(int);
 static int ob_is_seg(Object*);

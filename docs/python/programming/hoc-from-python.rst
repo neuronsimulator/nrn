@@ -1,46 +1,21 @@
-.. _python:
+.. _python_accessing_hoc:
+
+Accessing HOC from Python
+-------------------------
+
+This section describes how one can interact with HOC features and the HOC
+interpreter from Python code.
+
+In many cases, HOC provides features that are natively supported in Python.
+In these cases, it is usually preferable to use the Python version, which will
+be familiar to a wider range of people.
+Nonetheless, in isolated situations the following section may be useful:
+:ref:`hoc_features_you_should_not_use_from_python`.
 
 .. warning::
 
     Some of the idioms on this page are out of date, but they still work.
     See the NEURON Python tutorial for modern idioms.
-
-Python Language
----------------
-
-This document describes installation and basic use of NEURON's Python interface. For information on the modules in the ``neuron`` namespace, see:
-
-.. toctree:: :maxdepth: 1
-
-    neuronpython.rst
-
-
-.. _python_accessing_hoc:
-
-Python Accessing HOC
-~~~~~~~~~~~~~~~~~~~~
-
-
-
-Syntax:
-    ``nrniv -python [file.hoc file.py  -c "python_statement"]``
-
-    ``nrngui -python ...``
-
-    ``neurondemo -python ...``
-
-
-Description:
-    Launches NEURON with Python as the command line interpreter. 
-    File arguments with a .hoc suffix are interpreted using the 
-    Hoc interpreter. File arguments with the .py suffix are interpreted 
-    using the Python interpreter. The -c statement causes python to 
-    execute the statement. 
-    The import statements allow use of the following 
-
-         
-
-----
 
 .. note::
 
@@ -48,7 +23,7 @@ Description:
     with HOC; for a Python-based introduction to NEURON, see
     `Scripting NEURON Basics <../../tutorials/scripting-neuron-basics.html>`_
 
-
+.. _python_HocObject_class:
 .. class:: neuron.hoc.HocObject
 
 
@@ -682,145 +657,6 @@ Mechanism
 
 ----
 
-.. _Hoc_accessing_Python:
-
-HOC accessing Python
-~~~~~~~~~~~~~~~~~~~~
-
-
-    Syntax:
-        ``nrniv [file.py|file.hoc...]``
-
-
-    Description:
-        The absence of a -python argument causes NEURON to launch with Hoc 
-        as the command line interpreter. Python files (or Hoc files) are run
-        with the appropriate interpreter before presenting a Hoc user-interface.
-        From the hoc world any python statement can be executed and anything 
-        in the python world can be assigned or evaluated. 
-
-
-----
-
-
-
-.. function:: nrnpython
-
-
-    Syntax:
-        ``nrnpython("any python statement")``
-
-
-    Description:
-        Executes any python statement. Returns 1 on success; 0 if an exception
-        was raised or if python support is not available.
-        
-        In particular, ``python_available = nrnpython("")`` is 1 (true) if
-        python support is available and 0 (false) if python support is not
-        available.
-    
-    Example:
-
-        .. code-block::
-            python
-
-            nrnpython("import sys") 
-            nrnpython("print(sys.path)") 
-            nrnpython("a = [1,2,3]") 
-            nrnpython("print(a)") 
-            nrnpython("from neuron import h") 
-            nrnpython("h('print PI')") 
-            
-
-         
-
-----
-
-
-
-.. class:: PythonObject
-
-
-    Syntax:
-        ``p = new PythonObject()``
-
-
-    Description:
-        Accesses any python object. Almost equivalent to :class:`~neuron.hoc.HocObject` in the 
-        python world but because of some hoc syntax limitations, ie. hoc does not 
-        allow an object to be a callable function, and top level indices have 
-        different semantics, we sometimes need to use a special idiom, ie. the '_' 
-        method. Strings and double numbers move back and forth between Python and 
-        Hoc (but Python integers, etc. become double values in Hoc, and when they 
-        get back to the Python world, they are doubles). 
-         
-
-        .. code-block::
-            python
-
-            objref p 
-            p = new PythonObject() 
-            nrnpython("ev = lambda arg : eval(arg)") // interprets the string arg as an 
-                                      //expression and returns the value 
-            objref tup 
-            print p.ev("3 + 4")       // prints 7 
-            print p.ev("'hello' + 'world'") // prints helloworld 
-            tup = p.ev("('xyz',2,3)") // tup is a PythonObject wrapping a Python tuple 
-            print tup                 // prints PythonObject[1] 
-            print tup._[2]            // the 2th tuple element is 3 
-            print tup._[0]            // the 0th tuple element is xyz 
-             
-            nrnpython("from neuron import h")   // back in the Python world 
-            nrnpython("print h.tup")  // prints ('xyz', 2, 3) 
-
-        Note that one needs the '_' method, equivalent to 'this', because trying to 
-        get at an element through the built-in python method name via 
-
-        .. code-block::
-            python
-
-            tup.__getitem__(0) 
-
-        gives the error "TypeError: tuple indices must be integers" since 
-        the Hoc 0 argument is a double 0.0 when it gets into Python. 
-        It is difficult to pass an integer to a Python function from the hoc world. 
-        The only time Hoc doubles appear as integers in Python, is when they are 
-        the value of an index. If the index is not an integer, e.g. a string, use 
-        the __getitem__ idiom. 
-
-        .. code-block::
-            python
-
-            objref p 
-            p = new PythonObject() 
-            nrnpython("ev = lambda arg : eval(arg)") 
-            objref d 
-            d = p.ev("{'one':1, 'two':2, 'three':3}") 
-            print d.__getitem__("two")        // prints 2 
-             
-            objref dg 
-            dg = d.__getitem__ 
-            print dg._("two")                // prints 2 
-
-         
-        To assign a value to a python variable that exists in a module use 
-
-        .. code-block::
-            python
-
-            nrnpython("a = 10") 
-            p = new PythonObject() 
-            p.a = 25 
-            p.a = "hello" 
-            p.a = new Vector(4) 
-            nrnpython("b = []") 
-            p.a = p.b 
-
-
-         
-
-----
-
 .. method:: neuron.hoc.execute
 
 
@@ -846,4 +682,19 @@ HOC accessing Python
     .. seealso::
         :func:`nrnpython`
 
-    
+.. _hoc_features_you_should_not_use_from_python:
+Python-specific documentation of discouraged HOC features
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This section contains versions of the HOC documentation for certain features
+that have been updated to be somewhat Python-specific.
+You may find them useful, but in general Python-native versions are to be
+preferred.
+
+.. toctree::
+    :maxdepth: 1
+
+    io/file.rst
+    io/printf.rst
+    io/read.rst
+    io/ropen.rst

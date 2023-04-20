@@ -16,10 +16,8 @@
 #endif
 
 #include "nrnoc2iv.h"
+#include "nrnpy.h"
 #include "membfunc.h"
-void (*nrnpy_call_python_with_section)(Object*, Section*) = NULL;
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 //-----------------------------------------
 static double sb_select(void* v) {
@@ -167,8 +165,8 @@ void OcSectionBrowser::accept() {
         }
         nrn_pushsec(psec_[i]);
         if (accept_is_pycallback_) {
-            if (nrnpy_call_python_with_section) {
-                (*nrnpy_call_python_with_section)(accept_pycallback_, psec_[i]);
+            if (neuron::python::methods.call_python_with_section) {
+                neuron::python::methods.call_python_with_section(accept_pycallback_, psec_[i]);
             } else {
                 // should not be able to get here
             }
@@ -224,8 +222,8 @@ void OcSectionBrowser::select(GlyphIndex i) {
         if (psec_[i]->prop) {
             nrn_pushsec(psec_[i]);
             if (select_is_pycallback_) {
-                if (nrnpy_call_python_with_section) {
-                    (*nrnpy_call_python_with_section)(select_pycallback_, psec_[i]);
+                if (neuron::python::methods.call_python_with_section) {
+                    neuron::python::methods.call_python_with_section(select_pycallback_, psec_[i]);
                 } else {
                     // should not be able to get here
                 }

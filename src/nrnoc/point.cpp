@@ -53,7 +53,6 @@ void* create_point_process(int pointtype, Object* ho) {
 
 Object* nrn_new_pointprocess(Symbol* sym) {
     void* v;
-    extern Object* hoc_new_object(Symbol*, void*);
     extern Object* hoc_new_opoint(int);
     Object* ob;
     extern Symlist* hoc_built_in_symlist;

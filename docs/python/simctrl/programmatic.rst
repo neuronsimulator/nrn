@@ -8,6 +8,7 @@ See also:
     cvode.rst
     batch.rst
     savstate.rst
+    bbsavestate.rst
     sessionsave.rst
 
 Functions

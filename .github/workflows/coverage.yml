@@ -21,6 +21,7 @@ on:
 
 env:
   PY_MIN_VERSION: '3.8'
+  PY_MID_VERSION: '3.10'
   PY_MAX_VERSION: '3.11'
 
 jobs:
@@ -85,6 +86,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
+      - name: Set up Python@${{ env.PY_MID_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PY_MID_VERSION }}
+
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
         uses: actions/setup-python@v4
         with:
@@ -108,6 +114,7 @@ jobs:
 
           # Python setup
           export PYTHON_MIN=$(which $PYTHON_MIN_NAME);
+          export PYTHON_MID=$(which $PYTHON_MID_NAME);
           export PYTHON_MAX=$(which $PYTHON_MAX_NAME);
 
           mkdir build && cd build;
@@ -127,7 +134,8 @@ jobs:
                       -DNRN_ENABLE_PYTHON=ON \
                       -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
                       -DNRN_PYTHON_DYNAMIC="${PYTHON_MIN};${PYTHON_MAX}" \
-                      -DNRN_ENABLE_TESTS=ON
+                      -DNRN_PYTHON_EXTRA_FOR_TESTS=${PYTHON_MID} \
+                      -DNRN_ENABLE_TESTS=ON \
                       -DNRN_ENABLE_MUSIC=ON \
                       -DCMAKE_PREFIX_PATH="${MUSIC_INSTALL_DIR}" \
                       -DMUSIC_ROOT="${MUSIC_INSTALL_DIR}")
@@ -154,6 +162,7 @@ jobs:
         env:
           MATRIX_EVAL: "CC=gcc CXX=g++"
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
+          PYTHON_MID_NAME: "python${{ env.PY_MID_VERSION }}"
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
 
       # This step will set up an SSH connection on tmate.io for live debugging.

@@ -3,16 +3,7 @@
 
 #include "oc2iv.h"
 #include "classreg.h"
-double (*nrnpy_guigetval)(Object*);
-void (*nrnpy_guisetval)(Object*, double);
-int (*nrnpy_guigetstr)(Object*, char**);
-
 #include "gui-redirect.h"
-
-Object** (*nrnpy_gui_helper_)(const char* name, Object* obj) = NULL;
-double (*nrnpy_object_to_double_)(Object*) = NULL;
-Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr) = NULL;
-char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr) = NULL;
 
 #if HAVE_IV  // to end of file except for a few small fragments.
 
@@ -46,6 +37,7 @@ char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strpt
 #include "datapath.h"
 #include "ivoc.h"
 #include "bndedval.h"
+#include "nrnpy.h"
 #include "objcmd.h"
 #include "parse.hpp"
 #include "utility.h"
@@ -1542,7 +1534,7 @@ HocVarLabel::HocVarLabel(char** cpp, PolyGlyph* pg, Object* pyvar)
     cp_ = NULL;
     if (pyvar_) {
         hoc_obj_ref(pyvar_);
-        (*nrnpy_guigetstr)(pyvar_, &cp_);
+        neuron::python::methods.guigetstr(pyvar_, &cp_);
     } else {
         cp_ = *cpp_;
     }
@@ -1577,7 +1569,7 @@ void HocVarLabel::write(std::ostream& o) {
 
 void HocVarLabel::update_hoc_item() {
     if (pyvar_) {
-        if ((*nrnpy_guigetstr)(pyvar_, &cp_)) {
+        if (neuron::python::methods.guigetstr(pyvar_, &cp_)) {
             p_->body(LayoutKit::instance()->margin(WidgetKit::instance()->label(cp_), 3));
             p_->redraw();
             p_->reallocate();
@@ -2028,7 +2020,7 @@ void HocValEditor::print(Printer* p, const Allocation& a) const {
 void HocValEditor::set_val(double x) {
     char buf[200];
     if (pyvar_) {
-        (*nrnpy_guisetval)(pyvar_, x);
+        neuron::python::methods.guisetval(pyvar_, x);
         return;
     }
     hoc_ac_ = x;
@@ -2044,7 +2036,7 @@ void HocValEditor::set_val(double x) {
 double HocValEditor::get_val() {
     char buf[200];
     if (pyvar_) {
-        return (*nrnpy_guigetval)(pyvar_);
+        return neuron::python::methods.guigetval(pyvar_);
     } else if (pval_) {
         return *pval_;
     } else if (variable_) {
@@ -2768,7 +2760,7 @@ void OcSlider::update(Observable*) {
     if (pval_) {
         *pval_ = x;
     } else if (pyvar_) {
-        (*nrnpy_guisetval)(pyvar_, x);
+        neuron::python::methods.guisetval(pyvar_, x);
     } else {
         return;
     }
@@ -2816,7 +2808,7 @@ double OcSlider::slider_val() {
 void OcSlider::update_hoc_item() {
     Coord x = 0.;
     if (pyvar_) {
-        x = Coord((*nrnpy_guigetval)(pyvar_));
+        x = Coord(neuron::python::methods.guigetval(pyvar_));
     } else if (pval_) {
         x = Coord(*pval_);
     } else {
@@ -2969,8 +2961,8 @@ void HocStateButton::button_action() {
     }
     if (pyvar_) {
         TelltaleState* t = b_->state();
-        if (chosen() != bool((*nrnpy_guigetval)(pyvar_))) {
-            (*nrnpy_guisetval)(pyvar_, double(chosen()));
+        if (chosen() != bool(neuron::python::methods.guigetval(pyvar_))) {
+            neuron::python::methods.guisetval(pyvar_, double(chosen()));
         }
     }
     if (action_) {
@@ -2986,7 +2978,7 @@ void HocStateButton::button_action() {
 void HocStateButton::update_hoc_item() {
     double x = 0.;
     if (pyvar_) {
-        x = nrnpy_guigetval(pyvar_);
+        x = neuron::python::methods.guigetval(pyvar_);
     } else if (pval_) {
         x = *pval_;
     }
@@ -3127,8 +3119,8 @@ void HocStateMenuItem::button_action() {
     }
     if (pyvar_) {
         TelltaleState* t = b_->state();
-        if (chosen() != bool((*nrnpy_guigetval)(pyvar_))) {
-            (*nrnpy_guisetval)(pyvar_, double(chosen()));
+        if (chosen() != bool(neuron::python::methods.guigetval(pyvar_))) {
+            neuron::python::methods.guisetval(pyvar_, double(chosen()));
         }
     }
     if (action_) {
@@ -3144,7 +3136,7 @@ void HocStateMenuItem::button_action() {
 void HocStateMenuItem::update_hoc_item() {
     double x = 0.;
     if (pyvar_) {
-        x = nrnpy_guigetval(pyvar_);
+        x = neuron::python::methods.guigetval(pyvar_);
     } else if (pval_) {
         x = *pval_;
     }

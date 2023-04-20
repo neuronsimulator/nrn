@@ -38,6 +38,7 @@ pval = pval_praxis(i, Vector)
 
 #include <stdlib.h>
 #include "hocdec.h"
+#include "nrnpy.h"
 #include "parse.hpp"
 #include "scoplib.h"
 
@@ -57,7 +58,6 @@ at return of previous prax call
 */
 static long int nvar;
 
-double (*nrnpy_praxis_efun)(Object* pycallable, Object* hvec);
 static Object* efun_py;
 static Object* efun_py_arg;
 static void* vec_py_save;
@@ -113,7 +113,7 @@ void fit_praxis(void) {
     fmin = 0.;
 
     if (hoc_is_object_arg(1)) {
-        assert(nrnpy_praxis_efun);
+        assert(neuron::python::methods.praxis_efun);
         efun_py_ = *hoc_objgetarg(1);
         hoc_obj_ref(efun_py_);
         efun_py_arg_ = *vector_pobj(vector_arg(2));
@@ -259,7 +259,7 @@ static double efun(double* v, long int n) {
         for (i = 0; i < n; ++i) {
             px[i] = v[i];
         }
-        err = nrnpy_praxis_efun(efun_py, efun_py_arg);
+        err = neuron::python::methods.praxis_efun(efun_py, efun_py_arg);
         for (i = 0; i < n; ++i) {
             v[i] = px[i];
         }

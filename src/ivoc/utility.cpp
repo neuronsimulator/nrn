@@ -23,10 +23,6 @@
 #include "oc2iv.h"
 #include "ivoc.h"
 
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-extern Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr);
-
 bool nrn_spec_dialog_pos(Coord& x, Coord& y) {
     Style* s = Session::instance()->style();
     if (s->value_is_on("dialog_spec_position")) {
@@ -286,13 +282,10 @@ void FieldDialog::cancel(FieldEditor*) {
 
 void hoc_boolean_dialog() {
     bool b = false;
-    if (nrnpy_gui_helper_) {
-        Object** const result = nrnpy_gui_helper_("boolean_dialog", NULL);
-        if (result) {
-            hoc_ret();
-            hoc_pushx(nrnpy_object_to_double_(*result));
-            return;
-        }
+    if (auto* const result = neuron::python::methods.try_gui_helper("boolean_dialog", nullptr)) {
+        hoc_ret();
+        hoc_pushx(neuron::python::methods.object_to_double(*result));
+        return;
     }
     IFGUI
     if (ifarg(3)) {

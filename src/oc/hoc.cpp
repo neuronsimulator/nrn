@@ -1,6 +1,4 @@
 #include <../../nrnconf.h>
-
-#include "../nrnpython/nrnpython_config.h"
 #include "hoc.h"
 #include "hocstr.h"
 #include "equation.h"
@@ -16,6 +14,7 @@
 #include "ocfunc.h"
 #include "ocmisc.h"
 #include "nrnmpi.h"
+#include "nrnpy.h"
 #include "nrnfilewrap.h"
 #include "../nrniv/backtrace_utils.h"
 
@@ -33,7 +32,6 @@ char** nrn_global_argv;
 
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
-int (*p_nrnpython_start)(int);
 void (*p_nrnpython_finalize)();
 #endif
 int nrn_inpython_;
@@ -1006,8 +1004,8 @@ void inputReadyThread() {
 void hoc_final_exit(void) {
     char* buf;
 #if defined(USE_PYTHON)
-    if (p_nrnpython_start) {
-        (*p_nrnpython_start)(0);
+    if (neuron::python::methods.interpreter_start) {
+        neuron::python::methods.interpreter_start(0);
     }
 #endif
     bbs_done();
@@ -1171,6 +1169,12 @@ int hoc_moreinput() {
         hpfi = hoc_print_first_instance;
         fin = (NrnFILEWrap*) 0;
         hoc_print_first_instance = 0;
+        // This is processing HOC code via -c on the commandline. That HOC code could include
+        // nrnpython(...), so the Python interpreter needs to be configured appropriately for
+        // that (i.e. sys.path[0] = '').
+        if (neuron::python::methods.interpreter_set_path) {
+            neuron::python::methods.interpreter_set_path({});
+        }
         err = hoc_oc(hs->buf);
         hoc_print_first_instance = hpfi;
         hocstr_delete(hs);
@@ -1182,7 +1186,9 @@ int hoc_moreinput() {
         if (!p_nrnpy_pyrun) {
             hoc_execerror("Python not available to interpret", infile);
         }
-        (*p_nrnpy_pyrun)(infile);
+        if (!p_nrnpy_pyrun(infile)) {
+            hoc_execerror("Python error", infile);
+        }
         return hoc_moreinput();
     } else if ((fin = nrn_fw_fopen(infile, "r")) == (NrnFILEWrap*) 0) {
 #if OCSMALL
@@ -1202,6 +1208,11 @@ int hoc_moreinput() {
             hoc_xopen_file_ = static_cast<char*>(erealloc(hoc_xopen_file_, hoc_xopen_file_size_));
         }
         strcpy(hoc_xopen_file_, infile);
+        // This is, unfortunately rather implicitly, how we trigger execution of HOC files on a
+        // commandline like `nrniv a.hoc b.hoc`
+        if (neuron::python::methods.interpreter_set_path) {
+            neuron::python::methods.interpreter_set_path(hoc_xopen_file_);
+        }
     }
     return 1;
 }

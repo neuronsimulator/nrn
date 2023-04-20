@@ -10,9 +10,6 @@
 #include "ocnotify.h"
 #include "oc_ansi.h"
 
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-
 #if HAVE_IV
 #include "utility.h"
 #include "ivoc.h"
@@ -39,10 +36,6 @@ static nrn::tool::bimap<double*, Observer*>* pdob;
 // a part of is freed. So the upper_bound property is needed
 
 int nrn_err_dialog_active_;
-
-
-void* (*nrnpy_save_thread)();
-void (*nrnpy_restore_thread)(void*);
 
 void nrn_notify_freed(PF pf) {
     if (!f_list) {

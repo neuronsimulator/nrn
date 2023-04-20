@@ -5,8 +5,6 @@
     hoc_pushx(a);
 
 #include "gui-redirect.h"
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 int newstyle;
 unsigned int text_style = 0, text_size = 1, text_orient = 0;

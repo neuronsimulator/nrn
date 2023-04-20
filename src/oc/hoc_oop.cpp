@@ -9,20 +9,14 @@
 #include "hoclist.h"
 #include "nrn_ansi.h"
 #include "nrnmpi.h"
+#include "nrnpy.h"
 #include "nrnfilewrap.h"
-#include <nrnpython_config.h>
 #include "ocfunc.h"
 
 
 #define PDEBUG 0
 
-#if USE_PYTHON
-Symbol* nrnpy_pyobj_sym_;
-void (*nrnpy_py2n_component)(Object* o, Symbol* s, int nindex, int isfunc);
-void (*nrnpy_hpoasgn)(Object* o, int type);
-void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
-#endif
-
+Symbol* nrnpy_pyobj_sym_{};
 #include "section.h"
 #include "nrniv_mf.h"
 int section_object_seen;
@@ -1024,7 +1018,7 @@ void hoc_object_component() {
                 /* note obp is now on stack twice */
                 /* hpoasgn will pop both */
             } else {
-                (*nrnpy_py2n_component)(obp, sym0, nindex, isfunc);
+                neuron::python::methods.py2n_component(obp, sym0, nindex, isfunc);
             }
             return;
         }
@@ -1460,7 +1454,7 @@ void hoc_object_asgn() {
         if (op) {
             hoc_execerror("Invalid assignment operator for PythonObject", nullptr);
         }
-        (*nrnpy_hpoasgn)(o, type1);
+        neuron::python::methods.hpoasgn(o, type1);
     } break;
 #endif
     default:
@@ -2090,11 +2084,9 @@ int is_obj_type(Object* obj, const char* type_name) {
 
 
 void* nrn_opaque_obj2pyobj(Object* ho) {
-#if USE_PYTHON
     // The PyObject* reference is not incremented. Use only as last resort
-    if (nrnpy_opaque_obj2pyobj_p_) {
-        return (*nrnpy_opaque_obj2pyobj_p_)(ho);
+    if (neuron::python::methods.opaque_obj2pyobj) {
+        return neuron::python::methods.opaque_obj2pyobj(ho);
     }
-#endif
     return nullptr;
 }

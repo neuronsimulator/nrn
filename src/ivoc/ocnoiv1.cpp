@@ -5,13 +5,11 @@
 // things we DO NOT want
 
 #include "hocdec.h"
+#include "nrnpy.h"
 
 extern void hoc_ret();
 extern void hoc_pushx(double);
 extern "C" void nrn_shape_update();
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 void ivoc_help(const char*) {}
 void ivoc_cleanup() {}
@@ -25,153 +23,115 @@ void hoc_notify_iv() {
     hoc_pushx(0.);
 }
 void hoc_xpvalue() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("xpvalue", NULL);
-    }
+    neuron::python::methods.try_gui_helper("xpvalue", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_xlabel() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("xlabel", NULL);
-    }
+    neuron::python::methods.try_gui_helper("xlabel", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_xbutton() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("xbutton", NULL);
-    }
+    neuron::python::methods.try_gui_helper("xbutton", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_xcheckbox() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("xcheckbox", NULL);
-    }
+    neuron::python::methods.try_gui_helper("xcheckbox", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_xstatebutton() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("xstatebutton", NULL);
-    }
+    neuron::python::methods.try_gui_helper("xstatebutton", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_xmenu() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("xmenu", NULL);
-    }
+    neuron::python::methods.try_gui_helper("xmenu", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_xvalue() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("xvalue", NULL);
-    }
+    neuron::python::methods.try_gui_helper("xvalue", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_xpanel() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("xpanel", NULL);
-    }
+    neuron::python::methods.try_gui_helper("xpanel", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_xradiobutton() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("xradiobutton", NULL);
-    }
+    neuron::python::methods.try_gui_helper("xradiobutton", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_xfixedvalue() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("xfixedvalue", NULL);
-    }
+    neuron::python::methods.try_gui_helper("xfixedvalue", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_xvarlabel() {
-    if (nrnpy_gui_helper3_) {
-        nrnpy_gui_helper3_("xvarlabel", NULL, 1);
+    if (neuron::python::methods.gui_helper3) {
+        neuron::python::methods.gui_helper3("xvarlabel", nullptr, 1);
     }
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_xslider() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("xslider", NULL);
-    }
+    neuron::python::methods.try_gui_helper("xslider", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_boolean_dialog() {
-    if (nrnpy_gui_helper_) {
-        Object** const result = nrnpy_gui_helper_("boolean_dialog", NULL);
-        if (result) {
-            hoc_ret();
-            hoc_pushx(nrnpy_object_to_double_(*result));
-            return;
-        }
+    if (auto* const result = neuron::python::methods.try_gui_helper("boolean_dialog", nullptr)) {
+        hoc_ret();
+        hoc_pushx(neuron::python::methods.object_to_double(*result));
+    } else {
+        hoc_ret();
+        hoc_pushx(0.);
     }
-    hoc_ret();
-    hoc_pushx(0.);
 }
 void hoc_continue_dialog() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("continue_dialog", NULL);
-    }
+    neuron::python::methods.try_gui_helper("continue_dialog", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_string_dialog() {
     // TODO: needs to work with strrefs so can actually change the string
-    if (nrnpy_gui_helper_) {
-        Object** const result = nrnpy_gui_helper_("string_dialog", NULL);
-        if (result) {
-            hoc_ret();
-            hoc_pushx(nrnpy_object_to_double_(*result));
-        }
+    if (auto* const result = neuron::python::methods.try_gui_helper("string_dialog", nullptr);
+        result) {
+        hoc_ret();
+        hoc_pushx(neuron::python::methods.object_to_double(*result));
+    } else {
+        hoc_ret();
+        hoc_pushx(0.);
     }
-    hoc_ret();
-    hoc_pushx(0.);
 }
 void hoc_checkpoint() {
     // not redirecting checkpoint because not a GUI function
-    /*if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("checkpoint", NULL);
-    } */
+    // neuron::python::methods.try_gui_helper("checkpoint", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_pwman_place() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("pwman_place", NULL);
-    }
+    neuron::python::methods.try_gui_helper("pwman_place", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_save_session() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("save_session", NULL);
-    }
+    neuron::python::methods.try_gui_helper("save_session", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void hoc_print_session() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("print_session", NULL);
-    }
+    neuron::python::methods.try_gui_helper("print_session", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }
 void ivoc_style() {
-    if (nrnpy_gui_helper_) {
-        nrnpy_gui_helper_("ivoc_style", NULL);
-    }
+    neuron::python::methods.try_gui_helper("ivoc_style", nullptr);
     hoc_ret();
     hoc_pushx(0.);
 }

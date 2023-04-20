@@ -257,9 +257,6 @@
 /* host triplet */
 #undef NRNHOST
 
-/* cpu type consistent with nrnivmodl */
-#undef NRNHOSTCPU
-
 /* if 1 then dlopen nrnmech instead of special */
 #undef NRNMECH_DLL_STYLE
 
@@ -361,8 +358,13 @@
  * mesch (and maybe others)
  */
 #if defined(__cplusplus)
+#include <array>
 #include <string_view>
 namespace neuron::config {
+#ifdef USE_PYTHON
+   constexpr std::string_view default_python_executable{"@NRN_DEFAULT_PYTHON_EXECUTABLE@"};
+   constexpr std::array<std::string_view, @NRN_PYTHON_COUNT@> supported_python_versions{@NRN_DYNAMIC_PYTHON_LIST_OF_VERSION_STRINGS@};
+#endif
    constexpr std::string_view shared_library_prefix{"@CMAKE_SHARED_LIBRARY_PREFIX@"};
    constexpr std::string_view shared_library_suffix{"@CMAKE_SHARED_LIBRARY_SUFFIX@"};
    constexpr std::string_view system_processor{"@CMAKE_SYSTEM_PROCESSOR@"};

@@ -34,7 +34,8 @@ jobs:
       SDK_ROOT: $(xcrun --sdk macosx --show-sdk-path)
       SKIP_WHEELHOUSE_REPAIR: true
       BUILD_TYPE: Release
-      DESIRED_CMAKE_VERSION: 3.15.0
+      DESIRED_CMAKE_VERSION: 3.15
+      DYNAMIC_PYTHON_CMAKE_VERSION: 3.18
       PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
       PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
       MUSIC_INSTALL_DIR: /opt/MUSIC
@@ -82,7 +83,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1
         with:
-          cmake-version: ${{ env.DESIRED_CMAKE_VERSION }}
+          cmake-version : ${{(matrix.config.python_dynamic || matrix.config.build_mode == 'setuptools') && env.DYNAMIC_PYTHON_CMAKE_VERSION || env.DESIRED_CMAKE_VERSION}}
 
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
@@ -305,6 +306,7 @@ jobs:
               ccache -vs 2>/dev/null || ccache -s
               if [ "$RUNNER_OS" == "macOS" ]
               then
+                mkdir -p src/nrnpython
                 echo $'[install]\nprefix='>src/nrnpython/setup.cfg;
               fi
               if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then

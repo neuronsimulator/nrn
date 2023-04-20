@@ -8,11 +8,6 @@
 #endif
 
 #include <../../nrnconf.h>
-#include <nrnpython_config.h>
-
-#if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD >= 30
-#define PY_LIMITED_API
-#endif
 
 #if defined(USE_PYTHON)
 #undef _POSIX_C_SOURCE
@@ -20,6 +15,8 @@
 #include <nrnwrap_Python.h>
 
 #endif /*USE_PYTHON*/
+
+#include <string_view>
 
 #define PyString_FromString PyUnicode_FromString
 #define PyInt_Check         PyLong_Check
@@ -71,5 +68,20 @@ enum ObjectType {
 };
 enum IteratorState { Begin, NextNotLast, Last };
 }  // namespace PyHoc
-
+// Declare methods that are used in different translation units within one libnrnpythonX.Y
+struct Object;
+struct Section;
+PyObject* hocobj_call_arg(int);
+struct NPySecObj {
+    PyObject_HEAD
+    Section* sec_;
+    char* name_;
+    PyObject* cell_weakref_;
+};
+NPySecObj* newpysechelp(Section* sec);
+PyObject* nrnpy_hoc2pyobject(Object* ho);
+int nrnpy_ho_eq_po(Object*, PyObject*);
+PyObject* nrnpy_ho2po(Object*);
+Object* nrnpy_po2ho(PyObject*);
+Object* nrnpy_pyobject_in_obj(PyObject*);
 #endif
