@@ -162,11 +162,6 @@ function(nrn_add_test_group)
                      SIM_DIRECTORY)
   cmake_parse_arguments(NRN_ADD_TEST_GROUP "${options}" "${oneValueArgs}" "${multiValueArgs}"
                         ${ARGN})
-  if(DEFINED NRN_ADD_TEST_GROUP_MISSING_VALUES)
-    message(
-      WARNING
-        "nrn_add_test: missing values for keyword arguments: ${NRN_ADD_TEST_GROUP_MISSING_VALUES}")
-  endif()
   if(DEFINED NRN_ADD_TEST_GROUP_UNPARSED_ARGUMENTS)
     message(WARNING "nrn_add_test: unknown arguments: ${NRN_ADD_TEST_GROUP_UNPARSED_ARGUMENTS}")
   endif()
@@ -616,11 +611,6 @@ function(nrn_add_pytest)
   set(oneValueArgs GROUP NAME MPI_RANKS PYTHON)
   set(multiValueArgs ENVIRONMENT PYTEST_ARGS REQUIRES SCRIPT_PATTERNS)
   cmake_parse_arguments(NRN_ADD_PYTEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-  if(DEFINED NRN_ADD_PYTEST_MISSING_VALUES)
-    message(
-      WARNING
-        "nrn_add_pytest: missing values for keyword arguments: ${NRN_ADD_PYTEST_MISSING_VALUES}")
-  endif()
   if(DEFINED NRN_ADD_PYTEST_UNPARSED_ARGUMENTS)
     message(WARNING "nrn_add_pytest: unknown arguments: ${NRN_ADD_PYTEST_UNPARSED_ARGUMENTS}")
   endif()
@@ -744,12 +734,6 @@ function(nrn_add_test_group_comparison)
     message(
       ERROR
       "nrn_add_test_group_comparison was not told which test group to compare results from. Please pass a GROUP keyword argument."
-    )
-  endif()
-  if(DEFINED NRN_ADD_TEST_GROUP_COMPARISON_MISSING_VALUES)
-    message(
-      WARNING
-        "nrn_add_test: missing values for keyword arguments: ${NRN_ADD_TEST_GROUP_COMPARISON_MISSING_VALUES}"
     )
   endif()
   if(DEFINED NRN_ADD_TEST_GROUP_COMPARISON_UNPARSED_ARGUMENTS)

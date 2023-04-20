@@ -20,7 +20,7 @@ additional_commands:
       ENVIRONMENT: '+'
       CONFLICTS: '+'
       PRECOMMAND: '+'
-      PRELOAD_SANITIZER: 0
+      PRELOAD_SANITIZER: '?'
       PROCESSORS: 1
       REQUIRES: '+'
       OUTPUT: '*'

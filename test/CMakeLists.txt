@@ -366,10 +366,9 @@ if(NRN_ENABLE_PYTHON)
   # Second, build and test the subset that are compatible with CoreNEURON.
   nrn_add_test_group(
     CORENEURON # build MOD files for CoreNEURON
-    NAME nmodl_tests_coreneuron
-    # Not: test_disc.py test_function_table.py test_kinetic.py
+    NAME nmodl_tests_coreneuron # Not: test_disc.py test_function_table.py test_kinetic.py
     SCRIPT_PATTERNS test/nmodl/test_table.py
-    # Not: cadif.mod, disc.mod, k3st.mod, variabletypes.mod
+                    # Not: cadif.mod, disc.mod, k3st.mod, variabletypes.mod
     MODFILE_PATTERNS docs/nmodl/mod/fornetcon.mod docs/nmodl/mod/hhwatch.mod
                      docs/nmodl/mod/table.mod)
   # These require CoreNEURON and GPU support to be steered via environment variables
