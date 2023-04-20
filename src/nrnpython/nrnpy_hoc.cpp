@@ -1174,7 +1174,12 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             if (sym != nrn_child_sym && !ISARRAY(sym)) {
                 hoc_push_object(po->ho_);
                 nrn_inpython_ = 1;
-                component(po);
+                try_catch_depth_increment tell_children_we_will_catch{};
+                try {
+                    component(po);
+                } catch (...) {
+                    nrn_inpython_ = 2;
+                }
                 if (nrn_inpython_ == 2) {  // error in component
                     nrn_inpython_ = 0;
                     PyErr_SetString(PyExc_TypeError, "No value");
