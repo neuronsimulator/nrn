@@ -3562,10 +3562,12 @@ void CodegenCVisitor::print_nrn_destructor() {
 
 
 void CodegenCVisitor::print_functors_definitions() {
+    codegen = true;
     for (const auto& functor_name: info.functor_names) {
         printer->add_newline(2);
         print_functor_definition(*functor_name.first);
     }
+    codegen = false;
 }
 
 
@@ -4585,7 +4587,6 @@ void CodegenCVisitor::print_g_unused() const {
 
 void CodegenCVisitor::print_compute_functions() {
     print_top_verbatim_blocks();
-    print_function_prototypes();
     for (const auto& procedure: info.procedures) {
         print_procedure(*procedure);
     }
@@ -4633,6 +4634,7 @@ void CodegenCVisitor::print_codegen_routines() {
     print_nrn_alloc();
     print_nrn_constructor();
     print_nrn_destructor();
+    print_function_prototypes();
     print_functors_definitions();
     print_compute_functions();
     print_check_table_thread_function();
