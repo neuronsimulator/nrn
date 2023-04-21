@@ -88,7 +88,7 @@ jobs:
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install ccache coreutils doxygen flex mpich ninja xz autoconf autoconf automake libtool
+          brew install ccache coreutils doxygen flex bison mpich ninja xz autoconf autoconf automake libtool
           brew unlink mpich
           brew install openmpi
           brew install --cask xquartz
