@@ -168,6 +168,9 @@ static int narg() {
 static double ptr_plot(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("PtrVector.plot", pv_class_sym_, v);
     OcPtrVector* opv = (OcPtrVector*) v;
+    if (ifarg(5)) {
+        hoc_execerror("PtrVector.plot:", "too many arguments");
+    }
 #if HAVE_IV
     IFGUI
     int i;
@@ -181,9 +184,6 @@ static double ptr_plot(void* v) {
 
     GraphVector* gv = new GraphVector("");
 
-    if (ifarg(5)) {
-        hoc_execerror("PtrVector.plot:", "too many arguments");
-    }
     if (narg() == 3) {
         gv->color((colors->color(int(*getarg(2)))));
         gv->brush((brushes->brush(int(*getarg(3)))));
