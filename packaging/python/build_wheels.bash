@@ -76,6 +76,7 @@ build_wheel_linux() {
     echo " - Installing build requirements"
     pip install auditwheel
     pip install -r packaging/python/build_requirements.txt
+    pip install -r external/nmodl/requirements.txt
     pip_numpy_install
 
     echo " - Building..."
@@ -138,6 +139,7 @@ build_wheel_osx() {
 
     echo " - Installing build requirements"
     pip install -U delocate -r packaging/python/build_requirements.txt
+    pip install -r external/nmodl/requirements.txt
     pip_numpy_install
 
     echo " - Building..."
