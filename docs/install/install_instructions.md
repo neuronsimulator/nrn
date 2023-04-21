@@ -202,7 +202,7 @@ In order to build NEURON from source, the following packages must be available:
 - C/C++ compiler suite supporting C++17 (e.g. GCC >=9.3.1, Clang >= 11.0.0)
   - Note that some C++17 features require a newer compiler version.
   - C++17 features must be available without linking extra libraries. This notably excludes some older versions of GCC where `std::filesystem` required `libstdc++fs.so`.
-- CMake 3.15.0
+- CMake >= 3.15 (>= 3.18 if ``-DNRN_ENABLE_PYTHON_DYNAMIC=ON``)
 
 The following packages are optional (see build options):
 
@@ -469,10 +469,9 @@ being used by running following command:
 ```bash
 $ nrnpyenv.sh
 ...
-export NRN_PYTHONHOME="/python/install/path/python-3.8.3/"
 export NRN_PYLIB="/python/install/path/python-3.8.3/lib/libpython3.8.so.1.0"
 ```
-If `NRN_PYTHONHOME` and `NRN_PYLIB` are inappropriate then you can set them explicitly or use `-pyexe` option mentioned above.
+If `NRN_PYLIB` is inappropriate then you can set it explicitly or use `-pyexe` option mentioned above.
 
 * **How to build NEURON in cluster environment where build node architecture is different than compute node?**
 

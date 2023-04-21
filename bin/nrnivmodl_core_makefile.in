@@ -66,7 +66,7 @@ endif
 # First prefer env variables set by neuron's nrnivmodl wrapper then check
 # binary used during build. If they don't exist then simply use python and
 # perl as the name of binaries.
-CORENRN_PYTHONEXE ?= @PYTHON_EXECUTABLE@
+CORENRN_PYTHONEXE ?= @NRN_DEFAULT_PYTHON_EXECUTABLE@
 CORENRN_PERLEXE ?= @PERL_EXECUTABLE@
 ifeq ($(wildcard $(CORENRN_PYTHONEXE)),)
   CORENRN_PYTHONEXE=python

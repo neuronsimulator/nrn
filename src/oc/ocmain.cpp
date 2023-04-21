@@ -7,9 +7,6 @@
 
 extern const char* neuron_home;
 
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj) = NULL;
-extern double (*nrnpy_object_to_double_)(Object*) = NULL;
-
 #if MAC
 char hoc_console_buffer[256];
 #endif

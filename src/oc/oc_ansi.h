@@ -170,6 +170,7 @@ void hoc_pushs(Symbol*);
 void hoc_pushi(int);
 void hoc_push_ndim(int);
 int hoc_pop_ndim();
+int hoc_stack_type();
 bool hoc_stack_type_is_ndim();
 double hoc_xpop();
 Symbol* hoc_spop();
@@ -211,6 +212,7 @@ void hoc_obj_unref(Object*); /* NULL allowed */
 void hoc_dec_refcount(Object**);
 Object** hoc_temp_objvar(Symbol* template_symbol, void* cpp_object);
 Object** hoc_temp_objptr(Object*);
+Object* hoc_new_object(Symbol* symtemp, void* v);
 void hoc_new_object_asgn(Object** obp, Symbol* template_symbol, void* cpp_object);
 HocSymExtension* hoc_var_extra(const char*);
 double check_domain_limits(float*, double);

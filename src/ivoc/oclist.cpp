@@ -27,10 +27,6 @@ extern Object** hoc_temp_objptr(Object*);
 extern Symlist* hoc_top_level_symlist;
 int ivoc_list_count(Object*);
 
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-
 extern int hoc_return_type_code;
 
 void handle_old_focus();

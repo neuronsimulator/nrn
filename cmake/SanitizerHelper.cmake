@@ -57,10 +57,4 @@ if(NRN_SANITIZERS)
   if(NRN_SANITIZER_LIBRARY_PATH)
     set(NRN_SANITIZER_LD_PRELOAD "${NRN_SANITIZER_PRELOAD_VAR}=${NRN_SANITIZER_LIBRARY_PATH}")
   endif()
-  # Needed for using sanitizers on macOS
-  cpp_cc_strip_python_shims(EXECUTABLE "${PYTHON_EXECUTABLE}" OUTPUT PYTHON_EXECUTABLE)
-  set(NRN_DEFAULT_PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}")
-  configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
-  install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrn-enable-sanitizer
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()

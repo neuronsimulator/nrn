@@ -388,11 +388,7 @@ def setup_package():
 
     ext_common_libraries = ["nrniv"]
     if not without_nrnpython:
-        nrn_python_lib = "nrnpython{}".format(
-            sys.version_info[0]
-            if sys.platform != "win32"
-            else str(sys.version_info[0]) + str(sys.version_info[1])
-        )
+        nrn_python_lib = "nrnpython{}.{}".format(*sys.version_info[:2])
         ext_common_libraries.append(nrn_python_lib)
 
     extension_common_params = defaultdict(
@@ -423,7 +419,6 @@ def setup_package():
                 "-DNRN_ENABLE_PYTHON_DYNAMIC=ON",
                 "-DNRN_ENABLE_MODULE_INSTALL=OFF",
                 "-DNRN_ENABLE_REL_RPATH=ON",
-                "-DLINK_AGAINST_PYTHON=OFF",
                 "-DCMAKE_VERBOSE_MAKEFILE=OFF",
                 "-DCORENRN_ENABLE_OPENMP=ON",  # TODO: manylinux portability questions
             ]

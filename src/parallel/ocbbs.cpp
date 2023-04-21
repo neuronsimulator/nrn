@@ -12,6 +12,7 @@
 #include "section.h"
 #include "membfunc.h"
 #include "multicore.h"
+#include "nrnpy.h"
 #include "utils/profile/profiler_interface.h"
 #include <nrnmpi.h>
 #include <errno.h>
@@ -33,10 +34,6 @@ extern int nrn_set_timeout(int timeout);
 extern void nrnmpi_gid_clear(int);
 double nrnmpi_rtcomp_time_;
 extern double nrn_multisend_receive_time(int);
-char* (*nrnpy_po2pickle)(Object*, size_t*);
-Object* (*nrnpy_pickle2po)(char*, size_t);
-char* (*nrnpy_callpicklef)(char*, size_t, int, size_t*);
-Object* (*nrnpympi_alltoall_type)(int, int);
 extern void nrn_prcellstate(int gid, const char* suffix);
 double nrnmpi_step_wait_;
 #if PARANEURON
@@ -127,8 +124,8 @@ static int submit_help(OcBBS* bbs) {
         } else {
             Object* ob = *hoc_objgetarg(i++);
             size_t size;
-            if (nrnpy_po2pickle) {
-                pname = (*nrnpy_po2pickle)(ob, &size);
+            if (neuron::python::methods.po2pickle) {
+                pname = neuron::python::methods.po2pickle(ob, &size);
             }
             if (pname) {
                 style = 3;
@@ -165,9 +162,9 @@ static int submit_help(OcBBS* bbs) {
         if (hoc_is_str_arg(i)) {
             bbs->pkint(0);  // hoc statement style
             bbs->pkstr(gargstr(i));
-        } else if (nrnpy_po2pickle) {
+        } else if (neuron::python::methods.po2pickle) {
             size_t size;
-            pname = (*nrnpy_po2pickle)(*hoc_objgetarg(i), &size);
+            pname = neuron::python::methods.po2pickle(*hoc_objgetarg(i), &size);
             bbs->pkint(3);  // pyfun with no arg style
             bbs->pkpickle(pname, size);
             bbs->pkint(0);  // argtypes
@@ -290,7 +287,7 @@ static void pack_help(int i, OcBBS* bbs) {
             bbs->pkvec(n, px);
         } else {  // must be a PythonObject
             size_t size;
-            char* s = nrnpy_po2pickle(*hoc_objgetarg(i), &size);
+            char* s = neuron::python::methods.po2pickle(*hoc_objgetarg(i), &size);
             bbs->pkpickle(s, size);
             delete[] s;
         }
@@ -376,8 +373,8 @@ static Object** upkpyobj(void* v) {
     OcBBS* bbs = (OcBBS*) v;
     size_t n;
     char* s = bbs->upkpickle(&n);
-    assert(nrnpy_pickle2po);
-    Object* po = (*nrnpy_pickle2po)(s, n);
+    assert(neuron::python::methods.pickle2po);
+    Object* po = neuron::python::methods.pickle2po(s, n);
     delete[] s;
     return hoc_temp_objptr(po);
 }
@@ -388,8 +385,8 @@ static Object** pyret(void* v) {
 }
 Object** BBS::pyret() {
     assert(impl_->pickle_ret_);
-    assert(nrnpy_pickle2po);
-    Object* po = (*nrnpy_pickle2po)(impl_->pickle_ret_, impl_->pickle_ret_size_);
+    assert(neuron::python::methods.pickle2po);
+    Object* po = neuron::python::methods.pickle2po(impl_->pickle_ret_, impl_->pickle_ret_size_);
     delete[] impl_->pickle_ret_;
     impl_->pickle_ret_ = 0;
     impl_->pickle_ret_size_ = 0;
@@ -397,14 +394,14 @@ Object** BBS::pyret() {
 }
 
 static Object** py_alltoall_type(int type) {
-    assert(nrnpympi_alltoall_type);
+    assert(neuron::python::methods.mpi_alltoall_type);
     // for py_gather, py_broadcast, and py_scatter,
     // the second arg refers to the root rank of the operation (default 0)
     int size = 0;
     if (ifarg(2)) {
         size = int(chkarg(2, -1, 2.14748e9));
     }
-    Object* po = (*nrnpympi_alltoall_type)(size, type);
+    Object* po = neuron::python::methods.mpi_alltoall_type(size, type);
     return hoc_temp_objptr(po);
 }
 
@@ -1273,21 +1270,21 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
                     nrnmpi_int_broadcast(&size, 1, 0);
                     nrnmpi_char_broadcast(s, size, 0);
                 }
-                assert(nrnpy_pickle2po);
-                Object* po = nrnpy_pickle2po(s, n);
+                assert(neuron::python::methods.pickle2po);
+                Object* po = neuron::python::methods.pickle2po(s, n);
                 delete[] s;
                 hoc_pushobj(hoc_temp_objptr(po));
             }
         }
         if (style == 3) {
-            assert(nrnpy_callpicklef);
+            assert(neuron::python::methods.call_picklef);
             if (pickle_ret_) {
                 delete[] pickle_ret_;
                 pickle_ret_ = 0;
                 pickle_ret_size_ = 0;
             }
             if (exec) {
-                rs = (*nrnpy_callpicklef)(s, npickle, narg, size);
+                rs = neuron::python::methods.call_picklef(s, npickle, narg, size);
             }
             hoc_ac_ = 0.;
         } else {

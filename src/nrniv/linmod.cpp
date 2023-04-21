@@ -24,9 +24,7 @@
 
 #include <cstdio>
 #include "linmod.h"
-
-extern int (*nrnpy_hoccommand_exec)(Object*);
-
+#include "nrnpy.h"
 
 LinearModelAddition::LinearModelAddition(Matrix* cmat,
                                          Matrix* gmat,
@@ -65,7 +63,7 @@ void LinearModelAddition::f_(Vect& y, Vect& yprime, int size) {
     // has been adjusted by daspk
     // size is the number of equations
     if (f_callable_) {
-        if (!(*nrnpy_hoccommand_exec)(f_callable_)) {
+        if (!neuron::python::methods.hoccommand_exec(f_callable_)) {
             hoc_execerror("LinearModelAddition runtime error", 0);
         }
     }

@@ -813,10 +813,8 @@ static int (*nrnpy_pr_stdoe_callback)(int, char*);
 static int (*nrnpy_pass_callback)();
 
 extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
-    if (nrn_is_python_extension) {
-        nrnpy_pr_stdoe_callback = cbpr_stdoe;
-        nrnpy_pass_callback = cbpass;
-    }
+    nrnpy_pr_stdoe_callback = cbpr_stdoe;
+    nrnpy_pass_callback = cbpass;
 }
 
 void nrnpy_pass() {
