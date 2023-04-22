@@ -3,7 +3,9 @@
 #include "neuron.h"
 #include "ocfunc.h"
 #include "section.h"
+#if HAVE_IV
 #include "ivoc.h"
+#endif
 
 #include <catch2/catch.hpp>
 
@@ -49,11 +51,13 @@ TEST_CASE("Test return code of execerror", "[NEURON][execerror]") {
     REQUIRE(hoc_oc("execerror(\"test error\")") > 0);
 }
 
+#if HAVE_IV
 TEST_CASE("Test Oc::run(cmd)", "[NEURON]") {
     Oc oc;
     REQUIRE(oc.run("foo", 1) == 1);
     REQUIRE(oc.run("foo", 0) == 1);
 }
+#endif
 
 // AddressSanitizer seems to intercept the mallinfo[2]() system calls and return
 // null values from them.
