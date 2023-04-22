@@ -1,7 +1,9 @@
+#include <../../nrnconf.h>
 #include "code.h"
 #include "neuron.h"
 #include "ocfunc.h"
 #include "section.h"
+#include "ivoc.h"
 
 #include <catch2/catch.hpp>
 
@@ -45,6 +47,12 @@ SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
 
 TEST_CASE("Test return code of execerror", "[NEURON][execerror]") {
     REQUIRE(hoc_oc("execerror(\"test error\")") > 0);
+}
+
+TEST_CASE("Test Oc::run(cmd)", "[NEURON]") {
+    Oc oc;
+    REQUIRE(oc.run("foo", 1) == 1);
+    REQUIRE(oc.run("foo", 0) == 1);
 }
 
 // AddressSanitizer seems to intercept the mallinfo[2]() system calls and return
