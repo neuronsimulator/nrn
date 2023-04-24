@@ -26,6 +26,7 @@ fi
 py_ver=""
 
 clone_install_nmodl_requirements() {
+    git config --global --add safe.directory /root/nrn
     git submodule update --init --recursive --force -- external/nmodl
     pip install -r external/nmodl/requirements.txt
 }
