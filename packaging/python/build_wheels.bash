@@ -25,6 +25,12 @@ fi
 
 py_ver=""
 
+clone_install_nmodl_requirements() {
+    git submodule update --init --recursive --force -- external/nmodl
+    pip install -r external/nmodl/requirements.txt
+}
+
+
 setup_venv() {
     local py_bin="$1"
     py_ver=$("$py_bin" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
@@ -76,7 +82,6 @@ build_wheel_linux() {
     echo " - Installing build requirements"
     pip install auditwheel
     pip install -r packaging/python/build_requirements.txt
-    pip install -r external/nmodl/requirements.txt
     pip_numpy_install
 
     echo " - Building..."
@@ -89,6 +94,7 @@ build_wheel_linux() {
 
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
+        clone_install_nmodl_requirements
     elif [ "$2" == "coreneuron-gpu" ]; then
         setup_args="--enable-coreneuron --enable-gpu"
         # nvhpc is required for GPU support but make sure
@@ -101,6 +107,7 @@ build_wheel_linux() {
         # support OpenMP target offload with 60. Wheels use mod2c and
         # OpenACC for now, so we can be a little more generic.
         CMAKE_DEFS="${CMAKE_DEFS},CMAKE_CUDA_ARCHITECTURES=60;70;80,CMAKE_C_FLAGS=-tp=haswell,CMAKE_CXX_FLAGS=-tp=haswell"
+        clone_install_nmodl_requirements
     fi
 
     # Workaround for https://github.com/pypa/manylinux/issues/1309
@@ -139,7 +146,6 @@ build_wheel_osx() {
 
     echo " - Installing build requirements"
     pip install -U delocate -r packaging/python/build_requirements.txt
-    pip install -r external/nmodl/requirements.txt
     pip_numpy_install
 
     echo " - Building..."
@@ -147,6 +153,7 @@ build_wheel_osx() {
 
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
+        clone_install_nmodl_requirements
     elif [ "$2" == "coreneuron-gpu" ]; then
         echo "Error: GPU support on MacOS is not available!"
         exit 1
