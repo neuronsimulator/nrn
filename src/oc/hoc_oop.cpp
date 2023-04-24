@@ -23,6 +23,8 @@ int section_object_seen;
 struct Section* nrn_sec_pop();
 static int connect_obsec_;
 
+#include <utility>
+
 #define PUBLIC_TYPE   1
 #define EXTERNAL_TYPE 2
 static void call_constructor(Object*, Symbol*, int);
