@@ -106,7 +106,7 @@ class ColorValue: public Resource, public Observable {
 
 class Hinton: public Observer, public FastShape {
   public:
-    Hinton(double*, Coord xsize, Coord ysize, ShapeScene*);
+    Hinton(neuron::container::data_handle<double>, Coord xsize, Coord ysize, ShapeScene*);
     virtual ~Hinton();
     virtual void request(Requisition&) const;
     virtual void allocate(Canvas*, const Allocation&, Extension&);
@@ -115,7 +115,7 @@ class Hinton: public Observer, public FastShape {
     virtual void update(Observable*);
 
   private:
-    double* pd_;
+    neuron::container::data_handle<double> pd_{};
     const Color* old_;
     Coord xsize_, ysize_;
     ShapeScene* ss_;

@@ -107,6 +107,34 @@ def test2():  # Graph.xexpr
     return cells
 
 
+def test_Hinton():  # PlotShape.hinton
+    class Net:
+        def __init__(self, netid):
+            self.netid = netid
+            self.cells = [
+                [Cell(i + 10 * j + 100 * netid) for i in range(10)] for j in range(10)
+            ]
+
+    net = [Net(i) for i in range(3)]
+
+    def pnet(net):
+        sl = h.SectionList()  # leave empty so only hinton plot
+        s = h.PlotShape(sl)
+        for i, cellrow in enumerate(net.cells):
+            for j, cell in enumerate(cellrow):
+                s.hinton(cell.soma(0.5)._ref_v, i, j, 1, 1)
+                cell.soma(0.5).v = i / 10.0 + j / 10.0
+
+        s.size(-1, 11, -1, 11)
+        s.scale(0, 2)
+        return s, sl, net
+
+    rval = pnet(net[1])
+
+    return rval  # net[1] is only remaining Net (in rval)
+
+
 if __name__ == "__main__":
     gui = test1()
     cells = test2()
+    net = test_Hinton()
