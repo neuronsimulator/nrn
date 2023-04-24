@@ -212,7 +212,7 @@ void fit_praxis(void) {
 
 void hoc_after_prax_quad(char* s) {
     efun(minarg, nvar);
-    hoc_obj_run(s, hoc_thisobject);
+    hoc_exec_string(s, hoc_thisobject);
 }
 
 void attr_praxis(void) {

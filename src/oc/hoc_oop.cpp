@@ -135,7 +135,6 @@ Objectdata* hoc_objectdata_save(void) {
 Objectdata* hoc_objectdata_restore(Objectdata* obdsav) {
     if (obdsav == (Objectdata*) 1) {
         return hoc_top_level_data;
-        ;
     } else {
         return obdsav;
     }
@@ -305,101 +304,74 @@ void hoc_install_object_data_index(Symbol* sp) {
     }
 }
 
-int hoc_obj_run(const char* cmd, Object* ob) {
-    int err;
-    Object* objsave;
-    Objectdata* obdsave;
-    Symlist* slsave;
-    int osloc;
-    objsave = hoc_thisobject;
-    obdsave = hoc_objectdata_save();
-    slsave = hoc_symlist;
-    osloc = obj_stack_loc;
-
-    if (ob) {
-        if (ob->ctemplate->constructor) {
-            hoc_execerror("Can't execute in a built-in class context", 0);
+namespace {
+struct object_state_helper {
+    object_state_helper(Object* ob) {
+        if (ob && ob->ctemplate->constructor) {
+            hoc_execerror("Can't execute in a built-in class context", nullptr);
         }
-        hoc_thisobject = ob;
-        hoc_objectdata = ob->u.dataspace;
-        hoc_symlist = ob->ctemplate->symtable;
-    } else {
-        hoc_thisobject = 0;
-        hoc_objectdata = hoc_top_level_data;
-        hoc_symlist = hoc_top_level_symlist;
+        m_thisobject = std::exchange(hoc_thisobject, ob);
+        m_objectdata = hoc_objectdata_save();
+        hoc_objectdata = ob ? ob->u.dataspace : hoc_top_level_data;
+        m_symlist = std::exchange(hoc_symlist,
+                                  ob ? ob->ctemplate->symtable : hoc_top_level_symlist);
+        m_stack_loc = obj_stack_loc;
+    }
+    ~object_state_helper() {
+        hoc_thisobject = m_thisobject;
+        hoc_objectdata = hoc_objectdata_restore(m_objectdata);
+        hoc_symlist = m_symlist;
+        obj_stack_loc = m_stack_loc;
     }
 
-    err = hoc_oc(cmd);
+  private:
+    Object* m_thisobject{};
+    Objectdata* m_objectdata{};
+    Symlist* m_symlist{};
+    int m_stack_loc{};
+};
+}  // namespace
 
-    hoc_thisobject = objsave;
-    hoc_objectdata = hoc_objectdata_restore(obdsave);
-    hoc_symlist = slsave;
-    obj_stack_loc = osloc;
-
-    return err;
+int hoc_obj_run(const char* cmd, Object* ob) {
+    object_state_helper _{ob};
+    return hoc_oc(cmd);
 }
 
-void hoc_exec_cmd(void) { /* execute string from top level or within an object context */
-    int err;
-    char* cmd;
-    char buf[256];
-    char* pbuf;
-    Object* ob = 0;
-    HocStr* hs = 0;
-    cmd = gargstr(1);
-    pbuf = buf;
-    auto pbuf_size = 256;
-    if (strlen(cmd) > 256 - 10) {
-        hs = hocstr_create(strlen(cmd) + 10);
-        pbuf = hs->buf;
-        pbuf_size = hs->size + 1;
-    }
+void hoc_exec_string(const char* code, Object* ob) {
+    object_state_helper _{ob};
+    hoc_exec_string(code);
+}
+
+/**
+ * @brief Execute string from top level or within an object context.
+ *
+ * This is the HOC execute command (also h.execute in Python). It does not catch errors and convert
+ * them into non-zero return codes, i.e. `execute("<contains_bugs>")` and `<contains_bugs>` should
+ * be roughly equivalent.
+ *
+ * @todo Make sure this is tested, including its error handling behaviour.
+ */
+void hoc_exec_cmd() {
+    std::string cmd{hoc_gargstr(1)};
+    auto* const ob = ifarg(2) ? *hoc_objgetarg(2) : nullptr;
     if (cmd[0] == '~') {
-        std::snprintf(pbuf, pbuf_size, "%s\n", cmd + 1);
+        // The ~ is invalid syntax; it flags not to wrap in `cmd` in {...}
+        cmd.erase(cmd.begin());
     } else {
-        std::snprintf(pbuf, pbuf_size, "{%s}\n", cmd);
+        cmd.insert(cmd.begin(), '{');
+        cmd.insert(cmd.end(), '}');
     }
-    if (ifarg(2)) {
-        ob = *hoc_objgetarg(2);
-    }
-    err = hoc_obj_run(pbuf, ob);
-    if (err) {
-        hoc_execerror("execute error:", cmd);
-    }
-    if (pbuf != buf) {
-        hocstr_delete(hs);
-    }
-    hoc_ret();
-    pushx((double) (err));
+    cmd.insert(cmd.end(), '\n');
+    // Will throw on error.
+    hoc_exec_string(cmd.c_str(), ob);
+    // We only get this far if we succeeded.
+    hoc_retpushx(0.0);
 }
 
 /* call a function within the context of an object. Args must be on stack */
 double hoc_call_objfunc(Symbol* s, int narg, Object* ob) {
-    double d;  //, hoc_call_func();
-    Object* objsave;
-    Objectdata* obdsave;
-    Symlist* slsave;
-    objsave = hoc_thisobject;
-    obdsave = hoc_objectdata_save();
-    slsave = hoc_symlist;
-
-    if (ob) {
-        hoc_thisobject = ob;
-        hoc_objectdata = ob->u.dataspace;
-        hoc_symlist = ob->ctemplate->symtable;
-    } else {
-        hoc_thisobject = 0;
-        hoc_objectdata = hoc_top_level_data;
-        hoc_symlist = hoc_top_level_symlist;
-    }
-
-    d = hoc_call_func(s, narg);
-
-    hoc_thisobject = objsave;
-    hoc_objectdata = hoc_objectdata_restore(obdsave);
-    hoc_symlist = slsave;
-
-    return d;
+    object_state_helper _{ob};
+    return hoc_call_func(s, narg);
 }
 
 void hoc_oop_initaftererror(void) {

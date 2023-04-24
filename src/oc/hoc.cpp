@@ -19,6 +19,7 @@
 #include "../nrniv/backtrace_utils.h"
 
 #include <condition_variable>
+#include <csignal>
 #include <mutex>
 #include <thread>
 #include <utility>
@@ -635,7 +636,6 @@ void hoc_show_errmess_always(void) {
 }
 
 int hoc_execerror_messages;
-int nrn_try_catch_nest_depth{0};
 int yystart;
 
 void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from run-time error */
@@ -662,7 +662,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
         IGNORE(nrn_fw_fseek(hoc_fin, 0L, 2)); /* flush rest of file */
     }
 
-    // If the exception is due to a multiple ^C interrupt, then onintr
+    // If the exception is due to a multiple ^C interrupt, then hoc_onintr
     // will not exit normally (because of the throw below) and the signal
     // would remain in a SIG_BLOCK state.
     // It is not clear to me if this would be better done in every catch.
@@ -691,13 +691,16 @@ void hoc_execerror(const char* s, const char* t) /* recover from run-time error 
     hoc_execerror_mes(s, t, hoc_execerror_messages);
 }
 
-RETSIGTYPE onintr(int sig) /* catch interrupt */
-{
-    /*ARGSUSED*/
+/**
+ * @brief SIGINT handler.
+ */
+RETSIGTYPE hoc_onintr(int sig) {
     stoprun = 1;
-    if (hoc_intset++)
-        execerror("interrupted", (char*) 0);
-    IGNORE(signal(SIGINT, onintr));
+    // It is no longer safe to call hoc_execerror here, because that throws a C++ exception, which
+    // cannot safely be done from a signal handler.
+    ++hoc_intset;
+    // Re-install ourself as the SIGINT handler.
+    std::signal(SIGINT, hoc_onintr);
 }
 
 #if DOS
@@ -905,7 +908,6 @@ static int hoc_run1();
 
 // hoc6
 int hoc_main1(int argc, const char** argv, const char** envp) {
-    int exit_status = EXIT_SUCCESS;
 #ifdef WIN32
     extern void hoc_set_unhandled_exception_filter();
     hoc_set_unhandled_exception_filter();
@@ -960,6 +962,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
             --gargc;
         }
         // If we pass multiple HOC files to special then this loop runs once for each one of them
+        int exit_status = EXIT_SUCCESS;
         while (hoc_moreinput()) {
             exit_status = hoc_run1();
             if (exit_status) {
@@ -1222,7 +1225,7 @@ typedef RETSIGTYPE (*SignalType)(int);
 static SignalType signals[4];
 
 static void set_signals(void) {
-    signals[0] = signal(SIGINT, onintr);
+    signals[0] = signal(SIGINT, hoc_onintr);
     signals[1] = signal(SIGFPE, fpecatch);
 #if HAVE_SIGSEGV
     signals[2] = signal(SIGSEGV, sigsegvcatch);
@@ -1246,9 +1249,13 @@ static void restore_signals(void) {
 struct signal_handler_guard {
     signal_handler_guard() {
         set_signals();
+        hoc_intset = 0;
     }
     ~signal_handler_guard() {
         restore_signals();
+        if (std::exchange(hoc_intset, 0)) {
+            hoc_execerror("interrupt caught", nullptr);
+        }
     }
 };
 
@@ -1274,44 +1281,27 @@ static int hoc_run1() {
     auto* const sav_fin = hoc_fin;
     hoc_pipeflag = 0;
     hoc_execerror_messages = 1;
-    auto const loop_body = []() {
-        hoc_initcode();
-        if (!hoc_yyparse()) {
-            if (hoc_intset) {
-                hoc_execerror("interrupted", nullptr);
+    for (;;) {
+        try {
+            // Activate NEURON's signal handlers. For interrupt handling, the destructor of this helper will
+            // check hoc_intset and call hoc_execerror if it is set (i.e. if ^C was encountered during the
+            // lifetime of the helper).
+            signal_handler_guard _{};
+            hoc_initcode();
+            if (!hoc_yyparse()) {
+                break;
             }
-            return false;
-        }
-        hoc_execute(hoc_progbase);
-        return true;
-    };
-    if (nrn_try_catch_nest_depth) {
-        // This is not the most shallowly nested call to hoc_run1(), allow the
-        // most shallowly nested call to handle exceptions.
-        while (loop_body())
-            ;
-    } else {
-        // This is the most shallowly nested call to hoc_run1(), handle exceptions.
-        signal_handler_guard _{};  // install signal handlers
-        try_catch_depth_increment tell_children_we_will_catch{};
-        hoc_intset = 0;
-        for (;;) {
-            try {
-                if (!loop_body()) {
-                    break;
-                }
-            } catch (std::exception const& e) {
-                hoc_fin = sav_fin;
-                std::cerr << "hoc_run1: caught exception";
-                std::string_view what{e.what()};
-                if (!what.empty()) {
-                    std::cerr << ": " << what;
-                }
-                std::cerr << std::endl;
-                // Exit if we're not in interactive mode
-                if (!nrn_fw_eq(hoc_fin, stdin)) {
-                    return EXIT_FAILURE;
-                }
+            hoc_execute(hoc_progbase);
+        } catch (std::exception const& e) {
+            hoc_fin = sav_fin;
+            std::cerr << "hoc_run1: caught exception";
+            if (std::string_view what = e.what(); !what.empty()) {
+                std::cerr << ": " << what;
+            }
+            std::cerr << std::endl;
+            // Exit if we're not in interactive mode
+            if (!nrn_fw_eq(hoc_fin, stdin)) {
+                return EXIT_FAILURE;
             }
         }
     }
@@ -1380,45 +1370,70 @@ void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
     fin = i4;
 }
 
+template <bool catch_errors>
+static std::conditional_t<catch_errors, int, void> hoc_oc_impl(const char* buf, std::ostream* os) {
+    // Reset the line number, which gets incremented in hoc_get_line.
+    hoc_lineno = 0;
+    // hoc_pipeflag == 3 implies that hoc_get_line reads using nrn_inputbuf_getline, which reads
+    // from nrn_inputbufptr and writes to hoc_cbufstr->buf. When the function exits and the
+    // *_manager variables are restored, the old values of hoc_pipeflag and nrn_inputbufptr will be
+    // restored.
+    auto const pipeflag_manager = temporarily_change{hoc_pipeflag, 3};
+    auto const inputbufptr_manager = temporarily_change{nrn_inputbufptr, buf};
+    // Make space in the internal buffer hoc_cbufstr
+    hocstr_resize(hoc_cbufstr, std::strlen(buf) + 10);
+    // Read nrn_inputbufptr (== buf) into hoc_cbufstr (why?)
+    nrn_inputbuf_getline();
+    // Start looping through the input, which may be multiple HOC statements
+    while (*hoc_ctp || *nrn_inputbufptr) {
+        // Activate NEURON's signal handlers. For interrupt handling, the destructor of this helper will
+        // check hoc_intset and call hoc_execerror if it is set (i.e. if ^C was encountered during the
+        // lifetime of the helper).
+        signal_handler_guard _{};
+        if constexpr (catch_errors) {
+            try {
+                hoc_ParseExec(yystart);
+            } catch (std::exception const& e) {
+                if (os) {
+                    *os << "hoc_oc caught";
+                    if (std::string_view what = e.what(); !what.empty()) {
+                        *os << ": " << what;
+                    }
+                    *os << std::endl;
+                }
+                // re-initialise things (??)
+                hoc_initcode();
+                return 1;
+            }
+        } else {
+            hoc_ParseExec(yystart);
+        }
+    }
+    // Revert to messages being printed to stderr.
+    hoc_execerror_messages = 1;
+    if constexpr (catch_errors) {
+        return 0;
+    }
+}
+
+/**
+ * @brief Execute a string of HOC code, print errors to stderr.
+ * @param buf Null-terminated string to execute.
+ * @return 0 on success, 1 on error.
+ *
+ * The return value indicates success/failure/invalidity of the HOC code in `buf`. Other errors will
+ * be raised as exceptions. If hoc_execerror_messages is zero, no output is printed.
+ */
 int hoc_oc(const char* buf) {
-    return hoc_oc(buf, std::cerr);
+    return hoc_oc_impl<true>(buf, hoc_execerror_messages ? &std::cerr : nullptr);
+}
+
+void hoc_exec_string(const char* buf) {
+    hoc_oc_impl<false>(buf, nullptr);
 }
 
 int hoc_oc(const char* buf, std::ostream& os) {
-    // the substantive code to execute, everything else is to do with handling
-    // errors here or elsewhere
-    auto const kernel = [buf]() {
-        hoc_intset = 0;
-        hocstr_resize(hoc_cbufstr, strlen(buf) + 10);
-        nrn_inputbuf_getline();
-        while (*hoc_ctp || *nrn_inputbufptr) {
-            hoc_ParseExec(yystart);
-            if (hoc_intset) {
-                hoc_execerror("interrupted", nullptr);
-            }
-        }
-    };
-    auto const lineno_manager = temporarily_change{hoc_lineno, 1};
-    auto const pipeflag_manager = temporarily_change{hoc_pipeflag, 3};
-    auto const inputbufptr_manager = temporarily_change{nrn_inputbufptr, buf};
-    if (nrn_try_catch_nest_depth) {
-        // Someone else is responsible for catching errors
-        kernel();
-    } else {
-        // This is the highest level try/catch
-        try_catch_depth_increment tell_children_we_will_catch{};
-        try {
-            signal_handler_guard _{};
-            kernel();
-        } catch (std::exception const& e) {
-            os << "hoc_oc caught exception: " << e.what() << std::endl;
-            hoc_initcode();
-            hoc_intset = 0;
-            return 1;
-        }
-    }
-    hoc_execerror_messages = 1;
-    return 0;
+    return hoc_oc_impl<true>(buf, &os);
 }
 
 void warning(const char* s, const char* t) /* print warning message */

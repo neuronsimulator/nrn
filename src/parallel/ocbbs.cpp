@@ -1160,7 +1160,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
             nrnmpi_int_broadcast(&size, 1, 0);
             nrnmpi_char_broadcast(s, size, 0);
         }
-        hoc_obj_run(s, nil);
+        hoc_exec_string(s, nullptr);
         delete[] s;
         break;
     default: {

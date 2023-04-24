@@ -136,7 +136,6 @@ static OptionDesc options[] = {{"-dismissbutton", "*dismiss_button", OptionValue
                                {NULL}};
 #endif  // HAVE_IV
 
-extern int hoc_obj_run(const char*, Object*);
 extern int nrn_istty_;
 extern int nrn_nobanner_;
 extern void hoc_final_exit();

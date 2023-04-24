@@ -109,7 +109,6 @@ struct saved_state {
 
 bool OcJump::execute(Inst* p) {
     saved_state before{};
-    try_catch_depth_increment tell_children_we_will_catch{};
     try {
         hoc_execute(p);
         return true;
@@ -121,9 +120,8 @@ bool OcJump::execute(Inst* p) {
 
 bool OcJump::execute(const char* stmt, Object* ob) {
     saved_state before{};
-    try_catch_depth_increment tell_children_we_will_catch{};
     try {
-        hoc_obj_run(stmt, ob);
+        hoc_exec_string(stmt, ob);
         return true;
     } catch (...) {
         before.restore();
@@ -133,7 +131,6 @@ bool OcJump::execute(const char* stmt, Object* ob) {
 
 void* OcJump::fpycall(void* (*f)(void*, void*), void* a, void* b) {
     saved_state before{};
-    try_catch_depth_increment tell_children_we_will_catch{};
     try {
         return (*f)(a, b);
     } catch (...) {

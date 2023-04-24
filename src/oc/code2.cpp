@@ -709,20 +709,12 @@ void hoc_pointer(void) {
 }
 
 double* hoc_val_pointer(const char* s) {
-    char buf[BUFSIZ];
+    std::string code{"{hoc_pointer_(&"};
+    code.append(s);
+    code.append(")}\n");
     hoc_varpointer = 0;
-    if (strlen(s) > BUFSIZ - 20) {
-        HocStr* buf;
-        buf = hocstr_create(strlen(s) + 20);
-        std::snprintf(buf->buf, buf->size + 1, "{hoc_pointer_(&%s)}\n", s);
-        auto const code = hoc_oc(buf->buf);
-        assert(code == 0);
-        hocstr_delete(buf);
-    } else {
-        Sprintf(buf, "{hoc_pointer_(&%s)}\n", s);
-        auto const code = hoc_oc(buf);
-        assert(code == 0);
-    }
+    // will throw e.g. if `code` is invalid
+    hoc_exec_string(code.c_str());
     return hoc_varpointer;
 }
 

@@ -1038,18 +1038,13 @@ Prop* nrn_mechanism(int type, Node* nd) {
 /*returns prop given mech type, section, and inode */
 /* error if mech not at this position */
 Prop* nrn_mechanism_check(int type, Section* sec, int inode) {
-    Prop* m;
-    m = nrn_mechanism(type, sec->pnode[inode]);
-    if (!m) {
-        if (hoc_execerror_messages) {
-            Fprintf(stderr,
-                    "%s mechanism not inserted in section %s\n",
-                    memb_func[type].sym->name,
-                    secname(sec));
-        }
-        hoc_execerror("", (char*) 0);
+    if (auto* const m = nrn_mechanism(type, sec->pnode[inode]); m) {
+        return m;
     }
-    return m;
+    std::string err{memb_func[type].sym->name};
+    err.append(" mechanism not inserted in section ");
+    err.append(secname(sec));
+    hoc_execerror(err.c_str(), nullptr);
 }
 
 Prop* hoc_getdata_range(int type) {

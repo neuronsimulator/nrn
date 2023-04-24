@@ -124,13 +124,6 @@ double* vector_vec(IvocVect*);
 
 extern int nrnignore;
 
-/**
- * \brief Brief explanation of hoc_obj_run
- *
- * Detailed explanation of hoc_obj_run goes here.
- */
-int hoc_obj_run(const char*, Object*);
-
 int hoc_argtype(int);
 int hoc_is_double_arg(int);
 int hoc_is_pdouble_arg(int);
@@ -291,8 +284,61 @@ int hoc_saveaudit();
 void hoc_close_plot();
 void ivoc_cleanup();
 void ivoc_final_exit();
-[[nodiscard]] int hoc_oc(const char*);
-[[nodiscard]] int hoc_oc(const char*, std::ostream& os);
+
+// Several variants on the theme of "execute the HOC code in this string", which differ in their
+// error handling:
+// * hoc_oc and hoc_obj_run return status codes
+// * hoc_exec_string allows exceptions triggered in the code to propagate out
+
+/**
+ * @brief Execute HOC code, returning whether or not it was valid.
+ * @param code Code to execute.
+ * @returns 0 on sucess, 1 on error.
+ *
+ * Errors are printed to std::cerr. The return code indicates success/failure/invalidity of the HOC
+ * code in @ref code. Any other errors will be raised as exceptions.
+ */
+[[nodiscard]] int hoc_oc(const char* code);
+
+/**
+ * @brief Execute HOC code, returning whether or not it was valid.
+ * @param code Null-terminated code to execute.
+ * @param os Output stream to print errors to in case of error (1 returned)
+ * @returns 0 on sucess, 1 on error.
+ *
+ * The return code indicates success/failure/invalidity of the HOC code in @ref code. Any other
+ * errors will be raised as exceptions.
+ */
+[[nodiscard]] int hoc_oc(const char* code, std::ostream& os);
+
+/**
+ * @brief Execute HOC code in a given object context, return status.
+ * @param code Null-terminated code to execute.
+ * @param ob Object whose context to execute the code inside.
+ * @returns 0 on sucess, 1 on error.
+ */
+[[nodiscard]] int hoc_obj_run(const char* code, Object* ob);
+
+/**
+ * @brief Execute HOC code, throw on error.
+ * @param code Null-terminated code to execute.
+ *
+ * This is intended to be a low-level way of executing HOC code, where error handling is not going
+ * to take place in the immediate caller. If an error is encountered (say, a syntax error) then
+ * hoc_execerror will be called and an exception of type neuron::oc::runtime_error will be thrown,
+ * which will propagate out of this function.
+ */
+void hoc_exec_string(const char* code);
+
+/**
+ * @brief Execute HOC code in a given object context, throw on error.
+ * @param code Null-terminated code to execute.
+ * @param ob Object whose context to execute the code inside.
+ *
+ * See the description of @ref hoc_exec_string(const char* code).
+ */
+void hoc_exec_string(const char* code, Object* ob);
+
 void hoc_initcode();
 int hoc_ParseExec(int);
 int hoc_get_line();
