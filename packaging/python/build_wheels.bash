@@ -96,6 +96,7 @@ build_wheel_linux() {
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
         clone_install_nmodl_requirements
+        CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
     elif [ "$2" == "coreneuron-gpu" ]; then
         setup_args="--enable-coreneuron --enable-gpu"
         # nvhpc is required for GPU support but make sure
