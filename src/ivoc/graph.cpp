@@ -1369,7 +1369,7 @@ Graph::Graph(bool b)
     : Scene(0, 0, XSCENE, YSCENE) {
     loc_ = 0;
     x_expr_ = NULL;
-    x_pval_ = NULL;
+    x_pval_ = {};
     var_name_ = NULL;
     rvp_ = NULL;
     cross_action_ = NULL;
@@ -1940,12 +1940,12 @@ void Graph::x_expr(const char* expr, bool usepointer) {
         hoc_execerror(expr, "not an expression");
     }
     if (usepointer) {
-        x_pval_ = hoc_val_pointer(expr);
+        x_pval_ = hoc_val_handle(expr);
         if (!x_pval_) {
             hoc_execerror(expr, "is invalid left hand side of assignment statement");
         }
     } else {
-        x_pval_ = 0;
+        x_pval_ = {};
     }
 }
 

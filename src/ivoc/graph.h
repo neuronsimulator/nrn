@@ -190,7 +190,7 @@ class Graph: public Scene {  // Scene of GraphLines labels and polylines
     bool vector_copy_;
 
     Symbol* x_expr_;
-    double* x_pval_;
+    neuron::container::data_handle<double> x_pval_;
 
     GraphVector* rvp_;
     static std::ostream* ascii_;
