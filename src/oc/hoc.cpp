@@ -38,10 +38,6 @@ void (*p_nrnpython_finalize)();
 int nrn_inpython_;
 int (*p_nrnpy_pyrun)(const char* fname);
 
-#if 0 /* defined by cmake if rl_event_hook is not available */
-#define use_rl_getc_function
-#endif
-
 #if defined(MINGW)
 extern int stdin_event_ready();
 #endif
@@ -703,6 +699,19 @@ RETSIGTYPE hoc_onintr(int sig) {
     std::signal(SIGINT, hoc_onintr);
 }
 
+/**
+ * @brief Promote a recent SIGINT into a hoc_execerror.
+ * @todo Make hoc_intset atomic, add appropriate fences to hoc_onintr?
+ *
+ * We cannot call hoc_execerror from hoc_onintr, so we intermittently call this method to check for
+ * a recent call to hoc_onintr. This function leaves hoc_intset = 0
+ */
+static void check_intset() {
+    if (std::exchange(hoc_intset, 0)) {
+        hoc_execerror("SIGINT [^C]", nullptr);
+    }
+}
+
 #if DOS
 #include <float.h>
 #endif
@@ -1249,13 +1258,9 @@ static void restore_signals(void) {
 struct signal_handler_guard {
     signal_handler_guard() {
         set_signals();
-        hoc_intset = 0;
     }
     ~signal_handler_guard() {
         restore_signals();
-        if (std::exchange(hoc_intset, 0)) {
-            hoc_execerror("interrupt caught", nullptr);
-        }
     }
 };
 
@@ -1281,19 +1286,23 @@ static int hoc_run1() {
     auto* const sav_fin = hoc_fin;
     hoc_pipeflag = 0;
     hoc_execerror_messages = 1;
+    // Activate NEURON's signal handlers.
+    signal_handler_guard _{};
     for (;;) {
+        check_intset();
         try {
-            // Activate NEURON's signal handlers. For interrupt handling, the destructor of this helper will
-            // check hoc_intset and call hoc_execerror if it is set (i.e. if ^C was encountered during the
-            // lifetime of the helper).
-            signal_handler_guard _{};
             hoc_initcode();
+            check_intset();
             if (!hoc_yyparse()) {
+                // Happens at least on ^D from the interactive prompt.
                 break;
             }
+            check_intset();
             hoc_execute(hoc_progbase);
+            check_intset();
         } catch (std::exception const& e) {
             hoc_fin = sav_fin;
+            hoc_intset = 0;
             std::cerr << "hoc_run1: caught exception";
             if (std::string_view what = e.what(); !what.empty()) {
                 std::cerr << ": " << what;
@@ -1384,12 +1393,12 @@ static std::conditional_t<catch_errors, int, void> hoc_oc_impl(const char* buf, 
     hocstr_resize(hoc_cbufstr, std::strlen(buf) + 10);
     // Read nrn_inputbufptr (== buf) into hoc_cbufstr (why?)
     nrn_inputbuf_getline();
+    // Activate NEURON's signal handlers.
+    signal_handler_guard _{};
     // Start looping through the input, which may be multiple HOC statements
     while (*hoc_ctp || *nrn_inputbufptr) {
-        // Activate NEURON's signal handlers. For interrupt handling, the destructor of this helper will
-        // check hoc_intset and call hoc_execerror if it is set (i.e. if ^C was encountered during the
-        // lifetime of the helper).
-        signal_handler_guard _{};
+        // See if we recently received SIGINT
+        check_intset();
         if constexpr (catch_errors) {
             try {
                 hoc_ParseExec(yystart);
@@ -1408,6 +1417,9 @@ static std::conditional_t<catch_errors, int, void> hoc_oc_impl(const char* buf, 
         } else {
             hoc_ParseExec(yystart);
         }
+        // Check for SIGINT again. The intent is that when catch_errors == true then SIGINT results
+        // in an exception leaving this function, not a return value of 1.
+        check_intset();
     }
     // Revert to messages being printed to stderr.
     hoc_execerror_messages = 1;
