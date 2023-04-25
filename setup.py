@@ -257,6 +257,7 @@ class CMakeAugmentedBuilder(build_ext):
         env = os.environ.copy()
         if Components.CORENRN:
             from external.nmodl.pywheel.shim.find_libpython import find_libpython
+
             os.environ["NMODL_PYLIB"] = find_libpython()
         env["CXXFLAGS"] = "{} -DVERSION_INFO='{}'".format(
             env.get("CXXFLAGS", ""), self.distribution.get_version()
