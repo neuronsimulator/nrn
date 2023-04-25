@@ -177,7 +177,7 @@ static void eqn_side(int lhs) {
 
     init_access();
     do_equation = 1;
-    execute(savepc);
+    hoc_execute(savepc);
     do_equation = 0;
 
     if (lhs) {
@@ -189,7 +189,7 @@ static void eqn_side(int lhs) {
     rhs[row] -= f0;
     for (i = var_access; i > 0; i = hoc_access[i]) {
         *varble[i] += Delta;
-        execute(savepc);
+        hoc_execute(savepc);
         *varble[i] -= Delta;
         if (lhs) {
             f1 = xpop();

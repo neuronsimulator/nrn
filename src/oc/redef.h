@@ -52,7 +52,6 @@
 #define errcheck           hoc_errcheck
 #define eval               hoc_eval
 #define execerror          hoc_execerror
-#define execute            hoc_execute
 #define fin                hoc_fin
 #define follow             hoc_follow
 #define forcode            hoc_forcode

@@ -684,7 +684,7 @@ int hoc_xopen_run(Symbol* sp, const char* str) { /*recursively parse and execute
 
     if (sp == (Symbol*) 0) {
         for (rinitcode(); hoc_yyparse(); rinitcode())
-            execute(progbase);
+            hoc_execute(progbase);
     } else {
         int savpipeflag;
         rinitcode();
@@ -986,10 +986,10 @@ void forcode(void) {
     int isec;
 
     isec = nrn_isecstack();
-    execute(savepc + 3); /* condition */
+    hoc_execute(savepc + 3); /* condition */
     d = hoc_xpop();
     while (d) {
-        execute(relative(savepc)); /* body */
+        hoc_execute(relative(savepc)); /* body */
         if (hoc_returning) {
             nrn_secstack(isec);
         }
@@ -1001,9 +1001,9 @@ void forcode(void) {
             break;
         } else /* continue */
             hoc_returning = 0;
-        if ((savepc + 2)->i)               /* diff between while and for */
-            execute(relative(savepc + 2)); /* increment */
-        execute(savepc + 3);
+        if ((savepc + 2)->i)                   /* diff between while and for */
+            hoc_execute(relative(savepc + 2)); /* increment */
+        hoc_execute(savepc + 3);
         d = hoc_xpop();
     }
     if (!hoc_returning)
@@ -1066,7 +1066,7 @@ void hoc_shortfor(void) {
     }
     isec = nrn_isecstack();
     for (*pval = begin; *pval <= end; *pval += 1.) {
-        execute(relative(savepc));
+        hoc_execute(relative(savepc));
         if (hoc_returning) {
             nrn_secstack(isec);
         }
@@ -1163,7 +1163,7 @@ void hoc_iterator_stmt() {
 
     pcsav = pc;
     isec = nrn_isecstack();
-    execute(iter_f->iter_stmt_begin);
+    hoc_execute(iter_f->iter_stmt_begin);
     pc = pcsav;
     hoc_objectdata = hoc_objectdata_restore(obdsav);
     hoc_thisobject = obsav;
@@ -1246,7 +1246,7 @@ static void for_segment2(Symbol* sym, int mode) {
                 }
                 *pval = 1.;
             }
-            execute(relative(savepc));
+            hoc_execute(relative(savepc));
             if (hoc_returning) {
                 nrn_secstack(isec);
             }
@@ -1287,12 +1287,12 @@ void ifcode(void) {
     double d;
     Inst* savepc = pc; /* then part */
 
-    execute(savepc + 3); /* condition */
+    hoc_execute(savepc + 3); /* condition */
     d = hoc_xpop();
     if (d)
-        execute(relative(savepc));
+        hoc_execute(relative(savepc));
     else if ((savepc + 1)->i) /* else part? */
-        execute(relative(savepc + 1));
+        hoc_execute(relative(savepc + 1));
     if (!hoc_returning)
         pc = relative(savepc + 2); /* next stmt */
 }
@@ -1441,13 +1441,13 @@ void hoc_call() {
             hoc_thisobject = 0;
             hoc_symlist = hoc_top_level_symlist;
 
-            execute(sp->u.u_proc->defn.in);
+            hoc_execute(sp->u.u_proc->defn.in);
 
             hoc_objectdata = hoc_objectdata_restore(odsav);
             hoc_thisobject = obsav;
             hoc_symlist = slsav;
         } else {
-            execute(sp->u.u_proc->defn.in);
+            hoc_execute(sp->u.u_proc->defn.in);
         }
         /* the autoobject pointers were unreffed at the ret() */
 
@@ -2577,8 +2577,8 @@ void insertcode(Inst* begin, Inst* end, Pfrv f) {
 static int ntimes;
 #endif
 
-void execute(Inst* p) /* run the machine */
-{
+// run the machine
+void hoc_execute(Inst* p) {
     Inst* pcsav;
 
     BBSPOLL
