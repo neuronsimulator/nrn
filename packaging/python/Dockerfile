@@ -68,6 +68,12 @@ RUN cd /nrnwheel/readline/lib \
     && ar cq libreadline.a *.o \
     && rm *.o
 
+RUN curl -L -o Python-3.10.0.tar.gz https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz \
+    && tar -xvzf Python-3.10.0.tar.gz \
+    && cd Python-3.10.0 \
+    && ./configure --prefix=/nrnwheel/python --enable-shared=on --with-static-libpython=no \
+    && make -j altinstall
+
 ENV PATH /nrnwheel/openmpi/bin:$PATH
 RUN yum -y install epel-release libX11-devel libXcomposite-devel vim-enhanced
 RUN yum -y remove ncurses-devel
