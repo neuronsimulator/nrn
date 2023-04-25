@@ -12,6 +12,7 @@
 #include "nrnpy.h"
 #include "nrnfilewrap.h"
 #include "ocfunc.h"
+#include "ocjump.h"
 
 
 #define PDEBUG 0
@@ -335,13 +336,7 @@ struct object_state_helper {
 }  // namespace
 
 int hoc_obj_run(const char* cmd, Object* ob) {
-    object_state_helper _{ob};
-    return hoc_oc(cmd);
-}
-
-void hoc_exec_string(const char* code, Object* ob) {
-    object_state_helper _{ob};
-    hoc_exec_string(code);
+    return !OcJump::execute(cmd, ob);
 }
 
 /**
@@ -365,13 +360,14 @@ void hoc_exec_cmd() {
     }
     cmd.insert(cmd.end(), '\n');
     // Will throw on error.
-    hoc_exec_string(cmd.c_str(), ob);
+    OcJump::execute_unchecked(cmd.c_str(), ob);
     // We only get this far if we succeeded.
     hoc_retpushx(0.0);
 }
 
 /* call a function within the context of an object. Args must be on stack */
 double hoc_call_objfunc(Symbol* s, int narg, Object* ob) {
+    // TODO redirect this via OcJump?
     object_state_helper _{ob};
     return hoc_call_func(s, narg);
 }

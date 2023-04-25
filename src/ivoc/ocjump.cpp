@@ -1,9 +1,9 @@
+#include "ocjump.h"
 #include <../../nrnconf.h>
 
 #include "nrnfilewrap.h"
 #include "nrnoc2iv.h"
 #include "ocfunc.h"
-#include "ocjump.h"
 #if HAVE_IV
 #include "ivoc.h"
 #endif
@@ -105,12 +105,19 @@ struct saved_state {
     int cc1{};
     int cc2{};
 };
+
+// There are typically at least two threads using the HOC state machine: the main thread and the GUI
+// thread. The GUI thread repeatedly calls doNotify. This mutex is intended to provide a last line
+// of defence against race conditions between the two.
+std::recursive_mutex hoc_mutex{};
 }  // namespace
 
 bool OcJump::execute(Inst* p) {
+    std::lock_guard const _{hoc_mutex};
     saved_state before{};
     try {
         hoc_execute(p);
+        // TODO: check that restoring would be a no-op here? Or nearly-a-no-op?
         return true;
     } catch (...) {
         before.restore();
@@ -118,21 +125,93 @@ bool OcJump::execute(Inst* p) {
     }
 }
 
-bool OcJump::execute(const char* stmt, Object* ob) {
+void OcJump::execute_unchecked(const char* code) {
+    std::lock_guard const _{hoc_mutex};
     saved_state before{};
     try {
-        hoc_exec_string(stmt, ob);
-        return true;
+        hoc_exec_string(code);
+        // TODO: check that restoring would be a no-op here? Or nearly-a-no-op?
     } catch (...) {
         before.restore();
+        throw;
+    }
+}
+
+void OcJump::execute_unchecked(const char* code, Object* ob) {
+    std::lock_guard const _{hoc_mutex};
+    saved_state before{};
+    ObjectContext _ctx{ob};
+    try {
+        hoc_exec_string(code);
+        // TODO: check that restoring would be a no-op here? Or nearly-a-no-op?
+    } catch (...) {
+        before.restore();
+        throw;
+    }
+}
+
+bool OcJump::execute(const char* stmt, std::ostream* os) {
+    std::lock_guard const _{hoc_mutex};
+    saved_state before{};
+    try {
+        hoc_exec_string(stmt);
+        // TODO: check that restoring would be a no-op here? Or nearly-a-no-op?
+        return true;
+    } catch (std::exception const& e) {
+        before.restore();
+        if (os) {
+            *os << "OcJump::execute caught";
+            if (std::string_view what = e.what(); !what.empty()) {
+                *os << ": " << what;
+            }
+            *os << std::endl;
+        }
+        return false;
+    } catch (...) {
+        before.restore();
+        if (os) {
+            *os << "OcJump::execute caught";
+            *os << std::endl;
+        }
+        return false;
+    }
+}
+
+bool OcJump::execute(const char* stmt, Object* ob, std::ostream* os) {
+    std::lock_guard const _{hoc_mutex};
+    saved_state before{};
+    ObjectContext _ctx{ob};
+    try {
+        hoc_exec_string(stmt);
+        // TODO: check that restoring would be a no-op here? Or nearly-a-no-op?
+        return true;
+    } catch (std::exception const& e) {
+        before.restore();
+        if (os) {
+            *os << "OcJump::execute caught";
+            if (std::string_view what = e.what(); !what.empty()) {
+                *os << ": " << what;
+            }
+            *os << std::endl;
+        }
+        return false;
+    } catch (...) {
+        before.restore();
+        if (os) {
+            *os << "OcJump::execute caught";
+            *os << std::endl;
+        }
         return false;
     }
 }
 
 void* OcJump::fpycall(void* (*f)(void*, void*), void* a, void* b) {
+    std::lock_guard const _{hoc_mutex};
     saved_state before{};
     try {
-        return (*f)(a, b);
+        auto* const ret = f(a, b);
+        // TODO: check that restoring would be a no-op here? Or nearly-a-no-op?
+        return ret;
     } catch (...) {
         before.restore();
         throw;
@@ -140,6 +219,9 @@ void* OcJump::fpycall(void* (*f)(void*, void*), void* a, void* b) {
 }
 
 ObjectContext::ObjectContext(Object* obj) {
+    if (obj && obj->ctemplate->constructor) {
+        hoc_execerror("Can't execute in a built-in class context", nullptr);
+    }
     oc_save_hoc_oop(&a1, &a2, &a4, &a5);
     hoc_thisobject = obj;
     if (obj) {

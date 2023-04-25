@@ -330,15 +330,6 @@ void ivoc_final_exit();
  */
 void hoc_exec_string(const char* code);
 
-/**
- * @brief Execute HOC code in a given object context, throw on error.
- * @param code Null-terminated code to execute.
- * @param ob Object whose context to execute the code inside.
- *
- * See the description of @ref hoc_exec_string(const char* code).
- */
-void hoc_exec_string(const char* code, Object* ob);
-
 void hoc_initcode();
 int hoc_ParseExec(int);
 int hoc_get_line();

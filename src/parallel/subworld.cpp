@@ -27,7 +27,8 @@ void BBSImpl::subworld_worker_execute() {
         nrnmpi_int_broadcast(&size, 1, 0);  // includes terminator
         char* s = new char[size];
         nrnmpi_char_broadcast(s, size, 0);
-        hoc_exec_string(s, nullptr);
+        // Throws on error
+        OcJump::execute_unchecked(s, nullptr /* no Object context */);
         delete[] s;
         // printf("%d leave subworld_worker_execute\n", nrnmpi_myid_world);
         return;

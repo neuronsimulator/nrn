@@ -1368,19 +1368,30 @@ static void nrn_inputbuf_getline(void) {
 // used by ocjump.cpp
 void oc_save_input_info(const char** i1, int* i2, int* i3, NrnFILEWrap** i4) {
     *i1 = nrn_inputbufptr;
-    *i2 = pipeflag;
-    *i3 = lineno;
-    *i4 = fin;
+    *i2 = hoc_pipeflag;
+    *i3 = hoc_lineno;
+    *i4 = hoc_fin;
 }
 void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
     nrn_inputbufptr = i1;
-    pipeflag = i2;
-    lineno = i3;
-    fin = i4;
+    hoc_pipeflag = i2;
+    hoc_lineno = i3;
+    hoc_fin = i4;
 }
 
-template <bool catch_errors>
-static std::conditional_t<catch_errors, int, void> hoc_oc_impl(const char* buf, std::ostream* os) {
+/**
+ * @brief Execute a string of HOC code, print errors to stderr.
+ * @param buf Null-terminated string to execute.
+ * @return 0 on success, 1 on error.
+ *
+ * The return value indicates success/failure/invalidity of the HOC code in `buf`. Other errors will
+ * be raised as exceptions. If hoc_execerror_messages is zero, no output is printed.
+ */
+int hoc_oc(const char* buf) {
+    return !OcJump::execute(buf, hoc_execerror_messages ? &std::cerr : nullptr);
+}
+
+void hoc_exec_string(const char* buf) {
     // Reset the line number, which gets incremented in hoc_get_line.
     hoc_lineno = 0;
     // hoc_pipeflag == 3 implies that hoc_get_line reads using nrn_inputbuf_getline, which reads
@@ -1399,23 +1410,13 @@ static std::conditional_t<catch_errors, int, void> hoc_oc_impl(const char* buf, 
     while (*hoc_ctp || *nrn_inputbufptr) {
         // See if we recently received SIGINT
         check_intset();
-        if constexpr (catch_errors) {
-            try {
-                hoc_ParseExec(yystart);
-            } catch (std::exception const& e) {
-                if (os) {
-                    *os << "hoc_oc caught";
-                    if (std::string_view what = e.what(); !what.empty()) {
-                        *os << ": " << what;
-                    }
-                    *os << std::endl;
-                }
-                // re-initialise things (??)
-                hoc_initcode();
-                return 1;
-            }
-        } else {
+        try {
             hoc_ParseExec(yystart);
+        } catch (std::exception const& e) {
+            // re-initialise things, this destroys the HOC stack
+            // probably what we actually want to do is restore the stack as it was before hoc_ParseExec?
+            //hoc_initcode();
+            throw;
         }
         // Check for SIGINT again. The intent is that when catch_errors == true then SIGINT results
         // in an exception leaving this function, not a return value of 1.
@@ -1423,29 +1424,10 @@ static std::conditional_t<catch_errors, int, void> hoc_oc_impl(const char* buf, 
     }
     // Revert to messages being printed to stderr.
     hoc_execerror_messages = 1;
-    if constexpr (catch_errors) {
-        return 0;
-    }
-}
-
-/**
- * @brief Execute a string of HOC code, print errors to stderr.
- * @param buf Null-terminated string to execute.
- * @return 0 on success, 1 on error.
- *
- * The return value indicates success/failure/invalidity of the HOC code in `buf`. Other errors will
- * be raised as exceptions. If hoc_execerror_messages is zero, no output is printed.
- */
-int hoc_oc(const char* buf) {
-    return hoc_oc_impl<true>(buf, hoc_execerror_messages ? &std::cerr : nullptr);
-}
-
-void hoc_exec_string(const char* buf) {
-    hoc_oc_impl<false>(buf, nullptr);
 }
 
 int hoc_oc(const char* buf, std::ostream& os) {
-    return hoc_oc_impl<true>(buf, &os);
+    return !OcJump::execute(buf, &os);
 }
 
 void warning(const char* s, const char* t) /* print warning message */

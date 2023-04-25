@@ -2,15 +2,18 @@
 /* /local/src/master/nrn/src/oc/code2.cpp,v 1.12 1999/06/08 17:48:26 hines Exp */
 
 #include "hoc.h"
-#include "hocstr.h"
-#include "parse.hpp"
 #include "hocparse.h"
+#include "hocstr.h"
+#include "nrnfilewrap.h"
+#include "ocjump.h"
+#include "parse.hpp"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
 #include <errno.h>
-#include "nrnfilewrap.h"
+
 #include <cstring>
 
 
@@ -714,7 +717,7 @@ double* hoc_val_pointer(const char* s) {
     code.append(")}\n");
     hoc_varpointer = 0;
     // will throw e.g. if `code` is invalid
-    hoc_exec_string(code.c_str());
+    OcJump::execute_unchecked(code.c_str());
     return hoc_varpointer;
 }
 
