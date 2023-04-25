@@ -80,14 +80,14 @@ Inst* prog_parse_recover; /* start after parse error */
 int hoc_returning;        /* 1 if return stmt seen, 2 if break, 3 if continue */
 /* 4 if stop */
 namespace nrn::oc {
-struct frame {             /* proc/func call stack frame */
-    Symbol* sp;            /* symbol table entry */
-    Inst* retpc;           /* where to resume after return */
-    StackDatum* argn;      /* n-th argument on stack */
-    int nargs;             /* number of arguments */
-    Inst* iter_stmt_begin; /* Iterator statement starts here */
-    Object* iter_stmt_ob;  /* context of Iterator statement */
-    Object* ob;            /* for stack frame debug message */
+struct frame {               /* proc/func call stack frame */
+    Symbol* sp{};            /* symbol table entry */
+    Inst* retpc{};           /* where to resume after return */
+    StackDatum* argn{};      /* n-th argument on stack */
+    int nargs{};             /* number of arguments */
+    Inst* iter_stmt_begin{}; /* Iterator statement starts here */
+    Object* iter_stmt_ob{};  /* context of Iterator statement */
+    Object* ob{};            /* for stack frame debug message */
 };
 }  // namespace nrn::oc
 using Frame = nrn::oc::frame;
@@ -428,7 +428,7 @@ void hoc_init_space() {
     }
     stack.reserve(hoc_nstack);
     progp = progbase = prog = (Inst*) emalloc(sizeof(Inst) * NPROG);
-    fp = frame = (Frame*) emalloc(sizeof(Frame) * hoc_nframe);
+    fp = frame = new Frame[hoc_nframe]{};
     framelast = frame + hoc_nframe;
     hoc_temp_obj_pool_ = (Object**) emalloc(sizeof(Object*) * TOBJ_POOL_SIZE);
 }
