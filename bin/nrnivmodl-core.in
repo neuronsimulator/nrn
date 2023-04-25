@@ -45,7 +45,7 @@ while getopts "n:m:a:d:i:l:Vp:r:b:h" OPT; do
         # suffix for mechanism library
         params_MECHLIB_SUFFIX="$OPTARG";;
     m)
-        # nmodl or mod2c binary to use
+        # nmodl binary to use
         params_NMODL_BINARY="$OPTARG";;
     a)
         # additional nmodl flags to be used

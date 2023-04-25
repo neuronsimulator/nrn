@@ -14,7 +14,7 @@ from sysconfig import get_config_vars, get_config_var
 
 
 def _customize_compiler(compiler):
-    """Do platform-sepcific customizations of compilers on unix platforms."""
+    """Do platform-specific customizations of compilers on unix platforms."""
     if compiler.compiler_type == "unix":
         (cc, cxx, cflags) = get_config_vars("CC", "CXX", "CFLAGS")
         if "CC" in os.environ:

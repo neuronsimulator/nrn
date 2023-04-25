@@ -83,13 +83,10 @@ CXX_SHARED_LIB_CMD = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ 
 # env variables required for mod2c or nmodl
 NMODL_ENV_VAR = @CORENRN_SANITIZER_ENABLE_ENVIRONMENT_STRING@ PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@:${CORENRN_LIB_DIR}/python MODLUNIT=$(CORENRN_SHARE_NMODL_DIR)/nrnunits.lib
 
-# nmodl options
-ifeq (@CORENRN_ENABLE_NMODL@, ON)
-    ifeq (@CORENRN_ENABLE_GPU@, ON)
-        nmodl_arguments_c=@NMODL_ACC_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
-    else
-        nmodl_arguments_c=@NMODL_CPU_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
-    endif
+ifeq (@CORENRN_ENABLE_GPU@, ON)
+    nmodl_arguments_c=@NMODL_ACC_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
+else
+    nmodl_arguments_c=@NMODL_CPU_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
 endif
 
 # name of the mechanism library with suffix if provided
@@ -110,7 +107,7 @@ else
     corenrnmech_lib_target = coremech_lib_shared
 endif
 
-# Binary of MOD2C/NMODL depending on CMake option activated
+# Binary of NMODL depending on CMake option activated
 ifeq (@nmodl_FOUND@, TRUE)
     NMODL_BINARY_PATH = $(if $(NMODL_BINARY),$(NMODL_BINARY), @CORENRN_NMODL_BINARY@)
     INCLUDES += -I@CORENRN_NMODL_INCLUDE@
@@ -146,9 +143,7 @@ C_RESET := \033[0m
 C_GREEN := \033[32m
 
 # Default nmodl flags. Override if NMODL_RUNTIME_FLAGS is not empty
-ifeq (@CORENRN_ENABLE_NMODL@, ON)
-    NMODL_FLAGS_C = $(if $(NMODL_RUNTIME_FLAGS),$(NMODL_RUNTIME_FLAGS),$(nmodl_arguments_c))
-endif
+NMODL_FLAGS_C = $(if $(NMODL_RUNTIME_FLAGS),$(NMODL_RUNTIME_FLAGS),$(nmodl_arguments_c))
 
 $(info Default NMODL flags: @nmodl_arguments_c@)
 

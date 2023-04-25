@@ -241,7 +241,7 @@ class CMakeAugmentedBuilder(build_ext):
             "-DPYTHON_EXECUTABLE=" + sys.executable,
             "-DCMAKE_BUILD_TYPE=" + cfg,
         ] + ext.cmake_flags
-        # RTD neds quick config
+        # RTD needs quick config
         if self.docs and os.environ.get("READTHEDOCS"):
             cmake_args = ["-DNRN_ENABLE_MPI=OFF", "-DNRN_ENABLE_INTERVIEWS=OFF"]
         if self.docs:

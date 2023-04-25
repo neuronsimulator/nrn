@@ -255,9 +255,6 @@ else()
 endif()
 list(APPEND CORENRN_COMPILE_DEFS CORENEURON_USE_LEGACY_UNITS=${CORENRN_USE_LEGACY_UNITS})
 # Propagate Legacy Units flag to backends.
-set(MOD2C_ENABLE_LEGACY_UNITS
-    ${CORENRN_ENABLE_LEGACY_UNITS}
-    CACHE BOOL "" FORCE)
 set(NMODL_ENABLE_LEGACY_UNITS
     ${CORENRN_ENABLE_LEGACY_UNITS}
     CACHE BOOL "" FORCE)
@@ -732,7 +729,7 @@ install(
   PATTERN "*.ipp")
 install(FILES ${MODFUNC_PERL_SCRIPT} ${ENGINEMECH_CODE_FILE} DESTINATION share/coreneuron)
 
-# copy mod2c/nmodl for nrnivmodl-core
+# copy nmodl for nrnivmodl-core
 install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION bin)
 
 # install nrniv-core app
