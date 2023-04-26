@@ -519,3 +519,14 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         }
     }
 }
+
+// Tests that cover code paths reaching std::terminate. "[.]" means they will not run by default,
+// [tests_that_abort] means we have a tag to run them with.
+TEST_CASE("Deleting a row from a frozen SoA container causes a fatal error",
+          "[.][tests_that_abort]") {
+    auto& node_data = neuron::model().node_data();           // SoA data store
+    std::optional<::Node> node{std::in_place};               // take ownership of a row in node_data
+    REQUIRE(node_data.size() == 1);                          // quick sanity check
+    auto const sorted_token = node_data.get_sorted_token();  // mark node_data frozen
+    node.reset();  // Node destructor will trigger a call to std::terminate.
+}
