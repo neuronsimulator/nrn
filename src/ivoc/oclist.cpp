@@ -12,9 +12,7 @@
 #include <InterViews/adjust.h>
 #include <InterViews/hit.h>
 #include "ocglyph.h"
-#if !MAC
 #include "checkpnt.h"
-#endif
 #include "apwindow.h"
 #include "ocbrowsr.h"
 #include "objcmd.h"
@@ -457,7 +455,7 @@ OcList::~OcList() {
 }
 
 static int l_chkpt(void** vp) {
-#if HAVE_IV && !MAC
+#if HAVE_IV
     OcList* o;
     Checkpoint& chk = *Checkpoint::instance();
     if (chk.out()) {

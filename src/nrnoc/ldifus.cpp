@@ -46,23 +46,6 @@ void hoc_register_ldifus1(ldifusfunc_t f) {
     ++ldifusfunccnt;
 }
 
-#if MAC
-/* this avoids a missing _ptrgl12 in the mac library that was called by
-the MrC compiled object
-*/
-void mac_difusfunc(ldifusfunc2_t* f,
-                   int m,
-                   ldifusfunc3_t diffunc,
-                   void** v,
-                   int ai,
-                   int sindex,
-                   int dindex,
-                   NrnThread* nt) {
-    (*f)(m, diffunc, v, ai, sindex, dindex, nt);
-}
-#endif
-
-
 extern "C" void nrn_tree_solve(double* a, double* d, double* b, double* rhs, int* pindex, int n) {
     /*
         treesolver

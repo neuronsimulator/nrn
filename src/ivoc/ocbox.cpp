@@ -774,13 +774,8 @@ void OcBox::save(std::ostream& o) {
 #endif
                 window()->save_left(),
                 window()->save_bottom(),
-#if MAC
-                window()->canvas()->width(),
-                window()->canvas()->height());
-#else
                 window()->width(),
                 window()->height());
-#endif
         o << buf << std::endl;
     } else {
         o << "ocbox_.map()\n}" << std::endl;

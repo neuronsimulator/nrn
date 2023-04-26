@@ -20,21 +20,6 @@ extern char* neuron_home;
 NrnFILEWrap* frin;
 FILE* fout;
 
-#if 0 && MAC
-#include <stdarg.h>
-
-void debugfile(const char* format, ...) {
-	va_list args;
-	static FILE* df;
-	if (!df) {
-		df = fopen("debugfile", "w");
-	}
-	va_start(args, format);
-	vfprintf(df, format, args);
-	fflush(df);
-}
-#endif
-
 void hoc_stdout(void) {
     static int prev = -1;
     if (ifarg(1)) {
@@ -159,39 +144,6 @@ const char* expand_env_var(const char* s) {
         }
     }
     *cp2 = '\0';
-#if MAC && !defined(DARWIN)
-    /* convert / to : */
-    for (cp1 = hs->buf + begin; *cp1; ++cp1) {
-        if (*cp1 == '/') {
-            *cp1 = ':';
-        }
-    }
-    /* if a : in the original name then assume already mac and done */
-    /* if $ in original name then done since NEURONHOME already has correct prefix */
-    /* if first is : then remove it, otherwise prepend it */
-    if (!strchr(s, ':') && !strchr(s, '$')) {
-        if (hs->buf[begin] == ':') {
-            begin = 2;
-        } else {
-            begin = 0;
-            hs->buf[0] = ':';
-        }
-    }
-    for (cp1 = hs->buf + begin, cp2 = cp1; *cp1;) {
-        if (cp1[0] == ':' && cp1[1] == '.') {
-            if (cp1[2] == ':') {
-                cp1 += 2;
-                continue;
-            } else if (cp1[2] == '.' && cp1[3] == ':') {
-                cp1 += 3;
-                *cp2++ = ':';
-                continue;
-            }
-        }
-        *cp2++ = *cp1++;
-    }
-    *cp2 = '\0';
-#endif
     return hs->buf + begin;
 }
 
@@ -232,11 +184,7 @@ int hoc_xopen1(const char* name, const char* rcs) {
     errno = EINTR;
     while (errno == EINTR) {
         errno = 0;
-#if MAC
-        constexpr auto mode_str = "rb";
-#else
         constexpr auto mode_str = "r";
-#endif
         if (!(hoc_fin = nrn_fw_fopen(fname.c_str(), mode_str))) {
             fname = expand_env_var(fname.c_str());
             if (!(hoc_fin = nrn_fw_fopen(fname.c_str(), mode_str))) {
@@ -524,7 +472,7 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
     *ppbuf = hs->buf;
 }
 
-#if defined(WIN32) || defined(MAC)
+#if defined(WIN32)
 static FILE* oc_popen(char* cmd, char* type) {
     FILE* fp;
     char buf[1024];
@@ -668,7 +616,6 @@ static int hoc_Load_file(int always, const char* name) {
         path[0] = '\0';
         /* otherwise find the file in the default directories */
         f = fopen(base, "r"); /* cwd */
-#if !MAC
         if (!f) { /* try HOC_LIBRARY_PATH */
             char* hlp;
             hlp = getenv("HOC_LIBRARY_PATH");
@@ -700,7 +647,6 @@ static int hoc_Load_file(int always, const char* name) {
                 }
             }
         }
-#endif
         if (!f) { /* try NEURONHOME/lib/hoc */
             Sprintf(path, "$(NEURONHOME)/lib/hoc");
             assert(strlen(path) + strlen(base) + 1 < hoc_load_file_size_);
@@ -770,23 +716,16 @@ void hoc_getcwd(void) {
     { strcpy(buf, hoc_back2forward(buf)); }
 #endif
     len = strlen(buf);
-#if defined(MAC)
-    if (buf[len - 1] != ':') {
-        buf[len] = ':';
-        buf[len + 1] = '\0';
-    }
-#else
     if (buf[len - 1] != '/') {
         buf[len] = '/';
         buf[len + 1] = '\0';
     }
-#endif
     hoc_ret();
     hoc_pushstr(&buf);
 }
 
 void hoc_machine_name(void) {
-#if !defined(WIN32) && !defined(MAC)
+#if !defined(WIN32)
     /*----- functions called -----*/
     /*----- local  variables -----*/
     char buf[20];

@@ -141,7 +141,7 @@ const char* unit_str();
 extern const char* decode_units(Symbol*);
 
 extern List
-#if HAVE_STDARG_H || MAC
+#if HAVE_STDARG_H
 		*makelist(int narg, ...),
 		*itemarray(int narg, ...),	/* item  ITEMARRAY, array of item pointers */
 #else
@@ -240,7 +240,7 @@ using neuron::Sprintf;
 
 /* model.h,v
  * Revision 1.2  1997/11/24  16:19:13  hines
- * modlunit port to MAC (not complete)
+ * modlunit port to mac (not complete)
  *
  * Revision 1.1.1.1  1994/10/12  17:22:45  hines
  * NEURON 3.0 distribution

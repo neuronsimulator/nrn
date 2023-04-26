@@ -7,17 +7,13 @@
 
 extern const char* neuron_home;
 
-#if MAC
-char hoc_console_buffer[256];
-#endif
-
 #if defined(WIN32)
 void* cvode_pmem;
 extern void setneuronhome(const char*);
 #endif
 
 static void setnrnhome(const char* arg) {
-#if !defined(WIN32) && !defined(MAC)
+#if !defined(WIN32))
     /*
      Gary Holt's first pass at this was:
 
@@ -45,15 +41,8 @@ static void setnrnhome(const char* arg) {
 
 int main(int argc, const char** argv, const char** envp) {
     int err;
-#if MAC
-    int our_argc = 1;
-    char* our_argv[1];
-    our_argv[0] = "Neuron";
-    err = hoc_main1(our_argc, our_argv, envp);
-#else
     setnrnhome(argv[0]);
     err = hoc_main1(argc, argv, envp);
-#endif
     if (!err) {
         hoc_final_exit();
     }
