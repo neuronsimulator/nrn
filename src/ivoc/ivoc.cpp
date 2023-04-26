@@ -9,6 +9,7 @@
 #include "ocfunc.h"
 #include "ocnotify.h"
 #include "oc_ansi.h"
+#include "ocjump.h"
 
 #if HAVE_IV
 #include "utility.h"
@@ -318,8 +319,25 @@ int Oc::run(int argc, const char** argv) {
 }
 
 int Oc::run(const char* buf, bool show_err_mes) {
+    int hem = hoc_execerror_messages;
     hoc_execerror_messages = show_err_mes;
-    return hoc_oc(buf);
+    int err{};
+    try_catch_depth_increment tell_children_we_will_catch{};
+    try {
+        err = hoc_oc(buf);
+    } catch (std::exception const& e) {
+        if (show_err_mes) {
+            std::cerr << "Oc::run: caught exception";
+            std::string_view what{e.what()};
+            if (!what.empty()) {
+                std::cerr << ": " << what;
+            }
+            std::cerr << std::endl;
+        }
+        err = 1;
+    }
+    hoc_execerror_messages = hem;
+    return err;
 }
 
 Symbol* Oc::parseExpr(const char* expr, Symlist** ps) {
