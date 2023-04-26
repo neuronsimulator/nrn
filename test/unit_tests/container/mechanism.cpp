@@ -192,4 +192,39 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
             }
         }
     }
+    GIVEN("A mechanism type that gets deleted") {
+        std::vector<Variable> field_info{{"foo", 1}};  // one scalar variable
+        constexpr auto foo_index = 0;
+        constexpr auto foo_value = 29.0;
+        // Register the storage with neuron::model() because we want to cover codepaths in the
+        // pretty-printing
+        auto const mech_type = 0;
+        neuron::model().delete_mechanism(mech_type);
+        auto& mech_data = neuron::model().add_mechanism(mech_type, "test_mechanism", field_info);
+        REQUIRE(mech_data.get_tag<field::FloatingPoint>().num_variables() == 1);
+        WHEN("A row is added and we take a handle to its value") {
+            std::optional<owning_handle> instance{std::in_place, mech_data};
+            instance->fpfield(foo_index) = foo_value;
+            auto foo_handle = instance->fpfield_handle(foo_index);
+            THEN("The handle yields the expected value") {
+                REQUIRE(*foo_handle == foo_value);
+            }
+            AND_WHEN("The row is deleted again") {
+                instance.reset();
+                THEN("We can still print the handle") {
+                    std::ostringstream oss;
+                    oss << foo_handle;
+                    REQUIRE(oss.str() == "data_handle<double>{cont=test_mechanism foo died/0}");
+                }
+                AND_WHEN("The mechanism type is also deleted") {
+                    neuron::model().delete_mechanism(mech_type);
+                    THEN("We can still print the handle, following an unusual codepath") {
+                        std::ostringstream oss;
+                        oss << foo_handle;
+                        REQUIRE(oss.str() == "data_handle<double>{cont=unknown died/unknown}");
+                    }
+                }
+            }
+        }
+    }
 }
