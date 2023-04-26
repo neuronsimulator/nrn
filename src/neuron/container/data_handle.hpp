@@ -74,11 +74,6 @@ struct data_handle {
         auto needle = utils::find_data_handle(raw_ptr);
         if (needle) {
             *this = std::move(needle);
-            if (!m_offset) {
-                std::ostringstream oss;
-                oss << *this << " invalid data_handle(T*)";
-                throw std::runtime_error(oss.str());
-            }
         } else {
             // If that didn't work, just save the plain pointer value. This is unsafe
             // and should be removed. It is purely meant as an intermediate step, if

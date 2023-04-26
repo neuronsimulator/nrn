@@ -156,7 +156,6 @@ struct generic_data_handle {
         }
         if constexpr (std::is_same_v<T, void>) {
             // This branch is needed to avoid forming references-to-void if T=void.
-            throw_error(" should not be in modern mode because it is referring to void");
         } else {
             // A real and still-valid data handle
             assert(m_container);
