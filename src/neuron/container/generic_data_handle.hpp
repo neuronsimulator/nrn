@@ -148,19 +148,21 @@ struct generic_data_handle {
             // constructor from trying to find the raw pointer in the NEURON data structures.
             return {do_not_search, static_cast<T*>(m_container)};
         }
-        if (m_offset.was_once_valid()) {
-            // This used to be a valid data handle, but it has since been
-            // invalidated. Invalid data handles never become valid again, so we
-            // can safely produce a "fully null" data_handle<T>.
-            return {};
+        // Nothing after here is reachable with T=void, as data_handle<void> is always either null
+        // or in backwards-compatibility mode. the branch structure has been chosen to try and
+        // minimise compiler warnings and maximise reported coverage...
+        if constexpr (!std::is_same_v<T, void>) {
+            if (!m_offset.was_once_valid()) {
+                // A real and still-valid data handle. This cannot be instantiated with T=void
+                // because data_handle<void> does not have a 4-argument constructor.
+                assert(m_container);
+                return {m_offset, static_cast<T* const*>(m_container), m_array_dim, m_array_index};
+            }
         }
-        if constexpr (std::is_same_v<T, void>) {
-            // This branch is needed to avoid forming references-to-void if T=void.
-        } else {
-            // A real and still-valid data handle
-            assert(m_container);
-            return {m_offset, static_cast<T* const*>(m_container), m_array_dim, m_array_index};
-        }
+        // Reaching here should mean T != void && was_once_valid == true, i.e. this used to be a
+        // valid data handle, but it has since been invalidated. Invalid data handles never become
+        // valid again, so we can safely produce a "fully null" data_handle<T>.
+        return {};
     }
 
     /** @brief Explicit conversion to any T.
