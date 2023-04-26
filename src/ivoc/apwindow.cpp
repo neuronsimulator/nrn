@@ -241,7 +241,7 @@ void DismissableWindow::name(const char* s) {
         {
             SetWindowText(hw, s);
         }
-    } else
+    }
 #endif
     if (style()) {
         style()->attribute("name", s);

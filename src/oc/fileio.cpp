@@ -616,7 +616,7 @@ static int hoc_Load_file(int always, const char* name) {
         path[0] = '\0';
         /* otherwise find the file in the default directories */
         f = fopen(base, "r"); /* cwd */
-        if (!f) { /* try HOC_LIBRARY_PATH */
+        if (!f) {             /* try HOC_LIBRARY_PATH */
             char* hlp;
             hlp = getenv("HOC_LIBRARY_PATH");
             while (hlp && *hlp) {

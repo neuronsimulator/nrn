@@ -138,6 +138,7 @@ class HocItem: public Resource {
     const char* getStr();
     virtual void help(const char* childpath = NULL);
     virtual void help_parent(HocItem*);
+
   private:
     CopyString str_;
     HocItem* help_parent_;
@@ -148,6 +149,7 @@ class HocPushButton: public HocItem {
     HocPushButton(const char*, HocAction*, HocItem* parent = NULL);
     virtual ~HocPushButton();
     virtual void write(std::ostream&);
+
   private:
     HocAction* a_;
 };
@@ -157,6 +159,7 @@ class HocRadioButton: public HocItem {
     HocRadioButton(const char*, HocRadioAction*, HocItem* parent = NULL);
     virtual ~HocRadioButton();
     virtual void write(std::ostream&);
+
   private:
     HocRadioAction* a_;
 };
@@ -172,6 +175,7 @@ class HocMenu: public HocItem {
     virtual MenuItem* item() {
         return mi_;
     }
+
   private:
     MenuItem* mi_;
     Menu* menu_;

@@ -1744,12 +1744,12 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
                 return EOF;
             }
         }
-#else // READLINE
+#else  // READLINE
 #if INTERVIEWS
         if (nrn_fw_eq(fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
             run_til_stdin());
         }
-#endif // INTERVIEWS
+#endif  // INTERVIEWS
 #if defined(WIN32)
         if (nrn_fw_eq(fin, stdin)) {
             if (gets(cbuf) == (char*) 0) {
@@ -1758,13 +1758,13 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
             }
             strcat(cbuf, "\n");
         } else
-#endif // WIN32
+#endif  // WIN32
         {
             if (hoc_fgets_unlimited(hoc_cbufstr, fin) == (char*) 0) {
                 return EOF;
             }
         }
-#endif // READLINE
+#endif  // READLINE
     }
     errno = 0;
     lineno++;
