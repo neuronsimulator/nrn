@@ -1209,9 +1209,15 @@ int hoc_moreinput() {
         }
         strcpy(hoc_xopen_file_, infile);
         // This is, unfortunately rather implicitly, how we trigger execution of HOC files on a
-        // commandline like `nrniv a.hoc b.hoc`
+        // commandline like `nrniv a.hoc b.hoc`. To make HOC treatment similar to Python treatment
+        // we would pass hoc_xopen_file_ here, which would imply that nrnpython("...") inside
+        // test.hoc sees sys.path[0] == "/dir/" when we run `nrniv /dir/test.hoc`, however it seems
+        // that legacy models (183300) assume that sys.path[0] == '' in this context, so we stick
+        // with that. There is no particular reason to follow Python conventions when launching HOC
+        // scripts, in contrast to Python scripts where we strive to make `nrniv foo.py` and
+        // `python foo.py` behave in the same way.
         if (neuron::python::methods.interpreter_set_path) {
-            neuron::python::methods.interpreter_set_path(hoc_xopen_file_);
+            neuron::python::methods.interpreter_set_path({});
         }
     }
     return 1;
