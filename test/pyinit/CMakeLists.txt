@@ -233,11 +233,13 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
       SCRIPT_PATTERNS check_sys_attr.py dump_sys_attr.py)
     # Replicate this with nrnpython(...) inside a .hoc script too. This checks that the Python
     # environment inside nrnpython(...) inside foo.hoc is the same as in foo.py -- which seems like
-    # a reasonable choice.
+    # a reasonable choice -- except for path, which has an explicit exception documented in (for
+    # now) hoc_moreinput -- there nrnpython(...) inside foo.hoc sees sys.path[0] == '' for backward
+    # compatibility reasons.
     nrn_add_test(
       GROUP pyinit
       NAME ${nrnivpy}_nrnpython_check_sys_${attr}
-      PRECOMMAND "${pyexe}" dump_sys_attr.py ref.json ${attr}
+      PRECOMMAND "${pyexe}" dump_sys_attr.py override_sys_path_0_to_be_empty ref.json ${attr}
       COMMAND nrniv ${nrniv_args} -c "strdef attr, fname" -c "attr=\"${attr}\"" -c
               "fname=\"ref.json\"" check_sys_attr.hoc
       SCRIPT_PATTERNS check_sys_attr.hoc dump_sys_attr.py)
