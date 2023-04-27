@@ -1,5 +1,6 @@
 #include "membfunc.h"
 #include "neuron/container/generic_data_handle.hpp"
+#include "neuron/container/soa_container.hpp"
 #include "neuron/model_data.hpp"
 #include "section.h"
 
@@ -14,6 +15,21 @@ void invalidate_cache() {
 namespace neuron {
 Model::Model() {
     m_node_data.set_unsorted_callback(invalidate_cache);
+    // needs some re-organisation if we ever want to support multiple Model instances
+    assert(!container::detail::defer_delete_storage);
+    container::detail::defer_delete_storage = &m_ptrs_for_deferred_deletion;
+    assert(!container::detail::identifier_defer_delete_storage);
+    container::detail::identifier_defer_delete_storage = &m_identifier_ptrs_for_deferred_deletion;
+}
+Model::~Model() {
+    assert(container::detail::identifier_defer_delete_storage ==
+           &m_identifier_ptrs_for_deferred_deletion);
+    container::detail::identifier_defer_delete_storage = nullptr;
+    assert(container::detail::defer_delete_storage == &m_ptrs_for_deferred_deletion);
+    container::detail::defer_delete_storage = nullptr;
+    std::for_each(m_ptrs_for_deferred_deletion.begin(),
+                  m_ptrs_for_deferred_deletion.end(),
+                  [](void* ptr) { operator delete[](ptr); });
 }
 std::unique_ptr<container::utils::storage_info> Model::find_container_info(void const* cont) const {
     if (auto maybe_info = m_node_data.find_container_info(cont); maybe_info) {
@@ -78,7 +94,9 @@ std::ostream& operator<<(std::ostream& os, generic_data_handle const& dh) {
 }  // namespace neuron::container
 namespace neuron::container::detail {
 // See neuron/container/soa_identifier.hpp
-std::vector<std::unique_ptr<std::size_t>> garbage;
+std::vector<std::unique_ptr<std::size_t>>* identifier_defer_delete_storage{};
+// See neuron/container/soa_container.hpp
+std::vector<void*>* defer_delete_storage{};
 }  // namespace neuron::container::detail
 namespace neuron::container::Mechanism {
 storage::storage(short mech_type, std::string name, std::vector<Variable> floating_point_fields)

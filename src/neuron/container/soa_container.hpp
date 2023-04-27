@@ -149,6 +149,26 @@ void check_permutation_vector(Rng const& range, std::size_t size) {
 
 enum struct may_cause_reallocation { Yes, No };
 
+extern std::vector<void*>* defer_delete_storage;
+
+/**
+ * @brief Storage for safe deletion of soa<...> containers.
+ *
+ * This is intended to prevent deleting an instance of a soa<...>-based container from invalidating
+ * any existing data handles, by keeping certain (small) values alive. Deleting these containers is
+ * probably not common (e.g. deleting a mechanism type), and only small bookkeeping-related values
+ * have to be kept alive. Generally defer_delete_storage is non-null for the lifetime of the top
+ * level Model structure, and the Model destructor deallocates (using delete[]) the pointers that
+ * are stored inside defer_delete_storage.
+ */
+template <typename T>
+void defer_delete(std::unique_ptr<T[]> data) {
+    static_assert(std::is_trivially_destructible_v<T>, "defer_delete does not call destructors");
+    if (defer_delete_storage) {
+        defer_delete_storage->push_back(data.release());
+    }
+}
+
 template <typename, bool has_num_variables>
 struct field_data {};
 
@@ -177,10 +197,10 @@ struct field_data<Tag, true> {
     static_assert(has_num_variables_v<Tag>);
     field_data(Tag tag)
         : m_tag{std::move(tag)}
-        , m_storage{m_tag.num_variables()} {
-        auto const num = m_tag.num_variables();
-        m_data_ptrs.reserve(num);
+        , m_storage{m_tag.num_variables()}
+        , m_data_ptrs{std::make_unique<data_type*[]>(m_tag.num_variables())} {
         update_data_ptr_storage();
+        auto const num = m_tag.num_variables();
         m_array_dims.reserve(num);
         m_array_dim_prefix_sums.reserve(num);
         for (auto i = 0; i < m_tag.num_variables(); ++i) {
@@ -189,6 +209,11 @@ struct field_data<Tag, true> {
                 (m_array_dim_prefix_sums.empty() ? 0 : m_array_dim_prefix_sums.back()) +
                 m_array_dims.back());
         }
+    }
+
+    ~field_data() {
+        // An unknown number of data_handle<T> in the wild may be holding references to m_data_ptrs
+        defer_delete(std::move(m_data_ptrs));
     }
 
     /**
@@ -238,7 +263,7 @@ struct field_data<Tag, true> {
      * This is mainly intended for use in neuron::cache::MechanismRange and friends.
      */
     [[nodiscard]] data_type* const* data_ptrs() const {
-        return m_data_ptrs.data();
+        return m_data_ptrs.get();
     }
 
     /**
@@ -283,13 +308,9 @@ struct field_data<Tag, true> {
 
   private:
     void update_data_ptr_storage() {
-        auto* const old_data_ptrs = m_data_ptrs.data();
-        m_data_ptrs.clear();
-        std::transform(m_storage.begin(),
-                       m_storage.end(),
-                       std::back_inserter(m_data_ptrs),
-                       [](auto& vec) { return vec.data(); });
-        assert(old_data_ptrs == m_data_ptrs.data());
+        std::transform(m_storage.begin(), m_storage.end(), m_data_ptrs.get(), [](auto& vec) {
+            return vec.data();
+        });
     }
     /**
      * @brief Tag type instance.
@@ -319,15 +340,16 @@ struct field_data<Tag, true> {
 
     /**
      * @brief Storage where we maintain an up-to-date cache of .data() pointers from m_storage.
-     * @invariant @c m_storage.size() is equal to @c m_data_ptrs.size()
+     * @invariant @c m_data_ptrs contains @c m_storage.size() elements
      * @invariant @c m_storage[i].data() is equal to @c m_data_ptrs[i] for all @c i.
      *
      * This is useful because it allows @c data_handle<T> to store something like @c T** instead of
      * having to store something like @c std::vector<T>*, which avoids hardcoding unnecessary
      * details about the allocator and so on, and allows @c cache::MechanismRange to similarly have
-     * a C-like interface.
+     * a C-like interface. Because @c data_handle<T> remembers references to this, we cannot free
+     * it when the container is destroyed (e.g. when a mechanism type is deleted).
      */
-    std::vector<data_type*> m_data_ptrs;
+    std::unique_ptr<data_type*[]> m_data_ptrs;
 
     /**
      * @brief Array dimensions of the data associated with @c Tag.
@@ -361,7 +383,15 @@ struct field_data<Tag, false> {
     static_assert(!has_num_variables_v<Tag>);
     field_data(Tag tag)
         : m_tag{std::move(tag)}
-        , m_array_dim{get_array_dimension(m_tag)} {}
+        , m_array_dim{get_array_dimension(m_tag)}
+        , m_data_ptr{std::make_unique<data_type*[]>(1)} {
+        m_data_ptr[0] = m_storage.data();
+    }
+
+    ~field_data() {
+        // An unknown number of data_handle<T> in the wild may be holding references to m_data_ptr
+        defer_delete(std::move(m_data_ptr));
+    }
 
     /**
      * @brief Return a reference to the tag instance.
@@ -374,7 +404,7 @@ struct field_data<Tag, false> {
     void for_all_vectors(Callable const& callable) {
         callable(m_tag, m_storage, -1, m_array_dim);
         if constexpr (might_reallocate == may_cause_reallocation::Yes) {
-            m_data_ptr = m_storage.data();
+            m_data_ptr[0] = m_storage.data();
         }
     }
 
@@ -384,7 +414,7 @@ struct field_data<Tag, false> {
     }
 
     [[nodiscard]] data_type* const* data_ptrs() const {
-        return &m_data_ptr;
+        return m_data_ptr.get();
     }
 
     [[nodiscard]] int const* array_dims() const {
@@ -422,8 +452,10 @@ struct field_data<Tag, false> {
      * @brief Storage where we maintain an up-to-date cache of @c m_storage.data().
      * @invariant @c m_storage.data() is equal to @c m_data_ptr.
      * @see field_data<Tag, true>::m_data_ptrs %for the motivation.
+     *
+     * This is declared as an array (of size 1) to simplify the implementation of defer_delete.
      */
-    data_type* m_data_ptr{};
+    std::unique_ptr<data_type*[]> m_data_ptr;
 
     /**
      * @brief Array dimension of the data associated with @c Tag.

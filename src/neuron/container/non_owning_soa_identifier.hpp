@@ -15,15 +15,6 @@ struct field_index {
 };
 inline constexpr std::size_t invalid_row = std::numeric_limits<std::size_t>::max();
 
-namespace detail {
-/**
- * @brief The vector in which dying owning_identifier std::size_t's live.
- *
- * This is defined in container.cpp to avoid multiple-definition issues.
- */
-extern std::vector<std::unique_ptr<std::size_t>> garbage;
-}  // namespace detail
-
 /**
  * @brief A non-owning permutation-stable identifier for an entry in a container.
  *

@@ -15,7 +15,9 @@ namespace neuron {
  * construction/destruction/... of different parts of the model data.
  */
 struct Model {
-    Model();
+    Model();   // defined in container.cpp
+    ~Model();  // defined in container.cpp
+
     /** @brief Access the structure containing the data of all Nodes.
      */
     container::Node::storage& node_data() {
@@ -110,6 +112,16 @@ struct Model {
      *  does not invalidate pointers to container::Mechanism::storage.
      */
     std::vector<std::unique_ptr<container::Mechanism::storage>> m_mech_data{};
+
+    /**
+     * @brief Backing storage for defer_delete helper.
+     */
+    std::vector<void*> m_ptrs_for_deferred_deletion{};
+
+    /**
+     * @brief Backing storage for global identifier_defer_delete_storage.
+     */
+    std::vector<std::unique_ptr<std::size_t>> m_identifier_ptrs_for_deferred_deletion{};
 };
 
 struct model_sorted_token {
