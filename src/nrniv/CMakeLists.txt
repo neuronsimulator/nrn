@@ -104,13 +104,18 @@ endif()
 # =============================================================================
 foreach(modfile ${NRN_MODFILE_BASE_NAMES})
   nocmodl_mod_to_cpp(${modfile})
-  set_property(
-    SOURCE ${modfile}.cpp
-    APPEND
-    PROPERTY COMPILE_OPTIONS ${NRN_EXTRA_MECH_CXX_FLAGS})
   list(APPEND NRN_MODFILE_CPP ${PROJECT_BINARY_DIR}/${modfile}.cpp)
 endforeach()
-
+set_property(
+  SOURCE ${NRN_MODFILE_CPP}
+  APPEND
+  PROPERTY COMPILE_OPTIONS ${NRN_EXTRA_MECH_CXX_FLAGS})
+# we are basically emulating nrnivmodl with CMake here. nrnivmodl uses headers from the include
+# directory in the build or install directory.
+set_property(
+  SOURCE ${NRN_MODFILE_CPP}
+  APPEND
+  PROPERTY INCLUDE_DIRECTORIES ${PROJECT_BINARY_DIR}/include)
 set_source_files_properties(${NRN_MODFILE_CPP} PROPERTIES GENERATED TRUE)
 
 # =============================================================================
@@ -565,6 +570,3 @@ file(COPY ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION ${CMAKE_BINARY_DIR}/includ
 
 # For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
-install(FILES ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION include)
-install(FILES ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h DESTINATION include/nrncvode)
-install(FILES ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION include)
