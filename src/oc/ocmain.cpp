@@ -13,7 +13,7 @@ extern void setneuronhome(const char*);
 #endif
 
 static void setnrnhome(const char* arg) {
-#if !defined(WIN32))
+#ifndef WIN32
     /*
      Gary Holt's first pass at this was:
 
