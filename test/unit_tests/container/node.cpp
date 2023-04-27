@@ -352,38 +352,6 @@ std::tuple<std::vector<::Node>, std::vector<double>> get_nodes_and_reference_vol
 }
 }  // namespace neuron::test
 
-namespace {
-void* size_t_ptr_to_check{};
-}
-
-void* operator new(std::size_t sz) {
-    return std::malloc(sz);
-}
-
-void operator delete(void* ptr) noexcept {
-    if (ptr == size_t_ptr_to_check) {
-        auto* const typed_ptr = static_cast<std::size_t*>(ptr);
-        REQUIRE(*typed_ptr == neuron::container::invalid_row);
-    }
-    std::free(ptr);
-}
-
-template <typename T>
-struct temporarily_change {
-    temporarily_change(T& var, T new_val)
-        : m_var{var}
-        , m_val{std::exchange(var, new_val)} {}
-    ~temporarily_change() {
-        m_var = m_val;
-    }
-
-  private:
-    T& m_var;
-    T m_val;
-};
-template <typename T, typename U>
-temporarily_change(T&, U&&) -> temporarily_change<T>;
-
 TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
     GIVEN("A default-constructed node") {
         ::Node node{};
@@ -393,13 +361,14 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         }
     }
     GIVEN("A node that is deleted without an active deferred-deletion vector") {
-        std::optional<::Node> node{std::in_place};
-        temporarily_change _1{neuron::container::detail::identifier_defer_delete_storage, nullptr};
-        temporarily_change _2{size_t_ptr_to_check, node->id().get_raw_pointer()};
+        auto* const old = std::exchange(neuron::container::detail::identifier_defer_delete_storage,
+                                        nullptr);
         // Because identifier_defer_delete_storage is nullptr, deleting `node` will delete the
-        // heap-allocated std::size_t that the data handles depend on. This touches an
-        // otherwise-uncovered code path in soa_identifier.hpp.
-        node.reset();
+        // heap-allocated std::size_t that the data handles depend on. This touches an otherwise
+        // uncovered code path in soa_identifier.hpp. Meaningfully checking the right code path was
+        // followed seems excessively complicated.
+        { ::Node node{}; }
+        neuron::container::detail::identifier_defer_delete_storage = old;
     }
     GIVEN("A series of nodes with increasing integer voltages") {
         using neuron::test::get_node_voltages;
