@@ -69,6 +69,13 @@ struct non_owning_identifier_without_container {
         return !m_ptr;
     }
 
+    /**
+     * @brief Get the underlying pointer value.
+     */
+    [[nodiscard]] std::size_t* get_raw_pointer() const {
+        return m_ptr;
+    }
+
     friend std::ostream& operator<<(std::ostream& os,
                                     non_owning_identifier_without_container const& id) {
         if (!id.m_ptr) {
