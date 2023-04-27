@@ -26,6 +26,12 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
         auto const mech_type = 0;
         neuron::model().delete_mechanism(mech_type);
         auto& mech_data = neuron::model().add_mechanism(mech_type, "test_mechanism", field_info);
+        // the top-level mechanism data structure can be pretty-printed
+        THEN("The mechanism data structure can be pretty-printed") {
+            std::ostringstream oss;
+            oss << mech_data;
+            REQUIRE(oss.str() == "test_mechanism::storage{type=0, 2 fields}");
+        }
         REQUIRE(mech_data.get_tag<field::FloatingPoint>().num_variables() == num_fields);
         WHEN("A row is added") {
             owning_handle mech_instance{mech_data};
@@ -75,6 +81,13 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                     require_str("data_handle<double>{cont=test_mechanism bar[2/3] row=0/1 val=0.9}",
                                 bar_index,
                                 2);
+                    // Also cover generic_data_handle printing
+                    auto const gdh = neuron::container::generic_data_handle{
+                        mech_instance.fpfield_handle(foo_index)};
+                    std::ostringstream oss;
+                    oss << gdh;
+                    REQUIRE(oss.str() ==
+                            "generic_data_handle{cont=test_mechanism foo row=0/1, type=double*}");
                 }
                 std::ostringstream actual;
                 actual << mech_instance;
@@ -206,6 +219,7 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
             std::optional<owning_handle> instance{std::in_place, mech_data};
             instance->fpfield(foo_index) = foo_value;
             auto foo_handle = instance->fpfield_handle(foo_index);
+            auto generic_foo = neuron::container::generic_data_handle{foo_handle};
             THEN("The handle yields the expected value") {
                 REQUIRE(*foo_handle == foo_value);
             }
@@ -219,9 +233,17 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                 AND_WHEN("The mechanism type is also deleted") {
                     neuron::model().delete_mechanism(mech_type);
                     THEN("We can still print the handle, following an unusual codepath") {
-                        std::ostringstream oss;
-                        oss << foo_handle;
-                        REQUIRE(oss.str() == "data_handle<double>{cont=unknown died/unknown}");
+                        {
+                            std::ostringstream oss;
+                            oss << foo_handle;
+                            REQUIRE(oss.str() == "data_handle<double>{cont=unknown died/unknown}");
+                        }
+                        {
+                            std::ostringstream oss;
+                            oss << generic_foo;
+                            REQUIRE(oss.str() ==
+                                    "generic_data_handle{cont=unknown died/unknown, type=double*}");
+                        }
                     }
                 }
             }
