@@ -261,7 +261,7 @@ struct data_handle {
         } else if (dh.m_container_or_raw_ptr) {
             os << "raw=" << dh.m_container_or_raw_ptr;
         } else {
-            os << "nullptr";
+            os << dh.m_offset;
         }
         return os << '}';
     }

@@ -56,7 +56,7 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
         THEN("Check it prints the right value") {
             std::ostringstream os;
             os << handle;
-            REQUIRE(os.str() == "data_handle<double>{nullptr}");
+            REQUIRE(os.str() == "data_handle<double>{null}");
         }
         THEN("Check it doesn't claim to be modern") {
             REQUIRE_FALSE(handle.refers_to_a_modern_data_structure());
