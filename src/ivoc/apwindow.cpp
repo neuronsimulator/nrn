@@ -241,9 +241,10 @@ void DismissableWindow::name(const char* s) {
         {
             SetWindowText(hw, s);
         }
-    }
-#endif
+    } else if (style()) {
+#else  // not WIN32
     if (style()) {
+#endif
         style()->attribute("name", s);
         set_props();  // replaces following two statements
         //		rep()->wm_name(this);
