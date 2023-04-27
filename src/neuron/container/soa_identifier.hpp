@@ -11,6 +11,15 @@
 #include <vector>
 
 namespace neuron::container {
+namespace detail {
+/**
+ * @brief The vector in which dying owning_identifier std::size_t's live.
+ *
+ * This is defined in container.cpp to avoid multiple-definition issues.
+ */
+extern std::vector<std::unique_ptr<std::size_t>>* identifier_defer_delete_storage;
+}  // namespace detail
+
 /**
  * @brief A non-owning permutation-stable identifier for a entry in a container.
  * @tparam Storage The type of the referred-to container. This might be a type
@@ -159,12 +168,15 @@ struct owning_identifier {
             // This is to provide compatibility with NEURON's old nrn_notify_when_double_freed and
             // nrn_notify_when_void_freed methods.
             detail::notify_handle_dying(p);
-            // This is sort-of formalising a memory leak. In principle we could
-            // cleanup garbage by scanning all our data structures and finding
-            // references to the pointers that it contains. In practice it seems
-            // unlikely that either this, or using std::shared_ptr just to avoid it,
-            // would be worth it.
-            detail::garbage.emplace_back(p);
+            // This is sort-of formalising a memory leak. In principle we could cleanup
+            // identifier_defer_delete_storage by scanning all our data structures and finding
+            // references to the pointers that it contains. In practice it seems unlikely that
+            // either this, or using std::shared_ptr just to avoid it, would be worth it.
+            if (detail::identifier_defer_delete_storage) {
+                detail::identifier_defer_delete_storage->emplace_back(p);
+            } else {
+                delete p;
+            }
         }
         Storage* m_data_ptr{};
     };
