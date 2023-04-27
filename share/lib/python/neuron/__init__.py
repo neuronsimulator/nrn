@@ -1634,18 +1634,21 @@ def nrnpy_pr(stdoe, s):
 # nrnpy_pass callback used by h.doNotify() in MINGW when not called from
 # gui thread in order to allow the gui thread to run.
 # When this was introduced in ef4da5dbf293580ee1bf86b3a94d3d2f80226f62 it was wrapped in a
-# try .. except .. pass block for reasons that are not obvious to olupton, while in
-# fa1911d44f30dcc1ae8b5428d9e94478d053b498 redirection via Python was disabled when the Python
-# interpreter is managed by NEURON. Both have been reverted for now.
-nrnpy_set_pr_etal = nrn_dll_sym("nrnpy_set_pr_etal")
+# try .. except .. pass block for reasons that are not obvious to olupton, who removed it.
+if not embedded:
+    # Unconditionally redirecting NEURON printing via Python seemed to cause re-ordering
+    # of NEURON output in the ModelDB CI. This might be because the redirection is only
+    # triggered by `import neuron`, and an arbitrary amount of NEURON code may have been
+    # executed before that point.
+    nrnpy_set_pr_etal = nrn_dll_sym("nrnpy_set_pr_etal")
 
-nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
-nrnpy_pass_proto = ctypes.CFUNCTYPE(ctypes.c_int)
-nrnpy_set_pr_etal.argtypes = [nrnpy_pr_proto, nrnpy_pass_proto]
+    nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
+    nrnpy_pass_proto = ctypes.CFUNCTYPE(ctypes.c_int)
+    nrnpy_set_pr_etal.argtypes = [nrnpy_pr_proto, nrnpy_pass_proto]
 
-nrnpy_pr_callback = nrnpy_pr_proto(nrnpy_pr)
-nrnpy_pass_callback = nrnpy_pass_proto(nrnpy_pass)
-nrnpy_set_pr_etal(nrnpy_pr_callback, nrnpy_pass_callback)
+    nrnpy_pr_callback = nrnpy_pr_proto(nrnpy_pr)
+    nrnpy_pass_callback = nrnpy_pass_proto(nrnpy_pass)
+    nrnpy_set_pr_etal(nrnpy_pr_callback, nrnpy_pass_callback)
 
 
 def nrnpy_vec_math(op, flag, arg1, arg2=None):
