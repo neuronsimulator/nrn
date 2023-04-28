@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#if MAC || defined(HAVE_UNISTD_H)
+#if defined(HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
 

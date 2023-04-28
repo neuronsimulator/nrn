@@ -2573,7 +2573,7 @@ void insertcode(Inst* begin, Inst* end, Pfrv f) {
     }
 }
 
-#if defined(DOS) || defined(WIN32) || (MAC && !defined(DARWIN))
+#if defined(DOS) || defined(WIN32)
 static int ntimes;
 #endif
 
@@ -2589,14 +2589,6 @@ void execute(Inst* p) /* run the machine */
 #if 0
             kbhit(); /* DOS can't capture interrupt when number crunching*/
 #endif
-        }
-#endif
-
-#if MAC && !defined(DARWIN)
-        /* there is significant overhead here */
-        if (++ntimes > 100) {
-            ntimes = 0;
-            hoc_check_intupt(1);
         }
 #endif
         if (hoc_intset)

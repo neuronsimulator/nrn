@@ -258,11 +258,6 @@ Item* putintoken(const char* s, short type, short toktype) { /* make sure a symb
     return q;
 }
 
-#if MAC
-#undef HAVE_STDARG_H
-#define HAVE_STDARG_H 1
-#endif
-
 #if HAVE_STDARG_H
 #include <stdarg.h>
 #else

@@ -635,7 +635,7 @@ extern void mswin_delete_object(void*);
 
 void ShapePlot::draw(Canvas* c, const Allocation& a) const {
     if (spi_->fast_) {
-#if defined(WIN32) || MAC
+#if defined(WIN32)
         // win32 clipping is much more strict than X11 clipping even though the
         // implementations seem to agree that clipping is the intersection of
         // all clip requests on the clip stack in canvas. Clipping is originally
@@ -653,9 +653,6 @@ void ShapePlot::draw(Canvas* c, const Allocation& a) const {
 
         XYView* v = XYView::current_draw_view();
         c->push_clipping(true);
-#if MAC
-        c->clip_rect(v->left(), v->bottom(), v->right(), v->top());
-#endif
 #if defined(WIN32)
         // Consider the commit message:
         // -------
@@ -693,13 +690,10 @@ void ShapePlot::draw(Canvas* c, const Allocation& a) const {
                 ((FastShape*) (gi->body()))->fast_draw(c, x, y, false);
             }
         }
-#if defined(WIN32) || MAC
-        c->pop_clipping();
 #if defined(WIN32)
+        c->pop_clipping();
         mswin_delete_object(new_clip);
-#endif
         v->damage_all();
-        ;
 #endif
         spi_->fast_ = false;
     } else {
