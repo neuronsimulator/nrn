@@ -51,13 +51,13 @@ void hoc_ivpvaluerun(CChar* name,
 
 extern void hoc_ivlabel(CChar*);
 extern void hoc_ivvarlabel(char**, Object* pyvar = 0);
-extern void hoc_ivstatebutton(double*,
+extern void hoc_ivstatebutton(neuron::container::data_handle<double>,
                               CChar* name,
                               CChar* action,
                               int style,
                               Object* pyvar = 0,
                               Object* pyact = 0);
-extern void hoc_ivslider(double*,
+extern void hoc_ivslider(neuron::container::data_handle<double>,
                          float low = 0,
                          float high = 100,
                          float resolution = 1,

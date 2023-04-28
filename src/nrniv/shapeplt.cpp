@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 #include "classreg.h"
 #include "gui-redirect.h"
+#include "ocnotify.h"
 
 #if HAVE_IV
 
@@ -248,7 +249,7 @@ static double sh_hinton(void* v) {
 #if HAVE_IV
     IFGUI
     ShapeScene* ss = (ShapeScene*) v;
-    double* pd = hoc_pgetarg(1);
+    neuron::container::data_handle<double> pd = hoc_hgetarg<double>(1);
     double xsize = chkarg(4, 1e-9, 1e9);
     double ysize = xsize;
     if (ifarg(5)) {
@@ -1141,21 +1142,23 @@ FastGraphItem::FastGraphItem(FastShape* g, bool s, bool p)
 FastShape::FastShape() {}
 FastShape::~FastShape() {}
 
-Hinton::Hinton(double* pd, Coord xsize, Coord ysize, ShapeScene* ss) {
+Hinton::Hinton(neuron::container::data_handle<double> pd,
+               Coord xsize,
+               Coord ysize,
+               ShapeScene* ss) {
     pd_ = pd;
     old_ = NULL;  // not referenced
     xsize_ = xsize / 2;
     ysize_ = ysize / 2;
     ss_ = ss;
-    Oc oc;
-    oc.notify_when_freed(pd_, this);
+    neuron::container::notify_when_handle_dies(pd_, this);
 }
 Hinton::~Hinton() {
     Oc oc;
     oc.notify_pointer_disconnect(this);
 }
 void Hinton::update(Observable*) {
-    pd_ = NULL;
+    pd_ = {};
     ss_->remove(ss_->glyph_index(this));
 }
 void Hinton::request(Requisition& req) const {

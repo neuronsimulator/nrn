@@ -53,7 +53,7 @@ class HocPanel: public OcGlyph {
     virtual void map_window(int scroll = -1);  // -1 leave up to panel_scroll attribute
 
     void pushButton(const char* name, const char* action, bool activate = false, Object* pyact = 0);
-    void stateButton(double* pd,
+    void stateButton(neuron::container::data_handle<double> pd,
                      const char* name,
                      const char* action,
                      int style,
@@ -64,7 +64,7 @@ class HocPanel: public OcGlyph {
                        const char* action,
                        bool activate = false,
                        Object* pyact = 0);
-    MenuItem* menuStateItem(double* pd,
+    MenuItem* menuStateItem(neuron::container::data_handle<double> pd,
                             const char* name,
                             const char* action,
                             Object* pyvar = NULL,
@@ -87,7 +87,7 @@ class HocPanel: public OcGlyph {
                  bool keep_updated = false);
 
     // ZFM added vert
-    void slider(double*,
+    void slider(neuron::container::data_handle<double>,
                 float low = 0,
                 float high = 100,
                 float resolution = 1,
@@ -417,7 +417,7 @@ class HocValAction: public HocAction {
 // ZFM added vert_
 class OcSlider: public HocUpdateItem, public Observer {
   public:
-    OcSlider(double*,
+    OcSlider(neuron::container::data_handle<double>,
              float low,
              float high,
              float resolution,
@@ -446,7 +446,7 @@ class OcSlider: public HocUpdateItem, public Observer {
     float resolution_;
     BoundedValue* bv_;
     HocCommand* send_;
-    double* pval_;
+    neuron::container::data_handle<double> pval_;
     Object* pyvar_;
     CopyString* variable_;
     bool scrolling_;
@@ -457,7 +457,7 @@ class OcSlider: public HocUpdateItem, public Observer {
 
 class HocStateButton: public HocUpdateItem, public Observer {
   public:
-    HocStateButton(double*,
+    HocStateButton(neuron::container::data_handle<double>,
                    const char*,
                    Button*,
                    HocAction*,
@@ -480,7 +480,7 @@ class HocStateButton: public HocUpdateItem, public Observer {
     int style_;
     CopyString* variable_;
     CopyString* name_;
-    double* pval_;
+    neuron::container::data_handle<double> pval_;
     Object* pyvar_;
     Button* b_;
     HocAction* action_;
@@ -489,7 +489,7 @@ class HocStateButton: public HocUpdateItem, public Observer {
 
 class HocStateMenuItem: public HocUpdateItem, public Observer {
   public:
-    HocStateMenuItem(double*,
+    HocStateMenuItem(neuron::container::data_handle<double>,
                      const char*,
                      MenuItem*,
                      HocAction*,
@@ -509,7 +509,7 @@ class HocStateMenuItem: public HocUpdateItem, public Observer {
   private:
     CopyString* variable_;
     CopyString* name_;
-    double* pval_;
+    neuron::container::data_handle<double> pval_;
     Object* pyvar_;
     MenuItem* b_;
     HocAction* action_;
