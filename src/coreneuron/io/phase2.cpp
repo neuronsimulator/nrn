@@ -1040,6 +1040,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
     nt.n_pntproc = num_point_process;
     nt._ndata = offset;
 
+
     // matrix info
     nt._v_parent_index = v_parent_index;
 
