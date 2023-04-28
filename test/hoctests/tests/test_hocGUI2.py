@@ -1,7 +1,8 @@
 # tests of GUI with hoc variables that go out of scope or move
 
-from neuron import h, gui
+from neuron import config, h, gui
 from neuron.expect_hocerr import expect_err, set_quiet
+import os
 
 set_quiet(False)
 
@@ -98,7 +99,8 @@ def test2():  # Graph.xexpr
         ic.dur = 0.1
         ic.amp = 0.3
     h.newPlotV()
-    expect_err('h.graphItem.xexpr("_pysec.Cell_3.soma(0.5).ina", 1)')
+    if config.arguments["NRN_ENABLE_INTERVIEWS"] and "DISPLAY" in os.environ:
+        expect_err('h.graphItem.xexpr("_pysec.Cell_3.soma(0.5).ina", 1)')
     h.graphItem.xexpr("_pysec.Cell_3.soma.ina(0.5)", 1)
     h.run()
     h.graphItem.exec_menu("View = plot")
