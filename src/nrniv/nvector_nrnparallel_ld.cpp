@@ -689,7 +689,7 @@ realtype N_VWrmsNorm_NrnParallelLD(N_Vector x, N_Vector w) {
     }
 
     auto const gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
-    return SUNRSqrt(gsum / N_global);
+    return SUNRsqrt(gsum / N_global);
 }
 
 realtype N_VWrmsNormMask_NrnParallelLD(N_Vector x, N_Vector w, N_Vector id) {
@@ -716,7 +716,7 @@ realtype N_VWrmsNormMask_NrnParallelLD(N_Vector x, N_Vector w, N_Vector id) {
     }
 
     auto const gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
-    return SUNRSqrt(gsum / N_global);
+    return SUNRsqrt(gsum / N_global);
 }
 
 realtype N_VMin_NrnParallelLD(N_Vector x) {
@@ -765,7 +765,7 @@ realtype N_VWL2Norm_NrnParallelLD(N_Vector x, N_Vector w) {
     }
 
     auto const gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
-    return SUNRSqrt(gsum);
+    return SUNRsqrt(gsum);
 }
 
 realtype N_VL1Norm_NrnParallelLD(N_Vector x) {

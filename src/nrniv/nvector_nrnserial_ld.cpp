@@ -623,7 +623,7 @@ realtype N_VWrmsNorm_NrnSerialLD(N_Vector x, N_Vector w) {
         sum = t;
     }
 
-    return SUNRSqrt(sum / N);
+    return SUNRsqrt(sum / N);
 }
 
 realtype N_VWrmsNormMask_NrnSerialLD(N_Vector x, N_Vector w, N_Vector id) {
@@ -647,7 +647,7 @@ realtype N_VWrmsNormMask_NrnSerialLD(N_Vector x, N_Vector w, N_Vector id) {
         }
     }
 
-    return SUNRSqrt(sum / N);
+    return SUNRsqrt(sum / N);
 }
 
 realtype N_VMin_NrnSerialLD(N_Vector x) {
@@ -686,7 +686,7 @@ realtype N_VWL2Norm_NrnSerialLD(N_Vector x, N_Vector w) {
         sum = t;
     }
 
-    return SUNRSqrt(sum);
+    return SUNRsqrt(sum);
 }
 
 realtype N_VL1Norm_NrnSerialLD(N_Vector x) {
@@ -699,7 +699,7 @@ realtype N_VL1Norm_NrnSerialLD(N_Vector x) {
     // Use Kahan summation instead of a long double accumulator for better portability.
     realtype sum{}, c{};
     for (i = 0; i < N; i++) {
-        auto const y = SUNRABS(xd[i]) - c;
+        auto const y = SUNRabs(xd[i]) - c;
         auto const t = sum + y;
         c = (t - sum) - y;
         sum = t;
