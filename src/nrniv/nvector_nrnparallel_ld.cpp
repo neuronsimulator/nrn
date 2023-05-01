@@ -16,8 +16,8 @@
  * -----------------------------------------------------------------
  */
 
-#define SUNTRUE       true
-#define SUNFALSE      false
+#define SUNTRUE  true
+#define SUNFALSE false
 #include <../../nrnconf.h>
 #include <hocassrt.h>
 
