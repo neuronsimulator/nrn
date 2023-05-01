@@ -75,29 +75,6 @@ class Docs(Command):
         self.run_command("buildhtml")
 
 
-def _config_exe(exe_name):
-    """Sets the environment to run the real executable (returned)"""
-
-    package_name = "nmodl"
-
-    assert (
-        package_name in working_set.by_key
-    ), "NMODL package not found! Verify PYTHONPATH"
-    NMODL_PREFIX = os.path.join(working_set.by_key[package_name].location, "nmodl")
-    NMODL_PREFIX_DATA = os.path.join(NMODL_PREFIX, ".data")
-    if sys.platform == "darwin":
-        os.environ["NMODL_WRAPLIB"] = os.path.join(
-            NMODL_PREFIX_DATA, "libpywrapper.dylib"
-        )
-    else:
-        os.environ["NMODL_WRAPLIB"] = os.path.join(NMODL_PREFIX_DATA, "libpywrapper.so")
-
-    # find libpython*.so in the system
-    os.environ["NMODL_PYLIB"] = find_libpython()
-
-    return os.path.join(NMODL_PREFIX_DATA, exe_name)
-
-
 install_requirements = [
     "PyYAML>=3.13",
     "sympy>=1.3",
