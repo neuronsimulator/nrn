@@ -13,7 +13,6 @@ set(UNQUOTED_PACKAGE_VERSION "${PROJECT_VERSION}")
 # ~~~
 nrn_set_string(PACKAGE "nrn")
 nrn_set_string(NRNHOST "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}")
-nrn_set_string(NRNHOSTCPU "${CMAKE_SYSTEM_PROCESSOR}")
 nrn_set_string(PACKAGE_STRING "nrn ${PROJECT_VERSION}")
 nrn_set_string(PACKAGE_VERSION "${PROJECT_VERSION}")
 nrn_set_string(VERSION "${PROJECT_VERSION}")
@@ -39,7 +38,6 @@ set(bindir \${exec_prefix}/bin)
 set(modsubdir ${host_cpu})
 set(bindir \${exec_prefix}/bin)
 set(libdir \${exec_prefix}/lib)
-set(BGPDMA ${NRNMPI})
 
 # =============================================================================
 # Comment or empty character to enable/disable cmake specific settings
@@ -130,8 +128,7 @@ else()
 endif()
 
 if(NRN_ENABLE_PYTHON_DYNAMIC)
-  # the value needs to be made not to matter
-  set(NRNPYTHON_DYNAMICLOAD 3)
+  list(APPEND NRN_COMPILE_DEFS NRNPYTHON_DYNAMICLOAD)
 endif()
 
 if(NRN_DYNAMIC_UNITS_USE_LEGACY)
@@ -264,14 +261,16 @@ endif()
 # =============================================================================
 # Generate file from file.in template
 # =============================================================================
+set(version_strs ${NRN_PYTHON_VERSIONS})
+list(TRANSFORM version_strs APPEND "\"")
+list(TRANSFORM version_strs PREPEND "\"")
+string(JOIN ", " NRN_DYNAMIC_PYTHON_LIST_OF_VERSION_STRINGS ${version_strs})
 nrn_configure_dest_src(nrnconf.h . cmake_nrnconf.h .)
 nrn_configure_dest_src(nmodlconf.h . cmake_nrnconf.h .)
 nrn_configure_file(nrnmpiuse.h src/oc)
 nrn_configure_file(nrnconfigargs.h src/nrnoc)
-nrn_configure_file(nrnpython_config.h src/nrnpython)
 nrn_configure_file(bbsconf.h src/parallel)
 nrn_configure_file(nrnneosm.h src/nrncvode)
-nrn_configure_file(mos2nrn.h src/uxnrnbbs)
 nrn_configure_dest_src(nrnunits.lib share/nrn/lib nrnunits.lib share/lib)
 nrn_configure_dest_src(nrn.defaults share/nrn/lib nrn.defaults share/lib)
 # NRN_DYNAMIC_UNITS requires nrnunits.lib.in be in same places as nrnunits.lib
@@ -306,12 +305,6 @@ else()
   file(REMOVE "${PROJECT_BINARY_DIR}/config.h")
 endif()
 
-# Prepare some variables for @VAR@ expansion in setup.py.in (nrnpython and rx3d)
-set(NRN_COMPILE_FLAGS_QUOTED ${NRN_COMPILE_FLAGS})
-set(NRN_LINK_FLAGS_QUOTED ${NRN_LINK_FLAGS} ${NRN_LINK_FLAGS_FOR_ENTRY_POINTS})
-list(TRANSFORM NRN_COMPILE_FLAGS_QUOTED APPEND "'")
-list(TRANSFORM NRN_COMPILE_FLAGS_QUOTED PREPEND "'")
-list(TRANSFORM NRN_LINK_FLAGS_QUOTED APPEND "'")
-list(TRANSFORM NRN_LINK_FLAGS_QUOTED PREPEND "'")
-string(JOIN ", " NRN_COMPILE_FLAGS_COMMA_SEPARATED_STRINGS ${NRN_COMPILE_FLAGS_QUOTED})
-string(JOIN ", " NRN_LINK_FLAGS_COMMA_SEPARATED_STRINGS ${NRN_LINK_FLAGS_QUOTED})
+# Prepare some variables for setup.py extension building (hoc_module, rx3d and music)
+string(JOIN " " NRN_COMPILE_FLAGS_STRING ${NRN_COMPILE_FLAGS})
+string(JOIN " " NRN_LINK_FLAGS_STRING ${NRN_LINK_FLAGS})

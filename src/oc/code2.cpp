@@ -381,9 +381,6 @@ static int hoc_vsscanf(const char* buf) {
         }
     }
 
-#if 0
-	n = vsscanf(buf, format, arglist);
-#else
     if (iarg < 4) {
         n = sscanf(buf, format, arglist[0], arglist[1], arglist[2]);
     } else if (iarg < 13) {
@@ -404,7 +401,6 @@ static int hoc_vsscanf(const char* buf) {
     } else {
         goto too_many;
     }
-#endif
     assert(n <= iarg);
 
     for (i = 0; i < n; ++i) {
@@ -719,11 +715,13 @@ double* hoc_val_pointer(const char* s) {
         HocStr* buf;
         buf = hocstr_create(strlen(s) + 20);
         std::snprintf(buf->buf, buf->size + 1, "{hoc_pointer_(&%s)}\n", s);
-        hoc_oc(buf->buf);
+        auto const code = hoc_oc(buf->buf);
+        assert(code == 0);
         hocstr_delete(buf);
     } else {
         Sprintf(buf, "{hoc_pointer_(&%s)}\n", s);
-        hoc_oc(buf);
+        auto const code = hoc_oc(buf);
+        assert(code == 0);
     }
     return hoc_varpointer;
 }

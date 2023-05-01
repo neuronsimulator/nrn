@@ -1,18 +1,12 @@
-import distutils.util
+from neuron.tests.utils.strtobool import strtobool
 import os
 
 # Hacky, but it's non-trivial to pass commandline arguments to pytest tests.
-enable_gpu = bool(
-    distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-)
-mpi4py_option = bool(
-    distutils.util.strtobool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", "false"))
-)
-file_mode_option = bool(
-    distutils.util.strtobool(os.environ.get("NRN_TEST_SPIKES_FILE_MODE", "false"))
-)
+enable_gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+mpi4py_option = bool(strtobool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", "false")))
+file_mode_option = bool(strtobool(os.environ.get("NRN_TEST_SPIKES_FILE_MODE", "false")))
 nrnmpi_init_option = bool(
-    distutils.util.strtobool(os.environ.get("NRN_TEST_SPIKES_NRNMPI_INIT", "false"))
+    strtobool(os.environ.get("NRN_TEST_SPIKES_NRNMPI_INIT", "false"))
 )
 
 # following at top level and early enough avoids...

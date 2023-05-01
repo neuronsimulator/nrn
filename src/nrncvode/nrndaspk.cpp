@@ -6,7 +6,6 @@
 
 #include <stdio.h>
 #include <math.h>
-#include <InterViews/resource.h>
 #include "spmatrix.h"
 #include "nrnoc2iv.h"
 #include "cvodeobj.h"

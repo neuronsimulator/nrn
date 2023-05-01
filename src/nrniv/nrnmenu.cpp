@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <OS/string.h>
-#include <ivstream.h>
 
 #if HAVE_IV
 #include "secbrows.h"
@@ -12,12 +11,10 @@
 #endif
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
+#include "nrnpy.h"
 #include "nrnmenu.h"
 #include "classreg.h"
 #include "gui-redirect.h"
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 extern int hoc_return_type_code;
@@ -43,9 +40,7 @@ void nrnglobalmechmenu();
 void nrnmechmenu();
 void nrnpointmenu();
 
-Object* (*nrnpy_callable_with_args)(Object*, int narg);
 int (*nrnpy_ob_is_seg)(Object*);
-
 
 #if HAVE_IV
 static void pnodemenu(Prop* p1, double, int type, const char* path, MechSelector* = NULL);
@@ -760,11 +755,11 @@ void MechanismStandard::panel(const char* label) {
             Object* pyactval = NULL;
             int size = hoc_total_array_data(sym, 0);
             if (pyact_) {
-                assert(nrnpy_callable_with_args);
+                assert(neuron::python::methods.callable_with_args);
                 hoc_push_object(msobj_);
                 hoc_pushx(double(i));
                 hoc_pushx(0.0);
-                pyactval = (*nrnpy_callable_with_args)(pyact_, 3);
+                pyactval = neuron::python::methods.callable_with_args(pyact_, 3);
             } else {
                 Sprintf(buf, "hoc_ac_ = %d  %s", i, action_.string());
             }
@@ -785,11 +780,11 @@ void MechanismStandard::panel(const char* label) {
             for (j = 1; j < size; ++j) {
                 ++i;
                 if (pyact_) {
-                    assert(nrnpy_callable_with_args);
+                    assert(neuron::python::methods.callable_with_args);
                     hoc_push_object(msobj_);
                     hoc_pushx(double(i));
                     hoc_pushx(double(j));
-                    pyactval = (*nrnpy_callable_with_args)(pyact_, 3);
+                    pyactval = neuron::python::methods.callable_with_args(pyact_, 3);
                 } else {
                     Sprintf(buf, "hoc_ac_ = %d %s", i, action_.string());
                 }
@@ -1052,6 +1047,12 @@ static double mt_is_artificial(void* v) {
     hoc_return_type_code = 2;
     return double(mt->is_artificial(int(chkarg(1, 0, mt->count()))));
 }
+static double mt_is_ion(void* v) {
+    auto* mt = static_cast<MechanismType*>(v);
+    hoc_return_type_code = 2;
+    return double(mt->is_ion());
+}
+
 static Object** mt_pp_begin(void* v) {
     MechanismType* mt = (MechanismType*) v;
     Point_process* pp = mt->pp_begin();
@@ -1116,6 +1117,7 @@ static Member_func mt_members[] = {{"select", mt_select},
                                    {"is_netcon_target", mt_is_target},
                                    {"has_net_event", mt_has_net_event},
                                    {"is_artificial", mt_is_artificial},
+                                   {"is_ion", mt_is_ion},
                                    {"internal_type", mt_internal_type},
                                    {0, 0}};
 static Member_ret_obj_func mt_retobj_members[] = {{"pp_begin", mt_pp_begin},
@@ -1244,6 +1246,10 @@ bool MechanismType::is_artificial(int i) {
     return (nrn_is_artificial_[j] ? true : false);
 }
 
+bool MechanismType::is_ion() {
+    return nrn_is_ion(internal_type());
+}
+
 void MechanismType::select(const char* name) {
     for (int i = 0; i < mti_->count_; ++i) {
         if (strcmp(name, memb_func[mti_->type_[i]].sym->name) == 0) {
@@ -1301,10 +1307,10 @@ void MechanismType::menu() {
         Symbol* s = memb_func[mti_->type_[i]].sym;
         if (s->subtype != MORPHOLOGY) {
             if (mti_->pyact_) {
-                assert(nrnpy_callable_with_args);
+                assert(neuron::python::methods.callable_with_args);
                 hoc_push_object(mtobj_);
                 hoc_pushx(double(i));
-                Object* pyactval = (*nrnpy_callable_with_args)(mti_->pyact_, 2);
+                Object* pyactval = neuron::python::methods.callable_with_args(mti_->pyact_, 2);
                 hoc_ivbutton(s->name, NULL, pyactval);
                 hoc_obj_unref(pyactval);
             } else {

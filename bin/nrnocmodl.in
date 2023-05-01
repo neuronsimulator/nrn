@@ -44,14 +44,14 @@ fi
 echo '#include <stdio.h>
 #include "hocdec.h"
 extern "C" void modl_reg() {
-	NOT_PARALLEL_SUB(fprintf(stderr, "Additional mechanisms from files'$newline'");)
+	fprintf(stderr, "Additional mechanisms from files'$newline'");
 ' > mod_func.cpp
 
 for i in $files
 do
-	echo 'NOT_PARALLEL_SUB(fprintf(stderr," '$i'.mod");)' >>mod_func.cpp
+	echo 'fprintf(stderr," '$i'.mod");' >>mod_func.cpp
 done
-echo 'NOT_PARALLEL_SUB(fprintf(stderr, "'$newline'");)' >>mod_func.cpp
+echo 'fprintf(stderr, "'$newline'");' >>mod_func.cpp
 
 for i in $files
 do

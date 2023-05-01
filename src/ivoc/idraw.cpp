@@ -2,7 +2,8 @@
 #if HAVE_IV  // to end of file
 
 #include <stdio.h>
-#include <ivstream.h>
+#include <fstream>
+
 #include <InterViews/color.h>
 #include <InterViews/brush.h>
 #include <InterViews/font.h>
@@ -37,10 +38,10 @@ void OcIdraw::prologue() {
         return;
     }
     name = expand_env_var(name.string());
-#if defined(WIN32) || defined(MAC)
+#if defined(WIN32)
     if (!ibuf.open(name.string(), std::ios::in)) {
 #else
-    if (!ibuf.open(name.string(), IOS_IN)) {
+    if (!ibuf.open(name.string(), std::ios::in)) {
 #endif
         printf("can't open the idraw prologue in %s\n", name.string());
         return;
@@ -428,7 +429,6 @@ void OcIdraw::brush(const Brush* b) {
     int i, p;
 
     p = 0;
-#if !MAC
     if (b)
         for (i = 0; i < b->dash_count(); ++i) {
             int nbit = b->dash_list(i);
@@ -436,15 +436,12 @@ void OcIdraw::brush(const Brush* b) {
                 p = ((p << 1) | ((i + 1) % 2));
             }
         }
-#endif
     Sprintf(buf, "%%I b %d\n%d 0 0 [", p, int(w));
     out << buf;
-#if !MAC
     if (b)
         for (i = 0; i < b->dash_count(); ++i) {
             out << b->dash_list(i) << " ";
         }
-#endif
     Sprintf(buf, "] 0 SetB");
     out << buf << std::endl;
 }

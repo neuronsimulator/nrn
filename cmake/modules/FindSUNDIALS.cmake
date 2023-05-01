@@ -13,8 +13,8 @@ ExternalProject_Add(
   sundials-external
   PREFIX "${SUNDIALS_PREFIX}"
   GIT_REPOSITORY https://github.com/LLNL/sundials.git
-  # GIT_TAG e2f29c34f324829302037a1492db480be8828084   6.2.0 -> CVodeMem no longer "visible"
-  # GIT_TAG c09e732080a214694b209032ec627c93fed45340  4
+  # GIT_TAG e2f29c34f324829302037a1492db480be8828084   6.2.0 -> CVodeMem no longer "visible" GIT_TAG
+  # c09e732080a214694b209032ec627c93fed45340  4
   GIT_TAG 811234254d37652954daff0ccdb7af9813736846 # 3.2.1
   # GIT_TAG 7ed895fd102226dbc52225e6b2c6e26ef1cafa0e  #2.7.0
   GIT_SHALLOW ON

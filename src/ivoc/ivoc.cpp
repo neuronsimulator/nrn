@@ -8,9 +8,8 @@
 #include "oc2iv.h"
 #include "ocfunc.h"
 #include "ocnotify.h"
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
+#include "oc_ansi.h"
+#include "ocjump.h"
 
 #if HAVE_IV
 #include "utility.h"
@@ -38,10 +37,6 @@ static nrn::tool::bimap<double*, Observer*>* pdob;
 // a part of is freed. So the upper_bound property is needed
 
 int nrn_err_dialog_active_;
-
-
-void* (*nrnpy_save_thread)();
-void (*nrnpy_restore_thread)(void*);
 
 void nrn_notify_freed(PF pf) {
     if (!f_list) {
@@ -161,7 +156,6 @@ void nrn_err_dialog(const char* mes) {
  */
 
 extern void hoc_main1_init(const char* pname, const char** env);
-extern int hoc_oc(const char*);
 extern int hoc_interviews;
 extern Symbol* hoc_parse_expr(const char*, Symlist**);
 extern double hoc_run_expr(Symbol*);
@@ -211,7 +205,7 @@ if (WidgetKit::instance()->style()->find_attribute(gargstr(1)+1, s)) {
     hoc_pushx(1.);
 }
 
-#if !defined(MINGW) && !defined(MAC)
+#if !defined(MINGW)
 /*static*/ class ReqErr1: public ReqErr {
   public:
     ReqErr1();
@@ -246,10 +240,6 @@ void ReqErr1::Error() {
 static ReqErr1* reqerr1;
 #endif
 
-#if MAC
-static HandleStdin* hsd_;
-#endif
-
 #ifdef MINGW
 static HandleStdin* hsd_;
 void winio_key_press() {
@@ -275,11 +265,11 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
     notify_change_ = new Observable();
     if (s) {
         helpmode_ = false;
-#if !defined(WIN32) && !defined(MAC)
+#if !defined(WIN32)
         reqerr1 = new ReqErr1;
         reqerr1->Install();
 #endif
-#if defined(MINGW) || defined(MAC)
+#if defined(MINGW)
         hsd_ = handleStdin_ = new HandleStdin;
 #else
         handleStdin_ = new HandleStdin;
@@ -287,9 +277,6 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
         Dispatcher::instance().link(0, Dispatcher::ExceptMask, handleStdin_);
 #endif
         hoc_interviews = 1;
-#if MAC
-        hoc_print_first_instance = 0;
-#endif
         String str;
         if (session_->style()->find_attribute("first_instance_message", str)) {
             if (str == "on") {
@@ -306,7 +293,7 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
 Oc::~Oc() {
     MUTLOCK
     if (--refcnt_ == 0) {
-#if !defined(MINGW) && !defined(MAC)
+#if !defined(MINGW)
         if (reqerr1 && reqerr1->count()) {
             fprintf(stderr, "total X Errors: %d\n", reqerr1->count());
         }
@@ -325,8 +312,25 @@ int Oc::run(int argc, const char** argv) {
 }
 
 int Oc::run(const char* buf, bool show_err_mes) {
+    int hem = hoc_execerror_messages;
     hoc_execerror_messages = show_err_mes;
-    return hoc_oc(buf);
+    int err{};
+    try_catch_depth_increment tell_children_we_will_catch{};
+    try {
+        err = hoc_oc(buf);
+    } catch (std::exception const& e) {
+        if (show_err_mes) {
+            std::cerr << "Oc::run: caught exception";
+            std::string_view what{e.what()};
+            if (!what.empty()) {
+                std::cerr << ": " << what;
+            }
+            std::cerr << std::endl;
+        }
+        err = 1;
+    }
+    hoc_execerror_messages = hem;
+    return err;
 }
 
 Symbol* Oc::parseExpr(const char* expr, Symlist** ps) {
@@ -393,7 +397,7 @@ void ivoc_cleanup() {}
 
 int run_til_stdin() {
     Session* session = Oc::getSession();
-#if defined(WIN32) || MAC
+#if defined(WIN32)
     Oc oc;
     oc.notify();
 #endif
@@ -402,18 +406,10 @@ int run_til_stdin() {
 #endif
     session->run();
     WinDismiss::dismiss_defer();  // in case window was dismissed
-#if MAC
-    extern Boolean IVOCGoodLine;
-    if (IVOCGoodLine) {
-        return 1;
-    } else {
-        return 0;
-    }
-#endif
 #ifdef WIN32
     return 0;
 #else
-    return Oc::getStdinSeen();  // MAC should not reach this point
+    return Oc::getStdinSeen();
 #endif
 }
 
@@ -423,12 +419,6 @@ void single_event_run() {
     Event e;
     // actually run till no more events
     Oc::setAcceptInput(false);
-#if MAC
-    extern bool read_if_pending(Event&);
-    while (!session->done() && read_if_pending(e)) {
-        e.handle();
-    }
-#else
     bool dsav = session->done();
     session->unquit();
     while (session->pending() && !session->done()) {
@@ -438,13 +428,9 @@ void single_event_run() {
     if (dsav) {
         session->quit();
     }
-#endif
     Oc::setAcceptInput(true);
     ;
     HocPanel::keep_updated();
-#if MAC
-    Session::instance()->screen_update();
-#endif
     WinDismiss::dismiss_defer();  // in case window was dismissed
 }
 

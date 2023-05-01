@@ -19,15 +19,17 @@ double sqrt(doublereal)     Looks directly compatible with C sqrt
 */
 
 double d_sign(double* input, double* sign) {
-  if (*sign >= 0. && *input >= 0.) return(*input);
-  if (*sign <= 0. && *input <= 0.) return(*input);
-  return(-(*input));
+    if (*sign >= 0. && *input >= 0.)
+        return (*input);
+    if (*sign <= 0. && *input <= 0.)
+        return (*input);
+    return (-(*input));
 }
 
 double pow_dd(double* mantissa, double* exponent) {
-  return(pow(*mantissa, *exponent));
+    return (pow(*mantissa, *exponent));
 }
 
 double pow_di(double* mantissa, double* exponent) {
-  return(pow(*mantissa, (double) *exponent));
+    return (pow(*mantissa, (double) *exponent));
 }

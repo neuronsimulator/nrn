@@ -324,13 +324,6 @@ using neuron::Sprintf;
 
 extern int hoc_usegui; /* when 0 does not make interviews calls */
 extern int nrn_istty_;
-extern int parallel_sub; /* for use with parallel neuron (see parallel.cl) */
-
-#define NOT_PARALLEL_SUB(c1) \
-    {                        \
-        if (!parallel_sub)   \
-            c1               \
-    }
 
 /* Enter handling for PVM  NJP 11/21/94 */
 #ifdef PVM

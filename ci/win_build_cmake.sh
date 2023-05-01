@@ -18,7 +18,7 @@ cd $BUILD_SOURCESDIRECTORY/build
 
 # build and create installer
 /mingw64/bin/cmake .. \
-	-G 'Unix Makefiles'  \
+	-G Ninja  \
 	-DNRN_ENABLE_MPI_DYNAMIC=ON  \
 	-DNRN_ENABLE_MPI=ON  \
 	-DCMAKE_PREFIX_PATH='/c/msmpi'  \
@@ -26,17 +26,16 @@ cd $BUILD_SOURCESDIRECTORY/build
 	-DNRN_ENABLE_PYTHON=ON  \
 	-DNRN_ENABLE_RX3D=ON  \
 	-DNRN_RX3D_OPT_LEVEL=2 \
-	-DPYTHON_EXECUTABLE=/c/Python37/python.exe \
+	-DPYTHON_EXECUTABLE=/c/Python38/python.exe \
 	-DNRN_ENABLE_PYTHON_DYNAMIC=ON  \
-	-DNRN_PYTHON_DYNAMIC='c:/Python37/python.exe;c:/Python38/python.exe;c:/Python39/python.exe;c:/Python310/python.exe'  \
+	-DNRN_PYTHON_DYNAMIC='c:/Python38/python.exe;c:/Python39/python.exe;c:/Python310/python.exe;c:/Python311/python.exe'  \
 	-DCMAKE_INSTALL_PREFIX='/c/nrn-install' \
 	-DMPI_CXX_LIB_NAMES:STRING=msmpi \
 	-DMPI_C_LIB_NAMES:STRING=msmpi \
 	-DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
-make -j 2
+ninja install
 ctest -VV
-make install
-make setup_exe
+ninja setup_exe
 
 # copy installer with fixed name for nightly upload
 cp src/mswin/nrn*AMD64.exe $BUILD_SOURCESDIRECTORY/nrn-nightly-AMD64.exe

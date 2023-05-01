@@ -36,10 +36,9 @@ int poisrand(double mean) {
     n = 0;
     s = std::exp(-mean);
     q = 1.0;
-    while (q >= s)
-    {
-	q = q * scop_random();
-	++n;
+    while (q >= s) {
+        q = q * scop_random();
+        ++n;
     }
-    return (n-1);
+    return (n - 1);
 }

@@ -8,11 +8,6 @@
 #endif
 
 #include <../../nrnconf.h>
-#include <nrnpython_config.h>
-
-#if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD >= 30
-#define PY_LIMITED_API
-#endif
 
 #if defined(USE_PYTHON)
 #undef _POSIX_C_SOURCE
@@ -21,6 +16,8 @@
 
 #endif /*USE_PYTHON*/
 
+#include <string_view>
+
 #define PyString_FromString PyUnicode_FromString
 #define PyInt_Check         PyLong_Check
 #define PyInt_CheckExact    PyLong_CheckExact
@@ -28,8 +25,8 @@
 #define PyInt_AsLong        PyLong_AsLong
 #define PyInt_FromLong      PyLong_FromLong
 
-static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 7),
-              "Python >= 3.7 required");
+static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 8),
+              "Python >= 3.8 required");
 
 extern PyObject* nrnpy_hoc_pop();
 extern int nrnpy_numbercheck(PyObject*);
@@ -71,5 +68,20 @@ enum ObjectType {
 };
 enum IteratorState { Begin, NextNotLast, Last };
 }  // namespace PyHoc
-
+// Declare methods that are used in different translation units within one libnrnpythonX.Y
+struct Object;
+struct Section;
+PyObject* hocobj_call_arg(int);
+struct NPySecObj {
+    PyObject_HEAD
+    Section* sec_;
+    char* name_;
+    PyObject* cell_weakref_;
+};
+NPySecObj* newpysechelp(Section* sec);
+PyObject* nrnpy_hoc2pyobject(Object* ho);
+int nrnpy_ho_eq_po(Object*, PyObject*);
+PyObject* nrnpy_ho2po(Object*);
+Object* nrnpy_po2ho(PyObject*);
+Object* nrnpy_pyobject_in_obj(PyObject*);
 #endif

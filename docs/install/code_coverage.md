@@ -17,7 +17,7 @@ Clone the nrn repository and get ready to build.
 ```
 
 Note: A simplified workflow is supported via the cmake option
-[-DNRN_ENABLE_COVERAGE=ON](../cmake_doc/options.html#nrn-enable-coverage-bool-off)
+[-DNRN_ENABLE_COVERAGE=ON](../cmake_doc/options.rst#nrn-enable-coverage-bool-off)
 that removes the need to be concerned with COVERAGE_FLAGS and explicit
 use of lcov and genhtml by providing the make targets ``make cover_begin``
 and ``make cover_html``. See [Simplified Workflow](#simplified-workflow) below.

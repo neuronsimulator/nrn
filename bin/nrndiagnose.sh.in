@@ -15,7 +15,7 @@ pysetup='@ac_pysetup@'
 # What python are we supposed to use that allows the possibility
 # of import neuron. Need a Python that is consistent with our build.
 # If not dynamic then just use PYTHONCFG. If dynamic there may be
-# multiple acceptable python versions, e.g 3.7, 3.8 so look in
+# multiple acceptable python versions, e.g 3.8, 3.9 so look in
 # $prefix/$host_cpu/lib for libnrnpython* and see if there are
 # any consistent versions on this machine
 

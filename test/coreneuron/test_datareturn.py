@@ -1,5 +1,5 @@
 # Test of data return covering most of the functionality.
-import distutils.util
+from neuron.tests.utils.strtobool import strtobool
 import itertools
 import os
 
@@ -175,12 +175,10 @@ def test_datareturn():
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = bool(
-        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-    )
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
 
     results = []
-    cell_permute_values = (1, 2) if coreneuron.gpu else (0, 1)
+    cell_permute_values = coreneuron.valid_cell_permute()
     for mode, nthread, cell_permute in itertools.product(
         [0, 1, 2], [1, 2], cell_permute_values
     ):

@@ -505,7 +505,7 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
         Memb_list* ml = nullptr;
         for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
             ml = tml->ml;
-            int nn = corenrn.get_prop_param_size()[tml->index] * ml->nodecount;
+            int nn = corenrn.get_prop_param_size()[tml->index] * ml->_nodecount_padded;
             if (nn && pr->pd_ >= ml->data && pr->pd_ < (ml->data + nn)) {
                 mtype = tml->index;
                 ix = (pr->pd_ - ml->data);

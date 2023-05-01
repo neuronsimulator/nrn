@@ -150,23 +150,11 @@ static std::pair<std::vector<int>, std::vector<int>> all2allv_helper(const std::
     return std::make_pair(std::move(rcnt), std::move(rdispl));
 }
 
-/*
-define following to 1 if desire space/performance information such as:
-all2allv_int gidin to intermediate space=1552 total=37345104 time=0.000495835
-all2allv_int gidout space=528 total=37379376 time=1.641e-05
-all2allv_int lists space=3088 total=37351312 time=4.4708e-05
-*/
-
-#define all2allv_perf 0
-
 // input: s, scnt, sdispl; output: r, rdispl
 static std::pair<std::vector<int>, std::vector<int>> all2allv_int(const std::vector<int>& s,
                                                                   const std::vector<int>& scnt,
                                                                   const std::vector<int>& sdispl,
                                                                   const char* dmes) {
-#if all2allv_perf
-    double tm = nrn_wtime();
-#endif
     int np = nrnmpi_numprocs;
 
     std::vector<int> rcnt;
@@ -177,13 +165,6 @@ static std::pair<std::vector<int>, std::vector<int>> all2allv_int(const std::vec
         s.data(), scnt.data(), sdispl.data(), r.data(), rcnt.data(), rdispl.data());
     alltoalldebug(dmes, s, scnt, sdispl, r, rcnt, rdispl);
 
-#if all2allv_perf
-    if (nrnmpi_myid == 0) {
-        int nb = 4 * nrnmpi_numprocs + sdispl[nrnmpi_numprocs] + rdispl[nrnmpi_numprocs];
-        tm = nrn_wtime() - tm;
-        printf("all2allv_int %s space=%d total=%g time=%g\n", dmes, nb, nrn_mallinfo(), tm);
-    }
-#endif
     return std::make_pair(std::move(r), std::move(rdispl));
 }
 

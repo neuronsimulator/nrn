@@ -24,6 +24,7 @@
 
 #include <vector>
 #include <variant>
+#include <sstream>
 
 
 int bbs_poll_;
@@ -90,8 +91,7 @@ struct frame {             /* proc/func call stack frame */
 };
 }  // namespace nrn::oc
 using Frame = nrn::oc::frame;
-#define NFRAME 512 /* default size */
-#define nframe hoc_nframe
+#define NFRAME 512                    /* default size */
 static Frame *frame, *fp, *framelast; /* first, frame pointer, last */
 
 /* temporary object references come from this pool. This allows the
@@ -419,8 +419,8 @@ static void stack_obtmp_recover_on_err(int tcnt) {
 
 // create space for stack and code
 void hoc_init_space() {
-    if (nframe == 0) {
-        nframe = NFRAME;
+    if (hoc_nframe == 0) {
+        hoc_nframe = NFRAME;
     }
     if (hoc_nstack == 0) {
         // Default stack size
@@ -428,8 +428,8 @@ void hoc_init_space() {
     }
     stack.reserve(hoc_nstack);
     progp = progbase = prog = (Inst*) emalloc(sizeof(Inst) * NPROG);
-    fp = frame = (Frame*) emalloc(sizeof(Frame) * nframe);
-    framelast = frame + nframe;
+    fp = frame = (Frame*) emalloc(sizeof(Frame) * hoc_nframe);
+    framelast = frame + hoc_nframe;
     hoc_temp_obj_pool_ = (Object**) emalloc(sizeof(Object*) * TOBJ_POOL_SIZE);
 }
 
@@ -1655,14 +1655,13 @@ int hoc_argindex(void) {
     return j;
 }
 
-void arg(void) /* push argument onto stack */
-{
-    int i;
-    i = (pc++)->i;
+// push argument onto stack
+void hoc_arg() {
+    int i = (pc++)->i;
     if (i == 0) {
         i = hoc_argindex();
     }
-    hoc_pushx(*getarg(i));
+    hoc_pushx(*hoc_getarg(i));
 }
 
 void hoc_stringarg(void) /* push string arg onto stack */
@@ -2055,10 +2054,9 @@ void hoc_cyclic(void) /* the modulus function */
     hoc_pushx(r);
 }
 
-void negate(void) /* negate top element on stack */
-{
-    double d;
-    d = hoc_xpop();
+// negate top element on stack
+void hoc_negate() {
+    double const d = hoc_xpop();
     hoc_pushx(-d);
 }
 
@@ -2070,7 +2068,7 @@ void gt(void) {
     hoc_pushx(d1);
 }
 
-void lt(void) {
+void hoc_lt() {
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
@@ -2575,7 +2573,7 @@ void insertcode(Inst* begin, Inst* end, Pfrv f) {
     }
 }
 
-#if defined(DOS) || defined(WIN32) || (MAC && !defined(DARWIN))
+#if defined(DOS) || defined(WIN32)
 static int ntimes;
 #endif
 
@@ -2591,14 +2589,6 @@ void execute(Inst* p) /* run the machine */
 #if 0
             kbhit(); /* DOS can't capture interrupt when number crunching*/
 #endif
-        }
-#endif
-
-#if MAC && !defined(DARWIN)
-        /* there is significant overhead here */
-        if (++ntimes > 100) {
-            ntimes = 0;
-            hoc_check_intupt(1);
         }
 #endif
         if (hoc_intset)

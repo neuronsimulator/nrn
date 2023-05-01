@@ -18,7 +18,7 @@
 
 namespace coreneuron {
 
-#if defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
+#ifdef ENABLE_SONATA_REPORTS
 struct VarWithMapping {
     uint32_t id;
     double* var_value;
@@ -36,12 +36,14 @@ class ReportEvent: public DiscreteEvent {
                 double tstart,
                 const VarsToReport& filtered_gids,
                 const char* name,
-                double report_dt);
+                double report_dt,
+                ReportType type);
 
-    /** on deliver, call ReportingLib and setup next event */
+    /** on deliver, call libsonata and setup next event */
     void deliver(double t, NetCvode* nc, NrnThread* nt) override;
     bool require_checkpoint() override;
     void summation_alu(NrnThread* nt);
+    void lfp_calc(NrnThread* nt);
 
   private:
     double dt;
@@ -52,7 +54,8 @@ class ReportEvent: public DiscreteEvent {
     std::vector<int> gids_to_report;
     double tstart;
     VarsToReport vars_to_report;
+    ReportType report_type;
 };
-#endif  // defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
+#endif
 
 }  // Namespace coreneuron

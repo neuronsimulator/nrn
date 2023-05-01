@@ -4,6 +4,8 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
+#include <string>
+
 List* symlist[128]; /* symbol table: linked list
             first char gives which list to use,but*/
 

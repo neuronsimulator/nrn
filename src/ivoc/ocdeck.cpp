@@ -7,7 +7,6 @@
 #include <InterViews/layout.h>
 #include <InterViews/background.h>
 #include <IV-look/kit.h>
-#include <ivstream.h>
 #include <stdio.h>
 #include "ocdeck.h"
 #include "apwindow.h"
@@ -15,9 +14,6 @@
 #endif /* HAVE_IV */
 #include "classreg.h"
 #include "gui-redirect.h"
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 #if HAVE_IV
 class SpecialPatch: public Patch {

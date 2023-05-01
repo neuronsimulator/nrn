@@ -39,19 +39,24 @@
 /*                              call                            */
 /*								*/
 /*--------------------------------------------------------------*/
-double perstep(int* reset_integ, double* old_value, double t, double lag, double period, double jump) {
+double perstep(int* reset_integ,
+               double* old_value,
+               double t,
+               double lag,
+               double period,
+               double jump) {
     int njumps;
     double value;
 
     if (t < lag)
-	value = 0.0;
-    else
-    {
-	njumps = (int) ((t - lag) / period) + 1;
-	value = (double) njumps * jump;
+        value = 0.0;
+    else {
+        njumps = (int) ((t - lag) / period) + 1;
+        value = (double) njumps * jump;
     }
 
-    if (*old_value != value) *reset_integ = 1;
+    if (*old_value != value)
+        *reset_integ = 1;
     *old_value = value;
 
     return (value);

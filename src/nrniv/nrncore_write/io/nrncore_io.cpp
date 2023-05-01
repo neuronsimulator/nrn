@@ -564,13 +564,23 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
 
         for (size_t j = 0; j < c->size(); j++) {
             SecMapping* s = c->secmapping[j];
+            size_t total_lfp_factors = s->seglfp_factors.size();
             /** section list name, number of sections, number of segments */
-            fprintf(f, "%s %d %zd\n", s->name.c_str(), s->nsec, s->size());
+            fprintf(f,
+                    "%s %d %zd %zd %d\n",
+                    s->name.c_str(),
+                    s->nsec,
+                    s->size(),
+                    total_lfp_factors,
+                    s->num_electrodes);
 
             /** section - segment mapping */
             if (s->size()) {
                 writeint(&(s->sections.front()), s->size());
                 writeint(&(s->segments.front()), s->size());
+                if (total_lfp_factors) {
+                    writedbl(&(s->seglfp_factors.front()), total_lfp_factors);
+                }
             }
         }
     }

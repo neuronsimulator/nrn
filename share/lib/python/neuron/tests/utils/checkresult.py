@@ -52,7 +52,10 @@ class Chk:
                         print(a, b, "diff", abs(a - b) / max(abs(a), abs(b)), ">", tol)
                     return match
                 elif type(a) == str:
-                    return a == b
+                    match = a == b
+                    if not match:
+                        print("strdiff", a, b)
+                    return match
                 elif type(a) == list:
                     # List comprehension avoids short-circuit, so the "diff"
                     # message just above is printed for all elements
@@ -77,6 +80,10 @@ class Chk:
             else:
                 self.d[key] = value
             self.modified = True
+
+    def get(self, key, default=None):
+        """Get an element from the dict. Returns default if it doesn't exist."""
+        return self.d.get(key, default)
 
     def rm(self, key):
         """Remove key from dict.

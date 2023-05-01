@@ -2,6 +2,7 @@
 #include "nrniv_mf.h"
 #include "nrn_pyhocobject.h"
 #include "nrnoc2iv.h"
+#include "nrnpy.h"
 #include "nrnpy_utils.h"
 #include "nrnpython.h"
 #include "nrnwrap_dlfcn.h"
@@ -15,30 +16,12 @@
 
 #include <cstdint>
 #include <vector>
-
-#if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
-// when compiled with different Python.h, force correct value
-#undef NRNPYTHON_DYNAMICLOAD
-#define NRNPYTHON_DYNAMICLOAD PY_MAJOR_VERSION
-#endif
+#include <sstream>
 
 extern PyTypeObject* psection_type;
 
-// copied from nrnpy_nrn
-typedef struct {
-    PyObject_HEAD
-    Section* sec_;
-    char* name_;
-    PyObject* cell_;
-} NPySecObj;
-
-
 #include "parse.hpp"
 extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
-extern Object** (*nrnpy_gui_helper_)(const char*, Object*);
-extern Object** (*nrnpy_gui_helper3_)(const char*, Object*, int);
-extern char** (*nrnpy_gui_helper3_str_)(const char*, Object*, int);
-extern double (*nrnpy_object_to_double_)(Object*);
 extern void* (*nrnpy_get_pyobj)(Object* obj);
 extern void (*nrnpy_restore_savestate)(int64_t, char*);
 extern void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size);
@@ -74,13 +57,8 @@ extern PyObject* nrnpy_cas(PyObject*, PyObject*);
 extern PyObject* nrnpy_forall(PyObject*, PyObject*);
 extern PyObject* nrnpy_newsecobj(PyObject*, PyObject*, PyObject*);
 extern int section_object_seen;
-extern Symbol* nrnpy_pyobj_sym_;
 extern Symbol* nrn_child_sym;
 extern int nrn_secref_nchild(Section*);
-extern PyObject* nrnpy_hoc2pyobject(Object*);
-PyObject* nrnpy_ho2po(Object*);
-Object* nrnpy_po2ho(PyObject*);
-extern Object* nrnpy_pyobject_in_obj(PyObject*);
 static void pyobject_in_objptr(Object**, PyObject*);
 extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
@@ -93,7 +71,6 @@ extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
 class NetCon;
 extern int nrn_netcon_weight(NetCon*, double**);
 extern int nrn_matrix_dim(void*, int);
-extern NPySecObj* newpysechelp(Section* sec);
 
 extern PyObject* pmech_types;  // Python map for name to Mechanism
 extern PyObject* rangevars_;   // Python map for name to Symbol
@@ -522,6 +499,7 @@ PyObject* nrnpy_ho2po(Object* o) {
     return po;
 }
 
+// not static because it's used in nrnpy_nrn.cpp
 Object* nrnpy_po2ho(PyObject* po) {
     // po may be None, or encapsulate a hoc object (via the
     // PyHocObject, or be a native Python instance such as [1,2,3]
@@ -684,7 +662,8 @@ static void* fcall(void* vself, void* vargs) {
         hocobj_pushargs_free_strings(strings_to_free);
         return result;
     } else {
-        HocTopContextSet Inst fc[4];
+        HocTopContextSet
+        Inst fc[4];
         // ugh. so a potential call of hoc_get_last_pointer_symbol will return nil.
         fc[0].in = STOP;
         fc[1].sym = self->sym_;
@@ -1179,7 +1158,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         }
     }
     // top level interpreter fork
-    HocTopContextSet switch (sym->type) {
+    HocTopContextSet
+    switch (sym->type) {
     case VAR:  // double*
         if (!ISARRAY(sym)) {
             if (sym->subtype == USERINT) {
@@ -1288,7 +1268,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         }
     }
     }
-    HocContextRestore return result;
+    HocContextRestore
+    return result;
 }
 
 static PyObject* hocobj_baseattr(PyObject* subself, PyObject* args) {
@@ -1412,7 +1393,8 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
             return -1;
         }
     }
-    HocTopContextSet switch (sym->type) {
+    HocTopContextSet
+    switch (sym->type) {
     case VAR:  // double*
         if (ISARRAY(sym)) {
             PyErr_SetString(PyExc_TypeError, "Wrong number of subscripts");
@@ -1507,7 +1489,8 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
         err = -1;
         break;
     }
-    HocContextRestore return err;
+    HocContextRestore
+    return err;
 }
 
 static Symbol* sym_vec_x;
@@ -1885,7 +1868,8 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 }
             }
         } else {  // must be a top level intermediate
-            HocTopContextSet switch (po->sym_->type) {
+            HocTopContextSet
+            switch (po->sym_->type) {
             case VAR:
                 hocobj_pushtop(po, po->sym_, ix);
                 hoc_evalpointer();
@@ -1993,7 +1977,8 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
             err = set_final_from_stk(arg);
         }
     } else {  // must be a top level intermediate
-        HocTopContextSet switch (po->sym_->type) {
+        HocTopContextSet
+        switch (po->sym_->type) {
         case VAR:
             hocobj_pushtop(po, po->sym_, i);
             hoc_evalpointer();
@@ -3122,15 +3107,11 @@ PyObject* nrnpy_hoc() {
     nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
     nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
     nrnpy_sectionlist_helper_ = sectionlist_helper_;
-    nrnpy_gui_helper_ = gui_helper_;
-    nrnpy_gui_helper3_ = gui_helper_3_;
-    nrnpy_gui_helper3_str_ = gui_helper_3_str_;
     nrnpy_get_pyobj = nrnpy_get_pyobj_;
     nrnpy_decref = nrnpy_decref_;
     nrnpy_nrncore_arg_p_ = nrncore_arg;
     nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
     nrnpy_nrncore_file_mode_value_p_ = nrncore_file_mode_value;
-    nrnpy_object_to_double_ = object_to_double_;
     nrnpy_rvp_rxd_to_callable = rvp_rxd_to_callable_;
     PyLockGIL lock;
 
@@ -3198,4 +3179,11 @@ PyObject* nrnpy_hoc() {
     return m;
 fail:
     return NULL;
+}
+
+void nrnpython_reg_real_nrnpy_hoc_cpp(neuron::python::impl_ptrs* ptrs) {
+    ptrs->gui_helper = gui_helper_;
+    ptrs->gui_helper3 = gui_helper_3_;
+    ptrs->gui_helper3_str = gui_helper_3_str_;
+    ptrs->object_to_double = object_to_double_;
 }

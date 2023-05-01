@@ -2,7 +2,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <ivstream.h>
 #include <math.h>
 #include <assert.h>
 
@@ -50,9 +49,6 @@ extern Image* gif_image(const char*);
 #include "classreg.h"
 #include "gui-redirect.h"
 #include "treeset.h"
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 #if HAVE_IV
 #define Graph_Crosshair_           "Crosshair Graph"

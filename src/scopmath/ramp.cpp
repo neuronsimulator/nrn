@@ -29,9 +29,9 @@
  *		duration,double duration of the ramp incline
  *
  *    Output:  reset_integ, *int  set to 1 if discontinuity is
- *                              generated                     
+ *                              generated
  *              old_value, *double  saved value from previous
- *                              call                         
+ *                              call
  *
  *  Returns:
  *	Double precision value of the ramp function
@@ -43,23 +43,26 @@
  *	none
  *
  */
-double ramp(int* reset_integ, double* old_value, double t, double lag, double height, double duration) {
-    if (t < lag)
-    {
-	if (*old_value != 0.) *reset_integ = 1;
-	*old_value = 0.;
-	return (0.0);
-    }
-    else if (t > lag + duration)
-    {
-	if (*old_value != height) *reset_integ = 1;
-	*old_value = height;
-	return (height);
-    }
-    else
-    {
-	if (*old_value == 0. || *old_value == height) *reset_integ = 1;
-	*old_value = (t - lag) * height / duration;
-	return (*old_value);
+double ramp(int* reset_integ,
+            double* old_value,
+            double t,
+            double lag,
+            double height,
+            double duration) {
+    if (t < lag) {
+        if (*old_value != 0.)
+            *reset_integ = 1;
+        *old_value = 0.;
+        return (0.0);
+    } else if (t > lag + duration) {
+        if (*old_value != height)
+            *reset_integ = 1;
+        *old_value = height;
+        return (height);
+    } else {
+        if (*old_value == 0. || *old_value == height)
+            *reset_integ = 1;
+        *old_value = (t - lag) * height / duration;
+        return (*old_value);
     }
 }

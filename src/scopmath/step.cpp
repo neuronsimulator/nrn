@@ -43,11 +43,12 @@ double step(int* reset_integ, double* old_value, double t, double jumpt, double 
     double value;
 
     if (t >= jumpt)
-	value = jump;
+        value = jump;
     else
-	value = 0.0;
+        value = 0.0;
 
-    if (*old_value != value) *reset_integ = 1;
+    if (*old_value != value)
+        *reset_integ = 1;
     *old_value = value;
     return (value);
 }

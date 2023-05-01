@@ -3,7 +3,6 @@
 /*
 Hooks for special processing make use of the request() method in Glyphs.
 */
-#include <ivstream.h>
 
 class Canvas;
 class Transformer;

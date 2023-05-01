@@ -8,9 +8,9 @@
 #include <InterViews/patch.h>
 #include <InterViews/background.h>
 #include <InterViews/box.h>
+#include <InterViews/resource.h>
 #include <IV-look/kit.h>
 #include <InterViews/input.h>
-#include <ivstream.h>
 #include <stdio.h>
 #include "ocbox.h"
 #include "apwindow.h"
@@ -18,16 +18,12 @@
 #include "ivoc.h"
 #endif /* HAVE_IV */
 
-#include <InterViews/resource.h>
 #include "oc2iv.h"
 #include "classreg.h"
 
 #include "gui-redirect.h"
 
 extern int hoc_return_type_code;
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 #if HAVE_IV
 
@@ -778,13 +774,8 @@ void OcBox::save(std::ostream& o) {
 #endif
                 window()->save_left(),
                 window()->save_bottom(),
-#if MAC
-                window()->canvas()->width(),
-                window()->canvas()->height());
-#else
                 window()->width(),
                 window()->height());
-#endif
         o << buf << std::endl;
     } else {
         o << "ocbox_.map()\n}" << std::endl;

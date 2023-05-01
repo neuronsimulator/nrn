@@ -1,7 +1,6 @@
 #include <../../nrnconf.h>
 #if HAVE_IV  // to end of file
 
-#include <ivstream.h>
 #include <cstdio>
 #include <cassert>
 #include <cmath>

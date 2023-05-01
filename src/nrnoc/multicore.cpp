@@ -66,9 +66,7 @@ extern int v_structure_change;
 extern int diam_changed;
 extern Section** secorder;
 extern int section_count;
-extern "C" {
 extern void spDestroy(char*);
-}
 
 void nrn_mk_table_check();
 static std::vector<std::pair<int, NrnThreadMembList*>> table_check_;

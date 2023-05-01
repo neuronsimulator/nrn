@@ -47,11 +47,12 @@ double squarewave(int* reset_integ, double* old_value, double t, double period, 
 
     temp = std::modf(t / period, &temp);
     if (temp < 0.5)
-	value = amplitude;
+        value = amplitude;
     else
-	value = -amplitude;
+        value = -amplitude;
 
-    if (value != *old_value) *reset_integ = 1;
+    if (value != *old_value)
+        *reset_integ = 1;
     *old_value = value;
     return (value);
 }

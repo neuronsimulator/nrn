@@ -15,8 +15,8 @@ set(ringtest_prefix ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${ringtest_mpi_ranks
                     ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS})
 set(ringtest_special ${ringtest_prefix} special ${MPIEXEC_POSTFLAGS} -mpi -python ringtest.py)
 set(ringtest_special_core ${ringtest_prefix} special-core ${MPIEXEC_POSTFLAGS})
-set(ringtest_python ${ringtest_prefix} ${preload_sanitizer_mpiexec} ${PYTHON_EXECUTABLE}
-                    ${MPIEXEC_POSTFLAGS} ringtest.py)
+set(ringtest_python ${ringtest_prefix} ${preload_sanitizer_mpiexec}
+                    ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} ringtest.py)
 
 # Step 2 -- add configurations to the group (e.g. here NEURON without MPI) When CoreNEURON is
 # enabled then TABLE statements are disabled in hh.mod, which causes slight numerical differences in

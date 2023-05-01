@@ -33,7 +33,6 @@
  * Scene - arbitrary placements seen from several views
  */
 
-#include <ivstream.h>
 #include <stdio.h>
 #include <assert.h>
 
@@ -214,9 +213,6 @@ Scene::Scene(Coord x1, Coord y1, Coord x2, Coord y2, Glyph* bg)
         scene_list = new Scene_PtrList;
     }
     if (mbs_ == 0.) {
-#if MAC
-        mbs_ = 10.;
-#endif
         Session::instance()->style()->find_attribute("scene_menu_box_size", mbs_);
         if (mbs_ > 0.) {
             mb_color_ = new Color(ColorIntensity(.5), ColorIntensity(.5), ColorIntensity(.5));
@@ -892,7 +888,7 @@ void Scene::printfile(const char* fname) {
 
 void XYView::printfile(const char* fname) {
     std::filebuf obuf;
-    if (!obuf.open(fname, IOS_OUT)) {
+    if (!obuf.open(fname, std::ios::out)) {
         return;
     }
     std::ostream o(&obuf);

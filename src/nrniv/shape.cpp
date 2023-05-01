@@ -21,7 +21,6 @@
 #include <InterViews/layout.h>
 #include <IV-look/kit.h>
 #include <OS/list.h>
-#include <ivstream.h>
 #include <cmath>
 #include "mymath.h"
 #include "apwindow.h"
@@ -181,9 +180,6 @@ bool OcShapeHandler::event(Event&) {
     return true;
 }
 #endif  // HAVE_IV
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 // Shape class registration for oc
 static double sh_view(void* v) {

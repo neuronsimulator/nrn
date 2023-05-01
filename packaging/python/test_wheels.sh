@@ -214,11 +214,7 @@ run_parallel_test() {
       brew unlink openmpi
       brew link mpich
       BREW_PREFIX=$(brew --prefix)
-
-      # TODO : latest mpich has issuee on Azure OSX
-      if [[ "$CI_OS_NAME" == "osx" ]]; then
-          run_mpi_test "${BREW_PREFIX}/opt/mpich/bin/mpirun" "MPICH" ""
-      fi
+      run_mpi_test "${BREW_PREFIX}/opt/mpich/bin/mpirun" "MPICH" ""
 
       brew unlink mpich
       brew link openmpi
@@ -336,7 +332,7 @@ fi
 
 
 # run tests
-test_wheel $(which python)
+test_wheel "${python_exe}"
 
 
 # cleanup

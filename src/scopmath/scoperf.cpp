@@ -37,18 +37,18 @@
  *  Files accessed: none
  *
  ***********************************************************/
-#define a1  0.254829592
+#define a1 0.254829592
 #define a2 -0.284496736
-#define a3  1.421413741
+#define a3 1.421413741
 #define a4 -1.453152027
-#define a5  1.061405429
+#define a5 1.061405429
 
 double scop_erf(double z) {
     double t = 1. / (1. + 0.3275911 * fabs(z));
     double value = 1. - (((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t) * exp(-z * z);
 
     if (z >= 0.0)
-	return (value);
+        return (value);
     else
-	return (-value);
+        return (-value);
 }

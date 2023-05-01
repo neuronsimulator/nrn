@@ -52,7 +52,7 @@ Read from Terminal and Files
             ### world                                 #
             ###########################################
             
-            from neuron import h, gui
+            from neuron import h
             
             def r_open(ndat):
                 h.ropen("file.dat")
@@ -100,7 +100,7 @@ Read from Terminal and Files
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import h
 
             def response(answer):
                 if (answer == 0):
@@ -153,7 +153,7 @@ Read from Terminal and Files
             ### 12 9                                  #
             ###########################################
 
-            from neuron import h, gui
+            from neuron import h
 
             def r_open(ndat):
                 h.ropen("file.dat")

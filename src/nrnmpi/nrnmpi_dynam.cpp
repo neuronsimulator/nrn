@@ -8,6 +8,8 @@
 
 #include <array>
 #include <cstdlib>
+#include <iostream>
+#include <string>
 
 #if NRNMPI_DYNAMICLOAD /* to end of file */
 
@@ -27,6 +29,7 @@ extern const char* path_prefix_to_libnrniv();
 #endif
 
 #include <cstddef>
+#include <string>  // for nrnmpi_str_broadcast_world
 
 #include "mpispike.h"
 #include "nrnmpi_def_cinc" /* nrnmpi global variables */

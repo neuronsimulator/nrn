@@ -9,20 +9,14 @@
 #include "hoclist.h"
 #include "nrn_ansi.h"
 #include "nrnmpi.h"
+#include "nrnpy.h"
 #include "nrnfilewrap.h"
-#include <nrnpython_config.h>
 #include "ocfunc.h"
 
 
 #define PDEBUG 0
 
-#if USE_PYTHON
-Symbol* nrnpy_pyobj_sym_;
-void (*nrnpy_py2n_component)(Object* o, Symbol* s, int nindex, int isfunc);
-void (*nrnpy_hpoasgn)(Object* o, int type);
-void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
-#endif
-
+Symbol* nrnpy_pyobj_sym_{};
 #include "section.h"
 #include "nrniv_mf.h"
 int section_object_seen;
@@ -48,7 +42,8 @@ void hoc_install_hoc_obj(void) {
     hoc_objectdata[s->u.oboff].pobj = pobj = (Object**) emalloc(sizeof(Object*));
     pobj[0] = nullptr;
 
-    hoc_oc("objref hoc_obj_[2]\n");
+    auto const code = hoc_oc("objref hoc_obj_[2]\n");
+    assert(code == 0);
     hoc_obj_ = hoc_lookup("hoc_obj_");
 }
 
@@ -153,13 +148,9 @@ void hoc_obvar_declare(Symbol* sym, int type, int pmes) {
     assert(sym->cpublic != 2);
     if (pmes && hoc_symlist == hoc_top_level_symlist) {
         int b = 0;
-#if USE_NRNFILEWRAP
-        b = (hoc_fin && hoc_fin->f == stdin);
-#else
         b = (hoc_fin == stdin);
-#endif
         if (nrnmpi_myid_world == 0 && (hoc_print_first_instance && b)) {
-            NOT_PARALLEL_SUB(Printf("first instance of %s\n", sym->name);)
+            Printf("first instance of %s\n", sym->name);
         }
         sym->defined_on_the_fly = 1;
     }
@@ -625,7 +616,14 @@ static void call_constructor(Object* ob, Symbol* sym, int narg) {
     pcsav = pc;
 
     push_frame(sym, narg);
-    ob->u.this_pointer = (ob->ctemplate->constructor)(ob);
+    ob->u.this_pointer = neuron::oc::invoke_method_that_may_throw(
+        [ob]() -> std::string {
+            std::string rval{hoc_object_name(ob)};
+            rval.append(" constructor");
+            return rval;
+        },
+        ob->ctemplate->constructor,
+        ob);
     pop_frame();
 
     pc = pcsav;
@@ -661,26 +659,34 @@ void call_ob_proc(Object* ob, Symbol* sym, int narg) {
         gui_redirect_obj_ = ob;
         push_frame(sym, narg);
         hoc_thisobject = obsav;
+        auto const error_prefix_generator = [ob, sym]() {
+            std::string rval{hoc_object_name(ob)};
+            rval.append(2, ':');
+            rval.append(sym->name);
+            return rval;
+        };
         if (sym->type == OBFUNCTION) {
-            Object** o;
-            o = (*(sym->u.u_proc->defn.pfo_vp))(ob->u.this_pointer);
+            auto* const o = neuron::oc::invoke_method_that_may_throw(error_prefix_generator,
+                                                                     sym->u.u_proc->defn.pfo_vp,
+                                                                     ob->u.this_pointer);
             if (*o) {
                 ++(*o)->refcount;
             } /* in case unreffed below */
-            pop_frame();
+            hoc_pop_frame();
             if (*o) {
                 --(*o)->refcount;
             }
             hoc_pushobj(o);
         } else if (sym->type == STRFUNCTION) {
-            char** s;
-            s = (char**) (*(sym->u.u_proc->defn.pfs_vp))(ob->u.this_pointer);
-            pop_frame();
+            auto* const s = const_cast<char**>(neuron::oc::invoke_method_that_may_throw(
+                error_prefix_generator, sym->u.u_proc->defn.pfs_vp, ob->u.this_pointer));
+            hoc_pop_frame();
             hoc_pushstr(s);
         } else {
-            double x;
-            x = (*(sym->u.u_proc->defn.pfd_vp))(ob->u.this_pointer);
-            pop_frame();
+            auto x = neuron::oc::invoke_method_that_may_throw(error_prefix_generator,
+                                                              sym->u.u_proc->defn.pfd_vp,
+                                                              ob->u.this_pointer);
+            hoc_pop_frame();
             hoc_pushx(x);
         }
     } else if (ob->ctemplate->is_point_ && special_pnt_call(ob, sym, narg)) {
@@ -1012,7 +1018,7 @@ void hoc_object_component() {
                 /* note obp is now on stack twice */
                 /* hpoasgn will pop both */
             } else {
-                (*nrnpy_py2n_component)(obp, sym0, nindex, isfunc);
+                neuron::python::methods.py2n_component(obp, sym0, nindex, isfunc);
             }
             return;
         }
@@ -1094,6 +1100,20 @@ void hoc_object_component() {
             if (nindex) {
                 if (!ISARRAY(sym) || OPARINFO(sym)->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
+                }
+                if (narg) {
+                    // there are a few modeldb examples that use (index) instead
+                    // of [index] syntax for an array in this context. So we
+                    // have decided to keep allowing this legacy syntax for one
+                    // dimensional arrays.
+                    if (narg == 1) {
+                        hoc_push_ndim(1);
+                    } else {
+                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
+                                        hoc_object_name(obp),
+                                        sym->name,
+                                        sym->name);
+                    }
                 }
                 nindex = araypt(sym, OBJECTVAR);
             }
@@ -1246,6 +1266,20 @@ void hoc_object_component() {
             if (nindex) {
                 if (!ISARRAY(sym) || sym->arayinfo->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
+                }
+                if (narg) {
+                    // there are a few modeldb examples that use (index) instead
+                    // of [index] syntax for an array in this context. So we
+                    // have decided to keep allowing this legacy syntax for one
+                    // dimensional arrays.
+                    if (narg == 1) {
+                        hoc_push_ndim(1);
+                    } else {
+                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
+                                        hoc_object_name(obp),
+                                        sym->name,
+                                        sym->name);
+                    }
                 }
             }
             hoc_pushs(sym);
@@ -1420,7 +1454,7 @@ void hoc_object_asgn() {
         if (op) {
             hoc_execerror("Invalid assignment operator for PythonObject", nullptr);
         }
-        (*nrnpy_hpoasgn)(o, type1);
+        neuron::python::methods.hpoasgn(o, type1);
     } break;
 #endif
     default:
@@ -1792,6 +1826,25 @@ void hoc_dec_refcount(Object** pobj) {
     hoc_obj_unref(obj);
 }
 
+namespace {
+struct helper_in_case_dtor_throws {
+    helper_in_case_dtor_throws(Object* obj)
+        : m_obj{obj} {}
+    ~helper_in_case_dtor_throws() {
+        if (--m_obj->ctemplate->count <= 0) {
+            m_obj->ctemplate->index = 0;
+        }
+        m_obj->ctemplate = nullptr;
+        /* for testing purposes we don't free the object in order
+        to make sure no object variable ever uses a freed object */
+        hoc_free_object(m_obj);
+    }
+
+  private:
+    Object* m_obj;
+};
+}  // namespace
+
 void hoc_obj_unref(Object* obj) {
     Object* obsav;
 
@@ -1820,9 +1873,18 @@ printf("unreffing %s with refcount %d\n", hoc_object_name(obj), obj->refcount);
         if (obj->ctemplate->observers) {
             hoc_template_notify(obj, 0);
         }
+        // make sure that dereffing happens even if the destructor throws
+        helper_in_case_dtor_throws _{obj};
         if (obj->ctemplate->sym->subtype & (CPLUSOBJECT | JAVAOBJECT)) {
-            if (obj->u.this_pointer) {
-                (obj->ctemplate->destructor)(obj->u.this_pointer);
+            if (auto* const tp = obj->u.this_pointer; tp) {
+                neuron::oc::invoke_method_that_may_throw(
+                    [obj]() {
+                        std::string rval{hoc_object_name(obj)};
+                        rval.append(" destructor");
+                        return rval;
+                    },
+                    obj->ctemplate->destructor,
+                    tp);
             }
         } else {
             obsav = hoc_thisobject;
@@ -1831,15 +1893,6 @@ printf("unreffing %s with refcount %d\n", hoc_object_name(obj), obj->refcount);
             obj->u.dataspace = (Objectdata*) 0;
             hoc_thisobject = obsav;
         }
-        if (--obj->ctemplate->count <= 0) {
-            obj->ctemplate->index = 0;
-        }
-        obj->ctemplate = nullptr;
-        /* for testing purposes we don't free the object in order
-        to make sure no object variable ever uses a freed object */
-#if 1
-        hoc_free_object(obj);
-#endif
     }
 }
 
@@ -2031,11 +2084,9 @@ int is_obj_type(Object* obj, const char* type_name) {
 
 
 void* nrn_opaque_obj2pyobj(Object* ho) {
-#if USE_PYTHON
     // The PyObject* reference is not incremented. Use only as last resort
-    if (nrnpy_opaque_obj2pyobj_p_) {
-        return (*nrnpy_opaque_obj2pyobj_p_)(ho);
+    if (neuron::python::methods.opaque_obj2pyobj) {
+        return neuron::python::methods.opaque_obj2pyobj(ho);
     }
-#endif
     return nullptr;
 }

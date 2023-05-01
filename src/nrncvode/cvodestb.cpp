@@ -2,7 +2,6 @@
 // solver CVode stub to allow cvode as dll for mswindows version.
 
 #include <cmath>
-#include <InterViews/resource.h>
 #include "classreg.h"
 #include "cvodeobj.h"
 #include "nrncvode.h"
@@ -56,6 +55,12 @@ void nrn_deliver_events(NrnThread* nt) {
 void clear_event_queue() {
     if (net_cvode_instance) {
         net_cvode_instance->clear_events();
+    }
+}
+
+void free_event_queues() {
+    if (net_cvode_instance) {
+        net_cvode_instance->free_event_pools();
     }
 }
 

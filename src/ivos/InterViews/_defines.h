@@ -5,9 +5,7 @@
 #define point _lib_iv(point)
 #define points _lib_iv(points)
 #define RasterRect _lib_iv(RasterRect)
-#if !MAC
 #define Point _lib_iv(Point)
-#endif
 #define Line _lib_iv(Line)
 #define Ellipse _lib_iv(Ellipse)
 #define MultiLine _lib_iv(MultiLine)

@@ -25,9 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if MAC
-#undef HAVE_MALLOC_H
-#endif
 #if HAVE_MALLOC_H
 #include <malloc.h>
 #endif

@@ -54,17 +54,15 @@ int derivs(int nbase, double* x, double* y, double* h, double* der) {
     c = makevector(nbase);
     d = makevector(nbase);
 
-    for (i = 0; i < nbase - 1; i++)
-    {
-	h[i] = x[i + 1] - x[i];
-	d[i] = (y[i + 1] - y[i]) / h[i];
+    for (i = 0; i < nbase - 1; i++) {
+        h[i] = x[i + 1] - x[i];
+        d[i] = (y[i + 1] - y[i]) / h[i];
     }
-    for (i = 0; i < nbase - 2; i++)
-    {
-	b[i] = 2.0;
-	c[i] = h[i + 1] / (h[i] + h[i + 1]);
-	a[i] = 1.0 - c[i];
-	d[i] = 6.0 * (d[i + 1] - d[i]) / (h[i] + h[i + 1]);
+    for (i = 0; i < nbase - 2; i++) {
+        b[i] = 2.0;
+        c[i] = h[i + 1] / (h[i] + h[i + 1]);
+        a[i] = 1.0 - c[i];
+        d[i] = 6.0 * (d[i + 1] - d[i]) / (h[i] + h[i + 1]);
     }
 
     /*
@@ -72,7 +70,7 @@ int derivs(int nbase, double* x, double* y, double* h, double* der) {
      * array
      */
 
-    error = tridiag(nbase - 2, a, b, c, d, der+1);
+    error = tridiag(nbase - 2, a, b, c, d, der + 1);
     der[0] = 0.0;
     der[nbase - 1] = 0.0;
 
@@ -120,11 +118,11 @@ double spline(int nbase, double* x, double* y, double* h, double* der, double x_
     /* find subinterval containing point at which interpolation is desired */
 
     if ((x_inter < x[0]) || (x_inter > x[nbase - 1]))
-	return (-1.e35);
+        return (-1.e35);
 
     for (i = 0; i < nbase - 1; i++)
-	if ((x_inter >= x[i]) && (x_inter <= x[i + 1]))
-	    break;
+        if ((x_inter >= x[i]) && (x_inter <= x[i + 1]))
+            break;
 
     /* Perform interpolation */
     factor = x_inter - x[i];

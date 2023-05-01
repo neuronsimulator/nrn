@@ -90,10 +90,13 @@ echo "$PWD"
 shopt -s nullglob
 # files is the complete list of mod files to process
 files=()
+cfiles=()
 if [ $# -gt 0 ] ; then
   for i in "$@" ; do
     if [ -d "$i" ] ; then
       files+=( "$i"/*.mod )
+    elif [ "${i##*.}" = "c" ] ; then
+        cfiles+=( "$i" )
     elif [ -e "$i" ] || [ -e "$i.mod" ] ; then
       files+=( "$i" )
     else
@@ -112,6 +115,7 @@ if [ $# -gt 0 ] ; then
 else
   files=( *.mod )
 fi
+echo cfiles = $cfiles
 
 base_names=()
 for i in "${files[@]}" ; do
@@ -121,7 +125,7 @@ done
 echo -n "Mod files:"
 for i in "${files[@]}" ; do
   dir_name=$(dirname "$i")
-  echo -n " \"$dir_name/${i%.mod}.mod\""
+  echo -n " \"${i%.mod}.mod\""
 done
 echo ""
 echo ""
@@ -163,6 +167,26 @@ for i in "${files[@]}" ; do
 " >> "$MODMAKE"
 done
 
+# *.c
+cbase_names=()
+for i in "${cfiles[@]}" ; do
+  case "$i" in
+    /*) f="$i";; # absolute, fine as is
+    *)  f="../$i";; # relative
+  esac
+  base_name="$(basename "$f")"
+  cbase_names+=( "${base_name// /\\ }" )
+  dir_name="$(dirname "$f")"
+  # Note: indentation for shell lines in make rules must be a tab
+  f=${f// /\\ }
+  f=${f//:/\\:}
+  echo "\
+./${base_name// /\\ }.o: ${i}
+	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
+	\$(CCOMPILE) -I\"$dir_name\" \$(INCLUDES) @CMAKE_C_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
+" >> "$MODMAKE"
+done
+
 MODOBJS=
 
 {
@@ -195,8 +219,14 @@ extern int nrn_nobanner_;
     MODOBJS="$MODOBJS ./${i// /\\ }.o"
   done
 
+  for i in "${cbase_names[@]}" ; do
+    MODOBJS="$MODOBJS ./${i// /\\ }.o"
+  done
+
   echo "}"
 } > mod_func.cpp
+
+echo "MODOBJS=$MODOBJS"
 
 # call nrnivmodl-core if CoreNEURON is enabled and requested via CLI
 UsingCoreNEURON=false

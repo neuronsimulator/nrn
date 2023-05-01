@@ -49,7 +49,12 @@
 /*								*/
 /*--------------------------------------------------------------*/
 
-int boundary(int npts, double* x, double* y, double (*f)(double), double (*g)(double), double(*q)(double)) {
+int boundary(int npts,
+             double* x,
+             double* y,
+             double (*f)(double),
+             double (*g)(double),
+             double (*q)(double)) {
     int i, mesh, error;
     double *a, *b, *c, *d, h, temp;
 
@@ -67,13 +72,12 @@ int boundary(int npts, double* x, double* y, double (*f)(double), double (*g)(do
 
     /* Evaluate tridiagonal matrix and constant vector */
 
-    for (i = 0; i < mesh; i++)
-    {
-	temp = (*f) (x[i + 1]) * h / 2.0;
-	a[i] = 1. - temp;	/* subdiagonal elements */
-	b[i] = -2. + (*g) (x[i + 1]) * h * h;	/* diagonal elements */
-	c[i] = 1. + temp;	/* superdiagonal elements */
-	d[i] = (*q) (x[i + 1]) * h * h;	/* constant vector */
+    for (i = 0; i < mesh; i++) {
+        temp = (*f)(x[i + 1]) * h / 2.0;
+        a[i] = 1. - temp;                    /* subdiagonal elements */
+        b[i] = -2. + (*g)(x[i + 1]) * h * h; /* diagonal elements */
+        c[i] = 1. + temp;                    /* superdiagonal elements */
+        d[i] = (*q)(x[i + 1]) * h * h;       /* constant vector */
     }
 
     /* Add end corrections */

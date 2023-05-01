@@ -2,7 +2,6 @@
 #if HAVE_IV  // to end of file
 
 #include <cstdio>
-#include <ivstream.h>
 #include <InterViews/background.h>
 #include <InterViews/canvas.h>
 #include <InterViews/printer.h>

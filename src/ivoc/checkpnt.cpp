@@ -86,8 +86,6 @@ data depending on type. eg for VAR && NOTUSER it is
 
 */
 
-#ifndef MAC
-
 #define HAVE_XDR 0
 
 #include <OS/list.h>
@@ -117,7 +115,7 @@ static struct HocInst {
                  {hoc_sub, 0},
                  {mul, 0},
                  {hoc_div, 0},
-                 {negate, 0},
+                 {hoc_negate, nullptr},
                  {power, 0},
                  {hoc_assign, nullptr},
                  {bltin, "s"},    // requires change
@@ -129,8 +127,8 @@ static struct HocInst {
                  {prexpr, 0},
                  {prstr, 0},
                  {gt, 0},
-                 {lt, 0},
-                 {eq, 0},  // 20
+                 {hoc_lt, nullptr},
+                 {hoc_eq, nullptr},  // 20
                  {ge, 0},
                  {le, 0},
                  {ne, 0},
@@ -141,7 +139,7 @@ static struct HocInst {
                  {forcode, "iii"},
                  {shortfor, "ii"},
                  {call, "si"},  // 30
-                 {arg, "i"},
+                 {hoc_arg, "i"},
                  {argassign, "i"},
                  {funcret, 0},
                  {procret, 0},
@@ -155,8 +153,6 @@ static struct HocInst {
                  {hoc_newline, 0},
                  {hoc_delete_symbol, "s"},
                  {hoc_cyclic, 0},
-                 {hoc_parallel_begin, 0},
-                 {hoc_parallel_end, 0},
                  {dep_make, 0},
                  {eqn_name, 0},
                  {eqn_init, 0},
@@ -379,18 +375,7 @@ bool Checkpoint::xdr(Object*& o) {
     }
 }
 
-
-#else
-void hoc_checkpoint();
-int hoc_readcheckpoint(char*);
-void hoc_ret();
-void hoc_pushx(double);
-
-
-#endif  // from top of file
-
 void hoc_checkpoint() {
-#ifndef MAC
     if (!cp_) {
         cp_ = new OcCheckpoint();
     }
@@ -398,14 +383,9 @@ void hoc_checkpoint() {
     b = cp_->write(gargstr(1));
     hoc_ret();
     hoc_pushx(double(b));
-#else
-    hoc_ret();
-    hoc_pushx(0.);
-#endif
 }
 
 int hoc_readcheckpoint(char* fname) {
-#ifndef MAC
     f_ = fopen(fname, "r");
     if (!f_) {
         return 0;
@@ -430,12 +410,8 @@ int hoc_readcheckpoint(char* fname) {
     delete rdckpt_;
     rdckpt_ = NULL;
     return rval;
-#else
-    return 0;
-#endif
 }
 
-#ifndef MAC
 OcCheckpoint::OcCheckpoint() {
     ppl_ = NULL;
     func_ = NULL;
@@ -1421,5 +1397,4 @@ bool OcReadChkPnt::get(Object*& o) {
     o = pobj_[i];
     return true;
 }
-#endif
 #endif

@@ -43,7 +43,7 @@ extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.cpp */
 
 // error message hint with regard to mismatched arch
 void nrn_possible_mismatched_arch(const char* libname) {
-    if (strncmp(NRNHOSTCPU, "arm64", 5) == 0) {
+    if (neuron::config::system_processor == "arm64") {
         // what arch are we running on
 #if __arm64__
         const char* we_are{"arm64"};
@@ -382,9 +382,9 @@ void hoc_last_init(void) {
     for (m = mechanism; *m; m++) {
         (*m)();
     }
-#if !MAC && !defined(WIN32)
+#if !defined(WIN32)
     modl_reg();
-#endif  // not MAC and not WIN32
+#endif  // not WIN32
     hoc_register_limits(0, _hoc_parm_limits);
     hoc_register_units(0, _hoc_parm_units);
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)

@@ -1,6 +1,10 @@
 #pragma once
 #include <cstdio>
+#include <functional>
 #include <memory>
+#include <stdexcept>
+#include <string>
+#include <string_view>
 /**
  * \dir
  * \brief HOC Interpreter
@@ -46,6 +50,40 @@ void hoc_malchk();
 [[noreturn]] void hoc_execerr_ext(const char* fmt, ...);
 char* hoc_object_name(Object*);
 void hoc_retpushx(double);
+
+namespace neuron::oc {
+struct runtime_error: ::std::runtime_error {
+    using ::std::runtime_error::runtime_error;
+};
+/**
+ * @brief Execute C++ code that may throw and propagate HOC information.
+ *
+ * Low level C++ code called from HOC/Python may throw exceptions that do not carry any information
+ * about the HOC/Python expression that generated the exception. This can lead to unhelpful error
+ * messages if the exception is caught high up the stack. This wrapper is designed to be used at the
+ * points where we leave the HOC world and call lower level code. If that lower level code throws an
+ * exception, the message will be passed to hoc_execerror. This saves additional information so that
+ * the final error message provides additional context. If the "lower level" code called
+ * hoc_execerror itself then we pass on the exception without re-calling hoc_execerror.
+ */
+template <typename Callable, typename... Args>
+decltype(auto) invoke_method_that_may_throw(Callable message_prefix, Args&&... args) {
+    try {
+        return std::invoke(std::forward<Args>(args)...);
+    } catch (runtime_error const&) {
+        // This message was thrown by hoc_execerror; just pass it on
+        throw;
+    } catch (std::exception const& e) {
+        std::string message{message_prefix()};
+        std::string_view what{e.what()};
+        if (!what.empty()) {
+            message.append(": ");
+            message.append(what);
+        }
+        hoc_execerror(message.c_str(), nullptr);
+    }
+}
+}  // namespace neuron::oc
 
 double* hoc_getarg(int);
 double* hoc_pgetarg(int);
@@ -132,6 +170,7 @@ void hoc_pushs(Symbol*);
 void hoc_pushi(int);
 void hoc_push_ndim(int);
 int hoc_pop_ndim();
+int hoc_stack_type();
 bool hoc_stack_type_is_ndim();
 double hoc_xpop();
 Symbol* hoc_spop();
@@ -173,6 +212,7 @@ void hoc_obj_unref(Object*); /* NULL allowed */
 void hoc_dec_refcount(Object**);
 Object** hoc_temp_objvar(Symbol* template_symbol, void* cpp_object);
 Object** hoc_temp_objptr(Object*);
+Object* hoc_new_object(Symbol* symtemp, void* v);
 void hoc_new_object_asgn(Object** obp, Symbol* template_symbol, void* cpp_object);
 HocSymExtension* hoc_var_extra(const char*);
 double check_domain_limits(float*, double);
@@ -237,7 +277,6 @@ std::size_t hoc_total_array(Symbol*);
 void hoc_menu_cleanup();
 void frame_debug();
 void hoc_oop_initaftererror();
-void save_parallel_argv(int, const char**);
 void hoc_init();
 void initplot();
 void hoc_audit_command(const char*);
@@ -252,7 +291,8 @@ int hoc_saveaudit();
 void hoc_close_plot();
 void ivoc_cleanup();
 void ivoc_final_exit();
-int hoc_oc(const char*);
+[[nodiscard]] int hoc_oc(const char*);
+[[nodiscard]] int hoc_oc(const char*, std::ostream& os);
 void hoc_initcode();
 int hoc_ParseExec(int);
 int hoc_get_line();

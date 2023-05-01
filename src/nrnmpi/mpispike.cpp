@@ -20,6 +20,9 @@
 #include "mpispike.h"
 #include <mpi.h>
 
+#include <limits>
+#include <string>
+
 extern void nrnbbs_context_wait();
 
 static int np;
@@ -478,22 +481,15 @@ void nrnmpi_char_broadcast(char* buf, int cnt, int root) {
     MPI_Bcast(buf, cnt, MPI_CHAR, root, nrnmpi_comm);
 }
 
-void nrnmpi_char_broadcast_world(char** pstr, int root) {
-    int sz;
-    sz = *pstr ? (strlen(*pstr) + 1) : 0;
+void nrnmpi_str_broadcast_world(std::string& str, int root) {
+    assert(str.size() <= std::numeric_limits<int>::max());
+    // broadcast the size from `root` to everyone
+    int sz = str.size();
     MPI_Bcast(&sz, 1, MPI_INT, root, nrnmpi_world_comm);
-    if (nrnmpi_myid_world != root) {
-        if (*pstr) {
-            free(*pstr);
-            *pstr = NULL;
-        }
-        if (sz) {
-            *pstr = static_cast<char*>(hoc_Emalloc(sz * sizeof(char)));
-            hoc_malchk();
-        }
-    }
+    // resize to the size we received from root
+    str.resize(sz);
     if (sz) {
-        MPI_Bcast(*pstr, sz, MPI_CHAR, root, nrnmpi_world_comm);
+        MPI_Bcast(str.data(), sz, MPI_CHAR, root, nrnmpi_world_comm);
     }
 }
 
@@ -701,17 +697,15 @@ void nrnmpi_dbl_allgather(double* s, double* r, int n) {
     MPI_Allgather(s, n, MPI_DOUBLE, r, n, MPI_DOUBLE, nrnmpi_comm);
 }
 
-#if BGPDMA
-
 static MPI_Comm bgp_comm;
 
-void nrnmpi_bgp_comm() {
+void nrnmpi_multisend_comm() {
     if (!bgp_comm) {
         MPI_Comm_dup(nrnmpi_comm, &bgp_comm);
     }
 }
 
-void nrnmpi_bgp_multisend(NRNMPI_Spike* spk, int n, int* hosts) {
+void nrnmpi_multisend_multisend(NRNMPI_Spike* spk, int n, int* hosts) {
     int i;
     MPI_Request r;
     MPI_Status status;
@@ -721,7 +715,7 @@ void nrnmpi_bgp_multisend(NRNMPI_Spike* spk, int n, int* hosts) {
     }
 }
 
-int nrnmpi_bgp_single_advance(NRNMPI_Spike* spk) {
+int nrnmpi_multisend_single_advance(NRNMPI_Spike* spk) {
     int flag = 0;
     MPI_Status status;
     MPI_Iprobe(MPI_ANY_SOURCE, 1, bgp_comm, &flag, &status);
@@ -732,13 +726,11 @@ int nrnmpi_bgp_single_advance(NRNMPI_Spike* spk) {
 }
 
 static int iii;
-int nrnmpi_bgp_conserve(int nsend, int nrecv) {
+int nrnmpi_multisend_conserve(int nsend, int nrecv) {
     int tcnts[2];
     tcnts[0] = nsend - nrecv;
     MPI_Allreduce(tcnts, tcnts + 1, 1, MPI_INT, MPI_SUM, bgp_comm);
     return tcnts[1];
 }
-
-#endif /*BGPDMA*/
 
 #endif /*NRNMPI*/

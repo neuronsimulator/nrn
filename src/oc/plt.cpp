@@ -6,8 +6,6 @@ added plots in fig format      \
 */
 #include "hoc.h"
 #include "gui-redirect.h"
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 extern void Fig_file(const char*, int);
 

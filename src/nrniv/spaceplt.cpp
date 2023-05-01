@@ -6,7 +6,6 @@
 #include <vector>
 #include <OS/string.h>
 #include <string.h>
-#include <ivstream.h>
 #if HAVE_IV
 #include "graph.h"
 #include "scenepic.h"

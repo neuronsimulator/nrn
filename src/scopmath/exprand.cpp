@@ -32,5 +32,5 @@
 /*								*/
 /****************************************************************/
 double exprand(double mean) {
-    return (-mean*std::log(scop_random()));
+    return (-mean * std::log(scop_random()));
 }

@@ -29,11 +29,17 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-        
+
+    - name: Retrieve rxd test data
+      run: |
+        git submodule update --init test/rxd/testdata
+      shell: powershell
+      working-directory: ${{runner.workspace}}\nrn
+
     - name: Set up Python3
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.11'
 
     - name: Download Dependencies
       run: |
@@ -75,8 +81,6 @@ jobs:
       working-directory: ${{runner.workspace}}\nrn
 
     - name: Test Installer
-      # temporarily disable rxd testing ( ci/win_test_installer.cmd <-> ci/win_test_installer_wo_rxd.cmd)
-      # see https://github.com/neuronsimulator/nrn/issues/1522
-      run: .\ci\win_test_installer_wo_rxd.cmd
+      run: .\ci\win_test_installer.cmd
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn

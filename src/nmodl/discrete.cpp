@@ -41,7 +41,7 @@ void massagediscblk(Item* q1, Item* q2, Item* q3, Item* q4) /*DISCRETE NAME stmt
     Symbol* s;
     Item* qs;
 
-    replacstr(q1, "int");
+    replacstr(q1, "void");
     Insertstr(q3, "()\n{\n");
     Insertstr(q4, "}\n");
     SYM(q2)->subtype |= DISCF;

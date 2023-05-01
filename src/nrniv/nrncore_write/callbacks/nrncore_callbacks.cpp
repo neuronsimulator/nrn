@@ -1221,3 +1221,17 @@ void nrn2core_patternstim(void** info) {
     assert(ml.nodecount == 1);
     *info = nrn_patternstim_info_ref(ml.pdata[0]);
 }
+
+
+// Info from NEURON subworlds at beginning of psolve.
+void nrn2core_subworld_info(int& cnt,
+                            int& subworld_index,
+                            int& subworld_rank,
+                            int& numprocs_subworld,
+                            int& numprocs_world) {
+    cnt = nrnmpi_subworld_change_cnt;
+    subworld_index = nrnmpi_subworld_id;
+    subworld_rank = nrnmpi_myid;
+    numprocs_subworld = nrnmpi_numprocs_subworld;
+    numprocs_world = nrnmpi_numprocs_world;
+}

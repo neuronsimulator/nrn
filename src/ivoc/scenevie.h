@@ -74,7 +74,6 @@ with the common append/move.
 #include <InterViews/observe.h>
 #include "apwindow.h"
 #include "ocglyph.h"
-#include <ivstream.h>
 
 #undef Scene
 

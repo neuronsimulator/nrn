@@ -12,7 +12,10 @@ extern int nrn_noauto_dlopen_nrnmech;
 #if NRNMPI_DYNAMICLOAD
 void nrnmpi_stubs();
 void nrnmpi_load_or_exit(bool is_python);
-#endif
+#if NRN_MUSIC
+void nrnmusic_load();
+#endif  // NRN_MUSIC
+#endif  // NRNMPI_DYNAMICLOAD
 #if NRNMPI
 extern "C" void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
 #endif
@@ -33,15 +36,43 @@ printf("argv[%d]=|%s|\n", i, argv[i]);
 #if NRNMPI
 #if NRNMPI_DYNAMICLOAD
     nrnmpi_stubs();
+    bool mpi_loaded = false;
     for (int i = 0; i < argc; ++i) {
         if (strcmp("-mpi", argv[i]) == 0) {
             nrnmpi_load_or_exit(false);
+            mpi_loaded = true;
             break;
         }
     }
-#endif
+#if NRN_MUSIC
+    // There are three ways that a future call to nrnmusic_init sets
+    // nrnmusic = 1. 1) arg0 ends with "music", 2) there is a -music arg,
+    // 3) there is a _MUSIC_CONFIG_ environment variable. Use those here to
+    // decide whether to call nrnmusic_load() (which exits if it does not
+    // succeed.)
+    bool load_music = false;
+    if (strlen(argv[0]) >= 5 && strcmp(argv[0] + strlen(argv[0]) - 5, "music") == 0) {
+        load_music = true;
+    }
+    for (int i = 0; i < argc; ++i) {
+        if (strcmp("-music", argv[i]) == 0) {
+            load_music = true;
+            break;
+        }
+    }
+    if (getenv("_MUSIC_CONFIG_")) {
+        load_music = true;
+    }
+    if (load_music) {
+        if (!mpi_loaded) {
+            nrnmpi_load_or_exit(false);
+        }
+        nrnmusic_load();
+    }
+#endif                             // NRNMUSIC
+#endif                             // NRNMPI_DYNAMICLOAD
     nrnmpi_init(1, &argc, &argv);  // may change argc and argv
-#endif
+#endif                             // NRNMPI
     errno = 0;
     return ivocmain(argc, (const char**) argv, (const char**) env);
 }

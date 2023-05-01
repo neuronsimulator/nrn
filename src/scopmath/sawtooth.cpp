@@ -47,7 +47,8 @@
 /****************************************************************/
 double sawtooth(int* reset_integ, double* old_value, double t, double period, double amplitude) {
     double value = amplitude * std::modf(t / period, &value);
-    if (value != *old_value) *reset_integ = 1;
+    if (value != *old_value)
+        *reset_integ = 1;
     *old_value = value;
     return (value);
 }

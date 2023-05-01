@@ -3,7 +3,6 @@
 //#include <string.h>
 #include <cstdio>
 #include <cstdlib>
-#include <ivstream.h>
 #include <cmath>
 #include <cerrno>
 #include <numeric>
@@ -28,7 +27,6 @@
 
 #include <IV-look/kit.h>
 #else
-#include <InterViews/resource.h>
 #include <OS/list.h>
 #endif
 
@@ -44,9 +42,6 @@ extern void exit(int status);
 #endif
 
 #include "gui-redirect.h"
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 #ifndef PI
 #ifndef M_PI
@@ -2148,7 +2143,7 @@ static double v_max_ind(void* v) {
     if (ifarg(1)) {
         int start = int(chkarg(1, 0, x_max));
         int end = int(chkarg(2, start, x_max));
-        return std::max_element(x->begin() + start, x->begin() + end + 1) - x->begin() + start;
+        return std::max_element(x->begin() + start, x->begin() + end + 1) - x->begin();
     } else {
         return std::max_element(x->begin(), x->end()) - x->begin();
     }

@@ -409,6 +409,8 @@ function(nrn_add_test)
     list(TRANSFORM test_env REPLACE "^PATH="
                                     "PATH=${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:")
   endif()
+  list(TRANSFORM test_env REPLACE "^PYTHONPATH="
+                                  "PYTHONPATH=${CMAKE_SOURCE_DIR}/docs/nmodl/python_scripts:")
   # Get the list of variables being set
   set(extra_env_var_names ${extra_environment})
   list(TRANSFORM extra_env_var_names REPLACE "^([^=]+)=.*$" "\\1")
@@ -430,7 +432,7 @@ function(nrn_add_test)
     # https://tobywf.com/2021/02/python-ext-asan/
     list(APPEND test_env NRN_SANITIZER_PRELOAD_VAR=${NRN_SANITIZER_PRELOAD_VAR})
     list(APPEND test_env NRN_SANITIZER_PRELOAD_VAL=${NRN_SANITIZER_LIBRARY_PATH})
-    list(APPEND test_env NRN_PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE})
+    list(APPEND test_env NRN_PYTHON_EXECUTABLE=${NRN_DEFAULT_PYTHON_EXECUTABLE})
   endif()
   list(APPEND test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
   # Add the actual test job, including the `special` and `special-core` binaries in the path. TODOs:

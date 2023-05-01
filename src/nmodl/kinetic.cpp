@@ -279,8 +279,10 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtl
     numlist++;
     fun->u.i = numlist;
 
-    Sprintf(buf, "static int %s();\n", SYM(q2)->name);
-    Linsertstr(procfunc, buf);
+    vectorize_substitute(linsertstr(procfunc, "();\n"),
+                         "(void* _so, double* _rhs, _threadargsproto_);\n");
+    Sprintf(buf, "static int %s", SYM(q2)->name);
+    linsertstr(procfunc, buf);
     replacstr(q1, "\nstatic int");
     qv = insertstr(q3, "()\n");
     if (vectorize) {
@@ -424,6 +426,11 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtl
             q = q->next;
             qend = ITM(q);
             for (q1 = qb->next; q1 != qend; q1 = q1->next) {
+                // if a state compartment variable is not used in
+                // the kinetic block then skip it
+                if (!SYM(q1)->used) {
+                    continue;
+                }
                 Sprintf(buf1, "(%s)", qconcat(qexp, qb->prev));
                 rlist->capacity[SYM(q1)->used - 1] = stralloc(buf1, (char*) 0);
             }
@@ -853,16 +860,6 @@ for(_i=%d;_i<%d;_i++){\n",
                         "*(_nrn_thread_getelm(static_cast<SparseObj*>(_so), _row + 1, _col + 1))\n",
                         fun->u.i);
                 vectorize_substitute(qv, buf);
-                {
-                    static int first = 1;
-                    if (first) {
-                        first = 0;
-                        Sprintf(buf, "extern double *_getelm(int, int);\n");
-                        qv = linsertstr(procfunc, buf);
-                        Sprintf(buf, "extern double *_nrn_thread_getelm(SparseObj*, int, int);\n");
-                        vectorize_substitute(qv, buf);
-                    }
-                }
             }
         }
     } /* end of NOT_CVODE_FLAG */

@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 // solver interface to CVode
-#include <InterViews/resource.h>
 #include "nonvintblock.h"
+
 #include "nrnmpi.h"
 
 void cvode_finitialize();
@@ -18,8 +18,10 @@ extern int hoc_return_type_code;
 #include "netcvode.h"
 #include "membfunc.h"
 #include "nrn_ansi.h"
+#include "nrncvode.h"
 #include "nrndaspk.h"
 #include "nrniv_mf.h"
+#include "nrnpy.h"
 #include "tqueue.h"
 #include "mymath.h"
 #include "htlist.h"
@@ -139,7 +141,7 @@ static double spikestat(void* v) {
 }
 static double queue_mode(void* v) {
     hoc_return_type_code = 1;  // integer
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
     if (ifarg(1)) {
         nrn_use_fifo_queue_ = chkarg(1, 0, 1) ? true : false;
     }
@@ -381,7 +383,7 @@ static double use_long_double(void* v) {
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         d->use_long_double_ = i;
-        recalc_diam();
+        d->structure_change();
     }
     return (double) d->use_long_double_;
 }
@@ -533,9 +535,6 @@ static double nrn_diam_change_count(void* v) {
     return double(diam_change_cnt);
 }
 
-int (*nrnpy_pysame)(Object*, Object*);
-extern int (*nrnpy_hoccommand_exec)(Object*);
-
 using ExtraScatterList = std::vector<Object*>;
 static ExtraScatterList* extra_scatterlist[2];  // 0 scatter, 1 gather
 
@@ -544,7 +543,7 @@ void nrn_extra_scatter_gather(int direction, int tid) {
     if (esl) {
         nrn_thread_error("extra_scatter_gather not allowed with multiple threads");
         for (Object* callable: *esl) {
-            if (!(*nrnpy_hoccommand_exec)(callable)) {
+            if (!neuron::python::methods.hoccommand_exec(callable)) {
                 hoc_execerror("extra_scatter_gather runtime error", 0);
             }
         }
@@ -573,7 +572,7 @@ static double extra_scatter_gather_remove(void* v) {
             for (auto it = esl->begin(); it != esl->end();) {
                 Object* o1 = *it;
                 // if esl exists then python exists
-                if ((*nrnpy_pysame)(o, o1)) {
+                if (neuron::python::methods.pysame(o, o1)) {
                     it = esl->erase(it);
                     hoc_obj_unref(o1);
                 } else {
@@ -603,6 +602,11 @@ static double poolshrink(void*) {
     }
     nrn_poolshrink(i);
     return double(i);
+}
+
+static double free_event_queues(void*) {
+    free_event_queues();
+    return 0;
 }
 
 static Member_func members[] = {{"solve", solve},
@@ -654,6 +658,7 @@ static Member_func members[] = {{"solve", solve},
                                 {"extra_scatter_gather_remove", extra_scatter_gather_remove},
                                 {"use_fast_imem", use_fast_imem},
                                 {"poolshrink", poolshrink},
+                                {"free_event_queues", free_event_queues},
                                 {nullptr, nullptr}};
 
 static Member_ret_obj_func omembers[] = {{"netconlist", netconlist}, {nullptr, nullptr}};

@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <errno.h>
 #include <math.h>
-#include <InterViews/resource.h>
 #include "nrnoc2iv.h"
 #include "cvodeobj.h"
 #include "nonvintblock.h"

@@ -7,7 +7,6 @@
 #include <complex>
 #include "nrnoc2iv.h"
 #include "classreg.h"
-#include <ivstream.h>
 #include <stdio.h>
 #include "membfunc.h"
 extern void nrn_rhs(NrnThread*);

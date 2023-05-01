@@ -6,7 +6,6 @@
 
 struct NrnThread;
 struct Point_process;
-struct SparseObj;
 
 typedef double (*ldifusfunc3_t)(int, double*, Datum*, double*, double*, Datum*, NrnThread*);
 typedef void ldifusfunc2_t(int, ldifusfunc3_t, void**, int, int, int, NrnThread*);
@@ -33,16 +32,6 @@ void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, doubl
 extern double nrn_ion_charge(Symbol*);
 extern Point_process* ob2pntproc(Object*);
 extern Point_process* ob2pntproc_0(Object*);
-
-int euler_thread(int,
-                 int*,
-                 int*,
-                 double*,
-                 int (*)(double*, Datum*, Datum*, NrnThread*),
-                 Datum*,
-                 Datum*,
-                 NrnThread*);
-
 
 extern void register_mech(const char**, Pvmp, Pvmi, Pvmi, Pvmi, Pvmi, int, int);
 extern int point_register_mech(const char**,

@@ -47,7 +47,7 @@ The default advance is merely a HOC function that calls :func:`fadvance`. It may
     h('proc advance() {nrnpython("myadvance()")}')
     
     def myadvance():
-        print('h.t = {}'.format(h.t))
+        print(f'h.t = {h.t}')
         h.fadvance()
 
 

@@ -346,18 +346,10 @@ To see all CLI options for CoreNEURON, see `./bin/nrniv-core -h`.
 
 #### Formatting CMake and C++ Code
 
-In order to format code with `cmake-format` and `clang-format` tools, before creating a PR, enable below CMake options:
-
+Format code with `black`, `cmake-format`, and `clang-format` tools, before creating a PR.
+It should suffice within the build folder to ...
 ```
-cmake .. -DCORENRN_CLANG_FORMAT=ON -DCORENRN_CMAKE_FORMAT=ON
-cmake --build . --parallel 8 --target install
-```
-
-and now you can use `cmake-format` or `clang-format` targets:
-
-```
-cmake --build . --target cmake-format
-cmake --build . --target clang-format
+make format-pr
 ```
 
 ## Run CI

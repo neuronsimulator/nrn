@@ -16,10 +16,6 @@ class NodeList(list):
         else:
             return list.__getitem__(self, key)
 
-    def __getslice__(self, i, j):
-        # Python 2 support for simple slicing
-        return NodeList(list.__getslice__(self, i, j))
-
     @property
     def value(self):
         # TODO: change this when not everything is a concentration

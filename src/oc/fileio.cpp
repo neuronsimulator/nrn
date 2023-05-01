@@ -20,21 +20,6 @@ extern char* neuron_home;
 NrnFILEWrap* frin;
 FILE* fout;
 
-#if 0 && MAC
-#include <stdarg.h>
-
-void debugfile(const char* format, ...) {
-	va_list args;
-	static FILE* df;
-	if (!df) {
-		df = fopen("debugfile", "w");
-	}
-	va_start(args, format);
-	vfprintf(df, format, args);
-	fflush(df);
-}
-#endif
-
 void hoc_stdout(void) {
     static int prev = -1;
     if (ifarg(1)) {
@@ -159,39 +144,6 @@ const char* expand_env_var(const char* s) {
         }
     }
     *cp2 = '\0';
-#if MAC && !defined(DARWIN)
-    /* convert / to : */
-    for (cp1 = hs->buf + begin; *cp1; ++cp1) {
-        if (*cp1 == '/') {
-            *cp1 = ':';
-        }
-    }
-    /* if a : in the original name then assume already mac and done */
-    /* if $ in original name then done since NEURONHOME already has correct prefix */
-    /* if first is : then remove it, otherwise prepend it */
-    if (!strchr(s, ':') && !strchr(s, '$')) {
-        if (hs->buf[begin] == ':') {
-            begin = 2;
-        } else {
-            begin = 0;
-            hs->buf[0] = ':';
-        }
-    }
-    for (cp1 = hs->buf + begin, cp2 = cp1; *cp1;) {
-        if (cp1[0] == ':' && cp1[1] == '.') {
-            if (cp1[2] == ':') {
-                cp1 += 2;
-                continue;
-            } else if (cp1[2] == '.' && cp1[3] == ':') {
-                cp1 += 3;
-                *cp2++ = ':';
-                continue;
-            }
-        }
-        *cp2++ = *cp1++;
-    }
-    *cp2 = '\0';
-#endif
     return hs->buf + begin;
 }
 
@@ -232,11 +184,7 @@ int hoc_xopen1(const char* name, const char* rcs) {
     errno = EINTR;
     while (errno == EINTR) {
         errno = 0;
-#if MAC
-        constexpr auto mode_str = "rb";
-#else
         constexpr auto mode_str = "r";
-#endif
         if (!(hoc_fin = nrn_fw_fopen(fname.c_str(), mode_str))) {
             fname = expand_env_var(fname.c_str());
             if (!(hoc_fin = nrn_fw_fopen(fname.c_str(), mode_str))) {
@@ -302,7 +250,7 @@ void PRintf(void) /* printf function */
 
     hoc_sprint1(&buf, 1);
     d = (int) strlen(buf);
-    NOT_PARALLEL_SUB(plprint(buf);)
+    plprint(buf);
     fflush(stdout);
     ret();
     pushx(d);
@@ -524,7 +472,7 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
     *ppbuf = hs->buf;
 }
 
-#if defined(WIN32) || defined(MAC)
+#if defined(WIN32)
 static FILE* oc_popen(char* cmd, char* type) {
     FILE* fp;
     char buf[1024];
@@ -634,11 +582,7 @@ static int hoc_Load_file(int always, const char* name) {
     const char* base;
     char path[hoc_load_file_size_], old[hoc_load_file_size_];
     char fname[hoc_load_file_size_], cmd[hoc_load_file_size_ + 50];
-#if USE_NRNFILEWRAP
-    int f;
-#else
     FILE* f;
-#endif
 
     old[0] = '\0';
     goback = 0;
@@ -666,22 +610,13 @@ static int hoc_Load_file(int always, const char* name) {
         strncpy(path, name, base - name);
         path[base - name] = '\0';
         ++base;
-#if USE_NRNFILEWRAP
-        f = nrn_fw_readaccess(name);
-#else
         f = fopen(name, "r");
-#endif
     } else {
         base = name;
         path[0] = '\0';
         /* otherwise find the file in the default directories */
-#if USE_NRNFILEWRAP
-        f = nrn_fw_readaccess(base);
-#else
         f = fopen(base, "r"); /* cwd */
-#endif
-#if !MAC
-        if (!f) { /* try HOC_LIBRARY_PATH */
+        if (!f) {             /* try HOC_LIBRARY_PATH */
             char* hlp;
             hlp = getenv("HOC_LIBRARY_PATH");
             while (hlp && *hlp) {
@@ -703,11 +638,7 @@ static int hoc_Load_file(int always, const char* name) {
                 if (path[0]) {
                     nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
                                hoc_load_file_size_);
-#if USE_NRNFILEWRAP
-                    f = nrn_fw_readaccess(expand_env_var(fname));
-#else
                     f = fopen(expand_env_var(fname), "r");
-#endif
                     if (f) {
                         break;
                     }
@@ -716,17 +647,12 @@ static int hoc_Load_file(int always, const char* name) {
                 }
             }
         }
-#endif
         if (!f) { /* try NEURONHOME/lib/hoc */
             Sprintf(path, "$(NEURONHOME)/lib/hoc");
             assert(strlen(path) + strlen(base) + 1 < hoc_load_file_size_);
             nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
                        hoc_load_file_size_);
-#if USE_NRNFILEWRAP
-            f = nrn_fw_readaccess(expand_env_var(fname));
-#else
             f = fopen(expand_env_var(fname), "r");
-#endif
         }
     }
     /* add the name to the list of loaded packages */
@@ -734,9 +660,6 @@ static int hoc_Load_file(int always, const char* name) {
         if (!is_loaded) {
             hoc_l_lappendstr(loaded, name);
         }
-#if USE_NRNFILEWRAP == 0
-        fclose(f);
-#endif
         b = 1;
     } else {
         b = 0;
@@ -764,6 +687,9 @@ static int hoc_Load_file(int always, const char* name) {
                  base);
         b = hoc_oc(cmd);
         b = (int) hoc_ac_;
+        if (!b) {
+            hoc_execerror("hoc_Load_file", base);
+        }
     }
     /* change back */
     if (path[0] && goback) {
@@ -790,23 +716,16 @@ void hoc_getcwd(void) {
     { strcpy(buf, hoc_back2forward(buf)); }
 #endif
     len = strlen(buf);
-#if defined(MAC)
-    if (buf[len - 1] != ':') {
-        buf[len] = ':';
-        buf[len + 1] = '\0';
-    }
-#else
     if (buf[len - 1] != '/') {
         buf[len] = '/';
         buf[len + 1] = '\0';
     }
-#endif
     hoc_ret();
     hoc_pushstr(&buf);
 }
 
 void hoc_machine_name(void) {
-#if !defined(WIN32) && !defined(MAC)
+#if !defined(WIN32)
     /*----- functions called -----*/
     /*----- local  variables -----*/
     char buf[20];
@@ -833,10 +752,8 @@ static int (*nrnpy_pr_stdoe_callback)(int, char*);
 static int (*nrnpy_pass_callback)();
 
 extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
-    if (nrn_is_python_extension) {
-        nrnpy_pr_stdoe_callback = cbpr_stdoe;
-        nrnpy_pass_callback = cbpass;
-    }
+    nrnpy_pr_stdoe_callback = cbpr_stdoe;
+    nrnpy_pass_callback = cbpass;
 }
 
 void nrnpy_pass() {

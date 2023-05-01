@@ -5,6 +5,8 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
+#include <cstdlib>
+
 /* make it an error if 2 solve statements are called on a single call to
 model() */
 extern List* indeplist;

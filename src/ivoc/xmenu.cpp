@@ -1,26 +1,15 @@
 
 #include <../../nrnconf.h>
 
-#include <InterViews/resource.h>
 #include "oc2iv.h"
 #include "classreg.h"
-double (*nrnpy_guigetval)(Object*);
-void (*nrnpy_guisetval)(Object*, double);
-int (*nrnpy_guigetstr)(Object*, char**);
-
 #include "gui-redirect.h"
-
-Object** (*nrnpy_gui_helper_)(const char* name, Object* obj) = NULL;
-double (*nrnpy_object_to_double_)(Object*) = NULL;
-Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr) = NULL;
-char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr) = NULL;
 
 #if HAVE_IV  // to end of file except for a few small fragments.
 
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include <ivstream.h>
 #include <cctype>
 #include <cerrno>
 
@@ -40,6 +29,7 @@ char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strpt
 #include <InterViews/color.h>
 #include <InterViews/telltale.h>
 #include <InterViews/hit.h>
+#include <InterViews/resource.h>
 
 #include <InterViews/display.h>
 #include "mymath.h"
@@ -47,6 +37,7 @@ char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strpt
 #include "datapath.h"
 #include "ivoc.h"
 #include "bndedval.h"
+#include "nrnpy.h"
 #include "objcmd.h"
 #include "parse.hpp"
 #include "utility.h"
@@ -983,31 +974,6 @@ void HocPanel::update_ptrs() {
     }
 }
 
-#if MAC
-void HocPanel::mac_menubar() {
-    int i = 1;
-    int mindex = 0;
-    printf("menubar 0 %s\n", getName());
-    mac_menubar(mindex, i, 0);
-}
-
-void HocPanel::mac_menubar(int& mindex, int& i, int m) {
-    int mr;
-    int mi = 0;
-    while (i < ilist_.count()) {
-        mr = ilist_.item(i)->mac_menubar(mindex, m, mi);
-        ++i;
-        ++mi;
-        if (mr > m) {
-            mac_menubar(mindex, i, mr);
-        } else if (mr < m) {
-            return;
-        }
-    }
-    return;
-}
-#endif
-
 void HocPanel::map_window(int scroll) {
     // switch to scrollbox if too many items
     static GlyphIndex maxcnt = -1;
@@ -1202,13 +1168,6 @@ void HocPushButton::write(std::ostream& o) {
     o << buf << std::endl;
 }
 
-#if MAC
-int HocPushButton::mac_menubar(int&, int m, int mi) {
-    printf("button item %d in menu %d \"%s\", \"%s\"\n", mi, m, getStr(), hideQuote(a_->name()));
-    return m;
-}
-#endif
-
 HocRadioButton::HocRadioButton(const char* name, HocRadioAction* a, HocItem* hi)
     : HocItem(name, hi) {
     a_ = a;
@@ -1224,13 +1183,6 @@ void HocRadioButton::write(std::ostream& o) {
                200);
     o << buf << std::endl;
 }
-
-#if MAC
-int HocRadioButton::mac_menubar(int&, int m, int mi) {
-    printf("radio item %d in menu %d \"%s\", \"%s\"\n", mi, m, getStr(), hideQuote(a_->name()));
-    return m;
-}
-#endif
 
 void HocPanel::label(const char* name) {
     box()->append(LayoutKit::instance()->margin(WidgetKit::instance()->label(name), 3));
@@ -1341,14 +1293,6 @@ void HocMenu::write(std::ostream& o) {
     Sprintf(buf, "xmenu(\"%s\", %d)", getStr(), add2menubar_);
     o << buf << std::endl;
 }
-
-#if MAC
-int HocMenu::mac_menubar(int& mindex, int m, int mi) {
-    ++mindex;
-    printf("menu %d is item %d in %d %s\n", mindex, mi, m, getStr());
-    return mindex;
-}
-#endif
 
 static Coord xvalue_field_size;
 
@@ -1478,18 +1422,6 @@ void HocItem::write(std::ostream& o) {
     o << str_.string() << std::endl;
 }
 
-#if MAC
-int HocItem::mac_menubar(int&, int m, int mi) {
-    if (strcmp(getStr(), "xmenu()") == 0) {
-        printf("end menu %d\n", m);
-        return -1;
-    } else {
-        printf("invalid menuitem %s\n", getStr());
-    }
-    return m;
-}
-#endif
-
 const char* HocItem::getStr() {
     return str_.string();
 }
@@ -1543,7 +1475,7 @@ HocVarLabel::HocVarLabel(char** cpp, PolyGlyph* pg, Object* pyvar)
     cp_ = NULL;
     if (pyvar_) {
         hoc_obj_ref(pyvar_);
-        (*nrnpy_guigetstr)(pyvar_, &cp_);
+        neuron::python::methods.guigetstr(pyvar_, &cp_);
     } else {
         cp_ = *cpp_;
     }
@@ -1578,7 +1510,7 @@ void HocVarLabel::write(std::ostream& o) {
 
 void HocVarLabel::update_hoc_item() {
     if (pyvar_) {
-        if ((*nrnpy_guigetstr)(pyvar_, &cp_)) {
+        if (neuron::python::methods.guigetstr(pyvar_, &cp_)) {
             p_->body(LayoutKit::instance()->margin(WidgetKit::instance()->label(cp_), 3));
             p_->redraw();
             p_->reallocate();
@@ -2029,7 +1961,7 @@ void HocValEditor::print(Printer* p, const Allocation& a) const {
 void HocValEditor::set_val(double x) {
     char buf[200];
     if (pyvar_) {
-        (*nrnpy_guisetval)(pyvar_, x);
+        neuron::python::methods.guisetval(pyvar_, x);
         return;
     }
     hoc_ac_ = x;
@@ -2045,7 +1977,7 @@ void HocValEditor::set_val(double x) {
 double HocValEditor::get_val() {
     char buf[200];
     if (pyvar_) {
-        return (*nrnpy_guigetval)(pyvar_);
+        return neuron::python::methods.guigetval(pyvar_);
     } else if (pval_) {
         return *pval_;
     } else if (variable_) {
@@ -2769,7 +2701,7 @@ void OcSlider::update(Observable*) {
     if (pval_) {
         *pval_ = x;
     } else if (pyvar_) {
-        (*nrnpy_guisetval)(pyvar_, x);
+        neuron::python::methods.guisetval(pyvar_, x);
     } else {
         return;
     }
@@ -2817,7 +2749,7 @@ double OcSlider::slider_val() {
 void OcSlider::update_hoc_item() {
     Coord x = 0.;
     if (pyvar_) {
-        x = Coord((*nrnpy_guigetval)(pyvar_));
+        x = Coord(neuron::python::methods.guigetval(pyvar_));
     } else if (pval_) {
         x = Coord(*pval_);
     } else {
@@ -2970,8 +2902,8 @@ void HocStateButton::button_action() {
     }
     if (pyvar_) {
         TelltaleState* t = b_->state();
-        if (chosen() != bool((*nrnpy_guigetval)(pyvar_))) {
-            (*nrnpy_guisetval)(pyvar_, double(chosen()));
+        if (chosen() != bool(neuron::python::methods.guigetval(pyvar_))) {
+            neuron::python::methods.guisetval(pyvar_, double(chosen()));
         }
     }
     if (action_) {
@@ -2987,7 +2919,7 @@ void HocStateButton::button_action() {
 void HocStateButton::update_hoc_item() {
     double x = 0.;
     if (pyvar_) {
-        x = nrnpy_guigetval(pyvar_);
+        x = neuron::python::methods.guigetval(pyvar_);
     } else if (pval_) {
         x = *pval_;
     }
@@ -3128,8 +3060,8 @@ void HocStateMenuItem::button_action() {
     }
     if (pyvar_) {
         TelltaleState* t = b_->state();
-        if (chosen() != bool((*nrnpy_guigetval)(pyvar_))) {
-            (*nrnpy_guisetval)(pyvar_, double(chosen()));
+        if (chosen() != bool(neuron::python::methods.guigetval(pyvar_))) {
+            neuron::python::methods.guisetval(pyvar_, double(chosen()));
         }
     }
     if (action_) {
@@ -3145,7 +3077,7 @@ void HocStateMenuItem::button_action() {
 void HocStateMenuItem::update_hoc_item() {
     double x = 0.;
     if (pyvar_) {
-        x = nrnpy_guigetval(pyvar_);
+        x = neuron::python::methods.guigetval(pyvar_);
     } else if (pval_) {
         x = *pval_;
     }

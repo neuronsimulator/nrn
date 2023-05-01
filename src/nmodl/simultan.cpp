@@ -9,8 +9,12 @@ static List* eqnq;
 int nonlin_common(Item*);
 
 void solv_nonlin(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum) {
+    // examples of method->name: newton
+    // note that the non-type template parameter used to be the first argument; if more tests are
+    // added so that method->name != "newton" then those methods may need to be modified as newton
+    // was
     Sprintf(buf,
-            "%s(%d,_slist%d, _p, %s_wrapper_returning_int, _dlist%d);\n",
+            "%s<%d>(_slist%d, _p, %s_wrapper_returning_int, _dlist%d);\n",
             method->name,
             numeqn,
             listnum,
@@ -183,7 +187,7 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
     vectorize_substitute(q, buf);
     Insertstr(q3, "if (!_recurse) {\n _recurse = 1;\n");
     Sprintf(buf,
-            "error = newton(%d,_slist%d, _p, %s, _dlist%d);\n",
+            "error = newton<%d>(_slist%d, _p, %s, _dlist%d);\n",
             counts,
             numlist,
             SYM(q2)->name,
@@ -191,7 +195,7 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
     qret = insertstr(q3, buf);
     Sprintf(buf,
             "error = nrn_newton_thread(_newtonspace%d, %d,_slist%d, _p, "
-            "%s, _dlist%d, _ppvar, _thread, _nt);\n",
+            "%s, _dlist%d, _p, _ppvar, _thread, _nt);\n",
             numlist - 1,
             counts,
             numlist,

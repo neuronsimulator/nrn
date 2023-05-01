@@ -8,10 +8,12 @@
  *   Duke University
  *
  ******************************************************************************/
-#include "errcodes.h"
+#include "errcodes.hpp"
 #include "scoplib.h"
 
 #include <cmath>
+
+using namespace neuron::scopmath;  // for errcodes.hpp
 /****************************************************************/
 /*								*/
 /*  Abstract: factorial()					*/
@@ -42,19 +44,16 @@ double factorial(double n) {
 
     x = (int) (n + 0.1);
     if (x < 0)
-	abort_run(NEG_ARG);
+        abort_run(NEG_ARG);
 
     if (x < 2)
-	value = 1.0;
-    else if (x < 20)
-    {
-	value = 1.0;
-	for (i = n; i > 1; i--)
-	    value = value * i;
-    }
-    else
-    {				/* Use Stirling's approximation */
-	value = std::exp(-x) * std::pow(x, x) * std::sqrt(two_pi * x);
+        value = 1.0;
+    else if (x < 20) {
+        value = 1.0;
+        for (i = n; i > 1; i--)
+            value = value * i;
+    } else { /* Use Stirling's approximation */
+        value = std::exp(-x) * std::pow(x, x) * std::sqrt(two_pi * x);
     }
     return (value);
 }
