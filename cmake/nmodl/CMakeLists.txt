@@ -166,7 +166,7 @@ endif()
 # Find required python packages
 # =============================================================================
 message(STATUS "CHECKING FOR PYTHON")
-find_package(PythonInterp 3.7 REQUIRED)
+find_package(PythonInterp 3.8 REQUIRED)
 include(cmake/hpc-coding-conventions/cpp/cmake/bbp-find-python-module.cmake)
 cpp_cc_find_python_module(jinja2 2.9.3 REQUIRED)
 cpp_cc_find_python_module(pytest 3.3.0 REQUIRED)
