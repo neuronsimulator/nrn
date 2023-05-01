@@ -621,8 +621,10 @@ set(output_binaries "${nrniv_core_prefix}/special-core" "${corenrn_mech_library}
 add_custom_command(
   OUTPUT ${output_binaries}
   DEPENDS coreneuron-core ${NMODL_TARGET_TO_DEPEND} ${CORENEURON_BUILTIN_MODFILES}
-  COMMAND ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b ${COMPILE_LIBRARY_TYPE} -m
-          ${CORENRN_NMODL_BINARY} -n "internal" -p 4 "."
+  COMMAND
+    ${CMAKE_COMMAND} -E env NMODL_WRAPLIB=${CMAKE_BINARY_DIR}/lib/libpywrapper.so
+    ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b ${COMPILE_LIBRARY_TYPE} -m ${CORENRN_NMODL_BINARY} -n
+    "internal" -p 4 "."
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
   COMMENT "Running nrnivmodl-core with internal mod files")
 add_custom_target(nrniv-core ALL DEPENDS ${output_binaries})
