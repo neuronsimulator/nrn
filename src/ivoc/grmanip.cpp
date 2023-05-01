@@ -44,7 +44,7 @@ class LineRubberMarker: public Rubberband {
     Label* label_;
     Coord x_, y_;
     int index_;
-#if defined(WIN32) || MAC
+#if defined(WIN32)
     CopyString def_str_;
 #endif
 };
@@ -280,7 +280,7 @@ bool LineRubberMarker::event(Event& e) {
         }
         return true;
     } else {
-#if defined(WIN32) || MAC
+#if defined(WIN32)
         if (e.type() == Event::down) {
             def_str_ = ((DismissableWindow*) canvas()->window())->name();
         } else if (e.type() == Event::up) {
@@ -297,7 +297,7 @@ void LineRubberMarker::undraw(Coord, Coord) {
     Transformer identity;
     c->push_transform();
     c->transformer(identity);
-#if !defined(WIN32) && !MAC
+#if !defined(WIN32)
     Allocation a;
     a.allot_x(Allotment(x + 20, 0, 0));
     a.allot_y(Allotment(y, 0, 0));
@@ -320,7 +320,7 @@ void LineRubberMarker::draw(Coord x, Coord y) {
     }
     char s[50];
 
-#if defined(WIN32) || MAC
+#if defined(WIN32)
     Sprintf(s, "crosshair x=%g y=%g", x_, y_);
     ((DismissableWindow*) canvas()->window())->name(s);
 #else
@@ -513,7 +513,7 @@ void MoveLabelBand::press(Event&) {
     }
     x0_ -= x_begin();
     y0_ -= y_begin();
-#if !defined(WIN32) && !MAC
+#if !defined(WIN32)
     undraw(x(), y());  // so initial draw does not make it disappear
 #endif
 }
@@ -553,7 +553,7 @@ void MoveLabelBand::draw(Coord x, Coord y) {
     // printf("MoveLabelBand::draw(%g, %g)\n", x, y);
     a_.x_allotment().origin(x + x0_);
     a_.y_allotment().origin(y + y0_);
-#if defined(WIN32) || MAC
+#if defined(WIN32)
     c->rect(a_.x_allotment().begin(),
             a_.y_allotment().begin(),
             a_.x_allotment().end(),

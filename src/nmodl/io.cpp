@@ -8,9 +8,6 @@
 #include <errno.h>
 #include "modl.h"
 #include <ctype.h>
-#if MAC && TARGET_API_MAC_CARBON
-#include <SIOUX.h>
-#endif
 #undef METHOD
 #include "parse1.hpp"
 #if defined(_WIN32)
@@ -252,10 +249,6 @@ void diag(const char* s1, const char* s2) {
         }
     }
     Fprintf(stderr, "\n");
-#if MAC && TARGET_API_MAC_CARBON
-    SIOUXSettings.autocloseonquit = true;
-    RunApplicationEventLoop();
-#endif
     exit(1);
 }
 

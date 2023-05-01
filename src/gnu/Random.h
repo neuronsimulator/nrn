@@ -23,10 +23,6 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include <math.h>
 
-#if MAC
-	#define Random gnu_Random
-#endif
-
 #include <RNG.h>
 
 class Random {

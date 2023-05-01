@@ -205,7 +205,7 @@ if (WidgetKit::instance()->style()->find_attribute(gargstr(1)+1, s)) {
     hoc_pushx(1.);
 }
 
-#if !defined(MINGW) && !defined(MAC)
+#if !defined(MINGW)
 /*static*/ class ReqErr1: public ReqErr {
   public:
     ReqErr1();
@@ -240,10 +240,6 @@ void ReqErr1::Error() {
 static ReqErr1* reqerr1;
 #endif
 
-#if MAC
-static HandleStdin* hsd_;
-#endif
-
 #ifdef MINGW
 static HandleStdin* hsd_;
 void winio_key_press() {
@@ -269,11 +265,11 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
     notify_change_ = new Observable();
     if (s) {
         helpmode_ = false;
-#if !defined(WIN32) && !defined(MAC)
+#if !defined(WIN32)
         reqerr1 = new ReqErr1;
         reqerr1->Install();
 #endif
-#if defined(MINGW) || defined(MAC)
+#if defined(MINGW)
         hsd_ = handleStdin_ = new HandleStdin;
 #else
         handleStdin_ = new HandleStdin;
@@ -281,9 +277,6 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
         Dispatcher::instance().link(0, Dispatcher::ExceptMask, handleStdin_);
 #endif
         hoc_interviews = 1;
-#if MAC
-        hoc_print_first_instance = 0;
-#endif
         String str;
         if (session_->style()->find_attribute("first_instance_message", str)) {
             if (str == "on") {
@@ -300,7 +293,7 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
 Oc::~Oc() {
     MUTLOCK
     if (--refcnt_ == 0) {
-#if !defined(MINGW) && !defined(MAC)
+#if !defined(MINGW)
         if (reqerr1 && reqerr1->count()) {
             fprintf(stderr, "total X Errors: %d\n", reqerr1->count());
         }
@@ -404,7 +397,7 @@ void ivoc_cleanup() {}
 
 int run_til_stdin() {
     Session* session = Oc::getSession();
-#if defined(WIN32) || MAC
+#if defined(WIN32)
     Oc oc;
     oc.notify();
 #endif
@@ -413,18 +406,10 @@ int run_til_stdin() {
 #endif
     session->run();
     WinDismiss::dismiss_defer();  // in case window was dismissed
-#if MAC
-    extern Boolean IVOCGoodLine;
-    if (IVOCGoodLine) {
-        return 1;
-    } else {
-        return 0;
-    }
-#endif
 #ifdef WIN32
     return 0;
 #else
-    return Oc::getStdinSeen();  // MAC should not reach this point
+    return Oc::getStdinSeen();
 #endif
 }
 
@@ -434,12 +419,6 @@ void single_event_run() {
     Event e;
     // actually run till no more events
     Oc::setAcceptInput(false);
-#if MAC
-    extern bool read_if_pending(Event&);
-    while (!session->done() && read_if_pending(e)) {
-        e.handle();
-    }
-#else
     bool dsav = session->done();
     session->unquit();
     while (session->pending() && !session->done()) {
@@ -449,13 +428,9 @@ void single_event_run() {
     if (dsav) {
         session->quit();
     }
-#endif
     Oc::setAcceptInput(true);
     ;
     HocPanel::keep_updated();
-#if MAC
-    Session::instance()->screen_update();
-#endif
     WinDismiss::dismiss_defer();  // in case window was dismissed
 }
 

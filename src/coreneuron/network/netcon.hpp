@@ -11,9 +11,6 @@
 #include "coreneuron/mpi/nrnmpi.h"
 
 #undef check
-#if MAC
-#define NetCon nrniv_Dinfo
-#endif
 namespace coreneuron {
 class PreSyn;
 class InputPreSyn;
