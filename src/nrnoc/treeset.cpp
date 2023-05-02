@@ -384,6 +384,7 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         nrn_thread_error("need recalc_diam()");
         recalc_diam();
     }
+    auto* const vec_rhs = nt.node_rhs_storage();
     if (use_sparse13) {
         int i, neqn;
         nrn_thread_error("nrn_rhs use_sparse13");
@@ -398,7 +399,7 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
 #if CACHEVEC
         if (use_cachevec) {
             for (i = i1; i < i3; ++i) {
-                VEC_RHS(i) = 0.;
+                vec_rhs[i] = 0.;
             }
         } else
 #endif /* CACHEVEC */
@@ -444,7 +445,7 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         double* p = _nt->_nrn_fast_imem->_nrn_sav_rhs;
         if (use_cachevec) {
             for (i = i1; i < i3; ++i) {
-                p[i] -= VEC_RHS(i);
+                p[i] -= vec_rhs[i];
             }
         } else {
             for (i = i1; i < i3; ++i) {
@@ -480,8 +481,8 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         for (i = i2; i < i3; ++i) {
             auto const dv = actual_v[parent_i[i]] - actual_v[i];
             /* our connection coefficients are negative so */
-            VEC_RHS(i) -= VEC_B(i) * dv;
-            VEC_RHS(parent_i[i]) += VEC_A(i) * dv;
+            vec_rhs[i] -= VEC_B(i) * dv;
+            vec_rhs[parent_i[i]] += VEC_A(i) * dv;
         }
     } else
 #endif /* CACHEVEC */

@@ -399,6 +399,7 @@ void nrn_solve(NrnThread* _nt) {
 
 /* triangularization of the matrix equations */
 void triang(NrnThread* _nt) {
+    auto* const vec_rhs = _nt->node_rhs_storage();
     Node *nd, *pnd;
     double p;
     int i, i2, i3;
@@ -409,7 +410,7 @@ void triang(NrnThread* _nt) {
         for (i = i3 - 1; i >= i2; --i) {
             p = VEC_A(i) / VEC_D(i);
             VEC_D(_nt->_v_parent_index[i]) -= p * VEC_B(i);
-            VEC_RHS(_nt->_v_parent_index[i]) -= p * VEC_RHS(i);
+            vec_rhs[_nt->_v_parent_index[i]] -= p * vec_rhs[i];
         }
     } else
 #endif /* CACHEVEC */
@@ -426,6 +427,7 @@ void triang(NrnThread* _nt) {
 
 /* back substitution to finish solving the matrix equations */
 void bksub(NrnThread* _nt) {
+    auto* const vec_rhs = _nt->node_rhs_storage();
     Node *nd, *cnd;
     int i, i1, i2, i3;
     i1 = 0;
@@ -434,11 +436,11 @@ void bksub(NrnThread* _nt) {
 #if CACHEVEC
     if (use_cachevec) {
         for (i = i1; i < i2; ++i) {
-            VEC_RHS(i) /= VEC_D(i);
+            vec_rhs[i] /= VEC_D(i);
         }
         for (i = i2; i < i3; ++i) {
-            VEC_RHS(i) -= VEC_B(i) * VEC_RHS(_nt->_v_parent_index[i]);
-            VEC_RHS(i) /= VEC_D(i);
+            vec_rhs[i] -= VEC_B(i) * vec_rhs[_nt->_v_parent_index[i]];
+            vec_rhs[i] /= VEC_D(i);
         }
     } else
 #endif /* CACHEVEC */

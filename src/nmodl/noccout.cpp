@@ -217,6 +217,7 @@ void c_out() {
         P("\nstatic void nrn_cur(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
           "Memb_list* _ml_arg, int _type){\n");
         P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+        P("auto* const _vec_rhs = _nt->node_rhs_storage();\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _cntml;\n");
         P("_ml = &_lmr;\n");  // update global _ml
         P("#if CACHEVEC\n");
@@ -256,7 +257,7 @@ void c_out() {
 #else
                 P("#if CACHEVEC\n");
                 P("  if (use_cachevec) {\n");
-                P("	VEC_RHS(_ni[_iml]) += _rhs;\n");
+                P("	   _vec_rhs[_ni[_iml]] += _rhs;\n");
                 P("  }else\n");
                 P("#endif\n");
                 P("  {\n");
@@ -276,7 +277,7 @@ void c_out() {
 #else
                 P("#if CACHEVEC\n");
                 P("  if (use_cachevec) {\n");
-                P("	VEC_RHS(_ni[_iml]) -= _rhs;\n");
+                P("	   _vec_rhs[_ni[_iml]] -= _rhs;\n");
                 P("  }else\n");
                 P("#endif\n");
                 P("  {\n");
@@ -657,6 +658,7 @@ void c_out_vectorize() {
         P("\nstatic void nrn_cur(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
           "Memb_list* _ml_arg, int _type) {\n");
         P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+        P("auto* const _vec_rhs = _nt->node_rhs_storage();\n");
         P("auto* const _ml = &_lmr;\n");
         P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
@@ -708,7 +710,7 @@ void c_out_vectorize() {
 #else
                 P("#if CACHEVEC\n");
                 P("  if (use_cachevec) {\n");
-                P("	VEC_RHS(_ni[_iml]) += _rhs;\n");
+                P("	   _vec_rhs[_ni[_iml]] += _rhs;\n");
                 P("  }else\n");
                 P("#endif\n");
                 P("  {\n");
@@ -728,7 +730,7 @@ void c_out_vectorize() {
 #else
                 P("#if CACHEVEC\n");
                 P("  if (use_cachevec) {\n");
-                P("	VEC_RHS(_ni[_iml]) -= _rhs;\n");
+                P("	   _vec_rhs[_ni[_iml]] -= _rhs;\n");
                 P("  }else\n");
                 P("#endif\n");
                 P("  {\n");

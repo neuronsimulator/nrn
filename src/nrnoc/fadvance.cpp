@@ -569,6 +569,8 @@ void* nrn_ms_bksub_through_triang(NrnThread* nth) {
 
 
 void nrn_update_voltage(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
+    auto* const vec_rhs = nt.node_rhs_storage();
+    auto* const vec_v = nt.node_voltage_storage();
     auto* const _nt = &nt;
     int i, i1, i2;
     i1 = 0;
@@ -578,11 +580,11 @@ void nrn_update_voltage(neuron::model_sorted_token const& sorted_token, NrnThrea
         /* do not need to worry about linmod or extracellular*/
         if (secondorder) {
             for (i = i1; i < i2; ++i) {
-                VEC_V(i) += 2. * VEC_RHS(i);
+                vec_v[i] += 2. * vec_rhs[i];
             }
         } else {
             for (i = i1; i < i2; ++i) {
-                VEC_V(i) += VEC_RHS(i);
+                vec_v[i] += vec_rhs[i];
             }
         }
     } else
@@ -625,11 +627,12 @@ void nrn_calc_fast_imem(NrnThread* _nt) {
     int i;
     int i1 = 0;
     int i3 = _nt->end;
+    auto* const vec_rhs = _nt->node_rhs_storage();
     double* pd = _nt->_nrn_fast_imem->_nrn_sav_d;
     double* prhs = _nt->_nrn_fast_imem->_nrn_sav_rhs;
     if (use_cachevec) {
         for (i = i1; i < i3; ++i) {
-            prhs[i] = (pd[i] * VEC_RHS(i) + prhs[i]) * VEC_AREA(i) * 0.01;
+            prhs[i] = (pd[i] * vec_rhs[i] + prhs[i]) * VEC_AREA(i) * 0.01;
         }
     } else {
         for (i = i1; i < i3; ++i) {
@@ -653,9 +656,10 @@ void nrn_calc_fast_imem_fixedstep_init(NrnThread* _nt) {
     int i1 = 0;
     int i3 = _nt->end;
     double* prhs = _nt->_nrn_fast_imem->_nrn_sav_rhs;
+    auto* const vec_rhs = _nt->node_rhs_storage();
     if (use_cachevec) {
         for (i = i1; i < i3; ++i) {
-            prhs[i] = (VEC_RHS(i) + prhs[i]) * VEC_AREA(i) * 0.01;
+            prhs[i] = (vec_rhs[i] + prhs[i]) * VEC_AREA(i) * 0.01;
         }
     } else {
         for (i = i1; i < i3; ++i) {

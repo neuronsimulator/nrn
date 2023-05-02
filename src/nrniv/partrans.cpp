@@ -1046,11 +1046,12 @@ void pargap_jacobi_rhs(double* b, double* x) {
         Node* nd = visources_[i];
         nd->set_v(0.0);
     }
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    auto* const vec_rhs = _nt->node_rhs_storage();
     // Initialize rhs to 0.
     for (int i = 0; i < _nt->end; ++i) {
-        VEC_RHS(i) = 0.0;
+        vec_rhs[i] = 0.0;
     }
-    auto const sorted_token = nrn_ensure_model_data_are_sorted();
     for (int k = 0; k < imped_current_type_count_; ++k) {
         int type = imped_current_type_[k];
         Memb_list* ml = imped_current_ml_[k];
@@ -1062,7 +1063,7 @@ void pargap_jacobi_rhs(double* b, double* x) {
     // so ...  The only thing that can go wrong is if there are intances of
     // gap junctions that are not being used  (not in the target list).
     for (int i = 0; i < _nt->end; ++i) {
-        b[i] += VEC_RHS(i);
+        b[i] += vec_rhs[i];
     }
 }
 

@@ -2673,6 +2673,7 @@ void KSChan::cur(Memb_list* ml) {
 
 #if CACHEVEC
 void KSChan::cur(NrnThread* _nt, Memb_list* ml) {
+    auto* const vec_rhs = _nt->node_rhs_storage();
     int n = ml->nodecount;
     int* nodeindices = ml->nodeindices;
     Datum** ppd = ml->pdata;
@@ -2682,7 +2683,7 @@ void KSChan::cur(NrnThread* _nt, Memb_list* ml) {
         int ni = nodeindices[i];
         g = conductance(ml->data(i, gmaxoffset_), ml, i, soffset_);
         ic = iv_relation_->cur(g, ppd[i], VEC_V(ni), ml, i, gmaxoffset_);
-        VEC_RHS(ni) -= ic;
+        vec_rhs[ni] -= ic;
     }
 }
 #endif /* CACHEVEC */
