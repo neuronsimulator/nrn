@@ -2003,18 +2003,19 @@ void MultiSplitControl::multisplit_nocap_v_part1(NrnThread* _nt) {
     // so encode v into D and sum of zero-area rhs will end up in
     // rhs.
     auto* const vec_rhs = _nt->node_rhs_storage();
+    auto* const vec_v = _nt->node_voltage_storage();
     if (_nt->id == 0)
         for (i = 0; i < narea2buf_; ++i) {
             Area2Buf& ab = area2buf_[i];
             VEC_D(ab.inode) = 1e50;  // sentinal
-            vec_rhs[ab.inode] = VEC_V(ab.inode) * 1e50;
+            vec_rhs[ab.inode] = vec_v[ab.inode] * 1e50;
         }
     // also scale the non-zero area elements on this host
     for (i = 0; i < narea2rt_; ++i) {
         Area2RT& ar = area2rt_[i];
         if (_nt->id == ar.ms->ithread) {
             VEC_D(ar.inode) = 1e50;
-            vec_rhs[ar.inode] = VEC_V(ar.inode) * 1e50;
+            vec_rhs[ar.inode] = vec_v[ar.inode] * 1e50;
         }
     }
 }
@@ -2031,23 +2032,24 @@ void MultiSplitControl::multisplit_nocap_v_part3(NrnThread* _nt) {
     // node d, and RHS is the sum of all zero-area node rhs.
     int i;
     auto* const vec_rhs = _nt->node_rhs_storage();
+    auto* const vec_v = _nt->node_voltage_storage();
     if (_nt->id == 0)
         for (i = 0; i < narea2buf_; ++i) {
             Area2Buf& ab = area2buf_[i];
             int j = ab.inode;
             double afac = 100. / VEC_AREA(j);
-            ab.adjust_rhs_ = (vec_rhs[j] - VEC_D(j) * VEC_V(j)) * afac;
+            ab.adjust_rhs_ = (vec_rhs[j] - VEC_D(j) * vec_v[j]) * afac;
             // printf("%d nz1 %d D=%g RHS=%g V=%g afac=%g adjust=%g\n",
-            // nrnmpi_myid, i, D(i), RHS(i), VEC_V(j), afac, ab.adjust_rhs_);
+            // nrnmpi_myid, i, D(i), RHS(i), vec_v[j], afac, ab.adjust_rhs_);
         }
     for (i = 0; i < narea2rt_; ++i) {
         Area2RT& ar = area2rt_[i];
         if (_nt->id == ar.ms->ithread) {
             int j = ar.inode;
             double afac = 100. / VEC_AREA(j);
-            ar.adjust_rhs_ = (vec_rhs[j] - VEC_D(j) * VEC_V(j)) * afac;
+            ar.adjust_rhs_ = (vec_rhs[j] - VEC_D(j) * vec_v[j]) * afac;
             // printf("%d nz2 %d D=%g RHS=%g V=%g afac=%g adjust=%g\n",
-            // nrnmpi_myid, i, D(i), RHS(i), VEC_V(j), afac, ar.adjust_rhs_);
+            // nrnmpi_myid, i, D(i), RHS(i), vec_v[j], afac, ar.adjust_rhs_);
         }
     }
 }

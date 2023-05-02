@@ -2607,13 +2607,14 @@ void KSChan::state_cachevec(NrnThread* _nt, Memb_list* ml) {
     Datum** ppd = ml->pdata;
     int i, j;
     double* s;
+    auto* const vec_v = _nt->node_voltage_storage();
     if (nstate_) {
         for (i = 0; i < n; ++i) {
             if (is_single() && ml->data(i, NSingleIndex) > .999) {
                 single_->state(nd[i], ppd[i], _nt);
                 continue;
             }
-            double v = VEC_V(ni[i]);
+            double v = vec_v[ni[i]];
             auto offset = soffset_;
             if (usetable_) {
                 double inf, tau;
@@ -2674,6 +2675,7 @@ void KSChan::cur(Memb_list* ml) {
 #if CACHEVEC
 void KSChan::cur(NrnThread* _nt, Memb_list* ml) {
     auto* const vec_rhs = _nt->node_rhs_storage();
+    auto* const vec_v = _nt->node_voltage_storage();
     int n = ml->nodecount;
     int* nodeindices = ml->nodeindices;
     Datum** ppd = ml->pdata;
@@ -2682,7 +2684,7 @@ void KSChan::cur(NrnThread* _nt, Memb_list* ml) {
         double g, ic;
         int ni = nodeindices[i];
         g = conductance(ml->data(i, gmaxoffset_), ml, i, soffset_);
-        ic = iv_relation_->cur(g, ppd[i], VEC_V(ni), ml, i, gmaxoffset_);
+        ic = iv_relation_->cur(g, ppd[i], vec_v[ni], ml, i, gmaxoffset_);
         vec_rhs[ni] -= ic;
     }
 }
@@ -2701,9 +2703,10 @@ void KSChan::jacob(Memb_list* ml) {
 void KSChan::jacob(NrnThread* _nt, Memb_list* ml) {
     int n = ml->nodecount;
     Datum** ppd = ml->pdata;
+    auto* const vec_v = _nt->node_voltage_storage();
     for (int i = 0; i < n; ++i) {
         int ni = ml->nodeindices[i];
-        VEC_D(ni) += iv_relation_->jacob(ppd[i], VEC_V(ni), ml, i, gmaxoffset_);
+        VEC_D(ni) += iv_relation_->jacob(ppd[i], vec_v[ni], ml, i, gmaxoffset_);
     }
 }
 #endif /* CACHEVEC */
