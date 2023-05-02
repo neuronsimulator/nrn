@@ -238,7 +238,7 @@ void c_out() {
             fprintf(fcout, "if (cvode_active_) { %s(); }\n", cvode_nrn_cur_solve_->name);
         }
         if (currents->next != currents) {
-            P(" _g = _nrn_current(_v + .001);\n");
+            P(" auto const _g_local = _nrn_current(_v + .001);\n");
             printlist(begin_dion_stmt());
             if (state_discon_list_) {
                 P(" state_discon_flag_ = 1; _rhs = _nrn_current(_v); state_discon_flag_ = 0;\n");
@@ -246,7 +246,7 @@ void c_out() {
                 P(" _rhs = _nrn_current(_v);\n");
             }
             printlist(end_dion_stmt(".001"));
-            P(" _g = (_g - _rhs)/.001;\n");
+            P(" _g = (_g_local - _rhs)/.001;\n");
             /* set the ion variable values */
             printlist(set_ion_variables(0));
             if (point_process) {
@@ -692,7 +692,7 @@ void c_out_vectorize() {
                 printlist(set_ion_variables(0));
                 P(" }\n");
             } else {
-                P(" _g = _nrn_current(_threadargscomma_ _v + .001);\n");
+                P(" auto const _g_local = _nrn_current(_threadargscomma_ _v + .001);\n");
                 printlist(begin_dion_stmt());
                 if (state_discon_list_) {
                     P(" state_discon_flag_ = 1; _rhs = _nrn_current(_v); state_discon_flag_ = "
@@ -701,7 +701,7 @@ void c_out_vectorize() {
                     P(" _rhs = _nrn_current(_threadargscomma_ _v);\n");
                 }
                 printlist(end_dion_stmt(".001"));
-                P(" _g = (_g - _rhs)/.001;\n");
+                P(" _g = (_g_local - _rhs)/.001;\n");
                 /* set the ion variable values */
                 printlist(set_ion_variables(0));
             } /* end of not conductance */
