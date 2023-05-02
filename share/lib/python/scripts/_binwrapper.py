@@ -91,6 +91,12 @@ def _config_exe(exe_name):
     os.environ["CORENRN_PERLEXE"] = shutil.which("perl")
     os.environ["NRNBIN"] = os.path.dirname(__file__)
 
+    os.environ["NMODLHOME"] = os.path.join(NRN_PREFIX, "external", "nmodl")
+    if sys.platform == "darwin":
+        os.environ["NMODL_WRAPLIB"] = os.path.join(NRN_PREFIX, "lib", "libpywrapper.dylib")
+    else:
+        os.environ["NMODL_WRAPLIB"] = os.path.join(NRN_PREFIX, "lib", "libpywrapper.so")
+
     _set_default_compiler()
     return os.path.join(NRN_PREFIX, "bin", exe_name)
 
