@@ -93,7 +93,9 @@ def _config_exe(exe_name):
 
     os.environ["NMODLHOME"] = os.path.join(NRN_PREFIX, "external", "nmodl")
     if sys.platform == "darwin":
-        os.environ["NMODL_WRAPLIB"] = os.path.join(NRN_PREFIX, "lib", "libpywrapper.dylib")
+        os.environ["NMODL_WRAPLIB"] = os.path.join(
+            NRN_PREFIX, "lib", "libpywrapper.dylib"
+        )
     else:
         os.environ["NMODL_WRAPLIB"] = os.path.join(NRN_PREFIX, "lib", "libpywrapper.so")
 
