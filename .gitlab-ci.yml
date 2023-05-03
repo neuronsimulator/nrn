@@ -165,7 +165,7 @@ simulation_stack:
 
 .spack_intel:
   variables:
-    SPACK_PACKAGE_COMPILER: intel
+    SPACK_PACKAGE_COMPILER: oneapi
 .spack_nvhpc:
   variables:
     SPACK_PACKAGE_COMPILER: nvhpc
