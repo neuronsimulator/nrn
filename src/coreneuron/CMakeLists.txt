@@ -300,6 +300,7 @@ else()
   set(nmodl_PYTHONPATH "${CMAKE_BINARY_DIR}/lib")
   set(CORENRN_NMODL_PYTHONPATH "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
   set(NMODL_TARGET_TO_DEPEND nmodl)
+  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
 endif()
 
 # set correct arguments for nmodl for cpu/gpu target
@@ -622,7 +623,7 @@ add_custom_command(
   OUTPUT ${output_binaries}
   DEPENDS coreneuron-core ${NMODL_TARGET_TO_DEPEND} ${CORENEURON_BUILTIN_MODFILES}
   COMMAND
-    ${CMAKE_COMMAND} -E env NMODL_WRAPLIB=${CMAKE_BINARY_DIR}/lib/libpywrapper.so
+    ${CMAKE_COMMAND} -E env NMODLHOME=${NMODL_PROJECT_BINARY_DIR}
     ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b ${COMPILE_LIBRARY_TYPE} -m ${CORENRN_NMODL_BINARY} -n
     "internal" -p 4 "."
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
