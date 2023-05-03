@@ -3206,6 +3206,21 @@ Parallel Transfer
 ----
 
 
+.. method:: ParallelContext.get_partition
+
+
+    Syntax:
+        ``seclist = pc.get_partition(i)``
+
+
+    Description:
+        Returns a new :func:`SectionList` with references to all the root sections
+        of the ith thread.
+
+
+----
+
+
 
 .. method:: ParallelContext.thread_stat
 
