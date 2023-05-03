@@ -27,13 +27,6 @@ def _config_exe(exe_name):
     NMODL_PREFIX = os.path.join(working_set.by_key[package_name].location, "nmodl")
     NMODL_HOME = os.path.join(NMODL_PREFIX, ".data")
     NMODL_BIN = os.path.join(NMODL_HOME, "bin")
-    NMODL_LIB = os.path.join(NMODL_HOME, "lib")
-
-    # add pywrapper path to environment
-    if sys.platform == "darwin":
-        os.environ["NMODL_WRAPLIB"] = os.path.join(NMODL_LIB, "libpywrapper.dylib")
-    else:
-        os.environ["NMODL_WRAPLIB"] = os.path.join(NMODL_LIB, "libpywrapper.so")
 
     # add libpython*.so path to environment
     os.environ["NMODL_PYLIB"] = find_libpython()

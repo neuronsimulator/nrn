@@ -30,7 +30,8 @@ target_link_libraries(pyembed PRIVATE util)
 
 if(NOT LINK_AGAINST_PYTHON)
   add_library(pywrapper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
-  set_target_properties(pywrapper PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+  set_target_properties(pywrapper PROPERTIES LIBRARY_OUTPUT_DIRECTORY
+                                             ${NMODL_PROJECT_BINARY_DIR}/lib)
 else()
   add_library(pywrapper ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
   set_property(TARGET pywrapper PROPERTY POSITION_INDEPENDENT_CODE ON)

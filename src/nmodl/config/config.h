@@ -74,4 +74,8 @@ struct NrnUnitsLib {
     }
 };
 
+struct CMakeInfo {
+    static const std::string SHARED_LIBRARY_SUFFIX;
+};
+
 }  // namespace nmodl

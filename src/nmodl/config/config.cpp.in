@@ -13,6 +13,8 @@ const std::string nmodl::Version::GIT_REVISION = "@NMODL_GIT_REVISION@";
 /// NMODL version
 const std::string nmodl::Version::NMODL_VERSION = "@PROJECT_VERSION@";
 
+const std::string nmodl::CMakeInfo::SHARED_LIBRARY_SUFFIX = "@CMAKE_SHARED_LIBRARY_SUFFIX@";
+
 /**
  * \brief Path of nrnutils.lib file
  *
