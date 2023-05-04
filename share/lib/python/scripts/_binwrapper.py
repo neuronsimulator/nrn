@@ -11,6 +11,7 @@ from pkg_resources import working_set
 from setuptools.command.build_ext import new_compiler
 from packaging.version import Version
 from sysconfig import get_config_vars, get_config_var
+from find_libpython import find_libpython
 
 
 def _customize_compiler(compiler):
@@ -91,7 +92,10 @@ def _config_exe(exe_name):
     os.environ["CORENRN_PERLEXE"] = shutil.which("perl")
     os.environ["NRNBIN"] = os.path.dirname(__file__)
 
-    os.environ["NMODLHOME"] = os.path.join(NRN_PREFIX, "external", "nmodl")
+    if "NMODLHOME" not in os.environ:
+        os.environ["NMODLHOME"] = NRN_PREFIX
+    if "NMODL_PYLIB" not in os.environ:
+        os.environ["NMODL_PYLIB"] = find_libpython()
 
     _set_default_compiler()
     return os.path.join(NRN_PREFIX, "bin", exe_name)

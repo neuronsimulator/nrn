@@ -24,6 +24,7 @@ set(CMAKE_INSTALL_BINDIR bin)
 set(CMAKE_INSTALL_LIBDIR lib)
 set(CMAKE_INSTALL_INCLUDEDIR include)
 set(CMAKE_INSTALL_DATADIR share/nrn)
+set(CMAKE_INSTALL_DATADIR_NMODL share/nmodl)
 
 # =============================================================================
 # Include nrnivmodl makefile generator
