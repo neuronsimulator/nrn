@@ -34,7 +34,6 @@ ExternalProject_Add(
              -DPTHREAD_ENABLE=ON
              -DSUNDIALS_PRECISION=double
              -DUSE_GENERIC_MATH=ON
-             -DCMAKE_BUILD_TYPE=RelWitDebInfo
              -DCMAKE_POSITION_INDEPENDENT_CODE=ON
              -DBUILD_SHARED_LIBS=OFF
   BUILD_BYPRODUCTS
