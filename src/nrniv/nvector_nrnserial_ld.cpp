@@ -381,7 +381,7 @@ void N_VDestroy_NrnSerialLD(N_Vector v) {
     free(v);
 }
 
-void N_VSpace_NrnSerialLD(N_Vector v, long* lrw, long* liw) {
+void N_VSpace_NrnSerialLD(N_Vector v, sunindextype* lrw, sunindextype* liw) {
     *lrw = NV_LENGTH_S_LD(v);
     *liw = 1;
 }

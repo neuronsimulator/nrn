@@ -457,7 +457,7 @@ void N_VDestroy_NrnThread(N_Vector v) {
     free(v);
 }
 
-void N_VSpace_NrnThread(N_Vector v, long* lrw, long* liw) {
+void N_VSpace_NrnThread(N_Vector v, sunindextype* lrw, sunindextype* liw) {
     *lrw = NV_LENGTH_NT(v);
     *liw = 1;
 }

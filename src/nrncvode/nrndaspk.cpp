@@ -154,6 +154,9 @@ void Daspk::ida_init() {
         ier = IDAInit(mem, res_gvardt, cv_->t_, cv_->y_, yp_);
         assert(ier == IDA_SUCCESS);
 
+        ier = IDASetUserData(mem, cv_);
+        assert(ier == IDA_SUCCESS);
+
         ier = IDASVtolerances(mem, cv_->ncv_->rtol_, cv_->atolnvec_);
         assert(ier == IDA_SUCCESS);
 
