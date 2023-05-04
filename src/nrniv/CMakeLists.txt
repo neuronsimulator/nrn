@@ -325,12 +325,32 @@ if(NRN_HAVE_NVHPC_COMPILER)
   endif()
   set_source_files_properties(
     ${PROJECT_SOURCE_DIR}/src/oc/math.cpp
-    PROPERTIES COMPILE_DEFINITIONS NVHPC_CHECK_FE_EXCEPTIONS=1 COMPILE_OPTIONS
-                                                               "${NVHPC_MATH_COMPILE_OPTIONS}")
+    PROPERTIES COMPILE_DEFINITIONS NRN_CHECK_FE_EXCEPTIONS=1 COMPILE_OPTIONS
+                                                             "${NVHPC_MATH_COMPILE_OPTIONS}")
   # Versions of nvc++ around ~22.5 up to at least 23.1 have problems with this file see
   # https://github.com/BlueBrain/CoreNeuron/issues/888
   set_source_files_properties(${PROJECT_SOURCE_DIR}/src/ivoc/ivocvect.cpp PROPERTIES COMPILE_OPTIONS
                                                                                      "-O1")
+elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "IntelLLVM")
+  # Tested with icpx 2022.2.1:
+  #
+  # * With -fp-model=fast (the default...), icpx does not set the C++11 macro math_errhandling.
+  # * With -fp-model=fast and anything but -O0, icpx does not set floating point exception bits.
+  # * With -fp-model={precise,strict}, floating point exceptions are set at all optimisation levels.
+  # * With -fp-model=precise and anything but -O0, -fno-math-errno also disables exceptions.
+  # * When defined, math_errhandling always contains both MATH_ERRNO and MATH_ERREXCEPT.
+  #
+  # Based on all of this, forcing strict mode and forcing floating point exceptions to be used (with
+  # NRN_CHECK_FE_EXCEPTIONS) seems that it should work at all optimisation levels. We might as well
+  # also pass -fno-math-errno because we will not be checking errno.
+  set_property(
+    SOURCE ${PROJECT_SOURCE_DIR}/src/oc/math.cpp
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS NRN_CHECK_FE_EXCEPTIONS)
+  set_property(
+    SOURCE ${PROJECT_SOURCE_DIR}/src/oc/math.cpp
+    APPEND
+    PROPERTY COMPILE_OPTIONS "-fp-model=strict" "-fno-math-errno")
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
   # When optimisation is enabled then icpc apparently does not set errno
   set_property(

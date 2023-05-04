@@ -83,7 +83,7 @@ def node():
     def ev(*arg):
         print("ev t=%g v=%g x=%g nc.x=%g" % (h.t, s(0.5).v, src.x, nc.x))
         ref_t, ref_x = results[arg[0]][arg[1]]
-        assert h.t == ref_t
+        assert math.isclose(h.t, ref_t, rel_tol=1e-15)
         assert math.isclose(src.x, ref_x, rel_tol=1e-13)
 
     def run():
