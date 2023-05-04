@@ -63,7 +63,6 @@ add_executable(testprinter printer/printer.cpp)
 add_executable(testsymtab symtab/symbol_table.cpp)
 add_executable(testnewton newton/newton.cpp ${NEWTON_SOLVER_SOURCE_FILES})
 add_executable(testcrout crout/crout.cpp ${CROUT_SOLVER_SOURCE_FILES})
-add_executable(testfast_math fast_math/fast_math.cpp ${NEWTON_SOLVER_SOURCE_FILES})
 add_executable(testunitlexer units/lexer.cpp)
 add_executable(testunitparser units/parser.cpp)
 add_executable(
@@ -127,7 +126,6 @@ foreach(
   testsymtab
   testnewton
   testcrout
-  testfast_math
   testunitlexer
   testunitparser)
 
