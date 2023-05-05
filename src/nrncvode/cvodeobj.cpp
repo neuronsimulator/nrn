@@ -94,7 +94,7 @@ extern void nrn2ncs_netcons();
 #endif  // USENCS
 #if PARANEURON
 extern "C" {
-extern N_Vector N_VNew_Parallel(int comm, long int local_length, long int global_length);
+extern N_Vector nrnwrap_N_VNew_Parallel(int comm, long int local_length, long int global_length);
 extern N_Vector N_VNew_NrnParallelLD(int comm, long int local_length, long int global_length);
 }  // extern "C"
 #endif
@@ -824,10 +824,11 @@ void Cvode::set_init_flag() {
 N_Vector Cvode::nvnew(long int n) {
 #if PARANEURON
     if (use_partrans_) {
+        // the comm arg is ignored and replaced by MPI_Comm nrnmpi_comm
         if (net_cvode_instance->use_long_double_) {
             return N_VNew_NrnParallelLD(0, n, global_neq_);
         } else {
-            return N_VNew_Parallel(0, n, global_neq_);
+            return nrnwrap_N_VNew_Parallel(0, n, global_neq_);
         }
     }
 #endif

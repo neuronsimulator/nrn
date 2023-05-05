@@ -88,6 +88,18 @@ static void VScaleBy_NrnParallelLD(realtype a, N_Vector x);
  * -----------------------------------------------------------------
  */
 
+// wrapped because nrnmpi_comm not available from cvodeobj.cpp
+// This needs to be modified to work for NRNMPI_DYNAMICLOAD
+extern "C" {
+extern N_Vector N_VNew_Parallel(MPI_Comm comm,
+                                sunindextype local_length,
+                                sunindextype global_length);
+
+N_Vector nrnwrap_N_VNew_Parallel(int ignore, long int local_length, long int global_length) {
+    return N_VNew_Parallel(nrnmpi_comm, sunindextype(local_length), sunindextype(global_length));
+}
+}
+
 /* ----------------------------------------------------------------
  * Function to create a new parallel vector with empty data array
  */
