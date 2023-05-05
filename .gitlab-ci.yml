@@ -54,6 +54,9 @@ mac_m1_cmake_build:
     - echo "python3=$(command -v python3) is really ${real_python}"
     - PYTHONEXECUTABLE=${real_python} ${real_python} -mvenv venv
     - venv/bin/pip install --upgrade pip -r nrn_requirements.txt
+    - git submodule update --init --recursive --force --depth 1 -- external/nmodl
+    - venv/bin/pip install --upgrade -r external/nmodl/requirements.txt
+    - source ./venv/bin/activate
     - export PYTHON=${PWD}/venv/bin/python
     - ${PYTHON} --version
     - '${PYTHON} -c "import os,matplotlib; f = open(os.path.join(os.path.dirname(matplotlib.__file__), \"mpl-data/matplotlibrc\"),\"a\"); f.write(\"backend: TkAgg\");f.close();"'
@@ -205,32 +208,32 @@ build:nmodl:
 build:neuron:nmodl:intel:legacy:
   extends: [.build_neuron_nmodl, .spack_intel]
   variables:
-    SPACK_PACKAGE_SPEC: ~rx3d~caliper~gpu+coreneuron~legacy-unit+nmodl~openmp~shared~sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
+    SPACK_PACKAGE_SPEC: ~rx3d~caliper~gpu+coreneuron~legacy-unit~openmp~shared~sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
 build:neuron:nmodl:intel:shared:
   extends: [.build_neuron_nmodl, .spack_intel]
   variables:
-    SPACK_PACKAGE_SPEC: ~rx3d~caliper~gpu+coreneuron~legacy-unit+nmodl~openmp+shared+sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
+    SPACK_PACKAGE_SPEC: ~rx3d~caliper~gpu+coreneuron~legacy-unit~openmp+shared+sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
 build:neuron:nmodl:nvhpc:acc:legacy:
   extends: [.build_neuron_nmodl, .spack_nvhpc]
   variables:
-    SPACK_PACKAGE_SPEC: ~rx3d~caliper+gpu+coreneuron~legacy-unit+nmodl~openmp~shared~sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
+    SPACK_PACKAGE_SPEC: ~rx3d~caliper+gpu+coreneuron~legacy-unit~openmp~shared~sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
 build:neuron:nmodl:nvhpc:acc:shared:
   extends: [.build_neuron_nmodl, .spack_nvhpc]
   variables:
-    SPACK_PACKAGE_SPEC: ~rx3d~caliper+gpu+coreneuron~legacy-unit+nmodl~openmp+shared+sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
+    SPACK_PACKAGE_SPEC: ~rx3d~caliper+gpu+coreneuron~legacy-unit~openmp+shared+sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
 build:neuron:nmodl:nvhpc:omp:legacy:
   extends: [.build_neuron_nmodl, .spack_nvhpc]
   variables:
-    SPACK_PACKAGE_SPEC: ~rx3d+caliper+gpu+coreneuron~legacy-unit+nmodl+openmp~shared~sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy ^caliper+cuda cuda_arch=70
+    SPACK_PACKAGE_SPEC: ~rx3d+caliper+gpu+coreneuron~legacy-unit+openmp~shared~sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy ^caliper+cuda cuda_arch=70
 
 build:neuron:nmodl:nvhpc:omp:
   extends: [.build_neuron_nmodl, .spack_nvhpc]
   variables:
-    SPACK_PACKAGE_SPEC: ~rx3d+caliper+gpu+coreneuron~legacy-unit+nmodl+openmp~shared+sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy ^caliper+cuda cuda_arch=70
+    SPACK_PACKAGE_SPEC: ~rx3d+caliper+gpu+coreneuron~legacy-unit+openmp~shared+sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy ^caliper+cuda cuda_arch=70
 
 # Test NEURON
 
