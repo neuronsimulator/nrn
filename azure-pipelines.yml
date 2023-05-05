@@ -29,7 +29,7 @@ stages:
     jobs:
 
     - job: 'ManyLinuxWheels'
-      timeoutInMinutes: 30
+      timeoutInMinutes: 40
       pool:
         vmImage: 'ubuntu-20.04'
       strategy:
@@ -80,7 +80,7 @@ stages:
 
 
     - job: 'ManyLinuxGPUWheels'
-      timeoutInMinutes: 30
+      timeoutInMinutes: 40
       pool:
         vmImage: 'ubuntu-20.04'
       variables:
