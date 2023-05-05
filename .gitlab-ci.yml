@@ -59,6 +59,8 @@ mac_m1_cmake_build:
     - '${PYTHON} -c "import os,matplotlib; f = open(os.path.join(os.path.dirname(matplotlib.__file__), \"mpl-data/matplotlibrc\"),\"a\"); f.write(\"backend: TkAgg\");f.close();"'
     - 'export CXX=${CXX:-g++}'
     - 'export CC=${CC:-gcc}'
+    - brew install flex bison
+    - export PATH="/opt/homebrew/opt/flex/bin:/opt/homebrew/opt/bison/bin:$PATH"
     - export INSTALL_DIR=$(pwd)/install
     - echo $LANG
     - echo $LC_ALL
