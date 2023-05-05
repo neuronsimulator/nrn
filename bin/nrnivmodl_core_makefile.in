@@ -25,7 +25,7 @@ CORENRN_BIN_DIR := $(ROOT)/bin
 CORENRN_LIB_DIR := $(ROOT)/lib
 CORENRN_INC_DIR := $(ROOT)/include
 CORENRN_SHARE_CORENRN_DIR:= $(ROOT)/share/coreneuron
-CORENRN_SHARE_NMODL_DIR := $(ROOT)/share/mod2c
+CORENRN_SHARE_NMODL_DIR := $(ROOT)/share/nmodl
 
 # name of the CoreNEURON binary
 SPECIAL_EXE  = $(OUTPUT_DIR)/special-core
