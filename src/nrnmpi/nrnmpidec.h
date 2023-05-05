@@ -8,6 +8,7 @@ the prototypes be of the form "type foo(type arg, ...)"
 #include <nrnmpiuse.h>
 #include <cstdint>
 typedef long double longdbl;
+typedef long long nrnlonglong; /* see Sundials sunindextype */
 #if NRNMPI
 #include <stdlib.h>
 #include <string>
@@ -22,10 +23,11 @@ typedef struct bbsmpibuf {
     int refcount;
 } bbsmpibuf;
 
-// olupton 2022-07-06: dynamic MPI needs to dlopen some of these (slightly
-// redefined) symbol names, so keep C linkage for simplicity
+/* olupton 2022-07-06: dynamic MPI needs to dlopen some of these (slightly
+ redefined) symbol names, so keep C linkage for simplicity
+ */
 extern "C" {
-// clang-format off
+/* clang-format off */
 extern bbsmpibuf* nrnmpi_newbuf(int size);
 extern void nrnmpi_copy(bbsmpibuf* dest, bbsmpibuf* src);
 extern void nrnmpi_ref(bbsmpibuf* buf);
@@ -109,17 +111,15 @@ extern double nrnmpi_dbl_allreduce(double x, int type);
 extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
 extern void nrnmpi_longdbl_allreduce_vec(longdbl* src, longdbl* dest, int cnt, int type);
 extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
-extern void nrnmpi_longlong_allreduce_vec(long long* src, long long* dest, int cnt, int type);
+extern void nrnmpi_longlong_allreduce_vec(nrnlonglong* src, nrnlonglong* dest, int cnt, int type);
 
 extern void nrnmpi_dbl_allgather(double* s, double* r, int n);
-#if NRNMPI
 extern void nrnmpi_multisend_comm();
 extern void nrnmpi_multisend_multisend(NRNMPI_Spike* spk, int n, int* hosts);
 extern int nrnmpi_multisend_single_advance(NRNMPI_Spike* spk);
 extern int nrnmpi_multisend_conserve(int nsend, int nrecv);
-#endif
-// clang-format on
+/* clang-format on */
 }
 
-#endif
-#endif
+#endif /* NRNMPI */
+#endif /* nrnmpidec_h */
