@@ -109,6 +109,7 @@ extern double nrnmpi_dbl_allreduce(double x, int type);
 extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
 extern void nrnmpi_longdbl_allreduce_vec(longdbl* src, longdbl* dest, int cnt, int type);
 extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
+extern void nrnmpi_longlong_allreduce_vec(long long* src, long long* dest, int cnt, int type);
 
 extern void nrnmpi_dbl_allgather(double* s, double* r, int n);
 #if NRNMPI

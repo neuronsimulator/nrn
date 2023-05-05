@@ -24,25 +24,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* for NRNMPI_DYNAMICLOAD */
-#include <nrnmpiuse.h>
-#if NRNMPI_DYNAMICLOAD
-extern "C" void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
-extern "C" void nrnmpi_longdbl_allreduce_vec(long double* src,
-                                             long double* dest,
-                                             int cnt,
-                                             int type);
-extern "C" void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
-extern int nrnmpi_numprocs;
-#endif
-
 #include "nvector_nrnparallel_ld.h"
-#if NRNMPI_DYNAMICLOAD
-#else
-extern MPI_Comm nrnmpi_comm;
-#endif
 #include <sundials/sundials_math.h>
 #include <sundials/sundials_types.h> /* definition of type realtype*/
+
+/* for NRNMPI_DYNAMICLOAD */
+#include <nrnmpiuse.h>
+extern "C" {
+#if NRNMPI_DYNAMICLOAD
+extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
+extern void nrnmpi_longdbl_allreduce_vec(long double* src, long double* dest, int cnt, int type);
+extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
+extern int nrnmpi_numprocs;
+extern void* nrnmpi_p_comm;
+#define nrnmpi_comm *((MPI_Comm*) (nrnmpi_p_comm))
+#else   // not dynamicload
+extern MPI_Comm nrnmpi_comm;
+#endif  // not dynamicload
+}  // end of extern "C"
 
 #define ZERO   RCONST(0.0)
 #define HALF   RCONST(0.5)
@@ -180,7 +179,7 @@ extern "C" N_Vector N_VNew_NrnParallelLD(MPI_Comm comm,
     N_Vector v;
     realtype* data;
 
-    v = N_VNewEmpty_NrnParallelLD(comm, local_length, global_length);
+    v = N_VNewEmpty_NrnParallelLD(nrnmpi_comm, local_length, global_length);
     if (v == NULL)
         return (NULL);
 
@@ -430,10 +429,10 @@ void N_VSpace_NrnParallelLD(N_Vector v, sunindextype* lrw, sunindextype* liw) {
     MPI_Comm comm;
     int npes;
 
-    comm = NV_COMM_P_LD(v);
 #if NRNMPI_DYNAMICLOAD
     npes = nrnmpi_numprocs;
 #else
+    comm = NV_COMM_P_LD(v);
     MPI_Comm_size(comm, &npes);
 #endif
 
