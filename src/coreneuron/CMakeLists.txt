@@ -302,11 +302,11 @@ else()
   set(NMODL_TARGET_TO_DEPEND nmodl)
   set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
   # install nrnunits.lib and libpywrapper.so from external/nmodl
-  if (NOT LINK_AGAINST_PYTHON)
-      install(
-        FILES ${NMODL_PROJECT_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        COMPONENT pywrapper)
+  if(NOT LINK_AGAINST_PYTHON)
+    install(
+      FILES ${NMODL_PROJECT_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      COMPONENT pywrapper)
   endif()
   install(
     FILES ${NMODL_PROJECT_BINARY_DIR}/share/nmodl/nrnunits.lib
