@@ -19,7 +19,7 @@ Please create a softlink with the binary name to be called.
 """
 import stat
 from pkg_resources import working_set
-from pywheel.shim.find_libpython import find_libpython
+from find_libpython import find_libpython
 
 
 # Main source of the version. Dont rename, used by Cmake
@@ -78,6 +78,7 @@ class Docs(Command):
 install_requirements = [
     "PyYAML>=3.13",
     "sympy>=1.3",
+    "find_libpython"
 ]
 
 
@@ -103,7 +104,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     packages=["nmodl"],
-    scripts=["pywheel/shim/nmodl", "pywheel/shim/find_libpython.py"],
+    scripts=["pywheel/shim/nmodl"],
     include_package_data=True,
     cmake_minimum_required_version="3.15.0",
     cmake_args=cmake_args,
