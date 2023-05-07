@@ -3305,7 +3305,7 @@ Parallel Transfer
         The high resolution walltime time in seconds the indicated thread 
         used during time step integration. Note that this does not include 
         reduced tree computation time used by thread 0 when :func:`multisplit` is 
-        active. 
+        active. With no arg, sets thead_ctime of all threads to 0.
 
          
 ----

@@ -12,6 +12,8 @@ class Cell:
         s = self.secs
         for i in range(1, len(s)):
             s[i].connect(s[i - 1](1))
+            s[i].nseg = 11
+            s[i].insert("hh")
 
     def __str__(self):
         return "Cell_" + str(self.id)
@@ -78,6 +80,17 @@ def test_parts():
     for i in range(nt):
         pc.partition(i, parts[i])
     assertpart(parts)
+
+    def run(tstop):
+        pc.thread_ctime()  # all theads 0
+        pc.set_maxstep(10)
+        h.finitialize(-65)
+        pc.psolve(tstop)
+
+    run(20)
+    print("ith ncell thread_ctime")
+    for ith in range(pc.nthread()):
+        print(ith, len([1 for _ in parts[ith]]), pc.thread_ctime(ith))
 
 
 if __name__ == "__main__":
