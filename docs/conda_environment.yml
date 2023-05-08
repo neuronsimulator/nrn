@@ -10,6 +10,7 @@ dependencies:
   - ffmpeg
   - cython
   - pandoc
+  - mpi
   - pip
   - pip:
       - -r docs_requirements.txt
