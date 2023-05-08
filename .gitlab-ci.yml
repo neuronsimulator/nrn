@@ -67,6 +67,7 @@ mac_m1_cmake_build:
     - export INSTALL_DIR=$(pwd)/install
     - echo $LANG
     - echo $LC_ALL
+    - 'export PYTHONPATH=$(${PYTHON} -c "import site; print(\":\".join(site.getsitepackages()))")'
     - ${PYTHON} -c 'import os,sys; os.set_blocking(sys.stdout.fileno(), True)'
     - cmake_args=(-G Ninja)
     - if [[ -n "${sanitizer}" ]]; then
