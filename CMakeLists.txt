@@ -511,17 +511,6 @@ if(NRN_ENABLE_CORENEURON)
       set(CORENRN_ENABLE_LIKWID_PROFILING ON)
     endif()
   endif()
-  # Propagate NEURON MPI option to CoreNEURON if not set explicitly
-  if(NOT DEFINED CORENRN_ENABLE_MPI)
-    set(CORENRN_ENABLE_MPI
-        ${NRN_ENABLE_MPI}
-        CACHE BOOL "" FORCE)
-  endif()
-  if(NOT DEFINED CORENRN_ENABLE_MPI_DYNAMIC)
-    set(CORENRN_ENABLE_MPI_DYNAMIC
-        ${NRN_ENABLE_MPI_DYNAMIC}
-        CACHE BOOL "" FORCE)
-  endif()
   set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron)
 
   # initialize CLI11 submodule
