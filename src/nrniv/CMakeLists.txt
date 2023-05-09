@@ -488,7 +488,7 @@ if(NRN_ENABLE_MPI)
       install(TARGETS ${libnrnmusic}_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
     endif()
   else()
-    target_link_libraries(nrniv_lib PUBLIC MPI::MPI_C)
+    target_link_libraries(nrniv_lib MPI::MPI_C)
   endif()
 endif()
 
