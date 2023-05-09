@@ -482,7 +482,7 @@ set(CORENRN_MPI_LIB_NAME
 if(NRN_ENABLE_MPI AND NOT NRN_ENABLE_MPI_DYNAMIC)
   add_library(${CORENRN_MPI_LIB_NAME} OBJECT ${MPI_LIB_FILES})
   target_include_directories(
-    ${CORENRN_MPI_LIB_NAME} PRIVATE ${MPI_INCLUDE_PATH} ${PROJECT_SOURCE_DIR}/src
+    ${CORENRN_MPI_LIB_NAME} PRIVATE ${MPI_C_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/src
                                     ${CMAKE_BINARY_DIR}/generated)
   target_link_libraries(${CORENRN_MPI_LIB_NAME} ${CORENRN_CALIPER_LIB})
   set_property(TARGET ${CORENRN_MPI_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -801,7 +801,7 @@ if(NRN_ENABLE_MPI)
       message(STATUS "    INC             | ${include}")
     endforeach(val)
   else()
-    message(STATUS "  INC               | ${MPI_CXX_INCLUDE_PATH}")
+    message(STATUS "  INC               | ${MPI_CXX_INCLUDE_DIRS}")
   endif()
 endif()
 message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")
