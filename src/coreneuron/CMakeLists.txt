@@ -203,7 +203,6 @@ else()
 endif()
 
 if(NRN_ENABLE_MPI)
-  find_package(MPI REQUIRED)
   list(APPEND CORENRN_COMPILE_DEFS NRNMPI=1)
 else()
   list(APPEND CORENRN_COMPILE_DEFS NRNMPI=0)
