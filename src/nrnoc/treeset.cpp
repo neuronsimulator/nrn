@@ -360,6 +360,24 @@ void update_sp13_rhs_based_on_actual_rhs(NrnThread* nt) {
     }
 }
 
+/*
+ * Update the SoA storage for node matrix diagonals from the sparse13 matrix.
+ */
+void update_actual_d_based_on_sp13_mat(NrnThread* nt) {
+    for (int i = 0; i < nt->end; ++i) {
+        nt->actual_d(i) = *nt->_v_node[i]->_d_matelm;
+    }
+}
+
+/*
+ * Update the SoA storage for node matrix diagonals from the sparse13 matrix.
+ */
+void update_sp13_mat_based_on_actual_d(NrnThread* nt) {
+    for (int i = 0; i < nt->end; ++i) {
+        *nt->_v_node[i]->_d_matelm = nt->actual_d(i);
+    }
+}
+
 /* calculate right hand side of
 cm*dvm/dt = -i(vm) + is(vi) + ai_j*(vi_j - vi)
 cx*dvx/dt - cm*dvm/dt = -gx*(vx - ex) + i(vm) + ax_j*(vx_j - vx)
@@ -520,22 +538,14 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     }
 
     if (use_sparse13) {
-        int i, neqn;
-        neqn = spGetSize(_nt->_sp13mat, 0);
+        // Zero the sparse13 matrix
         spClear(_nt->_sp13mat);
-    } else {
-#if CACHEVEC
-        if (use_cachevec) {
-            for (i = i1; i < i3; ++i) {
-                VEC_D(i) = 0.;
-            }
-        } else
-#endif /* CACHEVEC */
-        {
-            for (i = i1; i < i3; ++i) {
-                NODED(_nt->_v_node[i]) = 0.;
-            }
-        }
+    }
+
+    // Make sure the SoA node diagonals are also zeroed (is this needed?)
+    auto* const vec_d = _nt->node_d_storage();
+    for (int i = i1; i < i3; ++i) {
+        vec_d[i] = 0.;
     }
 
     if (_nt->_nrn_fast_imem) {
@@ -569,26 +579,13 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 
     activsynapse_lhs();
 
-
     if (_nt->_nrn_fast_imem) {
         /* _nrn_save_d has only the contribution of electrode current
            so here we transform so it only has membrane current contribution
         */
         double* p = _nt->_nrn_fast_imem->_nrn_sav_d;
-        if (use_sparse13) {
-            for (i = i1; i < i3; ++i) {
-                Node* nd = _nt->_v_node[i];
-                p[i] += NODED(nd);
-            }
-        } else if (use_cachevec) {
-            for (i = i1; i < i3; ++i) {
-                p[i] += VEC_D(i);
-            }
-        } else {
-            for (i = i1; i < i3; ++i) {
-                Node* nd = _nt->_v_node[i];
-                p[i] += NODED(nd);
-            }
+        for (i = i1; i < i3; ++i) {
+            p[i] += vec_d[i];
         }
     }
 #if EXTRACELLULAR
@@ -607,31 +604,26 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 
 
     /* now add the axial currents */
-
     if (use_sparse13) {
-        for (i = i2; i < i3; ++i) {
+        for (i = i2; i < i3; ++i) {  // note i2
             Node* nd = _nt->_v_node[i];
-            *(nd->_a_matelm) += NODEA(nd);
-            *(nd->_b_matelm) += NODEB(nd); /* b may have value from lincir */
-            NODED(nd) -= NODEB(nd);
-        }
-        for (i = i2; i < i3; ++i) {
-            NODED(_nt->_v_parent[i]) -= NODEA(_nt->_v_node[i]);
+            auto const parent_i = _nt->_v_parent_index[i];
+            auto* const parent_nd = _nt->_v_node[parent_i];
+            auto const nd_a = NODEA(nd);
+            auto const nd_b = NODEB(nd);
+            // Update entries in sp13_mat
+            *nd->_a_matelm += nd_a;
+            *nd->_b_matelm += nd_b; /* b may have value from lincir */
+            *nd->_d_matelm -= nd_b;
+            *parent_nd->_d_matelm -= nd_a;
+            // Also update the Node's d value in the SoA storage (is this needed?)
+            vec_d[i] -= nd_b;
+            vec_d[parent_i] -= nd_a;
         }
     } else {
-#if CACHEVEC
-        if (use_cachevec) {
-            for (i = i2; i < i3; ++i) {
-                VEC_D(i) -= VEC_B(i);
-                VEC_D(_nt->_v_parent_index[i]) -= VEC_A(i);
-            }
-        } else
-#endif /* CACHEVEC */
-        {
-            for (i = i2; i < i3; ++i) {
-                NODED(_nt->_v_node[i]) -= NODEB(_nt->_v_node[i]);
-                NODED(_nt->_v_parent[i]) -= NODEA(_nt->_v_node[i]);
-            }
+        for (i = i2; i < i3; ++i) {
+            vec_d[i] -= VEC_B(i);
+            vec_d[_nt->_v_parent_index[i]] -= VEC_A(i);
         }
     }
 }
@@ -642,7 +634,7 @@ void setup_tree_matrix(neuron::model_sorted_token const& cache_token, NrnThread&
     nrn_rhs(cache_token, nt);
     nrn_lhs(cache_token, nt);
     nrn_nonvint_block_current(nt.end, nt.node_rhs_storage(), nt.id);
-    nrn_nonvint_block_conductance(nt.end, nt._actual_d, nt.id);
+    nrn_nonvint_block_conductance(nt.end, nt.node_d_storage(), nt.id);
 }
 
 /* membrane mechanisms needed by other mechanisms (such as Eion by HH)
@@ -1910,10 +1902,6 @@ void node_data(void) {
 void nrn_matrix_node_free() {
     NrnThread* nt;
     FOR_THREADS(nt) {
-        if (nt->_actual_d) {
-            free(nt->_actual_d);
-            nt->_actual_d = (double*) 0;
-        }
 #if CACHEVEC
         if (nt->_actual_a) {
             free(nt->_actual_a);
@@ -2024,7 +2012,7 @@ static void nrn_matrix_node_alloc(void) {
             v_setup_vectors();
             return;
         } else {
-            if (nt->_actual_d != nullptr) {
+            if (nt->_actual_a != nullptr) {
                 return;
             }
         }
@@ -2072,7 +2060,7 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
             pnd = nt->_v_parent[in];
             i = nd->eqn_index_;
             nt->_sp13_rhs[i] = nt->actual_rhs(in);
-            nd->_d = spGetElement(nt->_sp13mat, i, i);
+            nd->_d_matelm = spGetElement(nt->_sp13mat, i, i);
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
                     k = i + ie + 1;
@@ -2094,8 +2082,8 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
                         nde->_b_matelm[ie] = spGetElement(nt->_sp13mat, k, kp);
                     }
             } else { /* not needed if index starts at 1 */
-                nd->_a_matelm = (double*) 0;
-                nd->_b_matelm = (double*) 0;
+                nd->_a_matelm = nullptr;
+                nd->_b_matelm = nullptr;
             }
         }
         nrndae_alloc();
@@ -2103,11 +2091,6 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
         FOR_THREADS(nt) {
             assert(nrndae_extra_eqn_count() == 0);
             assert(!nt->_ecell_memb_list || nt->_ecell_memb_list->nodecount == 0);
-            nt->_actual_d = (double*) ecalloc(nt->end, sizeof(double));
-            for (i = 0; i < nt->end; ++i) {
-                Node* nd = nt->_v_node[i];
-                nd->_d = nt->_actual_d + i;
-            }
         }
     }
 }

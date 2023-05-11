@@ -295,6 +295,7 @@ void c_out() {
         P("\nstatic void nrn_jacob(_nrn_model_sorted_token const& _sorted_token, NrnThread* "
           "_nt, Memb_list* _ml_arg, int _type) {\n");
         P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+        P("auto* const _vec_d = _nt->node_d_storage();\n");
         P("auto* const _ml = &_lmr;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
         P("#if CACHEVEC\n");
@@ -309,7 +310,7 @@ void c_out() {
 #else
             P("#if CACHEVEC\n");
             P("  if (use_cachevec) {\n");
-            P("	VEC_D(_ni[_iml]) -= _g;\n");
+            P("    _vec_d[_ni[_iml]] -= _g;\n");
             P("  }else\n");
             P("#endif\n");
             P("  {\n");
@@ -328,7 +329,7 @@ void c_out() {
 #else
             P("#if CACHEVEC\n");
             P("  if (use_cachevec) {\n");
-            P("	VEC_D(_ni[_iml]) += _g;\n");
+            P("    _vec_d[_ni[_iml]] += _g;\n");
             P("  }else\n");
             P("#endif\n");
             P("  {\n");
@@ -751,6 +752,7 @@ void c_out_vectorize() {
         P("\nstatic void nrn_jacob(_nrn_model_sorted_token const& _sorted_token, NrnThread* "
           "_nt, Memb_list* _ml_arg, int _type) {\n");
         P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+        P("auto* const _vec_d = _nt->node_d_storage();\n");
         P("auto* const _ml = &_lmr;\n");
         P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
@@ -767,7 +769,7 @@ void c_out_vectorize() {
 #else
             P("#if CACHEVEC\n");
             P("  if (use_cachevec) {\n");
-            P("	VEC_D(_ni[_iml]) -= _g;\n");
+            P("    _vec_d[_ni[_iml]] -= _g;\n");
             P("  }else\n");
             P("#endif\n");
             P("  {\n");
@@ -786,7 +788,7 @@ void c_out_vectorize() {
 #else
             P("#if CACHEVEC\n");
             P("  if (use_cachevec) {\n");
-            P("	VEC_D(_ni[_iml]) += _g;\n");
+            P("    _vec_d[_ni[_iml]] += _g;\n");
             P("  }else\n");
             P("#endif\n");
             P("  {\n");

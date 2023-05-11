@@ -366,6 +366,7 @@ void nrn_solve(NrnThread* _nt) {
     if (use_sparse13) {
         int e;
         nrn_thread_error("solve use_sparse13");
+        update_sp13_mat_based_on_actual_d(_nt);
         e = spFactor(_nt->_sp13mat);
         if (e != spOKAY) {
             switch (e) {
@@ -379,6 +380,7 @@ void nrn_solve(NrnThread* _nt) {
         }
         update_sp13_rhs_based_on_actual_rhs(_nt);
         spSolve(_nt->_sp13mat, _nt->_sp13_rhs, _nt->_sp13_rhs);
+        update_actual_d_based_on_sp13_mat(_nt);
         update_actual_rhs_based_on_sp13_rhs(_nt);
     } else {
         triang(_nt);
@@ -398,8 +400,7 @@ void nrn_solve(NrnThread* _nt) {
 }
 
 /* triangularization of the matrix equations */
-void triang(NrnThread* _nt) {
-    auto* const vec_rhs = _nt->node_rhs_storage();
+static void triang(NrnThread* _nt) {
     Node *nd, *pnd;
     double p;
     int i, i2, i3;
@@ -407,9 +408,11 @@ void triang(NrnThread* _nt) {
     i3 = _nt->end;
 #if CACHEVEC
     if (use_cachevec) {
+        auto* const vec_d = _nt->node_d_storage();
+        auto* const vec_rhs = _nt->node_rhs_storage();
         for (i = i3 - 1; i >= i2; --i) {
-            p = VEC_A(i) / VEC_D(i);
-            VEC_D(_nt->_v_parent_index[i]) -= p * VEC_B(i);
+            p = VEC_A(i) / vec_d[i];
+            vec_d[_nt->_v_parent_index[i]] -= p * VEC_B(i);
             vec_rhs[_nt->_v_parent_index[i]] -= p * vec_rhs[i];
         }
     } else
@@ -427,7 +430,6 @@ void triang(NrnThread* _nt) {
 
 /* back substitution to finish solving the matrix equations */
 void bksub(NrnThread* _nt) {
-    auto* const vec_rhs = _nt->node_rhs_storage();
     Node *nd, *cnd;
     int i, i1, i2, i3;
     i1 = 0;
@@ -435,12 +437,14 @@ void bksub(NrnThread* _nt) {
     i3 = _nt->end;
 #if CACHEVEC
     if (use_cachevec) {
+        auto* const vec_d = _nt->node_d_storage();
+        auto* const vec_rhs = _nt->node_rhs_storage();
         for (i = i1; i < i2; ++i) {
-            vec_rhs[i] /= VEC_D(i);
+            vec_rhs[i] /= vec_d[i];
         }
         for (i = i2; i < i3; ++i) {
             vec_rhs[i] -= VEC_B(i) * vec_rhs[_nt->_v_parent_index[i]];
-            vec_rhs[i] /= VEC_D(i);
+            vec_rhs[i] /= vec_d[i];
         }
     } else
 #endif /* CACHEVEC */

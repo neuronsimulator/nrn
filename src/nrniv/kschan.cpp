@@ -2703,10 +2703,11 @@ void KSChan::jacob(Memb_list* ml) {
 void KSChan::jacob(NrnThread* _nt, Memb_list* ml) {
     int n = ml->nodecount;
     Datum** ppd = ml->pdata;
+    auto* const vec_d = _nt->node_d_storage();
     auto* const vec_v = _nt->node_voltage_storage();
     for (int i = 0; i < n; ++i) {
         int ni = ml->nodeindices[i];
-        VEC_D(ni) += iv_relation_->jacob(ppd[i], vec_v[ni], ml, i, gmaxoffset_);
+        vec_d[ni] += iv_relation_->jacob(ppd[i], vec_v[ni], ml, i, gmaxoffset_);
     }
 }
 #endif /* CACHEVEC */

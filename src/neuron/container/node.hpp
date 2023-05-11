@@ -29,6 +29,13 @@ struct Voltage {
     }
 };
 
+/**
+ * @brief Diagonal element in node equation.
+ */
+struct Diagonal {
+    using type = double;
+};
+
 struct RHS {
     using type = double;
 };
@@ -91,6 +98,20 @@ struct handle_interface: handle_base<Identifier> {
      */
     void set_area(field::Area::type area) {
         this->template get<field::Area>() = area;
+    }
+
+    /**
+     * @brief Return the diagonal element.
+     */
+    [[nodiscard]] field::Diagonal::type& d() {
+        return this->template get<field::Diagonal>();
+    }
+
+    /**
+     * @brief Return the diagonal element.
+     */
+    [[nodiscard]] field::Diagonal::type const& d() const {
+        return this->template get<field::Diagonal>();
     }
 
     /**

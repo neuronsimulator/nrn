@@ -339,10 +339,9 @@ void nrn_threads_create(int n, bool parallel) {
                 for (j = 0; j < BEFORE_AFTER_SIZE; ++j) {
                     nt->tbl[j] = (NrnThreadBAList*) 0;
                 }
-                nt->_actual_d = 0;
                 nt->_actual_a = 0;
                 nt->_actual_b = 0;
-                nt->_sp13_rhs = 0;
+                nt->_sp13_rhs = nullptr;
                 nt->_v_parent_index = 0;
                 nt->_v_node = 0;
                 nt->_v_parent = 0;
@@ -498,10 +497,6 @@ void nrn_threads_free() {
         if (nt->userpart == 0 && nt->roots) {
             hoc_l_freelist(&nt->roots);
             nt->ncell = 0;
-        }
-        if (nt->_actual_d) {
-            free((char*) nt->_actual_d);
-            nt->_actual_d = 0;
         }
         if (nt->_actual_a) {
             free((char*) nt->_actual_a);
@@ -782,7 +777,6 @@ void reorder_secorder() {
             }
         }
         _nt->end = inode;
-        CACHELINE_CALLOC(_nt->_actual_d, double, inode);
         CACHELINE_CALLOC(_nt->_actual_a, double, inode);
         CACHELINE_CALLOC(_nt->_actual_b, double, inode);
         CACHELINE_CALLOC(_nt->_v_node, Node*, inode);
@@ -859,13 +853,6 @@ void reorder_secorder() {
     if (nrn_multisplit_setup_) {
         /* classical order abandoned */
         (*nrn_multisplit_setup_)();
-    }
-    /* make the Nodes point to the proper d, rhs */
-    FOR_THREADS(_nt) {
-        for (j = 0; j < _nt->end; ++j) {
-            Node* nd = _nt->_v_node[j];
-            nd->_d = _nt->_actual_d + j;
-        }
     }
     /* because the d,rhs changed, if multisplit is used we need to update
       the reduced tree gather/scatter pointers
@@ -1131,6 +1118,13 @@ double* NrnThread::node_area_storage() {
     // Need to be able to use this method while the model is frozen, so
     // avoid calling the zero-parameter get()
     return &neuron::model().node_data().get<neuron::container::Node::field::Area>(
+        _node_data_offset);
+}
+
+double* NrnThread::node_d_storage() {
+    // Need to be able to use this method while the model is frozen, so
+    // avoid calling the zero-parameter get()
+    return &neuron::model().node_data().get<neuron::container::Node::field::Diagonal>(
         _node_data_offset);
 }
 

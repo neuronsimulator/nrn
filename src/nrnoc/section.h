@@ -121,6 +121,12 @@ struct Node {
     void set_area(neuron::container::Node::field::Area::type area) {
         _node_handle.set_area(area);
     }
+    [[nodiscard]] auto& d() {
+        return _node_handle.d();
+    }
+    [[nodiscard]] auto const& d() const {
+        return _node_handle.d();
+    }
     [[nodiscard]] auto& v() {
         return _node_handle.v_hack();
     }
@@ -152,9 +158,9 @@ struct Node {
         _node_handle.set_rhs(rhs);
     }
     double _rinv{}; /* conductance uS from node to parent */
-    double* _d;     /* diagonal element in node equation */
     double* _a_matelm;
     double* _b_matelm;
+    double* _d_matelm;
     int eqn_index_;                 /* sparse13 matrix row/col index */
                                     /* if no extnodes then = v_node_index +1*/
                                     /* each extnode adds nlayer more equations after this */

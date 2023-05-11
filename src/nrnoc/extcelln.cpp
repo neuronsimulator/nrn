@@ -471,10 +471,8 @@ void nrn_setup_ext(NrnThread* _nt) {
                 for (j = 0; j < nrn_nlayer_extracellular; ++j) {
                     *nde->_d[j] -= nde->_b[j];
                     *pnde->_d[j] -= nde->_a[j];
-                    ;
                     *nde->_a_matelm[j] += nde->_a[j];
                     *nde->_b_matelm[j] += nde->_b[j];
-                    ;
                 }
             }
         }

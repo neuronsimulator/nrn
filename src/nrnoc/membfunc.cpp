@@ -21,7 +21,7 @@ long& _nrn_mechanism_access_alloc_seq(Prop* prop) {
     return prop->_alloc_seq;
 }
 double& _nrn_mechanism_access_d(Node* node) {
-    return *node->_d;
+    return node->d();
 }
 neuron::container::generic_data_handle*& _nrn_mechanism_access_dparam(Prop* prop) {
     return prop->dparam;

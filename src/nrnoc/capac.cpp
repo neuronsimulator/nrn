@@ -35,6 +35,7 @@ It used to be static but is now a thread data variable
 
 void nrn_cap_jacob(neuron::model_sorted_token const& sorted_token, NrnThread* _nt, Memb_list* ml) {
     neuron::cache::MechanismRange<nparm, ndparm> ml_cache{sorted_token, *_nt, *ml, ml->type()};
+    auto* const vec_d = _nt->node_d_storage();
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
     double cfac = .001 * _nt->cj;
@@ -42,7 +43,7 @@ void nrn_cap_jacob(neuron::model_sorted_token const& sorted_token, NrnThread* _n
     if (use_cachevec) {
         int* ni = ml->nodeindices;
         for (int i = 0; i < count; i++) {
-            VEC_D(ni[i]) += cfac * ml_cache.fpfield<cm_index>(i);
+            vec_d[ni[i]] += cfac * ml_cache.fpfield<cm_index>(i);
         }
     } else
 #endif /* CACHEVEC */

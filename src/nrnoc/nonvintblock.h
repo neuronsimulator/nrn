@@ -47,7 +47,7 @@ nonvintblock_extern int (
 
 /* called at end of nrnoc/treeset.cpp:lhs and nrncvode/cvtrset.cpp:lhs */
 #define nrn_nonvint_block_conductance(size, d, tid) nonvint_block(3, size, d, 0, tid)
-/*if any ionic membrane currents are generated, di/dv adds to _actual_d */
+/*if any ionic membrane currents are generated, di/dv adds to the vector of diagonal values */
 
 /* called at end of nrnoc/fadvance.cpp:nonvint */
 #define nrn_nonvint_block_fixed_step_solve(tid) nonvint_block(4, 0, 0, 0, tid)

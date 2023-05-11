@@ -61,7 +61,7 @@ class MultiSplitControl;
 
 #define A(i)   VEC_A(i)
 #define B(i)   VEC_B(i)
-#define D(i)   VEC_D(i)
+#define D(i)   vec_d[i]
 #define RHS(i) vec_rhs[i]
 #define S1A(i) sid1A[i]
 #define S1B(i) sid1B[i]
@@ -1003,6 +1003,7 @@ bb_relation[j], rthost[j]);
             for (j = 0; j < 2; ++j) {
                 NrnThread* _nt = nrn_threads + threadid[i];
                 Node* nd = _nt->_v_node[inode[i + j]];
+                auto* const vec_d = _nt->node_d_storage();
                 auto* const vec_rhs = _nt->node_rhs_storage();
                 if (nd->_classical_parent && nd->sec_node_index_ < nd->sec->nnode - 1) {
                     if (rthost[i] == nrnmpi_myid) {
@@ -1475,6 +1476,7 @@ secname(v_node[j]->sec), v_node[j]->sec_node_index_);
         for (MultiSplit* ms: *multisplit_list_) {
             NrnThread* _nt = nrn_threads + ms->ithread;
             MultiSplitThread& t = mth_[ms->ithread];
+            auto* const vec_d = _nt->node_d_storage();
             auto* const vec_rhs = _nt->node_rhs_storage();
             if (ms->rthost == nrnmpi_myid) {
                 // printf("%d nrtree_=%d i=%d rt=%p\n", nrnmpi_myid, nrtree_, i, rt[i]);
@@ -1659,7 +1661,7 @@ void MultiSplitControl::rt_map_update() {
         Area2RT& art = area2rt_[i];
         MultiSplit& ms = *art.ms;
         NrnThread* _nt = nrn_threads + ms.ithread;
-        art.pd[0] = &D(art.inode);
+        art.pd[0] = &_nt->actual_d(art.inode);
         art.pd[1] = &_nt->actual_rhs(art.inode);
         if (art.n == 3) {
             MultiSplitThread& t = mth_[ms.ithread];
@@ -2002,19 +2004,20 @@ void MultiSplitControl::multisplit_nocap_v_part1(NrnThread* _nt) {
     // non-zero area nodes (because current from zero area not added)
     // so encode v into D and sum of zero-area rhs will end up in
     // rhs.
+    auto* const vec_d = _nt->node_d_storage();
     auto* const vec_rhs = _nt->node_rhs_storage();
     auto* const vec_v = _nt->node_voltage_storage();
     if (_nt->id == 0)
         for (i = 0; i < narea2buf_; ++i) {
             Area2Buf& ab = area2buf_[i];
-            VEC_D(ab.inode) = 1e50;  // sentinal
+            vec_d[ab.inode] = 1e50;  // sentinal
             vec_rhs[ab.inode] = vec_v[ab.inode] * 1e50;
         }
     // also scale the non-zero area elements on this host
     for (i = 0; i < narea2rt_; ++i) {
         Area2RT& ar = area2rt_[i];
         if (_nt->id == ar.ms->ithread) {
-            VEC_D(ar.inode) = 1e50;
+            vec_d[ar.inode] = 1e50;
             vec_rhs[ar.inode] = vec_v[ar.inode] * 1e50;
         }
     }
@@ -2031,6 +2034,7 @@ void MultiSplitControl::multisplit_nocap_v_part3(NrnThread* _nt) {
     // But for non-zero area nodes, D is the sum of all zero-area
     // node d, and RHS is the sum of all zero-area node rhs.
     int i;
+    auto* const vec_d = _nt->node_d_storage();
     auto* const vec_rhs = _nt->node_rhs_storage();
     auto* const vec_v = _nt->node_voltage_storage();
     if (_nt->id == 0)
@@ -2038,7 +2042,7 @@ void MultiSplitControl::multisplit_nocap_v_part3(NrnThread* _nt) {
             Area2Buf& ab = area2buf_[i];
             int j = ab.inode;
             double afac = 100. / VEC_AREA(j);
-            ab.adjust_rhs_ = (vec_rhs[j] - VEC_D(j) * vec_v[j]) * afac;
+            ab.adjust_rhs_ = (vec_rhs[j] - vec_d[j] * vec_v[j]) * afac;
             // printf("%d nz1 %d D=%g RHS=%g V=%g afac=%g adjust=%g\n",
             // nrnmpi_myid, i, D(i), RHS(i), vec_v[j], afac, ab.adjust_rhs_);
         }
@@ -2047,7 +2051,7 @@ void MultiSplitControl::multisplit_nocap_v_part3(NrnThread* _nt) {
         if (_nt->id == ar.ms->ithread) {
             int j = ar.inode;
             double afac = 100. / VEC_AREA(j);
-            ar.adjust_rhs_ = (vec_rhs[j] - VEC_D(j) * vec_v[j]) * afac;
+            ar.adjust_rhs_ = (vec_rhs[j] - vec_d[j] * vec_v[j]) * afac;
             // printf("%d nz2 %d D=%g RHS=%g V=%g afac=%g adjust=%g\n",
             // nrnmpi_myid, i, D(i), RHS(i), vec_v[j], afac, ar.adjust_rhs_);
         }
@@ -2132,7 +2136,7 @@ nrnmpi_myid, i, mt.displ_, mt.size_, mt.host_, tag);
         for (jj = 0; jj < mt.nnode_; ++jj) {
             k = mt.nodeindex_[jj];
             _nt = nrn_threads + mt.nodeindex_th_[jj];
-            tbuf[j++] = D(k);
+            tbuf[j++] = _nt->actual_d(k);
             tbuf[j++] = _nt->actual_rhs(k);
         }
         // each sent backbone will have added 2 to mt.nnode_rt_
@@ -2285,7 +2289,7 @@ nrnmpi_myid, mt.host_, mt.nnode_, mt.nnode_rt_, mt.size_, mt.tag_);
         for (jj = 0; jj < mt.nnode_; ++jj) {
             k = mt.nodeindex_[jj];
             _nt = nrn_threads + mt.nodeindex_th_[jj];
-            D(k) += tbuf[j++];
+            _nt->actual_d(k) += tbuf[j++];
             _nt->actual_rhs(k) += tbuf[j++];
         }
 #if 0
@@ -2341,7 +2345,7 @@ nrnmpi_myid, i, mt.displ_, mt.size_, mt.host_, tag);
         for (jj = 0; jj < mt.nnode_; ++jj) {
             k = mt.nodeindex_[jj];
             _nt = nrn_threads + mt.nodeindex_th_[jj];
-            tbuf[j++] = D(k);
+            tbuf[j++] = _nt->actual_d(k);
             tbuf[j++] = _nt->actual_rhs(k);
         }
         // each sent backbone will have added 2 to mt.nnode_rt_
@@ -2427,7 +2431,7 @@ for (i=0; i < tbsize_; ++i) { printf("%d trecvbuf[%d] = %g\n", nrnmpi_myid, i, t
         for (jj = 0; jj < mt.nnode_; ++jj) {
             k = mt.nodeindex_[jj];
             _nt = nrn_threads + mt.nodeindex_th_[jj];
-            D(k) = tbuf[j++];
+            _nt->actual_d(k) = tbuf[j++];
             _nt->actual_rhs(k) = tbuf[j++];
         }
 #if 0
@@ -2484,7 +2488,7 @@ nrnmpi_myid, mt.host_, mt.nnode_, mt.nnode_rt_, mt.size_, mt.tag_);
         for (jj = 0; jj < mt.nnode_; ++jj) {
             k = mt.nodeindex_[jj];
             _nt = nrn_threads + mt.nodeindex_th_[jj];
-            D(k) = tbuf[j++];
+            _nt->actual_d(k) = tbuf[j++];
             _nt->actual_rhs(k) = tbuf[j++];
         }
 #if 0
@@ -2686,12 +2690,12 @@ void ReducedTree::pr_map(int tsize, double* trbuf) {
                        secname(nd->sec),
                        nd->sec_node_index_);
             }
-            if (rmap[i] >= nt->_actual_d && rmap[i] < (nt->_actual_d + nt->end)) {
+            if (rmap[i] >= nt->node_d_storage() && rmap[i] < (nt->node_d_storage() + nt->end)) {
                 Printf(" %2d rhs[%2d]   d[%d] += d[%ld]\n",
                        i,
                        irmap[i],
                        irmap[i] - n,
-                       rmap[i] - nt->_actual_d);
+                       rmap[i] - nt->node_d_storage());
             }
             if (rmap[i] >= t.sid1A && rmap[i] < (t.sid1A + nb)) {
                 Printf(" %2d rhs[%2d]   a[%d] += sid1A[%ld]",
@@ -2861,6 +2865,7 @@ void ReducedTree::fillsmap(int sid, double* prhs, double* pd) {
 void MultiSplitThread::triang_subtree2backbone(NrnThread* _nt) {
     int i, ip;
     double p;
+    auto* const vec_d = _nt->node_d_storage();
     auto* const vec_rhs = _nt->node_rhs_storage();
     // eliminate a of the subtrees
     for (i = i3 - 1; i >= backbone_end; --i) {
@@ -2888,6 +2893,7 @@ void MultiSplitThread::triang_backbone(NrnThread* _nt) {
         j = _nt->_v_parent_index[i] - backbone_begin;
         S1A(j) = A(i);
     }
+    auto* const vec_d = _nt->node_d_storage();
     auto* const vec_rhs = _nt->node_rhs_storage();
     for (i = backbone_sid1_begin - 1; i >= backbone_interior_begin; --i) {
         ip = _nt->_v_parent_index[i];
@@ -2946,6 +2952,7 @@ for (i=i1; i < backbone_end; ++i) {
 // exchange of d and rhs of sids has taken place and we can solve for the
 // backbone nodes
 void MultiSplitThread::bksub_backbone(NrnThread* _nt) {
+    auto* const vec_d = _nt->node_d_storage();
     auto* const vec_rhs = _nt->node_rhs_storage();
     int i, j;
     double a, b, p, vsid1;
@@ -2992,6 +2999,7 @@ for (i=i1; i < backbone_end; ++i) {
 }
 
 void MultiSplitThread::bksub_short_backbone_part1(NrnThread* _nt) {
+    auto* const vec_d = _nt->node_d_storage();
     auto* const vec_rhs = _nt->node_rhs_storage();
     int i, j;
     double a, b, p;
@@ -3032,6 +3040,7 @@ nrnmpi_myid, RHS(i), RHS(j));
 
 // solve the subtrees,  rhs on the backbone is already solved
 void MultiSplitThread::bksub_subtrees(NrnThread* _nt) {
+    auto* const vec_d = _nt->node_d_storage();
     auto* const vec_rhs = _nt->node_rhs_storage();
     int i, ip;
     // solve all rootnodes not part of a backbone
@@ -3521,6 +3530,7 @@ void MultiSplitControl::pmat1(const char* s) {
     double a, b, d, rhs;
     for (it = 0; it < nrn_nthread; ++it) {
         NrnThread* _nt = nrn_threads + it;
+        auto* const vec_d = _nt->node_d_storage();
         auto* const vec_rhs = _nt->node_rhs_storage();
         MultiSplitThread& t = mth_[it];
         int i1 = 0;

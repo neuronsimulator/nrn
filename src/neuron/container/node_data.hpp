@@ -6,7 +6,7 @@
 namespace neuron::container::Node {
 /** @brief Underlying storage for all Nodes.
  */
-struct storage: soa<storage, field::Area, field::RHS, field::Voltage> {
+struct storage: soa<storage, field::Area, field::Diagonal, field::RHS, field::Voltage> {
     [[nodiscard]] std::string_view name() const {
         return {};
     }

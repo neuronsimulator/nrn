@@ -1213,10 +1213,7 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
                 auto const cache_token = nrn_ensure_model_data_are_sorted();
                 ix = nd->_node_handle.current_row() -
                      cache_token.thread_cache(tid).node_data_offset;
-                assert(ix == nd->_d - nrn_threads[tid]._actual_d);  // analogue of the old
-                                                                    // calculation with d instead of
-                                                                    // v
-                assert(nd->extnode == NULL);                        // only if v
+                assert(nd->extnode == NULL);  // only if v
                 assert(ix >= 0 && ix < nrn_threads[tid].end);
             }
 

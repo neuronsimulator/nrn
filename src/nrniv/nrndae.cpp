@@ -54,8 +54,9 @@ void nrndae_alloc() {
 
 void nrndae_init() {
     for (int it = 0; it < nrn_nthread; ++it) {
-        NrnThread* _nt = &nrn_threads[it];
-        update_sp13_rhs_based_on_actual_rhs(_nt);
+        auto* const nt = std::next(nrn_threads, it);
+        update_sp13_mat_based_on_actual_d(nt);
+        update_sp13_rhs_based_on_actual_rhs(nt);
     }
     if ((!nrndae_list.empty()) &&
         (secondorder > 0 || ((cvode_active_ > 0) && (nrn_use_daspk_ == 0)))) {
@@ -65,16 +66,19 @@ void nrndae_init() {
         (*m)->init();
     }
     for (int it = 0; it < nrn_nthread; ++it) {
-        NrnThread* _nt = &nrn_threads[it];
-        update_actual_rhs_based_on_sp13_rhs(_nt);
+        auto* const nt = std::next(nrn_threads, it);
+        update_actual_d_based_on_sp13_mat(nt);
+        update_actual_rhs_based_on_sp13_rhs(nt);
     }
 }
 
 void nrndae_rhs(NrnThread* _nt) {
+    update_sp13_mat_based_on_actual_d(_nt);
     update_sp13_rhs_based_on_actual_rhs(_nt);
     for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
         (*m)->rhs();
     }
+    update_actual_d_based_on_sp13_mat(_nt);
     update_actual_rhs_based_on_sp13_rhs(_nt);
 }
 
