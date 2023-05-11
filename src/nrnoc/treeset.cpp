@@ -595,7 +595,9 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     if (use_sparse13) {
         /* must be after nrn_setup_ext so that whatever is put in
         nd->_d does not get added to nde->d */
+        update_sp13_mat_based_on_actual_d(_nt);
         nrndae_lhs();
+        update_actual_d_based_on_sp13_mat(_nt);  // because nrndae_lhs writes to sp13_mat
     }
 
     activclamp_lhs();
@@ -605,7 +607,8 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 
     /* now add the axial currents */
     if (use_sparse13) {
-        for (i = i2; i < i3; ++i) {  // note i2
+        update_sp13_mat_based_on_actual_d(_nt);  // just because of activclamp_lhs
+        for (i = i2; i < i3; ++i) {              // note i2
             Node* nd = _nt->_v_node[i];
             auto const parent_i = _nt->_v_parent_index[i];
             auto* const parent_nd = _nt->_v_node[parent_i];
@@ -615,6 +618,7 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
             *nd->_a_matelm += nd_a;
             *nd->_b_matelm += nd_b; /* b may have value from lincir */
             *nd->_d_matelm -= nd_b;
+            // used to update NODED (sparse13 matrix) using NODEA and NODEB ("SoA")
             *parent_nd->_d_matelm -= nd_a;
             // Also update the Node's d value in the SoA storage (is this needed?)
             vec_d[i] -= nd_b;
