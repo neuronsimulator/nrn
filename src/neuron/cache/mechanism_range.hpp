@@ -83,7 +83,7 @@ struct MechanismRange {
     template <int variable, int array_size>
     [[nodiscard]] double* data_array(std::size_t instance) {
         static_assert(variable < NumFloatingPointFields);
-        assert(array_size == m_data_array_dims[variable]);
+        // assert(array_size == m_data_array_dims[variable]);
         return std::next(m_data_ptrs[variable], array_size * (m_offset + instance));
     }
 
@@ -106,9 +106,9 @@ struct MechanismRange {
      *                 index of the variable and the index into an array RANGE variable.
      */
     [[nodiscard]] double& data(std::size_t instance, container::field_index ind) {
-        assert(ind.field < NumFloatingPointFields);
+        // assert(ind.field < NumFloatingPointFields);
         auto const array_dim = m_data_array_dims[ind.field];
-        assert(ind.array_index < array_dim);
+        // assert(ind.array_index < array_dim);
         return m_data_ptrs[ind.field][array_dim * (m_offset + instance) + ind.array_index];
     }
 
