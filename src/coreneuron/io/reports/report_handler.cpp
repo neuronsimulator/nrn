@@ -368,7 +368,7 @@ VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
     VarsToReport vars_to_report;
     off_t offset_lfp = 0;
     for (const auto& gid: gids_to_report) {
-        // IClamp is needed for the LFP calculation
+        // IClamp & SEClamp are needed for the LFP calculation
         auto mech_id = nrn_get_mechtype("IClamp");
         Memb_list* ml = nt._ml_list[mech_id];
         if (ml) {
@@ -376,6 +376,17 @@ VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
                 auto segment_id = ml->nodeindices[j];
                 if ((nodes_to_gids[segment_id] == gid)) {
                     double* var_value = get_var_location_from_var_name(mech_id, "i", ml, j);
+                    summation_report.currents_[segment_id].push_back(std::make_pair(var_value, -1));
+                }
+            }
+        }
+        auto mech_id_seclamp = nrn_get_mechtype("SEClamp");
+        Memb_list* ml_seclamp = nt._ml_list[mech_id_seclamp];
+        if (ml_seclamp) {
+            for (int j = 0; j < ml_seclamp->nodecount; j++) {
+                auto segment_id = ml_seclamp->nodeindices[j];
+                if ((nodes_to_gids[segment_id] == gid)) {
+                    double* var_value = get_var_location_from_var_name(mech_id_seclamp, "i", ml_seclamp, j);
                     summation_report.currents_[segment_id].push_back(std::make_pair(var_value, -1));
                 }
             }
