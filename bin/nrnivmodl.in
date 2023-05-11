@@ -46,6 +46,7 @@ LinkCoreNEURON=false
 UserINCFLAGS=""
 UserLDFLAGS=""
 UserCOREFLAGS=()
+UserVERBOSE=""
 
 # - options come first but can be in any order.
 while [ "$1" ] ; do
@@ -67,6 +68,10 @@ while [ "$1" ] ; do
         # extra lin flags, paths. libraries (CoreNEURON)
         UserCOREFLAGS+=(-l "${2}")
         shift
+        shift;;
+    -V)
+        UserVERBOSE="VERBOSE=1"
+        UserCOREFLAGS+=(-V)
         shift;;
     -*)
         echo "$1 unrecognized"
@@ -246,5 +251,5 @@ if [ "$LinkCoreNEURON" = true ] ; then
   fi
 fi
 
-make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
+make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" "$UserVERBOSE" special &&
 echo "Successfully created $MODSUBDIR/special"
