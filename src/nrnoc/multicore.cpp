@@ -918,9 +918,8 @@ void nrn_thread_partition(int it, Object* sl) {
 }
 
 Object** nrn_get_thread_partition(int it) {
-    NrnThread* nt;
     assert(it >= 0 && it < nrn_nthread);
-    nt = nrn_threads + it;
+    NrnThread* nt = nrn_threads + it;
     if (!nt->roots) {
         v_setup_vectors();
     }
