@@ -60,11 +60,11 @@ def hrun():
     global hrun_count
     hrun_count += 1
     h.run()
-    # NVHPC in particular needs a non-zero tolerance
+    # NVHPC and oneAPI in particula need a non-zero tolerance
     chk(
         "hrun %d" % hrun_count,
         [trec.to_python(), vrec.to_python()],
-        tol=hrun_count * 5e-8,
+        tol=hrun_count * 1e-7,
     )
     return
     grph.erase()
