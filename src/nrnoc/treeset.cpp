@@ -2320,9 +2320,10 @@ static neuron::container::state_token<neuron::container::Node::storage> nrn_sort
     // Nodes. This must come after nrn_multisplit_setup_, which can change the
     // Node order.
     auto& node_data = neuron::model().node_data();
-    std::size_t const global_node_data_size{node_data.size()};
+    std::size_t const node_data_size{node_data.size()};
     std::size_t global_i{};
-    std::vector<std::size_t> global_node_data_permutation(global_node_data_size);
+    std::vector<std::size_t> node_data_permutation(node_data_size,
+                                                   std::numeric_limits<std::size_t>::max());
     // Process threads one at a time -- this means that the data for each
     // NrnThread will be contiguous.
     NrnThread* nt{};
@@ -2334,14 +2335,36 @@ static neuron::container::state_token<neuron::container::Node::storage> nrn_sort
         for (int i = 0; i < nt->end; ++i, ++global_i) {
             Node* nd = nt->_v_node[i];
             auto const current_node_row = nd->_node_handle.current_row();
-            assert(current_node_row < global_node_data_size);
-            assert(global_i < global_node_data_size);
-            global_node_data_permutation.at(current_node_row) = global_i;
+            assert(current_node_row < node_data_size);
+            assert(global_i < node_data_size);
+            node_data_permutation.at(current_node_row) = global_i;
         }
     }
-    assert(global_i == global_node_data_size);
+    if (global_i != node_data_size) {
+        // This means that we did not "positively" find all the Nodes by traversing the NrnThread
+        // objects. In this case we can figure out which the missing entries are and permute them to
+        // the end of the global vectors.
+        auto missing_elements = node_data_size - global_i;
+        std::cout << "permuting " << missing_elements << " 'lost' Nodes to the end\n";
+        // There are `missing_elements` integers from the range [0 .. node_data_size-1] whose values
+        // in `node_data_permutation` are still std::numeric_limits<std::size_t>::max().
+        for (auto global_row = 0ul; global_row < node_data_size; ++global_row) {
+            if (node_data_permutation[global_row] == std::numeric_limits<std::size_t>::max()) {
+                node_data_permutation[global_row] = global_i++;
+                --missing_elements;
+                if (missing_elements == 0) {
+                    break;
+                }
+            }
+        }
+        if (global_i != node_data_size) {
+            std::ostringstream oss;
+            oss << "(global_i = " << global_i << ") != (node_data_size = " << node_data_size << ')';
+            throw std::runtime_error(oss.str());
+        }
+    }
     // Should this and other permuting operations return a "sorted token"?
-    node_data.apply_reverse_permutation(std::move(global_node_data_permutation));
+    node_data.apply_reverse_permutation(std::move(node_data_permutation));
     return node_data.get_sorted_token();
 }
 

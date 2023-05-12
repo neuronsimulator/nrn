@@ -34,10 +34,11 @@ static void pas_cur(neuron::model_sorted_token const&, NrnThread* nt, Memb_list*
 }
 
 static void pas_jacob(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type) {
-    int count = ml->nodecount;
-    Node** vnode = ml->nodelist;
+    auto const count = ml->nodecount;
+    auto* const ni = ml->nodeindices;
+    auto* const vec_d = nt->node_d_storage();
     for (int i = 0; i < count; ++i) {
-        NODED(vnode[i]) += ml->data(i, g_index);
+        vec_d[ni[i]] += ml->data(i, g_index);
     }
 }
 

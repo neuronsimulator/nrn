@@ -37,20 +37,10 @@ void nrn_cap_jacob(neuron::model_sorted_token const& sorted_token, NrnThread* _n
     neuron::cache::MechanismRange<nparm, ndparm> ml_cache{sorted_token, *_nt, *ml, ml->type()};
     auto* const vec_d = _nt->node_d_storage();
     int count = ml->nodecount;
-    Node** vnode = ml->nodelist;
     double cfac = .001 * _nt->cj;
-#if CACHEVEC
-    if (use_cachevec) {
-        int* ni = ml->nodeindices;
-        for (int i = 0; i < count; i++) {
-            vec_d[ni[i]] += cfac * ml_cache.fpfield<cm_index>(i);
-        }
-    } else
-#endif /* CACHEVEC */
-    {
-        for (int i = 0; i < count; ++i) {
-            NODED(vnode[i]) += cfac * ml_cache.fpfield<cm_index>(i);
-        }
+    int* ni = ml->nodeindices;
+    for (int i = 0; i < count; i++) {
+        vec_d[ni[i]] += cfac * ml_cache.fpfield<cm_index>(i);
     }
 }
 

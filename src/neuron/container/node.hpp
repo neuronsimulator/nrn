@@ -20,6 +20,13 @@ struct Area {
     }
 };
 
+/**
+ * @brief Below-diagonal element in node equation.
+ */
+struct BelowDiagonal {
+    using type = double;
+};
+
 /** @brief Membrane potential.
  */
 struct Voltage {
@@ -98,6 +105,20 @@ struct handle_interface: handle_base<Identifier> {
      */
     void set_area(field::Area::type area) {
         this->template get<field::Area>() = area;
+    }
+
+    /**
+     * @brief Return the below-diagonal element.
+     */
+    [[nodiscard]] field::BelowDiagonal::type& b() {
+        return this->template get<field::BelowDiagonal>();
+    }
+
+    /**
+     * @brief Return the diagonal element.
+     */
+    [[nodiscard]] field::BelowDiagonal::type const& b() const {
+        return this->template get<field::BelowDiagonal>();
     }
 
     /**
