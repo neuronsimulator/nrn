@@ -1,5 +1,6 @@
 #pragma once
 
+#include "hocdec.h"
 #include "section.h"
 
 // we define these here to allow the API to be independent of internal details
