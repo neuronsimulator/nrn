@@ -226,6 +226,7 @@ set(NRNIV_FILE_LIST
     ndatclas.cpp
     netpar.cpp
     nonlinz.cpp
+    nrnapi.cpp
     nrncore_write.cpp
     nrncore_write/callbacks/nrncore_callbacks.cpp
     nrncore_write/data/cell_group.cpp
