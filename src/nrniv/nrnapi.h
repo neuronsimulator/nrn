@@ -38,11 +38,22 @@ Section *nrn_new_section(char const *const name);
 void nrn_connect_sections(Section *child_sec, double child_x,
                           Section *parent_sec, double parent_x);
 void nrn_set_section_length(Section *sec, double length);
+double nrn_get_section_length(Section *sec);
+double nrn_get_section_Ra(Section* sec);
+void nrn_set_section_Ra(Section* sec, double val);
 char const *nrn_secname(Section *sec);
 void nrn_push_section(Section *sec);
 void nrn_pop_section(void);
 void nrn_insert_mechanism(Section *sec, Symbol *mechanism);
-// TODO: set nseg
+
+/****************************************
+ * Segments
+ ****************************************/
+int nrn_get_nseg(Section const * const sec);
+void nrn_set_nseg(Section* const sec, const int nseg);
+void nrn_set_segment_diam(Section* const sec, const double x, const double diam);
+double* nrn_get_rangevar_ptr(Section* const sec, Symbol* const sym, double const x);
+
 
 /****************************************
  * Functions, objects, and the stack
@@ -67,6 +78,7 @@ void nrn_call_method(Object *obj, Symbol *method_sym, int narg);
 void nrn_call_function(Symbol *sym, int narg);
 // TODO: do we need a nrn_ref_object?
 void nrn_unref_object(Object *obj);
+// TODO: need a way to get the type of an object as a string
 
 /****************************************
  * Miscellaneous
@@ -74,8 +86,13 @@ void nrn_unref_object(Object *obj);
 int nrn_call_hoc(char const *const command);
 SectionListIterator *nrn_new_sectionlist_iterator(hoc_Item *my_sectionlist);
 void nrn_free_sectionlist_iterator(SectionListIterator *sl);
-Section *nrn_sectionlist_iterator_next(SectionListIterator sl);
-int nrn_sectionlist_iterator_done(SectionListIterator sl);
+Section *nrn_sectionlist_iterator_next(SectionListIterator* sl);
+int nrn_sectionlist_iterator_done(SectionListIterator* sl);
 int nrn_vector_capacity(Object *vec);
 double *nrn_vector_data_ptr(Object *vec);
+double* nrn_get_pp_property_ptr(Object* pp, const char* name);
+double* nrn_get_steered_property_ptr(Object* obj, const char* name);
+// TODO: need a way to get hoc_Item* corresponding to allsec, a given SectionList
+// TODO: need a way to iterate over symbol trees (top level and per object)
+// TODO: need a way of extracting information from a ShapePlotInterface
 }

@@ -4,6 +4,7 @@
 #include "nrnmpiuse.h"
 #include "ocfunc.h"
 #include "ocjump.h"
+#include "nrniv_mf.h"
 
 #include "parse.hpp"
 
@@ -17,6 +18,7 @@ extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char *), int (*cbpass)(
 int ivocmain_session(int, const char **, const char **, int start_session);
 void simpleconnectsection();
 extern Object *hoc_newobj1(Symbol *, int);
+extern void nrn_change_nseg(Section*, int);
 
 /****************************************
  * Initialization
@@ -77,6 +79,21 @@ void nrn_set_section_length(Section *sec, double length) {
   sec->recalc_area_ = 1;
 }
 
+double nrn_get_section_length(Section *sec) {
+  return section_length(sec);
+}
+
+double nrn_get_section_Ra(Section* sec) {
+    return nrn_ra(sec);
+}
+
+void nrn_set_section_Ra(Section* sec, double val) {
+    // TODO: ensure val > 0
+    sec->prop->dparam[7] = val;
+    diam_changed = 1;
+    sec->recalc_area_ = 1;
+}
+
 char const *nrn_secname(Section *sec) { return secname(sec); }
 
 void nrn_push_section(Section *sec) { nrn_pushsec(sec); }
@@ -87,6 +104,38 @@ void nrn_insert_mechanism(Section *sec, Symbol *mechanism) {
   // TODO: throw exception if mechanism is not an insertable mechanism?
   mech_insert1(sec, mechanism->subtype);
 }
+
+/****************************************
+ * Segments
+ ****************************************/
+
+int nrn_get_nseg(Section const * const sec) {
+    // always one more node than nseg
+    return sec->nnode - 1;
+}
+
+void nrn_set_nseg(Section* const sec, const int nseg) {
+    nrn_change_nseg(sec, nseg);
+}
+
+
+void nrn_set_segment_diam(Section* const sec, const double x, const double diam) {
+    Node* const node = node_exact(sec, x);
+    // TODO: this is fine if no 3D points; does it work if there are 3D points?
+    for (auto prop = node->prop; prop; prop=prop->next) {
+        if (prop->_type == MORPHOLOGY) {
+            prop->param[0] = diam;
+            diam_changed = 1;
+            node->sec->recalc_area_ = 1;
+            break;
+        }
+    }
+}
+
+double* nrn_get_rangevar_ptr(Section* const sec, Symbol* const sym, double const x) {
+    return nrn_rangepointer(sec, sym, x);
+}
+
 
 /****************************************
  * Functions, objects, and the stack
@@ -247,4 +296,19 @@ int nrn_vector_capacity(Object *vec) {
 double *nrn_vector_data_ptr(Object *vec) {
   // TODO: throw exception if vec is not a Vector
   return vector_vec((IvocVect *)vec->u.this_pointer);
+}
+
+double* nrn_get_pp_property_ptr(Object* pp, const char* name) {
+    int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
+    return &ob2pntproc_0(pp)->prop->param[index];
+}
+
+double* nrn_get_steered_property_ptr(Object* obj, const char* name) {
+    assert(obj->ctemplate->steer);
+    auto sym2 = hoc_table_lookup(name, obj->ctemplate->symtable);
+    assert(sym2);
+    hoc_pushs(sym2);
+    // put the pointer for the memory location on the stack 
+    obj->ctemplate->steer(obj->u.this_pointer);
+    return hoc_pxpop();
 }
