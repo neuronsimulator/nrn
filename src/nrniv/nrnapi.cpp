@@ -182,6 +182,7 @@ void nrn_call_method(Object *obj, Symbol *method_sym, int narg) {
 }
 
 void nrn_call_function(Symbol *sym, int narg) {
+  // NOTE: this differs from hoc_call_func in that the response remains on the stack
   OcJump::execute_throw_on_exception(sym, narg);
 }
 

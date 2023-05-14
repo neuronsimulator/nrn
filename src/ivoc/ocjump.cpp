@@ -143,10 +143,11 @@ void OcJump::execute_throw_on_exception(Object* obj, Symbol* sym, int narg) {
 }
 
 void OcJump::execute_throw_on_exception(Symbol* sym, int narg) {
+    // NOTE: return value is left on the stack
     saved_state before{};
     try_catch_depth_increment tell_children_we_will_catch{};
     try {
-        hoc_call_func(sym, narg);
+        hoc_pushx(hoc_call_func(sym, narg));        
     } catch (...) {
         before.restore();
         throw;

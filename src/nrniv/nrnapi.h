@@ -42,6 +42,7 @@ char const *nrn_secname(Section *sec);
 void nrn_push_section(Section *sec);
 void nrn_pop_section(void);
 void nrn_insert_mechanism(Section *sec, Symbol *mechanism);
+// TODO: set nseg
 
 /****************************************
  * Functions, objects, and the stack
@@ -64,6 +65,7 @@ Object *nrn_new_object(Symbol *sym, int narg);
 Symbol *nrn_get_method_symbol(Object *obj, char const *const name);
 void nrn_call_method(Object *obj, Symbol *method_sym, int narg);
 void nrn_call_function(Symbol *sym, int narg);
+// TODO: do we need a nrn_ref_object?
 void nrn_unref_object(Object *obj);
 
 /****************************************
