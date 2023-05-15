@@ -298,18 +298,16 @@ int nrnthread_dat2_2(int tid,
         for (int i = 0; i < nt.end; ++i) {
             v_parent_index[i] = nt._v_parent_index[i];
             a[i] = nt._actual_a[i];
-            b[i] = nt._actual_b[i];
+            b[i] = nt.actual_b(i);
             area[i] = nt.actual_area(i);
             v[i] = nt.actual_v(i);
         }
     } else {
         v_parent_index = nt._v_parent_index;
         a = nt._actual_a;
-        b = nt._actual_b;
-        // This is still dangerous, practically any operation on the NEURON side
-        // can affect `v`
         auto const cache_token = nrn_ensure_model_data_are_sorted();
         area = nt.node_area_storage();
+        b = nt.node_b_storage();
         v = nt.node_voltage_storage();
     }
     if (cg.ndiam) {

@@ -207,7 +207,8 @@ struct handle_interface: handle_base<Identifier> {
 
     friend std::ostream& operator<<(std::ostream& os, handle_interface const& handle) {
         return os << "Node{" << handle.id() << '/' << handle.underlying_storage().size()
-                  << " v=" << handle.v() << " area=" << handle.area() << '}';
+                  << " v=" << handle.v() << " area=" << handle.area() << " d=" << handle.d()
+                  << " b=" << handle.b() << '}';
     }
 };
 }  // namespace neuron::container::Node

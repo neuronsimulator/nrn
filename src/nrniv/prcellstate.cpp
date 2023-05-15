@@ -143,7 +143,7 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
                     precision,
                     nt._actual_a[i],
                     precision,
-                    nt._actual_b[i]);
+                    nt.actual_b(i));
         }
     fprintf(f, "inode v\n");
     for (int i = 0; i < nt.end; ++i)

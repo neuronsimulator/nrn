@@ -885,6 +885,15 @@ void connection_coef(void) /* setup a and b */
     section connects straight to the point*/
     /* for the near future we always have a last node at x=1 with
     no properties */
+
+    for (auto tid = 0; tid < nrn_nthread; ++tid) {
+        auto& nt = nrn_threads[tid];
+        for (auto i = 0; i < nt.end; ++i) {
+            nt._actual_a[i] = 0.0;
+            nt.actual_b(i) = 0.0;
+        }
+    }
+
     // ForAllSections(sec)
     ITERATE(qsec, section_list) {
         Section* sec = hocSEC(qsec);
@@ -1911,10 +1920,6 @@ void nrn_matrix_node_free() {
             free(nt->_actual_a);
             nt->_actual_a = (double*) 0;
         }
-        if (nt->_actual_b) {
-            free(nt->_actual_b);
-            nt->_actual_b = (double*) 0;
-        }
 #endif /* CACHEVEC */
         if (nt->_sp13_rhs) {
             free(std::exchange(nt->_sp13_rhs, nullptr));
@@ -2025,7 +2030,6 @@ static void nrn_matrix_node_alloc(void) {
 #if CACHEVEC
     FOR_THREADS(nt) {
         nt->_actual_a = (double*) ecalloc(nt->end, sizeof(double));
-        nt->_actual_b = (double*) ecalloc(nt->end, sizeof(double));
     }
     nrn_recalc_node_ptrs();
 #endif /* CACHEVEC */

@@ -587,6 +587,7 @@ void nrn_disconnect(Section* sec) {
         }
     section_unref(oldpsec);
     tree_changed = 1;
+    neuron::model().node_data().mark_as_unsorted();
 }
 
 static void connectsec_impl(Section* parent, Section* sec) {

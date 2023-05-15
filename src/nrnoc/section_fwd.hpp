@@ -45,7 +45,7 @@ struct Extnode {
 
 #define VEC_A(i)    (_nt->_actual_a[(i)])
 #define VEC_AREA(i) (_nt->actual_area(i))
-#define VEC_B(i)    (_nt->_actual_b[(i)])
+#define VEC_B(i)    (_nt->actual_b(i))
 
 #define NODEA(n)   VEC_A(_nrn_mechanism_get_v_node_index(n))
 #define NODEB(n)   VEC_B(_nrn_mechanism_get_v_node_index(n))

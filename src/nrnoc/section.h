@@ -121,6 +121,12 @@ struct Node {
     void set_area(neuron::container::Node::field::Area::type area) {
         _node_handle.set_area(area);
     }
+    [[nodiscard]] auto& b() {
+        return _node_handle.b();
+    }
+    [[nodiscard]] auto const& b() const {
+        return _node_handle.b();
+    }
     [[nodiscard]] auto& d() {
         return _node_handle.d();
     }
