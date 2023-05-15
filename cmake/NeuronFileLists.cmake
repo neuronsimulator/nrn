@@ -29,6 +29,7 @@ set(HEADER_FILES_TO_INSTALL
     multicore.h
     multisplit.h
     neuron.h
+    neuronapi.h
     newton.hpp
     newton_struct.h
     newton_thread.hpp

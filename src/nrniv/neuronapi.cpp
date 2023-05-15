@@ -1,4 +1,3 @@
-#include "neuronapi.h"
 #include "../../nrnconf.h"
 #include "nrniv_mf.h"
 #include "nrnmpi.h"
@@ -7,6 +6,42 @@
 #include "ocjump.h"
 
 #include "parse.hpp"
+
+#include "hocdec.h"
+#include "section.h"
+
+
+// we define these here to allow the API to be independent of internal details
+#define STACK_IS_STR 1
+#define STACK_IS_VAR 2
+#define STACK_IS_NUM 3
+#define STACK_IS_OBJVAR 4
+#define STACK_IS_OBJTMP 5
+#define STACK_IS_USERINT 6
+#define STACK_IS_SYM 7
+#define STACK_IS_OBJUNREF 8
+#define STACK_UNKNOWN -1
+
+class SectionListIterator {
+public:
+  SectionListIterator(hoc_Item *);
+  Section *next(void);
+  int done(void);
+
+private:
+  hoc_Item *initial;
+  hoc_Item *current;
+};
+
+class SymbolTableIterator {
+public:
+  SymbolTableIterator(Symlist *);
+  char const *next(void);
+  int done(void);
+
+private:
+  Symbol *current;
+};
 
 /****************************************
  * Connections to the rest of NEURON
