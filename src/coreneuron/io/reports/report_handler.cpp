@@ -386,7 +386,8 @@ VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
             for (int j = 0; j < ml_seclamp->nodecount; j++) {
                 auto segment_id = ml_seclamp->nodeindices[j];
                 if ((nodes_to_gids[segment_id] == gid)) {
-                    double* var_value = get_var_location_from_var_name(mech_id_seclamp, "i", ml_seclamp, j);
+                    double* var_value =
+                        get_var_location_from_var_name(mech_id_seclamp, "i", ml_seclamp, j);
                     summation_report.currents_[segment_id].push_back(std::make_pair(var_value, -1));
                 }
             }
