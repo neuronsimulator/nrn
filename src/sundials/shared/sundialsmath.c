@@ -39,14 +39,17 @@ realtype RPowerI(realtype base, int exponent)
   return(prod);
 }
 
-extern double hoc_pow(double, double);
+extern double hoc_c_pow(double, double);
+double hoc_c_pow(double x, double y) {
+  return pow(x, y);
+}
 
 realtype RPowerR(realtype base, realtype exponent)
 {
   if (base <= ZERO) return(ZERO);
 
 #if defined(SUNDIALS_USE_GENERIC_MATH)
-  return((realtype) hoc_pow((double) base, (double) exponent));
+  return((realtype) hoc_c_pow((double) base, (double) exponent));
 #elif defined(SUNDIALS_SINGLE_PRECISION)
   return(powf(base, exponent));
 #elif defined(SUNDIALS_EXTENDED_PRECISION)
@@ -82,7 +85,7 @@ realtype RPower2(realtype x)
 {
 #if defined(SUNDIALS_USE_GENERIC_MATH)
 printf("RPower2\n");
-  return((realtype) hoc_pow((double) x, 2.0));
+  return((realtype) hoc_c_pow((double) x, 2.0));
 #elif defined(SUNDIALS_SINGLE_PRECISION)
   return(powf(x, TWO));
 #elif defined(SUNDIALS_EXTENDED_PRECISION)

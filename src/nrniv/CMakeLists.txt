@@ -422,8 +422,8 @@ if(${NRN_DIGEST} EQUAL 1)
     set_property(
       SOURCE ${NRN_OC_SRC_DIR}/debug.cpp
       APPEND
-      PROPERTY INCLUDE_DIRECTORIES /opt/homebrew/Cellar/openssl@1.1/1.1.1k/include)
-    find_library(LIB_CRYPTO crypto PATHS /opt/homebrew/Cellar/openssl@1.1/1.1.1k/lib REQUIRED)
+      PROPERTY INCLUDE_DIRECTORIES /opt/homebrew/Cellar/openssl@3/3.1.0/include)
+    find_library(LIB_CRYPTO crypto PATHS /opt/homebrew/Cellar/openssl@3/3.1.0/lib REQUIRED)
     target_link_libraries(nrniv_lib ${LIB_CRYPTO})
   else()
     target_link_libraries(nrniv_lib crypto)
