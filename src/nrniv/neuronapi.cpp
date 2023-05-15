@@ -12,15 +12,18 @@
 
 
 // we define these here to allow the API to be independent of internal details
-#define STACK_IS_STR 1
-#define STACK_IS_VAR 2
-#define STACK_IS_NUM 3
-#define STACK_IS_OBJVAR 4
-#define STACK_IS_OBJTMP 5
-#define STACK_IS_USERINT 6
-#define STACK_IS_SYM 7
-#define STACK_IS_OBJUNREF 8
-#define STACK_UNKNOWN -1
+typedef enum {
+  STACK_IS_STR = 1,
+  STACK_IS_VAR = 2,
+  STACK_IS_NUM = 3,
+  STACK_IS_OBJVAR = 4,
+  STACK_IS_OBJTMP = 5,
+  STACK_IS_USERINT = 6,
+  STACK_IS_SYM = 7,
+  STACK_IS_OBJUNREF = 8,
+  STACK_UNKNOWN = -1
+} stack_types_t;
+
 
 class SectionListIterator {
 public:
@@ -222,7 +225,7 @@ Object *nrn_pop_object(void) {
   return new_ob_ptr;
 }
 
-int nrn_stack_type(void) {
+stack_types_t nrn_stack_type(void) {
   switch (hoc_stack_type()) {
   case STRING:
     return STACK_IS_STR;
@@ -244,7 +247,7 @@ int nrn_stack_type(void) {
   return STACK_UNKNOWN;
 }
 
-char const *const nrn_stack_type_name(int id) {
+char const *const nrn_stack_type_name(stack_types_t id) {
   switch (id) {
   case STACK_IS_STR:
     return "STRING";

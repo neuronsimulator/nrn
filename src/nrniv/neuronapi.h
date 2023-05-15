@@ -11,6 +11,18 @@ struct hoc_Item;
 struct SymbolTableIterator;
 struct Symlist;
 
+typedef enum {
+  STACK_IS_STR = 1,
+  STACK_IS_VAR = 2,
+  STACK_IS_NUM = 3,
+  STACK_IS_OBJVAR = 4,
+  STACK_IS_OBJTMP = 5,
+  STACK_IS_USERINT = 6,
+  STACK_IS_SYM = 7,
+  STACK_IS_OBJUNREF = 8,
+  STACK_UNKNOWN = -1
+} stack_types_t;
+
 /****************************************
  * Initialization
  ****************************************/
@@ -58,10 +70,13 @@ extern void (*nrn_push_int)(int i);
 extern int (*nrn_pop_int)(void);
 extern void (*nrn_push_object)(Object* obj);
 extern Object *(*nrn_pop_object)(void);
-extern int (*nrn_stack_type)(void);
-extern char const *const (*nrn_stack_type_name)(int id);
+extern stack_types_t (*nrn_stack_type)(void);
+extern char const *const (*nrn_stack_type_name)(stack_types_t id);
 extern Object *(*nrn_new_object)(Symbol *sym, int narg);
 extern Symbol *(*nrn_get_method_symbol)(Object *obj, char const *const name);
+// TODO: the next two functions throw exceptions in C++; need a version that
+//       returns a bool success indicator instead (this is actually the
+//       classic behavior of OcJump)
 extern void (*nrn_call_method)(Object *obj, Symbol *method_sym, int narg);
 extern void (*nrn_call_function)(Symbol *sym, int narg);
 extern void (*nrn_ref_object)(Object *obj);
