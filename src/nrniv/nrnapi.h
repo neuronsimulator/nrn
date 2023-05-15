@@ -46,6 +46,9 @@ char const *nrn_secname(Section *sec);
 void nrn_push_section(Section *sec);
 void nrn_pop_section(void);
 void nrn_insert_mechanism(Section *sec, Symbol *mechanism);
+hoc_Item* nrn_get_allsec(void);
+hoc_Item* nrn_get_sectionlist_data(Object* obj);
+
 
 /****************************************
  * Segments
@@ -93,7 +96,6 @@ int nrn_vector_capacity(Object *vec);
 double *nrn_vector_data_ptr(Object *vec);
 double* nrn_get_pp_property_ptr(Object* pp, const char* name);
 double* nrn_get_steered_property_ptr(Object* obj, const char* name);
-// TODO: need a way to get hoc_Item* corresponding to allsec, a given SectionList
 // TODO: need a way to iterate over symbol trees (top level and per object)
 // TODO: need a way of extracting information from a ShapePlotInterface
 }

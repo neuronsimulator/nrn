@@ -136,6 +136,15 @@ double* nrn_get_rangevar_ptr(Section* const sec, Symbol* const sym, double const
     return nrn_rangepointer(sec, sym, x);
 }
 
+hoc_Item* nrn_get_allsec(void) {
+    return section_list;
+}
+
+hoc_Item* nrn_get_sectionlist_data(Object* obj) {
+    // TODO: verify the obj is in fact a SectionList
+    return (hoc_Item*) obj->u.this_pointer;
+}
+
 
 /****************************************
  * Functions, objects, and the stack
