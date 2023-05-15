@@ -28,8 +28,10 @@ extern void nrn_change_nseg(Section *, int);
 int nrn_init(int argc, const char **argv) {
   nrn_nobanner_ = 1;
   int exit_status = ivocmain_session(argc, argv, nullptr, 0);
+#if NRNMPI
 #if NRNMPI_DYNAMICLOAD
   nrnmpi_stubs();
+#endif
 #endif
   return exit_status;
 }
