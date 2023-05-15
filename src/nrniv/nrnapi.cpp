@@ -243,8 +243,8 @@ void nrn_call_function(Symbol *sym, int narg) {
 
 void nrn_unref_object(Object *obj) { hoc_obj_unref(obj); }
 
-char const * nrn_get_class_name(Object* obj) {
-    return obj->ctemplate->sym->name;
+char const *nrn_get_class_name(Object *obj) {
+  return obj->ctemplate->sym->name;
 }
 
 /****************************************
@@ -282,6 +282,23 @@ int SectionListIterator::done(void) {
   return 0;
 }
 
+SymbolTableIterator::SymbolTableIterator(Symlist *list) {
+  current = list->first;
+}
+
+char const *SymbolTableIterator::next(void) {
+  auto result = current->name;
+  current = current->next;
+  return result;
+}
+
+int SymbolTableIterator::done(void) {
+  if (!current) {
+    return 1;
+  }
+  return 0;
+}
+
 // copy semantics isn't great, but only two data items
 // and is cleaner to use in a for loop than having to free memory at the end
 SectionListIterator *nrn_new_sectionlist_iterator(hoc_Item *my_sectionlist) {
@@ -296,6 +313,20 @@ Section *nrn_sectionlist_iterator_next(SectionListIterator *sl) {
 
 int nrn_sectionlist_iterator_done(SectionListIterator *sl) {
   return sl->done();
+}
+
+SymbolTableIterator *nrn_new_symbol_table_iterator(Symlist *my_symbol_table) {
+  return new SymbolTableIterator(my_symbol_table);
+}
+
+void nrn_free_symbol_table_iterator(SymbolTableIterator *st) { delete st; }
+
+char const *nrn_symbol_table_iterator_next(SymbolTableIterator *st) {
+  return st->next();
+}
+
+int nrn_symbol_table_iterator_done(SymbolTableIterator *st) {
+  return st->done();
 }
 
 int nrn_vector_capacity(Object *vec) {
@@ -323,6 +354,12 @@ double *nrn_get_steered_property_ptr(Object *obj, const char *name) {
   return hoc_pxpop();
 }
 
-char const * nrn_get_symbol_name(Symbol* sym) {
-    return sym->name;
+char const *nrn_get_symbol_name(Symbol *sym) { return sym->name; }
+
+Symlist *nrn_get_symbol_table(Symbol *sym) {
+  // TODO: ensure sym is an object or class
+  // NOTE: to use with an object, call nrn_get_symbol(nrn_get_class_name(obj))
+  return sym->u.ctemplate->symtable;
 }
+
+Symlist *nrn_get_global_symbol_table(void) { return hoc_built_in_symlist; }

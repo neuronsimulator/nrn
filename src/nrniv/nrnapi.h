@@ -25,6 +25,16 @@ private:
   hoc_Item *current;
 };
 
+class SymbolTableIterator {
+public:
+  SymbolTableIterator(Symlist *);
+  char const *next(void);
+  int done(void);
+
+private:
+  Symbol *current;
+};
+
 extern "C" {
 /****************************************
  * Initialization
@@ -64,6 +74,7 @@ double *nrn_get_rangevar_ptr(Section *const sec, Symbol *const sym,
  ****************************************/
 Symbol *nrn_get_symbol(char const *const name);
 int nrn_get_symbol_type(Symbol *sym);
+// TODO: need a way of mapping type identifiers to meaningful names
 double *nrn_get_symbol_ptr(Symbol *sym);
 void nrn_push_double(double val);
 double nrn_pop_double(void);
@@ -82,7 +93,7 @@ void nrn_call_method(Object *obj, Symbol *method_sym, int narg);
 void nrn_call_function(Symbol *sym, int narg);
 // TODO: do we need a nrn_ref_object?
 void nrn_unref_object(Object *obj);
-char const * nrn_get_class_name(Object* obj);
+char const *nrn_get_class_name(Object *obj);
 
 /****************************************
  * Miscellaneous
@@ -92,11 +103,16 @@ SectionListIterator *nrn_new_sectionlist_iterator(hoc_Item *my_sectionlist);
 void nrn_free_sectionlist_iterator(SectionListIterator *sl);
 Section *nrn_sectionlist_iterator_next(SectionListIterator *sl);
 int nrn_sectionlist_iterator_done(SectionListIterator *sl);
+SymbolTableIterator *nrn_new_symbol_table_iterator(Symlist *my_symbol_table);
+void nrn_free_symbol_table_iterator(SymbolTableIterator *st);
+char const *nrn_symbol_table_iterator_next(SymbolTableIterator *st);
+int nrn_symbol_table_iterator_done(SymbolTableIterator *st);
 int nrn_vector_capacity(Object *vec);
 double *nrn_vector_data_ptr(Object *vec);
 double *nrn_get_pp_property_ptr(Object *pp, const char *name);
 double *nrn_get_steered_property_ptr(Object *obj, const char *name);
-char const * nrn_get_symbol_name(Symbol* sym);
-// TODO: need a way to iterate over symbol trees (top level and per object)
+char const *nrn_get_symbol_name(Symbol *sym);
+Symlist *nrn_get_symbol_table(Symbol *sym);
+Symlist *nrn_get_global_symbol_table(void);
 // TODO: need a way of extracting information from a ShapePlotInterface
 }
