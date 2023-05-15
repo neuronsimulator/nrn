@@ -1,4 +1,4 @@
-#include "nrnapi.h"
+#include "neuronapi.h"
 #include "../../nrnconf.h"
 #include "nrniv_mf.h"
 #include "nrnmpi.h"
