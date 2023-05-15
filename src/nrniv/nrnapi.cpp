@@ -72,8 +72,8 @@ void nrn_connect_sections(Section *child_sec, double child_x,
 void nrn_set_section_length(Section *sec, double length) {
   // TODO: call can_change_morph(sec) to check pt3dconst_; how should we handle
   // that?
+  // TODO: is there a named constant so we don't have to use the magic number 2?
   sec->prop->dparam[2] = length;
-  // dparam[7].val is for Ra
   // nrn_length_change updates 3D points if needed
   nrn_length_change(sec, length);
   diam_changed = 1;
@@ -86,6 +86,7 @@ double nrn_get_section_Ra(Section *sec) { return nrn_ra(sec); }
 
 void nrn_set_section_Ra(Section *sec, double val) {
   // TODO: ensure val > 0
+  // TODO: is there a named constant so we don't have to use the magic number 7?
   sec->prop->dparam[7] = val;
   diam_changed = 1;
   sec->recalc_area_ = 1;
