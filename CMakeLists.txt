@@ -485,6 +485,24 @@ if(NOT NRN_ENABLE_MPI_DYNAMIC OR ${num_mpi} EQUAL 1)
 endif()
 
 # =============================================================================
+# Enable NRN_DIGEST
+# =============================================================================
+if(NRN_ENABLE_DIGEST)
+  set(NRN_DIGEST 1)
+else()
+  set(NRN_DIGEST 0)
+endif()
+
+# =============================================================================
+# Enable NRN_ARCH_INDEP_EXP_POW
+# =============================================================================
+if(NRN_ENABLE_ARCH_INDEP_EXP_POW)
+  set(NRN_ARCH_INDEP_EXP_POW 1)
+else()
+  set(NRN_ARCH_INDEP_EXP_POW 0)
+endif()
+
+# =============================================================================
 # Enable CoreNEURON support
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)

@@ -7,7 +7,7 @@
 #include "OS/list.h"
 #include "neuron.h"
 
-#define precision 15
+#define precision 18
 
 void nrn_prcellstate(int gid, const char* filesuffix);
 
