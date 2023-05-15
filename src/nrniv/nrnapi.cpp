@@ -242,6 +242,10 @@ void nrn_call_function(Symbol *sym, int narg) {
 
 void nrn_unref_object(Object *obj) { hoc_obj_unref(obj); }
 
+char const * nrn_get_class_name(Object* obj) {
+    return obj->ctemplate->sym->name;
+}
+
 /****************************************
  * Miscellaneous
  ****************************************/
@@ -316,4 +320,8 @@ double *nrn_get_steered_property_ptr(Object *obj, const char *name) {
   // put the pointer for the memory location on the stack
   obj->ctemplate->steer(obj->u.this_pointer);
   return hoc_pxpop();
+}
+
+char const * nrn_get_symbol_name(Symbol* sym) {
+    return sym->name;
 }

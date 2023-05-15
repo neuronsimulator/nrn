@@ -82,7 +82,7 @@ void nrn_call_method(Object *obj, Symbol *method_sym, int narg);
 void nrn_call_function(Symbol *sym, int narg);
 // TODO: do we need a nrn_ref_object?
 void nrn_unref_object(Object *obj);
-// TODO: need a way to get the type of an object as a string
+char const * nrn_get_class_name(Object* obj);
 
 /****************************************
  * Miscellaneous
@@ -96,6 +96,7 @@ int nrn_vector_capacity(Object *vec);
 double *nrn_vector_data_ptr(Object *vec);
 double *nrn_get_pp_property_ptr(Object *pp, const char *name);
 double *nrn_get_steered_property_ptr(Object *obj, const char *name);
+char const * nrn_get_symbol_name(Symbol* sym);
 // TODO: need a way to iterate over symbol trees (top level and per object)
 // TODO: need a way of extracting information from a ShapePlotInterface
 }
