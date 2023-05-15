@@ -84,6 +84,7 @@ void nrn_push_str(char **str);
 char **nrn_pop_str(void);
 void nrn_push_int(int i);
 int nrn_pop_int(void);
+void nrn_push_object(Object *obj);
 Object *nrn_pop_object(void);
 int nrn_stack_type(void);
 char const *const nrn_stack_type_name(int id);
@@ -91,7 +92,7 @@ Object *nrn_new_object(Symbol *sym, int narg);
 Symbol *nrn_get_method_symbol(Object *obj, char const *const name);
 void nrn_call_method(Object *obj, Symbol *method_sym, int narg);
 void nrn_call_function(Symbol *sym, int narg);
-// TODO: do we need a nrn_ref_object?
+void nrn_ref_object(Object *obj);
 void nrn_unref_object(Object *obj);
 char const *nrn_get_class_name(Object *obj);
 

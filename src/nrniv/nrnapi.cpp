@@ -172,6 +172,8 @@ void nrn_push_int(int i) { hoc_pushi(i); }
 
 int nrn_pop_int(void) { return hoc_ipop(); }
 
+void nrn_push_object(Object *obj) { hoc_push_object(obj); }
+
 Object *nrn_pop_object(void) {
   // NOTE: the returned object should be unref'd when no longer needed
   Object **obptr = hoc_objpop();
@@ -240,6 +242,8 @@ void nrn_call_function(Symbol *sym, int narg) {
   // stack
   OcJump::execute_throw_on_exception(sym, narg);
 }
+
+void nrn_ref_object(Object *obj) { obj->refcount++; }
 
 void nrn_unref_object(Object *obj) { hoc_obj_unref(obj); }
 
