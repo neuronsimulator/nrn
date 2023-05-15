@@ -30,7 +30,9 @@ int nrn_init(int argc, const char **argv) {
   int exit_status = ivocmain_session(argc, argv, nullptr, 0);
 #if NRNMPI
 #if NRNMPI_DYNAMICLOAD
+#ifdef nrnmpi_stubs
   nrnmpi_stubs();
+#endif
 #endif
 #endif
   return exit_status;
