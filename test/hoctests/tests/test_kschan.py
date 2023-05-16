@@ -1,6 +1,8 @@
+import math
 from neuron import h, gui
 from neuron.expect_hocerr import expect_err
 from neuron import expect_hocerr
+import numpy as np
 import os, sys, hashlib
 
 expect_hocerr.quiet = False
@@ -32,17 +34,7 @@ def chkpr(key):
 
 
 # Cover KSChan::state_consist(int shift) in nrniv/kschan.cpp
-
 h.load_file("chanbild.hoc")
-
-
-def cmp(trec, vrec, std, atol=0):
-    tdif = trec.sub(std[0]).abs().max()
-    vdif = vrec.sub(std[1]).abs().max()
-    print("ZZZ", tdif, vdif)
-    assert tdif <= atol
-    assert vdif <= atol
-
 
 # For checking if a run is doing something useful
 # Activate the graphics by uncomment the "# return" statement in
@@ -53,19 +45,55 @@ def cmp(trec, vrec, std, atol=0):
 trec = h.Vector()
 vrec = h.Vector()
 grph = h.Graph()
-hrun_count = 0
 
 
-def hrun():
-    global hrun_count
-    hrun_count += 1
+def hrun(name, t_tol=0.0, v_tol=0.0, v_tol_per_time=0.0):
+    """
+    Run the simulation, then compare against reference results.
+    The reference results are loaded from the `name` key in test_kschan.json.
+    Time values are compared using the relative tolerance `t_tol`.
+    Voltage values are linearly interpolated to the reference times, then
+    compared using a relative tolerance of v_tol + t * v_tol_per_time.
+
+    The reference files are typically generated with GCC, and the tolerances
+    are typically driven by the requirements of NVHPC and oneAPI...
+    """
     h.run()
-    # NVHPC and oneAPI in particular need a non-zero tolerance
-    chk(
-        "hrun %d" % hrun_count,
-        [trec.to_python(), vrec.to_python()],
-        tol=hrun_count * 1e-7,
-    )
+    ref_data = chk.get(name)
+    if ref_data is None:
+        raise Exception("No reference data for key: " + key)
+    ref_tv, ref_vv = ref_data
+    new_tv, new_vv = trec.to_python(), vrec.to_python()
+    assert len(ref_tv) == len(ref_vv)
+    assert len(ref_tv) == len(new_tv)
+    assert len(ref_tv) == len(new_vv)
+    match = True
+    max_diff_t, max_diff_v = 0.0, 0.0
+    # Interpolate the new v values to the reference t values
+    def interp(new_t, old_t, old_v):
+        assert np.all(np.diff(old_t) > 0)
+        return np.interp(new_t, old_t, old_v)
+
+    interp_vv = interp(ref_tv, new_tv, new_vv)
+    for ref_t, ref_v, new_t, new_v in zip(ref_tv, ref_vv, new_tv, interp_vv):
+        if not math.isclose(ref_t, new_t, rel_tol=t_tol):
+            diff_t = abs(ref_t - new_t) / max(abs(ref_t), abs(new_t))
+            max_diff_t = max(max_diff_t, diff_t)
+            print("t diff", ref_t, new_t, diff_t, ">", t_tol)
+            match = False
+        v_tol_for_this_t = v_tol + v_tol_per_time * ref_t
+        if not math.isclose(ref_v, new_v, rel_tol=v_tol_for_this_t):
+            diff_v = abs(ref_v - new_v) / max(abs(ref_v), abs(new_v))
+            max_diff_v = max(max_diff_v, diff_v)
+            print("v diff at t", ref_t, ref_v, new_v, diff_v, ">", v_tol_for_this_t)
+            match = False
+    if not match:
+        print("summary for", key)
+    if max_diff_t:
+        print("max t diff", max_diff_t)
+    if max_diff_v:
+        print("max v diff", max_diff_v)
+    assert match
     return
     grph.erase()
     trec.printf()
@@ -74,7 +102,6 @@ def hrun():
     vrec.resize(0)
     trec.resize(0)
     grph.exec_menu("View = plot")
-    print("hrun %d\n" % hrun_count)
     h.continue_dialog("continue")
 
 
@@ -141,7 +168,11 @@ def test_1():
     h.tstop = 1
     for cvode in [1, 0]:
         h.cvode_active(cvode)
-        hrun()
+        hrun(
+            "nahh cvode={}".format(bool(cvode)),
+            t_tol=5e-9 if cvode else 0.0,
+            v_tol=2e-9 if cvode else 3e-11,
+        )
 
     s.uninsert("nahh")
     kss = cb.ks.add_hhstate("xxx")
@@ -155,23 +186,22 @@ def test_1():
 
     cb.nahh()
     s.insert("hh")
-    hrun()
+    hrun("hh", v_tol=3e-11)  # used to be the reference run
     std = (trec.c(), vrec.c())
     # nahh gives same results as sodium channel in hh (usetable_hh is on)
     s.gnabar_hh = 0
     s.insert("nahh")
     s.gmax_nahh = 0.12
 
-    def run(tol):
-        hrun()
-        cmp(trec, vrec, std, tol)
-
-    run(1e-9)
+    # used to compare to the reference run with 1e-9 tolerance
+    hrun("nahh vs hh", v_tol=7e-12)
     # table
     cb.ks.usetable(1)
-    run(0.5)
+    # used to compare to the reference run with 0.5 tolerance
+    hrun("coarse table", v_tol=7e-12)
     cb.ks.usetable(1, 1000, -80, 60)
-    run(1e-3)
+    # used to compare to the reference run with 1e-3 tolerance
+    hrun("fine table", v_tol=5e-12)
     # cover usetable return info
     vmin = h.ref(0)
     vmax = h.ref(1)
@@ -185,7 +215,8 @@ def test_1():
     bvec = h.Vector()
     cb.ks.trans(0).ab(xvec, avec, bvec)
     cb.ks.trans(0).set_f(0, 7, avec, xvec[0], xvec[xvec.size() - 1])
-    run(1e-3)
+    # used to compare to the reference run with 1e-3 tolerance
+    hrun("KSChanTable", v_tol=4e-12)
     aref = h.ref(0)
     bref = h.ref(0)
     cb.ks.trans(0).parm(0, aref, bref)
@@ -193,7 +224,8 @@ def test_1():
 
     # cover some table limit code.
     cb.ks.usetable(1, 200, -50, 30)
-    run(20)
+    # used to compare to the reference run with 20 tolerance (!)
+    hrun("KSChanTable limits", v_tol=2e-12)
 
     del cb, s, kss, ic, std
     locals()
@@ -294,7 +326,10 @@ def test_2():
     kchan.gmax = 0.036
     chkstdout("kchan without single", capture_stdout("h.psection()", True))
     h.cvode_active(1)
-    hrun()  # At least executes KSChan::mulmat
+    # At least executes KSChan::mulmat
+    hrun(
+        "kchan without single cvode=True", t_tol=2e-7, v_tol=1e-11, v_tol_per_time=5e-7
+    )
     h.cvode_active(0)
 
     # location coverage
@@ -356,7 +391,22 @@ def test_3():
             h.cvode_active(cvon)
             h.ks.single(singleon)
             kchan = h.khh2(s(0.5))
-            hrun()
+            t_tol = 0.0
+            tols = {}
+            if cvon:
+                tols["v_tol"] = 1e-12
+                if singleon:
+                    tols["t_tol"] = 4e-9
+                    tols["v_tol_per_time"] = 5e-10
+                else:
+                    # seems a bit high?
+                    tols["t_tol"] = 2e-6
+                    tols["v_tol_per_time"] = 6e-8
+            else:
+                tols["v_tol"] = 8e-11
+            hrun(
+                "KSTrans cvode={} single={}".format(bool(cvon), bool(singleon)), **tols
+            )
             del kchan
             locals()
 
@@ -401,7 +451,7 @@ def test_4():
             else:
                 s.gmax_khh4 = 0.036 / 2.0
                 kchan.gmax = 0.036 / 2.0
-            hrun()
+            hrun("khh4 ivtype={} ion={}".format(ivtype, ion), v_tol=2e-7)
             s.uninsert("khh4")
             del kchan
             locals()
