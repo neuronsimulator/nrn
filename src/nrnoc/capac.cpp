@@ -66,20 +66,9 @@ void nrn_capacity_current(neuron::model_sorted_token const& sorted_token,
     /* since rhs is dvm for a full or half implicit step */
     /* (nrn_update_2d() replaces dvi by dvi-dvx) */
     /* no need to distinguish secondorder */
-#if CACHEVEC
-    if (use_cachevec) {
-        int* ni = ml->nodeindices;
-        for (int i = 0; i < count; i++) {
-            ml_cache.fpfield<i_cap_index>(i) = cfac * ml_cache.fpfield<cm_index>(i) *
-                                               vec_rhs[ni[i]];
-        }
-    } else
-#endif /* CACHEVEC */
-    {
-        for (int i = 0; i < count; ++i) {
-            ml_cache.fpfield<i_cap_index>(i) = cfac * ml_cache.fpfield<cm_index>(i) *
-                                               NODERHS(vnode[i]);
-        }
+    int* ni = ml->nodeindices;
+    for (int i = 0; i < count; i++) {
+        ml_cache.fpfield<i_cap_index>(i) = cfac * ml_cache.fpfield<cm_index>(i) * vec_rhs[ni[i]];
     }
 }
 
@@ -90,20 +79,10 @@ void nrn_mul_capacity(neuron::model_sorted_token const& sorted_token,
     neuron::cache::MechanismRange<nparm, ndparm> ml_cache{sorted_token, *_nt, *ml, ml->type()};
     auto* const vec_rhs = _nt->node_rhs_storage();
     int count = ml->nodecount;
-    Node** vnode = ml->nodelist;
     double cfac = .001 * _nt->cj;
-#if CACHEVEC
-    if (use_cachevec) {
-        int* ni = ml->nodeindices;
-        for (int i = 0; i < count; i++) {
-            vec_rhs[ni[i]] *= cfac * ml_cache.fpfield<cm_index>(i);
-        }
-    } else
-#endif /* CACHEVEC */
-    {
-        for (int i = 0; i < count; ++i) {
-            NODERHS(vnode[i]) *= cfac * ml_cache.fpfield<cm_index>(i);
-        }
+    int* ni = ml->nodeindices;
+    for (int i = 0; i < count; i++) {
+        vec_rhs[ni[i]] *= cfac * ml_cache.fpfield<cm_index>(i);
     }
 }
 
@@ -114,20 +93,10 @@ void nrn_div_capacity(neuron::model_sorted_token const& sorted_token,
     auto* const vec_rhs = _nt->node_rhs_storage();
     int count = ml->nodecount;
     Node** vnode = ml->nodelist;
-#if CACHEVEC
-    if (use_cachevec) {
-        int* ni = ml->nodeindices;
-        for (int i = 0; i < count; i++) {
-            ml_cache.fpfield<i_cap_index>(i) = vec_rhs[ni[i]];
-            vec_rhs[ni[i]] /= 1.e-3 * ml_cache.fpfield<cm_index>(i);
-        }
-    } else
-#endif /* CACHEVEC */
-    {
-        for (int i = 0; i < count; ++i) {
-            ml_cache.fpfield<i_cap_index>(i) = NODERHS(vnode[i]);
-            NODERHS(vnode[i]) /= 1.e-3 * ml_cache.fpfield<cm_index>(i);
-        }
+    int* ni = ml->nodeindices;
+    for (int i = 0; i < count; i++) {
+        ml_cache.fpfield<i_cap_index>(i) = vec_rhs[ni[i]];
+        vec_rhs[ni[i]] /= 1.e-3 * ml_cache.fpfield<cm_index>(i);
     }
     if (_nt->_nrn_fast_imem) {
         double* p = _nt->_nrn_fast_imem->_nrn_sav_rhs;

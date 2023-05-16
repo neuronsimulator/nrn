@@ -416,17 +416,8 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
             NODERHS(_nt->_v_node[i]) = 0.;
         }
     } else {
-#if CACHEVEC
-        if (use_cachevec) {
-            for (i = i1; i < i3; ++i) {
-                vec_rhs[i] = 0.;
-            }
-        } else
-#endif /* CACHEVEC */
-        {
-            for (i = i1; i < i3; ++i) {
-                NODERHS(_nt->_v_node[i]) = 0.;
-            }
+        for (i = i1; i < i3; ++i) {
+            vec_rhs[i] = 0.;
         }
     }
     if (_nt->_nrn_fast_imem) {
@@ -463,15 +454,8 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
            so here we transform so it only has membrane current contribution
         */
         double* p = _nt->_nrn_fast_imem->_nrn_sav_rhs;
-        if (use_cachevec) {
-            for (i = i1; i < i3; ++i) {
-                p[i] -= vec_rhs[i];
-            }
-        } else {
-            for (i = i1; i < i3; ++i) {
-                Node* nd = _nt->_v_node[i];
-                p[i] -= NODERHS(nd);
-            }
+        for (i = i1; i < i3; ++i) {
+            p[i] -= vec_rhs[i];
         }
     }
 #if EXTRACELLULAR
