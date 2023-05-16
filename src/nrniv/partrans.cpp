@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
-
 #include "partrans.h"  // sgid_t and SetupTransferInfo for CoreNEURON
+
+#include "neuron/container/data_handle.hpp"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,10 +19,9 @@
 #include <utility>
 #include <vector>
 
-
 #if NRNLONGSGID
 #if PARANEURON
-extern void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl) {
+static void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl) {
     if (nrn_sparse_partrans > 0) {
         nrnmpi_long_alltoallv_sparse(s, scnt, sdispl, r, rcnt, rdispl);
     } else {
@@ -31,7 +31,7 @@ extern void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rc
 #endif  // PARANEURON
 #else   // not NRNLONGSGID
 #if PARANEURON
-extern void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl) {
+static void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl) {
     if (nrn_sparse_partrans > 0) {
         nrnmpi_int_alltoallv_sparse(s, scnt, sdispl, r, rcnt, rdispl);
     } else {
@@ -41,16 +41,6 @@ extern void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rc
 #endif  // PARANEURON
 #endif  // not NRNLONGSGID
 
-void nrnmpi_source_var();
-void nrnmpi_target_var();
-void nrnmpi_setup_transfer();
-void nrn_partrans_clear();
-static void mpi_transfer();
-static void thread_transfer(NrnThread*);
-static void thread_vi_compute(NrnThread*);
-static void mk_ttd();
-extern double t;
-extern int nrn_node_ptr_change_cnt_;
 extern const char* bbcore_write_version;
 // see lengthy comment in ../nrnoc/fadvance.cpp
 // nrnmpi_v_transfer requires existence of nrnthread_v_transfer even if there
@@ -124,22 +114,13 @@ file.
 
 */
 
-#if 1 || PARANEURON
 extern void (*nrnthread_v_transfer_)(NrnThread*);  // before nonvint and BEFORE INITIAL
 extern void (*nrnthread_vi_compute_)(NrnThread*);
 extern void (*nrnmpi_v_transfer_)();  // before nrnthread_v_transfer and after update. Called by
                                       // thread 0.
 extern void (*nrn_mk_transfer_thread_data_)();
-#endif
 #if PARANEURON
 extern double nrnmpi_transfer_wait_;
-extern void nrnmpi_barrier();
-extern void nrnmpi_int_allgather(int*, int*, int);
-extern int nrnmpi_int_allmax(int);
-extern void sgid_alltoallv(sgid_t*, int*, int*, sgid_t*, int*, int*);
-extern void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
-extern void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
-extern void nrnmpi_dbl_alltoallv_sparse(double*, int*, int*, double*, int*, int*);
 #endif
 
 struct TransferThreadData {
@@ -182,21 +163,18 @@ static MapSgid2Int sid2insrc_;  // received interprocessor sid data is
 // ordered by calls to nrnmpi_target_var()
 static std::vector<neuron::container::data_handle<double>> targets_;  // list of target variables
 static SgidList sgid2targets_;                                        // list of target sgid
-static PPList target_pntlist_;        // list of target Point_process
-static IntList target_parray_index_;  // to recompute targets_ for cache_efficint
+static PPList target_pntlist_;  // list of target Point_process
 
 // ordered by calls to nrnmpi_source_var()
 static NodePList visources_;        // list of source Node*, (multiples possible)
 static SgidList sgids_;             // source gids
 static MapSgid2Int sgid2srcindex_;  // sgid2srcindex[sgids[i]] == i
 
+// source ssid -> (type,parray_index)
 static std::unordered_map<sgid_t, std::pair<int, neuron::container::field_index>>
-    non_vsrc_update_info_;  // source ssid -> (type,parray_index)
-
+    non_vsrc_update_info_;
 
 static int max_targets_;
-static int vptr_change_cnt_ = 0;
-
 static bool is_setup_;
 
 // deleted when setup_transfer called
@@ -215,15 +193,16 @@ static void delete_imped_info() {
 
 // pv2node extended to any range variable in the section
 // This helper searches over all the mechanisms in the node.
-// If *pv exists, store mechtype and parray_index.
-static bool non_vsrc_setinfo(sgid_t ssid, Node* nd, double const* pv) {
+// If h refers to a RANGE variable inside a mechanism in the Node, store the mechanism type, the
+// index of the RANGE variable, and the array index into that RANGE variable.
+static bool non_vsrc_setinfo(sgid_t ssid,
+                             Node* nd,
+                             neuron::container::data_handle<double> const& h) {
     for (Prop* p = nd->prop; p; p = p->next) {
         for (auto i = 0; i < p->param_num_vars(); ++i) {
             for (auto j = 0; j < p->param_array_dimension(i); ++j) {
-                if (pv == static_cast<double const*>(p->param_handle(i, j))) {
+                if (h == p->param_handle(i, j)) {
                     non_vsrc_update_info_[ssid] = {p->_type, {i, j}};
-                    // printf("non_vsrc_setinfo %p %d %ld %s\n", pv, p->_type, pv-p->param,
-                    // memb_func[p->_type].sym->name);
                     return true;
                 }
             }
@@ -252,32 +231,19 @@ static neuron::container::data_handle<double> non_vsrc_update(Node* nd,
 // If not a voltage save pv associated with mechtype, p_array_index
 // in non_vsrc_update_info_
 static Node* pv2node(sgid_t ssid, neuron::container::data_handle<double> const& v) {
-    Section* sec = chk_access();
-    Node* nd = sec->parentnode;
-    if (nd) {
-        if (v == nd->v_handle()) {
-            assert(v.refers_to_a_modern_data_structure());
-            assert(
-                v.refers_to<neuron::container::Node::field::Voltage>(neuron::model().node_data()));
-            return nd;
-        } else if (non_vsrc_setinfo(ssid, nd, static_cast<double const*>(v))) {
+    Section* const sec = chk_access();
+    if (auto* const nd = sec->parentnode; nd) {
+        if (v == nd->v_handle() || non_vsrc_setinfo(ssid, nd, v)) {
             return nd;
         }
     }
     for (int i = 0; i < sec->nnode; ++i) {
-        nd = sec->pnode[i];
-        if (v == nd->v_handle()) {
-            assert(v.refers_to_a_modern_data_structure());
-            assert(
-                v.refers_to<neuron::container::Node::field::Voltage>(neuron::model().node_data()));
-            return nd;
-        } else if (non_vsrc_setinfo(ssid, nd, static_cast<double const*>(v))) {
+        auto* const nd = sec->pnode[i];
+        if (v == nd->v_handle() || non_vsrc_setinfo(ssid, nd, v)) {
             return nd;
         }
     }
-
     hoc_execerr_ext("Pointer to src is not in the currently accessed section %s", secname(sec));
-    return nullptr;  // avoid coverage false negative.
 }
 
 void nrnmpi_source_var() {
@@ -302,23 +268,6 @@ void nrnmpi_source_var() {
     // printf("nrnmpi_source_var %p source_val=%g sgid=%ld\n", psv, *psv, (long)sgid);
 }
 
-static int compute_parray_index(Point_process* pp,
-                                neuron::container::data_handle<double> const& ptv) {
-    if (!pp) {
-        return -1;
-    }
-    int legacy_index{};
-    for (int i = 0; i < pp->prop->param_num_vars(); ++i) {
-        for (auto j = 0; j < pp->prop->param_array_dimension(i); ++j, ++legacy_index) {
-            if (ptv == pp->prop->param_handle(i, j)) {
-                return legacy_index;
-            }
-        }
-    }
-    std::cout << ptv << std::endl;
-    throw std::runtime_error("compute_parray_index");
-}
-
 void nrnmpi_target_var() {
     Point_process* pp{};
     Object* ob{};
@@ -340,33 +289,9 @@ void nrnmpi_target_var() {
     auto const sgid = static_cast<sgid_t>(x);
     targets_.push_back(ptv);
     target_pntlist_.push_back(pp);
-    target_parray_index_.push_back(compute_parray_index(pp, ptv));
     sgid2targets_.push_back(sgid);
     // printf("nrnmpi_target_var %p target_val=%g sgid=%ld\n", ptv, *ptv, (long)sgid);
 }
-
-void nrn_partrans_update_ptrs() {
-    // These pointer changes require that the targets be range variables
-    // of a point process and the sources be range variables
-
-    // update the poutsrc that have no extracellular
-    for (int i = 0; i < outsrc_buf_size_; ++i) {
-        int isrc = poutsrc_indices_[i];
-        Node* nd = visources_[isrc];
-        auto it = non_vsrc_update_info_.find(sgids_[isrc]);
-        if (it != non_vsrc_update_info_.end()) {
-            poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
-        } else if (!nd->extnode) {
-            poutsrc_[i] = nd->v_handle();
-        } else {
-            // pointers into SourceViBuf updated when
-            // latter is (re-)created
-        }
-    }
-    vptr_change_cnt_ = nrn_node_ptr_change_cnt_;
-}
-
-// static FILE* xxxfile;
 
 static void rm_ttd() {
     if (!transfer_thread_data_) {
@@ -374,7 +299,7 @@ static void rm_ttd() {
     }
     delete[] std::exchange(transfer_thread_data_, nullptr);
     n_transfer_thread_data_ = 0;
-    nrnthread_v_transfer_ = 0;
+    nrnthread_v_transfer_ = nullptr;
 }
 
 static void rm_svibuf() {
@@ -382,7 +307,7 @@ static void rm_svibuf() {
         return;
     }
     source_vi_buf_.clear();
-    nrnthread_vi_compute_ = 0;
+    nrnthread_vi_compute_ = nullptr;
 }
 
 static std::unordered_map<Node*, double*> mk_svibuf() {
@@ -572,7 +497,7 @@ static void mk_ttd() {
     nrnthread_v_transfer_ = thread_transfer;
 }
 
-void thread_vi_compute(NrnThread* _nt) {
+static void thread_vi_compute(NrnThread* _nt) {
     // vi+vext needed by either mpi or thread transfer copied into
     // the source value buffer for this thread. Note that relevant
     // poutsrc_ and ttd[_nt->id].sv items
@@ -588,11 +513,8 @@ void thread_vi_compute(NrnThread* _nt) {
     }
 }
 
-void mpi_transfer() {
+static void mpi_transfer() {
     int i, n = outsrc_buf_size_;
-    if (nrn_node_ptr_change_cnt_ > vptr_change_cnt_) {
-        nrn_partrans_update_ptrs();
-    }
     for (i = 0; i < n; ++i) {
         outsrc_buf_[i] = *poutsrc_[i];
     }
@@ -613,7 +535,7 @@ void mpi_transfer() {
     // insrc_buf_ will get transferred to targets by thread_transfer
 }
 
-void thread_transfer(NrnThread* _nt) {
+static void thread_transfer(NrnThread* _nt) {
     if (!is_setup_) {
         hoc_execerror("ParallelContext.setup_transfer()", "needs to be called.");
     }
@@ -772,12 +694,6 @@ void nrnmpi_setup_transfer() {
 
         // sanity check. all the sgids we are asked to send, we actually have
         int n = send_to_want_displ[nhost];
-#if 0  // done in passing in step 3 below
-	for (int i=0; i < n; ++i) {
-		sgid_t sgid = send_to_want[i];
-		nrn_assert(sgid2srcindex_.find(sgid) != sgid2srcindex_.end());
-	}
-#endif
         // sanity check. all the sgids we receive, we actually need.
         // also set the sid2insrc_ value to the proper recv_from_have index.
         n = recv_from_have_displ[nhost];
@@ -840,15 +756,14 @@ void nrnmpi_setup_transfer() {
 }
 
 void nrn_partrans_clear() {
-    nrnthread_v_transfer_ = NULL;
-    nrnthread_vi_compute_ = NULL;
-    nrnmpi_v_transfer_ = NULL;
+    nrnthread_v_transfer_ = nullptr;
+    nrnthread_vi_compute_ = nullptr;
+    nrnmpi_v_transfer_ = nullptr;
     sgid2srcindex_.clear();
     sgids_.resize(0);
     visources_.resize(0);
     sgid2targets_.resize(0);
     target_pntlist_.resize(0);
-    target_parray_index_.resize(0);
     targets_.clear();
     max_targets_ = 0;
     rm_svibuf();
@@ -860,7 +775,7 @@ void nrn_partrans_clear() {
     poutsrc_.clear();
     delete[] std::exchange(poutsrc_indices_, nullptr);
     non_vsrc_update_info_.clear();
-    nrn_mk_transfer_thread_data_ = 0;
+    nrn_mk_transfer_thread_data_ = nullptr;
 }
 
 // assume one thread and no extracellular
@@ -948,18 +863,13 @@ void pargap_jacobi_setup(int mode) {
         for (size_t i = 0; i < visources_.size(); ++i) {
             visources_[i]->set_v(vgap1[i]);
         }
-        if (ttd)
+        if (ttd) {
             for (int i = 0; i < ttd->cnt; ++i) {
                 *(ttd->tv[i]) = vgap2[i];
             }
-        if (vgap1) {
-            delete[] vgap1;
-            vgap1 = NULL;
         }
-        if (vgap2) {
-            delete[] vgap2;
-            vgap2 = NULL;
-        }
+        delete[] std::exchange(vgap1, nullptr);
+        delete[] std::exchange(vgap2, nullptr);
     }
 }
 

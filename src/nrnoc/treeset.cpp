@@ -77,7 +77,6 @@ set to 1. This means that the mechanism vectors need to be re-determined.
 int v_structure_change;
 int structure_change_cnt;
 int diam_change_cnt;
-int nrn_node_ptr_change_cnt_;
 
 extern int section_count;
 extern Section** secorder;
@@ -2379,9 +2378,7 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
 
 void nrn_recalc_node_ptrs() {
     nrn_recalc_ptrs();
-    nrn_node_ptr_change_cnt_++;
     nrn_recalc_ptrvector();
-    nrn_partrans_update_ptrs();
     nrn_imem_defer_free(nullptr);
 }
 
