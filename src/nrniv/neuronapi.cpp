@@ -58,6 +58,8 @@ void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);
 extern void nrn_change_nseg(Section*, int);
 
+extern "C" {
+
 /****************************************
  * Initialization
  ****************************************/
@@ -298,8 +300,9 @@ char const* const nrn_stack_type_name(stack_types_t id) {
         return "SYMBOL";
     case STACK_IS_OBJUNREF:
         return "STKOBJ_UNREF";
+    default:
+        return "UNKNOWN";
     }
-    return "UNKNOWN";
 }
 
 Object* nrn_new_object(Symbol* sym, int narg) {
@@ -457,4 +460,5 @@ Symlist* nrn_get_symbol_table(Symbol* sym) {
 
 Symlist* nrn_get_global_symbol_table(void) {
     return hoc_built_in_symlist;
+}
 }
