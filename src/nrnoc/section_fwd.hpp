@@ -42,8 +42,8 @@ struct Extnode {
 };
 #endif
 
-#define NODEA(n)   (_nt->actual_a(_nrn_mechanism_get_v_node_index(n)))
-#define NODEB(n)   (_nt->actual_b(_nrn_mechanism_get_v_node_index(n)))
+#define NODEA(n)   (n->a())
+#define NODEB(n)   (n->b())
 #define NODED(n)   _nrn_mechanism_access_d(n)
 #define NODERHS(n) _nrn_mechanism_access_rhs(n)
 #ifdef NODEV

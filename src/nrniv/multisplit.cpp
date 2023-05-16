@@ -59,8 +59,6 @@ static double nrnmpi_wtime() {
 class MultiSplit;
 class MultiSplitControl;
 
-#define A(i)   (_nt->actual_a(i))
-#define B(i)   (_nt->actual_b(i))
 #define D(i)   vec_d[i]
 #define RHS(i) vec_rhs[i]
 #define S1A(i) sid1A[i]
@@ -2865,13 +2863,15 @@ void ReducedTree::fillsmap(int sid, double* prhs, double* pd) {
 void MultiSplitThread::triang_subtree2backbone(NrnThread* _nt) {
     int i, ip;
     double p;
+    auto* const vec_a = _nt->node_a_storage();
+    auto* const vec_b = _nt->node_b_storage();
     auto* const vec_d = _nt->node_d_storage();
     auto* const vec_rhs = _nt->node_rhs_storage();
     // eliminate a of the subtrees
     for (i = i3 - 1; i >= backbone_end; --i) {
         ip = _nt->_v_parent_index[i];
-        p = A(i) / D(i);
-        D(ip) -= p * B(i);
+        p = vec_a[i] / vec_d[i];
+        vec_d[ip] -= p * vec_b[i];
         RHS(ip) -= p * RHS(i);
     }
 #if 0
@@ -2888,19 +2888,21 @@ void MultiSplitThread::triang_backbone(NrnThread* _nt) {
     double p;
     // begin the backbone triangularization. This eliminates a and fills in
     // sid1A column. Begin with pivot equation adjacent to sid1.
+    auto* const vec_a = _nt->node_a_storage();
     for (i = backbone_sid1_begin; i < backbone_end; ++i) {
         // what is the equation index for A(i)
         j = _nt->_v_parent_index[i] - backbone_begin;
-        S1A(j) = A(i);
+        S1A(j) = vec_a[i];
     }
+    auto* const vec_b = _nt->node_b_storage();
     auto* const vec_d = _nt->node_d_storage();
     auto* const vec_rhs = _nt->node_rhs_storage();
     for (i = backbone_sid1_begin - 1; i >= backbone_interior_begin; --i) {
         ip = _nt->_v_parent_index[i];
         j = i - backbone_begin;
         jp = ip - backbone_begin;
-        p = A(i) / D(i);
-        D(ip) -= p * B(i);
+        p = vec_a[i] / D(i);
+        D(ip) -= p * vec_b[i];
         RHS(ip) -= p * RHS(i);
         S1A(jp) = -p * S1A(j);
         // printf("iter i=%d ip=%d j=%d jp=%d D(ip)=%g RHS(ip)=%g S1A(ip)=%g\n",
@@ -2914,11 +2916,11 @@ void MultiSplitThread::triang_backbone(NrnThread* _nt) {
         ip = _nt->_v_parent_index[i];
         j = i - backbone_begin;
         if (ip < backbone_interior_begin) {
-            S1B(j) = B(i);
+            S1B(j) = vec_b[i];
             continue;
         }
         jp = ip - backbone_begin;
-        p = B(i) / D(ip);
+        p = vec_b[i] / D(ip);
         RHS(i) -= p * RHS(ip);
         S1A(j) -= p * S1A(jp);
         S1B(j) = -p * S1B(jp);
@@ -2930,11 +2932,11 @@ void MultiSplitThread::triang_backbone(NrnThread* _nt) {
         ip = _nt->_v_parent_index[i];
         j = i - backbone_begin;
         if (ip < backbone_interior_begin) {
-            S1B(j) = B(i);
+            S1B(j) = vec_b[i];
             continue;
         }
         jp = ip - backbone_begin;
-        p = B(i) / D(ip);
+        p = vec_b[i] / D(ip);
         RHS(i) -= p * RHS(ip);
         D(i) -= p * S1A(jp);
         S1B(j) = -p * S1B(jp);
@@ -3040,6 +3042,7 @@ nrnmpi_myid, RHS(i), RHS(j));
 
 // solve the subtrees,  rhs on the backbone is already solved
 void MultiSplitThread::bksub_subtrees(NrnThread* _nt) {
+    auto* const vec_b = _nt->node_b_storage();
     auto* const vec_d = _nt->node_d_storage();
     auto* const vec_rhs = _nt->node_rhs_storage();
     int i, ip;
@@ -3050,7 +3053,7 @@ void MultiSplitThread::bksub_subtrees(NrnThread* _nt) {
     // solve the subtrees
     for (i = backbone_end; i < i3; ++i) {
         ip = _nt->_v_parent_index[i];
-        RHS(i) -= B(i) * RHS(ip);
+        RHS(i) -= vec_b[i] * RHS(ip);
         RHS(i) /= D(i);
     }
 #if 0

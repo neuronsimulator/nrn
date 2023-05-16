@@ -84,20 +84,8 @@ struct NrnThread {
     [[nodiscard]] double* node_d_storage();
     [[nodiscard]] double* node_rhs_storage();
     [[nodiscard]] double* node_voltage_storage();
-    [[nodiscard]] double& actual_a(std::size_t row) {
-        return node_a_storage()[row];
-    }
-    [[nodiscard]] double const& actual_a(std::size_t row) const {
-        return node_a_storage()[row];
-    }
     [[nodiscard]] double& actual_area(std::size_t row) {
         return node_area_storage()[row];
-    }
-    [[nodiscard]] double& actual_b(std::size_t row) {
-        return node_b_storage()[row];
-    }
-    [[nodiscard]] double const& actual_b(std::size_t row) const {
-        return node_b_storage()[row];
     }
     [[nodiscard]] double& actual_d(std::size_t row) {
         return node_d_storage()[row];

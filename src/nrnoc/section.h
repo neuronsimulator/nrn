@@ -109,6 +109,12 @@ struct Node {
     [[nodiscard]] auto id() {
         return _node_handle.id();
     }
+    [[nodiscard]] auto& a() {
+        return _node_handle.a();
+    }
+    [[nodiscard]] auto const& a() const {
+        return _node_handle.a();
+    }
     [[nodiscard]] auto& area() {
         return _node_handle.area_hack();
     }

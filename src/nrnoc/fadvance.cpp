@@ -682,8 +682,8 @@ void nrn_print_matrix(NrnThread* _nt) {
             nd = _nt->_v_node[inode];
             Printf("%d %g %g %g %g\n",
                    inode,
-                   ClassicalNODEB(nd),
-                   ClassicalNODEA(nd),
+                   *nrn_classicalNodeB(nd),
+                   *nrn_classicalNodeA(nd),
                    NODED(nd),
                    NODERHS(nd));
         }
@@ -695,8 +695,8 @@ void nrn_print_matrix(NrnThread* _nt) {
                 Printf("%d %d %g %g %g %g\n",
                        isec,
                        inode,
-                       ClassicalNODEB(nd),
-                       ClassicalNODEA(nd),
+                       *nrn_classicalNodeB(nd),
+                       *nrn_classicalNodeA(nd),
                        NODED(nd),
                        NODERHS(nd));
             }

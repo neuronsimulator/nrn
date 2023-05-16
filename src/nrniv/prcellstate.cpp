@@ -141,9 +141,9 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
                     precision,
                     NODEAREA(nd),
                     precision,
-                    nt.actual_a(i),
+                    nd->a(),
                     precision,
-                    nt.actual_b(i));
+                    nd->b());
         }
     fprintf(f, "inode v\n");
     for (int i = 0; i < nt.end; ++i)

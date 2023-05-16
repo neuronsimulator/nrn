@@ -295,10 +295,10 @@ int nrnthread_dat2_2(int tid,
     // If direct transfer, copy, because target space already allocated
     bool copy = corenrn_direct;
     if (copy) {
+        std::copy_n(nt.node_a_storage(), nt.end, a);
+        std::copy_n(nt.node_b_storage(), nt.end, b);
         for (int i = 0; i < nt.end; ++i) {
             v_parent_index[i] = nt._v_parent_index[i];
-            a[i] = nt.actual_a(i);
-            b[i] = nt.actual_b(i);
             area[i] = nt.actual_area(i);
             v[i] = nt.actual_v(i);
         }

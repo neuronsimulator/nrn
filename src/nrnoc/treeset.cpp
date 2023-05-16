@@ -868,11 +868,11 @@ void connection_coef(void) /* setup a and b */
         Section* sec = hocSEC(qsec);
         // Unnecessary because they are unused, but help when looking at fmatrix.
         if (!sec->parentsec) {
-            if (nrn_classicalNodeA(sec->parentnode)) {
-                ClassicalNODEA(sec->parentnode) = 0.0;
+            if (auto* const ptr = nrn_classicalNodeA(sec->parentnode)) {
+                *ptr = 0.0;
             }
-            if (nrn_classicalNodeB(sec->parentnode)) {
-                ClassicalNODEB(sec->parentnode) = 0.0;
+            if (auto* const ptr = nrn_classicalNodeB(sec->parentnode)) {
+                *ptr = 0.0;
             }
         }
         /* convert to siemens/cm^2 for all nodes except last
@@ -886,11 +886,11 @@ void connection_coef(void) /* setup a and b */
         nd = sec->pnode[0];
         area = NODEAREA(sec->parentnode);
         /* dparam[4] is rall_branch */
-        ClassicalNODEA(nd) = -1.e2 * sec->prop->dparam[4].get<double>() * NODERINV(nd) / area;
+        *nrn_classicalNodeA(nd) = -1.e2 * sec->prop->dparam[4].get<double>() * NODERINV(nd) / area;
         for (j = 1; j < sec->nnode; j++) {
             nd = sec->pnode[j];
             area = NODEAREA(sec->pnode[j - 1]);
-            ClassicalNODEA(nd) = -1.e2 * NODERINV(nd) / area;
+            *nrn_classicalNodeA(nd) = -1.e2 * NODERINV(nd) / area;
         }
     }
     /* now the effect of parent on node equation. */
@@ -899,7 +899,7 @@ void connection_coef(void) /* setup a and b */
         Section* sec = hocSEC(qsec);
         for (j = 0; j < sec->nnode; j++) {
             nd = sec->pnode[j];
-            ClassicalNODEB(nd) = -1.e2 * NODERINV(nd) / NODEAREA(nd);
+            *nrn_classicalNodeB(nd) = -1.e2 * NODERINV(nd) / NODEAREA(nd);
         }
     }
 #if EXTRACELLULAR
