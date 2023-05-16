@@ -79,40 +79,19 @@ static void nrn_init(neuron::model_sorted_token const&, NrnThread* nt, Memb_list
 static void nrn_cur(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_cur\n");
     KSChan* c = (*channels)[type];
-#if CACHEVEC
-    if (use_cachevec) {
-        c->cur(nt, ml);
-    } else
-#endif /* CACHEVEC */
-    {
-        c->cur(ml);
-    }
+    c->cur(nt, ml);
 }
 
 static void nrn_jacob(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_jacob\n");
     KSChan* c = (*channels)[type];
-#if CACHEVEC
-    if (use_cachevec) {
-        c->jacob(nt, ml);
-    } else
-#endif /* CACHEVEC */
-    {
-        c->jacob(ml);
-    }
+    c->jacob(nt, ml);
 }
 
 static void nrn_state(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_state\n");
     KSChan* c = (*channels)[type];
-#if CACHEVEC
-    if (use_cachevec) {
-        c->state_cachevec(nt, ml);
-    } else
-#endif /* CACHEVEC */
-    {
-        c->state(nt, ml);
-    }
+    c->state(nt, ml);
 }
 
 static int ode_count(int type) {
@@ -2543,73 +2522,14 @@ void KSChan::init(NrnThread* nt, Memb_list* ml) {
     }
 }
 
-void KSChan::state(NrnThread* nt, Memb_list* ml) {
-    int n = ml->nodecount;
-    Node** nd = ml->nodelist;
-    Datum** ppd = ml->pdata;
-    int i, j;
-    double* s;
-    if (nstate_) {
-        for (i = 0; i < n; ++i) {
-            if (is_single() && ml->data(i, NSingleIndex) > .999) {
-                single_->state(nd[i], ppd[i], nt);
-                continue;
-            }
-            double v = NODEV(nd[i]);
-            auto offset = soffset_;
-            if (usetable_) {
-                double inf, tau;
-                int k;
-                double x, y;
-                x = (v - vmin_) * dvinv_;
-                y = floor(x);
-                k = int(y);
-                x -= y;
-                if (k < 0) {
-                    for (j = 0; j < nhhstate_; ++j) {
-                        trans_[j].inftau_hh_table(0, inf, tau);
-                        ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
-                    }
-                } else if (k >= hh_tab_size_) {
-                    for (j = 0; j < nhhstate_; ++j) {
-                        trans_[j].inftau_hh_table(hh_tab_size_ - 1, inf, tau);
-                        ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
-                    }
-                } else {
-                    for (j = 0; j < nhhstate_; ++j) {
-                        trans_[j].inftau_hh_table(k, x, inf, tau);
-                        ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
-                    }
-                }
-            } else {
-                for (j = 0; j < nhhstate_; ++j) {
-                    double inf, tau;
-                    trans_[j].inftau(v, inf, tau);
-                    tau = 1. - KSChanFunction::Exp(-nt->_dt / tau);
-                    ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
-                }
-            }
-            if (nksstate_) {
-                offset += nhhstate_;
-                fillmat(v, ppd[i]);
-                mat_dt(nt->_dt, ml, i, offset);
-                solvemat(ml, i, offset);
-            }
-        }
-    }
-}
-
-#if CACHEVEC
-void KSChan::state_cachevec(NrnThread* _nt, Memb_list* ml) {
+void KSChan::state(NrnThread* _nt, Memb_list* ml) {
     int n = ml->nodecount;
     int* ni = ml->nodeindices;
     Node** nd = ml->nodelist;
     Datum** ppd = ml->pdata;
-    int i, j;
-    double* s;
     auto* const vec_v = _nt->node_voltage_storage();
     if (nstate_) {
-        for (i = 0; i < n; ++i) {
+        for (int i = 0; i < n; ++i) {
             if (is_single() && ml->data(i, NSingleIndex) > .999) {
                 single_->state(nd[i], ppd[i], _nt);
                 continue;
@@ -2617,31 +2537,31 @@ void KSChan::state_cachevec(NrnThread* _nt, Memb_list* ml) {
             double v = vec_v[ni[i]];
             auto offset = soffset_;
             if (usetable_) {
-                double inf, tau;
-                int k;
-                double x, y;
-                x = (v - vmin_) * dvinv_;
-                y = floor(x);
-                k = int(y);
+                auto x = (v - vmin_) * dvinv_;
+                auto const y = floor(x);
+                auto const k = static_cast<int>(y);
                 x -= y;
                 if (k < 0) {
-                    for (j = 0; j < nhhstate_; ++j) {
+                    for (int j = 0; j < nhhstate_; ++j) {
+                        double inf, tau;
                         trans_[j].inftau_hh_table(0, inf, tau);
                         ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
                     }
                 } else if (k >= hh_tab_size_) {
-                    for (j = 0; j < nhhstate_; ++j) {
+                    for (int j = 0; j < nhhstate_; ++j) {
+                        double inf, tau;
                         trans_[j].inftau_hh_table(hh_tab_size_ - 1, inf, tau);
                         ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
                     }
                 } else {
-                    for (j = 0; j < nhhstate_; ++j) {
+                    for (int j = 0; j < nhhstate_; ++j) {
+                        double inf, tau;
                         trans_[j].inftau_hh_table(k, x, inf, tau);
                         ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
                     }
                 }
             } else {
-                for (j = 0; j < nhhstate_; ++j) {
+                for (int j = 0; j < nhhstate_; ++j) {
                     double inf, tau;
                     trans_[j].inftau(v, inf, tau);
                     tau = 1. - KSChanFunction::Exp(-_nt->_dt / tau);
@@ -2657,49 +2577,21 @@ void KSChan::state_cachevec(NrnThread* _nt, Memb_list* ml) {
         }
     }
 }
-#endif /* CACHEVEC */
 
-void KSChan::cur(Memb_list* ml) {
-    int n = ml->nodecount;
-    Node** nd = ml->nodelist;
-    Datum** ppd = ml->pdata;
-    int i;
-    for (i = 0; i < n; ++i) {
-        double g, ic;
-        g = conductance(ml->data(i, gmaxoffset_), ml, i, soffset_);
-        ic = iv_relation_->cur(g, ppd[i], NODEV(nd[i]), ml, i, gmaxoffset_);
-        NODERHS(nd[i]) -= ic;
-    }
-}
-
-#if CACHEVEC
 void KSChan::cur(NrnThread* _nt, Memb_list* ml) {
     auto* const vec_rhs = _nt->node_rhs_storage();
     auto* const vec_v = _nt->node_voltage_storage();
     int n = ml->nodecount;
     int* nodeindices = ml->nodeindices;
     Datum** ppd = ml->pdata;
-    int i;
-    for (i = 0; i < n; ++i) {
-        double g, ic;
-        int ni = nodeindices[i];
-        g = conductance(ml->data(i, gmaxoffset_), ml, i, soffset_);
-        ic = iv_relation_->cur(g, ppd[i], vec_v[ni], ml, i, gmaxoffset_);
+    for (int i = 0; i < n; ++i) {
+        auto const ni = nodeindices[i];
+        auto const g = conductance(ml->data(i, gmaxoffset_), ml, i, soffset_);
+        auto const ic = iv_relation_->cur(g, ppd[i], vec_v[ni], ml, i, gmaxoffset_);
         vec_rhs[ni] -= ic;
     }
 }
-#endif /* CACHEVEC */
 
-void KSChan::jacob(Memb_list* ml) {
-    int n = ml->nodecount;
-    Node** nd = ml->nodelist;
-    Datum** ppd = ml->pdata;
-    for (int i = 0; i < n; ++i) {
-        NODED(nd[i]) += iv_relation_->jacob(ppd[i], NODEV(nd[i]), ml, i, gmaxoffset_);
-    }
-}
-
-#if CACHEVEC
 void KSChan::jacob(NrnThread* _nt, Memb_list* ml) {
     int n = ml->nodecount;
     Datum** ppd = ml->pdata;
@@ -2710,7 +2602,6 @@ void KSChan::jacob(NrnThread* _nt, Memb_list* ml) {
         vec_d[ni] += iv_relation_->jacob(ppd[i], vec_v[ni], ml, i, gmaxoffset_);
     }
 }
-#endif /* CACHEVEC */
 
 double KSIv::cur(double g,
                  Datum* pd,

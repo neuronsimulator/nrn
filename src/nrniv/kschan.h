@@ -344,14 +344,9 @@ class KSChan {
     virtual ~KSChan() {}
     virtual void alloc(Prop*);
     virtual void init(NrnThread*, Memb_list*);
-    virtual void cur(Memb_list*);
-    virtual void jacob(Memb_list*);
     virtual void state(NrnThread*, Memb_list*);
-#if CACHEVEC != 0
     virtual void cur(NrnThread*, Memb_list*);
     virtual void jacob(NrnThread*, Memb_list*);
-    virtual void state_cachevec(NrnThread*, Memb_list*);
-#endif /* CACHEVEC */
     void add_channel(const char**);
     // for cvode
     virtual int count();
