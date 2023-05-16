@@ -77,24 +77,16 @@ struct NrnThread {
     std::size_t _node_data_offset{};
 
     [[nodiscard]] double* node_a_storage();
-    [[nodiscard]] double const* node_a_storage() const;
     [[nodiscard]] double* node_area_storage();
     [[nodiscard]] double* node_b_storage();
-    [[nodiscard]] double const* node_b_storage() const;
     [[nodiscard]] double* node_d_storage();
     [[nodiscard]] double* node_rhs_storage();
     [[nodiscard]] double* node_voltage_storage();
-    [[nodiscard]] double& actual_area(std::size_t row) {
-        return node_area_storage()[row];
-    }
     [[nodiscard]] double& actual_d(std::size_t row) {
         return node_d_storage()[row];
     }
     [[nodiscard]] double& actual_rhs(std::size_t row) {
         return node_rhs_storage()[row];
-    }
-    [[nodiscard]] double& actual_v(std::size_t row) {
-        return node_voltage_storage()[row];
     }
 
     int* _v_parent_index;

@@ -1109,22 +1109,12 @@ double* NrnThread::node_a_storage() {
         _node_data_offset);
 }
 
-double const* NrnThread::node_a_storage() const {
-    return &neuron::model().node_data().get<neuron::container::Node::field::AboveDiagonal>(
-        _node_data_offset);
-}
-
 double* NrnThread::node_area_storage() {
     return &neuron::model().node_data().get<neuron::container::Node::field::Area>(
         _node_data_offset);
 }
 
 double* NrnThread::node_b_storage() {
-    return &neuron::model().node_data().get<neuron::container::Node::field::BelowDiagonal>(
-        _node_data_offset);
-}
-
-double const* NrnThread::node_b_storage() const {
     return &neuron::model().node_data().get<neuron::container::Node::field::BelowDiagonal>(
         _node_data_offset);
 }

@@ -1658,8 +1658,8 @@ void MultiSplitControl::rt_map_update() {
         Area2RT& art = area2rt_[i];
         MultiSplit& ms = *art.ms;
         NrnThread* _nt = nrn_threads + ms.ithread;
-        art.pd[0] = &_nt->actual_d(art.inode);
-        art.pd[1] = &_nt->actual_rhs(art.inode);
+        art.pd[0] = _nt->node_d_storage() + art.inode;
+        art.pd[1] = _nt->node_rhs_storage() + art.inode;
         if (art.n == 3) {
             MultiSplitThread& t = mth_[ms.ithread];
             if (art.inode == ms.nd[0]->v_node_index) {
@@ -2166,7 +2166,7 @@ nrnmpi_myid, mt.host_, jj, tbuf[jj]);
     for (i = 0; i < narea2buf_; ++i) {
         Area2Buf& ab = area2buf_[i];
         _nt = nrn_threads + ab.ms->ithread;
-        double afac = 0.01 * _nt->actual_area(ab.inode);
+        double afac = 0.01 * _nt->node_area_storage()[ab.inode];
         tbuf = tsendbuf_;
         for (j = 0; j < ab.n; ++j) {
             tbuf[ab.ibuf[j]] *= afac;
@@ -2223,7 +2223,7 @@ for (i=0; i < tbsize_; ++i) { printf("%d trecvbuf[%d] = %g\n", nrnmpi_myid, i, t
     for (i = 0; i < narea2rt_; ++i) {
         Area2RT& ar = area2rt_[i];
         NrnThread* _nt = nrn_threads + ar.ms->ithread;
-        double afac = 0.01 * _nt->actual_area(ar.inode);
+        double afac = 0.01 * _nt->node_area_storage()[ar.inode];
         for (j = 0; j < ar.n; ++j) {
             *ar.pd[j] *= afac;
         }

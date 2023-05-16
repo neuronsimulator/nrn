@@ -477,10 +477,11 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     auto* const vec_v = nt.node_voltage_storage();
     auto* const parent_i = nt._v_parent_index;
     for (i = i2; i < i3; ++i) {
-        auto const dv = vec_v[parent_i[i]] - vec_v[i];
+        auto const pi = parent_i[i];
+        auto const dv = vec_v[pi] - vec_v[i];
         // our connection coefficients are negative so
         vec_rhs[i] -= vec_b[i] * dv;
-        vec_rhs[parent_i[i]] += vec_a[i] * dv;
+        vec_rhs[pi] += vec_a[i] * dv;
     }
 }
 

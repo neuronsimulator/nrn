@@ -297,11 +297,9 @@ int nrnthread_dat2_2(int tid,
     if (copy) {
         std::copy_n(nt.node_a_storage(), nt.end, a);
         std::copy_n(nt.node_b_storage(), nt.end, b);
-        for (int i = 0; i < nt.end; ++i) {
-            v_parent_index[i] = nt._v_parent_index[i];
-            area[i] = nt.actual_area(i);
-            v[i] = nt.actual_v(i);
-        }
+        std::copy_n(nt.node_area_storage(), nt.end, area);
+        std::copy_n(nt.node_voltage_storage(), nt.end, v);
+        std::copy_n(nt._v_parent_index, nt.end, v_parent_index);
     } else {
         v_parent_index = nt._v_parent_index;
         auto const cache_token = nrn_ensure_model_data_are_sorted();

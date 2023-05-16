@@ -411,8 +411,9 @@ static void triang(NrnThread* _nt) {
     auto* const vec_rhs = _nt->node_rhs_storage();
     for (i = i3 - 1; i >= i2; --i) {
         auto const p = vec_a[i] / vec_d[i];
-        vec_d[_nt->_v_parent_index[i]] -= p * vec_b[i];
-        vec_rhs[_nt->_v_parent_index[i]] -= p * vec_rhs[i];
+        auto const pi = _nt->_v_parent_index[i];
+        vec_d[pi] -= p * vec_b[i];
+        vec_rhs[pi] -= p * vec_rhs[i];
     }
 }
 
