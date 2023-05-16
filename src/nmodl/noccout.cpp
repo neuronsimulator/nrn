@@ -59,36 +59,10 @@ static void ext_vdef() {
         P(" }else\n");
         P("#endif\n");
         P(" {\n");
-#if CACHEVEC == 0
-        P("    _v = NODEV(_nd);\n");
-#else
-        P("#if CACHEVEC\n");
-        P("  if (use_cachevec) {\n");
-        P("    _v = _vec_v[_ni[_iml]];\n");
-        P("  }else\n");
-        P("#endif\n");
-        P("  {\n");
-        P("    _nd = _ml_arg->_nodelist[_iml];\n");
-        P("    _v = NODEV(_nd);\n");
-        P("  }\n");
-#endif
-
+        P("   _v = _vec_v[_ni[_iml]];\n");
         P(" }\n");
     } else {
-#if CACHEVEC == 0
-        P(" _nd = _ml_arg->_nodelist[_iml];\n");
-        P(" _v = NODEV(_nd);\n");
-#else
-        P("#if CACHEVEC\n");
-        P("  if (use_cachevec) {\n");
-        P("    _v = _vec_v[_ni[_iml]];\n");
-        P("  }else\n");
-        P("#endif\n");
-        P("  {\n");
-        P("    _nd = _ml_arg->_nodelist[_iml];\n");
-        P("    _v = NODEV(_nd);\n");
-        P("  }\n");
-#endif
+        P("   _v = _vec_v[_ni[_iml]];\n");
     }
 }
 
@@ -254,38 +228,16 @@ void c_out() {
                 P(" _rhs *= 1.e2/(_nd_area);\n");
             }
             if (electrode_current) {
-#if CACHEVEC == 0
-                P("	NODERHS(_nd) += _rhs;\n");
-#else
-                P("#if CACHEVEC\n");
-                P("  if (use_cachevec) {\n");
-                P("	   _vec_rhs[_ni[_iml]] += _rhs;\n");
-                P("  }else\n");
-                P("#endif\n");
-                P("  {\n");
-                P("	NODERHS(_nd) += _rhs;\n");
-                P("  }\n");
+                P("	 _vec_rhs[_ni[_iml]] += _rhs;\n");
                 P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_rhs[_ni[_iml]] += "
                   "_rhs; }\n");
-#endif
                 P("#if EXTRACELLULAR\n");
                 P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
                 P("   *_extnode->_rhs[0] += _rhs;\n");
                 P(" }\n");
                 P("#endif\n");
             } else {
-#if CACHEVEC == 0
-                P("	NODERHS(_nd) -= _rhs;\n");
-#else
-                P("#if CACHEVEC\n");
-                P("  if (use_cachevec) {\n");
-                P("	   _vec_rhs[_ni[_iml]] -= _rhs;\n");
-                P("  }else\n");
-                P("#endif\n");
-                P("  {\n");
-                P("	NODERHS(_nd) -= _rhs;\n");
-                P("  }\n");
-#endif
+                P("	 _vec_rhs[_ni[_iml]] -= _rhs;\n");
             }
         }
         P(" \n}}\n");
@@ -305,38 +257,15 @@ void c_out() {
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
         if (electrode_current) {
             P(" _nd = _ml_arg->_nodelist[_iml];\n");
-#if CACHEVEC == 0
-            P("	NODED(_nd) -= _g;\n");
-#else
-            P("#if CACHEVEC\n");
-            P("  if (use_cachevec) {\n");
-            P("    _vec_d[_ni[_iml]] -= _g;\n");
-            P("  }else\n");
-            P("#endif\n");
-            P("  {\n");
-            P("	NODED(_nd) -= _g;\n");
-            P("  }\n");
+            P("  _vec_d[_ni[_iml]] -= _g;\n");
             P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_d[_ni[_iml]] -= _g; }\n");
-#endif
             P("#if EXTRACELLULAR\n");
             P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
             P("   *_extnode->_d[0] += _g;\n");
             P(" }\n");
             P("#endif\n");
         } else {
-#if CACHEVEC == 0
-            P("	NODED(_nd) += _g;\n");
-#else
-            P("#if CACHEVEC\n");
-            P("  if (use_cachevec) {\n");
-            P("    _vec_d[_ni[_iml]] += _g;\n");
-            P("  }else\n");
-            P("#endif\n");
-            P("  {\n");
-            P("     _nd = _ml_arg->_nodelist[_iml];\n");
-            P("	NODED(_nd) += _g;\n");
-            P("  }\n");
-#endif
+            P("  _vec_d[_ni[_iml]] += _g;\n");
         }
         P(" \n}}\n");
     }
@@ -711,38 +640,16 @@ void c_out_vectorize() {
                 P(" _rhs *= 1.e2/(_nd_area);\n");
             }
             if (electrode_current) {
-#if CACHEVEC == 0
-                P("	NODERHS(_nd) += _rhs;\n");
-#else
-                P("#if CACHEVEC\n");
-                P("  if (use_cachevec) {\n");
-                P("	   _vec_rhs[_ni[_iml]] += _rhs;\n");
-                P("  }else\n");
-                P("#endif\n");
-                P("  {\n");
-                P("	NODERHS(_nd) += _rhs;\n");
-                P("  }\n");
+                P("	 _vec_rhs[_ni[_iml]] += _rhs;\n");
                 P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_rhs[_ni[_iml]] += "
                   "_rhs; }\n");
-#endif
                 P("#if EXTRACELLULAR\n");
                 P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
                 P("   *_extnode->_rhs[0] += _rhs;\n");
                 P(" }\n");
                 P("#endif\n");
             } else {
-#if CACHEVEC == 0
-                P("	NODERHS(_nd) -= _rhs;\n");
-#else
-                P("#if CACHEVEC\n");
-                P("  if (use_cachevec) {\n");
-                P("	   _vec_rhs[_ni[_iml]] -= _rhs;\n");
-                P("  }else\n");
-                P("#endif\n");
-                P("  {\n");
-                P("	NODERHS(_nd) -= _rhs;\n");
-                P("  }\n");
-#endif
+                P("	 _vec_rhs[_ni[_iml]] -= _rhs;\n");
             }
         }
         P(" \n}\n");
@@ -764,38 +671,15 @@ void c_out_vectorize() {
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
         if (electrode_current) {
             P(" _nd = _ml_arg->_nodelist[_iml];\n");
-#if CACHEVEC == 0
-            P("	NODED(_nd) -= _g;\n");
-#else
-            P("#if CACHEVEC\n");
-            P("  if (use_cachevec) {\n");
-            P("    _vec_d[_ni[_iml]] -= _g;\n");
-            P("  }else\n");
-            P("#endif\n");
-            P("  {\n");
-            P("	NODED(_nd) -= _g;\n");
-            P("  }\n");
+            P("  _vec_d[_ni[_iml]] -= _g;\n");
             P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_d[_ni[_iml]] -= _g; }\n");
-#endif
             P("#if EXTRACELLULAR\n");
             P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
             P("   *_extnode->_d[0] += _g;\n");
             P(" }\n");
             P("#endif\n");
         } else {
-#if CACHEVEC == 0
-            P("	NODED(_nd) += _g;\n");
-#else
-            P("#if CACHEVEC\n");
-            P("  if (use_cachevec) {\n");
-            P("    _vec_d[_ni[_iml]] += _g;\n");
-            P("  }else\n");
-            P("#endif\n");
-            P("  {\n");
-            P("     _nd = _ml_arg->_nodelist[_iml];\n");
-            P("	NODED(_nd) += _g;\n");
-            P("  }\n");
-#endif
+            P("  _vec_d[_ni[_iml]] += _g;\n");
         }
         P(" \n}\n");
         P(" \n}\n");

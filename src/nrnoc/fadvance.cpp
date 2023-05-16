@@ -575,36 +575,19 @@ void nrn_update_voltage(neuron::model_sorted_token const& sorted_token, NrnThrea
     int i, i1, i2;
     i1 = 0;
     i2 = _nt->end;
-#if CACHEVEC
-    if (use_cachevec) {
-        /* do not need to worry about linmod or extracellular*/
-        if (secondorder) {
-            for (i = i1; i < i2; ++i) {
-                vec_v[i] += 2. * vec_rhs[i];
-            }
-        } else {
-            for (i = i1; i < i2; ++i) {
-                vec_v[i] += vec_rhs[i];
-            }
+    /* do not need to worry about linmod or extracellular*/
+    if (secondorder) {
+        for (i = i1; i < i2; ++i) {
+            vec_v[i] += 2. * vec_rhs[i];
         }
-    } else
-#endif
-    { /* use original non-vectorized update */
-        if (secondorder) {
-            for (i = i1; i < i2; ++i) {
-                auto* node = _nt->_v_node[i];
-                node->v() += 2. * NODERHS(node);
-            }
-        } else {
-            for (i = i1; i < i2; ++i) {
-                auto* node = _nt->_v_node[i];
-                node->v() += NODERHS(_nt->_v_node[i]);
-            }
-            if (use_sparse13) {
-                nrndae_update(_nt);
-            }
+    } else {
+        for (i = i1; i < i2; ++i) {
+            vec_v[i] += vec_rhs[i];
         }
-    } /* end of non-vectorized update */
+    }
+    if (!use_cachevec && use_sparse13) {
+        nrndae_update(_nt);
+    }
 
 #if EXTRACELLULAR
     nrn_update_2d(_nt);
