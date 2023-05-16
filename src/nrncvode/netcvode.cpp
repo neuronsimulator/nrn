@@ -1438,9 +1438,7 @@ void CvodeThreadData::delete_memb_list(CvMembList* cmlist) {
         cmlnext = cml->next;
         for (auto& ml: cml->ml) {
             delete[] std::exchange(ml.nodelist, nullptr);
-#if CACHEVEC
             delete[] std::exchange(ml.nodeindices, nullptr);
-#endif
             delete[] std::exchange(ml.prop, nullptr);
             if (!memb_func[cml->index].hoc_mech) {
                 delete[] std::exchange(ml.pdata, nullptr);
@@ -1620,9 +1618,7 @@ bool NetCvode::init_global() {
                     cml->ml[0].nodecount = ml->nodecount;
                     // assumes cell info grouped contiguously
                     cml->ml[0].nodelist = ml->nodelist;
-#if CACHEVEC
                     cml->ml[0].nodeindices = ml->nodeindices;
-#endif
                     assert(ml->prop);
                     cml->ml[0].prop = ml->prop;  // used for ode_map even when hoc_mech = false
                     if (!mf->hoc_mech) {
@@ -1789,9 +1785,7 @@ bool NetCvode::init_global() {
                         newml.nodecount = 1;
                         newml.nodelist = new Node*[1];
                         newml.nodelist[0] = ml->nodelist[j];
-#if CACHEVEC
                         newml.nodeindices = new int[1]{ml->nodeindices[j]};
-#endif
                         newml.prop = new Prop* [1] { ml->prop[j] };
                         if (!mf->hoc_mech) {
                             newml.set_storage_offset(ml->get_storage_offset() + j);
@@ -6767,7 +6761,6 @@ double NetCvode::maxstate_analyse(Symbol* sym, double* pamax) {
 }
 
 void NetCvode::recalc_ptrs() {
-#if CACHEVEC
     // update PlayRecord pointers to v
     int cnt = prl_->count();
     for (int i = 0; i < cnt; ++i) {
@@ -6776,7 +6769,6 @@ void NetCvode::recalc_ptrs() {
             pr->update_ptr(pr->pd_);
         }
     }
-#endif
 }
 
 static double lvardt_tout_;

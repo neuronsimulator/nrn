@@ -559,9 +559,7 @@ void NonLinImpRep::current(int im, Memb_list* ml, int in) {  // assume there is 
                                                              // method
     // fake a 1 element memb_list
     Memb_list mfake{im};
-#if CACHEVEC != 0
     mfake.nodeindices = ml->nodeindices + in;
-#endif
     mfake.nodelist = ml->nodelist + in;
     mfake.set_storage_offset(ml->get_storage_offset());
     mfake.pdata = ml->pdata + in;

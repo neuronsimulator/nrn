@@ -50,16 +50,12 @@ extern void nrn_define_shape();
 void (*nrn_multisplit_setup_)();
 #endif
 
-#if CACHEVEC
-
-
 /* a, b, d and rhs are, from now on, all stored in extra arrays, to improve
  * cache efficiency in nrn_lhs() and nrn_rhs(). Formerly, three levels of
  * indirection were necessary for accessing these elements, leading to lots
  * of L2 misses.  2006-07-05/Hubert Eichner */
 /* these are now thread instance arrays */
 static void nrn_recalc_node_ptrs();
-#endif /* CACHEVEC */
 
 /*
 Do not use unless necessary (loops in tree structure) since overhead
@@ -1634,9 +1630,7 @@ void v_setup_vectors(void) {
             if (memb_list[i].nodecount) {
                 memb_list[i].nodecount = 0;
                 free(memb_list[i].nodelist);
-#if CACHEVEC
-                free((void*) memb_list[i].nodeindices);
-#endif /* CACHEVEC */
+                free(memb_list[i].nodeindices);
                 delete[] memb_list[i].prop;
                 if (!memb_func[i].hoc_mech) {
                     // free(memb_list[i]._data);
@@ -1660,9 +1654,7 @@ void v_setup_vectors(void) {
         if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
             if (memb_list[i].nodecount) {
                 memb_list[i].nodelist = (Node**) emalloc(memb_list[i].nodecount * sizeof(Node*));
-#if CACHEVEC
                 memb_list[i].nodeindices = (int*) emalloc(memb_list[i].nodecount * sizeof(int));
-#endif /* CACHEVEC */
                 // Prop used by ode_map even when hoc_mech is false
                 memb_list[i].prop = new Prop*[memb_list[i].nodecount];
                 if (!memb_func[i].hoc_mech) {
@@ -1698,7 +1690,6 @@ void v_setup_vectors(void) {
     reorder_secorder();
 #endif
 
-#if CACHEVEC
     FOR_THREADS(_nt) {
         for (inode = 0; inode < _nt->end; inode++) {
             if (_nt->_v_parent[inode] != NULL) {
@@ -1706,8 +1697,6 @@ void v_setup_vectors(void) {
             }
         }
     }
-
-#endif /* CACHEVEC */
 
     nrn_thread_memblist_setup();
 
@@ -1987,14 +1976,7 @@ static void nrn_matrix_node_alloc(void) {
             // used to return here if the cache-efficient structures for a/b/... were non-null
         }
     }
-/*printf("nrn_matrix_node_alloc does its work\n");*/
-#if CACHEVEC
     nrn_recalc_node_ptrs();
-#endif /* CACHEVEC */
-
-#if 0
-printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d\n", use_sparse13, cvode_active_, nrn_use_daspk_);
-#endif
     ++nrn_matrix_cnt_;
     if (use_sparse13) {
         int in, err, extn, neqn, j;
@@ -2061,7 +2043,6 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
     }
 }
 
-#if CACHEVEC
 /*
 Pointers that need to be updated are:
 All Point process area pointers.
@@ -2381,5 +2362,3 @@ void nrn_recalc_node_ptrs() {
     nrn_recalc_ptrvector();
     nrn_imem_defer_free(nullptr);
 }
-
-#endif /* CACHEVEC */

@@ -321,9 +321,7 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
                     newml.nodecount = 1;
                     newml.nodelist = new Node* [1] { ml.nodelist[i] };
                     assert(newml.nodelist[0] == ml.nodelist[i]);
-#if CACHEVEC
                     newml.nodeindices = new int[1]{ml.nodeindices[i]};
-#endif
                     newml.prop = new Prop* [1] { ml.prop[i] };
                     if (!mf->hoc_mech) {
                         // Danger: this is not stable w.r.t. permutation

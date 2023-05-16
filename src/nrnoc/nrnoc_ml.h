@@ -1,6 +1,4 @@
 #pragma once
-#include "options.h"  // CACHEVEC
-
 #include <cstddef>  // std::ptrdiff_t, std::size_t
 #include <limits>   // std::numeric_limits
 #include <vector>   // std::vector
@@ -48,14 +46,12 @@ struct Memb_list {
     Memb_list(int type);
 
     Node** nodelist{};
-#if CACHEVEC != 0
     /* nodeindices contains all nodes this extension is responsible for,
      * ordered according to the matrix. This allows to access the matrix
      * directly via the nrn_actual_* arrays instead of accessing it in the
      * order of insertion and via the node-structure, making it more
      * cache-efficient */
     int* nodeindices{};
-#endif /* CACHEVEC */
     Datum** pdata{};
     Prop** prop{};
     Datum* _thread{}; /* thread specific data (when static is no good) */

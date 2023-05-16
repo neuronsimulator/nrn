@@ -5,8 +5,6 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
-#define CACHEVEC 1
-
 extern char* nmodl_version_;
 
 #define P(arg) fputs(arg, fcout)
@@ -150,9 +148,7 @@ void c_out() {
     P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
     P("auto* const _vec_v = _nt->node_voltage_storage();\n");
     P("_ml = &_lmr;\n");  // update global _ml
-    P("#if CACHEVEC\n");
-    P("    _ni = _ml_arg->_nodeindices;\n");
-    P("#endif\n");
+    P("_ni = _ml_arg->_nodeindices;\n");
     P("_cntml = _ml_arg->_nodecount;\n");
     P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");  // use global _iml
     P(" _ppvar = _ml_arg->_pdata[_iml];\n");
@@ -196,9 +192,7 @@ void c_out() {
         P("auto* const _vec_v = _nt->node_voltage_storage();\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _cntml;\n");
         P("_ml = &_lmr;\n");  // update global _ml
-        P("#if CACHEVEC\n");
-        P("    _ni = _ml_arg->_nodeindices;\n");
-        P("#endif\n");
+        P("_ni = _ml_arg->_nodeindices;\n");
         P("_cntml = _ml_arg->_nodecount;\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");  // global _iml
         P(" _ppvar = _ml_arg->_pdata[_iml];\n");
@@ -250,9 +244,7 @@ void c_out() {
         P("auto* const _vec_d = _nt->node_d_storage();\n");
         P("auto* const _ml = &_lmr;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
-        P("#if CACHEVEC\n");
-        P("    _ni = _ml_arg->_nodeindices;\n");
-        P("#endif\n");
+        P("_ni = _ml_arg->_nodeindices;\n");
         P("_cntml = _ml_arg->_nodecount;\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
         if (electrode_current) {
@@ -283,9 +275,7 @@ void c_out() {
         P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("auto* const _vec_v = _nt->node_voltage_storage();\n");
         P("_ml = &_lmr;\n");  // update global _ml
-        P("#if CACHEVEC\n");
-        P("    _ni = _ml_arg->_nodeindices;\n");
-        P("#endif\n");
+        P("_ni = _ml_arg->_nodeindices;\n");
         P("_cntml = _ml_arg->_nodecount;\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");  // use the global _iml
         P(" _ppvar = _ml_arg->_pdata[_iml];\n");
@@ -534,9 +524,7 @@ void c_out_vectorize() {
     P("auto* const _ml = &_lmr;\n");
     P("Datum* _ppvar; Datum* _thread;\n");
     P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
-    P("#if CACHEVEC\n");
-    P("    _ni = _ml_arg->_nodeindices;\n");
-    P("#endif\n");
+    P("_ni = _ml_arg->_nodeindices;\n");
     P("_cntml = _ml_arg->_nodecount;\n");
     P("_thread = _ml_arg->_thread;\n");
     /*check_tables();*/
@@ -597,9 +585,7 @@ void c_out_vectorize() {
         P("auto* const _ml = &_lmr;\n");
         P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
-        P("#if CACHEVEC\n");
-        P("    _ni = _ml_arg->_nodeindices;\n");
-        P("#endif\n");
+        P("_ni = _ml_arg->_nodeindices;\n");
         P("_cntml = _ml_arg->_nodecount;\n");
         P("_thread = _ml_arg->_thread;\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
@@ -663,9 +649,7 @@ void c_out_vectorize() {
         P("auto* const _ml = &_lmr;\n");
         P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
-        P("#if CACHEVEC\n");
-        P("    _ni = _ml_arg->_nodeindices;\n");
-        P("#endif\n");
+        P("_ni = _ml_arg->_nodeindices;\n");
         P("_cntml = _ml_arg->_nodecount;\n");
         P("_thread = _ml_arg->_thread;\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
@@ -699,9 +683,7 @@ void c_out_vectorize() {
             P("double _dtsav = dt;\n"
               "if (secondorder) { dt *= 0.5; }\n");
         }
-        P("#if CACHEVEC\n");
-        P("    _ni = _ml_arg->_nodeindices;\n");
-        P("#endif\n");
+        P("_ni = _ml_arg->_nodeindices;\n");
         P("size_t _cntml = _ml_arg->_nodecount;\n");
         P("_thread = _ml_arg->_thread;\n");
         P("for (size_t _iml = 0; _iml < _cntml; ++_iml) {\n");
