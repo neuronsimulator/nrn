@@ -627,18 +627,12 @@ void nrn_calc_fast_imem(NrnThread* _nt) {
     int i;
     int i1 = 0;
     int i3 = _nt->end;
+    auto* const vec_area = _nt->node_area_storage();
     auto* const vec_rhs = _nt->node_rhs_storage();
     double* pd = _nt->_nrn_fast_imem->_nrn_sav_d;
     double* prhs = _nt->_nrn_fast_imem->_nrn_sav_rhs;
-    if (use_cachevec) {
-        for (i = i1; i < i3; ++i) {
-            prhs[i] = (pd[i] * vec_rhs[i] + prhs[i]) * VEC_AREA(i) * 0.01;
-        }
-    } else {
-        for (i = i1; i < i3; ++i) {
-            Node* nd = _nt->_v_node[i];
-            prhs[i] = (pd[i] * NODERHS(nd) + prhs[i]) * NODEAREA(nd) * 0.01;
-        }
+    for (i = i1; i < i3; ++i) {
+        prhs[i] = (pd[i] * vec_rhs[i] + prhs[i]) * vec_area[i] * 0.01;
     }
 }
 
@@ -656,16 +650,10 @@ void nrn_calc_fast_imem_fixedstep_init(NrnThread* _nt) {
     int i1 = 0;
     int i3 = _nt->end;
     double* prhs = _nt->_nrn_fast_imem->_nrn_sav_rhs;
+    auto* const vec_area = _nt->node_area_storage();
     auto* const vec_rhs = _nt->node_rhs_storage();
-    if (use_cachevec) {
-        for (i = i1; i < i3; ++i) {
-            prhs[i] = (vec_rhs[i] + prhs[i]) * VEC_AREA(i) * 0.01;
-        }
-    } else {
-        for (i = i1; i < i3; ++i) {
-            Node* nd = _nt->_v_node[i];
-            prhs[i] = (NODERHS(nd) + prhs[i]) * NODEAREA(nd) * 0.01;
-        }
+    for (i = i1; i < i3; ++i) {
+        prhs[i] = (vec_rhs[i] + prhs[i]) * vec_area[i] * 0.01;
     }
 }
 

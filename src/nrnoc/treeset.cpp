@@ -494,27 +494,15 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     The extracellular mechanism contribution is already done.
         rhs += ai_j*(vi_j - vi)
     */
-#if CACHEVEC
-    if (use_cachevec) {
-        auto* const actual_v = &(nt.actual_v(0));
-        auto* const parent_i = nt._v_parent_index;
-        for (i = i2; i < i3; ++i) {
-            auto const dv = actual_v[parent_i[i]] - actual_v[i];
-            /* our connection coefficients are negative so */
-            vec_rhs[i] -= VEC_B(i) * dv;
-            vec_rhs[parent_i[i]] += VEC_A(i) * dv;
-        }
-    } else
-#endif /* CACHEVEC */
-    {
-        for (i = i2; i < i3; ++i) {
-            Node* nd = _nt->_v_node[i];
-            Node* pnd = _nt->_v_parent[i];
-            double dv = NODEV(pnd) - NODEV(nd);
-            /* our connection coefficients are negative so */
-            NODERHS(nd) -= NODEB(nd) * dv;
-            NODERHS(pnd) += NODEA(nd) * dv;
-        }
+    auto* const vec_a = nt.node_a_storage();
+    auto* const vec_b = nt.node_b_storage();
+    auto* const vec_v = nt.node_voltage_storage();
+    auto* const parent_i = nt._v_parent_index;
+    for (i = i2; i < i3; ++i) {
+        auto const dv = vec_v[parent_i[i]] - vec_v[i];
+        // our connection coefficients are negative so
+        vec_rhs[i] -= vec_b[i] * dv;
+        vec_rhs[parent_i[i]] += vec_a[i] * dv;
     }
 }
 
@@ -627,9 +615,11 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
             vec_d[parent_i] -= nd_a;
         }
     } else {
+        auto* const vec_a = _nt->node_a_storage();
+        auto* const vec_b = _nt->node_b_storage();
         for (i = i2; i < i3; ++i) {
-            vec_d[i] -= VEC_B(i);
-            vec_d[_nt->_v_parent_index[i]] -= VEC_A(i);
+            vec_d[i] -= vec_b[i];
+            vec_d[_nt->_v_parent_index[i]] -= vec_a[i];
         }
     }
 }

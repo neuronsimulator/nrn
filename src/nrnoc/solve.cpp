@@ -402,62 +402,34 @@ void nrn_solve(NrnThread* _nt) {
 /* triangularization of the matrix equations */
 static void triang(NrnThread* _nt) {
     Node *nd, *pnd;
-    double p;
     int i, i2, i3;
     i2 = _nt->ncell;
     i3 = _nt->end;
-#if CACHEVEC
-    if (use_cachevec) {
-        auto* const vec_d = _nt->node_d_storage();
-        auto* const vec_rhs = _nt->node_rhs_storage();
-        for (i = i3 - 1; i >= i2; --i) {
-            p = VEC_A(i) / vec_d[i];
-            vec_d[_nt->_v_parent_index[i]] -= p * VEC_B(i);
-            vec_rhs[_nt->_v_parent_index[i]] -= p * vec_rhs[i];
-        }
-    } else
-#endif /* CACHEVEC */
-    {
-        for (i = i3 - 1; i >= i2; --i) {
-            nd = _nt->_v_node[i];
-            pnd = _nt->_v_parent[i];
-            p = NODEA(nd) / NODED(nd);
-            NODED(pnd) -= p * NODEB(nd);
-            NODERHS(pnd) -= p * NODERHS(nd);
-        }
+    auto* const vec_a = _nt->node_a_storage();
+    auto* const vec_b = _nt->node_b_storage();
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    for (i = i3 - 1; i >= i2; --i) {
+        auto const p = vec_a[i] / vec_d[i];
+        vec_d[_nt->_v_parent_index[i]] -= p * vec_b[i];
+        vec_rhs[_nt->_v_parent_index[i]] -= p * vec_rhs[i];
     }
 }
 
 /* back substitution to finish solving the matrix equations */
 void bksub(NrnThread* _nt) {
-    Node *nd, *cnd;
-    int i, i1, i2, i3;
-    i1 = 0;
-    i2 = i1 + _nt->ncell;
-    i3 = _nt->end;
-#if CACHEVEC
-    if (use_cachevec) {
-        auto* const vec_d = _nt->node_d_storage();
-        auto* const vec_rhs = _nt->node_rhs_storage();
-        for (i = i1; i < i2; ++i) {
-            vec_rhs[i] /= vec_d[i];
-        }
-        for (i = i2; i < i3; ++i) {
-            vec_rhs[i] -= VEC_B(i) * vec_rhs[_nt->_v_parent_index[i]];
-            vec_rhs[i] /= vec_d[i];
-        }
-    } else
-#endif /* CACHEVEC */
-    {
-        for (i = i1; i < i2; ++i) {
-            NODERHS(_nt->_v_node[i]) /= NODED(_nt->_v_node[i]);
-        }
-        for (i = i2; i < i3; ++i) {
-            cnd = _nt->_v_node[i];
-            nd = _nt->_v_parent[i];
-            NODERHS(cnd) -= NODEB(cnd) * NODERHS(nd);
-            NODERHS(cnd) /= NODED(cnd);
-        }
+    auto const i1 = 0;
+    auto const i2 = i1 + _nt->ncell;
+    auto const i3 = _nt->end;
+    auto* const vec_b = _nt->node_b_storage();
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    for (int i = i1; i < i2; ++i) {
+        vec_rhs[i] /= vec_d[i];
+    }
+    for (int i = i2; i < i3; ++i) {
+        vec_rhs[i] -= vec_b[i] * vec_rhs[_nt->_v_parent_index[i]];
+        vec_rhs[i] /= vec_d[i];
     }
 }
 

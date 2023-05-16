@@ -59,8 +59,8 @@ static double nrnmpi_wtime() {
 class MultiSplit;
 class MultiSplitControl;
 
-#define A(i)   VEC_A(i)
-#define B(i)   VEC_B(i)
+#define A(i)   (_nt->actual_a(i))
+#define B(i)   (_nt->actual_b(i))
 #define D(i)   vec_d[i]
 #define RHS(i) vec_rhs[i]
 #define S1A(i) sid1A[i]
@@ -2034,6 +2034,7 @@ void MultiSplitControl::multisplit_nocap_v_part3(NrnThread* _nt) {
     // But for non-zero area nodes, D is the sum of all zero-area
     // node d, and RHS is the sum of all zero-area node rhs.
     int i;
+    auto* const vec_area = _nt->node_area_storage();
     auto* const vec_d = _nt->node_d_storage();
     auto* const vec_rhs = _nt->node_rhs_storage();
     auto* const vec_v = _nt->node_voltage_storage();
@@ -2041,7 +2042,7 @@ void MultiSplitControl::multisplit_nocap_v_part3(NrnThread* _nt) {
         for (i = 0; i < narea2buf_; ++i) {
             Area2Buf& ab = area2buf_[i];
             int j = ab.inode;
-            double afac = 100. / VEC_AREA(j);
+            double afac = 100. / vec_area[j];
             ab.adjust_rhs_ = (vec_rhs[j] - vec_d[j] * vec_v[j]) * afac;
             // printf("%d nz1 %d D=%g RHS=%g V=%g afac=%g adjust=%g\n",
             // nrnmpi_myid, i, D(i), RHS(i), vec_v[j], afac, ab.adjust_rhs_);
@@ -2050,7 +2051,7 @@ void MultiSplitControl::multisplit_nocap_v_part3(NrnThread* _nt) {
         Area2RT& ar = area2rt_[i];
         if (_nt->id == ar.ms->ithread) {
             int j = ar.inode;
-            double afac = 100. / VEC_AREA(j);
+            double afac = 100. / vec_area[j];
             ar.adjust_rhs_ = (vec_rhs[j] - vec_d[j] * vec_v[j]) * afac;
             // printf("%d nz2 %d D=%g RHS=%g V=%g afac=%g adjust=%g\n",
             // nrnmpi_myid, i, D(i), RHS(i), vec_v[j], afac, ar.adjust_rhs_);
@@ -2168,7 +2169,7 @@ nrnmpi_myid, mt.host_, jj, tbuf[jj]);
     for (i = 0; i < narea2buf_; ++i) {
         Area2Buf& ab = area2buf_[i];
         _nt = nrn_threads + ab.ms->ithread;
-        double afac = 0.01 * VEC_AREA(ab.inode);
+        double afac = 0.01 * _nt->actual_area(ab.inode);
         tbuf = tsendbuf_;
         for (j = 0; j < ab.n; ++j) {
             tbuf[ab.ibuf[j]] *= afac;
@@ -2225,7 +2226,7 @@ for (i=0; i < tbsize_; ++i) { printf("%d trecvbuf[%d] = %g\n", nrnmpi_myid, i, t
     for (i = 0; i < narea2rt_; ++i) {
         Area2RT& ar = area2rt_[i];
         NrnThread* _nt = nrn_threads + ar.ms->ithread;
-        double afac = 0.01 * VEC_AREA(ar.inode);
+        double afac = 0.01 * _nt->actual_area(ar.inode);
         for (j = 0; j < ar.n; ++j) {
             *ar.pd[j] *= afac;
         }
