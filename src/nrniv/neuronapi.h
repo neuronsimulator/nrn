@@ -3,13 +3,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-struct Symbol;
-struct Object;
-struct Section;
-struct SectionListIterator;
-struct hoc_Item;
-struct SymbolTableIterator;
-struct Symlist;
+typedef struct Symbol Symbol;
+typedef struct Object Object;
+typedef struct Section Section;
+typedef struct SectionListIterator SectionListIterator;
+typedef struct hoc_Item hoc_Item;
+typedef struct SymbolTableIterator SymbolTableIterator;
+typedef struct Symlist Symlist;
 
 typedef enum {
     STACK_IS_STR = 1,
