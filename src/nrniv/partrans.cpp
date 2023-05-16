@@ -246,6 +246,7 @@ static Node* pv2node(sgid_t ssid, neuron::container::data_handle<double> const& 
     hoc_execerr_ext("Pointer to src is not in the currently accessed section %s", secname(sec));
 }
 
+static void thread_transfer(NrnThread* _nt);
 void nrnmpi_source_var() {
     nrnthread_v_transfer_ = thread_transfer;  // otherwise can't check is_setup_
     is_setup_ = false;
@@ -310,6 +311,7 @@ static void rm_svibuf() {
     nrnthread_vi_compute_ = nullptr;
 }
 
+static void thread_vi_compute(NrnThread* _nt);
 static std::unordered_map<Node*, double*> mk_svibuf() {
     rm_svibuf();
     if (visources_.empty()) {
