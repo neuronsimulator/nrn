@@ -180,7 +180,7 @@ static MapSgid2Int sid2insrc_;  // received interprocessor sid data is
 // and used by mk_ttd
 
 // ordered by calls to nrnmpi_target_var()
-static std::vector<neuron::container::data_handle<double>> targets_;  // list of target double*
+static std::vector<neuron::container::data_handle<double>> targets_;  // list of target variables
 static SgidList sgid2targets_;                                        // list of target sgid
 static PPList target_pntlist_;        // list of target Point_process
 static IntList target_parray_index_;  // to recompute targets_ for cache_efficint
@@ -195,9 +195,6 @@ static std::unordered_map<sgid_t, std::pair<int, neuron::container::field_index>
 
 
 static int max_targets_;
-
-static int target_ptr_update_cnt_ = 0;
-static int target_ptr_need_update_cnt_ = 0;
 static int vptr_change_cnt_ = 0;
 
 static bool is_setup_;
@@ -288,7 +285,7 @@ void nrnmpi_source_var() {
     is_setup_ = false;
     // Get the source variable pointer and promote it to a data_handle if
     // possible (i.e. if it is a Node voltage, for the moment)
-    neuron::container::data_handle<double> psv{hoc_pgetarg(1)};
+    auto const psv = hoc_hgetarg<double>(1);
     auto const sgid = []() -> sgid_t {
         double const x{*hoc_getarg(2)};
         if (x < 0) {
@@ -320,28 +317,6 @@ static int compute_parray_index(Point_process* pp,
     }
     std::cout << ptv << std::endl;
     throw std::runtime_error("compute_parray_index");
-}
-static neuron::container::data_handle<double> tar_ptr(Point_process* pp, int index) {
-    return pp->prop->param_handle_legacy(index);
-}
-
-static void target_ptr_update() {
-    // printf("target_ptr_update\n");
-    if (!targets_.empty()) {
-        int n = targets_.size();
-        for (int i = 0; i < n; ++i) {
-            Point_process* pp = target_pntlist_[i];
-            if (!pp) {
-                hoc_execerr_ext(
-                    "Do not know the POINT_PROCESS target for source id %zd (Hint: insert target "
-                    "instance of the target ref as the first argument.",
-                    size_t(sgid2targets_[i]));
-            }
-            targets_[i] = tar_ptr(target_pntlist_[i], target_parray_index_[i]);
-        }
-    }
-    mk_ttd();
-    target_ptr_update_cnt_ = target_ptr_need_update_cnt_;
 }
 
 void nrnmpi_target_var() {
@@ -389,9 +364,6 @@ void nrn_partrans_update_ptrs() {
         }
     }
     vptr_change_cnt_ = nrn_node_ptr_change_cnt_;
-    // the target vgap pointers also need updating but they will not
-    // change til after this returns ... (verify this)
-    ++target_ptr_need_update_cnt_;
 }
 
 // static FILE* xxxfile;
@@ -648,8 +620,6 @@ void thread_transfer(NrnThread* _nt) {
     if (targets_.empty()) {
         return;
     }
-
-    //	fprintf(xxxfile, "%g\n", t);
     // an edited old comment prior to allowing simultaneous threads and mpi.
     // for threads we do direct transfers under the assumption
     // that v is being transferred and they were set in a
@@ -667,9 +637,6 @@ void thread_transfer(NrnThread* _nt) {
     // For now we presume we have dealt with these matters and
     // do the transfer.
     assert(n_transfer_thread_data_ == nrn_nthread);
-    if (target_ptr_need_update_cnt_ > target_ptr_update_cnt_) {
-        target_ptr_update();
-    }
     TransferThreadData& ttd = transfer_thread_data_[_nt->id];
     for (int i = 0; i < ttd.cnt; ++i) {
         *(ttd.tv[i]) = *(ttd.sv[i]);
@@ -708,16 +675,10 @@ void nrnmpi_setup_transfer() {
 #endif
     int nhost = nrnmpi_numprocs;
     is_setup_ = true;
-    //	printf("nrnmpi_setup_transfer\n");
     delete_imped_info();
-    if (insrc_buf_) {
-        delete[] insrc_buf_;
-        insrc_buf_ = 0;
-    }
-    if (outsrc_buf_) {
-        delete[] outsrc_buf_;
-        outsrc_buf_ = 0;
-    }
+    delete[] std::exchange(insrc_buf_, nullptr);
+    delete[] std::exchange(outsrc_buf_, nullptr);
+    outsrc_buf_size_ = 0;
     sid2insrc_.clear();
     poutsrc_.clear();
     delete[] std::exchange(poutsrc_indices_, nullptr);
@@ -728,23 +689,10 @@ void nrnmpi_setup_transfer() {
         return;
     }
     if (nrnmpi_numprocs > 1) {
-        if (insrccnt_) {
-            delete[] insrccnt_;
-            insrccnt_ = NULL;
-        }
-        if (insrcdspl_) {
-            delete[] insrcdspl_;
-            insrcdspl_ = NULL;
-        }
-        if (outsrccnt_) {
-            delete[] outsrccnt_;
-            outsrccnt_ = NULL;
-        }
-        if (outsrcdspl_) {
-            delete[] outsrcdspl_;
-            outsrcdspl_ = NULL;
-        }
-
+        delete[] std::exchange(insrccnt_, nullptr);
+        delete[] std::exchange(insrcdspl_, nullptr);
+        delete[] std::exchange(outsrccnt_, nullptr);
+        delete[] std::exchange(outsrcdspl_, nullptr);
         // This is an old comment prior to using the want_to_have rendezvous
         // rank function in want2have.cpp. The old method did not scale
         // to more sgids than could fit on a single rank, because
@@ -851,7 +799,7 @@ void nrnmpi_setup_transfer() {
         outsrccnt_ = send_to_want_cnt;
         outsrcdspl_ = send_to_want_displ;
         outsrc_buf_size_ = outsrcdspl_[nrnmpi_numprocs];
-        szalloc = outsrc_buf_size_ ? outsrc_buf_size_ : 1;
+        szalloc = std::max(1, outsrc_buf_size_);
         outsrc_buf_ = new double[szalloc];
         poutsrc_.resize(szalloc);
         poutsrc_indices_ = new int[szalloc];
@@ -905,14 +853,9 @@ void nrn_partrans_clear() {
     max_targets_ = 0;
     rm_svibuf();
     rm_ttd();
-    if (insrc_buf_) {
-        delete[] insrc_buf_;
-        insrc_buf_ = NULL;
-    }
-    if (outsrc_buf_) {
-        delete[] outsrc_buf_;
-        outsrc_buf_ = NULL;
-    }
+    delete[] std::exchange(insrc_buf_, nullptr);
+    delete[] std::exchange(outsrc_buf_, nullptr);
+    outsrc_buf_size_ = 0;
     sid2insrc_.clear();
     poutsrc_.clear();
     delete[] std::exchange(poutsrc_indices_, nullptr);
@@ -985,9 +928,6 @@ void pargap_jacobi_setup(int mode) {
                     targets_.size());
             }
         }
-    }
-    if (target_ptr_need_update_cnt_ > target_ptr_update_cnt_) {
-        target_ptr_update();
     }
     TransferThreadData* ttd = transfer_thread_data_;
     if (mode == 0) {  // setup
