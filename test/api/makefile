@@ -7,16 +7,18 @@ endif
 
 ifeq ($(UNAME_S),Linux)
 	CXXFLAGS = -g -rdynamic -Wl,--no-as-needed -ldl -Wall
+	CCFLAGS = -g -rdynamic -Wl,--no-as-needed -ldl -Wall
 	CXXFLAGSNOLINKER = -g -Wl,--no-as-needed -ldl -Wall
 endif
 ifeq ($(UNAME_S),Darwin)
 	CXXFLAGS = -std=c++14 -g -rdynamic -ldl -Wall
+	CCFLAGS = -g -rdynamic -ldl -Wall
 	CXXFLAGSNOLINKER = -std=c++14 -g -Wall
 endif
 
 # TODO: handle Windows (mingw?)
 
-all: hh_sim vclamp 
+all: hh_sim vclamp sections
 
 hh_sim: hh_sim.cpp
 	$(CXX) $(CXXFLAGS) hh_sim.cpp -o hh_sim
@@ -24,3 +26,5 @@ hh_sim: hh_sim.cpp
 vclamp: vclamp.cpp 
 	$(CXX) $(CXXFLAGS) vclamp.cpp -o vclamp
 
+sections: sections.c
+	$(CC) $(CCFLAGS) sections.c -o sections
