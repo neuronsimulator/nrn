@@ -9,7 +9,7 @@ using std::cout;
 using std::endl;
 using std::ofstream;
 
-static const char* argv[] = {"hh_sim", "-nogui", "-nopython", nullptr};
+static const char* argv[] = {"vclamp", "-nogui", "-nopython", nullptr};
 
 extern "C" void modl_reg() {};
 
