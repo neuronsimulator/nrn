@@ -16,7 +16,11 @@ endif
 
 # TODO: handle Windows (mingw?)
 
-all: hh_sim
+all: hh_sim vclamp 
 
 hh_sim: hh_sim.cpp
 	$(CXX) $(CXXFLAGS) hh_sim.cpp -o hh_sim
+
+vclamp: vclamp.cpp 
+	$(CXX) $(CXXFLAGS) vclamp.cpp -o vclamp
+
