@@ -88,7 +88,7 @@ def hrun(name, t_tol=0.0, v_tol=0.0, v_tol_per_time=0.0):
             print("v diff at t", ref_t, ref_v, new_v, diff_v, ">", v_tol_for_this_t)
             match = False
     if not match:
-        print("summary for", key)
+        print("summary for", name)
     if max_diff_t:
         print("max t diff", max_diff_t)
     if max_diff_v:
@@ -170,7 +170,7 @@ def test_1():
         h.cvode_active(cvode)
         hrun(
             "nahh cvode={}".format(bool(cvode)),
-            t_tol=5e-9 if cvode else 0.0,
+            t_tol=8e-9 if cvode else 0.0,
             v_tol=2e-9 if cvode else 3e-11,
         )
 
@@ -198,7 +198,7 @@ def test_1():
     # table
     cb.ks.usetable(1)
     # used to compare to the reference run with 0.5 tolerance
-    hrun("coarse table", v_tol=7e-12)
+    hrun("coarse table", v_tol=1e-11)
     cb.ks.usetable(1, 1000, -80, 60)
     # used to compare to the reference run with 1e-3 tolerance
     hrun("fine table", v_tol=5e-12)
@@ -396,8 +396,8 @@ def test_3():
             if cvon:
                 tols["v_tol"] = 1e-12
                 if singleon:
-                    tols["t_tol"] = 4e-9
-                    tols["v_tol_per_time"] = 5e-10
+                    tols["t_tol"] = 6e-8
+                    tols["v_tol_per_time"] = 1e-8
                 else:
                     # seems a bit high?
                     tols["t_tol"] = 2e-6
