@@ -116,9 +116,6 @@ void GLineRecord::fill_pd1() {
 }
 
 void GLineRecord::fill_pd() {
-    // Call only if cache_efficient will not change pointers before useing
-    // the results of his computation.
-
     // Get rid of old pd_and_vec_ info.
     for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
         if ((*it).second) {
@@ -127,8 +124,7 @@ void GLineRecord::fill_pd() {
     }
     pd_and_vec_.resize(0);
     saw_t_ = false;
-    // TODO avoid the conversion
-    pd_ = neuron::container::data_handle<double>{gl_->pval_};
+    pd_ = gl_->pval_;
     if (pd_) {
         return;
     }

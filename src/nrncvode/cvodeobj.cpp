@@ -65,7 +65,6 @@ extern int secondorder;
 extern int linmod_extra_eqn_count();
 extern int nrn_modeltype();
 extern int nrn_use_selfqueue_;
-extern int use_cachevec;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 extern void (*nrnmpi_v_transfer_)();
 
@@ -351,12 +350,10 @@ static double use_mxb(void* v) {
 }
 
 static double cache_efficient(void* v) {
-    if (ifarg(1)) {
-        int i = (int) chkarg(1, 0, 1);
-        nrn_cachevec(i);
-    }
+    // Perhaps an error on cache_efficient(False) would be justified.
+    hoc_warning("cache efficient mode is now always on, this call has no effect", nullptr);
     hoc_return_type_code = 2;  // boolean
-    return (double) use_cachevec;
+    return 1.0;
 }
 
 static double use_long_double(void* v) {

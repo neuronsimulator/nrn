@@ -341,10 +341,8 @@ def test_partrans():
     transfer1()
 
     # following is a bit tricky and need some user help in the docs.
-    #  cannot be cache_efficient if general sparse matrix solver in effect.
     cvode = h.CVode()
     assert cvode.use_mxb(0) == 0
-    assert cvode.cache_efficient(1) == 1
 
     pc.setup_transfer()
     h.finitialize(-65)

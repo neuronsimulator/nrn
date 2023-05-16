@@ -60,7 +60,6 @@ void (*nrn_multisplit_setup_)();
 /* these are now thread instance arrays */
 static void nrn_recalc_node_ptrs();
 #endif /* CACHEVEC */
-int use_cachevec;
 
 /*
 Do not use unless necessary (loops in tree structure) since overhead
@@ -1953,9 +1952,6 @@ int nrn_method_consistent(void) {
         use_sparse13 = 1;
         consist = 1;
     }
-    if (use_sparse13 != 0) {
-        nrn_cachevec(0);
-    }
     return consist;
 }
 
@@ -2063,17 +2059,6 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
             assert(nrndae_extra_eqn_count() == 0);
             assert(!nt->_ecell_memb_list || nt->_ecell_memb_list->nodecount == 0);
         }
-    }
-}
-
-void nrn_cachevec(int b) {
-    if (use_sparse13) {
-        use_cachevec = 0;
-    } else {
-        if (b && use_cachevec == 0) {
-            tree_changed = 1;
-        }
-        use_cachevec = b;
     }
 }
 
@@ -2393,9 +2378,6 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
 }
 
 void nrn_recalc_node_ptrs() {
-    if (use_cachevec == 0) {
-        return;
-    }
     nrn_recalc_ptrs();
     nrn_node_ptr_change_cnt_++;
     nrn_recalc_ptrvector();

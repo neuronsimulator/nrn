@@ -33,9 +33,6 @@ extern short* nrn_is_artificial_;
 
 // prerequisites for a NEURON model to be transferred to CoreNEURON.
 void model_ready() {
-    // Do the model type checks first as some of them prevent the success
-    // of cvode.cache_efficient(1) and the error message associated with
-    // !use_cachevec would be misleading.
     if (!nrndae_list_is_empty()) {
         hoc_execerror(
             "CoreNEURON cannot simulate a model that contains extra LinearMechanism or RxD "
@@ -51,14 +48,10 @@ void model_ready() {
             hoc_execerror("CoreNEURON can only use fixed step method.", NULL);
         }
     }
-
-    if (!use_cachevec) {
-        hoc_execerror("NEURON model for CoreNEURON requires cvode.cache_efficient(1)", NULL);
-    }
     if (tree_changed || v_structure_change || diam_changed) {
         hoc_execerror(
             "NEURON model internal structures for CoreNEURON are out of date. Make sure call to "
-            "finitialize(...) is after cvode.cache_efficient(1))",
+            "finitialize(...)",
             NULL);
     }
 }
@@ -132,14 +125,12 @@ void nrnbbcore_register_mapping() {
 // mech_type enum or non-artificial cell mechanisms.
 // Limited to pointers to voltage, nt._nrn_fast_imem->_nrn_sav_rhs (fast_imem value) or
 // data of non-artificial cell mechanisms.
-// Requires cache_efficient mode.
 // Input double* and NrnThread. Output type and index.
 // type == 0 means could not determine index.
 int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
                         NrnThread& nt,
                         int& type,
                         int& index) {
-    assert(use_cachevec);
     int nnode = nt.end;
     type = 0;
     if (dh.refers_to<neuron::container::Node::field::Voltage>(neuron::model().node_data())) {

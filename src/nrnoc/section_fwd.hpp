@@ -13,7 +13,6 @@ using Datum = neuron::container::generic_data_handle;
 
 extern int cvode_active_;
 extern int secondorder;
-extern int use_cachevec;
 extern int use_sparse13;
 
 double nrn_ghk(double, double, double, double);

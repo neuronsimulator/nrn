@@ -2537,25 +2537,23 @@ void KSChan::state(NrnThread* _nt, Memb_list* ml) {
             double v = vec_v[ni[i]];
             auto offset = soffset_;
             if (usetable_) {
+                double inf, tau;
                 auto x = (v - vmin_) * dvinv_;
                 auto const y = floor(x);
                 auto const k = static_cast<int>(y);
                 x -= y;
                 if (k < 0) {
                     for (int j = 0; j < nhhstate_; ++j) {
-                        double inf, tau;
                         trans_[j].inftau_hh_table(0, inf, tau);
                         ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
                     }
                 } else if (k >= hh_tab_size_) {
                     for (int j = 0; j < nhhstate_; ++j) {
-                        double inf, tau;
                         trans_[j].inftau_hh_table(hh_tab_size_ - 1, inf, tau);
                         ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
                     }
                 } else {
                     for (int j = 0; j < nhhstate_; ++j) {
-                        double inf, tau;
                         trans_[j].inftau_hh_table(k, x, inf, tau);
                         ml->data(i, offset + j) += (inf - ml->data(i, offset + j)) * tau;
                     }

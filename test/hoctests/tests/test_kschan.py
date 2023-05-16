@@ -60,7 +60,7 @@ def hrun():
     global hrun_count
     hrun_count += 1
     h.run()
-    # NVHPC and oneAPI in particula need a non-zero tolerance
+    # NVHPC and oneAPI in particular need a non-zero tolerance
     chk(
         "hrun %d" % hrun_count,
         [trec.to_python(), vrec.to_python()],
@@ -141,9 +141,7 @@ def test_1():
     h.tstop = 1
     for cvode in [1, 0]:
         h.cvode_active(cvode)
-        for cache in [1, 0]:
-            h.cvode.cache_efficient(cache)
-            hrun()
+        hrun()
 
     s.uninsert("nahh")
     kss = cb.ks.add_hhstate("xxx")
@@ -195,9 +193,7 @@ def test_1():
 
     # cover some table limit code.
     cb.ks.usetable(1, 200, -50, 30)
-    for cache in [1, 0]:
-        h.cvode.cache_efficient(cache)
-        run(20)
+    run(20)
 
     del cb, s, kss, ic, std
     locals()

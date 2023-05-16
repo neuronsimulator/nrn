@@ -585,7 +585,7 @@ void nrn_update_voltage(neuron::model_sorted_token const& sorted_token, NrnThrea
             vec_v[i] += vec_rhs[i];
         }
     }
-    if (!use_cachevec && use_sparse13) {
+    if (use_sparse13) {
         nrndae_update(_nt);
     }
 

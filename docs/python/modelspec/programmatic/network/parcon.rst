@@ -3032,9 +3032,6 @@ Parallel Transfer
         a single cpu. It does not matter if a one sid subtree is declared short 
         or not; it is solved exactly in any case. 
          
-        Note: using multisplit automatically sets 
-        ``CVode.cache_efficient(1)``
-
     .. warning::
         Implemented only for fixed step methods. Cannot presently 
         be used with variable step 
@@ -3415,8 +3412,8 @@ Parallel Transfer
         teardown is the test_submodel.py in
         http://github.com/neuronsimulator/ringtest.
 
-        This function requires cvode.cache_efficient(1) . Multisplit is not
-        supported. The model cannot be more complicated than a spike or gap
+        Multisplit is not supported.
+        The model cannot be more complicated than a spike or gap
         junction coupled parallel network model of real and artificial cells.
         Real cells must have gids, Artificial cells without gids connect
         only to cells in the same thread. No POINTER to data outside of the
@@ -3451,7 +3448,6 @@ Parallel Transfer
             # run model
             from neuron import coreneuron
             coreneuron.enable = True
-            h.CVode().cache_efficient(1)
             h.stdinit()
             pc.psolve(h.tstop)
 

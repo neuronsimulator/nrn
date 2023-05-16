@@ -118,7 +118,6 @@ extern void nrn_sec_ref(Section**, Section*);
 extern void hoc_level_pushsec(Section*);
 extern double nrn_ra(Section*);
 extern int node_index_exact(Section*, double);
-void nrn_cachevec(int);
 void nrn_ba(neuron::model_sorted_token const&, NrnThread&, int);
 void nrniv_recalc_ptrs();
 extern void nrn_recalc_ptrvector(void);

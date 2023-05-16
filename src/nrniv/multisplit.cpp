@@ -365,7 +365,6 @@ void MultiSplitControl::multisplit(Section* sec, double x, int sid, int backbone
 	if (sid >= 1000) { pmat(sid>1000); return; }
 #endif
     if (sid < 0) {
-        nrn_cachevec(1);
         if (classical_root_to_multisplit_) {
             nrn_multisplit_setup_ = multisplit_v_setup;
             nrn_multisplit_solve_ = multisplit_solve;
@@ -3095,8 +3094,6 @@ void MultiSplitControl::v_setup() {
     // thread nt->_v_node and ms->ithread. Hence anything that
     // changes the overall structure
     // requires a complete start over from the point prior to splitting.
-
-    assert(use_cachevec);
     assert(!use_sparse13);
     int i;
     // first time through, nth_ = 0
