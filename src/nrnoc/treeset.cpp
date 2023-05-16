@@ -892,6 +892,7 @@ void connection_coef(void) /* setup a and b */
     // the initilisation code below is run.
     for (auto tid = 0; tid < nrn_nthread; ++tid) {
         auto& nt = nrn_threads[tid];
+        std::fill_n(nt.node_a_storage(), nt.end, 0.0);
         std::fill_n(nt.node_b_storage(), nt.end, 0.0);
     }
     // ForAllSections(sec)
@@ -906,7 +907,6 @@ void connection_coef(void) /* setup a and b */
                 ClassicalNODEB(sec->parentnode) = 0.0;
             }
         }
-#endif
         /* convert to siemens/cm^2 for all nodes except last
         and microsiemens for last.  This means that a*V = mamps/cm2
         and a*v in last node = nanoamps. Note that last node
@@ -1915,12 +1915,6 @@ void node_data(void) {
 void nrn_matrix_node_free() {
     NrnThread* nt;
     FOR_THREADS(nt) {
-#if CACHEVEC
-        if (nt->_actual_a) {
-            free(nt->_actual_a);
-            nt->_actual_a = (double*) 0;
-        }
-#endif /* CACHEVEC */
         if (nt->_sp13_rhs) {
             free(std::exchange(nt->_sp13_rhs, nullptr));
         }
@@ -2021,16 +2015,11 @@ static void nrn_matrix_node_alloc(void) {
             v_setup_vectors();
             return;
         } else {
-            if (nt->_actual_a != nullptr) {
-                return;
-            }
+            // used to return here if the cache-efficient structures for a/b/... were non-null
         }
     }
 /*printf("nrn_matrix_node_alloc does its work\n");*/
 #if CACHEVEC
-    FOR_THREADS(nt) {
-        nt->_actual_a = (double*) ecalloc(nt->end, sizeof(double));
-    }
     nrn_recalc_node_ptrs();
 #endif /* CACHEVEC */
 

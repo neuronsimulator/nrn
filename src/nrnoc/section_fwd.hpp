@@ -43,7 +43,7 @@ struct Extnode {
 };
 #endif
 
-#define VEC_A(i)    (_nt->_actual_a[(i)])
+#define VEC_A(i)    (_nt->actual_a(i))
 #define VEC_AREA(i) (_nt->actual_area(i))
 #define VEC_B(i)    (_nt->actual_b(i))
 

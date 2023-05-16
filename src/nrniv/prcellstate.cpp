@@ -141,7 +141,7 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
                     precision,
                     NODEAREA(nd),
                     precision,
-                    nt._actual_a[i],
+                    nt.actual_a(i),
                     precision,
                     nt.actual_b(i));
         }

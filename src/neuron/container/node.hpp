@@ -10,6 +10,14 @@
 
 namespace neuron::container::Node {
 namespace field {
+
+/**
+ * @brief Above-diagonal element in node equation.
+ */
+struct AboveDiagonal {
+    using type = double;
+};
+
 /**
  * @brief Area in um^2 but see treeset.cpp.
  */
@@ -66,6 +74,19 @@ template <typename Identifier>
 struct handle_interface: handle_base<Identifier> {
     using base_type = handle_base<Identifier>;
     using base_type::base_type;
+    /**
+     * @brief Return the above-diagonal element.
+     */
+    [[nodiscard]] field::AboveDiagonal::type& a() {
+        return this->template get<field::AboveDiagonal>();
+    }
+
+    /**
+     * @brief Return the above-diagonal element.
+     */
+    [[nodiscard]] field::AboveDiagonal::type const& a() const {
+        return this->template get<field::AboveDiagonal>();
+    }
 
     /** @brief Return the area.
      */
@@ -115,7 +136,7 @@ struct handle_interface: handle_base<Identifier> {
     }
 
     /**
-     * @brief Return the diagonal element.
+     * @brief Return the below-diagonal element.
      */
     [[nodiscard]] field::BelowDiagonal::type const& b() const {
         return this->template get<field::BelowDiagonal>();
@@ -207,8 +228,8 @@ struct handle_interface: handle_base<Identifier> {
 
     friend std::ostream& operator<<(std::ostream& os, handle_interface const& handle) {
         return os << "Node{" << handle.id() << '/' << handle.underlying_storage().size()
-                  << " v=" << handle.v() << " area=" << handle.area() << " d=" << handle.d()
-                  << " b=" << handle.b() << '}';
+                  << " v=" << handle.v() << " area=" << handle.area() << " a=" << handle.a()
+                  << " b=" << handle.b() << " d=" << handle.d() << '}';
     }
 };
 }  // namespace neuron::container::Node

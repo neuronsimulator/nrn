@@ -297,15 +297,15 @@ int nrnthread_dat2_2(int tid,
     if (copy) {
         for (int i = 0; i < nt.end; ++i) {
             v_parent_index[i] = nt._v_parent_index[i];
-            a[i] = nt._actual_a[i];
+            a[i] = nt.actual_a(i);
             b[i] = nt.actual_b(i);
             area[i] = nt.actual_area(i);
             v[i] = nt.actual_v(i);
         }
     } else {
         v_parent_index = nt._v_parent_index;
-        a = nt._actual_a;
         auto const cache_token = nrn_ensure_model_data_are_sorted();
+        a = nt.node_a_storage();
         area = nt.node_area_storage();
         b = nt.node_b_storage();
         v = nt.node_voltage_storage();

@@ -339,7 +339,6 @@ void nrn_threads_create(int n, bool parallel) {
                 for (j = 0; j < BEFORE_AFTER_SIZE; ++j) {
                     nt->tbl[j] = (NrnThreadBAList*) 0;
                 }
-                nt->_actual_a = 0;
                 nt->_sp13_rhs = nullptr;
                 nt->_v_parent_index = 0;
                 nt->_v_node = 0;
@@ -496,10 +495,6 @@ void nrn_threads_free() {
         if (nt->userpart == 0 && nt->roots) {
             hoc_l_freelist(&nt->roots);
             nt->ncell = 0;
-        }
-        if (nt->_actual_a) {
-            free((char*) nt->_actual_a);
-            nt->_actual_a = 0;
         }
         if (nt->_v_parent_index) {
             free((char*) nt->_v_parent_index);
@@ -772,7 +767,6 @@ void reorder_secorder() {
             }
         }
         _nt->end = inode;
-        CACHELINE_CALLOC(_nt->_actual_a, double, inode);
         CACHELINE_CALLOC(_nt->_v_node, Node*, inode);
         CACHELINE_CALLOC(_nt->_v_parent, Node*, inode);
         CACHELINE_CALLOC(_nt->_v_parent_index, int, inode);
@@ -1110,6 +1104,16 @@ std::size_t nof_worker_threads() {
 
 // Need to be able to use these methods while the model is frozen, so avoid calling the
 // zero-parameter get().
+double* NrnThread::node_a_storage() {
+    return &neuron::model().node_data().get<neuron::container::Node::field::AboveDiagonal>(
+        _node_data_offset);
+}
+
+double const* NrnThread::node_a_storage() const {
+    return &neuron::model().node_data().get<neuron::container::Node::field::AboveDiagonal>(
+        _node_data_offset);
+}
+
 double* NrnThread::node_area_storage() {
     return &neuron::model().node_data().get<neuron::container::Node::field::Area>(
         _node_data_offset);
