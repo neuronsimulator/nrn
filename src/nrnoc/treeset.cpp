@@ -2043,20 +2043,6 @@ static void nrn_matrix_node_alloc(void) {
     }
 }
 
-/*
-Pointers that need to be updated are:
-All Point process area pointers.
-All mechanism POINTER variables that point to  v.
-All Graph addvar pointers that plot v.
-All Vector record and play pointers that deal with v.
-All PreSyn threshold detectors that watch v.
-*/
-
-void nrn_recalc_ptrs() {
-    /* update pointers managed by c++ */
-    nrniv_recalc_ptrs();
-}
-
 /** @brief Sort the underlying storage for a particular mechanism.
  *
  *  After model building is complete the storage vectors backing all Mechanism
@@ -2358,7 +2344,7 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
 }
 
 void nrn_recalc_node_ptrs() {
-    nrn_recalc_ptrs();
+    nrniv_recalc_ptrs();
     nrn_recalc_ptrvector();
     nrn_imem_defer_free(nullptr);
 }

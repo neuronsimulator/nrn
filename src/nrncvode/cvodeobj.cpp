@@ -350,8 +350,8 @@ static double use_mxb(void* v) {
 }
 
 static double cache_efficient(void* v) {
-    // Perhaps an error on cache_efficient(False) would be justified.
-    hoc_warning("cache efficient mode is now always on, this call has no effect", nullptr);
+    // Perhaps a warning on cache_efficient(True) and an error on cache_efficient(False) would be
+    // justified.
     hoc_return_type_code = 2;  // boolean
     return 1.0;
 }
