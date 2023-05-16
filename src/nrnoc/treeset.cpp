@@ -26,6 +26,8 @@
 #endif
 #include <errno.h>
 #include <math.h>
+
+#include <algorithm>
 #include <string>
 
 extern spREAL* spGetElement(char*, int, int);
@@ -886,18 +888,16 @@ void connection_coef(void) /* setup a and b */
     /* for the near future we always have a last node at x=1 with
     no properties */
 
+    // To match legacy behaviour, make sure that the SoA storage for "a" and "b" is zeroed before
+    // the initilisation code below is run.
     for (auto tid = 0; tid < nrn_nthread; ++tid) {
         auto& nt = nrn_threads[tid];
-        for (auto i = 0; i < nt.end; ++i) {
-            nt._actual_a[i] = 0.0;
-            nt.actual_b(i) = 0.0;
-        }
+        std::fill_n(nt.node_b_storage(), nt.end, 0.0);
     }
-
     // ForAllSections(sec)
     ITERATE(qsec, section_list) {
         Section* sec = hocSEC(qsec);
-#if 1 /* unnecessary because they are unused, but help when looking at fmatrix */
+        // Unnecessary because they are unused, but help when looking at fmatrix.
         if (!sec->parentsec) {
             if (nrn_classicalNodeA(sec->parentnode)) {
                 ClassicalNODEA(sec->parentnode) = 0.0;
