@@ -18,25 +18,29 @@ extern int nrn_try_catch_nest_depth;
 /** @brief Helper type for incrementing/decrementing nrn_try_catch_nest_depth.
  */
 struct try_catch_depth_increment {
-  try_catch_depth_increment() { ++nrn_try_catch_nest_depth; }
-  ~try_catch_depth_increment() { --nrn_try_catch_nest_depth; }
+    try_catch_depth_increment() {
+        ++nrn_try_catch_nest_depth;
+    }
+    ~try_catch_depth_increment() {
+        --nrn_try_catch_nest_depth;
+    }
 };
 
 struct ObjectContext {
-  ObjectContext(Object *);
-  ~ObjectContext();
+    ObjectContext(Object*);
+    ~ObjectContext();
 
-private:
-  Object *a1;
-  Objectdata *a2;
-  int a4;
-  Symlist *a5;
+  private:
+    Object* a1;
+    Objectdata* a2;
+    int a4;
+    Symlist* a5;
 };
 
 struct OcJump {
-  static bool execute(Inst *p);
-  static bool execute(const char *, Object *ob = NULL);
-  static void *fpycall(void *(*)(void *, void *), void *, void *);
-  static void execute_throw_on_exception(Symbol *sym, int narg);
-  static void execute_throw_on_exception(Object *obj, Symbol *sym, int narg);
+    static bool execute(Inst* p);
+    static bool execute(const char*, Object* ob = NULL);
+    static void* fpycall(void* (*) (void*, void*), void*, void*);
+    static void execute_throw_on_exception(Symbol* sym, int narg);
+    static void execute_throw_on_exception(Object* obj, Symbol* sym, int narg);
 };
