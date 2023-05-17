@@ -269,6 +269,8 @@ namespace _get {
 // See https://github.com/neuronsimulator/nrn/issues/2234 for context of how this might be done
 // better in future...
 [[nodiscard]] long& _nrn_mechanism_access_alloc_seq(Prop*);
+[[nodiscard]] double& _nrn_mechanism_access_a(Node*);
+[[nodiscard]] double& _nrn_mechanism_access_b(Node*);
 [[nodiscard]] double& _nrn_mechanism_access_d(Node*);
 [[nodiscard]] neuron::container::generic_data_handle*& _nrn_mechanism_access_dparam(Prop*);
 [[nodiscard]] Extnode*& _nrn_mechanism_access_extnode(Node*);

@@ -20,6 +20,12 @@ void Memb_func::invoke_initialize(neuron::model_sorted_token const& sorted_token
 long& _nrn_mechanism_access_alloc_seq(Prop* prop) {
     return prop->_alloc_seq;
 }
+double& _nrn_mechanism_access_a(Node* node) {
+    return node->a();
+}
+double& _nrn_mechanism_access_b(Node* node) {
+    return node->b();
+}
 double& _nrn_mechanism_access_d(Node* node) {
     return node->d();
 }
