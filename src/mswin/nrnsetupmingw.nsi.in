@@ -137,7 +137,7 @@ Section "Start Menu Shortcuts"
   CreateShortCut "$SMPROGRAMS\${NEURON}\mknrndll.lnk" "$INSTDIR\bin${binsuffix}\nrniv.exe" "-nopython $uINSTDIR/lib/hoc/mknrndll.hoc" "$INSTDIR\bin${binsuffix}\nmodl2a.ico" 0
   CreateShortCut "$SMPROGRAMS\${NEURON}\modlunit.lnk" "$INSTDIR\bin${binsuffix}\nrniv.exe" "-nopython $uINSTDIR/lib/hoc/modlunit.hoc" "$INSTDIR\bin${binsuffix}\nmodl2a.ico" 0
   CreateShortCut "$SMPROGRAMS\${NEURON}\Notes.lnk" "notepad.exe" "$INSTDIR\notes.txt"
-  WriteINIStr "$SMPROGRAMS\${NEURON}\NEURON Home Page.url" "InternetShortcut" "URL" "http://neuron.yale.edu/"
+  WriteINIStr "$SMPROGRAMS\${NEURON}\NEURON Home Page.url" "InternetShortcut" "URL" "https://nrn.readthedocs.io/"
   SetOutPath "$INSTDIR\demo"
   SetOutPath "$INSTDIR"
   CreateShortCut "$SMPROGRAMS\${NEURON}\bash.lnk" "$launch1" "$launch2" "$INSTDIR\mingw\usr\bin\bash.exe" 0
@@ -157,7 +157,7 @@ Section "Desktop ${NEURON} folder with Shortcuts"
   CreateShortCut "$DESKTOP\${NEURON}\mknrndll.lnk" "$INSTDIR\bin${binsuffix}\nrniv.exe" "-nopython $uINSTDIR/lib/hoc/mknrndll.hoc" "$INSTDIR\bin${binsuffix}\nmodl2a.ico" 0
   CreateShortCut "$DESKTOP\${NEURON}\modlunit.lnk" "$INSTDIR\bin${binsuffix}\nrniv.exe" "-nopython $uINSTDIR/lib/hoc/modlunit.hoc" "$INSTDIR\bin${binsuffix}\nmodl2a.ico" 0
   CreateShortCut "$DESKTOP\${NEURON}\Notes.lnk" "notepad.exe" "$INSTDIR\notes.txt"
-  WriteINIStr "$DESKTOP\${NEURON}\NEURON Home Page.url" "InternetShortcut" "URL" "http://neuron.yale.edu/"
+  WriteINIStr "$DESKTOP\${NEURON}\NEURON Home Page.url" "InternetShortcut" "URL" "https://nrn.readthedocs.io/"
   SetOutPath "$INSTDIR\demo"
   SetOutPath "$INSTDIR"
   CreateShortCut "$DESKTOP\${NEURON}\bash.lnk" "$launch1" "$launch2" "$INSTDIR\mingw\usr\bin\bash.exe" 0
