@@ -431,9 +431,9 @@ endif()
 find_package(SUNDIALS)
 add_dependencies(nrniv_lib SUNDIALS)
 
-# Note that none of the following libsundials...a depend on MPI.
-# In particular we supply an alternative MPI_DYNAMIC capable version
-# of nvector_parallel.c so libsundials_nvecparallel.a is not needed.
+# Note that none of the following libsundials...a depend on MPI. In particular we supply an
+# alternative MPI_DYNAMIC capable version of nvector_parallel.c so libsundials_nvecparallel.a is not
+# needed.
 target_link_libraries(
   nrniv_lib ${SUNDIALS_LIB_DIR}/libsundials_ida.a ${SUNDIALS_LIB_DIR}/libsundials_cvode.a
   ${SUNDIALS_LIB_DIR}/libsundials_nvecserial.a ${SUNDIALS_LIB_DIR}/libsundials_nvecpthreads.a)
