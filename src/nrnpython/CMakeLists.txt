@@ -157,7 +157,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
   set(NRN_SETUP_PY_BUILD_EXT_OPTIONS "build_ext")
   if(NRN_ENABLE_MUSIC)
     # NRN_SETUP_PY_INC_DIRS is crafted for the MUSIC build, to be extended to other if needed
-    set(NRN_SETUP_PY_INC_DIRS "${MUSIC_INCDIR};${MPI_INCLUDE_PATH}")
+    set(NRN_SETUP_PY_INC_DIRS "${MUSIC_INCDIR};${MPI_C_INCLUDE_DIRS}")
     string(REPLACE ";" ":" NRN_SETUP_PY_INC_DIRS "${NRN_SETUP_PY_INC_DIRS}")
     list(APPEND NRN_SETUP_PY_BUILD_EXT_OPTIONS "--include-dirs=${NRN_SETUP_PY_INC_DIRS}")
   endif()

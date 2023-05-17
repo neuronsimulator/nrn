@@ -291,7 +291,7 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/install
 cmake --build . --parallel 8 --target install
 ```
 
-If you don't have MPI, you can disable the MPI dependency using the CMake option `-DCORENRN_ENABLE_MPI=OFF`.
+If you don't have MPI, you can disable the MPI dependency using the CMake option `-DNRN_ENABLE_MPI=OFF`.
 
 #### Compiling MOD files
 

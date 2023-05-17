@@ -334,9 +334,7 @@ if(NRN_ENABLE_MPI)
   set(PARANEURON 1)
 
   # avoid linking to C++ bindings
-  add_definitions("-DMPI_NO_CPPBIND=1")
-  add_definitions("-DOMPI_SKIP_MPICXX=1")
-  add_definitions("-DMPICH_SKIP_MPICXX=1")
+  add_compile_definitions(MPI_NO_CPPBIND=1 OMPI_SKIP_MPICXX=1 MPICH_SKIP_MPICXX=1)
 
   # Launching mpi executable with full path can mangle different python versions and libraries (see
   # issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
@@ -510,17 +508,6 @@ if(NRN_ENABLE_CORENEURON)
     elseif(NRN_PROFILER STREQUAL "likwid")
       set(CORENRN_ENABLE_LIKWID_PROFILING ON)
     endif()
-  endif()
-  # Propagate NEURON MPI option to CoreNEURON if not set explicitly
-  if(NOT DEFINED CORENRN_ENABLE_MPI)
-    set(CORENRN_ENABLE_MPI
-        ${NRN_ENABLE_MPI}
-        CACHE BOOL "" FORCE)
-  endif()
-  if(NOT DEFINED CORENRN_ENABLE_MPI_DYNAMIC)
-    set(CORENRN_ENABLE_MPI_DYNAMIC
-        ${NRN_ENABLE_MPI_DYNAMIC}
-        CACHE BOOL "" FORCE)
   endif()
   set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron)
 
@@ -971,11 +958,11 @@ if(NRN_ENABLE_MPI)
     endforeach(val)
   else()
     if(NRN_INCLUDE_MPI_HEADERS)
-      message(STATUS "  INC         | ${MPI_INCLUDE_PATH}")
+      message(STATUS "  INC         | ${MPI_C_INCLUDE_DIRS}")
     else()
       message(STATUS "  INC         | N/A")
     endif()
-    message(STATUS "  LIB         | ${MPI_LIBRARY}")
+    message(STATUS "  LIB         | ${MPI_C_LIBRARIES}")
   endif()
 endif()
 if(NRN_ENABLE_MUSIC)
