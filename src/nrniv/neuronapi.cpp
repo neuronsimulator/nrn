@@ -24,16 +24,18 @@ typedef enum {
     STACK_UNKNOWN = -1
 } stack_types_t;
 
+typedef hoc_Item nrn_Item;
+
 
 class SectionListIterator {
   public:
-    SectionListIterator(hoc_Item*);
+    SectionListIterator(nrn_Item*);
     Section* next(void);
     int done(void);
 
   private:
-    hoc_Item* initial;
-    hoc_Item* current;
+    nrn_Item* initial;
+    nrn_Item* current;
 };
 
 class SymbolTableIterator {
@@ -91,7 +93,7 @@ void nrn_redirect_stdout(int (*myprint)(int, char*)) {
 Section* nrn_new_section(char const* const name) {
     // TODO: check for memory leaks; should we free the symbol, pitm, etc?
     Symbol* symbol = new Symbol;
-    auto pitm = new hoc_Item*;
+    auto pitm = new nrn_Item*;
     char* name_ptr = new char[strlen(name)];
     strcpy(name_ptr, name);
     symbol->name = name_ptr;
@@ -188,13 +190,13 @@ double* nrn_get_rangevar_ptr(Section* const sec, Symbol* const sym, double const
     return nrn_rangepointer(sec, sym, x);
 }
 
-hoc_Item* nrn_get_allsec(void) {
+nrn_Item* nrn_get_allsec(void) {
     return section_list;
 }
 
-hoc_Item* nrn_get_sectionlist_data(Object* obj) {
+nrn_Item* nrn_get_sectionlist_data(Object* obj) {
     // TODO: verify the obj is in fact a SectionList
-    return (hoc_Item*) obj->u.this_pointer;
+    return (nrn_Item*) obj->u.this_pointer;
 }
 
 /****************************************
@@ -342,7 +344,7 @@ int nrn_call_hoc(char const* const command) {
     return hoc_oc(command);
 }
 
-SectionListIterator::SectionListIterator(hoc_Item* my_sectionlist) {
+SectionListIterator::SectionListIterator(nrn_Item* my_sectionlist) {
     initial = my_sectionlist;
     current = my_sectionlist->next;
 }
@@ -391,7 +393,7 @@ int SymbolTableIterator::done(void) {
 
 // copy semantics isn't great, but only two data items
 // and is cleaner to use in a for loop than having to free memory at the end
-SectionListIterator* nrn_new_sectionlist_iterator(hoc_Item* my_sectionlist) {
+SectionListIterator* nrn_new_sectionlist_iterator(nrn_Item* my_sectionlist) {
     return new SectionListIterator(my_sectionlist);
 }
 

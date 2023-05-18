@@ -7,7 +7,7 @@ typedef struct Symbol Symbol;
 typedef struct Object Object;
 typedef struct Section Section;
 typedef struct SectionListIterator SectionListIterator;
-typedef struct hoc_Item hoc_Item;
+typedef struct hoc_Item nrn_Item;
 typedef struct SymbolTableIterator SymbolTableIterator;
 typedef struct Symlist Symlist;
 
@@ -45,8 +45,8 @@ char const* (*nrn_secname)(Section* sec);
 void (*nrn_push_section)(Section* sec);
 void (*nrn_pop_section)(void);
 void (*nrn_insert_mechanism)(Section* sec, Symbol* mechanism);
-hoc_Item* (*nrn_get_allsec)(void);
-hoc_Item* (*nrn_get_sectionlist_data)(Object* obj);
+nrn_Item* (*nrn_get_allsec)(void);
+nrn_Item* (*nrn_get_sectionlist_data)(Object* obj);
 
 /****************************************
  * Segments
@@ -89,7 +89,7 @@ char const* (*nrn_get_class_name)(Object* obj);
  * Miscellaneous
  ****************************************/
 int (*nrn_call_hoc)(char const* command);
-SectionListIterator* (*nrn_new_sectionlist_iterator)(hoc_Item* my_sectionlist);
+SectionListIterator* (*nrn_new_sectionlist_iterator)(nrn_Item* my_sectionlist);
 void (*nrn_free_sectionlist_iterator)(SectionListIterator* sl);
 Section* (*nrn_sectionlist_iterator_next)(SectionListIterator* sl);
 int (*nrn_sectionlist_iterator_done)(SectionListIterator* sl);
