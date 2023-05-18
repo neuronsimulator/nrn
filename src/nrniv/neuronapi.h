@@ -7,7 +7,7 @@ typedef struct Symbol Symbol;
 typedef struct Object Object;
 typedef struct Section Section;
 typedef struct SectionListIterator SectionListIterator;
-typedef struct hoc_Item nrn_Item;
+typedef struct nrn_Item nrn_Item;
 typedef struct SymbolTableIterator SymbolTableIterator;
 typedef struct Symlist Symlist;
 
