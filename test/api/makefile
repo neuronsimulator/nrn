@@ -18,7 +18,7 @@ endif
 
 # TODO: handle Windows (mingw?)
 
-all: hh_sim vclamp sections
+all: hh_sim vclamp sections netcon
 
 hh_sim: hh_sim.cpp
 	$(CXX) $(CXXFLAGS) hh_sim.cpp -o hh_sim
@@ -28,3 +28,7 @@ vclamp: vclamp.cpp
 
 sections: sections.c
 	$(CC) $(CCFLAGS) sections.c -o sections
+
+# TODO: dynamic lookup is probably not possible on Windows
+netcon: netcon.cpp
+	$(CXX) $(CXXFLAGS) -undefined dynamic_lookup netcon.cpp -o netcon
