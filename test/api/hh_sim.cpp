@@ -16,8 +16,11 @@ extern "C" void modl_reg(){};
 void setup_neuron_api(void) {
     void* handle = dlopen("libnrniv.dylib", RTLD_NOW | RTLD_LOCAL);
     if (!handle) {
-        cout << "Couldn't open dylib." << endl << dlerror() << endl;
-        exit(-1);
+        handle = dlopen("libnrniv.so", RTLD_NOW | RTLD_LOCAL);
+        if (!handle) {
+            cout << "Couldn't open NEURON library." << endl << dlerror() << endl;
+            exit(-1);
+        }
     }
     nrn_init = reinterpret_cast<decltype(nrn_init)>(dlsym(handle, "nrn_init"));
     assert(nrn_init);

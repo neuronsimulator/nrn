@@ -17,15 +17,15 @@ typedef struct SymbolTableIterator SymbolTableIterator;
 typedef struct Symlist Symlist;
 
 extern "C" {
-int nrn_init(int argc, const char **argv);
-void nrn_push_str(char **str);
-void nrn_call_function(Symbol *sym, int narg);
+int nrn_init(int argc, const char** argv);
+void nrn_push_str(char** str);
+void nrn_call_function(Symbol* sym, int narg);
 double nrn_pop_double(void);
-Section *nrn_new_section(char const *const name);
+Section* nrn_new_section(char const* const name);
 Symbol* nrn_get_symbol(char const* const name);
 void nrn_insert_mechanism(Section* sec, Symbol* mechanism);
 Object* nrn_new_object(Symbol* sym, int narg);
-void nrn_call_method(Object *obj, Symbol *method_sym, int narg);
+void nrn_call_method(Object* obj, Symbol* method_sym, int narg);
 double* nrn_get_pp_property_ptr(Object* pp, const char* name);
 void nrn_push_double(double val);
 void nrn_push_object(Object* obj);
@@ -42,7 +42,7 @@ double* nrn_get_symbol_ptr(Symbol* sym);
 
 static const char* argv[] = {"netcon", "-nogui", "-nopython", nullptr};
 
-extern "C" void modl_reg() {};
+extern "C" void modl_reg(){};
 
 int main(void) {
     Object* v;
@@ -50,10 +50,13 @@ int main(void) {
     char* temp_str;
 
     // Note: cannot use RTLD_LOCAL here
-    void* handle = dlopen("libnrniv.dylib", RTLD_NOW); 
+    void* handle = dlopen("libnrniv.dylib", RTLD_NOW);
     if (!handle) {
-        cout << "Couldn't open dylib." << endl << dlerror() << endl;
-        exit(-1);
+        handle = dlopen("libnrniv.so", RTLD_NOW);
+        if (!handle) {
+            cout << "Couldn't open NEURON library." << endl << dlerror() << endl;
+            exit(-1);
+        }
     }
 
     nrn_init(3, argv);
@@ -83,8 +86,8 @@ int main(void) {
     // syn = h.ExpSyn(soma(0.5))
     nrn_push_double(0.5);
     auto syn = nrn_new_object(nrn_get_symbol("ExpSyn"), 1);
-    *nrn_get_pp_property_ptr(syn, "tau")  = 3;  // 3 ms timeconstant
-    *nrn_get_pp_property_ptr(syn, "e") = 0;     // 0 mV reversal potential (excitatory synapse)
+    *nrn_get_pp_property_ptr(syn, "tau") = 3;  // 3 ms timeconstant
+    *nrn_get_pp_property_ptr(syn, "e") = 0;    // 0 mV reversal potential (excitatory synapse)
 
     // nc = h.NetCon(ns, syn)
     nrn_push_object(ns);
@@ -92,7 +95,7 @@ int main(void) {
     auto nc = nrn_new_object(nrn_get_symbol("NetCon"), 2);
     nrn_get_steered_property_ptr(nc, "weight")[0] = 0.5;
     *nrn_get_steered_property_ptr(nc, "delay") = 0;
-    
+
     auto vec = nrn_new_object(nrn_get_symbol("Vector"), 0);
 
     // nc.record(vec)

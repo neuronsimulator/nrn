@@ -12,8 +12,11 @@ void modl_reg(){};
 void setup_neuron_api(void) {
     void* handle = dlopen("libnrniv.dylib", RTLD_NOW | RTLD_LOCAL);
     if (!handle) {
-        printf("Couldn't open dylib.\n%s\n", dlerror());
-        exit(-1);
+        handle = dlopen("libnrniv.so", RTLD_NOW | RTLD_LOCAL);
+        if (!handle) {
+            printf("Couldn't open NEURON library.\n%s\n", dlerror());
+            exit(-1);
+        }
     }
     nrn_init = (int (*)(int, const char**))(dlsym(handle, "nrn_init"));
     assert(nrn_init); /* NOTE: this function only exists in versions of NEURON with the API defined

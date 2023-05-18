@@ -29,6 +29,12 @@ vclamp: vclamp.cpp
 sections: sections.c
 	$(CC) $(CCFLAGS) sections.c -o sections
 
-# TODO: dynamic lookup is probably not possible on Windows
+# TODO: dynamic lookup is probably not possible on Windows; need to have a 
+#       version of the library available during linking (but won't have to be
+#       embedded)
 netcon: netcon.cpp
 	$(CXX) $(CXXFLAGS) -undefined dynamic_lookup netcon.cpp -o netcon
+
+# TODO: introspection example
+
+# TODO: morphology example with PlotShape
