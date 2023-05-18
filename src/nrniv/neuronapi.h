@@ -52,7 +52,7 @@ nrn_Item* (*nrn_get_sectionlist_data)(Object* obj);
  * Segments
  ****************************************/
 int (*nrn_get_nseg)(Section const* sec);
-void (*nrn_set_nseg)(Section* const sec, int nseg);
+void (*nrn_set_nseg)(Section* sec, int nseg);
 void (*nrn_set_segment_diam)(Section* sec, double x, double diam);
 double* (*nrn_get_rangevar_ptr)(Section* sec, Symbol* sym, double x);
 
