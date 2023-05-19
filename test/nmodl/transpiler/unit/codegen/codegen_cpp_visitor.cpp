@@ -5,7 +5,8 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "ast/program.hpp"
 #include "codegen/codegen_acc_visitor.hpp"
@@ -21,7 +22,7 @@
 #include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 
-using Catch::Matchers::Contains;  // ContainsSubstring in newer Catch2
+using Catch::Matchers::ContainsSubstring;
 
 using namespace nmodl;
 using namespace visitor;
@@ -148,7 +149,7 @@ SCENARIO("Check instance variable definition order", "[codegen][var_order]") {
             )";
             auto const expected = reindent_text(generated_code);
             auto const result = get_instance_var_setup_function(nmodl_text);
-            REQUIRE_THAT(result, Contains(expected));
+            REQUIRE_THAT(result, ContainsSubstring(expected));
         }
     }
 
@@ -197,7 +198,7 @@ SCENARIO("Check instance variable definition order", "[codegen][var_order]") {
 
             auto const expected = reindent_text(generated_code);
             auto const result = get_instance_var_setup_function(nmodl_text);
-            REQUIRE_THAT(result, Contains(expected));
+            REQUIRE_THAT(result, ContainsSubstring(expected));
         }
     }
 
@@ -282,7 +283,7 @@ SCENARIO("Check instance variable definition order", "[codegen][var_order]") {
 
             auto const expected = reindent_text(generated_code);
             auto const result = get_instance_var_setup_function(nmodl_text);
-            REQUIRE_THAT(result, Contains(expected));
+            REQUIRE_THAT(result, ContainsSubstring(expected));
         }
     }
 }
@@ -358,9 +359,10 @@ SCENARIO("Check NEURON globals are added to the instance struct on demand",
         )";
         THEN("The instance struct should contain these variables") {
             auto const generated = get_instance_structure(nmodl_text);
-            REQUIRE_THAT(generated, Contains("double* celsius{&coreneuron::celsius}"));
-            REQUIRE_THAT(generated, Contains("double* pi{&coreneuron::pi}"));
-            REQUIRE_THAT(generated, Contains("int* secondorder{&coreneuron::secondorder}"));
+            REQUIRE_THAT(generated, ContainsSubstring("double* celsius{&coreneuron::celsius}"));
+            REQUIRE_THAT(generated, ContainsSubstring("double* pi{&coreneuron::pi}"));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("int* secondorder{&coreneuron::secondorder}"));
         }
     }
     GIVEN("A MOD file that implicitly uses global variables") {
@@ -375,7 +377,7 @@ SCENARIO("Check NEURON globals are added to the instance struct on demand",
         )";
         THEN("The instance struct should contain celsius for the implicit 5th argument") {
             auto const generated = get_instance_structure(nmodl_text);
-            REQUIRE_THAT(generated, Contains("celsius"));
+            REQUIRE_THAT(generated, ContainsSubstring("celsius"));
         }
     }
     GIVEN("A MOD file that does not touch celsius, secondorder or pi") {
@@ -386,9 +388,9 @@ SCENARIO("Check NEURON globals are added to the instance struct on demand",
         )";
         THEN("The instance struct should not contain those variables") {
             auto const generated = get_instance_structure(nmodl_text);
-            REQUIRE_THAT(generated, !Contains("celsius"));
-            REQUIRE_THAT(generated, !Contains("pi"));
-            REQUIRE_THAT(generated, !Contains("secondorder"));
+            REQUIRE_THAT(generated, !ContainsSubstring("celsius"));
+            REQUIRE_THAT(generated, !ContainsSubstring("pi"));
+            REQUIRE_THAT(generated, !ContainsSubstring("secondorder"));
         }
     }
 }
@@ -430,19 +432,25 @@ SCENARIO("Check code generation for TABLE statements", "[codegen][array_variable
         )";
         THEN("Array and global variables should be correctly generated") {
             auto const generated = get_cpp_code(nmodl_text);
-            REQUIRE_THAT(generated, Contains("double t_inf[2][201]{};"));
-            REQUIRE_THAT(generated, Contains("double t_tau[201]{};"));
-
-            REQUIRE_THAT(generated, Contains("inst->global->t_inf[0][i] = (inst->inf+id*2)[0];"));
-            REQUIRE_THAT(generated, Contains("inst->global->t_inf[1][i] = (inst->inf+id*2)[1];"));
-            REQUIRE_THAT(generated, Contains("inst->global->t_tau[i] = inst->global->tau;"));
+            REQUIRE_THAT(generated, ContainsSubstring("double t_inf[2][201]{};"));
+            REQUIRE_THAT(generated, ContainsSubstring("double t_tau[201]{};"));
 
             REQUIRE_THAT(generated,
-                         Contains("(inst->inf+id*2)[0] = inst->global->t_inf[0][index];"));
+                         ContainsSubstring("inst->global->t_inf[0][i] = (inst->inf+id*2)[0];"));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("inst->global->t_inf[1][i] = (inst->inf+id*2)[1];"));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("inst->global->t_tau[i] = inst->global->tau;"));
 
-            REQUIRE_THAT(generated, Contains("(inst->inf+id*2)[0] = inst->global->t_inf[0][i]"));
-            REQUIRE_THAT(generated, Contains("(inst->inf+id*2)[1] = inst->global->t_inf[1][i]"));
-            REQUIRE_THAT(generated, Contains("inst->global->tau = inst->global->t_tau[i]"));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("(inst->inf+id*2)[0] = inst->global->t_inf[0][index];"));
+
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("(inst->inf+id*2)[0] = inst->global->t_inf[0][i]"));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("(inst->inf+id*2)[1] = inst->global->t_inf[1][i]"));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("inst->global->tau = inst->global->t_tau[i]"));
         }
     }
     GIVEN("A MOD file with two table statements") {
@@ -499,8 +507,8 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
             // BEFORE BREAKPOINT
             {
                 REQUIRE_THAT(generated,
-                             Contains("hoc_reg_ba(mech_type, nrn_before_after_0_ba1, "
-                                      "BAType::Before + BAType::Breakpoint);"));
+                             ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_ba1, "
+                                               "BAType::Before + BAType::Breakpoint);"));
                 // in case of PROTECT, there should not be simd or ivdep pragma
                 std::string generated_code = R"(
 
@@ -517,13 +525,13 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
             }
         })";
                 auto const expected = generated_code;
-                REQUIRE_THAT(generated, Contains(expected));
+                REQUIRE_THAT(generated, ContainsSubstring(expected));
             }
             // AFTER SOLVE
             {
                 REQUIRE_THAT(generated,
-                             Contains("hoc_reg_ba(mech_type, nrn_before_after_1_ba1, BAType::After "
-                                      "+ BAType::Solve);"));
+                             ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_1_ba1, "
+                                               "BAType::After + BAType::Solve);"));
                 // in case of MUTEXLOCK/MUTEXUNLOCK, there should not be simd or ivdep pragma
                 std::string generated_code = R"(
 
@@ -542,13 +550,13 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
             }
         })";
                 auto const expected = generated_code;
-                REQUIRE_THAT(generated, Contains(expected));
+                REQUIRE_THAT(generated, ContainsSubstring(expected));
             }
             // BEFORE INITIAL
             {
                 REQUIRE_THAT(generated,
-                             Contains("hoc_reg_ba(mech_type, nrn_before_after_2_ba1, "
-                                      "BAType::Before + BAType::Initial);"));
+                             ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_2_ba1, "
+                                               "BAType::Before + BAType::Initial);"));
                 std::string generated_code = R"(
         #pragma ivdep
         #pragma omp simd
@@ -564,13 +572,13 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
             }
         })";
                 auto const expected = generated_code;
-                REQUIRE_THAT(generated, Contains(expected));
+                REQUIRE_THAT(generated, ContainsSubstring(expected));
             }
             // AFTER INITIAL
             {
                 REQUIRE_THAT(generated,
-                             Contains("hoc_reg_ba(mech_type, nrn_before_after_3_ba1, BAType::After "
-                                      "+ BAType::Initial);"));
+                             ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_3_ba1, "
+                                               "BAType::After + BAType::Initial);"));
                 std::string generated_code = R"(
         #pragma ivdep
         #pragma omp simd
@@ -586,13 +594,13 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
             }
         })";
                 auto const expected = generated_code;
-                REQUIRE_THAT(generated, Contains(expected));
+                REQUIRE_THAT(generated, ContainsSubstring(expected));
             }
             // BEFORE STEP
             {
                 REQUIRE_THAT(generated,
-                             Contains("hoc_reg_ba(mech_type, nrn_before_after_4_ba1, "
-                                      "BAType::Before + BAType::Step);"));
+                             ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_4_ba1, "
+                                               "BAType::Before + BAType::Step);"));
                 std::string generated_code = R"(
         #pragma ivdep
         #pragma omp simd
@@ -608,7 +616,7 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
             }
         })";
                 auto const expected = generated_code;
-                REQUIRE_THAT(generated, Contains(expected));
+                REQUIRE_THAT(generated, ContainsSubstring(expected));
             }
         }
     }
@@ -626,17 +634,17 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
         THEN("They should be all registered") {
             auto const generated = get_cpp_code(nmodl_text);
             REQUIRE_THAT(generated,
-                         Contains("hoc_reg_ba(mech_type, nrn_before_after_0_ba1, BAType::Before + "
-                                  "BAType::Step);"));
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_ba1, "
+                                           "BAType::Before + BAType::Step);"));
             REQUIRE_THAT(generated,
-                         Contains("hoc_reg_ba(mech_type, nrn_before_after_1_ba1, BAType::After + "
-                                  "BAType::Solve);"));
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_1_ba1, "
+                                           "BAType::After + BAType::Solve);"));
             REQUIRE_THAT(generated,
-                         Contains("hoc_reg_ba(mech_type, nrn_before_after_2_ba1, BAType::Before + "
-                                  "BAType::Step);"));
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_2_ba1, "
+                                           "BAType::Before + BAType::Step);"));
             REQUIRE_THAT(generated,
-                         Contains("hoc_reg_ba(mech_type, nrn_before_after_3_ba1, BAType::After + "
-                                  "BAType::Solve);"));
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_3_ba1, "
+                                           "BAType::After + BAType::Solve);"));
         }
     }
 }
@@ -669,7 +677,8 @@ SCENARIO("Check CONSTANT variables are added to global variable structure",
         double kB{1.38065e-23};
         double q10Fluo{1.67};
     };)";
-            REQUIRE_THAT(generated, Contains(reindent_text(stringutils::trim(expected_code))));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring(reindent_text(stringutils::trim(expected_code))));
         }
     }
 }
@@ -683,12 +692,14 @@ SCENARIO("Check code generation for FUNCTION_TABLE block", "[codegen][function_t
         )";
         THEN("Code should be generated correctly") {
             auto const generated = get_cpp_code(nmodl_text);
-            REQUIRE_THAT(generated, Contains("double ttt_glia("));
-            REQUIRE_THAT(generated, Contains("double table_ttt_glia("));
-            REQUIRE_THAT(generated, Contains("hoc_spec_table(&inst->global->_ptable_ttt, 1"));
-            REQUIRE_THAT(generated, Contains("double uuu_glia("));
-            REQUIRE_THAT(generated, Contains("double table_uuu_glia("));
-            REQUIRE_THAT(generated, Contains("hoc_func_table(inst->global->_ptable_uuu, 2"));
+            REQUIRE_THAT(generated, ContainsSubstring("double ttt_glia("));
+            REQUIRE_THAT(generated, ContainsSubstring("double table_ttt_glia("));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("hoc_spec_table(&inst->global->_ptable_ttt, 1"));
+            REQUIRE_THAT(generated, ContainsSubstring("double uuu_glia("));
+            REQUIRE_THAT(generated, ContainsSubstring("double table_uuu_glia("));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("hoc_func_table(inst->global->_ptable_uuu, 2"));
         }
     }
 }
@@ -730,7 +741,7 @@ SCENARIO("Check that loops are well generated", "[codegen][loops]") {
         for (int a = 1; a <= 10; a += 2) {
             b = b + 1.0;
         })";
-            REQUIRE_THAT(generated, Contains(expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(expected_code));
         }
     }
 }
@@ -760,7 +771,7 @@ SCENARIO("Check that top verbatim blocks are well generated", "[codegen][top ver
             foo_(nt);
             &tqitem;
             pnodecount+id;)";
-            REQUIRE_THAT(generated, Contains(expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(expected_code));
         }
     }
 }
@@ -798,7 +809,7 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
             nsb->_nsb_flag[i] = flag;
         }
     })";
-            REQUIRE_THAT(generated, Contains(cpu_net_send_expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(cpu_net_send_expected_code));
             auto const gpu_generated = get_cpp_code(nmodl_text, true);
             std::string gpu_net_send_expected_code =
                 R"(static inline void net_send_buffering(const NrnThread* nt, NetSendBuffer_t* nsb, int type, int vdata_index, int weight_index, int point_index, double t, double flag) {
@@ -819,7 +830,7 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
             nsb->_nsb_flag[i] = flag;
         }
     })";
-            REQUIRE_THAT(gpu_generated, Contains(gpu_net_send_expected_code));
+            REQUIRE_THAT(gpu_generated, ContainsSubstring(gpu_net_send_expected_code));
             std::string net_receive_kernel_expected_code =
                 R"(static inline void net_receive_kernel_(double t, Point_process* pnt, _Instance* inst, NrnThread* nt, Memb_list* ml, int weight_index, double flag) {
         int tid = pnt->_tid;
@@ -842,7 +853,7 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
             }
         }
     })";
-            REQUIRE_THAT(generated, Contains(net_receive_kernel_expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(net_receive_kernel_expected_code));
             std::string net_receive_expected_code =
                 R"(static void net_receive_(Point_process* pnt, int weight_index, double flag) {
         NrnThread* nt = nrn_threads + pnt->_tid;
@@ -858,7 +869,7 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
         nrb->_nrb_flag[id] = flag;
         nrb->_cnt++;
     })";
-            REQUIRE_THAT(generated, Contains(net_receive_expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(net_receive_expected_code));
             std::string net_buf_receive_expected_code = R"(void net_buf_receive_(NrnThread* nt) {
         Memb_list* ml = get_memb_list(nt);
         if (!ml) {
@@ -899,15 +910,15 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
         }
         nsb->_cnt = 0;
     })";
-            REQUIRE_THAT(generated, Contains(net_buf_receive_expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(net_buf_receive_expected_code));
             std::string net_init_expected_code =
                 R"(static void net_init(Point_process* pnt, int weight_index, double flag) {
         // do nothing
     })";
-            REQUIRE_THAT(generated, Contains(net_init_expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(net_init_expected_code));
             std::string set_pnt_receive_expected_code =
                 "set_pnt_receive(mech_type, net_receive_, net_init, num_net_receive_args());";
-            REQUIRE_THAT(generated, Contains(set_pnt_receive_expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(set_pnt_receive_expected_code));
         }
     }
     GIVEN("A mod file with an INITIAL inside NET_RECEIVE") {
@@ -938,7 +949,7 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
         a = 1.0;
         auto& nsb = ml->_net_send_buffer;
     })";
-            REQUIRE_THAT(generated, Contains(expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(expected_code));
         }
     }
 
@@ -955,7 +966,7 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
             std::string expected_code(
                 "net_send_buffering(nt, ml->_net_send_buffer, 0, inst->tqitem[0*pnodecount+id], "
                 "weight_index, point_process, nt->_t+5.0, 1.0);");
-            REQUIRE_THAT(generated, Contains(expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(expected_code));
         }
     }
 
@@ -970,7 +981,7 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
             std::string expected_code(
                 "net_send_buffering(nt, ml->_net_send_buffer, 0, inst->tqitem[0*pnodecount+id], 0, "
                 "point_process, nt->_t+5.0, 1.0);");
-            REQUIRE_THAT(generated, Contains(expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(expected_code));
         }
     }
 
@@ -1009,9 +1020,9 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
 
         }
     })";
-            REQUIRE_THAT(generated, Contains(net_receive_kernel_expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(net_receive_kernel_expected_code));
             std::string registration_expected_code = "add_nrn_fornetcons(mech_type, 0);";
-            REQUIRE_THAT(generated, Contains(registration_expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(registration_expected_code));
         }
     }
     GIVEN("A mod file with a net_move outside NET_RECEIVE") {
@@ -1063,7 +1074,7 @@ SCENARIO("Some tests on derivimplicit", "[codegen][derivimplicit_solver]") {
             }
         };
     })";
-            REQUIRE_THAT(generated, Contains(newton_state_expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(newton_state_expected_code));
             std::string state_expected_code =
                 R"(int state_(int id, int pnodecount, double* data, Datum* indexes, ThreadDatum* thread, NrnThread* nt, Memb_list* ml, double v) {
         auto* const inst = static_cast<_Instance*>(ml->instance);
@@ -1077,7 +1088,7 @@ SCENARIO("Some tests on derivimplicit", "[codegen][derivimplicit_solver]") {
         int reset = nrn_newton_thread(static_cast<NewtonSpace*>(*newtonspace1(thread)), 1, slist2, _newton_state_{}, dlist2, id, pnodecount, data, indexes, thread, nt, ml, v);
         return reset;
     })";
-            REQUIRE_THAT(generated, Contains(state_expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(state_expected_code));
         }
     }
 }
@@ -1112,7 +1123,7 @@ SCENARIO("Some tests on euler solver", "[codegen][euler_solver]") {
             inst->Dn[id] = (2.0 + inst->m[id] - inf) * inst->n[id];
             inst->m[id] = inst->m[id] + nt->_dt * inst->Dm[id];
             inst->n[id] = inst->n[id] + nt->_dt * inst->Dn[id];)";
-            REQUIRE_THAT(generated, Contains(nrn_state_expected_code));
+            REQUIRE_THAT(generated, ContainsSubstring(nrn_state_expected_code));
         }
     }
 }
@@ -1154,8 +1165,8 @@ SCENARIO("Check codegen for MUTEX and PROTECT", "[codegen][mutex_protect]") {
             std::string expected_code_proc = R"(#pragma omp atomic update
         inst->foo[id] = inst->foo[id] - 21.0;)";
 
-            REQUIRE_THAT(generated, Contains(expected_code_initial));
-            REQUIRE_THAT(generated, Contains(expected_code_proc));
+            REQUIRE_THAT(generated, ContainsSubstring(expected_code_initial));
+            REQUIRE_THAT(generated, ContainsSubstring(expected_code_proc));
         }
     }
 }

@@ -22,6 +22,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 # =============================================================================
 option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
 option(NMODL_ENABLE_LEGACY_UNITS "Use original faraday, R, etc. instead of 2019 nist constants" OFF)
+option(NMODL_ENABLE_TESTS "Enable build of tests" ON)
 if(NMODL_ENABLE_LEGACY_UNITS)
   add_definitions(-DUSE_LEGACY_UNITS)
 endif()
@@ -99,13 +100,6 @@ list(APPEND NMODL_EXTRA_CXX_FLAGS ${NMODL_SANITIZER_COMPILER_FLAGS})
 # =============================================================================
 set(NMODL_3RDPARTY_DIR ext)
 include(cmake/hpc-coding-conventions/cpp/cmake/3rdparty.cmake)
-cpp_cc_git_submodule(catch2 BUILD PACKAGE Catch2 REQUIRED)
-if(NMODL_3RDPARTY_USE_CATCH2)
-  # If we're using the submodule then make sure the Catch.cmake helper can be found. In newer
-  # versions of Catch2, and with hpc-coding-conventions#130, this should just work...
-  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ext/catch2/contrib")
-endif()
-include(Catch)
 # If we're being built as a submodule of CoreNEURON then CoreNEURON may have already found/loaded a
 # CLI11 submodule.
 if(NOT TARGET CLI11::CLI11)
@@ -205,7 +199,14 @@ set(MEMORYCHECK_COMMAND_OPTIONS
                                  --track-origins=yes \
                                  --show-possibly-lost=no")
 # do not enable tests if nmodl is used as submodule
-if(NOT NMODL_AS_SUBPROJECT)
+if(NOT NMODL_AS_SUBPROJECT AND NMODL_ENABLE_TESTS)
+  cpp_cc_git_submodule(catch2 BUILD PACKAGE Catch2 REQUIRED)
+  if(NMODL_3RDPARTY_USE_CATCH2)
+    # If we're using the submodule then make sure the Catch.cmake helper can be found. In newer
+    # versions of Catch2, and with hpc-coding-conventions#130, this should just work...
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ext/catch2/extras")
+  endif()
+  include(Catch)
   include(CTest)
   add_subdirectory(test/unit)
   add_subdirectory(test/integration)
@@ -271,6 +272,7 @@ message(STATUS "Python Bindings     | ${NMODL_ENABLE_PYTHON_BINDINGS}")
 message(STATUS "Flex                | ${FLEX_EXECUTABLE}")
 message(STATUS "Bison               | ${BISON_EXECUTABLE}")
 message(STATUS "Python              | ${PYTHON_EXECUTABLE}")
+message(STATUS "  Linked against    | ${LINK_AGAINST_PYTHON}")
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS " See documentation : https://github.com/BlueBrain/nmodl/")
 message(STATUS "--------------+--------------------------------------------------------------")

@@ -5,7 +5,8 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "ast/program.hpp"
 #include "codegen/codegen_cpp_visitor.hpp"
@@ -29,7 +30,7 @@ using namespace visitor;
 using namespace test;
 using namespace test_utils;
 
-using Catch::Matchers::Contains;  // ContainsSubstring in newer Catch2
+using Catch::Matchers::ContainsSubstring;  // ContainsSubstring in newer Catch2
 
 using nmodl::test_utils::reindent_text;
 
@@ -818,8 +819,9 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
             "equations") {
             REQUIRE_THROWS_WITH(
                 run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK),
-                Catch::Matchers::Contains("State variable assignment(s) interleaved in system of "
-                                          "equations/differential equations") &&
+                Catch::Matchers::ContainsSubstring(
+                    "State variable assignment(s) interleaved in system of "
+                    "equations/differential equations") &&
                     Catch::Matchers::StartsWith("SympyReplaceSolutionsVisitor"));
         }
     }
@@ -2412,12 +2414,12 @@ SCENARIO("Code generation for EigenNewtonSolver", "[visitor][solver][sympy][deri
             std::string expected_functor_cacum_2_usage =
                 R"(functor_cacum_2 newton_functor(nt, inst, id, pnodecount, v, indexes, data, thread);)";
 
-            REQUIRE_THAT(generated, Contains(expected_functor_cacum_0_definition));
-            REQUIRE_THAT(generated, Contains(expected_functor_cacum_1_definition));
-            REQUIRE_THAT(generated, Contains(expected_functor_cacum_2_definition));
-            REQUIRE_THAT(generated, Contains(expected_functor_cacum_0_usage));
-            REQUIRE_THAT(generated, Contains(expected_functor_cacum_1_usage));
-            REQUIRE_THAT(generated, Contains(expected_functor_cacum_2_usage));
+            REQUIRE_THAT(generated, ContainsSubstring(expected_functor_cacum_0_definition));
+            REQUIRE_THAT(generated, ContainsSubstring(expected_functor_cacum_1_definition));
+            REQUIRE_THAT(generated, ContainsSubstring(expected_functor_cacum_2_definition));
+            REQUIRE_THAT(generated, ContainsSubstring(expected_functor_cacum_0_usage));
+            REQUIRE_THAT(generated, ContainsSubstring(expected_functor_cacum_1_usage));
+            REQUIRE_THAT(generated, ContainsSubstring(expected_functor_cacum_2_usage));
         }
     }
 }

@@ -85,6 +85,7 @@ install_requirements = [
 cmake_args = ["-DPYTHON_EXECUTABLE=" + sys.executable]
 if "bdist_wheel" in sys.argv:
     cmake_args.append("-DLINK_AGAINST_PYTHON=FALSE")
+    cmake_args.append("-DNMODL_ENABLE_TESTS=FALSE")
 
 # For CI, we want to build separate wheel
 package_name = "NMODL"

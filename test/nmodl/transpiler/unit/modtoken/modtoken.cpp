@@ -5,12 +5,10 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#define CATCH_CONFIG_MAIN
-
 #include <memory.h>
 #include <string>
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "lexer/modtoken.hpp"
 #include "lexer/nmodl_lexer.hpp"

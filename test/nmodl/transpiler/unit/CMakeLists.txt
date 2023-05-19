@@ -70,41 +70,41 @@ add_executable(
   codegen/main.cpp codegen/codegen_helper.cpp codegen/codegen_utils.cpp
   codegen/codegen_cpp_visitor.cpp codegen/transform.cpp codegen/codegen_compatibility_visitor.cpp)
 
-target_link_libraries(testmodtoken lexer util)
-target_link_libraries(testlexer lexer util)
+target_link_libraries(testmodtoken PRIVATE lexer util)
+target_link_libraries(testlexer PRIVATE lexer util)
 target_link_libraries(
   testparser
-  visitor
-  symtab
-  lexer
-  util
-  test_util
-  printer
-  ${NMODL_WRAPPER_LIBS})
+  PRIVATE visitor
+          symtab
+          lexer
+          util
+          test_util
+          printer
+          ${NMODL_WRAPPER_LIBS})
 target_link_libraries(
   testvisitor
-  visitor
-  symtab
-  lexer
-  util
-  test_util
-  printer
-  codegen
-  ${NMODL_WRAPPER_LIBS})
+  PRIVATE visitor
+          symtab
+          lexer
+          util
+          test_util
+          printer
+          codegen
+          ${NMODL_WRAPPER_LIBS})
 target_link_libraries(
   testcodegen
-  codegen
-  visitor
-  symtab
-  lexer
-  util
-  test_util
-  printer
-  ${NMODL_WRAPPER_LIBS})
-target_link_libraries(testprinter printer util)
-target_link_libraries(testsymtab symtab lexer util)
-target_link_libraries(testunitlexer lexer util)
-target_link_libraries(testunitparser lexer test_util config)
+  PRIVATE codegen
+          visitor
+          symtab
+          lexer
+          util
+          test_util
+          printer
+          ${NMODL_WRAPPER_LIBS})
+target_link_libraries(testprinter PRIVATE printer util)
+target_link_libraries(testsymtab PRIVATE symtab lexer util)
+target_link_libraries(testunitlexer PRIVATE lexer util)
+target_link_libraries(testunitparser PRIVATE lexer test_util config)
 
 # =============================================================================
 # Use catch_discover instead of add_test for granular test result reporting.
@@ -114,6 +114,21 @@ set(testvisitor_env "PYTHONPATH=${PROJECT_BINARY_DIR}/lib:$ENV{PYTHONPATH}")
 if(NOT LINK_AGAINST_PYTHON)
   list(APPEND testvisitor_env "NMODL_PYLIB=$ENV{NMODL_PYLIB}")
 endif()
+
+# Without main from Catch2
+target_link_libraries(testcodegen PRIVATE Catch2::Catch2)
+target_link_libraries(testvisitor PRIVATE Catch2::Catch2)
+
+# With main from Catch2
+target_link_libraries(testmodtoken PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(testlexer PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(testparser PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(testprinter PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(testsymtab PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(testnewton PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(testcrout PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(testunitlexer PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(testunitparser PRIVATE Catch2::Catch2WithMain)
 
 foreach(
   test_name
@@ -129,7 +144,6 @@ foreach(
   testunitlexer
   testunitparser)
 
-  target_link_libraries(${test_name} Catch2::Catch2)
   cpp_cc_configure_sanitizers(TARGET ${test_name})
   set(env ${test_env})
   list(APPEND env ${${test_name}_env})

@@ -5,11 +5,9 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#define CATCH_CONFIG_MAIN
-
 #include <string>
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "lexer/unit_lexer.hpp"
 #include "parser/unit_driver.hpp"

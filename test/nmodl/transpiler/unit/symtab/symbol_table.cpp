@@ -5,12 +5,11 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#define CATCH_CONFIG_MAIN
-
 #include <memory>
 #include <string>
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "ast/float.hpp"
 #include "ast/program.hpp"
@@ -63,9 +62,9 @@ SCENARIO("Symbol properties can be added and converted to string") {
             NmodlType result = prop1 | prop2 | prop3;
             result |= NmodlType::write_ion_var;
             THEN("to_string returns all added properties") {
-                REQUIRE_THAT(to_string(result), Catch::Contains("local"));
-                REQUIRE_THAT(to_string(result), Catch::Contains("global"));
-                REQUIRE_THAT(to_string(result), Catch::Contains("write_ion"));
+                REQUIRE_THAT(to_string(result), Catch::Matchers::ContainsSubstring("local"));
+                REQUIRE_THAT(to_string(result), Catch::Matchers::ContainsSubstring("global"));
+                REQUIRE_THAT(to_string(result), Catch::Matchers::ContainsSubstring("write_ion"));
             }
             WHEN("checked for property") {
                 THEN("has all added properties") {
@@ -173,9 +172,10 @@ SCENARIO("Symbol table allows operations like insert, lookup") {
         WHEN("checked methods and member variables") {
             THEN("all members are initialized") {
                 REQUIRE(table->under_global_scope());
-                REQUIRE_THAT(table->name(), Catch::Contains("Na"));
-                REQUIRE_THAT(table->get_parent_table_name(), Catch::Contains("None"));
-                REQUIRE_THAT(table->position(), Catch::Contains("UNKNOWN"));
+                REQUIRE_THAT(table->name(), Catch::Matchers::ContainsSubstring("Na"));
+                REQUIRE_THAT(table->get_parent_table_name(),
+                             Catch::Matchers::ContainsSubstring("None"));
+                REQUIRE_THAT(table->position(), Catch::Matchers::ContainsSubstring("UNKNOWN"));
             }
         }
         WHEN("insert symbol") {
@@ -189,7 +189,8 @@ SCENARIO("Symbol table allows operations like insert, lookup") {
             }
             WHEN("re-inserting the same symbol") {
                 THEN("throws an exception") {
-                    REQUIRE_THROWS_WITH(table->insert(symbol), Catch::Contains("re-insert"));
+                    REQUIRE_THROWS_WITH(table->insert(symbol),
+                                        Catch::Matchers::ContainsSubstring("re-insert"));
                 }
             }
             WHEN("inserting another symbol") {
@@ -295,19 +296,21 @@ SCENARIO("Global symbol table (ModelSymbol) allows scope based operations") {
 
         WHEN("trying to exit scope without entering") {
             THEN("throws an exception") {
-                REQUIRE_THROWS_WITH(mod_symtab.leave_scope(), Catch::Contains("without entering"));
+                REQUIRE_THROWS_WITH(mod_symtab.leave_scope(),
+                                    Catch::Matchers::ContainsSubstring("without entering"));
             }
         }
         WHEN("trying to enter scope without valid node") {
             THEN("throws an exception") {
                 REQUIRE_THROWS_WITH(mod_symtab.enter_scope("scope", nullptr, true, old_symtab),
-                                    Catch::Contains("empty node"));
+                                    Catch::Matchers::ContainsSubstring("empty node"));
             }
         }
         WHEN("trying to insert without entering scope") {
             THEN("throws an exception") {
                 auto symbol = std::make_shared<Symbol>("alpha");
-                REQUIRE_THROWS_WITH(mod_symtab.insert(symbol), Catch::Contains("Can not insert"));
+                REQUIRE_THROWS_WITH(mod_symtab.insert(symbol),
+                                    Catch::Matchers::ContainsSubstring("Can not insert"));
             }
         }
         WHEN("enter scope multipel times") {
@@ -335,7 +338,8 @@ SCENARIO("Global symbol table (ModelSymbol) allows scope based operations") {
             mod_symtab.insert(symbol1);
             mod_symtab.insert(symbol2);
             THEN("throws an exception") {
-                REQUIRE_THROWS_WITH(mod_symtab.insert(symbol3), Catch::Contains("Re-declaration"));
+                REQUIRE_THROWS_WITH(mod_symtab.insert(symbol3),
+                                    Catch::Matchers::ContainsSubstring("Re-declaration"));
             }
         }
         WHEN("added same symbol in children scope") {

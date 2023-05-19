@@ -5,7 +5,8 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "ast/program.hpp"
 #include "codegen/codegen_compatibility_visitor.hpp"
@@ -14,7 +15,7 @@
 #include "visitors/perf_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 
-using Catch::Matchers::Contains;  // ContainsSubstring in newer Catch2
+using Catch::Matchers::ContainsSubstring;
 
 using namespace nmodl;
 using namespace visitor;
