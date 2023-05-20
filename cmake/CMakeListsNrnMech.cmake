@@ -46,9 +46,9 @@ foreach(link_lib ${NRN_LINK_LIBS})
     set(link_flag "-l${link_lib}")
     set(description
         "Generating link flags from name '${link_lib}', beware that this can be fragile.")
-    # avoid library paths from special directory /nrnwheel which used to build wheels under docker
-    # container
-  elseif("${dir_path}" MATCHES "^/nrnwheel")
+    # avoid library paths from special directory /opt/nrnwheel which used to build wheels under
+    # docker container
+  elseif("${dir_path}" MATCHES "^/opt/nrnwheel")
     continue()
   elseif("${dir_path}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
     # NAME_WLE not avaialble with CMake version < 3.14

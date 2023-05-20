@@ -2,9 +2,9 @@ from neuron import h
 
 if not "NRN_ENABLE_MUSIC=ON" in h.nrnversion(6):
     print("skip music_tests; NRN_ENABLE_MUSIC is not ON")
-    quit()
 
 import subprocess
+from shutil import which
 
 # the test system copies the files in the source folder to
 # .../build/test/nrnmusic/music_tests/test/music_tests
@@ -20,26 +20,40 @@ try:
 except:
     pass
 
+my_env = os.environ.copy()
+
 
 def run(cmd):
-    result = subprocess.run(cmd, shell=True, env=my_env, capture_output=True, text=True)
+    result = subprocess.run(cmd, env=my_env, shell=True, capture_output=True, text=True)
+    print("PATH:", my_env["PATH"])
     if result.returncode != 0:
         print(result.stderr)
+        print(result.stdout)
     result.check_returncode()
     return result
 
 
-# try to find path to music binary
-my_env = os.environ.copy()
-try:
-    my_env["PATH"] = os.getenv("MUSIC_LIBDIR") + "/../bin:" + my_env["PATH"]
-except:
-    pass
+# try to find path to music binary based on MUSIC_LIBDIR
+if os.getenv("MUSIC_LIBDIR") is not None:
+    music_libdir = os.getenv("MUSIC_LIBDIR")
+    print("MUSIC_LIBDIR:", music_libdir)
+    # assume bin is in same dir as lib
+    musicpath = str(os.path.dirname(music_libdir))
+    print("MUSIC located in:", music_libdir)
+    music_bin_path = musicpath + "/bin:"
+    print("MUSIC_BINPATH:", music_bin_path)
+    my_env["PATH"] = music_bin_path + my_env["PATH"]
+else:
+    result = which("music", path=my_env["PATH"])
+    if result is not None:
+        print("music exe:", result)
+        musicpath = "/".join(result.strip().split("/")[:-2])
+    else:
+        raise Exception("music not found")
 
-result = run("which music")
-musicpath = "/".join(result.stdout.strip().split("/")[:-2])
 # need NRN_LIBMUSIC_PATH if mpi dynamic
 if "NRN_ENABLE_MPI_DYNAMIC=ON" in h.nrnversion(6):
+    print("NRN_ENABLE_MPI_DYNAMIC=ON")
     if os.getenv("NRN_LIBMUSIC_PATH") is None:
         from os.path import exists
 
@@ -50,7 +64,7 @@ if "NRN_ENABLE_MPI_DYNAMIC=ON" in h.nrnversion(6):
             if exists(name):
                 break
         my_env["NRN_LIBMUSIC_PATH"] = name
-    print(my_env["NRN_LIBMUSIC_PATH"])
+    print("NRN_LIBMUSIC_PATH={}".format(my_env["NRN_LIBMUSIC_PATH"]))
 
 out2 = "numprocs=1\nRank 0: Event (0, 0.001175) detected at 0\nRank 0: Event (0, 0.013825) detected at 0\n"
 

@@ -477,13 +477,10 @@ if(NRN_ENABLE_MPI)
     if(NRN_ENABLE_MUSIC)
       # libnrnmusic does not depend explicitly on MPI so don't need mpi version specific versions.
       set(libnrnmusic "nrnmusic")
-      set(NRNMUSIC_DYNAM_LIB
-          "'${libnrnmusic}'"
-          PARENT_SCOPE)
       add_library(${libnrnmusic}_lib SHARED ${NRN_MUSIC_SRC_FILES})
       target_include_directories(${libnrnmusic}_lib BEFORE PUBLIC ${include})
       add_dependencies(${libnrnmusic}_lib nrniv_lib ${libname}_lib)
-      target_link_libraries(${libnrnmusic}_lib nrniv_lib ${libname}_lib)
+      target_link_libraries(${libnrnmusic}_lib nrniv_lib)
       set_property(TARGET ${libnrnmusic}_lib PROPERTY OUTPUT_NAME ${libnrnmusic})
       install(TARGETS ${libnrnmusic}_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
     endif()

@@ -53,7 +53,7 @@ stages:
         inputs:
           secureFile: 'mpt_headears.2.21.tar.gz'
 
-      # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
+      # Note that mpt headers must be mounted in the docker imager under `/opt/nrnwheel/mpt`
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
           sudo mkdir -p /opt/nrnwheel/mpt
@@ -61,13 +61,13 @@ stages:
           docker run --rm \
             -w /root/nrn \
             -v $PWD:/root/nrn \
-            -v /opt/nrnwheel/mpt:/nrnwheel/mpt \
+            -v /opt/nrnwheel/mpt:/opt/nrnwheel/mpt \
             -e NEURON_NIGHTLY_TAG \
             -e NRN_NIGHTLY_UPLOAD \
             -e NRN_RELEASE_UPLOAD \
             -e SETUPTOOLS_SCM_PRETEND_VERSION \
             -e NRN_BUILD_FOR_UPLOAD=1 \
-            'neuronsimulator/neuron_wheel:latest-gcc9-x86_64' \
+            'neuronsimulator/neuron_wheel:music' \
             packaging/python/build_wheels.bash linux $(python.version) coreneuron
         displayName: 'Building ManyLinux Wheel'
 
@@ -106,7 +106,7 @@ stages:
         inputs:
           secureFile: 'mpt_headears.2.21.tar.gz'
 
-      # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
+      # Note that mpt headers must be mounted in the docker imager under `/opt/nrnwheel/mpt`
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
           sudo mkdir -p /opt/nrnwheel/mpt
@@ -114,7 +114,7 @@ stages:
           docker run --rm \
             -w /root/nrn \
             -v $PWD:/root/nrn \
-            -v /opt/nrnwheel/mpt:/nrnwheel/mpt \
+            -v /opt/nrnwheel/mpt:/opt/nrnwheel/mpt \
             -e NEURON_NIGHTLY_TAG \
             -e NRN_NIGHTLY_UPLOAD \
             -e NRN_RELEASE_UPLOAD \
@@ -166,7 +166,7 @@ stages:
 
       - script: |
           brew install --cask xquartz
-          brew install flex bison mpich
+          brew install flex bison mpich automake autoconf libtool
           brew unlink mpich && brew install openmpi
           cmake --version
           # see https://github.com/BlueBrain/CoreNeuron/issues/817, uninstall libomp until we fix this
@@ -186,6 +186,12 @@ stages:
         inputs:
           secureFile: 'readline7.0.tar.gz'
 
+      - task: DownloadSecureFile@1
+        name: musicSF
+        displayName: 'Download MUSIC secure file'
+        inputs:
+          secureFile: 'MUSIC-1.2.0.tar.gz'
+
       # 10.14 is required for full C++17 support according to
       # https://cibuildwheel.readthedocs.io/en/stable/cpp_standards, but it
       # seems that 10.15 is actually needed for std::filesystem::path.
@@ -194,11 +200,14 @@ stages:
           export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           export NRN_BUILD_FOR_UPLOAD=1
-          sudo mkdir /opt/nrnwheel
+          sudo mkdir -p /opt/nrnwheel
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/
+          sudo tar -zxf $(musicSF.secureFilePath) --directory /opt/nrnwheel/
+          sudo chown -R $(whoami) /opt/nrnwheel
           packaging/python/build_wheels.bash osx $(python.version) coreneuron
         displayName: 'Build MacOS Wheel'
 
+      
       - template: ci/azure-wheel-test-upload.yml
 
 
