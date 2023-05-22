@@ -27,5 +27,8 @@ endforeach()
 # }
 # ~~~
 # which requires special options to allow an executable with undefined symbols to be linked.
-string(REPLACE " " ";" link_opts "${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
-target_link_options(netcon_cpp PRIVATE ${link_opts})
+if(APPLE)
+  target_link_options(netcon_cpp PRIVATE -undefined dynamic_lookup)
+else()
+  target_link_options(netcon_cpp PRIVATE -Wl,--unresolved-symbols=ignore-all)
+endif()
