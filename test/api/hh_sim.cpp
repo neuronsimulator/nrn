@@ -1,6 +1,8 @@
 // NOTE: this assumes neuronapi.h is on your CPLUS_INCLUDE_PATH
 #include "neuronapi.h"
 #include <dlfcn.h>
+
+#include <cassert>
 #include <cstring>
 #include <iostream>
 #include <fstream>

@@ -27,4 +27,5 @@ endforeach()
 # }
 # ~~~
 # which requires special options to allow an executable with undefined symbols to be linked.
-target_link_options(netcon_cpp PRIVATE -undefined dynamic_lookup)
+string(REPLACE " " ";" link_opts "${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
+target_link_options(netcon_cpp PRIVATE ${link_opts})
