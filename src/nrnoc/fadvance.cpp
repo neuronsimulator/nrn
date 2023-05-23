@@ -143,7 +143,7 @@ void (*nrnthread_vi_compute_)(NrnThread* nt);
 int cvode_active_;
 
 int stoprun;
-int nrn_use_fast_imem;
+bool nrn_use_fast_imem;
 
 #define PROFILE 0
 #include "profile.h"
@@ -606,15 +606,16 @@ void nrn_update_voltage(neuron::model_sorted_token const& sorted_token, NrnThrea
 }
 
 void nrn_calc_fast_imem(NrnThread* _nt) {
-    int i;
-    int i1 = 0;
-    int i3 = _nt->end;
-    auto* const vec_area = _nt->node_area_storage();
-    auto* const vec_rhs = _nt->node_rhs_storage();
-    double* pd = _nt->_nrn_fast_imem->_nrn_sav_d;
-    double* prhs = _nt->_nrn_fast_imem->_nrn_sav_rhs;
-    for (i = i1; i < i3; ++i) {
-        prhs[i] = (pd[i] * vec_rhs[i] + prhs[i]) * vec_area[i] * 0.01;
+    constexpr int i1 = 0;
+    auto const i3 = _nt->end;
+    auto const vec_area = _nt->node_area_storage();
+    auto const vec_rhs = _nt->node_rhs_storage();
+    auto const vec_sav_d = _nt->node_sav_d_storage();
+    auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
+    assert(vec_sav_d);
+    assert(vec_sav_rhs);
+    for (int i = i1; i < i3; ++i) {
+        vec_sav_rhs[i] = (vec_sav_d[i] * vec_rhs[i] + vec_sav_rhs[i]) * vec_area[i] * 0.01;
     }
 }
 
@@ -628,14 +629,13 @@ void nrn_calc_fast_imem_fixedstep_init(NrnThread* _nt) {
     // Warning: Have not thought deeply about extracellular or LinearMechanism.
     //          But there is a good chance things are ok. But needs testing.
     // I don't believe this is used by Cvode or IDA.
-    int i;
-    int i1 = 0;
+    constexpr auto i1 = 0;
     int i3 = _nt->end;
-    double* prhs = _nt->_nrn_fast_imem->_nrn_sav_rhs;
-    auto* const vec_area = _nt->node_area_storage();
-    auto* const vec_rhs = _nt->node_rhs_storage();
-    for (i = i1; i < i3; ++i) {
-        prhs[i] = (vec_rhs[i] + prhs[i]) * vec_area[i] * 0.01;
+    auto const vec_area = _nt->node_area_storage();
+    auto const vec_rhs = _nt->node_rhs_storage();
+    auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
+    for (int i = i1; i < i3; ++i) {
+        vec_sav_rhs[i] = (vec_rhs[i] + vec_sav_rhs[i]) * vec_area[i] * 0.01;
     }
 }
 
@@ -835,9 +835,9 @@ void nrn_finitialize(int setv, double v) {
         nrn_deliver_events(nrn_threads + i); /* The play events at t=0 */
     }
     if (setv) {
-        FOR_THREADS(_nt)
-        for (i = 0; i < _nt->end; ++i) {
-            _nt->_v_node[i]->set_v(v);
+        FOR_THREADS(_nt) {
+            auto const vec_v = _nt->node_voltage_storage();
+            std::fill_n(vec_v, _nt->end, v);
         }
     }
 #if 1 || PARANEURON

@@ -147,7 +147,7 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
     GIVEN("A handle referring to an entry in an SOA container") {
         REQUIRE(neuron::model().node_data().size() == 0);
         std::optional<::Node> node{std::in_place};
-        node->set_v(magic_voltage_value);
+        node->v() = magic_voltage_value;
         auto handle = node->v_handle();
         const auto handle_id = handle.identifier();
         handle = transform(handle,
@@ -284,7 +284,7 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
     GIVEN("A generic_handle referring to an entry in an SOA container") {
         REQUIRE(neuron::model().node_data().size() == 0);
         std::optional<::Node> node{std::in_place};
-        node->set_v(magic_voltage_value);
+        node->v() = magic_voltage_value;
         auto typed_handle = node->v_handle();
         THEN("Match typed_handle as true") {
             REQUIRE(typed_handle);
@@ -345,7 +345,7 @@ std::tuple<std::vector<::Node>, std::vector<double>> get_nodes_and_reference_vol
                    std::back_inserter(nodes),
                    [](auto v) {
                        ::Node node{};
-                       node.set_v(v);
+                       node.v() = v;
                        return node;
                    });
     return {std::move(nodes), std::move(reference_voltages)};
@@ -513,7 +513,6 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                     auto& node = nodes.front();
                     REQUIRE_NOTHROW(node.v());
                     REQUIRE_NOTHROW(node.v() += 42.0);
-                    REQUIRE_NOTHROW(node.set_v(node.v() + 42.0));
                 }
                 THEN("The sorted-ness flag cannot be modified") {
                     REQUIRE_THROWS(node_data.mark_as_unsorted());
@@ -533,6 +532,70 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             // sorted_token out of scope, underlying data no longer read-only
             THEN("After the token is discarded, new Nodes can be allocated") {
                 REQUIRE_NOTHROW(::Node{});
+            }
+        }
+    }
+}
+
+TEST_CASE("Fast membrane current storage", "[Neuron][data_structures][node][fast_imem]") {
+    auto const set_fast_imem = [](bool new_value) {
+        nrn_use_fast_imem = new_value;
+        nrn_fast_imem_alloc();
+    };
+    auto const check_throws = [](auto const& node) {
+        THEN("fast_imem fields cannot be accessed") {
+            REQUIRE_THROWS(node.sav_d());
+            REQUIRE_THROWS(node.sav_rhs());
+        }
+    };
+    auto const check_default = [](auto const& node) {
+        THEN("fast_imem fields have their default values") {
+            REQUIRE(node.sav_d() == field::FastIMemSavD{}.default_value());
+            REQUIRE(node.sav_rhs() == field::FastIMemSavRHS{}.default_value());
+        }
+    };
+    GIVEN("fast_imem calculation is disabled") {
+        set_fast_imem(false);
+        WHEN("A node is default-constructed") {
+            ::Node node{};
+            check_throws(node);
+            AND_WHEN("fast_imem calculation is enabled with a Node active") {
+                set_fast_imem(true);
+                check_default(node);
+            }
+        }
+    }
+    GIVEN("fast_imem calculation is enabled") {
+        set_fast_imem(true);
+        WHEN("A node is default-constructed") {
+            REQUIRE(neuron::model().node_data().size() == 0);
+            ::Node node{};
+            check_default(node);
+            AND_WHEN("fast_imem calculation is disabled with a Node active") {
+                REQUIRE(neuron::model().node_data().size() == 1);
+                set_fast_imem(false);
+                check_throws(node);
+            }
+        }
+        WHEN("A series of Nodes are created with non-trivial fast_imem values") {
+            constexpr auto num_nodes = 10;
+            std::vector<::Node> nodes(num_nodes);
+            std::vector<std::size_t> perm_vector(num_nodes);
+            for (auto i = 0; i < num_nodes; ++i) {
+                perm_vector[i] = i;
+                nodes[i].sav_d() = i * i;
+                nodes[i].sav_rhs() = i * i * i;
+            }
+            AND_WHEN("A random permutation is applied") {
+                std::mt19937 g{42};
+                std::shuffle(perm_vector.begin(), perm_vector.end(), g);
+                neuron::model().node_data().apply_reverse_permutation(std::move(perm_vector));
+                THEN("The logical values should still match") {
+                    for (auto i = 0; i < num_nodes; ++i) {
+                        REQUIRE(nodes[i].sav_d() == i * i);
+                        REQUIRE(nodes[i].sav_rhs() == i * i * i);
+                    }
+                }
             }
         }
     }

@@ -58,7 +58,7 @@ struct FloatingPoint {
  * @brief Base class defining the public API of Mechanism handles.
  * @tparam Identifier The concrete owning/non-owning identifier type.
  *
- * This allows the same struct-like accessors (v(), set_v(), ...) to be
+ * This allows the same struct-like accessors (v(), ...) to be
  * used on all of the different types of objects that represent a single Node:
  * - owning_handle: stable over permutations of underlying data, manages
  *   lifetime of a row in the underlying storage. Only null when in moved-from

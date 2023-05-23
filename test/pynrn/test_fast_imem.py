@@ -264,19 +264,11 @@ def test_fastimem_corenrn():
     # When nthread changes, or internal model data needs to be reallocated,
     # pointers need to be updated. Use of i_membrane_ requires that the user
     # update the pointers to i_membrane_.
-    imem = []
-
-    def imem_update():
-        nonlocal imem
-        with gui.disabled():
-            imem = [
-                h.Vector().record(cell.ics[0], cell.secs[3](0.5)._ref_i_membrane_)
-                for cell in cells
-            ]
-
-    imem_updater = h.PtrVector(1)
-    imem_updater.ptr_update_callback(imem_update)
-    imem_update()
+    with gui.disabled():
+        imem = [
+            h.Vector().record(cell.ics[0], cell.secs[3](0.5)._ref_i_membrane_)
+            for cell in cells
+        ]
 
     tstop = 1.0
 
@@ -390,7 +382,7 @@ def test_fastimem_corenrn():
         pc.gid_clear()
         print(arg)
 
-    del imem_updater, imem
+    del imem
     cvode.use_fast_imem(0)
 
 

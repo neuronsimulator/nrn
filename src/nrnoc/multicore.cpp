@@ -349,7 +349,6 @@ void nrn_threads_create(int n, bool parallel) {
                 nt->_sp13mat = 0;
                 nt->_ctime = 0.0;
                 nt->_vcv = 0;
-                nt->_nrn_fast_imem = 0;
                 nt->_node_data_offset = 0;
             }
         }
@@ -375,83 +374,13 @@ void nrn_threads_create(int n, bool parallel) {
 #endif
 }
 
-/*
-Avoid invalidating pointers to i_membrane_ unless the number of compartments
-in a thread has changed.
-*/
-static int fast_imem_nthread_ = 0;
-static int* fast_imem_size_ = NULL;
-static _nrn_Fast_Imem* fast_imem_;
-static std::vector<double*> imem_defer_free_;
-
-void nrn_imem_defer_free(double* pd) {
-    if (pd) {
-        imem_defer_free_.push_back(pd);
-    } else {
-        for (const auto& pd: imem_defer_free_) {
-            free(pd);
-        }
-        imem_defer_free_.clear();
-    }
-}
-
-static void fast_imem_free() {
-    int i;
-    for (i = 0; i < nrn_nthread; ++i) {
-        nrn_threads[i]._nrn_fast_imem = NULL;
-    }
-    for (i = 0; i < fast_imem_nthread_; ++i) {
-        if (fast_imem_size_[i] > 0) {
-            nrn_imem_defer_free(fast_imem_[i]._nrn_sav_rhs);
-            free(fast_imem_[i]._nrn_sav_d);
-        }
-    }
-    if (fast_imem_nthread_) {
-        free(fast_imem_size_);
-        free(fast_imem_);
-        fast_imem_nthread_ = 0;
-        fast_imem_size_ = NULL;
-        fast_imem_ = NULL;
-    }
-}
-
-static void fast_imem_alloc() {
-    int i;
-    if (fast_imem_nthread_ != nrn_nthread) {
-        fast_imem_free();
-        fast_imem_nthread_ = nrn_nthread;
-        fast_imem_size_ = static_cast<int*>(ecalloc(nrn_nthread, sizeof(int)));
-        fast_imem_ = (_nrn_Fast_Imem*) ecalloc(nrn_nthread, sizeof(_nrn_Fast_Imem));
-    }
-    for (i = 0; i < nrn_nthread; ++i) {
-        NrnThread* nt = nrn_threads + i;
-        int n = nt->end;
-        _nrn_Fast_Imem* fi = fast_imem_ + i;
-        if (n != fast_imem_size_[i]) {
-            if (fast_imem_size_[i] > 0) {
-                nrn_imem_defer_free(fi->_nrn_sav_rhs);
-                free(fi->_nrn_sav_d);
-            }
-            if (n > 0) {
-                CACHELINE_CALLOC(fi->_nrn_sav_rhs, double, n);
-                CACHELINE_CALLOC(fi->_nrn_sav_d, double, n);
-            }
-            fast_imem_size_[i] = n;
-        }
-    }
-}
-
 void nrn_fast_imem_alloc() {
-    if (nrn_use_fast_imem) {
-        int i;
-        fast_imem_alloc();
-        for (i = 0; i < nrn_nthread; ++i) {
-            nrn_threads[i]._nrn_fast_imem = fast_imem_ + i;
-        }
-    } else {
-        fast_imem_free();
-        nrn_imem_defer_free(nullptr);
-    }
+    // Make sure that storage for the fast_imem calculation exists/is destroyed according to
+    // nrn_use_fast_imem
+    neuron::model()
+        .node_data()
+        .set_field_status<neuron::container::Node::field::FastIMemSavD,
+                          neuron::container::Node::field::FastIMemSavRHS>(nrn_use_fast_imem);
 }
 
 void nrn_threads_free() {
@@ -518,7 +447,6 @@ void nrn_threads_free() {
             spDestroy(nt->_sp13mat);
             nt->_sp13mat = 0;
         }
-        nt->_nrn_fast_imem = NULL;
         nt->end = 0;
         nt->ncell = 0;
         nt->_vcv = 0;
@@ -1126,6 +1054,26 @@ double* NrnThread::node_d_storage() {
 
 double* NrnThread::node_rhs_storage() {
     return &neuron::model().node_data().get<neuron::container::Node::field::RHS>(_node_data_offset);
+}
+
+double* NrnThread::node_sav_d_storage() {
+    auto& node_data = neuron::model().node_data();
+    using Tag = neuron::container::Node::field::FastIMemSavD;
+    if (node_data.field_active<Tag>()) {
+        return &node_data.get<Tag>(_node_data_offset);
+    } else {
+        return nullptr;
+    }
+}
+
+double* NrnThread::node_sav_rhs_storage() {
+    auto& node_data = neuron::model().node_data();
+    using Tag = neuron::container::Node::field::FastIMemSavRHS;
+    if (node_data.field_active<Tag>()) {
+        return &node_data.get<Tag>(_node_data_offset);
+    } else {
+        return nullptr;
+    }
 }
 
 double* NrnThread::node_voltage_storage() {

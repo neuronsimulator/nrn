@@ -34,21 +34,9 @@ OcPtrVector::~OcPtrVector() {
     }  // allocated by strdup
 }
 
-void OcPtrVector::ptr_update_cmd(std::unique_ptr<HocCommand> cmd) {
-    update_cmd_ = std::move(cmd);
-}
-
 void OcPtrVector::resize(int sz) {
     pd_.resize(sz,
                neuron::container::data_handle<double>{neuron::container::do_not_search, &dummy});
-}
-
-void OcPtrVector::ptr_update() {
-    if (update_cmd_) {
-        update_cmd_->execute(false);
-    } else {
-        hoc_warning("PtrVector has no ptr_update callback", NULL);
-    }
 }
 
 void OcPtrVector::pset(int i, neuron::container::data_handle<double> dh) {
@@ -141,22 +129,6 @@ static double gather(void* v) {
     return 0.;
 }
 
-static double ptr_update_callback(void* v) {
-    OcPtrVector* opv = (OcPtrVector*) v;
-    std::unique_ptr<HocCommand> hc{};
-    if (ifarg(1) && hoc_is_object_arg(1)) {
-        hc = std::make_unique<HocCommand>(*hoc_objgetarg(1));
-    } else if (ifarg(1)) {
-        Object* o = NULL;
-        if (ifarg(2)) {
-            o = *hoc_objgetarg(2);
-        }
-        hc = std::make_unique<HocCommand>(hoc_gargstr(1), o);
-    }
-    opv->ptr_update_cmd(std::move(hc));
-    return 0.;
-}
-
 //  a copy of ivocvect::v_plot with y+i replaced by y[i]
 static int narg() {
     int i = 0;
@@ -233,7 +205,6 @@ static Member_func members[] = {{"size", get_size},
                                 {"getval", getval},
                                 {"scatter", scatter},
                                 {"gather", gather},
-                                {"ptr_update_callback", ptr_update_callback},
                                 {"plot", ptr_plot},
                                 {0, 0}};
 
