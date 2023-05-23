@@ -99,4 +99,5 @@ WORKDIR /root
 
 ENV BASH_ENV=/opt/rh/devtoolset-9/enable  \
     ENV=/opt/rh/devtoolset-9/enable  \
-    PROMPT_COMMAND=". /opt/rh/devtoolset-9/enable "
+    PROMPT_COMMAND=". /opt/rh/devtoolset-9/enable " \
+    NMODL_PYLIB=/nrnwheel/python/lib/libpython3.10.so.1.0

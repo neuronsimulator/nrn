@@ -238,7 +238,7 @@ if [ "$LinkCoreNEURON" = true ] ; then
         exit 1
     fi
     cd "$USER_PWD"
-    "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" "$@"
+    "${cnrn_prefix}/bin/nrnivmodl-core" -V -p 1 "${UserCOREFLAGS[@]}" "$@"
     cd "$MODSUBDIR"
   else
     printf "ERROR : CoreNEURON support is not enabled!\n"
