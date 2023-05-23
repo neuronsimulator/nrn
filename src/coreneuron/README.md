@@ -5,7 +5,7 @@
 # CoreNEURON
 > Optimised simulator engine for [NEURON](https://github.com/neuronsimulator/nrn)
 
-CoreNEURON is a compute engine for the [NEURON](https://www.neuron.yale.edu/neuron/) simulator optimised for both memory usage and computational speed. Its goal is to simulate large cell networks with small memory footprint and optimal performance.
+CoreNEURON is a compute engine for the [NEURON](https://nrn.readthedocs.io/) simulator optimised for both memory usage and computational speed. Its goal is to simulate large cell networks with small memory footprint and optimal performance.
 
 ## NEURON Models Compatibility
 
@@ -230,7 +230,7 @@ You can find [HOC example](https://github.com/neuronsimulator/nrn/blob/master/te
 
 #### What results are returned by CoreNEURON?
 
-At the end of the simulation CoreNEURON transfers by default : spikes, voltages, state variables, NetCon weights, all Vector.record, and most GUI trajectories to NEURON. These variables can be recorded using regular NEURON API (e.g. [Vector.record](https://www.neuron.yale.edu/neuron/static/py_doc/programming/math/vector.html#Vector.record) or [spike_record](https://www.neuron.yale.edu/neuron/static/new_doc/modelspec/programmatic/network/parcon.html#ParallelContext.spike_record)).
+At the end of the simulation CoreNEURON transfers by default : spikes, voltages, state variables, NetCon weights, all Vector.record, and most GUI trajectories to NEURON. These variables can be recorded using regular NEURON API (e.g. [Vector.record](https://nrn.readthedocs.io/en/latest/python/programming/math/vector.html#Vector.record) or [spike_record](https://nrn.readthedocs.io/en/latest/python/modelspec/programmatic/network/parcon.html#ParallelContext.spike_record)).
 
 #### How can I pass additional flags to build?
 
