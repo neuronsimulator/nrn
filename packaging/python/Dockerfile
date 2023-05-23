@@ -73,6 +73,13 @@ RUN cd /nrnwheel/readline/lib \
     && ar cq libreadline.a *.o \
     && rm *.o
 
+# NOTE: NMODL transpiler is used in during build step but it requires
+# sympy+python available in order to translate MOD files to C++. But under
+# manylinux container, Python (libpython) is not available and hence we can't
+# complete the build step. In order to enable building wheels with the existing
+# implementation of NMODL, for now, we are making libpython available inside
+# the manylinux container which is just used during the build step (nothing is
+# linked to libraries or binaries of distribution). 
 RUN curl -L -o Python-3.10.0.tar.gz https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz \
     && tar -xvzf Python-3.10.0.tar.gz \
     && cd Python-3.10.0 \
