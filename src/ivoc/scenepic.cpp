@@ -798,11 +798,6 @@ PopupMenu::~PopupMenu() {
 bool PopupMenu::event(Event& e) {
     if (!w_) {
         w_ = new PopupWindow(menu_);
-#if MAC
-        w_->place(10000, 10000);
-        w_->map();
-        w_->unmap();
-#endif
     }
     switch (e.type()) {
     case Event::down:
@@ -810,7 +805,7 @@ bool PopupMenu::event(Event& e) {
             Coord l, b;
             w_->place(e.pointer_root_x(), e.pointer_root_y());
             w_->align(.8, .9);
-#if defined(WIN32) || MAC
+#if defined(WIN32)
             l = w_->left();
             b = w_->bottom();
             if (b < 0. || l < 0.) {

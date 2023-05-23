@@ -109,9 +109,7 @@ MAT	*Q;
 
 	V_FREE(v);	V_FREE(w);	V_FREE(tmp);
 }
-#ifndef MAC
 extern	double	frexp(), ldexp();
-#endif
 /* product -- returns the product of a long list of numbers
 	-- answer stored in mant (mantissa) and expt (exponent) */
 static	double	product(a,offset,expt)

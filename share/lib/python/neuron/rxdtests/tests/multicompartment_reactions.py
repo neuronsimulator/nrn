@@ -1,5 +1,5 @@
 # Example copied from the RxD tutorial
-# http://www.neuron.yale.edu/neuron/static/docs/rxd/index.html
+# https://nrn.readthedocs.io/en/latest/rxd-tutorials/index.html
 from neuron import rxd, h, gui
 import numpy
 

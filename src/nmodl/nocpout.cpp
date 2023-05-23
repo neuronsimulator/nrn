@@ -311,9 +311,6 @@ void parout() {
     varcount = parraycount = 0;
     declare_p();
     ioncount = iondef(&pointercount); /* first is _nd_area if point process */
-    Lappendstr(defs_list,
-               "\n#if MAC\n#if !defined(v)\n#define v _mlhv\n#endif\n#if !defined(h)\n#define h "
-               "_mlhh\n#endif\n#endif\n");
     Lappendstr(defs_list, "static int hoc_nrnpointerindex = ");
     if (pointercount) {
         q = nrnpointers->next;
@@ -1444,26 +1441,13 @@ static double _difcoef%d(int _i, double* _p, Datum* _ppvar, double* _pdvol, doub
         ++n;
 
         if (s->subtype & ARRAY) {
-#if MAC
-            Sprintf(buf,
-                    " for (_i=0; _i < %d; ++_i) mac_difusfunc(_f, _mechtype, _difcoef%d, "
-                    "&_difspace%d, _i, ",
-                    s->araydim,
-                    n,
-                    n);
-#else
             Sprintf(buf,
                     " for (_i=0; _i < %d; ++_i) (*_f)(_mechtype, _difcoef%d, &_difspace%d, _i, ",
                     s->araydim,
                     n,
                     n);
-#endif
         } else {
-#if MAC
-            Sprintf(buf, " mac_difusfunc(_f,_mechtype, _difcoef%d, &_difspace%d, 0, ", n, n);
-#else
             Sprintf(buf, " (*_f)(_mechtype, _difcoef%d, &_difspace%d, 0, ", n, n);
-#endif
         }
         lappendstr(procfunc, buf);
 

@@ -9,7 +9,7 @@
 #include <IV-look/kit.h>
 #include <IV-look/stepper.h>
 #include <IV-look/dialogs.h>
-#if defined(MINGW) || defined(MAC)
+#if defined(MINGW)
 #define UseFieldEditor 1
 #else
 #define UseFieldEditor 0  // Use the FieldSEditor
@@ -111,10 +111,6 @@ class HocPanel: public OcGlyph {
     static void save_all(std::ostream&);
     void data_path(HocDataPaths*, bool);
     void item_append(HocItem*);
-#if MAC
-    void mac_menubar();
-    void mac_menubar(int&, int&, int);  // recurse per menu through list
-#endif
     static void keep_updated();
     static void keep_updated(HocUpdateItem*, bool);
     static void paneltool(const char* name,
@@ -142,9 +138,7 @@ class HocItem: public Resource {
     const char* getStr();
     virtual void help(const char* childpath = NULL);
     virtual void help_parent(HocItem*);
-#if MAC
-    virtual int mac_menubar(int&, int, int);
-#endif
+
   private:
     CopyString str_;
     HocItem* help_parent_;
@@ -155,9 +149,7 @@ class HocPushButton: public HocItem {
     HocPushButton(const char*, HocAction*, HocItem* parent = NULL);
     virtual ~HocPushButton();
     virtual void write(std::ostream&);
-#if MAC
-    virtual int mac_menubar(int&, int, int);
-#endif
+
   private:
     HocAction* a_;
 };
@@ -167,9 +159,7 @@ class HocRadioButton: public HocItem {
     HocRadioButton(const char*, HocRadioAction*, HocItem* parent = NULL);
     virtual ~HocRadioButton();
     virtual void write(std::ostream&);
-#if MAC
-    virtual int mac_menubar(int&, int, int);
-#endif
+
   private:
     HocRadioAction* a_;
 };
@@ -185,9 +175,7 @@ class HocMenu: public HocItem {
     virtual MenuItem* item() {
         return mi_;
     }
-#if MAC
-    virtual int mac_menubar(int&, int, int);
-#endif
+
   private:
     MenuItem* mi_;
     Menu* menu_;

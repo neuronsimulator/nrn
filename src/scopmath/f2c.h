@@ -157,9 +157,6 @@ struct Namelist {
     int nvars;
 };
 typedef struct Namelist Namelist;
-#ifdef MAC
-#undef abs
-#endif
 #define abs(x)     ((x) >= 0 ? (x) : -(x))
 #define dabs(x)    (doublereal) abs(x)
 #define min(a, b)  ((a) <= (b) ? (a) : (b))

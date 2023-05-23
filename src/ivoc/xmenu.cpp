@@ -974,31 +974,6 @@ void HocPanel::update_ptrs() {
     }
 }
 
-#if MAC
-void HocPanel::mac_menubar() {
-    int i = 1;
-    int mindex = 0;
-    printf("menubar 0 %s\n", getName());
-    mac_menubar(mindex, i, 0);
-}
-
-void HocPanel::mac_menubar(int& mindex, int& i, int m) {
-    int mr;
-    int mi = 0;
-    while (i < ilist_.count()) {
-        mr = ilist_.item(i)->mac_menubar(mindex, m, mi);
-        ++i;
-        ++mi;
-        if (mr > m) {
-            mac_menubar(mindex, i, mr);
-        } else if (mr < m) {
-            return;
-        }
-    }
-    return;
-}
-#endif
-
 void HocPanel::map_window(int scroll) {
     // switch to scrollbox if too many items
     static GlyphIndex maxcnt = -1;
@@ -1193,13 +1168,6 @@ void HocPushButton::write(std::ostream& o) {
     o << buf << std::endl;
 }
 
-#if MAC
-int HocPushButton::mac_menubar(int&, int m, int mi) {
-    printf("button item %d in menu %d \"%s\", \"%s\"\n", mi, m, getStr(), hideQuote(a_->name()));
-    return m;
-}
-#endif
-
 HocRadioButton::HocRadioButton(const char* name, HocRadioAction* a, HocItem* hi)
     : HocItem(name, hi) {
     a_ = a;
@@ -1215,13 +1183,6 @@ void HocRadioButton::write(std::ostream& o) {
                200);
     o << buf << std::endl;
 }
-
-#if MAC
-int HocRadioButton::mac_menubar(int&, int m, int mi) {
-    printf("radio item %d in menu %d \"%s\", \"%s\"\n", mi, m, getStr(), hideQuote(a_->name()));
-    return m;
-}
-#endif
 
 void HocPanel::label(const char* name) {
     box()->append(LayoutKit::instance()->margin(WidgetKit::instance()->label(name), 3));
@@ -1332,14 +1293,6 @@ void HocMenu::write(std::ostream& o) {
     Sprintf(buf, "xmenu(\"%s\", %d)", getStr(), add2menubar_);
     o << buf << std::endl;
 }
-
-#if MAC
-int HocMenu::mac_menubar(int& mindex, int m, int mi) {
-    ++mindex;
-    printf("menu %d is item %d in %d %s\n", mindex, mi, m, getStr());
-    return mindex;
-}
-#endif
 
 static Coord xvalue_field_size;
 
@@ -1468,18 +1421,6 @@ HocItem::~HocItem() {
 void HocItem::write(std::ostream& o) {
     o << str_.string() << std::endl;
 }
-
-#if MAC
-int HocItem::mac_menubar(int&, int m, int mi) {
-    if (strcmp(getStr(), "xmenu()") == 0) {
-        printf("end menu %d\n", m);
-        return -1;
-    } else {
-        printf("invalid menuitem %s\n", getStr());
-    }
-    return m;
-}
-#endif
 
 const char* HocItem::getStr() {
     return str_.string();
