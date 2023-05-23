@@ -86,8 +86,6 @@ data depending on type. eg for VAR && NOTUSER it is
 
 */
 
-#ifndef MAC
-
 #define HAVE_XDR 0
 
 #include <OS/list.h>
@@ -377,18 +375,7 @@ bool Checkpoint::xdr(Object*& o) {
     }
 }
 
-
-#else
-void hoc_checkpoint();
-int hoc_readcheckpoint(char*);
-void hoc_ret();
-void hoc_pushx(double);
-
-
-#endif  // from top of file
-
 void hoc_checkpoint() {
-#ifndef MAC
     if (!cp_) {
         cp_ = new OcCheckpoint();
     }
@@ -396,14 +383,9 @@ void hoc_checkpoint() {
     b = cp_->write(gargstr(1));
     hoc_ret();
     hoc_pushx(double(b));
-#else
-    hoc_ret();
-    hoc_pushx(0.);
-#endif
 }
 
 int hoc_readcheckpoint(char* fname) {
-#ifndef MAC
     f_ = fopen(fname, "r");
     if (!f_) {
         return 0;
@@ -428,12 +410,8 @@ int hoc_readcheckpoint(char* fname) {
     delete rdckpt_;
     rdckpt_ = NULL;
     return rval;
-#else
-    return 0;
-#endif
 }
 
-#ifndef MAC
 OcCheckpoint::OcCheckpoint() {
     ppl_ = NULL;
     func_ = NULL;
@@ -1419,5 +1397,4 @@ bool OcReadChkPnt::get(Object*& o) {
     o = pobj_[i];
     return true;
 }
-#endif
 #endif

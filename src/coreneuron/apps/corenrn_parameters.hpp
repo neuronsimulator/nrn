@@ -6,6 +6,7 @@
 # =============================================================================.
 */
 #pragma once
+#include <cstdint>  // std::uint32_t
 #include <memory>
 #include <ostream>
 #include <string>

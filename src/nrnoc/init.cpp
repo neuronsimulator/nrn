@@ -382,9 +382,9 @@ void hoc_last_init(void) {
     for (m = mechanism; *m; m++) {
         (*m)();
     }
-#if !MAC && !defined(WIN32)
+#if !defined(WIN32)
     modl_reg();
-#endif  // not MAC and not WIN32
+#endif  // not WIN32
     hoc_register_limits(0, _hoc_parm_limits);
     hoc_register_units(0, _hoc_parm_units);
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)

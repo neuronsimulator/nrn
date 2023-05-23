@@ -2,9 +2,6 @@
 #define netcon_h
 
 #undef check
-#if MAC
-#define NetCon nrniv_Dinfo
-#endif
 
 #include "htlist.h"
 #include "nrnmpi.h"

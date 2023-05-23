@@ -33,8 +33,6 @@ option(CORENRN_ENABLE_OPENMP "Build the CORE NEURON with OpenMP implementation" 
 option(CORENRN_ENABLE_OPENMP_OFFLOAD "Prefer OpenMP target offload to OpenACC" ON)
 option(CORENRN_ENABLE_TIMEOUT "Enable nrn_timeout implementation" ON)
 option(CORENRN_ENABLE_REPORTING "Enable use of libsonata for soma reports" OFF)
-option(CORENRN_ENABLE_MPI "Enable MPI-based execution" ON)
-option(CORENRN_ENABLE_MPI_DYNAMIC "Enable dynamic MPI support" OFF)
 option(CORENRN_ENABLE_HOC_EXP "Enable wrapping exp with hoc_exp()" OFF)
 option(CORENRN_ENABLE_SPLAYTREE_QUEUING "Enable use of Splay tree for spike queuing" ON)
 option(CORENRN_ENABLE_NET_RECEIVE_BUFFER "Enable event buffering in net_receive function" ON)
@@ -204,16 +202,14 @@ else()
   set(COMPILE_LIBRARY_TYPE "STATIC")
 endif()
 
-if(CORENRN_ENABLE_MPI)
-  find_package(MPI REQUIRED)
+if(NRN_ENABLE_MPI)
   list(APPEND CORENRN_COMPILE_DEFS NRNMPI=1)
-  # avoid linking to C++ bindings
-  list(APPEND CORENRN_COMPILE_DEFS MPI_NO_CPPBIND=1)
-  list(APPEND CORENRN_COMPILE_DEFS OMPI_SKIP_MPICXX=1)
-  list(APPEND CORENRN_COMPILE_DEFS MPICH_SKIP_MPICXX=1)
 else()
   list(APPEND CORENRN_COMPILE_DEFS NRNMPI=0)
   list(APPEND CORENRN_COMPILE_DEFS NRN_MULTISEND=0)
+endif()
+if(NRN_ENABLE_MPI_DYNAMIC)
+  list(APPEND CORENRN_COMPILE_DEFS NRNMPI_DYNAMICLOAD=1)
 endif()
 
 if(CORENRN_ENABLE_OPENMP)
@@ -269,13 +265,6 @@ set(MOD2C_ENABLE_LEGACY_UNITS
 set(NMODL_ENABLE_LEGACY_UNITS
     ${CORENRN_ENABLE_LEGACY_UNITS}
     CACHE BOOL "" FORCE)
-
-if(CORENRN_ENABLE_MPI_DYNAMIC)
-  if(NOT CORENRN_ENABLE_MPI)
-    message(FATAL_ERROR "Cannot enable dynamic mpi without mpi")
-  endif()
-  list(APPEND CORENRN_COMPILE_DEFS CORENEURON_ENABLE_MPI_DYNAMIC)
-endif()
 
 if(CORENRN_ENABLE_PRCELLSTATE)
   set(CORENRN_NRN_PRCELLSTATE 1)
@@ -386,7 +375,7 @@ file(
   "utils/*/*.cpp")
 
 set(MPI_LIB_FILES "mpi/lib/mpispike.cpp" "mpi/lib/nrnmpi.cpp")
-if(CORENRN_ENABLE_MPI)
+if(NRN_ENABLE_MPI)
   # Building these requires -ldl, which is only added if MPI is enabled.
   list(APPEND CORENEURON_CODE_FILES "mpi/core/resolve.cpp" "mpi/core/nrnmpidec.cpp")
 endif()
@@ -492,10 +481,10 @@ set(CORENRN_MPI_LIB_NAME
     CACHE INTERNAL "")
 
 # for non-dynamic mpi mode just build object files
-if(CORENRN_ENABLE_MPI AND NOT CORENRN_ENABLE_MPI_DYNAMIC)
+if(NRN_ENABLE_MPI AND NOT NRN_ENABLE_MPI_DYNAMIC)
   add_library(${CORENRN_MPI_LIB_NAME} OBJECT ${MPI_LIB_FILES})
   target_include_directories(
-    ${CORENRN_MPI_LIB_NAME} PRIVATE ${MPI_INCLUDE_PATH} ${PROJECT_SOURCE_DIR}/src
+    ${CORENRN_MPI_LIB_NAME} PRIVATE ${MPI_C_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/src
                                     ${CMAKE_BINARY_DIR}/generated)
   target_link_libraries(${CORENRN_MPI_LIB_NAME} ${CORENRN_CALIPER_LIB})
   set_property(TARGET ${CORENRN_MPI_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -531,7 +520,7 @@ foreach(target coreneuron-core ${coreneuron_cuda_target})
 endforeach()
 
 # we can link to MPI libraries in non-dynamic-mpi build
-if(CORENRN_ENABLE_MPI AND NOT CORENRN_ENABLE_MPI_DYNAMIC)
+if(NRN_ENABLE_MPI AND NOT NRN_ENABLE_MPI_DYNAMIC)
   target_link_libraries(coreneuron-core PUBLIC ${MPI_CXX_LIBRARIES})
 endif()
 
@@ -545,7 +534,7 @@ endif()
 target_link_libraries(coreneuron-core PUBLIC ${CMAKE_DL_LIBS})
 
 # this is where we handle dynamic mpi library build
-if(CORENRN_ENABLE_MPI AND CORENRN_ENABLE_MPI_DYNAMIC)
+if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
   # store mpi library targets that will be built
   list(APPEND corenrn_mpi_targets "")
 
@@ -797,10 +786,10 @@ message(STATUS "--------------------+-------------------------------------------
 message(STATUS "CXX COMPILER        | ${CMAKE_CXX_COMPILER}")
 message(STATUS "COMPILE FLAGS       | ${CORENRN_CXX_FLAGS}")
 message(STATUS "Build Type          | ${COMPILE_LIBRARY_TYPE}")
-message(STATUS "MPI                 | ${CORENRN_ENABLE_MPI}")
-if(CORENRN_ENABLE_MPI)
-  message(STATUS "  DYNAMIC           | ${CORENRN_ENABLE_MPI_DYNAMIC}")
-  if(CORENRN_ENABLE_MPI_DYNAMIC AND NRN_MPI_LIBNAME_LIST)
+message(STATUS "MPI                 | ${NRN_ENABLE_MPI}")
+if(NRN_ENABLE_MPI)
+  message(STATUS "  DYNAMIC           | ${NRN_ENABLE_MPI_DYNAMIC}")
+  if(NRN_ENABLE_MPI_DYNAMIC AND NRN_MPI_LIBNAME_LIST)
     # ~~~
     # for dynamic mpi, rely on neuron for list of libraries to build
     # this is to avoid cmake code duplication on the coreneuron side
@@ -814,7 +803,7 @@ if(CORENRN_ENABLE_MPI)
       message(STATUS "    INC             | ${include}")
     endforeach(val)
   else()
-    message(STATUS "  INC               | ${MPI_CXX_INCLUDE_PATH}")
+    message(STATUS "  INC               | ${MPI_CXX_INCLUDE_DIRS}")
   endif()
 endif()
 message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")

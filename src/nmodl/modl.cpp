@@ -30,9 +30,6 @@
 
 #include <getopt.h>
 
-#if MAC
-#include <sioux.h>
-#endif
 #if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -131,11 +128,6 @@ int main(int argc, char** argv) {
     }
 
     filetxtlist = newlist();
-
-#if MAC
-    SIOUXSettings.asktosaveonclose = false;
-    Fprintf(stderr, "%s   %s   %s\n", pgm_name, RCS_version, RCS_date);
-#endif
 
     init(); /* keywords into symbol table, initialize
              * lists, etc. */
@@ -252,10 +244,6 @@ int main(int argc, char** argv) {
         yyunput(ilint);
         yyoutput(ilint);
     }
-#endif
-#if MAC
-    printf("Done\n");
-    SIOUXSettings.autocloseonquit = true;
 #endif
     free(modprefix); /* allocated in openfiles below */
     return 0;

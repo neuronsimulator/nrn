@@ -35,7 +35,7 @@ find_program(
   NAMES nmodl${CMAKE_EXECUTABLE_SUFFIX}
   HINTS "${CORENRN_NMODL_DIR}/bin" QUIET)
 
-find_path(nmodl_INCLUDE "nmodl/fast_math.hpp" HINTS "${CORENRN_NMODL_DIR}/include")
+find_path(nmodl_INCLUDE "nmodl.hpp" HINTS "${CORENRN_NMODL_DIR}/include")
 find_path(nmodl_PYTHONPATH "nmodl/__init__.py" HINTS "${CORENRN_NMODL_DIR}/lib")
 
 # Checks 'REQUIRED', 'QUIET' and versions.
