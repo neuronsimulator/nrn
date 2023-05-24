@@ -83,7 +83,7 @@ RUN cd /nrnwheel/readline/lib \
 RUN curl -L -o Python-3.10.0.tar.gz https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz \
     && tar -xvzf Python-3.10.0.tar.gz \
     && cd Python-3.10.0 \
-    && ./configure --prefix=/nrnwheel/python --enable-shared --with-static-libpython \
+    && ./configure --prefix=/nrnwheel/python --enable-shared --with-static-libpython=no \
     && make -j altinstall \
     && cd .. && rm -rf Python-3.10.0 Python-3.10.0.tar.gz
 
