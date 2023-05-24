@@ -6,10 +6,10 @@ WORKDIR /root
 # Install NVHPC from NVIDIA's repository.
 RUN yum-config-manager --add-repo https://developer.download.nvidia.com/hpc-sdk/rhel/nvhpc.repo \
     && yum install -y nvhpc-22-1 nvhpc-2022-22.1 \
-    && yum clean all
+    && yum clean all && rm -rf /var/cache
 
 # setup nvhpc environment for building wheel and interactive usage
-RUN yum install -y environment-modules && yum clean all \
+RUN yum install -y environment-modules && yum clean all && rm -rf /var/cache \
     && echo "module use /opt/nvidia/hpc_sdk/modulefiles" >> ~/.bashrc \
     && /opt/nvidia/hpc_sdk/Linux_x86_64/22.1/compilers/bin/makelocalrc -x \
         -gcc `which gcc` -gpp `which g++` -g77 `which gfortran` -cuda 11.5
