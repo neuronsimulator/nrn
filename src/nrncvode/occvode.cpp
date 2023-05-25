@@ -353,7 +353,6 @@ void Cvode::daspk_init_eqn() {
 
     // how many equations are there?
     neq_ = 0;
-    Memb_func* mf;
     CvMembList* cml;
     // start with all the equations for the fixed step method.
     if (use_sparse13 == 0 || diam_changed != 0) {
@@ -363,10 +362,12 @@ void Cvode::daspk_init_eqn() {
     z.neq_v_ = z.nonvint_offset_ = zneq;
     // now add the membrane mechanism ode's to the count
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {
-        nrn_ode_count_t s = memb_func[cml->index].ode_count;
-        if (s) {
-            assert(cml->ml.size() == 1);
-            zneq += cml->ml[0].nodecount * (*s)(cml->index);
+        if (auto ode_count = memb_func[cml->index].ode_count; ode_count) {
+            zneq += std::accumulate(cml->ml.begin(),
+                                    cml->ml.end(),
+                                    0,
+                                    [](int total, auto& ml) { return total + ml.nodecount; }) *
+                    ode_count(cml->index);
         }
     }
     z.nonvint_extra_offset_ = zneq;
@@ -424,20 +425,25 @@ void Cvode::daspk_init_eqn() {
     // map the membrane mechanism ode state and dstate pointers
     int ieq = z.neq_v_;
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {
-        int n;
-        mf = memb_func + cml->index;
-        nrn_ode_count_t sc = mf->ode_count;
-        if (sc && ((n = (*sc)(cml->index)) > 0)) {
-            assert(cml->ml.size() == 1);
-            Memb_list* ml = &cml->ml[0];
-            nrn_ode_map_t s = mf->ode_map;
-            for (j = 0; j < ml->nodecount; ++j) {
-                (*s)(ml->prop[j],
-                     ieq,
-                     z.pv_.data() + ieq,
-                     z.pvdot_.data() + ieq,
-                     atv + ieq,
-                     cml->index);
+        auto const& mf = memb_func[cml->index];
+        auto const ode_count = mf.ode_count;
+        if (!ode_count) {
+            continue;
+        }
+        auto const n = ode_count(cml->index);
+        if (n <= 0) {
+            continue;
+        }
+        auto const ode_map = mf.ode_map;
+        for (auto& ml: cml->ml) {
+            for (j = 0; j < ml.nodecount; ++j) {
+                assert(ode_map);
+                ode_map(ml.prop[j],
+                        ieq,
+                        z.pv_.data() + ieq,
+                        z.pvdot_.data() + ieq,
+                        atv + ieq,
+                        cml->index);
                 ieq += n;
             }
         }
@@ -471,8 +477,9 @@ void Cvode::scatter_y(neuron::model_sorted_token const& sorted_token, double* y,
     for (CvMembList* cml = z.cv_memb_list_; cml; cml = cml->next) {
         Memb_func* mf = memb_func + cml->index;
         if (mf->ode_synonym) {
-            assert(cml->ml.size() == 1);
-            mf->ode_synonym(sorted_token, nrn_threads[tid], cml->ml[0], cml->index);
+            for (auto& ml: cml->ml) {
+                mf->ode_synonym(sorted_token, nrn_threads[tid], ml, cml->index);
+            }
         }
     }
     nrn_extra_scatter_gather(0, tid);
