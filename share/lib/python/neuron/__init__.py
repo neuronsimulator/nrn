@@ -6,7 +6,7 @@ neuron
 For empirically-based simulations of neurons and networks of neurons in Python.
 
 This is the top-level module of the official python interface to
-the NEURON simulation environment (http://neuron.yale.edu/neuron/).
+the NEURON simulation environment (https://nrn.readthedocs.io).
 
 Documentation is available in the docstrings.
 
@@ -505,7 +505,7 @@ def psection(section):
 
     See:
 
-    https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/topology.html?#psection
+    https://nrn.readthedocs.io/en/latest/python/modelspec/programmatic/topology.html#psection
     """
     warnings.warn(
         "neuron.psection() is deprecated; use print(sec.psection()) instead",
@@ -537,7 +537,7 @@ def init():
         from neuron.units import mV
         h.finitialize(-65 * mV)
 
-    https://www.neuron.yale.edu/neuron/static/py_doc/simctrl/programmatic.html?#finitialize
+    https://nrn.readthedocs.io/en/latest/python/simctrl/programmatic.html#finitialize
 
     """
     warnings.warn(
