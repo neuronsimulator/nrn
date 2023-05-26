@@ -609,6 +609,13 @@ static double free_event_queues(void*) {
     return 0;
 }
 
+const char** sundials_version(void*) {
+    static const std::string ver{SUNDIALS_VERSION};
+    char** ps = hoc_temp_charptr();
+    *ps = (char*) ver.c_str();
+    return (const char**) (ps);
+}
+
 static Member_func members[] = {{"solve", solve},
                                 {"atol", nrn_atol},
                                 {"rtol", rtol},
@@ -663,6 +670,8 @@ static Member_func members[] = {{"solve", solve},
 
 static Member_ret_obj_func omembers[] = {{"netconlist", netconlist}, {nullptr, nullptr}};
 
+static Member_ret_str_func smembers[] = {{"version", sundials_version}, {nullptr, nullptr}};
+
 static void* cons(Object*) {
 #if 0
 	NetCvode* d;
@@ -686,7 +695,7 @@ static void destruct(void* v) {
 #endif
 }
 void Cvode_reg() {
-    class2oc("CVode", cons, destruct, members, NULL, omembers, NULL);
+    class2oc("CVode", cons, destruct, members, NULL, omembers, smembers);
     net_cvode_instance = new NetCvode(1);
     Daspk::dteps_ = 1e-9;  // change with cvode.dae_init_dteps(newval)
 }
