@@ -169,6 +169,9 @@ struct Node {
     void set_rhs(neuron::container::Node::field::RHS::type rhs) {
         _node_handle.set_rhs(rhs);
     }
+    [[nodiscard]] auto non_owning_handle() {
+        return _node_handle.non_owning_handle();
+    }
     double _rinv{}; /* conductance uS from node to parent */
     double* _a_matelm;
     double* _b_matelm;

@@ -26,5 +26,14 @@ using handle = handle_interface<non_owning_identifier<storage>>;
 /**
  * @brief Owning handle to a Node.
  */
-using owning_handle = handle_interface<owning_identifier<storage>>;
+struct owning_handle: handle_interface<owning_identifier<storage>> {
+    using base_type = handle_interface<owning_identifier<storage>>;
+    using base_type::base_type;
+    /**
+     * @brief Get a non-owning handle from an owning handle.
+     */
+    [[nodiscard]] handle non_owning_handle() {
+        return non_owning_identifier<storage>{&underlying_storage(), id()};
+    }
+};
 }  // namespace neuron::container::Node

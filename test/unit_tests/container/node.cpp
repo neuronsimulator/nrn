@@ -359,6 +359,13 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             REQUIRE(node.area() == field::Area{}.default_value());
             REQUIRE(node.v() == field::Voltage{}.default_value());
         }
+        THEN("Check we can get a non-owning handle to it") {
+            auto handle = node.non_owning_handle();
+            AND_THEN("Check the handle yields the corect values") {
+                REQUIRE(handle.area() == field::Area{}.default_value());
+                REQUIRE(handle.v() == field::Voltage{}.default_value());
+            }
+        }
     }
     GIVEN("A node that is deleted without an active deferred-deletion vector") {
         auto* const old = std::exchange(neuron::container::detail::identifier_defer_delete_storage,
@@ -520,7 +527,8 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                 }
                 // In read-only mode we cannot delete Nodes either, but because
                 // we cannot throw from destructors it is not easy to test this
-                // in this context. nodes.pop_back() would call std::terminate.
+                // in this context. There is a separate test for this below
+                // that is tagged with [tests_that_abort].
             }
             // sorted_token out of scope, underlying data no longer read-only
             THEN("After the token is discarded, new Nodes can be allocated") {
