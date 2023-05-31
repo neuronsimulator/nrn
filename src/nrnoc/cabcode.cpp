@@ -13,6 +13,8 @@
 #include "hocparse.h"
 #include "membdef.h"
 
+#include <sstream>
+
 extern int hoc_execerror_messages;
 #define symlist hoc_symlist
 
@@ -80,6 +82,15 @@ void nrn_initcode(void) {
     section_object_seen = 0;
     state_discon_allowed_ = 1;
     skip_secstack_check = 0;
+}
+
+void oc_check_cabcode(int* a1, int* a2) {
+    if (isecstack != *a1) {
+        std::ostringstream oss;
+        oss << "isecstack=" << isecstack << " would be overwritten with " << *a1 << " in a hypothetical restore";
+        hoc_execerror(oss.str().c_str(), nullptr);
+    }
+    nrn_assert(*a2 == section_object_seen);
 }
 
 void oc_save_cabcode(int* a1, int* a2) {

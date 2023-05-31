@@ -99,8 +99,10 @@ void hoc_spinit() {
     for (i = 0; functions[i].name; i++) {
         if (!strncmp(functions[i].name, "init", 4)) {
             hoc_fake_call(hoc_lookup(functions[i].name));
-            (*functions[i].func)();
-            continue;
+            functions[i].func();
+            // as noted in docs for hoc_fake_call, this leaves hoc_returning = 1 and a double on the stack. clean up.
+            hoc_returning = 0;
+            hoc_xpop();
         }
     }
     hoc_last_init();

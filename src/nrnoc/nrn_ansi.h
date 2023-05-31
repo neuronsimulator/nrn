@@ -20,9 +20,6 @@ extern void hoc_register_dparam_semantics(int, int, const char*);
 extern void add_nrn_fornetcons(int, int);
 extern void hoc_register_tolerance(int, HocStateTolerance*, Symbol***);
 
-extern void oc_save_cabcode(int* a1, int* a2);
-extern void oc_restore_cabcode(int* a1, int* a2);
-
 extern "C" void modl_reg(void);
 
 // nrnmech stuff

@@ -1162,7 +1162,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
             nrnmpi_char_broadcast(s, size, 0);
         }
         // Throws on error
-        OcJump::execute_unchecked(s);
+        OcJump::execute_unchecked(s, nullptr /* no Object context */);
         delete[] s;
         break;
     default: {

@@ -1379,6 +1379,13 @@ void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
     hoc_fin = i4;
 }
 
+void oc_check_input_info(const char* i1, int i2, int /* i3 */, NrnFILEWrap* i4) {
+    nrn_assert(nrn_inputbufptr == i1);
+    nrn_assert(hoc_pipeflag == i2);
+    // intentionally not checking hoc_lineno against i3; we expect some lines in some files to have been processed.
+    nrn_assert(hoc_fin == i4);
+}
+
 /**
  * @brief Execute a string of HOC code, print errors to stderr.
  * @param buf Null-terminated string to execute.
@@ -1410,14 +1417,7 @@ void hoc_exec_string(const char* buf) {
     while (*hoc_ctp || *nrn_inputbufptr) {
         // See if we recently received SIGINT
         check_intset();
-        try {
-            hoc_ParseExec(yystart);
-        } catch (std::exception const& e) {
-            // re-initialise things, this destroys the HOC stack
-            // probably what we actually want to do is restore the stack as it was before hoc_ParseExec?
-            //hoc_initcode();
-            throw;
-        }
+        hoc_ParseExec(yystart);
         // Check for SIGINT again. The intent is that when catch_errors == true then SIGINT results
         // in an exception leaving this function, not a return value of 1.
         check_intset();

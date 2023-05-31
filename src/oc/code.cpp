@@ -510,6 +510,40 @@ static Frame* rframe;
 static std::size_t rstack;
 static const char* parsestr;
 
+void oc_check_code(Inst** a1,
+                  Inst** a2,
+                  std::size_t& a3,
+                  Frame** a4,
+                  int* a5,
+                  int* a6,
+                  Inst** a7,
+                  Frame** a8,
+                  std::size_t& a9,
+                  Symlist** a10,
+                  Inst** a11,
+                  int* a12) {
+    nrn_assert(*a1 == progbase);
+    nrn_assert(*a2 == progp);
+    nrn_assert(a3 == stack.size());
+    nrn_assert(*a4 == fp);
+    if (hoc_returning != *a5) {
+        std::ostringstream oss;
+        oss << "hoc_returning=" << hoc_returning << " would be overwritten with " << *a5 << " in a hypothetical restore";
+        hoc_execerror(oss.str().c_str(), nullptr);
+    }
+    nrn_assert(*a6 == do_equation);
+    if (hoc_pc != *a7) {
+        std::ostringstream oss;
+        oss << "hoc_pc=" << hoc_pc << " would be overwritten with " << *a7 << " in a hypothetical restore";
+        hoc_execerror(oss.str().c_str(), nullptr);
+    }
+    nrn_assert(*a8 == rframe);
+    nrn_assert(a9 == rstack);
+    nrn_assert(*a10 == p_symlist);
+    nrn_assert(*a11 == prog_parse_recover);
+    nrn_assert(*a12 == tobj_count);
+}
+
 void oc_save_code(Inst** a1,
                   Inst** a2,
                   std::size_t& a3,

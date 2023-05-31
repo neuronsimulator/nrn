@@ -624,6 +624,7 @@ static void* nrnpy_hoc_bool_pop() {
 }
 
 static void* fcall(void* vself, void* vargs) {
+    PyLockGIL _gil_lock{};
     PyHocObject* self = (PyHocObject*) vself;
     if (self->ho_) {
         hoc_push_object(self->ho_);
@@ -695,16 +696,6 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
     PyObject* section = 0;
     PyObject* result{};
     if (kwrds && PyDict_Check(kwrds)) {
-#if 0
-		PyObject* keys = PyDict_Keys(kwrds);
-		assert(PyList_Check(keys));
-		int n = PyList_Size(keys);
-		for (int i = 0; i < n; ++i) {
-			PyObject* key = PyList_GetItem(keys, i);
-			PyObject* value = PyDict_GetItem(kwrds, key);
-			printf("%s %s\n", PyUnicode_AsUTF8(key), PyUnicode_AsUTF8(PyObject_Str(value)));
-		}
-#endif
         section = PyDict_GetItemString(kwrds, "sec");
         int num_kwargs = PyDict_Size(kwrds);
         if (num_kwargs > 1) {
@@ -737,14 +728,29 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
     if (self->type_ == PyHoc::HocTopLevelInterpreter) {
         result = nrnexec((PyObject*) self, args);
     } else if (self->type_ == PyHoc::HocFunction) {
+        // hocobj_call is called from Python, in a thread that holds the Python GIL.
+        // OcJump::fpycall needs to obtain the HOC interpreter lock, which may be held by another thread that is waiting for the GIL.
+        // Attempt the following strategy:
+        // - [stack belongs to someone else] here: release the GIL (may unblock another thread)
+        // - [stack empty, belongs to us] in fpycall: acquire the HOC lock (may wait a while for the other thread)
+        // - [stack empty, belongs to us] in fcall: re-acquire the GIL (should not deadlock, no other thread should be trying to acquire the HOC lock while holding the GIL)
+        // - [stack used, belongs to us] in fcall: execute HOC/Python glue, safely holding both locks (:tada:)
+        // - [stack used, belongs to us] in fcall: re-release the GIL
+        // - TODO [stack belongs to us]: clean stack, call hoc_unref_defer()
+        // - [stack empty, belongs to us] in fpycall: release the HOC lock
+        // - here: re-acquire the GIL (may have to wait a while, other pure Python or Python + NEURON code may be executing in the meantime)
+        // Releasing the GIL should avoid that deadlock.
+        auto* const Py_UNBLOCK_THREADS; // release the GIL
         try {
             result = static_cast<PyObject*>(OcJump::fpycall(fcall, self, args));
+            Py_BLOCK_THREADS // re-acquire the GIL before passing control back to Python
         } catch (std::exception const& e) {
+            Py_BLOCK_THREADS // re-acquire the GIL before calling Python API
             std::ostringstream oss;
             oss << "hocobj_call error: " << e.what();
             PyErr_SetString(PyExc_RuntimeError, oss.str().c_str());
         }
-        hoc_unref_defer();
+        hoc_unref_defer(); // FIXME: touches HOC state, should be called before releasing the HOC lock
     } else {
         PyErr_SetString(PyExc_TypeError, "object is not callable");
         curargs_ = prevargs_;

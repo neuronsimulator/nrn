@@ -67,6 +67,12 @@ struct saved_state {
         oc_save_input_info(&i1, &i2, &i3, &i4);
         oc_save_cabcode(&cc1, &cc2);
     }
+    void check() {
+        oc_check_hoc_oop(&o1, &o2, &o4, &o5);
+        oc_check_code(&c1, &c2, c3, &c4, &c5, &c6, &c7, &c8, c9, &c10, &c11, &c12);
+        oc_check_input_info(i1, i2, i3, i4);
+        oc_check_cabcode(&cc1, &cc2);
+    }
     void restore() {
         oc_restore_hoc_oop(&o1, &o2, &o4, &o5);
         oc_restore_code(&c1, &c2, c3, &c4, &c5, &c6, &c7, &c8, c9, &c10, &c11, &c12);
@@ -117,7 +123,7 @@ bool OcJump::execute(Inst* p) {
     saved_state before{};
     try {
         hoc_execute(p);
-        // TODO: check that restoring would be a no-op here? Or nearly-a-no-op?
+        before.check(); // Check that error-free execution got back to the initial state.
         return true;
     } catch (...) {
         before.restore();
@@ -125,12 +131,17 @@ bool OcJump::execute(Inst* p) {
     }
 }
 
+// 
+static void clean_state() {
+
+}
+
 void OcJump::execute_unchecked(const char* code) {
     std::lock_guard const _{hoc_mutex};
     saved_state before{};
     try {
         hoc_exec_string(code);
-        // TODO: check that restoring would be a no-op here? Or nearly-a-no-op?
+        before.check(); // Check that error-free execution got back to the initial state.
     } catch (...) {
         before.restore();
         throw;
@@ -140,10 +151,12 @@ void OcJump::execute_unchecked(const char* code) {
 void OcJump::execute_unchecked(const char* code, Object* ob) {
     std::lock_guard const _{hoc_mutex};
     saved_state before{};
-    ObjectContext _ctx{ob};
     try {
-        hoc_exec_string(code);
-        // TODO: check that restoring would be a no-op here? Or nearly-a-no-op?
+        {
+            ObjectContext _ctx{ob};
+            hoc_exec_string(code);
+        }
+        before.check(); // Check that error-free execution got back to the initial state.
     } catch (...) {
         before.restore();
         throw;
@@ -155,7 +168,7 @@ bool OcJump::execute(const char* stmt, std::ostream* os) {
     saved_state before{};
     try {
         hoc_exec_string(stmt);
-        // TODO: check that restoring would be a no-op here? Or nearly-a-no-op?
+        before.check(); // Check that error-free execution got back to the initial state.
         return true;
     } catch (std::exception const& e) {
         before.restore();
@@ -170,8 +183,7 @@ bool OcJump::execute(const char* stmt, std::ostream* os) {
     } catch (...) {
         before.restore();
         if (os) {
-            *os << "OcJump::execute caught";
-            *os << std::endl;
+            *os << "OcJump::execute caught" << std::endl;
         }
         return false;
     }
@@ -180,10 +192,12 @@ bool OcJump::execute(const char* stmt, std::ostream* os) {
 bool OcJump::execute(const char* stmt, Object* ob, std::ostream* os) {
     std::lock_guard const _{hoc_mutex};
     saved_state before{};
-    ObjectContext _ctx{ob};
     try {
-        hoc_exec_string(stmt);
-        // TODO: check that restoring would be a no-op here? Or nearly-a-no-op?
+        {
+            ObjectContext _ctx{ob};
+            hoc_exec_string(stmt);
+        }
+        before.check(); // Check that error-free execution got back to the initial state.
         return true;
     } catch (std::exception const& e) {
         before.restore();
@@ -198,8 +212,7 @@ bool OcJump::execute(const char* stmt, Object* ob, std::ostream* os) {
     } catch (...) {
         before.restore();
         if (os) {
-            *os << "OcJump::execute caught";
-            *os << std::endl;
+            *os << "OcJump::execute caught" << std::endl;
         }
         return false;
     }
@@ -210,7 +223,7 @@ void* OcJump::fpycall(void* (*f)(void*, void*), void* a, void* b) {
     saved_state before{};
     try {
         auto* const ret = f(a, b);
-        // TODO: check that restoring would be a no-op here? Or nearly-a-no-op?
+        before.check(); // Check that error-free execution got back to the initial state.
         return ret;
     } catch (...) {
         before.restore();

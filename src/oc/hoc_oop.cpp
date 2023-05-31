@@ -24,6 +24,7 @@ int section_object_seen;
 struct Section* nrn_sec_pop();
 static int connect_obsec_;
 
+#include <sstream>
 #include <utility>
 
 #define PUBLIC_TYPE   1
@@ -381,6 +382,25 @@ void hoc_oop_initaftererror(void) {
     obj_stack_loc = 0;
     hoc_in_template = 0;
     connect_obsec_ = 0;
+}
+
+void oc_check_hoc_oop(Object** a1,
+                      Objectdata** a2,
+                      // a3 is missing, do not add it
+                      int* a4,
+                      Symlist** a5) {
+    if (hoc_thisobject != *a1) {
+        std::ostringstream oss;
+        oss << "hoc_thisobject=" << hoc_thisobject << " would be overwritten with " << *a1 << " in a hypothetical restore";
+        hoc_execerror(oss.str().c_str(), nullptr);
+    }
+    if (*a2 == (Objectdata*) 1) {
+        nrn_assert(hoc_objectdata == hoc_top_level_data);
+    } else {
+        nrn_assert(hoc_objectdata == *a2);
+    }
+    nrn_assert(obj_stack_loc == *a4);
+    nrn_assert(hoc_symlist = *a5);
 }
 
 void oc_save_hoc_oop(Object** a1,
