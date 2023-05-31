@@ -61,9 +61,8 @@ inline constexpr bool
 // Get the array dimension for a given field within a given tag, or 1 if the array_dimension
 // function is not defined in the tag type
 template <typename T>
-auto get_array_dimension(T const& t) -> decltype(t.array_dimension(), 0) {
-    // TODO this one is probably broken -- don't have an example of a tag type with
-    // array_dimension() but without num_variables()
+auto get_array_dimension(T const& t, std::nullptr_t /* higher precedence than the fallback case */)
+    -> decltype(t.array_dimension(), 0) {
     return t.array_dimension();
 }
 template <typename T>
@@ -383,7 +382,7 @@ struct field_data<Tag, false> {
     static_assert(!has_num_variables_v<Tag>);
     field_data(Tag tag)
         : m_tag{std::move(tag)}
-        , m_array_dim{get_array_dimension(m_tag)}
+        , m_array_dim{get_array_dimension(m_tag, nullptr)}
         , m_data_ptr{std::make_unique<data_type*[]>(1)} {
         m_data_ptr[0] = m_storage.data();
     }

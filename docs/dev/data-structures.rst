@@ -163,7 +163,7 @@ also supported:
   These handles come in two flavours:
 
   * non-owning: like the "data handle" types above, these refer to an entry in the ``ab_store``
-    container and provide access to both "a" and "b" [these are currently not used]
+    container and provide access to both "a" and "b" [these are currently not used outside tests]
   * owning: like non-owning handles, these refer to an entry in the ``ab_store`` container and
     provide access to both "a" and "b" values. The key difference is that owning handles have
     owning semantics: creating an owning handle appends a new entry to the underlying data arrays
@@ -188,7 +188,7 @@ The following code snippet illustrates the use of owning handles:
       assert(*dh == 5);
       *dh = 6; // bonus track
       assert(heroes.b() == 6); // `dh` and `heroes.b()` refer to the same value
-    } // `heroes` is destroyed when it goes out of scope at this semicolon
+    } // `heroes` is destroyed when it goes out of scope at this closing brace
     // my_data.size() == 0 again 
     assert(!dh); // pointed-to value is no longer valid
 
@@ -332,9 +332,8 @@ to the container we would like multiple values to be allocated:
         return 42;
       }
 
-[actually this version is not tested] gives essentially the same memory layout as the example using
-``std::array<float, 42>``, but it has the major advantage that ``42`` can be replaced with a value
-that is only known at runtime.
+gives essentially the same memory layout as the example usin ``std::array<float, 42>``, but it has
+the major advantage that ``42`` can be replaced with a value that is only known at runtime.
 
 The memory layout when ``array_dimension()`` returns two is shown below.
 In the figure, the container ``size()`` is three.
