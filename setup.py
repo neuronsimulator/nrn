@@ -419,9 +419,15 @@ def setup_package():
                 "-DNRN_ENABLE_MODULE_INSTALL=OFF",
                 "-DNRN_ENABLE_REL_RPATH=ON",
                 "-DCMAKE_VERBOSE_MAKEFILE=OFF",
-                "-DCORENRN_ENABLE_OPENMP=ON",  # TODO: manylinux portability questions
-                "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
             ]
+            + (
+                [
+                    "-DCORENRN_ENABLE_OPENMP=ON",  # TODO: manylinux portability questions
+                    "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
+                ]
+                if Components.CORENRN
+                else []
+            )
             + (
                 [
                     "-DCORENRN_ENABLE_GPU=ON",
