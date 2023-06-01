@@ -36,6 +36,7 @@ ExternalProject_Add(
              -DUSE_GENERIC_MATH=ON
              -DCMAKE_POSITION_INDEPENDENT_CODE=ON
              -DBUILD_SHARED_LIBS=OFF
+             -DMPI_C_COMPILER=${MPI_C_COMPILER}
   BUILD_BYPRODUCTS
     <INSTALL_DIR>/lib/libsundials_ida.a <INSTALL_DIR>/lib/libsundials_cvode.a
     <INSTALL_DIR>/lib/libsundials_nvecserial.a <INSTALL_DIR>/lib/libsundials_nvecpthreads.a
