@@ -429,6 +429,7 @@ if(NRN_ENABLE_PROFILING)
   target_link_libraries(nrniv_lib ${likwid_LIBRARIES} ${CALIPER_LIB})
 endif()
 find_package(SUNDIALS REQUIRED)
+add_dependencies(nrniv_lib SUNDIALS)
 target_link_libraries(
   nrniv_lib ${SUNDIALS_LIB_DIR}/libsundials_ida.a ${SUNDIALS_LIB_DIR}/libsundials_cvode.a
   ${SUNDIALS_LIB_DIR}/libsundials_nvecpthreads.a ${SUNDIALS_LIB_DIR}/libsundials_nvecserial.a)

@@ -40,3 +40,6 @@ ExternalProject_Add(
     <INSTALL_DIR>/lib/libsundials_ida.a <INSTALL_DIR>/lib/libsundials_cvode.a
     <INSTALL_DIR>/lib/libsundials_nvecserial.a <INSTALL_DIR>/lib/libsundials_nvecpthreads.a
     <INSTALL_DIR>/lib/libsundials_nvecparallel.a)
+
+add_library(SUNDIALS INTERFACE IMPORTED)
+add_dependencies(SUNDIALS sundials-external)
