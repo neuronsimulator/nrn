@@ -430,7 +430,6 @@ if(NRN_ENABLE_PROFILING)
 endif()
 find_package(SUNDIALS)
 add_dependencies(nrniv_lib SUNDIALS)
-target_link_libraries(nrniv_lib SUNDIALS)
 
 target_link_libraries(
   nrniv_lib ${SUNDIALS_LIB_DIR}/libsundials_ida.a ${SUNDIALS_LIB_DIR}/libsundials_cvode.a
