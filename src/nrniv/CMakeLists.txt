@@ -428,14 +428,11 @@ endif()
 if(NRN_ENABLE_PROFILING)
   target_link_libraries(nrniv_lib ${likwid_LIBRARIES} ${CALIPER_LIB})
 endif()
-find_package(SUNDIALS)
-add_dependencies(nrniv_lib SUNDIALS)
+find_package(SUNDIALS REQUIRED)
+target_link_libraries(nrniv_lib SUNDIALS::IDA SUNDIALS::CVODE SUNDIALS::NVECTOR_SERIAL SUNDIALS::NVECTOR_PTHREADS)
 
-target_link_libraries(
-  nrniv_lib ${SUNDIALS_LIB_DIR}/libsundials_ida.a ${SUNDIALS_LIB_DIR}/libsundials_cvode.a
-  ${SUNDIALS_LIB_DIR}/libsundials_nvecserial.a ${SUNDIALS_LIB_DIR}/libsundials_nvecpthreads.a)
 if(NRN_ENABLE_MPI)
-  target_link_libraries(nrniv_lib ${SUNDIALS_LIB_DIR}/libsundials_nvecparallel.a MPI::MPI_C)
+  target_link_libraries(nrniv_lib SUNDIALS::NVECTOR_PARALLEL MPI::MPI_C)
 endif()
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
