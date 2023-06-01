@@ -29,7 +29,7 @@ stages:
     jobs:
 
     - job: 'ManyLinuxWheels'
-      timeoutInMinutes: 30
+      timeoutInMinutes: 45
       pool:
         vmImage: 'ubuntu-20.04'
       strategy:
@@ -80,7 +80,7 @@ stages:
 
 
     - job: 'ManyLinuxGPUWheels'
-      timeoutInMinutes: 30
+      timeoutInMinutes: 45
       pool:
         vmImage: 'ubuntu-20.04'
       variables:
@@ -133,7 +133,7 @@ stages:
 
     # Jobs to build OSX wheels natively
     - job: 'MacOSWheels'
-      timeoutInMinutes: 40
+      timeoutInMinutes: 45
       pool:
         vmImage: 'macOS-11'
       strategy:

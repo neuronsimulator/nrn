@@ -1,5 +1,4 @@
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -242,7 +241,7 @@ class CMakeAugmentedBuilder(build_ext):
             "-DPYTHON_EXECUTABLE=" + sys.executable,
             "-DCMAKE_BUILD_TYPE=" + cfg,
         ] + ext.cmake_flags
-        # RTD neds quick config
+        # RTD needs quick config
         if self.docs and os.environ.get("READTHEDOCS"):
             cmake_args = ["-DNRN_ENABLE_MPI=OFF", "-DNRN_ENABLE_INTERVIEWS=OFF"]
         if self.docs:
@@ -421,6 +420,7 @@ def setup_package():
                 "-DNRN_ENABLE_REL_RPATH=ON",
                 "-DCMAKE_VERBOSE_MAKEFILE=OFF",
                 "-DCORENRN_ENABLE_OPENMP=ON",  # TODO: manylinux portability questions
+                "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
             ]
             + (
                 [
@@ -532,7 +532,8 @@ def setup_package():
             else "node-and-date"
         },
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
-        install_requires=["numpy>=1.9.3", "packaging"] + maybe_patchelf,
+        install_requires=["numpy>=1.9.3", "packaging", "find_libpython"]
+        + maybe_patchelf,
         tests_require=["flake8", "pytest"],
         setup_requires=["wheel", "setuptools_scm"]
         + maybe_docs
