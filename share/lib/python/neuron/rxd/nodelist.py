@@ -37,7 +37,7 @@ class NodeList(list):
     def extend(self, items):
         if isinstance(items, types.GeneratorType):
             items = list(items)
-            
+
         for item in items:
             if not isinstance(item, Node):
                 raise TypeError("The extended items must all be Nodes.")
