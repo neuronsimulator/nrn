@@ -271,3 +271,17 @@ The reason we are setting `SETUPTOOLS_SCM_PRETEND_VERSION` to a desired version 
 ## Nightly wheels
 
 Nightly wheels get automatically published from `master` in CRON mode.
+
+
+## How to test Azure wheels locally
+
+After retrieving the Azure drop URL (i.e. from the GitHub PR comment, or by going to Azure for a specific build):
+
+```bash
+python3 -m pip wheel neuron-gpu-nightly --wheel-dir tmp --find-links 'https://dev.azure.com/neuronsimulator/aa1fb98d-a914-45c3-a215-5e5ef1bd7687/_apis/build/builds/7600/artifacts?artifactName=drop&api-version=7.0&%24format=zip'
+```
+will download the wheel and its dependencies to `tmp/` and then you can test it with:
+
+```bash
+./packaging/python/test_wheels.sh python3 ./tmp/NEURON_gpu_nightly-...whl true
+```
