@@ -2,6 +2,7 @@ from .rxdException import RxDException
 from .node import Node
 import types
 
+
 class NodeList(list):
     def __init__(self, items):
         """Constructs a NodeList from items, a python iterable containing Node objects."""
@@ -9,7 +10,6 @@ class NodeList(list):
             list.__init__(self, items)
         else:
             raise TypeError("Items must be nodes.")
-
 
     def __call__(self, restriction):
         """returns a sub-NodeList consisting of nodes satisfying restriction"""
@@ -31,7 +31,7 @@ class NodeList(list):
             raise TypeError("The append item must be a Node.")
         super().append(items)
 
-    def extend(self, items): 
+    def extend(self, items):
         if isinstance(items, types.GeneratorType):
             items = list(items)
 
@@ -44,7 +44,6 @@ class NodeList(list):
         if not isinstance(items, Node):
             raise TypeError("The item inserted must be a Node.")
         super().insert(position, items)
-
 
     @property
     def value(self):
