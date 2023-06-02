@@ -37,6 +37,7 @@ ExternalProject_Add(
              -DCMAKE_POSITION_INDEPENDENT_CODE=ON
              -DBUILD_SHARED_LIBS=OFF
              -DMPI_C_COMPILER=${MPI_C_COMPILER}
+             -DCMAKE_INSTALL_LIBDIR=${SUNDIALS_LIB_DIR}
   BUILD_BYPRODUCTS
     <INSTALL_DIR>/lib/libsundials_ida.a <INSTALL_DIR>/lib/libsundials_cvode.a
     <INSTALL_DIR>/lib/libsundials_nvecserial.a <INSTALL_DIR>/lib/libsundials_nvecpthreads.a
