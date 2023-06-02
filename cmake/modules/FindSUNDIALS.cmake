@@ -8,6 +8,10 @@ set(SUNDIALS_INCLUDE_DIR "${SUNDIALS_PREFIX}/include")
 set(SUNDIALS_LIB_DIR "${SUNDIALS_PREFIX}/lib")
 make_directory(${SUNDIALS_INCLUDE_DIR})
 
+set(SUNDIALS_C_FLAGS ${CMAKE_C_FLAGS})
+list(REMOVE_ITEM SUNDIALS_C_FLAGS "-tp=haswell")
+set(SUNDIALS_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+list(REMOVE_ITEM SUNDIALS_CXX_FLAGS "-tp=haswell")
 include(ExternalProject)
 ExternalProject_Add(
   sundials-external
@@ -21,8 +25,8 @@ ExternalProject_Add(
   GIT_PROGRESS ON
   # UPDATE_COMMAND ""
   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-             -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
-             -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+             -DCMAKE_C_FLAGS=${SUNDIALS_C_FLAGS}
+             -DCMAKE_CXX_FLAGS=${SUNDIALS_CXX_FLAGS}
              -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
              -DEXAMPLES_INSTALL=OFF
              -DBUILD_ARKODE=OFF
