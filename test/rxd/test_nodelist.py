@@ -86,3 +86,11 @@ def test_only_nodes(neuron_instance):
     except TypeError:
         print("Only nodes can be inserted into the nodelist.")
         raise Exception("should not get here")
+
+    try:
+        nl = rxd.nodelist.NodeList(
+            item for item in [water.nodes[0], water.nodes[0]]
+        )  # create nodelist with nodes generator
+        assert len(nl) == 2
+    except TypeError:
+        raise Exception("should not get here")

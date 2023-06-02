@@ -6,6 +6,9 @@ import types
 class NodeList(list):
     def __init__(self, items):
         """Constructs a NodeList from items, a python iterable containing Node objects."""
+        if isinstance(items, types.GeneratorType):
+            items = list(items)
+
         if items == [] or all(isinstance(item, Node) for item in items):
             list.__init__(self, items)
         else:
@@ -34,7 +37,7 @@ class NodeList(list):
     def extend(self, items):
         if isinstance(items, types.GeneratorType):
             items = list(items)
-
+            
         for item in items:
             if not isinstance(item, Node):
                 raise TypeError("The extended items must all be Nodes.")
