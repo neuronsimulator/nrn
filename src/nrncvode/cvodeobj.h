@@ -7,7 +7,7 @@
 #include "membfunc.h"
 #include <nvector/nvector_serial.h> /* serial N_Vector types, fcts, macros*/
 #include "netcon.h"
-#include <cvode/cvode_impl.h>
+#include <sundials/sundials_linearsolver.h>
 
 class NetCvode;
 class Daspk;
@@ -200,7 +200,9 @@ class Cvode {
     void maxacor(double*);
 
   public:
-    CVodeMem mem_;
+    SUNContext* sunctx;
+    SUNLinearSolver sls_;
+    void* mem_;
     N_Vector y_;
     N_Vector atolnvec_;
     N_Vector maxstate_;

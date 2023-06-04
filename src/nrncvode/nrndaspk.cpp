@@ -12,7 +12,6 @@
 #include "nrndaspk.h"
 #include "netcvode.h"
 #include "ida/ida.h"
-#include "ida/ida_impl.h"
 #include "mymath.h"
 
 // the state of the g - d2/dx2 matrix for voltages

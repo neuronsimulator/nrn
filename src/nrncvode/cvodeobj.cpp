@@ -28,8 +28,7 @@ extern int hoc_return_type_code;
 #include <OS/list.h>
 #include <nrnmutdec.h>
 
-// #include "cvodes_impl.h"
-#include <cvode/cvode_impl.h>
+#include <cvode/cvode.h>
 #include <sunmatrix/sunmatrix_dense.h>
 #include <sunlinsol/sunlinsol_dense.h>
 
@@ -71,8 +70,6 @@ static MUTDEC
 // #include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix */
 
 #include <ida/ida.h>
-#include <cvode/cvode.h>
-#include <cvode/cvode_impl.h>
 // For Pre-conditioned matrix solvers
 #include <cvode/cvode_diag.h> /*For Approx Diagonal matrix*/
 
@@ -702,8 +699,8 @@ void Cvode_reg() {
 
 /* Functions Called by the CVODE Solver */
 
-static int minit(CVodeMem cv_mem);
-static int msetup(CVodeMem cv_mem,
+static int minit(void* cv_mem);
+static int msetup(SUNLinearSolver s,
                   int convfail,
                   N_Vector ypred,
                   N_Vector fpred,
@@ -711,12 +708,8 @@ static int msetup(CVodeMem cv_mem,
                   N_Vector vtemp,
                   N_Vector vtemp2,
                   N_Vector vtemp3);
-static int msolve(CVodeMem cv_mem, N_Vector b, N_Vector weight, N_Vector ycur, N_Vector fcur);
-static int msolve_lvardt(CVodeMem cv_mem,
-                         N_Vector b,
-                         N_Vector weight,
-                         N_Vector ycur,
-                         N_Vector fcur);
+static int msolve(SUNLinearSolver s, SUNMatrix, N_Vector x, N_Vector b, realtype tol);
+static int msolve_lvardt(SUNLinearSolver s, SUNMatrix, N_Vector x, N_Vector b, realtype tol);
 static int f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data);
 static int f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data);
 static CVRhsFn pf_;
@@ -773,7 +766,9 @@ void Cvode::cvode_constructor() {
 
 double Cvode::gam() {
     if (mem_) {
-        return ((CVodeMem) mem_)->cv_gamma;
+        realtype gamma;
+        CVodeGetCurrentGamma(mem_, &gamma);
+        return gamma;
     } else {
         return 1.;
     }
@@ -781,7 +776,9 @@ double Cvode::gam() {
 
 double Cvode::h() {
     if (mem_) {
-        return ((CVodeMem) mem_)->cv_h;
+        realtype hcur;
+        CVodeGetCurrentStep(mem_, &hcur);
+        return hcur;
     } else {
         return 0.;
     }
@@ -864,7 +861,7 @@ N_Vector Cvode::nvnew(long int n) {
     if (net_cvode_instance->use_long_double_) {
         return N_VNew_NrnSerialLD(n);
     } else {
-        return N_VNew_Serial(n);
+        return N_VNew_Serial(n, *sunctx);
     }
 }
 
@@ -1061,13 +1058,8 @@ void Cvode::maxorder(int maxord) {
 }
 void Cvode::minstep(double x) {
     if (mem_) {
-        if (x > 0.) {
-            CVodeSetMinStep(mem_, x);
-        } else {
-            // CVodeSetMinStep requires x > 0 but
-            // HMIN_DEFAULT is ZERO in cvodes.cpp
-            ((CVodeMem) mem_)->cv_hmin = 0.;
-        }
+        x = (x > 0.) ? x : 0.0;
+        CVodeSetMinStep(mem_, x);
     }
 }
 void Cvode::maxstep(double x) {
@@ -1084,8 +1076,8 @@ void Cvode::maxstep(double x) {
 
 void Cvode::free_cvodemem() {
     if (mem_) {
-        CVodeFree((void**) (&mem_));
-        mem_ = nil;
+        CVodeFree(&mem_);
+        mem_ = nullptr;
     }
 }
 
@@ -1121,7 +1113,10 @@ int Cvode::cvode_init(double) {
             return err;
         }
     } else {
-        mem_ = (CVodeMem) CVodeCreate(CV_BDF, ncv_->stiff() ? CV_NEWTON : CV_FUNCTIONAL);
+#warning         ncv_->stiff() ? CV_NEWTON : CV_FUNCTIONAL);
+        // The choice for NEWTON and FUNCTIONAL happens
+        // through the SUNNonlinear API
+        mem_ = CVodeCreate(CV_BDF, *sunctx);
         if (!mem_) {
             hoc_execerror("CVodeCreate error", 0);
         }
@@ -1145,10 +1140,9 @@ int Cvode::cvode_init(double) {
         //		CVodeSetInitStep(mem_, .01);
     }
     matmeth();
-    ((CVodeMem) mem_)->cv_gamma = 0.;
-    ((CVodeMem) mem_)->cv_h = 0.;  // fun called before cvode sets this (though fun does not need it
-                                   // really)
-    // fun(t_, N_VGetArrayPointer(y_), nil);
+    CVodeSetInitStep(mem_, 0.0); // will set cv_h based on sqrt of second deriv
+    // cv_gamma set based on cv_h
+    // fun called before cvode sets this (though fun does not need it really)
     (*pf_)(t_, y_, nil, (void*) this);
     can_retreat_ = false;
     return err;
@@ -1384,18 +1378,11 @@ int Cvode::cvode_advance_tn() {
     }
     // this is very bad, performance-wise. However cvode modifies its states
     // after a call to fun with the proper t.
-#if 1
     (*pf_)(t_, y_, nil, (void*) this);
-#else
-    NrnThread* _nt;
-    scatter_y(y_);
-#endif
-    tn_ = ((CVodeMem) mem_)->cv_tn;
-    t0_ = tn_ - ((CVodeMem) mem_)->cv_h;
-    // printf("t=%.15g t_=%.15g tn()=%.15g tstop_=%.15g t0_=%.15g\n", nrn_threads->t, t_, tn(),
-    // tstop_, t0_); 	printf("t_=%g h=%g q=%d y=%g\n", t_, ((CVodeMem)mem_)->cv_h,
-    //((CVodeMem)mem_)->cv_q, N_VIth(y_,0)); printf("cvode_advance_tn end t0_=%g t_=%g tn_=%g\n",
-    // t0_, t_, tn_);
+    CVodeGetCurrentTime(mem_, &tn_);
+    double h;
+    CVodeGetLastStep(mem_, &h);
+    t0_ = tn_ - h;
     return SUCCESS;
 }
 
@@ -1449,7 +1436,9 @@ N_Vector Cvode::ewtvec() {
     if (use_daspk_) {
         return daspk_->ewtvec();
     } else {
-        return ((CVodeMem) mem_)->cv_ewt;
+        N_Vector nv;
+        CVodeGetErrWeights(mem_, nv);
+        return nv;
     }
 }
 
@@ -1457,7 +1446,9 @@ N_Vector Cvode::acorvec() {
     if (use_daspk_) {
         return daspk_->acorvec();
     } else {
-        return ((CVodeMem) mem_)->cv_acor;
+        N_Vector nv;
+        CVodeGetEstLocalErrors(mem_, nv);
+        return nv;
     }
 }
 
@@ -1495,26 +1486,32 @@ void Cvode::statistics() {
 #endif
 }
 
+SUNLinearSolver_Type SUNLinSolGetType_Nrn(SUNLinearSolver S) {
+    return(SUNLINEARSOLVER_DIRECT);
+}
+
+SUNLinearSolver_ID SUNLinSolGetID_Nrn(SUNLinearSolver S) {
+    return(SUNLINEARSOLVER_CUSTOM);
+}
+
 void Cvode::matmeth() {
     switch (ncv_->jacobian()) {
     case 1: {
         /* Create dense SUNMatrix for use in linear solver */
-        SUNMatrix A = SUNDenseMatrix(neq_, neq_);
+        SUNMatrix A = SUNDenseMatrix(neq_, neq_, *sunctx);
         assert(A);
 
         /* Create dense SUNLinearSolver object for use by CVode */
-        SUNLinearSolver LS = SUNDenseLinearSolver(y_, A);
+        SUNLinearSolver LS = SUNLinSol_Dense(y_, A, *sunctx);
         assert(LS);
 
         /* attach the matrix and linear solver to CVode */
-        int flag = CVDlsSetLinearSolver(mem_, LS, A);
+        int flag = CVodeSetLinearSolver(mem_, LS, A);
         assert(flag);
 
         /* Set jacobian and allocate memory */
-        /* (TODO Michael Hines: is there a jacobian for dense matrix
-         * in neuron? If yes, add it here instead of NULL */
-        flag = CVDlsSetJacFn(mem_, NULL);
-        if (flag != CVDLS_SUCCESS)
+        flag = CVodeSetJacFn(mem_, NULL);
+        if (flag != CVLS_SUCCESS)
             throw std::runtime_error("ERROR: can't allocate memory for dense jacobian");
         break;
     }
@@ -1522,26 +1519,21 @@ void Cvode::matmeth() {
         CVDiag(mem_);
         break;
     default: {
-        /* CVODES guide chapter 8: Providing Alternate Linear
-         * Solver Modules: only lsolve function is mandatory
-         * (non-used functions need to be set to null) */
-        ((CVodeMem) mem_)->cv_linit = NULL;
-        // TODO can the set-up be set to NULL? Comment says it does not do anything!
-        ((CVodeMem) mem_)->cv_lsetup = NULL;
-        //((CVodeMem)mem_)->cv_setupNonNull = TRUE; // but since our's does not do anything...
-        if (nth_) {  // lvardt
-            ((CVodeMem) mem_)->cv_lsolve = msolve_lvardt;
-        } else {
-            ((CVodeMem) mem_)->cv_lsolve = msolve;
-        }
-        ((CVodeMem) mem_)->cv_lfree = NULL;
+        // patterned after sunlinsol_band.c
+        sls_ = SUNLinSolNewEmpty(*sunctx);
+        sls_->content = (void*)this;
+        sls_->ops->gettype = SUNLinSolGetType_Nrn;
+        sls_->ops->getid = SUNLinSolGetID_Nrn;
+        sls_->ops->solve = (nth_) ? msolve_lvardt : msolve;
+        sls_->ops->setzeroguess = NULL; // may want to leverage this to save a dot-product per solve
+        CVodeSetLinearSolver(mem_, sls_, NULL);
         break;
     }
     }
 }
 
 
-static int msetup(CVodeMem m,
+static int msetup(SUNLinearSolver s,
                   int convfail,
                   N_Vector yp,
                   N_Vector fp,
@@ -1551,19 +1543,19 @@ static int msetup(CVodeMem m,
                   N_Vector) {
     //	printf("msetup\n");
     *jcurPtr = true;
-    Cvode* cv = (Cvode*) m->cv_user_data;
+    Cvode* cv = (Cvode*) s->content;
     return cv->setup(yp, fp);
 }
 
 static N_Vector msolve_b_;
 static N_Vector msolve_ycur_;
 static Cvode* msolve_cv_;
-static int msolve(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vector fcur) {
+static int msolve(SUNLinearSolver s, SUNMatrix, N_Vector x, N_Vector b, realtype tol) {
     //	printf("msolve gamma=%g gammap=%g gamrat=%g\n", m->cv_gamma, m->cv_gammap, m->cv_gamrat);
     //	N_VIth(b, 0) /= (1. + m->cv_gamma);
     //	N_VIth(b, 0) /= (1. + m->cv_gammap);
     //	N_VIth(b,0) *= 2./(1. + m->cv_gamrat);
-    msolve_cv_ = (Cvode*) m->cv_user_data;
+    msolve_cv_ = (Cvode*) s->content;
     Cvode& cv = *msolve_cv_;
     ++cv.mxb_calls_;
     if (cv.ncv_->stiff() == 0) {
@@ -1573,7 +1565,7 @@ static int msolve(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vect
         return 0;
     }  // i.e. (I - gamma * J)*x = b means x = b
     msolve_b_ = b;
-    msolve_ycur_ = ycur;
+    msolve_ycur_ = x;
     if (nrn_multisplit_setup_ && nrn_nthread > 1) {
         nrn_multithread_job(msolve_thread_part1);
         nrn_multithread_job(msolve_thread_part2);
@@ -1583,8 +1575,8 @@ static int msolve(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vect
     }
     return 0;
 }
-static int msolve_lvardt(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vector fcur) {
-    Cvode* cv = (Cvode*) m->cv_user_data;
+static int msolve_lvardt(SUNLinearSolver s, SUNMatrix, N_Vector x, N_Vector b, realtype tol) {
+    Cvode* cv = (Cvode*) s->content;
     ++cv->mxb_calls_;
     if (cv->ncv_->stiff() == 0) {
         return 0;
@@ -1593,7 +1585,7 @@ static int msolve_lvardt(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur,
         return 0;
     }
     cv->nth_->_vcv = cv;
-    cv->solvex_thread(cv->n_vector_data(b, 0), cv->n_vector_data(ycur, 0), cv->nth_);
+    cv->solvex_thread(cv->n_vector_data(b, 0), cv->n_vector_data(x, 0), cv->nth_);
     cv->nth_->_vcv = 0;
     return 0;
 }
