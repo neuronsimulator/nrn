@@ -418,6 +418,18 @@ assumptions about the ordering of thoese data.
     In general terms, this is important because some of these algorithms reduce to loops with data
     dependencies that inhibit more **generic** optimisations such as autovectorisation.
 
+.. note::
+
+    In principle then most dynamic memory [re-]allocation in step 1 can be avoided if an **good**
+    estimate of the final model size is available.
+    There is currently no way of providing this estimate, but it would be a relatively simple
+    change to NEURON to expose a `std::vector::reserve
+    <https://en.cppreference.com/w/cpp/container/vector/reserve>`_-like method (pay attention to
+    the "Notes" section of that page).
+    Note that calling this *repeatedly* is likely to be a bad idea, as it can inhibit the standard
+    exponential growth of the allocated storage size, but a single call to ``reserve`` before
+    constructing the model with an estimate of the complete model size may be worthwhile.
+
 Step 2 is thus responsible for sorting the unordered data of step 1 into sorted data suitable for
 step 3.
 How the ordering scheme is defined will be described in :ref:`soa-data-integration-in-neuron`

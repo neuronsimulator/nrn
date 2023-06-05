@@ -5,8 +5,14 @@
 
 using namespace neuron::container;
 
+// Mock up a neuron::container::soa<...>-based data structure that includes features that are not
+// currently tested in the real NEURON data structure code.
+
 namespace {
 namespace field {
+/**
+ * @brief Tag type that has zero-parameter array_dimension() and no num_variables().
+ */
 struct A {
     using type = float;
     [[nodiscard]] int array_dimension() const {
