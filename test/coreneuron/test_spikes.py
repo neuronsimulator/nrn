@@ -55,7 +55,6 @@ def test_spikes(
 
     h.tstop = 10
     h.cvode.use_fast_imem(1)
-    h.cvode.cache_efficient(1)
 
     pc = h.ParallelContext()
 

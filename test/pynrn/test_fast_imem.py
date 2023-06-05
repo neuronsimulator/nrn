@@ -213,7 +213,6 @@ def coreneuron_available():
         return False
     # But can it be loaded?
     cvode = h.CVode()
-    cvode.cache_efficient(1)
     pc = h.ParallelContext()
     h.finitialize()
     result = 0
@@ -228,7 +227,6 @@ def coreneuron_available():
     except Exception as e:
         pass
     sys.stderr = original_stderr
-    cvode.cache_efficient(0)
     return result
 
 
@@ -256,7 +254,6 @@ def test_fastimem_corenrn():
     pc = h.ParallelContext()
     ncell = 5
     cvode = h.CVode()
-    cvode.cache_efficient(0)
     # If the gui has been imported (possibly by another test) then there is a
     # thread asynchronously calling process_events -- make sure that doesn't
     # happen partway through creating cells
@@ -335,17 +332,15 @@ def test_fastimem_corenrn():
         assert keep_going
 
     # null comparison with the side effect of clearing imem
-    compare("cache inefficient NEURON")
+    compare("cache efficient NEURON with 1 thread")
 
-    cvode.cache_efficient(1)
-    for nth in [2, 1]:  # leaves us in 1-threaded mode
-        pc.nthread(nth)
-        run(tstop)
-        compare("cache efficient NEURON with {} threads".format(nth))
+    pc.nthread(2)
+    run(tstop)
+    compare("cache efficient NEURON with 2 threads")
+    pc.nthread(1)
 
     # This leaves nthread=1, other values cause errors in the CoreNEURON tests below
     if coreneuron_available():
-        cvode.cache_efficient(1)  # coreneuron_available() resets this
         from neuron import coreneuron
 
         coreneuron.enable = True

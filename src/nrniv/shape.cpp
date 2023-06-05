@@ -38,7 +38,6 @@
 #include "ocobserv.h"
 #include "parse.hpp"
 #include "ivoc.h"
-#include "treeset.h"
 
 #define Shape_Section_ "Section PlotShape"
 #define Shape_Rotate_  "Rotate3D PlotShape"
@@ -1271,8 +1270,6 @@ ShapeSection::ShapeSection(Section* sec) {
     section_ref(sec_);
     color_ = Scene::default_foreground();
     color_->ref();
-    old_ = NULL;
-    pvar_ = NULL;
     colorseg_ = NULL;
     colorseg_size_ = 0;
     scale(1.);
@@ -1497,50 +1494,26 @@ bool ShapeSection::good() const {
     return sec_->prop != 0;
 }
 
-void ShapeSection::update_ptrs() {
-    if (!pvar_) {
-        return;
-    }
-    int i, n = section()->nnode - 1;
-    for (i = 0; i < n; ++i) {
-        pvar_[i] = nrn_recalc_ptr(pvar_[i]);
-    }
-}
-
 void ShapeSection::set_range_variable(Symbol* sym) {
     clear_variable();
     if (!good()) {
         return;
     }
-    int i, n = section()->nnode - 1;
-    pvar_ = new double*[n];
-    old_ = new const Color*[n];
-    bool any = false;
-    if (nrn_exists(sym, section()->pnode[0])) {
-        for (i = 0; i < n; ++i) {
-            pvar_[i] = static_cast<double*>(
-                nrn_rangepointer(section(), sym, nrn_arc_position(section(), section()->pnode[i])));
-            old_[i] = NULL;
-            if (pvar_[i]) {
-                any = true;
-            }
-        }
-    } else {
-        for (i = 0; i < n; ++i) {
-            pvar_[i] = 0;
-            old_[i] = NULL;
+    auto* const sec = section();
+    auto const n = sec->nnode - 1;
+    pvar_.clear();
+    old_.clear();
+    pvar_.resize(n);
+    old_.resize(n);
+    if (nrn_exists(sym, sec->pnode[0])) {
+        for (int i = 0; i < n; ++i) {
+            pvar_[i] = nrn_rangepointer(sec, sym, nrn_arc_position(sec, sec->pnode[i]));
         }
     }
 }
 void ShapeSection::clear_variable() {
-    if (pvar_) {
-        delete[] pvar_;
-        pvar_ = NULL;
-    }
-    if (old_) {
-        delete[] old_;
-        old_ = NULL;
-    }
+    pvar_.clear();
+    old_.clear();
     if (colorseg_) {
         for (int i = 0; i < colorseg_size_; ++i) {
             colorseg_[i]->unref();
@@ -1575,10 +1548,10 @@ xmin_, a.left(),ymin_,a.bottom(),xmax_,a.right());
 void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
     Section* sec = section();
     IfIdraw(pict());
-    if (pvar_ || (colorseg_ && colorseg_size_ == sec_->nnode - 1)) {
+    if (!pvar_.empty() || (colorseg_ && colorseg_size_ == sec_->nnode - 1)) {
         const Color* color;
         ColorValue* cv;
-        if (pvar_) {
+        if (!pvar_.empty()) {
             cv = ShapeScene::current_draw_scene()->color_value();
         }
         if (sec->nnode == 2) {
@@ -1592,7 +1565,7 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
                 }
                 if (color != old_[0] || b) {
                     b = true;
-                    ((ShapeSection*) this)->old_[0] = color;
+                    const_cast<ShapeSection*>(this)->old_[0] = color;
                 }
             }
             if (b) {
@@ -1636,7 +1609,7 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
                         color = cv->no_value();
                     }
                     if (color != old_[iseg] || b) {
-                        ((ShapeSection*) this)->old_[iseg] = color;
+                        const_cast<ShapeSection*>(this)->old_[iseg] = color;
                         b = true;
                     }
                 }
@@ -1680,7 +1653,7 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
                         color = cv->no_value();
                     }
                     if (color != old_[iseg] || b) {
-                        ((ShapeSection*) this)->old_[iseg] = color;
+                        const_cast<ShapeSection*>(this)->old_[iseg] = color;
                         b = true;
                     }
                 }

@@ -24,7 +24,6 @@ class Cell:
         coreneuron.enable = corenrn
         coreneuron.gpu = gpu
 
-        h.CVode().cache_efficient(1)
         pc = h.ParallelContext()
         pc.set_maxstep(10)
         h.stdinit()
