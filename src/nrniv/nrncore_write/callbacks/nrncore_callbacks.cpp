@@ -148,16 +148,17 @@ void nrnthreads_all_weights_return(std::vector<double*>& weights) {
  *  The ARTIFICIAL_CELL type case is special as there is no thread specific
  *  Memb_list for those.
  */
-size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata) {
+size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<double*>& mdata) {
     size_t n = 0;
     data = NULL;
-    mdata = NULL;
+    mdata.clear();
     if (tid >= nrn_nthread) {
         return n;
     }
     NrnThread& nt = nrn_threads[tid];
     if (type == voltage) {
-        data = nt._actual_v;
+        auto const cache_token = nrn_ensure_model_data_are_sorted();
+        data = nt.node_voltage_storage();
         n = size_t(nt.end);
     } else if (type == i_membrane_) {  // i_membrane_
         data = nt._nrn_fast_imem->_nrn_sav_rhs;
@@ -168,13 +169,13 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
     } else if (type > 0 && type < n_memb_func) {
         Memb_list* ml = nt._ml_list[type];
         if (ml) {
-            mdata = ml->_data;
+            mdata = ml->data();
             n = ml->nodecount;
         } else {
             // The single thread case is easy
             if (nrn_nthread == 1) {
-                ml = memb_list + type;
-                mdata = ml->_data;
+                ml = &memb_list[type];
+                mdata = ml->data();
                 n = ml->nodecount;
             } else {
                 // mk_tml_with_art() created a cgs[id].mlwithart which appended
@@ -185,7 +186,7 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
                 // cellgroups_ portion (deleting it on return from nrncore_run).
                 auto& ml = CellGroup::deferred_type2artml_[tid][type];
                 n = size_t(ml->nodecount);
-                mdata = ml->_data;
+                mdata = ml->data();
             }
         }
     }
@@ -203,7 +204,7 @@ void nrnthread_group_ids(int* grp) {
 int nrnthread_dat1(int tid,
                    int& n_presyn,
                    int& n_netcon,
-                   int*& output_gid,
+                   std::vector<int>& output_gid,
                    int*& netcon_srcgid,
                    std::vector<int>& netcon_negsrcgid_tid) {
     if (tid >= nrn_nthread) {
@@ -212,8 +213,7 @@ int nrnthread_dat1(int tid,
     CellGroup& cg = cellgroups_[tid];
     n_presyn = cg.n_presyn;
     n_netcon = cg.n_netcon;
-    output_gid = cg.output_gid;
-    cg.output_gid = NULL;
+    output_gid = std::move(cg.output_gid);
     netcon_srcgid = cg.netcon_srcgid;
     cg.netcon_srcgid = NULL;
     netcon_negsrcgid_tid = cg.netcon_negsrcgid_tid;
@@ -295,19 +295,18 @@ int nrnthread_dat2_2(int tid,
     // If direct transfer, copy, because target space already allocated
     bool copy = corenrn_direct;
     if (copy) {
-        for (int i = 0; i < nt.end; ++i) {
-            v_parent_index[i] = nt._v_parent_index[i];
-            a[i] = nt._actual_a[i];
-            b[i] = nt._actual_b[i];
-            area[i] = nt._actual_area[i];
-            v[i] = nt._actual_v[i];
-        }
+        std::copy_n(nt.node_a_storage(), nt.end, a);
+        std::copy_n(nt.node_b_storage(), nt.end, b);
+        std::copy_n(nt.node_area_storage(), nt.end, area);
+        std::copy_n(nt.node_voltage_storage(), nt.end, v);
+        std::copy_n(nt._v_parent_index, nt.end, v_parent_index);
     } else {
         v_parent_index = nt._v_parent_index;
-        a = nt._actual_a;
-        b = nt._actual_b;
-        area = nt._actual_area;
-        v = nt._actual_v;
+        auto const cache_token = nrn_ensure_model_data_are_sorted();
+        a = nt.node_a_storage();
+        area = nt.node_area_storage();
+        b = nt.node_b_storage();
+        v = nt.node_voltage_storage();
     }
     if (cg.ndiam) {
         if (!copy) {
@@ -318,7 +317,7 @@ int nrnthread_dat2_2(int tid,
             double diam = 0.0;
             for (Prop* p = nd->prop; p; p = p->next) {
                 if (p->_type == MORPHOLOGY) {
-                    diam = p->param[0];
+                    diam = p->param(0);
                     break;
                 }
             }
@@ -350,13 +349,26 @@ int nrnthread_dat2_mech(int tid,
     int isart = nrn_is_artificial_[type];
     int n = ml->nodecount;
     int sz = nrn_prop_param_size_[type];
-    double* data1;
-    if (isart) {                                        // data may not be contiguous
-        data1 = contiguous_art_data(ml->_data, n, sz);  // delete after use
+
+    // As the NEURON data is now transposed then for now always create a new
+    // copy in the format expected by CoreNEURON -- TODO make sure this is
+    // freed, then later TODO remove the need for this entirely
+    if (!copy) {
+        data = new double[n * sz];
+    }
+    for (auto instance = 0, k = 0; instance < n; ++instance) {
+        for (auto variable = 0; variable < sz; ++variable) {
+            data[k++] = ml->data(instance, variable);
+        }
+    }
+
+    // double* data1;
+    if (isart) {  // data may not be contiguous
+        // data1 = contiguous_art_data(ml, n, sz);  // delete after use
         nodeindices = NULL;
     } else {
         nodeindices = ml->nodeindices;  // allocated below if copy
-        data1 = ml->_data[0];           // do not delete after use
+        // data1 = ml->_data[0];           // do not delete after use
     }
     if (copy) {
         if (!isart) {
@@ -365,15 +377,15 @@ int nrnthread_dat2_mech(int tid,
                 nodeindices[i] = ml->nodeindices[i];
             }
         }
-        int nn = n * sz;
-        for (int i = 0; i < nn; ++i) {
-            data[i] = data1[i];
-        }
-        if (isart) {
-            delete[] data1;
-        }
-    } else {
-        data = data1;
+        // int nn = n * sz;
+        // for (int i = 0; i < nn; ++i) {
+        //     data[i] = data1[i];
+        // }
+        // if (isart) {
+        //     delete[] data1;
+        // }
+        // } else {
+        //     data = data1;
     }
 
     sz = bbcore_dparam_size[type];  // nrn_prop_dparam_size off by 1 if cvode_ieq.
@@ -477,8 +489,7 @@ int nrnthread_dat2_corepointer_mech(int tid,
     icnt = 0;
     // data size and allocate
     for (int i = 0; i < ml->nodecount; ++i) {
-        (*nrn_bbcore_write_[type])(
-            NULL, NULL, &dcnt, &icnt, ml->_data[i], ml->pdata[i], ml->_thread, &nt);
+        (*nrn_bbcore_write_[type])(NULL, NULL, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, &nt);
     }
     dArray = NULL;
     iArray = NULL;
@@ -492,7 +503,7 @@ int nrnthread_dat2_corepointer_mech(int tid,
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
         (*nrn_bbcore_write_[type])(
-            dArray, iArray, &dcnt, &icnt, ml->_data[i], ml->pdata[i], ml->_thread, &nt);
+            dArray, iArray, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, &nt);
     }
 
     return 1;
@@ -518,8 +529,7 @@ int core2nrn_corepointer_mech(int tid, int type, int icnt, int dcnt, int* iArray
     int dk = 0;
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
-        (*nrn_bbcore_read_[type])(
-            dArray, iArray, &dk, &ik, ml->_data[i], ml->pdata[i], ml->_thread, &nt);
+        (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, ml, i, ml->pdata[i], ml->_thread, &nt);
     }
     assert(dk == dcnt);
     assert(ik == icnt);
@@ -590,8 +600,6 @@ int* datum2int(int type,
 }
 
 void part2_clean() {
-    CellGroup::clear_artdata2index();
-
     CellGroup::clean_art(cellgroups_);
 
     if (corenrn_direct) {
@@ -602,23 +610,16 @@ void part2_clean() {
     cellgroups_ = NULL;
 }
 
-std::vector<NetCon**> CellGroup::deferred_netcons;
+std::vector<std::vector<NetCon*>> CellGroup::deferred_netcons;
 
 void CellGroup::defer_clean_netcons(CellGroup* cgs) {
     clean_deferred_netcons();
     for (int tid = 0; tid < nrn_nthread; ++tid) {
-        CellGroup& cg = cgs[tid];
-        deferred_netcons.push_back(cg.netcons);
-        cg.netcons = nullptr;
+        deferred_netcons.push_back(std::move(cgs[tid].netcons));
     }
 }
 
 void CellGroup::clean_deferred_netcons() {
-    for (auto ncs: deferred_netcons) {
-        if (ncs) {
-            delete[] ncs;
-        }
-    }
     deferred_netcons.clear();
 }
 
@@ -690,9 +691,10 @@ int nrnthread_dat2_vecplay_inst(int tid,
                     }
                     Memb_list* ml = tml->ml;
                     int nn = nrn_prop_param_size_[tml->index] * ml->nodecount;
-                    if (pd >= ml->_data[0] && pd < (ml->_data[0] + nn)) {
+                    auto const legacy_index = ml->legacy_index(pd);
+                    if (legacy_index >= 0) {
                         mtype = tml->index;
-                        ix = (pd - ml->_data[0]);
+                        ix = legacy_index;
                         sz = vector_capacity(vp->y_);
                         yvec = vector_vec(vp->y_);
                         tvec = vector_vec(vp->t_);
@@ -746,7 +748,7 @@ void nrn2core_transfer_WatchCondition(WatchCondition* wc, void (*cb)(int, int, i
     int pnttype = pnt->prop->_type;
     int watch_index = wc->watch_index_;
     int triggered = wc->flag_ ? 1 : 0;
-    int pntindex = CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, pnttype);
+    int pntindex = CellGroup::nrncore_pntindex_for_queue(pnt->prop, tid, pnttype);
     (*cb)(tid, pnttype, pntindex, watch_index, triggered);
 
     // This transfers CvodeThreadData activated WatchCondition
@@ -844,10 +846,9 @@ static void set_info(TQItem* tqi,
         // On the other hand, if there is a non-null weight pointer, its index
         // can only be determined by sweeping over all NetCon.
 
-        double* data = pnt->prop->param;
         // Introduced the public static method below because ARTIFICIAL_CELL
         // are not located in NrnThread and are not cache efficient.
-        int index = CellGroup::nrncore_pntindex_for_queue(data, tid, type);
+        int index = CellGroup::nrncore_pntindex_for_queue(pnt->prop, tid, type);
         core_te->intdata.push_back(index);
 
         size_t iloc_wt = core_te->intdata.size();
@@ -1068,7 +1069,7 @@ static void core2nrn_SelfEvent_helper(int tid,
 
     // Needs to be tested when permuted on CoreNEURON side.
     assert(tar_type == pnt->prop->_type);
-    //  assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, tar_type));
+    assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop, tid, tar_type));
 
     int const movable_index = type2movable[tar_type];
     auto* const movable_arg = pnt->prop->dparam + movable_index;
@@ -1163,7 +1164,7 @@ void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true) {
             if (ps->flag_ && ps->thvar_) {
                 int type = 0;
                 int index_v = -1;
-                nrn_dblpntr2nrncore(static_cast<double*>(ps->thvar_), *ps->nt_, type, index_v);
+                nrn_dblpntr2nrncore(ps->thvar_, *ps->nt_, type, index_v);
                 assert(type == voltage);
                 presyns_flag_true.insert(index_v);
             }

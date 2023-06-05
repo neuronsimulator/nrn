@@ -6,6 +6,7 @@
 #include "mymath.h"
 
 #include "cvodeobj.h"
+#include "neuron/container/data_handle.hpp"
 #include "tqueue.h"
 
 #include <cmath>
@@ -15,7 +16,7 @@
 struct NrnThread;
 class PreSyn;
 class HocDataPaths;
-using PreSynTable = std::unordered_map<double*, PreSyn*>;
+using PreSynTable = std::unordered_map<neuron::container::data_handle<double>, PreSyn*>;
 class NetCon;
 class DiscreteEvent;
 class SelfEvent;
@@ -24,7 +25,7 @@ struct hoc_Item;
 class PlayRecord;
 class PlayRecList;
 class IvocVect;
-class BAMechList;
+struct BAMechList;
 class HTList;
 // nrn_nthread vectors of HTList* for fixed step method
 // Thread segregated HTList* of all the CVode.CvodeThreadData.HTList*
@@ -100,7 +101,7 @@ class NetCvode {
                    Object* ppobj = nil,
                    int reinit = 0,
                    Object* pyact = nil);
-    NetCon* install_deliver(double* psrc,
+    NetCon* install_deliver(neuron::container::data_handle<double> psrc,
                             Section* ssrc,
                             Object* osrc,
                             Object* target,
@@ -121,7 +122,7 @@ class NetCvode {
     void local_retreat(double, Cvode*);
     void retreat(double, Cvode*);
     Object** netconlist();
-    int owned_by_thread(double*);
+    int owned_by_thread(neuron::container::data_handle<double> const&);
     PlayRecord* playrec_uses(void*);
     void playrec_add(PlayRecord*);
     void playrec_remove(PlayRecord*);
@@ -138,7 +139,7 @@ class NetCvode {
     void vec_remove();
     void record_init();
     void play_init();
-    void fixed_record_continuous(NrnThread*);
+    void fixed_record_continuous(neuron::model_sorted_token const&, NrnThread& nt);
     void fixed_play_continuous(NrnThread*);
     static double eps(double x) {
         return eps_ * std::abs(x);
@@ -189,7 +190,7 @@ class NetCvode {
     //	int nlist() { return nlist_; }
     //	Cvode* list() { return list_; }
     bool initialized_;  // for global step solve.
-    void consist_sec_pd(const char*, Section*, double*);
+    void consist_sec_pd(const char*, Section*, neuron::container::data_handle<double> const&);
     double state_magnitudes();
     Symbol* name2sym(const char*);
     const char* sym2name(Symbol*);
@@ -203,7 +204,7 @@ class NetCvode {
     // private:
   public:
     static double eps_;
-    int local_microstep(NrnThread*);
+    int local_microstep(neuron::model_sorted_token const&, NrnThread&);
     int global_microstep();
     void deliver_least_event(NrnThread*);
     void evaluate_conditions();

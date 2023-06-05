@@ -1544,15 +1544,15 @@ CVode
 
 
     Description:
-        When set, G*v = R matrix and vectors are reallocated in tree order so that 
-        all the elements of each type are contiguous in memory. Pointers to these 
-        elements used by the GUI, Vector, Pointer, etc. are updated. 
+        Deprecated method.
+        This used to cause the G*v = R matrix and vectors to be reallocated in
+        tree order so that all the elements of each type are contiguous in
+        memory.
+        This is no longer required because this scheme is now used all the time
+        and cannot be disabled.
+        Pointers to these elements used by the GUI, Vector, Pointer, etc. are updated.
          
-        Much of the implementation was contributed by Hubert Eichner <eichnerh@in.tum.de> 
-         
-        :meth:`ParallelContext.multisplit` automatically sets h.CVode().cache_efficient(True) 
-        
-        0 or 1 can be used instead of ``False`` or ``True``, respectively.
+        0 or 1 could be used instead of ``False`` or ``True``, respectively.
 
          
 

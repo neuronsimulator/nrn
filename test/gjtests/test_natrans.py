@@ -75,7 +75,6 @@ def test_natrans():
             target.sgid = sgid
 
     cvode = h.CVode()
-    cvode.cache_efficient(1)
 
     pc.set_maxstep(10)
     pc.setup_transfer()

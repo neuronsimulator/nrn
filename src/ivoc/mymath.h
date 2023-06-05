@@ -70,7 +70,7 @@ class MyMath {
 };
 
 inline void MyMath::extend(Extension& e, const Extension& x) {
-    e.set_xy(NULL,
+    e.set_xy(nullptr,
              e.left() + x.left(),
              e.bottom() + x.bottom(),
              e.right() + x.right(),
@@ -78,7 +78,7 @@ inline void MyMath::extend(Extension& e, const Extension& x) {
 }
 
 inline void MyMath::extend(Extension& e, Coord x) {
-    e.set_xy(NULL, e.left() - x, e.bottom() - x, e.right() + x, e.top() + x);
+    e.set_xy(nullptr, e.left() - x, e.bottom() - x, e.right() + x, e.top() + x);
 }
 
 inline void MyMath::minmax(Coord& x, Coord& y) {

@@ -1262,7 +1262,6 @@ void hoc_object_component() {
     }
     default:
         if (cplus) {
-            double* pd;
             if (nindex) {
                 if (!ISARRAY(sym) || sym->arayinfo->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
@@ -1284,9 +1283,9 @@ void hoc_object_component() {
             }
             hoc_pushs(sym);
             (*obp->ctemplate->steer)(obp->u.this_pointer);
-            pd = hoc_pxpop();
+            auto dh = hoc_pop_handle<double>();
             hoc_pop_defer();
-            hoc_pushpx(pd);
+            hoc_push(std::move(dh));
         } else {
             hoc_execerror(sym->name, ": can't push that type onto stack");
         }
@@ -1358,7 +1357,7 @@ void hoc_ob_pointer(void) {
             } else {
                 x = .5;
             }
-            hoc_pushpx(nrn_rangepointer(sec, sym, x));
+            hoc_push(nrn_rangepointer(sec, sym, x));
         } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
             hoc_pushpx(cable_prop_eval_pointer(hoc_spop()));
         } else {
@@ -1400,7 +1399,11 @@ void hoc_object_asgn() {
             }
             *pd = d;
         } else {
-            nrn_rangeconst(sec, sym, &d, op);
+            nrn_rangeconst(sec,
+                           sym,
+                           neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                  &d},
+                           op);
         }
         hoc_pushx(d);
         return;

@@ -6,4 +6,5 @@ NEURON Development topics
 
    ./HOCInterpreter/HOCInterpreter.md
    ./how-do-i/how-do-i.rst
+   data-structures.rst
    gpu-testing.rst

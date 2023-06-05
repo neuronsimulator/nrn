@@ -36,14 +36,7 @@ Enabling CoreNEURON
 With CoreNEURON, existing NEURON models can be run with minimal changes.
 For a given NEURON model, the following steps are usually required:
 
-First, enable cache efficiency:
-
-.. code-block:: python
-
-   from neuron import h
-   h.CVode().cache_efficient(1)
-
-Second, enable CoreNEURON:
+First, enable CoreNEURON:
 
 .. code-block:: python
 

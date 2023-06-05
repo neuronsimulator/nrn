@@ -13,8 +13,11 @@ include(NeuronTestHelper)
 # =============================================================================
 # Test executables
 # =============================================================================
-add_executable(testneuron common/catch2_main.cpp unit_tests/basic.cpp
-                          unit_tests/oc/hoc_interpreter.cpp)
+add_executable(
+  testneuron
+  common/catch2_main.cpp unit_tests/basic.cpp unit_tests/container/container.cpp
+  unit_tests/container/mechanism.cpp unit_tests/container/node.cpp
+  unit_tests/oc/hoc_interpreter.cpp)
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
   add_executable(nrn-benchmarks common/catch2_main.cpp benchmarks/threads/test_multicore.cpp)
@@ -42,6 +45,20 @@ nrn_add_test(
   GROUP unit_tests
   NAME testneuron
   COMMAND $<TARGET_FILE:testneuron>)
+# Extra tests from testneuron that need manual checking because they call std::terminate.
+nrn_add_test(
+  GROUP unit_tests
+  NAME testneuron_soa_erase_calls_terminate
+  COMMAND $<TARGET_FILE:testneuron>
+          "Deleting a row from a frozen SoA container causes a fatal error")
+string(
+  JOIN " "
+  regex "neuron::container::owning_identifier<neuron::container::Node::storage> destructor could"
+        "not delete from the underlying storage:"
+        "neuron::container::Node::storage\\[frozen_count=1,sorted=true\\]: erase\\(\\) called on a"
+        "frozen structure \\[std::runtime_error\\]\\. This is not recoverable, aborting\\.")
+set_tests_properties(unit_tests::testneuron_soa_erase_calls_terminate
+                     PROPERTIES PASS_REGULAR_EXPRESSION "${regex}")
 if(TARGET nrn-benchmarks AND NRN_ENABLE_PERFORMANCE_TESTS)
   nrn_add_test(
     GROUP unit_tests
@@ -49,6 +66,7 @@ if(TARGET nrn-benchmarks AND NRN_ENABLE_PERFORMANCE_TESTS)
     PROCESSORS 16
     COMMAND $<TARGET_FILE:nrn-benchmarks> --processors=16)
 endif()
+
 # =============================================================================
 # Add ringtest
 # =============================================================================
@@ -207,6 +225,14 @@ if(NRN_ENABLE_PYTHON)
   # Add some tests that are specifically aimed at NEURON - Python integration, covering different
   # ways NEURON can be made to execute Python code.
   add_subdirectory(pyinit)
+
+  nrn_add_test_group(NAME datahandle MODFILE_PATTERNS test/datahandle/*.mod)
+  nrn_add_test(
+    GROUP datahandle
+    NAME datahandle_tests
+    PRELOAD_SANITIZER
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/datahandle
+    SCRIPT_PATTERNS test/datahandle/*.py)
 
   # Mostly to increase coverage
   nrn_add_test_group(NAME coverage_tests MODFILE_PATTERNS test/cover/mod/*.mod)
@@ -513,6 +539,7 @@ if(NRN_ENABLE_PYTHON)
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_spikes_file_mode_py NRN_TEST_SPIKES_FILE_MODE=1
       COMMAND ${modtests_launch_py} test/coreneuron/test_spikes.py)
+    # TODO this test does some NEURON vs. NEURON testing too
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME fast_imem_py_${processor}

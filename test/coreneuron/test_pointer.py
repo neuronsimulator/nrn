@@ -203,7 +203,6 @@ def test_axial():
 
     std = run(tstop)
 
-    cvode.cache_efficient(1)
     chk(std, run(tstop))
 
     from neuron import coreneuron
@@ -271,7 +270,6 @@ def test_checkpoint():
     spktime = h.Vector()
     spkgid = h.Vector()
     pc.spike_record(-1, spktime, spkgid)
-    cvode.cache_efficient(1)
     pc.set_maxstep(10)
     h.finitialize(-65)
     pc.nrncore_write("coredat")
