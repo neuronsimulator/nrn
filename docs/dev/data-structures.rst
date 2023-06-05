@@ -698,7 +698,7 @@ stably refer to that value.
 The data handle type also supports a fall-back mode where it simply wraps a raw pointer that does
 not point into the model data structures described on this page.
 Thanks to this fall-back mode, ``double*`` can safely be replaced with ``data_handle<double>``
-without loss of generality, and this substituion has been made in the HOC stack machine.
+without loss of generality, and this substitution has been made in the HOC stack machine.
 
 .. _soa-data-integration-in-neuron-sorting-algorithms:
 
