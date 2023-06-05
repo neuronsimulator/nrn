@@ -598,6 +598,10 @@ std::vector<std::string> CodegenCVisitor::ion_read_statements(BlockType type) {
     for (const auto& ion: info.ions) {
         auto name = ion.name;
         for (const auto& var: ion.reads) {
+            auto const iter = std::find(ion.implicit_reads.begin(), ion.implicit_reads.end(), var);
+            if (iter != ion.implicit_reads.end()) {
+                continue;
+            }
             auto variable_names = read_ion_variable_name(var);
             auto first = get_variable_name(variable_names.first);
             auto second = get_variable_name(variable_names.second);
@@ -776,6 +780,7 @@ void CodegenCVisitor::update_index_semantics() {
             }
         }
         if (ion.need_style) {
+            info.semantics.emplace_back(index++, fmt::format("{}_ion", ion.name), 1);
             info.semantics.emplace_back(index++, fmt::format("#{}_ion", ion.name), 1);
         }
     }
@@ -900,11 +905,28 @@ std::vector<IndexVariableInfo> CodegenCVisitor::get_int_variables() {
         }
     }
 
-    for (const auto& ion: info.ions) {
+    for (auto& ion: info.ions) {
         bool need_style = false;
         std::unordered_map<std::string, int> ion_vars;  // used to keep track of the variables to
                                                         // not have doubles between read/write. Same
                                                         // name variables are allowed
+        // See if we need to add extra readion statements to match NEURON with SoA data
+        auto const has_var = [&ion](const char* suffix) -> bool {
+            auto const pred = [name = ion.name + suffix](auto const& x) { return x == name; };
+            return std::any_of(ion.reads.begin(), ion.reads.end(), pred) ||
+                   std::any_of(ion.writes.begin(), ion.writes.end(), pred);
+        };
+        auto const add_implicit_read = [&ion](const char* suffix) {
+            auto name = ion.name + suffix;
+            ion.reads.push_back(name);
+            ion.implicit_reads.push_back(std::move(name));
+        };
+        bool const have_ionin{has_var("i")}, have_ionout{has_var("o")};
+        if (have_ionin && !have_ionout) {
+            add_implicit_read("o");
+        } else if (have_ionout && !have_ionin) {
+            add_implicit_read("i");
+        }
         for (const auto& var: ion.reads) {
             const std::string name = naming::ION_VARNAME_PREFIX + var;
             variables.emplace_back(make_symbol(name));
@@ -939,6 +961,7 @@ std::vector<IndexVariableInfo> CodegenCVisitor::get_int_variables() {
         }
 
         if (need_style) {
+            variables.emplace_back(make_symbol(naming::ION_VARNAME_PREFIX + ion.name + "_erev"));
             variables.emplace_back(make_symbol("style_" + ion.name), false, true);
             variables.back().is_constant = true;
         }
@@ -4296,7 +4319,7 @@ void CodegenCVisitor::print_nrn_state() {
     print_global_function_common_code(BlockType::State);
     print_channel_iteration_block_parallel_hint(BlockType::State, info.nrn_state_block);
     printer->start_block("for (int id = 0; id < nodecount; id++)");
-    
+
     printer->add_line("int node_id = node_index[id];");
     printer->add_line("double v = voltage[node_id];");
     print_v_unused();

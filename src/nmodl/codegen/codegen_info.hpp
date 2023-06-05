@@ -51,6 +51,9 @@ struct Ion {
     /// ion variables that are being read
     std::vector<std::string> reads;
 
+    /// ion variables that are being implicitly read
+    std::vector<std::string> implicit_reads;
+
     /// ion variables that are being written
     std::vector<std::string> writes;
 
