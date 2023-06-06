@@ -7,12 +7,9 @@
 
 /* do not want the redef in the dynamic load case */
 #include <nrnmpiuse.h>
-#if NRNMPI_DYNAMICLOAD
-#include <nrnmpi_dynam.h> /* define all the nrnmpi functions name to f_name */
-#endif
 
-#include <nrnmpi.h>
-#include <mpispike.h>
+#include "nrnmpi.h"
+#include "mpispike.h"
 
 
 #if NRNMPI_DYNAMICLOAD
@@ -42,18 +39,13 @@ MPI_Comm nrn_bbs_comm;
 static MPI_Group grp_bbs;
 static MPI_Group grp_net;
 
-extern void nrnmpi_spike_initialize();
-
 #define nrnmpidebugleak 0
-#if nrnmpidebugleak
-extern void nrnmpi_checkbufleak();
-#endif
 
 static int nrnmpi_under_nrncontrol_;
 static int nrnmpi_is_setup_;
 #endif
 
-extern "C" void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
+extern "C" void nrnmpi_init_impl(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
 #if NRNMPI
     int i, b, flag;
     if (nrnmpi_use) {
@@ -173,7 +165,7 @@ for (i=0; i < *pargc; ++i) {
 #endif /* NRNMPI */
 }
 
-double nrnmpi_wtime() {
+double nrnmpi_wtime_impl() {
 #if NRNMPI
     if (nrnmpi_use) {
         return MPI_Wtime();
@@ -182,7 +174,7 @@ double nrnmpi_wtime() {
     return nrn_timeus();
 }
 
-void nrnmpi_terminate() {
+void nrnmpi_terminate_impl() {
 #if NRNMPI
     if (nrnmpi_use) {
 #if 0
@@ -207,7 +199,7 @@ void nrnmpi_terminate() {
 #endif /*NRNMPI*/
 }
 
-void nrnmpi_abort(int errcode) {
+void nrnmpi_abort_impl(int errcode) {
 #if NRNMPI
     int flag;
     MPI_Initialized(&flag);
@@ -224,7 +216,7 @@ void nrnmpi_abort(int errcode) {
 #if NRNMPI
 
 
-void nrnmpi_subworld_size(int n) {
+void nrnmpi_subworld_size_impl(int n) {
     /* n is the (desired) size of a subworld (pc.nhost) */
     /* A subworld (net) is contiguous */
     /* In case pc.nhost_world/n is not an integer, there are
@@ -326,7 +318,7 @@ void nrnmpi_subworld_size(int n) {
 }
 
 /* so src/nrnpython/inithoc.cpp does not have to include a c++ mpi.h */
-int nrnmpi_wrap_mpi_init(int* flag) {
+int nrnmpi_wrap_mpi_init_impl(int* flag) {
     return MPI_Initialized(flag);
 }
 

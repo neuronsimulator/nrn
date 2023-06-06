@@ -17,11 +17,6 @@ extern int nrnmpi_subworld_change_cnt; /* increment from within void nrnmpi_subw
 extern int nrnmpi_subworld_id;         /* subworld index on all ranks */
 extern int nrnmpi_numprocs_subworld;   /* number of ranks in subworld on all ranks */
 
-typedef struct {
-    int gid;
-    double spiketime;
-} NRNMPI_Spike;
-
 #if NRNMPI
 
 

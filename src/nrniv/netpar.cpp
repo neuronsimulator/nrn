@@ -34,6 +34,55 @@ static int n_multisend_interval;
 int nrnmusic;
 #endif
 
+#ifndef nrn_spikebuf_size
+#define nrn_spikebuf_size 0
+#endif
+
+// Variable from MPI
+#if nrn_spikebuf_size > 0
+typedef struct {
+    int nspike;
+    int gid[nrn_spikebuf_size];
+    double spiketime[nrn_spikebuf_size];
+} NRNMPI_Spikebuf;
+#endif
+
+
+#define icapacity_ nrnmpi_i_capacity_
+#define spikeout_  nrnmpi_spikeout_
+#define spikein_   nrnmpi_spikein_
+#define nout_      nrnmpi_nout_
+#define nin_       nrnmpi_nin_
+extern int nout_;
+extern int* nin_;
+extern int icapacity_;
+extern NRNMPI_Spike* spikeout_;
+extern NRNMPI_Spike* spikein_;
+
+#define spfixout_       nrnmpi_spikeout_fixed_
+#define spfixin_        nrnmpi_spikein_fixed_
+#define spfixin_ovfl_   nrnmpi_spikein_fixed_ovfl_
+#define localgid_size_  nrnmpi_localgid_size_
+#define ag_send_size_   nrnmpi_ag_send_size_
+#define ag_send_nspike_ nrnmpi_send_nspike_
+#define ovfl_capacity_  nrnmpi_ovfl_capacity_
+#define ovfl_           nrnmpi_ovfl_
+extern int localgid_size_;  /* bytes */
+extern int ag_send_size_;   /* bytes */
+extern int ag_send_nspike_; /* spikes */
+extern int ovfl_capacity_;  /* spikes */
+extern int ovfl_;           /* spikes */
+extern unsigned char* spfixout_;
+extern unsigned char* spfixin_;
+extern unsigned char* spfixin_ovfl_;
+//end variables
+
+#if nrn_spikebuf_size > 0
+#define spbufout_ nrnmpi_spbufout_
+#define spbufin_  nrnmpi_spbufin_
+extern NRNMPI_Spikebuf* spbufout_;
+extern NRNMPI_Spikebuf* spbufin_;
+#endif
 static Symbol* netcon_sym_;
 static Gid2PreSyn gid2out_;
 static Gid2PreSyn gid2in_;
@@ -88,11 +137,9 @@ static double set_mindelay(double maxdelay);
 
 #if NRNMPI
 
-#include "../nrnmpi/mpispike.h"
+// #include "../nrnmpi/mpispike.h"
 
 void nrn_timeout(int);
-extern int nrnmpi_int_allmax(int);
-extern void nrnmpi_int_allgather(int*, int*, int);
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 bool nrn_use_compress_;  // global due to bbsavestate
 #define use_compress_ nrn_use_compress_
@@ -574,7 +621,7 @@ void nrn_spike_exchange(NrnThread* nt) {
         nrnmpi_barrier();
         nrnmpi_step_wait_ += nrnmpi_wtime() - wt;
     }
-    n = nrnmpi_spike_exchange();
+    n = nrnmpi_spike_exchange(nin_, &nout_, &icapacity_, &spikein_, &spikeout_);
     wt_ = nrnmpi_wtime() - wt;
     wt = nrnmpi_wtime();
     TBUF
@@ -670,7 +717,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
         nrnmpi_barrier();
         nrnmpi_step_wait_ += nrnmpi_wtime() - wt;
     }
-    n = nrnmpi_spike_exchange_compressed();
+    n = nrnmpi_spike_exchange_compressed(nin_, spfixin_ovfl_, spfixout_, spfixin_, ag_send_size_, ag_send_nspike_, localgid_size_, &ovfl_capacity_, &ovfl_);
     wt_ = nrnmpi_wtime() - wt;
     wt = nrnmpi_wtime();
     TBUF

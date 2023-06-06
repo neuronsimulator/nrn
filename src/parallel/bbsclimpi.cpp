@@ -13,8 +13,6 @@
 #include "bbsrcli.h"
 #include "bbssrv.h"
 
-extern void nrnmpi_int_broadcast(int*, int, int);
-
 #define debug 0
 
 #if defined(HAVE_STL)

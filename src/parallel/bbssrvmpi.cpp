@@ -104,7 +104,7 @@ void BBSDirectServer::handle1(int size, int tag, int cid) {
             nrnmpi_bbssend(cid, LOOK_YES, send);
             nrnmpi_unref(send);
         } else {
-            nrnmpi_bbssend(cid, LOOK_NO, nil);
+            nrnmpi_bbssend(cid, LOOK_NO, nullptr);
         }
         break;
     case LOOK_TAKE:
@@ -119,7 +119,7 @@ void BBSDirectServer::handle1(int size, int tag, int cid) {
             nrnmpi_bbssend(cid, LOOK_TAKE_YES, send);
             nrnmpi_unref(send);
         } else {
-            nrnmpi_bbssend(cid, LOOK_TAKE_NO, nil);
+            nrnmpi_bbssend(cid, LOOK_TAKE_NO, nullptr);
         }
         break;
     case TAKE:

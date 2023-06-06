@@ -156,14 +156,17 @@ set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_SPARSE13_SRC_FILES}
     ${NRN_SUNDIALS_SRC_FILES})
 
+set(NRN_MPI_LIB_NAME "nrn_mpi" CACHE INTERNAL "")
 if(NRN_ENABLE_MPI)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_PARALLEL_SRC_FILES})
-endif()
 
-if(NRN_ENABLE_MPI_DYNAMIC)
-  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp)
-else()
-  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNMPI_SRC_FILES})
+  if(NRN_ENABLE_MPI_DYNAMIC)
+    add_library(${NRN_MPI_LIB_NAME} OBJECT ${NRN_NRNMPI_SRC_FILES})
+    target_include_directories(
+      ${NRN_MPI_LIB_NAME} PRIVATE ${MPI_C_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/src)
+    set_property(TARGET ${NRN_MPI_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+    set(CORENRN_MPI_OBJ $<TARGET_OBJECTS:${NRN_MPI_LIB_NAME})
+  endif()
 endif()
 
 if(MINGW)
@@ -268,16 +271,6 @@ add_custom_command(
 add_custom_target(generate_hocusr_header DEPENDS "${PROJECT_BINARY_DIR}/src/oc/hocusr.h")
 add_dependencies(generated_source_files generate_hocusr_header)
 
-# header for dynamic mpi
-if(NRN_ENABLE_MPI_DYNAMIC)
-  add_custom_command(
-    OUTPUT ${NRNMPI_DYNAMIC_INCLUDE_FILE}
-    COMMAND sh mkdynam.sh
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/nrnmpi
-    DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.sh
-            ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpidec.h)
-endif()
-
 # =============================================================================
 # Various macro definitions for compiling different files
 # =============================================================================
@@ -379,13 +372,8 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
     PROPERTY COMPILE_OPTIONS -O1)
 endif()
 
-if(NRN_ENABLE_MPI_DYNAMIC)
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp
-                              PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi.cpp
-                              PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.cpp
-                              PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
+if(NRN_ENABLE_MPI)
+  set(NRN_NRNIV_MPI_DYNAM "../nrnmpi/core/resolve.cpp")
 endif()
 
 if(NRN_ENABLE_MUSIC)
@@ -410,7 +398,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 # =============================================================================
 # All source directories to include
 # =============================================================================
-add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES} ${NRN_NRNIV_MPI_DYNAM})
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")

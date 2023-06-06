@@ -16,9 +16,6 @@ void nrnmpi_load_or_exit(bool is_python);
 void nrnmusic_load();
 #endif  // NRN_MUSIC
 #endif  // NRNMPI_DYNAMICLOAD
-#if NRNMPI
-extern "C" void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
-#endif
 
 int main(int argc, char** argv, char** env) {
     nrn_main_launch = 1;

@@ -21,8 +21,6 @@ the subtrees is no longer required by this implementation.
 #if PARANEURON
 void nrnmpi_split_clear();
 extern void (*nrnmpi_splitcell_compute_)();
-extern void nrnmpi_send_doubles(double*, int cnt, int dest, int tag);
-extern void nrnmpi_recv_doubles(double*, int cnt, int src, int tag);
 extern double nrnmpi_splitcell_wait_;
 
 static int change_cnt_;

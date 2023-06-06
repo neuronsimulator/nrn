@@ -367,11 +367,6 @@ double nrn_multisend_receive_time(int type) {  // and others
     return rt;
 }
 
-extern void nrnmpi_multisend_comm();
-extern void nrnmpi_multisend_multisend(NRNMPI_Spike*, int, int*);
-extern int nrnmpi_multisend_single_advance(NRNMPI_Spike*);
-extern int nrnmpi_multisend_conserve(int nsend, int nrecv);
-
 static void nrn_multisend_init() {
     for (int i = 0; i < n_multisend_interval; ++i) {
         multisend_receive_buffer[i]->init(i);

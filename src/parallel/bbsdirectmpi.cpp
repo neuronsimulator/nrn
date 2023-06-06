@@ -12,7 +12,6 @@
 #include "bbssrv2mpi.h"
 #include "bbssrv.h"
 
-extern void nrnmpi_int_broadcast(int*, int, int);
 
 #if defined(HAVE_STL)
 #if defined(HAVE_SSTREAM)  // the standard ...
