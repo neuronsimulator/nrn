@@ -68,20 +68,30 @@ struct mpi_function_base {
     const char* m_name;
 };
 
+#ifdef NRNMPI_DYNAMICLOAD
+template <typename fptr>
+struct mpi_function: mpi_function_base {
+    using mpi_function_base::mpi_function_base;
+    template <typename... Args>  // in principle deducible from `function_ptr`
+    auto operator()(Args&&... args) const {
+        // Dynamic MPI, m_fptr should have been initialised via dlsym.
+        assert(m_fptr);
+        return (*reinterpret_cast<fptr>(m_fptr))(std::forward<Args>(args)...);
+    }
+};
+#define declare_mpi_method(x) mpi_function<decltype(&x)>
+#else
 template <auto fptr>
 struct mpi_function: mpi_function_base {
     using mpi_function_base::mpi_function_base;
     template <typename... Args>  // in principle deducible from `function_ptr`
     auto operator()(Args&&... args) const {
-#ifdef NRNMPI_DYNAMICLOAD
-        // Dynamic MPI, m_fptr should have been initialised via dlsym.
-        assert(m_fptr);
-        return (*reinterpret_cast<decltype(fptr)>(m_fptr))(std::forward<Args>(args)...);
-#else
         // No dynamic MPI, use `fptr` directly. Will produce link errors if libmpi.so is not linked.
         return (*fptr)(std::forward<Args>(args)...);
-#endif
     }
 };
+#define declare_mpi_method(x) mpi_function<x>
+#endif
+
 }  // namespace coreneuron
 #include "coreneuron/mpi/nrnmpidec.h"
