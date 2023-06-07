@@ -79,7 +79,10 @@ struct mpi_function: mpi_function_base {
         return (*reinterpret_cast<fptr>(m_fptr))(std::forward<Args>(args)...);
     }
 };
-#define declare_mpi_method(x) inline mpi_function<decltype(&x##_impl)> x{#x"_impl"}
+#define declare_mpi_method(x)                    \
+    inline mpi_function<decltype(&x##_impl)> x { \
+#x "_impl"                               \
+    }
 #else
 template <auto fptr>
 struct mpi_function: mpi_function_base {
@@ -90,7 +93,10 @@ struct mpi_function: mpi_function_base {
         return (*fptr)(std::forward<Args>(args)...);
     }
 };
-#define declare_mpi_method(x) inline mpi_function<x##_impl> x{#x"_impl"}
+#define declare_mpi_method(x)         \
+    inline mpi_function<x##_impl> x { \
+#x "_impl"                    \
+    }
 #endif
 
 }  // namespace coreneuron
