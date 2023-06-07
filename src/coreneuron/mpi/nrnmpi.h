@@ -68,16 +68,8 @@ struct mpi_function_base {
     const char* m_name;
 };
 
-// This could be done with a simpler
-//   template <auto fptr> struct function : function_base { ... };
-// pattern in C++17...
-template <typename>
-struct mpi_function {};
-
-#define cnrn_make_integral_constant_t(x) std::integral_constant<std::decay_t<decltype(x)>, x>
-
-template <typename function_ptr, function_ptr fptr>
-struct mpi_function<std::integral_constant<function_ptr, fptr>>: mpi_function_base {
+template <auto fptr>
+struct mpi_function: mpi_function_base {
     using mpi_function_base::mpi_function_base;
     template <typename... Args>  // in principle deducible from `function_ptr`
     auto operator()(Args&&... args) const {
