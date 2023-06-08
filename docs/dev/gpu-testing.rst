@@ -8,7 +8,7 @@ Other sections of the documentation that may be relevant are:
 - The :ref:`Running GPU benchmarks` section, which outlines how to use profiling tools such as Caliper, NVIDIA NSight Systems, and NVIDIA NSight Compute.
 
 This section aims to add some basic information about how to test if GPU execution is working.
-This might be useful if, for example, you need to test a change to the GPU wheel building, or test GPU execution on a new system.
+This might be useful if, for example, you need to test GPU execution on a new system.
 
 Accessing GPU resources
 ***********************

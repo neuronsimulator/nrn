@@ -30,9 +30,6 @@ endfunction()
 # Prepare compiler flags for GPU target
 # =============================================================================
 if(CORENRN_ENABLE_GPU)
-  # Get the NVC++ version number for use in nrnivmodl_core_makefile.in
-  cnrn_parse_version(${CMAKE_CXX_COMPILER_VERSION} OUTPUT_MAJOR_MINOR
-                     CORENRN_NVHPC_MAJOR_MINOR_VERSION)
   # Enable cudaProfiler{Start,Stop}() behind the Instrumentor::phase... APIs
   list(APPEND CORENRN_COMPILE_DEFS CORENEURON_CUDA_PROFILING CORENEURON_ENABLE_GPU)
   # Plain C++ code in CoreNEURON may need to use CUDA runtime APIs for, for example, starting and
