@@ -100,7 +100,7 @@ extern void* setup_tree_matrix(NrnThread*);
 extern void nrn_solve(NrnThread*);
 extern void second_order_cur(NrnThread*);
 void nrn_update_voltage(neuron::model_sorted_token const& sorted_token, NrnThread& nt);
-extern void* nrn_fixed_step_lastpart(NrnThread*);
+extern void nrn_fixed_step_lastpart(neuron::model_sorted_token const& sorted_token, NrnThread& nt);
 extern void hoc_register_dparam_size(int, int);
 extern void setup_topology(void);
 extern int nrn_errno_check(int);

@@ -52,7 +52,6 @@ extern double t, dt;
 extern double chkarg(int, double low, double high);
 static void nrn_fixed_step_thread(neuron::model_sorted_token const&, NrnThread&);
 static void nrn_fixed_step_group_thread(neuron::model_sorted_token const&, NrnThread&);
-static void nrn_fixed_step_lastpart(neuron::model_sorted_token const&, NrnThread&);
 extern void nrn_solve(NrnThread*);
 static void nonvint(neuron::model_sorted_token const&, NrnThread&);
 extern void nrncvode_set_t(double t);
