@@ -25,9 +25,7 @@ struct NRNMPI_Spikebuf {
     int gid[nrn_spikebuf_size];
     double spiketime[nrn_spikebuf_size];
 };
-}  // namespace coreneuron
 
-namespace coreneuron {
 struct NRNMPI_Spike {
     int gid;
     double spiketime;
