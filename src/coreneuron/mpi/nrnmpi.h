@@ -11,7 +11,7 @@
 #include <cassert>
 #include <string>
 #include <type_traits>
-#include <vector>
+#include <array>
 
 #include "coreneuron/mpi/nrnmpiuse.h"
 
@@ -37,13 +37,17 @@ struct mpi_function_base;
 
 struct mpi_manager_t {
     void register_function(mpi_function_base* ptr) {
-        m_function_ptrs.push_back(ptr);
+        if (m_num_function_ptrs == max_mpi_functions) {
+            throw std::runtime_error("mpi_manager_t::max_mpi_functions reached");
+        }
+        m_function_ptrs[m_num_function_ptrs++] = ptr;
     }
     void resolve_symbols(void* dlsym_handle);
 
   private:
-    std::vector<mpi_function_base*> m_function_ptrs;
-    // true when symbols are resolved
+    constexpr static auto max_mpi_functions = 128;
+    std::size_t m_num_function_ptrs{};
+    std::array<mpi_function_base*, max_mpi_functions> m_function_ptrs{};
 };
 
 inline mpi_manager_t& mpi_manager() {
