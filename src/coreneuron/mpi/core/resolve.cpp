@@ -19,7 +19,8 @@ void mpi_function_base::resolve(void* lib_handle) {
     const char* error = dlerror();
     if (error) {
         std::ostringstream oss;
-        oss << "Could not get symbol '" << m_name << "' from handle '" << lib_handle << "': " << error;
+        oss << "Could not get symbol '" << m_name << "' from handle '" << lib_handle
+            << "': " << error;
         throw std::runtime_error(oss.str());
     }
     assert(ptr);

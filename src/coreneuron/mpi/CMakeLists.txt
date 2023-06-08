@@ -2,8 +2,7 @@
 if(NRN_ENABLE_MPI)
   set(MPI_LIB_FILES "lib/mpispike.cpp" "lib/nrnmpi.cpp")
   if(NRN_ENABLE_MPI_DYNAMIC)
-    # this is where we handle dynamic mpi library build
-    # store mpi library targets that will be built
+    # this is where we handle dynamic mpi library build store mpi library targets that will be built
     list(APPEND corenrn_mpi_targets "")
 
     # ~~~

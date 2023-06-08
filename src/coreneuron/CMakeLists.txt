@@ -517,7 +517,6 @@ endif()
 # ~~~
 target_link_libraries(coreneuron-core PUBLIC ${CMAKE_DL_LIBS})
 
-
 # Suppress some compiler warnings.
 target_compile_options(coreneuron-core PRIVATE ${CORENEURON_CXX_WARNING_SUPPRESSIONS})
 target_link_libraries(coreneuron-core PUBLIC ${sonatareport_LIBRARY} ${CORENRN_CALIPER_LIB}

@@ -8,10 +8,9 @@
 
 #pragma once
 
-#include <cassert>
-#include <string>
-#include <type_traits>
 #include <array>
+#include <cassert>
+#include <stdexcept>
 
 #include "coreneuron/mpi/nrnmpiuse.h"
 
