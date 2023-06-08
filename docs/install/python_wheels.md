@@ -30,7 +30,6 @@ All wheels built on Azure are:
 * Published to `Pypi.org` as
   * `neuron-nightly` -> when the pipeline is launched in CRON mode
   * `neuron-x.y.z` -> when the pipeline is manually triggered for release `x.y.z`
-  * additionally, for Linux only: `neuron-gpu-nightly` and `neuron-gpu-x.y.z`
 * Stored as `Azure artifacts` in the Azure pipeline for every run.
 
 Refer to the following image for the NEURON Docker Image workflow: 
@@ -139,18 +138,11 @@ You can build the wheel for a specific python version:
 bash packaging/python/build_wheels.bash linux 38    # 38 for Python v3.8
 ```
 
-To build wheels with GPU support you have to pass an additional argument:
-* `coreneuron` : build wheel with `CoreNEURON` support
-* `coreneuron-gpu` : build wheel with `CoreNEURON` and `GPU` support
-
+To build wheels with CoreNEURON support you have to pass an additional argument: `coreneuron`.
 ```
-bash packaging/python/build_wheels.bash linux 38 coreneuron-gpu
-
-# or
-
 bash packaging/python/build_wheels.bash linux 3* coreneuron
 ```
-In the last example we are passing `3*` to build the wheels with `CoreNEURON` support for all python 3 versions.
+Where we are passing `3*` to build the wheels with `CoreNEURON` support for all python 3 versions.
 
 ### macOS
 As mentioned above, for macOS all dependencies have to be available on a system. You have to then clone NEURON repository and execute:
