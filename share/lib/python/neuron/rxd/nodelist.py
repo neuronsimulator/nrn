@@ -1,13 +1,15 @@
 from .rxdException import RxDException
 from .node import Node
 import types
+from collections import abc
 
 
 class NodeList(list):
     def __init__(self, items):
         """Constructs a NodeList from items, a python iterable containing Node objects."""
-        if isinstance(items, types.GeneratorType):
+        if isinstance(items, abc.Generator) or isinstance(items, abc.Iterator):
             items = list(items)
+            print("1")
 
         if items == [] or all(isinstance(item, Node) for item in items):
             list.__init__(self, items)
@@ -35,7 +37,7 @@ class NodeList(list):
         super().append(items)
 
     def extend(self, items):
-        if isinstance(items, types.GeneratorType):
+        if isinstance(items, abc.Generator) or isinstance(items, abc.Iterator):
             items = list(items)
 
         for item in items:
