@@ -13,22 +13,18 @@ release, or ``pip install neuron-nightly`` to install a snapshot of the
 development branch.
 You may want to use ``virtualenv`` to manage your Python package installations.
 
-If you want to use the GPU-enabled wheel then you should run
-``pip install neuron-gpu``, for the latest release, or
-``pip install neuron-gpu-nightly`` to install a snapshot of the
-development branch.
-This binary wheel does not include all the NVIDIA dependencies that are
-required to build and execute GPU code, so you should install the
-`NVIDIA HPC SDK <https://developer.nvidia.com/hpc-sdk>`_ on your
-machine.
-
 .. warning::
-   It is currently necessary to use the same version of the HPC SDK as
-   was used to build the binary wheels.
-   This is currently defined
-   `in this file <https://github.com/neuronsimulator/nrn/blob/master/packaging/python/Dockerfile_gpu>`_
-   in the NEURON repository, at the time of writing this is version
-   22.1
+
+   Between versions 8.1 and 8.2.2 a GPU-enabled wheel was available via ``pip install neuron-gpu``
+   and ``pip install neuron-gpu-nightly``.
+   Due to ease-of-use and maintainability concerns, this has been removed in `#2378
+   <https://github.com/neuronsimulator/nrn/pull/2378>`_ until person-power is available to pursue a
+   more robust solution.
+   Using the released GPU wheels with custom mechanism files (``nrnivmodl``) requires that you have
+   the same version of the `NVIDIA HPC SDK <https://developer.nvidia.com/hpc-sdk>`_ installed on
+   your system as was used to build the wheels.
+   For example, in 8.2.2 this was version 22.1, as can be seen `in this file
+   <https://github.com/neuronsimulator/nrn/blob/8.2.2/packaging/python/Dockerfile_gpu#L14>`_.
 
 
 Installing from source
