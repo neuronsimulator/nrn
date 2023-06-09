@@ -9,3 +9,5 @@ NEURON Development topics
    data-structures.rst
    gpu-testing.rst
    workflow-code-paths.rst
+   ./setuptools/setuptools.md
+
