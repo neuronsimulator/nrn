@@ -209,6 +209,7 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_BINARY_DIR}/src/sundials
     ${PROJECT_BINARY_DIR}/src/sundials/shared
     ${PROJECT_SOURCE_DIR}/external/Random123/include
+    ${PROJECT_SOURCE_DIR}/external/fmt/include
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/src/gnu
     ${PROJECT_SOURCE_DIR}/src/mesch
@@ -443,6 +444,15 @@ endif()
 if(NRN_ENABLE_PROFILING)
   target_link_libraries(nrniv_lib ${likwid_LIBRARIES} ${CALIPER_LIB})
 endif()
+
+find_package(MorphIO REQUIRED)
+find_package(HDF5 REQUIRED COMPONENTS CXX)
+target_link_libraries(nrniv_lib ${HDF5_LIBRARIES})
+target_include_directories(nrniv_lib PUBLIC ${HDF5_INCLUDE_DIRS})
+target_link_libraries(nrniv_lib fmt)
+add_dependencies(nrniv_lib MorphIO)
+target_link_libraries(nrniv_lib ${MorphIO_LIB_DIR}/libmorphio${CMAKE_SHARED_LIBRARY_SUFFIX})
+target_include_directories(nrniv_lib PUBLIC ${MorphIO_INCLUDE_DIR})
 
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 

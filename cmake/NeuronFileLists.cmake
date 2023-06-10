@@ -241,6 +241,8 @@ set(NRNIV_FILE_LIST
     nrncore_write/data/datum_indices.cpp
     nrncore_write/io/nrncore_io.cpp
     nrncore_write/utils/nrncore_utils.cpp
+    morphology/morphology.cpp
+    morphology/morphio_wrapper/morphio_wrapper.cpp
     nrndae.cpp
     nrnmenu.cpp
     nrnpy.cpp

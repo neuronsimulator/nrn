@@ -326,6 +326,9 @@ if(MINGW)
   find_package(Termcap REQUIRED)
 endif()
 
+cpp_cc_git_submodule(fmt BUILD PACKAGE fmt REQUIRED)
+set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 # =============================================================================
 # Enable MPI
 # =============================================================================

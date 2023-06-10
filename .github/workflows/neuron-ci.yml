@@ -95,7 +95,7 @@ jobs:
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install ccache coreutils doxygen flex bison mpich ninja xz autoconf autoconf automake libtool
+          brew install ccache coreutils doxygen flex bison mpich ninja xz autoconf autoconf automake libtool hdf5
           brew unlink mpich
           brew install openmpi
           brew install --cask xquartz
@@ -111,7 +111,7 @@ jobs:
         run: |
           sudo apt-get install build-essential ccache libopenmpi-dev \
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
-            openmpi-bin flex libfl-dev bison
+            openmpi-bin flex libfl-dev bison hdf5-tools libhdf5-dev
           # The sanitizer builds use ubuntu 22.04
           if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
             sudo apt-get install g++-7 g++-8
