@@ -177,3 +177,4 @@ configure_file(_config_params.py.in "${PROJECT_BINARY_DIR}/lib/python/neuron/_co
 
 install(FILES "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
         DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
+

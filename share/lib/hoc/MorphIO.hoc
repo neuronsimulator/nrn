@@ -1,0 +1,7 @@
+/*
+ *   MorphIO API
+*/
+
+func morphio_read() { 
+    return morphio_load($o1, $s2, 1)
+}

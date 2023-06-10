@@ -252,10 +252,16 @@ set(NRN_INCLUDE_DIRS
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 
 # generate hocusr.h
+if(NRN_ENABLE_MORPHIO)
+  set(MORPHIO_API_VALUE 1)
+else()
+  set(MORPHIO_API_VALUE 0)
+endif()
+
 add_custom_command(
   OUTPUT ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
   COMMAND ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR}
-          ${NRN_NRNOC_SRC_DIR}/neuron.h > neuron.tmp1
+          -DMORPHIO_API=${MORPHIO_API_VALUE} ${NRN_NRNOC_SRC_DIR}/neuron.h > neuron.tmp1
   COMMAND sed "/^#/d" neuron.tmp1 > neuron.tmp2
   COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 >
           ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
@@ -452,6 +458,19 @@ endif()
 
 if(NRN_ENABLE_PROFILING)
   target_link_libraries(nrniv_lib PRIVATE ${likwid_LIBRARIES} ${CALIPER_LIB} ${LIKWID_LIB})
+endif()
+
+if(NRN_ENABLE_MORPHIO)
+  find_package(MorphIO REQUIRED)
+  set(HDF5_NO_FIND_PACKAGE_CONFIG_FILE ON)
+  find_package(HDF5 REQUIRED COMPONENTS CXX)
+  target_link_libraries(nrniv_lib PUBLIC ${HDF5_LIBRARIES})
+  target_include_directories(nrniv_lib PUBLIC ${HDF5_INCLUDE_DIRS})
+  message(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")
+  message(STATUS "HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
+  add_dependencies(nrniv_lib MorphIO)
+  target_link_libraries(nrniv_lib PUBLIC ${MorphIO_LIB_DIR}/libmorphio${CMAKE_SHARED_LIBRARY_SUFFIX})
+  target_include_directories(nrniv_lib PUBLIC ${MorphIO_INCLUDE_DIR})
 endif()
 
 set_target_properties(nrniv_lib PROPERTIES EXPORT_NAME nrniv OUTPUT_NAME nrniv)

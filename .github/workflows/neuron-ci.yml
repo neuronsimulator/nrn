@@ -119,6 +119,7 @@ jobs:
           # install Python outside of brew; See actions/setup-python#577 and BlueBrain/libsonata/pull/317
           brew list -1 | grep python | while read formula; do brew unlink $formula; brew link --overwrite $formula; done
           brew install ccache coreutils doxygen flex bison mpich ninja xz autoconf automake libtool
+          brew install ccache coreutils doxygen flex bison mpich ninja xz autoconf autoconf automake libtool hdf5
           # We use both for dynamic mpi in nrn
           brew unlink mpich
           brew install openmpi
@@ -151,7 +152,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install build-essential ccache libopenmpi-dev \
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
-            openmpi-bin flex libfl-dev bison libreadline-dev
+            openmpi-bin flex libfl-dev bison libreadline-dev hdf5-tools libhdf5-dev
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
           echo CMAKE_BUILD_PARALLEL_LEVEL=4 >> $GITHUB_ENV
           echo CTEST_PARALLEL_LEVEL=4 >> $GITHUB_ENV

@@ -24,6 +24,7 @@ project(
 # =============================================================================
 # CMake common project settings
 # =============================================================================
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -106,6 +107,7 @@ option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fal
 option(NRN_ENABLE_THREADS "Allow use of multithreading" ${NRN_ENABLE_THREADS_DEFAULT})
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
 option(NRN_ENABLE_MUSIC "Enable MUSIC support" ${NRN_ENABLE_MUSIC_DEFAULT})
+option(NRN_ENABLE_MORPHIO "Enable MORPHIO support" ${NRN_ENABLE_MORPHIO_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_NMODL "Enable NMODL code-generator support" ${NRN_ENABLE_NMODL_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
@@ -1390,6 +1392,10 @@ endif()
 if(NRN_ENABLE_DIGEST OR NRN_ENABLE_ARCH_INDEP_EXP_POW)
   message(STATUS "NRN_ENABLE_DIGEST | ${NRN_ENABLE_DIGEST}")
   message(STATUS "NRN_ENABLE_ARCH_INDEP_EXP_POW | ${NRN_ENABLE_ARCH_INDEP_EXP_POW}")
+endif()
+message(STATUS "MorphIO       | ${NRN_ENABLE_MORPHIO}")
+if(NRN_ENABLE_MORPHIO)
+  message(STATUS "  Inc         | ${MorphIO_INCLUDE_DIR}")
 endif()
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS " See documentation : https://www.neuronsimulator.org")

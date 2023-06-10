@@ -247,6 +247,11 @@ set(NRNIV_FILE_LIST
     symdir.cpp
     vrecord.cpp)
 
+if(NRN_ENABLE_MORPHIO)
+  list(APPEND NRNIV_FILE_LIST morphology/morphology.cpp
+       morphology/morphio_wrapper/morphio_wrapper.cpp)
+endif()
+
 # =============================================================================
 # Files from coreneuron/permute that get compiled also for NEURON
 # =============================================================================

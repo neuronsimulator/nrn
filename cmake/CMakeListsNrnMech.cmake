@@ -28,7 +28,7 @@ function(get_link_libraries libs)
   foreach(link_lib ${libs})
     # skip static readline library as it will be linked to nrniv (e.g. with wheel) also stub
     # libraries from OSX can be skipped
-    if("${link_lib}" MATCHES "(libreadline.a|/*.tbd)")
+    if("${link_lib}" MATCHES "(libreadline.a|/*.tbd|libmorphio.*|libhdf5.*)")
       continue()
     endif()
 

@@ -139,7 +139,7 @@ stages:
 
       - script: |
           brew install --cask xquartz
-          brew install flex bison mpich
+          brew install flex bison mpich hdf5
           brew unlink mpich && brew install openmpi
           cmake --version
           # the version of bash used by Azure (which is the default one
