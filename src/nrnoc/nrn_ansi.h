@@ -211,7 +211,7 @@ char* nrn_version(int);
   In mechanism libraries, cannot use
       auto const token = nrn_ensure_model_data_are_sorted();
   because the reference is incomplete (from include/neuron/model_data_fwd.hpp).
-. And we do not want to fix by installing more *.hpps file in
+  And we do not want to fix by installing more *.hpps file in
   the include/neuron because of potential ABI incompatibility (anything with
   std::string anywhere in it).
   The work around is to provide an extra layer of indirection via unique_ptr
