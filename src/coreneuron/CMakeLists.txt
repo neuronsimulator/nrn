@@ -370,7 +370,7 @@ file(
 set(MPI_LIB_FILES "mpi/lib/mpispike.cpp" "mpi/lib/nrnmpi.cpp")
 if(NRN_ENABLE_MPI)
   # Building these requires -ldl, which is only added if MPI is enabled.
-  list(APPEND CORENEURON_CODE_FILES "mpi/core/resolve.cpp" "mpi/core/nrnmpidec.cpp")
+  list(APPEND CORENEURON_CODE_FILES "mpi/core/resolve.cpp")
 endif()
 
 file(COPY ${PROJECT_SOURCE_DIR}/external/Random123/include/Random123

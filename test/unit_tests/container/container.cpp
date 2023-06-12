@@ -36,11 +36,6 @@ using owning_handle = handle_interface<owning_identifier<storage>>;
 }  // namespace
 
 TEST_CASE("Tag type with array_dimension and without num_variables", "[Neuron][data_structures]") {
-    storage data{};
+    storage data;  // Debian's GCC 10.2 doesn't like a {} before the ;
     owning_handle instance{data};
-    // GIVEN("A null handle") {
-    //     THEN("Check it is really null") {
-    //         REQUIRE_FALSE(handle);
-    //     }
-    // }
 }
