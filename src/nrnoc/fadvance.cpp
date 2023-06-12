@@ -1058,3 +1058,14 @@ int nrn_nonvint_block_helper(int method, int size, double* pd1, double* pd2, int
     }
     return rval;
 }
+
+// ensure_data_sorted_opaque() can be used in circumstances where neuron:model_sorted_token const& is a forward ref.
+namespace neuron {
+opaque_model_sorted_token::opaque_model_sorted_token(model_sorted_token&& token) : m_ptr{std::make_unique<model_sorted_token>(std::move(token))} {}
+opaque_model_sorted_token::~opaque_model_sorted_token() {}
+}
+
+neuron::opaque_model_sorted_token ensure_data_sorted_opaque() {
+  return nrn_ensure_model_data_are_sorted();
+}
+
