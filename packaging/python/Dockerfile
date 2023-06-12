@@ -3,6 +3,8 @@ ARG MANYLINUX_IMAGE=manylinux2014_x86_64
 FROM quay.io/pypa/$MANYLINUX_IMAGE
 LABEL authors="Pramod Kumbhar, Fernando Pereira, Alexandru Savulescu"
 
+RUN gcc --version && python --version
+
 # install basic packages
 RUN yum -y install \
     git \
@@ -60,3 +62,5 @@ COPY Dockerfile .
 
 # build wheels from there
 WORKDIR /root
+
+ENV NMODL_PYLIB=/nrnwheel/python/lib/libpython3.10.so.1.0
