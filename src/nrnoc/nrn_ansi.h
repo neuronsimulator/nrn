@@ -216,7 +216,7 @@ char* nrn_version(int);
   std::string anywhere in it).
   The work around is to provide an extra layer of indirection via unique_ptr
   so the opaque token has a definite size (one pointer) and declaration.
-  
+
   The "trick" is just that you have to make sure the parts of the opaque
   token that need the definition of the non-opaque token are defined in
   the right place. That's why the constructor and destructor are defined
@@ -226,19 +226,19 @@ char* nrn_version(int);
     auto const token = ensure_data_sorted_opaque();
   This file is already included in all translated mod files.
 **/
-   
+
 #include <memory>
 namespace neuron {
 struct model_sorted_token;
 struct opaque_model_sorted_token {
-  opaque_model_sorted_token(model_sorted_token&&);
-  ~opaque_model_sorted_token();
-  operator model_sorted_token const&() const {
-    return *m_ptr;
-  }
-private:
-  std::unique_ptr<neuron::model_sorted_token> m_ptr;
-};
-}
-neuron::opaque_model_sorted_token ensure_data_sorted_opaque();
+    opaque_model_sorted_token(model_sorted_token&&);
+    ~opaque_model_sorted_token();
+    operator model_sorted_token const &() const {
+        return *m_ptr;
+    }
 
+  private:
+    std::unique_ptr<neuron::model_sorted_token> m_ptr;
+};
+}  // namespace neuron
+neuron::opaque_model_sorted_token ensure_data_sorted_opaque();
