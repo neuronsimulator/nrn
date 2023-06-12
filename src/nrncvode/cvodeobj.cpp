@@ -1363,7 +1363,7 @@ int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
     }
 #endif
     std::pair<Cvode*, neuron::model_sorted_token const&> opaque{this, sorted_token};
-    CVodeSetFdata(mem_, &opaque);
+    CVodeSetUserData(mem_, &opaque);
     CVodeSetStopTime(mem_, tstop_);
     /* Note: CV_ONE_STEP_TSTOP is removed, now CV_ONE_STEP does the
      * same. From documentation: If tstop is enabled (through a call
@@ -1371,6 +1371,7 @@ int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
      */
     // printf("cvode_advance_tn begin t0_=%g t_=%g tn_=%g tstop=%g\n", t0_, t_, tn_, tstop_);
     int err = CVode(mem_, tstop_, y_, &t_, CV_ONE_STEP);
+    CVodeSetUserData(mem_, nullptr);
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         Printf("t_=%.20g\n", t_);
