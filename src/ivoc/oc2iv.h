@@ -20,7 +20,10 @@ extern void hoc_ivfixedvalue(CChar* name,
                              bool deflt = false,
                              bool usepointer = false);
 extern void hoc_ivvalue_keep_updated(CChar* name, CChar* variable, Object* pyvar = 0);
-extern void hoc_ivpvalue(CChar* name, double*, bool deflt = false, HocSymExtension* extra = NULL);
+void hoc_ivpvalue(CChar* name,
+                  neuron::container::data_handle<double>,
+                  bool deflt = false,
+                  HocSymExtension* extra = NULL);
 extern void hoc_ivvaluerun(CChar* name,
                            CChar* variable,
                            CChar* action,
@@ -29,32 +32,32 @@ extern void hoc_ivvaluerun(CChar* name,
                            bool usepointer = false,
                            Object* pyvar = 0,
                            Object* pyact = 0);
-extern void hoc_ivvaluerun_ex(CChar* name,
-                              CChar* var,
-                              double* pvar,
-                              Object* pyvar,
-                              CChar* action,
-                              Object* pyact,
-                              bool deflt = false,
-                              bool canrun = false,
-                              bool usepointer = false,
-                              HocSymExtension* extra = NULL);
-extern void hoc_ivpvaluerun(CChar* name,
-                            double*,
-                            CChar* action,
-                            bool deflt = false,
-                            bool canrun = false,
-                            HocSymExtension* extra = NULL);
+void hoc_ivvaluerun_ex(CChar* name,
+                       CChar* var,
+                       neuron::container::data_handle<double> pvar,
+                       Object* pyvar,
+                       CChar* action,
+                       Object* pyact,
+                       bool deflt = false,
+                       bool canrun = false,
+                       bool usepointer = false,
+                       HocSymExtension* extra = NULL);
+void hoc_ivpvaluerun(CChar* name,
+                     neuron::container::data_handle<double>,
+                     CChar* action,
+                     bool deflt = false,
+                     bool canrun = false,
+                     HocSymExtension* extra = NULL);
 
 extern void hoc_ivlabel(CChar*);
 extern void hoc_ivvarlabel(char**, Object* pyvar = 0);
-extern void hoc_ivstatebutton(double*,
+extern void hoc_ivstatebutton(neuron::container::data_handle<double>,
                               CChar* name,
                               CChar* action,
                               int style,
                               Object* pyvar = 0,
                               Object* pyact = 0);
-extern void hoc_ivslider(double*,
+extern void hoc_ivslider(neuron::container::data_handle<double>,
                          float low = 0,
                          float high = 100,
                          float resolution = 1,

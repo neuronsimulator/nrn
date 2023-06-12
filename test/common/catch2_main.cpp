@@ -8,6 +8,8 @@
 #include "ocfunc.h"
 #include "section.h"
 
+#include <exception>
+
 int ivocmain_session(int, const char**, const char**, int);
 extern int nrn_main_launch;
 extern int nrn_nobanner_;
@@ -24,7 +26,21 @@ int PROCESSORS{0};
 int MAX_PROCESSORS{nrn_how_many_processors()};
 }  // namespace nrn::test
 
+#ifdef NRN_COVERAGE_ENABLED
+// works with AppleClang 14, other sources suggest __gcov_flush.
+extern "C" void __gcov_dump();
+#endif
+namespace {
+void new_handler() {
+#ifdef NRN_COVERAGE_ENABLED
+    __gcov_dump();
+#endif
+}
+}  // namespace
+
 int main(int argc, char* argv[]) {
+    std::set_terminate(new_handler);
+
     // global setup...
     nrn_main_launch = 2;
     int argc_nompi = 2;

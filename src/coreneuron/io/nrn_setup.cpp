@@ -817,15 +817,8 @@ void nrn_cleanup() {
             nt->presyns_helper = nullptr;
         }
 
-        if (nt->pntprocs) {
-            free_memory(nt->pntprocs);
-            nt->pntprocs = nullptr;
-        }
-
-        if (nt->presyns) {
-            delete[] nt->presyns;
-            nt->presyns = nullptr;
-        }
+        delete[] std::exchange(nt->pntprocs, nullptr);
+        delete[] std::exchange(nt->presyns, nullptr);
 
         if (nt->pnt2presyn_ix) {
             for (size_t i = 0; i < corenrn.get_has_net_event().size(); ++i) {

@@ -20,7 +20,6 @@ def test_version_macros():
         strtobool(os.environ.get("NRN_CORENEURON_ENABLE", "false"))
     )
     coreneuron.verbose = True
-    h.CVode().cache_efficient(True)
     h.finitialize()
     pc.set_maxstep(10)
     pc.psolve(0.1)

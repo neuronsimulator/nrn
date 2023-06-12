@@ -67,13 +67,7 @@ def _config_exe(exe_name):
     package_name = "neuron"
 
     # determine package to find the install location
-    if "neuron-gpu-nightly" in working_set.by_key:
-        print("INFO : Using neuron-gpu-nightly Package (Alpha Developer Version)")
-        package_name = "neuron-gpu-nightly"
-    elif "neuron-gpu" in working_set.by_key:
-        print("INFO : Using neuron-gpu Package (Alpha Version)")
-        package_name = "neuron-gpu"
-    elif "neuron-nightly" in working_set.by_key:
+    if "neuron-nightly" in working_set.by_key:
         print("INFO : Using neuron-nightly Package (Developer Version)")
         package_name = "neuron-nightly"
     elif "neuron" in working_set.by_key:

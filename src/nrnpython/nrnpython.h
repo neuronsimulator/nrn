@@ -6,7 +6,8 @@
 #define MS_WIN32
 #define MS_WINDOWS
 #endif
-
+#include "neuron/container/data_handle.hpp"
+#include "neuron/container/generic_data_handle.hpp"
 #include <../../nrnconf.h>
 
 #if defined(USE_PYTHON)
@@ -28,7 +29,7 @@
 static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 8),
               "Python >= 3.8 required");
 
-extern PyObject* nrnpy_hoc_pop();
+extern PyObject* nrnpy_hoc_pop(const char* mes);
 extern int nrnpy_numbercheck(PyObject*);
 
 #if defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ > __SIZEOF_LONG__
@@ -84,4 +85,14 @@ int nrnpy_ho_eq_po(Object*, PyObject*);
 PyObject* nrnpy_ho2po(Object*);
 Object* nrnpy_po2ho(PyObject*);
 Object* nrnpy_pyobject_in_obj(PyObject*);
+
+struct Prop;
+struct Symbol;
+
+bool nrn_chk_data_handle(const neuron::container::data_handle<double>&);
+PyObject* nrn_hocobj_handle(neuron::container::data_handle<double> d);
+extern "C" PyObject* nrn_hocobj_ptr(double*);
+int nrn_is_hocobj_ptr(PyObject*, neuron::container::data_handle<double>&);
+int nrn_pointer_assign(Prop*, Symbol*, PyObject*);
+neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject*, PyObject*);
 #endif

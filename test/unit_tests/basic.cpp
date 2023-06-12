@@ -12,9 +12,8 @@
 SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
     GIVEN("A section") {
         REQUIRE(hoc_oc("create s\n") == 0);
-        WHEN("fast_imem and cachevec is allocated") {
+        WHEN("fast_imem is allocated") {
             nrn_use_fast_imem = true;
-            use_cachevec = 1;
             nrn_fast_imem_alloc();
             THEN("nrn_fast_imem should not be nullptr") {
                 for (int it = 0; it < nrn_nthread; ++it) {

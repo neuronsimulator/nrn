@@ -1,6 +1,7 @@
 #pragma once
 #include "hocdec.h"
 #include "membfunc.h"  // nrn_bamech_t
+#include "neuron/container/data_handle.hpp"
 struct Extnode;
 struct hoc_Item;
 struct HocParmLimits;
@@ -44,7 +45,9 @@ extern void _nrn_watch_allocate(Datum*,
                                 Point_process*,
                                 double nrflag);
 extern void hoc_reg_ba(int, nrn_bamech_t, int);
-extern int nrn_pointing(double*);
+[[nodiscard]] inline int nrn_pointing(double* p) {
+    return static_cast<bool>(p);
+}
 
 extern void nrn_pushsec(Section*);
 extern void nrn_popsec(void);
@@ -62,7 +65,6 @@ extern void cable_prop_assign(Symbol* sym, double* pd, int op);
 extern void nrn_parent_info(Section* s);
 extern void nrn_relocate_old_points(Section* oldsec, Node* oldnode, Section* sec, Node* node);
 extern int nrn_at_beginning(Section* sec);
-extern void nrn_node_destruct1(Node*);
 extern void mech_insert1(Section*, int);
 extern void extcell_2d_alloc(Section* sec);
 extern int nrn_is_ion(int);
@@ -80,12 +82,16 @@ extern void section_order(void);
 extern Section* nrn_sec_pop(void);
 extern Node* node_ptr(Section* sec, double x, double* parea);
 extern double* nrn_vext_pd(Symbol* s, int indx, Node* nd);
-extern double* nrnpy_dprop(Symbol* s, int indx, Section* sec, short inode, int* err);
+neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
+                                                   int indx,
+                                                   Section* sec,
+                                                   short inode,
+                                                   int* err);
 extern void nrn_disconnect(Section*);
 extern void mech_uninsert1(Section* sec, Symbol* s);
 extern Object* nrn_sec2cell(Section*);
 extern int nrn_sec2cell_equals(Section*, Object*);
-extern double* dprop(Symbol* s, int indx, Section* sec, short inode);
+neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, short inode);
 extern void nrn_initcode();
 extern int segment_limits(double*);
 extern "C" void nrn_random_play();
@@ -93,12 +99,12 @@ extern void fixed_play_continuous(NrnThread*);
 extern void* setup_tree_matrix(NrnThread*);
 extern void nrn_solve(NrnThread*);
 extern void second_order_cur(NrnThread*);
-extern void nrn_update_voltage(NrnThread*);
+void nrn_update_voltage(neuron::model_sorted_token const& sorted_token, NrnThread& nt);
 extern void* nrn_fixed_step_lastpart(NrnThread*);
 extern void hoc_register_dparam_size(int, int);
 extern void setup_topology(void);
 extern int nrn_errno_check(int);
-extern void long_difus_solve(int method, NrnThread* nt);
+void long_difus_solve(neuron::model_sorted_token const&, int method, NrnThread& nt);
 extern void nrn_fihexec(int);
 extern int special_pnt_call(Object*, Symbol*, int);
 extern void ob_sec_access_push(hoc_Item*);
@@ -112,20 +118,20 @@ extern void nrn_sec_ref(Section**, Section*);
 extern void hoc_level_pushsec(Section*);
 extern double nrn_ra(Section*);
 extern int node_index_exact(Section*, double);
-void nrn_cachevec(int);
-void nrn_ba(NrnThread*, int);
-extern void nrniv_recalc_ptrs(void);
+void nrn_ba(neuron::model_sorted_token const&, NrnThread&, int);
+void nrniv_recalc_ptrs();
 extern void nrn_recalc_ptrvector(void);
-extern void nrn_recalc_ptrs(double* (*r)(double*) );
 extern void nrn_rhs_ext(NrnThread*);
 extern void nrn_setup_ext(NrnThread*);
-extern void nrn_cap_jacob(NrnThread*, Memb_list*);
+void nrn_cap_jacob(neuron::model_sorted_token const&, NrnThread*, Memb_list*);
+void nrn_div_capacity(neuron::model_sorted_token const&, NrnThread*, Memb_list*);
+void nrn_mul_capacity(neuron::model_sorted_token const&, NrnThread*, Memb_list*);
 extern void clear_point_process_struct(Prop* p);
 extern void ext_con_coef(void);
 extern void nrn_multisplit_ptr_update(void);
-extern void nrn_cache_prop_realloc();
 extern void nrn_use_daspk(int);
 extern void nrn_update_ps2nt(void);
+neuron::model_sorted_token nrn_ensure_model_data_are_sorted();
 extern void activstim_rhs(void);
 extern void activclamp_rhs(void);
 extern void activclamp_lhs(void);
@@ -135,14 +141,20 @@ extern void stim_prepare(void);
 extern void clamp_prepare(void);
 extern void synapse_prepare(void);
 
+void nrn_fixed_step(neuron::model_sorted_token const&);
+void nrn_fixed_step_group(neuron::model_sorted_token const&, int n);
+void nrn_lhs(neuron::model_sorted_token const&, NrnThread&);
+void nrn_rhs(neuron::model_sorted_token const&, NrnThread&);
+void setup_tree_matrix(neuron::model_sorted_token const&, NrnThread&);
 extern void v_setup_vectors(void);
 extern void section_ref(Section*);
 extern void section_unref(Section*);
 extern const char* secname(Section*);
 extern const char* nrn_sec2pysecname(Section*);
-void nrn_rangeconst(Section*, Symbol*, double* value, int op);
+void nrn_rangeconst(Section*, Symbol*, neuron::container::data_handle<double> value, int op);
 extern int nrn_exists(Symbol*, Node*);
-double* nrn_rangepointer(Section*, Symbol*, double x);
+neuron::container::data_handle<double> nrn_rangepointer(Section*, Symbol*, double x);
+neuron::container::data_handle<double> nrnpy_rangepointer(Section*, Symbol*, double, int*, int);
 extern double* cable_prop_eval_pointer(Symbol*);  // section on stack will be popped
 extern char* hoc_section_pathname(Section*);
 extern double nrn_arc_position(Section*, Node*);

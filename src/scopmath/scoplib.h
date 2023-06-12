@@ -12,6 +12,7 @@
 #include "euler_thread.hpp"
 #include "newton.hpp"
 #include "newton_thread.hpp"
+#include "row_view.hpp"
 #include "runge.hpp"
 #include "simeq.hpp"
 #include "sparse.hpp"

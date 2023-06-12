@@ -33,9 +33,6 @@ extern short* nrn_is_artificial_;
 
 // prerequisites for a NEURON model to be transferred to CoreNEURON.
 void model_ready() {
-    // Do the model type checks first as some of them prevent the success
-    // of cvode.cache_efficient(1) and the error message associated with
-    // !use_cachevec would be misleading.
     if (!nrndae_list_is_empty()) {
         hoc_execerror(
             "CoreNEURON cannot simulate a model that contains extra LinearMechanism or RxD "
@@ -51,14 +48,10 @@ void model_ready() {
             hoc_execerror("CoreNEURON can only use fixed step method.", NULL);
         }
     }
-
-    if (!use_cachevec) {
-        hoc_execerror("NEURON model for CoreNEURON requires cvode.cache_efficient(1)", NULL);
-    }
     if (tree_changed || v_structure_change || diam_changed) {
         hoc_execerror(
             "NEURON model internal structures for CoreNEURON are out of date. Make sure call to "
-            "finitialize(...) is after cvode.cache_efficient(1))",
+            "finitialize(...)",
             NULL);
     }
 }
@@ -132,18 +125,25 @@ void nrnbbcore_register_mapping() {
 // mech_type enum or non-artificial cell mechanisms.
 // Limited to pointers to voltage, nt._nrn_fast_imem->_nrn_sav_rhs (fast_imem value) or
 // data of non-artificial cell mechanisms.
-// Requires cache_efficient mode.
 // Input double* and NrnThread. Output type and index.
 // type == 0 means could not determine index.
-extern "C" int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
-    assert(use_cachevec);
+int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
+                        NrnThread& nt,
+                        int& type,
+                        int& index) {
     int nnode = nt.end;
     type = 0;
-    if (pd >= nt._actual_v && pd < (nt._actual_v + nnode)) {
-        type = voltage;  // signifies an index into voltage array portion of _data
-        index = pd - nt._actual_v;
-    } else if (nt._nrn_fast_imem && pd >= nt._nrn_fast_imem->_nrn_sav_rhs &&
-               pd < (nt._nrn_fast_imem->_nrn_sav_rhs + nnode)) {
+    if (dh.refers_to<neuron::container::Node::field::Voltage>(neuron::model().node_data())) {
+        auto const cache_token = nrn_ensure_model_data_are_sorted();
+        type = voltage;
+        // In the CoreNEURON world this is an offset into the voltage array part
+        // of _data
+        index = dh.current_row() - cache_token.thread_cache(nt.id).node_data_offset;
+        return 0;
+    }
+    auto* const pd = static_cast<double*>(dh);
+    if (nt._nrn_fast_imem && pd >= nt._nrn_fast_imem->_nrn_sav_rhs &&
+        pd < (nt._nrn_fast_imem->_nrn_sav_rhs + nnode)) {
         type = i_membrane_;  // signifies an index into i_membrane_ array portion of _data
         index = pd - nt._nrn_fast_imem->_nrn_sav_rhs;
     } else {
@@ -151,11 +151,9 @@ extern "C" int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& in
             if (nrn_is_artificial_[tml->index]) {
                 continue;
             }
-            Memb_list* ml1 = tml->ml;
-            int nn = nrn_prop_param_size_[tml->index] * ml1->nodecount;
-            if (pd >= ml1->_data[0] && pd < (ml1->_data[0] + nn)) {
+            if (auto const maybe_index = tml->ml->legacy_index(pd); maybe_index >= 0) {
                 type = tml->index;
-                index = pd - ml1->_data[0];
+                index = maybe_index;
                 break;
             }
         }
