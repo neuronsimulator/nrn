@@ -23,8 +23,5 @@ extern int nrnmpi_numprocs_subworld;   /* number of ranks in subworld on all ran
 extern int nrnmpi_use;                     /* NEURON does MPI init and terminate?*/
 extern int nrn_cannot_use_threads_and_mpi; /* 0 if required <= provided from MPI_Init_thread */
 
-
-#include "nrnmpidec.h"
-
 #endif /*NRNMPI*/
 #endif /*nrnmpi_h*/

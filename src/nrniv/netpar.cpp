@@ -75,7 +75,7 @@ extern int ovfl_;           /* spikes */
 extern unsigned char* spfixout_;
 extern unsigned char* spfixin_;
 extern unsigned char* spfixin_ovfl_;
-//end variables
+// end variables
 
 #if nrn_spikebuf_size > 0
 #define spbufout_ nrnmpi_spbufout_
@@ -717,7 +717,15 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
         nrnmpi_barrier();
         nrnmpi_step_wait_ += nrnmpi_wtime() - wt;
     }
-    n = nrnmpi_spike_exchange_compressed(nin_, spfixin_ovfl_, spfixout_, spfixin_, ag_send_size_, ag_send_nspike_, localgid_size_, &ovfl_capacity_, &ovfl_);
+    n = nrnmpi_spike_exchange_compressed(nin_,
+                                         spfixin_ovfl_,
+                                         spfixout_,
+                                         spfixin_,
+                                         ag_send_size_,
+                                         ag_send_nspike_,
+                                         localgid_size_,
+                                         &ovfl_capacity_,
+                                         &ovfl_);
     wt_ = nrnmpi_wtime() - wt;
     wt = nrnmpi_wtime();
     TBUF

@@ -75,9 +75,21 @@ declare_mpi_method(nrnmpi_subworld_size);
 // mpispike.cpp
 extern "C" void nrnmpi_spike_initialize_impl();
 declare_mpi_method(nrnmpi_spike_initialize);
-extern "C" int nrnmpi_spike_exchange_impl(int* nin, int* nout, int* icapacity, NRNMPI_Spike** spikein, NRNMPI_Spike** spikeout);
+extern "C" int nrnmpi_spike_exchange_impl(int* nin,
+                                          int* nout,
+                                          int* icapacity,
+                                          NRNMPI_Spike** spikein,
+                                          NRNMPI_Spike** spikeout);
 declare_mpi_method(nrnmpi_spike_exchange);
-extern "C" int nrnmpi_spike_exchange_compressed_impl(int* nin, unsigned char* spfixin_ovfl, unsigned char* spikeout_fixed, unsigned char* spikein_fixed, int ag_send_size, int ag_send_nspike, int localgid_size, int* ovfl_capacity, int* ovfl);
+extern "C" int nrnmpi_spike_exchange_compressed_impl(int* nin,
+                                                     unsigned char* spfixin_ovfl,
+                                                     unsigned char* spikeout_fixed,
+                                                     unsigned char* spikein_fixed,
+                                                     int ag_send_size,
+                                                     int ag_send_nspike,
+                                                     int localgid_size,
+                                                     int* ovfl_capacity,
+                                                     int* ovfl);
 declare_mpi_method(nrnmpi_spike_exchange_compressed);
 extern "C" double nrnmpi_mindelay_impl(double maxdel);
 declare_mpi_method(nrnmpi_mindelay);
@@ -87,11 +99,21 @@ extern "C" void nrnmpi_int_gather_impl(int* s, int* r, int cnt, int root);
 declare_mpi_method(nrnmpi_int_gather);
 extern "C" void nrnmpi_int_gatherv_impl(int* s, int scnt, int* r, int* rcnt, int* rdispl, int root);
 declare_mpi_method(nrnmpi_int_gatherv);
-extern "C" void nrnmpi_char_gatherv_impl(char* s, int scnt, char* r, int* rcnt, int* rdispl, int root);
+extern "C" void nrnmpi_char_gatherv_impl(char* s,
+                                         int scnt,
+                                         char* r,
+                                         int* rcnt,
+                                         int* rdispl,
+                                         int root);
 declare_mpi_method(nrnmpi_char_gatherv);
 extern "C" void nrnmpi_int_scatter_impl(int* s, int* r, int cnt, int root);
 declare_mpi_method(nrnmpi_int_scatter);
-extern "C" void nrnmpi_char_scatterv_impl(char* s, int* scnt, int* sdispl, char* r, int rcnt, int root);
+extern "C" void nrnmpi_char_scatterv_impl(char* s,
+                                          int* scnt,
+                                          int* sdispl,
+                                          char* r,
+                                          int rcnt,
+                                          int root);
 declare_mpi_method(nrnmpi_char_scatterv);
 extern "C" void nrnmpi_int_allgather_impl(int* s, int* r, int n);
 declare_mpi_method(nrnmpi_int_allgather);
@@ -105,27 +127,62 @@ extern "C" void nrnmpi_char_allgatherv_impl(char* s, char* r, int* n, int* dspl)
 declare_mpi_method(nrnmpi_char_allgatherv);
 extern "C" void nrnmpi_int_alltoall_impl(int* s, int* r, int n);
 declare_mpi_method(nrnmpi_int_alltoall);
-extern "C" void nrnmpi_int_alltoallv_impl(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl);
+extern "C" void nrnmpi_int_alltoallv_impl(int* s,
+                                          int* scnt,
+                                          int* sdispl,
+                                          int* r,
+                                          int* rcnt,
+                                          int* rdispl);
 declare_mpi_method(nrnmpi_int_alltoallv);
-extern "C" void nrnmpi_int_alltoallv_sparse_impl(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl);
+extern "C" void nrnmpi_int_alltoallv_sparse_impl(int* s,
+                                                 int* scnt,
+                                                 int* sdispl,
+                                                 int* r,
+                                                 int* rcnt,
+                                                 int* rdispl);
 declare_mpi_method(nrnmpi_int_alltoallv_sparse);
 extern "C" void nrnmpi_long_allgatherv_impl(int64_t* s, int64_t* r, int* n, int* dspl);
 declare_mpi_method(nrnmpi_long_allgatherv);
 extern "C" void nrnmpi_long_allgatherv_inplace_impl(long* srcdest, int* n, int* dspl);
 declare_mpi_method(nrnmpi_long_allgatherv_inplace);
-extern "C" void nrnmpi_long_alltoallv_impl(int64_t* s, int* scnt, int* sdispl, int64_t* r, int* rcnt, int* rdispl);
+extern "C" void nrnmpi_long_alltoallv_impl(int64_t* s,
+                                           int* scnt,
+                                           int* sdispl,
+                                           int64_t* r,
+                                           int* rcnt,
+                                           int* rdispl);
 declare_mpi_method(nrnmpi_long_alltoallv);
-extern "C" void nrnmpi_long_alltoallv_sparse_impl(int64_t* s, int* scnt, int* sdispl, int64_t* r, int* rcnt, int* rdispl);
+extern "C" void nrnmpi_long_alltoallv_sparse_impl(int64_t* s,
+                                                  int* scnt,
+                                                  int* sdispl,
+                                                  int64_t* r,
+                                                  int* rcnt,
+                                                  int* rdispl);
 declare_mpi_method(nrnmpi_long_alltoallv_sparse);
 extern "C" void nrnmpi_dbl_allgatherv_impl(double* s, double* r, int* n, int* dspl);
 declare_mpi_method(nrnmpi_dbl_allgatherv);
 extern "C" void nrnmpi_dbl_allgatherv_inplace_impl(double* srcdest, int* n, int* dspl);
 declare_mpi_method(nrnmpi_dbl_allgatherv_inplace);
-extern "C" void nrnmpi_dbl_alltoallv_impl(double* s, int* scnt, int* sdispl, double* r, int* rcnt, int* rdispl);
+extern "C" void nrnmpi_dbl_alltoallv_impl(double* s,
+                                          int* scnt,
+                                          int* sdispl,
+                                          double* r,
+                                          int* rcnt,
+                                          int* rdispl);
 declare_mpi_method(nrnmpi_dbl_alltoallv);
-extern "C" void nrnmpi_dbl_alltoallv_sparse_impl(double* s, int* scnt, int* sdispl, double* r, int* rcnt, int* rdispl);
+extern "C" void nrnmpi_dbl_alltoallv_sparse_impl(double* s,
+                                                 int* scnt,
+                                                 int* sdispl,
+                                                 double* r,
+                                                 int* rcnt,
+                                                 int* rdispl);
 declare_mpi_method(nrnmpi_dbl_alltoallv_sparse);
-extern "C" void nrnmpi_char_alltoallv_impl(char* s, int* scnt, int* sdispl, char* r, int* rcnt, int* rdispl);
+extern "C" void nrnmpi_char_alltoallv_impl(char* s,
+                                           int* scnt,
+                                           int* sdispl,
+                                           char* r,
+                                           int* rcnt,
+                                           int* rdispl);
 declare_mpi_method(nrnmpi_char_alltoallv);
 extern "C" void nrnmpi_dbl_broadcast_impl(double* buf, int cnt, int root);
 declare_mpi_method(nrnmpi_dbl_broadcast);
@@ -157,7 +214,10 @@ extern "C" double nrnmpi_dbl_allreduce_impl(double x, int type);
 declare_mpi_method(nrnmpi_dbl_allreduce);
 extern "C" void nrnmpi_dbl_allreduce_vec_impl(double* src, double* dest, int cnt, int type);
 declare_mpi_method(nrnmpi_dbl_allreduce_vec);
-extern "C" void nrnmpi_longdbl_allreduce_vec_impl(long double* src, long double* dest, int cnt, int type);
+extern "C" void nrnmpi_longdbl_allreduce_vec_impl(long double* src,
+                                                  long double* dest,
+                                                  int cnt,
+                                                  int type);
 declare_mpi_method(nrnmpi_longdbl_allreduce_vec);
 extern "C" void nrnmpi_long_allreduce_vec_impl(long* src, long* dest, int cnt, int type);
 declare_mpi_method(nrnmpi_long_allreduce_vec);

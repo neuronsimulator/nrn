@@ -91,7 +91,11 @@ static void make_spikebuf_type() {
 }
 #endif
 
-int nrnmpi_spike_exchange_impl(int* nin, int* nout, int* icapacity, NRNMPI_Spike** spikein, NRNMPI_Spike** spikeout) {
+int nrnmpi_spike_exchange_impl(int* nin,
+                               int* nout,
+                               int* icapacity,
+                               NRNMPI_Spike** spikein,
+                               NRNMPI_Spike** spikeout) {
     int i, n, novfl, n1;
     if (!displs) {
         np = nrnmpi_numprocs;
@@ -174,7 +178,15 @@ a sequence of spiketime, localgid pairs. There are nspike of them.
 The allgather sends the first part of the buf and the allgatherv buffer
 sends any overflow.
 */
-int nrnmpi_spike_exchange_compressed_impl(int* nin, unsigned char*& spfixin_ovfl, unsigned char* spikeout_fixed, unsigned char* spikein_fixed, int ag_send_size, int ag_send_nspike, int localgid_size, int* ovfl_capacity, int* ovfl) {
+int nrnmpi_spike_exchange_compressed_impl(int* nin,
+                                          unsigned char*& spfixin_ovfl,
+                                          unsigned char* spikeout_fixed,
+                                          unsigned char* spikein_fixed,
+                                          int ag_send_size,
+                                          int ag_send_nspike,
+                                          int localgid_size,
+                                          int* ovfl_capacity,
+                                          int* ovfl) {
     int i, novfl, n, ntot, idx, bs, bstot; /* n is #spikes, bs is #byte overflow */
     if (!displs) {
         np = nrnmpi_numprocs;
@@ -214,7 +226,7 @@ int nrnmpi_spike_exchange_compressed_impl(int* nin, unsigned char*& spfixin_ovfl
             *ovfl_capacity = novfl + 10;
             free(spfixin_ovfl);
             spfixin_ovfl = (unsigned char*) hoc_Emalloc(*ovfl_capacity * (1 + localgid_size) *
-                                                         sizeof(unsigned char));
+                                                        sizeof(unsigned char));
             hoc_malchk();
         }
         bs = byteovfl[nrnmpi_myid];
@@ -346,28 +358,28 @@ static int MPI_Alltoallv_sparse(void* sendbuf,
 
 
 extern void nrnmpi_dbl_alltoallv_sparse_impl(double* s,
-                                        int* scnt,
-                                        int* sdispl,
-                                        double* r,
-                                        int* rcnt,
-                                        int* rdispl) {
+                                             int* scnt,
+                                             int* sdispl,
+                                             double* r,
+                                             int* rcnt,
+                                             int* rdispl) {
     MPI_Alltoallv_sparse(s, scnt, sdispl, MPI_DOUBLE, r, rcnt, rdispl, MPI_DOUBLE, nrnmpi_comm);
 }
 extern void nrnmpi_int_alltoallv_sparse_impl(int* s,
-                                        int* scnt,
-                                        int* sdispl,
-                                        int* r,
-                                        int* rcnt,
-                                        int* rdispl) {
+                                             int* scnt,
+                                             int* sdispl,
+                                             int* r,
+                                             int* rcnt,
+                                             int* rdispl) {
     MPI_Alltoallv_sparse(s, scnt, sdispl, MPI_INT, r, rcnt, rdispl, MPI_INT, nrnmpi_comm);
 }
 
 extern void nrnmpi_long_alltoallv_sparse_impl(int64_t* s,
-                                         int* scnt,
-                                         int* sdispl,
-                                         int64_t* r,
-                                         int* rcnt,
-                                         int* rdispl) {
+                                              int* scnt,
+                                              int* sdispl,
+                                              int64_t* r,
+                                              int* rcnt,
+                                              int* rdispl) {
     MPI_Alltoallv_sparse(s, scnt, sdispl, MPI_INT64_T, r, rcnt, rdispl, MPI_INT64_T, nrnmpi_comm);
 }
 
@@ -388,7 +400,12 @@ extern void nrnmpi_int_scatter_impl(int* s, int* r, int cnt, int root) {
     MPI_Scatter(s, cnt, MPI_INT, r, cnt, MPI_INT, root, nrnmpi_comm);
 }
 
-extern void nrnmpi_char_scatterv_impl(char* s, int* scnt, int* sdispl, char* r, int rcnt, int root) {
+extern void nrnmpi_char_scatterv_impl(char* s,
+                                      int* scnt,
+                                      int* sdispl,
+                                      char* r,
+                                      int rcnt,
+                                      int root) {
     MPI_Scatterv(s, scnt, sdispl, MPI_CHAR, r, rcnt, MPI_CHAR, root, nrnmpi_comm);
 }
 
@@ -396,34 +413,39 @@ extern void nrnmpi_int_alltoall_impl(int* s, int* r, int n) {
     MPI_Alltoall(s, n, MPI_INT, r, n, MPI_INT, nrnmpi_comm);
 }
 
-extern void nrnmpi_int_alltoallv_impl(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) {
+extern void nrnmpi_int_alltoallv_impl(int* s,
+                                      int* scnt,
+                                      int* sdispl,
+                                      int* r,
+                                      int* rcnt,
+                                      int* rdispl) {
     MPI_Alltoallv(s, scnt, sdispl, MPI_INT, r, rcnt, rdispl, MPI_INT, nrnmpi_comm);
 }
 
 extern void nrnmpi_long_alltoallv_impl(int64_t* s,
-                                  int* scnt,
-                                  int* sdispl,
-                                  int64_t* r,
-                                  int* rcnt,
-                                  int* rdispl) {
+                                       int* scnt,
+                                       int* sdispl,
+                                       int64_t* r,
+                                       int* rcnt,
+                                       int* rdispl) {
     MPI_Alltoallv(s, scnt, sdispl, MPI_INT64_T, r, rcnt, rdispl, MPI_INT64_T, nrnmpi_comm);
 }
 
 extern void nrnmpi_dbl_alltoallv_impl(double* s,
-                                 int* scnt,
-                                 int* sdispl,
-                                 double* r,
-                                 int* rcnt,
-                                 int* rdispl) {
+                                      int* scnt,
+                                      int* sdispl,
+                                      double* r,
+                                      int* rcnt,
+                                      int* rdispl) {
     MPI_Alltoallv(s, scnt, sdispl, MPI_DOUBLE, r, rcnt, rdispl, MPI_DOUBLE, nrnmpi_comm);
 }
 
 extern void nrnmpi_char_alltoallv_impl(char* s,
-                                  int* scnt,
-                                  int* sdispl,
-                                  char* r,
-                                  int* rcnt,
-                                  int* rdispl) {
+                                       int* scnt,
+                                       int* sdispl,
+                                       char* r,
+                                       int* rcnt,
+                                       int* rdispl) {
     MPI_Alltoallv(s, scnt, sdispl, MPI_CHAR, r, rcnt, rdispl, MPI_CHAR, nrnmpi_comm);
 }
 

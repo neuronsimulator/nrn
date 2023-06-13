@@ -41,7 +41,6 @@ double nrnmpi_transfer_wait_;
 double nrnmpi_splitcell_wait_;
 #endif
 #if NRNMPI
-#include "nrnmpidec.h"
 #else
 static void nrnmpi_int_broadcast(int*, int, int) {}
 static void nrnmpi_char_broadcast(char*, int, int) {}

@@ -156,14 +156,16 @@ set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_SPARSE13_SRC_FILES}
     ${NRN_SUNDIALS_SRC_FILES})
 
-set(NRN_MPI_LIB_NAME "nrn_mpi" CACHE INTERNAL "")
+set(NRN_MPI_LIB_NAME
+    "nrn_mpi"
+    CACHE INTERNAL "")
 if(NRN_ENABLE_MPI)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_PARALLEL_SRC_FILES})
 
   if(NRN_ENABLE_MPI_DYNAMIC)
     add_library(${NRN_MPI_LIB_NAME} OBJECT ${NRN_NRNMPI_SRC_FILES})
-    target_include_directories(
-      ${NRN_MPI_LIB_NAME} PRIVATE ${MPI_C_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/src)
+    target_include_directories(${NRN_MPI_LIB_NAME} PRIVATE ${MPI_C_INCLUDE_DIRS}
+                                                           ${PROJECT_SOURCE_DIR}/src)
     set_property(TARGET ${NRN_MPI_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
     set(CORENRN_MPI_OBJ $<TARGET_OBJECTS:${NRN_MPI_LIB_NAME})
   endif()
