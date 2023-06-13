@@ -11,7 +11,7 @@ convert_notebooks() {
   set -e
   working_dir=$1
   echo "Running convert_notebooks in $1"
-  (cd "$working_dir" && jupyter nbconvert --to notebook --inplace --execute *.ipynb)
+  (cd "$working_dir" && jupyter nbconvert --debug --to notebook --inplace --execute *.ipynb)
 }
 
 clean_notebooks() {
