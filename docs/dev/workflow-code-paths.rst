@@ -1,0 +1,60 @@
+Workflow Code Paths
+###################
+
+The intention of the following section is to give an overview of important functions and code paths executed to perform certain actions.
+
+NEURON simulations
+------------------
+
+A summary of the workflow of a typical `NEURON` simulation can be given with the following graph:
+
+.. image:: execution_flow.svg
+
+The parts of the simulation can be described as:
+
+Circuit creation
+^^^^^^^^^^^^^^^^
+
+During this part of the simulation the segments, sections and their connections are created. All these are created based on the circuit which is defined by the users in HOC or Python scripts with the respective API.
+
+.. TODO: Add link to NEURON documentation for Section, Segments, etc
+
+During this part all the `Node` s are created as well as the `Section` s.
+
+.. TODO: Pointer to doxygen docs for Node and SectionPool
+
+The call graph of this part can be found below:
+
+.. image:: circuit_creation.svg
+
+Register Mechanisms
+^^^^^^^^^^^^^^^^^^^
+
+Mechanisms in `NEURON` are defined in `.mod` files. Apart from some built in mechanisms if the user wants to use any additional mechanisms those need to be compiled using the `nrnivmodl` executable.
+
+The `nrnivmodl` executable translates the `MOD` files from the `NMODL` language to `C++`. Those `C++` files apart from the computation kernels also include a function named `<mechanism_name>_reg_(void)` that is essential for registering the mechanism functions in `NEURON` so that later the user can `insert` the mechanism in the needed compartments.
+
+.. image:: mechanism_registration.svg
+
+Insert Mechanisms
+^^^^^^^^^^^^^^^^^
+
+After registering the mechanisms the user can insert them in the needed compartments. To do so they need to call the `insert` function on the proper section. 
+
+.. TODO: add pointer to insert function
+
+.. image:: insert_mechanism.svg
+
+Memory allocation of field data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+During the mechanism insertion the needed data structures to hold their data are also allocated. This is done by appending to the SoA data structures of the data a new element for the newly inserted mechanism.
+
+.. image:: memory_allocation.svg
+
+Initialization
+^^^^^^^^^^^^^^
+
+After all the needed `Section` s for the simulation have been created together with the data structures assigned to them and their mechanisms all the data structures all ordered and initialized. In this place the execution of the `INITIAL` block of the inserted `MOD` files is also executed.
+
+.. image:: initialization.svg
