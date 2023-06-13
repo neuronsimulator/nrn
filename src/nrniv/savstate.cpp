@@ -7,7 +7,7 @@
 #include <nrnoc/nrncvode.h>
 #include <nrniv/nrnoc2iv.h>
 #include <oc/classreg.h>
-#include "ndatclas.h"
+#include <nrniv/ndatclas.h>
 #include <nrnoc/nrniv_mf.h>
 
 #include <nrncvode/tqueue.h>

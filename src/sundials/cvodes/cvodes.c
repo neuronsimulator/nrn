@@ -24,7 +24,7 @@
 #include <stdlib.h>
 
 #include "cvodes_impl.h"
-#include "sundialsmath.h"
+#include <sundials/shared/sundialsmath.h>
 #include <sundials/shared/sundialstypes.h>
 
 /*=================================================================*/

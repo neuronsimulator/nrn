@@ -10,7 +10,7 @@
 #include "deflate.hpp"
 #include "errcodes.hpp"
 #include "../oc/nrnassrt.h"
-#include "scoplib.h"
+#include <scopmath/scoplib.h>
 
 #include <cmath>
 #include <cstdio>

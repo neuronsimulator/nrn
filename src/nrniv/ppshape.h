@@ -3,8 +3,8 @@
 
 // shape class for viewing point processes
 
-#include "shape.h"
-#include "graph.h"
+#include <nrniv/shape.h>
+#include <ivoc/graph.h>
 
 class PPShapeImpl;
 class OcList;

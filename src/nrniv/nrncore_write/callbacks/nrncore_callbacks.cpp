@@ -9,8 +9,8 @@
 #include <nrnoc/nrniv_mf.h>
 #include <oc/hocdec.h>
 #include <nrniv/nrncore_write/utils/nrncore_utils.h>
-#include "nrncore_write/data/cell_group.h"
-#include "nrncore_write/io/nrncore_io.h"
+#include <nrniv/nrncore_write/data/cell_group.h>
+#include <nrniv/nrncore_write/io/nrncore_io.h>
 #include "parse.hpp"
 #include <oc/nrnran123.h>  // globalindex written to globals.
 #include <nrncvode/netcvode.h>   // for nrnbbcore_vecplay_write and PreSyn.flag_

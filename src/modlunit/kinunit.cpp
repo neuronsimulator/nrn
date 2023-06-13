@@ -1,7 +1,7 @@
 #include <nmodlconf.h>
-#include "model.h"
-#include "symbol.h"
-#include "units.h"
+#include <modlunit/model.h>
+#include <modlunit/symbol.h>
+#include <modlunit/units.h>
 #include "parse1.hpp"
 extern const char* indepunits;
 static List* reactnames;

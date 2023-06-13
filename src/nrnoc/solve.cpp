@@ -58,7 +58,7 @@ node.v + extnode.v[0]
 #include <ivoc/ocnotify.h>
 #include <nrnoc/section.h>
 #include <sparse13/spmatrix.h>
-#include "treeset.h"
+#include <nrnoc/treeset.h>
 
 #include <stdio.h>
 #include <stdlib.h>

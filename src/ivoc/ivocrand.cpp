@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "random1.h"
+#include <ivoc/random1.h>
 
 #include <InterViews/resource.h>
 #include <oc/classreg.h>
@@ -34,7 +34,7 @@
 #include <gnu/Weibull.h>
 
 #if HAVE_IV
-#include "ivoc.h"
+#include <ivoc/ivoc.h>
 #endif
 
 #undef dmaxuint

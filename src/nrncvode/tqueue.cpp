@@ -6,7 +6,7 @@
 #include <nrniv/nrnoc2iv.h>
 
 #define PROFILE 0
-#include "profile.h"
+#include <oc/profile.h>
 
 #define DOCHECK 0
 

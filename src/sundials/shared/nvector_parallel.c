@@ -32,7 +32,7 @@ extern int nrnmpi_numprocs;
 #else
 extern MPI_Comm nrnmpi_comm;
 #endif
-#include "sundialsmath.h"
+#include <sundials/shared/sundialsmath.h>
 #include <sundials/shared/sundialstypes.h>
 
 #define ZERO   RCONST(0.0)

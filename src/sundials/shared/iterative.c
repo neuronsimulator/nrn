@@ -21,7 +21,7 @@
 
 #include "iterative.h"
 #include <sundials/shared/nvector.h>
-#include "sundialsmath.h"
+#include <sundials/shared/sundialsmath.h>
 #include <sundials/shared/sundialstypes.h>
 
 #define FACTOR RCONST(1000.0)

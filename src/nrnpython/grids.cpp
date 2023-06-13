@@ -6,9 +6,9 @@ a linked list of Grid_nodes
 ******************************************************************/
 #include <stdio.h>
 #include <assert.h>
-#include "nrnpython.h"
-#include "grids.h"
-#include "rxd.h"
+#include <nrnpython/nrnpython.h>
+#include <nrnpython/grids.h>
+#include <nrnpython/rxd.h>
 
 extern int NUM_THREADS;
 double* dt_ptr;

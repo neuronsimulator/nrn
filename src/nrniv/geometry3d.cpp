@@ -10,7 +10,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cassert>
-//#include <nrnpython.h>
+//#include <nrnpython/nrnpython.h>
 
 int geometry3d_find_triangles(double value0,
                               double value1,

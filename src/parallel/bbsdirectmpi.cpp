@@ -7,10 +7,10 @@
 #include <unistd.h>
 #include <InterViews/resource.h>
 #include <ivoc/oc2iv.h>
-#include "bbs.h"
-#include "bbsdirect.h"
-#include "bbssrv2mpi.h"
-#include "bbssrv.h"
+#include <parallel/bbs.h>
+#include <parallel/bbsdirect.h>
+#include <parallel/bbssrv2mpi.h>
+#include <parallel/bbssrv.h>
 
 extern void nrnmpi_int_broadcast(int*, int, int);
 

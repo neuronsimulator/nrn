@@ -1,7 +1,7 @@
 #include <nrnconf.h>
-#include "hoc.h"
+#include <oc/hoc.h>
 #include <oc/hocstr.h>
-#include "equation.h"
+#include <oc/equation.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -10,9 +10,9 @@
 #include "parse.hpp"
 #include <oc/hocparse.h>
 #include <oc/oc_ansi.h>
-#include "ocjump.h"
+#include <ivoc/ocjump.h>
 #include <oc/ocfunc.h>
-#include "ocmisc.h"
+#include <oc/ocmisc.h>
 #include <oc/nrnmpi.h>
 #include <nrniv/nrnpy.h>
 #include <oc/nrnfilewrap.h>

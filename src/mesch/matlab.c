@@ -35,7 +35,7 @@
 
 #include        <stdio.h>
 #include        <mesch/matrix.h>
-#include	"matlab.h"
+#include	<mesch/matlab.h>
 
 static char rcsid[] = "matlab.c,v 1.1 1997/12/04 17:55:34 hines Exp";
 

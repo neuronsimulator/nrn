@@ -3,10 +3,10 @@
 #include <InterViews/observe.h>
 #include <ivoc/ocnotify.h>
 #if HAVE_IV
-#include "ivoc.h"
+#include <ivoc/ivoc.h>
 #endif
 #include <oc/classreg.h>
-#include "linmod.h"
+#include <nrniv/linmod.h>
 #include <nrniv/nrnoc2iv.h>
 
 // hoc interface to a LinearModelAddition

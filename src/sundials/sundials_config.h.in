@@ -3,7 +3,7 @@
 /* FCMIX: Define name-mangling macro */
 #undef F77_FUNC
 
-/* Define to 1 if you have the <dlfcn.h> header file. */
+/* Define to 1 if you have the <mswin/dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
 /* Define to 1 if you have the <float.h> header file. */

@@ -5,7 +5,7 @@
 #include <OS/list.h>
 #include <OS/string.h>
 #include <InterViews/observe.h>
-#include "scenevie.h"
+#include <ivoc/scenevie.h>
 
 class DataVec;
 class Color;

@@ -94,7 +94,7 @@ struct Phase2Buffer {
     double spiketime;
 };
 
-#include <structpool.h>
+#include <nrniv/structpool.h>
 
 using SpkPool = Pool<NRNMPI_Spike>;
 

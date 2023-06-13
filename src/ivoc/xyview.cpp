@@ -19,13 +19,13 @@
 #include <InterViews/background.h>
 
 #include <ivoc/mymath.h>
-#include "apwindow.h"
+#include <ivoc/apwindow.h>
 #include <oc/hocdec.h>
-#include "ocglyph.h"
-#include "scenevie.h"
-#include "scenepic.h"
-#include "rubband.h"
-#include "idraw.h"
+#include <ivoc/ocglyph.h>
+#include <ivoc/scenevie.h>
+#include <ivoc/scenepic.h>
+#include <ivoc/rubband.h>
+#include <ivoc/idraw.h>
 
 // XYView
 /*static*/ class XYView_helper: public MonoGlyph {

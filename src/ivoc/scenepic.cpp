@@ -8,13 +8,13 @@
 #include <OS/list.h>
 #include <OS/string.h>
 #include <stdio.h>
-#include "ivoc.h"
+#include <ivoc/ivoc.h>
 #include <ivoc/mymath.h>
-#include "scenevie.h"
-#include "scenepic.h"
-#include "rubband.h"
-#include "apwindow.h"
-#include "utility.h"
+#include <ivoc/scenevie.h>
+#include <ivoc/scenepic.h>
+#include <ivoc/rubband.h>
+#include <ivoc/apwindow.h>
+#include <ivoc/utility.h>
 #include <ivoc/oc2iv.h>
 
 #define Scene_SceneMover_     "Translate Scene"

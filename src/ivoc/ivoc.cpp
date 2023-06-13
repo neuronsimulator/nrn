@@ -10,11 +10,11 @@
 #include <oc/ocfunc.h>
 #include <ivoc/ocnotify.h>
 #include <oc/oc_ansi.h>
-#include "ocjump.h"
+#include <ivoc/ocjump.h>
 
 #if HAVE_IV
-#include "utility.h"
-#include "ivoc.h"
+#include <ivoc/utility.h>
+#include <ivoc/ivoc.h>
 #endif
 
 #include "bimap.hpp"
@@ -199,7 +199,7 @@ void nrn_err_dialog(const char* mes) {
 #include <InterViews/style.h>
 #include <IV-look/kit.h>
 
-#include "xmenu.h"
+#include <ivoc/xmenu.h>
 
 /*
  * Interface between oc and interviews.

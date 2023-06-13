@@ -8,10 +8,10 @@
 #include <IV-look/kit.h>
 #include <OS/string.h>
 #include <stdio.h>
-#include "apwindow.h"
-#include "secbrows.h"
+#include <ivoc/apwindow.h>
+#include <nrniv/secbrows.h>
 #include <ivoc/oclist.h>
-#include "ivoc.h"
+#include <ivoc/ivoc.h>
 #include <ivoc/objcmd.h>
 #endif
 

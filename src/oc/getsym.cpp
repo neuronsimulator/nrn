@@ -62,7 +62,7 @@ getsym.cpp,v
 #if OCSMALL
 #else
 
-#include "hocgetsym.h"
+#include <oc/hocgetsym.h>
 #include "parse.hpp"
 #include <oc/hocparse.h>
 #include <oc/code.h>

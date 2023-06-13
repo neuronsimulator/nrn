@@ -2,7 +2,7 @@
 #include <parallel/bbsconf.h>
 #include <stdio.h>
 #include <string.h>
-#include "bbslsrv.h"
+#include <parallel/bbslsrv.h>
 #include <oc/oc_ansi.h>
 
 #define INT    1

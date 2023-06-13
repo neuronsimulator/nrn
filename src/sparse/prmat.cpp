@@ -5,7 +5,7 @@
 #else
 #define IGNORE(arg)	arg
 #endif
-#include "lineq.h"
+#include <sparse/lineq.h>
 
 void prmat(void)
 {

@@ -2,9 +2,9 @@
 
 #if HAVE_IV
 #include <InterViews/window.h>
-#include "ivoc.h"
-#include "scenevie.h"
-#include "utility.h"
+#include <ivoc/ivoc.h>
+#include <ivoc/scenevie.h>
+#include <ivoc/utility.h>
 #endif
 
 #include <ivoc/ocnotify.h>

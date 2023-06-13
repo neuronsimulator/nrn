@@ -6,7 +6,7 @@
 #if defined(__MINGW32__)
 #define _hypot hypot
 #endif
-#include "nrnpy_utils.h"
+#include <nrnpython/nrnpy_utils.h>
 #include <stdlib.h>
 #include <ctype.h>
 

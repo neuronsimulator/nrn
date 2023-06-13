@@ -1,5 +1,5 @@
-#include <nrnpython.h>
-#include <nrnpy_utils.h>
+#include <nrnpython/nrnpython.h>
+#include <nrnpython/nrnpy_utils.h>
 #include <oc/oc_ansi.h>
 #include <stdio.h>
 #include <InterViews/resource.h>
@@ -7,7 +7,7 @@
 #include <InterViews/session.h>
 #endif
 #include <nrniv/nrnoc2iv.h>
-#include <hoccontext.h>
+#include <nrnpython/hoccontext.h>
 #include <ivoc/ocfile.h>  // bool isDirExist(const std::string& path);
 
 #include <oc/hocstr.h>

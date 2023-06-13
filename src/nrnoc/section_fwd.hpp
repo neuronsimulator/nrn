@@ -1,7 +1,7 @@
 #pragma once
 #include <nrnoc/multicore.h>
 #include "neuron/container/generic_data_handle.hpp"
-#include "nrnredef.h"
+#include <nrnoc/nrnredef.h>
 /**
  * @file section_fwd.hpp
  * @brief Forward declarations of Section, Node etc. to be included in translated MOD files.

@@ -1,18 +1,18 @@
 
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #include <stdio.h>
 #include <string.h>
 #include <OS/string.h>
 
 #if HAVE_IV
-#include "secbrows.h"
-#include "ivoc.h"
+#include <nrniv/secbrows.h>
+#include <ivoc/ivoc.h>
 #endif
 #include <nrnoc/nrniv_mf.h>
 #include <nrniv/nrnoc2iv.h>
 #include <nrniv/nrnpy.h>
-#include "nrnmenu.h"
+#include <nrniv/nrnmenu.h>
 #include <oc/classreg.h>
 #include <nrnoc/gui-redirect.h>
 

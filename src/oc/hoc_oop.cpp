@@ -5,7 +5,7 @@
 #include "parse.hpp"
 #include <oc/hocparse.h>
 #include <oc/code.h>
-#include "hocassrt.h"
+#include <oc/hocassrt.h>
 #include <oc/hoclist.h>
 #include <nrnoc/nrn_ansi.h>
 #include <oc/nrnmpi.h>

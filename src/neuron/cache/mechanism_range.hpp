@@ -1,7 +1,7 @@
 #pragma once
 #include <nrnoc/membfunc.h>
 #include <nrnoc/nrn_ansi.h>
-#include "nrnoc_ml.h"
+#include <nrnoc/nrnoc_ml.h>
 
 #include <array>
 

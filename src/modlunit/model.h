@@ -162,7 +162,7 @@ extern Item *putintoken(const char*s, short type, short), /* construct symbol an
     *car(List*), *next(Item*), *prev(Item*);
 
 
-#include "modlunit.h" /* void functions */
+#include <modlunit/modlunit.h> /* void functions */
 
 extern Symbol *install(const char*, int), /* Install token in symbol table */
     *lookup(const char*),                 /* lookup name in symbol table */

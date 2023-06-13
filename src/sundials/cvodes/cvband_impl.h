@@ -24,8 +24,8 @@ extern "C" {
 
 #include <stdio.h>
 
-#include "band.h"
-#include "cvband.h"
+#include <sundials/shared/band.h>
+#include <sundials/cvodes/cvband.h>
 #include <sundials/shared/nvector.h>
 #include <sundials/shared/sundialstypes.h>
 

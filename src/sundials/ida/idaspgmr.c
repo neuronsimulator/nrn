@@ -21,7 +21,7 @@
 #include "ida_impl.h"
 #include "idaspgmr_impl.h"
 
-#include "sundialsmath.h"
+#include <sundials/shared/sundialsmath.h>
 
 /* Constants */
 

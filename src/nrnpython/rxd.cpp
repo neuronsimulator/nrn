@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include "grids.h"
-#include "rxd.h"
+#include <nrnpython/grids.h>
+#include <nrnpython/rxd.h>
 #include <../nrnoc/section.h>
 #include <../nrnoc/nrn_ansi.h>
 #include <../nrnoc/multicore.h>
-#include <nrnwrap_Python.h>
-#include <nrnpython.h>
+#include <nrnpython/nrnwrap_Python.h>
+#include <nrnpython/nrnpython.h>
 
 #include <thread>
 #include <vector>

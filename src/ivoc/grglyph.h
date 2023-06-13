@@ -2,7 +2,7 @@
 #define grglyph_h
 
 #include <InterViews/transformer.h>
-#include "graph.h"
+#include <ivoc/graph.h>
 
 struct Object;
 class GrGlyph;

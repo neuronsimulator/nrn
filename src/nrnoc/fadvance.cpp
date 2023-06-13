@@ -7,7 +7,7 @@
 #include <nrnoc/section.h>
 #include <nrnoc/nrn_ansi.h>
 #include <nrnoc/nrniv_mf.h>
-#include "multisplit.h"
+#include <nrnoc/multisplit.h>
 #define nrnoc_fadvance_c
 #include "utils/profile/profiler_interface.h"
 #include <nrnoc/nonvintblock.h>
@@ -146,7 +146,7 @@ int stoprun;
 int nrn_use_fast_imem;
 
 #define PROFILE 0
-#include "profile.h"
+#include <oc/profile.h>
 
 void fadvance() {
     nrn::Instrumentor::phase p_fadvance("fadvance");

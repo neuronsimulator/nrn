@@ -33,15 +33,15 @@
 
 #include <InterViews/display.h>
 #include <ivoc/mymath.h>
-#include "xmenu.h"
+#include <ivoc/xmenu.h>
 #include <ivoc/datapath.h>
-#include "ivoc.h"
-#include "bndedval.h"
+#include <ivoc/ivoc.h>
+#include <ivoc/bndedval.h>
 #include <nrniv/nrnpy.h>
 #include <ivoc/objcmd.h>
 #include "parse.hpp"
-#include "utility.h"
-#include "scenepic.h"
+#include <ivoc/utility.h>
+#include <ivoc/scenepic.h>
 
 // The problem this overcomes is that the pick of an input handler normally
 // succeeds for a keystroke only if the mouse is over one of the child

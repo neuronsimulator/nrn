@@ -13,7 +13,7 @@
 #define _XOPEN_SOURCE 600
 #endif
 
-#include "hoc.h"
+#include <oc/hoc.h>
 #include <oc/hocdec.h>
 #include <oc/hoclist.h>
 #include <nrniv/nrncore_write/utils/nrncore_utils.h>

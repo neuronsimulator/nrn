@@ -15,8 +15,8 @@
   Multiple invocations of the Rotate3Band accumulate rotations.
 */
 
-#include "rubband.h"
-#include "rotate3d.h"
+#include <ivoc/rubband.h>
+#include <nrniv/rotate3d.h>
 
 class Rotate3Band: public Rubberband {
   public:

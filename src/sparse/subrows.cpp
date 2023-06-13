@@ -1,7 +1,7 @@
 #include <nrnconf.h>
 
 #include <stdlib.h>
-#include "lineq.h"
+#include <sparse/lineq.h>
 	
 void subrow(struct elm *pivot, struct elm*rowsub) {
 	unsigned row;

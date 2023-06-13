@@ -5,7 +5,7 @@
 #include <ivoc/ocmatrix.h>
 #include <ivoc/ivocvect.h>
 #include <nrniv/nrnoc2iv.h>
-#include "matrixmap.h"
+#include <nrniv/matrixmap.h>
 #include <nrniv/nrndae.h>
 
 

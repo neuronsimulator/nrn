@@ -9,12 +9,12 @@
 #pragma alloca
 #endif
 
-#include "hoc.h"
+#include <oc/hoc.h>
 #include <oc/hocdec.h>
-#include "ocmisc.h"
+#include <oc/ocmisc.h>
 #include <oc/hocparse.h>
 #include <oc/code.h>
-#include "equation.h"
+#include <oc/equation.h>
 #include <oc/nrnfilewrap.h>
 
 void* nrn_parsing_pysec_;

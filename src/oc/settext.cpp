@@ -1,5 +1,5 @@
 #include <nrnconf.h>
-#include "hoc.h"
+#include <oc/hoc.h>
 #define Ret(a) \
     hoc_ret(); \
     hoc_pushx(a);

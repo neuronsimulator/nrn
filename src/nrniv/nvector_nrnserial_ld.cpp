@@ -16,8 +16,8 @@
  * -----------------------------------------------------------------
  */
 
-#include <../../nrnconf.h>
-#include <hocassrt.h>
+#include <nrnconf.h>
+#include <oc/hocassrt.h>
 #include <oc/nrnassrt.h>
 #if HAVE_POSIX_MEMALIGN
 #define HAVE_MEMALIGN 1

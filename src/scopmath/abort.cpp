@@ -9,7 +9,7 @@
  ******************************************************************************/
 #include "errcodes.hpp"
 #include <oc/oc_ansi.h>
-#include "scoplib.h"
+#include <scopmath/scoplib.h>
 
 #include <cmath>
 #include <cstdio>

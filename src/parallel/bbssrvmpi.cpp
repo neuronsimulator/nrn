@@ -4,8 +4,8 @@
 #ifdef NRNMPI  // to end of file
 #include <stdio.h>
 #include <unistd.h>
-#include "bbssrv2mpi.h"
-#include "bbssrv.h"
+#include <parallel/bbssrv2mpi.h>
+#include <parallel/bbssrv.h>
 
 #define debug 0
 

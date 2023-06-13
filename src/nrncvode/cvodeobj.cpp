@@ -18,7 +18,7 @@ extern int hoc_return_type_code;
 #include <nrnoc/membfunc.h>
 #include <nrnoc/nrn_ansi.h>
 #include <nrnoc/nrncvode.h>
-#include "nrndaspk.h"
+#include <nrncvode/nrndaspk.h>
 #include <nrnoc/nrniv_mf.h>
 #include <nrniv/nrnpy.h>
 #include <nrncvode/tqueue.h>

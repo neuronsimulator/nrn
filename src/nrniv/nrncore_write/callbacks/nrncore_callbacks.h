@@ -7,7 +7,7 @@
 #include <set>
 #include <cstdlib>
 // includers need several pieces of info for nrn_get_partrans_setup_info
-#include "partrans.h"
+#include <nrniv/partrans.h>
 
 typedef void* (*CNB)(...);
 typedef struct core2nrn_callback_t {

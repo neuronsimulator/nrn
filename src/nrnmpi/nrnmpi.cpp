@@ -31,7 +31,7 @@ extern double nrn_timeus();
 #endif
 
 #if NRN_MUSIC
-#include "nrnmusicapi.h"
+#include <neuronmusic/nrnmusicapi.h>
 MPI_Comm nrnmusic_comm;
 extern int nrnmusic;
 #endif

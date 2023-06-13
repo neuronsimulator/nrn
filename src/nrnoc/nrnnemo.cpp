@@ -7,7 +7,7 @@
 
 #if !OBSOLETE
 #include <nrnoc/membfunc.h>
-#include "hocassrt.h"
+#include <oc/hocassrt.h>
 
 /* basic loop taken from topology() in solve.cpp */
 static FILE *fin, *fmark, *fdat;

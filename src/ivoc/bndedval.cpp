@@ -1,7 +1,7 @@
 #include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
-#include "bndedval.h"
+#include <ivoc/bndedval.h>
 #include <stdio.h>
 
 BoundedValue::BoundedValue() {

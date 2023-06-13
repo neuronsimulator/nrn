@@ -3,7 +3,7 @@
 
 /* Returns parse tokens in same order that lexical analyzer did */
 
-#include "model.h"
+#include <modlunit/model.h>
 #include "parse1.hpp"
 
 #define DEBUG 0

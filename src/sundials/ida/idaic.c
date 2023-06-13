@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ida_impl.h"
-#include "sundialsmath.h"
+#include <sundials/shared/sundialsmath.h>
 
 /* Macro: loop */
 #define loop for(;;)

@@ -95,13 +95,13 @@ data depending on type. eg for VAR && NOTUSER it is
 #if HAVE_XDR
 #include <rpc/xdr.h>
 #endif
-#include "checkpnt.h"
+#include <ivoc/checkpnt.h>
 
-#include "redef.h"
+#include <oc/redef.h>
 #include <oc/hoclist.h>
 #include "parse.hpp"
 #include <oc/code.h>
-#include "equation.h"
+#include <oc/equation.h>
 int hoc_readcheckpoint(char*);
 extern int hoc_resize_toplevel(int);
 

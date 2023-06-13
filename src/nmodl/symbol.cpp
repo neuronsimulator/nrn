@@ -1,8 +1,8 @@
 #include <nmodlconf.h>
 
-#include "modl.h"
+#include <nmodl/modl.h>
 #include "parse1.hpp"
-#include "symbol.h"
+#include <nmodl/symbol.h>
 
 #include <string>
 

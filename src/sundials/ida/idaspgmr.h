@@ -24,7 +24,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <sundials/shared/sundialstypes.h>
-#include "spgmr.h"
+#include <sundials/shared/spgmr.h>
 #include <sundials/shared/nvector.h>
 
 /*

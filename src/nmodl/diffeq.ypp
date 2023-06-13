@@ -8,8 +8,8 @@
 
 #include <nmodlconf.h>
 #include <string.h>
-#include "modl.h"
-#include "difeqdef.h"
+#include <nmodl/modl.h>
+#include <nmodl/difeqdef.h>
 
 /* every yy gets changed to diffeq_yy before compiling */
 

@@ -1,7 +1,7 @@
 #include <nrnconf.h>
 #include <oc/nrnmpiuse.h>
 #include <nrnoc/nrn_ansi.h>
-#include "nrncore_write/io/nrncore_io.h"
+#include <nrniv/nrncore_write/io/nrncore_io.h>
 #include <oc/oc_ansi.h>
 #include <stdio.h>
 #include <errno.h>
@@ -11,7 +11,7 @@
 #include <nrnoc/section.h>
 #include "parse.hpp"
 #include <nrnoc/nrniv_mf.h>
-#include "cabvars.h"
+#include <nrnoc/cabvars.h>
 #include <nrnoc/neuron.h>
 #include "neuron/container/data_handle.hpp"
 #include <nrnoc/membdef.h>

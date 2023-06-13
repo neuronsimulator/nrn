@@ -1,5 +1,5 @@
 #include "nrncore_utils.h"
-#include "nrncore_write/callbacks/nrncore_callbacks.h"
+#include <nrniv/nrncore_write/callbacks/nrncore_callbacks.h>
 
 #include "nrnconf.h"
 #include <nrnoc/nrniv_mf.h>
@@ -7,7 +7,7 @@
 #include <nrnoc/nrndae_c.h>
 #include <nrnoc/section.h>
 #include <oc/hocdec.h>
-#include "nrnsection_mapping.h"
+#include <nrniv/nrnsection_mapping.h>
 #include <nrncvode/vrecitem.h>  // for nrnbbcore_vecplay_write
 #include "parse.hpp"
 #include <string>

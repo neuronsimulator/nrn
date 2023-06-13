@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #include <stdio.h>
 #include <oc/hocparse.h>
@@ -7,7 +7,7 @@
 
 #include <nrniv/nrnoc2iv.h>
 
-#include "nrnsymdiritem.h"
+#include <ivoc/nrnsymdiritem.h>
 
 #include <string>
 #include <map>

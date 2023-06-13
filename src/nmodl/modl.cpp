@@ -33,7 +33,7 @@
 #if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#include "modl.h"
+#include <nmodl/modl.h>
 
 #include <cstring>
 

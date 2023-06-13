@@ -1,6 +1,6 @@
 #include "nrncore_io.h"
-#include "nrncore_write/data/cell_group.h"
-#include "nrncore_write/callbacks/nrncore_callbacks.h"
+#include <nrniv/nrncore_write/data/cell_group.h>
+#include <nrniv/nrncore_write/callbacks/nrncore_callbacks.h>
 
 #include <cstdlib>
 #include <oc/nrnmpi.h>
@@ -13,7 +13,7 @@
 #include <nrncvode/vrecitem.h>  // for nrnbbcore_vecplay_write
 #include <fstream>
 #include <sstream>
-#include "nrnsection_mapping.h"
+#include <nrniv/nrnsection_mapping.h>
 
 extern short* nrn_is_artificial_;
 extern int* bbcore_dparam_size;

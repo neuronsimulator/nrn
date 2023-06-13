@@ -20,9 +20,9 @@
 #include <nrncvode/cvodeobj.h>
 
 #if HAVE_IV  // to end of file
-#include "graph.h"
-#include "glinerec.h"
-#include "ocjump.h"
+#include <ivoc/graph.h>
+#include <nrniv/glinerec.h>
+#include <ivoc/ocjump.h>
 
 extern NetCvode* net_cvode_instance;
 

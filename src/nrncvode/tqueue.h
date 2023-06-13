@@ -12,11 +12,11 @@ using TQItemPool = MutexPool<TQItem>;
 #define BBTQ 5
 
 #if BBTQ == 0
-#include <bbtqueue.h>
+#include <nrncvode/bbtqueue.h>
 #elif BBTQ == 2
-#include <sptqueue.h>
+#include <nrncvode/sptqueue.h>
 #elif BBTQ == 4
-#include <spt2queue.h>
+#include <nrncvode/spt2queue.h>
 #elif BBTQ == 5
 #include <nrncvode/sptbinq.h>
 #endif

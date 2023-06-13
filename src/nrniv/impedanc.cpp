@@ -3,7 +3,7 @@
 #include <nrnoc/nrniv_mf.h>
 #include <oc/nrnmpi.h>
 #include <nrnoc/nrn_ansi.h>
-#include "nonlinz.h"
+#include <nrniv/nonlinz.h>
 #include <InterViews/resource.h>
 #include <complex>
 #include <nrniv/nrnoc2iv.h>

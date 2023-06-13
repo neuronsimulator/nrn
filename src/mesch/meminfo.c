@@ -34,13 +34,13 @@
 
 #include <stdio.h>
 #include  <mesch/matrix.h>
-#include  "meminfo.h"
+#include  <mesch/meminfo.h>
 #ifdef COMPLEX   
-#include  "zmatrix.h"
+#include  <mesch/zmatrix.h>
 #endif
 #ifdef SPARSE
 #include  <mesch/sparse.h>
-#include  "iter.h"
+#include  <mesch/iter.h>
 #endif
 
 static char rcsid[] = "meminfo.c,v 1.1 1997/12/04 17:55:37 hines Exp";

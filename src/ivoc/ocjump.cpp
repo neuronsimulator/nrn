@@ -3,9 +3,9 @@
 #include <oc/nrnfilewrap.h>
 #include <nrniv/nrnoc2iv.h>
 #include <oc/ocfunc.h>
-#include "ocjump.h"
+#include <ivoc/ocjump.h>
 #if HAVE_IV
-#include "ivoc.h"
+#include <ivoc/ivoc.h>
 #endif
 
 #include <InterViews/resource.h>

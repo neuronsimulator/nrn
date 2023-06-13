@@ -42,8 +42,8 @@
 static	char	rcsid[] = "zqrfctr.c,v 1.1 1997/12/04 17:56:15 hines Exp";
 
 #include	<stdio.h>
-#include	"zmatrix.h"
-#include	"zmatrix2.h" 
+#include	<mesch/zmatrix.h>
+#include	<mesch/zmatrix2.h> 
 #include	<math.h>
 
 

@@ -11,10 +11,10 @@
 #if HAVE_IV
 #include <InterViews/adjust.h>
 #include <InterViews/hit.h>
-#include "ocglyph.h"
-#include "checkpnt.h"
-#include "apwindow.h"
-#include "ocbrowsr.h"
+#include <ivoc/ocglyph.h>
+#include <ivoc/checkpnt.h>
+#include <ivoc/apwindow.h>
+#include <ivoc/ocbrowsr.h>
 #include <ivoc/objcmd.h>
 #endif
 

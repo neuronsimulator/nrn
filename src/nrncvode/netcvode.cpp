@@ -23,9 +23,9 @@
 #include <nrniv/kssingle.h>
 #include <ivoc/ocnotify.h>
 #if HAVE_IV
-#include "ivoc.h"
-#include "glinerec.h"
-#include "ocjump.h"
+#include <ivoc/ivoc.h>
+#include <nrniv/glinerec.h>
+#include <ivoc/ocjump.h>
 #endif
 #include <nrncvode/vrecitem.h>
 #include <ivoc/oclist.h>
@@ -38,7 +38,7 @@
 #include <nrniv/nrncore_write/utils/nrncore_utils.h>
 #include <nrnoc/nrniv_mf.h>
 #include <nrniv/nrnste.h>
-#include "profile.h"
+#include <oc/profile.h>
 #include "utils/profile/profiler_interface.h"
 
 #include <array>
@@ -119,7 +119,7 @@ extern "C" void nrnthread_trajectory_return(int tid,
                                             double t);
 bool nrn_trajectory_request_per_time_step_ = false;
 #if NRN_MUSIC
-#include "nrnmusicapi.h"
+#include <neuronmusic/nrnmusicapi.h>
 #endif
 
 extern int hoc_return_type_code;

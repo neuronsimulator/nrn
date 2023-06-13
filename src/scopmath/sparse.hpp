@@ -6,7 +6,7 @@
 #pragma once
 #include "errcodes.hpp"
 #include <oc/hocdec.h>
-#include "scoplib.h"
+#include <scopmath/scoplib.h>
 
 #include <cassert>
 #include <cmath>

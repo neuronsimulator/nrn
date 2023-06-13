@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-#include "spgmr.h"
+#include <sundials/shared/spgmr.h>
 #include <sundials/shared/nvector.h>
 #include <sundials/shared/sundialstypes.h>
 

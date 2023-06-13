@@ -24,10 +24,10 @@ extern "C" {
 
 #include <stdio.h>
 
-#include "idaspgmr.h"
+#include <sundials/ida/idaspgmr.h>
 
-#include "spgmr.h"
-#include "iterative.h"
+#include <sundials/shared/spgmr.h>
+#include <sundials/shared/iterative.h>
 #include <sundials/shared/sundialstypes.h>
 #include <sundials/shared/nvector.h>
 

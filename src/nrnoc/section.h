@@ -27,8 +27,8 @@
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/container/node_data.hpp"
 #include "neuron/model_data.hpp"
-#include "nrnredef.h"
-#include "options.h"
+#include <nrnoc/nrnredef.h>
+#include <nrnoc/options.h>
 #include "section_fwd.hpp"
 
 /*#define DEBUGSOLVE 1*/

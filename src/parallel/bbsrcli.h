@@ -2,7 +2,7 @@
 #define bbsrcli_h
 
 #include <oc/nrnmpiuse.h>
-#include "bbsimpl.h"
+#include <parallel/bbsimpl.h>
 class KeepArgs;
 struct bbsmpibuf;
 

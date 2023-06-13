@@ -19,10 +19,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ida_impl.h"
-#include "idadense_impl.h"
+#include <sundials/ida/ida_impl.h>
+#include <sundials/ida/idadense_impl.h>
 
-#include "sundialsmath.h"
+#include <sundials/shared/sundialsmath.h>
 
 /* Constants */
 

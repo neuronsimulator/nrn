@@ -20,7 +20,7 @@ extern int hoc_return_type_code;
 #define DECO 2  // 1 means default on, 2 off. for Carnvale,Hines book figures
 
 #include <string.h>
-#include "ivoc.h"
+#include <ivoc/ivoc.h>
 #endif  // HAVE_IV
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +29,7 @@ extern int hoc_return_type_code;
 #include <cmath>
 
 #if HAVE_IV
-#include "utility.h"
+#include <ivoc/utility.h>
 
 void single_event_run();
 extern char** hoc_strpop();
@@ -61,17 +61,17 @@ char* hoc_back2forward(char*);
 #include <InterViews/label.h>
 #include <InterViews/resource.h>
 #include <OS/string.h>
-#include "apwindow.h"
-#include "scenevie.h"
-#include "rect.h"
-#include "ivoc.h"
-#include "utility.h"
-#include "ocbox.h"
-#include "idraw.h"
+#include <ivoc/apwindow.h>
+#include <ivoc/scenevie.h>
+#include <ivoc/rect.h>
+#include <ivoc/ivoc.h>
+#include <ivoc/utility.h>
+#include <ivoc/ocbox.h>
+#include <ivoc/idraw.h>
 #include <ivoc/mymath.h>
-#include "graph.h"
+#include <ivoc/graph.h>
 #include <ivoc/oc2iv.h>
-#include "rubband.h"
+#include <ivoc/rubband.h>
 
 // PGH begin
 // static const float Scl =  10.;

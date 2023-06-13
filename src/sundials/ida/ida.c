@@ -18,8 +18,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "ida_impl.h"
-#include "sundialsmath.h"
+#include <sundials/ida/ida_impl.h>
+#include <sundials/shared/sundialsmath.h>
 
 /*
  * -----------------------------------------------------------------

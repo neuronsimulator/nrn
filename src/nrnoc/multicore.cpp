@@ -36,7 +36,7 @@ model structure. We want to use Node* as much as possible and defer
 the handling of v_structure_change as long as possible.
 */
 
-#include "nmodlmutex.h"
+#include <nrnoc/nmodlmutex.h>
 
 #include <cstdint>
 #include <condition_variable>

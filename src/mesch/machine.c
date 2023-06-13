@@ -34,7 +34,7 @@
 
 static	char	*rcsid = "machine.c,v 1.1 1997/12/04 17:55:33 hines Exp";
 
-#include	"machine.h"
+#include	<mesch/machine.h>
 
 /* __ip__ -- inner product */
 double	__ip__(dp1,dp2,len)

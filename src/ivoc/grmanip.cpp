@@ -11,12 +11,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ivoc.h"
+#include <ivoc/ivoc.h>
 #include <ivoc/mymath.h>
-#include "rubband.h"
-#include "graph.h"
-#include "hocmark.h"
-#include "utility.h"
+#include <ivoc/rubband.h>
+#include <ivoc/graph.h>
+#include <ivoc/hocmark.h>
+#include <ivoc/utility.h>
 
 #define LineRubberMarker_event_   "Crosshair Graph"
 #define DeleteLabelHandler_event_ "Delete Graph"

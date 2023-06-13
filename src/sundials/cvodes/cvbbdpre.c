@@ -21,11 +21,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cvbbdpre_impl.h"
-#include "cvodes_impl.h"
-#include "cvspgmr_impl.h"
+#include <sundials/cvodes/cvbbdpre_impl.h>
+#include <sundials/cvodes/cvodes_impl.h>
+#include <sundials/cvodes/cvspgmr_impl.h>
 
-#include "sundialsmath.h"
+#include <sundials/shared/sundialsmath.h>
 
 #define MIN_INC_MULT RCONST(1000.0)
 #define ZERO         RCONST(0.0)

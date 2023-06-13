@@ -1,7 +1,7 @@
 #include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
-#include "epsprint.h"
+#include <ivoc/epsprint.h>
 
 // ps_prolog copied from InterViews's printer.cpp
 static const char* ps_prolog =

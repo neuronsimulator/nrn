@@ -1,9 +1,9 @@
 #include <nmodlconf.h>
 /* /local/src/master/nrn/src/nmodl/solve.c,v 4.4 1998/08/20 21:07:34 hines Exp */
 
-#include "modl.h"
+#include <nmodl/modl.h>
 #include "parse1.hpp"
-#include "symbol.h"
+#include <nmodl/symbol.h>
 
 #include <cstdlib>
 

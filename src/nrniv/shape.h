@@ -1,8 +1,8 @@
 #ifndef shape_h
 #define shape_h
 
-#include "scenevie.h"
-#include "graph.h"
+#include <ivoc/scenevie.h>
+#include <ivoc/graph.h>
 
 #undef Rubberband
 

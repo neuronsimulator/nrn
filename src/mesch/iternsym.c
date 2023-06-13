@@ -37,7 +37,7 @@
 #include        <mesch/matrix.h>
 #include        <mesch/matrix2.h>
 #include	<mesch/sparse.h>
-#include        "iter.h"
+#include        <mesch/iter.h>
 #include	<math.h>
 
 static char rcsid[] = "iternsym.c,v 1.1 1997/12/04 17:55:27 hines Exp";

@@ -3,7 +3,7 @@
 
 
 #if HAVE_IV
-#include "shape.h"
+#include <nrniv/shape.h>
 #endif
 
 struct Symbol;

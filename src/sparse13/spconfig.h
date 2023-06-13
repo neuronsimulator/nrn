@@ -39,7 +39,7 @@
 #define spCONFIG_DEFS
 
 #if defined(cmplx_spPrefix)
-#include "cspredef.h"
+#include <sparse13/cspredef.h>
 #endif
 
 #ifdef spINSIDE_SPARSE

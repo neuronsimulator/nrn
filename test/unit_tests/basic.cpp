@@ -1,8 +1,8 @@
-#include <../../nrnconf.h>
-#include "code.h"
-#include "neuron.h"
-#include "ocfunc.h"
-#include "section.h"
+#include <nrnconf.h>
+#include <oc/code.h>
+#include <nrnoc/neuron.h>
+#include <oc/ocfunc.h>
+#include <nrnoc/section.h>
 #if HAVE_IV
 #include "ivoc.h"
 #endif

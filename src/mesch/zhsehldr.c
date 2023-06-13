@@ -38,8 +38,8 @@
 static	char	rcsid[] = "zhsehldr.c,v 1.1 1997/12/04 17:56:08 hines Exp";
 
 #include	<stdio.h>
-#include	"zmatrix.h"
-#include        "zmatrix2.h"
+#include	<mesch/zmatrix.h>
+#include        <mesch/zmatrix2.h>
 #include	<math.h>
 
 #define	is_zero(z)	((z).re == 0.0 && (z).im == 0.0)

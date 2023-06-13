@@ -6,6 +6,6 @@
 
 #include <nrnoc/section.h>
 
-#include "ndatclas.h"
+#include <nrniv/ndatclas.h>
 
 #endif

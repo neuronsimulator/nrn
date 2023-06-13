@@ -1,16 +1,16 @@
 #include <ivoc/ivocvect.h>
 #include "neuron/container/data_handle.hpp"
 #include <nrnoc/nrniv_mf.h>
-#include "nrn_pyhocobject.h"
+#include <nrnpython/nrn_pyhocobject.h>
 #include <nrniv/nrnoc2iv.h>
 #include <nrniv/nrnpy.h>
-#include "nrnpy_utils.h"
-#include "nrnpython.h"
+#include <nrnpython/nrnpy_utils.h>
+#include <nrnpython/nrnpython.h>
 #include <oc/nrnwrap_dlfcn.h>
 #include <ivoc/ocfile.h>
-#include "ocjump.h"
+#include <ivoc/ocjump.h>
 #include <ivoc/oclist.h>
-#include "shapeplt.h"
+#include <nrniv/shapeplt.h>
 
 #include <InterViews/resource.h>
 #include <structmember.h>  // for PyMemberDef
@@ -103,7 +103,7 @@ static void add2topdict(PyObject*);
 static const char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper";
 
 #if 1
-#include <hoccontext.h>
+#include <nrnpython/hoccontext.h>
 #else
 extern Object* hoc_thisobject;
 #define HocTopContextSet  \
@@ -3002,7 +3002,7 @@ static PyObject* py_hocobj_div(PyObject* obj1, PyObject* obj2) {
 }
 static PyMemberDef hocobj_members[] = {{NULL, 0, 0, 0, NULL}};
 
-#include "nrnpy_hoc.h"
+#include <nrnpython/nrnpy_hoc.h>
 
 // Figure out the endian-ness of the system, and return
 // 0 (error), '<' (little endian) or '>' (big endian)

@@ -1,7 +1,7 @@
-#include "arraypool.h"   // ArrayPool
+#include <nrniv/arraypool.h>   // ArrayPool
 #include <oc/hocdec.h>      // Datum
 #include <nrnoc/section.h>     // Section
-#include "structpool.h"  // Pool
+#include <nrniv/structpool.h>  // Pool
 
 #include <memory>
 #include <vector>

@@ -18,10 +18,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cvspgmr_impl.h"
-#include "cvodes_impl.h"
+#include <sundials/cvodes/cvspgmr_impl.h>
+#include <sundials/cvodes/cvodes_impl.h>
 
-#include "sundialsmath.h"
+#include <sundials/shared/sundialsmath.h>
 
 /* Other Constants */
 

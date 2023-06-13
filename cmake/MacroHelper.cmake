@@ -83,7 +83,7 @@ endmacro()
 # Transform PROJECT_SOURCE_DIR/sdir/sfile.in to PROJECT_BINARY_DIR/bdir/bfile
 # =============================================================================
 # ~~~
-# This 4 arg macro transformsPROJECT_SOURCE_DIR/sdir/sfile.in into
+# This 4 arg macro transforms PROJECT_SOURCE_DIR/sdir/sfile.in into
 # PROJECT_BINARY_DIR/bdir/bfile .
 # THE shorter two arg form transforms PROJECT_SOURCE_DIR/dir/file.in into
 # PROJECT_BINARY_DIR/dir/file

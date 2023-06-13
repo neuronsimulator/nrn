@@ -27,8 +27,8 @@ void iv_display_scale(float);
 #endif
 
 #include <assert.h>
-#include "ivoc.h"
-#include "idraw.h"
+#include <ivoc/ivoc.h>
+#include <ivoc/idraw.h>
 #include <InterViews/style.h>
 #endif
 #include <OS/string.h>

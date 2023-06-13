@@ -4,7 +4,7 @@
 #pragma once
 #include "crout_thread.hpp"
 #include "errcodes.hpp"
-#include "newton_struct.h"
+#include <scopmath/newton_struct.h>
 #include <oc/oc_ansi.h>
 
 #include <cmath>

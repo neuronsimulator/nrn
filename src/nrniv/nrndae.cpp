@@ -1,9 +1,9 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <cstdio>
 #include <nrniv/nrndae.h>
 #include <nrnoc/nrndae_c.h>
 #include <nrniv/nrnoc2iv.h>
-#include "treeset.h"
+#include <nrnoc/treeset.h>
 
 extern int secondorder;
 

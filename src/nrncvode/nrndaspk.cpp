@@ -9,7 +9,7 @@
 #include <sparse13/spmatrix.h>
 #include <nrniv/nrnoc2iv.h>
 #include <nrncvode/cvodeobj.h>
-#include "nrndaspk.h"
+#include <nrncvode/nrndaspk.h>
 #include <nrncvode/netcvode.h>
 #include <nrnoc/nrn_ansi.h>
 #include <sundials/ida/ida.h>

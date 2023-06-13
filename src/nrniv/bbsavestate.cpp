@@ -167,9 +167,9 @@ Let's try trapping the assertion error in BinQ::enqueue and executing a
 callback to bbss_early when needed.
 */
 
-#include "bbsavestate.h"
+#include <nrniv/bbsavestate.h>
 #include <oc/classreg.h>
-#include "ndatclas.h"
+#include <nrniv/ndatclas.h>
 #include <nrnoc/nrncvode.h>
 #include <nrniv/nrnoc2iv.h>
 #include <ivoc/ocfile.h>

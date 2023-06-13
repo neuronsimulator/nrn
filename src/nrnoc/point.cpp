@@ -9,7 +9,7 @@ saves the pointtype as later argument to create and loc */
 #include <nrnoc/membfunc.h>
 #include <nrnoc/nrniv_mf.h>
 #include <ivoc/ocnotify.h>
-#include "parse_with_deps.hpp"
+#include <oc/parse_with_deps.hpp>
 #include <nrnoc/section.h>
 
 

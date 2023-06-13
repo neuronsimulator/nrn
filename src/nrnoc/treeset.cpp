@@ -3,7 +3,7 @@
 
 #include <nrncvode/cvodeobj.h>
 #include <nrnoc/membfunc.h>
-#include "multisplit.h"
+#include <nrnoc/multisplit.h>
 #include <nrnoc/nrn_ansi.h>
 #include <nrnoc/neuron.h>
 #include "neuron/cache/mechanism_range.hpp"
@@ -14,7 +14,7 @@
 #include <nrnoc/nrniv_mf.h>
 #include <oc/nrnmpi.h>
 #include <ivoc/ocnotify.h>
-#include "partrans.h"
+#include <nrniv/partrans.h>
 #include <nrnoc/section.h>
 #include <sparse13/spmatrix.h>
 #include "utils/profile/profiler_interface.h"

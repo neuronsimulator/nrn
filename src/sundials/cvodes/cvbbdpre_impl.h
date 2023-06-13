@@ -22,9 +22,9 @@
 extern "C" {
 #endif
 
-#include "cvbbdpre.h"
+#include <sundials/cvodes/cvbbdpre.h>
 
-#include "band.h"
+#include <sundials/shared/band.h>
 #include <sundials/shared/nvector.h>
 #include <sundials/shared/sundialstypes.h>
 

@@ -72,8 +72,8 @@ with the common append/move.
 
 #include <InterViews/tformsetter.h>
 #include <InterViews/observe.h>
-#include "apwindow.h"
-#include "ocglyph.h"
+#include <ivoc/apwindow.h>
+#include <ivoc/ocglyph.h>
 
 #undef Scene
 

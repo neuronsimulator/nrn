@@ -3,7 +3,7 @@
  */
 #pragma once
 #include "errcodes.hpp"
-#include "newton_struct.h"
+#include <scopmath/newton_struct.h>
 
 #include <cmath>
 namespace neuron::scopmath {

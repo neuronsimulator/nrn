@@ -2,7 +2,7 @@
 #define scenepicker_h
 
 #include <InterViews/hit.h>
-#include "ocpicker.h"
+#include <ivoc/ocpicker.h>
 
 /*
  right button invokes a menu.

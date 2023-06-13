@@ -34,8 +34,8 @@
   */
 static	char	*rcsid = "zmachine.c,v 1.1 1997/12/04 17:56:10 hines Exp";
 
-#include	"machine.h"
-#include        "zmatrix.h"
+#include	<mesch/machine.h>
+#include        <mesch/zmatrix.h>
 #include	<math.h>
 
 

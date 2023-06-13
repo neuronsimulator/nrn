@@ -5,7 +5,7 @@
 #include <math.h>
 #include <nrnoc/section.h>
 #include <nrnoc/nrniv_mf.h>
-#include "hocassrt.h"
+#include <oc/hocassrt.h>
 #include "parse.hpp"
 
 

@@ -4,10 +4,10 @@
 #include <stdio.h>
 #include <InterViews/color.h>
 #include <InterViews/brush.h>
-#include "hocmark.h"
+#include <ivoc/hocmark.h>
 #include <ivoc/oc2iv.h>
-#include "rect.h"
-#include "idraw.h"
+#include <ivoc/rect.h>
+#include <ivoc/idraw.h>
 
 /*static*/ class HocMarkP: public HocMark {
   public:

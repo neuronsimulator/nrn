@@ -5,7 +5,7 @@
 #include <InterViews/observe.h>
 #if HAVE_IV
 #include <InterViews/action.h>
-#include "rubband.h"
+#include <ivoc/rubband.h>
 #endif
 
 struct Object;

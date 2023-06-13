@@ -1,5 +1,5 @@
 #include "utils/profile/profiler_interface.h"
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <InterViews/resource.h>
 #include <math.h>
 #include <nrnoc/nrncvode.h>
@@ -8,9 +8,9 @@
 #include <nrniv/nrnoc2iv.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <netpar.h>
+#include <nrniv/netpar.h>
 #include <unordered_map>
-#include <bbs.h>
+#include <parallel/bbs.h>
 
 #undef MD
 #define MD 2147483648.
@@ -30,7 +30,7 @@ using Gid2PreSyn = std::unordered_map<int, PreSyn*>;
 static int n_multisend_interval;
 
 #if NRN_MUSIC
-#include "nrnmusicapi.h"
+#include <neuronmusic/nrnmusicapi.h>
 int nrnmusic;
 #endif
 
@@ -1565,7 +1565,7 @@ void nrn_gidout_iter(PFIO callback) {
     }
 }
 
-#include "nrncore_write.h"
+#include <nrniv/nrncore_write.h>
 extern int* nrn_prop_param_size_;
 extern short* nrn_is_artificial_;
 static int weightcnt(NetCon* nc) {

@@ -20,7 +20,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #pragma implementation
 #endif
 #include <gnu/Random.h>
-#include <HypGeom.h>
+#include <gnu/HypGeom.h>
 
 double HyperGeometric::operator()()
 {

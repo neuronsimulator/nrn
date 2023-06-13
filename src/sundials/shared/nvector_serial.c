@@ -29,7 +29,7 @@
 #include <stdlib.h>
 
 #include "nvector_serial.h"
-#include "sundialsmath.h"
+#include <sundials/shared/sundialsmath.h>
 #include <sundials/shared/sundialstypes.h>
 
 #define ZERO   RCONST(0.0)

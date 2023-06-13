@@ -2,7 +2,7 @@
 #define secbrowser_h
 
 #include <InterViews/monoglyph.h>
-#include "ocbrowsr.h"
+#include <ivoc/ocbrowsr.h>
 
 class TelltaleState;
 struct Object;

@@ -21,9 +21,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cvdiag.h"
-#include "cvodea_impl.h"
-#include "sundialsmath.h"
+#include <sundials/cvodes/cvdiag.h>
+#include <sundials/cvodes/cvodea_impl.h>
+#include <sundials/shared/sundialsmath.h>
 #include <sundials/shared/sundialstypes.h>
 
 /*=================================================================*/

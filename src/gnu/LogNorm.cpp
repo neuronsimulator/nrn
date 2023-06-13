@@ -21,7 +21,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <gnu/Random.h>
 #include <gnu/Normal.h>
 
-#include <LogNorm.h>
+#include <gnu/LogNorm.h>
 
 #ifndef M_E
 #define M_E 2.71828182845904523536

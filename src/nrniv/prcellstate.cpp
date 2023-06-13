@@ -1,4 +1,4 @@
-#include "../../nrnconf.h"
+#include <nrnconf.h>
 #include <nrnoc/section.h>
 #include <nrnoc/membfunc.h>
 #include <nrnoc/nrniv_mf.h>

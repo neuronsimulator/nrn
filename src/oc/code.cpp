@@ -3,15 +3,15 @@
 
 #include <nrniv/backtrace_utils.h>
 #include <errno.h>
-#include "hoc.h"
+#include <oc/hoc.h>
 #include <oc/code.h>
 #include <oc/hocstr.h>
 #include "parse.hpp"
 #include <oc/ocfunc.h>
-#include "ocmisc.h"
+#include <oc/ocmisc.h>
 #include <oc/oc_ansi.h>
 #include <oc/hocparse.h>
-#include "equation.h"
+#include <oc/equation.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,7 +19,7 @@
 #include <oc/nrnfilewrap.h>
 
 
-#include "options.h"
+#include <nrnoc/options.h>
 #include <nrnoc/section.h>
 
 #include <vector>

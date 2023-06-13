@@ -6,7 +6,7 @@
 #include <OS/list.h>
 #include <oc/hoclist.h>
 #if HAVE_IV
-#include "graph.h"
+#include <ivoc/graph.h>
 #endif
 #include <ivoc/datapath.h>
 #include <ivoc/ivocvect.h>

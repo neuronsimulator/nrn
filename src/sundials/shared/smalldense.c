@@ -19,7 +19,7 @@
 #include <stdlib.h>
 
 #include "smalldense.h"
-#include "sundialsmath.h"
+#include <sundials/shared/sundialsmath.h>
 #include <sundials/shared/sundialstypes.h>
 
 #define ZERO RCONST(0.0)

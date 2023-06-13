@@ -5,7 +5,7 @@
 #include <nrnoc/nrndae_c.h>
 #include <nrnoc/nrniv_mf.h>
 #include <nrniv/nrnoc2iv.h>
-#include "nrndaspk.h"
+#include <nrncvode/nrndaspk.h>
 #include <nrncvode/cvodeobj.h>
 #include <nrncvode/netcvode.h>
 #include <ivoc/ivocvect.h>

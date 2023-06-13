@@ -1,11 +1,11 @@
 #include <nrnconf.h>
 #include <stdlib.h>
 #include <math.h>
-#include "hoc.h"
+#include <oc/hoc.h>
 #include "parse.hpp"
 #include <oc/hocparse.h>
-#include "equation.h"
-#include "lineq.h"
+#include <oc/equation.h>
+#include <sparse/lineq.h>
 #include <oc/code.h>
 
 

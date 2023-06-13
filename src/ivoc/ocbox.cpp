@@ -12,10 +12,10 @@
 #include <IV-look/kit.h>
 #include <InterViews/input.h>
 #include <stdio.h>
-#include "ocbox.h"
-#include "apwindow.h"
+#include <ivoc/ocbox.h>
+#include <ivoc/apwindow.h>
 #include <ivoc/objcmd.h>
-#include "ivoc.h"
+#include <ivoc/ivoc.h>
 #endif /* HAVE_IV */
 
 #include <ivoc/oc2iv.h>

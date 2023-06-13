@@ -3,8 +3,8 @@
 
 #define USEGNU 1
 
-#include "graph.h"
-#include "ivoc.h"
+#include <ivoc/graph.h>
+#include <ivoc/ivoc.h>
 
 #if USEGNU
 #include <ivoc/oc2iv.h>

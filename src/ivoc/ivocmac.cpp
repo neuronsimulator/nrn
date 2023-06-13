@@ -4,12 +4,12 @@
 
 
 #include <stdio.h>
-#include "apwindow.h"
-#include "ivoc.h"
-#include "rubband.h"
+#include <ivoc/apwindow.h>
+#include <ivoc/ivoc.h>
+#include <ivoc/rubband.h>
 #include <ivoc/symdir.h>
 #include <ivoc/oc2iv.h>
-#include "graph.h"
+#include <ivoc/graph.h>
 #include <InterViews/window.h>
 #include <IV-Mac/window.h>
 #include <InterViews/display.h>

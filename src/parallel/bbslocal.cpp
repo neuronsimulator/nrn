@@ -2,8 +2,8 @@
 #include <parallel/bbsconf.h>
 #include <InterViews/resource.h>
 #include <ivoc/oc2iv.h>
-#include "bbslocal.h"
-#include "bbslsrv.h"
+#include <parallel/bbslocal.h>
+#include <parallel/bbslsrv.h>
 #include <oc/nrnmpi.h>
 
 #if defined(HAVE_STL)

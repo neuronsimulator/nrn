@@ -19,7 +19,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #pragma implementation
 #endif
 #include <gnu/Random.h>
-#include <Erlang.h>
+#include <gnu/Erlang.h>
 
 double Erlang::operator()()
 {

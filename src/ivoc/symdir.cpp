@@ -18,7 +18,7 @@ extern Symlist *hoc_built_in_symlist, *hoc_top_level_symlist;
 #include "string.h"
 #include <ivoc/symdir.h>
 
-#include "nrnsymdiritem.h"
+#include <ivoc/nrnsymdiritem.h>
 implementPtrList(SymbolList, SymbolItem);
 
 const char* concat(const char* s1, const char* s2) {

@@ -29,7 +29,7 @@ following function calls.
 */
 
 #include <stdlib.h>
-#include "modl.h"
+#include <nmodl/modl.h>
 #include "parse1.hpp"
 
 static Item* newitem() {

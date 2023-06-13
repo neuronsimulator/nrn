@@ -6,11 +6,11 @@
 #include <IV-look/kit.h>
 #include <InterViews/font.h>
 #include <InterViews/polyglyph.h>
-#include "rot3band.h"
+#include <nrniv/rot3band.h>
 #include <stdio.h>
 #include <nrniv/nrnoc2iv.h>
-#include "shape.h"
-#include "ivoc.h"
+#include <nrniv/shape.h>
+#include <ivoc/ivoc.h>
 
 #define Rotate_ "Rotate3D PlotShape"
 

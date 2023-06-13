@@ -1,7 +1,7 @@
 #include <nrnconf.h>
 /* /local/src/master/nrn/src/oc/code2.cpp,v 1.12 1999/06/08 17:48:26 hines Exp */
 
-#include "hoc.h"
+#include <oc/hoc.h>
 #include <oc/hocstr.h>
 #include "parse.hpp"
 #include <oc/hocparse.h>

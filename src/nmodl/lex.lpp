@@ -18,7 +18,7 @@
 #endif
 
 
-#include "modl.h"
+#include <nmodl/modl.h>
 #include "parse1.hpp"
 
 int lexcontext = 0;

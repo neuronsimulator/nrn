@@ -5,9 +5,9 @@
  * entire file is read in and allows declaring a variable after its use (very
  * bad style) to work in some circumstances.
  */
-#include "modl.h"
+#include <nmodl/modl.h>
 #include "parse1.hpp"
-#include "symbol.h"
+#include <nmodl/symbol.h>
 
 #include <cstdlib>  // for exit()
 

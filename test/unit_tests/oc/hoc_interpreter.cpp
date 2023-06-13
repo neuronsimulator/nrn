@@ -1,10 +1,10 @@
 #include <catch2/catch.hpp>
 
-#include "classreg.h"
-#include "code.h"
-#include "hocdec.h"
-#include "hoc_membf.h"
-#include "ocfunc.h"
+#include <oc/classreg.h>
+#include <oc/code.h>
+#include <oc/hocdec.h>
+#include <oc/hoc_membf.h>
+#include <oc/ocfunc.h>
 
 #include <sstream>
 

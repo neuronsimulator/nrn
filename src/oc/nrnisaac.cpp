@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #endif
 #include <oc/nrnisaac.h>
-#include <isaac64.h>
+#include <oc/isaac64.h>
 #include <oc/hocdec.h>
 
 typedef struct isaac64_state Rng;

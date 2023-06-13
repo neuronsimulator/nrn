@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <ivoc/oc2iv.h>
-#include "ocpointer.h"
+#include <ivoc/ocpointer.h>
 
 #include "parse.hpp"
 extern Symlist* hoc_top_level_symlist;

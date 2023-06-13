@@ -64,8 +64,8 @@ static char RCSid[] = "@(#)$Header$";
  */
 
 #define spINSIDE_SPARSE
-#include "spconfig.h"
-#include "spdefs.h"
+#include <sparse13/spconfig.h>
+#include <sparse13/spdefs.h>
 #include <sparse13/spmatrix.h>
 
 /* avoid "declared implicitly `extern' and later `static' " warnings. */

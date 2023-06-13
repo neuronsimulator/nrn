@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +10,7 @@
 #include <nrnoc/nrniv_mf.h>
 #include <nrniv/nrnoc2iv.h>
 #include <oc/nrnmpi.h>
-#include <multisplit.h>
+#include <nrnoc/multisplit.h>
 #include <unordered_map>
 #include <memory>
 
@@ -300,7 +300,7 @@ struct MultiSplitTransferInfo {
 using MultiSplitTable = std::unordered_map<Node*, MultiSplit*>;
 using MultiSplitList = std::vector<MultiSplit*>;
 
-#include <multisplitcontrol.h>
+#include <nrniv/multisplitcontrol.h>
 static MultiSplitControl* msc_;
 
 void nrnmpi_multisplit(Section* sec, double x, int sid, int backbone_style) {

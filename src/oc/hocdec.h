@@ -4,8 +4,8 @@
 #define INCLUDEHOCH 1
 
 #include "neuron/container/generic_data_handle.hpp"
-#include "nrnapi.h"
-#include "hocassrt.h" /* hoc_execerror instead of abort */
+#include <oc/nrnapi.h>
+#include <oc/hocassrt.h> /* hoc_execerror instead of abort */
 #include <oc/nrnassrt.h> /* assert in case of side effects (eg. scanf) */
 #include <oc/wrap_sprintf.h>
 

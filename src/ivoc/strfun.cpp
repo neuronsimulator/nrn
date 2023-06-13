@@ -13,7 +13,7 @@
 // for references
 #include <oc/hoclist.h>
 #if HAVE_IV
-#include <ocbox.h>
+#include <ivoc/ocbox.h>
 #endif
 extern Objectdata* hoc_top_level_data;
 extern Symlist* hoc_built_in_symlist;

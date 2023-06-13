@@ -35,7 +35,7 @@
 #ifndef ZMATRIX2H
 #define ZMATRIX2H
 
-#include "zmatrix.h"
+#include <mesch/zmatrix.h>
 
 #ifdef ANSI_C
 extern ZVEC	*zUsolve(ZMAT *matrix, ZVEC *b, ZVEC *out, double diag);

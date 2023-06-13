@@ -26,9 +26,9 @@ extern "C" {
 
 #include <stdio.h>
 
-#include "idaband.h"
+#include <sundials/ida/idaband.h>
 
-#include "band.h"
+#include <sundials/shared/band.h>
 #include <sundials/shared/nvector.h>
 #include <sundials/shared/sundialstypes.h>
 

@@ -1,7 +1,7 @@
 #include "neuron/container/generic_data_handle.hpp"
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/model_data.hpp"
-#include "nrnoc_ml.h"
+#include <nrnoc/nrnoc_ml.h>
 
 #include <cassert>
 #include <iterator>  // std::distance, std::next

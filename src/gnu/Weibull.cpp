@@ -19,7 +19,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #pragma implementation
 #endif
 #include <gnu/Random.h>
-#include <Weibull.h>
+#include <gnu/Weibull.h>
 
 //
 //	See Simulation, Modelling & Analysis by Law & Kelton, pp259

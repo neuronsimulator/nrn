@@ -8,8 +8,8 @@ and Flux_pair structs and their respective functions
 #include <assert.h>
 #include <oc/nrnmpi.h>
 
-#include "nrn_pyhocobject.h"
-#include "nrnwrap_Python.h"
+#include <nrnpython/nrn_pyhocobject.h>
+#include <nrnpython/nrnwrap_Python.h>
 
 #define SAFE_FREE(ptr)     \
     {                      \

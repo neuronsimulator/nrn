@@ -1,10 +1,10 @@
 #include <nrnconf.h>
 /* /local/src/master/nrn/src/oc/hoc_init.cpp,v 1.25 1999/11/08 17:48:58 hines Exp */
 
-#include "hoc.h"
+#include <oc/hoc.h>
 #include "parse.hpp"
 #include <math.h>
-#include "equation.h"
+#include <oc/equation.h>
 #include <oc/nrnunits_modern.h>
 
 #include <nrnoc/nrn_ansi.h>

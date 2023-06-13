@@ -6,7 +6,7 @@
  */
 
 #include <stdlib.h>
-#include "modl.h"
+#include <nmodl/modl.h>
 #include "parse1.hpp"
 
 Symbol* scop_indep;      /* independent used by SCoP */

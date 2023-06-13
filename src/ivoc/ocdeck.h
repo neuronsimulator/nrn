@@ -1,7 +1,7 @@
 #ifndef ocdeck_h
 #define ocdeck_h
 
-#include "ocglyph.h"
+#include <ivoc/ocglyph.h>
 
 class OcDeckImpl;
 struct Object;

@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <cstdarg>
 #include <unistd.h>
-#include "hoc.h"
-#include "ocmisc.h"
+#include <oc/hoc.h>
+#include <oc/ocmisc.h>
 #include <oc/hocstr.h>
 #include <oc/hoclist.h>
 #include "parse.hpp"

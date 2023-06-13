@@ -18,9 +18,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cvband_impl.h"
-#include "cvodes_impl.h"
-#include "sundialsmath.h"
+#include <sundials/cvodes/cvband_impl.h>
+#include <sundials/cvodes/cvodes_impl.h>
+#include <sundials/shared/sundialsmath.h>
 
 /* Other Constants */
 

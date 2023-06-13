@@ -3,7 +3,7 @@
 
 #include <nmodlconf.h>
 #include <stdlib.h>
-#include "model.h"
+#include <modlunit/model.h>
 
 /* Constructs a parse tree. No translation is done, ie. on exit printing
 the intoken list will make an exact copy of the input file.

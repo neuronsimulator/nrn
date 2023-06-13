@@ -1,6 +1,6 @@
 #include <nrnconf.h>
 /*LINTLIBRARY*/
-#include "lineq.h"
+#include <sparse/lineq.h>
 #include <math.h>
 
 struct elm **rowst;		/* link to first element in row */

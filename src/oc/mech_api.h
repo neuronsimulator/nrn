@@ -9,14 +9,14 @@
  *        header has to be sandwiched between md1redef.h and md2redef.h, which
  *        we leave to nocmodl.
  */
-#include "bbsavestate.h"
+#include <nrniv/bbsavestate.h>
 #include <oc/mcran4.h>
 #include <nrnoc/nrncvode.h>
 #include <oc/nrnran123.h>
-#include "nrnrandom.h"
+#include <oc/nrnrandom.h>
 #include <oc/oc_ansi.h>
-#include "nrnversionmacros.h"
-#include "scoplib.h"
+#include <nrnoc/nrnversionmacros.h>
+#include <scopmath/scoplib.h>
 
 #include <cmath>     // nocmodl uses std::isnan
 #include <iostream>  // nocmodl uses std::cerr

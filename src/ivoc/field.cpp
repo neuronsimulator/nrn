@@ -32,7 +32,7 @@
 #include <Dispatch/dispatcher.h>
 #include <Dispatch/iocallback.h>
 //#include <IV-look/field.h>
-#include "field.h"
+#include <ivoc/field.h>
 #include <IV-look/kit.h>
 #include <InterViews/background.h>
 #include <InterViews/canvas.h>

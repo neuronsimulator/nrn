@@ -197,8 +197,9 @@ endif()
 # =============================================================================
 set(NRN_INCLUDE_DIRS
     ${PROJECT_BINARY_DIR}
-    ${PROJECT_BINARY_DIR}/src/
-    ${PROJECT_SOURCE_DIR}/src)
+    ${PROJECT_BINARY_DIR}/src
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/external/Random123/include)
 
 if(NRN_ENABLE_MUSIC)
   list(APPEND NRN_INCLUDE_DIRS ${NRN_MUSIC_SRC_DIR})
@@ -558,7 +559,7 @@ endif()
 
 # For testneuron CTest
 file(COPY ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/nrn)
-file(COPY ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION ${CMAKE_BINARY_DIR}/include)
+file(COPY ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION ${CMAKE_BINARY_DIR}/include/oc)
 file(COPY ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
      DESTINATION ${CMAKE_BINARY_DIR}/include/nrncvode)
 file(COPY ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION ${CMAKE_BINARY_DIR}/include)

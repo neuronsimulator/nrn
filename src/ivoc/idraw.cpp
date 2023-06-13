@@ -15,9 +15,9 @@
 
 #include <oc/hocdec.h>
 #include <oc/oc_ansi.h>
-#include "scenevie.h"
+#include <ivoc/scenevie.h>
 #include <ivoc/mymath.h>
-#include "idraw.h"
+#include <ivoc/idraw.h>
 
 #define out *OcIdraw::idraw_stream
 

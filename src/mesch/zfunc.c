@@ -29,7 +29,7 @@
 	-- if not already defined
 */
 
-#include	"zmatrix.h"
+#include	<mesch/zmatrix.h>
 #include	<math.h>
 
 static char rcsid[] = "zfunc.c,v 1.1 1997/12/04 17:56:05 hines Exp";

@@ -15,8 +15,8 @@
  * of the NVECTOR package.
  * -----------------------------------------------------------------
  */
-#include <../../nrnconf.h>
-#include <hocassrt.h>
+#include <nrnconf.h>
+#include <oc/hocassrt.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,12 +33,12 @@ extern "C" void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int ty
 extern int nrnmpi_numprocs;
 #endif
 
-#include "nvector_nrnparallel_ld.h"
+#include <nrniv/nvector_nrnparallel_ld.h>
 #if NRNMPI_DYNAMICLOAD
 #else
 extern MPI_Comm nrnmpi_comm;
 #endif
-#include "sundialsmath.h"
+#include <sundials/shared/sundialsmath.h>
 #include <sundials/shared/sundialstypes.h>
 
 #define ZERO   RCONST(0.0)

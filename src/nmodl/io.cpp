@@ -6,7 +6,7 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include "modl.h"
+#include <nmodl/modl.h>
 #include <ctype.h>
 #undef METHOD
 #include "parse1.hpp"

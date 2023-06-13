@@ -9,9 +9,9 @@
 #include <InterViews/resource.h>
 #include <nrniv/nrnpy.h>
 #include <ivoc/oc2iv.h>
-#include "bbs.h"
-#include "bbsrcli.h"
-#include "bbssrv.h"
+#include <parallel/bbs.h>
+#include <parallel/bbsrcli.h>
+#include <parallel/bbssrv.h>
 
 extern void nrnmpi_int_broadcast(int*, int, int);
 

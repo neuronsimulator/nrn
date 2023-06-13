@@ -5,11 +5,11 @@
 #include <stdlib.h>
 #include <InterViews/resource.h>
 #include <ivoc/oc2iv.h>
-#include "bbs.h"
-#include "bbslocal.h"
+#include <parallel/bbs.h>
+#include <parallel/bbslocal.h>
 #if defined(NRNMPI)
-#include "bbsdirect.h"
-#include "bbsrcli.h"
+#include <parallel/bbsdirect.h>
+#include <parallel/bbsrcli.h>
 #endif
 
 #if defined(HAVE_TMS) && !NRNMPI

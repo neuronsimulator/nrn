@@ -24,13 +24,13 @@
 #include <InterViews/display.h>
 #include <InterViews/cursor.h>
 #include <IV-Win/canvas.h>
-#include "apwindow.h"
-#include "ivoc.h"
-#include "rubband.h"
+#include <ivoc/apwindow.h>
+#include <ivoc/ivoc.h>
+#include <ivoc/rubband.h>
 #include <ivoc/symdir.h>
 #undef max
 #undef min
-#include "graph.h"
+#include <ivoc/graph.h>
 
 #include <condition_variable>
 #include <mutex>

@@ -18,7 +18,7 @@
  */
 
 /* Hines: for greater self-containment */
-#include "nrngsl.h"
+#include <ivoc/nrngsl.h>
 /* from gsl/fft/factorize.cpp */
 static int fft_binary_logn(const size_t n) {
     size_t ntest;

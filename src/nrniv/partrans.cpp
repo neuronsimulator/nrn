@@ -1,5 +1,5 @@
-#include <../../nrnconf.h>
-#include "partrans.h"  // sgid_t and SetupTransferInfo for CoreNEURON
+#include <nrnconf.h>
+#include <nrniv/partrans.h>  // sgid_t and SetupTransferInfo for CoreNEURON
 
 #include "neuron/container/data_handle.hpp"
 

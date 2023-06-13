@@ -49,13 +49,13 @@
 #include <OS/string.h>
 #include <stdio.h>
 
-#include "symchoos.h"
-#include "utility.h"
+#include <ivoc/symchoos.h>
+#include <ivoc/utility.h>
 #include <ivoc/symdir.h>
 
 #include <ivoc/oc2iv.h>
 #include "parse.hpp"
-#include "ivoc.h"
+#include <ivoc/ivoc.h>
 #endif /* HAVE_IV */
 
 #include <oc/classreg.h>

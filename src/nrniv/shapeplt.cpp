@@ -16,20 +16,20 @@
 #include <OS/math.h>
 
 #include <stdio.h>
-#include "scenepic.h"
+#include <ivoc/scenepic.h>
 #endif
-#include "shapeplt.h"
+#include <nrniv/shapeplt.h>
 #if HAVE_IV
-#include "graph.h"
-#include "ivoc.h"
+#include <ivoc/graph.h>
+#include <ivoc/ivoc.h>
 #include <nrniv/nrnoc2iv.h>
-#include "rubband.h"
-#include "symchoos.h"
+#include <ivoc/rubband.h>
+#include <ivoc/symchoos.h>
 #include <ivoc/symdir.h>
 #include "parse.hpp"
-#include "utility.h"
+#include <ivoc/utility.h>
 #include <ivoc/objcmd.h>
-#include "idraw.h"
+#include <ivoc/idraw.h>
 
 #define SelectVariable_ "PlotWhat PlotShape"
 #define VariableScale_  "VariableScale PlotShape"

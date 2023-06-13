@@ -14,7 +14,7 @@ extern int hoc_return_type_code;
 #include <fcntl.h>
 #endif
 #if HAVE_IV
-#include "utility.h"
+#include <ivoc/utility.h>
 #include <IV-look/dialogs.h>
 #include <InterViews/session.h>
 #include <InterViews/display.h>

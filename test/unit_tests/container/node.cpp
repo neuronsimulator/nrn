@@ -1,6 +1,6 @@
 #include "neuron/container/node.hpp"
 #include "neuron/container/soa_container.hpp"
-#include "section.h"
+#include <nrnoc/section.h>
 
 #include <catch2/catch.hpp>
 

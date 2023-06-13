@@ -40,7 +40,7 @@ pval = pval_praxis(i, Vector)
 #include <oc/hocdec.h>
 #include <nrniv/nrnpy.h>
 #include "parse.hpp"
-#include "scoplib.h"
+#include <scopmath/scoplib.h>
 
 extern double chkarg(int, double, double);
 extern IvocVect* vector_new2(IvocVect* vec);

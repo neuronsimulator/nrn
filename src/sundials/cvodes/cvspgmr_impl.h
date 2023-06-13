@@ -25,10 +25,10 @@ extern "C" {
 
 #include <stdio.h>
 
-#include "cvspgmr.h"
+#include <sundials/cvodes/cvspgmr.h>
 
-#include "spgmr.h"
-#include "iterative.h"
+#include <sundials/shared/spgmr.h>
+#include <sundials/shared/iterative.h>
 #include <sundials/shared/nvector.h>
 #include <sundials/shared/sundialstypes.h>
 

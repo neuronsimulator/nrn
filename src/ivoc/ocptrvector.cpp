@@ -15,7 +15,7 @@
 #include <ivoc/objcmd.h>
 #include <ivoc/ivocvect.h>
 #if HAVE_IV
-#include "graph.h"
+#include <ivoc/graph.h>
 #endif
 #include <nrnoc/gui-redirect.h>
 

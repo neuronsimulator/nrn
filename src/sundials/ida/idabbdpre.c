@@ -27,7 +27,7 @@
 #include "idabbdpre_impl.h"
 #include "idaspgmr_impl.h"
 
-#include "sundialsmath.h"
+#include <sundials/shared/sundialsmath.h>
 
 
 #define ZERO         RCONST(0.0)

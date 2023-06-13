@@ -1,7 +1,7 @@
 #include <nmodlconf.h>
 /* /local/src/master/nrn/src/nmodl/init.c,v 4.5 1998/03/25 14:33:42 hines Exp */
 
-#include "modl.h"
+#include <nmodl/modl.h>
 #include "parse1.hpp"
 
 extern List* firstlist;
@@ -122,12 +122,12 @@ static struct { /* numerical methods */
 
 static const char* extdef[] = {/* external names that can be used as doubles
                                 * without giving an error message */
-#include "extdef.h"
+#include <modlunit/extdef.h>
                                0};
 
 static const char* extdef2[] = {/* external function names that can be used
                                  * with array and function name arguments  */
-#include "extdef2.h"
+#include <nmodl/extdef2.h>
                                 0};
 
 static const char* extdef3[] = {/* function names that get two reset arguments
@@ -150,7 +150,7 @@ static const char* extdef4[] = {/* functions that need a first arg of NrnThread*
                                 0};
 
 static const char* extdef5[] = {/* the extdef names that are not threadsafe */
-#include "extdef5.h"
+#include <nmodl/extdef5.h>
                                 0};
 
 List *constructorfunc, *destructorfunc;

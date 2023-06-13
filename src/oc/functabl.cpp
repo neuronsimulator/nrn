@@ -1,5 +1,5 @@
 #include <nrnconf.h>
-#include "hoc.h"
+#include <oc/hoc.h>
 
 struct TableArg {
     int nsize;

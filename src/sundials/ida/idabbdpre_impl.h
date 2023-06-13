@@ -24,10 +24,10 @@
 extern "C" {
 #endif
 
-#include "idabbdpre.h"
+#include <sundials/ida/idabbdpre.h>
 
-#include "band.h"
-#include "iterative.h"
+#include <sundials/shared/band.h>
+#include <sundials/shared/iterative.h>
 #include <sundials/shared/nvector.h>
 #include <sundials/shared/sundialstypes.h>
 

@@ -3,7 +3,7 @@
 #include <OS/list.h>
 #include <OS/string.h>
 #if HAVE_IV
-#include "ivoc.h"
+#include <ivoc/ivoc.h>
 #endif
 #include <nrnoc/nrniv_mf.h>
 #include <nrniv/nrnoc2iv.h>
@@ -11,7 +11,7 @@
 #include <ivoc/ivocvect.h>
 #include <stdio.h>
 
-#include "ocpointer.h"
+#include <ivoc/ocpointer.h>
 #include <nrncvode/vrecitem.h>
 #include <nrncvode/netcvode.h>
 #include <nrncvode/cvodeobj.h>

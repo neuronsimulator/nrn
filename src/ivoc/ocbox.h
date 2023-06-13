@@ -1,7 +1,7 @@
 #ifndef ocbox_h
 #define ocbox_h
 
-#include "ocglyph.h"
+#include <ivoc/ocglyph.h>
 
 class OcBoxImpl;
 class BoxAdjust;

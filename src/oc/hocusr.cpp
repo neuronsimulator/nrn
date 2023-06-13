@@ -6,7 +6,7 @@
 #include <oc/hocdec.h>
 #include "parse.hpp"
 #if 1
-#include "hocusr.h"
+#include <oc/hocusr.h>
 #endif
 
 #define CHECK(name) nrn_load_name_check(name)

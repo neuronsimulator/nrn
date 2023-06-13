@@ -3,7 +3,7 @@
 
 #include <nrniv/nrnoc2iv.h>
 #include <nrncvode/vrecitem.h>
-#include "graph.h"
+#include <ivoc/graph.h>
 
 #include <vector>
 #include <utility>

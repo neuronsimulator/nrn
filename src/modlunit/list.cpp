@@ -30,7 +30,7 @@ following function calls.
 */
 
 #include <stdlib.h>
-#include "model.h"
+#include <modlunit/model.h>
 #include "parse1.hpp"
 
 #define DEBUG 0

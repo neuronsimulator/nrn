@@ -5,8 +5,8 @@
 #include <ivoc/oc2iv.h>
 #include <ivoc/ivocvect.h>
 #include <oc/hoclist.h>
-#include "bbs.h"
-#include "bbsimpl.h"
+#include <parallel/bbs.h>
+#include <parallel/bbsimpl.h>
 #include <ivoc/ivocvect.h>
 #include "parse.hpp"
 #include <nrnoc/section.h>

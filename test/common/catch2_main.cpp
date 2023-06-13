@@ -2,11 +2,11 @@
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 
-#include "code.h"
-#include "neuron.h"
-#include "nrnmpi.h"
-#include "ocfunc.h"
-#include "section.h"
+#include <oc/code.h>
+#include <nrnoc/neuron.h>
+#include <oc/nrnmpi.h>
+#include <oc/ocfunc.h>
+#include <nrnoc/section.h>
 
 #include <exception>
 

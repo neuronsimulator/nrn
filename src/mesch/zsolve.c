@@ -33,7 +33,7 @@
 static	char	rcsid[] = "zsolve.c,v 1.1 1997/12/04 17:56:17 hines Exp";
 
 #include	<stdio.h>
-#include        "zmatrix2.h"
+#include        <mesch/zmatrix2.h>
 #include	<math.h>
 
 

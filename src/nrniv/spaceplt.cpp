@@ -7,10 +7,10 @@
 #include <OS/string.h>
 #include <string.h>
 #if HAVE_IV
-#include "graph.h"
-#include "scenepic.h"
-#include "utility.h"
-#include "ivoc.h"
+#include <ivoc/graph.h>
+#include <ivoc/scenepic.h>
+#include <ivoc/utility.h>
+#include <ivoc/ivoc.h>
 #endif
 #include <ivoc/ivocvect.h>
 #include <nrnoc/nrniv_mf.h>

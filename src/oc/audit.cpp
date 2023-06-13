@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <oc/hocdec.h>
-#include "hocassrt.h"
+#include <oc/hocassrt.h>
 
 
 static int doaudit;

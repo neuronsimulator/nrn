@@ -23,21 +23,21 @@
 #include <OS/list.h>
 #include <cmath>
 #include <ivoc/mymath.h>
-#include "apwindow.h"
+#include <ivoc/apwindow.h>
 // really only need colors from graph.h
-#include "graph.h"
-#include "shapeplt.h"
-#include "rubband.h"
-#include "scenepic.h"
-#include "rot3band.h"
+#include <ivoc/graph.h>
+#include <nrniv/shapeplt.h>
+#include <ivoc/rubband.h>
+#include <ivoc/scenepic.h>
+#include <nrniv/rot3band.h>
 #include <nrnoc/nrniv_mf.h>
 #include <nrniv/nrnoc2iv.h>
 #include <ivoc/objcmd.h>
-#include "idraw.h"
-#include "hocmark.h"
+#include <ivoc/idraw.h>
+#include <ivoc/hocmark.h>
 #include <ivoc/ocobserv.h>
 #include "parse.hpp"
-#include "ivoc.h"
+#include <ivoc/ivoc.h>
 
 #define Shape_Section_ "Section PlotShape"
 #define Shape_Rotate_  "Rotate3D PlotShape"

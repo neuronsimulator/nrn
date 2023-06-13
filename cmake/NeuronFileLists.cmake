@@ -7,8 +7,7 @@
 set(STRUCTURED_HEADER_FILES_TO_INSTALL
     neuron/cache/mechanism_range.hpp neuron/container/data_handle.hpp
     neuron/container/generic_data_handle.hpp neuron/container/non_owning_soa_identifier.hpp
-    neuron/model_data_fwd.hpp)
-set(HEADER_FILES_TO_INSTALL
+    neuron/model_data_fwd.hpp
     nrniv/backtrace_utils.h
     nrniv/bbsavestate.h
     nrnmpi/nrnmpidec.h

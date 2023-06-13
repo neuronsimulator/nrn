@@ -43,9 +43,9 @@ Date		Author		Modification
 extern "C" {
 #endif
 
-#include	"machine.h"
-#include        "err.h"
-#include 	"meminfo.h"
+#include	<mesch/machine.h>
+#include        <mesch/err.h>
+#include 	<mesch/meminfo.h>
 
 #define m_move mesch_m_move
 #define OUT mesch_out

@@ -28,7 +28,7 @@
 
 #include        <stdio.h>
 #include        <ctype.h>
-#include        "zmatrix.h"
+#include        <mesch/zmatrix.h>
 
 static char rcsid[] = "zmatio.c,v 1.1 1997/12/04 17:56:11 hines Exp";
 

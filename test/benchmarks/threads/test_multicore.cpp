@@ -1,10 +1,10 @@
 #include "test_multicore.h"
 
-#include "code.h"
-#include "hocdec.h"
-#include "multicore.h"
-#include "nrn_ansi.h"
-#include "ocfunc.h"
+#include <oc/code.h>
+#include <oc/hocdec.h>
+#include <nrnoc/multicore.h>
+#include <nrnoc/nrn_ansi.h>
+#include <oc/ocfunc.h>
 
 #include <catch2/catch.hpp>
 

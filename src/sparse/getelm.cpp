@@ -1,7 +1,7 @@
 #include <nrnconf.h>
 #include <stdlib.h>
 #include <oc/hocdec.h>
-#include "lineq.h"
+#include <sparse/lineq.h>
 
 #define diag(s) hoc_execerror(s, (char*)0);
 

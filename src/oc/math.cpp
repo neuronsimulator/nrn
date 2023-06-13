@@ -2,7 +2,7 @@
 /* a fake change */
 /* /local/src/master/nrn/src/oc/math.cpp,v 1.6 1999/07/16 13:43:10 hines Exp */
 
-#include "hoc.h"
+#include <oc/hoc.h>
 #include <oc/nrnmpiuse.h>
 #include <oc/ocfunc.h>
 #include <cfenv>

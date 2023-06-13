@@ -7,9 +7,9 @@
 #include <IV-look/choice.h>
 #include <IV-look/kit.h>
 #include <OS/string.h>
-#include "ocbrowsr.h"
+#include <ivoc/ocbrowsr.h>
 #include <stdio.h>
-#include "apwindow.h"
+#include <ivoc/apwindow.h>
 
 //--------------------------------------------------------------------
 /*static*/ class OcBrowserAccept: public Action {

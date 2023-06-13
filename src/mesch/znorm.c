@@ -32,7 +32,7 @@
 static	char	rcsid[] = "znorm.c,v 1.1 1997/12/04 17:56:14 hines Exp";
 
 #include	<stdio.h>
-#include	"zmatrix.h"
+#include	<mesch/zmatrix.h>
 #include	<math.h>
 
 

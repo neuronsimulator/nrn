@@ -1,5 +1,5 @@
 #include <nrniv/nrnpy.h>
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 // For Linux and Max OS X,
 // Solve the problem of not knowing what version of Python the user has by
 // possibly deferring linking to libnrnpython.so to run time using the proper
