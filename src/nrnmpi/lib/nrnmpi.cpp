@@ -8,7 +8,7 @@
 /* do not want the redef in the dynamic load case */
 #include <nrnmpiuse.h>
 
-#include "nrnmpi.h"
+#include "../nrnmpi.h"
 #include "mpispike.h"
 
 

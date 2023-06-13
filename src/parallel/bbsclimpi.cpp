@@ -1,5 +1,5 @@
 #include <../../nrnconf.h>
-#include <nrnmpi.h>
+#include "../nrnmpi/nrnmpi.h"
 #include "bbsconf.h"
 #ifdef NRNMPI  // to end of file
 #include <errno.h>

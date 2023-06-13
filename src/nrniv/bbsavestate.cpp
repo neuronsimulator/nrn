@@ -1,4 +1,5 @@
 #include <../../nrnconf.h>
+#include "nrnmpi/nrnmpi.h"
 
 /*
 

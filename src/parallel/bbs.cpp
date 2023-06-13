@@ -1,5 +1,5 @@
 #include <../../nrnconf.h>
-#include "nrnmpi.h"
+#include "../nrnmpi/nrnmpi.h"
 #include "bbsconf.h"
 #include <stdio.h>
 #include <stdlib.h>
