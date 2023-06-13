@@ -550,8 +550,8 @@ TEST_CASE("Fast membrane current storage", "[Neuron][data_structures][node][fast
     };
     auto const check_default = [](auto const& node) {
         THEN("fast_imem fields have their default values") {
-            REQUIRE(node.sav_d() == field::FastIMemSavD{}.default_value());
-            REQUIRE(node.sav_rhs() == field::FastIMemSavRHS{}.default_value());
+            REQUIRE(node.sav_d() == 0.0);
+            REQUIRE(node.sav_rhs() == 0.0);
         }
     };
     GIVEN("fast_imem calculation is disabled") {

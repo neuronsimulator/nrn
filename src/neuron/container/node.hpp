@@ -57,9 +57,6 @@ struct Diagonal {
 struct FastIMemSavD {
     static constexpr bool optional = true;
     using type = double;
-    constexpr type default_value() const {
-        return -1e9;
-    }
 };
 
 /**
@@ -68,9 +65,6 @@ struct FastIMemSavD {
 struct FastIMemSavRHS {
     static constexpr bool optional = true;
     using type = double;
-    constexpr type default_value() const {
-        return -7e9;
-    }
 };
 
 struct RHS {
