@@ -10,7 +10,7 @@ NEURON { SUFFIX nothing }
 
 PROCEDURE opaque_advance(){
   VERBATIM
-    auto const token = ensure_data_sorted_opaque();
+    auto const token = nrn_ensure_model_data_are_sorted_opaque();
     nrn_fixed_step(token);
   ENDVERBATIM
 }

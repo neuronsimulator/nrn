@@ -2,6 +2,8 @@
 #include "hocdec.h"
 #include "membfunc.h"  // nrn_bamech_t
 #include "neuron/container/data_handle.hpp"
+
+#include <memory>
 struct Extnode;
 struct hoc_Item;
 struct HocParmLimits;
@@ -96,7 +98,6 @@ extern void nrn_initcode();
 extern int segment_limits(double*);
 extern "C" void nrn_random_play();
 extern void fixed_play_continuous(NrnThread*);
-
 extern void setup_tree_matrix(neuron::model_sorted_token const& sorted_token, NrnThread& nt);
 extern void nrn_solve(NrnThread*);
 extern void second_order_cur(NrnThread*);
@@ -210,10 +211,10 @@ char* nrn_version(int);
 /**
   In mechanism libraries, cannot use
       auto const token = nrn_ensure_model_data_are_sorted();
-  because the reference is incomplete (from include/neuron/model_data_fwd.hpp).
-  And we do not want to fix by installing more *.hpps file in
-  the include/neuron because of potential ABI incompatibility (anything with
-  std::string anywhere in it).
+  because the return type is incomplete (from include/neuron/model_data.hpp).
+  And we do not want to fix by installing more *.hpp files in the
+  include/neuron directory because of potential ABI incompatibility (anything
+  with std::string anywhere in it).
   The work around is to provide an extra layer of indirection via unique_ptr
   so the opaque token has a definite size (one pointer) and declaration.
 
@@ -223,11 +224,9 @@ char* nrn_version(int);
   in fadvance.cpp
 
   Instead, use
-    auto const token = ensure_data_sorted_opaque();
+    auto const token = nrn_ensure_model_data_are_sorted_opaque();
   This file is already included in all translated mod files.
 **/
-
-#include <memory>
 namespace neuron {
 struct model_sorted_token;
 struct opaque_model_sorted_token {
@@ -238,7 +237,7 @@ struct opaque_model_sorted_token {
     }
 
   private:
-    std::unique_ptr<neuron::model_sorted_token> m_ptr;
+    std::unique_ptr<model_sorted_token> m_ptr;
 };
 }  // namespace neuron
-neuron::opaque_model_sorted_token ensure_data_sorted_opaque();
+neuron::opaque_model_sorted_token nrn_ensure_model_data_are_sorted_opaque();
