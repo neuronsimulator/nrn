@@ -3,7 +3,7 @@
 #include <vector>
 using std::vector;
 
-#include "spmatrix.h"
+#include <sparse13/spmatrix.h>
 
 MatrixMap::MatrixMap(Matrix& mat)
     : m_(mat)

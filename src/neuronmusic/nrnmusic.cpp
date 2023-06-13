@@ -1,15 +1,15 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #define NO_PYTHON_H 1
 #define IN_NRNMUSIC_CPP
 #include "nrnmusicapi.h"
-#include "hocdec.h"
-#include "nrn_ansi.h"
-#include "netcon.h"
-#include "cvodeobj.h"
-#include "netcvode.h"
-#include "multicore.h"
+#include <oc/hocdec.h>
+#include <nrnoc/nrn_ansi.h>
+#include <nrncvode/netcon.h>
+#include <nrncvode/cvodeobj.h>
+#include <nrncvode/netcvode.h>
+#include <nrnoc/multicore.h>
 #include "nrnmusic.h"
-#include "nrnpy.h"
+#include <nrniv/nrnpy.h>
 #include "netpar.h"
 #include <unordered_map>
 

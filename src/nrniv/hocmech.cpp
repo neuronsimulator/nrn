@@ -1,10 +1,10 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #undef check
 #include <InterViews/resource.h>
 #include <ctype.h>
-#include "membfunc.h"
-#include "nrnoc2iv.h"
-#include "nrniv_mf.h"
+#include <nrnoc/membfunc.h>
+#include <nrniv/nrnoc2iv.h>
+#include <nrnoc/nrniv_mf.h>
 
 #include "parse.hpp"
 extern int point_reg_helper(Symbol*);

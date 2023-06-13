@@ -1,8 +1,8 @@
 #ifndef random1_h
 #define random1_h
 
-#include "RNG.h"
-#include "Random.h"
+#include <gnu/RNG.h>
+#include <gnu/Random.h>
 
 struct Object;
 

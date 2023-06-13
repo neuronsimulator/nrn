@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include "hoc.h"
 
 #if defined(HAVE_GETTIMEOFDAY)

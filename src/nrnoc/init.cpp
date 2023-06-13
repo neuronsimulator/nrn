@@ -1,22 +1,22 @@
-#include <../../nrnconf.h>
-#include <nrnmpiuse.h>
-#include "nrn_ansi.h"
+#include <nrnconf.h>
+#include <oc/nrnmpiuse.h>
+#include <nrnoc/nrn_ansi.h>
 #include "nrncore_write/io/nrncore_io.h"
-#include "oc_ansi.h"
+#include <oc/oc_ansi.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "section.h"
+#include <nrnoc/section.h>
 #include "parse.hpp"
-#include "nrniv_mf.h"
+#include <nrnoc/nrniv_mf.h>
 #include "cabvars.h"
-#include "neuron.h"
+#include <nrnoc/neuron.h>
 #include "neuron/container/data_handle.hpp"
-#include "membdef.h"
-#include "multicore.h"
-#include "nrnmpi.h"
+#include <nrnoc/membdef.h>
+#include <nrnoc/multicore.h>
+#include <oc/nrnmpi.h>
 
 #include <vector>
 
@@ -86,7 +86,7 @@ void nrn_possible_mismatched_arch(const char* libname) {
 #endif  // ! DARWIN
 #endif  // NRNMECH_DLL_STYLE
 
-#include "nrnwrap_dlfcn.h"
+#include <oc/nrnwrap_dlfcn.h>
 
 #define CHECK(name)                            \
     if (hoc_lookup(name) != (Symbol*) 0) {     \

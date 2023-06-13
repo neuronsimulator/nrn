@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <nmodlconf.h>
 
 /* file.mod input routines */
 #include <stdlib.h>

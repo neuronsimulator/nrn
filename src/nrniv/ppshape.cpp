@@ -1,13 +1,13 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
-#include "oclist.h"
-#include "nrnoc2iv.h"
-#include "classreg.h"
+#include <ivoc/oclist.h>
+#include <nrniv/nrnoc2iv.h>
+#include <oc/classreg.h>
 
 #if HAVE_IV
 #include "ppshape.h"
 #endif  // HAVE_IV
-#include "gui-redirect.h"
+#include <nrnoc/gui-redirect.h>
 
 // ppshape registration
 

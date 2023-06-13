@@ -1,8 +1,8 @@
 #ifndef nrniv_mf_h
 #define nrniv_mf_h
-#include "hoc_membf.h"
-#include "hocdec.h"
-#include "membfunc.h"
+#include <oc/hoc_membf.h>
+#include <oc/hocdec.h>
+#include <nrnoc/membfunc.h>
 
 struct Memb_list;
 struct NrnThread;

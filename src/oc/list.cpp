@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 /* The following routines support the concept of a list.
 That is, one can insert at the head of a list or append to the tail of a
@@ -31,8 +31,8 @@ following function calls.
 #define HOC_L_LIST 1
 
 #include <stdlib.h>
-#include "hoclist.h"
-#include "hocdec.h"
+#include <oc/hoclist.h>
+#include <oc/hocdec.h>
 #include "parse.hpp"
 
 #define Free free

@@ -25,7 +25,7 @@
 
 #include <math.h>
 
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #if defined(HAVE_STDINT_H)
 #include <stdint.h>

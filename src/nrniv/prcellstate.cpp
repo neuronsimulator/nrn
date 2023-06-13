@@ -1,11 +1,11 @@
 #include "../../nrnconf.h"
-#include "section.h"
-#include "membfunc.h"
-#include "nrniv_mf.h"
-#include "netcon.h"
+#include <nrnoc/section.h>
+#include <nrnoc/membfunc.h>
+#include <nrnoc/nrniv_mf.h>
+#include <nrncvode/netcon.h>
 #include <map>
 #include "OS/list.h"
-#include "neuron.h"
+#include <nrnoc/neuron.h>
 
 #define precision 15
 

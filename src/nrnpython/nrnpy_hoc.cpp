@@ -1,15 +1,15 @@
-#include "ivocvect.h"
+#include <ivoc/ivocvect.h>
 #include "neuron/container/data_handle.hpp"
-#include "nrniv_mf.h"
+#include <nrnoc/nrniv_mf.h>
 #include "nrn_pyhocobject.h"
-#include "nrnoc2iv.h"
-#include "nrnpy.h"
+#include <nrniv/nrnoc2iv.h>
+#include <nrniv/nrnpy.h>
 #include "nrnpy_utils.h"
 #include "nrnpython.h"
-#include "nrnwrap_dlfcn.h"
-#include "ocfile.h"
+#include <oc/nrnwrap_dlfcn.h>
+#include <ivoc/ocfile.h>
 #include "ocjump.h"
-#include "oclist.h"
+#include <ivoc/oclist.h>
 #include "shapeplt.h"
 
 #include <InterViews/resource.h>

@@ -1,5 +1,5 @@
 #pragma once
-#include "oc_ansi.h"  // nrn_cacheline_calloc
+#include <oc/oc_ansi.h>  // nrn_cacheline_calloc
 
 // create and manage a vector of arrays as a memory pool of those arrays
 // the idea is to allow the possibility of some extra cache efficiency

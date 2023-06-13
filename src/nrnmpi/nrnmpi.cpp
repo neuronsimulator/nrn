@@ -1,18 +1,18 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <assert.h>
-#include "nrnassrt.h"
+#include <oc/nrnassrt.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
 /* do not want the redef in the dynamic load case */
-#include <nrnmpiuse.h>
+#include <oc/nrnmpiuse.h>
 #if NRNMPI_DYNAMICLOAD
-#include <nrnmpi_dynam.h> /* define all the nrnmpi functions name to f_name */
+#include <nrnmpi/nrnmpi_dynam.h> /* define all the nrnmpi functions name to f_name */
 #endif
 
-#include <nrnmpi.h>
-#include <mpispike.h>
+#include <oc/nrnmpi.h>
+#include <nrnmpi/mpispike.h>
 
 
 #if NRNMPI_DYNAMICLOAD

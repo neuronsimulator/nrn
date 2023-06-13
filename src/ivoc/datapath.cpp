@@ -1,18 +1,18 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <map>
 #include <cstdio>
 #include <InterViews/resource.h>
 #include <OS/string.h>
 #include <OS/list.h>
-#include "hoclist.h"
+#include <oc/hoclist.h>
 #if HAVE_IV
 #include "graph.h"
 #endif
-#include "datapath.h"
-#include "ivocvect.h"
+#include <ivoc/datapath.h>
+#include <ivoc/ivocvect.h>
 
-#include "nrnoc2iv.h"
-#include "membfunc.h"
+#include <nrniv/nrnoc2iv.h>
+#include <nrnoc/membfunc.h>
 
 #include "parse.hpp"
 extern Symlist* hoc_built_in_symlist;

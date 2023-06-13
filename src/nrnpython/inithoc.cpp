@@ -1,8 +1,8 @@
-#include "../../nrnconf.h"
-#include "nrnmpiuse.h"
+#include <nrnconf.h>
+#include <oc/nrnmpiuse.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "nrnmpi.h"
+#include <oc/nrnmpi.h>
 #if defined(__MINGW32__)
 #define _hypot hypot
 #endif

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -32,22 +32,22 @@ extern Image* gif_image(const char*);
 #include "graph.h"
 #include "axis.h"
 #include "hocmark.h"
-#include "mymath.h"
+#include <ivoc/mymath.h>
 #include "idraw.h"
 #include "symchoos.h"
 #include "scenepic.h"
-#include "oc_ansi.h"
-#include "oc2iv.h"
-#include "objcmd.h"
+#include <oc/oc_ansi.h>
+#include <ivoc/oc2iv.h>
+#include <ivoc/objcmd.h>
 #include "ocjump.h"
 #include "utility.h"
 #include "cbwidget.h"
 #include "xmenu.h"
-#include "ivocvect.h"
+#include <ivoc/ivocvect.h>
 #endif /* HAVE_IV */
 
-#include "classreg.h"
-#include "gui-redirect.h"
+#include <oc/classreg.h>
+#include <nrnoc/gui-redirect.h>
 
 #if HAVE_IV
 #define Graph_Crosshair_           "Crosshair Graph"

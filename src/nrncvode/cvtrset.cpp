@@ -2,12 +2,12 @@
 #include <stdio.h>
 #include <errno.h>
 #include <math.h>
-#include "nrnoc2iv.h"
-#include "cvodeobj.h"
-#include "nonvintblock.h"
+#include <nrniv/nrnoc2iv.h>
+#include <nrncvode/cvodeobj.h>
+#include <nrnoc/nonvintblock.h>
 
-#include "membfunc.h"
-#include "neuron.h"
+#include <nrnoc/membfunc.h>
+#include <nrnoc/neuron.h>
 
 void Cvode::rhs(neuron::model_sorted_token const& sorted_token, NrnThread* _nt) {
     int i;

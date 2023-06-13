@@ -1,5 +1,5 @@
 #ifdef HAVE_CONFIG_H
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #endif
 /*
  *  MATRIX SOLVE MODULE
@@ -56,7 +56,7 @@ static char RCSid[] = "@(#)$Header$";
 #define spINSIDE_SPARSE
 #include "spconfig.h"
 #include "spdefs.h"
-#include "spmatrix.h"
+#include <sparse13/spmatrix.h>
 
 /* avoid "declared implicitly `extern' and later `static' " warnings. */
 static void SolveComplexMatrix(MatrixPtr Matrix, RealVector RHS, RealVector Solution, std::optional<RealVector> iRHS = std::nullopt, std::optional<RealVector> iSolution = std::nullopt);

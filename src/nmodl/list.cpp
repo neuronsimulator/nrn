@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <nmodlconf.h>
 
 /* The following routines support the concept of a list.
 That is, one can insert at the head of a list or append to the tail of a

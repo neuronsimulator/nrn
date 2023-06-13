@@ -14,7 +14,7 @@
 // this defines things needed by ocmatrix
 #include <OS/list.h>
 
-#include "ivocvect.h"
+#include <ivoc/ivocvect.h>
 #include "matrixmap.h"
 
 #include "neuron/container/data_handle.hpp"

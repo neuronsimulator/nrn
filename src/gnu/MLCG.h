@@ -21,7 +21,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //#pragma interface
 #endif
 
-#include <RNG.h>
+#include <gnu/RNG.h>
 #include <math.h>
 
 //

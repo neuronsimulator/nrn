@@ -1,6 +1,6 @@
-#include <../../nrnconf.h>
-#include "classreg.h"
-#include "gui-redirect.h"
+#include <nrnconf.h>
+#include <oc/classreg.h>
+#include <nrnoc/gui-redirect.h>
 
 #if HAVE_IV
 
@@ -10,14 +10,14 @@
 #include <stdio.h>
 #include "apwindow.h"
 #include "secbrows.h"
-#include "oclist.h"
+#include <ivoc/oclist.h>
 #include "ivoc.h"
-#include "objcmd.h"
+#include <ivoc/objcmd.h>
 #endif
 
-#include "nrnoc2iv.h"
-#include "nrnpy.h"
-#include "membfunc.h"
+#include <nrniv/nrnoc2iv.h>
+#include <nrniv/nrnpy.h>
+#include <nrnoc/membfunc.h>
 
 //-----------------------------------------
 static double sb_select(void* v) {

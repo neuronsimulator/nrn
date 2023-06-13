@@ -1,16 +1,16 @@
-#include "nrn_ansi.h"
+#include <nrnoc/nrn_ansi.h>
 #include "nrnpython.h"
 #include <structmember.h>
 #include <InterViews/resource.h>
-#include "nrniv_mf.h"
-#include <nrnoc2iv.h>
-#include "nrnpy.h"
+#include <nrnoc/nrniv_mf.h>
+#include <nrniv/nrnoc2iv.h>
+#include <nrniv/nrnpy.h>
 #include "nrnpy_utils.h"
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
 #endif
 
-#include <membfunc.h>
+#include <nrnoc/membfunc.h>
 #include <parse.hpp>
 
 #include <cmath>

@@ -18,7 +18,7 @@
 
 #include <stdlib.h>
 
-#include "nvector.h"
+#include <sundials/shared/nvector.h>
 
 /*
  * -----------------------------------------------------------------

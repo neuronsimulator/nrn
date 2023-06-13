@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,11 +21,11 @@ extern int hoc_return_type_code;
 #include <InterViews/style.h>
 #include <InterViews/resource.h>
 #endif
-#include "nrnmpi.h"
-#include "oc2iv.h"
-#include "classreg.h"
-#include "ocfile.h"
-#include "nrnfilewrap.h"
+#include <oc/nrnmpi.h>
+#include <ivoc/oc2iv.h>
+#include <oc/classreg.h>
+#include <ivoc/ocfile.h>
+#include <oc/nrnfilewrap.h>
 
 // for isDirExist and makePath
 #include <iostream>
@@ -35,7 +35,7 @@ extern int hoc_return_type_code;
 #include <direct.h>
 #endif
 
-#include "gui-redirect.h"
+#include <nrnoc/gui-redirect.h>
 
 static Symbol* file_class_sym_;
 extern char* ivoc_get_temp_file();
@@ -44,7 +44,7 @@ int ivoc_unlink(const char* s) {
     return unlink(s);
 }
 
-#include "hocstr.h"
+#include <oc/hocstr.h>
 std::FILE* hoc_obj_file_arg(int i) {
     Object* ob = *hoc_objgetarg(i);
     check_obj_type(ob, "File");

@@ -21,7 +21,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #endif
 #define _Geometric_h 
 
-#include <Random.h>
+#include <gnu/Random.h>
 
 class Geometric: public Random {
 protected:

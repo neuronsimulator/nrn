@@ -1,7 +1,7 @@
-#include "membfunc.h"
+#include <nrnoc/membfunc.h>
 
-#include "multicore.h"
-#include "section.h"
+#include <nrnoc/multicore.h>
+#include <nrnoc/section.h>
 
 #include <cassert>
 

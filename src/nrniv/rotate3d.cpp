@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
 #include <math.h>
@@ -8,7 +8,7 @@
 #include <InterViews/polyglyph.h>
 #include "rot3band.h"
 #include <stdio.h>
-#include "nrnoc2iv.h"
+#include <nrniv/nrnoc2iv.h>
 #include "shape.h"
 #include "ivoc.h"
 

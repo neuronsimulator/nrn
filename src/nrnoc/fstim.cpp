@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/fstim.cpp,v 1.2 1997/08/15 13:04:11 hines Exp */
 /* copy of synapse.cpp modified to simulate current stimulus pulses */
 /* 4/9/2002 modified to conform to new treeset.cpp */
@@ -23,9 +23,9 @@ fstimi(i)
 */
 
 #include <stdlib.h>
-#include "neuron.h"
-#include "section.h"
-#include "nrniv_mf.h"
+#include <nrnoc/neuron.h>
+#include <nrnoc/section.h>
+#include <nrnoc/nrniv_mf.h>
 
 
 typedef struct Stimulus {

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
 #include <InterViews/glyph.h>
@@ -13,7 +13,7 @@
 #include <OS/string.h>
 #include "scenevie.h"
 #include "rect.h"
-#include "mymath.h"
+#include <ivoc/mymath.h>
 #include "idraw.h"
 #include <stdio.h>
 

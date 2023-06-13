@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 /**************************************************************************
 **
@@ -35,7 +35,7 @@
 static	char	rcsid[] = "spbkp.c,v 1.1 1997/12/04 17:55:50 hines Exp";
 
 #include	<stdio.h>
-#include        "sparse2.h"
+#include        <mesch/sparse2.h>
 #include	<math.h>
 
 

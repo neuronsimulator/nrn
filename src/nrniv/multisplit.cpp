@@ -5,11 +5,11 @@
 #include <errno.h>
 #include <InterViews/resource.h>
 #include <vector>
-#include "nrn_ansi.h"
-#include "nrndae_c.h"
-#include "nrniv_mf.h"
-#include <nrnoc2iv.h>
-#include <nrnmpi.h>
+#include <nrnoc/nrn_ansi.h>
+#include <nrnoc/nrndae_c.h>
+#include <nrnoc/nrniv_mf.h>
+#include <nrniv/nrnoc2iv.h>
+#include <oc/nrnmpi.h>
 #include <multisplit.h>
 #include <unordered_map>
 #include <memory>

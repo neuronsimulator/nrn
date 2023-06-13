@@ -1,10 +1,10 @@
-#include <../../nrnconf.h>
-#include "bbsconf.h"
+#include <nrnconf.h>
+#include <parallel/bbsconf.h>
 #include <InterViews/resource.h>
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 #include "bbslocal.h"
 #include "bbslsrv.h"
-#include <nrnmpi.h>
+#include <oc/nrnmpi.h>
 
 #if defined(HAVE_STL)
 #if defined(HAVE_SSTREAM)  // the standard ...

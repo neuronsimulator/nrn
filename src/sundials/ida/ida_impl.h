@@ -26,8 +26,8 @@ extern "C" {
 
 #include "ida.h"
 
-#include "sundialstypes.h"
-#include "nvector.h"
+#include <sundials/shared/sundialstypes.h>
+#include <sundials/shared/nvector.h>
 
 /* Basic IDA constants */
 

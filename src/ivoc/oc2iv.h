@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 // common things in oc that can be used by ivoc
-#include "hocdec.h"
+#include <oc/hocdec.h>
 
 // xmenu
 #define CChar const char

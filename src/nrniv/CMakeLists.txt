@@ -196,34 +196,9 @@ endif()
 # Include directories for #include <../../nrnconf.h>
 # =============================================================================
 set(NRN_INCLUDE_DIRS
-    ${NRN_IVOC_SRC_DIR}
-    ${NRN_NRNCVODE_SRC_DIR}
-    ${NRN_NRNIV_SRC_DIR}
-    ${NRN_NRNOC_SRC_DIR}
-    ${NRN_OC_SRC_DIR}
     ${PROJECT_BINARY_DIR}
-    ${PROJECT_BINARY_DIR}/src/nrncvode
-    ${PROJECT_BINARY_DIR}/src/nrnoc
-    ${PROJECT_BINARY_DIR}/src/nrnpython
-    ${PROJECT_BINARY_DIR}/src/oc
-    ${PROJECT_BINARY_DIR}/src/parallel
-    ${PROJECT_BINARY_DIR}/src/sundials
-    ${PROJECT_BINARY_DIR}/src/sundials/shared
-    ${PROJECT_SOURCE_DIR}/external/Random123/include
-    ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/src/gnu
-    ${PROJECT_SOURCE_DIR}/src/mesch
-    ${PROJECT_SOURCE_DIR}/src/nrncvode
-    ${PROJECT_SOURCE_DIR}/src/nrnmpi
-    ${PROJECT_SOURCE_DIR}/src/nrnpython
-    ${PROJECT_SOURCE_DIR}/src/parallel
-    ${PROJECT_SOURCE_DIR}/src/scopmath
-    ${PROJECT_SOURCE_DIR}/src/sparse
-    ${PROJECT_SOURCE_DIR}/src/sparse13
-    ${PROJECT_SOURCE_DIR}/src/sundials
-    ${PROJECT_SOURCE_DIR}/src/sundials/cvodes
-    ${PROJECT_SOURCE_DIR}/src/sundials/ida
-    ${PROJECT_SOURCE_DIR}/src/sundials/shared)
+    ${PROJECT_BINARY_DIR}/src/
+    ${PROJECT_SOURCE_DIR}/src)
 
 if(NRN_ENABLE_MUSIC)
   list(APPEND NRN_INCLUDE_DIRS ${NRN_MUSIC_SRC_DIR})

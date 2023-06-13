@@ -1,12 +1,12 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #define HOC_L_LIST 1
-#include "section.h"
-#include "neuron.h"
-#include "nrnpy.h"
+#include <nrnoc/section.h>
+#include <nrnoc/neuron.h>
+#include <nrniv/nrnpy.h>
 #include "parse.hpp"
-#include "hocparse.h"
-#include "code.h"
-#include "hoc_membf.h"
+#include <oc/hocparse.h>
+#include <oc/code.h>
+#include <oc/hoc_membf.h>
 
 /* needs trailing '}' */
 #define ITERATE_REMOVE(q1, q2, lst)                \

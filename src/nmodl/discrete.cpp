@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <nmodlconf.h>
 
 #include <stdlib.h>
 #include "modl.h"

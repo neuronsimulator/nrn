@@ -1,20 +1,20 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #include <OS/list.h>
 #include <OS/string.h>
 #if HAVE_IV
 #include "ivoc.h"
 #endif
-#include "nrniv_mf.h"
-#include "nrnoc2iv.h"
-#include "ocobserv.h"
-#include "ivocvect.h"
+#include <nrnoc/nrniv_mf.h>
+#include <nrniv/nrnoc2iv.h>
+#include <ivoc/ocobserv.h>
+#include <ivoc/ivocvect.h>
 #include <stdio.h>
 
 #include "ocpointer.h"
-#include "vrecitem.h"
-#include "netcvode.h"
-#include "cvodeobj.h"
+#include <nrncvode/vrecitem.h>
+#include <nrncvode/netcvode.h>
+#include <nrncvode/cvodeobj.h>
 
 extern double t;
 extern NetCvode* net_cvode_instance;

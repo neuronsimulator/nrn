@@ -18,7 +18,7 @@ of struct _spblk, we are really using TQItem
 #define uplink    parent_
 #define cnt       cnt_
 #define key       t_
-#include "sptree.h"
+#include <nrncvode/sptree.h>
 
 #if 0
 #define sp1enq(i)          \

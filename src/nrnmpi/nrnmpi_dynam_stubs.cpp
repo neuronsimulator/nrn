@@ -1,11 +1,11 @@
 /* a few calls to nrnmpi functions are made even when MPI not available */
 /* these need enough implementation to work with nrnmpi_numprocs = 1 */
 
-#include "nrnmpiuse.h"
+#include <oc/nrnmpiuse.h>
 #if NRNMPI_DYNAMICLOAD /* to end of file */
 
 #include <stdio.h>
-#include "nrnmpidec.h"
+#include <nrnmpi/nrnmpidec.h>
 
 extern double nrn_timeus();
 

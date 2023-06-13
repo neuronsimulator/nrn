@@ -1,17 +1,17 @@
 #include <nrnpython.h>
 #include <nrnpy_utils.h>
-#include "oc_ansi.h"
+#include <oc/oc_ansi.h>
 #include <stdio.h>
 #include <InterViews/resource.h>
 #if HAVE_IV
 #include <InterViews/session.h>
 #endif
-#include <nrnoc2iv.h>
+#include <nrniv/nrnoc2iv.h>
 #include <hoccontext.h>
-#include <ocfile.h>  // bool isDirExist(const std::string& path);
+#include <ivoc/ocfile.h>  // bool isDirExist(const std::string& path);
 
-#include <hocstr.h>
-#include "nrnpy.h"
+#include <oc/hocstr.h>
+#include <nrniv/nrnpy.h>
 
 #include <filesystem>
 #include <string>

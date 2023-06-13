@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/oc/fmenu.c,v 1.4 1996/02/16 16:19:25 hines Exp */
 /*
 fmenu.c,v

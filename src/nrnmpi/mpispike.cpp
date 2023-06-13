@@ -1,23 +1,23 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <assert.h>
 
 /* do not want the redef in the dynamic load case */
-#include <nrnmpiuse.h>
+#include <oc/nrnmpiuse.h>
 
 #if NRNMPI_DYNAMICLOAD
-#include <nrnmpi_dynam.h>
+#include <nrnmpi/nrnmpi_dynam.h>
 #endif
 
-#include <nrnmpi.h>
-#include <hocdec.h>
+#include <oc/nrnmpi.h>
+#include <oc/hocdec.h>
 
 #if NRNMPI
-#include "nrnmpidec.h"
-#include "nrnmpi_impl.h"
-#include "mpispike.h"
+#include <nrnmpi/nrnmpidec.h>
+#include <nrnmpi/nrnmpi_impl.h>
+#include <nrnmpi/mpispike.h>
 #include <mpi.h>
 
 #include <limits>

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
 #include <cstdio>
@@ -18,9 +18,9 @@
 #include <IV-look/kit.h>
 #include <InterViews/background.h>
 
-#include "mymath.h"
+#include <ivoc/mymath.h>
 #include "apwindow.h"
-#include "hocdec.h"
+#include <oc/hocdec.h>
 #include "ocglyph.h"
 #include "scenevie.h"
 #include "scenepic.h"

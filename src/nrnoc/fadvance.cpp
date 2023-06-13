@@ -1,18 +1,18 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
-#include <nrnmpi.h>
+#include <oc/nrnmpi.h>
 #include <stdlib.h>
 #include <errno.h>
-#include "neuron.h"
-#include "section.h"
-#include "nrn_ansi.h"
-#include "nrniv_mf.h"
+#include <nrnoc/neuron.h>
+#include <nrnoc/section.h>
+#include <nrnoc/nrn_ansi.h>
+#include <nrnoc/nrniv_mf.h>
 #include "multisplit.h"
 #define nrnoc_fadvance_c
 #include "utils/profile/profiler_interface.h"
-#include "nonvintblock.h"
-#include "nrncvode.h"
-#include "spmatrix.h"
+#include <nrnoc/nonvintblock.h>
+#include <nrnoc/nrncvode.h>
+#include <sparse13/spmatrix.h>
 
 #include <vector>
 

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/oc/regexp.cpp,v 1.1.1.1 1994/10/12 17:22:13 hines Exp */
 /*
 regexp.cpp,v
@@ -50,7 +50,7 @@ regexp.cpp,v
 */
 
 #include <stdio.h>
-#include "hocdec.h"
+#include <oc/hocdec.h>
 #define CABLESECTION 1
 /* Always match from beginning of string (implicit ^),
    Always match end of string (implicit $),

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #include <stdlib.h>
 #include "lineq.h"

@@ -1,15 +1,15 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #include <vector>
-#include <ocnotify.h>
+#include <ivoc/ocnotify.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "neuron/container/soa_container.hpp"
-#include <nrnmutdec.h>
-#include "oc2iv.h"
-#include "ocfunc.h"
-#include "ocnotify.h"
-#include "oc_ansi.h"
+#include <ivoc/nrnmutdec.h>
+#include <ivoc/oc2iv.h>
+#include <oc/ocfunc.h>
+#include <ivoc/ocnotify.h>
+#include <oc/oc_ansi.h>
 #include "ocjump.h"
 
 #if HAVE_IV

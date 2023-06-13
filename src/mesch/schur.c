@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 /**************************************************************************
 **
@@ -32,8 +32,8 @@
 */
 
 #include	<stdio.h>
-#include	"matrix.h"
-#include        "matrix2.h"
+#include	<mesch/matrix.h>
+#include        <mesch/matrix2.h>
 #include	<math.h>
 
 

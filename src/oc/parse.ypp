@@ -1,7 +1,7 @@
 /* /local/src/master/nrn/src/oc/parse.y,v 1.29 1998/11/27 13:11:48 hines Exp */
 %{
 
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* changes as of 2-jan-89 */
 /*  version 7.2.1 2-jan-89 short form of the for statement */
 
@@ -10,12 +10,12 @@
 #endif
 
 #include "hoc.h"
-#include "hocdec.h"
+#include <oc/hocdec.h>
 #include "ocmisc.h"
-#include "hocparse.h"
-#include "code.h"
+#include <oc/hocparse.h>
+#include <oc/code.h>
 #include "equation.h"
-#include "nrnfilewrap.h"
+#include <oc/nrnfilewrap.h>
 
 void* nrn_parsing_pysec_;
 

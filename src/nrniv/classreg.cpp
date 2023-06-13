@@ -3,5 +3,5 @@
  * this is just a stub to trick it into working right.
  */
 
-#define OC_CLASSES "nrnclass.h"
+#define OC_CLASSES <nrniv/nrnclass.h>
 #include "../ivoc/classreg.cpp"

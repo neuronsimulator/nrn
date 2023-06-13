@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
 /* I have shamelessly hacked away at the page implementation to
@@ -45,7 +45,7 @@
 #include <InterViews/background.h>
 #include <OS/list.h>
 
-#include "mymath.h"
+#include <ivoc/mymath.h>
 #include "epsprint.h"
 #include "scenevie.h"
 #include "scenepic.h"

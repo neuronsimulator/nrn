@@ -1,4 +1,4 @@
-#include "occlass.h"
+#include <ivoc/occlass.h>
 #if EXTERNS
 , Shape_reg(), PlotShape_reg(), PPShape_reg(), RangeVarPlot_reg(), SectionBrowser_reg(),
     MechanismStandard_reg(), MechanismType_reg(), NetCon_reg(), LinearMechanism_reg(), KSChan_reg(),

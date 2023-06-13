@@ -27,7 +27,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 // 
 
-#include <Random.h>
+#include <gnu/Random.h>
 
 class NegativeExpntl: public Random {
 protected:

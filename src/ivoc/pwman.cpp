@@ -1,5 +1,5 @@
-#include <../../nrnconf.h>
-#include "gui-redirect.h"
+#include <nrnconf.h>
+#include <nrnoc/gui-redirect.h>
 
 extern char* ivoc_get_temp_file();
 extern int hoc_return_type_code;
@@ -24,8 +24,8 @@ extern int hoc_return_type_code;
 #endif  // HAVE_IV
 #include <stdio.h>
 #include <stdlib.h>
-#include "classreg.h"
-#include "oc2iv.h"
+#include <oc/classreg.h>
+#include <ivoc/oc2iv.h>
 #include <cmath>
 
 #if HAVE_IV
@@ -68,9 +68,9 @@ char* hoc_back2forward(char*);
 #include "utility.h"
 #include "ocbox.h"
 #include "idraw.h"
-#include "mymath.h"
+#include <ivoc/mymath.h>
 #include "graph.h"
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 #include "rubband.h"
 
 // PGH begin
@@ -3328,7 +3328,7 @@ Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 
 #endif  // HAVE_IV
 

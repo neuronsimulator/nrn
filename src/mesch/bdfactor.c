@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 
 /**************************************************************************
@@ -34,7 +34,7 @@
 static	char	rcsid[] = "$Id: ";
 
 #include	<stdio.h>
-#include        "matrix2.h"
+#include        <mesch/matrix2.h>
 #include	<math.h>
 
 

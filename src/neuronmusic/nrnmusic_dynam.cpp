@@ -1,13 +1,13 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <stdio.h>
 #include <assert.h>
 #include <errno.h>
-#include "oc_ansi.h"
+#include <oc/oc_ansi.h>
 #include "nrnmusicapi.h"
 #include <array>
 #include <cstdlib>
 
-#include "nrnwrap_dlfcn.h"
+#include <oc/nrnwrap_dlfcn.h>
 
 void (*p_nrnmusic_runtime_phase)();
 void (*p_nrnmusic_injectlist)(void*, double);

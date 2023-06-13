@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 // we want to plot correctly during the local step method when
 // cvode.solve(tstop) is invoked. However, not all GraphLine  are time graphs,
 // so we assume that the time graphs will be added during stdinit
@@ -8,16 +8,16 @@
 // point processes.
 // Note: cvode.simgraph_remove() deletes all the GLineRecord instances.
 
-#include "hocparse.h"
-#include "code.h"
+#include <oc/hocparse.h>
+#include <oc/code.h>
 #undef begin
 #undef add
 
 #include <OS/list.h>
-#include "nrnoc2iv.h"
-#include "vrecitem.h"
-#include "netcvode.h"
-#include "cvodeobj.h"
+#include <nrniv/nrnoc2iv.h>
+#include <nrncvode/vrecitem.h>
+#include <nrncvode/netcvode.h>
+#include <nrncvode/cvodeobj.h>
 
 #if HAVE_IV  // to end of file
 #include "graph.h"

@@ -1,17 +1,17 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/cabcode.cpp,v 1.37 1999/07/08 14:24:59 hines Exp */
 
 #define HOC_L_LIST 1
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "section.h"
-#include "nrn_ansi.h"
-#include "nrniv_mf.h"
-#include "membfunc.h"
+#include <nrnoc/section.h>
+#include <nrnoc/nrn_ansi.h>
+#include <nrnoc/nrniv_mf.h>
+#include <nrnoc/membfunc.h>
 #include "parse.hpp"
-#include "hocparse.h"
-#include "membdef.h"
+#include <oc/hocparse.h>
+#include <nrnoc/membdef.h>
 
 extern int hoc_execerror_messages;
 #define symlist hoc_symlist

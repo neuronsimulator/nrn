@@ -1,5 +1,5 @@
 #ifdef HAVE_CONFIG_H
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #endif
 /*
 Based on Unidraw UList but UList changed to HTList (head tail list)
@@ -34,7 +34,7 @@ for fast insertion, deletion, iteration
 
 #include <stdio.h>
 #include <OS/enter-scope.h>
-#include <htlist.h>
+#include <ivoc/htlist.h>
 
 /*****************************************************************************/
 

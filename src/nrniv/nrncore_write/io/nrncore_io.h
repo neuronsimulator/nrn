@@ -1,6 +1,6 @@
 #ifndef NRN_NRNCORE_IO_H
 #define NRN_NRNCORE_IO_H
-#include "hocdec.h"
+#include <oc/hocdec.h>
 
 #include <string>
 #include <vector>

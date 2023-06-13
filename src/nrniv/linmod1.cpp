@@ -1,13 +1,13 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <stdio.h>
 #include <InterViews/observe.h>
-#include "ocnotify.h"
+#include <ivoc/ocnotify.h>
 #if HAVE_IV
 #include "ivoc.h"
 #endif
-#include "classreg.h"
+#include <oc/classreg.h>
 #include "linmod.h"
-#include "nrnoc2iv.h"
+#include <nrniv/nrnoc2iv.h>
 
 // hoc interface to a LinearModelAddition
 // remember that the policy for equation additions to the tree matrix is

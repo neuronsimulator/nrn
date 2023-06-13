@@ -1,5 +1,5 @@
 #pragma once
-#include "backtrace_utils.h"
+#include <nrniv/backtrace_utils.h>
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 #include "neuron/container/soa_identifier.hpp"

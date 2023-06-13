@@ -1,5 +1,5 @@
-#include <../../nrnconf.h>
-#include "nrn_ansi.h"
+#include <nrnconf.h>
+#include <nrnoc/nrn_ansi.h>
 
 long hoc_nframe, hoc_nstack;
 
@@ -33,9 +33,9 @@ void iv_display_scale(float);
 #endif
 #include <OS/string.h>
 #include "string.h"
-#include "oc2iv.h"
-#include "nrnmpi.h"
-#include "nrnpy.h"
+#include <ivoc/oc2iv.h>
+#include <oc/nrnmpi.h>
+#include <nrniv/nrnpy.h>
 
 #if defined(IVX11_DYNAM)
 #include <IV-X11/ivx11_dynam.h>
@@ -192,7 +192,7 @@ void penv() {
 #endif
 
 #if DARWIN || defined(__linux__)
-#include "nrnwrap_dlfcn.h"
+#include <oc/nrnwrap_dlfcn.h>
 #include <string>
 
 /* It is definitely now the case on mac and I think sometimes the case on
@@ -242,7 +242,7 @@ extern std::string nrnmpi_load(int is_python);
 #endif
 
 // some things are defined in libraries earlier than they are used so...
-#include <nrnisaac.h>
+#include <oc/nrnisaac.h>
 static void force_load() {
     if (always_false) {
         nrnisaac_new();

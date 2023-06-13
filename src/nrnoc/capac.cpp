@@ -1,10 +1,10 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/capac.cpp,v 1.6 1998/11/25 19:14:28 hines Exp */
 
-#include "section.h"
-#include "membdef.h"
+#include <nrnoc/section.h>
+#include <nrnoc/membdef.h>
 #include "neuron/cache/mechanism_range.hpp"
-#include "nrniv_mf.h"
+#include <nrnoc/nrniv_mf.h>
 
 
 static const char* mechanism[] = {"0", "capacitance", "cm", 0, "i_cap", 0, 0};

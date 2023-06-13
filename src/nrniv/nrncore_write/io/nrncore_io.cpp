@@ -3,14 +3,14 @@
 #include "nrncore_write/callbacks/nrncore_callbacks.h"
 
 #include <cstdlib>
-#include "nrnmpi.h"
-#include "section.h"
-#include "hocdec.h"
-#include "ocfile.h"     // for idDirExist and makePath
-#include "nrnran123.h"  // globalindex written to globals.dat
-#include "cvodeobj.h"
-#include "netcvode.h"  // for nrnbbcore_vecplay_write
-#include "vrecitem.h"  // for nrnbbcore_vecplay_write
+#include <oc/nrnmpi.h>
+#include <nrnoc/section.h>
+#include <oc/hocdec.h>
+#include <ivoc/ocfile.h>     // for idDirExist and makePath
+#include <oc/nrnran123.h>  // globalindex written to globals.dat
+#include <nrncvode/cvodeobj.h>
+#include <nrncvode/netcvode.h>  // for nrnbbcore_vecplay_write
+#include <nrncvode/vrecitem.h>  // for nrnbbcore_vecplay_write
 #include <fstream>
 #include <sstream>
 #include "nrnsection_mapping.h"

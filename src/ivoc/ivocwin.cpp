@@ -1,5 +1,5 @@
-#include <../../nrnconf.h>
-#include "oc2iv.h"
+#include <nrnconf.h>
+#include <ivoc/oc2iv.h>
 
 #if HAVE_IV
 #include <IV-Win/MWlib.h>
@@ -27,7 +27,7 @@
 #include "apwindow.h"
 #include "ivoc.h"
 #include "rubband.h"
-#include "symdir.h"
+#include <ivoc/symdir.h>
 #undef max
 #undef min
 #include "graph.h"
@@ -208,7 +208,7 @@ void IOHandler::childStatus(pid_t, int) {}
 
 #ifdef MINGW
 
-#include <nrnmutdec.h>
+#include <ivoc/nrnmutdec.h>
 static int bind_tid_;
 void nrniv_bind_thread(void);
 extern int (*iv_bind_enqueue_)(void (*)(void*), void* w);

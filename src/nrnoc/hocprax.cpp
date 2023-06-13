@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /*
 Hoc interface to praxis.
 
@@ -37,8 +37,8 @@ pval = pval_praxis(i, Vector)
 */
 
 #include <stdlib.h>
-#include "hocdec.h"
-#include "nrnpy.h"
+#include <oc/hocdec.h>
+#include <nrniv/nrnpy.h>
 #include "parse.hpp"
 #include "scoplib.h"
 

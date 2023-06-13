@@ -5,7 +5,7 @@
  */
 #pragma once
 #include "errcodes.hpp"
-#include "hocdec.h"
+#include <oc/hocdec.h>
 #include "scoplib.h"
 
 #include <cassert>

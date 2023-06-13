@@ -1,6 +1,6 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include "hoc.h"
-#include "hocstr.h"
+#include <oc/hocstr.h>
 #include "equation.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,14 +8,14 @@
 #include <math.h>
 #include <errno.h>
 #include "parse.hpp"
-#include "hocparse.h"
-#include "oc_ansi.h"
+#include <oc/hocparse.h>
+#include <oc/oc_ansi.h>
 #include "ocjump.h"
-#include "ocfunc.h"
+#include <oc/ocfunc.h>
 #include "ocmisc.h"
-#include "nrnmpi.h"
-#include "nrnpy.h"
-#include "nrnfilewrap.h"
+#include <oc/nrnmpi.h>
+#include <nrniv/nrnpy.h>
+#include <oc/nrnfilewrap.h>
 #include "../nrniv/backtrace_utils.h"
 
 #include <condition_variable>

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/point.cpp,v 1.13 1999/03/23 16:12:09 hines Exp */
 
 /* modl description via modlreg calls point_register_mech() and
@@ -6,11 +6,11 @@ saves the pointtype as later argument to create and loc */
 
 #include <stdlib.h>
 
-#include "membfunc.h"
-#include "nrniv_mf.h"
-#include "ocnotify.h"
+#include <nrnoc/membfunc.h>
+#include <nrnoc/nrniv_mf.h>
+#include <ivoc/ocnotify.h>
 #include "parse_with_deps.hpp"
-#include "section.h"
+#include <nrnoc/section.h>
 
 
 extern char* pnt_map;

@@ -1,17 +1,17 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <OS/string.h>
 #include <InterViews/regexp.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "classreg.h"
-#include "oc2iv.h"
+#include <oc/classreg.h>
+#include <ivoc/oc2iv.h>
 #include <string.h>
 // for alias
-#include <symdir.h>
-#include <oclist.h>
+#include <ivoc/symdir.h>
+#include <ivoc/oclist.h>
 #include <parse.hpp>
 // for references
-#include <hoclist.h>
+#include <oc/hoclist.h>
 #if HAVE_IV
 #include <ocbox.h>
 #endif

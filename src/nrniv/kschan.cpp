@@ -1,15 +1,15 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <string.h>
 #include <stdlib.h>
 #include <OS/list.h>
 #include <math.h>
-#include "nrnoc2iv.h"
-#include "classreg.h"
-#include "kschan.h"
-#include "kssingle.h"
-#include "ocnotify.h"
+#include <nrniv/nrnoc2iv.h>
+#include <oc/classreg.h>
+#include <nrniv/kschan.h>
+#include <nrniv/kssingle.h>
+#include <ivoc/ocnotify.h>
 #include "parse.hpp"
-#include "nrniv_mf.h"
+#include <nrnoc/nrniv_mf.h>
 
 #define NSingleIndex 0
 #if defined(__MWERKS__) && !defined(_MSC_VER)

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 extern int hoc_return_type_code;
 
@@ -13,14 +13,14 @@ extern int hoc_return_type_code;
 #include "ocglyph.h"
 #endif
 
-#include "classreg.h"
+#include <oc/classreg.h>
 #if HAVE_IV
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 #include "apwindow.h"
 #include "ivoc.h"
 #endif
 
-#include "gui-redirect.h"
+#include <nrnoc/gui-redirect.h>
 
 #if HAVE_IV
 class OcText: public Text {

@@ -3,8 +3,8 @@
 
 #include <OS/list.h>
 #include <InterViews/observe.h>
-#include <netcon.h>
-#include <ivocvect.h>
+#include <nrncvode/netcon.h>
+#include <ivoc/ivocvect.h>
 
 class PlayRecord;
 class PlayRecordSave;

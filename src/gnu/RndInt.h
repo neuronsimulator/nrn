@@ -44,7 +44,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 // override stored values
 
 #include <math.h>
-#include <RNG.h>
+#include <gnu/RNG.h>
 
 class RandomInteger 
 {

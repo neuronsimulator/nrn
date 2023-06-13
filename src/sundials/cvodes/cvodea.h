@@ -54,11 +54,11 @@ extern "C" {
 
 #include <stdio.h>
 
-#include "dense.h"
+#include <sundials/shared/dense.h>
 #include "band.h"
 #include "spgmr.h"
-#include "sundialstypes.h"
-#include "nvector.h"
+#include <sundials/shared/sundialstypes.h>
+#include <sundials/shared/nvector.h>
 
 /*
  * -----------------------------------------------------------------

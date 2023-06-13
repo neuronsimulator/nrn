@@ -13,14 +13,14 @@ of struct _spblk, we are really using TQItem
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <section.h>
+#include <nrnoc/section.h>
 
 #define leftlink  left_
 #define rightlink right_
 #define uplink    parent_
 #define cnt       cnt_
 #define key       t_
-#include <sptree.h>
+#include <nrncvode/sptree.h>
 
 // extern double dt;
 #define nt_dt nrn_threads->_dt

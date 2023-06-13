@@ -1,10 +1,10 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include "hoc.h"
 #define Ret(a) \
     hoc_ret(); \
     hoc_pushx(a);
 
-#include "gui-redirect.h"
+#include <nrnoc/gui-redirect.h>
 
 int newstyle;
 unsigned int text_style = 0, text_size = 1, text_orient = 0;

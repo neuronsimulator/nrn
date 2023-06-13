@@ -1,5 +1,5 @@
-#include <../../nrnconf.h>
-#include <nrnmpi.h>
+#include <nrnconf.h>
+#include <oc/nrnmpi.h>
 
 
 #if NRNMPI
@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <sys/time.h>
-#include <section.h>
+#include <nrnoc/section.h>
 
 static double told;
 static struct itimerval value;

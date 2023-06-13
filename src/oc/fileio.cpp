@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/oc/fileio.cpp,v 1.34 1999/09/14 13:11:46 hines Exp */
 
 #include <stdio.h>
@@ -7,12 +7,12 @@
 #include <unistd.h>
 #include "hoc.h"
 #include "ocmisc.h"
-#include "hocstr.h"
-#include "hoclist.h"
+#include <oc/hocstr.h>
+#include <oc/hoclist.h>
 #include "parse.hpp"
-#include "hocparse.h"
+#include <oc/hocparse.h>
 #include <errno.h>
-#include "nrnfilewrap.h"
+#include <oc/nrnfilewrap.h>
 
 
 extern char* neuron_home;

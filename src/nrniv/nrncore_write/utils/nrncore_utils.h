@@ -13,7 +13,7 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> pd,
                         int& type,
                         int& index);
 
-#include "nrnwrap_dlfcn.h"
+#include <oc/nrnwrap_dlfcn.h>
 #if defined(HAVE_DLFCN_H)
 
 bool is_coreneuron_loaded();

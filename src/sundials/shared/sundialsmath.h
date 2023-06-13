@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-#include "sundialstypes.h"
+#include <sundials/shared/sundialstypes.h>
 
 /*
  * -----------------------------------------------------------------

@@ -1,11 +1,11 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <stdlib.h>
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
-#include <nrnisaac.h>
+#include <oc/nrnisaac.h>
 #include <isaac64.h>
-#include "hocdec.h"
+#include <oc/hocdec.h>
 
 typedef struct isaac64_state Rng;
 

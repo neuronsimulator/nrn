@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /*
  * Copyright (c) 1991 Stanford University
  * Copyright (c) 1991 Silicon Graphics, Inc.
@@ -51,15 +51,15 @@
 
 #include "symchoos.h"
 #include "utility.h"
-#include "symdir.h"
+#include <ivoc/symdir.h>
 
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 #include "parse.hpp"
 #include "ivoc.h"
 #endif /* HAVE_IV */
 
-#include "classreg.h"
-#include "gui-redirect.h"
+#include <oc/classreg.h>
+#include <nrnoc/gui-redirect.h>
 
 #if HAVE_IV
 

@@ -39,14 +39,14 @@ contained the header:
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <math.h>
 #include <float.h>
 #include <stdlib.h>
-#include <mcran4.h>
-#include "hocdec.h"
+#include <oc/mcran4.h>
+#include <oc/hocdec.h>
 
 static uint32_t lowindex = 0;
 

@@ -20,9 +20,9 @@
 #include <stdio.h>
 
 #include "iterative.h"
-#include "nvector.h"
+#include <sundials/shared/nvector.h>
 #include "sundialsmath.h"
-#include "sundialstypes.h"
+#include <sundials/shared/sundialstypes.h>
 
 #define FACTOR RCONST(1000.0)
 #define ZERO   RCONST(0.0)

@@ -39,7 +39,7 @@
 /* RCS id: iter.h,v 1.1 1997/11/03 16:15:49 hines Exp  */
 
 
-#include	"sparse.h"
+#include	<mesch/sparse.h>
 
 
 /* basic structure for iterative methods */

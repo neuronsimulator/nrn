@@ -1,10 +1,10 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #include <vector>
 #include <errno.h>
-#include "nrniv_mf.h"
-#include <nrnoc2iv.h>
-#include <nrnmpi.h>
+#include <nrnoc/nrniv_mf.h>
+#include <nrniv/nrnoc2iv.h>
+#include <oc/nrnmpi.h>
 
 /*
 Started out attempting a general implementation in which the subtrees could be

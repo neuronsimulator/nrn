@@ -3,11 +3,11 @@
 
 #undef check
 
-#include "htlist.h"
+#include <ivoc/htlist.h>
 #include "neuron/container/data_handle.hpp"
-#include "nrnmpi.h"
-#include "nrnneosm.h"
-#include "pool.h"
+#include <oc/nrnmpi.h>
+#include <nrncvode/nrnneosm.h>
+#include <nrncvode/pool.h>
 
 #include <InterViews/observe.h>
 

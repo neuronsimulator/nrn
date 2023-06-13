@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <nmodlconf.h>
 
 /* print the .c file from the lists */
 #include "modl.h"

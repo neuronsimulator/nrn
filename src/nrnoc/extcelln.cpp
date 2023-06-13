@@ -1,10 +1,10 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/extcell.cpp,v 1.4 1996/05/21 17:09:19 hines Exp */
 
 #include <stdio.h>
 #include <math.h>
-#include "section.h"
-#include "nrniv_mf.h"
+#include <nrnoc/section.h>
+#include <nrnoc/nrniv_mf.h>
 #include "hocassrt.h"
 #include "parse.hpp"
 

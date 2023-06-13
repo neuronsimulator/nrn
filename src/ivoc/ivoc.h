@@ -6,7 +6,7 @@
 #include <InterViews/session.h>
 #include <OS/string.h>
 #include <stdio.h>
-#include "gui-redirect.h"
+#include <nrnoc/gui-redirect.h>
 extern int nrn_err_dialog_active_;
 
 #include <ostream>

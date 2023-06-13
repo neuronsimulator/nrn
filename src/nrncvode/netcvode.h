@@ -3,11 +3,11 @@
 
 #define PRINT_EVENT 1
 
-#include "mymath.h"
+#include <ivoc/mymath.h>
 
-#include "cvodeobj.h"
+#include <nrncvode/cvodeobj.h>
 #include "neuron/container/data_handle.hpp"
-#include "tqueue.h"
+#include <nrncvode/tqueue.h>
 
 #include <cmath>
 #include <vector>

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #ifdef MINGW
 
@@ -12,7 +12,7 @@
 #include "hoc.h"
 #include "../mswin/extra/d2upath.cpp"
 
-#include "gui-redirect.h"
+#include <nrnoc/gui-redirect.h>
 
 extern char* neuron_home;
 extern char* neuron_home_dos;

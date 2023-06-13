@@ -6,7 +6,7 @@
 #include <errno.h>
 #include "hoc.h"
 
-#include "gui-redirect.h"
+#include <nrnoc/gui-redirect.h>
 
 extern void debugfile(const char*, ...);
 extern int oc_print_from_dll(char*);

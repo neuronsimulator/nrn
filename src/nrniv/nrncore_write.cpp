@@ -92,22 +92,22 @@ correctness has not been validated for cells without gids.
 */
 #include <cstdlib>
 
-#include "section.h"
+#include <nrnoc/section.h>
 #include "parse.hpp"
-#include "nrnmpi.h"
-#include "netcon.h"
-#include "nrncvode.h"
+#include <oc/nrnmpi.h>
+#include <nrncvode/netcon.h>
+#include <nrnoc/nrncvode.h>
 
-#include "vrecitem.h"  // for nrnbbcore_vecplay_write
+#include <nrncvode/vrecitem.h>  // for nrnbbcore_vecplay_write
 #include "nrnsection_mapping.h"
 
 #include "nrncore_write.h"
-#include "nrncore_write/utils/nrncore_utils.h"
+#include <nrniv/nrncore_write/utils/nrncore_utils.h>
 #include "nrncore_write/io/nrncore_io.h"
 #include "nrncore_write/callbacks/nrncore_callbacks.h"
 #include <map>
 
-#include "nrnwrap_dlfcn.h"
+#include <oc/nrnwrap_dlfcn.h>
 
 
 extern NetCvode* net_cvode_instance;

@@ -2,11 +2,11 @@
 #define kssingle_h
 
 #include <math.h>
-#include <mymath.h>
-#include <kschan.h>
-#include <netcon.h>
+#include <ivoc/mymath.h>
+#include <nrniv/kschan.h>
+#include <nrncvode/netcon.h>
 
-#include <mcran4.h>
+#include <oc/mcran4.h>
 
 class KSSingleTrans;
 class KSSingleState;

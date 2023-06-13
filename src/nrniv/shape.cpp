@@ -1,6 +1,6 @@
-#include <../../nrnconf.h>
-#include "classreg.h"
-#include "gui-redirect.h"
+#include <nrnconf.h>
+#include <oc/classreg.h>
+#include <nrnoc/gui-redirect.h>
 
 #if HAVE_IV  // to end of file
 
@@ -22,7 +22,7 @@
 #include <IV-look/kit.h>
 #include <OS/list.h>
 #include <cmath>
-#include "mymath.h"
+#include <ivoc/mymath.h>
 #include "apwindow.h"
 // really only need colors from graph.h
 #include "graph.h"
@@ -30,12 +30,12 @@
 #include "rubband.h"
 #include "scenepic.h"
 #include "rot3band.h"
-#include "nrniv_mf.h"
-#include "nrnoc2iv.h"
-#include "objcmd.h"
+#include <nrnoc/nrniv_mf.h>
+#include <nrniv/nrnoc2iv.h>
+#include <ivoc/objcmd.h>
 #include "idraw.h"
 #include "hocmark.h"
-#include "ocobserv.h"
+#include <ivoc/ocobserv.h>
 #include "parse.hpp"
 #include "ivoc.h"
 

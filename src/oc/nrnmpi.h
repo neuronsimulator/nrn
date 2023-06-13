@@ -1,6 +1,6 @@
 #ifndef nrnmpi_h
 #define nrnmpi_h
-#include "nrnmpiuse.h"
+#include <oc/nrnmpiuse.h>
 
 /* by default nrnmpi_numprocs_world = nrnmpi_numprocs = nrnmpi_numsubworlds and
    nrnmpi_myid_world = nrnmpi_myid and the bulletin board and network communication do
@@ -29,7 +29,7 @@ extern int nrnmpi_use;                     /* NEURON does MPI init and terminate
 extern int nrn_cannot_use_threads_and_mpi; /* 0 if required <= provided from MPI_Init_thread */
 
 
-#include "nrnmpidec.h"
+#include <nrnmpi/nrnmpidec.h>
 
 #endif /*NRNMPI*/
 #endif /*nrnmpi_h*/

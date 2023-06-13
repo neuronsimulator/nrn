@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 /*
 statements that are called during finitialize()
@@ -16,9 +16,9 @@ Type 3 are at the very beginning of finitialize. ie structure changes
 #include <vector>
 #include <cstdio>
 #include <OS/list.h>
-#include <nrnoc2iv.h>
-#include <classreg.h>
-#include <objcmd.h>
+#include <nrniv/nrnoc2iv.h>
+#include <oc/classreg.h>
+#include <ivoc/objcmd.h>
 
 class FInitialHandler {
   public:

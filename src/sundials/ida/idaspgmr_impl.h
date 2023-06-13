@@ -28,8 +28,8 @@ extern "C" {
 
 #include "spgmr.h"
 #include "iterative.h"
-#include "sundialstypes.h"
-#include "nvector.h"
+#include <sundials/shared/sundialstypes.h>
+#include <sundials/shared/nvector.h>
 
 /*
  * -----------------------------------------------------------------

@@ -3,7 +3,7 @@
 
 #include <InterViews/observe.h>
 #include <OS/string.h>
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 class StmtInfo;
 
 class OcPointer: public Observer {

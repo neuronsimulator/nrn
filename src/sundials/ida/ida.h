@@ -23,8 +23,8 @@ extern "C" {
 #endif
 
 #include <stdio.h>
-#include "sundialstypes.h"
-#include "nvector.h"
+#include <sundials/shared/sundialstypes.h>
+#include <sundials/shared/nvector.h>
 
 /*
  * -----------------------------------------------------------------

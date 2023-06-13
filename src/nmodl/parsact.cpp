@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <nmodlconf.h>
 
 /*
  * some parse actions to reduce size of parse.ypp the installation routines can

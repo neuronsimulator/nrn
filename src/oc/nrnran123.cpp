@@ -1,7 +1,7 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <inttypes.h>
-#include <nrnran123.h>
-#include <hocdec.h>
+#include <oc/nrnran123.h>
+#include <oc/hocdec.h>
 #include <stdlib.h>
 #include <math.h>
 #include <Random123/philox.h>

@@ -1,8 +1,8 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
-#include "nrnfilewrap.h"
-#include "nrnoc2iv.h"
-#include "ocfunc.h"
+#include <oc/nrnfilewrap.h>
+#include <nrniv/nrnoc2iv.h>
+#include <oc/ocfunc.h>
 #include "ocjump.h"
 #if HAVE_IV
 #include "ivoc.h"

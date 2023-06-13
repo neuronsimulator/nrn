@@ -64,7 +64,7 @@ mv temp nvector_nrnparallel_ld.cpp
 #define _NVECTOR_NRNPARALLEL_LD_H
 
 
-#include <nrnmpiuse.h>
+#include <oc/nrnmpiuse.h>
 #if NRNMPI_DYNAMICLOAD
 #define MPI_DOUBLE double
 #define MPI_LONG   long
@@ -73,8 +73,8 @@ mv temp nvector_nrnparallel_ld.cpp
 #include <mpi.h>
 #endif
 
-#include "nvector.h"
-#include "sundialstypes.h"
+#include <sundials/shared/nvector.h>
+#include <sundials/shared/sundialstypes.h>
 
 /*
  * -----------------------------------------------------------------

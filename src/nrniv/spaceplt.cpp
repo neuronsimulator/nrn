@@ -1,6 +1,6 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <stdio.h>
-#include "classreg.h"
+#include <oc/classreg.h>
 
 
 #include <vector>
@@ -12,10 +12,10 @@
 #include "utility.h"
 #include "ivoc.h"
 #endif
-#include "ivocvect.h"
-#include "nrniv_mf.h"
-#include "nrnoc2iv.h"
-#include "objcmd.h"
+#include <ivoc/ivocvect.h>
+#include <nrnoc/nrniv_mf.h>
+#include <nrniv/nrnoc2iv.h>
+#include <ivoc/objcmd.h>
 
 extern int nrn_multisplit_active_;
 extern int hoc_execerror_messages;

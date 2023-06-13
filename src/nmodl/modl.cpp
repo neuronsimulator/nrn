@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <nmodlconf.h>
 
 /*
  * int main(int argc, char *argv[]) --- returns 0 if translation is

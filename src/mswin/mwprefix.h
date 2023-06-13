@@ -39,6 +39,6 @@ struct Symbol;
 #undef IGNORE
 #define HOC        1
 #define OOP        1
-#define OC_CLASSES "nrnclass.h"
+#define OC_CLASSES <nrniv/nrnclass.h>
 #define USECVODE   1
 #define USEMATRIX  1

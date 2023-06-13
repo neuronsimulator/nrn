@@ -1,17 +1,17 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <errno.h>
 #include <OS/string.h>
-#include "nrn_ansi.h"
-#include "nrndae_c.h"
-#include "nrniv_mf.h"
-#include "nrnoc2iv.h"
+#include <nrnoc/nrn_ansi.h>
+#include <nrnoc/nrndae_c.h>
+#include <nrnoc/nrniv_mf.h>
+#include <nrniv/nrnoc2iv.h>
 #include "nrndaspk.h"
-#include "cvodeobj.h"
-#include "netcvode.h"
-#include "ivocvect.h"
-#include "vrecitem.h"
-#include "membfunc.h"
-#include "nonvintblock.h"
+#include <nrncvode/cvodeobj.h>
+#include <nrncvode/netcvode.h>
+#include <ivoc/ivocvect.h>
+#include <nrncvode/vrecitem.h>
+#include <nrnoc/membfunc.h>
+#include <nrnoc/nonvintblock.h>
 
 #include <utility>
 
@@ -24,7 +24,7 @@ extern int nrn_errno_check(int);
 
 extern Symlist* hoc_built_in_symlist;
 
-#include "spmatrix.h"
+#include <sparse13/spmatrix.h>
 extern double* sp13mat;
 
 #if 1 || PARANEURON

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 /* hoc */
 const char* RCS_hoc_version = "$Revision: 3 $";

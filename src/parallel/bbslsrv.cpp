@@ -1,9 +1,9 @@
-#include <../../nrnconf.h>
-#include "bbsconf.h"
+#include <nrnconf.h>
+#include <parallel/bbsconf.h>
 #include <stdio.h>
 #include <string.h>
 #include "bbslsrv.h"
-#include "oc_ansi.h"
+#include <oc/oc_ansi.h>
 
 #define INT    1
 #define DOUBLE 2

@@ -1,12 +1,12 @@
 #ifndef cvodeobj_h
 #define cvodeobj_h
 
-#include "nrnmpi.h"
-#include "nrnneosm.h"
-//#include "shared/nvector_serial.h"
-#include "shared/nvector.h"
-#include "membfunc.h"
-#include "netcon.h"
+#include <oc/nrnmpi.h>
+#include <nrncvode/nrnneosm.h>
+//#include <sundials/shared/nvector_serial.h>
+#include <sundials/shared/nvector.h>
+#include <nrnoc/membfunc.h>
+#include <nrncvode/netcon.h>
 
 class NetCvode;
 class Daspk;

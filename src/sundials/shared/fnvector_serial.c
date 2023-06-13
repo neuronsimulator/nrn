@@ -21,7 +21,7 @@
 
 #include "fnvector_serial.h"
 #include "nvector_serial.h"
-#include "sundialstypes.h"
+#include <sundials/shared/sundialstypes.h>
 
 /* Define global variable F2C_vec */
 N_Vector F2C_vec;

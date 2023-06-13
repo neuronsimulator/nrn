@@ -105,8 +105,8 @@
 extern "C" {
 #endif
 
-#include "sundialstypes.h"
-#include "nvector.h"
+#include <sundials/shared/sundialstypes.h>
+#include <sundials/shared/nvector.h>
 #include "band.h"
 
 /*

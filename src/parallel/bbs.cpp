@@ -1,10 +1,10 @@
-#include <../../nrnconf.h>
-#include "nrnmpi.h"
-#include "bbsconf.h"
+#include <nrnconf.h>
+#include <oc/nrnmpi.h>
+#include <parallel/bbsconf.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <InterViews/resource.h>
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 #include "bbs.h"
 #include "bbslocal.h"
 #if defined(NRNMPI)

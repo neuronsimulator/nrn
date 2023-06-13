@@ -2,8 +2,8 @@
 #define tqueue_h
 #undef check
 
-#include <nrnmutdec.h>
-#include <pool.h>
+#include <ivoc/nrnmutdec.h>
+#include <nrncvode/pool.h>
 
 class TQItem;
 using TQItemPool = MutexPool<TQItem>;
@@ -18,7 +18,7 @@ using TQItemPool = MutexPool<TQItem>;
 #elif BBTQ == 4
 #include <spt2queue.h>
 #elif BBTQ == 5
-#include <sptbinq.h>
+#include <nrncvode/sptbinq.h>
 #endif
 
 class SelfQueue {  // not really a queue but a doubly linked list for fast

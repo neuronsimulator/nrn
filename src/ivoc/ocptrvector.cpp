@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /*
  construct a vector of pointers to variables and
  provide fast scatter/gather between Vector and those variables.
@@ -9,15 +9,15 @@
     p.scatter(Vector)
     p.gather(Vector)
 */
-#include "classreg.h"
-#include "oc2iv.h"
-#include "ocptrvector.h"
-#include "objcmd.h"
-#include "ivocvect.h"
+#include <oc/classreg.h>
+#include <ivoc/oc2iv.h>
+#include <ivoc/ocptrvector.h>
+#include <ivoc/objcmd.h>
+#include <ivoc/ivocvect.h>
 #if HAVE_IV
 #include "graph.h"
 #endif
-#include "gui-redirect.h"
+#include <nrnoc/gui-redirect.h>
 
 extern int hoc_return_type_code;
 

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /******************************************************************************
  *
  * File: abort.c
@@ -8,7 +8,7 @@
  *
  ******************************************************************************/
 #include "errcodes.hpp"
-#include "oc_ansi.h"
+#include <oc/oc_ansi.h>
 #include "scoplib.h"
 
 #include <cmath>

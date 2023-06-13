@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <stdio.h>
 #include <string.h>
 #if defined(__linux__)

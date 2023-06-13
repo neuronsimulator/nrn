@@ -6,7 +6,7 @@
 #include <map>
 #include <cstddef>
 #include <cassert>
-#include "section.h"
+#include <nrnoc/section.h>
 
 class PreSyn;
 class NetCon;

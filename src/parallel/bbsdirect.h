@@ -1,7 +1,7 @@
 #ifndef bbsdirect_h
 #define bbsdirect_h
 
-#include <nrnmpiuse.h>
+#include <oc/nrnmpiuse.h>
 
 #include "bbsimpl.h"
 class KeepArgs;

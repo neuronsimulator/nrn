@@ -19,12 +19,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "shared/nvector_serial.h"
-#include "nvector_nrnthread_ld.h"
-#include "shared/sundialsmath.h"
-#include "shared/sundialstypes.h"
-#include "section.h"
-#include "nrnmutdec.h"
+#include <sundials/shared/nvector_serial.h>
+#include <nrniv/nvector_nrnthread_ld.h>
+#include <sundials/shared/sundialsmath.h>
+#include <sundials/shared/sundialstypes.h>
+#include <nrnoc/section.h>
+#include <ivoc/nrnmutdec.h>
 
 #define ZERO   RCONST(0.0)
 #define HALF   RCONST(0.5)

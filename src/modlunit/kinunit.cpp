@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <nmodlconf.h>
 #include "model.h"
 #include "symbol.h"
 #include "units.h"

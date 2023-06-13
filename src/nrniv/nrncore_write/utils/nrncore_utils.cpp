@@ -2,13 +2,13 @@
 #include "nrncore_write/callbacks/nrncore_callbacks.h"
 
 #include "nrnconf.h"
-#include "nrniv_mf.h"
+#include <nrnoc/nrniv_mf.h>
 #include <cstdlib>
-#include "nrndae_c.h"
-#include "section.h"
-#include "hocdec.h"
+#include <nrnoc/nrndae_c.h>
+#include <nrnoc/section.h>
+#include <oc/hocdec.h>
 #include "nrnsection_mapping.h"
-#include "vrecitem.h"  // for nrnbbcore_vecplay_write
+#include <nrncvode/vrecitem.h>  // for nrnbbcore_vecplay_write
 #include "parse.hpp"
 #include <string>
 #include <unistd.h>
@@ -16,7 +16,7 @@
 #include <cerrno>
 #include <filesystem>
 
-#include "nrnwrap_dlfcn.h"
+#include <oc/nrnwrap_dlfcn.h>
 
 // RTLD_NODELETE is used with dlopen
 // if not defined it's safe to define as 0

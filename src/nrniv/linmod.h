@@ -2,11 +2,11 @@
 #define linmod_h
 
 #include <OS/list.h>
-#include "ocmatrix.h"
-#include "ivocvect.h"
-#include "nrnoc2iv.h"
+#include <ivoc/ocmatrix.h>
+#include <ivoc/ivocvect.h>
+#include <nrniv/nrnoc2iv.h>
 #include "matrixmap.h"
-#include "nrndae.h"
+#include <nrniv/nrndae.h>
 
 
 class LinearModelAddition: public NrnDAE {

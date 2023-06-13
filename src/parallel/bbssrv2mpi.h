@@ -1,7 +1,7 @@
 #ifndef bbslsrv2_h
 #define bbslsrv2_h
 
-#include <nrnmpiuse.h>
+#include <oc/nrnmpiuse.h>
 #include <InterViews/resource.h>
 
 class MpiMessageList;

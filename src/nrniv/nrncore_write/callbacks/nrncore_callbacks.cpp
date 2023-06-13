@@ -2,22 +2,22 @@
 #include <unordered_map>
 #include "nrncore_callbacks.h"
 #include "nrnconf.h"
-#include "nrnmpi.h"
-#include "section.h"
-#include "netcon.h"
-#include "nrncvode.h"
-#include "nrniv_mf.h"
-#include "hocdec.h"
-#include "nrncore_write/utils/nrncore_utils.h"
+#include <oc/nrnmpi.h>
+#include <nrnoc/section.h>
+#include <nrncvode/netcon.h>
+#include <nrnoc/nrncvode.h>
+#include <nrnoc/nrniv_mf.h>
+#include <oc/hocdec.h>
+#include <nrniv/nrncore_write/utils/nrncore_utils.h>
 #include "nrncore_write/data/cell_group.h"
 #include "nrncore_write/io/nrncore_io.h"
 #include "parse.hpp"
-#include "nrnran123.h"  // globalindex written to globals.
-#include "netcvode.h"   // for nrnbbcore_vecplay_write and PreSyn.flag_
+#include <oc/nrnran123.h>  // globalindex written to globals.
+#include <nrncvode/netcvode.h>   // for nrnbbcore_vecplay_write and PreSyn.flag_
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-#include "vrecitem.h"  // for nrnbbcore_vecplay_write
+#include <nrncvode/vrecitem.h>  // for nrnbbcore_vecplay_write
 
-#include "nrnwrap_dlfcn.h"
+#include <oc/nrnwrap_dlfcn.h>
 
 extern bbcore_write_t* nrn_bbcore_write_;
 extern bbcore_write_t* nrn_bbcore_read_;

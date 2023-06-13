@@ -18,7 +18,7 @@
 
 #include <../../nrnconf.h>
 #include <hocassrt.h>
-#include <nrnassrt.h>
+#include <oc/nrnassrt.h>
 #if HAVE_POSIX_MEMALIGN
 #define HAVE_MEMALIGN 1
 #endif
@@ -30,9 +30,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "nvector_nrnserial_ld.h"
-#include "shared/sundialsmath.h"
-#include "shared/sundialstypes.h"
+#include <nrniv/nvector_nrnserial_ld.h>
+#include <sundials/shared/sundialsmath.h>
+#include <sundials/shared/sundialstypes.h>
 
 #define ZERO   RCONST(0.0)
 #define HALF   RCONST(0.5)

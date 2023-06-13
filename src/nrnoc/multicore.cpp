@@ -1,8 +1,8 @@
 /* included by treeset.cpp */
-#include <nrnmpi.h>
+#include <oc/nrnmpi.h>
 
-#include "hoclist.h"
-#include "section.h"
+#include <oc/hoclist.h>
+#include <nrnoc/section.h>
 /*
 Now that threads have taken over the actual_v, v_node, etc, it might
 be a good time to regularize the method of freeing, allocating, and

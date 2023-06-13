@@ -1,14 +1,14 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #if HAVE_IV
 #include <Dispatch/iohandler.h>
 #include <Dispatch/dispatcher.h>
 
 #include <stdio.h>
-#include "oc2iv.h"
-#include "objcmd.h"
+#include <ivoc/oc2iv.h>
+#include <ivoc/objcmd.h>
 #endif /* HAVE_IV */
-#include "classreg.h"
+#include <oc/classreg.h>
 
 #ifdef MINGW
 #include <windows.h>

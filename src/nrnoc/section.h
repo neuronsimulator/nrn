@@ -22,8 +22,8 @@
    d is assumed to be non-zero.
    d and rhs is calculated from the property list.
 */
-#include "hoclist.h"
-#include "membfunc.h"
+#include <oc/hoclist.h>
+#include <nrnoc/membfunc.h>
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/container/node_data.hpp"
 #include "neuron/model_data.hpp"
@@ -36,7 +36,7 @@
 #define pc        hoc_pc
 #define spop      hoc_spop
 #define execerror hoc_execerror
-#include "hocdec.h"
+#include <oc/hocdec.h>
 
 #include <optional>
 
@@ -215,7 +215,7 @@ struct Node {
 };
 
 #if !INCLUDEHOCH
-#include "hocdec.h" /* Prop needs Datum and Datum needs Symbol */
+#include <oc/hocdec.h> /* Prop needs Datum and Datum needs Symbol */
 #endif
 
 #define PROP_PY_INDEX 10
@@ -446,7 +446,7 @@ extern void nrn_section_free(Section*);
 extern int nrn_is_valid_section_ptr(void*);
 
 
-#include <multicore.h>
+#include <nrnoc/multicore.h>
 
 #define tstopbit   (1 << 15)
 #define tstopset   stoprun |= tstopbit
@@ -455,4 +455,4 @@ extern int nrn_is_valid_section_ptr(void*);
 /* of any hoc call for integration and before returning to hoc */
 
 
-#include "nrn_ansi.h"
+#include <nrnoc/nrn_ansi.h>

@@ -1,24 +1,24 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/treeset.cpp,v 1.39 1999/07/08 14:25:07 hines Exp */
 
-#include "cvodeobj.h"
-#include "membfunc.h"
+#include <nrncvode/cvodeobj.h>
+#include <nrnoc/membfunc.h>
 #include "multisplit.h"
-#include "nrn_ansi.h"
-#include "neuron.h"
+#include <nrnoc/nrn_ansi.h>
+#include <nrnoc/neuron.h>
 #include "neuron/cache/mechanism_range.hpp"
 #include "neuron/cache/model_data.hpp"
 #include "neuron/container/soa_container.hpp"
-#include "nonvintblock.h"
-#include "nrndae_c.h"
-#include "nrniv_mf.h"
-#include "nrnmpi.h"
-#include "ocnotify.h"
+#include <nrnoc/nonvintblock.h>
+#include <nrnoc/nrndae_c.h>
+#include <nrnoc/nrniv_mf.h>
+#include <oc/nrnmpi.h>
+#include <ivoc/ocnotify.h>
 #include "partrans.h"
-#include "section.h"
-#include "spmatrix.h"
+#include <nrnoc/section.h>
+#include <sparse13/spmatrix.h>
 #include "utils/profile/profiler_interface.h"
-#include "multicore.h"
+#include <nrnoc/multicore.h>
 
 #include <stdio.h>
 #if HAVE_STDLIB_H

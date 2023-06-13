@@ -22,7 +22,7 @@
 #include "fnvector_parallel.h"
 #include "mpi.h"
 #include "nvector_parallel.h"
-#include "sundialstypes.h"
+#include <sundials/shared/sundialstypes.h>
 
 /* Define global variable F2C_vec */
 N_Vector F2C_vec;

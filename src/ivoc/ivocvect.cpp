@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 //#include <string.h>
 #include <cstdio>
@@ -9,7 +9,7 @@
 #include <functional>
 
 #include "fourier.h"
-#include "mymath.h"
+#include <ivoc/mymath.h>
 
 #if HAVE_IV
 #include <InterViews/glyph.h>
@@ -34,14 +34,14 @@
 extern void exit(int status);
 #endif
 
-#include "classreg.h"
+#include <oc/classreg.h>
 #if HAVE_IV
 #include "apwindow.h"
 #include "ivoc.h"
 #include "graph.h"
 #endif
 
-#include "gui-redirect.h"
+#include <nrnoc/gui-redirect.h>
 
 #ifndef PI
 #ifndef M_PI
@@ -110,19 +110,19 @@ static double dmaxint_ = 9007199254740992;
         (_X__) = *((_TYPE__*) &_OUT__);                         \
     }
 
-#include "ivocvect.h"
+#include <ivoc/ivocvect.h>
 
 // definition of random numer generator
 #include "random1.h"
-#include <Uniform.h>
+#include <gnu/Uniform.h>
 
 #if HAVE_IV
 #include "utility.h"
 #endif
-#include "oc2iv.h"
-#include "oc_ansi.h"
-#include "ocfile.h"
-#include "ocfunc.h"
+#include <ivoc/oc2iv.h>
+#include <oc/oc_ansi.h>
+#include <ivoc/ocfile.h>
+#include <oc/ocfunc.h>
 #include "parse.hpp"
 
 extern Object* hoc_thisobject;

@@ -8,7 +8,7 @@
 #endif
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #if defined(USE_PYTHON)
 #undef _POSIX_C_SOURCE

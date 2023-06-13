@@ -1,8 +1,8 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <InterViews/geometry.h>
-#include "mymath.h"
-#include "classreg.h"
-#include "oc2iv.h"
+#include <ivoc/mymath.h>
+#include <oc/classreg.h>
+#include <ivoc/oc2iv.h>
 #include <cmath>
 #include <cstdio>
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "multicore.h"
+#include <nrnoc/multicore.h>
 #include "neuron/container/generic_data_handle.hpp"
 #include "nrnredef.h"
 /**

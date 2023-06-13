@@ -36,7 +36,7 @@
 extern "C" {
 #endif
 
-#include "matrix.h"
+#include <mesch/matrix.h>
 
 /* Unless otherwise specified, factorisation routines overwrite the
    matrix that is being factorised */

@@ -1,14 +1,14 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <string.h>
 #include <stdlib.h>
 #include <OS/list.h>
-#include "nrnoc2iv.h"
-#include "kschan.h"
-#include "kssingle.h"
+#include <nrniv/nrnoc2iv.h>
+#include <nrniv/kschan.h>
+#include <nrniv/kssingle.h>
 
 // needed for DiscreteEvent aspect
-#include "netcvode.h"
-#include "cvodeobj.h"
+#include <nrncvode/netcvode.h>
+#include <nrncvode/cvodeobj.h>
 
 //----------------
 // KSSingleTrans, KSSingleState is only apparently redundant with KSTrans

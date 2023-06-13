@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 // definition of random number generation from the g++ library
 
@@ -7,31 +7,31 @@
 #include "random1.h"
 
 #include <InterViews/resource.h>
-#include "classreg.h"
-#include "oc2iv.h"
-#include "nrnisaac.h"
+#include <oc/classreg.h>
+#include <ivoc/oc2iv.h>
+#include <oc/nrnisaac.h>
 
 #include <vector>
-#include <ocnotify.h>
-#include "ocobserv.h"
-#include <nrnran123.h>
+#include <ivoc/ocnotify.h>
+#include <ivoc/ocobserv.h>
+#include <oc/nrnran123.h>
 
-#include <RNG.h>
-#include <ACG.h>
-#include <MLCG.h>
-#include <Random.h>
-#include <Poisson.h>
-#include <Normal.h>
-#include <Uniform.h>
-#include <Binomial.h>
-#include <DiscUnif.h>
-#include <Erlang.h>
-#include <Geom.h>
-#include <LogNorm.h>
-#include <NegExp.h>
-#include <RndInt.h>
-#include <HypGeom.h>
-#include <Weibull.h>
+#include <gnu/RNG.h>
+#include <gnu/ACG.h>
+#include <gnu/MLCG.h>
+#include <gnu/Random.h>
+#include <gnu/Poisson.h>
+#include <gnu/Normal.h>
+#include <gnu/Uniform.h>
+#include <gnu/Binomial.h>
+#include <gnu/DiscUnif.h>
+#include <gnu/Erlang.h>
+#include <gnu/Geom.h>
+#include <gnu/LogNorm.h>
+#include <gnu/NegExp.h>
+#include <gnu/RndInt.h>
+#include <gnu/HypGeom.h>
+#include <gnu/Weibull.h>
 
 #if HAVE_IV
 #include "ivoc.h"
@@ -58,7 +58,7 @@ class RandomPlay: public Observer, public Resource {
 using RandomPlayList = std::vector<RandomPlay*>;
 static RandomPlayList* random_play_list_;
 
-#include <mcran4.h>
+#include <oc/mcran4.h>
 
 class NrnRandom123: public RNG {
   public:

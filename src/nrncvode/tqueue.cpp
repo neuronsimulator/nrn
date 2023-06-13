@@ -1,9 +1,9 @@
-#include <../../nrnconf.h>
-#include "tqueue.h"
-#include "pool.h"
+#include <nrnconf.h>
+#include <nrncvode/tqueue.h>
+#include <nrncvode/pool.h>
 
-#include "classreg.h"
-#include "nrnoc2iv.h"
+#include <oc/classreg.h>
+#include <nrniv/nrnoc2iv.h>
 
 #define PROFILE 0
 #include "profile.h"
@@ -111,7 +111,7 @@ void TQueue_reg() {
 #elif BBTQ == 4
 #include <spt2queue.cpp>
 #elif BBTQ == 5
-#include <sptbinq.cpp>
+#include <nrncvode/sptbinq.cpp>
 #endif
 
 SelfQueue::SelfQueue(TQItemPool* tp, int mkmut) {

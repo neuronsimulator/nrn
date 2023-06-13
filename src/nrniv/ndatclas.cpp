@@ -1,10 +1,10 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
 #include <InterViews/resource.h>
-#include "nrnoc2iv.h"
-#include "classreg.h"
+#include <nrniv/nrnoc2iv.h>
+#include <oc/classreg.h>
 
-#include "membfunc.h"
+#include <nrnoc/membfunc.h>
 #include "parse.hpp"
 extern Prop* prop_alloc(Prop**, int, Node*);
 extern void single_prop_free(Prop*);

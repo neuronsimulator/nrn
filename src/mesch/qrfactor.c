@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 /**************************************************************************
 **
@@ -42,7 +42,7 @@
 static	char	rcsid[] = "qrfactor.c,v 1.1 1997/12/04 17:55:45 hines Exp";
 
 #include	<stdio.h>
-#include        "matrix2.h"
+#include        <mesch/matrix2.h>
 #include	<math.h>
 
 

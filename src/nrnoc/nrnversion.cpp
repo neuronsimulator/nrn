@@ -1,6 +1,6 @@
-#include <../../nrnconf.h>
-#include "nrn_ansi.h"
-#include "nrnassrt.h"
+#include <nrnconf.h>
+#include <nrnoc/nrn_ansi.h>
+#include <oc/nrnassrt.h>
 #include "nrnconfigargs.h"
 #include "nrnversion.h"
 

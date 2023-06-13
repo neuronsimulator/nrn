@@ -1,7 +1,7 @@
-#include <../../nrnconf.h>
-#include "classreg.h"
-#include "gui-redirect.h"
-#include "ocnotify.h"
+#include <nrnconf.h>
+#include <oc/classreg.h>
+#include <nrnoc/gui-redirect.h>
+#include <ivoc/ocnotify.h>
 
 #if HAVE_IV
 
@@ -22,13 +22,13 @@
 #if HAVE_IV
 #include "graph.h"
 #include "ivoc.h"
-#include "nrnoc2iv.h"
+#include <nrniv/nrnoc2iv.h>
 #include "rubband.h"
 #include "symchoos.h"
-#include "symdir.h"
+#include <ivoc/symdir.h>
 #include "parse.hpp"
 #include "utility.h"
-#include "objcmd.h"
+#include <ivoc/objcmd.h>
 #include "idraw.h"
 
 #define SelectVariable_ "PlotWhat PlotShape"

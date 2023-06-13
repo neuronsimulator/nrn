@@ -5,7 +5,7 @@
  *  Jan 2008 thread safe
  */
 #pragma once
-#include "hocdec.h"  // emalloc
+#include <oc/hocdec.h>  // emalloc
 #include "errcodes.hpp"
 
 #include <cassert>

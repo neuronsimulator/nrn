@@ -1,5 +1,5 @@
 #include "nrnconf.h"
-#include "nrnmpi.h"
+#include <oc/nrnmpi.h>
 #include "../nrncvode/nrnneosm.h"
 
 #include <errno.h>

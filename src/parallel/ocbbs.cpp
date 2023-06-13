@@ -1,20 +1,20 @@
-#include <../../nrnconf.h>
-#include "bbsconf.h"
+#include <nrnconf.h>
+#include <parallel/bbsconf.h>
 #include <InterViews/resource.h>
-#include "classreg.h"
-#include "oc2iv.h"
-#include "ivocvect.h"
-#include "hoclist.h"
+#include <oc/classreg.h>
+#include <ivoc/oc2iv.h>
+#include <ivoc/ivocvect.h>
+#include <oc/hoclist.h>
 #include "bbs.h"
 #include "bbsimpl.h"
-#include "ivocvect.h"
+#include <ivoc/ivocvect.h>
 #include "parse.hpp"
-#include "section.h"
-#include "membfunc.h"
-#include "multicore.h"
-#include "nrnpy.h"
+#include <nrnoc/section.h>
+#include <nrnoc/membfunc.h>
+#include <nrnoc/multicore.h>
+#include <nrniv/nrnpy.h>
 #include "utils/profile/profiler_interface.h"
-#include <nrnmpi.h>
+#include <oc/nrnmpi.h>
 #include <errno.h>
 
 #undef MD
@@ -41,7 +41,7 @@ double nrnmpi_transfer_wait_;
 double nrnmpi_splitcell_wait_;
 #endif
 #if NRNMPI
-#include "nrnmpidec.h"
+#include <nrnmpi/nrnmpidec.h>
 #else
 static void nrnmpi_int_broadcast(int*, int, int) {}
 static void nrnmpi_char_broadcast(char*, int, int) {}

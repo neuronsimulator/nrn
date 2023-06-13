@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/oc/getsym.cpp,v 1.2 1996/02/16 16:19:26 hines Exp */
 /*
 getsym.cpp,v
@@ -64,8 +64,8 @@ getsym.cpp,v
 
 #include "hocgetsym.h"
 #include "parse.hpp"
-#include "hocparse.h"
-#include "code.h"
+#include <oc/hocparse.h>
+#include <oc/code.h>
 
 Psym* hoc_getsym(const char* cp) {
     Symbol *sp, *sym;

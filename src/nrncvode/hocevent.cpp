@@ -1,8 +1,8 @@
-#include <objcmd.h>
-#include <pool.h>
-#include <netcon.h>
-#include <nrnoc2iv.h>
-#include <mymath.h>
+#include <ivoc/objcmd.h>
+#include <nrncvode/pool.h>
+#include <nrncvode/netcon.h>
+#include <nrniv/nrnoc2iv.h>
+#include <ivoc/mymath.h>
 
 using HocEventPool = MutexPool<HocEvent>;
 HocEventPool* HocEvent::hepool_;

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 /*
 
@@ -168,13 +168,13 @@ callback to bbss_early when needed.
 */
 
 #include "bbsavestate.h"
-#include "classreg.h"
+#include <oc/classreg.h>
 #include "ndatclas.h"
-#include "nrncvode.h"
-#include "nrnoc2iv.h"
-#include "ocfile.h"
+#include <nrnoc/nrncvode.h>
+#include <nrniv/nrnoc2iv.h>
+#include <ivoc/ocfile.h>
 #include <cmath>
-#include <nrnmpiuse.h>
+#include <oc/nrnmpiuse.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
@@ -182,10 +182,10 @@ callback to bbss_early when needed.
 #include <unordered_map>
 #include <unordered_set>
 
-#include "netcon.h"
-#include "nrniv_mf.h"
-#include "tqueue.h"
-#include "vrecitem.h"
+#include <nrncvode/netcon.h>
+#include <nrnoc/nrniv_mf.h>
+#include <nrncvode/tqueue.h>
+#include <nrncvode/vrecitem.h>
 
 // on mingw, OUT became defined
 #undef IN
@@ -198,7 +198,7 @@ static void bbss_early(double td, TQItem* tq);
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
-#include "membfunc.h"
+#include <nrnoc/membfunc.h>
 extern int section_count;
 extern "C" void nrn_shape_update();
 extern Section* nrn_section_exists(char* name, int index, Object* cell);
@@ -633,7 +633,7 @@ static double restore(void* v) {
     return 1.;
 }
 
-#include <ivocvect.h>
+#include <ivoc/ivocvect.h>
 static double save_request(void* v) {
     int *gids, *sizes;
     Vect* gidvec = vector_arg(1);

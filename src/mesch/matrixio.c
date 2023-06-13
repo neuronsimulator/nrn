@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 /**************************************************************************
 **
@@ -30,7 +30,7 @@
 
 #include        <stdio.h>
 #include        <ctype.h>
-#include        "matrix.h"
+#include        <mesch/matrix.h>
 
 static char rcsid[] = "matrixio.c,v 1.1 1997/12/04 17:55:35 hines Exp";
 

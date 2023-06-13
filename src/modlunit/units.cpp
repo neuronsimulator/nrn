@@ -1,8 +1,8 @@
-#include <../../nmodlconf.h>
+#include <nmodlconf.h>
 /* /local/src/master/nrn/src/modlunit/units.c,v 1.5 1997/11/24 16:19:13 hines Exp */
 /* Mostly from Berkeley */
 #include "model.h"
-#include "nrnassrt.h"
+#include <oc/nrnassrt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>

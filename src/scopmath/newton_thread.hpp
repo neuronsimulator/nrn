@@ -5,7 +5,7 @@
 #include "crout_thread.hpp"
 #include "errcodes.hpp"
 #include "newton_struct.h"
-#include "oc_ansi.h"
+#include <oc/oc_ansi.h>
 
 #include <cmath>
 #include <cstdlib>

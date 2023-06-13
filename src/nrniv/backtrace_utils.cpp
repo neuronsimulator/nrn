@@ -1,4 +1,4 @@
-#include "backtrace_utils.h"
+#include <nrniv/backtrace_utils.h>
 
 #ifdef USE_BACKWARD
 #include "backward.hpp"

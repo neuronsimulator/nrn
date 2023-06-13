@@ -9,7 +9,7 @@
 #include <stdio.h>
 #endif
 
-#include "oc_ansi.h"
+#include <oc/oc_ansi.h>
 #if defined(__STDC__)
 #undef assert
 #define assert(ex)                                                                       \

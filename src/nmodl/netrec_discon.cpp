@@ -51,7 +51,7 @@ that only dsi/dt that is affected by sj will change si.
 
 */
 
-#include <../../nmodlconf.h>
+#include <nmodlconf.h>
 
 #include <stdlib.h>
 #include <string.h>

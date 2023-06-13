@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/oc/axis.cpp,v 1.2 1999/01/04 13:04:55 hines Exp */
 /*
 axis.cpp,v
@@ -135,7 +135,7 @@ axis.cpp,v
 #include <stdlib.h>
 #include <math.h>
 #include "hoc.h"
-#include "gui-redirect.h"
+#include <nrnoc/gui-redirect.h>
 
 #define CLIP 1e9
 #define XS   500.

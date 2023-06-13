@@ -1,14 +1,14 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #include <stdio.h>
 #include <InterViews/resource.h>
-#include <nrnoc2iv.h>
-#include <classreg.h>
+#include <nrniv/nrnoc2iv.h>
+#include <oc/classreg.h>
 #include <nrnpython.h>
 #include <hoccontext.h>
-#include "nrnpy.h"
+#include <nrniv/nrnpy.h>
 #include "nrnpy_utils.h"
-#include "oc_ansi.h"
+#include <oc/oc_ansi.h>
 
 #include "parse.hpp"
 static void nrnpy_decref_defer(PyObject*);
@@ -782,7 +782,7 @@ char* call_picklef(char* fname, std::size_t size, int narg, std::size_t* retsize
     return rs;
 }
 
-#include "nrnmpi.h"
+#include <oc/nrnmpi.h>
 
 int* mk_displ(int* cnts) {
     int* displ = new int[nrnmpi_numprocs + 1];

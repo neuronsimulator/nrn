@@ -1,15 +1,15 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #undef check
-#include "nrniv_mf.h"
-#include "nrnmpi.h"
-#include "nrn_ansi.h"
+#include <nrnoc/nrniv_mf.h>
+#include <oc/nrnmpi.h>
+#include <nrnoc/nrn_ansi.h>
 #include "nonlinz.h"
 #include <InterViews/resource.h>
 #include <complex>
-#include "nrnoc2iv.h"
-#include "classreg.h"
+#include <nrniv/nrnoc2iv.h>
+#include <oc/classreg.h>
 #include <stdio.h>
-#include "membfunc.h"
+#include <nrnoc/membfunc.h>
 extern void setup_topology();
 extern void recalc_diam();
 

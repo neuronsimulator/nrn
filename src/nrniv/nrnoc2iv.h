@@ -2,9 +2,9 @@
 #define nrnoc2iv_h
 // common things in nrnoc that can be used by nrniv
 
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 
-#include "section.h"
+#include <nrnoc/section.h>
 
 #include "ndatclas.h"
 

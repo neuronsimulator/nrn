@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
 #include <string.h>
@@ -20,7 +20,7 @@
 
 #include "graph.h"
 #include "utility.h"
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 #include "ivoc.h"
 
 bool nrn_spec_dialog_pos(Coord& x, Coord& y) {

@@ -1,26 +1,26 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <vector>
 #include <cmath>
 
 #define v_elem(v, i) (*(vector_vec(v) + i))
 
-#include "ivocvect.h"
-#include "oc2iv.h"
+#include <ivoc/ivocvect.h>
+#include <ivoc/oc2iv.h>
 
 #undef error
 
 extern "C" {
 #undef OUT           /* /usr/x86_64-w64-mingw32/sys-root/mingw/include/windef.h */
-#include "matrix.h"  //meschach
-#include "matrix2.h"
-#include "sparse.h"
-#include "sparse2.h"
+#include <mesch/matrix.h>  //meschach
+#include <mesch/matrix2.h>
+#include <mesch/sparse.h>
+#include <mesch/sparse2.h>
 extern MAT* m_get(int, int);
 }  // extern "C"
 
 int nrn_matrix_dim(void*, int);
 
-#include "ocmatrix.h"
+#include <ivoc/ocmatrix.h>
 using std::vector;
 
 int nrn_matrix_dim(void* vm, int d) {

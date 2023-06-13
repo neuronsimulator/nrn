@@ -1,11 +1,11 @@
 #include "cell_group.h"
-#include "nrncore_write/utils/nrncore_utils.h"
-#include "nrnran123.h"  // globalindex written to globals.dat
-#include "section.h"
+#include <nrniv/nrncore_write/utils/nrncore_utils.h>
+#include <oc/nrnran123.h>  // globalindex written to globals.dat
+#include <nrnoc/section.h>
 #include "parse.hpp"
-#include "nrnmpi.h"
-#include "netcon.h"
-#include "netcvode.h"
+#include <oc/nrnmpi.h>
+#include <nrncvode/netcon.h>
+#include <nrncvode/netcvode.h>
 extern NetCvode* net_cvode_instance;
 
 #include <limits>

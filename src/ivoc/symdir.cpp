@@ -1,22 +1,22 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <stdlib.h>
 #include <InterViews/resource.h>
 #include <OS/list.h>
 #include <OS/string.h>
 #include <stdio.h>
-#include "ocobserv.h"
+#include <ivoc/ocobserv.h>
 
-#include "nrniv_mf.h"
-#include "nrnoc2iv.h"
+#include <nrnoc/nrniv_mf.h>
+#include <nrniv/nrnoc2iv.h>
 
-#include "membfunc.h"
+#include <nrnoc/membfunc.h>
 #include "parse.hpp"
-#include "hoclist.h"
+#include <oc/hoclist.h>
 extern Symlist* hoc_symlist;
 extern Objectdata* hoc_top_level_data;
 extern Symlist *hoc_built_in_symlist, *hoc_top_level_symlist;
 #include "string.h"
-#include "symdir.h"
+#include <ivoc/symdir.h>
 
 #include "nrnsymdiritem.h"
 implementPtrList(SymbolList, SymbolItem);

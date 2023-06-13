@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /*
 Section reference
 Allows sections to be stored as variables and passed as arguments by
@@ -16,10 +16,10 @@ access s1.sec	// soma becomes the default section
 */
 
 #include <stdlib.h>
-#include "section.h"
+#include <nrnoc/section.h>
 #include "parse.hpp"
-#include "hoc_membf.h"
-#include "oc_ansi.h"
+#include <oc/hoc_membf.h>
+#include <oc/oc_ansi.h>
 
 extern int hoc_return_type_code;
 

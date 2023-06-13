@@ -9,17 +9,17 @@
 #include "secbrows.h"
 #include "ivoc.h"
 #endif
-#include "nrniv_mf.h"
-#include "nrnoc2iv.h"
-#include "nrnpy.h"
+#include <nrnoc/nrniv_mf.h>
+#include <nrniv/nrnoc2iv.h>
+#include <nrniv/nrnpy.h>
 #include "nrnmenu.h"
-#include "classreg.h"
-#include "gui-redirect.h"
+#include <oc/classreg.h>
+#include <nrnoc/gui-redirect.h>
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 extern int hoc_return_type_code;
 // from nrnoc
-#include "membfunc.h"
+#include <nrnoc/membfunc.h>
 #include "parse.hpp"
 extern Symlist* hoc_built_in_symlist;
 extern Symbol** pointsym;

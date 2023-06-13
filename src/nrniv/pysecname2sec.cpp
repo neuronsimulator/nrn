@@ -1,11 +1,11 @@
 #include <../../nrnconf.h>
 
 #include <stdio.h>
-#include <hocparse.h>
+#include <oc/hocparse.h>
 
 #include <parse.hpp>
 
-#include <nrnoc2iv.h>
+#include <nrniv/nrnoc2iv.h>
 
 #include "nrnsymdiritem.h"
 

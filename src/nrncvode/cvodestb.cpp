@@ -1,16 +1,16 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 // solver CVode stub to allow cvode as dll for mswindows version.
 
 #include <cmath>
-#include "classreg.h"
-#include "cvodeobj.h"
-#include "nrncvode.h"
-#include "nrniv_mf.h"
-#include "nrnoc2iv.h"
-#include "datapath.h"
+#include <oc/classreg.h>
+#include <nrncvode/cvodeobj.h>
+#include <nrnoc/nrncvode.h>
+#include <nrnoc/nrniv_mf.h>
+#include <nrniv/nrnoc2iv.h>
+#include <ivoc/datapath.h>
 #if USECVODE
-#include "cvodeobj.h"
-#include "netcvode.h"
+#include <nrncvode/cvodeobj.h>
+#include <nrncvode/netcvode.h>
 #else
 class Cvode;
 #endif

@@ -1,7 +1,7 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 // solver interface to CVode
 
-#include "nrnmpi.h"
+#include <oc/nrnmpi.h>
 
 void cvode_finitialize();
 extern void (*nrn_multisplit_setup_)();
@@ -10,22 +10,22 @@ extern int hoc_return_type_code;
 
 #include <cmath>
 #include <cstdlib>
-#include "classreg.h"
-#include "nrnoc2iv.h"
-#include "datapath.h"
-#include "cvodeobj.h"
-#include "netcvode.h"
-#include "membfunc.h"
-#include "nrn_ansi.h"
-#include "nrncvode.h"
+#include <oc/classreg.h>
+#include <nrniv/nrnoc2iv.h>
+#include <ivoc/datapath.h>
+#include <nrncvode/cvodeobj.h>
+#include <nrncvode/netcvode.h>
+#include <nrnoc/membfunc.h>
+#include <nrnoc/nrn_ansi.h>
+#include <nrnoc/nrncvode.h>
 #include "nrndaspk.h"
-#include "nrniv_mf.h"
-#include "nrnpy.h"
-#include "tqueue.h"
-#include "mymath.h"
-#include "htlist.h"
+#include <nrnoc/nrniv_mf.h>
+#include <nrniv/nrnpy.h>
+#include <nrncvode/tqueue.h>
+#include <ivoc/mymath.h>
+#include <ivoc/htlist.h>
 #include <OS/list.h>
-#include <nrnmutdec.h>
+#include <ivoc/nrnmutdec.h>
 
 #if NRN_ENABLE_THREADS
 static MUTDEC
@@ -48,15 +48,15 @@ static MUTDEC
 // about illegal overloading in math.h
 // and math.h alone just moves the problem
 // to these
-//#include "shared/sundialstypes.h"
-//#include "shared/nvector_serial.h"
-#include "cvodes/cvodes.h"
-#include "cvodes/cvodes_impl.h"
-#include "cvodes/cvdense.h"
-#include "cvodes/cvdiag.h"
-#include "shared/dense.h"
-#include "ida/ida.h"
-#include "nonvintblock.h"
+//#include <sundials/shared/sundialstypes.h>
+//#include <sundials/shared/nvector_serial.h>
+#include <sundials/cvodes/cvodes.h>
+#include <sundials/cvodes/cvodes_impl.h>
+#include <sundials/cvodes/cvdense.h>
+#include <sundials/cvodes/cvdiag.h>
+#include <sundials/shared/dense.h>
+#include <sundials/ida/ida.h>
+#include <nrnoc/nonvintblock.h>
 
 extern double dt, t;
 #define nt_dt nrn_threads->_dt

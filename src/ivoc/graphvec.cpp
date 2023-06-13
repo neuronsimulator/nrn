@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
 #define USEGNU 1
@@ -7,8 +7,8 @@
 #include "ivoc.h"
 
 #if USEGNU
-#include "oc2iv.h"
-#include "ivocvect.h"
+#include <ivoc/oc2iv.h>
+#include <ivoc/ivocvect.h>
 
 Object** DataVec::new_vect(GLabel* gl) const {
     int i, cnt;

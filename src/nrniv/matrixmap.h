@@ -4,8 +4,8 @@
 // this defines things needed by ocmatrix
 #include <OS/list.h>
 
-#include "ocmatrix.h"
-#include "nrnoc2iv.h"
+#include <ivoc/ocmatrix.h>
+#include <nrniv/nrnoc2iv.h>
 
 class MatrixMap {
   public:

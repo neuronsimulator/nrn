@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #if HAVE_IV
 #include <OS/string.h>
@@ -14,14 +14,14 @@
 #include <stdio.h>
 #include "ocbox.h"
 #include "apwindow.h"
-#include "objcmd.h"
+#include <ivoc/objcmd.h>
 #include "ivoc.h"
 #endif /* HAVE_IV */
 
-#include "oc2iv.h"
-#include "classreg.h"
+#include <ivoc/oc2iv.h>
+#include <oc/classreg.h>
 
-#include "gui-redirect.h"
+#include <nrnoc/gui-redirect.h>
 
 extern int hoc_return_type_code;
 

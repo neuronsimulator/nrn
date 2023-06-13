@@ -1,15 +1,15 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 /* do not want the redef in the dynamic load case */
-#include <nrnmpiuse.h>
+#include <oc/nrnmpiuse.h>
 
 #if NRNMPI_DYNAMICLOAD
-#include <nrnmpi_dynam.h>
+#include <nrnmpi/nrnmpi_dynam.h>
 #endif
 
-#include <nrnmpi.h>
+#include <oc/nrnmpi.h>
 
 #if NRNMPI
 #if HAVE_STRING_H
@@ -18,9 +18,9 @@
 #include <assert.h>
 #include <errno.h>
 #include <mpi.h>
-#include <nrnmpidec.h>
-#include <nrnmpi_impl.h>
-#include <hocdec.h>
+#include <nrnmpi/nrnmpidec.h>
+#include <nrnmpi/nrnmpi_impl.h>
+#include <oc/hocdec.h>
 
 #if 0
 #define guard(f) nrn_assert(f == MPI_SUCCESS)

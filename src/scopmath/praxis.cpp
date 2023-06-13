@@ -1,6 +1,6 @@
-#include <../../nrnconf.h>
-#include "mcran4.h"
-#include "oc_ansi.h"
+#include <nrnconf.h>
+#include <oc/mcran4.h>
+#include <oc/oc_ansi.h>
 #include "scoplib.h"
 
 #include <cmath>

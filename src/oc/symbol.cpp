@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/oc/symbol.cpp,v 1.9 1999/02/25 18:01:58 hines Exp */
 /* version 7.2.1 2-jan-89 */
 
@@ -14,11 +14,11 @@
 #endif
 
 #include "hoc.h"
-#include "hocdec.h"
-#include "hoclist.h"
-#include "nrncore_write/utils/nrncore_utils.h"
-#include "oc_ansi.h"
-#include "ocnotify.h"
+#include <oc/hocdec.h>
+#include <oc/hoclist.h>
+#include <nrniv/nrncore_write/utils/nrncore_utils.h>
+#include <oc/oc_ansi.h>
+#include <ivoc/ocnotify.h>
 #include "parse.hpp"
 
 #include <stdio.h>
@@ -32,7 +32,7 @@
 #include <alloc.h> /* at least for turbo C 2.0 */
 #endif
 
-#include "nrnmpiuse.h"
+#include <oc/nrnmpiuse.h>
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach/mach.h>

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #if HAVE_IV
 #include <OS/string.h>
@@ -10,10 +10,10 @@
 #include <stdio.h>
 #include "ocdeck.h"
 #include "apwindow.h"
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 #endif /* HAVE_IV */
-#include "classreg.h"
-#include "gui-redirect.h"
+#include <oc/classreg.h>
+#include <nrnoc/gui-redirect.h>
 
 #if HAVE_IV
 class SpecialPatch: public Patch {

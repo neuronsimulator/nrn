@@ -1,9 +1,9 @@
 
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
-#include "oc2iv.h"
-#include "classreg.h"
-#include "gui-redirect.h"
+#include <ivoc/oc2iv.h>
+#include <oc/classreg.h>
+#include <nrnoc/gui-redirect.h>
 
 #if HAVE_IV  // to end of file except for a few small fragments.
 
@@ -32,13 +32,13 @@
 #include <InterViews/resource.h>
 
 #include <InterViews/display.h>
-#include "mymath.h"
+#include <ivoc/mymath.h>
 #include "xmenu.h"
-#include "datapath.h"
+#include <ivoc/datapath.h>
 #include "ivoc.h"
 #include "bndedval.h"
-#include "nrnpy.h"
-#include "objcmd.h"
+#include <nrniv/nrnpy.h>
+#include <ivoc/objcmd.h>
 #include "parse.hpp"
 #include "utility.h"
 #include "scenepic.h"

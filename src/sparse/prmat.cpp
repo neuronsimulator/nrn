@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /*LINTLIBRARY*/
 #if LINT
 #define IGNORE(arg)	{if(arg);}

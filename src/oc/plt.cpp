@@ -1,11 +1,11 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #define FIG                    \
     1 /* version 7.1.1 12/8/88 \
 added plots in fig format      \
 */
 #include "hoc.h"
-#include "gui-redirect.h"
+#include <nrnoc/gui-redirect.h>
 
 extern void Fig_file(const char*, int);
 

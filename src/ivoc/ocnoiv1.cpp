@@ -1,11 +1,11 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #if !HAVE_IV  // to end of file
 
 // things we DO NOT want
 
-#include "hocdec.h"
-#include "nrnpy.h"
+#include <oc/hocdec.h>
+#include <nrniv/nrnpy.h>
 
 extern void hoc_ret();
 extern void hoc_pushx(double);

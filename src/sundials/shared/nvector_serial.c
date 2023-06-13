@@ -30,7 +30,7 @@
 
 #include "nvector_serial.h"
 #include "sundialsmath.h"
-#include "sundialstypes.h"
+#include <sundials/shared/sundialstypes.h>
 
 #define ZERO   RCONST(0.0)
 #define HALF   RCONST(0.5)

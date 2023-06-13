@@ -1,8 +1,8 @@
 #ifndef glinerec_h
 #define glinerec_h
 
-#include "nrnoc2iv.h"
-#include "vrecitem.h"
+#include <nrniv/nrnoc2iv.h>
+#include <nrncvode/vrecitem.h>
 #include "graph.h"
 
 #include <vector>

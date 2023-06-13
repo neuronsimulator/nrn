@@ -24,7 +24,7 @@
 #include "cvdiag.h"
 #include "cvodea_impl.h"
 #include "sundialsmath.h"
-#include "sundialstypes.h"
+#include <sundials/shared/sundialstypes.h>
 
 /*=================================================================*/
 /*BEGIN             Macros                                         */

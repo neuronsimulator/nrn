@@ -1,5 +1,5 @@
 #pragma once
-#include "wrap_sprintf.h"
+#include <oc/wrap_sprintf.h>
 
 #include <stdio.h>
 #if HAVE_STRING_H

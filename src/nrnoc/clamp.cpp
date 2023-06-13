@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/clamp.cpp,v 1.2 1997/08/15 13:04:10 hines Exp */
 
 /* modified from fstim.cpp */
@@ -24,9 +24,9 @@ fclampi()
 */
 
 #include <stdlib.h>
-#include "neuron.h"
-#include "section.h"
-#include "nrniv_mf.h"
+#include <nrnoc/neuron.h>
+#include <nrnoc/section.h>
+#include <nrnoc/nrniv_mf.h>
 
 
 static double loc;

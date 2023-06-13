@@ -1,12 +1,12 @@
-#include <../../nrnconf.h>
-#include <nrnmpi.h>
-#include "bbsconf.h"
+#include <nrnconf.h>
+#include <oc/nrnmpi.h>
+#include <parallel/bbsconf.h>
 #ifdef NRNMPI  // to end of file
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <InterViews/resource.h>
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 #include "bbs.h"
 #include "bbsdirect.h"
 #include "bbssrv2mpi.h"

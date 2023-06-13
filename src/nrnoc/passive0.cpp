@@ -1,9 +1,9 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/passive0.cpp,v 1.2 1997/03/13 14:18:02 hines Exp */
 
-#include "section.h"
-#include "membdef.h"
-#include "nrniv_mf.h"
+#include <nrnoc/section.h>
+#include <nrnoc/membdef.h>
+#include <nrnoc/nrniv_mf.h>
 
 #define nparm 2
 static const char* mechanism[] = {"0", "fastpas", "g_fastpas", "e_fastpas", 0, 0, 0};

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 /**************************************************************************
 **
@@ -31,7 +31,7 @@
 */
 
 #include	<stdio.h>
-#include        "sparse2.h"
+#include        <mesch/sparse2.h>
 #include	<math.h>
 
 

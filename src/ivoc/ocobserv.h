@@ -1,7 +1,7 @@
 #ifndef ocobserve_h
 #define ocobserve_h
 
-#include "oc_ansi.h"
+#include <oc/oc_ansi.h>
 
 #include <InterViews/observe.h>
 

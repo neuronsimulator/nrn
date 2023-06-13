@@ -1,14 +1,14 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/oc/hoc_init.cpp,v 1.25 1999/11/08 17:48:58 hines Exp */
 
 #include "hoc.h"
 #include "parse.hpp"
 #include <math.h>
 #include "equation.h"
-#include "nrnunits_modern.h"
+#include <oc/nrnunits_modern.h>
 
-#include "nrn_ansi.h"
-#include "ocfunc.h"
+#include <nrnoc/nrn_ansi.h>
+#include <oc/ocfunc.h>
 
 
 extern void hoc_nrnmpi_init();

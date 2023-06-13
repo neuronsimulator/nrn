@@ -1,6 +1,6 @@
 #include "arraypool.h"   // ArrayPool
-#include "hocdec.h"      // Datum
-#include "section.h"     // Section
+#include <oc/hocdec.h>      // Datum
+#include <nrnoc/section.h>     // Section
 #include "structpool.h"  // Pool
 
 #include <memory>

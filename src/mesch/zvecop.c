@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 /**************************************************************************
 **
@@ -26,7 +26,7 @@
 
 
 #include	<stdio.h>
-#include	"matrix.h"
+#include	<mesch/matrix.h>
 #include	"zmatrix.h"
 static	char	rcsid[] = "zvecop.c,v 1.1 1997/12/04 17:56:19 hines Exp";
 

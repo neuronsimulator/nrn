@@ -1,5 +1,5 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#include <Random.h>
+#include <gnu/Random.h>

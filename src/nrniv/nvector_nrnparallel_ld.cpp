@@ -22,7 +22,7 @@
 #include <stdlib.h>
 
 /* for NRNMPI_DYNAMICLOAD */
-#include <nrnmpiuse.h>
+#include <oc/nrnmpiuse.h>
 #if NRNMPI_DYNAMICLOAD
 extern "C" void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
 extern "C" void nrnmpi_longdbl_allreduce_vec(long double* src,
@@ -39,7 +39,7 @@ extern int nrnmpi_numprocs;
 extern MPI_Comm nrnmpi_comm;
 #endif
 #include "sundialsmath.h"
-#include "sundialstypes.h"
+#include <sundials/shared/sundialstypes.h>
 
 #define ZERO   RCONST(0.0)
 #define HALF   RCONST(0.5)

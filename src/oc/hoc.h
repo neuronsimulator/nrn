@@ -2,5 +2,5 @@
 #ifndef hoc_h
 #define hoc_h
 #include "redef.h"
-#include "hocdec.h"
+#include <oc/hocdec.h>
 #endif

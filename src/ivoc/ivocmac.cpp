@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #include <CodeFragments.h>
 
@@ -7,8 +7,8 @@
 #include "apwindow.h"
 #include "ivoc.h"
 #include "rubband.h"
-#include "symdir.h"
-#include "oc2iv.h"
+#include <ivoc/symdir.h>
+#include <ivoc/oc2iv.h>
 #include "graph.h"
 #include <InterViews/window.h>
 #include <IV-Mac/window.h>

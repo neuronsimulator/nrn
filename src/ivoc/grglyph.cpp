@@ -1,8 +1,8 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 // hoc level Glyph implementation for graphing
 #include <stdio.h>
-#include "classreg.h"
-#include "oc2iv.h"
+#include <oc/classreg.h>
+#include <ivoc/oc2iv.h>
 #if HAVE_IV
 #include "ivoc.h"
 #include <InterViews/printer.h>
@@ -24,7 +24,7 @@ class GrGlyph: public Resource {
 };
 #endif  // HAVE_IV
 
-#include "gui-redirect.h"
+#include <nrnoc/gui-redirect.h>
 
 double gr_addglyph(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.addglyph", v);

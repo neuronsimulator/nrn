@@ -2,8 +2,8 @@
 #define classreg_h
 #include <stdio.h>
 
-#include <hocdec.h>
-#include <hoc_membf.h>
+#include <oc/hocdec.h>
+#include <oc/hoc_membf.h>
 
 
 extern void class2oc(const char*,

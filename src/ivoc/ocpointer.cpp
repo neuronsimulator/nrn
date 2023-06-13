@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /*
  provide a pointer to the interpreter
     p = new Pointer(string) or p = new Pointer(&var)
@@ -11,12 +11,12 @@
 */
 #include <InterViews/observe.h>
 #include <string.h>
-#include "classreg.h"
-#include "oc_ansi.h"
-#include "oc2iv.h"
+#include <oc/classreg.h>
+#include <oc/oc_ansi.h>
+#include <ivoc/oc2iv.h>
 #include "ocpointer.h"
 #include "parse.hpp"
-#include "ocnotify.h"
+#include <ivoc/ocnotify.h>
 
 #if HAVE_IV
 #include "ivoc.h"

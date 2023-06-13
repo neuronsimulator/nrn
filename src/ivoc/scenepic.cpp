@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
 #include <IV-look/kit.h>
@@ -9,13 +9,13 @@
 #include <OS/string.h>
 #include <stdio.h>
 #include "ivoc.h"
-#include "mymath.h"
+#include <ivoc/mymath.h>
 #include "scenevie.h"
 #include "scenepic.h"
 #include "rubband.h"
 #include "apwindow.h"
 #include "utility.h"
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 
 #define Scene_SceneMover_     "Translate Scene"
 #define Scene_SceneZoom_      "ZoomInOut Scene"

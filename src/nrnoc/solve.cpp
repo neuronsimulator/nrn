@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/solve.cpp,v 1.15 1999/07/12 14:34:13 hines Exp */
 
 /* solve.cpp 15-Dec-88 */
@@ -51,13 +51,13 @@ node.v + extnode.v[0]
 
 #endif
 
-#include "membdef.h"
-#include "membfunc.h"
-#include "nrniv_mf.h"
-#include "nrnmpiuse.h"
-#include "ocnotify.h"
-#include "section.h"
-#include "spmatrix.h"
+#include <nrnoc/membdef.h>
+#include <nrnoc/membfunc.h>
+#include <nrnoc/nrniv_mf.h>
+#include <oc/nrnmpiuse.h>
+#include <ivoc/ocnotify.h>
+#include <nrnoc/section.h>
+#include <sparse13/spmatrix.h>
 #include "treeset.h"
 
 #include <stdio.h>

@@ -1,22 +1,22 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #undef check
 #include <InterViews/resource.h>
 #include <stdio.h>
 #include <inttypes.h>
-#include "ocfile.h"
-#include "nrncvode.h"
-#include "nrnoc2iv.h"
-#include "classreg.h"
+#include <ivoc/ocfile.h>
+#include <nrnoc/nrncvode.h>
+#include <nrniv/nrnoc2iv.h>
+#include <oc/classreg.h>
 #include "ndatclas.h"
-#include "nrniv_mf.h"
+#include <nrnoc/nrniv_mf.h>
 
-#include "tqueue.h"
-#include "netcon.h"
-#include "vrecitem.h"
+#include <nrncvode/tqueue.h>
+#include <nrncvode/netcon.h>
+#include <nrncvode/vrecitem.h>
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
-#include "membfunc.h"
+#include <nrnoc/membfunc.h>
 extern int section_count;
 extern "C" void nrn_shape_update();
 extern Section** secorder;

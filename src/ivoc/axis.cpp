@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
 #include <cstdio>
@@ -9,9 +9,9 @@
 #include <IV-look/kit.h>
 #include <cmath>
 #include "scenevie.h"
-#include "mymath.h"
+#include <ivoc/mymath.h>
 #include "axis.h"
-#include "hocdec.h"
+#include <oc/hocdec.h>
 #include "rect.h"
 #include "graph.h"
 #include "idraw.h"

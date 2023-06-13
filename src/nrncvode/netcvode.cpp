@@ -1,43 +1,43 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 // define to 0 if do not wish use_min_delay_ to ever be 1
 #define USE_MIN_DELAY 1
 
 #include <stdlib.h>
-#include <nrnmpi.h>
+#include <oc/nrnmpi.h>
 #include <errno.h>
 #include <time.h>
 #include <InterViews/regexp.h>
-#include "classreg.h"
-#include "nrnoc2iv.h"
+#include <oc/classreg.h>
+#include <nrniv/nrnoc2iv.h>
 #include "parse.hpp"
-#include "cvodeobj.h"
-#include "hoclist.h"
-#include "pool.h"
-#include "tqueue.h"
-#include "ocobserv.h"
-#include "nrnneosm.h"
-#include "datapath.h"
-#include "objcmd.h"
-#include "shared/sundialsmath.h"
-#include "kssingle.h"
-#include "ocnotify.h"
+#include <nrncvode/cvodeobj.h>
+#include <oc/hoclist.h>
+#include <nrncvode/pool.h>
+#include <nrncvode/tqueue.h>
+#include <ivoc/ocobserv.h>
+#include <nrncvode/nrnneosm.h>
+#include <ivoc/datapath.h>
+#include <ivoc/objcmd.h>
+#include <sundials/shared/sundialsmath.h>
+#include <nrniv/kssingle.h>
+#include <ivoc/ocnotify.h>
 #if HAVE_IV
 #include "ivoc.h"
 #include "glinerec.h"
 #include "ocjump.h"
 #endif
-#include "vrecitem.h"
-#include "oclist.h"
+#include <nrncvode/vrecitem.h>
+#include <ivoc/oclist.h>
 #define PROFILE 0
-#include "htlist.h"
-#include "ivocvect.h"
-#include "netcon.h"
-#include "netcvode.h"
-#include "nrn_ansi.h"
-#include "nrncore_write/utils/nrncore_utils.h"
-#include "nrniv_mf.h"
-#include "nrnste.h"
+#include <ivoc/htlist.h>
+#include <ivoc/ivocvect.h>
+#include <nrncvode/netcon.h>
+#include <nrncvode/netcvode.h>
+#include <nrnoc/nrn_ansi.h>
+#include <nrniv/nrncore_write/utils/nrncore_utils.h>
+#include <nrnoc/nrniv_mf.h>
+#include <nrniv/nrnste.h>
 #include "profile.h"
 #include "utils/profile/profiler_interface.h"
 
@@ -63,7 +63,7 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 // needs to be fired to execute the NET_RECEIVE block.
 //#define POINT_RECEIVE(type, tar, w, f) ns->point_receive(type, tar, w, f)
 
-#include "membfunc.h"
+#include <nrnoc/membfunc.h>
 extern void single_event_run();
 extern void setup_topology(), v_setup_vectors();
 extern int nrn_errno_check(int);
@@ -3515,7 +3515,7 @@ void PlayRecordEvent::pr(const char* s, double tt, NetCvode* ns) {
     plr_->pr();
 }
 
-#include <hocevent.cpp>
+#include <nrncvode/hocevent.cpp>
 
 void NetCvode::local_retreat(double t, Cvode* cv) {
     if (!cvode_active_) {

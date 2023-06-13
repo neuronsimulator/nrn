@@ -1,11 +1,11 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 // interface c++ class to oc
 
 #include <InterViews/resource.h>
 #include <stdio.h>
-#include "classreg.h"
+#include <oc/classreg.h>
 #ifndef OC_CLASSES
-#define OC_CLASSES "occlass.h"
+#define OC_CLASSES <ivoc/occlass.h>
 #endif
 
 #define EXTERNS 1

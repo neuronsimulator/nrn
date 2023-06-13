@@ -1,6 +1,6 @@
 #pragma once
-#include "membfunc.h"
-#include "nrn_ansi.h"
+#include <nrnoc/membfunc.h>
+#include <nrnoc/nrn_ansi.h>
 #include "nrnoc_ml.h"
 
 #include <array>

@@ -1,6 +1,6 @@
 #pragma once
-#include "hocdec.h"
-#include "membfunc.h"  // nrn_bamech_t
+#include <oc/hocdec.h>
+#include <nrnoc/membfunc.h>  // nrn_bamech_t
 #include "neuron/container/data_handle.hpp"
 struct Extnode;
 struct hoc_Item;

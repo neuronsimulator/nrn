@@ -1,5 +1,5 @@
 #ifdef HAVE_CONFIG_H
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #endif
 /*
  *  MATRIX UTILITY MODULE
@@ -68,7 +68,7 @@ static char RCSid[] = "@(#)$Header$";
 #define spINSIDE_SPARSE
 #include "spconfig.h"
 #include "spdefs.h"
-#include "spmatrix.h"
+#include <sparse13/spmatrix.h>
 
 extern void spcLinkRows(MatrixPtr);
 extern void spcRowExchange(MatrixPtr, int row1, int row2);

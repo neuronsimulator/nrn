@@ -1,5 +1,5 @@
 #ifdef HAVE_CONFIG_H
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #endif
 /*
  * Copyright (c) 1987, 1988, 1989, 1990, 1991 Stanford University

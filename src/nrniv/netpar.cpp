@@ -2,10 +2,10 @@
 #include <../../nrnconf.h>
 #include <InterViews/resource.h>
 #include <math.h>
-#include "nrncvode.h"
-#include "nrniv_mf.h"
-#include <nrnmpi.h>
-#include <nrnoc2iv.h>
+#include <nrnoc/nrncvode.h>
+#include <nrnoc/nrniv_mf.h>
+#include <oc/nrnmpi.h>
+#include <nrniv/nrnoc2iv.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <netpar.h>
@@ -21,11 +21,11 @@ class PreSyn;
 using Gid2PreSyn = std::unordered_map<int, PreSyn*>;
 
 #include <errno.h>
-#include <netcon.h>
-#include <cvodeobj.h>
-#include <netcvode.h>
+#include <nrncvode/netcon.h>
+#include <nrncvode/cvodeobj.h>
+#include <nrncvode/netcvode.h>
 #include <vector>
-#include "ivocvect.h"
+#include <ivoc/ivocvect.h>
 
 static int n_multisend_interval;
 

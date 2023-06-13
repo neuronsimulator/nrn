@@ -23,9 +23,9 @@ extern "C" {
 #endif
 
 #include <stdio.h>
-#include "sundialstypes.h"
+#include <sundials/shared/sundialstypes.h>
 #include "spgmr.h"
-#include "nvector.h"
+#include <sundials/shared/nvector.h>
 
 /*
  * -----------------------------------------------------------------

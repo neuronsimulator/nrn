@@ -3,11 +3,11 @@
 
 #include <math.h>
 #include <OS/string.h>
-#include "nrnoc2iv.h"
-#include "ivocvect.h"
-#include "nrnunits_modern.h"
+#include <nrniv/nrnoc2iv.h>
+#include <ivoc/ivocvect.h>
+#include <oc/nrnunits_modern.h>
 
-#include "spmatrix.h"
+#include <sparse13/spmatrix.h>
 
 // extern double dt;
 extern double celsius;

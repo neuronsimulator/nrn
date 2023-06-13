@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <nmodlconf.h>
 /* /local/src/master/nrn/src/nmodl/init.c,v 4.5 1998/03/25 14:33:42 hines Exp */
 
 #include "modl.h"

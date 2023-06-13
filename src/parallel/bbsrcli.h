@@ -1,7 +1,7 @@
 #ifndef bbsrcli_h
 #define bbsrcli_h
 
-#include <nrnmpiuse.h>
+#include <oc/nrnmpiuse.h>
 #include "bbsimpl.h"
 class KeepArgs;
 struct bbsmpibuf;

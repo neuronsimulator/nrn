@@ -1,11 +1,11 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
 #include <stdio.h>
 #include <InterViews/color.h>
 #include <InterViews/brush.h>
 #include "hocmark.h"
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 #include "rect.h"
 #include "idraw.h"
 

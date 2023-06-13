@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 /**************************************************************************
 **
@@ -33,13 +33,13 @@
 */
 
 #include <stdio.h>
-#include  "matrix.h"
+#include  <mesch/matrix.h>
 #include  "meminfo.h"
 #ifdef COMPLEX   
 #include  "zmatrix.h"
 #endif
 #ifdef SPARSE
-#include  "sparse.h"
+#include  <mesch/sparse.h>
 #include  "iter.h"
 #endif
 

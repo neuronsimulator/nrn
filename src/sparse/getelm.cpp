@@ -1,6 +1,6 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <stdlib.h>
-#include <hocdec.h>
+#include <oc/hocdec.h>
 #include "lineq.h"
 
 #define diag(s) hoc_execerror(s, (char*)0);

@@ -1,5 +1,5 @@
 #pragma once
-#include "matrix2.h"
+#include <mesch/matrix2.h>
 // mesch defines many macros that interact badly with C++ headers
 #undef catch
 #undef max

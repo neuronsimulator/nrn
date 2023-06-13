@@ -6,7 +6,7 @@ and Flux_pair structs and their respective functions
 ******************************************************************/
 #include <stdio.h>
 #include <assert.h>
-#include <nrnmpi.h>
+#include <oc/nrnmpi.h>
 
 #include "nrn_pyhocobject.h"
 #include "nrnwrap_Python.h"

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
 #include <stdio.h>
@@ -6,7 +6,7 @@
 #include <string.h>
 #include <InterViews/raster.h>
 #include <InterViews/image.h>
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 
 
 #define byte  unsigned char

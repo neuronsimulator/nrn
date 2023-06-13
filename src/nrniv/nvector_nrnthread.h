@@ -57,8 +57,8 @@
 #define _NVECTOR_NRNTHREAD_H
 
 
-#include "nvector.h"
-#include "sundialstypes.h"
+#include <sundials/shared/nvector.h>
+#include <sundials/shared/sundialstypes.h>
 extern "C" {
 extern void N_VOneMask_Serial(N_Vector x);
 }

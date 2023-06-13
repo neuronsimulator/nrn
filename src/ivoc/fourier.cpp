@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* (C) Copr. 1986-92 Numerical Recipes Software #.,. */
 
 /* Algorithms for Fourier Transform Spectral Methods */
@@ -18,7 +18,7 @@
 #undef myfabs
 #define myfabs fabs
 
-#include "oc_ansi.h"
+#include <oc/oc_ansi.h>
 
 // Apple LLVM version 5.1 (clang-503.0.38) generates "unsequenced modification warning".
 // #define SQUARE(a) ((x_=(a)) == 0.0 ? 0.0 : x_*x_)

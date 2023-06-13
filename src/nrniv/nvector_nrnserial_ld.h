@@ -64,8 +64,8 @@ mv temp nvector_nrnserial_ld.cpp
 #define _NVECTOR_NRNSERIAL_LD_H
 
 
-#include "nvector.h"
-#include "sundialstypes.h"
+#include <sundials/shared/nvector.h>
+#include <sundials/shared/sundialstypes.h>
 
 /*
  * -----------------------------------------------------------------

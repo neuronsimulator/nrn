@@ -7,9 +7,9 @@ To reduce this setup time we experiment with a very different algorithm in which
 we construct a gid target host list on host gid%nhost and copy that list to
 the source host owning the gid.
 */
-#include "oc_ansi.h"
+#include <oc/oc_ansi.h>
 
-#include "oc_ansi.h"
+#include <oc/oc_ansi.h>
 
 static void del(int* a) {
     if (a) {
@@ -94,7 +94,7 @@ void TarList::alloc() {
     }
 }
 
-#include <nrnisaac.h>
+#include <oc/nrnisaac.h>
 static void* ranstate;
 
 static void random_init(int i) {

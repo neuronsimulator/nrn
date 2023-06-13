@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 // differential algebraic system solver interface to DDASPK
 
 // DDASPK is translated from fortran with f2c. Hence all args are
@@ -6,15 +6,15 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "spmatrix.h"
-#include "nrnoc2iv.h"
-#include "cvodeobj.h"
+#include <sparse13/spmatrix.h>
+#include <nrniv/nrnoc2iv.h>
+#include <nrncvode/cvodeobj.h>
 #include "nrndaspk.h"
-#include "netcvode.h"
-#include "nrn_ansi.h"
-#include "ida/ida.h"
-#include "ida/ida_impl.h"
-#include "mymath.h"
+#include <nrncvode/netcvode.h>
+#include <nrnoc/nrn_ansi.h>
+#include <sundials/ida/ida.h>
+#include <sundials/ida/ida_impl.h>
+#include <ivoc/mymath.h>
 
 // the state of the g - d2/dx2 matrix for voltages
 #define INVALID  0

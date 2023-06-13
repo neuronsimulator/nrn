@@ -1,26 +1,26 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 /* /local/src/master/nrn/src/oc/code.cpp,v 1.37 1999/07/03 14:20:21 hines Exp */
 
-#include "backtrace_utils.h"
+#include <nrniv/backtrace_utils.h>
 #include <errno.h>
 #include "hoc.h"
-#include "code.h"
-#include "hocstr.h"
+#include <oc/code.h>
+#include <oc/hocstr.h>
 #include "parse.hpp"
-#include "ocfunc.h"
+#include <oc/ocfunc.h>
 #include "ocmisc.h"
-#include "oc_ansi.h"
-#include "hocparse.h"
+#include <oc/oc_ansi.h>
+#include <oc/hocparse.h>
 #include "equation.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <nrnmpi.h>
-#include "nrnfilewrap.h"
+#include <oc/nrnmpi.h>
+#include <oc/nrnfilewrap.h>
 
 
 #include "options.h"
-#include "section.h"
+#include <nrnoc/section.h>
 
 #include <vector>
 #include <variant>

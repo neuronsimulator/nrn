@@ -1,6 +1,6 @@
 #pragma once
-#include "hocstr.h"
-#include "nrnmpiuse.h"
+#include <oc/hocstr.h>
+#include <oc/nrnmpiuse.h>
 
 #include <stdio.h>
 #include <stdlib.h>

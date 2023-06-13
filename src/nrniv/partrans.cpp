@@ -7,10 +7,10 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <InterViews/resource.h>
-#include <nrnoc2iv.h>
-#include <nrniv_mf.h>
-#include <nrnmpi.h>
-#include <mymath.h>
+#include <nrniv/nrnoc2iv.h>
+#include <nrnoc/nrniv_mf.h>
+#include <oc/nrnmpi.h>
+#include <ivoc/mymath.h>
 #if defined(HAVE_STDINT_H)
 #include <stdint.h>
 #endif

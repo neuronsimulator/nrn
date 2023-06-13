@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 // linear model whose equations are solved simultaneously with the
 // voltage equations.
 // The c*dy/dt + g*y = b equations are added to the node equations
@@ -24,7 +24,7 @@
 
 #include <cstdio>
 #include "linmod.h"
-#include "nrnpy.h"
+#include <nrniv/nrnpy.h>
 
 LinearModelAddition::LinearModelAddition(Matrix* cmat,
                                          Matrix* gmat,

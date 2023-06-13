@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
 #include <stdio.h>
@@ -13,10 +13,10 @@
 #include <InterViews/style.h>
 #include <OS/string.h>
 
-#include "hocdec.h"
-#include "oc_ansi.h"
+#include <oc/hocdec.h>
+#include <oc/oc_ansi.h>
 #include "scenevie.h"
-#include "mymath.h"
+#include <ivoc/mymath.h>
 #include "idraw.h"
 
 #define out *OcIdraw::idraw_stream

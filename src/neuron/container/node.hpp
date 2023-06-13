@@ -1,5 +1,5 @@
 #pragma once
-#include "membdef.h"  // DEF_vrest
+#include <nrnoc/membdef.h>  // DEF_vrest
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/view_utils.hpp"
 

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <errno.h>
 #ifndef MINGW
 #if DOS || defined(WIN32)

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
 /*
@@ -90,17 +90,17 @@ data depending on type. eg for VAR && NOTUSER it is
 
 #include <OS/list.h>
 #include <OS/table.h>
-#include "oc2iv.h"
-#include "ocfunc.h"
+#include <ivoc/oc2iv.h>
+#include <oc/ocfunc.h>
 #if HAVE_XDR
 #include <rpc/xdr.h>
 #endif
 #include "checkpnt.h"
 
 #include "redef.h"
-#include "hoclist.h"
+#include <oc/hoclist.h>
 #include "parse.hpp"
-#include "code.h"
+#include <oc/code.h>
 #include "equation.h"
 int hoc_readcheckpoint(char*);
 extern int hoc_resize_toplevel(int);

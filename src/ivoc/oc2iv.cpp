@@ -1,7 +1,7 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 #include <stdio.h>
-#include "oc2iv.h"
+#include <ivoc/oc2iv.h>
 #include "ocpointer.h"
 
 #include "parse.hpp"

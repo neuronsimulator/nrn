@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #if HAVE_IV  // to end of file
 
 #include <InterViews/canvas.h>
@@ -12,7 +12,7 @@
 #include <string.h>
 
 #include "ivoc.h"
-#include "mymath.h"
+#include <ivoc/mymath.h>
 #include "rubband.h"
 #include "graph.h"
 #include "hocmark.h"

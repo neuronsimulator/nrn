@@ -25,7 +25,7 @@
 
 #include "cvodes_impl.h"
 #include "sundialsmath.h"
-#include "sundialstypes.h"
+#include <sundials/shared/sundialstypes.h>
 
 /*=================================================================*/
 /*             Macros                                              */

@@ -1,8 +1,8 @@
 #ifndef gui_redirect_h
 #define gui_redirect_h
 
-#include "hocdec.h"
-#include "nrnpy.h"
+#include <oc/hocdec.h>
+#include <nrniv/nrnpy.h>
 
 
 extern Object* nrn_get_gui_redirect_obj();

@@ -1,6 +1,6 @@
-#include <../../nrnconf.h>
-#include "ocobserv.h"
-#include "oc2iv.h"
+#include <nrnconf.h>
+#include <ivoc/ocobserv.h>
+#include <ivoc/oc2iv.h>
 
 void hoc_obj_disconnect(Object* ob) {
     delete ((ObjObservable*) ob->observers);

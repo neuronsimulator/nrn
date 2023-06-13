@@ -20,10 +20,10 @@
 #include <stdlib.h>
 
 #include "iterative.h"
-#include "nvector.h"
+#include <sundials/shared/nvector.h>
 #include "spgmr.h"
 #include "sundialsmath.h"
-#include "sundialstypes.h"
+#include <sundials/shared/sundialstypes.h>
 
 /*
  * -----------------------------------------------------------------

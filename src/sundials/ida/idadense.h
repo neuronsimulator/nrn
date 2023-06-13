@@ -24,9 +24,9 @@ extern "C" {
 
 #include <stdio.h>
 
-#include "dense.h"
-#include "nvector.h"
-#include "sundialstypes.h"
+#include <sundials/shared/dense.h>
+#include <sundials/shared/nvector.h>
+#include <sundials/shared/sundialstypes.h>
 
 /*
  * -----------------------------------------------------------------

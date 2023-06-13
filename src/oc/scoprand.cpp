@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -21,7 +21,7 @@ static char RCSid[] = "random.cpp,v 1.4 1999/01/04 12:46:49 hines Exp";
 #endif
 
 #include <math.h>
-#include <mcran4.h>
+#include <oc/mcran4.h>
 #include "scoplib.h"
 static uint32_t value = 1;
 

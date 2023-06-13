@@ -1,24 +1,24 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <stdlib.h>
-#include <classreg.h>
-#include "hocstr.h"
+#include <oc/classreg.h>
+#include <oc/hocstr.h>
 #include "parse.hpp"
-#include "hocparse.h"
-#include "code.h"
+#include <oc/hocparse.h>
+#include <oc/code.h>
 #include "hocassrt.h"
-#include "hoclist.h"
-#include "nrn_ansi.h"
-#include "nrnmpi.h"
-#include "nrnpy.h"
-#include "nrnfilewrap.h"
-#include "ocfunc.h"
+#include <oc/hoclist.h>
+#include <nrnoc/nrn_ansi.h>
+#include <oc/nrnmpi.h>
+#include <nrniv/nrnpy.h>
+#include <oc/nrnfilewrap.h>
+#include <oc/ocfunc.h>
 
 
 #define PDEBUG 0
 
 Symbol* nrnpy_pyobj_sym_{};
-#include "section.h"
-#include "nrniv_mf.h"
+#include <nrnoc/section.h>
+#include <nrnoc/nrniv_mf.h>
 int section_object_seen;
 struct Section* nrn_sec_pop();
 static int connect_obsec_;

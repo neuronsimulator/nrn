@@ -1,5 +1,5 @@
 #pragma once
-#include "membdef.h"
+#include <nrnoc/membdef.h>
 #include "neuron/container/node.hpp"
 #include "neuron/container/soa_container.hpp"
 

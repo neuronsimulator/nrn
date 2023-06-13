@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif

@@ -1,4 +1,4 @@
-#include "nrnpy.h"
+#include <nrniv/nrnpy.h>
 #include <../../nrnconf.h>
 // For Linux and Max OS X,
 // Solve the problem of not knowing what version of Python the user has by
@@ -7,10 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <InterViews/resource.h>
-#include "nrnoc2iv.h"
-#include "classreg.h"
-#include "nonvintblock.h"
-#include "nrnmpi.h"
+#include <nrniv/nrnoc2iv.h>
+#include <oc/classreg.h>
+#include <nrnoc/nonvintblock.h>
+#include <oc/nrnmpi.h>
 
 #include <algorithm>
 #include <cctype>
@@ -32,7 +32,7 @@ extern void nrn_possible_mismatched_arch(const char*);
 #endif
 
 #ifdef NRNPYTHON_DYNAMICLOAD
-#include "nrnwrap_dlfcn.h"
+#include <oc/nrnwrap_dlfcn.h>
 extern char* neuron_home;
 static nrnpython_reg_real_t load_nrnpython();
 #else

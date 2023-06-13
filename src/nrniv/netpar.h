@@ -2,7 +2,7 @@
 
 // Some things in netpar.cpp that were static but needed by nrnmusic.cpp
 
-#include "netcon.h"
+#include <nrncvode/netcon.h>
 #include <unordered_map>
 struct Symbol;
 
