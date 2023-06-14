@@ -248,7 +248,7 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
         THEN("Check it has the expected string representation") {
             std::ostringstream actual;
             actual << null_handle;
-            REQUIRE(actual.str() == "generic_data_handle{raw=nullptr, type=double*}");
+            REQUIRE(actual.str() == "generic_data_handle{raw=nullptr type=double*}");
         }
         THEN("Check it does not claim to refer to a modern container") {
             REQUIRE_FALSE(null_handle.refers_to_a_modern_data_structure());
@@ -270,7 +270,7 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
         THEN("Check it has the expected string representation") {
             std::ostringstream actual, expected;
             actual << handle;
-            expected << "generic_data_handle{raw=" << &foo << ", type=double*}";
+            expected << "generic_data_handle{raw=" << &foo << " type=double*}";
             REQUIRE(actual.str() == expected.str());
         }
         THEN("Check it does not claim to refer to a modern container") {
@@ -303,7 +303,7 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
             std::ostringstream actual;
             actual << handle;
             REQUIRE(actual.str() ==
-                    "generic_data_handle{Node::field::Voltage row=0/1, type=double*}");
+                    "generic_data_handle{Node::field::Voltage row=0/1 type=double*}");
         }
         THEN("Check that it knows it refers to a modern data structure") {
             REQUIRE(handle.refers_to_a_modern_data_structure());
@@ -542,26 +542,51 @@ TEST_CASE("Fast membrane current storage", "[Neuron][data_structures][node][fast
         nrn_use_fast_imem = new_value;
         nrn_fast_imem_alloc();
     };
-    auto const check_throws = [](auto const& node) {
+    auto const check_throws = [](auto& node) {
         THEN("fast_imem fields cannot be accessed") {
-            REQUIRE_THROWS(node.sav_d());
-            REQUIRE_THROWS(node.sav_rhs());
+            CHECK_THROWS(node.sav_d());
+            CHECK_THROWS(node.sav_rhs());
+            CHECK_FALSE(node.sav_rhs_handle());
         }
     };
-    auto const check_default = [](auto const& node) {
+    auto const check_default = [](auto& node) {
         THEN("fast_imem fields have their default values") {
-            REQUIRE(node.sav_d() == 0.0);
-            REQUIRE(node.sav_rhs() == 0.0);
+            CHECK(node.sav_d() == 0.0);
+            CHECK(node.sav_rhs() == 0.0);
+            CHECK(*node.sav_rhs_handle() == 0.0);
         }
+    };
+    auto const to_str = [](auto const& handle) {
+        std::ostringstream oss;
+        oss << handle;
+        return oss.str();
     };
     GIVEN("fast_imem calculation is disabled") {
         set_fast_imem(false);
         WHEN("A node is default-constructed") {
             ::Node node{};
             check_throws(node);
+            auto handle = node.sav_rhs_handle();
+            // The sav_rhs field is disabled, but the handle still knows which row in the node data
+            // container it refers to, and that it refers to the sav_rhs field -- there just isn't
+            // any data.
+            CHECK(to_str(handle) ==
+                  "data_handle<double>{Node::field::FastIMemSavRHS row=0/0 disabled}");
+            CHECK(to_str(generic_data_handle{handle}) ==
+                  "generic_data_handle{Node::field::FastIMemSavRHS row=0/0 disabled type=double*}");
             AND_WHEN("fast_imem calculation is enabled with a Node active") {
                 set_fast_imem(true);
                 check_default(node);
+                // Note there is a subtlety to the "invalid handles never become valid" rule,
+                // unfortunately. In this case, a handle was created invalid (because it refers to a
+                // valid row in a disabled column), but it became valid when that column was
+                // enabled. The rule still holds in the sense that once a handle becomes invalid
+                // because its *row* has been invalidated, it will never become valid again. If we
+                // wanted to make the rule hold more strongly, then sav_rhs_handle could return a
+                // fully-null handle when the sav_rhs column is disabled, but extra work would be
+                // needed to ensure that (enable column, get handle, disable column, enable column)
+                // consistently left an *invalid* handle.
+                CHECK(handle);
             }
         }
     }
@@ -571,10 +596,38 @@ TEST_CASE("Fast membrane current storage", "[Neuron][data_structures][node][fast
             REQUIRE(neuron::model().node_data().size() == 0);
             ::Node node{};
             check_default(node);
+            auto handle = node.sav_rhs_handle();
+            *handle = 42;  // non-default value
+            generic_data_handle generic{handle};
+            CHECK(handle);
+            CHECK(to_str(handle) ==
+                  "data_handle<double>{Node::field::FastIMemSavRHS row=0/1 val=42}");
+            CHECK(to_str(generic) ==
+                  "generic_data_handle{Node::field::FastIMemSavRHS row=0/1 type=double*}");
             AND_WHEN("fast_imem calculation is disabled with a Node active") {
                 REQUIRE(neuron::model().node_data().size() == 1);
                 set_fast_imem(false);
                 check_throws(node);
+                // This handle used to be valid, but it is now invalid because the optional field it
+                // refers to has been disabled.
+                CHECK_FALSE(handle);
+                CHECK(to_str(handle) ==
+                      "data_handle<double>{Node::field::FastIMemSavRHS row=0/0 disabled}");
+                CHECK(to_str(generic) ==
+                      "generic_data_handle{Node::field::FastIMemSavRHS row=0/0 disabled "
+                      "type=double*}");
+                AND_WHEN("fast_imem calculation is re-enabled") {
+                    set_fast_imem(true);
+                    // non-default value written above has been lost
+                    check_default(node);
+                    // The relevant optional column has been enabled again, so the handles are valid
+                    // once more.
+                    CHECK(handle);
+                    CHECK(to_str(handle) ==
+                          "data_handle<double>{Node::field::FastIMemSavRHS row=0/1 val=0}");
+                    CHECK(to_str(generic) ==
+                          "generic_data_handle{Node::field::FastIMemSavRHS row=0/1 type=double*}");
+                }
             }
         }
         WHEN("A series of Nodes are created with non-trivial fast_imem values") {

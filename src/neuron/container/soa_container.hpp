@@ -227,9 +227,9 @@ struct field_data {
         }
     }
 
-    template <typename Callable>
+    template <bool ignore_active = false, typename Callable>
     void for_all_vectors(Callable const& callable) const {
-        if (m_active) {
+        if (m_active || ignore_active) {
             callable(m_tag, m_storage, -1, m_array_dim);
         }
     }
@@ -430,7 +430,7 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
         }
     }
 
-    template <typename Callable>
+    template <bool /* ignore_active */ = false, typename Callable>
     void for_all_vectors(Callable const& callable) const {
         for (auto i = 0; i < m_storage.size(); ++i) {
             callable(m_tag, m_storage[i], i, m_array_dims[i]);
@@ -1125,27 +1125,33 @@ struct soa {
 
     [[nodiscard]] std::unique_ptr<utils::storage_info> find_container_info(void const* cont) const {
         std::unique_ptr<utils::storage_info> opt_info;
-        for_all_vectors([cont,
-                         &opt_info,
-                         this](auto const& tag, auto const& vec, int field_index, int array_dim) {
-            if (opt_info) {
-                // Short-circuit
-                return;
-            }
-            if (vec.data() != cont) {
-                // This isn't the right vector
-                return;
-            }
-            // We found the right container/tag combination! Populate the
-            // information struct.
-            auto impl_ptr = std::make_unique<detail::storage_info_impl>();
-            auto& info = *impl_ptr;
-            info.m_container = static_cast<Storage const&>(*this).name();
-            info.m_field = detail::get_name(tag, field_index);
-            info.m_size = vec.size();
-            assert(info.m_size % array_dim == 0);
-            opt_info = std::move(impl_ptr);
-        });
+        // Do not use for_all_vectors helper in this class so we can pass the `true` template
+        // parameter and include currently-disabled optional fields. Also note that this is ignoring
+        // the index vector.
+        (std::get<tag_index_v<Tags>>(m_data).template for_all_vectors<true>(
+             [cont,
+              &opt_info,
+              this](auto const& tag, auto const& vec, int field_index, int array_dim) {
+                 if (opt_info) {
+                     // Short-circuit
+                     return;
+                 }
+                 if (std::get<tag_index_v<Tags>>(m_data).data_ptrs() + std::max(field_index, 0) !=
+                     cont) {
+                     // This isn't the right vector
+                     return;
+                 }
+                 // We found the right container/tag combination! Populate the
+                 // information struct.
+                 auto impl_ptr = std::make_unique<detail::storage_info_impl>();
+                 auto& info = *impl_ptr;
+                 info.m_container = static_cast<Storage const&>(*this).name();
+                 info.m_field = detail::get_name(tag, field_index);
+                 info.m_size = vec.size();
+                 assert(info.m_size % array_dim == 0);
+                 opt_info = std::move(impl_ptr);
+             }),
+         ...);
         return opt_info;
     }
 

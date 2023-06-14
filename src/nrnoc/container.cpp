@@ -68,7 +68,7 @@ std::ostream& operator<<(std::ostream& os, generic_data_handle const& dh) {
     os << "generic_data_handle{";
     if (!dh.m_offset.has_always_been_null()) {
         // modern and valid or once-valid data handle
-        auto const maybe_info = utils::find_container_info(*static_cast<void**>(dh.m_container));
+        auto const maybe_info = utils::find_container_info(dh.m_container);
         if (maybe_info) {
             if (!maybe_info->container().empty()) {
                 os << "cont=" << maybe_info->container() << ' ';
@@ -77,6 +77,12 @@ std::ostream& operator<<(std::ostream& os, generic_data_handle const& dh) {
         } else {
             // couldn't find which container it points into
             os << "cont=unknown " << dh.m_offset << "/unknown";
+        }
+        // figure out if the container is disabled
+        if (dh.m_offset && !*static_cast<void**>(dh.m_container)) {
+            // if the handle knows which row it lives in, but the pointer-to-data() is null, then it
+            // means that the relevant column is disabled
+            os << " disabled";
         }
     } else {
         // legacy data handle
@@ -89,7 +95,7 @@ std::ostream& operator<<(std::ostream& os, generic_data_handle const& dh) {
             os << "nullptr";
         }
     }
-    return os << ", type=" << dh.type_name() << '}';
+    return os << " type=" << dh.type_name() << '}';
 }
 }  // namespace neuron::container
 namespace neuron::container::detail {
