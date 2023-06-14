@@ -1133,7 +1133,14 @@ struct soa {
     [[nodiscard]] bool is_storage_pointer(typename Tag::type const* ptr) const {
         static_assert(has_tag_v<Tag>);
         static_assert(!detail::has_num_variables_v<Tag>);
-        return ptr == std::get<tag_index_v<Tag>>(m_data).data_ptrs()[0];
+        auto* const data_ptrs = std::get<tag_index_v<Tag>>(m_data).data_ptrs();
+        if constexpr (detail::optional_v<Tag>) {
+            // if the field is optional and disabled, data_ptrs is null
+            if (!data_ptrs) {
+                return false;
+            }
+        }
+        return ptr == data_ptrs[0];
     }
 
     [[nodiscard]] std::unique_ptr<utils::storage_info> find_container_info(void const* cont) const {
