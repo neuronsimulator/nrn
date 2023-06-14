@@ -81,15 +81,15 @@ void c_out() {
     P("/* NOT VECTORIZED */\n#define NRN_VECTORIZED 0\n");
     Fflush(fcout);
     /* things which must go first and most declarations */
-    P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
+    P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <oc/mech_api.h>\n");
     P("#undef PI\n");
     P("#define nil 0\n");
     P("#define _pval pval\n");  // due to some old models using _pval
-    P("#include \"md1redef.h\"\n");
-    P("#include \"section_fwd.hpp\"\n");
-    P("#include \"nrniv_mf.h\"\n");
-    P("#include \"md2redef.h\"\n");
-    P("#include \"neuron/cache/mechanism_range.hpp\"\n");
+    P("#include <nrnoc/md1redef.h>\n");
+    P("#include <nrnoc/section_fwd.hpp>\n");
+    P("#include <nrnoc/nrniv_mf.h>\n");
+    P("#include <nrnoc/md2redef.h>\n");
+    P("#include <neuron/cache/mechanism_range.hpp>\n");
     P("#include <vector>\n");
 
     /* avoid clashes with mech names */
@@ -472,15 +472,15 @@ void c_out_vectorize() {
 
     /* things which must go first and most declarations */
     P("/* VECTORIZED */\n#define NRN_VECTORIZED 1\n");
-    P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
+    P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <oc/mech_api.h>\n");
     P("#undef PI\n");
     P("#define nil 0\n");
     P("#define _pval pval\n");  // due to some old models using _pval
-    P("#include \"md1redef.h\"\n");
-    P("#include \"section_fwd.hpp\"\n");
-    P("#include \"nrniv_mf.h\"\n");
-    P("#include \"md2redef.h\"\n");
-    P("#include \"neuron/cache/mechanism_range.hpp\"\n");
+    P("#include <nrnoc/md1redef.h>\n");
+    P("#include <nrnoc/section_fwd.hpp>\n");
+    P("#include <nrnoc/nrniv_mf.h>\n");
+    P("#include <nrnoc/md2redef.h>\n");
+    P("#include <neuron/cache/mechanism_range.hpp>\n");
     printlist(defs_list);
     printlist(firstlist);
     P("static int _reset;\n");
