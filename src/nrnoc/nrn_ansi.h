@@ -2,6 +2,8 @@
 #include <oc/hocdec.h>
 #include <nrnoc/membfunc.h>  // nrn_bamech_t
 #include "neuron/container/data_handle.hpp"
+
+#include <memory>
 struct Extnode;
 struct hoc_Item;
 struct HocParmLimits;
@@ -205,3 +207,37 @@ char* nrn_version(int);
  * @param i Key index, must be less than nrn_num_config_keys().
  */
 [[nodiscard]] char* nrn_get_config_val(std::size_t i);
+
+/**
+  In mechanism libraries, cannot use
+      auto const token = nrn_ensure_model_data_are_sorted();
+  because the return type is incomplete (from include/neuron/model_data.hpp).
+  And we do not want to fix by installing more *.hpp files in the
+  include/neuron directory because of potential ABI incompatibility (anything
+  with std::string anywhere in it).
+  The work around is to provide an extra layer of indirection via unique_ptr
+  so the opaque token has a definite size (one pointer) and declaration.
+
+  The "trick" is just that you have to make sure the parts of the opaque
+  token that need the definition of the non-opaque token are defined in
+  the right place. That's why the constructor and destructor are defined
+  in fadvance.cpp
+
+  Instead, use
+    auto const token = nrn_ensure_model_data_are_sorted_opaque();
+  This file is already included in all translated mod files.
+**/
+namespace neuron {
+struct model_sorted_token;
+struct opaque_model_sorted_token {
+    opaque_model_sorted_token(model_sorted_token&&);
+    ~opaque_model_sorted_token();
+    operator model_sorted_token const &() const {
+        return *m_ptr;
+    }
+
+  private:
+    std::unique_ptr<model_sorted_token> m_ptr;
+};
+}  // namespace neuron
+neuron::opaque_model_sorted_token nrn_ensure_model_data_are_sorted_opaque();
