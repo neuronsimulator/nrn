@@ -191,7 +191,7 @@ MODOBJS=
 
 {
   echo '#include <stdio.h>
-#include "hocdec.h"
+#include <oc/hocdec.h>
 extern int nrnmpi_myid;
 extern int nrn_nobanner_;
 '

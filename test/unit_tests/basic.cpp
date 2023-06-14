@@ -4,7 +4,7 @@
 #include <oc/ocfunc.h>
 #include <nrnoc/section.h>
 #if HAVE_IV
-#include "ivoc.h"
+#include <ivoc/ivoc.h>
 #endif
 
 #include <catch2/catch.hpp>

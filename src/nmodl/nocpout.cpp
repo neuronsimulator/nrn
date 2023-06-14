@@ -246,7 +246,7 @@ void parout() {
 \n#endif\n\
 ");
     if (protect_include_) {
-        Lappendstr(defs_list, "\n#include \"nmodlmutex.h\"");
+        Lappendstr(defs_list, "\n#include <nrnoc/nmodlmutex.h>");
     }
 
 #if 1

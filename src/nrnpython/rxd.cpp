@@ -4,9 +4,9 @@
 #include <string.h>
 #include <nrnpython/grids.h>
 #include <nrnpython/rxd.h>
-#include <../nrnoc/section.h>
-#include <../nrnoc/nrn_ansi.h>
-#include <../nrnoc/multicore.h>
+#include <nrnoc/section.h>
+#include <nrnoc/nrn_ansi.h>
+#include <nrnoc/multicore.h>
 #include <nrnpython/nrnwrap_Python.h>
 #include <nrnpython/nrnpython.h>
 

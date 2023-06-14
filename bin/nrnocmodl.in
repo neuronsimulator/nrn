@@ -42,7 +42,7 @@ else
 fi
 
 echo '#include <stdio.h>
-#include "hocdec.h"
+#include <oc/hocdec.h>
 extern "C" void modl_reg() {
 	fprintf(stderr, "Additional mechanisms from files'$newline'");
 ' > mod_func.cpp

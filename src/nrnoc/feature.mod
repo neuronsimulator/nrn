@@ -4,7 +4,7 @@ NEURON {
 }
 
 VERBATIM
-#include "hocdec.h"
+#include <oc/hocdec.h>
 static double width(void* vv) {
 	int i, nx, ny, i1, i2;
 	double *x, *y;

@@ -38,7 +38,7 @@ else
 fi
 
 echo '#include <stdio.h>
-#include "hocdec.h"
+#include <oc/hocdec.h>
 #define IMPORT extern __declspec(dllimport)
 IMPORT int nrnmpi_myid, nrn_nobanner_;
 ' > mod_func.cpp
