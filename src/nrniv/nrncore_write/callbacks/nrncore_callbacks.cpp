@@ -12,8 +12,8 @@
 #include <nrniv/nrncore_write/data/cell_group.h>
 #include <nrniv/nrncore_write/io/nrncore_io.h>
 #include "parse.hpp"
-#include <oc/nrnran123.h>  // globalindex written to globals.
-#include <nrncvode/netcvode.h>   // for nrnbbcore_vecplay_write and PreSyn.flag_
+#include <oc/nrnran123.h>       // globalindex written to globals.
+#include <nrncvode/netcvode.h>  // for nrnbbcore_vecplay_write and PreSyn.flag_
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 #include <nrncvode/vrecitem.h>  // for nrnbbcore_vecplay_write
 

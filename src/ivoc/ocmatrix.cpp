@@ -10,7 +10,7 @@
 #undef error
 
 extern "C" {
-#undef OUT           /* /usr/x86_64-w64-mingw32/sys-root/mingw/include/windef.h */
+#undef OUT                 /* /usr/x86_64-w64-mingw32/sys-root/mingw/include/windef.h */
 #include <mesch/matrix.h>  //meschach
 #include <mesch/matrix2.h>
 #include <mesch/sparse.h>

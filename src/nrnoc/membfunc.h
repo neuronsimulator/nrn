@@ -3,7 +3,7 @@ extern void hoc_register_prop_size(int type, int psize, int dpsize);
 
 #include "neuron/container/data_handle.hpp"
 #include <nrnoc/nrnoc_ml.h>
-#include <oc/oc_ansi.h>  // neuron::model_sorted_token
+#include <oc/oc_ansi.h>     // neuron::model_sorted_token
 #include <nrnoc/options.h>  // EXTRACELLULAR
 
 #include <string>

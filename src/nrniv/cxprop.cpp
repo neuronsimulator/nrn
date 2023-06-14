@@ -1,5 +1,5 @@
 #include <nrniv/arraypool.h>   // ArrayPool
-#include <oc/hocdec.h>      // Datum
+#include <oc/hocdec.h>         // Datum
 #include <nrnoc/section.h>     // Section
 #include <nrniv/structpool.h>  // Pool
 

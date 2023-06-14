@@ -1,8 +1,8 @@
-#include <oc/hoclist.h>      // ITERATE, hoc_List, hoc_Item
-#include <nrncvode/netcvode.h>     // NetCvode
+#include <oc/hoclist.h>         // ITERATE, hoc_List, hoc_Item
+#include <nrncvode/netcvode.h>  // NetCvode
 #include <nrnoc/nrn_ansi.h>     // nrniv_recalc_ptrs
-#include <ivoc/ocptrvector.h>  // OcPtrVector
-#include <parse.hpp>      // TEMPLATE
+#include <ivoc/ocptrvector.h>   // OcPtrVector
+#include <parse.hpp>            // TEMPLATE
 
 #include <cassert>  // assert
 

@@ -195,11 +195,8 @@ endif()
 # =============================================================================
 # Include directories for #include <../../nrnconf.h>
 # =============================================================================
-set(NRN_INCLUDE_DIRS
-    ${PROJECT_BINARY_DIR}
-    ${PROJECT_BINARY_DIR}/src
-    ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/external/Random123/include)
+set(NRN_INCLUDE_DIRS ${PROJECT_BINARY_DIR} ${PROJECT_BINARY_DIR}/src ${PROJECT_SOURCE_DIR}/src
+                     ${PROJECT_SOURCE_DIR}/external/Random123/include)
 
 if(NRN_ENABLE_MUSIC)
   list(APPEND NRN_INCLUDE_DIRS ${NRN_MUSIC_SRC_DIR})

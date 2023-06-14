@@ -6,7 +6,7 @@
 #include <oc/nrnmpi.h>
 #include <nrnoc/section.h>
 #include <oc/hocdec.h>
-#include <ivoc/ocfile.h>     // for idDirExist and makePath
+#include <ivoc/ocfile.h>   // for idDirExist and makePath
 #include <oc/nrnran123.h>  // globalindex written to globals.dat
 #include <nrncvode/cvodeobj.h>
 #include <nrncvode/netcvode.h>  // for nrnbbcore_vecplay_write
