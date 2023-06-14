@@ -76,13 +76,15 @@ std::ostream& operator<<(std::ostream& os, generic_data_handle const& dh) {
             os << maybe_info->field() << ' ' << dh.m_offset << '/' << maybe_info->size();
         } else {
             // couldn't find which container it points into
-            os << "cont=unknown " << dh.m_offset << "/unknown";
-        }
-        // figure out if the container is disabled
-        if (dh.m_offset && !*static_cast<void**>(dh.m_container)) {
-            // if the handle knows which row it lives in, but the pointer-to-data() is null, then it
-            // means that the relevant column is disabled
-            os << " disabled";
+            os << "cont=";
+            if (*static_cast<void**>(dh.m_container)) {
+                // seems to be a completely valid handle, we just can't find metadata about the
+                // container
+                os << "unknown ";
+            } else {
+                os << "deleted ";
+            }
+            os << dh.m_offset << "/unknown";
         }
     } else {
         // legacy data handle

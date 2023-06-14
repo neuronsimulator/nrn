@@ -186,7 +186,7 @@ extern std::vector<void*>* defer_delete_storage;
 template <typename T>
 void defer_delete(std::unique_ptr<T[]> data) {
     static_assert(std::is_trivially_destructible_v<T>, "defer_delete does not call destructors");
-    if (defer_delete_storage) {
+    if (data && defer_delete_storage) {
         defer_delete_storage->push_back(data.release());
     }
 }
@@ -199,9 +199,10 @@ struct field_data {
     static_assert(!has_num_variables_v<Tag>);
     field_data(Tag tag)
         : m_tag{std::move(tag)}
-        , m_array_dim{get_array_dimension(m_tag)}
-        , m_data_ptr{std::make_unique<data_type*[]>(1)} {
-        m_data_ptr[0] = m_storage.data();
+        , m_array_dim{get_array_dimension(m_tag)} {
+        if constexpr (impl == FieldImplementation::AlwaysSingle) {
+            m_data_ptr = std::make_unique<data_type*[]>(1);
+        }
     }
 
     ~field_data() {
@@ -218,8 +219,11 @@ struct field_data {
 
     template <may_cause_reallocation might_reallocate, typename Callable>
     void for_all_vectors(Callable const& callable) {
-        if (!m_active) {
-            return;
+        if constexpr (impl == FieldImplementation::OptionalSingle) {
+            if (!m_data_ptr) {
+                // inactive, optional field
+                return;
+            }
         }
         callable(m_tag, m_storage, -1, m_array_dim);
         if constexpr (might_reallocate == may_cause_reallocation::Yes) {
@@ -227,21 +231,25 @@ struct field_data {
         }
     }
 
-    template <bool ignore_active = false, typename Callable>
+    template <typename Callable>
     void for_all_vectors(Callable const& callable) const {
-        if (m_active || ignore_active) {
-            callable(m_tag, m_storage, -1, m_array_dim);
+        if constexpr (impl == FieldImplementation::OptionalSingle) {
+            if (!m_data_ptr) {
+                // inactive, optional field
+                return;
+            }
         }
+        callable(m_tag, m_storage, -1, m_array_dim);
     }
 
     [[nodiscard]] bool active() const {
         static_assert(impl == FieldImplementation::OptionalSingle);
-        return m_active;
+        return bool{m_data_ptr};
     }
 
     void set_active(bool enable, std::size_t size) {
         static_assert(impl == FieldImplementation::OptionalSingle);
-        if (enable == m_active) {
+        if (enable == active()) {
             return;
         }
         if (enable) {
@@ -252,14 +260,18 @@ struct field_data {
             } else {
                 m_storage.resize(size * m_array_dim);
             }
+            m_data_ptr = std::make_unique<data_type*[]>(1);
             m_data_ptr[0] = m_storage.data();
         } else {
             // clear + free the storage
             m_storage.clear();
             m_storage.shrink_to_fit();
+            // data handles may be holding pointers to m_data_ptr (which is the reason for the
+            // deferred deletion); signal to them that they are no longer valid by writing nullptr
+            // here
             m_data_ptr[0] = nullptr;
+            defer_delete(std::move(m_data_ptr));
         }
-        m_active = enable;
     }
 
     [[nodiscard]] data_type* const* data_ptrs() const {
@@ -303,6 +315,8 @@ struct field_data {
      * @see field_data<Tag, true>::m_data_ptrs %for the motivation.
      *
      * This is declared as an array (of size 1) to simplify the implementation of defer_delete.
+     * For FieldImplementation::OptionalSingle then whether or not this is null encodes whether
+     * or not the field is active. For FieldImplementation::AlwaysSingle it is never null.
      */
     std::unique_ptr<data_type*[]> m_data_ptr;
 
@@ -313,11 +327,6 @@ struct field_data {
      * @see field_data<Tag, true>::m_array_dims %for the motivation.
      */
     int m_array_dim;
-
-    /**
-     * @brief Whether this field is currently active. Only relevant for OptionalSingle fields.
-     */
-    bool m_active{impl == FieldImplementation::AlwaysSingle};
 };
 
 /**
@@ -430,7 +439,7 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
         }
     }
 
-    template <bool /* ignore_active */ = false, typename Callable>
+    template <typename Callable>
     void for_all_vectors(Callable const& callable) const {
         for (auto i = 0; i < m_storage.size(); ++i) {
             callable(m_tag, m_storage[i], i, m_array_dims[i]);
@@ -999,6 +1008,12 @@ struct soa {
         int array_index = 0) const {
         static_assert(has_tag_v<Tag>);
         static_assert(!detail::has_num_variables_v<Tag>);
+        // If Tag is an optional field and that field is disabled, return a null handle.
+        if constexpr (detail::optional_v<Tag>) {
+            if (!std::get<tag_index_v<Tag>>(m_data).active()) {
+                return {};
+            }
+        }
         auto const array_dim = std::get<tag_index_v<Tag>>(m_data).array_dims()[0];
         assert(array_dim > 0);
         assert(array_index >= 0);
@@ -1125,33 +1140,31 @@ struct soa {
 
     [[nodiscard]] std::unique_ptr<utils::storage_info> find_container_info(void const* cont) const {
         std::unique_ptr<utils::storage_info> opt_info;
-        // Do not use for_all_vectors helper in this class so we can pass the `true` template
-        // parameter and include currently-disabled optional fields. Also note that this is ignoring
-        // the index vector.
-        (std::get<tag_index_v<Tags>>(m_data).template for_all_vectors<true>(
-             [cont,
-              &opt_info,
-              this](auto const& tag, auto const& vec, int field_index, int array_dim) {
-                 if (opt_info) {
-                     // Short-circuit
-                     return;
-                 }
-                 if (std::get<tag_index_v<Tags>>(m_data).data_ptrs() + std::max(field_index, 0) !=
-                     cont) {
-                     // This isn't the right vector
-                     return;
-                 }
-                 // We found the right container/tag combination! Populate the
-                 // information struct.
-                 auto impl_ptr = std::make_unique<detail::storage_info_impl>();
-                 auto& info = *impl_ptr;
-                 info.m_container = static_cast<Storage const&>(*this).name();
-                 info.m_field = detail::get_name(tag, field_index);
-                 info.m_size = vec.size();
-                 assert(info.m_size % array_dim == 0);
-                 opt_info = std::move(impl_ptr);
-             }),
-         ...);
+        for_all_vectors([cont,
+                         &opt_info,
+                         this](auto const& tag, auto const& vec, int field_index, int array_dim) {
+            using Tag = ::std::decay_t<decltype(tag)>;
+            if constexpr (!std::is_same_v<Tag, detail::index_column_tag>) {
+                if (opt_info) {
+                    // Short-circuit
+                    return;
+                }
+                if (std::get<tag_index_v<Tag>>(m_data).data_ptrs() + std::max(field_index, 0) !=
+                    cont) {
+                    // This isn't the right vector
+                    return;
+                }
+                // We found the right container/tag combination! Populate the
+                // information struct.
+                auto impl_ptr = std::make_unique<detail::storage_info_impl>();
+                auto& info = *impl_ptr;
+                info.m_container = static_cast<Storage const&>(*this).name();
+                info.m_field = detail::get_name(tag, field_index);
+                info.m_size = vec.size();
+                assert(info.m_size % array_dim == 0);
+                opt_info = std::move(impl_ptr);
+            }
+        });
         return opt_info;
     }
 

@@ -269,14 +269,20 @@ struct data_handle {
                 }
                 os << ' ' << dh.m_offset << '/' << size;
             } else {
-                os << "cont=unknown " << dh.m_offset << "/unknown";
+                os << "cont=";
+                if (dh.container_data()) {
+                    os << "unknown ";
+                } else {
+                    os << "deleted ";
+                }
+                os << dh.m_offset << "/unknown";
             }
             // print the value if it exists and has an output operator
             if (valid) {
+                // if the referred-to *column* was deleted but the referred-to *row* is still valid,
+                // valid==true but ptr==nullptr.
                 if (auto* const ptr = get_ptr_helper(dh); ptr) {
                     detail::print_value(os, *ptr);
-                } else {
-                    os << " disabled";
                 }
             }
         } else if (dh.m_container_or_raw_ptr) {

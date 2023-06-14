@@ -567,26 +567,16 @@ TEST_CASE("Fast membrane current storage", "[Neuron][data_structures][node][fast
             ::Node node{};
             check_throws(node);
             auto handle = node.sav_rhs_handle();
-            // The sav_rhs field is disabled, but the handle still knows which row in the node data
-            // container it refers to, and that it refers to the sav_rhs field -- there just isn't
-            // any data.
-            CHECK(to_str(handle) ==
-                  "data_handle<double>{Node::field::FastIMemSavRHS row=0/0 disabled}");
+            // The sav_rhs field is disabled, so the handle is a plain, completely null one.
+            CHECK(to_str(handle) == "data_handle<double>{null}");
             CHECK(to_str(generic_data_handle{handle}) ==
-                  "generic_data_handle{Node::field::FastIMemSavRHS row=0/0 disabled type=double*}");
+                  "generic_data_handle{raw=nullptr type=double*}");
             AND_WHEN("fast_imem calculation is enabled with a Node active") {
                 set_fast_imem(true);
                 check_default(node);
-                // Note there is a subtlety to the "invalid handles never become valid" rule,
-                // unfortunately. In this case, a handle was created invalid (because it refers to a
-                // valid row in a disabled column), but it became valid when that column was
-                // enabled. The rule still holds in the sense that once a handle becomes invalid
-                // because its *row* has been invalidated, it will never become valid again. If we
-                // wanted to make the rule hold more strongly, then sav_rhs_handle could return a
-                // fully-null handle when the sav_rhs column is disabled, but extra work would be
-                // needed to ensure that (enable column, get handle, disable column, enable column)
-                // consistently left an *invalid* handle.
-                CHECK(handle);
+                // The current implementation prefers simplicity to magic where possible, so handle
+                // will still be null.
+                CHECK_FALSE(handle);
             }
         }
     }
@@ -611,22 +601,18 @@ TEST_CASE("Fast membrane current storage", "[Neuron][data_structures][node][fast
                 // This handle used to be valid, but it is now invalid because the optional field it
                 // refers to has been disabled.
                 CHECK_FALSE(handle);
-                CHECK(to_str(handle) ==
-                      "data_handle<double>{Node::field::FastIMemSavRHS row=0/0 disabled}");
+                CHECK(to_str(handle) == "data_handle<double>{cont=deleted row=0/unknown}");
                 CHECK(to_str(generic) ==
-                      "generic_data_handle{Node::field::FastIMemSavRHS row=0/0 disabled "
-                      "type=double*}");
+                      "generic_data_handle{cont=deleted row=0/unknown type=double*}");
                 AND_WHEN("fast_imem calculation is re-enabled") {
                     set_fast_imem(true);
                     // non-default value written above has been lost
                     check_default(node);
-                    // The relevant optional column has been enabled again, so the handles are valid
-                    // once more.
-                    CHECK(handle);
-                    CHECK(to_str(handle) ==
-                          "data_handle<double>{Node::field::FastIMemSavRHS row=0/1 val=0}");
+                    // Implementation choice was to minimise magic, so the handles are still dead
+                    CHECK_FALSE(handle);
+                    CHECK(to_str(handle) == "data_handle<double>{cont=deleted row=0/unknown}");
                     CHECK(to_str(generic) ==
-                          "generic_data_handle{Node::field::FastIMemSavRHS row=0/1 type=double*}");
+                          "generic_data_handle{cont=deleted row=0/unknown type=double*}");
                 }
             }
         }
