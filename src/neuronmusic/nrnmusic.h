@@ -3,7 +3,7 @@
 #if defined(NO_PYTHON_H)
 typedef struct _object PyObject;
 #else
-#include <nrnpython/nrnwrap_Python.h>
+#include <nrnwrap_Python.h>
 #endif
 #include <music.hh>
 
