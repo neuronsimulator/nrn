@@ -1,4 +1,4 @@
-#include <nrnconf.h>
+#include "../../nrnconf.h"
 #include <oc/nrnmpiuse.h>
 #include <stdio.h>
 #include <stdint.h>
