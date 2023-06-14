@@ -52,7 +52,7 @@ struct Diagonal {
 };
 
 /**
- * @brief
+ * @brief Field for fast_imem calculation.
  */
 struct FastIMemSavD {
     static constexpr bool optional = true;
@@ -60,7 +60,7 @@ struct FastIMemSavD {
 };
 
 /**
- * @brief
+ * @brief Field for fast_imem calculation.
  */
 struct FastIMemSavRHS {
     static constexpr bool optional = true;

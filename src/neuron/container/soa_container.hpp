@@ -1008,20 +1008,18 @@ struct soa {
         int array_index = 0) const {
         static_assert(has_tag_v<Tag>);
         static_assert(!detail::has_num_variables_v<Tag>);
+        auto const& field_data = std::get<tag_index_v<Tag>>(m_data);
         // If Tag is an optional field and that field is disabled, return a null handle.
         if constexpr (detail::optional_v<Tag>) {
-            if (!std::get<tag_index_v<Tag>>(m_data).active()) {
+            if (!field_data.active()) {
                 return {};
             }
         }
-        auto const array_dim = std::get<tag_index_v<Tag>>(m_data).array_dims()[0];
+        auto const array_dim = field_data.array_dims()[0];
         assert(array_dim > 0);
         assert(array_index >= 0);
         assert(array_index < array_dim);
-        return {std::move(id),
-                std::get<tag_index_v<Tag>>(m_data).data_ptrs(),
-                array_dim,
-                array_index};
+        return {std::move(id), field_data.data_ptrs(), array_dim, array_index};
     }
 
     /**
@@ -1140,30 +1138,29 @@ struct soa {
 
     [[nodiscard]] std::unique_ptr<utils::storage_info> find_container_info(void const* cont) const {
         std::unique_ptr<utils::storage_info> opt_info;
+        if (!cont) {
+            return opt_info;
+        }
         for_all_vectors([cont,
                          &opt_info,
                          this](auto const& tag, auto const& vec, int field_index, int array_dim) {
-            using Tag = ::std::decay_t<decltype(tag)>;
-            if constexpr (!std::is_same_v<Tag, detail::index_column_tag>) {
-                if (opt_info) {
-                    // Short-circuit
-                    return;
-                }
-                if (std::get<tag_index_v<Tag>>(m_data).data_ptrs() + std::max(field_index, 0) !=
-                    cont) {
-                    // This isn't the right vector
-                    return;
-                }
-                // We found the right container/tag combination! Populate the
-                // information struct.
-                auto impl_ptr = std::make_unique<detail::storage_info_impl>();
-                auto& info = *impl_ptr;
-                info.m_container = static_cast<Storage const&>(*this).name();
-                info.m_field = detail::get_name(tag, field_index);
-                info.m_size = vec.size();
-                assert(info.m_size % array_dim == 0);
-                opt_info = std::move(impl_ptr);
+            if (opt_info) {
+                // Short-circuit
+                return;
             }
+            if (vec.data() != cont) {
+                // This isn't the right vector
+                return;
+            }
+            // We found the right container/tag combination! Populate the
+            // information struct.
+            auto impl_ptr = std::make_unique<detail::storage_info_impl>();
+            auto& info = *impl_ptr;
+            info.m_container = static_cast<Storage const&>(*this).name();
+            info.m_field = detail::get_name(tag, field_index);
+            info.m_size = vec.size();
+            assert(info.m_size % array_dim == 0);
+            opt_info = std::move(impl_ptr);
         });
         return opt_info;
     }

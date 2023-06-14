@@ -251,7 +251,8 @@ struct data_handle {
     friend std::ostream& operator<<(std::ostream& os, data_handle const& dh) {
         os << "data_handle<" << cxx_demangle(typeid(T).name()) << ">{";
         if (auto const valid = dh.m_offset; valid || dh.m_offset.was_once_valid()) {
-            if (auto const maybe_info = utils::find_container_info(dh.m_container_or_raw_ptr)) {
+            auto* const container_data = dh.container_data();
+            if (auto const maybe_info = utils::find_container_info(container_data)) {
                 if (!maybe_info->container().empty()) {
                     os << "cont=" << maybe_info->container() << ' ';
                 }
@@ -269,18 +270,13 @@ struct data_handle {
                 }
                 os << ' ' << dh.m_offset << '/' << size;
             } else {
-                os << "cont=";
-                if (dh.container_data()) {
-                    os << "unknown ";
-                } else {
-                    os << "deleted ";
-                }
-                os << dh.m_offset << "/unknown";
+                os << "cont=" << (container_data ? "unknown " : "deleted ") << dh.m_offset
+                   << "/unknown";
             }
             // print the value if it exists and has an output operator
             if (valid) {
                 // if the referred-to *column* was deleted but the referred-to *row* is still valid,
-                // valid==true but ptr==nullptr.
+                // valid == true but ptr == nullptr.
                 if (auto* const ptr = get_ptr_helper(dh); ptr) {
                     detail::print_value(os, *ptr);
                 }

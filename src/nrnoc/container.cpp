@@ -68,23 +68,18 @@ std::ostream& operator<<(std::ostream& os, generic_data_handle const& dh) {
     os << "generic_data_handle{";
     if (!dh.m_offset.has_always_been_null()) {
         // modern and valid or once-valid data handle
-        auto const maybe_info = utils::find_container_info(dh.m_container);
+        auto* const container_data = *static_cast<void**>(dh.m_container);
+        auto const maybe_info = utils::find_container_info(container_data);
         if (maybe_info) {
             if (!maybe_info->container().empty()) {
                 os << "cont=" << maybe_info->container() << ' ';
             }
             os << maybe_info->field() << ' ' << dh.m_offset << '/' << maybe_info->size();
         } else {
-            // couldn't find which container it points into
-            os << "cont=";
-            if (*static_cast<void**>(dh.m_container)) {
-                // seems to be a completely valid handle, we just can't find metadata about the
-                // container
-                os << "unknown ";
-            } else {
-                os << "deleted ";
-            }
-            os << dh.m_offset << "/unknown";
+            // couldn't find which container it points into; if container_data is null that will be
+            // because the relevant container/column was deleted
+            os << "cont=" << (container_data ? "unknown " : "deleted ") << dh.m_offset
+               << "/unknown";
         }
     } else {
         // legacy data handle
