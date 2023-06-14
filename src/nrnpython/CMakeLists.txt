@@ -17,10 +17,7 @@ set(nrnpython_lib_list)
 
 # user has selected dynamic python support (could be multiple versions)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
-  set(INCLUDE_DIRS
-      ${PROJECT_SOURCE_DIR}/src
-      ${PROJECT_BINARY_DIR}/include
-      ${IV_INCLUDE_DIR})
+  set(INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/include ${IV_INCLUDE_DIR})
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
