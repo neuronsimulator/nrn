@@ -125,8 +125,8 @@ copyinc() {
 
 # we rely on a couple of include groups, one from nocmodl and the other one hoisted from old gcc days and all (most) ModelDB include 
 copyinc '
-"mech_api.h"
-"section.h"
+<oc/mech_api.h>
+<nrnoc/section.h>
 <math.h>
 <stdio.h>
 <stdlib.h>
