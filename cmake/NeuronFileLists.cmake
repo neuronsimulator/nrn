@@ -1,7 +1,6 @@
 # =======================================================================================
 # Lists of header files to install. Difference is whether the dir structure is preserved.
 #
-# * HEADER_FILES_TO_INSTALL: ${src}/src/dir/header.h -> {bld}/include/header.h
 # * STRUCTURED_HEADER_FILES_TO_INSTALL: {src}/src/a/b.h -> {bld}/include/a/b.h
 # =======================================================================================
 set(STRUCTURED_HEADER_FILES_TO_INSTALL

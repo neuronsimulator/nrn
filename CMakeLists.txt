@@ -859,15 +859,6 @@ install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
 
 # Copy NEURON headers that will be included in the installation into the build directory.
 set(headers_in_build_dir)
-foreach(header_below_src ${HEADER_FILES_TO_INSTALL})
-  get_filename_component(header_name "${header_below_src}" NAME)
-  set(output_name "${PROJECT_BINARY_DIR}/include/${header_name}")
-  cpp_cc_build_time_copy(
-    INPUT "${PROJECT_SOURCE_DIR}/src/${header_below_src}"
-    OUTPUT "${output_name}"
-    NO_TARGET)
-  list(APPEND headers_in_build_dir "${output_name}")
-endforeach()
 foreach(header_below_src ${STRUCTURED_HEADER_FILES_TO_INSTALL})
   set(output_name "${PROJECT_BINARY_DIR}/include/${header_below_src}")
   cpp_cc_build_time_copy(
