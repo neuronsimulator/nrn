@@ -3,8 +3,8 @@
  */
 #pragma once
 #include "errcodes.hpp"
-#include <scopmath/newton_struct.h>
-#include <scopmath/scoplib.h>
+#include "newton_struct.h"
+#include "scoplib.h"
 namespace neuron::scopmath {
 /**
  * Solves simultaneous differential equations using a fourth order Runge-Kutta

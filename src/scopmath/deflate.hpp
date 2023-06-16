@@ -3,7 +3,7 @@
  */
 #pragma once
 #include "errcodes.hpp"
-#include <scopmath/newton_struct.h>
+#include "newton_struct.h"
 
 #include <cmath>
 
