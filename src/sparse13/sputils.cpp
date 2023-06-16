@@ -66,9 +66,9 @@ static char RCSid[] = "@(#)$Header$";
  */
 
 #define spINSIDE_SPARSE
-#include <sparse13/spconfig.h>
-#include <sparse13/spdefs.h>
-#include <sparse13/spmatrix.h>
+#include "spconfig.h"
+#include "spdefs.h"
+#include "spmatrix.h"
 
 extern void spcLinkRows(MatrixPtr);
 extern void spcRowExchange(MatrixPtr, int row1, int row2);

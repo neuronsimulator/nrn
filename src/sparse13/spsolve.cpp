@@ -54,9 +54,9 @@ static char RCSid[] = "@(#)$Header$";
  */
 
 #define spINSIDE_SPARSE
-#include <sparse13/spconfig.h>
-#include <sparse13/spdefs.h>
-#include <sparse13/spmatrix.h>
+#include "spconfig.h"
+#include "spdefs.h"
+#include "spmatrix.h"
 
 /* avoid "declared implicitly `extern' and later `static' " warnings. */
 static void SolveComplexMatrix(MatrixPtr Matrix, RealVector RHS, RealVector Solution, std::optional<RealVector> iRHS = std::nullopt, std::optional<RealVector> iSolution = std::nullopt);

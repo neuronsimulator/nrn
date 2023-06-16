@@ -64,9 +64,9 @@ static char RCSid[] = "@(#)$Header$";
  */
 
 #define spINSIDE_SPARSE
-#include <sparse13/spconfig.h>
-#include <sparse13/spdefs.h>
-#include <sparse13/spmatrix.h>
+#include "spconfig.h"
+#include "spdefs.h"
+#include "spmatrix.h"
 
 /* avoid "declared implicitly `extern' and later `static' " warnings. */
 static int FactorComplexMatrix(MatrixPtr Matrix);
