@@ -1,4 +1,3 @@
-#include <../../nrnconf.h>
 // This may look like C code, but it is really -*- C++ -*-
 /* 
 Copyright (C) 1989 Free Software Foundation
@@ -19,7 +18,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #pragma implementation
 #endif
 #include <assert.h>
-#include <RNG.h>
+#include "RNG.h"
 
 // These two static fields get initialized by RNG::RNG().
 PrivateRNGSingleType RNG::singleMantissa;
