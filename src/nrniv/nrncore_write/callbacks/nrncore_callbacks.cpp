@@ -161,7 +161,8 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<doub
         data = nt.node_voltage_storage();
         n = size_t(nt.end);
     } else if (type == i_membrane_) {  // i_membrane_
-        data = nt._nrn_fast_imem->_nrn_sav_rhs;
+        auto const cache_token = nrn_ensure_model_data_are_sorted();
+        data = nt.node_sav_rhs_storage();
         n = size_t(nt.end);
     } else if (type == 0) {  // time
         data = &nt._t;

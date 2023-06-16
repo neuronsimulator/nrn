@@ -16,11 +16,8 @@ struct OcPtrVector {
     void setval(int, double);
     void scatter(double*, int sz);
     void gather(double*, int sz);
-    void ptr_update_cmd(std::unique_ptr<HocCommand> cmd);
-    void ptr_update();
 
   public:
     std::vector<neuron::container::data_handle<double>> pd_{};
-    std::unique_ptr<HocCommand> update_cmd_{};
     char* label_{};
 };

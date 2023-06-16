@@ -274,6 +274,25 @@ member function.
     instances of tag types in the same order as they appear in the declaration. Also, repeated tag
     types are not allowed.
 
+Optional fields
+^^^^^^^^^^^^^^^
+If it is known that the number of fields will be zero or one, *i.e.* the field is optional, then a
+simplified tag type can be used:
+
+.. code-block:: c++
+
+    struct OptionalA {
+      static constexpr bool optional = true;
+      using type = double;
+    };
+
+This defines a simple field like ``A`` above, with ``std::vector<double>`` backing storage, but it
+can be toggled on and off at runtime using the ``set_field_status`` method, and its status can be
+queried using the ``field_active`` method.
+
+The real-world use of this is the data for the fast membrane current calculation, which is only
+filled if it has been enabled at runtime using :meth:`CVode.use_fast_imem`.
+
 Explicit default values
 ^^^^^^^^^^^^^^^^^^^^^^^
 If you do not explicitly specify otherwise, new values in the storage arrays -- produced by, as
@@ -770,25 +789,6 @@ validity.
 Future work
 -----------
 This section contains a brief summary of future work that would be beneficial on these topics.
-
-``fast_imem`` data
-^^^^^^^^^^^^^^^^^^
-The fast membrane current calculation driven by :meth:`CVode.use_fast_imem` uses two additional
-Node data fields (``sav_d`` and ``sav_rhs``) that are currently in manually-managed SoA format.
-
-This is noteworthy because in the current test suite ``test_fast_imem.py`` resorts to complicated
-pointer-updating logic to successfully record ``i_membrane_`` values.
-Moving these fields into the new-style Node data structure would allow this to be removed, as it
-would work automatically via the new data handles.
-This also appears to be the only remaining use of the ``OcPtrVector::ptr_update_cmd`` mechanism
-and would allow more legacy pointer-updating logic to be removed.
-
-It requires an extension to the ``neuron::container::soa`` helper to support fields that are
-optional.
-
-.. note::
-
-    There is already a draft implementation of the above proposal.
 
 Elimination of "legacy indices"
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
