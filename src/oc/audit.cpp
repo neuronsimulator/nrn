@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <oc/hocdec.h>
-#include <oc/hocassrt.h>
+#include "hocdec.h"
+#include "hocassrt.h"
 
 
 static int doaudit;

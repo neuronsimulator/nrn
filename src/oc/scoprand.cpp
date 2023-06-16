@@ -21,7 +21,7 @@ static char RCSid[] = "random.cpp,v 1.4 1999/01/04 12:46:49 hines Exp";
 #endif
 
 #include <math.h>
-#include <oc/mcran4.h>
+#include "mcran4.h"
 #include <scopmath/scoplib.h>
 static uint32_t value = 1;
 

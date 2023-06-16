@@ -5,9 +5,9 @@
 
 #include <ivoc/mymath.h>
 
-#include <nrncvode/cvodeobj.h>
+#include "cvodeobj.h"
 #include "neuron/container/data_handle.hpp"
-#include <nrncvode/tqueue.h>
+#include "tqueue.h"
 
 #include <cmath>
 #include <vector>

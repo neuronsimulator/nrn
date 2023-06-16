@@ -5,14 +5,14 @@
 #include <stdlib.h>
 #include <cstdarg>
 #include <unistd.h>
-#include <oc/hoc.h>
-#include <oc/ocmisc.h>
-#include <oc/hocstr.h>
-#include <oc/hoclist.h>
+#include "hoc.h"
+#include "ocmisc.h"
+#include "hocstr.h"
+#include "hoclist.h"
 #include "parse.hpp"
-#include <oc/hocparse.h>
+#include "hocparse.h"
 #include <errno.h>
-#include <oc/nrnfilewrap.h>
+#include "nrnfilewrap.h"
 
 
 extern char* neuron_home;

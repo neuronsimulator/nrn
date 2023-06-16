@@ -51,14 +51,14 @@ node.v + extnode.v[0]
 
 #endif
 
-#include <nrnoc/membdef.h>
-#include <nrnoc/membfunc.h>
-#include <nrnoc/nrniv_mf.h>
+#include "membdef.h"
+#include "membfunc.h"
+#include "nrniv_mf.h"
 #include <oc/nrnmpiuse.h>
 #include <ivoc/ocnotify.h>
-#include <nrnoc/section.h>
+#include "section.h"
 #include <sparse13/spmatrix.h>
-#include <nrnoc/treeset.h>
+#include "treeset.h"
 
 #include <stdio.h>
 #include <stdlib.h>

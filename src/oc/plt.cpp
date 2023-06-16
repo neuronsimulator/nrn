@@ -4,7 +4,7 @@
     1 /* version 7.1.1 12/8/88 \
 added plots in fig format      \
 */
-#include <oc/hoc.h>
+#include "hoc.h"
 #include <nrnoc/gui-redirect.h>
 
 extern void Fig_file(const char*, int);

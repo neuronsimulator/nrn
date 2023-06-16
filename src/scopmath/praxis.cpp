@@ -1,7 +1,7 @@
 #include <nrnconf.h>
 #include <oc/mcran4.h>
 #include <oc/oc_ansi.h>
-#include <scopmath/scoplib.h>
+#include "scoplib.h"
 
 #include <cmath>
 #include <cstdio>

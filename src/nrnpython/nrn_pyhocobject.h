@@ -1,6 +1,6 @@
 #pragma once
 #include "neuron/container/data_handle.hpp"
-#include <nrnpython/nrnpython.h>
+#include "nrnpython.h"
 
 struct Object;
 struct Symbol;

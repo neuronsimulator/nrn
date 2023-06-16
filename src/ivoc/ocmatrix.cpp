@@ -4,8 +4,8 @@
 
 #define v_elem(v, i) (*(vector_vec(v) + i))
 
-#include <ivoc/ivocvect.h>
-#include <ivoc/oc2iv.h>
+#include "ivocvect.h"
+#include "oc2iv.h"
 
 #undef error
 
@@ -20,7 +20,7 @@ extern MAT* m_get(int, int);
 
 int nrn_matrix_dim(void*, int);
 
-#include <ivoc/ocmatrix.h>
+#include "ocmatrix.h"
 using std::vector;
 
 int nrn_matrix_dim(void* vm, int d) {

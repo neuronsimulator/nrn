@@ -4,10 +4,10 @@
 #include <InterViews/resource.h>
 #include <nrniv/nrnoc2iv.h>
 #include <oc/classreg.h>
-#include <nrnpython/nrnpython.h>
-#include <nrnpython/hoccontext.h>
+#include "nrnpython.h"
+#include "hoccontext.h"
 #include <nrniv/nrnpy.h>
-#include <nrnpython/nrnpy_utils.h>
+#include "nrnpy_utils.h"
 #include <oc/oc_ansi.h>
 
 #include "parse.hpp"

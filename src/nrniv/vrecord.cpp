@@ -6,7 +6,7 @@
 #include <ivoc/ivoc.h>
 #endif
 #include <nrnoc/nrniv_mf.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <ivoc/ocobserv.h>
 #include <ivoc/ivocvect.h>
 #include <stdio.h>

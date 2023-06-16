@@ -1,20 +1,20 @@
 #include <nrnconf.h>
 
 #include <vector>
-#include <ivoc/ocnotify.h>
+#include "ocnotify.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "neuron/container/soa_container.hpp"
-#include <ivoc/nrnmutdec.h>
-#include <ivoc/oc2iv.h>
+#include "nrnmutdec.h"
+#include "oc2iv.h"
 #include <oc/ocfunc.h>
-#include <ivoc/ocnotify.h>
+#include "ocnotify.h"
 #include <oc/oc_ansi.h>
-#include <ivoc/ocjump.h>
+#include "ocjump.h"
 
 #if HAVE_IV
-#include <ivoc/utility.h>
-#include <ivoc/ivoc.h>
+#include "utility.h"
+#include "ivoc.h"
 #endif
 
 #include "bimap.hpp"
@@ -199,7 +199,7 @@ void nrn_err_dialog(const char* mes) {
 #include <InterViews/style.h>
 #include <IV-look/kit.h>
 
-#include <ivoc/xmenu.h>
+#include "xmenu.h"
 
 /*
  * Interface between oc and interviews.

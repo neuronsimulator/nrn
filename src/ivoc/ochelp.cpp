@@ -11,7 +11,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include <ivoc/ivoc.h>
+#include "ivoc.h"
 
 static FILE* help_pipe;
 

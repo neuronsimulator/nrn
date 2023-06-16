@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include <nrnpython/grids.h>
-#include <nrnpython/rxd.h>
-#include <nrnpython/nrnwrap_Python.h>
+#include "grids.h"
+#include "rxd.h"
+#include "nrnwrap_Python.h"
 #include <unistd.h>
 
 #include <cmath>

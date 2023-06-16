@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <math.h>
 #include <nrniv/nrnoc2iv.h>
-#include <nrncvode/cvodeobj.h>
+#include "cvodeobj.h"
 #include <nrnoc/nonvintblock.h>
 
 #include <nrnoc/membfunc.h>

@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <oc/oc_ansi.h>
-#include <neuronmusic/nrnmusicapi.h>
+#include "nrnmusicapi.h"
 #include <array>
 #include <cstdlib>
 

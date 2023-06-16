@@ -8,8 +8,8 @@
  *
  ******************************************************************************/
 #include "errcodes.hpp"
-#include <scopmath/scoplib.h>
-#include <scopmath/newton_struct.h>
+#include "scoplib.h"
+#include "newton_struct.h"
 
 #include <cstdlib>
 #include <cmath>

@@ -13,9 +13,9 @@
  *
  ******************************************************************************/
 #include "errcodes.hpp"
-#include <scopmath/newton_struct.h>
+#include "newton_struct.h"
 #include "../oc/nrnassrt.h"
-#include <scopmath/scoplib.h>
+#include "scoplib.h"
 
 #include <cstdio>
 #include <cstdlib>

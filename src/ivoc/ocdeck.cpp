@@ -8,9 +8,9 @@
 #include <InterViews/background.h>
 #include <IV-look/kit.h>
 #include <stdio.h>
-#include <ivoc/ocdeck.h>
-#include <ivoc/apwindow.h>
-#include <ivoc/oc2iv.h>
+#include "ocdeck.h"
+#include "apwindow.h"
+#include "oc2iv.h"
 #endif /* HAVE_IV */
 #include <oc/classreg.h>
 #include <nrnoc/gui-redirect.h>

@@ -1,6 +1,6 @@
 #include <nrnconf.h>
 #include <stdlib.h>
-#include <oc/nrnmpi.h>
+#include "nrnmpi.h"
 
 #if NRNMPI && DARWIN && !defined(NRNMPI_DYNAMICLOAD)
 // For DARWIN I do not really know the proper way to avoid

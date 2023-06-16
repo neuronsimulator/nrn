@@ -19,8 +19,8 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#include <gnu/Random.h>
-#include <gnu/HypGeom.h>
+#include "Random.h"
+#include "HypGeom.h"
 
 double HyperGeometric::operator()()
 {

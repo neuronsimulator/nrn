@@ -33,7 +33,7 @@ extern "C" void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int ty
 extern int nrnmpi_numprocs;
 #endif
 
-#include <nrniv/nvector_nrnparallel_ld.h>
+#include "nvector_nrnparallel_ld.h"
 #if NRNMPI_DYNAMICLOAD
 #else
 extern MPI_Comm nrnmpi_comm;

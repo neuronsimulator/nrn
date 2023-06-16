@@ -3,14 +3,14 @@
 
 #include <cmath>
 #include <oc/classreg.h>
-#include <nrncvode/cvodeobj.h>
+#include "cvodeobj.h"
 #include <nrnoc/nrncvode.h>
 #include <nrnoc/nrniv_mf.h>
 #include <nrniv/nrnoc2iv.h>
 #include <ivoc/datapath.h>
 #if USECVODE
-#include <nrncvode/cvodeobj.h>
-#include <nrncvode/netcvode.h>
+#include "cvodeobj.h"
+#include "netcvode.h"
 #else
 class Cvode;
 #endif

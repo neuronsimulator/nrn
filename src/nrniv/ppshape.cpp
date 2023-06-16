@@ -1,11 +1,11 @@
 #include <nrnconf.h>
 #include <stdio.h>
 #include <ivoc/oclist.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <oc/classreg.h>
 
 #if HAVE_IV
-#include <nrniv/ppshape.h>
+#include "ppshape.h"
 #endif  // HAVE_IV
 #include <nrnoc/gui-redirect.h>
 

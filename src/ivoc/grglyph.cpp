@@ -2,13 +2,13 @@
 // hoc level Glyph implementation for graphing
 #include <stdio.h>
 #include <oc/classreg.h>
-#include <ivoc/oc2iv.h>
+#include "oc2iv.h"
 #if HAVE_IV
-#include <ivoc/ivoc.h>
+#include "ivoc.h"
 #include <InterViews/printer.h>
 #include <InterViews/image.h>
-#include <ivoc/grglyph.h>
-#include <ivoc/idraw.h>
+#include "grglyph.h"
+#include "idraw.h"
 
 extern Image* gif_image(const char*);
 #else

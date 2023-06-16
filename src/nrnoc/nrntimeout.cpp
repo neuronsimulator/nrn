@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <sys/time.h>
-#include <nrnoc/section.h>
+#include "section.h"
 
 static double told;
 static struct itimerval value;

@@ -45,8 +45,8 @@ contained the header:
 #include <math.h>
 #include <float.h>
 #include <stdlib.h>
-#include <oc/mcran4.h>
-#include <oc/hocdec.h>
+#include "mcran4.h"
+#include "hocdec.h"
 
 static uint32_t lowindex = 0;
 

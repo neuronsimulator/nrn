@@ -3,7 +3,7 @@
 #include <InterViews/resource.h>
 #include <ctype.h>
 #include <nrnoc/membfunc.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <nrnoc/nrniv_mf.h>
 
 #include "parse.hpp"

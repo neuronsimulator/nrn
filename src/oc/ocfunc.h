@@ -1,5 +1,5 @@
 #pragma once
-#include <oc/nrnfilewrap.h>
+#include "nrnfilewrap.h"
 
 #include <cstddef>
 

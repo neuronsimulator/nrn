@@ -2,17 +2,17 @@
 
 #if HAVE_IV
 #include <InterViews/window.h>
-#include <ivoc/ivoc.h>
-#include <ivoc/scenevie.h>
-#include <ivoc/utility.h>
+#include "ivoc.h"
+#include "scenevie.h"
+#include "utility.h"
 #endif
 
-#include <ivoc/ocnotify.h>
+#include "ocnotify.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <nrniv/nrnpy.h>
-#include <ivoc/objcmd.h>
-#include <ivoc/oc2iv.h>
+#include "objcmd.h"
+#include "oc2iv.h"
 
 extern Object* hoc_thisobject;
 

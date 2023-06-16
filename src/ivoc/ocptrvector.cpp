@@ -10,12 +10,12 @@
     p.gather(Vector)
 */
 #include <oc/classreg.h>
-#include <ivoc/oc2iv.h>
-#include <ivoc/ocptrvector.h>
-#include <ivoc/objcmd.h>
-#include <ivoc/ivocvect.h>
+#include "oc2iv.h"
+#include "ocptrvector.h"
+#include "objcmd.h"
+#include "ivocvect.h"
 #if HAVE_IV
-#include <ivoc/graph.h>
+#include "graph.h"
 #endif
 #include <nrnoc/gui-redirect.h>
 

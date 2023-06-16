@@ -62,10 +62,10 @@ getsym.cpp,v
 #if OCSMALL
 #else
 
-#include <oc/hocgetsym.h>
+#include "hocgetsym.h"
 #include "parse.hpp"
-#include <oc/hocparse.h>
-#include <oc/code.h>
+#include "hocparse.h"
+#include "code.h"
 
 Psym* hoc_getsym(const char* cp) {
     Symbol *sp, *sym;

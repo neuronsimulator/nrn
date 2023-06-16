@@ -4,10 +4,10 @@
 #define INCLUDEHOCH 1
 
 #include "neuron/container/generic_data_handle.hpp"
-#include <oc/nrnapi.h>
-#include <oc/hocassrt.h> /* hoc_execerror instead of abort */
-#include <oc/nrnassrt.h> /* assert in case of side effects (eg. scanf) */
-#include <oc/wrap_sprintf.h>
+#include "nrnapi.h"
+#include "hocassrt.h" /* hoc_execerror instead of abort */
+#include "nrnassrt.h" /* assert in case of side effects (eg. scanf) */
+#include "wrap_sprintf.h"
 
 #include <iostream>
 #include <cstdint>
@@ -222,7 +222,7 @@ struct HocParmUnits { /* units for symbol values */
     const char* units;
 };
 
-#include <oc/oc_ansi.h>
+#include "oc_ansi.h"
 
 void* emalloc(size_t n);
 void* ecalloc(size_t n, size_t size);

@@ -6,8 +6,8 @@
 #include <ivoc/ivoc.h>
 #endif
 #include <oc/classreg.h>
-#include <nrniv/linmod.h>
-#include <nrniv/nrnoc2iv.h>
+#include "linmod.h"
+#include "nrnoc2iv.h"
 
 // hoc interface to a LinearModelAddition
 // remember that the policy for equation additions to the tree matrix is

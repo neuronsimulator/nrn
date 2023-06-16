@@ -1,4 +1,4 @@
-#include <nrniv/nrnpy.h>
+#include "nrnpy.h"
 #include <nrnconf.h>
 // For Linux and Max OS X,
 // Solve the problem of not knowing what version of Python the user has by
@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <InterViews/resource.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <oc/classreg.h>
 #include <nrnoc/nonvintblock.h>
 #include <oc/nrnmpi.h>

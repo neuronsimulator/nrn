@@ -8,9 +8,9 @@
 #include <math.h>
 #include <sparse13/spmatrix.h>
 #include <nrniv/nrnoc2iv.h>
-#include <nrncvode/cvodeobj.h>
-#include <nrncvode/nrndaspk.h>
-#include <nrncvode/netcvode.h>
+#include "cvodeobj.h"
+#include "nrndaspk.h"
+#include "netcvode.h"
 #include <nrnoc/nrn_ansi.h>
 #include <sundials/ida/ida.h>
 #include <sundials/ida/ida_impl.h>

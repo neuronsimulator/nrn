@@ -99,12 +99,12 @@ correctness has not been validated for cells without gids.
 #include <nrnoc/nrncvode.h>
 
 #include <nrncvode/vrecitem.h>  // for nrnbbcore_vecplay_write
-#include <nrniv/nrnsection_mapping.h>
+#include "nrnsection_mapping.h"
 
-#include <nrniv/nrncore_write.h>
-#include <nrniv/nrncore_write/utils/nrncore_utils.h>
-#include <nrniv/nrncore_write/io/nrncore_io.h>
-#include <nrniv/nrncore_write/callbacks/nrncore_callbacks.h>
+#include "nrncore_write.h"
+#include "nrncore_write/utils/nrncore_utils.h"
+#include "nrncore_write/io/nrncore_io.h"
+#include "nrncore_write/callbacks/nrncore_callbacks.h"
 #include <map>
 
 #include <oc/nrnwrap_dlfcn.h>

@@ -4,7 +4,7 @@
 #include <OS/list.h>
 #include <OS/string.h>
 #include <stdio.h>
-#include <ivoc/ocobserv.h>
+#include "ocobserv.h"
 
 #include <nrnoc/nrniv_mf.h>
 #include <nrniv/nrnoc2iv.h>
@@ -16,9 +16,9 @@ extern Symlist* hoc_symlist;
 extern Objectdata* hoc_top_level_data;
 extern Symlist *hoc_built_in_symlist, *hoc_top_level_symlist;
 #include "string.h"
-#include <ivoc/symdir.h>
+#include "symdir.h"
 
-#include <ivoc/nrnsymdiritem.h>
+#include "nrnsymdiritem.h"
 implementPtrList(SymbolList, SymbolItem);
 
 const char* concat(const char* s1, const char* s2) {

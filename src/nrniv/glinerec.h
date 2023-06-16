@@ -1,7 +1,7 @@
 #ifndef glinerec_h
 #define glinerec_h
 
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <nrncvode/vrecitem.h>
 #include <ivoc/graph.h>
 

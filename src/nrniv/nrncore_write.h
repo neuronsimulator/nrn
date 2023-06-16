@@ -1,7 +1,7 @@
 #ifndef nrncore_write_h
 #define nrncore_write_h
 
-#include <nrniv/nrncore_write/data/cell_group.h>
+#include "nrncore_write/data/cell_group.h"
 
 int nrncore_run(const char* arg);
 int nrncore_is_enabled();

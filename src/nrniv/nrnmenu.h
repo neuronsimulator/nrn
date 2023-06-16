@@ -2,7 +2,7 @@
 #define nrnmenu_h
 
 #include <OS/string.h>
-#include <nrniv/ndatclas.h>
+#include "ndatclas.h"
 class MechTypeImpl;
 
 class MechanismStandard: public Resource {

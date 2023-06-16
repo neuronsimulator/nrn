@@ -5,9 +5,9 @@
 #include <inttypes.h>
 #include <ivoc/ocfile.h>
 #include <nrnoc/nrncvode.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <oc/classreg.h>
-#include <nrniv/ndatclas.h>
+#include "ndatclas.h"
 #include <nrnoc/nrniv_mf.h>
 
 #include <nrncvode/tqueue.h>

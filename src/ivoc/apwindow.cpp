@@ -23,9 +23,9 @@
 #include <InterViews/session.h>
 #include <OS/string.h>
 
-#include <ivoc/apwindow.h>
-#include <ivoc/ocglyph.h>
-#include <ivoc/ivoc.h>
+#include "apwindow.h"
+#include "ocglyph.h"
+#include "ivoc.h"
 #include <stdio.h>
 #include <string.h>
 

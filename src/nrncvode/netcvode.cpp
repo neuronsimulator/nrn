@@ -11,12 +11,12 @@
 #include <oc/classreg.h>
 #include <nrniv/nrnoc2iv.h>
 #include "parse.hpp"
-#include <nrncvode/cvodeobj.h>
+#include "cvodeobj.h"
 #include <oc/hoclist.h>
-#include <nrncvode/pool.h>
-#include <nrncvode/tqueue.h>
+#include "pool.h"
+#include "tqueue.h"
 #include <ivoc/ocobserv.h>
-#include <nrncvode/nrnneosm.h>
+#include "nrnneosm.h"
 #include <ivoc/datapath.h>
 #include <ivoc/objcmd.h>
 #include <sundials/shared/sundialsmath.h>
@@ -27,13 +27,13 @@
 #include <nrniv/glinerec.h>
 #include <ivoc/ocjump.h>
 #endif
-#include <nrncvode/vrecitem.h>
+#include "vrecitem.h"
 #include <ivoc/oclist.h>
 #define PROFILE 0
 #include <ivoc/htlist.h>
 #include <ivoc/ivocvect.h>
-#include <nrncvode/netcon.h>
-#include <nrncvode/netcvode.h>
+#include "netcon.h"
+#include "netcvode.h"
 #include <nrnoc/nrn_ansi.h>
 #include <nrniv/nrncore_write/utils/nrncore_utils.h>
 #include <nrnoc/nrniv_mf.h>
@@ -3515,7 +3515,7 @@ void PlayRecordEvent::pr(const char* s, double tt, NetCvode* ns) {
     plr_->pr();
 }
 
-#include <nrncvode/hocevent.cpp>
+#include "hocevent.cpp"
 
 void NetCvode::local_retreat(double t, Cvode* cv) {
     if (!cvode_active_) {

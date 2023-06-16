@@ -10,9 +10,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <ivoc/rubband.h>
-#include <ivoc/scenevie.h>
-#include <ivoc/apwindow.h>
+#include "rubband.h"
+#include "scenevie.h"
+#include "apwindow.h"
 
 void get_position(XDisplay* dpy, XWindow window, int* rx, int* ry);
 

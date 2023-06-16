@@ -1,7 +1,7 @@
 #include <nmodlconf.h>
-#include <nmodl/modl.h>
+#include "modl.h"
 #include "parse1.hpp"
-#include <nmodl/symbol.h>
+#include "symbol.h"
 
 extern int numlist;
 static List* eqnq;

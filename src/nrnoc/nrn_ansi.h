@@ -1,6 +1,6 @@
 #pragma once
 #include <oc/hocdec.h>
-#include <nrnoc/membfunc.h>  // nrn_bamech_t
+#include "membfunc.h"  // nrn_bamech_t
 #include "neuron/container/data_handle.hpp"
 
 #include <memory>

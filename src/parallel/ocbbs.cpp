@@ -1,12 +1,12 @@
 #include <nrnconf.h>
-#include <parallel/bbsconf.h>
+#include "bbsconf.h"
 #include <InterViews/resource.h>
 #include <oc/classreg.h>
 #include <ivoc/oc2iv.h>
 #include <ivoc/ivocvect.h>
 #include <oc/hoclist.h>
-#include <parallel/bbs.h>
-#include <parallel/bbsimpl.h>
+#include "bbs.h"
+#include "bbsimpl.h"
 #include <ivoc/ivocvect.h>
 #include "parse.hpp"
 #include <nrnoc/section.h>

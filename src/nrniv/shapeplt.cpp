@@ -18,11 +18,11 @@
 #include <stdio.h>
 #include <ivoc/scenepic.h>
 #endif
-#include <nrniv/shapeplt.h>
+#include "shapeplt.h"
 #if HAVE_IV
 #include <ivoc/graph.h>
 #include <ivoc/ivoc.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <ivoc/rubband.h>
 #include <ivoc/symchoos.h>
 #include <ivoc/symdir.h>

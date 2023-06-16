@@ -35,9 +35,9 @@ fsyng(i)
 */
 
 #include <stdlib.h>
-#include <nrnoc/neuron.h>
-#include <nrnoc/section.h>
-#include <nrnoc/nrniv_mf.h>
+#include "neuron.h"
+#include "section.h"
+#include "nrniv_mf.h"
 #include <math.h>
 
 

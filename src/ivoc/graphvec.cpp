@@ -3,12 +3,12 @@
 
 #define USEGNU 1
 
-#include <ivoc/graph.h>
-#include <ivoc/ivoc.h>
+#include "graph.h"
+#include "ivoc.h"
 
 #if USEGNU
-#include <ivoc/oc2iv.h>
-#include <ivoc/ivocvect.h>
+#include "oc2iv.h"
+#include "ivocvect.h"
 
 Object** DataVec::new_vect(GLabel* gl) const {
     int i, cnt;

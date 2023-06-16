@@ -1,8 +1,8 @@
 #include <nrnconf.h>
-#include <nrnoc/nrn_ansi.h>
+#include "nrn_ansi.h"
 #include <oc/nrnassrt.h>
-#include <nrnoc/nrnconfigargs.h>
-#include <nrnoc/nrnversion.h>
+#include "nrnconfigargs.h"
+#include "nrnversion.h"
 
 #include <stdio.h>
 #include <string.h>

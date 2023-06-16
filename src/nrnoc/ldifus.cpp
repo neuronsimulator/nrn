@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <math.h>
-#include <nrnoc/section.h>
-#include <nrnoc/membfunc.h>
-#include <nrnoc/neuron.h>
-#include <nrnoc/nrniv_mf.h>
+#include "section.h"
+#include "membfunc.h"
+#include "neuron.h"
+#include "nrniv_mf.h"
 #include "parse.hpp"
 
 

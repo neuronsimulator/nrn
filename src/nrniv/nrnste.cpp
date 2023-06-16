@@ -2,11 +2,11 @@
 #include <stdio.h>
 #include <InterViews/resource.h>
 #include <string.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <nrnoc/nrniv_mf.h>
 #include <oc/classreg.h>
 #include <ivoc/objcmd.h>
-#include <nrniv/nrnste.h>
+#include "nrnste.h"
 #include <nrncvode/netcon.h>
 
 extern int hoc_return_type_code;

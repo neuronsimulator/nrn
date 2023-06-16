@@ -3,10 +3,10 @@
 
 #include <stdio.h>
 #include <math.h>
-#include <ivoc/ocmatrix.h>
-#include <ivoc/oc2iv.h>
+#include "ocmatrix.h"
+#include "oc2iv.h"
 #include "parse.hpp"
-#include <ivoc/ivocvect.h>
+#include "ivocvect.h"
 
 #define EPS hoc_epsilon
 Symbol* nrn_matrix_sym;  // also used in oc/hoc_oop.cpp

@@ -2,7 +2,7 @@
 #include <oc/nrnmpi.h>
 
 #include <oc/hoclist.h>
-#include <nrnoc/section.h>
+#include "section.h"
 /*
 Now that threads have taken over the actual_v, v_node, etc, it might
 be a good time to regularize the method of freeing, allocating, and
@@ -36,7 +36,7 @@ model structure. We want to use Node* as much as possible and defer
 the handling of v_structure_change as long as possible.
 */
 
-#include <nrnoc/nmodlmutex.h>
+#include "nmodlmutex.h"
 
 #include <cstdint>
 #include <condition_variable>

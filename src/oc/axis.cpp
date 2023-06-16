@@ -134,7 +134,7 @@ axis.cpp,v
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <oc/hoc.h>
+#include "hoc.h"
 #include <nrnoc/gui-redirect.h>
 
 #define CLIP 1e9

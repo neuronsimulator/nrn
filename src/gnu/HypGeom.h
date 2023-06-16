@@ -21,7 +21,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #endif
 #define _HyperGeometric_h 
 
-#include <gnu/Random.h>
+#include "Random.h"
 
 class HyperGeometric: public Random {
 protected:

@@ -1,6 +1,6 @@
 #ifndef nrnmpi_h
 #define nrnmpi_h
-#include <oc/nrnmpiuse.h>
+#include "nrnmpiuse.h"
 
 /* by default nrnmpi_numprocs_world = nrnmpi_numprocs = nrnmpi_numsubworlds and
    nrnmpi_myid_world = nrnmpi_myid and the bulletin board and network communication do

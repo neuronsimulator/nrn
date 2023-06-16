@@ -9,7 +9,7 @@
  *
  ******************************************************************************/
 #include "errcodes.hpp"
-#include <scopmath/scoplib.h>
+#include "scoplib.h"
 
 #include <cmath>
 

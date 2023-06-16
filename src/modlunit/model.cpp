@@ -24,7 +24,7 @@
  * still gives the prefix of the .c and .var files.
  */
 
-#include <modlunit/model.h>
+#include "model.h"
 #include "parse1.hpp"
 
 extern int yyparse();

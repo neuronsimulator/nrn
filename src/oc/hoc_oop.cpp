@@ -1,17 +1,17 @@
 #include <nrnconf.h>
 #include <stdlib.h>
-#include <oc/classreg.h>
-#include <oc/hocstr.h>
+#include "classreg.h"
+#include "hocstr.h"
 #include "parse.hpp"
-#include <oc/hocparse.h>
-#include <oc/code.h>
-#include <oc/hocassrt.h>
-#include <oc/hoclist.h>
+#include "hocparse.h"
+#include "code.h"
+#include "hocassrt.h"
+#include "hoclist.h"
 #include <nrnoc/nrn_ansi.h>
-#include <oc/nrnmpi.h>
+#include "nrnmpi.h"
 #include <nrniv/nrnpy.h>
-#include <oc/nrnfilewrap.h>
-#include <oc/ocfunc.h>
+#include "nrnfilewrap.h"
+#include "ocfunc.h"
 
 
 #define PDEBUG 0

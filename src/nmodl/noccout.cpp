@@ -1,9 +1,9 @@
 #include <nmodlconf.h>
 
 /* print the .c file from the lists */
-#include <nmodl/modl.h>
+#include "modl.h"
 #include "parse1.hpp"
-#include <nmodl/symbol.h>
+#include "symbol.h"
 
 extern char* nmodl_version_;
 

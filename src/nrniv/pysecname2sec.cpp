@@ -5,7 +5,7 @@
 
 #include <parse.hpp>
 
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 
 #include <ivoc/nrnsymdiritem.h>
 

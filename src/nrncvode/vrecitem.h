@@ -3,7 +3,7 @@
 
 #include <OS/list.h>
 #include <InterViews/observe.h>
-#include <nrncvode/netcon.h>
+#include "netcon.h"
 #include <ivoc/ivocvect.h>
 
 class PlayRecord;

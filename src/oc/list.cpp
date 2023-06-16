@@ -31,8 +31,8 @@ following function calls.
 #define HOC_L_LIST 1
 
 #include <stdlib.h>
-#include <oc/hoclist.h>
-#include <oc/hocdec.h>
+#include "hoclist.h"
+#include "hocdec.h"
 #include "parse.hpp"
 
 #define Free free

@@ -257,7 +257,7 @@ extern Symbol *install(const char*, int), /* Install token in symbol table */
                        const char*units,
                        const char*limits); /* new .var info only if
                                             * not already done. */
-#include <nmodl/nmodlfunc.h>
+#include "nmodlfunc.h"
 
 extern char finname[NRN_BUFSIZE]; /* the input file prefix */
 extern char buf[NRN_BUFSIZE];     /* general purpose temporary buffer */

@@ -23,7 +23,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include <math.h>
 
-#include <gnu/RNG.h>
+#include "RNG.h"
 
 class Random {
 protected:

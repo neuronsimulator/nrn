@@ -16,7 +16,7 @@
 */
 
 #include <ivoc/rubband.h>
-#include <nrniv/rotate3d.h>
+#include "rotate3d.h"
 
 class Rotate3Band: public Rubberband {
   public:

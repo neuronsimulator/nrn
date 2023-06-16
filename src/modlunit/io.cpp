@@ -3,7 +3,7 @@
 
 /* file.mod input routines */
 #include <stdlib.h>
-#include <modlunit/model.h>
+#include "model.h"
 #include <ctype.h>
 #undef METHOD
 #include "parse1.hpp"

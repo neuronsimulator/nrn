@@ -59,7 +59,7 @@ which sets up _p and _ppvar for use by functions in the model called
 directly by hoc.
 */
 
-#include <nmodl/modl.h>
+#include "modl.h"
 #include "parse1.hpp"
 
 #include <algorithm>

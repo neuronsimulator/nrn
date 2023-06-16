@@ -1,8 +1,8 @@
-#include <nrnoc/membfunc.h>
+#include "membfunc.h"
 #include "neuron/container/generic_data_handle.hpp"
 #include "neuron/container/soa_container.hpp"
 #include "neuron/model_data.hpp"
-#include <nrnoc/section.h>
+#include "section.h"
 
 #include <cstddef>
 #include <optional>

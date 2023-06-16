@@ -1,9 +1,9 @@
 #include <nrnconf.h>
-#include <parallel/bbsconf.h>
+#include "bbsconf.h"
 #include <InterViews/resource.h>
 #include <ivoc/oc2iv.h>
-#include <parallel/bbslocal.h>
-#include <parallel/bbslsrv.h>
+#include "bbslocal.h"
+#include "bbslsrv.h"
 #include <oc/nrnmpi.h>
 
 #if defined(HAVE_STL)

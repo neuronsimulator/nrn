@@ -1,7 +1,7 @@
 #ifndef hocparse_h
 #define hocparse_h
 
-#include <oc/hoc.h>
+#include "hoc.h"
 
 
 /* do not know why this is not in parse.hpp */

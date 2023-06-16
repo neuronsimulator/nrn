@@ -1,5 +1,5 @@
 #include <nrnconf.h>
-#include <nrniv/matrixmap.h>
+#include "matrixmap.h"
 #include <vector>
 using std::vector;
 

@@ -20,7 +20,7 @@
 #include <stdlib.h>
 
 #include <sundials/shared/nvector_serial.h>
-#include <nrniv/nvector_nrnthread_ld.h>
+#include "nvector_nrnthread_ld.h"
 #include <sundials/shared/sundialsmath.h>
 #include <sundials/shared/sundialstypes.h>
 #include <nrnoc/section.h>

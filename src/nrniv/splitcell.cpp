@@ -3,7 +3,7 @@
 #include <vector>
 #include <errno.h>
 #include <nrnoc/nrniv_mf.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <oc/nrnmpi.h>
 
 /*

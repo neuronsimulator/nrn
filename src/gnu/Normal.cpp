@@ -18,8 +18,8 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#include <gnu/Random.h>
-#include <gnu/Normal.h>
+#include "Random.h"
+#include "Normal.h"
 //
 //	See Simulation, Modelling & Analysis by Law & Kelton, pp259
 //

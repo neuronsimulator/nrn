@@ -48,7 +48,7 @@ xred.cpp,v
  *
 */
 
-#include <oc/hoc.h>
+#include "hoc.h"
 
 
 /* input a n integer in range > min and < max */

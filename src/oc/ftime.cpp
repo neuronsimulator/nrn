@@ -1,5 +1,5 @@
 #include <nrnconf.h>
-#include <oc/hoc.h>
+#include "hoc.h"
 
 #if defined(HAVE_GETTIMEOFDAY)
 

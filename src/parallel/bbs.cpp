@@ -1,15 +1,15 @@
 #include <nrnconf.h>
 #include <oc/nrnmpi.h>
-#include <parallel/bbsconf.h>
+#include "bbsconf.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <InterViews/resource.h>
 #include <ivoc/oc2iv.h>
-#include <parallel/bbs.h>
-#include <parallel/bbslocal.h>
+#include "bbs.h"
+#include "bbslocal.h"
 #if defined(NRNMPI)
-#include <parallel/bbsdirect.h>
-#include <parallel/bbsrcli.h>
+#include "bbsdirect.h"
+#include "bbsrcli.h"
 #endif
 
 #if defined(HAVE_TMS) && !NRNMPI

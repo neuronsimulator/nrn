@@ -16,7 +16,7 @@ access s1.sec	// soma becomes the default section
 */
 
 #include <stdlib.h>
-#include <nrnoc/section.h>
+#include "section.h"
 #include "parse.hpp"
 #include <oc/hoc_membf.h>
 #include <oc/oc_ansi.h>

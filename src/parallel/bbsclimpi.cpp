@@ -1,6 +1,6 @@
 #include <nrnconf.h>
 #include <oc/nrnmpi.h>
-#include <parallel/bbsconf.h>
+#include "bbsconf.h"
 #ifdef NRNMPI  // to end of file
 #include <errno.h>
 #include <stdio.h>
@@ -9,9 +9,9 @@
 #include <InterViews/resource.h>
 #include <nrniv/nrnpy.h>
 #include <ivoc/oc2iv.h>
-#include <parallel/bbs.h>
-#include <parallel/bbsrcli.h>
-#include <parallel/bbssrv.h>
+#include "bbs.h"
+#include "bbsrcli.h"
+#include "bbssrv.h"
 
 extern void nrnmpi_int_broadcast(int*, int, int);
 

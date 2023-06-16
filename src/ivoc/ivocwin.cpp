@@ -1,5 +1,5 @@
 #include <nrnconf.h>
-#include <ivoc/oc2iv.h>
+#include "oc2iv.h"
 
 #if HAVE_IV
 #include <IV-Win/MWlib.h>
@@ -24,13 +24,13 @@
 #include <InterViews/display.h>
 #include <InterViews/cursor.h>
 #include <IV-Win/canvas.h>
-#include <ivoc/apwindow.h>
-#include <ivoc/ivoc.h>
-#include <ivoc/rubband.h>
-#include <ivoc/symdir.h>
+#include "apwindow.h"
+#include "ivoc.h"
+#include "rubband.h"
+#include "symdir.h"
 #undef max
 #undef min
-#include <ivoc/graph.h>
+#include "graph.h"
 
 #include <condition_variable>
 #include <mutex>
@@ -208,7 +208,7 @@ void IOHandler::childStatus(pid_t, int) {}
 
 #ifdef MINGW
 
-#include <ivoc/nrnmutdec.h>
+#include "nrnmutdec.h"
 static int bind_tid_;
 void nrniv_bind_thread(void);
 extern int (*iv_bind_enqueue_)(void (*)(void*), void* w);

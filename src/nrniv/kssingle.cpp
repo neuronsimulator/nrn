@@ -2,9 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <OS/list.h>
-#include <nrniv/nrnoc2iv.h>
-#include <nrniv/kschan.h>
-#include <nrniv/kssingle.h>
+#include "nrnoc2iv.h"
+#include "kschan.h"
+#include "kssingle.h"
 
 // needed for DiscreteEvent aspect
 #include <nrncvode/netcvode.h>

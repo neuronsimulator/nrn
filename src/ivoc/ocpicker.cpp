@@ -4,8 +4,8 @@
 #include <OS/list.h>
 #include <InterViews/hit.h>
 #include <stdio.h>
-#include <ivoc/ocpicker.h>
-#include <ivoc/rubband.h>
+#include "ocpicker.h"
+#include "rubband.h"
 
 /*static*/ class ButtonHandler {
   public:

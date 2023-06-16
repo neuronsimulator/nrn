@@ -4,7 +4,7 @@
 #include <InterViews/input.h>
 #include <InterViews/event.h>
 #include <InterViews/handler.h>
-#include <ivoc/rubband.h>
+#include "rubband.h"
 
 class HandlerList;
 class Canvas;

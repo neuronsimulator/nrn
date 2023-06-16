@@ -23,12 +23,12 @@
    d and rhs is calculated from the property list.
 */
 #include <oc/hoclist.h>
-#include <nrnoc/membfunc.h>
+#include "membfunc.h"
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/container/node_data.hpp"
 #include "neuron/model_data.hpp"
-#include <nrnoc/nrnredef.h>
-#include <nrnoc/options.h>
+#include "nrnredef.h"
+#include "options.h"
 #include "section_fwd.hpp"
 
 /*#define DEBUGSOLVE 1*/
@@ -446,7 +446,7 @@ extern void nrn_section_free(Section*);
 extern int nrn_is_valid_section_ptr(void*);
 
 
-#include <nrnoc/multicore.h>
+#include "multicore.h"
 
 #define tstopbit   (1 << 15)
 #define tstopset   stoprun |= tstopbit
@@ -455,4 +455,4 @@ extern int nrn_is_valid_section_ptr(void*);
 /* of any hoc call for integration and before returning to hoc */
 
 
-#include <nrnoc/nrn_ansi.h>
+#include "nrn_ansi.h"

@@ -10,14 +10,14 @@ extern int hoc_return_type_code;
 #include <InterViews/background.h>
 #include <InterViews/event.h>
 #include <IV-look/kit.h>
-#include <ivoc/ocglyph.h>
+#include "ocglyph.h"
 #endif
 
 #include <oc/classreg.h>
 #if HAVE_IV
-#include <ivoc/oc2iv.h>
-#include <ivoc/apwindow.h>
-#include <ivoc/ivoc.h>
+#include "oc2iv.h"
+#include "apwindow.h"
+#include "ivoc.h"
 #endif
 
 #include <nrnoc/gui-redirect.h>

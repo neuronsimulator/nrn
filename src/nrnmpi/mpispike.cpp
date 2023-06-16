@@ -8,16 +8,16 @@
 #include <oc/nrnmpiuse.h>
 
 #if NRNMPI_DYNAMICLOAD
-#include <nrnmpi/nrnmpi_dynam.h>
+#include "nrnmpi_dynam.h"
 #endif
 
 #include <oc/nrnmpi.h>
 #include <oc/hocdec.h>
 
 #if NRNMPI
-#include <nrnmpi/nrnmpidec.h>
-#include <nrnmpi/nrnmpi_impl.h>
-#include <nrnmpi/mpispike.h>
+#include "nrnmpidec.h"
+#include "nrnmpi_impl.h"
+#include "mpispike.h"
 #include <mpi.h>
 
 #include <limits>

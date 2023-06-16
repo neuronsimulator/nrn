@@ -13,11 +13,11 @@
 #define _XOPEN_SOURCE 600
 #endif
 
-#include <oc/hoc.h>
-#include <oc/hocdec.h>
-#include <oc/hoclist.h>
+#include "hoc.h"
+#include "hocdec.h"
+#include "hoclist.h"
 #include <nrniv/nrncore_write/utils/nrncore_utils.h>
-#include <oc/oc_ansi.h>
+#include "oc_ansi.h"
 #include <ivoc/ocnotify.h>
 #include "parse.hpp"
 
@@ -32,7 +32,7 @@
 #include <alloc.h> /* at least for turbo C 2.0 */
 #endif
 
-#include <oc/nrnmpiuse.h>
+#include "nrnmpiuse.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach/mach.h>

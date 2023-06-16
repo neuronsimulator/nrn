@@ -1,7 +1,7 @@
 #ifndef hoc_code_h
 #define hoc_code_h
 
-#include <oc/redef.h>
+#include "redef.h"
 
 extern void nopop(void);
 extern void edit(void);

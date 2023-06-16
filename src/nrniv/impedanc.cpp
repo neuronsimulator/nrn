@@ -3,10 +3,10 @@
 #include <nrnoc/nrniv_mf.h>
 #include <oc/nrnmpi.h>
 #include <nrnoc/nrn_ansi.h>
-#include <nrniv/nonlinz.h>
+#include "nonlinz.h"
 #include <InterViews/resource.h>
 #include <complex>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <oc/classreg.h>
 #include <stdio.h>
 #include <nrnoc/membfunc.h>

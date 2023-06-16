@@ -8,8 +8,8 @@
 #include <numeric>
 #include <functional>
 
-#include <ivoc/fourier.h>
-#include <ivoc/mymath.h>
+#include "fourier.h"
+#include "mymath.h"
 
 #if HAVE_IV
 #include <InterViews/glyph.h>
@@ -36,9 +36,9 @@ extern void exit(int status);
 
 #include <oc/classreg.h>
 #if HAVE_IV
-#include <ivoc/apwindow.h>
-#include <ivoc/ivoc.h>
-#include <ivoc/graph.h>
+#include "apwindow.h"
+#include "ivoc.h"
+#include "graph.h"
 #endif
 
 #include <nrnoc/gui-redirect.h>
@@ -110,18 +110,18 @@ static double dmaxint_ = 9007199254740992;
         (_X__) = *((_TYPE__*) &_OUT__);                         \
     }
 
-#include <ivoc/ivocvect.h>
+#include "ivocvect.h"
 
 // definition of random numer generator
-#include <ivoc/random1.h>
+#include "random1.h"
 #include <gnu/Uniform.h>
 
 #if HAVE_IV
-#include <ivoc/utility.h>
+#include "utility.h"
 #endif
-#include <ivoc/oc2iv.h>
+#include "oc2iv.h"
 #include <oc/oc_ansi.h>
-#include <ivoc/ocfile.h>
+#include "ocfile.h"
 #include <oc/ocfunc.h>
 #include "parse.hpp"
 

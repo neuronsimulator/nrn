@@ -4,16 +4,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <oc/classreg.h>
-#include <ivoc/oc2iv.h>
+#include "oc2iv.h"
 #include <string.h>
 // for alias
-#include <ivoc/symdir.h>
-#include <ivoc/oclist.h>
+#include "symdir.h"
+#include "oclist.h"
 #include <parse.hpp>
 // for references
 #include <oc/hoclist.h>
 #if HAVE_IV
-#include <ivoc/ocbox.h>
+#include "ocbox.h"
 #endif
 extern Objectdata* hoc_top_level_data;
 extern Symlist* hoc_built_in_symlist;

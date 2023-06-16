@@ -50,7 +50,7 @@ regexp.cpp,v
 */
 
 #include <stdio.h>
-#include <oc/hocdec.h>
+#include "hocdec.h"
 #define CABLESECTION 1
 /* Always match from beginning of string (implicit ^),
    Always match end of string (implicit $),

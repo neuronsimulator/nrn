@@ -1,9 +1,9 @@
 #include <nmodlconf.h>
 
 #include <stdlib.h>
-#include <nmodl/modl.h>
+#include "modl.h"
 #include "parse1.hpp"
-#include <nmodl/symbol.h>
+#include "symbol.h"
 
 void disc_var_seen(Item* q1, Item* q2, Item* q3, int array) /*NAME '@' NUMBER --- array flag*/
 {

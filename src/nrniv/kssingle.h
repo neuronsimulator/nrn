@@ -3,7 +3,7 @@
 
 #include <math.h>
 #include <ivoc/mymath.h>
-#include <nrniv/kschan.h>
+#include "kschan.h"
 #include <nrncvode/netcon.h>
 
 #include <oc/mcran4.h>

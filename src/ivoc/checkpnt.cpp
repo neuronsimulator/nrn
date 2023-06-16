@@ -90,12 +90,12 @@ data depending on type. eg for VAR && NOTUSER it is
 
 #include <OS/list.h>
 #include <OS/table.h>
-#include <ivoc/oc2iv.h>
+#include "oc2iv.h"
 #include <oc/ocfunc.h>
 #if HAVE_XDR
 #include <rpc/xdr.h>
 #endif
-#include <ivoc/checkpnt.h>
+#include "checkpnt.h"
 
 #include <oc/redef.h>
 #include <oc/hoclist.h>

@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <oc/hocdec.h>
+#include "hocdec.h"
 
 extern const char* neuron_home;
 

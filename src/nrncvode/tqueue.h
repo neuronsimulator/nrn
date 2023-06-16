@@ -3,7 +3,7 @@
 #undef check
 
 #include <ivoc/nrnmutdec.h>
-#include <nrncvode/pool.h>
+#include "pool.h"
 
 class TQItem;
 using TQItemPool = MutexPool<TQItem>;
@@ -12,13 +12,13 @@ using TQItemPool = MutexPool<TQItem>;
 #define BBTQ 5
 
 #if BBTQ == 0
-#include <nrncvode/bbtqueue.h>
+#include "bbtqueue.h"
 #elif BBTQ == 2
-#include <nrncvode/sptqueue.h>
+#include "sptqueue.h"
 #elif BBTQ == 4
-#include <nrncvode/spt2queue.h>
+#include "spt2queue.h"
 #elif BBTQ == 5
-#include <nrncvode/sptbinq.h>
+#include "sptbinq.h"
 #endif
 
 class SelfQueue {  // not really a queue but a doubly linked list for fast

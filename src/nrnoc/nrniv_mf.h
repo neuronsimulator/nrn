@@ -2,7 +2,7 @@
 #define nrniv_mf_h
 #include <oc/hoc_membf.h>
 #include <oc/hocdec.h>
-#include <nrnoc/membfunc.h>
+#include "membfunc.h"
 
 struct Memb_list;
 struct NrnThread;

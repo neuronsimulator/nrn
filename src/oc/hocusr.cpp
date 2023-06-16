@@ -3,10 +3,10 @@
 /* version 7.2.1 2-jan-89 */
 #include <stdio.h>
 #include <stdlib.h>
-#include <oc/hocdec.h>
+#include "hocdec.h"
 #include "parse.hpp"
 #if 1
-#include <oc/hocusr.h>
+#include "hocusr.h"
 #endif
 
 #define CHECK(name) nrn_load_name_check(name)

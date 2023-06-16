@@ -6,10 +6,10 @@
 #include <OS/list.h>
 #include <oc/hoclist.h>
 #if HAVE_IV
-#include <ivoc/graph.h>
+#include "graph.h"
 #endif
-#include <ivoc/datapath.h>
-#include <ivoc/ivocvect.h>
+#include "datapath.h"
+#include "ivocvect.h"
 
 #include <nrniv/nrnoc2iv.h>
 #include <nrnoc/membfunc.h>

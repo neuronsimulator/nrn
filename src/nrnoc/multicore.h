@@ -26,7 +26,7 @@ ParallelContext methods.
 actual_v, etc.
 */
 
-#include <nrnoc/membfunc.h>
+#include "membfunc.h"
 
 #include <cstddef>
 

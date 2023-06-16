@@ -5,8 +5,8 @@
 #include <Dispatch/dispatcher.h>
 
 #include <stdio.h>
-#include <ivoc/oc2iv.h>
-#include <ivoc/objcmd.h>
+#include "oc2iv.h"
+#include "objcmd.h"
 #endif /* HAVE_IV */
 #include <oc/classreg.h>
 

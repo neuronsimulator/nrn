@@ -1,11 +1,11 @@
 #include <ivoc/ivocvect.h>
 #include "neuron/container/data_handle.hpp"
 #include <nrnoc/nrniv_mf.h>
-#include <nrnpython/nrn_pyhocobject.h>
+#include "nrn_pyhocobject.h"
 #include <nrniv/nrnoc2iv.h>
 #include <nrniv/nrnpy.h>
-#include <nrnpython/nrnpy_utils.h>
-#include <nrnpython/nrnpython.h>
+#include "nrnpy_utils.h"
+#include "nrnpython.h"
 #include <oc/nrnwrap_dlfcn.h>
 #include <ivoc/ocfile.h>
 #include <ivoc/ocjump.h>
@@ -103,7 +103,7 @@ static void add2topdict(PyObject*);
 static const char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper";
 
 #if 1
-#include <nrnpython/hoccontext.h>
+#include "hoccontext.h"
 #else
 extern Object* hoc_thisobject;
 #define HocTopContextSet  \
@@ -3002,7 +3002,7 @@ static PyObject* py_hocobj_div(PyObject* obj1, PyObject* obj2) {
 }
 static PyMemberDef hocobj_members[] = {{NULL, 0, 0, 0, NULL}};
 
-#include <nrnpython/nrnpy_hoc.h>
+#include "nrnpy_hoc.h"
 
 // Figure out the endian-ness of the system, and return
 // 0 (error), '<' (little endian) or '>' (big endian)

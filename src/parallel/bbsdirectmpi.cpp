@@ -1,16 +1,16 @@
 #include <nrnconf.h>
 #include <oc/nrnmpi.h>
-#include <parallel/bbsconf.h>
+#include "bbsconf.h"
 #ifdef NRNMPI  // to end of file
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <InterViews/resource.h>
 #include <ivoc/oc2iv.h>
-#include <parallel/bbs.h>
-#include <parallel/bbsdirect.h>
-#include <parallel/bbssrv2mpi.h>
-#include <parallel/bbssrv.h>
+#include "bbs.h"
+#include "bbsdirect.h"
+#include "bbssrv2mpi.h"
+#include "bbssrv.h"
 
 extern void nrnmpi_int_broadcast(int*, int, int);
 

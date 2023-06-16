@@ -45,12 +45,12 @@
 #include <InterViews/background.h>
 #include <OS/list.h>
 
-#include <ivoc/mymath.h>
-#include <ivoc/epsprint.h>
-#include <ivoc/scenevie.h>
-#include <ivoc/scenepic.h>
-#include <ivoc/idraw.h>
-#include <ivoc/ivoc.h>
+#include "mymath.h"
+#include "epsprint.h"
+#include "scenevie.h"
+#include "scenepic.h"
+#include "idraw.h"
+#include "ivoc.h"
 
 #define Scene_Move_Text_   "MoveText Graph"
 #define Scene_ChangeColor_ "ChangeColor Graph"

@@ -1,14 +1,14 @@
 #include <nrnconf.h>
 #define NO_PYTHON_H 1
 #define IN_NRNMUSIC_CPP
-#include <neuronmusic/nrnmusicapi.h>
+#include "nrnmusicapi.h"
 #include <oc/hocdec.h>
 #include <nrnoc/nrn_ansi.h>
 #include <nrncvode/netcon.h>
 #include <nrncvode/cvodeobj.h>
 #include <nrncvode/netcvode.h>
 #include <nrnoc/multicore.h>
-#include <neuronmusic/nrnmusic.h>
+#include "nrnmusic.h"
 #include <nrniv/nrnpy.h>
 #include <nrniv/netpar.h>
 #include <unordered_map>

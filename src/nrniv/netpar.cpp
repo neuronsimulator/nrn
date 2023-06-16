@@ -5,10 +5,10 @@
 #include <nrnoc/nrncvode.h>
 #include <nrnoc/nrniv_mf.h>
 #include <oc/nrnmpi.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <nrniv/netpar.h>
+#include "netpar.h"
 #include <unordered_map>
 #include <parallel/bbs.h>
 
@@ -1565,7 +1565,7 @@ void nrn_gidout_iter(PFIO callback) {
     }
 }
 
-#include <nrniv/nrncore_write.h>
+#include "nrncore_write.h"
 extern int* nrn_prop_param_size_;
 extern short* nrn_is_artificial_;
 static int weightcnt(NetCon* nc) {

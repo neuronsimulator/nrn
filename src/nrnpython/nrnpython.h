@@ -13,7 +13,7 @@
 #if defined(USE_PYTHON)
 #undef _POSIX_C_SOURCE
 #undef _XOPEN_SOURCE
-#include <nrnpython/nrnwrap_Python.h>
+#include "nrnwrap_Python.h"
 
 #endif /*USE_PYTHON*/
 

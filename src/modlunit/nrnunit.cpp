@@ -1,6 +1,6 @@
 #include <nmodlconf.h>
-#include <modlunit/model.h>
-#include <modlunit/units.h>
+#include "model.h"
+#include "units.h"
 #include "parse1.hpp"
 
 #define IONCUR  0

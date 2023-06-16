@@ -1,11 +1,11 @@
 #include <nrnoc/nrn_ansi.h>
-#include <nrnpython/nrnpython.h>
+#include "nrnpython.h"
 #include <structmember.h>
 #include <InterViews/resource.h>
 #include <nrnoc/nrniv_mf.h>
 #include <nrniv/nrnoc2iv.h>
 #include <nrniv/nrnpy.h>
-#include <nrnpython/nrnpy_utils.h>
+#include "nrnpy_utils.h"
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
 #endif
@@ -2475,7 +2475,7 @@ static PyMethodDef nrnpy_methods[] = {
      "Specify the nrn.Section.psection callback."},
     {NULL}};
 
-#include <nrnpython/nrnpy_nrn.h>
+#include "nrnpy_nrn.h"
 
 static PyObject* nrnmodule_;
 

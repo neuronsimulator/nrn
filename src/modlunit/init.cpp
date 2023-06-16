@@ -1,7 +1,7 @@
 #include <nmodlconf.h>
 /* /local/src/master/nrn/src/modlunit/init.c,v 1.9 1998/03/25 14:33:55 hines Exp */
 
-#include <modlunit/model.h>
+#include "model.h"
 #include "parse1.hpp"
 
 extern int unitonflag;
@@ -129,12 +129,12 @@ static struct { /* numerical methods */
 
 static const char* extdef[] = {/* external names that can be used as doubles
                                 * without giving an error message */
-#include <modlunit/extdef.h>
+#include "extdef.h"
                                0};
 
 static const char* extargs[] = {/* units of args to external functions */
 /* format: name, returnunits, arg1unit, arg2unit, ..., 0, */
-#include <modlunit/extargs.h>
+#include "extargs.h"
                                 0};
 
 void init() {

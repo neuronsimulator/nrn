@@ -8,7 +8,7 @@
 #include <nrnoc/nrn_ansi.h>
 #include <nrnoc/nrndae_c.h>
 #include <nrnoc/nrniv_mf.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <oc/nrnmpi.h>
 #include <nrnoc/multisplit.h>
 #include <unordered_map>
@@ -300,7 +300,7 @@ struct MultiSplitTransferInfo {
 using MultiSplitTable = std::unordered_map<Node*, MultiSplit*>;
 using MultiSplitList = std::vector<MultiSplit*>;
 
-#include <nrniv/multisplitcontrol.h>
+#include "multisplitcontrol.h"
 static MultiSplitControl* msc_;
 
 void nrnmpi_multisplit(Section* sec, double x, int sid, int backbone_style) {

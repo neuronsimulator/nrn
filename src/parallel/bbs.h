@@ -1,7 +1,7 @@
 #ifndef bbs_h
 #define bbs_h
 
-#include <parallel/bbsimpl.h>
+#include "bbsimpl.h"
 
 class IvocVect;
 

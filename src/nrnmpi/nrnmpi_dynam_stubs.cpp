@@ -5,7 +5,7 @@
 #if NRNMPI_DYNAMICLOAD /* to end of file */
 
 #include <stdio.h>
-#include <nrnmpi/nrnmpidec.h>
+#include "nrnmpidec.h"
 
 extern double nrn_timeus();
 

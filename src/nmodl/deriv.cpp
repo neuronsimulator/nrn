@@ -1,6 +1,6 @@
 #include <nmodlconf.h>
 
-#include <nmodl/modl.h>
+#include "modl.h"
 #include <modlunit/symbol.h>
 #include "../oc/nrnassrt.h"
 #include <ctype.h>

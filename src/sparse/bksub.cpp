@@ -1,6 +1,6 @@
 #include <nrnconf.h>
 
-#include <sparse/lineq.h>
+#include "lineq.h"
 
 void bksub(void)
 {

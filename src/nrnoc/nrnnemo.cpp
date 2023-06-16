@@ -1,12 +1,12 @@
 #include <nrnconf.h>
 
-#include <nrnoc/section.h>
+#include "section.h"
 
 
 #define OBSOLETE 1
 
 #if !OBSOLETE
-#include <nrnoc/membfunc.h>
+#include "membfunc.h"
 #include <oc/hocassrt.h>
 
 /* basic loop taken from topology() in solve.cpp */

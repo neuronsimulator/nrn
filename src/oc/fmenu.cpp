@@ -109,7 +109,7 @@ extern int egagrph; /* detect if in graphics mode */
 #else
 static int egagrph = 0;
 #endif
-#include <oc/hoc.h>
+#include "hoc.h"
 #include <ctype.h>
 #define Ret(a) \
     hoc_ret(); \
@@ -117,7 +117,7 @@ static int egagrph = 0;
 #define SPACE '\040'
 #define BEEP  Printf("\007")
 /* structure and functions from getsym.c */
-#include <oc/hocgetsym.h>
+#include "hocgetsym.h"
 
 /* Structure for single menu list */
 typedef struct Menuitem {

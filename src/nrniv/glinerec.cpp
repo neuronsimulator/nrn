@@ -14,14 +14,14 @@
 #undef add
 
 #include <OS/list.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <nrncvode/vrecitem.h>
 #include <nrncvode/netcvode.h>
 #include <nrncvode/cvodeobj.h>
 
 #if HAVE_IV  // to end of file
 #include <ivoc/graph.h>
-#include <nrniv/glinerec.h>
+#include "glinerec.h"
 #include <ivoc/ocjump.h>
 
 extern NetCvode* net_cvode_instance;

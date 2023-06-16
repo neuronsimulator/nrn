@@ -1,13 +1,13 @@
 #include <nrnconf.h>
-#include <parallel/bbsconf.h>
+#include "bbsconf.h"
 #include <oc/nrnmpi.h>
 #if NRNMPI  // to end of file
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <parallel/bbssrv2mpi.h>
-#include <parallel/bbssrv.h>
-#include <parallel/bbsimpl.h>
+#include "bbssrv2mpi.h"
+#include "bbssrv.h"
+#include "bbsimpl.h"
 #include <oc/hocdec.h>  //Printf
 
 void nrnbbs_context_wait();

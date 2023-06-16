@@ -13,13 +13,13 @@
 #include <string.h>
 #include <oc/classreg.h>
 #include <oc/oc_ansi.h>
-#include <ivoc/oc2iv.h>
-#include <ivoc/ocpointer.h>
+#include "oc2iv.h"
+#include "ocpointer.h"
 #include "parse.hpp"
-#include <ivoc/ocnotify.h>
+#include "ocnotify.h"
 
 #if HAVE_IV
-#include <ivoc/ivoc.h>
+#include "ivoc.h"
 #endif
 
 OcPointer::OcPointer(const char* st, double* d)

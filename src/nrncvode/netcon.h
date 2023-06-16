@@ -6,8 +6,8 @@
 #include <ivoc/htlist.h>
 #include "neuron/container/data_handle.hpp"
 #include <oc/nrnmpi.h>
-#include <nrncvode/nrnneosm.h>
-#include <nrncvode/pool.h>
+#include "nrnneosm.h"
+#include "pool.h"
 
 #include <InterViews/observe.h>
 

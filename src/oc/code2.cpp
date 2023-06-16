@@ -1,16 +1,16 @@
 #include <nrnconf.h>
 /* /local/src/master/nrn/src/oc/code2.cpp,v 1.12 1999/06/08 17:48:26 hines Exp */
 
-#include <oc/hoc.h>
-#include <oc/hocstr.h>
+#include "hoc.h"
+#include "hocstr.h"
 #include "parse.hpp"
-#include <oc/hocparse.h>
+#include "hocparse.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
 #include <errno.h>
-#include <oc/nrnfilewrap.h>
+#include "nrnfilewrap.h"
 #include <cstring>
 
 

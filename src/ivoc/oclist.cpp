@@ -3,19 +3,19 @@
 #include <stdio.h>
 #include <OS/string.h>
 #include <oc/classreg.h>
-#include <ivoc/oclist.h>
-#include <ivoc/oc2iv.h>
+#include "oclist.h"
+#include "oc2iv.h"
 #include <oc/hoclist.h>
-#include <ivoc/ocobserv.h>
+#include "ocobserv.h"
 #include <oc/oc_ansi.h>
 #if HAVE_IV
 #include <InterViews/adjust.h>
 #include <InterViews/hit.h>
-#include <ivoc/ocglyph.h>
-#include <ivoc/checkpnt.h>
-#include <ivoc/apwindow.h>
-#include <ivoc/ocbrowsr.h>
-#include <ivoc/objcmd.h>
+#include "ocglyph.h"
+#include "checkpnt.h"
+#include "apwindow.h"
+#include "ocbrowsr.h"
+#include "objcmd.h"
 #endif
 
 #include <nrnoc/gui-redirect.h>

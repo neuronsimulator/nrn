@@ -1,12 +1,12 @@
 #include <nrnconf.h>
 #include <stdlib.h>
 #include <math.h>
-#include <oc/hoc.h>
+#include "hoc.h"
 #include "parse.hpp"
-#include <oc/hocparse.h>
-#include <oc/equation.h>
+#include "hocparse.h"
+#include "equation.h"
 #include <sparse/lineq.h>
-#include <oc/code.h>
+#include "code.h"
 
 
 int do_equation; /* switch for determining access to dep vars */

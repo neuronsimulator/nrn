@@ -1,7 +1,7 @@
 #ifndef hocgetsym_h
 #define hocgetsym_h
 
-#include <oc/hoc.h>
+#include "hoc.h"
 
 typedef struct Psym {
     Symbol* sym;

@@ -3,9 +3,9 @@
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
-#include <oc/nrnisaac.h>
-#include <oc/isaac64.h>
-#include <oc/hocdec.h>
+#include "nrnisaac.h"
+#include "isaac64.h"
+#include "hocdec.h"
 
 typedef struct isaac64_state Rng;
 

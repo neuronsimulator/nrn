@@ -1,13 +1,13 @@
 #include <nmodlconf.h>
 /* /local/src/master/nrn/src/modlunit/units.c,v 1.5 1997/11/24 16:19:13 hines Exp */
 /* Mostly from Berkeley */
-#include <modlunit/model.h>
+#include "model.h"
 #include <oc/nrnassrt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
-#include <modlunit/units.h>
+#include "units.h"
 #include <assert.h>
 
 #include <cstring>

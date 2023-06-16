@@ -1,7 +1,7 @@
 #include <nrnconf.h>
 #include <stdio.h>
 #include <InterViews/resource.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <oc/classreg.h>
 
 #include <nrnoc/membfunc.h>

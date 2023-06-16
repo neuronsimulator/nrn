@@ -6,7 +6,7 @@
 #include <string.h>
 #include <InterViews/raster.h>
 #include <InterViews/image.h>
-#include <ivoc/oc2iv.h>
+#include "oc2iv.h"
 
 
 #define byte  unsigned char

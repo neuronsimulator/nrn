@@ -4,16 +4,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <ivoc/random1.h>
+#include "random1.h"
 
 #include <InterViews/resource.h>
 #include <oc/classreg.h>
-#include <ivoc/oc2iv.h>
+#include "oc2iv.h"
 #include <oc/nrnisaac.h>
 
 #include <vector>
-#include <ivoc/ocnotify.h>
-#include <ivoc/ocobserv.h>
+#include "ocnotify.h"
+#include "ocobserv.h"
 #include <oc/nrnran123.h>
 
 #include <gnu/RNG.h>
@@ -34,7 +34,7 @@
 #include <gnu/Weibull.h>
 
 #if HAVE_IV
-#include <ivoc/ivoc.h>
+#include "ivoc.h"
 #endif
 
 #undef dmaxuint

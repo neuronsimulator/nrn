@@ -8,11 +8,11 @@
 #include <InterViews/style.h>
 #include <IV-look/kit.h>
 #include <stdio.h>
-#include <ivoc/apwindow.h>
-#include <ivoc/graph.h>
-#include <ivoc/cbwidget.h>
-#include <ivoc/rect.h>
-#include <ivoc/scenepic.h>
+#include "apwindow.h"
+#include "graph.h"
+#include "cbwidget.h"
+#include "rect.h"
+#include "scenepic.h"
 
 ColorBrushWidget::ColorBrushWidget(Graph* g) {
     g_ = g;

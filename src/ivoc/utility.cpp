@@ -18,10 +18,10 @@
 #include <IV-look/dialogs.h>
 #include <OS/string.h>
 
-#include <ivoc/graph.h>
-#include <ivoc/utility.h>
-#include <ivoc/oc2iv.h>
-#include <ivoc/ivoc.h>
+#include "graph.h"
+#include "utility.h"
+#include "oc2iv.h"
+#include "ivoc.h"
 
 bool nrn_spec_dialog_pos(Coord& x, Coord& y) {
     Style* s = Session::instance()->style();

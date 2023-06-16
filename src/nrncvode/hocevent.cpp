@@ -1,6 +1,6 @@
 #include <ivoc/objcmd.h>
-#include <nrncvode/pool.h>
-#include <nrncvode/netcon.h>
+#include "pool.h"
+#include "netcon.h"
 #include <nrniv/nrnoc2iv.h>
 #include <ivoc/mymath.h>
 

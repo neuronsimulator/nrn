@@ -18,10 +18,10 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#include <gnu/Random.h>
-#include <gnu/Normal.h>
+#include "Random.h"
+#include "Normal.h"
 
-#include <gnu/LogNorm.h>
+#include "LogNorm.h"
 
 #ifndef M_E
 #define M_E 2.71828182845904523536

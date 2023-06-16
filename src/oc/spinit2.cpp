@@ -1,7 +1,7 @@
 #include <nrnconf.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <oc/hocdec.h>
+#include "hocdec.h"
 
 extern "C" void _modl_set_dt(double newdt) {
     /*ARGSUSED*/

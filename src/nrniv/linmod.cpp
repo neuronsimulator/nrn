@@ -23,8 +23,8 @@
 // daspk equation indices.
 
 #include <cstdio>
-#include <nrniv/linmod.h>
-#include <nrniv/nrnpy.h>
+#include "linmod.h"
+#include "nrnpy.h"
 
 LinearModelAddition::LinearModelAddition(Matrix* cmat,
                                          Matrix* gmat,

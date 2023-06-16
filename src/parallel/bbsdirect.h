@@ -3,7 +3,7 @@
 
 #include <oc/nrnmpiuse.h>
 
-#include <parallel/bbsimpl.h>
+#include "bbsimpl.h"
 class KeepArgs;
 #if NRNMPI
 struct bbsmpibuf;

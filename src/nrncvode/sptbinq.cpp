@@ -20,7 +20,7 @@ of struct _spblk, we are really using TQItem
 #define uplink    parent_
 #define cnt       cnt_
 #define key       t_
-#include <nrncvode/sptree.h>
+#include "sptree.h"
 
 // extern double dt;
 #define nt_dt nrn_threads->_dt

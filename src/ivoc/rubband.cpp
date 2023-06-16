@@ -9,7 +9,7 @@
 #include <InterViews/printer.h>
 #include <InterViews/window.h>
 #include <InterViews/transformer.h>
-#include <ivoc/rubband.h>
+#include "rubband.h"
 
 #include <OS/math.h>
 #include <stdio.h>

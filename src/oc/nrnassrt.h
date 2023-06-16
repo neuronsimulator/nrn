@@ -10,7 +10,7 @@ has side effects which need to be executed regardles of NDEBUG.
 #include <stdlib.h>
 
 #if defined(hocassrt_h) /* hoc_execerror form */
-#include <oc/oc_ansi.h>
+#include "oc_ansi.h"
 
 #if defined(__STDC__)
 #define nrn_assert(ex)                                                                   \

@@ -8,11 +8,11 @@
 /* do not want the redef in the dynamic load case */
 #include <oc/nrnmpiuse.h>
 #if NRNMPI_DYNAMICLOAD
-#include <nrnmpi/nrnmpi_dynam.h> /* define all the nrnmpi functions name to f_name */
+#include "nrnmpi_dynam.h" /* define all the nrnmpi functions name to f_name */
 #endif
 
 #include <oc/nrnmpi.h>
-#include <nrnmpi/mpispike.h>
+#include "mpispike.h"
 
 
 #if NRNMPI_DYNAMICLOAD

@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 #include <math.h>
-#include <nrnoc/section.h>
-#include <nrnoc/nrniv_mf.h>
+#include "section.h"
+#include "nrniv_mf.h"
 #include <oc/hocassrt.h>
 #include "parse.hpp"
 

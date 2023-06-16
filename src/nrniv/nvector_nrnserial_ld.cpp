@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <nrniv/nvector_nrnserial_ld.h>
+#include "nvector_nrnserial_ld.h"
 #include <sundials/shared/sundialsmath.h>
 #include <sundials/shared/sundialstypes.h>
 

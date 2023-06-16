@@ -18,11 +18,11 @@
 #include <IV-look/field.h>
 #define FieldSEditor FieldEditor
 #else
-#include <ivoc/field.h>
+#include "field.h"
 #endif
-#include <ivoc/ocglyph.h>
-#include <ivoc/apwindow.h>
-#include <ivoc/ivocconf.h>
+#include "ocglyph.h"
+#include "apwindow.h"
+#include "ivocconf.h"
 
 class HocPanel;      // panel is a vbox with menus, buttons, value editors, etc.
 class HocMenu;       // popup menu panel item

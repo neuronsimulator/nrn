@@ -34,7 +34,7 @@ for fast insertion, deletion, iteration
 
 #include <stdio.h>
 #include <OS/enter-scope.h>
-#include <ivoc/htlist.h>
+#include "htlist.h"
 
 /*****************************************************************************/
 

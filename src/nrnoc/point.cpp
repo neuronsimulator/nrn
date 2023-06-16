@@ -6,11 +6,11 @@ saves the pointtype as later argument to create and loc */
 
 #include <stdlib.h>
 
-#include <nrnoc/membfunc.h>
-#include <nrnoc/nrniv_mf.h>
+#include "membfunc.h"
+#include "nrniv_mf.h"
 #include <ivoc/ocnotify.h>
 #include <oc/parse_with_deps.hpp>
-#include <nrnoc/section.h>
+#include "section.h"
 
 
 extern char* pnt_map;

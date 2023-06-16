@@ -1,8 +1,8 @@
 #include <nrnconf.h>
-#include <parallel/bbsconf.h>
+#include "bbsconf.h"
 #include <stdio.h>
 #include <string.h>
-#include <parallel/bbslsrv.h>
+#include "bbslsrv.h"
 #include <oc/oc_ansi.h>
 
 #define INT    1

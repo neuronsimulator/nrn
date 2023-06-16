@@ -1,7 +1,7 @@
 #include <nrnconf.h>
 #define HOC_L_LIST 1
-#include <nrnoc/section.h>
-#include <nrnoc/neuron.h>
+#include "section.h"
+#include "neuron.h"
 #include <nrniv/nrnpy.h>
 #include "parse.hpp"
 #include <oc/hocparse.h>

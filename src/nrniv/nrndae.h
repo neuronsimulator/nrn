@@ -15,7 +15,7 @@
 #include <OS/list.h>
 
 #include <ivoc/ivocvect.h>
-#include <nrniv/matrixmap.h>
+#include "matrixmap.h"
 
 #include "neuron/container/data_handle.hpp"
 

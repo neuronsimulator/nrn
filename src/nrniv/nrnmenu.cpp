@@ -6,13 +6,13 @@
 #include <OS/string.h>
 
 #if HAVE_IV
-#include <nrniv/secbrows.h>
+#include "secbrows.h"
 #include <ivoc/ivoc.h>
 #endif
 #include <nrnoc/nrniv_mf.h>
-#include <nrniv/nrnoc2iv.h>
-#include <nrniv/nrnpy.h>
-#include <nrniv/nrnmenu.h>
+#include "nrnoc2iv.h"
+#include "nrnpy.h"
+#include "nrnmenu.h"
 #include <oc/classreg.h>
 #include <nrnoc/gui-redirect.h>
 

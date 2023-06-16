@@ -8,13 +8,13 @@
 #include <InterViews/label.h>
 #include <IV-look/kit.h>
 #include <cmath>
-#include <ivoc/scenevie.h>
-#include <ivoc/mymath.h>
-#include <ivoc/axis.h>
+#include "scenevie.h"
+#include "mymath.h"
+#include "axis.h"
 #include <oc/hocdec.h>
-#include <ivoc/rect.h>
-#include <ivoc/graph.h>
-#include <ivoc/idraw.h>
+#include "rect.h"
+#include "graph.h"
+#include "idraw.h"
 
 /*static*/ class GAxisItem: public GraphItem {
   public:

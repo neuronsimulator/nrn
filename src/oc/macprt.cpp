@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <oc/hoc.h>
+#include "hoc.h"
 
 #include <nrnoc/gui-redirect.h>
 

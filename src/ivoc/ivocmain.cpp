@@ -27,13 +27,13 @@ void iv_display_scale(float);
 #endif
 
 #include <assert.h>
-#include <ivoc/ivoc.h>
-#include <ivoc/idraw.h>
+#include "ivoc.h"
+#include "idraw.h"
 #include <InterViews/style.h>
 #endif
 #include <OS/string.h>
 #include "string.h"
-#include <ivoc/oc2iv.h>
+#include "oc2iv.h"
 #include <oc/nrnmpi.h>
 #include <nrniv/nrnpy.h>
 

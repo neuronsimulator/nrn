@@ -12,13 +12,13 @@
 #include <IV-look/kit.h>
 #include <InterViews/input.h>
 #include <stdio.h>
-#include <ivoc/ocbox.h>
-#include <ivoc/apwindow.h>
-#include <ivoc/objcmd.h>
-#include <ivoc/ivoc.h>
+#include "ocbox.h"
+#include "apwindow.h"
+#include "objcmd.h"
+#include "ivoc.h"
 #endif /* HAVE_IV */
 
-#include <ivoc/oc2iv.h>
+#include "oc2iv.h"
 #include <oc/classreg.h>
 
 #include <nrnoc/gui-redirect.h>

@@ -26,12 +26,12 @@
 #include <ivoc/apwindow.h>
 // really only need colors from graph.h
 #include <ivoc/graph.h>
-#include <nrniv/shapeplt.h>
+#include "shapeplt.h"
 #include <ivoc/rubband.h>
 #include <ivoc/scenepic.h>
-#include <nrniv/rot3band.h>
+#include "rot3band.h"
 #include <nrnoc/nrniv_mf.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <ivoc/objcmd.h>
 #include <ivoc/idraw.h>
 #include <ivoc/hocmark.h>

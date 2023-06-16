@@ -2,13 +2,13 @@
 /* /local/src/master/nrn/src/nrnoc/eion.cpp,v 1.10 1998/02/26 16:42:50 hines Exp */
 
 #include <stdlib.h>
-#include <nrnoc/section.h>
-#include <nrnoc/neuron.h>
+#include "section.h"
+#include "neuron.h"
 #include "neuron/cache/mechanism_range.hpp"
-#include <nrnoc/membfunc.h>
+#include "membfunc.h"
 #include "parse.hpp"
-#include <nrnoc/membdef.h>
-#include <nrnoc/nrniv_mf.h>
+#include "membdef.h"
+#include "nrniv_mf.h"
 #include <oc/nrnunits_modern.h>
 
 #include <array>

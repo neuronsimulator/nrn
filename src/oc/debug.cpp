@@ -1,8 +1,8 @@
 #include <nrnconf.h>
 /* /local/src/master/nrn/src/oc/debug.cpp,v 1.7 1996/04/09 16:39:14 hines Exp */
-#include <oc/hoc.h>
-#include <oc/code.h>
-#include <oc/equation.h>
+#include "hoc.h"
+#include "code.h"
+#include "equation.h"
 #include <stdio.h>
 int zzdebug;
 

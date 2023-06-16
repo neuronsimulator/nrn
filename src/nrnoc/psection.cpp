@@ -1,9 +1,9 @@
 #include <nrnconf.h>
 
 #include <stdio.h>
-#include <nrnoc/section.h>
+#include "section.h"
 #include "parse.hpp"
-#include <nrnoc/membfunc.h>
+#include "membfunc.h"
 
 extern void verify_structure(void);
 

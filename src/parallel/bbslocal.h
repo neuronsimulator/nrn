@@ -1,7 +1,7 @@
 #ifndef bbslocal_h
 #define bbslocal_h
 
-#include <parallel/bbsimpl.h>
+#include "bbsimpl.h"
 
 class KeepArgs;
 

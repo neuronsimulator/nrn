@@ -15,9 +15,9 @@ order.  Here is the C code from a kinetic block:
 /* Sets up derivative form  and implicit form*/
 
 #include <stdlib.h>
-#include <nmodl/modl.h>
+#include "modl.h"
 #include "parse1.hpp"
-#include <nmodl/symbol.h>
+#include "symbol.h"
 extern int numlist;
 extern int thread_data_index;
 extern List* thread_cleanup_list;

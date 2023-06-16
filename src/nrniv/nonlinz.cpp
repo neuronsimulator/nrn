@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <InterViews/resource.h>
-#include <nrniv/nonlinz.h>
+#include "nonlinz.h"
 #include <nrnoc/nrniv_mf.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <oc/nrnmpi.h>
 #include <sparse13/cspmatrix.h>
 #include <nrnoc/membfunc.h>

@@ -14,7 +14,7 @@
 #endif
 #include <ivoc/ivocvect.h>
 #include <nrnoc/nrniv_mf.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <ivoc/objcmd.h>
 
 extern int nrn_multisplit_active_;

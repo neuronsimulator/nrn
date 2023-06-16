@@ -11,10 +11,10 @@
 #include <InterViews/transformer.h>
 #include <IV-look/kit.h>
 #include <OS/string.h>
-#include <ivoc/scenevie.h>
-#include <ivoc/rect.h>
-#include <ivoc/mymath.h>
-#include <ivoc/idraw.h>
+#include "scenevie.h"
+#include "rect.h"
+#include "mymath.h"
+#include "idraw.h"
 #include <stdio.h>
 
 Appear::Appear(const Color* c, const Brush* b) {

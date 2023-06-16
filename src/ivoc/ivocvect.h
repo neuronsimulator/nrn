@@ -1,8 +1,8 @@
 #ifndef ivoc_vector_h
 #define ivoc_vector_h
 
-#include <ivoc/nrnmutdec.h>
-#include <ivoc/ocnotify.h>
+#include "nrnmutdec.h"
+#include "ocnotify.h"
 
 #include <vector>
 #include <numeric>

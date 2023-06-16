@@ -1,4 +1,4 @@
-#include <nrnpython/nrnpython.h>
+#include "nrnpython.h"
 
 static PyType_Slot nrnpy_HocObjectType_slots[] = {
     {Py_tp_dealloc, (void*) hocobj_dealloc},

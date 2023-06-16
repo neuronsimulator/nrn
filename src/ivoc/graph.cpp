@@ -27,23 +27,23 @@ extern Image* gif_image(const char*);
 
 #include <IV-look/kit.h>
 
-#include <ivoc/apwindow.h>
-#include <ivoc/ivoc.h>
-#include <ivoc/graph.h>
-#include <ivoc/axis.h>
-#include <ivoc/hocmark.h>
-#include <ivoc/mymath.h>
-#include <ivoc/idraw.h>
-#include <ivoc/symchoos.h>
-#include <ivoc/scenepic.h>
+#include "apwindow.h"
+#include "ivoc.h"
+#include "graph.h"
+#include "axis.h"
+#include "hocmark.h"
+#include "mymath.h"
+#include "idraw.h"
+#include "symchoos.h"
+#include "scenepic.h"
 #include <oc/oc_ansi.h>
-#include <ivoc/oc2iv.h>
-#include <ivoc/objcmd.h>
-#include <ivoc/ocjump.h>
-#include <ivoc/utility.h>
-#include <ivoc/cbwidget.h>
-#include <ivoc/xmenu.h>
-#include <ivoc/ivocvect.h>
+#include "oc2iv.h"
+#include "objcmd.h"
+#include "ocjump.h"
+#include "utility.h"
+#include "cbwidget.h"
+#include "xmenu.h"
+#include "ivocvect.h"
 #endif /* HAVE_IV */
 
 #include <oc/classreg.h>

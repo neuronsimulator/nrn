@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <OS/list.h>
 #include <math.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <oc/classreg.h>
-#include <nrniv/kschan.h>
-#include <nrniv/kssingle.h>
+#include "kschan.h"
+#include "kssingle.h"
 #include <ivoc/ocnotify.h>
 #include "parse.hpp"
 #include <nrnoc/nrniv_mf.h>

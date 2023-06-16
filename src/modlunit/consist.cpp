@@ -6,9 +6,9 @@
  * entire file is read in and allows declaring a variable after its use (very
  * bad style) to work.
  */
-#include <modlunit/model.h>
+#include "model.h"
 #include "parse1.hpp"
-#include <modlunit/symbol.h>
+#include "symbol.h"
 
 extern Item** scop_indep;
 

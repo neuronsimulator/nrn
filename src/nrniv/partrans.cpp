@@ -1,5 +1,5 @@
 #include <nrnconf.h>
-#include <nrniv/partrans.h>  // sgid_t and SetupTransferInfo for CoreNEURON
+#include "partrans.h"  // sgid_t and SetupTransferInfo for CoreNEURON
 
 #include "neuron/container/data_handle.hpp"
 
@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <InterViews/resource.h>
-#include <nrniv/nrnoc2iv.h>
+#include "nrnoc2iv.h"
 #include <nrnoc/nrniv_mf.h>
 #include <oc/nrnmpi.h>
 #include <ivoc/mymath.h>

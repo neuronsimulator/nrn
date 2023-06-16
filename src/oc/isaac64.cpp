@@ -12,7 +12,7 @@ By Bob Jenkins, 1996.  Public Domain.
 Modified for modularity by Tom Bartol and Rex Kerr
 ------------------------------------------------------------------------------
 */
-#include <oc/isaac64.h>
+#include "isaac64.h"
 
 
 #define ind(mm, x) (*(ub8*) ((ub1*) (mm) + ((x) & ((RANDSIZ - 1) << 3))))

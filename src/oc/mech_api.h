@@ -10,11 +10,11 @@
  *        we leave to nocmodl.
  */
 #include <nrniv/bbsavestate.h>
-#include <oc/mcran4.h>
+#include "mcran4.h"
 #include <nrnoc/nrncvode.h>
-#include <oc/nrnran123.h>
-#include <oc/nrnrandom.h>
-#include <oc/oc_ansi.h>
+#include "nrnran123.h"
+#include "nrnrandom.h"
+#include "oc_ansi.h"
 #include <nrnoc/nrnversionmacros.h>
 #include <scopmath/scoplib.h>
 

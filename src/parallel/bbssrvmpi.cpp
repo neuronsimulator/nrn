@@ -1,11 +1,11 @@
 #include <nrnconf.h>
-#include <parallel/bbsconf.h>
+#include "bbsconf.h"
 #include <oc/nrnmpi.h>
 #ifdef NRNMPI  // to end of file
 #include <stdio.h>
 #include <unistd.h>
-#include <parallel/bbssrv2mpi.h>
-#include <parallel/bbssrv.h>
+#include "bbssrv2mpi.h"
+#include "bbssrv.h"
 
 #define debug 0
 

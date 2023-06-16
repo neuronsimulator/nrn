@@ -1,8 +1,8 @@
 #include <nmodlconf.h>
 #include <stdlib.h>
-#include <modlunit/model.h>
+#include "model.h"
 #include "parse1.hpp"
-#include <modlunit/symbol.h>
+#include "symbol.h"
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif

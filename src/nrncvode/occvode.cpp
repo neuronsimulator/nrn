@@ -5,11 +5,11 @@
 #include <nrnoc/nrndae_c.h>
 #include <nrnoc/nrniv_mf.h>
 #include <nrniv/nrnoc2iv.h>
-#include <nrncvode/nrndaspk.h>
-#include <nrncvode/cvodeobj.h>
-#include <nrncvode/netcvode.h>
+#include "nrndaspk.h"
+#include "cvodeobj.h"
+#include "netcvode.h"
 #include <ivoc/ivocvect.h>
-#include <nrncvode/vrecitem.h>
+#include "vrecitem.h"
 #include <nrnoc/membfunc.h>
 #include <nrnoc/nonvintblock.h>
 
