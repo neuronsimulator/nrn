@@ -752,6 +752,7 @@ a similar order to ``nrn_sort_node_data``.
     This can, presumably, be addressed with a more sophisticated sort order in this case.
     The relevant code can be identified by searching for cases where the ``CvMembList::ml`` vector
     has a size greater than one.
+    ModelDB entries 156120 and 267666 are some fairly arbitrary examples that follow this codepath.
 
 Transient cache
 ^^^^^^^^^^^^^^^
@@ -889,6 +890,8 @@ The current implementation allows an unnecessary amount of freedom, namely that 
     could be benchmarked + optimised using the knowledge that all the data handles will(?) be
     pointing into the same container.
 
+See also: `#2312 <https://github.com/neuronsimulator/nrn/issues/2312>`_.
+
 Eliminating ``pdata`` in a less invasive way
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The previous sub-section is the "ideal" way of removing the old ``pdata`` structure, which is
@@ -897,3 +900,42 @@ the other Mechanism data.
 
 An alternative stepping stone would be to retain ``generic_data_handle`` for the moment, but to
 transpose ``pdata`` from AoS to SoA.
+
+Reduce indirection when MOD files use ``diam``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+MOD files can access the section diameter using the special ``diam`` variable name.
+Examples of this include ``share/examples/nrniv/nmodl/nadifl.mod`` and ModelDB entry 184054.
+This is handled explicitly in the codebase, and the underlying storage for ``diam`` values is
+managed via a special pseudomechanism called ``MORPHOLOGY``.
+When ``diam`` is used in the generated code, the values are indirectly looked up using
+``data_handle<double>`` during the simulation, which is rather slow and indirect.
+There are (at least?) two possibilities for how the situation can be improved:
+
+* Adopt the same caching technique that is used for ion variables, *i.e.* don't change the data
+  layout but do reduce the indirection down to loading a pointer and dereferencing it.
+  To pursue this, look at ``neuron::cache::indices_to_cache`` and modify the code generation to use
+  the cached pointer.
+* Revisit whether the ``MORPHOLOGY`` pseudomechanism is still needed, or whether the diameter could
+  be stored directly as a ``Node`` data field? See `#2312
+  <https://github.com/neuronsimulator/nrn/issues/2312>`_ for more information.
+
+Similarly, usage of ``area`` in generated code may be able to be simplified.
+Most likely, the best approach is to uniformly handle ``area`` and ``diam`` in the same way as Node
+voltages, both in terms of the underlying data structure and how they are accessed in the generated
+code.
+
+Report memory usage statistics, including the bookkeeping overhead
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Provide a useful tool for reporting how much memory is consumed in the model data structures (those
+reachable via ``neuron::model()``).
+This should provide some kind of breakdown between the actual data, the "active" bookkeeping costs
+(the currently-used index columns, as explained above), and also the "wasted" overhead of values
+that have their deletion deferred in order to avoid leaving any data handles "in the wild" from
+accidentally dereferencing freed pointers.
+
+This "wasted" storage could, in principle, be recovered after a full traversal of all data
+structures that hold ``data_handle<T>`` or ``generic_data_handle`` that collapses handles that are
+in previously-valid-but-not-any-more (once valid?) state into "null" (never valid?) state.
+
+Reporting and monitoring the scale of this "waste" is much easier than recovering it, which should
+only be done **if** this is **shown** to be a real problem.
