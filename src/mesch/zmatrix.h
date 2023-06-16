@@ -29,7 +29,7 @@
 #ifndef ZMATRIXH
 #define ZMATRIXH
 
-#include <mesch/matrix.h>
+#include "matrix.h"
 
 
           /*  Type definitions for complex vectors and matrices  */

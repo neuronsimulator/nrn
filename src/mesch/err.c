@@ -37,7 +37,7 @@ static	char	rcsid[] = "err.c,v 1.1 1997/12/04 17:55:19 hines Exp";
 #include	<stdio.h>
 #include	<setjmp.h>
 #include	<ctype.h>
-#include        <mesch/err.h>
+#include        "err.h"
 
 #if defined(__MWERKS__)
 #define isascii isprint

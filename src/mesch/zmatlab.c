@@ -35,8 +35,8 @@
 */
 
 #include        <stdio.h>
-#include        <mesch/zmatrix.h>
-#include	<mesch/matlab.h>
+#include        "zmatrix.h"
+#include	"matlab.h"
 
 static char rcsid[] = "zmatlab.c,v 1.1 1997/12/04 17:56:11 hines Exp";
 

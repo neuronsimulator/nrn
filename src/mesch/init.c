@@ -34,7 +34,7 @@
 static	char	rcsid[] = "init.c,v 1.1 1997/12/04 17:55:25 hines Exp";
 
 #include	<stdio.h>
-#include	<mesch/matrix.h>
+#include	"matrix.h"
 
 /* v_zero -- zero the vector x */
 VEC	*v_zero(x)

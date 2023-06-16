@@ -32,7 +32,7 @@
 #include	<stdio.h>
 #include	<math.h>
 #include        <stdlib.h>
-#include	<mesch/sparse.h>
+#include	"sparse.h"
 
 
 static char	rcsid[] = "sparse.c,v 1.1 1997/12/04 17:55:48 hines Exp";

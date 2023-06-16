@@ -33,7 +33,7 @@
 
 #define SPARSE2H
 
-#include <mesch/sparse.h>
+#include "sparse.h"
 
 
 #ifdef ANSI_C

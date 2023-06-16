@@ -28,7 +28,7 @@
 /* vecop.c 1.3 8/18/87 */
 
 #include	<stdio.h>
-#include	<mesch/matrix.h>
+#include	"matrix.h"
 
 static	char	rcsid[] = "vecop.c,v 1.1 1997/12/04 17:56:02 hines Exp";
 

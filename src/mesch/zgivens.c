@@ -36,8 +36,8 @@
 static	char	rcsid[] = "$Id: ";
 
 #include	<stdio.h>
-#include	<mesch/zmatrix.h>
-#include        <mesch/zmatrix2.h>
+#include	"zmatrix.h"
+#include        "zmatrix2.h"
 #include	<math.h>
 
 /*

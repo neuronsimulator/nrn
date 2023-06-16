@@ -33,7 +33,7 @@
 static	char	rcsid[] = "solve.c,v 1.1 1997/12/04 17:55:47 hines Exp";
 
 #include	<stdio.h>
-#include        <mesch/matrix2.h>
+#include        "matrix2.h"
 #include	<math.h>
 
 

@@ -28,7 +28,7 @@
 /* 1.2 submat.c 11/25/87 */
 
 #include	<stdio.h>
-#include	<mesch/matrix.h>
+#include	"matrix.h"
 
 static	char	rcsid[] = "submat.c,v 1.1 1997/12/04 17:55:55 hines Exp";
 

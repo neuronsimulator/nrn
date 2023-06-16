@@ -35,8 +35,8 @@
 static	char	rcsid[] = "zhessen.c,v 1.1 1997/12/04 17:56:07 hines Exp";
 
 #include	<stdio.h>
-#include	<mesch/zmatrix.h>
-#include        <mesch/zmatrix2.h>
+#include	"zmatrix.h"
+#include        "zmatrix2.h"
 
 
 /* zHfactor -- compute Hessenberg factorisation in compact form.

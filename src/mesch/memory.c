@@ -27,7 +27,7 @@
 
 /* memory.c 1.3 11/25/87 */
 
-#include 	<mesch/matrix.h>
+#include 	"matrix.h"
 
 
 static	char	rcsid[] = "memory.c,v 1.1 1997/12/04 17:55:38 hines Exp";

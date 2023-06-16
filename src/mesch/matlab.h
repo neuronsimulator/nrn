@@ -90,7 +90,7 @@ extern	double d_save();
 
 /* complex variant */
 #ifdef COMPLEX
-#include <mesch/zmatrix.h>
+#include "zmatrix.h"
 
 #ifdef ANSI_C
 extern ZMAT	*zm_save(FILE *fp,ZMAT *A,char *name);

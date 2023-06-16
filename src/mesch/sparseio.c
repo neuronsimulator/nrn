@@ -31,7 +31,7 @@
 */
 
 #include        <stdio.h>
-#include        <mesch/sparse.h>
+#include        "sparse.h"
 
 static char rcsid[] = "sparseio.c,v 1.1 1997/12/04 17:55:49 hines Exp";
 

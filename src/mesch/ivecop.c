@@ -28,7 +28,7 @@
 /* ivecop.c  */
 
 #include	<stdio.h>
-#include 	<mesch/matrix.h>
+#include 	"matrix.h"
 
 static	char	rcsid[] = "ivecop.c,v 1.1 1997/12/04 17:55:30 hines Exp";
 

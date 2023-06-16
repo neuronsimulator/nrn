@@ -34,8 +34,8 @@
 static	char	rcsid[] = "hessen.c,v 1.1 1997/12/04 17:55:23 hines Exp";
 
 #include	<stdio.h>
-#include	<mesch/matrix.h>
-#include        <mesch/matrix2.h>
+#include	"matrix.h"
+#include        "matrix2.h"
 
 
 

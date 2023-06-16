@@ -32,8 +32,8 @@
 */
 
 #include	<stdio.h>
-#include	<mesch/matrix.h>
-#include        <mesch/matrix2.h>
+#include	"matrix.h"
+#include        "matrix2.h"
 #include	<math.h>
 
 

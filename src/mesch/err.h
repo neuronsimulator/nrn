@@ -34,7 +34,7 @@
 
 
 #include        <setjmp.h>
-#include        <mesch/machine.h>
+#include        "machine.h"
 
 /* Error recovery */
 

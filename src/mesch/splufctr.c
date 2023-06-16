@@ -31,7 +31,7 @@
 */
 
 #include	<stdio.h>
-#include        <mesch/sparse2.h>
+#include        "sparse2.h"
 #include	<math.h>
 
 

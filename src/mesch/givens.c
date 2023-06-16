@@ -38,8 +38,8 @@
 static	char	rcsid[] = "givens.c,v 1.1 1997/12/04 17:55:22 hines Exp";
 
 #include	<stdio.h>
-#include	<mesch/matrix.h>
-#include        <mesch/matrix2.h>
+#include	"matrix.h"
+#include        "matrix2.h"
 #include	<math.h>
 
 /* givens -- returns c,s parameters for Givens rotation to

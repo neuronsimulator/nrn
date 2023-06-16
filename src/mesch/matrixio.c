@@ -30,7 +30,7 @@
 
 #include        <stdio.h>
 #include        <ctype.h>
-#include        <mesch/matrix.h>
+#include        "matrix.h"
 
 static char rcsid[] = "matrixio.c,v 1.1 1997/12/04 17:55:35 hines Exp";
 

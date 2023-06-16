@@ -31,7 +31,7 @@
 
 /* For BSD 4.[23] environments: using bcopy() and bzero() */
 
-#include <mesch/machine.h>
+#include "machine.h"
 
 #ifndef MEM_COPY
 void	MEM_COPY(from,to,len)

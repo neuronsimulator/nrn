@@ -30,9 +30,9 @@
 */
 #include	<stdio.h>
 #include	<math.h>
-#include	<mesch/matrix.h>
-#include	<mesch/matrix2.h>
-#include	<mesch/sparse.h>
+#include	"matrix.h"
+#include	"matrix2.h"
+#include	"sparse.h"
 
 static char rcsid[] = "arnoldi.c,v 1.1 1997/12/04 17:55:13 hines Exp";
 

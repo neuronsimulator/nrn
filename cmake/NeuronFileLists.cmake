@@ -1,5 +1,5 @@
 # =======================================================================================
-# Lists of header files to install. Difference is whether the dir structure is preserved.
+# Lists of header files to install.
 #
 # * STRUCTURED_HEADER_FILES_TO_INSTALL: {src}/src/a/b.h -> {bld}/include/a/b.h
 # =======================================================================================

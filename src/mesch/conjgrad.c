@@ -47,8 +47,8 @@
 
 #include	<stdio.h>
 #include	<math.h>
-#include	<mesch/matrix.h>
-#include	<mesch/sparse.h>
+#include	"matrix.h"
+#include	"sparse.h"
 static char	rcsid[] = "conjgrad.c,v 1.1 1997/12/04 17:55:16 hines Exp";
 
 

@@ -28,7 +28,7 @@
 /* Memory allocation and de-allocation for complex matrices and vectors */
 
 #include	<stdio.h>
-#include	<mesch/zmatrix.h>
+#include	"zmatrix.h"
 
 static	char	rcsid[] = "zmemory.c,v 1.1 1997/12/04 17:56:13 hines Exp";
 

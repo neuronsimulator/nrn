@@ -33,7 +33,7 @@ static	char	rcsid[] = "otherio.c,v 1.1 1997/12/04 17:55:44 hines Exp";
 
 #include	<stdio.h>
 #include	<ctype.h>
-#include	<mesch/matrix.h>
+#include	"matrix.h"
 
 
 
