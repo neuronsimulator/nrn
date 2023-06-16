@@ -917,6 +917,25 @@ void nrn_thread_partition(int it, Object* sl) {
     v_structure_change = 1;
 }
 
+Object** nrn_get_thread_partition(int it) {
+    assert(it >= 0 && it < nrn_nthread);
+    NrnThread* nt = nrn_threads + it;
+    if (!nt->roots) {
+        v_setup_vectors();
+    }
+    // nt->roots is a hoc_List of Section*. Create a new SectionList and copy
+    // those Section* into it and ref them.
+    hoc_List* sl = hoc_l_newlist();
+    Object** po = hoc_temp_objvar(hoc_lookup("SectionList"), sl);
+    hoc_Item* qsec;
+    ITERATE(qsec, nt->roots) {
+        Section* sec = hocSEC(qsec);
+        section_ref(sec);
+        hoc_l_lappendsec(sl, sec);
+    }
+    return po;
+}
+
 int nrn_user_partition() {
     int i, it, b, n;
     hoc_Item* qsec;
