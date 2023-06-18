@@ -31,8 +31,11 @@ jobs:
       # This will trigger another workflow run, which will cancel the current one.
       - name: Apply formatting
         working-directory: ${{runner.workspace}}/nrn
-        if: failure()
+        if: failure() && github.event_name == 'pull_request'
         run: |
+          # Checkout PR
+          gh pr checkout ${{ github.event.pull_request.number }}
+
           # Apply formatting
           external/coding-conventions/bin/format -v
 
@@ -41,4 +44,4 @@ jobs:
           git config user.email github-actions@github.com
           git add -u :/
           git commit -a -m "Fix formatting"
-          git push -u origin ${{ github.ref }}
+          git push
