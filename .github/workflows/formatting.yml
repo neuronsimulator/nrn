@@ -45,3 +45,5 @@ jobs:
           git add -u :/
           git commit -a -m "Fix formatting"
           git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
