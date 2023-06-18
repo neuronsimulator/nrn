@@ -40,8 +40,6 @@ jobs:
           external/coding-conventions/bin/format -v
 
           # Commit & push changes
-          git config user.name github-actions
-          git config user.email github-actions@github.com
           git add -u :/
           git commit -a -m "Fix formatting"
           git push
