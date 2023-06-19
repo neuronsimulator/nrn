@@ -73,8 +73,8 @@ extern double hoc_epsilon;
 #define NONVINT_ODE_COUNT 5
 
 #if NRNCTIME
-#define CTBEGIN double wt = nrnmpi_wtime();
-#define CTADD   nth->_ctime += nrnmpi_wtime() - wt;
+#define CTBEGIN double wt = nrnmpi_wtime()
+#define CTADD   nth->_ctime += nrnmpi_wtime() - wt
 #else
 #define CTBEGIN /**/
 #define CTADD   /**/
@@ -457,13 +457,12 @@ static void nrn_fixed_step_group_thread(neuron::model_sorted_token const& cache_
 
 static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     auto* const nth = &nt;
-    double wt;
     {
         nrn::Instrumentor::phase p("deliver-events");
         deliver_net_events(nth);
     }
 
-    wt = nrnmpi_wtime();
+    CTBEGIN;
     nrn_random_play();
 #if ELIMINATE_T_ROUNDOFF
     nt.nrn_ndt_ += .5;
@@ -485,7 +484,7 @@ static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token,
         nrn::Instrumentor::phase p("update");
         nrn_update_voltage(cache_token, *nth);
     }
-    CTADD
+    CTADD;
     /*
       To simplify the logic,
       if there is no nrnthread_v_transfer then there cannot be an nrnmpi_v_transfer.
@@ -499,7 +498,7 @@ extern void nrn_extra_scatter_gather(int direction, int tid);
 
 void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     auto* const nth = &nt;
-    CTBEGIN
+    CTBEGIN;
 #if ELIMINATE_T_ROUNDOFF
     nth->nrn_ndt_ += .5;
     nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
@@ -511,7 +510,8 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
     nonvint(cache_token, nt);
     nrn_ba(cache_token, nt, AFTER_SOLVE);
     fixed_record_continuous(cache_token, nt);
-    CTADD {
+    CTADD;
+    {
         nrn::Instrumentor::phase p("deliver-events");
         nrn_deliver_events(nth); /* up to but not past texit */
     }
@@ -520,9 +520,8 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
 /* nrn_fixed_step_thread is split into three pieces */
 
 void* nrn_ms_treeset_through_triang(NrnThread* nth) {
-    double wt;
     deliver_net_events(nth);
-    wt = nrnmpi_wtime();
+    CTBEGIN;
     nrn_random_play();
 #if ELIMINATE_T_ROUNDOFF
     nth->nrn_ndt_ += .5;
@@ -533,7 +532,7 @@ void* nrn_ms_treeset_through_triang(NrnThread* nth) {
     fixed_play_continuous(nth);
     setup_tree_matrix(nrn_ensure_model_data_are_sorted(), *nth);
     nrn_multisplit_triang(nth);
-    CTADD
+    CTADD;
     return nullptr;
 }
 void* nrn_ms_reduce_solve(NrnThread* nth) {
@@ -541,12 +540,12 @@ void* nrn_ms_reduce_solve(NrnThread* nth) {
     return nullptr;
 }
 void* nrn_ms_bksub(NrnThread* nth) {
-    CTBEGIN
+    CTBEGIN;
     nrn_multisplit_bksub(nth);
     second_order_cur(nth);
     auto const cache_token = nrn_ensure_model_data_are_sorted();
     nrn_update_voltage(cache_token, *nth);
-    CTADD
+    CTADD;
     /* see above comment in nrn_fixed_step_thread */
     if (!nrnthread_v_transfer_) {
         nrn_fixed_step_lastpart(cache_token, *nth);
