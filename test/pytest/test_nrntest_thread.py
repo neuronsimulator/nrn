@@ -4,7 +4,7 @@ https://github.com/neuronsimulator/nrntest repository
 """
 import os
 import pytest
-from neuron import coreneuron, h
+from neuron import h
 from neuron.tests.utils import (
     num_threads,
     parallel_context,
@@ -65,10 +65,7 @@ def test_mcna(chk, simulator, threads):
     """
     ncell = 10
     cells = [Cell(id, ncell) for id in range(ncell)]
-    enable_coreneuron = simulator == "coreneuron"
-    with coreneuron(
-        enable=enable_coreneuron, verbose=0
-    ), parallel_context() as pc, num_threads(pc, threads=threads):
+    with parallel_context() as pc, num_threads(pc, threads=threads):
         pc.set_maxstep(10)
         h.finitialize()
         pc.psolve(5)
