@@ -330,7 +330,7 @@ if(NRN_ENABLE_PYTHON)
       endif()
     endif()
   endif()
-  nrn_add_test_group(NAME parallel MODFILE_PATTERNS test/pynrn/*.mod)
+  nrn_add_test_group(NAME parallel MODFILE_PATTERNS test/pytest_coreneuron/*.mod)
   nrn_add_test(
     GROUP parallel
     NAME subworld
@@ -344,17 +344,17 @@ if(NRN_ENABLE_PYTHON)
     NAME partrans
     PROCESSORS 2
     REQUIRES mpi
-    SCRIPT_PATTERNS test/pynrn/test_partrans.py
+    SCRIPT_PATTERNS test/pytest_coreneuron/test_partrans.py
     COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/pynrn/test_partrans.py)
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/pytest_coreneuron/test_partrans.py)
   nrn_add_test(
     GROUP parallel
     NAME netpar
     PROCESSORS 2
     REQUIRES mpi
-    SCRIPT_PATTERNS test/pynrn/test_hoc_po.py test/pynrn/test_netpar.py
+    SCRIPT_PATTERNS test/pytest_coreneuron/test_hoc_po.py test/pytest_coreneuron/test_netpar.py
     COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/pynrn/test_netpar.py)
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/pytest_coreneuron/test_netpar.py)
   nrn_add_test(
     GROUP parallel
     NAME bas
@@ -372,10 +372,11 @@ if(NRN_ENABLE_PYTHON)
     PROCESSORS 2
     REQUIRES mpi
     ENVIRONMENT "NRN_PYTEST_ARGS=${pytest_arg_string}"
-    SCRIPT_PATTERNS test/pynrn/run_pytest.py test/pynrn/test_nrntest_fast.json
-                    test/pynrn/test_nrntest_fast.py
+    SCRIPT_PATTERNS
+      test/pytest_coreneuron/run_pytest.py test/pytest_coreneuron/test_nrntest_fast.json
+      test/pytest_coreneuron/test_nrntest_fast.py
     COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-            special ${MPIEXEC_POSTFLAGS} -mpi -python test/pynrn/run_pytest.py)
+            special ${MPIEXEC_POSTFLAGS} -mpi -python test/pytest_coreneuron/run_pytest.py)
   # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude
   # workaround.
   if(CORENRN_ENABLE_REPORTING)
@@ -494,15 +495,16 @@ if(NRN_ENABLE_PYTHON)
     SCRIPT_PATTERNS test/coreneuron/test_spikes.py
     MODFILE_PATTERNS
       "test/coreneuron/mod files/*.mod" "test/coreneuron/mod files/axial.inc"
-      test/pynrn/unitstest.mod test/pynrn/version_macros.mod test/gjtests/natrans.mod)
+      test/pytest_coreneuron/unitstest.mod test/pytest_coreneuron/version_macros.mod
+      test/gjtests/natrans.mod)
   nrn_add_test(
     GROUP coreneuron_modtests
     NAME version_macros
     REQUIRES coreneuron ${modtests_preload_sanitizer}
-    SCRIPT_PATTERNS test/pynrn/test_version_macros.py
+    SCRIPT_PATTERNS test/pytest_coreneuron/test_version_macros.py
     ENVIRONMENT COVERAGE_FILE=.coverage.coreneuron_version_macros NRN_CORENEURON_ENABLE=true
                 ${sonata_zero_gid_env} ${nrnpython_mpi_env}
-    COMMAND ${modtests_launch_py} test/pynrn/test_version_macros.py)
+    COMMAND ${modtests_launch_py} test/pytest_coreneuron/test_version_macros.py)
   # In GPU builds run all of the tests on both CPU and GPU
   set(coreneuron_modtests_gpu_env CORENRN_ENABLE_GPU=true)
   foreach(processor cpu gpu)
@@ -550,10 +552,10 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME fast_imem_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/pynrn/test_fast_imem.py
+      SCRIPT_PATTERNS test/pytest_coreneuron/test_fast_imem.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_fast_imem_py
-      COMMAND ${modtests_launch_py} test/pynrn/test_fast_imem.py)
+      COMMAND ${modtests_launch_py} test/pytest_coreneuron/test_fast_imem.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME datareturn_py_${processor}
@@ -741,7 +743,7 @@ function(add_modlunit_test mod_file)
       "${TESTS}"
       PARENT_SCOPE)
 endfunction()
-add_modlunit_test("${PROJECT_SOURCE_DIR}/test/pynrn/unitstest.mod")
+add_modlunit_test("${PROJECT_SOURCE_DIR}/test/pytest_coreneuron/unitstest.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/hh.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/stim.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod")

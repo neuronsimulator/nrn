@@ -209,48 +209,6 @@ def test_fastimem():
             run(1.0, ics, 1e-12)
 
 
-def coreneuron_available():
-    if not config.arguments["NRN_ENABLE_CORENEURON"]:
-        return False
-    # But can it be loaded?
-    cvode = h.CVode()
-    pc = h.ParallelContext()
-    h.finitialize()
-    result = 0
-    import sys
-    from io import StringIO
-
-    original_stderr = sys.stderr
-    sys.stderr = StringIO()
-    try:
-        pc.nrncore_run("--tstop 1 --verbose 0")
-        result = 1
-    except Exception as e:
-        pass
-    sys.stderr = original_stderr
-    return result
-
-
-def print_fast_imem():
-    ix = h.Vector()
-    imem = h.Vector()
-    for sec in h.allsec():
-        for seg in sec.allseg():
-            if seg.x == 0.0 and sec.parentseg() is not None:
-                continue  # don't count twice
-            ix.append(seg.node_index())
-            imem.append(seg.i_membrane_)
-    si = ix.sortindex()
-    ix.index(ix.c(), si)
-    imem.index(imem.c(), si)
-    f = open("fastimem.nrn", "w")
-    f.write("%d\n" % int(ix.size()))
-    for i, x in enumerate(imem):
-        assert i == int(ix[i])
-        f.write("%d %.20g\n" % (i, x))
-    f.close()
-
-
 def test_fastimem_corenrn():
     ncell = 5
     tstop = 1.0
@@ -330,18 +288,16 @@ def test_fastimem_corenrn():
             run(tstop)
             cmp("cache efficient NEURON with 2 threads")
 
-        if coreneuron_available():
+        if config.arguments["NRN_ENABLE_CORENEURON"]:
             from neuron import coreneuron
 
-            with coreneuron(
-                verbose=0, gpu=strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-            ):
+            enable_gpu = strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
+            with coreneuron(verbose=0, gpu=enable_gpu):
+                tolerance = 5e-11
                 with coreneuron(enable=True):
-                    tolerance = 5e-11
                     run(tstop)
                     cmp("CoreNEURON online mode", rel_tol=tolerance)
 
-                tvec = h.Vector().record(h._ref_t)
                 init_v()
                 while h.t < tstop - h.dt / 2:
                     dt_above = (
@@ -353,30 +309,11 @@ def test_fastimem_corenrn():
                         assert h.t > told
                     pc.psolve(h.t + dt_above)
                 cmp("Checking i_membrane_ trajectories", rel_tol=tolerance)
-
-                # olupton 2023-03-29 where are these data files used?
-                print(
-                    "For file mode (offline) coreneuron comparison of i_membrane_ initialization",
-                    flush=True,
-                )
-
-                init_v()
-                print_fast_imem()
-
-                # The cells must have gids.
-                for i, cell in enumerate(cells):
-                    pc.set_gid2node(i, pc.id())
-                    sec = cell.secs[0]
-                    pc.cell(i, h.NetCon(sec(0.5)._ref_v, None, sec=sec))
-
-                # Write the data files
-                init_v()
-                pc.nrncore_write("./corenrn_data")
-
-                # args needed for offline run of coreneuron
-                with coreneuron(enable=True, file_mode=True):
-                    arg = coreneuron.nrncore_arg(tstop)
-                print(arg)
+                # olupton 2023-06-19: removed some logic to dump a file of fast imem values from
+                # NEURON that could in principle be compared offline to a similar file produced by
+                # a patched version of CoreNEURON.
+                # See https://github.com/BlueBrain/CoreNeuron/pull/630. It seems that this test was
+                # never automated, and it is not straightforward to do so.
 
         del imem
 
