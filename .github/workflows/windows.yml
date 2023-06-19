@@ -93,14 +93,6 @@ jobs:
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn
 
-    - name: Publish Nightly Installer
-      if: github.ref == 'refs/heads/master'
-      working-directory: ${{runner.workspace}}\nrn
-      run: |
-        gh release upload nightly nrn-nightly-AMD64.exe -R neuronsimulator/installers
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
     - name: Publish Release Installer
       working-directory: ${{runner.workspace}}\nrn
       if: inputs.tag != ''
