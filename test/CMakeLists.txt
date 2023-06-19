@@ -205,21 +205,30 @@ if(NRN_ENABLE_PYTHON)
     list(APPEND pytest_args --cov-report=xml --cov=neuron)
   endif()
   set(pytest -m pytest ${pytest_args})
-  # TODO: consider allowing the group-related parts to be dropped here
+  # In brief:
+  #
+  # * tests and mod files under pytest/ are only compatible with NEURON
+  # * tests and mod files under pytest_coreneuron/ are compatible with both NEURON and CoreNEURON
+  #
+  # So, pytest/ should generally be viewed as a staging area en route to pytest_coreneuron. As the
+  # name implies, tests in these directories are executed using pytest.
+  nrn_add_test_group(NAME pytest MODFILE_PATTERNS test/pytest/*.mod)
   nrn_add_test_group(
     CORENEURON
-    NAME pynrn
-    MODFILE_PATTERNS test/pynrn/*.mod)
+    NAME pytest_coreneuron
+    MODFILE_PATTERNS test/pytest_coreneuron/*.mod)
   # In case of multiple Python versions, run these tests with all of them
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
     list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
-    nrn_add_test(
-      GROUP pynrn
-      NAME basic_tests_py${pyver}
-      PRELOAD_SANITIZER
-      COMMAND "${exe}" ${pytest} ./test/pynrn
-      SCRIPT_PATTERNS test/pynrn/*.json test/pynrn/*.py)
+    foreach(group pytest pytest_coreneuron)
+      nrn_add_test(
+        GROUP ${group}
+        NAME basic_tests_py${pyver}
+        PRELOAD_SANITIZER
+        COMMAND "${exe}" ${pytest} "./test/${group}"
+        SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py")
+    endforeach()
   endforeach()
 
   # Add some tests that are specifically aimed at NEURON - Python integration, covering different

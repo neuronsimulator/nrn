@@ -333,7 +333,9 @@ def test_fastimem_corenrn():
         if coreneuron_available():
             from neuron import coreneuron
 
-            with coreneuron(verbose=0, gpu=strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))):
+            with coreneuron(
+                verbose=0, gpu=strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
+            ):
                 with coreneuron(enable=True):
                     tolerance = 5e-11
                     run(tstop)

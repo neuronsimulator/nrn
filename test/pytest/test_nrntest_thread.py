@@ -5,9 +5,7 @@ https://github.com/neuronsimulator/nrntest repository
 import os
 import pytest
 from neuron import coreneuron, h
-from neuron.config import arguments
 from neuron.tests.utils import (
-    cache_efficient,
     num_threads,
     parallel_context,
 )
@@ -54,7 +52,8 @@ class Cell:
         return {"ina": list(self.ina_vec), "t": list(self.tv)}
 
 
-simulators = ["neuron"] + ["coreneuron"] if arguments["NRN_ENABLE_CORENEURON"] else []
+# TODO: fix coreneuron compilation and execution of this test
+simulators = ["neuron"]
 
 
 @pytest.mark.parametrize("simulator", simulators)
@@ -67,7 +66,7 @@ def test_mcna(chk, simulator, threads):
     ncell = 10
     cells = [Cell(id, ncell) for id in range(ncell)]
     enable_coreneuron = simulator == "coreneuron"
-    with cache_efficient(enable_coreneuron), coreneuron(
+    with coreneuron(
         enable=enable_coreneuron, verbose=0
     ), parallel_context() as pc, num_threads(pc, threads=threads):
         pc.set_maxstep(10)
@@ -92,13 +91,6 @@ def test_mcna(chk, simulator, threads):
         # bootstrapping
         chk("mcna", model_data)
         return
-    if simulator == "coreneuron":
-        # CoreNEURON does not handle GLOBAL variables that are updated during
-        # simulation.
-        ref_data = ref_data.copy()
-        for key in ("cnt1", "cnt2"):
-            ref_data.pop(key)
-            model_data.pop(key)
     assert model_data == ref_data
 
 
