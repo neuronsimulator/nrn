@@ -6206,12 +6206,6 @@ PlayRecord::~PlayRecord() {
     net_cvode_instance->playrec_remove(this);
 }
 
-void PlayRecord::update_ptr(neuron::container::data_handle<double> pd) {
-    nrn_notify_pointer_disconnect(this);
-    neuron::container::notify_when_handle_dies(pd, this);
-    pd_ = pd;
-}
-
 void PlayRecord::disconnect(Observable*) {
     // printf("PlayRecord::disconnect %ls\n", (long)this);
     delete this;
@@ -6758,17 +6752,6 @@ double NetCvode::maxstate_analyse(Symbol* sym, double* pamax) {
     }
     *pamax = -1e9;
     return -1e9;
-}
-
-void NetCvode::recalc_ptrs() {
-    // update PlayRecord pointers to v
-    int cnt = prl_->count();
-    for (int i = 0; i < cnt; ++i) {
-        PlayRecord* pr = prl_->item(i);
-        if (pr->pd_ && !pr->pd_.refers_to_a_modern_data_structure()) {
-            pr->update_ptr(pr->pd_);
-        }
-    }
 }
 
 static double lvardt_tout_;

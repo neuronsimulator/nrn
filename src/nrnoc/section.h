@@ -124,9 +124,6 @@ struct Node {
     [[nodiscard]] auto area_handle() {
         return _node_handle.area_handle();
     }
-    void set_area(neuron::container::Node::field::Area::type area) {
-        _node_handle.set_area(area);
-    }
     [[nodiscard]] auto& b() {
         return _node_handle.b();
     }
@@ -154,9 +151,6 @@ struct Node {
     [[nodiscard]] auto v_handle() {
         return _node_handle.v_handle();
     }
-    void set_v(neuron::container::Node::field::Voltage::type v) {
-        _node_handle.set_v(v);
-    }
     [[nodiscard]] auto& rhs() {
         return _node_handle.rhs();
     }
@@ -166,8 +160,20 @@ struct Node {
     [[nodiscard]] auto rhs_handle() {
         return _node_handle.rhs_handle();
     }
-    void set_rhs(neuron::container::Node::field::RHS::type rhs) {
-        _node_handle.set_rhs(rhs);
+    [[nodiscard]] auto& sav_d() {
+        return _node_handle.sav_d();
+    }
+    [[nodiscard]] auto const& sav_d() const {
+        return _node_handle.sav_d();
+    }
+    [[nodiscard]] auto& sav_rhs() {
+        return _node_handle.sav_rhs();
+    }
+    [[nodiscard]] auto const& sav_rhs() const {
+        return _node_handle.sav_rhs();
+    }
+    [[nodiscard]] auto sav_rhs_handle() {
+        return _node_handle.sav_rhs_handle();
     }
     [[nodiscard]] auto non_owning_handle() {
         return _node_handle.non_owning_handle();

@@ -729,7 +729,7 @@ void SaveState::restore(int type) {
 }
 
 void SaveState::restorenode(NodeState& ns, Node* nd) {
-    nd->set_v(ns.v);
+    nd->v() = ns.v;
     int istate = 0;
     Prop* p;
     for (p = nd->prop; p; p = p->next) {

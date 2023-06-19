@@ -87,7 +87,7 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                     std::ostringstream oss;
                     oss << gdh;
                     REQUIRE(oss.str() ==
-                            "generic_data_handle{cont=test_mechanism foo row=0/1, type=double*}");
+                            "generic_data_handle{cont=test_mechanism foo row=0/1 type=double*}");
                 }
                 std::ostringstream actual;
                 actual << mech_instance;
@@ -242,7 +242,7 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                             std::ostringstream oss;
                             oss << generic_foo;
                             REQUIRE(oss.str() ==
-                                    "generic_data_handle{cont=unknown died/unknown, type=double*}");
+                                    "generic_data_handle{cont=unknown died/unknown type=double*}");
                         }
                     }
                 }

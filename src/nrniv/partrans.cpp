@@ -863,7 +863,7 @@ void pargap_jacobi_setup(int mode) {
             }
     } else {  // tear down
         for (size_t i = 0; i < visources_.size(); ++i) {
-            visources_[i]->set_v(vgap1[i]);
+            visources_[i]->v() = vgap1[i];
         }
         if (ttd) {
             for (int i = 0; i < ttd->cnt; ++i) {
@@ -888,7 +888,7 @@ void pargap_jacobi_rhs(double* b, double* x) {
     // transfer gap node voltages to gap vpre
     for (size_t i = 0; i < visources_.size(); ++i) {
         Node* nd = visources_[i];
-        nd->set_v(x[nd->v_node_index]);
+        nd->v() = x[nd->v_node_index];
     }
     mpi_transfer();
     thread_transfer(_nt);
@@ -896,7 +896,7 @@ void pargap_jacobi_rhs(double* b, double* x) {
     // set gap node voltages to 0 so we can use nrn_cur to set rhs
     for (size_t i = 0; i < visources_.size(); ++i) {
         Node* nd = visources_[i];
-        nd->set_v(0.0);
+        nd->v() = 0.0;
     }
     auto const sorted_token = nrn_ensure_model_data_are_sorted();
     auto* const vec_rhs = _nt->node_rhs_storage();

@@ -42,11 +42,6 @@ typedef struct NrnThreadBAList {
     struct NrnThreadBAList* next;
 } NrnThreadBAList;
 
-typedef struct _nrn_Fast_Imem {
-    double* _nrn_sav_rhs;
-    double* _nrn_sav_d;
-} _nrn_Fast_Imem;
-
 struct hoc_Item;
 using hoc_List = hoc_Item;
 struct Object;
@@ -81,6 +76,8 @@ struct NrnThread {
     [[nodiscard]] double* node_b_storage();
     [[nodiscard]] double* node_d_storage();
     [[nodiscard]] double* node_rhs_storage();
+    [[nodiscard]] double* node_sav_d_storage();
+    [[nodiscard]] double* node_sav_rhs_storage();
     [[nodiscard]] double* node_voltage_storage();
     [[nodiscard]] double& actual_d(std::size_t row) {
         return node_d_storage()[row];
@@ -97,8 +94,7 @@ struct NrnThread {
     char* _sp13mat;              /* handle to general sparse matrix */
     Memb_list* _ecell_memb_list; /* normally nil */
     Node** _ecell_children;      /* nodes with no extcell but parent has it */
-    _nrn_Fast_Imem* _nrn_fast_imem;
-    void* _vcv; /* replaces old cvode_instance and nrn_cvode_ */
+    void* _vcv;                  /* replaces old cvode_instance and nrn_cvode_ */
 
 #if 1
     double _ctime; /* computation time in seconds (using nrnmpi_wtime) */
@@ -125,7 +121,6 @@ extern void nrn_threads_free();
 extern int nrn_user_partition();
 extern void reorder_secorder();
 extern void nrn_thread_memblist_setup();
-extern void nrn_imem_defer_free(double*);
 extern std::size_t nof_worker_threads();
 
 #define FOR_THREADS(nt) for (nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt)

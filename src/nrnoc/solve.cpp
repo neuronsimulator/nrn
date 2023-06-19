@@ -595,7 +595,7 @@ extern int keep_nseg_parm_;
 // already does the right thing by default
 static Node* node_clone(Node* nd1) {
     Node* nd2 = new Node{};
-    nd2->set_v(nd1->v());
+    nd2->v() = nd1->v();
     for (Prop* p1 = nd1->prop; p1; p1 = p1->next) {
         if (!memb_func[p1->_type].is_point) {
             Prop* p2 = prop_alloc(&(nd2->prop), p1->_type, nd2);

@@ -50,13 +50,6 @@ extern void nrn_define_shape();
 void (*nrn_multisplit_setup_)();
 #endif
 
-/* a, b, d and rhs are, from now on, all stored in extra arrays, to improve
- * cache efficiency in nrn_lhs() and nrn_rhs(). Formerly, three levels of
- * indirection were necessary for accessing these elements, leading to lots
- * of L2 misses.  2006-07-05/Hubert Eichner */
-/* these are now thread instance arrays */
-static void nrn_recalc_node_ptrs();
-
 /*
 Do not use unless necessary (loops in tree structure) since overhead
 (for gaussian elimination) is
@@ -414,9 +407,10 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
             vec_rhs[i] = 0.;
         }
     }
-    if (_nt->_nrn_fast_imem) {
+    auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
+    if (vec_sav_rhs) {
         for (i = i1; i < i3; ++i) {
-            _nt->_nrn_fast_imem->_nrn_sav_rhs[i] = 0.;
+            vec_sav_rhs[i] = 0.;
         }
     }
 
@@ -443,13 +437,12 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         }
     activsynapse_rhs();
 
-    if (_nt->_nrn_fast_imem) {
+    if (vec_sav_rhs) {
         /* _nrn_save_rhs has only the contribution of electrode current
            so here we transform so it only has membrane current contribution
         */
-        double* p = _nt->_nrn_fast_imem->_nrn_sav_rhs;
         for (i = i1; i < i3; ++i) {
-            p[i] -= vec_rhs[i];
+            vec_sav_rhs[i] -= vec_rhs[i];
         }
     }
 #if EXTRACELLULAR
@@ -517,9 +510,10 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         vec_d[i] = 0.;
     }
 
-    if (_nt->_nrn_fast_imem) {
+    auto const vec_sav_d = _nt->node_sav_d_storage();
+    if (vec_sav_d) {
         for (i = i1; i < i3; ++i) {
-            _nt->_nrn_fast_imem->_nrn_sav_d[i] = 0.;
+            vec_sav_d[i] = 0.;
         }
     }
 
@@ -548,13 +542,12 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 
     activsynapse_lhs();
 
-    if (_nt->_nrn_fast_imem) {
+    if (vec_sav_d) {
         /* _nrn_save_d has only the contribution of electrode current
            so here we transform so it only has membrane current contribution
         */
-        double* p = _nt->_nrn_fast_imem->_nrn_sav_d;
         for (i = i1; i < i3; ++i) {
-            p[i] += vec_d[i];
+            vec_sav_d[i] += vec_d[i];
         }
     }
 #if EXTRACELLULAR
@@ -797,7 +790,7 @@ void nrn_area_ri(Section* sec) {
                 diam = 1e-6;
                 hoc_execerror(secname(sec), "diameter diam = 0. Setting to 1e-6");
             }
-            nd->set_area(PI * diam * dx);                           // um^2
+            nd->area() = PI * diam * dx;                            // um^2
             rleft = 1e-2 * ra * (dx / 2) / (PI * diam * diam / 4.); /*left half segment Megohms*/
             NODERINV(nd) = 1. / (rleft + rright);                   /*uS*/
             rright = rleft;
@@ -805,7 +798,7 @@ void nrn_area_ri(Section* sec) {
     }
     /* last segment has 0 length. area is 1e2
     in dimensionless units */
-    sec->pnode[j]->set_area(1.e2);
+    sec->pnode[j]->area() = 1.e2;
     NODERINV(sec->pnode[j]) = 1. / rright;
     sec->recalc_area_ = 0;
     diam_changed = 1;
@@ -1593,13 +1586,13 @@ static double diam_from_list(Section* sec, int inode, Prop* p, double rparent)
     if (fabs(diam - p->param(0)) > 1e-9 || diam < 1e-5) {
         p->param(0) = diam; /* microns */
     }
-    sec->pnode[inode]->set_area(area * .5 * PI); /* microns^2 */
+    sec->pnode[inode]->area() = area * .5 * PI; /* microns^2 */
 #if NTS_SPINE
     /* if last point has a spine then increment spine count for last node */
     if (inode == sec->nnode - 2 && sec->pt3d[npt - 1].d < 0.) {
         nspine += 1;
     }
-    sec->pnode[inode]->set_area(sec->pnode[inode]->area() + nspine * spinearea);
+    sec->pnode[inode]->area() = sec->pnode[inode]->area() + nspine * spinearea;
 #endif
     return ri;
 }
@@ -1762,7 +1755,6 @@ void v_setup_vectors(void) {
             }
         }
     }
-    nrn_recalc_node_ptrs();
     neuron::model().node_data().mark_as_unsorted();
     v_structure_change = 0;
     nrn_update_ps2nt();
@@ -1977,7 +1969,6 @@ static void nrn_matrix_node_alloc(void) {
             // used to return here if the cache-efficient structures for a/b/... were non-null
         }
     }
-    nrn_recalc_node_ptrs();
     ++nrn_matrix_cnt_;
     if (use_sparse13) {
         int in, err, extn, neqn, j;
@@ -2342,10 +2333,4 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         neuron::cache::model = std::move(cache);
     }
     return ret;
-}
-
-void nrn_recalc_node_ptrs() {
-    nrniv_recalc_ptrs();
-    nrn_recalc_ptrvector();
-    nrn_imem_defer_free(nullptr);
 }

@@ -219,7 +219,6 @@ set(NRNIV_FILE_LIST
     bbslsrv2.cpp
     bbsrcli.cpp
     bbssrv.cpp
-    cachevec.cpp
     classreg.cpp
     cxprop.cpp
     datapath.cpp

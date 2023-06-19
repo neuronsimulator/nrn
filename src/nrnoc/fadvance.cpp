@@ -73,8 +73,8 @@ extern double hoc_epsilon;
 #define NONVINT_ODE_COUNT 5
 
 #if NRNCTIME
-#define CTBEGIN double wt = nrnmpi_wtime();
-#define CTADD   nth->_ctime += nrnmpi_wtime() - wt;
+#define CTBEGIN double wt = nrnmpi_wtime()
+#define CTADD   nth->_ctime += nrnmpi_wtime() - wt
 #else
 #define CTBEGIN /**/
 #define CTADD   /**/
@@ -143,7 +143,7 @@ void (*nrnthread_vi_compute_)(NrnThread* nt);
 int cvode_active_;
 
 int stoprun;
-int nrn_use_fast_imem;
+bool nrn_use_fast_imem;
 
 #define PROFILE 0
 #include <oc/profile.h>
@@ -457,13 +457,12 @@ static void nrn_fixed_step_group_thread(neuron::model_sorted_token const& cache_
 
 static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     auto* const nth = &nt;
-    double wt;
     {
         nrn::Instrumentor::phase p("deliver-events");
         deliver_net_events(nth);
     }
 
-    wt = nrnmpi_wtime();
+    CTBEGIN;
     nrn_random_play();
 #if ELIMINATE_T_ROUNDOFF
     nt.nrn_ndt_ += .5;
@@ -485,7 +484,7 @@ static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token,
         nrn::Instrumentor::phase p("update");
         nrn_update_voltage(cache_token, *nth);
     }
-    CTADD
+    CTADD;
     /*
       To simplify the logic,
       if there is no nrnthread_v_transfer then there cannot be an nrnmpi_v_transfer.
@@ -499,7 +498,7 @@ extern void nrn_extra_scatter_gather(int direction, int tid);
 
 void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     auto* const nth = &nt;
-    CTBEGIN
+    CTBEGIN;
 #if ELIMINATE_T_ROUNDOFF
     nth->nrn_ndt_ += .5;
     nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
@@ -511,7 +510,8 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
     nonvint(cache_token, nt);
     nrn_ba(cache_token, nt, AFTER_SOLVE);
     fixed_record_continuous(cache_token, nt);
-    CTADD {
+    CTADD;
+    {
         nrn::Instrumentor::phase p("deliver-events");
         nrn_deliver_events(nth); /* up to but not past texit */
     }
@@ -520,9 +520,8 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
 /* nrn_fixed_step_thread is split into three pieces */
 
 void* nrn_ms_treeset_through_triang(NrnThread* nth) {
-    double wt;
     deliver_net_events(nth);
-    wt = nrnmpi_wtime();
+    CTBEGIN;
     nrn_random_play();
 #if ELIMINATE_T_ROUNDOFF
     nth->nrn_ndt_ += .5;
@@ -533,7 +532,7 @@ void* nrn_ms_treeset_through_triang(NrnThread* nth) {
     fixed_play_continuous(nth);
     setup_tree_matrix(nrn_ensure_model_data_are_sorted(), *nth);
     nrn_multisplit_triang(nth);
-    CTADD
+    CTADD;
     return nullptr;
 }
 void* nrn_ms_reduce_solve(NrnThread* nth) {
@@ -541,12 +540,12 @@ void* nrn_ms_reduce_solve(NrnThread* nth) {
     return nullptr;
 }
 void* nrn_ms_bksub(NrnThread* nth) {
-    CTBEGIN
+    CTBEGIN;
     nrn_multisplit_bksub(nth);
     second_order_cur(nth);
     auto const cache_token = nrn_ensure_model_data_are_sorted();
     nrn_update_voltage(cache_token, *nth);
-    CTADD
+    CTADD;
     /* see above comment in nrn_fixed_step_thread */
     if (!nrnthread_v_transfer_) {
         nrn_fixed_step_lastpart(cache_token, *nth);
@@ -606,15 +605,16 @@ void nrn_update_voltage(neuron::model_sorted_token const& sorted_token, NrnThrea
 }
 
 void nrn_calc_fast_imem(NrnThread* _nt) {
-    int i;
-    int i1 = 0;
-    int i3 = _nt->end;
-    auto* const vec_area = _nt->node_area_storage();
-    auto* const vec_rhs = _nt->node_rhs_storage();
-    double* pd = _nt->_nrn_fast_imem->_nrn_sav_d;
-    double* prhs = _nt->_nrn_fast_imem->_nrn_sav_rhs;
-    for (i = i1; i < i3; ++i) {
-        prhs[i] = (pd[i] * vec_rhs[i] + prhs[i]) * vec_area[i] * 0.01;
+    constexpr int i1 = 0;
+    auto const i3 = _nt->end;
+    auto const vec_area = _nt->node_area_storage();
+    auto const vec_rhs = _nt->node_rhs_storage();
+    auto const vec_sav_d = _nt->node_sav_d_storage();
+    auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
+    assert(vec_sav_d);
+    assert(vec_sav_rhs);
+    for (int i = i1; i < i3; ++i) {
+        vec_sav_rhs[i] = (vec_sav_d[i] * vec_rhs[i] + vec_sav_rhs[i]) * vec_area[i] * 0.01;
     }
 }
 
@@ -628,14 +628,13 @@ void nrn_calc_fast_imem_fixedstep_init(NrnThread* _nt) {
     // Warning: Have not thought deeply about extracellular or LinearMechanism.
     //          But there is a good chance things are ok. But needs testing.
     // I don't believe this is used by Cvode or IDA.
-    int i;
-    int i1 = 0;
+    constexpr auto i1 = 0;
     int i3 = _nt->end;
-    double* prhs = _nt->_nrn_fast_imem->_nrn_sav_rhs;
-    auto* const vec_area = _nt->node_area_storage();
-    auto* const vec_rhs = _nt->node_rhs_storage();
-    for (i = i1; i < i3; ++i) {
-        prhs[i] = (vec_rhs[i] + prhs[i]) * vec_area[i] * 0.01;
+    auto const vec_area = _nt->node_area_storage();
+    auto const vec_rhs = _nt->node_rhs_storage();
+    auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
+    for (int i = i1; i < i3; ++i) {
+        vec_sav_rhs[i] = (vec_rhs[i] + vec_sav_rhs[i]) * vec_area[i] * 0.01;
     }
 }
 
@@ -835,9 +834,9 @@ void nrn_finitialize(int setv, double v) {
         nrn_deliver_events(nrn_threads + i); /* The play events at t=0 */
     }
     if (setv) {
-        FOR_THREADS(_nt)
-        for (i = 0; i < _nt->end; ++i) {
-            _nt->_v_node[i]->set_v(v);
+        FOR_THREADS(_nt) {
+            auto const vec_v = _nt->node_voltage_storage();
+            std::fill_n(vec_v, _nt->end, v);
         }
     }
 #if 1 || PARANEURON

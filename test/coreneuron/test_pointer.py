@@ -126,10 +126,6 @@ class Model:
     def __init__(self, ncell, nsec):
         self.cells = [Cell(i, nsec) for i in range(ncell)]
         self.update_pointers()
-        # Setup callback to update dipole POINTER for cache_efficiency
-        # The PtrVector is used only to support the callback.
-        self._callback_setup = h.PtrVector(1)
-        self._callback_setup.ptr_update_callback(self.update_pointers)
 
     def update_pointers(self):
         for cell in self.cells:
@@ -216,8 +212,6 @@ def test_axial():
         coreneuron.cell_permute = perm
         chk(std, run(tstop))
     coreneuron.enable = False
-
-    m._callback_setup = None  # get rid of the callback first.
     del m
 
 
@@ -296,7 +290,6 @@ def test_checkpoint():
     coreneuron.enable = False
 
     # Delete model before launching the CoreNEURON simulation offline
-    m._callback_setup = None
     pc.gid_clear()
     del m
 

@@ -115,6 +115,14 @@ struct data_handle {
         }
     }
 
+    /**
+     * @brief Query whether this data handle is in "modern" mode.
+     * @return true if the handle was created as a permutation-stable handle to an soa<...> data
+     *         structure, otherwise false.
+     *
+     * Note that this does *not* mean that the handle is still valid. The referred-to row and/or
+     * column may have gone away in the meantime.
+     */
     [[nodiscard]] bool refers_to_a_modern_data_structure() const {
         return bool{m_offset} || m_offset.was_once_valid();
     }
@@ -134,8 +142,8 @@ struct data_handle {
 
     [[nodiscard]] explicit operator bool() const {
         if (bool{m_offset}) {
-            // valid, modern
-            return true;
+            // valid, modern identifier (i.e. row is valid)
+            return container_data();  // also check if the column is valid
         } else if (m_offset.was_once_valid()) {
             // once-valid, modern. no longer valid
             return false;
@@ -192,9 +200,18 @@ struct data_handle {
             return this_ref.raw_ptr();
         }
         if (this_ref.m_offset) {
-            // valid, modern mode
-            return this_ref.container_data() +
-                   this_ref.m_array_dim * this_ref.m_offset.current_row() + this_ref.m_array_index;
+            // valid, modern mode *identifier*; i.e. we know what offset into a vector we're
+            // supposed to be looking at. It's also possible that the vector doesn't exist anymore,
+            // either because the whole soa<...> container was deleted, or because an optional field
+            // was toggled off in an existing soa<...> container. In that case, the base pointer
+            // will be null.
+            if (auto* const base_ptr = this_ref.container_data(); base_ptr) {
+                // the array still exists
+                return base_ptr + this_ref.m_array_dim * this_ref.m_offset.current_row() +
+                       this_ref.m_array_index;
+            }
+            // the vector doesn't exist anymore => return nullptr
+            return decltype(this_ref.raw_ptr()){nullptr};
         }
         // no longer valid, modern mode
         return decltype(this_ref.raw_ptr()){nullptr};
@@ -234,7 +251,8 @@ struct data_handle {
     friend std::ostream& operator<<(std::ostream& os, data_handle const& dh) {
         os << "data_handle<" << cxx_demangle(typeid(T).name()) << ">{";
         if (auto const valid = dh.m_offset; valid || dh.m_offset.was_once_valid()) {
-            if (auto const maybe_info = utils::find_container_info(dh.container_data())) {
+            auto* const container_data = dh.container_data();
+            if (auto const maybe_info = utils::find_container_info(container_data)) {
                 if (!maybe_info->container().empty()) {
                     os << "cont=" << maybe_info->container() << ' ';
                 }
@@ -252,11 +270,16 @@ struct data_handle {
                 }
                 os << ' ' << dh.m_offset << '/' << size;
             } else {
-                os << "cont=unknown " << dh.m_offset << "/unknown";
+                os << "cont=" << (container_data ? "unknown " : "deleted ") << dh.m_offset
+                   << "/unknown";
             }
-            // print the value if it has an output operator
+            // print the value if it exists and has an output operator
             if (valid) {
-                detail::print_value(os, *dh);
+                // if the referred-to *column* was deleted but the referred-to *row* is still valid,
+                // valid == true but ptr == nullptr.
+                if (auto* const ptr = get_ptr_helper(dh); ptr) {
+                    detail::print_value(os, *ptr);
+                }
             }
         } else if (dh.m_container_or_raw_ptr) {
             os << "raw=" << dh.m_container_or_raw_ptr;

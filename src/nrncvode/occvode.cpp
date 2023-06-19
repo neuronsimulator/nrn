@@ -738,11 +738,10 @@ void Cvode::fun_thread_transfer_part2(neuron::model_sorted_token const& sorted_t
             nrn_div_capacity(sorted_token, nt, &ml);
         }
     }
-    if (nt->_nrn_fast_imem) {
-        double* p = nt->_nrn_fast_imem->_nrn_sav_rhs;
+    if (auto const vec_sav_rhs = nt->node_sav_rhs_storage(); vec_sav_rhs) {
         for (int i = 0; i < z.v_node_count_; ++i) {
             Node* nd = z.v_node_[i];
-            p[nd->v_node_index] *= NODEAREA(nd) * 0.01;
+            vec_sav_rhs[nd->v_node_index] *= NODEAREA(nd) * 0.01;
         }
     }
     gather_ydot(ydot, nt->id);
@@ -874,7 +873,7 @@ void Cvode::nocap_v(neuron::model_sorted_token const& sorted_token, NrnThread* _
 
     for (i = 0; i < z.no_cap_count_; ++i) {
         Node* nd = z.no_cap_node_[i];
-        nd->set_v(NODERHS(nd) / NODED(nd));
+        nd->v() = NODERHS(nd) / NODED(nd);
         //		printf("%d %d %g v=%g\n", nrnmpi_myid, i, _nt->_t, NODEV(nd));
     }
     // no_cap v's are now consistent with adjacent v's
@@ -923,7 +922,7 @@ void Cvode::nocap_v_part3(NrnThread* _nt) {
     CvodeThreadData& z = ctd_[_nt->id];
     for (i = 0; i < z.no_cap_count_; ++i) {
         Node* nd = z.no_cap_node_[i];
-        nd->set_v(NODERHS(nd) / NODED(nd));
+        nd->v() = NODERHS(nd) / NODED(nd);
         //		printf("%d %d %g v=%g\n", nrnmpi_myid, i, t, NODEV(nd));
     }
     // no_cap v's are now consistent with adjacent v's

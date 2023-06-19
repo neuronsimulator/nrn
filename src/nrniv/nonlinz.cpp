@@ -359,14 +359,14 @@ void NonLinImpRep::didv() {
             NODERHS(nd) = 0;
             double x1 = NODEV(nd);
             // v+dv
-            nd->set_v(x1 + delta_);
+            nd->v() = x1 + delta_;
             current(i, ml, j);
             // save rhs
             // zero rhs
             // restore v
             x2 = NODERHS(nd);
             NODERHS(nd) = 0;
-            nd->set_v(x1);
+            nd->v() = x1;
             current(i, ml, j);
             // conductance
             // add to matrix
@@ -455,7 +455,7 @@ void NonLinImpRep::dsdv() {
                     Node* nd = ml->nodelist[in];
                     auto const v = nd->v();
                     if (x1[in] == v) {
-                        nd->set_v(v + delta_);
+                        nd->v() = v + delta_;
                     }
                 }
                 // compute rhs. this is the rhs(v+dv)
@@ -467,7 +467,7 @@ void NonLinImpRep::dsdv() {
                         x2[is] = *pvdot_[is];
                         *pvdot_[is] = 0;
                     }
-                    nd->set_v(x1[in]);
+                    nd->v() = x1[in];
                 }
                 // compute the rhs(v)
                 ode(i, ml);
