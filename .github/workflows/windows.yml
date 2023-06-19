@@ -5,8 +5,16 @@ concurrency:
   cancel-in-progress: true  
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Release version (tag name)'
+        default: ''
+        required: true
+        type: string
   push:
     branches: 
+      - master
       - release/**
   pull_request:
     branches:
@@ -28,7 +36,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        fetch-depth: 0
+        ref: ${{ inputs.tag }}
 
     - name: Retrieve rxd test data
       run: |
@@ -84,3 +92,19 @@ jobs:
       run: .\ci\win_test_installer.cmd
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn
+
+    - name: Publish Nightly Installer
+      if: github.ref == 'refs/heads/master'
+      working-directory: ${{runner.workspace}}\nrn
+      run: |
+        gh release upload nightly nrn-nightly-AMD64.exe -R neuronsimulator/installers
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Publish Release Installer
+      working-directory: ${{runner.workspace}}\nrn
+      if: inputs.tag != ''
+      run: |
+        gh release upload ${{ inputs.tag }} nrn-nightly-AMD64.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
