@@ -3,7 +3,7 @@ def test_only_nodes(neuron_instance):
 
     h, rxd, data, save_path = neuron_instance
 
-    dend = h.Section(name="dend")
+    dend = h.Section("dend")
     r = rxd.Region(h.allsec())
     hydrogen = rxd.Species(r, initial=1)
     water = rxd.Species(r, initial=1)
@@ -50,7 +50,6 @@ def test_only_nodes(neuron_instance):
     try:
         nodelist.append(water.nodes[0])  # append node
     except TypeError:
-        print("The appended item is not a node.")
         raise Exception("should not get here")
 
     try:
@@ -58,13 +57,11 @@ def test_only_nodes(neuron_instance):
         nodelist.extend(item for item in water.nodes)
         assert len(nodelist) == original_length + len(water.nodes)
     except TypeError:
-        print("The extended list are not all nodes.")
         raise Exception("should not get here")
 
     try:
         nodelist[0] = water.nodes[0]
     except TypeError:
-        print("Nodelist should only contain nodes.")
         raise Exception("should not get here")
 
     try:
@@ -72,23 +69,19 @@ def test_only_nodes(neuron_instance):
             [water.nodes[0], water.nodes[0]]
         )  # create nodelist with nodes
     except TypeError:
-        print("Nodelist should only contain nodes.")
         raise Exception("should not get here")
 
     try:
         nodelist.insert(1, water.nodes[0])  # insert node into nodelist
     except TypeError:
-        print("Only nodes can be inserted into the nodelist.")
         raise Exception("should not get here")
 
     try:
         nl = rxd.nodelist.NodeList([])  # create empty nodelist
     except TypeError:
-        print("Only nodes can be inserted into the nodelist.")
         raise Exception("should not get here")
 
     try:
-        print("4")
         nl = rxd.nodelist.NodeList(
             item for item in [water.nodes[0], water.nodes[0]]
         )  # create nodelist with nodes generator
