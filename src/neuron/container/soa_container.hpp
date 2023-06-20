@@ -83,6 +83,29 @@ struct has_num_variables<T, std::void_t<decltype(std::declval<T>().num_variables
 template <typename T>
 inline constexpr bool has_num_variables_v = has_num_variables<T>::value;
 
+// Get the value of a static member variable called optional, or false if it doesn't exist.
+template <typename T, typename = void>
+struct optional: std::false_type {};
+template <typename T>
+struct optional<T, std::void_t<decltype(T::optional)>> {
+    constexpr static bool value = T::optional;
+};
+template <typename T>
+inline constexpr bool optional_v = optional<T>::value;
+
+enum struct FieldImplementation {
+    AlwaysSingle,    // field always exists -> std::vector<T>
+    OptionalSingle,  // field exists 0 or 1 time -> std::vector<T> that might be skipped
+    RuntimeVariable  // field is duplicated a number of times that is set at runtime ->
+                     // std::vector<std::vector<T>>
+};
+
+template <typename Tag>
+inline constexpr FieldImplementation field_impl_v =
+    (has_num_variables_v<Tag> ? FieldImplementation::RuntimeVariable
+                              : (optional_v<Tag> ? FieldImplementation::OptionalSingle
+                                                 : FieldImplementation::AlwaysSingle));
+
 // Get a name for a given field within a given tag
 template <typename Tag>
 auto get_name_impl(Tag const& tag, int field_index, std::nullptr_t)
@@ -163,13 +186,148 @@ extern std::vector<void*>* defer_delete_storage;
 template <typename T>
 void defer_delete(std::unique_ptr<T[]> data) {
     static_assert(std::is_trivially_destructible_v<T>, "defer_delete does not call destructors");
-    if (defer_delete_storage) {
+    if (data && defer_delete_storage) {
         defer_delete_storage->push_back(data.release());
     }
 }
 
-template <typename, bool has_num_variables>
-struct field_data {};
+template <typename Tag, FieldImplementation impl>
+struct field_data {
+    static_assert(impl == FieldImplementation::AlwaysSingle ||
+                  impl == FieldImplementation::OptionalSingle);
+    using data_type = typename Tag::type;
+    static_assert(!has_num_variables_v<Tag>);
+    field_data(Tag tag)
+        : m_tag{std::move(tag)}
+        , m_array_dim{get_array_dimension(m_tag)} {
+        if constexpr (impl == FieldImplementation::AlwaysSingle) {
+            m_data_ptr = std::make_unique<data_type*[]>(1);
+        }
+    }
+
+    ~field_data() {
+        // An unknown number of data_handle<T> in the wild may be holding references to m_data_ptr
+        defer_delete(std::move(m_data_ptr));
+    }
+
+    /**
+     * @brief Return a reference to the tag instance.
+     */
+    Tag const& tag() const {
+        return m_tag;
+    }
+
+    template <may_cause_reallocation might_reallocate, typename Callable>
+    void for_all_vectors(Callable const& callable) {
+        if constexpr (impl == FieldImplementation::OptionalSingle) {
+            if (!m_data_ptr) {
+                // inactive, optional field
+                return;
+            }
+        }
+        callable(m_tag, m_storage, -1, m_array_dim);
+        if constexpr (might_reallocate == may_cause_reallocation::Yes) {
+            m_data_ptr[0] = m_storage.data();
+        }
+    }
+
+    template <typename Callable>
+    void for_all_vectors(Callable const& callable) const {
+        if constexpr (impl == FieldImplementation::OptionalSingle) {
+            if (!m_data_ptr) {
+                // inactive, optional field
+                return;
+            }
+        }
+        callable(m_tag, m_storage, -1, m_array_dim);
+    }
+
+    [[nodiscard]] bool active() const {
+        static_assert(impl == FieldImplementation::OptionalSingle);
+        return bool{m_data_ptr};
+    }
+
+    void set_active(bool enable, std::size_t size) {
+        static_assert(impl == FieldImplementation::OptionalSingle);
+        if (enable == active()) {
+            return;
+        }
+        if (enable) {
+            // make sure the storage is allocated + the right size + full of default values
+            assert(m_storage.empty());  // it should be starting off empty
+            if constexpr (has_default_value_v<Tag>) {
+                m_storage.resize(size * m_array_dim, m_tag.default_value());
+            } else {
+                m_storage.resize(size * m_array_dim);
+            }
+            m_data_ptr = std::make_unique<data_type*[]>(1);
+            m_data_ptr[0] = m_storage.data();
+        } else {
+            // clear + free the storage
+            m_storage.clear();
+            m_storage.shrink_to_fit();
+            // data handles may be holding pointers to m_data_ptr (which is the reason for the
+            // deferred deletion); signal to them that they are no longer valid by writing nullptr
+            // here
+            m_data_ptr[0] = nullptr;
+            defer_delete(std::move(m_data_ptr));
+        }
+    }
+
+    [[nodiscard]] data_type* const* data_ptrs() const {
+        return m_data_ptr.get();
+    }
+
+    [[nodiscard]] int const* array_dims() const {
+        return &m_array_dim;
+    }
+
+    [[nodiscard]] int const* array_dim_prefix_sums() const {
+        return &m_array_dim;
+    }
+
+  private:
+    /**
+     * @brief Tag type instance.
+     *
+     * An instance of @c soa contains an instance of @c field_data for each tag type in its @c
+     * Tags... pack. The instance of the tag type contains the metadata about the field it
+     * represents, and @c field_data adds the actual data for that field. For example, with @c Tag =
+     * @c Node::field::Voltage, which represents the voltage in a given Node, @c m_tag is just an
+     * empty type that defines the @c data_type and default value of voltages.
+     */
+    Tag m_tag;
+
+    /**
+     * @brief Storage for the data associated with @c Tag.
+     *
+     * This is one of the "large" data arrays holding the model data. Because this specialisation of
+     * @c field_data is for @c Tag types that @b don't have @c num_variables() members, such as @c
+     * Node::field::Voltage, there is exactly one vector per instance of @c field_data. Because the
+     * fields in @c Node::storage all have array dimension 1, in that case the size of this vector
+     * is the number of Node instances in the program.
+     */
+    std::vector<data_type> m_storage;
+
+    /**
+     * @brief Storage where we maintain an up-to-date cache of @c m_storage.data().
+     * @invariant @c m_storage.data() is equal to @c m_data_ptr.
+     * @see field_data<Tag, true>::m_data_ptrs %for the motivation.
+     *
+     * This is declared as an array (of size 1) to simplify the implementation of defer_delete.
+     * For FieldImplementation::OptionalSingle then whether or not this is null encodes whether
+     * or not the field is active. For FieldImplementation::AlwaysSingle it is never null.
+     */
+    std::unique_ptr<data_type*[]> m_data_ptr;
+
+    /**
+     * @brief Array dimension of the data associated with @c Tag.
+     * @invariant @c m_array_dim is equal to @c m_tag.array_dimension(), if that function exists,
+     *            or 1.
+     * @see field_data<Tag, true>::m_array_dims %for the motivation.
+     */
+    int m_array_dim;
+};
 
 /**
  * @brief Storage manager for a tag type that implements num_variables().
@@ -191,7 +349,7 @@ struct field_data {};
  * This is a helper type for use by neuron::container::soa and it should not be used directly.
  */
 template <typename Tag>
-struct field_data<Tag, true> {
+struct field_data<Tag, FieldImplementation::RuntimeVariable> {
     using data_type = typename Tag::type;
     static_assert(has_num_variables_v<Tag>);
     field_data(Tag tag)
@@ -374,95 +532,6 @@ struct field_data<Tag, true> {
      * than @c m_tag.num_variables().
      */
     std::vector<int> m_array_dim_prefix_sums;
-};
-
-template <typename Tag>
-struct field_data<Tag, false> {
-    using data_type = typename Tag::type;
-    static_assert(!has_num_variables_v<Tag>);
-    field_data(Tag tag)
-        : m_tag{std::move(tag)}
-        , m_array_dim{get_array_dimension(m_tag, nullptr)}
-        , m_data_ptr{std::make_unique<data_type*[]>(1)} {
-        m_data_ptr[0] = m_storage.data();
-    }
-
-    ~field_data() {
-        // An unknown number of data_handle<T> in the wild may be holding references to m_data_ptr
-        defer_delete(std::move(m_data_ptr));
-    }
-
-    /**
-     * @brief Return a reference to the tag instance.
-     */
-    Tag const& tag() const {
-        return m_tag;
-    }
-
-    template <may_cause_reallocation might_reallocate, typename Callable>
-    void for_all_vectors(Callable const& callable) {
-        callable(m_tag, m_storage, -1, m_array_dim);
-        if constexpr (might_reallocate == may_cause_reallocation::Yes) {
-            m_data_ptr[0] = m_storage.data();
-        }
-    }
-
-    template <typename Callable>
-    void for_all_vectors(Callable const& callable) const {
-        callable(m_tag, m_storage, -1, m_array_dim);
-    }
-
-    [[nodiscard]] data_type* const* data_ptrs() const {
-        return m_data_ptr.get();
-    }
-
-    [[nodiscard]] int const* array_dims() const {
-        return &m_array_dim;
-    }
-
-    [[nodiscard]] int const* array_dim_prefix_sums() const {
-        return &m_array_dim;
-    }
-
-  private:
-    /**
-     * @brief Tag type instance.
-     *
-     * An instance of @c soa contains an instance of @c field_data for each tag type in its @c
-     * Tags... pack. The instance of the tag type contains the metadata about the field it
-     * represents, and @c field_data adds the actual data for that field. For example, with @c Tag =
-     * @c Node::field::Voltage, which represents the voltage in a given Node, @c m_tag is just an
-     * empty type that defines the @c data_type and default value of voltages.
-     */
-    Tag m_tag;
-
-    /**
-     * @brief Storage for the data associated with @c Tag.
-     *
-     * This is one of the "large" data arrays holding the model data. Because this specialisation of
-     * @c field_data is for @c Tag types that @b don't have @c num_variables() members, such as @c
-     * Node::field::Voltage, there is exactly one vector per instance of @c field_data. Because the
-     * fields in @c Node::storage all have array dimension 1, in that case the size of this vector
-     * is the number of Node instances in the program.
-     */
-    std::vector<data_type> m_storage;
-
-    /**
-     * @brief Storage where we maintain an up-to-date cache of @c m_storage.data().
-     * @invariant @c m_storage.data() is equal to @c m_data_ptr.
-     * @see field_data<Tag, true>::m_data_ptrs %for the motivation.
-     *
-     * This is declared as an array (of size 1) to simplify the implementation of defer_delete.
-     */
-    std::unique_ptr<data_type*[]> m_data_ptr;
-
-    /**
-     * @brief Array dimension of the data associated with @c Tag.
-     * @invariant @c m_array_dim is equal to @c m_tag.array_dimension(), if that function exists,
-     *            or 1.
-     * @see field_data<Tag, true>::m_array_dims %for the motivation.
-     */
-    int m_array_dim;
 };
 
 struct storage_info_impl: utils::storage_info {
@@ -828,7 +897,7 @@ struct soa {
      * This is a low-level call that is useful for the implementation of the
      * owning_identifier template. The returned owning identifier is typically
      * wrapped inside an owning handle type that adds data-structure-specific
-     * methods (e.g. v(), v_handle(), set_v() for a Node).
+     * methods (e.g. v(), v_handle() for a Node).
      */
     [[nodiscard]] owning_identifier<Storage> acquire_owning_identifier() {
         if (m_frozen_count) {
@@ -905,7 +974,13 @@ struct soa {
     [[nodiscard]] typename Tag::type& get(std::size_t offset) {
         static_assert(has_tag_v<Tag>);
         static_assert(!detail::has_num_variables_v<Tag>);
-        return std::get<tag_index_v<Tag>>(m_data).data_ptrs()[0][offset];
+        auto& field_data = std::get<tag_index_v<Tag>>(m_data);
+        if constexpr (detail::field_impl_v<Tag> == detail::FieldImplementation::OptionalSingle) {
+            if (!field_data.active()) {
+                throw_error("get(offset) called for a disabled optional field");
+            }
+        }
+        return field_data.data_ptrs()[0][offset];
     }
 
     /**
@@ -915,7 +990,13 @@ struct soa {
     [[nodiscard]] typename Tag::type const& get(std::size_t offset) const {
         static_assert(has_tag_v<Tag>);
         static_assert(!detail::has_num_variables_v<Tag>);
-        return std::get<tag_index_v<Tag>>(m_data).data_ptrs()[0][offset];
+        auto const& field_data = std::get<tag_index_v<Tag>>(m_data);
+        if constexpr (detail::field_impl_v<Tag> == detail::FieldImplementation::OptionalSingle) {
+            if (!field_data.active()) {
+                throw_error("get(offset) const called for a disabled optional field");
+            }
+        }
+        return field_data.data_ptrs()[0][offset];
     }
 
     /**
@@ -927,14 +1008,18 @@ struct soa {
         int array_index = 0) const {
         static_assert(has_tag_v<Tag>);
         static_assert(!detail::has_num_variables_v<Tag>);
-        auto const array_dim = std::get<tag_index_v<Tag>>(m_data).array_dims()[0];
+        auto const& field_data = std::get<tag_index_v<Tag>>(m_data);
+        // If Tag is an optional field and that field is disabled, return a null handle.
+        if constexpr (detail::optional_v<Tag>) {
+            if (!field_data.active()) {
+                return {};
+            }
+        }
+        auto const array_dim = field_data.array_dims()[0];
         assert(array_dim > 0);
         assert(array_index >= 0);
         assert(array_index < array_dim);
-        return {std::move(id),
-                std::get<tag_index_v<Tag>>(m_data).data_ptrs(),
-                array_dim,
-                array_index};
+        return {std::move(id), field_data.data_ptrs(), array_dim, array_index};
     }
 
     /**
@@ -1048,11 +1133,21 @@ struct soa {
     [[nodiscard]] bool is_storage_pointer(typename Tag::type const* ptr) const {
         static_assert(has_tag_v<Tag>);
         static_assert(!detail::has_num_variables_v<Tag>);
-        return ptr == std::get<tag_index_v<Tag>>(m_data).data_ptrs()[0];
+        auto* const data_ptrs = std::get<tag_index_v<Tag>>(m_data).data_ptrs();
+        if constexpr (detail::optional_v<Tag>) {
+            // if the field is optional and disabled, data_ptrs is null
+            if (!data_ptrs) {
+                return false;
+            }
+        }
+        return ptr == data_ptrs[0];
     }
 
     [[nodiscard]] std::unique_ptr<utils::storage_info> find_container_info(void const* cont) const {
         std::unique_ptr<utils::storage_info> opt_info;
+        if (!cont) {
+            return opt_info;
+        }
         for_all_vectors([cont,
                          &opt_info,
                          this](auto const& tag, auto const& vec, int field_index, int array_dim) {
@@ -1108,6 +1203,27 @@ struct soa {
         return std::get<tag_index_v<Tag>>(m_data).translate_legacy_index(legacy_index);
     }
 
+    /**
+     * @brief Query whether the field associated with the given tag is active.
+     */
+    template <typename Tag>
+    [[nodiscard]] bool field_active() const {
+        static_assert(detail::optional_v<Tag>,
+                      "field_active can only be called with tag types for optional fields");
+        return std::get<tag_index_v<Tag>>(m_data).active();
+    }
+
+    /**
+     * @brief Enable/disable the fields associated with the given tags.
+     */
+    template <typename... TagsToChange>
+    void set_field_status(bool enabled) {
+        static_assert((detail::optional_v<TagsToChange> && ...),
+                      "set_field_status can only be called with tag types for optional fields");
+        auto const size = m_indices.size();
+        (std::get<tag_index_v<TagsToChange>>(m_data).set_active(enabled, size), ...);
+    }
+
   private:
     [[noreturn]] void throw_error(std::string_view message) const {
         std::ostringstream oss;
@@ -1144,7 +1260,7 @@ struct soa {
      * vectors. If is no num_variables() method then the outer vector can be
      * omitted and get<Tag>() returns a vector of values.
      */
-    std::tuple<detail::field_data<Tags, detail::has_num_variables_v<Tags>>...> m_data{};
+    std::tuple<detail::field_data<Tags, detail::field_impl_v<Tags>>...> m_data{};
 
     /**
      * @brief Callback that is invoked when the container becomes unsorted.

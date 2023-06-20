@@ -152,7 +152,6 @@ class NetCvode {
     }
     TQueue* event_queue(NrnThread* nt);
     void psl_append(PreSyn*);
-    void recalc_ptrs();
 
   public:
     void rtol(double);

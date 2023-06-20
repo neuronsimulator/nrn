@@ -567,6 +567,7 @@ endif()
 # =============================================================================
 # Add project directories AFTER CMake modules
 # =============================================================================
+add_subdirectory(src/gnu)
 add_subdirectory(src/nrniv)
 
 # Collect the environment variables that are needed to execute NEURON from the build directory. This
@@ -676,7 +677,7 @@ if(NRN_ENABLE_DOCS)
     sphinx
     COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${SPHINX_EXECUTABLE} -j auto -b html
             "${PROJECT_SOURCE_DIR}/docs" "${PROJECT_SOURCE_DIR}/docs/_build"
-    COMMAND echo "Copy/Paste to Browser ${PROJECT_SOURCE_DIR}/docs/_build/index.html"
+    COMMAND echo "Copy/Paste to Browser file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
     COMMENT "Generating documentation with Sphinx")
 

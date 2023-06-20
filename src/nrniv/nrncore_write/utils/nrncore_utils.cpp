@@ -123,7 +123,7 @@ void nrnbbcore_register_mapping() {
 // This function is related to stdindex2ptr in CoreNeuron to determine which values should
 // be transferred from CoreNeuron. Types correspond to the value to be transferred based on
 // mech_type enum or non-artificial cell mechanisms.
-// Limited to pointers to voltage, nt._nrn_fast_imem->_nrn_sav_rhs (fast_imem value) or
+// Limited to pointers to voltage, nt.node_sav_rhs_storage() (fast_imem value) or
 // data of non-artificial cell mechanisms.
 // Input double* and NrnThread. Output type and index.
 // type == 0 means could not determine index.
@@ -141,21 +141,21 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
         index = dh.current_row() - cache_token.thread_cache(nt.id).node_data_offset;
         return 0;
     }
-    auto* const pd = static_cast<double*>(dh);
-    if (nt._nrn_fast_imem && pd >= nt._nrn_fast_imem->_nrn_sav_rhs &&
-        pd < (nt._nrn_fast_imem->_nrn_sav_rhs + nnode)) {
+    if (dh.refers_to<neuron::container::Node::field::FastIMemSavRHS>(neuron::model().node_data())) {
+        auto const cache_token = nrn_ensure_model_data_are_sorted();
         type = i_membrane_;  // signifies an index into i_membrane_ array portion of _data
-        index = pd - nt._nrn_fast_imem->_nrn_sav_rhs;
-    } else {
-        for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
-            if (nrn_is_artificial_[tml->index]) {
-                continue;
-            }
-            if (auto const maybe_index = tml->ml->legacy_index(pd); maybe_index >= 0) {
-                type = tml->index;
-                index = maybe_index;
-                break;
-            }
+        index = dh.current_row() - cache_token.thread_cache(nt.id).node_data_offset;
+        return 0;
+    }
+    auto* const pd = static_cast<double*>(dh);
+    for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+        if (nrn_is_artificial_[tml->index]) {
+            continue;
+        }
+        if (auto const maybe_index = tml->ml->legacy_index(pd); maybe_index >= 0) {
+            type = tml->index;
+            index = maybe_index;
+            break;
         }
     }
     return type == 0 ? 1 : 0;
@@ -164,7 +164,6 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
 
 #if defined(HAVE_DLFCN_H)
 
-extern int nrn_use_fast_imem;
 extern char* neuron_home;
 
 /** Check if coreneuron is loaded into memory */

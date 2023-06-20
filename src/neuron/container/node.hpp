@@ -51,6 +51,22 @@ struct Diagonal {
     using type = double;
 };
 
+/**
+ * @brief Field for fast_imem calculation.
+ */
+struct FastIMemSavD {
+    static constexpr bool optional = true;
+    using type = double;
+};
+
+/**
+ * @brief Field for fast_imem calculation.
+ */
+struct FastIMemSavRHS {
+    static constexpr bool optional = true;
+    using type = double;
+};
+
 struct RHS {
     using type = double;
 };
@@ -61,7 +77,7 @@ struct RHS {
  * @brief Base class defining the public API of Node handles.
  * @tparam Identifier The concrete owning/non-owning identifier type.
  *
- * This allows the same struct-like accessors (v(), set_v(), ...) to be
+ * This allows the same struct-like accessors (v(), ...) to be
  * used on all of the different types of objects that represent a single Node:
  * - owning_handle: stable over permutations of underlying data, manages
  *   lifetime of a row in the underlying storage. Only null when in moved-from
@@ -120,12 +136,6 @@ struct handle_interface: handle_base<Identifier> {
      */
     [[nodiscard]] data_handle<field::Area::type> area_handle() {
         return this->template get_handle<field::Area>();
-    }
-
-    /** @brief Set the area.
-     */
-    void set_area(field::Area::type area) {
-        this->template get<field::Area>() = area;
     }
 
     /**
@@ -193,12 +203,6 @@ struct handle_interface: handle_base<Identifier> {
         return v();
     }
 
-    /** @brief Set the membrane potential.
-     */
-    void set_v(field::Voltage::type v) {
-        this->template get<field::Voltage>() = v;
-    }
-
     /**
      * @brief Return the right hand side of the Hines solver.
      */
@@ -220,10 +224,23 @@ struct handle_interface: handle_base<Identifier> {
         return this->template get_handle<field::RHS>();
     }
 
-    /** @brief Set the right hand side of the Hines solver.
-     */
-    void set_rhs(field::RHS::type rhs) {
-        this->template get<field::RHS>() = rhs;
+    [[nodiscard]] field::FastIMemSavRHS::type& sav_d() {
+        return this->template get<field::FastIMemSavD>();
+    }
+
+    [[nodiscard]] field::FastIMemSavRHS::type const& sav_d() const {
+        return this->template get<field::FastIMemSavD>();
+    }
+
+    [[nodiscard]] field::FastIMemSavRHS::type& sav_rhs() {
+        return this->template get<field::FastIMemSavRHS>();
+    }
+
+    [[nodiscard]] field::FastIMemSavRHS::type const& sav_rhs() const {
+        return this->template get<field::FastIMemSavRHS>();
+    }
+    [[nodiscard]] data_handle<field::FastIMemSavRHS::type> sav_rhs_handle() {
+        return this->template get_handle<field::FastIMemSavRHS>();
     }
 
     friend std::ostream& operator<<(std::ostream& os, handle_interface const& handle) {
