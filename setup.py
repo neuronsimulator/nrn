@@ -113,19 +113,22 @@ setup(
         docs=Docs, doctest=get_sphinx_command, buildhtml=get_sphinx_command,
     ),
     zip_safe=False,
+    # myst_parser 2.0.0 want sphinx >= 6 but it leads to incompatibily with sphinxcontrib-applehelp and 
+    # sphinxcontrib-htmlhelp that want PEP-517 support instead of setup.py (name clash with '-' and '.')
+    # So we pin low versions of packages
     setup_requires=[
         "jinja2>=2.9.3",
         "jupyter-client",
         "jupyter",
-        "myst_parser",
-        "mistune<3",  # prevents a version conflict with nbconvert
+        "myst_parser<2.0.0",
+        "mistune<3",
         "nbconvert",
         "nbsphinx>=0.3.2",
         "pytest>=3.7.2",
-        "sphinxcontrib-applehelp<1.0.3",
-        "sphinxcontrib-htmlhelp<=2.0.0",
+        "sphinxcontrib-applehelp<1.0.3", # After this version it needs a toml file to work, no more setup.py
+        "sphinxcontrib-htmlhelp<=2.0.0", # After this version it needs a toml file to work, no more setup.py
         "sphinx<6",
-        "sphinx-rtd-theme",
+        "sphinx-rtd-theme", # needs sphinx < 7
     ]
     + install_requirements,
     install_requires=install_requirements,
