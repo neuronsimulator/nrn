@@ -9,7 +9,6 @@ class NodeList(list):
         """Constructs a NodeList from items, a python iterable containing Node objects."""
         if isinstance(items, abc.Generator) or isinstance(items, abc.Iterator):
             items = list(items)
-            print("1")
 
         if items == [] or all(isinstance(item, Node) for item in items):
             list.__init__(self, items)
