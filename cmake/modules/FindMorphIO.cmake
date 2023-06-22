@@ -29,5 +29,8 @@ ExternalProject_Add(
   BUILD_BYPRODUCTS
     <INSTALL_DIR>/lib/libmorphio${CMAKE_SHARED_LIBRARY_SUFFIX})
 
+  INSTALL(
+    FILES ${MorphIO_PREFIX}/lib/libmorphio${CMAKE_SHARED_LIBRARY_SUFFIX}
+    DESTINATION ${CMAKE_INSTALL_LIBDIR})
 add_library(MorphIO INTERFACE IMPORTED)
 add_dependencies(MorphIO morphio-external)
