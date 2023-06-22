@@ -639,21 +639,21 @@ inline SparseObj* create_sparseobj() {
  * @param linflag solve as linear equations when nonlinear, all states are
  * forced >= 0
  */
-template <typename Array, typename Callable, typename... Args>
+template <typename Array, typename Callable, typename IndexArray, typename... Args>
 int sparse_thread(void** v,
                   int n,
-                  int* s,
-                  int* d,
+                  IndexArray s,
+                  IndexArray d,
                   Array p,
                   double* t,
                   double dt,
                   Callable fun,
                   int linflag,
                   Args&&... args) {
-    auto const s_ = [&p, s](auto arg) -> auto& {
+    auto const s_ = [&p, &s](auto arg) -> auto& {
         return p[s[arg]];
     };
-    auto const d_ = [&p, d](auto arg) -> auto& {
+    auto const d_ = [&p, &d](auto arg) -> auto& {
         return p[d[arg]];
     };
     int i, j, ierr;
@@ -701,9 +701,9 @@ int sparse_thread(void** v,
 }
 
 /* for solving ax=b */
-template <typename Array, typename Callable, typename... Args>
-int _cvode_sparse_thread(void** v, int n, int* x, Array p, Callable fun, Args&&... args) {
-    auto const x_ = [&p, x](auto arg) -> auto& {
+template <typename Array, typename Callable, typename IndexArray, typename... Args>
+int _cvode_sparse_thread(void** v, int n, IndexArray x, Array p, Callable fun, Args&&... args) {
+    auto const x_ = [&p, &x](auto arg) -> auto& {
         return p[x[arg]];
     };
     int i, j, ierr;

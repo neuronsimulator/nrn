@@ -5,9 +5,7 @@
 #undef point
 #undef points
 #undef RasterRect
-#if !MAC
 #undef Point
-#endif
 #undef Line
 #undef Ellipse
 #undef MultiLine

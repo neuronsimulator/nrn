@@ -30,8 +30,8 @@ Strings
     .. note::
 
         Similar functionality is available for Python strings using the ``%`` operator or (for Python 2.6+) a
-        string object's ``format`` method. As Python strings are immutable, these approaches each create a new
-        string.
+        string object's ``format`` method or (for Python 3.6+) with f-strings. 
+        As Python strings are immutable, these approaches each create a new string.
 
 
 

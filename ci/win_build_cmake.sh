@@ -18,7 +18,7 @@ cd $BUILD_SOURCESDIRECTORY/build
 
 # build and create installer
 /mingw64/bin/cmake .. \
-	-G 'Unix Makefiles'  \
+	-G Ninja  \
 	-DNRN_ENABLE_MPI_DYNAMIC=ON  \
 	-DNRN_ENABLE_MPI=ON  \
 	-DCMAKE_PREFIX_PATH='/c/msmpi'  \
@@ -33,10 +33,9 @@ cd $BUILD_SOURCESDIRECTORY/build
 	-DMPI_CXX_LIB_NAMES:STRING=msmpi \
 	-DMPI_C_LIB_NAMES:STRING=msmpi \
 	-DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
-make -j 2
+ninja install
 ctest -VV
-make install
-make setup_exe
+ninja setup_exe
 
 # copy installer with fixed name for nightly upload
 cp src/mswin/nrn*AMD64.exe $BUILD_SOURCESDIRECTORY/nrn-nightly-AMD64.exe

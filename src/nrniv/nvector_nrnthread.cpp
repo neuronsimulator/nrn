@@ -16,8 +16,6 @@
  * -----------------------------------------------------------------
  */
 
-#define USELONGDOUBLE 0
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -41,12 +39,6 @@
 #define mydebug2(a, b) /**/
 #endif
 
-#if USELONGDOUBLE
-#define ldrealtype long double
-#else
-#define ldrealtype realtype
-#endif
-
 #if NRN_ENABLE_THREADS
 static MUTDEC
 #endif
@@ -60,9 +52,6 @@ static realtype a_;
 static realtype b_;
 static realtype c_;
 static realtype retval;
-#if USELONGDOUBLE
-static long double longdretval;
-#endif
 static booleantype bretval;
 #define xpass    x_ = x;
 #define ypass    y_ = y;
@@ -86,14 +75,7 @@ static booleantype bretval;
     lock;            \
     retval += arg;   \
     unlock;
-#if USELONGDOUBLE
-#define locklongdadd(arg) \
-    lock;                 \
-    longdretval += arg;   \
-    unlock;
-#else
 #define locklongdadd(arg) lockadd(arg)
-#endif
 #define lockmax(arg)    \
     lock;               \
     if (retval < arg) { \
@@ -609,9 +591,9 @@ realtype N_VMaxNorm_NrnThread(N_Vector x) {
 }
 
 
-static ldrealtype vwrmsnorm_help(N_Vector x, N_Vector w) {
+static realtype vwrmsnorm_help(N_Vector x, N_Vector w) {
     long int i, N;
-    ldrealtype sum = ZERO;
+    realtype sum = ZERO;
     realtype prodi, *xd, *wd;
 
     N = NV_LENGTH_S(x);
@@ -626,7 +608,7 @@ static ldrealtype vwrmsnorm_help(N_Vector x, N_Vector w) {
     return (sum);
 }
 static void* vwrmsnorm(NrnThread* nt) {
-    ldrealtype s;
+    realtype s;
     int i = nt->id;
     s = vwrmsnorm_help(xarg(i), warg(i));
     locklongdadd(s);
@@ -635,15 +617,8 @@ static void* vwrmsnorm(NrnThread* nt) {
 realtype N_VWrmsNorm_NrnThread(N_Vector x, N_Vector w) {
     long int N;
     N = NV_LENGTH_NT(x);
-#if USELONGDOUBLE
-    longdretval = ZERO;
-#else
     retval = ZERO;
-#endif
     xpass wpass nrn_multithread_job(vwrmsnorm);
-#if USELONGDOUBLE
-    retval = longdretval;
-#endif
     mydebug2("vwrmsnorm %.20g\n", RSqrt(retval / N));
     return (RSqrt(retval / N));
 }

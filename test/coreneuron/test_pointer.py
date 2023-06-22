@@ -1,3 +1,5 @@
+import os
+from neuron.tests.utils.strtobool import strtobool
 from neuron import h
 import subprocess
 from subprocess import PIPE
@@ -124,10 +126,6 @@ class Model:
     def __init__(self, ncell, nsec):
         self.cells = [Cell(i, nsec) for i in range(ncell)]
         self.update_pointers()
-        # Setup callback to update dipole POINTER for cache_efficiency
-        # The PtrVector is used only to support the callback.
-        self._callback_setup = h.PtrVector(1)
-        self._callback_setup.ptr_update_callback(self.update_pointers)
 
     def update_pointers(self):
         for cell in self.cells:
@@ -201,20 +199,19 @@ def test_axial():
 
     std = run(tstop)
 
-    cvode.cache_efficient(1)
     chk(std, run(tstop))
 
     from neuron import coreneuron
 
     coreneuron.verbose = 0
     coreneuron.enable = True
-    coreneuron.cell_permute = 0
-    chk(std, run(tstop))
-    coreneuron.cell_permute = 1
-    chk(std, run(tstop))
-    coreneuron.enable = False
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
 
-    m._callback_setup = None  # get rid of the callback first.
+    # test (0,1) for CPU and (1,2) for GPU
+    for perm in coreneuron.valid_cell_permute():
+        coreneuron.cell_permute = perm
+        chk(std, run(tstop))
+    coreneuron.enable = False
     del m
 
 
@@ -267,7 +264,6 @@ def test_checkpoint():
     spktime = h.Vector()
     spkgid = h.Vector()
     pc.spike_record(-1, spktime, spkgid)
-    cvode.cache_efficient(1)
     pc.set_maxstep(10)
     h.finitialize(-65)
     pc.nrncore_write("coredat")
@@ -285,7 +281,7 @@ def test_checkpoint():
     from neuron import coreneuron
 
     coreneuron.enable = True
-    for perm in [0, 1]:
+    for perm in coreneuron.valid_cell_permute():
         coreneuron.cell_permute = perm
         run(5)
         pc.psolve(10)
@@ -294,7 +290,6 @@ def test_checkpoint():
     coreneuron.enable = False
 
     # Delete model before launching the CoreNEURON simulation offline
-    m._callback_setup = None
     pc.gid_clear()
     del m
 

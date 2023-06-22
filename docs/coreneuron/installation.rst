@@ -6,20 +6,25 @@ CoreNEURON is integrated into the NEURON repository, and it is straightforward t
 
 Starting with version 8.1, NEURON also provides Python wheels that include CoreNEURON and, optionally, GPU support. These binary distributions are described in :ref:`Installing Binary Distribution`.
 
-.. warning::
-   These wheels are not yet released, and must currently be installed using ``pip install neuron-nightly`` and/or ``pip install neuron-gpu-nightly``.
-
 Installing with ``pip``
 ***********************
-This should be as simple as ``pip install neuron-nightly``.
+This should be as simple as ``pip install neuron``, for the latest
+release, or ``pip install neuron-nightly`` to install a snapshot of the
+development branch.
 You may want to use ``virtualenv`` to manage your Python package installations.
 
-If you want to use the GPU-enabled wheel then you should run ``pip install neuron-gpu-nightly``.
-This binary wheel does not include all the NVIDIA dependencies that are required to build and execute GPU code, so you should install the `NVIDIA HPC SDK <https://developer.nvidia.com/hpc-sdk>`_ on your machine.
-
 .. warning::
-   It is safest to use the same version of the HPC SDK as was used to build the binary wheels.
-   This is currently defined `in this file <https://github.com/neuronsimulator/nrn/blob/master/packaging/python/Dockerfile_gpu>`_ in the NEURON repository.
+
+   Between versions 8.1 and 8.2.2 a GPU-enabled wheel was available via ``pip install neuron-gpu``
+   and ``pip install neuron-gpu-nightly``.
+   Due to ease-of-use and maintainability concerns, this has been removed in `#2378
+   <https://github.com/neuronsimulator/nrn/pull/2378>`_ until person-power is available to pursue a
+   more robust solution.
+   Using the released GPU wheels with custom mechanism files (``nrnivmodl``) requires that you have
+   the same version of the `NVIDIA HPC SDK <https://developer.nvidia.com/hpc-sdk>`_ installed on
+   your system as was used to build the wheels.
+   For example, in 8.2.2 this was version 22.1, as can be seen `in this file
+   <https://github.com/neuronsimulator/nrn/blob/8.2.2/packaging/python/Dockerfile_gpu#L14>`_.
 
 
 Installing from source
@@ -36,7 +41,14 @@ Compiler Selection
 ==================
 CoreNEURON relies on compiler `auto-vectorisation <https://en.wikipedia.org/wiki/Automatic_vectorization>`_ to achieve better performance on modern CPUs.
 With this release we recommend compilers from **Intel**, **Cray** and, for GPU support, **NVIDIA** (formerly **PGI**).
-These compilers are able to vectorise the code better than **GCC** or **Clang**, achieving the best possible performance gains.
+These compilers are often able to vectorise the code better than
+**GCC** or **Clang**, achieving the best possible performance gains.
+
+.. note::
+   To benefit from auto-vectorisation it is important to ensure that
+   your compiler flags allow the compiler to assume that vector CPU
+   instructions are available. See the discussion of compiler flags
+   below.
 
 Computer clusters will typically provide the Intel and/or Cray compilers as modules.
 You can also install the Intel compiler by downloading the `oneAPI HPC Toolkit <https://software.intel.com/content/www/us/en/develop/tools/oneapi/hpc-toolkit.html>`_.
@@ -128,18 +140,23 @@ For example,
      -DCMAKE_CXX_COMPILER=nvc++
 
 .. note::
-  ``nvcc`` is provided both by the NVIDIA HPC SDK and by CUDA toolkit
+   ``nvcc`` is provided both by the NVIDIA HPC SDK and by CUDA toolkit
    installations, which can lead to fragile and surprising behaviour.
    See, for example, `this issue <https://forums.developer.nvidia.com/t/nvcc-only-partially-respects-cuda-home-input-file-newer-than-toolkit/182599>`_.
    On some systems it is necessary to load the ``nvhpc`` module before
    the ``cuda`` module, thereby ensuring that ``nvcc`` comes from a
    CUDA toolkit installation, but your mileage may vary.
 
-By default the GPU code will be compiled for NVIDIA devices with compute capability 7.0 or 8.0.
-This can be steered by passing, for example, ``-DCMAKE_CUDA_ARCHITECTURES:STRING=60;70;80`` to CMake.
+By default the GPU code will be compiled for NVIDIA devices with
+compute capability 7.0 (Volta) or 8.0 (Ampere).
+This can be steered by passing, for example,
+``-DCMAKE_CUDA_ARCHITECTURES:STRING=60;70;80`` to CMake.
 
-You can change C/C++ optimisation flags using the  ``-DCMAKE_C_FLAGS``, ``-DCMAKE_CUDA_FLAGS`` and ``-DCMAKE_CXX_FLAGS`` options.
-To make sure your custom flags are not modified, you should also set ``-DCMAKE_BUILD_TYPE=Custom``, for example:
+You can change C/C++ optimisation flags using the  ``-DCMAKE_C_FLAGS``,
+``-DCMAKE_CUDA_FLAGS`` and ``-DCMAKE_CXX_FLAGS`` options.
+These will be appended to the default flags for the CMake build type.
+If you need to override the default flags, you can also set
+``-DCMAKE_BUILD_TYPE=Custom``, for example:
 
 .. code-block::
 
@@ -150,6 +167,44 @@ To make sure your custom flags are not modified, you should also set ``-DCMAKE_B
 
 .. warning::
    If the CMake command fails, make sure to delete temporary CMake cache files (``CMakeCache.txt`` and ``CMakeFiles``, or the entire build directory) before re-running CMake.
+
+To enable support for the vector instructions available on modern CPUs
+and auto-vectorisation optimisations, you may need to pass additional
+flags to your compiler.
+
+For compilers that accept GCC-like options, this often involves setting
+the ``-march`` and ``-mtune`` options.
+Other compilers may vary.
+If you are building on the same machine that you will be running NEURON
+on, you may be able to use ``-march=native`` and ``-mtune=native``, in
+which case many compilers will detect the CPU features that are
+available on the machine that is compiling NEURON.
+Alternatively, you may need to set this explictly, for example:
+``-march=skylake-avx512 -mtune=skylake-avx512``.
+Note that compute clusters may contain a mix of CPU types.
+
+Please also note the following observations about different compilers,
+but ultimately refer to the documentation of the compiler version that
+you are using:
+
+* The handling of ``-march=native`` in GCC `can be surprising <https://lemire.me/blog/2018/07/25/it-is-more-complicated-than-i-thought-mtune-march-in-gcc/>`_.
+
+* The NVIDIA HPC compiler ``nvc++`` uses the equivalent of
+  ``-march=native`` by default
+  (`nvc++ documentation <https://docs.nvidia.com/hpc-sdk/compilers/hpc-compilers-ref-guide/index.html#tp>`_).
+
+* The Intel C++ compilers ``icpc`` and ``icpx`` support an ``-x``
+  option that enables even more specialised optimisations for Intel
+  CPUs
+  (`icpc documentation <https://www.intel.com/content/www/us/en/docs/cpp-compiler/developer-guide-reference/2021-8/x-qx.html>`_,
+  `icpx documentation <https://www.intel.com/content/www/us/en/docs/dpcpp-cpp-compiler/developer-guide-reference/2023-0/x-qx.html>`_),
+  this has been seen to give modest performance improvements when using
+  the ``mod2c``, but not ``NMODL``, transpiler.
+
+.. warning::
+   If you tell the compiler to target a more modern CPU than you have
+   available, your NEURON installation may crash with illegal
+   instruction errors and/or ``SIGILL`` signals.
 
 Once the configure step is done, you can build and install the project by running
 

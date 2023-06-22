@@ -26,18 +26,9 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
  * int32_t and uint32_t have been defined by the configure procedure.  Just
  * use these in place of the ones that libg++ used to provide. 
  */
-#if defined(HAVE_INTTYPES_H)
-#include <inttypes.h>
-#elif defined(HAVE_SYS_TYPES_H)
-#include <sys/types.h>
-#elif defined(HAVE__G_CONFIG_H)
-#include <_G_config.h>
-typedef _G_int32_t int32_t;
-typedef _G_uint32_t uint32_t;
-#endif
-
-#include <assert.h>
-#include <math.h>
+#include <cstdint>
+#include <cassert>
+#include <cmath>
 
 union PrivateRNGSingleType {		   	// used to access floats as unsigneds
     float s;

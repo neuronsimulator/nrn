@@ -38,7 +38,7 @@ if(Boost_FOUND)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/solver)
     # lfp test uses nrnmpi_* wrappers but does not load the dynamic MPI library TODO: re-enable
     # after NEURON and CoreNEURON dynamic MPI are merged
-    if(NOT CORENRN_ENABLE_MPI_DYNAMIC)
+    if(NOT NRN_ENABLE_MPI_DYNAMIC)
       add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lfp)
     endif()
   endif()

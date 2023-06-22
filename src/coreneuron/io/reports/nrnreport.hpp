@@ -8,7 +8,7 @@
 
 /**
  * @file nrnreport.h
- * @brief interface with reportinglib for soma reports
+ * @brief interface with libsonata for soma reports
  */
 
 #ifndef _H_NRN_REPORT_
@@ -76,7 +76,8 @@ enum ReportType {
     SynapseReport,
     IMembraneReport,
     SectionReport,
-    SummationReport
+    SummationReport,
+    LFPReport
 };
 
 // enumerate that defines the section type for a Section report
@@ -90,7 +91,7 @@ struct ReportConfiguration {
     std::vector<std::string> var_names;   // variable names
     std::vector<int> mech_ids;            // mechanisms
     std::string unit;                     // unit of the report
-    std::string format;                   // format of the report (Bin, hdf5, SONATA)
+    std::string format;                   // format of the report (SONATA)
     std::string type_str;                 // type of report string
     TargetType target_type;               // type of the target
     ReportType type;                      // type of the report

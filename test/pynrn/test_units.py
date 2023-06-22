@@ -41,6 +41,7 @@ def test_mod_legacy():
     assert ut.e * ut.avogadro == ut.faraday
     assert abs(ut.faraday - h.FARADAY) < 1e-10
     assert ut.gasconst == h.R
+    assert ut.gasconst_exact == 8.313424
     assert ut.k * ut.avogadro == ut.gasconst
     assert abs(ut.planck - ut.hbar * 2.0 * h.PI) < 1e-49
     assert ut.avogadro == h.Avogadro_constant

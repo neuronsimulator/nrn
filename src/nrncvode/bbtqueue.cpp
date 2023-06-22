@@ -139,7 +139,7 @@ double TQueue::least_t() {
 
 TQItem* TQueue::least() {
     STAT(nleast)
-#if !FAST_LEAST || DOCHECK
+#if DOCHECK
     TQItem* b;
     b = root_;
     if (b)
@@ -252,11 +252,9 @@ void TQueue::remove1(TQItem* i) {
     // x would be invalid. So take the trouble to reset
     // pointer belonging to x
     check("begin remove1");
-#if FAST_LEAST
     if (least_ && least_ == i) {
         new_least();
     }
-#endif
     TQItem* p = i->parent_;
     TQItem** child;
     bool doweight = true;
@@ -403,12 +401,10 @@ TQItem* TQueue::insert(double t, void* data) {
 
 void TQueue::insert1(double t, TQItem* i) {
     check("begin insert1");
-#if FAST_LEAST
     STAT(ncompare)
     if (!least_ || t < least_->t_) {
         least_ = i;
     }
-#endif
     TQItem* p = root_;
     STAT(ninsert)
     if (p) {

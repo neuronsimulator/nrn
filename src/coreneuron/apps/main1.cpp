@@ -33,7 +33,6 @@
 #include "coreneuron/io/prcellstate.hpp"
 #include "coreneuron/utils/nrn_stats.h"
 #include "coreneuron/io/reports/nrnreport.hpp"
-#include "coreneuron/io/reports/binary_report_handler.hpp"
 #include "coreneuron/io/reports/report_handler.hpp"
 #include "coreneuron/io/reports/sonata_report_handler.hpp"
 #include "coreneuron/gpu/nrn_acc_manager.hpp"
@@ -414,9 +413,7 @@ static void trajectory_return() {
 std::unique_ptr<ReportHandler> create_report_handler(const ReportConfiguration& config,
                                                      const SpikesInfo& spikes_info) {
     std::unique_ptr<ReportHandler> report_handler;
-    if (config.format == "Bin") {
-        report_handler = std::make_unique<BinaryReportHandler>();
-    } else if (config.format == "SONATA") {
+    if (config.format == "SONATA") {
         report_handler = std::make_unique<SonataReportHandler>(spikes_info);
     } else {
         if (nrnmpi_myid == 0) {
@@ -439,7 +436,7 @@ std::unique_ptr<ReportHandler> create_report_handler(const ReportConfiguration& 
 
 using namespace coreneuron;
 
-#if NRNMPI && defined(CORENEURON_ENABLE_MPI_DYNAMIC)
+#if NRNMPI && defined(NRNMPI_DYNAMICLOAD)
 static void* load_dynamic_mpi(const std::string& libname) {
     dlerror();
     void* handle = dlopen(libname.c_str(), RTLD_NOW | RTLD_GLOBAL);
@@ -461,7 +458,7 @@ extern "C" void mk_mech_init(int argc, char** argv) {
 
 #if NRNMPI
     if (corenrn_param.mpi_enable) {
-#ifdef CORENEURON_ENABLE_MPI_DYNAMIC
+#ifdef NRNMPI_DYNAMICLOAD
         // coreneuron rely on neuron to detect mpi library distribution and
         // the name of the library itself. Make sure the library name is specified
         // via CLI option.
@@ -576,7 +573,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
             report_mem_usage("After nrn_finitialize");
         }
 
-        // register all reports into reportinglib
+        // register all reports with libsonata
         double min_report_dt = INT_MAX;
         for (size_t i = 0; i < configs.size(); i++) {
             std::unique_ptr<ReportHandler> report_handler = create_report_handler(configs[i],

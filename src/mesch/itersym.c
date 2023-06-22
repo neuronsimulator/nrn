@@ -272,9 +272,7 @@ MAT     *Q;
 }
 
 
-#ifndef MAC
 extern	double	frexp(), ldexp();
-#endif
 
 /* product -- returns the product of a long list of numbers
    -- answer stored in mant (mantissa) and expt (exponent) */

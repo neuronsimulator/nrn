@@ -3,18 +3,18 @@
 #include "sparse.hpp"
 void _modl_set_dt(double);
 namespace neuron::scopmath {
-template <typename Array>
+template <typename Array, typename IndexArray>
 int _ss_sparse(void** v,
                int n,
-               int* s,
-               int* d,
+               IndexArray s,
+               IndexArray d,
                Array p,
                double* t,
                double dt,
                int (*fun)(),
                double** pcoef,
                int linflag) {
-    auto const check_state = [&p](int n, int* s) {
+    auto const check_state = [n, &p, &s]() {
         auto const s_ = [&p, s](auto arg) -> auto& {
             return p[s[arg]];
         };
@@ -42,7 +42,7 @@ int _ss_sparse(void** v,
             if (err) {
                 break; /* perhaps we should re-start */
             }
-            if (check_state(n, s)) {
+            if (check_state()) {
                 err = sparse(v, n, s, d, p, t, ss_dt, fun, pcoef, 0);
                 break;
             }

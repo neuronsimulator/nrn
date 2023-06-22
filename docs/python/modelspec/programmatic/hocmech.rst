@@ -73,7 +73,7 @@ HOC-based Mechanisms
 
             soma = h.Section(name="soma")
             soma.L = soma.diam = math.sqrt(100 / math.pi)
-            soma.insert('hh')
+            soma.insert('hh')  # equivalently: soma.insert(h.hh)
 
             stim = h.IClamp(soma(0.5))
             stim.dur = 0.1

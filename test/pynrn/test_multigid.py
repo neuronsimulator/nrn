@@ -15,7 +15,6 @@ def coreneuron_available():
         return False
     # But can it be loaded?
     cvode = h.CVode()
-    cvode.cache_efficient(1)
     pc = h.ParallelContext()
     h.finitialize()
     result = 0
@@ -30,7 +29,6 @@ def coreneuron_available():
     except Exception as e:
         pass
     sys.stderr = original_stderr
-    cvode.cache_efficient(0)
     return result
 
 
@@ -101,11 +99,9 @@ def test_multigid():
     if cn_avail:
         coreneuron.enable = True
         coreneuron.verbose = 0
-        h.CVode().cache_efficient(1)
         run(10.0)
         raster_eq(std, net.raster)
         coreneuron.enable = False
-        h.CVode().cache_efficient(0)
         print("test_multigid coreneuron success")
 
     s = None
@@ -121,10 +117,8 @@ def test_multigid():
             pc.set_gid2node(10003, pc.id())
             pc.cell(10003, h.NetCon(s(0.5).hh._ref_m, None, sec=s), 0)
             coreneuron.enable = True
-            h.CVode().cache_efficient(1)
             expect_err("run(10)")
             coreneuron.enable = False
-            h.CVode().cache_efficient(0)
 
     pc.gid_clear()
     del s, net, std
@@ -138,10 +132,8 @@ def test_nogid():
     nc = h.NetCon(s(0.5)._ref_v, syn, sec=s)
     if cn_avail:
         coreneuron.enable = True
-        h.CVode().cache_efficient(1)
         expect_err("run(10)")
         coreneuron.enable = False
-        h.CVode().cache_efficient(0)
     pc.gid_clear()
     del nc, syn, s, net
     locals()

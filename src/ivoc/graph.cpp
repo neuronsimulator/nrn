@@ -48,10 +48,6 @@ extern Image* gif_image(const char*);
 
 #include "classreg.h"
 #include "gui-redirect.h"
-#include "treeset.h"
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 #if HAVE_IV
 #define Graph_Crosshair_           "Crosshair Graph"
@@ -512,38 +508,39 @@ static void gr_add(void* v, bool var) {
     Object* obj = NULL;
     char* lab = NULL;
     char* expr = NULL;
-    int ioff = 0;       // deal with 0, 1, or 2 optional arguments after first
-    double* pd = NULL;  // pointer to varname if second arg is varname string
+    int ioff = 0;  // deal with 0, 1, or 2 optional arguments after first
+    // pointer to varname if second arg is varname string
+    neuron::container::data_handle<double> pd{};
     int fixtype = g->labeltype();
     // organize args for backward compatibility and the new
     // addexpr("label, "expr", obj,.... style
     if (ifarg(2)) {
         if (var) {  // if string or address then variable and 1 was label
-            expr = gargstr(1);
+            expr = hoc_gargstr(1);
             if (hoc_is_str_arg(2)) {
-                pd = hoc_val_pointer(gargstr(2));
+                pd = hoc_val_handle(hoc_gargstr(2));
                 ioff += 1;
             } else if (hoc_is_pdouble_arg(2)) {
-                pd = hoc_pgetarg(2);
+                pd = hoc_hgetarg<double>(2);
                 ioff += 1;
             }
         } else if (hoc_is_str_arg(2)) {  // 1 label, 2 expression
-            lab = gargstr(1);
-            expr = gargstr(2);
+            lab = hoc_gargstr(1);
+            expr = hoc_gargstr(2);
             ioff += 1;
             if (ifarg(3) && hoc_is_object_arg(3)) {  // object context
                 obj = *hoc_objgetarg(3);
                 ioff += 1;
             }
         } else if (hoc_is_object_arg(2)) {  // 1 expr, 2 object context
-            expr = gargstr(1);
+            expr = hoc_gargstr(1);
             obj = *hoc_objgetarg(2);
             ioff += 1;
         } else {
-            expr = gargstr(1);
+            expr = hoc_gargstr(1);
         }
     } else {
-        expr = gargstr(1);
+        expr = hoc_gargstr(1);
     }
     if (ifarg(3 + ioff)) {
         if (ifarg(6 + ioff)) {
@@ -625,7 +622,7 @@ static double gr_vector(void* v) {
     Graph* g = (Graph*) v;
     int n = int(chkarg(1, 1., 1.e5));
     double* x = hoc_pgetarg(2);
-    double* y = hoc_pgetarg(3);
+    auto y_handle = hoc_hgetarg<double>(3);
     GraphVector* gv = new GraphVector("");
     if (ifarg(4)) {
         gv->color(colors->color(int(*getarg(4))));
@@ -635,7 +632,7 @@ static double gr_vector(void* v) {
         gv->brush(g->brush());
     }
     for (int i = 0; i < n; ++i) {
-        gv->add(x[i], y + i);
+        gv->add(x[i], y_handle.next_array_element(i));
     }
     //	GLabel* glab = g->label(gv->name());
     //	((GraphItem*)g->component(g->glyph_index(glab)))->save(false);
@@ -1372,7 +1369,7 @@ Graph::Graph(bool b)
     : Scene(0, 0, XSCENE, YSCENE) {
     loc_ = 0;
     x_expr_ = NULL;
-    x_pval_ = NULL;
+    x_pval_ = {};
     var_name_ = NULL;
     rvp_ = NULL;
     cross_action_ = NULL;
@@ -1908,7 +1905,7 @@ GraphLine* Graph::add_var(const char* expr,
                           const Brush* brush,
                           bool usepointer,
                           int fixtype,
-                          double* pd,
+                          neuron::container::data_handle<double> pd,
                           const char* lab,
                           Object* obj) {
     GraphLine* gl = new GraphLine(expr, x_, &symlist_, color, brush, usepointer, pd, obj);
@@ -1943,12 +1940,12 @@ void Graph::x_expr(const char* expr, bool usepointer) {
         hoc_execerror(expr, "not an expression");
     }
     if (usepointer) {
-        x_pval_ = hoc_val_pointer(expr);
+        x_pval_ = hoc_val_handle(expr);
         if (!x_pval_) {
             hoc_execerror(expr, "is invalid left hand side of assignment statement");
         }
     } else {
-        x_pval_ = 0;
+        x_pval_ = {};
     }
 }
 
@@ -2485,6 +2482,9 @@ void Graph::choose_sym() {
         // printf("Graph selected %s\n", sc_->selected()->string());
         char buf[256];
         double* pd = sc_->selected_var();
+        neuron::container::data_handle<double> pd_handle{pd};
+        assert(!pd_handle.refers_to_a_modern_data_structure());  // pd + i below would be
+                                                                 // problematic
         if (sc_->selected_vector_count()) {
             Sprintf(buf, "%s", sc_->selected()->string());
             GraphVector* gv = new GraphVector(buf);
@@ -2492,7 +2492,9 @@ void Graph::choose_sym() {
             gv->brush(brush());
             int n = sc_->selected_vector_count();
             for (int i = 0; i < n; ++i) {
-                gv->add(double(i), pd + i);
+                gv->add(double(i),
+                        neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                               pd + i});
             }
             GLabel* glab = label(gv->name());
             ((GraphItem*) component(glyph_index(glab)))->save(false);
@@ -2549,7 +2551,7 @@ GraphLine::GraphLine(const char* expr,
                      const Color* c,
                      const Brush* b,
                      bool usepointer,
-                     double* pd,
+                     neuron::container::data_handle<double> pd,
                      Object* obj)
     : GPolyLine(x, c, b) {
     Oc oc;
@@ -2561,16 +2563,16 @@ GraphLine::GraphLine(const char* expr,
             // char buf[256];
             // Sprintf(buf, "%s", expr);
             // expr_ = oc.parseExpr(buf, symlist);
-            expr_ = NULL;
+            expr_ = nullptr;
             pval_ = pd;
         } else {
             expr_ = oc.parseExpr(expr, symlist);
-            pval_ = hoc_val_pointer(expr);
+            pval_ = hoc_val_handle(expr);
             if (!pval_) {
                 hoc_execerror(expr, "is invalid left hand side of assignment statement");
             }
         }
-        oc.notify_when_freed(pval_, this);
+        neuron::container::notify_when_handle_dies(pval_, this);
     } else {
         if (obj) {
             obj_ = obj;
@@ -2580,7 +2582,7 @@ GraphLine::GraphLine(const char* expr,
         } else {
             expr_ = oc.parseExpr(expr, symlist);
         }
-        pval_ = 0;
+        pval_ = {};
     }
     if (!pval_ && !expr_) {
         hoc_execerror(expr, "not an expression");
@@ -2674,7 +2676,7 @@ void GraphLine::simgraph_continuous(double tt) {
 
 void GraphLine::update(Observable*) {  // *pval_ has been freed
                                        // printf("GraphLine::update pval_ has been freed\n");
-    pval_ = NULL;
+    pval_ = {};
     if (obj_) {
         expr_ = NULL;
     }
@@ -2691,9 +2693,9 @@ bool GraphLine::change_expr(const char* expr, Symlist** symlist) {
     if (sym) {
         expr_ = sym;
         if (pval_) {
-            Oc oc;
-            oc.notify_pointer_disconnect(this);
-            pval_ = NULL;
+            // we are no longer interested in updates to pval_
+            nrn_notify_pointer_disconnect(this);
+            pval_ = {};
         }
         return true;
     } else {
@@ -3329,27 +3331,6 @@ void DataVec::write() {
 #endif
 }
 
-DataPointers::DataPointers(int size) {
-    count_ = 0;
-    size_ = size;
-    px_ = new double*[size];
-}
-DataPointers::~DataPointers() {
-    delete[] px_;
-}
-void DataPointers::add(double* pd) {
-    if (count_ == size_) {
-        size_ *= 2;
-        double** px = new double*[size_];
-        for (int i = 0; i < count_; i++) {
-            px[i] = px_[i];
-        }
-        delete[] px_;
-        px_ = px;
-    }
-    px_[count_++] = pd;
-}
-
 GraphVector::GraphVector(const char* name, const Color* color, const Brush* brush)
     : GPolyLine(new DataVec(50), color, brush) {
     dp_ = new DataPointers();
@@ -3386,28 +3367,28 @@ void GraphVector::update(Observable*) {
     begin();
 }
 
-void GraphVector::add(float x, double* py) {
+void GraphVector::add(float x, neuron::container::data_handle<double> py) {
     if (disconnect_defer_) {
         Oc oc;
         oc.notify_pointer_disconnect(this);
         disconnect_defer_ = false;
     }
-    if (dp_->count() == 0 || py != dp_->p(dp_->count() - 1) + 1) {
-        Oc oc;
-        oc.notify_when_freed(py, this);
+    // Dubious
+    if (dp_->count() == 0 ||
+        static_cast<double*>(py) != static_cast<double*>(dp_->p(dp_->count() - 1)) + 1) {
+        neuron::container::notify_when_handle_dies(py, this);
     }
     x_->add(x);
-    double* p = &zero;
-    if (py) {
-        p = py;
+    if (!py) {
+        py = {neuron::container::do_not_search, &zero};
     }
-    dp_->add(p);
-    y_->add(float(*p));
+    y_->add(*py);
+    dp_->add(std::move(py));
 }
 
 bool GraphVector::trivial() const {
     for (int i = 0; i < dp_->count(); ++i) {
-        if (dp_->p(i) != &zero) {
+        if (static_cast<double const*>(dp_->p(i)) != &zero) {
             return false;
         }
     }
@@ -3487,48 +3468,6 @@ void Graph::change_prop() {
     ColorBrushWidget::start(this);
     if (Oc::helpmode()) {
         help();
-    }
-}
-
-void Graph::update_ptrs() {
-    if (x_pval_) {
-        x_pval_ = nrn_recalc_ptr(x_pval_);
-    }
-    if (rvp_) {
-        rvp_->update_ptrs();
-    }
-    GlyphIndex i, cnt = count();
-    for (i = 0; i < cnt; ++i) {
-        GraphItem* gi = (GraphItem*) component(i);
-        if (gi->is_graphVector()) {
-            GraphVector* gv = (GraphVector*) (gi->body());
-            if (gv) {
-                gv->update_ptrs();
-            }
-        }
-    }
-    cnt = line_list_.count();
-    for (i = 0; i < line_list_.count(); ++i) {
-        line_list_.item(i)->update_ptrs();
-    }
-}
-
-void DataPointers::update_ptrs() {
-    int i;
-    for (i = 0; i < count_; ++i) {
-        px_[i] = nrn_recalc_ptr(px_[i]);
-    }
-}
-
-void GraphLine::update_ptrs() {
-    if (pval_) {
-        pval_ = nrn_recalc_ptr(pval_);
-    }
-}
-
-void GraphVector::update_ptrs() {
-    if (dp_) {
-        dp_->update_ptrs();
     }
 }
 

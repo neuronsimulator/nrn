@@ -4,6 +4,7 @@
 #include <InterViews/resource.h>
 #include "nrniv_mf.h"
 #include <nrnoc2iv.h>
+#include "nrnpy.h"
 #include "nrnpy_utils.h"
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
@@ -26,16 +27,8 @@ extern void nrn_area_ri(Section* sec);
 extern void sec_free(hoc_Item*);
 extern Symlist* hoc_built_in_symlist;
 extern Section* nrn_noerr_access();
-double* nrnpy_rangepointer(Section*, Symbol*, double, int*, int);
 extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
 extern int has_membrane(char*, Section*);
-typedef struct {
-    PyObject_HEAD
-    Section* sec_;
-    char* name_;
-    PyObject* cell_weakref_;
-} NPySecObj;
-NPySecObj* newpysechelp(Section* sec);
 
 typedef struct {
     PyObject_HEAD
@@ -113,15 +106,7 @@ extern void nrn_diam_change(Section*);
 extern void nrn_length_change(Section*, double);
 extern void mech_insert1(Section*, int);
 extern void mech_uninsert1(Section*, Symbol*);
-extern "C" PyObject* nrn_hocobj_ptr(double*);
-extern int nrn_is_hocobj_ptr(PyObject*, double*&);
 extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
-extern Object* nrnpy_po2ho(PyObject*);
-extern Object* nrnpy_pyobject_in_obj(PyObject*);
-extern Symbol* nrnpy_pyobj_sym_;
-extern int nrnpy_ho_eq_po(Object*, PyObject*);
-extern PyObject* nrnpy_hoc2pyobject(Object*);
-extern PyObject* nrnpy_ho2po(Object*);
 static void nrnpy_reg_mech(int);
 extern void (*nrnpy_reg_mech_p_)(int);
 static int ob_is_seg(Object*);
@@ -1476,7 +1461,7 @@ static PyObject* seg_volume(NPySegObj* self) {
             Node* nd = node_exact(sec, x);
             for (Prop* p = nd->prop; p; p = p->next) {
                 if (p->_type == MORPHOLOGY) {
-                    double diam = p->param[0];
+                    double diam = p->param(0);
                     a = M_PI * diam * diam / 4 * length;
                     break;
                 }
@@ -1862,7 +1847,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
     } else if (strncmp(n, "_ref_", 5) == 0) {
         if (strcmp(n + 5, "v") == 0) {
             Node* nd = node_exact(sec, self->x_);
-            result = nrn_hocobj_ptr(&(NODEV(nd)));
+            result = nrn_hocobj_handle(nd->v_handle());
         } else if ((sym = hoc_table_lookup(n + 5, hoc_built_in_symlist)) != 0 &&
                    sym->type == RANGEVAR) {
             if (ISARRAY(sym)) {
@@ -1881,7 +1866,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                     rv_noexist(sec, n + 5, self->x_, err);
                     result = NULL;
                 } else {
-                    result = nrn_hocobj_ptr(d);
+                    result = nrn_hocobj_handle(d);
                 }
             }
         } else {
@@ -1914,11 +1899,13 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
 int nrn_pointer_assign(Prop* prop, Symbol* sym, PyObject* value) {
     int err = 0;
     if (sym->subtype == NRNPOINTER) {
-        double* pd;
-        double** ppd = &prop->dparam[sym->u.rng.index].literal_value<double*>();
-        assert(ppd);
-        if (nrn_is_hocobj_ptr(value, pd)) {
-            *ppd = pd;
+        if (neuron::container::data_handle<double> dh{}; nrn_is_hocobj_ptr(value, dh)) {
+            // The challenge is that we need to store a data handle here,
+            // because POINTER variables are set up before the data are
+            // permuted, but that handle then gets read as part of the
+            // translated mechanism code, inside the translated MOD files, where
+            // we might not otherwise like to pay the extra cost of indirection.
+            prop->dparam[sym->u.rng.index] = std::move(dh);
         } else {
             PyErr_SetString(PyExc_ValueError, "must be a hoc pointer");
             err = -1;
@@ -2066,11 +2053,11 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
             r->attr_from_sec_ = 0;
             result = (PyObject*) r;
         } else {
-            double* px = np.prop_pval(sym, 0);
+            auto const px = np.prop_pval(sym, 0);
             if (!px) {
                 rv_noexist(sec, sym->name, self->pyseg_->x_, 2);
             } else if (isptr) {
-                result = nrn_hocobj_ptr(px);
+                result = nrn_hocobj_handle(px);
             } else {
                 result = Py_BuildValue("d", *px);
             }
@@ -2127,7 +2114,7 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
             err = nrn_pointer_assign(self->prop_, sym, value);
         } else {
             double x;
-            double* pd = np.prop_pval(sym, 0);
+            auto pd = np.prop_pval(sym, 0);
             if (pd) {
                 if (PyArg_Parse(value, "d", &x) == 1) {
                     *pd = x;
@@ -2147,7 +2134,7 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
     return err;
 }
 
-double** nrnpy_setpointer_helper(PyObject* pyname, PyObject* mech) {
+neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject* pyname, PyObject* mech) {
     if (PyObject_TypeCheck(mech, pmech_generic_type) == 0) {
         return nullptr;
     }
@@ -2164,7 +2151,7 @@ double** nrnpy_setpointer_helper(PyObject* pyname, PyObject* mech) {
     if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
         return nullptr;
     }
-    return &m->prop_->dparam[np.prop_index(sym)].literal_value<double*>();
+    return &(m->prop_->dparam[np.prop_index(sym)]);
 }
 
 static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
@@ -2217,7 +2204,7 @@ static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
         return NULL;
     }
     if (r->isptr_) {
-        result = nrn_hocobj_ptr(d);
+        result = nrn_hocobj_handle(d);
     } else {
         result = Py_BuildValue("d", *d);
     }
@@ -2236,6 +2223,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
         return -1;
     }
     int err;
+    // Bug that ix is not passed as the last argument?
     auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, 0 /* idx */);
     if (!d) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
@@ -2251,10 +2239,13 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
         }
         hoc_pushx(double(ix));
         hoc_push_ndim(1);
-        nrn_rangeconst(r->pymech_->pyseg_->pysec_->sec_, r->sym_, &x, 0);
+        nrn_rangeconst(r->pymech_->pyseg_->pysec_->sec_,
+                       r->sym_,
+                       neuron::container::data_handle<double>{neuron::container::do_not_search, &x},
+                       0);
     } else {
         assert(ix == 0);  // d += ix;
-        if (!PyArg_Parse(value, "d", d)) {
+        if (!PyArg_Parse(value, "d", static_cast<double const*>(d))) {
             PyErr_SetString(PyExc_ValueError, "bad value");
             return -1;
         }
@@ -2621,11 +2612,7 @@ void nrnpy_reg_mech(int type) {
             if (!s) {
                 s = hoc_install("get_segment", OBFUNCTION, 0, &sl);
                 s->cpublic = 1;
-#if MAC
-                s->u.u_proc->defn.pfo = (Object * *(*) (...)) pp_get_segment;
-#else
                 s->u.u_proc->defn.pfo = (Object * *(*) ()) pp_get_segment;
-#endif
             }
         }
         return;

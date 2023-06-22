@@ -46,8 +46,6 @@ typedef struct {
 #define MOTOROLA        1       /* 6888x format */
 #define SUN     MOTOROLA
 #define APOLLO  MOTOROLA
-#undef MAC
-#define MAC     MOTOROLA
 #define VAX_D   2
 #define VAX_G   3
 

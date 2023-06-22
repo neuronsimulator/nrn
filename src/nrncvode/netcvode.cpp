@@ -39,10 +39,11 @@
 #include "nrniv_mf.h"
 #include "nrnste.h"
 #include "profile.h"
-#include "treeset.h"
 #include "utils/profile/profiler_interface.h"
-#include <unordered_map>
+
+#include <array>
 #include <unordered_set>
+#include <utility>
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
@@ -118,7 +119,7 @@ extern "C" void nrnthread_trajectory_return(int tid,
                                             double t);
 bool nrn_trajectory_request_per_time_step_ = false;
 #if NRN_MUSIC
-extern void nrnmusic_injectlist(void*, double);
+#include "nrnmusicapi.h"
 #endif
 
 extern int hoc_return_type_code;
@@ -192,8 +193,6 @@ static void* neosim_entity_;
 #endif
 
 void ncs2nrn_integrate(double tstop);
-void nrn_fixed_step();
-void nrn_fixed_step_group(int);
 extern void (*nrn_allthread_handle)();
 static void allthread_handle_callback() {
     net_cvode_instance->allthread_handle();
@@ -448,16 +447,17 @@ static double nc_preloc(void* v) {  // user must pop section stack after call
     }
     if (s) {
         nrn_pushsec(s);
-        double* v = d->src_->thvar_;
+        // This is a special handle, not just a pointer.
+        auto const& v = d->src_->thvar_;
         nrn_parent_info(s);  // make sure parentnode exists
         // there is no efficient search for the location of
         // an arbitrary variable. Search only for v at 0 - 1.
         // Otherwise return .5 .
-        if (v == &NODEV(s->parentnode)) {
+        if (v == s->parentnode->v_handle()) {
             return nrn_arc_position(s, s->parentnode);
         }
         for (int i = 0; i < s->nnode; ++i) {
-            if (v == &NODEV(s->pnode[i])) {
+            if (v == s->pnode[i]->v_handle()) {
                 return nrn_arc_position(s, s->pnode[i]);
             }
         }
@@ -476,16 +476,16 @@ static Object** nc_preseg(void* v) {  // user must pop section stack after call
         s = d->src_->ssrc_;
     }
     if (s && nrnpy_seg_from_sec_x) {
-        double* v = d->src_->thvar_;
+        auto const& v = d->src_->thvar_;
         nrn_parent_info(s);  // make sure parentnode exists
         // there is no efficient search for the location of
         // an arbitrary variable. Search only for v at 0 -  1.
         // Otherwise return NULL.
-        if (v == &NODEV(s->parentnode)) {
+        if (v == s->parentnode->v_handle()) {
             x = nrn_arc_position(s, s->parentnode);
         }
         for (int i = 0; i < s->nnode; ++i) {
-            if (v == &NODEV(s->pnode[i])) {
+            if (v == s->pnode[i]->v_handle()) {
                 x = nrn_arc_position(s, s->pnode[i]);
                 continue;
             }
@@ -675,8 +675,7 @@ static double nc_setpost(void* v) {
     }
     if (d->cnt_ != cnt) {
         d->cnt_ = cnt;
-        delete[] d->weight_;
-        d->weight_ = new double[d->cnt_];
+        delete[] std::exchange(d->weight_, new double[d->cnt_]);
     }
     return 0.;
 }
@@ -820,7 +819,7 @@ static void steer_val(void* v) {
         static double dummy = 0.;
         d->chksrc();
         if (d->src_->thvar_) {
-            hoc_pushpx(d->src_->thvar_);
+            hoc_push(d->src_->thvar_);
         } else {
             dummy = 0.;
             hoc_pushpx(&dummy);
@@ -839,14 +838,14 @@ static void* cons(Object* o) {
     // source, target, threshold, delay, magnitude
     Object *osrc = nil, *otar;
     Section* srcsec = nil;
-    double* psrc = nil;
+    neuron::container::data_handle<double> psrc{};
     if (hoc_is_object_arg(1)) {
         osrc = *hoc_objgetarg(1);
         if (osrc && !is_point_process(osrc)) {
             hoc_execerror("if arg 1 is an object it must be a point process or NULLObject", 0);
         }
     } else {
-        psrc = hoc_pgetarg(1);
+        psrc = hoc_hgetarg<double>(1);
         srcsec = chk_access();
     }
     otar = *hoc_objgetarg(2);
@@ -868,8 +867,7 @@ static void* cons(Object* o) {
 }
 
 static void destruct(void* v) {
-    NetCon* d = (NetCon*) v;
-    delete d;
+    delete static_cast<NetCon*>(v);
 }
 
 void NetCon_reg() {
@@ -958,7 +956,7 @@ Object** NetCvode::netconlist() {
                 spost = std::regex(escape_bracket(s.data()));
             } catch (std::regex_error& e) {
                 hoc_execerror(gargstr(2), "not a valid regular expression");
-            }
+            
         }
     }
     if (hoc_is_object_arg(3)) {
@@ -972,7 +970,7 @@ Object** NetCvode::netconlist() {
                 star = std::regex(escape_bracket(s.data()));
             } catch (std::regex_error& e) {
                 hoc_execerror(gargstr(3), "not a valid regular expression");
-            }
+            
         }
     }
 
@@ -1053,25 +1051,23 @@ NetCvodeThreadData::NetCvodeThreadData() {
 }
 
 NetCvodeThreadData::~NetCvodeThreadData() {
-    delete[] inter_thread_events_;
+    delete[] std::exchange(inter_thread_events_, nullptr);
     if (psl_thr_) {
         hoc_l_freelist(&psl_thr_);
     }
-    if (tq_) {
-        delete tq_;
-    }
-    delete tqe_;
-    delete tpool_;
+    delete std::exchange(tq_, nullptr);
+    delete std::exchange(tqe_, nullptr);
+    delete std::exchange(tpool_, nullptr);
     if (selfqueue_) {
         selfqueue_->remove_all();
-        delete selfqueue_;
+        delete std::exchange(selfqueue_, nullptr);
     }
-    delete sepool_;
+    delete std::exchange(sepool_, nullptr);
     if (lcv_) {
         for (int i = 0; i < nlcv_; ++i) {
             net_cvode_instance->delete_list(lcv_ + i);
         }
-        delete[] lcv_;
+        delete[] std::exchange(lcv_, nullptr);
     }
     MUTDESTRUCT
 }
@@ -1096,8 +1092,7 @@ void NetCvodeThreadData::interthread_send(double td, DiscreteEvent* db, NrnThrea
             in[i].de_ = inter_thread_events_[i].de_;
             in[i].t_ = inter_thread_events_[i].t_;
         }
-        delete[] inter_thread_events_;
-        inter_thread_events_ = in;
+        delete[] std::exchange(inter_thread_events_, in);
     }
     InterThreadEvent& ite = inter_thread_events_[ite_cnt_++];
     ite.de_ = db;
@@ -1190,35 +1185,31 @@ NetCvode::~NetCvode() {
     }
     delete_list();
     p_construct(0);
-    if (mst_) {
-        // and should also iterate and delete the MaxStateItem
-        delete mst_;
-    }
+    // and should also iterate and delete the MaxStateItem
+    delete std::exchange(mst_, nullptr);
     if (psl_) {
         hoc_Item* q;
         ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
-            for (auto it = ps->dil_.rbegin(); it != ps->dil_.rend(); ++it) {
-                NetCon* d = *it;
-                d->src_ = nil;
-                delete d;
-            }
+            auto* const ps = static_cast<PreSyn*>(VOIDITM(q));
+            std::for_each(ps->dil_.rbegin(), ps->dil_.rend(), [](NetCon*& d) {
+                d->src_ = nullptr;
+                delete std::exchange(d, nullptr);
+            });
             delete ps;
+            VOIDITM(q) = nullptr;
         }
         hoc_l_freelist(&psl_);
     }
-    if (pst_) {
-        delete pst_;
-    }
-    delete fixed_play_;
-    delete fixed_record_;
+    delete std::exchange(pst_, nullptr);
+    delete std::exchange(fixed_play_, nullptr);
+    delete std::exchange(fixed_record_, nullptr);
     while (prl_->count()) {
         delete prl_->item(prl_->count() - 1);
     }
-    delete prl_;
+    delete std::exchange(prl_, nullptr);
     unused_presyn = nil;
     wl_list_.clear();
-    delete allthread_hocevents_;
+    delete std::exchange(allthread_hocevents_, nullptr);
 }
 
 bool NetCvode::localstep() {
@@ -1304,8 +1295,6 @@ CvodeThreadData::CvodeThreadData() {
     v_parent_ = nil;
     psl_th_ = nil;
     watch_list_ = nil;
-    pv_ = nil;
-    pvdot_ = nil;
     nvoffset_ = 0;
     nvsize_ = 0;
     neq_v_ = nonvint_offset_ = 0;
@@ -1316,10 +1305,6 @@ CvodeThreadData::CvodeThreadData() {
 CvodeThreadData::~CvodeThreadData() {
     if (no_cap_memb_) {
         delete_memb_list(no_cap_memb_);
-    }
-    if (pv_) {
-        delete[] pv_;
-        delete[] pvdot_;
     }
     if (no_cap_node_) {
         delete[] no_cap_node_;
@@ -1337,8 +1322,7 @@ void NetCvode::delete_list() {
     wl_list_.resize(nrn_nthread);
     if (gcv_) {
         delete_list(gcv_);
-        delete gcv_;
-        gcv_ = nil;
+        delete std::exchange(gcv_, nullptr);
     }
     for (i = 0; i < pcnt_; ++i) {
         NetCvodeThreadData& d = p[i];
@@ -1346,14 +1330,10 @@ void NetCvode::delete_list() {
             for (j = 0; j < d.nlcv_; ++j) {
                 delete_list(d.lcv_ + j);
             }
-            delete[] d.lcv_;
-            d.lcv_ = nil;
+            delete[] std::exchange(d.lcv_, nullptr);
             d.nlcv_ = 0;
         }
-        if (d.tq_) {
-            delete d.tq_;
-            d.tq_ = nil;
-        }
+        delete std::exchange(d.tq_, nullptr);
     }
     empty_ = true;
 }
@@ -1362,8 +1342,7 @@ void NetCvode::delete_list(Cvode* cvode) {
     del_cv_memb_list(cvode);
     Cvode& cv = *cvode;
     cv.delete_prl();
-    delete[] cv.ctd_;
-    cv.ctd_ = nil;
+    delete[] std::exchange(cv.ctd_, nullptr);
 }
 
 void NetCvode::del_cv_memb_list() {
@@ -1386,55 +1365,39 @@ void NetCvode::del_cv_memb_list(Cvode* cvode) {
         CvodeThreadData& z = cv.ctd_[j];
         if (z.psl_th_) {
             z.psl_th_->clear();
-            delete z.psl_th_;
-            z.psl_th_ = nil;
+            delete std::exchange(z.psl_th_, nullptr);
         }
         if (cvode != gcv_) {
             if (z.v_node_) {
-                delete[] z.v_node_;
-                delete[] z.v_parent_;
-                z.v_node_ = nil;
-                z.v_parent_ = nil;
+                delete[] std::exchange(z.v_node_, nullptr);
+                delete[] std::exchange(z.v_parent_, nullptr);
             }
-            z.delete_memb_list(z.cv_memb_list_);
+            z.delete_memb_list(std::exchange(z.cv_memb_list_, nullptr));
         } else {
             CvMembList *cml, *cmlnext;
-            for (cml = z.cv_memb_list_; cml; cml = cmlnext) {
+            for (cml = std::exchange(z.cv_memb_list_, nullptr); cml; cml = cmlnext) {
                 cmlnext = cml->next;
                 delete cml;
             }
         }
-        z.cv_memb_list_ = nil;
         BAMechList::destruct(&z.before_breakpoint_);
         BAMechList::destruct(&z.after_solve_);
         BAMechList::destruct(&z.before_step_);
     }
 }
 
-CvMembList::CvMembList() {
-    index = -1;
-    ml = new Memb_list;
-}
-CvMembList::~CvMembList() {
-    delete ml;
-}
-
 void CvodeThreadData::delete_memb_list(CvMembList* cmlist) {
     CvMembList *cml, *cmlnext;
     for (cml = cmlist; cml; cml = cmlnext) {
-        Memb_list* ml = cml->ml;
+        auto const& ml = cml->ml;
         cmlnext = cml->next;
-        delete[] ml->nodelist;
-#if CACHEVEC
-        if (ml->nodeindices) {
-            delete[] ml->nodeindices;
-        }
-#endif
-        if (memb_func[cml->index].hoc_mech) {
-            delete[] ml->prop;
-        } else {
-            delete[] ml->_data;
-            delete[] ml->pdata;
+        for (auto& ml: cml->ml) {
+            delete[] std::exchange(ml.nodelist, nullptr);
+            delete[] std::exchange(ml.nodeindices, nullptr);
+            delete[] std::exchange(ml.prop, nullptr);
+            if (!memb_func[cml->index].hoc_mech) {
+                delete[] std::exchange(ml.pdata, nullptr);
+            }
         }
         delete cml;
     }
@@ -1553,6 +1516,23 @@ bool NetCvode::init_global() {
     matrix_change_cnt_ = -1;
     playrec_change_cnt_ = 0;
     NrnThread* _nt;
+    // We copy Memb_list* into cml->ml below. At the moment this CVode code
+    // generates its own complicated set of Memb_list* that operate in
+    // list-of-handles mode instead of referring to contiguous sets of values.
+    // This is a shame, as it forces that list-of-handles mode to exist.
+    // Possible alternatives could include:
+    // - making the sorting algorithm more sophisticated so that the values that
+    //   are going to be processed together are contiguous -- this might be a
+    //   bit intricate, but it shouldn't be *too* had to assert that we get the
+    //   right answer -- and it's the only way of making sure the actual compute
+    //   kernels are cache efficient / vectorisable.
+    // - changing the type used by this code to not be Memb_list but rather some
+    //   Memb_list_with_list_of_handles type and adding extra glue to the code
+    //   generation so that we can call into translated MOD file code using that
+    //   type
+    // - Using a list of Memb_list with size 1 instead of a single Memb_list
+    //   that holds a list of handles?
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
     if (single_) {
         if (!gcv_ || gcv_->nctd_ != nrn_nthread) {
             delete_list();
@@ -1577,7 +1557,7 @@ bool NetCvode::init_global() {
                                       mf->ode_spec || mf->state)) {
                     // maintain same order (not reversed) for
                     // singly linked list built below
-                    cml = new CvMembList;
+                    cml = new CvMembList{i};
                     if (!z.cv_memb_list_) {
                         z.cv_memb_list_ = cml;
                     } else {
@@ -1585,20 +1565,21 @@ bool NetCvode::init_global() {
                     }
                     last = cml;
                     cml->next = nil;
-                    cml->index = i;
-                    cml->ml->nodecount = ml->nodecount;
+                    auto const mech_offset = cache_token.thread_cache(_nt->id).mechanism_offset.at(
+                        i);
+                    assert(mech_offset != neuron::container::invalid_row);
+                    assert(cml->ml.size() == 1);
+                    cml->ml[0].set_storage_offset(mech_offset);
+                    cml->ml[0].nodecount = ml->nodecount;
                     // assumes cell info grouped contiguously
-                    cml->ml->nodelist = ml->nodelist;
-#if CACHEVEC
-                    cml->ml->nodeindices = ml->nodeindices;
-#endif
-                    if (mf->hoc_mech) {
-                        cml->ml->prop = ml->prop;
-                    } else {
-                        cml->ml->_data = ml->_data;
-                        cml->ml->pdata = ml->pdata;
+                    cml->ml[0].nodelist = ml->nodelist;
+                    cml->ml[0].nodeindices = ml->nodeindices;
+                    assert(ml->prop);
+                    cml->ml[0].prop = ml->prop;  // used for ode_map even when hoc_mech = false
+                    if (!mf->hoc_mech) {
+                        cml->ml[0].pdata = ml->pdata;
                     }
-                    cml->ml->_thread = ml->_thread;
+                    cml->ml[0]._thread = ml->_thread;
                 }
             }
             fill_global_ba(_nt, BEFORE_BREAKPOINT, &z.before_breakpoint_);
@@ -1644,7 +1625,7 @@ bool NetCvode::init_global() {
             if (_nt->end == 0) {
                 continue;
             }
-            int* cellnum = new int[_nt->end];
+            std::vector<int> cellnum(_nt->end);
             for (i = 0; i < _nt->ncell; ++i) {
                 cellnum[i] = i;
             }
@@ -1676,15 +1657,15 @@ bool NetCvode::init_global() {
             }
             // divide the memb_list info into per cell info
             // count
-            CvMembList** last = new CvMembList*[_nt->ncell];
+            std::vector<CvMembList*> last(_nt->ncell);
 
             // Need to determine if a Memb_list needs to be included
             // in CvMembList because there is a BEFORE/AFTER
             // statement that needs to be handled.
             std::unordered_set<int> ba_candidate;
             {
-                std::vector<int> batypes = {BEFORE_STEP, BEFORE_BREAKPOINT, AFTER_SOLVE};
-                for (const auto& bat: batypes) {
+                constexpr std::array batypes{BEFORE_STEP, BEFORE_BREAKPOINT, AFTER_SOLVE};
+                for (auto const bat: batypes) {
                     for (BAMech* bam = bamech_[bat]; bam; bam = bam->next) {
                         ba_candidate.insert(bam->type);
                     }
@@ -1706,44 +1687,37 @@ bool NetCvode::init_global() {
                         Cvode& cv = d.lcv_[cellnum[inode]];
                         CvodeThreadData& z = cv.ctd_[0];
                         if (!z.cv_memb_list_) {
-                            cml = new CvMembList;
+                            cml = new CvMembList{i};
                             cml->next = nil;
-                            cml->index = i;
-                            cml->ml->nodecount = 0;
+                            assert(cml->ml.size() == 1);
+                            cml->ml[0].nodecount = 0;
                             z.cv_memb_list_ = cml;
                             last[cellnum[inode]] = cml;
                         }
                         if (last[cellnum[inode]]->index == i) {
-                            ++last[cellnum[inode]]->ml->nodecount;
+                            assert(last[cellnum[inode]]->ml.size() == 1);
+                            ++last[cellnum[inode]]->ml[0].nodecount;
                         } else {
-                            cml = new CvMembList;
+                            cml = new CvMembList{i};
                             last[cellnum[inode]]->next = cml;
                             cml->next = nil;
                             last[cellnum[inode]] = cml;
-                            cml->index = i;
-                            cml->ml->nodecount = 1;
+                            assert(cml->ml.size() == 1);
+                            cml->ml[0].nodecount = 1;
                         }
                     }
                 }
             }
-            delete[] last;
             // allocate and re-initialize count
-            CvMembList** cvml = new CvMembList*[d.nlcv_];
+            std::vector<CvMembList*> cvml(d.nlcv_);
             for (i = 0; i < d.nlcv_; ++i) {
                 cvml[i] = d.lcv_[i].ctd_[0].cv_memb_list_;
                 for (cml = cvml[i]; cml; cml = cml->next) {
-                    Memb_list* ml = cml->ml;
-                    ml->nodelist = new Node*[ml->nodecount];
-#if CACHEVEC
-                    ml->nodeindices = new int[ml->nodecount];
-#endif
-                    if (memb_func[cml->index].hoc_mech) {
-                        ml->prop = new Prop*[ml->nodecount];
-                    } else {
-                        ml->_data = new double*[ml->nodecount];
-                        ml->pdata = new Datum*[ml->nodecount];
-                    }
-                    ml->nodecount = 0;
+                    // non-contiguous mode, so we're going to create a lot of 1-element Memb_list
+                    // inside cml->ml
+                    cml->ml.reserve(cml->ml[0].nodecount);
+                    // remove the single entry from contiguous mode
+                    cml->ml.clear();
                 }
             }
             // fill pointers (and nodecount)
@@ -1755,33 +1729,31 @@ bool NetCvode::init_global() {
                 if (ml->nodecount &&
                     (mf->current || mf->ode_count || mf->ode_matsol || mf->ode_spec || mf->state ||
                      i == CAP || ba_candidate.count(i) == 1)) {
-                    int j;
-                    for (j = 0; j < ml->nodecount; ++j) {
+                    for (int j = 0; j < ml->nodecount; ++j) {
                         int icell = cellnum[ml->nodelist[j]->v_node_index];
                         if (cvml[icell]->index != i) {
                             cvml[icell] = cvml[icell]->next;
                             assert(cvml[icell] && cvml[icell]->index);
                         }
                         cml = cvml[icell];
-                        cml->ml->nodelist[cml->ml->nodecount] = ml->nodelist[j];
-#if CACHEVEC
-                        cml->ml->nodeindices[cml->ml->nodecount] = ml->nodeindices[j];
-#endif
-                        if (mf->hoc_mech) {
-                            cml->ml->prop[cml->ml->nodecount] = ml->prop[j];
-                        } else {
-                            cml->ml->_data[cml->ml->nodecount] = ml->_data[j];
-                            cml->ml->pdata[cml->ml->nodecount] = ml->pdata[j];
+                        auto& newml = cml->ml.emplace_back(cml->index /* mechanism type */);
+                        newml.nodecount = 1;
+                        newml.nodelist = new Node*[1];
+                        newml.nodelist[0] = ml->nodelist[j];
+                        newml.nodeindices = new int[1]{ml->nodeindices[j]};
+                        newml.prop = new Prop* [1] { ml->prop[j] };
+                        if (!mf->hoc_mech) {
+                            newml.set_storage_offset(ml->get_storage_offset() + j);
+                            newml.pdata = new Datum* [1] { ml->pdata[j] };
                         }
-                        cml->ml->_thread = ml->_thread;
-                        ++cml->ml->nodecount;
+                        newml._thread = ml->_thread;
                     }
                 }
             }
             // do the above for the BEFORE/AFTER functions
-            fill_local_ba(cellnum, d);
+            fill_local_ba(cellnum.data(), d);
 
-            distribute_dinfo(cellnum, id);
+            distribute_dinfo(cellnum.data(), id);
             // If a point process is not an artificial cell, fill its nvi_ field.
             // artifical cells have no integrator
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
@@ -1802,8 +1774,6 @@ bool NetCvode::init_global() {
                     }
                 }
             }
-            delete[] cellnum;
-            delete[] cvml;
         }
     }
     return true;
@@ -1814,7 +1784,7 @@ void NetCvode::fill_global_ba(NrnThread* nt, int bat, BAMechList** baml) {
     for (tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
         BAMechList* ba = new BAMechList(baml);
         ba->bam = tbl->bam;
-        ba->ml = tbl->ml;
+        ba->ml.push_back(tbl->ml);
     }
 }
 
@@ -1832,10 +1802,11 @@ void NetCvode::fill_local_ba_cnt(int bat, int* celnum, NetCvodeThreadData& d) {
             assert(cv->nctd_ == 1);
             for (CvMembList* cml = cv->ctd_[0].cv_memb_list_; cml; cml = cml->next) {
                 if (cml->index == bam->type) {
-                    Memb_list* ml = cml->ml;
                     BAMechList* bl = cvbml(bat, bam, cv);
                     bl->bam = bam;
-                    bl->ml = ml;
+                    for (auto& ml: cml->ml) {
+                        bl->ml.push_back(&ml);
+                    }
                 }
             }
         }
@@ -2058,14 +2029,15 @@ int NetCvode::solve(double tout) {
             }
         }
     } else if (!gcv_) {  // lvardt
+        auto const cache_token = nrn_ensure_model_data_are_sorted();
         if (tout >= 0.) {
-            time_t rt = time(nil);
+            time_t rt = time(nullptr);
             //			int cnt = 0;
             TQueue* tq = p[0].tq_;
             TQueue* tqe = p[0].tqe_;
             NrnThread* nt = nrn_threads;
             while (tq->least_t() < tout || tqe->least_t() <= tout) {
-                err = local_microstep(nt);
+                err = local_microstep(cache_token, *nt);
                 if (nrn_allthread_handle) {
                     (*nrn_allthread_handle)();
                 }
@@ -2074,13 +2046,13 @@ int NetCvode::solve(double tout) {
                 }
 #if HAVE_IV
                 IFGUI
-                if (rt < time(nil)) {
+                if (rt < time(nullptr)) {
                     //				if (++cnt > 10000) {
                     //					cnt = 0;
                     Oc oc;
                     oc.notify();
                     single_event_run();
-                    rt = time(nil);
+                    rt = time(nullptr);
                 }
                 ENDGUI
 #endif
@@ -2099,7 +2071,7 @@ int NetCvode::solve(double tout) {
             double tc = tq->least_t();
             double te = p[0].tqe_->least_t();
             while (tq->least_t() <= tc && p[0].tqe_->least_t() <= te) {
-                err = local_microstep(nrn_threads);
+                err = local_microstep(cache_token, *nrn_threads);
                 if (nrn_allthread_handle) {
                     (*nrn_allthread_handle)();
                 }
@@ -2153,7 +2125,8 @@ bool NetCvode::deliver_event(double til, NrnThread* nt) {
     }
 }
 
-int NetCvode::local_microstep(NrnThread* nt) {
+int NetCvode::local_microstep(neuron::model_sorted_token const& sorted_token, NrnThread& ntr) {
+    auto* const nt = &ntr;
     int err = NVI_SUCCESS;
     int i = nt->id;
     if (p[i].tqe_->least_t() <= p[i].tq_->least_t()) {
@@ -2161,7 +2134,7 @@ int NetCvode::local_microstep(NrnThread* nt) {
     } else {
         TQItem* q = p[i].tq_->least();
         Cvode* cv = (Cvode*) q->data_;
-        err = cv->handle_step(this, 1e100);
+        err = cv->handle_step(sorted_token, this, 1e100);
         p[i].tq_->move_least(cv->t_);
     }
     return err;
@@ -2179,7 +2152,7 @@ int NetCvode::global_microstep() {
         assert(tdiff == 0.0 || (gcv_->tstop_begin_ <= tt && tt <= gcv_->tstop_end_));
         deliver_events(tt, nt);
     } else {
-        err = gcv_->handle_step(this, tt);
+        err = gcv_->handle_step(nrn_ensure_model_data_are_sorted(), this, tt);
     }
     if (p[0].tqe_->least_t() < gcv_->t_) {
         gcv_->interpolate(p[0].tqe_->least_t());
@@ -2187,7 +2160,7 @@ int NetCvode::global_microstep() {
     return err;
 }
 
-int Cvode::handle_step(NetCvode* ns, double te) {
+int Cvode::handle_step(neuron::model_sorted_token const& sorted_token, NetCvode* ns, double te) {
     int err = NVI_SUCCESS;
     // first order correct condition evaluation goes here
     if (ns->condition_order() == 1) {
@@ -2231,7 +2204,7 @@ int Cvode::handle_step(NetCvode* ns, double te) {
         err = interpolate(tn_);
     } else {
         record_continuous();
-        err = advance_tn();
+        err = advance_tn(sorted_token);
         // second order correct condition evaluation goes here
         if (ns->condition_order() == 2) {
             evaluate_conditions(nth_);
@@ -2574,7 +2547,7 @@ void NetCvode::vec_event_store() {
     }
 }
 
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
 TQItem* NetCvode::fifo_event(double td, DiscreteEvent* db) {
     if (nrn_use_fifo_queue_) {
 #if PRINT_EVENT
@@ -2838,10 +2811,11 @@ void NetCvode::clear_events() {
     enqueueing_ = 0;
     for (i = 0; i < nrn_nthread; ++i) {
         NetCvodeThreadData& d = p[i];
-        delete d.tqe_;
-        d.tqe_ = new TQueue(p[i].tpool_);
+        delete std::exchange(d.tqe_, new TQueue(p[i].tpool_));
         d.unreffed_event_cnt_ = 0;
-        d.sepool_->free_all();
+        if (d.sepool_) {
+            d.sepool_->free_all();
+        }
         d.immediate_deliver_ = -1e100;
         d.ite_cnt_ = 0;
         if (nrn_use_selfqueue_) {
@@ -2869,18 +2843,12 @@ void NetCvode::free_event_pools() {
     clear_events();
     for (int i = 0; i < nrn_nthread; ++i) {
         NetCvodeThreadData& d = p[i];
-        if (d.sepool_) {
-            delete d.sepool_;
-        }
-        if (d.selfqueue_) {
-            delete d.selfqueue_;
-        }
-        if (d.tqe_) {
-            delete d.tqe_;
-        }
+        delete std::exchange(d.sepool_, nullptr);
+        delete std::exchange(d.selfqueue_, nullptr);
+        delete std::exchange(d.tqe_, nullptr);
         if (d.tpool_) {
             d.tpool_->free_all();
-            delete d.tpool_;
+            delete std::exchange(d.tpool_, nullptr);
         }
     }
 }
@@ -2909,7 +2877,7 @@ void NetCvode::init_events() {
             // also decide what to do about use_min_delay_
             // the rule for now is to use it if all delays are
             // the same and there are more than 2
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
             // but
             // if we desire nrn_use_fifo_queue_ then use it
             // even if just one
@@ -2934,7 +2902,7 @@ void NetCvode::init_events() {
                 if (ps->use_min_delay_ && ps->delay_ != d->delay_) {
                     ps->use_min_delay_ = false;
                 }
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
                 if (nrn_use_fifo_queue_ && d->delay_ != fifodelay) {
                     hoc_warning(
                         "Use of the event fifo queue is turned off due to more than one value for "
@@ -2957,7 +2925,7 @@ void NetCvode::init_events() {
         Object* obj = OBJ(q);
         auto* d = static_cast<NetCon*>(obj->u.this_pointer);
         if (d->target_) {
-            int type = d->target_->prop->_type;
+            int type = d->target_->prop->_type;  // somehow prop is non-deterministically-null here
             if (pnt_receive_init[type]) {
                 (*pnt_receive_init[type])(d->target_, d->weight_, 0);
             } else {
@@ -3193,7 +3161,7 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 #ifndef USENCS
     if (use_min_delay_) {
         STATISTICS(presyn_send_mindelay_);
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
         ns->fifo_event(tt + delay_, this);
 #else
 #if BBTQ == 5
@@ -3266,7 +3234,7 @@ void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
             Cvode* cv = (Cvode*) q->data_;
             if (tt < cv->t_) {
                 int err = NVI_SUCCESS;
-                err = cv->handle_step(ns, tt);
+                err = cv->handle_step(nrn_ensure_model_data_are_sorted(), ns, tt);
                 ns->p[i].tq_->move_least(cv->t_);
             }
         }
@@ -3721,7 +3689,7 @@ int NetCvode::pgvts_cvode(double tt, int op) {
             gcv_->check_deliver();
         }
         gcv_->record_continuous();
-        err = gcv_->advance_tn();
+        err = gcv_->advance_tn(nrn_ensure_model_data_are_sorted());
         if (condition_order() == 2) {
             gcv_->evaluate_conditions();
         }
@@ -3754,6 +3722,7 @@ bool NetCvode::use_partrans() {
 void ncs2nrn_integrate(double tstop) {
     double ts;
     nrn_use_busywait(1);  // just a possibility
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
     if (cvode_active_) {
 #if PARANEURON
         if (net_cvode_instance->use_partrans()) {
@@ -3771,7 +3740,7 @@ void ncs2nrn_integrate(double tstop) {
 #if 1
         int n = (int) ((tstop - nt_t) / dt + 1e-9);
         if (n > 3 && !nrnthread_v_transfer_) {
-            nrn_fixed_step_group(n);
+            nrn_fixed_step_group(cache_token, n);
         } else
 #endif
         {
@@ -3784,7 +3753,7 @@ void ncs2nrn_integrate(double tstop) {
             ts = tstop - .5 * dt;
             while (nt_t < ts) {
 #endif
-                nrn_fixed_step();
+                nrn_fixed_step(cache_token);
                 if (stoprun) {
                     break;
                 }
@@ -4057,10 +4026,7 @@ void NetCvode::fornetcon_prepare() {
     }
     int i, j;
     // initialize a map from type to dparam index, -1 means no FOR_NETCONS statement
-    int* t2i = new int[n_memb_func];
-    for (i = 0; i < n_memb_func; ++i) {
-        t2i[i] = -1;
-    }
+    std::vector<int> t2i(n_memb_func, -1);
     // create ForNetConsInfo in all the relevant point processes
     // and fill in the t2i map.
     for (i = 0; i < nrn_fornetcon_cnt_; ++i) {
@@ -4068,7 +4034,7 @@ void NetCvode::fornetcon_prepare() {
         int type = nrn_fornetcon_type_[i];
         t2i[type] = index;
         if (nrn_is_artificial_[type]) {
-            Memb_list* m = memb_list + type;
+            auto* const m = &memb_list[type];
             for (j = 0; j < m->nodecount; ++j) {
                 // Save ForNetConsInfo* as void* to avoid needing to expose the
                 // definition of ForNetConsInfo to translated MOD file code
@@ -4103,7 +4069,8 @@ void NetCvode::fornetcon_prepare() {
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
                 if (pnt && t2i[pnt->prop->_type] > -1) {
-                    auto* fnc = pnt->prop->dparam[t2i[pnt->prop->_type]].get<ForNetConsInfo*>();
+                    auto* fnc = static_cast<ForNetConsInfo*>(
+                        pnt->prop->dparam[t2i[pnt->prop->_type]].get<void*>());
                     assert(fnc);
                     fnc->size += 1;
                 }
@@ -4115,7 +4082,7 @@ void NetCvode::fornetcon_prepare() {
         int index = nrn_fornetcon_index_[i];
         int type = nrn_fornetcon_type_[i];
         if (nrn_is_artificial_[type]) {
-            Memb_list* m = memb_list + type;
+            auto* const m = &memb_list[type];
             for (j = 0; j < m->nodecount; ++j) {
                 auto* fnc = static_cast<ForNetConsInfo*>(m->pdata[j][index].get<void*>());
                 if (fnc->size > 0) {
@@ -4139,7 +4106,7 @@ void NetCvode::fornetcon_prepare() {
         }
     }
     // fill in argslist and count again
-    if (psl_)
+    if (psl_) {
         ITERATE(q, psl_) {
             PreSyn* ps = (PreSyn*) VOIDITM(q);
             const NetConPList& dil = ps->dil_;
@@ -4153,7 +4120,7 @@ void NetCvode::fornetcon_prepare() {
                 }
             }
         }
-    delete[] t2i;
+    }
 }
 
 int _nrn_netcon_args(void* v, double*** argslist) {
@@ -4164,13 +4131,10 @@ int _nrn_netcon_args(void* v, double*** argslist) {
 }
 
 void _nrn_free_fornetcon(void** v) {
-    auto* fnc = static_cast<ForNetConsInfo*>(*v);
-    if (fnc) {
-        if (fnc->argslist) {
-            delete[] fnc->argslist;
-        }
+    if (auto* fnc = static_cast<ForNetConsInfo*>(*v); fnc) {
+        delete[] std::exchange(fnc->argslist, nullptr);
         delete fnc;
-        *v = nil;
+        *v = nullptr;
     }
 }
 
@@ -4280,11 +4244,11 @@ void NetCvode::dstates() {
 
 void nrn_cvfun(double t, double* y, double* ydot) {
     NetCvode* d = net_cvode_instance;
-    d->gcv_->fun_thread(t, y, ydot, nrn_threads);
+    d->gcv_->fun_thread(nrn_ensure_model_data_are_sorted(), t, y, ydot, nrn_threads);
 }
 
 double nrn_hoc2fixed_step(void*) {
-    nrn_fixed_step();
+    nrn_fixed_step(nrn_ensure_model_data_are_sorted());
     return 0.;
 }
 
@@ -4319,7 +4283,7 @@ double nrn_hoc2scatter_y(void* v) {
     if (nrn_nthread > 1) {
         hoc_execerror("only one thread allowed", 0);
     }
-    d->gcv_->scatter_y(vector_vec(s), 0);
+    d->gcv_->scatter_y(nrn_ensure_model_data_are_sorted(), vector_vec(s), 0);
     return 0.;
 }
 
@@ -4398,8 +4362,9 @@ void NetCvode::acor() {
 /** @brief Create a lookup table for variable names.
  *
  *  This is only created on-demand because it involves building a lookup table
- *  of pointers, which are prone to being invalidated. In nrn#1929 this may be
- *  superseded by the output operator of data_handle<T>.
+ *  of pointers, some of which are obtained from data_handles (and are therefore
+ *  unstable). Eventually the operator<< of data_handle might provide the
+ *  necessary functionality and this could be dropped completely.
  */
 HocDataPaths NetCvode::create_hdp(int style) {
     int n{};
@@ -4496,31 +4461,28 @@ const char* NetCvode::sym2name(Symbol* sym) {
 }
 
 Symbol* NetCvode::name2sym(const char* name) {
-    char* buf = new char[strlen(name) + 1];
-    strcpy(buf, name);
+    std::vector<char> buf(strlen(name) + 1);
+    strcpy(buf.data(), name);
     char* cp;
-    for (cp = buf; *cp; ++cp) {
+    for (cp = buf.data(); *cp; ++cp) {
         if (*cp == '.') {
             *cp = '\0';
             ++cp;
             break;
         }
     }
-    Symbol* sym = hoc_table_lookup(buf, hoc_built_in_symlist);
+    Symbol* sym = hoc_table_lookup(buf.data(), hoc_built_in_symlist);
     if (!sym) {
-        sym = hoc_table_lookup(buf, hoc_top_level_symlist);
+        sym = hoc_table_lookup(buf.data(), hoc_top_level_symlist);
     }
     if (sym && *cp == '\0' && (sym->type == RANGEVAR || strcmp(sym->name, "Vector") == 0)) {
-        delete[] buf;
         return sym;
     } else if (sym && sym->type == TEMPLATE && *cp != '\0') {
         sym = hoc_table_lookup(cp, sym->u.ctemplate->symtable);
         if (sym) {
-            delete[] buf;
             return sym;
         }
     }
-    delete[] buf;
     hoc_execerror(name, "must be in form rangevar or Template.var");
     return nil;
 }
@@ -4607,7 +4569,7 @@ void NetCvode::structure_change() {
     }
 }
 
-NetCon* NetCvode::install_deliver(double* dsrc,
+NetCon* NetCvode::install_deliver(neuron::container::data_handle<double> dsrc,
                                   Section* ssrc,
                                   Object* osrc,
                                   Object* target,
@@ -4615,7 +4577,7 @@ NetCon* NetCvode::install_deliver(double* dsrc,
                                   double delay,
                                   double magnitude) {
     PreSyn* ps = nil;
-    double* psrc = nil;
+    neuron::container::data_handle<double> psrc{};
     if (ssrc) {
         consist_sec_pd("NetCon", ssrc, dsrc);
     }
@@ -4634,7 +4596,7 @@ NetCon* NetCvode::install_deliver(double* dsrc,
             assert(pp && pp->prop);
             if (!pnt_receive[pp->prop->_type]) {  // only if no NET_RECEIVE block
                 Sprintf(buf, "%s.x", hoc_object_name(osrc));
-                psrc = hoc_val_pointer(buf);
+                psrc = hoc_val_handle(buf);
             }
         }
     } else {
@@ -4667,7 +4629,7 @@ NetCon* NetCvode::install_deliver(double* dsrc,
         }
     } else if (target) {  // no source so use the special presyn
         if (!unused_presyn) {
-            unused_presyn = new PreSyn(nil, nil, nil);
+            unused_presyn = new PreSyn({}, nullptr, nullptr);
             unused_presyn->hi_ = hoc_l_insertvoid(psl_, unused_presyn);
         }
         ps = unused_presyn;
@@ -4812,7 +4774,7 @@ void NetCon::rmsrc() {
                 src_->dil_.erase(src_->dil_.begin() + i);
                 if (src_->dil_.size() == 0 && src_->tvec_ == NULL && src_->idvec_ == NULL) {
                     if (src_->output_index_ == -1) {
-                        delete src_;
+                        delete std::exchange(src_, nullptr);
                     }
                 }
                 break;
@@ -4873,14 +4835,8 @@ NetConSaveWeightTable* NetConSave::wtable_;
 NetConSaveIndexTable* NetConSave::idxtable_;
 
 void NetConSave::invalid() {
-    if (wtable_) {
-        delete wtable_;
-        wtable_ = nil;
-    }
-    if (idxtable_) {
-        delete idxtable_;
-        idxtable_ = nil;
-    }
+    delete std::exchange(wtable_, nullptr);
+    delete std::exchange(idxtable_, nullptr);
 }
 
 NetCon* NetConSave::weight2netcon(double* pd) {
@@ -4980,14 +4936,9 @@ void NetCvode::update_ps2nt() {
 void NetCvode::p_construct(int n) {
     int i;
     if (pcnt_ != n) {
-        if (p) {
-            delete[] p;
-            p = nil;
-        }
+        delete[] std::exchange(p, nullptr);
         if (n > 0) {
             p = new NetCvodeThreadData[n];
-        } else {
-            p = nil;
         }
         pcnt_ = n;
     }
@@ -4996,14 +4947,14 @@ void NetCvode::p_construct(int n) {
     }
 }
 
-PreSyn::PreSyn(double* src, Object* osrc, Section* ssrc) {
+PreSyn::PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section* ssrc)
+    : thvar_{std::move(src)} {
     //	printf("Presyn %x %s\n", (long)this, osrc?hoc_object_name(osrc):"nil");
     PreSynSave::invalid();
     hi_index_ = -1;
     hi_th_ = nil;
     flag_ = false;
     valthresh_ = 0;
-    thvar_ = src;
     osrc_ = osrc;
     ssrc_ = ssrc;
     threshold_ = 10.;
@@ -5034,7 +4985,7 @@ PreSyn::PreSyn(double* src, Object* osrc, Section* ssrc) {
 #endif
 #if DISCRETE_EVENT_OBSERVER
     if (thvar_) {
-        nrn_notify_when_double_freed(thvar_, this);
+        neuron::container::notify_when_handle_dies(thvar_, this);
     } else if (osrc_) {
         nrn_notify_when_void_freed(osrc_, this);
     }
@@ -5045,9 +4996,7 @@ PreSyn::~PreSyn() {
     PreSynSave::invalid();
     //	printf("~PreSyn %p\n", this);
     nrn_cleanup_presyn(this);
-    if (stmt_) {
-        delete stmt_;
-    }
+    delete std::exchange(stmt_, nullptr);
 #if DISCRETE_EVENT_OBSERVER
     if (tvec_) {
         ObjObservable::Detach(tvec_->obj_, this);
@@ -5111,10 +5060,7 @@ void PreSynSave::savestate_write(FILE* f) {
 PreSynSaveIndexTable* PreSynSave::idxtable_;
 
 void PreSynSave::invalid() {
-    if (idxtable_) {
-        delete idxtable_;
-        idxtable_ = nil;
-    }
+    delete std::exchange(idxtable_, nullptr);
 }
 
 PreSyn* PreSynSave::hindx2presyn(long id) {
@@ -5156,20 +5102,14 @@ void PreSyn::init() {
 }
 
 void PreSyn::record_stmt(const char* stmt) {
-    if (stmt_) {
-        delete stmt_;
-        stmt_ = nil;
-    }
+    delete std::exchange(stmt_, nullptr);
     if (strlen(stmt) > 0) {
         stmt_ = new HocCommand(stmt);
     }
 }
 
 void PreSyn::record_stmt(Object* pyact) {
-    if (stmt_) {
-        delete stmt_;
-        stmt_ = nil;
-    }
+    delete std::exchange(stmt_, nullptr);
     if (pyact) {
         stmt_ = new HocCommand(pyact);
     }
@@ -5261,17 +5201,9 @@ if (d->obj_) {
         idvec_ = nil;
     }
     net_cvode_instance->presyn_disconnect(this);
-    thvar_ = nil;
+    thvar_ = {};
     osrc_ = nil;
     delete this;
-}
-
-void PreSyn::update_ptr(double* pd) {
-#if DISCRETE_EVENT_OBSERVER
-    nrn_notify_pointer_disconnect(this);
-    nrn_notify_when_double_freed(pd, this);
-#endif
-    thvar_ = pd;
 }
 
 void ConditionEvent::check(NrnThread* nt, double tt, double teps) {
@@ -5466,13 +5398,13 @@ void WatchCondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 
 void StateTransitionEvent::transition(int src,
                                       int dest,
-                                      double* var1,
-                                      double* var2,
+                                      neuron::container::data_handle<double> var1,
+                                      neuron::container::data_handle<double> var2,
                                       std::unique_ptr<HocCommand> hc) {
     STETransition& st = states_[src].add_transition(pnt_);
     st.dest_ = dest;
-    st.var1_ = var1;
-    st.var2_ = var2;
+    st.var1_ = std::move(var1);
+    st.var2_ = std::move(var2);
     st.hc_ = std::move(hc);
     st.ste_ = this;
     st.var1_is_time_ = (static_cast<double*>(st.var1_) == &t);
@@ -5480,7 +5412,8 @@ void StateTransitionEvent::transition(int src,
 
 void STETransition::activate() {
     if (var1_is_time_) {
-        var1_ = &stec_->thread()->_t;
+        var1_ = neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                       &stec_->thread()->_t};
     }
     if (stec_->qthresh_) {  // is it on the queue
         net_cvode_instance->remove_event(stec_->qthresh_, stec_->thread()->id);
@@ -5634,14 +5567,14 @@ void Cvode::check_deliver(NrnThread* nt) {
     }
 }
 
-void NetCvode::fixed_record_continuous(NrnThread* nt) {
-    int i, cnt;
-    nrn_ba(nt, BEFORE_STEP);
-    cnt = fixed_record_->count();
-    for (i = 0; i < cnt; ++i) {  // should be made more efficient
+void NetCvode::fixed_record_continuous(neuron::model_sorted_token const& cache_token,
+                                       NrnThread& nt) {
+    nrn_ba(cache_token, nt, BEFORE_STEP);
+    auto const cnt = fixed_record_->count();
+    for (int i = 0; i < cnt; ++i) {  // should be made more efficient
         PlayRecord* pr = fixed_record_->item(i);
-        if (pr->ith_ == nt->id) {
-            pr->continuous(nt->_t);
+        if (pr->ith_ == nt.id) {
+            pr->continuous(nt._t);
         }
     }
 }
@@ -5669,7 +5602,7 @@ void NetCvode::fixed_play_continuous(NrnThread* nt) {
 static int trajec_buffered(NrnThread& nt,
                            int bsize,
                            IvocVect* v,
-                           double* pd,
+                           neuron::container::data_handle<double> pd,
                            int i_pr,
                            PlayRecord* pr,
                            void** vpr,
@@ -5688,10 +5621,11 @@ static int trajec_buffered(NrnThread& nt,
         v->resize(bsize + cur_size);
         varrays[i_trajec] = vector_vec(v) + cur_size;  // begin filling here
     } else {
+        // Danger, think this through better
         pvars[i_trajec] = static_cast<double*>(pd);
     }
     vpr[i_pr] = pr;
-    if (pd == &nt._t) {
+    if (static_cast<double const*>(pd) == &nt._t) {
         types[i_trajec] = 0;
         indices[i_trajec] = 0;
     } else {
@@ -5699,7 +5633,7 @@ static int trajec_buffered(NrnThread& nt,
         if (err) {
             Fprintf(stderr,
                     "Pointer %p of PlayRecord type %d ignored because not a Range Variable",
-                    pd,
+                    static_cast<double*>(pd),
                     pr->type());
         }
     }
@@ -5757,7 +5691,7 @@ void nrnthread_get_trajectory_requests(int tid,
 #if HAVE_IV
                 } else if (pr->type() == GLineRecordType) {
                     n_pr++;
-                    if (pr->pd_ == NULL) {
+                    if (!pr->pd_) {
                         GLineRecord* glr = (GLineRecord*) pr;
                         assert(glr->gl_->expr_);
                         glr->fill_pd();
@@ -5809,7 +5743,8 @@ void nrnthread_get_trajectory_requests(int tid,
                         err = trajec_buffered(nt,
                                               bsize,
                                               v,
-                                              &nt._t,
+                                              neuron::container::data_handle<double>{
+                                                  neuron::container::do_not_search, &nt._t},
                                               n_pr++,
                                               pr,
                                               vpr,
@@ -5874,10 +5809,11 @@ void nrnthread_get_trajectory_requests(int tid,
                                 if (bsize && v == NULL) {
                                     v = (*it).second = new IvocVect(bsize);
                                 }
+                                // TODO avoid the conversion?
                                 err = trajec_buffered(nt,
                                                       bsize,
                                                       v,
-                                                      pd,
+                                                      neuron::container::data_handle<double>{pd},
                                                       n_pr,
                                                       pr,
                                                       vpr,
@@ -5932,26 +5868,11 @@ void nrnthread_get_trajectory_requests(int tid,
         }
         if (n_trajec == 0) {  // if errors reduced to 0, clean up
             assert(n_pr == 0);
-            if (types) {
-                delete[] types;
-                types = NULL;
-            }
-            if (indices) {
-                delete[] indices;
-                indices = NULL;
-            }
-            if (vpr) {
-                delete[] vpr;
-                vpr = NULL;
-            }
-            if (varrays) {
-                delete[] varrays;
-                varrays = NULL;
-            }
-            if (pvars) {
-                delete[] pvars;
-                pvars = NULL;
-            }
+            delete[] std::exchange(types, nullptr);
+            delete[] std::exchange(indices, nullptr);
+            delete[] std::exchange(vpr, nullptr);
+            delete[] std::exchange(varrays, nullptr);
+            delete[] std::exchange(pvars, nullptr);
         }
 #if 0
     printf("nrnthread_get_trajectory_requests tid=%d bsize=%d n_pr=%d n_trajec=%d\n", tid, bsize, n_pr, n_trajec);
@@ -6216,13 +6137,13 @@ PlayRecord* NetCvode::playrec_uses(void* v) {
     return nil;
 }
 
-PlayRecord::PlayRecord(double* pd, Object* ppobj) {
+PlayRecord::PlayRecord(neuron::container::data_handle<double> pd, Object* ppobj)
+    : pd_{std::move(pd)} {
     // printf("PlayRecord::PlayRecord %p\n", this);
-    pd_ = pd;
     cvode_ = nil;
     ith_ = 0;
     if (pd_) {
-        nrn_notify_when_double_freed(pd_, this);
+        neuron::container::notify_when_handle_dies(pd_, this);
     }
     ppobj_ = ppobj;
     if (ppobj_) {
@@ -6238,12 +6159,6 @@ PlayRecord::~PlayRecord() {
         ObjObservable::Detach(ppobj_, this);
     }
     net_cvode_instance->playrec_remove(this);
-}
-
-void PlayRecord::update_ptr(double* pd) {
-    nrn_notify_pointer_disconnect(this);
-    nrn_notify_when_double_freed(pd, this);
-    pd_ = pd;
 }
 
 void PlayRecord::disconnect(Observable*) {
@@ -6272,7 +6187,7 @@ void PlayRecord::pr() {
 }
 
 TvecRecord::TvecRecord(Section* sec, IvocVect* t, Object* ppobj)
-    : PlayRecord(&NODEV(sec->pnode[0]), ppobj) {
+    : PlayRecord(sec->pnode[0]->v_handle(), ppobj) {
     // printf("TvecRecord\n");
     t_ = t;
     ObjObservable::Attach(t_->obj_, this);
@@ -6300,8 +6215,8 @@ void TvecRecord::continuous(double tt) {
     t_->push_back(tt);
 }
 
-YvecRecord::YvecRecord(double* pd, IvocVect* y, Object* ppobj)
-    : PlayRecord(pd, ppobj) {
+YvecRecord::YvecRecord(neuron::container::data_handle<double> dh, IvocVect* y, Object* ppobj)
+    : PlayRecord(std::move(dh), ppobj) {
     // printf("YvecRecord\n");
     y_ = y;
     ObjObservable::Attach(y_->obj_, this);
@@ -6322,6 +6237,9 @@ void YvecRecord::install(Cvode* cv) {
 }
 
 void YvecRecord::record_init() {
+    if (!pd_) {
+        hoc_execerr_ext("%s recording from invalid data reference.", hoc_object_name(y_->obj_));
+    }
     y_->resize(0);
 }
 
@@ -6329,8 +6247,11 @@ void YvecRecord::continuous(double tt) {
     y_->push_back(*pd_);
 }
 
-VecRecordDiscrete::VecRecordDiscrete(double* pd, IvocVect* y, IvocVect* t, Object* ppobj)
-    : PlayRecord(pd, ppobj) {
+VecRecordDiscrete::VecRecordDiscrete(neuron::container::data_handle<double> dh,
+                                     IvocVect* y,
+                                     IvocVect* t,
+                                     Object* ppobj)
+    : PlayRecord(std::move(dh), ppobj) {
     // printf("VecRecordDiscrete\n");
     y_ = y;
     t_ = t;
@@ -6399,8 +6320,11 @@ void VecRecordDiscrete::deliver(double tt, NetCvode* nc) {
     }
 }
 
-VecRecordDt::VecRecordDt(double* pd, IvocVect* y, double dt, Object* ppobj)
-    : PlayRecord(pd, ppobj) {
+VecRecordDt::VecRecordDt(neuron::container::data_handle<double> pd,
+                         IvocVect* y,
+                         double dt,
+                         Object* ppobj)
+    : PlayRecord(std::move(pd), ppobj) {
     // printf("VecRecordDt\n");
     y_ = y;
     dt_ = dt;
@@ -6445,45 +6369,39 @@ void VecRecordDt::frecord_init(TQItem* q) {
 }
 
 void VecRecordDt::deliver(double tt, NetCvode* nc) {
-    if (pd_ == &t) {
+    auto* const ptr = static_cast<double*>(pd_);
+    if (ptr == &t) {
         y_->push_back(tt);
     } else {
-        y_->push_back(*pd_);
+        y_->push_back(*ptr);
     }
     e_->send(tt + dt_, nc, nrn_threads);
 }
 
 void NetCvode::vecrecord_add() {
-    double* pd = hoc_pgetarg(1);
+    auto const pd = hoc_hgetarg<double>(1);
     consist_sec_pd("Cvode.record", chk_access(), pd);
     IvocVect* y = vector_arg(2);
     IvocVect* t = vector_arg(3);
-    PlayRecord* pr = playrec_uses(y);
-    if (pr) {
-        delete pr;
-    }
+    delete playrec_uses(y);
     bool discrete = ((ifarg(4) && (int) chkarg(4, 0, 1) == 1) ? true : false);
     if (discrete) {
-        pr = new VecRecordDiscrete(pd, y, t);
+        new VecRecordDiscrete(pd, y, t);
     } else {
-        pr = playrec_uses(t);
-        if (pr) {
-            delete pr;
-        }
-        pr = new TvecRecord(chk_access(), t);
-        pr = new YvecRecord(pd, y);
+        delete playrec_uses(t);
+        new TvecRecord(chk_access(), t);
+        new YvecRecord(pd, y);
     }
 }
 
 void NetCvode::vec_remove() {
-    PlayRecord* pr;
-    while ((pr = playrec_uses(vector_arg(1))) != nil) {
+    while (auto* const pr = playrec_uses(vector_arg(1))) {
         delete pr;
     }
 }
 
 void NetCvode::playrec_setup() {
-    long i, j, iprl, prlc;
+    long i, j, prlc;
     prlc = prl_->count();
     fixed_record_->remove_all();
     fixed_play_->remove_all();
@@ -6494,8 +6412,16 @@ void NetCvode::playrec_setup() {
             p[i].lcv_[j].delete_prl();
         }
     }
-    for (iprl = 0; iprl < prlc; ++iprl) {
+    std::vector<PlayRecord*> to_delete{};
+    for (long iprl = 0; iprl < prlc; ++iprl) {
         PlayRecord* pr = prl_->item(iprl);
+        if (!pr->pd_) {
+            // Presumably the recorded value was invalidated elsewhere, e.g. it
+            // was a voltage of a deleted node, or a range variable of a deleted
+            // mechanism instance
+            to_delete.push_back(pr);
+            continue;
+        }
         bool b = false;
         if (single_) {
             pr->install(gcv_);
@@ -6530,21 +6456,27 @@ void NetCvode::playrec_setup() {
         }
         pr->ith_ = i;
     }
+    for (auto* pr: to_delete) {
+        // Destructor should de-register things
+        delete pr;
+    }
     playrec_change_cnt_ = structure_change_cnt_;
 }
 
-bool Cvode::is_owner(double* pd) {  // is a pointer to range variable in this cell
+// is a pointer to range variable in this cell
+bool Cvode::is_owner(neuron::container::data_handle<double> const& handle) {
     int in, it;
     for (it = 0; it < nrn_nthread; ++it) {
         CvodeThreadData& z = CTD(it);
         for (in = 0; in < z.v_node_count_; ++in) {
             Node* nd = z.v_node_[in];
-            if (&NODEV(nd) == pd) {
+            if (handle == nd->v_handle()) {
                 return true;
             }
+            auto* pd = static_cast<double const*>(handle);
             Prop* p;
             for (p = nd->prop; p; p = p->next) {
-                if (pd >= p->param && pd < (p->param + p->param_size)) {
+                if (p->owns(handle)) {
                     return true;
                 }
             }
@@ -6563,7 +6495,7 @@ bool Cvode::is_owner(double* pd) {  // is a pointer to range variable in this ce
     return false;
 }
 
-int NetCvode::owned_by_thread(double* pd) {
+int NetCvode::owned_by_thread(neuron::container::data_handle<double> const& handle) {
     if (nrn_nthread == 1) {
         return 0;
     }
@@ -6574,16 +6506,16 @@ int NetCvode::owned_by_thread(double* pd) {
         int i3 = nt.end;
         for (in = i1; in < i3; ++in) {
             Node* nd = nt._v_node[in];
-            if (&NODEV(nd) == pd) {
+            if (handle == nd->v_handle()) {
                 return it;
             }
-            Prop* p;
-            for (p = nd->prop; p; p = p->next) {
-                if (pd >= p->param && pd < (p->param + p->param_size)) {
+            for (Prop* p = nd->prop; p; p = p->next) {
+                if (p->owns(handle)) {
                     return it;
                 }
             }
             if (nd->extnode) {
+                auto* pd = static_cast<double const*>(handle);
                 if (pd >= nd->extnode->v && pd < (nd->extnode->v + nlayer)) {
                     return it;
                 }
@@ -6595,7 +6527,9 @@ int NetCvode::owned_by_thread(double* pd) {
     return -1;
 }
 
-void NetCvode::consist_sec_pd(const char* msg, Section* sec, double* pd) {
+void NetCvode::consist_sec_pd(const char* msg,
+                              Section* sec,
+                              neuron::container::data_handle<double> const& handle) {
     int in;
     Node* nd;
     for (in = -1; in < sec->nnode; ++in) {
@@ -6607,12 +6541,13 @@ void NetCvode::consist_sec_pd(const char* msg, Section* sec, double* pd) {
         } else {
             nd = sec->pnode[in];
         }
-        if (&NODEV(nd) == pd) {
+        if (nd->v_handle() == handle) {
             return;
         }
         Prop* p;
+        auto* const pd = static_cast<double const*>(handle);
         for (p = nd->prop; p; p = p->next) {
-            if (pd >= p->param && pd < (p->param + p->param_size)) {
+            if (p->owns(handle)) {
                 return;
             }
         }
@@ -6774,36 +6709,10 @@ double NetCvode::maxstate_analyse(Symbol* sym, double* pamax) {
     return -1e9;
 }
 
-void NetCvode::recalc_ptrs() {
-#if CACHEVEC
-    // update PlayRecord pointers to v
-    int cnt = prl_->count();
-    for (int i = 0; i < cnt; ++i) {
-        PlayRecord* pr = prl_->item(i);
-        if (pr->pd_) {
-            pr->update_ptr(nrn_recalc_ptr(pr->pd_));
-        }
-    }
-    // update PreSyn pointers to v
-    hoc_Item* q;
-    if (psl_)
-        ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
-            if (ps->thvar_) {
-                double* pd = nrn_recalc_ptr(ps->thvar_);
-                if (pd != ps->thvar_) {
-                    pst_->erase(ps->thvar_);
-                    (*pst_)[pd] = ps;
-                    ps->update_ptr(pd);
-                }
-            }
-        }
-#endif
-}
-
 static double lvardt_tout_;
 
-static void* lvardt_integrate(NrnThread* nt) {
+static void lvardt_integrate(neuron::model_sorted_token const& token, NrnThread& ntr) {
+    auto* const nt = &ntr;
     size_t err = NVI_SUCCESS;
     int id = nt->id;
     NetCvode* nc = net_cvode_instance;
@@ -6813,13 +6722,13 @@ static void* lvardt_integrate(NrnThread* nt) {
     double tout = lvardt_tout_;
     nt->_stop_stepping = 0;
     while (tq->least_t() < tout || tqe->least_t() <= tout) {
-        err = nc->local_microstep(nt);
+        err = nc->local_microstep(token, ntr);
         if (nt->_stop_stepping) {
             nt->_stop_stepping = 0;
-            return (void*) err;
+            return;
         }
         if (err != NVI_SUCCESS || stoprun) {
-            return (void*) err;
+            return;
         }
     }
     int n = p.nlcv_;
@@ -6832,7 +6741,6 @@ static void* lvardt_integrate(NrnThread* nt) {
     else {
         nt->_t = tout;
     }
-    return (void*) err;
 }
 
 int NetCvode::solve_when_threads(double tout) {
@@ -6840,6 +6748,7 @@ int NetCvode::solve_when_threads(double tout) {
     int tid;
     double til;
     nrn_use_busywait(1);  // just a possibility
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
     if (empty_) {
         if (tout >= 0.) {
             while (nt_t < tout && !stoprun) {
@@ -6896,7 +6805,7 @@ int NetCvode::solve_when_threads(double tout) {
             // For now just integrate by min delay intervals.
             lvardt_tout_ = tout;
             while (nt_t < tout) {
-                nrn_multithread_job(lvardt_integrate);
+                nrn_multithread_job(cache_token, lvardt_integrate);
                 if (nrn_allthread_handle) {
                     (*nrn_allthread_handle)();
                 }
@@ -6963,7 +6872,7 @@ int NetCvode::global_microstep_when_threads() {
         assert(tdiff == 0.0 || (gcv_->tstop_begin_ <= tt && tt <= gcv_->tstop_end_));
         deliver_events_when_threads(tt);
     } else {
-        err = gcv_->handle_step(this, tt);
+        err = gcv_->handle_step(nrn_ensure_model_data_are_sorted(), this, tt);
     }
     if ((tt = allthread_least_t(tid)) < gcv_->t_) {
         gcv_->interpolate(tt);

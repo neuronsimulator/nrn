@@ -1,4 +1,3 @@
-#include <../../nrnconf.h>
 // This may look like C code, but it is really -*- C++ -*-
 /* 
 Copyright (C) 1989 Free Software Foundation
@@ -18,7 +17,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#include <MLCG.h>
+#include "MLCG.h"
 //
 //	SEED_TABLE_SIZE must be a power of 2
 //

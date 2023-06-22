@@ -61,7 +61,7 @@ using StackDatum = std::variant<double,
                                 Object**,
                                 Object*,
                                 char**,
-                                double*,
+                                neuron::container::generic_data_handle,
                                 std::nullptr_t>;
 
 /** @brief The stack.
@@ -262,12 +262,8 @@ T const& hoc_look_inside_stack(int i) {
 }
 template double const& hoc_look_inside_stack(int);
 template Symbol* const& hoc_look_inside_stack(int);
-template int const& hoc_look_inside_stack(int);
 template Object** const& hoc_look_inside_stack(int);
 template Object* const& hoc_look_inside_stack(int);
-template char** const& hoc_look_inside_stack(int);
-template double* const& hoc_look_inside_stack(int);
-template std::nullptr_t const& hoc_look_inside_stack(int);
 namespace {
 bool stack_entry_is_tmpobject(StackDatum const& entry) {
     return std::holds_alternative<Object*>(entry);
@@ -288,7 +284,7 @@ void unref_if_tmpobject(StackDatum& entry) {
 int get_legacy_int_type(StackDatum const& entry) {
     if (std::holds_alternative<char**>(entry)) {
         return STRING;
-    } else if (std::holds_alternative<double*>(entry)) {
+    } else if (std::holds_alternative<neuron::container::generic_data_handle>(entry)) {
         return VAR;
     } else if (std::holds_alternative<double>(entry)) {
         return NUMBER;
@@ -836,7 +832,9 @@ void hoc_push_string() {
 
 // push double pointer onto stack
 void hoc_pushpx(double* d) {
-    push_value(d);
+    // Trying to promote a raw pointer to a data handle is expensive, so don't
+    // do that every time we push a double* onto the stack.
+    hoc_push(neuron::container::data_handle<double>{neuron::container::do_not_search, d});
 }
 
 // push symbol pointer onto stack
@@ -847,6 +845,10 @@ void hoc_pushs(Symbol* d) {
 /* push integer onto stack */
 void hoc_pushi(int d) {
     push_value(d);
+}
+
+void hoc_push(neuron::container::generic_data_handle handle) {
+    push_value(std::move(handle));
 }
 
 /* push index onto stack */
@@ -902,9 +904,24 @@ double hoc_xpop() {
     return pop_value<double>();
 }
 
+namespace neuron {
+/** @brief hoc_get_arg<generic_data_handle>()
+ */
+container::generic_data_handle oc::detail::hoc_get_arg_helper<container::generic_data_handle>::impl(
+    std::size_t narg) {
+    return cast<container::generic_data_handle>(get_argument(narg));
+}
+/** @brief hoc_pop<generic_data_handle>()
+ */
+container::generic_data_handle oc::detail::hoc_pop_helper<container::generic_data_handle>::impl() {
+    return pop_value<neuron::container::generic_data_handle>();
+}
+}  // namespace neuron
+
 // pop double pointer and return top elem from stack
 double* hoc_pxpop() {
-    return pop_value<double*>();
+    // All pointers are actually stored on the stack as data handles
+    return static_cast<double*>(hoc_pop<neuron::container::data_handle<double>>());
 }
 
 // pop symbol pointer and return top elem from stack
@@ -1586,17 +1603,18 @@ void hoc_Argtype() {
         itype = -1;
     } else {
         auto const& entry = f->argn[iarg - f->nargs];
-        itype = std::visit(overloaded{[](double) { return 0; },
-                                      [](Object*) { return 1; },
-                                      [](Object**) { return 1; },
-                                      [](char**) { return 2; },
-                                      [](double*) { return 3; },
-                                      [](auto const& x) -> int {
-                                          throw std::runtime_error(
-                                              "hoc_Argtype didn't expect argument of type " +
-                                              cxx_demangle(typeid(decltype(x)).name()));
-                                      }},
-                           entry);
+        itype =
+            std::visit(overloaded{[](double) { return 0; },
+                                  [](Object*) { return 1; },
+                                  [](Object**) { return 1; },
+                                  [](char**) { return 2; },
+                                  [](neuron::container::generic_data_handle const&) { return 3; },
+                                  [](auto const& x) -> int {
+                                      throw std::runtime_error(
+                                          "hoc_Argtype didn't expect argument of type " +
+                                          cxx_demangle(typeid(decltype(x)).name()));
+                                  }},
+                       entry);
     }
     hoc_retpushx(itype);
 }
@@ -1632,12 +1650,6 @@ char** hoc_pgargstr(int narg) {
                                      hoc_execerror("Expecting string argument", nullptr);
                                  }},
                       get_argument(narg));
-}
-
-// return pointer to nth argument
-double* hoc_pgetarg(int narg) {
-    auto const& arg_entry = get_argument(narg);
-    return cast<double*>(arg_entry);
 }
 
 // return pointer to nth argument
@@ -2573,7 +2585,7 @@ void insertcode(Inst* begin, Inst* end, Pfrv f) {
     }
 }
 
-#if defined(DOS) || defined(WIN32) || (MAC && !defined(DARWIN))
+#if defined(DOS) || defined(WIN32)
 static int ntimes;
 #endif
 
@@ -2589,14 +2601,6 @@ void execute(Inst* p) /* run the machine */
 #if 0
             kbhit(); /* DOS can't capture interrupt when number crunching*/
 #endif
-        }
-#endif
-
-#if MAC && !defined(DARWIN)
-        /* there is significant overhead here */
-        if (++ntimes > 100) {
-            ntimes = 0;
-            hoc_check_intupt(1);
         }
 #endif
         if (hoc_intset)

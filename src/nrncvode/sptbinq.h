@@ -73,7 +73,6 @@ class TQueue {
     TQueue(TQItemPool*, int mkmut = 0);
     virtual ~TQueue();
 
-#if FAST_LEAST
     TQItem* least() {
         return least_;
     }
@@ -98,10 +97,6 @@ class TQueue {
             return 1e15;
         }
     }
-#endif
-#else
-    TQItem* least();  // does not remove from TQueue
-    double least_t();
 #endif
     TQItem* atomic_dq(double til);
     TQItem* insert(double t, void* data);

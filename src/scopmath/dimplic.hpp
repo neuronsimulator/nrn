@@ -3,11 +3,11 @@
  */
 #pragma once
 namespace neuron::scopmath {
-template <typename Array>
+template <typename Array, typename IndexArray>
 int derivimplicit(int /* _ninits */,
                   int /* n */,
-                  int* /* slist */,
-                  int* /* dlist */,
+                  IndexArray /* slist */,
+                  IndexArray /* dlist */,
                   Array /* p */,
                   double* /* pt */,
                   double /* dt */,
@@ -16,10 +16,10 @@ int derivimplicit(int /* _ninits */,
     fun();
     return 0;
 }
-template <typename Array, typename Callable, typename... Args>
+template <typename Array, typename Callable, typename IndexArray, typename... Args>
 int derivimplicit_thread(int /* n */,
-                         int* /* slist */,
-                         int* /* dlist */,
+                         IndexArray /* slist */,
+                         IndexArray /* dlist */,
                          Array /* p */,
                          Callable fun,
                          Args&&... args) {

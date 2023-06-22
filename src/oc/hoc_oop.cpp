@@ -9,20 +9,14 @@
 #include "hoclist.h"
 #include "nrn_ansi.h"
 #include "nrnmpi.h"
+#include "nrnpy.h"
 #include "nrnfilewrap.h"
-#include <nrnpython_config.h>
 #include "ocfunc.h"
 
 
 #define PDEBUG 0
 
-#if USE_PYTHON
-Symbol* nrnpy_pyobj_sym_;
-void (*nrnpy_py2n_component)(Object* o, Symbol* s, int nindex, int isfunc);
-void (*nrnpy_hpoasgn)(Object* o, int type);
-void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
-#endif
-
+Symbol* nrnpy_pyobj_sym_{};
 #include "section.h"
 #include "nrniv_mf.h"
 int section_object_seen;
@@ -154,13 +148,9 @@ void hoc_obvar_declare(Symbol* sym, int type, int pmes) {
     assert(sym->cpublic != 2);
     if (pmes && hoc_symlist == hoc_top_level_symlist) {
         int b = 0;
-#if USE_NRNFILEWRAP
-        b = (hoc_fin && hoc_fin->f == stdin);
-#else
         b = (hoc_fin == stdin);
-#endif
         if (nrnmpi_myid_world == 0 && (hoc_print_first_instance && b)) {
-            NOT_PARALLEL_SUB(Printf("first instance of %s\n", sym->name);)
+            Printf("first instance of %s\n", sym->name);
         }
         sym->defined_on_the_fly = 1;
     }
@@ -1028,7 +1018,7 @@ void hoc_object_component() {
                 /* note obp is now on stack twice */
                 /* hpoasgn will pop both */
             } else {
-                (*nrnpy_py2n_component)(obp, sym0, nindex, isfunc);
+                neuron::python::methods.py2n_component(obp, sym0, nindex, isfunc);
             }
             return;
         }
@@ -1110,6 +1100,20 @@ void hoc_object_component() {
             if (nindex) {
                 if (!ISARRAY(sym) || OPARINFO(sym)->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
+                }
+                if (narg) {
+                    // there are a few modeldb examples that use (index) instead
+                    // of [index] syntax for an array in this context. So we
+                    // have decided to keep allowing this legacy syntax for one
+                    // dimensional arrays.
+                    if (narg == 1) {
+                        hoc_push_ndim(1);
+                    } else {
+                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
+                                        hoc_object_name(obp),
+                                        sym->name,
+                                        sym->name);
+                    }
                 }
                 nindex = araypt(sym, OBJECTVAR);
             }
@@ -1258,17 +1262,30 @@ void hoc_object_component() {
     }
     default:
         if (cplus) {
-            double* pd;
             if (nindex) {
                 if (!ISARRAY(sym) || sym->arayinfo->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
                 }
+                if (narg) {
+                    // there are a few modeldb examples that use (index) instead
+                    // of [index] syntax for an array in this context. So we
+                    // have decided to keep allowing this legacy syntax for one
+                    // dimensional arrays.
+                    if (narg == 1) {
+                        hoc_push_ndim(1);
+                    } else {
+                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
+                                        hoc_object_name(obp),
+                                        sym->name,
+                                        sym->name);
+                    }
+                }
             }
             hoc_pushs(sym);
             (*obp->ctemplate->steer)(obp->u.this_pointer);
-            pd = hoc_pxpop();
+            auto dh = hoc_pop_handle<double>();
             hoc_pop_defer();
-            hoc_pushpx(pd);
+            hoc_push(std::move(dh));
         } else {
             hoc_execerror(sym->name, ": can't push that type onto stack");
         }
@@ -1340,7 +1357,7 @@ void hoc_ob_pointer(void) {
             } else {
                 x = .5;
             }
-            hoc_pushpx(nrn_rangepointer(sec, sym, x));
+            hoc_push(nrn_rangepointer(sec, sym, x));
         } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
             hoc_pushpx(cable_prop_eval_pointer(hoc_spop()));
         } else {
@@ -1382,7 +1399,11 @@ void hoc_object_asgn() {
             }
             *pd = d;
         } else {
-            nrn_rangeconst(sec, sym, &d, op);
+            nrn_rangeconst(sec,
+                           sym,
+                           neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                  &d},
+                           op);
         }
         hoc_pushx(d);
         return;
@@ -1436,7 +1457,7 @@ void hoc_object_asgn() {
         if (op) {
             hoc_execerror("Invalid assignment operator for PythonObject", nullptr);
         }
-        (*nrnpy_hpoasgn)(o, type1);
+        neuron::python::methods.hpoasgn(o, type1);
     } break;
 #endif
     default:
@@ -2066,11 +2087,9 @@ int is_obj_type(Object* obj, const char* type_name) {
 
 
 void* nrn_opaque_obj2pyobj(Object* ho) {
-#if USE_PYTHON
     // The PyObject* reference is not incremented. Use only as last resort
-    if (nrnpy_opaque_obj2pyobj_p_) {
-        return (*nrnpy_opaque_obj2pyobj_p_)(ho);
+    if (neuron::python::methods.opaque_obj2pyobj) {
+        return neuron::python::methods.opaque_obj2pyobj(ho);
     }
-#endif
     return nullptr;
 }

@@ -74,42 +74,21 @@ TQueue::~TQueue() {
 }
 
 void TQueue::print() {
-#if FAST_LEAST
     if (least_) {
         prnt(least_, 0);
     }
-#endif
     spscan(prnt, nil, sptree_);
 }
 
 void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
-#if FAST_LEAST
     if (least_) {
         f(least_, 0);
     }
-#endif
     spscan(f, nil, sptree_);
 }
 
 void TQueue::check(const char* mes) {}
 
-#if !FAST_LEAST
-double TQueue::least_t() {
-    TQItem* b = least();
-    if (b) {
-        return b->t_;
-    } else {
-        return 1e15;
-    }
-}
-
-TQItem* TQueue::least() {
-    STAT(nleast)
-    return sphead(sptree_);
-}
-#endif
-
-#if FAST_LEAST
 TQItem* TQueue::second_least(double t) {
     assert(least_);
     TQItem* b = sphead(sptree_);
@@ -118,12 +97,10 @@ TQItem* TQueue::second_least(double t) {
     }
     return 0;
 }
-#endif
 
 void TQueue::move_least(double tnew) {
     TQItem* b = least();
     if (b) {
-#if FAST_LEAST
         b->t_ = tnew;
         TQItem* nl = sphead(sptree_);
         if (nl) {
@@ -132,15 +109,11 @@ void TQueue::move_least(double tnew) {
                 spenq(b, sptree_);
             }
         }
-#else
-        move(b, tnew);
-#endif
     }
 }
 
 void TQueue::move(TQItem* i, double tnew) {
     STAT(nmove)
-#if FAST_LEAST
     if (i == least_) {
         move_least(tnew);
     } else if (tnew < least_->t_) {
@@ -148,9 +121,7 @@ void TQueue::move(TQItem* i, double tnew) {
         i->t_ = tnew;
         spenq(least_, sptree_);
         least_ = i;
-    } else
-#endif
-    {
+    } else {
         spdelete(i, sptree_);
         i->t_ = tnew;
         spenq(i, sptree_);
@@ -185,7 +156,6 @@ TQItem* TQueue::insert(double t, void* d) {
     i->data_ = d;
     i->t_ = t;
     i->cnt_ = 0;
-#if FAST_LEAST
     if (t < least_t()) {
         if (least()) {
             spenq(least(), sptree_);
@@ -194,16 +164,12 @@ TQItem* TQueue::insert(double t, void* d) {
     } else {
         spenq(i, sptree_);
     }
-#else
-    spenq(i, sptree_);
-#endif
     return i;
 }
 
 void TQueue::remove(TQItem* q) {
     STAT(nrem);
     if (q) {
-#if FAST_LEAST
         if (q == least_) {
             if (sptree_->root) {
                 least_ = spdeq(&sptree_->root);
@@ -213,20 +179,15 @@ void TQueue::remove(TQItem* q) {
         } else {
             spdelete(q, sptree_);
         }
-#else
-        spdelete(q, sptree_);
-#endif
         tpool_->hpfree(q);
     }
 }
 
 TQItem* TQueue::find(double t) {
     STAT(nfind)
-#if FAST_LEAST
     if (t == least_t()) {
         return least();
     }
-#endif
     TQItem* q;
     q = splookup(t, sptree_);
     return (q);

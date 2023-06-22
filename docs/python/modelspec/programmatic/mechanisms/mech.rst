@@ -336,7 +336,7 @@ General
             s3 = h.Section(name='s3')
 
             for sec in [s1, s2, s3]:
-                sec.insert('hh')
+                sec.insert('hh')   # equivalently: sec.insert(h.hh)
                 sec.L = sec.diam = 3
 
             c1 = h.IClamp(s1(0.5))
@@ -349,8 +349,7 @@ General
             c3.dur[0] = 1
 
             # record an action potential
-            ap = h.Vector()
-            ap.record(s1(0.5)._ref_v)
+            ap = h.Vector().record(s1(0.5)._ref_v)
             h.finitialize(-65)
             while h.t < 1:
                 h.fadvance()
@@ -669,7 +668,7 @@ General
       
       from neuron import h
       pc = h.ParallelContext()
-      
+
       #Model
       cell = h.IntFire1()
       cell.refrac = 0 # no limit on spike rate
@@ -679,13 +678,14 @@ General
       for i, nc in enumerate(nclist):
         nc.weight[0] = 2 # anything above 1 causes immediate firing for IntFire1
         nc.delay = 1 + 0.1*i # incoming (t, gid) generates output (t + 1 + 0.1*gid, 0)
-      
+
       # Record all spikes (cell is the only one generating output spikes)
-      out = [h.Vector() for _ in range(2)]
-      pc.spike_record(-1, out[0], out[1])
-      
+      spike_ts = h.Vector()
+      spike_ids = h.Vector()
+      pc.spike_record(-1, spike_ts, spike_ids)
+
       #PatternStim
-      tvec =   h.Vector(range(10))
+      tvec = h.Vector(range(10))
       gidvec = h.Vector(range(10)) # only 0,1,2 go to cell
       ps = h.PatternStim()
       ps.play(tvec, gidvec)
@@ -695,9 +695,10 @@ General
       pc.set_maxstep(10.)
       h.finitialize(-65)
       pc.psolve(7)
-      
-      for i, tsp in enumerate(out[0]):
-        print ("%g %d" %(tsp, int(out[1][i])))
+
+      for spike_t, spike_cell_id in zip(spike_ts, spike_ids):
+        print(f"{spike_t} {int(spike_cell_id)}")
+
 
   Output:
     Notice that 2.1 is the first output because (0, 0) is discarded by PatternStim
@@ -705,6 +706,7 @@ General
     (1, 1) is the first spike that gets passed into a NetCon (with delay 1.1) so the
     first output spike is generated at 2.2 and that spike gets recursively regenerated every
     1.0 ms. PatternStim spikes with gid > 3 are discarded.
+    
     .. code-block::
 
         2.1 0
@@ -1004,6 +1006,8 @@ Mechanisms
     Syntax:
         ``section.insert('hh')``
 
+        ``section.insert(h.hh)``
+
 
     Description:
         See `<nrn src dir>/src/nrnoc/hh.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/hh.mod>`_
@@ -1041,6 +1045,8 @@ Mechanisms
 
     Syntax:
         ``section.insert('pas')``
+
+        ``section.insert(h.pas)``
 
         ``section(x).pas.g -- mho/cm2	conductance``
 

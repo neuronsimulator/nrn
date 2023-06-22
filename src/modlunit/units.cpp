@@ -67,20 +67,12 @@ extern void diag(const char*, const char*);
 #endif
 
 /* if MODLUNIT environment variable not set then look in the following places*/
-#if MAC
-static const char* dfile = ":lib:nrnunits.lib" SUFFIX;
-#else
 #if defined(NEURON_DATA_DIR)
 static const char* dfile = NEURON_DATA_DIR "/lib/nrnunits.lib" SUFFIX;
 #else
 static const char* dfile = "/usr/lib/units";
 #endif
-#endif
-#if MAC
-static const char* dfilealt = "::lib:nrnunits.lib" SUFFIX;
-#else
 static const char* dfilealt = "../../share/lib/nrnunits.lib" SUFFIX;
-#endif
 static char* unames[NDIM];
 double getflt();
 void fperr(int);
@@ -144,15 +136,7 @@ static const char* pc;
 
 static int Getc(FILE* inp) {
     if (inp != stdin) {
-#if MAC
-        int c = getc(inp);
-        if (c == '\r') {
-            c = '\n';
-        }
-        return c;
-#else
         return getc(inp);
-#endif
     } else if (pc && *pc) {
         return (int) (*pc++);
     } else {
@@ -1194,7 +1178,7 @@ void nrnunit_dynamic_str(char (&buf)[NRN_BUFSIZE], const char* name, char* u1, c
 #if (defined(LegacyFR) && LegacyFR == 1)
     Sprintf(buf, "static double %s = %g;\n", name, unit_mag());
 #else
-    Sprintf(buf, "static double %s = %.12g;\n", name, unit_mag());
+    Sprintf(buf, "static double %s = %a;\n", name, unit_mag());
 #endif
     unit_pop();
 

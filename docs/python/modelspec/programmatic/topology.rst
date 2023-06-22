@@ -38,7 +38,7 @@ This document describes the construction and manipulation of a stylized topology
 
             soma = h.Section(name='soma')
             axon = h.Section(name='axon')
-            dend = [h.Section(name='dend[%d]' % i) for i in range(3)]
+            dend = [h.Section(name=f'dend[{i}]') for i in range(3)]
             for sec in h.allsec():
                 print(sec)
 
@@ -63,7 +63,7 @@ This document describes the construction and manipulation of a stylized topology
             class MyCell:
                 _ids = itertools.count(0)
                 def __repr__(self):
-                    return 'MyCell[%d]' % self.id
+                    return f'MyCell[{self.id}]'
                 def __init__(self):
                     self.id = self._ids.next()
                     # create the morphology and connect it
@@ -129,7 +129,7 @@ This document describes the construction and manipulation of a stylized topology
             from neuron import h, gui
             soma = h.Section(name='soma')
             axon = h.Section(name='axon')
-            dend = [h.Section(name='dend[%d]' % i) for i in range(3)]
+            dend = [h.Section(name=f'dend[{i}]') for i in range(3)]
             for sec in dend:
                 sec.connect(soma(1), 0)
 
@@ -157,7 +157,7 @@ This document describes the construction and manipulation of a stylized topology
         .. code::
 
             from neuron import h
-            sl = [h.Section(name="s_%d" % i) for i in range(4)]
+            sl = [h.Section(name=f"s_{i}") for i in range(4)]
             for i, sec in enumerate(sl[1:]):
                 sec.connect(sl[i](1))
 
@@ -549,7 +549,7 @@ This document describes the construction and manipulation of a stylized topology
             from neuron import h, gui
             soma = h.Section(name='soma')
             axon = h.Section(name='axon')
-            dend = [h.Section(name='dend[%d]' % i) for i in range(3)]
+            dend = [h.Section(name=f'dend[{i}]') for i in range(3)]
             for section in h.allsec():
                 if h.issection('s.*', sec=section):
                     print(section)
@@ -675,7 +675,7 @@ This document describes the construction and manipulation of a stylized topology
 
             for sec in h.allsec():
                 for seg in sec:
-                    print('%s(%g)' % (h.secname(sec=sec), seg.x))
+                    print(f'{h.secname(sec=sec)}({seg.x})')  # same as print(seg)
 
          
 

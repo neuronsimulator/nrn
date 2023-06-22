@@ -43,6 +43,7 @@ the handling of v_structure_change as long as possible.
 #include <mutex>
 #include <thread>
 #include <utility>
+#include <variant>
 #include <vector>
 #include <iostream>
 
@@ -59,16 +60,13 @@ void (*nrn_mk_transfer_thread_data_)();
 static int busywait_;
 static int busywait_main_;
 extern void nrn_thread_error(const char*);
-extern void nrn_old_thread_save();
 extern double nrn_timeus();
 extern void (*nrn_multisplit_setup_)();
 extern int v_structure_change;
 extern int diam_changed;
 extern Section** secorder;
 extern int section_count;
-extern "C" {
 extern void spDestroy(char*);
-}
 
 void nrn_mk_table_check();
 static std::vector<std::pair<int, NrnThreadMembList*>> table_check_;
@@ -89,7 +87,6 @@ bool interpreter_locked{false};
 std::unique_ptr<std::mutex> interpreter_lock;
 
 enum struct worker_flag { execute_job, exit, wait };
-using worker_job_t = void* (*) (NrnThread*);
 
 // With C++17 and alignment-aware allocators we could do something like
 // alignas(std::hardware_destructive_interference_size) here and then use a
@@ -97,9 +94,34 @@ using worker_job_t = void* (*) (NrnThread*);
 // that std::hardware_destructive_interference_size is not very well supported.
 struct worker_conf_t {
     /* for nrn_solve etc.*/
-    worker_job_t job{};
+    std::variant<std::monostate,
+                 worker_job_t,
+                 std::pair<worker_job_with_token_t, neuron::model_sorted_token const*>>
+        job{};
     std::size_t thread_id{};
     worker_flag flag{worker_flag::wait};
+    friend bool operator==(worker_conf_t const& lhs, worker_conf_t const& rhs) {
+        return lhs.flag == rhs.flag && lhs.thread_id == rhs.thread_id && lhs.job == rhs.job;
+    }
+};
+
+struct worker_kernel {
+    worker_kernel(std::size_t thread_id)
+        : m_thread_id{thread_id} {}
+    void operator()(std::monostate const&) const {
+        throw std::runtime_error("worker_kernel");
+    }
+    void operator()(worker_job_t job) const {
+        job(nrn_threads + m_thread_id);
+    }
+    void operator()(
+        std::pair<worker_job_with_token_t, neuron::model_sorted_token const*> const& pair) const {
+        auto const& [job, token_ptr] = pair;
+        job(*token_ptr, nrn_threads[m_thread_id]);
+    }
+
+  private:
+    std::size_t m_thread_id{};
 };
 
 void worker_main(worker_conf_t* my_wc_ptr,
@@ -122,13 +144,12 @@ void worker_main(worker_conf_t* my_wc_ptr,
                 return;
             }
             assert(wc.flag == worker_flag::execute_job);
-            (*wc.job)(nrn_threads + wc.thread_id);
+            std::visit(worker_kernel{wc.thread_id}, wc.job);
             wc.flag = worker_flag::wait;
-            wc.job = nullptr;
+            wc.job = std::monostate{};
             cond.notify_one();
         } else {
-            worker_job_t job{};
-            NrnThread* job_arg{};
+            worker_conf_t conf{};
             {
                 // Wait until we have a job to execute or we have been told to
                 // shut down.
@@ -142,11 +163,10 @@ void worker_main(worker_conf_t* my_wc_ptr,
                 assert(wc.flag == worker_flag::execute_job);
                 // Save the workload + argument to local variables before
                 // releasing the mutex.
-                job = wc.job;
-                job_arg = nrn_threads + wc.thread_id;
+                conf = wc;
             }
             // Execute the workload without keeping the mutex
-            (*job)(job_arg);
+            std::visit(worker_kernel{conf.thread_id}, conf.job);
             // Signal that the work is completed and this thread is becoming
             // idle
             {
@@ -154,9 +174,9 @@ void worker_main(worker_conf_t* my_wc_ptr,
                 // Make sure we don't accidentally overwrite an exit signal from
                 // the coordinating thread.
                 if (wc.flag == worker_flag::execute_job) {
-                    assert(wc.job == job);
+                    assert(wc == conf);
                     wc.flag = worker_flag::wait;
-                    wc.job = nullptr;
+                    wc.job = std::monostate{};
                 }
             }
             // Notify the coordinating thread.
@@ -177,8 +197,7 @@ struct worker_threads_t {
         // worker_threads[0] does not appear to be used
         m_worker_threads.emplace_back();
         for (std::size_t i = 1; i < nrn_nthread; ++i) {
-            m_wc[i].flag = worker_flag::wait;
-            m_wc[i].job = nullptr;
+            new (m_wc + i) worker_conf_t{};
             m_wc[i].thread_id = i;
             m_worker_threads.emplace_back(worker_main, &(m_wc[i]), &(m_cond[i]), &(m_mut[i]));
         }
@@ -210,7 +229,7 @@ struct worker_threads_t {
         free(std::exchange(m_wc, nullptr));
     }
 
-    void assign_job(std::size_t worker, void* (*job)(NrnThread*) ) {
+    void assign_job(std::size_t worker, worker_job_t job) {
         assert(worker > 0);
         auto& cond = m_cond[worker];
         auto& wc = m_wc[worker];
@@ -218,9 +237,28 @@ struct worker_threads_t {
             std::unique_lock<std::mutex> lock{m_mut[worker]};
             // Wait until the worker is idle.
             cond.wait(lock, [&wc] { return wc.flag == worker_flag::wait; });
-            assert(!wc.job);
+            assert(std::holds_alternative<std::monostate>(wc.job));
             assert(wc.thread_id == worker);
             wc.job = job;
+            wc.flag = worker_flag::execute_job;
+        }
+        // Notify the worker that it has new work to do.
+        cond.notify_one();
+    }
+
+    void assign_job(std::size_t worker,
+                    neuron::model_sorted_token const& cache_token,
+                    worker_job_with_token_t job) {
+        assert(worker > 0);
+        auto& cond = m_cond[worker];
+        auto& wc = m_wc[worker];
+        {
+            std::unique_lock<std::mutex> lock{m_mut[worker]};
+            // Wait until the worker is idle.
+            cond.wait(lock, [&wc] { return wc.flag == worker_flag::wait; });
+            assert(std::holds_alternative<std::monostate>(wc.job));
+            assert(wc.thread_id == worker);
+            wc.job = std::make_pair(job, &cache_token);
             wc.flag = worker_flag::execute_job;
         }
         // Notify the worker that it has new work to do.
@@ -267,6 +305,14 @@ void nrn_threads_create(int n, bool parallel) {
     NrnThread* nt;
     if (nrn_nthread != n) {
         worker_threads.reset();
+        // If the number of threads changes then the node storage data is
+        // implicitly no longer sorted, as "sorted" includes being partitioned
+        // by NrnThread. Similarly for the mechanism data then "sorted" includes
+        // being partitioned by thread.
+        // TODO: consider if we can be smarter about how/when we call
+        // mark_as_unsorted() for different containers.
+        neuron::model().node_data().mark_as_unsorted();
+        neuron::model().apply_to_mechanisms([](auto& mech_data) { mech_data.mark_as_unsorted(); });
         nrn_threads_free();
         for (i = 0; i < nrn_nthread; ++i) {
             nt = nrn_threads + i;
@@ -293,12 +339,7 @@ void nrn_threads_create(int n, bool parallel) {
                 for (j = 0; j < BEFORE_AFTER_SIZE; ++j) {
                     nt->tbl[j] = (NrnThreadBAList*) 0;
                 }
-                nt->_actual_rhs = 0;
-                nt->_actual_d = 0;
-                nt->_actual_a = 0;
-                nt->_actual_b = 0;
-                nt->_actual_v = 0;
-                nt->_actual_area = 0;
+                nt->_sp13_rhs = nullptr;
                 nt->_v_parent_index = 0;
                 nt->_v_node = 0;
                 nt->_v_parent = 0;
@@ -308,7 +349,7 @@ void nrn_threads_create(int n, bool parallel) {
                 nt->_sp13mat = 0;
                 nt->_ctime = 0.0;
                 nt->_vcv = 0;
-                nt->_nrn_fast_imem = 0;
+                nt->_node_data_offset = 0;
             }
         }
         v_structure_change = 1;
@@ -333,83 +374,13 @@ void nrn_threads_create(int n, bool parallel) {
 #endif
 }
 
-/*
-Avoid invalidating pointers to i_membrane_ unless the number of compartments
-in a thread has changed.
-*/
-static int fast_imem_nthread_ = 0;
-static int* fast_imem_size_ = NULL;
-static _nrn_Fast_Imem* fast_imem_;
-static std::vector<double*> imem_defer_free_;
-
-void nrn_imem_defer_free(double* pd) {
-    if (pd) {
-        imem_defer_free_.push_back(pd);
-    } else {
-        for (const auto& pd: imem_defer_free_) {
-            free(pd);
-        }
-        imem_defer_free_.clear();
-    }
-}
-
-static void fast_imem_free() {
-    int i;
-    for (i = 0; i < nrn_nthread; ++i) {
-        nrn_threads[i]._nrn_fast_imem = NULL;
-    }
-    for (i = 0; i < fast_imem_nthread_; ++i) {
-        if (fast_imem_size_[i] > 0) {
-            nrn_imem_defer_free(fast_imem_[i]._nrn_sav_rhs);
-            free(fast_imem_[i]._nrn_sav_d);
-        }
-    }
-    if (fast_imem_nthread_) {
-        free(fast_imem_size_);
-        free(fast_imem_);
-        fast_imem_nthread_ = 0;
-        fast_imem_size_ = NULL;
-        fast_imem_ = NULL;
-    }
-}
-
-static void fast_imem_alloc() {
-    int i;
-    if (fast_imem_nthread_ != nrn_nthread) {
-        fast_imem_free();
-        fast_imem_nthread_ = nrn_nthread;
-        fast_imem_size_ = static_cast<int*>(ecalloc(nrn_nthread, sizeof(int)));
-        fast_imem_ = (_nrn_Fast_Imem*) ecalloc(nrn_nthread, sizeof(_nrn_Fast_Imem));
-    }
-    for (i = 0; i < nrn_nthread; ++i) {
-        NrnThread* nt = nrn_threads + i;
-        int n = nt->end;
-        _nrn_Fast_Imem* fi = fast_imem_ + i;
-        if (n != fast_imem_size_[i]) {
-            if (fast_imem_size_[i] > 0) {
-                nrn_imem_defer_free(fi->_nrn_sav_rhs);
-                free(fi->_nrn_sav_d);
-            }
-            if (n > 0) {
-                CACHELINE_CALLOC(fi->_nrn_sav_rhs, double, n);
-                CACHELINE_CALLOC(fi->_nrn_sav_d, double, n);
-            }
-            fast_imem_size_[i] = n;
-        }
-    }
-}
-
 void nrn_fast_imem_alloc() {
-    if (nrn_use_fast_imem) {
-        int i;
-        fast_imem_alloc();
-        for (i = 0; i < nrn_nthread; ++i) {
-            nrn_threads[i]._nrn_fast_imem = fast_imem_ + i;
-        }
-    } else {
-        fast_imem_free();
-        nrn_imem_defer_free(nullptr);
-    }
+    // Make sure that storage for the fast_imem calculation exists/is destroyed according to
+    // nrn_use_fast_imem
+    neuron::model()
+        .node_data()
+        .set_field_status<neuron::container::Node::field::FastIMemSavD,
+                          neuron::container::Node::field::FastIMemSavRHS>(nrn_use_fast_imem);
 }
 
 void nrn_threads_free() {
@@ -425,16 +396,16 @@ void nrn_threads_free() {
             if (memb_func[tml->index].hoc_mech) {
                 free((char*) ml->prop);
             } else {
-                free((char*) ml->_data);
+                // free((char*) ml->_data);
                 free((char*) ml->pdata);
             }
             if (ml->_thread) {
                 if (memb_func[tml->index].thread_cleanup_) {
                     (*memb_func[tml->index].thread_cleanup_)(ml->_thread);
                 }
-                free((char*) ml->_thread);
+                delete[] ml->_thread;
             }
-            free((char*) ml);
+            delete ml;
             free((char*) tml);
         }
         if (nt->_ml_list) {
@@ -453,22 +424,6 @@ void nrn_threads_free() {
         if (nt->userpart == 0 && nt->roots) {
             hoc_l_freelist(&nt->roots);
             nt->ncell = 0;
-        }
-        if (nt->_actual_rhs) {
-            free((char*) nt->_actual_rhs);
-            nt->_actual_rhs = 0;
-        }
-        if (nt->_actual_d) {
-            free((char*) nt->_actual_d);
-            nt->_actual_d = 0;
-        }
-        if (nt->_actual_a) {
-            free((char*) nt->_actual_a);
-            nt->_actual_a = 0;
-        }
-        if (nt->_actual_b) {
-            free((char*) nt->_actual_b);
-            nt->_actual_b = 0;
         }
         if (nt->_v_parent_index) {
             free((char*) nt->_v_parent_index);
@@ -492,11 +447,6 @@ void nrn_threads_free() {
             spDestroy(nt->_sp13mat);
             nt->_sp13mat = 0;
         }
-        nt->_nrn_fast_imem = NULL;
-        /* following freed by nrn_recalc_node_ptrs */
-        nrn_old_thread_save();
-        nt->_actual_v = 0;
-        nt->_actual_area = 0;
         nt->end = 0;
         nt->ncell = 0;
         nt->_vcv = 0;
@@ -545,22 +495,20 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
             tml->next = (NrnThreadMembList*) 0;
             *ptml = tml;
             ptml = &tml->next;
-            CACHELINE_ALLOC(tml->ml, Memb_list, 1);
+            tml->ml = new Memb_list{i};
             if (i == EXTRACELL) {
                 _nt->_ecell_memb_list = tml->ml;
             }
             mlmap[i] = tml->ml;
             CACHELINE_ALLOC(tml->ml->nodelist, Node*, mlcnt[i]);
             CACHELINE_ALLOC(tml->ml->nodeindices, int, mlcnt[i]);
-            if (memb_func[i].hoc_mech) {
-                tml->ml->prop = (Prop**) emalloc(mlcnt[i] * sizeof(Prop*));
-            } else {
-                CACHELINE_ALLOC(tml->ml->_data, double*, mlcnt[i]);
+            tml->ml->prop = new Prop*[mlcnt[i]];  // used for ode_map
+            if (!memb_func[i].hoc_mech) {
                 CACHELINE_ALLOC(tml->ml->pdata, Datum*, mlcnt[i]);
             }
             tml->ml->_thread = (Datum*) 0;
             if (memb_func[i].thread_size_) {
-                tml->ml->_thread = (Datum*) ecalloc(memb_func[i].thread_size_, sizeof(Datum));
+                tml->ml->_thread = new Datum[memb_func[i].thread_size_]{};
                 if (memb_func[tml->index].thread_mem_init_) {
                     (*memb_func[tml->index].thread_mem_init_)(tml->ml->_thread);
                 }
@@ -582,10 +530,9 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
                 Memb_list* ml = mlmap[p->_type];
                 ml->nodelist[ml->nodecount] = nd;
                 ml->nodeindices[ml->nodecount] = nd->v_node_index;
-                if (memb_func[p->_type].hoc_mech) {
-                    ml->prop[ml->nodecount] = p;
-                } else {
-                    ml->_data[ml->nodecount] = p->param;
+                ml->prop[ml->nodecount] = p;
+                if (!memb_func[p->_type].hoc_mech) {
+                    // ml->_data[ml->nodecount] = p->param;
                     ml->pdata[ml->nodecount] = p->dparam;
                 }
                 ++ml->nodecount;
@@ -680,6 +627,14 @@ void nrn_thread_memblist_setup() {
     for (it = 0; it < nrn_nthread; ++it) {
         thread_memblist_setup(nrn_threads + it, mlcnt, vmap);
     }
+    // Right now the sorting method updates the storage offsets inside the
+    // Memb_list* structures owned by NrnThreads. This is a bit of a design
+    // failure, as those offsets should have a lifetime linked to the sorted
+    // status of the underlying storage, i.e. they should be part of a cache
+    // structure. In any case, because we have just created new Memb_list then
+    // their offsets are empty, so we need to trigger a re-sort before they are
+    // used.
+    neuron::model().apply_to_mechanisms([](auto& mech_data) { mech_data.mark_as_unsorted(); });
     nrn_fast_imem_alloc();
     free((char*) vmap);
     free((char*) mlcnt);
@@ -726,7 +681,7 @@ void reorder_secorder() {
         for (isec = order - _nt->ncell; isec < order; ++isec) {
             sec = secorder[isec];
             /* to make it easy to fill in PreSyn.nt_*/
-            sec->prop->dparam[9] = _nt;
+            sec->prop->dparam[9] = {neuron::container::do_not_search, _nt};
             for (j = 0; j < sec->nnode; ++j) {
                 nd = sec->pnode[j];
                 nd->_nt = _nt;
@@ -740,10 +695,6 @@ void reorder_secorder() {
             }
         }
         _nt->end = inode;
-        CACHELINE_CALLOC(_nt->_actual_rhs, double, inode);
-        CACHELINE_CALLOC(_nt->_actual_d, double, inode);
-        CACHELINE_CALLOC(_nt->_actual_a, double, inode);
-        CACHELINE_CALLOC(_nt->_actual_b, double, inode);
         CACHELINE_CALLOC(_nt->_v_node, Node*, inode);
         CACHELINE_CALLOC(_nt->_v_parent, Node*, inode);
         CACHELINE_CALLOC(_nt->_v_parent_index, int, inode);
@@ -777,7 +728,7 @@ void reorder_secorder() {
         for (isec = order - _nt->ncell; isec < order; ++isec) {
             sec = secorder[isec];
             /* to make it easy to fill in PreSyn.nt_*/
-            sec->prop->dparam[9] = _nt;
+            sec->prop->dparam[9] = {neuron::container::do_not_search, _nt};
             for (j = 0; j < sec->nnode; ++j) {
                 nd = sec->pnode[j];
                 nd->_nt = _nt;
@@ -819,14 +770,6 @@ void reorder_secorder() {
         /* classical order abandoned */
         (*nrn_multisplit_setup_)();
     }
-    /* make the Nodes point to the proper d, rhs */
-    FOR_THREADS(_nt) {
-        for (j = 0; j < _nt->end; ++j) {
-            Node* nd = _nt->_v_node[j];
-            nd->_d = _nt->_actual_d + j;
-            nd->_rhs = _nt->_actual_rhs + j;
-        }
-    }
     /* because the d,rhs changed, if multisplit is used we need to update
       the reduced tree gather/scatter pointers
     */
@@ -862,11 +805,11 @@ void nrn_mk_table_check() {
     }
 }
 
-void nrn_thread_table_check() {
+void nrn_thread_table_check(neuron::model_sorted_token const& sorted_token) {
     for (auto [id, tml]: table_check_) {
         Memb_list* ml = tml->ml;
-        (*memb_func[tml->index].thread_table_check_)(
-            ml->_data[0], ml->pdata[0], ml->_thread, nrn_threads + id, tml->index);
+        memb_func[tml->index].thread_table_check_(
+            ml, 0, ml->pdata[0], ml->_thread, nrn_threads + id, tml->index, sorted_token);
     }
 }
 
@@ -889,7 +832,7 @@ void nrn_hoc_unlock() {
 #endif
 }
 
-void nrn_multithread_job(void* (*job)(NrnThread*) ) {
+void nrn_multithread_job(worker_job_t job) {
 #if NRN_ENABLE_THREADS
     if (worker_threads) {
         nrn_inthread_ = 1;
@@ -908,6 +851,25 @@ void nrn_multithread_job(void* (*job)(NrnThread*) ) {
     (*job)(nrn_threads);
 }
 
+void nrn_multithread_job(neuron::model_sorted_token const& cache_token,
+                         worker_job_with_token_t job) {
+#if NRN_ENABLE_THREADS
+    if (worker_threads) {
+        nrn_inthread_ = 1;
+        for (std::size_t i = 1; i < nrn_nthread; ++i) {
+            worker_threads->assign_job(i, cache_token, job);
+        }
+        job(cache_token, nrn_threads[0]);
+        worker_threads->wait();
+        nrn_inthread_ = 0;
+        return;
+    }
+#endif
+    for (std::size_t i = 1; i < nrn_nthread; ++i) {
+        job(cache_token, nrn_threads[i]);
+    }
+    job(cache_token, nrn_threads[0]);
+}
 
 void nrn_onethread_job(int i, void* (*job)(NrnThread*) ) {
     assert(i >= 0 && i < nrn_nthread);
@@ -953,6 +915,25 @@ void nrn_thread_partition(int it, Object* sl) {
         nt->roots = (hoc_List*) sl->u.this_pointer;
     }
     v_structure_change = 1;
+}
+
+Object** nrn_get_thread_partition(int it) {
+    assert(it >= 0 && it < nrn_nthread);
+    NrnThread* nt = nrn_threads + it;
+    if (!nt->roots) {
+        v_setup_vectors();
+    }
+    // nt->roots is a hoc_List of Section*. Create a new SectionList and copy
+    // those Section* into it and ref them.
+    hoc_List* sl = hoc_l_newlist();
+    Object** po = hoc_temp_objvar(hoc_lookup("SectionList"), sl);
+    hoc_Item* qsec;
+    ITERATE(qsec, nt->roots) {
+        Section* sec = hocSEC(qsec);
+        section_ref(sec);
+        hoc_l_lappendsec(sl, sec);
+    }
+    return po;
 }
 
 int nrn_user_partition() {
@@ -1066,4 +1047,55 @@ int nrn_how_many_processors() {
 
 std::size_t nof_worker_threads() {
     return worker_threads.get() ? worker_threads->num_workers() : 0;
+}
+
+// Need to be able to use these methods while the model is frozen, so avoid calling the
+// zero-parameter get().
+double* NrnThread::node_a_storage() {
+    return &neuron::model().node_data().get<neuron::container::Node::field::AboveDiagonal>(
+        _node_data_offset);
+}
+
+double* NrnThread::node_area_storage() {
+    return &neuron::model().node_data().get<neuron::container::Node::field::Area>(
+        _node_data_offset);
+}
+
+double* NrnThread::node_b_storage() {
+    return &neuron::model().node_data().get<neuron::container::Node::field::BelowDiagonal>(
+        _node_data_offset);
+}
+
+double* NrnThread::node_d_storage() {
+    return &neuron::model().node_data().get<neuron::container::Node::field::Diagonal>(
+        _node_data_offset);
+}
+
+double* NrnThread::node_rhs_storage() {
+    return &neuron::model().node_data().get<neuron::container::Node::field::RHS>(_node_data_offset);
+}
+
+double* NrnThread::node_sav_d_storage() {
+    auto& node_data = neuron::model().node_data();
+    using Tag = neuron::container::Node::field::FastIMemSavD;
+    if (node_data.field_active<Tag>()) {
+        return &node_data.get<Tag>(_node_data_offset);
+    } else {
+        return nullptr;
+    }
+}
+
+double* NrnThread::node_sav_rhs_storage() {
+    auto& node_data = neuron::model().node_data();
+    using Tag = neuron::container::Node::field::FastIMemSavRHS;
+    if (node_data.field_active<Tag>()) {
+        return &node_data.get<Tag>(_node_data_offset);
+    } else {
+        return nullptr;
+    }
+}
+
+double* NrnThread::node_voltage_storage() {
+    return &neuron::model().node_data().get<neuron::container::Node::field::Voltage>(
+        _node_data_offset);
 }

@@ -112,21 +112,17 @@ TQueue::~TQueue() {
 }
 
 void TQueue::print() {
-#if FAST_LEAST
     if (least_) {
         prnt(least_, 0);
     }
-#endif
     spscan(prnt, nil, sptree_);
     spscan(prnt, nil, sptree2_);
 }
 
 void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
-#if FAST_LEAST
     if (least_) {
         f(least_, 0);
     }
-#endif
     spscan(f, nil, sptree_);
     spscan(f, nil, sptree2_);
 }

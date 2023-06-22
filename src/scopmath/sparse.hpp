@@ -645,21 +645,21 @@ ensures all elements needed are present */
  *   varord[el->row] < varord[el->c_right->row]
  *   varord[el->col] < varord[el->r_down->col]
  */
-template <typename Array>
+template <typename Array, typename IndexArray>
 int sparse(void** v,
            int n,
-           int* s,
-           int* d,
+           IndexArray s,
+           IndexArray d,
            Array p,
            double* t,
            double dt,
            int (*fun)(),
            double** prhs,
            int linflag) {
-    auto const s_ = [&p, s](auto arg) -> auto& {
+    auto const s_ = [&p, &s](auto arg) -> auto& {
         return p[s[arg]];
     };
-    auto const d_ = [&p, d](auto arg) -> auto& {
+    auto const d_ = [&p, &d](auto arg) -> auto& {
         return p[d[arg]];
     };
     int i, j, ierr;
@@ -714,9 +714,9 @@ int sparse(void** v,
 }
 
 /* for solving ax=b */
-template <typename Array>
-int _cvode_sparse(void** v, int n, int* x, Array p, int (*fun)(), double** prhs) {
-    auto const x_ = [&p, x](auto arg) -> auto& {
+template <typename Array, typename IndexArray>
+int _cvode_sparse(void** v, int n, IndexArray x, Array p, int (*fun)(), double** prhs) {
+    auto const x_ = [&p, &x](auto arg) -> auto& {
         return p[x[arg]];
     };
     int i, j, ierr;

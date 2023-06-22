@@ -2,10 +2,9 @@ from .rxdException import RxDException
 from neuron import h
 
 try:
-    from . import geometry3d, dimension3
+    from . import geometry3d
 except:
     pass
-import copy
 import itertools
 import numpy
 from . import geometry as geo
@@ -60,11 +59,11 @@ class _c_region:
         self.num_params = 0
         self.num_ecs_species = 0
         self.num_ecs_params = 0
-        self._ecs_react_species = list()
-        self._ecs_react_params = list()
-        self._react_species = list()
-        self._react_params = list()
-        self._react_regions = dict()
+        self._ecs_react_species = []
+        self._ecs_react_params = []
+        self._react_species = []
+        self._react_params = []
+        self._react_regions = {}
         self._initialized = False
         self.location_index = None
         self.ecs_location_index = None
@@ -177,8 +176,8 @@ class _c_region:
         )
 
         # Set the local ids of the regions and species involved in the reactions
-        self._ecs_species_ids = dict()
-        self._ecs_params_ids = dict()
+        self._ecs_species_ids = {}
+        self._ecs_params_ids = {}
         for sid, s in enumerate(self._ecs_react_species):
             self._ecs_species_ids[s()._grid_id] = sid
         for sid, s in enumerate(self._ecs_react_params):
@@ -205,9 +204,9 @@ class _c_region:
         from .species import SpeciesOnExtracellular, SpeciesOnRegion, ParameterOnRegion
 
         # Set the local ids of the regions and species involved in the reactions
-        self._species_ids = dict()
-        self._params_ids = dict()
-        self._region_ids = dict()
+        self._species_ids = {}
+        self._params_ids = {}
+        self._region_ids = {}
         self._react_species.sort(
             key=lambda sp: sp()._species()._id
             if isinstance(sp(), SpeciesOnRegion)
@@ -384,25 +383,31 @@ class Extracellular:
                 ecs_permeability = h.Vector(parsed_value.flatten())
             else:
                 ecs_permeability = h.Vector(parsed_value.flatten()).pow(-2)
-        elif hasattr(value, "_extracellular_instances") or hasattr(
-            self, "_extracellular"
+        elif hasattr(value, "_extracellular_regions") or hasattr(
+            value, "_extracellular"
         ):
             # Check Species or SpeciesOnExtracellular is defined on this region
             if (
-                hasattr(value, "_extracellular_instances")
-                and self not in value._extracellular_instances
+                hasattr(value, "_extracellular_regions")
+                and self not in value._extracellular_regions
             ) or (
                 (
                     hasattr(value, "_extracellular")
                     and value._extracellular()
-                    and value._extracellular() != self
+                    and value._extracellular()._region != self
                 )
             ):
                 raise RxDException(
-                    "permeability can be set to a State or Parameter, but it must be defined on this Extracellular region %r"
-                    % self
+                    f"permeability can be set to a State or Parameter, but it must be defined on this Extracellular region {self}"
                 )
             else:
+                # make sure permeability has been initialized
+                if hasattr(value, "_extracellular_regions") and not hasattr(
+                    value, "_extracellular_instances"
+                ):
+                    initializer._do_init()
+                    value._finitialize()
+
                 if is_permeability:
                     parsed_value = value
                     ecs_permeability = None
@@ -455,25 +460,30 @@ class Extracellular:
             warnings.warn(
                 "Dynamic changes to the volume fraction does not change the concentrations of species already in the region."
             )
-        elif hasattr(volume_fraction, "_extracellular_instances") or hasattr(
-            self, "_extracellular"
+        elif hasattr(volume_fraction, "_extracellular_regions") or hasattr(
+            volume_fraction, "_extracellular"
         ):
             # Check Species or SpeciesOnExtracellular is defined on this region
             if (
-                hasattr(volume_fraction, "_extracellular_instances")
-                and self not in volume_fraction._extracellular_instances
+                hasattr(volume_fraction, "_extracellular_regions")
+                and self not in volume_fraction._extracellular_regions
             ) or (
                 (
                     hasattr(volume_fraction, "_extracellular")
                     and volume_fraction._extracellular()
-                    and volume_fraction._extracellular() != self
+                    and volume_fraction._extracellular()._region != self
                 )
             ):
                 raise RxDException(
-                    "volume fraction can be set to a State or Parameter, but it must be defined on this Extracellular region %r"
-                    % self
+                    f"volume fraction can be set to a State or Parameter, but it must be defined on this Extracellular region {self}"
                 )
             else:
+                # make sure volume_fraction has been initialized
+                if hasattr(volume_fraction, "_extracellular_regions") and not hasattr(
+                    volume_fraction, "_extracellular_instances"
+                ):
+                    initializer._do_init()
+                    volume_fraction._finitialize()
                 alpha = volume_fraction
                 ecs_alpha = None
                 warnings.warn(
@@ -650,7 +660,7 @@ class Region(object):
         nrn_region = self.nrn_region
 
         # TODO: self.dx needs to be removed... eventually that should be on a per-section basis
-        #       right now, it has to be consistent but 2this is unenforced
+        #       right now, it has to be consistent but this is unenforced
         if self.dx is None:
             self.dx = 0.25
         dx = self.dx
@@ -666,9 +676,7 @@ class Region(object):
             elif dim == 3:
                 self._secs3d.append(sec)
             else:
-                raise RxDException(
-                    "unknown dimension: %r in section %r" % (dim, sec.name())
-                )
+                raise RxDException(f"unknown dimension: {dim} in section {sec}")
 
         # TODO: I used to not sort secs in 3D if hasattr(self._secs, 'sections'); figure out why
         self._secs = _sort_secs(self._secs)
@@ -678,8 +686,7 @@ class Region(object):
         if any(self._secs3d):
             if not (hasattr(self._geometry, "volumes3d")):
                 raise RxDException(
-                    'selected geometry (%r) does not support 3d mode (no "volumes3d" attr)'
-                    % self._geometry
+                    f'selected geometry ({self._geometry}) does not support 3d mode (no "volumes3d" attr)'
                 )
 
             if nrn_region == "o":
@@ -775,9 +782,10 @@ class Region(object):
             nx = x - sec.x3d(n - 2)
             ny = y - sec.y3d(n - 2)
             nz = z - sec.z3d(n - 2)
-            x -= dx * nx / (nx**2 + ny**2 + nz**2) ** 0.5
-            y -= dx * ny / (nx**2 + ny**2 + nz**2) ** 0.5
-            z -= dx * nz / (nx**2 + ny**2 + nz**2) ** 0.5
+            scale = dx / (nx**2 + ny**2 + nz**2) ** 0.5
+            x -= nx * scale
+            y -= ny * scale
+            z -= nz * scale
 
         else:
             raise RxDException("should never get here")
@@ -791,7 +799,6 @@ class Region(object):
         # x, y, z = x * x1 + (1 - x) * x0, x * y1 + (1 - x) * y0, x * z1 + (1 - x) * z1
         r = sec(position).diam * 0.5 + self.dx * 3**0.5
         plane_of_disc = geometry3d.graphicsPrimitives.Plane(x, y, z, nx, ny, nz)
-        potential_coordinates = []
 
         xs = numpy.arange(
             self._mesh_grid["xlo"] - self._mesh_grid["dx"],
@@ -862,7 +869,7 @@ class Region(object):
             self._secs = secs
         else:
             self._secs = [secs]
-        if secs == [] or secs is None:
+        if not secs:
             warnings.warn(
                 "Warning: No sections. Region 'secs' should be a list of NEURON sections."
             )
@@ -871,8 +878,7 @@ class Region(object):
         for sec in self._secs:
             if not isinstance(sec, Section):
                 raise RxDException(
-                    "Error: Region 'secs' must be a list of NEURON sections, %r is not a valid NEURON section."
-                    % sec
+                    f"Error: Region 'secs' must be a list of NEURON sections, {sec} is not a valid NEURON section."
                 )
         self._secs = h.SectionList(self._secs)
         self.nrn_region = nrn_region
@@ -956,7 +962,7 @@ class Region(object):
 
     @property
     def _semi_compile(self):
-        return "r%d" % self._id
+        return f"r{self._id}"
 
     @property
     def secs(self):
@@ -988,8 +994,7 @@ class Region(object):
             for sec in secs:
                 if not isinstance(sec, Section):
                     raise RxDException(
-                        "Error: Region 'secs' must be a list of NEURON sections, %r is not a valid NEURON section."
-                        % sec
+                        f"Error: Region 'secs' must be a list of NEURON sections, {sec} is not a valid NEURON section."
                     )
             self._secs = h.SectionList(secs)
         else:

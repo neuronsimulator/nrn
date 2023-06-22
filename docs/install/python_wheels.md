@@ -14,15 +14,14 @@ You can find instructions on how to setup Docker on Linux [here](https://docs.do
 
 ### NEURON Docker Image Workflow
 
-When required (i.e. update packages, add new software), `NEURON maintainers` are in charge of updating the NEURON docker
-images published on Docker Hub under: 
-* [neuronsimulator/neuron_wheel](https://hub.docker.com/r/neuronsimulator/neuron_wheel)
-* [neuronsimulator/neuron_wheel_gpu](https://hub.docker.com/r/neuronsimulator/neuron_wheel_gpu)
+When required (i.e. update packages, add new software), `NEURON maintainers` are in charge of
+updating the NEURON docker images published on Docker Hub under
+[neuronsimulator/neuron_wheel](https://hub.docker.com/r/neuronsimulator/neuron_wheel).
 
 Azure pipelines pull this image off DockerHub for Linux wheels building.
 
-Updating and publishing the public images are done by a manual process that relies on a `Docker file` 
-(see [packaging/python/Dockerfile](../../packaging/python/Dockerfile) and [packaging/python/Dockerfile_gpu](../../packaging/python/Dockerfile_gpu)).
+Updating and publishing the public images are done by a manual process that relies on a
+`Docker file`  (see [packaging/python/Dockerfile](../../packaging/python/Dockerfile)).
 Any official update of these files shall imply a PR reviewed and merged before `DockerHub` publishing.
 
 All wheels built on Azure are:
@@ -30,7 +29,6 @@ All wheels built on Azure are:
 * Published to `Pypi.org` as
   * `neuron-nightly` -> when the pipeline is launched in CRON mode
   * `neuron-x.y.z` -> when the pipeline is manually triggered for release `x.y.z`
-  * additionally, for Linux only: `neuron-gpu-nightly` and `neuron-gpu-x.y.z`
 * Stored as `Azure artifacts` in the Azure pipeline for every run.
 
 Refer to the following image for the NEURON Docker Image workflow: 
@@ -42,13 +40,12 @@ After making updates to any of the docker files, you can build the image with:
 ```
 cd nrn/packaging/python
 # update Dockerfile
-docker build -t neuronsimulator/neuron_wheel[_gpu]:<tag> .
+docker build -t neuronsimulator/neuron_wheel:<tag> .
 ```
 where `<tag>` is:
 * `latest-x86_64` or `latest-aarch64` for official publishing on respective platforms. For `master`, we are using `latest-gcc9-x86_64` and `latest-gcc9-aarch64` (see [Use GCC9 for building wheels #1971](https://github.com/neuronsimulator/nrn/pull/1971)). 
-* `nvhpc-X.Y-cuda-A.B` for the GPU wheels where `X.Y` is the NVHPC version and `A.B` is the CUDA one. I.e `nvhpc-22.1-cuda-11.5`. For `master` we are using `nvhpc-22.1-cuda-11.5-gcc9`(see [Use GCC9 for building wheels #1971](https://github.com/neuronsimulator/nrn/pull/1971)).
 * `feature-name` for updates (for local testing or for PR testing purposes where you can temporarily publish the tag on DockerHub and tweak Azure CI pipelines to use it - refer to
-  `Job: 'ManyLinuxWheels'` or `Job: 'ManyLinuxGPUWheels'` in [azure-pipelines.yml](../../azure-pipelines.yml) )
+  `Job: 'ManyLinuxWheels'` in [azure-pipelines.yml](../../azure-pipelines.yml) )
 
 If you are building an image for AArch64 i.e. with `latest-aarch64` tag then you additionally pass `--build-arg` argument to docker build command in order to use compatible manylinux image for ARM64 platform (e.g. while building on Apple M1 or QEMU emulation):
 
@@ -62,7 +59,7 @@ docker build -t neuronsimulator/neuron_wheel:latest-aarch64 --build-arg MANYLINU
 In order to push the image and its tag:
 ```
 docker login --username=<username>
-docker push neuronsimulator/neuron_wheel[_gpu]:<tag>
+docker push neuronsimulator/neuron_wheel:<tag>
 ```
 
 ### Using the docker image
@@ -85,12 +82,6 @@ docker run -v $PWD/nrn:/root/nrn -w /root/nrn -it neuronsimulator/neuron_wheel b
 where `$PWD/nrn` is a NEURON repository on the host machine that ends up mounted at `/root/nrn`.
 This is how you can test your NEURON updates inside the NEURON Docker image. 
 Note that `-w` sets the working directory inside the container.
-
-If you want to build wheels with `GPU support` via CoreNEURON, then you have to use the `neuronsimulator/neuron_wheel_gpu` image:
-
-```
-docker run -v $PWD/nrn:/root/nrn -w /root/nrn -it neuronsimulator/neuron_wheel_gpu bash
-```
 
 ### MPI support
 
@@ -139,18 +130,11 @@ You can build the wheel for a specific python version:
 bash packaging/python/build_wheels.bash linux 38    # 38 for Python v3.8
 ```
 
-To build wheels with GPU support you have to pass an additional argument:
-* `coreneuron` : build wheel with `CoreNEURON` support
-* `coreneuron-gpu` : build wheel with `CoreNEURON` and `GPU` support
-
+To build wheels with CoreNEURON support you have to pass an additional argument: `coreneuron`.
 ```
-bash packaging/python/build_wheels.bash linux 38 coreneuron-gpu
-
-# or
-
 bash packaging/python/build_wheels.bash linux 3* coreneuron
 ```
-In the last example we are passing `3*` to build the wheels with `CoreNEURON` support for all python 3 versions.
+Where we are passing `3*` to build the wheels with `CoreNEURON` support for all python 3 versions.
 
 ### macOS
 As mentioned above, for macOS all dependencies have to be available on a system. You have to then clone NEURON repository and execute:
@@ -185,26 +169,6 @@ salloc -A proj16  -N 1 --ntasks-per-node=4 -C "cpu" --time=1:00:00 -p interactiv
 module load unstable python
 bash packaging/python/test_wheels.sh python3.8 wheelhouse/NEURON-7.8.0.236-cp38-cp38m-manylinux1_x86_64.whl
 ```
-
-The GPU wheels can be also tested in same way on the CPU partition. In this case only pre-compiled binaries
-like `nrniv` and `nrniv-core` are tested on  the CPU. In order to test full functionality of GPU wheels we need to
-do the following:
-* Allocate GPU node
-* Load NVHPC compiler
-* Launch `test_wheels.sh`
-
-```
-salloc -A proj16 -N 1 --ntasks-per-node=4 -C "volta" --time=1:00:00 -p prod --partition=prod --exclusive
-module load unstable python nvhpc
-
-bash packaging/python/test_wheels.sh python3 NEURON_gpu_nightly-8.0a709-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-```
-
-The `test_wheels.sh` will check if `nvc/nvc++` compilers are available and run tests for `hpe-mpi`, `intel-mpi` and `mvapich2` MPI modules.
-Also, it checks if GPU is available (using `pgaccelinfo -nvidia` command) and then runs a few tests on the GPU as well.
-
-Similar to BB5, the wheel can be tested on any desktop system provided that NVHPC compiler module is loaded or appropriate PATH environment variable is setup.
-
 
 ## Publishing the wheels on Pypi via Azure
 
@@ -261,7 +225,7 @@ $ git diff
      machine:
        image: ubuntu-2004:202101-01
 +    environment:
-+      NEURON_WHEEL_VERSION: 8.1a
++      SETUPTOOLS_SCM_PRETEND_VERSION: 8.1a
 +      NEURON_NIGHTLY_TAG: ""
 +      NRN_NIGHTLY_UPLOAD: false
 +      NRN_RELEASE_UPLOAD: false
@@ -274,7 +238,7 @@ $ git diff
 +              NRN_PYTHON_VERSION: ["38", "39", "310", "311"]
 ```
 
-The reason we are setting `NEURON_WHEEL_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
+The reason we are setting `SETUPTOOLS_SCM_PRETEND_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
 
 
 ## Nightly wheels

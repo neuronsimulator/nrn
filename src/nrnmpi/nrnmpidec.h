@@ -10,6 +10,7 @@ the prototypes be of the form "type foo(type arg, ...)"
 typedef long double longdbl;
 #if NRNMPI
 #include <stdlib.h>
+#include <string>
 
 /* from bbsmpipack.cpp */
 typedef struct bbsmpibuf {
@@ -93,7 +94,7 @@ extern void nrnmpi_char_alltoallv(char* s, int* scnt, int* sdispl, char* r, int*
 extern void nrnmpi_dbl_broadcast(double* buf, int cnt, int root);
 extern void nrnmpi_int_broadcast(int* buf, int cnt, int root);
 extern void nrnmpi_char_broadcast(char* buf, int cnt, int root);
-extern void nrnmpi_char_broadcast_world(char** pstr, int root);
+extern void nrnmpi_str_broadcast_world(std::string& str, int root);
 extern int nrnmpi_int_sum_reduce(int in);
 extern void nrnmpi_assert_opstep(int opstep, double t);
 extern double nrnmpi_dbl_allmin(double x);

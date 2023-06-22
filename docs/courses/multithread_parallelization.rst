@@ -1,6 +1,6 @@
 .. _multithread_parallelization:
 
-Multithreaded paralellization
+Multithreaded parallelization
 =============================
 
 If a model has more than a few thousand states, it may run faster with multiple threads.

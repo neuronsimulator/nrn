@@ -1,68 +1,77 @@
-# =============================================================================
-# Lists of header files to install
-# =============================================================================
+# =======================================================================================
+# Lists of header files to install. Difference is whether the dir structure is preserved.
+#
+# * HEADER_FILES_TO_INSTALL: ${src}/src/dir/header.h -> {bld}/include/header.h
+# * STRUCTURED_HEADER_FILES_TO_INSTALL: {src}/src/a/b.h -> {bld}/include/a/b.h
+# =======================================================================================
+set(STRUCTURED_HEADER_FILES_TO_INSTALL
+    neuron/cache/mechanism_range.hpp neuron/container/data_handle.hpp
+    neuron/container/generic_data_handle.hpp neuron/container/non_owning_soa_identifier.hpp
+    neuron/model_data_fwd.hpp)
 set(HEADER_FILES_TO_INSTALL
-    bbsavestate.h
-    cabvars.h
-    crout.hpp
-    crout_thread.hpp
-    cspmatrix.h
-    cspredef.h
-    deflate.hpp
-    dimplic.hpp
-    errcodes.hpp
-    euler.hpp
-    euler_thread.hpp
-    hoc.h
-    hoc_membf.h
-    hocassrt.h
-    hocdec.h
-    hocgetsym.h
-    hoclist.h
-    hocparse.h
-    mcran4.h
-    md1redef.h
-    md2redef.h
-    mech_api.h
-    membdef.h
-    membfunc.h
-    multicore.h
-    multisplit.h
-    neuron.h
-    newton.hpp
-    newton_struct.h
-    newton_thread.hpp
-    nmodlmutex.h
-    nrn_ansi.h
-    nrnapi.h
-    nrnassrt.h
-    nrncvode.h
-    nrnisaac.h
-    nrniv_mf.h
-    nrnoc_ml.h
-    nrnmpi.h
-    nrnmpidec.h
-    nrnrandom.h
-    nrnran123.h
-    nrnredef.h
-    nrnversionmacros.h
-    oc_ansi.h
-    ocfunc.h
-    ocmisc.h
-    options.h
-    parse_with_deps.hpp
-    runge.hpp
-    scoplib.h
-    section.h
-    simeq.hpp
-    sparse.hpp
-    sparse_thread.hpp
-    spconfig.h
-    spmatrix.h
-    ssimplic.hpp
-    ssimplic_thread.hpp
-    treeset.h
-    wrap_sprintf.h)
+    nrniv/backtrace_utils.h
+    nrniv/bbsavestate.h
+    nrnmpi/nrnmpidec.h
+    nrnoc/cabvars.h
+    nrnoc/md1redef.h
+    nrnoc/md2redef.h
+    nrnoc/membdef.h
+    nrnoc/membfunc.h
+    nrnoc/multicore.h
+    nrnoc/multisplit.h
+    nrnoc/neuron.h
+    nrnoc/nmodlmutex.h
+    nrnoc/nrn_ansi.h
+    nrnoc/nrncvode.h
+    nrnoc/nrniv_mf.h
+    nrnoc/nrnoc_ml.h
+    nrnoc/nrnredef.h
+    nrnoc/nrnversionmacros.h
+    nrnoc/options.h
+    nrnoc/section_fwd.hpp
+    nrnoc/treeset.h
+    oc/hoc.h
+    oc/hoc_membf.h
+    oc/hocassrt.h
+    oc/hocdec.h
+    oc/hocgetsym.h
+    oc/hoclist.h
+    oc/hocparse.h
+    oc/mcran4.h
+    oc/mech_api.h
+    oc/nrnapi.h
+    oc/nrnassrt.h
+    oc/nrnisaac.h
+    oc/nrnmpi.h
+    oc/nrnrandom.h
+    oc/nrnran123.h
+    oc/oc_ansi.h
+    oc/ocfunc.h
+    oc/ocmisc.h
+    oc/parse_with_deps.hpp
+    oc/wrap_sprintf.h
+    scopmath/crout.hpp
+    scopmath/crout_thread.hpp
+    scopmath/deflate.hpp
+    scopmath/dimplic.hpp
+    scopmath/errcodes.hpp
+    scopmath/euler.hpp
+    scopmath/euler_thread.hpp
+    scopmath/newton.hpp
+    scopmath/newton_struct.h
+    scopmath/newton_thread.hpp
+    scopmath/row_view.hpp
+    scopmath/runge.hpp
+    scopmath/scoplib.h
+    scopmath/simeq.hpp
+    scopmath/sparse.hpp
+    scopmath/sparse_thread.hpp
+    scopmath/ssimplic.hpp
+    scopmath/ssimplic_thread.hpp
+    sparse13/cspmatrix.h
+    sparse13/cspredef.h
+    sparse13/spconfig.h
+    sparse13/spmatrix.h)
 
 # =============================================================================
 # Lists of headers populated using check_include_files
@@ -97,9 +106,7 @@ set(OC_FILE_LIST
     math.cpp
     mswinprt.cpp
     nonlin.cpp
-    nrnfilewrap.cpp
     ocerf.cpp
-    parallel.cpp
     plot.cpp
     plt.cpp
     regexp.cpp
@@ -117,6 +124,7 @@ set(NRNOC_FILE_LIST
     cabcode.cpp
     capac.cpp
     clamp.cpp
+    container.cpp
     eion.cpp
     extcelln.cpp
     fadvance.cpp
@@ -125,6 +133,7 @@ set(NRNOC_FILE_LIST
     init.cpp
     ldifus.cpp
     membfunc.cpp
+    memblist.cpp
     nrnnemo.cpp
     nrntimeout.cpp
     nrnversion.cpp
@@ -210,7 +219,6 @@ set(NRNIV_FILE_LIST
     bbslsrv2.cpp
     bbsrcli.cpp
     bbssrv.cpp
-    cachevec.cpp
     classreg.cpp
     cxprop.cpp
     datapath.cpp
@@ -382,18 +390,18 @@ set(SPARSE_FILES_LIST bksub.cpp getelm.cpp lineq.cpp prmat.cpp subrows.cpp)
 
 # sparse13 matrix sources
 set(SPARSE13_FILES_LIST
-    spalloc.c
-    spbuild.c
-    spfactor.c
-    spoutput.c
-    spsolve.c
-    sputils.c
-    cspalloc.c
-    cspbuild.c
-    cspfactor.c
-    cspoutput.c
-    cspsolve.c
-    csputils.c)
+    spalloc.cpp
+    spbuild.cpp
+    spfactor.cpp
+    spoutput.cpp
+    spsolve.cpp
+    sputils.cpp
+    cspalloc.cpp
+    cspbuild.cpp
+    cspfactor.cpp
+    cspoutput.cpp
+    cspsolve.cpp
+    csputils.cpp)
 
 # scopmath sources
 set(SCOPMATH_FILES_LIST
@@ -435,24 +443,6 @@ set(SCOPMATH_FILES_LIST
     tridiag.cpp)
 
 set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
-
-set(NRNGNU_FILES_LIST
-    ACG.cpp
-    Binomial.cpp
-    DiscUnif.cpp
-    Erlang.cpp
-    Geom.cpp
-    HypGeom.cpp
-    LogNorm.cpp
-    MLCG.cpp
-    NegExp.cpp
-    Normal.cpp
-    Poisson.cpp
-    RNG.cpp
-    Random.cpp
-    RndInt.cpp
-    Uniform.cpp
-    Weibull.cpp)
 
 # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST
@@ -526,6 +516,8 @@ set(IVOS_FILES_LIST listimpl.cpp string.cpp observe.cpp resource.cpp)
 
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
 
+set(NRN_MUSIC_FILES_LIST nrnmusic.cpp)
+
 # =============================================================================
 # Top level directories under src
 # =============================================================================
@@ -538,6 +530,7 @@ set(NRN_NRNIV_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrniv)
 set(NRN_MODLUNIT_SRC_DIR ${PROJECT_SOURCE_DIR}/src/modlunit)
 set(NRN_NMODL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nmodl)
 set(NRN_IVOS_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivos)
+set(NRN_MUSIC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/neuronmusic)
 
 # =============================================================================
 # Create source file lists by gathering from various directories
@@ -559,7 +552,6 @@ nrn_create_file_list(NRN_SPARSE13_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse13
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
-nrn_create_file_list(NRN_NRNGNU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/gnu ${NRNGNU_FILES_LIST})
 nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
                      ${NRNPYTHON_FILES_LIST})
 nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})
@@ -570,6 +562,7 @@ nrn_create_file_list(NRN_NMODL_SRC_FILES ${NRN_NMODL_SRC_DIR} ${NMODL_FILES_LIST
 nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmpi
                      ${MPI_DYNAMIC_INCLUDE})
 nrn_create_file_list(NRN_IVOS_SRC_FILES ${NRN_IVOS_SRC_DIR} ${IVOS_FILES_LIST})
+nrn_create_file_list(NRN_MUSIC_SRC_FILES ${NRN_MUSIC_SRC_DIR} ${NRN_MUSIC_FILES_LIST})
 list(APPEND NRN_OC_SRC_FILES ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
 
 # =============================================================================

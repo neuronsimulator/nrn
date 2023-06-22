@@ -215,9 +215,6 @@ extern int (*iv_bind_enqueue_)(void (*)(void*), void* w);
 extern void iv_bind_call(void* w, int type);
 extern void nrnpy_setwindowtext(void*);
 
-extern void* (*nrnpy_save_thread)();
-extern void (*nrnpy_restore_thread)(void*);
-
 static void* w_;
 static void (*nrn_gui_exec_)(void*);
 
@@ -245,14 +242,14 @@ int iv_bind_enqueue(void (*cb)(void*), void* w) {
 void nrn_gui_exec(void (*cb)(void*), void* v) {
     assert(GetCurrentThreadId() != bind_tid_);
     // wait for the gui thread to handle the operation
-    void* gs = (*nrnpy_save_thread)();
+    auto* const gs = neuron::python::methods.save_thread();
     {
         std::unique_lock<std::mutex> lock{mut_};
         w_ = v;
         nrn_gui_exec_ = cb;
         cond_->wait(lock, [] { return !w_; });
     }
-    (*nrnpy_restore_thread)(gs);
+    neuron::python::methods.restore_thread(gs);
 }
 
 void nrniv_bind_call() {

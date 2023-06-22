@@ -25,8 +25,8 @@ namespace neuron::scopmath {
  *
  * Output: jacobian, computed jacobian matrix.
  */
-template <std::size_t n, typename Array, typename Matrix>
-int buildjacobian(int* index, Array& x, int (*pfunc)(), double* value, Matrix& jacobian) {
+template <std::size_t n, typename Array, typename IndexArray, typename Matrix>
+int buildjacobian(IndexArray index, Array& x, int (*pfunc)(), double* value, Matrix& jacobian) {
     std::array<double, n> high_value{}, low_value{};
     // Compute partial derivatives by central finite differences
     if (index) {
@@ -90,8 +90,8 @@ int buildjacobian(int* index, Array& x, int (*pfunc)(), double* value, Matrix& j
  * Output: x contains the solution value or the most recent iteration's result
  * in the event of an error.
  */
-template <std::size_t n, typename Array>
-int newton(int* index, Array&& x, int (*pfunc)(), double* value) {
+template <std::size_t n, typename Array, typename IndexArray>
+int newton(IndexArray index, Array&& x, int (*pfunc)(), double* value) {
     // Create arrays for Jacobian, variable increments, function values, and
     // permutation vector
     std::array<int, n> perm{};

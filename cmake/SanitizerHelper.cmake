@@ -13,6 +13,7 @@ list(APPEND NRN_COMPILE_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 list(APPEND NRN_LINK_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 # And to CoreNEURON as we don't have CORENRN_SANITIZERS any more
 list(APPEND CORENRN_EXTRA_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
+list(APPEND CORENRN_EXTRA_MECH_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 list(APPEND CORENRN_EXTRA_LINK_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 if(NRN_SANITIZER_LIBRARY_DIR)
   # At least Clang 14 does not add rpath entries for the sanitizer runtime libraries. Adding this
@@ -56,10 +57,4 @@ if(NRN_SANITIZERS)
   if(NRN_SANITIZER_LIBRARY_PATH)
     set(NRN_SANITIZER_LD_PRELOAD "${NRN_SANITIZER_PRELOAD_VAR}=${NRN_SANITIZER_LIBRARY_PATH}")
   endif()
-  # Needed for using sanitizers on macOS
-  cpp_cc_strip_python_shims(EXECUTABLE "${PYTHON_EXECUTABLE}" OUTPUT PYTHON_EXECUTABLE)
-  set(NRN_DEFAULT_PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}")
-  configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
-  install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrn-enable-sanitizer
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()

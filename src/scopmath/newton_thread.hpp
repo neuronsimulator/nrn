@@ -25,10 +25,10 @@ namespace detail::newton_thread {
  * @param value pointer to array of addresses of function values
  * @param[out] jacobian computed jacobian matrix
  */
-template <typename Array, typename Callable, typename... Args>
+template <typename Array, typename Callable, typename IndexArray, typename... Args>
 void buildjacobian(NewtonSpace* ns,
                    int n,
-                   int* index,
+                   IndexArray index,
                    Array x,
                    Callable pfunc,
                    double* value,
@@ -106,10 +106,10 @@ void buildjacobian(NewtonSpace* ns,
  * @returns 0 if no error; 2 if matrix is singular or ill-conditioned; 1 if
  * maximum iterations exceeded
  */
-template <typename Array, typename Function, typename... Args>
+template <typename Array, typename Function, typename IndexArray, typename... Args>
 int nrn_newton_thread(NewtonSpace* ns,
                       int n,
-                      int* index,
+                      IndexArray index,
                       Array x,
                       Function pfunc,
                       double* value,

@@ -18,7 +18,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #ifndef _ACG_h
 #define _ACG_h 1 
 
-#include <RNG.h>
+#include "RNG.h"
 #include <math.h>
 #ifdef __GNUG__
 //#pragma interface

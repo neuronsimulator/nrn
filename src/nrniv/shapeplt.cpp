@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 #include "classreg.h"
 #include "gui-redirect.h"
+#include "ocnotify.h"
 
 #if HAVE_IV
 
@@ -40,8 +41,6 @@
 extern Symlist* hoc_built_in_symlist;
 #endif  // HAVE_IV
 
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 void* (*nrnpy_get_pyobj)(Object* obj) = 0;
 void (*nrnpy_decref)(void* pyobj) = 0;
 
@@ -250,7 +249,7 @@ static double sh_hinton(void* v) {
 #if HAVE_IV
     IFGUI
     ShapeScene* ss = (ShapeScene*) v;
-    double* pd = hoc_pgetarg(1);
+    neuron::container::data_handle<double> pd = hoc_hgetarg<double>(1);
     double xsize = chkarg(4, 1e-9, 1e9);
     double ysize = xsize;
     if (ifarg(5)) {
@@ -530,15 +529,6 @@ void ShapePlot::observe(SectionList* sl) {
     }
 }
 
-void ShapePlot::update_ptrs() {
-    PolyGlyph* pg = shape_section_list();
-    GlyphIndex i, cnt = pg->count();
-    for (i = 0; i < cnt; ++i) {
-        ShapeSection* ss = (ShapeSection*) pg->component(i);
-        ss->update_ptrs();
-    }
-}
-
 void ShapePlot::erase_all() {
     Resource::unref(spi_->colorbar_);
     spi_->colorbar_ = NULL;
@@ -637,7 +627,7 @@ extern void mswin_delete_object(void*);
 
 void ShapePlot::draw(Canvas* c, const Allocation& a) const {
     if (spi_->fast_) {
-#if defined(WIN32) || MAC
+#if defined(WIN32)
         // win32 clipping is much more strict than X11 clipping even though the
         // implementations seem to agree that clipping is the intersection of
         // all clip requests on the clip stack in canvas. Clipping is originally
@@ -655,9 +645,6 @@ void ShapePlot::draw(Canvas* c, const Allocation& a) const {
 
         XYView* v = XYView::current_draw_view();
         c->push_clipping(true);
-#if MAC
-        c->clip_rect(v->left(), v->bottom(), v->right(), v->top());
-#endif
 #if defined(WIN32)
         // Consider the commit message:
         // -------
@@ -695,13 +682,10 @@ void ShapePlot::draw(Canvas* c, const Allocation& a) const {
                 ((FastShape*) (gi->body()))->fast_draw(c, x, y, false);
             }
         }
-#if defined(WIN32) || MAC
-        c->pop_clipping();
 #if defined(WIN32)
+        c->pop_clipping();
         mswin_delete_object(new_clip);
-#endif
         v->damage_all();
-        ;
 #endif
         spi_->fast_ = false;
     } else {
@@ -1158,21 +1142,23 @@ FastGraphItem::FastGraphItem(FastShape* g, bool s, bool p)
 FastShape::FastShape() {}
 FastShape::~FastShape() {}
 
-Hinton::Hinton(double* pd, Coord xsize, Coord ysize, ShapeScene* ss) {
+Hinton::Hinton(neuron::container::data_handle<double> pd,
+               Coord xsize,
+               Coord ysize,
+               ShapeScene* ss) {
     pd_ = pd;
     old_ = NULL;  // not referenced
     xsize_ = xsize / 2;
     ysize_ = ysize / 2;
     ss_ = ss;
-    Oc oc;
-    oc.notify_when_freed(pd_, this);
+    neuron::container::notify_when_handle_dies(pd_, this);
 }
 Hinton::~Hinton() {
     Oc oc;
     oc.notify_pointer_disconnect(this);
 }
 void Hinton::update(Observable*) {
-    pd_ = NULL;
+    pd_ = {};
     ss_->remove(ss_->glyph_index(this));
 }
 void Hinton::request(Requisition& req) const {

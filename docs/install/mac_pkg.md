@@ -9,7 +9,7 @@ The build will be universal2 and work on arm64 and x86_64 architectures
 (if the pythons used are themselves, universal2).
 Preparing your Mac development environment for correct functioning of
 the script requires installing a few extra [Dependencies](#Dependencies) beyond the
-[normal user source build](./install_instructions.html#Mac-OS-Depend),
+[normal user source build](./install_instructions.md#Mac-OS-Depend),
 obtaining an Apple Developer Program membership,
 and requesting two signing certificates from Apple. Those actions are
 described in separate sections below.
@@ -163,7 +163,7 @@ can be found at [python.org](http://python.org/Downloads/macOS) at least for
 
   - Python 3.8 is already installed as /usr/bin/python3 and is universal2.
 
-  - The [normal source build](./install_instructions.html#Mac-OS-Depend)
+  - The [normal source build](./install_instructions.md#Mac-OS-Depend)
     explains how to install brew and add it to the PATH.
     ```bash
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"

@@ -6,10 +6,6 @@ _numpy_zeros = numpy.zeros
 _h_ptrvector = h.PtrVector
 
 
-def _donothing():
-    pass
-
-
 class RangeVar:
     def __init__(self, name):
         self._name = name
@@ -25,13 +21,12 @@ class RangeVar:
         name = self._name
         for node in nodes:
             seg = node.segment
-            ptrs_append(getattr(seg, "_ref_%s" % name))
+            ptrs_append(getattr(seg, f"_ref_{name}"))
             # TODO: is this the right index? or do I need to change things to
             #       account for the zero-volume nodes?
             locs_append(node._index)
         self._locs = numpy.array(locs)
         pv = _h_ptrvector(len(ptrs))
-        pv.ptr_update_callback(_donothing)
         pv_pset = pv.pset
         for i, ptr in enumerate(ptrs):
             pv_pset(i, ptr)

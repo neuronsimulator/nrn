@@ -13,11 +13,11 @@
 #define nt_t  nrn_threads->_t
 #define nt_dt nrn_threads->_dt
 
-typedef struct LongDifus {
-    int dchange;
+struct LongDifus {
+    int dchange{};
     int* mindex; /* index into memb_list[m] */
     int* pindex; /* parent in this struct */
-    double** state;
+    std::vector<neuron::container::data_handle<double>> state;
     double* a;
     double* b;
     double* d;
@@ -27,13 +27,15 @@ typedef struct LongDifus {
     double* vol; /* volatile volume from COMPARTMENT */
     double* dc;  /* volatile diffusion constant * cross sectional
                 area from LONGITUDINAL_DIFFUSION */
-} LongDifus;
+    LongDifus(std::size_t n)
+        : state(n) {}
+};
 
-typedef struct LongDifusThreadData {
+struct LongDifusThreadData {
     int nthread;
     LongDifus** ldifus;
     Memb_list** ml;
-} LongDifusThreadData;
+};
 
 static int ldifusfunccnt;
 static ldifusfunc_t* ldifusfunc;
@@ -45,23 +47,6 @@ void hoc_register_ldifus1(ldifusfunc_t f) {
     ldifusfunc[ldifusfunccnt] = f;
     ++ldifusfunccnt;
 }
-
-#if MAC
-/* this avoids a missing _ptrgl12 in the mac library that was called by
-the MrC compiled object
-*/
-void mac_difusfunc(ldifusfunc2_t* f,
-                   int m,
-                   ldifusfunc3_t diffunc,
-                   void** v,
-                   int ai,
-                   int sindex,
-                   int dindex,
-                   NrnThread* nt) {
-    (*f)(m, diffunc, v, ai, sindex, dindex, nt);
-}
-#endif
-
 
 extern "C" void nrn_tree_solve(double* a, double* d, double* b, double* rhs, int* pindex, int n) {
     /*
@@ -98,9 +83,8 @@ extern "C" void nrn_tree_solve(double* a, double* d, double* b, double* rhs, int
 }
 
 
-void long_difus_solve(int method, NrnThread* nt) {
-    ldifusfunc2_t* f = NULL;
-    int i;
+void long_difus_solve(neuron::model_sorted_token const& sorted_token, int method, NrnThread& nt) {
+    ldifusfunc2_t* f{};
     if (ldifusfunc) {
         switch (method) {
         case 0: /* normal staggered time step */
@@ -117,9 +101,8 @@ void long_difus_solve(int method, NrnThread* nt) {
             break;
         }
         assert(f);
-
-        for (i = 0; i < ldifusfunccnt; ++i) {
-            (*ldifusfunc[i])(f, nt);
+        for (int i = 0; i < ldifusfunccnt; ++i) {
+            ldifusfunc[i](f, sorted_token, nt);
         }
     }
 }
@@ -127,12 +110,8 @@ void long_difus_solve(int method, NrnThread* nt) {
 static void longdifusfree(LongDifus** ppld) {
     if (*ppld) {
         LongDifus* pld = *ppld;
-#if 0
-printf("free longdifus structure_change=%d %d\n", pld->schange, structure_change_cnt);
-#endif
         free(pld->mindex);
         free(pld->pindex);
-        free(pld->state);
         free(pld->a);
         free(pld->b);
         free(pld->d);
@@ -141,11 +120,11 @@ printf("free longdifus structure_change=%d %d\n", pld->schange, structure_change
         free(pld->bf);
         free(pld->vol);
         free(pld->dc);
-        free(pld);
     }
-    *ppld = (LongDifus*) 0;
+    delete std::exchange(*ppld, nullptr);
 }
 
+// sindex is a non-legacy field index
 static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* ml, NrnThread* _nt) {
     int i, n, mi, mpi, j, index, pindex, vnodecount;
     Node *nd, *pnd;
@@ -162,9 +141,11 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
         /* Also child may butte end to end with parent or attach to middle */
         mi = pld->mindex[i];
         if (sindex < 0) {
-            pld->state[i] = ml->pdata[mi][-sindex - 1].get<double*>();
+            pld->state[i] = static_cast<neuron::container::data_handle<double>>(
+                ml->pdata[mi][-sindex - 1].get<double*>());
         } else {
-            pld->state[i] = ml->_data[mi] + sindex;
+            // if this is an array variable then take a handle to the zeroth entry of it
+            pld->state[i] = ml->data_handle(mi, {sindex, 0});
         }
         nd = ml->nodelist[mi];
         pindex = pld->pindex[i];
@@ -186,20 +167,12 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
 }
 
 static void longdifusalloc(LongDifus** ppld, int m, int sindex, Memb_list* ml, NrnThread* _nt) {
-    LongDifus* pld;
-    int i, n, mi, mpi, j, index, pindex, vnodecount;
-    int *map, *omap;
-    Node *nd, *pnd;
-    hoc_Item* qsec;
-
-    vnodecount = _nt->end;
-    *ppld = pld = (LongDifus*) emalloc(sizeof(LongDifus));
-    n = ml->nodecount;
-
-    pld->dchange = 0;
+    auto const n = ml->nodecount;
+    assert(n > 0);
+    auto* const pld = new LongDifus{static_cast<std::size_t>(n)};
+    *ppld = pld;
     pld->mindex = (int*) ecalloc(n, sizeof(int));
     pld->pindex = (int*) ecalloc(n, sizeof(int));
-    pld->state = (double**) ecalloc(n, sizeof(double*));
     pld->a = (double*) ecalloc(n, sizeof(double));
     pld->b = (double*) ecalloc(n, sizeof(double));
     pld->d = (double*) ecalloc(n, sizeof(double));
@@ -210,30 +183,22 @@ static void longdifusalloc(LongDifus** ppld, int m, int sindex, Memb_list* ml, N
     pld->dc = (double*) ecalloc(n, sizeof(double));
 
     /* make a map from node_index to memb_list index. -1 means no exist*/
-    map = (int*) ecalloc(vnodecount, sizeof(int));
-    omap = (int*) ecalloc(n, sizeof(int));
-    for (i = 0; i < vnodecount; ++i) {
-        map[i] = -1;
-    }
-    for (i = 0; i < n; ++i) {
+    auto const vnodecount = _nt->end;
+    std::vector<int> map(vnodecount, -1), omap(n);
+    for (int i = 0; i < n; ++i) {
         map[ml->nodelist[i]->v_node_index] = i;
     }
-#if 0
-for (i=0; i < vnodecount; ++i) {
-	printf("%d index=%d\n", i, map[i]);
-}
-#endif
     /* order the indices for efficient gaussian elimination */
     /* But watch out for 0 area nodes. Use the parent of parent */
     /* But if parent of parent does not have diffusion mechanism
        check the parent section */
     /* And watch out for root. Use first node of root section */
-    for (i = 0, j = 0; i < vnodecount; ++i) {
+    for (int i = 0, j = 0; i < vnodecount; ++i) {
         if (map[i] > -1) {
             pld->mindex[j] = map[i];
             omap[map[i]] = j; /* from memb list index to order */
-            pnd = _nt->_v_parent[i];
-            pindex = map[pnd->v_node_index];
+            Node* pnd = _nt->_v_parent[i];
+            auto pindex = map[pnd->v_node_index];
             if (pindex == -1) { /* maybe this was zero area node */
                 pnd = _nt->_v_parent[pnd->v_node_index];
                 if (pnd) {
@@ -262,16 +227,6 @@ for (i=0; i < vnodecount; ++i) {
         }
     }
     longdifus_diamchange(pld, m, sindex, ml, _nt);
-#if 0
-	for (i=0; i < n; ++i) {
-printf("i=%d pin=%d mi=%d :%s node %d state[(%i)]=%g\n", i, pld->pindex[i],
-	pld->mindex[i], secname(ml->nodelist[pld->mindex[i]]->sec),
-	ml->nodelist[pld->mindex[i]]->sec_node_index_
-	, sindex, pld->state[i][0]);
-	}
-#endif
-    free(map);
-    free(omap);
 }
 
 /* called at end of v_setup_vectors only for thread 0 */
@@ -284,7 +239,9 @@ static void overall_setup(int m,
                           int ai,
                           int sindex,
                           int dindex,
-                          NrnThread* _nt) {
+                          neuron::model_sorted_token const&,
+                          NrnThread& ntr) {
+    auto* const _nt = &ntr;
     int i;
     LongDifusThreadData** ppldtd = (LongDifusThreadData**) v;
     LongDifusThreadData* ldtd = *ppldtd;
@@ -328,204 +285,153 @@ static Memb_list* v2ml(void** v, int tid) {
     return (*ppldtd)->ml[tid];
 }
 
-static void
-stagger(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* _nt) {
-    LongDifus* pld;
-    int i, n, di;
-    double dc, vol, dfdi, dx;
-    double** data;
-    Datum** pdata;
-    Datum* thread;
-    Memb_list* ml;
-
-    di = dindex + ai;
-
-    pld = v2ld(v, _nt->id);
-    if (!pld)
+static void stagger(int m,
+                    ldifusfunc3_t diffunc,
+                    void** v,
+                    int ai,      // array index
+                    int sindex,  // field index of {x} variable
+                    int dindex,  // field index of D{x} variable
+                    neuron::model_sorted_token const& sorted_token,
+                    NrnThread& ntr) {
+    auto* const _nt = &ntr;
+    LongDifus* const pld = v2ld(v, _nt->id);
+    if (!pld) {
         return;
-    ml = v2ml(v, _nt->id);
-
-    n = ml->nodecount;
-    data = ml->_data;
-    pdata = ml->pdata;
-    thread = ml->_thread;
+    }
+    auto* const ml = v2ml(v, _nt->id);
+    int const n = ml->nodecount;
+    Datum** const pdata = ml->pdata;
+    Datum* const thread = ml->_thread;
 
     longdifus_diamchange(pld, m, sindex, ml, _nt);
     /*flux and volume coefficients (if dc is constant this is too often)*/
-    for (i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
         int pin = pld->pindex[i];
         int mi = pld->mindex[i];
-        pld->dc[i] = (*diffunc)(ai, data[mi], pdata[mi], pld->vol + i, &dfdi, thread, _nt);
+        double dfdi;
+        pld->dc[i] = diffunc(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt, sorted_token);
         pld->d[i] = 0.;
-#if 0
-		if (dfdi) {
-			pld->d[i] += fabs(dfdi)/pld->vol[i]/pld->state[i][ai];
-		}
-#endif
         if (pin > -1) {
             /* D * area between compartments */
-            dc = (pld->dc[i] + pld->dc[pin]) / 2.;
-
+            double const dc = (pld->dc[i] + pld->dc[pin]) / 2.;
             pld->a[i] = -pld->af[i] * dc / pld->vol[pin];
             pld->b[i] = -pld->bf[i] * dc / pld->vol[i];
         }
     }
     /* setup matrix */
-    for (i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
         int pin = pld->pindex[i];
         int mi = pld->mindex[i];
         pld->d[i] += 1. / nt_dt;
-        pld->rhs[i] = pld->state[i][ai] / nt_dt;
+        pld->rhs[i] = *(pld->state[i].next_array_element(ai)) / nt_dt;
         if (pin > -1) {
             pld->d[i] -= pld->b[i];
             pld->d[pin] -= pld->a[i];
         }
     }
-#if 0
-for (i=0; i < n; ++i) { double a,b;
-	if (pld->pindex[i] > -1) {
-		a = pld->a[i];
-		b = pld->b[i];
-	}else{ a=b=0.;}
-	printf("i=%d a=%g b=%g d=%g rhs=%g state=%g\n",
-	 i, a, b, pld->d[i], pld->rhs[i], pld->state[i][ai]);
-}
-#endif
 
     /* we've set up the matrix; now solve it */
     nrn_tree_solve(pld->a, pld->d, pld->b, pld->rhs, pld->pindex, n);
 
     /* update answer */
-    for (i = 0; i < n; ++i) {
-        pld->state[i][ai] = pld->rhs[i];
+    for (int i = 0; i < n; ++i) {
+        *(pld->state[i].next_array_element(ai)) = pld->rhs[i];
     }
 }
 
-static void
-ode(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* _nt) {
-    LongDifus* pld;
-    int i, n, di;
-    double dc, vol, dfdi;
-    double** data;
-    Datum** pdata;
-    Datum* thread;
-    Memb_list* ml;
-
-    di = dindex + ai;
-
-    pld = v2ld(v, _nt->id);
-    if (!pld)
+static void ode(int m,
+                ldifusfunc3_t diffunc,
+                void** v,
+                int ai,      // array index
+                int sindex,  // field index of {x} variable
+                int dindex,  // field index of D{x} variable
+                neuron::model_sorted_token const& sorted_token,
+                NrnThread& ntr) {
+    auto* const _nt = &ntr;
+    LongDifus* const pld = v2ld(v, _nt->id);
+    if (!pld) {
         return;
-    ml = v2ml(v, _nt->id);
-
-    n = ml->nodecount;
-    data = ml->_data;
-    pdata = ml->pdata;
-    thread = ml->_thread;
-
+    }
+    auto* const ml = v2ml(v, _nt->id);
+    int const n = ml->nodecount;
+    Datum** const pdata = ml->pdata;
+    Datum* const thread = ml->_thread;
     longdifus_diamchange(pld, m, sindex, ml, _nt);
     /*flux and volume coefficients (if dc is constant this is too often)*/
-    for (i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
         int pin = pld->pindex[i];
         int mi = pld->mindex[i];
-        pld->dc[i] = (*diffunc)(ai, data[mi], pdata[mi], pld->vol + i, &dfdi, thread, _nt);
+        double dfdi;
+        pld->dc[i] = diffunc(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt, sorted_token);
         if (pin > -1) {
             /* D * area between compartments */
-            dc = (pld->dc[i] + pld->dc[pin]) / 2.;
-
+            double const dc = (pld->dc[i] + pld->dc[pin]) / 2.;
             pld->a[i] = pld->af[i] * dc / pld->vol[pin];
             pld->b[i] = pld->bf[i] * dc / pld->vol[i];
         }
     }
     /* add terms to diffeq */
-    for (i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
         double dif;
         int pin = pld->pindex[i];
         int mi = pld->mindex[i];
-#if 0
-		pld->d[i] = data[mi][di];
-#endif
         if (pin > -1) {
-            dif = (pld->state[pin][ai] - pld->state[i][ai]);
-            data[mi][di] += dif * pld->b[i];
-            data[pld->mindex[pin]][di] -= dif * pld->a[i];
+            dif = *(pld->state[pin].next_array_element(ai)) -
+                  *(pld->state[i].next_array_element(ai));
+            ml->data(mi, dindex, ai) += dif * pld->b[i];
+            ml->data(pld->mindex[pin], dindex, ai) -= dif * pld->a[i];
         }
     }
-#if 0
-	for (i=0; i < n; ++i) {
-		int mi = pld->mindex[i];
-		printf("%d olddstate=%g new=%g\n", i, pld->d[i], data[mi][di]);
-	}
-#endif
 }
 
-
-static void
-matsol(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* _nt) {
-    LongDifus* pld;
-    int i, n, di;
-    double dc, vol, dfdi;
-    double** data;
-    Datum** pdata;
-    Datum* thread;
-    Memb_list* ml;
-
-    di = dindex + ai;
-
-    pld = v2ld(v, _nt->id);
-    if (!pld)
+static void matsol(int m,
+                   ldifusfunc3_t diffunc,
+                   void** v,
+                   int ai,      // array index
+                   int sindex,  // field index of {x} variable
+                   int dindex,  // field index of D{x} variable
+                   neuron::model_sorted_token const& sorted_token,
+                   NrnThread& ntr) {
+    auto* const _nt = &ntr;
+    LongDifus* const pld = v2ld(v, _nt->id);
+    if (!pld) {
         return;
-    ml = v2ml(v, _nt->id);
-
-    n = ml->nodecount;
-    data = ml->_data;
-    pdata = ml->pdata;
-    thread = ml->_thread;
+    }
+    auto* const ml = v2ml(v, _nt->id);
+    int const n = ml->nodecount;
+    Datum** const pdata = ml->pdata;
+    Datum* const thread = ml->_thread;
 
     /*flux and volume coefficients (if dc is constant this is too often)*/
-    for (i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
         int pin = pld->pindex[i];
         int mi = pld->mindex[i];
-        pld->dc[i] = (*diffunc)(ai, data[mi], pdata[mi], pld->vol + i, &dfdi, thread, _nt);
+        double dfdi;
+        pld->dc[i] = diffunc(ai, ml, mi, pdata[mi], pld->vol + i, &dfdi, thread, _nt, sorted_token);
         pld->d[i] = 0.;
         if (dfdi) {
-            pld->d[i] += fabs(dfdi) / pld->vol[i] / pld->state[i][ai];
-#if 0
-printf("i=%d state=%g vol=%g dfdc=%g\n", i, pld->state[i][ai],pld->vol[i], pld->d[i]);
-#endif
+            pld->d[i] += fabs(dfdi) / pld->vol[i] / *(pld->state[i].next_array_element(ai));
         }
         if (pin > -1) {
             /* D * area between compartments */
-            dc = (pld->dc[i] + pld->dc[pin]) / 2.;
-
+            auto const dc = (pld->dc[i] + pld->dc[pin]) / 2.;
             pld->a[i] = -pld->af[i] * dc / pld->vol[pin];
             pld->b[i] = -pld->bf[i] * dc / pld->vol[i];
         }
     }
     /* setup matrix */
-    for (i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
         int pin = pld->pindex[i];
         int mi = pld->mindex[i];
         pld->d[i] += 1. / nt_dt;
-        pld->rhs[i] = data[mi][di] / nt_dt;
+        pld->rhs[i] = ml->data(mi, dindex, ai) / nt_dt;
         if (pin > -1) {
             pld->d[i] -= pld->b[i];
             pld->d[pin] -= pld->a[i];
         }
     }
-#if 0
-for (i=0; i < n; ++i) { double a,b;
-	int mi = pld->mindex[i];
-	if (pld->pindex[i] > -1) {
-		a = pld->a[i];
-		b = pld->b[i];
-	}else{ a=b=0.;}
-	printf("i=%d a=%g b=%g d=%g rhs=%g dstate=%g\n",
-	 i, a, b, pld->d[i], pld->rhs[i], data[mi][di]);
-}
-#endif
     /* triang */
-    for (i = n - 1; i > 0; --i) {
+    for (int i = n - 1; i > 0; --i) {
         int pin = pld->pindex[i];
         if (pin > -1) {
             double p;
@@ -535,7 +441,7 @@ for (i=0; i < n; ++i) { double a,b;
         }
     }
     /* bksub */
-    for (i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
         int pin = pld->pindex[i];
         if (pin > -1) {
             pld->rhs[i] -= pld->b[i] * pld->rhs[pin];
@@ -543,8 +449,8 @@ for (i=0; i < n; ++i) { double a,b;
         pld->rhs[i] /= pld->d[i];
     }
     /* update answer */
-    for (i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
         int mi = pld->mindex[i];
-        data[mi][di] = pld->rhs[i];
+        ml->data(mi, dindex, ai) = pld->rhs[i];
     }
 }
