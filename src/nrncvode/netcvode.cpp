@@ -956,7 +956,7 @@ Object** NetCvode::netconlist() {
                 spost = std::regex(escape_bracket(s.data()));
             } catch (std::regex_error& e) {
                 hoc_execerror(gargstr(2), "not a valid regular expression");
-            
+	    }
         }
     }
     if (hoc_is_object_arg(3)) {
@@ -970,7 +970,7 @@ Object** NetCvode::netconlist() {
                 star = std::regex(escape_bracket(s.data()));
             } catch (std::regex_error& e) {
                 hoc_execerror(gargstr(3), "not a valid regular expression");
-            
+	    }
         }
     }
 
