@@ -52,7 +52,8 @@ class Cell:
         return {"ina": list(self.ina_vec), "t": list(self.tv)}
 
 
-# TODO: fix coreneuron compilation and execution of this test
+# TODO: fix coreneuron compilation and execution of this test, see
+#       https://github.com/neuronsimulator/nrn/issues/2397.
 simulators = ["neuron"]
 
 
@@ -63,32 +64,49 @@ def test_mcna(chk, simulator, threads):
     Derived from nrntest/thread/mcna.hoc, which used to be run with neurondemo.
     Old comment "test GLOBAL counter".
     """
+    tstop = 5  # ms
     ncell = 10
     cells = [Cell(id, ncell) for id in range(ncell)]
     with parallel_context() as pc, num_threads(pc, threads=threads):
         pc.set_maxstep(10)
         h.finitialize()
-        pc.psolve(5)
+        # the nrn_cur kernel gets called once in finitialize
+        assert h.cnt1_MCna == 2 * ncell
+        assert h.cnt2_MCna == 0
+        pc.psolve(tstop)
+    time_steps = round(tstop / h.dt)
+    assert h.cnt1_MCna == 2 * ncell * (time_steps + 1)  # +1 b/c of finitialize
+    assert h.cnt2_MCna == 2 * ncell * time_steps
     t_vector = None
     model_data = {}
-    model_data["cnt1"] = h.cnt1_MCna
-    model_data["cnt2"] = h.cnt2_MCna
-    for cell in cells:
+    cell_names = set()
+    for n, cell in enumerate(cells):
         cell_data = cell.data()
         # The time vector should be identical for all cells
         cell_times = cell_data.pop("t")
         assert t_vector is None or t_vector == cell_times
         t_vector = cell_times
-        # The other data should vary across cells
-        model_data[str(cell)] = cell_data
+        # The other data should vary across cells; just check first/last
+        if n == 0 or n == ncell - 1:
+            model_data[str(cell)] = cell_data
+            cell_names.add(str(cell))
     model_data["t"] = t_vector
-    del cells
+    # Make sure the whole model is deleted. If this test breaks in future with
+    # mismatches in cnt1 between the first execution (e.g. 1 thread) and later
+    # executions (e.g. 3 threads) then that might be because this has broken
+    # and the later executions include relics of the earlier ones.
+    del cell, cells
     ref_data = chk.get("mcna", None)
     if ref_data is None:  # pragma: no cover
         # bootstrapping
         chk("mcna", model_data)
         return
-    assert model_data == ref_data
+    # Compare this run to the reference data.
+    assert model_data["t"] == ref_data["t"]
+    for cell_name in cell_names:
+        assert model_data[cell_name]["ina"] == pytest.approx(
+            ref_data[cell_name]["ina"], abs=1e-15, rel=1e-14
+        )
 
 
 if __name__ == "__main__":

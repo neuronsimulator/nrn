@@ -45,11 +45,13 @@ ASSIGNED {
 ASSIGNED {  am (/ms)   bm (/ms)  ah (/ms)  bh (/ms)}
 
 INITIAL {
-	cnt1 = 0
-	cnt2 = 0
      P=1
      rate(v*1(/mV))
      SOLVE states STEADYSTATE sparse
+     : Set these *after* the SOLVE statement so they have easier-to-predict
+     : values after calling finitialize.
+	cnt1 = 0
+	cnt2 = 0
 }
 
 BREAKPOINT {
