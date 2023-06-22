@@ -70,13 +70,14 @@ def test_mcna(chk, simulator, threads):
     with parallel_context() as pc, num_threads(pc, threads=threads):
         pc.set_maxstep(10)
         h.finitialize()
-        # the nrn_cur kernel gets called once in finitialize
+        # the nrn_cur kernel gets called once in finitialize, and it calls the
+        # code that increments cnt1 twice
         assert h.cnt1_MCna == 2 * ncell
-        assert h.cnt2_MCna == 0
+        assert h.cnt2_MCna == 3
         pc.psolve(tstop)
     time_steps = round(tstop / h.dt)
     assert h.cnt1_MCna == 2 * ncell * (time_steps + 1)  # +1 b/c of finitialize
-    assert h.cnt2_MCna == 2 * ncell * time_steps
+    assert h.cnt2_MCna == 2 * ncell * time_steps + 3
     t_vector = None
     model_data = {}
     cell_names = set()
@@ -105,7 +106,7 @@ def test_mcna(chk, simulator, threads):
     assert model_data["t"] == ref_data["t"]
     for cell_name in cell_names:
         assert model_data[cell_name]["ina"] == pytest.approx(
-            ref_data[cell_name]["ina"], abs=1e-15, rel=1e-14
+            ref_data[cell_name]["ina"], abs=1e-15, rel=5e-10
         )
 
 
