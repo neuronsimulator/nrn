@@ -25,7 +25,8 @@ During this part all the `Node` s are created as well as the `Section` s.
 
 The call graph of this part can be found below:
 
-.. figure:: create_sections.svg
+.. raw:: html
+    :file: circuit_creation.svg
 
 Register Mechanisms
 ^^^^^^^^^^^^^^^^^^^
@@ -34,7 +35,8 @@ Mechanisms in `NEURON` are defined in `.mod` files. Apart from some built in mec
 
 The `nrnivmodl` executable translates the `MOD` files from the `NMODL` language to `C++`. Those `C++` files apart from the computation kernels also include a function named `<mechanism_name>_reg_(void)` that is essential for registering the mechanism functions in `NEURON` so that later the user can `insert` the mechanism in the needed compartments.
 
-.. figure:: mechanism_registration.pdf
+.. raw:: html
+    :file: mechanism_registration.svg
 
 Insert Mechanisms
 ^^^^^^^^^^^^^^^^^
@@ -43,18 +45,21 @@ After registering the mechanisms the user can insert them in the needed compartm
 
 .. TODO: add pointer to insert function
 
-.. figure:: insert_mechanism.pdf
+.. raw:: html
+    :file: insert_mechanism.svg
 
 Memory allocation of field data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 During the mechanism insertion the needed data structures to hold their data are also allocated. This is done by appending to the SoA data structures of the data a new element for the newly inserted mechanism.
 
-.. figure:: mem_alloc.pdf
+.. raw:: html
+    :file: memory_allocation.svg
 
 Initialization
 ^^^^^^^^^^^^^^
 
 After all the needed `Section` s for the simulation have been created together with the data structures assigned to them and their mechanisms all the data structures all ordered and initialized. In this place the execution of the `INITIAL` block of the inserted `MOD` files is also executed.
 
-.. figure:: initialization.pdf
+.. raw:: html
+    :file: initialization.svg
