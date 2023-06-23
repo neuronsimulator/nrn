@@ -235,6 +235,8 @@ if not hasattr(hoc, "__file__"):
         setattr(hoc, "__file__", hoc_path)
 else:
     _original_hoc_file = hoc.__file__
+
+
 # As a workaround to importing doc at neuron import time
 # (which leads to chicken and egg issues on some platforms)
 # define a dummy help function which imports doc,
@@ -1009,7 +1011,8 @@ class _PlotShapePlot(_WrapperPlot):
     ps.plot(pyplot)
     pyplot.show()
 
-    Limitations: many. Currently only supports plotting a full cell colored based on a variable."""
+    Limitations: many. Currently only supports plotting a full cell colored based on a variable.
+    """
 
     # TODO: handle pointmark, specified sections, color
     def __call__(self, graph, *args, **kwargs):
@@ -1051,8 +1054,17 @@ class _PlotShapePlot(_WrapperPlot):
                     return self
 
                 def _do_plot(
-                    self, val_min, val_max, sections, variable, cmap=cm.cool, **kwargs
-                ):
+                    self,
+                    val_min,
+                    val_max,
+                    sections,
+                    variable,
+                    mode,
+                    show_color,
+                    line_width=2,
+                    cmap=cm.cool,
+                    **kwargs,
+                ):  ## added show_color and line_width here
                     """
                     Plots a 3D shapeplot
                     Args:
@@ -1073,7 +1085,6 @@ class _PlotShapePlot(_WrapperPlot):
 
                     # default color is black
                     kwargs.setdefault("color", "black")
-
                     # Plot each segement as a line
                     lines = {}
                     lines_list = []
@@ -1081,7 +1092,15 @@ class _PlotShapePlot(_WrapperPlot):
                     for sec in sections:
                         all_seg_pts = _segment_3d_pts(sec)
                         for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
-                            (line,) = self.plot(xs, ys, zs, "-", **kwargs)
+                            if (
+                                mode == 0
+                            ):  ## added the if else to set up mode for showing diameter for each segment
+                                width = seg.diam
+                            else:
+                                width = line_width
+                            (line,) = self.plot(
+                                xs, ys, zs, "-", linewidth=width, **kwargs
+                            )  ## added linewidth here
                             if variable is not None:
                                 val = _get_variable_seg(seg, variable)
                                 vals.append(val)
@@ -1098,15 +1117,19 @@ class _PlotShapePlot(_WrapperPlot):
                             for sec in sections:
                                 for line, val in zip(lines_list, vals):
                                     if val is not None:
-                                        col = _get_color(
-                                            variable,
-                                            val,
-                                            cmap,
-                                            val_min,
-                                            val_max,
-                                            val_range,
-                                        )
-                                        line.set_color(col)
+                                        if show_color == True:
+                                            col = _get_color(
+                                                variable,
+                                                val,
+                                                cmap,
+                                                val_min,
+                                                val_max,
+                                                val_range,
+                                            )
+                                        else:
+                                            col = kwargs["color"]
+
+                                    line.set_color(col)
                     return lines
 
             return Axis3DWithNEURON(fig)
@@ -1147,7 +1170,7 @@ class _PlotShapePlot(_WrapperPlot):
             z = np.interp(seg_l, arc3d, z3d)
             return x, y, z
 
-        def _do_plot_on_matplotlib_figure(fig):
+        def _do_plot_on_matplotlib_figure(fig, *args, **kwargs):  ## *args, **kwargs
             import ctypes
 
             get_plotshape_data = nrn_dll_sym("get_plotshape_data")
@@ -1159,7 +1182,9 @@ class _PlotShapePlot(_WrapperPlot):
                 variable = varobj
             kwargs.setdefault("picker", 2)
             result = _get_pyplot_axis3d(fig)
-            _lines = result._do_plot(lo, hi, secs, variable, *args, **kwargs)
+            ps = self._data
+            mode = ps.show()
+            _lines = result._do_plot(lo, hi, secs, variable, mode, *args, **kwargs)
             result._mouseover_text = ""
 
             def _onpick(event):
@@ -1200,7 +1225,7 @@ class _PlotShapePlot(_WrapperPlot):
                 [item if len(item) == 2 else "0" + item for item in items]
             )
 
-        def _do_plot_on_plotly():
+        def _do_plot_on_plotly(width, show_color):  ## add width and show_color
             """requires matplotlib for colormaps if not specified explicitly"""
             import ctypes
             import plotly.graph_objects as go
@@ -1209,6 +1234,7 @@ class _PlotShapePlot(_WrapperPlot):
                 def mark(self, segment, marker="or", **kwargs):
                     """plot a marker on a segment
 
+
                     Args:
                         segment = the segment to mark
                         **kwargs = passed to go.Scatter3D plot
@@ -1216,7 +1242,7 @@ class _PlotShapePlot(_WrapperPlot):
                     x, y, z = _get_3d_pt(segment)
                     # approximately match the appearance of the matplotlib defaults
                     kwargs.setdefault("marker_size", 5)
-                    kwargs.setdefault("marker_color", "red")
+                    kwargs.setdefault("marker_color", "black")  ## changed red to black
                     kwargs.setdefault("marker_opacity", 1)
 
                     self.add_trace(
@@ -1236,12 +1262,16 @@ class _PlotShapePlot(_WrapperPlot):
             variable, varobj, lo, hi, secs = get_plotshape_data(
                 ctypes.py_object(self._data)
             )
+
+            ps = self._data  ## added this to inherit plotshape object from before
+            mode = ps.show()
+
             if varobj is not None:
                 variable = varobj
             if secs is None:
                 secs = list(h.allsec())
 
-            if variable is None:
+            if variable is None and varobj is None:
                 kwargs.setdefault("color", "black")
 
                 data = []
@@ -1257,7 +1287,7 @@ class _PlotShapePlot(_WrapperPlot):
                             name="",
                             hovertemplate=str(sec),
                             mode="lines",
-                            line=go.scatter3d.Line(color=kwargs["color"], width=2),
+                            line=go.scatter3d.Line(color=kwargs["color"], width=width),
                         )
                     )
                 return FigureWidgetWithNEURON(data=data, layout={"showlegend": False})
@@ -1270,7 +1300,8 @@ class _PlotShapePlot(_WrapperPlot):
                     kwargs["cmap"] = cm.cool
 
                 cmap = kwargs["cmap"]
-                show_diam = False
+
+                # show_diam = False ## hashed this out
 
                 # calculate bounds
 
@@ -1285,30 +1316,49 @@ class _PlotShapePlot(_WrapperPlot):
                         if val is not None:
                             hover_template += "<br>" + ("%.3f" % val)
                         col = _get_color(variable, val, cmap, lo, hi, val_range)
-                        if show_diam:
+                        if mode == 0:
                             diam = seg.diam
                         else:
-                            diam = 2
-                        data.append(
-                            go.Scatter3d(
-                                x=xs,
-                                y=ys,
-                                z=zs,
-                                name="",
-                                hovertemplate=hover_template,
-                                mode="lines",
-                                line=go.scatter3d.Line(color=col, width=diam),
+                            diam = width
+
+                        if show_color:
+                            data.append(
+                                go.Scatter3d(
+                                    x=xs,
+                                    y=ys,
+                                    z=zs,
+                                    name="",
+                                    hovertemplate=hover_template,
+                                    mode="lines",
+                                    line=go.scatter3d.Line(color=col, width=diam),
+                                )
                             )
-                        )
+                        else:  ## added this block to set the mode to show diameter and not show_color
+                            kwargs.setdefault("color", "black")
+                            data.append(
+                                go.Scatter3d(
+                                    x=xs,
+                                    y=ys,
+                                    z=zs,
+                                    name="",
+                                    hovertemplate=hover_template,
+                                    mode="lines",
+                                    line=go.scatter3d.Line(
+                                        color=kwargs["color"], width=diam
+                                    ),
+                                )
+                            )
 
                 return FigureWidgetWithNEURON(data=data, layout={"showlegend": False})
 
         if hasattr(graph, "__name__"):
             if graph.__name__ == "matplotlib.pyplot":
                 fig = graph.figure()
-                return _do_plot_on_matplotlib_figure(fig)
+                return _do_plot_on_matplotlib_figure(
+                    fig, *args, **kwargs
+                )  ## added args and kwargs
             elif graph.__name__ == "plotly":
-                return _do_plot_on_plotly()
+                return _do_plot_on_plotly(*args, **kwargs)  ## added args and kwargs
         elif str(type(graph)) == "<class 'matplotlib.figure.Figure'>":
             return _do_plot_on_matplotlib_figure(graph)
         raise NotImplementedError
