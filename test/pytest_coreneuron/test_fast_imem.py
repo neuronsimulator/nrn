@@ -209,6 +209,28 @@ def test_fastimem():
             run(1.0, ics, 1e-12)
 
 
+def coreneuron_available():
+    if not config.arguments["NRN_ENABLE_CORENEURON"]:
+        return False
+    # But can it be loaded?
+    cvode = h.CVode()
+    pc = h.ParallelContext()
+    h.finitialize()
+    result = 0
+    import sys
+    from io import StringIO
+
+    original_stderr = sys.stderr
+    sys.stderr = StringIO()
+    try:
+        pc.nrncore_run("--tstop 1 --verbose 0")
+        result = 1
+    except Exception as e:
+        pass
+    sys.stderr = original_stderr
+    return result
+
+
 def test_fastimem_corenrn():
     ncell = 5
     tstop = 1.0
@@ -288,7 +310,7 @@ def test_fastimem_corenrn():
             run(tstop)
             cmp("cache efficient NEURON with 2 threads")
 
-        if config.arguments["NRN_ENABLE_CORENEURON"]:
+        if coreneuron_available():
             from neuron import coreneuron
 
             enable_gpu = strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
