@@ -987,12 +987,12 @@ class _PlotShapePlot(_WrapperPlot):
                     val_max,
                     sections,
                     variable,
-                    show_diam,
+                    mode,
                     show_color,
                     line_width=2,
                     cmap=cm.cool,
                     **kwargs,
-                ):  ## added show_color, show_diam and line_width here
+                ):  ## added show_color and line_width here
                     """
                     Plots a 3D shapeplot
                     Args:
@@ -1021,7 +1021,7 @@ class _PlotShapePlot(_WrapperPlot):
                         all_seg_pts = _segment_3d_pts(sec)
                         for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
                             if (
-                                show_diam == True
+                                mode == 0
                             ):  ## added the if else to set up mode for showing diameter for each segment
                                 width = seg.diam
                             else:
@@ -1110,7 +1110,9 @@ class _PlotShapePlot(_WrapperPlot):
                 variable = varobj
             kwargs.setdefault("picker", 2)
             result = _get_pyplot_axis3d(fig)
-            _lines = result._do_plot(lo, hi, secs, variable, *args, **kwargs)
+            ps = self._data
+            mode = ps.show()
+            _lines = result._do_plot(lo, hi, secs, variable, mode, *args, **kwargs)
             result._mouseover_text = ""
 
             def _onpick(event):
@@ -1151,9 +1153,7 @@ class _PlotShapePlot(_WrapperPlot):
                 [item if len(item) == 2 else "0" + item for item in items]
             )
 
-        def _do_plot_on_plotly(
-            width, show_diam, show_color
-        ):  ## add width, show_diam, and show_color, if show_diam is false, diam = width
+        def _do_plot_on_plotly(width, show_color):  ## add width and show_color
             """requires matplotlib for colormaps if not specified explicitly"""
             import ctypes
             import plotly.graph_objects as go
@@ -1190,6 +1190,10 @@ class _PlotShapePlot(_WrapperPlot):
             variable, varobj, lo, hi, secs = get_plotshape_data(
                 ctypes.py_object(self._data)
             )
+
+            ps = self._data  ## added this to inherit plotshape object from before
+            mode = ps.show()
+
             if varobj is not None:
                 variable = varobj
             if secs is None:
@@ -1240,7 +1244,7 @@ class _PlotShapePlot(_WrapperPlot):
                         if val is not None:
                             hover_template += "<br>" + ("%.3f" % val)
                         col = _get_color(variable, val, cmap, lo, hi, val_range)
-                        if show_diam == True:
+                        if mode == 0:
                             diam = seg.diam
                         else:
                             diam = width
@@ -1257,7 +1261,7 @@ class _PlotShapePlot(_WrapperPlot):
                                     line=go.scatter3d.Line(color=col, width=diam),
                                 )
                             )
-                        else:  ## added this block to set the mode to show_diam and not show_color
+                        else:  ## added this block to set the mode to show diameter and not show_color
                             kwargs.setdefault("color", "black")
                             data.append(
                                 go.Scatter3d(
