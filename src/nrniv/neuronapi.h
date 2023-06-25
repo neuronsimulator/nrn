@@ -21,7 +21,7 @@ typedef enum {
     STACK_IS_SYM = 7,
     STACK_IS_OBJUNREF = 8,
     STACK_UNKNOWN = -1
-} stack_types_t;
+} nrn_stack_types_t;
 
 /****************************************
  * Initialization
@@ -75,8 +75,8 @@ void (*nrn_push_int)(int i);
 int (*nrn_pop_int)(void);
 void (*nrn_push_object)(Object* obj);
 Object* (*nrn_object_pop)(void);
-stack_types_t (*nrn_stack_type)(void);
-char const* const (*nrn_stack_type_name)(stack_types_t id);
+nrn_stack_types_t (*nrn_stack_type)(void);
+char const* const (*nrn_stack_type_name)(nrn_stack_types_t id);
 Object* (*nrn_object_new)(Symbol* sym, int narg);
 Symbol* (*nrn_method_symbol)(Object* obj, char const* name);
 // TODO: the next two functions throw exceptions in C++; need a version that

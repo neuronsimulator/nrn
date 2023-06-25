@@ -22,7 +22,7 @@ typedef enum {
     STACK_IS_SYM = 7,
     STACK_IS_OBJUNREF = 8,
     STACK_UNKNOWN = -1
-} stack_types_t;
+} nrn_stack_types_t;
 
 typedef hoc_Item nrn_Item;
 
@@ -274,7 +274,7 @@ Object* nrn_object_pop(void) {
     return new_ob_ptr;
 }
 
-stack_types_t nrn_stack_type(void) {
+nrn_stack_types_t nrn_stack_type(void) {
     switch (hoc_stack_type()) {
     case STRING:
         return STACK_IS_STR;
@@ -296,7 +296,7 @@ stack_types_t nrn_stack_type(void) {
     return STACK_UNKNOWN;
 }
 
-char const* const nrn_stack_type_name(stack_types_t id) {
+char const* const nrn_stack_type_name(nrn_stack_types_t id) {
     switch (id) {
     case STACK_IS_STR:
         return "STRING";
