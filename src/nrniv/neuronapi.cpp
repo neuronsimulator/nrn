@@ -446,22 +446,22 @@ double* nrn_vector_data(Object* vec) {
 
 double nrn_pp_property_get(Object* pp, const char* name) {
     int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    return *ob2pntproc_0(pp)->prop->param_handle(index);
+    return ob2pntproc_0(pp)->prop->param(index);
 }
 
 double nrn_pp_property_array_get(Object* pp, const char* name, int i) {
     int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    return *ob2pntproc_0(pp)->prop->param_handle(index, i);
+    return ob2pntproc_0(pp)->prop->param(index, i);
 }
 
 void nrn_pp_property_set(Object* pp, const char* name, double value) {
     int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    *ob2pntproc_0(pp)->prop->param_handle(index) = value;
+    ob2pntproc_0(pp)->prop->param(index) = value;
 }
 
 void nrn_pp_property_array_set(Object* pp, const char* name, int i, double value) {
     int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    *ob2pntproc_0(pp)->prop->param_handle(index, i) = value;
+    ob2pntproc_0(pp)->prop->param(index, i) = value;
 }
 
 void nrn_pp_property_push(Object* pp, const char* name) {
