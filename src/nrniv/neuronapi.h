@@ -27,7 +27,7 @@ typedef enum {
  * Initialization
  ****************************************/
 int (*nrn_init)(int argc, const char** argv);
-void (*nrn_redirect_stdout)(int (*myprint)(int, char*));
+void (*nrn_stdout_redirect)(int (*myprint)(int, char*));
 
 /****************************************
  * Sections
@@ -84,9 +84,9 @@ Symbol* (*nrn_method_symbol)(Object* obj, char const* name);
 //       classic behavior of OcJump)
 void (*nrn_method_call)(Object* obj, Symbol* method_sym, int narg);
 void (*nrn_function_call)(Symbol* sym, int narg);
-void (*nrn_ref_object)(Object* obj);
+void (*nrn_object_ref)(Object* obj);
 void (*nrn_object_unref)(Object* obj);
-char const* (*nrn_get_class_name)(Object* obj);
+char const* (*nrn_class_name)(Object* obj);
 
 /****************************************
  * Miscellaneous

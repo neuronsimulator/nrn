@@ -79,7 +79,7 @@ int nrn_init(int argc, const char** argv) {
     return exit_status;
 }
 
-void nrn_redirect_stdout(int (*myprint)(int, char*)) {
+void nrn_stdout_redirect(int (*myprint)(int, char*)) {
     // the first argument of myprint is an integer indicating the output stream
     // if the int is 1, then stdout, else stderr
     // the char* is the message to display
@@ -342,7 +342,7 @@ void nrn_object_unref(Object* obj) {
     hoc_obj_unref(obj);
 }
 
-char const* nrn_get_class_name(Object* obj) {
+char const* nrn_class_name(Object* obj) {
     return obj->ctemplate->sym->name;
 }
 
@@ -514,7 +514,7 @@ char const* nrn_symbol_name(Symbol* sym) {
 
 Symlist* nrn_symbol_table(Symbol* sym) {
     // TODO: ensure sym is an object or class
-    // NOTE: to use with an object, call nrn_get_symbol(nrn_get_class_name(obj))
+    // NOTE: to use with an object, call nrn_get_symbol(nrn_class_name(obj))
     return sym->u.ctemplate->symtable;
 }
 
