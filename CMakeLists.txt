@@ -229,7 +229,7 @@ include(cmake/CheckGitDescribeCompatibility.cmake)
 set(NRN_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(NRN_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(NRN_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-configure_file(src/nrnoc/nrnsemanticversion.h.in src/nrnoc/nrnsemanticversion.h @ONLY)
+configure_file(src/nrnoc/nrnsemanticversion.h.in include/nrnsemanticversion.h @ONLY)
 
 # =============================================================================
 # Add coding-conventions submodule so we can use helper functions defined there
@@ -334,9 +334,7 @@ if(NRN_ENABLE_MPI)
   set(PARANEURON 1)
 
   # avoid linking to C++ bindings
-  add_definitions("-DMPI_NO_CPPBIND=1")
-  add_definitions("-DOMPI_SKIP_MPICXX=1")
-  add_definitions("-DMPICH_SKIP_MPICXX=1")
+  add_compile_definitions(MPI_NO_CPPBIND=1 OMPI_SKIP_MPICXX=1 MPICH_SKIP_MPICXX=1)
 
   # Launching mpi executable with full path can mangle different python versions and libraries (see
   # issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
@@ -496,7 +494,6 @@ if(NRN_ENABLE_CORENEURON)
   list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/coreneuron
        ${PROJECT_SOURCE_DIR}/cmake/coreneuron/packages)
 
-  set(nrn_using_ext_corenrn FALSE)
   # If NEURON tests are enabled then enable CoreNEURON tests too
   set(CORENRN_ENABLE_UNIT_TESTS
       ${NRN_ENABLE_TESTS}
@@ -510,17 +507,6 @@ if(NRN_ENABLE_CORENEURON)
     elseif(NRN_PROFILER STREQUAL "likwid")
       set(CORENRN_ENABLE_LIKWID_PROFILING ON)
     endif()
-  endif()
-  # Propagate NEURON MPI option to CoreNEURON if not set explicitly
-  if(NOT DEFINED CORENRN_ENABLE_MPI)
-    set(CORENRN_ENABLE_MPI
-        ${NRN_ENABLE_MPI}
-        CACHE BOOL "" FORCE)
-  endif()
-  if(NOT DEFINED CORENRN_ENABLE_MPI_DYNAMIC)
-    set(CORENRN_ENABLE_MPI_DYNAMIC
-        ${NRN_ENABLE_MPI_DYNAMIC}
-        CACHE BOOL "" FORCE)
   endif()
   set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron)
 
@@ -580,6 +566,7 @@ endif()
 # =============================================================================
 # Add project directories AFTER CMake modules
 # =============================================================================
+add_subdirectory(src/gnu)
 add_subdirectory(src/nrniv)
 
 # Collect the environment variables that are needed to execute NEURON from the build directory. This
@@ -693,7 +680,7 @@ if(NRN_ENABLE_DOCS)
     sphinx
     COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${SPHINX_EXECUTABLE} -j auto -b html
             "${PROJECT_SOURCE_DIR}/docs" "${PROJECT_SOURCE_DIR}/docs/_build"
-    COMMAND echo "Copy/Paste to Browser ${PROJECT_SOURCE_DIR}/docs/_build/index.html"
+    COMMAND echo "Copy/Paste to Browser file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
     COMMENT "Generating documentation with Sphinx")
 
@@ -874,11 +861,30 @@ install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
 install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
 
-# find neuron (excluding coreneuron) headers to install
-nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
-list(FILTER NRN_HEADERS_PATHS EXCLUDE REGEX "src/coreneuron")
-file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/nrnoc/nrnsemanticversion.h
-     DESTINATION ${PROJECT_BINARY_DIR}/include)
+# Copy NEURON headers that will be included in the installation into the build directory.
+set(headers_in_build_dir)
+foreach(header_below_src ${HEADER_FILES_TO_INSTALL})
+  get_filename_component(header_name "${header_below_src}" NAME)
+  set(output_name "${PROJECT_BINARY_DIR}/include/${header_name}")
+  cpp_cc_build_time_copy(
+    INPUT "${PROJECT_SOURCE_DIR}/src/${header_below_src}"
+    OUTPUT "${output_name}"
+    NO_TARGET)
+  list(APPEND headers_in_build_dir "${output_name}")
+endforeach()
+foreach(header_below_src ${STRUCTURED_HEADER_FILES_TO_INSTALL})
+  set(output_name "${PROJECT_BINARY_DIR}/include/${header_below_src}")
+  cpp_cc_build_time_copy(
+    INPUT "${PROJECT_SOURCE_DIR}/src/${header_below_src}"
+    OUTPUT "${output_name}"
+    NO_TARGET)
+  list(APPEND headers_in_build_dir "${output_name}")
+endforeach()
+add_custom_target(
+  copy_headers_to_build
+  COMMENT "Copying headers to build directory"
+  DEPENDS ${headers_in_build_dir})
+add_dependencies(nrniv_lib copy_headers_to_build)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 if(NRN_MACOS_BUILD)
@@ -975,11 +981,11 @@ if(NRN_ENABLE_MPI)
     endforeach(val)
   else()
     if(NRN_INCLUDE_MPI_HEADERS)
-      message(STATUS "  INC         | ${MPI_INCLUDE_PATH}")
+      message(STATUS "  INC         | ${MPI_C_INCLUDE_DIRS}")
     else()
       message(STATUS "  INC         | N/A")
     endif()
-    message(STATUS "  LIB         | ${MPI_LIBRARY}")
+    message(STATUS "  LIB         | ${MPI_C_LIBRARIES}")
   endif()
 endif()
 if(NRN_ENABLE_MUSIC)

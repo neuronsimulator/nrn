@@ -41,7 +41,7 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg ninja-build
+          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin gpg ninja-build flex bison libfl-dev
         shell: bash
 
       - name: Setup Caliper profiler
@@ -76,6 +76,11 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Clone nmodl
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+            git submodule update --init --recursive --force --depth 1 -- external/nmodl
+
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         uses: actions/setup-python@v4
         with:
@@ -85,6 +90,7 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
+          python -m pip install --upgrade -r external/nmodl/requirements.txt
 
       - name: Set up Python@${{ env.PY_MID_VERSION }}
         uses: actions/setup-python@v4
@@ -100,6 +106,7 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
+          python -m pip install --upgrade -r external/nmodl/requirements.txt
 
       - name: Build & Test
         id: build-test

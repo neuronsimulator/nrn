@@ -21,7 +21,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #endif
 #define _Normal_h 
 
-#include <Random.h>
+#include "Random.h"
 
 class Normal: public Random {
     char haveCachedNormal;

@@ -23,7 +23,6 @@ extern int hoc_return_type_code;
 #include "parse.hpp"
 extern Symlist* hoc_built_in_symlist;
 extern Symbol** pointsym;
-extern double* point_process_pointer(Point_process*, Symbol*, int);
 extern ReceiveFunc* pnt_receive;
 extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;
@@ -144,7 +143,7 @@ void nrnglobalmechmenu() {
                         break;
                     Sprintf(buf, "%s[%d]", sp->name, i);
                     Sprintf(n, "%s[%d]", sp->name, i);
-                    hoc_ivpvalue(n, hoc_val_pointer(buf), false, sp->extra);
+                    hoc_ivpvalue(n, hoc_val_handle(buf), false, sp->extra);
                 }
             } else {
                 hoc_ivvalue(sp->name, sp->name, 1);
@@ -212,7 +211,9 @@ void section_menu(double x1, int type, MechSelector* ms) {
             }
             Sprintf(buf, "%s.Ra += 0", sname.string());
             hoc_ivpvaluerun("Ra",
-                            &(sec->prop->dparam[7].literal_value<double>()),
+                            neuron::container::data_handle<double>{
+                                neuron::container::do_not_search,
+                                &(sec->prop->dparam[7].literal_value<double>())},
                             buf,
                             1,
                             0,
@@ -220,7 +221,9 @@ void section_menu(double x1, int type, MechSelector* ms) {
             p = sec->prop;
             if (p->dparam[4].literal_value<double>() != 1) {
                 hoc_ivpvaluerun("Rall",
-                                &(sec->prop->dparam[4].literal_value<double>()),
+                                neuron::container::data_handle<double>{
+                                    neuron::container::do_not_search,
+                                    &(sec->prop->dparam[4].literal_value<double>())},
                                 "diam_changed = 1",
                                 1,
                                 0,
@@ -233,7 +236,7 @@ void section_menu(double x1, int type, MechSelector* ms) {
             hoc_ivvalue("v", buf);
         } else {
             Sprintf(buf, "v(%g)", x);
-            hoc_ivpvalue("v", hoc_val_pointer(buf), false, hoc_lookup("v")->extra);
+            hoc_ivpvalue("v", hoc_val_handle(buf), false, hoc_lookup("v")->extra);
         }
     }
 
@@ -312,7 +315,7 @@ static void mech_menu(Prop* p1, double x, int type, const char* path, MechSelect
                                 }
                             } else {
                                 Sprintf(buf, "%s[%d](%g)", vsym->name, i, x);
-                                hoc_ivpvalue(n, hoc_val_pointer(buf), false, vsym->extra);
+                                hoc_ivpvalue(n, hoc_val_handle(buf), false, vsym->extra);
                             }
                         }
                     } else {
@@ -331,9 +334,9 @@ static void mech_menu(Prop* p1, double x, int type, const char* path, MechSelect
                                 char buf2[200];
                                 Sprintf(buf2, "%s.Ra += 0", secname(sec));
                                 hoc_ivpvaluerun(
-                                    vsym->name, hoc_val_pointer(buf), buf2, 1, 0, vsym->extra);
+                                    vsym->name, hoc_val_handle(buf), buf2, 1, 0, vsym->extra);
                             } else {
-                                hoc_ivpvalue(vsym->name, hoc_val_pointer(buf), deflt, vsym->extra);
+                                hoc_ivpvalue(vsym->name, hoc_val_handle(buf), deflt, vsym->extra);
                             }
                         }
                     }
@@ -467,10 +470,10 @@ static void point_menu(Object* ob, int make_label) {
                 break;
         case STATE:
                 Sprintf(buf,"%s[%d] (States)", psym->name, j);
-                break; 
-        case 2: 
+                break;
+        case 2:
                 Sprintf(buf,"%s[%d] (Assigned)", psym->name, j);
-                break; 
+                break;
         }
 #endif
 
@@ -489,11 +492,10 @@ static void point_menu(Object* ob, int make_label) {
             if (ISARRAY(vsym)) {
                 Arrayinfo* a = vsym->arayinfo;
                 for (m = 0; m < vsym->arayinfo->sub[0]; m++) {
-                    double* pd;
                     if (m > 5)
                         break;
                     Sprintf(buf, "%s[%d]", vsym->name, m);
-                    pd = point_process_pointer(pp, vsym, m);
+                    auto pd = point_process_pointer(pp, vsym, m);
                     if (pd) {
                         hoc_ivpvalue(buf, pd, deflt, vsym->extra);
                     }
@@ -832,7 +834,7 @@ double MechanismStandard::get(const char* name, int index) {
     if (!s) {
         hoc_execerror(name, "not in this property");
     }
-    double* pval = np_->prop_pval(s, index);
+    auto const pval = np_->prop_pval(s, index);
     if (!pval) {
         return -1e300;
     }

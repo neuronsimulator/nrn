@@ -42,3 +42,11 @@ Using NMODL to add new mechanisms to NEURON
   NMODL code needs to be updated to work with |neuron_with_cpp_mechanisms|.
   This is principally an issue for MOD files that include ``VERBATIM`` blocks.
   For more information, see :ref:`porting-mechanisms-to-cpp`.
+
+.. note::
+  Starting in |neuron_with_soa_data|, the model data structures used by NEURON
+  have been completely overhauled.
+  This change is not fully backwards compatible, and you may find that older
+  NMODL code needs to be updated to work with |neuron_with_soa_data|.
+  This is principally an issue for MOD files that include ``VERBATIM`` blocks.
+  For more information, see :ref:`porting-mechanisms-to-new-data-structures`.

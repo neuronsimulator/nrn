@@ -15,8 +15,8 @@ static double ste_transition(void* v) {
     auto* const ste = static_cast<StateTransitionEvent*>(v);
     int src = (int) chkarg(1, 0, ste->nstate() - 1);
     int dest = (int) chkarg(2, 0, ste->nstate() - 1);
-    double* var1 = hoc_pgetarg(3);
-    double* var2 = hoc_pgetarg(4);
+    auto var1 = hoc_hgetarg<double>(3);
+    auto var2 = hoc_hgetarg<double>(4);
     std::unique_ptr<HocCommand> hc{};
     if (ifarg(5)) {
         Object* obj = NULL;
@@ -32,7 +32,7 @@ static double ste_transition(void* v) {
             hc = std::make_unique<HocCommand>(obj);
         }
     }
-    ste->transition(src, dest, var1, var2, std::move(hc));
+    ste->transition(src, dest, std::move(var1), std::move(var2), std::move(hc));
     return 1.;
 }
 

@@ -1,4 +1,3 @@
-#include <../../nrnconf.h>
 // This may look like C code, but it is really -*- C++ -*-
 /* 
 Copyright (C) 1989 Free Software Foundation
@@ -20,7 +19,7 @@ Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#include <ACG.h>
+#include "ACG.h"
 #include <assert.h>
 
 //

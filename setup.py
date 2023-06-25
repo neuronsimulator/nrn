@@ -1,5 +1,4 @@
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -21,7 +20,6 @@ class Components:
     MPI = True
     MUSIC = False  # still early support
     CORENRN = False  # still early support
-    GPU = False  # still early support
 
 
 # Check if we've got --cmake-build-dir path that will be used to build extensions only
@@ -93,10 +91,6 @@ if "--disable-mpi" in sys.argv:
 if "--enable-coreneuron" in sys.argv:
     Components.CORENRN = True
     sys.argv.remove("--enable-coreneuron")
-
-if "--enable-gpu" in sys.argv:
-    Components.GPU = True
-    sys.argv.remove("--enable-gpu")
 
 if "--enable-music" in sys.argv:
     Components.MUSIC = True
@@ -242,7 +236,7 @@ class CMakeAugmentedBuilder(build_ext):
             "-DPYTHON_EXECUTABLE=" + sys.executable,
             "-DCMAKE_BUILD_TYPE=" + cfg,
         ] + ext.cmake_flags
-        # RTD neds quick config
+        # RTD needs quick config
         if self.docs and os.environ.get("READTHEDOCS"):
             cmake_args = ["-DNRN_ENABLE_MPI=OFF", "-DNRN_ENABLE_INTERVIEWS=OFF"]
         if self.docs:
@@ -321,16 +315,6 @@ class CMakeAugmentedBuilder(build_ext):
                     cwd=self.build_temp,
                     env=env,
                 )
-                if Components.GPU:
-                    subprocess.check_call(
-                        [
-                            ext.sourcedir
-                            + "/packaging/python/fix_target_processor_in_makefiles.sh",
-                            ext.cmake_install_prefix,
-                        ],
-                        cwd=self.build_temp,
-                        env=env,
-                    )
 
         except subprocess.CalledProcessError as exc:
             logging.error("Status : FAIL. Logging.\n%s", exc.output)
@@ -420,16 +404,13 @@ def setup_package():
                 "-DNRN_ENABLE_MODULE_INSTALL=OFF",
                 "-DNRN_ENABLE_REL_RPATH=ON",
                 "-DCMAKE_VERBOSE_MAKEFILE=OFF",
-                "-DCORENRN_ENABLE_OPENMP=ON",  # TODO: manylinux portability questions
             ]
             + (
                 [
-                    "-DCORENRN_ENABLE_GPU=ON",
-                    "-DCMAKE_C_COMPILER=nvc",  # use nvc and nvc++ for GPU support
-                    "-DCMAKE_CXX_COMPILER=nvc++",
-                    "-DCMAKE_CUDA_COMPILER=nvcc",
+                    "-DCORENRN_ENABLE_OPENMP=ON",  # TODO: manylinux portability questions
+                    "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
                 ]
-                if Components.GPU
+                if Components.CORENRN
                 else []
             ),
             include_dirs=[
@@ -506,14 +487,10 @@ def setup_package():
     logging.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
 
     # package name
-    package_name = "NEURON-gpu" if Components.GPU else "NEURON"
+    package_name = "NEURON"
 
     # For CI, we want to build separate wheel with "-nightly" suffix
     package_name += os.environ.get("NEURON_NIGHTLY_TAG", "-nightly")
-
-    # GPU wheels use patchelf to avoid duplicating NVIDIA runtime libraries when
-    # using nrnivmodl.
-    maybe_patchelf = ["patchelf"] if Components.GPU else []
 
     setup(
         name=package_name,
@@ -532,7 +509,7 @@ def setup_package():
             else "node-and-date"
         },
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
-        install_requires=["numpy>=1.9.3", "packaging"] + maybe_patchelf,
+        install_requires=["numpy>=1.9.3", "packaging", "find_libpython"],
         tests_require=["flake8", "pytest"],
         setup_requires=["wheel", "setuptools_scm"]
         + maybe_docs

@@ -4,7 +4,6 @@ from neuron import h
 def test_random_play():  # for coverage of ptrlist changes #1815
     cv = h.CVode()
     cv.active(0)
-    cv.cache_efficient(0)
     h.secondorder = 0
     s = h.Section()
     s.L = 10

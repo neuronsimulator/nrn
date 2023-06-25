@@ -246,7 +246,6 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states,
                              double atolscale,
                              double* ics_alphas) {
     int k;
-    ics_num_segs = 0;
     _num_nodes = num_nodes;
     diffusable = is_diffusable;
     this->atolscale = atolscale;
@@ -271,7 +270,6 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states,
 
     ics_surface_nodes_per_seg = NULL;
     ics_surface_nodes_per_seg_start_indices = NULL;
-    ics_concentration_seg_ptrs = NULL;
     ics_scale_factors = NULL;
     ics_current_seg_ptrs = NULL;
 
@@ -605,14 +603,11 @@ extern "C" void ics_set_grid_concentrations(int grid_list_index,
     g->ics_surface_nodes_per_seg = nodes_per_seg;
 
     g->ics_surface_nodes_per_seg_start_indices = nodes_per_seg_start_indices;
-
-    g->ics_concentration_seg_ptrs = (double**) malloc(n * sizeof(double*));
+    g->ics_concentration_seg_handles.reserve(n);
     for (i = 0; i < n; i++) {
-        g->ics_concentration_seg_ptrs[i] = static_cast<double*>(
-            ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i))->u.px_);
+        g->ics_concentration_seg_handles.push_back(
+            reinterpret_cast<PyHocObject*>(PyList_GET_ITEM(neuron_pointers, i))->u.px_);
     }
-
-    g->ics_num_segs = n;
 }
 
 extern "C" void ics_set_grid_currents(int grid_list_index,
@@ -674,8 +669,8 @@ extern "C" void set_grid_concentrations(int grid_list_index,
     for (i = 0; i < n; i++) {
         /* printf("set_grid_concentrations %ld\n", i); */
         g->concentration_list[i].source = PyInt_AS_LONG(PyList_GET_ITEM(grid_indices, i));
-        g->concentration_list[i].destination = static_cast<double*>(
-            ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i))->u.px_);
+        g->concentration_list[i].destination =
+            reinterpret_cast<PyHocObject*>(PyList_GET_ITEM(neuron_pointers, i))->u.px_;
     }
 }
 
@@ -718,8 +713,8 @@ extern "C" void set_grid_currents(int grid_list_index,
     for (i = 0; i < n; i++) {
         g->current_list[i].destination = PyInt_AS_LONG(PyList_GET_ITEM(grid_indices, i));
         g->current_list[i].scale_factor = PyFloat_AS_DOUBLE(PyList_GET_ITEM(scale_factors, i));
-        g->current_list[i].source = static_cast<double*>(
-            ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i))->u.px_);
+        g->current_list[i].source =
+            reinterpret_cast<PyHocObject*>(PyList_GET_ITEM(neuron_pointers, i))->u.px_;
         /* printf("set_grid_currents %ld out of %ld, %ld, %ld\n", i, n,
          * PyList_Size(neuron_pointers), PyList_Size(scale_factors)); */
     } /*
@@ -946,7 +941,7 @@ double* ECS_Grid_node::set_rxd_currents(int current_count,
     induced_currents_index = current_indices;
     for (i = 0; i < current_count; i++) {
         for (j = 0; j < num_all_currents; j++) {
-            if (static_cast<double*>(ptrs[i]->u.px_) == current_list[j].source) {
+            if (ptrs[i]->u.px_ == current_list[j].source) {
                 volume_fraction = (VARIABLE_ECS_VOLUME == VOLUME_FRACTION
                                        ? alpha[current_list[j].destination]
                                        : alpha[0]);
@@ -1647,11 +1642,11 @@ void ICS_Grid_node::apply_node_flux3D(double dt, double* ydot) {
 void ICS_Grid_node::do_grid_currents(double* output, double dt, int) {
     MEM_ZERO(states_cur, sizeof(double) * _num_nodes);
     if (ics_current_seg_ptrs != NULL) {
-        ssize_t i, j, n;
+        ssize_t i, j;
         int seg_start_index, seg_stop_index;
         int state_index;
         double seg_cur;
-        n = ics_num_segs;
+        auto const n = ics_concentration_seg_handles.size();
         for (i = 0; i < n; i++) {
             seg_start_index = ics_surface_nodes_per_seg_start_indices[i];
             seg_stop_index = ics_surface_nodes_per_seg_start_indices[i + 1];
@@ -1726,23 +1721,17 @@ void ICS_Grid_node::variable_step_hybrid_connections(const double* cvode_states_
 }
 
 void ICS_Grid_node::scatter_grid_concentrations() {
-    ssize_t i, j, n;
-    double total_seg_concentration;
-    double average_seg_concentration;
-    int seg_start_index, seg_stop_index;
-
-    n = ics_num_segs;
-
-    for (i = 0; i < n; i++) {
-        total_seg_concentration = 0.0;
-        seg_start_index = ics_surface_nodes_per_seg_start_indices[i];
-        seg_stop_index = ics_surface_nodes_per_seg_start_indices[i + 1];
-        for (j = seg_start_index; j < seg_stop_index; j++) {
+    auto const n = ics_concentration_seg_handles.size();
+    for (auto i = 0ul; i < n; ++i) {
+        double total_seg_concentration{};
+        auto const seg_start_index = ics_surface_nodes_per_seg_start_indices[i];
+        auto const seg_stop_index = ics_surface_nodes_per_seg_start_indices[i + 1];
+        for (auto j = seg_start_index; j < seg_stop_index; j++) {
             total_seg_concentration += states[ics_surface_nodes_per_seg[j]];
         }
-        average_seg_concentration = total_seg_concentration / (seg_stop_index - seg_start_index);
-
-        *ics_concentration_seg_ptrs[i] = average_seg_concentration;
+        auto const average_seg_concentration = total_seg_concentration /
+                                               (seg_stop_index - seg_start_index);
+        *ics_concentration_seg_handles[i] = average_seg_concentration;
     }
 }
 

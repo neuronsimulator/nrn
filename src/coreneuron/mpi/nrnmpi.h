@@ -8,10 +8,9 @@
 
 #pragma once
 
+#include <array>
 #include <cassert>
-#include <string>
-#include <type_traits>
-#include <vector>
+#include <stdexcept>
 
 #include "coreneuron/mpi/nrnmpiuse.h"
 
@@ -25,9 +24,7 @@ struct NRNMPI_Spikebuf {
     int gid[nrn_spikebuf_size];
     double spiketime[nrn_spikebuf_size];
 };
-}  // namespace coreneuron
 
-namespace coreneuron {
 struct NRNMPI_Spike {
     int gid;
     double spiketime;
@@ -39,13 +36,17 @@ struct mpi_function_base;
 
 struct mpi_manager_t {
     void register_function(mpi_function_base* ptr) {
-        m_function_ptrs.push_back(ptr);
+        if (m_num_function_ptrs == max_mpi_functions) {
+            throw std::runtime_error("mpi_manager_t::max_mpi_functions reached");
+        }
+        m_function_ptrs[m_num_function_ptrs++] = ptr;
     }
     void resolve_symbols(void* dlsym_handle);
 
   private:
-    std::vector<mpi_function_base*> m_function_ptrs;
-    // true when symbols are resolved
+    constexpr static auto max_mpi_functions = 128;
+    std::size_t m_num_function_ptrs{};
+    std::array<mpi_function_base*, max_mpi_functions> m_function_ptrs{};
 };
 
 inline mpi_manager_t& mpi_manager() {
@@ -68,28 +69,36 @@ struct mpi_function_base {
     const char* m_name;
 };
 
-// This could be done with a simpler
-//   template <auto fptr> struct function : function_base { ... };
-// pattern in C++17...
-template <typename>
-struct mpi_function {};
-
-#define cnrn_make_integral_constant_t(x) std::integral_constant<std::decay_t<decltype(x)>, x>
-
-template <typename function_ptr, function_ptr fptr>
-struct mpi_function<std::integral_constant<function_ptr, fptr>>: mpi_function_base {
+#ifdef NRNMPI_DYNAMICLOAD
+template <typename fptr>
+struct mpi_function: mpi_function_base {
     using mpi_function_base::mpi_function_base;
     template <typename... Args>  // in principle deducible from `function_ptr`
     auto operator()(Args&&... args) const {
-#ifdef CORENEURON_ENABLE_MPI_DYNAMIC
         // Dynamic MPI, m_fptr should have been initialised via dlsym.
         assert(m_fptr);
-        return (*reinterpret_cast<decltype(fptr)>(m_fptr))(std::forward<Args>(args)...);
-#else
-        // No dynamic MPI, use `fptr` directly. Will produce link errors if libmpi.so is not linked.
-        return (*fptr)(std::forward<Args>(args)...);
-#endif
+        return (*reinterpret_cast<fptr>(m_fptr))(std::forward<Args>(args)...);
     }
 };
+#define declare_mpi_method(x)                    \
+    inline mpi_function<decltype(&x##_impl)> x { \
+#x "_impl"                               \
+    }
+#else
+template <auto fptr>
+struct mpi_function: mpi_function_base {
+    using mpi_function_base::mpi_function_base;
+    template <typename... Args>  // in principle deducible from `function_ptr`
+    auto operator()(Args&&... args) const {
+        // No dynamic MPI, use `fptr` directly. Will produce link errors if libmpi.so is not linked.
+        return (*fptr)(std::forward<Args>(args)...);
+    }
+};
+#define declare_mpi_method(x)         \
+    inline mpi_function<x##_impl> x { \
+#x "_impl"                    \
+    }
+#endif
+
 }  // namespace coreneuron
 #include "coreneuron/mpi/nrnmpidec.h"
