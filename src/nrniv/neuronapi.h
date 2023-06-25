@@ -63,17 +63,17 @@ void (*nrn_rangevar_set)(Symbol* const sym, Section* const sec, double x, double
  ****************************************/
 Symbol* (*nrn_symbol)(char const* name);
 void (*nrn_symbol_push)(Symbol* sym);
-int (*nrn_get_symbol_type)(Symbol* sym);
-double* (*nrn_get_symbol_ptr)(Symbol* sym);
+int (*nrn_symbol_type)(Symbol* sym);
+//double* (*nrn_get_symbol_ptr)(Symbol* sym);
 void (*nrn_double_push)(double val);
 double (*nrn_double_pop)(void);
 void (*nrn_double_ptr_push)(double* addr);
 double* (*nrn_double_ptr_pop)(void);
 void (*nrn_str_push)(char** str);
 char** (*nrn_pop_str)(void);
-void (*nrn_push_int)(int i);
-int (*nrn_pop_int)(void);
-void (*nrn_push_object)(Object* obj);
+void (*nrn_int_push)(int i);
+int (*nrn_int_pop)(void);
+void (*nrn_object_push)(Object* obj);
 Object* (*nrn_object_pop)(void);
 nrn_stack_types_t (*nrn_stack_type)(void);
 char const* const (*nrn_stack_type_name)(nrn_stack_types_t id);
