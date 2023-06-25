@@ -124,15 +124,15 @@ void nrn_section_length_set(Section* sec, double length) {
     sec->recalc_area_ = 1;
 }
 
-double nrn_get_section_length(Section* sec) {
+double nrn_section_length_get(Section* sec) {
     return section_length(sec);
 }
 
-double nrn_get_section_Ra(Section* sec) {
+double nrn_section_Ra_get(Section* sec) {
     return nrn_ra(sec);
 }
 
-void nrn_set_section_Ra(Section* sec, double val) {
+void nrn_section_Ra_set(Section* sec, double val) {
     // TODO: ensure val > 0
     // TODO: is there a named constant so we don't have to use the magic number 7?
     sec->prop->dparam[7] = val;
@@ -144,15 +144,15 @@ char const* nrn_secname(Section* sec) {
     return secname(sec);
 }
 
-void nrn_push_section(Section* sec) {
+void nrn_section_push(Section* sec) {
     nrn_pushsec(sec);
 }
 
-void nrn_pop_section(void) {
+void nrn_section_pop(void) {
     nrn_sec_pop();
 }
 
-void nrn_insert_mechanism(Section* sec, Symbol* mechanism) {
+void nrn_mechanism_insert(Section* sec, Symbol* mechanism) {
     // TODO: throw exception if mechanism is not an insertable mechanism?
     mech_insert1(sec, mechanism->subtype);
 }
@@ -195,11 +195,11 @@ void nrn_rangevar_push(Symbol* const sym, Section* const sec, double x) {
     hoc_push(nrn_rangepointer(sec, sym, x));
 }
 
-nrn_Item* nrn_get_allsec(void) {
+nrn_Item* nrn_allsec(void) {
     return section_list;
 }
 
-nrn_Item* nrn_sectionlist_data_get(Object* obj) {
+nrn_Item* nrn_sectionlist_data(Object* obj) {
     // TODO: verify the obj is in fact a SectionList
     return (nrn_Item*) obj->u.this_pointer;
 }
@@ -402,11 +402,11 @@ int SymbolTableIterator::done(void) {
 
 // copy semantics isn't great, but only two data items
 // and is cleaner to use in a for loop than having to free memory at the end
-SectionListIterator* nrn_new_sectionlist_iterator(nrn_Item* my_sectionlist) {
+SectionListIterator* nrn_sectionlist_iterator_new(nrn_Item* my_sectionlist) {
     return new SectionListIterator(my_sectionlist);
 }
 
-void nrn_free_sectionlist_iterator(SectionListIterator* sl) {
+void nrn_sectionlist_iterator_free(SectionListIterator* sl) {
     delete sl;
 }
 
@@ -418,11 +418,11 @@ int nrn_sectionlist_iterator_done(SectionListIterator* sl) {
     return sl->done();
 }
 
-SymbolTableIterator* nrn_new_symbol_table_iterator(Symlist* my_symbol_table) {
+SymbolTableIterator* nrn_symbol_table_iterator_new(Symlist* my_symbol_table) {
     return new SymbolTableIterator(my_symbol_table);
 }
 
-void nrn_free_symbol_table_iterator(SymbolTableIterator* st) {
+void nrn_symbol_table_iterator_free(SymbolTableIterator* st) {
     delete st;
 }
 
@@ -439,7 +439,7 @@ int nrn_vector_capacity(Object* vec) {
     return vector_capacity((IvocVect*) vec->u.this_pointer);
 }
 
-double* nrn_vector_data_ptr(Object* vec) {
+double* nrn_vector_data(Object* vec) {
     // TODO: throw exception if vec is not a Vector
     return vector_vec((IvocVect*) vec->u.this_pointer);
 }
@@ -474,7 +474,7 @@ void nrn_pp_property_array_push(Object* pp, const char* name, int i) {
     hoc_push(ob2pntproc_0(pp)->prop->param_handle(index, i));
 }
 
-double* nrn_get_steered_property_ptr(Object* obj, const char* name) {
+double* _nrn_get_steered_property_ptr(Object* obj, const char* name) {
     assert(obj->ctemplate->steer);
     auto sym2 = hoc_table_lookup(name, obj->ctemplate->symtable);
     assert(sym2);
@@ -484,17 +484,41 @@ double* nrn_get_steered_property_ptr(Object* obj, const char* name) {
     return hoc_pxpop();
 }
 
-char const* nrn_get_symbol_name(Symbol* sym) {
+void nrn_steered_property_array_set(Object* obj, const char* name, int i, double value) {
+    _nrn_get_steered_property_ptr(obj, name)[i] = value;
+}
+
+void nrn_steered_property_set(Object* obj, const char* name, double value) {
+    *_nrn_get_steered_property_ptr(obj, name) = value;
+}
+
+double nrn_steered_property_array_get(Object* obj, const char* name, int i) {
+    return _nrn_get_steered_property_ptr(obj, name)[i];
+}
+
+double nrn_steered_property_get(Object* obj, const char* name) {
+    return *_nrn_get_steered_property_ptr(obj, name);
+}
+
+void nrn_steered_property_array_push(Object* obj, const char* name, int i) {
+    hoc_pushpx(&_nrn_get_steered_property_ptr(obj, name)[i]);
+}
+
+void nrn_steered_property_push(Object* obj, const char* name) {
+    hoc_pushpx(_nrn_get_steered_property_ptr(obj, name));
+}
+
+char const* nrn_symbol_name(Symbol* sym) {
     return sym->name;
 }
 
-Symlist* nrn_get_symbol_table(Symbol* sym) {
+Symlist* nrn_symbol_table(Symbol* sym) {
     // TODO: ensure sym is an object or class
     // NOTE: to use with an object, call nrn_get_symbol(nrn_get_class_name(obj))
     return sym->u.ctemplate->symtable;
 }
 
-Symlist* nrn_get_global_symbol_table(void) {
+Symlist* nrn_global_symbol_table(void) {
     return hoc_built_in_symlist;
 }
 }

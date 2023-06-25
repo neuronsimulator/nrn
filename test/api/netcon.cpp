@@ -18,26 +18,28 @@ typedef struct Symlist Symlist;
 
 extern "C" {
 int nrn_init(int argc, const char** argv);
-void nrn_push_str(char** str);
-void nrn_call_function(Symbol* sym, int narg);
-double nrn_pop_double(void);
-Section* nrn_new_section(char const* const name);
-Symbol* nrn_get_symbol(char const* const name);
-void nrn_insert_mechanism(Section* sec, Symbol* mechanism);
-Object* nrn_new_object(Symbol* sym, int narg);
-void nrn_call_method(Object* obj, Symbol* method_sym, int narg);
-double* nrn_get_pp_property_ptr(Object* pp, const char* name);
-void nrn_push_double(double val);
-void nrn_push_object(Object* obj);
-Symbol* nrn_get_method_symbol(Object* obj, char const* const name);
-Object* nrn_pop_object(void);
-void nrn_unref_object(Object* obj);
-double* nrn_vector_data_ptr(Object* vec);
+void nrn_str_push(char** str);
+void nrn_function_call(Symbol* sym, int narg);
+double nrn_double_pop(void);
+Section* nrn_section_new(char const* const name);
+Symbol* nrn_symbol(char const* const name);
+void nrn_mechanism_insert(Section* sec, Symbol* mechanism);
+Object* nrn_object_new(Symbol* sym, int narg);
+void nrn_method_call(Object* obj, Symbol* method_sym, int narg);
+void nrn_pp_property_set(Object* pp, const char* name, double value);
+void nrn_double_push(double val);
+void nrn_object_push(Object* obj);
+Symbol* nrn_method_symbol(Object* obj, char const* const name);
+Object* nrn_object_pop(void);
+void nrn_object_unref(Object* obj);
+double* nrn_vector_data(Object* vec);
 int nrn_vector_capacity(Object* vec);
-double* nrn_get_steered_property_ptr(Object* obj, const char* name);
-double* nrn_get_rangevar_ptr(Section* const sec, Symbol* const sym, double const x);
-void nrn_push_double_ptr(double* addr);
-double* nrn_get_symbol_ptr(Symbol* sym);
+void nrn_steered_property_array_set(Object* obj, const char* name, int i, double value);
+void nrn_steered_property_set(Object* obj, const char* name, double value);
+void nrn_double_ptr_push(double* addr);
+double* nrn_symbol_ptr(Symbol* sym);
+void nrn_rangevar_push(Symbol* const sym, Section* const sec, double x);
+void nrn_symbol_push(Symbol* sym);
 }
 
 static const char* argv[] = {"netcon", "-nogui", "-nopython", nullptr};
@@ -64,67 +66,67 @@ int main(void) {
     // load the stdrun library
     temp_str = new char[11];
     strcpy(temp_str, "stdrun.hoc");
-    nrn_push_str(&temp_str);
-    nrn_call_function(nrn_get_symbol("load_file"), 1);
-    nrn_pop_double();
+    nrn_str_push(&temp_str);
+    nrn_function_call(nrn_symbol("load_file"), 1);
+    nrn_double_pop();
     delete[] temp_str;
 
 
     // topology
-    auto soma = nrn_new_section("soma");
+    auto soma = nrn_section_new("soma");
 
     // ion channels
-    nrn_insert_mechanism(soma, nrn_get_symbol("hh"));
+    nrn_mechanism_insert(soma, nrn_symbol("hh"));
 
     // NetStim
-    auto ns = nrn_new_object(nrn_get_symbol("NetStim"), 0);
-    *nrn_get_pp_property_ptr(ns, "start") = 5;
-    *nrn_get_pp_property_ptr(ns, "noise") = 1;
-    *nrn_get_pp_property_ptr(ns, "interval") = 5;
-    *nrn_get_pp_property_ptr(ns, "number") = 10;
+    auto ns = nrn_object_new(nrn_symbol("NetStim"), 0);
+    nrn_pp_property_set(ns, "start", 5);
+    nrn_pp_property_set(ns, "noise", 1);
+    nrn_pp_property_set(ns, "interval", 5);
+    nrn_pp_property_set(ns, "number", 10);
 
     // syn = h.ExpSyn(soma(0.5))
-    nrn_push_double(0.5);
-    auto syn = nrn_new_object(nrn_get_symbol("ExpSyn"), 1);
-    *nrn_get_pp_property_ptr(syn, "tau") = 3;  // 3 ms timeconstant
-    *nrn_get_pp_property_ptr(syn, "e") = 0;    // 0 mV reversal potential (excitatory synapse)
+    nrn_double_push(0.5);
+    auto syn = nrn_object_new(nrn_symbol("ExpSyn"), 1);
+    nrn_pp_property_set(syn, "tau", 3);  // 3 ms timeconstant
+    nrn_pp_property_set(syn, "e", 0);    // 0 mV reversal potential (excitatory synapse)
 
     // nc = h.NetCon(ns, syn)
-    nrn_push_object(ns);
-    nrn_push_object(syn);
-    auto nc = nrn_new_object(nrn_get_symbol("NetCon"), 2);
-    nrn_get_steered_property_ptr(nc, "weight")[0] = 0.5;
-    *nrn_get_steered_property_ptr(nc, "delay") = 0;
+    nrn_object_push(ns);
+    nrn_object_push(syn);
+    auto nc = nrn_object_new(nrn_symbol("NetCon"), 2);
+    nrn_steered_property_array_set(nc, "weight", 0, 0.5);
+    nrn_steered_property_set(nc, "delay", 0);
 
-    auto vec = nrn_new_object(nrn_get_symbol("Vector"), 0);
+    auto vec = nrn_object_new(nrn_symbol("Vector"), 0);
 
     // nc.record(vec)
-    nrn_push_object(vec);
-    nrn_call_method(nc, nrn_get_method_symbol(nc, "record"), 1);
+    nrn_object_push(vec);
+    nrn_method_call(nc, nrn_method_symbol(nc, "record"), 1);
     // TODO: record probably put something on the stack that should be removed
 
     // setup recording
-    v = nrn_new_object(nrn_get_symbol("Vector"), 0);
-    nrn_push_double_ptr(nrn_get_rangevar_ptr(soma, nrn_get_symbol("v"), 0.5));
-    nrn_call_method(v, nrn_get_method_symbol(v, "record"), 1);
-    nrn_unref_object(nrn_pop_object());  // record returns the vector
-    t = nrn_new_object(nrn_get_symbol("Vector"), 0);
-    nrn_push_double_ptr(nrn_get_symbol_ptr(nrn_get_symbol("t")));
-    nrn_call_method(t, nrn_get_method_symbol(t, "record"), 1);
-    nrn_unref_object(nrn_pop_object());  // record returns the vector
+    v = nrn_object_new(nrn_symbol("Vector"), 0);
+    nrn_rangevar_push(nrn_symbol("v"), soma, 0.5);
+    nrn_method_call(v, nrn_method_symbol(v, "record"), 1);
+    nrn_object_unref(nrn_object_pop());  // record returns the vector
+    t = nrn_object_new(nrn_symbol("Vector"), 0);
+    nrn_symbol_push(nrn_symbol("t"));
+    nrn_method_call(t, nrn_method_symbol(t, "record"), 1);
+    nrn_object_unref(nrn_object_pop());  // record returns the vector
 
     // finitialize(-65)
-    nrn_push_double(-65);
-    nrn_call_function(nrn_get_symbol("finitialize"), 1);
-    nrn_pop_double();
+    nrn_double_push(-65);
+    nrn_function_call(nrn_symbol("finitialize"), 1);
+    nrn_double_pop();
 
     // continuerun(100)
-    nrn_push_double(100);
-    nrn_call_function(nrn_get_symbol("continuerun"), 1);
-    nrn_pop_double();
+    nrn_double_push(100);
+    nrn_function_call(nrn_symbol("continuerun"), 1);
+    nrn_double_pop();
 
-    double* tvec = nrn_vector_data_ptr(t);
-    double* vvec = nrn_vector_data_ptr(v);
+    double* tvec = nrn_vector_data(t);
+    double* vvec = nrn_vector_data(v);
     ofstream out_file;
     out_file.open("netcon.csv");
     for (auto i = 0; i < nrn_vector_capacity(t); i++) {

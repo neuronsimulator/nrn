@@ -28,22 +28,21 @@ void setup_neuron_api(void) {
     nrn_function_call = (void (*)(Symbol*, int))(dlsym(handle, "nrn_function_call"));
     nrn_symbol = (Symbol * (*) (char const*) )(dlsym(handle, "nrn_symbol"));
     nrn_object_new = (Object * (*) (Symbol*, int) )(dlsym(handle, "nrn_object_new"));
-    nrn_push_section = (void (*)(Section*))(dlsym(handle, "nrn_push_section"));
-    nrn_pop_section = (void (*)(void))(dlsym(handle, "nrn_pop_section"));
+    nrn_section_push = (void (*)(Section*))(dlsym(handle, "nrn_section_push"));
+    nrn_section_pop = (void (*)(void))(dlsym(handle, "nrn_section_pop"));
     nrn_method_symbol = (Symbol * (*) (Object*, char const*) )(dlsym(handle, "nrn_method_symbol"));
     nrn_method_call = (void (*)(Object*, Symbol*, int))(dlsym(handle, "nrn_method_call"));
-    nrn_new_sectionlist_iterator = (SectionListIterator * (*) (nrn_Item*) )(
-        dlsym(handle, "nrn_new_sectionlist_iterator"));
-    nrn_get_allsec = (nrn_Item * (*) (void) )(dlsym(handle, "nrn_get_allsec"));
+    nrn_sectionlist_iterator_new = (SectionListIterator * (*) (nrn_Item*) )(
+        dlsym(handle, "nrn_sectionlist_iterator_new"));
+    nrn_allsec = (nrn_Item * (*) (void) )(dlsym(handle, "nrn_allsec"));
     nrn_sectionlist_iterator_done = (int (*)(SectionListIterator*))(
         dlsym(handle, "nrn_sectionlist_iterator_done"));
     nrn_sectionlist_iterator_next = (Section * (*) (SectionListIterator*) )(
         dlsym(handle, "nrn_sectionlist_iterator_next"));
-    nrn_free_sectionlist_iterator = (void (*)(SectionListIterator*))(
-        dlsym(handle, "nrn_free_sectionlist_iterator"));
+    nrn_sectionlist_iterator_free = (void (*)(SectionListIterator*))(
+        dlsym(handle, "nrn_sectionlist_iterator_free"));
     nrn_secname = (char const* (*) (Section*) )(dlsym(handle, "nrn_secname"));
-    nrn_sectionlist_data_get = (nrn_Item *
-                                (*) (Object*) )(dlsym(handle, "nrn_sectionlist_data_get"));
+    nrn_sectionlist_data = (nrn_Item * (*) (Object*) )(dlsym(handle, "nrn_sectionlist_data"));
 }
 
 int main(void) {
@@ -67,24 +66,24 @@ int main(void) {
 
     /* create a SectionList that is dend1 and its children */
     Object* seclist = nrn_object_new(nrn_symbol("SectionList"), 0);
-    nrn_push_section(dend1);
+    nrn_section_push(dend1);
     nrn_method_call(seclist, nrn_method_symbol(seclist, "subtree"), 0);
-    nrn_pop_section();
+    nrn_section_pop();
 
     /* loop over allsec, print out */
     printf("allsec:\n");
-    SectionListIterator* sli = nrn_new_sectionlist_iterator(nrn_get_allsec());
+    SectionListIterator* sli = nrn_sectionlist_iterator_new(nrn_allsec());
     for (; !nrn_sectionlist_iterator_done(sli);) {
         Section* sec = nrn_sectionlist_iterator_next(sli);
         printf("    %s\n", nrn_secname(sec));
     }
-    nrn_free_sectionlist_iterator(sli);
+    nrn_sectionlist_iterator_free(sli);
 
     printf("\ndend1's subtree:\n");
-    sli = nrn_new_sectionlist_iterator(nrn_sectionlist_data_get(seclist));
+    sli = nrn_sectionlist_iterator_new(nrn_sectionlist_data(seclist));
     for (; !nrn_sectionlist_iterator_done(sli);) {
         Section* sec = nrn_sectionlist_iterator_next(sli);
         printf("    %s\n", nrn_secname(sec));
     }
-    nrn_free_sectionlist_iterator(sli);
+    nrn_sectionlist_iterator_free(sli);
 }

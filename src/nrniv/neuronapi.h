@@ -38,15 +38,15 @@ void (*nrn_section_connect)(Section* child_sec,
                             Section* parent_sec,
                             double parent_x);
 void (*nrn_section_length_set)(Section* sec, double length);
-double (*nrn_get_section_length)(Section* sec);
-double (*nrn_get_section_Ra)(Section* sec);
-void (*nrn_set_section_Ra)(Section* sec, double val);
+double (*nrn_section_length_get)(Section* sec);
+double (*nrn_section_Ra_get)(Section* sec);
+void (*nrn_section_Ra_set)(Section* sec, double val);
 char const* (*nrn_secname)(Section* sec);
-void (*nrn_push_section)(Section* sec);
-void (*nrn_pop_section)(void);
-void (*nrn_insert_mechanism)(Section* sec, Symbol* mechanism);
-nrn_Item* (*nrn_get_allsec)(void);
-nrn_Item* (*nrn_sectionlist_data_get)(Object* obj);
+void (*nrn_section_push)(Section* sec);
+void (*nrn_section_pop)(void);
+void (*nrn_mechanism_insert)(Section* sec, Symbol* mechanism);
+nrn_Item* (*nrn_allsec)(void);
+nrn_Item* (*nrn_sectionlist_data)(Object* obj);
 
 /****************************************
  * Segments
@@ -91,26 +91,32 @@ char const* (*nrn_get_class_name)(Object* obj);
 /****************************************
  * Miscellaneous
  ****************************************/
-int (*nrn_call_hoc)(char const* command);
-SectionListIterator* (*nrn_new_sectionlist_iterator)(nrn_Item* my_sectionlist);
-void (*nrn_free_sectionlist_iterator)(SectionListIterator* sl);
+int (*nrn_hoc_call)(char const* command);
+SectionListIterator* (*nrn_sectionlist_iterator_new)(nrn_Item* my_sectionlist);
+void (*nrn_sectionlist_iterator_free)(SectionListIterator* sl);
 Section* (*nrn_sectionlist_iterator_next)(SectionListIterator* sl);
 int (*nrn_sectionlist_iterator_done)(SectionListIterator* sl);
-SymbolTableIterator* (*nrn_new_symbol_table_iterator)(Symlist* my_symbol_table);
-void (*nrn_free_symbol_table_iterator)(SymbolTableIterator* st);
+SymbolTableIterator* (*nrn_symbol_table_iterator_new)(Symlist* my_symbol_table);
+void (*nrn_symbol_table_iterator_free)(SymbolTableIterator* st);
 char const* (*nrn_symbol_table_iterator_next)(SymbolTableIterator* st);
 int (*nrn_symbol_table_iterator_done)(SymbolTableIterator* st);
 int (*nrn_vector_capacity)(Object* vec);
-double* (*nrn_vector_data_ptr)(Object* vec);
+double* (*nrn_vector_data)(Object* vec);
 double (*nrn_pp_property_get)(Object* pp, const char* name);
 double (*nrn_pp_property_array_get)(Object* pp, const char* name, int i);
 void (*nrn_pp_property_set)(Object* pp, const char* name, double value);
 void (*nrn_pp_property_array_set)(Object* pp, const char* name, int i, double value);
 void (*nrn_pp_property_push)(Object* pp, const char* name);
 void (*nrn_pp_property_array_push)(Object* pp, const char* name, int i);
-char const* (*nrn_get_symbol_name)(Symbol* sym);
-Symlist* (*nrn_get_symbol_table)(Symbol* sym);
-Symlist* (*nrn_get_global_symbol_table)(void);
+void (*nrn_steered_property_array_set)(Object* obj, const char* name, int i, double value);
+void (*nrn_steered_property_set)(Object* obj, const char* name, double value);
+double (*nrn_steered_property_array_get)(Object* obj, const char* name, int i);
+double (*nrn_steered_property_get)(Object* obj, const char* name);
+void (*nrn_steered_property_array_push)(Object* obj, const char* name, int i);
+void (*nrn_steered_property_push)(Object* obj, const char* name);
+char const* (*nrn_symbol_name)(Symbol * sym);
+Symlist* (*nrn_symbol_table)(Symbol * sym);
+Symlist* (*nrn_global_symbol_table)(void);
 // TODO: need shapeplot information extraction
 
 #ifdef __cplusplus

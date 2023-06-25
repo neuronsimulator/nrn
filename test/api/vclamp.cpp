@@ -31,8 +31,8 @@ void setup_neuron_api(void) {
         dlsym(handle, "nrn_function_call"));
     nrn_symbol = reinterpret_cast<decltype(nrn_symbol)>(dlsym(handle, "nrn_symbol"));
     nrn_double_pop = reinterpret_cast<decltype(nrn_double_pop)>(dlsym(handle, "nrn_double_pop"));
-    nrn_push_section = reinterpret_cast<decltype(nrn_push_section)>(
-        dlsym(handle, "nrn_push_section"));
+    nrn_section_push = reinterpret_cast<decltype(nrn_section_push)>(
+        dlsym(handle, "nrn_section_push"));
     nrn_section_new = reinterpret_cast<decltype(nrn_section_new)>(dlsym(handle, "nrn_section_new"));
     nrn_double_push = reinterpret_cast<decltype(nrn_double_push)>(dlsym(handle, "nrn_double_push"));
     nrn_object_new = reinterpret_cast<decltype(nrn_object_new)>(dlsym(handle, "nrn_object_new"));
@@ -45,8 +45,7 @@ void setup_neuron_api(void) {
         dlsym(handle, "nrn_object_unref"));
     nrn_vector_capacity = reinterpret_cast<decltype(nrn_vector_capacity)>(
         dlsym(handle, "nrn_vector_capacity"));
-    nrn_vector_data_ptr = reinterpret_cast<decltype(nrn_vector_data_ptr)>(
-        dlsym(handle, "nrn_vector_data_ptr"));
+    nrn_vector_data = reinterpret_cast<decltype(nrn_vector_data)>(dlsym(handle, "nrn_vector_data"));
     nrn_method_symbol = reinterpret_cast<decltype(nrn_method_symbol)>(
         dlsym(handle, "nrn_method_symbol"));
     nrn_method_call = reinterpret_cast<decltype(nrn_method_call)>(dlsym(handle, "nrn_method_call"));
@@ -81,7 +80,7 @@ int main(void) {
     soma = nrn_section_new("soma");
 
     // define soma morphology with two 3d points
-    nrn_push_section(soma);
+    nrn_section_push(soma);
     assert(soma);
     assert(nrn_section_length_set);
     nrn_section_length_set(soma, 10);
@@ -118,8 +117,8 @@ int main(void) {
     nrn_function_call(nrn_symbol("continuerun"), 1);
     nrn_double_pop();
 
-    double* tvec = nrn_vector_data_ptr(t);
-    double* vvec = nrn_vector_data_ptr(v);
+    double* tvec = nrn_vector_data(t);
+    double* vvec = nrn_vector_data(v);
     ofstream out_file;
     out_file.open("vclamp.csv");
     for (auto i = 0; i < nrn_vector_capacity(t); i++) {
