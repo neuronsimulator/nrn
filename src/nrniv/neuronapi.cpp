@@ -94,7 +94,7 @@ Section* nrn_new_section(char const* const name) {
     // TODO: check for memory leaks; should we free the symbol, pitm, etc?
     Symbol* symbol = new Symbol;
     auto pitm = new nrn_Item*;
-    char* name_ptr = new char[strlen(name)];
+    char* name_ptr = new char[strlen(name) + 1];
     strcpy(name_ptr, name);
     symbol->name = name_ptr;
     symbol->type = 1;
