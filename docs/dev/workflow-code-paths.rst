@@ -17,11 +17,11 @@ Circuit creation
 
 During this part of the simulation the segments, sections and their connections are created. All these are created based on the circuit which is defined by the users in HOC or Python scripts with the respective API.
 
-.. TODO: Add link to NEURON documentation for Section, Segments, etc
+See: :ref:`_hoc_topology` and :ref:`_topology`.
 
 During this part all the `Node` s are created as well as the `Section` s.
 
-.. TODO: Pointer to doxygen docs for Node and SectionPool
+See C++ documentation: `Node <https://neuronsimulator.github.io/nrn/doxygen/struct_node.html>`_, `Section <https://neuronsimulator.github.io/nrn/doxygen/struct_section.html>`_ and `SectionPool <https://neuronsimulator.github.io/nrn/doxygen/cxprop_8cpp.html#af7ff12d644d3eb29873e7fd2c7b9a18b>`_.
 
 The call graph of this part can be found below:
 
@@ -42,8 +42,6 @@ Insert Mechanisms
 ^^^^^^^^^^^^^^^^^
 
 After registering the mechanisms the user can insert them in the needed compartments. To do so they need to call the `insert` function on the proper section. 
-
-.. TODO: add pointer to insert function
 
 .. raw:: html
     :file: insert_mechanism.svg
