@@ -11,7 +11,7 @@ set(STRUCTURED_HEADER_FILES_TO_INSTALL
 set(HEADER_FILES_TO_INSTALL
     nrniv/backtrace_utils.h
     nrniv/bbsavestate.h
-    nrniv/nrnapi.h
+    nrniv/neuronapi.h
     nrnmpi/nrnmpidec.h
     nrnoc/cabvars.h
     nrnoc/md1redef.h
