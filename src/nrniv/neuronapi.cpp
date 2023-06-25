@@ -90,7 +90,7 @@ void nrn_redirect_stdout(int (*myprint)(int, char*)) {
  * Sections
  ****************************************/
 
-Section* nrn_new_section(char const* const name) {
+Section* nrn_section_new(char const* const name) {
     // TODO: check for memory leaks; should we free the symbol, pitm, etc?
     Symbol* symbol = new Symbol;
     auto pitm = new nrn_Item*;
@@ -105,7 +105,7 @@ Section* nrn_new_section(char const* const name) {
     return (*pitm)->element.sec;
 }
 
-void nrn_connect_sections(Section* child_sec,
+void nrn_section_connect(Section* child_sec,
                           double child_x,
                           Section* parent_sec,
                           double parent_x) {
@@ -116,7 +116,7 @@ void nrn_connect_sections(Section* child_sec,
     simpleconnectsection();
 }
 
-void nrn_set_section_length(Section* sec, double length) {
+void nrn_section_length_set(Section* sec, double length) {
     // TODO: call can_change_morph(sec) to check pt3dconst_; how should we handle
     // that?
     // TODO: is there a named constant so we don't have to use the magic number 2?
@@ -164,21 +164,21 @@ void nrn_insert_mechanism(Section* sec, Symbol* mechanism) {
  * Segments
  ****************************************/
 
-int nrn_get_nseg(Section const* const sec) {
+int nrn_nseg_get(Section const* const sec) {
     // always one more node than nseg
     return sec->nnode - 1;
 }
 
-void nrn_set_nseg(Section* const sec, const int nseg) {
+void nrn_nseg_set(Section* const sec, const int nseg) {
     nrn_change_nseg(sec, nseg);
 }
 
-void nrn_set_segment_diam(Section* const sec, const double x, const double diam) {
+void nrn_segment_diam_set(Section* const sec, const double x, const double diam) {
     Node* const node = node_exact(sec, x);
     // TODO: this is fine if no 3D points; does it work if there are 3D points?
     for (auto prop = node->prop; prop; prop = prop->next) {
         if (prop->_type == MORPHOLOGY) {
-            prop->param[0] = diam;
+            prop->param(0) = diam;
             diam_changed = 1;
             node->sec->recalc_area_ = 1;
             break;
@@ -186,15 +186,23 @@ void nrn_set_segment_diam(Section* const sec, const double x, const double diam)
     }
 }
 
-double* nrn_get_rangevar_ptr(Section* const sec, Symbol* const sym, double const x) {
-    return nrn_rangepointer(sec, sym, x);
+double nrn_rangevar_get(Symbol* const sym, Section* const sec, double x) {
+    return *nrn_rangepointer(sec, sym, x);
+}
+
+void nrn_rangevar_set(Symbol* const sym, Section* const sec, double x, double value) {
+    *nrn_rangepointer(sec, sym, x) = value;
+}
+
+void nrn_rangevar_push(Symbol* const sym, Section* const sec, double x) {
+    hoc_push(nrn_rangepointer(sec, sym, x));
 }
 
 nrn_Item* nrn_get_allsec(void) {
     return section_list;
 }
 
-nrn_Item* nrn_get_sectionlist_data(Object* obj) {
+nrn_Item* nrn_sectionlist_data_get(Object* obj) {
     // TODO: verify the obj is in fact a SectionList
     return (nrn_Item*) obj->u.this_pointer;
 }
@@ -203,37 +211,41 @@ nrn_Item* nrn_get_sectionlist_data(Object* obj) {
  * Functions, objects, and the stack
  ****************************************/
 
-Symbol* nrn_get_symbol(char const* const name) {
+Symbol* nrn_symbol(char const* const name) {
     return hoc_lookup(name);
 }
 
-int nrn_get_symbol_type(Symbol* sym) {
+int nrn_symbol_type(Symbol* sym) {
     // TODO: these types are in parse.hpp and are not the same between versions,
     // so we really should wrap
     return sym->type;
 }
 
-double* nrn_get_symbol_ptr(Symbol* sym) {
-    return sym->u.pval;
+void nrn_symbol_push(Symbol* sym) {
+    hoc_pushpx(sym->u.pval);
 }
 
-void nrn_push_double(double val) {
+/*double* nrn_get_symbol_ptr(Symbol* sym) {
+    return sym->u.pval;
+}*/
+
+void nrn_double_push(double val) {
     hoc_pushx(val);
 }
 
-double nrn_pop_double(void) {
+double nrn_double_pop(void) {
     return hoc_xpop();
 }
 
-void nrn_push_double_ptr(double* addr) {
+void nrn_double_ptr_push(double* addr) {
     hoc_pushpx(addr);
 }
 
-double* nrn_pop_double_ptr(void) {
+double* nrn_double_ptr_pop(void) {
     return hoc_pxpop();
 }
 
-void nrn_push_str(char** str) {
+void nrn_str_push(char** str) {
     hoc_pushstr(str);
 }
 
@@ -241,19 +253,19 @@ char** nrn_pop_str(void) {
     return hoc_strpop();
 }
 
-void nrn_push_int(int i) {
+void nrn_int_push(int i) {
     hoc_pushi(i);
 }
 
-int nrn_pop_int(void) {
+int nrn_int_pop(void) {
     return hoc_ipop();
 }
 
-void nrn_push_object(Object* obj) {
+void nrn_object_push(Object* obj) {
     hoc_push_object(obj);
 }
 
-Object* nrn_pop_object(void) {
+Object* nrn_object_pop(void) {
     // NOTE: the returned object should be unref'd when no longer needed
     Object** obptr = hoc_objpop();
     Object* new_ob_ptr = *obptr;
@@ -307,29 +319,29 @@ char const* const nrn_stack_type_name(stack_types_t id) {
     }
 }
 
-Object* nrn_new_object(Symbol* sym, int narg) {
+Object* nrn_object_new(Symbol* sym, int narg) {
     return hoc_newobj1(sym, narg);
 }
 
-Symbol* nrn_get_method_symbol(Object* obj, char const* const name) {
+Symbol* nrn_method_symbol(Object* obj, char const* const name) {
     return hoc_table_lookup(name, obj->ctemplate->symtable);
 }
 
-void nrn_call_method(Object* obj, Symbol* method_sym, int narg) {
+void nrn_method_call(Object* obj, Symbol* method_sym, int narg) {
     OcJump::execute_throw_on_exception(obj, method_sym, narg);
 }
 
-void nrn_call_function(Symbol* sym, int narg) {
+void nrn_function_call(Symbol* sym, int narg) {
     // NOTE: this differs from hoc_call_func in that the response remains on the
     // stack
     OcJump::execute_throw_on_exception(sym, narg);
 }
 
-void nrn_ref_object(Object* obj) {
+void nrn_object_ref(Object* obj) {
     obj->refcount++;
 }
 
-void nrn_unref_object(Object* obj) {
+void nrn_object_unref(Object* obj) {
     hoc_obj_unref(obj);
 }
 
@@ -340,7 +352,7 @@ char const* nrn_get_class_name(Object* obj) {
 /****************************************
  * Miscellaneous
  ****************************************/
-int nrn_call_hoc(char const* const command) {
+int nrn_hoc_call(char const* const command) {
     return hoc_oc(command);
 }
 
@@ -435,9 +447,34 @@ double* nrn_vector_data_ptr(Object* vec) {
     return vector_vec((IvocVect*) vec->u.this_pointer);
 }
 
-double* nrn_get_pp_property_ptr(Object* pp, const char* name) {
+double nrn_pp_property_get(Object* pp, const char* name) {
     int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    return &ob2pntproc_0(pp)->prop->param[index];
+    return *ob2pntproc_0(pp)->prop->param_handle(index);
+}
+
+double nrn_pp_property_array_get(Object* pp, const char* name, int i) {
+    int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
+    return *ob2pntproc_0(pp)->prop->param_handle(index, i);
+}
+
+void nrn_pp_property_set(Object* pp, const char* name, double value) {
+    int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
+    *ob2pntproc_0(pp)->prop->param_handle(index) = value;
+}
+
+void nrn_pp_property_array_set(Object* pp, const char* name, int i, double value) {
+    int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
+    *ob2pntproc_0(pp)->prop->param_handle(index, i) = value;
+}
+
+void nrn_pp_property_push(Object* pp, const char* name) {
+    int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
+    hoc_push(ob2pntproc_0(pp)->prop->param_handle(index));
+}
+
+void nrn_pp_property_array_push(Object* pp, const char* name, int i) {
+    int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
+    hoc_push(ob2pntproc_0(pp)->prop->param_handle(index, i));
 }
 
 double* nrn_get_steered_property_ptr(Object* obj, const char* name) {

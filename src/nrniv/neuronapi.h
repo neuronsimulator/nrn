@@ -32,12 +32,12 @@ void (*nrn_redirect_stdout)(int (*myprint)(int, char*));
 /****************************************
  * Sections
  ****************************************/
-Section* (*nrn_new_section)(char const* name);
-void (*nrn_connect_sections)(Section* child_sec,
+Section* (*nrn_section_new)(char const* name);
+void (*nrn_section_connect)(Section* child_sec,
                              double child_x,
                              Section* parent_sec,
                              double parent_x);
-void (*nrn_set_section_length)(Section* sec, double length);
+void (*nrn_section_length_set)(Section* sec, double length);
 double (*nrn_get_section_length)(Section* sec);
 double (*nrn_get_section_Ra)(Section* sec);
 void (*nrn_set_section_Ra)(Section* sec, double val);
@@ -46,43 +46,46 @@ void (*nrn_push_section)(Section* sec);
 void (*nrn_pop_section)(void);
 void (*nrn_insert_mechanism)(Section* sec, Symbol* mechanism);
 nrn_Item* (*nrn_get_allsec)(void);
-nrn_Item* (*nrn_get_sectionlist_data)(Object* obj);
+nrn_Item* (*nrn_sectionlist_data_get)(Object* obj);
 
 /****************************************
  * Segments
  ****************************************/
-int (*nrn_get_nseg)(Section const* sec);
-void (*nrn_set_nseg)(Section* sec, int nseg);
-void (*nrn_set_segment_diam)(Section* sec, double x, double diam);
-double* (*nrn_get_rangevar_ptr)(Section* sec, Symbol* sym, double x);
+int (*nrn_nseg_get)(Section const* sec);
+void (*nrn_nseg_set)(Section* sec, int nseg);
+void (*nrn_segment_diam_set)(Section* sec, double x, double diam);
+void (*nrn_rangevar_push)(Symbol* const sym, Section* const sec, double x);
+double (*nrn_rangevar_get)(Symbol* const sym, Section* const sec, double x);
+void (*nrn_rangevar_set)(Symbol* const sym, Section* const sec, double x, double value);
 
 /****************************************
  * Functions, objects, and the stack
  ****************************************/
-Symbol* (*nrn_get_symbol)(char const* name);
+Symbol* (*nrn_symbol)(char const* name);
+void (*nrn_symbol_push)(Symbol* sym);
 int (*nrn_get_symbol_type)(Symbol* sym);
 double* (*nrn_get_symbol_ptr)(Symbol* sym);
-void (*nrn_push_double)(double val);
-double (*nrn_pop_double)(void);
-void (*nrn_push_double_ptr)(double* addr);
-double* (*nrn_pop_double_ptr)(void);
-void (*nrn_push_str)(char** str);
+void (*nrn_double_push)(double val);
+double (*nrn_double_pop)(void);
+void (*nrn_double_ptr_push)(double* addr);
+double* (*nrn_double_ptr_pop)(void);
+void (*nrn_str_push)(char** str);
 char** (*nrn_pop_str)(void);
 void (*nrn_push_int)(int i);
 int (*nrn_pop_int)(void);
 void (*nrn_push_object)(Object* obj);
-Object* (*nrn_pop_object)(void);
+Object* (*nrn_object_pop)(void);
 stack_types_t (*nrn_stack_type)(void);
 char const* const (*nrn_stack_type_name)(stack_types_t id);
-Object* (*nrn_new_object)(Symbol* sym, int narg);
-Symbol* (*nrn_get_method_symbol)(Object* obj, char const* name);
+Object* (*nrn_object_new)(Symbol* sym, int narg);
+Symbol* (*nrn_method_symbol)(Object* obj, char const* name);
 // TODO: the next two functions throw exceptions in C++; need a version that
 //       returns a bool success indicator instead (this is actually the
 //       classic behavior of OcJump)
-void (*nrn_call_method)(Object* obj, Symbol* method_sym, int narg);
-void (*nrn_call_function)(Symbol* sym, int narg);
+void (*nrn_method_call)(Object* obj, Symbol* method_sym, int narg);
+void (*nrn_function_call)(Symbol* sym, int narg);
 void (*nrn_ref_object)(Object* obj);
-void (*nrn_unref_object)(Object* obj);
+void (*nrn_object_unref)(Object* obj);
 char const* (*nrn_get_class_name)(Object* obj);
 
 /****************************************
@@ -99,8 +102,12 @@ char const* (*nrn_symbol_table_iterator_next)(SymbolTableIterator* st);
 int (*nrn_symbol_table_iterator_done)(SymbolTableIterator* st);
 int (*nrn_vector_capacity)(Object* vec);
 double* (*nrn_vector_data_ptr)(Object* vec);
-double* (*nrn_get_pp_property_ptr)(Object* pp, const char* name);
-double* (*nrn_get_steered_property_ptr)(Object* obj, const char* name);
+double (*nrn_pp_property_get)(Object* pp, const char* name);
+double (*nrn_pp_property_array_get)(Object* pp, const char* name, int i);
+void (*nrn_pp_property_set)(Object* pp, const char* name, double value);
+void (*nrn_pp_property_array_set)(Object* pp, const char* name, int i, double value);
+void (*nrn_pp_property_push)(Object* pp, const char* name);
+void (*nrn_pp_property_array_push)(Object* pp, const char* name, int i);
 char const* (*nrn_get_symbol_name)(Symbol* sym);
 Symlist* (*nrn_get_symbol_table)(Symbol* sym);
 Symlist* (*nrn_get_global_symbol_table)(void);
