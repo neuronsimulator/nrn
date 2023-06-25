@@ -26,39 +26,36 @@ void setup_neuron_api(void) {
     }
     nrn_init = reinterpret_cast<decltype(nrn_init)>(dlsym(handle, "nrn_init"));
     assert(nrn_init);
-    nrn_push_str = reinterpret_cast<decltype(nrn_push_str)>(dlsym(handle, "nrn_push_str"));
-    nrn_call_function = reinterpret_cast<decltype(nrn_call_function)>(
-        dlsym(handle, "nrn_call_function"));
-    nrn_get_symbol = reinterpret_cast<decltype(nrn_get_symbol)>(dlsym(handle, "nrn_get_symbol"));
-    nrn_pop_double = reinterpret_cast<decltype(nrn_pop_double)>(dlsym(handle, "nrn_pop_double"));
+    nrn_str_push = reinterpret_cast<decltype(nrn_str_push)>(dlsym(handle, "nrn_str_push"));
+    nrn_function_call = reinterpret_cast<decltype(nrn_function_call)>(
+        dlsym(handle, "nrn_function_call"));
+    nrn_symbol = reinterpret_cast<decltype(nrn_symbol)>(dlsym(handle, "nrn_symbol"));
+    nrn_double_pop = reinterpret_cast<decltype(nrn_double_pop)>(dlsym(handle, "nrn_double_pop"));
     nrn_push_section = reinterpret_cast<decltype(nrn_push_section)>(
         dlsym(handle, "nrn_push_section"));
-    nrn_new_section = reinterpret_cast<decltype(nrn_new_section)>(dlsym(handle, "nrn_new_section"));
-    nrn_push_double = reinterpret_cast<decltype(nrn_push_double)>(dlsym(handle, "nrn_push_double"));
-    nrn_new_object = reinterpret_cast<decltype(nrn_new_object)>(dlsym(handle, "nrn_new_object"));
-    nrn_get_pp_property_ptr = reinterpret_cast<decltype(nrn_get_pp_property_ptr)>(
-        dlsym(handle, "nrn_get_pp_property_ptr"));
-    nrn_push_double_ptr = reinterpret_cast<decltype(nrn_push_double_ptr)>(
-        dlsym(handle, "nrn_push_double_ptr"));
-    nrn_get_rangevar_ptr = reinterpret_cast<decltype(nrn_get_rangevar_ptr)>(
-        dlsym(handle, "nrn_get_rangevar_ptr"));
-    nrn_call_method = reinterpret_cast<decltype(nrn_call_method)>(dlsym(handle, "nrn_call_method"));
-    nrn_unref_object = reinterpret_cast<decltype(nrn_unref_object)>(
-        dlsym(handle, "nrn_unref_object"));
+    nrn_section_new = reinterpret_cast<decltype(nrn_section_new)>(dlsym(handle, "nrn_section_new"));
+    nrn_double_push = reinterpret_cast<decltype(nrn_double_push)>(dlsym(handle, "nrn_double_push"));
+    nrn_object_new = reinterpret_cast<decltype(nrn_object_new)>(dlsym(handle, "nrn_object_new"));
+    nrn_pp_property_array_set = reinterpret_cast<decltype(nrn_pp_property_array_set)>(
+        dlsym(handle, "nrn_pp_property_array_set"));
+    nrn_rangevar_push = reinterpret_cast<decltype(nrn_rangevar_push)>(
+        dlsym(handle, "nrn_rangevar_push"));
+    nrn_method_call = reinterpret_cast<decltype(nrn_method_call)>(dlsym(handle, "nrn_method_call"));
+    nrn_object_unref = reinterpret_cast<decltype(nrn_object_unref)>(
+        dlsym(handle, "nrn_object_unref"));
     nrn_vector_capacity = reinterpret_cast<decltype(nrn_vector_capacity)>(
         dlsym(handle, "nrn_vector_capacity"));
     nrn_vector_data_ptr = reinterpret_cast<decltype(nrn_vector_data_ptr)>(
         dlsym(handle, "nrn_vector_data_ptr"));
-    nrn_get_method_symbol = reinterpret_cast<decltype(nrn_get_method_symbol)>(
-        dlsym(handle, "nrn_get_method_symbol"));
-    nrn_call_method = reinterpret_cast<decltype(nrn_call_method)>(dlsym(handle, "nrn_call_method"));
-    nrn_pop_object = reinterpret_cast<decltype(nrn_pop_object)>(dlsym(handle, "nrn_pop_object"));
-    nrn_get_symbol_ptr = reinterpret_cast<decltype(nrn_get_symbol_ptr)>(
-        dlsym(handle, "nrn_get_symbol_ptr"));
-    nrn_set_section_length = reinterpret_cast<decltype(nrn_set_section_length)>(
-        dlsym(handle, "nrn_set_section_length"));
-    nrn_set_segment_diam = reinterpret_cast<decltype(nrn_set_segment_diam)>(
-        dlsym(handle, "nrn_set_segment_diam"));
+    nrn_method_symbol = reinterpret_cast<decltype(nrn_method_symbol)>(
+        dlsym(handle, "nrn_method_symbol"));
+    nrn_method_call = reinterpret_cast<decltype(nrn_method_call)>(dlsym(handle, "nrn_method_call"));
+    nrn_object_pop = reinterpret_cast<decltype(nrn_object_pop)>(dlsym(handle, "nrn_object_pop"));
+    nrn_symbol_push = reinterpret_cast<decltype(nrn_symbol_push)>(dlsym(handle, "nrn_symbol_push"));
+    nrn_section_length_set = reinterpret_cast<decltype(nrn_section_length_set)>(
+        dlsym(handle, "nrn_section_length_set"));
+    nrn_segment_diam_set = reinterpret_cast<decltype(nrn_segment_diam_set)>(
+        dlsym(handle, "nrn_segment_diam_set"));
 }
 
 int main(void) {
@@ -74,55 +71,52 @@ int main(void) {
     // load the stdrun library
     temp_str = new char[11];
     strcpy(temp_str, "stdrun.hoc");
-    nrn_push_str(&temp_str);
-    nrn_call_function(nrn_get_symbol("load_file"), 1);
-    nrn_pop_double();
+    nrn_str_push(&temp_str);
+    nrn_function_call(nrn_symbol("load_file"), 1);
+    nrn_double_pop();
     delete[] temp_str;
 
 
     // topology
-    soma = nrn_new_section("soma");
+    soma = nrn_section_new("soma");
 
     // define soma morphology with two 3d points
     nrn_push_section(soma);
-    nrn_set_section_length(soma, 10);
-    nrn_set_segment_diam(soma, 0.5, 3);
+    assert(soma);
+    assert(nrn_section_length_set);
+    nrn_section_length_set(soma, 10);
+    nrn_segment_diam_set(soma, 0.5, 3);
 
     // voltage clamp at soma(0.5)
-    nrn_push_double(0.5);
-    vclamp = nrn_new_object(nrn_get_symbol("VClamp"), 1);
-    auto vclamp_amp = nrn_get_pp_property_ptr(vclamp, "amp");
-    auto vclamp_dur = nrn_get_pp_property_ptr(vclamp, "dur");
-
+    nrn_double_push(0.5);
+    vclamp = nrn_object_new(nrn_symbol("VClamp"), 1);
     // 0 mV for 1 ms; 10 mV for the next 2 ms; 5 mV for the next 3 ms
-
-    vclamp_amp[0] = 0;
-    vclamp_amp[1] = 10;
-    vclamp_amp[2] = 5;
-
-    vclamp_dur[0] = 1;
-    vclamp_dur[1] = 2;
-    vclamp_dur[2] = 3;
+    nrn_pp_property_array_set(vclamp, "amp", 0, 0);
+    nrn_pp_property_array_set(vclamp, "amp", 1, 10);
+    nrn_pp_property_array_set(vclamp, "amp", 2, 5);
+    nrn_pp_property_array_set(vclamp, "dur", 0, 1);
+    nrn_pp_property_array_set(vclamp, "dur", 1, 2);
+    nrn_pp_property_array_set(vclamp, "dur", 2, 3);
 
     // setup recording
-    v = nrn_new_object(nrn_get_symbol("Vector"), 0);
-    nrn_push_double_ptr(nrn_get_rangevar_ptr(soma, nrn_get_symbol("v"), 0.5));
-    nrn_call_method(v, nrn_get_method_symbol(v, "record"), 1);
-    nrn_unref_object(nrn_pop_object());  // record returns the vector
-    t = nrn_new_object(nrn_get_symbol("Vector"), 0);
-    nrn_push_double_ptr(nrn_get_symbol_ptr(nrn_get_symbol("t")));
-    nrn_call_method(t, nrn_get_method_symbol(t, "record"), 1);
-    nrn_unref_object(nrn_pop_object());  // record returns the vector
+    v = nrn_object_new(nrn_symbol("Vector"), 0);
+    nrn_rangevar_push(nrn_symbol("v"), soma, 0.5);
+    nrn_method_call(v, nrn_method_symbol(v, "record"), 1);
+    nrn_object_unref(nrn_object_pop());  // record returns the vector
+    t = nrn_object_new(nrn_symbol("Vector"), 0);
+    nrn_symbol_push(nrn_symbol("t"));
+    nrn_method_call(t, nrn_method_symbol(t, "record"), 1);
+    nrn_object_unref(nrn_object_pop());  // record returns the vector
 
     // finitialize(-65)
-    nrn_push_double(-65);
-    nrn_call_function(nrn_get_symbol("finitialize"), 1);
-    nrn_pop_double();
+    nrn_double_push(-65);
+    nrn_function_call(nrn_symbol("finitialize"), 1);
+    nrn_double_pop();
 
     // continuerun(6)
-    nrn_push_double(6);
-    nrn_call_function(nrn_get_symbol("continuerun"), 1);
-    nrn_pop_double();
+    nrn_double_push(6);
+    nrn_function_call(nrn_symbol("continuerun"), 1);
+    nrn_double_pop();
 
     double* tvec = nrn_vector_data_ptr(t);
     double* vvec = nrn_vector_data_ptr(v);

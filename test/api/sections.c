@@ -30,8 +30,7 @@ void setup_neuron_api(void) {
     nrn_object_new = (Object * (*) (Symbol*, int) )(dlsym(handle, "nrn_object_new"));
     nrn_push_section = (void (*)(Section*))(dlsym(handle, "nrn_push_section"));
     nrn_pop_section = (void (*)(void))(dlsym(handle, "nrn_pop_section"));
-    nrn_method_symbol = (Symbol *
-                             (*) (Object*, char const*) )(dlsym(handle, "nrn_method_symbol"));
+    nrn_method_symbol = (Symbol * (*) (Object*, char const*) )(dlsym(handle, "nrn_method_symbol"));
     nrn_method_call = (void (*)(Object*, Symbol*, int))(dlsym(handle, "nrn_method_call"));
     nrn_new_sectionlist_iterator = (SectionListIterator * (*) (nrn_Item*) )(
         dlsym(handle, "nrn_new_sectionlist_iterator"));

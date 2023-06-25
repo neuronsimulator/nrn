@@ -105,10 +105,7 @@ Section* nrn_section_new(char const* const name) {
     return (*pitm)->element.sec;
 }
 
-void nrn_section_connect(Section* child_sec,
-                          double child_x,
-                          Section* parent_sec,
-                          double parent_x) {
+void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x) {
     nrn_pushsec(child_sec);
     hoc_pushx(child_x);
     nrn_pushsec(parent_sec);

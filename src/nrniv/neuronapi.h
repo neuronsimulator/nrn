@@ -34,9 +34,9 @@ void (*nrn_redirect_stdout)(int (*myprint)(int, char*));
  ****************************************/
 Section* (*nrn_section_new)(char const* name);
 void (*nrn_section_connect)(Section* child_sec,
-                             double child_x,
-                             Section* parent_sec,
-                             double parent_x);
+                            double child_x,
+                            Section* parent_sec,
+                            double parent_x);
 void (*nrn_section_length_set)(Section* sec, double length);
 double (*nrn_get_section_length)(Section* sec);
 double (*nrn_get_section_Ra)(Section* sec);

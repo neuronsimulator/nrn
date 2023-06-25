@@ -52,10 +52,9 @@ void setup_neuron_api(void) {
         dlsym(handle, "nrn_method_symbol"));
     nrn_method_call = reinterpret_cast<decltype(nrn_method_call)>(dlsym(handle, "nrn_method_call"));
     nrn_object_pop = reinterpret_cast<decltype(nrn_object_pop)>(dlsym(handle, "nrn_object_pop"));
-    nrn_symbol_push = reinterpret_cast<decltype(nrn_symbol_push)>(
-        dlsym(handle, "nrn_symbol_push"));
+    nrn_symbol_push = reinterpret_cast<decltype(nrn_symbol_push)>(dlsym(handle, "nrn_symbol_push"));
     nrn_pp_property_set = reinterpret_cast<decltype(nrn_pp_property_set)>(
-        dlsym(handle, "nrn_pp_property_set"));        
+        dlsym(handle, "nrn_pp_property_set"));
 }
 
 int main(void) {
