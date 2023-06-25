@@ -52,3 +52,7 @@ To that end, the following table's columns constitute:
      - NEURON Java support.
      - `#1937 <https://github.com/neuronsimulator/nrn/pull/1937>`_
      - 5a67957
+   * - GPU wheels
+     - Experimental support for ``pip install neuron-gpu`` proved user-unfriendly and hard to maintain.
+     - `#2378 <https://github.com/neuronsimulator/nrn/pull/2378>`_
+     - fb17127

@@ -173,7 +173,6 @@ char* cxx_char_alloc(size_t sz) {
 
 
 #ifndef MINGW  // actual implementation in ivocwin.cpp
-void nrniv_bind_thread(void);
 void nrniv_bind_thread() {
     hoc_pushx(1.);
     hoc_ret();
@@ -233,7 +232,6 @@ void ivoc_style();
 // because NEURON can no longer maintain its own copy of dialogs.cpp
 // we communicate with the InterViews version through a callback.
 extern bool (*IVDialog_setAcceptInput)(bool);
-bool setAcceptInputCallback(bool);
 bool setAcceptInputCallback(bool b) {
     Oc oc;
     return oc.setAcceptInput(b);
@@ -414,10 +412,6 @@ void Oc::notify_when_freed(void* p, Observer* ob) {
     nrn_notify_when_void_freed(p, ob);
 }
 
-void Oc::notify_when_freed(double* p, Observer* ob) {
-    nrn_notify_when_double_freed(p, ob);
-}
-
 void Oc::notify_pointer_disconnect(Observer* ob) {
     nrn_notify_pointer_disconnect(ob);
 }
@@ -484,7 +478,6 @@ void single_event_run() {
         session->quit();
     }
     Oc::setAcceptInput(true);
-    ;
     HocPanel::keep_updated();
     WinDismiss::dismiss_defer();  // in case window was dismissed
 }

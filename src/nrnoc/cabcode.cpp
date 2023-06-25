@@ -920,17 +920,17 @@ void nrn_rangeconst(Section* sec, Symbol* s, neuron::container::data_handle<doub
         if (op) {
             *pd = hoc_opasgn(op, NODEV(nd), d);
         }
-        nd->set_v(*pd);
+        nd->v() = *pd;
         nd = node_ptr(sec, 1., (double*) 0);
         if (op) {
             *pd = hoc_opasgn(op, NODEV(nd), d);
         }
-        nd->set_v(*pd);
+        nd->v() = *pd;
         for (i = 0; i < n; i++) {
             if (op) {
                 *pd = hoc_opasgn(op, NODEV(sec->pnode[i]), d);
             }
-            sec->pnode[i]->set_v(*pd);
+            sec->pnode[i]->v() = *pd;
         }
     } else {
         if (s->u.rng.type == IMEMFAST) {
@@ -1139,17 +1139,17 @@ void range_interpolate(void) /*symbol at pc, 4 values on stack*/
         if (x1 == 0. || x1 == 1.) {
             nd = node_ptr(sec, x1, (double*) 0);
             if (op) {
-                nd->set_v(hoc_opasgn(op, NODEV(nd), y1));
+                nd->v() = hoc_opasgn(op, NODEV(nd), y1);
             } else {
-                nd->set_v(y1);
+                nd->v() = y1;
             }
         }
         if (x2 == 1. || x2 == 0.) {
             nd = node_ptr(sec, x2, (double*) 0);
             if (op) {
-                nd->set_v(hoc_opasgn(op, NODEV(nd), y2));
+                nd->v() = hoc_opasgn(op, NODEV(nd), y2);
             } else {
-                nd->set_v(y2);
+                nd->v() = y2;
             }
         }
         for (i = i1; i != i2; i += di) {
@@ -1162,9 +1162,9 @@ void range_interpolate(void) /*symbol at pc, 4 values on stack*/
             if (thet >= -1e-9 && thet <= 1. + 1e-9) {
                 y = y1 * (1. - thet) + y2 * thet;
                 if (op) {
-                    nd->set_v(hoc_opasgn(op, NODEV(nd), y));
+                    nd->v() = hoc_opasgn(op, NODEV(nd), y);
                 } else {
-                    nd->set_v(y);
+                    nd->v() = y;
                 }
             }
         }
@@ -1260,14 +1260,7 @@ neuron::container::data_handle<double> nrn_rangepointer(Section* sec, Symbol* s,
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
             nd = node_ptr(sec, d, nullptr);
-            if (!nd->_nt) {
-                v_setup_vectors();
-                assert(nd->_nt);
-            }
-            // rhs is not soa<...> managed
-            return neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                          nd->_nt->_nrn_fast_imem->_nrn_sav_rhs +
-                                                              nd->v_node_index};
+            return nd->sav_rhs_handle();
         } else {
             hoc_execerror(
                 "cvode.use_fast_imem(1) has not been executed so i_membrane_ does not exist", 0);
@@ -1303,14 +1296,7 @@ neuron::container::data_handle<double> nrnpy_rangepointer(Section* sec,
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
             auto* nd = node_ptr(sec, d, nullptr);
-            if (!nd->_nt) {
-                v_setup_vectors();
-                assert(nd->_nt);
-            }
-            // rhs is not soa<...> managed
-            return neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                          nd->_nt->_nrn_fast_imem->_nrn_sav_rhs +
-                                                              nd->v_node_index};
+            return nd->sav_rhs_handle();
         } else {
             return {};
         }
@@ -1341,11 +1327,7 @@ void rangevarevalpointer() {
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
             auto* nd = node_ptr(sec, d, nullptr);
-            if (!nd->_nt) {
-                v_setup_vectors();
-                assert(nd->_nt);
-            }
-            hoc_pushpx(nd->_nt->_nrn_fast_imem->_nrn_sav_rhs + nd->v_node_index);
+            hoc_push(nd->sav_rhs_handle());
         } else {
             hoc_execerror(
                 "cvode.use_fast_imem(1) has not been executed so i_membrane_ does not exist", 0);
