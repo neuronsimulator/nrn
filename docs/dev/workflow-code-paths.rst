@@ -25,9 +25,9 @@ The ``nrnivmodl`` executable translates the ``MOD`` files from the ``NMODL`` lan
 Circuit creation
 ^^^^^^^^^^^^^^^^
 
-During this part of the simulation the segments, sections and their connections are created. All these are created based on the circuit which is defined by the users in HOC or Python scripts with the respective API.
+During this part of the simulation the segments, sections and their connections are created. All these are created based on the circuit which is defined by the users in Python or HOC scripts with the respective API.
 
-See: :ref:`_hoc_topology` and :ref:`_topology`.
+See: :ref:`_topology` and :ref:`_hoc_topology`.
 
 During this part all the ``Node`` s are created as well as the ``Section`` s.
 
@@ -57,7 +57,7 @@ During the mechanism insertion the needed data structures to hold their data are
 Initialization
 ^^^^^^^^^^^^^^
 
-After all the needed ``Section`` s for the simulation have been created together with the data structures assigned to them and their mechanisms all the data structures all ordered and initialized. In this place the execution of the ``INITIAL`` block of the inserted ``MOD`` files is also executed.
+After all the simulation ``Section`` have been created, along with the data structures assigned to them and their mechanisms, all the underlying data structures are ordered and initialized. At this stage, the ``INITIAL`` blocks of the inserted ``MOD`` files are also executed.
 
 .. raw:: html
     :file: initialization.svg
