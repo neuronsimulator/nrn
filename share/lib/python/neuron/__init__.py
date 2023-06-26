@@ -1060,7 +1060,6 @@ class _PlotShapePlot(_WrapperPlot):
                     sections,
                     variable,
                     mode,
-                    show_color=False,
                     line_width=2,
                     cmap=cm.cool,
                     **kwargs,
@@ -1083,8 +1082,6 @@ class _PlotShapePlot(_WrapperPlot):
 
                     h.define_shape()
 
-                    # default color is black
-                    kwargs.setdefault("color", "black")
                     # Plot each segement as a line
                     lines = {}
                     lines_list = []
@@ -1117,7 +1114,7 @@ class _PlotShapePlot(_WrapperPlot):
                             for sec in sections:
                                 for line, val in zip(lines_list, vals):
                                     if val is not None:
-                                        if show_color == True:
+                                        if "color" not in kwargs:
                                             col = _get_color(
                                                 variable,
                                                 val,
@@ -1128,7 +1125,8 @@ class _PlotShapePlot(_WrapperPlot):
                                             )
                                         else:
                                             col = kwargs["color"]
-
+                                    else:
+                                        col = kwargs.get("color", "black")
                                     line.set_color(col)
                     return lines
 
@@ -1225,7 +1223,9 @@ class _PlotShapePlot(_WrapperPlot):
                 [item if len(item) == 2 else "0" + item for item in items]
             )
 
-        def _do_plot_on_plotly(width=2, show_color=False):  ## add width and show_color
+        def _do_plot_on_plotly(
+            width=2, color=None, cmap=None
+        ):  ## add width and show_color
             """requires matplotlib for colormaps if not specified explicitly"""
             import ctypes
             import plotly.graph_objects as go
@@ -1242,7 +1242,7 @@ class _PlotShapePlot(_WrapperPlot):
                     x, y, z = _get_3d_pt(segment)
                     # approximately match the appearance of the matplotlib defaults
                     kwargs.setdefault("marker_size", 5)
-                    kwargs.setdefault("marker_color", "black")  ## changed red to black
+                    kwargs.setdefault("marker_color", "red")
                     kwargs.setdefault("marker_opacity", 1)
 
                     self.add_trace(
@@ -1315,39 +1315,26 @@ class _PlotShapePlot(_WrapperPlot):
                         hover_template = str(seg)
                         if val is not None:
                             hover_template += "<br>" + ("%.3f" % val)
-                        col = _get_color(variable, val, cmap, lo, hi, val_range)
+                        if color is None:
+                            col = _get_color(variable, val, cmap, lo, hi, val_range)
+                        else:
+                            col = color
                         if mode == 0:
                             diam = seg.diam
                         else:
                             diam = width
 
-                        if show_color:
-                            data.append(
-                                go.Scatter3d(
-                                    x=xs,
-                                    y=ys,
-                                    z=zs,
-                                    name="",
-                                    hovertemplate=hover_template,
-                                    mode="lines",
-                                    line=go.scatter3d.Line(color=col, width=diam),
-                                )
+                        data.append(
+                            go.Scatter3d(
+                                x=xs,
+                                y=ys,
+                                z=zs,
+                                name="",
+                                hovertemplate=hover_template,
+                                mode="lines",
+                                line=go.scatter3d.Line(color=col, width=diam),
                             )
-                        else:  ## added this block to set the mode to show diameter and not show_color
-                            kwargs.setdefault("color", "black")
-                            data.append(
-                                go.Scatter3d(
-                                    x=xs,
-                                    y=ys,
-                                    z=zs,
-                                    name="",
-                                    hovertemplate=hover_template,
-                                    mode="lines",
-                                    line=go.scatter3d.Line(
-                                        color=kwargs["color"], width=diam
-                                    ),
-                                )
-                            )
+                        )
 
                 return FigureWidgetWithNEURON(data=data, layout={"showlegend": False})
 
