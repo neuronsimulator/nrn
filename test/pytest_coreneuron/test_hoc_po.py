@@ -5,6 +5,8 @@ from neuron import h
 from neuron.units import ms, mV
 
 import numpy as np
+import os
+import shutil
 import subprocess
 
 
@@ -165,18 +167,14 @@ def test_2():
 # BBSaveState for mixed (hoc and python cells) Ring.
 
 # some helpers copied from ../parallel_tests/test_bas.py
-def subprocess_run(cmd):
-    subprocess.run(cmd, shell=True).check_returncode()
-
-
 def rmfiles():
     if pc.id() == 0:
-        subprocess_run("rm -r -f bbss_out")
-        subprocess_run("rm -r -f in")
-        subprocess_run("rm -r -f binbufout")
-        subprocess_run("rm -r -f binbufin")
-        subprocess_run("mkdir binbufout")
-        subprocess_run("rm -f allcell-bbss.dat")
+        shutil.rmtree("bbss_out", ignore_errors=True)
+        shutil.rmtree("in", ignore_errors=True)
+        shutil.rmtree("binbufout", ignore_errors=True)
+        shutil.rmtree("binbufin", ignore_errors=True)
+        os.mkdir("binbufout")
+        os.unlink("allcell-bbss.dat")
     pc.barrier()
 
 
@@ -228,8 +226,7 @@ def prun(tstop, mode=None):
         bbss = h.BBSaveState()
         bbss.restore_test()
     elif mode == "restore_test_bin":
-        subprocess_run("mkdir binbufin")
-        subprocess_run("cp binbufout/* binbufin")
+        shutil.copytree("binbufout", "binbufin")
         bbss = h.BBSaveState()
         bbss.restore_test_bin()
     elif mode == "restore":

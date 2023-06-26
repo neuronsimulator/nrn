@@ -269,7 +269,10 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
 #endif
             wx_ += wt_;
             ws_ += wt1_;
+	    // ThreadSanitizer claimed a data race without the mutex here
+	    MUTLOCK
             seqcnt_ = 0;
+	    MUTUNLOCK
         }
     }
 #endif
