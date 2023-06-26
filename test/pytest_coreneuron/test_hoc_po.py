@@ -1,6 +1,6 @@
 # Test proper management of HOC PythonObject (no memory leaks)
 # Expanded for more testing and coverage of BBSaveState.
-
+from glob import iglob
 from neuron import h
 from neuron.units import ms, mV
 
@@ -174,34 +174,29 @@ def rmfiles():
         shutil.rmtree("binbufout", ignore_errors=True)
         shutil.rmtree("binbufin", ignore_errors=True)
         os.mkdir("binbufout")
-        os.unlink("allcell-bbss.dat")
+        try:
+            os.unlink("allcell-bbss.dat")
+        except FileNotFoundError:
+            pass
     pc.barrier()
 
 
 def cp_out_to_in():
-    out2in_sh = r"""
-#!/usr/bin/env bash
-out=bbss_out
-rm -r -f in
-mkdir in
-cat $out/tmp > in/tmp
-for f in $out/tmp.*.* ; do
-  i=`echo "$f" | sed 's/.*tmp\.\([0-9]*\)\..*/\1/'`
-  if test ! -f in/tmp.$i ; then
-    cnt=`ls $out/tmp.$i.* | wc -l`
-    echo $cnt > in/tmp.$i
-    cat $out/tmp.$i.* >> in/tmp.$i
-  fi
-done    
-"""
     if pc.id() == 0:
-        import tempfile
-
-        with tempfile.NamedTemporaryFile("w") as scriptfile:
-            scriptfile.write(out2in_sh)
-            scriptfile.flush()
-            subprocess.check_call(["/bin/bash", scriptfile.name])
-
+        shutil.rmtree("in", ignore_errors=True)
+        os.mkdir("in")
+        shutil.copyfile("bbss_out/tmp", "in/tmp")
+        for f in iglob("bbss_out/tmp.*.*"):
+            # Get A from bbss_out/tmp.A.B
+            i = os.path.basename(f).split(".", 2)[1]
+            if not os.path.isfile("in/tmp.{}".format(i)):
+                files = list(iglob("bbss_out/tmp.{}.*".format(i)))
+                cnt = len(files)
+                with open("in/tmp.{}".format(i), "w") as ofile:
+                    ofile.write("{}\n".format(cnt))
+                    for fname in files:
+                        with open(fname, "r") as ifile:
+                            shutil.copyfileobj(ifile, ofile)
     pc.barrier()
 
 
