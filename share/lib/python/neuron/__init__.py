@@ -1060,7 +1060,7 @@ class _PlotShapePlot(_WrapperPlot):
                     sections,
                     variable,
                     mode,
-                    show_color,
+                    show_color=False,
                     line_width=2,
                     cmap=cm.cool,
                     **kwargs,
@@ -1225,7 +1225,7 @@ class _PlotShapePlot(_WrapperPlot):
                 [item if len(item) == 2 else "0" + item for item in items]
             )
 
-        def _do_plot_on_plotly(width, show_color):  ## add width and show_color
+        def _do_plot_on_plotly(width, show_color=False):  ## add width and show_color
             """requires matplotlib for colormaps if not specified explicitly"""
             import ctypes
             import plotly.graph_objects as go

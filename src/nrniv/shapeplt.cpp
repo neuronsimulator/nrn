@@ -216,24 +216,25 @@ static double sh_show(void* v) {
     hoc_return_type_code = 1;
 #if HAVE_IV
     IFGUI
-        ShapeScene* s = (ShapeScene*) v;
-        if (ifarg(1)) {
-            s->shape_type(int(chkarg(1, 0., 2.)));
-        } else {
-            return s->shape_type();
-        }
+    ShapeScene* s = (ShapeScene*) v;
+    if (ifarg(1)) {
+        s->shape_type(int(chkarg(1, 0., 2.)));
     } else {
-        if (ifarg(1)) {
-            ((ShapePlotData*) v) -> set_mode(int(chkarg(1, 0., 2.)));
-        } else {
-            return ((ShapePlotData*) v)-> get_mode();
-        }
+        return s->shape_type();
+    }
+}
+else {
+    if (ifarg(1)) {
+        ((ShapePlotData*) v)->set_mode(int(chkarg(1, 0., 2.)));
+    } else {
+        return ((ShapePlotData*) v)->get_mode();
+    }
     ENDGUI
 #else
     if (ifarg(1)) {
-        ((ShapePlotData*) v) -> set_mode(int(chkarg(1, 0., 2.)));
+        ((ShapePlotData*) v)->set_mode(int(chkarg(1, 0., 2.)));
     } else {
-        return ((ShapePlotData*) v)-> get_mode();
+        return ((ShapePlotData*) v)->get_mode();
     }
 #endif
     return 1.;
