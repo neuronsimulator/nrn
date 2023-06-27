@@ -10,7 +10,6 @@
 #include "hocdec.h"
 #include "section.h"
 
-
 // we define these here to allow the API to be independent of internal details
 typedef enum {
     STACK_IS_STR = 1,
@@ -444,19 +443,56 @@ double* nrn_vector_data(Object* vec) {
     return vector_vec((IvocVect*) vec->u.this_pointer);
 }
 
-double nrn_pp_property_get(Object* pp, const char* name) {
-    int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    return ob2pntproc_0(pp)->prop->param_legacy(index);
+double nrn_property_get(Object* obj, const char* name) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        hoc_pushs(sym);
+        // put the pointer for the memory location on the stack
+        obj->ctemplate->steer(obj->u.this_pointer);
+        return *hoc_pxpop();
+    } else {
+        int index = sym->u.rng.index;
+        return ob2pntproc_0(obj)->prop->param_legacy(index);
+    }
 }
 
-double nrn_pp_property_array_get(Object* pp, const char* name, int i) {
-    int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    return ob2pntproc_0(pp)->prop->param_legacy(index + i);
+double nrn_property_array_get(Object* obj, const char* name, int i) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        hoc_pushs(sym);
+        // put the pointer for the memory location on the stack
+        obj->ctemplate->steer(obj->u.this_pointer);
+        return hoc_pxpop()[i];
+    } else {
+        int index = sym->u.rng.index;
+        return ob2pntproc_0(obj)->prop->param_legacy(index + i);
+    }
 }
 
-void nrn_pp_property_set(Object* pp, const char* name, double value) {
-    int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    ob2pntproc_0(pp)->prop->param_legacy(index) = value;
+void nrn_property_set(Object* obj, const char* name, double value) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        hoc_pushs(sym);
+        // put the pointer for the memory location on the stack
+        obj->ctemplate->steer(obj->u.this_pointer);
+        *hoc_pxpop() = value;
+    } else {
+        int index = sym->u.rng.index;
+        ob2pntproc_0(obj)->prop->param_legacy(index) = value;
+    }
+}
+
+void nrn_property_array_set(Object* obj, const char* name, int i, double value) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        hoc_pushs(sym);
+        // put the pointer for the memory location on the stack
+        obj->ctemplate->steer(obj->u.this_pointer);
+        hoc_pxpop()[i] = value;
+    } else {
+        int index = sym->u.rng.index;
+        ob2pntproc_0(obj)->prop->param_legacy(index + i) = value;
+    }
 }
 
 void nrn_pp_property_array_set(Object* pp, const char* name, int i, double value) {
@@ -464,48 +500,29 @@ void nrn_pp_property_array_set(Object* pp, const char* name, int i, double value
     ob2pntproc_0(pp)->prop->param_legacy(index + i) = value;
 }
 
-void nrn_pp_property_push(Object* pp, const char* name) {
-    int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    hoc_push(ob2pntproc_0(pp)->prop->param_handle_legacy(index));
+void nrn_property_push(Object* obj, const char* name, double value) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        hoc_pushs(sym);
+        // put the pointer for the memory location on the stack
+        obj->ctemplate->steer(obj->u.this_pointer);
+    } else {
+        int index = sym->u.rng.index;
+        hoc_push(ob2pntproc_0(obj)->prop->param_handle_legacy(index));
+    }
 }
 
-void nrn_pp_property_array_push(Object* pp, const char* name, int i) {
-    int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    hoc_push(ob2pntproc_0(pp)->prop->param_handle_legacy(index + i));
-}
-
-double* _nrn_get_steered_property_ptr(Object* obj, const char* name) {
-    assert(obj->ctemplate->steer);
-    auto sym2 = hoc_table_lookup(name, obj->ctemplate->symtable);
-    assert(sym2);
-    hoc_pushs(sym2);
-    // put the pointer for the memory location on the stack
-    obj->ctemplate->steer(obj->u.this_pointer);
-    return hoc_pxpop();
-}
-
-void nrn_steered_property_array_set(Object* obj, const char* name, int i, double value) {
-    _nrn_get_steered_property_ptr(obj, name)[i] = value;
-}
-
-void nrn_steered_property_set(Object* obj, const char* name, double value) {
-    *_nrn_get_steered_property_ptr(obj, name) = value;
-}
-
-double nrn_steered_property_array_get(Object* obj, const char* name, int i) {
-    return _nrn_get_steered_property_ptr(obj, name)[i];
-}
-
-double nrn_steered_property_get(Object* obj, const char* name) {
-    return *_nrn_get_steered_property_ptr(obj, name);
-}
-
-void nrn_steered_property_array_push(Object* obj, const char* name, int i) {
-    hoc_pushpx(&_nrn_get_steered_property_ptr(obj, name)[i]);
-}
-
-void nrn_steered_property_push(Object* obj, const char* name) {
-    hoc_pushpx(_nrn_get_steered_property_ptr(obj, name));
+void nrn_property_array_push(Object* obj, const char* name, int i, double value) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        hoc_pushs(sym);
+        // put the pointer for the memory location on the stack
+        obj->ctemplate->steer(obj->u.this_pointer);
+        hoc_pushpx(hoc_pxpop() + i);
+    } else {
+        int index = sym->u.rng.index;
+        hoc_push(ob2pntproc_0(obj)->prop->param_handle_legacy(index + i));
+    }
 }
 
 char const* nrn_symbol_name(Symbol* sym) {

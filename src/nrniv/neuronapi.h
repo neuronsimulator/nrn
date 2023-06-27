@@ -64,7 +64,7 @@ void (*nrn_rangevar_set)(Symbol* const sym, Section* const sec, double x, double
 Symbol* (*nrn_symbol)(char const* name);
 void (*nrn_symbol_push)(Symbol* sym);
 int (*nrn_symbol_type)(Symbol* sym);
-//double* (*nrn_get_symbol_ptr)(Symbol* sym);
+// double* (*nrn_get_symbol_ptr)(Symbol* sym);
 void (*nrn_double_push)(double val);
 double (*nrn_double_pop)(void);
 void (*nrn_double_ptr_push)(double* addr);
@@ -102,20 +102,14 @@ char const* (*nrn_symbol_table_iterator_next)(SymbolTableIterator* st);
 int (*nrn_symbol_table_iterator_done)(SymbolTableIterator* st);
 int (*nrn_vector_capacity)(Object* vec);
 double* (*nrn_vector_data)(Object* vec);
-double (*nrn_pp_property_get)(Object* pp, const char* name);
-double (*nrn_pp_property_array_get)(Object* pp, const char* name, int i);
-void (*nrn_pp_property_set)(Object* pp, const char* name, double value);
-void (*nrn_pp_property_array_set)(Object* pp, const char* name, int i, double value);
-void (*nrn_pp_property_push)(Object* pp, const char* name);
-void (*nrn_pp_property_array_push)(Object* pp, const char* name, int i);
-void (*nrn_steered_property_array_set)(Object* obj, const char* name, int i, double value);
-void (*nrn_steered_property_set)(Object* obj, const char* name, double value);
-double (*nrn_steered_property_array_get)(Object* obj, const char* name, int i);
-double (*nrn_steered_property_get)(Object* obj, const char* name);
-void (*nrn_steered_property_array_push)(Object* obj, const char* name, int i);
-void (*nrn_steered_property_push)(Object* obj, const char* name);
-char const* (*nrn_symbol_name)(Symbol * sym);
-Symlist* (*nrn_symbol_table)(Symbol * sym);
+double (*nrn_property_get)(Object* obj, const char* name);
+double (*nrn_property_array_get)(Object* obj, const char* name, int i);
+void (*nrn_property_set)(Object* obj, const char* name, double value);
+void (*nrn_property_array_set)(Object* obj, const char* name, int i, double value);
+void (*nrn_property_push)(Object* obj, const char* name);
+void (*nrn_property_array_push)(Object* obj, const char* name, int i);
+char const* (*nrn_symbol_name)(Symbol* sym);
+Symlist* (*nrn_symbol_table)(Symbol* sym);
 Symlist* (*nrn_global_symbol_table)(void);
 // TODO: need shapeplot information extraction
 

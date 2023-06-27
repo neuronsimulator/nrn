@@ -52,8 +52,8 @@ void setup_neuron_api(void) {
     nrn_method_call = reinterpret_cast<decltype(nrn_method_call)>(dlsym(handle, "nrn_method_call"));
     nrn_object_pop = reinterpret_cast<decltype(nrn_object_pop)>(dlsym(handle, "nrn_object_pop"));
     nrn_symbol_push = reinterpret_cast<decltype(nrn_symbol_push)>(dlsym(handle, "nrn_symbol_push"));
-    nrn_pp_property_set = reinterpret_cast<decltype(nrn_pp_property_set)>(
-        dlsym(handle, "nrn_pp_property_set"));
+    nrn_property_set = reinterpret_cast<decltype(nrn_property_set)>(
+        dlsym(handle, "nrn_property_set"));
 }
 
 int main(void) {
@@ -102,9 +102,9 @@ int main(void) {
     // current clamp at soma(0.5)
     nrn_double_push(0.5);
     iclamp = nrn_object_new(nrn_symbol("IClamp"), 1);
-    nrn_pp_property_set(iclamp, "amp", 0.3);
-    nrn_pp_property_set(iclamp, "del", 1);
-    nrn_pp_property_set(iclamp, "dur", 0.1);
+    nrn_property_set(iclamp, "amp", 0.3);
+    nrn_property_set(iclamp, "del", 1);
+    nrn_property_set(iclamp, "dur", 0.1);
 
     // setup recording
     v = nrn_object_new(nrn_symbol("Vector"), 0);

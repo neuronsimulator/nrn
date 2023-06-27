@@ -36,8 +36,8 @@ void setup_neuron_api(void) {
     nrn_section_new = reinterpret_cast<decltype(nrn_section_new)>(dlsym(handle, "nrn_section_new"));
     nrn_double_push = reinterpret_cast<decltype(nrn_double_push)>(dlsym(handle, "nrn_double_push"));
     nrn_object_new = reinterpret_cast<decltype(nrn_object_new)>(dlsym(handle, "nrn_object_new"));
-    nrn_pp_property_array_set = reinterpret_cast<decltype(nrn_pp_property_array_set)>(
-        dlsym(handle, "nrn_pp_property_array_set"));
+    nrn_property_array_set = reinterpret_cast<decltype(nrn_property_array_set)>(
+        dlsym(handle, "nrn_property_array_set"));
     nrn_rangevar_push = reinterpret_cast<decltype(nrn_rangevar_push)>(
         dlsym(handle, "nrn_rangevar_push"));
     nrn_method_call = reinterpret_cast<decltype(nrn_method_call)>(dlsym(handle, "nrn_method_call"));
@@ -90,12 +90,12 @@ int main(void) {
     nrn_double_push(0.5);
     vclamp = nrn_object_new(nrn_symbol("VClamp"), 1);
     // 0 mV for 1 ms; 10 mV for the next 2 ms; 5 mV for the next 3 ms
-    nrn_pp_property_array_set(vclamp, "amp", 0, 0);
-    nrn_pp_property_array_set(vclamp, "amp", 1, 10);
-    nrn_pp_property_array_set(vclamp, "amp", 2, 5);
-    nrn_pp_property_array_set(vclamp, "dur", 0, 1);
-    nrn_pp_property_array_set(vclamp, "dur", 1, 2);
-    nrn_pp_property_array_set(vclamp, "dur", 2, 3);
+    nrn_property_array_set(vclamp, "amp", 0, 0);
+    nrn_property_array_set(vclamp, "amp", 1, 10);
+    nrn_property_array_set(vclamp, "amp", 2, 5);
+    nrn_property_array_set(vclamp, "dur", 0, 1);
+    nrn_property_array_set(vclamp, "dur", 1, 2);
+    nrn_property_array_set(vclamp, "dur", 2, 3);
 
     // setup recording
     v = nrn_object_new(nrn_symbol("Vector"), 0);

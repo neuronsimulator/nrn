@@ -26,7 +26,8 @@ Symbol* nrn_symbol(char const* const name);
 void nrn_mechanism_insert(Section* sec, Symbol* mechanism);
 Object* nrn_object_new(Symbol* sym, int narg);
 void nrn_method_call(Object* obj, Symbol* method_sym, int narg);
-void nrn_pp_property_set(Object* pp, const char* name, double value);
+void nrn_property_set(Object* obj, const char* name, double value);
+void nrn_property_array_set(Object* obj, const char* name, int i, double value);
 void nrn_double_push(double val);
 void nrn_object_push(Object* obj);
 Symbol* nrn_method_symbol(Object* obj, char const* const name);
@@ -34,9 +35,6 @@ Object* nrn_object_pop(void);
 void nrn_object_unref(Object* obj);
 double* nrn_vector_data(Object* vec);
 int nrn_vector_capacity(Object* vec);
-void nrn_steered_property_array_set(Object* obj, const char* name, int i, double value);
-void nrn_steered_property_set(Object* obj, const char* name, double value);
-void nrn_double_ptr_push(double* addr);
 double* nrn_symbol_ptr(Symbol* sym);
 void nrn_rangevar_push(Symbol* const sym, Section* const sec, double x);
 void nrn_symbol_push(Symbol* sym);
@@ -80,23 +78,23 @@ int main(void) {
 
     // NetStim
     auto ns = nrn_object_new(nrn_symbol("NetStim"), 0);
-    nrn_pp_property_set(ns, "start", 5);
-    nrn_pp_property_set(ns, "noise", 1);
-    nrn_pp_property_set(ns, "interval", 5);
-    nrn_pp_property_set(ns, "number", 10);
+    nrn_property_set(ns, "start", 5);
+    nrn_property_set(ns, "noise", 1);
+    nrn_property_set(ns, "interval", 5);
+    nrn_property_set(ns, "number", 10);
 
     // syn = h.ExpSyn(soma(0.5))
     nrn_double_push(0.5);
     auto syn = nrn_object_new(nrn_symbol("ExpSyn"), 1);
-    nrn_pp_property_set(syn, "tau", 3);  // 3 ms timeconstant
-    nrn_pp_property_set(syn, "e", 0);    // 0 mV reversal potential (excitatory synapse)
+    nrn_property_set(syn, "tau", 3);  // 3 ms timeconstant
+    nrn_property_set(syn, "e", 0);    // 0 mV reversal potential (excitatory synapse)
 
     // nc = h.NetCon(ns, syn)
     nrn_object_push(ns);
     nrn_object_push(syn);
     auto nc = nrn_object_new(nrn_symbol("NetCon"), 2);
-    nrn_steered_property_array_set(nc, "weight", 0, 0.5);
-    nrn_steered_property_set(nc, "delay", 0);
+    nrn_property_array_set(nc, "weight", 0, 0.5);
+    nrn_property_set(nc, "delay", 0);
 
     auto vec = nrn_object_new(nrn_symbol("Vector"), 0);
 
