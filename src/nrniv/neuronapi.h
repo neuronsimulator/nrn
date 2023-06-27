@@ -100,7 +100,7 @@ SymbolTableIterator* (*nrn_symbol_table_iterator_new)(Symlist* my_symbol_table);
 void (*nrn_symbol_table_iterator_free)(SymbolTableIterator* st);
 char const* (*nrn_symbol_table_iterator_next)(SymbolTableIterator* st);
 int (*nrn_symbol_table_iterator_done)(SymbolTableIterator* st);
-int (*nrn_vector_capacity)(Object* vec);
+int (*nrn_vector_capacity)(Object const* vec);
 double* (*nrn_vector_data)(Object* vec);
 double (*nrn_property_get)(Object const* obj, const char* name);
 double (*nrn_property_array_get)(Object const* obj, const char* name, int i);

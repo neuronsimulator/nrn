@@ -433,7 +433,7 @@ int nrn_symbol_table_iterator_done(SymbolTableIterator* st) {
     return st->done();
 }
 
-int nrn_vector_capacity(Object* vec) {
+int nrn_vector_capacity(Object const* vec) {
     // TODO: throw exception if vec is not a Vector
     return vector_capacity((IvocVect*) vec->u.this_pointer);
 }
