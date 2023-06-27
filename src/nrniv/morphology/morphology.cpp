@@ -12,8 +12,7 @@
 
 namespace neuron::morphology {
     std::vector<std::string> morphio_read(std::filesystem::path const& path) {
-        MorphIOWrapper morphio_wrapper(path);
-        return morphio_wrapper.morph_as_hoc();
+        return MorphIOWrapper{path}.morph_as_hoc();
     }
 
     std::string type2name(int type_id) {

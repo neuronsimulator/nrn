@@ -484,6 +484,17 @@ def setup_package():
             ),
         ]
 
+        from pybind11.setup_helpers import Pybind11Extension
+        
+        extensions += [
+            Pybind11Extension(
+                "neuron.morphio_api",
+                ["src/nrniv/morphology/morphio_wrapper/morphio_wrapper_bind.cpp"],
+                extra_compile_args=extra_compile_args + ["-std=c++17"],
+                extra_link_args=extra_link_args,
+                **extension_common_params,
+            ),
+        ]
     logging.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
 
     # package name

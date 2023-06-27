@@ -32,5 +32,12 @@ ExternalProject_Add(
   INSTALL(
     FILES ${MorphIO_PREFIX}/lib/libmorphio${CMAKE_SHARED_LIBRARY_SUFFIX}
     DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+add_custom_command(
+  TARGET morphio-external
+  POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy
+          ${MorphIO_PREFIX}/lib/libmorphio${CMAKE_SHARED_LIBRARY_SUFFIX}
+          ${CMAKE_BINARY_DIR}/lib)    
 add_library(MorphIO INTERFACE IMPORTED)
 add_dependencies(MorphIO morphio-external)

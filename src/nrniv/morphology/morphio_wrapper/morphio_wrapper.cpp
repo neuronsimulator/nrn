@@ -5,7 +5,25 @@
 #include <morphio/soma.h>
 #include <fmt/core.h>
 
+namespace morphio {
+    class Morphology;
+    class Section;
+}  // namespace morphio
+
+
 namespace neuron::morphology {
+
+    struct MorphIOWrapper::MorphIOWrapperImpl {
+        MorphIOWrapperImpl(morphio::Morphology&& morph) :
+            _morph{std::move(morph)}, _sections{_morph.sections()} {}
+        ~MorphIOWrapperImpl() = default;
+        morphio::Morphology _morph;
+        std::vector<morphio::Section> _sections;
+    };
+
+    MorphIOWrapper::MorphIOWrapper(MorphIOWrapper&&) = default;
+    MorphIOWrapper& MorphIOWrapper::operator=(MorphIOWrapper&&) = default;
+    MorphIOWrapper::~MorphIOWrapper() = default;
 
     morphio::Point operator-(const morphio::Point& lhs, const morphio::Point& rhs) {
         return morphio::Point{lhs[0] - rhs[0], lhs[1] - rhs[1], lhs[2] - rhs[2]};
@@ -269,18 +287,18 @@ namespace neuron::morphology {
         return {new_return_points, diameters};
     }
 
-    MorphIOWrapper::MorphIOWrapper(const std::string& filename) :
-        _morph{std::make_unique<morphio::Morphology>(filename, morphio::NRN_ORDER)},
-        _sections{ _morph->sections()} {
+    MorphIOWrapper::MorphIOWrapper(const std::string& filename)
+        : _pimpl{std::make_unique<MorphIOWrapperImpl>(
+            morphio::Morphology(filename, morphio::NRN_ORDER))} {
                 int id = 1;
                 int count = 0;
-                int prev_type = _sections[0].type();
+                int prev_type = _pimpl->_sections[0].type();
                 _sec_idx2names.emplace_back("soma");
                 _sec_typeid_distrib.push_back({1, -1, 1});
                 int idx_adjust = 0;
                 int current_type = -1;
                 int i = 0;
-                for (const auto& sec : _sections) {
+                for (const auto& sec: _pimpl->_sections) {
                     if (sec.type() == prev_type) {
                         ++count;
                     } else {
@@ -326,8 +344,8 @@ namespace neuron::morphology {
                 cmds.emplace_back("forall all.append");
 
                 // generate 3D soma points commands. Order is reversed wrt NEURON's soma points.
-                const auto& soma_points = _morph->soma().points();
-                const auto& soma_diameters = _morph->soma().diameters();
+                const auto& soma_points = _pimpl->_morph.soma().points();
+                const auto& soma_diameters = _pimpl->_morph.soma().diameters();
 
                 // for (size_t i = soma_points.size(); i > 0; --i) {
                 //     const auto& p = soma_points[i - 1];
@@ -341,7 +359,7 @@ namespace neuron::morphology {
                     soma_points_vec.push_back({point[0], point[1], point[2]});
                 }
 
-                switch (_morph->soma().type())
+                switch (_pimpl->_morph.soma().type())
                 {
                 case morphio::SomaType::SOMA_SIMPLE_CONTOUR:
                     {
@@ -356,7 +374,7 @@ namespace neuron::morphology {
                     break;
                 case morphio::SomaType::SOMA_SINGLE_POINT:
                     {
-                        auto [new_xyz, new_diams] = single_point_sphere_to_circular_contour(*_morph);
+                        auto [new_xyz, new_diams] = single_point_sphere_to_circular_contour(_pimpl->_morph);
                         for (size_t i = new_xyz.size(); i > 0; --i) {
                             const auto& p = new_xyz[i - 1];
                             const auto& d = new_diams[i - 1];
@@ -365,7 +383,7 @@ namespace neuron::morphology {
                     }
                     break;
                 default:
-                    throw std::runtime_error("Soma type not supported: " + std::to_string(static_cast<int>(_morph->soma().type())));
+                    throw std::runtime_error("Soma type not supported: " + std::to_string(static_cast<int>(_pimpl->_morph.soma().type())));
                     break;
                 }
 
@@ -373,7 +391,7 @@ namespace neuron::morphology {
 
                 // generate sections connect + their respective 3D points commands
                 auto i = 0;
-                for_each(_sections.begin(), _sections.end(), [&cmds, &i, this](const morphio::Section& sec) {
+                for_each(_pimpl->_sections.begin(), _pimpl->_sections.end(), [&cmds, &i, this](const morphio::Section& sec) {
                     const size_t index = i + 1;
                     std::string tstr = _sec_idx2names[index];
 
