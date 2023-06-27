@@ -25,13 +25,13 @@ void setup_neuron_api(void) {
     nrn_section_connect = (void (*)(Section*, double, Section*, double))(
         dlsym(handle, "nrn_section_connect"));
     nrn_nseg_set = (void (*)(Section*, int))(dlsym(handle, "nrn_nseg_set"));
-    nrn_function_call = (void (*)(Symbol*, int))(dlsym(handle, "nrn_function_call"));
+    nrn_function_call = (void (*)(Symbol const*, int))(dlsym(handle, "nrn_function_call"));
     nrn_symbol = (Symbol * (*) (char const*) )(dlsym(handle, "nrn_symbol"));
     nrn_object_new = (Object * (*) (Symbol*, int) )(dlsym(handle, "nrn_object_new"));
     nrn_section_push = (void (*)(Section*))(dlsym(handle, "nrn_section_push"));
     nrn_section_pop = (void (*)(void))(dlsym(handle, "nrn_section_pop"));
     nrn_method_symbol = (Symbol * (*) (Object*, char const*) )(dlsym(handle, "nrn_method_symbol"));
-    nrn_method_call = (void (*)(Object*, Symbol*, int))(dlsym(handle, "nrn_method_call"));
+    nrn_method_call = (void (*)(Object*, Symbol const*, int))(dlsym(handle, "nrn_method_call"));
     nrn_sectionlist_iterator_new = (SectionListIterator * (*) (nrn_Item*) )(
         dlsym(handle, "nrn_sectionlist_iterator_new"));
     nrn_allsec = (nrn_Item * (*) (void) )(dlsym(handle, "nrn_allsec"));
