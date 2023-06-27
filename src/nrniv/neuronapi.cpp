@@ -446,32 +446,32 @@ double* nrn_vector_data(Object* vec) {
 
 double nrn_pp_property_get(Object* pp, const char* name) {
     int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    return ob2pntproc_0(pp)->prop->param(index);
+    return ob2pntproc_0(pp)->prop->param_legacy(index);
 }
 
 double nrn_pp_property_array_get(Object* pp, const char* name, int i) {
     int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    return ob2pntproc_0(pp)->prop->param(index, i);
+    return ob2pntproc_0(pp)->prop->param_legacy(index + i);
 }
 
 void nrn_pp_property_set(Object* pp, const char* name, double value) {
     int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    ob2pntproc_0(pp)->prop->param(index) = value;
+    ob2pntproc_0(pp)->prop->param_legacy(index) = value;
 }
 
 void nrn_pp_property_array_set(Object* pp, const char* name, int i, double value) {
     int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    ob2pntproc_0(pp)->prop->param(index, i) = value;
+    ob2pntproc_0(pp)->prop->param_legacy(index + i) = value;
 }
 
 void nrn_pp_property_push(Object* pp, const char* name) {
     int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    hoc_push(ob2pntproc_0(pp)->prop->param_handle(index));
+    hoc_push(ob2pntproc_0(pp)->prop->param_handle_legacy(index));
 }
 
 void nrn_pp_property_array_push(Object* pp, const char* name, int i) {
     int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    hoc_push(ob2pntproc_0(pp)->prop->param_handle(index, i));
+    hoc_push(ob2pntproc_0(pp)->prop->param_handle_legacy(index + i));
 }
 
 double* _nrn_get_steered_property_ptr(Object* obj, const char* name) {
