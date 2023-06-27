@@ -112,7 +112,7 @@ void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec
     simpleconnectsection();
 }
 
-void nrn_section_length_set(Section* sec, double length) {
+void nrn_section_length_set(Section* sec, double const length) {
     // TODO: call can_change_morph(sec) to check pt3dconst_; how should we handle
     // that?
     // TODO: is there a named constant so we don't have to use the magic number 2?
@@ -123,15 +123,15 @@ void nrn_section_length_set(Section* sec, double length) {
     sec->recalc_area_ = 1;
 }
 
-double nrn_section_length_get(Section* sec) {
-    return section_length(sec);
+double nrn_section_length_get(Section const* sec) {
+    return section_length(const_cast<Section*>(sec));
 }
 
-double nrn_section_Ra_get(Section* sec) {
-    return nrn_ra(sec);
+double nrn_section_Ra_get(Section const* sec) {
+    return nrn_ra(const_cast<Section*>(sec));
 }
 
-void nrn_section_Ra_set(Section* sec, double val) {
+void nrn_section_Ra_set(Section* sec, double const val) {
     // TODO: ensure val > 0
     // TODO: is there a named constant so we don't have to use the magic number 7?
     sec->prop->dparam[7] = val;
@@ -182,8 +182,8 @@ void nrn_segment_diam_set(Section* const sec, const double x, const double diam)
     }
 }
 
-double nrn_rangevar_get(Symbol* const sym, Section* const sec, double x) {
-    return *nrn_rangepointer(sec, sym, x);
+double nrn_rangevar_get(Symbol* const sym, Section const* const sec, double x) {
+    return *nrn_rangepointer(const_cast<Section*>(sec), const_cast<Symbol*>(sym), x);
 }
 
 void nrn_rangevar_set(Symbol* const sym, Section* const sec, double x, double value) {
@@ -211,7 +211,7 @@ Symbol* nrn_symbol(char const* const name) {
     return hoc_lookup(name);
 }
 
-int nrn_symbol_type(Symbol* sym) {
+int nrn_symbol_type(Symbol const* sym) {
     // TODO: these types are in parse.hpp and are not the same between versions,
     // so we really should wrap
     return sym->type;
@@ -443,7 +443,7 @@ double* nrn_vector_data(Object* vec) {
     return vector_vec((IvocVect*) vec->u.this_pointer);
 }
 
-double nrn_property_get(Object* obj, const char* name) {
+double nrn_property_get(Object const* obj, const char* name) {
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
         hoc_pushs(sym);
@@ -452,11 +452,11 @@ double nrn_property_get(Object* obj, const char* name) {
         return *hoc_pxpop();
     } else {
         int index = sym->u.rng.index;
-        return ob2pntproc_0(obj)->prop->param_legacy(index);
+        return ob2pntproc_0(const_cast<Object*>(obj))->prop->param_legacy(index);
     }
 }
 
-double nrn_property_array_get(Object* obj, const char* name, int i) {
+double nrn_property_array_get(Object const* obj, const char* name, int i) {
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
         hoc_pushs(sym);
@@ -465,7 +465,7 @@ double nrn_property_array_get(Object* obj, const char* name, int i) {
         return hoc_pxpop()[i];
     } else {
         int index = sym->u.rng.index;
-        return ob2pntproc_0(obj)->prop->param_legacy(index + i);
+        return ob2pntproc_0(const_cast<Object*>(obj))->prop->param_legacy(index + i);
     }
 }
 

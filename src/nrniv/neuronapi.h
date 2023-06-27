@@ -38,8 +38,8 @@ void (*nrn_section_connect)(Section* child_sec,
                             Section* parent_sec,
                             double parent_x);
 void (*nrn_section_length_set)(Section* sec, double length);
-double (*nrn_section_length_get)(Section* sec);
-double (*nrn_section_Ra_get)(Section* sec);
+double (*nrn_section_length_get)(Section const* sec);
+double (*nrn_section_Ra_get)(Section const* sec);
 void (*nrn_section_Ra_set)(Section* sec, double val);
 char const* (*nrn_secname)(Section* sec);
 void (*nrn_section_push)(Section* sec);
@@ -55,8 +55,8 @@ int (*nrn_nseg_get)(Section const* sec);
 void (*nrn_nseg_set)(Section* sec, int nseg);
 void (*nrn_segment_diam_set)(Section* sec, double x, double diam);
 void (*nrn_rangevar_push)(Symbol* const sym, Section* const sec, double x);
-double (*nrn_rangevar_get)(Symbol* const sym, Section* const sec, double x);
-void (*nrn_rangevar_set)(Symbol* const sym, Section* const sec, double x, double value);
+double (*nrn_rangevar_get)(Symbol const* sym, Section const* sec, double x);
+void (*nrn_rangevar_set)(Symbol const* sym, Section* sec, double x, double value);
 
 /****************************************
  * Functions, objects, and the stack
@@ -82,11 +82,11 @@ Symbol* (*nrn_method_symbol)(Object* obj, char const* name);
 // TODO: the next two functions throw exceptions in C++; need a version that
 //       returns a bool success indicator instead (this is actually the
 //       classic behavior of OcJump)
-void (*nrn_method_call)(Object* obj, Symbol* method_sym, int narg);
-void (*nrn_function_call)(Symbol* sym, int narg);
+void (*nrn_method_call)(Object* obj, Symbol const* method_sym, int narg);
+void (*nrn_function_call)(Symbol const* sym, int narg);
 void (*nrn_object_ref)(Object* obj);
 void (*nrn_object_unref)(Object* obj);
-char const* (*nrn_class_name)(Object* obj);
+char const* (*nrn_class_name)(Object const* obj);
 
 /****************************************
  * Miscellaneous
@@ -102,13 +102,13 @@ char const* (*nrn_symbol_table_iterator_next)(SymbolTableIterator* st);
 int (*nrn_symbol_table_iterator_done)(SymbolTableIterator* st);
 int (*nrn_vector_capacity)(Object* vec);
 double* (*nrn_vector_data)(Object* vec);
-double (*nrn_property_get)(Object* obj, const char* name);
-double (*nrn_property_array_get)(Object* obj, const char* name, int i);
+double (*nrn_property_get)(Object const* obj, const char* name);
+double (*nrn_property_array_get)(Object const* obj, const char* name, int i);
 void (*nrn_property_set)(Object* obj, const char* name, double value);
 void (*nrn_property_array_set)(Object* obj, const char* name, int i, double value);
 void (*nrn_property_push)(Object* obj, const char* name);
 void (*nrn_property_array_push)(Object* obj, const char* name, int i);
-char const* (*nrn_symbol_name)(Symbol* sym);
+char const* (*nrn_symbol_name)(Symbol const* sym);
 Symlist* (*nrn_symbol_table)(Symbol* sym);
 Symlist* (*nrn_global_symbol_table)(void);
 // TODO: need shapeplot information extraction
