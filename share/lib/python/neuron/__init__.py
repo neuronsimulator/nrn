@@ -1089,9 +1089,7 @@ class _PlotShapePlot(_WrapperPlot):
                     for sec in sections:
                         all_seg_pts = _segment_3d_pts(sec)
                         for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
-                            if (
-                                mode == 0
-                            ):
+                            if mode == 0:
                                 width = seg.diam
                             else:
                                 width = line_width
@@ -1223,9 +1221,7 @@ class _PlotShapePlot(_WrapperPlot):
                 [item if len(item) == 2 else "0" + item for item in items]
             )
 
-        def _do_plot_on_plotly(
-            width=2, color=None, cmap=None
-        ):
+        def _do_plot_on_plotly(width=2, color=None, cmap=None):
             """requires matplotlib for colormaps if not specified explicitly"""
             import ctypes
             import plotly.graph_objects as go
@@ -1341,9 +1337,7 @@ class _PlotShapePlot(_WrapperPlot):
         if hasattr(graph, "__name__"):
             if graph.__name__ == "matplotlib.pyplot":
                 fig = graph.figure()
-                return _do_plot_on_matplotlib_figure(
-                    fig, *args, **kwargs
-                )
+                return _do_plot_on_matplotlib_figure(fig, *args, **kwargs)
             elif graph.__name__ == "plotly":
                 return _do_plot_on_plotly(*args, **kwargs)
         elif str(type(graph)) == "<class 'matplotlib.figure.Figure'>":
