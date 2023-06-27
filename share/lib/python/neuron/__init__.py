@@ -1063,7 +1063,7 @@ class _PlotShapePlot(_WrapperPlot):
                     line_width=2,
                     cmap=cm.cool,
                     **kwargs,
-                ):  ## added show_color and line_width here
+                ):
                     """
                     Plots a 3D shapeplot
                     Args:
@@ -1091,13 +1091,13 @@ class _PlotShapePlot(_WrapperPlot):
                         for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
                             if (
                                 mode == 0
-                            ):  ## added the if else to set up mode for showing diameter for each segment
+                            ):
                                 width = seg.diam
                             else:
                                 width = line_width
                             (line,) = self.plot(
                                 xs, ys, zs, "-", linewidth=width, **kwargs
-                            )  ## added linewidth here
+                            )
                             if variable is not None:
                                 val = _get_variable_seg(seg, variable)
                                 vals.append(val)
@@ -1168,7 +1168,7 @@ class _PlotShapePlot(_WrapperPlot):
             z = np.interp(seg_l, arc3d, z3d)
             return x, y, z
 
-        def _do_plot_on_matplotlib_figure(fig, *args, **kwargs):  ## *args, **kwargs
+        def _do_plot_on_matplotlib_figure(fig, *args, **kwargs):
             import ctypes
 
             get_plotshape_data = nrn_dll_sym("get_plotshape_data")
@@ -1225,7 +1225,7 @@ class _PlotShapePlot(_WrapperPlot):
 
         def _do_plot_on_plotly(
             width=2, color=None, cmap=None
-        ):  ## add width and show_color
+        ):
             """requires matplotlib for colormaps if not specified explicitly"""
             import ctypes
             import plotly.graph_objects as go
@@ -1263,7 +1263,7 @@ class _PlotShapePlot(_WrapperPlot):
                 ctypes.py_object(self._data)
             )
 
-            ps = self._data  ## added this to inherit plotshape object from before
+            ps = self._data
             mode = ps.show()
 
             if varobj is not None:
@@ -1301,7 +1301,7 @@ class _PlotShapePlot(_WrapperPlot):
 
                 cmap = kwargs["cmap"]
 
-                # show_diam = False ## hashed this out
+                # show_diam = False
 
                 # calculate bounds
 
@@ -1343,9 +1343,9 @@ class _PlotShapePlot(_WrapperPlot):
                 fig = graph.figure()
                 return _do_plot_on_matplotlib_figure(
                     fig, *args, **kwargs
-                )  ## added args and kwargs
+                )
             elif graph.__name__ == "plotly":
-                return _do_plot_on_plotly(*args, **kwargs)  ## added args and kwargs
+                return _do_plot_on_plotly(*args, **kwargs)
         elif str(type(graph)) == "<class 'matplotlib.figure.Figure'>":
             return _do_plot_on_matplotlib_figure(graph)
         raise NotImplementedError
