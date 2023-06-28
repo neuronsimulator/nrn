@@ -1688,6 +1688,10 @@ def _nrnpy_rvp_pyobj_callback(f):
     if f_type not in (
         "<class 'neuron.rxd.species.SpeciesOnRegion'>",
         "<class 'neuron.rxd.species.Species'>",
+        "<class 'neuron.rxd.species.State'>",
+        "<class 'neuron.rxd.species.Parameter'>",
+        "<class 'neuron.rxd.species.StateOnRegion'>",
+        "<class 'neuron.rxd.species.ParameterOnRegion'>",
     ):
         return f
 
@@ -1698,6 +1702,8 @@ def _nrnpy_rvp_pyobj_callback(f):
     fref = weakref.ref(f)
 
     def result(x):
+        if x == 0 or x == 1:
+            raise Exception("Concentration is only defined for interior.")
         sp = fref()
         if sp:
             try:
