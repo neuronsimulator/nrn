@@ -197,7 +197,7 @@ void nrnmpi_terminate() {
                 nrnmusic_terminate();
             } else
 #endif
-                MPI_Finalize();
+                //MPI_Finalize();
         }
         nrnmpi_use = 0;
 #if nrnmpidebugleak
