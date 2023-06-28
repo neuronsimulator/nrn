@@ -27,7 +27,7 @@ Circuit creation
 
 During this part of the simulation the segments, sections and their connections are created. All these are created based on the circuit which is defined by the users in Python or HOC scripts with the respective API.
 
-See: :ref:`_topology` and :ref:`_hoc_topology`.
+See: :ref:`topology` and :ref:`hoc_topology`.
 
 During this part all the ``Node`` s are created as well as the ``Section`` s.
 
