@@ -9,12 +9,14 @@
 #include <morphio/soma.h>
 #include <unordered_map>
 #include "morphio_wrapper/morphio_wrapper.hpp"
+#include "nrnpython.h"
 
 namespace neuron::morphology {
     std::vector<std::string> morphio_read(std::filesystem::path const& path) {
         return MorphIOWrapper{path}.morph_as_hoc();
     }
 
+    
     std::string type2name(int type_id) {
         static const std::unordered_map<int, std::string> type2name_dict = {
             {1, "soma"},
@@ -46,8 +48,28 @@ namespace neuron::morphology {
         return type2name(type_id) + "[" + std::to_string(index) + "]";
     }
     
-      
+    void morphio_read(PyObject* pyObj, MorphIOWrapper& morph) {
+        // Call nrn_po2ho on the PyObject
+        Object* cell_obj = nrnpy_po2ho(pyObj);
+
+        // Check that the PyObject is a Cell object
+        if (!cell_obj) {
+            hoc_execerror("morphio_read requires a Cell object", nullptr);
+        }
+
+        auto result = morph.morph_as_hoc();
+        // execute the hoc code in the cell_obj context
+        auto err = 0.;
+        for_each(result.begin(), result.end(), [&err, &cell_obj](std::string const& s) {
+            err = hoc_obj_run(s.c_str(), cell_obj);
+        });
+        if(err) {
+            hoc_execerror("morphio_read failed", nullptr);
+        }
+    }  
 }
+
+
 
 void morphio_read() {
     if(!ifarg(1)) {
@@ -85,3 +107,4 @@ void morphio_read() {
     });
     hoc_retpushx(err ? 0.:1.);
 }
+

@@ -3,11 +3,15 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+#include "nrnpython.h"
 
 namespace neuron::morphology {
+
+    class MorphIOWrapper;
     
     // MorphIO API
     std::vector<std::string> morphio_read(std::filesystem::path const& path);
+    void morphio_read(PyObject* pyObj, MorphIOWrapper& morph);
     
 
     // Morphology constructs
