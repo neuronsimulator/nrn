@@ -19,6 +19,11 @@ def test_setup_cell():
         """
     )
 
+def test_morphio_read_from_python():
+    cell0 = h.HocBasicCell()
+    h.morphio_read(cell0, 'test/morphology/test.h5')
+    h.topology()
+
 def test_morphio_read_from_wrapper_binding():
     """test that we can import at the top level without error"""
     cell = h.HocBasicCell()
