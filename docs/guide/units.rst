@@ -57,6 +57,8 @@ The following table lists the units that NEURON uses by default. Point processes
       - ``ri( )``
       -	[10 :superscript:`6` ohm]
 
+.. _units_within_nmodl:
+
 Units within NMODL files
 ------------------------
 
