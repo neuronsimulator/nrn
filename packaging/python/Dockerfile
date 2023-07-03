@@ -87,6 +87,15 @@ ENV PATH /nrnwheel/openmpi/bin:$PATH
 RUN yum -y install epel-release libX11-devel libXcomposite-devel vim-enhanced && yum -y clean all && rm -rf /var/cache
 RUN yum -y remove ncurses-devel
 
+ENV HDF5_VERSION='1.12.1'
+
+RUN curl -fsSLO "https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_VERSION%.*}/hdf5-$HDF5_VERSION/src/hdf5-$HDF5_VERSION.tar.gz" \
+    && tar -xzvf hdf5-$HDF5_VERSION.tar.gz \
+    && cd  hdf5-$HDF5_VERSION \
+    && ./configure  --prefix=/usr  --enable-build-mode=production  --with-szlib  --enable-tools=no  --enable-tests=no \
+    && make -j 2 &&   make install &&  ldconfig \
+    && cd .. && rm -rf hdf5-$HDF5_VERSION
+
 # Copy Dockerfile for reference
 COPY Dockerfile .
 
