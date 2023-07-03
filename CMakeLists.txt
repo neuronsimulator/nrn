@@ -229,7 +229,7 @@ include(cmake/CheckGitDescribeCompatibility.cmake)
 set(NRN_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(NRN_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(NRN_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-configure_file(src/nrnoc/nrnsemanticversion.h.in src/nrnoc/nrnsemanticversion.h @ONLY)
+configure_file(src/nrnoc/nrnsemanticversion.h.in include/nrnsemanticversion.h @ONLY)
 
 # =============================================================================
 # Add coding-conventions submodule so we can use helper functions defined there
@@ -494,7 +494,6 @@ if(NRN_ENABLE_CORENEURON)
   list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/coreneuron
        ${PROJECT_SOURCE_DIR}/cmake/coreneuron/packages)
 
-  set(nrn_using_ext_corenrn FALSE)
   # If NEURON tests are enabled then enable CoreNEURON tests too
   set(CORENRN_ENABLE_UNIT_TESTS
       ${NRN_ENABLE_TESTS}
@@ -567,6 +566,7 @@ endif()
 # =============================================================================
 # Add project directories AFTER CMake modules
 # =============================================================================
+add_subdirectory(src/gnu)
 add_subdirectory(src/nrniv)
 
 # Collect the environment variables that are needed to execute NEURON from the build directory. This
@@ -676,7 +676,7 @@ if(NRN_ENABLE_DOCS)
     sphinx
     COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${SPHINX_EXECUTABLE} -j auto -b html
             "${PROJECT_SOURCE_DIR}/docs" "${PROJECT_SOURCE_DIR}/docs/_build"
-    COMMAND echo "Copy/Paste to Browser ${PROJECT_SOURCE_DIR}/docs/_build/index.html"
+    COMMAND echo "Copy/Paste to Browser file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
     COMMENT "Generating documentation with Sphinx")
 
@@ -857,11 +857,30 @@ install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
 install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
 
-# find neuron (excluding coreneuron) headers to install
-nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
-list(FILTER NRN_HEADERS_PATHS EXCLUDE REGEX "src/coreneuron")
-file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/nrnoc/nrnsemanticversion.h
-     DESTINATION ${PROJECT_BINARY_DIR}/include)
+# Copy NEURON headers that will be included in the installation into the build directory.
+set(headers_in_build_dir)
+foreach(header_below_src ${HEADER_FILES_TO_INSTALL})
+  get_filename_component(header_name "${header_below_src}" NAME)
+  set(output_name "${PROJECT_BINARY_DIR}/include/${header_name}")
+  cpp_cc_build_time_copy(
+    INPUT "${PROJECT_SOURCE_DIR}/src/${header_below_src}"
+    OUTPUT "${output_name}"
+    NO_TARGET)
+  list(APPEND headers_in_build_dir "${output_name}")
+endforeach()
+foreach(header_below_src ${STRUCTURED_HEADER_FILES_TO_INSTALL})
+  set(output_name "${PROJECT_BINARY_DIR}/include/${header_below_src}")
+  cpp_cc_build_time_copy(
+    INPUT "${PROJECT_SOURCE_DIR}/src/${header_below_src}"
+    OUTPUT "${output_name}"
+    NO_TARGET)
+  list(APPEND headers_in_build_dir "${output_name}")
+endforeach()
+add_custom_target(
+  copy_headers_to_build
+  COMMENT "Copying headers to build directory"
+  DEPENDS ${headers_in_build_dir})
+add_dependencies(nrniv_lib copy_headers_to_build)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 if(NRN_MACOS_BUILD)

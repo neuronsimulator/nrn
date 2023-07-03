@@ -104,13 +104,18 @@ endif()
 # =============================================================================
 foreach(modfile ${NRN_MODFILE_BASE_NAMES})
   nocmodl_mod_to_cpp(${modfile})
-  set_property(
-    SOURCE ${modfile}.cpp
-    APPEND
-    PROPERTY COMPILE_OPTIONS ${NRN_EXTRA_MECH_CXX_FLAGS})
   list(APPEND NRN_MODFILE_CPP ${PROJECT_BINARY_DIR}/${modfile}.cpp)
 endforeach()
-
+set_property(
+  SOURCE ${NRN_MODFILE_CPP}
+  APPEND
+  PROPERTY COMPILE_OPTIONS ${NRN_EXTRA_MECH_CXX_FLAGS})
+# we are basically emulating nrnivmodl with CMake here. nrnivmodl uses headers from the include
+# directory in the build or install directory.
+set_property(
+  SOURCE ${NRN_MODFILE_CPP}
+  APPEND
+  PROPERTY INCLUDE_DIRECTORIES ${PROJECT_BINARY_DIR}/include)
 set_source_files_properties(${NRN_MODFILE_CPP} PROPERTIES GENERATED TRUE)
 
 # =============================================================================
@@ -145,7 +150,6 @@ set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_OC_SRC_FILES}
     ${NRN_MESCH_SRC_FILES}
     ${NRN_MODFILE_CPP}
-    ${NRN_NRNGNU_SRC_FILES}
     ${NRN_SCOPMATH_SRC_FILES}
     ${NRN_SPARSE_SRC_FILES}
     ${NRN_SPARSE13_SRC_FILES}
@@ -406,6 +410,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+target_link_libraries(nrniv_lib nrngnu)
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")
@@ -585,6 +590,3 @@ file(COPY ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION ${CMAKE_BINARY_DIR}/includ
 
 # For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
-install(FILES ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION include)
-install(FILES ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h DESTINATION include/nrncvode)
-install(FILES ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION include)

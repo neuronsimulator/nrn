@@ -50,6 +50,7 @@ static void nrnmpi_dbl_broadcast(double*, int, int) {}
 extern double* nrn_mech_wtime_;
 extern int nrn_nthread;
 extern void nrn_thread_partition(int, Object*);
+extern Object** nrn_get_thread_partition(int);
 extern int nrn_allow_busywait(int);
 extern int nrn_how_many_processors();
 extern size_t nrncore_write();
@@ -935,6 +936,11 @@ static double partition(void*) {
     return 0.0;
 }
 
+static Object** get_partition(void*) {
+    return nrn_get_thread_partition(int(chkarg(1, 0, nrn_nthread - 1)));
+    ;
+}
+
 static double thread_stat(void*) {
     // nrn_thread_stat was called here but didn't do anything
     return 0.0;
@@ -1110,6 +1116,7 @@ static Member_ret_obj_func retobj_members[] = {{"upkvec", upkvec},
                                                {"gid2obj", gid2obj},
                                                {"gid2cell", gid2cell},
                                                {"gid_connect", gid_connect},
+                                               {"get_partition", get_partition},
                                                {"upkpyobj", upkpyobj},
                                                {"pyret", pyret},
                                                {"py_alltoall", py_alltoall},

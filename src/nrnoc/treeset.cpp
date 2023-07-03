@@ -6,14 +6,17 @@
 #include "multisplit.h"
 #include "nrn_ansi.h"
 #include "neuron.h"
+#include "neuron/cache/mechanism_range.hpp"
+#include "neuron/cache/model_data.hpp"
+#include "neuron/container/soa_container.hpp"
 #include "nonvintblock.h"
 #include "nrndae_c.h"
 #include "nrniv_mf.h"
 #include "nrnmpi.h"
 #include "ocnotify.h"
+#include "partrans.h"
 #include "section.h"
 #include "spmatrix.h"
-#include "treeset.h"
 #include "utils/profile/profiler_interface.h"
 #include "multicore.h"
 
@@ -23,6 +26,8 @@
 #endif
 #include <errno.h>
 #include <math.h>
+
+#include <algorithm>
 #include <string>
 
 extern spREAL* spGetElement(char*, int, int);
@@ -40,27 +45,10 @@ extern int* nrn_prop_dparam_size_;
 extern int* nrn_dparam_ptr_start_;
 extern int* nrn_dparam_ptr_end_;
 extern void nrn_define_shape();
-extern void nrn_partrans_update_ptrs();
 
 #if 1 || PARANEURON
 void (*nrn_multisplit_setup_)();
 #endif
-
-#if CACHEVEC
-
-
-/* a, b, d and rhs are, from now on, all stored in extra arrays, to improve
- * cache efficiency in nrn_lhs() and nrn_rhs(). Formerly, three levels of
- * indirection were necessary for accessing these elements, leading to lots
- * of L2 misses.  2006-07-05/Hubert Eichner */
-/* these are now thread instance arrays */
-static void nrn_recalc_node_ptrs();
-#define UPDATE_VEC_AREA(nd)                                       \
-    if (nd->_nt && nd->_nt->_actual_area) {                       \
-        nd->_nt->_actual_area[(nd)->v_node_index] = NODEAREA(nd); \
-    }
-#endif /* CACHEVEC */
-int use_cachevec;
 
 /*
 Do not use unless necessary (loops in tree structure) since overhead
@@ -78,7 +66,6 @@ set to 1. This means that the mechanism vectors need to be re-determined.
 int v_structure_change;
 int structure_change_cnt;
 int diam_change_cnt;
-int nrn_node_ptr_change_cnt_;
 
 extern int section_count;
 extern Section** secorder;
@@ -344,13 +331,50 @@ vm += dvi-dvx
 
 */
 
+/*
+ * Update actual_rhs based on _sp13_rhs used for sparse13 solver
+ */
+void update_actual_rhs_based_on_sp13_rhs(NrnThread* nt) {
+    for (int i = 0; i < nt->end; i++) {
+        nt->actual_rhs(i) = nt->_sp13_rhs[nt->_v_node[i]->eqn_index_];
+    }
+}
+
+/*
+ * Update _sp13_rhs used for sparse13 solver based on changes on actual_rhs
+ */
+void update_sp13_rhs_based_on_actual_rhs(NrnThread* nt) {
+    for (int i = 0; i < nt->end; i++) {
+        nt->_sp13_rhs[nt->_v_node[i]->eqn_index_] = nt->actual_rhs(i);
+    }
+}
+
+/*
+ * Update the SoA storage for node matrix diagonals from the sparse13 matrix.
+ */
+void update_actual_d_based_on_sp13_mat(NrnThread* nt) {
+    for (int i = 0; i < nt->end; ++i) {
+        nt->actual_d(i) = *nt->_v_node[i]->_d_matelm;
+    }
+}
+
+/*
+ * Update the SoA storage for node matrix diagonals from the sparse13 matrix.
+ */
+void update_sp13_mat_based_on_actual_d(NrnThread* nt) {
+    for (int i = 0; i < nt->end; ++i) {
+        *nt->_v_node[i]->_d_matelm = nt->actual_d(i);
+    }
+}
+
 /* calculate right hand side of
 cm*dvm/dt = -i(vm) + is(vi) + ai_j*(vi_j - vi)
 cx*dvx/dt - cm*dvm/dt = -gx*(vx - ex) + i(vm) + ax_j*(vx_j - vx)
 This is a common operation for fixed step, cvode, and daspk methods
 */
 
-void nrn_rhs(NrnThread* _nt) {
+void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
+    auto* const _nt = &nt;
     int i, i1, i2, i3;
     double w;
     int measure = 0;
@@ -367,45 +391,40 @@ void nrn_rhs(NrnThread* _nt) {
         nrn_thread_error("need recalc_diam()");
         recalc_diam();
     }
+    auto* const vec_rhs = nt.node_rhs_storage();
     if (use_sparse13) {
         int i, neqn;
         nrn_thread_error("nrn_rhs use_sparse13");
         neqn = spGetSize(_nt->_sp13mat, 0);
         for (i = 1; i <= neqn; ++i) {
-            _nt->_actual_rhs[i] = 0.;
+            _nt->_sp13_rhs[i] = 0.;
+        }
+        for (i = i1; i < i3; ++i) {
+            NODERHS(_nt->_v_node[i]) = 0.;
         }
     } else {
-#if CACHEVEC
-        if (use_cachevec) {
-            for (i = i1; i < i3; ++i) {
-                VEC_RHS(i) = 0.;
-            }
-        } else
-#endif /* CACHEVEC */
-        {
-            for (i = i1; i < i3; ++i) {
-                NODERHS(_nt->_v_node[i]) = 0.;
-            }
+        for (i = i1; i < i3; ++i) {
+            vec_rhs[i] = 0.;
         }
     }
-    if (_nt->_nrn_fast_imem) {
+    auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
+    if (vec_sav_rhs) {
         for (i = i1; i < i3; ++i) {
-            _nt->_nrn_fast_imem->_nrn_sav_rhs[i] = 0.;
+            vec_sav_rhs[i] = 0.;
         }
     }
 
-    nrn_ba(_nt, BEFORE_BREAKPOINT);
+    nrn_ba(cache_token, nt, BEFORE_BREAKPOINT);
     /* note that CAP has no current */
     for (tml = _nt->tml; tml; tml = tml->next)
-        if (memb_func[tml->index].current) {
-            Pvmi s = memb_func[tml->index].current;
+        if (auto const current = memb_func[tml->index].current; current) {
             std::string mechname("cur-");
             mechname += memb_func[tml->index].sym->name;
             if (measure) {
                 w = nrnmpi_wtime();
             }
             nrn::Instrumentor::phase_begin(mechname.c_str());
-            (*s)(_nt, tml->ml, tml->index);
+            current(cache_token, _nt, tml->ml, tml->index);
             nrn::Instrumentor::phase_end(mechname.c_str());
             if (measure) {
                 nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w;
@@ -418,20 +437,12 @@ void nrn_rhs(NrnThread* _nt) {
         }
     activsynapse_rhs();
 
-    if (_nt->_nrn_fast_imem) {
+    if (vec_sav_rhs) {
         /* _nrn_save_rhs has only the contribution of electrode current
            so here we transform so it only has membrane current contribution
         */
-        double* p = _nt->_nrn_fast_imem->_nrn_sav_rhs;
-        if (use_cachevec) {
-            for (i = i1; i < i3; ++i) {
-                p[i] -= VEC_RHS(i);
-            }
-        } else {
-            for (i = i1; i < i3; ++i) {
-                Node* nd = _nt->_v_node[i];
-                p[i] -= NODERHS(nd);
-            }
+        for (i = i1; i < i3; ++i) {
+            vec_sav_rhs[i] -= vec_rhs[i];
         }
     }
 #if EXTRACELLULAR
@@ -445,7 +456,7 @@ void nrn_rhs(NrnThread* _nt) {
     if (use_sparse13) {
         /* must be after nrn_rhs_ext so that whatever is put in
         nd->_rhs does not get added to nde->rhs */
-        nrndae_rhs();
+        nrndae_rhs(_nt);
     }
 
     activstim_rhs();
@@ -454,25 +465,16 @@ void nrn_rhs(NrnThread* _nt) {
     The extracellular mechanism contribution is already done.
         rhs += ai_j*(vi_j - vi)
     */
-#if CACHEVEC
-    if (use_cachevec) {
-        for (i = i2; i < i3; ++i) {
-            double dv = VEC_V(_nt->_v_parent_index[i]) - VEC_V(i);
-            /* our connection coefficients are negative so */
-            VEC_RHS(i) -= VEC_B(i) * dv;
-            VEC_RHS(_nt->_v_parent_index[i]) += VEC_A(i) * dv;
-        }
-    } else
-#endif /* CACHEVEC */
-    {
-        for (i = i2; i < i3; ++i) {
-            Node* nd = _nt->_v_node[i];
-            Node* pnd = _nt->_v_parent[i];
-            double dv = NODEV(pnd) - NODEV(nd);
-            /* our connection coefficients are negative so */
-            NODERHS(nd) -= NODEB(nd) * dv;
-            NODERHS(pnd) += NODEA(nd) * dv;
-        }
+    auto* const vec_a = nt.node_a_storage();
+    auto* const vec_b = nt.node_b_storage();
+    auto* const vec_v = nt.node_voltage_storage();
+    auto* const parent_i = nt._v_parent_index;
+    for (i = i2; i < i3; ++i) {
+        auto const pi = parent_i[i];
+        auto const dv = vec_v[pi] - vec_v[i];
+        // our connection coefficients are negative so
+        vec_rhs[i] -= vec_b[i] * dv;
+        vec_rhs[pi] += vec_a[i] * dv;
     }
 }
 
@@ -484,7 +486,8 @@ hand side after solving.
 This is a common operation for fixed step, cvode, and daspk methods
 */
 
-void nrn_lhs(NrnThread* _nt) {
+void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
+    auto* const _nt = &nt;
     int i, i1, i2, i3;
     NrnThreadMembList* tml;
 
@@ -497,38 +500,30 @@ void nrn_lhs(NrnThread* _nt) {
     }
 
     if (use_sparse13) {
-        int i, neqn;
-        neqn = spGetSize(_nt->_sp13mat, 0);
+        // Zero the sparse13 matrix
         spClear(_nt->_sp13mat);
-    } else {
-#if CACHEVEC
-        if (use_cachevec) {
-            for (i = i1; i < i3; ++i) {
-                VEC_D(i) = 0.;
-            }
-        } else
-#endif /* CACHEVEC */
-        {
-            for (i = i1; i < i3; ++i) {
-                NODED(_nt->_v_node[i]) = 0.;
-            }
-        }
     }
 
-    if (_nt->_nrn_fast_imem) {
+    // Make sure the SoA node diagonals are also zeroed (is this needed?)
+    auto* const vec_d = _nt->node_d_storage();
+    for (int i = i1; i < i3; ++i) {
+        vec_d[i] = 0.;
+    }
+
+    auto const vec_sav_d = _nt->node_sav_d_storage();
+    if (vec_sav_d) {
         for (i = i1; i < i3; ++i) {
-            _nt->_nrn_fast_imem->_nrn_sav_d[i] = 0.;
+            vec_sav_d[i] = 0.;
         }
     }
 
     /* note that CAP has no jacob */
     for (tml = _nt->tml; tml; tml = tml->next)
-        if (memb_func[tml->index].jacob) {
-            Pvmi s = memb_func[tml->index].jacob;
+        if (auto const jacob = memb_func[tml->index].jacob; jacob) {
             std::string mechname("cur-");
             mechname += memb_func[tml->index].sym->name;
             nrn::Instrumentor::phase_begin(mechname.c_str());
-            (*s)(_nt, tml->ml, tml->index);
+            jacob(sorted_token, _nt, tml->ml, tml->index);
             nrn::Instrumentor::phase_end(mechname.c_str());
             if (errno) {
                 if (nrn_errno_check(tml->index)) {
@@ -542,31 +537,17 @@ void nrn_lhs(NrnThread* _nt) {
     /* note, the first is CAP */
     if (_nt->tml) {
         assert(_nt->tml->index == CAP);
-        nrn_cap_jacob(_nt, _nt->tml->ml);
+        nrn_cap_jacob(sorted_token, _nt, _nt->tml->ml);
     }
 
     activsynapse_lhs();
 
-
-    if (_nt->_nrn_fast_imem) {
+    if (vec_sav_d) {
         /* _nrn_save_d has only the contribution of electrode current
            so here we transform so it only has membrane current contribution
         */
-        double* p = _nt->_nrn_fast_imem->_nrn_sav_d;
-        if (use_sparse13) {
-            for (i = i1; i < i3; ++i) {
-                Node* nd = _nt->_v_node[i];
-                p[i] += NODED(nd);
-            }
-        } else if (use_cachevec) {
-            for (i = i1; i < i3; ++i) {
-                p[i] += VEC_D(i);
-            }
-        } else {
-            for (i = i1; i < i3; ++i) {
-                Node* nd = _nt->_v_node[i];
-                p[i] += NODED(nd);
-            }
+        for (i = i1; i < i3; ++i) {
+            vec_sav_d[i] += vec_d[i];
         }
     }
 #if EXTRACELLULAR
@@ -576,7 +557,9 @@ void nrn_lhs(NrnThread* _nt) {
     if (use_sparse13) {
         /* must be after nrn_setup_ext so that whatever is put in
         nd->_d does not get added to nde->d */
+        update_sp13_mat_based_on_actual_d(_nt);
         nrndae_lhs();
+        update_actual_d_based_on_sp13_mat(_nt);  // because nrndae_lhs writes to sp13_mat
     }
 
     activclamp_lhs();
@@ -585,43 +568,41 @@ void nrn_lhs(NrnThread* _nt) {
 
 
     /* now add the axial currents */
-
     if (use_sparse13) {
-        for (i = i2; i < i3; ++i) {
+        update_sp13_mat_based_on_actual_d(_nt);  // just because of activclamp_lhs
+        for (i = i2; i < i3; ++i) {              // note i2
             Node* nd = _nt->_v_node[i];
-            *(nd->_a_matelm) += NODEA(nd);
-            *(nd->_b_matelm) += NODEB(nd); /* b may have value from lincir */
-            NODED(nd) -= NODEB(nd);
-        }
-        for (i = i2; i < i3; ++i) {
-            NODED(_nt->_v_parent[i]) -= NODEA(_nt->_v_node[i]);
+            auto const parent_i = _nt->_v_parent_index[i];
+            auto* const parent_nd = _nt->_v_node[parent_i];
+            auto const nd_a = NODEA(nd);
+            auto const nd_b = NODEB(nd);
+            // Update entries in sp13_mat
+            *nd->_a_matelm += nd_a;
+            *nd->_b_matelm += nd_b; /* b may have value from lincir */
+            *nd->_d_matelm -= nd_b;
+            // used to update NODED (sparse13 matrix) using NODEA and NODEB ("SoA")
+            *parent_nd->_d_matelm -= nd_a;
+            // Also update the Node's d value in the SoA storage (is this needed?)
+            vec_d[i] -= nd_b;
+            vec_d[parent_i] -= nd_a;
         }
     } else {
-#if CACHEVEC
-        if (use_cachevec) {
-            for (i = i2; i < i3; ++i) {
-                VEC_D(i) -= VEC_B(i);
-                VEC_D(_nt->_v_parent_index[i]) -= VEC_A(i);
-            }
-        } else
-#endif /* CACHEVEC */
-        {
-            for (i = i2; i < i3; ++i) {
-                NODED(_nt->_v_node[i]) -= NODEB(_nt->_v_node[i]);
-                NODED(_nt->_v_parent[i]) -= NODEA(_nt->_v_node[i]);
-            }
+        auto* const vec_a = _nt->node_a_storage();
+        auto* const vec_b = _nt->node_b_storage();
+        for (i = i2; i < i3; ++i) {
+            vec_d[i] -= vec_b[i];
+            vec_d[_nt->_v_parent_index[i]] -= vec_a[i];
         }
     }
 }
 
 /* for the fixed step method */
-void* setup_tree_matrix(NrnThread* _nt) {
-    nrn::Instrumentor::phase p_setup_tree_matrix("setup-tree-matrix");
-    nrn_rhs(_nt);
-    nrn_lhs(_nt);
-    nrn_nonvint_block_current(_nt->end, _nt->_actual_rhs, _nt->id);
-    nrn_nonvint_block_conductance(_nt->end, _nt->_actual_d, _nt->id);
-    return nullptr;
+void setup_tree_matrix(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
+    nrn::Instrumentor::phase _{"setup-tree-matrix"};
+    nrn_rhs(cache_token, nt);
+    nrn_lhs(cache_token, nt);
+    nrn_nonvint_block_current(nt.end, nt.node_rhs_storage(), nt.id);
+    nrn_nonvint_block_conductance(nt.end, nt.node_d_storage(), nt.id);
 }
 
 /* membrane mechanisms needed by other mechanisms (such as Eion by HH)
@@ -693,23 +674,30 @@ Prop* prop_alloc(Prop** pp, int type, Node* nd) {
     /* returning *Prop because allocation may */
     /* cause other properties to be linked ahead */
     /* some models need the node (to find area) */
-    if (nd) {
-        nrn_alloc_node_ = nd;
-    }
+    nrn_alloc_node_ = nd;  // this might be null
     v_structure_change = 1;
     current_prop_list = pp;
-    auto* p = (Prop*) emalloc(sizeof(Prop));
-    p->_type = type;
+    auto* p = new Prop{static_cast<short>(type)};
     p->next = *pp;
     p->ob = nullptr;
     p->_alloc_seq = -1;
     *pp = p;
     assert(memb_func[type].alloc);
     p->dparam = nullptr;
-    p->param = nullptr;
-    p->param_size = 0;
     (memb_func[type].alloc)(p);
     return p;
+}
+
+void prop_update_ion_variables(Prop* prop, Node* node) {
+    nrn_alloc_node_ = node;
+    nrn_point_prop_ = prop;
+    current_prop_list = &node->prop;
+    auto const type = prop->_type;
+    assert(memb_func[type].alloc);
+    memb_func[type].alloc(prop);
+    current_prop_list = nullptr;
+    nrn_point_prop_ = nullptr;
+    nrn_alloc_node_ = nullptr;
 }
 
 Prop* prop_alloc_disallow(Prop** pp, short type, Node* nd) {
@@ -719,15 +707,12 @@ Prop* prop_alloc_disallow(Prop** pp, short type, Node* nd) {
     return p;
 }
 
-void prop_free(Prop** pp) /* free an entire property list */
-{
-    Prop *p, *pn;
-    p = *pp;
-    *pp = (Prop*) 0;
+// free an entire property list
+void prop_free(Prop** pp) {
+    Prop* p = *pp;
+    *pp = nullptr;
     while (p) {
-        pn = p->next;
-        single_prop_free(p);
-        p = pn;
+        single_prop_free(std::exchange(p, p->next));
     }
 }
 
@@ -738,10 +723,6 @@ void single_prop_free(Prop* p) {
         clear_point_process_struct(p);
         return;
     }
-    if (p->param) {
-        notify_freed_val_array(p->param, p->param_size);
-        nrn_prop_data_free(p->_type, p->param);
-    }
     if (p->dparam) {
         if (p->_type == CABLESECTION) {
             notify_freed_val_array(&(p->dparam[2].literal_value<double>()), 6);
@@ -751,7 +732,7 @@ void single_prop_free(Prop* p) {
     if (p->ob) {
         hoc_obj_unref(p->ob);
     }
-    free((char*) p);
+    delete p;
 }
 
 
@@ -768,7 +749,7 @@ static double diam_from_list(Section* sec, int inode, Prop* p, double rparent);
 int recalc_diam_count_, nrn_area_ri_nocount_, nrn_area_ri_count_;
 void nrn_area_ri(Section* sec) {
     int j;
-    double ra, dx, diam, rright, rleft;
+    double ra, dx, rright, rleft;
     Prop* p;
     Node* nd;
     if (nrn_area_ri_nocount_ == 0) {
@@ -804,13 +785,12 @@ void nrn_area_ri(Section* sec) {
             /* area for right circular cylinders. Ri as right half of parent + left half
                of this
             */
-            diam = p->param[0];
+            auto& diam = p->param(0);
             if (diam <= 0.) {
-                p->param[0] = 1e-6;
+                diam = 1e-6;
                 hoc_execerror(secname(sec), "diameter diam = 0. Setting to 1e-6");
             }
-            NODEAREA(nd) = PI * diam * dx; /* um^2 */
-            UPDATE_VEC_AREA(nd);
+            nd->area() = PI * diam * dx;                            // um^2
             rleft = 1e-2 * ra * (dx / 2) / (PI * diam * diam / 4.); /*left half segment Megohms*/
             NODERINV(nd) = 1. / (rleft + rright);                   /*uS*/
             rright = rleft;
@@ -818,8 +798,7 @@ void nrn_area_ri(Section* sec) {
     }
     /* last segment has 0 length. area is 1e2
     in dimensionless units */
-    NODEAREA(sec->pnode[j]) = 1.e2;
-    UPDATE_VEC_AREA(sec->pnode[j]);
+    sec->pnode[j]->area() = 1.e2;
     NODERINV(sec->pnode[j]) = 1. / rright;
     sec->recalc_area_ = 0;
     diam_changed = 1;
@@ -870,19 +849,26 @@ void connection_coef(void) /* setup a and b */
     section connects straight to the point*/
     /* for the near future we always have a last node at x=1 with
     no properties */
+
+    // To match legacy behaviour, make sure that the SoA storage for "a" and "b" is zeroed before
+    // the initilisation code below is run.
+    for (auto tid = 0; tid < nrn_nthread; ++tid) {
+        auto& nt = nrn_threads[tid];
+        std::fill_n(nt.node_a_storage(), nt.end, 0.0);
+        std::fill_n(nt.node_b_storage(), nt.end, 0.0);
+    }
     // ForAllSections(sec)
     ITERATE(qsec, section_list) {
         Section* sec = hocSEC(qsec);
-#if 1 /* unnecessary because they are unused, but help when looking at fmatrix */
+        // Unnecessary because they are unused, but help when looking at fmatrix.
         if (!sec->parentsec) {
-            if (nrn_classicalNodeA(sec->parentnode)) {
-                ClassicalNODEA(sec->parentnode) = 0.0;
+            if (auto* const ptr = nrn_classicalNodeA(sec->parentnode)) {
+                *ptr = 0.0;
             }
-            if (nrn_classicalNodeB(sec->parentnode)) {
-                ClassicalNODEB(sec->parentnode) = 0.0;
+            if (auto* const ptr = nrn_classicalNodeB(sec->parentnode)) {
+                *ptr = 0.0;
             }
         }
-#endif
         /* convert to siemens/cm^2 for all nodes except last
         and microsiemens for last.  This means that a*V = mamps/cm2
         and a*v in last node = nanoamps. Note that last node
@@ -894,11 +880,11 @@ void connection_coef(void) /* setup a and b */
         nd = sec->pnode[0];
         area = NODEAREA(sec->parentnode);
         /* dparam[4] is rall_branch */
-        ClassicalNODEA(nd) = -1.e2 * sec->prop->dparam[4].get<double>() * NODERINV(nd) / area;
+        *nrn_classicalNodeA(nd) = -1.e2 * sec->prop->dparam[4].get<double>() * NODERINV(nd) / area;
         for (j = 1; j < sec->nnode; j++) {
             nd = sec->pnode[j];
             area = NODEAREA(sec->pnode[j - 1]);
-            ClassicalNODEA(nd) = -1.e2 * NODERINV(nd) / area;
+            *nrn_classicalNodeA(nd) = -1.e2 * NODERINV(nd) / area;
         }
     }
     /* now the effect of parent on node equation. */
@@ -907,7 +893,7 @@ void connection_coef(void) /* setup a and b */
         Section* sec = hocSEC(qsec);
         for (j = 0; j < sec->nnode; j++) {
             nd = sec->pnode[j];
-            ClassicalNODEB(nd) = -1.e2 * NODERINV(nd) / NODEAREA(nd);
+            *nrn_classicalNodeB(nd) = -1.e2 * NODERINV(nd) / NODEAREA(nd);
         }
     }
 #if EXTRACELLULAR
@@ -1597,18 +1583,16 @@ static double diam_from_list(Section* sec, int inode, Prop* p, double rparent)
     /* answer for inode is here */
     NODERINV(sec->pnode[inode]) = 1. / (rparent + rleft);
     diam *= .5 / ds;
-    if (fabs(diam - p->param[0]) > 1e-9 || diam < 1e-5) {
-        p->param[0] = diam; /* microns */
+    if (fabs(diam - p->param(0)) > 1e-9 || diam < 1e-5) {
+        p->param(0) = diam; /* microns */
     }
-    NODEAREA(sec->pnode[inode]) = area * .5 * PI; /* microns^2 */
-    UPDATE_VEC_AREA(sec->pnode[inode]);
+    sec->pnode[inode]->area() = area * .5 * PI; /* microns^2 */
 #if NTS_SPINE
     /* if last point has a spine then increment spine count for last node */
     if (inode == sec->nnode - 2 && sec->pt3d[npt - 1].d < 0.) {
         nspine += 1;
     }
-    NODEAREA(sec->pnode[inode]) += nspine * spinearea;
-    UPDATE_VEC_AREA(sec->pnode[inode]);
+    sec->pnode[inode]->area() = sec->pnode[inode]->area() + nspine * spinearea;
 #endif
     return ri;
 }
@@ -1640,13 +1624,10 @@ void v_setup_vectors(void) {
             if (memb_list[i].nodecount) {
                 memb_list[i].nodecount = 0;
                 free(memb_list[i].nodelist);
-#if CACHEVEC
-                free((void*) memb_list[i].nodeindices);
-#endif /* CACHEVEC */
-                if (memb_func[i].hoc_mech) {
-                    free(memb_list[i].prop);
-                } else {
-                    free(memb_list[i]._data);
+                free(memb_list[i].nodeindices);
+                delete[] memb_list[i].prop;
+                if (!memb_func[i].hoc_mech) {
+                    // free(memb_list[i]._data);
                     free(memb_list[i].pdata);
                 }
             }
@@ -1667,14 +1648,10 @@ void v_setup_vectors(void) {
         if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
             if (memb_list[i].nodecount) {
                 memb_list[i].nodelist = (Node**) emalloc(memb_list[i].nodecount * sizeof(Node*));
-#if CACHEVEC
                 memb_list[i].nodeindices = (int*) emalloc(memb_list[i].nodecount * sizeof(int));
-#endif /* CACHEVEC */
-                if (memb_func[i].hoc_mech) {
-                    memb_list[i].prop = (Prop**) emalloc(memb_list[i].nodecount * sizeof(Prop*));
-                } else {
-                    memb_list[i]._data = (double**) emalloc(memb_list[i].nodecount *
-                                                            sizeof(double*));
+                // Prop used by ode_map even when hoc_mech is false
+                memb_list[i].prop = new Prop*[memb_list[i].nodecount];
+                if (!memb_func[i].hoc_mech) {
                     memb_list[i].pdata = (Datum**) emalloc(memb_list[i].nodecount * sizeof(Datum*));
                 }
                 memb_list[i].nodecount = 0; /* counted again below */
@@ -1707,7 +1684,6 @@ void v_setup_vectors(void) {
     reorder_secorder();
 #endif
 
-#if CACHEVEC
     FOR_THREADS(_nt) {
         for (inode = 0; inode < _nt->end; inode++) {
             if (_nt->_v_parent[inode] != NULL) {
@@ -1716,28 +1692,22 @@ void v_setup_vectors(void) {
         }
     }
 
-#endif /* CACHEVEC */
-
     nrn_thread_memblist_setup();
 
     /* fill in artificial cell info */
     for (i = 0; i < n_memb_func; ++i) {
         if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
             hoc_Item* q;
-            hoc_List* list;
-            int j, nti;
             cTemplate* tmp = nrn_pnt_template_[i];
             memb_list[i].nodecount = tmp->count;
-            nti = 0;
-            j = 0;
-            list = tmp->olist;
+            int nti{}, j{};
+            hoc_List* list = tmp->olist;
+            std::vector<std::size_t> thread_counts(nrn_nthread);
             ITERATE(q, list) {
                 Object* obj = OBJ(q);
                 auto* pnt = static_cast<Point_process*>(obj->u.this_pointer);
                 p = pnt->prop;
                 memb_list[i].nodelist[j] = nullptr;
-                memb_list[i]._data[j] = p->param;
-                memb_list[i].pdata[j] = p->dparam;
                 /* for now, round robin all the artificial cells */
                 /* but put the non-threadsafe ones in thread 0 */
                 /*
@@ -1752,15 +1722,44 @@ void v_setup_vectors(void) {
                     pnt->_vnt = nrn_threads + nti;
                     nti = (nti + 1) % nrn_nthread;
                 }
+                auto const tid = static_cast<NrnThread*>(pnt->_vnt)->id;
+                ++thread_counts[tid];
+                // pnt->_i_instance = j;
                 ++j;
+            }
+            assert(j == memb_list[i].nodecount);
+            // The following is a transition measure while data are SOA-backed
+            // using the new neuron::container::soa scheme but pdata are not.
+            // data get permuted so that artificial cells are blocked according
+            // to the NrnThread they are assigned to, but without this change
+            // then the pdata order encoded in the global non-thread-specific
+            // memb_list[i] structure was different, with threads interleaved.
+            // This was a problem when we wanted to e.g. run the initialisation
+            // kernels in finitialize using that global structure, as the i-th
+            // rows of data and pdata did not refer to the same mechanism
+            // instance. The temporary solution here is to manually organise
+            // pdata to match the data order, with all the instances associated
+            // with thread 0 followed by all the instances associated with
+            // thread 1, and so on. See CellGroup::mk_tml_with_art for another
+            // side of this story and why it is useful to have artificial cell
+            // data blocked by thread.
+            std::vector<std::size_t> thread_offsets(nrn_nthread);
+            for (auto j = 1; j < nrn_nthread; ++j) {
+                thread_offsets[j] = std::exchange(thread_counts[j - 1], 0) + thread_offsets[j - 1];
+            }
+            thread_counts[nrn_nthread - 1] = 0;
+            ITERATE(q, list) {
+                auto* const pnt = static_cast<Point_process*>(OBJ(q)->u.this_pointer);
+                auto const tid = static_cast<NrnThread*>(pnt->_vnt)->id;
+                memb_list[i].pdata[thread_offsets[tid] + thread_counts[tid]++] = pnt->prop->dparam;
             }
         }
     }
-    nrn_recalc_node_ptrs();
+    neuron::model().node_data().mark_as_unsorted();
     v_structure_change = 0;
     nrn_update_ps2nt();
     ++structure_change_cnt;
-    long_difus_solve(3, nrn_threads);
+    long_difus_solve(nrn_ensure_model_data_are_sorted(), 3, *nrn_threads);  // !!!
     nrn_nonvint_block_setup();
     diam_changed = 1;
 }
@@ -1867,55 +1866,12 @@ void node_data(void) {
 
 #endif
 
-void nrn_complain(double* pp) {
-    /* print location for this param on the standard error */
-    Node* nd;
-    hoc_Item* qsec;
-    int j;
-    Prop* p;
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
-        for (j = 0; j < sec->nnode; ++j) {
-            nd = sec->pnode[j];
-            for (p = nd->prop; p; p = p->next) {
-                if (p->param == pp) {
-                    fprintf(stderr,
-                            "Error at section location %s(%g)\n",
-                            secname(sec),
-                            nrn_arc_position(sec, nd));
-                    return;
-                }
-            }
-        }
-    }
-    fprintf(stderr, "Don't know the location of params at %p\n", pp);
-}
-
 void nrn_matrix_node_free() {
     NrnThread* nt;
     FOR_THREADS(nt) {
-        if (nt->_actual_rhs) {
-            free(nt->_actual_rhs);
-            nt->_actual_rhs = (double*) 0;
+        if (nt->_sp13_rhs) {
+            free(std::exchange(nt->_sp13_rhs, nullptr));
         }
-        if (nt->_actual_d) {
-            free(nt->_actual_d);
-            nt->_actual_d = (double*) 0;
-        }
-#if CACHEVEC
-        if (nt->_actual_a) {
-            free(nt->_actual_a);
-            nt->_actual_a = (double*) 0;
-        }
-        if (nt->_actual_b) {
-            free(nt->_actual_b);
-            nt->_actual_b = (double*) 0;
-        }
-        /* because actual_v and actual_area have pointers to them from many
-           places, defer the freeing until nrn_recalc_node_ptrs is called
-        */
-#endif /* CACHEVEC */
         if (nt->_sp13mat) {
             spDestroy(nt->_sp13mat);
             nt->_sp13mat = (char*) 0;
@@ -1977,9 +1933,6 @@ int nrn_method_consistent(void) {
         use_sparse13 = 1;
         consist = 1;
     }
-    if (use_sparse13 != 0) {
-        nrn_cachevec(0);
-    }
     return consist;
 }
 
@@ -2013,23 +1966,9 @@ static void nrn_matrix_node_alloc(void) {
             v_setup_vectors();
             return;
         } else {
-            if (nt->_actual_rhs != (double*) 0) {
-                return;
-            }
+            // used to return here if the cache-efficient structures for a/b/... were non-null
         }
     }
-/*printf("nrn_matrix_node_alloc does its work\n");*/
-#if CACHEVEC
-    FOR_THREADS(nt) {
-        nt->_actual_a = (double*) ecalloc(nt->end, sizeof(double));
-        nt->_actual_b = (double*) ecalloc(nt->end, sizeof(double));
-    }
-    nrn_recalc_node_ptrs();
-#endif /* CACHEVEC */
-
-#if 0
-printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d\n", use_sparse13, cvode_active_, nrn_use_daspk_);
-#endif
     ++nrn_matrix_cnt_;
     if (use_sparse13) {
         int in, err, extn, neqn, j;
@@ -2041,7 +1980,7 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
         }
         /*printf(" %d extracellular nodes\n", extn);*/
         neqn += extn;
-        nt->_actual_rhs = (double*) ecalloc(neqn + 1, sizeof(double));
+        nt->_sp13_rhs = (double*) ecalloc(neqn + 1, sizeof(double));
         nt->_sp13mat = spCreate(neqn, 0, &err);
         if (err != spOKAY) {
             hoc_execerror("Couldn't create sparse matrix", (char*) 0);
@@ -2060,13 +1999,13 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
             nde = nd->extnode;
             pnd = nt->_v_parent[in];
             i = nd->eqn_index_;
-            nd->_rhs = nt->_actual_rhs + i;
-            nd->_d = spGetElement(nt->_sp13mat, i, i);
+            nt->_sp13_rhs[i] = nt->actual_rhs(in);
+            nd->_d_matelm = spGetElement(nt->_sp13mat, i, i);
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
                     k = i + ie + 1;
                     nde->_d[ie] = spGetElement(nt->_sp13mat, k, k);
-                    nde->_rhs[ie] = nt->_actual_rhs + k;
+                    nde->_rhs[ie] = nt->_sp13_rhs + k;
                     nde->_x21[ie] = spGetElement(nt->_sp13mat, k, k - 1);
                     nde->_x12[ie] = spGetElement(nt->_sp13mat, k - 1, k);
                 }
@@ -2083,8 +2022,8 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
                         nde->_b_matelm[ie] = spGetElement(nt->_sp13mat, k, kp);
                     }
             } else { /* not needed if index starts at 1 */
-                nd->_a_matelm = (double*) 0;
-                nd->_b_matelm = (double*) 0;
+                nd->_a_matelm = nullptr;
+                nd->_b_matelm = nullptr;
             }
         }
         nrndae_alloc();
@@ -2092,198 +2031,306 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
         FOR_THREADS(nt) {
             assert(nrndae_extra_eqn_count() == 0);
             assert(!nt->_ecell_memb_list || nt->_ecell_memb_list->nodecount == 0);
-            nt->_actual_d = (double*) ecalloc(nt->end, sizeof(double));
-            nt->_actual_rhs = (double*) ecalloc(nt->end, sizeof(double));
-            for (i = 0; i < nt->end; ++i) {
-                Node* nd = nt->_v_node[i];
-                nd->_d = nt->_actual_d + i;
-                nd->_rhs = nt->_actual_rhs + i;
+        }
+    }
+}
+
+/** @brief Sort the underlying storage for a particular mechanism.
+ *
+ *  After model building is complete the storage vectors backing all Mechanism
+ *  instances can be permuted to ensure that preconditions are met for the
+ *  computations performed while time-stepping.
+ *
+ *  This method ensures that the Mechanism data is ready for this compute phase.
+ *  It is guaranteed to remain "ready" until the returned tokens are destroyed.
+ */
+static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_data(
+    neuron::cache::Model& cache,
+    neuron::container::Mechanism::storage& mech_data) {
+    // Do the actual sorting here. For now the algorithm is just to ensure that
+    // the mechanism instances are partitioned by NrnThread.
+    auto const type = mech_data.type();
+    // Some special types are not "really" mechanisms and don't need to be
+    // sorted
+    if (type != MORPHOLOGY) {
+        std::size_t const mech_data_size{mech_data.size()};
+        std::vector<short> pdata_fields_to_cache{};
+        neuron::cache::indices_to_cache(type,
+                                        [mech_data_size,
+                                         &pdata_fields_to_cache,
+                                         &pdata_hack = cache.mechanism.at(type).pdata_hack](
+                                            auto field) {
+                                            if (field >= pdata_hack.size()) {
+                                                // we get called with the largest field first
+                                                pdata_hack.resize(field + 1);
+                                            }
+                                            pdata_hack.at(field).reserve(mech_data_size);
+                                            pdata_fields_to_cache.push_back(field);
+                                        });
+        std::size_t global_i{}, trivial_counter{};
+        std::vector<std::size_t> mech_data_permutation(mech_data_size,
+                                                       std::numeric_limits<std::size_t>::max());
+        NrnThread* nt{};
+        FOR_THREADS(nt) {
+            // the Memb_list for this mechanism in this thread, this might be
+            // null if there are no entries, or if it's an artificial cell type(?)
+            auto* const ml = nt->_ml_list[type];
+            if (ml) {
+                // Tell the Memb_list what global offset its values start at
+                ml->set_storage_offset(global_i);
             }
-        }
-    }
-}
-
-void nrn_cachevec(int b) {
-    if (use_sparse13) {
-        use_cachevec = 0;
-    } else {
-        if (b && use_cachevec == 0) {
-            tree_changed = 1;
-        }
-        use_cachevec = b;
-    }
-}
-
-#if CACHEVEC
-/*
-Pointers that need to be updated are:
-All Point process area pointers.
-All mechanism POINTER variables that point to  v.
-All Graph addvar pointers that plot v.
-All Vector record and play pointers that deal with v.
-All PreSyn threshold detectors that watch v.
-*/
-
-static int n_recalc_ptr_callback;
-static void (*recalc_ptr_callback[20])();
-static int recalc_cnt_;
-static double **recalc_ptr_new_vp_, **recalc_ptr_old_vp_;
-static int n_old_thread_;
-static int* old_actual_v_size_;
-static double** old_actual_v_;
-static double** old_actual_area_;
-
-/* defer freeing a few things which may have pointers to them
-until ready to update those pointers */
-void nrn_old_thread_save(void) {
-    int i;
-    int n = nrn_nthread;
-    if (old_actual_v_) {
-        return;
-    } /* one is already outstanding */
-    n_old_thread_ = n;
-    old_actual_v_size_ = (int*) ecalloc(n, sizeof(int));
-    old_actual_v_ = (double**) ecalloc(n, sizeof(double*));
-    old_actual_area_ = (double**) ecalloc(n, sizeof(double*));
-    for (i = 0; i < n; ++i) {
-        NrnThread* nt = nrn_threads + i;
-        old_actual_v_size_[i] = nt->end;
-        old_actual_v_[i] = nt->_actual_v;
-        old_actual_area_[i] = nt->_actual_area;
-    }
-}
-
-static double* (*recalc_ptr_)(double*);
-
-double* nrn_recalc_ptr(double* old) {
-    if (recalc_ptr_) {
-        return (*recalc_ptr_)(old);
-    }
-    if (!recalc_ptr_old_vp_) {
-        return old;
-    }
-    if (old && *old >= 0 && *old <= recalc_cnt_) {
-        int k = (int) (*old);
-        if (old == recalc_ptr_old_vp_[k]) {
-            return recalc_ptr_new_vp_[k];
-        }
-    }
-    return old;
-}
-
-void nrn_register_recalc_ptr_callback(Pfrv f) {
-    if (n_recalc_ptr_callback >= 20) {
-        Printf("More than 20 recalc_ptr_callback functions\n");
-        exit(1);
-    }
-    recalc_ptr_callback[n_recalc_ptr_callback++] = f;
-}
-
-void nrn_recalc_ptrs(double* (*r)(double*) ) {
-    int i;
-
-    recalc_ptr_ = r;
-
-    /* update pointers managed by c++ */
-    nrniv_recalc_ptrs();
-
-    /* user callbacks to update pointers */
-    for (i = 0; i < n_recalc_ptr_callback; ++i) {
-        (*recalc_ptr_callback[i])();
-    }
-    recalc_ptr_ = nullptr;
-}
-
-void nrn_recalc_node_ptrs(void) {
-    int i, ii, j, k;
-    NrnThread* nt;
-    if (use_cachevec == 0) {
-        return;
-    }
-    /*printf("nrn_recalc_node_ptrs\n");*/
-    recalc_cnt_ = 0;
-    FOR_THREADS(nt) {
-        recalc_cnt_ += nt->end;
-    }
-    recalc_ptr_new_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
-    recalc_ptr_old_vp_ = (double**) ecalloc(recalc_cnt_, sizeof(double*));
-    /* first update the pointers without messing with the old NODEV,NODEAREA */
-    /* to prepare for the update, copy all the v and area values into the */
-    /* new arrays are replace the old values by index value. */
-    /* a pointer dereference value of i allows us to easily check */
-    /* if the pointer points to what v_node[i]->_v points to. */
-    ii = 0;
-    FOR_THREADS(nt) {
-        nt->_actual_v = (double*) ecalloc(nt->end, sizeof(double));
-        nt->_actual_area = (double*) ecalloc(nt->end, sizeof(double));
-    }
-    FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
-        Node* nd = nt->_v_node[i];
-        nt->_actual_v[i] = *nd->_v;
-        recalc_ptr_new_vp_[ii] = nt->_actual_v + i;
-        recalc_ptr_old_vp_[ii] = nd->_v;
-        nt->_actual_area[i] = nd->_area;
-        *nd->_v = (double) ii;
-        ++ii;
-    }
-    /* update POINT_PROCESS pointers to NODEAREA */
-    /* and relevant POINTER pointers to NODEV */
-    FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
-        Node* nd = nt->_v_node[i];
-        Prop* p;
-        Datum* d;
-        int dpend;
-        for (p = nd->prop; p; p = p->next) {
-            if (memb_func[p->_type].is_point && !nrn_is_artificial_[p->_type]) {
-                p->dparam[0] = nt->_actual_area + i;
+            // Record where in the global storage this NrnThread's instances of
+            // the mechanism start
+            cache.thread.at(nt->id).mechanism_offset.at(type) = global_i;
+            // Count how many times we see this mechanism in this NrnThread
+            auto nt_mech_count = 0;
+            // Loop through the Nodes in this NrnThread
+            for (auto i = 0; i < nt->end; ++i) {
+                auto* const nd = nt->_v_node[i];
+                // See if this Node has a mechanism of this type
+                for (Prop* p = nd->prop; p; p = p->next) {
+                    if (p->_type != type) {
+                        continue;
+                    }
+                    // this condition comes from thread_memblist_setup(...)
+                    if (!memb_func[type].current && !memb_func[type].state &&
+                        !memb_func[type].has_initialize()) {
+                        continue;
+                    }
+                    // OK, p is an instance of the mechanism we're currently
+                    // considering.
+                    auto const current_global_row = p->id().current_row();
+                    trivial_counter += (current_global_row == global_i);
+                    mech_data_permutation.at(current_global_row) = global_i++;
+                    for (auto const field: pdata_fields_to_cache) {
+                        cache.mechanism.at(type).pdata_hack.at(field).push_back(p->dparam + field);
+                    }
+                    // Checks
+                    assert(ml->nodelist[nt_mech_count] == nd);
+                    assert(ml->nodeindices[nt_mech_count] == nd->v_node_index);
+                    ++nt_mech_count;
+                }
             }
-            dpend = nrn_dparam_ptr_end_[p->_type];
-            for (j = nrn_dparam_ptr_start_[p->_type]; j < dpend; ++j) {
-                if (double* pval = p->dparam[j].get<double*>();
-                    pval && *pval >= 0.0 && *pval <= recalc_cnt_) {
-                    /* possible pointer to v */
-                    k = (int) (*pval);
-                    if (pval == recalc_ptr_old_vp_[k]) {
-                        p->dparam[j] = recalc_ptr_new_vp_[k];
+            assert(!ml || ml->nodecount == nt_mech_count);
+            // Look for any artificial cells attached to this NrnThread
+            if (nrn_is_artificial_[type]) {
+                cTemplate* tmp = nrn_pnt_template_[type];
+                hoc_Item* q;
+                ITERATE(q, tmp->olist) {
+                    Object* obj = OBJ(q);
+                    auto* pnt = static_cast<Point_process*>(obj->u.this_pointer);
+                    assert(pnt->prop->_type == type);
+                    if (nt == pnt->_vnt) {
+                        auto const current_global_row = pnt->prop->id().current_row();
+                        trivial_counter += (current_global_row == global_i);
+                        mech_data_permutation.at(current_global_row) = global_i++;
+                        for (auto const field: pdata_fields_to_cache) {
+                            cache.mechanism.at(type).pdata_hack.at(field).push_back(
+                                pnt->prop->dparam + field);
+                        }
                     }
                 }
             }
         }
+        if (global_i != mech_data_size) {
+            // This means that we did not "positively" find all the instances of
+            // this mechanism by traversing the model structure. This can happen
+            // if HOC (or probably Python) scripts create instances and then do
+            // not attach them anywhere, or do not explicitly destroy
+            // interpreter variables that are preventing reference counts from
+            // reaching zero. In this case we can figure out which the missing
+            // entries are and permute them to the end of the vector.
+            auto missing_elements = mech_data_size - global_i;
+            // There are `missing_elements` integers from the range [0 ..
+            // mech_data_size-1] whose values in `mech_data_permutation` are
+            // still std::numeric_limits<std::size_t>::max().
+            for (auto global_row = 0ul; global_row < mech_data_size; ++global_row) {
+                if (mech_data_permutation[global_row] == std::numeric_limits<std::size_t>::max()) {
+                    trivial_counter += (global_row == global_i);
+                    mech_data_permutation[global_row] = global_i++;
+                    --missing_elements;
+                    if (missing_elements == 0) {
+                        break;
+                    }
+                }
+            }
+            if (global_i != mech_data_size) {
+                std::ostringstream oss;
+                oss << "(global_i = " << global_i << ") != (mech_data_size = " << mech_data_size
+                    << ") for " << mech_data.name();
+                throw std::runtime_error(oss.str());
+            }
+        }
+        assert(trivial_counter <= mech_data_size);
+        if (trivial_counter < mech_data_size) {
+            // The `mech_data_permutation` vector is not a unit transformation
+            // Should this and other permuting operations return a "sorted token"?
+            mech_data.apply_reverse_permutation(std::move(mech_data_permutation));
+        }
     }
-
-    nrn_recalc_ptrs(nullptr);
-
-    /* now that all the pointers are updated we update the NODEV */
-    ii = 0;
-    FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
-        Node* nd = nt->_v_node[i];
-        nd->_v = recalc_ptr_new_vp_[ii];
-        ++ii;
-    }
-    free(recalc_ptr_old_vp_);
-    free(recalc_ptr_new_vp_);
-    recalc_ptr_old_vp_ = (double**) 0;
-    recalc_ptr_new_vp_ = (double**) 0;
-    /* and free the old thread arrays if new ones were allocated */
-    for (i = 0; i < n_old_thread_; ++i) {
-        if (old_actual_v_[i])
-            hoc_free_val_array(old_actual_v_[i], old_actual_v_size_[i]);
-        if (old_actual_area_[i])
-            free(old_actual_area_[i]);
-    }
-    free(old_actual_v_size_);
-    free(old_actual_v_);
-    free(old_actual_area_);
-    old_actual_v_size_ = 0;
-    old_actual_v_ = 0;
-    old_actual_area_ = 0;
-    n_old_thread_ = 0;
-
-    nrn_node_ptr_change_cnt_++;
-    nrn_cache_prop_realloc();
-    nrn_recalc_ptrvector();
-    nrn_partrans_update_ptrs();
-    nrn_imem_defer_free(nullptr);
+    return mech_data.get_sorted_token();
 }
 
-#endif /* CACHEVEC */
+void nrn_fill_mech_data_caches(neuron::cache::Model& cache,
+                               neuron::container::Mechanism::storage& mech_data) {
+    // Generate some temporary "flattened" vectors from pdata
+    // For example, when a mechanism uses an ion then one of its pdata fields holds Datum
+    // (=generic_data_handle) objects that wrap data_handles to ion (RANGE) variables.
+    // Dereferencing those fields to access the relevant double values can be indirect and
+    // expensive, so here we can generate a std::vector<double*> that can be used directly in
+    // hot loops. This is partitioned for the threads in the same way as the other data.
+    // Note that this needs to come after *all* of the mechanism types' data have been permuted, not
+    // just the type that we are filling the cache for.
+    // TODO could identify the case that the pointers are all monotonically increasing and optimise
+    // further?
+    auto const type = mech_data.type();
+    // Some special types are not "really" mechanisms and don't need to be
+    // sorted
+    if (type != MORPHOLOGY) {
+        auto& mech_cache = cache.mechanism.at(type);
+        // Transform the vector<Datum> in pdata_hack into vector<double*> in pdata
+        std::transform(mech_cache.pdata_hack.begin(),
+                       mech_cache.pdata_hack.end(),
+                       std::back_inserter(mech_cache.pdata),
+                       [](std::vector<Datum*>& pdata_hack) {
+                           std::vector<double*> tmp{};
+                           std::transform(pdata_hack.begin(),
+                                          pdata_hack.end(),
+                                          std::back_inserter(tmp),
+                                          [](Datum* datum) { return datum->get<double*>(); });
+                           pdata_hack.clear();
+                           pdata_hack.shrink_to_fit();
+                           return tmp;
+                       });
+        mech_cache.pdata_hack.clear();
+        // Create a flat list of pointers we can use inside generated code
+        std::transform(mech_cache.pdata.begin(),
+                       mech_cache.pdata.end(),
+                       std::back_inserter(mech_cache.pdata_ptr_cache),
+                       [](auto const& pdata) { return pdata.empty() ? nullptr : pdata.data(); });
+    }
+}
+
+/** @brief Sort the underlying storage for Nodes.
+ *
+ *  After model building is complete the storage vectors backing all Node
+ *  objects can be permuted to ensure that preconditions are met for the
+ *  computations performed while time-stepping.
+ *
+ *  This method ensures that the Node data is ready for this compute phase.
+ *
+ *  @todo Is it worth "freezing" the data before any of the current_row() calls,
+ *  and making it possible to "atomically" do (freeze, calculate permutation,
+ *  apply-permutation-iff-the-frozen-count-was-1, return token)?
+ */
+static neuron::container::state_token<neuron::container::Node::storage> nrn_sort_node_data(
+    neuron::cache::Model& cache) {
+    // Make sure the voltage storage follows the order encoded in _v_node.
+    // Generate the permutation vector to update the underlying storage for
+    // Nodes. This must come after nrn_multisplit_setup_, which can change the
+    // Node order.
+    auto& node_data = neuron::model().node_data();
+    std::size_t const node_data_size{node_data.size()};
+    std::size_t global_i{};
+    std::vector<std::size_t> node_data_permutation(node_data_size,
+                                                   std::numeric_limits<std::size_t>::max());
+    // Process threads one at a time -- this means that the data for each
+    // NrnThread will be contiguous.
+    NrnThread* nt{};
+    FOR_THREADS(nt) {
+        // What offset in the global node data structure do the values for this thread
+        // start at
+        nt->_node_data_offset = global_i;
+        cache.thread.at(nt - nrn_threads).node_data_offset = global_i;
+        for (int i = 0; i < nt->end; ++i, ++global_i) {
+            Node* nd = nt->_v_node[i];
+            auto const current_node_row = nd->_node_handle.current_row();
+            assert(current_node_row < node_data_size);
+            assert(global_i < node_data_size);
+            node_data_permutation.at(current_node_row) = global_i;
+        }
+    }
+    if (global_i != node_data_size) {
+        // This means that we did not "positively" find all the Nodes by traversing the NrnThread
+        // objects. In this case we can figure out which the missing entries are and permute them to
+        // the end of the global vectors.
+        auto missing_elements = node_data_size - global_i;
+        std::cout << "permuting " << missing_elements << " 'lost' Nodes to the end\n";
+        // There are `missing_elements` integers from the range [0 .. node_data_size-1] whose values
+        // in `node_data_permutation` are still std::numeric_limits<std::size_t>::max().
+        for (auto global_row = 0ul; global_row < node_data_size; ++global_row) {
+            if (node_data_permutation[global_row] == std::numeric_limits<std::size_t>::max()) {
+                node_data_permutation[global_row] = global_i++;
+                --missing_elements;
+                if (missing_elements == 0) {
+                    break;
+                }
+            }
+        }
+        if (global_i != node_data_size) {
+            std::ostringstream oss;
+            oss << "(global_i = " << global_i << ") != (node_data_size = " << node_data_size << ')';
+            throw std::runtime_error(oss.str());
+        }
+    }
+    // Should this and other permuting operations return a "sorted token"?
+    node_data.apply_reverse_permutation(std::move(node_data_permutation));
+    return node_data.get_sorted_token();
+}
+
+/** @brief Ensure neuron::container::* data are sorted.
+ *
+ *  Set the containers to be in read-only mode, until the returned token is
+ *  destroyed.
+ */
+neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
+    bool cache_was_valid = bool{neuron::cache::model};
+    if (!cache_was_valid) {
+        neuron::cache::model.emplace();
+    }
+    neuron::model_sorted_token ret{*neuron::cache::model};
+    auto& node_data = neuron::model().node_data();
+    auto& tokens = ret.mech_data_tokens;
+    tokens.reserve(neuron::model().mechanism_storage_size());
+    if (cache_was_valid) {
+        // cache is valid
+        assert(node_data.is_sorted());
+        ret.node_data_token = node_data.get_sorted_token();
+        neuron::model().apply_to_mechanisms([&tokens](auto& mech_data) {
+            if (!mech_data.is_sorted()) {
+                std::ostringstream oss;
+                oss << "nrn_ensure_model_data_are_sorted: " << mech_data
+                    << " was not sorted despite the cache being valid";
+                throw std::runtime_error(std::move(oss).str());
+            }
+            tokens.emplace_back(mech_data.get_sorted_token());
+        });
+    } else {
+        // cache not valid, presumably because something is not sorted
+        // populate a different cache, because neuron::cache::model gets
+        // invalidated by permutations via the callback
+        auto cache = std::move(*neuron::cache::model);
+        bool all_sorted = node_data.is_sorted();
+        neuron::model().apply_to_mechanisms(
+            [&all_sorted](auto& mech_data) { all_sorted = all_sorted && mech_data.is_sorted(); });
+        assert(!all_sorted);
+        cache.thread.resize(nrn_nthread);
+        // How big an array needs to be to be indexed by mechanism type
+        auto const mech_storage_size = neuron::model().mechanism_storage_size();
+        cache.mechanism.resize(mech_storage_size);
+        for (auto& thread_cache: cache.thread) {
+            thread_cache.mechanism_offset.resize(mech_storage_size);
+        }
+        ret.node_data_token = nrn_sort_node_data(cache);
+        // TODO should we pass a token saying the node data are sorted to
+        // nrn_sort_mech_data?
+        neuron::model().apply_to_mechanisms([&cache, &tokens](auto& mech_data) {
+            tokens.emplace_back(nrn_sort_mech_data(cache, mech_data));
+        });
+        // Now that all the mechanism data is sorted we can fill in pdata caches
+        neuron::model().apply_to_mechanisms(
+            [&cache](auto& mech_data) { nrn_fill_mech_data_caches(cache, mech_data); });
+        neuron::cache::model = std::move(cache);
+    }
+    return ret;
+}

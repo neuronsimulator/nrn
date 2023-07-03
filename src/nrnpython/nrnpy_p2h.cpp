@@ -181,7 +181,13 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     if (isfunc) {
         args = PyTuple_New(nindex);
         for (i = 0; i < nindex; ++i) {
-            PyObject* arg = nrnpy_hoc_pop();
+            PyObject* arg = nrnpy_hoc_pop("isfunc py2n_component");
+            if (!arg) {
+                PyErr2NRNString e;
+                e.get_pyerr();
+                Py_DECREF(args);
+                hoc_execerr_ext("arg %d error: %s", i, e.c_str());
+            }
             // PyObject_Print(arg, stdout, 0);
             // printf(" %d   arg %d\n", arg->ob_refcnt,  i);
             if (PyTuple_SetItem(args, nindex - 1 - i, arg)) {
@@ -220,7 +226,11 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         if (hoc_stack_type() == NUMBER) {
             arg = Py_BuildValue("l", (long) hoc_xpop());
         } else {
-            arg = nrnpy_hoc_pop();
+            // I don't think it is syntactically possible
+            // for this to be a VAR. It is possible for it to
+            // be an Object but the GetItem below will raise
+            // TypeError: list indices must be integers or slices, not hoc.HocObject
+            arg = nrnpy_hoc_pop("nindex py2n_component");
         }
         result = PyObject_GetItem(tail, arg);
         if (!result) {
@@ -398,9 +408,10 @@ static int hoccommand_exec(Object* ho) {
     if (r == NULL) {
         char* mes = nrnpyerr_str();
         if (mes) {
-            Fprintf(stderr, "%s\n", mes);
+            std::string tmp{"Python Callback failed [hoccommand_exec]:\n"};
+            tmp.append(mes);
             free(mes);
-            hoc_execerror("Python Callback failed", 0);
+            hoc_execerror(tmp.c_str(), nullptr);
         }
         if (PyErr_Occurred()) {
             PyErr_Print();
@@ -467,7 +478,8 @@ static Object* callable_with_args(Object* ho, int narg) {
         hoc_execerror("PyTuple_New failed", 0);
     }
     for (int i = 0; i < narg; ++i) {
-        PyObject* item = nrnpy_hoc_pop();
+        // not used with datahandle args.
+        PyObject* item = nrnpy_hoc_pop("callable_with_args");
         if (item == NULL) {
             Py_XDECREF(args);
             hoc_execerror("nrnpy_hoc_pop failed", 0);
@@ -499,7 +511,7 @@ static double func_call(Object* ho, int narg, int* err) {
         hoc_execerror("PyTuple_New failed", 0);
     }
     for (int i = 0; i < narg; ++i) {
-        PyObject* item = nrnpy_hoc_pop();
+        PyObject* item = nrnpy_hoc_pop("func_call");
         if (item == NULL) {
             Py_XDECREF(args);
             hoc_execerror("nrnpy_hoc_pop failed", 0);
@@ -745,7 +757,7 @@ char* call_picklef(char* fname, std::size_t size, int narg, std::size_t* retsize
 
     args = PyTuple_New(narg);
     for (int i = 0; i < narg; ++i) {
-        PyObject* arg = nrnpy_hoc_pop();
+        PyObject* arg = nrnpy_hoc_pop("call_picklef");
         if (PyTuple_SetItem(args, narg - 1 - i, arg)) {
             assert(0);
         }

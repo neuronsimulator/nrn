@@ -10,7 +10,6 @@
 #include "membfunc.h"
 
 extern void v_setup_vectors();
-extern void nrn_rhs(NrnThread*);
 extern int nrndae_extra_eqn_count();
 extern Symlist* hoc_built_in_symlist;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
@@ -33,8 +32,7 @@ class NonLinImpRep {
     char* m_;
     int scnt_;  // structure_change
     int n_v_, n_ext_, n_lin_, n_ode_, neq_v_, neq_;
-    double** pv_;
-    double** pvdot_;
+    std::vector<neuron::container::data_handle<double>> pv_, pvdot_;
     int* v_index_;
     double* rv_;
     double* jv_;
@@ -132,7 +130,7 @@ double NonLinImp::ratio_amp(int clmploc, int vloc) {
 }
 void NonLinImp::compute(double omega, double deltafac, int maxiter) {
     v_setup_vectors();
-    nrn_rhs(nrn_threads);
+    nrn_rhs(nrn_ensure_model_data_are_sorted(), nrn_threads[0]);
     if (rep_ && rep_->scnt_ != structure_change_cnt) {
         delete rep_;
         rep_ = NULL;
@@ -249,8 +247,8 @@ NonLinImpRep::NonLinImpRep() {
     }
     m_ = cmplx_spCreate(neq_, 1, &err);
     assert(err == spOKAY);
-    pv_ = new double*[neq_];
-    pvdot_ = new double*[neq_];
+    pv_.resize(neq_);
+    pvdot_.resize(neq_);
     v_index_ = new int[n_v_];
     rv_ = new double[neq_ + 1];
     rv_ += 1;
@@ -262,8 +260,8 @@ NonLinImpRep::NonLinImpRep() {
     for (i = 0; i < n_v_; ++i) {
         // utilize nd->eqn_index in case of use_sparse13 later
         Node* nd = _nt->_v_node[i];
-        pv_[i] = &NODEV(nd);
-        pvdot_[i] = nd->_rhs;
+        pv_[i] = nd->v_handle();
+        pvdot_[i] = nd->rhs_handle();
         v_index_[i] = i + 1;
     }
     for (i = 0; i < n_v_; ++i) {
@@ -280,8 +278,6 @@ NonLinImpRep::~NonLinImpRep() {
         return;
     }
     cmplx_spDestroy(m_);
-    delete[] pv_;
-    delete[] pvdot_;
     delete[] v_index_;
     delete[](rv_ - 1);
     delete[](jv_ - 1);
@@ -290,7 +286,7 @@ NonLinImpRep::~NonLinImpRep() {
 }
 
 void NonLinImpRep::delta(double deltafac) {  // also defines pv_,pvdot_ map for ode
-    int i, j, nc, cnt, ieq;
+    int i, nc, cnt, ieq;
     NrnThread* nt = nrn_threads;
     for (i = 0; i < neq_; ++i) {
         deltavec_[i] = deltafac;  // all v's wasted but no matter.
@@ -300,11 +296,11 @@ void NonLinImpRep::delta(double deltafac) {  // also defines pv_,pvdot_ map for 
         Memb_list* ml = tml->ml;
         i = tml->index;
         nc = ml->nodecount;
-        nrn_ode_count_t s = memb_func[i].ode_count;
-        if (s && (cnt = (*s)(i)) > 0) {
-            nrn_ode_map_t m = memb_func[i].ode_map;
-            for (j = 0; j < nc; ++j) {
-                (*m)(ieq, pv_ + ieq, pvdot_ + ieq, ml->_data[j], ml->pdata[j], deltavec_ + ieq, i);
+        if (nrn_ode_count_t s = memb_func[i].ode_count; s && (cnt = s(i)) > 0) {
+            nrn_ode_map_t ode_map = memb_func[i].ode_map;
+            for (auto j = 0; j < nc; ++j) {
+                ode_map(
+                    ml->prop[j], ieq, pv_.data() + ieq, pvdot_.data() + ieq, deltavec_ + ieq, i);
                 ieq += cnt;
             }
         }
@@ -332,9 +328,8 @@ void NonLinImpRep::didv() {
     Memb_list* mlc = _nt->tml->ml;
     int n = mlc->nodecount;
     for (i = 0; i < n; ++i) {
-        double* cd = mlc->_data[i];
         j = mlc->nodelist[i]->v_node_index;
-        diag_[v_index_[j] - 1][1] += .001 * cd[0] * omega_;
+        diag_[v_index_[j] - 1][1] += .001 * mlc->data(i, 0) * omega_;
     }
     // di/dv terms
     // because there may be several point processes of the same type
@@ -364,14 +359,14 @@ void NonLinImpRep::didv() {
             NODERHS(nd) = 0;
             double x1 = NODEV(nd);
             // v+dv
-            NODEV(nd) += delta_;
+            nd->v() = x1 + delta_;
             current(i, ml, j);
             // save rhs
             // zero rhs
             // restore v
             x2 = NODERHS(nd);
             NODERHS(nd) = 0;
-            NODEV(nd) = x1;
+            nd->v() = x1;
             current(i, ml, j);
             // conductance
             // add to matrix
@@ -458,8 +453,9 @@ void NonLinImpRep::dsdv() {
                 // point processes at the same location
                 for (in = 0; in < ml->nodecount; ++in) {
                     Node* nd = ml->nodelist[in];
-                    if (x1[in] == NODEV(nd)) {
-                        NODEV(nd) += delta_;
+                    auto const v = nd->v();
+                    if (x1[in] == v) {
+                        nd->v() = v + delta_;
                     }
                 }
                 // compute rhs. this is the rhs(v+dv)
@@ -471,7 +467,7 @@ void NonLinImpRep::dsdv() {
                         x2[is] = *pvdot_[is];
                         *pvdot_[is] = 0;
                     }
-                    NODEV(nd) = x1[in];
+                    nd->v() = x1[in];
                 }
                 // compute the rhs(v)
                 ode(i, ml);
@@ -561,24 +557,20 @@ void NonLinImpRep::dsds() {
 
 void NonLinImpRep::current(int im, Memb_list* ml, int in) {  // assume there is in fact a current
                                                              // method
-    Pvmi s = memb_func[im].current;
     // fake a 1 element memb_list
-    Memb_list mfake;
-#if CACHEVEC != 0
+    Memb_list mfake{im};
     mfake.nodeindices = ml->nodeindices + in;
-#endif
     mfake.nodelist = ml->nodelist + in;
-    mfake._data = ml->_data + in;
+    mfake.set_storage_offset(ml->get_storage_offset());
     mfake.pdata = ml->pdata + in;
     mfake.prop = ml->prop ? ml->prop + in : nullptr;
     mfake.nodecount = 1;
     mfake._thread = ml->_thread;
-    (*s)(nrn_threads, &mfake, im);
+    memb_func[im].current(nrn_ensure_model_data_are_sorted(), nrn_threads, &mfake, im);
 }
 
 void NonLinImpRep::ode(int im, Memb_list* ml) {  // assume there is in fact an ode method
-    Pvmi s = memb_func[im].ode_spec;
-    (*s)(nrn_threads, ml, im);
+    memb_func[im].ode_spec(nrn_ensure_model_data_are_sorted(), nrn_threads, ml, im);
 }
 
 int NonLinImpRep::gapsolve() {

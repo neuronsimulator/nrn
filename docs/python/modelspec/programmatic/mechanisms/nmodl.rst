@@ -114,7 +114,7 @@ this use the command:
 
     	modlunit file 
 
-leaving off the file extension. For more information about units click here.
+leaving off the file extension. For more information about units `click here <units_within_nmodl>`_.
 
 Rationale
 """""""""
@@ -485,7 +485,7 @@ that exists should be set up via the command:
 .. code-block::
     python
 
-    h.setpointer(_ref_nrnvar, 'POINTER_name', mechanism_object)
+    mechanism_object._ref_somepointer = source_obj._ref_varname
 
 Here mechanism_object (a point process object or a density mechanism) and
 the other arguments
@@ -511,7 +511,7 @@ Then
     python
 
     syn = h.Syn(section(0.8)) 
-    h.setpointer(axon(1)._ref_v, 'vpre', syn)
+    syn._ref_vpre = axon(1)._ref_v
 
 will allow the ``syn`` object located at ``section(0.8)`` to know the voltage at the distal end of the axon 
 section. As a variation on that example, if one supposed that the synapse 
@@ -523,7 +523,7 @@ statement would be
 .. code-block::
     python
 
-    h.setpointer(rel._ref_ACH_release, 'trpe', syn)
+    syn._ref_trpe = rel._ref_ACH_release
 
 
 The caveat is that tight coupling between states in different models 

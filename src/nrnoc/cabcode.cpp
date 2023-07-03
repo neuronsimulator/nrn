@@ -125,19 +125,7 @@ void nrn_popsec(void) {
         if (!sec) {
             return;
         }
-#if 0
-		if (sec->prop && sec->prop->dparam[0].sym) {
-			printf("popsec %s\n", sec->prop->dparam[0].sym->name);
-		}else{
-			printf("popsec unnamed or with no properties\n");
-		}
-#endif
-        if (--sec->refcount <= 0) {
-#if 0
-			printf("sec freed after pop\n");
-#endif
-            nrn_section_free(sec);
-        }
+        section_unref(sec);
     }
 }
 
@@ -160,7 +148,7 @@ void clear_sectionlist(void)	/* merely change all SECTION to UNDEF */
 printf("clear_sectionlist not fixed yet, doing nothing\n");
 return;
 	Symbol *s;
-	
+
 	free_point_process();
 	if (symlist) for (s=symlist->first; s; s = s->next) {
 		if (s->type == SECTION) {
@@ -267,9 +255,9 @@ static Section* new_section(Object* ob, Symbol* sym, int i) {
     sec = sec_alloc();
     section_ref(sec);
     prop = prop_alloc(&(sec->prop), CABLESECTION, (Node*) 0);
-    prop->dparam[0] = sym;
+    prop->dparam[0] = {neuron::container::do_not_search, sym};
     prop->dparam[5] = i;
-    prop->dparam[6] = ob;
+    prop->dparam[6] = {neuron::container::do_not_search, ob};
 #if USE_PYTHON
     prop->dparam[PROP_PY_INDEX] = nullptr;
 #endif
@@ -295,7 +283,7 @@ void new_sections(Object* ob, Symbol* sym, Item** pitm, int size) {
         } else {
             pitm[i] = lappendsec(section_list, sec);
         }
-        sec->prop->dparam[8] = pitm[i];
+        sec->prop->dparam[8] = {neuron::container::do_not_search, pitm[i]};
     }
 }
 
@@ -410,22 +398,18 @@ void cab_alloc(Prop* p) {
     pd[4] = DEF_rallbranch;
     pd[7] = DEF_Ra;
     p->dparam = pd;
-    p->param_size = CAB_SIZE; /* this one is special since it refers to dparam */
+    p->dparam_size = CAB_SIZE; /* this one is special since it refers to dparam */
 }
 
 void morph_alloc(Prop* p) {
-    double* pd;
-    pd = nrn_prop_data_alloc(MORPHOLOGY, 1, p);
-    pd[0] = DEF_diam; /* microns */
+    assert(p->param_size() == 1);
+    p->param(0) = DEF_diam; /* microns */
     diam_changed = 1;
-    p->param = pd;
-    p->param_size = 1;
 }
 
 double nrn_diameter(Node* nd) {
-    Prop* p;
-    p = nrn_mechanism(MORPHOLOGY, nd);
-    return p->param[0];
+    Prop* p = nrn_mechanism(MORPHOLOGY, nd);
+    return p->param(0);
 }
 
 void nrn_chk_section(Symbol* s) {
@@ -603,6 +587,7 @@ void nrn_disconnect(Section* sec) {
         }
     section_unref(oldpsec);
     tree_changed = 1;
+    neuron::model().node_data().mark_as_unsorted();
 }
 
 static void connectsec_impl(Section* parent, Section* sec) {
@@ -648,7 +633,7 @@ static void connectsec_impl(Section* parent, Section* sec) {
     if (oldpsec) {
         section_unref(oldpsec);
     } else if (oldpnode) {
-        nrn_node_destruct1(oldpnode);
+        delete oldpnode;
     }
     tree_changed = 1;
     diam_changed = 1;
@@ -923,11 +908,11 @@ void mech_uninsert1(Section* sec, Symbol* s) {
     }
 }
 
-void nrn_rangeconst(Section* sec, Symbol* s, double* pd, int op) {
+void nrn_rangeconst(Section* sec, Symbol* s, neuron::container::data_handle<double> pd, int op) {
     short n, i;
     Node* nd;
     int indx;
-    double* dpr;
+    neuron::container::data_handle<double> dpr{};
     double d = *pd;
     n = sec->nnode - 1;
     if (s->u.rng.type == VINDEX) {
@@ -935,17 +920,17 @@ void nrn_rangeconst(Section* sec, Symbol* s, double* pd, int op) {
         if (op) {
             *pd = hoc_opasgn(op, NODEV(nd), d);
         }
-        NODEV(nd) = *pd;
+        nd->v() = *pd;
         nd = node_ptr(sec, 1., (double*) 0);
         if (op) {
             *pd = hoc_opasgn(op, NODEV(nd), d);
         }
-        NODEV(nd) = *pd;
+        nd->v() = *pd;
         for (i = 0; i < n; i++) {
             if (op) {
                 *pd = hoc_opasgn(op, NODEV(sec->pnode[i]), d);
             }
-            NODEV(sec->pnode[i]) = *pd;
+            sec->pnode[i]->v() = *pd;
         }
     } else {
         if (s->u.rng.type == IMEMFAST) {
@@ -978,7 +963,8 @@ void nrn_rangeconst(Section* sec, Symbol* s, double* pd, int op) {
             if (s->u.rng.index == 0) {
                 diam_changed = 1;
             }
-            dpr = nrn_vext_pd(s, indx, node_ptr(sec, 0., (double*) 0));
+            dpr = neuron::container::data_handle<double>{
+                nrn_vext_pd(s, indx, node_ptr(sec, 0., nullptr))};
             if (dpr) {
                 if (op) {
                     *dpr = hoc_opasgn(op, *dpr, d);
@@ -986,7 +972,8 @@ void nrn_rangeconst(Section* sec, Symbol* s, double* pd, int op) {
                     *dpr = d;
                 }
             }
-            dpr = nrn_vext_pd(s, indx, node_ptr(sec, 1., (double*) 0));
+            dpr = neuron::container::data_handle<double>{
+                nrn_vext_pd(s, indx, node_ptr(sec, 1., nullptr))};
             if (dpr) {
                 if (op) {
                     *dpr = hoc_opasgn(op, *dpr, d);
@@ -999,17 +986,16 @@ void nrn_rangeconst(Section* sec, Symbol* s, double* pd, int op) {
     }
 }
 
-void range_const(void) /* rangevariable symbol at pc, value on stack */
-{
-    Section* sec;
-    double d;
-    int op;
-    Symbol* s = (pc++)->sym;
-
-    op = (pc++)->i;
-    d = xpop();
-    sec = nrn_sec_pop();
-    nrn_rangeconst(sec, s, &d, op);
+// rangevariable symbol at pc, value on stack
+void range_const() {
+    Symbol* s = (hoc_pc++)->sym;
+    int const op{(hoc_pc++)->i};
+    double d{hoc_xpop()};
+    auto* const sec = nrn_sec_pop();
+    nrn_rangeconst(sec,
+                   s,
+                   neuron::container::data_handle<double>{neuron::container::do_not_search, &d},
+                   op);
     hoc_pushx(d);
 }
 
@@ -1070,31 +1056,17 @@ static Datum* pdprop(Symbol* s, int indx, Section* sec, short inode) {
     return m->dparam + s->u.rng.index + indx;
 }
 
-void connectpointer(void) { /* pointer symbol at pc, target variable on stack, maybe
-    range variable location on stack */
-    Datum* dat;
-    double* pd;
-    double d;
-    Symbol* s = (pc++)->sym;
-    pd = hoc_pxpop();
+// pointer symbol at pc, target variable on stack, maybe range variable location on stack
+void connectpointer() {
+    auto* const s = (hoc_pc++)->sym;
+    auto const pd = hoc_pop_handle<double>();
     if (s->subtype != NRNPOINTER) {
         hoc_execerror(s->name, "not a model variable POINTER");
     }
-#if 0
-/* can't be since parser sees object syntax and generates different code. */
-	if (s->type == NRNPNTVAR) {
-		dat = ppnrnpnt(s);
-	}else
-#endif
-    {
-        short i;
-        Section* sec;
-
-        d = hoc_xpop();
-        sec = nrn_sec_pop();
-        i = node_index(sec, d);
-        dat = pdprop(s, range_vec_indx(s), sec, i);
-    }
+    auto const d = hoc_xpop();
+    auto* const sec = nrn_sec_pop();
+    auto const i = node_index(sec, d);
+    auto* const dat = pdprop(s, range_vec_indx(s), sec, i);
     *dat = pd;
 }
 
@@ -1144,7 +1116,7 @@ void range_interpolate(void) /*symbol at pc, 4 values on stack*/
     short i, i1, i2, di;
     Section* sec;
     double y1, y2, x1, x2, x, dx, thet, y;
-    double* dpr;
+    neuron::container::data_handle<double> dpr{};
     Symbol* s = (pc++)->sym;
     int indx, op;
     Node* nd;
@@ -1167,17 +1139,17 @@ void range_interpolate(void) /*symbol at pc, 4 values on stack*/
         if (x1 == 0. || x1 == 1.) {
             nd = node_ptr(sec, x1, (double*) 0);
             if (op) {
-                NODEV(nd) = hoc_opasgn(op, NODEV(nd), y1);
+                nd->v() = hoc_opasgn(op, NODEV(nd), y1);
             } else {
-                NODEV(nd) = y1;
+                nd->v() = y1;
             }
         }
         if (x2 == 1. || x2 == 0.) {
             nd = node_ptr(sec, x2, (double*) 0);
             if (op) {
-                NODEV(nd) = hoc_opasgn(op, NODEV(nd), y2);
+                nd->v() = hoc_opasgn(op, NODEV(nd), y2);
             } else {
-                NODEV(nd) = y2;
+                nd->v() = y2;
             }
         }
         for (i = i1; i != i2; i += di) {
@@ -1190,9 +1162,9 @@ void range_interpolate(void) /*symbol at pc, 4 values on stack*/
             if (thet >= -1e-9 && thet <= 1. + 1e-9) {
                 y = y1 * (1. - thet) + y2 * thet;
                 if (op) {
-                    NODEV(nd) = hoc_opasgn(op, NODEV(nd), y);
+                    nd->v() = hoc_opasgn(op, NODEV(nd), y);
                 } else {
-                    NODEV(nd) = y;
+                    nd->v() = y;
                 }
             }
         }
@@ -1234,7 +1206,8 @@ void range_interpolate(void) /*symbol at pc, 4 values on stack*/
     }
     if (s->u.rng.type == EXTRACELL) {
         if (x1 == 0. || x1 == 1.) {
-            dpr = nrn_vext_pd(s, indx, node_ptr(sec, x1, (double*) 0));
+            dpr = neuron::container::data_handle<double>{
+                nrn_vext_pd(s, indx, node_ptr(sec, x1, nullptr))};
             if (dpr) {
                 if (op) {
                     *dpr = hoc_opasgn(op, *dpr, y1);
@@ -1244,7 +1217,8 @@ void range_interpolate(void) /*symbol at pc, 4 values on stack*/
             }
         }
         if (x2 == 1. || x2 == 0.) {
-            dpr = nrn_vext_pd(s, indx, node_ptr(sec, x2, (double*) 0));
+            dpr = neuron::container::data_handle<double>{
+                nrn_vext_pd(s, indx, node_ptr(sec, x2, nullptr))};
             if (dpr) {
                 if (op) {
                     *dpr = hoc_opasgn(op, *dpr, y2);
@@ -1273,7 +1247,7 @@ int nrn_exists(Symbol* s, Node* node) {
     }
 }
 
-double* nrn_rangepointer(Section* sec, Symbol* s, double d) {
+neuron::container::data_handle<double> nrn_rangepointer(Section* sec, Symbol* s, double d) {
     /* if you change this change nrnpy_rangepointer as well */
     short i;
     Node* nd;
@@ -1281,16 +1255,12 @@ double* nrn_rangepointer(Section* sec, Symbol* s, double d) {
 
     if (s->u.rng.type == VINDEX) {
         nd = node_ptr(sec, d, nullptr);
-        return &NODEV(nd);
+        return nd->v_handle();
     }
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
             nd = node_ptr(sec, d, nullptr);
-            if (!nd->_nt) {
-                v_setup_vectors();
-                assert(nd->_nt);
-            }
-            return nd->_nt->_nrn_fast_imem->_nrn_sav_rhs + nd->v_node_index;
+            return nd->sav_rhs_handle();
         } else {
             hoc_execerror(
                 "cvode.use_fast_imem(1) has not been executed so i_membrane_ does not exist", 0);
@@ -1299,10 +1269,9 @@ double* nrn_rangepointer(Section* sec, Symbol* s, double d) {
     indx = range_vec_indx(s);
 #if EXTRACELLULAR
     if (s->u.rng.type == EXTRACELL) {
-        double* pd;
-        pd = nrn_vext_pd(s, indx, node_ptr(sec, d, (double*) 0));
+        double* const pd{nrn_vext_pd(s, indx, node_ptr(sec, d, (double*) 0))};
         if (pd) {
-            return pd;
+            return neuron::container::data_handle<double>{pd};
         }
     }
 #endif
@@ -1313,22 +1282,23 @@ double* nrn_rangepointer(Section* sec, Symbol* s, double d) {
 /* return nil if failure instead of hoc_execerror
    and return pointer to the 0 element if an array
 */
-double* nrnpy_rangepointer(Section* sec, Symbol* s, double d, int* err, int idx) {
+neuron::container::data_handle<double> nrnpy_rangepointer(Section* sec,
+                                                          Symbol* s,
+                                                          double d,
+                                                          int* err,
+                                                          int idx) {
     /* if you change this change nrn_rangepointer as well */
     *err = 0;
     if (s->u.rng.type == VINDEX) {
-        return &NODEV(node_ptr(sec, d, nullptr));
+        auto* nd = node_ptr(sec, d, nullptr);
+        return nd->v_handle();
     }
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
             auto* nd = node_ptr(sec, d, nullptr);
-            if (!nd->_nt) {
-                v_setup_vectors();
-                assert(nd->_nt);
-            }
-            return nd->_nt->_nrn_fast_imem->_nrn_sav_rhs + nd->v_node_index;
+            return nd->sav_rhs_handle();
         } else {
-            return nullptr;
+            return {};
         }
     }
 #if EXTRACELLULAR
@@ -1336,7 +1306,7 @@ double* nrnpy_rangepointer(Section* sec, Symbol* s, double d, int* err, int idx)
         auto* nd = node_ptr(sec, d, nullptr);
         double* pd{nrn_vext_pd(s, 0, nd)};
         if (pd) {
-            return pd;
+            return neuron::container::data_handle<double>{pd};
         }
     }
 #endif
@@ -1351,17 +1321,13 @@ void rangevarevalpointer() {
     Section* sec{nrn_sec_pop()};
     if (s->u.rng.type == VINDEX) {
         auto* const nd = node_ptr(sec, d, nullptr);
-        hoc_pushpx(&NODEV(nd));
+        hoc_push(nd->v_handle());
         return;
     }
     if (s->u.rng.type == IMEMFAST) {
         if (nrn_use_fast_imem) {
             auto* nd = node_ptr(sec, d, nullptr);
-            if (!nd->_nt) {
-                v_setup_vectors();
-                assert(nd->_nt);
-            }
-            hoc_pushpx(nd->_nt->_nrn_fast_imem->_nrn_sav_rhs + nd->v_node_index);
+            hoc_push(nd->sav_rhs_handle());
         } else {
             hoc_execerror(
                 "cvode.use_fast_imem(1) has not been executed so i_membrane_ does not exist", 0);
@@ -1380,7 +1346,7 @@ void rangevarevalpointer() {
         }
     }
     auto const i = node_index(sec, d);
-    hoc_pushpx(dprop(s, indx, sec, i));
+    hoc_push(dprop(s, indx, sec, i));
 }
 
 void rangevareval(void) /* symbol at pc, location on stack, return value on stack */
@@ -1560,8 +1526,8 @@ int nrn_at_beginning(Section* sec) {
 
 static void nrn_rootnode_alloc(Section* sec) {
     Extnode* nde;
-    extern Node* nrn_node_construct1();
-    sec->parentnode = nrn_node_construct1();
+    sec->parentnode = new Node{};
+    sec->parentnode->sec_node_index_ = 0;
     sec->parentnode->sec = sec;
 #if EXTRACELLULAR
     if (sec->pnode[0]->extnode) {
@@ -1870,16 +1836,9 @@ double* nrn_vext_pd(Symbol* s, int indx, Node* nd) {
     if (s->u.rng.type != EXTRACELL) {
         return (double*) 0;
     }
-#if I_MEMBRANE
-    if (s->u.rng.index != 3 * (nlayer) + 2) {
-        return (double*) 0;
+    if (s->u.rng.index != neuron::extracellular::vext_pseudoindex()) {
+        return nullptr;
     }
-#else /* not I_MEMBRANE */
-    if (s->u.rng.index != 3 * (nlayer) + 1) {
-        return (double*) 0;
-    }
-#endif
-
     zero = 0.;
     if (nd->extnode) {
         return nd->extnode->v + indx;
@@ -1899,28 +1858,24 @@ double* nrn_vext_pd(Symbol* s, int indx, Node* nd) {
 
 /* if you change this then change nrnpy_dprop as well */
 /* returns location of property symbol */
-double* dprop(Symbol* s, int indx, Section* sec, short inode) {
-    Prop* m;
-
-    m = nrn_mechanism_check(s->u.rng.type, sec, inode);
+neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, short inode) {
+    auto* const m = nrn_mechanism_check(s->u.rng.type, sec, inode);
 #if EXTRACELLULAR
-/* this does not handle vext(0) and vext(1) properly at this time */
-#if I_MEMBRANE
-    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 2) {
-#else
-    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 1) {
-#endif
-        return sec->pnode[inode]->extnode->v + indx;
+    // old comment: this does not handle vext(0) and vext(1) properly at this time
+    if (m->_type == EXTRACELL && s->u.rng.index == neuron::extracellular::vext_pseudoindex()) {
+        return neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                      sec->pnode[inode]->extnode->v + indx};
     }
 #endif
     if (s->subtype != NRNPOINTER) {
         if (m->ob) {
-            return m->ob->u.dataspace[s->u.rng.index].pval + indx;
+            return neuron::container::data_handle<double>{m->ob->u.dataspace[s->u.rng.index].pval +
+                                                          indx};
         } else {
-            return &(m->param[s->u.rng.index]) + indx;
+            return m->param_handle_legacy(s->u.rng.index + indx);
         }
     } else {
-        auto* const p = m->dparam[s->u.rng.index + indx].get<double*>();
+        neuron::container::data_handle<double> const p{m->dparam[s->u.rng.index + indx]};
         if (!p) {
             hoc_execerror(s->name, "wasn't made to point to anything");
         }
@@ -1930,32 +1885,31 @@ double* dprop(Symbol* s, int indx, Section* sec, short inode) {
 
 /* return nil instead of hoc_execerror. */
 /* returns location of property symbol */
-double* nrnpy_dprop(Symbol* s, int indx, Section* sec, short inode, int* err) {
-    Prop* m;
-
-    m = nrn_mechanism(s->u.rng.type, sec->pnode[inode]);
+neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
+                                                   int indx,
+                                                   Section* sec,
+                                                   short inode,
+                                                   int* err) {
+    auto* const m = nrn_mechanism(s->u.rng.type, sec->pnode[inode]);
     if (!m) {
         *err = 1;
-        return (double*) 0;
+        return {};
     }
 #if EXTRACELLULAR
-/* this does not handle vext(0) and vext(1) properly at this time */
-#if I_MEMBRANE
-    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 2) {
-#else
-    if (m->_type == EXTRACELL && s->u.rng.index == 3 * (nlayer) + 1) {
-#endif
-        return sec->pnode[inode]->extnode->v + indx;
+    /* this does not handle vext(0) and vext(1) properly at this time */
+    if (m->_type == EXTRACELL && s->u.rng.index == neuron::extracellular::vext_pseudoindex()) {
+        return neuron::container::data_handle<double>{sec->pnode[inode]->extnode->v + indx};
     }
 #endif
     if (s->subtype != NRNPOINTER) {
         if (m->ob) {
-            return m->ob->u.dataspace[s->u.rng.index].pval + indx;
+            return neuron::container::data_handle<double>{m->ob->u.dataspace[s->u.rng.index].pval +
+                                                          indx};
         } else {
-            return &(m->param[s->u.rng.index]) + indx;
+            return m->param_handle_legacy(s->u.rng.index + indx);
         }
     } else {
-        auto* const p = m->dparam[s->u.rng.index + indx].get<double*>();
+        neuron::container::data_handle<double> const p{m->dparam[s->u.rng.index + indx]};
         if (!p) {
             *err = 2;
         }

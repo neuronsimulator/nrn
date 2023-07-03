@@ -313,6 +313,8 @@ class BBSS_Cnt: public BBSS_IO {
     virtual void i(int& j, int chk = 0) override;
     virtual void d(int n, double& p) override;
     virtual void d(int n, double* p) override;
+    virtual void d(int n, double** p) override;
+    virtual void d(int n, neuron::container::data_handle<double> h) override;
     virtual void s(char* cp, int chk = 0) override;
     virtual Type type() override;
     int bytecnt();
@@ -335,6 +337,14 @@ void BBSS_Cnt::d(int n, double& p) {
     ++nl;
 }
 void BBSS_Cnt::d(int n, double* p) {
+    nd += n;
+    ++nl;
+}
+void BBSS_Cnt::d(int n, double**) {
+    nd += n;
+    ++nl;
+}
+void BBSS_Cnt::d(int n, neuron::container::data_handle<double>) {
     nd += n;
     ++nl;
 }
@@ -361,6 +371,8 @@ class BBSS_TxtFileOut: public BBSS_IO {
     virtual void i(int& j, int chk = 0) override;
     virtual void d(int n, double& p) override;
     virtual void d(int n, double* p) override;
+    virtual void d(int n, double** p) override;
+    virtual void d(int n, neuron::container::data_handle<double> h) override;
     virtual void s(char* cp, int chk = 0) override;
     virtual Type type() override;
     FILE* f;
@@ -384,6 +396,17 @@ void BBSS_TxtFileOut::d(int n, double* p) {
     }
     fprintf(f, "\n");
 }
+void BBSS_TxtFileOut::d(int n, double** p) {
+    for (int i = 0; i < n; ++i) {
+        fprintf(f, " %22.15g", *p[i]);
+    }
+    fprintf(f, "\n");
+}
+void BBSS_TxtFileOut::d(int n, neuron::container::data_handle<double> h) {
+    assert(n == 1);  // Cannot read n values "starting at" a data handle
+    assert(h);
+    fprintf(f, " %22.15g\n", *h);
+}
 void BBSS_TxtFileOut::s(char* cp, int chk) {
     fprintf(f, "%s\n", cp);
 }
@@ -400,6 +423,8 @@ class BBSS_TxtFileIn: public BBSS_IO {
         d(n, &p);
     }
     virtual void d(int n, double* p) override;
+    virtual void d(int n, double** p) override;
+    virtual void d(int n, neuron::container::data_handle<double> h) override;
     virtual void s(char* cp, int chk = 0) override;
     virtual Type type() override {
         return BBSS_IO::IN;
@@ -431,6 +456,19 @@ void BBSS_TxtFileIn::d(int n, double* p) {
     }
     nrn_assert(fscanf(f, "\n") == 0);
 }
+void BBSS_TxtFileIn::d(int n, double** p) {
+    for (int i = 0; i < n; ++i) {
+        nrn_assert(fscanf(f, " %lf", p[i]) == 1);
+    }
+    nrn_assert(fscanf(f, "\n") == 0);
+}
+void BBSS_TxtFileIn::d(int n, neuron::container::data_handle<double> h) {
+    assert(n == 1);
+    assert(h);
+    double v{};
+    nrn_assert(fscanf(f, " %lf\n", &v) == 1);
+    *h = v;
+}
 void BBSS_TxtFileIn::s(char* cp, int chk) {
     char buf[100];
     nrn_assert(fscanf(f, "%[^\n]\n", buf) == 1);
@@ -452,6 +490,8 @@ class BBSS_BufferOut: public BBSS_IO {
     virtual void i(int& j, int chk = 0) override;
     virtual void d(int n, double& p) override;
     virtual void d(int n, double* p) override;
+    virtual void d(int n, double** p) override;
+    virtual void d(int n, neuron::container::data_handle<double> h) override;
     virtual void s(char* cp, int chk = 0) override;
     virtual Type type() override;
     virtual void a(int);
@@ -474,6 +514,15 @@ void BBSS_BufferOut::d(int n, double& d) {
 }
 void BBSS_BufferOut::d(int n, double* d) {
     cpy(n * sizeof(double), (char*) d);
+}
+void BBSS_BufferOut::d(int n, double** d) {
+    for (auto i = 0; i < n; ++i) {
+        cpy(sizeof(double), reinterpret_cast<char*>(d[i]));
+    }
+}
+void BBSS_BufferOut::d(int n, neuron::container::data_handle<double> h) {
+    assert(n == 1);
+    cpy(sizeof(double), reinterpret_cast<char*>(static_cast<double*>(h)));
 }
 void BBSS_BufferOut::s(char* cp, int chk) {
     cpy(strlen(cp) + 1, cp);
@@ -966,28 +1015,26 @@ void BBSaveState_reg() {
 
 // from savstate.cpp
 struct StateStructInfo {
-    int offset;
-    int size;
-    Symbol* callback;
+    int offset{-1};
+    int size{};
+    Symbol* callback{nullptr};
 };
 static StateStructInfo* ssi;
 static cTemplate* nct;
 static void ssi_def() {
+    assert(!ssi);
     if (nct) {
         return;
     }
     Symbol* s = hoc_lookup("NetCon");
     nct = s->u.ctemplate;
-    ssi = new StateStructInfo[n_memb_func];
+    ssi = new StateStructInfo[n_memb_func]{};
     int sav = v_structure_change;
     for (int im = 0; im < n_memb_func; ++im) {
-        ssi[im].offset = -1;
-        ssi[im].size = 0;
-        ssi[im].callback = 0;
         if (!memb_func[im].sym) {
             continue;
         }
-        NrnProperty* np = new NrnProperty(memb_func[im].sym->name);
+        NrnProperty np{memb_func[im].sym->name};
         // generally we only save STATE variables. However for
         // models containing a NET_RECEIVE block, we also need to
         // save everything except the parameters
@@ -998,14 +1045,16 @@ static void ssi_def() {
         // param array including PARAMETERs.
         if (pnt_receive[im]) {
             ssi[im].offset = 0;
-            ssi[im].size = np->prop()->param_size;
+            ssi[im].size = np.prop()->param_size();  // sum over array dims
         } else {
-            int type = STATE;
-            for (Symbol* sym = np->first_var(); np->more_var(); sym = np->next_var()) {
-                if (np->var_type(sym) == type || np->var_type(sym) == STATE ||
-                    sym->subtype == _AMBIGUOUS) {
+            for (Symbol* sym = np.first_var(); np.more_var(); sym = np.next_var()) {
+                if (np.var_type(sym) == STATE || sym->subtype == _AMBIGUOUS) {
                     if (ssi[im].offset < 0) {
-                        ssi[im].offset = np->prop_index(sym);
+                        ssi[im].offset = np.prop_index(sym);
+                    } else {
+                        // assert what we assume: that after this code the variables we want are
+                        // `size` contiguous legacy indices starting at `offset`
+                        assert(ssi[im].offset + ssi[im].size == np.prop_index(sym));
                     }
                     ssi[im].size += hoc_total_array_data(sym, 0);
                 }
@@ -1028,7 +1077,6 @@ static void ssi_def() {
             //	printf("callback %s\n", ssi[im].callback->name);
             //}
         }
-        delete np;
     }
     // Following set to 1 when NrnProperty constructor calls prop_alloc.
     // so set back to original value.
@@ -1928,7 +1976,7 @@ void BBSaveState::node(Node* nd) {
     }
     int i;
     Prop* p;
-    f->d(1, NODEV(nd));
+    f->d(1, nd->v_handle());
     // count
     // On restore, new point processes may have been inserted in
     // the section and marked IGNORE. So we need to count only the
@@ -1967,7 +2015,7 @@ void BBSaveState::node01(Section* sec, Node* nd) {
     // It is not clear why the zero area node voltages need to be saved.
     // Without them, we get correct simulations after a restore for
     // whole cells but not for split cells.
-    f->d(1, NODEV(nd));
+    f->d(1, nd->v_handle());
     // count
     for (i = 0, p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
@@ -2007,7 +2055,15 @@ void BBSaveState::mech(Prop* p) {
     char buf[100];
     Sprintf(buf, "//%s", memb_func[type].sym->name);
     f->s(buf, 1);
-    f->d(ssi[p->_type].size, p->param + ssi[p->_type].offset);
+    {
+        auto const size = ssi[p->_type].size;  // sum over array dimensions for range variables
+        std::vector<double*> tmp{};
+        tmp.reserve(size);
+        for (auto i = 0; i < size; ++i) {
+            tmp.push_back(static_cast<double*>(p->param_handle_legacy(ssi[p->_type].offset + i)));
+        }
+        f->d(size, tmp.data());
+    }
     Point_process* pp{};
     if (memb_func[p->_type].is_point) {
         pp = p->dparam[1].get<Point_process*>();

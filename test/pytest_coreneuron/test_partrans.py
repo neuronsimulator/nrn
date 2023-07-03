@@ -350,10 +350,8 @@ def test_partrans():
     transfer1()
 
     # following is a bit tricky and need some user help in the docs.
-    #  cannot be cache_efficient if general sparse matrix solver in effect.
     cvode = h.CVode()
     assert cvode.use_mxb(0) == 0
-    assert cvode.cache_efficient(1) == 1
 
     pc.setup_transfer()
     h.finitialize(-65)
@@ -373,7 +371,9 @@ def test_partrans():
     teardown()
     del s
 
-    # There are single thread circumstances where target POINT_PROCESS is needed
+    # There used to be single thread circumstances where target POINT_PROCESS is needed
+    # With the new data_handle scheme, the pointer update that used to need the target
+    # POINT_PROCESS is no longer made.
     s = h.Section("dend")
     pc.set_gid2node(rank, rank)
     pc.cell(rank, h.NetCon(s(0.5)._ref_v, None, sec=s))
@@ -381,7 +381,7 @@ def test_partrans():
     ic = h.IClamp(s(0.5))
     pc.target_var(ic._ref_amp, rank)
     pc.setup_transfer()
-    expect_error(h.finitialize, (-65,))
+    h.finitialize(-65)
     teardown()
     del ic, s
 

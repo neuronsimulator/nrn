@@ -53,7 +53,7 @@ class GVectorRecord: public PlayRecord {
     }
 
     int count();
-    double* pdata(int);
+    neuron::container::data_handle<double> pdata(int);
     GraphVector* gv_;
 };
 

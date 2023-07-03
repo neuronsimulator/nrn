@@ -21,7 +21,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #endif
 #define _Binomial_h 1
 
-#include <Random.h>
+#include "Random.h"
 
 class Binomial: public Random {
 protected:

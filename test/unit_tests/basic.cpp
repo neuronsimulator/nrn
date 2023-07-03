@@ -12,14 +12,13 @@
 SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
     GIVEN("A section") {
         REQUIRE(hoc_oc("create s\n") == 0);
-        WHEN("fast_imem and cachevec is allocated") {
+        WHEN("fast_imem is allocated") {
             nrn_use_fast_imem = true;
-            use_cachevec = 1;
             nrn_fast_imem_alloc();
             THEN("nrn_fast_imem should not be nullptr") {
                 for (int it = 0; it < nrn_nthread; ++it) {
-                    NrnThread* nt = &nrn_threads[it];
-                    REQUIRE(nt->_nrn_fast_imem != nullptr);
+                    REQUIRE(nrn_threads[it].node_sav_d_storage());
+                    REQUIRE(nrn_threads[it].node_sav_rhs_storage());
                 }
             }
         }
@@ -35,8 +34,9 @@ SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
                 }
                 THEN("The current in this section is 0") {
                     for (NrnThread* nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
+                        auto const vec_sav_rhs = nt->node_sav_rhs_storage();
                         for (int i = 0; i < nt->end; ++i) {
-                            REQUIRE(nt->_nrn_fast_imem->_nrn_sav_rhs[i] == 0.0);
+                            REQUIRE(vec_sav_rhs[i] == 0.0);
                         }
                     }
                 }
