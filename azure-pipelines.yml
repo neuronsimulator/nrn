@@ -114,7 +114,7 @@ stages:
 
       - script: |
           brew install --cask xquartz
-          brew install flex bison mpich
+          brew install flex bison mpich hdf5
           brew unlink mpich && brew install openmpi
           cmake --version
           # see https://github.com/BlueBrain/CoreNeuron/issues/817, uninstall libomp until we fix this

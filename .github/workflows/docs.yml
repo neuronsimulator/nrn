@@ -30,7 +30,7 @@ jobs:
       - name: Install apt packages
         run: |
           sudo apt-get update --fix-missing
-          sudo apt-get install build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin
+          sudo apt-get install build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin hdf5-tools libhdf5-dev
           sudo apt-get install ffmpeg doxygen pandoc
         shell: bash
 
