@@ -250,7 +250,7 @@ if(NRN_ENABLE_PYTHON)
     NAME morphology_tests
     PRELOAD_SANITIZER
     COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/morphology
-    SCRIPT_PATTERNS test/morphology/*.py  test/morphology/*.h5)
+    SCRIPT_PATTERNS test/morphology/*.py test/morphology/*.h5)
   # Mostly to increase coverage
   nrn_add_test_group(NAME coverage_tests MODFILE_PATTERNS test/cover/mod/*.mod)
   nrn_add_test(

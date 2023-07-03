@@ -485,7 +485,7 @@ def setup_package():
         ]
 
         from pybind11.setup_helpers import Pybind11Extension
-        
+
         extensions += [
             Pybind11Extension(
                 "neuron.morphio_api",
