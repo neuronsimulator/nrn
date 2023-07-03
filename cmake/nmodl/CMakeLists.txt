@@ -107,7 +107,10 @@ if(NOT TARGET CLI11::CLI11)
 endif()
 # For the moment do not try and use an external Eigen.
 cpp_cc_git_submodule(eigen)
-cpp_cc_git_submodule(fmt BUILD PACKAGE fmt REQUIRED)
+# We could have fmt incoming from NEURON
+if(NOT TARGET fmt)
+  cpp_cc_git_submodule(fmt BUILD PACKAGE fmt REQUIRED)
+endif()
 # If we're building from the submodule, make sure we pass -fPIC so that we can link the code into a
 # shared library later.
 if(NMODL_3RDPARTY_USE_FMT)
