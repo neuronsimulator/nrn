@@ -9,7 +9,7 @@
 #include <morphio/soma.h>
 #include <unordered_map>
 #include "morphio_wrapper/morphio_wrapper.hpp"
-#include "nrnpython.h"
+#include "nrnpy.h"
 
 namespace neuron::morphology {
 std::vector<std::string> morphio_read(std::filesystem::path const& path) {
