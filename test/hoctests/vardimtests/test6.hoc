@@ -1,0 +1,12 @@
+// in proc, etc., can refer to a func that is not yet defined
+
+debug
+func foo() {local i
+    i = foo1()
+    return i
+}
+debug
+func foo1() {
+  return 1
+}
+

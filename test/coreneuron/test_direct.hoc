@@ -53,7 +53,7 @@ proc test_direct_memory_transfer() { localobj po, pc, ic, tv, vvec, i_mem, tvstd
 
     po = new PythonObject()
     po.coreneuron.enable = 1
-    nrnpython("import distutils.util; import os; coreneuron.gpu=bool(distutils.util.strtobool(os.environ.get('CORENRN_ENABLE_GPU', 'false')))")
+    nrnpython("from neuron.tests.utils.strtobool import strtobool; import os; coreneuron.gpu=bool(strtobool(os.environ.get('CORENRN_ENABLE_GPU', 'false')))")
     printf("nrncore_arg: |%s|\n", po.coreneuron.nrncore_arg(tstop))
 
     pc = new ParallelContext()

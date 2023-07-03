@@ -1,11 +1,12 @@
-.. _mechtype:
+
+.. _hoc_mechtype:
 
 MechanismType
 -------------
 
 
 
-.. class:: MechanismType
+.. hoc:class:: MechanismType
 
 
     Syntax:
@@ -49,7 +50,7 @@ MechanismType
 
 
     .. seealso::
-        :class:`MechanismStandard`
+        :hoc:class:`MechanismStandard`
 
          
 
@@ -57,7 +58,7 @@ MechanismType
 
 
 
-.. method:: MechanismType.select
+.. hoc:method:: MechanismType.select
 
 
     Syntax:
@@ -75,7 +76,7 @@ MechanismType
 
 
 
-.. method:: MechanismType.selected
+.. hoc:method:: MechanismType.selected
 
 
     Syntax:
@@ -92,7 +93,7 @@ MechanismType
 
 
 
-.. method:: MechanismType.remove
+.. hoc:method:: MechanismType.remove
 
 
     Syntax:
@@ -110,7 +111,7 @@ MechanismType
 
 
 
-.. method:: MechanismType.make
+.. hoc:method:: MechanismType.make
 
 
     Syntax:
@@ -140,7 +141,7 @@ MechanismType
 
 
 
-.. method:: MechanismType.count
+.. hoc:method:: MechanismType.count
 
 
     Syntax:
@@ -156,7 +157,7 @@ MechanismType
 
 
 
-.. method:: MechanismType.menu
+.. hoc:method:: MechanismType.menu
 
 
     Syntax:
@@ -176,7 +177,7 @@ MechanismType
 
 
 
-.. method:: MechanismType.action
+.. hoc:method:: MechanismType.action
 
 
     Syntax:
@@ -192,7 +193,7 @@ MechanismType
 
 
 
-.. method:: MechanismType.is_netcon_target
+.. hoc:method:: MechanismType.is_netcon_target
 
 
     Syntax:
@@ -201,7 +202,7 @@ MechanismType
 
     Description:
         The i'th point process has a NET_RECEIVE block and can therefore be 
-        a target for a :class:`NetCon` object. 
+        a target for a :hoc:class:`NetCon` object.
 
          
 
@@ -209,7 +210,7 @@ MechanismType
 
 
 
-.. method:: MechanismType.has_net_event
+.. hoc:method:: MechanismType.has_net_event
 
 
     Syntax:
@@ -218,8 +219,8 @@ MechanismType
 
     Description:
         The i'th point process has a net_event call in its NET_RECEIVE block 
-        and can therefore be a source for a :class:`NetCon` object. 
-        This means it is :class:`NetCon` stimulator or that 
+        and can therefore be a source for a :hoc:class:`NetCon` object.
+        This means it is :hoc:class:`NetCon` stimulator or that
         the point process can be used as an artificial neural network cell. 
 
          
@@ -228,7 +229,7 @@ MechanismType
 
 
 
-.. method:: MechanismType.is_artificial
+.. hoc:method:: MechanismType.is_artificial
 
 
     Syntax:
@@ -237,12 +238,12 @@ MechanismType
 
     Description:
         The i'th point process is an ARTIFICIAL_CELL 
-        and can therefore be a source for a :class:`NetCon` object. 
-        This means it is :class:`NetCon` stimulator or that 
+        and can therefore be a source for a :hoc:class:`NetCon` object.
+        This means it is :hoc:class:`NetCon` stimulator or that
         the point process can be used as an artificial neural network cell. 
          
         This seems to have, but does not, equivalent functionality to 
-        :func:`has_net_event` and was introduced because ARTIFICIAL_CELL objects are no 
+        :hoc:func:`has_net_event` and was introduced because ARTIFICIAL_CELL objects are no
         longer located in sections. Some ARTIFICIAL_CELLs such as the PatternStim 
         do not make use of net_event in their implementation, and some PointProcesses 
         do use net_event and must be located in sections for their proper function, 
@@ -255,7 +256,7 @@ MechanismType
 
 
 
-.. method:: MechanismType.pp_begin
+.. hoc:method:: MechanismType.pp_begin
 
 
     Syntax:
@@ -266,7 +267,7 @@ MechanismType
         Initializes an iterator used to iterate over point processes of 
         a particular type in the currently accessed section. 
         Returns the first point process in the currently accessed 
-        section having the type specified by the :meth:`MechanismType.select` 
+        section having the type specified by the :hoc:meth:`MechanismType.select`
         statement. This only works if the the MechanismType was instantiated 
         with the (1) argument. If there is no such point process in the 
         section the method returns NULLobject. Note that, prior to version 
@@ -306,7 +307,7 @@ MechanismType
 
 
 
-.. method:: MechanismType.pp_next
+.. hoc:method:: MechanismType.pp_next
 
 
     Syntax:
@@ -315,7 +316,7 @@ MechanismType
 
     Description:
         Returns the next point process of the type and in the section that 
-        were specified in the earlier call to :meth:`MechanismType.pp_begin` . 
+        were specified in the earlier call to :hoc:meth:`MechanismType.pp_begin` .
         When there are no more point processes, the return value is NULLobject. 
 
          
@@ -324,7 +325,7 @@ MechanismType
 
 
 
-.. method:: MechanismType.internal_type
+.. hoc:method:: MechanismType.internal_type
 
 
     Syntax:

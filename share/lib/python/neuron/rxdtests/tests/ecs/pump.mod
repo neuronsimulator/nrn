@@ -14,15 +14,10 @@ UNITS {
 
 
 PARAMETER {
-    imax    (mA/cm2)
-    Kd      (mM)
+    imax = 1.0  (mA/cm2)
+    Kd = 1.0    (mM)
 }
 
-INITIAL {
-    imax = 1.0
-    Kd = 1.0
-}
- 
 ASSIGNED {
     xo      (mM)
     xi      (mM)

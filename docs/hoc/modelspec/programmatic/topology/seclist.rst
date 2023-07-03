@@ -1,11 +1,12 @@
-.. _seclist:
+
+.. _hoc_seclist:
 
 SectionList
 -----------
 
 
 
-.. class:: SectionList
+.. hoc:class:: SectionList
 
 
     Syntax:
@@ -16,7 +17,7 @@ SectionList
         Class for creating and managing a list of sections 
 
     .. seealso::
-        :class:`SectionBrowser`, :class:`Shape`, :ref:`forsec <keyword_forsec>`, :meth:`RangeVarPlot.list`
+        :hoc:class:`SectionBrowser`, :hoc:class:`Shape`, :ref:`forsec <hoc_keyword_forsec>`, :hoc:meth:`RangeVarPlot.list`
 
          
 
@@ -24,7 +25,7 @@ SectionList
 
 
 
-.. method:: SectionList.append
+.. hoc:method:: SectionList.append
 
 
     Syntax:
@@ -40,7 +41,7 @@ SectionList
 
 
 
-.. method:: SectionList.remove
+.. hoc:method:: SectionList.remove
 
 
     Syntax:
@@ -61,7 +62,7 @@ SectionList
 
 
 
-.. method:: SectionList.children
+.. hoc:method:: SectionList.children
 
 
     Syntax:
@@ -79,7 +80,7 @@ SectionList
 
 
 
-.. method:: SectionList.subtree
+.. hoc:method:: SectionList.subtree
 
 
     Syntax:
@@ -95,7 +96,7 @@ SectionList
 
 
 
-.. method:: SectionList.wholetree
+.. hoc:method:: SectionList.wholetree
 
 
     Syntax:
@@ -113,7 +114,7 @@ SectionList
 
 
 
-.. method:: SectionList.allroots
+.. hoc:method:: SectionList.allroots
 
 
     Syntax:
@@ -131,7 +132,7 @@ SectionList
 
 
 
-.. method:: SectionList.unique
+.. hoc:method:: SectionList.unique
 
 
     Syntax:
@@ -149,7 +150,7 @@ SectionList
 
 
 
-.. method:: SectionList.printnames
+.. hoc:method:: SectionList.printnames
 
 
     Syntax:

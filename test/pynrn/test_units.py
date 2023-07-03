@@ -41,6 +41,7 @@ def test_mod_legacy():
     assert ut.e * ut.avogadro == ut.faraday
     assert abs(ut.faraday - h.FARADAY) < 1e-10
     assert ut.gasconst == h.R
+    assert ut.gasconst_exact == 8.313424
     assert ut.k * ut.avogadro == ut.gasconst
     assert abs(ut.planck - ut.hbar * 2.0 * h.PI) < 1e-49
     assert ut.avogadro == h.Avogadro_constant
@@ -70,19 +71,28 @@ def test_hoc_legacy():
 
 
 def test_env_legacy():
-    for i in [0, 1]:
-        a = None
-        try:  # test NRNUNIT_USE_LEGACY not whether we can successfully run a subprocess
-            import sys, subprocess
+    import os, subprocess, sys
 
-            a = (
-                "NRNUNIT_USE_LEGACY=%d %s -c 'from neuron import h; print (h.nrnunit_use_legacy())'"
-                % (i, sys.executable)
-            )
-            a = subprocess.check_output(a, shell=True)
-            a = int(float(a.decode().split()[0]))
+    for i in [0, 1]:
+        exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
+        env = os.environ.copy()
+        env["NRNUNIT_USE_LEGACY"] = str(i)
+        try:
+            env[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
+                "NRN_SANITIZER_PRELOAD_VAL"
+            ]
         except:
             pass
+        a = subprocess.check_output(
+            [
+                exe,
+                "-c",
+                "from neuron import h; print(h.nrnunit_use_legacy())",
+            ],
+            env=env,
+            shell=False,
+        )
+        a = int(float(a.decode().split()[0]))
         assert a == i
 
 

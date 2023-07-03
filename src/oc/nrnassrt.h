@@ -10,30 +10,45 @@ has side effects which need to be executed regardles of NDEBUG.
 #include <stdlib.h>
 
 #if defined(hocassrt_h) /* hoc_execerror form */
+#include "oc_ansi.h"
 
-#if defined(__cplusplus)
-extern "C" {
+#if defined(__STDC__)
+#define nrn_assert(ex)                                                                   \
+    {                                                                                    \
+        if (!(ex)) {                                                                     \
+            fprintf(stderr, "Assertion failed: file %s, line %d\n", __FILE__, __LINE__); \
+            hoc_execerror(#ex, (char*) 0);                                               \
+        }                                                                                \
+    }
+#else
+#define nrn_assert(ex)                                                                   \
+    {                                                                                    \
+        if (!(ex)) {                                                                     \
+            fprintf(stderr, "Assertion failed: file %s, line %d\n", __FILE__, __LINE__); \
+            hoc_execerror("ex", (char*) 0);                                              \
+        }                                                                                \
+    }
 #endif
-
-extern void hoc_execerror(const char*, const char*);
-
-#if defined(__cplusplus)
-}
-#endif
-
-# if defined(__STDC__)
-#  define nrn_assert(ex) {if (!(ex)){fprintf(stderr,"Assertion failed: file %s, line %d\n", __FILE__,__LINE__);hoc_execerror(#ex, (char *)0);}}
-# else
-#  define nrn_assert(ex) {if (!(ex)){fprintf(stderr,"Assertion failed: file %s, line %d\n", __FILE__,__LINE__);hoc_execerror("ex", (char *)0);}}
-# endif
 
 #else /* abort form */
 
-# if defined(__STDC__)
-#  define nrn_assert(ex) {if (!(ex)){fprintf(stderr,"Assertion failed: file %s, line %d\n", __FILE__,__LINE__); abort();}}
-# else
-#  define nrn_assert(ex) {if (!(ex)){fprintf(stderr,"Assertion failed: file %s, line %d\n", __FILE__,__LINE__); abort();}}
-# endif
+#if defined(__STDC__)
+#define nrn_assert(ex)                                                                   \
+    {                                                                                    \
+        if (!(ex)) {                                                                     \
+            fprintf(stderr, "Assertion failed: file %s, line %d\n", __FILE__, __LINE__); \
+            abort();                                                                     \
+        }                                                                                \
+    }
+#else
+#define nrn_assert(ex)                                                                   \
+    {                                                                                    \
+        if (!(ex)) {                                                                     \
+            fprintf(stderr, "Assertion failed: file %s, line %d\n", __FILE__, __LINE__); \
+            abort();                                                                     \
+        }                                                                                \
+    }
+#endif
 
 #endif
 

@@ -36,12 +36,13 @@ class coreneuron(object):
         self._warp_balance = 0
         self._verbose = 2  # INFO
         self._prcellstate = -1
-
-    def _valid_cell_permute(self):
-        return {1, 2} if self._gpu else {0, 1}
+        self._model_stats = False
 
     def _default_cell_permute(self):
         return 1 if self._gpu else 0
+
+    def valid_cell_permute(self):
+        return {1, 2} if self._gpu else {0, 1}
 
     @property
     def enable(self):
@@ -64,7 +65,7 @@ class coreneuron(object):
         # setting, change it and print a warning.
         if (
             self._cell_permute is not None
-            and self._cell_permute not in self._valid_cell_permute()
+            and self._cell_permute not in self.valid_cell_permute()
         ):
             print(
                 "WARNING: coreneuron.gpu = {} forbids coreneuron.cell_permute = {}, using {} instead".format(
@@ -107,7 +108,7 @@ class coreneuron(object):
     @cell_permute.setter
     def cell_permute(self, value):
         value = int(value)
-        assert value in self._valid_cell_permute()
+        assert value in self.valid_cell_permute()
         self._cell_permute = value
 
     @property
@@ -152,6 +153,15 @@ class coreneuron(object):
         assert value >= -1
         self._prcellstate = value
 
+    @property
+    def model_stats(self):
+        """Print number of instances of each mechanism and detailed memory stats."""
+        return self._model_stats
+
+    @model_stats.setter
+    def model_stats(self, value):
+        self._model_stats = bool(value)
+
     def nrncore_arg(self, tstop):
         """
         Return str that can be used for pc.nrncore_run(str)
@@ -183,6 +193,8 @@ class coreneuron(object):
         if self._prcellstate >= 0:
             arg += " --prcellgid %d" % self.prcellstate
         arg += " --verbose %d" % self.verbose
+        if self._model_stats:
+            arg += " --model-stats"
 
         # args derived from current NEURON settings.
         pc = h.ParallelContext()
@@ -201,12 +213,10 @@ class coreneuron(object):
         multisend = int(pc.send_time(8))
         if (multisend & 1) == 1:
             arg += " --multisend"
-            interval = (multisend & 2) / 2 + 1
-            if interval != 2:
-                arg += " --ms_subinterval %d" % interval
-            phases = (multisend & 4) / 4 + 1
-            if phases != 2:
-                arg += " --ms_phases %d" % phases
+            interval = 2 if multisend & 4 else 1
+            arg += " --ms-subintervals %d" % interval
+            phases = 2 if multisend & 8 else 1
+            arg += " --ms-phases %d" % phases
 
         return arg
 

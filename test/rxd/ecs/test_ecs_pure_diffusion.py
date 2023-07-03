@@ -30,7 +30,7 @@ def ecs_diffusion(neuron_instance):
             d=d,
             charge=1,
             initial=lambda nd: 1
-            if nd.x3d ** 2 + nd.y3d ** 2 + nd.z3d ** 2 < (2 * dx) ** 2
+            if nd.x3d**2 + nd.y3d**2 + nd.z3d**2 < (2 * dx) ** 2
             else 0,
         )
 

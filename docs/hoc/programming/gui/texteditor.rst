@@ -1,4 +1,5 @@
-.. _tedit:
+
+.. _hoc_tedit:
 
          
 TextEditor
@@ -6,7 +7,7 @@ TextEditor
 
 
 
-.. class:: TextEditor
+.. hoc:class:: TextEditor
 
 
     Syntax:
@@ -30,7 +31,7 @@ TextEditor
 
 
 
-.. method:: TextEditor.text
+.. hoc:method:: TextEditor.text
 
 
     Syntax:
@@ -49,7 +50,7 @@ TextEditor
 
 
 
-.. method:: TextEditor.readonly
+.. hoc:method:: TextEditor.readonly
 
 
     Syntax:
@@ -69,7 +70,7 @@ TextEditor
 
 
 
-.. method:: TextEditor.map
+.. hoc:method:: TextEditor.map
 
 
     Syntax:

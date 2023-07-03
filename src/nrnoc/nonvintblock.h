@@ -27,12 +27,14 @@ The other uses can merely return 0.
 
 extern int nrn_nonvint_block_helper(int method, int length, double* pd1, double* pd2, int tid);
 
-nonvintblock_extern int (*nrn_nonvint_block)(int method, int length, double* pd1, double* pd2, int tid);
+nonvintblock_extern int (
+    *nrn_nonvint_block)(int method, int length, double* pd1, double* pd2, int tid);
 
 #define nonvint_block(method, size, pd1, pd2, tid) \
-  nrn_nonvint_block ? nrn_nonvint_block_helper(method, size, pd1, pd2, tid) : 0
+    nrn_nonvint_block ? nrn_nonvint_block_helper(method, size, pd1, pd2, tid) : 0
 
-/* called near end of nrnoc/treeset.cpp:v_setup_vectors after structure_change_cnt is incremented. */
+/* called near end of nrnoc/treeset.cpp:v_setup_vectors after structure_change_cnt is incremented.
+ */
 #define nrn_nonvint_block_setup() nonvint_block(0, 0, 0, 0, 0)
 
 /* called in nrnoc/fadvance.cpp:nrn_finitialize before mod file INITIAL blocks */
@@ -40,12 +42,12 @@ nonvintblock_extern int (*nrn_nonvint_block)(int method, int length, double* pd1
 
 /* called at end of nrnoc/treeset.cpp:rhs and nrncvode/cvtrset.cpp:rhs */
 #define nrn_nonvint_block_current(size, rhs, tid) nonvint_block(2, size, rhs, 0, tid)
-  /*if any ionic membrane currents are generated, they subtract from
-    NrnThread._actual_rhs*/
+/*if any ionic membrane currents are generated, they subtract from
+  NrnThread._actual_rhs*/
 
 /* called at end of nrnoc/treeset.cpp:lhs and nrncvode/cvtrset.cpp:lhs */
 #define nrn_nonvint_block_conductance(size, d, tid) nonvint_block(3, size, d, 0, tid)
-  /*if any ionic membrane currents are generated, di/dv adds to _actual_d */
+/*if any ionic membrane currents are generated, di/dv adds to _actual_d */
 
 /* called at end of nrnoc/fadvance.cpp:nonvint */
 #define nrn_nonvint_block_fixed_step_solve(tid) nonvint_block(4, 0, 0, 0, tid)

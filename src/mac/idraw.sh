@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Mac os x intermediate between applescript and idraw
 
 echo -e "\033]0;idraw\007"

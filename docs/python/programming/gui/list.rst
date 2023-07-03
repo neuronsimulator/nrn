@@ -44,11 +44,11 @@ List
             clamps = h.IClamp(), h.IClamp(), h.IClamp()
 
             all_iclamps = h.List('IClamp')
-            print('There are initially %d IClamp objects.' % len(all_iclamps)) # 3
+            print(f'There are initially {len(all_iclamps)} IClamp objects.') # 3
 
             another = h.IClamp()
 
-            print('There are now %d IClamp objects.' % len(all_iclamps))       # 4
+            print(f'There are now {len(all_iclamps)} IClamp objects.')       # 4
 
          
 
@@ -237,7 +237,7 @@ List
             def label_with_lengths():
                 item_id = h.hoc_ac_
                 item = my_list[item_id].s
-                return '%s (%d)' % (item, len(item))
+                return f'{item} ({len(item)})'
 
             my_list.browser('Words!', label_with_lengths)
 
@@ -348,7 +348,7 @@ List
             def on_click():
                 item_id = my_list.selected()
                 if item_id >= 0: # check to make sure selection isn't dragged off
-                    print('Item %d selected (%s)' % (item_id, my_list[item_id].s))
+                    print(f'Item {item_id} selected ({my_list[item_id].s})')
 
 
             for word in ['Python', 'HOC', 'NEURON', 'NMODL']:

@@ -1,24 +1,52 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -ex
+
+default_pythons="python3.8 python3.9 python3.10"
 # distribution built with
-# bash bldnrnmacpkgcmake.sh python3.6 python3.7 python3.8 python3.9
-# without args, default is the 5 pythons above.
+# bash bldnrnmacpkgcmake.sh
+# without args, default are the pythons above.
+
+# If all the pythons are universal, then so is NEURON.
+# Otherwise $CPU
+# All pythons must have the same macos version and that will become
+# the MACOSX_DEPLOYMENT_TARGET
 
 CPU=`uname -m`
 
+universal="yes" # changes to "no" if any python not universal
+
 args="$*"
 if test "$args" = "" ; then
-  if test "$CPU" = "x86_64" ; then
-    args="python3.6 python3.7 python3.8 python3.9"
-  else # arm64
-    args="python3 python3.9"
-  fi
+  args="$default_pythons"
 fi
 
-#10.7 possible if one builds with pythons that are consistent with that.
-if test "$CPU" = "x86_64" ; then
-  export MACOSX_DEPLOYMENT_TARGET=10.9
+
+# sysconfig.get_platform() looks like, e.g. "macosx-12.2-arm64" or
+# "macosx-11-universal2". I.e. encodes MACOSX_DEPLOYMENT_TARGET and archs.
+# Demand all pythons we are building against have same platform.
+mac_platform=""
+for i in $args ; do
+  last_py=$i
+  mplat=`$i -c 'import sysconfig; print(sysconfig.get_platform())'`
+  echo "platform for $i is $mplat"
+  if test "$mac_platform" = "" ; then
+    mac_platform=$mplat
+  fi
+  if test "$mac_platform" != "$mplat" ; then
+    echo "$i platform \"$mplat\" differs from previous python \"$mac_platform\"."
+    exit 1
+  fi
+done
+
+# extract MACOSX_DEPLOYMENT_TARGET and archs from mac_platform
+macosver=`$last_py -c 'import sysconfig; print(sysconfig.get_platform().split("-")[1])'`
+archs=`$last_py -c 'import sysconfig; print(sysconfig.get_platform().split("-")[2])'`
+if test "$archs" != "universal2" ; then
+  universal=no
 fi
+
+export MACOSX_DEPLOYMENT_TARGET=$macosver
+echo "MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET"
 
 if test "$NRN_SRC" == "" ; then
   NRN_SRC=$HOME/neuron/nrn
@@ -36,13 +64,18 @@ mkdir -p $NRN_BLD
 rm -r -f $NRN_BLD/*
 cd $NRN_BLD
 
-PYVS="py" # will be part of package file name, eg. py-27-35-36-37-38
+PYVS="py" # will be part of package file name, eg. py-37-38-39-310
 pythons="" # will be arg value of NRN_PYTHON_DYNAMIC
 for i in $args ; do
   PYVER=`$i -c 'from sys import version_info as v ; print (str(v.major) + str(v.minor)); quit()'`
   PYVS=${PYVS}-${PYVER}
   pythons="${pythons}${i};"
 done
+
+archs_cmake="" # arg for CMAKE_OSX_ARCHITECTURES, eg. arm64;x86_64
+if test "$universal" = "yes" ; then
+  archs_cmake='-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'
+fi
 
 # The reason for the "-DCMAKE_PREFIX_PATH=/usr/X11" below
 # is to definitely link against the xquartz.org installation instead
@@ -57,11 +90,19 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DIV_ENABLE_X11_DYNAMIC=ON \
   -DNRN_ENABLE_CORENEURON=OFF \
   -DNRN_RX3D_OPT_LEVEL=2 \
-  -DCMAKE_OSX_ARCHITECTURES="$CPU" \
+  $archs_cmake \
   -DCMAKE_PREFIX_PATH=/usr/X11 \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
 make -j install
+
+if test "$universal" = "yes" ; then
+  _temp="`lipo -archs $NRN_INSTALL/share/nrn/demo/release/$CPU/special`"
+  if test "$_temp" != "x86_64 arm64" ; then
+    echo "universal build failed. lipo -archs .../special is \"$_temp\" instead of \"x86_64 arm64\""
+    exit 1
+  fi
+fi
 $NRN_INSTALL/bin/neurondemo -c 'quit()'
 
 chk () {
@@ -99,7 +140,8 @@ done
 # upload package to neuron.yale.edu
 ALPHADIR='hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha'
 describe="`sh $NRN_SRC/nrnversion.sh describe`"
-PACKAGE_FULL_NAME=nrn-${describe}-osx-${CPU}-${PYVS}.pkg
+macos=macos${MACOSX_DEPLOYMENT_TARGET}
+PACKAGE_FULL_NAME=nrn-${describe}-${mac_platform}-${PYVS}.pkg
 PACKATE_DOWNLOAD_NAME=$ALPHADIR/$PACKAGE_FULL_NAME
 PACKAGE_FILE_NAME=$NRN_BLD/src/mac/build/NEURON.pkg
 echo "

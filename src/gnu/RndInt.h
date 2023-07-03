@@ -91,22 +91,22 @@ class RandomInteger
 
 
 inline RandomInteger::RandomInteger(long low, long high, RNG *gen) 
-     : pLow((low < high) ? low : high),
-       pHigh((low < high) ? high : low),
-       pGenerator(gen)
+     : pGenerator(gen),
+       pLow((low < high) ? low : high),
+       pHigh((low < high) ? high : low)
 {}
 
 inline RandomInteger::RandomInteger(long high, RNG *gen) 
-     : pLow((0 < high) ? 0 : high),
-       pHigh((0 < high) ? high : 0),
-       pGenerator(gen)
+     : pGenerator(gen),
+       pLow((0 < high) ? 0 : high),
+       pHigh((0 < high) ? high : 0)
 {}
   
 
 inline RandomInteger::RandomInteger(RNG *gen) 
-     : pLow(0),
-       pHigh(1),
-       pGenerator(gen)
+     : pGenerator(gen),
+       pLow(0),
+       pHigh(1)
 {}
 
 inline RNG* RandomInteger::generator() const { return pGenerator;}

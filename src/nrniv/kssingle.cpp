@@ -128,304 +128,301 @@
 // double* KSSingleNodeData.statepop_ which points into the prop->param.
 //----------------
 
-extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
 
 double KSSingle::vres_;
 unsigned int KSSingle::idum_;
 
 KSSingle::KSSingle(KSChan* c) {
-	//implemenation assumes one ks gate complex with power 1
-	int i;
-	sndindex_ = 2;
-	nstate_ = c->nstate_;
-	states_ = new KSSingleState[nstate_];
-	ntrans_ = 2 * c->ntrans_;
-	transitions_ = new KSSingleTrans[ntrans_];
-	rval_ = new double[Math::max(ntrans_, nstate_)];
-	uses_ligands_ = false;
-	for (i=0; i < c->ntrans_; ++i) {
-	    {
-		KSSingleTrans& tf = transitions_[2*i];
-		tf.kst_ = c->trans_ + i;
-		if (tf.kst_->type_ >= 2) { uses_ligands_ = true; }
-		tf.f_ = true;
-		tf.fac_ = 1.;
-		tf.src_ = tf.kst_->src_;
-		tf.target_ = tf.kst_->target_;
-	    }{
-		KSSingleTrans& tf = transitions_[2*i + 1];
-		tf.kst_ = c->trans_ + i;
-		tf.f_ = false;
-		tf.fac_ = 1.;
-		tf.src_ = tf.kst_->target_;
-		tf.target_ = tf.kst_->src_;
-	    }
-	}
-	// The transition list for each source state is required for
-	// N=1 single channels.
-	// count first
-	for (i=0; i < ntrans_; ++i) {
-		states_[transitions_[i].src_].ntrans_++;
-	}
-	// allocate and reset count
-	for (i=0; i < nstate_; ++i) {
-		KSSingleState& ss = states_[i];
-		ss.transitions_ = new int[ss.ntrans_];
-		ss.ntrans_ = 0;
-	}
-	// link
-	for (i=0; i < ntrans_; ++i) {
-		KSSingleState& ss = states_[transitions_[i].src_];
-		ss.transitions_[ss.ntrans_] = i;
-		++ss.ntrans_;
-	}
+    // implemenation assumes one ks gate complex with power 1
+    int i;
+    sndindex_ = 2;
+    nstate_ = c->nstate_;
+    states_ = new KSSingleState[nstate_];
+    ntrans_ = 2 * c->ntrans_;
+    transitions_ = new KSSingleTrans[ntrans_];
+    rval_ = new double[std::max(ntrans_, nstate_)];
+    uses_ligands_ = false;
+    for (i = 0; i < c->ntrans_; ++i) {
+        {
+            KSSingleTrans& tf = transitions_[2 * i];
+            tf.kst_ = c->trans_ + i;
+            if (tf.kst_->type_ >= 2) {
+                uses_ligands_ = true;
+            }
+            tf.f_ = true;
+            tf.fac_ = 1.;
+            tf.src_ = tf.kst_->src_;
+            tf.target_ = tf.kst_->target_;
+        }
+        {
+            KSSingleTrans& tf = transitions_[2 * i + 1];
+            tf.kst_ = c->trans_ + i;
+            tf.f_ = false;
+            tf.fac_ = 1.;
+            tf.src_ = tf.kst_->target_;
+            tf.target_ = tf.kst_->src_;
+        }
+    }
+    // The transition list for each source state is required for
+    // N=1 single channels.
+    // count first
+    for (i = 0; i < ntrans_; ++i) {
+        states_[transitions_[i].src_].ntrans_++;
+    }
+    // allocate and reset count
+    for (i = 0; i < nstate_; ++i) {
+        KSSingleState& ss = states_[i];
+        ss.transitions_ = new int[ss.ntrans_];
+        ss.ntrans_ = 0;
+    }
+    // link
+    for (i = 0; i < ntrans_; ++i) {
+        KSSingleState& ss = states_[transitions_[i].src_];
+        ss.transitions_[ss.ntrans_] = i;
+        ++ss.ntrans_;
+    }
 }
 
 KSSingle::~KSSingle() {
-	delete [] states_;
-	delete [] transitions_;
-	delete [] rval_;
+    delete[] states_;
+    delete[] transitions_;
+    delete[] rval_;
 }
 
 KSSingleState::KSSingleState() {
-	ntrans_ = 0;
-	transitions_ = NULL;
+    ntrans_ = 0;
+    transitions_ = NULL;
 }
 KSSingleState::~KSSingleState() {
-	if (transitions_) {
-		delete [] transitions_;
-	}
+    if (transitions_) {
+        delete[] transitions_;
+    }
 }
 
-KSSingleTrans::KSSingleTrans() {
-}
-KSSingleTrans::~KSSingleTrans() {
-}
+KSSingleTrans::KSSingleTrans() {}
+KSSingleTrans::~KSSingleTrans() {}
 double KSSingleTrans::rate(Point_process* pnt) {
-	if (kst_->type_ < 2) {
-		return rate(NODEV(pnt->node));
-	}else{
-		return rate(pnt->prop->dparam);
-	}
+    if (kst_->type_ < 2) {
+        return rate(NODEV(pnt->node));
+    } else {
+        return rate(pnt->prop->dparam);
+    }
 }
 
 KSSingleNodeData::KSSingleNodeData() {
-	statepop_ = NULL;
-	nsingle_ = 1;
+    statepop_ = NULL;
+    nsingle_ = 1;
 }
 
-KSSingleNodeData::~KSSingleNodeData() {
-}
+KSSingleNodeData::~KSSingleNodeData() {}
 
 void KSSingleNodeData::deliver(double tt, NetCvode* nc, NrnThread* nt) {
-	++KSSingle::singleevent_deliver_;
-	Cvode* cv = (Cvode*)((*ppnt_)->nvi_);
-	if (cv) {
-		nc->retreat(tt, cv);
-		cv->set_init_flag();
-	}
-	assert(nt->_t == tt);
-	vlast_ = NODEV((*ppnt_)->node);
-	if (nsingle_ == 1) {
-		kss_->do1trans(this);
-	}else{
-		kss_->doNtrans(this);
-	}
-	qi_ = nc->event(t1_, this, nt);
+    ++KSSingle::singleevent_deliver_;
+    Cvode* cv = (Cvode*) ((*ppnt_)->nvi_);
+    if (cv) {
+        nc->retreat(tt, cv);
+        cv->set_init_flag();
+    }
+    assert(nt->_t == tt);
+    vlast_ = NODEV((*ppnt_)->node);
+    if (nsingle_ == 1) {
+        kss_->do1trans(this);
+    } else {
+        kss_->doNtrans(this);
+    }
+    qi_ = nc->event(t1_, this, nt);
 }
 
 void KSSingleNodeData::pr(const char* s, double tt, NetCvode* nc) {
-	Printf("%s %s %.15g\n", s, hoc_object_name((*ppnt_)->ob), tt);
+    Printf("%s %s %.15g\n", s, hoc_object_name((*ppnt_)->ob), tt);
 }
 
 void KSSingle::state(Node* nd, double* p, Datum* pd, NrnThread* nt) {
-	// integrate from t-dt to t
-	int i;
-	double v = NODEV(nd);
-	KSSingleNodeData* snd = (KSSingleNodeData*)pd[sndindex_]._pvoid;
-	// if truly single channel, as opposed to N single channels
-	// then follow the one populated state. Otherwise do the
-	// general case
-	if (snd->nsingle_ == 1) {
-		one(v, snd, nt);
-	}else{
-		multi(v, snd, nt);
-	}
+    // integrate from t-dt to t
+    int i;
+    double v = NODEV(nd);
+    auto* snd = pd[sndindex_].get<KSSingleNodeData*>();
+    // if truly single channel, as opposed to N single channels
+    // then follow the one populated state. Otherwise do the
+    // general case
+    if (snd->nsingle_ == 1) {
+        one(v, snd, nt);
+    } else {
+        multi(v, snd, nt);
+    }
 }
 
 void KSSingle::cv_update(Node* nd, double* p, Datum* pd, NrnThread* nt) {
-	// if v changed then need to move the outstanding
-	// single channel event time to a recalculated time
-	int i;
-	double v = NODEV(nd);
-	KSSingleNodeData* snd = (KSSingleNodeData*)pd[sndindex_]._pvoid;
-	if (uses_ligands_ || !vsame(v, snd->vlast_)) {
-		assert(nt->_t < snd->t1_);
-		snd->vlast_ = v;
-		snd->t0_ = nt->_t;
-		if (snd->nsingle_ == 1) {
-			next1trans(snd);
-		}else{
-			nextNtrans(snd);
-		}
-		net_cvode_instance->move_event(snd->qi_, snd->t1_, nt);
-		++KSSingle::singleevent_move_;
-	}
+    // if v changed then need to move the outstanding
+    // single channel event time to a recalculated time
+    int i;
+    double v = NODEV(nd);
+    auto* snd = pd[sndindex_].get<KSSingleNodeData*>();
+    if (uses_ligands_ || !vsame(v, snd->vlast_)) {
+        assert(nt->_t < snd->t1_);
+        snd->vlast_ = v;
+        snd->t0_ = nt->_t;
+        if (snd->nsingle_ == 1) {
+            next1trans(snd);
+        } else {
+            nextNtrans(snd);
+        }
+        net_cvode_instance->move_event(snd->qi_, snd->t1_, nt);
+        ++KSSingle::singleevent_move_;
+    }
 }
 
 int KSSingle::rvalrand(int n) {
-	int i;
-	--n;
-	double x = unifrand(rval_[n]);
-	for (i=0; i < n; ++i) {
-		if (rval_[i] >= x) {
-			return i;
-		}
-	}
-	return n; 
+    int i;
+    --n;
+    double x = unifrand(rval_[n]);
+    for (i = 0; i < n; ++i) {
+        if (rval_[i] >= x) {
+            return i;
+        }
+    }
+    return n;
 }
 
 void KSSingle::one(double v, KSSingleNodeData* snd, NrnThread* nt) {
-	if (uses_ligands_ || !vsame(v, snd->vlast_)) {
-		snd->vlast_ = v;
-		snd->t0_ = nt->_t - nt->_dt;
-		next1trans(snd);
-	}
-	while (snd->t1_ <= nt->_t) {
-		snd->vlast_ = v;
-		do1trans(snd);
-	}
+    if (uses_ligands_ || !vsame(v, snd->vlast_)) {
+        snd->vlast_ = v;
+        snd->t0_ = nt->_t - nt->_dt;
+        next1trans(snd);
+    }
+    while (snd->t1_ <= nt->_t) {
+        snd->vlast_ = v;
+        do1trans(snd);
+    }
 }
 
 void KSSingle::do1trans(KSSingleNodeData* snd) {
-	snd->t0_ = snd->t1_;
-//printf("KSSingle::do1trans t1=%g old=%d ", snd->t1_, snd->filledstate_);
-	snd->statepop_[snd->filledstate_] = 0.;
-	snd->filledstate_ = transitions_[snd->next_trans_].target_;
-	snd->statepop_[snd->filledstate_] = 1.;
-//printf("new=%d \n", snd->filledstate_);
-	next1trans(snd);
+    snd->t0_ = snd->t1_;
+    // printf("KSSingle::do1trans t1=%g old=%d ", snd->t1_, snd->filledstate_);
+    snd->statepop_[snd->filledstate_] = 0.;
+    snd->filledstate_ = transitions_[snd->next_trans_].target_;
+    snd->statepop_[snd->filledstate_] = 1.;
+    // printf("new=%d \n", snd->filledstate_);
+    next1trans(snd);
 }
 
 void KSSingle::next1trans(KSSingleNodeData* snd) {
-	int i;
-	KSSingleState* ss = states_ + snd->filledstate_;
-	double x = 0;
-	for (i = 0; i < ss->ntrans_; ++i) {
-		KSSingleTrans* st = transitions_ + ss->transitions_[i];
-		x += st->rate(*snd->ppnt_);
-		rval_[i] = x;
-	}
-	if (x > 1e-9) {
-		snd->t1_ = exprand()/x + snd->t0_;
-		snd->next_trans_ = ss->transitions_[rvalrand(ss->ntrans_)];
-	}else{
-		snd->t1_ = 1e9 + snd->t0_;
-		snd->next_trans_ = ss->transitions_[0];
-	}
-//printf("KSSingle::next1trans v=%g t1_=%g %d (%d, %d)\n", snd->vlast_, snd->t1_, snd->next_trans_,
-//transitions_[snd->next_trans_].src_, transitions_[snd->next_trans_].target_);
+    int i;
+    KSSingleState* ss = states_ + snd->filledstate_;
+    double x = 0;
+    for (i = 0; i < ss->ntrans_; ++i) {
+        KSSingleTrans* st = transitions_ + ss->transitions_[i];
+        x += st->rate(*snd->ppnt_);
+        rval_[i] = x;
+    }
+    if (x > 1e-9) {
+        snd->t1_ = exprand() / x + snd->t0_;
+        snd->next_trans_ = ss->transitions_[rvalrand(ss->ntrans_)];
+    } else {
+        snd->t1_ = 1e9 + snd->t0_;
+        snd->next_trans_ = ss->transitions_[0];
+    }
+    // printf("KSSingle::next1trans v=%g t1_=%g %d (%d, %d)\n", snd->vlast_, snd->t1_,
+    // snd->next_trans_, transitions_[snd->next_trans_].src_,
+    // transitions_[snd->next_trans_].target_);
 }
 void KSSingle::multi(double v, KSSingleNodeData* snd, NrnThread* nt) {
-	if (uses_ligands_ || !vsame(v, snd->vlast_)) {
-		snd->vlast_ = v;
-		snd->t0_ = nt->_t - nt->_dt;
-		nextNtrans(snd);
-	}
-	while (snd->t1_ <= nt->_t) {
-		snd->vlast_ = v;
-		doNtrans(snd);
-	}
+    if (uses_ligands_ || !vsame(v, snd->vlast_)) {
+        snd->vlast_ = v;
+        snd->t0_ = nt->_t - nt->_dt;
+        nextNtrans(snd);
+    }
+    while (snd->t1_ <= nt->_t) {
+        snd->vlast_ = v;
+        doNtrans(snd);
+    }
 }
 
 void KSSingle::doNtrans(KSSingleNodeData* snd) {
-	snd->t0_ = snd->t1_;
-	KSSingleTrans* st = transitions_ + snd->next_trans_;
-	assert(snd->statepop_[st->src_] >= 1.);
-	--snd->statepop_[st->src_];
-	++snd->statepop_[st->target_];
-//printf("KSSingle::doNtrans t1=%g %d with %g -> %d with %g\n", snd->t1_,
-//st->src_, snd->statepop_[st->src_], st->target_, snd->statepop_[st->target_]);
-	nextNtrans(snd);
+    snd->t0_ = snd->t1_;
+    KSSingleTrans* st = transitions_ + snd->next_trans_;
+    assert(snd->statepop_[st->src_] >= 1.);
+    --snd->statepop_[st->src_];
+    ++snd->statepop_[st->target_];
+    // printf("KSSingle::doNtrans t1=%g %d with %g -> %d with %g\n", snd->t1_,
+    // st->src_, snd->statepop_[st->src_], st->target_, snd->statepop_[st->target_]);
+    nextNtrans(snd);
 }
 
 void KSSingle::nextNtrans(KSSingleNodeData* snd) {
-	int i;
-	double x = 0;
-	for (i = 0; i < ntrans_; ++i) {
-		KSSingleTrans* st = transitions_ + i;
-		x += snd->statepop_[st->src_] * st->rate(*snd->ppnt_);
-		rval_[i] = x;
-	}
-	if (x > 1e-9) {
-		snd->t1_ = exprand()/x + snd->t0_;
-		snd->next_trans_ = rvalrand(ntrans_);
-	}else{
-		snd->t1_ = 1e9 + snd->t0_;
-		snd->next_trans_ = 0;
-	}
+    int i;
+    double x = 0;
+    for (i = 0; i < ntrans_; ++i) {
+        KSSingleTrans* st = transitions_ + i;
+        x += snd->statepop_[st->src_] * st->rate(*snd->ppnt_);
+        rval_[i] = x;
+    }
+    if (x > 1e-9) {
+        snd->t1_ = exprand() / x + snd->t0_;
+        snd->next_trans_ = rvalrand(ntrans_);
+    } else {
+        snd->t1_ = 1e9 + snd->t0_;
+        snd->next_trans_ = 0;
+    }
 }
 
-void KSSingle::alloc(Prop* p, int sindex) { // and discard old if not NULL
-	KSSingleNodeData* snd = (KSSingleNodeData*)(p->dparam[2]._pvoid);
-	if (snd) {
-		delete snd;
-	}
-	snd = new KSSingleNodeData();
-	snd->kss_ = this;
-	snd->ppnt_ = (Point_process**)(&p->dparam[1]._pvoid);
-	p->dparam[2]._pvoid = snd;
-	snd->statepop_ = p->param + sindex;
+void KSSingle::alloc(Prop* p, int sindex) {  // and discard old if not NULL
+    auto* snd = p->dparam[2].get<KSSingleNodeData*>();
+    if (snd) {
+        delete snd;
+    }
+    snd = new KSSingleNodeData();
+    snd->kss_ = this;
+    snd->ppnt_ = &(p->dparam[1].literal_value<Point_process*>());
+    p->dparam[2] = snd;
+    snd->statepop_ = p->param + sindex;
 }
 
 void KSSingle::init(double v, double* s, KSSingleNodeData* snd, NrnThread* nt) {
-	// assuming 1-1 correspondence between KSChan and KSSingle states
-	// place steady state population intervals end to end
-	int i;
-	double x = 0;
-	snd->qi_ = NULL;
-	snd->t0_ = nt->_t;
-	snd->vlast_ = v;
-	for (i=0; i < nstate_; ++i) {
-		x += s[i];	
-		rval_[i] = x;
-	}
-// initialization of complex kinetic schemes often not accurate to 9 decimal places
-//	assert(Math::equal(rval_[nstate_ - 1], 1., 1e-9));
-	for (i=0; i < nstate_; ++i) {
-		snd->statepop_[i] = 0;
-	}
-	if (snd->nsingle_ == 1) {
-		snd->filledstate_ = rvalrand(nstate_);
-		++snd->statepop_[snd->filledstate_];
-		next1trans(snd);
-	}else{
-		for (i=0; i < snd->nsingle_; ++i) {
-			++snd->statepop_[rvalrand(nstate_)];
-		}
-		nextNtrans(snd);
-//for (i=0; i < nstate_; ++i) {
-//	printf("  state %d pop %g\n", i, snd->statepop_[i]);
-//}
-	}
-	if (cvode_active_) {
-		snd->qi_ = net_cvode_instance->event(snd->t1_, snd, nrn_threads);
-	}
+    // assuming 1-1 correspondence between KSChan and KSSingle states
+    // place steady state population intervals end to end
+    int i;
+    double x = 0;
+    snd->qi_ = NULL;
+    snd->t0_ = nt->_t;
+    snd->vlast_ = v;
+    for (i = 0; i < nstate_; ++i) {
+        x += s[i];
+        rval_[i] = x;
+    }
+    // initialization of complex kinetic schemes often not accurate to 9 decimal places
+    //	assert(Math::equal(rval_[nstate_ - 1], 1., 1e-9));
+    for (i = 0; i < nstate_; ++i) {
+        snd->statepop_[i] = 0;
+    }
+    if (snd->nsingle_ == 1) {
+        snd->filledstate_ = rvalrand(nstate_);
+        ++snd->statepop_[snd->filledstate_];
+        next1trans(snd);
+    } else {
+        for (i = 0; i < snd->nsingle_; ++i) {
+            ++snd->statepop_[rvalrand(nstate_)];
+        }
+        nextNtrans(snd);
+        // for (i=0; i < nstate_; ++i) {
+        //	printf("  state %d pop %g\n", i, snd->statepop_[i]);
+        //}
+    }
+    if (cvode_active_) {
+        snd->qi_ = net_cvode_instance->event(snd->t1_, snd, nrn_threads);
+    }
 }
 
 void KSChan::nsingle(Point_process* pp, int n) {
-	KSSingleNodeData* snd = (KSSingleNodeData*)pp->prop->dparam[2]._pvoid;
-	if (snd) {
-		snd->nsingle_ = n;
-	}
+    if (auto* snd = pp->prop->dparam[2].get<KSSingleNodeData*>(); snd) {
+        snd->nsingle_ = n;
+    }
 }
 int KSChan::nsingle(Point_process* pp) {
-	KSSingleNodeData* snd = (KSSingleNodeData*)pp->prop->dparam[2]._pvoid;
-	if (snd) {
-		return snd->nsingle_;
-	}else{
-		return 1000000000;
-	}
+    if (auto* snd = pp->prop->dparam[2].get<KSSingleNodeData*>(); snd) {
+        return snd->nsingle_;
+    } else {
+        return 1000000000;
+    }
 }
-

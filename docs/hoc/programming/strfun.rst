@@ -1,11 +1,12 @@
-.. _strfun:
+
+.. _hoc_strfun:
 
 StringFunctions (String Manipulation Class)
 -------------------------------------------
 
 
 
-.. class:: StringFunctions
+.. hoc:class:: StringFunctions
 
 
     Syntax:
@@ -31,7 +32,7 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.len
+.. hoc:method:: StringFunctions.len
 
 
     Syntax:
@@ -47,7 +48,7 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.substr
+.. hoc:method:: StringFunctions.substr
 
 
     Syntax:
@@ -64,7 +65,7 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.head
+.. hoc:method:: StringFunctions.head
 
 
     Syntax:
@@ -82,7 +83,7 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.tail
+.. hoc:method:: StringFunctions.tail
 
 
     Syntax:
@@ -105,7 +106,7 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.right
+.. hoc:method:: StringFunctions.right
 
 
     Syntax:
@@ -122,7 +123,7 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.left
+.. hoc:method:: StringFunctions.left
 
 
     Syntax:
@@ -139,7 +140,7 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.is_name
+.. hoc:method:: StringFunctions.is_name
 
 
     Syntax:
@@ -149,7 +150,7 @@ StringFunctions (String Manipulation Class)
     Description:
         Returns 1 if the *str* is the name of a symbol, 0 otherwise. 
         This is so useful that the same thing is available with the top level 
-        :func:`name_declared` function. 
+        :hoc:func:`name_declared` function.
 
          
 
@@ -157,7 +158,7 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.alias
+.. hoc:method:: StringFunctions.alias
 
 
     Syntax:
@@ -182,7 +183,7 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.alias_list
+.. hoc:method:: StringFunctions.alias_list
 
 
     Syntax:
@@ -215,7 +216,7 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.references
+.. hoc:method:: StringFunctions.references
 
 
     Syntax:
@@ -225,7 +226,7 @@ StringFunctions (String Manipulation Class)
     Description:
         Prints the number of references to the object and all objref names 
         that reference that object (including references via 
-        :class:`HBox`, :class:`VBox`, and :class:`List`). It also prints the number of references found. 
+        :hoc:class:`HBox`, :hoc:class:`VBox`, and :hoc:class:`List`). It also prints the number of references found.
 
          
 
@@ -233,7 +234,7 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.is_point_process
+.. hoc:method:: StringFunctions.is_point_process
 
 
     Syntax:
@@ -243,7 +244,7 @@ StringFunctions (String Manipulation Class)
     Description:
         Returns 0 if the object is not a POINT_PROCESS. Otherwise 
         returns the point type (which is always 1 greater than the index into the 
-        :func:`MechanismType(1) <MechanismType>` list). 
+        :hoc:func:`MechanismType(1) <MechanismType>` list).
 
          
 
@@ -251,7 +252,7 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.is_artificial
+.. hoc:method:: StringFunctions.is_artificial
 
 
     Syntax:
@@ -261,7 +262,7 @@ StringFunctions (String Manipulation Class)
     Description:
         Returns 0 if the object is not an ARTIFICIAL_CELL. Otherwise 
         returns the point type (which is always 1 greater than the index into the 
-        :func:`MechanismType(1) <MechanismType>` list). 
+        :hoc:func:`MechanismType(1) <MechanismType>` list).
 
          
 

@@ -1,19 +1,20 @@
-.. _oldgrph:
+
+.. _hoc_oldgrph:
 
 Obsolete Plotting
 -----------------
 
 
 
-.. function:: graphmode
+.. hoc:function:: graphmode
 
-        obsolete. see :func:`graph`. Use :class:`Graph`. 
+        obsolete. see :hoc:func:`graph`. Use :hoc:class:`Graph`.
 
 ----
 
 
 
-.. function:: graph
+.. hoc:function:: graph
 
          
 
@@ -118,44 +119,44 @@ Obsolete Plotting
          
 
     .. seealso::
-        :func:`plot`
+        :hoc:func:`plot`
         
 
 ----
 
 
 
-.. function:: axis
+.. hoc:function:: axis
 
-        See :func:`plot` 
-
-----
-
-
-
-.. function:: plotx
-
+        See :hoc:func:`plot`
 
 ----
 
 
 
-.. function:: ploty
+.. hoc:function:: plotx
 
 
 ----
 
 
 
-.. function:: regraph
+.. hoc:function:: ploty
 
-        See :func:`graph` 
 
 ----
 
 
 
-.. function:: plot
+.. hoc:function:: regraph
+
+        See :hoc:func:`graph`
+
+----
+
+
+
+.. hoc:function:: plot
 
          
 
@@ -238,29 +239,29 @@ Obsolete Plotting
          
 
     .. seealso::
-        :func:`plt`, :func:`setcolor`, :func:`axis`
+        :hoc:func:`plt`, :hoc:func:`setcolor`, :hoc:func:`axis`
         
 ----
 
 
 
 
-.. function:: setcolor
+.. hoc:function:: setcolor
 
-        obsolete. See :func:`plt`.
-
-----
-
-
-
-.. function:: settext
-
-        obsolete. See :func:`plt`.
+        obsolete. See :hoc:func:`plt`.
 
 ----
 
 
-.. function:: plt
+
+.. hoc:function:: settext
+
+        obsolete. See :hoc:func:`plt`.
+
+----
+
+
+.. hoc:function:: plt
 
          
 
@@ -376,7 +377,7 @@ Obsolete Plotting
          
 
     .. seealso::
-        :func:`plot`, :func:`axis`, :func:`lw`
+        :hoc:func:`plot`, :hoc:func:`axis`, :hoc:func:`lw`
         
 
     .. warning::

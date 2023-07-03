@@ -1,11 +1,12 @@
-.. _notify:
+
+.. _hoc_notify:
 
 Notification
 ------------
 
 
 
-.. function:: doEvents
+.. hoc:function:: doEvents
 
 
     Syntax:
@@ -17,7 +18,7 @@ Notification
         This also causes any previous flushes to make their effect felt on 
         the screen. 
          
-        Faster than :func:`doNotify` since field editors are not updated. 
+        Faster than :hoc:func:`doNotify` since field editors are not updated.
 
          
 
@@ -25,7 +26,7 @@ Notification
 
 
 
-.. function:: doNotify
+.. hoc:function:: doNotify
 
 
     Syntax:
@@ -34,6 +35,6 @@ Notification
 
     Description:
         All panels are updated so field editors show current values. 
-        This is slower than :func:`doEvents` which does not check the field editors. 
+        This is slower than :hoc:func:`doEvents` which does not check the field editors.
 
 

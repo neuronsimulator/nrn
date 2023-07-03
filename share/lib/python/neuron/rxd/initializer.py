@@ -1,4 +1,3 @@
-import itertools
 from threading import RLock
 
 # TODO: monkey-patch everything that requires an init so only even attempts once
@@ -70,4 +69,4 @@ def assert_initialized(msg=""):
             msg = ": " + msg
         from .rxdException import RxDException
 
-        raise RxDException("invalid operation; rxd module not initialized" + msg)
+        raise RxDException(f"invalid operation; rxd module not initialized{msg}")

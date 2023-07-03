@@ -1,7 +1,5 @@
-import distutils.util
+from neuron.tests.utils.strtobool import strtobool
 import os
-import sys
-import traceback
 
 from neuron import h
 
@@ -22,9 +20,7 @@ def test_units():
 
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
-    coreneuron.gpu = bool(
-        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-    )
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
     pc.set_maxstep(10)
     h.finitialize(-65)
     pc.psolve(h.dt)
@@ -37,10 +33,5 @@ def test_units():
 
 
 if __name__ == "__main__":
-    try:
-        model = test_units()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
+    test_units()
     h.quit()

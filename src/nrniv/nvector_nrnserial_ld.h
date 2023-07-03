@@ -1,9 +1,9 @@
 /*
-* N_Vector_NrnSerialLD derived from N_Vector_Serial Sundials version
-* by replaceing every occurrence of Serial with NrnSerialLD and then
-* modifying relevant method implementations to allow long double
-* accumulation.
-*/
+ * N_Vector_NrnSerialLD derived from N_Vector_Serial Sundials version
+ * by replaceing every occurrence of Serial with NrnSerialLD and then
+ * modifying relevant method implementations to allow long double
+ * accumulation.
+ */
 /*
 Macros changed with
 sed 's/NV_\([A-Za-z_]*\)_S/NV_\1_S_LD/g' nvector_nrnserial_ld.h >temp
@@ -16,7 +16,7 @@ mv temp nvector_nrnserial_ld.cpp
  * -----------------------------------------------------------------
  * $Revision: 855 $
  * $Date: 2005-02-10 00:15:46 +0100 (Thu, 10 Feb 2005) $
- * ----------------------------------------------------------------- 
+ * -----------------------------------------------------------------
  * Programmer(s): Scott D. Cohen, Alan C. Hindmarsh, Radu Serban,
  *                and Aaron Collier @ LLNL
  * -----------------------------------------------------------------
@@ -79,12 +79,12 @@ mv temp nvector_nrnserial_ld.cpp
    the data */
 
 struct _N_VectorContent_NrnSerialLD {
-  long int length;
-  booleantype own_data;
-  realtype *data;
+    long int length;
+    booleantype own_data;
+    realtype* data;
 };
 
-typedef struct _N_VectorContent_NrnSerialLD *N_VectorContent_NrnSerialLD;
+typedef struct _N_VectorContent_NrnSerialLD* N_VectorContent_NrnSerialLD;
 
 /*
  * -----------------------------------------------------------------
@@ -135,20 +135,20 @@ typedef struct _N_VectorContent_NrnSerialLD *N_VectorContent_NrnSerialLD;
  * -----------------------------------------------------------------
  */
 
-#define NV_CONTENT_S_LD(v)  ( (N_VectorContent_NrnSerialLD)(v->content) )
+#define NV_CONTENT_S_LD(v) ((N_VectorContent_NrnSerialLD) (v->content))
 
-#define NV_LENGTH_S_LD(v)   ( NV_CONTENT_S_LD(v)->length )
+#define NV_LENGTH_S_LD(v) (NV_CONTENT_S_LD(v)->length)
 
-#define NV_OWN_DATA_S_LD(v) ( NV_CONTENT_S_LD(v)->own_data )
+#define NV_OWN_DATA_S_LD(v) (NV_CONTENT_S_LD(v)->own_data)
 
-#define NV_DATA_S_LD(v)     ( NV_CONTENT_S_LD(v)->data )
+#define NV_DATA_S_LD(v) (NV_CONTENT_S_LD(v)->data)
 
-#define NV_Ith_S_LD(v,i)    ( NV_DATA_S_LD(v)[i] )
+#define NV_Ith_S_LD(v, i) (NV_DATA_S_LD(v)[i])
 
 /*
  * -----------------------------------------------------------------
  * PART III: functions exported by nvector_serial
- * 
+ *
  * CONSTRUCTORS:
  *    N_VNew_NrnSerialLD
  *    N_VNewEmpty_NrnSerialLD
@@ -204,7 +204,7 @@ N_Vector N_VCloneEmpty_NrnSerialLD(N_Vector w);
  * -----------------------------------------------------------------
  */
 
-N_Vector N_VMake_NrnSerialLD(long int vec_length, realtype *v_data);
+N_Vector N_VMake_NrnSerialLD(long int vec_length, realtype* v_data);
 
 /*
  * -----------------------------------------------------------------
@@ -216,7 +216,7 @@ N_Vector N_VMake_NrnSerialLD(long int vec_length, realtype *v_data);
  * -----------------------------------------------------------------
  */
 
-N_Vector *N_VNewVectorArray_NrnSerialLD(int count, long int vec_length);
+N_Vector* N_VNewVectorArray_NrnSerialLD(int count, long int vec_length);
 
 /*
  * -----------------------------------------------------------------
@@ -227,18 +227,18 @@ N_Vector *N_VNewVectorArray_NrnSerialLD(int count, long int vec_length);
  * -----------------------------------------------------------------
  */
 
-N_Vector *N_VNewVectorArrayEmpty_NrnSerialLD(int count, long int vec_length);
+N_Vector* N_VNewVectorArrayEmpty_NrnSerialLD(int count, long int vec_length);
 
 /*
  * -----------------------------------------------------------------
  * Function : N_VDestroyVectorArray_NrnSerialLD
  * -----------------------------------------------------------------
- * This function frees an array of N_Vector created with 
+ * This function frees an array of N_Vector created with
  * N_VNewVectorArray_NrnSerialLD.
  * -----------------------------------------------------------------
  */
 
-void N_VDestroyVectorArray_NrnSerialLD(N_Vector *vs, int count);
+void N_VDestroyVectorArray_NrnSerialLD(N_Vector* vs, int count);
 
 /*
  * -----------------------------------------------------------------
@@ -258,9 +258,9 @@ void N_VPrint_NrnSerialLD(N_Vector v);
 
 N_Vector N_VClone_NrnSerialLD(N_Vector w);
 void N_VDestroy_NrnSerialLD(N_Vector v);
-void N_VSpace_NrnSerialLD(N_Vector v, long int *lrw, long int *liw);
-realtype *N_VGetArrayPointer_NrnSerialLD(N_Vector v);
-void N_VSetArrayPointer_NrnSerialLD(realtype *v_data, N_Vector v);
+void N_VSpace_NrnSerialLD(N_Vector v, long int* lrw, long int* liw);
+realtype* N_VGetArrayPointer_NrnSerialLD(N_Vector v);
+void N_VSetArrayPointer_NrnSerialLD(realtype* v_data, N_Vector v);
 void N_VLinearSum_NrnSerialLD(realtype a, N_Vector x, realtype b, N_Vector y, N_Vector z);
 void N_VConst_NrnSerialLD(realtype c, N_Vector z);
 void N_VProd_NrnSerialLD(N_Vector x, N_Vector y, N_Vector z);

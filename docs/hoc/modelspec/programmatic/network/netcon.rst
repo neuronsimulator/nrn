@@ -1,11 +1,12 @@
-.. _netcon:
+
+.. _hoc_netcon:
 
 NetCon
 ------
 
 
 
-.. class:: NetCon
+.. hoc:class:: NetCon
 
 
     Syntax:
@@ -29,7 +30,7 @@ NetCon
         If the optional threshold, delay, and weight arguments are not 
         specified, their default values are 10, 1, and 0 respectively. In 
         any case, their values can be specified after the netcon has been 
-        constructed, see :data:`NetCon.threshold`, :data:`NetCon.weight`, and :data:`NetCon.delay` . 
+        constructed, see :hoc:data:`NetCon.threshold`, :hoc:data:`NetCon.weight`, and :hoc:data:`NetCon.delay` .
          
         Note that prior to 12-Jul-2006, when the first form of the constructor 
         was used, (i.e. a NetCon having a pointer to a source 
@@ -41,20 +42,20 @@ NetCon
          
         The target must be a POINT_PROCESS or ARTIFICIAL_CELL that defines a NET_RECEIVE procedure. 
         The number of NET_RECEIVE procedure arguments define a weight vector 
-        whose elements can be accessed with through the NetCon.weight ( :data:`NetCon.weight` )variable 
+        whose elements can be accessed with through the NetCon.weight ( :hoc:data:`NetCon.weight` )variable
         but the weight argument in the above constructors specify the value of 
         the first argument, with the normal interpretation of weight or maximum 
         conductance. On initialization, all weight elements with index > 0 are 
         set to 0 unless the NET_RECEIVE block contains an INITIAL block. In the 
-        latter case, that block is executed on a call to :func:`finitialize`  and 
+        latter case, that block is executed on a call to :hoc:func:`finitialize`  and
         allows non-zero initialization of netcon "states" --- args not initialized 
-        in the INITIAL block would be analogous to a :ref:`Parameter <nmodl_parameter>` except that it 
+        in the INITIAL block would be analogous to a :ref:`hoc_Parameter <hoc_nmodl_parameter>` except that it
         can have a different value for different NetCon instances and can be set 
-        to a desired value with :data:`NetCon.weight`. 
+        to a desired value with :hoc:data:`NetCon.weight`.
          
         The target is allowed to be nil (NULLObject) in which case the NetCon 
         is always inactive. However this can be useful for recording (see 
-        :meth:`NetCon.record`) the spike train from an output cell. 
+        :hoc:meth:`NetCon.record`) the spike train from an output cell.
          
         The source is normally a reference to a membrane potential which is 
         watched during simulation for passage past threshold. The 
@@ -63,7 +64,7 @@ NetCon
         Any range variable may be a source variable but I suspect that membrane 
         potential is the only practical one. 
          
-        N.B. For the local variable time step method :meth:`CVode.use_local_dt` , the 
+        N.B. For the local variable time step method :hoc:meth:`CVode.use_local_dt` , the
         proper currently accessed section for the source must be correct during 
         the creation of the NetCon so that the proper cell may be associated 
         with the source. i.e, 
@@ -84,7 +85,7 @@ NetCon
         the overhead of threshold detection at every time step. 
          
         The source may be a NULLObject. In this case events can only occur by 
-        calling :func:`event` from hoc. (It is also used by NEOSIM to implement 
+        calling :hoc:func:`event` from hoc. (It is also used by NEOSIM to implement
         its own delivery system.) 
          
         A source used by multiple NetCon instances is shared by those instances 
@@ -107,7 +108,7 @@ NetCon
         already exists, the previous threshold is retained. 
          
         From a NetCon instance, various lists of NetCon's can be created 
-        with the same target, precell, or postcell. See :meth:`CVode.netconlist` 
+        with the same target, precell, or postcell. See :hoc:meth:`CVode.netconlist`
         for creation of NetCon lists from a target, precell, or  postcell 
         pattern or object. 
          
@@ -128,7 +129,7 @@ NetCon
 
 
 
-.. method:: NetCon.valid
+.. hoc:method:: NetCon.valid
 
 
     Syntax:
@@ -146,7 +147,7 @@ NetCon
 
 
 
-.. method:: NetCon.active
+.. hoc:method:: NetCon.active
 
 
     Syntax:
@@ -166,7 +167,7 @@ NetCon
 
 
 
-.. method:: NetCon.event
+.. hoc:method:: NetCon.event
 
 
     Syntax:
@@ -189,7 +190,7 @@ NetCon
 
 
 
-.. method:: NetCon.syn
+.. hoc:method:: NetCon.syn
 
 
     Syntax:
@@ -205,7 +206,7 @@ NetCon
 
 
 
-.. method:: NetCon.pre
+.. hoc:method:: NetCon.pre
 
 
     Syntax:
@@ -222,7 +223,7 @@ NetCon
 
 
 
-.. method:: NetCon.preloc
+.. hoc:method:: NetCon.preloc
 
 
     Syntax:
@@ -247,7 +248,7 @@ NetCon
 
 
 
-.. method:: NetCon.postloc
+.. hoc:method:: NetCon.postloc
 
 
     Syntax:
@@ -266,7 +267,7 @@ NetCon
 
 
 
-.. method:: NetCon.precell
+.. hoc:method:: NetCon.precell
 
 
     Syntax:
@@ -284,7 +285,7 @@ NetCon
 
 
 
-.. method:: NetCon.postcell
+.. hoc:method:: NetCon.postcell
 
 
     Syntax:
@@ -302,7 +303,7 @@ NetCon
 
 
 
-.. method:: NetCon.setpost
+.. hoc:method:: NetCon.setpost
 
 
     Syntax:
@@ -323,7 +324,7 @@ NetCon
 
 
 
-.. method:: NetCon.prelist
+.. hoc:method:: NetCon.prelist
 
 
     Syntax:
@@ -343,7 +344,7 @@ NetCon
 
 
 
-.. method:: NetCon.synlist
+.. hoc:method:: NetCon.synlist
 
 
     Syntax:
@@ -358,7 +359,7 @@ NetCon
         If the List arg is present, the objects are appended. 
 
     .. seealso::
-        :meth:`CVode.netconlist`
+        :hoc:meth:`CVode.netconlist`
 
          
 
@@ -366,7 +367,7 @@ NetCon
 
 
 
-.. method:: NetCon.postcelllist
+.. hoc:method:: NetCon.postcelllist
 
 
     Syntax:
@@ -381,7 +382,7 @@ NetCon
         If the List arg is present, the objects are appended. 
 
     .. seealso::
-        :meth:`CVode.netconlist`
+        :hoc:meth:`CVode.netconlist`
 
          
 
@@ -389,7 +390,7 @@ NetCon
 
 
 
-.. method:: NetCon.precelllist
+.. hoc:method:: NetCon.precelllist
 
 
     Syntax:
@@ -404,7 +405,7 @@ NetCon
         If the List arg is present, the objects are appended. 
 
     .. seealso::
-        :meth:`CVode.netconlist`
+        :hoc:meth:`CVode.netconlist`
 
          
 
@@ -412,7 +413,7 @@ NetCon
 
 
 
-.. data:: NetCon.delay
+.. hoc:data:: NetCon.delay
 
 
     Syntax:
@@ -432,7 +433,7 @@ NetCon
 
 
 
-.. method:: NetCon.wcnt
+.. hoc:method:: NetCon.wcnt
 
 
     Syntax:
@@ -448,7 +449,7 @@ NetCon
 
 
 
-.. data:: NetCon.weight
+.. hoc:data:: NetCon.weight
 
 
     Syntax:
@@ -477,7 +478,7 @@ NetCon
 
 
 
-.. data:: NetCon.threshold
+.. hoc:data:: NetCon.threshold
 
 
     Syntax:
@@ -504,7 +505,7 @@ NetCon
 
 
 
-.. data:: NetCon.x
+.. hoc:data:: NetCon.x
 
 
     Syntax:
@@ -525,7 +526,7 @@ NetCon
 
 
 
-.. method:: NetCon.record
+.. hoc:method:: NetCon.record
 
 
     Syntax:
@@ -545,7 +546,7 @@ NetCon
          
         With no argument, no vector recording at the source takes place. 
          
-        The vector is resized to 0 when :func:`finitialize` is called. 
+        The vector is resized to 0 when :hoc:func:`finitialize` is called.
          
         NB: Recording takes place on a per source, not a per netcon basis, 
         and the source only records into one vector at a time. 
@@ -697,7 +698,7 @@ NetCon
 
 
 
-.. method:: NetCon.get_recordvec
+.. hoc:method:: NetCon.get_recordvec
 
 
     Syntax:
@@ -717,7 +718,7 @@ NetCon
 
 
 
-.. method:: NetCon.srcgid
+.. hoc:method:: NetCon.srcgid
 
 
     Syntax:
@@ -728,13 +729,13 @@ NetCon
         Returns the global source id integer that sends events through the NetCon. 
         May return -1 or -2 if the NetCon has no source or if the source does not 
         send interprocessor events. If the gid >= 0 then the netcon must have been 
-        created by a :meth:`ParallelContext.gid_connect` call with gid as the first 
+        created by a :hoc:meth:`ParallelContext.gid_connect` call with gid as the first
         arg or else it is connected to spike detector that was associated with a 
-        gid via :meth:`ParallelContext.cell`. 
+        gid via :hoc:meth:`ParallelContext.cell`.
          
         There is no way to determine the corresponding target cell gid (assuming there 
         is one and only one gid source integer for each cell. But see 
-        :meth:`NetCon.syn` and :meth:`NetCon.postcell`. 
+        :hoc:meth:`NetCon.syn` and :hoc:meth:`NetCon.postcell`.
 
          
          

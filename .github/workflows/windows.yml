@@ -7,7 +7,6 @@ concurrency:
 on:
   push:
     branches: 
-      - master
       - release/**
   pull_request:
     branches:
@@ -27,21 +26,20 @@ jobs:
     timeout-minutes: 45
 
     steps:
-    # TODO: temporarily use choco install until #1522 is fixed
-    # we need to move out of the way the image installed msys64
-    - name: Move installed msys64
-      run: |
-        move C:\msys64 C:\msys64-from-image
-      shell: cmd
-
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-        
+
+    - name: Retrieve rxd test data
+      run: |
+        git submodule update --init test/rxd/testdata
+      shell: powershell
+      working-directory: ${{runner.workspace}}\nrn
+
     - name: Set up Python3
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.11'
 
     - name: Download Dependencies
       run: |
@@ -72,7 +70,7 @@ jobs:
       uses: mxschmitt/action-tmate@v3
 
     - name: Upload build artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: nrn-nightly-AMD64.exe
         path: ${{runner.workspace}}\nrn\nrn-nightly-AMD64.exe

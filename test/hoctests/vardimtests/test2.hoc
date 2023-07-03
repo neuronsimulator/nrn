@@ -1,0 +1,43 @@
+//changing dimensions of double, objref, Section works if dimension is
+// same when both compiled and executed
+proc foo() {local i for i=1, 10000 { a = 1 }}
+foo()
+double a[1]
+proc foo() {local i for i=1, 10000 { a = 1 }}
+foo()
+double a[1][1]
+proc foo() {local i for i=1, 10000 { a = 1 }}
+foo()
+double a[1]
+proc foo() {local i for i=1, 10000 { a = 1 }}
+foo()
+
+objref o
+proc foo() {local i for i = 1, 1000 { o = new Vector() }}
+foo()
+objref o[1]
+proc foo() {local i for i = 1, 1000 { o = new Vector() }}
+foo()
+objref o[1][1]
+proc foo() {local i for i = 1, 1000 { o = new Vector() }}
+foo()
+objref o
+proc foo() {local i for i = 1, 1000 { o = new Vector() }}
+foo()
+
+create d
+proc foo() {local i for i = 1, 1000 { d { a = 1 } }}
+foo()
+topology()
+create d[3]
+proc foo() {local i for i = 1, 1000 { d { a = 1 } }}
+foo()
+topology()
+create d[3][3]
+proc foo() {local i for i = 1, 1000 { d { a = 1 } }}
+foo()
+topology()
+create d
+proc foo() {local i for i = 1, 1000 { d { a = 1 } }}
+foo()
+topology()

@@ -59,7 +59,11 @@ for line in text.splitlines():
     names = line.replace(",", " ").replace(";", " ").split()
     if not skip and len(names) > 2:
         print(line)  # entire filtered neuron.h file without pgcc added lines.
-        process(names[1], names[2:])
+        assert names[0] == "extern"
+        names.pop(0)
+        if names[0] in {'"C"', '"C++"'}:
+            names.pop(0)
+        process(names[0], names[1:])
 
 
 print(
@@ -71,9 +75,11 @@ static VoidFunc functions[] = {
 
 for i in voidfun:
     if i:
-        print('"%s", %s,' % (i, i))
+        prefix = "nrnhoc_"
+        j = i[len(prefix) :] if i.startswith(prefix) else i
+        print('{"%s", %s},' % (j, i))
 print(
-    """0, 0
+    """{nullptr, nullptr}
 };
 
 static struct {  /* Integer Scalars */
@@ -84,9 +90,9 @@ static struct {  /* Integer Scalars */
 )
 
 for i in intvar[0]:
-    print('"%s", &%s,' % (i[0], i[0]))
+    print('{"%s", &%s},' % (i[0], i[0]))
 print(
-    """0, 0
+    """{nullptr, nullptr}
 };
 
 static struct {  /* Vector integers */
@@ -98,9 +104,9 @@ static struct {  /* Vector integers */
 )
 
 for i in intvar[1]:
-    print('"%s", %s, %s,' % (i[0], i[0], i[1]))
+    print('{"%s", %s, %s},' % (i[0], i[0], i[1]))
 print(
-    """0,0
+    """{nullptr, nullptr, 0}
 };
 
 static struct {  /* Float Scalars */
@@ -111,9 +117,9 @@ static struct {  /* Float Scalars */
 )
 
 for i in fltvar[0]:
-    print('"%s", &%s,' % (i[0], i[0]))
+    print('{"%s", &%s},' % (i[0], i[0]))
 print(
-    """0, 0
+    """{nullptr, nullptr}
 };
 
 static struct {  /* Vector float */
@@ -125,9 +131,9 @@ static struct {  /* Vector float */
 )
 
 for i in fltvar[1]:
-    print('"%s", %s, %s,' % (i[0], i[0], i[1]))
+    print('{"%s", %s, %s},' % (i[0], i[0], i[1]))
 print(
-    """0,0,0
+    """{nullptr, nullptr, 0}
 };
 
 /* Double Scalars */
@@ -136,9 +142,9 @@ DoubScal scdoub[] = {
 )
 
 for i in dblvar[0]:
-    print('"%s", &%s,' % (i[0], i[0]))
+    print('{"%s", &%s},' % (i[0], i[0]))
 print(
-    """0,0
+    """{nullptr, nullptr}
 };
 
 /* Vectors */
@@ -147,9 +153,9 @@ DoubVec vdoub[] = {
 )
 
 for i in dblvar[1]:
-    print('"%s", %s, %s,' % (i[0], i[0], i[1]))
+    print('{"%s", %s, %s},' % (i[0], i[0], i[1]))
 print(
-    """0, 0, 0
+    """{nullptr, nullptr, 0}
 };
 
 static struct {  /* Arrays */
@@ -162,9 +168,9 @@ static struct {  /* Arrays */
 )
 
 for i in dblvar[2]:
-    print('"%s", %s, %s, %s,' % (i[0], i[0], i[1], i[2]))
+    print('{"%s", %s, %s, %s},' % (i[0], i[0], i[1], i[2]))
 print(
-    """0, 0, 0, 0
+    """{nullptr, nullptr, 0, 0}
 };
 
 static struct {  /* triple dimensioned arrays */
@@ -178,9 +184,9 @@ static struct {  /* triple dimensioned arrays */
 )
 
 for i in dblvar[3]:
-    print('"%s", %s, %s, %s, %s,' % (i[0], i[0], i[1], i[2], i[3]))
+    print('{"%s", %s, %s, %s, %s},' % (i[0], i[0], i[1], i[2], i[3]))
 print(
-    """0, 0, 0, 0, 0
+    """{nullptr, nullptr, 0, 0, 0}
 };
 """
 )

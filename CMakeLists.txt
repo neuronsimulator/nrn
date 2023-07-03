@@ -1,35 +1,38 @@
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
-# Note that this needs to happen **before** the call to project(...). This is
-# because CMake reads the CRAYPE_LINK_TYPE environment variable inside the call
-# to project(...) and sets various flags and properties based on its value.
-# Because we are so early in the CMake processing, we have to figure out for
-# ourselves whether or not we are running on a Cray system by looking for Cray
+# Note that this needs to happen **before** the call to project(...). This is because CMake reads
+# the CRAYPE_LINK_TYPE environment variable inside the call to project(...) and sets various flags
+# and properties based on its value. Because we are so early in the CMake processing, we have to
+# figure out for ourselves whether or not we are running on a Cray system by looking for Cray
 # environment variables directly.
 if(DEFINED ENV{CRAYPE_VERSION})
-  # Older versions of the Cray software prefer static linking by default, which
-  # doesn't work with NEURON with some compilers (GCC and Intel at the time of
-  # writing). Note that this variable will not be set in the compiler and
-  # linker runtime environments, so we are relying on CMake baking in the
-  # correct compiler flags based on the value we set here. In more recent
-  # versions of the Cray software the default has changed; CMake knows about
-  # this in v3.15.3 and newer, but to support older CMake versions we still
-  # need to set this explicitly.
-  # See: https://github.com/neuronsimulator/nrn/issues/1153
+  # Older versions of the Cray software prefer static linking by default, which doesn't work with
+  # NEURON with some compilers (GCC and Intel at the time of writing). Note that this variable will
+  # not be set in the compiler and linker runtime environments, so we are relying on CMake baking in
+  # the correct compiler flags based on the value we set here. In more recent versions of the Cray
+  # software the default has changed; CMake knows about this in v3.15.3 and newer, but to support
+  # older CMake versions we still need to set this explicitly. See:
+  # https://github.com/neuronsimulator/nrn/issues/1153
   set(ENV{CRAYPE_LINK_TYPE} dynamic)
   message(STATUS "Cray system detected...setting CRAYPE_LINK_TYPE=dynamic")
 endif()
-project(NEURON C CXX)
+project(
+  NEURON
+  VERSION 9.0.0
+  LANGUAGES C CXX
+  HOMEPAGE_URL "https://www.neuron.yale.edu/neuron/")
 
 # =============================================================================
 # CMake common project settings
 # =============================================================================
-set(PROJECT_VERSION_MAJOR 8)
-set(PROJECT_VERSION_MINOR 0)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+if(NOT "cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+  message(
+    FATAL_ERROR
+      "This compiler does not fully support C++17, choose a higher version or another compiler.")
+endif()
 
 # =============================================================================
 # CMake common project settings
@@ -47,30 +50,57 @@ include(BuildOptionDefaults)
 # =============================================================================
 # Build options (boolean)
 # =============================================================================
+option(NRN_ENABLE_DOCS "Build documentation" ${NRN_ENABLE_DOCS_DEFAULT})
+# This is useful for readthedocs-style builds and the documentation CI, where the actual
+# installation of NEURON comes from an installed binary wheel.
+option(
+  NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION
+  "Build documentation without building NEURON. It will be assumed that import neuron works, nrnivmodl is in PATH, etc."
+  ${NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION_DEFAULT})
+mark_as_advanced(NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
 option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)"
        ${NRN_ENABLE_SHARED_DEFAULT})
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
 option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library"
-        ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
+       ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
 option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent"
        ${NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT})
 option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)"
        ${NRN_ENABLE_PYTHON_DEFAULT})
-option(NRN_ENABLE_THREADS "Allow use of Pthreads" ${NRN_ENABLE_THREADS_DEFAULT})
+option(NRN_ENABLE_THREADS "Allow use of multithreading" ${NRN_ENABLE_THREADS_DEFAULT})
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
+option(NRN_ENABLE_MUSIC "Enable MUSIC support" ${NRN_ENABLE_MUSIC_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
-option(NRN_ENABLE_MODEL_TESTS "Enable tests with detailed models specified" ${NRN_ENABLE_MODEL_TESTS_DEFAULT})
+set(NRN_ENABLE_MODEL_TESTS
+    "${NRN_ENABLE_MODEL_TESTS_DEFAULT}"
+    CACHE STRING "Comma-separated list of detailed models to enable tests of.")
 # parse NRN_ENABLE_MODEL_TESTS as list
-string(REPLACE "," ";" NRN_ENABLE_MODEL_TESTS ${NRN_ENABLE_MODEL_TESTS})
-option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic units" ${NRN_DYNAMIC_UNITS_USE_LEGACY_DEFAULT})
+string(REPLACE "," ";" NRN_ENABLE_MODEL_TESTS "${NRN_ENABLE_MODEL_TESTS}")
+option(
+  NRN_ENABLE_PERFORMANCE_TESTS
+  "Enable tests that measure performance. These are known to be unreliable when run on busy/oversubscribed machines such as CI runners."
+  ${NRN_ENABLE_PERFORMANCE_TESTS_DEFAULT})
+# This can be helpful in very specific CI build configurations, where ccache is used *and* different
+# CI builds are built under different directories.
+option(NRN_AVOID_ABSOLUTE_PATHS
+       "Avoid embedding absolute paths in generated code (ccache optimisation)"
+       ${NRN_AVOID_ABSOLUTE_PATHS_DEFAULT})
+mark_as_advanced(NRN_AVOID_ABSOLUTE_PATHS)
+option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic units"
+       ${NRN_DYNAMIC_UNITS_USE_LEGACY_DEFAULT})
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
-option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
-option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" ${NRN_ENABLE_REL_RPATH_DEFAULT})
-option(NRN_WHEEL_STATIC_READLINE "Use static readline libraries for the wheels." ${NRN_WHEEL_STATIC_READLINE_DEFAULT})
+option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files"
+       ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
+option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python"
+       ${NRN_ENABLE_REL_RPATH_DEFAULT})
+option(NRN_WHEEL_BUILD ${NRN_WHEEL_BUILD_DEFAULT})
+option(NRN_WHEEL_STATIC_READLINE "Use static readline libraries for the wheels."
+       ${NRN_WHEEL_STATIC_READLINE_DEFAULT})
 mark_as_advanced(NRN_ENABLE_REL_RPATH)
+mark_as_advanced(NRN_WHEEL_BUILD)
 
 # =============================================================================
 # Build options (string)
@@ -78,19 +108,30 @@ mark_as_advanced(NRN_ENABLE_REL_RPATH)
 # ~~~
 # NEURON module installation:
 #   - OFF       : do not install
-#   - ON        : install with --home in ${CMAKE_INSTALL_PREFIX}
-#   - <string>  : install using other modes or locations using an appropriate
-#                 string that goes after python setup.py install
+#   - ON        : install in ${CMAKE_INSTALL_PREFIX} (default)
+#   NOTE: When building the wheel, this is set to OFF.
 # Dynamic Python version support:
-#   - OFF       : nrnpython interface is linked into libnrniv.so
-#   - ON        : nrnpython interface consistent with default python3 (falling back to python)
-#                 is built and loaded dynamically at run time (nrniv still works in the absence
-#                 of any Python at all).
-#   - <string>  : semicolon (;) separated list of python executable used to create a separate
-#                 interface for each. When one of those versions of Python is launched,
-#                 "import neuron" will automatically load the appropriate module interface along
-#                 with the rest of neuron. Also nrniv -pyexe <python> will work with any <python>
-#                 in the list of python executables.
+#   - NRN_ENABLE_PYTHON_DYNAMIC=OFF  : libnrniv is linked against a single Python version, which
+#                                      can be steered with PYTHON_EXECUTABLE
+#   - NRN_ENABLE_PYTHON_DYNAMIC=ON   : libnrniv is not linked against Python, distinct libnrnpython
+#                                      libraries are built for each configured Python major.minor
+#                                      version but are only linked against the relevant libpython
+#                                      if NRN_LINK_AGAINST_PYTHON is true, which is by default only
+#                                      the case on windows.
+#                                      nrniv/special still works in the absence of Python, and
+#                                      dynamically loads the appropriate libnrnpythonX.Y as needed
+#   - NRN_PYTHON_DYNAMIC=pythonX;... : semicolon separated list of Python versions used when
+#                                      NRN_ENABLE_PYTHON_DYNAMIC=ON, if not set then it defaults to
+#                                      PYTHON_EXECUTABLE. This must include all major.minor
+#                                      versions that you want nrniv -python to be able to load. If
+#                                      this *is* set then the first entry will be used as the
+#                                      default Python version.
+# Extra options for extended Python tests:
+#   - NRN_PYTHON_EXTRA_FOR_TESTS=... : semicolon separated list of Python executables that NEURON
+#                                      is *not* built against. These are only used for testing, and
+#                                      there must be no overlap in major.minor versions between
+#                                      this list and the set of versions that NEURON *is* built
+#                                      against. This allows tests of failure modes.
 # Dynamic MPI support:
 #   - OFF       : nrnmpi is linked into libnrniv.so
 #   - ON        : nrnmpi interface consistent with default mpi is built and loaded dynamically
@@ -104,20 +145,23 @@ mark_as_advanced(NRN_ENABLE_REL_RPATH)
 #   - ON        : Collect code coverage for files (default all).
 #   - <string>  : semicolon (;) separated list of files to collect coverage.
 # ~~~
-option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module"
+option(NRN_ENABLE_MODULE_INSTALL
+       "Enable installation of NEURON Python module for regular CMake builds"
        ${NRN_ENABLE_MODULE_INSTALL_DEFAULT})
-set(NRN_MODULE_INSTALL_OPTIONS
-    "${NRN_MODULE_INSTALL_OPTIONS_DEFAULT}"
-    CACHE STRING "setup.py options, everything after setup.py install")
-
 option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support"
        ${NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT})
+option(NRN_LINK_AGAINST_PYTHON
+       "Link libnrnpythonX.Y against libpythonX.Y when NRN_ENABLE_PYTHON_DYNAMIC=ON"
+       ${NRN_LINK_AGAINST_PYTHON_DEFAULT})
 set(NRN_PYTHON_DYNAMIC
     ""
     CACHE
       STRING
       "semicolon (;) separated list of python executables to create interface for (default python3)"
 )
+set(NRN_PYTHON_EXTRA_FOR_TESTS
+    ""
+    CACHE STRING "semicolon (;) separated list of python executables to use for testing")
 
 option(NRN_ENABLE_MPI_DYNAMIC "Enable dynamic MPI library support" OFF)
 set(NRN_MPI_DYNAMIC
@@ -134,26 +178,28 @@ set(NRN_RX3D_OPT_LEVEL
 option(NRN_ENABLE_COVERAGE "EnableCode Coverage (make cover_begin, make cover_html)" OFF)
 set(NRN_COVERAGE_FILES
     ""
-    CACHE
-      STRING
-      "semicolon (;) separated list of files to collect code coverage")
+    CACHE STRING "semicolon (;) separated list of files to collect code coverage")
 
 set(NRN_NMODL_CXX_FLAGS
     "${NRN_NMODL_CXX_FLAGS_DEFAULT}"
-    CACHE
-      STRING
-      "space separated list of flags to be added to host tools (nocmodl, modlunit")
+    CACHE STRING "space separated list of flags to be added to host tools (nocmodl, modlunit")
 separate_arguments(NRN_NMODL_CXX_FLAGS UNIX_COMMAND ${NRN_NMODL_CXX_FLAGS})
+
+set(NRN_EXTRA_CXX_FLAGS
+    ""
+    CACHE STRING "Extra compiler flags for NEURON source files")
+separate_arguments(NRN_EXTRA_CXX_FLAGS)
+list(APPEND NRN_COMPILE_FLAGS ${NRN_EXTRA_CXX_FLAGS})
+
+set(NRN_EXTRA_MECH_CXX_FLAGS
+    ""
+    CACHE STRING "Extra compiler flags for translated NEURON mechanisms")
+separate_arguments(NRN_EXTRA_MECH_CXX_FLAGS)
 
 option(NRN_ENABLE_PROFILING "Enable profiling" ${NRN_ENABLE_PROFILING_DEFAULT})
 set(NRN_PROFILER
     "${NRN_PROFILER_DEFAULT}"
     CACHE STRING "Set which profiler to build against ('caliper', 'likwid')")
-
-# =============================================================================
-# Set Python additional versions earlier (especially for old CMake)
-# =============================================================================
-set(Python_ADDITIONAL_VERSIONS 3 3.9 3.8 3.7 3.6 3.5 3.4 3.3 3.2 3.1 3.0 2.8 2.7 2.6)
 
 # =============================================================================
 # Include cmake modules
@@ -173,32 +219,88 @@ include(cmake/Coverage.cmake)
 set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
 include(ReleaseDebugAutoFlags)
 
+# Try and emit an intelligent warning if the version number currently set in the CMake project(...)
+# call is inconsistent with the output of git describe.
+include(cmake/CheckGitDescribeCompatibility.cmake)
+
+# Save the version information from project(...) to an nrnsemanticversion.h header in the build
+# directory. This separate from nrnversion.h, which includes information about the latest git
+# commit, because it should change less frequently, but it is included in many more files.
+set(NRN_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(NRN_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(NRN_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+configure_file(src/nrnoc/nrnsemanticversion.h.in src/nrnoc/nrnsemanticversion.h @ONLY)
+
+# =============================================================================
+# Add coding-conventions submodule so we can use helper functions defined there
+# =============================================================================
+set(CODING_CONV_PREFIX "NRN")
+set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "external")
+set(CODING_CONV_CMAKE "${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/coding-conventions/cpp/cmake")
+if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
+  # Abort with a helpful message if the current source tree lacks .git information, as in that case
+  # we're not going to be able to initialise the submodule.
+  nrn_submodule_file_not_found("3rdparty.cmake")
+  nrn_initialize_submodule(external/coding-conventions)
+endif()
+include("${CODING_CONV_CMAKE}/3rdparty.cmake")
+cpp_cc_git_submodule(Random123)
+
+# =================================================================================================
+# Enable sanitizer support if the NRN_SANITIZERS variable is set. Comes befores PythonHelper.cmake.
+# =================================================================================================
+include(cmake/SanitizerHelper.cmake)
+# Make a CMake list NRN_SANITIZERS_LIST
+string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
+
+# =================================================================================================
+# Juggle PYTHON_EXECUTABLE and NRN_ENABLE_PYTHON_DYNAMIC to make sure that:
+#
+# * NRN_DEFAULT_PYTHON_EXECUTABLE is the default Python version, and NRN_DEFAULT_PYTHON_INCLUDES and
+#   NRN_DEFAULT_PYTHON_LIBRARIES are its include direcory and library
+# * NRN_PYTHON_EXECUTABLES is a list of absolute paths to all Python executables to be built against
+#   (length >=1 if NRN_ENABLE_PYTHON_DYNAMIC else == 1)
+# * NRN_PYTHON_VERSIONS (3.8, 3.11, ...), NRN_PYTHON_INCLUDES and NRN_PYTHON_LIBRARIES are populated
+#   with values patching NRN_PYTHON_EXECUTABLES
+# * NRN_PYTHON_COUNT is set to the number of entries in those lists (i.e. number of Pythons), and
+#   NRN_PYTHON_ITERATION_LIMIT is set to ${NRN_PYTHON_COUNT} - 1
+# =================================================================================================
+set(NRN_MINIMUM_PYTHON_VERSION 3.8)
+include(cmake/PythonHelper.cmake)
+
+# This needs NRN_DEFAULT_PYTHON_EXECUTABLE, which comes from PythonHelper.cmake
+if(NRN_SANITIZERS)
+  configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
+  install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrn-enable-sanitizer
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+endif()
+
 # =============================================================================
 # Find required packages
 # =============================================================================
 find_package(BISON REQUIRED)
-find_package(FLEX REQUIRED)
+find_package(FLEX 2.6 REQUIRED)
 
 # When shipping the wheels we want to link readline libs statically.
 if(NRN_WHEEL_STATIC_READLINE)
-  # CMake will prefer dynamic libraries over static ones. With the following construct we make sure we get them.
-  set( ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  set( CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+  # CMake will prefer dynamic libraries over static ones. With the following construct we make sure
+  # we get them.
+  set(ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 endif()
 
 find_package(Readline REQUIRED)
 if(READLINE_FOUND)
-  # MAC libedit.3.dylib does not have rl_event_hook
-  # Readline_LIBRARY may be a binary lib or (on the MAC) a tbd file that
-  # points to the library and mentions all its definitions.
-  # this part has to be prior to adding the nrniv subdirectory.
+  # MAC libedit.3.dylib does not have rl_event_hook Readline_LIBRARY may be a binary lib or (on the
+  # MAC) a tbd file that points to the library and mentions all its definitions. this part has to be
+  # prior to adding the nrniv subdirectory.
   execute_process(COMMAND grep -q rl_event_hook ${Readline_LIBRARY} RESULT_VARIABLE result)
   if(NOT result EQUAL 0)
     # define for src/oc/hoc.cpp
     set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
   endif()
-  # If we are not using self contained, static readline library
-  # created for building wheel then only look for curses and termcap
+  # If we are not using self contained, static readline library created for building wheel then only
+  # look for curses and termcap
   if(NOT NRN_WHEEL_STATIC_READLINE)
     find_package(Curses QUIET)
     find_package(Termcap QUIET)
@@ -206,8 +308,8 @@ if(READLINE_FOUND)
 endif()
 
 # Reset original CMake library suffixes
-if (ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES)
-  set (CMAKE_FIND_LIBRARY_SUFFIXES ${ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES} )
+if(ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES})
 endif()
 
 if(NRN_ENABLE_RX3D)
@@ -222,89 +324,17 @@ if(MINGW)
 endif()
 
 # =============================================================================
-# Setup Doxygen documentation
-# =============================================================================
-find_package(Doxygen QUIET)
-if(DOXYGEN_FOUND)
-  # generate Doxyfile with correct source paths
-  configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile)
-  add_custom_target(
-    doxygen
-    COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMENT "Generating API documentation with Doxygen"
-    VERBATIM)
-endif()
-
-# =============================================================================
-# Setup Sphinx documentation
-# =============================================================================
-find_package(Sphinx QUIET)
-if(SPHINX_FOUND)
-  # Target to execute && convert notebooks to html.
-  # Note that neuron must be available for python import. See docs/README.md.
-  add_custom_target(
-          notebooks
-          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh execute
-          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
-  )
-
-  # Executing notebooks can take a fair amount of time. Use this target
-  # if you want to skip the execution.
-  add_custom_target(
-          notebooks-noexec
-          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
-          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
-  )
-
-  set(SPHINX_SOURCE ${PROJECT_SOURCE_DIR}/docs)
-  set(SPHINX_BUILD ${PROJECT_SOURCE_DIR}/docs/_build)
-
-  add_custom_target(
-          sphinx
-          COMMAND ${SPHINX_EXECUTABLE} -b html
-          ${SPHINX_SOURCE} ${SPHINX_BUILD}
-          COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
-          WORKING_DIRECTORY WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
-          COMMENT "Generating documentation with Sphinx"
-  )
-endif()
-
-# =============================================================================
-# Build full docs
-# =============================================================================
-find_program(JUPYTER_EXE jupyter QUIET)
-
-if(DOXYGEN_FOUND AND SPHINX_FOUND AND JUPYTER_EXE)
-  add_custom_target(
-          docs
-          COMMAND ${CMAKE_COMMAND} --build . --target doxygen
-          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-          COMMAND ${CMAKE_COMMAND} --build . --target notebooks
-          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
-          COMMAND ${CMAKE_COMMAND} --build . --target sphinx
-          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-          COMMENT "Generating full documentation"
-  )
-else()
-  add_custom_target(
-    docs
-    VERBATIM COMMAND echo "Please install docs requirements (see docs/README.md)!"
-    COMMENT "Documentation generation not possible!"
-  )
-endif()
-
-# =============================================================================
 # Enable MPI
 # =============================================================================
 if(NRN_ENABLE_MPI)
-  find_package(MPI REQUIRED)
+
+  # find_package(MPI REQUIRED) has a CMAKE_OSX_ARCHITECTURES edge case
+  nrn_mpi_find_package()
   set(NRNMPI 1)
   set(PARANEURON 1)
+
   # avoid linking to C++ bindings
-  add_definitions("-DMPI_NO_CPPBIND=1")
-  add_definitions("-DOMPI_SKIP_MPICXX=1")
-  add_definitions("-DMPICH_SKIP_MPICXX=1")
+  add_compile_definitions(MPI_NO_CPPBIND=1 OMPI_SKIP_MPICXX=1 MPICH_SKIP_MPICXX=1)
 
   # Launching mpi executable with full path can mangle different python versions and libraries (see
   # issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
@@ -333,13 +363,31 @@ else()
 endif()
 
 # =============================================================================
+# Enable MUSIC MUlti SImulation Coordinator
+# =============================================================================
+if(NRN_ENABLE_MUSIC)
+  if(NOT NRN_ENABLE_MPI)
+    message(FATAL "MUSIC requires -DNRN_ENABLE_MPI=ON")
+  endif()
+  if(NOT NRN_ENABLE_PYTHON)
+    message(FATAL "MUSIC requires -DNRN_ENABLE_PYTHON=ON")
+  endif()
+  find_package(Cython REQUIRED)
+  if(NOT Cython_FOUND)
+    message(FATAL "MUSIC requires Cython")
+  endif()
+  find_package(MUSIC REQUIRED)
+  set(NRN_MUSIC 1)
+endif()
+
+# =============================================================================
 # Enable backward
 # =============================================================================
 if(NRN_ENABLE_BACKTRACE)
-    set(NRN_USE_BACKWARD 1)
-    add_external_project(backward)
+  set(NRN_USE_BACKWARD 1)
+  nrn_add_external_project(backward)
 else()
-    set(NRN_USE_BACKWARD 0)
+  set(NRN_USE_BACKWARD 0)
 endif()
 # =============================================================================
 # Enable Interviews
@@ -366,8 +414,8 @@ if(NRN_ENABLE_INTERVIEWS)
     message(STATUS "Using external Interviews from ${IV_DIR}")
     get_target_property(IV_INCLUDE_DIR interviews INTERFACE_INCLUDE_DIRECTORIES)
   else()
-    add_external_project(iv)
-    include_directories(external/iv/src/include)
+    nrn_add_external_project(iv)
+    include_directories(SYSTEM external/iv/src/include)
     set(IV_DIR ${PROJECT_SOURCE_DIR}/external/iv)
     set(IV_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/external/iv/src/include)
   endif()
@@ -379,32 +427,19 @@ endif()
 # =============================================================================
 # Enable Python support
 # =============================================================================
-find_package(PythonInterp 3.6 REQUIRED)
 if(NRN_ENABLE_PYTHON)
-  # start afresh with PythonLibsNew's find_library
-  # without this, -DPYTHON_EXECUTABLE=`which python3` -DNRN_PYTHON_DYNAMIC="python3.6;python3.9"
-  # would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
-  # /usr/lib/x86_64-linux-gnu/libpython3.6.so
-  unset(PYTHON_LIBRARY CACHE)
-
-  find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
-  set(NRN_DEFAULT_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
-  set(NRN_DEFAULT_PYTHON_LIBRARIES ${PYTHON_LIBRARIES})
-  set(NRN_DEFAULT_PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS})
-  set(USE_PYTHON 1)
-else()
-  set(USE_PYTHON 0)
+  # Make sure the USE_PYTHON macro is defined in the C++ code
+  list(APPEND NRN_COMPILE_DEFS USE_PYTHON)
 endif()
 
 # =============================================================================
 # Enable Threads support
 # =============================================================================
 if(NRN_ENABLE_THREADS)
+  # Note that at least GCC requires -pthread to be passed even when using std::thread.
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
-  set(USE_PTHREAD 1)
-else()
-  set(USE_PTHREAD 0)
+  list(APPEND NRN_COMPILE_DEFS NRN_ENABLE_THREADS)
 endif()
 
 # =============================================================================
@@ -428,58 +463,83 @@ endif()
 # Set library type
 # =============================================================================
 if(NRN_ENABLE_SHARED)
-    set(NRN_LIBRARY_TYPE "SHARED")
+  set(NRN_LIBRARY_TYPE "SHARED")
 else()
-    set(NRN_LIBRARY_TYPE "STATIC")
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  set(NRN_LIBRARY_TYPE "STATIC")
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
 # =============================================================================
-# Add helpder CMake modules AFTER setting options
+# Add helper CMake modules AFTER setting options
 # =============================================================================
 include(NeuronFileLists)
 include(MPIDynamicHelper)
-include(ConfigFileSetting)
-include(PythonDynamicHelper)
+
+# Set variable to include mpi headers
+set(NRN_INCLUDE_MPI_HEADERS OFF)
+list(LENGTH NRN_MPI_LIBNAME_LIST num_mpi)
+if(NOT NRN_ENABLE_MPI_DYNAMIC OR ${num_mpi} EQUAL 1)
+  set(NRN_INCLUDE_MPI_HEADERS ON)
+endif()
 
 # =============================================================================
 # Enable CoreNEURON support
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)
-  find_package(coreneuron QUIET PATHS ${CORENEURON_DIR}/share/cmake ${CORENEURON_DIR})
-  if(coreneuron_FOUND)
-    message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
-    # By default `nrnivmodl` should look for `nrnivmodl-core` under the external prefix.
-    set(cnrn_prefix "${CORENEURON_DIR}")
-  else()
-    message(STATUS "Building CoreNEURON from submodule")
-    # If NEURON tests are enabled then enable CoreNEURON tests too
-    set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
-    set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
-    if(NRN_ENABLE_PROFILING)
-      if(NRN_PROFILER STREQUAL "caliper")
-        set(CORENRN_ENABLE_CALIPER_PROFILING ON)
-      elseif(NRN_PROFILER STREQUAL "likwid")
-        set(CORENRN_ENABLE_LIKWID_PROFILING ON)
-      endif()
+  message(STATUS "Building CoreNEURON")
+
+  # =============================================================================
+  # Include cmake modules path
+  # =============================================================================
+  list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/coreneuron
+       ${PROJECT_SOURCE_DIR}/cmake/coreneuron/packages)
+
+  set(nrn_using_ext_corenrn FALSE)
+  # If NEURON tests are enabled then enable CoreNEURON tests too
+  set(CORENRN_ENABLE_UNIT_TESTS
+      ${NRN_ENABLE_TESTS}
+      CACHE BOOL "" FORCE)
+  set(CORENRN_ENABLE_LEGACY_UNITS
+      ${NRN_DYNAMIC_UNITS_USE_LEGACY}
+      CACHE BOOL "" FORCE)
+  if(NRN_ENABLE_PROFILING)
+    if(NRN_PROFILER STREQUAL "caliper")
+      set(CORENRN_ENABLE_CALIPER_PROFILING ON)
+    elseif(NRN_PROFILER STREQUAL "likwid")
+      set(CORENRN_ENABLE_LIKWID_PROFILING ON)
     endif()
-    # Propagate NEURON MPI option to CoreNEURON if not set explicitly
-    if(NOT DEFINED CORENRN_ENABLE_MPI)
-      set(CORENRN_ENABLE_MPI ${NRN_ENABLE_MPI} CACHE BOOL "" FORCE)
-    endif()
-    if(NOT DEFINED CORENRN_ENABLE_MPI_DYNAMIC)
-      set(CORENRN_ENABLE_MPI_DYNAMIC ${NRN_ENABLE_MPI_DYNAMIC} CACHE BOOL "" FORCE)
-    endif()
-    add_external_project(coreneuron)
-    set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
-    # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.
-    set(cnrn_prefix "${CMAKE_INSTALL_PREFIX}")
-    # CoreNEURON exports this list of flags as a property; turn it into a
-    # variable in this scope. If CoreNEURON is installed externally then this
-    # is exported into coreneuron-config.cmake.
-    get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
   endif()
+  set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron)
+
+  # initialize CLI11 submodule
+  cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
+
+  add_subdirectory(${PROJECT_SOURCE_DIR}/src/coreneuron)
+
+  # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.
+  set(cnrn_prefix "${CMAKE_INSTALL_PREFIX}")
+  # CoreNEURON exports this list of flags as a property; turn it into a variable in this scope. If
+  # CoreNEURON is installed externally then this is exported into coreneuron-config.cmake.
+  get_property(CORENRN_LIB_LINK_FLAGS GLOBAL PROPERTY CORENRN_LIB_LINK_FLAGS)
+  get_property(CORENRN_NEURON_LINK_FLAGS GLOBAL PROPERTY CORENRN_NEURON_LINK_FLAGS)
+  get_property(CORENRN_ENABLE_SHARED GLOBAL PROPERTY CORENRN_ENABLE_SHARED)
+  # NEURON tests that link against CoreNEURON need to depend on it.
+  set(CORENEURON_TARGET_TO_DEPEND coreneuron-for-tests)
+
+  # When we are using CoreNEURON, OpenACC and shared libraries then it is important that the first
+  # library *compiled by nvc++* to be opened is linked against OpenACC, to avoid the NVIDIA runtime
+  # being initialised without OpenACC. See:
+  # https://forums.developer.nvidia.com/t/dynamically-loading-an-openacc-enabled-shared-library-from-an-executable-compiled-with-nvc-does-not-work/210968/5
+  # When we build CoreNEURON with NVHPC then we often build NEURON with NVHPC too, and if we load
+  # NEURON from Python then the first compiled-by-nvc++ thing to be loaded is the NEURON Python
+  # module (hoc.XXX.so). It is, therefore, important that we link that with -acc.
+  separate_arguments(CORENRN_NEURON_LINK_FLAGS)
+  set(NRN_LINK_FLAGS_FOR_ENTRY_POINTS ${CORENRN_NEURON_LINK_FLAGS})
+
 endif()
+
+# This needs to be after all modifications to NRN_LINK_FLAGS
+include(ConfigFileSetting)
 
 # =============================================================================
 # Set install location for libraries (before src/nrniv)
@@ -508,14 +568,34 @@ endif()
 # Add project directories AFTER CMake modules
 # =============================================================================
 add_subdirectory(src/nrniv)
+
+# Collect the environment variables that are needed to execute NEURON from the build directory. This
+# is used when configuring tests, and when building documentation targets.
+function(prepend_to_var var new_path)
+  set(old_list "${NRN_RUN_FROM_BUILD_DIR_ENV}")
+  set(new_val "${var}=${new_path}")
+  if(DEFINED ENV{${var}} AND NOT "$ENV{${var}}" STREQUAL "")
+    string(APPEND new_val ":$ENV{${var}}")
+  endif()
+  list(APPEND old_list "${new_val}")
+  set(NRN_RUN_FROM_BUILD_DIR_ENV
+      "${old_list}"
+      PARENT_SCOPE)
+endfunction()
+set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
+                               "NRNHOME=${PROJECT_BINARY_DIR}")
+prepend_to_var(PATH "${PROJECT_BINARY_DIR}/bin")
+prepend_to_var(LD_LIBRARY_PATH "${PROJECT_BINARY_DIR}/lib")
+if(NRN_ENABLE_CORENEURON)
+  list(APPEND NRN_RUN_FROM_BUILD_DIR_ENV "CORENRNHOME=${PROJECT_BINARY_DIR}")
+endif()
+if(NRN_ENABLE_PYTHON)
+  prepend_to_var(PYTHONPATH "${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd")
+endif()
 add_subdirectory(bin)
 
 if(NRN_ENABLE_PYTHON)
   add_subdirectory(src/nrnpython)
-endif()
-
-if(NRN_ENABLE_RX3D)
-  add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
 endif()
 
 if(NRN_MACOS_BUILD)
@@ -526,23 +606,124 @@ if(MINGW)
   add_subdirectory(src/mswin)
 endif()
 
-# =============================================================================
-# Add coding-conventions submodule so we can use helper functions defined there
-# =============================================================================
-set(CODING_CONV_PREFIX "NRN")
-set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "external")
-set(CODING_CONV_CMAKE "${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/coding-conventions/cpp/cmake")
-if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
-  initialize_submodule(external/coding-conventions)
+if(NRN_ENABLE_DOCS)
+  if(APPLE AND "address" IN_LIST NRN_SANITIZERS)
+    # IPython notebook execution doesn't have enough magic to preload ASan
+    message(FATAL_ERROR "macOS + ASan + docs is not supported")
+  endif()
+  # Do we need to set extra environment variables to find NEURON?
+  set(NRN_DOCS_COMMAND_PREFIX ${CMAKE_COMMAND} -E env)
+  if(NOT NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
+    list(APPEND NRN_DOCS_COMMAND_PREFIX ${NRN_RUN_FROM_BUILD_DIR_ENV})
+  endif()
+
+  # Make sure all dependencies are available
+  find_package(Doxygen REQUIRED)
+  find_program(FFMPEG_EXECUTABLE ffmpeg REQUIRED)
+  find_program(JUPYTER_EXECUTABLE jupyter REQUIRED)
+  find_program(PANDOC_EXECUTABLE pandoc REQUIRED)
+  find_package(Sphinx REQUIRED)
+  set(docs_requirements_file "${PROJECT_SOURCE_DIR}/docs/docs_requirements.txt")
+  file(STRINGS "${docs_requirements_file}" docs_requirements)
+  # Make sure CMake reruns if docs_requirements.txt changeds.
+  set_property(GLOBAL APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${docs_requirements_file}")
+  foreach(docs_requirement ${docs_requirements})
+    if(${skip_next})
+      set(skip_next FALSE)
+      continue()
+    endif()
+    # This is needed for ipython, which is pip installable but not importable.
+    if("${docs_requirement}" STREQUAL "# do not check import of next line")
+      set(skip_next TRUE)
+    elseif("${docs_requirement}" MATCHES "^([a-zA-Z_][a-zA-Z0-9_]*)$")
+      nrn_find_python_module(MODULE ${CMAKE_MATCH_0} REQUIRED)
+    endif()
+  endforeach()
+
+  # =============================================================================
+  # Setup Doxygen documentation
+  # =============================================================================
+  # generate Doxyfile with correct source paths
+  configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile)
+  add_custom_target(
+    doxygen
+    COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMENT "Generating API documentation with Doxygen"
+    VERBATIM)
+
+  # =============================================================================
+  # Setup Sphinx documentation
+  # =============================================================================
+
+  # Target to execute && convert notebooks to html. Note that neuron must be available for python
+  # import, so we use NRN_RUN_FROM_BUILD_DIR_ENV. See docs/README.md.
+  add_custom_target(
+    notebooks
+    COMMAND ${NRN_DOCS_COMMAND_PREFIX} NEURON_MODULE_OPTIONS="-nogui" bash
+            ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs)
+  if(NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
+    message(STATUS "**Not** making the notebooks target depend on the rest of the NEURON build.")
+    message(STATUS "Documentation building will probably fail if you haven't installed NEURON.")
+  else()
+    # We need NEURON to execute the notebooks. If we're building documentation as part of a normal
+    # build, this means we need to schedule the documenation targets sufficiently late in the build.
+    add_dependencies(notebooks hoc_module rxdmath)
+  endif()
+
+  add_custom_target(
+    sphinx
+    COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${SPHINX_EXECUTABLE} -j auto -b html
+            "${PROJECT_SOURCE_DIR}/docs" "${PROJECT_SOURCE_DIR}/docs/_build"
+    COMMAND echo "Copy/Paste to Browser ${PROJECT_SOURCE_DIR}/docs/_build/index.html"
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+    COMMENT "Generating documentation with Sphinx")
+
+  # Executing notebooks will add outputs in-place. We don't want those committed to the repo. This
+  # commands cleans them out.
+  add_custom_target(
+    notebooks-clean
+    COMMAND ${NRN_DOCS_COMMAND_PREFIX} bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh --clean
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs)
+
+  # =============================================================================
+  # Build full docs
+  # =============================================================================
+  add_custom_target(
+    docs
+    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target doxygen
+    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target notebooks
+    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target sphinx
+    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target notebooks-clean
+    COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
+    COMMENT "Generating full documentation")
 endif()
-include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 
 # =============================================================================
-# Add coding-conventions submodule if code formatting enabled
+# Black, Clang-format, Cmake-format (see $PROJECT_SOURCE_DIR/.bbp-project.yaml)
 # =============================================================================
-if(NRN_CMAKE_FORMAT OR NRN_CLANG_FORMAT)
-  add_subdirectory(external/coding-conventions/cpp)
-endif()
+add_custom_target(
+  format
+  COMMAND ${PROJECT_SOURCE_DIR}/external/coding-conventions/bin/format
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# Prepare a shell script to format only files modified with respect to master branch
+file(
+  WRITE ${CMAKE_CURRENT_BINARY_DIR}/format-pr.sh
+  "\
+#!bash\n\
+set -e\n\
+cmd='cd ${PROJECT_SOURCE_DIR} && external/coding-conventions/bin/format `git diff --name-only master`'\n\
+echo $cmd\n\
+cd ${PROJECT_SOURCE_DIR} && external/coding-conventions/bin/format `git diff --name-only master`\n\
+")
+
+add_custom_target(
+  format-pr
+  COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/format-pr.sh
+  COMMENT "Format only files modified with respect to master branch."
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 # =============================================================================
 # ~~~
@@ -578,42 +759,80 @@ add_dependencies(nrniv_lib hh_update)
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
   add_custom_target(
-      help_data_dat
-      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
-              ${PROJECT_SOURCE_DIR}/docs/python
-              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-              ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
-      COMMENT "Generating help_data.dat"
-      VERBATIM)
+    help_data_dat
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/lib/python/neuron
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
+            ${PROJECT_SOURCE_DIR}/docs/python ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
+    COMMENT "Generating help_data.dat"
+    VERBATIM)
   add_dependencies(nrniv_lib help_data_dat)
+  # also ensure help_data.dat is copied to the install location
+  install(FILES ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat DESTINATION lib/python/neuron)
 endif()
+
+include("${CODING_CONV_CMAKE}/build-time-copy.cmake") # cpp_cc_build_time_copy
+function(copy_share_subdir_at_build_time)
+  cmake_parse_arguments(opt "" "SUBDIR;TARGET" "" ${ARGN})
+  set(src_dir "${PROJECT_SOURCE_DIR}/share/${opt_SUBDIR}")
+  set(tgt_dir "${NRN_BUILD_SHARE_DIR}/${opt_SUBDIR}")
+  # Note CONFIGURE_DEPENDS causes GLOB mismatch for MINGW, see #2277
+  file(
+    GLOB_RECURSE files_to_copy
+    LIST_DIRECTORIES false
+    RELATIVE "${src_dir}"
+    CONFIGURE_DEPENDS "${src_dir}/*")
+  foreach(file_to_copy ${files_to_copy})
+    cpp_cc_build_time_copy(
+      INPUT "${src_dir}/${file_to_copy}"
+      OUTPUT "${tgt_dir}/${file_to_copy}"
+      NO_TARGET)
+    list(APPEND files_to_depend_on "${tgt_dir}/${file_to_copy}")
+  endforeach()
+  add_custom_target(
+    ${opt_TARGET}
+    COMMENT "Copying ${src_dir} to ${tgt_dir}"
+    DEPENDS ${files_to_depend_on})
+endfunction()
+copy_share_subdir_at_build_time(SUBDIR demo TARGET copy_share_demo_to_build)
+copy_share_subdir_at_build_time(SUBDIR lib TARGET copy_share_lib_to_build)
 
 # =============================================================================
 # Add tests if enabled
 # =============================================================================
 if(NRN_ENABLE_TESTS)
-  add_external_project(catch2)
-  set(CATCH_DIR ${PROJECT_SOURCE_DIR}/external/catch2)
-  list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
-  include(CTest)
-  include(Catch)
-  nrn_find_python_module(pytest)
-  nrn_find_python_module(pytest_cov)
-  if(NRN_ENABLE_PYTHON)
-    if(NOT PYTEST_FOUND)
-      message(SEND_ERROR "pytest Python package is required.")
-    elseif(NOT PYTEST_COV_FOUND)
-      message(WARNING "pytest-cov package not installed. Python coverage will not be generated.")
-    endif()
-  else()  # share/demo still required for testing
-    add_custom_target(copy_demo_to_build
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo ${NRN_BUILD_SHARE_DIR}/demo
-            COMMENT "Copying ${PROJECT_SOURCE_DIR}/share/demo to ${NRN_BUILD_SHARE_DIR}"
-            VERBATIM)
-    add_dependencies(nrniv_lib copy_demo_to_build)
+  # If CoreNEURON + NMODL are enabled, Catch2 will already have been set up...
+  if(NOT TARGET Catch2::Catch2)
+    nrn_add_external_project(catch2)
+    set(CATCH_DIR ${PROJECT_SOURCE_DIR}/external/catch2)
+    list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
+    include(Catch)
   endif()
+  include(CTest)
+  if(NRN_ENABLE_PYTHON)
+    # Need this for *all* Python versions we try and run tests with
+    nrn_find_python_module(MODULE pytest ALL REQUIRED)
+    nrn_find_python_module(MODULE pytest_cov ALL)
+    if(NOT PYTEST_COV_FOUND)
+      message(STATUS "pytest-cov package not installed. Python coverage will not be generated.")
+    endif()
+  endif()
+  add_dependencies(nrniv_lib copy_share_demo_to_build)
+  # Execute neurondemo as part of the build because it lazily calls nrnivmodl. If we don't do this
+  # then test_neurondemo.py will run nrnivmodl in a clean build, and report compilation warnings as
+  # unexpected stderr.
+  set(neurondemo_prefix
+      "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}")
+  set(neurondemo_files
+      "${neurondemo_prefix}/special"
+      "${neurondemo_prefix}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  add_custom_command(
+    OUTPUT ${neurondemo_files}
+    COMMAND
+      ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_SANITIZER_ENABLE_ENVIRONMENT}
+      "${PROJECT_BINARY_DIR}/bin/neurondemo" "-nobanner" "-nogui" "-c" "quit()"
+    VERBATIM)
+  add_custom_target(generate-neurondemo-mechanism-library ALL DEPENDS ${neurondemo_files} nrniv
+                                                                      copy_share_lib_to_build)
   # Initialize the submodule *before* including the test/CMakeLists.txt that uses it. This ensures
   # that the test infrastructure can find the names of the input data files and set up rules to copy
   # them into the test working directories.
@@ -627,9 +846,10 @@ endif()
 # =============================================================================
 # Install targets
 # =============================================================================
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
-        DESTINATION ${NRN_INSTALL_SHARE_DIR}
-        PATTERN "python" EXCLUDE)
+install(
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
+  DESTINATION ${NRN_INSTALL_SHARE_DIR}
+  PATTERN "python" EXCLUDE)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${NRN_INSTALL_SHARE_DIR})
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
@@ -637,11 +857,17 @@ install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
 install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
 
-# find headers to install
+# find neuron (excluding coreneuron) headers to install
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
-file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
+list(FILTER NRN_HEADERS_PATHS EXCLUDE REGEX "src/coreneuron")
+file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/nrnoc/nrnsemanticversion.h
      DESTINATION ${PROJECT_BINARY_DIR}/include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+if(NRN_MACOS_BUILD)
+  # universal build for neurondemo needs to be after, or at end of, install
+  nrn_macos_after_install()
+endif()
 
 # =============================================================================
 # Copy bash executable for windows
@@ -669,8 +895,10 @@ endif()
 # =============================================================================
 if(NOT NRN_WINDOWS_BUILD)
   # create arch folder under prefix with symlink to bin and lib
-  nrn_install_dir_symlink(${CMAKE_INSTALL_PREFIX}/bin ${CMAKE_INSTALL_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/bin)
-  nrn_install_dir_symlink(${CMAKE_INSTALL_PREFIX}/lib ${CMAKE_INSTALL_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/lib)
+  nrn_install_dir_symlink(${CMAKE_INSTALL_PREFIX}/bin
+                          ${CMAKE_INSTALL_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/bin)
+  nrn_install_dir_symlink(${CMAKE_INSTALL_PREFIX}/lib
+                          ${CMAKE_INSTALL_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/lib)
 endif()
 
 # =============================================================================
@@ -684,6 +912,7 @@ if(BUILD_TYPE_UPPER MATCHES "CUSTOM")
 else()
   set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
 endif()
+string(JOIN " " COMPILER_FLAGS "${COMPILER_FLAGS}" ${NRN_COMPILE_FLAGS})
 
 message(STATUS "")
 message(STATUS "Configured NEURON ${PROJECT_VERSION}")
@@ -698,7 +927,9 @@ message(STATUS "--------------+-------------------------------------------------
 message(STATUS "install       | Will install NEURON to: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "              | Change the install location of NEURON using:")
 message(STATUS "              |   cmake <src_path> -DCMAKE_INSTALL_PREFIX=<install_path>")
-message(STATUS "docs          | Build full docs. Calls targets: doxygen, notebooks, sphinx")
+message(
+  STATUS
+    "docs          | Build full docs. Calls targets: doxygen, notebooks, sphinx, notebooks-clean")
 message(STATUS "uninstall     | Removes files installed by make install (todo)")
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS " Build option | Status")
@@ -715,8 +946,6 @@ else()
 endif()
 message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
 if(NRN_ENABLE_MPI)
-  message(STATUS "  INC         | ${MPI_INCLUDE_PATH}")
-  message(STATUS "  LIB         | ${MPI_LIBRARY}")
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_MPI_DYNAMIC}")
   if(NRN_ENABLE_MPI_DYNAMIC)
     list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
@@ -727,32 +956,36 @@ if(NRN_ENABLE_MPI)
       message(STATUS "    LIBNAME   | ${libname}")
       message(STATUS "    INC       | ${include}")
     endforeach(val)
+  else()
+    if(NRN_INCLUDE_MPI_HEADERS)
+      message(STATUS "  INC         | ${MPI_C_INCLUDE_DIRS}")
+    else()
+      message(STATUS "  INC         | N/A")
+    endif()
+    message(STATUS "  LIB         | ${MPI_C_LIBRARIES}")
   endif()
+endif()
+if(NRN_ENABLE_MUSIC)
+  message(STATUS "MUSIC         | ${MUSIC_LIBDIR}")
 endif()
 message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")
 if(NRN_ENABLE_PYTHON)
-  message(STATUS "  EXE         | ${NRN_DEFAULT_PYTHON_EXECUTABLE}")
-  message(STATUS "  INC         | ${NRN_DEFAULT_PYTHON_INCLUDE_DIRS}")
-  message(STATUS "  LIB         | ${NRN_DEFAULT_PYTHON_LIBRARIES}")
-  message(STATUS "  MODULE      | ${NRN_ENABLE_MODULE_INSTALL}")
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_PYTHON_DYNAMIC}")
-  if(NRN_ENABLE_PYTHON_DYNAMIC)
-    list(LENGTH NRN_PYTHON_EXE_LIST _num_pythons)
-    math(EXPR num_pythons "${_num_pythons} - 1")
-    foreach(val RANGE ${num_pythons})
-      list(GET NRN_PYTHON_EXE_LIST ${val} exe)
-      list(GET NRN_PYTHON_VER_LIST ${val} version)
-      if(${version} LESS 3)
-        message(SEND_ERROR "Python 3 required. Please upgrade.")
-      endif()
-      list(GET NRN_PYTHON_INCLUDE_LIST ${val} include)
-      list(GET NRN_PYTHON_LIB_LIST ${val} lib)
-      message(STATUS "    EXE       | ${exe}")
-      message(STATUS "    INC       | ${include}")
-      message(STATUS "    LIB       | ${lib}")
-      message(STATUS "    INSTALL C | ${exe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}")
-    endforeach(val)
-  endif()
+  message(STATUS "  MODULE      | ${NRN_ENABLE_MODULE_INSTALL}")
+  foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+    list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
+    list(GET NRN_PYTHON_VERSIONS ${val} pyver)
+    list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
+    list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
+    unset(suffix)
+    if(val EQUAL 0)
+      set(suffix " (default)")
+    endif()
+    message(STATUS " python${pyver}${suffix}")
+    message(STATUS "  EXE         | ${exe}")
+    message(STATUS "  INC         | ${pyinc}")
+    message(STATUS "  LIB         | ${pylib}")
+  endforeach()
 endif()
 if(READLINE_FOUND)
   message(STATUS "Readline      | ${Readline_LIBRARY}")
@@ -780,15 +1013,19 @@ endif()
 message(STATUS "CoreNEURON    | ${NRN_ENABLE_CORENEURON}")
 if(NRN_ENABLE_CORENEURON)
   message(STATUS "  PATH        | ${CORENEURON_DIR}")
-  message(STATUS "  LINK FLAGS  | ${CORENEURON_LIB_LINK_FLAGS}")
+  message(STATUS "  LINK FLAGS  | ${CORENRN_LIB_LINK_FLAGS}")
   if(NOT coreneuron_FOUND)
     message(STATUS "  Legacy Units| ${CORENRN_ENABLE_LEGACY_UNITS}")
   endif()
 endif()
+if(NRN_UNIVERSAL2_BUILD)
+  message(STATUS "CMAKE_OSX_ARCH| ${CMAKE_OSX_ARCHITECTURES}")
+endif()
+message(STATUS "Tests         | ${NRN_ENABLE_TESTS}")
 if(NRN_ENABLE_COVERAGE)
   message(STATUS "Coverage      | Enabled")
-  if (NRN_COVERAGE_FILES)
-  message(STATUS "  Files       | ${NRN_COVERAGE_FILES}")
+  if(NRN_COVERAGE_FILES)
+    message(STATUS "  Files       | ${NRN_COVERAGE_FILES}")
   endif()
 endif()
 if(NRN_ENABLE_PROFILING)

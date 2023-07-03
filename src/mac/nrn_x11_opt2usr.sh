@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #Work around for the problem that
 #I cannot get the linker to use /usr/X11/lib instead of /opt/X11/lib

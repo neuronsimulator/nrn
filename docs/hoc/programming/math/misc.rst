@@ -1,7 +1,7 @@
 Miscellaneous
 -------------
 
-.. data:: float_epsilon
+.. hoc:data:: float_epsilon
 
 
     Syntax:

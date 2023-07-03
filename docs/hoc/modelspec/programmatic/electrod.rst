@@ -1,11 +1,12 @@
-.. _electrod:
+
+.. _hoc_electrod:
 
 Electrode
 ---------
 
 
 
-.. class:: Electrode
+.. hoc:class:: Electrode
 
          
     A current injection electrode inserted in the middle of the 
@@ -24,7 +25,7 @@ Electrode
 
 
 
-.. method:: Electrode.IClamp
+.. hoc:method:: Electrode.IClamp
 
     Switches the Electrode to single pulse current injection. Uses IClamp 
     point process. 
@@ -34,7 +35,7 @@ Electrode
 
 
 
-.. method:: Electrode.del
+.. hoc:method:: Electrode.del
 
     Time (ms) of the onset of the current stimulus relative to t = 0. 
 
@@ -42,7 +43,7 @@ Electrode
 
 
 
-.. method:: Electrode.dur
+.. hoc:method:: Electrode.dur
 
     Duration (ms) of the current stimulus 
 
@@ -50,7 +51,7 @@ Electrode
 
 
 
-.. method:: Electrode.amp
+.. hoc:method:: Electrode.amp
 
     Amplitude (nA) of the current stimulus 
          
@@ -59,9 +60,9 @@ Electrode
 
 
 
-.. method:: Electrode.VClamp
+.. hoc:method:: Electrode.VClamp
 
-    Switches the Electrode to two electrode voltage clamp. Uses :class:`VClamp` point 
+    Switches the Electrode to two electrode voltage clamp. Uses :hoc:class:`VClamp` point
     process that allows up to three level changes. The clamp is set to be ideal. 
      
 
@@ -69,7 +70,7 @@ Electrode
 
 
 
-.. method:: Electrode.dur0
+.. hoc:method:: Electrode.dur0
 
     Duration in milliseconds of each level change starting at t=0. Each level 
     is concatenated. At t = dur0+dur1+dur2 the clamp is switched off and 
@@ -80,7 +81,7 @@ Electrode
 
 
 
-.. method:: Electrode.amp0
+.. hoc:method:: Electrode.amp0
 
     Amplitude in millivolts of each level. 
          
@@ -89,7 +90,7 @@ Electrode
 
 
 
-.. method:: Electrode.VClampigraph
+.. hoc:method:: Electrode.VClampigraph
 
     Creates a currentgraph displaying the voltage clamp current. This button 
     exists because, with the present implementation, it is generally not 
@@ -103,7 +104,7 @@ Electrode
 
 
 
-.. method:: Electrode.VClampFamily
+.. hoc:method:: Electrode.VClampFamily
 
     Several common families for voltage clamp experiments. One should bring 
     up a current graph (VClampigraph button in VClamp card) and select KeepLines 
@@ -116,7 +117,7 @@ Electrode
 
 
 
-.. method:: Electrode.Testlevel
+.. hoc:method:: Electrode.Testlevel
 
     varies amp1 in 10 steps 
 
@@ -124,7 +125,7 @@ Electrode
 
 
 
-.. method:: Electrode.Holding
+.. hoc:method:: Electrode.Holding
 
     varies amp0 in 10 steps. Initialization is carried out at the value of amp0 
     so it is equivalent to the holding potential. 
@@ -134,7 +135,7 @@ Electrode
 
 
 
-.. method:: Electrode.Returnlevel
+.. hoc:method:: Electrode.Returnlevel
 
     varies amp2 in 10 steps. 
          
@@ -144,7 +145,7 @@ Electrode
 
 
 
-.. method:: Electrode.Location
+.. hoc:method:: Electrode.Location
 
     Shows a Shape scene of the neuron with the Electrode location marked as 
     a blue dot. The electrode location can be changed by making sure the 

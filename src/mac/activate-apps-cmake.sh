@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # This started as a copy of after-install.sh and is modified to work in the
 # context subsequent to a cmake build 'make install'. The main differences
@@ -26,6 +26,7 @@ CPU=`uname -m`
 NRN_INSTALL=$2
 NRN_SRC=$3
 ivlibdir=$4
+NRN_UNIVERSAL_BUILD=$5
 export CPU
 export NRN_SRC
 NSRC=$NRN_SRC
@@ -63,9 +64,17 @@ osascript -e 'tell application "Finder"'\
  -e 'set target of Finder window 1 to folder "bin" of folder '"$lst"' of startup disk'\
  -e 'end tell'
 
-# force rebuild of the neurondemo
+# force rebuild of the neurondemo (perhaps as universal2)
 DEMO="${NRN_INSTALL}/share/nrn/demo"
 rm -f -r ${DEMO}/neuron ${DEMO}/release/${CPU}
+if test "${NRN_UNIVERSAL_BUILD}" = "ON" ; then
+  (
+    cd ${DEMO}/release
+    archs='-arch arm64 -arch x86_64'
+    $NRN_INSTALL/bin/nrnivmodl -incflags "$archs" -loadflags "$archs"
+    rm -f ${DEMO}/neuron ; touch ${DEMO}/neuron
+  )
+fi
 $NRN_INSTALL/bin/neurondemo << here
 quit()
 here

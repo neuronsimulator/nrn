@@ -1,0 +1,25 @@
+// $Id: initplotfi.hoc,v 1.3 2011/06/15 05:14:54 ted Exp ted $
+
+// reads and plots data from a file compatible with
+// stdgui.hoc's clipboard_retrieve()
+
+load_file("stdgui.hoc")
+
+clipboard_retrieve() // user selects file to be read
+
+if (hoc_obj_[0].size<=1) {
+  print "insufficient data"
+  quit()
+}
+
+objref xvec, yvec
+clipboard_get(xvec, yvec)
+
+// now xvec and yvec contain the xy coords of the points
+
+// up to this point, everything has been generic
+// below this point, everything is customized by the user
+
+objref fig
+load_file("plotfi.hoc") // creates a Graph with customized label and axes
+fig = plotfi(yvec, xvec)

@@ -234,7 +234,7 @@ class StarNet:
 
 
 out2in_sh = r"""
-#!/bin/bash
+#!/usr/bin/env bash
 out=bbss_out
 rm -f in/*
 mkdir -p in
@@ -335,6 +335,20 @@ def compare_dicts(dict1, dict2):
 
 
 def test_bas():
+
+    # h.execute1(...) does not call mpi_abort on failure
+    assert h.execute1("1/0") == 0
+    assert h.execute1("2/0", 0) == 0  # no error message printed
+
+    # MPI_Abort can be avoided on hoc errors.
+    oldflag = pc.mpiabort_on_error(0)
+    assert h("""3/0""") == 0
+    try:
+        x = h.log(-1)
+        assert False
+    except:
+        assert True
+    pc.mpiabort_on_error(oldflag)
 
     stdspikes = {
         0: [10.925000000099914, 143.3000000001066],

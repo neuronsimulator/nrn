@@ -7,7 +7,9 @@ import weakref
 from .rxdException import RxDException
 import warnings
 import ctypes
-import collections
+
+from collections.abc import Callable
+
 
 # function to change extracellular diffusion
 set_diffusion = nrn_dll_sym("set_diffusion")
@@ -137,7 +139,7 @@ class Node(object):
 
     @property
     def _ref_concentration(self):
-        """Returns a HOC reference to the Node's concentration
+        """Returns a NEURON reference to the Node's concentration
 
         (The node must store concentration data. Use _ref_molecules for nodes
         storing molecule counts.)
@@ -152,10 +154,10 @@ class Node(object):
 
     @property
     def _ref_molecules(self):
-        """Returns a HOC reference to the Node's concentration
+        """Returns a NEURON reference to the Node's concentration
 
-        (The node must store concentration data. Use _ref_molecules for nodes
-        storing molecule counts.)
+        (The node must store molecule counts. Use _ref_concentrations for nodes
+        storing concentration.)
         """
         # this points to rxd array only, will not change legacy concentration
         if self._data_type == _molecule_node:
@@ -246,13 +248,13 @@ class Node(object):
 
     @property
     def _ref_value(self):
-        """Returns a HOC reference to the Node's value"""
+        """Returns a NEURON reference to the Node's value"""
         return _numpy_element_ref(_states, self._index)
 
     def include_flux(self, *args, **kwargs):
         """Include a flux contribution to a specific node.
 
-        The flux can be described as a HOC reference, a point process and a
+        The flux can be described as a NEURON reference, a point process and a
         property, a Python function, or something that evaluates to a constant
         Python float.
 
@@ -307,20 +309,17 @@ class Node(object):
 
         if len(args) == 1 and isinstance(args[0], hoc.HocObject):
             source = args[0]
-            flux_type = 1
             try:
                 # just a test access
                 source[0]
             except:
                 raise RxDException("HocObject must be a pointer")
-        elif len(args) == 1 and isinstance(args[0], collections.abc.Callable):
-            flux_type = 2
+        elif len(args) == 1 and isinstance(args[0], Callable):
             source = args[0]
             warnings.warn(
                 "Adding a python callback may slow down execution. Consider using a Rate and Parameter."
             )
         elif len(args) == 2:
-            flux_type = 1
             try:
                 source = getattr(args[0], "_ref_" + args[1])
             except:
@@ -336,7 +335,6 @@ class Node(object):
                 try:
                     f = float(args[0])
                     source = f
-                    flux_type = 3
                     success = True
                 except:
                     pass
@@ -858,4 +856,4 @@ class NodeExtracellular(Node):
                 and int((y - r._ylo) / r._dx[1]) == self._j
                 and int((z - r._zlo) / r._dx[2]) == self._k
             )
-        raise RxDException("unrecognized node condition: %r" % condition)
+        raise RxDException(f"unrecognized node condition: {condition}")

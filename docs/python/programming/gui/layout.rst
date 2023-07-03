@@ -49,7 +49,7 @@ Layout
             deck.flip_to(0)            # show the first plot of the deck
             h.xpanel('flip to')        # create a panel titled "flip to"
             for i in range(ncard):     # create radio buttons which will bring each card to the front
-                h.xradiobutton('card %d' % (i + 1), flip_function(i), i == 0)
+                h.xradiobutton(f'card {i + 1}', flip_function(i), i == 0)
 
             h.xpanel()                 # close off the set of panel commands
 
@@ -444,7 +444,7 @@ Layout
                 if obj.ismapped():
                     s = numpy.array([0, 0, 0, 0], 'd')
                     obj.size(neuron.numpy_element_ref(s, 0))
-                    print('%s %g %g %g %g' % (obj.hname(), s[0], s[1], s[2], s[3]))
+                    print(obj.hname(), s[0], s[1], s[2], s[3])
 
             # create two vboxes, but only map 1
             vb1, vb2 = h.VBox(), h.VBox()

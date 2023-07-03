@@ -1,4 +1,5 @@
-.. _funfit:
+
+.. _hoc_funfit:
 
 
 FunctionFitter
@@ -45,7 +46,7 @@ PraxisFit
 ~~~~~~~~~
 
 Starts fitting the function to the data with respect to the DataWeights 
-by adjusting the checked argument values. See :func:`fit_praxis` . 
+by adjusting the checked argument values. See :hoc:func:`fit_praxis` .
 
 StopAtNextQuadForm
 ~~~~~~~~~~~~~~~~~~

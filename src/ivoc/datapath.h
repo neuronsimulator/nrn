@@ -7,18 +7,19 @@ class String;
 class HocDataPathImpl;
 
 class HocDataPaths {
-public:
-	// 0 objref style, 1 object id style, 2 symbol style
- 	HocDataPaths(int = 1000, int pathstyle = 0);
-	virtual ~HocDataPaths();
+  public:
+    // 0 objref style, 1 object id style, 2 symbol style
+    HocDataPaths(int = 1000, int pathstyle = 0);
+    virtual ~HocDataPaths();
 
-	void append(double*);
-	void append(char**);
-	void search();
-	String* retrieve(double*);
-	String* retrieve(char**);
-	Symbol* retrieve_sym(double*);
-	int style();
-private:
-	HocDataPathImpl* impl_;
+    void append(double*);
+    void append(char**);
+    void search();
+    String* retrieve(double*) const;
+    String* retrieve(char**) const;
+    Symbol* retrieve_sym(double*) const;
+    int style();
+
+  private:
+    HocDataPathImpl* impl_;
 };

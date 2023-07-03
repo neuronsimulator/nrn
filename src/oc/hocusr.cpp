@@ -9,12 +9,12 @@
 #include "hocusr.h"
 #endif
 
-# define	CHECK(name) nrn_load_name_check(name)
+#define CHECK(name) nrn_load_name_check(name)
 
 
 static char CHKmes[] = "The user defined name, %s, already exists.\n";
 
-Symlist *nrn_load_dll_called_;
+Symlist* nrn_load_dll_called_;
 
 /* Return 0 if nrn_load_dll_called_ == NULL, otherwise recover and return 1.
    If 1 is returned, then can recover with a hoc_execerror.
@@ -24,14 +24,14 @@ int nrn_load_dll_recover_error() {
         /* recoverable error for nrn_load_dll interpreter call */
         hoc_built_in_symlist = hoc_symlist;
         hoc_symlist = nrn_load_dll_called_;
-        nrn_load_dll_called_ = (Symlist *) 0;
+        nrn_load_dll_called_ = (Symlist*) 0;
         return 1;
     }
     return 0;
 }
 
-void nrn_load_name_check(const char *name) {
-    if (hoc_lookup(name) != (Symbol *) 0) {
+void nrn_load_name_check(const char* name) {
+    if (hoc_lookup(name) != (Symbol*) 0) {
         if (nrn_load_dll_recover_error()) {
             hoc_execerror("The user defined name already exists:", name);
         } else {
@@ -42,12 +42,12 @@ void nrn_load_name_check(const char *name) {
 }
 
 
-static void arayinstal(Symbol *sp, int nsub, int sub1, int sub2, int sub3);
+static void arayinstal(Symbol* sp, int nsub, int sub1, int sub2, int sub3);
 
-extern "C" void hoc_spinit(void)    /* install user variables and functions */
-{
+/* install user variables and functions */
+void hoc_spinit() {
     int i;
-    Symbol *s;
+    Symbol* s;
 
     hoc_register_var(scdoub, vdoub, functions);
     for (i = 0; scint[i].name; i++) {
@@ -92,8 +92,7 @@ extern "C" void hoc_spinit(void)    /* install user variables and functions */
         CHECK(thredim[i].name);
         s = hoc_install(thredim[i].name, UNDEF, 0.0, &hoc_symlist);
         s->type = VAR;
-        arayinstal(s, 3, thredim[i].index1, thredim[i].index2,
-                   thredim[i].index3);
+        arayinstal(s, 3, thredim[i].index1, thredim[i].index2, thredim[i].index3);
         s->u.pval = thredim[i].pdoub;
         s->subtype = USERDOUBLE;
     }
@@ -107,9 +106,9 @@ extern "C" void hoc_spinit(void)    /* install user variables and functions */
     hoc_last_init();
 }
 
-void hoc_register_var(DoubScal *scdoub, DoubVec *vdoub, VoidFunc *fn) {
+void hoc_register_var(DoubScal* scdoub, DoubVec* vdoub, VoidFunc* fn) {
     int i;
-    Symbol *s;
+    Symbol* s;
 
     if (scdoub)
         for (i = 0; scdoub[i].name; i++) {
@@ -139,12 +138,11 @@ void hoc_register_var(DoubScal *scdoub, DoubVec *vdoub, VoidFunc *fn) {
 }
 
 /* set up arayinfo */
-static void arayinstal(Symbol *sp, int nsub, int sub1, int sub2, int sub3) {
+static void arayinstal(Symbol* sp, int nsub, int sub1, int sub2, int sub3) {
     sp->type = VAR;
     sp->s_varn = 0;
-    sp->arayinfo = (Arrayinfo *) emalloc(
-            (unsigned) (sizeof(Arrayinfo) + nsub * sizeof(int)));
-    sp->arayinfo->a_varn = (unsigned *) 0;
+    sp->arayinfo = (Arrayinfo*) emalloc((unsigned) (sizeof(Arrayinfo) + nsub * sizeof(int)));
+    sp->arayinfo->a_varn = (unsigned*) 0;
     sp->arayinfo->nsub = nsub;
     sp->arayinfo->sub[0] = sub1;
     if (nsub > 1)
@@ -153,8 +151,7 @@ static void arayinstal(Symbol *sp, int nsub, int sub1, int sub2, int sub3) {
         sp->arayinfo->sub[2] = sub3;
 }
 
-extern "C" void hoc_retpushx(double x) {    /* utility return for user functions */
+void hoc_retpushx(double x) { /* utility return for user functions */
     hoc_ret();
     hoc_pushx(x);
 }
-

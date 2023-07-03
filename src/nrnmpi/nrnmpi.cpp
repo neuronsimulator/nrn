@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "nrnpthread.h"
 
 /* do not want the redef in the dynamic load case */
 #include <nrnmpiuse.h>
@@ -26,16 +25,15 @@ extern double nrn_timeus();
 #if NRNMPI
 #include <mpi.h>
 #define asrt(arg) nrn_assert(arg == MPI_SUCCESS)
-#define USE_HPM 0
+#define USE_HPM   0
 #if USE_HPM
 #include <libhpm.h>
 #endif
 
-int nrnmusic;
 #if NRN_MUSIC
+#include "nrnmusicapi.h"
 MPI_Comm nrnmusic_comm;
-extern void nrnmusic_init(int* parg, char*** pargv);
-extern void nrnmusic_terminate();
+extern int nrnmusic;
 #endif
 
 MPI_Comm nrnmpi_world_comm;
@@ -99,9 +97,11 @@ for (i=0; i < *pargc; ++i) {
             b = 1;
             nrnmpi_under_nrncontrol_ = 1;
         }
+#if NRN_MUSIC
         if (nrnmusic) {
             b = 1;
         }
+#endif
         if (!b) {
             nrnmpi_under_nrncontrol_ = 0;
             return;
@@ -111,7 +111,7 @@ for (i=0; i < *pargc; ++i) {
 
         /* only call MPI_Init if not already initialized */
         if (!flag) {
-#if (USE_PTHREAD)
+#if (NRN_ENABLE_THREADS)
             int required = MPI_THREAD_SERIALIZED;
             int provided;
             asrt(MPI_Init_thread(pargc, pargv, required, &provided));
@@ -122,8 +122,10 @@ for (i=0; i < *pargc; ++i) {
             asrt(MPI_Init(pargc, pargv));
 #endif
             nrnmpi_under_nrncontrol_ = 1;
-        } else {
+#if NRN_MUSIC
+        } else if (!nrnmusic) {
             nrnmpi_under_nrncontrol_ = 0;
+#endif
         }
 
 #if NRN_MUSIC
@@ -146,6 +148,9 @@ for (i=0; i < *pargc; ++i) {
     nrnmpi_myid = nrnmpi_myid_bbs = nrnmpi_myid_world;
     nrnmpi_spike_initialize();
     nrnmpi_use = 1;
+    nrnmpi_subworld_change_cnt = 0;  // increment from within void nrnmpi_subworld_size(int n)
+    nrnmpi_subworld_id = 0;          // Subworld index of current rank
+    nrnmpi_numprocs_subworld = nrnmpi_numprocs_bbs;  // Size of subworld of current rank
 
     /*begin instrumentation*/
 #if USE_HPM
@@ -217,6 +222,8 @@ void nrnmpi_abort(int errcode) {
 }
 
 #if NRNMPI
+
+
 void nrnmpi_subworld_size(int n) {
     /* n is the (desired) size of a subworld (pc.nhost) */
     /* A subworld (net) is contiguous */
@@ -255,6 +262,8 @@ void nrnmpi_subworld_size(int n) {
         asrt(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
         asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
         asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
+        nrnmpi_subworld_id = nrnmpi_myid_bbs;
+        nrnmpi_numprocs_subworld = nrnmpi_numprocs_bbs;
     } else if (n == nrnmpi_numprocs_world) {
         asrt(MPI_Group_incl(wg, 1, &r, &grp_bbs));
         asrt(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm));
@@ -268,23 +277,25 @@ void nrnmpi_subworld_size(int n) {
             nrnmpi_myid_bbs = -1;
             nrnmpi_numprocs_bbs = -1;
         }
+        nrnmpi_subworld_id = 0;
+        nrnmpi_numprocs_subworld = nrnmpi_numprocs;
     } else {
         int nw = nrnmpi_numprocs_world;
         int nb = nw / n; /* nrnmpi_numprocs_bbs */
         int ib;
         int range[3];
-        if (nw%n) {
-                nb += 1; /* and the last will have pc.nhost = nw%n */
+        if (nw % n) {
+            nb += 1; /* and the last will have pc.nhost = nw%n */
         }
         /* A subworld (net) has contiguous ranks. */
         /* Every rank is in a specific nrnmpi_comm communicator */
         ib = r / n;
-        range[0] = ib*n;               /* first rank in group */
+        range[0] = ib * n;           /* first rank in group */
         range[1] = range[0] + n - 1; /* last rank in group */
         if (range[1] >= nw) {
-                range[1] = nw - 1;
+            range[1] = nw - 1;
         }
-        range[2] = 1;                /* stride */
+        range[2] = 1; /* stride */
         asrt(MPI_Group_range_incl(wg, 1, &range, &grp_net));
         asrt(MPI_Comm_create(nrnmpi_world_comm, grp_net, &nrnmpi_comm));
         asrt(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid));
@@ -292,24 +303,25 @@ void nrnmpi_subworld_size(int n) {
 
         /* nrn_bbs_com ranks stride is nrnmpi_numprocs */
         /* only rank 0 of each subworld participates in nrn_bbs_comm */
-        range[0] = 0;      /* first world rank in nrn_bbs_comm */
-        range[1] = (nb - 1)*n; /* last world rank in nrn_bbs_comm */
-        range[2] = n;      /* stride */
+        range[0] = 0;            /* first world rank in nrn_bbs_comm */
+        range[1] = (nb - 1) * n; /* last world rank in nrn_bbs_comm */
+        range[2] = n;            /* stride */
         asrt(MPI_Group_range_incl(wg, 1, &range, &grp_bbs));
         asrt(MPI_Comm_create(nrnmpi_world_comm, grp_bbs, &nrn_bbs_comm));
         if (r % n == 0) { /* only rank 0 participates in nrn_bbs_comm */
             asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
             asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
         } else {
-#if 1
             nrnmpi_myid_bbs = -1;
             nrnmpi_numprocs_bbs = -1;
-#else
-            nrnmpi_myid_bbs = r/n;
-            nrnmpi_numprocs_bbs = nb;
-#endif
+        }
+        nrnmpi_subworld_id = r / n;
+        nrnmpi_numprocs_subworld = n;
+        if ((nw % n != 0) && (nrnmpi_subworld_id == (nb - 1))) {
+            nrnmpi_numprocs_subworld = nw % n; /* and the last will have pc.nhost = nw%n */
         }
     }
+    nrnmpi_subworld_change_cnt++;
     asrt(MPI_Group_free(&wg));
 }
 

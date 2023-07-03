@@ -494,7 +494,7 @@ cpdef double tri_area(numpy.ndarray[numpy.float_t, ndim=1] triangles):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef double _tri_area(numpy.ndarray[numpy.float_t, ndim=1] triangles, int lo, int hi):
-    cpdef double doublearea = 0., local_area
+    cdef double doublearea = 0., local_area
     cdef int i
     for i in range(lo, hi, 9):
         local_area = llgramarea(&triangles[i], &triangles[3 + i], &triangles[6 + i])
@@ -506,7 +506,7 @@ cpdef double _tri_area(numpy.ndarray[numpy.float_t, ndim=1] triangles, int lo, i
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef double tri_volume(numpy.ndarray[numpy.float_t, ndim=1] triangles):
-    cpdef double sixtimesvolume = 0., local_vol
+    cdef double sixtimesvolume = 0., local_vol
     cdef int i
     for i in range(0, len(triangles), 9):
         local_vol = llpipedfromoriginvolume(&triangles[i], &triangles[3 + i], &triangles[6 + i])

@@ -24,23 +24,20 @@ NEURON 5.3 2002/06/04
  *
  * Revision 1.1  91/10/11  11:12:26  hines
  * Initial revision
- * 
+ *
  * Revision 3.28  89/09/29  16:02:46  mlh
  * need to use -1 as falg for unsigned variable
- * 
+ *
  * Revision 2.0  89/07/07  11:30:34  mlh
  * Preparation for newcable
- * 
+ *
  * Revision 1.1  89/07/07  11:15:45  mlh
  * Initial revision
- * 
+ *
 */
 
 
-
-extern int	do_equation;	/* switch for determining access to dep vars */
-extern int	*hoc_access;	/* links to next accessed variables */
-extern int  var_access;	/* variable number as pointer into access array */
+extern int do_equation; /* switch for determining access to dep vars */
+extern int* hoc_access; /* links to next accessed variables */
+extern int var_access;  /* variable number as pointer into access array */
 extern void eqn_name(void), eqn_init(void), eqn_lhs(void), eqn_rhs(void), dep_make(void);
-
-

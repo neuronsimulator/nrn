@@ -1,0 +1,13 @@
+{nrnpython("from functools import reduce")}
+{nrnpython("import json")}
+{nrnpython("import sys")}
+strdef setattr, setfname
+{sprint(setattr, "attr='%s'", attr)}
+{sprint(setfname, "fname='%s'", fname)}
+{nrnpython(setattr)}
+{nrnpython(setfname)}
+{nrnpython("data = reduce(getattr, [sys] + attr.split('.'))")}
+{nrnpython("print('checking sys.{} = {} against reference file {}'.format(attr, data, fname))")}
+{nrnpython("with open(fname) as ifile: ref_data = json.load(ifile)")}
+{nrnpython("print('reference value is {}'.format(ref_data))")}
+quit(!nrnpython("assert data == ref_data"))

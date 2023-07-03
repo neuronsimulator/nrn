@@ -122,14 +122,14 @@ stdinit()
 proc spikeout() { local i, rank localobj outdat
   pc.barrier()  // wait for all hosts to get to this point
   outdat = new File()
-  if (pc.id==0) {
-    outdat.wopen("out.dat")
-    outdat.printf("\ntime\t cell\n")  // print header once
-    outdat.close()
-  }
   for rank=0, pc.nhost-1 {  // host 0 first, then 1, 2, etc.
     if (rank==pc.id) {
-      outdat.aopen("out.dat")
+        // first rank without append to overwite existing file
+        if (rank == 0) {
+          outdat.wopen("out.dat")
+        } else {
+          outdat.aopen("out.dat")
+        }
       for i=0, tvec.size-1 {
         outdat.printf("%g\t %d\n", tvec.x[i], idvec.x[i])
       }

@@ -1,3 +1,5 @@
+.. _hoc_language_guide:
+
 HOC Language
 ------------
 

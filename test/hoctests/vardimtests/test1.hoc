@@ -1,0 +1,30 @@
+//changing dimensions of double, objref, Section works at top level
+for i=1, 10000 { a = 1 }
+double a[1]
+for i=1, 10000 { a = 1 }
+double a[1][1]
+for i=1, 10000 { a = 1 }
+double a[1]
+for i=1, 10000 { a = 1 }
+
+objref o
+for i = 1, 10000 { o = new Vector() }
+objref o[1]
+for i = 1, 10000 { o = new Vector() }
+objref o[1][1]
+for i = 1, 10000 { o = new Vector() }
+objref o
+for i = 1, 10000 { o = new Vector() }
+
+create d
+for i = 1, 10000 { d { a = 1 } }
+topology()
+create d[3]
+for i = 1, 10000 { d { a = 1 } }
+topology()
+create d[3][3]
+for i = 1, 10000 { d { a = 1 } }
+topology()
+create d
+for i = 1, 10000 { d { a = 1 } }
+topology()

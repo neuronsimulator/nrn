@@ -5,6 +5,10 @@ int nrnmpi_numprocs_world = 1;
 int nrnmpi_myid_world = 0;
 int nrnmpi_numprocs_bbs = 1;
 int nrnmpi_myid_bbs = 0;
+// increment from within void nrnmpi_subworld_size(int n)
+int nrnmpi_subworld_change_cnt = 0;
+int nrnmpi_subworld_id = -1;
+int nrnmpi_numprocs_subworld = 1;
 
 int nrnmpi_nout_;
 int* nrnmpi_nin_;

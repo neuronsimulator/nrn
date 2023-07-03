@@ -10,9 +10,15 @@
 # corresponding elements are related to the same mpi installation.
 # ~~~
 
-set(NRN_MPI_INCLUDE_LIST "" CACHE INTERNAL "" FORCE)
-set(NRN_MPI_LIBNAME_LIST "" CACHE INTERNAL "" FORCE)
-set(NRN_MPI_TYPE_LIST "" CACHE INTERNAL "" FORCE)
+set(NRN_MPI_INCLUDE_LIST
+    ""
+    CACHE INTERNAL "" FORCE)
+set(NRN_MPI_LIBNAME_LIST
+    ""
+    CACHE INTERNAL "" FORCE)
+set(NRN_MPI_TYPE_LIST
+    ""
+    CACHE INTERNAL "" FORCE)
 
 if(NRN_ENABLE_MPI)
   if(NRN_ENABLE_MPI_DYNAMIC)
@@ -41,7 +47,7 @@ if(NRN_ENABLE_MPI)
       # Know about openmpi, mpich, ms-mpi, and a few others.
       # ~~~
       execute_process(COMMAND grep -q "define OPEN_MPI  *1" ${idir}/mpi.h RESULT_VARIABLE result)
-      if (result EQUAL 0)
+      if(result EQUAL 0)
         set(type "ompi")
       else()
         # ~~~
@@ -50,19 +56,22 @@ if(NRN_ENABLE_MPI)
         # a given library is MPT and then check MPT_VERSION to define it as MPICH.
         # ~~~
         execute_process(COMMAND grep -q "define SGIABI" ${idir}/mpi.h RESULT_VARIABLE result)
-        if (result EQUAL 0)
+        if(result EQUAL 0)
           set(type "mpt")
         else()
-          execute_process(COMMAND grep -q -e "define MPICH  *1" -e "define MPT_VERSION" ${idir}/mpi.h RESULT_VARIABLE result)
-          if (result EQUAL 0)
+          execute_process(COMMAND grep -q -e "define MPICH  *1" -e "define MPT_VERSION"
+                                  ${idir}/mpi.h RESULT_VARIABLE result)
+          if(result EQUAL 0)
             set(type "mpich")
           else()
-            execute_process(COMMAND grep -q "define MSMPI_VER " ${idir}/mpi.h RESULT_VARIABLE result)
-            if (result EQUAL 0)
+            execute_process(COMMAND grep -q "define MSMPI_VER " ${idir}/mpi.h
+                            RESULT_VARIABLE result)
+            if(result EQUAL 0)
               set(type "msmpi")
             else()
               # Perhaps rather set the type to "unknown" and check for no duplicates?
-              message(FATAL_ERROR "${idir}/mpi.h does not seem to be either openmpi, mpich, mpt or msmpi")
+              message(
+                FATAL_ERROR "${idir}/mpi.h does not seem to be either openmpi, mpich, mpt or msmpi")
             endif()
           endif()
         endif()

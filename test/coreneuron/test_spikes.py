@@ -1,19 +1,12 @@
-import distutils.util
+from neuron.tests.utils.strtobool import strtobool
 import os
-import sys
 
 # Hacky, but it's non-trivial to pass commandline arguments to pytest tests.
-enable_gpu = bool(
-    distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-)
-mpi4py_option = bool(
-    distutils.util.strtobool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", "false"))
-)
-file_mode_option = bool(
-    distutils.util.strtobool(os.environ.get("NRN_TEST_SPIKES_FILE_MODE", "false"))
-)
+enable_gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+mpi4py_option = bool(strtobool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", "false")))
+file_mode_option = bool(strtobool(os.environ.get("NRN_TEST_SPIKES_FILE_MODE", "false")))
 nrnmpi_init_option = bool(
-    distutils.util.strtobool(os.environ.get("NRN_TEST_SPIKES_NRNMPI_INIT", "false"))
+    strtobool(os.environ.get("NRN_TEST_SPIKES_NRNMPI_INIT", "false"))
 )
 
 # following at top level and early enough avoids...
@@ -25,16 +18,14 @@ if mpi4py_option:
     from neuron import h, gui
 # without mpi4py we need to call nrnmpi_init explicitly
 elif nrnmpi_init_option:
-    from neuron import h, gui
+    from neuron import h
 
     h.nrnmpi_init()
+    # if mpi is active, don't ask for gui til it is turned off for all ranks > 0
+    from neuron import gui
 # otherwise serial execution
 else:
     from neuron import h, gui
-
-import pytest
-import sys
-import traceback
 
 
 def test_spikes(
@@ -142,12 +133,7 @@ def test_spikes(
 
 
 if __name__ == "__main__":
-    try:
-        h = test_spikes()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
+    h = test_spikes()
     if mpi4py_option or nrnmpi_init_option:
         pc = h.ParallelContext()
         pc.barrier()

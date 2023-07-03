@@ -1,4 +1,5 @@
-.. _mech:
+
+.. _hoc_mech:
 
          
 Point Processes and Artificial Cells
@@ -9,18 +10,19 @@ Description:
     Built-in POINT_PROCESS models and ARTIFICIAL_CELL models are listed on the left. 
     The user may add other classes of those types using mod files. Some properties 
     and functions that are available for all POINT_PROCESS models are described 
-    under :ref:`pointprocesses_general`. 
+    under :ref:`hoc_pointprocesses_general`.
 
 .. seealso::
-    :ref:`pointprocessmanager`
+    :ref:`hoc_pointprocessmanager`
 
 
-.. _pointprocesses_general:
+
+.. _hoc_pointprocesses_general:
 
 General
 ~~~~~~~
 
-.. method:: pnt.get_loc
+.. hoc:method:: pnt.get_loc
 
 
     Syntax:
@@ -37,8 +39,8 @@ General
         user input. 
 
     .. seealso::
-        :func:`pop_section`,
-        :meth:`get_segment`
+        :hoc:func:`pop_section`,
+        :hoc:meth:`get_segment`
 
          
 
@@ -46,7 +48,7 @@ General
 
 
 
-.. method:: pnt.get_segment
+.. hoc:method:: pnt.get_segment
 
 
     Syntax:
@@ -54,7 +56,7 @@ General
 
 
     Description:
-        A more pythonic version of :func:`get_loc` in that it returns a python segment object 
+        A more pythonic version of :hoc:func:`get_loc` in that it returns a python segment object
         without pushing the section stack. From a segment object one can get the 
         section with ``pyseg.sec`` and the position with ``pyseg.x``. If the 
         point process is not located anywhere, the return value is None. 
@@ -69,7 +71,7 @@ General
 
 
 
-.. method:: pnt.loc
+.. hoc:method:: pnt.loc
 
 
     Syntax:
@@ -86,7 +88,7 @@ General
 
 
 
-.. method:: pnt.has_loc
+.. hoc:method:: pnt.has_loc
 
 
     Syntax:
@@ -103,7 +105,7 @@ General
 
 
 
-.. class:: IClamp
+.. hoc:class:: IClamp
 
 
     Syntax:
@@ -119,20 +121,20 @@ General
 
 
     Description:
-        See `<nrn src dir>/src/nrnoc/stim.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/stim.mod>`_
+        See `<nrn src dir>/src/nrnoc/stim.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/stim.mod>`_
          
         Single pulse current clamp point process. This is an electrode current 
         so positive amp depolarizes the cell. i is set to amp when t is within 
         the closed interval del to del+dur. Time varying current stimuli can 
         be simulated by setting del=0, dur=1e9 and playing a vector into amp 
-        with the :meth:`~Vector.play` :class:`Vector` method. 
+        with the :hoc:meth:`~Vector.play` :hoc:class:`Vector` method.
 
 
 ----
 
 
 
-.. class:: AlphaSynapse
+.. hoc:class:: AlphaSynapse
 
 
     Syntax:
@@ -150,7 +152,7 @@ General
 
 
     Description:
-        See `<nrn src dir>/src/nrnoc/syn.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/syn.mod>`_. The comment in this file reads: 
+        See `<nrn src dir>/src/nrnoc/syn.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/syn.mod>`_. The comment in this file reads: 
 
         .. code-block::
             none
@@ -170,7 +172,7 @@ General
 
 
 
-.. class:: VClamp
+.. hoc:class:: VClamp
 
 
     Syntax:
@@ -188,7 +190,7 @@ General
     Description:
         Two electrode voltage clamp. 
          
-        See `<nrn src dir>/src/nrnoc/vclmp.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/vclmp.mod>`_. The comment in this file reads: 
+        See `<nrn src dir>/src/nrnoc/vclmp.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/vclmp.mod>`_. The comment in this file reads: 
          
         Voltage clamp with three levels. Clamp is on at time 0, and off at time 
         dur[0]+dur[1]+dur[2]. When clamp is off the injected current is 0. 
@@ -223,14 +225,14 @@ General
          
         This model is quite stiff.  For this reason the current is updated 
         within the solve block before updating the state of the clamp. This 
-        gives the correct value of the current on exit from :func:`fadvance`. If we 
+        gives the correct value of the current on exit from :hoc:func:`fadvance`. If we
         didn't do this and 
         instead used the values computed in the breakpoint block, it 
         would look like the clamp current is much larger than it actually is 
         since it 
         doesn't take into account the change in voltage within the timestep, ie 
         equivalent to an almost infinite capacitance. 
-        Also, because of stiffness, do not use this model except with :data:`secondorder`\ =0. 
+        Also, because of stiffness, do not use this model except with :hoc:data:`secondorder`\ =0.
          
         This model makes use of implementation details of how models are interfaced 
         to neuron. At some point I will make the translation such that these kinds 
@@ -249,7 +251,7 @@ General
 
 
 
-.. class:: SEClamp
+.. hoc:class:: SEClamp
 
 
     Syntax:
@@ -270,7 +272,7 @@ General
     Description:
         Single electrode voltage clamp with three levels. 
          
-        See `<nrn src dir>/src/nrnoc/svclmp.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/svclmp.mod>`_. The comment in this file reads: 
+        See `<nrn src dir>/src/nrnoc/svclmp.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/svclmp.mod>`_. The comment in this file reads: 
          
         Single electrode Voltage clamp with three levels. 
         Clamp is on at time 0, and off at time 
@@ -296,8 +298,8 @@ General
          
         This model is careful to ensure the clamp current is properly computed 
         relative to the membrane voltage on exit from fadvance and can therefore 
-        be used with time varying control potentials. Like :class:`VClamp` it is suitable 
-        for :meth:`~Vector.play`\ ing a Vector into the control potential. 
+        be used with time varying control potentials. Like :hoc:class:`VClamp` it is suitable
+        for :hoc:meth:`~Vector.play`\ ing a Vector into the control potential.
          
         The following example compares the current that results from 
         clamping an action potential originally elicited by a current pulse.
@@ -340,7 +342,7 @@ General
 
 
 
-.. class:: APCount
+.. hoc:class:: APCount
 
 
     Syntax:
@@ -366,14 +368,14 @@ General
         The apc is not notified if the vector is freed but this can be fixed if 
         it is convenient to add this feature. 
          
-        See `<nrn src dir>/src/nrnoc/apcount.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/apcount.mod>`_
+        See `<nrn src dir>/src/nrnoc/apcount.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/apcount.mod>`_
 
 
 ----
 
 
 
-.. class:: ExpSyn
+.. hoc:class:: ExpSyn
 
 
     Syntax:
@@ -398,18 +400,18 @@ General
 
          
         The weight is specified 
-        by the :data:`~NetCon.weight` field of a :class:`NetCon` object. 
+        by the :hoc:data:`~NetCon.weight` field of a :hoc:class:`NetCon` object.
          
         This synapse summates. 
          
-        See `<nrn src dir>/src/nrnoc/expsyn.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/expsyn.mod>`_
+        See `<nrn src dir>/src/nrnoc/expsyn.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/expsyn.mod>`_
 
 
 ----
 
 
 
-.. class:: Exp2Syn
+.. hoc:class:: Exp2Syn
 
 
     Syntax:
@@ -449,7 +451,7 @@ General
               G = weight * factor * (exp(-t/tau2) - exp(-t/tau1)) 
 
         The weight is specified 
-        by the :data:`~NetCon.weight` field of a :class:`NetCon` object. 
+        by the :hoc:data:`~NetCon.weight` field of a :hoc:class:`NetCon` object.
         The factor is defined so that the normalized peak is 1. 
         If tau2 is close to tau1 
         this has the property that the maximum value is weight and occurs at 
@@ -462,7 +464,7 @@ General
          
         This synapse summates. 
          
-        See `<nrn src dir>/src/nrnoc/exp2syn.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/exp2syn.mod>`_
+        See `<nrn src dir>/src/nrnoc/exp2syn.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/exp2syn.mod>`_
          
 
 
@@ -470,7 +472,7 @@ General
 
 
 
-.. class:: NetStim
+.. hoc:class:: NetStim
 
 
     Syntax:
@@ -516,7 +518,7 @@ General
 
         That is, do not use ``&nc.y`` as the source for the netcon. 
          
-        See `<nrn src dir>/src/nrnoc/netstim.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/netstim.mod>`_
+        See `<nrn src dir>/src/nrnoc/netstim.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/netstim.mod>`_
 
     .. warning::
         Prior to version 5.2.1 an attempt was made to 
@@ -534,7 +536,7 @@ General
 
 
 
-.. class:: IntFire1
+.. hoc:class:: IntFire1
 
 
     Syntax:
@@ -568,14 +570,14 @@ General
         for the first 0.5 ms and -1 for the rest of the period. Otherwise it 
         returns exp((t-t0)/tau) 
          
-        See `<nrn src dir>/src/nrnoc/intfire1.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/intfire1.mod>`_
+        See `<nrn src dir>/src/nrnoc/intfire1.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/intfire1.mod>`_
 
 
 ----
 
 
 
-.. class:: IntFire2
+.. hoc:class:: IntFire2
 
 
     Syntax:
@@ -610,7 +612,7 @@ General
         changes abruptly by 
         the amount w. 
         
-        See `<nrn src dir>/src/nrnoc/intfire2.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/intfire2.mod>`_         
+        See `<nrn src dir>/src/nrnoc/intfire2.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/intfire2.mod>`_         
 
          
 
@@ -618,7 +620,7 @@ General
 
 
 
-.. class:: IntFire4
+.. hoc:class:: IntFire4
 
 
     Syntax:
@@ -672,17 +674,18 @@ General
         an isolated inhibitory event of weight -1 will produce a minimum 
         membrane potential of -1. 
          
-        See `<nrn src dir>/src/nrnoc/intfire4.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/intfire4.mod>`_         
+        See `<nrn src dir>/src/nrnoc/intfire4.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/intfire4.mod>`_         
 
 ----
 
-.. _mech_mechanisms:
+
+.. _hoc_mech_mechanisms:
 
 Mechanisms
 ----------
 
 .. seealso::
-    :ref:`insert <keyword_insert>`, :ref:`Inserter`, :ref:`nmodl`
+    :ref:`insert <hoc_keyword_insert>`, :ref:`hoc_Inserter`, :ref:`hoc_nmodl`
 
          
 
@@ -691,7 +694,8 @@ Mechanisms
 
 .. index::  setdata (mechanism)
 
-.. _mech_setdata:
+
+.. _hoc_mech_sethoc:data:
 
 **setdata**
 
@@ -724,7 +728,8 @@ Mechanisms
 
 .. index::  capacitance (mechanism)
 
-.. _mech_capacitance:
+
+.. _hoc_mech_capacitance:
 
 **capacitance**
 
@@ -749,7 +754,8 @@ Mechanisms
 
 .. index::  hh (mechanism)
 
-.. _mech_hh:
+
+.. _hoc_mech_hh:
 
 **hh**
 
@@ -759,7 +765,7 @@ Mechanisms
 
 
     Description:
-        See `<nrn src dir>/src/nrnoc/hh.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/hh.mod>`_
+        See `<nrn src dir>/src/nrnoc/hh.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/hh.mod>`_
          
         Hodgkin-Huxley sodium, potassium, and leakage channels. Range variables 
         specific to this model are: 
@@ -788,7 +794,8 @@ Mechanisms
 
 .. index::  pas (mechanism)
 
-.. _mech_pas:
+
+.. _hoc_mech_pas:
 
 **pas**
 
@@ -803,7 +810,7 @@ Mechanisms
 
 
     Description:
-        See `<nrn src dir>/src/nrnoc/passive.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/passive.mod>`_
+        See `<nrn src dir>/src/nrnoc/passive.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/passive.mod>`_
          
         Passive membrane channel. 
 
@@ -814,13 +821,14 @@ Mechanisms
 
 .. index::  fastpas (mechanism)
 
-.. _mech_fastpas:
+
+.. _hoc_mech_fastpas:
 
 **fastpas**
 
-        See `<nrn src dir>/src/nrnoc/passive0.c <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/passive0.c>`_
+        See `<nrn src dir>/src/nrnoc/passive0.cpp <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/passive0.cpp>`_
          
-        Passive membrane channel. Same as the :ref:`pas <mech_pas>` mechanism but hand coded to 
+        Passive membrane channel. Same as the :ref:`pas <hoc_mech_pas>` mechanism but hand coded to
         be a bit faster (avoids the wasteful numerical derivative computation of 
         the conductance and does not save the current). Generally not worth 
         using since passive channel computations are not usually the rate limiting 
@@ -833,7 +841,8 @@ Mechanisms
 
 .. index::  extracellular (mechanism)
 
-.. _mech_extracellular:
+
+.. _hoc_mech_extracellular:
 
 **extracellular**
 
@@ -866,13 +875,13 @@ Mechanisms
         potential boundary condition computed by some external program, leaky 
         patch clamps, incomplete seals in the myelin sheath along with current 
         flow in the space between the myelin and the axon. It is required 
-        when connecting :class:`LinearMechanism` (e.g. a circuit built with 
+        when connecting :hoc:class:`LinearMechanism` (e.g. a circuit built with
         the :menuselection:`NEURON Main Menu --> Build --> Linear Circuit`) to extracellular nodes. 
          
         i_membrane correctly does not include contributions from ELECTRODE_CURRENT 
         point processes. 
 
-        See i_membrane\_ at :meth:`CVode.use_fast_imem`.
+        See i_membrane\_ at :hoc:meth:`CVode.use_fast_imem`.
          
         The figure illustrates the form the electrical equivalent circuit 
         when this mechanism is present. Note that previous documentation 
@@ -934,15 +943,15 @@ Mechanisms
         It is best to start out believing that there are bugs in the method 
         and attempt to prove their existence. 
 
-        See `<nrn src dir>/src/nrnoc/extcell.c <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/extcell.c>`_
-        and `<nrn src dir>/examples/nrnoc/extcab*.hoc <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/examples/nrniv/nrnoc>`_.
+        See `<nrn src dir>/src/nrnoc/extcell.cpp <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/extcell.cpp>`_
+        and `<nrn src dir>/share/examples/nrniv/nrnoc/extcab*.hoc <https://github.com/neuronsimulator/nrn/tree/master/share/examples/nrniv/nrnoc>`_.
          
         NEURON can be compiled with any number of extracellular layers. 
         See below. 
 
     .. warning::
         xcaxial is also defined but is not implemented. If you need those 
-        then add them with the :class:`LinearMechanism` . 
+        then add them with the :hoc:class:`LinearMechanism` .
          
         Prior versions of this document indicated that 
         e_extracellular is in series with the parallel (xc,xg) 

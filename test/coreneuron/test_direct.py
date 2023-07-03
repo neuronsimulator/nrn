@@ -1,7 +1,5 @@
-import distutils.util
+from neuron.tests.utils.strtobool import strtobool
 import os
-import sys
-import traceback
 
 from neuron import h, gui
 
@@ -39,9 +37,8 @@ def test_direct_memory_transfer():
 
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = bool(
-        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-    )
+    coreneuron.model_stats = True
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
     coreneuron.num_gpus = 1
 
     pc = h.ParallelContext()
@@ -90,10 +87,5 @@ def test_direct_memory_transfer():
 
 
 if __name__ == "__main__":
-    try:
-        test_direct_memory_transfer()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
+    test_direct_memory_transfer()
     h.quit()

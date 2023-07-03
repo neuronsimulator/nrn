@@ -1,9 +1,14 @@
+import re
 import sys
 from neuron.expect_hocerr import expect_hocerr, expect_err, set_quiet
+from neuron.tests.utils import (
+    num_threads,
+    parallel_context,
+)
 
 import numpy as np
 
-from neuron import h, hoc
+from neuron import config, h, hoc
 
 
 def test_soma():
@@ -321,9 +326,8 @@ def test_deleted_sec():
     expect_hocerr(h.distance, (0, seg))
 
     del ic, imp, dend
+    del vref, gnabarref, rvlist, mech, seg, s
     locals()
-
-    return s, seg, mech, rvlist, vref, gnabarref
 
 
 def test_disconnect():
@@ -370,11 +374,94 @@ def test_py_alltoall_dict_err():
     expect_hocerr(pc.py_alltoall, src, ("hocobj_call error",))
 
 
+def test_nosection():
+    expect_err("h.IClamp(.5)")
+    expect_err("h.IClamp(5)")
+    s = h.Section()
+    expect_err("h.IClamp(5)")
+    del s
+    locals()
+
+
+def test_nrn_mallinfo():
+    # figure out if ASan was enabled, see comment in unit_test.cpp
+    if "address" in config.arguments["NRN_SANITIZERS"]:
+        print("Skipping nrn_mallinfo checks because ASan was enabled")
+        return
+    assert h.nrn_mallinfo(0) > 0
+
+
+def test_errorcode():
+    import os, sys, subprocess
+
+    process = subprocess.run('nrniv -c "1/0"', shell=True)
+    assert process.returncode > 0
+
+    exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
+    env = os.environ.copy()
+    try:
+        env[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
+            "NRN_SANITIZER_PRELOAD_VAL"
+        ]
+    except:
+        pass
+    process = subprocess.run(
+        [exe, "-c", "from neuron import h; h.sqrt(-1)"], env=env, shell=False
+    )
+    assert process.returncode > 0
+
+
+def test_hocObj_error_in_construction():
+    # test unref hoc obj when error during construction
+    expect_hocerr(h.List, "A")
+    expect_hocerr(h.List, h.NetStim())
+
+
+def test_recording_deleted_node():
+    soma = h.Section()
+    soma_v = h.Vector().record(soma(0.5)._ref_v)
+    del soma
+    # Now soma_v is still alive, but the node whose voltage it is recording is
+    # dead. The current behaviour is that the record instance is silently deleted in this case
+    h.finitialize()
+
+
+def test_nworker():
+    threads_enabled = config.arguments["NRN_ENABLE_THREADS"]
+    with parallel_context() as pc:
+        # single threaded mode, no workers
+        with num_threads(pc, threads=1):
+            assert pc.nworker() == 0
+
+        # parallel argument specifies serial execution, no workers
+        with num_threads(pc, threads=2, parallel=False):
+            assert pc.nworker() == 0
+
+        # two workers if threading was enabled at compile time
+        with num_threads(pc, threads=2, parallel=True):
+            assert pc.nworker() == 2 * threads_enabled
+
+
+def test_help():
+    # a little fragile in the event we change the docs, but easily fixed
+    # checks the main paths for generating docstrings
+    assert h.Vector().to_python.__doc__.startswith(
+        "Syntax:\n    ``pythonlist = vec.to_python()"
+    )
+    assert h.Vector().__doc__.startswith("This class was imple")
+    assert h.Vector.__doc__.startswith("This class was imple")
+    assert h.finitialize.__doc__.startswith("Syntax:\n    ``h.finiti")
+    assert h.__doc__.startswith("\n\nneuron.h\n====")
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()
     test_simple_sim()
-    result = test_deleted_sec()
+    test_deleted_sec()
     test_disconnect()
     h.topology()
     h.allobjects()
+    test_nosection()
+    test_nrn_mallinfo()
+    test_help()

@@ -24,7 +24,7 @@ NEURON that he or she had trouble with.
 1. [**progref-hoc**](https://github.com/neuronsimulator/progref-hoc) -- this is the _programmers reference_ for the hoc language, the 'higher order calculator' of Kernighan (a co-founder of UNIX). _hoc_ is now largely retired in
 favor of Python. The hoc code itself is in the nrn repository and also should not usually be touched.
 
-There are several NEURON-related repositories hosted elsewhere which also encourage contributions. Each of these will have it's own *Contributing* document.
+There are several NEURON-related repositories hosted elsewhere which also encourage contributions. Each of these will have its own *Contributing* document.
 1. [NMODL](https://github.com/BlueBrain/nmodl) -- improved method for compiling and porting *.mod* files using *abstract syntax trees*
 1. [CoreNEURON](https://github.com/BlueBrain/CoreNeuron) -- an optimized NEURON for running on high performance computers (HPCs)
 1. [NetPyNE](https://github.com/Neurosim-lab/netpyne) -- multiscale modeling tool for developing, simulating and analyzing networks which include complex cells, potentially
@@ -106,18 +106,18 @@ brew install clang-format # or your favorite package manager
 ```
 Now you should have the `clang-format` and `cmake-format` commands available.
 
-* Use `-DNRN_CMAKE_FORMAT=ON` option of CMake to enable CMake code formatting targets:
+* CMake automatically creates the formatting targets ``format`` and ``format-pr``
+
+The former, formats all cmake, c++, and python files. The latter
+(usually much faster) formats
+only those files that differ from the master (``git diff --name-only master``).
 
 ```
-cmake .. -DPYTHON_EXECUTABLE=`which python3.7` -DNRN_CMAKE_FORMAT=ON
-```
-
-With this, new target called **cmake-format** can be used to automatically format all CMake files:
-
-```
-$ make cmake-format
-Scanning dependencies of target cmake-format
-Built target cmake-format
+$ make format-pr
+Format only files modified with respect to master branch.
+/home/hines/neuron/nrn
+/home/hines/neuron/format/external/coding-conventions/bin/format CMakeLists.txt
+Built target format-pr
 ```
 
 You can now use `git diff` to see how cmake-format has formatted existing CMake files.
@@ -142,24 +142,7 @@ Or,
 
 See [cmake-format](https://github.com/cheshirekow/cmake_format) documentation for details.
 
-* For `clang-format` you should restrict formatting to only the code parts relevant to your change.
-  This can be eachieved by setting following build options:
-
-```
-cmake .. -DNRN_CLANG_FORMAT=ON \
-    -DNRN_CMAKE_FORMAT=ON \
-    -DNRN_FORMATTING_ON="since-ref:master" \
-    -DNRN_FORMATTING_CPP_CHANGES_ONLY=ON
-```
-
-Note: Sometimes it might be necessary to point your build-system to the clang-format-diff utility,
-this can be done by supplying an additional flag:
-`-DClangFormatDiff_EXECUTABLE=/path/to/share/clang/clang-format-diff.py`
-
-* You can then run the `clang-format` target after a full build:
-
-```
-make && make clang-format
+make && make format-pr
 ```
 
 ## Python Contributions
@@ -173,12 +156,23 @@ Please follow [PEP8](https://www.python.org/dev/peps/pep-0008/) conventions in a
 submitted code and apply [black](https://black.readthedocs.io/en/stable/) formatting, a
 stricter superset of PEP8.
 
-You can install and apply black formatting as follows:
+Using [`pre-commit` hooks](https://pre-commit.com/), the `black` tool can be executed every time you commit, and automatically reformat your code according to the repository's preferences.
+To set up automatic formatting run the following commands from the root of the repository:
+
+    pip install pre-commit
+    pre-commit install
+
+**Note**: The first time you commit after installing the hooks, it can take a while to set up the environment.
+If your commit contains any formatting errors, an error will be displayed: Black will have reformatted your staged
+changes and your workspace will contain them as new unstaged changes; stage these changes and re-commit the now
+formatted code!
+
+You can also install and manually apply black formatting as follows:
 
     pip install black
     black /path/to/file.py
 
-Please limit formatting to the code you contribute and not the entire `file.py`.
+This will reformat the entire file, not just your changes, and might pollute your PR.
 
 ## Reporting a bug<a name="bug"></a>
 

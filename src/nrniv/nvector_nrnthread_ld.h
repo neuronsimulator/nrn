@@ -1,9 +1,9 @@
 /*
-* N_Vector_NrnThreadLD derived from N_Vector_Serial SunDials version
-* by replacing every occurrence of nrnthread with nrnthread in the various
-* cases and then modifying the relevant prototypes.
-* We only re-implement the ones that are used by cvodes and ida
-*/
+ * N_Vector_NrnThreadLD derived from N_Vector_Serial SunDials version
+ * by replacing every occurrence of nrnthread with nrnthread in the various
+ * cases and then modifying the relevant prototypes.
+ * We only re-implement the ones that are used by cvodes and ida
+ */
 /*
 Macros changed with
 sed 's/NV_\([A-Za-z_]*\)_NT/NV_\1_NT_LD/g' nvector_nrnthread_ld.cpp > temp
@@ -15,7 +15,7 @@ mv temp nvector_nrnthread_ld.h
  * -----------------------------------------------------------------
  * $Revision: 855 $
  * $Date: 2005-02-09 18:15:46 -0500 (Wed, 09 Feb 2005) $
- * ----------------------------------------------------------------- 
+ * -----------------------------------------------------------------
  * Programmer(s): Scott D. Cohen, Alan C. Hindmarsh, Radu Serban,
  *                and Aaron Collier @ LLNL
  * -----------------------------------------------------------------
@@ -81,13 +81,13 @@ extern void N_VOneMask_Serial(N_Vector x);
 */
 
 struct _N_VectorContent_NrnThreadLD {
-  long int length;
-  int nt; /* number of threads */
-  booleantype own_data;
-  N_Vector *data; /* nt of them (N_Vector_Serial) */
+    long int length;
+    int nt; /* number of threads */
+    booleantype own_data;
+    N_Vector* data; /* nt of them (N_Vector_Serial) */
 };
 
-typedef struct _N_VectorContent_NrnThreadLD *N_VectorContent_NrnThreadLD;
+typedef struct _N_VectorContent_NrnThreadLD* N_VectorContent_NrnThreadLD;
 
 /* Note: documentation below may not be completely transformed from the
    N_Vector_Serial case
@@ -142,24 +142,24 @@ typedef struct _N_VectorContent_NrnThreadLD *N_VectorContent_NrnThreadLD;
  * -----------------------------------------------------------------
  */
 
-#define NV_CONTENT_NT_LD(v)  ( (N_VectorContent_NrnThreadLD)(v->content) )
+#define NV_CONTENT_NT_LD(v) ((N_VectorContent_NrnThreadLD) (v->content))
 
-#define NV_LENGTH_NT_LD(v)   ( NV_CONTENT_NT_LD(v)->length )
+#define NV_LENGTH_NT_LD(v) (NV_CONTENT_NT_LD(v)->length)
 
-#define NV_NT_NT_LD(v)   ( NV_CONTENT_NT_LD(v)->nt )
+#define NV_NT_NT_LD(v) (NV_CONTENT_NT_LD(v)->nt)
 
-#define NV_OWN_DATA_NT_LD(v) ( NV_CONTENT_NT_LD(v)->own_data )
+#define NV_OWN_DATA_NT_LD(v) (NV_CONTENT_NT_LD(v)->own_data)
 
-#define NV_DATA_NT_LD(v)     ( NV_CONTENT_NT_LD(v)->data )
+#define NV_DATA_NT_LD(v) (NV_CONTENT_NT_LD(v)->data)
 
-#define NV_SUBVEC_NT_LD(v, i)     ( NV_CONTENT_NT_LD(v)->data[i] )
+#define NV_SUBVEC_NT_LD(v, i) (NV_CONTENT_NT_LD(v)->data[i])
 
-#define NV_Ith_NT_LD(v,i)    ( NV_DATA_NT_LD(v)[i] ) /* wrong but not needed */
+#define NV_Ith_NT_LD(v, i) (NV_DATA_NT_LD(v)[i]) /* wrong but not needed */
 
 /*
  * -----------------------------------------------------------------
  * PART III: functions exported by nvector_nrnthread
- * 
+ *
  * CONSTRUCTORS:
  *    N_VNew_NrnThreadLD
  *    N_VNewEmpty_NrnThreadLD
@@ -182,7 +182,7 @@ typedef struct _N_VectorContent_NrnThreadLD *N_VectorContent_NrnThreadLD;
  * -----------------------------------------------------------------
  */
 
-N_Vector N_VNew_NrnThreadLD(long int vec_length, int nthread, long int* sizes );
+N_Vector N_VNew_NrnThreadLD(long int vec_length, int nthread, long int* sizes);
 
 /*
  * -----------------------------------------------------------------
@@ -216,7 +216,7 @@ N_Vector N_VCloneEmpty_NrnThreadLD(N_Vector w);
  */
 
 /*not implemented*/
-N_Vector N_VMake_NrnThreadLD(long int vec_length, realtype *v_data);
+N_Vector N_VMake_NrnThreadLD(long int vec_length, realtype* v_data);
 
 /*
  * -----------------------------------------------------------------
@@ -228,8 +228,10 @@ N_Vector N_VMake_NrnThreadLD(long int vec_length, realtype *v_data);
  * -----------------------------------------------------------------
  */
 
-N_Vector *N_VNewVectorArray_NrnThreadLD(int count, long int vec_length,
-	int nthread, long int* sizes);
+N_Vector* N_VNewVectorArray_NrnThreadLD(int count,
+                                        long int vec_length,
+                                        int nthread,
+                                        long int* sizes);
 
 /*
  * -----------------------------------------------------------------
@@ -240,19 +242,21 @@ N_Vector *N_VNewVectorArray_NrnThreadLD(int count, long int vec_length,
  * -----------------------------------------------------------------
  */
 
-N_Vector *N_VNewVectorArrayEmpty_NrnThreadLD(int count, long int vec_length,
-	int nthread, long int* sizes);
+N_Vector* N_VNewVectorArrayEmpty_NrnThreadLD(int count,
+                                             long int vec_length,
+                                             int nthread,
+                                             long int* sizes);
 
 /*
  * -----------------------------------------------------------------
  * Function : N_VDestroyVectorArray_NrnThreadLD
  * -----------------------------------------------------------------
- * This function frees an array of N_Vector created with 
+ * This function frees an array of N_Vector created with
  * N_VNewVectorArray_NrnThreadLD.
  * -----------------------------------------------------------------
  */
 
-void N_VDestroyVectorArray_NrnThreadLD(N_Vector *vs, int count);
+void N_VDestroyVectorArray_NrnThreadLD(N_Vector* vs, int count);
 
 /*
  * -----------------------------------------------------------------
@@ -272,9 +276,9 @@ void N_VPrint_NrnThreadLD(N_Vector v);
 
 N_Vector N_VClone_NrnThreadLD(N_Vector w);
 void N_VDestroy_NrnThreadLD(N_Vector v);
-void N_VSpace_NrnThreadLD(N_Vector v, long int *lrw, long int *liw);
-realtype *N_VGetArrayPointer_NrnThreadLD(N_Vector v);
-void N_VSetArrayPointer_NrnThreadLD(realtype *v_data, N_Vector v);
+void N_VSpace_NrnThreadLD(N_Vector v, long int* lrw, long int* liw);
+realtype* N_VGetArrayPointer_NrnThreadLD(N_Vector v);
+void N_VSetArrayPointer_NrnThreadLD(realtype* v_data, N_Vector v);
 void N_VLinearSum_NrnThreadLD(realtype a, N_Vector x, realtype b, N_Vector y, N_Vector z);
 void N_VConst_NrnThreadLD(realtype c, N_Vector z);
 void N_VProd_NrnThreadLD(N_Vector x, N_Vector y, N_Vector z);

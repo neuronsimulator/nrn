@@ -1,0 +1,7 @@
+np = 1
+[neuron]
+  binary=nrniv
+  args=-music -nobanner -python test2.py
+[logger]
+  binary=eventlogger
+  neuron.out -> logger.in [1]

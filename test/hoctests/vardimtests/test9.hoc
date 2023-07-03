@@ -1,0 +1,61 @@
+// test evaluation/assignment of python array elements from hoc
+
+load_file("expect_err.hoc")
+
+proc eq() {
+  if ($1 != $2) {
+    printf("%g != %g\n", $1, $2)
+    execerror()
+  }
+}
+
+// evaluation
+
+nrnpython("a = [1,2,3]")
+objref po
+po = new PythonObject()
+for i = 0, 2 {
+  eq(po.a._[i], i+1)
+  eq(po.a[i], i+1)
+}
+
+nrnpython("b = [[1,2,3],[4,5,6],[7,8,9]]")
+k = 1
+for i = 0, 2 {
+  for j = 0, 2 {
+    // ugly
+    eq(po.b._[i]._[j], k)
+    eq(po.b[i]._[j], k)
+    k += 1
+  }
+}
+
+objref x
+x = po.a
+expect_err("x[1]")
+x = po.b
+expect_err("x[1][1]")
+expect_err("x._[1][1]")
+expect_err("po.b[1][1]")
+expect_err("po.b._[1][1]")
+
+
+// assignment
+po.a[1] = 25
+eq(po.a[1], 25)
+x = po.a
+expect_err("x[1] = 30")
+x._[1] = 30
+eq(po.a[1], 30)
+
+expect_err("po.b[1][1]  = 30")
+expect_err("po.b._[1][1] = 30")
+po.b[1]._[1] = 30
+eq(po.b[1]._[1], 30)
+x = po.b[1]
+x._[1] = 40
+eq(x._[1], 40)
+x = po.b
+x._[1]._[1] = 50
+eq(x._[1]._[1], 50)
+eq(po.b[1]._[1], 50)

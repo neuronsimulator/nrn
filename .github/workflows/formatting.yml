@@ -1,0 +1,28 @@
+name: Check formatting
+
+concurrency: 
+  group: ${{ github.workflow }}#${{ github.ref }}
+  cancel-in-progress: true  
+
+on:
+  push:
+    branches: 
+      - release/**
+  pull_request:
+    branches:
+      - master
+      - release/**
+
+jobs:
+  all:
+    name: C/C++, CMake and Python
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v3
+      - name: Update submodule
+        working-directory: ${{runner.workspace}}/nrn
+        run: git submodule update --init external/coding-conventions
+      - name: Check formatting
+        working-directory: ${{runner.workspace}}/nrn
+        run: external/coding-conventions/bin/format -v --dry-run
