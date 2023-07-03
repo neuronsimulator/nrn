@@ -587,6 +587,14 @@ NRN_ENABLE_BACKTRACE:BOOL=OFF
 
   Note: floating exceptions are turned on with :func:`nrn_feenableexcept`.
 
+NRN_ENABLE_MORPHIO:BOOL=ON
+-------------------------------------
+  Enable the use of the MorphIO library for reading SWC, ASC and HDF5 morphology files.
+
+  This is enabled by default. If you want to disable it, set this option to ``OFF``.
+
+  More information about the MorphIO library can be found at https://github.com/BlueBrain/MorphIO.
+
 NRN_LINK_AGAINST_PYTHON:BOOL=OFF
 --------------------------------
   When ``NRN_ENABLE_PYTHON_DYNAMIC=ON`` then link the NEURON-Python interface
