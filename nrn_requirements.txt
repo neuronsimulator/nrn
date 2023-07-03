@@ -13,4 +13,4 @@ pytest-cov
 mpi4py
 numpy
 find_libpython
-pybind11
+pybind11[global]

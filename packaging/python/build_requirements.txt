@@ -1,3 +1,3 @@
 cython<3
 packaging
-pybind11
+pybind11[global]
