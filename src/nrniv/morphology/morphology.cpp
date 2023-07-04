@@ -50,7 +50,7 @@ std::string name(int type_id, int index) {
 
 void morphio_read(PyObject* pyObj, MorphIOWrapper& morph) {
     // Call nrn_po2ho on the PyObject
-    Object* cell_obj = nrnpy_po2ho(pyObj);
+    Object* cell_obj = neuron::python::methods.po2ho(pyObj);
 
     // Check that the PyObject is a Cell object
     if (!cell_obj) {

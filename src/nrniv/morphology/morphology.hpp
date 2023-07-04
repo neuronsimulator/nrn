@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 #include <filesystem>
-#include "nrnpython.h"
+#include "nrnpy.h"
 
 namespace neuron::morphology {
 
