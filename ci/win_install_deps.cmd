@@ -69,6 +69,7 @@ mingw64/mingw-w64-x86_64-cython ^
 mingw-w64-x86_64-python3-setuptools ^
 mingw-w64-x86_64-python3-packaging ^
 mingw-w64-x86_64-python3-pip ^
+mingw-w64-x86_64-pybind11 ^
 mingw64/mingw-w64-x86_64-dlfcn ^
 mingw-w64-x86_64-toolchain || goto :error
 
