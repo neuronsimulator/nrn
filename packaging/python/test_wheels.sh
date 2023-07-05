@@ -203,16 +203,12 @@ run_parallel_test() {
     # this is for MacOS system
     if [[ "$OSTYPE" == "darwin"* ]]; then
       # assume both MPIs are installed via brew.
+      BREW_PREFIX=$(brew --prefix)
 
       brew unlink openmpi
       brew link mpich
-      BREW_PREFIX=$(brew --prefix)
-
-      # TODO : latest mpich has issuee on Azure OSX
-      if [[ "$CI_OS_NAME" == "osx" ]]; then
-          export DYLD_LIBRARY_PATH=${BREW_PREFIX}/opt/mpich/lib:$DYLD_LIBRARY_PATH
-          run_mpi_test "${BREW_PREFIX}/opt/mpich/bin/mpirun" "MPICH" ""
-      fi
+      export DYLD_LIBRARY_PATH=${BREW_PREFIX}/opt/mpich/lib:$DYLD_LIBRARY_PATH
+      run_mpi_test "${BREW_PREFIX}/opt/mpich/bin/mpirun" "MPICH" ""
 
       brew unlink mpich
       brew link openmpi
