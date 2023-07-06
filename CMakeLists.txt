@@ -494,7 +494,6 @@ if(NRN_ENABLE_CORENEURON)
   list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/coreneuron
        ${PROJECT_SOURCE_DIR}/cmake/coreneuron/packages)
 
-  set(nrn_using_ext_corenrn FALSE)
   # If NEURON tests are enabled then enable CoreNEURON tests too
   set(CORENRN_ENABLE_UNIT_TESTS
       ${NRN_ENABLE_TESTS}
@@ -567,6 +566,7 @@ endif()
 # =============================================================================
 # Add project directories AFTER CMake modules
 # =============================================================================
+add_subdirectory(src/gnu)
 add_subdirectory(src/nrniv)
 
 # Collect the environment variables that are needed to execute NEURON from the build directory. This

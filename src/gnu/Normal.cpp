@@ -1,4 +1,3 @@
-#include <nrnconf.h>
 /* 
 Copyright (C) 1988 Free Software Foundation
     written by Dirk Grunwald (grunwald@cs.uiuc.edu)

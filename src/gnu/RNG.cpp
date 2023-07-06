@@ -1,4 +1,3 @@
-#include <nrnconf.h>
 // This may look like C code, but it is really -*- C++ -*-
 /* 
 Copyright (C) 1989 Free Software Foundation

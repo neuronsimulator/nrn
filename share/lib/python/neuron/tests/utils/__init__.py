@@ -87,6 +87,19 @@ def cvode_use_long_double(cv, enabled):
 
 
 @contextmanager
+def fast_imem(enabled):
+    from neuron import h
+
+    cvode = h.CVode()
+    old_setting = cvode.use_fast_imem()
+    cvode.use_fast_imem(enabled)
+    try:
+        yield None
+    finally:
+        cvode.use_fast_imem(old_setting)
+
+
+@contextmanager
 def hh_table_disabled():
     """
     Helper for tests to ensure that the TABLE statement in hh.mod will not be used.
