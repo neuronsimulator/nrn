@@ -1037,7 +1037,9 @@ class _PlotShapePlot(_WrapperPlot):
                                         line.set_color(col)
                     return lines
 
-            return Axis3DWithNEURON(fig)
+            ax = Axis3DWithNEURON(fig)
+            fig.add_axes(ax)
+            return ax
 
         def _get_variable_seg(seg, variable):
             if isinstance(variable, str):
