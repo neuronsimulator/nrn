@@ -15,6 +15,8 @@ list(REMOVE_ITEM MorphIO_CXX_FLAGS "-tp=haswell")
 include(ExternalProject)
 ExternalProject_Add(
   morphio-external
+  BINARY_DIR "${CMAKE_BINARY_DIR}/external/MorphIO"
+  BUILD_ALWAYS ON
   PREFIX "${MorphIO_PREFIX}"
   GIT_REPOSITORY https://github.com/BlueBrain/MorphIO.git
   GIT_TAG v3.3.5

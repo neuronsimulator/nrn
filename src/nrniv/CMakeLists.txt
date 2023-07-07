@@ -257,10 +257,16 @@ add_dependencies(generated_source_files nrnversion_h)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 
 # generate hocusr.h
+if(NRN_ENABLE_MORPHIO)
+  set(MORPHIO_API_VALUE 1)
+else()
+  set(MORPHIO_API_VALUE 0)
+endif()
+
 add_custom_command(
   OUTPUT ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
   COMMAND ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR}
-          ${NRN_NRNOC_SRC_DIR}/neuron.h > neuron.tmp1
+          -DMORPHIO_API=${MORPHIO_API_VALUE} ${NRN_NRNOC_SRC_DIR}/neuron.h > neuron.tmp1
   COMMAND sed "/^#/d" neuron.tmp1 > neuron.tmp2
   COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 >
           ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
