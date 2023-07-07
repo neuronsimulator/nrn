@@ -499,7 +499,12 @@ def setup_package():
                 "neuron.morphio_api",
                 ["src/nrniv/morphology/morphio_wrapper/morphio_wrapper_bind.cpp"],
                 extra_compile_args=extra_compile_args + ["-std=c++17"],
-                extra_link_args=extra_link_args,
+                extra_link_args=extra_link_args
+                + [
+                    "-Wl,-rpath,{}{}".format(
+                        REL_RPATH, "/../../" if just_extensions else "/.data/lib/"
+                    )
+                ],
                 **extension_common_params,
             ),
         ]
