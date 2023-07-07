@@ -1,3 +1,10 @@
+/*
+ * Copyright 2023 Blue Brain Project, EPFL.
+ * See the top-level LICENSE file for details.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "visitors/semantic_analysis_visitor.hpp"
 #include "ast/function_block.hpp"
 #include "ast/function_table_block.hpp"
