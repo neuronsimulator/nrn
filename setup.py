@@ -490,7 +490,7 @@ def setup_package():
             ),
         ]
     logging.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
-    
+
     if Components.MORPHIO:
         from pybind11.setup_helpers import Pybind11Extension
 

@@ -241,8 +241,6 @@ set(NRNIV_FILE_LIST
     nrncore_write/data/datum_indices.cpp
     nrncore_write/io/nrncore_io.cpp
     nrncore_write/utils/nrncore_utils.cpp
-    morphology/morphology.cpp
-    morphology/morphio_wrapper/morphio_wrapper.cpp
     nrndae.cpp
     nrnmenu.cpp
     nrnpy.cpp
@@ -265,6 +263,11 @@ set(NRNIV_FILE_LIST
     splitcell.cpp
     symdir.cpp
     vrecord.cpp)
+
+if(NRN_ENABLE_MORPHIO)
+  list(APPEND NRNIV_FILE_LIST morphology/morphology.cpp
+       morphology/morphio_wrapper/morphio_wrapper.cpp)
+endif()
 
 # =============================================================================
 # Files in nrncvode directory
