@@ -2,6 +2,8 @@
 #include "hocdec.h"
 #include "membfunc.h"  // nrn_bamech_t
 #include "neuron/container/data_handle.hpp"
+
+#include <memory>
 struct Extnode;
 struct hoc_Item;
 struct HocParmLimits;
@@ -119,8 +121,6 @@ extern void hoc_level_pushsec(Section*);
 extern double nrn_ra(Section*);
 extern int node_index_exact(Section*, double);
 void nrn_ba(neuron::model_sorted_token const&, NrnThread&, int);
-void nrniv_recalc_ptrs();
-extern void nrn_recalc_ptrvector(void);
 extern void nrn_rhs_ext(NrnThread*);
 extern void nrn_setup_ext(NrnThread*);
 void nrn_cap_jacob(neuron::model_sorted_token const&, NrnThread*, Memb_list*);
@@ -170,8 +170,8 @@ extern int is_point_process(Object*);
 extern int nrn_vartype(Symbol*);  // nrnocCONST, DEP, STATE
 extern void recalc_diam(void);
 extern Prop* nrn_mechanism_check(int type, Section* sec, int inode);
-extern int nrn_use_fast_imem;
-extern void nrn_fast_imem_alloc();
+extern bool nrn_use_fast_imem;
+void nrn_fast_imem_alloc();
 extern void nrn_calc_fast_imem(NrnThread*);
 extern Section* nrn_secarg(int iarg);
 extern void nrn_seg_or_x_arg(int iarg, Section** psec, double* px);
@@ -205,3 +205,37 @@ char* nrn_version(int);
  * @param i Key index, must be less than nrn_num_config_keys().
  */
 [[nodiscard]] char* nrn_get_config_val(std::size_t i);
+
+/**
+  In mechanism libraries, cannot use
+      auto const token = nrn_ensure_model_data_are_sorted();
+  because the return type is incomplete (from include/neuron/model_data.hpp).
+  And we do not want to fix by installing more *.hpp files in the
+  include/neuron directory because of potential ABI incompatibility (anything
+  with std::string anywhere in it).
+  The work around is to provide an extra layer of indirection via unique_ptr
+  so the opaque token has a definite size (one pointer) and declaration.
+
+  The "trick" is just that you have to make sure the parts of the opaque
+  token that need the definition of the non-opaque token are defined in
+  the right place. That's why the constructor and destructor are defined
+  in fadvance.cpp
+
+  Instead, use
+    auto const token = nrn_ensure_model_data_are_sorted_opaque();
+  This file is already included in all translated mod files.
+**/
+namespace neuron {
+struct model_sorted_token;
+struct opaque_model_sorted_token {
+    opaque_model_sorted_token(model_sorted_token&&);
+    ~opaque_model_sorted_token();
+    operator model_sorted_token const &() const {
+        return *m_ptr;
+    }
+
+  private:
+    std::unique_ptr<model_sorted_token> m_ptr;
+};
+}  // namespace neuron
+neuron::opaque_model_sorted_token nrn_ensure_model_data_are_sorted_opaque();

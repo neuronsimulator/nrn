@@ -564,13 +564,13 @@ static double extra_scatter_gather_remove(void* v) {
 }
 
 static double use_fast_imem(void* v) {
-    int i = nrn_use_fast_imem;
+    auto i = nrn_use_fast_imem;
     hoc_return_type_code = 2;  // boolean
     if (ifarg(1)) {
-        nrn_use_fast_imem = int(chkarg(1, 0., 1.));
+        nrn_use_fast_imem = chkarg(1, 0., 1.);
         nrn_fast_imem_alloc();
     }
-    return double(i);
+    return i;
 }
 
 static double poolshrink(void*) {

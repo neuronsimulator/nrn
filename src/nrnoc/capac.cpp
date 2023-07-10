@@ -98,10 +98,9 @@ void nrn_div_capacity(neuron::model_sorted_token const& sorted_token,
         ml_cache.fpfield<i_cap_index>(i) = vec_rhs[ni[i]];
         vec_rhs[ni[i]] /= 1.e-3 * ml_cache.fpfield<cm_index>(i);
     }
-    if (_nt->_nrn_fast_imem) {
-        double* p = _nt->_nrn_fast_imem->_nrn_sav_rhs;
+    if (auto const vec_sav_rhs = _nt->node_sav_rhs_storage(); vec_sav_rhs) {
         for (int i = 0; i < count; ++i) {
-            p[vnode[i]->v_node_index] += ml_cache.fpfield<i_cap_index>(i);
+            vec_sav_rhs[vnode[i]->v_node_index] += ml_cache.fpfield<i_cap_index>(i);
         }
     }
 }

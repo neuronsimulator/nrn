@@ -12,10 +12,6 @@ _c_ptr_vector_storage = None
 _last_c_ptr_length = None
 
 
-def _donothing():
-    pass
-
-
 class _SectionLookup:
     class Lookup:
         def __init__(self):
@@ -118,7 +114,6 @@ def _transfer_to_legacy():
     if _last_c_ptr_length != size:
         if size:
             _c_ptr_vector = h.PtrVector(size)
-            _c_ptr_vector.ptr_update_callback(_donothing)
             for i, ptr in enumerate(_all_cptrs):
                 _c_ptr_vector.pset(i, ptr)
             _c_ptr_vector_storage_nrn = h.Vector(size)

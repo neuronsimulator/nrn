@@ -3206,6 +3206,21 @@ Parallel Transfer
 ----
 
 
+.. method:: ParallelContext.get_partition
+
+
+    Syntax:
+        ``seclist = pc.get_partition(i)``
+
+
+    Description:
+        Returns a new :func:`SectionList` with references to all the root sections
+        of the ith thread.
+
+
+----
+
+
 
 .. method:: ParallelContext.thread_stat
 
@@ -3290,7 +3305,7 @@ Parallel Transfer
         The high resolution walltime time in seconds the indicated thread 
         used during time step integration. Note that this does not include 
         reduced tree computation time used by thread 0 when :func:`multisplit` is 
-        active. 
+        active. With no arg, sets thread_ctime of all threads to 0.
 
          
 ----

@@ -219,7 +219,6 @@ set(NRNIV_FILE_LIST
     bbslsrv2.cpp
     bbsrcli.cpp
     bbssrv.cpp
-    cachevec.cpp
     classreg.cpp
     cxprop.cpp
     datapath.cpp
@@ -445,24 +444,6 @@ set(SCOPMATH_FILES_LIST
 
 set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
 
-set(NRNGNU_FILES_LIST
-    ACG.cpp
-    Binomial.cpp
-    DiscUnif.cpp
-    Erlang.cpp
-    Geom.cpp
-    HypGeom.cpp
-    LogNorm.cpp
-    MLCG.cpp
-    NegExp.cpp
-    Normal.cpp
-    Poisson.cpp
-    RNG.cpp
-    Random.cpp
-    RndInt.cpp
-    Uniform.cpp
-    Weibull.cpp)
-
 # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST
     nrnpython.cpp
@@ -569,7 +550,6 @@ nrn_create_file_list(NRN_SPARSE13_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse13
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi/lib ${NRNMPI_FILES_LIST})
-nrn_create_file_list(NRN_NRNGNU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/gnu ${NRNGNU_FILES_LIST})
 nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
                      ${NRNPYTHON_FILES_LIST})
 nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})
