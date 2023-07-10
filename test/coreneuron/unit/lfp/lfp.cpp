@@ -123,8 +123,8 @@ BOOST_AUTO_TEST_CASE(LFP_ReportEvent) {
     for (const auto& gid: gids) {
         mapinfo->mappingvec.push_back(new CellMapping(gid));
         for (const auto& segment: segment_ids) {
-            mapinfo->mappingvec.back()->add_segment_lfp_factor(segment,
-                                                               {segment + 1.0, segment + 2.0});
+            std::vector<double> lfp_factors{segment + 1.0, segment + 2.0};
+            mapinfo->mappingvec.back()->add_segment_lfp_factor(segment, lfp_factors);
         }
     }
     mapinfo->prepare_lfp();
