@@ -1,5 +1,6 @@
 from neuron import h, morphio_api
 from os import path
+import pytest
 
 
 def test_setup_cell():
@@ -24,6 +25,8 @@ def test_setup_cell():
 def test_morphio_read_from_python():
     cell0 = h.HocBasicCell()
     h.morphio_read(cell0, "test/morphology/test.h5")
+    with pytest.raises(Exception) as _:
+        h.morphio_read(None, "test/morphology/test.h5")
     h.topology()
 
 
@@ -31,8 +34,9 @@ def test_morphio_read_from_wrapper_binding():
     """test that we can import at the top level without error"""
     cell = h.HocBasicCell()
     m = morphio_api.MorphIOWrapper("test/morphology/test.h5")
-
     morphio_api.morphio_read(cell, m)
+    with pytest.raises(Exception) as _:
+        h.morphio_read(None, "test/morphology/test.h5")
     h.topology()
 
 
@@ -43,6 +47,12 @@ def test_morphio_read_api():
         objref cell1 
         cell1 = new HocBasicCell()
         morphio_read(cell1, "test/morphology/test.h5")
+        """
+    )
+    assert not h(
+        """
+        objref empty
+        morphio_read(empty, "test/morphology/test.h5")
         """
     )
     h.topology()

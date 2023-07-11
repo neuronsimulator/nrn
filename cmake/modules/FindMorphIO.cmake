@@ -16,7 +16,6 @@ if(MorphIO_LIBRARY AND MorphIO_INCLUDE_DIR)
   add_library(MorphIO INTERFACE IMPORTED)
 else()
   message(STATUS "MorphIO not found, building it from source")
-  set(MorphIO_BUILD_FROM_SOURCE ON)
 
   include(ExternalProject)
   set(MorphIO_PREFIX "${THIRD_PARTY_DIRECTORY}/MorphIO")
