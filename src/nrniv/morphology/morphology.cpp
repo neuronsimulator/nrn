@@ -60,9 +60,10 @@ void morphio_read(PyObject* pyObj, MorphIOWrapper& morph) {
     auto result = morph.morph_as_hoc();
     // execute the hoc code in the cell_obj context
     auto err = 0.;
-    for (const auto& s : result) {
+    for (const auto& s: result) {
         err = hoc_obj_run(s.c_str(), cell_obj);
-        if (err) break;
+        if (err)
+            break;
     }
     if (err) {
         hoc_execerror("morphio_read failed", nullptr);
@@ -102,9 +103,10 @@ void morphio_read() {
 
     // execute the hoc code in the cell_obj context
     auto err = 0.;
-    for (const auto& s : result) {
+    for (const auto& s: result) {
         err = hoc_obj_run(s.c_str(), cell_obj);
-        if (err != 0) break;
+        if (err != 0)
+            break;
     }
     hoc_retpushx(err ? 0. : 1.);
 }
