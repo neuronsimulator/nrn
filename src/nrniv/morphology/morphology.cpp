@@ -12,7 +12,7 @@
 #include "nrnpy.h"
 
 namespace neuron::morphology {
-std::vector<std::string> morphio_read(std::filesystem::path const& path) {
+std::vector<std::string> morphio_load(std::filesystem::path const& path) {
     return MorphIOWrapper{path}.morph_as_hoc();
 }
 
@@ -48,13 +48,13 @@ std::string name(int type_id, int index) {
     return type2name(type_id) + "[" + std::to_string(index) + "]";
 }
 
-void morphio_read(PyObject* pyObj, MorphIOWrapper& morph) {
+void morphio_load(PyObject* pyObj, MorphIOWrapper& morph) {
     // Call nrn_po2ho on the PyObject
     Object* cell_obj = neuron::python::methods.po2ho(pyObj);
 
     // Check that the PyObject is a Cell object
     if (!cell_obj) {
-        hoc_execerror("morphio_read requires a Cell object", nullptr);
+        hoc_execerror("morphio_load requires a Cell object", nullptr);
     }
 
     auto result = morph.morph_as_hoc();
@@ -66,25 +66,25 @@ void morphio_read(PyObject* pyObj, MorphIOWrapper& morph) {
             break;
     }
     if (err) {
-        hoc_execerror("morphio_read failed", nullptr);
+        hoc_execerror("morphio_load failed", nullptr);
     }
 }
 }  // namespace neuron::morphology
 
 
-void morphio_read() {
+void morphio_load() {
     if (!ifarg(1)) {
-        hoc_execerror("morphio_read requires a Cell object", nullptr);
+        hoc_execerror("morphio_load requires a Cell object", nullptr);
     }
     // get the Cell object and check that it is a Cell object
     auto cell_obj = *hoc_objgetarg(1);
 
     if (!ifarg(2)) {
-        hoc_execerror("morphio_read requires a path argument", nullptr);
+        hoc_execerror("morphio_load requires a path argument", nullptr);
     }
     // get the morphology path
     std::filesystem::path path(hoc_gargstr(2));
-    auto result = neuron::morphology::morphio_read(path);
+    auto result = neuron::morphology::morphio_load(path);
 
     // temporary: also dump to file where the morphology is located
     // i.e. /path/to/morphology.h5 -> /path/to/morphology.hoc

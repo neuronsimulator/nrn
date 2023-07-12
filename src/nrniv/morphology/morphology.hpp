@@ -10,8 +10,8 @@ namespace neuron::morphology {
 class MorphIOWrapper;
 
 // MorphIO API
-std::vector<std::string> morphio_read(std::filesystem::path const& path);
-void morphio_read(PyObject* pyObj, MorphIOWrapper& morph);
+std::vector<std::string> morphio_load(std::filesystem::path const& path);
+void morphio_load(PyObject* pyObj, MorphIOWrapper& morph);
 
 
 // Morphology constructs
