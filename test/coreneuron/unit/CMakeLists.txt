@@ -21,7 +21,7 @@ set(CMAKE_BUILD_RPATH ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR})
 if(CORENRN_ENABLE_UNIT_TESTS)
   set(Boost_NO_BOOST_CMAKE TRUE)
   # Minimum set by needing the multi-argument version of BOOST_AUTO_TEST_CASE.
-  find_package(Boost 1.59 REQUIRED COMPONENTS filesystem system atomic unit_test_framework)
+  find_package(Boost REQUIRED COMPONENTS filesystem system atomic unit_test_framework)
   include_directories(${PROJECT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
   add_library(coreneuron-unit-test INTERFACE)
   target_compile_options(coreneuron-unit-test INTERFACE ${CORENEURON_BOOST_UNIT_TEST_COMPILE_FLAGS})
