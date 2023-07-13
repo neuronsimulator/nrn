@@ -95,7 +95,12 @@ static void make_spikebuf_type(int* nout_) {
 }
 #endif
 
-int nrnmpi_spike_exchange(int* ovfl, int* nout_, int* nin_, NRNMPI_Spike* spikeout_, NRNMPI_Spike* spikein_, int* icapacity_) {
+int nrnmpi_spike_exchange(int* ovfl,
+                          int* nout_,
+                          int* nin_,
+                          NRNMPI_Spike* spikeout_,
+                          NRNMPI_Spike* spikein_,
+                          int* icapacity_) {
     int i, n, novfl, n1;
     if (!displs) {
         np = nrnmpi_numprocs;
