@@ -41,6 +41,14 @@ static IvocVect* all_spiketvec = NULL;
 static IvocVect* all_spikegidvec = NULL;
 static double t_exchange_;
 static double dt1_;  // 1/dt
+static int localgid_size_;
+static int ag_send_size_;
+static int ag_send_nspike_;
+static int ovfl_capacity_;
+static int ovfl_;
+static unsigned char* spikeout_fixed_;
+static unsigned char* spikein_fixed_;
+static unsigned char* spikein_fixed_ovfl_;
 static void alloc_space();
 
 extern NetCvode* net_cvode_instance;
@@ -335,14 +343,14 @@ void nrn_outputevent(unsigned char localgid, double firetime) {
     idxout_ += 2;
     if (idxout_ >= spfixout_capacity_) {
         spfixout_capacity_ *= 2;
-        spfixout_ = (unsigned char*) hoc_Erealloc(spfixout_,
+        spikeout_fixed_ = (unsigned char*) hoc_Erealloc(spikeout_fixed_,
                                                   spfixout_capacity_ * sizeof(unsigned char));
         hoc_malchk();
     }
-    spfixout_[i++] = (unsigned char) ((firetime - t_exchange_) * dt1_ + .5);
-    spfixout_[i] = localgid;
+    spikeout_fixed_[i++] = (unsigned char) ((firetime - t_exchange_) * dt1_ + .5);
+    spikeout_fixed_[i] = localgid;
     // printf("%d idx=%d lgid=%d firetime=%g t_exchange_=%g [0]=%d [1]=%d\n", nrnmpi_myid, i,
-    // (int)localgid, firetime, t_exchange_, (int)spfixout_[i-1], (int)spfixout_[i]);
+    // (int)localgid, firetime, t_exchange_, (int)spikeout_fixed_[i-1], (int)spikeout_fixed_[i]);
     MUTUNLOCK
 }
 
@@ -358,17 +366,17 @@ void nrn2ncs_outputevent(int gid, double firetime) {
         idxout_ += 1 + localgid_size_;
         if (idxout_ >= spfixout_capacity_) {
             spfixout_capacity_ *= 2;
-            spfixout_ = (unsigned char*) hoc_Erealloc(spfixout_,
+            spikeout_fixed_ = (unsigned char*) hoc_Erealloc(spikeout_fixed_,
                                                       spfixout_capacity_ * sizeof(unsigned char));
             hoc_malchk();
         }
         // printf("%d nrnncs_outputevent %d %.20g %.20g %d\n", nrnmpi_myid, gid, firetime,
         // t_exchange_, (int)((unsigned char)((firetime - t_exchange_)*dt1_ + .5)));
-        spfixout_[i++] = (unsigned char) ((firetime - t_exchange_) * dt1_ + .5);
+        spikeout_fixed_[i++] = (unsigned char) ((firetime - t_exchange_) * dt1_ + .5);
         // printf("%d idx=%d firetime=%g t_exchange_=%g spfixout=%d\n", nrnmpi_myid, i, firetime,
-        // t_exchange_, (int)spfixout_[i-1]);
-        sppk(spfixout_ + i, gid);
-        // printf("%d idx=%d gid=%d spupk=%d\n", nrnmpi_myid, i, gid, spupk(spfixout_+i));
+        // t_exchange_, (int)spikeout_fixed_[i-1]);
+        sppk(spikeout_fixed_ + i, gid);
+        // printf("%d idx=%d gid=%d spupk=%d\n", nrnmpi_myid, i, gid, spupk(spikeout_fixed_+i));
     } else {
 #if nrn_spikebuf_size == 0
         int i = nout_++;
@@ -574,7 +582,7 @@ void nrn_spike_exchange(NrnThread* nt) {
         nrnmpi_barrier();
         nrnmpi_step_wait_ += nrnmpi_wtime() - wt;
     }
-    n = nrnmpi_spike_exchange();
+    n = nrnmpi_spike_exchange(&ovfl_);
     wt_ = nrnmpi_wtime() - wt;
     wt = nrnmpi_wtime();
     TBUF
@@ -662,15 +670,15 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
         nsendmax_ = nout_;
     }
     assert(nout_ < 0x10000);
-    spfixout_[1] = (unsigned char) (nout_ & 0xff);
-    spfixout_[0] = (unsigned char) (nout_ >> 8);
+    spikeout_fixed_[1] = (unsigned char) (nout_ & 0xff);
+    spikeout_fixed_[0] = (unsigned char) (nout_ >> 8);
 
     wt = nrnmpi_wtime();
     if (nrnmpi_step_wait_ >= 0.) {
         nrnmpi_barrier();
         nrnmpi_step_wait_ += nrnmpi_wtime() - wt;
     }
-    n = nrnmpi_spike_exchange_compressed();
+    n = nrnmpi_spike_exchange_compressed(localgid_size_, ag_send_size_, ag_send_nspike_, &ovfl_capacity_, &ovfl_, spikeout_fixed_, spikein_fixed_, spikein_fixed_ovfl_);
     wt_ = nrnmpi_wtime() - wt;
     wt = nrnmpi_wtime();
     TBUF
@@ -727,8 +735,8 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
                 idx = 2 + i * ag_send_size_;
                 for (j = 0; j < nnn; ++j) {
                     // order is (firetime,gid) pairs.
-                    double firetime = spfixin_[idx++] * dt + t_exchange_;
-                    int lgid = (int) spfixin_[idx];
+                    double firetime = spikein_fixed_[idx++] * dt + t_exchange_;
+                    int lgid = (int) spikein_fixed_[idx];
                     idx += localgid_size_;
                     auto iter = gps->find(lgid);
                     if (iter != gps->end()) {
@@ -738,8 +746,8 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
                     }
                 }
                 for (; j < nn; ++j) {
-                    double firetime = spfixin_ovfl_[idxov++] * dt + t_exchange_;
-                    int lgid = (int) spfixin_ovfl_[idxov];
+                    double firetime = spikein_fixed_ovfl_[idxov++] * dt + t_exchange_;
+                    int lgid = (int) spikein_fixed_ovfl_[idxov];
                     idxov += localgid_size_;
                     auto iter = gps->find(lgid);
                     if (iter != gps->end()) {
@@ -760,8 +768,8 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
             idx = 2 + i * ag_send_size_;
             for (j = 0; j < nn; ++j) {
                 // order is (firetime,gid) pairs.
-                double firetime = spfixin_[idx++] * dt + t_exchange_;
-                int gid = spupk(spfixin_ + idx);
+                double firetime = spikein_fixed_[idx++] * dt + t_exchange_;
+                int gid = spupk(spikein_fixed_ + idx);
                 idx += localgid_size_;
                 auto iter = gid2in_.find(gid);
                 if (iter != gid2in_.end()) {
@@ -774,8 +782,8 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
         n = ovfl_;
         idx = 0;
         for (i = 0; i < n; ++i) {
-            double firetime = spfixin_ovfl_[idx++] * dt + t_exchange_;
-            int gid = spupk(spfixin_ovfl_ + idx);
+            double firetime = spikein_fixed_ovfl_[idx++] * dt + t_exchange_;
+            int gid = spupk(spikein_fixed_ovfl_ + idx);
             idx += localgid_size_;
             auto iter = gid2in_.find(gid);
             if (iter != gid2in_.end()) {
@@ -1479,17 +1487,17 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
     }
     if (nspike >= 0) {
         ag_send_nspike_ = 0;
-        if (spfixout_) {
-            free(spfixout_);
-            spfixout_ = 0;
+        if (spikeout_fixed_) {
+            free(spikeout_fixed_);
+            spikeout_fixed_ = 0;
         }
-        if (spfixin_) {
-            free(spfixin_);
-            spfixin_ = 0;
+        if (spikein_fixed_) {
+            free(spikein_fixed_);
+            spikein_fixed_ = 0;
         }
-        if (spfixin_ovfl_) {
-            free(spfixin_ovfl_);
-            spfixin_ovfl_ = 0;
+        if (spikein_fixed_ovfl_) {
+            free(spikein_fixed_ovfl_);
+            spikein_fixed_ovfl_ = 0;
         }
         localmaps_.clear();
     }
@@ -1522,12 +1530,12 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
         }
         ag_send_size_ = 2 + ag_send_nspike_ * (1 + localgid_size_);
         spfixout_capacity_ = ag_send_size_ + 50 * (1 + localgid_size_);
-        spfixout_ = (unsigned char*) hoc_Emalloc(spfixout_capacity_);
+        spikeout_fixed_ = (unsigned char*) hoc_Emalloc(spfixout_capacity_);
         hoc_malchk();
-        spfixin_ = (unsigned char*) hoc_Emalloc(nrnmpi_numprocs * ag_send_size_);
+        spikein_fixed_ = (unsigned char*) hoc_Emalloc(nrnmpi_numprocs * ag_send_size_);
         hoc_malchk();
         ovfl_capacity_ = 100;
-        spfixin_ovfl_ = (unsigned char*) hoc_Emalloc(ovfl_capacity_ * (1 + localgid_size_));
+        spikein_fixed_ovfl_ = (unsigned char*) hoc_Emalloc(ovfl_capacity_ * (1 + localgid_size_));
         hoc_malchk();
     }
     return ag_send_nspike_;
