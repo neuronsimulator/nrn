@@ -99,7 +99,7 @@ int nrnmpi_spike_exchange(int* ovfl,
                           int* nout_,
                           int* nin_,
                           NRNMPI_Spike* spikeout_,
-                          NRNMPI_Spike* spikein_,
+                          NRNMPI_Spike** spikein_,
                           int* icapacity_) {
     int i, n, novfl, n1;
     if (!displs) {
@@ -122,12 +122,12 @@ int nrnmpi_spike_exchange(int* ovfl,
     if (n) {
         if (*icapacity_ < n) {
             *icapacity_ = n + 10;
-            free(spikein_);
-            spikein_ = (NRNMPI_Spike*) hoc_Emalloc(*icapacity_ * sizeof(NRNMPI_Spike));
+            free(*spikein_);
+            *spikein_ = (NRNMPI_Spike*) hoc_Emalloc(*icapacity_ * sizeof(NRNMPI_Spike));
             hoc_malchk();
         }
         MPI_Allgatherv(
-            spikeout_, *nout_, spike_type, spikein_, nin_, displs, spike_type, nrnmpi_comm);
+            spikeout_, *nout_, spike_type, *spikein_, nin_, displs, spike_type, nrnmpi_comm);
     }
 #else
     MPI_Allgather(spbufout_, 1, spikebuf_type, spbufin_, 1, spikebuf_type, nrnmpi_comm);
@@ -153,12 +153,12 @@ int nrnmpi_spike_exchange(int* ovfl,
     if (novfl) {
         if (*icapacity_ < novfl) {
             *icapacity_ = novfl + 10;
-            free(spikein_);
-            spikein_ = (NRNMPI_Spike*) hoc_Emalloc(*icapacity_ * sizeof(NRNMPI_Spike));
+            free(*spikein_);
+            *spikein_ = (NRNMPI_Spike*) hoc_Emalloc(*icapacity_ * sizeof(NRNMPI_Spike));
             hoc_malchk();
         }
         n1 = (*nout_ > nrn_spikebuf_size) ? *nout_ - nrn_spikebuf_size : 0;
-        MPI_Allgatherv(spikeout_, n1, spike_type, spikein_, nin_, displs, spike_type, nrnmpi_comm);
+        MPI_Allgatherv(spikeout_, n1, spike_type, *spikein_, nin_, displs, spike_type, nrnmpi_comm);
     }
     *ovfl = novfl;
 #endif

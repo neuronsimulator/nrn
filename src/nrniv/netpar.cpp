@@ -587,7 +587,7 @@ void nrn_spike_exchange(NrnThread* nt) {
         nrnmpi_barrier();
         nrnmpi_step_wait_ += nrnmpi_wtime() - wt;
     }
-    n = nrnmpi_spike_exchange(&ovfl_, &nout_, nin_, spikeout_, spikein_, &icapacity_);
+    n = nrnmpi_spike_exchange(&ovfl_, &nout_, nin_, spikeout_, &spikein_, &icapacity_);
     wt_ = nrnmpi_wtime() - wt;
     wt = nrnmpi_wtime();
     TBUF

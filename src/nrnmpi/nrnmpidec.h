@@ -65,7 +65,7 @@ extern void nrnmpi_subworld_size(int n);
 
 /* from mpispike.cpp */
 extern void nrnmpi_spike_initialize();
-extern int nrnmpi_spike_exchange(int* ovfl, int* nout, int* nin, NRNMPI_Spike* spikeout, NRNMPI_Spike* spikein, int* icapacity_);
+extern int nrnmpi_spike_exchange(int* ovfl, int* nout, int* nin, NRNMPI_Spike* spikeout, NRNMPI_Spike** spikein, int* icapacity_);
 extern int nrnmpi_spike_exchange_compressed(int localgid_size, int ag_send_size, int ag_send_nspike, int* ovfl_capacity, int* ovfl, unsigned char* spfixout, unsigned char* spfixin, unsigned char* spfixin_ovfl, int* nin_);
 extern double nrnmpi_mindelay(double maxdel);
 extern int nrnmpi_int_allmax(int i);
