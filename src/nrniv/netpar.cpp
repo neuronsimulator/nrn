@@ -49,6 +49,11 @@ static int ovfl_;
 static unsigned char* spfixout_;
 static unsigned char* spfixin_;
 static unsigned char* spfixin_ovfl_;
+static int nout_;
+static int* nin_;
+static NRNMPI_Spike* spikeout_;
+static NRNMPI_Spike* spikein_;
+static int icapacity_;
 static void alloc_space();
 
 extern NetCvode* net_cvode_instance;
@@ -582,7 +587,7 @@ void nrn_spike_exchange(NrnThread* nt) {
         nrnmpi_barrier();
         nrnmpi_step_wait_ += nrnmpi_wtime() - wt;
     }
-    n = nrnmpi_spike_exchange(&ovfl_);
+    n = nrnmpi_spike_exchange(&ovfl_, &nout_, nin_, spikeout_, spikein_, &icapacity_);
     wt_ = nrnmpi_wtime() - wt;
     wt = nrnmpi_wtime();
     TBUF
@@ -685,7 +690,8 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
                                          &ovfl_,
                                          spfixout_,
                                          spfixin_,
-                                         spfixin_ovfl_);
+                                         spfixin_ovfl_,
+                                         nin_);
     wt_ = nrnmpi_wtime() - wt;
     wt = nrnmpi_wtime();
     TBUF

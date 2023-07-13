@@ -13,18 +13,6 @@ typedef struct {
 } NRNMPI_Spikebuf;
 #endif
 
-
-#define icapacity_ nrnmpi_i_capacity_
-#define spikeout_  nrnmpi_spikeout_
-#define spikein_   nrnmpi_spikein_
-#define nout_      nrnmpi_nout_
-#define nin_       nrnmpi_nin_
-extern int nout_;
-extern int* nin_;
-extern int icapacity_;
-extern NRNMPI_Spike* spikeout_;
-extern NRNMPI_Spike* spikein_;
-
 #if nrn_spikebuf_size > 0
 #define spbufout_ nrnmpi_spbufout_
 #define spbufin_  nrnmpi_spbufin_
