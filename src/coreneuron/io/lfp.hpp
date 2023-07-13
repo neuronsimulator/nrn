@@ -106,7 +106,7 @@ struct LFPCalculator {
 };
 
 template <>
-double LFPCalculator<LineSource>::getFactor(const lfputils::Point3D& e_pos,
+inline double LFPCalculator<LineSource>::getFactor(const lfputils::Point3D& e_pos,
                                             const lfputils::Point3D& seg_0,
                                             const lfputils::Point3D& seg_1,
                                             const double radius,
@@ -115,7 +115,7 @@ double LFPCalculator<LineSource>::getFactor(const lfputils::Point3D& e_pos,
 }
 
 template <>
-double LFPCalculator<PointSource>::getFactor(const lfputils::Point3D& e_pos,
+inline double LFPCalculator<PointSource>::getFactor(const lfputils::Point3D& e_pos,
                                              const lfputils::Point3D& seg_0,
                                              const lfputils::Point3D& seg_1,
                                              const double radius,
