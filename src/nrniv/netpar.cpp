@@ -678,7 +678,14 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
         nrnmpi_barrier();
         nrnmpi_step_wait_ += nrnmpi_wtime() - wt;
     }
-    n = nrnmpi_spike_exchange_compressed(localgid_size_, ag_send_size_, ag_send_nspike_, &ovfl_capacity_, &ovfl_, spfixout_, spfixin_, spfixin_ovfl_);
+    n = nrnmpi_spike_exchange_compressed(localgid_size_,
+                                         ag_send_size_,
+                                         ag_send_nspike_,
+                                         &ovfl_capacity_,
+                                         &ovfl_,
+                                         spfixout_,
+                                         spfixin_,
+                                         spfixin_ovfl_);
     wt_ = nrnmpi_wtime() - wt;
     wt = nrnmpi_wtime();
     TBUF

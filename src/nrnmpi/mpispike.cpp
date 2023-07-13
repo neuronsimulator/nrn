@@ -178,7 +178,14 @@ a sequence of spiketime, localgid pairs. There are nspike of them.
 The allgather sends the first part of the buf and the allgatherv buffer
 sends any overflow.
 */
-int nrnmpi_spike_exchange_compressed(int localgid_size, int ag_send_size, int ag_send_nspike, int* ovfl_capacity, int* ovfl, unsigned char* spfixout, unsigned char* spfixin, unsigned char* spfixin_ovfl) {
+int nrnmpi_spike_exchange_compressed(int localgid_size,
+                                     int ag_send_size,
+                                     int ag_send_nspike,
+                                     int* ovfl_capacity,
+                                     int* ovfl,
+                                     unsigned char* spfixout,
+                                     unsigned char* spfixin,
+                                     unsigned char* spfixin_ovfl) {
     int i, novfl, n, ntot, idx, bs, bstot; /* n is #spikes, bs is #byte overflow */
     if (!displs) {
         np = nrnmpi_numprocs;
@@ -192,8 +199,7 @@ int nrnmpi_spike_exchange_compressed(int localgid_size, int ag_send_size, int ag
     }
     nrnbbs_context_wait();
 
-    MPI_Allgather(
-        spfixout, ag_send_size, MPI_BYTE, spfixin, ag_send_size, MPI_BYTE, nrnmpi_comm);
+    MPI_Allgather(spfixout, ag_send_size, MPI_BYTE, spfixin, ag_send_size, MPI_BYTE, nrnmpi_comm);
     novfl = 0;
     ntot = 0;
     bstot = 0;
@@ -218,7 +224,7 @@ int nrnmpi_spike_exchange_compressed(int localgid_size, int ag_send_size, int ag
             *ovfl_capacity = novfl + 10;
             free(spfixin_ovfl);
             spfixin_ovfl = (unsigned char*) hoc_Emalloc(*ovfl_capacity * (1 + localgid_size) *
-                                                         sizeof(unsigned char));
+                                                        sizeof(unsigned char));
             hoc_malchk();
         }
         bs = byteovfl[nrnmpi_myid];
