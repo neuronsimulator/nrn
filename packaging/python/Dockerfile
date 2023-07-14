@@ -89,12 +89,14 @@ RUN yum -y remove ncurses-devel
 
 ENV HDF5_VERSION='1.12.1'
 
-RUN curl -fsSLO "https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_VERSION%.*}/hdf5-$HDF5_VERSION/src/hdf5-$HDF5_VERSION.tar.gz" \
-    && tar -xzvf hdf5-$HDF5_VERSION.tar.gz \
-    && cd  hdf5-$HDF5_VERSION \
-    && ./configure  --prefix=/usr  --enable-build-mode=production  --with-szlib  --enable-tools=no  --enable-tests=no \
-    && make -j 2 &&   make install &&  ldconfig \
-    && cd .. && rm -rf hdf5-$HDF5_VERSION
+RUN curl -fsSLO "https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_VERSION%.*}/hdf5-$HDF5_VERSION/src/CMake-hdf5-$HDF5_VERSION.tar.gz" \
+    && tar -xzvf CMake-hdf5-$HDF5_VERSION.tar.gz \
+    && cd CMake-hdf5-$HDF5_VERSION \
+    && ctest -S HDF5config.cmake,BUILD_GENERATOR=Unix,INSTALLDIR=/usr -C Release -V -O hdf5.log\
+    && (cd build && make install) \
+    && (cd build/SZIP-prefix/src/SZIP-build && make install) \
+    && (cd build/ZLIB-prefix/src/ZLIB-build && make install) \
+    && cd ../../ && rm -rf CMake-hdf5-$HDF5_VERSION
 
 # Copy Dockerfile for reference
 COPY Dockerfile .
