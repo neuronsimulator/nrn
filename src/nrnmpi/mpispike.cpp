@@ -190,7 +190,7 @@ int nrnmpi_spike_exchange_compressed(int localgid_size,
                                      int* ovfl,
                                      unsigned char* spfixout,
                                      unsigned char* spfixin,
-                                     unsigned char* spfixin_ovfl,
+                                     unsigned char** spfixin_ovfl,
                                      int* nin_) {
     int i, novfl, n, ntot, idx, bs, bstot; /* n is #spikes, bs is #byte overflow */
     if (!displs) {
@@ -228,8 +228,8 @@ int nrnmpi_spike_exchange_compressed(int localgid_size,
     if (novfl) {
         if (*ovfl_capacity < novfl) {
             *ovfl_capacity = novfl + 10;
-            free(spfixin_ovfl);
-            spfixin_ovfl = (unsigned char*) hoc_Emalloc(*ovfl_capacity * (1 + localgid_size) *
+            free(*spfixin_ovfl);
+            *spfixin_ovfl = (unsigned char*) hoc_Emalloc(*ovfl_capacity * (1 + localgid_size) *
                                                         sizeof(unsigned char));
             hoc_malchk();
         }
@@ -243,7 +243,7 @@ int nrnmpi_spike_exchange_compressed(int localgid_size,
         MPI_Allgatherv(spfixout + ag_send_size,
                        bs,
                        MPI_BYTE,
-                       spfixin_ovfl,
+                       *spfixin_ovfl,
                        byteovfl,
                        displs,
                        MPI_BYTE,

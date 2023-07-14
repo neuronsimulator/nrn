@@ -690,7 +690,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
                                          &ovfl_,
                                          spfixout_,
                                          spfixin_,
-                                         spfixin_ovfl_,
+                                         &spfixin_ovfl_,
                                          nin_);
     wt_ = nrnmpi_wtime() - wt;
     wt = nrnmpi_wtime();
