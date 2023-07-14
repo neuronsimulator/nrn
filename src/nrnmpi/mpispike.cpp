@@ -230,7 +230,7 @@ int nrnmpi_spike_exchange_compressed(int localgid_size,
             *ovfl_capacity = novfl + 10;
             free(*spfixin_ovfl);
             *spfixin_ovfl = (unsigned char*) hoc_Emalloc(*ovfl_capacity * (1 + localgid_size) *
-                                                        sizeof(unsigned char));
+                                                         sizeof(unsigned char));
             hoc_malchk();
         }
         bs = byteovfl[nrnmpi_myid];
