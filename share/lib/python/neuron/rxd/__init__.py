@@ -31,6 +31,7 @@ from .geometry import (
     MultipleGeometry,
 )
 from .plugins import set_solver
+_userrxd = 1
 
 # deprecated:
 # from geometry import ConstantArea, ConstantVolume
