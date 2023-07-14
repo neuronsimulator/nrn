@@ -32,6 +32,8 @@ from .geometry import (
 )
 from .plugins import set_solver
 
+_userrxd = 1
+
 # deprecated:
 # from geometry import ConstantArea, ConstantVolume
 # TODO: if we ever separate Parameter and State from species, then we need to
