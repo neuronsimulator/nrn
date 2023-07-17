@@ -45,6 +45,10 @@
 #include "coreneuron/io/core2nrn_data_return.hpp"
 #include "coreneuron/utils/utils.hpp"
 
+// name of coreneuron mpi library (determined on neuron side)
+// that should be loaded in case of dynamic MPI
+extern std::string corenrn_mpi_library;
+
 extern "C" {
 const char* corenrn_version() {
     return coreneuron::bbcore_write_version;
@@ -87,11 +91,17 @@ char* prepare_args(int& argc, char**& argv, int use_mpi, const char* mpi_lib, co
     }
 
     // if neuron has passed name of MPI library then add it to CLI
-    std::string corenrn_mpi_lib{mpi_lib};
-    if (!corenrn_mpi_lib.empty()) {
+    std::string corenrn_mpi_lib_to_load{mpi_lib};
+
+    // if no mpi library specified then try to use what neuron might have detected
+    if (corenrn_mpi_lib_to_load.empty()) {
+        corenrn_mpi_lib_to_load = corenrn_mpi_library;
+    }
+
+    if (!corenrn_mpi_lib_to_load.empty()) {
         args.append(" --mpi-lib ");
-        corenrn_mpi_lib += " ";
-        args.append(corenrn_mpi_lib);
+        corenrn_mpi_lib_to_load += " ";
+        args.append(corenrn_mpi_lib_to_load);
     }
 
     // we can't modify string with strtok, make copy
