@@ -31,8 +31,9 @@ from .geometry import (
     MultipleGeometry,
 )
 from .plugins import set_solver
+import neuron
 
-_userrxd = 1
+neuron._userrxd = 1
 
 # deprecated:
 # from geometry import ConstantArea, ConstantVolume
