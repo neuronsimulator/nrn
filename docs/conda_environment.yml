@@ -8,10 +8,9 @@ dependencies:
   - cmake
   - xorg-libxcomposite
   - ffmpeg
-  - cython
+  - cython<3
   - pandoc
   - mpich
-  - cython<3
   - pip
   - pip:
       - -r docs_requirements.txt
