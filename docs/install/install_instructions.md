@@ -211,6 +211,11 @@ The following packages are optional (see build options):
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)
 
+Note that you may have to force Cython version:
+```bash
+pip install "cython<3"
+```
+
 Depending on platform you can install these dependencies as follows:
 
 <a name="Mac-OS-Depend"></a>
