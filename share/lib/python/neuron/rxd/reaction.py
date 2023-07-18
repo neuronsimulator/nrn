@@ -163,7 +163,9 @@ class Reaction(GeneralizedReaction):
                 ecs_region = list(sps[0]._extracellular_instances.keys())
                 for s in sps:
                     ecs_region = [
-                        r for r in list(s._extracellular_instances.keys()) if r in ecs_region
+                        r
+                        for r in list(s._extracellular_instances.keys())
+                        if r in ecs_region
                     ]
         if ecs_region:
             self._rate_ecs, self._involved_species_ecs = rxdmath._compile(

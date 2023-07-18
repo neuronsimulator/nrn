@@ -1776,7 +1776,9 @@ class Species(_SpeciesMathable):
                     segs = [seg for sec in r._secs3d for seg in sec]
                     self._intracellular_nodes[r] += [
                         node.Node3D(i, x, y, z, r, self._d, segs[idx], selfref)
-                        for i, x, y, z, idx in zip(list(range(len(xs))), xs, ys, zs, segsidx)
+                        for i, x, y, z, idx in zip(
+                            list(range(len(xs))), xs, ys, zs, segsidx
+                        )
                     ]
                     # the region is now responsible for computing the correct volumes and surface areas
                     # this is done so that multiple species can use the same region without recomputing it
