@@ -37,12 +37,15 @@ class ShapePlotData: public ShapePlotInterface {
     virtual float high();
     virtual Object* neuron_section_list();
     virtual bool has_iv_view();
+    int get_mode();
+    void set_mode(int mode);
 
   private:
     Symbol* sym_;
     float lo, hi;
     Object* sl_;
     void* py_var_;
+    int show_mode;
 };
 
 #if HAVE_IV
