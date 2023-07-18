@@ -92,7 +92,7 @@ double nrn_multisend_receive_time(int) {
 }
 #endif
 
-#if PARANEURON
+#if NRNMPI
 extern void nrnmpi_split_clear();
 #endif
 extern void nrnmpi_multisplit_clear();
@@ -990,7 +990,7 @@ void nrn_cleanup_presyn(PreSyn* ps) {
 void nrnmpi_gid_clear(int arg) {
     if (arg == 0 || arg == 3 || arg == 4) {
         nrn_partrans_clear();
-#if PARANEURON
+#if NRNMPI
         nrnmpi_split_clear();
 #endif
     }

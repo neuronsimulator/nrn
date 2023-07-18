@@ -261,12 +261,12 @@ class Cvode {
 
   private:
     int prior2init_;
-#if PARANEURON
+#if NRNMPI
   public:
     bool use_partrans_;
     int global_neq_;
     int opmode_;  // 1 advance, 2 interpolate, 3 init; for testing
-#endif            // PARANEURON
+#endif            // NRNMPI
 };
 
 #endif
