@@ -61,6 +61,7 @@ extern double nrnmpi_wtime();
 extern void nrnmpi_terminate();
 extern void nrnmpi_abort(int errcode);
 extern void nrnmpi_subworld_size(int n);
+extern void nrnmpi_get_subworld_info(int* cnt, int* index, int* rank, int* numprocs, int* numprocs_world);
 
 
 /* from mpispike.cpp */
