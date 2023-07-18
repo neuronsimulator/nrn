@@ -593,8 +593,12 @@ static void prs(int oldnew, int row, int col, const char* string) {
         Sprintf(buf, "%13c", SPACE);
         plprint(buf);
         xcursor(row, col);
-        snprintf(buf, 100, "<%s>", string);
-        plprint(buf);
+        // avoid directive output may be truncated warning
+        if (snprintf(buf, 100, "<%s>", string) >= 0) {
+            plprint(buf);
+        } else {
+            plprint("snprintf error");
+        }
     }
 }
 
