@@ -104,7 +104,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
             if relevant_pts:
                 rng = relevant_pts[i]
             else:
-                rng = range(sec.n3d())
+                rng = list(range(sec.n3d()))
             if sec.hoc_internal_name() in _sec_db:
                 soma_idx.append(i)
             else:
@@ -134,7 +134,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
 
         for idx in soma_idx:
             sec = source[idx]
-            rng = relevant_pts[idx] if relevant_pts else range(sec.n3d())
+            rng = relevant_pts[idx] if relevant_pts else list(range(sec.n3d()))
             xs = minmax([sec.x3d(i) for i in rng], xs)
             ys = minmax([sec.y3d(i) for i in rng], ys)
             zs = minmax([sec.z3d(i) for i in rng], zs)
@@ -159,7 +159,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
 
     # soma: modified when ctng properly assigns soma obj to segments
     if soma_objects:
-        for item, seg in soma_objects.items():
+        for item, seg in list(soma_objects.items()):
             if seg in final_seg_dict:
                 final_seg_dict[seg].append(item)
             else:
@@ -173,7 +173,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
             if (not (isinstance(item, Cone) or isinstance(item, Cylinder))) or (
                 item in join_objects
             ):
-                if seg in final_seg_dict.keys():
+                if seg in list(final_seg_dict.keys()):
                     final_seg_dict[seg].append(item)
                 else:
                     final_seg_dict[seg] = [item]
@@ -181,7 +181,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
     # complete final segment dictionary
     for cone in cones:
         seg = segment_dict[(cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1)]
-        if seg in final_seg_dict.keys():
+        if seg in list(final_seg_dict.keys()):
             final_seg_dict[seg].append(cone)
         else:
             final_seg_dict[seg] = [cone]
@@ -213,7 +213,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
                 # must take only the internal voxels for that item (set diff)
                 yesvox = yesvox - set(surface.keys())
                 for i in yesvox:
-                    if i in final_intern_voxels.keys():
+                    if i in list(final_intern_voxels.keys()):
                         if h.distance(distance_root, seg) < h.distance(
                             distance_root, final_intern_voxels[i][1]
                         ) and not isinstance(item, Sphere):
@@ -221,8 +221,8 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
                     else:
                         final_intern_voxels[i] = [dx**3, seg]
 
-                for i in surface.keys():
-                    if i in total_surface_voxels.keys():
+                for i in list(surface.keys()):
+                    if i in list(total_surface_voxels.keys()):
                         total_surface_voxels[i][0].append(item)
                         # update the distances list to the minimum at each vertex
                         total_surface_voxels[i][1] = [
@@ -237,13 +237,13 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
                         total_surface_voxels[i] = [[item], surface[i], seg]
 
     # take internal voxels out of surface voxels
-    for vox in final_intern_voxels.keys():
-        if vox in total_surface_voxels.keys():
+    for vox in list(final_intern_voxels.keys()):
+        if vox in list(total_surface_voxels.keys()):
             del total_surface_voxels[vox]
 
     # calculate volume and SA for surface voxels, taking into account multiple item crossovers
     final_surface_voxels = {}
-    for vox in total_surface_voxels.keys():
+    for vox in list(total_surface_voxels.keys()):
         # modified version of SV1 functions verts_in that returns volume and distances
         [itemlist, distances, seg] = total_surface_voxels[vox]
         # check if the surface voxel is actually internal after updating all vertex distances:
@@ -268,7 +268,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
     #       is surface that passes exactly through the boundary
     #       Figure out how to handle that, and remove this; it slows things down a lot
     actually_surface_voxels = []
-    for vox, (vol, seg) in final_intern_voxels.items():
+    for vox, (vol, seg) in list(final_intern_voxels.items()):
         i, j, k = vox
         area = 0
         if not has_vox(i + 1, j, k):

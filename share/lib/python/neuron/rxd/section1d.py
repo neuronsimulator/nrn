@@ -45,16 +45,16 @@ class _SectionLookup:
         return iter(_SectionLookup._instance.nrn_sec_list)
 
     def values(self):
-        return _SectionLookup._instance.rxd_sec_list.values()
+        return list(_SectionLookup._instance.rxd_sec_list.values())
 
     def items(self):
         res = {}
         for sec in _SectionLookup._instance.nrn_sec_list:
             res[sec] = _SectionLookup._instance.rxd_sec_list[sec.hoc_internal_name()]
-        return res.items()
+        return list(res.items())
 
     def remove(self, rxdsec):
-        for key, val in _SectionLookup._instance.rxd_sec_list.items():
+        for key, val in list(_SectionLookup._instance.rxd_sec_list.items()):
             if val == rxdsec:
                 del _SectionLookup._instance.rxd_sec_list[key]
 
@@ -137,7 +137,7 @@ def replace(rmsec, offset, nseg):
     rmsec._offset = offset
     rmsec._nseg = nseg
 
-    for secs in _SectionLookup().values():
+    for secs in list(_SectionLookup().values()):
         for sec in secs:
             if sec and sec._offset > old_offset:
                 sec._offset -= dur
@@ -234,7 +234,7 @@ class Section1D(rxdsection.RxDSection):
         node._remove(self._offset, self._offset + self._nseg + 1)
 
         # shift offset to account for deleted sec
-        for secs in _rxd_sec_lookup.values():
+        for secs in list(_rxd_sec_lookup.values()):
             for s in secs:
                 if s._offset > self._offset:
                     s._offset -= self._nseg + 1

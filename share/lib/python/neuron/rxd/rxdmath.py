@@ -674,7 +674,7 @@ class _Arithmeticed:
         if intracellular3d and hasattr(self, "_items"):
             from . import species
 
-            for item, count in self._items.items():
+            for item, count in list(self._items.items()):
                 if count:
                     if isinstance(item, species.Species):
                         ics_species = item._intracellular_instances[intracellular3d]
@@ -693,7 +693,7 @@ class _Arithmeticed:
 
         items = []
         counts = []
-        for item, count in self._items.items():
+        for item, count in list(self._items.items()):
             if count:
                 items.append(item)
                 counts.append(count)

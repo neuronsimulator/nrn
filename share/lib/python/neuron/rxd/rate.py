@@ -123,7 +123,7 @@ class Rate(GeneralizedReaction):
                 sp = self._species()
                 if sp and sp._extracellular_instances:
                     self._ecs_regions = [
-                        key for key in sp._extracellular_instances.keys()
+                        key for key in list(sp._extracellular_instances.keys())
                     ]
 
         if hasattr(self, "_ecs_regions"):

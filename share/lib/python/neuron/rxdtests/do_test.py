@@ -44,12 +44,12 @@ def do_test(test_to_run, results_location, num_record=10):
             s = sp()
             if s and hasattr(s, "_intracellular_instances"):
                 for key, ics in sorted(
-                    s._intracellular_instances.items(), key=lambda val: val[0]._id
+                    list(s._intracellular_instances.items()), key=lambda val: val[0]._id
                 ):
                     rxd_3d += list(ics.states)
             if s and hasattr(s, "_extracellular_instances"):
                 for ecs in sorted(
-                    s._extracellular_instances.values(), key=lambda spe: spe._grid_id
+                    list(s._extracellular_instances.values()), key=lambda spe: spe._grid_id
                 ):
                     rxd_ecs += list(ecs.states.flatten())
         all_rxd = rxd_1d + rxd_3d + rxd_ecs

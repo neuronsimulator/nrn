@@ -12,8 +12,8 @@ and output approx. surface area contained in that vox"""
 def surface_area(itemlist, vox, grid):
     res = options.ics_partial_surface_resolution
     i0, j0, k0 = vox
-    rng = range(res + 1)
-    rng0 = range(res)
+    rng = list(range(res + 1))
+    rng0 = list(range(res))
     dx, dy, dz = grid["dx"], grid["dy"], grid["dz"]
     Sx, Sy, Sz = dx / res, dy / res, dz / res
     x0 = grid["xlo"] + i0 * dx

@@ -81,7 +81,7 @@ def _remove(start, stop):
     # remove _node_flux
     for (i, idx) in enumerate(_node_fluxes["index"]):
         if idx in dels:
-            for lst in _node_fluxes.values():
+            for lst in list(_node_fluxes.values()):
                 del lst[i]
 
 

@@ -276,7 +276,7 @@ _diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
 
 
 def _domain_lookup(sec, dim=None):
-    for d, sl in _dimensions.items():
+    for d, sl in list(_dimensions.items()):
         if sec in sl:
             if dim is not None and d != dim:
                 sl.remove(sec)
@@ -331,7 +331,7 @@ def _unregister_reaction(r):
     react = r() if isinstance(r, weakref.ref) else r
     with initializer._init_lock:
         _all_reactions = list(
-            filter(lambda x: x() is not None and x() != react, _all_reactions)
+            [x for x in _all_reactions if x() is not None and x() != react]
         )
 
 
@@ -602,7 +602,7 @@ def _update_node_data(force=False, newspecies=False):
                     # re-register ions for extracellular species in case new
                     # sections have been added within the ecs region
                     if hasattr(s, "_extracellular_instances"):
-                        for ecs in s._extracellular_instances.values():
+                        for ecs in list(s._extracellular_instances.values()):
                             ecs._ion_register()
 
             if nsegs_changed or newspecies:
@@ -690,8 +690,8 @@ def _check_multigridding_supported_3d():
                         groups_by_root_and_dx.setdefault(root, {})
                         groups_by_root_and_dx[root].setdefault(dx, [])
                         groups_by_root_and_dx[root][dx].append(sec)
-    for root, groups in groups_by_root_and_dx.items():
-        if _do_section_groups_border(groups.values()):
+    for root, groups in list(groups_by_root_and_dx.items()):
+        if _do_section_groups_border(list(groups.values())):
             return False
 
     return True
@@ -742,8 +742,8 @@ def _setup_matrices():
                 for i in range(n):
                     mat_i = diffusion_matrix[i]
                     euler_matrix_i.extend(itertools.repeat(i, len(mat_i)))
-                    euler_matrix_j.extend(mat_i.keys())
-                    euler_matrix_nonzero.extend(mat_i.values())
+                    euler_matrix_j.extend(list(mat_i.keys()))
+                    euler_matrix_nonzero.extend(list(mat_i.values()))
                 euler_matrix_nnonzero = len(euler_matrix_nonzero)
                 assert (
                     len(euler_matrix_i)
@@ -1267,7 +1267,7 @@ def _compile_reactions():
                     if isinstance(s, species.SpeciesOnExtracellular):
                         ecs_mc_species_involved.add(s)
                     if isinstance(s, species.Species) and s._extracellular_instances:
-                        for ecs in s._extracellular_instances.keys():
+                        for ecs in list(s._extracellular_instances.keys()):
                             ecs_mc_species_involved.add(s[ecs])
                 for reg in react_regions:
                     if reg in list(ecs_species_by_region.keys()):

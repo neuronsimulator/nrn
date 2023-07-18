@@ -75,9 +75,9 @@ if __name__ == "__main__":
         s = matplotlib.cm.ScalarMappable(cmap=cmap)
         cmap = s.get_cmap()
         s.set_clim(0, cmap.N)
-        rs, gs, bs = itertools.islice(zip(*s.to_rgba(list(range(cmap.N)))), 0, 3)
+        rs, gs, bs = itertools.islice(list(zip(*s.to_rgba(list(range(cmap.N))))), 0, 3)
         plotshape.colormap(cmap.N)
-        for i, r, g, b in zip(range(cmap.N), rs, gs, bs):
+        for i, r, g, b in zip(list(range(cmap.N)), rs, gs, bs):
             plotshape.colormap(i, r * 255, g * 255, b * 255)
         # call s.scale(lo, hi) to replot the legend
 

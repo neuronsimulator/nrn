@@ -55,22 +55,22 @@ def test(files, correct_data):
             c = 0
             while c < len(t1) - 1 and t1[c] > t1[c + 1]:
                 c = c + 1
-            t1 = numpy.delete(t1, range(c))
-            corr_dat = numpy.delete(corr_dat, range(c), 0)
+            t1 = numpy.delete(t1, list(range(c)))
+            corr_dat = numpy.delete(corr_dat, list(range(c)), 0)
             # remove any initial t that are greter than the next t (removes times before 0) in test data
             c = 0
             while c < len(t2) - 1 and t2[c] > t2[c + 1]:
                 c = c + 1
-            t2 = numpy.delete(t2, range(c))
-            tst_dat = numpy.delete(tst_dat, range(c), 0)
+            t2 = numpy.delete(t2, list(range(c)))
+            tst_dat = numpy.delete(tst_dat, list(range(c)), 0)
             # get rid of repeating t in correct data (otherwise interpolation fails)
             c = 0
             while c < len(t1) - 1:
                 c1 = c + 1
                 while c1 < len(t1) and abs(t1[c] - t1[c1]) < dt_eps:
                     c1 = c1 + 1
-                t1 = numpy.delete(t1, range(c, c1 - 1))
-                corr_dat = numpy.delete(corr_dat, range(c, c1 - 1), 0)
+                t1 = numpy.delete(t1, list(range(c, c1 - 1)))
+                corr_dat = numpy.delete(corr_dat, list(range(c, c1 - 1)), 0)
                 c = c + 1
             # get rid of the test data outside of the correct data time interval
             t2_n = len(t2)

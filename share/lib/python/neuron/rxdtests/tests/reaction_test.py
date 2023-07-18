@@ -8,13 +8,13 @@ r = rxd.Region([cell])
 
 def Declare_Parameters(**kwargs):
     """helper function enabling clean declaration of parameters in top namespace"""
-    for key, value in kwargs.items():
+    for key, value in list(kwargs.items()):
         globals()[key] = rxd.Parameter(r, name=key, initial=value)
 
 
 def Declare_Species(**kwargs):
     """helper function enabling clean declaration of species in top namespace"""
-    for key, value in kwargs.items():
+    for key, value in list(kwargs.items()):
         globals()[key] = rxd.Species(r, name=key, initial=value)
 
 

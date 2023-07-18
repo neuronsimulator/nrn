@@ -706,8 +706,8 @@ class Region(object):
             self._sa = numpy.zeros(len(surface_voxels) + len(internal_voxels))
             self._vol = numpy.ones(len(surface_voxels) + len(internal_voxels))
             self._mesh_grid = mesh_grid
-            self._points = [key for key in surface_voxels.keys()] + [
-                key for key in internal_voxels.keys()
+            self._points = [key for key in list(surface_voxels.keys())] + [
+                key for key in list(internal_voxels.keys())
             ]
 
             self._points = sorted(self._points)
@@ -715,7 +715,7 @@ class Region(object):
             nodes_by_seg = {}
             surface_nodes_by_seg = {}
             # creates tuples of x, y, and z coordinates where a point is (xs[i], ys[i], zs[i])
-            self._xs, self._ys, self._zs = zip(*self._points)
+            self._xs, self._ys, self._zs = list(zip(*self._points))
             maps = {
                 seg: i
                 for i, seg in enumerate([seg for sec in self._secs3d for seg in sec])

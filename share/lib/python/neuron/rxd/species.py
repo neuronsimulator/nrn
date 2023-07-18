@@ -161,7 +161,7 @@ _has_3d = False
 def _update_tortuosity(region):
     """Update tortuosity for all species on region"""
 
-    for s, r in _extracellular_diffusion_objects.items():
+    for s, r in list(_extracellular_diffusion_objects.items()):
         if (
             r == region
             and hasattr(s, "_grid_id")
@@ -177,7 +177,7 @@ def _update_tortuosity(region):
 def _update_volume_fraction(region):
     """Update volume fractions for all species on region"""
 
-    for s, r in _extracellular_diffusion_objects.items():
+    for s, r in list(_extracellular_diffusion_objects.items()):
         if (
             r == region
             and hasattr(s, "_grid_id")
@@ -315,10 +315,10 @@ class _SpeciesMathable(object):
 
         self._d = value
         if hasattr(self, "_extracellular_instances"):
-            for ecs in self._extracellular_instances.values():
+            for ecs in list(self._extracellular_instances.values()):
                 ecs.d = value
         if hasattr(self, "_intracellular_instances"):
-            for ics in self._intracellular_instances.values():
+            for ics in list(self._intracellular_instances.values()):
                 ics.d = value
         if initializer.is_initialized() and hasattr(self, "_region_indices"):
             _volumes, _surface_area, _diffs = node._get_data()
@@ -425,7 +425,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
     def node_by_ijk(self, i, j, k):
         index = 0
         s = self._extracellular()
-        for ecs in self._species()._extracellular_instances.values():
+        for ecs in list(self._species()._extracellular_instances.values()):
             if ecs == s:
                 e = s._region
                 index += (i * e._ny + j) * e._nz + k
@@ -877,8 +877,8 @@ class _IntracellularSpecies(_SpeciesMathable):
         self._isalive()
         ion = "_ref_" + self._name + self._region._nrn_region
         for seg, nodes in zip(
-            r._segs3d(self._region._nodes_by_seg.keys()),
-            self._region._nodes_by_seg.values(),
+            r._segs3d(list(self._region._nodes_by_seg.keys())),
+            list(self._region._nodes_by_seg.values()),
         ):
             segptr = getattr(seg, ion)
             value = segptr[0]
@@ -913,10 +913,10 @@ class _IntracellularSpecies(_SpeciesMathable):
                 segs = self._region._segs3d()
                 self._concentration_neuron_pointers = [
                     getattr(segs[segidx], ion_conc)
-                    for segidx in self._seg_to_surface_nodes.keys()
+                    for segidx in list(self._seg_to_surface_nodes.keys())
                 ]
                 self._surface_nodes_per_seg = [
-                    nodes for nodes in self._seg_to_surface_nodes.values()
+                    nodes for nodes in list(self._seg_to_surface_nodes.values())
                 ]
                 self._surface_nodes_per_seg_start_indices = [
                     len(nodes) for nodes in self._surface_nodes_per_seg
@@ -956,7 +956,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                     self._current_neuron_pointers = [
                         getattr(seg, ion_curr)
                         for seg in self._region._segs3d(
-                            self._seg_to_surface_nodes.keys()
+                            list(self._seg_to_surface_nodes.keys())
                         )
                     ]
                     # These are in the same order as self._surface_nodes_per_seg so self._surface_nodes_per_seg_start_indices will work for this list as well
@@ -986,7 +986,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                 sp = _defined_species[self._species][self._region]()
             else:
                 for s in _all_species:
-                    if self in s()._intracellular_instances.values():
+                    if self in list(s()._intracellular_instances.values()):
                         sp = s()
                         break
             if isinstance(sp, Parameter):
@@ -1050,7 +1050,7 @@ class _IntracellularSpecies(_SpeciesMathable):
 
             if sys.version_info.major > 2:
                 sig = inspect.signature(fun)
-                for param in sig.parameters.values():
+                for param in list(sig.parameters.values()):
                     if (
                         param.kind == param.VAR_POSITIONAL
                         or param.kind == param.VAR_KEYWORD
@@ -1157,7 +1157,7 @@ class _IntracellularSpecies(_SpeciesMathable):
     def _mc3d_indices_start(self, r):
         self._isalive()
         indices = []
-        for node_idx in r._nodes_by_seg.values():
+        for node_idx in list(r._nodes_by_seg.values()):
             first_index = node_idx[0]
             point = r._points[first_index]
             indices.append(self._index_from_point(point))
@@ -1463,7 +1463,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         grid_indices = []
         neuron_pointers = []
         stateo = "_ref_" + self._species + "o"
-        for sec, indices in self._seg_indices.items():
+        for sec, indices in list(self._seg_indices.items()):
             for seg, i in zip(sec, indices):
                 if i is not None:
                     grid_indices.append(i)
@@ -1481,7 +1481,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
             ispecies = "_ref_i" + self._species
             neuron_pointers = []
             scale_factors = []
-            for sec, indices in self._seg_indices.items():
+            for sec, indices in list(self._seg_indices.items()):
                 for seg, surface_area, i in zip(sec, _surface_areas1d(sec), indices):
                     if i is not None:
                         neuron_pointers.append(getattr(seg, ispecies))
@@ -1501,7 +1501,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         grid_indices = []
         neuron_pointers = []
         stateo = self._species + "o"
-        for sec, indices in self._seg_indices.items():
+        for sec, indices in list(self._seg_indices.items()):
             for seg, i in zip(sec, indices):
                 if i is not None:
                     self._states[i] = getattr(seg, stateo)
@@ -1513,7 +1513,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
             sp = _defined_species[self._species][self._region]()
         else:
             for s in _all_species:
-                if self in s()._extracellular_instances.values():
+                if self in list(s()._extracellular_instances.values()):
                     sp = s()
                     break
         if isinstance(sp, Parameter):
@@ -1776,7 +1776,7 @@ class Species(_SpeciesMathable):
                     segs = [seg for sec in r._secs3d for seg in sec]
                     self._intracellular_nodes[r] += [
                         node.Node3D(i, x, y, z, r, self._d, segs[idx], selfref)
-                        for i, x, y, z, idx in zip(range(len(xs)), xs, ys, zs, segsidx)
+                        for i, x, y, z, idx in zip(list(range(len(xs))), xs, ys, zs, segsidx)
                     ]
                     # the region is now responsible for computing the correct volumes and surface areas
                     # this is done so that multiple species can use the same region without recomputing it
@@ -1858,17 +1858,17 @@ class Species(_SpeciesMathable):
             if not any(_defined_species[name]):
                 del _defined_species[name]
         _all_defined_species = list(
-            filter(lambda x: x() is not None and x() is not self, _all_defined_species)
+            [x for x in _all_defined_species if x() is not None and x() is not self]
         )
         _all_species = list(
-            filter(lambda x: x() is not None and x() is not self, _all_species)
+            [x for x in _all_species if x() is not None and x() is not self]
         )
         if hasattr(self, "_extracellular_instances"):
-            for sp in self._extracellular_instances.values():
+            for sp in list(self._extracellular_instances.values()):
                 sp._delete()
 
         if hasattr(self, "_intracellular_instances"):
-            for sp in self._intracellular_instances.values():
+            for sp in list(self._intracellular_instances.values()):
                 sp._delete()
 
         # delete the secs
@@ -2027,7 +2027,7 @@ class Species(_SpeciesMathable):
             self._id, self._atolscale, len(idx), (ctypes.c_int * len(idx))(*idx)
         )
         # 3D stuff
-        for ics in self._intracellular_instances.values():
+        for ics in list(self._intracellular_instances.values()):
             ics._register_cptrs()
 
     @property
@@ -2212,10 +2212,10 @@ class Species(_SpeciesMathable):
 
     def _finitialize(self, skip_transfer=False):
         if self._extracellular_instances:
-            for r in self._extracellular_instances.keys():
+            for r in list(self._extracellular_instances.keys()):
                 self._extracellular_instances[r]._finitialize()
         if self._intracellular_instances:
-            for r in self._intracellular_instances.keys():
+            for r in list(self._intracellular_instances.keys()):
                 self._intracellular_instances[r]._finitialize()
         if self.initial is not None:
             if isinstance(self.initial, Callable):
@@ -2239,7 +2239,7 @@ class Species(_SpeciesMathable):
             sec._transfer_to_legacy()
 
         # now the 3D stuff
-        for ics in self._intracellular_instances.values():
+        for ics in list(self._intracellular_instances.values()):
             ics._transfer_to_legacy()
 
         """
@@ -2270,11 +2270,11 @@ class Species(_SpeciesMathable):
             sec._import_concentration(init)
 
         # now the 3D stuff
-        for ics in self._intracellular_instances.values():
+        for ics in list(self._intracellular_instances.values()):
             ics._import_concentration()
 
         # now the ECS
-        for ecs in self._extracellular_instances.values():
+        for ecs in list(self._extracellular_instances.values()):
             ecs._import_concentration()
 
     @property

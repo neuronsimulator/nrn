@@ -11,17 +11,17 @@ class CoreNEURONContextHelper(object):
         assert self._new_values is not None
         assert self._old_values is None
         self._old_values = {}
-        for k, v in self._new_values.items():
+        for k, v in list(self._new_values.items()):
             self._old_values[k] = getattr(self._coreneuron, k)
             setattr(self._coreneuron, k, v)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         assert self._new_values is not None
         assert self._old_values is not None
-        assert self._new_values.keys() == self._old_values.keys()
+        assert list(self._new_values.keys()) == list(self._old_values.keys())
         # Make sure we restore values in reverse order to how we set them.
         # This is important for pairs like gpu and cell_permute that interact.
-        for k in reversed(self._new_values.keys()):
+        for k in reversed(list(self._new_values.keys())):
             assert getattr(self._coreneuron, k) == self._new_values[k]
             setattr(self._coreneuron, k, self._old_values[k])
         return False

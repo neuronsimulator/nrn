@@ -118,7 +118,7 @@ class middle_man:
         model = ET.SubElement(sbml, "model", name=self.name)
         if len(self.unit_defs) > 0:
             unitdefinitions = ET.SubElement(model, "listOfUnitDefinitions")
-        for key, value in self.unit_defs.items():
+        for key, value in list(self.unit_defs.items()):
             unitDefinition = ET.SubElement(
                 unitdefinitions, "unitDefinition", id=value.name, name=value.name
             )
@@ -130,7 +130,7 @@ class middle_man:
 
         if len(self.compartments) > 0:
             listOfCompartments = ET.SubElement(model, "listOfCompartments")
-        for key, value in self.compartments.items():
+        for key, value in list(self.compartments.items()):
             ET.SubElement(
                 listOfCompartments,
                 "compartment",
@@ -141,7 +141,7 @@ class middle_man:
 
         if len(self.species) > 0:
             listOfSpecies = ET.SubElement(model, "listOfSpecies")
-        for key, value in self.species.items():
+        for key, value in list(self.species.items()):
             ET.SubElement(
                 listOfSpecies,
                 "species",
@@ -153,7 +153,7 @@ class middle_man:
 
         if len(self.parameters) > 0:
             listOfParameters = ET.SubElement(model, "listOfParameters")
-        for para, value in self.parameters.items():
+        for para, value in list(self.parameters.items()):
             ET.SubElement(
                 listOfParameters, "parameter", id=para, value=str(value.value)
             )
