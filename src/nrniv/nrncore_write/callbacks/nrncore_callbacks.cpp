@@ -1232,7 +1232,8 @@ void nrn2core_subworld_info(int& cnt,
                             int& numprocs_subworld,
                             int& numprocs_world) {
 #ifdef NRNMPI
-    nrnmpi_get_subworld_info(&cnt, &subworld_index, &subworld_rank, &numprocs_subworld, &numprocs_world);
+    nrnmpi_get_subworld_info(
+        &cnt, &subworld_index, &subworld_rank, &numprocs_subworld, &numprocs_world);
 #else
     cnt = 0;
     subworld_index = -1;
