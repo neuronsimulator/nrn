@@ -171,6 +171,13 @@ void check_permutation_vector(Rng const& range, std::size_t size) {
 
 enum struct may_cause_reallocation { Yes, No };
 
+/** @brief Defer deleting pointers to deallocated memory.
+ *
+ *  The address of a pointer to the underlying storage of `field_data` can
+ *  escape the container. When deallocating the container the memory is
+ *  deallocated but the pointer to the storage location is set to `nullptr` and
+ *  "leaked" into this vector. These pointers are all `nullptr`s.
+ */
 extern std::vector<void*>* defer_delete_storage;
 
 /**
@@ -426,8 +433,18 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
     /**
      * @brief Invoke the given callable for each vector.
      *
+     * The callable has a signature compatible with:
+     *
+     *     void callable(const Tag& tag,
+     *                   const std::vector<Tag::data_type>& v,
+     *                   int i,
+     *                   int array_dim)
+     *
+     * where `i` is the field index, `array_dim` is the array dimensions of the
+     * field `i`.
+     *
      * @tparam might_reallocate Might the callable cause reallocation of the vector it is given?
-     * @param callable Callable to invoke.
+     * @param callable A callable to invoke.
      */
     template <may_cause_reallocation might_reallocate, typename Callable>
     void for_all_vectors(Callable const& callable) {
