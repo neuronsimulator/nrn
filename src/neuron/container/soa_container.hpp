@@ -180,6 +180,13 @@ bool check_permutation_vector(Rng const& range, std::size_t size) {
 
 enum struct may_cause_reallocation { Yes, No };
 
+/** @brief Defer deleting pointers to deallocated memory.
+ *
+ *  The address of a pointer to the underlying storage of `field_data` can
+ *  escape the container. When deallocating the container the memory is
+ *  deallocated but the pointer to the storage location is "leaked" into this
+ *  vector.
+ */
 extern std::vector<void*>* defer_delete_storage;
 
 /**
@@ -436,7 +443,7 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
      * @brief Invoke the given callable for each vector.
      *
      * @tparam might_reallocate Might the callable cause reallocation of the vector it is given?
-     * @param callable Callable to invoke.
+     * @param callable A callable to invoke.
      */
     template <may_cause_reallocation might_reallocate, typename Callable>
     void for_all_vectors(Callable const& callable) {
@@ -448,6 +455,11 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
         }
     }
 
+    /**
+     * @brief Invoke the given callable for each vector.
+     *
+     * @param callable A callable to invoke.
+     */
     template <typename Callable>
     void for_all_vectors(Callable const& callable) const {
         for (auto i = 0; i < m_storage.size(); ++i) {
@@ -749,6 +761,15 @@ struct soa {
     /**
      * @brief Apply the given function to non-const versions of all vectors.
      *
+     * The callable has a signature compatible with:
+     *
+     *     void callable(const Tag& tag,
+     *                   std::vector<Tag::data_type, Allocator>& v,
+     *                   int field_index,
+     *                   int array_dim)
+     *
+     * where `array_dim` is the array dimensions of the field `field_index`.
+     *
      * @tparam might_reallocate Might the callable trigger reallocation of the vectors?
      * @param callable Callable to invoke on each vector.
      *
@@ -766,6 +787,15 @@ struct soa {
 
     /**
      * @brief Apply the given function to const-qualified versions of all vectors.
+     *
+     * The callable has a signature compatible with:
+     *
+     *     void callable(const Tag& tag,
+     *                   const std::vector<Tag::data_type, Allocator>& v,
+     *                   int field_index,
+     *                   int array_dim)
+     *
+     * where `array_dim` is the array dimensions of the field `field_index`.
      *
      * Because of the const qualification this cannot cause reallocation and trigger updates of
      * pointers inside m_data, so no might_reallocate parameter is needed.
