@@ -433,16 +433,6 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
     /**
      * @brief Invoke the given callable for each vector.
      *
-     * The callable has a signature compatible with:
-     *
-     *     void callable(const Tag& tag,
-     *                   const std::vector<Tag::data_type>& v,
-     *                   int i,
-     *                   int array_dim)
-     *
-     * where `i` is the field index, `array_dim` is the array dimensions of the
-     * field `i`.
-     *
      * @tparam might_reallocate Might the callable cause reallocation of the vector it is given?
      * @param callable A callable to invoke.
      */
@@ -456,6 +446,11 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
         }
     }
 
+    /**
+     * @brief Invoke the given callable for each vector.
+     *
+     * @param callable A callable to invoke.
+     */
     template <typename Callable>
     void for_all_vectors(Callable const& callable) const {
         for (auto i = 0; i < m_storage.size(); ++i) {
@@ -732,6 +727,15 @@ struct soa {
     /**
      * @brief Apply the given function to non-const versions of all vectors.
      *
+     * The callable has a signature compatible with:
+     *
+     *     void callable(const Tag& tag,
+     *                   std::vector<Tag::data_type, Allocator>& v,
+     *                   int field_index,
+     *                   int array_dim)
+     *
+     * where `array_dim` is the array dimensions of the field `field_index`.
+     *
      * @tparam might_reallocate Might the callable trigger reallocation of the vectors?
      * @param callable Callable to invoke on each vector.
      *
@@ -749,6 +753,15 @@ struct soa {
 
     /**
      * @brief Apply the given function to const-qualified versions of all vectors.
+     *
+     * The callable has a signature compatible with:
+     *
+     *     void callable(const Tag& tag,
+     *                   const std::vector<Tag::data_type, Allocator>& v,
+     *                   int field_index,
+     *                   int array_dim)
+     *
+     * where `array_dim` is the array dimensions of the field `field_index`.
      *
      * Because of the const qualification this cannot cause reallocation and trigger updates of
      * pointers inside m_data, so no might_reallocate parameter is needed.
