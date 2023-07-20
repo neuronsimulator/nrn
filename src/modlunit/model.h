@@ -141,13 +141,8 @@ const char* unit_str();
 extern const char* decode_units(Symbol*);
 
 extern List
-#if HAVE_STDARG_H
 		*makelist(int narg, ...),
 		*itemarray(int narg, ...),	/* item  ITEMARRAY, array of item pointers */
-#else
-		*makelist(),	/* item LIST */
-		*itemarray(),	/* item  ITEMARRAY, array of item pointers */
-#endif
 		*prepend(),
 		*newlist(),	/* begins new empty list */
 		*inputtext();	/* used by parser to get block text from

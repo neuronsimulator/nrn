@@ -26,14 +26,10 @@ static double inside(void*) {
 int nrn_feround(int);
 // return last rounding mode and set to given mode if 1,2,3,4.
 // order is FE_DOWNWARD, FE_TONEAREST, FE_TOWARDZERO, FE_UPWARD
-#if defined(HAVE_FENV_H) && defined(HAVE_FESETROUND)
-#include <fenv.h>
+#include <cfenv>
 static int round_mode[] = {FE_DOWNWARD, FE_TONEAREST, FE_TOWARDZERO, FE_UPWARD};
-#endif
 int nrn_feround(int mode) {
-#if defined(HAVE_FENV_H) && defined(HAVE_FESETROUND)
     int oldmode = fegetround();
-    int m;
     if (oldmode == FE_TONEAREST) {
         oldmode = 2;
     } else if (oldmode == FE_TOWARDZERO) {
@@ -49,9 +45,6 @@ int nrn_feround(int mode) {
         nrn_assert(fesetround(round_mode[mode - 1]) == 0);
     }
     return oldmode;
-#else
-    return 0;
-#endif
 }
 
 static double feround(void*) {

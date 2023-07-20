@@ -409,51 +409,13 @@
 
 /* Begin machine constants. */
 
-#ifdef notdef /* __STDC__ */
-/*
- * This code is currently deleted because most ANSI standard C compilers
- * do not provide the standard header files yet.
- */
-#endif
-#if defined(HAVE_LIMITS_H)
-#include <float.h>
-#include <limits.h>
+#include <cfloat>
+#include <climits>
 #define MACHINE_RESOLUTION DBL_EPSILON
 #define LARGEST_REAL DBL_MAX
 #define SMALLEST_REAL DBL_MIN
 #define LARGEST_SHORT_INTEGER SHRT_MAX
 #define LARGEST_LONG_INTEGER LONG_MAX
-#else /* do not have limits.h */ /* NOT defined(__STDC__) */
-
-/* VAX machine constants */
-#ifdef vax
-#define MACHINE_RESOLUTION 6.93889e-18
-#define LARGEST_REAL 1.70141e+38
-#define SMALLEST_REAL 2.938743e-39
-#define LARGEST_SHORT_INTEGER 32766
-#define LARGEST_LONG_INTEGER 2147483646
-#endif
-
-/* hp9000 machine constants */
-#ifdef hpux
-/* These values are correct for hp9000/300.  Should be correct for others. */
-#define MACHINE_RESOLUTION 8.9e-15
-#define LARGEST_REAL 1.79769313486231e+308
-#define SMALLEST_REAL 2.22507385850721e-308
-#define LARGEST_SHORT_INTEGER 32766
-#define LARGEST_LONG_INTEGER 2147483646
-#endif
-
-/* Sun machine constants */
-#ifdef sun
-/* These values are rumored to be the correct values. */
-#define MACHINE_RESOLUTION 8.9e-15
-#define LARGEST_REAL 1.79769313486231e+308
-#define SMALLEST_REAL 2.22507385850721e-308
-#define LARGEST_SHORT_INTEGER 32766
-#define LARGEST_LONG_INTEGER 2147483646
-#endif
-#endif /* NOT defined(__STDC__) */
 
 /*
  *  ANNOTATION
