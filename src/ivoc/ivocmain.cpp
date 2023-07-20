@@ -310,10 +310,6 @@ static int nrn_optargint(const char* opt, int* pargc, const char** argv, int dfl
     return i;
 }
 
-#if USENRNJAVA
-void nrn_InitializeJavaVM();
-#endif
-
 #if 0  // for debugging
 void prargs(const char* s, int argc, const char** argv) {
 	int i;
@@ -520,25 +516,9 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     // But I have decided to use the environment variable if it exists
     neuron_home = getenv("NEURONHOME");
     if (!neuron_home) {
-#if defined(HAVE_SETENV)
         setenv("NEURONHOME", NEURON_DATA_DIR, 1);
         neuron_home = NEURON_DATA_DIR;
-#else
-#error "I don't know how to set environment variables."
-// Maybe in this case the user will have to set it by hand.
-#endif
-        // putenv and setenv may invalidate env but we no longer
-        // use it so following should not be needed
-#if 0
-#if HAVE_UNISTD_H && !defined(__APPLE__)
-	env = environ;
-#endif
-#if defined(__APPLE__)
-	env = (*_NSGetEnviron());
-#endif
-#endif
     }
-
 #else  // Not unix:
     neuron_home = getenv("NEURONHOME");
     if (!neuron_home) {
@@ -731,9 +711,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     hoc_main1_init(our_argv[0], env);
 #endif  // HAVE_IV
 
-#if USENRNJAVA
-    nrn_InitializeJavaVM();
-#endif
 #if OCSMALL
     if (argc == 1) {
         ocsmall_argv[0] = our_argv[0];
