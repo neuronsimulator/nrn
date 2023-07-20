@@ -265,8 +265,7 @@ in whatever list they happen to be in. */
 /* usage is q = makelist(n, q1, q2,..., qn); and q is of type LIST and
    is not in any list */
 
-Item * makelist(int narg, ...)
-{
+Item* makelist(int narg, ...) {
     va_list ap;
     int i;
     List* l;
@@ -303,7 +302,7 @@ Item* prepend(Item* ql, Item* q) {
 /* An item which is an array of item pointers. Note where the size of
 the array is held. */
 
-Item * itemarray(int narg, ...) {
+Item* itemarray(int narg, ...) {
     va_list ap;
     int i;
     Item *ql, *q, **qa;
