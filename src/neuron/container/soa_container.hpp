@@ -175,8 +175,8 @@ enum struct may_cause_reallocation { Yes, No };
  *
  *  The address of a pointer to the underlying storage of `field_data` can
  *  escape the container. When deallocating the container the memory is
- *  deallocated but the pointer to the storage location is set to `nullptr` and
- *  "leaked" into this vector. These pointers are all `nullptr`s.
+ *  deallocated but the pointer to the storage location is "leaked" into this
+ *  vector.
  */
 extern std::vector<void*>* defer_delete_storage;
 
